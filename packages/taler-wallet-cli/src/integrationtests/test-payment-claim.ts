@@ -21,6 +21,7 @@ import { GlobalTestState, MerchantPrivateApi, WalletCli } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 import { PreparePayResultType } from "@gnu-taler/taler-util";
 import { TalerErrorCode } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for basic, bank-integrated withdrawal.
@@ -61,25 +62,26 @@ export async function runPaymentClaimTest(t: GlobalTestState) {
 
   // Make wallet pay for the order
 
-  const preparePayResult = await wallet.preparePay({
-    talerPayUri,
-  });
+  const preparePayResult = await wallet.client.call(
+    WalletApiOperation.PreparePayForUri,
+    {
+      talerPayUri,
+    },
+  );
 
   t.assertTrue(
     preparePayResult.status === PreparePayResultType.PaymentPossible,
   );
 
   t.assertThrowsOperationErrorAsync(async () => {
-    await walletTwo.preparePay({
+    await walletTwo.client.call(WalletApiOperation.PreparePayForUri, {
       talerPayUri,
     });
   });
 
-  const r2 = await wallet.apiRequest("confirmPay", {
-    // FIXME: should be validated, don't cast!
+  await wallet.client.call(WalletApiOperation.ConfirmPay, {
     proposalId: preparePayResult.proposalId,
   });
-  t.assertTrue(r2.type === "response");
 
   // Check if payment was successful.
 
@@ -92,7 +94,7 @@ export async function runPaymentClaimTest(t: GlobalTestState) {
   walletTwo.deleteDatabase();
 
   const err = await t.assertThrowsOperationErrorAsync(async () => {
-    await walletTwo.preparePay({
+    await walletTwo.client.call(WalletApiOperation.PreparePayForUri, {
       talerPayUri,
     });
   });

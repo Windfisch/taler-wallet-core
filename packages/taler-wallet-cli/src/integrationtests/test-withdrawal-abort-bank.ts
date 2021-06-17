@@ -18,6 +18,7 @@
  * Imports.
  */
 import { TalerErrorCode } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { GlobalTestState, BankApi, BankAccessApi } from "./harness";
 import { createSimpleTestkudosEnvironment } from "./helpers";
 
@@ -40,10 +41,9 @@ export async function runWithdrawalAbortBankTest(t: GlobalTestState) {
 
   // Hand it to the wallet
 
-  const r1 = await wallet.apiRequest("getWithdrawalDetailsForUri", {
+  await wallet.client.call(WalletApiOperation.GetWithdrawalDetailsForUri, {
     talerWithdrawUri: wop.taler_withdraw_uri,
   });
-  t.assertTrue(r1.type === "response");
 
   await wallet.runPending();
 
@@ -53,14 +53,18 @@ export async function runWithdrawalAbortBankTest(t: GlobalTestState) {
 
   // Withdraw
 
-  const r2 = await wallet.apiRequest("acceptBankIntegratedWithdrawal", {
-    exchangeBaseUrl: exchange.baseUrl,
-    talerWithdrawUri: wop.taler_withdraw_uri,
+  const e = await t.assertThrowsOperationErrorAsync(async () => {
+    await wallet.client.call(
+      WalletApiOperation.AcceptBankIntegratedWithdrawal,
+      {
+        exchangeBaseUrl: exchange.baseUrl,
+        talerWithdrawUri: wop.taler_withdraw_uri,
+      },
+    );
   });
-  t.assertTrue(r2.type === "error");
-  t.assertTrue(
-    r2.error.code ===
-      TalerErrorCode.WALLET_WITHDRAWAL_OPERATION_ABORTED_BY_BANK,
+  t.assertDeepEqual(
+    e.operationError.code,
+    TalerErrorCode.WALLET_WITHDRAWAL_OPERATION_ABORTED_BY_BANK,
   );
 
   await t.shutdown();

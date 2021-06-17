@@ -28,6 +28,7 @@ import {
 } from "./harness";
 import { withdrawViaBank } from "./helpers";
 import { coin_ct10, coin_u1 } from "./denomStructures";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 async function setupTest(
   t: GlobalTestState,
@@ -137,16 +138,14 @@ export async function runPaymentMultipleTest(t: GlobalTestState) {
 
   // Make wallet pay for the order
 
-  const r1 = await wallet.apiRequest("preparePay", {
+  const r1 = await wallet.client.call(WalletApiOperation.PreparePayForUri, {
     talerPayUri: orderStatus.taler_pay_uri,
   });
-  t.assertTrue(r1.type === "response");
 
-  const r2 = await wallet.apiRequest("confirmPay", {
+  await wallet.client.call(WalletApiOperation.ConfirmPay, {
     // FIXME: should be validated, don't cast!
-    proposalId: (r1.result as any).proposalId,
+    proposalId: r1.proposalId,
   });
-  t.assertTrue(r2.type === "response");
 
   // Check if payment was successful.
 
@@ -160,3 +159,4 @@ export async function runPaymentMultipleTest(t: GlobalTestState) {
 }
 
 runPaymentMultipleTest.suites = ["wallet"];
+runPaymentMultipleTest.timeoutMs = 120000;

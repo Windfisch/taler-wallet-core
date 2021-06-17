@@ -50,6 +50,7 @@ import {
   MerchantPrivateApi,
   HarnessExchangeBankAccount,
 } from "./harness.js";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 export interface SimpleTestEnvironment {
   commonDb: DbInfo;
@@ -265,10 +266,9 @@ export async function startWithdrawViaBank(
 
   // Hand it to the wallet
 
-  const r1 = await wallet.apiRequest("getWithdrawalDetailsForUri", {
+  await wallet.client.call(WalletApiOperation.GetWithdrawalDetailsForUri, {
     talerWithdrawUri: wop.taler_withdraw_uri,
   });
-  t.assertTrue(r1.type === "response");
 
   await wallet.runPending();
 
@@ -278,11 +278,10 @@ export async function startWithdrawViaBank(
 
   // Withdraw
 
-  const r2 = await wallet.apiRequest("acceptBankIntegratedWithdrawal", {
+  await wallet.client.call(WalletApiOperation.AcceptBankIntegratedWithdrawal, {
     exchangeBaseUrl: exchange.baseUrl,
     talerWithdrawUri: wop.taler_withdraw_uri,
   });
-  t.assertTrue(r2.type === "response");
 }
 
 /**
@@ -305,8 +304,7 @@ export async function withdrawViaBank(
 
   // Check balance
 
-  const balApiResp = await wallet.apiRequest("getBalances", {});
-  t.assertTrue(balApiResp.type === "response");
+  await wallet.client.call(WalletApiOperation.GetBalances, {});
 }
 
 export async function applyTimeTravel(
@@ -365,15 +363,18 @@ export async function makeTestPayment(
 
   // Make wallet pay for the order
 
-  const preparePayResult = await wallet.preparePay({
-    talerPayUri: orderStatus.taler_pay_uri,
-  });
+  const preparePayResult = await wallet.client.call(
+    WalletApiOperation.PreparePayForUri,
+    {
+      talerPayUri: orderStatus.taler_pay_uri,
+    },
+  );
 
   t.assertTrue(
     preparePayResult.status === PreparePayResultType.PaymentPossible,
   );
 
-  const r2 = await wallet.confirmPay({
+  const r2 = await wallet.client.call(WalletApiOperation.ConfirmPay, {
     proposalId: preparePayResult.proposalId,
   });
 

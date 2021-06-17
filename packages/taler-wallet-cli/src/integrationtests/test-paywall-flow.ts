@@ -25,6 +25,7 @@ import {
   ConfirmPayResultType,
 } from "@gnu-taler/taler-util";
 import axios from "axios";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for basic, bank-integrated withdrawal.
@@ -90,9 +91,12 @@ export async function runPaywallFlowTest(t: GlobalTestState) {
 
   console.log(pubUnpaidStatus);
 
-  let preparePayResp = await wallet.preparePay({
-    talerPayUri: pubUnpaidStatus.taler_pay_uri,
-  });
+  let preparePayResp = await wallet.client.call(
+    WalletApiOperation.PreparePayForUri,
+    {
+      talerPayUri: pubUnpaidStatus.taler_pay_uri,
+    },
+  );
 
   t.assertTrue(preparePayResp.status === PreparePayResultType.PaymentPossible);
 
@@ -112,9 +116,12 @@ export async function runPaywallFlowTest(t: GlobalTestState) {
     publicOrderStatusResp.data,
   );
 
-  const confirmPayRes = await wallet.confirmPay({
-    proposalId: proposalId,
-  });
+  const confirmPayRes = await wallet.client.call(
+    WalletApiOperation.ConfirmPay,
+    {
+      proposalId: proposalId,
+    },
+  );
 
   t.assertTrue(confirmPayRes.type === ConfirmPayResultType.Done);
 
@@ -148,9 +155,12 @@ export async function runPaywallFlowTest(t: GlobalTestState) {
   // Pay with new taler://pay URI, which should
   // have the new session ID!
   // Wallet should now automatically re-play payment.
-  preparePayResp = await wallet.preparePay({
-    talerPayUri: talerPayUriOne,
-  });
+  preparePayResp = await wallet.client.call(
+    WalletApiOperation.PreparePayForUri,
+    {
+      talerPayUri: talerPayUriOne,
+    },
+  );
 
   t.assertTrue(preparePayResp.status === PreparePayResultType.AlreadyConfirmed);
   t.assertTrue(preparePayResp.paid);
@@ -185,9 +195,12 @@ export async function runPaywallFlowTest(t: GlobalTestState) {
   // Here the re-purchase detection should kick in,
   // and the wallet should re-pay for the old order
   // under the new session ID (mysession-three).
-  preparePayResp = await wallet.preparePay({
-    talerPayUri: orderStatus.taler_pay_uri,
-  });
+  preparePayResp = await wallet.client.call(
+    WalletApiOperation.PreparePayForUri,
+    {
+      talerPayUri: orderStatus.taler_pay_uri,
+    },
+  );
 
   t.assertTrue(preparePayResp.status === PreparePayResultType.AlreadyConfirmed);
   t.assertTrue(preparePayResp.paid);

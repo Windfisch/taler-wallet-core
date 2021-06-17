@@ -20,6 +20,7 @@
 import { GlobalTestState, MerchantPrivateApi } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 import { URL } from "url";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for the merchant's order lifecycle.
@@ -61,7 +62,7 @@ export async function runClaimLoopTest(t: GlobalTestState) {
   // Make wallet claim the unpaid order.
   t.assertTrue(orderStatusBefore.order_status === "unpaid");
   const talerPayUri = orderStatusBefore.taler_pay_uri;
-  const y = await wallet.preparePay({
+  await wallet.client.call(WalletApiOperation.PreparePayForUri, {
     talerPayUri,
   });
 

@@ -17,6 +17,7 @@
 /**
  * Imports.
  */
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { GlobalTestState } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 
@@ -39,14 +40,20 @@ export async function runDepositTest(t: GlobalTestState) {
 
   await wallet.runUntilDone();
 
-  const { depositGroupId } = await wallet.createDepositGroup({
-    amount: "TESTKUDOS:10",
-    depositPaytoUri: "payto://x-taler-bank/localhost/foo",
-  });
+  const { depositGroupId } = await wallet.client.call(
+    WalletApiOperation.CreateDepositGroup,
+    {
+      amount: "TESTKUDOS:10",
+      depositPaytoUri: "payto://x-taler-bank/localhost/foo",
+    },
+  );
 
   await wallet.runUntilDone();
 
-  const transactions = await wallet.getTransactions();
+  const transactions = await wallet.client.call(
+    WalletApiOperation.GetTransactions,
+    {},
+  );
   console.log("transactions", JSON.stringify(transactions, undefined, 2));
   t.assertDeepEqual(transactions.transactions[0].type, "withdrawal");
   t.assertDeepEqual(transactions.transactions[1].type, "deposit");
@@ -54,7 +61,7 @@ export async function runDepositTest(t: GlobalTestState) {
   // deposit and wire fees.
   t.assertDeepEqual(transactions.transactions[1].amountRaw, "TESTKUDOS:9.79");
 
-  const trackResult = wallet.trackDepositGroup({
+  const trackResult = wallet.client.call(WalletApiOperation.TrackDepositGroup, {
     depositGroupId,
   });
 

@@ -25,7 +25,7 @@ import {
   ConfirmPayResultType,
 } from "@gnu-taler/taler-util";
 import axios from "axios";
-import { URL } from "@gnu-taler/taler-wallet-core";
+import { URL, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for basic, bank-integrated withdrawal.
@@ -104,9 +104,12 @@ export async function runMerchantLongpollingTest(t: GlobalTestState) {
     validateStatus: () => true,
   });
 
-  let preparePayResp = await wallet.preparePay({
-    talerPayUri: pubUnpaidStatus.taler_pay_uri,
-  });
+  let preparePayResp = await wallet.client.call(
+    WalletApiOperation.PreparePayForUri,
+    {
+      talerPayUri: pubUnpaidStatus.taler_pay_uri,
+    },
+  );
 
   t.assertTrue(preparePayResp.status === PreparePayResultType.PaymentPossible);
 
@@ -124,9 +127,12 @@ export async function runMerchantLongpollingTest(t: GlobalTestState) {
     publicOrderStatusResp.data,
   );
 
-  const confirmPayRes = await wallet.confirmPay({
-    proposalId: proposalId,
-  });
+  const confirmPayRes = await wallet.client.call(
+    WalletApiOperation.ConfirmPay,
+    {
+      proposalId: proposalId,
+    },
+  );
 
   t.assertTrue(confirmPayRes.type === ConfirmPayResultType.Done);
 }

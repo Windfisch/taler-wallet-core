@@ -791,6 +791,8 @@ async function dispatchRequestInternal(
       await runPending(ws, true);
       return {};
     }
+    // FIXME: Deprecate one of the aliases!
+    case "preparePayForUri":
     case "preparePay": {
       const req = codecForPreparePayRequest().decode(payload);
       return await preparePayForUri(ws, req.talerPayUri);

@@ -22,6 +22,7 @@
  * Imports.
  */
 import {
+  AbortPayWithRefundRequest,
   AcceptBankIntegratedWithdrawalRequest,
   AcceptExchangeTosRequest,
   AcceptManualWithdrawalRequest,
@@ -45,6 +46,7 @@ import {
   GetExchangeTosResult,
   GetWithdrawalDetailsForAmountRequest,
   GetWithdrawalDetailsForUriRequest,
+  IntegrationTestArgs,
   ManualWithdrawalDetails,
   PreparePayRequest,
   PreparePayResult,
@@ -54,12 +56,14 @@ import {
   RetryTransactionRequest,
   SetCoinSuspendedRequest,
   SetWalletDeviceIdRequest,
+  TestPayArgs,
   TrackDepositGroupRequest,
   TrackDepositGroupResponse,
   TransactionsRequest,
   TransactionsResponse,
   WalletBackupContentV1,
   WalletCurrencyInfo,
+  WithdrawTestBalanceRequest,
   WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
 import { AddBackupProviderRequest, BackupInfo } from "./operations/backup";
@@ -85,7 +89,7 @@ export enum WalletApiOperation {
   AcceptBankIntegratedWithdrawal = "acceptBankIntegratedWithdrawal",
   GetExchangeTos = "getExchangeTos",
   RetryPendingNow = "retryPendingNow",
-  PreparePay = "preparePay",
+  AbortFailedPayWithRefund = "abortFailedPayWithRefund",
   ConfirmPay = "confirmPay",
   DumpCoins = "dumpCoins",
   SetCoinSuspended = "setCoinSuspended",
@@ -117,13 +121,13 @@ export type WalletOperations = {
     request: {};
     response: {};
   };
-  [WalletApiOperation.PreparePay]: {
-    request: PreparePayRequest;
-    response: PreparePayResult;
-  };
   [WalletApiOperation.ConfirmPay]: {
     request: ConfirmPayRequest;
     response: ConfirmPayResult;
+  };
+  [WalletApiOperation.AbortFailedPayWithRefund]: {
+    request: AbortPayWithRefundRequest;
+    response: {};
   };
   [WalletApiOperation.GetBalances]: {
     request: {};
@@ -241,6 +245,18 @@ export type WalletOperations = {
     request: {};
     response: BackupInfo;
   };
+  [WalletApiOperation.RunIntegrationTest]: {
+    request: IntegrationTestArgs;
+    response: {};
+  };
+  [WalletApiOperation.WithdrawTestBalance]: {
+    request: WithdrawTestBalanceRequest;
+    response: {};
+  };
+  [WalletApiOperation.TestPay]: {
+    request: TestPayArgs;
+    response: {};
+  }
 };
 
 export type RequestType<

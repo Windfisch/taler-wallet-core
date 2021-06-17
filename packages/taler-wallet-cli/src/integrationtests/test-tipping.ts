@@ -17,6 +17,7 @@
 /**
  * Imports.
  */
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { GlobalTestState, MerchantPrivateApi, BankApi } from "./harness";
 import { createSimpleTestkudosEnvironment } from "./helpers";
 
@@ -83,7 +84,7 @@ export async function runTippingTest(t: GlobalTestState) {
   console.log("created tip", tip);
 
   const doTip = async (): Promise<void> => {
-    const ptr = await wallet.prepareTip({
+    const ptr = await wallet.client.call(WalletApiOperation.PrepareTip, {
       talerTipUri: tip.taler_tip_uri,
     });
 
@@ -92,19 +93,22 @@ export async function runTippingTest(t: GlobalTestState) {
     t.assertAmountEquals(ptr.tipAmountRaw, "TESTKUDOS:5");
     t.assertAmountEquals(ptr.tipAmountEffective, "TESTKUDOS:4.85");
 
-    await wallet.acceptTip({
+    await wallet.client.call(WalletApiOperation.AcceptTip, {
       walletTipId: ptr.walletTipId,
     });
 
     await wallet.runUntilDone();
 
-    const bal = await wallet.getBalances();
+    const bal = await wallet.client.call(WalletApiOperation.GetBalances, {});
 
     console.log(bal);
 
     t.assertAmountEquals(bal.balances[0].available, "TESTKUDOS:4.85");
 
-    const txns = await wallet.getTransactions();
+    const txns = await wallet.client.call(
+      WalletApiOperation.GetTransactions,
+      {},
+    );
 
     console.log("Transactions:", JSON.stringify(txns, undefined, 2));
 

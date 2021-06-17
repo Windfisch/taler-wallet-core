@@ -23,7 +23,7 @@
  * Imports.
  */
 import { PreparePayResultType, TalerErrorCode } from "@gnu-taler/taler-util";
-import { URL } from "@gnu-taler/taler-wallet-core";
+import { URL, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import {
   FaultInjectionRequestContext,
   FaultInjectionResponseContext,
@@ -76,9 +76,12 @@ export async function runPayAbortTest(t: GlobalTestState) {
 
   // Make wallet pay for the order
 
-  const preparePayResult = await wallet.preparePay({
-    talerPayUri: orderStatus.taler_pay_uri,
-  });
+  const preparePayResult = await wallet.client.call(
+    WalletApiOperation.PreparePayForUri,
+    {
+      talerPayUri: orderStatus.taler_pay_uri,
+    },
+  );
 
   t.assertTrue(
     preparePayResult.status === PreparePayResultType.PaymentPossible,
@@ -121,12 +124,12 @@ export async function runPayAbortTest(t: GlobalTestState) {
   });
 
   await t.assertThrowsOperationErrorAsync(async () => {
-    await wallet.confirmPay({
+    await wallet.client.call(WalletApiOperation.ConfirmPay, {
       proposalId: preparePayResult.proposalId,
     });
   });
 
-  let txr = await wallet.getTransactions();
+  let txr = await wallet.client.call(WalletApiOperation.GetTransactions, {});
   console.log(JSON.stringify(txr, undefined, 2));
 
   t.assertDeepEqual(txr.transactions[1].type, "payment");
@@ -136,13 +139,13 @@ export async function runPayAbortTest(t: GlobalTestState) {
     TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
   );
 
-  await wallet.abortFailedPayWithRefund({
+  await wallet.client.call(WalletApiOperation.AbortFailedPayWithRefund, {
     proposalId: preparePayResult.proposalId,
   });
 
   await wallet.runUntilDone();
 
-  txr = await wallet.getTransactions();
+  txr = await wallet.client.call(WalletApiOperation.GetTransactions, {});
   console.log(JSON.stringify(txr, undefined, 2));
 
   const txTypes = txr.transactions.map((x) => x.type);

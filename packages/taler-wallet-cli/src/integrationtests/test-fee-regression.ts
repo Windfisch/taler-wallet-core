@@ -17,6 +17,7 @@
 /**
  * Imports.
  */
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import {
   GlobalTestState,
   BankService,
@@ -183,7 +184,7 @@ export async function runFeeRegressionTest(t: GlobalTestState) {
     amount: "TESTKUDOS:1.92",
   });
 
-  const coins = await wallet.dumpCoins();
+  const coins = await wallet.client.call(WalletApiOperation.DumpCoins, {});
 
   // Make sure we really withdraw one 0.64 and one 1.28 coin.
   t.assertTrue(coins.coins.length === 2);
@@ -198,7 +199,7 @@ export async function runFeeRegressionTest(t: GlobalTestState) {
 
   await wallet.runUntilDone();
 
-  const txs = await wallet.getTransactions();
+  const txs = await wallet.client.call(WalletApiOperation.GetTransactions, {});
   t.assertAmountEquals(txs.transactions[1].amountEffective, "TESTKUDOS:1.30");
   console.log(txs);
 }

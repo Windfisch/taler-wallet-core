@@ -24,6 +24,7 @@ import {
   startWithdrawViaBank,
 } from "./helpers";
 import { Duration, TransactionType } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Basic time travel test.
@@ -71,7 +72,10 @@ export async function runTimetravelWithdrawTest(t: GlobalTestState) {
   // Check that transactions are correct for the failed withdrawal
   {
     await wallet.runUntilDone({ maxRetries: 5 });
-    const transactions = await wallet.getTransactions();
+    const transactions = await wallet.client.call(
+      WalletApiOperation.GetTransactions,
+      {},
+    );
     console.log(transactions);
     const types = transactions.transactions.map((x) => x.type);
     t.assertDeepEqual(types, ["withdrawal", "withdrawal"]);

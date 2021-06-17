@@ -18,6 +18,7 @@
  * Imports.
  */
 import { CoreApiResponse } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { CoinConfig, defaultCoinConfig } from "./denomStructures";
 import {
   DbInfo,
@@ -237,24 +238,19 @@ export async function runLibeufinBasicTest(t: GlobalTestState) {
     libeufinNexus,
   } = await createLibeufinTestEnvironment(t);
 
-  let wresp: CoreApiResponse;
-
-  // FIXME: add nicer api in the harness wallet for this.
-  wresp = await wallet.apiRequest("addExchange", {
+  await wallet.client.call(WalletApiOperation.AddExchange, {
     exchangeBaseUrl: exchange.baseUrl,
   });
 
-  t.assertTrue(wresp.type === "response");
+  const wr = await wallet.client.call(
+    WalletApiOperation.AcceptManualWithdrawal,
+    {
+      exchangeBaseUrl: exchange.baseUrl,
+      amount: "EUR:10",
+    },
+  );
 
-  // FIXME: add nicer api in the harness wallet for this.
-  wresp = await wallet.apiRequest("acceptManualWithdrawal", {
-    exchangeBaseUrl: exchange.baseUrl,
-    amount: "EUR:10",
-  });
-
-  t.assertTrue(wresp.type === "response");
-
-  const reservePub: string = (wresp.result as any).reservePub;
+  const reservePub: string = wr.reservePub;
 
   await LibeufinSandboxApi.simulateIncomingTransaction(
     libeufinSandbox,
@@ -275,7 +271,7 @@ export async function runLibeufinBasicTest(t: GlobalTestState) {
 
   await wallet.runUntilDone();
 
-  const bal = await wallet.getBalances();
+  const bal = await wallet.client.call(WalletApiOperation.GetBalances, {});
   console.log("balances", JSON.stringify(bal, undefined, 2));
   t.assertAmountEquals(bal.balances[0].available, "EUR:14.7");
 

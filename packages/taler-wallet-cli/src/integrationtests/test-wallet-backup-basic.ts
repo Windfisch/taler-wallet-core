@@ -17,6 +17,7 @@
 /**
  * Imports.
  */
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { GlobalTestState, WalletCli } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 import { SyncService } from "./sync";
@@ -49,30 +50,30 @@ export async function runWalletBackupBasicTest(t: GlobalTestState) {
   await sync.start();
   await sync.pingUntilAvailable();
 
-  await wallet.addBackupProvider({
+  await wallet.client.call(WalletApiOperation.AddBackupProvider, {
     backupProviderBaseUrl: sync.baseUrl,
     activate: false,
   });
 
   {
-    const bi = await wallet.getBackupInfo();
+    const bi = await wallet.client.call(WalletApiOperation.GetBackupInfo, {});
     t.assertDeepEqual(bi.providers[0].active, false);
   }
 
-  await wallet.addBackupProvider({
+  await wallet.client.call(WalletApiOperation.AddBackupProvider, {
     backupProviderBaseUrl: sync.baseUrl,
     activate: true,
   });
 
   {
-    const bi = await wallet.getBackupInfo();
+    const bi = await wallet.client.call(WalletApiOperation.GetBackupInfo, {});
     t.assertDeepEqual(bi.providers[0].active, true);
   }
 
-  await wallet.runBackupCycle();
+  await wallet.client.call(WalletApiOperation.RunBackupCycle, {});
 
   {
-    const bi = await wallet.getBackupInfo();
+    const bi = await wallet.client.call(WalletApiOperation.GetBackupInfo, {});
     console.log(bi);
     t.assertDeepEqual(
       bi.providers[0].paymentStatus.type,
@@ -82,46 +83,51 @@ export async function runWalletBackupBasicTest(t: GlobalTestState) {
 
   await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:10" });
 
-  await wallet.runBackupCycle();
+  await wallet.client.call(WalletApiOperation.RunBackupCycle, {});
 
   {
-    const bi = await wallet.getBackupInfo();
+    const bi = await wallet.client.call(WalletApiOperation.GetBackupInfo, {});
     console.log(bi);
   }
 
   await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:5" });
 
-  await wallet.runBackupCycle();
+  await wallet.client.call(WalletApiOperation.RunBackupCycle, {});
 
   {
-    const bi = await wallet.getBackupInfo();
+    const bi = await wallet.client.call(WalletApiOperation.GetBackupInfo, {});
     console.log(bi);
   }
 
-  const backupRecovery = await wallet.exportBackupRecovery();
+  const backupRecovery = await wallet.client.call(
+    WalletApiOperation.ExportBackupRecovery,
+    {},
+  );
 
   const wallet2 = new WalletCli(t, "wallet2");
 
   // Check that the second wallet is a fresh wallet.
   {
-    const bal = await wallet2.getBalances();
+    const bal = await wallet2.client.call(WalletApiOperation.GetBalances, {});
     t.assertTrue(bal.balances.length === 0);
   }
 
-  await wallet2.importBackupRecovery({ recovery: backupRecovery });
+  await wallet2.client.call(WalletApiOperation.ImportBackupRecovery, {
+    recovery: backupRecovery,
+  });
 
-  await wallet2.runBackupCycle();
+  await wallet2.client.call(WalletApiOperation.RunBackupCycle, {});
 
   // Check that now the old balance is available!
   {
-    const bal = await wallet2.getBalances();
+    const bal = await wallet2.client.call(WalletApiOperation.GetBalances, {});
     t.assertTrue(bal.balances.length === 1);
     console.log(bal);
   }
 
   // Now do some basic checks that the restored wallet is still functional
   {
-    const bal1 = await wallet2.getBalances();
+    const bal1 = await wallet2.client.call(WalletApiOperation.GetBalances, {});
 
     t.assertAmountEquals(bal1.balances[0].available, "TESTKUDOS:14.1");
 
@@ -134,7 +140,7 @@ export async function runWalletBackupBasicTest(t: GlobalTestState) {
 
     await wallet2.runUntilDone();
 
-    const bal2 = await wallet2.getBalances();
+    const bal2 = await wallet2.client.call(WalletApiOperation.GetBalances, {});
 
     t.assertAmountEquals(bal2.balances[0].available, "TESTKUDOS:23.82");
   }

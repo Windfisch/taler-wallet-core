@@ -23,7 +23,10 @@ import {
   durationFromSpec,
   PreparePayResultType,
 } from "@gnu-taler/taler-util";
-import { PendingOperationsResponse } from "@gnu-taler/taler-wallet-core";
+import {
+  PendingOperationsResponse,
+  WalletApiOperation,
+} from "@gnu-taler/taler-wallet-core";
 import { makeNoFeeCoinConfig } from "./denomStructures";
 import {
   BankService,
@@ -145,7 +148,7 @@ export async function runTimetravelAutorefreshTest(t: GlobalTestState) {
   await wallet.runUntilDone();
 
   let p: PendingOperationsResponse;
-  p = await wallet.getPendingOperations();
+  p = await wallet.client.call(WalletApiOperation.GetPendingOperations, {});
 
   console.log("pending operations after first time travel");
   console.log(JSON.stringify(p, undefined, 2));
@@ -191,7 +194,7 @@ export async function runTimetravelAutorefreshTest(t: GlobalTestState) {
 
   t.assertTrue(orderStatus.order_status === "unpaid");
 
-  const r = await wallet.preparePay({
+  const r = await wallet.client.call(WalletApiOperation.PreparePayForUri, {
     talerPayUri: orderStatus.taler_pay_uri,
   });
 
@@ -199,7 +202,7 @@ export async function runTimetravelAutorefreshTest(t: GlobalTestState) {
 
   t.assertTrue(r.status === PreparePayResultType.PaymentPossible);
 
-  const cpr = await wallet.confirmPay({
+  const cpr = await wallet.client.call(WalletApiOperation.ConfirmPay, {
     proposalId: r.proposalId,
   });
 

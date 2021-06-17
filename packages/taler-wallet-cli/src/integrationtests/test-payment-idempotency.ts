@@ -20,6 +20,7 @@
 import { GlobalTestState, MerchantPrivateApi } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 import { PreparePayResultType } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Test the wallet-core payment API, especially that repeated operations
@@ -59,13 +60,19 @@ export async function runPaymentIdempotencyTest(t: GlobalTestState) {
 
   // Make wallet pay for the order
 
-  const preparePayResult = await wallet.preparePay({
-    talerPayUri: orderStatus.taler_pay_uri,
-  });
+  const preparePayResult = await wallet.client.call(
+    WalletApiOperation.PreparePayForUri,
+    {
+      talerPayUri: orderStatus.taler_pay_uri,
+    },
+  );
 
-  const preparePayResultRep = await wallet.preparePay({
-    talerPayUri: orderStatus.taler_pay_uri,
-  });
+  const preparePayResultRep = await wallet.client.call(
+    WalletApiOperation.PreparePayForUri,
+    {
+      talerPayUri: orderStatus.taler_pay_uri,
+    },
+  );
 
   t.assertTrue(
     preparePayResult.status === PreparePayResultType.PaymentPossible,
@@ -76,11 +83,10 @@ export async function runPaymentIdempotencyTest(t: GlobalTestState) {
 
   const proposalId = preparePayResult.proposalId;
 
-  const r2 = await wallet.apiRequest("confirmPay", {
+  await wallet.client.call(WalletApiOperation.ConfirmPay, {
     // FIXME: should be validated, don't cast!
     proposalId: proposalId,
   });
-  t.assertTrue(r2.type === "response");
 
   // Check if payment was successful.
 
@@ -90,9 +96,12 @@ export async function runPaymentIdempotencyTest(t: GlobalTestState) {
 
   t.assertTrue(orderStatus.order_status === "paid");
 
-  const preparePayResultAfter = await wallet.preparePay({
-    talerPayUri,
-  });
+  const preparePayResultAfter = await wallet.client.call(
+    WalletApiOperation.PreparePayForUri,
+    {
+      talerPayUri,
+    },
+  );
 
   t.assertTrue(
     preparePayResultAfter.status === PreparePayResultType.AlreadyConfirmed,

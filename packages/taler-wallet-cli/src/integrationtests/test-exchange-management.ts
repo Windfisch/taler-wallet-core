@@ -27,7 +27,7 @@ import {
   BankApi,
   BankAccessApi,
 } from "./harness";
-import { URL } from "@gnu-taler/taler-wallet-core";
+import { URL, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { ExchangesListRespose, TalerErrorCode } from "@gnu-taler/taler-util";
 import {
   FaultInjectedExchangeService,
@@ -116,24 +116,33 @@ export async function runExchangeManagementTest(t: GlobalTestState) {
 
   let exchangesList: ExchangesListRespose;
 
-  exchangesList = await wallet.listExchanges();
+  exchangesList = await wallet.client.call(
+    WalletApiOperation.ListExchanges,
+    {},
+  );
   t.assertTrue(exchangesList.exchanges.length === 0);
 
   // Try before fault is injected
-  await wallet.addExchange({
+  await wallet.client.call(WalletApiOperation.AddExchange, {
     exchangeBaseUrl: faultyExchange.baseUrl,
   });
 
-  exchangesList = await wallet.listExchanges();
+  exchangesList = await wallet.client.call(
+    WalletApiOperation.ListExchanges,
+    {},
+  );
   t.assertTrue(exchangesList.exchanges.length === 1);
 
-  await wallet.addExchange({
+  await wallet.client.call(WalletApiOperation.ListExchanges, {
     exchangeBaseUrl: faultyExchange.baseUrl,
   });
 
   console.log("listing exchanges");
 
-  exchangesList = await wallet.listExchanges();
+  exchangesList = await wallet.client.call(
+    WalletApiOperation.ListExchanges,
+    {},
+  );
   t.assertTrue(exchangesList.exchanges.length === 1);
 
   console.log("got list", exchangesList);
@@ -147,7 +156,10 @@ export async function runExchangeManagementTest(t: GlobalTestState) {
 
   wallet.deleteDatabase();
 
-  exchangesList = await wallet.listExchanges();
+  exchangesList = await wallet.client.call(
+    WalletApiOperation.ListExchanges,
+    {},
+  );
   t.assertTrue(exchangesList.exchanges.length === 0);
 
   faultyExchange.faultProxy.addFault({
@@ -163,7 +175,7 @@ export async function runExchangeManagementTest(t: GlobalTestState) {
   });
 
   const err1 = await t.assertThrowsOperationErrorAsync(async () => {
-    await wallet.addExchange({
+    await wallet.client.call(WalletApiOperation.AddExchange, {
       exchangeBaseUrl: faultyExchange.baseUrl,
     });
   });
@@ -175,7 +187,10 @@ export async function runExchangeManagementTest(t: GlobalTestState) {
       TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
   );
 
-  exchangesList = await wallet.listExchanges();
+  exchangesList = await wallet.client.call(
+    WalletApiOperation.ListExchanges,
+    {},
+  );
   t.assertTrue(exchangesList.exchanges.length === 0);
 
   /*
@@ -202,7 +217,7 @@ export async function runExchangeManagementTest(t: GlobalTestState) {
   });
 
   const err2 = await t.assertThrowsOperationErrorAsync(async () => {
-    await wallet.addExchange({
+    await wallet.client.call(WalletApiOperation.AddExchange, {
       exchangeBaseUrl: faultyExchange.baseUrl,
     });
   });
@@ -212,7 +227,10 @@ export async function runExchangeManagementTest(t: GlobalTestState) {
       TalerErrorCode.WALLET_EXCHANGE_PROTOCOL_VERSION_INCOMPATIBLE,
   );
 
-  exchangesList = await wallet.listExchanges();
+  exchangesList = await wallet.client.call(
+    WalletApiOperation.ListExchanges,
+    {},
+  );
   t.assertTrue(exchangesList.exchanges.length === 0);
 
   /*
@@ -236,9 +254,12 @@ export async function runExchangeManagementTest(t: GlobalTestState) {
 
   // Hand it to the wallet
 
-  const wd = await wallet.getWithdrawalDetailsForUri({
-    talerWithdrawUri: wop.taler_withdraw_uri,
-  });
+  const wd = await wallet.client.call(
+    WalletApiOperation.GetWithdrawalDetailsForUri,
+    {
+      talerWithdrawUri: wop.taler_withdraw_uri,
+    },
+  );
 
   // Make sure the faulty exchange isn't used for the suggestion.
   t.assertTrue(wd.possibleExchanges.length === 0);

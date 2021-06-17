@@ -51,6 +51,8 @@ import {
   getRandomBytes,
   openPromise,
   OperationFailedError,
+  WalletApiOperation,
+  WalletCoreApiClient,
 } from "@gnu-taler/taler-wallet-core";
 import {
   AmountJson,
@@ -1624,6 +1626,7 @@ function shellWrap(s: string) {
 
 export class WalletCli {
   private currentTimetravel: Duration | undefined;
+  private _client: WalletCoreApiClient;
 
   setTimetravel(d: Duration | undefined) {
     this.currentTimetravel = d;
@@ -1640,7 +1643,29 @@ export class WalletCli {
   constructor(
     private globalTestState: GlobalTestState,
     private name: string = "default",
-  ) {}
+  ) {
+    const self = this;
+    this._client = {
+      async call(op: any, payload: any): Promise<any> {
+        const resp = await sh(
+          self.globalTestState,
+          `wallet-${self.name}`,
+          `taler-wallet-cli ${
+            self.timetravelArg ?? ""
+          } --no-throttle --wallet-db '${self.dbfile}' api '${op}' ${shellWrap(
+            JSON.stringify(payload),
+          )}`,
+        );
+        console.log(resp);
+        const ar = JSON.parse(resp) as CoreApiResponse;
+        if (ar.type === "error") {
+          throw new OperationFailedError(ar.error);
+        } else {
+          return ar.result;
+        }
+      },
+    };
+  }
 
   get dbfile(): string {
     return this.globalTestState.testDir + `/walletdb-${this.name}.json`;
@@ -1658,21 +1683,8 @@ export class WalletCli {
     return [];
   }
 
-  async apiRequest(
-    request: string,
-    payload: unknown,
-  ): Promise<CoreApiResponse> {
-    const resp = await sh(
-      this.globalTestState,
-      `wallet-${this.name}`,
-      `taler-wallet-cli ${
-        this.timetravelArg ?? ""
-      } --no-throttle --wallet-db '${this.dbfile}' api '${request}' ${shellWrap(
-        JSON.stringify(payload),
-      )}`,
-    );
-    console.log(resp);
-    return JSON.parse(resp) as CoreApiResponse;
+  get client(): WalletCoreApiClient {
+    return this._client;
   }
 
   async runUntilDone(args: { maxRetries?: number } = {}): Promise<void> {
@@ -1704,217 +1716,5 @@ export class WalletCli {
         "run-pending",
       ],
     );
-  }
-
-  async applyRefund(req: ApplyRefundRequest): Promise<ApplyRefundResponse> {
-    const resp = await this.apiRequest("applyRefund", req);
-    if (resp.type === "response") {
-      return codecForApplyRefundResponse().decode(resp.result);
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async preparePay(req: PreparePayRequest): Promise<PreparePayResult> {
-    const resp = await this.apiRequest("preparePay", req);
-    if (resp.type === "response") {
-      return codecForPreparePayResult().decode(resp.result);
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async createDepositGroup(
-    req: CreateDepositGroupRequest,
-  ): Promise<CreateDepositGroupResponse> {
-    const resp = await this.apiRequest("createDepositGroup", req);
-    if (resp.type === "response") {
-      return resp.result as CreateDepositGroupResponse;
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async abortFailedPayWithRefund(
-    req: AbortPayWithRefundRequest,
-  ): Promise<void> {
-    const resp = await this.apiRequest("abortFailedPayWithRefund", req);
-    if (resp.type === "response") {
-      return;
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async confirmPay(req: ConfirmPayRequest): Promise<ConfirmPayResult> {
-    const resp = await this.apiRequest("confirmPay", req);
-    if (resp.type === "response") {
-      return codecForConfirmPayResult().decode(resp.result);
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async prepareTip(req: PrepareTipRequest): Promise<PrepareTipResult> {
-    const resp = await this.apiRequest("prepareTip", req);
-    if (resp.type === "response") {
-      return codecForPrepareTipResult().decode(resp.result);
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async acceptTip(req: AcceptTipRequest): Promise<void> {
-    const resp = await this.apiRequest("acceptTip", req);
-    if (resp.type === "response") {
-      return;
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async dumpCoins(): Promise<CoinDumpJson> {
-    const resp = await this.apiRequest("dumpCoins", {});
-    if (resp.type === "response") {
-      return codecForAny().decode(resp.result);
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async addExchange(req: AddExchangeRequest): Promise<void> {
-    const resp = await this.apiRequest("addExchange", req);
-    if (resp.type === "response") {
-      return;
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async forceUpdateExchange(req: ForceExchangeUpdateRequest): Promise<void> {
-    const resp = await this.apiRequest("addExchange", {
-      exchangeBaseUrl: req.exchangeBaseUrl,
-      forceUpdate: true,
-    });
-    if (resp.type === "response") {
-      return;
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async forceRefresh(req: ForceRefreshRequest): Promise<void> {
-    const resp = await this.apiRequest("forceRefresh", req);
-    if (resp.type === "response") {
-      return;
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async listExchanges(): Promise<ExchangesListRespose> {
-    const resp = await this.apiRequest("listExchanges", {});
-    if (resp.type === "response") {
-      return codecForExchangesListResponse().decode(resp.result);
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async getBalances(): Promise<BalancesResponse> {
-    const resp = await this.apiRequest("getBalances", {});
-    if (resp.type === "response") {
-      return codecForBalancesResponse().decode(resp.result);
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async getPendingOperations(): Promise<PendingOperationsResponse> {
-    const resp = await this.apiRequest("getPendingOperations", {});
-    if (resp.type === "response") {
-      // FIXME: validate properly!
-      return codecForAny().decode(resp.result);
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async getTransactions(): Promise<TransactionsResponse> {
-    const resp = await this.apiRequest("getTransactions", {});
-    if (resp.type === "response") {
-      return codecForTransactionsResponse().decode(resp.result);
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async trackDepositGroup(
-    req: TrackDepositGroupRequest,
-  ): Promise<TrackDepositGroupResponse> {
-    const resp = await this.apiRequest("trackDepositGroup", req);
-    if (resp.type === "response") {
-      return resp.result as TrackDepositGroupResponse;
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async runIntegrationTest(args: IntegrationTestArgs): Promise<void> {
-    const resp = await this.apiRequest("runIntegrationTest", args);
-    if (resp.type === "response") {
-      return;
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async testPay(args: TestPayArgs): Promise<void> {
-    const resp = await this.apiRequest("testPay", args);
-    if (resp.type === "response") {
-      return;
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async withdrawTestBalance(args: WithdrawTestBalanceRequest): Promise<void> {
-    const resp = await this.apiRequest("withdrawTestBalance", args);
-    if (resp.type === "response") {
-      return;
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async getWithdrawalDetailsForUri(
-    req: GetWithdrawalDetailsForUriRequest,
-  ): Promise<WithdrawUriInfoResponse> {
-    const resp = await this.apiRequest("getWithdrawalDetailsForUri", req);
-    if (resp.type === "response") {
-      return codecForWithdrawUriInfoResponse().decode(resp.result);
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async addBackupProvider(req: AddBackupProviderRequest): Promise<void> {
-    const resp = await this.apiRequest("addBackupProvider", req);
-    if (resp.type === "response") {
-      return;
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async getBackupInfo(): Promise<BackupInfo> {
-    const resp = await this.apiRequest("getBackupInfo", {});
-    if (resp.type === "response") {
-      return resp.result as BackupInfo;
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async exportBackupRecovery(): Promise<BackupRecovery> {
-    const resp = await this.apiRequest("exportBackupRecovery", {});
-    if (resp.type === "response") {
-      return resp.result as BackupRecovery;
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async importBackupRecovery(req: RecoveryLoadRequest): Promise<void> {
-    const resp = await this.apiRequest("importBackupRecovery", req);
-    if (resp.type === "response") {
-      return;
-    }
-    throw new OperationFailedError(resp.error);
-  }
-
-  async runBackupCycle(): Promise<void> {
-    const resp = await this.apiRequest("runBackupCycle", {});
-    if (resp.type === "response") {
-      return;
-    }
-    throw new OperationFailedError(resp.error);
   }
 }

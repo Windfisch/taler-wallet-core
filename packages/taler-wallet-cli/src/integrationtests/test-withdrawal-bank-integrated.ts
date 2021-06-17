@@ -20,6 +20,7 @@
 import { GlobalTestState, BankApi, BankAccessApi } from "./harness";
 import { createSimpleTestkudosEnvironment } from "./helpers";
 import { codecForBalancesResponse } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for basic, bank-integrated withdrawal.
@@ -40,10 +41,9 @@ export async function runWithdrawalBankIntegratedTest(t: GlobalTestState) {
 
   // Hand it to the wallet
 
-  const r1 = await wallet.apiRequest("getWithdrawalDetailsForUri", {
+  const r1 = await wallet.client.call(WalletApiOperation.GetWithdrawalDetailsForUri, {
     talerWithdrawUri: wop.taler_withdraw_uri,
   });
-  t.assertTrue(r1.type === "response");
 
   await wallet.runPending();
 
@@ -53,18 +53,15 @@ export async function runWithdrawalBankIntegratedTest(t: GlobalTestState) {
 
   // Withdraw
 
-  const r2 = await wallet.apiRequest("acceptBankIntegratedWithdrawal", {
+  const r2 = await wallet.client.call(WalletApiOperation.AcceptBankIntegratedWithdrawal, {
     exchangeBaseUrl: exchange.baseUrl,
     talerWithdrawUri: wop.taler_withdraw_uri,
   });
-  t.assertTrue(r2.type === "response");
   await wallet.runUntilDone();
 
   // Check balance
 
-  const balApiResp = await wallet.apiRequest("getBalances", {});
-  t.assertTrue(balApiResp.type === "response");
-  const balResp = codecForBalancesResponse().decode(balApiResp.result);
+  const balResp = await wallet.client.call(WalletApiOperation.GetBalances, {});
   t.assertAmountEquals("TESTKUDOS:9.72", balResp.balances[0].available);
 
   await t.shutdown();

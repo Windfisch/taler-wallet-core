@@ -20,6 +20,7 @@
 import { GlobalTestState, MerchantPrivateApi } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 import { durationFromSpec } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for basic, bank-integrated withdrawal.
@@ -59,16 +60,14 @@ export async function runRefundAutoTest(t: GlobalTestState) {
 
   // Make wallet pay for the order
 
-  const r1 = await wallet.apiRequest("preparePay", {
+  const r1 = await wallet.client.call(WalletApiOperation.PreparePayForUri, {
     talerPayUri: orderStatus.taler_pay_uri,
   });
-  t.assertTrue(r1.type === "response");
 
-  const r2 = await wallet.apiRequest("confirmPay", {
+  await wallet.client.call(WalletApiOperation.ConfirmPay, {
     // FIXME: should be validated, don't cast!
-    proposalId: (r1.result as any).proposalId,
+    proposalId: r1.proposalId,
   });
-  t.assertTrue(r2.type === "response");
 
   // Check if payment was successful.
 
@@ -90,7 +89,10 @@ export async function runRefundAutoTest(t: GlobalTestState) {
   // The wallet should now automatically pick up the refund.
   await wallet.runUntilDone();
 
-  const transactions = await wallet.getTransactions();
+  const transactions = await wallet.client.call(
+    WalletApiOperation.GetTransactions,
+    {},
+  );
   console.log(JSON.stringify(transactions, undefined, 2));
 
   const transactionTypes = transactions.transactions.map((x) => x.type);

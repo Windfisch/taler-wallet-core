@@ -39,6 +39,7 @@ import {
 } from "./faultInjection";
 import { CoreApiResponse } from "@gnu-taler/taler-util";
 import { defaultCoinConfig } from "./denomStructures";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for basic, bank-integrated withdrawal.
@@ -124,10 +125,9 @@ export async function runPaymentFaultTest(t: GlobalTestState) {
 
   // Hand it to the wallet
 
-  const r1 = await wallet.apiRequest("getWithdrawalDetailsForUri", {
+  await wallet.client.call(WalletApiOperation.GetWithdrawalDetailsForUri, {
     talerWithdrawUri: wop.taler_withdraw_uri,
   });
-  t.assertTrue(r1.type === "response");
 
   await wallet.runPending();
 
@@ -137,16 +137,15 @@ export async function runPaymentFaultTest(t: GlobalTestState) {
 
   // Withdraw
 
-  const r2 = await wallet.apiRequest("acceptBankIntegratedWithdrawal", {
+  await wallet.client.call(WalletApiOperation.AcceptBankIntegratedWithdrawal, {
     exchangeBaseUrl: faultyExchange.baseUrl,
     talerWithdrawUri: wop.taler_withdraw_uri,
   });
-  t.assertTrue(r2.type === "response");
   await wallet.runUntilDone();
 
   // Check balance
 
-  await wallet.getBalances();
+  await wallet.client.call(WalletApiOperation.GetBalances, {});
 
   // Set up order.
 
@@ -168,12 +167,14 @@ export async function runPaymentFaultTest(t: GlobalTestState) {
 
   let apiResp: CoreApiResponse;
 
-  apiResp = await wallet.apiRequest("preparePay", {
-    talerPayUri: orderStatus.taler_pay_uri,
-  });
-  t.assertTrue(apiResp.type === "response");
+  const prepResp = await wallet.client.call(
+    WalletApiOperation.PreparePayForUri,
+    {
+      talerPayUri: orderStatus.taler_pay_uri,
+    },
+  );
 
-  const proposalId = (apiResp.result as any).proposalId;
+  const proposalId = prepResp.proposalId;
 
   await wallet.runPending();
 
@@ -196,7 +197,7 @@ export async function runPaymentFaultTest(t: GlobalTestState) {
 
   // confirmPay won't work, as the exchange is unreachable
 
-  apiResp = await wallet.apiRequest("confirmPay", {
+  await wallet.client.call(WalletApiOperation.ConfirmPay, {
     // FIXME: should be validated, don't cast!
     proposalId: proposalId,
   });

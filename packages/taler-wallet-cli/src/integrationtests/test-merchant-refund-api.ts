@@ -32,7 +32,7 @@ import {
 } from "./helpers";
 import { durationFromSpec, PreparePayResultType } from "@gnu-taler/taler-util";
 import axios from "axios";
-import { URL } from "@gnu-taler/taler-wallet-core";
+import { URL, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 async function testRefundApiWithFulfillmentUrl(
   t: GlobalTestState,
@@ -66,18 +66,20 @@ async function testRefundApiWithFulfillmentUrl(
 
   // Make wallet pay for the order
 
-  let preparePayResult = await wallet.preparePay({
-    talerPayUri,
-  });
+  let preparePayResult = await wallet.client.call(
+    WalletApiOperation.PreparePayForUri,
+    {
+      talerPayUri,
+    },
+  );
 
   t.assertTrue(
     preparePayResult.status === PreparePayResultType.PaymentPossible,
   );
 
-  const r2 = await wallet.apiRequest("confirmPay", {
+  await wallet.client.call(WalletApiOperation.ConfirmPay, {
     proposalId: preparePayResult.proposalId,
   });
-  t.assertTrue(r2.type === "response");
 
   // Check if payment was successful.
 
@@ -87,9 +89,12 @@ async function testRefundApiWithFulfillmentUrl(
 
   t.assertTrue(orderStatus.order_status === "paid");
 
-  preparePayResult = await wallet.preparePay({
-    talerPayUri,
-  });
+  preparePayResult = await wallet.client.call(
+    WalletApiOperation.PreparePayForUri,
+    {
+      talerPayUri,
+    },
+  );
 
   t.assertTrue(
     preparePayResult.status === PreparePayResultType.AlreadyConfirmed,
@@ -176,18 +181,20 @@ async function testRefundApiWithFulfillmentMessage(
 
   // Make wallet pay for the order
 
-  let preparePayResult = await wallet.preparePay({
-    talerPayUri,
-  });
+  let preparePayResult = await wallet.client.call(
+    WalletApiOperation.PreparePayForUri,
+    {
+      talerPayUri,
+    },
+  );
 
   t.assertTrue(
     preparePayResult.status === PreparePayResultType.PaymentPossible,
   );
 
-  const r2 = await wallet.apiRequest("confirmPay", {
+  await wallet.client.call(WalletApiOperation.ConfirmPay, {
     proposalId: preparePayResult.proposalId,
   });
-  t.assertTrue(r2.type === "response");
 
   // Check if payment was successful.
 
@@ -197,9 +204,12 @@ async function testRefundApiWithFulfillmentMessage(
 
   t.assertTrue(orderStatus.order_status === "paid");
 
-  preparePayResult = await wallet.preparePay({
-    talerPayUri,
-  });
+  preparePayResult = await wallet.client.call(
+    WalletApiOperation.PreparePayForUri,
+    {
+      talerPayUri,
+    },
+  );
 
   t.assertTrue(
     preparePayResult.status === PreparePayResultType.AlreadyConfirmed,

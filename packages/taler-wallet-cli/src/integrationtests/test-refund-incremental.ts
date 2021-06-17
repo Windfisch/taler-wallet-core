@@ -24,6 +24,7 @@ import {
   Amounts,
   durationFromSpec,
 } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for basic, bank-integrated withdrawal.
@@ -61,16 +62,13 @@ export async function runRefundIncrementalTest(t: GlobalTestState) {
 
   // Make wallet pay for the order
 
-  const r1 = await wallet.apiRequest("preparePay", {
+  const r1 = await wallet.client.call(WalletApiOperation.PreparePayForUri, {
     talerPayUri: orderStatus.taler_pay_uri,
   });
-  t.assertTrue(r1.type === "response");
 
-  const r2 = await wallet.apiRequest("confirmPay", {
-    // FIXME: should be validated, don't cast!
-    proposalId: (r1.result as any).proposalId,
+  await wallet.client.call(WalletApiOperation.ConfirmPay, {
+    proposalId: r1.proposalId,
   });
-  t.assertTrue(r2.type === "response");
 
   // Check if payment was successful.
 
@@ -90,11 +88,14 @@ export async function runRefundIncrementalTest(t: GlobalTestState) {
   console.log("first refund increase response", ref);
 
   {
-    let wr = await wallet.applyRefund({
+    let wr = await wallet.client.call(WalletApiOperation.ApplyRefund, {
       talerRefundUri: ref.talerRefundUri,
     });
     console.log(wr);
-    const txs = await wallet.getTransactions();
+    const txs = await wallet.client.call(
+      WalletApiOperation.GetTransactions,
+      {},
+    );
     console.log(
       "transactions after applying first refund:",
       JSON.stringify(txs, undefined, 2),
@@ -128,7 +129,7 @@ export async function runRefundIncrementalTest(t: GlobalTestState) {
   console.log("third refund increase response", ref);
 
   {
-    let wr = await wallet.applyRefund({
+    let wr = await wallet.client.call(WalletApiOperation.ApplyRefund, {
       talerRefundUri: ref.talerRefundUri,
     });
     console.log(wr);
@@ -146,11 +147,14 @@ export async function runRefundIncrementalTest(t: GlobalTestState) {
 
   await wallet.runUntilDone();
 
-  const bal = await wallet.getBalances();
+  const bal = await wallet.client.call(WalletApiOperation.GetBalances, {});
   console.log(JSON.stringify(bal, undefined, 2));
 
   {
-    const txs = await wallet.getTransactions();
+    const txs = await wallet.client.call(
+      WalletApiOperation.GetTransactions,
+      {},
+    );
     console.log(JSON.stringify(txs, undefined, 2));
 
     const txTypes = txs.transactions.map((x) => x.type);

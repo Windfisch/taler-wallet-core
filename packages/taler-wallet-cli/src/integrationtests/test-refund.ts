@@ -18,6 +18,7 @@
  * Imports.
  */
 import { durationFromSpec } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { GlobalTestState, MerchantPrivateApi } from "./harness";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 
@@ -57,16 +58,13 @@ export async function runRefundTest(t: GlobalTestState) {
 
   // Make wallet pay for the order
 
-  const r1 = await wallet.apiRequest("preparePay", {
+  const r1 = await wallet.client.call(WalletApiOperation.PreparePayForUri, {
     talerPayUri: orderStatus.taler_pay_uri,
   });
-  t.assertTrue(r1.type === "response");
 
-  const r2 = await wallet.apiRequest("confirmPay", {
-    // FIXME: should be validated, don't cast!
-    proposalId: (r1.result as any).proposalId,
+  await wallet.client.call(WalletApiOperation.ConfirmPay, {
+    proposalId: r1.proposalId,
   });
-  t.assertTrue(r2.type === "response");
 
   // Check if payment was successful.
 
@@ -85,19 +83,21 @@ export async function runRefundTest(t: GlobalTestState) {
 
   console.log(ref);
 
-  let r = await wallet.apiRequest("applyRefund", {
+  let r = await wallet.client.call(WalletApiOperation.ApplyRefund, {
     talerRefundUri: ref.talerRefundUri,
   });
-  t.assertTrue(r.type === "response");
   console.log(r);
 
   await wallet.runUntilDone();
 
-  r = await wallet.apiRequest("getBalances", {});
-  console.log(JSON.stringify(r, undefined, 2));
-
-  r = await wallet.apiRequest("getTransactions", {});
-  console.log(JSON.stringify(r, undefined, 2));
+  {
+    const r2 = await wallet.client.call(WalletApiOperation.GetBalances, {});
+    console.log(JSON.stringify(r2, undefined, 2));
+  }
+  {
+    const r2 = await wallet.client.call(WalletApiOperation.GetTransactions, {});
+    console.log(JSON.stringify(r2, undefined, 2));
+  }
 
   await t.shutdown();
 }

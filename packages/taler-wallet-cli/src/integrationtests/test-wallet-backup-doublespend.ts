@@ -18,6 +18,7 @@
  * Imports.
  */
 import { PreparePayResultType } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { GlobalTestState, WalletCli, MerchantPrivateApi } from "./harness";
 import {
   createSimpleTestkudosEnvironment,
@@ -54,26 +55,34 @@ export async function runWalletBackupDoublespendTest(t: GlobalTestState) {
   await sync.start();
   await sync.pingUntilAvailable();
 
-  await wallet.addBackupProvider({
+  await wallet.client.call(WalletApiOperation.AddBackupProvider, {
     backupProviderBaseUrl: sync.baseUrl,
     activate: true,
   });
 
   await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:10" });
 
-  await wallet.runBackupCycle();
+  await wallet.client.call(WalletApiOperation.RunBackupCycle, {});
   await wallet.runUntilDone();
-  await wallet.runBackupCycle();
+  await wallet.client.call(WalletApiOperation.RunBackupCycle, {});
 
-  const backupRecovery = await wallet.exportBackupRecovery();
+  const backupRecovery = await wallet.client.call(
+    WalletApiOperation.ExportBackupRecovery,
+    {},
+  );
 
   const wallet2 = new WalletCli(t, "wallet2");
 
-  await wallet2.importBackupRecovery({ recovery: backupRecovery });
+  await wallet2.client.call(WalletApiOperation.ImportBackupRecovery, {
+    recovery: backupRecovery,
+  });
 
-  await wallet2.runBackupCycle();
+  await wallet2.client.call(WalletApiOperation.RunBackupCycle, {});
 
-  console.log("wallet1 balance before spend:", await wallet.getBalances());
+  console.log(
+    "wallet1 balance before spend:",
+    await wallet.client.call(WalletApiOperation.GetBalances, {}),
+  );
 
   await makeTestPayment(t, {
     merchant,
@@ -86,10 +95,16 @@ export async function runWalletBackupDoublespendTest(t: GlobalTestState) {
 
   await wallet.runUntilDone();
 
-  console.log("wallet1 balance after spend:", await wallet.getBalances());
+  console.log(
+    "wallet1 balance after spend:",
+    await wallet.client.call(WalletApiOperation.GetBalances, {}),
+  );
 
   {
-    console.log("wallet2 balance:", await wallet2.getBalances());
+    console.log(
+      "wallet2 balance:",
+      await wallet2.client.call(WalletApiOperation.GetBalances, {}),
+    );
   }
 
   // Now we double-spend with the second wallet
@@ -116,15 +131,18 @@ export async function runWalletBackupDoublespendTest(t: GlobalTestState) {
 
     // Make wallet pay for the order
 
-    const preparePayResult = await wallet2.preparePay({
-      talerPayUri: orderStatus.taler_pay_uri,
-    });
+    const preparePayResult = await wallet2.client.call(
+      WalletApiOperation.PreparePayForUri,
+      {
+        talerPayUri: orderStatus.taler_pay_uri,
+      },
+    );
 
     t.assertTrue(
       preparePayResult.status === PreparePayResultType.PaymentPossible,
     );
 
-    const res = await wallet2.confirmPay({
+    const res = await wallet2.client.call(WalletApiOperation.ConfirmPay, {
       proposalId: preparePayResult.proposalId,
     });
 
@@ -139,7 +157,7 @@ export async function runWalletBackupDoublespendTest(t: GlobalTestState) {
       amount: "TESTKUDOS:50",
     });
 
-    const bal = await wallet2.getBalances();
+    const bal = await wallet2.client.call(WalletApiOperation.GetBalances, {});
     console.log("bal", bal);
 
     await wallet2.runUntilDone();

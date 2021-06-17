@@ -34,7 +34,7 @@ import {
   TalerErrorCode,
   TalerErrorDetails,
 } from "@gnu-taler/taler-util";
-import { URL } from "@gnu-taler/taler-wallet-core";
+import { URL, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for a payment where the merchant has a transient
@@ -90,9 +90,12 @@ export async function runPaymentTransientTest(t: GlobalTestState) {
 
   console.log(pubUnpaidStatus);
 
-  let preparePayResp = await wallet.preparePay({
-    talerPayUri: pubUnpaidStatus.taler_pay_uri,
-  });
+  let preparePayResp = await wallet.client.call(
+    WalletApiOperation.PreparePayForUri,
+    {
+      talerPayUri: pubUnpaidStatus.taler_pay_uri,
+    },
+  );
 
   t.assertTrue(preparePayResp.status === PreparePayResultType.PaymentPossible);
 
@@ -139,18 +142,24 @@ export async function runPaymentTransientTest(t: GlobalTestState) {
     },
   });
 
-  const confirmPayResp = await wallet.confirmPay({
-    proposalId,
-  });
+  const confirmPayResp = await wallet.client.call(
+    WalletApiOperation.ConfirmPay,
+    {
+      proposalId,
+    },
+  );
 
   console.log(confirmPayResp);
 
   t.assertTrue(confirmPayResp.type === ConfirmPayResultType.Pending);
   t.assertTrue(faultInjected);
 
-  const confirmPayRespTwo = await wallet.confirmPay({
-    proposalId,
-  });
+  const confirmPayRespTwo = await wallet.client.call(
+    WalletApiOperation.ConfirmPay,
+    {
+      proposalId,
+    },
+  );
 
   t.assertTrue(confirmPayRespTwo.type === ConfirmPayResultType.Done);
 

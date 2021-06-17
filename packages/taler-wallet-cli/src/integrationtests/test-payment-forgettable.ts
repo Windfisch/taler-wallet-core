@@ -78,4 +78,4 @@ export async function runPaymentForgettableTest(t: GlobalTestState) {
   await wallet.runUntilDone();
 }
 
-runPaymentForgettableTest.suites = ["wallet"];
+runPaymentForgettableTest.suites = ["wallet", "merchant"];

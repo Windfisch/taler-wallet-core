@@ -22,6 +22,7 @@
 /**
  * Imports.
  */
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { CoinConfig, defaultCoinConfig } from "./denomStructures";
 import {
   BankService,
@@ -114,7 +115,7 @@ export async function createMyEnvironment(
 export async function runWallettestingTest(t: GlobalTestState) {
   const { wallet, bank, exchange, merchant } = await createMyEnvironment(t);
 
-  await wallet.runIntegrationTest({
+  await wallet.client.call(WalletApiOperation.RunIntegrationTest, {
     amountToSpend: "TESTKUDOS:5",
     amountToWithdraw: "TESTKUDOS:10",
     bankBaseUrl: bank.baseUrl,
@@ -123,7 +124,7 @@ export async function runWallettestingTest(t: GlobalTestState) {
     merchantBaseUrl: merchant.makeInstanceBaseUrl(),
   });
 
-  let txns = await wallet.getTransactions();
+  let txns = await wallet.client.call(WalletApiOperation.GetTransactions, {});
   console.log(JSON.stringify(txns, undefined, 2));
   let txTypes = txns.transactions.map((x) => x.type);
 
@@ -138,7 +139,7 @@ export async function runWallettestingTest(t: GlobalTestState) {
 
   wallet.deleteDatabase();
 
-  await wallet.withdrawTestBalance({
+  await wallet.client.call(WalletApiOperation.WithdrawTestBalance, {
     amount: "TESTKUDOS:10",
     bankBaseUrl: bank.baseUrl,
     exchangeBaseUrl: exchange.baseUrl,
@@ -146,7 +147,7 @@ export async function runWallettestingTest(t: GlobalTestState) {
 
   await wallet.runUntilDone();
 
-  await wallet.testPay({
+  await wallet.client.call(WalletApiOperation.TestPay, {
     amount: "TESTKUDOS:5",
     merchantAuthToken: merchantAuthToken,
     merchantBaseUrl: merchant.makeInstanceBaseUrl(),
@@ -155,7 +156,7 @@ export async function runWallettestingTest(t: GlobalTestState) {
 
   await wallet.runUntilDone();
 
-  txns = await wallet.getTransactions();
+  txns = await wallet.client.call(WalletApiOperation.GetTransactions, {});
   console.log(JSON.stringify(txns, undefined, 2));
   txTypes = txns.transactions.map((x) => x.type);
 

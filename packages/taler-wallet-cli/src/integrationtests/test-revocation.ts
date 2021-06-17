@@ -17,6 +17,7 @@
 /**
  * Imports.
  */
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { CoinConfig } from "./denomStructures";
 import {
   GlobalTestState,
@@ -39,7 +40,7 @@ async function revokeAllWalletCoins(req: {
   merchant: MerchantService;
 }): Promise<void> {
   const { wallet, exchange, merchant } = req;
-  const coinDump = await wallet.dumpCoins();
+  const coinDump = await wallet.client.call(WalletApiOperation.DumpCoins, {});
   console.log(coinDump);
   const usedDenomHashes = new Set<string>();
   for (const coin of coinDump.coins) {
@@ -160,10 +161,13 @@ export async function runRevocationTest(t: GlobalTestState) {
 
   // FIXME: this shouldn't be necessary once https://bugs.taler.net/n/6565
   // is implemented.
-  await wallet.forceUpdateExchange({ exchangeBaseUrl: exchange.baseUrl });
+  await wallet.client.call(WalletApiOperation.AddExchange, {
+    exchangeBaseUrl: exchange.baseUrl,
+    forceUpdate: true,
+  });
   await wallet.runUntilDone();
   await wallet.runUntilDone();
-  const bal = await wallet.getBalances();
+  const bal = await wallet.client.call(WalletApiOperation.GetBalances, {});
   console.log("wallet balance", bal);
 
   const order = {
@@ -177,10 +181,10 @@ export async function runRevocationTest(t: GlobalTestState) {
   wallet.deleteDatabase();
   await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:15" });
 
-  const coinDump = await wallet.dumpCoins();
+  const coinDump = await wallet.client.call(WalletApiOperation.DumpCoins, {});
   console.log(coinDump);
   const coinPubList = coinDump.coins.map((x) => x.coin_pub);
-  await wallet.forceRefresh({
+  await wallet.client.call(WalletApiOperation.ForceRefresh, {
     coinPubList,
   });
   await wallet.runUntilDone();
@@ -190,11 +194,14 @@ export async function runRevocationTest(t: GlobalTestState) {
 
   // FIXME: this shouldn't be necessary once https://bugs.taler.net/n/6565
   // is implemented.
-  await wallet.forceUpdateExchange({ exchangeBaseUrl: exchange.baseUrl });
+  await wallet.client.call(WalletApiOperation.AddExchange, {
+    exchangeBaseUrl: exchange.baseUrl,
+    forceUpdate: true,
+  });
   await wallet.runUntilDone();
   await wallet.runUntilDone();
   {
-    const bal = await wallet.getBalances();
+    const bal = await wallet.client.call(WalletApiOperation.GetBalances, {});
     console.log("wallet balance", bal);
   }
 

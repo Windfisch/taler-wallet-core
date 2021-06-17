@@ -43,6 +43,7 @@ import {
   FaultInjectionRequestContext,
 } from "./faultInjection";
 import { defaultCoinConfig } from "./denomStructures";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run a test case with a simple TESTKUDOS Taler environment, consisting
@@ -199,9 +200,12 @@ export async function runMerchantExchangeConfusionTest(t: GlobalTestState) {
 
   console.log(pubUnpaidStatus);
 
-  let preparePayResp = await wallet.preparePay({
-    talerPayUri: pubUnpaidStatus.taler_pay_uri,
-  });
+  let preparePayResp = await wallet.client.call(
+    WalletApiOperation.PreparePayForUri,
+    {
+      talerPayUri: pubUnpaidStatus.taler_pay_uri,
+    },
+  );
 
   t.assertTrue(preparePayResp.status === PreparePayResultType.PaymentPossible);
 
@@ -221,9 +225,12 @@ export async function runMerchantExchangeConfusionTest(t: GlobalTestState) {
     publicOrderStatusResp.data,
   );
 
-  const confirmPayRes = await wallet.confirmPay({
-    proposalId: proposalId,
-  });
+  const confirmPayRes = await wallet.client.call(
+    WalletApiOperation.ConfirmPay,
+    {
+      proposalId: proposalId,
+    },
+  );
 
   t.assertTrue(confirmPayRes.type === ConfirmPayResultType.Done);
 }

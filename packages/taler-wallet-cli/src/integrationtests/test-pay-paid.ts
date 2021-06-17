@@ -29,7 +29,7 @@ import {
 } from "@gnu-taler/taler-util";
 import axios from "axios";
 import { FaultInjectionRequestContext } from "./faultInjection";
-import { URL } from "@gnu-taler/taler-wallet-core";
+import { URL, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for the wallets repurchase detection mechanism
@@ -103,9 +103,12 @@ export async function runPayPaidTest(t: GlobalTestState) {
 
   console.log(pubUnpaidStatus);
 
-  let preparePayResp = await wallet.preparePay({
-    talerPayUri: pubUnpaidStatus.taler_pay_uri,
-  });
+  let preparePayResp = await wallet.client.call(
+    WalletApiOperation.PreparePayForUri,
+    {
+      talerPayUri: pubUnpaidStatus.taler_pay_uri,
+    },
+  );
 
   t.assertTrue(preparePayResp.status === PreparePayResultType.PaymentPossible);
 
@@ -125,9 +128,12 @@ export async function runPayPaidTest(t: GlobalTestState) {
     publicOrderStatusResp.data,
   );
 
-  const confirmPayRes = await wallet.confirmPay({
-    proposalId: proposalId,
-  });
+  const confirmPayRes = await wallet.client.call(
+    WalletApiOperation.ConfirmPay,
+    {
+      proposalId: proposalId,
+    },
+  );
 
   t.assertTrue(confirmPayRes.type === ConfirmPayResultType.Done);
 
@@ -198,9 +204,12 @@ export async function runPayPaidTest(t: GlobalTestState) {
   // Pay with new taler://pay URI, which should
   // have the new session ID!
   // Wallet should now automatically re-play payment.
-  preparePayResp = await wallet.preparePay({
-    talerPayUri: orderStatusTwo.taler_pay_uri,
-  });
+  preparePayResp = await wallet.client.call(
+    WalletApiOperation.PreparePayForUri,
+    {
+      talerPayUri: orderStatusTwo.taler_pay_uri,
+    },
+  );
 
   t.assertTrue(preparePayResp.status === PreparePayResultType.AlreadyConfirmed);
   t.assertTrue(preparePayResp.paid);
