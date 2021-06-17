@@ -418,26 +418,22 @@ export async function retryTransaction(
       const depositGroupId = rest[0];
       processDepositGroup(ws, depositGroupId, true);
       break;
-    case TransactionType.Withdrawal: {
+    case TransactionType.Withdrawal:
       const withdrawalGroupId = rest[0];
       await processWithdrawGroup(ws, withdrawalGroupId, true);
       break;
-    }
-    case TransactionType.Payment: {
+    case TransactionType.Payment:
       const proposalId = rest[0];
       await processPurchasePay(ws, proposalId, true);
       break;
-    }
-    case TransactionType.Tip: {
+    case TransactionType.Tip: 
       const walletTipId = rest[0];
       await processTip(ws, walletTipId, true);
       break;
-    }
-    case TransactionType.Refresh: {
+    case TransactionType.Refresh:
       const refreshGroupId = rest[0];
       await processRefreshGroup(ws, refreshGroupId, true);
       break;
-    }
     default:
       break;
   }

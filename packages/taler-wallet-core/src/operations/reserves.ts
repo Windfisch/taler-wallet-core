@@ -732,14 +732,12 @@ async function processReserveImpl(
     case ReserveRecordStatus.REGISTERING_BANK:
       await processReserveBankStatus(ws, reservePub);
       return await processReserveImpl(ws, reservePub, true);
-    case ReserveRecordStatus.QUERYING_STATUS: {
+    case ReserveRecordStatus.QUERYING_STATUS: 
       const res = await updateReserve(ws, reservePub);
       if (res.ready) {
         return await processReserveImpl(ws, reservePub, true);
-      } else {
-        break;
       }
-    }
+      break;
     case ReserveRecordStatus.DORMANT:
       // nothing to do
       break;
