@@ -27,12 +27,12 @@ import {
   BridgeIDBFactory,
   shimIndexedDB,
 } from "@gnu-taler/idb-bridge";
-import { openTalerDatabase } from "../db";
-import { HttpRequestLibrary } from "../util/http";
-import { NodeThreadCryptoWorkerFactory } from "../crypto/workers/nodeThreadWorker";
-import { NodeHttpLib } from "./NodeHttpLib";
+import { openTalerDatabase } from "../db.js";
+import { HttpRequestLibrary } from "../util/http.js";
+import { NodeThreadCryptoWorkerFactory } from "../crypto/workers/nodeThreadWorker.js";
+import { NodeHttpLib } from "./NodeHttpLib.js";
 import { Logger } from "@gnu-taler/taler-util";
-import { SynchronousCryptoWorkerFactory } from "../crypto/workers/synchronousWorker";
+import { SynchronousCryptoWorkerFactory } from "../crypto/workers/synchronousWorker.js";
 import type { IDBFactory } from "@gnu-taler/idb-bridge";
 import { WalletNotification } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../common.js";

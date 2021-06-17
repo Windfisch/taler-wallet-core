@@ -5,16 +5,6 @@
 // Implementation derived from TweetNaCl version 20140427.
 // See for details: http://tweetnacl.cr.yp.to/
 
-import * as mod from "module";
-
-let require: any;
-
-if (typeof require !== "function" && mod.default && mod.default.createRequire) {
-  // We need this require function to synchronously
-  // import the "crypto" module in the CSPRNG initialization.
-  require = mod.default.createRequire(import.meta.url);
-}
-
 const gf = function (init: number[] = []): Float64Array {
   const r = new Float64Array(16);
   if (init) for (let i = 0; i < init.length; i++) r[i] = init[i];
@@ -2806,10 +2796,6 @@ function checkArrayTypes(...args: Uint8Array[]): void {
   }
 }
 
-function cleanup(arr: Uint8Array): void {
-  for (let i = 0; i < arr.length; i++) arr[i] = 0;
-}
-
 export function randomBytes(n: number): Uint8Array {
   const b = new Uint8Array(n);
   randombytes(b, n);
@@ -3031,35 +3017,3 @@ export function secretbox_open(
   return m.subarray(crypto_secretbox_ZEROBYTES);
 }
 
-function initPRNG() {
-  // Initialize PRNG if environment provides CSPRNG.
-  // If not, methods calling randombytes will throw.
-  // @ts-ignore-error
-  const cr = typeof self !== "undefined" ? self.crypto || self.msCrypto : null;
-  if (cr && cr.getRandomValues) {
-    // Browsers.
-    const QUOTA = 65536;
-    setPRNG(function (x: Uint8Array, n: number) {
-      let i;
-      const v = new Uint8Array(n);
-      for (i = 0; i < n; i += QUOTA) {
-        cr.getRandomValues(v.subarray(i, i + Math.min(n - i, QUOTA)));
-      }
-      for (i = 0; i < n; i++) x[i] = v[i];
-      cleanup(v);
-    });
-  } else if (typeof require !== "undefined") {
-    // Node.js.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const cr = require("crypto");
-    if (cr && cr.randomBytes) {
-      setPRNG(function (x: Uint8Array, n: number) {
-        const v = cr.randomBytes(n);
-        for (let i = 0; i < n; i++) x[i] = v[i];
-        cleanup(v);
-      });
-    }
-  }
-}
-
-initPRNG();

@@ -66,7 +66,7 @@ import {
   WithdrawTestBalanceRequest,
   WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
-import { AddBackupProviderRequest, BackupInfo } from "./operations/backup";
+import { AddBackupProviderRequest, BackupInfo } from "./operations/backup/index.js";
 import { PendingOperationsResponse } from "./pending-types.js";
 
 export enum WalletApiOperation {

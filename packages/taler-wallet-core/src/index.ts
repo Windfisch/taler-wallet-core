@@ -27,19 +27,12 @@ export * from "./util/promiseUtils.js";
 export * from "./util/query.js";
 export * from "./util/http.js";
 
-// Utils for using the wallet under node
-export { NodeHttpLib } from "./headless/NodeHttpLib.js";
-export {
-  getDefaultNodeWallet,
-  DefaultNodeWalletArgs,
-} from "./headless/helpers.js";
-
 export * from "./versions.js";
 
 export * from "./db.js";
 
 // Crypto and crypto workers
-export * from "./crypto/workers/nodeThreadWorker.js";
+// export * from "./crypto/workers/nodeThreadWorker.js";
 export { CryptoImplementation } from "./crypto/workers/cryptoImplementation.js";
 export type { CryptoWorker } from "./crypto/workers/cryptoWorker.js";
 export { CryptoWorkerFactory, CryptoApi } from "./crypto/workers/cryptoApi.js";

@@ -17,10 +17,10 @@
 /**
  * Imports
  */
-import { CryptoWorkerFactory } from "./cryptoApi";
-import { CryptoWorker } from "./cryptoWorker";
+import { CryptoWorkerFactory } from "./cryptoApi.js";
+import { CryptoWorker } from "./cryptoWorker.js";
 import os from "os";
-import { CryptoImplementation } from "./cryptoImplementation";
+import { CryptoImplementation } from "./cryptoImplementation.js";
 import { Logger } from "@gnu-taler/taler-util";
 
 const logger = new Logger("nodeThreadWorker.ts");

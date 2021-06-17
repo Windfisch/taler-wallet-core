@@ -46,9 +46,9 @@ import {
   WireInfo,
   WalletStoresV1,
 } from "../../db.js";
-import { PayCoinSelection } from "../../util/coinSelection";
+import { PayCoinSelection } from "../../util/coinSelection.js";
 import { j2s } from "@gnu-taler/taler-util";
-import { checkDbInvariant, checkLogicInvariant } from "../../util/invariants";
+import { checkDbInvariant, checkLogicInvariant } from "../../util/invariants.js";
 import { Logger } from "@gnu-taler/taler-util";
 import { initRetryInfo } from "../../util/retries.js";
 import { InternalWalletState } from "../../common.js";

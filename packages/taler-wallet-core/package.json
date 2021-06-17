@@ -29,9 +29,13 @@
     "lib/"
   ],
   "main": "./dist/taler-wallet-core.js",
-  "module": "./lib/index.js",
+  "browser": {
+    "./dist/taler-wallet-core.js": "./dist/taler-wallet-core.browser.js",
+    "./lib/index.node.js": "./lib/index.browser.js"
+  },
+  "module": "./lib/index.node.js",
   "type": "module",
-  "types": "./lib/index.d.ts",
+  "types": "./lib/index.node.d.ts",
   "devDependencies": {
     "@ava/typescript": "^1.1.1",
     "@gnu-taler/pogen": "workspace:*",

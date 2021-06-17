@@ -14,10 +14,10 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { CryptoImplementation } from "./cryptoImplementation";
+import { CryptoImplementation } from "./cryptoImplementation.js";
 
-import { CryptoWorkerFactory } from "./cryptoApi";
-import { CryptoWorker } from "./cryptoWorker";
+import { CryptoWorkerFactory } from "./cryptoApi.js";
+import { CryptoWorker } from "./cryptoWorker.js";
 
 /**
  * The synchronous crypto worker produced by this factory doesn't run in the

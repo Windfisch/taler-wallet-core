@@ -45,7 +45,7 @@ import {
   MakeSyncSignatureRequest,
 } from "@gnu-taler/taler-util";
 import { AmountJson, Amounts } from "@gnu-taler/taler-util";
-import * as timer from "../../util/timer";
+import * as timer from "../../util/timer.js";
 import {
   encodeCrock,
   decodeCrock,
@@ -63,9 +63,9 @@ import {
   setupRefreshTransferPub,
   setupTipPlanchet,
   setupWithdrawPlanchet,
-} from "../talerCrypto";
-import { randomBytes } from "../primitives/nacl-fast";
-import { kdf } from "../primitives/kdf";
+} from "../talerCrypto.js";
+import { randomBytes } from "../primitives/nacl-fast.js";
+import { kdf } from "../primitives/kdf.js";
 import { Timestamp, timestampTruncateToSecond } from "@gnu-taler/taler-util";
 
 import { Logger } from "@gnu-taler/taler-util";

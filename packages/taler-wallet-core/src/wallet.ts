@@ -43,65 +43,65 @@ import {
   getBackupRecovery,
   loadBackupRecovery,
   runBackupCycle,
-} from "./operations/backup";
-import { exportBackup } from "./operations/backup/export";
-import { getBalances } from "./operations/balance";
+} from "./operations/backup/index.js";
+import { exportBackup } from "./operations/backup/export.js";
+import { getBalances } from "./operations/balance.js";
 import {
   createDepositGroup,
   processDepositGroup,
   trackDepositGroup,
-} from "./operations/deposits";
+} from "./operations/deposits.js";
 import {
   makeErrorDetails,
   OperationFailedAndReportedError,
   OperationFailedError,
-} from "./errors";
+} from "./errors.js";
 import {
   acceptExchangeTermsOfService,
   getExchangeDetails,
   updateExchangeFromUrl,
-} from "./operations/exchanges";
+} from "./operations/exchanges.js";
 import {
   confirmPay,
   preparePayForUri,
   processDownloadProposal,
   processPurchasePay,
-} from "./operations/pay";
-import { getPendingOperations } from "./operations/pending";
-import { processRecoupGroup } from "./operations/recoup";
+} from "./operations/pay.js";
+import { getPendingOperations } from "./operations/pending.js";
+import { processRecoupGroup } from "./operations/recoup.js";
 import {
   autoRefresh,
   createRefreshGroup,
   processRefreshGroup,
-} from "./operations/refresh";
+} from "./operations/refresh.js";
 import {
   abortFailedPayWithRefund,
   applyRefund,
   processPurchaseQueryRefund,
-} from "./operations/refund";
+} from "./operations/refund.js";
 import {
   createReserve,
   createTalerWithdrawReserve,
   getFundingPaytoUris,
   processReserve,
-} from "./operations/reserves";
-import { InternalWalletState } from "./common";
+} from "./operations/reserves.js";
+import { InternalWalletState } from "./common.js";
 import {
   runIntegrationTest,
   testPay,
   withdrawTestBalance,
-} from "./operations/testing";
-import { acceptTip, prepareTip, processTip } from "./operations/tip";
+} from "./operations/testing.js";
+import { acceptTip, prepareTip, processTip } from "./operations/tip.js";
 import {
   deleteTransaction,
   getTransactions,
   retryTransaction,
-} from "./operations/transactions";
+} from "./operations/transactions.js";
 import {
   getExchangeWithdrawalInfo,
   getWithdrawalDetailsForUri,
   processWithdrawGroup,
-} from "./operations/withdraw";
+} from "./operations/withdraw.js";
 import {
   AuditorTrustRecord,
   CoinSourceType,
@@ -147,7 +147,7 @@ import {
   RefreshReason,
 } from "@gnu-taler/taler-util";
 import { AmountJson, Amounts } from "@gnu-taler/taler-util";
-import { assertUnreachable } from "./util/assertUnreachable";
+import { assertUnreachable } from "./util/assertUnreachable.js";
 import { Logger } from "@gnu-taler/taler-util";
 import { setWalletDeviceId } from "./operations/backup/state.js";
 import { WalletCoreApiClient } from "./wallet-api-types.js";

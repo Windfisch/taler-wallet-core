@@ -50,7 +50,7 @@ import {
   BackupExchangeDetails,
 } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../../common.js";
-import { provideBackupState, getWalletBackupState } from "./state";
+import { provideBackupState, getWalletBackupState } from "./state.js";
 import { Amounts, getTimestampNow } from "@gnu-taler/taler-util";
 import {
   CoinSourceType,
@@ -60,7 +60,7 @@ import {
   ProposalStatus,
   WALLET_BACKUP_STATE_KEY,
 } from "../../db.js";
-import { encodeCrock, stringToBytes, getRandomBytes } from "../../index.js";
+import { encodeCrock, stringToBytes, getRandomBytes } from "../../crypto/talerCrypto.js";
 import { canonicalizeBaseUrl, canonicalJson } from "@gnu-taler/taler-util";
 
 export async function exportBackup(
