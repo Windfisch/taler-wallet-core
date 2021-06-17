@@ -33,8 +33,7 @@ import {
   WALLET_EXCHANGE_PROTOCOL_VERSION,
   WALLET_MERCHANT_PROTOCOL_VERSION,
   runRetryLoop,
-  handleCoreApiRequest,
-  InternalWalletState,
+  Wallet,
 } from "@gnu-taler/taler-wallet-core";
 
 import fs from "fs";
@@ -156,8 +155,8 @@ function sendAkonoMessage(ev: CoreApiEnvelope): void {
 
 class AndroidWalletMessageHandler {
   walletArgs: DefaultNodeWalletArgs | undefined;
-  maybeWallet: InternalWalletState | undefined;
-  wp = openPromise<InternalWalletState>();
+  maybeWallet: Wallet | undefined;
+  wp = openPromise<Wallet>();
   httpLib = new NodeHttpLib();
 
   /**
@@ -180,8 +179,8 @@ class AndroidWalletMessageHandler {
     const reinit = async () => {
       const w = await getDefaultNodeWallet(this.walletArgs);
       this.maybeWallet = w;
-      await handleCoreApiRequest(w, "initWallet", "akono-init", {});
-      runRetryLoop(w).catch((e) => {
+      await w.handleCoreApiRequest("initWallet", "akono-init", {});
+      w.runRetryLoop().catch((e) => {
         console.error("Error during wallet retry loop", e);
       });
       this.wp.resolve(w);
@@ -230,14 +229,14 @@ class AndroidWalletMessageHandler {
         }
         const wallet = await this.wp.promise;
         wallet.stop();
-        this.wp = openPromise<InternalWalletState>();
+        this.wp = openPromise<Wallet>();
         this.maybeWallet = undefined;
         await reinit();
         return wrapResponse({});
       }
       default: {
         const wallet = await this.wp.promise;
-        return await handleCoreApiRequest(wallet, operation, id, args);
+        return await wallet.handleCoreApiRequest(operation, id, args);
       }
     }
   }

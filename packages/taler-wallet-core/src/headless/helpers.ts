@@ -36,6 +36,7 @@ import { SynchronousCryptoWorkerFactory } from "../crypto/workers/synchronousWor
 import type { IDBFactory } from "@gnu-taler/idb-bridge";
 import { WalletNotification } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../common.js";
+import { Wallet } from "../wallet.js";
 
 const logger = new Logger("headless/helpers.ts");
 
@@ -93,7 +94,7 @@ function makeId(length: number): string {
  */
 export async function getDefaultNodeWallet(
   args: DefaultNodeWalletArgs = {},
-): Promise<InternalWalletState> {
+): Promise<Wallet> {
   BridgeIDBFactory.enableTracing = false;
   const myBackend = new MemoryBackend();
   myBackend.enableTracing = false;
@@ -172,7 +173,7 @@ export async function getDefaultNodeWallet(
     workerFactory = new SynchronousCryptoWorkerFactory();
   }
 
-  const w = new InternalWalletState(myDb, myHttpLib, workerFactory);
+  const w = await Wallet.create(myDb, myHttpLib, workerFactory);
 
   if (args.notifyHandler) {
     w.addNotificationListener(args.notifyHandler);

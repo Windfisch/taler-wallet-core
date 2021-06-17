@@ -40,8 +40,6 @@ import {
 import { DbAccess, GetReadOnlyAccess } from "./util/query.js";
 import { TimerGroup } from "./util/timer.js";
 
-type NotificationListener = (n: WalletNotification) => void;
-
 const logger = new Logger("state.ts");
 
 export const EXCHANGE_COINS_LOCK = "exchange-coins-lock";
@@ -79,114 +77,51 @@ export interface ExchangeOperations {
   }>;
 }
 
+export type NotificationListener = (n: WalletNotification) => void;
+
 /**
- * Internal state of the wallet.
+ * Internal, shard wallet state that is used by the implementation
+ * of wallet operations.
+ * 
+ * FIXME:  This should not be exported anywhere from the taler-wallet-core package,
+ * as it's an opaque implementation detail.
  */
-export class InternalWalletState implements InternalWalletState {
-  memoProcessReserve: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
-  memoMakePlanchet: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
-  memoGetPending: AsyncOpMemoSingle<PendingOperationsResponse> = new AsyncOpMemoSingle();
-  memoGetBalance: AsyncOpMemoSingle<BalancesResponse> = new AsyncOpMemoSingle();
-  memoProcessRefresh: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
-  memoProcessRecoup: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
-  memoProcessDeposit: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
+export interface InternalWalletState {
+  memoProcessReserve: AsyncOpMemoMap<void>;
+  memoMakePlanchet: AsyncOpMemoMap<void>;
+  memoGetPending: AsyncOpMemoSingle<PendingOperationsResponse>;
+  memoGetBalance: AsyncOpMemoSingle<BalancesResponse>;
+  memoProcessRefresh: AsyncOpMemoMap<void>;
+  memoProcessRecoup: AsyncOpMemoMap<void>;
+  memoProcessDeposit: AsyncOpMemoMap<void>;
   cryptoApi: CryptoApi;
 
-  timerGroup: TimerGroup = new TimerGroup();
-  latch = new AsyncCondition();
-  stopped = false;
-  memoRunRetryLoop = new AsyncOpMemoSingle<void>();
+  timerGroup: TimerGroup;
+  latch: AsyncCondition;
+  stopped: boolean;
+  memoRunRetryLoop: AsyncOpMemoSingle<void>;
 
-  listeners: NotificationListener[] = [];
+  listeners: NotificationListener[];
 
-  initCalled: boolean = false;
+  initCalled: boolean;
 
-  // FIXME:  This should be done in wallet.ts, here we should only give declarations
-  exchangeOps: ExchangeOperations = {
-    getExchangeDetails,
-    getExchangeTrust,
-    updateExchangeFromUrl,
-  };
+  exchangeOps: ExchangeOperations;
 
-  /**
-   * Promises that are waiting for a particular resource.
-   */
-  private resourceWaiters: Record<string, OpenedPromise<void>[]> = {};
+  db: DbAccess<typeof WalletStoresV1>;
+  http: HttpRequestLibrary;
 
-  /**
-   * Resources that are currently locked.
-   */
-  private resourceLocks: Set<string> = new Set();
+  notify(n: WalletNotification): void;
 
-  constructor(
-    // FIXME: Make this a getter and make
-    // the actual value nullable.
-    // Check if we are in a DB migration / garbage collection
-    // and throw an error in that case.
-    public db: DbAccess<typeof WalletStoresV1>,
-    public http: HttpRequestLibrary,
-    cryptoWorkerFactory: CryptoWorkerFactory,
-  ) {
-    this.cryptoApi = new CryptoApi(cryptoWorkerFactory);
-  }
-
-  notify(n: WalletNotification): void {
-    logger.trace("Notification", n);
-    for (const l of this.listeners) {
-      const nc = JSON.parse(JSON.stringify(n));
-      setTimeout(() => {
-        l(nc);
-      }, 0);
-    }
-  }
-
-  addNotificationListener(f: (n: WalletNotification) => void): void {
-    this.listeners.push(f);
-  }
+  addNotificationListener(f: (n: WalletNotification) => void): void;
 
   /**
    * Stop ongoing processing.
    */
-  stop(): void {
-    this.stopped = true;
-    this.timerGroup.stopCurrentAndFutureTimers();
-    this.cryptoApi.stop();
-  }
+  stop(): void;
 
   /**
    * Run an async function after acquiring a list of locks, identified
    * by string tokens.
    */
-  async runSequentialized<T>(tokens: string[], f: () => Promise<T>) {
-    // Make sure locks are always acquired in the same order
-    tokens = [...tokens].sort();
-
-    for (const token of tokens) {
-      if (this.resourceLocks.has(token)) {
-        const p = openPromise<void>();
-        let waitList = this.resourceWaiters[token];
-        if (!waitList) {
-          waitList = this.resourceWaiters[token] = [];
-        }
-        waitList.push(p);
-        await p.promise;
-      }
-      this.resourceLocks.add(token);
-    }
-
-    try {
-      logger.trace(`begin exclusive execution on ${JSON.stringify(tokens)}`);
-      const result = await f();
-      logger.trace(`end exclusive execution on ${JSON.stringify(tokens)}`);
-      return result;
-    } finally {
-      for (const token of tokens) {
-        this.resourceLocks.delete(token);
-        let waiter = (this.resourceWaiters[token] ?? []).shift();
-        if (waiter) {
-          waiter.resolve();
-        }
-      }
-    }
-  }
+  runSequentialized<T>(tokens: string[], f: () => Promise<T>): Promise<T>;
 }

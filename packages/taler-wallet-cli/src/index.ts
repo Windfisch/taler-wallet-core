@@ -51,7 +51,7 @@ import {
   getClientFromWalletState,
   WalletApiOperation,
   WalletCoreApiClient,
-  InternalWalletState,
+  Wallet,
 } from "@gnu-taler/taler-wallet-core";
 
 // This module also serves as the entry point for the crypto
@@ -172,10 +172,7 @@ type WalletCliArgsType = clk.GetArgType<typeof walletCli>;
 
 async function withWallet<T>(
   walletCliArgs: WalletCliArgsType,
-  f: (w: {
-    client: WalletCoreApiClient;
-    ws: InternalWalletState;
-  }) => Promise<T>,
+  f: (w: { client: WalletCoreApiClient; ws: Wallet }) => Promise<T>,
 ): Promise<T> {
   const dbPath = walletCliArgs.wallet.walletDbFile ?? defaultWalletDbPath;
   const myHttpLib = new NodeHttpLib();
@@ -190,7 +187,7 @@ async function withWallet<T>(
   try {
     const w = {
       ws: wallet,
-      client: await getClientFromWalletState(wallet),
+      client: wallet.client,
     };
     const ret = await f(w);
     return ret;
@@ -242,8 +239,7 @@ walletCli
         console.error("Invalid JSON");
         process.exit(1);
       }
-      const resp = await handleCoreApiRequest(
-        wallet.ws,
+      const resp = await wallet.ws.handleCoreApiRequest(
         args.api.operation,
         "reqid-1",
         requestJson,
@@ -294,7 +290,7 @@ walletCli
   .flag("forceNow", ["-f", "--force-now"])
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      await runPending(wallet.ws, args.runPendingOpt.forceNow);
+      await wallet.ws.runPending(args.runPendingOpt.forceNow);
     });
   });
 
@@ -318,7 +314,7 @@ walletCli
   .maybeOption("maxRetries", ["--max-retries"], clk.INT)
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      await runUntilDone(wallet.ws, {
+      await wallet.ws.runUntilDone({
         maxRetries: args.finishPendingOpt.maxRetries,
       });
       wallet.ws.stop();
@@ -607,7 +603,7 @@ depositCli
         },
       );
       console.log(`Created deposit ${resp.depositGroupId}`);
-      await runPending(wallet.ws);
+      await wallet.ws.runPending();
     });
   });
 

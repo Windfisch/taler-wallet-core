@@ -37,6 +37,8 @@ import {
   runRetryLoop,
   handleNotifyReserve,
   InternalWalletState,
+  Wallet,
+  WalletApiOperation,
 } from "@gnu-taler/taler-wallet-core";
 import {
   classifyTalerUri,
@@ -52,8 +54,10 @@ import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory";
 /**
  * Currently active wallet instance.  Might be unloaded and
  * re-instantiated when the database is reset.
+ * 
+ * FIXME:  Maybe move the wallet reseting into the Wallet class?
  */
-let currentWallet: InternalWalletState | undefined;
+let currentWallet: Wallet | undefined;
 
 let currentDatabase: DbAccess<typeof WalletStoresV1> | undefined;
 
@@ -170,7 +174,7 @@ async function dispatch(
         };
         break;
       }
-      r = await handleCoreApiRequest(w, req.operation, req.id, req.payload);
+      r = await w.handleCoreApiRequest(req.operation, req.id, req.payload);
       break;
     }
   }
@@ -256,7 +260,7 @@ async function reinitWallet(): Promise<void> {
   }
   const http = new BrowserHttpLib();
   console.log("setting wallet");
-  const wallet = new InternalWalletState(
+  const wallet = await Wallet.create(
     currentDatabase,
     http,
     new BrowserCryptoWorkerFactory(),
@@ -270,7 +274,7 @@ async function reinitWallet(): Promise<void> {
       }
     }
   });
-  runRetryLoop(wallet).catch((e) => {
+  wallet.runRetryLoop().catch((e) => {
     console.log("error during wallet retry loop", e);
   });
   // Useful for debugging in the background page.
@@ -360,7 +364,8 @@ function headerListener(
               if (!w) {
                 return;
               }
-              handleNotifyReserve(w);
+              // FIXME:  Is this still useful?
+              // handleNotifyReserve(w);
             });
             break;
           default:
@@ -451,4 +456,3 @@ export async function wxMain(): Promise<void> {
     setupHeaderListener();
   });
 }
-
