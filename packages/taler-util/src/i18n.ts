@@ -17,7 +17,6 @@ export function setupI18n(lang: string, strings: { [s: string]: any }): any {
     lang = "en-US";
     logger.warn(`language ${lang} not found, defaulting to english`);
   }
-  debugger;
   jed = new jedLib.Jed(strings[lang]);
 }
 
