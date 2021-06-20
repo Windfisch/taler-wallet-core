@@ -33,8 +33,9 @@ import {
   PreparePayResultType,
   TalerErrorCode,
   TalerErrorDetails,
+  URL,
 } from "@gnu-taler/taler-util";
-import { URL, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for a payment where the merchant has a transient

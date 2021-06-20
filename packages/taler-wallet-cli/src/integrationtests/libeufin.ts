@@ -18,7 +18,7 @@
  * Imports.
  */
 import axios from "axios";
-import { URL } from "@gnu-taler/taler-wallet-core";
+import { URL } from "@gnu-taler/taler-util";
 import { getRandomIban, getRandomString } from "./helpers";
 import {
   GlobalTestState,

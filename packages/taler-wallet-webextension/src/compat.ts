@@ -19,6 +19,21 @@
  * WebExtension APIs consistently.
  */
 
+// globalThis polyfill, see https://mathiasbynens.be/notes/globalthis
+(function () {
+  if (typeof globalThis === "object") return;
+  Object.defineProperty(Object.prototype, "__magic__", {
+    get: function () {
+      return this;
+    },
+    configurable: true, // This makes it possible to `delete` the getter later.
+  });
+  // @ts-ignore: polyfill magic
+  __magic__.globalThis = __magic__; // lolwat
+  // @ts-ignore: polyfill magic
+  delete Object.prototype.__magic__;
+})();
+
 export function isFirefox(): boolean {
   const rt = chrome.runtime as any;
   if (typeof rt.getBrowserInfo === "function") {

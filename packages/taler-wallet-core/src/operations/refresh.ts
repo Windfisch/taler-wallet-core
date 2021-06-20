@@ -50,8 +50,8 @@ import {
   timestampAddDuration,
   timestampDifference,
   timestampMin,
+  URL,
 } from "@gnu-taler/taler-util";
-import { URL } from "../util/url.js";
 import { guardOperationException } from "../errors.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
 import { EXCHANGE_COINS_LOCK, InternalWalletState } from "../common.js";

@@ -39,6 +39,7 @@ import {
   timestampCmp,
   timestampSubtractDuraction,
   WithdrawResponse,
+  URL,
   WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
 import {
@@ -56,7 +57,6 @@ import {
 import { walletCoreDebugFlags } from "../util/debugFlags.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
-import { URL } from "../util/url.js";
 import {
   guardOperationException,
   makeErrorDetails,

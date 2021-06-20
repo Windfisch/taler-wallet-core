@@ -31,11 +31,11 @@ import {
   IntegrationTestArgs,
   Amounts,
   TestPayArgs,
+  URL,
   PreparePayResultType,
 } from "@gnu-taler/taler-util";
 import { createTalerWithdrawReserve } from "./reserves.js";
 import { InternalWalletState } from "../common.js";
-import { URL } from "../util/url.js";
 import { confirmPay, preparePayForUri } from "./pay.js";
 import { getBalances } from "./balance.js";
 import { runUntilDone } from "../wallet.js";

@@ -51,6 +51,7 @@ import {
   PreparePayResultType,
   parsePayUri,
   Logger,
+  URL,
   getDurationRemaining,
 } from "@gnu-taler/taler-util";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto.js";
@@ -99,7 +100,6 @@ import {
   OperationFailedAndReportedError,
   OperationFailedError,
 } from "../errors.js";
-import { URL } from "../util/url.js";
 
 /**
  * Logger.

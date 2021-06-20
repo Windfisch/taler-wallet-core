@@ -36,6 +36,7 @@ import {
   timestampTruncateToSecond,
   TrackDepositGroupRequest,
   TrackDepositGroupResponse,
+  URL
 } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../common.js";
 import { kdf } from "../crypto/primitives/kdf.js";
@@ -49,7 +50,6 @@ import { guardOperationException } from "../errors.js";
 import { selectPayCoins } from "../util/coinSelection.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
-import { URL } from "../util/url.js";
 import { getExchangeDetails } from "./exchanges.js";
 import {
   applyCoinSpend,

@@ -45,9 +45,8 @@ import {
 } from "../db.js";
 
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
-import { Logger } from "@gnu-taler/taler-util";
+import { Logger, URL } from "@gnu-taler/taler-util";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
-import { URL } from "../util/url.js";
 import { guardOperationException } from "../errors.js";
 import { createRefreshGroup, processRefreshGroup } from "./refresh.js";
 import { getReserveRequestTimeout, processReserve } from "./reserves.js";

@@ -22,7 +22,6 @@
 export * from "./errors.js";
 
 // Util functionality
-export { URL } from "./util/url.js";
 export * from "./util/promiseUtils.js";
 export * from "./util/query.js";
 export * from "./util/http.js";

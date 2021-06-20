@@ -37,6 +37,7 @@ import {
   parsePaytoUri,
   Recoup,
   TalerErrorCode,
+  URL,
   TalerErrorDetails,
   Timestamp,
 } from "@gnu-taler/taler-util";
@@ -59,7 +60,6 @@ import {
 } from "../util/http.js";
 import { DbAccess, GetReadOnlyAccess } from "../util/query.js";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
-import { URL } from "../util/url.js";
 import {
   guardOperationException,
   makeErrorDetails,

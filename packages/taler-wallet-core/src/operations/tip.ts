@@ -29,6 +29,7 @@ import {
   TalerErrorCode,
   codecForTipResponse,
   Logger,
+  URL,
 } from "@gnu-taler/taler-util";
 import { DerivedTipPlanchet } from "../crypto/cryptoTypes.js";
 import {
@@ -50,7 +51,6 @@ import {
   selectWithdrawalDenominations,
   denomSelectionInfoToState,
 } from "./withdraw.js";
-import { URL } from "../util/url.js";
 import {
   getHttpResponseErrorDetails,
   readSuccessResponseJsonOrThrow,

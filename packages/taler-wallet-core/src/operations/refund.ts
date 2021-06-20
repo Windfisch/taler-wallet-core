@@ -42,6 +42,7 @@ import {
   RefreshReason,
   TalerErrorCode,
   TalerErrorDetails,
+  URL,
   timestampAddDuration,
 } from "@gnu-taler/taler-util";
 import {
@@ -56,7 +57,6 @@ import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { GetReadWriteAccess } from "../util/query.js";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
-import { URL } from "../util/url.js";
 import { guardOperationException } from "../errors.js";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
 import { InternalWalletState } from "../common.js";

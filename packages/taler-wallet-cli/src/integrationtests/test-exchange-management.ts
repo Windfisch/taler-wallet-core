@@ -27,8 +27,8 @@ import {
   BankApi,
   BankAccessApi,
 } from "./harness";
-import { URL, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { ExchangesListRespose, TalerErrorCode } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+import { ExchangesListRespose, URL, TalerErrorCode } from "@gnu-taler/taler-util";
 import {
   FaultInjectedExchangeService,
   FaultInjectionResponseContext,

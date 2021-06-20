@@ -17,7 +17,7 @@
 /**
  * Imports.
  */
-import { URL } from "@gnu-taler/taler-wallet-core";
+import { URL } from "@gnu-taler/taler-util";
 import axios from "axios";
 import {
   ExchangeService,

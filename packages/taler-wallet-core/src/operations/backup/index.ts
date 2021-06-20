@@ -59,8 +59,8 @@ import {
   getTimestampNow,
   Timestamp,
   timestampAddDuration,
+  URL
 } from "@gnu-taler/taler-util";
-import { URL } from "../../util/url.js";
 import {
   buildCodecForObject,
   Codec,

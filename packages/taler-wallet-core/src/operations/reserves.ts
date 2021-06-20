@@ -64,13 +64,12 @@ import {
   getBankWithdrawalInfo,
 } from "./withdraw.js";
 import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto.js";
-import { Logger } from "@gnu-taler/taler-util";
+import { Logger, URL } from "@gnu-taler/taler-util";
 import {
   readSuccessResponseJsonOrErrorCode,
   readSuccessResponseJsonOrThrow,
   throwUnexpectedRequestError,
 } from "../util/http.js";
-import { URL } from "../util/url.js";
 import { GetReadOnlyAccess } from "../util/query.js";
 
 const logger = new Logger("reserves.ts");
