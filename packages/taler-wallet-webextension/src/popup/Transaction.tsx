@@ -14,14 +14,14 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Amounts, i18n, Transaction, TransactionType } from "@gnu-taler/taler-util";
+import { AmountJson, Amounts, i18n, Transaction, TransactionType } from "@gnu-taler/taler-util";
 import { format } from "date-fns";
-import { JSX } from "preact";
+import { Fragment, JSX } from "preact";
 import { route } from 'preact-router';
 import { useEffect, useState } from "preact/hooks";
 import * as wxApi from "../wxApi";
 import { Pages } from "./popup";
-
+import emptyImg from "../../static/img/empty.png"
 
 export function TransactionPage({ tid }: { tid: string; }): JSX.Element {
   const [transaction, setTransaction] = useState<
@@ -59,11 +59,10 @@ export function TransactionView({ transaction, onDelete, onBack }: WalletTransac
   }
 
   function Footer() {
-    return <footer style={{ marginTop: 'auto', display: 'flex' }}>
+    return <footer style={{ marginTop: 'auto', display: 'flex', flexShrink: 0 }}>
       <button onClick={onBack}><i18n.Translate>back</i18n.Translate></button>
       <div style={{ width: '100%', flexDirection: 'row', justifyContent: 'flex-end', display: 'flex' }}>
-        <button onClick={onDelete}><i18n.Translate>remove</i18n.Translate></button>
-
+        <button class="pure-button button-destructive" onClick={onDelete}><i18n.Translate>forget</i18n.Translate></button>
       </div>
 
     </footer>
@@ -74,91 +73,66 @@ export function TransactionView({ transaction, onDelete, onBack }: WalletTransac
     return <span style={{ fontWeight: 'normal', fontSize: 16, color: 'gray' }}>(pending...)</span>
   }
 
+  const Fee = ({ value }: { value: AmountJson }) => Amounts.isNonZero(value) ?
+    <span style="font-size: 16px;font-weight: normal;color: gray;">(fee {Amounts.stringify(value)})</span> : null
+
   if (transaction.type === TransactionType.Withdrawal) {
+    const fee = Amounts.sub(
+      Amounts.parseOrThrow(transaction.amountRaw),
+      Amounts.parseOrThrow(transaction.amountEffective),
+    ).amount
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '20rem' }} >
-        <section>
-          <h1>Withdrawal <Pending /></h1>
-          <p>
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }} >
+        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(20rem - 34px - 45px)', overflow: 'auto' }}>
+          <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
+          <span style="float: right; font-size:small; color:gray">
             From <b>{transaction.exchangeBaseUrl}</b>
-          </p>
-          <table class={transaction.pending ? "detailsTable pending" : "detailsTable"}>
-            <tr>
-              <td>Amount subtracted</td>
-              <td>{transaction.amountRaw}</td>
-            </tr>
-            <tr>
-              <td>Amount received</td>
-              <td>{transaction.amountEffective}</td>
-            </tr>
-            <tr>
-              <td>Exchange fee</td>
-              <td>{Amounts.stringify(
-                Amounts.sub(
-                  Amounts.parseOrThrow(transaction.amountRaw),
-                  Amounts.parseOrThrow(transaction.amountEffective),
-                ).amount
-              )}</td>
-            </tr>
-            <tr>
-              <td>When</td>
-              <td>{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</td>
-            </tr>
-          </table>
+          </span>
+          <h3>Withdraw <Pending /></h3>
+          <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
         </section>
         <Footer />
       </div>
     );
   }
 
+  const showLargePic = () => {
+
+  }
+
   if (transaction.type === TransactionType.Payment) {
+    const fee = Amounts.sub(
+      Amounts.parseOrThrow(transaction.amountEffective),
+      Amounts.parseOrThrow(transaction.amountRaw),
+    ).amount
+
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '20rem' }} >
-        <section>
-          <h1>Payment ({transaction.proposalId.substring(0, 10)}...) <Pending /></h1>
-          <p>
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }} >
+        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(20rem - 34px - 45px)', overflow: 'auto' }}>
+          <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
+          <span style="float: right; font-size:small; color:gray">
             To <b>{transaction.info.merchant.name}</b>
+          </span>
+          <h3>Payment <Pending /></h3>
+          <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
+          <span style="font-size:small; color:gray">#{transaction.info.orderId}</span>
+          <p>
+            {transaction.info.summary}
           </p>
-          <table class={transaction.pending ? "detailsTable pending" : "detailsTable"}>
-            <tr>
-              <td>Order id</td>
-              <td>{transaction.info.orderId}</td>
-            </tr>
-            <tr>
-              <td>Summary</td>
-              <td>{transaction.info.summary}</td>
-            </tr>
-            {transaction.info.products && transaction.info.products.length > 0 &&
-              <tr>
-                <td>Products</td>
-                <td><ol style={{ margin: 0, textAlign: 'left' }}>
-                  {transaction.info.products.map(p =>
-                    <li>{p.description}</li>
-                  )}</ol></td>
-              </tr>
+          <div>
+            {transaction.info.products && transaction.info.products.length > 0 && <div>
+              {transaction.info.products.map(p => <div style="display: flex; flex-direction: row; border: 1px solid gray; border-radius: 0.5em; margin: 0.5em 0px; justify-content: left; padding: 0.5em;">
+                <a href="#" onClick={showLargePic}>
+                  <img class="pure-img" style="display:inline-block" src={p.image ? p.image : emptyImg} width="32" height="32" />
+                </a>
+                <div style="display: block; margin-left: 1em;">
+                  {p.quantity && p.quantity > 0 && <div style="font-size: small; color: gray;">x {p.quantity} {p.unit}</div>}
+                  <div style={{ textOverflow: 'ellipsis', overflow: 'hidden', width: 'calc(20rem - 32px - 32px - 8px - 1em)', whiteSpace: 'nowrap' }}>{p.description}</div>
+                </div>
+              </div>)}
+            </div>
             }
-            <tr>
-              <td>Order amount</td>
-              <td>{transaction.amountRaw}</td>
-            </tr>
-            <tr>
-              <td>Order amount and fees</td>
-              <td>{transaction.amountEffective}</td>
-            </tr>
-            <tr>
-              <td>Exchange fee</td>
-              <td>{Amounts.stringify(
-                Amounts.sub(
-                  Amounts.parseOrThrow(transaction.amountEffective),
-                  Amounts.parseOrThrow(transaction.amountRaw),
-                ).amount
-              )}</td>
-            </tr>
-            <tr>
-              <td>When</td>
-              <td>{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</td>
-            </tr>
-          </table>
+          </div>
         </section>
         <Footer />
       </div>
@@ -166,36 +140,19 @@ export function TransactionView({ transaction, onDelete, onBack }: WalletTransac
   }
 
   if (transaction.type === TransactionType.Deposit) {
+    const fee = Amounts.sub(
+      Amounts.parseOrThrow(transaction.amountRaw),
+      Amounts.parseOrThrow(transaction.amountEffective),
+    ).amount
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '20rem' }} >
-        <section>
-          <h1>Deposit ({transaction.depositGroupId}) <Pending /></h1>
-          <p>
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }} >
+        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(20rem - 34px - 45px)', overflow: 'auto' }}>
+          <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
+          <span style="float: right; font-size:small; color:gray">
             To <b>{transaction.targetPaytoUri}</b>
-          </p>
-          <table class={transaction.pending ? "detailsTable pending" : "detailsTable"}>
-            <tr>
-              <td>Amount deposit</td>
-              <td>{transaction.amountRaw}</td>
-            </tr>
-            <tr>
-              <td>Amount deposit and fees</td>
-              <td>{transaction.amountEffective}</td>
-            </tr>
-            <tr>
-              <td>Exchange fee</td>
-              <td>{Amounts.stringify(
-                Amounts.sub(
-                  Amounts.parseOrThrow(transaction.amountEffective),
-                  Amounts.parseOrThrow(transaction.amountRaw),
-                ).amount
-              )}</td>
-            </tr>
-            <tr>
-              <td>When</td>
-              <td>{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</td>
-            </tr>
-          </table>
+          </span>
+          <h3>Deposit <Pending /></h3>
+          <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
         </section>
         <Footer />
       </div>
@@ -203,27 +160,19 @@ export function TransactionView({ transaction, onDelete, onBack }: WalletTransac
   }
 
   if (transaction.type === TransactionType.Refresh) {
+    const fee = Amounts.sub(
+      Amounts.parseOrThrow(transaction.amountRaw),
+      Amounts.parseOrThrow(transaction.amountEffective),
+    ).amount
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '20rem' }} >
-        <section>
-          <h1>Refresh <Pending /></h1>
-          <p>
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }} >
+        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(20rem - 34px - 45px)', overflow: 'auto' }}>
+          <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
+          <span style="float: right; font-size:small; color:gray">
             From <b>{transaction.exchangeBaseUrl}</b>
-          </p>
-          <table class={transaction.pending ? "detailsTable pending" : "detailsTable"}>
-            <tr>
-              <td>Amount refreshed</td>
-              <td>{transaction.amountRaw}</td>
-            </tr>
-            <tr>
-              <td>Fees</td>
-              <td>{transaction.amountEffective}</td>
-            </tr>
-            <tr>
-              <td>When</td>
-              <td>{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</td>
-            </tr>
-          </table>
+          </span>
+          <h3>Refresh <Pending /></h3>
+          <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
         </section>
         <Footer />
       </div>
@@ -231,91 +180,58 @@ export function TransactionView({ transaction, onDelete, onBack }: WalletTransac
   }
 
   if (transaction.type === TransactionType.Tip) {
+    const fee = Amounts.sub(
+      Amounts.parseOrThrow(transaction.amountRaw),
+      Amounts.parseOrThrow(transaction.amountEffective),
+    ).amount
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '20rem' }} >
-        <section>
-          <h1>Tip <Pending /></h1>
-          <p>
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }} >
+        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(20rem - 34px - 45px)', overflow: 'auto' }}>
+          <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
+          <span style="float: right; font-size:small; color:gray">
             From <b>{transaction.merchantBaseUrl}</b>
-          </p>
-          <table class={transaction.pending ? "detailsTable pending" : "detailsTable"}>
-            <tr>
-              <td>Amount deduce</td>
-              <td>{transaction.amountRaw}</td>
-            </tr>
-            <tr>
-              <td>Amount received</td>
-              <td>{transaction.amountEffective}</td>
-            </tr>
-            <tr>
-              <td>Exchange fee</td>
-              <td>{Amounts.stringify(
-                Amounts.sub(
-                  Amounts.parseOrThrow(transaction.amountRaw),
-                  Amounts.parseOrThrow(transaction.amountEffective),
-                ).amount
-              )}</td>
-            </tr>
-            <tr>
-              <td>When</td>
-              <td>{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</td>
-            </tr>
-          </table>
+          </span>
+          <h3>Tip <Pending /></h3>
+          <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
         </section>
         <Footer />
       </div>
     );
   }
 
-  const TRANSACTION_FROM_REFUND = /[a-z]*:([\w]{10}).*/
   if (transaction.type === TransactionType.Refund) {
+    const fee = Amounts.sub(
+      Amounts.parseOrThrow(transaction.amountRaw),
+      Amounts.parseOrThrow(transaction.amountEffective),
+    ).amount
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '20rem' }} >
-        <section>
-          <h1>Refund ({TRANSACTION_FROM_REFUND.exec(transaction.refundedTransactionId)![1]}...) <Pending /></h1>
-          <p>
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }} >
+        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(20rem - 34px - 45px)', overflow: 'auto' }}>
+          <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
+          <span style="float: right; font-size:small; color:gray">
             From <b>{transaction.info.merchant.name}</b>
+          </span>
+          <h3>Refund <Pending /></h3>
+          <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
+          <span style="font-size:small; color:gray">#{transaction.info.orderId}</span>
+          <p>
+            {transaction.info.summary}
           </p>
-          <table class={transaction.pending ? "detailsTable pending" : "detailsTable"}>
-            <tr>
-              <td>Order id</td>
-              <td>{transaction.info.orderId}</td>
-            </tr>
-            <tr>
-              <td>Summary</td>
-              <td>{transaction.info.summary}</td>
-            </tr>
-            {transaction.info.products && transaction.info.products.length > 0 &&
-              <tr>
-                <td>Products</td>
-                <td><ol>
-                  {transaction.info.products.map(p =>
-                    <li>{p.description}</li>
-                  )}</ol></td>
-              </tr>
+          <div>
+            {transaction.info.products && transaction.info.products.length > 0 && <div>
+              {transaction.info.products.map(p => <div style="display: flex; flex-direction: row; border: 1px solid gray; border-radius: 0.5em; margin: 0.5em 0px; justify-content: left; padding: 0.5em;">
+                <a href="#" onClick={showLargePic}>
+                  <img class="pure-img" style="display:inline-block" src={p.image ? p.image : emptyImg} width="32" height="32" />
+                </a>
+                <div style="display: block; margin-left: 1em;">
+                  {p.quantity && p.quantity > 0 && <div style="font-size: small; color: gray;">x {p.quantity} {p.unit}</div>}
+                  <div style={{ textOverflow: 'ellipsis', overflow: 'hidden', width: 'calc(20rem - 32px - 32px - 8px - 1em)', whiteSpace: 'nowrap' }}>{p.description}</div>
+                </div>
+              </div>)}
+            </div>
             }
-            <tr>
-              <td>Amount deduce</td>
-              <td>{transaction.amountRaw}</td>
-            </tr>
-            <tr>
-              <td>Amount received</td>
-              <td>{transaction.amountEffective}</td>
-            </tr>
-            <tr>
-              <td>Exchange fee</td>
-              <td>{Amounts.stringify(
-                Amounts.sub(
-                  Amounts.parseOrThrow(transaction.amountRaw),
-                  Amounts.parseOrThrow(transaction.amountEffective),
-                ).amount
-              )}</td>
-            </tr>
-            <tr>
-              <td>When</td>
-              <td>{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</td>
-            </tr>
-          </table>
+          </div>
+
         </section>
         <Footer />
       </div>

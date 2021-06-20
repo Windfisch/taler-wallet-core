@@ -15,7 +15,10 @@
  */
 
 import { setupI18n } from "@gnu-taler/taler-util"
-import { strings } from '../src/i18n'
+import { strings } from '../src/i18n/strings.ts'
+import '../static/style/pure.css'
+import '../static/style/popup.css'
+import '../static/style/wallet.css'
 
 const mockConfig = {
   backendURL: 'http://demo.taler.net',

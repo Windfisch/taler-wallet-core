@@ -38,16 +38,22 @@ export function HistoryPage(props: any): JSX.Element {
     return <div>Loading ...</div>;
   }
 
-  const txs = [...transactions.transactions].reverse();
-
-  return (
-    <div>
-      {txs.map((tx, i) => (
-        <TransactionItem key={i} tx={tx} />
-      ))}
-    </div>
-  );
+  return <HistoryView list={[...transactions.transactions].reverse()} />;
 }
+
+export function HistoryView({ list }: { list: Transaction[] }) {
+  return <div style={{ height: 'calc(20rem - 34px )', overflow: 'auto', width: '100%' }}>
+    {list.map((tx, i) => (
+      <TransactionItem key={i} tx={tx} />
+    ))}
+  </div>
+}
+
+import imageBank from '../../static/img/ri-bank-line.svg';
+import imageShoppingCart from '../../static/img/ri-shopping-cart-line.svg';
+import imageRefund from '../../static/img/ri-refund-2-line.svg';
+import imageHandHeart from '../../static/img/ri-hand-heart-line.svg';
+import imageRefresh from '../../static/img/ri-refresh-line.svg';
 
 function TransactionItem(props: { tx: Transaction }): JSX.Element {
   const tx = props.tx;
@@ -61,7 +67,7 @@ function TransactionItem(props: { tx: Transaction }): JSX.Element {
           title="Withdrawal"
           subtitle={`via ${tx.exchangeBaseUrl}`}
           timestamp={tx.timestamp}
-          iconPath="/static/img/ri-bank-line.svg"
+          iconPath={imageBank}
           pending={tx.pending}
         ></TransactionLayout>
       );
@@ -74,7 +80,7 @@ function TransactionItem(props: { tx: Transaction }): JSX.Element {
           title="Payment"
           subtitle={tx.info.summary}
           timestamp={tx.timestamp}
-          iconPath="/static/img/ri-shopping-cart-line.svg"
+          iconPath={imageShoppingCart}
           pending={tx.pending}
         ></TransactionLayout>
       );
@@ -87,7 +93,7 @@ function TransactionItem(props: { tx: Transaction }): JSX.Element {
           title="Refund"
           subtitle={tx.info.summary}
           timestamp={tx.timestamp}
-          iconPath="/static/img/ri-refund-2-line.svg"
+          iconPath={imageRefund}
           pending={tx.pending}
         ></TransactionLayout>
       );
@@ -100,7 +106,7 @@ function TransactionItem(props: { tx: Transaction }): JSX.Element {
           title="Tip"
           subtitle={`from ${new URL(tx.merchantBaseUrl).hostname}`}
           timestamp={tx.timestamp}
-          iconPath="/static/img/ri-hand-heart-line.svg"
+          iconPath={imageHandHeart}
           pending={tx.pending}
         ></TransactionLayout>
       );
@@ -113,7 +119,7 @@ function TransactionItem(props: { tx: Transaction }): JSX.Element {
           title="Refresh"
           subtitle={`via exchange ${tx.exchangeBaseUrl}`}
           timestamp={tx.timestamp}
-          iconPath="/static/img/ri-refresh-line.svg"
+          iconPath={imageRefresh}
           pending={tx.pending}
         ></TransactionLayout>
       );
@@ -126,7 +132,7 @@ function TransactionItem(props: { tx: Transaction }): JSX.Element {
           title="Refresh"
           subtitle={`to ${tx.targetPaytoUri}`}
           timestamp={tx.timestamp}
-          iconPath="/static/img/ri-refresh-line.svg"
+          iconPath={imageRefresh}
           pending={tx.pending}
         ></TransactionLayout>
       );

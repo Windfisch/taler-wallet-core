@@ -37,7 +37,7 @@ export default {
       <link key="1" rel="stylesheet" type="text/css" href="/style/pure.css" />
       <link key="2" rel="stylesheet" type="text/css" href="/style/popup.css" />
       <link key="3" rel="stylesheet" type="text/css" href="/style/wallet.css" />
-      <div style={{ margin: "1em", width: 400 }}>
+      <div style={{ margin: "1em", width: 400, display: 'flex', padding: '0.5em', height: 'calc(20rem - 34px)', border: 'black solid 1px' }}>
         <Story />
       </div>
     </div>
@@ -74,7 +74,7 @@ const exampleData = {
       merchant: {
         name: 'the merchant',
       },
-      orderId: '#12345',
+      orderId: '2021.167-03NPY6MCYMVGT',
       products: [],
       summary: 'the summary',
       fulfillmentMessage: '',
@@ -107,7 +107,7 @@ const exampleData = {
       merchant: {
         name: 'the merchant',
       },
-      orderId: '#12345',
+      orderId: '2021.167-03NPY6MCYMVGT',
       products: [],
       summary: 'the summary',
       fulfillmentMessage: '',
@@ -121,69 +121,111 @@ function createExample<Props>(Component: FunctionalComponent<Props>, props: Part
   return r
 }
 
-export const NotYetLoaded = createExample(TestedComponent,{});
+export const NotYetLoaded = createExample(TestedComponent, {});
 
-export const Withdraw = createExample(TestedComponent,{
+export const Withdraw = createExample(TestedComponent, {
   transaction: exampleData.withdraw
 });
 
-export const WithdrawPending = createExample(TestedComponent,{
+export const WithdrawPending = createExample(TestedComponent, {
   transaction: { ...exampleData.withdraw, pending: true },
 });
 
 
-export const Payment = createExample(TestedComponent,{
+export const Payment = createExample(TestedComponent, {
   transaction: exampleData.payment
 });
 
-export const PaymentPending = createExample(TestedComponent,{
+export const PaymentWithoutFee = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.payment,
+    amountRaw: 'USD:11',
+
+  }
+});
+
+export const PaymentPending = createExample(TestedComponent, {
   transaction: { ...exampleData.payment, pending: true },
 });
 
-export const PaymentWithProducts = createExample(TestedComponent,{
+export const PaymentWithProducts = createExample(TestedComponent, {
   transaction: {
     ...exampleData.payment,
     info: {
       ...exampleData.payment.info,
+      summary: 'this order has 5 products',
       products: [{
         description: 't-shirt',
+        unit: 'shirts',
+        quantity: 1,
+      }, {
+        description: 't-shirt',
+        unit: 'shirts',
+        quantity: 1,
+      }, {
+        description: 'e-book',
       }, {
         description: 'beer',
+        unit: 'pint',
+        quantity: 15,
+      }, {
+        description: 'beer',
+        unit: 'pint',
+        quantity: 15,
+      }]
+    }
+  } as TransactionPayment,
+});
+
+export const PaymentWithLongSummary = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.payment,
+    info: {
+      ...exampleData.payment.info,
+      summary: 'this is a very long summary that will occupy severals lines, this is a very long summary that will occupy severals lines, this is a very long summary that will occupy severals lines, this is a very long summary that will occupy severals lines, ',
+      products: [{
+        description: 'an xl sized t-shirt with some drawings on it, color pink',
+        unit: 'shirts',
+        quantity: 1,
+      }, {
+        description: 'beer',
+        unit: 'pint',
+        quantity: 15,
       }]
     }
   } as TransactionPayment,
 });
 
 
-export const Deposit = createExample(TestedComponent,{
+export const Deposit = createExample(TestedComponent, {
   transaction: exampleData.deposit
 });
 
-export const DepositPending = createExample(TestedComponent,{
+export const DepositPending = createExample(TestedComponent, {
   transaction: { ...exampleData.deposit, pending: true }
 });
 
-export const Refresh = createExample(TestedComponent,{
+export const Refresh = createExample(TestedComponent, {
   transaction: exampleData.refresh
 });
 
-export const Tip = createExample(TestedComponent,{
+export const Tip = createExample(TestedComponent, {
   transaction: exampleData.tip
 });
 
-export const TipPending = createExample(TestedComponent,{
+export const TipPending = createExample(TestedComponent, {
   transaction: { ...exampleData.tip, pending: true }
 });
 
-export const Refund = createExample(TestedComponent,{
+export const Refund = createExample(TestedComponent, {
   transaction: exampleData.refund
 });
 
-export const RefundPending = createExample(TestedComponent,{
+export const RefundPending = createExample(TestedComponent, {
   transaction: { ...exampleData.refund, pending: true }
 });
 
-export const RefundWithProducts = createExample(TestedComponent,{
+export const RefundWithProducts = createExample(TestedComponent, {
   transaction: {
     ...exampleData.refund,
     info: {

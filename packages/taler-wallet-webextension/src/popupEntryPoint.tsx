@@ -88,7 +88,7 @@ function Application() {
   return (
     <div>
       <Match>{({ path }: any) => <WalletNavBar current={path} />}</Match >
-      <div style={{ margin: "1em", width: 400 }}>
+      <div style={{ margin: "1em", width: 400, height: 'calc(20rem - 34px)' }}>
         <Router>
           <Route path={Pages.balance} component={BalancePage} />
           <Route path={Pages.settings} component={SettingsPage} />

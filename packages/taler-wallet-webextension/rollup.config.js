@@ -5,6 +5,7 @@ import json from "@rollup/plugin-json";
 import builtins from "builtin-modules";
 import replace from "@rollup/plugin-replace";
 import ignore from "rollup-plugin-ignore"
+import image from '@rollup/plugin-image';
 
 const makePlugins = () => [
     ignore(["module", "os"]),
@@ -29,6 +30,7 @@ const makePlugins = () => [
     }),
 
     json(),
+    image(),
 ];
 
 
