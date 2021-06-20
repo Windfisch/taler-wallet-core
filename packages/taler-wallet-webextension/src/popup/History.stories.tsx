@@ -37,7 +37,7 @@ export default {
       <link key="1" rel="stylesheet" type="text/css" href="/style/pure.css" />
       <link key="2" rel="stylesheet" type="text/css" href="/style/popup.css" />
       <link key="3" rel="stylesheet" type="text/css" href="/style/wallet.css" />
-      <div style={{ margin: "1em", width: 400, display: 'flex', padding: '0.5em', height: 'calc(20rem - 34px)', border: 'black solid 1px' }}>
+      <div style={{ margin: "1em", width: 400, display: 'flex', padding: '0.5em', height: 'calc(320px - 34px)', border: 'black solid 1px' }}>
         <Story />
       </div>
     </div>
