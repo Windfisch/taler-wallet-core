@@ -74,7 +74,7 @@ function Application() {
   return <Router history={createHashHistory()} >
 
     <Route path={Pages.welcome} component={() => {
-      return <section id="main">
+      return <section class="main">
         <div style="border-bottom: 3px dashed #aa3939; margin-bottom: 2em;">
           <h1 style="font-family: monospace; font-size: 250%;">
             <span style="color: #aa3939;">❰</span>Taler Wallet<span style="color: #aa3939;">❱</span>
@@ -88,7 +88,7 @@ function Application() {
     }} />
 
     <Route path={Pages.pay} component={() => {
-      return <section id="main">
+      return <section class="main">
         <h1>GNU Taler Wallet</h1>
         <article class="fade">
           <PayPage talerPayUri={queryParams.talerPayUri} />
@@ -97,7 +97,7 @@ function Application() {
     }} />
 
     <Route path={Pages.refund} component={() => {
-      return <section id="main">
+      return <section class="main">
         <h1>GNU Taler Wallet</h1>
         <article class="fade">
           <RefundPage talerRefundUri={queryParams.talerRefundUri} />
@@ -106,7 +106,7 @@ function Application() {
     }} />
 
     <Route path={Pages.tips} component={() => {
-      return <section id="main">
+      return <section class="main">
         <h1>GNU Taler Wallet</h1>
         <div>
           <TipPage talerTipUri={queryParams.talerTipUri} />
@@ -114,7 +114,7 @@ function Application() {
       </section>
     }} />
     <Route path={Pages.withdraw} component={() => {
-      return <section id="main">
+      return <section class="main">
         <div style="border-bottom: 3px dashed #aa3939; margin-bottom: 2em;">
           <h1 style="font-family: monospace; font-size: 250%;">
             <span style="color: #aa3939;">❰</span>Taler Wallet<span style="color: #aa3939;">❱</span>

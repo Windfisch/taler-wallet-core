@@ -34,7 +34,7 @@ import { BalancePage } from "./popup/Balance";
 import Match from "preact-router/match";
 import Router, { route, Route } from "preact-router";
 import { useTalerActionURL } from "./hooks/useTalerActionURL";
-// import { Application } from "./Application";
+import { createHashHistory } from "history";
 
 function main(): void {
   try {
@@ -88,8 +88,8 @@ function Application() {
   return (
     <div>
       <Match>{({ path }: any) => <WalletNavBar current={path} />}</Match >
-      <div style={{ padding: "1em", width: 'calc(400px - 2em)', height: 'calc(320px - 34px - 2em)' }}>
-        <Router>
+      <div style={{ padding: 8, width: 'calc(400px - 16px)', height: 'calc(320px - 34px - 16px)' }}>
+        <Router history={createHashHistory()}>
           <Route path={Pages.balance} component={BalancePage} />
           <Route path={Pages.settings} component={SettingsPage} />
           <Route path={Pages.debug} component={DebugPage} />

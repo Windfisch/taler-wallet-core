@@ -49,7 +49,7 @@ function Tab(props: TabProps): JSX.Element {
     cssClass = "active";
   }
   return (
-    <a href={props.target} className={cssClass}>
+    <a href={props.target} class={cssClass}>
       {props.children}
     </a>
   );
@@ -57,7 +57,7 @@ function Tab(props: TabProps): JSX.Element {
 
 export function WalletNavBar({ current }: { current?: string }) {
   return (
-    <div className="nav" id="header">
+    <div class="nav" id="header">
       <Tab target="/balance" current={current}>{i18n.str`Balance`}</Tab>
       <Tab target="/history" current={current}>{i18n.str`History`}</Tab>
       <Tab target="/settings" current={current}>{i18n.str`Settings`}</Tab>

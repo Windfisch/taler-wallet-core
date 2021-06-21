@@ -71,7 +71,7 @@ class ResetNotification extends Component<any, State> {
           </label>
           <br />
           <button
-            className="pure-button"
+            class="pure-button"
             disabled={!this.state.checked}
             onClick={() => wxApi.resetDb()}
           >

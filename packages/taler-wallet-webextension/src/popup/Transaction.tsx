@@ -82,8 +82,8 @@ export function TransactionView({ transaction, onDelete, onBack }: WalletTransac
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }} >
-        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 45px - 2em)', overflow: 'auto' }}>
+      <div style={{ display: 'flex', flexDirection: 'column' }} >
+        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 45px - 16px)', overflow: 'auto' }}>
           <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
           <span style="float: right; font-size:small; color:gray">
             From <b>{transaction.exchangeBaseUrl}</b>
@@ -107,8 +107,8 @@ export function TransactionView({ transaction, onDelete, onBack }: WalletTransac
     ).amount
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }} >
-        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 45px - 2em)', overflow: 'auto' }}>
+      <div style={{ display: 'flex', flexDirection: 'column' }} >
+        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 45px - 16px)', overflow: 'auto' }}>
           <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
           <span style="float: right; font-size:small; color:gray">
             To <b>{transaction.info.merchant.name}</b>
@@ -145,8 +145,8 @@ export function TransactionView({ transaction, onDelete, onBack }: WalletTransac
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }} >
-        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 45px - 2em)', overflow: 'auto' }}>
+      <div style={{ display: 'flex', flexDirection: 'column' }} >
+        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 45px - 16px)', overflow: 'auto' }}>
           <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
           <span style="float: right; font-size:small; color:gray">
             To <b>{transaction.targetPaytoUri}</b>
@@ -165,8 +165,8 @@ export function TransactionView({ transaction, onDelete, onBack }: WalletTransac
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }} >
-        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 45px - 2em)', overflow: 'auto' }}>
+      <div style={{ display: 'flex', flexDirection: 'column' }} >
+        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 45px - 16px)', overflow: 'auto' }}>
           <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
           <span style="float: right; font-size:small; color:gray">
             From <b>{transaction.exchangeBaseUrl}</b>
@@ -185,8 +185,8 @@ export function TransactionView({ transaction, onDelete, onBack }: WalletTransac
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }} >
-        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 45px - 2em)', overflow: 'auto' }}>
+      <div style={{ display: 'flex', flexDirection: 'column' }} >
+        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 45px - 16px)', overflow: 'auto' }}>
           <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
           <span style="float: right; font-size:small; color:gray">
             From <b>{transaction.merchantBaseUrl}</b>
@@ -205,8 +205,8 @@ export function TransactionView({ transaction, onDelete, onBack }: WalletTransac
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }} >
-        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 45px - 2em)', overflow: 'auto' }}>
+      <div style={{ display: 'flex', flexDirection: 'column' }} >
+        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 45px - 16px)', overflow: 'auto' }}>
           <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
           <span style="float: right; font-size:small; color:gray">
             From <b>{transaction.info.merchant.name}</b>

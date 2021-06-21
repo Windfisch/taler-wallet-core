@@ -81,7 +81,7 @@ export function View({ talerWithdrawUri, details, cancelled, selectedExchange, a
 
       <div>
         <button
-          className="pure-button button-success"
+          class="pure-button button-success"
           disabled={!selectedExchange}
           onClick={() => accept()}
         >

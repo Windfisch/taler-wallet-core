@@ -69,7 +69,7 @@ export function abbrev(s: string, n = 5): JSX.Element {
     sAbbrev = s.slice(0, n) + "..";
   }
   return (
-    <span className="abbrev" title={s}>
+    <span class="abbrev" title={s}>
       {sAbbrev}
     </span>
   );
@@ -108,7 +108,7 @@ export class Collapsible extends Component<
     if (this.state.collapsed) {
       return (
         <h2>
-          <a className="opener opener-collapsed" href="#" onClick={doOpen}>
+          <a class="opener opener-collapsed" href="#" onClick={doOpen}>
             {" "}
             {this.props.title}
           </a>
@@ -118,7 +118,7 @@ export class Collapsible extends Component<
     return (
       <div>
         <h2>
-          <a className="opener opener-open" href="#" onClick={doClose}>
+          <a class="opener opener-open" href="#" onClick={doClose}>
             {" "}
             {this.props.title}
           </a>
@@ -147,14 +147,14 @@ export interface LoadingButtonProps extends JSX.HTMLAttributes<HTMLButtonElement
 export function ProgressButton({isLoading, ...rest}: LoadingButtonProps): JSX.Element {
   return (
     <button
-      className="pure-button pure-button-primary"
+      class="pure-button pure-button-primary"
       type="button"
       {...rest}
     >
       {isLoading ? (
         <span>
           <object
-            className="svg-icon svg-baseline"
+            class="svg-icon svg-baseline"
             data="/img/spinner-bars.svg"
           />
         </span>
@@ -170,7 +170,7 @@ export function PageLink(
   const url = chrome.extension.getURL(`/static/wallet.html#/${props.pageName}`);
   return (
     <a
-      className="actionLink"
+      class="actionLink"
       href={url}
       target="_blank"
       rel="noopener noreferrer"

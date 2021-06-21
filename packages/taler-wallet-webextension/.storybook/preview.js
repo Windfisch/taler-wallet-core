@@ -16,9 +16,6 @@
 
 import { setupI18n } from "@gnu-taler/taler-util"
 import { strings } from '../src/i18n/strings.ts'
-import '../static/style/pure.css'
-import '../static/style/popup.css'
-import '../static/style/wallet.css'
 
 const mockConfig = {
   backendURL: 'http://demo.taler.net',
@@ -52,5 +49,27 @@ export const decorators = [
     setupI18n(globals.locale, strings);
     return <Story />
   },
+  (Story, { kind }) => {
+    if (kind.startsWith('popup')) {
+      return <div class="popup-container">
+        <link key="1" rel="stylesheet" type="text/css" href="/style/pure.css" />
+        <link key="2" rel="stylesheet" type="text/css" href="/style/popup.css" />
+        <div style={{ padding: 8, width: 'calc(400px - 16px - 2px)', height: 'calc(320px - 34px - 16px - 2px)', border: 'black solid 1px' }}>
+          <Story />
+        </div>
+      </div>
+    }
+    if (kind.startsWith('wallet')) {
+      return <div class="wallet-container">
+        <link key="1" rel="stylesheet" type="text/css" href="/style/pure.css" />
+        <link key="2" rel="stylesheet" type="text/css" href="/style/wallet.css" />
+        <Story />
+      </div>
+    }
+    return <div>
+      <h1>this story is not under wallet or popup, check title property</h1>
+      <Story />
+    </div>
+  }
   //   (Story) => <ConfigContextProvider value={mockConfig}> <Story /> </ConfigContextProvider>
 ];

@@ -42,7 +42,7 @@ export function HistoryPage(props: any): JSX.Element {
 }
 
 export function HistoryView({ list }: { list: Transaction[] }) {
-  return <div style={{ height: 'calc(320px - 34px - 2em)', overflow: 'auto', width: '100%' }}>
+  return <div style={{ height: 'calc(320px - 34px - 16px)', overflow: 'auto' }}>
     {list.map((tx, i) => (
       <TransactionItem key={i} tx={tx} />
     ))}

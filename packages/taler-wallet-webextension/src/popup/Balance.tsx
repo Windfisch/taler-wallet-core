@@ -143,7 +143,7 @@ export class BalancePage extends Component<any, any> {
     const wallet = this.balance;
     if (this.gotError) {
       return (
-        <div className="balance">
+        <div class="balance">
           <p>{i18n.str`Error: could not retrieve balance information.`}</p>
           <p>
             Click <PageLink pageName="welcome.html">here</PageLink> for help and
@@ -165,7 +165,7 @@ export class BalancePage extends Component<any, any> {
       );
     });
     return listing.length > 0 ? (
-      <div className="balance">{listing}</div>
+      <div class="balance">{listing}</div>
     ) : (
       <EmptyBalanceView />
     );

@@ -4,7 +4,12 @@ body {
   margin-top: 2em;
 }
 
-#main {
+.wallet-container {
+  margin: 0px;
+  padding: 0px;
+}
+
+section.main {
   border: solid 5px black;
   border-radius: 10px;
   margin-left: auto;
@@ -37,14 +42,14 @@ aside {
   float: left;
 }
 
-section#main {
+section.main {
   margin: auto;
   padding: 20px;
   height: 100%;
   max-width: 50%;
 }
 
-section#main h1:first-child {
+section.main h1:first-child {
   margin-top: 0;
 }
 
@@ -83,9 +88,6 @@ input.url {
   width: 25em;
 }
 
-.formish {
-}
-
 .json-key {
   color: brown;
 }
@@ -96,10 +98,6 @@ input.url {
   color: olive;
 }
 
-button {
-  font-size: 120%;
-  padding: 0.5em;
-}
 
 button.confirm-pay {
   float: right;
@@ -287,4 +285,9 @@ object.svg-icon.svg-baseline {
   opacity: 0;
   width: 0;
   height: 0;
+}
+
+button.pure-button {
+  font-size: 120%;
+  padding: 0.5em;
 }

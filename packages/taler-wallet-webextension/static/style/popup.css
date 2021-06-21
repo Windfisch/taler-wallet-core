@@ -7,13 +7,25 @@
 body {
   /* min-height: 20em; */
   /* width: 30em; */
-  margin: 0;
-  padding: 0;
   /* max-height: 800px; */
+  margin: 0;
+  font-size: 100%;
+  padding: 0;
   overflow: hidden;
   background-color: #f8faf7;
   font-family: Arial, Helvetica, sans-serif;
 }
+/* taler-popup {
+  min-height: 20em;
+  width: 30em;
+  height: 20rem;
+  margin: 0;
+  font-size: 100%;
+  padding: 0;
+  overflow: hidden;
+  background-color: #f8faf7;
+  font-family: Arial, Helvetica, sans-serif;
+} */
 
 .nav {
   background-color: #033;
@@ -286,6 +298,32 @@ table.detailsTable.pending {
   background: white;
 }
 
-button.danger {
-  background-color: 'red';
+.button-success,
+.button-destructive,
+.button-warning,
+.button-secondary {
+  color: white;
+  border-radius: 4px;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.button-success {
+  background: rgb(28, 184, 65);
+}
+
+.button-destructive {
+  background: rgb(202, 60, 60);
+}
+
+.button-warning {
+  background: rgb(223, 117, 20);
+}
+
+.button-secondary {
+  background: rgb(66, 184, 221);
+}
+
+button {
+  font-size: 120%;
+  padding: 0.5em;
 }

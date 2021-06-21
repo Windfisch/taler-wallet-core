@@ -201,7 +201,7 @@ export function PayPage({ talerPayUri }: Props): JSX.Element {
         <div>
           <p>Payment failed: {payErrMsg}</p>
           <button
-            className="pure-button button-success"
+            class="pure-button button-success"
             onClick={() => doPayment()}
           >
             {i18n.str`Retry`}
