@@ -76,6 +76,7 @@ import {
   DeriveTipRequest,
   SignTrackTransactionRequest,
 } from "../cryptoTypes.js";
+import bigint from "big-integer";
 
 const logger = new Logger("cryptoImplementation.ts");
 
@@ -102,7 +103,15 @@ function amountToBuffer(amount: AmountJson): Uint8Array {
   const dvbuf = new DataView(buffer);
   const u8buf = new Uint8Array(buffer);
   const curr = stringToBytes(amount.currency);
-  dvbuf.setBigUint64(0, BigInt(amount.value));
+  if (typeof dvbuf.setBigUint64 !== "undefined") {
+    dvbuf.setBigUint64(0, BigInt(amount.value));
+  } else {
+    const arr = bigint(amount.value).toArray(2 ** 8).value
+    let offset = 8 - arr.length
+    for (let i = 0; i < arr.length; i++) {
+      dvbuf.setUint8(offset++, arr[i]);
+    }
+  }
   dvbuf.setUint32(8, amount.fraction);
   u8buf.set(curr, 8 + 4);
 
@@ -113,15 +122,24 @@ function timestampRoundedToBuffer(ts: Timestamp): Uint8Array {
   const b = new ArrayBuffer(8);
   const v = new DataView(b);
   const tsRounded = timestampTruncateToSecond(ts);
-  const s = BigInt(tsRounded.t_ms) * BigInt(1000);
-  v.setBigUint64(0, s);
+  if (typeof v.setBigUint64 !== "undefined") {
+    const s = BigInt(tsRounded.t_ms) * BigInt(1000);
+    v.setBigUint64(0, s);
+  } else {
+    const s = (tsRounded.t_ms === "never" ? bigint.zero : bigint(tsRounded.t_ms).times(1000));
+    const arr = s.toArray(2 ** 8).value
+    let offset = 8 - arr.length
+    for (let i = 0; i < arr.length; i++) {
+      v.setUint8(offset++, arr[i]);
+    }
+  }
   return new Uint8Array(b);
 }
 
 class SignaturePurposeBuilder {
   private chunks: Uint8Array[] = [];
 
-  constructor(private purposeNum: number) {}
+  constructor(private purposeNum: number) { }
 
   put(bytes: Uint8Array): SignaturePurposeBuilder {
     this.chunks.push(Uint8Array.from(bytes));
