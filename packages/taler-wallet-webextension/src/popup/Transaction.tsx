@@ -62,7 +62,7 @@ export function TransactionView({ transaction, onDelete, onBack }: WalletTransac
     return <footer style={{ marginTop: 'auto', display: 'flex', flexShrink: 0 }}>
       <button onClick={onBack}><i18n.Translate>back</i18n.Translate></button>
       <div style={{ width: '100%', flexDirection: 'row', justifyContent: 'flex-end', display: 'flex' }}>
-        <button class="pure-button button-destructive" onClick={onDelete}><i18n.Translate>forget</i18n.Translate></button>
+        <button class="pure-button button-destructive" onClick={onDelete}><i18n.Translate>delete</i18n.Translate></button>
       </div>
 
     </footer>
