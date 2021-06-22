@@ -32,7 +32,6 @@ import {
   Headers,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
   WALLET_MERCHANT_PROTOCOL_VERSION,
-  runRetryLoop,
   Wallet,
 } from "@gnu-taler/taler-wallet-core";
 

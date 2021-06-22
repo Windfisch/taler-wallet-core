@@ -33,7 +33,6 @@ import {
   codecForList,
   codecForString,
   Logger,
-  WithdrawalType,
 } from "@gnu-taler/taler-util";
 import {
   NodeHttpLib,
@@ -45,10 +44,6 @@ import {
   NodeThreadCryptoWorkerFactory,
   CryptoApi,
   walletCoreDebugFlags,
-  handleCoreApiRequest,
-  runPending,
-  runUntilDone,
-  getClientFromWalletState,
   WalletApiOperation,
   WalletCoreApiClient,
   Wallet,
@@ -314,8 +309,9 @@ walletCli
   .maybeOption("maxRetries", ["--max-retries"], clk.INT)
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      await wallet.ws.runUntilDone({
+      await wallet.ws.runTaskLoop({
         maxRetries: args.finishPendingOpt.maxRetries,
+        stopWhenDone: true,
       });
       wallet.ws.stop();
     });

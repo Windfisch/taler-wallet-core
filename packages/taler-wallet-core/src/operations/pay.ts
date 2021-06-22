@@ -205,10 +205,7 @@ export async function getEffectiveDepositAmount(
   return Amounts.sub(Amounts.sum(amt).amount, Amounts.sum(fees).amount).amount;
 }
 
-export function isSpendableCoin(
-  coin: CoinRecord,
-  denom: DenominationRecord,
-): boolean {
+function isSpendableCoin(coin: CoinRecord, denom: DenominationRecord): boolean {
   if (coin.suspended) {
     return false;
   }
@@ -721,7 +718,9 @@ async function processDownloadProposalImpl(
   );
 
   if (!isWellFormed) {
-    logger.trace(`malformed contract terms: ${j2s(proposalResp.contract_terms)}`);
+    logger.trace(
+      `malformed contract terms: ${j2s(proposalResp.contract_terms)}`,
+    );
     const err = makeErrorDetails(
       TalerErrorCode.WALLET_CONTRACT_TERMS_MALFORMED,
       "validation for well-formedness failed",

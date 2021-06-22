@@ -116,9 +116,15 @@ export interface InternalWalletState {
   cryptoApi: CryptoApi;
 
   timerGroup: TimerGroup;
-  latch: AsyncCondition;
   stopped: boolean;
-  memoRunRetryLoop: AsyncOpMemoSingle<void>;
+
+  /**
+   * Asynchronous condition to interrupt the sleep of the
+   * retry loop.
+   *
+   * Used to allow processing of new work faster.
+   */
+  latch: AsyncCondition;
 
   listeners: NotificationListener[];
 

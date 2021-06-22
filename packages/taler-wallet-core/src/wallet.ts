@@ -276,81 +276,31 @@ export async function runPending(
   }
 }
 
+export interface RetryLoopOpts {
+  /**
+   * Stop when the number of retries is exceeded for any pending
+   * operation.
+   */
+  maxRetries?: number;
+
+  /**
+   * Stop the retry loop when all lifeness-giving pending operations
+   * are done.
+   *
+   * Defaults to false.
+   */
+  stopWhenDone?: boolean;
+}
+
 /**
- * Run the wallet until there are no more pending operations that give
- * liveness left.  The wallet will be in a stopped state when this function
- * returns without resolving to an exception.
+ * Main retry loop of the wallet.
+ *
+ * Looks up pending operations from the wallet, runs them, repeat.
  */
-export async function runUntilDone(
+async function runTaskLoop(
   ws: InternalWalletState,
-  req: {
-    maxRetries?: number;
-  } = {},
+  opts: RetryLoopOpts = {},
 ): Promise<void> {
-  let done = false;
-  const p = new Promise<void>((resolve, reject) => {
-    // Monitor for conditions that means we're done or we
-    // should quit with an error (due to exceeded retries).
-    ws.addNotificationListener((n) => {
-      if (done) {
-        return;
-      }
-      if (
-        n.type === NotificationType.WaitingForRetry &&
-        n.numGivingLiveness == 0
-      ) {
-        done = true;
-        logger.trace("no liveness-giving operations left");
-        resolve();
-      }
-      const maxRetries = req.maxRetries;
-      if (!maxRetries) {
-        return;
-      }
-      getPendingOperations(ws)
-        .then((pending) => {
-          for (const p of pending.pendingOperations) {
-            if (p.retryInfo && p.retryInfo.retryCounter > maxRetries) {
-              console.warn(
-                `stopping, as ${maxRetries} retries are exceeded in an operation of type ${p.type}`,
-              );
-              ws.stop();
-              done = true;
-              resolve();
-            }
-          }
-        })
-        .catch((e) => {
-          logger.error(e);
-          reject(e);
-        });
-    });
-    // Run this asynchronously
-    runRetryLoop(ws).catch((e) => {
-      logger.error("exception in wallet retry loop");
-      reject(e);
-    });
-  });
-  await p;
-}
-
-/**
- * Process pending operations and wait for scheduled operations in
- * a loop until the wallet is stopped explicitly.
- */
-export async function runRetryLoop(ws: InternalWalletState): Promise<void> {
-  // Make sure we only run one main loop at a time.
-  return ws.memoRunRetryLoop.memo(async () => {
-    try {
-      await runRetryLoopImpl(ws);
-    } catch (e) {
-      console.error("error during retry loop execution", e);
-      throw e;
-    }
-  });
-}
-
-async function runRetryLoopImpl(ws: InternalWalletState): Promise<void> {
   for (let iteration = 0; !ws.stopped; iteration++) {
     const pending = await getPendingOperations(ws);
     logger.trace(`pending operations: ${j2s(pending)}`);
@@ -365,7 +315,22 @@ async function runRetryLoopImpl(ws: InternalWalletState): Promise<void> {
       if (p.givesLifeness) {
         numGivingLiveness++;
       }
+
+      const maxRetries = opts.maxRetries;
+
+      if (maxRetries && p.retryInfo && p.retryInfo.retryCounter > maxRetries) {
+        logger.warn(
+          `stopping, as ${maxRetries} retries are exceeded in an operation of type ${p.type}`,
+        );
+        return;
+      }
     }
+
+    if (opts.stopWhenDone && numGivingLiveness === 0) {
+      logger.warn(`stopping, as no pending operations have lifeness`);
+      return;
+    }
+
     // Make sure that we run tasks that don't give lifeness at least
     // one time.
     if (iteration !== 0 && numDue === 0) {
@@ -993,19 +958,15 @@ export class Wallet {
   }
 
   runRetryLoop(): Promise<void> {
-    return runRetryLoop(this.ws);
+    return runTaskLoop(this.ws);
   }
 
   runPending(forceNow: boolean = false) {
     return runPending(this.ws, forceNow);
   }
 
-  runUntilDone(
-    req: {
-      maxRetries?: number;
-    } = {},
-  ) {
-    return runUntilDone(this.ws, req);
+  runTaskLoop(opts: RetryLoopOpts) {
+    return runTaskLoop(this.ws, opts);
   }
 
   handleCoreApiRequest(
@@ -1035,7 +996,6 @@ class InternalWalletStateImpl implements InternalWalletState {
   timerGroup: TimerGroup = new TimerGroup();
   latch = new AsyncCondition();
   stopped = false;
-  memoRunRetryLoop = new AsyncOpMemoSingle<void>();
 
   listeners: NotificationListener[] = [];
 
@@ -1102,7 +1062,7 @@ class InternalWalletStateImpl implements InternalWalletState {
       maxRetries?: number;
     } = {},
   ): Promise<void> {
-    runUntilDone(this, req);
+    await runTaskLoop(this, { ...req, stopWhenDone: true });
   }
 
   /**

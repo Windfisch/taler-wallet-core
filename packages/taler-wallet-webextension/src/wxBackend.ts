@@ -33,12 +33,7 @@ import {
   deleteTalerDatabase,
   DbAccess,
   WalletStoresV1,
-  handleCoreApiRequest,
-  runRetryLoop,
-  handleNotifyReserve,
-  InternalWalletState,
   Wallet,
-  WalletApiOperation,
 } from "@gnu-taler/taler-wallet-core";
 import {
   classifyTalerUri,

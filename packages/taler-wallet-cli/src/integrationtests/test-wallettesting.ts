@@ -22,8 +22,9 @@
 /**
  * Imports.
  */
+import { Amounts } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { CoinConfig, defaultCoinConfig } from "./denomStructures";
+import { CoinConfig, defaultCoinConfig } from "./denomStructures.js";
 import {
   BankService,
   ExchangeService,
@@ -31,8 +32,8 @@ import {
   MerchantService,
   setupDb,
   WalletCli,
-} from "./harness";
-import { SimpleTestEnvironment } from "./helpers";
+} from "./harness.js";
+import { SimpleTestEnvironment } from "./helpers.js";
 
 const merchantAuthToken = "secret-token:sandbox";
 
@@ -161,6 +162,63 @@ export async function runWallettestingTest(t: GlobalTestState) {
   txTypes = txns.transactions.map((x) => x.type);
 
   t.assertDeepEqual(txTypes, ["withdrawal", "payment"]);
+
+  wallet.deleteDatabase();
+
+  await wallet.client.call(WalletApiOperation.WithdrawTestBalance, {
+    amount: "TESTKUDOS:10",
+    bankBaseUrl: bank.baseUrl,
+    exchangeBaseUrl: exchange.baseUrl,
+  });
+
+  await wallet.runUntilDone();
+
+  const coinDump = await wallet.client.call(WalletApiOperation.DumpCoins, {});
+
+  console.log("coin dump:", JSON.stringify(coinDump, undefined, 2));
+
+  let susp: string | undefined;
+  {
+    for (const c of coinDump.coins) {
+      if (0 === Amounts.cmp(c.remaining_value, "TESTKUDOS:8")) {
+        susp = c.coin_pub;
+      }
+    }
+  }
+
+  t.assertTrue(susp !== undefined);
+
+  console.log("suspending coin");
+
+  await wallet.client.call(WalletApiOperation.SetCoinSuspended, {
+    coinPub: susp,
+    suspended: true,
+  });
+
+  // This should fail, as we've suspended a coin that we need
+  // to pay.
+  await t.assertThrowsAsync(async () => {
+    await wallet.client.call(WalletApiOperation.TestPay, {
+      amount: "TESTKUDOS:5",
+      merchantAuthToken: merchantAuthToken,
+      merchantBaseUrl: merchant.makeInstanceBaseUrl(),
+      summary: "foo",
+    });
+  });
+
+  console.log("unsuspending coin");
+
+  await wallet.client.call(WalletApiOperation.SetCoinSuspended, {
+    coinPub: susp,
+    suspended: false,
+  });
+
+  await wallet.client.call(WalletApiOperation.TestPay, {
+    amount: "TESTKUDOS:5",
+    merchantAuthToken: merchantAuthToken,
+    merchantBaseUrl: merchant.makeInstanceBaseUrl(),
+    summary: "foo",
+  });
 
   await t.shutdown();
 }
