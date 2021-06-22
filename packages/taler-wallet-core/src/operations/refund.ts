@@ -44,6 +44,8 @@ import {
   TalerErrorDetails,
   URL,
   timestampAddDuration,
+  codecForMerchantOrderStatusPaid,
+  isTimestampExpired,
 } from "@gnu-taler/taler-util";
 import {
   AbortStatus,
@@ -493,7 +495,7 @@ export async function applyRefund(
     ws.notify({
       type: NotificationType.RefundStarted,
     });
-    await processPurchaseQueryRefund(ws, proposalId);
+    await processPurchaseQueryRefundImpl(ws, proposalId, true, false);
   }
 
   purchase = await ws.db
@@ -571,7 +573,7 @@ export async function processPurchaseQueryRefund(
   const onOpErr = (e: TalerErrorDetails): Promise<void> =>
     incrementPurchaseQueryRefundRetry(ws, proposalId, e);
   await guardOperationException(
-    () => processPurchaseQueryRefundImpl(ws, proposalId, forceNow),
+    () => processPurchaseQueryRefundImpl(ws, proposalId, forceNow, true),
     onOpErr,
   );
 }
@@ -597,6 +599,7 @@ async function processPurchaseQueryRefundImpl(
   ws: InternalWalletState,
   proposalId: string,
   forceNow: boolean,
+  waitForAutoRefund: boolean,
 ): Promise<void> {
   if (forceNow) {
     await resetPurchaseQueryRefundRetry(ws, proposalId);
@@ -617,6 +620,34 @@ async function processPurchaseQueryRefundImpl(
   }
 
   if (purchase.timestampFirstSuccessfulPay) {
+    if (
+      waitForAutoRefund &&
+      purchase.autoRefundDeadline &&
+      !isTimestampExpired(purchase.autoRefundDeadline)
+    ) {
+      const requestUrl = new URL(
+        `orders/${purchase.download.contractData.orderId}`,
+        purchase.download.contractData.merchantBaseUrl,
+      );
+      requestUrl.searchParams.set(
+        "h_contract",
+        purchase.download.contractData.contractTermsHash,
+      );
+      // Long-poll for one second
+      requestUrl.searchParams.set("timeout_ms", "1000");
+      requestUrl.searchParams.set("await_refund_obtained", "yes");
+      logger.trace("making long-polling request for auto-refund");
+      const resp = await ws.http.get(requestUrl.href);
+      const orderStatus = await readSuccessResponseJsonOrThrow(
+        resp,
+        codecForMerchantOrderStatusPaid(),
+      );
+      if (!orderStatus.refunded) {
+        incrementPurchaseQueryRefundRetry(ws, proposalId, undefined);
+        return;
+      }
+    }
+
     const requestUrl = new URL(
       `orders/${purchase.download.contractData.orderId}/refund`,
       purchase.download.contractData.merchantBaseUrl,
