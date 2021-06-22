@@ -368,6 +368,15 @@ export async function getCandidatePayCoins(
   };
 }
 
+/**
+ * Apply a coin selection to the database.  Marks coins as spent
+ * and creates a refresh session for the remaining amount.
+ *
+ * FIXME:  This does not deal well with conflicting spends!
+ * When two payments are made in parallel, the same coin can be selected
+ * for two payments.
+ * However, this is a situation that can also happen via sync.
+ */
 export async function applyCoinSpend(
   ws: InternalWalletState,
   tx: GetReadWriteAccess<{
