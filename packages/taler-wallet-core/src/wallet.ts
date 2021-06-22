@@ -33,7 +33,6 @@ import {
   getDurationRemaining,
   isTimestampExpired,
   j2s,
-  PreparePayResultType,
   TalerErrorCode,
   Timestamp,
   timestampMin,
@@ -72,7 +71,7 @@ import {
   processPurchasePay,
 } from "./operations/pay.js";
 import { getPendingOperations } from "./operations/pending.js";
-import { processRecoupGroup } from "./operations/recoup.js";
+import { createRecoupGroup, processRecoupGroup } from "./operations/recoup.js";
 import {
   autoRefresh,
   createRefreshGroup,
@@ -93,6 +92,7 @@ import {
   ExchangeOperations,
   InternalWalletState,
   NotificationListener,
+  RecoupOperations,
 } from "./common.js";
 import {
   runIntegrationTest,
@@ -673,6 +673,7 @@ async function dispatchRequestInternal(
   switch (operation) {
     case "initWallet": {
       ws.initCalled = true;
+      await fillDefaults(ws);
       return {};
     }
     case "withdrawTestkudos": {
@@ -1046,6 +1047,11 @@ class InternalWalletStateImpl implements InternalWalletState {
     updateExchangeFromUrl,
   };
 
+  recoupOps: RecoupOperations = {
+    createRecoupGroup: createRecoupGroup,
+    processRecoupGroup: processRecoupGroup,
+  };
+
   /**
    * Promises that are waiting for a particular resource.
    */
@@ -1089,6 +1095,14 @@ class InternalWalletStateImpl implements InternalWalletState {
     this.stopped = true;
     this.timerGroup.stopCurrentAndFutureTimers();
     this.cryptoApi.stop();
+  }
+
+  async runUntilDone(
+    req: {
+      maxRetries?: number;
+    } = {},
+  ): Promise<void> {
+    runUntilDone(this, req);
   }
 
   /**

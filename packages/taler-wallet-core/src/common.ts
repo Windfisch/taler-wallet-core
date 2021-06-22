@@ -15,32 +15,33 @@
  */
 
 /**
+ * Common interface of the internal wallet state.  This object is passed
+ * to the various operations (exchange management, withdrawal, refresh, reserve
+ * management, etc.).
+ *
+ * Some operations can be accessed via this state object.  This allows mutual
+ * recursion between operations, without having cycling dependencies between
+ * the respective TypeScript files.
+ *
+ * (You can think of this as a "header file" for the wallet implementation.)
+ */
+
+/**
  * Imports.
  */
-import {
-  WalletNotification,
-  BalancesResponse,
-  Logger,
-} from "@gnu-taler/taler-util";
-import { CryptoApi, CryptoWorkerFactory } from "./crypto/workers/cryptoApi.js";
+import { WalletNotification, BalancesResponse } from "@gnu-taler/taler-util";
+import { CryptoApi } from "./crypto/workers/cryptoApi.js";
 import { ExchangeDetailsRecord, ExchangeRecord, WalletStoresV1 } from "./db.js";
-import {
-  getExchangeDetails,
-  getExchangeTrust,
-  updateExchangeFromUrl,
-} from "./operations/exchanges.js";
 import { PendingOperationsResponse } from "./pending-types.js";
 import { AsyncOpMemoMap, AsyncOpMemoSingle } from "./util/asyncMemo.js";
 import { HttpRequestLibrary } from "./util/http.js";
+import { AsyncCondition } from "./util/promiseUtils.js";
 import {
-  AsyncCondition,
-  OpenedPromise,
-  openPromise,
-} from "./util/promiseUtils.js";
-import { DbAccess, GetReadOnlyAccess } from "./util/query.js";
+  DbAccess,
+  GetReadOnlyAccess,
+  GetReadWriteAccess,
+} from "./util/query.js";
 import { TimerGroup } from "./util/timer.js";
-
-const logger = new Logger("state.ts");
 
 export const EXCHANGE_COINS_LOCK = "exchange-coins-lock";
 export const EXCHANGE_RESERVES_LOCK = "exchange-reserves-lock";
@@ -77,12 +78,30 @@ export interface ExchangeOperations {
   }>;
 }
 
+export interface RecoupOperations {
+  createRecoupGroup(
+    ws: InternalWalletState,
+    tx: GetReadWriteAccess<{
+      recoupGroups: typeof WalletStoresV1.recoupGroups;
+      denominations: typeof WalletStoresV1.denominations;
+      refreshGroups: typeof WalletStoresV1.refreshGroups;
+      coins: typeof WalletStoresV1.coins;
+    }>,
+    coinPubs: string[],
+  ): Promise<string>;
+  processRecoupGroup(
+    ws: InternalWalletState,
+    recoupGroupId: string,
+    forceNow?: boolean,
+  ): Promise<void>;
+}
+
 export type NotificationListener = (n: WalletNotification) => void;
 
 /**
  * Internal, shard wallet state that is used by the implementation
  * of wallet operations.
- * 
+ *
  * FIXME:  This should not be exported anywhere from the taler-wallet-core package,
  * as it's an opaque implementation detail.
  */
@@ -106,6 +125,7 @@ export interface InternalWalletState {
   initCalled: boolean;
 
   exchangeOps: ExchangeOperations;
+  recoupOps: RecoupOperations;
 
   db: DbAccess<typeof WalletStoresV1>;
   http: HttpRequestLibrary;
@@ -124,4 +144,6 @@ export interface InternalWalletState {
    * by string tokens.
    */
   runSequentialized<T>(tokens: string[], f: () => Promise<T>): Promise<T>;
+
+  runUntilDone(req?: { maxRetries?: number }): Promise<void>;
 }

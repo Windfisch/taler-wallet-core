@@ -65,7 +65,6 @@ import {
   makeErrorDetails,
   OperationFailedError,
 } from "../errors.js";
-import { createRecoupGroup, processRecoupGroup } from "./recoup.js";
 import { InternalWalletState, TrustInfo } from "../common.js";
 import {
   WALLET_CACHE_BREAKER_CLIENT_VERSION,
@@ -556,7 +555,11 @@ async function updateExchangeFromUrlImpl(
       }
       if (newlyRevokedCoinPubs.length != 0) {
         logger.trace("recouping coins", newlyRevokedCoinPubs);
-        recoupGroupId = await createRecoupGroup(ws, tx, newlyRevokedCoinPubs);
+        recoupGroupId = await ws.recoupOps.createRecoupGroup(
+          ws,
+          tx,
+          newlyRevokedCoinPubs,
+        );
       }
       return {
         exchange: r,
@@ -567,7 +570,7 @@ async function updateExchangeFromUrlImpl(
   if (recoupGroupId) {
     // Asynchronously start recoup.  This doesn't need to finish
     // for the exchange update to be considered finished.
-    processRecoupGroup(ws, recoupGroupId).catch((e) => {
+    ws.recoupOps.processRecoupGroup(ws, recoupGroupId).catch((e) => {
       logger.error("error while recouping coins:", e);
     });
   }

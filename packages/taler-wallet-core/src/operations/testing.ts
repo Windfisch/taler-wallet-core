@@ -38,7 +38,6 @@ import { createTalerWithdrawReserve } from "./reserves.js";
 import { InternalWalletState } from "../common.js";
 import { confirmPay, preparePayForUri } from "./pay.js";
 import { getBalances } from "./balance.js";
-import { runUntilDone } from "../wallet.js";
 import { applyRefund } from "./refund.js";
 
 const logger = new Logger("operations/testing.ts");
@@ -333,7 +332,7 @@ export async function runIntegrationTest(
     args.bankBaseUrl,
     args.exchangeBaseUrl,
   );
-  await runUntilDone(ws);
+  await ws.runUntilDone();
   logger.info("done withdrawing test balance");
 
   const balance = await getBalances(ws);
@@ -348,7 +347,7 @@ export async function runIntegrationTest(
   await makePayment(ws, myMerchant, args.amountToSpend, "hello world");
 
   // Wait until the refresh is done
-  await runUntilDone(ws);
+  await ws.runUntilDone();
 
   logger.trace("withdrawing test balance for refund");
   const withdrawAmountTwo = Amounts.parseOrThrow(`${currency}:18`);
@@ -364,7 +363,7 @@ export async function runIntegrationTest(
   );
 
   // Wait until the withdraw is done
-  await runUntilDone(ws);
+  await ws.runUntilDone();
 
   const { orderId: refundOrderId } = await makePayment(
     ws,
@@ -388,7 +387,7 @@ export async function runIntegrationTest(
   logger.trace("integration test: applied refund");
 
   // Wait until the refund is done
-  await runUntilDone(ws);
+  await ws.runUntilDone();
 
   logger.trace("integration test: making payment after refund");
 
@@ -401,7 +400,7 @@ export async function runIntegrationTest(
 
   logger.trace("integration test: make payment done");
 
-  await runUntilDone(ws);
+  await ws.runUntilDone();
 
   logger.trace("integration test: all done!");
 }
