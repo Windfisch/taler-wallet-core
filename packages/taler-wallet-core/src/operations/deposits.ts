@@ -36,7 +36,7 @@ import {
   timestampTruncateToSecond,
   TrackDepositGroupRequest,
   TrackDepositGroupResponse,
-  URL
+  URL,
 } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../common.js";
 import { kdf } from "../crypto/primitives/kdf.js";
@@ -433,7 +433,8 @@ export async function createDepositGroup(
     timestampCreated: timestamp,
     timestampFinished: undefined,
     payCoinSelection: payCoinSel,
-    depositedPerCoin: payCoinSel.coinPubs.map((x) => false),
+    payCoinSelectionUid: encodeCrock(getRandomBytes(32)),
+    depositedPerCoin: payCoinSel.coinPubs.map(() => false),
     merchantPriv: merchantPair.priv,
     merchantPub: merchantPair.pub,
     totalPayCost: totalDepositCost,
@@ -454,7 +455,12 @@ export async function createDepositGroup(
       denominations: x.denominations,
     }))
     .runReadWrite(async (tx) => {
-      await applyCoinSpend(ws, tx, payCoinSel);
+      await applyCoinSpend(
+        ws,
+        tx,
+        payCoinSel,
+        `deposit-group:${depositGroup.depositGroupId}`,
+      );
       await tx.depositGroups.put(depositGroup);
     });
 

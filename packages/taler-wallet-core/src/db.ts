@@ -848,6 +848,17 @@ export interface CoinRecord {
    * Status of the coin.
    */
   status: CoinStatus;
+
+  /**
+   * Information about what the coin has been allocated for.
+   * Used to prevent allocation of the same coin for two different payments.
+   */
+  allocation?: CoinAllocation;
+}
+
+export interface CoinAllocation {
+  id: string;
+  amount: AmountString;
 }
 
 export enum ProposalStatus {
@@ -1642,6 +1653,8 @@ export interface DepositGroupRecord {
   contractTermsHash: string;
 
   payCoinSelection: PayCoinSelection;
+
+  payCoinSelectionUid: string;
 
   totalPayCost: AmountJson;
 

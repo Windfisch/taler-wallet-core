@@ -385,24 +385,34 @@ export async function applyCoinSpend(
     denominations: typeof WalletStoresV1.denominations;
   }>,
   coinSelection: PayCoinSelection,
+  allocationId: string,
 ) {
   for (let i = 0; i < coinSelection.coinPubs.length; i++) {
     const coin = await tx.coins.get(coinSelection.coinPubs[i]);
     if (!coin) {
       throw Error("coin allocated for payment doesn't exist anymore");
     }
+    const contrib = coinSelection.coinContributions[i];
     if (coin.status !== CoinStatus.Fresh) {
-      // applyCoinSpend was called again, probably
-      // because of a coin re-selection to recover after
-      // accidental double spending.
-      // Ignore coins we already marked as spent.
-      continue;
+      const alloc = coin.allocation;
+      if (!alloc) {
+        continue;
+      }
+      if (alloc.id !== allocationId) {
+        // FIXME: assign error code
+        throw Error("conflicting coin allocation (id)");
+      }
+      if (0 !== Amounts.cmp(alloc.amount, contrib)) {
+        // FIXME: assign error code
+        throw Error("conflicting coin allocation (contrib)");
+      }
     }
     coin.status = CoinStatus.Dormant;
-    const remaining = Amounts.sub(
-      coin.currentAmount,
-      coinSelection.coinContributions[i],
-    );
+    coin.allocation = {
+      id: allocationId,
+      amount: Amounts.stringify(contrib),
+    };
+    const remaining = Amounts.sub(coin.currentAmount, contrib);
     if (remaining.saturated) {
       throw Error("not enough remaining balance on coin for payment");
     }
@@ -482,7 +492,7 @@ async function recordConfirmPay(
         await tx.proposals.put(p);
       }
       await tx.purchases.put(t);
-      await applyCoinSpend(ws, tx, coinSelection);
+      await applyCoinSpend(ws, tx, coinSelection, `proposal:${t.proposalId}`);
     });
 
   ws.notify({
@@ -1082,9 +1092,10 @@ async function handleInsufficientFunds(
         return;
       }
       p.payCoinSelection = res;
+      p.payCoinSelectionUid = encodeCrock(getRandomBytes(32));
       p.coinDepositPermissions = undefined;
       await tx.purchases.put(p);
-      await applyCoinSpend(ws, tx, res);
+      await applyCoinSpend(ws, tx, res, `proposal:${p.proposalId}`);
     });
 }
 
