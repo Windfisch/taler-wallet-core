@@ -1586,7 +1586,14 @@ export interface BackupProviderRecord {
    */
   lastBackupHash?: string;
 
-  lastBackupTimestamp?: Timestamp;
+  /**
+   * Last time that we successfully uploaded a backup (or
+   * the uploaded backup was already current).
+   *
+   * Does NOT correspond to the timestamp of the backup,
+   * which only changes when the backup content changes.
+   */
+  lastBackupCycleTimestamp?: Timestamp;
 
   /**
    * Proposal that we're currently trying to pay for.

@@ -296,6 +296,21 @@ async function runBackupCycleForProvider(
 
   logger.trace(`sync response status: ${resp.status}`);
 
+  if (resp.status === HttpResponseStatus.NotModified) {
+    await ws.db
+      .mktx((x) => ({ backupProvider: x.backupProviders }))
+      .runReadWrite(async (tx) => {
+        const prov = await tx.backupProvider.get(provider.baseUrl);
+        if (!prov) {
+          return;
+        }
+        delete prov.lastError;
+        prov.lastBackupCycleTimestamp = getTimestampNow();
+        await tx.backupProvider.put(prov);
+      });
+    return;
+  }
+
   if (resp.status === HttpResponseStatus.PaymentRequired) {
     logger.trace("payment required for backup");
     logger.trace(`headers: ${j2s(resp.headers)}`);
@@ -360,7 +375,7 @@ async function runBackupCycleForProvider(
           return;
         }
         prov.lastBackupHash = encodeCrock(currentBackupHash);
-        prov.lastBackupTimestamp = getTimestampNow();
+        prov.lastBackupCycleTimestamp = getTimestampNow();
         prov.lastError = undefined;
         await tx.backupProviders.put(prov);
       });
@@ -382,7 +397,7 @@ async function runBackupCycleForProvider(
           return;
         }
         prov.lastBackupHash = encodeCrock(hash(backupEnc));
-        prov.lastBackupTimestamp = getTimestampNow();
+        prov.lastBackupCycleTimestamp = getTimestampNow();
         prov.lastError = undefined;
         await tx.backupProvider.put(prov);
       });
@@ -684,7 +699,7 @@ export async function getBackupInfo(
     providers.push({
       active: x.active,
       syncProviderBaseUrl: x.baseUrl,
-      lastSuccessfulBackupTimestamp: x.lastBackupTimestamp,
+      lastSuccessfulBackupTimestamp: x.lastBackupCycleTimestamp,
       paymentProposalIds: x.paymentProposalIds,
       lastError: x.lastError,
       paymentStatus: await getProviderPaymentInfo(ws, x),
@@ -759,7 +774,7 @@ async function backupRecoveryTheirs(
       }
       const providers = await tx.backupProviders.iter().toArray();
       for (const prov of providers) {
-        prov.lastBackupTimestamp = undefined;
+        prov.lastBackupCycleTimestamp = undefined;
         prov.lastBackupHash = undefined;
         await tx.backupProviders.put(prov);
       }
