@@ -406,6 +406,7 @@ export async function applyCoinSpend(
         // FIXME: assign error code
         throw Error("conflicting coin allocation (contrib)");
       }
+      continue;
     }
     coin.status = CoinStatus.Dormant;
     coin.allocation = {
