@@ -24,24 +24,39 @@
 /**
  * Imports.
  */
-import { InternalWalletState } from "../../common.js";
 import {
   AmountString,
   BackupRecovery,
+  buildCodecForObject,
+  canonicalizeBaseUrl,
+  canonicalJson,
+  Codec,
   codecForAmountString,
+  codecForBoolean,
+  codecForNumber,
+  codecForString,
+  codecOptional,
+  ConfirmPayResultType,
+  durationFromSpec,
+  getTimestampNow,
+  j2s,
+  Logger,
+  PreparePayResultType,
+  RecoveryLoadRequest,
+  RecoveryMergeStrategy,
+  TalerErrorDetails,
+  Timestamp,
+  timestampAddDuration,
+  URL,
   WalletBackupContentV1,
 } from "@gnu-taler/taler-util";
+import { gunzipSync, gzipSync } from "fflate";
+import { InternalWalletState } from "../../common.js";
+import { kdf } from "../../crypto/primitives/kdf.js";
 import {
-  BackupProviderRecord,
-  BackupProviderTerms,
-  ConfigRecord,
-  WalletBackupConfState,
-  WALLET_BACKUP_STATE_KEY,
-} from "../../db.js";
-import {
-  checkDbInvariant,
-  checkLogicInvariant,
-} from "../../util/invariants.js";
+  secretbox,
+  secretbox_open,
+} from "../../crypto/primitives/nacl-fast.js";
 import {
   bytesToString,
   decodeCrock,
@@ -53,43 +68,24 @@ import {
   rsaBlind,
   stringToBytes,
 } from "../../crypto/talerCrypto.js";
-import { canonicalizeBaseUrl, canonicalJson, j2s } from "@gnu-taler/taler-util";
+import { CryptoApi } from "../../crypto/workers/cryptoApi.js";
 import {
-  durationFromSpec,
-  getTimestampNow,
-  Timestamp,
-  timestampAddDuration,
-  URL
-} from "@gnu-taler/taler-util";
-import {
-  buildCodecForObject,
-  Codec,
-  codecForBoolean,
-  codecForNumber,
-  codecForString,
-  codecOptional,
-} from "@gnu-taler/taler-util";
+  BackupProviderRecord,
+  BackupProviderTerms,
+  ConfigRecord,
+  WalletBackupConfState,
+  WALLET_BACKUP_STATE_KEY,
+} from "../../db.js";
 import {
   HttpResponseStatus,
   readSuccessResponseJsonOrThrow,
   readTalerErrorResponse,
 } from "../../util/http.js";
-import { Logger } from "@gnu-taler/taler-util";
-import { gunzipSync, gzipSync } from "fflate";
-import { kdf } from "../../crypto/primitives/kdf.js";
+import {
+  checkDbInvariant,
+  checkLogicInvariant,
+} from "../../util/invariants.js";
 import { initRetryInfo } from "../../util/retries.js";
-import {
-  ConfirmPayResultType,
-  PreparePayResultType,
-  RecoveryLoadRequest,
-  RecoveryMergeStrategy,
-  TalerErrorDetails,
-} from "@gnu-taler/taler-util";
-import { CryptoApi } from "../../crypto/workers/cryptoApi.js";
-import {
-  secretbox,
-  secretbox_open,
-} from "../../crypto/primitives/nacl-fast.js";
 import {
   checkPaymentByProposalId,
   confirmPay,
@@ -97,7 +93,7 @@ import {
 } from "../pay.js";
 import { exportBackup } from "./export.js";
 import { BackupCryptoPrecomputedData, importBackup } from "./import.js";
-import { provideBackupState, getWalletBackupState } from "./state.js";
+import { getWalletBackupState, provideBackupState } from "./state.js";
 
 const logger = new Logger("operations/backup.ts");
 
@@ -137,7 +133,9 @@ export async function encryptBackup(
   chunks.push(nonce);
   const backupJsonContent = canonicalJson(blob);
   logger.trace("backup JSON size", backupJsonContent.length);
-  const compressedContent = gzipSync(stringToBytes(backupJsonContent));
+  const compressedContent = gzipSync(stringToBytes(backupJsonContent), {
+    mtime: 0,
+  });
   const secret = deriveBlobSecret(config);
   const encrypted = secretbox(compressedContent, nonce.slice(0, 24), secret);
   chunks.push(encrypted);
@@ -261,7 +259,12 @@ async function runBackupCycleForProvider(
     backupJson,
   } = args;
   const accountKeyPair = deriveAccountKeyPair(backupConfig, provider.baseUrl);
+
+  const newHash = encodeCrock(currentBackupHash);
+  const oldHash = provider.lastBackupHash;
+
   logger.trace(`trying to upload backup to ${provider.baseUrl}`);
+  logger.trace(`old hash ${oldHash}, new hash ${newHash}`);
 
   const syncSig = await ws.cryptoApi.makeSyncSignature({
     newHash: encodeCrock(currentBackupHash),

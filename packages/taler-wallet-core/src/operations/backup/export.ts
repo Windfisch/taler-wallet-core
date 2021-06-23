@@ -24,44 +24,54 @@
 /**
  * Imports.
  */
-import { hash } from "../../crypto/primitives/nacl-fast.js";
 import {
-  WalletBackupContentV1,
-  BackupExchange,
-  BackupCoin,
-  BackupDenomination,
-  BackupReserve,
-  BackupPurchase,
-  BackupProposal,
-  BackupRefreshGroup,
+  Amounts,
   BackupBackupProvider,
-  BackupTip,
-  BackupRecoupGroup,
-  BackupWithdrawalGroup,
   BackupBackupProviderTerms,
+  BackupCoin,
   BackupCoinSource,
   BackupCoinSourceType,
+  BackupDenomination,
+  BackupExchange,
+  BackupExchangeDetails,
   BackupExchangeWireFee,
-  BackupRefundItem,
-  BackupRefundState,
+  BackupProposal,
   BackupProposalStatus,
+  BackupPurchase,
+  BackupRecoupGroup,
+  BackupRefreshGroup,
   BackupRefreshOldCoin,
   BackupRefreshSession,
-  BackupExchangeDetails,
+  BackupRefundItem,
+  BackupRefundState,
+  BackupReserve,
+  BackupTip,
+  BackupWithdrawalGroup,
+  canonicalizeBaseUrl,
+  canonicalJson,
+  getTimestampNow,
+  Logger,
+  timestampToIsoString,
+  WalletBackupContentV1,
 } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../../common.js";
-import { provideBackupState, getWalletBackupState } from "./state.js";
-import { Amounts, getTimestampNow } from "@gnu-taler/taler-util";
+import { hash } from "../../crypto/primitives/nacl-fast.js";
 import {
+  encodeCrock,
+  getRandomBytes,
+  stringToBytes,
+} from "../../crypto/talerCrypto.js";
+import {
+  AbortStatus,
   CoinSourceType,
   CoinStatus,
-  RefundState,
-  AbortStatus,
   ProposalStatus,
+  RefundState,
   WALLET_BACKUP_STATE_KEY,
 } from "../../db.js";
-import { encodeCrock, stringToBytes, getRandomBytes } from "../../crypto/talerCrypto.js";
-import { canonicalizeBaseUrl, canonicalJson } from "@gnu-taler/taler-util";
+import { getWalletBackupState, provideBackupState } from "./state.js";
+
+const logger = new Logger("backup/export.ts");
 
 export async function exportBackup(
   ws: InternalWalletState,
@@ -444,8 +454,10 @@ export async function exportBackup(
         });
       });
 
+      const ts = getTimestampNow();
+
       if (!bs.lastBackupTimestamp) {
-        bs.lastBackupTimestamp = getTimestampNow();
+        bs.lastBackupTimestamp = ts;
       }
 
       const backupBlob: WalletBackupContentV1 = {
@@ -469,18 +481,30 @@ export async function exportBackup(
         tombstones: [],
       };
 
-      // If the backup changed, we increment our clock.
+      // If the backup changed, we change our nonce and timestamp.
 
       let h = encodeCrock(hash(stringToBytes(canonicalJson(backupBlob))));
-      if (h != bs.lastBackupPlainHash) {
+      if (h !== bs.lastBackupPlainHash) {
+        logger.trace(
+          `plain backup hash changed (from ${bs.lastBackupPlainHash}to ${h})`,
+        );
+        bs.lastBackupTimestamp = ts;
+        backupBlob.timestamp = ts;
         bs.lastBackupPlainHash = encodeCrock(
           hash(stringToBytes(canonicalJson(backupBlob))),
         );
         bs.lastBackupNonce = encodeCrock(getRandomBytes(32));
+        logger.trace(
+          `setting timestamp to ${timestampToIsoString(ts)} and nonce to ${
+            bs.lastBackupNonce
+          }`,
+        );
         await tx.config.put({
           key: WALLET_BACKUP_STATE_KEY,
           value: bs,
         });
+      } else {
+        logger.trace("backup hash did not change");
       }
 
       return backupBlob;
