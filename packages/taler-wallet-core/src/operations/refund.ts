@@ -405,7 +405,7 @@ async function acceptRefunds(
       if (queryDone) {
         p.timestampLastRefundStatus = now;
         p.lastRefundStatusError = undefined;
-        p.refundStatusRetryInfo = initRetryInfo(false);
+        p.refundStatusRetryInfo = initRetryInfo();
         p.refundQueryRequested = false;
         if (p.abortStatus === AbortStatus.AbortRefund) {
           p.abortStatus = AbortStatus.AbortFinished;
@@ -768,7 +768,7 @@ export async function abortFailedPayWithRefund(
       purchase.paymentSubmitPending = false;
       purchase.abortStatus = AbortStatus.AbortRefund;
       purchase.lastPayError = undefined;
-      purchase.payRetryInfo = initRetryInfo(false);
+      purchase.payRetryInfo = initRetryInfo();
       await tx.purchases.put(purchase);
     });
   processPurchaseQueryRefund(ws, proposalId, true).catch((e) => {

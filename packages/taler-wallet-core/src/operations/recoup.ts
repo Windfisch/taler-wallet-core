@@ -109,7 +109,7 @@ async function putGroupAsFinished(
   if (allFinished) {
     logger.trace("all recoups of recoup group are finished");
     recoupGroup.timestampFinished = getTimestampNow();
-    recoupGroup.retryInfo = initRetryInfo(false);
+    recoupGroup.retryInfo = initRetryInfo();
     recoupGroup.lastError = undefined;
     if (recoupGroup.scheduleRefreshCoins.length > 0) {
       const refreshGroupId = await createRefreshGroup(

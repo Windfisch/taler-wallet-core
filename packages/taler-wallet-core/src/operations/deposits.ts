@@ -443,7 +443,7 @@ export async function createDepositGroup(
       payto_uri: req.depositPaytoUri,
       salt: wireSalt,
     },
-    retryInfo: initRetryInfo(true),
+    retryInfo: initRetryInfo(),
     lastError: undefined,
   };
 

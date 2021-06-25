@@ -203,7 +203,7 @@ async function refreshCreateSession(
         }
         if (allDone) {
           rg.timestampFinished = getTimestampNow();
-          rg.retryInfo = initRetryInfo(false);
+          rg.retryInfo = initRetryInfo();
         }
         await tx.refreshGroups.put(rg);
       });
@@ -590,7 +590,7 @@ async function refreshReveal(
       }
       if (allDone) {
         rg.timestampFinished = getTimestampNow();
-        rg.retryInfo = initRetryInfo(false);
+        rg.retryInfo = initRetryInfo();
       }
       for (const coin of coins) {
         await tx.coins.put(coin);

@@ -263,7 +263,7 @@ export async function importBackup(
             updateClock: backupExchange.update_clock,
           },
           permanent: true,
-          retryInfo: initRetryInfo(false),
+          retryInfo: initRetryInfo(),
           lastUpdate: undefined,
           nextUpdate: getTimestampNow(),
           nextRefreshCheck: getTimestampNow(),
@@ -443,7 +443,7 @@ export async function importBackup(
               timestampReserveInfoPosted:
                 backupReserve.bank_info?.timestamp_reserve_info_posted,
               senderWire: backupReserve.sender_wire,
-              retryInfo: initRetryInfo(false),
+              retryInfo: initRetryInfo(),
               lastError: undefined,
               lastSuccessfulStatusQuery: { t_ms: "never" },
               initialWithdrawalGroupId:
@@ -483,7 +483,7 @@ export async function importBackup(
                   backupWg.raw_withdrawal_amount,
                 ),
                 reservePub,
-                retryInfo: initRetryInfo(false),
+                retryInfo: initRetryInfo(),
                 secretSeed: backupWg.secret_seed,
                 timestampStart: backupWg.timestamp_created,
                 timestampFinish: backupWg.timestamp_finish,
@@ -593,7 +593,7 @@ export async function importBackup(
               cryptoComp.proposalNoncePrivToPub[backupProposal.nonce_priv],
             proposalId: backupProposal.proposal_id,
             repurchaseProposalId: backupProposal.repurchase_proposal_id,
-            retryInfo: initRetryInfo(false),
+            retryInfo: initRetryInfo(),
             download,
             proposalStatus,
           });
@@ -728,7 +728,7 @@ export async function importBackup(
               cryptoComp.proposalNoncePrivToPub[backupPurchase.nonce_priv],
             lastPayError: undefined,
             autoRefundDeadline: { t_ms: "never" },
-            refundStatusRetryInfo: initRetryInfo(false),
+            refundStatusRetryInfo: initRetryInfo(),
             lastRefundStatusError: undefined,
             timestampAccept: backupPurchase.timestamp_accept,
             timestampFirstSuccessfulPay:
@@ -738,7 +738,7 @@ export async function importBackup(
             lastSessionId: undefined,
             abortStatus,
             // FIXME!
-            payRetryInfo: initRetryInfo(false),
+            payRetryInfo: initRetryInfo(),
             download,
             paymentSubmitPending: !backupPurchase.timestamp_first_successful_pay,
             refundQueryRequested: false,
@@ -835,7 +835,7 @@ export async function importBackup(
               Amounts.parseOrThrow(x.estimated_output_amount),
             ),
             refreshSessionPerCoin,
-            retryInfo: initRetryInfo(false),
+            retryInfo: initRetryInfo(),
           });
         }
       }
@@ -861,7 +861,7 @@ export async function importBackup(
             merchantBaseUrl: backupTip.exchange_base_url,
             merchantTipId: backupTip.merchant_tip_id,
             pickedUpTimestamp: backupTip.timestamp_finished,
-            retryInfo: initRetryInfo(false),
+            retryInfo: initRetryInfo(),
             secretSeed: backupTip.secret_seed,
             tipAmountEffective: denomsSel.totalCoinValue,
             tipAmountRaw: Amounts.parseOrThrow(backupTip.tip_amount_raw),

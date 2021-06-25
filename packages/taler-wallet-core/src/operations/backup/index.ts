@@ -41,6 +41,7 @@ import {
   getTimestampNow,
   j2s,
   Logger,
+  NotificationType,
   PreparePayResultType,
   RecoveryLoadRequest,
   RecoveryMergeStrategy,
@@ -71,11 +72,15 @@ import {
 import { CryptoApi } from "../../crypto/workers/cryptoApi.js";
 import {
   BackupProviderRecord,
+  BackupProviderState,
+  BackupProviderStateTag,
   BackupProviderTerms,
   ConfigRecord,
   WalletBackupConfState,
+  WalletStoresV1,
   WALLET_BACKUP_STATE_KEY,
 } from "../../db.js";
+import { guardOperationException } from "../../errors.js";
 import {
   HttpResponseStatus,
   readSuccessResponseJsonOrThrow,
@@ -85,7 +90,8 @@ import {
   checkDbInvariant,
   checkLogicInvariant,
 } from "../../util/invariants.js";
-import { initRetryInfo } from "../../util/retries.js";
+import { GetReadWriteAccess } from "../../util/query.js";
+import { initRetryInfo, updateRetryInfoTimeout } from "../../util/retries.js";
 import {
   checkPaymentByProposalId,
   confirmPay,
@@ -247,6 +253,14 @@ interface BackupForProviderArgs {
   retryAfterPayment: boolean;
 }
 
+function getNextBackupTimestamp(): Timestamp {
+  // FIXME:  Randomize!
+  return timestampAddDuration(
+    getTimestampNow(),
+    durationFromSpec({ minutes: 5 }),
+  );
+}
+
 async function runBackupCycleForProvider(
   ws: InternalWalletState,
   args: BackupForProviderArgs,
@@ -304,8 +318,11 @@ async function runBackupCycleForProvider(
         if (!prov) {
           return;
         }
-        delete prov.lastError;
         prov.lastBackupCycleTimestamp = getTimestampNow();
+        prov.state = {
+          tag: BackupProviderStateTag.Ready,
+          nextBackupTimestamp: getNextBackupTimestamp(),
+        };
         await tx.backupProvider.put(prov);
       });
     return;
@@ -345,7 +362,9 @@ async function runBackupCycleForProvider(
         ids.add(proposalId);
         provRec.paymentProposalIds = Array.from(ids).sort();
         provRec.currentPaymentProposalId = proposalId;
+        // FIXME: allocate error code for this!
         await tx.backupProviders.put(provRec);
+        await incrementBackupRetryInTx(tx, args.provider.baseUrl, undefined);
       });
 
     if (doPay) {
@@ -376,7 +395,10 @@ async function runBackupCycleForProvider(
         }
         prov.lastBackupHash = encodeCrock(currentBackupHash);
         prov.lastBackupCycleTimestamp = getTimestampNow();
-        prov.lastError = undefined;
+        prov.state = {
+          tag: BackupProviderStateTag.Ready,
+          nextBackupTimestamp: getNextBackupTimestamp(),
+        };
         await tx.backupProviders.put(prov);
       });
     return;
@@ -397,11 +419,19 @@ async function runBackupCycleForProvider(
           return;
         }
         prov.lastBackupHash = encodeCrock(hash(backupEnc));
-        prov.lastBackupCycleTimestamp = getTimestampNow();
-        prov.lastError = undefined;
+        // FIXME:  Allocate error code for this situation?
+        prov.state = {
+          tag: BackupProviderStateTag.Retrying,
+          retryInfo: initRetryInfo(),
+        };
         await tx.backupProvider.put(prov);
       });
     logger.info("processed existing backup");
+    // Now upload our own, merged backup.
+    await runBackupCycleForProvider(ws, {
+      ...args,
+      retryAfterPayment: false,
+    });
     return;
   }
 
@@ -412,15 +442,82 @@ async function runBackupCycleForProvider(
   const err = await readTalerErrorResponse(resp);
   logger.error(`got error response from backup provider: ${j2s(err)}`);
   await ws.db
-    .mktx((x) => ({ backupProvider: x.backupProviders }))
+    .mktx((x) => ({ backupProviders: x.backupProviders }))
     .runReadWrite(async (tx) => {
-      const prov = await tx.backupProvider.get(provider.baseUrl);
-      if (!prov) {
-        return;
-      }
-      prov.lastError = err;
-      await tx.backupProvider.put(prov);
+      incrementBackupRetryInTx(tx, args.provider.baseUrl, err);
     });
+}
+
+async function incrementBackupRetryInTx(
+  tx: GetReadWriteAccess<{
+    backupProviders: typeof WalletStoresV1.backupProviders;
+  }>,
+  backupProviderBaseUrl: string,
+  err: TalerErrorDetails | undefined,
+): Promise<void> {
+  const pr = await tx.backupProviders.get(backupProviderBaseUrl);
+  if (!pr) {
+    return;
+  }
+  if (pr.state.tag === BackupProviderStateTag.Retrying) {
+    pr.state.retryInfo.retryCounter++;
+    pr.state.lastError = err;
+    updateRetryInfoTimeout(pr.state.retryInfo);
+  } else if (pr.state.tag === BackupProviderStateTag.Ready) {
+    pr.state = {
+      tag: BackupProviderStateTag.Retrying,
+      retryInfo: initRetryInfo(),
+      lastError: err,
+    };
+  }
+  await tx.backupProviders.put(pr);
+}
+
+async function incrementBackupRetry(
+  ws: InternalWalletState,
+  backupProviderBaseUrl: string,
+  err: TalerErrorDetails | undefined,
+): Promise<void> {
+  await ws.db
+    .mktx((x) => ({ backupProviders: x.backupProviders }))
+    .runReadWrite(async (tx) =>
+      incrementBackupRetryInTx(tx, backupProviderBaseUrl, err),
+    );
+}
+
+export async function processBackupForProvider(
+  ws: InternalWalletState,
+  backupProviderBaseUrl: string,
+): Promise<void> {
+  const provider = await ws.db
+    .mktx((x) => ({ backupProviders: x.backupProviders }))
+    .runReadOnly(async (tx) => {
+      return await tx.backupProviders.get(backupProviderBaseUrl);
+    });
+  if (!provider) {
+    throw Error("unknown backup provider");
+  }
+
+  const onOpErr = (err: TalerErrorDetails): Promise<void> =>
+    incrementBackupRetry(ws, backupProviderBaseUrl, err);
+
+  const run = async () => {
+    const backupJson = await exportBackup(ws);
+    const backupConfig = await provideBackupState(ws);
+    const encBackup = await encryptBackup(backupConfig, backupJson);
+    const currentBackupHash = hash(encBackup);
+
+    await runBackupCycleForProvider(ws, {
+      provider,
+      backupJson,
+      backupConfig,
+      encBackup,
+      currentBackupHash,
+      retryAfterPayment: true,
+    });
+  };
+
+  await guardOperationException(run, onOpErr);
 }
 
 /**
@@ -436,14 +533,9 @@ export async function runBackupCycle(ws: InternalWalletState): Promise<void> {
     .runReadOnly(async (tx) => {
       return await tx.backupProviders.iter().toArray();
     });
-  logger.trace("got backup providers", providers);
   const backupJson = await exportBackup(ws);
-
-  logger.trace(`running backup cycle with backup JSON: ${j2s(backupJson)}`);
-
   const backupConfig = await provideBackupState(ws);
   const encBackup = await encryptBackup(backupConfig, backupJson);
-
   const currentBackupHash = hash(encBackup);
 
   for (const provider of providers) {
@@ -506,7 +598,10 @@ export async function addBackupProvider(
       if (oldProv) {
         logger.info("old backup provider found");
         if (req.activate) {
-          oldProv.active = true;
+          oldProv.state = {
+            tag: BackupProviderStateTag.Ready,
+            nextBackupTimestamp: getTimestampNow(),
+          };
           logger.info("setting existing backup provider to active");
           await tx.backupProviders.put(oldProv);
         }
@@ -522,8 +617,19 @@ export async function addBackupProvider(
   await ws.db
     .mktx((x) => ({ backupProviders: x.backupProviders }))
     .runReadWrite(async (tx) => {
+      let state: BackupProviderState;
+      if (req.activate) {
+        state = {
+          tag: BackupProviderStateTag.Ready,
+          nextBackupTimestamp: getTimestampNow(),
+        };
+      } else {
+        state = {
+          tag: BackupProviderStateTag.Provisional,
+        };
+      }
       await tx.backupProviders.put({
-        active: !!req.activate,
+        state,
         terms: {
           annualFee: terms.annual_fee,
           storageLimitInMegabytes: terms.storage_limit_in_megabytes,
@@ -531,8 +637,6 @@ export async function addBackupProvider(
         },
         paymentProposalIds: [],
         baseUrl: canonUrl,
-        lastError: undefined,
-        retryInfo: initRetryInfo(false),
         uids: [encodeCrock(getRandomBytes(32))],
       });
     });
@@ -697,11 +801,14 @@ export async function getBackupInfo(
   const providers: ProviderInfo[] = [];
   for (const x of providerRecords) {
     providers.push({
-      active: x.active,
+      active: x.state.tag !== BackupProviderStateTag.Provisional,
       syncProviderBaseUrl: x.baseUrl,
       lastSuccessfulBackupTimestamp: x.lastBackupCycleTimestamp,
       paymentProposalIds: x.paymentProposalIds,
-      lastError: x.lastError,
+      lastError:
+        x.state.tag === BackupProviderStateTag.Retrying
+          ? x.state.lastError
+          : undefined,
       paymentStatus: await getProviderPaymentInfo(ws, x),
       terms: x.terms,
     });
@@ -728,7 +835,7 @@ export async function getBackupRecovery(
     });
   return {
     providers: providers
-      .filter((x) => x.active)
+      .filter((x) => x.state.tag !== BackupProviderStateTag.Provisional)
       .map((x) => {
         return {
           url: x.baseUrl,
@@ -763,11 +870,12 @@ async function backupRecoveryTheirs(
         const existingProv = await tx.backupProviders.get(prov.url);
         if (!existingProv) {
           await tx.backupProviders.put({
-            active: true,
             baseUrl: prov.url,
             paymentProposalIds: [],
-            retryInfo: initRetryInfo(false),
-            lastError: undefined,
+            state: {
+              tag: BackupProviderStateTag.Ready,
+              nextBackupTimestamp: getTimestampNow(),
+            },
             uids: [encodeCrock(getRandomBytes(32))],
           });
         }

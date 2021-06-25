@@ -15,9 +15,9 @@
  */
 
 /**
- * Type and schema definitions for pending operations in the wallet.
+ * Type and schema definitions for pending tasks in the wallet.
  *
- * These are only used internally, and are not part of the public
+ * These are only used internally, and are not part of the stable public
  * interface to the wallet.
  */
 
@@ -32,7 +32,7 @@ import {
 import { ReserveRecordStatus } from "./db.js";
 import { RetryInfo } from "./util/retries.js";
 
-export enum PendingOperationType {
+export enum PendingTaskType {
   ExchangeUpdate = "exchange-update",
   ExchangeCheckRefresh = "exchange-check-refresh",
   Pay = "pay",
@@ -45,31 +45,39 @@ export enum PendingOperationType {
   TipPickup = "tip-pickup",
   Withdraw = "withdraw",
   Deposit = "deposit",
+  Backup = "backup",
 }
 
 /**
  * Information about a pending operation.
  */
-export type PendingOperationInfo = PendingOperationInfoCommon &
+export type PendingTaskInfo = PendingTaskInfoCommon &
   (
-    | PendingExchangeUpdateOperation
-    | PendingExchangeCheckRefreshOperation
-    | PendingPayOperation
-    | PendingProposalDownloadOperation
-    | PendingRefreshOperation
-    | PendingRefundQueryOperation
-    | PendingReserveOperation
-    | PendingTipPickupOperation
-    | PendingWithdrawOperation
-    | PendingRecoupOperation
-    | PendingDepositOperation
+    | PendingExchangeUpdateTask
+    | PendingExchangeCheckRefreshTask
+    | PendingPayTask
+    | PendingProposalDownloadTask
+    | PendingRefreshTask
+    | PendingRefundQueryTask
+    | PendingReserveTask
+    | PendingTipPickupTask
+    | PendingWithdrawTask
+    | PendingRecoupTask
+    | PendingDepositTask
+    | PendingBackupTask
   );
+
+export interface PendingBackupTask {
+  type: PendingTaskType.Backup;
+  backupProviderBaseUrl: string;
+  lastError: TalerErrorDetails | undefined;
+}
 
 /**
  * The wallet is currently updating information about an exchange.
  */
-export interface PendingExchangeUpdateOperation {
-  type: PendingOperationType.ExchangeUpdate;
+export interface PendingExchangeUpdateTask {
+  type: PendingTaskType.ExchangeUpdate;
   exchangeBaseUrl: string;
   lastError: TalerErrorDetails | undefined;
 }
@@ -78,8 +86,8 @@ export interface PendingExchangeUpdateOperation {
  * The wallet should check whether coins from this exchange
  * need to be auto-refreshed.
  */
-export interface PendingExchangeCheckRefreshOperation {
-  type: PendingOperationType.ExchangeCheckRefresh;
+export interface PendingExchangeCheckRefreshTask {
+  type: PendingTaskType.ExchangeCheckRefresh;
   exchangeBaseUrl: string;
 }
 
@@ -100,8 +108,8 @@ export enum ReserveType {
  * Does *not* include the withdrawal operation that might result
  * from this.
  */
-export interface PendingReserveOperation {
-  type: PendingOperationType.Reserve;
+export interface PendingReserveTask {
+  type: PendingTaskType.Reserve;
   retryInfo: RetryInfo | undefined;
   stage: ReserveRecordStatus;
   timestampCreated: Timestamp;
@@ -113,8 +121,8 @@ export interface PendingReserveOperation {
 /**
  * Status of an ongoing withdrawal operation.
  */
-export interface PendingRefreshOperation {
-  type: PendingOperationType.Refresh;
+export interface PendingRefreshTask {
+  type: PendingTaskType.Refresh;
   lastError?: TalerErrorDetails;
   refreshGroupId: string;
   finishedPerCoin: boolean[];
@@ -124,8 +132,8 @@ export interface PendingRefreshOperation {
 /**
  * Status of downloading signed contract terms from a merchant.
  */
-export interface PendingProposalDownloadOperation {
-  type: PendingOperationType.ProposalDownload;
+export interface PendingProposalDownloadTask {
+  type: PendingTaskType.ProposalDownload;
   merchantBaseUrl: string;
   proposalTimestamp: Timestamp;
   proposalId: string;
@@ -139,7 +147,7 @@ export interface PendingProposalDownloadOperation {
  * proposed contract terms.
  */
 export interface PendingProposalChoiceOperation {
-  type: PendingOperationType.ProposalChoice;
+  type: PendingTaskType.ProposalChoice;
   merchantBaseUrl: string;
   proposalTimestamp: Timestamp;
   proposalId: string;
@@ -148,8 +156,8 @@ export interface PendingProposalChoiceOperation {
 /**
  * The wallet is picking up a tip that the user has accepted.
  */
-export interface PendingTipPickupOperation {
-  type: PendingOperationType.TipPickup;
+export interface PendingTipPickupTask {
+  type: PendingTaskType.TipPickup;
   tipId: string;
   merchantBaseUrl: string;
   merchantTipId: string;
@@ -159,8 +167,8 @@ export interface PendingTipPickupOperation {
  * The wallet is signing coins and then sending them to
  * the merchant.
  */
-export interface PendingPayOperation {
-  type: PendingOperationType.Pay;
+export interface PendingPayTask {
+  type: PendingTaskType.Pay;
   proposalId: string;
   isReplay: boolean;
   retryInfo?: RetryInfo;
@@ -171,15 +179,15 @@ export interface PendingPayOperation {
  * The wallet is querying the merchant about whether any refund
  * permissions are available for a purchase.
  */
-export interface PendingRefundQueryOperation {
-  type: PendingOperationType.RefundQuery;
+export interface PendingRefundQueryTask {
+  type: PendingTaskType.RefundQuery;
   proposalId: string;
   retryInfo: RetryInfo;
   lastError: TalerErrorDetails | undefined;
 }
 
-export interface PendingRecoupOperation {
-  type: PendingOperationType.Recoup;
+export interface PendingRecoupTask {
+  type: PendingTaskType.Recoup;
   recoupGroupId: string;
   retryInfo: RetryInfo;
   lastError: TalerErrorDetails | undefined;
@@ -188,8 +196,8 @@ export interface PendingRecoupOperation {
 /**
  * Status of an ongoing withdrawal operation.
  */
-export interface PendingWithdrawOperation {
-  type: PendingOperationType.Withdraw;
+export interface PendingWithdrawTask {
+  type: PendingTaskType.Withdraw;
   lastError: TalerErrorDetails | undefined;
   retryInfo: RetryInfo;
   withdrawalGroupId: string;
@@ -198,8 +206,8 @@ export interface PendingWithdrawOperation {
 /**
  * Status of an ongoing deposit operation.
  */
-export interface PendingDepositOperation {
-  type: PendingOperationType.Deposit;
+export interface PendingDepositTask {
+  type: PendingTaskType.Deposit;
   lastError: TalerErrorDetails | undefined;
   retryInfo: RetryInfo;
   depositGroupId: string;
@@ -208,11 +216,11 @@ export interface PendingDepositOperation {
 /**
  * Fields that are present in every pending operation.
  */
-export interface PendingOperationInfoCommon {
+export interface PendingTaskInfoCommon {
   /**
    * Type of the pending operation.
    */
-  type: PendingOperationType;
+  type: PendingTaskType;
 
   /**
    * Set to true if the operation indicates that something is really in progress,
@@ -239,7 +247,7 @@ export interface PendingOperationsResponse {
   /**
    * List of pending operations.
    */
-  pendingOperations: PendingOperationInfo[];
+  pendingOperations: PendingTaskInfo[];
 
   /**
    * Current wallet balance, including pending balances.

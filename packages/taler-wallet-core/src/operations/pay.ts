@@ -77,6 +77,7 @@ import {
   AbortStatus,
   AllowedAuditorInfo,
   AllowedExchangeInfo,
+  BackupProviderStateTag,
   CoinRecord,
   CoinStatus,
   DenominationRecord,
@@ -489,7 +490,7 @@ async function recordConfirmPay(
       if (p) {
         p.proposalStatus = ProposalStatus.ACCEPTED;
         delete p.lastError;
-        p.retryInfo = initRetryInfo(false);
+        p.retryInfo = initRetryInfo();
         await tx.proposals.put(p);
       }
       await tx.purchases.put(t);
@@ -942,7 +943,7 @@ async function storeFirstPaySuccess(
       purchase.paymentSubmitPending = false;
       purchase.lastPayError = undefined;
       purchase.lastSessionId = sessionId;
-      purchase.payRetryInfo = initRetryInfo(false);
+      purchase.payRetryInfo = initRetryInfo();
       purchase.merchantPaySig = paySig;
       if (isFirst) {
         const ar = purchase.download.contractData.autoRefund;
@@ -978,7 +979,7 @@ async function storePayReplaySuccess(
       }
       purchase.paymentSubmitPending = false;
       purchase.lastPayError = undefined;
-      purchase.payRetryInfo = initRetryInfo(false);
+      purchase.payRetryInfo = initRetryInfo();
       purchase.lastSessionId = sessionId;
       await tx.purchases.put(purchase);
     });
@@ -1097,6 +1098,26 @@ async function handleInsufficientFunds(
       p.coinDepositPermissions = undefined;
       await tx.purchases.put(p);
       await applyCoinSpend(ws, tx, res, `proposal:${p.proposalId}`);
+    });
+}
+
+async function unblockBackup(
+  ws: InternalWalletState,
+  proposalId: string,
+): Promise<void> {
+  await ws.db
+    .mktx((x) => ({ backupProviders: x.backupProviders }))
+    .runReadWrite(async (tx) => {
+      const bp = await tx.backupProviders.indexes.byPaymentProposalId
+        .iter(proposalId)
+        .forEachAsync(async (bp) => {
+          if (bp.state.tag === BackupProviderStateTag.Retrying) {
+            bp.state = {
+              tag: BackupProviderStateTag.Ready,
+              nextBackupTimestamp: getTimestampNow(),
+            };
+          }
+        });
     });
 }
 
@@ -1228,6 +1249,7 @@ async function submitPay(
     }
 
     await storeFirstPaySuccess(ws, proposalId, sessionId, merchantResp.sig);
+    await unblockBackup(ws, proposalId);
   } else {
     const payAgainUrl = new URL(
       `orders/${purchase.download.contractData.orderId}/paid`,
@@ -1266,6 +1288,7 @@ async function submitPay(
       );
     }
     await storePayReplaySuccess(ws, proposalId, sessionId);
+    await unblockBackup(ws, proposalId);
   }
 
   ws.notify({

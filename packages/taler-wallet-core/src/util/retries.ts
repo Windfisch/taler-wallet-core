@@ -72,13 +72,11 @@ export function getRetryDuration(
 }
 
 export function initRetryInfo(
-  active = true,
   p: RetryPolicy = defaultRetryPolicy,
 ): RetryInfo {
   const now = getTimestampNow();
   const info = {
     firstTry: now,
-    active: true,
     nextRetry: now,
     retryCounter: 0,
   };

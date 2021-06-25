@@ -50,6 +50,7 @@ export enum NotificationType {
   RefundApplyOperationError = "refund-apply-error",
   RefundStatusOperationError = "refund-status-error",
   ProposalOperationError = "proposal-error",
+  BackupOperationError = "backup-error",
   TipOperationError = "tip-error",
   PayOperationError = "pay-error",
   PayOperationSuccess = "pay-operation-success",
@@ -159,6 +160,11 @@ export interface RefreshOperationErrorNotification {
   error: TalerErrorDetails;
 }
 
+export interface BackupOperationErrorNotification {
+  type: NotificationType.BackupOperationError;
+  error: TalerErrorDetails;
+}
+
 export interface RefundStatusOperationErrorNotification {
   type: NotificationType.RefundStatusOperationError;
   error: TalerErrorDetails;
@@ -234,6 +240,7 @@ export interface PayOperationSuccessNotification {
 }
 
 export type WalletNotification =
+  | BackupOperationErrorNotification
   | WithdrawOperationErrorNotification
   | ReserveOperationErrorNotification
   | ExchangeOperationErrorNotification

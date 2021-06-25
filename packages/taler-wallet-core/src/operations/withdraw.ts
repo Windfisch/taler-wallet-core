@@ -875,7 +875,7 @@ async function processWithdrawGroupImpl(
         finishedForFirstTime = true;
         wg.timestampFinish = getTimestampNow();
         wg.lastError = undefined;
-        wg.retryInfo = initRetryInfo(false);
+        wg.retryInfo = initRetryInfo();
       }
 
       await tx.withdrawalGroups.put(wg);

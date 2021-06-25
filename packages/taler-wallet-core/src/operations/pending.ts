@@ -15,6 +15,10 @@
  */
 
 /**
+ * Derive pending tasks from the wallet database.
+ */
+
+/**
  * Imports.
  */
 import {
@@ -22,13 +26,18 @@ import {
   ReserveRecordStatus,
   AbortStatus,
   WalletStoresV1,
+  BackupProviderStateTag,
 } from "../db.js";
 import {
   PendingOperationsResponse,
-  PendingOperationType,
+  PendingTaskType,
   ReserveType,
 } from "../pending-types.js";
-import { getTimestampNow, Timestamp } from "@gnu-taler/taler-util";
+import {
+  getTimestampNow,
+  isTimestampExpired,
+  Timestamp,
+} from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../common.js";
 import { getBalancesInsideTransaction } from "./balance.js";
 import { GetReadOnlyAccess } from "../util/query.js";
@@ -43,7 +52,7 @@ async function gatherExchangePending(
 ): Promise<void> {
   await tx.exchanges.iter().forEachAsync(async (e) => {
     resp.pendingOperations.push({
-      type: PendingOperationType.ExchangeUpdate,
+      type: PendingTaskType.ExchangeUpdate,
       givesLifeness: false,
       timestampDue: e.nextUpdate,
       exchangeBaseUrl: e.baseUrl,
@@ -51,7 +60,7 @@ async function gatherExchangePending(
     });
 
     resp.pendingOperations.push({
-      type: PendingOperationType.ExchangeCheckRefresh,
+      type: PendingTaskType.ExchangeCheckRefresh,
       timestampDue: e.nextRefreshCheck,
       givesLifeness: false,
       exchangeBaseUrl: e.baseUrl,
@@ -76,7 +85,7 @@ async function gatherReservePending(
       case ReserveRecordStatus.QUERYING_STATUS:
       case ReserveRecordStatus.REGISTERING_BANK:
         resp.pendingOperations.push({
-          type: PendingOperationType.Reserve,
+          type: PendingTaskType.Reserve,
           givesLifeness: true,
           timestampDue: reserve.retryInfo.nextRetry,
           stage: reserve.reserveStatus,
@@ -103,7 +112,7 @@ async function gatherRefreshPending(
       return;
     }
     resp.pendingOperations.push({
-      type: PendingOperationType.Refresh,
+      type: PendingTaskType.Refresh,
       givesLifeness: true,
       timestampDue: r.retryInfo.nextRetry,
       refreshGroupId: r.refreshGroupId,
@@ -136,7 +145,7 @@ async function gatherWithdrawalPending(
         }
       });
     resp.pendingOperations.push({
-      type: PendingOperationType.Withdraw,
+      type: PendingTaskType.Withdraw,
       givesLifeness: true,
       timestampDue: wsr.retryInfo.nextRetry,
       withdrawalGroupId: wsr.withdrawalGroupId,
@@ -157,7 +166,7 @@ async function gatherProposalPending(
     } else if (proposal.proposalStatus == ProposalStatus.DOWNLOADING) {
       const timestampDue = proposal.retryInfo?.nextRetry ?? getTimestampNow();
       resp.pendingOperations.push({
-        type: PendingOperationType.ProposalDownload,
+        type: PendingTaskType.ProposalDownload,
         givesLifeness: true,
         timestampDue,
         merchantBaseUrl: proposal.merchantBaseUrl,
@@ -182,7 +191,7 @@ async function gatherTipPending(
     }
     if (tip.acceptedTimestamp) {
       resp.pendingOperations.push({
-        type: PendingOperationType.TipPickup,
+        type: PendingTaskType.TipPickup,
         givesLifeness: true,
         timestampDue: tip.retryInfo.nextRetry,
         merchantBaseUrl: tip.merchantBaseUrl,
@@ -202,7 +211,7 @@ async function gatherPurchasePending(
     if (pr.paymentSubmitPending && pr.abortStatus === AbortStatus.None) {
       const timestampDue = pr.payRetryInfo?.nextRetry ?? getTimestampNow();
       resp.pendingOperations.push({
-        type: PendingOperationType.Pay,
+        type: PendingTaskType.Pay,
         givesLifeness: true,
         timestampDue,
         isReplay: false,
@@ -213,7 +222,7 @@ async function gatherPurchasePending(
     }
     if (pr.refundQueryRequested) {
       resp.pendingOperations.push({
-        type: PendingOperationType.RefundQuery,
+        type: PendingTaskType.RefundQuery,
         givesLifeness: true,
         timestampDue: pr.refundStatusRetryInfo.nextRetry,
         proposalId: pr.proposalId,
@@ -234,7 +243,7 @@ async function gatherRecoupPending(
       return;
     }
     resp.pendingOperations.push({
-      type: PendingOperationType.Recoup,
+      type: PendingTaskType.Recoup,
       givesLifeness: true,
       timestampDue: rg.retryInfo.nextRetry,
       recoupGroupId: rg.recoupGroupId,
@@ -244,23 +253,32 @@ async function gatherRecoupPending(
   });
 }
 
-async function gatherDepositPending(
-  tx: GetReadOnlyAccess<{ depositGroups: typeof WalletStoresV1.depositGroups }>,
+async function gatherBackupPending(
+  tx: GetReadOnlyAccess<{
+    backupProviders: typeof WalletStoresV1.backupProviders;
+  }>,
   now: Timestamp,
   resp: PendingOperationsResponse,
 ): Promise<void> {
-  await tx.depositGroups.iter().forEach((dg) => {
-    if (dg.timestampFinished) {
-      return;
+  await tx.backupProviders.iter().forEach((bp) => {
+    if (bp.state.tag === BackupProviderStateTag.Ready) {
+      resp.pendingOperations.push({
+        type: PendingTaskType.Backup,
+        givesLifeness: false,
+        timestampDue: bp.state.nextBackupTimestamp,
+        backupProviderBaseUrl: bp.baseUrl,
+        lastError: undefined,
+      });
+    } else if (bp.state.tag === BackupProviderStateTag.Retrying) {
+      resp.pendingOperations.push({
+        type: PendingTaskType.Backup,
+        givesLifeness: false,
+        timestampDue: bp.state.retryInfo.nextRetry,
+        backupProviderBaseUrl: bp.baseUrl,
+        retryInfo: bp.state.retryInfo,
+        lastError: bp.state.lastError,
+      });
     }
-    resp.pendingOperations.push({
-      type: PendingOperationType.Deposit,
-      givesLifeness: true,
-      timestampDue: dg.retryInfo.nextRetry,
-      depositGroupId: dg.depositGroupId,
-      retryInfo: dg.retryInfo,
-      lastError: dg.lastError,
-    });
   });
 }
 
@@ -270,6 +288,7 @@ export async function getPendingOperations(
   const now = getTimestampNow();
   return await ws.db
     .mktx((x) => ({
+      backupProviders: x.backupProviders,
       exchanges: x.exchanges,
       exchangeDetails: x.exchangeDetails,
       reserves: x.reserves,
@@ -297,7 +316,7 @@ export async function getPendingOperations(
       await gatherTipPending(tx, now, resp);
       await gatherPurchasePending(tx, now, resp);
       await gatherRecoupPending(tx, now, resp);
-      await gatherDepositPending(tx, now, resp);
+      await gatherBackupPending(tx, now, resp);
       return resp;
     });
 }

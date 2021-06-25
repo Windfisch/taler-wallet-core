@@ -44,6 +44,7 @@ import {
   getBackupInfo,
   getBackupRecovery,
   loadBackupRecovery,
+  processBackupForProvider,
   runBackupCycle,
 } from "./operations/backup/index.js";
 import { exportBackup } from "./operations/backup/export.js";
@@ -118,9 +119,9 @@ import {
 } from "./db.js";
 import { NotificationType } from "@gnu-taler/taler-util";
 import {
-  PendingOperationInfo,
+  PendingTaskInfo,
   PendingOperationsResponse,
-  PendingOperationType,
+  PendingTaskType,
 } from "./pending-types.js";
 import { CoinDumpJson } from "@gnu-taler/taler-util";
 import { codecForTransactionsRequest } from "@gnu-taler/taler-util";
@@ -206,43 +207,46 @@ async function getWithdrawalDetailsForAmount(
  */
 async function processOnePendingOperation(
   ws: InternalWalletState,
-  pending: PendingOperationInfo,
+  pending: PendingTaskInfo,
   forceNow = false,
 ): Promise<void> {
   logger.trace(`running pending ${JSON.stringify(pending, undefined, 2)}`);
   switch (pending.type) {
-    case PendingOperationType.ExchangeUpdate:
+    case PendingTaskType.ExchangeUpdate:
       await updateExchangeFromUrl(ws, pending.exchangeBaseUrl, forceNow);
       break;
-    case PendingOperationType.Refresh:
+    case PendingTaskType.Refresh:
       await processRefreshGroup(ws, pending.refreshGroupId, forceNow);
       break;
-    case PendingOperationType.Reserve:
+    case PendingTaskType.Reserve:
       await processReserve(ws, pending.reservePub, forceNow);
       break;
-    case PendingOperationType.Withdraw:
+    case PendingTaskType.Withdraw:
       await processWithdrawGroup(ws, pending.withdrawalGroupId, forceNow);
       break;
-    case PendingOperationType.ProposalDownload:
+    case PendingTaskType.ProposalDownload:
       await processDownloadProposal(ws, pending.proposalId, forceNow);
       break;
-    case PendingOperationType.TipPickup:
+    case PendingTaskType.TipPickup:
       await processTip(ws, pending.tipId, forceNow);
       break;
-    case PendingOperationType.Pay:
+    case PendingTaskType.Pay:
       await processPurchasePay(ws, pending.proposalId, forceNow);
       break;
-    case PendingOperationType.RefundQuery:
+    case PendingTaskType.RefundQuery:
       await processPurchaseQueryRefund(ws, pending.proposalId, forceNow);
       break;
-    case PendingOperationType.Recoup:
+    case PendingTaskType.Recoup:
       await processRecoupGroup(ws, pending.recoupGroupId, forceNow);
       break;
-    case PendingOperationType.ExchangeCheckRefresh:
+    case PendingTaskType.ExchangeCheckRefresh:
       await autoRefresh(ws, pending.exchangeBaseUrl);
       break;
-    case PendingOperationType.Deposit:
+    case PendingTaskType.Deposit:
       await processDepositGroup(ws, pending.depositGroupId);
+      break;
+    case PendingTaskType.Backup:
+      await processBackupForProvider(ws, pending.backupProviderBaseUrl);
       break;
     default:
       assertUnreachable(pending);

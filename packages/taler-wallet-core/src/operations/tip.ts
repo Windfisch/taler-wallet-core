@@ -388,7 +388,7 @@ async function processTipImpl(
       }
       tr.pickedUpTimestamp = getTimestampNow();
       tr.lastError = undefined;
-      tr.retryInfo = initRetryInfo(false);
+      tr.retryInfo = initRetryInfo();
       await tx.tips.put(tr);
       for (const cr of newCoinRecords) {
         await tx.coins.put(cr);

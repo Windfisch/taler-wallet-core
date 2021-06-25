@@ -1552,10 +1552,25 @@ export interface RecoupGroupRecord {
   lastError: TalerErrorDetails | undefined;
 }
 
-export enum BackupProviderStatus {
-  PaymentRequired = "payment-required",
+export enum BackupProviderStateTag {
+  Provisional = "provisional",
   Ready = "ready",
+  Retrying = "retrying",
 }
+
+export type BackupProviderState =
+  | {
+      tag: BackupProviderStateTag.Provisional;
+    }
+  | {
+      tag: BackupProviderStateTag.Ready;
+      nextBackupTimestamp: Timestamp;
+    }
+  | {
+      tag: BackupProviderStateTag.Retrying;
+      retryInfo: RetryInfo;
+      lastError?: TalerErrorDetails;
+    };
 
 export interface BackupProviderTerms {
   supportedProtocolVersion: string;
@@ -1578,8 +1593,6 @@ export interface BackupProviderRecord {
    */
   terms?: BackupProviderTerms;
 
-  active: boolean;
-
   /**
    * Hash of the last encrypted backup that we already merged
    * or successfully uploaded ourselves.
@@ -1599,6 +1612,8 @@ export interface BackupProviderRecord {
    * Proposal that we're currently trying to pay for.
    *
    * (Also included in paymentProposalIds.)
+   *
+   * FIXME:  Make this part of a proper BackupProviderState?
    */
   currentPaymentProposalId?: string;
 
@@ -1610,20 +1625,7 @@ export interface BackupProviderRecord {
    */
   paymentProposalIds: string[];
 
-  /**
-   * Next scheduled backup.
-   */
-  nextBackupTimestamp?: Timestamp;
-
-  /**
-   * Retry info.
-   */
-  retryInfo: RetryInfo;
-
-  /**
-   * Last error that occurred, if any.
-   */
-  lastError: TalerErrorDetails | undefined;
+  state: BackupProviderState;
 
   /**
    * UIDs for the operation that added the backup provider.
@@ -1851,7 +1853,15 @@ export const WalletStoresV1 = {
     describeContents<BackupProviderRecord>("backupProviders", {
       keyPath: "baseUrl",
     }),
-    {},
+    {
+      byPaymentProposalId: describeIndex(
+        "byPaymentProposalId",
+        "paymentProposalIds",
+        {
+          multiEntry: true,
+        },
+      ),
+    },
   ),
   depositGroups: describeStore(
     describeContents<DepositGroupRecord>("depositGroups", {

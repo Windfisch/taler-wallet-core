@@ -297,7 +297,7 @@ async function provideExchangeRecord(
         r = {
           permanent: true,
           baseUrl: baseUrl,
-          retryInfo: initRetryInfo(false),
+          retryInfo: initRetryInfo(),
           detailsPointer: undefined,
           lastUpdate: undefined,
           nextUpdate: now,
@@ -498,7 +498,7 @@ async function updateExchangeFromUrlImpl(
       };
       // FIXME: only update if pointer got updated
       r.lastError = undefined;
-      r.retryInfo = initRetryInfo(false);
+      r.retryInfo = initRetryInfo();
       r.lastUpdate = getTimestampNow();
       (r.nextUpdate = keysInfo.expiry),
         // New denominations might be available.

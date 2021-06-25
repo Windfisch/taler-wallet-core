@@ -651,7 +651,7 @@ async function updateReserve(
       if (denomSelInfo.selectedDenoms.length === 0) {
         newReserve.reserveStatus = ReserveRecordStatus.DORMANT;
         newReserve.lastError = undefined;
-        newReserve.retryInfo = initRetryInfo(false);
+        newReserve.retryInfo = initRetryInfo();
         await tx.reserves.put(newReserve);
         return;
       }
@@ -679,7 +679,7 @@ async function updateReserve(
       };
 
       newReserve.lastError = undefined;
-      newReserve.retryInfo = initRetryInfo(false);
+      newReserve.retryInfo = initRetryInfo();
       newReserve.reserveStatus = ReserveRecordStatus.DORMANT;
 
       await tx.reserves.put(newReserve);
