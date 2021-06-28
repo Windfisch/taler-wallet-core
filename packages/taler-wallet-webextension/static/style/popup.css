@@ -234,12 +234,15 @@ button.accept:disabled {
 }
 
 .errorbox {
-  border: 1px solid;
-  display: inline-block;
-  margin: 1em;
-  padding: 1em;
-  font-weight: bold;
-  background: #ff8a8a;
+  border: 2px solid #f5c6cb;
+  border-radius: .25em;
+  display: block;
+  /* margin: 0.5em; */
+  padding-left: 1em;
+  padding-right: 1em;
+  width: '100%';
+  color: #721c24;
+  background: #f8d7da;
 }
 
 .okaybox {

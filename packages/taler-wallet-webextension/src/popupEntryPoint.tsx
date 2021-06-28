@@ -25,7 +25,8 @@ import { setupI18n } from "@gnu-taler/taler-util";
 import { strings } from "./i18n/strings";
 import { useEffect } from "preact/hooks";
 import {
-  Pages, WalletNavBar} from "./popup/popup";
+  Pages, WalletNavBar
+} from "./popup/popup";
 import { HistoryPage } from "./popup/History";
 import { DebugPage } from "./popup/Debug";
 import { SettingsPage } from "./popup/Settings";
@@ -67,7 +68,7 @@ function TalerActionFound({ url, onDismiss }: Props) {
     <h1>Taler Action </h1>
     <p>This page has a Taler action.</p>
     <p>
-      <button onClick={() => { window.open(url, "_blank"); }}>
+      <button onClick={() => { chrome.tabs.create({ "url": url }); }}>
         Open
       </button>
     </p>

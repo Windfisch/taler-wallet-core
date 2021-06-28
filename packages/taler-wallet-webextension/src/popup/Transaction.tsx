@@ -44,16 +44,18 @@ export function TransactionPage({ tid }: { tid: string; }): JSX.Element {
   return <TransactionView
     transaction={transaction}
     onDelete={() => wxApi.deleteTransaction(tid).then(_ => history.go(-1))}
+    onRetry={() => wxApi.retryTransaction(tid).then(_ => history.go(-1))}
     onBack={() => { history.go(-1); }} />;
 }
 
 export interface WalletTransactionProps {
   transaction?: Transaction,
   onDelete: () => void,
+  onRetry: () => void,
   onBack: () => void,
 }
 
-export function TransactionView({ transaction, onDelete, onBack }: WalletTransactionProps) {
+export function TransactionView({ transaction, onDelete, onRetry, onBack }: WalletTransactionProps) {
   if (!transaction) {
     return <div><i18n.Translate>Loading ...</i18n.Translate></div>;
   }
@@ -62,15 +64,26 @@ export function TransactionView({ transaction, onDelete, onBack }: WalletTransac
     return <footer style={{ marginTop: 'auto', display: 'flex', flexShrink: 0 }}>
       <button onClick={onBack}><i18n.Translate>back</i18n.Translate></button>
       <div style={{ width: '100%', flexDirection: 'row', justifyContent: 'flex-end', display: 'flex' }}>
-        <button class="pure-button button-destructive" onClick={onDelete}><i18n.Translate>delete</i18n.Translate></button>
+        {transaction?.error ? <button class="pure-button button-secondary" style={{marginRight: 5}} onClick={onRetry}><i18n.Translate>retry</i18n.Translate></button> : null }
+        <button class="pure-button button-destructive"  onClick={onDelete}><i18n.Translate>delete</i18n.Translate></button>
       </div>
 
     </footer>
   }
 
-  function Pending() {
+  function Status() {
+    if (transaction?.error) {
+      return <span style={{ fontWeight: 'normal', fontSize: 16, color: 'red' }}>(failed)</span>
+    }
     if (!transaction?.pending) return null
     return <span style={{ fontWeight: 'normal', fontSize: 16, color: 'gray' }}>(pending...)</span>
+  }
+
+  function Error() {
+    if (!transaction?.error) return null
+    return <div class="errorbox" >
+      <p>{transaction.error.hint}</p>
+    </div>
   }
 
   const Fee = ({ value }: { value: AmountJson }) => Amounts.isNonZero(value) ?
@@ -88,7 +101,8 @@ export function TransactionView({ transaction, onDelete, onBack }: WalletTransac
           <span style="float: right; font-size:small; color:gray">
             From <b>{transaction.exchangeBaseUrl}</b>
           </span>
-          <h3>Withdraw <Pending /></h3>
+          <Error />
+          <h3>Withdraw <Status /></h3>
           <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
         </section>
         <Footer />
@@ -113,7 +127,8 @@ export function TransactionView({ transaction, onDelete, onBack }: WalletTransac
           <span style="float: right; font-size:small; color:gray">
             To <b>{transaction.info.merchant.name}</b>
           </span>
-          <h3>Payment <Pending /></h3>
+          <Error />
+          <h3>Payment <Status /></h3>
           <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
           <span style="font-size:small; color:gray">#{transaction.info.orderId}</span>
           <p>
@@ -151,7 +166,8 @@ export function TransactionView({ transaction, onDelete, onBack }: WalletTransac
           <span style="float: right; font-size:small; color:gray">
             To <b>{transaction.targetPaytoUri}</b>
           </span>
-          <h3>Deposit <Pending /></h3>
+          <Error />
+          <h3>Deposit <Status /></h3>
           <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
         </section>
         <Footer />
@@ -171,7 +187,8 @@ export function TransactionView({ transaction, onDelete, onBack }: WalletTransac
           <span style="float: right; font-size:small; color:gray">
             From <b>{transaction.exchangeBaseUrl}</b>
           </span>
-          <h3>Refresh <Pending /></h3>
+          <Error />
+          <h3>Refresh <Status /></h3>
           <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
         </section>
         <Footer />
@@ -191,7 +208,8 @@ export function TransactionView({ transaction, onDelete, onBack }: WalletTransac
           <span style="float: right; font-size:small; color:gray">
             From <b>{transaction.merchantBaseUrl}</b>
           </span>
-          <h3>Tip <Pending /></h3>
+          <Error />
+          <h3>Tip <Status /></h3>
           <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
         </section>
         <Footer />
@@ -211,7 +229,8 @@ export function TransactionView({ transaction, onDelete, onBack }: WalletTransac
           <span style="float: right; font-size:small; color:gray">
             From <b>{transaction.info.merchant.name}</b>
           </span>
-          <h3>Refund <Pending /></h3>
+          <Error />
+          <h3>Refund <Status /></h3>
           <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
           <span style="font-size:small; color:gray">#{transaction.info.orderId}</span>
           <p>

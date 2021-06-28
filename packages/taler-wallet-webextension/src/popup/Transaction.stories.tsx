@@ -32,6 +32,11 @@ import { TransactionView as TestedComponent } from './Transaction';
 export default {
   title: 'popup/transaction/details',
   component: TestedComponent,
+  argTypes: {
+    onRetry: { action: 'onRetry' },
+    onDelete: { action: 'onDelete' },
+    onBack: { action: 'onBack' },
+  }
 };
 
 const commonTransaction = {
@@ -105,6 +110,13 @@ const exampleData = {
   } as TransactionRefund,
 }
 
+const transactionError = {
+  code: 2000,
+  details: "details",
+  hint: "this is a hint for the error",
+  message: 'message'
+}
+
 function createExample<Props>(Component: FunctionalComponent<Props>, props: Partial<Props>) {
   const r = (args: any) => <Component {...args} />
   r.args = props
@@ -117,6 +129,13 @@ export const Withdraw = createExample(TestedComponent, {
   transaction: exampleData.withdraw
 });
 
+export const WithdrawError = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.withdraw,
+    error: transactionError,
+  },
+});
+
 export const WithdrawPending = createExample(TestedComponent, {
   transaction: { ...exampleData.withdraw, pending: true },
 });
@@ -124,6 +143,13 @@ export const WithdrawPending = createExample(TestedComponent, {
 
 export const Payment = createExample(TestedComponent, {
   transaction: exampleData.payment
+});
+
+export const PaymentError = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.payment,
+    error: transactionError
+  },
 });
 
 export const PaymentWithoutFee = createExample(TestedComponent, {
@@ -191,6 +217,13 @@ export const Deposit = createExample(TestedComponent, {
   transaction: exampleData.deposit
 });
 
+export const DepositError = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.deposit,
+    error: transactionError
+  },
+});
+
 export const DepositPending = createExample(TestedComponent, {
   transaction: { ...exampleData.deposit, pending: true }
 });
@@ -199,8 +232,22 @@ export const Refresh = createExample(TestedComponent, {
   transaction: exampleData.refresh
 });
 
+export const RefreshError = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.refresh,
+    error: transactionError
+  },
+});
+
 export const Tip = createExample(TestedComponent, {
   transaction: exampleData.tip
+});
+
+export const TipError = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.tip,
+    error: transactionError
+  },
 });
 
 export const TipPending = createExample(TestedComponent, {
@@ -209,6 +256,13 @@ export const TipPending = createExample(TestedComponent, {
 
 export const Refund = createExample(TestedComponent, {
   transaction: exampleData.refund
+});
+
+export const RefundError = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.refund,
+    error: transactionError
+  },
 });
 
 export const RefundPending = createExample(TestedComponent, {
