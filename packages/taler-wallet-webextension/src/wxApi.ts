@@ -126,12 +126,18 @@ export function getBalance(): Promise<BalancesResponse> {
 }
 
 /**
- * Get balances for all currencies/exchanges.
+ * Retrieve the full event history for this wallet.
  */
 export function getTransactions(): Promise<TransactionsResponse> {
   return callBackend("getTransactions", {});
 }
 
+/**
+ * Get currency from known auditors and exchanges
+ */
+ export function listCurrencies(): Promise<TransactionsResponse> {
+  return callBackend("listCurrencies", {});
+}
 /**
  * Retry a transaction
  * @param transactionId 

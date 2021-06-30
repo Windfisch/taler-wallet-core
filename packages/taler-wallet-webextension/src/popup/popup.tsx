@@ -24,9 +24,7 @@
 /**
  * Imports.
  */
-import {
-  classifyTalerUri, i18n, TalerUriType
-} from "@gnu-taler/taler-util";
+import { i18n } from "@gnu-taler/taler-util";
 import { ComponentChildren, JSX } from "preact";
 import Match from "preact-router/match";
 import { useDevContext } from "../context/useDevContext";
