@@ -29,12 +29,16 @@ body {
 
 .nav {
   background-color: #033;
-  padding: 0.5em 0;
+  /* padding: 0.5em 0; */
 }
 
 .nav a {
   color: #f8faf7;
-  padding: 0.7em 1.4em;
+  padding-top: 0.7em;
+  display: inline-block;
+  width: calc(400px / 5);
+  padding-bottom: 0.7em;
+  text-align: center;
   text-decoration: none;
 }
 
@@ -235,12 +239,12 @@ button.accept:disabled {
 
 .errorbox {
   border: 2px solid #f5c6cb;
-  border-radius: .25em;
+  border-radius: 0.25em;
   display: block;
   /* margin: 0.5em; */
   padding-left: 1em;
   padding-right: 1em;
-  width: '100%';
+  width: "100%";
   color: #721c24;
   background: #f8d7da;
 }
@@ -286,7 +290,7 @@ table.detailsTable.pending {
 .overflow::before {
   position: absolute;
   content: "...";
-/*   inset-block-end: 0;
+  /*   inset-block-end: 0;
   inset-inline-end: 0; */
   bottom: 0;
   right: 0;
@@ -294,7 +298,7 @@ table.detailsTable.pending {
 .overflow::after {
   content: "";
   position: absolute;
-/*   inset-inline-end: 0; */
+  /*   inset-inline-end: 0; */
   right: 0;
   width: 1rem;
   height: 1rem;

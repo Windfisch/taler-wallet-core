@@ -16,22 +16,29 @@
 
 import { JSX } from "preact/jsx-runtime";
 
-export function PermissionsCheckbox({ enabled, onToggle }: { enabled: boolean; onToggle: () => void; }): JSX.Element {
+interface Props {
+  enabled: boolean;
+  onToggle: () => void;
+  label: string;
+  name: string;
+  description?: string;
+}
+export function Checkbox({ name, enabled, onToggle, label, description }: Props): JSX.Element {
   return (
     <div>
       <input
         checked={enabled}
         onClick={onToggle}
         type="checkbox"
-        id="checkbox-perm"
+        id={`checkbox-${name}`}
         style={{ width: "1.5em", height: "1.5em", verticalAlign: "middle" }} />
       <label
-        htmlFor="checkbox-perm"
+        htmlFor={`checkbox-${name}`}
         style={{ marginLeft: "0.5em", fontWeight: "bold" }}
       >
-        Automatically open wallet based on page content
+        {label}
       </label>
-      <span
+      {description && <span
         style={{
           color: "#383838",
           fontSize: "smaller",
@@ -39,9 +46,8 @@ export function PermissionsCheckbox({ enabled, onToggle }: { enabled: boolean; o
           marginLeft: "2em",
         }}
       >
-        (Enabling this option below will make using the wallet faster, but
-        requires more permissions from your browser.)
-      </span>
+        {description}
+      </span>}
     </div>
   );
 }

@@ -21,7 +21,7 @@
  */
 
 import { JSX } from "preact/jsx-runtime";
-import { PermissionsCheckbox } from "../components/PermissionsCheckbox";
+import { Checkbox } from "../components/Checkbox";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
 import { Diagnostics } from "../components/Diagnostics";
 
@@ -32,7 +32,11 @@ export function WelcomePage(): JSX.Element {
       <p>Thank you for installing the wallet.</p>
       <Diagnostics />
       <h2>Permissions</h2>
-      <PermissionsCheckbox enabled={permissionsEnabled} onToggle={togglePermissions}/>
+      <Checkbox label="Automatically open wallet based on page content"
+        name="perm"
+        description="(Enabling this option below will make using the wallet faster, but requires more permissions from your browser.)"
+        enabled={permissionsEnabled} onToggle={togglePermissions}
+      />
       <h2>Next Steps</h2>
       <a href="https://demo.taler.net/" style={{ display: "block" }}>
         Try the demo »

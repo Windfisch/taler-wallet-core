@@ -15,20 +15,42 @@
 */
 
 
-import { PermissionsCheckbox } from "../components/PermissionsCheckbox";
+import { VNode } from "preact";
+import { Checkbox } from "../components/Checkbox";
+import { useDevContext } from "../context/useDevContext";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
 
-
-export function SettingsPage() {
+export function SettingsPage(): VNode {
   const [permissionsEnabled, togglePermissions] = useExtendedPermissions();
+  const { devMode, toggleDevMode } = useDevContext()
+  return <SettingsView 
+    permissionsEnabled={permissionsEnabled} togglePermissions={togglePermissions}
+    developerMode={devMode} toggleDeveloperMode={toggleDevMode}
+  />;
+}
+
+export interface ViewProps {
+  permissionsEnabled: boolean;
+  togglePermissions: () => void;
+  developerMode: boolean;
+  toggleDeveloperMode: () => void;
+}
+
+export function SettingsView({permissionsEnabled, togglePermissions, developerMode, toggleDeveloperMode}: ViewProps): VNode {
   return (
     <div>
       <h2>Permissions</h2>
-      <PermissionsCheckbox enabled={permissionsEnabled} onToggle={togglePermissions} />
-      {/*
-            <h2>Developer mode</h2>
-            <DebugCheckbox enabled={permissionsEnabled} onToggle={togglePermissions} />
-            */}
+      <Checkbox label="Automatically open wallet based on page content"
+        name="perm"
+        description="(Enabling this option below will make using the wallet faster, but requires more permissions from your browser.)"
+        enabled={permissionsEnabled} onToggle={togglePermissions} 
+      />
+      <h2>Config</h2>
+      <Checkbox label="Developer mode"
+        name="devMode"
+        description="(More options and information useful for debugging)"
+        enabled={developerMode} onToggle={toggleDeveloperMode} 
+      />
     </div>
-  );
+  )
 }

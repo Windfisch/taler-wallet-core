@@ -20,7 +20,7 @@
  * @author Florian Dold <dold@taler.net>
  */
 
-import { render } from "preact";
+import { Fragment, render } from "preact";
 import { setupI18n } from "@gnu-taler/taler-util";
 import { strings } from "./i18n/strings";
 import { useEffect } from "preact/hooks";
@@ -28,14 +28,16 @@ import {
   Pages, WalletNavBar
 } from "./popup/popup";
 import { HistoryPage } from "./popup/History";
-import { DebugPage } from "./popup/Debug";
+import { DeveloperPage as DeveloperPage } from "./popup/Debug";
 import { SettingsPage } from "./popup/Settings";
 import { TransactionPage } from "./popup/Transaction";
 import { BalancePage } from "./popup/Balance";
 import Match from "preact-router/match";
-import Router, { route, Route } from "preact-router";
+import Router, { getCurrentUrl, route, Route } from "preact-router";
 import { useTalerActionURL } from "./hooks/useTalerActionURL";
 import { createHashHistory } from "history";
+import { DevContextProvider } from "./context/useDevContext";
+import { BackupPage } from "./popup/BackupPage";
 
 function main(): void {
   try {
@@ -88,17 +90,20 @@ function Application() {
 
   return (
     <div>
-      <Match>{({ path }: any) => <WalletNavBar current={path} />}</Match >
-      <div style={{ padding: 8, width: 'calc(400px - 16px)', height: 'calc(320px - 34px - 16px)' }}>
-        <Router history={createHashHistory()}>
-          <Route path={Pages.balance} component={BalancePage} />
-          <Route path={Pages.settings} component={SettingsPage} />
-          <Route path={Pages.debug} component={DebugPage} />
-          <Route path={Pages.history} component={HistoryPage} />
-          <Route path={Pages.transaction} component={TransactionPage} />
-          <Route default component={Redirect} to={Pages.balance} />
-        </Router>
-      </div>
+      <DevContextProvider>
+        <WalletNavBar />
+        <div style={{ padding: 8, width: 'calc(400px - 16px)', height: 'calc(320px - 34px - 16px)' }}>
+          <Router history={createHashHistory()}>
+            <Route path={Pages.balance} component={BalancePage} />
+            <Route path={Pages.settings} component={SettingsPage} />
+            <Route path={Pages.dev} component={DeveloperPage} />
+            <Route path={Pages.history} component={HistoryPage} />
+            <Route path={Pages.backup} component={BackupPage} />
+            <Route path={Pages.transaction} component={TransactionPage} />
+            <Route default component={Redirect} to={Pages.balance} />
+          </Router>
+        </div>
+      </DevContextProvider>
     </div>
   );
 }

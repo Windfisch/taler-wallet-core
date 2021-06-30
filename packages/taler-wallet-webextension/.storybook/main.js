@@ -25,6 +25,7 @@ module.exports = {
     "../src/**/*.stories.tsx",
   ],
   "addons": [
+    "storybook-dark-mode",
     "@storybook/addon-a11y",
     "@storybook/addon-essentials" //docs, control, actions, viewport, toolbar, background
   ],

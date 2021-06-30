@@ -19,7 +19,7 @@ import { Diagnostics } from "../components/Diagnostics";
 import * as wxApi from "../wxApi";
 
 
-export function DebugPage(props: any): JSX.Element {
+export function DeveloperPage(props: any): JSX.Element {
   return (
     <div>
       <p>Debug tools:</p>

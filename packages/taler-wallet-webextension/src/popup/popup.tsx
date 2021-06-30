@@ -28,11 +28,14 @@ import {
   classifyTalerUri, i18n, TalerUriType
 } from "@gnu-taler/taler-util";
 import { ComponentChildren, JSX } from "preact";
+import Match from "preact-router/match";
+import { useDevContext } from "../context/useDevContext";
 
 export enum Pages {
   balance = '/balance',
   settings = '/settings',
-  debug = '/debug',
+  dev = '/dev',
+  backup = '/backup',
   history = '/history',
   transaction = '/transaction/:tid',
 }
@@ -55,14 +58,19 @@ function Tab(props: TabProps): JSX.Element {
   );
 }
 
-export function WalletNavBar({ current }: { current?: string }) {
-  return (
-    <div class="nav" id="header">
-      <Tab target="/balance" current={current}>{i18n.str`Balance`}</Tab>
-      <Tab target="/history" current={current}>{i18n.str`History`}</Tab>
-      <Tab target="/settings" current={current}>{i18n.str`Settings`}</Tab>
-      <Tab target="/debug" current={current}>{i18n.str`Debug`}</Tab>
-    </div>
-  );
+export function WalletNavBar() {
+  const { devMode } = useDevContext()
+  return <Match>{({ path }: any) => {
+    console.log("current", path)
+    return (
+      <div class="nav" id="header">
+        <Tab target="/balance" current={path}>{i18n.str`Balance`}</Tab>
+        <Tab target="/history" current={path}>{i18n.str`History`}</Tab>
+        <Tab target="/backup" current={path}>{i18n.str`Backup`}</Tab>
+        <Tab target="/settings" current={path}>{i18n.str`Settings`}</Tab>
+        {devMode && <Tab target="/dev" current={path}>{i18n.str`Dev`}</Tab>}
+      </div>
+    )
+  }}</Match>
 }
 
