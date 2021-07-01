@@ -36,7 +36,8 @@ export enum Pages {
   backup = '/backup',
   history = '/history',
   transaction = '/transaction/:tid',
-  provider = '/provider/:currency',
+  provider_detail = '/provider/:currency',
+  provider_add = '/provider/:currency/add',
 }
 
 interface TabProps {
@@ -47,7 +48,7 @@ interface TabProps {
 
 function Tab(props: TabProps): JSX.Element {
   let cssClass = "";
-  if (props.current === props.target) {
+  if (props.current?.startsWith(props.target)) {
     cssClass = "active";
   }
   return (

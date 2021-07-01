@@ -99,7 +99,7 @@ function BackupLayout(props: TransactionLayoutProps): JSX.Element {
         {dateStr && <div style={{ fontSize: "small", color: "gray" }}>{dateStr}</div>}
         {!dateStr && <div style={{ fontSize: "small", color: "red" }}>never synced</div>}
         <div style={{ fontVariant: "small-caps", fontSize: "x-large" }}>
-          <a href={Pages.provider.replace(':currency', props.id)}><span>{props.title}</span></a>
+          <a href={Pages.provider_detail.replace(':currency', props.id)}><span>{props.title}</span></a>
         </div>
 
         <div>{props.subtitle}</div>

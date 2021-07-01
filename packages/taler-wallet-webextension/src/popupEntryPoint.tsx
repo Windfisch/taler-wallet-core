@@ -20,25 +20,25 @@
  * @author Florian Dold <dold@taler.net>
  */
 
-import { Fragment, render } from "preact";
 import { setupI18n } from "@gnu-taler/taler-util";
-import { strings } from "./i18n/strings";
+import { createHashHistory } from "history";
+import { render } from "preact";
+import Router, { route, Route } from "preact-router";
 import { useEffect } from "preact/hooks";
+import { DevContextProvider } from "./context/useDevContext";
+import { useTalerActionURL } from "./hooks/useTalerActionURL";
+import { strings } from "./i18n/strings";
+import { BackupPage } from "./popup/BackupPage";
+import { BalancePage } from "./popup/Balance";
+import { DeveloperPage as DeveloperPage } from "./popup/Debug";
+import { HistoryPage } from "./popup/History";
 import {
   Pages, WalletNavBar
 } from "./popup/popup";
-import { HistoryPage } from "./popup/History";
-import { DeveloperPage as DeveloperPage } from "./popup/Debug";
+import { ProviderAddPage } from "./popup/ProviderAddPage";
+import { ProviderDetailPage } from "./popup/ProviderDetailPage";
 import { SettingsPage } from "./popup/Settings";
 import { TransactionPage } from "./popup/Transaction";
-import { BalancePage } from "./popup/Balance";
-import Match from "preact-router/match";
-import Router, { getCurrentUrl, route, Route } from "preact-router";
-import { useTalerActionURL } from "./hooks/useTalerActionURL";
-import { createHashHistory } from "history";
-import { DevContextProvider } from "./context/useDevContext";
-import { BackupPage } from "./popup/BackupPage";
-import { ProviderPage } from "./popup/ProviderPage.js";
 
 function main(): void {
   try {
@@ -100,7 +100,8 @@ function Application() {
             <Route path={Pages.dev} component={DeveloperPage} />
             <Route path={Pages.history} component={HistoryPage} />
             <Route path={Pages.backup} component={BackupPage} />
-            <Route path={Pages.provider} component={ProviderPage} />
+            <Route path={Pages.provider_detail} component={ProviderDetailPage} />
+            <Route path={Pages.provider_add} component={ProviderAddPage} />
             <Route path={Pages.transaction} component={TransactionPage} />
             <Route default component={Redirect} to={Pages.balance} />
           </Router>

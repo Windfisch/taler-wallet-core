@@ -21,7 +21,7 @@
 
 import { ProviderPaymentType } from '@gnu-taler/taler-wallet-core';
 import { FunctionalComponent } from 'preact';
-import { ProviderView as TestedComponent } from './ProviderPage';
+import { ProviderView as TestedComponent } from './ProviderDetailPage';
 
 export default {
   title: 'popup/backup/details',
@@ -75,6 +75,9 @@ export const ActiveErrorSync = createExample(TestedComponent, {
     "active": true,
     "syncProviderBaseUrl": "http://sync.taler:9967/",
     "lastSuccessfulBackupTimestamp": {
+      "t_ms": 1625063925078
+    },
+    lastAttemptedBackupTimestamp: {
       "t_ms": 1625063925078
     },
     "paymentProposalIds": [

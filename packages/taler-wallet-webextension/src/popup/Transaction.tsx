@@ -62,7 +62,7 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
 
   function Footer() {
     return <footer style={{ marginTop: 'auto', display: 'flex', flexShrink: 0 }}>
-      <button onClick={onBack}><i18n.Translate>back</i18n.Translate></button>
+      <button class="pure-button" onClick={onBack}><i18n.Translate>back</i18n.Translate></button>
       <div style={{ width: '100%', flexDirection: 'row', justifyContent: 'flex-end', display: 'flex' }}>
         {transaction?.error ? <button class="pure-button button-secondary" style={{marginRight: 5}} onClick={onRetry}><i18n.Translate>retry</i18n.Translate></button> : null }
         <button class="pure-button button-destructive"  onClick={onDelete}><i18n.Translate>delete</i18n.Translate></button>
@@ -96,7 +96,7 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
     ).amount
     return (
       <div style={{ display: 'flex', flexDirection: 'column' }} >
-        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 45px - 16px)', overflow: 'auto' }}>
+        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 34px - 16px)', overflow: 'auto' }}>
           <span style="font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
           <span style="float: right; font-size:small; color:gray">
             From <b>{transaction.exchangeBaseUrl}</b>
@@ -122,7 +122,7 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column' }} >
-        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 45px - 16px)', overflow: 'auto' }}>
+        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 34px - 16px)', overflow: 'auto' }}>
           <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
           <span style="float: right; font-size:small; color:gray">
             To <b>{transaction.info.merchant.name}</b>
@@ -161,7 +161,7 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
     ).amount
     return (
       <div style={{ display: 'flex', flexDirection: 'column' }} >
-        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 45px - 16px)', overflow: 'auto' }}>
+        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 34px - 16px)', overflow: 'auto' }}>
           <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
           <span style="float: right; font-size:small; color:gray">
             To <b>{transaction.targetPaytoUri}</b>
@@ -182,7 +182,7 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
     ).amount
     return (
       <div style={{ display: 'flex', flexDirection: 'column' }} >
-        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 45px - 16px)', overflow: 'auto' }}>
+        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 34px - 16px)', overflow: 'auto' }}>
           <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
           <span style="float: right; font-size:small; color:gray">
             From <b>{transaction.exchangeBaseUrl}</b>
@@ -203,7 +203,7 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
     ).amount
     return (
       <div style={{ display: 'flex', flexDirection: 'column' }} >
-        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 45px - 16px)', overflow: 'auto' }}>
+        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 34px - 16px)', overflow: 'auto' }}>
           <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
           <span style="float: right; font-size:small; color:gray">
             From <b>{transaction.merchantBaseUrl}</b>
@@ -224,7 +224,7 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
     ).amount
     return (
       <div style={{ display: 'flex', flexDirection: 'column' }} >
-        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 45px - 16px)', overflow: 'auto' }}>
+        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 34px - 16px)', overflow: 'auto' }}>
           <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
           <span style="float: right; font-size:small; color:gray">
             From <b>{transaction.info.merchant.name}</b>

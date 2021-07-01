@@ -15,46 +15,32 @@
 */
 
 
-import { i18n, Timestamp } from "@gnu-taler/taler-util";
+import { BackupBackupProviderTerms, i18n, Timestamp } from "@gnu-taler/taler-util";
 import { ProviderInfo, ProviderPaymentType } from "@gnu-taler/taler-wallet-core";
-import { formatDuration, intervalToDuration } from "date-fns";
-import { VNode } from "preact";
+import { formatDuration, intervalToDuration, format } from "date-fns";
+import { Fragment, VNode } from "preact";
 import { useRef, useState } from "preact/hooks";
 import { useBackupStatus } from "../hooks/useProvidersByCurrency";
 import * as wxApi from "../wxApi";
 
 interface Props {
   currency: string;
+  onAddProvider: (c: string) => void;
+  onBack: () => void;
 }
 
-export function ProviderPage({ currency }: Props): VNode {
+export function ProviderDetailPage({ currency, onAddProvider, onBack }: Props): VNode {
   const status = useBackupStatus()
-  const [adding, setAdding] = useState<boolean>(false)
   if (!status) {
     return <div>Loading...</div>
-  }
-  if (adding) {
-    return <AddProviderView onConfirm={(value) => {
-      console.log(value)
-      wxApi.addBackupProvider(value).then(_ => history.go(-1))
-      setAdding(false)
-    }} />
   }
   const info = status.providers[currency];
   return <ProviderView currency={currency} info={info}
     onSync={() => { null }}
     onDelete={() => { null }}
-    onBack={() => { history.go(-1); }}
-    onAddProvider={() => { setAdding(true) }}
+    onBack={onBack}
+    onAddProvider={() => onAddProvider(currency)}
   />;
-}
-
-function AddProviderView({ onConfirm }: { onConfirm: (s: string) => void }) {
-  const textInput = useRef<HTMLInputElement>(null)
-  return <div>
-    <input ref={textInput} />
-    <button onClick={() => onConfirm(textInput?.current.value)}>confirm</button>
-  </div>
 }
 
 export interface ViewProps {
@@ -69,7 +55,7 @@ export interface ViewProps {
 export function ProviderView({ currency, info, onDelete, onSync, onBack, onAddProvider }: ViewProps): VNode {
   function Footer() {
     return <footer style={{ marginTop: 'auto', display: 'flex', flexShrink: 0 }}>
-      <button onClick={onBack}><i18n.Translate>back</i18n.Translate></button>
+      <button class="pure-button" onClick={onBack}><i18n.Translate>back</i18n.Translate></button>
       <div style={{ width: '100%', flexDirection: 'row', justifyContent: 'flex-end', display: 'flex' }}>
         {info && <button class="pure-button button-destructive" onClick={onDelete}><i18n.Translate>remove</i18n.Translate></button>}
         {info && <button class="pure-button button-secondary" style={{ marginLeft: 5 }} onClick={onSync}><i18n.Translate>sync now</i18n.Translate></button>}
@@ -79,9 +65,12 @@ export function ProviderView({ currency, info, onDelete, onSync, onBack, onAddPr
   }
   function Error() {
     if (info?.lastError) {
-      return <div class="errorbox" style={{ marginTop: 10 }} >
-        <p>{info.lastError.hint}</p>
-      </div>
+      return <Fragment>
+        <div class="errorbox" style={{ marginTop: 10 }} >
+        <div style={{ height: 0, textAlign: 'right', color: 'gray', fontSize: 'small' }}>{!info.lastAttemptedBackupTimestamp || info.lastAttemptedBackupTimestamp.t_ms === 'never' ? 'never' : format(new Date(info.lastAttemptedBackupTimestamp.t_ms), 'dd/MM/yyyy HH:mm:ss')}</div>
+          <p>{info.lastError.hint}</p>
+        </div>
+      </Fragment>
     }
     if (info?.backupProblem) {
       switch (info.backupProblem.type) {
@@ -129,7 +118,7 @@ export function ProviderView({ currency, info, onDelete, onSync, onBack, onAddPr
       }
       `}</style>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <section style={{ flex: '1 0 auto', height: 'calc(320px - 34px - 45px - 16px)', overflow: 'auto' }}>
+        <section style={{ flex: '1 0 auto', height: 'calc(320px - 34px - 34px - 16px)', overflow: 'auto' }}>
           <span style={{ padding: 5, display: 'inline-block', backgroundColor: colorByStatus(info?.paymentStatus.type), borderRadius: 5, color: 'white' }}>{info?.paymentStatus.type}</span>
           {info && <span style={{ float: "right", fontSize: "small", color: "gray", padding: 5 }}>
             From <b>{info.syncProviderBaseUrl}</b>
