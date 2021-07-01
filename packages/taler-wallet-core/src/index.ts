@@ -43,3 +43,5 @@ export * from "./util/debugFlags.js";
 export { InternalWalletState } from "./common.js";
 export * from "./wallet-api-types.js";
 export * from "./wallet.js";
+
+export * from "./operations/backup/index.js"
