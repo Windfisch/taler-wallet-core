@@ -1,5 +1,5 @@
 import { Amounts } from "@gnu-taler/taler-util";
-import { ProviderInfo } from "@gnu-taler/taler-wallet-core/src/operations/backup";
+import { ProviderInfo } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useState } from "preact/hooks";
 
 import * as wxApi from "../wxApi";

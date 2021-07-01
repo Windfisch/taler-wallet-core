@@ -16,10 +16,10 @@
 
 
 import { Timestamp } from "@gnu-taler/taler-util";
-// import { ProviderPaymentStatus } from "@gnu-taler/taler-wallet-core/src/operations/backup";
 import { formatDuration, intervalToDuration } from "date-fns";
 import { JSX, VNode } from "preact";
 import { ProvidersByCurrency, useBackupStatus } from "../hooks/useProvidersByCurrency";
+import { Pages } from "./popup";
 
 export function BackupPage(): VNode {
   const status = useBackupStatus()
@@ -99,7 +99,7 @@ function BackupLayout(props: TransactionLayoutProps): JSX.Element {
         {dateStr && <div style={{ fontSize: "small", color: "gray" }}>{dateStr}</div>}
         {!dateStr && <div style={{ fontSize: "small", color: "red" }}>never synced</div>}
         <div style={{ fontVariant: "small-caps", fontSize: "x-large" }}>
-          <a href=""><span>{props.title}</span></a>
+          <a href={Pages.provider.replace(':currency', props.id)}><span>{props.title}</span></a>
         </div>
 
         <div>{props.subtitle}</div>

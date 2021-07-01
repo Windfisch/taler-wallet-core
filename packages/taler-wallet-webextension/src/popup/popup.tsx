@@ -36,6 +36,7 @@ export enum Pages {
   backup = '/backup',
   history = '/history',
   transaction = '/transaction/:tid',
+  provider = '/provider/:currency',
 }
 
 interface TabProps {

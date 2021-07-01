@@ -38,8 +38,8 @@ import {
   DeleteTransactionRequest,
   RetryTransactionRequest,
 } from "@gnu-taler/taler-util";
-import { BackupProviderState, OperationFailedError } from "@gnu-taler/taler-wallet-core";
-import { BackupInfo } from "@gnu-taler/taler-wallet-core/src/operations/backup";
+import { AddBackupProviderRequest, BackupProviderState, OperationFailedError } from "@gnu-taler/taler-wallet-core";
+import { BackupInfo } from "@gnu-taler/taler-wallet-core";
 
 export interface ExtendedPermissionsResponse {
   newValue: boolean;
@@ -166,9 +166,26 @@ export function listKnownCurrencies(): Promise<ListOfKnownCurrencies> {
 /**
  * Get information about the current state of wallet backups.
  */
- export function getBackupInfo(): Promise<BackupInfo> {
+export function getBackupInfo(): Promise<BackupInfo> {
   return callBackend("getBackupInfo", {})
 }
+
+/**
+ * Add a backup provider and activate it
+ */
+export function addBackupProvider(backupProviderBaseUrl: string): Promise<void> {
+  return callBackend("addBackupProvider", {
+    backupProviderBaseUrl, activate: true
+  } as AddBackupProviderRequest)
+}
+
+export function syncAllProviders(): Promise<void> {
+  return callBackend("runBackupCycle", {})
+}
+
+
+
+
 /**
  * Retry a transaction
  * @param transactionId 

@@ -97,7 +97,7 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
     return (
       <div style={{ display: 'flex', flexDirection: 'column' }} >
         <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 45px - 16px)', overflow: 'auto' }}>
-          <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
+          <span style="font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
           <span style="float: right; font-size:small; color:gray">
             From <b>{transaction.exchangeBaseUrl}</b>
           </span>

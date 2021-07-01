@@ -1,0 +1,215 @@
+/*
+ This file is part of GNU Taler
+ (C) 2021 Taler Systems S.A.
+
+ GNU Taler is free software; you can redistribute it and/or modify it under the
+ terms of the GNU General Public License as published by the Free Software
+ Foundation; either version 3, or (at your option) any later version.
+
+ GNU Taler is distributed in the hope that it will be useful, but WITHOUT ANY
+ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along with
+ GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+ */
+
+/**
+*
+* @author Sebastian Javier Marchano (sebasjm)
+*/
+
+import { ProviderPaymentType } from '@gnu-taler/taler-wallet-core';
+import { FunctionalComponent } from 'preact';
+import { ProviderView as TestedComponent } from './ProviderPage';
+
+export default {
+  title: 'popup/backup/details',
+  component: TestedComponent,
+  argTypes: {
+    onRetry: { action: 'onRetry' },
+    onDelete: { action: 'onDelete' },
+    onBack: { action: 'onBack' },
+  }
+};
+
+
+function createExample<Props>(Component: FunctionalComponent<Props>, props: Partial<Props>) {
+  const r = (args: any) => <Component {...args} />
+  r.args = props
+  return r
+}
+
+export const NotDefined = createExample(TestedComponent, {
+  currency: 'ARS',
+});
+
+export const Active = createExample(TestedComponent, {
+  currency: 'ARS',
+  info: {
+    "active": true,
+    "syncProviderBaseUrl": "http://sync.taler:9967/",
+    "lastSuccessfulBackupTimestamp": {
+      "t_ms": 1625063925078
+    },
+    "paymentProposalIds": [
+      "43Q5WWRJPNS4SE9YKS54H9THDS94089EDGXW9EHBPN6E7M184XEG"
+    ],
+    "paymentStatus": {
+      "type": ProviderPaymentType.Paid,
+      "paidUntil": {
+        "t_ms": 1656599921000
+      }
+    },
+    "terms": {
+      "annualFee": "ARS:1",
+      "storageLimitInMegabytes": 16,
+      "supportedProtocolVersion": "0.0"
+    }
+  }
+});
+
+export const ActiveErrorSync = createExample(TestedComponent, {
+  currency: 'ARS',
+  info: {
+    "active": true,
+    "syncProviderBaseUrl": "http://sync.taler:9967/",
+    "lastSuccessfulBackupTimestamp": {
+      "t_ms": 1625063925078
+    },
+    "paymentProposalIds": [
+      "43Q5WWRJPNS4SE9YKS54H9THDS94089EDGXW9EHBPN6E7M184XEG"
+    ],
+    "paymentStatus": {
+      "type": ProviderPaymentType.Paid,
+      "paidUntil": {
+        "t_ms": 1656599921000
+      }
+    },
+    lastError: {
+      code: 2002,
+      details: 'details',
+      hint: 'error hint from the server',
+      message: 'message'
+    },
+    "terms": {
+      "annualFee": "ARS:1",
+      "storageLimitInMegabytes": 16,
+      "supportedProtocolVersion": "0.0"
+    }
+  }
+});
+
+export const ActiveBackupProblemUnreadable = createExample(TestedComponent, {
+  currency: 'ARS',
+  info: {
+    "active": true,
+    "syncProviderBaseUrl": "http://sync.taler:9967/",
+    "lastSuccessfulBackupTimestamp": {
+      "t_ms": 1625063925078
+    },
+    "paymentProposalIds": [
+      "43Q5WWRJPNS4SE9YKS54H9THDS94089EDGXW9EHBPN6E7M184XEG"
+    ],
+    "paymentStatus": {
+      "type": ProviderPaymentType.Paid,
+      "paidUntil": {
+        "t_ms": 1656599921000
+      }
+    },
+    backupProblem: {
+      type: 'backup-unreadable'
+    },
+    "terms": {
+      "annualFee": "ARS:1",
+      "storageLimitInMegabytes": 16,
+      "supportedProtocolVersion": "0.0"
+    }
+  }
+});
+
+export const ActiveBackupProblemDevice = createExample(TestedComponent, {
+  currency: 'ARS',
+  info: {
+    "active": true,
+    "syncProviderBaseUrl": "http://sync.taler:9967/",
+    "lastSuccessfulBackupTimestamp": {
+      "t_ms": 1625063925078
+    },
+    "paymentProposalIds": [
+      "43Q5WWRJPNS4SE9YKS54H9THDS94089EDGXW9EHBPN6E7M184XEG"
+    ],
+    "paymentStatus": {
+      "type": ProviderPaymentType.Paid,
+      "paidUntil": {
+        "t_ms": 1656599921000
+      }
+    },
+    backupProblem: {
+      type: 'backup-conflicting-device',
+      myDeviceId: 'my-device-id',
+      otherDeviceId: 'other-device-id',
+      backupTimestamp: {
+        "t_ms": 1656599921000
+      }
+    },
+    "terms": {
+      "annualFee": "ARS:1",
+      "storageLimitInMegabytes": 16,
+      "supportedProtocolVersion": "0.0"
+    }
+  }
+});
+
+export const InactiveUnpaid = createExample(TestedComponent, {
+  currency: 'ARS',
+  info: {
+    "active": false,
+    "syncProviderBaseUrl": "http://sync.demo.taler.net/",
+    "paymentProposalIds": [],
+    "paymentStatus": {
+      "type": ProviderPaymentType.Unpaid,
+    },
+    "terms": {
+      "annualFee": "ARS:0.1",
+      "storageLimitInMegabytes": 16,
+      "supportedProtocolVersion": "0.0"
+    }
+  }
+});
+
+export const InactiveInsufficientBalance = createExample(TestedComponent, {
+  currency: 'ARS',
+  info: {
+    "active": false,
+    "syncProviderBaseUrl": "http://sync.demo.taler.net/",
+    "paymentProposalIds": [],
+    "paymentStatus": {
+      "type": ProviderPaymentType.InsufficientBalance,
+    },
+    "terms": {
+      "annualFee": "ARS:0.1",
+      "storageLimitInMegabytes": 16,
+      "supportedProtocolVersion": "0.0"
+    }
+  }
+});
+
+export const InactivePending = createExample(TestedComponent, {
+  currency: 'ARS',
+  info: {
+    "active": false,
+    "syncProviderBaseUrl": "http://sync.demo.taler.net/",
+    "paymentProposalIds": [],
+    "paymentStatus": {
+      "type": ProviderPaymentType.Pending,
+    },
+    "terms": {
+      "annualFee": "ARS:0.1",
+      "storageLimitInMegabytes": 16,
+      "supportedProtocolVersion": "0.0"
+    }
+  }
+});
+
+

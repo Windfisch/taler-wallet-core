@@ -19,7 +19,7 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 
-import { ProviderPaymentType } from '@gnu-taler/taler-wallet-core/src/operations/backup';
+import { ProviderPaymentType } from '@gnu-taler/taler-wallet-core';
 import { FunctionalComponent } from 'preact';
 import { BackupView as TestedComponent } from './BackupPage';
 

@@ -38,6 +38,7 @@ import { useTalerActionURL } from "./hooks/useTalerActionURL";
 import { createHashHistory } from "history";
 import { DevContextProvider } from "./context/useDevContext";
 import { BackupPage } from "./popup/BackupPage";
+import { ProviderPage } from "./popup/ProviderPage.js";
 
 function main(): void {
   try {
@@ -99,6 +100,7 @@ function Application() {
             <Route path={Pages.dev} component={DeveloperPage} />
             <Route path={Pages.history} component={HistoryPage} />
             <Route path={Pages.backup} component={BackupPage} />
+            <Route path={Pages.provider} component={ProviderPage} />
             <Route path={Pages.transaction} component={TransactionPage} />
             <Route default component={Redirect} to={Pages.balance} />
           </Router>
