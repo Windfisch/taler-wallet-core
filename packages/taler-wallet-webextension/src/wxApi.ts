@@ -38,7 +38,8 @@ import {
   DeleteTransactionRequest,
   RetryTransactionRequest,
 } from "@gnu-taler/taler-util";
-import { OperationFailedError } from "@gnu-taler/taler-wallet-core";
+import { BackupProviderState, OperationFailedError } from "@gnu-taler/taler-wallet-core";
+import { BackupInfo } from "@gnu-taler/taler-wallet-core/src/operations/backup";
 
 export interface ExtendedPermissionsResponse {
   newValue: boolean;
@@ -132,18 +133,48 @@ export function getTransactions(): Promise<TransactionsResponse> {
   return callBackend("getTransactions", {});
 }
 
+interface CurrencyInfo {
+  name: string;
+  baseUrl: string;
+  pub: string;
+}
+interface ListOfKnownCurrencies {
+  auditors: CurrencyInfo[],
+  exchanges: CurrencyInfo[],
+}
+
 /**
- * Get currency from known auditors and exchanges
+ * Get a list of currencies from known auditors and exchanges
  */
- export function listCurrencies(): Promise<TransactionsResponse> {
-  return callBackend("listCurrencies", {});
+export function listKnownCurrencies(): Promise<ListOfKnownCurrencies> {
+  return callBackend("listCurrencies", {}).then(result => {
+    console.log("result list", result)
+    const auditors = result.trustedAuditors.map((a: Record<string, string>) => ({
+      name: a.currency,
+      baseUrl: a.auditorBaseUrl,
+      pub: a.auditorPub,
+    }))
+    const exchanges = result.trustedExchanges.map((a: Record<string, string>) => ({
+      name: a.currency,
+      baseUrl: a.exchangeBaseUrl,
+      pub: a.exchangeMasterPub,
+    }))
+    return { auditors, exchanges }
+  });
+}
+
+/**
+ * Get information about the current state of wallet backups.
+ */
+ export function getBackupInfo(): Promise<BackupInfo> {
+  return callBackend("getBackupInfo", {})
 }
 /**
  * Retry a transaction
  * @param transactionId 
  * @returns 
  */
- export function retryTransaction(transactionId: string): Promise<void> {
+export function retryTransaction(transactionId: string): Promise<void> {
   return callBackend("retryTransaction", {
     transactionId
   } as RetryTransactionRequest);

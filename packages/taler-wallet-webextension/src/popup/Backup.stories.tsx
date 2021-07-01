@@ -19,6 +19,7 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 
+import { ProviderPaymentType } from '@gnu-taler/taler-wallet-core/src/operations/backup';
 import { FunctionalComponent } from 'preact';
 import { BackupView as TestedComponent } from './BackupPage';
 
@@ -52,7 +53,7 @@ export const Example = createExample(TestedComponent, {
         "43Q5WWRJPNS4SE9YKS54H9THDS94089EDGXW9EHBPN6E7M184XEG"
       ],
       "paymentStatus": {
-        "type": 'paid',
+        "type": ProviderPaymentType.Paid,
         "paidUntil": {
           "t_ms": 1656599921000
         }
@@ -68,7 +69,7 @@ export const Example = createExample(TestedComponent, {
       "syncProviderBaseUrl": "http://sync.demo.taler.net/",
       "paymentProposalIds": [],
       "paymentStatus": {
-        "type": 'unpaid',
+        "type": ProviderPaymentType.Unpaid,
       },
       "terms": {
         "annualFee": "KUDOS:0.1",

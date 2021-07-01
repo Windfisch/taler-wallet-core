@@ -19,11 +19,14 @@ import { Timestamp } from "@gnu-taler/taler-util";
 // import { ProviderPaymentStatus } from "@gnu-taler/taler-wallet-core/src/operations/backup";
 import { formatDuration, intervalToDuration } from "date-fns";
 import { JSX, VNode } from "preact";
-import { ProvidersByCurrency, useProvidersByCurrency } from "../hooks/useProvidersByCurrency";
+import { ProvidersByCurrency, useBackupStatus } from "../hooks/useProvidersByCurrency";
 
 export function BackupPage(): VNode {
-  const providers = useProvidersByCurrency()
-  return <BackupView deviceName={"thisdevicename"} providers={providers}/>;
+  const status = useBackupStatus()
+  if (!status) {
+    return <div>Loading...</div>
+  }
+  return <BackupView deviceName={status.deviceName} providers={status.providers}/>;
 }
 
 export interface ViewProps {
