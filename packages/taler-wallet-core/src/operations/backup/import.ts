@@ -48,7 +48,10 @@ import {
 } from "../../db.js";
 import { PayCoinSelection } from "../../util/coinSelection.js";
 import { j2s } from "@gnu-taler/taler-util";
-import { checkDbInvariant, checkLogicInvariant } from "../../util/invariants.js";
+import {
+  checkDbInvariant,
+  checkLogicInvariant,
+} from "../../util/invariants.js";
 import { Logger } from "@gnu-taler/taler-util";
 import { initRetryInfo } from "../../util/retries.js";
 import { InternalWalletState } from "../../common.js";
@@ -244,7 +247,9 @@ export async function importBackup(
         });
       }
 
-      const tombstoneSet = new Set(backupBlob.tombstones);
+      const tombstoneSet = new Set(
+        (await tx.tombstones.iter().toArray()).map((x) => x.id),
+      );
 
       // FIXME:  Validate that the "details pointer" is correct
 
@@ -877,7 +882,7 @@ export async function importBackup(
       // importing things that are tombstoned,
       // but we do tombstone processing last just to be sure.
 
-      for (const tombstone of backupBlob.tombstones) {
+      for (const tombstone of tombstoneSet) {
         const [type, ...rest] = tombstone.split(":");
         if (type === TombstoneTag.DeleteDepositGroup) {
           await tx.depositGroups.delete(rest[0]);
