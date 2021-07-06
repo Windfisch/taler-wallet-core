@@ -40,12 +40,7 @@ function createExample<Props>(Component: FunctionalComponent<Props>, props: Part
   return r
 }
 
-export const NotDefined = createExample(TestedComponent, {
-  currency: 'ARS',
-});
-
 export const Active = createExample(TestedComponent, {
-  currency: 'ARS',
   info: {
     "active": true,
     "syncProviderBaseUrl": "http://sync.taler:9967/",
@@ -62,7 +57,7 @@ export const Active = createExample(TestedComponent, {
       }
     },
     "terms": {
-      "annualFee": "ARS:1",
+      "annualFee": "EUR:1",
       "storageLimitInMegabytes": 16,
       "supportedProtocolVersion": "0.0"
     }
@@ -70,7 +65,6 @@ export const Active = createExample(TestedComponent, {
 });
 
 export const ActiveErrorSync = createExample(TestedComponent, {
-  currency: 'ARS',
   info: {
     "active": true,
     "syncProviderBaseUrl": "http://sync.taler:9967/",
@@ -96,7 +90,7 @@ export const ActiveErrorSync = createExample(TestedComponent, {
       message: 'message'
     },
     "terms": {
-      "annualFee": "ARS:1",
+      "annualFee": "EUR:1",
       "storageLimitInMegabytes": 16,
       "supportedProtocolVersion": "0.0"
     }
@@ -104,7 +98,6 @@ export const ActiveErrorSync = createExample(TestedComponent, {
 });
 
 export const ActiveBackupProblemUnreadable = createExample(TestedComponent, {
-  currency: 'ARS',
   info: {
     "active": true,
     "syncProviderBaseUrl": "http://sync.taler:9967/",
@@ -124,7 +117,7 @@ export const ActiveBackupProblemUnreadable = createExample(TestedComponent, {
       type: 'backup-unreadable'
     },
     "terms": {
-      "annualFee": "ARS:1",
+      "annualFee": "EUR:1",
       "storageLimitInMegabytes": 16,
       "supportedProtocolVersion": "0.0"
     }
@@ -132,7 +125,6 @@ export const ActiveBackupProblemUnreadable = createExample(TestedComponent, {
 });
 
 export const ActiveBackupProblemDevice = createExample(TestedComponent, {
-  currency: 'ARS',
   info: {
     "active": true,
     "syncProviderBaseUrl": "http://sync.taler:9967/",
@@ -157,7 +149,7 @@ export const ActiveBackupProblemDevice = createExample(TestedComponent, {
       }
     },
     "terms": {
-      "annualFee": "ARS:1",
+      "annualFee": "EUR:1",
       "storageLimitInMegabytes": 16,
       "supportedProtocolVersion": "0.0"
     }
@@ -165,7 +157,6 @@ export const ActiveBackupProblemDevice = createExample(TestedComponent, {
 });
 
 export const InactiveUnpaid = createExample(TestedComponent, {
-  currency: 'ARS',
   info: {
     "active": false,
     "syncProviderBaseUrl": "http://sync.demo.taler.net/",
@@ -174,7 +165,7 @@ export const InactiveUnpaid = createExample(TestedComponent, {
       "type": ProviderPaymentType.Unpaid,
     },
     "terms": {
-      "annualFee": "ARS:0.1",
+      "annualFee": "EUR:0.1",
       "storageLimitInMegabytes": 16,
       "supportedProtocolVersion": "0.0"
     }
@@ -182,7 +173,6 @@ export const InactiveUnpaid = createExample(TestedComponent, {
 });
 
 export const InactiveInsufficientBalance = createExample(TestedComponent, {
-  currency: 'ARS',
   info: {
     "active": false,
     "syncProviderBaseUrl": "http://sync.demo.taler.net/",
@@ -191,7 +181,7 @@ export const InactiveInsufficientBalance = createExample(TestedComponent, {
       "type": ProviderPaymentType.InsufficientBalance,
     },
     "terms": {
-      "annualFee": "ARS:0.1",
+      "annualFee": "EUR:0.1",
       "storageLimitInMegabytes": 16,
       "supportedProtocolVersion": "0.0"
     }
@@ -199,7 +189,6 @@ export const InactiveInsufficientBalance = createExample(TestedComponent, {
 });
 
 export const InactivePending = createExample(TestedComponent, {
-  currency: 'ARS',
   info: {
     "active": false,
     "syncProviderBaseUrl": "http://sync.demo.taler.net/",
@@ -208,11 +197,40 @@ export const InactivePending = createExample(TestedComponent, {
       "type": ProviderPaymentType.Pending,
     },
     "terms": {
-      "annualFee": "ARS:0.1",
+      "annualFee": "EUR:0.1",
       "storageLimitInMegabytes": 16,
       "supportedProtocolVersion": "0.0"
     }
   }
 });
 
+
+export const ActiveTermsChanged = createExample(TestedComponent, {
+  info: {
+    "active": true,
+    "syncProviderBaseUrl": "http://sync.demo.taler.net/",
+    "paymentProposalIds": [],
+    "paymentStatus": {
+      "type": ProviderPaymentType.TermsChanged,
+      paidUntil: {
+        t_ms: 1656599921000
+      },
+      newTerms: {
+        "annualFee": "EUR:10",
+        "storageLimitInMegabytes": 8,
+        "supportedProtocolVersion": "0.0"
+      },
+      oldTerms: {
+        "annualFee": "EUR:0.1",
+        "storageLimitInMegabytes": 16,
+        "supportedProtocolVersion": "0.0"
+      }
+    },
+    "terms": {
+      "annualFee": "EUR:0.1",
+      "storageLimitInMegabytes": 16,
+      "supportedProtocolVersion": "0.0"
+    }
+  }
+});
 

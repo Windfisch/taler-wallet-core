@@ -36,8 +36,8 @@ export enum Pages {
   backup = '/backup',
   history = '/history',
   transaction = '/transaction/:tid',
-  provider_detail = '/provider/:currency',
-  provider_add = '/provider/:currency/add',
+  provider_detail = '/provider/:pid',
+  provider_add = '/provider/add',
 }
 
 interface TabProps {
@@ -61,7 +61,6 @@ function Tab(props: TabProps): JSX.Element {
 export function WalletNavBar() {
   const { devMode } = useDevContext()
   return <Match>{({ path }: any) => {
-    console.log("current", path)
     return (
       <div class="nav" id="header">
         <Tab target="/balance" current={path}>{i18n.str`Balance`}</Tab>

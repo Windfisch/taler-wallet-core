@@ -19,7 +19,6 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 
-import { ProviderPaymentType } from '@gnu-taler/taler-wallet-core';
 import { FunctionalComponent } from 'preact';
 import { SetUrlView as TestedComponent } from './ProviderAddPage';
 
@@ -40,7 +39,21 @@ function createExample<Props>(Component: FunctionalComponent<Props>, props: Part
   return r
 }
 
-export const SetUrl = createExample(TestedComponent, {
-  currency: 'ARS',
+export const Initial = createExample(TestedComponent, {
 }); 
 
+export const WithValue = createExample(TestedComponent, {
+  initialValue: 'sync.demo.taler.net'
+}); 
+
+export const WithConnectionError = createExample(TestedComponent, {
+  withError: 'Network error'
+}); 
+
+export const WithClientError = createExample(TestedComponent, {
+  withError: 'URL may not be right: (404) Not Found'
+}); 
+
+export const WithServerError = createExample(TestedComponent, {
+  withError: 'Try another server: (500) Internal Server Error'
+}); 

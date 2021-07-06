@@ -37,6 +37,7 @@ import {
   AcceptTipRequest,
   DeleteTransactionRequest,
   RetryTransactionRequest,
+  SetWalletDeviceIdRequest,
 } from "@gnu-taler/taler-util";
 import { AddBackupProviderRequest, BackupProviderState, OperationFailedError } from "@gnu-taler/taler-wallet-core";
 import { BackupInfo } from "@gnu-taler/taler-wallet-core";
@@ -179,11 +180,15 @@ export function addBackupProvider(backupProviderBaseUrl: string): Promise<void> 
   } as AddBackupProviderRequest)
 }
 
+export function setWalletDeviceId(walletDeviceId: string): Promise<void> {
+  return callBackend("setWalletDeviceId", {
+    walletDeviceId
+  } as SetWalletDeviceIdRequest)
+}
+
 export function syncAllProviders(): Promise<void> {
   return callBackend("runBackupCycle", {})
 }
-
-
 
 
 /**

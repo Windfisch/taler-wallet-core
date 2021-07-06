@@ -16,7 +16,8 @@
 
 
 import { BackupBackupProviderTerms, i18n, Timestamp } from "@gnu-taler/taler-util";
-import { ProviderInfo, ProviderPaymentType } from "@gnu-taler/taler-wallet-core";
+import { ProviderInfo, ProviderPaymentStatus, ProviderPaymentType } from "@gnu-taler/taler-wallet-core";
+import { ContractTermsUtil } from "@gnu-taler/taler-wallet-core/src/util/contractTerms";
 import { formatDuration, intervalToDuration, format } from "date-fns";
 import { Fragment, VNode } from "preact";
 import { useRef, useState } from "preact/hooks";
@@ -24,42 +25,45 @@ import { useBackupStatus } from "../hooks/useProvidersByCurrency";
 import * as wxApi from "../wxApi";
 
 interface Props {
-  currency: string;
-  onAddProvider: (c: string) => void;
+  pid: string;
   onBack: () => void;
 }
 
-export function ProviderDetailPage({ currency, onAddProvider, onBack }: Props): VNode {
+export function ProviderDetailPage({ pid, onBack }: Props): VNode {
   const status = useBackupStatus()
   if (!status) {
     return <div>Loading...</div>
   }
-  const info = status.providers[currency];
-  return <ProviderView currency={currency} info={info}
+  const idx = parseInt(pid, 10)
+  if (Number.isNaN(idx) || !(status.providers[idx])) {
+    onBack()
+    return <div />
+  }
+  const info = status.providers[idx];
+  return <ProviderView info={info}
     onSync={() => { null }}
     onDelete={() => { null }}
     onBack={onBack}
-    onAddProvider={() => onAddProvider(currency)}
+    onExtend={() => { null }}
   />;
 }
 
 export interface ViewProps {
-  currency: string;
-  info?: ProviderInfo;
+  info: ProviderInfo;
   onDelete: () => void;
   onSync: () => void;
   onBack: () => void;
-  onAddProvider: () => void;
+  onExtend: () => void;
 }
 
-export function ProviderView({ currency, info, onDelete, onSync, onBack, onAddProvider }: ViewProps): VNode {
+export function ProviderView({ info, onDelete, onSync, onBack, onExtend }: ViewProps): VNode {
   function Footer() {
     return <footer style={{ marginTop: 'auto', display: 'flex', flexShrink: 0 }}>
       <button class="pure-button" onClick={onBack}><i18n.Translate>back</i18n.Translate></button>
       <div style={{ width: '100%', flexDirection: 'row', justifyContent: 'flex-end', display: 'flex' }}>
-        {info && <button class="pure-button button-destructive" onClick={onDelete}><i18n.Translate>remove</i18n.Translate></button>}
-        {info && <button class="pure-button button-secondary" style={{ marginLeft: 5 }} onClick={onSync}><i18n.Translate>sync now</i18n.Translate></button>}
-        {!info && <button class="pure-button button-success" style={{ marginLeft: 5 }} onClick={onAddProvider}><i18n.Translate>add provider</i18n.Translate></button>}
+        {info && <button class="pure-button button-destructive" disabled onClick={onDelete}><i18n.Translate>remove</i18n.Translate></button>}
+        {info && <button class="pure-button button-secondary" disabled style={{ marginLeft: 5 }} onClick={onExtend}><i18n.Translate>extend</i18n.Translate></button>}
+        {info && <button class="pure-button button-secondary" disabled style={{ marginLeft: 5 }} onClick={onSync}><i18n.Translate>sync now</i18n.Translate></button>}
       </div>
     </footer>
   }
@@ -67,7 +71,7 @@ export function ProviderView({ currency, info, onDelete, onSync, onBack, onAddPr
     if (info?.lastError) {
       return <Fragment>
         <div class="errorbox" style={{ marginTop: 10 }} >
-        <div style={{ height: 0, textAlign: 'right', color: 'gray', fontSize: 'small' }}>{!info.lastAttemptedBackupTimestamp || info.lastAttemptedBackupTimestamp.t_ms === 'never' ? 'never' : format(new Date(info.lastAttemptedBackupTimestamp.t_ms), 'dd/MM/yyyy HH:mm:ss')}</div>
+          <div style={{ height: 0, textAlign: 'right', color: 'gray', fontSize: 'small' }}>last time tried {!info.lastAttemptedBackupTimestamp || info.lastAttemptedBackupTimestamp.t_ms === 'never' ? 'never' : format(new Date(info.lastAttemptedBackupTimestamp.t_ms), 'dd/MM/yyyy HH:mm:ss')}</div>
           <p>{info.lastError.hint}</p>
         </div>
       </Fragment>
@@ -76,7 +80,7 @@ export function ProviderView({ currency, info, onDelete, onSync, onBack, onAddPr
       switch (info.backupProblem.type) {
         case "backup-conflicting-device":
           return <div class="errorbox" style={{ marginTop: 10 }}>
-            <p>There is another backup from <b>{info.backupProblem.otherDeviceId}</b></p>
+            <p>There is conflict with another backup from <b>{info.backupProblem.otherDeviceId}</b></p>
           </div>
         case "backup-unreadable":
           return <div class="errorbox" style={{ marginTop: 10 }}>
@@ -84,7 +88,7 @@ export function ProviderView({ currency, info, onDelete, onSync, onBack, onAddPr
           </div>
         default:
           return <div class="errorbox" style={{ marginTop: 10 }}>
-            <p>Unkown backup problem: {JSON.stringify(info.backupProblem)}</p>
+            <p>Unknown backup problem: {JSON.stringify(info.backupProblem)}</p>
           </div>
       }
     }
@@ -110,6 +114,28 @@ export function ProviderView({ currency, info, onDelete, onSync, onBack, onAddPr
     return undefined
   }
 
+  function descriptionByStatus(status: ProviderPaymentStatus | undefined) {
+    if (!status) return ''
+    switch (status.type) {
+      case ProviderPaymentType.InsufficientBalance:
+        return 'no enough balance to make the payment'
+      case ProviderPaymentType.Unpaid:
+        return 'not pay yet'
+      case ProviderPaymentType.Paid:
+      case ProviderPaymentType.TermsChanged:
+        if (status.paidUntil.t_ms === 'never') {
+          return 'service paid.'
+        } else {
+          return `service paid until ${format(status.paidUntil.t_ms, 'yyyy/MM/dd HH:mm:ss')}`
+        }
+      case ProviderPaymentType.Pending:
+        return ''
+      default:
+        break;
+    }
+    return undefined
+  }
+
   return (
     <div style={{ height: 'calc(320px - 34px - 16px)', overflow: 'auto' }}>
       <style>{`
@@ -120,18 +146,49 @@ export function ProviderView({ currency, info, onDelete, onSync, onBack, onAddPr
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <section style={{ flex: '1 0 auto', height: 'calc(320px - 34px - 34px - 16px)', overflow: 'auto' }}>
           <span style={{ padding: 5, display: 'inline-block', backgroundColor: colorByStatus(info?.paymentStatus.type), borderRadius: 5, color: 'white' }}>{info?.paymentStatus.type}</span>
-          {info && <span style={{ float: "right", fontSize: "small", color: "gray", padding: 5 }}>
+          {/* {info && <span style={{ float: "right", fontSize: "small", color: "gray", padding: 5 }}>
             From <b>{info.syncProviderBaseUrl}</b>
-          </span>}
+          </span>} */}
+            {info && <div style={{ float: 'right', fontSize: "large", padding: 5 }}>{info.terms?.annualFee} / year</div>}
 
           <Error />
 
+          <h3>{info?.syncProviderBaseUrl}</h3>
           <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", }}>
-            <h1>{currency}</h1>
-            {info && <div style={{ marginTop: 'auto', marginBottom: 'auto' }}>{info.terms?.annualFee} / year</div>}
+            <div>{daysSince(info?.lastSuccessfulBackupTimestamp)} </div>
           </div>
 
-          <div>{daysSince(info?.lastSuccessfulBackupTimestamp)} </div>
+          <p>{descriptionByStatus(info?.paymentStatus)}</p>
+
+          {info?.paymentStatus.type === ProviderPaymentType.TermsChanged && <div>
+            <p>terms has changed, extending the service will imply accepting the new terms of service</p>
+            <table>
+              <thead>
+                <tr>
+                  <td></td>
+                  <td>old</td>
+                  <td> -&gt;</td>
+                  <td>new</td>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td>fee</td>
+                  <td>{info.paymentStatus.oldTerms.annualFee}</td>
+                  <td>-&gt;</td>
+                  <td>{info.paymentStatus.newTerms.annualFee}</td>
+                </tr>
+                <tr>
+                  <td>storage</td>
+                  <td>{info.paymentStatus.oldTerms.storageLimitInMegabytes}</td>
+                  <td>-&gt;</td>
+                  <td>{info.paymentStatus.newTerms.storageLimitInMegabytes}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>}
+
         </section>
         <Footer />
       </div>

@@ -40,7 +40,6 @@ function createExample<Props>(Component: FunctionalComponent<Props>, props: Part
 }
 
 export const DemoService = createExample(TestedComponent, {
-  currency: 'KUDOS',
   url: 'https://sync.demo.taler.net/',
   provider: {
     annual_fee: 'KUDOS:0.1',
@@ -50,7 +49,6 @@ export const DemoService = createExample(TestedComponent, {
 });
 
 export const FreeService = createExample(TestedComponent, {
-  currency: 'ARS',
   url: 'https://sync.taler:9667/',
   provider: {
     annual_fee: 'ARS:0',

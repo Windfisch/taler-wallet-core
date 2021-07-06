@@ -17,40 +17,57 @@
 
 import { VNode } from "preact";
 import { Checkbox } from "../components/Checkbox";
+import { EditableText } from "../components/EditableText";
 import { useDevContext } from "../context/useDevContext";
+import { useBackupDeviceName } from "../hooks/useBackupDeviceName";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
 
 export function SettingsPage(): VNode {
   const [permissionsEnabled, togglePermissions] = useExtendedPermissions();
   const { devMode, toggleDevMode } = useDevContext()
-  return <SettingsView 
+  const { name, update } = useBackupDeviceName()
+  return <SettingsView
+    deviceName={name} setDeviceName={update}
     permissionsEnabled={permissionsEnabled} togglePermissions={togglePermissions}
     developerMode={devMode} toggleDeveloperMode={toggleDevMode}
   />;
 }
 
 export interface ViewProps {
+  deviceName: string;
+  setDeviceName: (s: string) => Promise<void>;
   permissionsEnabled: boolean;
   togglePermissions: () => void;
   developerMode: boolean;
   toggleDeveloperMode: () => void;
 }
 
-export function SettingsView({permissionsEnabled, togglePermissions, developerMode, toggleDeveloperMode}: ViewProps): VNode {
+export function SettingsView({ deviceName, setDeviceName, permissionsEnabled, togglePermissions, developerMode, toggleDeveloperMode }: ViewProps): VNode {
   return (
     <div>
-      <h2>Permissions</h2>
-      <Checkbox label="Automatically open wallet based on page content"
-        name="perm"
-        description="(Enabling this option below will make using the wallet faster, but requires more permissions from your browser.)"
-        enabled={permissionsEnabled} onToggle={togglePermissions} 
-      />
-      <h2>Config</h2>
-      <Checkbox label="Developer mode"
-        name="devMode"
-        description="(More options and information useful for debugging)"
-        enabled={developerMode} onToggle={toggleDeveloperMode} 
-      />
+      <section style={{ height: 'calc(320px - 34px - 16px)', overflow: 'auto' }}>
+
+        <h2>Wallet</h2>
+        <EditableText
+          value={deviceName}
+          onChange={setDeviceName}
+          name="device-id"
+          label="Device name"
+          description="(This is how you will recognize the wallet in the backup provider)"
+        />
+        <h2>Permissions</h2>
+        <Checkbox label="Automatically open wallet based on page content"
+          name="perm"
+          description="(Enabling this option below will make using the wallet faster, but requires more permissions from your browser.)"
+          enabled={permissionsEnabled} onToggle={togglePermissions}
+        />
+        <h2>Config</h2>
+        <Checkbox label="Developer mode"
+          name="devMode"
+          description="(More options and information useful for debugging)"
+          enabled={developerMode} onToggle={toggleDeveloperMode}
+        />
+      </section>
     </div>
   )
 }

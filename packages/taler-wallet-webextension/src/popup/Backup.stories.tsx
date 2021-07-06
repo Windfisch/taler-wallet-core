@@ -40,46 +40,117 @@ function createExample<Props>(Component: FunctionalComponent<Props>, props: Part
   return r
 }
 
-export const Example = createExample(TestedComponent, {
-  deviceName: "somedevicename",
-  providers: {
-    ARS: {
-      "active": true,
-      "syncProviderBaseUrl": "http://sync.taler:9967/",
-      "lastSuccessfulBackupTimestamp": {
-        "t_ms": 1625063925078
-      },
-      "paymentProposalIds": [
-        "43Q5WWRJPNS4SE9YKS54H9THDS94089EDGXW9EHBPN6E7M184XEG"
-      ],
-      "paymentStatus": {
-        "type": ProviderPaymentType.Paid,
-        "paidUntil": {
-          "t_ms": 1656599921000
-        }
-      },
-      "terms": {
-        "annualFee": "ARS:1",
-        "storageLimitInMegabytes": 16,
-        "supportedProtocolVersion": "0.0"
+export const LotOfProviders = createExample(TestedComponent, {
+  providers: [{
+    "active": true,
+    "syncProviderBaseUrl": "http://sync.taler:9967/",
+    "lastSuccessfulBackupTimestamp": {
+      "t_ms": 1625063925078
+    },
+    "paymentProposalIds": [
+      "43Q5WWRJPNS4SE9YKS54H9THDS94089EDGXW9EHBPN6E7M184XEG"
+    ],
+    "paymentStatus": {
+      "type": ProviderPaymentType.Paid,
+      "paidUntil": {
+        "t_ms": 1656599921000
       }
     },
-    KUDOS: {
-      "active": false,
-      "syncProviderBaseUrl": "http://sync.demo.taler.net/",
-      "paymentProposalIds": [],
-      "paymentStatus": {
-        "type": ProviderPaymentType.Unpaid,
-      },
-      "terms": {
-        "annualFee": "KUDOS:0.1",
-        "storageLimitInMegabytes": 16,
-        "supportedProtocolVersion": "0.0"
-      }
+    "terms": {
+      "annualFee": "ARS:1",
+      "storageLimitInMegabytes": 16,
+      "supportedProtocolVersion": "0.0"
+    }
+  }, {
+    "active": false,
+    "syncProviderBaseUrl": "http://sync.demo.taler.net/",
+    "paymentProposalIds": [],
+    "paymentStatus": {
+      "type": ProviderPaymentType.Unpaid,
     },
-    USD: undefined,
-    EUR: undefined
-  }
+    "terms": {
+      "annualFee": "KUDOS:0.1",
+      "storageLimitInMegabytes": 16,
+      "supportedProtocolVersion": "0.0"
+    }
+  },{
+    "active": false,
+    "syncProviderBaseUrl": "http://sync.demo.taler.net/",
+    "paymentProposalIds": [],
+    "paymentStatus": {
+      "type": ProviderPaymentType.Unpaid,
+    },
+    "terms": {
+      "annualFee": "KUDOS:0.1",
+      "storageLimitInMegabytes": 16,
+      "supportedProtocolVersion": "0.0"
+    }
+  },{
+    "active": false,
+    "syncProviderBaseUrl": "http://sync.demo.taler.net/",
+    "paymentProposalIds": [],
+    "paymentStatus": {
+      "type": ProviderPaymentType.Unpaid,
+    },
+    "terms": {
+      "annualFee": "KUDOS:0.1",
+      "storageLimitInMegabytes": 16,
+      "supportedProtocolVersion": "0.0"
+    }
+  },{
+    "active": false,
+    "syncProviderBaseUrl": "http://sync.demo.taler.net/",
+    "paymentProposalIds": [],
+    "paymentStatus": {
+      "type": ProviderPaymentType.Unpaid,
+    },
+    "terms": {
+      "annualFee": "KUDOS:0.1",
+      "storageLimitInMegabytes": 16,
+      "supportedProtocolVersion": "0.0"
+    }
+  },{
+    "active": false,
+    "syncProviderBaseUrl": "http://sync.demo.taler.net/",
+    "paymentProposalIds": [],
+    "paymentStatus": {
+      "type": ProviderPaymentType.Unpaid,
+    },
+    "terms": {
+      "annualFee": "KUDOS:0.1",
+      "storageLimitInMegabytes": 16,
+      "supportedProtocolVersion": "0.0"
+    }
+  }]
 });
 
+
+export const OneProvider = createExample(TestedComponent, {
+  providers: [{
+    "active": true,
+    "syncProviderBaseUrl": "http://sync.taler:9967/",
+    "lastSuccessfulBackupTimestamp": {
+      "t_ms": 1625063925078
+    },
+    "paymentProposalIds": [
+      "43Q5WWRJPNS4SE9YKS54H9THDS94089EDGXW9EHBPN6E7M184XEG"
+    ],
+    "paymentStatus": {
+      "type": ProviderPaymentType.Paid,
+      "paidUntil": {
+        "t_ms": 1656599921000
+      }
+    },
+    "terms": {
+      "annualFee": "ARS:1",
+      "storageLimitInMegabytes": 16,
+      "supportedProtocolVersion": "0.0"
+    }
+  }]
+});
+
+
+export const Empty = createExample(TestedComponent, {
+  providers: []
+});
 

@@ -15,53 +15,64 @@
 */
 
 
-import { Timestamp } from "@gnu-taler/taler-util";
+import { i18n, Timestamp } from "@gnu-taler/taler-util";
+import { ProviderInfo } from "@gnu-taler/taler-wallet-core";
 import { formatDuration, intervalToDuration } from "date-fns";
 import { JSX, VNode } from "preact";
-import { ProvidersByCurrency, useBackupStatus } from "../hooks/useProvidersByCurrency";
+import { useBackupStatus } from "../hooks/useProvidersByCurrency";
 import { Pages } from "./popup";
 
-export function BackupPage(): VNode {
+interface Props {
+  onAddProvider: () => void;
+}
+
+export function BackupPage({ onAddProvider }: Props): VNode {
   const status = useBackupStatus()
   if (!status) {
     return <div>Loading...</div>
   }
-  return <BackupView deviceName={status.deviceName} providers={status.providers}/>;
+  return <BackupView providers={status.providers} onAddProvider={onAddProvider} />;
 }
 
 export interface ViewProps {
-  deviceName: string;
-  providers: ProvidersByCurrency
+  providers: ProviderInfo[],
+  onAddProvider: () => void;
 }
 
-export function BackupView({ deviceName, providers }: ViewProps): VNode {
+export function BackupView({ providers, onAddProvider }: ViewProps): VNode {
   return (
     <div style={{ height: 'calc(320px - 34px - 16px)', overflow: 'auto' }}>
-      <div style={{ display: 'flex', flexDirection: 'row', width: '100%',  justifyContent: 'space-between' }}>
-        <h2 style={{ width: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 10, marginBottom:10 }}>
-          {deviceName}
-        </h2>
-        <div style={{ flexDirection: 'row', marginTop: 'auto', marginBottom: 'auto' }}>
-          <button class="pure-button button-secondary">rename</button>
-        </div>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <section style={{ flex: '1 0 auto', height: 'calc(320px - 34px - 34px - 16px)', overflow: 'auto' }}>
+
+          {!!providers.length && <div>
+            {providers.map((provider, idx) => {
+              return <BackupLayout
+                status={provider.paymentStatus}
+                timestamp={provider.lastSuccessfulBackupTimestamp}
+                id={idx}
+                active={provider.active}
+                subtitle={provider.syncProviderBaseUrl}
+                title={provider.syncProviderBaseUrl}
+              />
+            })}
+          </div>}
+          {!providers.length && <div>
+            There is not backup providers configured, add one with the button below
+          </div>}
+
+        </section>
+        <footer style={{ marginTop: 'auto', display: 'flex', flexShrink: 0 }}>
+          <div style={{ width: '100%', flexDirection: 'row', justifyContent: 'flex-end', display: 'flex' }}>
+            <button class="pure-button button-secondary" disabled={!providers.length} style={{ marginLeft: 5 }} onClick={onAddProvider}>{
+              providers.length > 1 ?
+              <i18n.Translate>sync all now</i18n.Translate>:
+              <i18n.Translate>sync now</i18n.Translate>
+            }</button>
+            <button class="pure-button button-success" style={{ marginLeft: 5 }} onClick={onAddProvider}><i18n.Translate>add provider</i18n.Translate></button>
+          </div>
+        </footer>
       </div>
-      {Object.keys(providers).map((currency) => {
-        const provider = providers[currency]
-        if (!provider) {
-          return <BackupLayout
-            id={currency}
-            title={currency}
-          />
-        }
-        return <BackupLayout
-          status={provider.paymentStatus}
-          timestamp={provider.lastSuccessfulBackupTimestamp}
-          id={currency}
-          active={provider.active}
-          subtitle={provider.syncProviderBaseUrl}
-          title={currency}
-        />
-      })}
     </div>
   )
 }
@@ -70,7 +81,7 @@ interface TransactionLayoutProps {
   status?: any;
   timestamp?: Timestamp;
   title: string;
-  id: string;
+  id: number;
   subtitle?: string;
   active?: boolean;
 }
@@ -96,13 +107,13 @@ function BackupLayout(props: TransactionLayoutProps): JSX.Element {
       <div
         style={{ display: "flex", flexDirection: "column", color: !props.active ? "gray" : undefined }}
       >
-        {dateStr && <div style={{ fontSize: "small", color: "gray" }}>{dateStr}</div>}
-        {!dateStr && <div style={{ fontSize: "small", color: "red" }}>never synced</div>}
+
         <div style={{ fontVariant: "small-caps", fontSize: "x-large" }}>
-          <a href={Pages.provider_detail.replace(':currency', props.id)}><span>{props.title}</span></a>
+          <a href={Pages.provider_detail.replace(':pid', String(props.id))}><span>{props.title}</span></a>
         </div>
 
-        <div>{props.subtitle}</div>
+        {dateStr && <div style={{ fontSize: "small" }}>Last time synced: {dateStr}</div>}
+        {!dateStr && <div style={{ fontSize: "small", color: "red" }}>never synced</div>}
       </div>
       <div style={{
         marginLeft: "auto",
@@ -111,7 +122,7 @@ function BackupLayout(props: TransactionLayoutProps): JSX.Element {
         alignItems: "center",
         alignSelf: "center"
       }}>
-        <div style={{}}>
+        <div style={{ whiteSpace: 'nowrap' }}>
           {!props.status ? "missing" : (
             props.status?.type === 'paid' ? daysUntil(props.status.paidUntil) : 'unpaid'
           )}

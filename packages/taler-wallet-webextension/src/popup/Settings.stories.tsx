@@ -19,13 +19,6 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 
-import {
-  PaymentStatus,
-  TransactionCommon, TransactionDeposit, TransactionPayment,
-  TransactionRefresh, TransactionRefund, TransactionTip, TransactionType,
-  TransactionWithdrawal,
-  WithdrawalType
-} from '@gnu-taler/taler-util';
 import { FunctionalComponent } from 'preact';
 import { SettingsView as TestedComponent } from './Settings';
 
@@ -33,9 +26,7 @@ export default {
   title: 'popup/settings',
   component: TestedComponent,
   argTypes: {
-    onRetry: { action: 'onRetry' },
-    onDelete: { action: 'onDelete' },
-    onBack: { action: 'onBack' },
+    setDeviceName: () => Promise.resolve(),
   }
 };
 
@@ -46,9 +37,14 @@ function createExample<Props>(Component: FunctionalComponent<Props>, props: Part
   return r
 }
 
-export const AllOff = createExample(TestedComponent, {});
+export const AllOff = createExample(TestedComponent, {
+  deviceName: 'this-is-the-device-name',
+  setDeviceName: () => Promise.resolve(),
+});
 
 export const OneChecked = createExample(TestedComponent, {
+  deviceName: 'this-is-the-device-name',
   permissionsEnabled: true,
+  setDeviceName: () => Promise.resolve(),
 });
 
