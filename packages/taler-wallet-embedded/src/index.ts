@@ -46,7 +46,7 @@ import {
 
 export { handleWorkerError, handleWorkerMessage };
 
-export class AndroidHttpLib implements HttpRequestLibrary {
+export class NativeHttpLib implements HttpRequestLibrary {
   useNfcTunnel = false;
 
   private nodeHttpLib: HttpRequestLibrary = new NodeHttpLib();
@@ -138,12 +138,12 @@ export class AndroidHttpLib implements HttpRequestLibrary {
   }
 }
 
-function sendAkonoMessage(ev: CoreApiEnvelope): void {
+function sendNativeMessage(ev: CoreApiEnvelope): void {
   // @ts-ignore
-  const sendMessage = globalThis.__akono_sendMessage;
+  const sendMessage = globalThis.__native_sendMessage;
   if (typeof sendMessage !== "function") {
     const errMsg =
-      "FATAL: cannot install android wallet listener: akono functions missing";
+      "FATAL: cannot install native wallet listener: native functions missing";
     console.error(errMsg);
     throw new Error(errMsg);
   }
@@ -152,14 +152,14 @@ function sendAkonoMessage(ev: CoreApiEnvelope): void {
   sendMessage(m);
 }
 
-class AndroidWalletMessageHandler {
+class NativeWalletMessageHandler {
   walletArgs: DefaultNodeWalletArgs | undefined;
   maybeWallet: Wallet | undefined;
   wp = openPromise<Wallet>();
   httpLib = new NodeHttpLib();
 
   /**
-   * Handle a request from the Android wallet.
+   * Handle a request from the native wallet.
    */
   async handleMessage(
     operation: string,
@@ -178,7 +178,7 @@ class AndroidWalletMessageHandler {
     const reinit = async () => {
       const w = await getDefaultNodeWallet(this.walletArgs);
       this.maybeWallet = w;
-      await w.handleCoreApiRequest("initWallet", "akono-init", {});
+      await w.handleCoreApiRequest("initWallet", "native-init", {});
       w.runRetryLoop().catch((e) => {
         console.error("Error during wallet retry loop", e);
       });
@@ -189,7 +189,7 @@ class AndroidWalletMessageHandler {
       case "init": {
         this.walletArgs = {
           notifyHandler: async (notification: WalletNotification) => {
-            sendAkonoMessage({ type: "notification", payload: notification });
+            sendNativeMessage({ type: "notification", payload: notification });
           },
           persistentStoragePath: args.persistentStoragePath,
           httpLib: this.httpLib,
@@ -241,8 +241,8 @@ class AndroidWalletMessageHandler {
   }
 }
 
-export function installAndroidWalletListener(): void {
-  const handler = new AndroidWalletMessageHandler();
+export function installNativeWalletListener(): void {
+  const handler = new NativeWalletMessageHandler();
   const onMessage = async (msgStr: any): Promise<void> => {
     if (typeof msgStr !== "string") {
       console.error("expected string as message");
@@ -252,19 +252,19 @@ export function installAndroidWalletListener(): void {
     const operation = msg.operation;
     if (typeof operation !== "string") {
       console.error(
-        "message to android wallet helper must contain operation of type string",
+        "message to native wallet helper must contain operation of type string",
       );
       return;
     }
     const id = msg.id;
-    console.log(`android listener: got request for ${operation} (${id})`);
+    console.log(`native listener: got request for ${operation} (${id})`);
 
     try {
       const respMsg = await handler.handleMessage(operation, id, msg.args);
       console.log(
-        `android listener: sending success response for ${operation} (${id})`,
+        `native listener: sending success response for ${operation} (${id})`,
       );
-      sendAkonoMessage(respMsg);
+      sendNativeMessage(respMsg);
     } catch (e) {
       const respMsg: CoreApiResponse = {
         type: "error",
@@ -276,13 +276,13 @@ export function installAndroidWalletListener(): void {
           {},
         ),
       };
-      sendAkonoMessage(respMsg);
+      sendNativeMessage(respMsg);
       return;
     }
   };
 
   // @ts-ignore
-  globalThis.__akono_onMessage = onMessage;
+  globalThis.__native_onMessage = onMessage;
 
-  console.log("android wallet listener installed");
+  console.log("native wallet listener installed");
 }

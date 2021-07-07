@@ -1,5 +1,5 @@
 {
-  "name": "@gnu-taler/taler-wallet-android",
+  "name": "@gnu-taler/taler-wallet-embedded",
   "version": "0.8.0",
   "description": "",
   "engines": {
@@ -9,7 +9,7 @@
     "type": "git",
     "url": "git://git.taler.net/wallet-core.git"
   },
-  "main": "dist/taler-wallet-android.js",
+  "main": "dist/taler-wallet-embedded.js",
   "author": "Florian Dold",
   "license": "GPL-3.0",
   "scripts": {

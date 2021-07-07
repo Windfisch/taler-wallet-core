@@ -62,37 +62,6 @@ importers:
       rimraf: 3.0.2
       typescript: 4.2.3
 
-  packages/taler-wallet-android:
-    specifiers:
-      '@gnu-taler/taler-wallet-core': workspace:*
-      '@rollup/plugin-commonjs': ^17.0.0
-      '@rollup/plugin-json': ^4.1.0
-      '@rollup/plugin-node-resolve': ^11.1.0
-      '@rollup/plugin-replace': ^2.3.4
-      '@types/node': ^14.14.22
-      prettier: ^2.2.1
-      rimraf: ^3.0.2
-      rollup: ^2.43.0
-      rollup-plugin-sourcemaps: ^0.6.3
-      rollup-plugin-terser: ^7.0.2
-      tslib: ^2.1.0
-      typescript: ^4.2.3
-    dependencies:
-      '@gnu-taler/taler-wallet-core': link:../taler-wallet-core
-      tslib: 2.1.0
-    devDependencies:
-      '@rollup/plugin-commonjs': 17.0.0_rollup@2.43.0
-      '@rollup/plugin-json': 4.1.0_rollup@2.43.0
-      '@rollup/plugin-node-resolve': 11.1.0_rollup@2.43.0
-      '@rollup/plugin-replace': 2.3.4_rollup@2.43.0
-      '@types/node': 14.14.22
-      prettier: 2.2.1
-      rimraf: 3.0.2
-      rollup: 2.43.0
-      rollup-plugin-sourcemaps: 0.6.3_79665b55c550dd6b792bac22e5c7c20e
-      rollup-plugin-terser: 7.0.2_rollup@2.43.0
-      typescript: 4.2.3
-
   packages/taler-wallet-cli:
     specifiers:
       '@gnu-taler/taler-util': workspace:*
@@ -202,6 +171,37 @@ importers:
       source-map-resolve: 0.6.0
       typedoc: 0.20.16_typescript@4.1.3
       typescript: 4.1.3
+
+  packages/taler-wallet-embedded:
+    specifiers:
+      '@gnu-taler/taler-wallet-core': workspace:*
+      '@rollup/plugin-commonjs': ^17.0.0
+      '@rollup/plugin-json': ^4.1.0
+      '@rollup/plugin-node-resolve': ^11.1.0
+      '@rollup/plugin-replace': ^2.3.4
+      '@types/node': ^14.14.22
+      prettier: ^2.2.1
+      rimraf: ^3.0.2
+      rollup: ^2.43.0
+      rollup-plugin-sourcemaps: ^0.6.3
+      rollup-plugin-terser: ^7.0.2
+      tslib: ^2.1.0
+      typescript: ^4.2.3
+    dependencies:
+      '@gnu-taler/taler-wallet-core': link:../taler-wallet-core
+      tslib: 2.2.0
+    devDependencies:
+      '@rollup/plugin-commonjs': 17.1.0_rollup@2.43.0
+      '@rollup/plugin-json': 4.1.0_rollup@2.43.0
+      '@rollup/plugin-node-resolve': 11.2.0_rollup@2.43.0
+      '@rollup/plugin-replace': 2.4.2_rollup@2.43.0
+      '@types/node': 14.17.1
+      prettier: 2.2.1
+      rimraf: 3.0.2
+      rollup: 2.43.0
+      rollup-plugin-sourcemaps: 0.6.3_6efbbae6640434994627e0ab519821c6
+      rollup-plugin-terser: 7.0.2_rollup@2.43.0
+      typescript: 4.2.3
 
   packages/taler-wallet-webextension:
     specifiers:
@@ -3252,22 +3252,6 @@ packages:
       rollup: 2.37.1
     dev: true
 
-  /@rollup/plugin-commonjs/17.0.0_rollup@2.43.0:
-    resolution: {integrity: sha512-/omBIJG1nHQc+bgkYDuLpb/V08QyutP9amOrJRUSlYJZP+b/68gM//D8sxJe3Yry2QnYIr3QjR3x4AlxJEN3GA==}
-    engines: {node: '>= 8.0.0'}
-    peerDependencies:
-      rollup: ^2.30.0
-    dependencies:
-      '@rollup/pluginutils': 3.1.0_rollup@2.43.0
-      commondir: 1.0.1
-      estree-walker: 2.0.2
-      glob: 7.1.6
-      is-reference: 1.2.1
-      magic-string: 0.25.7
-      resolve: 1.19.0
-      rollup: 2.43.0
-    dev: true
-
   /@rollup/plugin-commonjs/17.1.0_rollup@2.37.1:
     resolution: {integrity: sha512-PoMdXCw0ZyvjpCMT5aV4nkL0QywxP29sODQsSGeDpr/oI49Qq9tRtAsb/LbYbDzFlOydVEqHmmZWFtXJEAX9ew==}
     engines: {node: '>= 8.0.0'}
@@ -3282,6 +3266,22 @@ packages:
       magic-string: 0.25.7
       resolve: 1.20.0
       rollup: 2.37.1
+    dev: true
+
+  /@rollup/plugin-commonjs/17.1.0_rollup@2.43.0:
+    resolution: {integrity: sha512-PoMdXCw0ZyvjpCMT5aV4nkL0QywxP29sODQsSGeDpr/oI49Qq9tRtAsb/LbYbDzFlOydVEqHmmZWFtXJEAX9ew==}
+    engines: {node: '>= 8.0.0'}
+    peerDependencies:
+      rollup: ^2.30.0
+    dependencies:
+      '@rollup/pluginutils': 3.1.0_rollup@2.43.0
+      commondir: 1.0.1
+      estree-walker: 2.0.2
+      glob: 7.1.6
+      is-reference: 1.2.1
+      magic-string: 0.25.7
+      resolve: 1.20.0
+      rollup: 2.43.0
     dev: true
 
   /@rollup/plugin-image/2.0.6_rollup@2.37.1:
@@ -3328,21 +3328,6 @@ packages:
       rollup: 2.37.1
     dev: true
 
-  /@rollup/plugin-node-resolve/11.1.0_rollup@2.43.0:
-    resolution: {integrity: sha512-ouBBppRdWJKCllDXGzJ7ZIkYbaq+5TmyP0smt1vdJCFfoZhLi31vhpmjLhyo8lreHf4RoeSNllaWrvSqHpHRog==}
-    engines: {node: '>= 10.0.0'}
-    peerDependencies:
-      rollup: ^1.20.0||^2.0.0
-    dependencies:
-      '@rollup/pluginutils': 3.1.0_rollup@2.43.0
-      '@types/resolve': 1.17.1
-      builtin-modules: 3.2.0
-      deepmerge: 4.2.2
-      is-module: 1.0.0
-      resolve: 1.19.0
-      rollup: 2.43.0
-    dev: true
-
   /@rollup/plugin-node-resolve/11.2.0_rollup@2.37.1:
     resolution: {integrity: sha512-qHjNIKYt5pCcn+5RUBQxK8krhRvf1HnyVgUCcFFcweDS7fhkOLZeYh0mhHK6Ery8/bb9tvN/ubPzmfF0qjDCTA==}
     engines: {node: '>= 10.0.0'}
@@ -3356,6 +3341,21 @@ packages:
       is-module: 1.0.0
       resolve: 1.20.0
       rollup: 2.37.1
+    dev: true
+
+  /@rollup/plugin-node-resolve/11.2.0_rollup@2.43.0:
+    resolution: {integrity: sha512-qHjNIKYt5pCcn+5RUBQxK8krhRvf1HnyVgUCcFFcweDS7fhkOLZeYh0mhHK6Ery8/bb9tvN/ubPzmfF0qjDCTA==}
+    engines: {node: '>= 10.0.0'}
+    peerDependencies:
+      rollup: ^1.20.0||^2.0.0
+    dependencies:
+      '@rollup/pluginutils': 3.1.0_rollup@2.43.0
+      '@types/resolve': 1.17.1
+      builtin-modules: 3.2.0
+      deepmerge: 4.2.2
+      is-module: 1.0.0
+      resolve: 1.20.0
+      rollup: 2.43.0
     dev: true
 
   /@rollup/plugin-node-resolve/7.1.3_rollup@1.32.1:
@@ -3382,16 +3382,6 @@ packages:
       rollup: 2.37.1
     dev: true
 
-  /@rollup/plugin-replace/2.3.4_rollup@2.43.0:
-    resolution: {integrity: sha512-waBhMzyAtjCL1GwZes2jaE9MjuQ/DQF2BatH3fRivUF3z0JBFrU0U6iBNC/4WR+2rLKhaAhPWDNPYp4mI6RqdQ==}
-    peerDependencies:
-      rollup: ^1.20.0 || ^2.0.0
-    dependencies:
-      '@rollup/pluginutils': 3.1.0_rollup@2.43.0
-      magic-string: 0.25.7
-      rollup: 2.43.0
-    dev: true
-
   /@rollup/plugin-replace/2.4.2_rollup@1.32.1:
     resolution: {integrity: sha512-IGcu+cydlUMZ5En85jxHH4qj2hta/11BHq95iHEyb2sbgiN0eCdzvUcHw5gt9pBL5lTi4JDYJ1acCoMGpTvEZg==}
     peerDependencies:
@@ -3400,6 +3390,16 @@ packages:
       '@rollup/pluginutils': 3.1.0_rollup@1.32.1
       magic-string: 0.25.7
       rollup: 1.32.1
+    dev: true
+
+  /@rollup/plugin-replace/2.4.2_rollup@2.43.0:
+    resolution: {integrity: sha512-IGcu+cydlUMZ5En85jxHH4qj2hta/11BHq95iHEyb2sbgiN0eCdzvUcHw5gt9pBL5lTi4JDYJ1acCoMGpTvEZg==}
+    peerDependencies:
+      rollup: ^1.20.0 || ^2.0.0
+    dependencies:
+      '@rollup/pluginutils': 3.1.0_rollup@2.43.0
+      magic-string: 0.25.7
+      rollup: 2.43.0
     dev: true
 
   /@rollup/pluginutils/3.1.0_rollup@1.32.1:
@@ -12052,7 +12052,7 @@ packages:
     resolution: {integrity: sha512-KWYVV1c4i+jbMpaBC+U++4Va0cp8OisU185o73T1vo99hqi7w8tSJfUXYswwqqrjzwxa6KpRK54WhPvwf5w6PQ==}
     engines: {node: '>= 10.13.0'}
     dependencies:
-      '@types/node': 14.14.22
+      '@types/node': 14.17.1
       merge-stream: 2.0.0
       supports-color: 7.2.0
     dev: true
@@ -15767,7 +15767,7 @@ packages:
       source-map-resolve: 0.6.0
     dev: true
 
-  /rollup-plugin-sourcemaps/0.6.3_79665b55c550dd6b792bac22e5c7c20e:
+  /rollup-plugin-sourcemaps/0.6.3_6efbbae6640434994627e0ab519821c6:
     resolution: {integrity: sha512-paFu+nT1xvuO1tPFYXGe+XnQvg4Hjqv/eIhG8i5EspfYYPBKL57X7iVbfv55aNVASg3dzWvES9dmWsL2KhfByw==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
@@ -15778,7 +15778,7 @@ packages:
         optional: true
     dependencies:
       '@rollup/pluginutils': 3.1.0_rollup@2.43.0
-      '@types/node': 14.14.22
+      '@types/node': 14.17.1
       rollup: 2.43.0
       source-map-resolve: 0.6.0
     dev: true
@@ -15801,7 +15801,7 @@ packages:
     peerDependencies:
       rollup: ^2.0.0
     dependencies:
-      '@babel/code-frame': 7.10.4
+      '@babel/code-frame': 7.12.13
       jest-worker: 26.6.2
       rollup: 2.37.1
       serialize-javascript: 4.0.0
@@ -15813,7 +15813,7 @@ packages:
     peerDependencies:
       rollup: ^2.0.0
     dependencies:
-      '@babel/code-frame': 7.10.4
+      '@babel/code-frame': 7.12.13
       jest-worker: 26.6.2
       rollup: 2.43.0
       serialize-javascript: 4.0.0
@@ -17257,7 +17257,6 @@ packages:
 
   /tslib/2.2.0:
     resolution: {integrity: sha512-gS9GVHRU+RGn5KQM2rllAlR3dU6m7AcpJKdtH8gFvQiC4Otgk98XnmMU+nZenHt/+VhnBPWwgrJsyrdcw6i23w==}
-    dev: true
 
   /tsutils/3.19.1_typescript@4.1.3:
     resolution: {integrity: sha512-GEdoBf5XI324lu7ycad7s6laADfnAqCw6wLGI+knxvw9vsIYBaJfYdmeCEG3FMMUiSm3OGgNb+m6utsWf5h9Vw==}
