@@ -41,6 +41,7 @@ import {
 import {
   addBackupProvider,
   codecForAddBackupProviderRequest,
+  codecForRunBackupCycle,
   getBackupInfo,
   getBackupRecovery,
   loadBackupRecovery,
@@ -809,7 +810,8 @@ async function dispatchRequestInternal(
       return {};
     }
     case "runBackupCycle": {
-      await runBackupCycle(ws);
+      const req = codecForRunBackupCycle().decode(payload);
+      await runBackupCycle(ws, req);
       return {};
     }
     case "exportBackupRecovery": {

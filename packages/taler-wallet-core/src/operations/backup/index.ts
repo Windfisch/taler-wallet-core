@@ -33,6 +33,7 @@ import {
   Codec,
   codecForAmountString,
   codecForBoolean,
+  codecForList,
   codecForNumber,
   codecForString,
   codecOptional,
@@ -41,6 +42,7 @@ import {
   getTimestampNow,
   j2s,
   Logger,
+  notEmpty,
   NotificationType,
   PreparePayResultType,
   RecoveryLoadRequest,
@@ -520,6 +522,19 @@ export async function processBackupForProvider(
   await guardOperationException(run, onOpErr);
 }
 
+
+export interface RunBackupCycleRequest {
+  /**
+   * List of providers to backup or empty for all known providers. 
+   */
+  providers?: Array<string>;
+}
+
+export const codecForRunBackupCycle = (): Codec<RunBackupCycleRequest> =>
+  buildCodecForObject<RunBackupCycleRequest>()
+    .property("providers", codecOptional(codecForList(codecForString())))
+    .build("RunBackupCycleRequest");
+
 /**
  * Do one backup cycle that consists of:
  * 1. Exporting a backup and try to upload it.
@@ -527,11 +542,15 @@ export async function processBackupForProvider(
  * 2. Download, verify and import backups from connected sync accounts.
  * 3. Upload the updated backup blob.
  */
-export async function runBackupCycle(ws: InternalWalletState): Promise<void> {
+export async function runBackupCycle(ws: InternalWalletState, req: RunBackupCycleRequest): Promise<void> {
   const providers = await ws.db
     .mktx((x) => ({ backupProviders: x.backupProviders }))
     .runReadOnly(async (tx) => {
-      return await tx.backupProviders.iter().toArray();
+      if (req.providers) {
+        const rs = await Promise.all(req.providers.map(id => tx.backupProviders.get(id)))
+        return rs.filter(notEmpty)
+      }
+      return await tx.backupProviders.iter(req.providers).toArray();
     });
   const backupJson = await exportBackup(ws);
   const backupConfig = await provideBackupState(ws);

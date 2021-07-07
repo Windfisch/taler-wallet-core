@@ -110,3 +110,18 @@ export function strcmp(s1: string, s2: string): number {
 export function j2s(x: any): string {
   return JSON.stringify(x, undefined, 2);
 }
+
+/**
+ * Use this to filter null or undefined from an array in a type-safe fashion
+ * 
+ * example:
+ * const array: Array<T | undefined> = [undefined, null]
+ * const filtered: Array<T> = array.filter(notEmpty)
+ * 
+ * @param value 
+ * @returns 
+ */
+export function notEmpty<T>(value: T | null | undefined): value is T {
+  return value !== null && value !== undefined;
+}
+
