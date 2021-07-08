@@ -49,6 +49,7 @@ import {
   MerchantServiceInterface,
   MerchantPrivateApi,
   HarnessExchangeBankAccount,
+  WithAuthorization,
 } from "./harness.js";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
@@ -345,6 +346,7 @@ export async function makeTestPayment(
     order: Partial<ContractTerms>;
     instance?: string;
   },
+  auth: WithAuthorization = {},
 ): Promise<void> {
   // Set up order.
 
@@ -353,11 +355,11 @@ export async function makeTestPayment(
 
   const orderResp = await MerchantPrivateApi.createOrder(merchant, instance, {
     order: args.order,
-  });
+  }, auth);
 
   let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
-  });
+  }, auth);
 
   t.assertTrue(orderStatus.order_status === "unpaid");
 
@@ -385,7 +387,7 @@ export async function makeTestPayment(
   orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
     instance,
-  });
+  }, auth);
 
   t.assertTrue(orderStatus.order_status === "paid");
 }

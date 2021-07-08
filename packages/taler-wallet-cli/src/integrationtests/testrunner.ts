@@ -22,6 +22,7 @@ import {
   TestRunResult,
 } from "./harness";
 import { runPaymentTest } from "./test-payment";
+import { runPaymentDemoTest } from "./test-payment-on-demo";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
@@ -115,6 +116,7 @@ const allTests: TestMainFunction[] = [
   runPaymentIdempotencyTest,
   runPaymentMultipleTest,
   runPaymentTest,
+  runPaymentDemoTest,
   runPaymentTransientTest,
   runPayPaidTest,
   runPaywallFlowTest,

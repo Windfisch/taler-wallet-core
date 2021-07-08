@@ -118,6 +118,10 @@ export async function delayMs(ms: number): Promise<void> {
   });
 }
 
+export interface WithAuthorization {
+  Authorization?: string,
+} ;
+
 interface WaitResult {
   code: number | null;
   signal: NodeJS.Signals | null;
@@ -1258,16 +1262,18 @@ export namespace MerchantPrivateApi {
     merchantService: MerchantServiceInterface,
     instanceName: string,
     req: PostOrderRequest,
+    withAuthorization: WithAuthorization = {},
   ): Promise<PostOrderResponse> {
     const baseUrl = merchantService.makeInstanceBaseUrl(instanceName);
     let url = new URL("private/orders", baseUrl);
-    const resp = await axios.post(url.href, req);
+    const resp = await axios.post(url.href, req, { headers: withAuthorization });
     return codecForPostOrderResponse().decode(resp.data);
   }
 
   export async function queryPrivateOrderStatus(
     merchantService: MerchantServiceInterface,
     query: PrivateOrderStatusQuery,
+    withAuthorization: WithAuthorization = {},
   ): Promise<MerchantOrderPrivateStatusResponse> {
     const reqUrl = new URL(
       `private/orders/${query.orderId}`,
@@ -1276,7 +1282,7 @@ export namespace MerchantPrivateApi {
     if (query.sessionId) {
       reqUrl.searchParams.set("session_id", query.sessionId);
     }
-    const resp = await axios.get(reqUrl.href);
+    const resp = await axios.get(reqUrl.href, { headers: withAuthorization });
     return codecForMerchantOrderPrivateStatusResponse().decode(resp.data);
   }
 
