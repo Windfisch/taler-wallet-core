@@ -190,6 +190,15 @@ export function syncAllProviders(): Promise<void> {
   return callBackend("runBackupCycle", {})
 }
 
+export function syncOneProvider(url: string): Promise<void> {
+  return callBackend("runBackupCycle", { providers: [url] })
+}
+export function removeProvider(url: string): Promise<void> {
+  return callBackend("removeBackupProvider", { provider: url })
+}
+export function extendedProvider(url: string): Promise<void> {
+  return callBackend("extendBackupProvider", { provider: url })
+}
 
 /**
  * Retry a transaction

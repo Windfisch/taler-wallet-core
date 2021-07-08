@@ -20,6 +20,7 @@
 */
 
 import { ProviderPaymentType } from '@gnu-taler/taler-wallet-core';
+import { addDays } from 'date-fns';
 import { FunctionalComponent } from 'preact';
 import { BackupView as TestedComponent } from './BackupPage';
 
@@ -61,7 +62,27 @@ export const LotOfProviders = createExample(TestedComponent, {
       "storageLimitInMegabytes": 16,
       "supportedProtocolVersion": "0.0"
     }
-  }, {
+  },{
+    "active": true,
+    "syncProviderBaseUrl": "http://sync.taler:9967/",
+    "lastSuccessfulBackupTimestamp": {
+      "t_ms": 1625063925078
+    },
+    "paymentProposalIds": [
+      "43Q5WWRJPNS4SE9YKS54H9THDS94089EDGXW9EHBPN6E7M184XEG"
+    ],
+    "paymentStatus": {
+      "type": ProviderPaymentType.Paid,
+      "paidUntil": {
+        "t_ms": addDays(new Date(), 13).getTime()
+      }
+    },
+    "terms": {
+      "annualFee": "ARS:1",
+      "storageLimitInMegabytes": 16,
+      "supportedProtocolVersion": "0.0"
+    }
+  },{
     "active": false,
     "syncProviderBaseUrl": "http://sync.demo.taler.net/",
     "paymentProposalIds": [],

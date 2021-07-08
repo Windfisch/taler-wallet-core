@@ -5,6 +5,7 @@ import * as wxApi from "../wxApi";
 
 interface Props {
   currency: string;
+  onBack: () => void;
 }
 
 function getJsonIfOk(r: Response) {
@@ -20,16 +21,14 @@ function getJsonIfOk(r: Response) {
 }
 
 
-export function ProviderAddPage({ }: Props): VNode {
+export function ProviderAddPage({ onBack }: Props): VNode {
   const [verifying, setVerifying] = useState<{ url: string, provider: BackupBackupProviderTerms } | undefined>(undefined)
   const [readingTerms, setReadingTerms] = useState<boolean | undefined>(undefined)
   const alreadyCheckedTheTerms = readingTerms === false
 
   if (!verifying) {
     return <SetUrlView
-      onCancel={() => {
-        setVerifying(undefined);
-      }}
+      onCancel={onBack}
       onVerify={(url) => {
         return fetch(`${url}/config`)
           .catch(e => { throw new Error(`Network error`) })
@@ -56,7 +55,7 @@ export function ProviderAddPage({ }: Props): VNode {
       setReadingTerms(true)
     }}
     onConfirm={() => {
-      wxApi.addBackupProvider(verifying.url).then(_ => history.go(-1))
+      wxApi.addBackupProvider(verifying.url).then(onBack)
     }}
 
   />

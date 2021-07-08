@@ -1,12 +1,12 @@
-import { Amounts } from "@gnu-taler/taler-util";
 import { ProviderInfo, ProviderPaymentPaid, ProviderPaymentStatus, ProviderPaymentType } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useState } from "preact/hooks";
-
 import * as wxApi from "../wxApi";
+
 
 export interface BackupStatus {
   deviceName: string;
-  providers: ProviderInfo[]
+  providers: ProviderInfo[];
+  sync: () => Promise<void>;
 }
 
 function getStatusTypeOrder(t: ProviderPaymentStatus) {
@@ -40,11 +40,16 @@ export function useBackupStatus(): BackupStatus | undefined {
         return getStatusTypeOrder(a.paymentStatus) - getStatusTypeOrder(b.paymentStatus)
       })
 
-      setStatus({ deviceName: status.deviceId, providers })
+      async function sync() {
+        await wxApi.syncAllProviders()
+      }
+      
+      setStatus({ deviceName: status.deviceId, providers, sync })
     }
     run()
   }, [])
 
   return status
 }
+
 

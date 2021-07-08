@@ -99,17 +99,21 @@ function Application() {
             <Route path={Pages.settings} component={SettingsPage} />
             <Route path={Pages.dev} component={DeveloperPage} />
             <Route path={Pages.history} component={HistoryPage} />
-            <Route path={Pages.backup} component={BackupPage} 
+            <Route path={Pages.backup} component={BackupPage}
               onAddProvider={() => {
                 route(Pages.provider_add)
-              }} 
-              />
-            <Route path={Pages.provider_detail} component={ProviderDetailPage} 
-            onBack={() => {
-              route(Pages.backup)
-            }}
+              }}
             />
-            <Route path={Pages.provider_add} component={ProviderAddPage} />
+            <Route path={Pages.provider_detail} component={ProviderDetailPage}
+              onBack={() => {
+                route(Pages.backup)
+              }}
+            />
+            <Route path={Pages.provider_add} component={ProviderAddPage}
+              onBack={() => {
+                route(Pages.backup)
+              }}
+            />
             <Route path={Pages.transaction} component={TransactionPage} />
             <Route default component={Redirect} to={Pages.balance} />
           </Router>

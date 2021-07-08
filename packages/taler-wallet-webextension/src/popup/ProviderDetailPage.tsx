@@ -21,7 +21,8 @@ import { ContractTermsUtil } from "@gnu-taler/taler-wallet-core/src/util/contrac
 import { formatDuration, intervalToDuration, format } from "date-fns";
 import { Fragment, VNode } from "preact";
 import { useRef, useState } from "preact/hooks";
-import { useBackupStatus } from "../hooks/useProvidersByCurrency";
+import { useBackupStatus } from "../hooks/useBackupStatus";
+import { useProviderStatus } from "../hooks/useProviderStatus.js";
 import * as wxApi from "../wxApi";
 
 interface Props {
@@ -30,18 +31,16 @@ interface Props {
 }
 
 export function ProviderDetailPage({ pid, onBack }: Props): VNode {
-  const status = useBackupStatus()
+  const status = useProviderStatus(pid)
   if (!status) {
     return <div>Loading...</div>
   }
-  const idx = parseInt(pid, 10)
-  if (Number.isNaN(idx) || !(status.providers[idx])) {
+  if (!status.info) {
     onBack()
     return <div />
   }
-  const info = status.providers[idx];
-  return <ProviderView info={info}
-    onSync={() => { null }}
+  return <ProviderView info={status.info}
+    onSync={status.sync}
     onDelete={() => { null }}
     onBack={onBack}
     onExtend={() => { null }}
@@ -63,7 +62,7 @@ export function ProviderView({ info, onDelete, onSync, onBack, onExtend }: ViewP
       <div style={{ width: '100%', flexDirection: 'row', justifyContent: 'flex-end', display: 'flex' }}>
         {info && <button class="pure-button button-destructive" disabled onClick={onDelete}><i18n.Translate>remove</i18n.Translate></button>}
         {info && <button class="pure-button button-secondary" disabled style={{ marginLeft: 5 }} onClick={onExtend}><i18n.Translate>extend</i18n.Translate></button>}
-        {info && <button class="pure-button button-secondary" disabled style={{ marginLeft: 5 }} onClick={onSync}><i18n.Translate>sync now</i18n.Translate></button>}
+        {info && <button class="pure-button button-secondary" style={{ marginLeft: 5 }} onClick={onSync}><i18n.Translate>sync now</i18n.Translate></button>}
       </div>
     </footer>
   }
