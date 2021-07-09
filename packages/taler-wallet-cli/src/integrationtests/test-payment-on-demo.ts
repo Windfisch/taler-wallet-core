@@ -87,7 +87,7 @@ export async function runPaymentDemoTest(t: GlobalTestState) {
       merchant, wallet, order
     },
     {
-      "Authorization": `Bearer ${process.env["TALER_MERCHANT_TOKEN"]}`,
+      "Authorization": `Bearer ${process.env["TALER_ENV_FRONTENDS_APITOKEN"]}`,
     });
 
   await wallet.runUntilDone();
