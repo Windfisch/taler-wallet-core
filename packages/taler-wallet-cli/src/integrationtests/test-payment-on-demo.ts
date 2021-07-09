@@ -79,7 +79,7 @@ export async function runPaymentDemoTest(t: GlobalTestState) {
     name: "donations",
   };
 
-  t.assertTrue("TALER_MERCHANT_TOKEN" in process.env);
+  t.assertTrue("TALER_ENV_FRONTENDS_APITOKEN" in process.env);
 
   await makeTestPayment(
     t,
