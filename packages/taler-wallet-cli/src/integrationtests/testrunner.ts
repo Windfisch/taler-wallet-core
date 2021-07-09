@@ -148,7 +148,10 @@ export interface TestInfo {
 }
 
 function updateCurrentSymlink(testDir: string): void {
-  const currLink = path.join(os.tmpdir(), "taler-integrationtests-current");
+  const currLink = path.join(
+    os.tmpdir(),
+    `taler-integrationtests-${os.userInfo().username}-current`
+  );
   try {
     fs.unlinkSync(currLink);
   } catch (e) {
