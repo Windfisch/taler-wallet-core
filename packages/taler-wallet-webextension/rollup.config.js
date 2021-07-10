@@ -6,8 +6,18 @@ import builtins from "builtin-modules";
 import replace from "@rollup/plugin-replace";
 import ignore from "rollup-plugin-ignore"
 import image from '@rollup/plugin-image';
+import linaria from '@linaria/rollup';
+import css from 'rollup-plugin-css-only';
+import alias from '@rollup/plugin-alias';
 
 const makePlugins = () => [
+    alias({
+      entries: [
+        { find: 'react', replacement: 'preact/compat' },
+        { find: 'react-dom', replacement: 'preact/compat' }
+      ]
+    }),
+
     ignore(["module", "os"]),
     nodeResolve({
       browser: true,
@@ -31,6 +41,14 @@ const makePlugins = () => [
 
     json(),
     image(),
+
+    linaria({
+      sourceMap: process.env.NODE_ENV !== 'production',
+    }),
+    css({
+      output: 'styles.css',
+    }),
+    
 ];
 
 

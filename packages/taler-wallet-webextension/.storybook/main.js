@@ -40,8 +40,9 @@ module.exports = {
         '@babel/preset-react', {
           runtime: 'automatic',
         },
-        'preset-react-jsx-transform' 
+        'preset-react-jsx-transform'
       ],
+      "@linaria",
     ],
   }),
   webpackFinal: (config) => {
@@ -51,6 +52,30 @@ module.exports = {
       react: "preact/compat",
       "react-dom": "preact/compat",
     };
+
+    // we need to add @linaria loader AFTER the babel-loader
+    // https://github.com/callstack/linaria/blob/master/docs/BUNDLERS_INTEGRATION.md#webpack  
+    config.module.rules[0] = {
+      ...(config.module.rules[0]),
+      loader: undefined, // Disable the predefined babel-loader on the rule
+      use: [
+        {
+          ...(config.module.rules[0].use[0]),
+          loader: 'babel-loader',          
+        },
+        {
+          loader: '@linaria/webpack-loader',
+          options: {
+            sourceMap: true, //always true since this is dev
+            babelOptions: {
+              presets: config.module.rules[0].use[0].options.presets,
+            }
+             // Pass the current babel options to linaria's babel instance
+          }
+        }
+      ]
+    };
+
     return config;
   },
 }

@@ -15,15 +15,11 @@
 */
 
 
-import { BackupBackupProviderTerms, i18n, Timestamp } from "@gnu-taler/taler-util";
+import { i18n, Timestamp } from "@gnu-taler/taler-util";
 import { ProviderInfo, ProviderPaymentStatus, ProviderPaymentType } from "@gnu-taler/taler-wallet-core";
-import { ContractTermsUtil } from "@gnu-taler/taler-wallet-core/src/util/contractTerms";
-import { formatDuration, intervalToDuration, format } from "date-fns";
+import { format, formatDuration, intervalToDuration } from "date-fns";
 import { Fragment, VNode } from "preact";
-import { useRef, useState } from "preact/hooks";
-import { useBackupStatus } from "../hooks/useBackupStatus";
-import { useProviderStatus } from "../hooks/useProviderStatus.js";
-import * as wxApi from "../wxApi";
+import { useProviderStatus } from "../hooks/useProviderStatus";
 
 interface Props {
   pid: string;

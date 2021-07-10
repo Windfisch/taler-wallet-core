@@ -62,7 +62,7 @@ export const LotOfProviders = createExample(TestedComponent, {
       "storageLimitInMegabytes": 16,
       "supportedProtocolVersion": "0.0"
     }
-  },{
+  }, {
     "active": true,
     "syncProviderBaseUrl": "http://sync.taler:9967/",
     "lastSuccessfulBackupTimestamp": {
@@ -82,7 +82,57 @@ export const LotOfProviders = createExample(TestedComponent, {
       "storageLimitInMegabytes": 16,
       "supportedProtocolVersion": "0.0"
     }
-  },{
+  }, {
+    "active": false,
+    "syncProviderBaseUrl": "http://sync.demo.taler.net/",
+    "paymentProposalIds": [],
+    "paymentStatus": {
+      "type": ProviderPaymentType.Pending,
+    },
+    "terms": {
+      "annualFee": "KUDOS:0.1",
+      "storageLimitInMegabytes": 16,
+      "supportedProtocolVersion": "0.0"
+    }
+  }, {
+    "active": false,
+    "syncProviderBaseUrl": "http://sync.demo.taler.net/",
+    "paymentProposalIds": [],
+    "paymentStatus": {
+      "type": ProviderPaymentType.InsufficientBalance,
+    },
+    "terms": {
+      "annualFee": "KUDOS:0.1",
+      "storageLimitInMegabytes": 16,
+      "supportedProtocolVersion": "0.0"
+    }
+  }, {
+    "active": false,
+    "syncProviderBaseUrl": "http://sync.demo.taler.net/",
+    "paymentProposalIds": [],
+    "paymentStatus": {
+      "type": ProviderPaymentType.TermsChanged,
+      newTerms: {
+        annualFee: 'USD:2',
+        storageLimitInMegabytes: 8,
+        supportedProtocolVersion: '2',
+      },
+      oldTerms: {
+        annualFee: 'USD:1',
+        storageLimitInMegabytes: 16,
+        supportedProtocolVersion: '1',
+
+      },
+      paidUntil: {
+        t_ms: 'never'
+      }
+    },
+    "terms": {
+      "annualFee": "KUDOS:0.1",
+      "storageLimitInMegabytes": 16,
+      "supportedProtocolVersion": "0.0"
+    }
+  }, {
     "active": false,
     "syncProviderBaseUrl": "http://sync.demo.taler.net/",
     "paymentProposalIds": [],
@@ -94,43 +144,7 @@ export const LotOfProviders = createExample(TestedComponent, {
       "storageLimitInMegabytes": 16,
       "supportedProtocolVersion": "0.0"
     }
-  },{
-    "active": false,
-    "syncProviderBaseUrl": "http://sync.demo.taler.net/",
-    "paymentProposalIds": [],
-    "paymentStatus": {
-      "type": ProviderPaymentType.Unpaid,
-    },
-    "terms": {
-      "annualFee": "KUDOS:0.1",
-      "storageLimitInMegabytes": 16,
-      "supportedProtocolVersion": "0.0"
-    }
-  },{
-    "active": false,
-    "syncProviderBaseUrl": "http://sync.demo.taler.net/",
-    "paymentProposalIds": [],
-    "paymentStatus": {
-      "type": ProviderPaymentType.Unpaid,
-    },
-    "terms": {
-      "annualFee": "KUDOS:0.1",
-      "storageLimitInMegabytes": 16,
-      "supportedProtocolVersion": "0.0"
-    }
-  },{
-    "active": false,
-    "syncProviderBaseUrl": "http://sync.demo.taler.net/",
-    "paymentProposalIds": [],
-    "paymentStatus": {
-      "type": ProviderPaymentType.Unpaid,
-    },
-    "terms": {
-      "annualFee": "KUDOS:0.1",
-      "storageLimitInMegabytes": 16,
-      "supportedProtocolVersion": "0.0"
-    }
-  },{
+  }, {
     "active": false,
     "syncProviderBaseUrl": "http://sync.demo.taler.net/",
     "paymentProposalIds": [],

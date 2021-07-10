@@ -16,9 +16,14 @@
 
 
 import { i18n, Timestamp } from "@gnu-taler/taler-util";
-import { ProviderInfo } from "@gnu-taler/taler-wallet-core";
+import { ProviderInfo, ProviderPaymentStatus } from "@gnu-taler/taler-wallet-core";
 import { differenceInMonths, formatDuration, intervalToDuration } from "date-fns";
-import { Fragment, JSX, VNode } from "preact";
+import { FunctionalComponent, Fragment, JSX, VNode, AnyComponent } from "preact";
+import {
+  BoldLight, ButtonPrimary, ButtonSuccess, Centered, 
+  CenteredText, CenteredTextBold, PopupBox, Row, 
+  SmallText, SmallTextLight
+} from "../components/styled";
 import { useBackupStatus } from "../hooks/useBackupStatus";
 import { Pages } from "./popup";
 
@@ -31,7 +36,7 @@ export function BackupPage({ onAddProvider }: Props): VNode {
   if (!status) {
     return <div>Loading...</div>
   }
-  return <BackupView providers={status.providers} onAddProvider={onAddProvider} onSyncAll={status.sync}/>;
+  return <BackupView providers={status.providers} onAddProvider={onAddProvider} onSyncAll={status.sync} />;
 }
 
 export interface ViewProps {
@@ -42,44 +47,35 @@ export interface ViewProps {
 
 export function BackupView({ providers, onAddProvider, onSyncAll }: ViewProps): VNode {
   return (
-    <div style={{ height: 'calc(320px - 34px - 16px)', overflow: 'auto' }}>
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <section style={{ flex: '1 0 auto', height: 'calc(320px - 34px - 34px - 16px)', overflow: 'auto' }}>
-
-          {!!providers.length && <div>
-            {providers.map((provider) => {
-              return <BackupLayout
-                status={provider.paymentStatus}
-                timestamp={provider.lastSuccessfulBackupTimestamp}
-                id={provider.syncProviderBaseUrl}
-                active={provider.active}
-                title={provider.syncProviderBaseUrl}
-              />
-            })}
-          </div>}
-          {!providers.length && <div style={{ color: 'gray', fontWeight: 'bold', marginTop: 80, textAlign: 'center' }}>
-            <div>No backup providers configured</div>
-            <button class="pure-button button-success" style={{ marginTop: 15 }} onClick={onAddProvider}><i18n.Translate>Add provider</i18n.Translate></button>
-          </div>}
-
-        </section>
-        {!!providers.length && <footer style={{ marginTop: 'auto', display: 'flex', flexShrink: 0 }}>
-          <div style={{ width: '100%', flexDirection: 'row', justifyContent: 'flex-end', display: 'flex' }}>
-            <button class="pure-button button-secondary" style={{ marginLeft: 5 }} onClick={onSyncAll}>{
-              providers.length > 1 ?
-                <i18n.Translate>Sync all backups</i18n.Translate> :
-                <i18n.Translate>Sync now</i18n.Translate>
-            }</button>
-            <button class="pure-button button-success" style={{ marginLeft: 5 }} onClick={onAddProvider}><i18n.Translate>Add provider</i18n.Translate></button>
-          </div>
-        </footer>}
-      </div>
-    </div>
+    <PopupBox style={{ justifyContent: !providers.length ? 'center' : 'space-between' }}>
+      <section>
+        {providers.map((provider) => <BackupLayout
+          status={provider.paymentStatus}
+          timestamp={provider.lastSuccessfulBackupTimestamp}
+          id={provider.syncProviderBaseUrl}
+          active={provider.active}
+          title={provider.syncProviderBaseUrl}
+        />
+        )}
+        {!providers.length && <Centered>
+          <BoldLight>No backup providers configured</BoldLight>
+          <ButtonSuccess onClick={onAddProvider}><i18n.Translate>Add provider</i18n.Translate></ButtonSuccess>
+        </Centered>}
+      </section>
+      {!!providers.length && <footer>
+        <ButtonPrimary onClick={onSyncAll}>{
+          providers.length > 1 ?
+            <i18n.Translate>Sync all backups</i18n.Translate> :
+            <i18n.Translate>Sync now</i18n.Translate>
+        }</ButtonPrimary>
+        <ButtonSuccess onClick={onAddProvider}>Add provider</ButtonSuccess>
+      </footer>}
+    </PopupBox>
   )
 }
 
 interface TransactionLayoutProps {
-  status: any;
+  status: ProviderPaymentStatus;
   timestamp?: Timestamp;
   title: string;
   id: string;
@@ -92,53 +88,31 @@ function BackupLayout(props: TransactionLayoutProps): JSX.Element {
     dateStyle: "medium",
     timeStyle: "short",
   } as any);
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        border: "1px solid gray",
-        borderRadius: "0.5em",
-        margin: "0.5em 0",
-        justifyContent: "space-between",
-        padding: "0.5em",
-      }}
-    >
-      <div
-        style={{ display: "flex", flexDirection: "column", color: !props.active ? "gray" : undefined }}
-      >
-        <div style={{  }}>
-          <a href={Pages.provider_detail.replace(':pid', encodeURIComponent(props.id))}><span>{props.title}</span></a>
-        </div>
 
-        {dateStr && <div style={{ fontSize: "small", marginTop: '0.5em' }}>Last synced: {dateStr}</div>}
-        {!dateStr && <div style={{ fontSize: "small", color: 'gray' }}>Not synced</div>}
+
+  return (
+    <Row>
+      <div style={{ color: !props.active ? "grey" : undefined }}>
+        <a href={Pages.provider_detail.replace(':pid', encodeURIComponent(props.id))}><span>{props.title}</span></a>
+
+        {dateStr && <SmallText>Last synced: {dateStr}</SmallText>}
+        {!dateStr && <SmallTextLight>Not synced</SmallTextLight>}
       </div>
-      <div style={{
-        marginLeft: "auto",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        alignSelf: "center"
-      }}>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {
-            props.status?.type === 'paid' ?
-              <Fragment>
-                <div style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
-                  Expires in
-                </div>
-                <div style={{ whiteSpace: 'nowrap', textAlign: 'center', fontWeight: 'bold', color: colorByTimeToExpire(props.status.paidUntil) }}>
-                  {daysUntil(props.status.paidUntil)}
-                </div>
-              </Fragment>
-              :
-              'unpaid'
-          }
-        </div>
+      <div>
+        {props.status?.type === 'paid' ?
+          <ExpirationText until={props.status.paidUntil} /> :
+          <div>{props.status.type}</div>
+        }
       </div>
-    </div>
+    </Row>
   );
+}
+
+function ExpirationText({ until }: { until: Timestamp }) {
+  return <Fragment>
+    <CenteredText> Expires in </CenteredText>
+    <CenteredTextBold {...({color:colorByTimeToExpire(until)})}> {daysUntil(until)} </CenteredTextBold>
+  </Fragment>
 }
 
 function colorByTimeToExpire(d: Timestamp) {
