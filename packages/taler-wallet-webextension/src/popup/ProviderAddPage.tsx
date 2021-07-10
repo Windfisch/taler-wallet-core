@@ -23,8 +23,6 @@ function getJsonIfOk(r: Response) {
 
 export function ProviderAddPage({ onBack }: Props): VNode {
   const [verifying, setVerifying] = useState<{ url: string, provider: BackupBackupProviderTerms } | undefined>(undefined)
-  const [readingTerms, setReadingTerms] = useState<boolean | undefined>(undefined)
-  const alreadyCheckedTheTerms = readingTerms === false
 
   if (!verifying) {
     return <SetUrlView
@@ -38,21 +36,11 @@ export function ProviderAddPage({ onBack }: Props): VNode {
       }}
     />
   }
-  if (readingTerms) {
-    return <TermsOfService
-      onCancel={() => setReadingTerms(undefined)}
-      onAccept={() => setReadingTerms(false)}
-    />
-  }
   return <ConfirmProviderView
     provider={verifying.provider}
-    termsChecked={alreadyCheckedTheTerms}
     url={verifying.url}
     onCancel={() => {
       setVerifying(undefined);
-    }}
-    onShowTerms={() => {
-      setReadingTerms(true)
     }}
     onConfirm={() => {
       wxApi.addBackupProvider(verifying.url).then(onBack)
@@ -89,50 +77,53 @@ export interface SetUrlViewProps {
   withError?: string;
 }
 import arrowDown from '../../static/img/chevron-down.svg';
+import { Button, ButtonPrimary, ErrorBox, Input, LightText, PopupBox, SmallTextLight } from "../components/styled/index";
+import { Checkbox } from "../components/Checkbox";
+
+function ErrorMessage({ title, description }: { title?: string, description?: string }) {
+  const [showErrorDetail, setShowErrorDetail] = useState(false);
+  if (!title) return null
+  return <ErrorBox>
+    <div>
+      <p>{title}</p>
+      <button onClick={() => { setShowErrorDetail(v => !v) }} >
+        <img style={{ height: '1.5em' }} src={arrowDown} />
+      </button>
+    </div>
+    {showErrorDetail && <p>{description}</p>}
+  </ErrorBox>
+}
 
 export function SetUrlView({ initialValue, onCancel, onVerify, withError }: SetUrlViewProps) {
   const [value, setValue] = useState<string>(initialValue || "")
   const [error, setError] = useState<string | undefined>(withError)
-  const [showErrorDetail, setShowErrorDetail] = useState(false);
-  return <div style={{ display: 'flex', flexDirection: 'column' }}>
-    <section style={{ height: 'calc(320px - 34px - 34px - 16px)', overflow: 'auto' }}>
-      <div>
-        Add backup provider for saving coins
-      </div>
-      <h3>Backup provider URL</h3>
-      <div style={{ width: '3em', display: 'inline-block' }}>https://</div>
-      <input style={{ width: 'calc(100% - 8px - 4em)', marginLeft: 5 }} value={value} onChange={(e) => setValue(e.currentTarget.value)} />
+  return <PopupBox>
+    <section>
+      <h1> Add backup provider</h1>
+      <ErrorMessage title={error && "Could not get provider information"} description={error} />
+      <LightText> Backup providers may charge for their service</LightText>
       <p>
-        Backup providers may charge for their service
+        <Input>
+          <label>URL</label>
+          <input type="text" placeholder="https://" value={value} onChange={(e) => setValue(e.currentTarget.value)} />
+        </Input>
+        <Input>
+          <label>Name</label>
+          <input type="text" disabled />
+        </Input>
       </p>
-      {error && <Fragment>
-        <div class="errorbox" style={{ marginTop: 10 }} >
-          <div style={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between', display: 'flex' }}>
-            <p style={{ alignSelf: 'center' }}>Could not get provider information</p>
-            <p>
-              <button style={{ fontSize: '100%', padding: 0, height: 28, width: 28 }} onClick={() => { setShowErrorDetail(v => !v) }} >
-                <img style={{ height: '1.5em' }} src={arrowDown} />
-              </button>
-            </p>
-          </div>
-          {showErrorDetail && <div>{error}</div>}
-        </div>
-      </Fragment>
-      }
     </section>
-    <footer style={{ marginTop: 'auto', display: 'flex', flexShrink: 0 }}>
-      <button class="pure-button" onClick={onCancel}><i18n.Translate>cancel</i18n.Translate></button>
-      <div style={{ width: '100%', flexDirection: 'row', justifyContent: 'flex-end', display: 'flex' }}>
-        <button class="pure-button button-secondary" style={{ marginLeft: 5 }}
-          disabled={!value}
-          onClick={() => {
-            let url = value.startsWith('http://') || value.startsWith('https://') ? value : `https://${value}`
-            url = url.endsWith('/') ? url.substring(0, url.length - 1) : url;
-            return onVerify(url).then(r => r ? setError(r) : undefined)
-          }}><i18n.Translate>next</i18n.Translate></button>
-      </div>
+    <footer style={{ justifyContent: 'space-between' }}>
+      <Button onClick={onCancel}><i18n.Translate> &lt; Back</i18n.Translate></Button>
+      <ButtonPrimary
+        disabled={!value}
+        onClick={() => {
+          let url = value.startsWith('http://') || value.startsWith('https://') ? value : `https://${value}`
+          url = url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+          return onVerify(url).then(r => r ? setError(r) : undefined)
+        }}><i18n.Translate>Next</i18n.Translate></ButtonPrimary>
     </footer>
-  </div>
+  </PopupBox>
 }
 
 export interface ConfirmProviderViewProps {
@@ -140,34 +131,30 @@ export interface ConfirmProviderViewProps {
   url: string,
   onCancel: () => void;
   onConfirm: () => void;
-  onShowTerms: () => void;
-  termsChecked: boolean;
 }
-export function ConfirmProviderView({ url, termsChecked, onShowTerms, provider, onCancel, onConfirm }: ConfirmProviderViewProps) {
-  return <div style={{ display: 'flex', flexDirection: 'column' }}>
-    <section style={{ height: 'calc(320px - 34px - 34px - 16px)', overflow: 'auto' }}>
-      <div>Verify provider service terms for <b>{url}</b> backup provider</div>
+export function ConfirmProviderView({ url, provider, onCancel, onConfirm }: ConfirmProviderViewProps) {
+  const [accepted, setAccepted] = useState(false);
+
+  return <PopupBox>
+    <section>
+      <h1>Review terms of service</h1>
+      <div>Provider URL: <a href={url} target="_blank">{url}</a></div>
+      <SmallTextLight>Please review and accept this provider's terms of service</SmallTextLight>
+      <h2>1. Pricing</h2>
       <p>
-        {Amounts.isZero(provider.annual_fee) ? 'free of charge' : provider.annual_fee} for a year of backup service
+        {Amounts.isZero(provider.annual_fee) ? 'free of charge' : `${provider.annual_fee} per year of service`} 
       </p>
+      <h2>2. Storage</h2>
       <p>
-        {provider.storage_limit_in_megabytes} megabytes of storage
+        {provider.storage_limit_in_megabytes} megabytes of storage per year of service
       </p>
+      <Checkbox label="Accept terms of service" name="terms" onToggle={() => setAccepted(old => !old)} enabled={accepted}/>
     </section>
-    <footer style={{ marginTop: 'auto', display: 'flex', flexShrink: 0 }}>
-      <button class="pure-button" onClick={onCancel}>
-        <i18n.Translate>cancel</i18n.Translate>
-      </button>
-      <div style={{ width: '100%', flexDirection: 'row', justifyContent: 'flex-end', display: 'flex' }}>
-        {termsChecked ?
-          <button class="pure-button button-success" style={{ marginLeft: 5 }} onClick={onConfirm}>
-            <i18n.Translate>confirm</i18n.Translate>
-          </button> :
-          <button class="pure-button button-success" style={{ marginLeft: 5 }} onClick={onShowTerms}>
-            <i18n.Translate>review terms</i18n.Translate>
-          </button>
-        }
-      </div>
+    <footer style={{ justifyContent: 'space-between' }}>
+      <Button onClick={onCancel}><i18n.Translate> &lt; Back</i18n.Translate></Button>
+      <ButtonPrimary
+        disabled={!accepted}
+        onClick={onConfirm}><i18n.Translate>Add provider</i18n.Translate></ButtonPrimary>
     </footer>
-  </div>
+  </PopupBox>
 }

@@ -1,13 +1,14 @@
-// import { FunctionalComponent, JSX } from 'preact';
-// import styled from './preact-styled'
 
-// import { css } from '@linaria/core';
+// need to import linaria types, otherwise compiler will complain
+import type * as Linaria from '@linaria/core';
+
 import { styled } from '@linaria/react';
 
 export const PopupBox = styled.div`
   height: calc(320px - 34px - 16px);
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
 
   & > section {
     overflow: auto;
@@ -22,9 +23,14 @@ export const PopupBox = styled.div`
       margin-left: 5px;
     }
   }
+
+  & > section > h1 {
+    margin-top: 0.3em;
+    margin-bottom: 0.3em;
+  }
 `
 
-const Button = styled.button`
+export const Button = styled.button`
   display: inline-block;
   zoom: 1;
   line-height: normal;
@@ -50,7 +56,7 @@ const Button = styled.button`
     outline: 0;
   }
 
-  [disabled] {
+  &:disabled {
     border: none;
     background-image: none;
     /* csslint ignore:start */
@@ -113,6 +119,10 @@ export const Row = styled.div`
   padding: 0.5em;
 `
 
+export const LightText = styled.div`
+  color: gray;
+`
+
 export const SmallText = styled.div`
   font-size: small; 
   margin-top: 0.5em;
@@ -132,4 +142,42 @@ export const CenteredTextBold = styled(CenteredText)`
   text-align: center;
   font-weight: bold;
   color: ${((props: any): any => String(props.color) as any) as any};
+`
+export const Input = styled.div`
+  & label {
+    display: block;
+    padding: 5px;
+  }
+  & input {
+    display: block;
+    padding: 5px;
+    width: calc(100% - 4px - 10px);
+  }
+`
+
+export const ErrorBox = styled.div`
+  border: 2px solid #f5c6cb;
+  border-radius: 0.25em;
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+  /* margin: 0.5em; */
+  padding-left: 1em;
+  padding-right: 1em;
+  width: "100%";
+  color: #721c24;
+  background: #f8d7da;
+
+  & > div {
+    display: flex;
+    justify-content: space-between;
+
+    & > button {
+      align-self: center;
+      font-size: 100%;
+      padding: 0;
+      height: 28px;
+      width: 28px;
+    }
+  }
 `
