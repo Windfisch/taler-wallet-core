@@ -73,6 +73,7 @@ import { runWalletBackupBasicTest } from "./test-wallet-backup-basic";
 import { runMerchantInstancesDeleteTest } from "./test-merchant-instances-delete";
 import { runWalletBackupDoublespendTest } from "./test-wallet-backup-doublespend";
 import { runPaymentForgettableTest } from "./test-payment-forgettable.js";
+import { runPaymentZeroTest } from "./test-payment-zero.js";
 
 /**
  * Test runner.
@@ -118,6 +119,7 @@ const allTests: TestMainFunction[] = [
   runPaymentTest,
   runPaymentDemoTest,
   runPaymentTransientTest,
+  runPaymentZeroTest,
   runPayPaidTest,
   runPaywallFlowTest,
   runRefundAutoTest,
@@ -150,7 +152,7 @@ export interface TestInfo {
 function updateCurrentSymlink(testDir: string): void {
   const currLink = path.join(
     os.tmpdir(),
-    `taler-integrationtests-${os.userInfo().username}-current`
+    `taler-integrationtests-${os.userInfo().username}-current`,
   );
   try {
     fs.unlinkSync(currLink);
