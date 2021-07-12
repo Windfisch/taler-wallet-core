@@ -145,7 +145,8 @@ export async function getTotalPaymentCost(
         costs.push(pcs.coinContributions[i]);
         costs.push(refreshCost);
       }
-      return Amounts.sum(costs).amount;
+      const zero = Amounts.getZero(pcs.paymentAmount.currency);
+      return Amounts.sum([zero, ...costs]).amount;
     });
 }
 
