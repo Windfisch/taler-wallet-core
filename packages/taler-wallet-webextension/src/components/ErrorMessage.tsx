@@ -1,8 +1,9 @@
+import { VNode } from "preact";
 import { useState } from "preact/hooks";
 import arrowDown from '../../static/img/chevron-down.svg';
 import { ErrorBox } from "./styled";
 
-export function ErrorMessage({ title, description }: { title?: string; description?: string; }) {
+export function ErrorMessage({ title, description }: { title?: string|VNode; description?: string; }) {
   const [showErrorDetail, setShowErrorDetail] = useState(false);
   if (!title)
     return null;

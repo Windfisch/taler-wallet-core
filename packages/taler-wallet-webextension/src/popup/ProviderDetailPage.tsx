@@ -54,69 +54,6 @@ export interface ViewProps {
 }
 
 export function ProviderView({ info, onDelete, onSync, onBack, onExtend }: ViewProps): VNode {
-  function Error() {
-    if (info?.lastError) {
-      return <ErrorMessage title={info.lastError.hint} />
-      // <div class="errorbox" style={{ marginTop: 10 }} >
-      //   <div style={{ height: 0, textAlign: 'right', color: 'gray', fontSize: 'small' }}>last time tried {!info.lastAttemptedBackupTimestamp || info.lastAttemptedBackupTimestamp.t_ms === 'never' ? 'never' : format(new Date(info.lastAttemptedBackupTimestamp.t_ms), 'dd/MM/yyyy HH:mm:ss')}</div>
-      //   <p>{info.lastError.hint}</p>
-      // </div>
-      // </Fragment>
-    }
-    if (info?.backupProblem) {
-      switch (info.backupProblem.type) {
-        case "backup-conflicting-device":
-          return <div class="errorbox" style={{ marginTop: 10 }}>
-            <p>There is conflict with another backup from <b>{info.backupProblem.otherDeviceId}</b></p>
-          </div>
-        case "backup-unreadable":
-          return <div class="errorbox" style={{ marginTop: 10 }}>
-            <p>Backup is not readable</p>
-          </div>
-        default:
-          return <div class="errorbox" style={{ marginTop: 10 }}>
-            <p>Unknown backup problem: {JSON.stringify(info.backupProblem)}</p>
-          </div>
-      }
-    }
-    return null
-  }
-
-  function colorByStatus(status: ProviderPaymentType) {
-    switch (status) {
-      case ProviderPaymentType.InsufficientBalance:
-        return 'rgb(223, 117, 20)'
-      case ProviderPaymentType.Unpaid:
-        return 'rgb(202, 60, 60)'
-      case ProviderPaymentType.Paid:
-        return 'rgb(28, 184, 65)'
-      case ProviderPaymentType.Pending:
-        return 'gray'
-      case ProviderPaymentType.InsufficientBalance:
-        return 'rgb(202, 60, 60)'
-      case ProviderPaymentType.TermsChanged:
-        return 'rgb(202, 60, 60)'
-    }
-  }
-
-  function descriptionByStatus(status: ProviderPaymentStatus) {
-    switch (status.type) {
-      case ProviderPaymentType.InsufficientBalance:
-        return 'no enough balance to make the payment'
-      case ProviderPaymentType.Unpaid:
-        return 'not pay yet'
-      case ProviderPaymentType.Paid:
-      case ProviderPaymentType.TermsChanged:
-        if (status.paidUntil.t_ms === 'never') {
-          return 'service paid.'
-        } else {
-          return `service paid until ${format(status.paidUntil.t_ms, 'yyyy/MM/dd HH:mm:ss')}`
-        }
-      case ProviderPaymentType.Pending:
-        return ''
-    }
-  }
-
   return (
     <PopupBox>
       <header>
@@ -125,7 +62,7 @@ export function ProviderView({ info, onDelete, onSync, onBack, onExtend }: ViewP
         {info.terms && <div>{info.terms.annualFee} / year</div>}
       </header>
       <section>
-        <Error />
+        <Error info={info} />
         <h3>{info.syncProviderBaseUrl}</h3>
         <p>{daysSince(info?.lastSuccessfulBackupTimestamp)} </p>
         <p>{descriptionByStatus(info.paymentStatus)}</p>
@@ -192,4 +129,60 @@ function daysSince(d?: Timestamp) {
     ]
   })
   return `synced ${str} ago`
+}
+
+function Error({ info }: { info: ProviderInfo }) {
+  if (info.lastError) {
+    return <ErrorMessage title={info.lastError.hint} />
+  }
+  if (info.backupProblem) {
+    switch (info.backupProblem.type) {
+      case "backup-conflicting-device":
+        return <ErrorMessage title={<Fragment>
+          There is conflict with another backup from <b>{info.backupProblem.otherDeviceId}</b>
+        </Fragment>} />
+      case "backup-unreadable":
+        return <ErrorMessage title="Backup is not readable" />
+      default:
+        return <ErrorMessage title={<Fragment>
+          Unknown backup problem: {JSON.stringify(info.backupProblem)}
+        </Fragment>} />
+    }
+  }
+  return null
+}
+
+function colorByStatus(status: ProviderPaymentType) {
+  switch (status) {
+    case ProviderPaymentType.InsufficientBalance:
+      return 'rgb(223, 117, 20)'
+    case ProviderPaymentType.Unpaid:
+      return 'rgb(202, 60, 60)'
+    case ProviderPaymentType.Paid:
+      return 'rgb(28, 184, 65)'
+    case ProviderPaymentType.Pending:
+      return 'gray'
+    case ProviderPaymentType.InsufficientBalance:
+      return 'rgb(202, 60, 60)'
+    case ProviderPaymentType.TermsChanged:
+      return 'rgb(202, 60, 60)'
+  }
+}
+
+function descriptionByStatus(status: ProviderPaymentStatus) {
+  switch (status.type) {
+    case ProviderPaymentType.InsufficientBalance:
+      return 'no enough balance to make the payment'
+    case ProviderPaymentType.Unpaid:
+      return 'not pay yet'
+    case ProviderPaymentType.Paid:
+    case ProviderPaymentType.TermsChanged:
+      if (status.paidUntil.t_ms === 'never') {
+        return 'service paid.'
+      } else {
+        return `service paid until ${format(status.paidUntil.t_ms, 'yyyy/MM/dd HH:mm:ss')}`
+      }
+    case ProviderPaymentType.Pending:
+      return ''
+  }
 }
