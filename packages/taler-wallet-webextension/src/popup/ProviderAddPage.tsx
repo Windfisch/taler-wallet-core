@@ -1,6 +1,9 @@
 import { Amounts, BackupBackupProviderTerms, i18n } from "@gnu-taler/taler-util";
-import { Fragment, VNode } from "preact";
+import { VNode } from "preact";
 import { useState } from "preact/hooks";
+import { Checkbox } from "../components/Checkbox";
+import { ErrorMessage } from "../components/ErrorMessage";
+import { Button, ButtonPrimary, Input, LightText, PopupBox, SmallTextLight } from "../components/styled/index";
 import * as wxApi from "../wxApi";
 
 interface Props {
@@ -49,49 +52,12 @@ export function ProviderAddPage({ onBack }: Props): VNode {
   />
 }
 
-interface TermsOfServiceProps {
-  onCancel: () => void;
-  onAccept: () => void;
-}
-
-function TermsOfService({ onCancel, onAccept }: TermsOfServiceProps) {
-  return <div style={{ display: 'flex', flexDirection: 'column' }}>
-    <section style={{ height: 'calc(320px - 34px - 34px - 16px)', overflow: 'auto' }}>
-      <div>
-        Here we will place the complete text of terms of service
-      </div>
-    </section>
-    <footer style={{ marginTop: 'auto', display: 'flex', flexShrink: 0 }}>
-      <button class="pure-button" onClick={onCancel}><i18n.Translate>cancel</i18n.Translate></button>
-      <div style={{ width: '100%', flexDirection: 'row', justifyContent: 'flex-end', display: 'flex' }}>
-        <button class="pure-button" onClick={onAccept}><i18n.Translate>accept</i18n.Translate></button>
-      </div>
-    </footer>
-  </div>
-}
 
 export interface SetUrlViewProps {
   initialValue?: string;
   onCancel: () => void;
   onVerify: (s: string) => Promise<string | undefined>;
   withError?: string;
-}
-import arrowDown from '../../static/img/chevron-down.svg';
-import { Button, ButtonPrimary, ErrorBox, Input, LightText, PopupBox, SmallTextLight } from "../components/styled/index";
-import { Checkbox } from "../components/Checkbox";
-
-function ErrorMessage({ title, description }: { title?: string, description?: string }) {
-  const [showErrorDetail, setShowErrorDetail] = useState(false);
-  if (!title) return null
-  return <ErrorBox>
-    <div>
-      <p>{title}</p>
-      <button onClick={() => { setShowErrorDetail(v => !v) }} >
-        <img style={{ height: '1.5em' }} src={arrowDown} />
-      </button>
-    </div>
-    {showErrorDetail && <p>{description}</p>}
-  </ErrorBox>
 }
 
 export function SetUrlView({ initialValue, onCancel, onVerify, withError }: SetUrlViewProps) {
@@ -113,7 +79,7 @@ export function SetUrlView({ initialValue, onCancel, onVerify, withError }: SetU
         </Input>
       </p>
     </section>
-    <footer style={{ justifyContent: 'space-between' }}>
+    <footer>
       <Button onClick={onCancel}><i18n.Translate> &lt; Back</i18n.Translate></Button>
       <ButtonPrimary
         disabled={!value}
@@ -150,7 +116,7 @@ export function ConfirmProviderView({ url, provider, onCancel, onConfirm }: Conf
       </p>
       <Checkbox label="Accept terms of service" name="terms" onToggle={() => setAccepted(old => !old)} enabled={accepted}/>
     </section>
-    <footer style={{ justifyContent: 'space-between' }}>
+    <footer>
       <Button onClick={onCancel}><i18n.Translate> &lt; Back</i18n.Translate></Button>
       <ButtonPrimary
         disabled={!accepted}

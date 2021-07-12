@@ -20,8 +20,8 @@ import { ProviderInfo, ProviderPaymentStatus } from "@gnu-taler/taler-wallet-cor
 import { differenceInMonths, formatDuration, intervalToDuration } from "date-fns";
 import { FunctionalComponent, Fragment, JSX, VNode, AnyComponent } from "preact";
 import {
-  BoldLight, ButtonPrimary, ButtonSuccess, Centered, 
-  CenteredText, CenteredTextBold, PopupBox, Row, 
+  BoldLight, ButtonPrimary, ButtonSuccess, Centered,
+  CenteredText, CenteredTextBold, PopupBox, Row,
   SmallText, SmallTextLight
 } from "../components/styled";
 import { useBackupStatus } from "../hooks/useBackupStatus";
@@ -47,7 +47,7 @@ export interface ViewProps {
 
 export function BackupView({ providers, onAddProvider, onSyncAll }: ViewProps): VNode {
   return (
-    <PopupBox style={{ justifyContent: !providers.length ? 'center' : 'space-between' }}>
+    <PopupBox>
       <section>
         {providers.map((provider) => <BackupLayout
           status={provider.paymentStatus}
@@ -57,18 +57,21 @@ export function BackupView({ providers, onAddProvider, onSyncAll }: ViewProps): 
           title={provider.syncProviderBaseUrl}
         />
         )}
-        {!providers.length && <Centered>
+        {!providers.length && <Centered style={{marginTop: 100}}>
           <BoldLight>No backup providers configured</BoldLight>
           <ButtonSuccess onClick={onAddProvider}><i18n.Translate>Add provider</i18n.Translate></ButtonSuccess>
         </Centered>}
       </section>
       {!!providers.length && <footer>
-        <ButtonPrimary onClick={onSyncAll}>{
-          providers.length > 1 ?
-            <i18n.Translate>Sync all backups</i18n.Translate> :
-            <i18n.Translate>Sync now</i18n.Translate>
-        }</ButtonPrimary>
-        <ButtonSuccess onClick={onAddProvider}>Add provider</ButtonSuccess>
+        <div />
+        <div>
+          <ButtonPrimary onClick={onSyncAll}>{
+            providers.length > 1 ?
+              <i18n.Translate>Sync all backups</i18n.Translate> :
+              <i18n.Translate>Sync now</i18n.Translate>
+          }</ButtonPrimary>
+          <ButtonSuccess onClick={onAddProvider}>Add provider</ButtonSuccess>
+        </div>
       </footer>}
     </PopupBox>
   )
@@ -111,7 +114,7 @@ function BackupLayout(props: TransactionLayoutProps): JSX.Element {
 function ExpirationText({ until }: { until: Timestamp }) {
   return <Fragment>
     <CenteredText> Expires in </CenteredText>
-    <CenteredTextBold {...({color:colorByTimeToExpire(until)})}> {daysUntil(until)} </CenteredTextBold>
+    <CenteredTextBold {...({ color: colorByTimeToExpire(until) })}> {daysUntil(until)} </CenteredTextBold>
   </Fragment>
 }
 

@@ -4,6 +4,13 @@ import type * as Linaria from '@linaria/core';
 
 import { styled } from '@linaria/react';
 
+export const PaymentStatus = styled.span<{color:string}>`
+  padding: 5px;
+  border-radius: 5px;
+  color: white;
+  background-color: ${p => p.color};
+`
+
 export const PopupBox = styled.div`
   height: calc(320px - 34px - 16px);
   display: flex;
@@ -11,23 +18,40 @@ export const PopupBox = styled.div`
   justify-content: space-between;
 
   & > section {
+    // this margin will send the section up when used with a header
+    margin-bottom: auto; 
     overflow: auto;
+
+    table td {
+      padding: 5px 10px;
+    }
+    table tr {
+      border-bottom: 1px solid black;
+      border-top: 1px solid black;
+    }
+  }
+
+  & > header {
+    flex-direction: row;
+    justify-content: space-between;
+    display: flex;
+    margin-bottom: 5px;
+
+    & > div {
+      align-self: center;
+    }
   }
 
   & > footer {
     padding-top: 5px;
     flex-direction: row;
-    justify-content: flex-end;
+    justify-content: space-between;
     display: flex;
-    & > button {
+    & button {
       margin-left: 5px;
     }
   }
 
-  & > section > h1 {
-    margin-top: 0.3em;
-    margin-bottom: 0.3em;
-  }
 `
 
 export const Button = styled.button`

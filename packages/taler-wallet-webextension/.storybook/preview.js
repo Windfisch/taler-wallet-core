@@ -52,8 +52,32 @@ export const decorators = [
   (Story, { kind }) => {
     if (kind.startsWith('popup')) {
       return <div class="popup-container">
-        <link key="1" rel="stylesheet" type="text/css" href="/style/pure.css" />
-        <link key="2" rel="stylesheet" type="text/css" href="/style/popup.css" />
+        <style>{`
+        html {
+          font-family: sans-serif; /* 1 */
+        }
+        body {
+          margin: 0;
+        }`}
+        </style>
+        <style>{`
+        html {
+        }
+        h1 {
+          font-size: 2em;
+        }
+        input {
+          font: inherit;
+        }
+        body {
+          margin: 0;
+          font-size: 100%;
+          padding: 0;
+          overflow: hidden;
+          background-color: #f8faf7;
+          font-family: Arial, Helvetica, sans-serif;
+        }`}
+        </style>
         <div style={{ padding: 8, width: 'calc(400px - 16px - 2px)', height: 'calc(320px - 34px - 16px - 2px)', border: 'black solid 1px' }}>
           <Story />
         </div>

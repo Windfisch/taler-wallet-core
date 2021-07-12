@@ -19,6 +19,8 @@ import { i18n, Timestamp } from "@gnu-taler/taler-util";
 import { ProviderInfo, ProviderPaymentStatus, ProviderPaymentType } from "@gnu-taler/taler-wallet-core";
 import { format, formatDuration, intervalToDuration } from "date-fns";
 import { Fragment, VNode } from "preact";
+import { ErrorMessage } from "../components/ErrorMessage";
+import { Button, ButtonDestructive, ButtonPrimary, PaymentStatus, PopupBox } from "../components/styled";
 import { useProviderStatus } from "../hooks/useProviderStatus";
 
 interface Props {
@@ -52,24 +54,14 @@ export interface ViewProps {
 }
 
 export function ProviderView({ info, onDelete, onSync, onBack, onExtend }: ViewProps): VNode {
-  function Footer() {
-    return <footer style={{ marginTop: 'auto', display: 'flex', flexShrink: 0 }}>
-      <button class="pure-button" onClick={onBack}><i18n.Translate>back</i18n.Translate></button>
-      <div style={{ width: '100%', flexDirection: 'row', justifyContent: 'flex-end', display: 'flex' }}>
-        {info && <button class="pure-button button-destructive" disabled onClick={onDelete}><i18n.Translate>remove</i18n.Translate></button>}
-        {info && <button class="pure-button button-secondary" disabled style={{ marginLeft: 5 }} onClick={onExtend}><i18n.Translate>extend</i18n.Translate></button>}
-        {info && <button class="pure-button button-secondary" style={{ marginLeft: 5 }} onClick={onSync}><i18n.Translate>sync now</i18n.Translate></button>}
-      </div>
-    </footer>
-  }
   function Error() {
     if (info?.lastError) {
-      return <Fragment>
-        <div class="errorbox" style={{ marginTop: 10 }} >
-          <div style={{ height: 0, textAlign: 'right', color: 'gray', fontSize: 'small' }}>last time tried {!info.lastAttemptedBackupTimestamp || info.lastAttemptedBackupTimestamp.t_ms === 'never' ? 'never' : format(new Date(info.lastAttemptedBackupTimestamp.t_ms), 'dd/MM/yyyy HH:mm:ss')}</div>
-          <p>{info.lastError.hint}</p>
-        </div>
-      </Fragment>
+      return <ErrorMessage title={info.lastError.hint} />
+      // <div class="errorbox" style={{ marginTop: 10 }} >
+      //   <div style={{ height: 0, textAlign: 'right', color: 'gray', fontSize: 'small' }}>last time tried {!info.lastAttemptedBackupTimestamp || info.lastAttemptedBackupTimestamp.t_ms === 'never' ? 'never' : format(new Date(info.lastAttemptedBackupTimestamp.t_ms), 'dd/MM/yyyy HH:mm:ss')}</div>
+      //   <p>{info.lastError.hint}</p>
+      // </div>
+      // </Fragment>
     }
     if (info?.backupProblem) {
       switch (info.backupProblem.type) {
@@ -89,7 +81,8 @@ export function ProviderView({ info, onDelete, onSync, onBack, onExtend }: ViewP
     }
     return null
   }
-  function colorByStatus(status: ProviderPaymentType | undefined) {
+
+  function colorByStatus(status: ProviderPaymentType) {
     switch (status) {
       case ProviderPaymentType.InsufficientBalance:
         return 'rgb(223, 117, 20)'
@@ -103,14 +96,10 @@ export function ProviderView({ info, onDelete, onSync, onBack, onExtend }: ViewP
         return 'rgb(202, 60, 60)'
       case ProviderPaymentType.TermsChanged:
         return 'rgb(202, 60, 60)'
-      default:
-        break;
     }
-    return undefined
   }
 
-  function descriptionByStatus(status: ProviderPaymentStatus | undefined) {
-    if (!status) return ''
+  function descriptionByStatus(status: ProviderPaymentStatus) {
     switch (status.type) {
       case ProviderPaymentType.InsufficientBalance:
         return 'no enough balance to make the payment'
@@ -125,69 +114,60 @@ export function ProviderView({ info, onDelete, onSync, onBack, onExtend }: ViewP
         }
       case ProviderPaymentType.Pending:
         return ''
-      default:
-        break;
     }
-    return undefined
   }
 
   return (
-    <div style={{ height: 'calc(320px - 34px - 16px)', overflow: 'auto' }}>
-      <style>{`
-      table td {
-        padding: 5px 10px;
-      }
-      `}</style>
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <section style={{ flex: '1 0 auto', height: 'calc(320px - 34px - 34px - 16px)', overflow: 'auto' }}>
-          <span style={{ padding: 5, display: 'inline-block', backgroundColor: colorByStatus(info?.paymentStatus.type), borderRadius: 5, color: 'white' }}>{info?.paymentStatus.type}</span>
-          {/* {info && <span style={{ float: "right", fontSize: "small", color: "gray", padding: 5 }}>
-            From <b>{info.syncProviderBaseUrl}</b>
-          </span>} */}
-            {info && <div style={{ float: 'right', fontSize: "large", padding: 5 }}>{info.terms?.annualFee} / year</div>}
+    <PopupBox>
+      <header>
+        <PaymentStatus color={colorByStatus(info.paymentStatus.type)}>{info.paymentStatus.type}</PaymentStatus>
 
-          <Error />
+        {info.terms && <div>{info.terms.annualFee} / year</div>}
+      </header>
+      <section>
+        <Error />
+        <h3>{info.syncProviderBaseUrl}</h3>
+        <p>{daysSince(info?.lastSuccessfulBackupTimestamp)} </p>
+        <p>{descriptionByStatus(info.paymentStatus)}</p>
+        {info.paymentStatus.type === ProviderPaymentType.TermsChanged && <div>
+          <p>terms has changed, extending the service will imply accepting the new terms of service</p>
+          <table>
+            <thead>
+              <tr>
+                <td></td>
+                <td>old</td>
+                <td> -&gt;</td>
+                <td>new</td>
+              </tr>
+            </thead>
+            <tbody>
 
-          <h3>{info?.syncProviderBaseUrl}</h3>
-          <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", }}>
-            <div>{daysSince(info?.lastSuccessfulBackupTimestamp)} </div>
-          </div>
+              <tr>
+                <td>fee</td>
+                <td>{info.paymentStatus.oldTerms.annualFee}</td>
+                <td>-&gt;</td>
+                <td>{info.paymentStatus.newTerms.annualFee}</td>
+              </tr>
+              <tr>
+                <td>storage</td>
+                <td>{info.paymentStatus.oldTerms.storageLimitInMegabytes}</td>
+                <td>-&gt;</td>
+                <td>{info.paymentStatus.newTerms.storageLimitInMegabytes}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>}
 
-          <p>{descriptionByStatus(info?.paymentStatus)}</p>
-
-          {info?.paymentStatus.type === ProviderPaymentType.TermsChanged && <div>
-            <p>terms has changed, extending the service will imply accepting the new terms of service</p>
-            <table>
-              <thead>
-                <tr>
-                  <td></td>
-                  <td>old</td>
-                  <td> -&gt;</td>
-                  <td>new</td>
-                </tr>
-              </thead>
-              <tbody>
-
-                <tr>
-                  <td>fee</td>
-                  <td>{info.paymentStatus.oldTerms.annualFee}</td>
-                  <td>-&gt;</td>
-                  <td>{info.paymentStatus.newTerms.annualFee}</td>
-                </tr>
-                <tr>
-                  <td>storage</td>
-                  <td>{info.paymentStatus.oldTerms.storageLimitInMegabytes}</td>
-                  <td>-&gt;</td>
-                  <td>{info.paymentStatus.newTerms.storageLimitInMegabytes}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>}
-
-        </section>
-        <Footer />
-      </div>
-    </div>
+      </section>
+      <footer>
+        <Button onClick={onBack}><i18n.Translate> &lt; back</i18n.Translate></Button>
+        <div>
+          <ButtonDestructive disabled onClick={onDelete}><i18n.Translate>remove</i18n.Translate></ButtonDestructive>
+          <ButtonPrimary disabled onClick={onExtend}><i18n.Translate>extend</i18n.Translate></ButtonPrimary>
+          <ButtonPrimary onClick={onSync}><i18n.Translate>sync now</i18n.Translate></ButtonPrimary>
+        </div>
+      </footer>
+    </PopupBox>
   )
 }
 
