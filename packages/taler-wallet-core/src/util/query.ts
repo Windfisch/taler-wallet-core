@@ -87,6 +87,15 @@ interface CursorValueResult<T> {
   value: T;
 }
 
+class TransactionAbortedError extends Error {
+  constructor(m: string) {
+    super(m);
+
+    // Set the prototype explicitly.
+    Object.setPrototypeOf(this, TransactionAbortedError.prototype);
+  }
+}
+
 class ResultStream<T> {
   private currentPromise: Promise<void>;
   private gotCursorEnd = false;
@@ -396,6 +405,7 @@ function runTx<Arg, Res>(
   return new Promise((resolve, reject) => {
     let funResult: any = undefined;
     let gotFunResult = false;
+    let transactionException: any = undefined;
     tx.oncomplete = () => {
       // This is a fatal error: The transaction completed *before*
       // the transaction function returned.  Likely, the transaction
@@ -416,12 +426,16 @@ function runTx<Arg, Res>(
       logger.error(`${stack}`);
     };
     tx.onabort = () => {
+      let msg: string;
       if (tx.error) {
-        logger.error("Transaction aborted with error:", tx.error);
+        msg = `Transaction aborted (transaction error): ${tx.error}`;
+      } else if (transactionException !== undefined) {
+        msg = `Transaction aborted (exception thrown): ${transactionException}`;
       } else {
-        logger.error("Transaction aborted (no error)");
+        msg = "Transaction aborted (no DB error)";
       }
-      reject(TransactionAbort);
+      logger.error(msg);
+      reject(new TransactionAbortedError(msg));
     };
     const resP = Promise.resolve().then(() => f(arg));
     resP
@@ -433,6 +447,7 @@ function runTx<Arg, Res>(
         if (e == TransactionAbort) {
           logger.trace("aborting transaction");
         } else {
+          transactionException = e;
           console.error("Transaction failed:", e);
           console.error(stack);
           tx.abort();
