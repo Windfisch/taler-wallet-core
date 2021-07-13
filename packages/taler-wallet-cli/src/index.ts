@@ -21,6 +21,12 @@ import os from "os";
 import fs from "fs";
 import * as clk from "./clk.js";
 import { deepStrictEqual } from "assert";
+// Polyfill for encoding which isn't present globally in older nodejs versions
+import { TextEncoder, TextDecoder } from "util";
+// @ts-ignore
+global.TextEncoder = TextEncoder;
+// @ts-ignore
+global.TextDecoder = TextDecoder;
 import { getTestInfo, runTests } from "./integrationtests/testrunner.js";
 import {
   PreparePayResultType,
