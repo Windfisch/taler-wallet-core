@@ -194,6 +194,12 @@ function kdfMod(
   }
 }
 
+// Newer versions of node have TextEncoder and TextDecoder as a global,
+// just like modern browsers.
+// In older versions of node or environments that do not have these
+// globals, they must be polyfilled (by adding them to globa/globalThis)
+// before stringToBytes or bytesToString is called the first time.
+
 let encoder: any;
 let decoder: any;
 
