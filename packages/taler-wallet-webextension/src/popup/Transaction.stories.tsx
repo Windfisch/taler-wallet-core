@@ -123,8 +123,6 @@ function createExample<Props>(Component: FunctionalComponent<Props>, props: Part
   return r
 }
 
-export const NotYetLoaded = createExample(TestedComponent, {});
-
 export const Withdraw = createExample(TestedComponent, {
   transaction: exampleData.withdraw
 });

@@ -21,7 +21,7 @@ import { differenceInMonths, formatDuration, intervalToDuration } from "date-fns
 import { FunctionalComponent, Fragment, JSX, VNode, AnyComponent } from "preact";
 import {
   BoldLight, ButtonPrimary, ButtonSuccess, Centered,
-  CenteredText, CenteredTextBold, PopupBox, Row,
+  CenteredText, CenteredTextBold, PopupBox, RowBorderGray,
   SmallText, SmallTextLight
 } from "../components/styled";
 import { useBackupStatus } from "../hooks/useBackupStatus";
@@ -94,12 +94,12 @@ function BackupLayout(props: TransactionLayoutProps): JSX.Element {
 
 
   return (
-    <Row>
+    <RowBorderGray>
       <div style={{ color: !props.active ? "grey" : undefined }}>
         <a href={Pages.provider_detail.replace(':pid', encodeURIComponent(props.id))}><span>{props.title}</span></a>
 
-        {dateStr && <SmallText>Last synced: {dateStr}</SmallText>}
-        {!dateStr && <SmallTextLight>Not synced</SmallTextLight>}
+        {dateStr && <SmallText style={{marginTop: 5}}>Last synced: {dateStr}</SmallText>}
+        {!dateStr && <SmallTextLight style={{marginTop: 5}}>Not synced</SmallTextLight>}
       </div>
       <div>
         {props.status?.type === 'paid' ?
@@ -107,7 +107,7 @@ function BackupLayout(props: TransactionLayoutProps): JSX.Element {
           <div>{props.status.type}</div>
         }
       </div>
-    </Row>
+    </RowBorderGray>
   );
 }
 

@@ -16,12 +16,14 @@
 
 import { AmountJson, Amounts, i18n, Transaction, TransactionType } from "@gnu-taler/taler-util";
 import { format } from "date-fns";
-import { Fragment, JSX } from "preact";
+import { Fragment, JSX, VNode } from "preact";
 import { route } from 'preact-router';
 import { useEffect, useState } from "preact/hooks";
 import * as wxApi from "../wxApi";
 import { Pages } from "./popup";
 import emptyImg from "../../static/img/empty.png"
+import { Button, ButtonDestructive, ButtonPrimary, ListOfProducts, PopupBox, Row, RowBorderGray, SmallTextLight } from "../components/styled";
+import { ErrorMessage } from "../components/ErrorMessage";
 
 export function TransactionPage({ tid }: { tid: string; }): JSX.Element {
   const [transaction, setTransaction] = useState<
@@ -41,6 +43,9 @@ export function TransactionPage({ tid }: { tid: string; }): JSX.Element {
     fetchData();
   }, []);
 
+  if (!transaction) {
+    return <div><i18n.Translate>Loading ...</i18n.Translate></div>;
+  }
   return <TransactionView
     transaction={transaction}
     onDelete={() => wxApi.deleteTransaction(tid).then(_ => history.go(-1))}
@@ -49,65 +54,63 @@ export function TransactionPage({ tid }: { tid: string; }): JSX.Element {
 }
 
 export interface WalletTransactionProps {
-  transaction?: Transaction,
+  transaction: Transaction,
   onDelete: () => void,
   onRetry: () => void,
   onBack: () => void,
 }
 
+
 export function TransactionView({ transaction, onDelete, onRetry, onBack }: WalletTransactionProps) {
-  if (!transaction) {
-    return <div><i18n.Translate>Loading ...</i18n.Translate></div>;
-  }
-
-  function Footer() {
-    return <footer style={{ marginTop: 'auto', display: 'flex', flexShrink: 0 }}>
-      <button class="pure-button" onClick={onBack}><i18n.Translate>back</i18n.Translate></button>
-      <div style={{ width: '100%', flexDirection: 'row', justifyContent: 'flex-end', display: 'flex' }}>
-        {transaction?.error ? <button class="pure-button button-secondary" style={{marginRight: 5}} onClick={onRetry}><i18n.Translate>retry</i18n.Translate></button> : null }
-        <button class="pure-button button-destructive"  onClick={onDelete}><i18n.Translate>delete</i18n.Translate></button>
-      </div>
-
-    </footer>
-  }
 
   function Status() {
-    if (transaction?.error) {
+    if (transaction.error) {
       return <span style={{ fontWeight: 'normal', fontSize: 16, color: 'red' }}>(failed)</span>
     }
-    if (!transaction?.pending) return null
-    return <span style={{ fontWeight: 'normal', fontSize: 16, color: 'gray' }}>(pending...)</span>
+    if (transaction.pending) {
+      return <span style={{ fontWeight: 'normal', fontSize: 16, color: 'gray' }}>(pending...)</span>
+    }
+    return null
   }
 
-  function Error() {
-    if (!transaction?.error) return null
-    return <div class="errorbox" >
-      <p>{transaction.error.hint}</p>
-    </div>
+  function Fee({ value }: { value: AmountJson }) {
+    if (Amounts.isZero(value)) return null
+    return <span style="font-size: 16px;font-weight: normal;color: gray;">(fee {Amounts.stringify(value)})</span>
   }
 
-  const Fee = ({ value }: { value: AmountJson }) => Amounts.isNonZero(value) ?
-    <span style="font-size: 16px;font-weight: normal;color: gray;">(fee {Amounts.stringify(value)})</span> : null
+  function TransactionTemplate({ upperRight, children }: { upperRight: VNode, children: VNode[] }) {
+    return <PopupBox>
+      <header>
+        <SmallTextLight>
+          {transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}
+        </SmallTextLight>
+        <SmallTextLight>
+          {upperRight}
+        </SmallTextLight>
+      </header>
+      <section>
+        <ErrorMessage title={transaction?.error?.hint} />
+        {children}
+      </section>
+      <footer>
+        <Button onClick={onBack}><i18n.Translate> &lt; back</i18n.Translate></Button>
+        <div>
+          {transaction?.error ? <ButtonPrimary onClick={onRetry}><i18n.Translate>retry</i18n.Translate></ButtonPrimary> : null}
+          <ButtonDestructive onClick={onDelete}><i18n.Translate>delete</i18n.Translate></ButtonDestructive>
+        </div>
+      </footer>
+    </PopupBox>
+  }
 
   if (transaction.type === TransactionType.Withdrawal) {
     const fee = Amounts.sub(
       Amounts.parseOrThrow(transaction.amountRaw),
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column' }} >
-        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 34px - 16px)', overflow: 'auto' }}>
-          <span style="font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
-          <span style="float: right; font-size:small; color:gray">
-            From <b>{transaction.exchangeBaseUrl}</b>
-          </span>
-          <Error />
-          <h3>Withdraw <Status /></h3>
-          <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
-        </section>
-        <Footer />
-      </div>
-    );
+    return <TransactionTemplate upperRight={<Fragment>From <b>{transaction.exchangeBaseUrl}</b></Fragment>}>
+      <h3>Withdraw <Status /></h3>
+      <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
+    </TransactionTemplate>
   }
 
   const showLargePic = () => {
@@ -120,38 +123,29 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
       Amounts.parseOrThrow(transaction.amountRaw),
     ).amount
 
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column' }} >
-        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 34px - 16px)', overflow: 'auto' }}>
-          <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
-          <span style="float: right; font-size:small; color:gray">
-            To <b>{transaction.info.merchant.name}</b>
-          </span>
-          <Error />
-          <h3>Payment <Status /></h3>
-          <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
-          <span style="font-size:small; color:gray">#{transaction.info.orderId}</span>
-          <p>
-            {transaction.info.summary}
-          </p>
-          <div>
-            {transaction.info.products && transaction.info.products.length > 0 && <div>
-              {transaction.info.products.map(p => <div style="display: flex; flex-direction: row; border: 1px solid gray; border-radius: 0.5em; margin: 0.5em 0px; justify-content: left; padding: 0.5em;">
-                <a href="#" onClick={showLargePic}>
-                  <img class="pure-img" style="display:inline-block" src={p.image ? p.image : emptyImg} width="32" height="32" />
-                </a>
-                <div style="display: block; margin-left: 1em;">
-                  {p.quantity && p.quantity > 0 && <div style="font-size: small; color: gray;">x {p.quantity} {p.unit}</div>}
-                  <div style={{ textOverflow: 'ellipsis', overflow: 'hidden', width: 'calc(20rem - 32px - 32px - 8px - 1em)', whiteSpace: 'nowrap' }}>{p.description}</div>
-                </div>
-              </div>)}
-            </div>
-            }
-          </div>
-        </section>
-        <Footer />
+    return <TransactionTemplate upperRight={<Fragment>To <b>{transaction.info.merchant.name}</b></Fragment>}>
+      <h3>Payment <Status /></h3>
+      <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
+      <span style="font-size:small; color:gray">#{transaction.info.orderId}</span>
+      <p>
+        {transaction.info.summary}
+      </p>
+      <div>
+        {transaction.info.products && transaction.info.products.length > 0 &&
+          <ListOfProducts>
+            {transaction.info.products.map(p => <RowBorderGray>
+              <a href="#" onClick={showLargePic}>
+                <img src={p.image ? p.image : emptyImg} />
+              </a>
+              <div>
+                {p.quantity && p.quantity > 0 && <SmallTextLight>x {p.quantity} {p.unit}</SmallTextLight>}
+                <div>{p.description}</div>
+              </div>
+            </RowBorderGray>)}
+          </ListOfProducts>
+        }
       </div>
-    );
+    </TransactionTemplate>
   }
 
   if (transaction.type === TransactionType.Deposit) {
@@ -159,20 +153,10 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
       Amounts.parseOrThrow(transaction.amountRaw),
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column' }} >
-        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 34px - 16px)', overflow: 'auto' }}>
-          <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
-          <span style="float: right; font-size:small; color:gray">
-            To <b>{transaction.targetPaytoUri}</b>
-          </span>
-          <Error />
-          <h3>Deposit <Status /></h3>
-          <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
-        </section>
-        <Footer />
-      </div>
-    );
+    return <TransactionTemplate upperRight={<Fragment>To <b>{transaction.targetPaytoUri}</b></Fragment>}>
+      <h3>Deposit <Status /></h3>
+      <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
+    </TransactionTemplate>
   }
 
   if (transaction.type === TransactionType.Refresh) {
@@ -180,20 +164,10 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
       Amounts.parseOrThrow(transaction.amountRaw),
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column' }} >
-        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 34px - 16px)', overflow: 'auto' }}>
-          <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
-          <span style="float: right; font-size:small; color:gray">
-            From <b>{transaction.exchangeBaseUrl}</b>
-          </span>
-          <Error />
-          <h3>Refresh <Status /></h3>
-          <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
-        </section>
-        <Footer />
-      </div>
-    );
+    return <TransactionTemplate upperRight={<Fragment>From <b>{transaction.exchangeBaseUrl}</b></Fragment>}>
+      <h3>Refresh <Status /></h3>
+      <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
+    </TransactionTemplate>
   }
 
   if (transaction.type === TransactionType.Tip) {
@@ -201,20 +175,10 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
       Amounts.parseOrThrow(transaction.amountRaw),
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column' }} >
-        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 34px - 16px)', overflow: 'auto' }}>
-          <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
-          <span style="float: right; font-size:small; color:gray">
-            From <b>{transaction.merchantBaseUrl}</b>
-          </span>
-          <Error />
-          <h3>Tip <Status /></h3>
-          <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
-        </section>
-        <Footer />
-      </div>
-    );
+    return <TransactionTemplate upperRight={<Fragment>From <b>{transaction.merchantBaseUrl}</b></Fragment>}>
+      <h3>Tip <Status /></h3>
+      <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
+    </TransactionTemplate>
   }
 
   if (transaction.type === TransactionType.Refund) {
@@ -222,39 +186,30 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
       Amounts.parseOrThrow(transaction.amountRaw),
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column' }} >
-        <section style={{ color: transaction.pending ? 'gray' : '', flex: '1 0 auto', height: 'calc(320px - 34px - 34px - 16px)', overflow: 'auto' }}>
-          <span style="flat: left; font-size:small; color:gray">{transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}</span>
-          <span style="float: right; font-size:small; color:gray">
-            From <b>{transaction.info.merchant.name}</b>
-          </span>
-          <Error />
-          <h3>Refund <Status /></h3>
-          <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
-          <span style="font-size:small; color:gray">#{transaction.info.orderId}</span>
-          <p>
-            {transaction.info.summary}
-          </p>
-          <div>
-            {transaction.info.products && transaction.info.products.length > 0 && <div>
-              {transaction.info.products.map(p => <div style="display: flex; flex-direction: row; border: 1px solid gray; border-radius: 0.5em; margin: 0.5em 0px; justify-content: left; padding: 0.5em;">
-                <a href="#" onClick={showLargePic}>
-                  <img class="pure-img" style="display:inline-block" src={p.image ? p.image : emptyImg} width="32" height="32" />
-                </a>
-                <div style="display: block; margin-left: 1em;">
-                  {p.quantity && p.quantity > 0 && <div style="font-size: small; color: gray;">x {p.quantity} {p.unit}</div>}
-                  <div style={{ textOverflow: 'ellipsis', overflow: 'hidden', width: 'calc(20rem - 32px - 32px - 8px - 1em)', whiteSpace: 'nowrap' }}>{p.description}</div>
-                </div>
-              </div>)}
-            </div>
-            }
-          </div>
+    return <TransactionTemplate upperRight={<Fragment>From <b>{transaction.info.merchant.name}</b></Fragment>}>
+      <h3>Refund <Status /></h3>
+      <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
 
-        </section>
-        <Footer />
+      <span style="font-size:small; color:gray">#{transaction.info.orderId}</span>
+      <p>
+        {transaction.info.summary}
+      </p>
+      <div>
+        {transaction.info.products && transaction.info.products.length > 0 &&
+          <ListOfProducts>
+            {transaction.info.products.map(p => <RowBorderGray>
+              <a href="#" onClick={showLargePic}>
+                <img src={p.image ? p.image : emptyImg} />
+              </a>
+              <div>
+                {p.quantity && p.quantity > 0 && <SmallTextLight>x {p.quantity} {p.unit}</SmallTextLight>}
+                <div>{p.description}</div>
+              </div>
+            </RowBorderGray>)}
+          </ListOfProducts>
+        }
       </div>
-    );
+    </TransactionTemplate>
   }
 
 

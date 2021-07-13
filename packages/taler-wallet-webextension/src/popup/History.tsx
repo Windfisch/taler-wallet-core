@@ -42,11 +42,13 @@ export function HistoryPage(props: any): JSX.Element {
 }
 
 export function HistoryView({ list }: { list: Transaction[] }) {
-  return <div style={{ height: 'calc(320px - 34px - 16px)', overflow: 'auto' }}>
-    {list.map((tx, i) => (
-      <TransactionItem key={i} tx={tx} />
-    ))}
-  </div>
+  return <PopupBox>
+    <section>
+      {list.map((tx, i) => (
+        <TransactionItem key={i} tx={tx} />
+      ))}
+    </section>
+  </PopupBox>
 }
 
 import imageBank from '../../static/img/ri-bank-line.svg';
@@ -54,6 +56,7 @@ import imageShoppingCart from '../../static/img/ri-shopping-cart-line.svg';
 import imageRefund from '../../static/img/ri-refund-2-line.svg';
 import imageHandHeart from '../../static/img/ri-hand-heart-line.svg';
 import imageRefresh from '../../static/img/ri-refresh-line.svg';
+import { Column, ExtraLargeText, HistoryRow, PopupBox, Row, RowBorderGray, SmallTextLight } from "../components/styled";
 
 function TransactionItem(props: { tx: Transaction }): JSX.Element {
   const tx = props.tx;
@@ -146,37 +149,25 @@ function TransactionLayout(props: TransactionLayoutProps): JSX.Element {
     timeStyle: "short",
   } as any);
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        border: "1px solid gray",
-        borderRadius: "0.5em",
-        margin: "0.5em 0",
-        justifyContent: "space-between",
-        padding: "0.5em",
-      }}
-    >
+    <HistoryRow>
       <img src={props.iconPath} />
-      <div
-        style={{ display: "flex", flexDirection: "column", marginLeft: "1em" }}
-      >
-        <div style={{ fontSize: "small", color: "gray" }}>{dateStr}</div>
-        <div style={{ fontVariant: "small-caps", fontSize: "x-large" }}>
+      <Column>
+        <SmallTextLight>{dateStr}</SmallTextLight>
+        <ExtraLargeText>
           <a href={Pages.transaction.replace(':tid', props.id)}><span>{props.title}</span></a>
           {props.pending ? (
             <span style={{ color: "darkblue" }}> (Pending)</span>
           ) : null}
-        </div>
+        </ExtraLargeText>
 
         <div>{props.subtitle}</div>
-      </div>
+      </Column>
       <TransactionAmount
         pending={props.pending}
         amount={props.amount}
         debitCreditIndicator={props.debitCreditIndicator}
       />
-    </div>
+    </HistoryRow>
   );
 }
 
@@ -210,24 +201,14 @@ function TransactionAmount(props: TransactionAmountProps): JSX.Element {
     case "unknown":
       sign = "";
   }
-  const style: JSX.AllCSSProperties = {
-    marginLeft: "auto",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    alignSelf: "center"
-  };
-  if (props.pending) {
-    style.color = "gray";
-  }
   return (
-    <div style={{ ...style }}>
-      <div style={{ fontSize: "x-large" }}>
+    <Column style={{ color: props.pending ? "gray" : undefined }}>
+      <ExtraLargeText>
         {sign}
         {amount}
-      </div>
+      </ExtraLargeText>
       <div>{currency}</div>
-    </div>
+    </Column>
   );
 }
 

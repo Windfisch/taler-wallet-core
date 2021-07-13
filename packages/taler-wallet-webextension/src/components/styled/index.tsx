@@ -4,7 +4,7 @@ import type * as Linaria from '@linaria/core';
 
 import { styled } from '@linaria/react';
 
-export const PaymentStatus = styled.span<{color:string}>`
+export const PaymentStatus = styled.span<{ color: string }>`
   padding: 5px;
   border-radius: 5px;
   color: white;
@@ -136,11 +136,42 @@ export const Centered = styled.div`
 `
 export const Row = styled.div`
   display: flex;
-  border: 1px solid gray;
-  border-radius: 0.5em;
   margin: 0.5em 0;
   justify-content: space-between;
   padding: 0.5em;
+`
+
+export const Column = styled.div`
+  display: flex;
+  flex-direction: column;
+  margin: 0em 1em;
+  justify-content: space-between;
+`
+
+export const RowBorderGray = styled(Row)`
+  border: 1px solid gray;
+  border-radius: 0.5em;
+`
+
+export const HistoryRow = styled(RowBorderGray)`
+  & > ${Column}:last-of-type {
+    margin-left: auto;
+    align-self: center;
+  }
+`
+
+export const ListOfProducts = styled.div`
+  & > div > a > img {
+    max-width: 100%;
+    display: inline-block;
+
+    width: 32px;
+    height: 32px;
+  }
+  & > div > div {
+    margin-right: auto;
+    margin-left: 1em;
+  }
 `
 
 export const LightText = styled.div`
@@ -149,7 +180,9 @@ export const LightText = styled.div`
 
 export const SmallText = styled.div`
   font-size: small; 
-  margin-top: 0.5em;
+`
+export const ExtraLargeText = styled.div`
+  font-size: x-large; 
 `
 
 export const SmallTextLight = styled(SmallText)`
