@@ -18,21 +18,12 @@
  * Native implementation of GNU Taler crypto.
  */
 
+/**
+ * Imports.
+ */
 import * as nacl from "./primitives/nacl-fast.js";
 import bigint from "big-integer";
 import { kdf } from "./primitives/kdf.js";
-
-// @ts-ignore
-const decoder = new TextDecoder();
-if (typeof decoder !== "object") {
-  throw Error("FATAL: TextDecoder not available");
-}
-
-// @ts-ignore
-const encoder = new TextEncoder();
-if (typeof encoder !== "object") {
-  throw Error("FATAL: TextEncoder not available");
-}
 
 export function getRandomBytes(n: number): Uint8Array {
   return nacl.randomBytes(n);
@@ -203,11 +194,22 @@ function kdfMod(
   }
 }
 
+let encoder: any;
+let decoder: any;
+
 export function stringToBytes(s: string): Uint8Array {
+  if (!encoder) {
+    // @ts-ignore
+    encoder = new TextEncoder();
+  }
   return encoder.encode(s);
 }
 
 export function bytesToString(b: Uint8Array): string {
+  if (!decoder) {
+    // @ts-ignore
+    decoder = new TextDecoder();
+  }
   return decoder.decode(b);
 }
 
