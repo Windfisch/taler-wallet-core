@@ -1,6 +1,6 @@
 {
   "name": "@gnu-taler/taler-wallet-embedded",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "",
   "engines": {
     "node": ">=0.12.0"
