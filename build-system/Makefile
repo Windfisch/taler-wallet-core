@@ -46,6 +46,10 @@ check: compile
 webextension: compile
 	cd ./packages/taler-wallet-webextension/ && ./pack.sh
 
+.PHONY: dev-view
+webextension-dev-view: compile
+	pnpm run --filter @gnu-taler/taler-wallet-webextension storybook
+
 .PHONY: integrationtests
 integrationtests: compile
 	./packages/taler-integrationtests/testrunner '*'

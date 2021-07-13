@@ -24,6 +24,11 @@ The CLI version of the wallet supports the normal GNU installation process.
 ./configure [ --prefix=$PREFIX ] && make install
 ```
 
+### Compiling from Git
+
+If you are compiling the code from git, you have to run `./bootstrap` before
+running `./configure`.
+
 ### Building the WebExtension
 
 The WebExtension can be built via the 'webextension' make target:
@@ -86,12 +91,24 @@ Then, you can proceed with these instructions:
 (host)$ docker cp walletcontainer:/wallet-core-$version/packages/taler-wallet-webextension/extension extension
 ```
 
+### Reviewing WebExtension UI examples
 
-### Compiling from Git
+The WebExtension can be tested using Storybook. Using live server or building 
+static html files to deploy into nginx.
 
-If you are compiling the code from git, you have to run `./bootstrap` before
-running `./configure`.
+To run a live server use the 'dev-view' target
 
+```shell
+make dev-view
+```
+
+A server will start, usually at http://localhost:6006/.
+On the left it will have a navigation panel with examples organized in a tree view.
+
+Stories are defined with a *.stories.tsx file [1], you are free to create new or edit
+some and commit them in order to create a more complete set of examples.
+
+[1] look for them at packages/taler-wallet-webextension/src/**/*.stories.tsx
 
 # Integration Tests
 
