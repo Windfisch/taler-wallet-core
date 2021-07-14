@@ -50,7 +50,7 @@ import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory";
  * Currently active wallet instance.  Might be unloaded and
  * re-instantiated when the database is reset.
  * 
- * FIXME:  Maybe move the wallet reseting into the Wallet class?
+ * FIXME:  Maybe move the wallet resetting into the Wallet class?
  */
 let currentWallet: Wallet | undefined;
 
