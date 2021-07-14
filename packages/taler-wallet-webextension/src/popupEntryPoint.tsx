@@ -29,7 +29,7 @@ import { DevContextProvider } from "./context/useDevContext";
 import { useTalerActionURL } from "./hooks/useTalerActionURL";
 import { strings } from "./i18n/strings";
 import { BackupPage } from "./popup/BackupPage";
-import { BalancePage } from "./popup/Balance";
+import { BalancePage } from "./popup/BalancePage";
 import { DeveloperPage as DeveloperPage } from "./popup/Debug";
 import { HistoryPage } from "./popup/History";
 import {

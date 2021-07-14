@@ -18,7 +18,7 @@
 import { i18n, Timestamp } from "@gnu-taler/taler-util";
 import { ProviderInfo, ProviderPaymentStatus } from "@gnu-taler/taler-wallet-core";
 import { differenceInMonths, formatDuration, intervalToDuration } from "date-fns";
-import { FunctionalComponent, Fragment, JSX, VNode, AnyComponent } from "preact";
+import { Fragment, JSX, VNode } from "preact";
 import {
   BoldLight, ButtonPrimary, ButtonSuccess, Centered,
   CenteredText, CenteredTextBold, PopupBox, RowBorderGray,
