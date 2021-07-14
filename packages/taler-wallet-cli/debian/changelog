@@ -1,0 +1,9 @@
+taler-wallet-cli (0.0.1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Florian Dold <dold@taler.net>  Sun, 14 Jul 2021 15:00:00 +0100
+
+Local variables:
+mode: debian-changelog
+End:
