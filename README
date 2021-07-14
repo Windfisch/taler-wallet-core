@@ -99,7 +99,7 @@ static html files to deploy into nginx.
 To run a live server use the 'dev-view' target
 
 ```shell
-make dev-view
+make webextension-dev-view
 ```
 
 A server will start, usually at http://localhost:6006/.
