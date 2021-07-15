@@ -43,6 +43,7 @@ function createExample<Props>(Component: FunctionalComponent<Props>, props: Part
 export const Active = createExample(TestedComponent, {
   info: {
     "active": true,
+    name:'sync.demo',
     "syncProviderBaseUrl": "http://sync.taler:9967/",
     "lastSuccessfulBackupTimestamp": {
       "t_ms": 1625063925078
@@ -67,6 +68,7 @@ export const Active = createExample(TestedComponent, {
 export const ActiveErrorSync = createExample(TestedComponent, {
   info: {
     "active": true,
+    name:'sync.demo',
     "syncProviderBaseUrl": "http://sync.taler:9967/",
     "lastSuccessfulBackupTimestamp": {
       "t_ms": 1625063925078
@@ -100,6 +102,7 @@ export const ActiveErrorSync = createExample(TestedComponent, {
 export const ActiveBackupProblemUnreadable = createExample(TestedComponent, {
   info: {
     "active": true,
+    name:'sync.demo',
     "syncProviderBaseUrl": "http://sync.taler:9967/",
     "lastSuccessfulBackupTimestamp": {
       "t_ms": 1625063925078
@@ -127,6 +130,7 @@ export const ActiveBackupProblemUnreadable = createExample(TestedComponent, {
 export const ActiveBackupProblemDevice = createExample(TestedComponent, {
   info: {
     "active": true,
+    name:'sync.demo',
     "syncProviderBaseUrl": "http://sync.taler:9967/",
     "lastSuccessfulBackupTimestamp": {
       "t_ms": 1625063925078
@@ -159,6 +163,7 @@ export const ActiveBackupProblemDevice = createExample(TestedComponent, {
 export const InactiveUnpaid = createExample(TestedComponent, {
   info: {
     "active": false,
+    name:'sync.demo',
     "syncProviderBaseUrl": "http://sync.demo.taler.net/",
     "paymentProposalIds": [],
     "paymentStatus": {
@@ -175,6 +180,7 @@ export const InactiveUnpaid = createExample(TestedComponent, {
 export const InactiveInsufficientBalance = createExample(TestedComponent, {
   info: {
     "active": false,
+    name:'sync.demo',
     "syncProviderBaseUrl": "http://sync.demo.taler.net/",
     "paymentProposalIds": [],
     "paymentStatus": {
@@ -191,6 +197,7 @@ export const InactiveInsufficientBalance = createExample(TestedComponent, {
 export const InactivePending = createExample(TestedComponent, {
   info: {
     "active": false,
+    name:'sync.demo',
     "syncProviderBaseUrl": "http://sync.demo.taler.net/",
     "paymentProposalIds": [],
     "paymentStatus": {
@@ -208,6 +215,7 @@ export const InactivePending = createExample(TestedComponent, {
 export const ActiveTermsChanged = createExample(TestedComponent, {
   info: {
     "active": true,
+    name:'sync.demo',
     "syncProviderBaseUrl": "http://sync.demo.taler.net/",
     "paymentProposalIds": [],
     "paymentStatus": {

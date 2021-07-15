@@ -44,6 +44,7 @@ function createExample<Props>(Component: FunctionalComponent<Props>, props: Part
 export const LotOfProviders = createExample(TestedComponent, {
   providers: [{
     "active": true,
+    name:'sync.demo',
     "syncProviderBaseUrl": "http://sync.taler:9967/",
     "lastSuccessfulBackupTimestamp": {
       "t_ms": 1625063925078
@@ -64,6 +65,7 @@ export const LotOfProviders = createExample(TestedComponent, {
     }
   }, {
     "active": true,
+    name:'sync.demo',
     "syncProviderBaseUrl": "http://sync.taler:9967/",
     "lastSuccessfulBackupTimestamp": {
       "t_ms": 1625063925078
@@ -84,6 +86,7 @@ export const LotOfProviders = createExample(TestedComponent, {
     }
   }, {
     "active": false,
+    name:'sync.demo',
     "syncProviderBaseUrl": "http://sync.demo.taler.net/",
     "paymentProposalIds": [],
     "paymentStatus": {
@@ -96,6 +99,7 @@ export const LotOfProviders = createExample(TestedComponent, {
     }
   }, {
     "active": false,
+    name:'sync.demo',
     "syncProviderBaseUrl": "http://sync.demo.taler.net/",
     "paymentProposalIds": [],
     "paymentStatus": {
@@ -108,6 +112,7 @@ export const LotOfProviders = createExample(TestedComponent, {
     }
   }, {
     "active": false,
+    name:'sync.demo',
     "syncProviderBaseUrl": "http://sync.demo.taler.net/",
     "paymentProposalIds": [],
     "paymentStatus": {
@@ -134,6 +139,7 @@ export const LotOfProviders = createExample(TestedComponent, {
     }
   }, {
     "active": false,
+    name:'sync.demo',
     "syncProviderBaseUrl": "http://sync.demo.taler.net/",
     "paymentProposalIds": [],
     "paymentStatus": {
@@ -146,6 +152,7 @@ export const LotOfProviders = createExample(TestedComponent, {
     }
   }, {
     "active": false,
+    name:'sync.demo',
     "syncProviderBaseUrl": "http://sync.demo.taler.net/",
     "paymentProposalIds": [],
     "paymentStatus": {
@@ -163,6 +170,7 @@ export const LotOfProviders = createExample(TestedComponent, {
 export const OneProvider = createExample(TestedComponent, {
   providers: [{
     "active": true,
+    name:'sync.demo',
     "syncProviderBaseUrl": "http://sync.taler:9967/",
     "lastSuccessfulBackupTimestamp": {
       "t_ms": 1625063925078

@@ -5,6 +5,7 @@ import * as wxApi from "../wxApi";
 export interface ProviderStatus {
   info?: ProviderInfo;
   sync: () => Promise<void>;
+  remove: () => Promise<void>;
 }
 
 export function useProviderStatus(url: string): ProviderStatus | undefined {
@@ -19,13 +20,18 @@ export function useProviderStatus(url: string): ProviderStatus | undefined {
       const info = providers.length ? providers[0] : undefined;
 
       async function sync() {
-        console.log("que tiene info", info)
         if (info) {
           await wxApi.syncOneProvider(info.syncProviderBaseUrl);
         }
       }
 
-      setStatus({ info, sync });
+      async function remove() {
+        if (info) {
+          await wxApi.removeProvider(info.syncProviderBaseUrl);
+        }
+      }
+
+      setStatus({ info, sync, remove });
     }
     run();
   }, []);

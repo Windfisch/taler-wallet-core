@@ -20,7 +20,7 @@ import { ProviderInfo, ProviderPaymentStatus, ProviderPaymentType } from "@gnu-t
 import { format, formatDuration, intervalToDuration } from "date-fns";
 import { Fragment, VNode } from "preact";
 import { ErrorMessage } from "../components/ErrorMessage";
-import { Button, ButtonDestructive, ButtonPrimary, PaymentStatus, PopupBox } from "../components/styled";
+import { Button, ButtonDestructive, ButtonPrimary, PaymentStatus, PopupBox, SmallTextLight } from "../components/styled";
 import { useProviderStatus } from "../hooks/useProviderStatus";
 
 interface Props {
@@ -39,7 +39,7 @@ export function ProviderDetailPage({ pid, onBack }: Props): VNode {
   }
   return <ProviderView info={status.info}
     onSync={status.sync}
-    onDelete={() => { null }}
+    onDelete={() => status.remove().then(onBack) }
     onBack={onBack}
     onExtend={() => { null }}
   />;
@@ -63,7 +63,7 @@ export function ProviderView({ info, onDelete, onSync, onBack, onExtend }: ViewP
       </header>
       <section>
         <Error info={info} />
-        <h3>{info.syncProviderBaseUrl}</h3>
+        <h3>{info.name} <SmallTextLight>{info.syncProviderBaseUrl}</SmallTextLight></h3>
         <p>{daysSince(info?.lastSuccessfulBackupTimestamp)} </p>
         <p>{descriptionByStatus(info.paymentStatus)}</p>
         {info.paymentStatus.type === ProviderPaymentType.TermsChanged && <div>
@@ -99,7 +99,7 @@ export function ProviderView({ info, onDelete, onSync, onBack, onExtend }: ViewP
       <footer>
         <Button onClick={onBack}><i18n.Translate> &lt; back</i18n.Translate></Button>
         <div>
-          <ButtonDestructive disabled onClick={onDelete}><i18n.Translate>remove</i18n.Translate></ButtonDestructive>
+          <ButtonDestructive onClick={onDelete}><i18n.Translate>remove</i18n.Translate></ButtonDestructive>
           <ButtonPrimary disabled onClick={onExtend}><i18n.Translate>extend</i18n.Translate></ButtonPrimary>
           <ButtonPrimary onClick={onSync}><i18n.Translate>sync now</i18n.Translate></ButtonPrimary>
         </div>
@@ -174,7 +174,7 @@ function descriptionByStatus(status: ProviderPaymentStatus) {
     case ProviderPaymentType.InsufficientBalance:
       return 'no enough balance to make the payment'
     case ProviderPaymentType.Unpaid:
-      return 'not pay yet'
+      return 'not paid yet'
     case ProviderPaymentType.Paid:
     case ProviderPaymentType.TermsChanged:
       if (status.paidUntil.t_ms === 'never') {

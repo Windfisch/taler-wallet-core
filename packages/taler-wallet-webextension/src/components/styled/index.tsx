@@ -200,15 +200,17 @@ export const CenteredTextBold = styled(CenteredText)`
   font-weight: bold;
   color: ${((props: any): any => String(props.color) as any) as any};
 `
-export const Input = styled.div`
+export const Input = styled.div<{ invalid?: boolean }>`
   & label {
     display: block;
     padding: 5px;
+    color: ${({ invalid }) => !invalid ? 'inherit' : 'red'}
   }
   & input {
     display: block;
     padding: 5px;
     width: calc(100% - 4px - 10px);
+    border-color: ${({ invalid }) => !invalid ? 'inherit' : 'red'}
   }
 `
 

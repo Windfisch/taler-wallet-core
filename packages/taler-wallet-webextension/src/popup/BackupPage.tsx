@@ -54,7 +54,7 @@ export function BackupView({ providers, onAddProvider, onSyncAll }: ViewProps): 
           timestamp={provider.lastSuccessfulBackupTimestamp}
           id={provider.syncProviderBaseUrl}
           active={provider.active}
-          title={provider.syncProviderBaseUrl}
+          title={provider.name}
         />
         )}
         {!providers.length && <Centered style={{marginTop: 100}}>

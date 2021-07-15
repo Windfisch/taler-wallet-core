@@ -39,7 +39,7 @@ import {
   RetryTransactionRequest,
   SetWalletDeviceIdRequest,
 } from "@gnu-taler/taler-util";
-import { AddBackupProviderRequest, BackupProviderState, OperationFailedError } from "@gnu-taler/taler-wallet-core";
+import { AddBackupProviderRequest, BackupProviderState, OperationFailedError, RemoveBackupProviderRequest } from "@gnu-taler/taler-wallet-core";
 import { BackupInfo } from "@gnu-taler/taler-wallet-core";
 
 export interface ExtendedPermissionsResponse {
@@ -174,9 +174,9 @@ export function getBackupInfo(): Promise<BackupInfo> {
 /**
  * Add a backup provider and activate it
  */
-export function addBackupProvider(backupProviderBaseUrl: string): Promise<void> {
+export function addBackupProvider(backupProviderBaseUrl: string, name: string): Promise<void> {
   return callBackend("addBackupProvider", {
-    backupProviderBaseUrl, activate: true
+    backupProviderBaseUrl, activate: true, name
   } as AddBackupProviderRequest)
 }
 
@@ -194,7 +194,7 @@ export function syncOneProvider(url: string): Promise<void> {
   return callBackend("runBackupCycle", { providers: [url] })
 }
 export function removeProvider(url: string): Promise<void> {
-  return callBackend("removeBackupProvider", { provider: url })
+  return callBackend("removeBackupProvider", { provider: url } as RemoveBackupProviderRequest)
 }
 export function extendedProvider(url: string): Promise<void> {
   return callBackend("extendBackupProvider", { provider: url })
