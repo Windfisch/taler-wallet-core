@@ -304,8 +304,8 @@ async function runBackupCycleForProvider(
       "if-none-match": encodeCrock(currentBackupHash),
       ...(provider.lastBackupHash
         ? {
-            "if-match": provider.lastBackupHash,
-          }
+          "if-match": provider.lastBackupHash,
+        }
         : {}),
     },
   });
@@ -522,6 +522,21 @@ export async function processBackupForProvider(
   await guardOperationException(run, onOpErr);
 }
 
+export interface RemoveBackupProviderRequest {
+  provider: string;
+}
+
+export const codecForRemoveBackupProvider = (): Codec<RemoveBackupProviderRequest> =>
+  buildCodecForObject<RemoveBackupProviderRequest>()
+    .property("provider", codecForString())
+    .build("RemoveBackupProviderRequest");
+
+export async function removeBackupProvider(ws: InternalWalletState, req: RemoveBackupProviderRequest): Promise<void> {
+  await ws.db.mktx(({ backupProviders }) => ({ backupProviders }))
+    .runReadWrite(async (tx) => {
+      await tx.backupProviders.delete(req.provider)
+    })
+}
 
 export interface RunBackupCycleRequest {
   /**
@@ -590,6 +605,8 @@ const codecForSyncTermsOfServiceResponse = (): Codec<SyncTermsOfServiceResponse>
 
 export interface AddBackupProviderRequest {
   backupProviderBaseUrl: string;
+
+  name: string;
   /**
    * Activate the provider.  Should only be done after
    * the user has reviewed the provider.
@@ -600,6 +617,7 @@ export interface AddBackupProviderRequest {
 export const codecForAddBackupProviderRequest = (): Codec<AddBackupProviderRequest> =>
   buildCodecForObject<AddBackupProviderRequest>()
     .property("backupProviderBaseUrl", codecForString())
+    .property("name", codecForString())
     .property("activate", codecOptional(codecForBoolean()))
     .build("AddBackupProviderRequest");
 
@@ -649,6 +667,7 @@ export async function addBackupProvider(
       }
       await tx.backupProviders.put({
         state,
+        name: req.name,
         terms: {
           annualFee: terms.annual_fee,
           storageLimitInMegabytes: terms.storage_limit_in_megabytes,
@@ -661,11 +680,7 @@ export async function addBackupProvider(
     });
 }
 
-export async function removeBackupProvider(
-  syncProviderBaseUrl: string,
-): Promise<void> {}
-
-export async function restoreFromRecoverySecret(): Promise<void> {}
+export async function restoreFromRecoverySecret(): Promise<void> { }
 
 /**
  * Information about one provider.
@@ -676,6 +691,7 @@ export async function restoreFromRecoverySecret(): Promise<void> {}
 export interface ProviderInfo {
   active: boolean;
   syncProviderBaseUrl: string;
+  name: string;
   terms?: BackupProviderTerms;
   /**
    * Last communication issue with the provider.
@@ -830,6 +846,7 @@ export async function getBackupInfo(
           : undefined,
       paymentStatus: await getProviderPaymentInfo(ws, x),
       terms: x.terms,
+      name: x.name,
     });
   }
   return {
@@ -890,6 +907,7 @@ async function backupRecoveryTheirs(
         if (!existingProv) {
           await tx.backupProviders.put({
             baseUrl: prov.url,
+            name: 'not-defined',
             paymentProposalIds: [],
             state: {
               tag: BackupProviderStateTag.Ready,

@@ -1587,6 +1587,11 @@ export interface BackupProviderRecord {
   baseUrl: string;
 
   /**
+   * Name of the provider
+   */
+  name: string;
+
+  /**
    * Terms of service of the provider.
    * Might be unavailable in the DB in certain situations
    * (such as loading a recovery document).

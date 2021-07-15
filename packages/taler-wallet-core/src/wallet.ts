@@ -41,11 +41,13 @@ import {
 import {
   addBackupProvider,
   codecForAddBackupProviderRequest,
+  codecForRemoveBackupProvider,
   codecForRunBackupCycle,
   getBackupInfo,
   getBackupRecovery,
   loadBackupRecovery,
   processBackupForProvider,
+  removeBackupProvider,
   runBackupCycle,
 } from "./operations/backup/index.js";
 import { exportBackup } from "./operations/backup/export.js";
@@ -812,6 +814,11 @@ async function dispatchRequestInternal(
     case "runBackupCycle": {
       const req = codecForRunBackupCycle().decode(payload);
       await runBackupCycle(ws, req);
+      return {};
+    }
+    case "removeBackupProvider": {
+      const req = codecForRemoveBackupProvider().decode(payload);
+      await removeBackupProvider(ws, req);
       return {};
     }
     case "exportBackupRecovery": {
