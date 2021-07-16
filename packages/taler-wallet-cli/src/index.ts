@@ -577,12 +577,14 @@ backupCli
 backupCli
   .subcommand("addProvider", "add-provider")
   .requiredArgument("url", clk.STRING)
+  .maybeArgument("name", clk.STRING)
   .flag("activate", ["--activate"])
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
       await wallet.client.call(WalletApiOperation.AddBackupProvider, {
         backupProviderBaseUrl: args.addProvider.url,
         activate: args.addProvider.activate,
+        name: args.addProvider.name || args.addProvider.url,
       });
     });
   });

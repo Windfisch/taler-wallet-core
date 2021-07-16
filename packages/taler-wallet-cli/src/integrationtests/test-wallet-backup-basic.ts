@@ -53,6 +53,7 @@ export async function runWalletBackupBasicTest(t: GlobalTestState) {
   await wallet.client.call(WalletApiOperation.AddBackupProvider, {
     backupProviderBaseUrl: sync.baseUrl,
     activate: false,
+    name: sync.baseUrl,
   });
 
   {
@@ -63,6 +64,7 @@ export async function runWalletBackupBasicTest(t: GlobalTestState) {
   await wallet.client.call(WalletApiOperation.AddBackupProvider, {
     backupProviderBaseUrl: sync.baseUrl,
     activate: true,
+    name: sync.baseUrl,
   });
 
   {

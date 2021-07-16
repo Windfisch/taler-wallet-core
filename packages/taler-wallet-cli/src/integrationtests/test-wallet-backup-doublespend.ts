@@ -58,6 +58,7 @@ export async function runWalletBackupDoublespendTest(t: GlobalTestState) {
   await wallet.client.call(WalletApiOperation.AddBackupProvider, {
     backupProviderBaseUrl: sync.baseUrl,
     activate: true,
+    name: sync.baseUrl,
   });
 
   await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:10" });
