@@ -28,6 +28,7 @@ import { i18n } from "@gnu-taler/taler-util";
 import { ComponentChildren, JSX } from "preact";
 import Match from "preact-router/match";
 import { useDevContext } from "../context/useDevContext";
+import { PopupNavigation } from '../components/styled'
 
 export enum Pages {
   balance = '/balance',
@@ -58,18 +59,18 @@ function Tab(props: TabProps): JSX.Element {
   );
 }
 
+export function NavBar({devMode, path}:{path:string, devMode:boolean}) {
+  return <PopupNavigation>
+    <Tab target="/balance" current={path}>{i18n.str`Balance`}</Tab>
+    <Tab target="/history" current={path}>{i18n.str`History`}</Tab>
+    <Tab target="/backup" current={path}>{i18n.str`Backup`}</Tab>
+    <Tab target="/settings" current={path}>{i18n.str`Settings`}</Tab>
+    {devMode && <Tab target="/dev" current={path}>{i18n.str`Dev`}</Tab>}
+  </PopupNavigation>
+}
+
 export function WalletNavBar() {
   const { devMode } = useDevContext()
-  return <Match>{({ path }: any) => {
-    return (
-      <div class="nav" id="header">
-        <Tab target="/balance" current={path}>{i18n.str`Balance`}</Tab>
-        <Tab target="/history" current={path}>{i18n.str`History`}</Tab>
-        <Tab target="/backup" current={path}>{i18n.str`Backup`}</Tab>
-        <Tab target="/settings" current={path}>{i18n.str`Settings`}</Tab>
-        {devMode && <Tab target="/dev" current={path}>{i18n.str`Dev`}</Tab>}
-      </div>
-    )
-  }}</Match>
+  return <Match>{({ path }: any) => <NavBar devMode={devMode} path={path} />}</Match>
 }
 

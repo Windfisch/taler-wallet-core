@@ -19,9 +19,7 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 
-import { ProviderPaymentType } from '@gnu-taler/taler-wallet-core';
-import { addDays } from 'date-fns';
-import { ComponentChild, ComponentChildren, FunctionalComponent, h } from 'preact';
+import { ComponentChildren, FunctionalComponent, h } from 'preact';
 import { BalanceView as TestedComponent } from './BalancePage';
 
 export default {

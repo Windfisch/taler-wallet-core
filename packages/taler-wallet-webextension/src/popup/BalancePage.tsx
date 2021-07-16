@@ -16,7 +16,6 @@
 
 import {
   amountFractionalBase, Amounts,
-
   Balance, BalancesResponse,
   i18n
 } from "@gnu-taler/taler-util";
@@ -41,7 +40,7 @@ export function BalanceView({ balance, Linker }: BalanceViewProps) {
 
   if (balance.error) {
     return (
-      <div class="balance">
+      <div>
         <p>{i18n.str`Error: could not retrieve balance information.`}</p>
         <p>
           Click <Linker pageName="welcome.html">here</Linker> for help and

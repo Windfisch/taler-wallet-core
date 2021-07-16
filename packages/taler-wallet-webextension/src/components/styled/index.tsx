@@ -240,4 +240,23 @@ export const ErrorBox = styled.div`
     }
   }
 `
+export const PopupNavigation = styled.div`
+  background-color: #033;
+  
+  & > a {
+    color: #f8faf7;
+    padding-top: 0.7em;
+    display: inline-block;
+    width: calc(400px / 5);
+    padding-bottom: 0.7em;
+    text-align: center;
+    text-decoration: none;
+  }
 
+  & > a.active {
+    background-color: #f8faf7;
+    color: #000;
+    font-weight: bold;
+
+  }
+`

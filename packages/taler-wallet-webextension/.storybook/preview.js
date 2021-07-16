@@ -15,7 +15,9 @@
  */
 
 import { setupI18n } from "@gnu-taler/taler-util"
+import { Fragment } from "preact"
 import { strings } from '../src/i18n/strings.ts'
+import { NavBar } from '../src/popup/popup'
 
 const mockConfig = {
   backendURL: 'http://demo.taler.net',
@@ -45,12 +47,28 @@ export const globalTypes = {
 
 
 export const decorators = [
-  (Story, { globals }) => {
-    setupI18n(globals.locale, strings);
-    return <Story />
-  },
   (Story, { kind }) => {
     if (kind.startsWith('popup')) {
+      
+      function Body() {
+        const isTestingHeader = (/.*\/header\/?.*/.test(kind));
+        if (isTestingHeader) {
+          // simple box with correct width and height
+          return <div style={{ width: 400, height: 320 }}>
+            <Story />
+          </div>
+        } else {
+          const path = !isTestingHeader ? /popup(\/.*)\/.*/.exec(kind)[1] : ''
+          // add a fake header so it looks similar
+          return <Fragment>
+            <NavBar path={path} devMode={path === '/dev'} />
+            <div style={{ padding: 8, width: 'calc(400px - 16px)', height: 'calc(320px - 34px - 16px)' }}>
+              <Story />
+            </div>
+          </Fragment>
+        }
+      }
+
       return <div class="popup-container">
         <style>{`
         html {
@@ -78,8 +96,8 @@ export const decorators = [
           font-family: Arial, Helvetica, sans-serif;
         }`}
         </style>
-        <div style={{ padding: 8, width: 'calc(400px - 16px - 2px)', height: 'calc(320px - 34px - 16px - 2px)', border: 'black solid 1px' }}>
-          <Story />
+        <div style={{ width: 400, border: 'black solid 1px' }}>
+          <Body />
         </div>
       </div>
     }
@@ -94,6 +112,10 @@ export const decorators = [
       <h1>this story is not under wallet or popup, check title property</h1>
       <Story />
     </div>
-  }
+  },
+  (Story, { globals }) => {
+    setupI18n(globals.locale, strings);
+    return <Story />
+  },
   //   (Story) => <ConfigContextProvider value={mockConfig}> <Story /> </ConfigContextProvider>
 ];
