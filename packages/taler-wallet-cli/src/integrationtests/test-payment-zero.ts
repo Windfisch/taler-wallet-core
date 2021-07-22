@@ -59,20 +59,6 @@ export async function runPaymentZeroTest(t: GlobalTestState) {
 
   await wallet.runUntilDone();
 
-  // Now try to "pay" for something where we don't even have the
-  // currency.
-  await makeTestPayment(t, {
-    wallet,
-    merchant,
-    order: {
-      summary: "I am also free!",
-      amount: "BLURP:0",
-      fulfillment_url: "taler://fulfillment-success/thx",
-    },
-  });
-
-  await wallet.runUntilDone();
-
   const transactions = await wallet.client.call(
     WalletApiOperation.GetTransactions,
     {},
