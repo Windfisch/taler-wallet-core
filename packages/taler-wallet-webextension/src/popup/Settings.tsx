@@ -15,18 +15,23 @@
 */
 
 
+import { i18n } from "@gnu-taler/taler-util";
 import { VNode } from "preact";
 import { Checkbox } from "../components/Checkbox";
 import { EditableText } from "../components/EditableText";
-import { useDevContext } from "../context/useDevContext";
+import { SelectList } from "../components/SelectList";
+import { useDevContext } from "../context/devContext";
 import { useBackupDeviceName } from "../hooks/useBackupDeviceName";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
+import { useLang } from "../hooks/useLang";
 
 export function SettingsPage(): VNode {
   const [permissionsEnabled, togglePermissions] = useExtendedPermissions();
   const { devMode, toggleDevMode } = useDevContext()
   const { name, update } = useBackupDeviceName()
+  const [lang, changeLang] = useLang()
   return <SettingsView
+    lang={lang} changeLang={changeLang}
     deviceName={name} setDeviceName={update}
     permissionsEnabled={permissionsEnabled} togglePermissions={togglePermissions}
     developerMode={devMode} toggleDeveloperMode={toggleDevMode}
@@ -34,6 +39,8 @@ export function SettingsPage(): VNode {
 }
 
 export interface ViewProps {
+  lang: string;
+  changeLang: (s: string) => void;
   deviceName: string;
   setDeviceName: (s: string) => Promise<void>;
   permissionsEnabled: boolean;
@@ -42,20 +49,43 @@ export interface ViewProps {
   toggleDeveloperMode: () => void;
 }
 
-export function SettingsView({ deviceName, setDeviceName, permissionsEnabled, togglePermissions, developerMode, toggleDeveloperMode }: ViewProps): VNode {
+import { strings as messages } from '../i18n/strings'
+
+type LangsNames = {
+  [P in keyof typeof messages]: string
+}
+
+const names: LangsNames = {
+  es: 'Español [es]',
+  en: 'English [en]',
+  fr: 'Français [fr]',
+  de: 'Deutsch [de]',
+  sv: 'Svenska [sv]',
+  it: 'Italiano [it]',
+}
+
+
+export function SettingsView({ lang, changeLang, deviceName, setDeviceName, permissionsEnabled, togglePermissions, developerMode, toggleDeveloperMode }: ViewProps): VNode {
   return (
     <div>
       <section style={{ height: 'calc(320px - 34px - 16px)', overflow: 'auto' }}>
-
-        <h2>Wallet</h2>
+        <h2><i18n.Translate>Wallet</i18n.Translate></h2>
+        <SelectList
+          value={lang}
+          onChange={changeLang}
+          name="lang"
+          list={names}
+          label={i18n.str`Lang`}
+          description="(Choose your preferred lang)"
+        />
         <EditableText
           value={deviceName}
           onChange={setDeviceName}
           name="device-id"
-          label="Device name"
+          label={i18n.str`Device name`}
           description="(This is how you will recognize the wallet in the backup provider)"
         />
-        <h2>Permissions</h2>
+        <h2><i18n.Translate>Permissions</i18n.Translate></h2>
         <Checkbox label="Automatically open wallet based on page content"
           name="perm"
           description="(Enabling this option below will make using the wallet faster, but requires more permissions from your browser.)"

@@ -45,7 +45,7 @@ function toI18nString(stringSeq: ReadonlyArray<string>): string {
 /**
  * Internationalize a string template with arbitrary serialized values.
  */
-export function str(stringSeq: TemplateStringsArray, ...values: any[]): string {
+export function singular(stringSeq: TemplateStringsArray, ...values: any[]): string {
   const s = toI18nString(stringSeq);
   const tr = jed
     .translate(s)
@@ -141,7 +141,9 @@ function stringifyArray(children: Array<any>): string {
 }
 
 export const i18n = {
-  str,
+  str: singular,
+  singular,
   Translate,
   translate,
 };
+

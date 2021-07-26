@@ -14,15 +14,9 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { setupI18n } from "@gnu-taler/taler-util"
 import { Fragment } from "preact"
-import { strings } from '../src/i18n/strings.ts'
 import { NavBar } from '../src/popup/popup'
-
-const mockConfig = {
-  backendURL: 'http://demo.taler.net',
-  currency: 'KUDOS'
-}
+import { TranslationProvider } from '../src/context/translation'
 
 export const parameters = {
   controls: { expanded: true },
@@ -38,7 +32,7 @@ export const globalTypes = {
       icon: 'globe',
       items: [
         { value: 'en', right: '🇺🇸', title: 'English' },
-        { value: 'es', right: '🇪🇸', title: 'Spanish' },
+        { value: 'de', right: '🇪🇸', title: 'German' },
       ],
     },
   },
@@ -58,7 +52,7 @@ export const decorators = [
             <Story />
           </div>
         } else {
-          const path = !isTestingHeader ? /popup(\/.*)\/.*/.exec(kind)[1] : ''
+          const path = !isTestingHeader ? /popup(\/.*).*/.exec(kind)[1] : ''
           // add a fake header so it looks similar
           return <Fragment>
             <NavBar path={path} devMode={path === '/dev'} />
@@ -113,9 +107,7 @@ export const decorators = [
       <Story />
     </div>
   },
-  (Story, { globals }) => {
-    setupI18n(globals.locale, strings);
-    return <Story />
-  },
-  //   (Story) => <ConfigContextProvider value={mockConfig}> <Story /> </ConfigContextProvider>
+  (Story, { globals }) => <TranslationProvider initial='en' forceLang={globals.locale}>
+    <Story />
+  </TranslationProvider>,
 ];

@@ -31,7 +31,7 @@ interface Props {
 export function ProviderDetailPage({ pid, onBack }: Props): VNode {
   const status = useProviderStatus(pid)
   if (!status) {
-    return <div>Loading...</div>
+    return <div><i18n.Translate>Loading...</i18n.Translate></div>
   }
   if (!status.info) {
     onBack()
@@ -67,26 +67,26 @@ export function ProviderView({ info, onDelete, onSync, onBack, onExtend }: ViewP
         <p>{daysSince(info?.lastSuccessfulBackupTimestamp)} </p>
         <p>{descriptionByStatus(info.paymentStatus)}</p>
         {info.paymentStatus.type === ProviderPaymentType.TermsChanged && <div>
-          <p>terms has changed, extending the service will imply accepting the new terms of service</p>
+          <p><i18n.Translate>terms has changed, extending the service will imply accepting the new terms of service</i18n.Translate></p>
           <table>
             <thead>
               <tr>
                 <td></td>
-                <td>old</td>
+                <td><i18n.Translate>old</i18n.Translate></td>
                 <td> -&gt;</td>
-                <td>new</td>
+                <td><i18n.Translate>new</i18n.Translate></td>
               </tr>
             </thead>
             <tbody>
 
               <tr>
-                <td>fee</td>
+                <td><i18n.Translate>fee</i18n.Translate></td>
                 <td>{info.paymentStatus.oldTerms.annualFee}</td>
                 <td>-&gt;</td>
                 <td>{info.paymentStatus.newTerms.annualFee}</td>
               </tr>
               <tr>
-                <td>storage</td>
+                <td><i18n.Translate>storage</i18n.Translate></td>
                 <td>{info.paymentStatus.oldTerms.storageLimitInMegabytes}</td>
                 <td>-&gt;</td>
                 <td>{info.paymentStatus.newTerms.storageLimitInMegabytes}</td>
@@ -117,11 +117,11 @@ function daysSince(d?: Timestamp) {
   const str = formatDuration(duration, {
     delimiter: ', ',
     format: [
-      duration?.years ? 'years' : (
-        duration?.months ? 'months' : (
-          duration?.days ? 'days' : (
-            duration?.hours ? 'hours' : (
-              duration?.minutes ? 'minutes' : 'seconds'
+      duration?.years ? i18n.str`years` : (
+        duration?.months ? i18n.str`months` : (
+          duration?.days ? i18n.str`days` : (
+            duration?.hours ? i18n.str`hours` : (
+              duration?.minutes ? i18n.str`minutes` : i18n.str`seconds`
             )
           )
         )
@@ -139,13 +139,13 @@ function Error({ info }: { info: ProviderInfo }) {
     switch (info.backupProblem.type) {
       case "backup-conflicting-device":
         return <ErrorMessage title={<Fragment>
-          There is conflict with another backup from <b>{info.backupProblem.otherDeviceId}</b>
+          <i18n.Translate>There is conflict with another backup from <b>{info.backupProblem.otherDeviceId}</b></i18n.Translate>
         </Fragment>} />
       case "backup-unreadable":
         return <ErrorMessage title="Backup is not readable" />
       default:
         return <ErrorMessage title={<Fragment>
-          Unknown backup problem: {JSON.stringify(info.backupProblem)}
+          <i18n.Translate>Unknown backup problem: {JSON.stringify(info.backupProblem)}</i18n.Translate>
         </Fragment>} />
     }
   }
@@ -172,15 +172,15 @@ function colorByStatus(status: ProviderPaymentType) {
 function descriptionByStatus(status: ProviderPaymentStatus) {
   switch (status.type) {
     case ProviderPaymentType.InsufficientBalance:
-      return 'no enough balance to make the payment'
+      return i18n.str`no enough balance to make the payment`
     case ProviderPaymentType.Unpaid:
-      return 'not paid yet'
+      return i18n.str`not paid yet`
     case ProviderPaymentType.Paid:
     case ProviderPaymentType.TermsChanged:
       if (status.paidUntil.t_ms === 'never') {
-        return 'service paid.'
+        return i18n.str`service paid`
       } else {
-        return `service paid until ${format(status.paidUntil.t_ms, 'yyyy/MM/dd HH:mm:ss')}`
+        return i18n.str`service paid until ${format(status.paidUntil.t_ms, 'yyyy/MM/dd HH:mm:ss')}`
       }
     case ProviderPaymentType.Pending:
       return ''
