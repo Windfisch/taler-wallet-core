@@ -10,6 +10,7 @@ Homepage: https://taler.net/
 
 Package: taler-wallet-cli
 Architecture: all
-Depends: nodejs (>= 12) | ${misc:Depends}
+Depends: nodejs,
+         ${misc:Depends}
 Recommends:
 Description: Software package to test Taler installations.
