@@ -39,7 +39,7 @@ export function ProviderDetailPage({ pid, onBack }: Props): VNode {
   }
   return <ProviderView info={status.info}
     onSync={status.sync}
-    onDelete={() => status.remove().then(onBack) }
+    onDelete={() => status.remove().then(onBack)}
     onBack={onBack}
     onExtend={() => { null }}
   />;
@@ -54,18 +54,28 @@ export interface ViewProps {
 }
 
 export function ProviderView({ info, onDelete, onSync, onBack, onExtend }: ViewProps): VNode {
+  const lb = info?.lastSuccessfulBackupTimestamp
+  const isPaid = info.paymentStatus.type === ProviderPaymentType.Paid || info.paymentStatus.type === ProviderPaymentType.TermsChanged
   return (
     <PopupBox>
       <header>
-        <PaymentStatus color={colorByStatus(info.paymentStatus.type)}>{info.paymentStatus.type}</PaymentStatus>
+        <Error info={info} />
 
-        {info.terms && <div>{info.terms.annualFee} / year</div>}
+      </header>
+      <header>
+        <h3>{info.name} <SmallTextLight>{info.syncProviderBaseUrl}</SmallTextLight></h3>
+        <PaymentStatus color={isPaid ? 'rgb(28, 184, 65)' : 'rgb(202, 60, 60)'}>{isPaid ? 'Paid': 'Unpaid' }</PaymentStatus>
       </header>
       <section>
-        <Error info={info} />
-        <h3>{info.name} <SmallTextLight>{info.syncProviderBaseUrl}</SmallTextLight></h3>
-        <p>{daysSince(info?.lastSuccessfulBackupTimestamp)} </p>
+        <p><b>Last backup:</b> {lb == null || lb.t_ms == "never" ? "never" : format(lb.t_ms, 'dd MMM yyyy')} </p>
+        <ButtonPrimary onClick={onSync}><i18n.Translate>Back up</i18n.Translate></ButtonPrimary>
+        {info.terms && <Fragment>
+          <p><b>Provider fee:</b> {info.terms && info.terms.annualFee} per year</p>
+        </Fragment>
+        }
         <p>{descriptionByStatus(info.paymentStatus)}</p>
+        <ButtonPrimary disabled onClick={onExtend}><i18n.Translate>Extend</i18n.Translate></ButtonPrimary>
+
         {info.paymentStatus.type === ProviderPaymentType.TermsChanged && <div>
           <p><i18n.Translate>terms has changed, extending the service will imply accepting the new terms of service</i18n.Translate></p>
           <table>
@@ -99,9 +109,7 @@ export function ProviderView({ info, onDelete, onSync, onBack, onExtend }: ViewP
       <footer>
         <Button onClick={onBack}><i18n.Translate> &lt; back</i18n.Translate></Button>
         <div>
-          <ButtonDestructive onClick={onDelete}><i18n.Translate>remove</i18n.Translate></ButtonDestructive>
-          <ButtonPrimary disabled onClick={onExtend}><i18n.Translate>extend</i18n.Translate></ButtonPrimary>
-          <ButtonPrimary onClick={onSync}><i18n.Translate>sync now</i18n.Translate></ButtonPrimary>
+          <ButtonDestructive onClick={onDelete}><i18n.Translate>remove provider</i18n.Translate></ButtonDestructive>
         </div>
       </footer>
     </PopupBox>
@@ -171,17 +179,19 @@ function colorByStatus(status: ProviderPaymentType) {
 
 function descriptionByStatus(status: ProviderPaymentStatus) {
   switch (status.type) {
-    case ProviderPaymentType.InsufficientBalance:
-      return i18n.str`no enough balance to make the payment`
-    case ProviderPaymentType.Unpaid:
-      return i18n.str`not paid yet`
+    // return i18n.str`no enough balance to make the payment`
+    // return i18n.str`not paid yet`
     case ProviderPaymentType.Paid:
     case ProviderPaymentType.TermsChanged:
       if (status.paidUntil.t_ms === 'never') {
         return i18n.str`service paid`
       } else {
-        return i18n.str`service paid until ${format(status.paidUntil.t_ms, 'yyyy/MM/dd HH:mm:ss')}`
+        return <Fragment>
+          <b>Backup valid until:</b> {format(status.paidUntil.t_ms, 'dd MMM yyyy')}
+        </Fragment>
       }
+    case ProviderPaymentType.Unpaid:
+    case ProviderPaymentType.InsufficientBalance:
     case ProviderPaymentType.Pending:
       return ''
   }

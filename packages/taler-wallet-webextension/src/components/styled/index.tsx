@@ -4,7 +4,7 @@ import type * as Linaria from '@linaria/core';
 
 import { styled } from '@linaria/react';
 
-export const PaymentStatus = styled.span<{ color: string }>`
+export const PaymentStatus = styled.div<{ color: string }>`
   padding: 5px;
   border-radius: 5px;
   color: white;
@@ -39,6 +39,10 @@ export const PopupBox = styled.div`
 
     & > div {
       align-self: center;
+    }
+
+    & > h3 {
+      margin: 0px;
     }
   }
 
@@ -223,7 +227,7 @@ export const ErrorBox = styled.div`
   /* margin: 0.5em; */
   padding-left: 1em;
   padding-right: 1em;
-  width: "100%";
+  width: 100%;
   color: #721c24;
   background: #f8d7da;
 
