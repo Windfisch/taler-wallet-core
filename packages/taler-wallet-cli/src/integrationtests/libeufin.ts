@@ -1070,13 +1070,13 @@ export namespace LibeufinNexusApi {
     accountName: string,
     username: string = "admin",
     password: string = "test",
-  ): Promise<void> {
+  ): Promise<any> {
     const baseUrl = libeufinNexusService.baseUrl;
     let url = new URL(
       `/bank-accounts/${accountName}/fetch-transactions`,
       baseUrl,
     );
-    await axios.post(
+    return await axios.post(
       url.href,
       {
         rangeType: "all",
@@ -1087,6 +1087,7 @@ export namespace LibeufinNexusApi {
           username: username,
           password: password,
         },
+        validateStatus: () => true,
       },
     );
   }
