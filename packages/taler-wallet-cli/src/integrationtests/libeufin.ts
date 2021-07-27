@@ -699,6 +699,14 @@ export class LibeufinCli {
 }
 
 export namespace LibeufinSandboxApi {
+  export async function rotateKeys(
+    libeufinSandboxService: LibeufinSandboxServiceInterface,
+    hostID: string,
+  ) {
+    const baseUrl = libeufinSandboxService.baseUrl;
+    let url = new URL(`admin/ebics/hosts/${hostID}/rotate-keys`, baseUrl);
+    await axios.post(url.href);
+  }
   export async function createEbicsHost(
     libeufinSandboxService: LibeufinSandboxServiceInterface,
     hostID: string,
