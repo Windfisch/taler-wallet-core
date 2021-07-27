@@ -201,6 +201,15 @@ export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
   }
 
   async start(): Promise<void> {
+    const stdout = await sh(
+      this.globalTestState,
+      "libeufin-sandbox-config",
+      "libeufin-sandbox config localhost",
+      {
+        ...process.env,
+        LIBEUFIN_SANDBOX_DB_CONNECTION: this.sandboxConfig.databaseJdbcUri,
+      },
+    );
     this.sandboxProc = this.globalTestState.spawnService(
       "libeufin-sandbox",
       ["serve", "--port", `${this.sandboxConfig.httpPort}`],
