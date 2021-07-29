@@ -1489,6 +1489,17 @@ export class MerchantService implements MerchantServiceInterface {
     config.write(this.configFilename);
   }
 
+  async addDefaultInstance(): Promise<void> {
+    return await this.addInstance({
+      id: "default",
+      name: "Default Instance",
+      paytoUris: [`payto://x-taler-bank/merchant-default`],
+      auth: {
+        method: "external",
+      },
+    });
+  }
+
   async addInstance(
     instanceConfig: PartialMerchantInstanceConfig,
   ): Promise<void> {

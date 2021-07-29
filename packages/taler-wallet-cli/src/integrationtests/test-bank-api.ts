@@ -81,7 +81,7 @@ export async function runBankApiTest(t: GlobalTestState) {
 
   await merchant.start();
   await merchant.pingUntilAvailable();
-
+  await merchant.addDefaultInstance();
   await merchant.addInstance({
     id: "minst1",
     name: "minst1",
