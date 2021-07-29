@@ -459,6 +459,11 @@ export interface ContractTerms {
   fulfillment_url?: string;
 
   /**
+   * URL meant to share the shopping cart.
+   */
+  public_reorder_url?: string;
+
+  /**
    * Plain text fulfillment message in the merchant's default language.
    */
   fulfillment_message?: string;
