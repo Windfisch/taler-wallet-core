@@ -92,15 +92,15 @@ export async function runExchangeManagementTest(t: GlobalTestState) {
   await merchant.pingUntilAvailable();
 
   await merchant.addInstance({
-    id: "minst1",
-    name: "minst1",
-    paytoUris: ["payto://x-taler-bank/minst1"],
-  });
-
-  await merchant.addInstance({
     id: "default",
     name: "Default Instance",
     paytoUris: [`payto://x-taler-bank/merchant-default`],
+  });
+
+  await merchant.addInstance({
+    id: "minst1",
+    name: "minst1",
+    paytoUris: ["payto://x-taler-bank/minst1"],
   });
 
   console.log("setup done!");
