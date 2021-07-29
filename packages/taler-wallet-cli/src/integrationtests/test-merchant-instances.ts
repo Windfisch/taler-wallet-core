@@ -65,16 +65,10 @@ export async function runMerchantInstancesTest(t: GlobalTestState) {
   }
 
   // Instances should initially be empty
-  /**
-   * FIXME/NOTE: this call doesn't function with the current
-   * auth-policy.  Upon starting up the first time, the merchant
-   * locks ANY call UNLESS a particular env variable is defined
-   * and calls authenticate with it.
   {
     const r = await axios.get(new URL("private/instances", baseUrl).href);
     t.assertDeepEqual(r.data.instances, []);
   }
-  */
 
   // Add an instance, no auth!
   await merchant.addInstance({
