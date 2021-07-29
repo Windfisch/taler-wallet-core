@@ -136,16 +136,11 @@ export async function createMyTestkudosEnvironment(
   await merchant.start();
   await merchant.pingUntilAvailable();
 
+  await merchant.addDefaultInstance();
   await merchant.addInstance({
     id: "minst1",
     name: "minst1",
     paytoUris: ["payto://x-taler-bank/minst1"],
-  });
-
-  await merchant.addInstance({
-    id: "default",
-    name: "Default Instance",
-    paytoUris: [`payto://x-taler-bank/merchant-default`],
   });
 
   console.log("setup done!");
