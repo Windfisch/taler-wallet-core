@@ -62,6 +62,7 @@ export async function runPaymentTransientTest(t: GlobalTestState) {
       summary: "Buy me!",
       amount: "TESTKUDOS:5",
       fulfillment_url: "https://example.com/article42",
+      public_reorder_url: "https://example.com/article42-share",
     },
   });
 

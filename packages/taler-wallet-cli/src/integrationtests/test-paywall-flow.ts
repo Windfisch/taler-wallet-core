@@ -58,6 +58,7 @@ export async function runPaywallFlowTest(t: GlobalTestState) {
       summary: "Buy me!",
       amount: "TESTKUDOS:5",
       fulfillment_url: "https://example.com/article42",
+      public_reorder_url: "https://example.com/article42-share",
     },
   });
 
@@ -177,6 +178,7 @@ export async function runPaywallFlowTest(t: GlobalTestState) {
       amount: "TESTKUDOS:5",
       // Same fulfillment URL as previously!
       fulfillment_url: "https://example.com/article42",
+      public_reorder_url: "https://example.com/article42-share",
     },
   });
 
