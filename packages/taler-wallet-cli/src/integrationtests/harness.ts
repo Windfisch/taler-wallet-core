@@ -1128,7 +1128,7 @@ export class ExchangeService implements ExchangeServiceInterface {
     await sh(
       this.globalState,
       "exchange-dbinit",
-      `taler-exchange-dbinit -c "${this.configFilename}"`,
+      `taler-exchange-dbinit -r -c "${this.configFilename}"`,
     );
 
     this.helperCryptoEddsaProc = this.globalState.spawnService(
