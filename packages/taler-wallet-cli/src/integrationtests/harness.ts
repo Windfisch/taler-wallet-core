@@ -1441,8 +1441,10 @@ export class MerchantService implements MerchantServiceInterface {
     }
   }
 
-  async start(): Promise<void> {
-    await exec(`taler-merchant-dbinit -r -c "${this.configFilename}"`);
+  async start(
+    withResetTables: boolean = true, // eventually, this should become a named parameter
+  ): Promise<void> {
+    await exec(`taler-merchant-dbinit ${withResetTables ? "-r" : ""} -c "${this.configFilename}"`);
 
     this.proc = this.globalState.spawnService(
       "taler-merchant-httpd",

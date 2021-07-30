@@ -63,10 +63,9 @@ export async function runTippingTest(t: GlobalTestState) {
 
   await exchange.runWirewatchOnce();
 
-  // FIXME/WHY? Disabling for now, as start() erases the DB.
-  /*await merchant.stop();
-  await merchant.start();
-  await merchant.pingUntilAvailable();*/
+  await merchant.stop();
+  await merchant.start(false);
+  await merchant.pingUntilAvailable();
 
   const r = await MerchantPrivateApi.queryTippingReserves(merchant, "default");
   console.log("tipping reserves:", JSON.stringify(r, undefined, 2));
