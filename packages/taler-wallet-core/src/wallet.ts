@@ -637,7 +637,7 @@ async function dispatchRequestInternal(
   operation: string,
   payload: unknown,
 ): Promise<Record<string, any>> {
-  if (ws.initCalled && operation !== "initWallet") {
+  if (!ws.initCalled && operation !== "initWallet") {
     throw Error(
       `wallet must be initialized before running operation ${operation}`,
     );

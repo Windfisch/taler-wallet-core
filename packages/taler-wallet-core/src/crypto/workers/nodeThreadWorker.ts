@@ -28,11 +28,15 @@ const logger = new Logger("nodeThreadWorker.ts");
 const f = __filename;
 
 const workerCode = `
-  // Try loading the glue library for Android
+  // Try loading the glue library for embedded
   try {
     require("akono");
   } catch (e) {
-    // Probably we're not on Android ...
+    try {
+      require("iono");
+    } catch (e2) {
+      // Probably we're not on embedded ...
+    }
   }
   const worker_threads = require('worker_threads');
   const parentPort = worker_threads.parentPort;
@@ -44,9 +48,9 @@ const workerCode = `
   }
   if (!tw) {
     try {
-      tw = require("@gnu-taler/taler-wallet-android");
+      tw = require("@gnu-taler/taler-wallet-embedded");
     } catch (e) {
-      console.warn("could not load taler-wallet-android either");
+      console.warn("could not load taler-wallet-embedded either");
       throw e;
     }
   }
