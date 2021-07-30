@@ -17,7 +17,7 @@
 /**
  * Imports.
  */
-import { GlobalTestState } from "./harness";
+import { GlobalTestState, delayMs } from "./harness";
 import {
   SandboxUserBundle,
   NexusUserBundle,
@@ -85,6 +85,7 @@ export async function runLibeufinRefundMultipleUsersTest(t: GlobalTestState) {
     libeufinServices.libeufinNexus,
     user02nexus.localAccountName,
   );
+  delayMs(2000); // time to ingest.
 
   await LibeufinNexusApi.submitInitiatedPayment(
     libeufinServices.libeufinNexus,
