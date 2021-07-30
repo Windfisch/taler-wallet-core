@@ -17,7 +17,7 @@
 /**
  * Imports.
  */
-import { GlobalTestState } from "./harness";
+import { GlobalTestState, delayMs } from "./harness";
 import {
   SandboxUserBundle,
   NexusUserBundle,
@@ -71,15 +71,37 @@ export async function runLibeufinRefundTest(t: GlobalTestState) {
     "EUR",
   );
 
+  // check payment shows up in the Sandbox' history.
+  // NOTE: the debitor account has no entry so far, because
+  // the call above is a mere test method that books only one
+  // CRDT transaction.
+  const txsCredit = await LibeufinSandboxApi.getAccountTransactions(
+    libeufinServices.libeufinSandbox,
+    user02sandbox.ebicsBankAccount["label"]);
+  t.assertTrue(txsCredit["payments"].length == 1);
+
+  // Gets the faulty payment in the (ingested) history.
   await LibeufinNexusApi.fetchAllTransactions(
     libeufinServices.libeufinNexus,
     user02nexus.localAccountName,
   );
+  // Give time to ingest.
+  delayMs(2000);
 
+  // Check payment shows up in Nexus history.
+  const nexusTxs = await LibeufinNexusApi.getAccountTransactions(
+    libeufinServices.libeufinNexus,
+    user02nexus.localAccountName,
+  );
+  t.assertTrue(nexusTxs.data["transactions"].length == 1);
+
+  // This should pay the faulty payment back.
   await LibeufinNexusApi.submitInitiatedPayment(
     libeufinServices.libeufinNexus,
     user02nexus.localAccountName,
-    "1", // so far the only one that can exist.
+    // The initiated payment ID below got set by the Taler
+    // facade; at this point only one can / must exist.
+    "1",
   );
 
   // Counterpart checks whether the reimbursement shows up.
@@ -87,7 +109,6 @@ export async function runLibeufinRefundTest(t: GlobalTestState) {
     libeufinServices.libeufinSandbox,
     user01sandbox.ebicsBankAccount["label"],
   );
-
   t.assertTrue(history["payments"].length == 1);
 }
 runLibeufinRefundTest.suites = ["libeufin"];
