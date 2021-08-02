@@ -873,9 +873,18 @@ const deploymentConfigCli = deploymentCli.subcommand("configArgs", "config", {
   help: "Subcommands the Taler configuration.",
 });
 
-deploymentConfigCli.subcommand("show", "show").action(async (args) => {
-  const cfg = new Configuration();
-});
+deploymentConfigCli
+  .subcommand("show", "show")
+  .flag("diagnostics", ["-d", "--diagnostics"])
+  .maybeArgument("cfgfile", clk.STRING, {})
+  .action(async (args) => {
+    const cfg = Configuration.load(args.show.cfgfile);
+    console.log(
+      cfg.stringify({
+        diagnostics: args.show.diagnostics,
+      }),
+    );
+  });
 
 const testCli = walletCli.subcommand("testingArgs", "testing", {
   help: "Subcommands for testing.",
