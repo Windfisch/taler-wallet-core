@@ -98,37 +98,37 @@ export class ConfigValue<T> {
   constructor(
     private sectionName: string,
     private optionName: string,
-    private val: string | undefined,
+    public value: string | undefined,
     private converter: (x: string) => T,
   ) {}
 
   required(): T {
-    if (!this.val) {
+    if (!this.value) {
       throw new ConfigError(
         `required option [${this.sectionName}]/${this.optionName} not found`,
       );
     }
-    return this.converter(this.val);
+    return this.converter(this.value);
   }
 
   orUndefined(): T | undefined {
-    if (this.val !== undefined) {
-      return this.converter(this.val);
+    if (this.value !== undefined) {
+      return this.converter(this.value);
     } else {
       return undefined;
     }
   }
 
   orDefault(v: T): T | undefined {
-    if (this.val !== undefined) {
-      return this.converter(this.val);
+    if (this.value !== undefined) {
+      return this.converter(this.value);
     } else {
       return v;
     }
   }
 
   isDefined(): boolean {
-    return this.val !== undefined;
+    return this.value !== undefined;
   }
 }
 
@@ -303,7 +303,7 @@ export class Configuration {
 
   private nestLevel = 0;
 
-  loadFromFilename(filename: string, opts: LoadOptions = {}): void {
+  private loadFromFilename(filename: string, opts: LoadOptions = {}): void {
     filename = expandPath(filename);
 
     const checkCycle = () => {
@@ -339,7 +339,7 @@ export class Configuration {
     }
   }
 
-  loadGlob(parentFilename: string, fileglob: string): void {
+  private loadGlob(parentFilename: string, fileglob: string): void {
     const resolvedParent = nodejs_fs().realpathSync(parentFilename);
     const parentDir = nodejs_path().dirname(resolvedParent);
 

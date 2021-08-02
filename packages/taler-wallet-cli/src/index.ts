@@ -55,6 +55,7 @@ import {
   WalletCoreApiClient,
   Wallet,
 } from "@gnu-taler/taler-wallet-core";
+import { lintDeployment } from "./lint.js";
 
 // This module also serves as the entry point for the crypto
 // thread worker, and thus must expose these two handlers.
@@ -868,6 +869,49 @@ advancedCli
 const deploymentCli = walletCli.subcommand("deploymentArgs", "deployment", {
   help: "Subcommands for handling GNU Taler deployments.",
 });
+
+deploymentCli.subcommand("lint", "lint").action(async (args) => {
+  lintDeployment();
+});
+
+deploymentCli
+  .subcommand("coincfg", "gen-coin-config", {
+    help: "Generate a coin/denomination configuration for the exchange.",
+  })
+  .requiredOption("currency", ["--currency"], clk.STRING, {
+    help: "Currency to use",
+  })
+  .action(async (args) => {
+    let out = "";
+    const currency = args.coincfg.currency;
+
+    const min = Amounts.parseOrThrow(`${currency}:0.01`);
+    const max = Amounts.parseOrThrow(`${currency}:100`);
+    let x = min;
+    let n = 1;
+
+    out += "# Coin configuration for the exchange.\n";
+    out += '# Should be placed in "/etc/taler/conf.d/exchange-coins.conf".\n';
+    out += "\n";
+
+    while (Amounts.cmp(x, max) < 0) {
+      out += `[COIN_${currency}_${n}]\n`;
+      out += `VALUE = ${Amounts.stringify(x)}\n`;
+      out += `DURATION_WITHDRAW = 7 days\n`;
+      out += `DURATION_SPEND = 2 years\n`;
+      out += `DURATION_LEGAL = 6 years\n`;
+      out += `FEE_WITHDRAW = ${currency}:0\n`;
+      out += `FEE_DEPOSIT = ${currency}:0\n`;
+      out += `FEE_REFRESH = ${currency}:0\n`;
+      out += `FEE_REFUND = ${currency}:0\n`;
+      out += `RSA_KEYSIZE = 2048\n`;
+      out += "\n";
+      x = Amounts.add(x, x).amount;
+      n++;
+    }
+
+    console.log(out);
+  });
 
 const deploymentConfigCli = deploymentCli.subcommand("configArgs", "config", {
   help: "Subcommands the Taler configuration.",
