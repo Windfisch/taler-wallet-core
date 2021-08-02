@@ -39,6 +39,7 @@ import {
   codecForList,
   codecForString,
   Logger,
+  Configuration,
 } from "@gnu-taler/taler-util";
 import {
   NodeHttpLib,
@@ -863,8 +864,20 @@ advancedCli
     });
   });
 
+const deploymentCli = walletCli.subcommand("deploymentArgs", "deployment", {
+  help: "Subcommands for handling GNU Taler deployments.",
+});
+
+const deploymentConfigCli = deploymentCli.subcommand("configArgs", "config", {
+  help: "Subcommands the Taler configuration.",
+});
+
+deploymentConfigCli.subcommand("show", "show").action(async (args) => {
+  const cfg = new Configuration();
+});
+
 const testCli = walletCli.subcommand("testingArgs", "testing", {
-  help: "Subcommands for testing GNU Taler deployments.",
+  help: "Subcommands for testing.",
 });
 
 testCli
