@@ -70,14 +70,14 @@ export function SettingsView({ lang, changeLang, deviceName, setDeviceName, perm
     <div>
       <section style={{ height: 'calc(320px - 34px - 16px)', overflow: 'auto' }}>
         <h2><i18n.Translate>Wallet</i18n.Translate></h2>
-        {/* <SelectList
+        <SelectList
           value={lang}
           onChange={changeLang}
           name="lang"
           list={names}
-          label={i18n.str`Lang`}
+          label={i18n.str`Language`}
           description="(Choose your preferred lang)"
-        /> */}
+        />
         <EditableText
           value={deviceName}
           onChange={setDeviceName}

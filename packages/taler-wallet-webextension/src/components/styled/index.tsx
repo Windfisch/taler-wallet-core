@@ -263,4 +263,49 @@ export const PopupNavigation = styled.div`
     font-weight: bold;
 
   }
+`;
+
+export const NiceSelect = styled.div`
+
+  & > select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    -ms-appearance: none;
+    appearance: none;
+    outline: 0;
+    box-shadow: none;
+    background-image: none;
+    background-color: white;
+
+    flex: 1;
+    padding: 0.5em 1em;
+    cursor: pointer;
+  }
+
+  position: relative;
+  display: flex;
+  width: 10em;
+  overflow: hidden;
+  border-radius: .25em;
+
+  &::after {
+    content: '\u25BC';
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 0.5em 1em;
+    cursor: pointer;
+    pointer-events: none;
+    -webkit-transition: .25s all ease;
+    -o-transition: .25s all ease;
+    transition: .25s all ease;
+  }
+
+  &:hover::after {
+    /* color: #f39c12; */
+  }
+
+  &::-ms-expand {
+    display: none;
+  }
 `

@@ -14,9 +14,8 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { VNode } from "preact";
-import { useRef, useState } from "preact/hooks";
 import { JSX } from "preact/jsx-runtime";
+import { NiceSelect } from "./styled/index";
 
 interface Props {
   value: string;
@@ -27,14 +26,41 @@ interface Props {
   }
   name: string;
   description?: string;
+  canBeNull?: boolean;
 }
 
-export function SelectList({ name, value, list, onChange, label, description }: Props): JSX.Element {
-  return <select name={name} id="slct">
-    <option selected disabled>Choose an option</option>
-    {Object.keys(list)
-      .filter((l) => l !== value)
-      .map(key => <option value={key} key={key}>{list[key]}</option> )
-    }
-  </select>
+export function SelectList({ name, value, list, canBeNull, onChange, label, description }: Props): JSX.Element {
+  console.log("==>", name, value)
+  return <div>
+    <label
+      htmlFor={`text-${name}`}
+      style={{ marginLeft: "0.5em", fontWeight: "bold" }}
+    > {label}</label>
+    <NiceSelect>
+      <select name={name} onChange={(e) => {
+        console.log(e.currentTarget.value, value)
+        onChange(e.currentTarget.value)
+      }}>
+        <option selected>
+          {list[value]}
+        </option>
+        {Object.keys(list)
+          .filter((l) => l !== value)
+          .map(key => <option value={key} key={key}>{list[key]}</option>)
+        }
+      </select>
+    </NiceSelect>
+    {description && <span
+      style={{
+        color: "#383838",
+        fontSize: "smaller",
+        display: "block",
+        marginLeft: "2em",
+      }}
+    >
+      {description}
+    </span>}
+
+  </div>
+
 }
