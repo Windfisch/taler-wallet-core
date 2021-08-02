@@ -191,6 +191,7 @@ async function withWallet<T>(
       ws: wallet,
       client: wallet.client,
     };
+    await wallet.handleCoreApiRequest("initWallet", "native-init", {});
     const ret = await f(w);
     return ret;
   } catch (e) {
