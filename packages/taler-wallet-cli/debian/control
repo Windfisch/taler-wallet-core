@@ -3,7 +3,7 @@ Section: networking
 Priority: optional
 Maintainer: Taler Systems SA <deb@taler.net>
 Uploaders: Christian Grothoff <grothoff@gnu.org>, Florian Dold <dold@taler.net>
-Build-Depends: debhelper (>= 10),
+Build-Depends: debhelper-compat (= 12),
 Standards-Version: 4.1.0
 Vcs-Git: https://git.taler.net/wallet-core.git
 Homepage: https://taler.net/
