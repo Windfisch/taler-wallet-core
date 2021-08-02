@@ -3,7 +3,7 @@ include /usr/share/dpkg/default.mk
 
 TALER_WALLET_HOME = /usr/share/taler-wallet-cli
 
-cli_dir=src/packages/taler-wallet-cli
+cli_dir=packages/taler-wallet-cli
 
 
 build: build-arch build-indep
