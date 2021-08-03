@@ -696,6 +696,46 @@ export class LibeufinCli {
     );
     console.log(stdout);
   }
+
+  async newTalerWireGatewayFacade(req: NewTalerWireGatewayReq): Promise<void> {
+    const stdout = await sh(
+      this.globalTestState,
+      "libeufin-cli-new-taler-wire-gateway-facade",
+      `libeufin-cli facades new-taler-wire-gateway-facade` +
+        ` --currency ${req.currency}` +
+        ` --facade-name ${req.facadeName}` +
+        ` ${req.connectionName} ${req.accountName}`,
+      {
+        ...process.env,
+        LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+      },
+    );
+    console.log(stdout);
+  }
+
+  async listFacades(): Promise<void> {
+    const stdout = await sh(
+      this.globalTestState,
+      "libeufin-cli-facades-list",
+      `libeufin-cli facades list`,
+      {
+        ...process.env,
+        LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+      },
+    );
+    console.log(stdout);
+  }
+}
+
+interface NewTalerWireGatewayReq {
+  facadeName: string;
+  connectionName: string;
+  accountName: string;
+  currency: string;
 }
 
 export namespace LibeufinSandboxApi {

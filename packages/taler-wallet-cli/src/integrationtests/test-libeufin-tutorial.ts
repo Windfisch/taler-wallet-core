@@ -117,5 +117,14 @@ export async function runLibeufinTutorialTest(t: GlobalTestState) {
   };
   await libeufinCli.preparePayment(paymentDetails);
   await libeufinCli.submitPayment(paymentDetails, "1");
+
+  await libeufinCli.newTalerWireGatewayFacade({
+    accountName: bankAccountImportDetails.nexusBankAccountName,
+    connectionName: "my-ebics-conn",
+    currency: "EUR",
+    facadeName: "my-twg",
+  });
+
+  await libeufinCli.listFacades();
 }
 runLibeufinTutorialTest.suites = ["libeufin"];
