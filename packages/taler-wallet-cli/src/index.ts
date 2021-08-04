@@ -55,7 +55,7 @@ import {
   WalletCoreApiClient,
   Wallet,
 } from "@gnu-taler/taler-wallet-core";
-import { lintDeployment } from "./lint.js";
+import { lintExchangeDeployment } from "./lint.js";
 
 // This module also serves as the entry point for the crypto
 // thread worker, and thus must expose these two handlers.
@@ -870,8 +870,10 @@ const deploymentCli = walletCli.subcommand("deploymentArgs", "deployment", {
   help: "Subcommands for handling GNU Taler deployments.",
 });
 
-deploymentCli.subcommand("lint", "lint").action(async (args) => {
-  lintDeployment();
+deploymentCli.subcommand("lintExchange", "lint-exchange", {
+  help: "Run checks on the exchange deployment."
+}).action(async (args) => {
+  await lintExchangeDeployment();
 });
 
 deploymentCli

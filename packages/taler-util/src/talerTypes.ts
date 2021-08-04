@@ -1429,3 +1429,25 @@ export const codecForTalerConfigResponse = (): Codec<TalerConfigResponse> =>
     .property("version", codecForString())
     .property("currency", codecOptional(codecForString()))
     .build("TalerConfigResponse");
+
+export interface FutureKeysResponse {
+  future_denoms: any[];
+
+  future_signkeys: any[];
+
+  master_pub: string;
+
+  denom_secmod_public_key: string;
+
+  // Public key of the signkey security module.
+  signkey_secmod_public_key: string;
+}
+
+export const codecForKeysManagementResponse = (): Codec<FutureKeysResponse> =>
+  buildCodecForObject<FutureKeysResponse>()
+    .property("master_pub", codecForString())
+    .property("future_signkeys", codecForList(codecForAny()))
+    .property("future_denoms", codecForList(codecForAny()))
+    .property("denom_secmod_public_key", codecForAny())
+    .property("signkey_secmod_public_key", codecForAny())
+    .build("FutureKeysResponse");

@@ -51,7 +51,6 @@ import {
   getRandomBytes,
   openPromise,
   OperationFailedError,
-  WalletApiOperation,
   WalletCoreApiClient,
 } from "@gnu-taler/taler-wallet-core";
 import {
@@ -65,49 +64,7 @@ import {
   Duration,
   parsePaytoUri,
   CoreApiResponse,
-  ApplyRefundRequest,
-  ApplyRefundResponse,
-  codecForApplyRefundResponse,
-  PreparePayRequest,
-  PreparePayResult,
-  codecForPreparePayResult,
-  CreateDepositGroupRequest,
-  CreateDepositGroupResponse,
-  AbortPayWithRefundRequest,
-  ConfirmPayRequest,
-  ConfirmPayResult,
-  codecForConfirmPayResult,
-  PrepareTipRequest,
-  PrepareTipResult,
-  codecForPrepareTipResult,
-  AcceptTipRequest,
-  CoinDumpJson,
-  codecForAny,
-  AddExchangeRequest,
-  ForceExchangeUpdateRequest,
-  ForceRefreshRequest,
-  ExchangesListRespose,
-  codecForExchangesListResponse,
-  BalancesResponse,
-  codecForBalancesResponse,
-  TransactionsResponse,
-  codecForTransactionsResponse,
-  TrackDepositGroupRequest,
-  TrackDepositGroupResponse,
-  IntegrationTestArgs,
-  TestPayArgs,
-  WithdrawTestBalanceRequest,
-  GetWithdrawalDetailsForUriRequest,
-  WithdrawUriInfoResponse,
-  codecForWithdrawUriInfoResponse,
-  BackupRecovery,
-  RecoveryLoadRequest,
 } from "@gnu-taler/taler-util";
-import {
-  AddBackupProviderRequest,
-  BackupInfo,
-} from "@gnu-taler/taler-wallet-core/src/operations/backup";
-import { PendingOperationsResponse } from "@gnu-taler/taler-wallet-core/src/pending-types";
 import { CoinConfig } from "./denomStructures.js";
 
 const exec = util.promisify(require("child_process").exec);
