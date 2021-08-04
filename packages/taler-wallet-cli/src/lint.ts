@@ -523,11 +523,11 @@ export async function lintExchangeDeployment(
 
   await checkExchangeHttpd(context, pubConf);
 
-  if (context.numErr > 0) {
+  if (context.numErr == 0) {
     console.log("Linting completed without errors.");
     process.exit(0);
   } else {
-    console.log("Linting completed with errors.");
-    process.exit(0);
+    console.log(`Linting completed with ${context.numErr} errors.`);
+    process.exit(1);
   }
 }
