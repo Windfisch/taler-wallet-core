@@ -897,13 +897,13 @@ deploymentCli
     out += "\n";
 
     while (Amounts.cmp(x, max) < 0) {
-      out += `[COIN_${currency}_${n}]\n`;
+      out += `[COIN-${currency}_${n}]\n`;
       out += `VALUE = ${Amounts.stringify(x)}\n`;
       out += `DURATION_WITHDRAW = 7 days\n`;
       out += `DURATION_SPEND = 2 years\n`;
       out += `DURATION_LEGAL = 6 years\n`;
       out += `FEE_WITHDRAW = ${currency}:0\n`;
-      out += `FEE_DEPOSIT = ${currency}:0\n`;
+      out += `FEE_DEPOSIT = ${Amounts.stringify(min)}\n`;
       out += `FEE_REFRESH = ${currency}:0\n`;
       out += `FEE_REFUND = ${currency}:0\n`;
       out += `RSA_KEYSIZE = 2048\n`;

@@ -138,9 +138,11 @@ function checkCoinConfig(cfg: Configuration, basic: BasicConf): void {
     // FIXME: check that section is well-formed
   }
 
-  console.log(
-    "error: no coin denomination configured, please configure [coin_*] sections",
-  );
+  if (numCoins == 0) {
+    console.log(
+      "error: no coin denomination configured, please configure [coin-*] sections",
+    );
+  }
 }
 
 function checkWireConfig(cfg: Configuration): void {
@@ -231,7 +233,6 @@ export async function checkExchangeHttpd(
     console.log(
       "warning: section EXCHANGE option BASE_URL: it is recommended to serve the exchange via HTTPS",
     );
-    process.exit(1);
   }
 
   {
@@ -265,7 +266,9 @@ export async function checkExchangeHttpd(
     );
 
     if (keys.master_public_key !== pubConf.masterPublicKey) {
-      console.log("error: master public key of exchange does not match public key of live exchange");
+      console.log(
+        "error: master public key of exchange does not match public key of live exchange",
+      );
     }
   }
 }
