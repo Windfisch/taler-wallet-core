@@ -294,6 +294,26 @@ function normalizeInlineFilename(parentFile: string, f: string): string {
   return nodejs_path().join(resolvedParentDir, f);
 }
 
+/**
+ * Crude implementation of the which(1) shell command.
+ * 
+ * Tries to locate the location of an executable based on the
+ * "PATH" environment variable.
+ */
+function which(name: string): string | undefined {
+  const paths = process.env["PATH"]?.split(":");
+  if (!paths) {
+    return undefined;
+  }
+  for (const path of paths) {
+    const filename = nodejs_path().join(path, name);
+    if (nodejs_fs().existsSync(filename)) {
+      return filename;
+    }
+  }
+  return undefined;
+}
+
 export class Configuration {
   private sectionMap: SectionMap = {};
 
@@ -613,6 +633,16 @@ export class Configuration {
 
   private loadDefaults(): void {
     let bc = process.env["TALER_BASE_CONFIG"];
+    if (!bc) {
+      /* Try to locate the configuration based on the location
+       * of the taler-config binary. */
+      const path = which("taler-config");
+      if (path) {
+        bc = nodejs_fs().realpathSync(
+          nodejs_path().dirname(path) + "/../share/taler/config.d",
+        );
+      }
+    }
     if (!bc) {
       bc = "/usr/share/taler/config.d";
     }

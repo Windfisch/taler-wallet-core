@@ -124,7 +124,6 @@ export async function runLibeufinTutorialTest(t: GlobalTestState) {
     currency: "EUR",
     facadeName: "my-twg",
   });
-
   await libeufinCli.listFacades();
 }
 runLibeufinTutorialTest.suites = ["libeufin"];
