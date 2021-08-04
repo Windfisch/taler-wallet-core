@@ -73,6 +73,8 @@ interface LintContext {
   cont: boolean;
 
   cfg: Configuration;
+
+  numErr: number;
 }
 
 /**
@@ -132,6 +134,7 @@ function checkBasicConf(context: LintContext): BasicConf {
   let mainCurrency: string | undefined;
 
   if (!currencyEntry.value) {
+    context.numErr++;
     console.log("error: currency not defined in section TALER option CURRENCY");
     console.log("Aborting further checks.");
     process.exit(1);
@@ -147,6 +150,7 @@ function checkBasicConf(context: LintContext): BasicConf {
 
   const roundUnit = cfg.getAmount("taler", "currency_round_unit");
   if (!roundUnit.isDefined) {
+    context.numErr++;
     console.log(
       "error: configuration incomplete, section TALER option CURRENCY_ROUND_UNIT missing",
     );
@@ -170,6 +174,7 @@ function checkCoinConfig(context: LintContext, basic: BasicConf): void {
   }
 
   if (numCoins == 0) {
+    context.numErr++;
     console.log(
       "error: no coin denomination configured, please configure [coin-*] sections",
     );
@@ -197,6 +202,7 @@ async function checkWireConfig(context: LintContext): Promise<void> {
   }
 
   if (accounts.size === 0) {
+    context.numErr++;
     console.log(
       "error: No accounts configured (no sections EXCHANGE_ACCOUNT-*).",
     );
@@ -224,6 +230,7 @@ async function checkWireConfig(context: LintContext): Promise<void> {
           "taler-exchange-wire",
       );
       if (res.status != 0) {
+        context.numErr++;
         console.log(res.stdout);
         console.log(res.stderr);
         console.log(
@@ -244,6 +251,7 @@ async function checkWireConfig(context: LintContext): Promise<void> {
       `su -l --shell /bin/sh -c 'taler-exchange-wirewatch -t' taler-exchange-wire`,
     );
     if (res.status != 0) {
+      context.numErr++;
       console.log(res.stdout);
       console.log(res.stderr);
       console.log("error: Could not run wirewatch. Please review logs above.");
@@ -261,6 +269,7 @@ async function checkWireConfig(context: LintContext): Promise<void> {
       `su -l --shell /bin/sh -c 'taler-exchange-wirewatch -t' taler-exchange-wire`,
     );
     if (res.status != 0) {
+      context.numErr++;
       console.log(res.stdout);
       console.log(res.stderr);
       console.log("error: Could not run wirewatch. Please review logs above.");
@@ -278,6 +287,7 @@ async function checkWireConfig(context: LintContext): Promise<void> {
       `su -l --shell /bin/sh -c 'taler-exchange-closer -t' taler-exchange-closer`,
     );
     if (res.status != 0) {
+      context.numErr++;
       console.log(res.stdout);
       console.log(res.stderr);
       console.log("error: Could not run closer. Please review logs above.");
@@ -295,6 +305,7 @@ async function checkAggregatorConfig(context: LintContext) {
     "su -l --shell /bin/sh -c 'taler-exchange-aggregator -t' taler-exchange-aggregator",
   );
   if (res.status != 0) {
+    context.numErr++;
     console.log(res.stdout);
     console.log(res.stderr);
     console.log("error: Could not run aggregator. Please review logs above.");
@@ -311,6 +322,7 @@ async function checkCloserConfig(context: LintContext) {
     `su -l --shell /bin/sh -c 'taler-exchange-closer -t' taler-exchange-closer`,
   );
   if (res.status != 0) {
+    context.numErr++;
     console.log(res.stdout);
     console.log(res.stderr);
     console.log("error: Could not run closer. Please review logs above.");
@@ -328,6 +340,7 @@ function checkMasterPublicKeyConfig(context: LintContext): PubkeyConf {
   const pubDecoded = decodeCrock(pub.required());
 
   if (pubDecoded.length != 32) {
+    context.numErr++;
     console.log("error: invalid master public key");
     if (!context.cont) {
       console.log("Aborting further checks.");
@@ -348,26 +361,38 @@ export async function checkExchangeHttpd(
   const baseUrlEntry = cfg.getString("exchange", "base_url");
 
   if (!baseUrlEntry.isDefined) {
+    context.numErr++;
     console.log(
       "error: configuration needs to specify section EXCHANGE option BASE_URL",
     );
-    process.exit(1);
+    if (!context.cont) {
+      console.log("Aborting further checks.");
+      process.exit(1);
+    }
   }
 
   const baseUrl = baseUrlEntry.required();
 
   if (!baseUrl.startsWith("http")) {
+    context.numErr++;
     console.log(
       "error: section EXCHANGE option BASE_URL needs to be an http or https URL",
     );
-    process.exit(1);
+    if (!context.cont) {
+      console.log("Aborting further checks.");
+      process.exit(1);
+    }
   }
 
   if (!baseUrl.endsWith("/")) {
+    context.numErr++;
     console.log(
       "error: section EXCHANGE option BASE_URL needs to end with a slash",
     );
-    process.exit(1);
+    if (!context.cont) {
+      console.log("Aborting further checks.");
+      process.exit(1);
+    }
   }
 
   if (!baseUrl.startsWith("https://")) {
@@ -405,6 +430,7 @@ export async function checkExchangeHttpd(
     const resp = await Promise.race([httpLib.get(keysUrl.href), delayMs(2000)]);
 
     if (!resp) {
+      context.numErr;
       console.log(
         "error: request to /keys timed out. " +
           "Make sure to sign and upload denomination and signing keys " +
@@ -421,9 +447,14 @@ export async function checkExchangeHttpd(
       );
 
       if (keys.master_public_key !== pubConf.masterPublicKey) {
+        context.numErr;
         console.log(
           "error: master public key of exchange does not match public key of live exchange",
         );
+        if (!context.cont) {
+          console.log("Aborting further checks.");
+          process.exit(1);
+        }
       }
     }
   }
@@ -435,6 +466,7 @@ export async function checkExchangeHttpd(
     const resp = await Promise.race([httpLib.get(keysUrl.href), delayMs(2000)]);
 
     if (!resp) {
+      context.numErr++;
       console.log(
         "error: request to /wire timed out. " +
           "Make sure to sign and upload accounts and wire fees " +
@@ -474,6 +506,7 @@ export async function lintExchangeDeployment(
     cont,
     verbose,
     cfg,
+    numErr: 0,
   };
 
   const basic = checkBasicConf(context);
@@ -489,4 +522,12 @@ export async function lintExchangeDeployment(
   const pubConf = checkMasterPublicKeyConfig(context);
 
   await checkExchangeHttpd(context, pubConf);
+
+  if (context.numErr > 0) {
+    console.log("Linting completed without errors.");
+    process.exit(0);
+  } else {
+    console.log("Linting completed with errors.");
+    process.exit(0);
+  }
 }
