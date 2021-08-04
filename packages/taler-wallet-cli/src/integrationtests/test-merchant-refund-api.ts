@@ -25,12 +25,12 @@ import {
   WalletCli,
   ExchangeServiceInterface,
 } from "./harness";
+import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
 import {
-  createSimpleTestkudosEnvironment,
-  withdrawViaBank,
-  SimpleTestEnvironment,
-} from "./helpers";
-import { URL, durationFromSpec, PreparePayResultType } from "@gnu-taler/taler-util";
+  URL,
+  durationFromSpec,
+  PreparePayResultType,
+} from "@gnu-taler/taler-util";
 import axios from "axios";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
@@ -138,10 +138,11 @@ async function testRefundApiWithFulfillmentUrl(
     `orders/${orderId}`,
     merchant.makeInstanceBaseUrl(),
   );
-
+  console.log(`requesting order status via '${publicOrderStatusUrl.href}'`);
   publicOrderStatusResp = await axios.get(publicOrderStatusUrl.href, {
     validateStatus: () => true,
   });
+  console.log(publicOrderStatusResp.status);
   console.log(publicOrderStatusResp.data);
   // We didn't give any authentication, so we should get a fulfillment URL back
   t.assertTrue(publicOrderStatusResp.status === 202);
@@ -293,3 +294,5 @@ export async function runMerchantRefundApiTest(t: GlobalTestState) {
     merchant,
   });
 }
+
+runMerchantRefundApiTest.suites = ["merchant"];
