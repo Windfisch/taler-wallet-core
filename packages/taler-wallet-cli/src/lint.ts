@@ -26,6 +26,7 @@ import {
   codecForList,
   codecForString,
   Configuration,
+  durationFromSpec,
 } from "@gnu-taler/taler-util";
 import {
   decodeCrock,
@@ -36,6 +37,7 @@ import { URL } from "url";
 import * as fs from "fs";
 import * as path from "path";
 import { ChildProcess, spawn } from "child_process";
+import { delayMs } from "./integrationtests/harness.js";
 
 interface BasicConf {
   mainCurrency: string;
@@ -145,7 +147,7 @@ function checkCoinConfig(cfg: Configuration, basic: BasicConf): void {
   }
 }
 
-function checkWireConfig(cfg: Configuration): void {
+async function checkWireConfig(cfg: Configuration): Promise<void> {
   const accountPrefix = "EXCHANGE-ACCOUNT-";
   const accountCredentialsPrefix = "EXCHANGE-ACCOUNTCREDENTIALS-";
 
@@ -172,17 +174,40 @@ function checkWireConfig(cfg: Configuration): void {
     }
   }
 
-  // FIXME: now try to use taler-exchange-wire-gateway-client to connect!
+  const res = await sh(
+    "sudo -u taler-exchange-wirewatch taler-exchange-wirewatch -t",
+  );
+  if (res.status != 0) {
+    console.log(res.stdout);
+    console.log(res.stderr);
+    console.log("error: Could not run aggregator. Please review logs above.");
+    process.exit(1);
+  }
+
   // FIXME: run wirewatch in test mode here?
   // FIXME: run transfer in test mode here?
 }
 
-function checkAggregatorConfig(cfg: Configuration) {
-  // FIXME: run aggregator in test mode here
+async function checkAggregatorConfig(cfg: Configuration) {
+  const res = await sh(
+    "sudo -u taler-exchange-aggregator taler-exchange-aggregator -t",
+  );
+  if (res.status != 0) {
+    console.log(res.stdout);
+    console.log(res.stderr);
+    console.log("error: Could not run aggregator. Please review logs above.");
+    process.exit(1);
+  }
 }
 
-function checkCloserConfig(cfg: Configuration) {
-  // FIXME: run closer in test mode here
+async function checkCloserConfig(cfg: Configuration) {
+  const res = await sh("sudo -u taler-exchange-close taler-exchange-closer -t");
+  if (res.status != 0) {
+    console.log(res.stdout);
+    console.log(res.stderr);
+    console.log("error: Could not run aggregator. Please review logs above.");
+    process.exit(1);
+  }
 }
 
 function checkMasterPublicKeyConfig(cfg: Configuration): PubkeyConf {
@@ -259,7 +284,18 @@ export async function checkExchangeHttpd(
 
   {
     const keysUrl = new URL("keys", baseUrl);
-    const resp = await httpLib.get(keysUrl.href);
+
+    const resp = await Promise.race([httpLib.get(keysUrl.href), delayMs(2000)]);
+
+    if (!resp) {
+      console.log(
+        "error: request to /keys timed out." +
+          "Make sure to sign and upload denomination and signing keys " +
+          "with taler-exchange-offline.",
+      );
+      process.exit(1);
+    }
+
     const keys = await readSuccessResponseJsonOrThrow(
       resp,
       codecForExchangeKeysJson(),
@@ -289,11 +325,11 @@ export async function lintExchangeDeployment(): Promise<void> {
 
   checkCoinConfig(cfg, basic);
 
-  checkWireConfig(cfg);
+  await checkWireConfig(cfg);
 
-  checkAggregatorConfig(cfg);
+  await checkAggregatorConfig(cfg);
 
-  checkCloserConfig(cfg);
+  await checkCloserConfig(cfg);
 
   const pubConf = checkMasterPublicKeyConfig(cfg);
 
