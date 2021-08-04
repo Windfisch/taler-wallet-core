@@ -103,7 +103,9 @@ export async function sh(
       }
     });
     proc.on("exit", (code, signal) => {
-      console.log(`child process exited (${code} / ${signal})`);
+      if (code != 0 && context.verbose) {
+        console.log(`child process exited (${code} / ${signal})`);
+      }
       const bOut = Buffer.concat(stdoutChunks).toString("utf-8");
       const bErr = Buffer.concat(stderrChunks).toString("utf-8");
       resolve({
@@ -387,7 +389,7 @@ export async function checkExchangeHttpd(
 
     if (!resp) {
       console.log(
-        "error: request to /keys timed out." +
+        "error: request to /keys timed out. " +
           "Make sure to sign and upload denomination and signing keys " +
           "with taler-exchange-offline.",
       );
