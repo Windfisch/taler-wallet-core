@@ -125,7 +125,7 @@ function checkBasicConf(cfg: Configuration): BasicConf {
 }
 
 function checkCoinConfig(cfg: Configuration, basic: BasicConf): void {
-  const coinPrefix = "coin_";
+  const coinPrefix = "COIN_";
   let numCoins = 0;
 
   for (const secName of cfg.getSectionNames()) {
@@ -143,8 +143,8 @@ function checkCoinConfig(cfg: Configuration, basic: BasicConf): void {
 }
 
 function checkWireConfig(cfg: Configuration): void {
-  const accountPrefix = "exchange-account-";
-  const accountCredentialsPrefix = "exchange-accountcredentials-";
+  const accountPrefix = "EXCHANGE-ACCOUNT-";
+  const accountCredentialsPrefix = "EXCHANGE-ACCOUNTCREDENTIALS-";
 
   let accounts = new Set<string>();
   let credentials = new Set<string>();
@@ -267,6 +267,10 @@ export async function checkExchangeHttpd(
       resp,
       codecForExchangeKeysJson(),
     );
+
+    if (keys.master_public_key !== pubConf.masterPublicKey) {
+      console.log("error: master public key of exchange does not match public key of live exchange");
+    }
   }
 }
 

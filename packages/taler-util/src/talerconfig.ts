@@ -103,7 +103,7 @@ export class ConfigValue<T> {
   ) {}
 
   required(): T {
-    if (!this.value) {
+    if (this.value == undefined) {
       throw new ConfigError(
         `required option [${this.sectionName}]/${this.optionName} not found`,
       );
