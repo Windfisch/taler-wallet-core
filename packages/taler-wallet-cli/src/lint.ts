@@ -15,18 +15,26 @@
  */
 
 /**
+ * The deployment linter implements checks for a deployment
+ * of the GNU Taler exchange.  It is meant to help sysadmins
+ * when setting up an exchange.
+ *
+ * The linter does checks in the configuration and uses
+ * various tools of the exchange in test mode (-t).
+ *
+ * To be able to run the tools as the right user, the linter should be
+ * run as root.
+ *
+ * @author Florian Dold <dold@taler.net>
+ */
+
+/**
  * Imports.
  */
 import {
-  buildCodecForObject,
-  Codec,
-  codecForAny,
   codecForExchangeKeysJson,
   codecForKeysManagementResponse,
-  codecForList,
-  codecForString,
   Configuration,
-  durationFromSpec,
 } from "@gnu-taler/taler-util";
 import {
   decodeCrock,
@@ -382,6 +390,7 @@ export async function checkExchangeHttpd(
     }
   }
 
+  // Check if we can use /keys already
   {
     const keysUrl = new URL("keys", baseUrl);
 
@@ -393,18 +402,47 @@ export async function checkExchangeHttpd(
           "Make sure to sign and upload denomination and signing keys " +
           "with taler-exchange-offline.",
       );
-      process.exit(1);
-    }
-
-    const keys = await readSuccessResponseJsonOrThrow(
-      resp,
-      codecForExchangeKeysJson(),
-    );
-
-    if (keys.master_public_key !== pubConf.masterPublicKey) {
-      console.log(
-        "error: master public key of exchange does not match public key of live exchange",
+      if (!context.cont) {
+        console.log("Aborting further checks.");
+        process.exit(1);
+      }
+    } else {
+      const keys = await readSuccessResponseJsonOrThrow(
+        resp,
+        codecForExchangeKeysJson(),
       );
+
+      if (keys.master_public_key !== pubConf.masterPublicKey) {
+        console.log(
+          "error: master public key of exchange does not match public key of live exchange",
+        );
+      }
+    }
+  }
+
+  // Check /wire
+  {
+    const keysUrl = new URL("wire", baseUrl);
+
+    const resp = await Promise.race([httpLib.get(keysUrl.href), delayMs(2000)]);
+
+    if (!resp) {
+      console.log(
+        "error: request to /wire timed out. " +
+          "Make sure to sign and upload accounts and wire fees " +
+          "using the taler-exchange-offline tool.",
+      );
+      if (!context.cont) {
+        console.log("Aborting further checks.");
+        process.exit(1);
+      }
+    } else {
+      if (resp.status !== 200) {
+        console.log(
+          "error:  Can't access exchange /wire.  Please check " +
+            "the logs of taler-exchange-httpd for further information.",
+        );
+      }
     }
   }
 }
