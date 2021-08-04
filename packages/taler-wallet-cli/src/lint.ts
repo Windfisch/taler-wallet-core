@@ -55,13 +55,31 @@ interface ShellResult {
   status: number;
 }
 
+interface LintContext {
+  /**
+   * Be more verbose.
+   */
+  verbose: boolean;
+
+  /**
+   * Always continue even after errors.
+   */
+  cont: boolean;
+
+  cfg: Configuration;
+}
+
 /**
  * Run a shell command, return stdout.
  */
 export async function sh(
+  context: LintContext,
   command: string,
   env: { [index: string]: string | undefined } = process.env,
 ): Promise<ShellResult> {
+  if (context.verbose) {
+    console.log("executing command:", command);
+  }
   return new Promise((resolve, reject) => {
     const stdoutChunks: Buffer[] = [];
     const stderrChunks: Buffer[] = [];
@@ -100,12 +118,14 @@ export async function sh(
   });
 }
 
-function checkBasicConf(cfg: Configuration): BasicConf {
+function checkBasicConf(context: LintContext): BasicConf {
+  const cfg = context.cfg;
   const currencyEntry = cfg.getString("taler", "currency");
   let mainCurrency: string | undefined;
 
   if (!currencyEntry.value) {
     console.log("error: currency not defined in section TALER option CURRENCY");
+    console.log("Aborting further checks.");
     process.exit(1);
   } else {
     mainCurrency = currencyEntry.value.toUpperCase();
@@ -126,7 +146,8 @@ function checkBasicConf(cfg: Configuration): BasicConf {
   return { mainCurrency };
 }
 
-function checkCoinConfig(cfg: Configuration, basic: BasicConf): void {
+function checkCoinConfig(context: LintContext, basic: BasicConf): void {
+  const cfg = context.cfg;
   const coinPrefix1 = "COIN_";
   const coinPrefix2 = "COIN-";
   let numCoins = 0;
@@ -147,7 +168,8 @@ function checkCoinConfig(cfg: Configuration, basic: BasicConf): void {
   }
 }
 
-async function checkWireConfig(cfg: Configuration): Promise<void> {
+async function checkWireConfig(context: LintContext): Promise<void> {
+  const cfg = context.cfg;
   const accountPrefix = "EXCHANGE-ACCOUNT-";
   const accountCredentialsPrefix = "EXCHANGE-ACCOUNTCREDENTIALS-";
 
@@ -174,50 +196,125 @@ async function checkWireConfig(cfg: Configuration): Promise<void> {
     }
   }
 
+  for (const acc of accounts) {
+    // test debit history
+    {
+      const res = await sh(
+        context,
+        "su -l --shell /bin/sh " +
+          "-c 'taler-exchange-wire-gateway-client -s exchange-accountcredentials-${acc} --debit-history'" +
+          "taler-exchange-wire",
+      );
+      if (res.status != 0) {
+        console.log(res.stdout);
+        console.log(res.stderr);
+        console.log(
+          "error: Could not run wirewatch. Please review logs above.",
+        );
+        if (!context.cont) {
+          console.log("Aborting further checks.");
+          process.exit(1);
+        }
+      }
+    }
+  }
+
+  // TWG client
+  {
+    const res = await sh(
+      context,
+      `su -l --shell /bin/sh -c 'taler-exchange-wirewatch -t' taler-exchange-wire`,
+    );
+    if (res.status != 0) {
+      console.log(res.stdout);
+      console.log(res.stderr);
+      console.log("error: Could not run wirewatch. Please review logs above.");
+      if (!context.cont) {
+        console.log("Aborting further checks.");
+        process.exit(1);
+      }
+    }
+  }
+
+  // Wirewatch
+  {
+    const res = await sh(
+      context,
+      `su -l --shell /bin/sh -c 'taler-exchange-wirewatch -t' taler-exchange-wire`,
+    );
+    if (res.status != 0) {
+      console.log(res.stdout);
+      console.log(res.stderr);
+      console.log("error: Could not run wirewatch. Please review logs above.");
+      if (!context.cont) {
+        console.log("Aborting further checks.");
+        process.exit(1);
+      }
+    }
+  }
+
+  // Closer
+  {
+    const res = await sh(
+      context,
+      `su -l --shell /bin/sh -c 'taler-exchange-closer -t' taler-exchange-closer`,
+    );
+    if (res.status != 0) {
+      console.log(res.stdout);
+      console.log(res.stderr);
+      console.log("error: Could not run closer. Please review logs above.");
+      if (!context.cont) {
+        console.log("Aborting further checks.");
+        process.exit(1);
+      }
+    }
+  }
+}
+
+async function checkAggregatorConfig(context: LintContext) {
   const res = await sh(
-    "sudo -u taler-exchange-wirewatch taler-exchange-wirewatch -t",
+    context,
+    "su -l --shell /bin/sh -c 'taler-exchange-aggregator -t' taler-exchange-aggregator",
   );
   if (res.status != 0) {
     console.log(res.stdout);
     console.log(res.stderr);
     console.log("error: Could not run aggregator. Please review logs above.");
-    process.exit(1);
+    if (!context.cont) {
+      console.log("Aborting further checks.");
+      process.exit(1);
+    }
   }
-
-  // FIXME: run wirewatch in test mode here?
-  // FIXME: run transfer in test mode here?
 }
 
-async function checkAggregatorConfig(cfg: Configuration) {
+async function checkCloserConfig(context: LintContext) {
   const res = await sh(
-    "sudo -u taler-exchange-aggregator taler-exchange-aggregator -t",
+    context,
+    `su -l --shell /bin/sh -c 'taler-exchange-closer -t' taler-exchange-closer`,
   );
   if (res.status != 0) {
     console.log(res.stdout);
     console.log(res.stderr);
-    console.log("error: Could not run aggregator. Please review logs above.");
-    process.exit(1);
+    console.log("error: Could not run closer. Please review logs above.");
+    if (!context.cont) {
+      console.log("Aborting further checks.");
+      process.exit(1);
+    }
   }
 }
 
-async function checkCloserConfig(cfg: Configuration) {
-  const res = await sh("sudo -u taler-exchange-close taler-exchange-closer -t");
-  if (res.status != 0) {
-    console.log(res.stdout);
-    console.log(res.stderr);
-    console.log("error: Could not run aggregator. Please review logs above.");
-    process.exit(1);
-  }
-}
-
-function checkMasterPublicKeyConfig(cfg: Configuration): PubkeyConf {
+function checkMasterPublicKeyConfig(context: LintContext): PubkeyConf {
+  const cfg = context.cfg;
   const pub = cfg.getString("exchange", "master_public_key");
 
   const pubDecoded = decodeCrock(pub.required());
 
   if (pubDecoded.length != 32) {
     console.log("error: invalid master public key");
-    process.exit(1);
+    if (!context.cont) {
+      console.log("Aborting further checks.");
+      process.exit(1);
+    }
   }
 
   return {
@@ -226,9 +323,10 @@ function checkMasterPublicKeyConfig(cfg: Configuration): PubkeyConf {
 }
 
 export async function checkExchangeHttpd(
-  cfg: Configuration,
+  context: LintContext,
   pubConf: PubkeyConf,
 ): Promise<void> {
+  const cfg = context.cfg;
   const baseUrlEntry = cfg.getString("exchange", "base_url");
 
   if (!baseUrlEntry.isDefined) {
@@ -312,7 +410,10 @@ export async function checkExchangeHttpd(
 /**
  * Do some basic checks in the configuration of a Taler deployment.
  */
-export async function lintExchangeDeployment(): Promise<void> {
+export async function lintExchangeDeployment(
+  verbose: boolean,
+  cont: boolean,
+): Promise<void> {
   if (process.getuid() != 0) {
     console.log(
       "warning: the exchange deployment linter is designed to be run as root",
@@ -321,17 +422,23 @@ export async function lintExchangeDeployment(): Promise<void> {
 
   const cfg = Configuration.load();
 
-  const basic = checkBasicConf(cfg);
+  const context: LintContext = {
+    cont,
+    verbose,
+    cfg,
+  };
 
-  checkCoinConfig(cfg, basic);
+  const basic = checkBasicConf(context);
 
-  await checkWireConfig(cfg);
+  checkCoinConfig(context, basic);
 
-  await checkAggregatorConfig(cfg);
+  await checkWireConfig(context);
 
-  await checkCloserConfig(cfg);
+  await checkAggregatorConfig(context);
 
-  const pubConf = checkMasterPublicKeyConfig(cfg);
+  await checkCloserConfig(context);
 
-  await checkExchangeHttpd(cfg, pubConf);
+  const pubConf = checkMasterPublicKeyConfig(context);
+
+  await checkExchangeHttpd(context, pubConf);
 }

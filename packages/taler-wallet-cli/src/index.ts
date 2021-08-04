@@ -870,11 +870,22 @@ const deploymentCli = walletCli.subcommand("deploymentArgs", "deployment", {
   help: "Subcommands for handling GNU Taler deployments.",
 });
 
-deploymentCli.subcommand("lintExchange", "lint-exchange", {
-  help: "Run checks on the exchange deployment."
-}).action(async (args) => {
-  await lintExchangeDeployment();
-});
+deploymentCli
+  .subcommand("lintExchange", "lint-exchange", {
+    help: "Run checks on the exchange deployment.",
+  })
+  .flag("cont", ["--continue"], {
+    help: "Continue after errors if possible",
+  })
+  .flag("debug", ["--debug"], {
+    help: "Output extra debug info",
+  })
+  .action(async (args) => {
+    await lintExchangeDeployment(
+      args.lintExchange.debug,
+      args.lintExchange.cont,
+    );
+  });
 
 deploymentCli
   .subcommand("coincfg", "gen-coin-config", {
