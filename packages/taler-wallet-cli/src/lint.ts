@@ -155,7 +155,7 @@ function checkCoinConfig(context: LintContext, basic: BasicConf): void {
   let numCoins = 0;
 
   for (const secName of cfg.getSectionNames()) {
-    if (!secName.startsWith(coinPrefix1) && !secName.startsWith(coinPrefix2)) {
+    if (!secName.startsWith(coinPrefix1) || !secName.startsWith(coinPrefix2)) {
       continue;
     }
     numCoins++;
