@@ -544,7 +544,7 @@ export class Configuration {
    * Get lower-cased section names.
    */
   getSectionNames(): string[] {
-    return Object.keys(this.sectionMap).map((x) => x.toLowerCase());
+    return Object.keys(this.sectionMap).map((x) => x.toUpperCase());
   }
 
   getString(section: string, option: string): ConfigValue<string> {

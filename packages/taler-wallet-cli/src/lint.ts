@@ -198,6 +198,16 @@ async function checkWireConfig(context: LintContext): Promise<void> {
     }
   }
 
+  if (accounts.size === 0) {
+    console.log(
+      "error: No accounts configured (no sections EXCHANGE_ACCOUNT-*).",
+    );
+    if (!context.cont) {
+      console.log("Aborting further checks.");
+      process.exit(1);
+    }
+  }
+
   for (const acc of accounts) {
     if (!credentials.has(acc)) {
       console.log(
@@ -207,19 +217,19 @@ async function checkWireConfig(context: LintContext): Promise<void> {
   }
 
   for (const acc of accounts) {
-    // test debit history
+    // test credit history
     {
       const res = await sh(
         context,
         "su -l --shell /bin/sh " +
-          "-c 'taler-exchange-wire-gateway-client -s exchange-accountcredentials-${acc} --debit-history'" +
+          `-c 'taler-exchange-wire-gateway-client -s exchange-accountcredentials-${acc} --credit-history'` +
           "taler-exchange-wire",
       );
       if (res.status != 0) {
         console.log(res.stdout);
         console.log(res.stderr);
         console.log(
-          "error: Could not run wirewatch. Please review logs above.",
+          "error: Could not run taler-exchange-wire-gateway-client. Please review logs above.",
         );
         if (!context.cont) {
           console.log("Aborting further checks.");
