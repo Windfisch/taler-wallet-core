@@ -42,9 +42,7 @@ import {
   readSuccessResponseJsonOrThrow,
 } from "@gnu-taler/taler-wallet-core";
 import { URL } from "url";
-import * as fs from "fs";
-import * as path from "path";
-import { ChildProcess, spawn } from "child_process";
+import { spawn } from "child_process";
 import { delayMs } from "./integrationtests/harness.js";
 
 interface BasicConf {
@@ -163,7 +161,7 @@ function checkCoinConfig(context: LintContext, basic: BasicConf): void {
   let numCoins = 0;
 
   for (const secName of cfg.getSectionNames()) {
-    if (!secName.startsWith(coinPrefix1) || !secName.startsWith(coinPrefix2)) {
+    if (!(secName.startsWith(coinPrefix1) || secName.startsWith(coinPrefix2))) {
       continue;
     }
     numCoins++;
