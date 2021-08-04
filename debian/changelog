@@ -1,3 +1,9 @@
+taler-wallet-cli (0.0.1-1) unstable; urgency=low
+
+  * Added exchange deployment linting tool.
+
+ -- Florian Dold <dold@taler.net>  Wed, 04 Aug 2021 23:05:47 +0200
+
 taler-wallet-cli (0.0.1) unstable; urgency=low
 
   * Initial Release.
