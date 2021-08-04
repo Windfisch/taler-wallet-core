@@ -430,7 +430,7 @@ export async function checkExchangeHttpd(
     const resp = await Promise.race([httpLib.get(keysUrl.href), delayMs(2000)]);
 
     if (!resp) {
-      context.numErr;
+      context.numErr++;
       console.log(
         "error: request to /keys timed out. " +
           "Make sure to sign and upload denomination and signing keys " +
@@ -447,7 +447,7 @@ export async function checkExchangeHttpd(
       );
 
       if (keys.master_public_key !== pubConf.masterPublicKey) {
-        context.numErr;
+        context.numErr++;
         console.log(
           "error: master public key of exchange does not match public key of live exchange",
         );
