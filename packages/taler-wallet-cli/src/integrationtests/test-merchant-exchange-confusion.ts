@@ -211,6 +211,8 @@ export async function runMerchantExchangeConfusionTest(t: GlobalTestState) {
 
   const proposalId = preparePayResp.proposalId;
 
+  console.log("requesting", publicOrderStatusUrl);
+
   publicOrderStatusResp = await axios.get(publicOrderStatusUrl, {
     validateStatus: () => true,
   });
