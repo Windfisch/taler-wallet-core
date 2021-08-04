@@ -613,12 +613,8 @@ export class Configuration {
   }
 
   getAmount(section: string, option: string): ConfigValue<AmountJson> {
-    const val = (
-      this.sectionMap[section] ?? {
-        entries: {},
-      }
-    ).entries[option];
-    return new ConfigValue(section, option, val.value, (x) =>
+    const val = this.findEntry(section, option)?.value;
+    return new ConfigValue(section, option, val, (x) =>
       Amounts.parseOrThrow(x),
     );
   }

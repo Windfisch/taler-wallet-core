@@ -274,7 +274,7 @@ export async function checkExchangeHttpd(
  * Do some basic checks in the configuration of a Taler deployment.
  */
 export async function lintExchangeDeployment(): Promise<void> {
-  if (process.getuid() != 1) {
+  if (process.getuid() != 0) {
     console.log(
       "warning: the exchange deployment linter is designed to be run as root",
     );
