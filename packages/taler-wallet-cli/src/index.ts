@@ -40,6 +40,7 @@ import {
   codecForString,
   Logger,
   Configuration,
+  getTimestampNow,
 } from "@gnu-taler/taler-util";
 import {
   NodeHttpLib,
@@ -891,15 +892,24 @@ deploymentCli
   .subcommand("coincfg", "gen-coin-config", {
     help: "Generate a coin/denomination configuration for the exchange.",
   })
-  .requiredOption("currency", ["--currency"], clk.STRING, {
-    help: "Currency to use",
+  .requiredOption("minAmount", ["--min-amount"], clk.STRING, {
+    help: "Smallest denomination",
+  })
+  .requiredOption("maxAmount", ["--max-amount"], clk.STRING, {
+    help: "Largest denomination",
   })
   .action(async (args) => {
     let out = "";
-    const currency = args.coincfg.currency;
 
-    const min = Amounts.parseOrThrow(`${currency}:0.01`);
-    const max = Amounts.parseOrThrow(`${currency}:100`);
+    const stamp = Math.floor((new Date()).getTime() / 1000);
+
+    const min = Amounts.parseOrThrow(args.coincfg.minAmount);
+    const max = Amounts.parseOrThrow(args.coincfg.maxAmount);
+    if (min.currency != max.currency) {
+      console.error("currency mismatch")
+      process.exit(1);
+    }
+    const currency = min.currency;
     let x = min;
     let n = 1;
 
@@ -908,7 +918,7 @@ deploymentCli
     out += "\n";
 
     while (Amounts.cmp(x, max) < 0) {
-      out += `[COIN-${currency}_${n}]\n`;
+      out += `[COIN-${currency}-n${n}-t${stamp}]\n`;
       out += `VALUE = ${Amounts.stringify(x)}\n`;
       out += `DURATION_WITHDRAW = 7 days\n`;
       out += `DURATION_SPEND = 2 years\n`;

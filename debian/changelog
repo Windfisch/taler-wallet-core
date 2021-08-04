@@ -1,3 +1,9 @@
+taler-wallet-cli (0.0.1-2) unstable; urgency=low
+
+  * Improved denomination generator.
+
+ -- Florian Dold <dold@taler.net>  Wed, 04 Aug 2021 23:26:17 +0200
+
 taler-wallet-cli (0.0.1-1) unstable; urgency=low
 
   * Added exchange deployment linting tool.
