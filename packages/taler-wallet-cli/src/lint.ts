@@ -125,11 +125,12 @@ function checkBasicConf(cfg: Configuration): BasicConf {
 }
 
 function checkCoinConfig(cfg: Configuration, basic: BasicConf): void {
-  const coinPrefix = "COIN_";
+  const coinPrefix1 = "COIN_";
+  const coinPrefix2 = "COIN-";
   let numCoins = 0;
 
   for (const secName of cfg.getSectionNames()) {
-    if (!secName.startsWith(coinPrefix)) {
+    if (!secName.startsWith(coinPrefix1) && !secName.startsWith(coinPrefix2)) {
       continue;
     }
     numCoins++;
@@ -184,11 +185,6 @@ function checkCloserConfig(cfg: Configuration) {
 
 function checkMasterPublicKeyConfig(cfg: Configuration): PubkeyConf {
   const pub = cfg.getString("exchange", "master_public_key");
-
-  if (!pub.isDefined) {
-    console.log("error: Master public key is not set.");
-    process.exit(1);
-  }
 
   const pubDecoded = decodeCrock(pub.required());
 
