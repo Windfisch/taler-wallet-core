@@ -968,22 +968,27 @@ export class ExchangeService implements ExchangeServiceInterface {
     config.setString(`exchange-account-${localName}`, "enable_credit", "yes");
     config.setString(`exchange-account-${localName}`, "enable_debit", "yes");
     config.setString(
-      `exchange-account-${localName}`,
+      `exchange-accountcredentials-${localName}`,
+      "payto_uri",
+      exchangeBankAccount.accountPaytoUri,
+    );
+    config.setString(
+      `exchange-accountcredentials-${localName}`,
       "wire_gateway_url",
       exchangeBankAccount.wireGatewayApiBaseUrl,
     );
     config.setString(
-      `exchange-account-${localName}`,
+      `exchange-accountcredentials-${localName}`,
       "wire_gateway_auth_method",
       "basic",
     );
     config.setString(
-      `exchange-account-${localName}`,
+      `exchange-accountcredentials-${localName}`,
       "username",
       exchangeBankAccount.accountName,
     );
     config.setString(
-      `exchange-account-${localName}`,
+      `exchange-accountcredentials-${localName}`,
       "password",
       exchangeBankAccount.accountPassword,
     );
