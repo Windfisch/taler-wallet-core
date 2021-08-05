@@ -1016,7 +1016,7 @@ export class ExchangeService implements ExchangeServiceInterface {
 
     const config = Configuration.load(this.configFilename);
     for (const sectionName of config.getSectionNames()) {
-      if (sectionName.startsWith("EXCHANGE-ACCOUNT")) {
+      if (sectionName.startsWith("EXCHANGE-ACCOUNT-")) {
         const paytoUri = config.getString(sectionName, "payto_uri").required();
         const p = parsePaytoUri(paytoUri);
         if (!p) {
@@ -1156,15 +1156,13 @@ export class MerchantApiClient {
   ) {}
 
   async changeAuth(auth: MerchantAuthConfiguration): Promise<void> {
-    const baseUrl = this.baseUrl;
-    const url = new URL("management/auth", baseUrl);
+    const url = new URL("private/auth", this.baseUrl);
     await axios.post(url.href, auth, {
       headers: this.makeAuthHeader(),
     });
   }
 
   async deleteInstance(instanceId: string) {
-    const baseUrl = this.baseUrl;
     const url = new URL(`management/instances/${instanceId}`, this.baseUrl);
     await axios.delete(url.href, {
       headers: this.makeAuthHeader(),
@@ -1172,8 +1170,7 @@ export class MerchantApiClient {
   }
 
   async createInstance(req: MerchantInstanceConfig): Promise<void> {
-    const baseUrl = this.baseUrl;
-    const url = new URL("management/instances", baseUrl);
+    const url = new URL("management/instances", this.baseUrl);
     await axios.post(url.href, req, {
       headers: this.makeAuthHeader(),
     });
