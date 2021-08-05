@@ -926,11 +926,6 @@ export class ExchangeService implements ExchangeServiceInterface {
     config.setString(`exchange-account-${localName}`, "enable_debit", "yes");
     config.setString(
       `exchange-accountcredentials-${localName}`,
-      "payto_uri",
-      exchangeBankAccount.accountPaytoUri,
-    );
-    config.setString(
-      `exchange-accountcredentials-${localName}`,
       "wire_gateway_url",
       exchangeBankAccount.wireGatewayApiBaseUrl,
     );
@@ -1021,7 +1016,7 @@ export class ExchangeService implements ExchangeServiceInterface {
 
     const config = Configuration.load(this.configFilename);
     for (const sectionName of config.getSectionNames()) {
-      if (sectionName.startsWith("exchange-account")) {
+      if (sectionName.startsWith("EXCHANGE_ACCOUNT")) {
         const paytoUri = config.getString(sectionName, "payto_uri").required();
         const p = parsePaytoUri(paytoUri);
         if (!p) {
