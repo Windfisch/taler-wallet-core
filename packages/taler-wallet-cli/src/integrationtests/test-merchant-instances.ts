@@ -66,7 +66,7 @@ export async function runMerchantInstancesTest(t: GlobalTestState) {
 
   // Instances should initially be empty
   {
-    const r = await axios.get(new URL("private/instances", baseUrl).href);
+    const r = await axios.get(new URL("management/instances", baseUrl).href);
     t.assertDeepEqual(r.data.instances, []);
   }
 
@@ -102,7 +102,7 @@ export async function runMerchantInstancesTest(t: GlobalTestState) {
   // Check that a "malformed" bearer Authorization header gets ignored
   {
     const url = merchant.makeInstanceBaseUrl();
-    const resp = await axios.get(new URL("private/instances", url).href, {
+    const resp = await axios.get(new URL("management/instances", url).href, {
       headers: {
         Authorization: "foo bar-baz",
       },
@@ -143,7 +143,7 @@ export async function runMerchantInstancesTest(t: GlobalTestState) {
   // Now, try some variations.
   {
     const url = merchant.makeInstanceBaseUrl();
-    const resp = await axios.get(new URL("private/instances", url).href, {
+    const resp = await axios.get(new URL("management/instances", url).href, {
       headers: {
         // Note the spaces
         Authorization: "Bearer     secret-token:foobar",

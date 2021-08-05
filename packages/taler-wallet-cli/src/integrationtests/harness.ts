@@ -1162,7 +1162,7 @@ export class MerchantApiClient {
 
   async changeAuth(auth: MerchantAuthConfiguration): Promise<void> {
     const baseUrl = this.baseUrl;
-    const url = new URL("private/auth", baseUrl);
+    const url = new URL("management/auth", baseUrl);
     await axios.post(url.href, auth, {
       headers: this.makeAuthHeader(),
     });
@@ -1170,7 +1170,7 @@ export class MerchantApiClient {
 
   async deleteInstance(instanceId: string) {
     const baseUrl = this.baseUrl;
-    const url = new URL(`private/instances/${instanceId}`, this.baseUrl);
+    const url = new URL(`management/instances/${instanceId}`, this.baseUrl);
     await axios.delete(url.href, {
       headers: this.makeAuthHeader(),
     });
@@ -1178,14 +1178,14 @@ export class MerchantApiClient {
 
   async createInstance(req: MerchantInstanceConfig): Promise<void> {
     const baseUrl = this.baseUrl;
-    const url = new URL("private/instances", baseUrl);
+    const url = new URL("management/instances", baseUrl);
     await axios.post(url.href, req, {
       headers: this.makeAuthHeader(),
     });
   }
 
   async getInstances(): Promise<MerchantInstancesResponse> {
-    const url = new URL("private/instances", this.baseUrl);
+    const url = new URL("management/instances", this.baseUrl);
     const resp = await axios.get(url.href, {
       headers: this.makeAuthHeader(),
     });
@@ -1193,7 +1193,7 @@ export class MerchantApiClient {
   }
 
   async getInstanceFullDetails(instanceId: string): Promise<any> {
-    const url = new URL(`private/instances/${instanceId}`, this.baseUrl);
+    const url = new URL(`management/instances/${instanceId}`, this.baseUrl);
     try {
       const resp = await axios.get(url.href, {
         headers: this.makeAuthHeader(),
@@ -1471,7 +1471,7 @@ export class MerchantService implements MerchantServiceInterface {
       throw Error("merchant must be running to add instance");
     }
     console.log("adding instance");
-    const url = `http://localhost:${this.merchantConfig.httpPort}/private/instances`;
+    const url = `http://localhost:${this.merchantConfig.httpPort}/management/instances`;
     const auth = instanceConfig.auth ?? { method: "external" };
     await axios.post(url, {
       auth,

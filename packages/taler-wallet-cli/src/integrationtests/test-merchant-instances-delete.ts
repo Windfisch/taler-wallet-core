@@ -66,7 +66,7 @@ export async function runMerchantInstancesDeleteTest(t: GlobalTestState) {
 
   // Instances should initially be empty
   {
-    const r = await axios.get(new URL("private/instances", baseUrl).href);
+    const r = await axios.get(new URL("management/instances", baseUrl).href);
     t.assertDeepEqual(r.data.instances, []);
   }
 
