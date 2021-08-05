@@ -226,7 +226,7 @@ async function checkWireConfig(context: LintContext): Promise<void> {
       const res = await sh(
         context,
         "su -l --shell /bin/sh " +
-          `-c 'taler-exchange-wire-gateway-client -s exchange-accountcredentials-${acc} --credit-history'` +
+          `-c 'taler-exchange-wire-gateway-client -s exchange-accountcredentials-${acc} --credit-history' ` +
           "taler-exchange-wire",
       );
       if (res.status != 0) {
