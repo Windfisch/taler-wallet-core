@@ -204,7 +204,7 @@ async function checkWireConfig(context: LintContext): Promise<void> {
   if (accounts.size === 0) {
     context.numErr++;
     console.log(
-      "error: No accounts configured (no sections EXCHANGE_ACCOUNT-*).",
+      "error: No accounts configured (no sections EXCHANGE-ACCOUNT-*).",
     );
     if (!context.cont) {
       console.log("Aborting further checks.");
