@@ -1016,7 +1016,7 @@ export class ExchangeService implements ExchangeServiceInterface {
 
     const config = Configuration.load(this.configFilename);
     for (const sectionName of config.getSectionNames()) {
-      if (sectionName.startsWith("EXCHANGE_ACCOUNT")) {
+      if (sectionName.startsWith("EXCHANGE-ACCOUNT")) {
         const paytoUri = config.getString(sectionName, "payto_uri").required();
         const p = parsePaytoUri(paytoUri);
         if (!p) {
