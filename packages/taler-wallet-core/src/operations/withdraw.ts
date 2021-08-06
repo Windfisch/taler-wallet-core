@@ -675,6 +675,9 @@ export async function updateWithdrawalDenoms(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
 ): Promise<void> {
+  logger.trace(
+    `updating denominations used for withdrawal for ${exchangeBaseUrl}`,
+  );
   const exchangeDetails = await ws.db
     .mktx((x) => ({
       exchanges: x.exchanges,
@@ -689,52 +692,55 @@ export async function updateWithdrawalDenoms(
   }
   // First do a pass where the validity of candidate denominations
   // is checked and the result is stored in the database.
+  logger.trace("getting candidate denominations");
   const denominations = await getCandidateWithdrawalDenoms(ws, exchangeBaseUrl);
-  for (const denom of denominations) {
-    if (denom.status === DenominationStatus.Unverified) {
-      const valid = await ws.cryptoApi.isValidDenom(
-        denom,
-        exchangeDetails.masterPublicKey,
-      );
-      if (!valid) {
-        logger.warn(
-          `Signature check for denomination h=${denom.denomPubHash} failed`,
-        );
-        denom.status = DenominationStatus.VerifiedBad;
-      } else {
-        denom.status = DenominationStatus.VerifiedGood;
+  logger.trace(`got ${denominations.length} candidate denominations`);
+  const batchSize = 500;
+  let current = 0;
+
+  while (current < denominations.length) {
+    const updatedDenominations: DenominationRecord[] = [];
+    // Do a batch of batchSize
+    for (let batchIdx = 0; batchIdx < batchSize; batchIdx++) {
+      current++;
+      if (current >= denominations.length) {
+        break;
       }
+      const denom = denominations[current];
+      if (denom.status === DenominationStatus.Unverified) {
+        logger.trace(
+          `Validation denomination (${current + 1}/${
+            denominations.length
+          }) signature of ${denom.denomPubHash}`,
+        );
+        const valid = await ws.cryptoApi.isValidDenom(
+          denom,
+          exchangeDetails.masterPublicKey,
+        );
+        logger.trace(`Done validating ${denom.denomPubHash}`);
+        if (!valid) {
+          logger.warn(
+            `Signature check for denomination h=${denom.denomPubHash} failed`,
+          );
+          denom.status = DenominationStatus.VerifiedBad;
+        } else {
+          denom.status = DenominationStatus.VerifiedGood;
+        }
+        updatedDenominations.push(denom);
+      }
+    }
+    if (updatedDenominations.length > 0) {
+      logger.trace("writing denomination batch to db");
       await ws.db
         .mktx((x) => ({ denominations: x.denominations }))
         .runReadWrite(async (tx) => {
-          await tx.denominations.put(denom);
+          for (let i = 0; i < updatedDenominations.length; i++) {
+            const denom = updatedDenominations[i];
+            await tx.denominations.put(denom);
+          }
         });
+      logger.trace("done with DB write");
     }
-  }
-  // FIXME:  This debug info should either be made conditional on some flag
-  // or put into some wallet-core API.
-  const nextDenominations = await getCandidateWithdrawalDenoms(
-    ws,
-    exchangeBaseUrl,
-  );
-  logger.trace(
-    `updated withdrawable denominations for "${exchangeBaseUrl}, n=${nextDenominations.length}"`,
-  );
-  const now = getTimestampNow();
-  for (const denom of nextDenominations) {
-    const startDelay = getDurationRemaining(denom.stampStart, now);
-    const lastPossibleWithdraw = timestampSubtractDuraction(
-      denom.stampExpireWithdraw,
-      { d_ms: 50 * 1000 },
-    );
-    const remaining = getDurationRemaining(lastPossibleWithdraw, now);
-    logger.trace(
-      `Denom ${denom.denomPubHash} ${denom.status} revoked ${
-        denom.isRevoked
-      } offered ${denom.isOffered} remaining ${
-        (remaining.d_ms as number) / 1000
-      }sec withdrawDelay ${(startDelay.d_ms as number) / 1000}sec`,
-    );
   }
 }
 

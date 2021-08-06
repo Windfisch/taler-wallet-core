@@ -118,6 +118,7 @@ export async function getDefaultNodeWallet(
     }
 
     myBackend.afterCommitCallback = async () => {
+      logger.trace("committing database");
       // Allow caller to stop persisting the wallet.
       if (args.persistentStoragePath === undefined) {
         return;

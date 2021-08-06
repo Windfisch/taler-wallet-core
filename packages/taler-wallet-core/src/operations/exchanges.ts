@@ -341,7 +341,6 @@ async function downloadKeysInfo(
   );
 
   logger.info("received /keys response");
-  logger.trace(j2s(exchangeKeysJson));
 
   if (exchangeKeysJson.denoms.length === 0) {
     const opErr = makeErrorDetails(
@@ -442,17 +441,22 @@ async function updateExchangeFromUrlImpl(
 
   const keysInfo = await downloadKeysInfo(baseUrl, ws.http, timeout);
 
+  logger.info("updating exchange /wire info");
   const wireInfoDownload = await downloadExchangeWithWireInfo(
     baseUrl,
     ws.http,
     timeout,
   );
 
+  logger.info("validating exchange /wire info");
+
   const wireInfo = await validateWireInfo(
     wireInfoDownload,
     keysInfo.masterPublicKey,
     ws.cryptoApi,
   );
+
+  logger.info("finished validating exchange /wire info");
 
   const tosDownload = await downloadExchangeWithTermsOfService(
     baseUrl,
@@ -461,6 +465,8 @@ async function updateExchangeFromUrlImpl(
   );
 
   let recoupGroupId: string | undefined = undefined;
+
+  logger.trace("updating exchange info in database");
 
   const updated = await ws.db
     .mktx((x) => ({
@@ -512,6 +518,7 @@ async function updateExchangeFromUrlImpl(
       await tx.exchanges.put(r);
       await tx.exchangeDetails.put(details);
 
+      logger.trace("updating denominations in database");
       for (const currentDenom of keysInfo.currentDenominations) {
         const oldDenom = await tx.denominations.get([
           baseUrl,
@@ -523,6 +530,7 @@ async function updateExchangeFromUrlImpl(
           await tx.denominations.put(currentDenom);
         }
       }
+      logger.trace("done updating denominations in database");
 
       // Handle recoup
       const recoupDenomList = keysInfo.recoup;
@@ -578,6 +586,8 @@ async function updateExchangeFromUrlImpl(
   if (!updated) {
     throw Error("something went wrong with updating the exchange");
   }
+
+  logger.trace("done updating exchange info in database");
 
   return {
     exchange: updated.exchange,

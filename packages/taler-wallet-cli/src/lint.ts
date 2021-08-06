@@ -149,10 +149,11 @@ function checkBasicConf(context: LintContext): BasicConf {
   }
 
   const roundUnit = cfg.getAmount("taler", "currency_round_unit");
-  if (!roundUnit.isDefined) {
+  const ru = roundUnit.required();
+  if (ru.currency.toLowerCase() != mainCurrency.toLowerCase()) {
     context.numErr++;
     console.log(
-      "error: configuration incomplete, section TALER option CURRENCY_ROUND_UNIT missing",
+      "error: [TALER]/CURRENCY_ROUND_UNIT: currency does not match main currency",
     );
   }
   return { mainCurrency };
