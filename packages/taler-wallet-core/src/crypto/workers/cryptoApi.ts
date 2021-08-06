@@ -82,7 +82,7 @@ interface WorkItem {
   /**
    * Time when the work was submitted to a (non-busy) worker thread.
    */
-  startTime: number;
+  startTime: BigInt;
 }
 
 /**
@@ -291,7 +291,7 @@ export class CryptoApi {
         resolve,
         reject,
         rpcId,
-        startTime: 0,
+        startTime: BigInt(0),
       };
 
       if (this.numBusy === this.workers.length) {

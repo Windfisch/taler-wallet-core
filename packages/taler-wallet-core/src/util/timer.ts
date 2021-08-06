@@ -78,24 +78,23 @@ class TimeoutHandle {
 }
 
 /**
- * Get a performance counter in milliseconds.
+ * Get a performance counter in nanoseconds.
  */
-export const performanceNow: () => number = (() => {
+export const performanceNow: () => bigint = (() => {
   // @ts-ignore
   if (typeof process !== "undefined" && process.hrtime) {
     return () => {
-      const t = process.hrtime();
-      return t[0] * 1e9 + t[1];
+      return process.hrtime.bigint();
     };
   }
 
   // @ts-ignore
   if (typeof performance !== "undefined") {
     // @ts-ignore
-    return () => performance.now();
+    return () => BigInt(performance.now()) * BigInt(1000 * 1000);
   }
 
-  return () => 0;
+  return () => BigInt(0);
 })();
 
 /**

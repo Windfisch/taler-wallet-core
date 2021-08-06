@@ -35,6 +35,7 @@ import {
   IDBKeyPath,
 } from "@gnu-taler/idb-bridge";
 import { Logger } from "@gnu-taler/taler-util";
+import { performanceNow } from "./timer.js";
 
 const logger = new Logger("query.ts");
 
@@ -298,6 +299,7 @@ export function describeIndex(
 interface IndexReadOnlyAccessor<RecordType> {
   iter(query?: IDBValidKey): ResultStream<RecordType>;
   get(query: IDBValidKey): Promise<RecordType | undefined>;
+  getAll(query: IDBValidKey, count?: number): Promise<RecordType[]>;
 }
 
 type GetIndexReadOnlyAccess<RecordType, IndexMap> = {
@@ -307,6 +309,7 @@ type GetIndexReadOnlyAccess<RecordType, IndexMap> = {
 interface IndexReadWriteAccessor<RecordType> {
   iter(query: IDBValidKey): ResultStream<RecordType>;
   get(query: IDBValidKey): Promise<RecordType | undefined>;
+  getAll(query: IDBValidKey, count?: number): Promise<RecordType[]>;
 }
 
 type GetIndexReadWriteAccess<RecordType, IndexMap> = {
@@ -484,6 +487,10 @@ function makeReadContext(
             .openCursor(query);
           return new ResultStream<any>(req);
         },
+        getAll(query, count) {
+          const req = tx.objectStore(storeName).index(indexName).getAll(query, count);
+          return requestToPromise(req);
+        }
       };
     }
     ctx[storeAlias] = {
@@ -526,6 +533,10 @@ function makeWriteContext(
             .openCursor(query);
           return new ResultStream<any>(req);
         },
+        getAll(query, count) {
+          const req = tx.objectStore(storeName).index(indexName).getAll(query, count);
+          return requestToPromise(req);
+        }
       };
     }
     ctx[storeAlias] = {

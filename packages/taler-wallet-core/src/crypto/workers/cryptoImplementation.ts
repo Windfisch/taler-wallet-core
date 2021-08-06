@@ -106,8 +106,8 @@ function amountToBuffer(amount: AmountJson): Uint8Array {
   if (typeof dvbuf.setBigUint64 !== "undefined") {
     dvbuf.setBigUint64(0, BigInt(amount.value));
   } else {
-    const arr = bigint(amount.value).toArray(2 ** 8).value
-    let offset = 8 - arr.length
+    const arr = bigint(amount.value).toArray(2 ** 8).value;
+    let offset = 8 - arr.length;
     for (let i = 0; i < arr.length; i++) {
       dvbuf.setUint8(offset++, arr[i]);
     }
@@ -126,9 +126,12 @@ function timestampRoundedToBuffer(ts: Timestamp): Uint8Array {
     const s = BigInt(tsRounded.t_ms) * BigInt(1000);
     v.setBigUint64(0, s);
   } else {
-    const s = (tsRounded.t_ms === "never" ? bigint.zero : bigint(tsRounded.t_ms).times(1000));
-    const arr = s.toArray(2 ** 8).value
-    let offset = 8 - arr.length
+    const s =
+      tsRounded.t_ms === "never"
+        ? bigint.zero
+        : bigint(tsRounded.t_ms).times(1000);
+    const arr = s.toArray(2 ** 8).value;
+    let offset = 8 - arr.length;
     for (let i = 0; i < arr.length; i++) {
       v.setUint8(offset++, arr[i]);
     }
@@ -139,7 +142,7 @@ function timestampRoundedToBuffer(ts: Timestamp): Uint8Array {
 class SignaturePurposeBuilder {
   private chunks: Uint8Array[] = [];
 
-  constructor(private purposeNum: number) { }
+  constructor(private purposeNum: number) {}
 
   put(bytes: Uint8Array): SignaturePurposeBuilder {
     this.chunks.push(Uint8Array.from(bytes));
@@ -317,7 +320,8 @@ export class CryptoImplementation {
       .build();
     const sig = decodeCrock(denom.masterSig);
     const pub = decodeCrock(masterPub);
-    return eddsaVerify(p, sig, pub);
+    const res = eddsaVerify(p, sig, pub);
+    return res;
   }
 
   isValidWireAccount(
@@ -550,14 +554,14 @@ export class CryptoImplementation {
   }
 
   benchmark(repetitions: number): BenchmarkResult {
-    let time_hash = 0;
+    let time_hash = BigInt(0);
     for (let i = 0; i < repetitions; i++) {
       const start = timer.performanceNow();
       this.hashString("hello world");
       time_hash += timer.performanceNow() - start;
     }
 
-    let time_hash_big = 0;
+    let time_hash_big = BigInt(0);
     for (let i = 0; i < repetitions; i++) {
       const ba = randomBytes(4096);
       const start = timer.performanceNow();
@@ -565,14 +569,14 @@ export class CryptoImplementation {
       time_hash_big += timer.performanceNow() - start;
     }
 
-    let time_eddsa_create = 0;
+    let time_eddsa_create = BigInt(0);
     for (let i = 0; i < repetitions; i++) {
       const start = timer.performanceNow();
       createEddsaKeyPair();
       time_eddsa_create += timer.performanceNow() - start;
     }
 
-    let time_eddsa_sign = 0;
+    let time_eddsa_sign = BigInt(0);
     const p = randomBytes(4096);
 
     const pair = createEddsaKeyPair();
@@ -585,7 +589,7 @@ export class CryptoImplementation {
 
     const sig = eddsaSign(p, pair.eddsaPriv);
 
-    let time_eddsa_verify = 0;
+    let time_eddsa_verify = BigInt(0);
     for (let i = 0; i < repetitions; i++) {
       const start = timer.performanceNow();
       eddsaVerify(p, sig, pair.eddsaPub);
@@ -595,11 +599,11 @@ export class CryptoImplementation {
     return {
       repetitions,
       time: {
-        hash_small: time_hash,
-        hash_big: time_hash_big,
-        eddsa_create: time_eddsa_create,
-        eddsa_sign: time_eddsa_sign,
-        eddsa_verify: time_eddsa_verify,
+        hash_small: Number(time_hash),
+        hash_big: Number(time_hash_big),
+        eddsa_create: Number(time_eddsa_create),
+        eddsa_sign: Number(time_eddsa_sign),
+        eddsa_verify: Number(time_eddsa_verify),
       },
     };
   }

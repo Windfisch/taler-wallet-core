@@ -306,15 +306,7 @@ export async function getCandidateWithdrawalDenoms(
   return await ws.db
     .mktx((x) => ({ denominations: x.denominations }))
     .runReadOnly(async (tx) => {
-      return tx.denominations.indexes.byExchangeBaseUrl
-        .iter(exchangeBaseUrl)
-        .filter((d) => {
-          return (
-            (d.status === DenominationStatus.Unverified ||
-              d.status === DenominationStatus.VerifiedGood) &&
-            !d.isRevoked
-          );
-        });
+      return tx.denominations.indexes.byExchangeBaseUrl.getAll(exchangeBaseUrl);
     });
 }
 
