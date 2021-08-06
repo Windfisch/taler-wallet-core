@@ -168,9 +168,9 @@ export interface LibeufinSandboxAddIncomingRequest {
   creditorIban: string;
   creditorBic: string;
   creditorName: string;
-  debitorIban: string;
-  debitorBic: string;
-  debitorName: string;
+  debtorIban: string;
+  debtorBic: string;
+  debtorName: string;
   subject: string;
   amount: string;
   currency: string;
@@ -332,7 +332,6 @@ export interface SimulateIncomingTransactionRequest {
    * Decimal amount without currency.
    */
   amount: string;
-  currency: string;
 }
 
 /**
@@ -798,9 +797,9 @@ export namespace LibeufinSandboxApi {
       creditorIban: creditorBundle.ebicsBankAccount.iban,
       creditorBic: creditorBundle.ebicsBankAccount.bic,
       creditorName: creditorBundle.ebicsBankAccount.name,
-      debitorIban: debitorBundle.ebicsBankAccount.iban,
-      debitorBic: debitorBundle.ebicsBankAccount.bic,
-      debitorName: debitorBundle.ebicsBankAccount.name,
+      debtorIban: debitorBundle.ebicsBankAccount.iban,
+      debtorBic: debitorBundle.ebicsBankAccount.bic,
+      debtorName: debitorBundle.ebicsBankAccount.name,
       subject: subject,
       amount: amount,
       currency: currency,

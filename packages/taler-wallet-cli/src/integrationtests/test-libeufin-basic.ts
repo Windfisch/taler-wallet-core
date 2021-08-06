@@ -257,7 +257,6 @@ export async function runLibeufinBasicTest(t: GlobalTestState) {
     "exchangeacct",
     {
       amount: "15.00",
-      currency: "EUR",
       debtorBic: customerBic,
       debtorIban: customerIban,
       debtorName: "Jane Customer",

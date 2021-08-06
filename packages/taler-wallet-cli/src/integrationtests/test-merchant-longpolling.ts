@@ -23,7 +23,7 @@ import {
   PreparePayResultType,
   codecForMerchantOrderStatusUnpaid,
   ConfirmPayResultType,
-  URL
+  URL,
 } from "@gnu-taler/taler-util";
 import axios from "axios";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
@@ -60,9 +60,8 @@ export async function runMerchantLongpollingTest(t: GlobalTestState) {
       amount: "TESTKUDOS:5",
       fulfillment_url: "https://example.com/article42",
     },
+    create_token: false,
   });
-
-  const firstOrderId = orderResp.order_id;
 
   let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
     orderId: orderResp.order_id,
@@ -74,16 +73,31 @@ export async function runMerchantLongpollingTest(t: GlobalTestState) {
   t.assertTrue(orderStatus.already_paid_order_id === undefined);
   let publicOrderStatusUrl = new URL(orderStatus.order_status_url);
 
-  // Wait for half a second seconds!
+  // First, request order status without longpolling
+  {
+    console.log("requesting", publicOrderStatusUrl.href);
+    let publicOrderStatusResp = await axios.get(publicOrderStatusUrl.href, {
+      validateStatus: () => true,
+    });
+
+    if (publicOrderStatusResp.status != 402) {
+      throw Error(
+        `expected status 402 (before claiming, no long polling), but got ${publicOrderStatusResp.status}`,
+      );
+    }
+  }
+
+  // Now do long-polling for half a second!
   publicOrderStatusUrl.searchParams.set("timeout_ms", "500");
 
+  console.log("requesting", publicOrderStatusUrl.href);
   let publicOrderStatusResp = await axios.get(publicOrderStatusUrl.href, {
     validateStatus: () => true,
   });
 
   if (publicOrderStatusResp.status != 402) {
     throw Error(
-      `expected status 402 (before claiming), but got ${publicOrderStatusResp.status}`,
+      `expected status 402 (before claiming, with long-polling), but got ${publicOrderStatusResp.status}`,
     );
   }
 
@@ -99,18 +113,24 @@ export async function runMerchantLongpollingTest(t: GlobalTestState) {
    * =========================================================================
    */
 
-  publicOrderStatusUrl.searchParams.set("timeout_ms", "5000");
-
-  let publicOrderStatusPromise = axios.get(publicOrderStatusUrl.href, {
-    validateStatus: () => true,
-  });
-
   let preparePayResp = await wallet.client.call(
     WalletApiOperation.PreparePayForUri,
     {
       talerPayUri: pubUnpaidStatus.taler_pay_uri,
     },
   );
+
+  t.assertTrue(preparePayResp.status === PreparePayResultType.PaymentPossible);
+
+  publicOrderStatusUrl.searchParams.set("timeout_ms", "5000");
+  publicOrderStatusUrl.searchParams.set(
+    "h_contract",
+    preparePayResp.contractTermsHash,
+  );
+
+  let publicOrderStatusPromise = axios.get(publicOrderStatusUrl.href, {
+    validateStatus: () => true,
+  });
 
   t.assertTrue(preparePayResp.status === PreparePayResultType.PaymentPossible);
 
@@ -137,3 +157,5 @@ export async function runMerchantLongpollingTest(t: GlobalTestState) {
 
   t.assertTrue(confirmPayRes.type === ConfirmPayResultType.Done);
 }
+
+runMerchantLongpollingTest.suites = ["merchant"];
