@@ -324,6 +324,7 @@ export const codecForPreparePayResultPaymentPossible = (): Codec<PreparePayResul
     .property("amountRaw", codecForAmountString())
     .property("contractTerms", codecForContractTerms())
     .property("proposalId", codecForString())
+    .property("contractTermsHash", codecForString())
     .property(
       "status",
       codecForConstString(PreparePayResultType.PaymentPossible),
@@ -381,6 +382,7 @@ export interface PreparePayResultPaymentPossible {
   status: PreparePayResultType.PaymentPossible;
   proposalId: string;
   contractTerms: ContractTerms;
+  contractTermsHash: string;
   amountRaw: string;
   amountEffective: string;
 }

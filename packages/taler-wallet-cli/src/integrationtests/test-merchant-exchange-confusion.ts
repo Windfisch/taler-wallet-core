@@ -44,6 +44,7 @@ import {
 } from "./faultInjection";
 import { defaultCoinConfig } from "./denomStructures";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+import { URL } from "url";
 
 /**
  * Run a test case with a simple TESTKUDOS Taler environment, consisting
@@ -211,9 +212,12 @@ export async function runMerchantExchangeConfusionTest(t: GlobalTestState) {
 
   const proposalId = preparePayResp.proposalId;
 
-  console.log("requesting", publicOrderStatusUrl);
+  const orderUrlWithHash = new URL(publicOrderStatusUrl);
+  orderUrlWithHash.searchParams.set("h_contract", preparePayResp.contractTermsHash);
 
-  publicOrderStatusResp = await axios.get(publicOrderStatusUrl, {
+  console.log("requesting", orderUrlWithHash.href);
+
+  publicOrderStatusResp = await axios.get(orderUrlWithHash.href, {
     validateStatus: () => true,
   });
 

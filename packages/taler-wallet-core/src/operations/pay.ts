@@ -1392,6 +1392,7 @@ export async function checkPaymentByProposalId(
       proposalId: proposal.proposalId,
       amountEffective: Amounts.stringify(totalCost),
       amountRaw: Amounts.stringify(res.paymentAmount),
+      contractTermsHash: d.contractData.contractTermsHash,
     };
   }
 
