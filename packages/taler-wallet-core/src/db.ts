@@ -1685,7 +1685,7 @@ export interface DepositGroupRecord {
   /**
    * Retry info.
    */
-  retryInfo: RetryInfo;
+  retryInfo?: RetryInfo;
 }
 
 /**

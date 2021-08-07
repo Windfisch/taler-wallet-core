@@ -209,7 +209,7 @@ export interface PendingWithdrawTask {
 export interface PendingDepositTask {
   type: PendingTaskType.Deposit;
   lastError: TalerErrorDetails | undefined;
-  retryInfo: RetryInfo;
+  retryInfo: RetryInfo | undefined;
   depositGroupId: string;
 }
 

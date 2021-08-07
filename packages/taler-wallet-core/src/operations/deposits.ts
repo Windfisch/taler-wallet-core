@@ -255,6 +255,8 @@ async function processDepositGroupImpl(
       }
       if (allDeposited) {
         dg.timestampFinished = getTimestampNow();
+        delete dg.lastError;
+        delete dg.retryInfo;
         await tx.depositGroups.put(dg);
       }
     });
