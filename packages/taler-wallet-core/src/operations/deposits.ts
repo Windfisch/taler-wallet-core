@@ -210,7 +210,7 @@ async function processDepositGroupImpl(
       continue;
     }
     const perm = depositPermissions[i];
-    const url = new URL(`/coins/${perm.coin_pub}/deposit`, perm.exchange_url);
+    const url = new URL(`coins/${perm.coin_pub}/deposit`, perm.exchange_url);
     const httpResp = await ws.http.postJson(url.href, {
       contribution: Amounts.stringify(perm.contribution),
       wire: depositGroup.wire,
