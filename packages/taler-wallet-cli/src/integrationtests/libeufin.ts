@@ -154,6 +154,14 @@ export interface LibeufinBankAccountImportDetails {
   connectionName: string;
 }
 
+export interface BankAccountInfo {
+  iban: string;
+  bic: string;
+  name: string;
+  currency: string;
+  label: string;
+}
+
 export interface LibeufinPreparedPaymentDetails {
   creditorIban: string;
   creditorBic: string;
@@ -758,6 +766,15 @@ export namespace LibeufinSandboxApi {
     });
   }
 
+  export async function createBankAccount(
+    libeufinSandboxService: LibeufinSandboxServiceInterface,
+    req: BankAccountInfo,
+  ) {
+    const baseUrl = libeufinSandboxService.baseUrl;
+    let url = new URL(`admin/bank-accounts/${req.label}`, baseUrl);
+    await axios.post(url.href, req);
+  }
+
   export async function createEbicsSubscriber(
     libeufinSandboxService: LibeufinSandboxServiceInterface,
     req: CreateEbicsSubscriberRequest,
@@ -833,6 +850,18 @@ export namespace LibeufinSandboxApi {
     );
     const res = await axios.get(url.href);
     return res.data as SandboxAccountTransactions;
+  }
+
+  export async function getAccountInfoWithBalance(
+    libeufinSandboxService: LibeufinSandboxServiceInterface,
+    accountLabel: string,
+  ): Promise<any> {
+    const baseUrl = libeufinSandboxService.baseUrl;
+    let url = new URL(
+      `admin/bank-accounts/${accountLabel}`,
+      baseUrl,
+    );
+    return await axios.get(url.href);
   }
 }
 

@@ -66,6 +66,7 @@ import { runLibeufinApiSchedulingTest } from "./test-libeufin-api-scheduling";
 import { runLibeufinApiBankconnectionTest } from "./test-libeufin-api-bankconnection";
 import { runLibeufinApiUsersTest } from "./test-libeufin-api-users";
 import { runLibeufinApiBankaccountTest } from "./test-libeufin-api-bankaccount";
+import { runLibeufinApiSandboxTransactionsTest } from "./test-libeufin-api-sandbox-transactions";
 import { runDepositTest } from "./test-deposit";
 import CancellationToken from "cancellationtoken";
 import { runMerchantInstancesTest } from "./test-merchant-instances";
@@ -106,6 +107,7 @@ const allTests: TestMainFunction[] = [
   runLibeufinApiUsersTest,
   runLibeufinApiBankaccountTest,
   runLibeufinApiBankconnectionTest,
+  runLibeufinApiSandboxTransactionsTest,
   runMerchantExchangeConfusionTest,
   runMerchantInstancesTest,
   runMerchantInstancesDeleteTest,
