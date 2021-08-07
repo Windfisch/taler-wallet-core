@@ -105,7 +105,7 @@ export async function createLibeufinTestEnvironment(
     userID: "user02",
   });
   await LibeufinSandboxApi.createEbicsBankAccount(libeufinSandbox, {
-    bic: "COBADEFXXX",
+    bic: "AUTOATW1XXX",
     iban: merchantIban,
     label: "merchantacct",
     name: "Merchant",
