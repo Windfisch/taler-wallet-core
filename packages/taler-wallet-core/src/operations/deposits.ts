@@ -294,7 +294,7 @@ export async function trackDepositGroup(
 
   for (const dp of depositPermissions) {
     const url = new URL(
-      `/deposits/${wireHash}/${depositGroup.merchantPub}/${depositGroup.contractTermsHash}/${dp.coin_pub}`,
+      `deposits/${wireHash}/${depositGroup.merchantPub}/${depositGroup.contractTermsHash}/${dp.coin_pub}`,
       dp.exchange_url,
     );
     const sig = await ws.cryptoApi.signTrackTransaction({

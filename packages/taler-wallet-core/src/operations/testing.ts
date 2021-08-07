@@ -244,7 +244,7 @@ async function checkPayment(
   merchantBackend: MerchantBackendInfo,
   orderId: string,
 ): Promise<CheckPaymentResponse> {
-  const reqUrl = new URL(`/private/orders/${orderId}`, merchantBackend.baseUrl);
+  const reqUrl = new URL(`private/orders/${orderId}`, merchantBackend.baseUrl);
   reqUrl.searchParams.set("order_id", orderId);
   const resp = await http.get(reqUrl.href, {
     headers: getMerchantAuthHeader(merchantBackend),
