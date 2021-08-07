@@ -180,6 +180,27 @@ async function gatherProposalPending(
   });
 }
 
+async function gatherDepositPending(
+  tx: GetReadOnlyAccess<{ depositGroups: typeof WalletStoresV1.depositGroups }>,
+  now: Timestamp,
+  resp: PendingOperationsResponse,
+): Promise<void> {
+  await tx.depositGroups.iter().forEach((dg) => {
+    if (dg.timestampFinished) {
+      return;
+    }
+    const timestampDue = dg.retryInfo?.nextRetry ?? getTimestampNow();
+    resp.pendingOperations.push({
+      type: PendingTaskType.Deposit,
+      givesLifeness: true,
+      timestampDue,
+      depositGroupId: dg.depositGroupId,
+      lastError: dg.lastError,
+      retryInfo: dg.retryInfo,
+    });
+  });
+}
+
 async function gatherTipPending(
   tx: GetReadOnlyAccess<{ tips: typeof WalletStoresV1.tips }>,
   now: Timestamp,
@@ -313,6 +334,7 @@ export async function getPendingOperations(
       await gatherRefreshPending(tx, now, resp);
       await gatherWithdrawalPending(tx, now, resp);
       await gatherProposalPending(tx, now, resp);
+      await gatherDepositPending(tx, now, resp);
       await gatherTipPending(tx, now, resp);
       await gatherPurchasePending(tx, now, resp);
       await gatherRecoupPending(tx, now, resp);

@@ -56,7 +56,9 @@ export async function runDepositTest(t: GlobalTestState) {
   );
   console.log("transactions", JSON.stringify(transactions, undefined, 2));
   t.assertDeepEqual(transactions.transactions[0].type, "withdrawal");
+  t.assertTrue(!transactions.transactions[0].pending);
   t.assertDeepEqual(transactions.transactions[1].type, "deposit");
+  t.assertTrue(!transactions.transactions[1].pending);
   // The raw amount is what ends up on the bank account, which includes
   // deposit and wire fees.
   t.assertDeepEqual(transactions.transactions[1].amountRaw, "TESTKUDOS:9.79");
