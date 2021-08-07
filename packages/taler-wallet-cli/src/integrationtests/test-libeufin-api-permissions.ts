@@ -17,12 +17,9 @@
 /**
  * Imports.
  */
-import { GlobalTestState, setupDb } from "./harness";
+import { GlobalTestState } from "./harness";
 import {
-  SandboxUserBundle,
   NexusUserBundle,
-  launchLibeufinServices,
-  LibeufinSandboxApi,
   LibeufinNexusApi,
   LibeufinNexusService,
 } from "./libeufin";
@@ -51,7 +48,7 @@ export async function runLibeufinApiPermissionsTest(t: GlobalTestState) {
   let transferPermission = await LibeufinNexusApi.getAllPermissions(nexus);
   let element = transferPermission.data["permissions"].pop();
   t.assertTrue(
-    element["permissionName"] == "facade.talerWireGateway.transfer" &&
+    element["permissionName"] == "facade.talerwiregateway.transfer" &&
       element["subjectId"] == "username-01",
   );
   let denyTransfer = user01nexus.twgTransferPermission;
@@ -63,4 +60,5 @@ export async function runLibeufinApiPermissionsTest(t: GlobalTestState) {
   transferPermission = await LibeufinNexusApi.getAllPermissions(nexus);
   t.assertTrue(transferPermission.data["permissions"].length == 0);
 }
+
 runLibeufinApiPermissionsTest.suites = ["libeufin"];

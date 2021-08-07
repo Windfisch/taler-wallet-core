@@ -1133,11 +1133,12 @@ export namespace LibeufinNexusApi {
 
   export async function changePassword(
     libeufinNexusService: LibeufinNexusServiceInterface,
+    username: string,
     req: UpdateNexusUserRequest,
     auth: NexusAuth,
   ) {
     const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(`/users/password`, baseUrl);
+    let url = new URL(`/users/${username}/password`, baseUrl);
     await axios.post(url.href, req, auth);
   }
 

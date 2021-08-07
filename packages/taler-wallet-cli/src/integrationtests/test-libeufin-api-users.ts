@@ -18,11 +18,7 @@
  * Imports.
  */
 import { GlobalTestState } from "./harness";
-import {
-  NexusUserBundle,
-  LibeufinNexusApi,
-  LibeufinNexusService,
-} from "./libeufin";
+import { LibeufinNexusApi, LibeufinNexusService } from "./libeufin";
 
 /**
  * Run basic test with LibEuFin.
@@ -42,13 +38,14 @@ export async function runLibeufinApiUsersTest(t: GlobalTestState) {
 
   await LibeufinNexusApi.changePassword(
     nexus,
+    "one",
     {
       newPassword: "got-changed",
     },
     {
       auth: {
-        username: "one",
-        password: "will-be-changed",
+        username: "admin",
+        password: "test",
       },
     },
   );
@@ -62,4 +59,5 @@ export async function runLibeufinApiUsersTest(t: GlobalTestState) {
   console.log(resp.data);
   t.assertTrue(resp.data["username"] == "one" && !resp.data["superuser"]);
 }
+
 runLibeufinApiUsersTest.suites = ["libeufin"];
