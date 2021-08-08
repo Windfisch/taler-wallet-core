@@ -23,6 +23,7 @@ import {
   PreparePayResultType,
   codecForMerchantOrderStatusUnpaid,
   ConfirmPayResultType,
+  URL,
 } from "@gnu-taler/taler-util";
 import axios from "axios";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
@@ -74,9 +75,9 @@ export async function runPaywallFlowTest(t: GlobalTestState) {
   const talerPayUriOne = orderStatus.taler_pay_uri;
 
   t.assertTrue(orderStatus.already_paid_order_id === undefined);
-  let publicOrderStatusUrl = orderStatus.order_status_url;
+  let publicOrderStatusUrl = new URL(orderStatus.order_status_url);
 
-  let publicOrderStatusResp = await axios.get(publicOrderStatusUrl, {
+  let publicOrderStatusResp = await axios.get(publicOrderStatusUrl.href, {
     validateStatus: () => true,
   });
 
@@ -103,10 +104,11 @@ export async function runPaywallFlowTest(t: GlobalTestState) {
 
   const proposalId = preparePayResp.proposalId;
 
-  publicOrderStatusResp = await axios.get(publicOrderStatusUrl, {
+  console.log("requesting", publicOrderStatusUrl.href);
+  publicOrderStatusResp = await axios.get(publicOrderStatusUrl.href, {
     validateStatus: () => true,
   });
-
+  console.log("response body", publicOrderStatusResp.data);
   if (publicOrderStatusResp.status != 402) {
     throw Error(
       `expected status 402 (after claiming), but got ${publicOrderStatusResp.status}`,
@@ -126,7 +128,7 @@ export async function runPaywallFlowTest(t: GlobalTestState) {
 
   t.assertTrue(confirmPayRes.type === ConfirmPayResultType.Done);
 
-  publicOrderStatusResp = await axios.get(publicOrderStatusUrl, {
+  publicOrderStatusResp = await axios.get(publicOrderStatusUrl.href, {
     validateStatus: () => true,
   });
 
@@ -192,7 +194,7 @@ export async function runPaywallFlowTest(t: GlobalTestState) {
   t.assertTrue(orderStatus.order_status === "unpaid");
 
   t.assertTrue(orderStatus.already_paid_order_id === undefined);
-  publicOrderStatusUrl = orderStatus.order_status_url;
+  publicOrderStatusUrl = new URL(orderStatus.order_status_url);
 
   // Here the re-purchase detection should kick in,
   // and the wallet should re-pay for the old order
@@ -230,7 +232,7 @@ export async function runPaywallFlowTest(t: GlobalTestState) {
   console.log("requesting public status", publicOrderStatusUrl);
 
   // Ask the order status of the claimed-but-unpaid order
-  publicOrderStatusResp = await axios.get(publicOrderStatusUrl, {
+  publicOrderStatusResp = await axios.get(publicOrderStatusUrl.href, {
     validateStatus: () => true,
   });
 
@@ -247,4 +249,4 @@ export async function runPaywallFlowTest(t: GlobalTestState) {
   t.assertTrue(pubUnpaidStatus.already_paid_order_id === firstOrderId);
 }
 
-runPaywallFlowTest.suites = ["wallet"];
+runPaywallFlowTest.suites = ["merchant", "wallet"];
