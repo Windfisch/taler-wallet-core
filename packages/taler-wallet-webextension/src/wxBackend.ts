@@ -34,6 +34,7 @@ import {
   DbAccess,
   WalletStoresV1,
   Wallet,
+  WalletApiOperation,
 } from "@gnu-taler/taler-wallet-core";
 import {
   classifyTalerUri,
@@ -260,6 +261,7 @@ async function reinitWallet(): Promise<void> {
     http,
     new BrowserCryptoWorkerFactory(),
   );
+  await wallet.handleCoreApiRequest("initWallet", "native-init", {});
   wallet.addNotificationListener((x) => {
     for (const x of notificationPorts) {
       try {
