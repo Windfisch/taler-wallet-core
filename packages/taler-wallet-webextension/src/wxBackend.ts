@@ -261,7 +261,13 @@ async function reinitWallet(): Promise<void> {
     http,
     new BrowserCryptoWorkerFactory(),
   );
-  await wallet.handleCoreApiRequest("initWallet", "native-init", {});
+  try {
+    await wallet.handleCoreApiRequest("initWallet", "native-init", {});
+  } catch (e) {
+    console.error("could not initialize wallet", e);
+    walletInit.reject(e);
+    return;
+  }
   wallet.addNotificationListener((x) => {
     for (const x of notificationPorts) {
       try {
