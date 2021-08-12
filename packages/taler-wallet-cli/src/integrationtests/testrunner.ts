@@ -76,6 +76,7 @@ import { runMerchantInstancesDeleteTest } from "./test-merchant-instances-delete
 import { runWalletBackupDoublespendTest } from "./test-wallet-backup-doublespend";
 import { runPaymentForgettableTest } from "./test-payment-forgettable.js";
 import { runPaymentZeroTest } from "./test-payment-zero.js";
+import { runMerchantSpecPublicOrdersTest } from "./test-merchant-spec-public-orders.js";
 
 /**
  * Test runner.
@@ -113,6 +114,7 @@ const allTests: TestMainFunction[] = [
   runMerchantInstancesDeleteTest,
   runMerchantInstancesUrlsTest,
   runMerchantLongpollingTest,
+  runMerchantSpecPublicOrdersTest,
   runMerchantRefundApiTest,
   runPayAbortTest,
   runPaymentClaimTest,

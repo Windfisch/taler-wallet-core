@@ -403,6 +403,13 @@ export enum TombstoneTag {
   DeleteRefund = "delete-refund",
 }
 
+export async function retryTransactionNow(
+  ws: InternalWalletState,
+  transactionId: string,
+): Promise<void> {
+  const [type, ...rest] = transactionId.split(":");
+}
+
 /**
  * Immediately retry the underlying operation
  * of a transaction.

@@ -52,6 +52,8 @@ export class NodeHttpLib implements HttpRequestLibrary {
     const method = opt?.method ?? "GET";
     let body = opt?.body;
 
+    logger.trace(`Requesting ${method} ${url}`);
+
     const parsedUrl = new URL(url);
     if (this.throttlingEnabled && this.throttle.applyThrottle(url)) {
       throw OperationFailedError.fromCode(
@@ -79,6 +81,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
         transformResponse: (x) => x,
         data: body,
         timeout,
+        maxRedirects: 0,
       });
     } catch (e) {
       throw OperationFailedError.fromCode(
