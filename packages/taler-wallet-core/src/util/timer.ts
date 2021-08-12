@@ -91,7 +91,7 @@ export const performanceNow: () => bigint = (() => {
   // @ts-ignore
   if (typeof performance !== "undefined") {
     // @ts-ignore
-    return () => BigInt(performance.now()) * BigInt(1000 * 1000);
+    return () => BigInt(Math.floor(performance.now() * 1000)) * BigInt(1000);
   }
 
   return () => BigInt(0);
