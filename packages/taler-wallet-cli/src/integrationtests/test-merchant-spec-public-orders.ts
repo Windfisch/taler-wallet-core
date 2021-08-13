@@ -273,10 +273,7 @@ export async function runMerchantSpecPublicOrdersTest(t: GlobalTestState) {
     const httpResp = await httpLib.get(url.href, {
       headers: { Accept: "text/html" },
     });
-    t.assertDeepEqual(httpResp.status, 302);
-    const location = httpResp.headers.get("Location");
-    console.log("location header:", location);
-    t.assertDeepEqual(location, "https://example.com/article42");
+    t.assertDeepEqual(httpResp.status, 200);
   }
 
   const confirmPayRes2 = await wallet.client.call(
