@@ -93,7 +93,7 @@ function Application() {
     <div>
       <DevContextProvider>
         <WalletNavBar />
-        <div style={{ padding: 8, width: 'calc(400px - 16px)', height: 'calc(320px - 34px - 16px)' }}>
+        <div style={{ width: 400, height: 290 }}>
           <Router history={createHashHistory()}>
             <Route path={Pages.balance} component={BalancePage} />
             <Route path={Pages.settings} component={SettingsPage} />

@@ -32,6 +32,7 @@ import {
 } from "../wxApi";
 import { WithdrawUriInfoResponse } from "@gnu-taler/taler-util";
 import { JSX } from "preact/jsx-runtime";
+import { WalletPage } from '../components/styled';
 
 interface Props {
   talerWithdrawUri?: string;
@@ -39,79 +40,72 @@ interface Props {
 
 export interface ViewProps {
   talerWithdrawUri?: string;
-  details?: WithdrawUriInfoResponse;
-  cancelled?: boolean;
+  details: WithdrawUriInfoResponse;
   selectedExchange?: string;
   accept: () => Promise<void>;
   setCancelled: (b: boolean) => void;
   setSelecting: (b: boolean) => void;
 };
 
-export function View({ talerWithdrawUri, details, cancelled, selectedExchange, accept, setCancelled, setSelecting }: ViewProps) {
-  const [state, setState] = useState(1)
-  setTimeout(() => {
-    setState(s => s + 1)
-  }, 1000);
-  if (!talerWithdrawUri) {
-    return <span><i18n.Translate>missing withdraw uri</i18n.Translate></span>;
-  }
-
-  if (!details) {
-    return <span><i18n.Translate>Loading...</i18n.Translate></span>;
-  }
-
-  if (cancelled) {
-    return <span><i18n.Translate>Withdraw operation has been cancelled.{state}</i18n.Translate></span>;
-  }
+export function View({ details, selectedExchange, accept, setCancelled, setSelecting }: ViewProps) {
 
   return (
-    <div>
-      <h1><i18n.Translate>Digital Cash Withdrawal</i18n.Translate></h1>
-      <p><i18n.Translate>
-        You are about to withdraw{" "}
-        <strong>{renderAmount(details.amount)}</strong> from your bank account
-        into your wallet.
-      </i18n.Translate></p>
-      {selectedExchange ? (
-        <p><i18n.Translate>
-          The exchange <strong>{selectedExchange}</strong> will be used as the
-          Taler payment service provider.
-        </i18n.Translate></p>
-      ) : null}
-
-      <div>
-        <button
-          class="pure-button button-success"
-          disabled={!selectedExchange}
-          onClick={() => accept()}
-        >
-          {i18n.str`Accept fees and withdraw`}
-        </button>
-        <p>
-          <span
-            role="button"
-            tabIndex={0}
-            style={{ textDecoration: "underline", cursor: "pointer" }}
-            onClick={() => setSelecting(true)}
-          >
-            {i18n.str`Chose different exchange provider`}
-          </span>
-          <br />
-          <span
-            role="button"
-            tabIndex={0}
-            style={{ textDecoration: "underline", cursor: "pointer" }}
-            onClick={() => setCancelled(true)}
-          >
-            {i18n.str`Cancel withdraw operation`}
-          </span>
-        </p>
+    <WalletPage>
+      <div style="border-bottom: 3px dashed #aa3939; margin-bottom: 2em;">
+        <h1 style="font-family: monospace; font-size: 250%;">
+          <span style="color: #aa3939;">❰</span>Taler Wallet<span style="color: #aa3939;">❱</span>
+        </h1>
       </div>
-    </div>
+      <div class="fade">
+        <div>
+          <h1><i18n.Translate>Digital Cash Withdrawal</i18n.Translate></h1>
+          <p><i18n.Translate>
+            You are about to withdraw{" "}
+            <strong>{renderAmount(details.amount)}</strong> from your bank account
+            into your wallet.
+          </i18n.Translate></p>
+          {selectedExchange ? (
+            <p><i18n.Translate>
+              The exchange <strong>{selectedExchange}</strong> will be used as the
+              Taler payment service provider.
+            </i18n.Translate></p>
+          ) : null}
+
+          <div>
+            <button
+              class="pure-button button-success"
+              disabled={!selectedExchange}
+              onClick={() => accept()}
+            >
+              {i18n.str`Accept fees and withdraw`}
+            </button>
+            <p>
+              <span
+                role="button"
+                tabIndex={0}
+                style={{ textDecoration: "underline", cursor: "pointer" }}
+                onClick={() => setSelecting(true)}
+              >
+                {i18n.str`Chose different exchange provider`}
+              </span>
+              <br />
+              <span
+                role="button"
+                tabIndex={0}
+                style={{ textDecoration: "underline", cursor: "pointer" }}
+                onClick={() => setCancelled(true)}
+              >
+                {i18n.str`Cancel withdraw operation`}
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </WalletPage>
   )
 }
 
-export function WithdrawPage({ talerWithdrawUri }: Props): JSX.Element {
+export function WithdrawPage({ talerWithdrawUri, ...rest }: Props): JSX.Element {
   const [details, setDetails] = useState<WithdrawUriInfoResponse | undefined>(undefined);
   const [selectedExchange, setSelectedExchange] = useState<
     string | undefined
@@ -120,27 +114,44 @@ export function WithdrawPage({ talerWithdrawUri }: Props): JSX.Element {
   const [selecting, setSelecting] = useState(false);
   const [errMsg, setErrMsg] = useState<string | undefined>("");
   const [updateCounter, setUpdateCounter] = useState(1);
+  const [state, setState] = useState(1)
+
+  // setTimeout(() => {
+  //   console.log('tick...')
+  //   setState(s => s + 1)
+  // }, 1000);
 
   useEffect(() => {
     return onUpdateNotification(() => {
+      console.log('updating...')
       setUpdateCounter(updateCounter + 1);
     });
   }, []);
 
   useEffect(() => {
+    console.log('on effect yes', talerWithdrawUri)
     if (!talerWithdrawUri) return
     const fetchData = async (): Promise<void> => {
-      const res = await getWithdrawalDetailsForUri({ talerWithdrawUri });
-      setDetails(res);
-      if (res.defaultExchangeBaseUrl) {
-        setSelectedExchange(res.defaultExchangeBaseUrl);
+      console.log('que pasa')
+      try {
+        const res = await getWithdrawalDetailsForUri({ talerWithdrawUri });
+        console.log('res', res)
+        setDetails(res);
+        if (res.defaultExchangeBaseUrl) {
+          setSelectedExchange(res.defaultExchangeBaseUrl);
+        }
+      } catch (e) {
+        console.error(e)
       }
     };
     fetchData();
-  }, [selectedExchange, errMsg, selecting, talerWithdrawUri, updateCounter]);
+  }, [selectedExchange, errMsg, selecting, talerWithdrawUri, updateCounter, state]);
+
+  if (!talerWithdrawUri) {
+    return <span><i18n.Translate>missing withdraw uri</i18n.Translate></span>;
+  }
 
   const accept = async (): Promise<void> => {
-    if (!talerWithdrawUri) return
     if (!selectedExchange) {
       throw Error("can't accept, no exchange selected");
     }
@@ -152,10 +163,16 @@ export function WithdrawPage({ talerWithdrawUri }: Props): JSX.Element {
     }
   };
 
+  if (!details) {
+    return <span><i18n.Translate>Loading...</i18n.Translate></span>;
+  }
+  if (cancelled) {
+    return <span><i18n.Translate>Withdraw operation has been cancelled.</i18n.Translate></span>;
+  }
+
   return <View accept={accept}
     setCancelled={setCancelled} setSelecting={setSelecting}
-    cancelled={cancelled} details={details} selectedExchange={selectedExchange}
-    talerWithdrawUri={talerWithdrawUri}
+    details={details} selectedExchange={selectedExchange}
   />
 }
 

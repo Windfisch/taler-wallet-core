@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountString, Timestamp, Transaction, TransactionsResponse, TransactionType } from "@gnu-taler/taler-util";
+import { AmountJson, Amounts, AmountString, Balance, Timestamp, Transaction, TransactionsResponse, TransactionType } from "@gnu-taler/taler-util";
 import { JSX } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import * as wxApi from "../wxApi";
@@ -25,6 +25,8 @@ export function HistoryPage(props: any): JSX.Element {
   const [transactions, setTransactions] = useState<
     TransactionsResponse | undefined
   >(undefined);
+  const balance = useBalances()
+  const balanceWithoutError = balance?.error ? [] : (balance?.response.balances || [])
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
@@ -38,16 +40,36 @@ export function HistoryPage(props: any): JSX.Element {
     return <div>Loading ...</div>;
   }
 
-  return <HistoryView list={[...transactions.transactions].reverse()} />;
+  return <HistoryView balances={balanceWithoutError} list={[...transactions.transactions].reverse()} />;
 }
 
-export function HistoryView({ list }: { list: Transaction[] }) {
-  return <PopupBox>
+function amountToString(c: AmountString) {
+  const idx = c.indexOf(':')
+  return `${c.substring(idx+1)} ${c.substring(0,idx)}`
+}
+
+
+
+export function HistoryView({ list, balances }: { list: Transaction[], balances: Balance[] }) {
+  return <PopupBox noPadding>
+    {balances.length > 0 && <header>
+      {balances.length === 1 && <div class="title">
+        Balance: <span>{amountToString(balances[0].available)}</span>
+      </div>}
+      {balances.length > 1 && <div class="title">
+        Balance: <ul style={{ margin: 0 }}>
+          {balances.map(b => <li>{b.available}</li>)}
+        </ul>
+      </div>}
+    </header>}
     <section>
-      {list.map((tx, i) => (
+      {list.slice(0, 3).map((tx, i) => (
         <TransactionItem key={i} tx={tx} />
       ))}
     </section>
+    <footer style={{ justifyContent: 'space-around' }}>
+      <a style={{ color: 'darkgreen', textDecoration:'none' }} href={Pages.transaction.replace(':tid', 'asd')}>VIEW MORE TRANSACTIONS</a>
+    </footer>
   </PopupBox>
 }
 
@@ -57,6 +79,8 @@ import imageRefund from '../../static/img/ri-refund-2-line.svg';
 import imageHandHeart from '../../static/img/ri-hand-heart-line.svg';
 import imageRefresh from '../../static/img/ri-refresh-line.svg';
 import { Column, ExtraLargeText, HistoryRow, PopupBox, Row, RowBorderGray, SmallTextLight } from "../components/styled";
+import { useBalances } from "../hooks/useBalances";
+import { formatDistance } from "date-fns";
 
 function TransactionItem(props: { tx: Transaction }): JSX.Element {
   const tx = props.tx;
@@ -144,23 +168,21 @@ function TransactionItem(props: { tx: Transaction }): JSX.Element {
 
 function TransactionLayout(props: TransactionLayoutProps): JSX.Element {
   const date = new Date(props.timestamp.t_ms);
-  const dateStr = date.toLocaleString([], {
-    dateStyle: "medium",
-    timeStyle: "short",
-  } as any);
+  const now = new Date();
+  const dateStr = formatDistance(date, now, { addSuffix: true })
   return (
     <HistoryRow>
       <img src={props.iconPath} />
       <Column>
-        <SmallTextLight>{dateStr}</SmallTextLight>
         <ExtraLargeText>
           <a href={Pages.transaction.replace(':tid', props.id)}><span>{props.title}</span></a>
           {props.pending ? (
             <span style={{ color: "darkblue" }}> (Pending)</span>
           ) : null}
         </ExtraLargeText>
+        <SmallTextLight>{dateStr}</SmallTextLight>
 
-        <div>{props.subtitle}</div>
+        {/* <div>{props.subtitle}</div> */}
       </Column>
       <TransactionAmount
         pending={props.pending}
@@ -202,7 +224,13 @@ function TransactionAmount(props: TransactionAmountProps): JSX.Element {
       sign = "";
   }
   return (
-    <Column style={{ color: props.pending ? "gray" : undefined }}>
+    <Column style={{
+      color:
+        props.pending ? "gray" :
+          (sign === '+' ? 'darkgreen' :
+            (sign === '-' ? 'darkred' :
+              undefined))
+    }}>
       <ExtraLargeText>
         {sign}
         {amount}

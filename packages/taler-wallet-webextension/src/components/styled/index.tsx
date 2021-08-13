@@ -11,13 +11,32 @@ export const PaymentStatus = styled.div<{ color: string }>`
   background-color: ${p => p.color};
 `
 
-export const PopupBox = styled.div`
-  height: calc(320px - 34px - 16px);
+export const WalletPage = styled.section`
+  border: solid 5px black;
+  border-radius: 10px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-top: 2em;
+  max-width: 50%;
+  padding: 2em;
+
+  margin: auto;
+  height: 100%;
+  
+  & h1:first-child {
+    margin-top: 0; 
+  }
+`
+
+export const PopupBox = styled.div<{ noPadding?: boolean }>`
+  height: 290px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 
   & > section {
+    padding-left: ${({ noPadding }) => noPadding ? '0px' : '8px'};
+    padding-right: ${({ noPadding }) => noPadding ? '0px' : '8px'};
     // this margin will send the section up when used with a header
     margin-bottom: auto; 
     overflow: auto;
@@ -35,6 +54,7 @@ export const PopupBox = styled.div`
     flex-direction: row;
     justify-content: space-between;
     display: flex;
+    padding: 8px;
     margin-bottom: 5px;
 
     & > div {
@@ -44,15 +64,23 @@ export const PopupBox = styled.div`
     & > h3 {
       margin: 0px;
     }
+
+    & > .title {
+      /* margin: 1em; */
+      font-size: large;
+      color: #3c4e92;
+    }
   }
 
   & > footer {
-    padding-top: 5px;
+    padding-top: 8px;
+    padding-bottom: 8px;
     flex-direction: row;
     justify-content: space-between;
     display: flex;
     & button {
-      margin-left: 5px;
+      margin-right: 8px;
+      margin-left: 8px;
     }
   }
 
@@ -145,6 +173,13 @@ export const Row = styled.div`
   padding: 0.5em;
 `
 
+export const Row2 = styled.div`
+  display: flex;
+  /* margin: 0.5em 0; */
+  justify-content: space-between;
+  padding: 0.5em;
+`
+
 export const Column = styled.div`
   display: flex;
   flex-direction: column;
@@ -154,10 +189,15 @@ export const Column = styled.div`
 
 export const RowBorderGray = styled(Row)`
   border: 1px solid gray;
-  border-radius: 0.5em;
+  /* border-radius: 0.5em; */
 `
 
-export const HistoryRow = styled(RowBorderGray)`
+export const RowLightBorderGray = styled(Row2)`
+  border: 1px solid lightgray;
+  /* border-radius: 0.5em; */
+`
+
+export const HistoryRow = styled(RowLightBorderGray)`
   & > ${Column}:last-of-type {
     margin-left: auto;
     align-self: center;
@@ -244,24 +284,24 @@ export const ErrorBox = styled.div`
     }
   }
 `
-export const PopupNavigation = styled.div`
-  background-color: #033;
+export const PopupNavigation = styled.div<{devMode?:boolean}>`
+  background-color:#0042b2;
+  height: 35px;
   
   & > a {
     color: #f8faf7;
-    padding-top: 0.7em;
     display: inline-block;
-    width: calc(400px / 5);
-    padding-bottom: 0.7em;
+    width: calc(400px / ${({ devMode }) => !devMode ? 4 : 5});
     text-align: center;
     text-decoration: none;
+    vertical-align: middle;
+    line-height: 35px;
   }
 
   & > a.active {
     background-color: #f8faf7;
-    color: #000;
+    color: #0042b2;
     font-weight: bold;
-
   }
 `;
 

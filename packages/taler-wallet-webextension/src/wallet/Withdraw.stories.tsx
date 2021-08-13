@@ -30,27 +30,12 @@ export default {
   },
 };
 
-export const WithoutURI = (a: any) => <View {...a} />;
-WithoutURI.args = {
-} as ViewProps
-
 export const WithoutDetails = (a: any) => <View {...a} />;
 WithoutDetails.args = {
-  talerWithdrawUri: 'http://something'
-} as ViewProps
-
-export const Cancelled = (a: any) => <View {...a} />;
-Cancelled.args = {
-  talerWithdrawUri: 'http://something',
-  details: {
-    amount: 'USD:2',
-  },
-  cancelled: true
 } as ViewProps
 
 export const CompleteWithExchange = (a: any) => <View {...a} />;
 CompleteWithExchange.args = {
-  talerWithdrawUri: 'http://something',
   details: {
     amount: 'USD:2',
   },
@@ -59,7 +44,6 @@ CompleteWithExchange.args = {
 
 export const CompleteWithoutExchange = (a: any) => <View {...a} />;
 CompleteWithoutExchange.args = {
-  talerWithdrawUri: 'http://something',
   details: {
     amount: 'USD:2',
   },

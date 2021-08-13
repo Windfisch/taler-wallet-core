@@ -26,8 +26,41 @@ import { AmountView } from "../renderHtml";
 import * as wxApi from "../wxApi";
 import { JSX } from "preact/jsx-runtime";
 
-interface Props { 
-  talerTipUri?: string 
+interface Props {
+  talerTipUri?: string
+}
+export interface ViewProps {
+  prepareTipResult: PrepareTipResult;
+  onAccept: () => void;
+  onIgnore: () => void;
+
+}
+export function View({ prepareTipResult, onAccept, onIgnore }: ViewProps) {
+  return <section class="main">
+    <h1>GNU Taler Wallet</h1>
+    <article class="fade">
+      {prepareTipResult.accepted ? (
+        <span>
+          Tip from <code>{prepareTipResult.merchantBaseUrl}</code> accepted. Check
+        your transactions list for more details.
+        </span>
+      ) : (
+          <div>
+            <p>
+              The merchant <code>{prepareTipResult.merchantBaseUrl}</code> is
+            offering you a tip of{" "}
+              <strong>
+                <AmountView amount={prepareTipResult.tipAmountEffective} />
+              </strong>{" "}
+            via the exchange <code>{prepareTipResult.exchangeBaseUrl}</code>
+            </p>
+            <button onClick={onAccept}>Accept tip</button>
+            <button onClick={onIgnore}>Ignore</button>
+          </div>
+        )}
+    </article>
+  </section>
+
 }
 
 export function TipPage({ talerTipUri }: Props): JSX.Element {
@@ -71,27 +104,7 @@ export function TipPage({ talerTipUri }: Props): JSX.Element {
     return <span>Loading ...</span>;
   }
 
-  if (prepareTipResult.accepted) {
-    return (
-      <span>
-        Tip from <code>{prepareTipResult.merchantBaseUrl}</code> accepted. Check
-        your transactions list for more details.
-      </span>
-    );
-  } else {
-    return (
-      <div>
-        <p>
-          The merchant <code>{prepareTipResult.merchantBaseUrl}</code> is
-          offering you a tip of{" "}
-          <strong>
-            <AmountView amount={prepareTipResult.tipAmountEffective} />
-          </strong>{" "}
-          via the exchange <code>{prepareTipResult.exchangeBaseUrl}</code>
-        </p>
-        <button onClick={doAccept}>Accept tip</button>
-        <button onClick={doIgnore}>Ignore</button>
-      </div>
-    );
-  }
+  return <View prepareTipResult={prepareTipResult}
+    onAccept={doAccept} onIgnore={doIgnore}
+  />
 }

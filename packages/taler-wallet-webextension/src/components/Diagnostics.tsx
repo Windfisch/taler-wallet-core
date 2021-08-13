@@ -4,30 +4,12 @@ import { PageLink } from "../renderHtml";
 import { WalletDiagnostics } from "@gnu-taler/taler-util";
 import { JSX } from "preact/jsx-runtime";
 
+interface Props {
+  timedOut: boolean;
+  diagnostics: WalletDiagnostics | undefined
+}
 
-export function Diagnostics(): JSX.Element | null {
-  const [timedOut, setTimedOut] = useState(false);
-  const [diagnostics, setDiagnostics] = useState<WalletDiagnostics | undefined>(
-    undefined
-  );
-
-  useEffect(() => {
-    let gotDiagnostics = false;
-    setTimeout(() => {
-      if (!gotDiagnostics) {
-        console.error("timed out");
-        setTimedOut(true);
-      }
-    }, 1000);
-    const doFetch = async (): Promise<void> => {
-      const d = await getDiagnostics();
-      console.log("got diagnostics", d);
-      gotDiagnostics = true;
-      setDiagnostics(d);
-    };
-    console.log("fetching diagnostics");
-    doFetch();
-  }, []);
+export function Diagnostics({timedOut, diagnostics}: Props): JSX.Element | null {
 
   if (timedOut) {
     return <p>Diagnostics timed out. Could not talk to the wallet backend.</p>;

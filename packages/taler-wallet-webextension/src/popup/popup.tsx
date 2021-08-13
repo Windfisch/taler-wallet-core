@@ -60,7 +60,7 @@ function Tab(props: TabProps): JSX.Element {
 }
 
 export function NavBar({devMode, path}:{path:string, devMode:boolean}) {
-  return <PopupNavigation>
+  return <PopupNavigation devMode={devMode}>
     <Tab target="/balance" current={path}>{i18n.str`Balance`}</Tab>
     <Tab target="/history" current={path}>{i18n.str`History`}</Tab>
     <Tab target="/backup" current={path}>{i18n.str`Backup`}</Tab>

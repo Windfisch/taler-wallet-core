@@ -24,13 +24,36 @@ import { JSX } from "preact/jsx-runtime";
 import { Checkbox } from "../components/Checkbox";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
 import { Diagnostics } from "../components/Diagnostics";
+import { WalletPage } from "../components/styled";
+import { useDiagnostics } from "../hooks/useDiagnostics";
+import { WalletDiagnostics } from "@gnu-taler/taler-util";
 
-export function WelcomePage(): JSX.Element {
+export function WelcomePage() {
   const [permissionsEnabled, togglePermissions] = useExtendedPermissions()
-  return (
-    <>
+  const [diagnostics, timedOut] = useDiagnostics()
+  return <View
+    permissionsEnabled={permissionsEnabled} togglePermissions={togglePermissions}
+    diagnostics={diagnostics} timedOut={timedOut}
+  />
+}
+
+export interface ViewProps {
+  permissionsEnabled: boolean,
+  togglePermissions: () => void,
+  diagnostics: WalletDiagnostics | undefined,
+  timedOut: boolean,
+}
+export function View({ permissionsEnabled, togglePermissions, diagnostics, timedOut }: ViewProps): JSX.Element {
+  return (<WalletPage>
+    <div style="border-bottom: 3px dashed #aa3939; margin-bottom: 2em;">
+      <h1 style="font-family: monospace; font-size: 250%;">
+        <span style="color: #aa3939;">❰</span>Taler Wallet<span style="color: #aa3939;">❱</span>
+      </h1>
+    </div>
+    <h1>Browser Extension Installed!</h1>
+    <div>
       <p>Thank you for installing the wallet.</p>
-      <Diagnostics />
+      <Diagnostics diagnostics={diagnostics} timedOut={timedOut} />
       <h2>Permissions</h2>
       <Checkbox label="Automatically open wallet based on page content"
         name="perm"
@@ -44,6 +67,7 @@ export function WelcomePage(): JSX.Element {
       <a href="https://demo.taler.net/" style={{ display: "block" }}>
         Learn how to top up your wallet balance »
       </a>
-    </>
+    </div>
+  </WalletPage>
   );
 }

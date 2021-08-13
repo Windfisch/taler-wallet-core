@@ -58,13 +58,12 @@ export function ProviderView({ info, onDelete, onSync, onBack, onExtend }: ViewP
   const isPaid = info.paymentStatus.type === ProviderPaymentType.Paid || info.paymentStatus.type === ProviderPaymentType.TermsChanged
   return (
     <PopupBox>
-      <header>
+      {info.backupProblem || info.lastError ? <header>
         <Error info={info} />
-
-      </header>
+      </header> : undefined }
       <header>
         <h3>{info.name} <SmallTextLight>{info.syncProviderBaseUrl}</SmallTextLight></h3>
-        <PaymentStatus color={isPaid ? 'rgb(28, 184, 65)' : 'rgb(202, 60, 60)'}>{isPaid ? 'Paid': 'Unpaid' }</PaymentStatus>
+        <PaymentStatus color={isPaid ? 'rgb(28, 184, 65)' : 'rgb(202, 60, 60)'}>{isPaid ? 'Paid' : 'Unpaid'}</PaymentStatus>
       </header>
       <section>
         <p><b>Last backup:</b> {lb == null || lb.t_ms == "never" ? "never" : format(lb.t_ms, 'dd MMM yyyy')} </p>

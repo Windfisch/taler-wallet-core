@@ -32,7 +32,6 @@ import { RefundPage } from "./wallet/Refund";
 import { TipPage } from './wallet/Tip';
 import Router, { route, Route } from "preact-router";
 
-
 function main(): void {
   try {
     const container = document.getElementById("container");
@@ -67,64 +66,15 @@ enum Pages {
 }
 
 function Application() {
-  const sp = new URL(document.location.href).searchParams
-  const queryParams: any = {}
-  sp.forEach((v, k) => { queryParams[k] = v; });
+  const h = createHashHistory();
+  return <Router history={h} >
 
-  return <Router history={createHashHistory()} >
+    <Route path={Pages.welcome} component={WelcomePage} />
+    <Route path={Pages.pay} component={PayPage} />
+    <Route path={Pages.refund} component={RefundPage} />
 
-    <Route path={Pages.welcome} component={() => {
-      return <section class="main">
-        <div style="border-bottom: 3px dashed #aa3939; margin-bottom: 2em;">
-          <h1 style="font-family: monospace; font-size: 250%;">
-            <span style="color: #aa3939;">❰</span>Taler Wallet<span style="color: #aa3939;">❱</span>
-          </h1>
-        </div>
-        <h1>Browser Extension Installed!</h1>
-        <div>
-          <WelcomePage />
-        </div>
-      </section>
-    }} />
-
-    <Route path={Pages.pay} component={() => {
-      return <section class="main">
-        <h1>GNU Taler Wallet</h1>
-        <article class="fade">
-          <PayPage talerPayUri={queryParams.talerPayUri} />
-        </article>
-      </section>
-    }} />
-
-    <Route path={Pages.refund} component={() => {
-      return <section class="main">
-        <h1>GNU Taler Wallet</h1>
-        <article class="fade">
-          <RefundPage talerRefundUri={queryParams.talerRefundUri} />
-        </article>
-      </section>
-    }} />
-
-    <Route path={Pages.tips} component={() => {
-      return <section class="main">
-        <h1>GNU Taler Wallet</h1>
-        <div>
-          <TipPage talerTipUri={queryParams.talerTipUri} />
-        </div>
-      </section>
-    }} />
-    <Route path={Pages.withdraw} component={() => {
-      return <section class="main">
-        <div style="border-bottom: 3px dashed #aa3939; margin-bottom: 2em;">
-          <h1 style="font-family: monospace; font-size: 250%;">
-            <span style="color: #aa3939;">❰</span>Taler Wallet<span style="color: #aa3939;">❱</span>
-          </h1>
-        </div>
-        <div class="fade">
-          <WithdrawPage talerWithdrawUri={queryParams.talerWithdrawUri} />
-        </div>
-      </section>
-    }} />
+    <Route path={Pages.tips} component={TipPage} />
+    <Route path={Pages.withdraw} component={WithdrawPage} />
 
     <Route path={Pages.reset_required} component={() => <div>no yet implemented</div>} />
     <Route path={Pages.payback} component={() => <div>no yet implemented</div>} />

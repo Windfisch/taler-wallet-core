@@ -56,7 +56,7 @@ export const decorators = [
           // add a fake header so it looks similar
           return <Fragment>
             <NavBar path={path} devMode={path === '/dev'} />
-            <div style={{ padding: 8, width: 'calc(400px - 16px)', height: 'calc(320px - 34px - 16px)' }}>
+            <div style={{ width: 400, height: 290 }}>
               <Story />
             </div>
           </Fragment>

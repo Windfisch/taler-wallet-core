@@ -30,7 +30,7 @@ import { FunctionalComponent } from 'preact';
 import { TransactionView as TestedComponent } from './Transaction';
 
 export default {
-  title: 'popup/transaction/details',
+  title: 'popup/history/details',
   component: TestedComponent,
   argTypes: {
     onRetry: { action: 'onRetry' },

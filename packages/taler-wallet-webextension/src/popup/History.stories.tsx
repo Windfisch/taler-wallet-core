@@ -30,7 +30,7 @@ import { FunctionalComponent } from 'preact';
 import { HistoryView as TestedComponent } from './History';
 
 export default {
-  title: 'popup/transaction/list',
+  title: 'popup/history/list',
   component: TestedComponent,
 };
 
@@ -112,12 +112,26 @@ function createExample<Props>(Component: FunctionalComponent<Props>, props: Part
 }
 
 export const Empty = createExample(TestedComponent, {
-  list: []
+  list: [],
+  balances: [{
+    available: 'TESTKUDOS:10',
+    pendingIncoming: 'TESTKUDOS:0',
+    pendingOutgoing: 'TESTKUDOS:0',
+    hasPendingTransactions: false,
+    requiresUserInput: false,
+  }]
 });
 
 
 export const One = createExample(TestedComponent, {
-  list: [exampleData.withdraw]
+  list: [exampleData.withdraw],
+  balances: [{
+    available: 'USD:10',
+    pendingIncoming: 'USD:0',
+    pendingOutgoing: 'USD:0',
+    hasPendingTransactions: false,
+    requiresUserInput: false,
+  }]
 });
 
 export const Several = createExample(TestedComponent, {
@@ -130,7 +144,40 @@ export const Several = createExample(TestedComponent, {
     exampleData.refund,
     exampleData.tip,
     exampleData.deposit,
-  ]
+  ],
+  balances: [{
+    available: 'TESTKUDOS:10',
+    pendingIncoming: 'TESTKUDOS:0',
+    pendingOutgoing: 'TESTKUDOS:0',
+    hasPendingTransactions: false,
+    requiresUserInput: false,
+  }]
+});
+
+export const SeveralWithTwoCurrencies = createExample(TestedComponent, {
+  list: [
+    exampleData.withdraw,
+    exampleData.payment,
+    exampleData.withdraw,
+    exampleData.payment,
+    exampleData.refresh,
+    exampleData.refund,
+    exampleData.tip,
+    exampleData.deposit,
+  ],
+  balances: [{
+    available: 'TESTKUDOS:10',
+    pendingIncoming: 'TESTKUDOS:0',
+    pendingOutgoing: 'TESTKUDOS:0',
+    hasPendingTransactions: false,
+    requiresUserInput: false,
+  },{
+    available: 'USD:10',
+    pendingIncoming: 'USD:0',
+    pendingOutgoing: 'USD:0',
+    hasPendingTransactions: false,
+    requiresUserInput: false,
+  }]
 });
 
 // export const WithdrawPending = createExample(TestedComponent, {

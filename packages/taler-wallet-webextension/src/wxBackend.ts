@@ -216,12 +216,8 @@ function makeSyncWalletRedirect(
 ): Record<string, unknown> {
   const innerUrl = new URL(chrome.extension.getURL(url));
   if (params) {
-    for (const key in params) {
-      const p = params[key];
-      if (p) {
-        innerUrl.searchParams.set(key, p);
-      }
-    }
+    const hParams = Object.keys(params).map(k => `${k}=${params[k]}`).join('&')
+    innerUrl.hash = innerUrl.hash + '?' + hParams
   }
   if (isFirefox()) {
     // Some platforms don't support the sync redirect (yet), so fall back to

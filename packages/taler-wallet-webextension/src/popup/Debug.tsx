@@ -16,10 +16,12 @@
 
 import { JSX } from "preact";
 import { Diagnostics } from "../components/Diagnostics";
+import { useDiagnostics } from "../hooks/useDiagnostics.js";
 import * as wxApi from "../wxApi";
 
 
 export function DeveloperPage(props: any): JSX.Element {
+  const [status, timedOut] = useDiagnostics();
   return (
     <div>
       <p>Debug tools:</p>
@@ -27,7 +29,7 @@ export function DeveloperPage(props: any): JSX.Element {
       <br />
       <button onClick={confirmReset}>reset</button>
       <button onClick={reload}>reload chrome extension</button>
-      <Diagnostics />
+      <Diagnostics diagnostics={status} timedOut={timedOut} />
     </div>
   );
 }

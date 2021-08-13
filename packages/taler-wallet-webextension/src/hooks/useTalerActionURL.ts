@@ -57,12 +57,8 @@ function makeExtensionUrlWithParams(
 ): string {
   const innerUrl = new URL(chrome.extension.getURL("/" + url));
   if (params) {
-    for (const key in params) {
-      const p = params[key];
-      if (p) {
-        innerUrl.searchParams.set(key, p);
-      }
-    }
+    const hParams = Object.keys(params).map(k => `${k}=${params[k]}`).join('&')
+    innerUrl.hash = innerUrl.hash + '?' + hParams
   }
   return innerUrl.href;
 }

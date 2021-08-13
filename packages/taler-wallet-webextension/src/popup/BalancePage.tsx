@@ -43,7 +43,7 @@ export function BalanceView({ balance, Linker }: BalanceViewProps) {
       <div>
         <p>{i18n.str`Error: could not retrieve balance information.`}</p>
         <p>
-          Click <Linker pageName="welcome.html">here</Linker> for help and
+          Click <Linker pageName="welcome">here</Linker> for help and
           diagnostics.
         </p>
       </div>

@@ -29,7 +29,7 @@ import * as wxApi from "../wxApi";
 
 import { useState, useEffect } from "preact/hooks";
 
-import { getJsonI18n, i18n } from "@gnu-taler/taler-util";
+import { ConfirmPayResultDone, getJsonI18n, i18n } from "@gnu-taler/taler-util";
 import {
   PreparePayResult,
   ConfirmPayResult,
@@ -45,13 +45,54 @@ interface Props {
   talerPayUri?: string
 }
 
+export function AlreadyPaid({ payStatus }: { payStatus: PreparePayResult }) {
+  const fulfillmentUrl = payStatus.contractTerms.fulfillment_url;
+  let message;
+  if (fulfillmentUrl) {
+    message = (
+      <span>
+        You have already paid for this article. Click{" "}
+        <a href={fulfillmentUrl} target="_bank" rel="external">here</a> to view it again.
+      </span>
+    );
+  } else {
+    message = <span>
+      You have already paid for this article:{" "}
+      <em>
+        {payStatus.contractTerms.fulfillment_message ?? "no message given"}
+      </em>
+    </span>;
+  }
+  return <section class="main">
+    <h1>GNU Taler Wallet</h1>
+    <article class="fade">
+      {message}
+    </article>
+  </section>
+}
+
+const doPayment = async (payStatus: PreparePayResult): Promise<ConfirmPayResultDone> => {
+  if (payStatus.status !== "payment-possible") {
+    throw Error(`invalid state: ${payStatus.status}`);
+  }
+  const proposalId = payStatus.proposalId;
+  const res = await wxApi.confirmPay(proposalId, undefined);
+  if (res.type !== ConfirmPayResultType.Done) {
+    throw Error("payment pending");
+  }
+  const fu = res.contractTerms.fulfillment_url;
+  if (fu) {
+    document.location.href = fu;
+  }
+  return res;
+};
+
+
+
 export function PayPage({ talerPayUri }: Props): JSX.Element {
   const [payStatus, setPayStatus] = useState<PreparePayResult | undefined>(undefined);
   const [payResult, setPayResult] = useState<ConfirmPayResult | undefined>(undefined);
   const [payErrMsg, setPayErrMsg] = useState<string | undefined>("");
-  const [numTries, setNumTries] = useState(0);
-  const [loading, setLoading] = useState(false);
-  let totalFees: AmountJson | undefined = undefined;
 
   useEffect(() => {
     if (!talerPayUri) return;
@@ -60,94 +101,15 @@ export function PayPage({ talerPayUri }: Props): JSX.Element {
       setPayStatus(p);
     };
     doFetch();
-  }, [numTries, talerPayUri]);
+  }, [talerPayUri]);
 
   if (!talerPayUri) {
     return <span>missing pay uri</span>
   }
-  
+
   if (!payStatus) {
     return <span>Loading payment information ...</span>;
   }
-
-  let insufficientBalance = false;
-  if (payStatus.status == PreparePayResultType.InsufficientBalance) {
-    insufficientBalance = true;
-  }
-
-  if (payStatus.status === PreparePayResultType.PaymentPossible) {
-    const amountRaw = Amounts.parseOrThrow(payStatus.amountRaw);
-    const amountEffective: AmountJson = Amounts.parseOrThrow(
-      payStatus.amountEffective,
-    );
-    totalFees = Amounts.sub(amountEffective, amountRaw).amount;
-  }
-
-  if (
-    payStatus.status === PreparePayResultType.AlreadyConfirmed &&
-    numTries === 0
-  ) {
-    const fulfillmentUrl = payStatus.contractTerms.fulfillment_url;
-    if (fulfillmentUrl) {
-      return (
-        <span>
-          You have already paid for this article. Click{" "}
-          <a href={fulfillmentUrl} target="_bank" rel="external">here</a> to view it again.
-        </span>
-      );
-    } else {
-      <span>
-        You have already paid for this article:{" "}
-        <em>
-          {payStatus.contractTerms.fulfillment_message ?? "no message given"}
-        </em>
-      </span>;
-    }
-  }
-
-  const contractTerms: ContractTerms = payStatus.contractTerms;
-
-  if (!contractTerms) {
-    return (
-      <span>
-        Error: did not get contract terms from merchant or wallet backend.
-      </span>
-    );
-  }
-
-  let merchantName: VNode;
-  if (contractTerms.merchant && contractTerms.merchant.name) {
-    merchantName = <strong>{contractTerms.merchant.name}</strong>;
-  } else {
-    merchantName = <strong>(pub: {contractTerms.merchant_pub})</strong>;
-  }
-
-  const amount = (
-    <strong>{renderAmount(Amounts.parseOrThrow(contractTerms.amount))}</strong>
-  );
-
-  const doPayment = async (): Promise<void> => {
-    if (payStatus.status !== "payment-possible") {
-      throw Error(`invalid state: ${payStatus.status}`);
-    }
-    const proposalId = payStatus.proposalId;
-    setNumTries(numTries + 1);
-    try {
-      setLoading(true);
-      const res = await wxApi.confirmPay(proposalId, undefined);
-      if (res.type !== ConfirmPayResultType.Done) {
-        throw Error("payment pending");
-      }
-      const fu = res.contractTerms.fulfillment_url;
-      if (fu) {
-        document.location.href = fu;
-      }
-      setPayResult(res);
-    } catch (e) {
-      console.error(e);
-      setPayErrMsg(e.message);
-    }
-  };
 
   if (payResult && payResult.type === ConfirmPayResultType.Done) {
     if (payResult.contractTerms.fulfillment_message) {
@@ -168,57 +130,124 @@ export function PayPage({ talerPayUri }: Props): JSX.Element {
     }
   }
 
-  return (
-    <div>
-      <p>
-        <i18n.Translate>
-          The merchant <span>{merchantName}</span> offers you to purchase:
-        </i18n.Translate>
-        <div style={{ textAlign: "center" }}>
-          <strong>{contractTerms.summary}</strong>
-        </div>
-        {totalFees ? (
-          <i18n.Translate>
-            The total price is <span>{amount} </span>
-            (plus <span>{renderAmount(totalFees)}</span> fees).
-          </i18n.Translate>
-        ) : (
-          <i18n.Translate>
-            The total price is <span>{amount}</span>.
-          </i18n.Translate>
-        )}
-      </p>
+  const onClick = async () => {
+    try {
+      const res = await doPayment(payStatus)
+      setPayResult(res);
+    } catch (e) {
+      console.error(e);
+      setPayErrMsg(e.message);
+    }
 
-      {insufficientBalance ? (
-        <div>
-          <p style={{ color: "red", fontWeight: "bold" }}>
-            Unable to pay: Your balance is insufficient.
-          </p>
-        </div>
-      ) : null}
+  }
 
-      {payErrMsg ? (
-        <div>
-          <p>Payment failed: {payErrMsg}</p>
-          <button
-            class="pure-button button-success"
-            onClick={() => doPayment()}
-          >
-            {i18n.str`Retry`}
-          </button>
-        </div>
-      ) : (
-        <div>
-          <ProgressButton
-            isLoading={loading}
-            disabled={insufficientBalance}
-            onClick={() => doPayment()}
-          >
-            {i18n.str`Confirm payment`}
-          </ProgressButton>
-        </div>
-      )}
-    </div>
-  );
+  return <PaymentRequestView payStatus={payStatus} onClick={onClick} payErrMsg={payErrMsg} />;
 }
 
+export interface PaymentRequestViewProps {
+  payStatus: PreparePayResult;
+  onClick: () => void;
+  payErrMsg?: string;
+
+}
+export function PaymentRequestView({ payStatus, onClick, payErrMsg }: PaymentRequestViewProps) {
+  let totalFees: AmountJson | undefined = undefined;
+  let insufficientBalance = false;
+  const [loading, setLoading] = useState(false);
+  const contractTerms: ContractTerms = payStatus.contractTerms;
+
+  if (
+    payStatus.status === PreparePayResultType.AlreadyConfirmed
+  ) {
+    return <AlreadyPaid payStatus={payStatus} />
+  }
+
+  if (!contractTerms) {
+    return (
+      <span>
+        Error: did not get contract terms from merchant or wallet backend.
+      </span>
+    );
+  }
+
+  if (payStatus.status == PreparePayResultType.InsufficientBalance) {
+    insufficientBalance = true;
+  }
+
+  if (payStatus.status === PreparePayResultType.PaymentPossible) {
+    const amountRaw = Amounts.parseOrThrow(payStatus.amountRaw);
+    const amountEffective: AmountJson = Amounts.parseOrThrow(
+      payStatus.amountEffective,
+    );
+    totalFees = Amounts.sub(amountEffective, amountRaw).amount;
+  }
+
+  let merchantName: VNode;
+  if (contractTerms.merchant && contractTerms.merchant.name) {
+    merchantName = <strong>{contractTerms.merchant.name}</strong>;
+  } else {
+    merchantName = <strong>(pub: {contractTerms.merchant_pub})</strong>;
+  }
+
+  const amount = (
+    <strong>{renderAmount(Amounts.parseOrThrow(contractTerms.amount))}</strong>
+  );
+
+  return <section class="main">
+    <h1>GNU Taler Wallet</h1>
+    <article class="fade">
+      <div>
+        <p>
+          <i18n.Translate>
+            The merchant <span>{merchantName}</span> offers you to purchase:
+      </i18n.Translate>
+          <div style={{ textAlign: "center" }}>
+            <strong>{contractTerms.summary}</strong>
+          </div>
+          {totalFees ? (
+            <i18n.Translate>
+              The total price is <span>{amount} </span>
+        (plus <span>{renderAmount(totalFees)}</span> fees).
+            </i18n.Translate>
+          ) : (
+              <i18n.Translate>
+                The total price is <span>{amount}</span>.
+              </i18n.Translate>
+            )}
+        </p>
+
+        {insufficientBalance ? (
+          <div>
+            <p style={{ color: "red", fontWeight: "bold" }}>
+              Unable to pay: Your balance is insufficient.
+            </p>
+          </div>
+        ) : null}
+
+        {payErrMsg ? (
+          <div>
+            <p>Payment failed: {payErrMsg}</p>
+            <button
+              class="pure-button button-success"
+              onClick={onClick}
+            >
+              {i18n.str`Retry`}
+            </button>
+          </div>
+        ) : (
+            <div>
+              <ProgressButton
+                isLoading={loading}
+                disabled={insufficientBalance}
+                onClick={onClick}
+              >
+                {i18n.str`Confirm payment`}
+              </ProgressButton>
+            </div>
+          )}
+      </div>
+    </article>
+  </section>
+
+
+}

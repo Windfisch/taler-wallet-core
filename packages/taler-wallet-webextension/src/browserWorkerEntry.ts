@@ -68,6 +68,6 @@ worker.onmessage = (msg: MessageEvent) => {
   }
 
   handleRequest(operation, id, args).catch((e) => {
-    console.error("error in browsere worker", e);
+    console.error("error in browser worker", e);
   });
 };

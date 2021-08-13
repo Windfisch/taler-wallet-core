@@ -68,7 +68,7 @@ const names: LangsNames = {
 export function SettingsView({ lang, changeLang, deviceName, setDeviceName, permissionsEnabled, togglePermissions, developerMode, toggleDeveloperMode }: ViewProps): VNode {
   return (
     <div>
-      <section style={{ height: 'calc(320px - 34px - 16px)', overflow: 'auto' }}>
+      <section style={{ height: 300, overflow: 'auto' }}>
         <h2><i18n.Translate>Wallet</i18n.Translate></h2>
         <SelectList
           value={lang}
