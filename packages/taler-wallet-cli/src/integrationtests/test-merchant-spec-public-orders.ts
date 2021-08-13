@@ -254,7 +254,7 @@ export async function runMerchantSpecPublicOrdersTest(t: GlobalTestState) {
     t.assertDeepEqual(httpResp.status, 200);
   }
 
-  // paid, access with correct claim token
+  // paid, access with correct claim token, JSON
   {
     const url = new URL(`orders/${orderId}`, merchantBaseUrl);
     url.searchParams.set("token", claimToken);
@@ -262,6 +262,21 @@ export async function runMerchantSpecPublicOrdersTest(t: GlobalTestState) {
     const r = await httpResp.json();
     console.log(r);
     t.assertDeepEqual(httpResp.status, 200);
+    const respFulfillmentUrl = r.fulfillment_url;
+    t.assertDeepEqual(respFulfillmentUrl, "https://example.com/article42");
+  }
+
+  // paid, access with correct claim token, HTML
+  {
+    const url = new URL(`orders/${orderId}`, merchantBaseUrl);
+    url.searchParams.set("token", claimToken);
+    const httpResp = await httpLib.get(url.href, {
+      headers: { Accept: "text/html" },
+    });
+    t.assertDeepEqual(httpResp.status, 302);
+    const location = httpResp.headers.get("Location");
+    console.log("location header:", location);
+    t.assertDeepEqual(location, "https://example.com/article42");
   }
 
   const confirmPayRes2 = await wallet.client.call(
