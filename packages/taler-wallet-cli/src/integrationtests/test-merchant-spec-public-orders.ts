@@ -28,7 +28,14 @@ import {
   NodeHttpLib,
   WalletApiOperation,
 } from "@gnu-taler/taler-wallet-core";
-import { GlobalTestState, MerchantPrivateApi, WalletCli } from "./harness";
+import {
+  BankService,
+  ExchangeService,
+  GlobalTestState,
+  MerchantPrivateApi,
+  MerchantService,
+  WalletCli,
+} from "./harness";
 import {
   createSimpleTestkudosEnvironment,
   withdrawViaBank,
@@ -36,65 +43,22 @@ import {
 
 const httpLib = new NodeHttpLib();
 
-/**
- * Checks for the /orders/{id} endpoint of the merchant.
- *
- * The tests here should exercise all code paths in the executable
- * specification of the endpoint.
- */
-export async function runMerchantSpecPublicOrdersTest(t: GlobalTestState) {
-  const {
-    wallet,
-    bank,
-    exchange,
-    merchant,
-  } = await createSimpleTestkudosEnvironment(t);
-  const wallet2 = new WalletCli(t);
+interface Context {
+  merchant: MerchantService;
+  merchantBaseUrl: string;
+  bank: BankService;
+  exchange: ExchangeService;
+}
 
-  // Withdraw digital cash into the wallet.
-
+async function testWithClaimToken(
+  t: GlobalTestState,
+  c: Context,
+): Promise<void> {
+  const wallet = new WalletCli(t, "withclaimtoken");
+  const { bank, exchange } = c;
+  const { merchant, merchantBaseUrl } = c;
   await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:20" });
-  await withdrawViaBank(t, {
-    wallet: wallet2,
-    bank,
-    exchange,
-    amount: "TESTKUDOS:20",
-  });
-  // Base URL for the default instance.
-  const merchantBaseUrl = merchant.makeInstanceBaseUrl();
-
-  {
-    const httpResp = await httpLib.get(new URL("config", merchantBaseUrl).href);
-    const r = await httpResp.json();
-    console.log(r);
-    t.assertDeepEqual(r.currency, "TESTKUDOS");
-  }
-
-  {
-    const httpResp = await httpLib.get(
-      new URL("orders/foo", merchantBaseUrl).href,
-    );
-    const r = await httpResp.json();
-    console.log(r);
-    t.assertDeepEqual(httpResp.status, 404);
-    // FIXME: also check Taler error code
-  }
-
-  {
-    const httpResp = await httpLib.get(
-      new URL("orders/foo", merchantBaseUrl).href,
-      {
-        headers: {
-          Accept: "text/html",
-        },
-      },
-    );
-    const r = await httpResp.text();
-    console.log(r);
-    t.assertDeepEqual(httpResp.status, 404);
-    // FIXME: also check Taler error code
-  }
-
+  const sessionId = "mysession";
   const orderResp = await MerchantPrivateApi.createOrder(merchant, "default", {
     order: {
       summary: "Buy me!",
@@ -280,7 +244,7 @@ export async function runMerchantSpecPublicOrdersTest(t: GlobalTestState) {
     WalletApiOperation.ConfirmPay,
     {
       proposalId: proposalId,
-      sessionId: "mysession",
+      sessionId: sessionId,
     },
   );
 
@@ -317,7 +281,7 @@ export async function runMerchantSpecPublicOrdersTest(t: GlobalTestState) {
   {
     const url = new URL(`orders/${apOrderId}`, merchantBaseUrl);
     url.searchParams.set("token", apToken);
-    url.searchParams.set("session_id", "mysession");
+    url.searchParams.set("session_id", sessionId);
     const httpResp = await httpLib.get(url.href);
     const r = await httpResp.json();
     console.log(r);
@@ -330,7 +294,7 @@ export async function runMerchantSpecPublicOrdersTest(t: GlobalTestState) {
   {
     const url = new URL(`orders/${apOrderId}`, merchantBaseUrl);
     url.searchParams.set("token", apToken);
-    url.searchParams.set("session_id", "mysession");
+    url.searchParams.set("session_id", sessionId);
     const httpResp = await httpLib.get(url.href, {
       headers: { Accept: "text/html" },
     });
@@ -339,6 +303,323 @@ export async function runMerchantSpecPublicOrdersTest(t: GlobalTestState) {
     console.log("location header:", location);
     t.assertDeepEqual(location, "https://example.com/article42");
   }
+}
+
+async function testWithoutClaimToken(
+  t: GlobalTestState,
+  c: Context,
+): Promise<void> {
+  const wallet = new WalletCli(t, "withoutct");
+  const sessionId = "mysession2";
+  const { bank, exchange } = c;
+  const { merchant, merchantBaseUrl } = c;
+  await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:20" });
+  const orderResp = await MerchantPrivateApi.createOrder(merchant, "default", {
+    order: {
+      summary: "Buy me!",
+      amount: "TESTKUDOS:5",
+      fulfillment_url: "https://example.com/article42",
+      public_reorder_url: "https://example.com/article42-share",
+    },
+    create_token: false,
+  });
+
+  const orderId = orderResp.order_id;
+  let talerPayUri: string;
+
+  {
+    const httpResp = await httpLib.get(
+      new URL(`orders/${orderId}`, merchantBaseUrl).href,
+    );
+    const r = await httpResp.json();
+    t.assertDeepEqual(httpResp.status, 402);
+    console.log(r);
+  }
+
+  {
+    const url = new URL(`orders/${orderId}`, merchantBaseUrl);
+    const httpResp = await httpLib.get(url.href);
+    const r = await httpResp.json();
+    t.assertDeepEqual(httpResp.status, 402);
+    console.log(r);
+    talerPayUri = r.taler_pay_uri;
+    t.assertTrue(!!talerPayUri);
+  }
+
+  {
+    const url = new URL(`orders/${orderId}`, merchantBaseUrl);
+    const httpResp = await httpLib.get(url.href, {
+      headers: {
+        Accept: "text/html",
+      },
+    });
+    const r = await httpResp.text();
+    t.assertDeepEqual(httpResp.status, 402);
+    console.log(r);
+  }
+
+  const preparePayResp = await wallet.client.call(
+    WalletApiOperation.PreparePayForUri,
+    {
+      talerPayUri,
+    },
+  );
+
+  console.log(preparePayResp);
+
+  t.assertTrue(preparePayResp.status === PreparePayResultType.PaymentPossible);
+  const contractTermsHash = preparePayResp.contractTermsHash;
+  const proposalId = preparePayResp.proposalId;
+
+  // claimed, unpaid, access with wrong h_contract
+  {
+    const url = new URL(`orders/${orderId}`, merchantBaseUrl);
+    const hcWrong = encodeCrock(getRandomBytes(64));
+    url.searchParams.set("h_contract", hcWrong);
+    const httpResp = await httpLib.get(url.href);
+    const r = await httpResp.json();
+    console.log(r);
+    t.assertDeepEqual(httpResp.status, 403);
+  }
+
+  // claimed, unpaid, access with wrong claim token
+  {
+    const url = new URL(`orders/${orderId}`, merchantBaseUrl);
+    const ctWrong = encodeCrock(getRandomBytes(16));
+    url.searchParams.set("token", ctWrong);
+    const httpResp = await httpLib.get(url.href);
+    const r = await httpResp.json();
+    console.log(r);
+    t.assertDeepEqual(httpResp.status, 403);
+  }
+
+  // claimed, unpaid, no claim token
+  {
+    const url = new URL(`orders/${orderId}`, merchantBaseUrl);
+    const httpResp = await httpLib.get(url.href);
+    const r = await httpResp.json();
+    console.log(r);
+    t.assertDeepEqual(httpResp.status, 402);
+  }
+
+  // claimed, unpaid, access with correct contract terms hash
+  {
+    const url = new URL(`orders/${orderId}`, merchantBaseUrl);
+    url.searchParams.set("h_contract", contractTermsHash);
+    const httpResp = await httpLib.get(url.href);
+    const r = await httpResp.json();
+    console.log(r);
+    t.assertDeepEqual(httpResp.status, 402);
+  }
+
+  // claimed, unpaid, access without credentials
+  {
+    const url = new URL(`orders/${orderId}`, merchantBaseUrl);
+    const httpResp = await httpLib.get(url.href);
+    const r = await httpResp.json();
+    console.log(r);
+    // No credentials, but the order doesn't require a claim token.
+    // This effectively means that the order ID is already considered
+    // enough authentication, at least to check for the basic order status
+    t.assertDeepEqual(httpResp.status, 402);
+  }
+
+  const confirmPayRes = await wallet.client.call(
+    WalletApiOperation.ConfirmPay,
+    {
+      proposalId: proposalId,
+    },
+  );
+
+  t.assertTrue(confirmPayRes.type === ConfirmPayResultType.Done);
+
+  // paid, access without credentials
+  {
+    const url = new URL(`orders/${orderId}`, merchantBaseUrl);
+    const httpResp = await httpLib.get(url.href);
+    const r = await httpResp.json();
+    console.log(r);
+    t.assertDeepEqual(httpResp.status, 200);
+  }
+
+  // paid, access with wrong h_contract
+  {
+    const url = new URL(`orders/${orderId}`, merchantBaseUrl);
+    const hcWrong = encodeCrock(getRandomBytes(64));
+    url.searchParams.set("h_contract", hcWrong);
+    const httpResp = await httpLib.get(url.href);
+    const r = await httpResp.json();
+    console.log(r);
+    t.assertDeepEqual(httpResp.status, 403);
+  }
+
+  // paid, access with wrong claim token
+  {
+    const url = new URL(`orders/${orderId}`, merchantBaseUrl);
+    const ctWrong = encodeCrock(getRandomBytes(16));
+    url.searchParams.set("token", ctWrong);
+    const httpResp = await httpLib.get(url.href);
+    const r = await httpResp.json();
+    console.log(r);
+    t.assertDeepEqual(httpResp.status, 403);
+  }
+
+  // paid, access with correct h_contract
+  {
+    const url = new URL(`orders/${orderId}`, merchantBaseUrl);
+    url.searchParams.set("h_contract", contractTermsHash);
+    const httpResp = await httpLib.get(url.href);
+    const r = await httpResp.json();
+    console.log(r);
+    t.assertDeepEqual(httpResp.status, 200);
+  }
+
+  // paid, JSON
+  {
+    const url = new URL(`orders/${orderId}`, merchantBaseUrl);
+    const httpResp = await httpLib.get(url.href);
+    const r = await httpResp.json();
+    console.log(r);
+    t.assertDeepEqual(httpResp.status, 200);
+    const respFulfillmentUrl = r.fulfillment_url;
+    t.assertDeepEqual(respFulfillmentUrl, "https://example.com/article42");
+  }
+
+  // paid, HTML
+  {
+    const url = new URL(`orders/${orderId}`, merchantBaseUrl);
+    const httpResp = await httpLib.get(url.href, {
+      headers: { Accept: "text/html" },
+    });
+    t.assertDeepEqual(httpResp.status, 200);
+  }
+
+  const confirmPayRes2 = await wallet.client.call(
+    WalletApiOperation.ConfirmPay,
+    {
+      proposalId: proposalId,
+      sessionId: sessionId,
+    },
+  );
+
+  t.assertTrue(confirmPayRes2.type === ConfirmPayResultType.Done);
+
+  // Create another order with identical fulfillment URL to test the "already paid" flow
+  const alreadyPaidOrderResp = await MerchantPrivateApi.createOrder(
+    merchant,
+    "default",
+    {
+      order: {
+        summary: "Buy me!",
+        amount: "TESTKUDOS:5",
+        fulfillment_url: "https://example.com/article42",
+        public_reorder_url: "https://example.com/article42-share",
+      },
+    },
+  );
+
+  const apOrderId = alreadyPaidOrderResp.order_id;
+  const apToken = alreadyPaidOrderResp.token;
+  t.assertTrue(!!apToken);
+
+  {
+    const url = new URL(`orders/${apOrderId}`, merchantBaseUrl);
+    url.searchParams.set("token", apToken);
+    const httpResp = await httpLib.get(url.href);
+    const r = await httpResp.json();
+    console.log(r);
+    t.assertDeepEqual(httpResp.status, 402);
+  }
+
+  // Check for already paid session ID, JSON
+  {
+    const url = new URL(`orders/${apOrderId}`, merchantBaseUrl);
+    url.searchParams.set("token", apToken);
+    url.searchParams.set("session_id", sessionId);
+    const httpResp = await httpLib.get(url.href);
+    const r = await httpResp.json();
+    console.log(r);
+    t.assertDeepEqual(httpResp.status, 402);
+    const alreadyPaidOrderId = r.already_paid_order_id;
+    t.assertDeepEqual(alreadyPaidOrderId, orderId);
+  }
+
+  // Check for already paid session ID, HTML
+  {
+    const url = new URL(`orders/${apOrderId}`, merchantBaseUrl);
+    url.searchParams.set("token", apToken);
+    url.searchParams.set("session_id", sessionId);
+    const httpResp = await httpLib.get(url.href, {
+      headers: { Accept: "text/html" },
+    });
+    t.assertDeepEqual(httpResp.status, 302);
+    const location = httpResp.headers.get("Location");
+    console.log("location header:", location);
+    t.assertDeepEqual(location, "https://example.com/article42");
+  }
+}
+
+/**
+ * Checks for the /orders/{id} endpoint of the merchant.
+ *
+ * The tests here should exercise all code paths in the executable
+ * specification of the endpoint.
+ */
+export async function runMerchantSpecPublicOrdersTest(t: GlobalTestState) {
+  const {
+    bank,
+    exchange,
+    merchant,
+  } = await createSimpleTestkudosEnvironment(t);
+
+  // Base URL for the default instance.
+  const merchantBaseUrl = merchant.makeInstanceBaseUrl();
+
+  {
+    const httpResp = await httpLib.get(new URL("config", merchantBaseUrl).href);
+    const r = await httpResp.json();
+    console.log(r);
+    t.assertDeepEqual(r.currency, "TESTKUDOS");
+  }
+
+  {
+    const httpResp = await httpLib.get(
+      new URL("orders/foo", merchantBaseUrl).href,
+    );
+    const r = await httpResp.json();
+    console.log(r);
+    t.assertDeepEqual(httpResp.status, 404);
+    // FIXME: also check Taler error code
+  }
+
+  {
+    const httpResp = await httpLib.get(
+      new URL("orders/foo", merchantBaseUrl).href,
+      {
+        headers: {
+          Accept: "text/html",
+        },
+      },
+    );
+    const r = await httpResp.text();
+    console.log(r);
+    t.assertDeepEqual(httpResp.status, 404);
+    // FIXME: also check Taler error code
+  }
+
+  await testWithClaimToken(t, {
+    merchant,
+    merchantBaseUrl,
+    exchange,
+    bank,
+  });
+
+  await testWithoutClaimToken(t, {
+    merchant,
+    merchantBaseUrl,
+    exchange,
+    bank,
+  });
 }
 
 runMerchantSpecPublicOrdersTest.suites = ["merchant"];
