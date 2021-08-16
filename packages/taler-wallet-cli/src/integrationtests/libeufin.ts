@@ -704,6 +704,25 @@ export class LibeufinCli {
     console.log(stdout);
   }
 
+  async newAnastasisFacade(req: NewAnastasisFacadeReq): Promise<void> {
+    const stdout = await sh(
+      this.globalTestState,
+      "libeufin-cli-new-anastasis-facade",
+      `libeufin-cli facades new-anastasis-facade` +
+        ` --currency ${req.currency}` +
+        ` --facade-name ${req.facadeName}` +
+        ` ${req.connectionName} ${req.accountName}`,
+      {
+        ...process.env,
+        LIBEUFIN_NEXUS_URL: this.cliDetails.nexusUrl,
+        LIBEUFIN_NEXUS_USERNAME: this.cliDetails.user.username,
+        LIBEUFIN_NEXUS_PASSWORD: this.cliDetails.user.password,
+      },
+    );
+    console.log(stdout);
+  }
+
+
   async newTalerWireGatewayFacade(req: NewTalerWireGatewayReq): Promise<void> {
     const stdout = await sh(
       this.globalTestState,
@@ -736,6 +755,13 @@ export class LibeufinCli {
     );
     console.log(stdout);
   }
+}
+
+interface NewAnastasisFacadeReq {
+  facadeName: string;
+  connectionName: string;
+  accountName: string;
+  currency: string;
 }
 
 interface NewTalerWireGatewayReq {
@@ -891,6 +917,15 @@ export interface CreateEbicsBankConnectionRequest {
   partnerID: string;
   systemID?: string;
 }
+
+export interface CreateAnastasisFacadeRequest {
+  name: string;
+  connectionName: string;
+  accountName: string;
+  currency: string;
+  reserveTransferLevel: "report" | "statement" | "notification";
+}
+
 
 export interface CreateTalerWireGatewayFacadeRequest {
   name: string;
@@ -1299,6 +1334,33 @@ export namespace LibeufinNexusApi {
         password: "test",
       },
     });
+  }
+
+  export async function createAnastasisFacade(
+    libeufinNexusService: LibeufinNexusServiceInterface,
+    req: CreateAnastasisFacadeRequest,
+  ) {
+    const baseUrl = libeufinNexusService.baseUrl;
+    let url = new URL("facades", baseUrl);
+    await axios.post(
+      url.href,
+      {
+        name: req.name,
+        type: "anastasis",
+        config: {
+          bankAccount: req.accountName,
+          bankConnection: req.connectionName,
+          currency: req.currency,
+          reserveTransferLevel: req.reserveTransferLevel,
+        },
+      },
+      {
+        auth: {
+          username: "admin",
+          password: "test",
+        },
+      },
+    );
   }
 
   export async function createTwgFacade(
