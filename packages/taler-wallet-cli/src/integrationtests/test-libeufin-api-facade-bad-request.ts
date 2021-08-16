@@ -57,11 +57,11 @@ export async function runLibeufinApiFacadeBadRequestTest(t: GlobalTestState) {
       config: {}, // malformation here.
     },
     {
-      validateStatus: () => true,
       auth: {
         username: "admin",
         password: "test",
       },
+      validateStatus: () => true,
     },
   );
   t.assertTrue(resp.status == 400);
