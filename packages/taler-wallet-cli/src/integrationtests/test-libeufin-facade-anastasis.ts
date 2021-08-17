@@ -29,7 +29,7 @@ import {
 /**
  * Run basic test with LibEuFin.
  */
-export async function runLibeufinApiFacadeTest(t: GlobalTestState) {
+export async function runLibeufinAnastasisFacadeTest(t: GlobalTestState) {
   /**
    * User saltetd "01"
    */
@@ -52,37 +52,34 @@ export async function runLibeufinApiFacadeTest(t: GlobalTestState) {
     libeufinServices.libeufinNexus,
   );
   // check that original facade shows up.
-  t.assertTrue(resp.data["facades"][0]["name"] == user01nexus.twgReq["name"]);
-
-  const anastasisBaseUrl: string = resp.data["facades"][0]["twgBaseUrl"];
+  t.assertTrue(resp.data["facades"][0]["name"] == user01nexus.anastasisReq["name"]);
+  const anastasisBaseUrl: string = resp.data["facades"][0]["baseUrl"];
   t.assertTrue(typeof anastasisBaseUrl === "string");
   t.assertTrue(anastasisBaseUrl.startsWith("http://"));
   t.assertTrue(anastasisBaseUrl.endsWith("/"));
 
   LibeufinSandboxApi.simulateIncomingTransaction(
     libeufinServices.libeufinSandbox,
-    user01nexus.localAccountName,
+    user01sandbox.ebicsBankAccount.label,
     {
       debtorIban: "ES3314655813489414469157",
       debtorBic: "BCMAESM1XXX",
       debtorName: "Mock Donor",
       subject: "Anastasis donation",
-      amount: "EUR:3",
+      amount: "3", // Sandbox takes currency from its "config"
     },
   )
 
-        //***************************************//
-        // Here payments need to be generated    //
-        // and checked via the Anastasis facade. //
-        //***************************************//
-
-  // delete it.
-  resp = await LibeufinNexusApi.deleteFacade(
+  await LibeufinNexusApi.fetchAllTransactions(
     libeufinServices.libeufinNexus,
-    user01nexus.anastasisReq["name"],
+    user01nexus.localAccountName,
   );
-  // check that no facades show up.
-  t.assertTrue(!resp.data.hasOwnProperty("facades"));
+
+  let txs = await LibeufinNexusApi.getAnastasisTransactions(
+    libeufinServices.libeufinNexus,
+    anastasisBaseUrl, {delta: 5})
+
+    // FIXME: test more!
 }
 
-runLibeufinApiFacadeTest.suites = ["libeufin"];
+runLibeufinAnastasisFacadeTest.suites = ["libeufin"];

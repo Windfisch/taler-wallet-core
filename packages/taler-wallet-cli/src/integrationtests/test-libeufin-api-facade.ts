@@ -53,7 +53,7 @@ export async function runLibeufinApiFacadeTest(t: GlobalTestState) {
   // check that original facade shows up.
   t.assertTrue(resp.data["facades"][0]["name"] == user01nexus.twgReq["name"]);
 
-  const twgBaseUrl: string = resp.data["facades"][0]["twgBaseUrl"];
+  const twgBaseUrl: string = resp.data["facades"][0]["baseUrl"];
   t.assertTrue(typeof twgBaseUrl === "string");
   t.assertTrue(twgBaseUrl.startsWith("http://"));
   t.assertTrue(twgBaseUrl.endsWith("/"));

@@ -1165,7 +1165,7 @@ export namespace LibeufinNexusApi {
     username: string = "admin",
     password: string = "test",
   ): Promise<any> {
-    let url = new URL("/history/incoming", anastasisBaseUrl);
+    let url = new URL("history/incoming", anastasisBaseUrl);
     let response = await axios.get(url.href, { params: params,
       auth: {
         username: username,
