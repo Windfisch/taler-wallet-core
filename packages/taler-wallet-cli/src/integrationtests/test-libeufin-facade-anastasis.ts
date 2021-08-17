@@ -23,6 +23,7 @@ import {
   NexusUserBundle,
   launchLibeufinServices,
   LibeufinNexusApi,
+  LibeufinSandboxApi,
 } from "./libeufin";
 
 /**
@@ -57,6 +58,18 @@ export async function runLibeufinApiFacadeTest(t: GlobalTestState) {
   t.assertTrue(typeof anastasisBaseUrl === "string");
   t.assertTrue(anastasisBaseUrl.startsWith("http://"));
   t.assertTrue(anastasisBaseUrl.endsWith("/"));
+
+  LibeufinSandboxApi.simulateIncomingTransaction(
+    libeufinServices.libeufinSandbox,
+    user01nexus.localAccountName,
+    {
+      debtorIban: "ES3314655813489414469157",
+      debtorBic: "BCMAESM1XXX",
+      debtorName: "Mock Donor",
+      subject: "Anastasis donation",
+      amount: "EUR:3",
+    },
+  )
 
         //***************************************//
         // Here payments need to be generated    //

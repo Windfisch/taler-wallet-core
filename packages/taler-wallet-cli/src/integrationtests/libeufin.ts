@@ -1157,6 +1157,24 @@ export namespace LibeufinNexusApi {
     let response = await axios.get(url.href);
   }
 
+  // Uses the Anastasis API to get a list of transactions.
+  export async function getAnastasisTransactions(
+    libeufinNexusService: LibeufinNexusService,
+    anastasisBaseUrl: string,
+    params: {}, // of the request: {delta: 5, ..}
+    username: string = "admin",
+    password: string = "test",
+  ): Promise<any> {
+    let url = new URL("/history/incoming", anastasisBaseUrl);
+    let response = await axios.get(url.href, { params: params,
+      auth: {
+        username: username,
+        password: password,
+      },
+    });
+    return response;
+  }
+
   // FIXME: this function should return some structured
   // object that represents a history.
   export async function getAccountTransactions(
