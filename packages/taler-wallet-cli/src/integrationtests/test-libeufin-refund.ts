@@ -55,6 +55,7 @@ export async function runLibeufinRefundTest(t: GlobalTestState) {
     t,
     [user01nexus, user02nexus],
     [user01sandbox, user02sandbox],
+    ["twg"],
   );
 
   /**

@@ -45,7 +45,7 @@ export async function runLibeufinApiFacadeTest(t: GlobalTestState) {
     t,
     [user01nexus],
     [user01sandbox],
-    ["twg"],
+    ["anastasis"],
   );
   let resp = await LibeufinNexusApi.getAllFacades(
     libeufinServices.libeufinNexus,
@@ -53,15 +53,20 @@ export async function runLibeufinApiFacadeTest(t: GlobalTestState) {
   // check that original facade shows up.
   t.assertTrue(resp.data["facades"][0]["name"] == user01nexus.twgReq["name"]);
 
-  const twgBaseUrl: string = resp.data["facades"][0]["twgBaseUrl"];
-  t.assertTrue(typeof twgBaseUrl === "string");
-  t.assertTrue(twgBaseUrl.startsWith("http://"));
-  t.assertTrue(twgBaseUrl.endsWith("/"));
+  const anastasisBaseUrl: string = resp.data["facades"][0]["twgBaseUrl"];
+  t.assertTrue(typeof anastasisBaseUrl === "string");
+  t.assertTrue(anastasisBaseUrl.startsWith("http://"));
+  t.assertTrue(anastasisBaseUrl.endsWith("/"));
+
+        //***************************************//
+        // Here payments need to be generated    //
+        // and checked via the Anastasis facade. //
+        //***************************************//
 
   // delete it.
   resp = await LibeufinNexusApi.deleteFacade(
     libeufinServices.libeufinNexus,
-    user01nexus.twgReq["name"],
+    user01nexus.anastasisReq["name"],
   );
   // check that no facades show up.
   t.assertTrue(!resp.data.hasOwnProperty("facades"));

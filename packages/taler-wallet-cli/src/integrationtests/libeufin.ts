@@ -350,6 +350,7 @@ export interface SimulateIncomingTransactionRequest {
 export class NexusUserBundle {
   userReq: CreateNexusUserRequest;
   connReq: CreateEbicsBankConnectionRequest;
+  anastasisReq: CreateAnastasisFacadeRequest;
   twgReq: CreateTalerWireGatewayFacadeRequest;
   twgTransferPermission: PostNexusPermissionRequest;
   twgHistoryPermission: PostNexusPermissionRequest;
@@ -374,6 +375,13 @@ export class NexusUserBundle {
     this.twgReq = {
       currency: "EUR",
       name: `twg-${salt}`,
+      reserveTransferLevel: "report",
+      accountName: `local-account-${salt}`,
+      connectionName: `connection-${salt}`,
+    };
+    this.anastasisReq = {
+      currency: "EUR",
+      name: `anastasis-${salt}`,
       reserveTransferLevel: "report",
       accountName: `local-account-${salt}`,
       connectionName: `connection-${salt}`,
@@ -1420,6 +1428,7 @@ export async function launchLibeufinServices(
   t: GlobalTestState,
   nexusUserBundle: NexusUserBundle[],
   sandboxUserBundle: SandboxUserBundle[],
+  withFacades: string[] = [], // takes only "twg" and/or "anastasis"
 ): Promise<LibeufinServices> {
   const db = await setupDb(t);
 
@@ -1469,16 +1478,24 @@ export async function launchLibeufinServices(
       nb.remoteAccountName,
       nb.localAccountName,
     );
-    await LibeufinNexusApi.createTwgFacade(libeufinNexus, nb.twgReq);
     await LibeufinNexusApi.createUser(libeufinNexus, nb.userReq);
-    await LibeufinNexusApi.postPermission(
-      libeufinNexus,
-      nb.twgTransferPermission,
-    );
-    await LibeufinNexusApi.postPermission(
-      libeufinNexus,
-      nb.twgHistoryPermission,
-    );
+    for (let facade of withFacades) {
+      switch (facade) {
+        case "twg":
+          await LibeufinNexusApi.createTwgFacade(libeufinNexus, nb.twgReq);
+          await LibeufinNexusApi.postPermission(
+            libeufinNexus,
+            nb.twgTransferPermission,
+          );
+          await LibeufinNexusApi.postPermission(
+            libeufinNexus,
+            nb.twgHistoryPermission,
+          );
+	  break;
+        case "anastasis":
+	  await LibeufinNexusApi.createAnastasisFacade(libeufinNexus, nb.anastasisReq);
+      }
+    }
   }
   console.log(
     "Nexus user(s) / connection(s) / facade(s) / permission(s): created",

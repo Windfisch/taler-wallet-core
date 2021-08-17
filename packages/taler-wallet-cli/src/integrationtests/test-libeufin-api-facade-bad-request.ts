@@ -45,6 +45,7 @@ export async function runLibeufinApiFacadeBadRequestTest(t: GlobalTestState) {
     t,
     [user01nexus],
     [user01sandbox],
+    ["twg"],
   );
   console.log("malformed facade");
   const baseUrl = libeufinServices.libeufinNexus.baseUrl;
