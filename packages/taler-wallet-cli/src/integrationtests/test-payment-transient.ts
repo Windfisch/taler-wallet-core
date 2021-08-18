@@ -81,6 +81,8 @@ export async function runPaymentTransientTest(t: GlobalTestState) {
   });
 
   if (publicOrderStatusResp.status != 402) {
+
+
     throw Error(
       `expected status 402 (before claiming), but got ${publicOrderStatusResp.status}`,
     );

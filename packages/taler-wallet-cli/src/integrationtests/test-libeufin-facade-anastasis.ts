@@ -27,7 +27,7 @@ import {
 } from "./libeufin";
 
 /**
- * Run basic test with LibEuFin.
+ * Testing the Anastasis API, offered by the Anastasis facade.
  */
 export async function runLibeufinAnastasisFacadeTest(t: GlobalTestState) {
   /**
@@ -46,7 +46,7 @@ export async function runLibeufinAnastasisFacadeTest(t: GlobalTestState) {
     t,
     [user01nexus],
     [user01sandbox],
-    ["anastasis"],
+    ["anastasis"], // create only one Anastasis facade.
   );
   let resp = await LibeufinNexusApi.getAllFacades(
     libeufinServices.libeufinNexus,
@@ -61,6 +61,19 @@ export async function runLibeufinAnastasisFacadeTest(t: GlobalTestState) {
   await LibeufinNexusApi.fetchAllTransactions(
     libeufinServices.libeufinNexus,
     user01nexus.localAccountName,
+  );
+
+  await LibeufinNexusApi.postPermission(
+    libeufinServices.libeufinNexus, {
+      action: "grant",
+      permission: {
+        subjectId: user01nexus.userReq.username,
+        subjectType: "user",
+        resourceType: "facade",
+        resourceId: user01nexus.anastasisReq.name,
+        permissionName: "facade.anastasis.history",
+      },
+  }
   );
 
   // check if empty.
@@ -78,7 +91,7 @@ export async function runLibeufinAnastasisFacadeTest(t: GlobalTestState) {
       debtorBic: "BCMAESM1XXX",
       debtorName: "Mock Donor",
       subject: "Anastasis donation",
-      amount: "3", // Sandbox takes currency from its "config"
+      amount: "3", // Sandbox takes currency from its 'config'
     },
   )
 
@@ -101,9 +114,17 @@ export async function runLibeufinAnastasisFacadeTest(t: GlobalTestState) {
 
   let txs = await LibeufinNexusApi.getAnastasisTransactions(
     libeufinServices.libeufinNexus,
-    anastasisBaseUrl, {delta: 5})
+    anastasisBaseUrl,
+    {delta: 5},
+    user01nexus.userReq.username,
+    user01nexus.userReq.password,
+  );
 
-  t.assertTrue(txs.data.incoming_transactions.length == 2);
+  // check the two payments show up
+  let txsList = txs.data.incoming_transactions
+  t.assertTrue(txsList.length == 2);
+  t.assertTrue([txsList[0].subject, txsList[1].subject].includes("Anastasis donation"));
+  t.assertTrue([txsList[0].subject, txsList[1].subject].includes("another Anastasis donation"));
 }
 
 runLibeufinAnastasisFacadeTest.suites = ["libeufin"];
