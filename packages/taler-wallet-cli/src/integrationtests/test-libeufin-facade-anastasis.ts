@@ -58,6 +58,18 @@ export async function runLibeufinAnastasisFacadeTest(t: GlobalTestState) {
   t.assertTrue(anastasisBaseUrl.startsWith("http://"));
   t.assertTrue(anastasisBaseUrl.endsWith("/"));
 
+  await LibeufinNexusApi.fetchAllTransactions(
+    libeufinServices.libeufinNexus,
+    user01nexus.localAccountName,
+  );
+
+  // check if empty.
+  let txsEmpty = await LibeufinNexusApi.getAnastasisTransactions(
+    libeufinServices.libeufinNexus,
+    anastasisBaseUrl, {delta: 5})
+
+  t.assertTrue(txsEmpty.data.incoming_transactions.length == 0);
+
   LibeufinSandboxApi.simulateIncomingTransaction(
     libeufinServices.libeufinSandbox,
     user01sandbox.ebicsBankAccount.label,
@@ -70,6 +82,18 @@ export async function runLibeufinAnastasisFacadeTest(t: GlobalTestState) {
     },
   )
 
+  LibeufinSandboxApi.simulateIncomingTransaction(
+    libeufinServices.libeufinSandbox,
+    user01sandbox.ebicsBankAccount.label,
+    {
+      debtorIban: "ES3314655813489414469157",
+      debtorBic: "BCMAESM1XXX",
+      debtorName: "Mock Donor",
+      subject: "another Anastasis donation",
+      amount: "1", // Sandbox takes currency from its "config"
+    },
+  )
+
   await LibeufinNexusApi.fetchAllTransactions(
     libeufinServices.libeufinNexus,
     user01nexus.localAccountName,
@@ -79,7 +103,7 @@ export async function runLibeufinAnastasisFacadeTest(t: GlobalTestState) {
     libeufinServices.libeufinNexus,
     anastasisBaseUrl, {delta: 5})
 
-    // FIXME: test more!
+  t.assertTrue(txs.data.incoming_transactions.length == 2);
 }
 
 runLibeufinAnastasisFacadeTest.suites = ["libeufin"];
