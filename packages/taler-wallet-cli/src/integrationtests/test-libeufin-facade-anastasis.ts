@@ -125,6 +125,8 @@ export async function runLibeufinAnastasisFacadeTest(t: GlobalTestState) {
   t.assertTrue(txsList.length == 2);
   t.assertTrue([txsList[0].subject, txsList[1].subject].includes("Anastasis donation"));
   t.assertTrue([txsList[0].subject, txsList[1].subject].includes("another Anastasis donation"));
+  t.assertTrue(txsList[0].row_id == 1)
+  t.assertTrue(txsList[1].row_id == 2)
 
   LibeufinSandboxApi.simulateIncomingTransaction(
     libeufinServices.libeufinSandbox,
