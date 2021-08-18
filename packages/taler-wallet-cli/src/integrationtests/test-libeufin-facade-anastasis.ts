@@ -125,6 +125,43 @@ export async function runLibeufinAnastasisFacadeTest(t: GlobalTestState) {
   t.assertTrue(txsList.length == 2);
   t.assertTrue([txsList[0].subject, txsList[1].subject].includes("Anastasis donation"));
   t.assertTrue([txsList[0].subject, txsList[1].subject].includes("another Anastasis donation"));
+
+  LibeufinSandboxApi.simulateIncomingTransaction(
+    libeufinServices.libeufinSandbox,
+    user01sandbox.ebicsBankAccount.label,
+    {
+      debtorIban: "ES3314655813489414469157",
+      debtorBic: "BCMAESM1XXX",
+      debtorName: "Mock Donor",
+      subject: "last Anastasis donation",
+      amount: "10.10", // Sandbox takes currency from its "config"
+    },
+  )
+
+  await LibeufinNexusApi.fetchAllTransactions(
+    libeufinServices.libeufinNexus,
+    user01nexus.localAccountName,
+  );
+
+  let txsLast = await LibeufinNexusApi.getAnastasisTransactions(
+    libeufinServices.libeufinNexus,
+    anastasisBaseUrl,
+    {delta: 5, start: 2},
+    user01nexus.userReq.username,
+    user01nexus.userReq.password,
+  );
+  console.log(txsLast.data.incoming_transactions[0].subject == "last Anastasis donation");
+
+  let txsReverse = await LibeufinNexusApi.getAnastasisTransactions(
+    libeufinServices.libeufinNexus,
+    anastasisBaseUrl,
+    {delta: -5, start: 4},
+    user01nexus.userReq.username,
+    user01nexus.userReq.password,
+  );
+  t.assertTrue(txsReverse.data.incoming_transactions[0].row_id == 3);
+  t.assertTrue(txsReverse.data.incoming_transactions[1].row_id == 2);
+  t.assertTrue(txsReverse.data.incoming_transactions[2].row_id == 1);
 }
 
 runLibeufinAnastasisFacadeTest.suites = ["libeufin"];
