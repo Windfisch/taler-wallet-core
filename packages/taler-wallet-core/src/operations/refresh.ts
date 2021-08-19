@@ -186,8 +186,8 @@ async function refreshCreateSession(
     logger.trace(`printing selected denominations for refresh`);
     logger.trace(`current time: ${stringifyTimestamp(getTimestampNow())}`);
     for (const denom of newCoinDenoms.selectedDenoms) {
-      console.log(`denom ${denom.denom}, count ${denom.count}`);
-      console.log(
+      logger.trace(`denom ${denom.denom}, count ${denom.count}`);
+      logger.trace(
         `withdrawal expiration ${stringifyTimestamp(
           denom.denom.stampExpireWithdraw,
         )}`,

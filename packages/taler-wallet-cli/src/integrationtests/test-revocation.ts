@@ -53,7 +53,7 @@ async function revokeAllWalletCoins(req: {
   await exchange.keyup();
   await delayMs(1000);
   await merchant.stop();
-  await merchant.start(false); // 'false' prevents DB reset
+  await merchant.start();
   await merchant.pingUntilAvailable();
 }
 

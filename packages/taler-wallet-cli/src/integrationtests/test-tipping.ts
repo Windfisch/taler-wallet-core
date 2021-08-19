@@ -64,7 +64,7 @@ export async function runTippingTest(t: GlobalTestState) {
   await exchange.runWirewatchOnce();
 
   await merchant.stop();
-  await merchant.start(false);
+  await merchant.start();
   await merchant.pingUntilAvailable();
 
   const r = await MerchantPrivateApi.queryTippingReserves(merchant, "default");

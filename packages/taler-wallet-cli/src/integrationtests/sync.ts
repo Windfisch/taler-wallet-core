@@ -17,7 +17,6 @@
 /**
  * Imports.
  */
-import axios from "axios";
 import { URL } from "@gnu-taler/taler-util";
 import * as fs from "fs";
 import * as util from "util";

@@ -76,8 +76,8 @@ export async function delayMs(ms: number): Promise<void> {
 }
 
 export interface WithAuthorization {
-  Authorization?: string,
-} ;
+  Authorization?: string;
+}
 
 interface WaitResult {
   code: number | null;
@@ -1220,7 +1220,9 @@ export namespace MerchantPrivateApi {
   ): Promise<PostOrderResponse> {
     const baseUrl = merchantService.makeInstanceBaseUrl(instanceName);
     let url = new URL("private/orders", baseUrl);
-    const resp = await axios.post(url.href, req, { headers: withAuthorization });
+    const resp = await axios.post(url.href, req, {
+      headers: withAuthorization,
+    });
     return codecForPostOrderResponse().decode(resp.data);
   }
 
@@ -1395,10 +1397,8 @@ export class MerchantService implements MerchantServiceInterface {
     }
   }
 
-  async start(
-    withResetTables: boolean = true, // eventually, this should become a named parameter
-  ): Promise<void> {
-    await exec(`taler-merchant-dbinit ${withResetTables ? "-r" : ""} -c "${this.configFilename}"`);
+  async start(): Promise<void> {
+    await exec(`taler-merchant-dbinit -c "${this.configFilename}"`);
 
     this.proc = this.globalState.spawnService(
       "taler-merchant-httpd",
