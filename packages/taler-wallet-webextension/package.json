@@ -12,7 +12,7 @@
     "test": "jest ./tests",
     "compile": "tsc && rollup -c",
     "build-storybook": "build-storybook",
-    "storybook": "start-storybook -s static -p 6006",
+    "storybook": "start-storybook -s . -p 6006",
     "watch": "tsc --watch & rollup -w -c"
   },
   "dependencies": {

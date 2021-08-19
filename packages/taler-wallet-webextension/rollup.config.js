@@ -1,14 +1,13 @@
 // rollup.config.js
-import commonjs from "@rollup/plugin-commonjs";
-import nodeResolve from "@rollup/plugin-node-resolve";
-import json from "@rollup/plugin-json";
-import builtins from "builtin-modules";
-import replace from "@rollup/plugin-replace";
-import ignore from "rollup-plugin-ignore"
-import image from '@rollup/plugin-image';
 import linaria from '@linaria/rollup';
-import css from 'rollup-plugin-css-only';
 import alias from '@rollup/plugin-alias';
+import commonjs from "@rollup/plugin-commonjs";
+import image from '@rollup/plugin-image';
+import json from "@rollup/plugin-json";
+import nodeResolve from "@rollup/plugin-node-resolve";
+import replace from "@rollup/plugin-replace";
+import css from 'rollup-plugin-css-only';
+import ignore from "rollup-plugin-ignore";
 
 const makePlugins = () => [
     alias({

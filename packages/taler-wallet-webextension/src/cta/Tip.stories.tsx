@@ -19,32 +19,41 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 
-import { h } from 'preact';
-import { View, ViewProps } from './Withdraw';
+import { createExample } from '../test-utils';
+import { View as TestedComponent } from './Tip';
 
 
 export default {
-  title: 'wallet/withdraw',
-  component: View,
+  title: 'cta/tip',
+  component: TestedComponent,
   argTypes: {
   },
 };
 
-export const WithoutDetails = (a: any) => <View {...a} />;
-WithoutDetails.args = {
-} as ViewProps
+export const Accepted = createExample(TestedComponent, {
+  prepareTipResult: {
+    accepted: true,
+    merchantBaseUrl: '',
+    exchangeBaseUrl: '',
+    expirationTimestamp : {
+      t_ms: 0
+    },
+    tipAmountEffective: 'USD:10',
+    tipAmountRaw: 'USD:5',
+    walletTipId: 'id'
+  }
+});
 
-export const CompleteWithExchange = (a: any) => <View {...a} />;
-CompleteWithExchange.args = {
-  details: {
-    amount: 'USD:2',
-  },
-  selectedExchange: 'Some exchange'
-} as ViewProps
-
-export const CompleteWithoutExchange = (a: any) => <View {...a} />;
-CompleteWithoutExchange.args = {
-  details: {
-    amount: 'USD:2',
-  },
-} as ViewProps
+export const NotYetAccepted = createExample(TestedComponent, {
+  prepareTipResult: {
+    accepted: false,
+    merchantBaseUrl: 'http://merchant.url/',
+    exchangeBaseUrl: 'http://exchange.url/',
+    expirationTimestamp : {
+      t_ms: 0
+    },
+    tipAmountEffective: 'USD:10',
+    tipAmountRaw: 'USD:5',
+    walletTipId: 'id'
+  }
+});

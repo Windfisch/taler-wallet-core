@@ -20,7 +20,7 @@
 */
 
 import { Fragment, FunctionalComponent } from 'preact';
-import { NavBar as TestedComponent } from './popup';
+import { NavBar as TestedComponent } from '../NavigationBar';
 
 export default {
   title: 'popup/header',

@@ -15,15 +15,15 @@
  */
 
 import { AmountString, Balance, Timestamp, Transaction, TransactionsResponse, TransactionType } from "@gnu-taler/taler-util";
-import { formatDistance } from "date-fns";
-import { JSX } from "preact";
+import { format } from "date-fns";
+import { Fragment, JSX } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import imageBank from '../../static/img/ri-bank-line.svg';
 import imageHandHeart from '../../static/img/ri-hand-heart-line.svg';
 import imageRefresh from '../../static/img/ri-refresh-line.svg';
 import imageRefund from '../../static/img/ri-refund-2-line.svg';
 import imageShoppingCart from '../../static/img/ri-shopping-cart-line.svg';
-import { Column, ExtraLargeText, HistoryRow, PopupBox, SmallTextLight } from "../components/styled";
+import { Column, ExtraLargeText, HistoryRow, WalletBox, DateSeparator, SmallTextLight } from "../components/styled";
 import { useBalances } from "../hooks/useBalances";
 import * as wxApi from "../wxApi";
 import { Pages } from "../NavigationBar";
@@ -59,7 +59,13 @@ function amountToString(c: AmountString) {
 
 
 export function HistoryView({ list, balances }: { list: Transaction[], balances: Balance[] }) {
-  return <PopupBox noPadding>
+  const byDate = list.reduce(function (rv, x) {
+    const theDate = x.timestamp.t_ms === "never" ? "never" : format(x.timestamp.t_ms, 'dd MMMM yyyy');
+    (rv[theDate] = rv[theDate] || []).push(x);
+    return rv;
+  }, {} as { [x: string]: Transaction[] });
+
+  return <WalletBox noPadding>
     {balances.length > 0 && <header>
       {balances.length === 1 && <div class="title">
         Balance: <span>{amountToString(balances[0].available)}</span>
@@ -71,17 +77,16 @@ export function HistoryView({ list, balances }: { list: Transaction[], balances:
       </div>}
     </header>}
     <section>
-      {list.slice(0, 3).map((tx, i) => (
-        <TransactionItem key={i} tx={tx} />
-      ))}
+      {Object.keys(byDate).map(d => {
+        return <Fragment>
+          <DateSeparator>{d}</DateSeparator>
+          {byDate[d].map((tx, i) => (
+            <TransactionItem key={i} tx={tx} />
+          ))}
+        </Fragment>
+      })}
     </section>
-    <footer style={{ justifyContent: 'space-around' }}>
-      <a target="_blank"
-        rel="noopener noreferrer"
-        style={{ color: 'darkgreen', textDecoration: 'none' }}
-        href={chrome.extension ? chrome.extension.getURL(`/static/wallet.html#/history`) : '#'}>VIEW MORE TRANSACTIONS</a>
-    </footer>
-  </PopupBox>
+  </WalletBox>
 }
 
 function TransactionItem(props: { tx: Transaction }): JSX.Element {
@@ -170,26 +175,27 @@ function TransactionItem(props: { tx: Transaction }): JSX.Element {
 
 function TransactionLayout(props: TransactionLayoutProps): JSX.Element {
   const date = new Date(props.timestamp.t_ms);
-  const now = new Date();
-  const dateStr = formatDistance(date, now, { addSuffix: true })
+  const dateStr = format(date, 'HH:mm:ss')
   return (
-    <HistoryRow href={Pages.transaction.replace(':tid', props.id)}>
-      <img src={props.iconPath} />
-      <Column>
-        <ExtraLargeText>
-          <span>{props.title}</span>
-          {props.pending ? (
-            <span style={{ color: "darkblue" }}> (Pending)</span>
-          ) : null}
-        </ExtraLargeText>
-        <SmallTextLight>{dateStr}</SmallTextLight>
-      </Column>
-      <TransactionAmount
-        pending={props.pending}
-        amount={props.amount}
-        debitCreditIndicator={props.debitCreditIndicator}
-      />
-    </HistoryRow>
+    // <a href={Pages.transaction.replace(':tid', props.id)}>
+      <HistoryRow href={Pages.transaction.replace(':tid', props.id)}>
+        <img src={props.iconPath} />
+        <Column>
+          <ExtraLargeText>
+            <span>{props.title}</span>
+            {props.pending ? (
+              <span style={{ color: "darkblue" }}> (Pending)</span>
+            ) : null}
+          </ExtraLargeText>
+          <SmallTextLight>{dateStr}</SmallTextLight>
+        </Column>
+        <TransactionAmount
+          pending={props.pending}
+          amount={props.amount}
+          debitCreditIndicator={props.debitCreditIndicator}
+        />
+      </HistoryRow>
+    // </a>
   );
 }
 

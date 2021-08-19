@@ -32,14 +32,13 @@ import {
 } from "../wxApi";
 import { WithdrawUriInfoResponse } from "@gnu-taler/taler-util";
 import { JSX } from "preact/jsx-runtime";
-import { WalletPage } from '../components/styled';
+import { WalletAction } from '../components/styled';
 
 interface Props {
   talerWithdrawUri?: string;
 }
 
 export interface ViewProps {
-  talerWithdrawUri?: string;
   details: WithdrawUriInfoResponse;
   selectedExchange?: string;
   accept: () => Promise<void>;
@@ -50,7 +49,7 @@ export interface ViewProps {
 export function View({ details, selectedExchange, accept, setCancelled, setSelecting }: ViewProps) {
 
   return (
-    <WalletPage>
+    <WalletAction>
       <div style="border-bottom: 3px dashed #aa3939; margin-bottom: 2em;">
         <h1 style="font-family: monospace; font-size: 250%;">
           <span style="color: #aa3939;">❰</span>Taler Wallet<span style="color: #aa3939;">❱</span>
@@ -101,25 +100,18 @@ export function View({ details, selectedExchange, accept, setCancelled, setSelec
           </div>
         </div>
       </div>
-    </WalletPage>
+    </WalletAction>
   )
 }
 
 export function WithdrawPage({ talerWithdrawUri, ...rest }: Props): JSX.Element {
   const [details, setDetails] = useState<WithdrawUriInfoResponse | undefined>(undefined);
-  const [selectedExchange, setSelectedExchange] = useState<
-    string | undefined
-  >(undefined);
+  const [selectedExchange, setSelectedExchange] = useState<string | undefined>(undefined);
   const [cancelled, setCancelled] = useState(false);
   const [selecting, setSelecting] = useState(false);
-  const [errMsg, setErrMsg] = useState<string | undefined>("");
+  const [error, setError] = useState<boolean>(false);
   const [updateCounter, setUpdateCounter] = useState(1);
   const [state, setState] = useState(1)
-
-  // setTimeout(() => {
-  //   console.log('tick...')
-  //   setState(s => s + 1)
-  // }, 1000);
 
   useEffect(() => {
     return onUpdateNotification(() => {
@@ -132,20 +124,19 @@ export function WithdrawPage({ talerWithdrawUri, ...rest }: Props): JSX.Element 
     console.log('on effect yes', talerWithdrawUri)
     if (!talerWithdrawUri) return
     const fetchData = async (): Promise<void> => {
-      console.log('que pasa')
       try {
         const res = await getWithdrawalDetailsForUri({ talerWithdrawUri });
-        console.log('res', res)
         setDetails(res);
         if (res.defaultExchangeBaseUrl) {
           setSelectedExchange(res.defaultExchangeBaseUrl);
         }
       } catch (e) {
-        console.error(e)
+        console.error('error',JSON.stringify(e,undefined,2))
+        setError(true)
       }
     };
     fetchData();
-  }, [selectedExchange, errMsg, selecting, talerWithdrawUri, updateCounter, state]);
+  }, [selectedExchange, selecting, talerWithdrawUri, updateCounter, state]);
 
   if (!talerWithdrawUri) {
     return <span><i18n.Translate>missing withdraw uri</i18n.Translate></span>;
@@ -168,6 +159,9 @@ export function WithdrawPage({ talerWithdrawUri, ...rest }: Props): JSX.Element 
   }
   if (cancelled) {
     return <span><i18n.Translate>Withdraw operation has been cancelled.</i18n.Translate></span>;
+  }
+  if (error) {
+    return <span><i18n.Translate>This URI is not valid anymore.</i18n.Translate></span>;
   }
 
   return <View accept={accept}

@@ -20,7 +20,7 @@ import { Fragment, JSX, VNode } from "preact";
 import { route } from 'preact-router';
 import { useEffect, useState } from "preact/hooks";
 import * as wxApi from "../wxApi";
-import { Pages } from "./popup";
+import { Pages } from "../NavigationBar";
 import emptyImg from "../../static/img/empty.png"
 import { Button, ButtonDestructive, ButtonPrimary, ListOfProducts, PopupBox, Row, RowBorderGray, SmallTextLight } from "../components/styled";
 import { ErrorMessage } from "../components/ErrorMessage";

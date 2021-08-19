@@ -24,7 +24,7 @@ import { JSX } from "preact/jsx-runtime";
 import { Checkbox } from "../components/Checkbox";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
 import { Diagnostics } from "../components/Diagnostics";
-import { WalletPage } from "../components/styled";
+import { WalletBox } from "../components/styled";
 import { useDiagnostics } from "../hooks/useDiagnostics";
 import { WalletDiagnostics } from "@gnu-taler/taler-util";
 
@@ -44,12 +44,7 @@ export interface ViewProps {
   timedOut: boolean,
 }
 export function View({ permissionsEnabled, togglePermissions, diagnostics, timedOut }: ViewProps): JSX.Element {
-  return (<WalletPage>
-    <div style="border-bottom: 3px dashed #aa3939; margin-bottom: 2em;">
-      <h1 style="font-family: monospace; font-size: 250%;">
-        <span style="color: #aa3939;">❰</span>Taler Wallet<span style="color: #aa3939;">❱</span>
-      </h1>
-    </div>
+  return (<WalletBox>
     <h1>Browser Extension Installed!</h1>
     <div>
       <p>Thank you for installing the wallet.</p>
@@ -68,6 +63,6 @@ export function View({ permissionsEnabled, togglePermissions, diagnostics, timed
         Learn how to top up your wallet balance »
       </a>
     </div>
-  </WalletPage>
+  </WalletBox>
   );
 }

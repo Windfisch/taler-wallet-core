@@ -20,22 +20,15 @@
 */
 
 import { ContractTerms, PreparePayResultType } from '@gnu-taler/taler-util';
-import { FunctionalComponent, h } from 'preact';
+import { createExample } from '../test-utils';
 import { PaymentRequestView as TestedComponent } from './Pay';
 
-
 export default {
-  title: 'wallet/pay',
+  title: 'cta/pay',
   component: TestedComponent,
   argTypes: {
   },
 };
-
-function createExample<Props>(Component: FunctionalComponent<Props>, props: Partial<Props>) {
-  const r = (args: any) => <Component {...args} />
-  r.args = props
-  return r
-}
 
 export const InsufficientBalance = createExample(TestedComponent, {
   payStatus: {

@@ -15,7 +15,8 @@
  */
 
 import { Fragment } from "preact"
-import { NavBar } from '../src/popup/popup'
+import { NavBar } from '../src/NavigationBar'
+import { LogoHeader } from '../src/components/LogoHeader'
 import { TranslationProvider } from '../src/context/translation'
 
 export const parameters = {
@@ -43,7 +44,7 @@ export const globalTypes = {
 export const decorators = [
   (Story, { kind }) => {
     if (kind.startsWith('popup')) {
-      
+
       function Body() {
         const isTestingHeader = (/.*\/header\/?.*/.test(kind));
         if (isTestingHeader) {
@@ -51,16 +52,16 @@ export const decorators = [
           return <div style={{ width: 400, height: 320 }}>
             <Story />
           </div>
-        } else {
-          const path = !isTestingHeader ? /popup(\/.*).*/.exec(kind)[1] : ''
-          // add a fake header so it looks similar
-          return <Fragment>
-            <NavBar path={path} devMode={path === '/dev'} />
-            <div style={{ width: 400, height: 290 }}>
-              <Story />
-            </div>
-          </Fragment>
         }
+
+        const path = /popup(\/.*).*/.exec(kind)[1];
+        // add a fake header so it looks similar
+        return <Fragment>
+          <NavBar path={path} devMode={path === '/dev'} />
+          <div style={{ width: 400, height: 290 }}>
+            <Story />
+          </div>
+        </Fragment>
       }
 
       return <div class="popup-container">
@@ -95,10 +96,70 @@ export const decorators = [
         </div>
       </div>
     }
-    if (kind.startsWith('wallet')) {
-      return <div class="wallet-container">
+    if (kind.startsWith('cta')) {
+      return <div>
+        <style>{`
+        html {
+          font-family: sans-serif; /* 1 */
+        }
+        body {
+          margin: 0;
+        }`}
+        </style>
+        <style>{`
+        html {
+        }
+        h1 {
+          font-size: 2em;
+        }
+        input {
+          font: inherit;
+        }
+        body {
+          margin: 0;
+          font-size: 100%;
+          padding: 0;
+          background-color: #f8faf7;
+          font-family: Arial, Helvetica, sans-serif;
+        }`}
+        </style>
         <link key="1" rel="stylesheet" type="text/css" href="/style/pure.css" />
         <link key="2" rel="stylesheet" type="text/css" href="/style/wallet.css" />
+        <Story />
+      </div>      
+    }
+    if (kind.startsWith('wallet')) {
+      const path = /wallet(\/.*).*/.exec(kind)[1];
+      return <div class="wallet-container">
+        <style>{`
+        html {
+          font-family: sans-serif; /* 1 */
+        }
+        body {
+          margin: 0;
+        }`}
+        </style>
+        <style>{`
+        html {
+        }
+        h1 {
+          font-size: 2em;
+        }
+        input {
+          font: inherit;
+        }
+        body {
+          margin: 0;
+          font-size: 100%;
+          padding: 0;
+          background-color: #f8faf7;
+          font-family: Arial, Helvetica, sans-serif;
+        }`}
+        </style>
+        <LogoHeader />
+        <NavBar path={path} devMode={path === '/dev'} />
+        {/* <link key="1" rel="stylesheet" type="text/css" href="/style/pure.css" />
+        <link key="2" rel="stylesheet" type="text/css" href="/style/wallet.css" /> */}
         <Story />
       </div>
     }

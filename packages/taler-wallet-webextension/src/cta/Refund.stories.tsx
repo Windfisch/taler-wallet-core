@@ -19,23 +19,17 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 
-import { ContractTerms, OrderShortInfo, PreparePayResultType } from '@gnu-taler/taler-util';
-import { FunctionalComponent, h } from 'preact';
+import { OrderShortInfo } from '@gnu-taler/taler-util';
+import { createExample } from '../test-utils';
 import { View as TestedComponent } from './Refund';
 
 
 export default {
-  title: 'wallet/refund',
+  title: 'cta/refund',
   component: TestedComponent,
   argTypes: {
   },
 };
-
-function createExample<Props>(Component: FunctionalComponent<Props>, props: Partial<Props>) {
-  const r = (args: any) => <Component {...args} />
-  r.args = props
-  return r
-}
 
 export const Complete = createExample(TestedComponent, {
   applyResult: {

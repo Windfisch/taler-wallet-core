@@ -34,7 +34,7 @@ import { DeveloperPage as DeveloperPage } from "./popup/Debug";
 import { HistoryPage } from "./popup/History";
 import {
   Pages, WalletNavBar
-} from "./popup/popup";
+} from "./NavigationBar";
 import { ProviderAddPage } from "./popup/ProviderAddPage";
 import { ProviderDetailPage } from "./popup/ProviderDetailPage";
 import { SettingsPage } from "./popup/Settings";

@@ -25,7 +25,7 @@ import {
   SmallText, SmallTextLight
 } from "../components/styled";
 import { useBackupStatus } from "../hooks/useBackupStatus";
-import { Pages } from "./popup";
+import { Pages } from "../NavigationBar";
 
 interface Props {
   onAddProvider: () => void;

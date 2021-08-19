@@ -20,31 +20,26 @@
 */
 
 import { createExample } from '../test-utils';
-import { View as TestedComponent } from './Welcome';
+import { View as TestedComponent } from './Withdraw';
 
 
 export default {
-  title: 'wallet/welcome',
+  title: 'cta/withdraw',
   component: TestedComponent,
+  argTypes: {
+  },
 };
 
-export const Normal = createExample(TestedComponent, {
-  permissionsEnabled: true,
-  diagnostics: {
-    errors: [],
-    walletManifestVersion: '1.0',
-    walletManifestDisplayVersion: '1.0',
-    firefoxIdbProblem: false,
-    dbOutdated: false,
-  }
-});
-
-export const TimedoutDiagnostics = createExample(TestedComponent, {
-  timedOut: true,
-  permissionsEnabled: false,
-});
-
-export const RunningDiagnostics = createExample(TestedComponent, {
-  permissionsEnabled: false,
-});
-
+export const CompleteWithExchange = createExample(TestedComponent, {
+  details: {
+    amount: 'USD:2',
+    possibleExchanges: [],
+  },
+  selectedExchange: 'Some exchange'
+})
+export const CompleteWithoutExchange = createExample(TestedComponent, {
+  details: {
+    amount: 'USD:2',
+    possibleExchanges: [],
+  },
+})
