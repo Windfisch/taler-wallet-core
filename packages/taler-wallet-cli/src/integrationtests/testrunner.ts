@@ -79,6 +79,7 @@ import { runWalletBackupDoublespendTest } from "./test-wallet-backup-doublespend
 import { runPaymentForgettableTest } from "./test-payment-forgettable.js";
 import { runPaymentZeroTest } from "./test-payment-zero.js";
 import { runMerchantSpecPublicOrdersTest } from "./test-merchant-spec-public-orders.js";
+import { runExchangeTimetravelTest } from "./test-exchange-timetravel.js";
 
 /**
  * Test runner.
@@ -99,6 +100,7 @@ const allTests: TestMainFunction[] = [
   runClaimLoopTest,
   runDepositTest,
   runExchangeManagementTest,
+  runExchangeTimetravelTest,
   runFeeRegressionTest,
   runLibeufinBasicTest,
   runLibeufinKeyrotationTest,

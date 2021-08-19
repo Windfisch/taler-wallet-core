@@ -28,7 +28,11 @@ import {
   BankAccessApi,
 } from "./harness";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { ExchangesListRespose, URL, TalerErrorCode } from "@gnu-taler/taler-util";
+import {
+  ExchangesListRespose,
+  URL,
+  TalerErrorCode,
+} from "@gnu-taler/taler-util";
 import {
   FaultInjectedExchangeService,
   FaultInjectionResponseContext,
@@ -264,3 +268,5 @@ export async function runExchangeManagementTest(t: GlobalTestState) {
   // Make sure the faulty exchange isn't used for the suggestion.
   t.assertTrue(wd.possibleExchanges.length === 0);
 }
+
+runExchangeManagementTest.suites = ["exchange"];
