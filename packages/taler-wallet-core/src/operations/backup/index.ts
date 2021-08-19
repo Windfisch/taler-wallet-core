@@ -242,11 +242,7 @@ function deriveBlobSecret(bc: WalletBackupConfState): Uint8Array {
 }
 
 interface BackupForProviderArgs {
-  backupConfig: WalletBackupConfState;
-  provider: BackupProviderRecord;
-  currentBackupHash: ArrayBuffer;
-  encBackup: ArrayBuffer;
-  backupJson: WalletBackupContentV1;
+  backupProviderBaseUrl: string;
 
   /**
    * Should we attempt one more upload after trying
@@ -267,13 +263,22 @@ async function runBackupCycleForProvider(
   ws: InternalWalletState,
   args: BackupForProviderArgs,
 ): Promise<void> {
-  const {
-    backupConfig,
-    provider,
-    currentBackupHash,
-    encBackup,
-    backupJson,
-  } = args;
+  const provider = await ws.db
+    .mktx((x) => ({ backupProviders: x.backupProviders }))
+    .runReadOnly(async (tx) => {
+      return tx.backupProviders.get(args.backupProviderBaseUrl);
+    });
+
+  if (!provider) {
+    logger.warn("provider disappeared");
+    return;
+  }
+
+  const backupJson = await exportBackup(ws);
+  const backupConfig = await provideBackupState(ws);
+  const encBackup = await encryptBackup(backupConfig, backupJson);
+  const currentBackupHash = hash(encBackup);
+
   const accountKeyPair = deriveAccountKeyPair(backupConfig, provider.baseUrl);
 
   const newHash = encodeCrock(currentBackupHash);
@@ -301,11 +306,11 @@ async function runBackupCycleForProvider(
     headers: {
       "content-type": "application/octet-stream",
       "sync-signature": syncSig,
-      "if-none-match": encodeCrock(currentBackupHash),
+      "if-none-match": newHash,
       ...(provider.lastBackupHash
         ? {
-          "if-match": provider.lastBackupHash,
-        }
+            "if-match": provider.lastBackupHash,
+          }
         : {}),
     },
   });
@@ -366,7 +371,11 @@ async function runBackupCycleForProvider(
         provRec.currentPaymentProposalId = proposalId;
         // FIXME: allocate error code for this!
         await tx.backupProviders.put(provRec);
-        await incrementBackupRetryInTx(tx, args.provider.baseUrl, undefined);
+        await incrementBackupRetryInTx(
+          tx,
+          args.backupProviderBaseUrl,
+          undefined,
+        );
       });
 
     if (doPay) {
@@ -418,6 +427,7 @@ async function runBackupCycleForProvider(
       .runReadWrite(async (tx) => {
         const prov = await tx.backupProvider.get(provider.baseUrl);
         if (!prov) {
+          logger.warn("backup provider not found anymore");
           return;
         }
         prov.lastBackupHash = encodeCrock(hash(backupEnc));
@@ -446,7 +456,7 @@ async function runBackupCycleForProvider(
   await ws.db
     .mktx((x) => ({ backupProviders: x.backupProviders }))
     .runReadWrite(async (tx) => {
-      incrementBackupRetryInTx(tx, args.provider.baseUrl, err);
+      incrementBackupRetryInTx(tx, args.backupProviderBaseUrl, err);
     });
 }
 
@@ -504,17 +514,8 @@ export async function processBackupForProvider(
     incrementBackupRetry(ws, backupProviderBaseUrl, err);
 
   const run = async () => {
-    const backupJson = await exportBackup(ws);
-    const backupConfig = await provideBackupState(ws);
-    const encBackup = await encryptBackup(backupConfig, backupJson);
-    const currentBackupHash = hash(encBackup);
-
     await runBackupCycleForProvider(ws, {
-      provider,
-      backupJson,
-      backupConfig,
-      encBackup,
-      currentBackupHash,
+      backupProviderBaseUrl: provider.baseUrl,
       retryAfterPayment: true,
     });
   };
@@ -531,16 +532,20 @@ export const codecForRemoveBackupProvider = (): Codec<RemoveBackupProviderReques
     .property("provider", codecForString())
     .build("RemoveBackupProviderRequest");
 
-export async function removeBackupProvider(ws: InternalWalletState, req: RemoveBackupProviderRequest): Promise<void> {
-  await ws.db.mktx(({ backupProviders }) => ({ backupProviders }))
+export async function removeBackupProvider(
+  ws: InternalWalletState,
+  req: RemoveBackupProviderRequest,
+): Promise<void> {
+  await ws.db
+    .mktx(({ backupProviders }) => ({ backupProviders }))
     .runReadWrite(async (tx) => {
-      await tx.backupProviders.delete(req.provider)
-    })
+      await tx.backupProviders.delete(req.provider);
+    });
 }
 
 export interface RunBackupCycleRequest {
   /**
-   * List of providers to backup or empty for all known providers. 
+   * List of providers to backup or empty for all known providers.
    */
   providers?: Array<string>;
 }
@@ -557,28 +562,25 @@ export const codecForRunBackupCycle = (): Codec<RunBackupCycleRequest> =>
  * 2. Download, verify and import backups from connected sync accounts.
  * 3. Upload the updated backup blob.
  */
-export async function runBackupCycle(ws: InternalWalletState, req: RunBackupCycleRequest): Promise<void> {
+export async function runBackupCycle(
+  ws: InternalWalletState,
+  req: RunBackupCycleRequest,
+): Promise<void> {
   const providers = await ws.db
     .mktx((x) => ({ backupProviders: x.backupProviders }))
     .runReadOnly(async (tx) => {
       if (req.providers) {
-        const rs = await Promise.all(req.providers.map(id => tx.backupProviders.get(id)))
-        return rs.filter(notEmpty)
+        const rs = await Promise.all(
+          req.providers.map((id) => tx.backupProviders.get(id)),
+        );
+        return rs.filter(notEmpty);
       }
-      return await tx.backupProviders.iter(req.providers).toArray();
+      return await tx.backupProviders.iter().toArray();
     });
-  const backupJson = await exportBackup(ws);
-  const backupConfig = await provideBackupState(ws);
-  const encBackup = await encryptBackup(backupConfig, backupJson);
-  const currentBackupHash = hash(encBackup);
 
   for (const provider of providers) {
     await runBackupCycleForProvider(ws, {
-      provider,
-      backupJson,
-      backupConfig,
-      encBackup,
-      currentBackupHash,
+      backupProviderBaseUrl: provider.baseUrl,
       retryAfterPayment: true,
     });
   }
@@ -645,7 +647,7 @@ export async function addBackupProvider(
         return;
       }
     });
-  const termsUrl = new URL("terms", canonUrl);
+  const termsUrl = new URL("config", canonUrl);
   const resp = await ws.http.get(termsUrl.href);
   const terms = await readSuccessResponseJsonOrThrow(
     resp,
@@ -680,7 +682,7 @@ export async function addBackupProvider(
     });
 }
 
-export async function restoreFromRecoverySecret(): Promise<void> { }
+export async function restoreFromRecoverySecret(): Promise<void> {}
 
 /**
  * Information about one provider.
@@ -907,7 +909,7 @@ async function backupRecoveryTheirs(
         if (!existingProv) {
           await tx.backupProviders.put({
             baseUrl: prov.url,
-            name: 'not-defined',
+            name: "not-defined",
             paymentProposalIds: [],
             state: {
               tag: BackupProviderStateTag.Ready,

@@ -2,7 +2,7 @@
   "compileOnSave": true,
   "compilerOptions": {
     "composite": true,
-    "target": "ES6",
+    "target": "ES2018",
     "module": "ESNext",
     "moduleResolution": "node",
     "sourceMap": true,
