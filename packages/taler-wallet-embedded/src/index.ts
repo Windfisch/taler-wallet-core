@@ -179,7 +179,7 @@ class NativeWalletMessageHandler {
       const w = await getDefaultNodeWallet(this.walletArgs);
       this.maybeWallet = w;
       await w.handleCoreApiRequest("initWallet", "native-init", {});
-      w.runRetryLoop().catch((e) => {
+      w.runTaskLoop().catch((e) => {
         console.error("Error during wallet retry loop", e);
       });
       this.wp.resolve(w);

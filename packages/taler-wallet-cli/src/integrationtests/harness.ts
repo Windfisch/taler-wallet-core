@@ -1620,6 +1620,7 @@ export class WalletCli {
     const self = this;
     this._client = {
       async call(op: any, payload: any): Promise<any> {
+        console.log("calling wallet with timetravel arg", self.timetravelArg);
         const resp = await sh(
           self.globalTestState,
           `wallet-${self.name}`,

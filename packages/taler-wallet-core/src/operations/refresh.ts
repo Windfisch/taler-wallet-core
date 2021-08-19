@@ -147,6 +147,7 @@ async function refreshCreateSession(
     throw Error("db inconsistent: exchange of coin not found");
   }
 
+
   const { availableAmount, availableDenoms } = await ws.db
     .mktx((x) => ({
       denominations: x.denominations,
@@ -161,6 +162,7 @@ async function refreshCreateSession(
         throw Error("db inconsistent: denomination for coin not found");
       }
 
+      // FIXME: use an index here, based on the withdrawal expiration time.
       const availableDenoms: DenominationRecord[] = await tx.denominations.indexes.byExchangeBaseUrl
         .iter(exchange.baseUrl)
         .toArray();
@@ -913,7 +915,15 @@ export async function autoRefresh(
         }
       }
       if (refreshCoins.length > 0) {
-        await createRefreshGroup(ws, tx, refreshCoins, RefreshReason.Scheduled);
+        const res = await createRefreshGroup(
+          ws,
+          tx,
+          refreshCoins,
+          RefreshReason.Scheduled,
+        );
+        logger.info(
+          `created refresh group for auto-refresh (${res.refreshGroupId})`,
+        );
       }
       logger.info(
         `current wallet time: ${timestampToIsoString(getTimestampNow())}`,

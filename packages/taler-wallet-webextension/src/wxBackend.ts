@@ -49,7 +49,7 @@ import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory";
 /**
  * Currently active wallet instance.  Might be unloaded and
  * re-instantiated when the database is reset.
- * 
+ *
  * FIXME:  Maybe move the wallet resetting into the Wallet class?
  */
 let currentWallet: Wallet | undefined;
@@ -215,8 +215,10 @@ function makeSyncWalletRedirect(
 ): Record<string, unknown> {
   const innerUrl = new URL(chrome.extension.getURL(url));
   if (params) {
-    const hParams = Object.keys(params).map(k => `${k}=${params[k]}`).join('&')
-    innerUrl.hash = innerUrl.hash + '?' + hParams
+    const hParams = Object.keys(params)
+      .map((k) => `${k}=${params[k]}`)
+      .join("&");
+    innerUrl.hash = innerUrl.hash + "?" + hParams;
   }
   if (isFirefox()) {
     // Some platforms don't support the sync redirect (yet), so fall back to
@@ -272,8 +274,8 @@ async function reinitWallet(): Promise<void> {
       }
     }
   });
-  wallet.runRetryLoop().catch((e) => {
-    console.log("error during wallet retry loop", e);
+  wallet.runTaskLoop().catch((e) => {
+    console.log("error during wallet task loop", e);
   });
   // Useful for debugging in the background page.
   (window as any).talerWallet = wallet;

@@ -62,6 +62,7 @@ async function applyTimeTravel(
   }
 
   if (s.wallet) {
+    console.log("setting wallet time travel to", timetravelDuration);
     s.wallet.setTimetravel(timetravelDuration);
   }
 }
@@ -139,6 +140,7 @@ export async function runTimetravelAutorefreshTest(t: GlobalTestState) {
 
   // Travel into the future, the deposit expiration is two years
   // into the future.
+  console.log("applying first time travel");
   await applyTimeTravel(durationFromSpec({ days: 400 }), {
     wallet,
     exchange,
@@ -164,6 +166,7 @@ export async function runTimetravelAutorefreshTest(t: GlobalTestState) {
 
   // Travel into the future, the deposit expiration is two years
   // into the future.
+  console.log("applying second time travel");
   await applyTimeTravel(durationFromSpec({ years: 2, months: 6 }), {
     wallet,
     exchange,

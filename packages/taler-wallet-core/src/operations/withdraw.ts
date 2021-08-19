@@ -17,7 +17,6 @@
 /**
  * Imports.
  */
-import * as LibtoolVersion from "@gnu-taler/taler-util";
 import {
   AmountJson,
   Amounts,
@@ -41,6 +40,7 @@ import {
   WithdrawResponse,
   URL,
   WithdrawUriInfoResponse,
+  VersionMatchResult,
 } from "@gnu-taler/taler-util";
 import {
   CoinRecord,
@@ -143,7 +143,7 @@ interface ExchangeWithdrawDetails {
    *
    * Older exchanges don't return version information.
    */
-  versionMatch: LibtoolVersion.VersionMatchResult | undefined;
+  versionMatch: VersionMatchResult | undefined;
 
   /**
    * Libtool-style version string for the exchange or "unknown"
@@ -693,15 +693,15 @@ export async function updateWithdrawalDenoms(
   while (current < denominations.length) {
     const updatedDenominations: DenominationRecord[] = [];
     // Do a batch of batchSize
-    for (let batchIdx = 0; batchIdx < batchSize; batchIdx++) {
-      current++;
-      if (current >= denominations.length) {
-        break;
-      }
+    for (
+      let batchIdx = 0;
+      batchIdx < batchSize && current < denominations.length;
+      batchIdx++, current++
+    ) {
       const denom = denominations[current];
       if (denom.status === DenominationStatus.Unverified) {
         logger.trace(
-          `Validation denomination (${current + 1}/${
+          `Validating denomination (${current + 1}/${
             denominations.length
           }) signature of ${denom.denomPubHash}`,
         );
@@ -939,7 +939,7 @@ export async function getExchangeWithdrawalInfo(
 
   let versionMatch;
   if (exchangeDetails.protocolVersion) {
-    versionMatch = LibtoolVersion.compare(
+    versionMatch = compare(
       WALLET_EXCHANGE_PROTOCOL_VERSION,
       exchangeDetails.protocolVersion,
     );

@@ -1065,5 +1065,6 @@ export function main() {
     logger.warn("Allowing withdrawal of late denominations for debugging");
     walletCoreDebugFlags.denomselAllowLate = true;
   }
+  logger.trace(`running wallet-cli with`, process.argv);
   walletCli.run();
 }

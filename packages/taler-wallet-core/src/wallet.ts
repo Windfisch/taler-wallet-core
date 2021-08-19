@@ -333,7 +333,7 @@ async function runTaskLoop(
       }
     }
 
-    if (opts.stopWhenDone && numGivingLiveness === 0) {
+    if (opts.stopWhenDone && numGivingLiveness === 0 && iteration !== 0) {
       logger.warn(`stopping, as no pending operations have lifeness`);
       return;
     }
@@ -970,15 +970,11 @@ export class Wallet {
     this.ws.stop();
   }
 
-  runRetryLoop(): Promise<void> {
-    return runTaskLoop(this.ws);
-  }
-
   runPending(forceNow: boolean = false) {
     return runPending(this.ws, forceNow);
   }
 
-  runTaskLoop(opts: RetryLoopOpts) {
+  runTaskLoop(opts?: RetryLoopOpts) {
     return runTaskLoop(this.ws, opts);
   }
 
