@@ -31,6 +31,7 @@ import {
   NotificationType,
   RefreshGroupId,
   RefreshReason,
+  stringifyTimestamp,
   TalerErrorDetails,
   timestampToIsoString,
 } from "@gnu-taler/taler-util";
@@ -147,6 +148,8 @@ async function refreshCreateSession(
     throw Error("db inconsistent: exchange of coin not found");
   }
 
+  // FIXME: use helper functions from withdraw.ts
+  // to update and filter withdrawable denoms.
 
   const { availableAmount, availableDenoms } = await ws.db
     .mktx((x) => ({
@@ -178,6 +181,19 @@ async function refreshCreateSession(
     availableAmount,
     availableDenoms,
   );
+
+  if (logger.shouldLogTrace()) {
+    logger.trace(`printing selected denominations for refresh`);
+    logger.trace(`current time: ${stringifyTimestamp(getTimestampNow())}`);
+    for (const denom of newCoinDenoms.selectedDenoms) {
+      console.log(`denom ${denom.denom}, count ${denom.count}`);
+      console.log(
+        `withdrawal expiration ${stringifyTimestamp(
+          denom.denom.stampExpireWithdraw,
+        )}`,
+      );
+    }
+  }
 
   if (newCoinDenoms.selectedDenoms.length === 0) {
     logger.trace(

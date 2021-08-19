@@ -56,6 +56,21 @@ function writeNodeLog(
 export class Logger {
   constructor(private tag: string) {}
 
+  shouldLogTrace() {
+    // FIXME: Implement logic to check loglevel
+    return true;
+  }
+
+  shouldLogInfo() {
+    // FIXME: Implement logic to check loglevel
+    return true;
+  }
+
+  shouldLogWarn() {
+    // FIXME: Implement logic to check loglevel
+    return true;
+  }
+
   info(message: string, ...args: any[]): void {
     if (isNode) {
       writeNodeLog(message, this.tag, "INFO", args);
