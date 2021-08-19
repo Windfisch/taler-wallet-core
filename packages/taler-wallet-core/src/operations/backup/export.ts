@@ -260,6 +260,7 @@ export async function exportBackup(
           stamp_expire_withdraw: denom.stampExpireWithdraw,
           stamp_start: denom.stampStart,
           value: Amounts.stringify(denom.value),
+          list_issue_date: denom.listIssueDate,
         });
       });
 

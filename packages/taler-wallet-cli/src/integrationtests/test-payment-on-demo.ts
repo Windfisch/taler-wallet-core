@@ -24,8 +24,6 @@ import {
   BankAccessApi
 } from "./harness";
 import {
-  createSimpleTestkudosEnvironment,
-  withdrawViaBank,
   makeTestPayment,
 } from "./helpers";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
@@ -96,4 +94,6 @@ export async function runPaymentDemoTest(t: GlobalTestState) {
   t.assertTrue(balanceAfter["balances"].length == 1);
   t.assertTrue(balanceBefore["balances"][0]["available"] > balanceAfter["balances"][0]["available"]);
 }
+
+runPaymentDemoTest.excludeByDefault = true;
 runPaymentDemoTest.suites = ["buildbot"];

@@ -18,17 +18,10 @@
  * Imports.
  */
 import {
-  openDatabase,
   describeStore,
   describeContents,
   describeIndex,
-  DbAccess,
-  StoreDescriptor,
-  StoreWithIndexes,
-  IndexDescriptor,
 } from "./util/query.js";
-import { IDBFactory, IDBDatabase, IDBTransaction } from "@gnu-taler/idb-bridge";
-import { Logger } from "@gnu-taler/taler-util";
 import {
   AmountJson,
   AmountString,
@@ -53,11 +46,17 @@ import { PayCoinSelection } from "./util/coinSelection.js";
  * for all previous versions must be written, which should be
  * avoided.
  */
-const TALER_DB_NAME = "taler-wallet-main-v2";
+export const TALER_DB_NAME = "taler-wallet-main-v2";
 
-const TALER_META_DB_NAME = "taler-wallet-meta";
+/**
+ * Name of the metadata database.  This database is used
+ * to track major migrations of the main Taler database.
+ *
+ * (Minor migrations are handled via upgrade transactions.)
+ */
+export const TALER_META_DB_NAME = "taler-wallet-meta";
 
-const CURRENT_DB_CONFIG_KEY = "currentMainDbName";
+export const CURRENT_DB_CONFIG_KEY = "currentMainDbName";
 
 /**
  * Current database minor version, should be incremented
@@ -67,124 +66,6 @@ const CURRENT_DB_CONFIG_KEY = "currentMainDbName";
  * are added.
  */
 export const WALLET_DB_MINOR_VERSION = 1;
-
-const logger = new Logger("db.ts");
-
-function upgradeFromStoreMap(
-  storeMap: any,
-  db: IDBDatabase,
-  oldVersion: number,
-  newVersion: number,
-  upgradeTransaction: IDBTransaction,
-): void {
-  if (oldVersion === 0) {
-    for (const n in storeMap) {
-      const swi: StoreWithIndexes<StoreDescriptor<unknown>, any> = storeMap[n];
-      const storeDesc: StoreDescriptor<unknown> = swi.store;
-      const s = db.createObjectStore(storeDesc.name, {
-        autoIncrement: storeDesc.autoIncrement,
-        keyPath: storeDesc.keyPath,
-      });
-      for (const indexName in swi.indexMap as any) {
-        const indexDesc: IndexDescriptor = swi.indexMap[indexName];
-        s.createIndex(indexDesc.name, indexDesc.keyPath, {
-          multiEntry: indexDesc.multiEntry,
-        });
-      }
-    }
-    return;
-  }
-  if (oldVersion === newVersion) {
-    return;
-  }
-  logger.info(`upgrading database from ${oldVersion} to ${newVersion}`);
-  throw Error("upgrade not supported");
-}
-
-function onTalerDbUpgradeNeeded(
-  db: IDBDatabase,
-  oldVersion: number,
-  newVersion: number,
-  upgradeTransaction: IDBTransaction,
-) {
-  upgradeFromStoreMap(
-    WalletStoresV1,
-    db,
-    oldVersion,
-    newVersion,
-    upgradeTransaction,
-  );
-}
-
-function onMetaDbUpgradeNeeded(
-  db: IDBDatabase,
-  oldVersion: number,
-  newVersion: number,
-  upgradeTransaction: IDBTransaction,
-) {
-  upgradeFromStoreMap(
-    walletMetadataStore,
-    db,
-    oldVersion,
-    newVersion,
-    upgradeTransaction,
-  );
-}
-
-/**
- * Return a promise that resolves
- * to the taler wallet db.
- */
-export async function openTalerDatabase(
-  idbFactory: IDBFactory,
-  onVersionChange: () => void,
-): Promise<DbAccess<typeof WalletStoresV1>> {
-  const metaDbHandle = await openDatabase(
-    idbFactory,
-    TALER_META_DB_NAME,
-    1,
-    () => {},
-    onMetaDbUpgradeNeeded,
-  );
-
-  const metaDb = new DbAccess(metaDbHandle, walletMetadataStore);
-  let currentMainVersion: string | undefined;
-  await metaDb
-    .mktx((x) => ({
-      metaConfig: x.metaConfig,
-    }))
-    .runReadWrite(async (tx) => {
-      const dbVersionRecord = await tx.metaConfig.get(CURRENT_DB_CONFIG_KEY);
-      if (!dbVersionRecord) {
-        currentMainVersion = TALER_DB_NAME;
-        await tx.metaConfig.put({
-          key: CURRENT_DB_CONFIG_KEY,
-          value: TALER_DB_NAME,
-        });
-      } else {
-        currentMainVersion = dbVersionRecord.value;
-      }
-    });
-
-  if (currentMainVersion !== TALER_DB_NAME) {
-    // In the future, the migration logic will be implemented here.
-    throw Error(`migration from database ${currentMainVersion} not supported`);
-  }
-
-  const mainDbHandle = await openDatabase(
-    idbFactory,
-    TALER_DB_NAME,
-    WALLET_DB_MINOR_VERSION,
-    onVersionChange,
-    onTalerDbUpgradeNeeded,
-  );
-
-  return new DbAccess(mainDbHandle, WalletStoresV1);
-}
-
-export function deleteTalerDatabase(idbFactory: IDBFactory): void {
-  idbFactory.deleteDatabase(TALER_DB_NAME);
-}
 
 export enum ReserveRecordStatus {
   /**
@@ -217,6 +98,10 @@ export enum ReserveRecordStatus {
   BANK_ABORTED = "bank-aborted",
 }
 
+/**
+ * Extra info about a reserve that is used
+ * with a bank-integrated withdrawal.
+ */
 export interface ReserveBankInfo {
   /**
    * Status URL that the wallet will use to query the status
@@ -224,6 +109,10 @@ export interface ReserveBankInfo {
    */
   statusUrl: string;
 
+  /**
+   * URL that the user can be redirected to, and allows
+   * them to confirm (or abort) the bank-integrated withdrawal.
+   */
   confirmUrl?: string;
 
   /**
@@ -339,25 +228,9 @@ export interface ReserveRecord {
 }
 
 /**
- * Auditor record as stored with currencies in the exchange database.
+ * Record that indicates the wallet trusts
+ * a particular auditor.
  */
-export interface AuditorRecord {
-  /**
-   * Base url of the auditor.
-   */
-  baseUrl: string;
-
-  /**
-   * Public signing key of the auditor.
-   */
-  auditorPub: string;
-
-  /**
-   * Time when the auditing expires.
-   */
-  expirationStamp: number;
-}
-
 export interface AuditorTrustRecord {
   /**
    * Currency that we trust this auditor for.
@@ -381,6 +254,9 @@ export interface AuditorTrustRecord {
   uids: string[];
 }
 
+/**
+ * Record to indicate trust for a particular exchange.
+ */
 export interface ExchangeTrustRecord {
   /**
    * Currency that we trust this exchange for.
@@ -519,8 +395,17 @@ export interface DenominationRecord {
    * on the denomination.
    */
   exchangeMasterPub: string;
+
+  /**
+   * Latest list issue date of the "/keys" response
+   * that includes this denomination.
+   */
+  listIssueDate: Timestamp;
 }
 
+/**
+ * Information about one of the exchange's bank accounts.
+ */
 export interface ExchangeBankAccount {
   payto_uri: string;
   master_sig: string;
@@ -554,6 +439,8 @@ export interface ExchangeDetailsRecord {
   /**
    * Signing keys we got from the exchange, can also contain
    * older signing keys that are not returned by /keys anymore.
+   *
+   * FIXME:  Should this be put into a separate object store?
    */
   signingKeys: ExchangeSignKeyJson[];
 
@@ -610,6 +497,9 @@ export interface ExchangeRecord {
    */
   baseUrl: string;
 
+  /**
+   * Pointer to the current exchange details.
+   */
   detailsPointer: ExchangeDetailsPointer | undefined;
 
   /**
@@ -701,7 +591,9 @@ export interface PlanchetRecord {
 }
 
 /**
- * Planchet for a coin during refrehs.
+ * Planchet for a coin during refresh.
+ *
+ * FIXME:  Not used in DB?
  */
 export interface RefreshPlanchet {
   /**
@@ -1040,6 +932,8 @@ export interface RefreshGroupRecord {
 
   oldCoinPubs: string[];
 
+  // FIXME:  Should this go into a separate
+  // object store for faster updates?
   refreshSessionPerCoin: (RefreshSessionRecord | undefined)[];
 
   inputPerCoin: AmountJson[];
@@ -1124,21 +1018,6 @@ export interface WireFee {
    * Signature made by the exchange master key.
    */
   sig: string;
-}
-
-/**
- * Record to store information about a refund event.
- *
- * All information about a refund is stored with the purchase,
- * this event is just for the history.
- *
- * The event is only present for completed refunds.
- */
-export interface RefundEventRecord {
-  timestamp: Timestamp;
-  merchantExecutionTimestamp: Timestamp;
-  refundGroupId: string;
-  proposalId: string;
 }
 
 export enum RefundState {
@@ -1381,7 +1260,6 @@ export const WALLET_BACKUP_STATE_KEY = "walletBackupState";
 /**
  * Configuration key/value entries to configure
  * the wallet.
- *
  */
 export type ConfigRecord =
   | {

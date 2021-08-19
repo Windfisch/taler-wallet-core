@@ -34,7 +34,6 @@ import {
   DbAccess,
   WalletStoresV1,
   Wallet,
-  WalletApiOperation,
 } from "@gnu-taler/taler-wallet-core";
 import {
   classifyTalerUri,

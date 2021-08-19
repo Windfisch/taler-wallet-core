@@ -31,7 +31,6 @@ import {
   ExchangeWireJson,
   getTimestampNow,
   isTimestampExpired,
-  j2s,
   Logger,
   NotificationType,
   parsePaytoUri,
@@ -76,6 +75,7 @@ const logger = new Logger("exchanges.ts");
 function denominationRecordFromKeys(
   exchangeBaseUrl: string,
   exchangeMasterPub: string,
+  listIssueDate: Timestamp,
   denomIn: Denomination,
 ): DenominationRecord {
   const denomPubHash = encodeCrock(hash(decodeCrock(denomIn.denom_pub)));
@@ -97,6 +97,7 @@ function denominationRecordFromKeys(
     stampStart: denomIn.stamp_start,
     status: DenominationStatus.Unverified,
     value: Amounts.parseOrThrow(denomIn.value),
+    listIssueDate,
   };
   return d;
 }
@@ -380,6 +381,7 @@ async function downloadKeysInfo(
       denominationRecordFromKeys(
         baseUrl,
         exchangeKeysJson.master_public_key,
+        exchangeKeysJson.list_issue_date,
         d,
       ),
     ),

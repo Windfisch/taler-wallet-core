@@ -901,12 +901,12 @@ deploymentCli
   .action(async (args) => {
     let out = "";
 
-    const stamp = Math.floor((new Date()).getTime() / 1000);
+    const stamp = Math.floor(new Date().getTime() / 1000);
 
     const min = Amounts.parseOrThrow(args.coincfg.minAmount);
     const max = Amounts.parseOrThrow(args.coincfg.maxAmount);
     if (min.currency != max.currency) {
-      console.error("currency mismatch")
+      console.error("currency mismatch");
       process.exit(1);
     }
     const currency = min.currency;
@@ -961,7 +961,14 @@ testCli
   .subcommand("listIntegrationtests", "list-integrationtests")
   .action(async (args) => {
     for (const t of getTestInfo()) {
-      console.log(t.name);
+      let s = t.name;
+      if (t.suites.length > 0) {
+        s += ` (suites: ${t.suites.join(",")})`;
+      }
+      if (t.excludeByDefault) {
+        s += ` [excluded by default]`;
+      }
+      console.log(s);
     }
   });
 

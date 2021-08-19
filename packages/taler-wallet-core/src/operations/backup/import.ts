@@ -360,6 +360,7 @@ export async function importBackup(
               stampStart: backupDenomination.stamp_start,
               status: DenominationStatus.VerifiedGood,
               value: Amounts.parseOrThrow(backupDenomination.value),
+              listIssueDate: backupDenomination.list_issue_date,
             });
           }
           for (const backupCoin of backupDenomination.coins) {

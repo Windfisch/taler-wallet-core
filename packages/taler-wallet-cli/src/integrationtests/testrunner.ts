@@ -90,6 +90,7 @@ import { runMerchantSpecPublicOrdersTest } from "./test-merchant-spec-public-ord
 interface TestMainFunction {
   (t: GlobalTestState): Promise<void>;
   timeoutMs?: number;
+  excludeByDefault?: boolean;
   suites?: string[];
 }
 
@@ -157,6 +158,8 @@ export interface TestRunSpec {
 
 export interface TestInfo {
   name: string;
+  suites: string[];
+  excludeByDefault: boolean;
 }
 
 function updateCurrentSymlink(testDir: string): void {
@@ -234,6 +237,10 @@ export async function runTests(spec: TestRunSpec) {
       const ts = new Set(testCase.suites ?? []);
       const intersection = new Set([...suites].filter((x) => ts.has(x)));
       if (intersection.size === 0) {
+        continue;
+      }
+    } else {
+      if (testCase.excludeByDefault) {
         continue;
       }
     }
@@ -389,6 +396,8 @@ export function reportAndQuit(
 export function getTestInfo(): TestInfo[] {
   return allTests.map((x) => ({
     name: getTestName(x),
+    suites: x.suites ?? [],
+    excludeByDefault: x.excludeByDefault ?? false,
   }));
 }
 

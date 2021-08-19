@@ -897,6 +897,12 @@ export interface BackupDenomination {
    * Coins of this denomination.
    */
   coins: BackupCoin[];
+
+  /**
+   * The list issue date of the exchange "/keys" response
+   * that this denomination was last seen in.
+   */
+  list_issue_date: Timestamp;
 }
 
 /**

@@ -29,6 +29,7 @@ export * from "./util/http.js";
 export * from "./versions.js";
 
 export * from "./db.js";
+export * from "./db-utils.js";
 
 // Crypto and crypto workers
 // export * from "./crypto/workers/nodeThreadWorker.js";
@@ -44,4 +45,4 @@ export { InternalWalletState } from "./common.js";
 export * from "./wallet-api-types.js";
 export * from "./wallet.js";
 
-export * from "./operations/backup/index.js"
+export * from "./operations/backup/index.js";

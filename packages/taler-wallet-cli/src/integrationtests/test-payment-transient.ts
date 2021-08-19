@@ -169,16 +169,17 @@ export async function runPaymentTransientTest(t: GlobalTestState) {
 
   // Now ask the merchant if paid
 
+  console.log("requesting", publicOrderStatusUrl);
   publicOrderStatusResp = await axios.get(publicOrderStatusUrl, {
     validateStatus: () => true,
   });
 
   console.log(publicOrderStatusResp.data);
 
-  if (publicOrderStatusResp.status != 202) {
+  if (publicOrderStatusResp.status != 200) {
     console.log(publicOrderStatusResp.data);
     throw Error(
-      `expected status 202 (after paying), but got ${publicOrderStatusResp.status}`,
+      `expected status 200 (after paying), but got ${publicOrderStatusResp.status}`,
     );
   }
 }

@@ -76,6 +76,7 @@ test("withdrawal selection bug repro", (t) => {
         fraction: 0,
         value: 1000,
       },
+      listIssueDate: { t_ms: 0 },
     },
     {
       denomPub:
@@ -126,6 +127,7 @@ test("withdrawal selection bug repro", (t) => {
         fraction: 0,
         value: 10,
       },
+      listIssueDate: { t_ms: 0 },
     },
     {
       denomPub:
@@ -176,6 +178,7 @@ test("withdrawal selection bug repro", (t) => {
         fraction: 0,
         value: 5,
       },
+      listIssueDate: { t_ms: 0 },
     },
     {
       denomPub:
@@ -226,6 +229,7 @@ test("withdrawal selection bug repro", (t) => {
         fraction: 0,
         value: 1,
       },
+      listIssueDate: { t_ms: 0 },
     },
     {
       denomPub:
@@ -276,6 +280,7 @@ test("withdrawal selection bug repro", (t) => {
         fraction: 10000000,
         value: 0,
       },
+      listIssueDate: { t_ms: 0 },
     },
     {
       denomPub:
@@ -326,6 +331,7 @@ test("withdrawal selection bug repro", (t) => {
         fraction: 0,
         value: 2,
       },
+      listIssueDate: { t_ms: 0 },
     },
   ];
 
