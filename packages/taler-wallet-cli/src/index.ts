@@ -40,7 +40,6 @@ import {
   codecForString,
   Logger,
   Configuration,
-  getTimestampNow,
 } from "@gnu-taler/taler-util";
 import {
   NodeHttpLib,

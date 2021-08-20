@@ -22,12 +22,8 @@ import * as fs from "fs";
 import * as util from "util";
 import {
   GlobalTestState,
-  DbInfo,
   pingProc,
   ProcessWrapper,
-  runCommand,
-  setupDb,
-  sh,
 } from "./harness";
 import { Configuration } from "@gnu-taler/taler-util";
 

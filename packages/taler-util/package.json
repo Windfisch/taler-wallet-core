@@ -5,10 +5,10 @@
   "exports": {
     ".": "./lib/index.js"
   },
-  "module": "./lib/index.node.js",
-  "main": "./lib/index.node.js",
+  "module": "./lib/index.js",
+  "main": "./lib/index.js",
   "browser": {
-    "./lib/index.node.js": "./lib/index.js"
+    "./lib/index.js": "./lib/index.browser.js"
   },
   "type": "module",
   "types": "./lib/index.d.ts",
