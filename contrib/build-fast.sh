@@ -15,7 +15,7 @@ function build_idb() {
 function build_taler_util() {
   taler_util_dir=build/@gnu-taler/taler-util
   mkdir -p $taler_util_dir
-  esbuild --platform=node --bundle packages/taler-util/src/index.node.ts > $taler_util_dir/index.js
+  esbuild --platform=node --bundle packages/taler-util/src/index.ts > $taler_util_dir/index.js
 }
 
 function build_fflate() {
