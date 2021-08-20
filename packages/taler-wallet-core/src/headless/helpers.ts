@@ -36,23 +36,9 @@ import { SynchronousCryptoWorkerFactory } from "../crypto/workers/synchronousWor
 import type { IDBFactory } from "@gnu-taler/idb-bridge";
 import { WalletNotification } from "@gnu-taler/taler-util";
 import { Wallet } from "../wallet.js";
+import * as fs from "fs";
 
 const logger = new Logger("headless/helpers.ts");
-
-const nodejs_fs = (function () {
-  let fs: typeof import("fs");
-  return function () {
-    if (!fs) {
-      /**
-       * need to use an expression when doing a require if we want
-       * webpack not to find out about the requirement
-       */
-      const _r = "require";
-      fs = module[_r]("fs");
-    }
-    return fs;
-  };
-})();
 
 export interface DefaultNodeWalletArgs {
   /**
@@ -101,7 +87,7 @@ export async function getDefaultNodeWallet(
   const storagePath = args.persistentStoragePath;
   if (storagePath) {
     try {
-      const dbContentStr: string = nodejs_fs().readFileSync(storagePath, {
+      const dbContentStr: string = fs.readFileSync(storagePath, {
         encoding: "utf-8",
       });
       const dbContent = JSON.parse(dbContentStr);
@@ -124,15 +110,11 @@ export async function getDefaultNodeWallet(
       }
       const tmpPath = `${args.persistentStoragePath}-${makeId(5)}.tmp`;
       const dbContent = myBackend.exportDump();
-      nodejs_fs().writeFileSync(
-        tmpPath,
-        JSON.stringify(dbContent, undefined, 2),
-        {
-          encoding: "utf-8",
-        },
-      );
+      fs.writeFileSync(tmpPath, JSON.stringify(dbContent, undefined, 2), {
+        encoding: "utf-8",
+      });
       // Atomically move the temporary file onto the DB path.
-      nodejs_fs().renameSync(tmpPath, args.persistentStoragePath);
+      fs.renameSync(tmpPath, args.persistentStoragePath);
     };
   }
 

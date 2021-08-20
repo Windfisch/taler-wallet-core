@@ -7,27 +7,11 @@ purpose with or without fee is hereby granted, provided that the above
 copyright notice and this permission notice appear in all copies.
 */
 
-
 import { expand } from "./brace-expansion.js";
-
-const nodejs_path = (function () {
-  let path: typeof import("path");
-  return function () {
-    if (!path) {
-      /**
-       * need to use an expression when doing a require if we want
-       * webpack not to find out about the requirement
-       */
-      const _r = "require";
-      path = module[_r]("path");
-    }
-    return path;
-  };
-})();
 
 let path = { sep: "/" };
 try {
-  path.sep = nodejs_path().sep;
+  path.sep = require("path").sep;
 } catch (er) {}
 
 const GLOBSTAR = {};

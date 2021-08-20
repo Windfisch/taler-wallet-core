@@ -5,8 +5,11 @@
   "exports": {
     ".": "./lib/index.js"
   },
-  "module": "./lib/index.js",
-  "main": "./lib/index.js",
+  "module": "./lib/index.node.js",
+  "main": "./lib/index.node.js",
+  "browser": {
+    "./lib/index.node.js": "./lib/index.js"
+  },
   "type": "module",
   "types": "./lib/index.d.ts",
   "typesVersions": {
