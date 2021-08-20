@@ -3,7 +3,7 @@
 set -eu
 set -x
 
-export NODE_PATH=vendor:build/node_modules:build
+export NODE_PATH=vendor:build
 
 function build_idb() {
   rm -rf packages/idb-bridge/node_modules
