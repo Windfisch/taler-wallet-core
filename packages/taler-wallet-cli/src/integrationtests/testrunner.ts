@@ -15,7 +15,9 @@
  */
 
 import {
-  delayMs,
+  minimatch
+} from "@gnu-taler/taler-util";
+import {
   GlobalTestState,
   runTestWithState,
   shouldLingerInTest,
@@ -53,7 +55,6 @@ import { runWallettestingTest } from "./test-wallettesting";
 import { runTestWithdrawalManualTest } from "./test-withdrawal-manual";
 import { runWithdrawalAbortBankTest } from "./test-withdrawal-abort-bank";
 import { runWithdrawalBankIntegratedTest } from "./test-withdrawal-bank-integrated";
-import M from "minimatch";
 import { runMerchantExchangeConfusionTest } from "./test-merchant-exchange-confusion";
 import { runLibeufinBasicTest } from "./test-libeufin-basic";
 import { runLibeufinKeyrotationTest } from "./test-libeufin-keyrotation";
@@ -231,7 +232,7 @@ export async function runTests(spec: TestRunSpec) {
 
   for (const [n, testCase] of allTests.entries()) {
     const testName = getTestName(testCase);
-    if (spec.includePattern && !M(testName, spec.includePattern)) {
+    if (spec.includePattern && !minimatch(testName, spec.includePattern)) {
       continue;
     }
 
