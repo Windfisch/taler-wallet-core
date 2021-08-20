@@ -1,0 +1,6 @@
+The third-party packages in this directory are managed
+via git subtrees.
+
+They are added like this:
+
+$ git subtree -P vendor/jed add --squash https://github.com/messageformat/Jed master
