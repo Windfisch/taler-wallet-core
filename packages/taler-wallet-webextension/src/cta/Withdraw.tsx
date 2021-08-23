@@ -30,6 +30,7 @@ import {
   onUpdateNotification,
   getWithdrawalDetailsForUri,
 } from "../wxApi";
+import { h } from 'preact';
 import { WithdrawUriInfoResponse } from "@gnu-taler/taler-util";
 import { JSX } from "preact/jsx-runtime";
 import { WalletAction } from '../components/styled';
@@ -131,7 +132,7 @@ export function WithdrawPage({ talerWithdrawUri, ...rest }: Props): JSX.Element 
           setSelectedExchange(res.defaultExchangeBaseUrl);
         }
       } catch (e) {
-        console.error('error',JSON.stringify(e,undefined,2))
+        console.error('error', JSON.stringify(e, undefined, 2))
         setError(true)
       }
     };

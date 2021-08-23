@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Fragment } from "preact"
+import { h, Fragment } from "preact"
 import { NavBar } from '../src/NavigationBar'
 import { LogoHeader } from '../src/components/LogoHeader'
 import { TranslationProvider } from '../src/context/translation'
@@ -123,8 +123,8 @@ export const decorators = [
           font-family: Arial, Helvetica, sans-serif;
         }`}
         </style>
-        <link key="1" rel="stylesheet" type="text/css" href="/style/pure.css" />
-        <link key="2" rel="stylesheet" type="text/css" href="/style/wallet.css" />
+        <link key="1" rel="stylesheet" type="text/css" href="/static/style/pure.css" />
+        <link key="2" rel="stylesheet" type="text/css" href="/static/style/wallet.css" />
         <Story />
       </div>      
     }
@@ -158,8 +158,8 @@ export const decorators = [
         </style>
         <LogoHeader />
         <NavBar path={path} devMode={path === '/dev'} />
-        {/* <link key="1" rel="stylesheet" type="text/css" href="/style/pure.css" />
-        <link key="2" rel="stylesheet" type="text/css" href="/style/wallet.css" /> */}
+        <link key="1" rel="stylesheet" type="text/css" href="/static/style/pure.css" />
+        <link key="2" rel="stylesheet" type="text/css" href="/static/style/wallet.css" />
         <Story />
       </div>
     }

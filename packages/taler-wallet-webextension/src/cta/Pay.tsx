@@ -39,7 +39,7 @@ import {
   ContractTerms,
   ConfirmPayResultType,
 } from "@gnu-taler/taler-util";
-import { JSX, VNode } from "preact";
+import { JSX, VNode, h } from "preact";
 
 interface Props {
   talerPayUri?: string

@@ -1,8 +1,7 @@
-import { useState, useEffect } from "preact/hooks";
-import { getDiagnostics } from "../wxApi";
-import { PageLink } from "../renderHtml";
 import { WalletDiagnostics } from "@gnu-taler/taler-util";
+import { h } from "preact";
 import { JSX } from "preact/jsx-runtime";
+import { PageLink } from "../renderHtml";
 
 interface Props {
   timedOut: boolean;

@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { JSX } from "preact";
+import { JSX, h } from "preact";
 import { Diagnostics } from "../components/Diagnostics";
 import { useDiagnostics } from "../hooks/useDiagnostics.js";
 import * as wxApi from "../wxApi";

@@ -1,4 +1,4 @@
-import { VNode } from "preact";
+import { VNode, h } from "preact";
 import { useState } from "preact/hooks";
 import arrowDown from '../../static/img/chevron-down.svg';
 import { ErrorBox } from "./styled";

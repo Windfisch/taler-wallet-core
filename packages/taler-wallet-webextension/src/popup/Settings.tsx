@@ -16,7 +16,7 @@
 
 
 import { i18n } from "@gnu-taler/taler-util";
-import { VNode } from "preact";
+import { VNode, h } from "preact";
 import { Checkbox } from "../components/Checkbox";
 import { EditableText } from "../components/EditableText";
 import { SelectList } from "../components/SelectList";

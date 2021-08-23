@@ -21,8 +21,8 @@
 
 import { ProviderPaymentType } from '@gnu-taler/taler-wallet-core';
 import { addDays } from 'date-fns';
-import { FunctionalComponent } from 'preact';
 import { BackupView as TestedComponent } from './BackupPage';
+import { createExample } from '../test-utils';
 
 export default {
   title: 'popup/backup/list',
@@ -34,12 +34,6 @@ export default {
   }
 };
 
-
-function createExample<Props>(Component: FunctionalComponent<Props>, props: Partial<Props>) {
-  const r = (args: any) => <Component {...args} />
-  r.args = props
-  return r
-}
 
 export const LotOfProviders = createExample(TestedComponent, {
   providers: [{

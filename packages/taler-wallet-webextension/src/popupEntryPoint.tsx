@@ -22,9 +22,9 @@
 
 import { setupI18n } from "@gnu-taler/taler-util";
 import { createHashHistory } from "history";
-import { render } from "preact";
+import { render, h } from "preact";
 import Router, { route, Route } from "preact-router";
-import { useEffect } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { DevContextProvider } from "./context/devContext";
 import { useTalerActionURL } from "./hooks/useTalerActionURL";
 import { strings } from "./i18n/strings";

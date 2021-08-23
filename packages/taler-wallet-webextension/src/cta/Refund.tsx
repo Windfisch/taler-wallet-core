@@ -28,6 +28,7 @@ import {
 } from "@gnu-taler/taler-util";
 import { useEffect, useState } from "preact/hooks";
 import { JSX } from "preact/jsx-runtime";
+import { h } from 'preact';
 
 interface Props {
   talerRefundUri?: string

@@ -16,7 +16,7 @@
 
 import { AmountJson, Amounts, i18n, Transaction, TransactionType } from "@gnu-taler/taler-util";
 import { format } from "date-fns";
-import { Fragment, JSX, VNode } from "preact";
+import { Fragment, JSX, VNode, h } from "preact";
 import { route } from 'preact-router';
 import { useEffect, useState } from "preact/hooks";
 import * as wxApi from "../wxApi";

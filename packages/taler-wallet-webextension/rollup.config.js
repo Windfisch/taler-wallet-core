@@ -44,9 +44,6 @@ const makePlugins = () => [
     linaria({
       sourceMap: process.env.NODE_ENV !== 'production',
     }),
-    css({
-      output: 'styles.css',
-    }),
     
 ];
 
@@ -59,7 +56,12 @@ const webExtensionWalletEntryPoint = {
     exports: "none",
     name: "webExtensionWalletEntry",
   },
-  plugins: makePlugins(),
+  plugins: [
+    ...makePlugins(),
+    css({
+      output: 'walletEntryPoint.css',
+     }),
+   ],
 };
 
 const webExtensionPopupEntryPoint = {
@@ -70,7 +72,12 @@ const webExtensionPopupEntryPoint = {
     exports: "none",
     name: "webExtensionPopupEntry",
   },
-  plugins: makePlugins(),
+  plugins: [
+    ...makePlugins(),
+    css({
+      output: 'popupEntryPoint.css',
+     }),
+   ],
 };
 
 const webExtensionBackgroundPageScript = {

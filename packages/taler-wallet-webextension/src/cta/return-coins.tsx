@@ -15,7 +15,7 @@
  */
 
 import { JSX } from "preact/jsx-runtime";
-
+import { h } from 'preact';
 /**
  * Return coins to own bank account.
  *

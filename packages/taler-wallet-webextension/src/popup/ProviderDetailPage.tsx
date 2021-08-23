@@ -18,7 +18,7 @@
 import { i18n, Timestamp } from "@gnu-taler/taler-util";
 import { ProviderInfo, ProviderPaymentStatus, ProviderPaymentType } from "@gnu-taler/taler-wallet-core";
 import { format, formatDuration, intervalToDuration } from "date-fns";
-import { Fragment, VNode } from "preact";
+import { Fragment, VNode, h } from "preact";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { Button, ButtonDestructive, ButtonPrimary, PaymentStatus, PopupBox, SmallTextLight } from "../components/styled";
 import { useProviderStatus } from "../hooks/useProviderStatus";

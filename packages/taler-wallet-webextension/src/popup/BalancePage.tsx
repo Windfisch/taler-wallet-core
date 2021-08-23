@@ -19,7 +19,7 @@ import {
   Balance, BalancesResponse,
   i18n
 } from "@gnu-taler/taler-util";
-import { JSX } from "preact";
+import { JSX, h } from "preact";
 import { PopupBox, Centered } from "../components/styled/index";
 import { BalancesHook, useBalances } from "../hooks/useBalances";
 import { PageLink, renderAmount } from "../renderHtml";

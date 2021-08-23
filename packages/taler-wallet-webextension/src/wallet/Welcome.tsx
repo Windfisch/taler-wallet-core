@@ -27,6 +27,7 @@ import { Diagnostics } from "../components/Diagnostics";
 import { WalletBox } from "../components/styled";
 import { useDiagnostics } from "../hooks/useDiagnostics";
 import { WalletDiagnostics } from "@gnu-taler/taler-util";
+import { h } from 'preact';
 
 export function WelcomePage() {
   const [permissionsEnabled, togglePermissions] = useExtendedPermissions()

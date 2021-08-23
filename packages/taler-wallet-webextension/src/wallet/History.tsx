@@ -16,7 +16,7 @@
 
 import { AmountString, Balance, Timestamp, Transaction, TransactionsResponse, TransactionType } from "@gnu-taler/taler-util";
 import { format } from "date-fns";
-import { Fragment, JSX } from "preact";
+import { Fragment, JSX, h } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import imageBank from '../../static/img/ri-bank-line.svg';
 import imageHandHeart from '../../static/img/ri-hand-heart-line.svg';

@@ -1,6 +1,6 @@
 import { Amounts, BackupBackupProviderTerms, canonicalizeBaseUrl, i18n } from "@gnu-taler/taler-util";
 import { verify } from "@gnu-taler/taler-wallet-core/src/crypto/primitives/nacl-fast";
-import { VNode } from "preact";
+import { VNode, h } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { Checkbox } from "../components/Checkbox";
 import { ErrorMessage } from "../components/ErrorMessage";

@@ -19,7 +19,7 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 
-import { ComponentChildren, FunctionalComponent, h } from 'preact';
+import { createExample, NullLink } from '../test-utils';
 import { BalanceView as TestedComponent } from './BalancePage';
 
 export default {
@@ -30,16 +30,9 @@ export default {
 };
 
 
-function createExample<Props>(Component: FunctionalComponent<Props>, props: Partial<Props>) {
-  const r = (args: any) => <Component {...args} />
-  r.args = props
-  return r
-}
-
 export const NotYetLoaded = createExample(TestedComponent, {
 });
 
-const NullLink = ({ children }: { children?: ComponentChildren }) => h('a', { children, href: 'javascript:void(0);' })
 export const GotError = createExample(TestedComponent, {
   balance: {
     error: true

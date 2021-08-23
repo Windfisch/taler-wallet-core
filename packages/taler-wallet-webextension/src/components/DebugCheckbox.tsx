@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
- import { JSX } from "preact";
+ import { JSX, h } from "preact";
 
 export function DebugCheckbox({ enabled, onToggle }: { enabled: boolean; onToggle: () => void; }): JSX.Element {
   return (

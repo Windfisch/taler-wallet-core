@@ -28,8 +28,7 @@ import {
   Amounts,
   amountFractionalBase,
 } from "@gnu-taler/taler-util";
-import { Component, ComponentChildren, JSX } from "preact";
-import { JSXInternal } from "preact/src/jsx";
+import { Component, ComponentChildren, JSX, h } from "preact";
 
 /**
  * Render amount as HTML, which non-breaking space between

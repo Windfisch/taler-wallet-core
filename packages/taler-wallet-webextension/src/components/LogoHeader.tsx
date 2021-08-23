@@ -1,3 +1,5 @@
+import { h } from "preact";
+
 export function LogoHeader() {
   return <div style={{
     display: 'flex',

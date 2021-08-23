@@ -20,7 +20,7 @@
  * @author Florian Dold
  */
 
-import { Component, JSX } from "preact";
+import { Component, JSX, h } from "preact";
 import * as wxApi from "../wxApi";
 
 interface State {

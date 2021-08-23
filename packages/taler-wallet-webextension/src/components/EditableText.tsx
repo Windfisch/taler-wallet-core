@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { VNode } from "preact";
+import { h } from "preact";
 import { useRef, useState } from "preact/hooks";
 import { JSX } from "preact/jsx-runtime";
 
@@ -27,7 +27,7 @@ interface Props {
 }
 export function EditableText({ name, value, onChange, label, description }: Props): JSX.Element {
   const [editing, setEditing] = useState(false)
-  const ref = useRef<HTMLInputElement>()
+  const ref = useRef<HTMLInputElement>(null)
   let InputText;
   if (!editing) {
     InputText = () => <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -42,7 +42,7 @@ export function EditableText({ name, value, onChange, label, description }: Prop
         type="text"
         id={`text-${name}`}
       />
-      <button onClick={() => { onChange(ref.current.value).then(r => setEditing(false)) }}>confirm</button>
+      <button onClick={() => { if (ref.current) onChange(ref.current.value).then(r => setEditing(false)) }}>confirm</button>
     </div>
   }
   return (

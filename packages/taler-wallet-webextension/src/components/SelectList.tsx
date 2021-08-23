@@ -16,6 +16,7 @@
 
 import { JSX } from "preact/jsx-runtime";
 import { NiceSelect } from "./styled/index";
+import { h } from "preact";
 
 interface Props {
   value: string;

@@ -26,7 +26,7 @@ import {
   TransactionWithdrawal,
   WithdrawalType
 } from '@gnu-taler/taler-util';
-import { FunctionalComponent } from 'preact';
+import { createExample } from '../test-utils';
 import { HistoryView as TestedComponent } from './History';
 
 export default {
@@ -103,12 +103,6 @@ const exampleData = {
       fulfillmentMessage: '',
     },
   } as TransactionRefund,
-}
-
-function createExample<Props>(Component: FunctionalComponent<Props>, props: Partial<Props>) {
-  const r = (args: any) => <Component {...args} />
-  r.args = props
-  return r
 }
 
 export const Empty = createExample(TestedComponent, {

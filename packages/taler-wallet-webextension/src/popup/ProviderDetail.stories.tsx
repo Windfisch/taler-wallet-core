@@ -20,7 +20,7 @@
 */
 
 import { ProviderPaymentType } from '@gnu-taler/taler-wallet-core';
-import { FunctionalComponent } from 'preact';
+import { createExample } from '../test-utils';
 import { ProviderView as TestedComponent } from './ProviderDetailPage';
 
 export default {
@@ -33,12 +33,6 @@ export default {
   }
 };
 
-
-function createExample<Props>(Component: FunctionalComponent<Props>, props: Partial<Props>) {
-  const r = (args: any) => <Component {...args} />
-  r.args = props
-  return r
-}
 
 export const Active = createExample(TestedComponent, {
   info: {

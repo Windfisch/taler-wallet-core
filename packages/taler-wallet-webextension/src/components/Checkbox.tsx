@@ -15,6 +15,7 @@
  */
 
 import { JSX } from "preact/jsx-runtime";
+import { h } from "preact";
 
 interface Props {
   enabled: boolean;

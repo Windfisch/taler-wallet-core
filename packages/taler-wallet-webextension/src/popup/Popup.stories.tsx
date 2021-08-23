@@ -19,7 +19,7 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 
-import { Fragment, FunctionalComponent } from 'preact';
+import { createExample } from '../test-utils';
 import { NavBar as TestedComponent } from '../NavigationBar';
 
 export default {
@@ -32,12 +32,6 @@ export default {
   }
 };
 
-
-function createExample<Props>(Component: FunctionalComponent<Props>, props: Partial<Props>) {
-  const r = (args: any) => <Component {...args} />
-  r.args = props
-  return r
-}
 
 export const OnBalance = createExample(TestedComponent, {
   devMode:false,

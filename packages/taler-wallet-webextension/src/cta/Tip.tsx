@@ -25,6 +25,7 @@ import { PrepareTipResult } from "@gnu-taler/taler-util";
 import { AmountView } from "../renderHtml";
 import * as wxApi from "../wxApi";
 import { JSX } from "preact/jsx-runtime";
+import { h } from 'preact';
 
 interface Props {
   talerTipUri?: string

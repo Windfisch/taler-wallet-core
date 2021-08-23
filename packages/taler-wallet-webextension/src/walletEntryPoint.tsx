@@ -20,7 +20,7 @@
  * @author Florian Dold <dold@taler.net>
  */
 
-import { Fragment, render } from "preact";
+import { Fragment, render, h } from "preact";
 import { setupI18n } from "@gnu-taler/taler-util";
 import { strings } from "./i18n/strings";
 import { createHashHistory } from 'history';
