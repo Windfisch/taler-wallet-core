@@ -229,6 +229,23 @@ export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
     );
   }
 
+  async makeTransaction(
+    debit: string,
+    credit: string,
+    amount: string,
+    subject: string,): Promise<string> {
+    const stdout = await sh(
+      this.globalTestState,
+      "libeufin-sandbox-maketransfer",
+      `libeufin-sandbox make-transaction --debit-account=${debit} --credit-account=${credit} ${amount} "${subject}"`,
+      {
+        ...process.env,
+        LIBEUFIN_SANDBOX_DB_CONNECTION: this.sandboxConfig.databaseJdbcUri,
+      },
+    );
+    return stdout;
+  }
+
   async pingUntilAvailable(): Promise<void> {
     const url = `${this.baseUrl}config`;
     await pingProc(this.sandboxProc, url, "libeufin-sandbox");
@@ -780,6 +797,7 @@ interface NewTalerWireGatewayReq {
 }
 
 export namespace LibeufinSandboxApi {
+
   export async function rotateKeys(
     libeufinSandboxService: LibeufinSandboxServiceInterface,
     hostID: string,
