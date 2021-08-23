@@ -153,6 +153,9 @@ async function downloadExchangeWithTermsOfService(
   return { tosText, tosEtag };
 }
 
+/**
+ * Get exchange details from the database.
+ */
 export async function getExchangeDetails(
   tx: GetReadOnlyAccess<{
     exchanges: typeof WalletStoresV1.exchanges;
@@ -320,6 +323,7 @@ interface ExchangeKeysDownloadResult {
   reserveClosingDelay: Duration;
   expiry: Timestamp;
   recoup: Recoup[];
+  listIssueDate: Timestamp;
 }
 
 /**
@@ -392,6 +396,7 @@ async function downloadKeysInfo(
       minDuration: durationFromSpec({ hours: 1 }),
     }),
     recoup: exchangeKeysJson.recoup ?? [],
+    listIssueDate: exchangeKeysJson.list_issue_date,
   };
 }
 
@@ -508,9 +513,9 @@ async function updateExchangeFromUrlImpl(
       r.lastError = undefined;
       r.retryInfo = initRetryInfo();
       r.lastUpdate = getTimestampNow();
-      (r.nextUpdate = keysInfo.expiry),
-        // New denominations might be available.
-        (r.nextRefreshCheck = getTimestampNow());
+      r.nextUpdate = keysInfo.expiry;
+      // New denominations might be available.
+      r.nextRefreshCheck = getTimestampNow();
       r.detailsPointer = {
         currency: details.currency,
         masterPublicKey: details.masterPublicKey,
@@ -521,17 +526,47 @@ async function updateExchangeFromUrlImpl(
       await tx.exchangeDetails.put(details);
 
       logger.trace("updating denominations in database");
+      const currentDenomSet = new Set<string>(
+        keysInfo.currentDenominations.map((x) => x.denomPubHash),
+      );
       for (const currentDenom of keysInfo.currentDenominations) {
         const oldDenom = await tx.denominations.get([
           baseUrl,
           currentDenom.denomPubHash,
         ]);
         if (oldDenom) {
-          // FIXME: Do consistency check
+          // FIXME: Do consistency check, report to auditor if necessary.
         } else {
           await tx.denominations.put(currentDenom);
         }
       }
+
+      // Update list issue date for all denominations,
+      // and mark non-offered denominations as such.
+      await tx.denominations.indexes.byExchangeBaseUrl
+        .iter(r.baseUrl)
+        .forEachAsync(async (x) => {
+          if (!currentDenomSet.has(x.denomPubHash)) {
+            // FIXME: Here, an auditor report should be created, unless
+            // the denomination is really legally expired.
+            if (x.isOffered) {
+              x.isOffered = false;
+              logger.info(
+                `setting denomination ${x.denomPubHash} to offered=false`,
+              );
+            }
+          } else {
+            x.listIssueDate = keysInfo.listIssueDate;
+            if (!x.isOffered) {
+              x.isOffered = true;
+              logger.info(
+                `setting denomination ${x.denomPubHash} to offered=true`,
+              );
+            }
+          }
+          await tx.denominations.put(x);
+        });
+
       logger.trace("done updating denominations in database");
 
       // Handle recoup

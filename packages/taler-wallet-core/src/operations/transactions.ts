@@ -505,7 +505,7 @@ export async function deleteTransaction(
         const purchase = await tx.purchases.get(proposalId);
         if (purchase) {
           found = true;
-          await tx.proposals.delete(proposalId);
+          await tx.purchases.delete(proposalId);
         }
         if (found) {
           await tx.tombstones.put({

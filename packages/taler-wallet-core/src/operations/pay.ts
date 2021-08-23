@@ -211,6 +211,12 @@ function isSpendableCoin(coin: CoinRecord, denom: DenominationRecord): boolean {
   if (coin.suspended) {
     return false;
   }
+  if (denom.isRevoked) {
+    return false;
+  }
+  if (!denom.isOffered) {
+    return false;
+  }
   if (coin.status !== CoinStatus.Fresh) {
     return false;
   }

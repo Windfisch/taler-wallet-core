@@ -838,12 +838,6 @@ export class ExchangeService implements ExchangeServiceInterface {
       e.roundUnit ?? `${e.currency}:0.01`,
     );
     setTalerPaths(config, gc.testDir + "/talerhome");
-
-    config.setString(
-      "exchange",
-      "keydir",
-      "${TALER_DATA_HOME}/exchange/live-keys/",
-    );
     config.setString(
       "exchange",
       "revocation_dir",
@@ -1078,6 +1072,23 @@ export class ExchangeService implements ExchangeServiceInterface {
     );
   }
 
+  async purgeSecmodKeys(): Promise<void> {
+    const cfg = Configuration.load(this.configFilename);
+    const rsaKeydir = cfg.getPath("taler-exchange-secmod-rsa", "KEY_DIR").required();
+    const eddsaKeydir = cfg.getPath("taler-exchange-secmod-eddsa", "KEY_DIR").required();
+    // Be *VERY* careful when changing this, or you will accidentally delete user data.
+    await sh(this.globalState, "rm-secmod-keys", `rm -rf ${rsaKeydir}/COIN_*`);
+    await sh(this.globalState, "rm-secmod-keys", `rm ${eddsaKeydir}/*`);
+  }
+
+  async purgeDatabase(): Promise<void> {
+    await sh(
+      this.globalState,
+      "exchange-dbinit",
+      `taler-exchange-dbinit -r -c "${this.configFilename}"`,
+    );
+  }
+
   async start(): Promise<void> {
     if (this.isRunning()) {
       throw Error("exchange is already running");
@@ -1111,8 +1122,6 @@ export class ExchangeService implements ExchangeServiceInterface {
       [
         "-c",
         this.configFilename,
-        "--num-threads",
-        "1",
         ...this.timetravelArgArr,
       ],
       `exchange-httpd-${this.name}`,

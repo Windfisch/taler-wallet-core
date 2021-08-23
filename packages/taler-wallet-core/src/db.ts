@@ -963,9 +963,6 @@ export interface RefreshSessionRecord {
   /**
    * 512-bit secret that can be used to derive
    * the other cryptographic material for the refresh session.
-   *
-   * FIXME:  We currently store the derived material, but
-   * should always derive it.
    */
   sessionSecretSeed: string;
 

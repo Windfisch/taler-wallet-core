@@ -158,8 +158,8 @@ interface ExchangeWithdrawDetails {
 }
 
 /**
- * Check if a denom is withdrawable based on the expiration time
- * and revocation state.
+ * Check if a denom is withdrawable based on the expiration time,
+ * revocation and offered state.
  */
 export function isWithdrawableDenom(d: DenominationRecord): boolean {
   const now = getTimestampNow();
@@ -175,7 +175,7 @@ export function isWithdrawableDenom(d: DenominationRecord): boolean {
   }
   const remaining = getDurationRemaining(lastPossibleWithdraw, now);
   const stillOkay = remaining.d_ms !== 0;
-  return started && stillOkay && !d.isRevoked;
+  return started && stillOkay && !d.isRevoked && d.isOffered;
 }
 
 /**
@@ -228,6 +228,14 @@ export function selectWithdrawalDenominations(
     if (Amounts.isZero(remaining)) {
       break;
     }
+  }
+
+  if (logger.shouldLogTrace()) {
+    logger.trace(`selected withdrawal denoms for ${Amounts.stringify(totalCoinValue)}`);
+    for (const sd of selectedDenoms) {
+      logger.trace(`denom_pub_hash=${sd.denom.denomPubHash}, count=${sd.count}`);
+    }
+    logger.trace("(end of withdrawal denom list)");
   }
 
   return {
@@ -306,7 +314,8 @@ export async function getCandidateWithdrawalDenoms(
   return await ws.db
     .mktx((x) => ({ denominations: x.denominations }))
     .runReadOnly(async (tx) => {
-      return tx.denominations.indexes.byExchangeBaseUrl.getAll(exchangeBaseUrl);
+      const allDenoms = await tx.denominations.indexes.byExchangeBaseUrl.getAll(exchangeBaseUrl);
+      return allDenoms.filter(isWithdrawableDenom);
     });
 }
 

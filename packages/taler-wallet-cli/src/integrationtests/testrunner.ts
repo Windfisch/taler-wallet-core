@@ -82,6 +82,7 @@ import { runPaymentForgettableTest } from "./test-payment-forgettable.js";
 import { runPaymentZeroTest } from "./test-payment-zero.js";
 import { runMerchantSpecPublicOrdersTest } from "./test-merchant-spec-public-orders.js";
 import { runExchangeTimetravelTest } from "./test-exchange-timetravel.js";
+import { runDenomUnofferedTest } from "./test-denom-unoffered.js";
 
 /**
  * Test runner.
@@ -101,6 +102,7 @@ const allTests: TestMainFunction[] = [
   runBankApiTest,
   runClaimLoopTest,
   runDepositTest,
+  runDenomUnofferedTest,
   runExchangeManagementTest,
   runExchangeTimetravelTest,
   runFeeRegressionTest,
