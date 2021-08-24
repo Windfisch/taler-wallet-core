@@ -915,6 +915,17 @@ export interface TipRecord {
   retryInfo: RetryInfo;
 }
 
+export enum RefreshCoinStatus {
+  Pending = "pending",
+  Finished = "finished",
+
+  /**
+   * The refresh for this coin has been frozen, because of a permanent error.
+   * More info in lastErrorPerCoin.
+   */
+  Frozen = "frozen",
+}
+
 export interface RefreshGroupRecord {
   /**
    * Retry info, even present when the operation isn't active to allow indexing
@@ -926,8 +937,15 @@ export interface RefreshGroupRecord {
 
   lastErrorPerCoin: { [coinIndex: number]: TalerErrorDetails };
 
+  /**
+   * Unique, randomly generated identifier for this group of
+   * refresh operations.
+   */
   refreshGroupId: string;
 
+  /**
+   * Reason why this refresh group has been created.
+   */
   reason: RefreshReason;
 
   oldCoinPubs: string[];
@@ -946,7 +964,7 @@ export interface RefreshGroupRecord {
    * it will be marked as finished, but no refresh session will
    * be created.
    */
-  finishedPerCoin: boolean[];
+  statusPerCoin: RefreshCoinStatus[];
 
   timestampCreated: Timestamp;
 
@@ -954,6 +972,11 @@ export interface RefreshGroupRecord {
    * Timestamp when the refresh session finished.
    */
   timestampFinished: Timestamp | undefined;
+
+  /**
+   * No coins are pending, but at least one is frozen.
+   */
+  frozen?: boolean;
 }
 
 /**
@@ -1162,6 +1185,9 @@ export interface PurchaseRecord {
 
   /**
    * Downloaded and parsed proposal data.
+   *
+   * FIXME:  Move this into another object store,
+   * to improve read/write perf on purchases.
    */
   download: ProposalDownload;
 

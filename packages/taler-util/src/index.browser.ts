@@ -19,3 +19,4 @@ export * from "./walletTypes.js";
 export * from "./i18n.js";
 export * from "./logging.js";
 export * from "./url.js";
+export { fnutil } from "./fnutils.js";

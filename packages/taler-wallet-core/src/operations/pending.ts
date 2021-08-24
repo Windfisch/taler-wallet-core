@@ -27,6 +27,7 @@ import {
   AbortStatus,
   WalletStoresV1,
   BackupProviderStateTag,
+  RefreshCoinStatus,
 } from "../db.js";
 import {
   PendingOperationsResponse,
@@ -111,12 +112,17 @@ async function gatherRefreshPending(
     if (r.timestampFinished) {
       return;
     }
+    if (r.frozen) {
+      return;
+    }
     resp.pendingOperations.push({
       type: PendingTaskType.Refresh,
       givesLifeness: true,
       timestampDue: r.retryInfo.nextRetry,
       refreshGroupId: r.refreshGroupId,
-      finishedPerCoin: r.finishedPerCoin,
+      finishedPerCoin: r.statusPerCoin.map(
+        (x) => x === RefreshCoinStatus.Finished,
+      ),
       retryInfo: r.retryInfo,
     });
   });

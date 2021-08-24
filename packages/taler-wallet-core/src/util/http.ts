@@ -24,10 +24,7 @@
 /**
  * Imports
  */
-import {
-  OperationFailedError,
-  makeErrorDetails,
-} from "../errors.js";
+import { OperationFailedError, makeErrorDetails } from "../errors.js";
 import {
   Logger,
   Duration,
@@ -68,6 +65,7 @@ export enum HttpResponseStatus {
   Gone = 210,
   NotModified = 304,
   PaymentRequired = 402,
+  NotFound = 404,
   Conflict = 409,
 }
 
@@ -156,6 +154,33 @@ export async function readTalerErrorResponse(
     );
   }
   return errJson;
+}
+
+export async function readUnexpectedResponseDetails(
+  httpResponse: HttpResponse,
+): Promise<TalerErrorDetails> {
+  const errJson = await httpResponse.json();
+  const talerErrorCode = errJson.code;
+  if (typeof talerErrorCode !== "number") {
+    return makeErrorDetails(
+      TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
+      "Error response did not contain error code",
+      {
+        requestUrl: httpResponse.requestUrl,
+        requestMethod: httpResponse.requestMethod,
+        httpStatusCode: httpResponse.status,
+      },
+    );
+  }
+  return makeErrorDetails(
+    TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
+    "Unexpected error code in response",
+    {
+      requestUrl: httpResponse.requestUrl,
+      httpStatusCode: httpResponse.status,
+      errorResponse: errJson,
+    },
+  );
 }
 
 export async function readSuccessResponseJsonOrErrorCode<T>(

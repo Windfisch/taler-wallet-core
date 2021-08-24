@@ -45,6 +45,7 @@ import {
   RefreshSessionRecord,
   WireInfo,
   WalletStoresV1,
+  RefreshCoinStatus,
 } from "../../db.js";
 import { PayCoinSelection } from "../../util/coinSelection.js";
 import { j2s } from "@gnu-taler/taler-util";
@@ -831,8 +832,10 @@ export async function importBackup(
             lastError: undefined,
             lastErrorPerCoin: {},
             oldCoinPubs: backupRefreshGroup.old_coins.map((x) => x.coin_pub),
-            finishedPerCoin: backupRefreshGroup.old_coins.map(
-              (x) => x.finished,
+            statusPerCoin: backupRefreshGroup.old_coins.map((x) =>
+              x.finished
+                ? RefreshCoinStatus.Finished
+                : RefreshCoinStatus.Pending,
             ),
             inputPerCoin: backupRefreshGroup.old_coins.map((x) =>
               Amounts.parseOrThrow(x.input_amount),

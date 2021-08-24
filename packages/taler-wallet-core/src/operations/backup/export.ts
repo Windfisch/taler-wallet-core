@@ -66,6 +66,7 @@ import {
   CoinSourceType,
   CoinStatus,
   ProposalStatus,
+  RefreshCoinStatus,
   RefundState,
   WALLET_BACKUP_STATE_KEY,
 } from "../../db.js";
@@ -440,7 +441,7 @@ export async function exportBackup(
             estimated_output_amount: Amounts.stringify(
               rg.estimatedOutputPerCoin[i],
             ),
-            finished: rg.finishedPerCoin[i],
+            finished: rg.statusPerCoin[i] === RefreshCoinStatus.Finished,
             input_amount: Amounts.stringify(rg.inputPerCoin[i]),
             refresh_session: refreshSession,
           });

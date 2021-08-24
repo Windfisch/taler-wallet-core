@@ -20,6 +20,7 @@ import {
   CoinSourceType,
   CoinStatus,
   DenominationRecord,
+  RefreshCoinStatus,
   RefreshGroupRecord,
   RefreshPlanchet,
   WalletStoresV1,
@@ -28,6 +29,7 @@ import {
   codecForExchangeMeltResponse,
   codecForExchangeRevealResponse,
   CoinPublicKey,
+  fnutil,
   NotificationType,
   RefreshGroupId,
   RefreshReason,
@@ -37,7 +39,11 @@ import {
 } from "@gnu-taler/taler-util";
 import { AmountJson, Amounts } from "@gnu-taler/taler-util";
 import { amountToPretty } from "@gnu-taler/taler-util";
-import { readSuccessResponseJsonOrThrow } from "../util/http.js";
+import {
+  HttpResponseStatus,
+  readSuccessResponseJsonOrThrow,
+  readUnexpectedResponseDetails,
+} from "../util/http.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { Logger } from "@gnu-taler/taler-util";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
@@ -99,6 +105,26 @@ export function getTotalRefreshCost(
   return totalCost;
 }
 
+function updateGroupStatus(rg: RefreshGroupRecord): void {
+  let allDone = fnutil.all(
+    rg.statusPerCoin,
+    (x) => x === RefreshCoinStatus.Finished || x === RefreshCoinStatus.Frozen,
+  );
+  let anyFrozen = fnutil.any(
+    rg.statusPerCoin,
+    (x) => x === RefreshCoinStatus.Frozen,
+  );
+  if (allDone) {
+    if (anyFrozen) {
+      rg.frozen = true;
+      rg.retryInfo = initRetryInfo();
+    } else {
+      rg.timestampFinished = getTimestampNow();
+      rg.retryInfo = initRetryInfo();
+    }
+  }
+}
+
 /**
  * Create a refresh session for one particular coin inside a refresh group.
  */
@@ -121,7 +147,9 @@ async function refreshCreateSession(
       if (!refreshGroup) {
         return;
       }
-      if (refreshGroup.finishedPerCoin[coinIndex]) {
+      if (
+        refreshGroup.statusPerCoin[coinIndex] === RefreshCoinStatus.Finished
+      ) {
         return;
       }
       const existingRefreshSession =
@@ -211,18 +239,9 @@ async function refreshCreateSession(
         if (!rg) {
           return;
         }
-        rg.finishedPerCoin[coinIndex] = true;
-        let allDone = true;
-        for (const f of rg.finishedPerCoin) {
-          if (!f) {
-            allDone = false;
-            break;
-          }
-        }
-        if (allDone) {
-          rg.timestampFinished = getTimestampNow();
-          rg.retryInfo = initRetryInfo();
-        }
+        rg.statusPerCoin[coinIndex] = RefreshCoinStatus.Finished;
+        updateGroupStatus(rg);
+
         await tx.refreshGroups.put(rg);
       });
     ws.notify({ type: NotificationType.RefreshUnwarranted });
@@ -357,6 +376,31 @@ async function refreshMelt(
       timeout: getRefreshRequestTimeout(refreshGroup),
     });
   });
+
+  if (resp.status === HttpResponseStatus.NotFound) {
+    const errDetails = await readUnexpectedResponseDetails(resp);
+    await ws.db
+      .mktx((x) => ({
+        refreshGroups: x.refreshGroups,
+      }))
+      .runReadWrite(async (tx) => {
+        const rg = await tx.refreshGroups.get(refreshGroupId);
+        if (!rg) {
+          return;
+        }
+        if (rg.timestampFinished) {
+          return;
+        }
+        if (rg.statusPerCoin[coinIndex] !== RefreshCoinStatus.Pending) {
+          return;
+        }
+        rg.statusPerCoin[coinIndex] = RefreshCoinStatus.Frozen;
+        rg.lastErrorPerCoin[coinIndex] = errDetails;
+        updateGroupStatus(rg);
+        await tx.refreshGroups.put(rg);
+      });
+    return;
+  }
 
   const meltResponse = await readSuccessResponseJsonOrThrow(
     resp,
@@ -598,18 +642,8 @@ async function refreshReveal(
       if (!rs) {
         return;
       }
-      rg.finishedPerCoin[coinIndex] = true;
-      let allDone = true;
-      for (const f of rg.finishedPerCoin) {
-        if (!f) {
-          allDone = false;
-          break;
-        }
-      }
-      if (allDone) {
-        rg.timestampFinished = getTimestampNow();
-        rg.retryInfo = initRetryInfo();
-      }
+      rg.statusPerCoin[coinIndex] = RefreshCoinStatus.Finished;
+      updateGroupStatus(rg);
       for (const coin of coins) {
         await tx.coins.put(coin);
       }
@@ -728,7 +762,7 @@ async function processRefreshSession(
   if (!refreshGroup) {
     return;
   }
-  if (refreshGroup.finishedPerCoin[coinIndex]) {
+  if (refreshGroup.statusPerCoin[coinIndex] === RefreshCoinStatus.Finished) {
     return;
   }
   if (!refreshGroup.refreshSessionPerCoin[coinIndex]) {
@@ -744,7 +778,7 @@ async function processRefreshSession(
   }
   const refreshSession = refreshGroup.refreshSessionPerCoin[coinIndex];
   if (!refreshSession) {
-    if (!refreshGroup.finishedPerCoin[coinIndex]) {
+    if (refreshGroup.statusPerCoin[coinIndex] !== RefreshCoinStatus.Finished) {
       throw Error(
         "BUG: refresh session was not created and coin not marked as finished",
       );
@@ -826,13 +860,13 @@ export async function createRefreshGroup(
 
   const refreshGroup: RefreshGroupRecord = {
     timestampFinished: undefined,
-    finishedPerCoin: oldCoinPubs.map((x) => false),
+    statusPerCoin: oldCoinPubs.map(() => RefreshCoinStatus.Pending),
     lastError: undefined,
     lastErrorPerCoin: {},
     oldCoinPubs: oldCoinPubs.map((x) => x.coinPub),
     reason,
     refreshGroupId,
-    refreshSessionPerCoin: oldCoinPubs.map((x) => undefined),
+    refreshSessionPerCoin: oldCoinPubs.map(() => undefined),
     retryInfo: initRetryInfo(),
     inputPerCoin,
     estimatedOutputPerCoin,
