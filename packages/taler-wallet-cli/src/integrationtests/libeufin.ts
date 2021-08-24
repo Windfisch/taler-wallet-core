@@ -904,6 +904,18 @@ export namespace LibeufinSandboxApi {
     return res.data as SandboxAccountTransactions;
   }
 
+  export async function getCamt053(
+    libeufinSandboxService: LibeufinSandboxServiceInterface,
+    accountLabel: string,
+  ): Promise<any> {
+    const baseUrl = libeufinSandboxService.baseUrl;
+    let url = new URL("admin/payments/camt", baseUrl);
+    return await axios.post(url.href, {
+      bankaccount: accountLabel,
+      type: 53, 
+    });
+  }
+
   export async function getAccountInfoWithBalance(
     libeufinSandboxService: LibeufinSandboxServiceInterface,
     accountLabel: string,
