@@ -22,7 +22,7 @@ import { useEffect, useState } from "preact/hooks";
 import * as wxApi from "../wxApi";
 import { Pages } from "../NavigationBar";
 import emptyImg from "../../static/img/empty.png"
-import { Button, ButtonDestructive, ButtonPrimary, ListOfProducts, PopupBox, Row, RowBorderGray, SmallTextLight } from "../components/styled";
+import { Button, ButtonDestructive, ButtonPrimary, ListOfProducts, PopupBox, Row, RowBorderGray, SmallTextLight, WalletBox } from "../components/styled";
 import { ErrorMessage } from "../components/ErrorMessage";
 
 export function TransactionPage({ tid }: { tid: string; }): JSX.Element {
@@ -79,7 +79,7 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
   }
 
   function TransactionTemplate({ upperRight, children }: { upperRight: VNode, children: VNode[] }) {
-    return <PopupBox>
+    return <WalletBox>
       <header>
         <SmallTextLight>
           {transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}
@@ -99,7 +99,7 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
           <ButtonDestructive onClick={onDelete}><i18n.Translate>delete</i18n.Translate></ButtonDestructive>
         </div>
       </footer>
-    </PopupBox>
+    </WalletBox>
   }
 
   if (transaction.type === TransactionType.Withdrawal) {

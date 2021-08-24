@@ -23,7 +23,7 @@ import { createExample, NullLink } from '../test-utils';
 import { BalanceView as TestedComponent } from './BalancePage';
 
 export default {
-  title: 'popup/balance',
+  title: 'wallet/balance',
   component: TestedComponent,
   argTypes: {
   }

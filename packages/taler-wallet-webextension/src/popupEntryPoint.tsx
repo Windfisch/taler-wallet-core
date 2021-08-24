@@ -38,7 +38,6 @@ import {
 import { ProviderAddPage } from "./popup/ProviderAddPage";
 import { ProviderDetailPage } from "./popup/ProviderDetailPage";
 import { SettingsPage } from "./popup/Settings";
-import { TransactionPage } from "./popup/Transaction";
 
 function main(): void {
   try {
@@ -114,7 +113,6 @@ function Application() {
                 route(Pages.backup)
               }}
             />
-            <Route path={Pages.transaction} component={TransactionPage} />
             <Route default component={Redirect} to={Pages.balance} />
           </Router>
         </div>

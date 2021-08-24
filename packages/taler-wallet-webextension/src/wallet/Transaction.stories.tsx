@@ -30,7 +30,7 @@ import { createExample } from '../test-utils';
 import { TransactionView as TestedComponent } from './Transaction';
 
 export default {
-  title: 'popup/history/details',
+  title: 'wallet/history/details',
   component: TestedComponent,
   argTypes: {
     onRetry: { action: 'onRetry' },
