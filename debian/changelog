@@ -1,3 +1,9 @@
+taler-wallet-cli (0.8.2) unstable; urgency=low
+
+  * Official 0.8.2 release.
+
+ -- Florian Dold <dold@taler.net>  Tue, 24 Aug 2021 15:47:15 +0200
+
 taler-wallet-cli (0.0.1-6) unstable; urgency=low
 
   * Fix deposit tracking.
