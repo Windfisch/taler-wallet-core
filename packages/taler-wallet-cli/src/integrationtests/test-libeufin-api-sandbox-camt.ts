@@ -52,6 +52,7 @@ export async function runLibeufinApiSandboxCamtTest(t: GlobalTestState) {
   await sandbox.makeTransaction("mock-account-0", "mock-account-1", "EUR:1", "+1");
   await sandbox.makeTransaction("mock-account-0", "mock-account-1", "EUR:1", "+1");
   await sandbox.makeTransaction("mock-account-0", "mock-account-1", "EUR:1", "+1");
+  await sandbox.makeTransaction("mock-account-1", "mock-account-0", "EUR:5", "minus 5");
 
   let ret = await LibeufinSandboxApi.getCamt053(sandbox, "mock-account-1");
   console.log(ret);
