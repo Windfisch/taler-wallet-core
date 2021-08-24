@@ -19,6 +19,11 @@ compile:
 
 .PHONY: dist
 dist:
+	$(git-archive-all) --include ./configure taler-wallet-$(shell git describe --tags --abbrev=0).tar.gz
+
+# Create tarball with git hash prefix in name
+.PHONY: dist-git
+dist-git:
 	$(git-archive-all) --include ./configure taler-wallet-$(shell git describe --tags).tar.gz
 
 .PHONY: publish
