@@ -269,6 +269,7 @@ export const RowLightBorderGray = styled(Row2)`
 
 export const HistoryRow = styled.a`
   text-decoration: none;
+  color: #212121;
 
   display: flex;
   justify-content: space-between;
@@ -312,6 +313,10 @@ export const LightText = styled.div`
 export const SmallText = styled.div`
   font-size: small; 
 `
+export const LargeText = styled.div`
+  font-size: large; 
+`
+
 export const ExtraLargeText = styled.div`
   font-size: x-large; 
 `

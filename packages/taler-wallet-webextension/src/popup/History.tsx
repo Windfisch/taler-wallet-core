@@ -14,19 +14,13 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountString, Balance, Timestamp, Transaction, TransactionsResponse, TransactionType } from "@gnu-taler/taler-util";
-import { formatDistance } from "date-fns";
-import { JSX, h } from "preact";
+import { AmountString, Balance, Transaction, TransactionsResponse } from "@gnu-taler/taler-util";
+import { h, JSX } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import imageBank from '../../static/img/ri-bank-line.svg';
-import imageHandHeart from '../../static/img/ri-hand-heart-line.svg';
-import imageRefresh from '../../static/img/ri-refresh-line.svg';
-import imageRefund from '../../static/img/ri-refund-2-line.svg';
-import imageShoppingCart from '../../static/img/ri-shopping-cart-line.svg';
-import { Column, ExtraLargeText, HistoryRow, PopupBox, SmallTextLight } from "../components/styled";
+import { PopupBox } from "../components/styled";
+import { TransactionItem } from "../components/TransactionItem";
 import { useBalances } from "../hooks/useBalances";
 import * as wxApi from "../wxApi";
-import { Pages } from "../NavigationBar";
 
 
 export function HistoryPage(props: any): JSX.Element {
@@ -59,20 +53,20 @@ function amountToString(c: AmountString) {
 
 
 export function HistoryView({ list, balances }: { list: Transaction[], balances: Balance[] }) {
+  const multiCurrency = balances.length > 1
   return <PopupBox noPadding>
     {balances.length > 0 && <header>
-      {balances.length === 1 && <div class="title">
-        Balance: <span>{amountToString(balances[0].available)}</span>
-      </div>}
-      {balances.length > 1 && <div class="title">
+      {multiCurrency ? <div class="title">
         Balance: <ul style={{ margin: 0 }}>
           {balances.map(b => <li>{b.available}</li>)}
         </ul>
+      </div> : <div class="title">
+        Balance: <span>{amountToString(balances[0].available)}</span>
       </div>}
     </header>}
     <section>
       {list.slice(0, 3).map((tx, i) => (
-        <TransactionItem key={i} tx={tx} />
+        <TransactionItem key={i} tx={tx} multiCurrency={multiCurrency}/>
       ))}
     </section>
     <footer style={{ justifyContent: 'space-around' }}>
@@ -83,160 +77,3 @@ export function HistoryView({ list, balances }: { list: Transaction[], balances:
     </footer>
   </PopupBox>
 }
-
-function TransactionItem(props: { tx: Transaction }): JSX.Element {
-  const tx = props.tx;
-  switch (tx.type) {
-    case TransactionType.Withdrawal:
-      return (
-        <TransactionLayout
-          id={tx.transactionId}
-          amount={tx.amountEffective}
-          debitCreditIndicator={"credit"}
-          title="Withdrawal"
-          subtitle={`via ${tx.exchangeBaseUrl}`}
-          timestamp={tx.timestamp}
-          iconPath={imageBank}
-          pending={tx.pending}
-        ></TransactionLayout>
-      );
-    case TransactionType.Payment:
-      return (
-        <TransactionLayout
-          id={tx.transactionId}
-          amount={tx.amountEffective}
-          debitCreditIndicator={"debit"}
-          title="Payment"
-          subtitle={tx.info.summary}
-          timestamp={tx.timestamp}
-          iconPath={imageShoppingCart}
-          pending={tx.pending}
-        ></TransactionLayout>
-      );
-    case TransactionType.Refund:
-      return (
-        <TransactionLayout
-          id={tx.transactionId}
-          amount={tx.amountEffective}
-          debitCreditIndicator={"credit"}
-          title="Refund"
-          subtitle={tx.info.summary}
-          timestamp={tx.timestamp}
-          iconPath={imageRefund}
-          pending={tx.pending}
-        ></TransactionLayout>
-      );
-    case TransactionType.Tip:
-      return (
-        <TransactionLayout
-          id={tx.transactionId}
-          amount={tx.amountEffective}
-          debitCreditIndicator={"credit"}
-          title="Tip"
-          subtitle={`from ${new URL(tx.merchantBaseUrl).hostname}`}
-          timestamp={tx.timestamp}
-          iconPath={imageHandHeart}
-          pending={tx.pending}
-        ></TransactionLayout>
-      );
-    case TransactionType.Refresh:
-      return (
-        <TransactionLayout
-          id={tx.transactionId}
-          amount={tx.amountEffective}
-          debitCreditIndicator={"credit"}
-          title="Refresh"
-          subtitle={`via exchange ${tx.exchangeBaseUrl}`}
-          timestamp={tx.timestamp}
-          iconPath={imageRefresh}
-          pending={tx.pending}
-        ></TransactionLayout>
-      );
-    case TransactionType.Deposit:
-      return (
-        <TransactionLayout
-          id={tx.transactionId}
-          amount={tx.amountEffective}
-          debitCreditIndicator={"debit"}
-          title="Refresh"
-          subtitle={`to ${tx.targetPaytoUri}`}
-          timestamp={tx.timestamp}
-          iconPath={imageRefresh}
-          pending={tx.pending}
-        ></TransactionLayout>
-      );
-  }
-}
-
-function TransactionLayout(props: TransactionLayoutProps): JSX.Element {
-  const date = new Date(props.timestamp.t_ms);
-  const now = new Date();
-  const dateStr = formatDistance(date, now, { addSuffix: true })
-  return (
-    <HistoryRow href={Pages.transaction.replace(':tid', props.id)}>
-      <img src={props.iconPath} />
-      <Column>
-        <ExtraLargeText>
-          <span>{props.title}</span>
-          {props.pending ? (
-            <span style={{ color: "darkblue" }}> (Pending)</span>
-          ) : null}
-        </ExtraLargeText>
-        <SmallTextLight>{dateStr}</SmallTextLight>
-      </Column>
-      <TransactionAmount
-        pending={props.pending}
-        amount={props.amount}
-        debitCreditIndicator={props.debitCreditIndicator}
-      />
-    </HistoryRow>
-  );
-}
-
-interface TransactionLayoutProps {
-  debitCreditIndicator: "debit" | "credit" | "unknown";
-  amount: AmountString | "unknown";
-  timestamp: Timestamp;
-  title: string;
-  id: string;
-  subtitle: string;
-  iconPath: string;
-  pending: boolean;
-}
-
-interface TransactionAmountProps {
-  debitCreditIndicator: "debit" | "credit" | "unknown";
-  amount: AmountString | "unknown";
-  pending: boolean;
-}
-
-function TransactionAmount(props: TransactionAmountProps): JSX.Element {
-  const [currency, amount] = props.amount.split(":");
-  let sign: string;
-  switch (props.debitCreditIndicator) {
-    case "credit":
-      sign = "+";
-      break;
-    case "debit":
-      sign = "-";
-      break;
-    case "unknown":
-      sign = "";
-  }
-  return (
-    <Column style={{
-      color:
-        props.pending ? "gray" :
-          (sign === '+' ? 'darkgreen' :
-            (sign === '-' ? 'darkred' :
-              undefined))
-    }}>
-      <ExtraLargeText>
-        {sign}
-        {amount}
-      </ExtraLargeText>
-      <div>{currency}</div>
-    </Column>
-  );
-}
-

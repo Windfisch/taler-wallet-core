@@ -48,7 +48,7 @@ const exampleData = {
   withdraw: {
     ...commonTransaction,
     type: TransactionType.Withdrawal,
-    exchangeBaseUrl: 'http://exchange.taler',
+    exchangeBaseUrl: 'http://exchange.demo.taler.net',
     withdrawalDetails: {
       confirmed: false,
       exchangePaytoUris: ['payto://x-taler-bank/bank/account'],

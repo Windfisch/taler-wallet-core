@@ -50,7 +50,7 @@ const exampleData = {
   withdraw: {
     ...commonTransaction(),
     type: TransactionType.Withdrawal,
-    exchangeBaseUrl: 'http://exchange.taler',
+    exchangeBaseUrl: 'http://exchange.demo.taler.net',
     withdrawalDetails: {
       confirmed: false,
       exchangePaytoUris: ['payto://x-taler-bank/bank/account'],
@@ -64,7 +64,7 @@ const exampleData = {
     info: {
       contractTermsHash: 'ASDZXCASD',
       merchant: {
-        name: 'the merchant',
+        name: 'Blog',
       },
       orderId: '2021.167-03NPY6MCYMVGT',
       products: [],
@@ -88,7 +88,7 @@ const exampleData = {
   tip: {
     ...commonTransaction(),
     type: TransactionType.Tip,
-    merchantBaseUrl: 'http://merchant.taler',
+    merchantBaseUrl: 'http://ads.merchant.taler.net/',
   } as TransactionTip,
   refund: {
     ...commonTransaction(),
