@@ -40,8 +40,8 @@ export default {
 };
 
 const commonTransaction = {
-  amountRaw: 'USD:10',
-  amountEffective: 'USD:9',
+  amountRaw: 'KUDOS:11',
+  amountEffective: 'KUDOS:9.2',
   pending: false,
   timestamp: {
     t_ms: new Date().getTime()
@@ -62,7 +62,7 @@ const exampleData = {
   } as TransactionWithdrawal,
   payment: {
     ...commonTransaction,
-    amountEffective: 'USD:11',
+    amountEffective: 'KUDOS:11',
     type: TransactionType.Payment,
     info: {
       contractTermsHash: 'ASDZXCASD',
@@ -147,7 +147,7 @@ export const PaymentError = createExample(TestedComponent, {
 export const PaymentWithoutFee = createExample(TestedComponent, {
   transaction: {
     ...exampleData.payment,
-    amountRaw: 'USD:11',
+    amountRaw: 'KUDOS:11',
 
   }
 });

@@ -158,8 +158,6 @@ export const decorators = [
         </style>
         <LogoHeader />
         <NavBar path={path} devMode={path === '/dev'} />
-        <link key="1" rel="stylesheet" type="text/css" href="/static/style/pure.css" />
-        <link key="2" rel="stylesheet" type="text/css" href="/static/style/wallet.css" />
         <Story />
       </div>
     }

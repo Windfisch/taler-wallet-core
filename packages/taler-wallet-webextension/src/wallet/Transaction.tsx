@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountJson, Amounts, i18n, Transaction, TransactionType } from "@gnu-taler/taler-util";
+import { AmountJson, AmountLike, Amounts, i18n, Transaction, TransactionType } from "@gnu-taler/taler-util";
 import { format } from "date-fns";
 import { Fragment, JSX, VNode, h } from "preact";
 import { route } from 'preact-router';
@@ -22,7 +22,7 @@ import { useEffect, useState } from "preact/hooks";
 import * as wxApi from "../wxApi";
 import { Pages } from "../NavigationBar";
 import emptyImg from "../../static/img/empty.png"
-import { Button, ButtonDestructive, ButtonPrimary, ListOfProducts, PopupBox, Row, RowBorderGray, SmallTextLight, WalletBox } from "../components/styled";
+import { Button, ButtonBox, ButtonBoxDestructive, ButtonDestructive, ButtonPrimary, ExtraLargeText, FontIcon, LargeText, ListOfProducts, PopupBox, Row, RowBorderGray, SmallTextLight, WalletBox } from "../components/styled";
 import { ErrorMessage } from "../components/ErrorMessage";
 
 export function TransactionPage({ tid }: { tid: string; }): JSX.Element {
@@ -73,43 +73,54 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
     return null
   }
 
-  function Fee({ value }: { value: AmountJson }) {
-    if (Amounts.isZero(value)) return null
-    return <span style="font-size: 16px;font-weight: normal;color: gray;">(fee {Amounts.stringify(value)})</span>
-  }
-
-  function TransactionTemplate({ upperRight, children }: { upperRight: VNode, children: VNode[] }) {
+  function TransactionTemplate({ children }: { children: VNode[] }) {
     return <WalletBox>
-      <header>
-        <SmallTextLight>
-          {transaction.timestamp.t_ms === "never" ? "never" : format(transaction.timestamp.t_ms, 'dd/MM/yyyy HH:mm:ss')}
-        </SmallTextLight>
-        <SmallTextLight>
-          {upperRight}
-        </SmallTextLight>
-      </header>
       <section>
         <ErrorMessage title={transaction?.error?.hint} />
-        {children}
+        <div style={{ textAlign: 'center' }}>
+          {children}
+        </div>
       </section>
       <footer>
-        <Button onClick={onBack}><i18n.Translate> &lt; back</i18n.Translate></Button>
+        <ButtonBox onClick={onBack}><i18n.Translate> <FontIcon>&#x2190;</FontIcon> </i18n.Translate></ButtonBox>
         <div>
           {transaction?.error ? <ButtonPrimary onClick={onRetry}><i18n.Translate>retry</i18n.Translate></ButtonPrimary> : null}
-          <ButtonDestructive onClick={onDelete}><i18n.Translate>delete</i18n.Translate></ButtonDestructive>
+          <ButtonBoxDestructive onClick={onDelete}><i18n.Translate>&#x1F5D1;</i18n.Translate></ButtonBoxDestructive>
         </div>
       </footer>
     </WalletBox>
   }
+  type Kind = 'positive' | 'negative' | 'neutral';
+  function Part({ text, title, kind, big }: { title: string, text: AmountLike, kind: Kind, big?: boolean }) {
+    const Text = big ? ExtraLargeText : LargeText;
+    return <div style={{ margin: '1em' }}>
+      <SmallTextLight style={{ margin: '.5em' }}>{title}</SmallTextLight>
+      <Text style={{ color: kind == 'positive' ? 'green' : (kind == 'negative' ? 'red' : 'black') }}>
+        {text}
+      </Text>
+    </div>
+  }
+
+  function amountToString(text: AmountLike) {
+    const aj = Amounts.jsonifyAmount(text)
+    const amount = Amounts.stringifyValue(aj)
+    return `${amount} ${aj.currency}`
+  }
+
 
   if (transaction.type === TransactionType.Withdrawal) {
     const fee = Amounts.sub(
       Amounts.parseOrThrow(transaction.amountRaw),
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount
-    return <TransactionTemplate upperRight={<Fragment>From <b>{transaction.exchangeBaseUrl}</b></Fragment>}>
-      <h3>Withdraw <Status /></h3>
-      <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
+    return <TransactionTemplate>
+      <h2>Withdrawal <Status /></h2>
+      <div>{transaction.timestamp.t_ms === 'never' ? 'never': format(transaction.timestamp.t_ms, 'dd MMMM yyyy, HH:mm')}</div>
+      <br />
+      <Part title="Total withdrawn" text={amountToString(transaction.amountEffective)} kind='positive' />
+      <Part title="Chosen amount" text={amountToString(transaction.amountRaw)} kind='neutral' />
+      <Part title="Exchange fee" text={amountToString(fee)} kind='negative' />
+      <Part title="Exchange" text={new URL(transaction.exchangeBaseUrl).hostname} kind='neutral' />
     </TransactionTemplate>
   }
 
@@ -123,13 +134,17 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
       Amounts.parseOrThrow(transaction.amountRaw),
     ).amount
 
-    return <TransactionTemplate upperRight={<Fragment>To <b>{transaction.info.merchant.name}</b></Fragment>}>
-      <h3>Payment <Status /></h3>
-      <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
-      <span style="font-size:small; color:gray">#{transaction.info.orderId}</span>
-      <p>
-        {transaction.info.summary}
-      </p>
+    return <TransactionTemplate>
+      <h2>Payment <Status /></h2>
+      <div>{transaction.timestamp.t_ms === 'never' ? 'never': format(transaction.timestamp.t_ms, 'dd MMMM yyyy, HH:mm')}</div>
+      <br />
+      <Part big title="Total paid" text={amountToString(transaction.amountEffective)} kind='negative' />
+      <Part big title="Purchase amount" text={amountToString(transaction.amountRaw)} kind='neutral' />
+      <Part big title="Fee" text={amountToString(fee)} kind='negative' />
+      <Part title="Merchant" text={transaction.info.merchant.name} kind='neutral' />
+      <Part title="Purchase" text={transaction.info.summary} kind='neutral' />
+      <Part title="Receipt" text={`#${transaction.info.orderId}`} kind='neutral' />
+
       <div>
         {transaction.info.products && transaction.info.products.length > 0 &&
           <ListOfProducts>
@@ -153,9 +168,13 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
       Amounts.parseOrThrow(transaction.amountRaw),
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount
-    return <TransactionTemplate upperRight={<Fragment>To <b>{transaction.targetPaytoUri}</b></Fragment>}>
-      <h3>Deposit <Status /></h3>
-      <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
+    return <TransactionTemplate>
+      <h2>Deposit <Status /></h2>
+      <div>{transaction.timestamp.t_ms === 'never' ? 'never': format(transaction.timestamp.t_ms, 'dd MMMM yyyy, HH:mm')}</div>
+      <br />
+      <Part big title="Total deposit" text={amountToString(transaction.amountEffective)} kind='negative' />
+      <Part big title="Purchase amount" text={amountToString(transaction.amountRaw)} kind='neutral' />
+      <Part big title="Fee" text={amountToString(fee)} kind='negative' />
     </TransactionTemplate>
   }
 
@@ -164,9 +183,13 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
       Amounts.parseOrThrow(transaction.amountRaw),
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount
-    return <TransactionTemplate upperRight={<Fragment>From <b>{transaction.exchangeBaseUrl}</b></Fragment>}>
-      <h3>Refresh <Status /></h3>
-      <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
+    return <TransactionTemplate>
+      <h2>Refresh <Status /></h2>
+      <div>{transaction.timestamp.t_ms === 'never' ? 'never': format(transaction.timestamp.t_ms, 'dd MMMM yyyy, HH:mm')}</div>
+      <br />
+      <Part big title="Total refresh" text={amountToString(transaction.amountEffective)} kind='negative' />
+      <Part big title="Refresh amount" text={amountToString(transaction.amountRaw)} kind='neutral' />
+      <Part big title="Fee" text={amountToString(fee)} kind='negative' />
     </TransactionTemplate>
   }
 
@@ -175,9 +198,13 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
       Amounts.parseOrThrow(transaction.amountRaw),
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount
-    return <TransactionTemplate upperRight={<Fragment>From <b>{transaction.merchantBaseUrl}</b></Fragment>}>
-      <h3>Tip <Status /></h3>
-      <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
+    return <TransactionTemplate>
+      <h2>Tip <Status /></h2>
+      <div>{transaction.timestamp.t_ms === 'never' ? 'never': format(transaction.timestamp.t_ms, 'dd MMMM yyyy, HH:mm')}</div>
+      <br />
+      <Part big title="Total tip" text={amountToString(transaction.amountEffective)} kind='positive' />
+      <Part big title="Received amount" text={amountToString(transaction.amountRaw)} kind='neutral' />
+      <Part big title="Fee" text={amountToString(fee)} kind='negative' />
     </TransactionTemplate>
   }
 
@@ -186,11 +213,17 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
       Amounts.parseOrThrow(transaction.amountRaw),
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount
-    return <TransactionTemplate upperRight={<Fragment>From <b>{transaction.info.merchant.name}</b></Fragment>}>
-      <h3>Refund <Status /></h3>
-      <h1>{transaction.amountEffective} <Fee value={fee} /></h1>
+    return <TransactionTemplate>
+      <h2>Refund <Status /></h2>
+      <div>{transaction.timestamp.t_ms === 'never' ? 'never': format(transaction.timestamp.t_ms, 'dd MMMM yyyy, HH:mm')}</div>
+      <br />
+      <Part big title="Total refund" text={amountToString(transaction.amountEffective)} kind='positive' />
+      <Part big title="Refund amount" text={amountToString(transaction.amountRaw)} kind='neutral' />
+      <Part big title="Fee" text={amountToString(fee)} kind='negative' />
+      <Part title="Merchant" text={transaction.info.merchant.name} kind='neutral' />
+      <Part title="Purchase" text={transaction.info.summary} kind='neutral' />
+      <Part title="Receipt" text={`#${transaction.info.orderId}`} kind='neutral' />
 
-      <span style="font-size:small; color:gray">#{transaction.info.orderId}</span>
       <p>
         {transaction.info.summary}
       </p>

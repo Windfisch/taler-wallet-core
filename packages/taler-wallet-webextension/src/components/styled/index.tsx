@@ -85,6 +85,7 @@ export const WalletBox = styled.div<{ noPadding?: boolean }>`
     flex-direction: row;
     justify-content: space-between;
     display: flex;
+    background-color: #f7f7f7;
     & button {
       margin-right: 8px;
       margin-left: 8px;
@@ -199,6 +200,33 @@ export const Button = styled.button`
   }
 `;
 
+export const FontIcon = styled.div`
+  font-family: monospace;
+  font-size: x-large;
+  text-align: center;
+  font-weight: bold;
+  /* vertical-align: text-top; */
+`
+export const ButtonBox = styled(Button)`
+  padding: .5em;
+  width: 2em;
+  height: 2em;
+
+  & > ${FontIcon} {
+    width: 1em;
+    height: 1em;
+    display: inline;
+    line-height: 0px;
+  }
+  background-color: transparent;
+
+  border: 1px solid;
+  border-radius: 4px;
+  border-color: black;
+  color: black;
+`
+
+
 const ButtonVariant = styled(Button)`
   color: white;
   border-radius: 4px;
@@ -208,18 +236,35 @@ const ButtonVariant = styled(Button)`
 export const ButtonPrimary = styled(ButtonVariant)`
   background-color: rgb(66, 184, 221);
 `
+export const ButtonBoxPrimary = styled(ButtonBox)`
+  color: rgb(66, 184, 221);
+  border-color: rgb(66, 184, 221);
+`
 
 export const ButtonSuccess = styled(ButtonVariant)`
   background-color: rgb(28, 184, 65);
+`
+export const ButtonBoxSuccess = styled(ButtonBox)`
+  color: rgb(28, 184, 65);
+  border-color: rgb(28, 184, 65);
 `
 
 export const ButtonWarning = styled(ButtonVariant)`
   background-color: rgb(223, 117, 20);
 `
+export const ButtonBoxWarning = styled(ButtonBox)`
+  color: rgb(223, 117, 20);
+  border-color: rgb(223, 117, 20);
+`
 
 export const ButtonDestructive = styled(ButtonVariant)`
   background-color: rgb(202, 60, 60);
 `
+export const ButtonBoxDestructive = styled(ButtonBox)`
+  color: rgb(202, 60, 60);
+  border-color: rgb(202, 60, 60);
+`
+
 
 export const BoldLight = styled.div`
 color: gray;
@@ -336,6 +381,7 @@ export const CenteredTextBold = styled(CenteredText)`
   font-weight: bold;
   color: ${((props: any): any => String(props.color) as any) as any};
 `
+
 export const Input = styled.div<{ invalid?: boolean }>`
   & label {
     display: block;
@@ -359,7 +405,7 @@ export const ErrorBox = styled.div`
   /* margin: 0.5em; */
   padding-left: 1em;
   padding-right: 1em;
-  width: 100%;
+  /* width: 100%; */
   color: #721c24;
   background: #f8d7da;
 

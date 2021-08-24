@@ -402,6 +402,12 @@ export class Amounts {
    */
   static stringify(a: AmountLike): string {
     a = Amounts.jsonifyAmount(a);
+    const s = this.stringifyValue(a)
+
+    return `${a.currency}:${s}`;
+  }
+
+  static stringifyValue(a: AmountJson): string {
     const av = a.value + Math.floor(a.fraction / amountFractionalBase);
     const af = a.fraction % amountFractionalBase;
     let s = av.toString();
@@ -417,7 +423,6 @@ export class Amounts {
         n = (n * 10) % amountFractionalBase;
       }
     }
-
-    return `${a.currency}:${s}`;
+    return s
   }
 }
