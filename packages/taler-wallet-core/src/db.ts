@@ -1276,6 +1276,12 @@ export interface PurchaseRecord {
    * Continue querying the refund status until this deadline has expired.
    */
   autoRefundDeadline: Timestamp | undefined;
+
+  /**
+   * Is the payment frozen?  I.e. did we encounter
+   * an error where it doesn't make sense to retry.
+   */
+  payFrozen?: boolean;
 }
 
 export const WALLET_BACKUP_STATE_KEY = "walletBackupState";

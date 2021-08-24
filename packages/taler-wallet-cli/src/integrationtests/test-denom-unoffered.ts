@@ -112,13 +112,6 @@ export async function runDenomUnofferedTest(t: GlobalTestState) {
       merchantErrorCode,
       TalerErrorCode.MERCHANT_POST_ORDERS_ID_PAY_DENOMINATION_KEY_NOT_FOUND,
     );
-
-    const purchId = makeEventId(TransactionType.Payment, preparePayResult.proposalId);
-    await wallet.client.call(WalletApiOperation.DeleteTransaction, {
-      transactionId: purchId,
-    });
-
-    // Now, delete the purchase and refresh operation.
   }
 
   await wallet.client.call(WalletApiOperation.AddExchange, {

@@ -235,7 +235,11 @@ async function gatherPurchasePending(
   resp: PendingOperationsResponse,
 ): Promise<void> {
   await tx.purchases.iter().forEach((pr) => {
-    if (pr.paymentSubmitPending && pr.abortStatus === AbortStatus.None) {
+    if (
+      pr.paymentSubmitPending &&
+      pr.abortStatus === AbortStatus.None &&
+      !pr.payFrozen
+    ) {
       const timestampDue = pr.payRetryInfo?.nextRetry ?? getTimestampNow();
       resp.pendingOperations.push({
         type: PendingTaskType.Pay,

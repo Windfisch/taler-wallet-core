@@ -64,6 +64,7 @@ export enum HttpResponseStatus {
   NoContent = 204,
   Gone = 210,
   NotModified = 304,
+  BadRequest = 400,
   PaymentRequired = 402,
   NotFound = 404,
   Conflict = 409,

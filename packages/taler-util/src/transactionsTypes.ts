@@ -80,6 +80,12 @@ export interface TransactionCommon {
   // but its transactionId will remain unchanged
   pending: boolean;
 
+  /**
+   * True if the transaction encountered a problem that might be
+   * permanent.  A frozen transaction won't be automatically retried.
+   */
+  frozen: boolean;
+
   // Raw amount of the transaction (exclusive of fees or other extra costs)
   amountRaw: AmountString;
 

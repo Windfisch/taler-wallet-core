@@ -93,6 +93,7 @@ import {
   readSuccessResponseJsonOrErrorCode,
   readSuccessResponseJsonOrThrow,
   readTalerErrorResponse,
+  readUnexpectedResponseDetails,
   throwUnexpectedRequestError,
 } from "../util/http.js";
 import {
@@ -1207,6 +1208,26 @@ async function submitPay(
         type: ConfirmPayResultType.Pending,
         lastError: err,
       };
+    }
+
+    if (resp.status === HttpResponseStatus.BadRequest) {
+      const errDetails = await readUnexpectedResponseDetails(resp);
+      logger.warn("unexpected 400 response for /pay");
+      logger.warn(j2s(errDetails));
+      await ws.db
+        .mktx((x) => ({ purchases: x.purchases }))
+        .runReadWrite(async (tx) => {
+          const purch = await tx.purchases.get(proposalId);
+          if (!purch) {
+            return;
+          }
+          purch.payFrozen = true;
+          purch.lastPayError = errDetails;
+          delete purch.payRetryInfo;
+          await tx.purchases.put(purch);
+        });
+      // FIXME: Maybe introduce a new return type for this instead of throwing?
+      throw new OperationFailedAndReportedError(errDetails);
     }
 
     if (resp.status === HttpResponseStatus.Conflict) {

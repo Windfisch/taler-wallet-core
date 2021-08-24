@@ -168,6 +168,7 @@ export async function getTransactions(
               TransactionType.Withdrawal,
               wsr.withdrawalGroupId,
             ),
+            frozen: false,
             ...(wsr.lastError ? { error: wsr.lastError } : {}),
           });
         });
@@ -215,6 +216,7 @@ export async function getTransactions(
               TransactionType.Withdrawal,
               r.initialWithdrawalGroupId,
             ),
+            frozen: false,
             ...(r.lastError ? { error: r.lastError } : {}),
           });
         });
@@ -230,6 +232,7 @@ export async function getTransactions(
             amountRaw: Amounts.stringify(dg.effectiveDepositAmount),
             amountEffective: Amounts.stringify(dg.totalPayCost),
             pending: !dg.timestampFinished,
+            frozen: false,
             timestamp: dg.timestampCreated,
             targetPaytoUri: dg.wire.payto_uri,
             transactionId: makeEventId(
@@ -288,6 +291,7 @@ export async function getTransactions(
             transactionId: paymentTransactionId,
             proposalId: pr.proposalId,
             info: info,
+            frozen: pr.payFrozen ?? false,
             ...(err ? { error: err } : {}),
           });
 
@@ -351,6 +355,7 @@ export async function getTransactions(
               amountEffective: Amounts.stringify(amountEffective),
               amountRaw: Amounts.stringify(amountRaw),
               pending: false,
+              frozen: false,
             });
           }
         });
@@ -372,6 +377,7 @@ export async function getTransactions(
             amountEffective: Amounts.stringify(tipRecord.tipAmountEffective),
             amountRaw: Amounts.stringify(tipRecord.tipAmountRaw),
             pending: !tipRecord.pickedUpTimestamp,
+            frozen: false,
             timestamp: tipRecord.acceptedTimestamp,
             transactionId: makeEventId(
               TransactionType.Tip,
