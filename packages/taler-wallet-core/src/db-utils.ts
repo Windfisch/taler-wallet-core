@@ -135,7 +135,7 @@ export async function openTalerDatabase(
 
   if (currentMainVersion !== TALER_DB_NAME) {
     switch (currentMainVersion) {
-      case "taler-wallet-main-v2": {
+      case "taler-wallet-main-v2": 
         // We consider this a pre-release
         // development version, no migration is done.
         await metaDb
@@ -149,7 +149,6 @@ export async function openTalerDatabase(
             });
           });
         break;
-      }
       default:
         throw Error(
           `migration from database ${currentMainVersion} not supported`,
