@@ -22,7 +22,6 @@ import {
   DenominationRecord,
   RefreshCoinStatus,
   RefreshGroupRecord,
-  RefreshPlanchet,
   WalletStoresV1,
 } from "../db.js";
 import {
@@ -32,6 +31,7 @@ import {
   fnutil,
   NotificationType,
   RefreshGroupId,
+  RefreshPlanchetInfo,
   RefreshReason,
   stringifyTimestamp,
   TalerErrorDetails,
@@ -534,7 +534,7 @@ async function refreshReveal(
     throw Error("refresh index error");
   }
 
-  const evs = planchets.map((x: RefreshPlanchet) => x.coinEv);
+  const evs = planchets.map((x: RefreshPlanchetInfo) => x.coinEv);
   const newDenomsFlat: string[] = [];
   const linkSigs: string[] = [];
 

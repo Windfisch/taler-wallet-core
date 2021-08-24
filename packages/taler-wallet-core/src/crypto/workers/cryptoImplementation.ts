@@ -30,12 +30,11 @@
 import {
   CoinRecord,
   DenominationRecord,
-  RefreshPlanchet,
   WireFee,
   CoinSourceType,
 } from "../../db.js";
 
-import { CoinDepositPermission, RecoupRequest } from "@gnu-taler/taler-util";
+import { CoinDepositPermission, RecoupRequest, RefreshPlanchetInfo } from "@gnu-taler/taler-util";
 // FIXME: These types should be internal to the wallet!
 import {
   BenchmarkResult,
@@ -442,7 +441,7 @@ export class CryptoImplementation {
     const transferPubs: string[] = [];
     const transferPrivs: string[] = [];
 
-    const planchetsForGammas: RefreshPlanchet[][] = [];
+    const planchetsForGammas: RefreshPlanchetInfo[][] = [];
 
     for (let i = 0; i < kappa; i++) {
       const transferKeyPair = setupRefreshTransferPub(
@@ -464,7 +463,7 @@ export class CryptoImplementation {
     sessionHc.update(decodeCrock(meltCoinPub));
     sessionHc.update(amountToBuffer(valueWithFee));
     for (let i = 0; i < kappa; i++) {
-      const planchets: RefreshPlanchet[] = [];
+      const planchets: RefreshPlanchetInfo[] = [];
       for (let j = 0; j < newCoinDenoms.length; j++) {
         const denomSel = newCoinDenoms[j];
         for (let k = 0; k < denomSel.count; k++) {
@@ -482,7 +481,7 @@ export class CryptoImplementation {
           const pubHash = hash(coinPub);
           const denomPub = decodeCrock(denomSel.denomPub);
           const ev = rsaBlind(pubHash, blindingFactor, denomPub);
-          const planchet: RefreshPlanchet = {
+          const planchet: RefreshPlanchetInfo = {
             blindingKey: encodeCrock(blindingFactor),
             coinEv: encodeCrock(ev),
             privateKey: encodeCrock(coinPriv),

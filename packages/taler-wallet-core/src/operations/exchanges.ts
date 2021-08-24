@@ -44,7 +44,7 @@ import { decodeCrock, encodeCrock, hash } from "../crypto/talerCrypto.js";
 import { CryptoApi } from "../crypto/workers/cryptoApi.js";
 import {
   DenominationRecord,
-  DenominationStatus,
+  DenominationVerificationStatus,
   ExchangeDetailsRecord,
   ExchangeRecord,
   WalletStoresV1,
@@ -95,7 +95,7 @@ function denominationRecordFromKeys(
     stampExpireLegal: denomIn.stamp_expire_legal,
     stampExpireWithdraw: denomIn.stamp_expire_withdraw,
     stampStart: denomIn.stamp_start,
-    status: DenominationStatus.Unverified,
+    verificationStatus: DenominationVerificationStatus.Unverified,
     value: Amounts.parseOrThrow(denomIn.value),
     listIssueDate,
   };

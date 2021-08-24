@@ -134,8 +134,27 @@ export async function openTalerDatabase(
     });
 
   if (currentMainVersion !== TALER_DB_NAME) {
-    // In the future, the migration logic will be implemented here.
-    throw Error(`migration from database ${currentMainVersion} not supported`);
+    switch (currentMainVersion) {
+      case "taler-wallet-main-v2": {
+        // We consider this a pre-release
+        // development version, no migration is done.
+        await metaDb
+          .mktx((x) => ({
+            metaConfig: x.metaConfig,
+          }))
+          .runReadWrite(async (tx) => {
+            await tx.metaConfig.put({
+              key: CURRENT_DB_CONFIG_KEY,
+              value: TALER_DB_NAME,
+            });
+          });
+        break;
+      }
+      default:
+        throw Error(
+          `migration from database ${currentMainVersion} not supported`,
+        );
+    }
   }
 
   const mainDbHandle = await openDatabase(

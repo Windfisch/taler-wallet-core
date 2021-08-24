@@ -46,7 +46,7 @@ import { PayCoinSelection } from "./util/coinSelection.js";
  * for all previous versions must be written, which should be
  * avoided.
  */
-export const TALER_DB_NAME = "taler-wallet-main-v2";
+export const TALER_DB_NAME = "taler-wallet-main-v3";
 
 /**
  * Name of the metadata database.  This database is used
@@ -283,7 +283,7 @@ export interface ExchangeTrustRecord {
 /**
  * Status of a denomination.
  */
-export enum DenominationStatus {
+export enum DenominationVerificationStatus {
   /**
    * Verification was delayed.
    */
@@ -366,10 +366,8 @@ export interface DenominationRecord {
 
   /**
    * Did we verify the signature on the denomination?
-   *
-   * FIXME:  Rename to "verificationStatus"?
    */
-  status: DenominationStatus;
+  verificationStatus: DenominationVerificationStatus;
 
   /**
    * Was this denomination still offered by the exchange the last time
@@ -588,35 +586,6 @@ export interface PlanchetRecord {
   coinValue: AmountJson;
 
   isFromTip: boolean;
-}
-
-/**
- * Planchet for a coin during refresh.
- *
- * FIXME:  Not used in DB?
- */
-export interface RefreshPlanchet {
-  /**
-   * Public key for the coin.
-   */
-  publicKey: string;
-
-  /**
-   * Private key for the coin.
-   */
-  privateKey: string;
-
-  /**
-   * Blinded public key.
-   */
-  coinEv: string;
-
-  coinEvHash: string;
-
-  /**
-   * Blinding key used.
-   */
-  blindingKey: string;
 }
 
 /**
@@ -1317,21 +1286,6 @@ export interface WalletBackupConfState {
    */
   lastBackupCheckTimestamp?: Timestamp;
   lastBackupNonce?: string;
-}
-
-/**
- * FIXME: Eliminate this in favor of DenomSelectionState.
- */
-export interface DenominationSelectionInfo {
-  totalCoinValue: AmountJson;
-  totalWithdrawCost: AmountJson;
-  selectedDenoms: {
-    /**
-     * How many times do we withdraw this denomination?
-     */
-    count: number;
-    denom: DenominationRecord;
-  }[];
 }
 
 /**

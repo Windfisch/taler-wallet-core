@@ -16,7 +16,7 @@
 
 import { Amounts } from "@gnu-taler/taler-util";
 import test from "ava";
-import { DenominationRecord, DenominationStatus } from "../db.js";
+import { DenominationRecord, DenominationVerificationStatus } from "../db.js";
 import { selectWithdrawalDenominations } from "./withdraw.js";
 
 test("withdrawal selection bug repro", (t) => {
@@ -70,7 +70,7 @@ test("withdrawal selection bug repro", (t) => {
       stampStart: {
         t_ms: 1585229388000,
       },
-      status: DenominationStatus.Unverified,
+      verificationStatus: DenominationVerificationStatus.Unverified,
       value: {
         currency: "KUDOS",
         fraction: 0,
@@ -121,7 +121,7 @@ test("withdrawal selection bug repro", (t) => {
       stampStart: {
         t_ms: 1585229388000,
       },
-      status: DenominationStatus.Unverified,
+      verificationStatus: DenominationVerificationStatus.Unverified,
       value: {
         currency: "KUDOS",
         fraction: 0,
@@ -172,7 +172,7 @@ test("withdrawal selection bug repro", (t) => {
       stampStart: {
         t_ms: 1585229388000,
       },
-      status: DenominationStatus.Unverified,
+      verificationStatus: DenominationVerificationStatus.Unverified,
       value: {
         currency: "KUDOS",
         fraction: 0,
@@ -223,7 +223,7 @@ test("withdrawal selection bug repro", (t) => {
       stampStart: {
         t_ms: 1585229388000,
       },
-      status: DenominationStatus.Unverified,
+      verificationStatus: DenominationVerificationStatus.Unverified,
       value: {
         currency: "KUDOS",
         fraction: 0,
@@ -274,7 +274,7 @@ test("withdrawal selection bug repro", (t) => {
       stampStart: {
         t_ms: 1585229388000,
       },
-      status: DenominationStatus.Unverified,
+      verificationStatus: DenominationVerificationStatus.Unverified,
       value: {
         currency: "KUDOS",
         fraction: 10000000,
@@ -325,7 +325,7 @@ test("withdrawal selection bug repro", (t) => {
       stampStart: {
         t_ms: 1585229388000,
       },
-      status: DenominationStatus.Unverified,
+      verificationStatus: DenominationVerificationStatus.Unverified,
       value: {
         currency: "KUDOS",
         fraction: 0,

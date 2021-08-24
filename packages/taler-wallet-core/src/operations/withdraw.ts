@@ -47,8 +47,7 @@ import {
   CoinSourceType,
   CoinStatus,
   DenominationRecord,
-  DenominationSelectionInfo,
-  DenominationStatus,
+  DenominationVerificationStatus,
   DenomSelectionState,
   ExchangeDetailsRecord,
   ExchangeRecord,
@@ -72,6 +71,21 @@ import {
  * Logger for this file.
  */
 const logger = new Logger("withdraw.ts");
+
+/**
+ * FIXME: Eliminate this in favor of DenomSelectionState.
+ */
+interface DenominationSelectionInfo {
+  totalCoinValue: AmountJson;
+  totalWithdrawCost: AmountJson;
+  selectedDenoms: {
+    /**
+     * How many times do we withdraw this denomination?
+     */
+    count: number;
+    denom: DenominationRecord;
+  }[];
+}
 
 /**
  * Information about what will happen when creating a reserve.
@@ -231,9 +245,13 @@ export function selectWithdrawalDenominations(
   }
 
   if (logger.shouldLogTrace()) {
-    logger.trace(`selected withdrawal denoms for ${Amounts.stringify(totalCoinValue)}`);
+    logger.trace(
+      `selected withdrawal denoms for ${Amounts.stringify(totalCoinValue)}`,
+    );
     for (const sd of selectedDenoms) {
-      logger.trace(`denom_pub_hash=${sd.denom.denomPubHash}, count=${sd.count}`);
+      logger.trace(
+        `denom_pub_hash=${sd.denom.denomPubHash}, count=${sd.count}`,
+      );
     }
     logger.trace("(end of withdrawal denom list)");
   }
@@ -314,7 +332,9 @@ export async function getCandidateWithdrawalDenoms(
   return await ws.db
     .mktx((x) => ({ denominations: x.denominations }))
     .runReadOnly(async (tx) => {
-      const allDenoms = await tx.denominations.indexes.byExchangeBaseUrl.getAll(exchangeBaseUrl);
+      const allDenoms = await tx.denominations.indexes.byExchangeBaseUrl.getAll(
+        exchangeBaseUrl,
+      );
       return allDenoms.filter(isWithdrawableDenom);
     });
 }
@@ -708,7 +728,7 @@ export async function updateWithdrawalDenoms(
       batchIdx++, current++
     ) {
       const denom = denominations[current];
-      if (denom.status === DenominationStatus.Unverified) {
+      if (denom.verificationStatus === DenominationVerificationStatus.Unverified) {
         logger.trace(
           `Validating denomination (${current + 1}/${
             denominations.length
@@ -723,9 +743,9 @@ export async function updateWithdrawalDenoms(
           logger.warn(
             `Signature check for denomination h=${denom.denomPubHash} failed`,
           );
-          denom.status = DenominationStatus.VerifiedBad;
+          denom.verificationStatus = DenominationVerificationStatus.VerifiedBad;
         } else {
-          denom.status = DenominationStatus.VerifiedGood;
+          denom.verificationStatus = DenominationVerificationStatus.VerifiedGood;
         }
         updatedDenominations.push(denom);
       }

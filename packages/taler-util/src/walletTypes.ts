@@ -789,6 +789,33 @@ export interface MakeSyncSignatureRequest {
 }
 
 /**
+ * Planchet for a coin during refresh.
+ */
+ export interface RefreshPlanchetInfo {
+  /**
+   * Public key for the coin.
+   */
+  publicKey: string;
+
+  /**
+   * Private key for the coin.
+   */
+  privateKey: string;
+
+  /**
+   * Blinded public key.
+   */
+  coinEv: string;
+
+  coinEvHash: string;
+
+  /**
+   * Blinding key used.
+   */
+  blindingKey: string;
+}
+
+/**
  * Strategy for loading recovery information.
  */
 export enum RecoveryMergeStrategy {

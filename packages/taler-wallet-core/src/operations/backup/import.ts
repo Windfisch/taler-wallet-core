@@ -31,7 +31,7 @@ import {
 import {
   WalletContractData,
   DenomSelectionState,
-  DenominationStatus,
+  DenominationVerificationStatus,
   CoinSource,
   CoinSourceType,
   CoinStatus,
@@ -359,7 +359,7 @@ export async function importBackup(
               stampExpireLegal: backupDenomination.stamp_expire_legal,
               stampExpireWithdraw: backupDenomination.stamp_expire_withdraw,
               stampStart: backupDenomination.stamp_start,
-              status: DenominationStatus.VerifiedGood,
+              verificationStatus: DenominationVerificationStatus.VerifiedGood,
               value: Amounts.parseOrThrow(backupDenomination.value),
               listIssueDate: backupDenomination.list_issue_date,
             });
