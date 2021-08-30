@@ -229,6 +229,19 @@ export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
     );
   }
 
+  async c53tick(): Promise<string> {
+    const stdout = await sh(
+      this.globalTestState,
+      "libeufin-sandbox-c53tick",
+      "libeufin-sandbox camt053tick",
+      {
+        ...process.env,
+        LIBEUFIN_SANDBOX_DB_CONNECTION: this.sandboxConfig.databaseJdbcUri,
+      },
+    );
+    return stdout;
+  }
+
   async makeTransaction(
     debit: string,
     credit: string,
