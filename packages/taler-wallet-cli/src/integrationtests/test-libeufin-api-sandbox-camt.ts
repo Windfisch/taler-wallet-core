@@ -27,6 +27,9 @@ import {
   findNexusPayment,
 } from "./libeufin";
 
+// This test only checks that LibEuFin doesn't fail when
+// it generates Camt statements - no assertions take place.
+// Furthermore, it prints the Camt.053 being generated.
 export async function runLibeufinApiSandboxCamtTest(t: GlobalTestState) {
 
   const sandbox = await LibeufinSandboxService.create(t, {
@@ -53,7 +56,7 @@ export async function runLibeufinApiSandboxCamtTest(t: GlobalTestState) {
   await sandbox.makeTransaction("mock-account-0", "mock-account-1", "EUR:1", "+1");
   await sandbox.makeTransaction("mock-account-0", "mock-account-1", "EUR:1", "+1");
   await sandbox.makeTransaction("mock-account-1", "mock-account-0", "EUR:5", "minus 5");
-
+  await sandbox.c53tick();
   let ret = await LibeufinSandboxApi.getCamt053(sandbox, "mock-account-1");
   console.log(ret);
 }

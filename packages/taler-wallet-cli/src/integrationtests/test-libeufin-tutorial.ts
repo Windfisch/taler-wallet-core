@@ -101,9 +101,8 @@ export async function runLibeufinTutorialTest(t: GlobalTestState) {
   };
 
   await libeufinCli.importBankAccount(bankAccountImportDetails);
-  await libeufinCli.fetchTransactions(
-    bankAccountImportDetails.nexusBankAccountName,
-  );
+  await libeufinSandbox.c53tick()
+  await libeufinCli.fetchTransactions(bankAccountImportDetails.nexusBankAccountName);
   await libeufinCli.transactions(bankAccountImportDetails.nexusBankAccountName);
 
   const paymentDetails = {
