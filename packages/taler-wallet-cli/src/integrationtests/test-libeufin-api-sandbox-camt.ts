@@ -60,4 +60,5 @@ export async function runLibeufinApiSandboxCamtTest(t: GlobalTestState) {
   let ret = await LibeufinSandboxApi.getCamt053(sandbox, "mock-account-1");
   console.log(ret);
 }
+runLibeufinApiSandboxCamtTest.excludeByDefault = true;
 runLibeufinApiSandboxCamtTest.suites = ["libeufin"];
