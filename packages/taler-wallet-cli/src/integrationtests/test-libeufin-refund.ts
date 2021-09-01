@@ -58,11 +58,7 @@ export async function runLibeufinRefundTest(t: GlobalTestState) {
     ["twg"],
   );
 
-  /**
-   * user01 pays user02 using a invalid subject.  At the end,
-   * user01 checks whether one incoming payment exists in the
-   * history.  This one incoming payment will be the refund.
-   */
+  // user 02 pays user 01 with a faulty (non Taler) subject.
   await libeufinServices.libeufinSandbox.makeTransaction(
     user02sandbox.ebicsBankAccount.label, // debit
     user01sandbox.ebicsBankAccount.label, // credit
@@ -70,34 +66,36 @@ export async function runLibeufinRefundTest(t: GlobalTestState) {
     "not a public key",
   );
 
-  // Gets the faulty payment in the (ingested) history.
+  // The bad payment should be now ingested and prepared as
+  // a reimbursement.
   await LibeufinNexusApi.fetchAllTransactions(
     libeufinServices.libeufinNexus,
     user01nexus.localAccountName,
   );
-  // Check payment shows up in Nexus history.
+  // Check that the payment arrived at the Nexus.
   const nexusTxs = await LibeufinNexusApi.getAccountTransactions(
     libeufinServices.libeufinNexus,
     user01nexus.localAccountName,
   );
   t.assertTrue(nexusTxs.data["transactions"].length == 1);
 
-  // This should pay the faulty payment back.
+  // Submit the reimbursement
   await LibeufinNexusApi.submitInitiatedPayment(
     libeufinServices.libeufinNexus,
     user01nexus.localAccountName,
-    // The initiated payment ID below got set by the Taler
-    // facade; at this point only one can / must exist.
+    // The initiated payment (= the reimbursement) ID below
+    // got set by the Taler facade; at this point only one must
+    // exist.  If "1" is not found, a 404 will make this test fail.
     "1",
   );
 
-  // Counterpart checks whether the reimbursement shows up.
+  // user 02 checks whether the reimbursement arrived.
   let history = await LibeufinSandboxApi.getAccountTransactions(
     libeufinServices.libeufinSandbox,
     user02sandbox.ebicsBankAccount["label"],
   );
-
-  // 2 is total: 1 the original payment + 1 the reimbursement.
+  // 2 payments must exist: 1 the original (faulty) payment +
+  // 1 the reimbursement.
   t.assertTrue(history["payments"].length == 2);
 }
 runLibeufinRefundTest.suites = ["libeufin"];

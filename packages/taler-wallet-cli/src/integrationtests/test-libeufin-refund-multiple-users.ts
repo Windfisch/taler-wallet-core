@@ -68,39 +68,37 @@ export async function runLibeufinRefundMultipleUsersTest(t: GlobalTestState) {
     ["twg"],
   );
 
-  /**
-   * user01 pays user02 using a invalid subject.  At the end,
-   * user01 checks whether one incoming payment exists in the
-   * history.  This one incoming payment will be the refund.
-   */
-  await LibeufinSandboxApi.bookPayment(
-    libeufinServices.libeufinSandbox,
-    user02sandbox,
-    user01sandbox,
+  // user 01 gets the payment
+  await libeufinServices.libeufinSandbox.makeTransaction(
+    user02sandbox.ebicsBankAccount.label, // debit
+    user01sandbox.ebicsBankAccount.label, // credit
+    "EUR:1",
     "not a public key",
-    "1",
-    "EUR",
   );
 
+  // user 01 fetches the payments
   await LibeufinNexusApi.fetchAllTransactions(
     libeufinServices.libeufinNexus,
-    user02nexus.localAccountName,
+    user01nexus.localAccountName,
   );
-  delayMs(2000); // time to ingest.
 
+  // user 01 tries to submit the reimbursement, as
+  // the payment didn't have a valid public key in
+  // the subject.
   await LibeufinNexusApi.submitInitiatedPayment(
     libeufinServices.libeufinNexus,
-    user02nexus.localAccountName,
+    user01nexus.localAccountName,
     "1", // so far the only one that can exist.
   );
 
-  // Counterpart checks whether the reimbursement shows up.
+  // user 02 checks whether a reimbursement arrived.
   let history = await LibeufinSandboxApi.getAccountTransactions(
     libeufinServices.libeufinSandbox,
-    user01sandbox.ebicsBankAccount["label"],
+    user02sandbox.ebicsBankAccount["label"],
   );
-
-  t.assertTrue(history["payments"].length == 1);
+  // reimbursement arrived IFF the total payments are 2:
+  // 1 the original (faulty) transaction + 1 the reimbursement.
+  t.assertTrue(history["payments"].length == 2);
 }
 
 runLibeufinRefundMultipleUsersTest.suites = ["libeufin"];
