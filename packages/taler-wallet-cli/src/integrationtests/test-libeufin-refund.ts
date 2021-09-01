@@ -63,43 +63,29 @@ export async function runLibeufinRefundTest(t: GlobalTestState) {
    * user01 checks whether one incoming payment exists in the
    * history.  This one incoming payment will be the refund.
    */
-  await LibeufinSandboxApi.bookPayment(
-    libeufinServices.libeufinSandbox,
-    user02sandbox,
-    user01sandbox,
+  await libeufinServices.libeufinSandbox.makeTransaction(
+    user02sandbox.ebicsBankAccount.label, // debit
+    user01sandbox.ebicsBankAccount.label, // credit
+    "EUR:1",
     "not a public key",
-    "1",
-    "EUR",
   );
-
-  // check payment shows up in the Sandbox' history.
-  // NOTE: the debitor account has no entry so far, because
-  // the call above is a mere test method that books only one
-  // CRDT transaction.
-  const txsCredit = await LibeufinSandboxApi.getAccountTransactions(
-    libeufinServices.libeufinSandbox,
-    user02sandbox.ebicsBankAccount["label"]);
-  t.assertTrue(txsCredit["payments"].length == 1);
 
   // Gets the faulty payment in the (ingested) history.
   await LibeufinNexusApi.fetchAllTransactions(
     libeufinServices.libeufinNexus,
-    user02nexus.localAccountName,
+    user01nexus.localAccountName,
   );
-  // Give time to ingest.
-  delayMs(2000);
-
   // Check payment shows up in Nexus history.
   const nexusTxs = await LibeufinNexusApi.getAccountTransactions(
     libeufinServices.libeufinNexus,
-    user02nexus.localAccountName,
+    user01nexus.localAccountName,
   );
   t.assertTrue(nexusTxs.data["transactions"].length == 1);
 
   // This should pay the faulty payment back.
   await LibeufinNexusApi.submitInitiatedPayment(
     libeufinServices.libeufinNexus,
-    user02nexus.localAccountName,
+    user01nexus.localAccountName,
     // The initiated payment ID below got set by the Taler
     // facade; at this point only one can / must exist.
     "1",
@@ -108,8 +94,10 @@ export async function runLibeufinRefundTest(t: GlobalTestState) {
   // Counterpart checks whether the reimbursement shows up.
   let history = await LibeufinSandboxApi.getAccountTransactions(
     libeufinServices.libeufinSandbox,
-    user01sandbox.ebicsBankAccount["label"],
+    user02sandbox.ebicsBankAccount["label"],
   );
-  t.assertTrue(history["payments"].length == 1);
+
+  // 2 is total: 1 the original payment + 1 the reimbursement.
+  t.assertTrue(history["payments"].length == 2);
 }
 runLibeufinRefundTest.suites = ["libeufin"];

@@ -88,20 +88,17 @@ export async function runLibeufinApiBankaccountTest(t: GlobalTestState) {
     "mock",
     "local-mock",
   );
-
-  await LibeufinSandboxApi.bookPayment2(sandbox, {
-    creditorIban: "DE71500105179674997361",
-    creditorBic: "BELADEBEXXX",
-    creditorName: "mock",
-    debtorIban: "DE84500105176881385584",
-    debtorBic: "BELADEBEXXX",
-    debtorName: "mock2",
-    subject: "mock subject",
-    currency: "EUR",
-    amount: "1",
-    uid: "mock",
-    direction: "CRDT",
-  });
+  await LibeufinSandboxApi.simulateIncomingTransaction(
+    sandbox,
+    "mock", // creditor bankaccount label
+    {
+      debtorIban: "DE84500105176881385584",
+      debtorBic: "BELADEBEXXX",
+      debtorName: "mock2",
+      amount: "1",
+      subject: "mock subject",
+    }
+  );
   await LibeufinNexusApi.fetchAllTransactions(nexus, "local-mock");
   let transactions = await LibeufinNexusApi.getAccountTransactions(
     nexus,
