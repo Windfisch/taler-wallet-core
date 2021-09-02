@@ -99,7 +99,7 @@ export async function runLibeufinApiBankaccountTest(t: GlobalTestState) {
       subject: "mock subject",
     }
   );
-  await LibeufinNexusApi.fetchAllTransactions(nexus, "local-mock");
+  await LibeufinNexusApi.fetchTransactions(nexus, "local-mock");
   let transactions = await LibeufinNexusApi.getAccountTransactions(
     nexus,
     "local-mock",

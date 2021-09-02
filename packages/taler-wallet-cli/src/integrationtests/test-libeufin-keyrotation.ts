@@ -46,7 +46,7 @@ export async function runLibeufinKeyrotationTest(t: GlobalTestState) {
     t, [user01nexus], [user01sandbox],
   );
 
-  await LibeufinNexusApi.fetchAllTransactions(
+  await LibeufinNexusApi.fetchTransactions(
     libeufinServices.libeufinNexus,
     user01nexus.localAccountName,
   );
@@ -57,7 +57,7 @@ export async function runLibeufinKeyrotationTest(t: GlobalTestState) {
     user01sandbox.ebicsBankAccount.subscriber.hostID,
   );
 
-  const resp = await LibeufinNexusApi.fetchAllTransactions(
+  const resp = await LibeufinNexusApi.fetchTransactions(
     libeufinServices.libeufinNexus,
     user01nexus.localAccountName,
   );

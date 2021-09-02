@@ -58,7 +58,7 @@ export async function runLibeufinAnastasisFacadeTest(t: GlobalTestState) {
   t.assertTrue(anastasisBaseUrl.startsWith("http://"));
   t.assertTrue(anastasisBaseUrl.endsWith("/"));
 
-  await LibeufinNexusApi.fetchAllTransactions(
+  await LibeufinNexusApi.fetchTransactions(
     libeufinServices.libeufinNexus,
     user01nexus.localAccountName,
   );
@@ -107,7 +107,7 @@ export async function runLibeufinAnastasisFacadeTest(t: GlobalTestState) {
     },
   )
 
-  await LibeufinNexusApi.fetchAllTransactions(
+  await LibeufinNexusApi.fetchTransactions(
     libeufinServices.libeufinNexus,
     user01nexus.localAccountName,
   );
@@ -140,7 +140,7 @@ export async function runLibeufinAnastasisFacadeTest(t: GlobalTestState) {
     },
   )
 
-  await LibeufinNexusApi.fetchAllTransactions(
+  await LibeufinNexusApi.fetchTransactions(
     libeufinServices.libeufinNexus,
     user01nexus.localAccountName,
   );

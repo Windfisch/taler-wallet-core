@@ -77,7 +77,7 @@ export async function runLibeufinRefundMultipleUsersTest(t: GlobalTestState) {
   );
 
   // user 01 fetches the payments
-  await LibeufinNexusApi.fetchAllTransactions(
+  await LibeufinNexusApi.fetchTransactions(
     libeufinServices.libeufinNexus,
     user01nexus.localAccountName,
   );

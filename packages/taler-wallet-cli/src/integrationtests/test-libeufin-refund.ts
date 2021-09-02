@@ -68,7 +68,7 @@ export async function runLibeufinRefundTest(t: GlobalTestState) {
 
   // The bad payment should be now ingested and prepared as
   // a reimbursement.
-  await LibeufinNexusApi.fetchAllTransactions(
+  await LibeufinNexusApi.fetchTransactions(
     libeufinServices.libeufinNexus,
     user01nexus.localAccountName,
   );

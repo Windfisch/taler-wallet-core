@@ -245,7 +245,7 @@ export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
   async makeTransaction(
     debit: string,
     credit: string,
-    amount: string,
+    amount: string, // $currency:x.y
     subject: string,): Promise<string> {
     const stdout = await sh(
       this.globalTestState,
@@ -1237,9 +1237,11 @@ export namespace LibeufinNexusApi {
     return response;
   }
 
-  export async function fetchAllTransactions(
+  export async function fetchTransactions(
     libeufinNexusService: LibeufinNexusService,
     accountName: string,
+    rangeType: string = "all",
+    level: string = "report",
     username: string = "admin",
     password: string = "test",
   ): Promise<any> {
@@ -1251,8 +1253,8 @@ export namespace LibeufinNexusApi {
     return await axios.post(
       url.href,
       {
-        rangeType: "all",
-        level: "report",
+        rangeType: rangeType,
+        level: level,
       },
       {
         auth: {

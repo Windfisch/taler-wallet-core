@@ -264,7 +264,7 @@ export async function runLibeufinBasicTest(t: GlobalTestState) {
     },
   );
 
-  await LibeufinNexusApi.fetchAllTransactions(libeufinNexus, "myacct");
+  await LibeufinNexusApi.fetchTransactions(libeufinNexus, "myacct");
 
   await exchange.runWirewatchOnce();
 
