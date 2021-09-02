@@ -58,6 +58,7 @@ import { runWithdrawalBankIntegratedTest } from "./test-withdrawal-bank-integrat
 import { runMerchantExchangeConfusionTest } from "./test-merchant-exchange-confusion";
 import { runLibeufinBasicTest } from "./test-libeufin-basic";
 import { runLibeufinC5xTest } from "./test-libeufin-c5x";
+import { runLibeufinNexusBalanceTest } from "./test-libeufin-nexus-balance";
 import { runLibeufinKeyrotationTest } from "./test-libeufin-keyrotation";
 import { runLibeufinRefundTest } from "./test-libeufin-refund";
 import { runLibeufinRefundMultipleUsersTest } from "./test-libeufin-refund-multiple-users";
@@ -113,6 +114,7 @@ const allTests: TestMainFunction[] = [
   runLibeufinTutorialTest,
   runLibeufinRefundTest,
   runLibeufinC5xTest,
+  runLibeufinNexusBalanceTest,
   runLibeufinRefundMultipleUsersTest,
   runLibeufinApiPermissionsTest,
   runLibeufinApiFacadeTest,

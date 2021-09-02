@@ -1082,6 +1082,27 @@ export namespace LibeufinNexusApi {
     );
   }
 
+  export async function getBankAccount(
+    libeufinNexusService: LibeufinNexusServiceInterface,
+    accountName: string,
+  ): Promise<any> {
+    const baseUrl = libeufinNexusService.baseUrl;
+    let url = new URL(
+      `bank-accounts/${accountName}`,
+      baseUrl,
+    );
+    return await axios.get(
+      url.href,
+      {
+        auth: {
+          username: "admin",
+          password: "test",
+        },
+      },
+    );
+  }
+
+
   export async function submitInitiatedPayment(
     libeufinNexusService: LibeufinNexusServiceInterface,
     accountName: string,
