@@ -136,7 +136,6 @@ function stringifyArray(children: Array<any>): string {
     return `%${n++}$s`;
   });
   const s = ss.join("").replace(/ +/g, " ").trim();
-  console.log("translation lookup", JSON.stringify(s));
   return s;
 }
 

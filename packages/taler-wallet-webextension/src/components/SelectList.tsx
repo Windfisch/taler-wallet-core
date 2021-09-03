@@ -31,7 +31,6 @@ interface Props {
 }
 
 export function SelectList({ name, value, list, canBeNull, onChange, label, description }: Props): JSX.Element {
-  console.log("==>", name, value)
   return <div>
     <label
       htmlFor={`text-${name}`}

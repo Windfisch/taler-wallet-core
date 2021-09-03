@@ -25,14 +25,14 @@
     "tslib": "^2.1.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.14.0",
+    "@babel/core": "7.13.16",
     "@babel/plugin-transform-react-jsx-source": "^7.12.13",
     "@babel/preset-typescript": "^7.13.0",
-    "@linaria/babel-preset": "^3.0.0-beta.4",
-    "@linaria/core": "^3.0.0-beta.4",
-    "@linaria/react": "^3.0.0-beta.7",
-    "@linaria/rollup": "^3.0.0-beta.7",
-    "@linaria/webpack-loader": "^3.0.0-beta.7",
+    "@linaria/babel-preset": "3.0.0-beta.4",
+    "@linaria/core": "3.0.0-beta.4",
+    "@linaria/react": "3.0.0-beta.4",
+    "@linaria/rollup": "3.0.0-beta.4",
+    "@linaria/webpack-loader": "3.0.0-beta.4",
     "@rollup/plugin-alias": "^3.1.2",
     "@rollup/plugin-commonjs": "^17.0.0",
     "@rollup/plugin-image": "^2.0.6",
@@ -44,6 +44,7 @@
     "@storybook/preact": "^6.2.9",
     "@testing-library/preact": "^2.0.1",
     "@types/chrome": "^0.0.128",
+    "@types/enzyme": "^3.10.8",
     "@types/history": "^4.7.8",
     "@types/jest": "^26.0.23",
     "@types/node": "^14.14.22",
@@ -53,7 +54,7 @@
     "enzyme": "^3.11.0",
     "enzyme-adapter-preact-pure": "^3.1.0",
     "jest": "^26.6.3",
-    "jest-preset-preact": "^4.0.3",
+    "jest-preset-preact": "^4.0.2",
     "preact-cli": "^3.0.5",
     "preact-render-to-string": "^5.1.19",
     "rimraf": "^3.0.2",
@@ -71,7 +72,8 @@
       "<rootDir>/tests/__mocks__/setupTests.ts"
     ],
     "moduleNameMapper": {
-      "\\.(css|less)$": "identity-obj-proxy"
+      "\\.(css|less)$": "identity-obj-proxy",
+      "@linaria/react": "<rootDir>/tests/__mocks__/linaria.ts"
     },
     "transform": {
       "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga|po)$": "<rootDir>/tests/__mocks__/fileTransformer.js"

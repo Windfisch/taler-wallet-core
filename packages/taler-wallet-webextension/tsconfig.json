@@ -2,9 +2,8 @@
   "compilerOptions": {
     "composite": true,
     "lib": ["es6", "DOM"],
-    "jsx": "react",
-    "jsxFactory": "h",
-    "jsxFragmentFactory": "Fragment",
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
     "moduleResolution": "Node",
     "module": "ESNext",
     "target": "ES6",

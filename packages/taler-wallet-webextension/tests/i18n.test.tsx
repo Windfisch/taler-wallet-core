@@ -15,8 +15,9 @@
  */
 
 // import * as test from "ava";
-import { internalSetStrings, str, Translate } from "@gnu-taler/taler-util";
+import { internalSetStrings, i18n, Translate } from "@gnu-taler/taler-util";
 import { render, configure } from "enzyme";
+import { h } from 'preact';
 import Adapter from 'enzyme-adapter-preact-pure';
 
 configure({ adapter: new Adapter() });
@@ -40,7 +41,7 @@ const testStrings = {
 test("str translation", (done) => {
 
   // Alias, so we nly use the function for lookups, not for string extranction.
-  const strAlias = str;
+  const strAlias = i18n.str;
   const TranslateAlias = Translate;
   internalSetStrings(testStrings);
   expect(strAlias`str1`).toEqual("foo1");

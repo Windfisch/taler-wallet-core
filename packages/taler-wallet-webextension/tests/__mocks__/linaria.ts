@@ -14,21 +14,20 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
- /**
- *
- * @author Sebastian Javier Marchano (sebasjm)
+/**
+*
+* @author Sebastian Javier Marchano (sebasjm)
+*/
+
+/**
+ * Here we are mocking the linaria runtime since it should not be used in 
+ * runtime.
  */
+export const styled = new Proxy(function (tag: any) {
+    return jest.fn(() => `mock-styled.${tag}`);
+}, {
+    get(o, prop) {
+        return o(prop);
+    },
+})
 
-import 'regenerator-runtime/runtime'
-import { configure } from 'enzyme';
-import Adapter from 'enzyme-adapter-preact-pure';
-
-configure({
-    adapter: new Adapter()
-});
-
-// Polyfill for encoding which isn't present globally in jsdom
-import { TextEncoder, TextDecoder } from 'util'
-global.TextEncoder = TextEncoder;
-global.TextDecoder = TextDecoder;
-(global as any).chrome = {};
