@@ -366,7 +366,7 @@ export const ExtraLargeText = styled.div`
   font-size: x-large; 
 `
 
-export const SmallTextLight = styled(SmallText)`
+export const SmallLightText = styled(SmallText)`
   color: gray;
 `
 
@@ -375,7 +375,7 @@ export const CenteredText = styled.div`
   text-align: center;
 `
 
-export const CenteredTextBold = styled(CenteredText)`
+export const CenteredBoldText = styled(CenteredText)`
   white-space: nowrap;
   text-align: center;
   font-weight: bold;

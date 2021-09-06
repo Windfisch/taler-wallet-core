@@ -21,8 +21,8 @@ import { differenceInMonths, formatDuration, intervalToDuration } from "date-fns
 import { Fragment, JSX, VNode, h } from "preact";
 import {
   BoldLight, ButtonPrimary, ButtonSuccess, Centered,
-  CenteredText, CenteredTextBold, PopupBox, RowBorderGray,
-  SmallText, SmallTextLight, WalletBox
+  CenteredText, CenteredBoldText, PopupBox, RowBorderGray,
+  SmallText, SmallLightText, WalletBox
 } from "../components/styled";
 import { useBackupStatus } from "../hooks/useBackupStatus";
 import { Pages } from "../NavigationBar";
@@ -99,7 +99,7 @@ function BackupLayout(props: TransactionLayoutProps): JSX.Element {
         <a href={Pages.provider_detail.replace(':pid', encodeURIComponent(props.id))}><span>{props.title}</span></a>
 
         {dateStr && <SmallText style={{marginTop: 5}}>Last synced: {dateStr}</SmallText>}
-        {!dateStr && <SmallTextLight style={{marginTop: 5}}>Not synced</SmallTextLight>}
+        {!dateStr && <SmallLightText style={{marginTop: 5}}>Not synced</SmallLightText>}
       </div>
       <div>
         {props.status?.type === 'paid' ?
@@ -114,7 +114,7 @@ function BackupLayout(props: TransactionLayoutProps): JSX.Element {
 function ExpirationText({ until }: { until: Timestamp }) {
   return <Fragment>
     <CenteredText> Expires in </CenteredText>
-    <CenteredTextBold {...({ color: colorByTimeToExpire(until) })}> {daysUntil(until)} </CenteredTextBold>
+    <CenteredBoldText {...({ color: colorByTimeToExpire(until) })}> {daysUntil(until)} </CenteredBoldText>
   </Fragment>
 }
 

@@ -4,7 +4,7 @@ import { VNode, h } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { Checkbox } from "../components/Checkbox";
 import { ErrorMessage } from "../components/ErrorMessage";
-import { Button, ButtonPrimary, Input, LightText, WalletBox, SmallTextLight } from "../components/styled/index";
+import { Button, ButtonPrimary, Input, LightText, WalletBox, SmallLightText } from "../components/styled/index";
 import * as wxApi from "../wxApi";
 
 interface Props {
@@ -129,7 +129,7 @@ export function ConfirmProviderView({ url, provider, onCancel, onConfirm }: Conf
     <section>
       <h1>Review terms of service</h1>
       <div>Provider URL: <a href={url} target="_blank">{url}</a></div>
-      <SmallTextLight>Please review and accept this provider's terms of service</SmallTextLight>
+      <SmallLightText>Please review and accept this provider's terms of service</SmallLightText>
       <h2>1. Pricing</h2>
       <p>
         {Amounts.isZero(provider.annual_fee) ? 'free of charge' : `${provider.annual_fee} per year of service`}

@@ -22,7 +22,7 @@ import { useEffect, useState } from "preact/hooks";
 import * as wxApi from "../wxApi";
 import { Pages } from "../NavigationBar";
 import emptyImg from "../../static/img/empty.png"
-import { Button, ButtonBox, ButtonBoxDestructive, ButtonDestructive, ButtonPrimary, ExtraLargeText, FontIcon, LargeText, ListOfProducts, PopupBox, Row, RowBorderGray, SmallTextLight, WalletBox } from "../components/styled";
+import { Button, ButtonBox, ButtonBoxDestructive, ButtonDestructive, ButtonPrimary, ExtraLargeText, FontIcon, LargeText, ListOfProducts, PopupBox, Row, RowBorderGray, SmallLightText, WalletBox } from "../components/styled";
 import { ErrorMessage } from "../components/ErrorMessage";
 
 export function TransactionPage({ tid }: { tid: string; }): JSX.Element {
@@ -94,7 +94,7 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
   function Part({ text, title, kind, big }: { title: string, text: AmountLike, kind: Kind, big?: boolean }) {
     const Text = big ? ExtraLargeText : LargeText;
     return <div style={{ margin: '1em' }}>
-      <SmallTextLight style={{ margin: '.5em' }}>{title}</SmallTextLight>
+      <SmallLightText style={{ margin: '.5em' }}>{title}</SmallLightText>
       <Text style={{ color: kind == 'positive' ? 'green' : (kind == 'negative' ? 'red' : 'black') }}>
         {text}
       </Text>
@@ -153,7 +153,7 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
                 <img src={p.image ? p.image : emptyImg} />
               </a>
               <div>
-                {p.quantity && p.quantity > 0 && <SmallTextLight>x {p.quantity} {p.unit}</SmallTextLight>}
+                {p.quantity && p.quantity > 0 && <SmallLightText>x {p.quantity} {p.unit}</SmallLightText>}
                 <div>{p.description}</div>
               </div>
             </RowBorderGray>)}
@@ -235,7 +235,7 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
                 <img src={p.image ? p.image : emptyImg} />
               </a>
               <div>
-                {p.quantity && p.quantity > 0 && <SmallTextLight>x {p.quantity} {p.unit}</SmallTextLight>}
+                {p.quantity && p.quantity > 0 && <SmallLightText>x {p.quantity} {p.unit}</SmallLightText>}
                 <div>{p.description}</div>
               </div>
             </RowBorderGray>)}

@@ -20,7 +20,7 @@ import { ProviderInfo, ProviderPaymentStatus, ProviderPaymentType } from "@gnu-t
 import { format, formatDuration, intervalToDuration } from "date-fns";
 import { Fragment, VNode, h } from "preact";
 import { ErrorMessage } from "../components/ErrorMessage";
-import { Button, ButtonDestructive, ButtonPrimary, PaymentStatus, WalletBox, SmallTextLight } from "../components/styled";
+import { Button, ButtonDestructive, ButtonPrimary, PaymentStatus, WalletBox, SmallLightText } from "../components/styled";
 import { useProviderStatus } from "../hooks/useProviderStatus";
 
 interface Props {
@@ -60,7 +60,7 @@ export function ProviderView({ info, onDelete, onSync, onBack, onExtend }: ViewP
     <WalletBox>
       <Error info={info} />
       <header>
-        <h3>{info.name} <SmallTextLight>{info.syncProviderBaseUrl}</SmallTextLight></h3>
+        <h3>{info.name} <SmallLightText>{info.syncProviderBaseUrl}</SmallLightText></h3>
         <PaymentStatus color={isPaid ? 'rgb(28, 184, 65)' : 'rgb(202, 60, 60)'}>{isPaid ? 'Paid' : 'Unpaid'}</PaymentStatus>
       </header>
       <section>

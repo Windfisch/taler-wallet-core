@@ -7,7 +7,7 @@ import imageRefresh from '../../static/img/ri-refresh-line.svg';
 import imageRefund from '../../static/img/ri-refund-2-line.svg';
 import imageShoppingCart from '../../static/img/ri-shopping-cart-line.svg';
 import { Pages } from "../NavigationBar";
-import { Column, ExtraLargeText, HistoryRow, SmallTextLight, LargeText } from './styled/index';
+import { Column, ExtraLargeText, HistoryRow, SmallLightText, LargeText, LightText } from './styled/index';
 
 export function TransactionItem(props: { tx: Transaction, multiCurrency: boolean }): JSX.Element {
   const tx = props.tx;
@@ -103,11 +103,11 @@ function TransactionLayout(props: TransactionLayoutProps): JSX.Element {
       <Column>
         <LargeText>
           <span>{props.title}</span>
-          {props.pending ? (
-            <span style={{ color: "darkblue" }}> (Pending)</span>
-          ) : null}
         </LargeText>
-        <SmallTextLight>{dateStr}</SmallTextLight>
+        {props.pending &&
+          <LightText style={{marginTop: 5, marginBottom: 5}}>Waiting for confirmation</LightText>
+        }
+        <SmallLightText>{dateStr}</SmallLightText>
       </Column>
       <TransactionAmount
         pending={props.pending}
@@ -152,6 +152,7 @@ function TransactionAmount(props: TransactionAmountProps): JSX.Element {
   }
   return (
     <Column style={{
+      textAlign: 'center',
       color:
         props.pending ? "gray" :
           (sign === '+' ? 'darkgreen' :
@@ -163,6 +164,7 @@ function TransactionAmount(props: TransactionAmountProps): JSX.Element {
         {amount}
       </ExtraLargeText>
       {props.multiCurrency && <div>{currency}</div>}
+      {props.pending && <div>PENDING</div>}
     </Column>
   );
 }
