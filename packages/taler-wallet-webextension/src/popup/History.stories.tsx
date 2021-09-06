@@ -128,6 +128,20 @@ export const One = createExample(TestedComponent, {
   }]
 });
 
+export const OnePending = createExample(TestedComponent, {
+  list: [{
+    ...exampleData.withdraw,
+    pending: true,
+  }],
+  balances: [{
+    available: 'USD:10',
+    pendingIncoming: 'USD:0',
+    pendingOutgoing: 'USD:0',
+    hasPendingTransactions: false,
+    requiresUserInput: false,
+  }]
+});
+
 export const Several = createExample(TestedComponent, {
   list: [
     exampleData.withdraw,
@@ -165,7 +179,7 @@ export const SeveralWithTwoCurrencies = createExample(TestedComponent, {
     pendingOutgoing: 'TESTKUDOS:0',
     hasPendingTransactions: false,
     requiresUserInput: false,
-  },{
+  }, {
     available: 'USD:10',
     pendingIncoming: 'USD:0',
     pendingOutgoing: 'USD:0',
@@ -174,114 +188,3 @@ export const SeveralWithTwoCurrencies = createExample(TestedComponent, {
   }]
 });
 
-// export const WithdrawPending = createExample(TestedComponent, {
-//   transaction: { ...exampleData.withdraw, pending: true },
-// });
-
-
-// export const Payment = createExample(TestedComponent, {
-//   transaction: exampleData.payment
-// });
-
-// export const PaymentWithoutFee = createExample(TestedComponent, {
-//   transaction: {
-//     ...exampleData.payment,
-//     amountRaw: 'USD:11',
-
-//   }
-// });
-
-// export const PaymentPending = createExample(TestedComponent, {
-//   transaction: { ...exampleData.payment, pending: true },
-// });
-
-// export const PaymentWithProducts = createExample(TestedComponent, {
-//   transaction: {
-//     ...exampleData.payment,
-//     info: {
-//       ...exampleData.payment.info,
-//       summary: 'this order has 5 products',
-//       products: [{
-//         description: 't-shirt',
-//         unit: 'shirts',
-//         quantity: 1,
-//       }, {
-//         description: 't-shirt',
-//         unit: 'shirts',
-//         quantity: 1,
-//       }, {
-//         description: 'e-book',
-//       }, {
-//         description: 'beer',
-//         unit: 'pint',
-//         quantity: 15,
-//       }, {
-//         description: 'beer',
-//         unit: 'pint',
-//         quantity: 15,
-//       }]
-//     }
-//   } as TransactionPayment,
-// });
-
-// export const PaymentWithLongSummary = createExample(TestedComponent, {
-//   transaction: {
-//     ...exampleData.payment,
-//     info: {
-//       ...exampleData.payment.info,
-//       summary: 'this is a very long summary that will occupy severals lines, this is a very long summary that will occupy severals lines, this is a very long summary that will occupy severals lines, this is a very long summary that will occupy severals lines, ',
-//       products: [{
-//         description: 'an xl sized t-shirt with some drawings on it, color pink',
-//         unit: 'shirts',
-//         quantity: 1,
-//       }, {
-//         description: 'beer',
-//         unit: 'pint',
-//         quantity: 15,
-//       }]
-//     }
-//   } as TransactionPayment,
-// });
-
-
-// export const Deposit = createExample(TestedComponent, {
-//   transaction: exampleData.deposit
-// });
-
-// export const DepositPending = createExample(TestedComponent, {
-//   transaction: { ...exampleData.deposit, pending: true }
-// });
-
-// export const Refresh = createExample(TestedComponent, {
-//   transaction: exampleData.refresh
-// });
-
-// export const Tip = createExample(TestedComponent, {
-//   transaction: exampleData.tip
-// });
-
-// export const TipPending = createExample(TestedComponent, {
-//   transaction: { ...exampleData.tip, pending: true }
-// });
-
-// export const Refund = createExample(TestedComponent, {
-//   transaction: exampleData.refund
-// });
-
-// export const RefundPending = createExample(TestedComponent, {
-//   transaction: { ...exampleData.refund, pending: true }
-// });
-
-// export const RefundWithProducts = createExample(TestedComponent, {
-//   transaction: {
-//     ...exampleData.refund,
-//     info: {
-//       ...exampleData.refund.info,
-//       products: [{
-//         description: 't-shirt',
-//       }, {
-//         description: 'beer',
-//       }]
-//     }
-//   } as TransactionRefund,
-// });
