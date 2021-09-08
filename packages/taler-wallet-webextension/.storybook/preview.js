@@ -119,7 +119,6 @@ export const decorators = [
           margin: 0;
           font-size: 100%;
           padding: 0;
-          background-color: #f8faf7;
           font-family: Arial, Helvetica, sans-serif;
         }`}
         </style>

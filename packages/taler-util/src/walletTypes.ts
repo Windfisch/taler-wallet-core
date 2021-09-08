@@ -713,6 +713,17 @@ export const codecForGetWithdrawalDetailsForUri = (): Codec<GetWithdrawalDetails
     .property("talerWithdrawUri", codecForString())
     .build("GetWithdrawalDetailsForUriRequest");
 
+export interface GetExchangeWithdrawalInfo {
+  exchangeBaseUrl: string;
+  amount: AmountJson;
+}
+
+export const codecForGetExchangeWithdrawalInfo = (): Codec<GetExchangeWithdrawalInfo> =>
+  buildCodecForObject<GetExchangeWithdrawalInfo>()
+    .property("exchangeBaseUrl", codecForString())
+    .property("amount", codecForAmountJson())
+    .build("GetExchangeWithdrawalInfo");
+
 export interface AbortProposalRequest {
   proposalId: string;
 }
@@ -791,7 +802,7 @@ export interface MakeSyncSignatureRequest {
 /**
  * Planchet for a coin during refresh.
  */
- export interface RefreshPlanchetInfo {
+export interface RefreshPlanchetInfo {
   /**
    * Public key for the coin.
    */

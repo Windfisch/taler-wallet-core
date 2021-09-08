@@ -38,9 +38,11 @@ import {
   DeleteTransactionRequest,
   RetryTransactionRequest,
   SetWalletDeviceIdRequest,
+  GetExchangeWithdrawalInfo,
 } from "@gnu-taler/taler-util";
 import { AddBackupProviderRequest, BackupProviderState, OperationFailedError, RemoveBackupProviderRequest } from "@gnu-taler/taler-wallet-core";
 import { BackupInfo } from "@gnu-taler/taler-wallet-core";
+import { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core/src/operations/withdraw";
 
 export interface ExtendedPermissionsResponse {
   newValue: boolean;
@@ -279,6 +281,16 @@ export function getWithdrawalDetailsForUri(
   req: GetWithdrawalDetailsForUriRequest,
 ): Promise<WithdrawUriInfoResponse> {
   return callBackend("getWithdrawalDetailsForUri", req);
+}
+
+
+/**
+ * Get diagnostics information
+ */
+ export function getExchangeWithdrawalInfo(
+  req: GetExchangeWithdrawalInfo,
+): Promise<ExchangeWithdrawDetails> {
+  return callBackend("getExchangeWithdrawalInfo", req);
 }
 
 export function prepareTip(req: PrepareTipRequest): Promise<PrepareTipResult> {

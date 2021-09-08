@@ -24,6 +24,7 @@ import { Pages } from "../NavigationBar";
 import emptyImg from "../../static/img/empty.png"
 import { Button, ButtonBox, ButtonBoxDestructive, ButtonDestructive, ButtonPrimary, ExtraLargeText, FontIcon, LargeText, ListOfProducts, PopupBox, Row, RowBorderGray, SmallLightText, WalletBox } from "../components/styled";
 import { ErrorMessage } from "../components/ErrorMessage";
+import { Part } from "../components/Part";
 
 export function TransactionPage({ tid }: { tid: string; }): JSX.Element {
   const [transaction, setTransaction] = useState<
@@ -60,7 +61,6 @@ export interface WalletTransactionProps {
   onBack: () => void,
 }
 
-
 export function TransactionView({ transaction, onDelete, onRetry, onBack }: WalletTransactionProps) {
 
   function Status() {
@@ -89,16 +89,6 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
         </div>
       </footer>
     </WalletBox>
-  }
-  type Kind = 'positive' | 'negative' | 'neutral';
-  function Part({ text, title, kind, big }: { title: string, text: AmountLike, kind: Kind, big?: boolean }) {
-    const Text = big ? ExtraLargeText : LargeText;
-    return <div style={{ margin: '1em' }}>
-      <SmallLightText style={{ margin: '.5em' }}>{title}</SmallLightText>
-      <Text style={{ color: kind == 'positive' ? 'green' : (kind == 'negative' ? 'red' : 'black') }}>
-        {text}
-      </Text>
-    </div>
   }
 
   function amountToString(text: AmountLike) {

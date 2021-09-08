@@ -92,7 +92,7 @@ interface DenominationSelectionInfo {
  *
  * Sent to the wallet frontend to be rendered and shown to the user.
  */
-interface ExchangeWithdrawDetails {
+export interface ExchangeWithdrawDetails {
   /**
    * Exchange that the reserve will be created at.
    */

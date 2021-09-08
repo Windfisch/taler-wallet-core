@@ -19,6 +19,9 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 
+import { amountFractionalBase, Amounts } from '@gnu-taler/taler-util';
+import { ExchangeRecord } from '@gnu-taler/taler-wallet-core';
+import { ExchangeWithdrawDetails } from '@gnu-taler/taler-wallet-core/src/operations/withdraw';
 import { createExample } from '../test-utils';
 import { View as TestedComponent } from './Withdraw';
 
@@ -30,16 +33,29 @@ export default {
   },
 };
 
-export const CompleteWithExchange = createExample(TestedComponent, {
+export const WithdrawWithFee = createExample(TestedComponent, {
   details: {
-    amount: 'USD:2',
-    possibleExchanges: [],
-  },
-  selectedExchange: 'Some exchange'
+    exchangeInfo: {
+      baseUrl: 'exchange.demo.taler.net'
+    } as ExchangeRecord,
+    withdrawFee: {
+      currency: 'USD',
+      fraction: amountFractionalBase*0.5,
+      value: 0
+    },
+  } as ExchangeWithdrawDetails,
+  amount: 'USD:2',
 })
-export const CompleteWithoutExchange = createExample(TestedComponent, {
+export const WithdrawWithoutFee = createExample(TestedComponent, {
   details: {
-    amount: 'USD:2',
-    possibleExchanges: [],
-  },
+    exchangeInfo: {
+      baseUrl: 'exchange.demo.taler.net'
+    } as ExchangeRecord,
+    withdrawFee: {
+      currency: 'USD',
+      fraction: 0,
+      value: 0
+    },
+  } as ExchangeWithdrawDetails,
+  amount: 'USD:2',
 })

@@ -12,6 +12,16 @@ export const PaymentStatus = styled.div<{ color: string }>`
 `
 
 export const WalletAction = styled.section`
+  max-width: 50%;
+
+  margin: auto;
+  height: 100%;
+  
+  & h1:first-child {
+    margin-top: 0; 
+  }
+`
+export const WalletActionOld = styled.section`
   border: solid 5px black;
   border-radius: 10px;
   margin-left: auto;
@@ -152,7 +162,7 @@ export const PopupBox = styled.div<{ noPadding?: boolean }>`
 
 `
 
-export const Button = styled.button`
+export const Button = styled.button<{ upperCased?: boolean }>`
   display: inline-block;
   zoom: 1;
   line-height: normal;
@@ -162,6 +172,7 @@ export const Button = styled.button`
   cursor: pointer;
   user-select: none;
   box-sizing: border-box;
+  text-transform: ${({ upperCased }) => upperCased ? 'uppercase' : 'none'};
 
   font-family: inherit;
   font-size: 100%;
@@ -242,11 +253,11 @@ export const ButtonBoxPrimary = styled(ButtonBox)`
 `
 
 export const ButtonSuccess = styled(ButtonVariant)`
-  background-color: rgb(28, 184, 65);
+  background-color: #388e3c;
 `
 export const ButtonBoxSuccess = styled(ButtonBox)`
-  color: rgb(28, 184, 65);
-  border-color: rgb(28, 184, 65);
+  color: #388e3c;
+  border-color: #388e3c;
 `
 
 export const ButtonWarning = styled(ButtonVariant)`

@@ -21,98 +21,78 @@
  * @author Florian Dold
  */
 
-import { i18n } from '@gnu-taler/taler-util'
-import { renderAmount } from "../renderHtml";
-
-import { useState, useEffect } from "preact/hooks";
-import {
-  acceptWithdrawal,
-  onUpdateNotification,
-  getWithdrawalDetailsForUri,
-} from "../wxApi";
-import { h } from 'preact';
-import { WithdrawUriInfoResponse } from "@gnu-taler/taler-util";
+import { AmountLike, Amounts, i18n, WithdrawUriInfoResponse } from '@gnu-taler/taler-util';
+import { ExchangeWithdrawDetails } from '@gnu-taler/taler-wallet-core/src/operations/withdraw';
+import { useEffect, useState } from "preact/hooks";
 import { JSX } from "preact/jsx-runtime";
-import { WalletAction } from '../components/styled';
+import { LogoHeader } from '../components/LogoHeader';
+import { Part } from '../components/Part';
+import { ButtonSuccess, WalletAction } from '../components/styled';
+import {
+  acceptWithdrawal, getExchangeWithdrawalInfo, getWithdrawalDetailsForUri, onUpdateNotification
+} from "../wxApi";
+
 
 interface Props {
   talerWithdrawUri?: string;
 }
 
 export interface ViewProps {
-  details: WithdrawUriInfoResponse;
-  selectedExchange?: string;
+  details: ExchangeWithdrawDetails;
+  amount: string;
   accept: () => Promise<void>;
   setCancelled: (b: boolean) => void;
   setSelecting: (b: boolean) => void;
 };
 
-export function View({ details, selectedExchange, accept, setCancelled, setSelecting }: ViewProps) {
+function amountToString(text: AmountLike) {
+  const aj = Amounts.jsonifyAmount(text)
+  const amount = Amounts.stringifyValue(aj)
+  return `${amount} ${aj.currency}`
+}
+
+
+export function View({ details, amount, accept, setCancelled, setSelecting }: ViewProps) {
 
   return (
-    <WalletAction>
-      <div style="border-bottom: 3px dashed #aa3939; margin-bottom: 2em;">
-        <h1 style="font-family: monospace; font-size: 250%;">
-          <span style="color: #aa3939;">❰</span>Taler Wallet<span style="color: #aa3939;">❱</span>
-        </h1>
-      </div>
-      <div class="fade">
+    <WalletAction style={{ textAlign: 'center' }}>
+      <LogoHeader />
+      <h2>
+        {i18n.str`Digital cash withdrawal`}
+      </h2>
+      <section>
         <div>
-          <h1><i18n.Translate>Digital Cash Withdrawal</i18n.Translate></h1>
-          <p><i18n.Translate>
-            You are about to withdraw{" "}
-            <strong>{renderAmount(details.amount)}</strong> from your bank account
-            into your wallet.
-          </i18n.Translate></p>
-          {selectedExchange ? (
-            <p><i18n.Translate>
-              The exchange <strong>{selectedExchange}</strong> will be used as the
-              Taler payment service provider.
-            </i18n.Translate></p>
-          ) : null}
-
-          <div>
-            <button
-              class="pure-button button-success"
-              disabled={!selectedExchange}
-              onClick={() => accept()}
-            >
-              {i18n.str`Accept fees and withdraw`}
-            </button>
-            <p>
-              <span
-                role="button"
-                tabIndex={0}
-                style={{ textDecoration: "underline", cursor: "pointer" }}
-                onClick={() => setSelecting(true)}
-              >
-                {i18n.str`Chose different exchange provider`}
-              </span>
-              <br />
-              <span
-                role="button"
-                tabIndex={0}
-                style={{ textDecoration: "underline", cursor: "pointer" }}
-                onClick={() => setCancelled(true)}
-              >
-                {i18n.str`Cancel withdraw operation`}
-              </span>
-            </p>
-          </div>
+          <Part title="Total to withdraw" text={amountToString(Amounts.sub(Amounts.parseOrThrow(amount), details.withdrawFee).amount)} kind='positive' />
+          <Part title="Chosen amount" text={amountToString(amount)} kind='neutral' />
+          {Amounts.isNonZero(details.withdrawFee) &&
+            <Part title="Exchange fee" text={amountToString(details.withdrawFee)} kind='negative' />
+          }
+          <Part title="Exchange" text={details.exchangeInfo.baseUrl} kind='neutral' big />
         </div>
-      </div>
+      </section>
+      <section>
+
+        <div>
+          <ButtonSuccess
+            upperCased
+            disabled={!details.exchangeInfo.baseUrl}
+            onClick={accept}
+          >
+            {i18n.str`Accept fees and withdraw`}
+          </ButtonSuccess>
+        </div>
+      </section>
     </WalletAction>
   )
 }
 
 export function WithdrawPage({ talerWithdrawUri, ...rest }: Props): JSX.Element {
-  const [details, setDetails] = useState<WithdrawUriInfoResponse | undefined>(undefined);
-  const [selectedExchange, setSelectedExchange] = useState<string | undefined>(undefined);
+  const [uriInfo, setUriInfo] = useState<WithdrawUriInfoResponse | undefined>(undefined);
+  const [details, setDetails] = useState<ExchangeWithdrawDetails | undefined>(undefined);
   const [cancelled, setCancelled] = useState(false);
   const [selecting, setSelecting] = useState(false);
   const [error, setError] = useState<boolean>(false);
   const [updateCounter, setUpdateCounter] = useState(1);
-  const [state, setState] = useState(1)
 
   useEffect(() => {
     return onUpdateNotification(() => {
@@ -127,47 +107,59 @@ export function WithdrawPage({ talerWithdrawUri, ...rest }: Props): JSX.Element 
     const fetchData = async (): Promise<void> => {
       try {
         const res = await getWithdrawalDetailsForUri({ talerWithdrawUri });
-        setDetails(res);
-        if (res.defaultExchangeBaseUrl) {
-          setSelectedExchange(res.defaultExchangeBaseUrl);
-        }
+        setUriInfo(res);
       } catch (e) {
         console.error('error', JSON.stringify(e, undefined, 2))
         setError(true)
       }
     };
     fetchData();
-  }, [selectedExchange, selecting, talerWithdrawUri, updateCounter, state]);
+  }, [selecting, talerWithdrawUri, updateCounter]);
+
+  useEffect(() => {
+    async function fetchData() {
+      if (!uriInfo || !uriInfo.defaultExchangeBaseUrl) return
+      const res = await getExchangeWithdrawalInfo({
+        exchangeBaseUrl: uriInfo.defaultExchangeBaseUrl,
+        amount: Amounts.parseOrThrow(uriInfo.amount)
+      })
+      setDetails(res)
+    }
+    fetchData()
+  }, [uriInfo])
 
   if (!talerWithdrawUri) {
     return <span><i18n.Translate>missing withdraw uri</i18n.Translate></span>;
   }
 
   const accept = async (): Promise<void> => {
-    if (!selectedExchange) {
+    if (!details) {
       throw Error("can't accept, no exchange selected");
     }
-    console.log("accepting exchange", selectedExchange);
-    const res = await acceptWithdrawal(talerWithdrawUri, selectedExchange);
+    console.log("accepting exchange", details.exchangeInfo.baseUrl);
+    const res = await acceptWithdrawal(talerWithdrawUri, details.exchangeInfo.baseUrl);
     console.log("accept withdrawal response", res);
     if (res.confirmTransferUrl) {
       document.location.href = res.confirmTransferUrl;
     }
   };
 
-  if (!details) {
-    return <span><i18n.Translate>Loading...</i18n.Translate></span>;
-  }
   if (cancelled) {
     return <span><i18n.Translate>Withdraw operation has been cancelled.</i18n.Translate></span>;
   }
   if (error) {
     return <span><i18n.Translate>This URI is not valid anymore.</i18n.Translate></span>;
   }
+  if (!uriInfo) {
+    return <span><i18n.Translate>Loading...</i18n.Translate></span>;
+  }
+  if (!details) {
+    return <span><i18n.Translate>Getting withdrawal details.</i18n.Translate></span>;
+  }
 
   return <View accept={accept}
     setCancelled={setCancelled} setSelecting={setSelecting}
-    details={details} selectedExchange={selectedExchange}
+    details={details} amount={uriInfo.amount}
   />
 }
 

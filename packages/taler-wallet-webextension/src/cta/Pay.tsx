@@ -136,7 +136,9 @@ export function PayPage({ talerPayUri }: Props): JSX.Element {
       setPayResult(res);
     } catch (e) {
       console.error(e);
-      setPayErrMsg(e.message);
+      if (e instanceof Error) {
+        setPayErrMsg(e.message);
+      }
     }
 
   }

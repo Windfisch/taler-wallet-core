@@ -28,6 +28,7 @@ import {
   codecForDeleteTransactionRequest,
   codecForRetryTransactionRequest,
   codecForSetWalletDeviceIdRequest,
+  codecForGetExchangeWithdrawalInfo,
   durationFromSpec,
   durationMin,
   getDurationRemaining,
@@ -692,6 +693,10 @@ async function dispatchRequestInternal(
     case "getWithdrawalDetailsForUri": {
       const req = codecForGetWithdrawalDetailsForUri().decode(payload);
       return await getWithdrawalDetailsForUri(ws, req.talerWithdrawUri);
+    }
+    case "getExchangeWithdrawalInfo": {
+      const req = codecForGetExchangeWithdrawalInfo().decode(payload);
+      return await getExchangeWithdrawalInfo(ws, req.exchangeBaseUrl, req.amount);
     }
     case "acceptManualWithdrawal": {
       const req = codecForAcceptManualWithdrawalRequet().decode(payload);
