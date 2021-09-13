@@ -12,6 +12,10 @@ export const PaymentStatus = styled.div<{ color: string }>`
 `
 
 export const WalletAction = styled.section`
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
   max-width: 50%;
 
   margin: auto;
@@ -19,6 +23,9 @@ export const WalletAction = styled.section`
   
   & h1:first-child {
     margin-top: 0; 
+  }
+  section {
+    margin-bottom: 2em;
   }
 `
 export const WalletActionOld = styled.section`
@@ -211,6 +218,51 @@ export const Button = styled.button<{ upperCased?: boolean }>`
   }
 `;
 
+export const Link = styled.a<{ upperCased?: boolean }>`
+  display: inline-block;
+  zoom: 1;
+  line-height: normal;
+  white-space: nowrap;
+  vertical-align: middle;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  box-sizing: border-box;
+  text-transform: ${({ upperCased }) => upperCased ? 'uppercase' : 'none'};
+
+  font-family: inherit;
+  font-size: 100%;
+  padding: 0.5em 1em;
+  background-color: transparent;
+  text-decoration: none;
+
+  :focus {
+    outline: 0;
+  }
+
+  &:disabled {
+    border: none;
+    background-image: none;
+    /* csslint ignore:start */
+    filter: alpha(opacity=40);
+    /* csslint ignore:end */
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+    pointer-events: none;
+  }
+
+  :hover {
+    text-decoration: underline;
+    /* filter: alpha(opacity=90);
+    background-image: linear-gradient(
+      transparent,
+      rgba(0, 0, 0, 0.05) 40%,
+      rgba(0, 0, 0, 0.1)
+    ); */
+  }
+`;
+
 export const FontIcon = styled.div`
   font-family: monospace;
   font-size: x-large;
@@ -220,7 +272,7 @@ export const FontIcon = styled.div`
 `
 export const ButtonBox = styled(Button)`
   padding: .5em;
-  width: 2em;
+  width: fit-content;
   height: 2em;
 
   & > ${FontIcon} {
@@ -254,6 +306,9 @@ export const ButtonBoxPrimary = styled(ButtonBox)`
 
 export const ButtonSuccess = styled(ButtonVariant)`
   background-color: #388e3c;
+`
+export const LinkSuccess = styled(Link)`
+  color: #388e3c;
 `
 export const ButtonBoxSuccess = styled(ButtonBox)`
   color: #388e3c;
@@ -503,4 +558,145 @@ export const NiceSelect = styled.div`
   &::-ms-expand {
     display: none;
   }
+`
+
+export const Outlined = styled.div`
+  border: 2px solid #388e3c;
+  padding: 0.5em 1em;
+  width: fit-content;
+  border-radius: 2px;
+  color: #388e3c;
+`
+
+/* { width: "1.5em", height: "1.5em", verticalAlign: "middle" } */
+export const CheckboxSuccess = styled.input`
+  vertical-align: center;
+
+`
+
+export const TermsSection = styled.a`
+  border: 1px solid black;
+  border-radius: 5px;
+  padding: 1em;
+  margin-top: 2px;
+  margin-bottom: 2px;
+  text-decoration: none;
+  color: inherit;
+  flex-direction: column;
+  
+  display: flex;
+  &[data-open="true"] {
+    display: flex; 
+  }
+  &[data-open="false"] > *:not(:first-child) {
+    display: none; 
+  }
+
+  header {
+    display: flex;
+    flex-direction: row;
+    font-weight: bold;
+    justify-content: space-between;
+    height: auto;
+  }
+
+  &[data-open="true"] header:after  {
+    content: '\\2227';
+  }
+  &[data-open="false"] header:after  {
+    content: '\\2228';
+  }
+`;
+
+export const TermsOfService = styled.div`
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+
+  & > header {
+    text-align: center;
+    font-size: 2em;
+  }
+
+  a {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 1em;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    text-decoration: none;
+    color: inherit;
+    flex-direction: column;
+    
+    display: flex;
+    &[data-open="true"] {
+      display: flex; 
+    }
+    &[data-open="false"] > *:not(:first-child) {
+      display: none; 
+    }
+
+    header {
+      display: flex;
+      flex-direction: row;
+      font-weight: bold;
+      justify-content: space-between;
+      height: auto;
+    }
+
+    &[data-open="true"] header:after  {
+      content: '\\2227';
+    }
+    &[data-open="false"] header:after  {
+      content: '\\2228';
+    }
+  }
+
+`
+export const StyledCheckboxLabel = styled.div`
+  color: green;
+  text-transform: uppercase;
+  /* font-weight: bold; */
+  text-align: center;
+  span {
+
+    input {
+      display: none;
+      opacity: 0;
+      width: 1em;
+      height: 1em;
+    }
+    div {
+      display: inline-grid;
+      width: 1em;
+      height: 1em;
+      margin-right: 1em;
+      border-radius: 2px;
+      border: 2px solid currentColor;
+  
+      svg {
+        transition: transform 0.1s ease-in 25ms;
+        transform: scale(0);
+        transform-origin: bottom left;
+      }
+    }
+    label {
+      padding: 0px;
+      font-size: small;
+    }
+  }
+
+  input:checked + div svg {
+    transform: scale(1);
+  }
+  input:disabled + div {
+    color: #959495;
+  };
+  input:disabled + div + label {
+    color: #959495;
+  };
+  input:focus + div + label {
+    box-shadow: 0 0 0 0.05em #fff, 0 0 0.15em 0.1em currentColor;
+  }
+
 `
