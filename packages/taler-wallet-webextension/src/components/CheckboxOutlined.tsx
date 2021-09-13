@@ -16,6 +16,7 @@
 
 import { JSX } from "preact/jsx-runtime";
 import { Outlined, StyledCheckboxLabel } from "./styled/index";
+import { h } from 'preact';
 
 interface Props {
   enabled: boolean;

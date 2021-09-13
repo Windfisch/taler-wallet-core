@@ -32,7 +32,7 @@ import { ButtonDestructive, ButtonSuccess, ButtonWarning, LinkSuccess, TermsOfSe
 import {
   acceptWithdrawal, getExchangeWithdrawalInfo, getWithdrawalDetailsForUri, onUpdateNotification
 } from "../wxApi";
-
+import { h } from 'preact';
 
 interface Props {
   talerWithdrawUri?: string;
