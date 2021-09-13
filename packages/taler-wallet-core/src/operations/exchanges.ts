@@ -127,20 +127,22 @@ function getExchangeRequestTimeout(e: ExchangeRecord): Duration {
   return { d_ms: 5000 };
 }
 
-interface ExchangeTosDownloadResult {
+export interface ExchangeTosDownloadResult {
   tosText: string;
   tosEtag: string;
+  tosContentType: string;
 }
 
-async function downloadExchangeWithTermsOfService(
+export async function downloadExchangeWithTermsOfService(
   exchangeBaseUrl: string,
   http: HttpRequestLibrary,
   timeout: Duration,
+  contentType: string,
 ): Promise<ExchangeTosDownloadResult> {
   const reqUrl = new URL("terms", exchangeBaseUrl);
   reqUrl.searchParams.set("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION);
   const headers = {
-    Accept: "text/plain",
+    Accept: contentType,
   };
 
   const resp = await http.get(reqUrl.href, {
@@ -149,8 +151,9 @@ async function downloadExchangeWithTermsOfService(
   });
   const tosText = await readSuccessResponseTextOrThrow(resp);
   const tosEtag = resp.headers.get("etag") || "unknown";
+  const tosContentType = resp.headers.get("content-type") || "text/plain";
 
-  return { tosText, tosEtag };
+  return { tosText, tosEtag, tosContentType };
 }
 
 /**
@@ -469,6 +472,7 @@ async function updateExchangeFromUrlImpl(
     baseUrl,
     ws.http,
     timeout,
+    "text/plain"
   );
 
   let recoupGroupId: string | undefined = undefined;
@@ -506,6 +510,7 @@ async function updateExchangeFromUrlImpl(
         wireInfo,
         termsOfServiceText: tosDownload.tosText,
         termsOfServiceAcceptedEtag: undefined,
+        termsOfServiceContentType: tosDownload.tosContentType,
         termsOfServiceLastEtag: tosDownload.tosEtag,
         termsOfServiceAcceptedTimestamp: getTimestampNow(),
       };

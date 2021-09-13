@@ -696,7 +696,7 @@ async function dispatchRequestInternal(
     }
     case "getExchangeWithdrawalInfo": {
       const req = codecForGetExchangeWithdrawalInfo().decode(payload);
-      return await getExchangeWithdrawalInfo(ws, req.exchangeBaseUrl, req.amount);
+      return await getExchangeWithdrawalInfo(ws, req.exchangeBaseUrl, req.amount, req.tosAcceptedFormat);
     }
     case "acceptManualWithdrawal": {
       const req = codecForAcceptManualWithdrawalRequet().decode(payload);

@@ -39,6 +39,7 @@ import {
   RetryTransactionRequest,
   SetWalletDeviceIdRequest,
   GetExchangeWithdrawalInfo,
+  AcceptExchangeTosRequest,
 } from "@gnu-taler/taler-util";
 import { AddBackupProviderRequest, BackupProviderState, OperationFailedError, RemoveBackupProviderRequest } from "@gnu-taler/taler-wallet-core";
 import { BackupInfo } from "@gnu-taler/taler-wallet-core";
@@ -251,6 +252,16 @@ export function acceptWithdrawal(
   });
 }
 
+export function setExchangeTosAccepted(
+  exchangeBaseUrl: string,
+  etag: string | undefined
+): Promise<void> {
+  return callBackend("setExchangeTosAccepted", {
+    exchangeBaseUrl, etag
+  } as AcceptExchangeTosRequest)
+}
+
+
 /**
  * Get diagnostics information
  */
@@ -287,7 +298,7 @@ export function getWithdrawalDetailsForUri(
 /**
  * Get diagnostics information
  */
- export function getExchangeWithdrawalInfo(
+export function getExchangeWithdrawalInfo(
   req: GetExchangeWithdrawalInfo,
 ): Promise<ExchangeWithdrawDetails> {
   return callBackend("getExchangeWithdrawalInfo", req);

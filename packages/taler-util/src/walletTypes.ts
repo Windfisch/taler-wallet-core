@@ -716,12 +716,14 @@ export const codecForGetWithdrawalDetailsForUri = (): Codec<GetWithdrawalDetails
 export interface GetExchangeWithdrawalInfo {
   exchangeBaseUrl: string;
   amount: AmountJson;
+  tosAcceptedFormat?: string[];
 }
 
 export const codecForGetExchangeWithdrawalInfo = (): Codec<GetExchangeWithdrawalInfo> =>
   buildCodecForObject<GetExchangeWithdrawalInfo>()
     .property("exchangeBaseUrl", codecForString())
     .property("amount", codecForAmountJson())
+    .property("tosAcceptedFormat", codecOptional(codecForList(codecForString())))
     .build("GetExchangeWithdrawalInfo");
 
 export interface AbortProposalRequest {

@@ -306,6 +306,7 @@ export async function importBackup(
             termsOfServiceAcceptedEtag: backupExchangeDetails.tos_accepted_etag,
             termsOfServiceText: undefined,
             termsOfServiceLastEtag: undefined,
+            termsOfServiceContentType: undefined,
             termsOfServiceAcceptedTimestamp:
               backupExchangeDetails.tos_accepted_timestamp,
             wireInfo,

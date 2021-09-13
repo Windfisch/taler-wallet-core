@@ -450,6 +450,11 @@ export interface ExchangeDetailsRecord {
   termsOfServiceText: string | undefined;
 
   /**
+   * content-type of the last downloaded termsOfServiceText.
+   */
+   termsOfServiceContentType: string | undefined;
+
+  /**
    * ETag for last terms of service download.
    */
   termsOfServiceLastEtag: string | undefined;

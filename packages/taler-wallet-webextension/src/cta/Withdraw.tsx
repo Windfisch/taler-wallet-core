@@ -30,7 +30,7 @@ import { LogoHeader } from '../components/LogoHeader';
 import { Part } from '../components/Part';
 import { ButtonDestructive, ButtonSuccess, ButtonWarning, LinkSuccess, TermsOfService, WalletAction } from '../components/styled';
 import {
-  acceptWithdrawal, getExchangeWithdrawalInfo, getWithdrawalDetailsForUri, onUpdateNotification
+  acceptWithdrawal, getExchangeWithdrawalInfo, getWithdrawalDetailsForUri, onUpdateNotification, setExchangeTosAccepted
 } from "../wxApi";
 import { h } from 'preact';
 
@@ -48,6 +48,7 @@ export interface ViewProps {
   onAccept: (b: boolean) => void;
   reviewing: boolean;
   accepted: boolean;
+  confirmed: boolean;
   terms: {
     value?: TermsDocument;
     status: TermsStatus;
@@ -75,7 +76,7 @@ function amountToString(text: AmountLike) {
   return `${amount} ${aj.currency}`
 }
 
-export function View({ details, amount, onWithdraw, terms, reviewing, onReview, onAccept, accepted }: ViewProps) {
+export function View({ details, amount, onWithdraw, terms, reviewing, onReview, onAccept, accepted, confirmed }: ViewProps) {
   const needsReview = terms.status === 'changed' || terms.status === 'new'
 
   return (
@@ -172,7 +173,7 @@ export function View({ details, amount, onWithdraw, terms, reviewing, onReview, 
           <div>
             <ButtonSuccess
               upperCased
-              disabled={!details.exchangeInfo.baseUrl}
+              disabled={!details.exchangeInfo.baseUrl || confirmed}
               onClick={onWithdraw}
             >
               {i18n.str`Confirm withdrawal`}
@@ -203,6 +204,7 @@ export function WithdrawPage({ talerWithdrawUri, ...rest }: Props): JSX.Element 
   const [updateCounter, setUpdateCounter] = useState(1);
   const [reviewing, setReviewing] = useState<boolean>(false)
   const [accepted, setAccepted] = useState<boolean>(false)
+  const [confirmed, setConfirmed] = useState<boolean>(false)
 
   useEffect(() => {
     return onUpdateNotification(() => {
@@ -231,7 +233,8 @@ export function WithdrawPage({ talerWithdrawUri, ...rest }: Props): JSX.Element 
       if (!uriInfo || !uriInfo.defaultExchangeBaseUrl) return
       const res = await getExchangeWithdrawalInfo({
         exchangeBaseUrl: uriInfo.defaultExchangeBaseUrl,
-        amount: Amounts.parseOrThrow(uriInfo.amount)
+        amount: Amounts.parseOrThrow(uriInfo.amount),
+        tosAcceptedFormat: ['text/json', 'text/xml', 'text/pdf']
       })
       setDetails(res)
     }
@@ -242,10 +245,19 @@ export function WithdrawPage({ talerWithdrawUri, ...rest }: Props): JSX.Element 
     return <span><i18n.Translate>missing withdraw uri</i18n.Translate></span>;
   }
 
+  const onAccept = async (): Promise<void> => {
+    if (!details) {
+      throw Error("can't accept, no exchange selected");
+    }
+    await setExchangeTosAccepted(details.exchangeDetails.exchangeBaseUrl, details.tosRequested?.tosEtag)
+    setAccepted(true)
+  }
+
   const onWithdraw = async (): Promise<void> => {
     if (!details) {
       throw Error("can't accept, no exchange selected");
     }
+    setConfirmed(true)
     console.log("accepting exchange", details.exchangeInfo.baseUrl);
     const res = await acceptWithdrawal(talerWithdrawUri, details.exchangeInfo.baseUrl);
     console.log("accept withdrawal response", res);
@@ -267,11 +279,33 @@ export function WithdrawPage({ talerWithdrawUri, ...rest }: Props): JSX.Element 
     return <span><i18n.Translate>Getting withdrawal details.</i18n.Translate></span>;
   }
 
+  let termsContent: TermsDocument | undefined = undefined;
+  if (details.tosRequested) {
+    if (details.tosRequested.tosContentType === 'text/xml') {
+      try {
+        const document = new DOMParser().parseFromString(details.tosRequested.tosText, "text/xml")
+        termsContent = { type: 'xml', document }
+      } catch (e) {
+        console.log(e)
+        debugger;
+       }
+    }
+  }
+
+  const status: TermsStatus = !termsContent ? 'notfound' : (
+    !details.exchangeDetails.termsOfServiceAcceptedEtag ? 'new' : (
+      details.tosRequested?.tosEtag !== details.exchangeDetails.termsOfServiceAcceptedEtag ? 'changed' : 'accepted'
+    ))
+
+
   return <View onWithdraw={onWithdraw}
     // setCancelled={setCancelled} setSelecting={setSelecting}
     details={details} amount={uriInfo.amount}
-    terms={{} as any}
-    accepted={accepted} onAccept={setAccepted}
+    terms={{
+      status, value: termsContent
+    }}
+    confirmed={confirmed}
+    accepted={accepted} onAccept={onAccept}
     reviewing={reviewing} onReview={setReviewing}
   // terms={[]}
   />
