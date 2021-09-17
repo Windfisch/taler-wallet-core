@@ -325,6 +325,7 @@ export const codecForPreparePayResultPaymentPossible = (): Codec<PreparePayResul
     .property("contractTerms", codecForContractTerms())
     .property("proposalId", codecForString())
     .property("contractTermsHash", codecForString())
+    .property("noncePriv", codecForString())
     .property(
       "status",
       codecForConstString(PreparePayResultType.PaymentPossible),
@@ -336,6 +337,7 @@ export const codecForPreparePayResultInsufficientBalance = (): Codec<PreparePayR
     .property("amountRaw", codecForAmountString())
     .property("contractTerms", codecForAny())
     .property("proposalId", codecForString())
+    .property("noncePriv", codecForString())
     .property(
       "status",
       codecForConstString(PreparePayResultType.InsufficientBalance),
@@ -354,6 +356,7 @@ export const codecForPreparePayResultAlreadyConfirmed = (): Codec<PreparePayResu
     .property("contractTerms", codecForAny())
     .property("contractTermsHash", codecForString())
     .property("proposalId", codecForString())
+    .property("noncePriv", codecForString())
     .build("PreparePayResultAlreadyConfirmed");
 
 export const codecForPreparePayResult = (): Codec<PreparePayResult> =>
@@ -385,6 +388,7 @@ export interface PreparePayResultPaymentPossible {
   contractTermsHash: string;
   amountRaw: string;
   amountEffective: string;
+  noncePriv: string;
 }
 
 export interface PreparePayResultInsufficientBalance {
@@ -392,6 +396,7 @@ export interface PreparePayResultInsufficientBalance {
   proposalId: string;
   contractTerms: ContractTerms;
   amountRaw: string;
+  noncePriv: string;
 }
 
 export interface PreparePayResultAlreadyConfirmed {
@@ -402,6 +407,7 @@ export interface PreparePayResultAlreadyConfirmed {
   amountEffective: string;
   contractTermsHash: string;
   proposalId: string;
+  noncePriv: string;
 }
 
 export interface BankWithdrawDetails {

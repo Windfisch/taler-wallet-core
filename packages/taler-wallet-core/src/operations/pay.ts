@@ -875,7 +875,9 @@ async function startDownloadProposal(
   orderId: string,
   sessionId: string | undefined,
   claimToken: string | undefined,
+  noncePriv: string | undefined,
 ): Promise<string> {
+
   const oldProposal = await ws.db
     .mktx((x) => ({ proposals: x.proposals }))
     .runReadOnly(async (tx) => {
@@ -884,12 +886,20 @@ async function startDownloadProposal(
         orderId,
       ]);
     });
-  if (oldProposal) {
+  
+  /**
+   * If we have already claimed this proposal with the same sessionId
+   * nonce and claim token, reuse it.
+   */
+  if (oldProposal && 
+      oldProposal.downloadSessionId === sessionId &&
+      oldProposal.noncePriv === noncePriv &&
+      oldProposal.claimToken === claimToken) {
     await processDownloadProposal(ws, oldProposal.proposalId);
     return oldProposal.proposalId;
   }
 
-  const { priv, pub } = await ws.cryptoApi.createEddsaKeypair();
+  const { priv, pub } = await (noncePriv ? ws.cryptoApi.eddsaGetPublic(noncePriv) : ws.cryptoApi.createEddsaKeypair());
   const proposalId = encodeCrock(getRandomBytes(32));
 
   const proposalRecord: ProposalRecord = {
@@ -1405,6 +1415,7 @@ export async function checkPaymentByProposalId(
         status: PreparePayResultType.InsufficientBalance,
         contractTerms: d.contractTermsRaw,
         proposalId: proposal.proposalId,
+        noncePriv: proposal.noncePriv,
         amountRaw: Amounts.stringify(d.contractData.amount),
       };
     }
@@ -1417,6 +1428,7 @@ export async function checkPaymentByProposalId(
       status: PreparePayResultType.PaymentPossible,
       contractTerms: d.contractTermsRaw,
       proposalId: proposal.proposalId,
+      noncePriv: proposal.noncePriv,
       amountEffective: Amounts.stringify(totalCost),
       amountRaw: Amounts.stringify(res.paymentAmount),
       contractTermsHash: d.contractData.contractTermsHash,
@@ -1453,6 +1465,7 @@ export async function checkPaymentByProposalId(
       amountRaw: Amounts.stringify(purchase.download.contractData.amount),
       amountEffective: Amounts.stringify(purchase.totalPayCost),
       proposalId,
+      noncePriv: proposal.noncePriv,
     };
   } else if (!purchase.timestampFirstSuccessfulPay) {
     return {
@@ -1463,6 +1476,7 @@ export async function checkPaymentByProposalId(
       amountRaw: Amounts.stringify(purchase.download.contractData.amount),
       amountEffective: Amounts.stringify(purchase.totalPayCost),
       proposalId,
+      noncePriv: proposal.noncePriv,
     };
   } else {
     const paid = !purchase.paymentSubmitPending;
@@ -1475,6 +1489,7 @@ export async function checkPaymentByProposalId(
       amountEffective: Amounts.stringify(purchase.totalPayCost),
       ...(paid ? { nextUrl: purchase.download.contractData.orderId } : {}),
       proposalId,
+      noncePriv: proposal.noncePriv,
     };
   }
 }
@@ -1507,6 +1522,7 @@ export async function preparePayForUri(
     uriResult.orderId,
     uriResult.sessionId,
     uriResult.claimToken,
+    uriResult.noncePriv,
   );
 
   return checkPaymentByProposalId(ws, proposalId, uriResult.sessionId);

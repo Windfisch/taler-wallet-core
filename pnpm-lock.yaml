@@ -248,6 +248,7 @@ importers:
       preact-cli: ^3.0.5
       preact-render-to-string: ^5.1.19
       preact-router: ^3.2.1
+      qrcode-generator: ^1.4.4
       rimraf: ^3.0.2
       rollup: ^2.37.1
       rollup-plugin-css-only: ^3.1.0
@@ -264,6 +265,7 @@ importers:
       history: 4.10.1
       preact: 10.5.14
       preact-router: 3.2.1_preact@10.5.14
+      qrcode-generator: 1.4.4
       tslib: 2.3.1
     devDependencies:
       '@babel/core': 7.13.16
@@ -16697,6 +16699,10 @@ packages:
     resolution: {integrity: sha1-fjL3W0E4EpHQRhHxvxQQmsAGUdc=}
     engines: {node: '>=0.6.0', teleport: '>=0.2.0'}
     dev: true
+
+  /qrcode-generator/1.4.4:
+    resolution: {integrity: sha512-HM7yY8O2ilqhmULxGMpcHSF1EhJJ9yBj8gvDEuZ6M+KGJ0YY2hKpnXvRD+hZPLrDVck3ExIGhmPtSdcjC+guuw==}
+    dev: false
 
   /qs/6.10.1:
     resolution: {integrity: sha512-M528Hph6wsSVOBiYUnGf+K/7w0hNshs/duGsNXPUCLH5XAqjEtiPGwNONLV0tBH8NoGb0mvD5JubnUTrujKDTg==}

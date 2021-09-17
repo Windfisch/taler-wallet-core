@@ -62,6 +62,7 @@ import {
   setupRefreshTransferPub,
   setupTipPlanchet,
   setupWithdrawPlanchet,
+  eddsaGetPublic,
 } from "../talerCrypto.js";
 import { randomBytes } from "../primitives/nacl-fast.js";
 import { kdf } from "../primitives/kdf.js";
@@ -141,7 +142,7 @@ function timestampRoundedToBuffer(ts: Timestamp): Uint8Array {
 class SignaturePurposeBuilder {
   private chunks: Uint8Array[] = [];
 
-  constructor(private purposeNum: number) {}
+  constructor(private purposeNum: number) { }
 
   put(bytes: Uint8Array): SignaturePurposeBuilder {
     this.chunks.push(Uint8Array.from(bytes));
@@ -170,7 +171,6 @@ class SignaturePurposeBuilder {
 function buildSigPS(purposeNum: number): SignaturePurposeBuilder {
   return new SignaturePurposeBuilder(purposeNum);
 }
-
 export class CryptoImplementation {
   static enableTracing = false;
 
@@ -359,6 +359,13 @@ export class CryptoImplementation {
       priv: encodeCrock(pair.eddsaPriv),
       pub: encodeCrock(pair.eddsaPub),
     };
+  }
+
+  eddsaGetPublic(key: string): { priv: string; pub: string } {
+    return {
+      priv: key,
+      pub: encodeCrock(eddsaGetPublic(decodeCrock(key)))
+    }
   }
 
   /**

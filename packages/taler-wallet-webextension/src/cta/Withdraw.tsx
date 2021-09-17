@@ -80,20 +80,18 @@ export function View({ details, amount, onWithdraw, terms, reviewing, onReview, 
   const needsReview = terms.status === 'changed' || terms.status === 'new'
 
   return (
-    <WalletAction style={{ textAlign: 'center' }}>
+    <WalletAction>
       <LogoHeader />
       <h2>
         {i18n.str`Digital cash withdrawal`}
       </h2>
       <section>
-        <div>
-          <Part title="Total to withdraw" text={amountToString(Amounts.sub(Amounts.parseOrThrow(amount), details.withdrawFee).amount)} kind='positive' />
-          <Part title="Chosen amount" text={amountToString(amount)} kind='neutral' />
-          {Amounts.isNonZero(details.withdrawFee) &&
-            <Part title="Exchange fee" text={amountToString(details.withdrawFee)} kind='negative' />
-          }
-          <Part title="Exchange" text={details.exchangeInfo.baseUrl} kind='neutral' big />
-        </div>
+        <Part title="Total to withdraw" text={amountToString(Amounts.sub(Amounts.parseOrThrow(amount), details.withdrawFee).amount)} kind='positive' />
+        <Part title="Chosen amount" text={amountToString(amount)} kind='neutral' />
+        {Amounts.isNonZero(details.withdrawFee) &&
+          <Part title="Exchange fee" text={amountToString(details.withdrawFee)} kind='negative' />
+        }
+        <Part title="Exchange" text={details.exchangeInfo.baseUrl} kind='neutral' big />
       </section>
       {!reviewing &&
         <section>
@@ -132,63 +130,50 @@ export function View({ details, amount, onWithdraw, terms, reviewing, onReview, 
       }
       {(reviewing || accepted) &&
         <section>
-          <div>
-            <CheckboxOutlined
-              name="terms"
-              enabled={accepted}
-              label={i18n.str`I accept the exchange terms of service`}
-              onToggle={() => {
-                onAccept(!accepted)
-                onReview(false)
-              }}
-            />
-          </div>
+          <CheckboxOutlined
+            name="terms"
+            enabled={accepted}
+            label={i18n.str`I accept the exchange terms of service`}
+            onToggle={() => {
+              onAccept(!accepted)
+              onReview(false)
+            }}
+          />
         </section>
       }
 
       <section>
         {terms.status === 'new' && !accepted &&
-          <div>
-            <ButtonSuccess
-              upperCased
-              disabled={!details.exchangeInfo.baseUrl}
-              onClick={() => onReview(true)}
-            >
-              {i18n.str`Review exchange terms of service`}
-            </ButtonSuccess>
-          </div>
+          <ButtonSuccess
+            upperCased
+            disabled={!details.exchangeInfo.baseUrl}
+            onClick={() => onReview(true)}
+          >
+            {i18n.str`Review exchange terms of service`}
+          </ButtonSuccess>
         }
         {terms.status === 'changed' && !accepted &&
-          <div>
-            <ButtonWarning
-              upperCased
-              disabled={!details.exchangeInfo.baseUrl}
-              onClick={() => onReview(true)}
-            >
-              {i18n.str`Review new version of terms of service`}
-            </ButtonWarning>
-          </div>
+          <ButtonWarning
+            upperCased
+            disabled={!details.exchangeInfo.baseUrl}
+            onClick={() => onReview(true)}
+          >
+            {i18n.str`Review new version of terms of service`}
+          </ButtonWarning>
         }
         {(terms.status === 'accepted' || (needsReview && accepted)) &&
-          <div>
-            <ButtonSuccess
-              upperCased
-              disabled={!details.exchangeInfo.baseUrl || confirmed}
-              onClick={onWithdraw}
-            >
-              {i18n.str`Confirm withdrawal`}
-            </ButtonSuccess>
-          </div>
+          <ButtonSuccess
+            upperCased
+            disabled={!details.exchangeInfo.baseUrl || confirmed}
+            onClick={onWithdraw}
+          >
+            {i18n.str`Confirm withdrawal`}
+          </ButtonSuccess>
         }
         {terms.status === 'notfound' &&
-          <div>
-            <ButtonDestructive
-              upperCased
-              disabled={true}
-            >
-              {i18n.str`Exchange doesn't have terms of service`}
-            </ButtonDestructive>
-          </div>
+          <ButtonDestructive upperCased disabled>
+            {i18n.str`Exchange doesn't have terms of service`}
+          </ButtonDestructive>
         }
       </section>
     </WalletAction>
@@ -231,12 +216,16 @@ export function WithdrawPage({ talerWithdrawUri, ...rest }: Props): JSX.Element 
   useEffect(() => {
     async function fetchData() {
       if (!uriInfo || !uriInfo.defaultExchangeBaseUrl) return
-      const res = await getExchangeWithdrawalInfo({
-        exchangeBaseUrl: uriInfo.defaultExchangeBaseUrl,
-        amount: Amounts.parseOrThrow(uriInfo.amount),
-        tosAcceptedFormat: ['text/json', 'text/xml', 'text/pdf']
-      })
-      setDetails(res)
+      try {
+        const res = await getExchangeWithdrawalInfo({
+          exchangeBaseUrl: uriInfo.defaultExchangeBaseUrl,
+          amount: Amounts.parseOrThrow(uriInfo.amount),
+          tosAcceptedFormat: ['text/json', 'text/xml', 'text/pdf']
+        })
+        setDetails(res)
+      } catch (e) {
+        setError(true)
+      }
     }
     fetchData()
   }, [uriInfo])
@@ -249,8 +238,12 @@ export function WithdrawPage({ talerWithdrawUri, ...rest }: Props): JSX.Element 
     if (!details) {
       throw Error("can't accept, no exchange selected");
     }
-    await setExchangeTosAccepted(details.exchangeDetails.exchangeBaseUrl, details.tosRequested?.tosEtag)
-    setAccepted(true)
+    try {
+      await setExchangeTosAccepted(details.exchangeDetails.exchangeBaseUrl, details.tosRequested?.tosEtag)
+      setAccepted(true)
+    } catch (e) {
+      setError(true)
+    }
   }
 
   const onWithdraw = async (): Promise<void> => {
@@ -259,10 +252,14 @@ export function WithdrawPage({ talerWithdrawUri, ...rest }: Props): JSX.Element 
     }
     setConfirmed(true)
     console.log("accepting exchange", details.exchangeInfo.baseUrl);
-    const res = await acceptWithdrawal(talerWithdrawUri, details.exchangeInfo.baseUrl);
-    console.log("accept withdrawal response", res);
-    if (res.confirmTransferUrl) {
-      document.location.href = res.confirmTransferUrl;
+    try {
+      const res = await acceptWithdrawal(talerWithdrawUri, details.exchangeInfo.baseUrl);
+      console.log("accept withdrawal response", res);
+      if (res.confirmTransferUrl) {
+        document.location.href = res.confirmTransferUrl;
+      }
+    } catch (e) {
+      setConfirmed(false)
     }
   };
 
@@ -288,7 +285,7 @@ export function WithdrawPage({ talerWithdrawUri, ...rest }: Props): JSX.Element 
       } catch (e) {
         console.log(e)
         debugger;
-       }
+      }
     }
   }
 

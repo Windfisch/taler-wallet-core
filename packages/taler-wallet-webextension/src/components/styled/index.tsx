@@ -29,10 +29,11 @@ export const PaymentStatus = styled.div<{ color: string }>`
 
 export const WalletAction = styled.section`
   display: flex;
+  text-align: center;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  max-width: 50%;
+  /* max-width: 50%; */
 
   margin: auto;
   height: 100%;
@@ -42,6 +43,10 @@ export const WalletAction = styled.section`
   }
   section {
     margin-bottom: 2em;
+    & button {
+      margin-right: 8px;
+      margin-left: 8px;
+    }
   }
 `
 export const WalletActionOld = styled.section`
@@ -628,6 +633,7 @@ export const TermsOfService = styled.div`
   display: flex;
   flex-direction: column;
   text-align: left;
+  max-width: 500px;
 
   & > header {
     text-align: center;

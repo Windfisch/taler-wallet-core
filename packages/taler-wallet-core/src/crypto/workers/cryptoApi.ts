@@ -213,7 +213,7 @@ export class CryptoApi {
         ws.w = null;
       }
     } catch (e) {
-      logger.error(e);
+      logger.error(e as string);
     }
     if (ws.currentWorkItem !== null) {
       ws.currentWorkItem.reject(e);
@@ -377,6 +377,10 @@ export class CryptoApi {
 
   createEddsaKeypair(): Promise<{ priv: string; pub: string }> {
     return this.doRpc<{ priv: string; pub: string }>("createEddsaKeypair", 1);
+  }
+
+  eddsaGetPublic(key: string): Promise<{ priv: string; pub: string }> {
+    return this.doRpc<{ priv: string; pub: string }>("eddsaGetPublic", 1, key);
   }
 
   rsaUnblind(sig: string, bk: string, pk: string): Promise<string> {

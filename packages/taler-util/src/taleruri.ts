@@ -22,6 +22,7 @@ export interface PayUriResult {
   orderId: string;
   sessionId: string;
   claimToken: string | undefined;
+  noncePriv: string | undefined;
 }
 
 export interface WithdrawUriResult {
@@ -147,6 +148,7 @@ export function parsePayUri(s: string): PayUriResult | undefined {
   const c = pi?.rest.split("?");
   const q = new URLSearchParams(c[1] ?? "");
   const claimToken = q.get("c") ?? undefined;
+  const noncePriv = q.get("n") ?? undefined;
   const parts = c[0].split("/");
   if (parts.length < 3) {
     return undefined;
@@ -163,6 +165,7 @@ export function parsePayUri(s: string): PayUriResult | undefined {
     orderId,
     sessionId: sessionId,
     claimToken,
+    noncePriv,
   };
 }
 

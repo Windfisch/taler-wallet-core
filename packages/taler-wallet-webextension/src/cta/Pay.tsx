@@ -29,7 +29,7 @@ import * as wxApi from "../wxApi";
 
 import { useState, useEffect } from "preact/hooks";
 
-import { ConfirmPayResultDone, getJsonI18n, i18n } from "@gnu-taler/taler-util";
+import { AmountLike, ConfirmPayResultDone, getJsonI18n, i18n } from "@gnu-taler/taler-util";
 import {
   PreparePayResult,
   ConfirmPayResult,
@@ -39,7 +39,11 @@ import {
   ContractTerms,
   ConfirmPayResultType,
 } from "@gnu-taler/taler-util";
-import { JSX, VNode, h } from "preact";
+import { JSX, VNode, h, Fragment } from "preact";
+import { ButtonSuccess, LinkSuccess, WalletAction } from "../components/styled";
+import { LogoHeader } from "../components/LogoHeader";
+import { Part } from "../components/Part";
+import { QR } from "../components/QR";
 
 interface Props {
   talerPayUri?: string
@@ -143,17 +147,17 @@ export function PayPage({ talerPayUri }: Props): JSX.Element {
 
   }
 
-  return <PaymentRequestView payStatus={payStatus} onClick={onClick} payErrMsg={payErrMsg} />;
+  return <PaymentRequestView uri={talerPayUri} payStatus={payStatus} onClick={onClick} payErrMsg={payErrMsg} />;
 }
 
 export interface PaymentRequestViewProps {
   payStatus: PreparePayResult;
   onClick: () => void;
   payErrMsg?: string;
-
+  uri: string;
 }
-export function PaymentRequestView({ payStatus, onClick, payErrMsg }: PaymentRequestViewProps) {
-  let totalFees: AmountJson | undefined = undefined;
+export function PaymentRequestView({ uri, payStatus, onClick, payErrMsg }: PaymentRequestViewProps) {
+  let totalFees: AmountJson = Amounts.getZero(payStatus.amountRaw);
   let insufficientBalance = false;
   const [loading, setLoading] = useState(false);
   const contractTerms: ContractTerms = payStatus.contractTerms;
@@ -174,6 +178,7 @@ export function PaymentRequestView({ payStatus, onClick, payErrMsg }: PaymentReq
 
   if (payStatus.status == PreparePayResultType.InsufficientBalance) {
     insufficientBalance = true;
+    return <div>no te alcanza</div>
   }
 
   if (payStatus.status === PreparePayResultType.PaymentPossible) {
@@ -191,65 +196,62 @@ export function PaymentRequestView({ payStatus, onClick, payErrMsg }: PaymentReq
     merchantName = <strong>(pub: {contractTerms.merchant_pub})</strong>;
   }
 
-  const amount = (
-    <strong>{renderAmount(Amounts.parseOrThrow(contractTerms.amount))}</strong>
-  );
+  const [showQR, setShowQR] = useState<boolean>(false)
+  const privateUri = `${uri}&n=${payStatus.noncePriv}`
+  return <WalletAction>
+    <LogoHeader />
+    <h2>
+      {i18n.str`Digital cash payment`}
+    </h2>
+    <section>
+      <Part big title="Total paid" text={amountToString(payStatus.amountEffective)} kind='negative' />
+      <Part big title="Purchase amount" text={amountToString(payStatus.amountRaw)} kind='neutral' />
+      {Amounts.isNonZero(totalFees) && <Part big title="Fee" text={amountToString(totalFees)} kind='negative' />}
+      <Part title="Merchant" text={contractTerms.merchant.name} kind='neutral' />
+      <Part title="Purchase" text={contractTerms.summary} kind='neutral' />
+      {contractTerms.order_id && <Part title="Receipt" text={`#${contractTerms.order_id}`} kind='neutral' />}
+    </section>
+    {showQR && <section>
+      <QR text={privateUri} />
+      <a href={privateUri}>or click here to pay with a installed wallet</a>
+    </section>}
+    <section>
+      {payErrMsg ? (
+        <div>
+          <p>Payment failed: {payErrMsg}</p>
+          <button
+            class="pure-button button-success"
+            onClick={onClick}
+          >
+            {i18n.str`Retry`}
+          </button>
+        </div>
+      ) : (
+        <Fragment>
 
-  return <section class="main">
-    <h1>GNU Taler Wallet</h1>
-    <article class="fade">
-      <div>
-        <p>
-          <i18n.Translate>
-            The merchant <span>{merchantName}</span> offers you to purchase:
-      </i18n.Translate>
-          <div style={{ textAlign: "center" }}>
-            <strong>{contractTerms.summary}</strong>
-          </div>
-          {totalFees ? (
-            <i18n.Translate>
-              The total price is <span>{amount} </span>
-        (plus <span>{renderAmount(totalFees)}</span> fees).
-            </i18n.Translate>
-          ) : (
-              <i18n.Translate>
-                The total price is <span>{amount}</span>.
-              </i18n.Translate>
-            )}
-        </p>
+          <LinkSuccess
+            upperCased
+            // disabled={!details.exchangeInfo.baseUrl}
+            onClick={() => setShowQR(qr => !qr)}
+          >
+            {!showQR ? i18n.str`Complete with mobile wallet` : i18n.str`Hide QR`}
+          </LinkSuccess>
+          <ButtonSuccess
+            upperCased
+          // disabled={!details.exchangeInfo.baseUrl}
+          // onClick={() => onReview(true)}
+          >
+            {i18n.str`Confirm payment`}
+          </ButtonSuccess>
+        </Fragment>
+      )}
 
-        {insufficientBalance ? (
-          <div>
-            <p style={{ color: "red", fontWeight: "bold" }}>
-              Unable to pay: Your balance is insufficient.
-            </p>
-          </div>
-        ) : null}
+    </section>
+  </WalletAction>
+}
 
-        {payErrMsg ? (
-          <div>
-            <p>Payment failed: {payErrMsg}</p>
-            <button
-              class="pure-button button-success"
-              onClick={onClick}
-            >
-              {i18n.str`Retry`}
-            </button>
-          </div>
-        ) : (
-            <div>
-              <ProgressButton
-                isLoading={loading}
-                disabled={insufficientBalance}
-                onClick={onClick}
-              >
-                {i18n.str`Confirm payment`}
-              </ProgressButton>
-            </div>
-          )}
-      </div>
-    </article>
-  </section>
-
-
+function amountToString(text: AmountLike) {
+  const aj = Amounts.jsonifyAmount(text)
+  const amount = Amounts.stringifyValue(aj)
+  return `${amount} ${aj.currency}`
 }
