@@ -218,6 +218,17 @@ export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
         LIBEUFIN_SANDBOX_DB_CONNECTION: this.sandboxConfig.databaseJdbcUri,
       },
     );
+    await runCommand(
+      this.globalTestState,
+      "libeufin-sandbox-superuser",
+      "libeufin-sandbox",
+      ["superuser", "admin", "--password", "test"],
+      {
+        ...process.env,
+        LIBEUFIN_SANDBOX_DB_CONNECTION: this.sandboxConfig.databaseJdbcUri,
+      },
+    );
+
     this.sandboxProc = this.globalTestState.spawnService(
       "libeufin-sandbox",
       ["serve", "--port", `${this.sandboxConfig.httpPort}`],
@@ -817,7 +828,12 @@ export namespace LibeufinSandboxApi {
   ) {
     const baseUrl = libeufinSandboxService.baseUrl;
     let url = new URL(`admin/ebics/hosts/${hostID}/rotate-keys`, baseUrl);
-    await axios.post(url.href);
+    await axios.post(url.href, {}, {
+      auth: {
+        username: "admin",
+        password: "test",
+      },
+    });
   }
   export async function createEbicsHost(
     libeufinSandboxService: LibeufinSandboxServiceInterface,
@@ -828,6 +844,12 @@ export namespace LibeufinSandboxApi {
     await axios.post(url.href, {
       hostID,
       ebicsVersion: "2.5",
+    },
+    {
+      auth: {
+        username: "admin",
+        password: "test",
+      },
     });
   }
 
@@ -837,7 +859,12 @@ export namespace LibeufinSandboxApi {
   ) {
     const baseUrl = libeufinSandboxService.baseUrl;
     let url = new URL(`admin/bank-accounts/${req.label}`, baseUrl);
-    await axios.post(url.href, req);
+    await axios.post(url.href, req, {
+      auth: {
+        username: "admin",
+        password: "test",
+      },
+    });
   }
 
   export async function createEbicsSubscriber(
@@ -846,7 +873,12 @@ export namespace LibeufinSandboxApi {
   ) {
     const baseUrl = libeufinSandboxService.baseUrl;
     let url = new URL("admin/ebics/subscribers", baseUrl);
-    await axios.post(url.href, req);
+    await axios.post(url.href, req, {
+      auth: {
+        username: "admin",
+        password: "test",
+      },
+    });
   }
 
   export async function createEbicsBankAccount(
@@ -855,7 +887,12 @@ export namespace LibeufinSandboxApi {
   ) {
     const baseUrl = libeufinSandboxService.baseUrl;
     let url = new URL("admin/ebics/bank-accounts", baseUrl);
-    await axios.post(url.href, req);
+    await axios.post(url.href, req, {
+      auth: {
+        username: "admin",
+        password: "test",
+      },
+    });
   }
 
   export async function bookPayment2(
@@ -864,7 +901,12 @@ export namespace LibeufinSandboxApi {
   ) {
     const baseUrl = libeufinSandboxService.baseUrl;
     let url = new URL("admin/payments", baseUrl);
-    await axios.post(url.href, req);
+    await axios.post(url.href, req, {
+      auth: {
+        username: "admin",
+        password: "test",
+      },
+    });
   }
 
   export async function bookPayment(
@@ -901,7 +943,12 @@ export namespace LibeufinSandboxApi {
       `admin/bank-accounts/${accountLabel}/simulate-incoming-transaction`,
       baseUrl,
     );
-    await axios.post(url.href, req);
+    await axios.post(url.href, req, {
+      auth: {
+        username: "admin",
+        password: "test",
+      },
+    });
   }
 
   export async function getAccountTransactions(
@@ -913,7 +960,12 @@ export namespace LibeufinSandboxApi {
       `admin/bank-accounts/${accountLabel}/transactions`,
       baseUrl,
     );
-    const res = await axios.get(url.href);
+    const res = await axios.get(url.href, {
+      auth: {
+        username: "admin",
+        password: "test",
+      },
+    });
     return res.data as SandboxAccountTransactions;
   }
 
@@ -926,6 +978,12 @@ export namespace LibeufinSandboxApi {
     return await axios.post(url.href, {
       bankaccount: accountLabel,
       type: 53, 
+    },
+    {
+      auth: {
+        username: "admin",
+        password: "test",
+      },
     });
   }
 
@@ -938,7 +996,12 @@ export namespace LibeufinSandboxApi {
       `admin/bank-accounts/${accountLabel}`,
       baseUrl,
     );
-    return await axios.get(url.href);
+    return await axios.get(url.href, {
+      auth: {
+        username: "admin",
+        password: "test",
+      },
+    });
   }
 }
 

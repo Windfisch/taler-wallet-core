@@ -751,7 +751,6 @@ async function processReserveImpl(
       break;
   }
 }
-
 export async function createTalerWithdrawReserve(
   ws: InternalWalletState,
   talerWithdrawUri: string,
