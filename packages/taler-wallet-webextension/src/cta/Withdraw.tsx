@@ -28,7 +28,7 @@ import { CheckboxOutlined } from '../components/CheckboxOutlined';
 import { ExchangeXmlTos } from '../components/ExchangeToS';
 import { LogoHeader } from '../components/LogoHeader';
 import { Part } from '../components/Part';
-import { ButtonDestructive, ButtonSuccess, ButtonWarning, LinkSuccess, TermsOfService, WalletAction } from '../components/styled';
+import { ButtonDestructive, ButtonSuccess, ButtonWarning, LinkSuccess, LinkWarning, TermsOfService, WalletAction } from '../components/styled';
 import {
   acceptWithdrawal, getExchangeWithdrawalInfo, getWithdrawalDetailsForUri, onUpdateNotification, setExchangeTosAccepted
 } from "../wxApi";
@@ -42,8 +42,6 @@ export interface ViewProps {
   details: ExchangeWithdrawDetails;
   amount: string;
   onWithdraw: () => Promise<void>;
-  // setCancelled: (b: boolean) => void;
-  // setSelecting: (b: boolean) => void;
   onReview: (b: boolean) => void;
   onAccept: (b: boolean) => void;
   reviewing: boolean;
@@ -171,9 +169,9 @@ export function View({ details, amount, onWithdraw, terms, reviewing, onReview, 
           </ButtonSuccess>
         }
         {terms.status === 'notfound' &&
-          <ButtonDestructive upperCased disabled>
+          <LinkWarning upperCased>
             {i18n.str`Exchange doesn't have terms of service`}
-          </ButtonDestructive>
+          </LinkWarning>
         }
       </section>
     </WalletAction>

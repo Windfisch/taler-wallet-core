@@ -339,6 +339,9 @@ export const ButtonBoxSuccess = styled(ButtonBox)`
 export const ButtonWarning = styled(ButtonVariant)`
   background-color: rgb(223, 117, 20);
 `
+export const LinkWarning = styled(Link)`
+  color: rgb(223, 117, 20);
+`
 export const ButtonBoxWarning = styled(ButtonBox)`
   color: rgb(223, 117, 20);
   border-color: rgb(223, 117, 20);
@@ -641,14 +644,17 @@ export const TermsOfService = styled.div`
   }
 
   a {
+    text-decoration: none;
+    color: inherit;
+    flex-direction: column;
+  }
+
+  & > a {
     border: 1px solid black;
     border-radius: 5px;
     padding: 1em;
     margin-top: 2px;
     margin-bottom: 2px;
-    text-decoration: none;
-    color: inherit;
-    flex-direction: column;
     
     display: flex;
     &[data-open="true"] {
@@ -666,10 +672,10 @@ export const TermsOfService = styled.div`
       height: auto;
     }
 
-    &[data-open="true"] header:after  {
+    &[data-open="true"] > header:after  {
       content: '\\2227';
     }
-    &[data-open="false"] header:after  {
+    &[data-open="false"] > header:after  {
       content: '\\2228';
     }
   }

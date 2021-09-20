@@ -28,6 +28,11 @@ export function ExchangeXmlTos({ doc }: { doc: Document }) {
   </Fragment>
 }
 
+/**
+ * Map XML elements into HTML
+ * @param child 
+ * @returns 
+ */
 function renderChild(child: Element): VNode {
   const children = Array.from(child.children)
   switch (child.nodeName) {
@@ -55,13 +60,16 @@ function renderChild(child: Element): VNode {
   }
 }
 
+/**
+ * Simple anchor with a state persisted into 'data-open' prop
+ * @returns 
+ */
 function AnchorWithOpenState(props: JSXInternal.HTMLAttributes<HTMLAnchorElement>) {
   const [open, setOpen] = useState<boolean>(false)
   function doClick(e: JSXInternal.TargetedMouseEvent<HTMLAnchorElement>) {
     setOpen(!open);
-    e.stopPropagation();
     e.preventDefault();
   }
-  return <a data-open={JSON.stringify(open)} onClick={doClick} {...props} />
+  return <a data-open={open ? 'true' : 'false'} onClick={doClick} {...props} />
 }
 
