@@ -40,6 +40,9 @@ import {
   SetWalletDeviceIdRequest,
   GetExchangeWithdrawalInfo,
   AcceptExchangeTosRequest,
+  AcceptManualWithdrawalResult,
+  AcceptManualWithdrawalRequest,
+  AmountJson,
 } from "@gnu-taler/taler-util";
 import { AddBackupProviderRequest, BackupProviderState, OperationFailedError, RemoveBackupProviderRequest } from "@gnu-taler/taler-wallet-core";
 import { BackupInfo } from "@gnu-taler/taler-wallet-core";
@@ -249,6 +252,21 @@ export function acceptWithdrawal(
   return callBackend("acceptBankIntegratedWithdrawal", {
     talerWithdrawUri,
     exchangeBaseUrl: selectedExchange,
+  });
+}
+
+/**
+ * Create a reserve into the exchange that expect the amount indicated
+ * @param exchangeBaseUrl 
+ * @param amount 
+ * @returns 
+ */
+export function acceptManualWithdrawal(
+  exchangeBaseUrl: string,
+  amount: string,
+): Promise<AcceptManualWithdrawalResult> {
+  return callBackend("acceptManualWithdrawal", {
+    amount, exchangeBaseUrl
   });
 }
 

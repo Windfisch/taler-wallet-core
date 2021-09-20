@@ -33,6 +33,7 @@ import { PopupNavigation } from './components/styled'
 export enum Pages {
   welcome = '/welcome',
   balance = '/balance',
+  manual_withdraw = '/manual-withdraw',
   settings = '/settings',
   dev = '/dev',
   backup = '/backup',

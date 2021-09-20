@@ -22,8 +22,8 @@
 
 import { setupI18n } from "@gnu-taler/taler-util";
 import { createHashHistory } from "history";
-import { render, h } from "preact";
-import Router, { route, Route } from "preact-router";
+import { render, h, VNode } from "preact";
+import Router, { route, Route, getCurrentUrl } from "preact-router";
 import { useEffect, useState } from "preact/hooks";
 import { DevContextProvider } from "./context/devContext";
 import { useTalerActionURL } from "./hooks/useTalerActionURL";
@@ -96,9 +96,16 @@ function Application() {
         <WalletNavBar />
         <div style={{ width: 400, height: 290 }}>
           <Router history={createHashHistory()}>
-            <Route path={Pages.balance} component={BalancePage} />
+            <Route path={Pages.balance} component={BalancePage}
+              goToWalletManualWithdraw={() => goToWalletPage(Pages.manual_withdraw)}
+            />
             <Route path={Pages.settings} component={SettingsPage} />
             <Route path={Pages.dev} component={DeveloperPage} />
+
+            <Route path={Pages.transaction}
+              component={({ tid }: { tid: string }) => goToWalletPage(Pages.transaction.replace(':tid', tid))}
+            />
+
             <Route path={Pages.history} component={HistoryPage} />
             <Route path={Pages.backup} component={BackupPage}
               onAddProvider={() => {
@@ -123,6 +130,13 @@ function Application() {
   );
 }
 
+function goToWalletPage(page: Pages | string): null {
+  chrome.tabs.create({
+    active: true,
+    url: chrome.extension.getURL(`/static/wallet.html#${page}`),
+  })
+  return null
+}
 
 function Redirect({ to }: { to: string }): null {
   useEffect(() => {

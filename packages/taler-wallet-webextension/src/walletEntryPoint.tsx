@@ -41,6 +41,8 @@ import { SettingsPage } from "./wallet/Settings";
 import { TransactionPage } from './wallet/Transaction';
 import { WelcomePage } from "./wallet/Welcome";
 import { BackupPage } from './wallet/BackupPage';
+import { DeveloperPage } from "./popup/Debug.js";
+import { ManualWithdrawPage } from "./wallet/ManualWithdrawPage.js";
 
 
 function main(): void {
@@ -52,7 +54,9 @@ function main(): void {
     render(<Application />, container);
   } catch (e) {
     console.error("got error", e);
-    document.body.innerText = `Fatal error: "${e.message}".  Please report this bug at https://bugs.gnunet.org/.`;
+    if (e instanceof Error) {
+      document.body.innerText = `Fatal error: "${e.message}".  Please report this bug at https://bugs.gnunet.org/.`;
+    }
   }
 }
 
@@ -65,10 +69,10 @@ if (document.readyState === "loading") {
 }
 
 function withLogoAndNavBar(Component: any) {
-  return () => <Fragment>
+  return (props: any) => <Fragment>
     <LogoHeader />
     <WalletNavBar />
-    <Component />
+    <Component {...props} />
   </Fragment>
 }
 
@@ -81,13 +85,19 @@ function Application() {
 
         <Route path={Pages.history} component={withLogoAndNavBar(HistoryPage)} />
         <Route path={Pages.transaction} component={withLogoAndNavBar(TransactionPage)} />
-        <Route path={Pages.balance} component={withLogoAndNavBar(BalancePage)} />
+        <Route path={Pages.balance} component={withLogoAndNavBar(BalancePage)} 
+              goToWalletManualWithdraw={() => route(Pages.manual_withdraw)} 
+        />
         <Route path={Pages.settings} component={withLogoAndNavBar(SettingsPage)} />
         <Route path={Pages.backup} component={withLogoAndNavBar(BackupPage)} />
+
+        <Route path={Pages.manual_withdraw} component={withLogoAndNavBar(ManualWithdrawPage)} />
 
         <Route path={Pages.reset_required} component={() => <div>no yet implemented</div>} />
         <Route path={Pages.payback} component={() => <div>no yet implemented</div>} />
         <Route path={Pages.return_coins} component={() => <div>no yet implemented</div>} />
+
+        <Route path={Pages.dev} component={withLogoAndNavBar(DeveloperPage)} />
 
         {/** call to action */}
         <Route path={Pages.pay} component={PayPage} />

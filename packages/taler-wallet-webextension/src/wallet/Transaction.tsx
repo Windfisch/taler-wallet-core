@@ -51,7 +51,7 @@ export function TransactionPage({ tid }: { tid: string; }): JSX.Element {
     transaction={transaction}
     onDelete={() => wxApi.deleteTransaction(tid).then(_ => history.go(-1))}
     onRetry={() => wxApi.retryTransaction(tid).then(_ => history.go(-1))}
-    onBack={() => { history.go(-1); }} />;
+    onBack={() => { route(Pages.history) }} />;
 }
 
 export interface WalletTransactionProps {

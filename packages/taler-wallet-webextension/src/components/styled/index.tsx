@@ -486,6 +486,33 @@ export const Input = styled.div<{ invalid?: boolean }>`
   }
 `
 
+export const InputWithLabel = styled.div<{ invalid?: boolean }>`
+  & label {
+    display: block;
+    padding: 5px;
+    color: ${({ invalid }) => !invalid ? 'inherit' : 'red'}
+  }
+  & > div {
+    position: relative;
+    display: flex;
+    top: 0px;
+    bottom: 0px;
+
+    &  > div {
+      position: absolute;
+      background-color: lightgray;
+      padding: 5px;
+      margin: 2px;
+    }
+
+    &  > input {
+      flex: 1;
+      padding: 5px; 
+      border-color: ${({ invalid }) => !invalid ? 'inherit' : 'red'}
+    }
+  }
+`
+
 export const ErrorBox = styled.div`
   border: 2px solid #f5c6cb;
   border-radius: 0.25em;

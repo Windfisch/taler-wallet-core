@@ -57,7 +57,7 @@ export function BackupView({ providers, onAddProvider, onSyncAll }: ViewProps): 
           title={provider.name}
         />
         )}
-        {!providers.length && <Centered style={{marginTop: 100}}>
+        {!providers.length && <Centered style={{ marginTop: 100 }}>
           <BoldLight>No backup providers configured</BoldLight>
           <ButtonSuccess onClick={onAddProvider}><i18n.Translate>Add provider</i18n.Translate></ButtonSuccess>
         </Centered>}
@@ -98,8 +98,8 @@ function BackupLayout(props: TransactionLayoutProps): JSX.Element {
       <div style={{ color: !props.active ? "grey" : undefined }}>
         <a href={Pages.provider_detail.replace(':pid', encodeURIComponent(props.id))}><span>{props.title}</span></a>
 
-        {dateStr && <SmallText style={{marginTop: 5}}>Last synced: {dateStr}</SmallText>}
-        {!dateStr && <SmallLightText style={{marginTop: 5}}>Not synced</SmallLightText>}
+        {dateStr && <SmallText style={{ marginTop: 5 }}>Last synced: {dateStr}</SmallText>}
+        {!dateStr && <SmallLightText style={{ marginTop: 5 }}>Not synced</SmallLightText>}
       </div>
       <div>
         {props.status?.type === 'paid' ?

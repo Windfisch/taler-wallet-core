@@ -19,21 +19,24 @@ import {
   Balance, BalancesResponse,
   i18n
 } from "@gnu-taler/taler-util";
-import { JSX, h } from "preact";
-import { WalletBox, Centered } from "../components/styled/index";
+import { JSX } from "preact";
+import { ButtonPrimary, Centered, WalletBox } from "../components/styled/index";
 import { BalancesHook, useBalances } from "../hooks/useBalances";
 import { PageLink, renderAmount } from "../renderHtml";
 
 
-export function BalancePage() {
+export function BalancePage({ goToWalletManualWithdraw }: { goToWalletManualWithdraw: () => void }) {
   const balance = useBalances()
-  return <BalanceView balance={balance} Linker={PageLink} />
+  return <BalanceView balance={balance} Linker={PageLink} goToWalletManualWithdraw={goToWalletManualWithdraw} />
 }
+
 export interface BalanceViewProps {
-  balance: BalancesHook,
-  Linker: typeof PageLink,
+  balance: BalancesHook;
+  Linker: typeof PageLink;
+  goToWalletManualWithdraw: () => void;
 }
-export function BalanceView({ balance, Linker }: BalanceViewProps) {
+
+export function BalanceView({ balance, Linker, goToWalletManualWithdraw }: BalanceViewProps) {
   if (!balance) {
     return <span />
   }
@@ -57,7 +60,9 @@ export function BalanceView({ balance, Linker }: BalanceViewProps) {
       </i18n.Translate></p>
     )
   }
-  return <ShowBalances wallet={balance.response} />
+  return <ShowBalances wallet={balance.response}
+    onWithdraw={goToWalletManualWithdraw}
+  />
 }
 
 function formatPending(entry: Balance): JSX.Element {
@@ -96,7 +101,7 @@ function formatPending(entry: Balance): JSX.Element {
 }
 
 
-function ShowBalances({ wallet }: { wallet: BalancesResponse }) {
+function ShowBalances({ wallet, onWithdraw }: { wallet: BalancesResponse, onWithdraw: () => void }) {
   return <WalletBox>
     <section>
       <Centered>{wallet.balances.map((entry) => {
@@ -113,5 +118,9 @@ function ShowBalances({ wallet }: { wallet: BalancesResponse }) {
         );
       })}</Centered>
     </section>
+    <footer>
+      <div />
+      <ButtonPrimary onClick={onWithdraw} >Withdraw</ButtonPrimary>
+    </footer>
   </WalletBox>
 }

@@ -141,7 +141,7 @@ export function View({ details, amount, onWithdraw, terms, reviewing, onReview, 
       }
 
       <section>
-        {terms.status === 'new' && !accepted &&
+        {terms.status === 'new' && !accepted && !reviewing &&
           <ButtonSuccess
             upperCased
             disabled={!details.exchangeInfo.baseUrl}
