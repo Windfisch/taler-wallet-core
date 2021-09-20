@@ -1465,7 +1465,6 @@ export async function checkPaymentByProposalId(
       amountRaw: Amounts.stringify(purchase.download.contractData.amount),
       amountEffective: Amounts.stringify(purchase.totalPayCost),
       proposalId,
-      noncePriv: proposal.noncePriv,
     };
   } else if (!purchase.timestampFirstSuccessfulPay) {
     return {
@@ -1476,7 +1475,6 @@ export async function checkPaymentByProposalId(
       amountRaw: Amounts.stringify(purchase.download.contractData.amount),
       amountEffective: Amounts.stringify(purchase.totalPayCost),
       proposalId,
-      noncePriv: proposal.noncePriv,
     };
   } else {
     const paid = !purchase.paymentSubmitPending;
@@ -1489,7 +1487,6 @@ export async function checkPaymentByProposalId(
       amountEffective: Amounts.stringify(purchase.totalPayCost),
       ...(paid ? { nextUrl: purchase.download.contractData.orderId } : {}),
       proposalId,
-      noncePriv: proposal.noncePriv,
     };
   }
 }
