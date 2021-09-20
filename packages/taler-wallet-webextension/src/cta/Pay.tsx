@@ -40,7 +40,7 @@ import {
   ConfirmPayResultType,
 } from "@gnu-taler/taler-util";
 import { JSX, VNode, h, Fragment } from "preact";
-import { ButtonSuccess, LinkSuccess, WalletAction } from "../components/styled";
+import { ButtonDestructive, ButtonSuccess, ButtonWarning, LinkSuccess, LinkWarning, WalletAction } from "../components/styled";
 import { LogoHeader } from "../components/LogoHeader";
 import { Part } from "../components/Part";
 import { QR } from "../components/QR";
@@ -158,15 +158,7 @@ export interface PaymentRequestViewProps {
 }
 export function PaymentRequestView({ uri, payStatus, onClick, payErrMsg }: PaymentRequestViewProps) {
   let totalFees: AmountJson = Amounts.getZero(payStatus.amountRaw);
-  let insufficientBalance = false;
-  const [loading, setLoading] = useState(false);
   const contractTerms: ContractTerms = payStatus.contractTerms;
-
-  if (
-    payStatus.status === PreparePayResultType.AlreadyConfirmed
-  ) {
-    return <AlreadyPaid payStatus={payStatus} />
-  }
 
   if (!contractTerms) {
     return (
@@ -174,11 +166,6 @@ export function PaymentRequestView({ uri, payStatus, onClick, payErrMsg }: Payme
         Error: did not get contract terms from merchant or wallet backend.
       </span>
     );
-  }
-
-  if (payStatus.status == PreparePayResultType.InsufficientBalance) {
-    insufficientBalance = true;
-    return <div>no te alcanza</div>
   }
 
   if (payStatus.status === PreparePayResultType.PaymentPossible) {
@@ -197,14 +184,17 @@ export function PaymentRequestView({ uri, payStatus, onClick, payErrMsg }: Payme
   }
 
   const [showQR, setShowQR] = useState<boolean>(false)
-  const privateUri = `${uri}&n=${payStatus.noncePriv}`
+  const privateUri = payStatus.status !== PreparePayResultType.AlreadyConfirmed ? `${uri}&n=${payStatus.noncePriv}` : uri
   return <WalletAction>
     <LogoHeader />
     <h2>
       {i18n.str`Digital cash payment`}
     </h2>
     <section>
-      <Part big title="Total paid" text={amountToString(payStatus.amountEffective)} kind='negative' />
+      {payStatus.status === PreparePayResultType.InsufficientBalance ?
+        <Part title="Insufficient balance" text="No enough coins to pay" kind='negative' /> :
+        <Part big title="Total amount with fee" text={amountToString(payStatus.amountEffective)} kind='negative' />
+      }
       <Part big title="Purchase amount" text={amountToString(payStatus.amountRaw)} kind='neutral' />
       {Amounts.isNonZero(totalFees) && <Part big title="Fee" text={amountToString(totalFees)} kind='negative' />}
       <Part title="Merchant" text={contractTerms.merchant.name} kind='neutral' />
@@ -213,37 +203,43 @@ export function PaymentRequestView({ uri, payStatus, onClick, payErrMsg }: Payme
     </section>
     {showQR && <section>
       <QR text={privateUri} />
-      <a href={privateUri}>or click here to pay with a installed wallet</a>
+      Scan the QR code or <a href={privateUri}>click here</a>
     </section>}
     <section>
       {payErrMsg ? (
         <div>
           <p>Payment failed: {payErrMsg}</p>
-          <button
-            class="pure-button button-success"
-            onClick={onClick}
-          >
+          <button class="pure-button button-success" onClick={onClick} >
             {i18n.str`Retry`}
           </button>
         </div>
       ) : (
-        <Fragment>
-
-          <LinkSuccess
-            upperCased
-            // disabled={!details.exchangeInfo.baseUrl}
-            onClick={() => setShowQR(qr => !qr)}
-          >
+        payStatus.status === PreparePayResultType.PaymentPossible ? <Fragment>
+          <LinkSuccess upperCased onClick={() => setShowQR(qr => !qr)}>
             {!showQR ? i18n.str`Complete with mobile wallet` : i18n.str`Hide QR`}
           </LinkSuccess>
-          <ButtonSuccess
-            upperCased
-          // disabled={!details.exchangeInfo.baseUrl}
-          // onClick={() => onReview(true)}
-          >
+          <ButtonSuccess upperCased>
             {i18n.str`Confirm payment`}
           </ButtonSuccess>
-        </Fragment>
+        </Fragment> : (
+          payStatus.status === PreparePayResultType.InsufficientBalance ? <Fragment>
+            <LinkSuccess upperCased onClick={() => setShowQR(qr => !qr)}>
+              {!showQR ? i18n.str`Pay with other device` : i18n.str`Hide QR`}
+            </LinkSuccess>
+            <ButtonDestructive upperCased disabled>
+              {i18n.str`No enough coins`}
+            </ButtonDestructive>
+          </Fragment> :
+            <Fragment>
+              {payStatus.contractTerms.fulfillment_message && <div>
+                {payStatus.contractTerms.fulfillment_message}
+              </div>}
+              <LinkWarning upperCased href={payStatus.contractTerms.fulfillment_url}>
+                {i18n.str`Already paid`}
+              </LinkWarning>
+            </Fragment>
+
+        )
       )}
 
     </section>

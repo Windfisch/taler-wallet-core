@@ -48,7 +48,9 @@ function main(): void {
     render(<Application />, container);
   } catch (e) {
     console.error("got error", e);
-    document.body.innerText = `Fatal error: "${e.message}".  Please report this bug at https://bugs.gnunet.org/.`;
+    if (e instanceof Error) {
+      document.body.innerText = `Fatal error: "${e.message}".  Please report this bug at https://bugs.gnunet.org/.`;
+    }
   }
 }
 

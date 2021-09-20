@@ -54,28 +54,6 @@ section.main h1:first-child {
   margin-top: 0;
 }
 
-h1 {
-  font-size: 160%;
-  font-family: "monospace";
-}
-
-h2 {
-  font-size: 140%;
-  font-family: "monospace";
-}
-
-h3 {
-  font-size: 120%;
-  font-family: "monospace";
-}
-
-h4,
-h5,
-h6 {
-  font-family: "monospace";
-  font-size: 100%;
-}
-
 .form-row {
   padding-top: 5px;
   padding-bottom: 5px;

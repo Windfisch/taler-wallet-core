@@ -39,6 +39,7 @@ export const InsufficientBalance = createExample(TestedComponent, {
       merchant: {
         name: 'someone'
       },
+      summary: 'some beers',
       amount: 'USD:10',
     } as Partial<ContractTerms> as any,
     amountRaw: 'USD:10',
@@ -70,12 +71,12 @@ export const AlreadyConfirmedWithFullfilment = createExample(TestedComponent, {
     status: PreparePayResultType.AlreadyConfirmed,
     amountEffective: 'USD:10',
     amountRaw: 'USD:10',
-    noncePriv: '',
     contractTerms: {
       merchant: {
         name: 'someone'
       },
       fulfillment_message: 'congratulations! you are looking at the fulfillment message! ',
+      summary: 'some beers',
       amount: 'USD:10',
     } as Partial<ContractTerms> as any,
     contractTermsHash: '123456',
@@ -88,12 +89,12 @@ export const AlreadyConfirmedWithoutFullfilment = createExample(TestedComponent,
   payStatus: {
     status: PreparePayResultType.AlreadyConfirmed,
     amountEffective: 'USD:10',
-    noncePriv: '',
     amountRaw: 'USD:10',
     contractTerms: {
       merchant: {
         name: 'someone'
       },
+      summary: 'some beers',
       amount: 'USD:10',
     } as Partial<ContractTerms> as any,
     contractTermsHash: '123456',
