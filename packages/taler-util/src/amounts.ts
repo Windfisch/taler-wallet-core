@@ -407,7 +407,7 @@ export class Amounts {
     return `${a.currency}:${s}`;
   }
 
-  static stringifyValue(a: AmountJson): string {
+  static stringifyValue(a: AmountJson, minFractional: number = 0): string {
     const av = a.value + Math.floor(a.fraction / amountFractionalBase);
     const af = a.fraction % amountFractionalBase;
     let s = av.toString();
@@ -416,7 +416,7 @@ export class Amounts {
       s = s + ".";
       let n = af;
       for (let i = 0; i < amountFractionalLength; i++) {
-        if (!n) {
+        if (!n && i >= minFractional) {
           break;
         }
         s = s + Math.floor((n / amountFractionalBase) * 10).toString();

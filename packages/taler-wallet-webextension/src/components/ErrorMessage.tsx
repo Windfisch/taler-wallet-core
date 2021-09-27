@@ -22,7 +22,7 @@ export function ErrorMessage({ title, description }: { title?: string|VNode; des
   const [showErrorDetail, setShowErrorDetail] = useState(false);
   if (!title)
     return null;
-  return <ErrorBox>
+  return <ErrorBox style={{paddingTop: 0, paddingBottom: 0}}>
     <div>
       <p>{title}</p>
       { description && <button onClick={() => { setShowErrorDetail(v => !v); }}>

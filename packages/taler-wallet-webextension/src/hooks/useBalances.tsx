@@ -32,7 +32,6 @@ export type BalancesHook = BalancesHookOk | BalancesHookError | undefined;
 
 export function useBalances(): BalancesHook {
   const [balance, setBalance] = useState<BalancesHook>(undefined);
-  console.log('render balance')
   useEffect(() => {
     async function checkBalance() {
       try {

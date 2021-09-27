@@ -30,7 +30,7 @@ export default {
   },
 };
 
-export const InsufficientBalance = createExample(TestedComponent, {
+export const NoBalance = createExample(TestedComponent, {
   payStatus: {
     status: PreparePayResultType.InsufficientBalance,
     noncePriv: '',
@@ -46,11 +46,52 @@ export const InsufficientBalance = createExample(TestedComponent, {
   }
 });
 
+export const NoEnoughBalance = createExample(TestedComponent, {
+  payStatus: {
+    status: PreparePayResultType.InsufficientBalance,
+    noncePriv: '',
+    proposalId: "proposal1234",
+    contractTerms: {
+      merchant: {
+        name: 'someone'
+      },
+      summary: 'some beers',
+      amount: 'USD:10',
+    } as Partial<ContractTerms> as any,
+    amountRaw: 'USD:10',
+  },
+  balance: {
+    currency: 'USD',
+    fraction: 40000000,
+    value: 9
+  }
+});
+
 export const PaymentPossible = createExample(TestedComponent, {
   uri: 'taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0',
   payStatus: {
     status: PreparePayResultType.PaymentPossible,
     amountEffective: 'USD:10',
+    amountRaw: 'USD:10',
+    noncePriv: '',
+    contractTerms: {
+      nonce: '123213123',
+      merchant: {
+        name: 'someone'
+      },
+      amount: 'USD:10',
+      summary: 'some beers',
+    } as Partial<ContractTerms> as any,
+    contractTermsHash: '123456',
+    proposalId: 'proposal1234'
+  }
+});
+
+export const PaymentPossibleWithFee = createExample(TestedComponent, {
+  uri: 'taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0',
+  payStatus: {
+    status: PreparePayResultType.PaymentPossible,
+    amountEffective: 'USD:10.20',
     amountRaw: 'USD:10',
     noncePriv: '',
     contractTerms: {
@@ -100,5 +141,24 @@ export const AlreadyConfirmedWithoutFullfilment = createExample(TestedComponent,
     contractTermsHash: '123456',
     proposalId: 'proposal1234',
     paid: false,
+  }
+});
+
+export const AlreadyPaid = createExample(TestedComponent, {
+  payStatus: {
+    status: PreparePayResultType.AlreadyConfirmed,
+    amountEffective: 'USD:10',
+    amountRaw: 'USD:10',
+    contractTerms: {
+      merchant: {
+        name: 'someone'
+      },
+      fulfillment_message: 'congratulations! you are looking at the fulfillment message! ',
+      summary: 'some beers',
+      amount: 'USD:10',
+    } as Partial<ContractTerms> as any,
+    contractTermsHash: '123456',
+    proposalId: 'proposal1234',
+    paid: true,
   }
 });

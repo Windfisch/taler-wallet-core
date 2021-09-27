@@ -520,8 +520,7 @@ export const ErrorBox = styled.div`
   justify-content: space-between;
   flex-direction: column;
   /* margin: 0.5em; */
-  padding-left: 1em;
-  padding-right: 1em;
+  padding: 1em;
   /* width: 100%; */
   color: #721c24;
   background: #f8d7da;
@@ -539,6 +538,19 @@ export const ErrorBox = styled.div`
     }
   }
 `
+
+export const SuccessBox = styled(ErrorBox)`
+  color: #0f5132;
+  background-color: #d1e7dd;
+  border-color: #badbcc;
+`
+
+export const WarningBox = styled(ErrorBox)`
+  color: #664d03;
+  background-color: #fff3cd;
+  border-color: #ffecb5;
+`
+
 export const PopupNavigation = styled.div<{ devMode?: boolean }>`
   background-color:#0042b2;
   height: 35px;
