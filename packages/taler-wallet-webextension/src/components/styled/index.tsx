@@ -27,13 +27,12 @@ export const PaymentStatus = styled.div<{ color: string }>`
   background-color: ${p => p.color};
 `
 
-export const WalletAction = styled.section`
+export const WalletAction = styled.div`
   display: flex;
   text-align: center;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  /* max-width: 50%; */
 
   margin: auto;
   height: 100%;

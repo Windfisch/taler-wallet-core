@@ -30,7 +30,7 @@ import { useEffect, useState } from "preact/hooks";
 import { LogoHeader } from "../components/LogoHeader";
 import { Part } from "../components/Part";
 import { QR } from "../components/QR";
-import { ButtonSuccess, LinkSuccess, SuccessBox, WalletAction, WarningBox } from "../components/styled";
+import { ButtonSuccess, ErrorBox, LinkSuccess, SuccessBox, WalletAction, WarningBox } from "../components/styled";
 import { useBalances } from "../hooks/useBalances";
 import * as wxApi from "../wxApi";
 
@@ -85,7 +85,7 @@ const doPayment = async (payStatus: PreparePayResult): Promise<ConfirmPayResultD
 export function PayPage({ talerPayUri }: Props): JSX.Element {
   const [payStatus, setPayStatus] = useState<PreparePayResult | undefined>(undefined);
   const [payResult, setPayResult] = useState<ConfirmPayResult | undefined>(undefined);
-  const [payErrMsg, setPayErrMsg] = useState<string | undefined>("");
+  const [payErrMsg, setPayErrMsg] = useState<string | undefined>(undefined);
 
   const balance = useBalances()
   const balanceWithoutError = balance?.error ? [] : (balance?.response.balances || [])
@@ -96,8 +96,14 @@ export function PayPage({ talerPayUri }: Props): JSX.Element {
   useEffect(() => {
     if (!talerPayUri) return;
     const doFetch = async (): Promise<void> => {
-      const p = await wxApi.preparePay(talerPayUri);
-      setPayStatus(p);
+      try {
+        const p = await wxApi.preparePay(talerPayUri);
+        setPayStatus(p);
+      } catch (e) {
+        if (e instanceof Error) {
+          setPayErrMsg(e.message)
+        }
+      }
     };
     doFetch();
   }, [talerPayUri]);
@@ -107,27 +113,22 @@ export function PayPage({ talerPayUri }: Props): JSX.Element {
   }
 
   if (!payStatus) {
+    if (payErrMsg) {
+      return <WalletAction>
+        <LogoHeader />
+        <h2>
+          {i18n.str`Digital cash payment`}
+        </h2>
+        <section>
+          <p>Could not get the payment information for this order</p>
+          <ErrorBox>
+            {payErrMsg}
+          </ErrorBox>
+        </section>
+      </WalletAction>
+    }
     return <span>Loading payment information ...</span>;
   }
-
-  // if (payResult && payResult.type === ConfirmPayResultType.Done) {
-  //   if (payResult.contractTerms.fulfillment_message) {
-  //     const obj = {
-  //       fulfillment_message: payResult.contractTerms.fulfillment_message,
-  //       fulfillment_message_i18n:
-  //         payResult.contractTerms.fulfillment_message_i18n,
-  //     };
-  //     const msg = getJsonI18n(obj, "fulfillment_message");
-  //     return (
-  //       <div>
-  //         <p>Payment succeeded.</p>
-  //         <p>{msg}</p>
-  //       </div>
-  //     );
-  //   } else {
-  //     return <span>Redirecting ...</span>;
-  //   }
-  // }
 
   const onClick = async () => {
     try {
@@ -249,7 +250,7 @@ export function PaymentRequestView({ uri, payStatus, onClick, payErrMsg, balance
       {i18n.str`Digital cash payment`}
     </h2>
     {payStatus.status === PreparePayResultType.AlreadyConfirmed &&
-      (payStatus.paid ? <SuccessBox> Already paid </SuccessBox> : <WarningBox> Already confirmed </WarningBox>)
+      (payStatus.paid ? <SuccessBox> Already paid </SuccessBox> : <WarningBox> Already claimed </WarningBox>)
     }
     <section>
       {payStatus.status !== PreparePayResultType.InsufficientBalance && Amounts.isNonZero(totalFees) &&
