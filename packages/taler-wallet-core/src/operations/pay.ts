@@ -893,7 +893,7 @@ async function startDownloadProposal(
    */
   if (oldProposal && 
       oldProposal.downloadSessionId === sessionId &&
-      oldProposal.noncePriv === noncePriv &&
+      (!noncePriv || oldProposal.noncePriv === noncePriv) &&
       oldProposal.claimToken === claimToken) {
     await processDownloadProposal(ws, oldProposal.proposalId);
     return oldProposal.proposalId;
