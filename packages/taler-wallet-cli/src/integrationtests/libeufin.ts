@@ -1574,7 +1574,7 @@ export namespace LibeufinNexusApi {
 export async function launchLibeufinServices(
   t: GlobalTestState,
   nexusUserBundle: NexusUserBundle[],
-  sandboxUserBundle: SandboxUserBundle[],
+  sandboxUserBundle: SandboxUserBundle[] = [],
   withFacades: string[] = [], // takes only "twg" and/or "anastasis"
 ): Promise<LibeufinServices> {
   const db = await setupDb(t);
