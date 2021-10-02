@@ -59,7 +59,7 @@ import { runMerchantExchangeConfusionTest } from "./test-merchant-exchange-confu
 import { runLibeufinBasicTest } from "./test-libeufin-basic";
 import { runLibeufinC5xTest } from "./test-libeufin-c5x";
 import { runLibeufinNexusBalanceTest } from "./test-libeufin-nexus-balance";
-import { runLibeufinNexus404ResponseTest } from "./test-libeufin-404-from-sandbox";
+import { runLibeufinBadGatewayTest } from "./test-libeufin-bad-gateway";
 import { runLibeufinKeyrotationTest } from "./test-libeufin-keyrotation";
 import { runLibeufinRefundTest } from "./test-libeufin-refund";
 import { runLibeufinRefundMultipleUsersTest } from "./test-libeufin-refund-multiple-users";
@@ -116,7 +116,7 @@ const allTests: TestMainFunction[] = [
   runLibeufinRefundTest,
   runLibeufinC5xTest,
   runLibeufinNexusBalanceTest,
-  runLibeufinNexus404ResponseTest,
+  runLibeufinBadGatewayTest,
   runLibeufinRefundMultipleUsersTest,
   runLibeufinApiPermissionsTest,
   runLibeufinApiFacadeTest,
