@@ -1,4 +1,5 @@
 import test from "ava";
+import { userIdentifierDerive } from "./crypto.js";
 
 // Vector generated with taler-anastasis-tvg
 const userIdVector = {
@@ -12,5 +13,9 @@ const userIdVector = {
 };
 
 test("user ID derivation", async (t) => {
-  t.fail();
+  const res = await userIdentifierDerive(
+    userIdVector.input_id_data,
+    userIdVector.input_server_salt,
+  );
+  t.is(res, userIdVector.output_id);
 });
