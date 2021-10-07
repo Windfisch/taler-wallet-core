@@ -55,7 +55,7 @@ import {
   getHttpResponseErrorDetails,
   readSuccessResponseJsonOrThrow,
 } from "../util/http.js";
-import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto.js";
+import { encodeCrock, getRandomBytes } from "@gnu-taler/taler-util";
 
 const logger = new Logger("operations/tip.ts");
 

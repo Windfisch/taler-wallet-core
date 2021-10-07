@@ -22,22 +22,4 @@ export {
   getDefaultNodeWallet,
   DefaultNodeWalletArgs,
 } from "./headless/helpers.js";
-
-import { setPRNG } from './crypto/primitives/nacl-fast.js';
-import cr from 'crypto';
-
-function cleanup(arr: Uint8Array): void {
-  for (let i = 0; i < arr.length; i++) arr[i] = 0;
-}
-
-// Initialize PRNG if environment provides CSPRNG.
-// If not, methods calling randombytes will throw.
-if (cr && cr.randomBytes) {
-  setPRNG(function (x: Uint8Array, n: number) {
-    const v = cr.randomBytes(n);
-    for (let i = 0; i < n; i++) x[i] = v[i];
-    cleanup(v);
-  });
-}
-
 export * from "./crypto/workers/nodeThreadWorker.js";

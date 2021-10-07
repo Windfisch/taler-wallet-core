@@ -15,14 +15,14 @@
  */
 
 import { canonicalJson } from "@gnu-taler/taler-util";
-import { kdf } from "../crypto/primitives/kdf.js";
+import { kdf } from "@gnu-taler/taler-util";
 import {
   decodeCrock,
   encodeCrock,
   getRandomBytes,
   hash,
   stringToBytes,
-} from "../crypto/talerCrypto.js";
+} from "@gnu-taler/taler-util";
 
 export namespace ContractTermsUtil {
   export type PathPredicate = (path: string[]) => boolean;

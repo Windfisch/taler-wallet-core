@@ -55,11 +55,11 @@ import {
 } from "@gnu-taler/taler-util";
 import { gunzipSync, gzipSync } from "fflate";
 import { InternalWalletState } from "../../common.js";
-import { kdf } from "../../crypto/primitives/kdf.js";
+import { kdf } from "@gnu-taler/taler-util";
 import {
   secretbox,
   secretbox_open,
-} from "../../crypto/primitives/nacl-fast.js";
+} from "@gnu-taler/taler-util";
 import {
   bytesToString,
   decodeCrock,
@@ -70,7 +70,7 @@ import {
   hash,
   rsaBlind,
   stringToBytes,
-} from "../../crypto/talerCrypto.js";
+} from "@gnu-taler/taler-util";
 import { CryptoApi } from "../../crypto/workers/cryptoApi.js";
 import {
   BackupProviderRecord,

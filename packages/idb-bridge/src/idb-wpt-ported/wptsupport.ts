@@ -542,7 +542,7 @@ export function is_transaction_active(
       e.stopPropagation();
     };
     return true;
-  } catch (ex) {
+  } catch (ex: any) {
     console.log(ex.stack);
     t.deepEqual(
       ex.name,

@@ -805,7 +805,7 @@ export class BridgeIDBFactory {
           oldVersion,
         });
         request.dispatchEvent(event2);
-      } catch (err) {
+      } catch (err: any) {
         request.error = new Error();
         request.error.name = err.name;
         request.readyState = "done";
@@ -846,7 +846,7 @@ export class BridgeIDBFactory {
         if (BridgeIDBFactory.enableTracing) {
           console.log("TRACE: connected!");
         }
-      } catch (err) {
+      } catch (err: any) {
         if (BridgeIDBFactory.enableTracing) {
           console.log(
             "TRACE: caught exception while trying to connect with backend",
@@ -2704,7 +2704,7 @@ export class BridgeIDBTransaction
             this._active = false;
             throw err;
           }
-        } catch (err) {
+        } catch (err: any) {
           if (BridgeIDBFactory.enableTracing) {
             console.log("TRACING: error during operation: ", err);
           }

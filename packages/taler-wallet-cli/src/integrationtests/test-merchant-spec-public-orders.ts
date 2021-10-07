@@ -21,13 +21,10 @@ import {
   ConfirmPayResultType,
   PreparePayResultType,
   URL,
-} from "@gnu-taler/taler-util";
-import {
   encodeCrock,
   getRandomBytes,
-  NodeHttpLib,
-  WalletApiOperation,
-} from "@gnu-taler/taler-wallet-core";
+} from "@gnu-taler/taler-util";
+import { NodeHttpLib, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import {
   BankService,
   ExchangeService,
@@ -566,11 +563,9 @@ async function testWithoutClaimToken(
  * specification of the endpoint.
  */
 export async function runMerchantSpecPublicOrdersTest(t: GlobalTestState) {
-  const {
-    bank,
-    exchange,
-    merchant,
-  } = await createSimpleTestkudosEnvironment(t);
+  const { bank, exchange, merchant } = await createSimpleTestkudosEnvironment(
+    t,
+  );
 
   // Base URL for the default instance.
   const merchantBaseUrl = merchant.makeInstanceBaseUrl();

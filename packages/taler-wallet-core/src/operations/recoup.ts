@@ -32,7 +32,7 @@ import {
   RefreshReason,
   TalerErrorDetails,
 } from "@gnu-taler/taler-util";
-import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto.js";
+import { encodeCrock, getRandomBytes } from "@gnu-taler/taler-util";
 import {
   CoinRecord,
   CoinSourceType,

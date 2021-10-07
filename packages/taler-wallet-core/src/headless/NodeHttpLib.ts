@@ -28,8 +28,7 @@ import {
 import { RequestThrottler } from "../util/RequestThrottler.js";
 import Axios, { AxiosResponse } from "axios";
 import { OperationFailedError, makeErrorDetails } from "../errors.js";
-import { Logger } from "@gnu-taler/taler-util";
-import { bytesToString } from "../crypto/talerCrypto.js";
+import { Logger, bytesToString } from "@gnu-taler/taler-util";
 import { TalerErrorCode, URL } from "@gnu-taler/taler-util";
 
 const logger = new Logger("NodeHttpLib.ts");
@@ -83,7 +82,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
         timeout,
         maxRedirects: 0,
       });
-    } catch (e) {
+    } catch (e: any) {
       throw OperationFailedError.fromCode(
         TalerErrorCode.WALLET_NETWORK_ERROR,
         `${e.message}`,

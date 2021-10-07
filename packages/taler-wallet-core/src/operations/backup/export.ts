@@ -53,14 +53,12 @@ import {
   Logger,
   timestampToIsoString,
   WalletBackupContentV1,
-} from "@gnu-taler/taler-util";
-import { InternalWalletState } from "../../common.js";
-import { hash } from "../../crypto/primitives/nacl-fast.js";
-import {
+  hash,
   encodeCrock,
   getRandomBytes,
   stringToBytes,
-} from "../../crypto/talerCrypto.js";
+} from "@gnu-taler/taler-util";
+import { InternalWalletState } from "../../common.js";
 import {
   AbortStatus,
   CoinSourceType,

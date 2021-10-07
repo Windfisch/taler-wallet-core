@@ -40,7 +40,7 @@ import {
   TalerErrorDetails,
   Timestamp,
 } from "@gnu-taler/taler-util";
-import { decodeCrock, encodeCrock, hash } from "../crypto/talerCrypto.js";
+import { decodeCrock, encodeCrock, hash } from "@gnu-taler/taler-util";
 import { CryptoApi } from "../crypto/workers/cryptoApi.js";
 import {
   DenominationRecord,

@@ -36,7 +36,6 @@ export * from "./db-utils.js";
 export { CryptoImplementation } from "./crypto/workers/cryptoImplementation.js";
 export type { CryptoWorker } from "./crypto/workers/cryptoWorker.js";
 export { CryptoWorkerFactory, CryptoApi } from "./crypto/workers/cryptoApi.js";
-export * from "./crypto/talerCrypto.js";
 
 export * from "./pending-types.js";
 

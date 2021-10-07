@@ -28,7 +28,7 @@ import {
   BankAccessApi,
   CreditDebitIndicator,
 } from "./harness";
-import { createEddsaKeyPair, encodeCrock } from "@gnu-taler/taler-wallet-core";
+import { createEddsaKeyPair, encodeCrock } from "@gnu-taler/taler-util";
 import { defaultCoinConfig } from "./denomStructures";
 
 /**

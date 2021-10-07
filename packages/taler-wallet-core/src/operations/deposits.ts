@@ -39,12 +39,12 @@ import {
   URL,
 } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../common.js";
-import { kdf } from "../crypto/primitives/kdf.js";
+import { kdf } from "@gnu-taler/taler-util";
 import {
   encodeCrock,
   getRandomBytes,
   stringToBytes,
-} from "../crypto/talerCrypto.js";
+} from "@gnu-taler/taler-util";
 import { DepositGroupRecord } from "../db.js";
 import { guardOperationException } from "../errors.js";
 import { selectPayCoins } from "../util/coinSelection.js";

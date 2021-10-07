@@ -35,9 +35,9 @@ import {
   codecForExchangeKeysJson,
   codecForKeysManagementResponse,
   Configuration,
+  decodeCrock,
 } from "@gnu-taler/taler-util";
 import {
-  decodeCrock,
   NodeHttpLib,
   readSuccessResponseJsonOrThrow,
 } from "@gnu-taler/taler-wallet-core";

@@ -25,14 +25,11 @@ import {
   eddsaGetPublic,
   keyExchangeEddsaEcdhe,
   keyExchangeEcdheEddsa,
-  rsaBlind,
-  rsaUnblind,
   stringToBytes,
   bytesToString,
-  rsaVerify,
 } from "./talerCrypto.js";
-import { sha512, kdf } from "./primitives/kdf.js";
-import * as nacl from "./primitives/nacl-fast.js";
+import { sha512, kdf } from "./kdf.js";
+import * as nacl from "./nacl-fast.js";
 
 test("encoding", (t) => {
   const s = "Hello, World";

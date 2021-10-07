@@ -44,11 +44,6 @@ import {
   MerchantInstancesResponse,
 } from "./merchantApiTypes";
 import {
-  createEddsaKeyPair,
-  eddsaGetPublic,
-  EddsaKeyPair,
-  encodeCrock,
-  getRandomBytes,
   openPromise,
   OperationFailedError,
   WalletCoreApiClient,
@@ -64,6 +59,11 @@ import {
   Duration,
   parsePaytoUri,
   CoreApiResponse,
+  createEddsaKeyPair,
+  eddsaGetPublic,
+  EddsaKeyPair,
+  encodeCrock,
+  getRandomBytes,
 } from "@gnu-taler/taler-util";
 import { CoinConfig } from "./denomStructures.js";
 
@@ -441,7 +441,7 @@ export async function pingProc(
       const resp = await axios.get(url);
       console.log(`service ${serviceName} available`);
       return;
-    } catch (e) {
+    } catch (e: any) {
       console.log(`service ${serviceName} not ready:`, e.toString());
       await delayMs(1000);
     }
@@ -1074,8 +1074,12 @@ export class ExchangeService implements ExchangeServiceInterface {
 
   async purgeSecmodKeys(): Promise<void> {
     const cfg = Configuration.load(this.configFilename);
-    const rsaKeydir = cfg.getPath("taler-exchange-secmod-rsa", "KEY_DIR").required();
-    const eddsaKeydir = cfg.getPath("taler-exchange-secmod-eddsa", "KEY_DIR").required();
+    const rsaKeydir = cfg
+      .getPath("taler-exchange-secmod-rsa", "KEY_DIR")
+      .required();
+    const eddsaKeydir = cfg
+      .getPath("taler-exchange-secmod-eddsa", "KEY_DIR")
+      .required();
     // Be *VERY* careful when changing this, or you will accidentally delete user data.
     await sh(this.globalState, "rm-secmod-keys", `rm -rf ${rsaKeydir}/COIN_*`);
     await sh(this.globalState, "rm-secmod-keys", `rm ${eddsaKeydir}/*`);
@@ -1119,11 +1123,7 @@ export class ExchangeService implements ExchangeServiceInterface {
 
     this.exchangeHttpProc = this.globalState.spawnService(
       "taler-exchange-httpd",
-      [
-        "-c",
-        this.configFilename,
-        ...this.timetravelArgArr,
-      ],
+      ["-c", this.configFilename, ...this.timetravelArgArr],
       `exchange-httpd-${this.name}`,
     );
 

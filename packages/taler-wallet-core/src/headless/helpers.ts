@@ -92,7 +92,7 @@ export async function getDefaultNodeWallet(
       });
       const dbContent = JSON.parse(dbContentStr);
       myBackend.importDump(dbContent);
-    } catch (e) {
+    } catch (e: any) {
       const code: string = e.code;
       if (code === "ENOENT") {
         logger.trace("wallet file doesn't exist yet");

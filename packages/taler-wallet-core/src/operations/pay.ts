@@ -54,7 +54,7 @@ import {
   URL,
   getDurationRemaining,
 } from "@gnu-taler/taler-util";
-import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto.js";
+import { encodeCrock, getRandomBytes } from "@gnu-taler/taler-util";
 import {
   PayCoinSelection,
   CoinCandidateSelection,

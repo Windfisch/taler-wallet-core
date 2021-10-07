@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { encodeCrock, getRandomBytes } from "../../crypto/talerCrypto.js";
+import { encodeCrock, getRandomBytes } from "@gnu-taler/taler-util";
 import {
   ConfigRecord,
   WalletBackupConfState,

@@ -14,8 +14,17 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-// Entry point for the browser.
+import { setPRNG } from "./nacl-fast.js";
+import cr from "crypto";
 
-import { loadBrowserPrng } from "./prng-browser.js";
-loadBrowserPrng();
-export * from "./index.js";
+export function initNodePrng() {
+  // Initialize PRNG if environment provides CSPRNG.
+  // If not, methods calling randombytes will throw.
+  if (cr && cr.randomBytes) {
+    setPRNG(function (x: Uint8Array, n: number) {
+      const v = cr.randomBytes(n);
+      for (let i = 0; i < n; i++) x[i] = v[i];
+      for (let i = 0; i < v.length; i++) v[i] = 0;
+    });
+  }
+}

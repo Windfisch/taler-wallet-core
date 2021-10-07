@@ -40,14 +40,14 @@ import {
   codecForString,
   Logger,
   Configuration,
+  decodeCrock,
+  rsaBlind,
 } from "@gnu-taler/taler-util";
 import {
   NodeHttpLib,
   getDefaultNodeWallet,
   OperationFailedAndReportedError,
   OperationFailedError,
-  decodeCrock,
-  rsaBlind,
   NodeThreadCryptoWorkerFactory,
   CryptoApi,
   walletCoreDebugFlags,
@@ -810,7 +810,7 @@ advancedCli
         coinPubList = coinPubListCodec.decode(
           JSON.parse(args.suspendCoins.coinPubSpec),
         );
-      } catch (e) {
+      } catch (e: any) {
         console.log("could not parse coin list:", e.message);
         process.exit(1);
       }
@@ -835,7 +835,7 @@ advancedCli
         coinPubList = coinPubListCodec.decode(
           JSON.parse(args.unsuspendCoins.coinPubSpec),
         );
-      } catch (e) {
+      } catch (e: any) {
         console.log("could not parse coin list:", e.message);
         process.exit(1);
       }

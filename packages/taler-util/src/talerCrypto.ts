@@ -21,9 +21,12 @@
 /**
  * Imports.
  */
-import * as nacl from "./primitives/nacl-fast.js";
+import * as nacl from "./nacl-fast.js";
+import { kdf } from "./kdf.js";
 import bigint from "big-integer";
-import { kdf } from "./primitives/kdf.js";
+import { initNodePrng } from "./prng-node.js";
+
+initNodePrng();
 
 export function getRandomBytes(n: number): Uint8Array {
   return nacl.randomBytes(n);

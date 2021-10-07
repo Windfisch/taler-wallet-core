@@ -32,7 +32,7 @@ import {
   TalerErrorCode,
   addPaytoQueryParams,
 } from "@gnu-taler/taler-util";
-import { randomBytes } from "../crypto/primitives/nacl-fast.js";
+import { randomBytes } from "@gnu-taler/taler-util";
 import {
   ReserveRecordStatus,
   ReserveBankInfo,
@@ -63,7 +63,7 @@ import {
   processWithdrawGroup,
   getBankWithdrawalInfo,
 } from "./withdraw.js";
-import { encodeCrock, getRandomBytes } from "../crypto/talerCrypto.js";
+import { encodeCrock, getRandomBytes } from "@gnu-taler/taler-util";
 import { Logger, URL } from "@gnu-taler/taler-util";
 import {
   readSuccessResponseJsonOrErrorCode,

@@ -14,8 +14,10 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-// Entry point for the browser.
+// Entry point for nodejs.
 
-import { loadBrowserPrng } from "./prng-browser.js";
-loadBrowserPrng();
+import { initNodePrng } from "./prng-node.js";
+initNodePrng();
 export * from "./index.js";
+export * from "./talerconfig.js";
+export * from "./globbing/minimatch.js";

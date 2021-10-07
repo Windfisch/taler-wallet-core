@@ -198,7 +198,7 @@ export async function readSuccessResponseJsonOrErrorCode<T>(
   let parsedResponse: T;
   try {
     parsedResponse = codec.decode(respJson);
-  } catch (e) {
+  } catch (e: any) {
     throw OperationFailedError.fromCode(
       TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
       "Response invalid",

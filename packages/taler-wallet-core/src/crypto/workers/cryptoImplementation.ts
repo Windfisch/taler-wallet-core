@@ -63,9 +63,9 @@ import {
   setupTipPlanchet,
   setupWithdrawPlanchet,
   eddsaGetPublic,
-} from "../talerCrypto.js";
-import { randomBytes } from "../primitives/nacl-fast.js";
-import { kdf } from "../primitives/kdf.js";
+} from "@gnu-taler/taler-util";
+import { randomBytes } from "@gnu-taler/taler-util";
+import { kdf } from "@gnu-taler/taler-util";
 import { Timestamp, timestampTruncateToSecond } from "@gnu-taler/taler-util";
 
 import { Logger } from "@gnu-taler/taler-util";
