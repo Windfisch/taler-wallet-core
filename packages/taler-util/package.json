@@ -7,7 +7,9 @@
   },
   "module": "./lib/index.node.js",
   "main": "./lib/index.node.js",
-  "browser": "./lib/index.browser.js",
+  "browser": {
+    "./lib/index.node.js": "./lib/index.browser.js"
+  },
   "type": "module",
   "types": "./lib/index.node.d.ts",
   "typesVersions": {

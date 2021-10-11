@@ -42,6 +42,7 @@ const browserEntryPoint = {
   external: builtins,
   plugins: [
     nodeResolve({
+      browser: true,
       preferBuiltins: true,
     }),
 
