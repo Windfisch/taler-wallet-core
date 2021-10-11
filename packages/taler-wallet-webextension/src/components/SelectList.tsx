@@ -19,7 +19,7 @@ import { NiceSelect } from "./styled/index";
 import { h } from "preact";
 
 interface Props {
-  value: string;
+  value?: string;
   onChange: (s: string) => void;
   label: string;
   list: {
@@ -41,9 +41,11 @@ export function SelectList({ name, value, list, canBeNull, onChange, label, desc
         console.log(e.currentTarget.value, value)
         onChange(e.currentTarget.value)
       }}>
-        <option selected>
+        {value !== undefined ? <option selected>
           {list[value]}
-        </option>
+        </option> : <option selected disabled>
+            Select one option
+        </option>}
         {Object.keys(list)
           .filter((l) => l !== value)
           .map(key => <option value={key} key={key}>{list[key]}</option>)

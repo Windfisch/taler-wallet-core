@@ -20,6 +20,7 @@ import { VNode, h } from "preact";
 import { Checkbox } from "../components/Checkbox";
 import { EditableText } from "../components/EditableText";
 import { SelectList } from "../components/SelectList";
+import { PopupBox } from "../components/styled";
 import { useDevContext } from "../context/devContext";
 import { useBackupDeviceName } from "../hooks/useBackupDeviceName";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
@@ -67,10 +68,10 @@ const names: LangsNames = {
 
 export function SettingsView({ lang, changeLang, deviceName, setDeviceName, permissionsEnabled, togglePermissions, developerMode, toggleDeveloperMode }: ViewProps): VNode {
   return (
-    <div>
-      <section style={{ height: 300, overflow: 'auto' }}>
-        <h2><i18n.Translate>Wallet</i18n.Translate></h2>
-        <SelectList
+    <PopupBox>
+      <section>
+        {/* <h2><i18n.Translate>Wallet</i18n.Translate></h2> */}
+        {/* <SelectList
           value={lang}
           onChange={changeLang}
           name="lang"
@@ -84,7 +85,7 @@ export function SettingsView({ lang, changeLang, deviceName, setDeviceName, perm
           name="device-id"
           label={i18n.str`Device name`}
           description="(This is how you will recognize the wallet in the backup provider)"
-        />
+        /> */}
         <h2><i18n.Translate>Permissions</i18n.Translate></h2>
         <Checkbox label="Automatically open wallet based on page content"
           name="perm"
@@ -98,6 +99,12 @@ export function SettingsView({ lang, changeLang, deviceName, setDeviceName, perm
           enabled={developerMode} onToggle={toggleDeveloperMode}
         />
       </section>
-    </div>
+      <footer style={{ justifyContent: 'space-around' }}>
+        <a target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: 'darkgreen', textDecoration: 'none' }}
+          href={chrome.extension ? chrome.extension.getURL(`/static/wallet.html#/settings`) : '#'}>VIEW MORE SETTINGS</a>
+      </footer>
+    </PopupBox>
   )
 }

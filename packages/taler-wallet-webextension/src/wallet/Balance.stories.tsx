@@ -35,14 +35,15 @@ export const NotYetLoaded = createExample(TestedComponent, {
 
 export const GotError = createExample(TestedComponent, {
   balance: {
-    error: true
+    hasError: true,
+    message: 'Network error'
   },
   Linker: NullLink,
 });
 
 export const EmptyBalance = createExample(TestedComponent, {
   balance: {
-    error: false,
+    hasError: false,
     response: {
       balances: []
     },
@@ -52,7 +53,7 @@ export const EmptyBalance = createExample(TestedComponent, {
 
 export const SomeCoins = createExample(TestedComponent, {
   balance: {
-    error: false,
+    hasError: false,
     response: {
       balances: [{
         available: 'USD:10.5',
@@ -68,7 +69,7 @@ export const SomeCoins = createExample(TestedComponent, {
 
 export const SomeCoinsAndIncomingMoney = createExample(TestedComponent, {
   balance: {
-    error: false,
+    hasError: false,
     response: {
       balances: [{
         available: 'USD:2.23',
@@ -84,7 +85,7 @@ export const SomeCoinsAndIncomingMoney = createExample(TestedComponent, {
 
 export const SomeCoinsInTwoCurrencies = createExample(TestedComponent, {
   balance: {
-    error: false,
+    hasError: false,
     response: {
       balances: [{
         available: 'USD:2',

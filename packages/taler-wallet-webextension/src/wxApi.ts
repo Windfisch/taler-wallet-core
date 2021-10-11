@@ -43,6 +43,7 @@ import {
   AcceptManualWithdrawalResult,
   AcceptManualWithdrawalRequest,
   AmountJson,
+  ExchangesListRespose,
 } from "@gnu-taler/taler-util";
 import { AddBackupProviderRequest, BackupProviderState, OperationFailedError, RemoveBackupProviderRequest } from "@gnu-taler/taler-wallet-core";
 import { BackupInfo } from "@gnu-taler/taler-wallet-core";
@@ -168,6 +169,10 @@ export function listKnownCurrencies(): Promise<ListOfKnownCurrencies> {
     }))
     return { auditors, exchanges }
   });
+}
+
+export function listExchanges(): Promise<ExchangesListRespose> {
+  return callBackend("listExchanges", {})
 }
 
 /**

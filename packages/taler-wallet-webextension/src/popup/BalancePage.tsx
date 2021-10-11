@@ -19,8 +19,9 @@ import {
   Balance, BalancesResponse,
   i18n
 } from "@gnu-taler/taler-util";
-import { JSX, h } from "preact";
-import { PopupBox, Centered, ButtonPrimary } from "../components/styled/index";
+import { JSX, h, Fragment } from "preact";
+import { ErrorMessage } from "../components/ErrorMessage";
+import { PopupBox, Centered, ButtonPrimary, ErrorBox, Middle } from "../components/styled/index";
 import { BalancesHook, useBalances } from "../hooks/useBalances";
 import { PageLink, renderAmount } from "../renderHtml";
 
@@ -34,34 +35,6 @@ export interface BalanceViewProps {
   Linker: typeof PageLink;
   goToWalletManualWithdraw: () => void;
 }
-export function BalanceView({ balance, Linker, goToWalletManualWithdraw }: BalanceViewProps) {
-  if (!balance) {
-    return <span />
-  }
-
-  if (balance.error) {
-    return (
-      <div>
-        <p>{i18n.str`Error: could not retrieve balance information.`}</p>
-        <p>
-          Click <Linker pageName="welcome">here</Linker> for help and
-          diagnostics.
-        </p>
-      </div>
-    )
-  }
-  if (balance.response.balances.length === 0) {
-    return (
-      <p><i18n.Translate>
-        You have no balance to show. Need some{" "}
-        <Linker pageName="/welcome">help</Linker> getting started?
-      </i18n.Translate></p>
-    )
-  }
-  return <ShowBalances wallet={balance.response}
-    onWithdraw={goToWalletManualWithdraw}
-  />
-}
 
 function formatPending(entry: Balance): JSX.Element {
   let incoming: JSX.Element | undefined;
@@ -74,11 +47,20 @@ function formatPending(entry: Balance): JSX.Element {
   if (!Amounts.isZero(pendingIncoming)) {
     incoming = (
       <span><i18n.Translate>
-        <span style={{ color: "darkgreen" }}>
+        <span style={{ color: "darkgreen" }} title="incoming amount">
           {"+"}
           {renderAmount(entry.pendingIncoming)}
         </span>{" "}
-        incoming
+      </i18n.Translate></span>
+    );
+  }
+  if (!Amounts.isZero(pendingOutgoing)) {
+    payment = (
+      <span><i18n.Translate>
+        <span style={{ color: "darkred" }} title="outgoing amount">
+          {"-"}
+          {renderAmount(entry.pendingOutgoing)}
+        </span>{" "}
       </i18n.Translate></span>
     );
   }
@@ -89,36 +71,85 @@ function formatPending(entry: Balance): JSX.Element {
   }
 
   if (l.length === 1) {
-    return <span>({l})</span>;
+    return <span>{l}</span>;
   }
   return (
     <span>
-      ({l[0]}, {l[1]})
+      {l[0]}, {l[1]}
     </span>
   );
 }
 
 
-function ShowBalances({ wallet, onWithdraw }: { wallet: BalancesResponse, onWithdraw: () => void }) {
-  return <PopupBox>
-    <section>
-      <Centered>{wallet.balances.map((entry) => {
+export function BalanceView({ balance, Linker, goToWalletManualWithdraw }: BalanceViewProps) {
+
+  function Content() {
+    if (!balance) {
+      return <span />
+    }
+
+    if (balance.hasError) {
+      return (<section>
+        <ErrorBox>{balance.message}</ErrorBox>
+        <p>
+          Click <Linker pageName="welcome">here</Linker> for help and
+          diagnostics.
+        </p>
+      </section>)
+    }
+    if (balance.response.balances.length === 0) {
+      return (<section data-expanded>
+        <Middle>
+          <p><i18n.Translate>
+            You have no balance to show. Need some{" "}
+            <Linker pageName="/welcome">help</Linker> getting started?
+          </i18n.Translate></p>
+        </Middle>
+      </section>)
+    }
+    return <section data-expanded data-centered>
+      <table style={{width:'100%'}}>{balance.response.balances.map((entry) => {
         const av = Amounts.parseOrThrow(entry.available);
-        const v = av.value + av.fraction / amountFractionalBase;
-        return (
-          <p key={av.currency}>
-            <span>
-              <span style={{ fontSize: "5em", display: "block" }}>{v}</span>{" "}
-              <span>{av.currency}</span>
-            </span>
-            {formatPending(entry)}
-          </p>
+        // Create our number formatter.
+        let formatter;
+        try {
+          formatter = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: av.currency,
+            currencyDisplay: 'symbol'
+            // These options are needed to round to whole numbers if that's what you want.
+            //minimumFractionDigits: 0, // (this suffices for whole numbers, but will print 2500.10 as $2,500.1)
+            //maximumFractionDigits: 0, // (causes 2500.99 to be printed as $2,501)
+          });
+        } catch {
+          formatter = new Intl.NumberFormat('en-US', {
+            // style: 'currency',
+            // currency: av.currency,
+            // These options are needed to round to whole numbers if that's what you want.
+            //minimumFractionDigits: 0, // (this suffices for whole numbers, but will print 2500.10 as $2,500.1)
+            //maximumFractionDigits: 0, // (causes 2500.99 to be printed as $2,501)
+          });
+        }
+
+        const v = formatter.format(av.value + av.fraction / amountFractionalBase);
+        const fontSize = v.length < 8 ? '3em' : (v.length < 13 ? '2em' : '1em')
+        return (<tr>
+          <td style={{ height: 50, fontSize, width: '60%', textAlign: 'right', padding: 0 }}>{v}</td>
+          <td style={{ maxWidth: '2em', overflowX: 'hidden' }}>{av.currency}</td>
+          <td style={{ fontSize: 'small', color: 'gray' }}>{formatPending(entry)}</td>
+        </tr>
         );
-      })}</Centered>
+      })}</table>
     </section>
+  }
+
+  return <PopupBox>
+    {/* <section> */}
+    <Content />
+    {/* </section> */}
     <footer>
       <div />
-      <ButtonPrimary onClick={onWithdraw} >Withdraw</ButtonPrimary>
+      <ButtonPrimary onClick={goToWalletManualWithdraw}>Withdraw</ButtonPrimary>
     </footer>
   </PopupBox>
 }

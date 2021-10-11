@@ -41,7 +41,7 @@ export function BalanceView({ balance, Linker, goToWalletManualWithdraw }: Balan
     return <span />
   }
 
-  if (balance.error) {
+  if (balance.hasError) {
     return (
       <div>
         <p>{i18n.str`Error: could not retrieve balance information.`}</p>

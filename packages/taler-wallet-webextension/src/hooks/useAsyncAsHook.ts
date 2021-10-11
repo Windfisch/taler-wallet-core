@@ -13,39 +13,36 @@
  You should have received a copy of the GNU General Public License along with
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-
-import { BalancesResponse } from "@gnu-taler/taler-util";
+import { ExchangesListRespose } from "@gnu-taler/taler-util";
 import { useEffect, useState } from "preact/hooks";
 import * as wxApi from "../wxApi";
 
-
-interface BalancesHookOk {
-  error: false;
-  response: BalancesResponse;
+interface HookOk<T> {
+  hasError: false;
+  response: T;
 }
 
-interface BalancesHookError {
-  error: true;
+interface HookError {
+  hasError: true;
+  message: string;
 }
 
-export type BalancesHook = BalancesHookOk | BalancesHookError | undefined;
+export type HookResponse<T> = HookOk<T> | HookError | undefined;
 
-export function useBalances(): BalancesHook {
-  const [balance, setBalance] = useState<BalancesHook>(undefined);
+export function useAsyncAsHook<T> (fn: (() => Promise<T>)): HookResponse<T> {
+  const [result, setHookResponse] = useState<HookResponse<T>>(undefined);
   useEffect(() => {
-    async function checkBalance() {
+    async function doAsync() {
       try {
-        const response = await wxApi.getBalance();
-        console.log("got balance", balance);
-        setBalance({ error: false, response });
+        const response = await fn();
+        setHookResponse({ hasError: false, response });
       } catch (e) {
-        console.error("could not retrieve balances", e);
-        setBalance({ error: true });
+        if (e instanceof Error) {
+          setHookResponse({ hasError: true, message: e.message });
+        }
       }
     }
-    checkBalance()
-    return wxApi.onUpdateNotification(checkBalance);
+    doAsync()
   }, []);
-
-  return balance;
+  return result;
 }

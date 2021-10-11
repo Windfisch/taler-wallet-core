@@ -88,7 +88,7 @@ export function PayPage({ talerPayUri }: Props): JSX.Element {
   const [payErrMsg, setPayErrMsg] = useState<string | undefined>(undefined);
 
   const balance = useBalances()
-  const balanceWithoutError = balance?.error ? [] : (balance?.response.balances || [])
+  const balanceWithoutError = balance?.hasError ? [] : (balance?.response.balances || [])
 
   const foundBalance = balanceWithoutError.find(b => payStatus && Amounts.parseOrThrow(b.available).currency === Amounts.parseOrThrow(payStatus?.amountRaw).currency)
   const foundAmount = foundBalance ? Amounts.parseOrThrow(foundBalance.available) : undefined
@@ -143,17 +143,21 @@ export function PayPage({ talerPayUri }: Props): JSX.Element {
 
   }
 
-  return <PaymentRequestView uri={talerPayUri} payStatus={payStatus} onClick={onClick} payErrMsg={payErrMsg} balance={foundAmount} />;
+  return <PaymentRequestView uri={talerPayUri}
+    payStatus={payStatus} payResult={payResult}
+    onClick={onClick} payErrMsg={payErrMsg}
+    balance={foundAmount} />;
 }
 
 export interface PaymentRequestViewProps {
   payStatus: PreparePayResult;
+  payResult?: ConfirmPayResult;
   onClick: () => void;
   payErrMsg?: string;
   uri: string;
   balance: AmountJson | undefined;
 }
-export function PaymentRequestView({ uri, payStatus, onClick, payErrMsg, balance }: PaymentRequestViewProps) {
+export function PaymentRequestView({ uri, payStatus, payResult, onClick, payErrMsg, balance }: PaymentRequestViewProps) {
   let totalFees: AmountJson = Amounts.getZero(payStatus.amountRaw);
   const contractTerms: ContractTerms = payStatus.contractTerms;
 
@@ -195,6 +199,16 @@ export function PaymentRequestView({ uri, payStatus, onClick, payErrMsg, balance
   }
 
   function ButtonsSection() {
+    if (payResult) {
+      if (payResult.type === ConfirmPayResultType.Pending) {
+        return <section>
+          <div>
+            <p>Processing...</p>
+          </div>
+        </section>
+      }
+      return null
+    }
     if (payErrMsg) {
       return <section>
         <div>
@@ -208,7 +222,7 @@ export function PaymentRequestView({ uri, payStatus, onClick, payErrMsg, balance
     if (payStatus.status === PreparePayResultType.PaymentPossible) {
       return <Fragment>
         <section>
-          <ButtonSuccess upperCased>
+          <ButtonSuccess upperCased onClick={onClick}>
             {i18n.str`Pay`} {amountToString(payStatus.amountEffective)}
           </ButtonSuccess>
         </section>
@@ -252,6 +266,15 @@ export function PaymentRequestView({ uri, payStatus, onClick, payErrMsg, balance
     {payStatus.status === PreparePayResultType.AlreadyConfirmed &&
       (payStatus.paid ? <SuccessBox> Already paid </SuccessBox> : <WarningBox> Already claimed </WarningBox>)
     }
+    {payResult && payResult.type === ConfirmPayResultType.Done && (
+      <SuccessBox>
+        <h3>Payment complete</h3>
+        <p>{!payResult.contractTerms.fulfillment_message ?
+          "You will now be sent back to the merchant you came from." :
+          payResult.contractTerms.fulfillment_message
+        }</p>
+      </SuccessBox>
+    )}
     <section>
       {payStatus.status !== PreparePayResultType.InsufficientBalance && Amounts.isNonZero(totalFees) &&
         <Part big title="Total to pay" text={amountToString(payStatus.amountEffective)} kind='negative' />

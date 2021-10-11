@@ -29,7 +29,7 @@ export function HistoryPage(props: any): JSX.Element {
     TransactionsResponse | undefined
   >(undefined);
   const balance = useBalances()
-  const balanceWithoutError = balance?.error ? [] : (balance?.response.balances || [])
+  const balanceWithoutError = balance?.hasError ? [] : (balance?.response.balances || [])
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {

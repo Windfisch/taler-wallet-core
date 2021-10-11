@@ -15,23 +15,29 @@
 */
 
 
-import { i18n } from "@gnu-taler/taler-util";
-import { VNode, h } from "preact";
+import { ExchangeListItem, i18n } from "@gnu-taler/taler-util";
+import { VNode, h, Fragment } from "preact";
 import { Checkbox } from "../components/Checkbox";
 import { EditableText } from "../components/EditableText";
 import { SelectList } from "../components/SelectList";
+import { ButtonPrimary, ButtonSuccess, WalletBox } from "../components/styled";
 import { useDevContext } from "../context/devContext";
 import { useBackupDeviceName } from "../hooks/useBackupDeviceName";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { useLang } from "../hooks/useLang";
+import * as wxApi from "../wxApi";
 
 export function SettingsPage(): VNode {
   const [permissionsEnabled, togglePermissions] = useExtendedPermissions();
   const { devMode, toggleDevMode } = useDevContext()
   const { name, update } = useBackupDeviceName()
   const [lang, changeLang] = useLang()
+  const exchangesHook = useAsyncAsHook(() => wxApi.listExchanges());
+
   return <SettingsView
     lang={lang} changeLang={changeLang}
+    knownExchanges={!exchangesHook || exchangesHook.hasError ? [] : exchangesHook.response.exchanges}
     deviceName={name} setDeviceName={update}
     permissionsEnabled={permissionsEnabled} togglePermissions={togglePermissions}
     developerMode={devMode} toggleDeveloperMode={toggleDevMode}
@@ -47,6 +53,7 @@ export interface ViewProps {
   togglePermissions: () => void;
   developerMode: boolean;
   toggleDeveloperMode: () => void;
+  knownExchanges: Array<ExchangeListItem>;
 }
 
 import { strings as messages } from '../i18n/strings'
@@ -65,26 +72,24 @@ const names: LangsNames = {
 }
 
 
-export function SettingsView({ lang, changeLang, deviceName, setDeviceName, permissionsEnabled, togglePermissions, developerMode, toggleDeveloperMode }: ViewProps): VNode {
+export function SettingsView({ knownExchanges, lang, changeLang, deviceName, setDeviceName, permissionsEnabled, togglePermissions, developerMode, toggleDeveloperMode }: ViewProps): VNode {
   return (
-    <div>
-      <section style={{ height: 300, overflow: 'auto' }}>
-        <h2><i18n.Translate>Wallet</i18n.Translate></h2>
-        <SelectList
-          value={lang}
-          onChange={changeLang}
-          name="lang"
-          list={names}
-          label={i18n.str`Language`}
-          description="(Choose your preferred lang)"
-        />
-        <EditableText
-          value={deviceName}
-          onChange={setDeviceName}
-          name="device-id"
-          label={i18n.str`Device name`}
-          description="(This is how you will recognize the wallet in the backup provider)"
-        />
+    <WalletBox>
+      <section>
+
+        <h2><i18n.Translate>Known exchanges</i18n.Translate></h2>
+        {!knownExchanges || !knownExchanges.length ? <div>
+          No exchange yet!
+        </div> :
+          <dl>
+            {knownExchanges.map(e => <Fragment>
+              <dt>{e.currency}</dt>
+              <dd>{e.exchangeBaseUrl}</dd>
+              <dd>{e.paytoUris}</dd>
+            </Fragment>)}
+          </dl>
+        }
+        <ButtonPrimary>add exchange</ButtonPrimary>
         <h2><i18n.Translate>Permissions</i18n.Translate></h2>
         <Checkbox label="Automatically open wallet based on page content"
           name="perm"
@@ -98,6 +103,6 @@ export function SettingsView({ lang, changeLang, deviceName, setDeviceName, perm
           enabled={developerMode} onToggle={toggleDeveloperMode}
         />
       </section>
-    </div>
+    </WalletBox>
   )
 }

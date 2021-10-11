@@ -31,6 +31,7 @@ export default {
   title: 'cta/withdraw',
   component: TestedComponent,
   argTypes: {
+    onSwitchExchange: { action: 'onRetry' },
   },
 };
 
@@ -381,6 +382,15 @@ const termsXml = `<?xml version="1.0" encoding="utf-8"?>
 `;
 
 export const WithdrawNewTermsXML = createExample(TestedComponent, {
+  knownExchanges: [{
+    currency: 'USD',
+    exchangeBaseUrl: 'exchange.demo.taler.net',
+    paytoUris: ['asd'],
+  },{
+    currency: 'USD',
+    exchangeBaseUrl: 'exchange.test.taler.net',
+    paytoUris: ['asd'],
+  }],
   details: {
     exchangeInfo: {
       baseUrl: 'exchange.demo.taler.net'
@@ -391,9 +401,15 @@ export const WithdrawNewTermsXML = createExample(TestedComponent, {
       value: 0
     },
   } as ExchangeWithdrawDetails,
-  amount: 'USD:2',
+  amount: {
+    currency: 'USD',
+    value: 2,
+    fraction: 10000000
+  },
+
+  onSwitchExchange: async () => { },
   terms: {
-    value : {
+    value: {
       type: 'xml',
       document: new DOMParser().parseFromString(termsXml, "text/xml"),
     },
@@ -402,6 +418,15 @@ export const WithdrawNewTermsXML = createExample(TestedComponent, {
 })
 
 export const WithdrawNewTermsReviewingXML = createExample(TestedComponent, {
+  knownExchanges: [{
+    currency: 'USD',
+    exchangeBaseUrl: 'exchange.demo.taler.net',
+    paytoUris: ['asd'],
+  },{
+    currency: 'USD',
+    exchangeBaseUrl: 'exchange.test.taler.net',
+    paytoUris: ['asd'],
+  }],
   details: {
     exchangeInfo: {
       baseUrl: 'exchange.demo.taler.net'
@@ -412,9 +437,15 @@ export const WithdrawNewTermsReviewingXML = createExample(TestedComponent, {
       value: 0
     },
   } as ExchangeWithdrawDetails,
-  amount: 'USD:2',
+  amount: {
+    currency: 'USD',
+    value: 2,
+    fraction: 10000000
+  },
+
+  onSwitchExchange: async () => { },
   terms: {
-    value : {
+    value: {
       type: 'xml',
       document: new DOMParser().parseFromString(termsXml, "text/xml"),
     },
@@ -424,6 +455,15 @@ export const WithdrawNewTermsReviewingXML = createExample(TestedComponent, {
 })
 
 export const WithdrawNewTermsAcceptedXML = createExample(TestedComponent, {
+  knownExchanges: [{
+    currency: 'USD',
+    exchangeBaseUrl: 'exchange.demo.taler.net',
+    paytoUris: ['asd'],
+  },{
+    currency: 'USD',
+    exchangeBaseUrl: 'exchange.test.taler.net',
+    paytoUris: ['asd'],
+  }],
   details: {
     exchangeInfo: {
       baseUrl: 'exchange.demo.taler.net'
@@ -434,9 +474,14 @@ export const WithdrawNewTermsAcceptedXML = createExample(TestedComponent, {
       value: 0
     },
   } as ExchangeWithdrawDetails,
-  amount: 'USD:2',
+  amount: {
+    currency: 'USD',
+    value: 2,
+    fraction: 10000000
+  },
+  onSwitchExchange: async () => { },
   terms: {
-    value : {
+    value: {
       type: 'xml',
       document: new DOMParser().parseFromString(termsXml, "text/xml"),
     },
@@ -446,6 +491,15 @@ export const WithdrawNewTermsAcceptedXML = createExample(TestedComponent, {
 })
 
 export const WithdrawNewTermsShowAfterAcceptedXML = createExample(TestedComponent, {
+  knownExchanges: [{
+    currency: 'USD',
+    exchangeBaseUrl: 'exchange.demo.taler.net',
+    paytoUris: ['asd'],
+  },{
+    currency: 'USD',
+    exchangeBaseUrl: 'exchange.test.taler.net',
+    paytoUris: ['asd'],
+  }],
   details: {
     exchangeInfo: {
       baseUrl: 'exchange.demo.taler.net'
@@ -456,9 +510,15 @@ export const WithdrawNewTermsShowAfterAcceptedXML = createExample(TestedComponen
       value: 0
     },
   } as ExchangeWithdrawDetails,
-  amount: 'USD:2',
+  amount: {
+    currency: 'USD',
+    value: 2,
+    fraction: 10000000
+  },
+
+  onSwitchExchange: async () => { },
   terms: {
-    value : {
+    value: {
       type: 'xml',
       document: new DOMParser().parseFromString(termsXml, "text/xml"),
     },
@@ -469,6 +529,15 @@ export const WithdrawNewTermsShowAfterAcceptedXML = createExample(TestedComponen
 })
 
 export const WithdrawChangedTermsXML = createExample(TestedComponent, {
+  knownExchanges: [{
+    currency: 'USD',
+    exchangeBaseUrl: 'exchange.demo.taler.net',
+    paytoUris: ['asd'],
+  },{
+    currency: 'USD',
+    exchangeBaseUrl: 'exchange.test.taler.net',
+    paytoUris: ['asd'],
+  }],
   details: {
     exchangeInfo: {
       baseUrl: 'exchange.demo.taler.net'
@@ -479,9 +548,15 @@ export const WithdrawChangedTermsXML = createExample(TestedComponent, {
       value: 0
     },
   } as ExchangeWithdrawDetails,
-  amount: 'USD:2',
+  amount: {
+    currency: 'USD',
+    value: 2,
+    fraction: 10000000
+  },
+
+  onSwitchExchange: async () => { },
   terms: {
-    value : {
+    value: {
       type: 'xml',
       document: new DOMParser().parseFromString(termsXml, "text/xml"),
     },
@@ -490,6 +565,15 @@ export const WithdrawChangedTermsXML = createExample(TestedComponent, {
 })
 
 export const WithdrawNotFoundTermsXML = createExample(TestedComponent, {
+  knownExchanges: [{
+    currency: 'USD',
+    exchangeBaseUrl: 'exchange.demo.taler.net',
+    paytoUris: ['asd'],
+  },{
+    currency: 'USD',
+    exchangeBaseUrl: 'exchange.test.taler.net',
+    paytoUris: ['asd'],
+  }],
   details: {
     exchangeInfo: {
       baseUrl: 'exchange.demo.taler.net'
@@ -500,13 +584,28 @@ export const WithdrawNotFoundTermsXML = createExample(TestedComponent, {
       value: 0
     },
   } as ExchangeWithdrawDetails,
-  amount: 'USD:2',
+  amount: {
+    currency: 'USD',
+    value: 2,
+    fraction: 10000000
+  },
+
+  onSwitchExchange: async () => { },
   terms: {
     status: 'notfound'
   },
 })
 
 export const WithdrawAcceptedTermsXML = createExample(TestedComponent, {
+  knownExchanges: [{
+    currency: 'USD',
+    exchangeBaseUrl: 'exchange.demo.taler.net',
+    paytoUris: ['asd'],
+  },{
+    currency: 'USD',
+    exchangeBaseUrl: 'exchange.test.taler.net',
+    paytoUris: ['asd'],
+  }],
   details: {
     exchangeInfo: {
       baseUrl: 'exchange.demo.taler.net'
@@ -517,7 +616,13 @@ export const WithdrawAcceptedTermsXML = createExample(TestedComponent, {
       value: 0
     },
   } as ExchangeWithdrawDetails,
-  amount: 'USD:2',
+  amount: {
+    currency: 'USD',
+    value: 2,
+    fraction: 10000000
+  },
+
+  onSwitchExchange: async () => { },
   terms: {
     status: 'accepted'
   },
@@ -525,6 +630,15 @@ export const WithdrawAcceptedTermsXML = createExample(TestedComponent, {
 
 
 export const WithdrawAcceptedTermsWithoutFee = createExample(TestedComponent, {
+  knownExchanges: [{
+    currency: 'USD',
+    exchangeBaseUrl: 'exchange.demo.taler.net',
+    paytoUris: ['asd'],
+  },{
+    currency: 'USD',
+    exchangeBaseUrl: 'exchange.test.taler.net',
+    paytoUris: ['asd'],
+  }],
   details: {
     exchangeInfo: {
       baseUrl: 'exchange.demo.taler.net'
@@ -535,9 +649,15 @@ export const WithdrawAcceptedTermsWithoutFee = createExample(TestedComponent, {
       value: 0
     },
   } as ExchangeWithdrawDetails,
-  amount: 'USD:2',
+  amount: {
+    currency: 'USD',
+    value: 2,
+    fraction: 10000000
+  },
+
+  onSwitchExchange: async () => { },
   terms: {
-    value : {
+    value: {
       type: 'xml',
       document: new DOMParser().parseFromString(termsXml, "text/xml"),
     },

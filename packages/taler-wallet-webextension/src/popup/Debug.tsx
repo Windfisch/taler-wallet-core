@@ -28,7 +28,6 @@ export function DeveloperPage(props: any): JSX.Element {
       <button onClick={openExtensionPage("/static/popup.html")}>wallet tab</button>
       <br />
       <button onClick={confirmReset}>reset</button>
-      <button onClick={reload}>reload chrome extension</button>
       <Diagnostics diagnostics={status} timedOut={timedOut} />
     </div>
   );

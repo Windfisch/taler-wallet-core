@@ -129,6 +129,12 @@ export const WalletBox = styled.div<{ noPadding?: boolean }>`
     }
   }
 `
+export const Middle = styled.div`
+    justify-content: space-around;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+`
 
 export const PopupBox = styled.div<{ noPadding?: boolean }>`
   height: 290px;
@@ -138,11 +144,10 @@ export const PopupBox = styled.div<{ noPadding?: boolean }>`
   justify-content: space-between;
 
   & > section {
-    padding-left: ${({ noPadding }) => noPadding ? '0px' : '8px'};
-    padding-right: ${({ noPadding }) => noPadding ? '0px' : '8px'};
+    padding: ${({ noPadding }) => noPadding ? '0px' : '8px'};
     // this margin will send the section up when used with a header
     margin-bottom: auto; 
-    overflow: auto;
+    overflow-y: auto;
 
     table td {
       padding: 5px 10px;
@@ -151,6 +156,16 @@ export const PopupBox = styled.div<{ noPadding?: boolean }>`
       border-bottom: 1px solid black;
       border-top: 1px solid black;
     }
+  }
+
+  & > section[data-expanded] {
+    height: 100%;
+  }
+
+  & > section[data-centered] {
+    justify-content: center;
+    display: flex;
+    /* flex-direction: column; */
   }
 
   & > header {
@@ -596,7 +611,7 @@ export const NiceSelect = styled.div`
 
   position: relative;
   display: flex;
-  width: 10em;
+  /* width: 10em; */
   overflow: hidden;
   border-radius: .25em;
 
