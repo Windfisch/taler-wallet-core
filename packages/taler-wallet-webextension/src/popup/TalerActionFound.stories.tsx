@@ -20,34 +20,33 @@
 */
 
 import { createExample } from '../test-utils';
-import { SettingsView as TestedComponent } from './Settings';
+import { TalerActionFound as TestedComponent } from './TalerActionFound';
 
 export default {
-  title: 'wallet/settings',
+  title: 'popup/TalerActionFound',
   component: TestedComponent,
-  argTypes: {
-    setDeviceName: () => Promise.resolve(),
-  }
 };
 
-export const AllOff = createExample(TestedComponent, {
-  deviceName: 'this-is-the-device-name',
-  setDeviceName: () => Promise.resolve(),
+export const PayAction = createExample(TestedComponent, {
+  url: 'taler://pay/something'
 });
 
-export const OneChecked = createExample(TestedComponent, {
-  deviceName: 'this-is-the-device-name',
-  permissionsEnabled: true,
-  setDeviceName: () => Promise.resolve(),
+export const WithdrawalAction = createExample(TestedComponent, {
+  url: 'taler://withdraw/something'
 });
 
-export const WithOneExchange = createExample(TestedComponent, {
-  deviceName: 'this-is-the-device-name',
-  permissionsEnabled: true,
-  setDeviceName: () => Promise.resolve(),
-  knownExchanges: [{
-    currency: 'USD',
-    exchangeBaseUrl: 'http://exchange.taler',
-    paytoUris: ['payto://x-taler-bank/bank.rpi.sebasjm.com/exchangeminator']
-  }]
+export const TipAction = createExample(TestedComponent, {
+  url: 'taler://tip/something'
+});
+
+export const NotifyAction = createExample(TestedComponent, {
+  url: 'taler://notify-reserve/something'
+});
+
+export const RefundAction = createExample(TestedComponent, {
+  url: 'taler://refund/something'
+});
+
+export const InvalidAction = createExample(TestedComponent, {
+  url: 'taler://something/asd'
 });

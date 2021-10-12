@@ -49,7 +49,7 @@ export interface ViewProps {
   onReview: (b: boolean) => void;
   onAccept: (b: boolean) => void;
   reviewing: boolean;
-  accepted: boolean;
+  reviewed: boolean;
   confirmed: boolean;
   terms: {
     value?: TermsDocument;
@@ -61,7 +61,7 @@ export interface ViewProps {
 
 type TermsStatus = 'new' | 'accepted' | 'changed' | 'notfound';
 
-type TermsDocument = TermsDocumentXml | TermsDocumentHtml;
+type TermsDocument = TermsDocumentXml | TermsDocumentHtml | TermsDocumentPlain | TermsDocumentJson | TermsDocumentPdf;
 
 interface TermsDocumentXml {
   type: 'xml',
@@ -70,7 +70,22 @@ interface TermsDocumentXml {
 
 interface TermsDocumentHtml {
   type: 'html',
-  href: string,
+  href: URL,
+}
+
+interface TermsDocumentPlain {
+  type: 'plain',
+  content: string,
+}
+
+interface TermsDocumentJson {
+  type: 'json',
+  data: any,
+}
+
+interface TermsDocumentPdf {
+  type: 'pdf',
+  location: URL,
 }
 
 function amountToString(text: AmountJson) {
@@ -79,7 +94,7 @@ function amountToString(text: AmountJson) {
   return `${amount} ${aj.currency}`
 }
 
-export function View({ details, knownExchanges, amount, onWithdraw, onSwitchExchange, terms, reviewing, onReview, onAccept, accepted, confirmed }: ViewProps) {
+export function View({ details, knownExchanges, amount, onWithdraw, onSwitchExchange, terms, reviewing, onReview, onAccept, reviewed, confirmed }: ViewProps) {
   const needsReview = terms.status === 'changed' || terms.status === 'new'
 
   const [switchingExchange, setSwitchingExchange] = useState<string | undefined>(undefined)
@@ -105,9 +120,6 @@ export function View({ details, knownExchanges, amount, onWithdraw, onSwitchExch
             <div>
               <SelectList label="Known exchanges" list={exchanges} name="" onChange={onSwitchExchange} />
             </div>
-            <p>
-              This is the list of known exchanges
-            </p>
             <LinkSuccess upperCased onClick={() => onSwitchExchange(switchingExchange)}>
               {i18n.str`Confirm exchange selection`}
             </LinkSuccess>
@@ -118,7 +130,7 @@ export function View({ details, knownExchanges, amount, onWithdraw, onSwitchExch
 
         </section>
       }
-      {!reviewing && accepted &&
+      {!reviewing && reviewed &&
         <section>
           <LinkSuccess
             upperCased
@@ -130,11 +142,24 @@ export function View({ details, knownExchanges, amount, onWithdraw, onSwitchExch
       }
       {reviewing &&
         <section>
-          <TermsOfService>
-            {terms.status !== 'accepted' && terms.value && terms.value.type === 'xml' && <ExchangeXmlTos doc={terms.value.document} />}
-          </TermsOfService>
+          {terms.status !== 'accepted' && terms.value && terms.value.type === 'xml' &&
+            <TermsOfService>
+              <ExchangeXmlTos doc={terms.value.document} />
+            </TermsOfService>
+          }
+          {terms.status !== 'accepted' && terms.value && terms.value.type === 'plain' &&
+            <div style={{ textAlign: 'left' }}>
+              <pre>{terms.value.content}</pre>
+            </div>
+          }
+          {terms.status !== 'accepted' && terms.value && terms.value.type === 'html' &&
+            <iframe src={terms.value.href.toString()} />
+          }
+          {terms.status !== 'accepted' && terms.value && terms.value.type === 'pdf' &&
+            <a href={terms.value.location.toString()} download="tos.pdf" >Download Terms of Service</a>
+          }
         </section>}
-      {reviewing && accepted &&
+      {reviewing && reviewed &&
         <section>
           <LinkSuccess
             upperCased
@@ -144,14 +169,14 @@ export function View({ details, knownExchanges, amount, onWithdraw, onSwitchExch
           </LinkSuccess>
         </section>
       }
-      {(reviewing || accepted) &&
+      {(reviewing || reviewed) &&
         <section>
           <CheckboxOutlined
             name="terms"
-            enabled={accepted}
+            enabled={reviewed}
             label={i18n.str`I accept the exchange terms of service`}
             onToggle={() => {
-              onAccept(!accepted)
+              onAccept(!reviewed)
               onReview(false)
             }}
           />
@@ -162,7 +187,7 @@ export function View({ details, knownExchanges, amount, onWithdraw, onSwitchExch
        * Main action section
        */}
       <section>
-        {terms.status === 'new' && !accepted && !reviewing &&
+        {terms.status === 'new' && !reviewed && !reviewing &&
           <ButtonSuccess
             upperCased
             disabled={!details.exchangeInfo.baseUrl}
@@ -171,7 +196,7 @@ export function View({ details, knownExchanges, amount, onWithdraw, onSwitchExch
             {i18n.str`Review exchange terms of service`}
           </ButtonSuccess>
         }
-        {terms.status === 'changed' && !accepted &&
+        {terms.status === 'changed' && !reviewed && !reviewing &&
           <ButtonWarning
             upperCased
             disabled={!details.exchangeInfo.baseUrl}
@@ -180,7 +205,7 @@ export function View({ details, knownExchanges, amount, onWithdraw, onSwitchExch
             {i18n.str`Review new version of terms of service`}
           </ButtonWarning>
         }
-        {(terms.status === 'accepted' || (needsReview && accepted)) &&
+        {(terms.status === 'accepted' || (needsReview && reviewed)) &&
           <ButtonSuccess
             upperCased
             disabled={!details.exchangeInfo.baseUrl || confirmed}
@@ -204,7 +229,7 @@ export function WithdrawPageWithParsedURI({ uri, uriInfo }: { uri: string, uriIn
   const [errorAccepting, setErrorAccepting] = useState<string | undefined>(undefined)
 
   const [reviewing, setReviewing] = useState<boolean>(false)
-  const [accepted, setAccepted] = useState<boolean>(false)
+  const [reviewed, setReviewed] = useState<boolean>(false)
   const [confirmed, setConfirmed] = useState<boolean>(false)
 
   const knownExchangesHook = useAsyncAsHook(() => listExchanges())
@@ -219,7 +244,7 @@ export function WithdrawPageWithParsedURI({ uri, uriInfo }: { uri: string, uriIn
     return getExchangeWithdrawalInfo({
       exchangeBaseUrl: exchange,
       amount: withdrawAmount,
-      tosAcceptedFormat: ['text/json', 'text/xml', 'text/pdf']
+      tosAcceptedFormat: ['text/xml']
     })
   })
 
@@ -235,7 +260,7 @@ export function WithdrawPageWithParsedURI({ uri, uriInfo }: { uri: string, uriIn
   const onAccept = async (): Promise<void> => {
     try {
       await setExchangeTosAccepted(details.exchangeInfo.baseUrl, details.tosRequested?.tosEtag)
-      setAccepted(true)
+      setReviewed(true)
     } catch (e) {
       if (e instanceof Error) {
         setErrorAccepting(e.message)
@@ -257,18 +282,7 @@ export function WithdrawPageWithParsedURI({ uri, uriInfo }: { uri: string, uriIn
     }
   };
 
-  let termsContent: TermsDocument | undefined = undefined;
-  if (details.tosRequested) {
-    if (details.tosRequested.tosContentType === 'text/xml') {
-      try {
-        const document = new DOMParser().parseFromString(details.tosRequested.tosText, "text/xml")
-        termsContent = { type: 'xml', document }
-      } catch (e) {
-        console.log(e)
-        debugger;
-      }
-    }
-  }
+  const termsContent: TermsDocument | undefined = !details.tosRequested ? undefined : parseTermsOfServiceContent(details.tosRequested.tosContentType, details.tosRequested.tosText);
 
   const status: TermsStatus = !termsContent ? 'notfound' : (
     !details.exchangeDetails.termsOfServiceAcceptedEtag ? 'new' : (
@@ -285,7 +299,7 @@ export function WithdrawPageWithParsedURI({ uri, uriInfo }: { uri: string, uriIn
     onSwitchExchange={setCustomExchange}
     knownExchanges={knownExchanges}
     confirmed={confirmed}
-    accepted={accepted} onAccept={onAccept}
+    reviewed={reviewed} onAccept={onAccept}
     reviewing={reviewing} onReview={setReviewing}
   // terms={[]}
   />
@@ -305,5 +319,50 @@ export function WithdrawPage({ talerWithdrawUri }: Props): JSX.Element {
     return <span><i18n.Translate>This URI is not valid anymore: {uriInfoHook.message}</i18n.Translate></span>;
   }
   return <WithdrawPageWithParsedURI uri={talerWithdrawUri} uriInfo={uriInfoHook.response} />
+}
+
+function parseTermsOfServiceContent(type: string, text: string): TermsDocument | undefined {
+  if (type === 'text/xml') {
+    try {
+      const document = new DOMParser().parseFromString(text, "text/xml")
+      return { type: 'xml', document }
+    } catch (e) {
+      console.log(e)
+      debugger;
+    }
+  } else if (type === 'text/html') {
+    try {
+      const href = new URL(text)
+      return { type: 'html', href }
+    } catch (e) {
+      console.log(e)
+      debugger;
+    }
+  } else if (type === 'text/json') {
+    try {
+      const data = JSON.parse(text)
+      return { type: 'json', data }
+    } catch (e) {
+      console.log(e)
+      debugger;
+    }
+  } else if (type === 'text/pdf') {
+    try {
+      const location = new URL(text)
+      return { type: 'pdf', location }
+    } catch (e) {
+      console.log(e)
+      debugger;
+    }
+  } else if (type === 'text/plain') {
+    try {
+      const content = text
+      return { type: 'plain', content }
+    } catch (e) {
+      console.log(e)
+      debugger;
+    }
+  }
+  return undefined
 }
 

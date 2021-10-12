@@ -38,6 +38,7 @@ import {
 import { ProviderAddPage } from "./popup/ProviderAddPage";
 import { ProviderDetailPage } from "./popup/ProviderDetailPage";
 import { SettingsPage } from "./popup/Settings";
+import { TalerActionFound } from "./popup/TalerActionFound";
 
 function main(): void {
   try {
@@ -62,32 +63,16 @@ if (document.readyState === "loading") {
   main();
 }
 
-interface Props {
-  url: string;
-  onDismiss: (s: boolean) => void;
-}
-
-function TalerActionFound({ url, onDismiss }: Props) {
-  return <div style={{ padding: "1em", width: 400 }}>
-    <h1>Taler Action </h1>
-    <p>This page has a Taler action.</p>
-    <p>
-      <button onClick={() => { chrome.tabs.create({ "url": url }); }}>
-        Open
-      </button>
-    </p>
-    <p>
-      <button onClick={() => onDismiss(true)}> Dismiss </button>
-    </p>
-  </div>
-
-}
-
 function Application() {
   const [talerActionUrl, setDismissed] = useTalerActionURL()
 
   if (talerActionUrl) {
-    return <TalerActionFound url={talerActionUrl} onDismiss={setDismissed} />
+    return <div>
+      <WalletNavBar />
+      <div style={{ width: 400, height: 290 }}>
+        <TalerActionFound url={talerActionUrl} onDismiss={setDismissed} />
+      </div>
+    </div>
   }
 
   return (

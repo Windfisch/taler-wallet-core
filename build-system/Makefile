@@ -51,7 +51,7 @@ check: compile
 webextension: compile
 	cd ./packages/taler-wallet-webextension/ && ./pack.sh
 
-.PHONY: dev-view
+.PHONY: webextension-dev-view
 webextension-dev-view: compile
 	pnpm run --filter @gnu-taler/taler-wallet-webextension storybook
 

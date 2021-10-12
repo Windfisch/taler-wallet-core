@@ -81,15 +81,14 @@ export function SettingsView({ knownExchanges, lang, changeLang, deviceName, set
         {!knownExchanges || !knownExchanges.length ? <div>
           No exchange yet!
         </div> :
-          <dl>
-            {knownExchanges.map(e => <Fragment>
-              <dt>{e.currency}</dt>
-              <dd>{e.exchangeBaseUrl}</dd>
-              <dd>{e.paytoUris}</dd>
-            </Fragment>)}
-          </dl>
+          <table>
+            {knownExchanges.map(e => <tr>
+              <td>{e.currency}</td>
+              <td><a href={e.exchangeBaseUrl}>{e.exchangeBaseUrl}</a></td>
+            </tr>)}
+          </table>
         }
-        <ButtonPrimary>add exchange</ButtonPrimary>
+        
         <h2><i18n.Translate>Permissions</i18n.Translate></h2>
         <Checkbox label="Automatically open wallet based on page content"
           name="perm"

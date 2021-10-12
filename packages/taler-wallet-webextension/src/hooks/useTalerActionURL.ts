@@ -25,58 +25,12 @@ export function useTalerActionURL(): [string | undefined, (s: boolean) => void] 
   useEffect(() => {
     async function check(): Promise<void> {
       const talerUri = await findTalerUriInActiveTab();
-      if (talerUri) {
-        const actionUrl = actionForTalerUri(talerUri);
-        setTalerActionUrl(actionUrl);
-      }
+      setTalerActionUrl(talerUri)
     }
     check();
   }, []);
   const url = dismissed ? undefined : talerActionUrl;
   return [url, setDismissed];
-}
-
-function actionForTalerUri(talerUri: string): string | undefined {
-  const uriType = classifyTalerUri(talerUri);
-  switch (uriType) {
-    case TalerUriType.TalerWithdraw:
-      return makeExtensionUrlWithParams("static/wallet.html#/withdraw", {
-        talerWithdrawUri: talerUri,
-      });
-    case TalerUriType.TalerPay:
-      return makeExtensionUrlWithParams("static/wallet.html#/pay", {
-        talerPayUri: talerUri,
-      });
-    case TalerUriType.TalerTip:
-      return makeExtensionUrlWithParams("static/wallet.html#/tip", {
-        talerTipUri: talerUri,
-      });
-    case TalerUriType.TalerRefund:
-      return makeExtensionUrlWithParams("static/wallet.html#/refund", {
-        talerRefundUri: talerUri,
-      });
-    case TalerUriType.TalerNotifyReserve:
-      // FIXME: implement
-      break;
-    default:
-      console.warn(
-        "Response with HTTP 402 has Taler header, but header value is not a taler:// URI.",
-      );
-      break;
-  }
-  return undefined;
-}
-
-function makeExtensionUrlWithParams(
-  url: string,
-  params?: { [name: string]: string | undefined },
-): string {
-  const innerUrl = new URL(chrome.extension.getURL("/" + url));
-  if (params) {
-    const hParams = Object.keys(params).map(k => `${k}=${params[k]}`).join('&')
-    innerUrl.hash = innerUrl.hash + '?' + hParams
-  }
-  return innerUrl.href;
 }
 
 async function findTalerUriInActiveTab(): Promise<string | undefined> {

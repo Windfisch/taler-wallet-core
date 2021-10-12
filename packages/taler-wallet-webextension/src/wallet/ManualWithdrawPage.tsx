@@ -21,6 +21,8 @@ import { CreateManualWithdraw } from "./CreateManualWithdraw";
 import * as wxApi from '../wxApi'
 import { AcceptManualWithdrawalResult, AmountJson, Amounts } from "@gnu-taler/taler-util";
 import { ReserveCreated } from "./ReserveCreated.js";
+import { route } from 'preact-router';
+import { Pages } from "../NavigationBar.js";
 
 interface Props {
 
@@ -58,7 +60,9 @@ export function ManualWithdrawPage({ }: Props): VNode {
   }
 
   if (success) {
-    return <ReserveCreated reservePub={success.reservePub} paytos={success.exchangePaytoUris} onBack={() => {}}/>
+    return <ReserveCreated reservePub={success.reservePub} paytos={success.exchangePaytoUris} onBack={() => {
+      route(Pages.balance)
+    }}/>
   }
 
   return <CreateManualWithdraw
