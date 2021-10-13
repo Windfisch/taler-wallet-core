@@ -38,7 +38,13 @@ export function ManualWithdrawPage({ }: Props): VNode {
     try {
       const r = await fetch(`${exchange}/keys`)
       const j = await r.json()
-      setCurrency(j.currency)
+      if (j.currency) {
+        await wxApi.addExchange({
+          exchangeBaseUrl: `${exchange}/`,
+          forceUpdate: true
+        })
+        setCurrency(j.currency)
+      }
     } catch (e) {
       setError('The exchange url seems invalid')
       setCurrency(undefined)

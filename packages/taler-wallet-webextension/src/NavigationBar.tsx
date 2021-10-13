@@ -48,7 +48,7 @@ export enum Pages {
 
   pay = '/pay',
   refund = '/refund',
-  tips = '/tips',
+  tips = '/tip',
   withdraw = '/withdraw',
 }
 
