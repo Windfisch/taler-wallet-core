@@ -1050,7 +1050,6 @@ export const TermsShowAgainXML = createExample(TestedComponent, {
     },
     status: 'new'
   },
-  accepted: true,
   reviewing: true,
 })
 
