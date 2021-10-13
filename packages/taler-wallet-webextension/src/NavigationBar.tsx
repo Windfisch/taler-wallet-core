@@ -36,6 +36,7 @@ export enum Pages {
   manual_withdraw = '/manual-withdraw',
   settings = '/settings',
   dev = '/dev',
+  cta = '/cta',
   backup = '/backup',
   history = '/history',
   transaction = '/transaction/:tid',

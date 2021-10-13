@@ -66,14 +66,9 @@ if (document.readyState === "loading") {
 function Application() {
   const [talerActionUrl, setDismissed] = useTalerActionURL()
 
-  if (talerActionUrl) {
-    return <div>
-      <WalletNavBar />
-      <div style={{ width: 400, height: 290 }}>
-        <TalerActionFound url={talerActionUrl} onDismiss={setDismissed} />
-      </div>
-    </div>
-  }
+  useEffect(() => {
+    if (talerActionUrl) route(Pages.cta)
+  },[talerActionUrl])
 
   return (
     <div>
@@ -81,11 +76,16 @@ function Application() {
         <WalletNavBar />
         <div style={{ width: 400, height: 290 }}>
           <Router history={createHashHistory()}>
+            <Route path={Pages.dev} component={DeveloperPage} />
+
             <Route path={Pages.balance} component={BalancePage}
               goToWalletManualWithdraw={() => goToWalletPage(Pages.manual_withdraw)}
             />
             <Route path={Pages.settings} component={SettingsPage} />
-            <Route path={Pages.dev} component={DeveloperPage} />
+            <Route path={Pages.cta} component={() => <TalerActionFound url={talerActionUrl!} onDismiss={() => {
+              setDismissed(true)
+              route(Pages.balance)
+            }} />} />
 
             <Route path={Pages.transaction}
               component={({ tid }: { tid: string }) => goToWalletPage(Pages.transaction.replace(':tid', tid))}

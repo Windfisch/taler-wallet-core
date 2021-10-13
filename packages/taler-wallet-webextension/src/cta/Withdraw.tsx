@@ -214,10 +214,18 @@ export function View({ details, knownExchanges, amount, onWithdraw, onSwitchExch
             {i18n.str`Confirm withdrawal`}
           </ButtonSuccess>
         }
-        {terms.status === 'notfound' &&
-          <LinkWarning upperCased>
+        {terms.status === 'notfound' && <Fragment>
+          <LinkWarning>
             {i18n.str`Exchange doesn't have terms of service`}
           </LinkWarning>
+          <ButtonWarning
+            upperCased
+            disabled={!details.exchangeInfo.baseUrl}
+            onClick={onWithdraw}
+          >
+            {i18n.str`Withdraw anyway`}
+          </ButtonWarning>
+        </Fragment>
         }
       </section>
     </WalletAction>

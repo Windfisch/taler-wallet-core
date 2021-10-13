@@ -21,7 +21,10 @@ import { h } from 'preact';
 export function ExchangeXmlTos({ doc }: { doc: Document }) {
   const termsNode = doc.querySelector('[ids=terms-of-service]')
   if (!termsNode) {
-    return <div>not found</div>
+    return <div>
+      <p>The exchange send us an xml but there is no node with 'ids=terms-of-service'. This is the content:</p>
+      <pre>{new XMLSerializer().serializeToString(doc)}</pre>
+    </div>
   }
   return <Fragment>
     {Array.from(termsNode.children).map(renderChild)}

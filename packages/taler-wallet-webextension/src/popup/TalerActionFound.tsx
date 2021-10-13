@@ -3,7 +3,7 @@ import { ButtonPrimary, ButtonSuccess, PopupBox } from "../components/styled/ind
 
 export interface Props {
   url: string;
-  onDismiss: (s: boolean) => void;
+  onDismiss: () => void;
 }
 
 export function TalerActionFound({ url, onDismiss }: Props) {
@@ -49,7 +49,7 @@ export function TalerActionFound({ url, onDismiss }: Props) {
     </section>
     <footer>
       <div />
-      <ButtonPrimary onClick={() => onDismiss(true)}> Dismiss </ButtonPrimary>
+      <ButtonPrimary onClick={() => onDismiss()}> Dismiss </ButtonPrimary>
     </footer>
   </PopupBox>;
 
