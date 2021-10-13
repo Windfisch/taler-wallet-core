@@ -585,10 +585,10 @@ function AuthMethodSmsSetup(props: AuthMethodSetupProps) {
       },
     });
   };
-  //const inputRef = useRef<HTMLInputElement>(null);
-  // useLayoutEffect(() => {
-  //   inputRef.current?.focus();
-  // }, []);
+  const inputRef = useRef<HTMLInputElement>(null);
+  useLayoutEffect(() => {
+    inputRef.current?.focus();
+  }, []);
   return (
     <AnastasisClientFrame hideNav title="Add SMS authentication">
       <div>
@@ -601,7 +601,7 @@ function AuthMethodSmsSetup(props: AuthMethodSetupProps) {
           Mobile number:{" "}
           <input
             value={mobileNumber}
-            //ref={inputRef}
+            ref={inputRef}
             style={{ display: "block" }}
             autoFocus
             onChange={(e) => setMobileNumber((e.target as any).value)}
