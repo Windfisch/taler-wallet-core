@@ -11,6 +11,7 @@ export interface ReducerStateBackup {
   code: undefined;
   continents: any;
   countries: any;
+  identity_attributes?: { [n: string]: string };
   authentication_providers: any;
   authentication_methods?: AuthMethod[];
   required_attributes: any;
@@ -39,14 +40,60 @@ export interface AuthMethod {
   challenge: string;
 }
 
+export interface ChallengeInfo {
+  cost: string;
+  instructions: string;
+  type: string;
+  uuid: string;
+}
+
 export interface ReducerStateRecovery {
   backup_state: undefined;
   recovery_state: RecoveryStates;
   code: undefined;
 
+  identity_attributes?: { [n: string]: string };
+
   continents: any;
   countries: any;
   required_attributes: any;
+
+  recovery_information?: {
+    challenges: ChallengeInfo[];
+    policies: {
+      /**
+       * UUID of the associated challenge.
+       */
+      uuid: string;
+    }[][];
+  };
+
+  recovery_document?: {
+    secret_name: string;
+    provider_url: string;
+    version: number;
+  };
+
+  selected_challenge_uuid?: string;
+
+  challenge_feedback?: { [uuid: string]: ChallengeFeedback };
+
+  core_secret?: {
+    mime: string;
+    value: string;
+  };
+
+  authentication_providers?: {
+    [url: string]: {
+      business_name: string;
+    };
+  };
+
+  recovery_error: any;
+}
+
+export interface ChallengeFeedback {
+  state: string;
 }
 
 export interface ReducerStateError {
@@ -76,6 +123,11 @@ export enum RecoveryStates {
   ContinentSelecting = "CONTINENT_SELECTING",
   CountrySelecting = "COUNTRY_SELECTING",
   UserAttributesCollecting = "USER_ATTRIBUTES_COLLECTING",
+  SecretSelecting = "SECRET_SELECTING",
+  ChallengeSelecting = "CHALLENGE_SELECTING",
+  ChallengePaying = "CHALLENGE_PAYING",
+  ChallengeSolving = "CHALLENGE_SOLVING",
+  RecoveryFinished = "RECOVERY_FINISHED",
 }
 
 const reducerBaseUrl = "http://localhost:5000/";
