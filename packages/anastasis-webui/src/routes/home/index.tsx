@@ -1,10 +1,15 @@
-import { encodeCrock, stringToBytes } from "@gnu-taler/taler-util";
+import {
+  canonicalJson,
+  encodeCrock,
+  stringToBytes,
+} from "@gnu-taler/taler-util";
 import { FunctionalComponent, h } from "preact";
 import { useState } from "preact/hooks";
 import {
   AnastasisReducerApi,
   AuthMethod,
   BackupStates,
+  RecoveryStates,
   ReducerStateBackup,
   ReducerStateRecovery,
   useAnastasisReducer,
@@ -94,14 +99,23 @@ const Home: FunctionalComponent = () => {
   }
   console.log("state", reducer.currentReducerState);
 
-  if (reducerState.backup_state === BackupStates.ContinentSelecting) {
+  if (
+    reducerState.backup_state === BackupStates.ContinentSelecting ||
+    reducerState.recovery_state === RecoveryStates.ContinentSelecting
+  ) {
     return <ContinentSelection reducer={reducer} reducerState={reducerState} />;
   }
-  if (reducerState.backup_state === BackupStates.CountrySelecting) {
+  if (
+    reducerState.backup_state === BackupStates.CountrySelecting ||
+    reducerState.recovery_state === RecoveryStates.CountrySelecting
+  ) {
     return <CountrySelection reducer={reducer} reducerState={reducerState} />;
   }
-  if (reducerState.backup_state === BackupStates.UserAttributesCollecting) {
-    return <AttributeEntry reducer={reducer} backupState={reducerState} />;
+  if (
+    reducerState.backup_state === BackupStates.UserAttributesCollecting ||
+    reducerState.recovery_state === RecoveryStates.UserAttributesCollecting
+  ) {
+    return <AttributeEntry reducer={reducer} reducerState={reducerState} />;
   }
   if (reducerState.backup_state === BackupStates.AuthenticationsEditing) {
     return (
@@ -305,6 +319,15 @@ interface AuthMethodSetupProps {
 
 function AuthMethodSmsSetup(props: AuthMethodSetupProps) {
   const [mobileNumber, setMobileNumber] = useState("");
+  const addSmsAuth = () => {
+    props.addAuthMethod({
+      authentication_method: {
+        type: "sms",
+        instructions: `SMS to ${mobileNumber}`,
+        challenge: encodeCrock(stringToBytes(mobileNumber)),
+      },
+    });
+  };
   return (
     <div class={style.home}>
       <h1>Add {props.method} authentication</h1>
@@ -325,19 +348,7 @@ function AuthMethodSmsSetup(props: AuthMethodSetupProps) {
         </label>
         <div>
           <button onClick={() => props.cancel()}>Cancel</button>
-          <button
-            onClick={() =>
-              props.addAuthMethod({
-                authentication_method: {
-                  type: "sms",
-                  instructions: `SMS to ${mobileNumber}`,
-                  challenge: "E1QPPS8A",
-                },
-              })
-            }
-          >
-            Add
-          </button>
+          <button onClick={() => addSmsAuth()}>Add</button>
         </div>
       </div>
     </div>
@@ -388,6 +399,150 @@ function AuthMethodQuestionSetup(props: AuthMethodSetupProps) {
                   type: "question",
                   instructions: questionText,
                   challenge: encodeCrock(stringToBytes(answerText)),
+                },
+              })
+            }
+          >
+            Add
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AuthMethodEmailSetup(props: AuthMethodSetupProps) {
+  const [email, setEmail] = useState("");
+  return (
+    <div class={style.home}>
+      <h1>Add {props.method} authentication</h1>
+      <div>
+        <p>
+          For email authentication, you need to provid an email address. When
+          recovering your secret, you need to enter the code you will receive by
+          email.
+        </p>
+        <div>
+          <label>
+            Email address
+            <input
+              value={email}
+              autoFocus
+              onChange={(e) => setEmail((e.target as any).value)}
+              type="text"
+            />
+          </label>
+        </div>
+        <div>
+          <button onClick={() => props.cancel()}>Cancel</button>
+          <button
+            onClick={() =>
+              props.addAuthMethod({
+                authentication_method: {
+                  type: "email",
+                  instructions: `Email to ${email}`,
+                  challenge: encodeCrock(stringToBytes(email)),
+                },
+              })
+            }
+          >
+            Add
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AuthMethodPostSetup(props: AuthMethodSetupProps) {
+  const [fullName, setFullName] = useState("");
+  const [street, setStreet] = useState("");
+  const [city, setCity] = useState("");
+  const [postcode, setPostcode] = useState("");
+  const [country, setCountry] = useState("");
+  return (
+    <div class={style.home}>
+      <h1>Add {props.method} authentication</h1>
+      <div>
+        <p>
+          For postal letter authentication, you need to provide a postal
+          address. When recovering your secret, you will be asked to enter a
+          code that you will receive in a letter to that address.
+        </p>
+        <div>
+          <label>
+            Full Name
+            <input
+              value={fullName}
+              autoFocus
+              onChange={(e) => setFullName((e.target as any).value)}
+              type="text"
+            />
+          </label>
+        </div>
+        <div>
+          <label>
+            Street
+            <input
+              value={street}
+              autoFocus
+              onChange={(e) => setStreet((e.target as any).value)}
+              type="text"
+            />
+          </label>
+        </div>
+        <div>
+          <label>
+            City
+            <input
+              value={city}
+              autoFocus
+              onChange={(e) => setCity((e.target as any).value)}
+              type="text"
+            />
+          </label>
+        </div>
+        <div>
+          <label>
+            Postal Code
+            <input
+              value={postcode}
+              autoFocus
+              onChange={(e) => setPostcode((e.target as any).value)}
+              type="text"
+            />
+          </label>
+        </div>
+        <div>
+          <label>
+            Country
+            <input
+              value={country}
+              autoFocus
+              onChange={(e) => setCountry((e.target as any).value)}
+              type="text"
+            />
+          </label>
+        </div>
+        <div>
+          <button onClick={() => props.cancel()}>Cancel</button>
+          <button
+            onClick={() =>
+              props.addAuthMethod({
+                authentication_method: {
+                  type: "email",
+                  instructions: `Letter to address in postal code ${postcode}`,
+                  challenge: encodeCrock(
+                    stringToBytes(
+                      canonicalJson({
+                        full_name: fullName,
+                        street,
+                        city,
+                        postcode,
+                        country,
+                      }),
+                    ),
+                  ),
                 },
               })
             }
@@ -452,7 +607,23 @@ function AuthenticationEditor(props: AuthenticationEditorProps) {
           <AuthMethodQuestionSetup
             cancel={cancel}
             addAuthMethod={addMethod}
-            method="sms"
+            method="question"
+          />
+        );
+      case "email":
+        return (
+          <AuthMethodEmailSetup
+            cancel={cancel}
+            addAuthMethod={addMethod}
+            method="email"
+          />
+        );
+      case "post":
+        return (
+          <AuthMethodPostSetup
+            cancel={cancel}
+            addAuthMethod={addMethod}
+            method="post"
           />
         );
       default:
@@ -525,11 +696,11 @@ function AuthenticationEditor(props: AuthenticationEditorProps) {
 
 export interface AttributeEntryProps {
   reducer: AnastasisReducerApi;
-  backupState: ReducerStateBackup;
+  reducerState: ReducerStateRecovery | ReducerStateBackup;
 }
 
 function AttributeEntry(props: AttributeEntryProps) {
-  const { reducer, backupState } = props;
+  const { reducer, reducerState: backupState } = props;
   const [attrs, setAttrs] = useState<Record<string, string>>({});
   return (
     <div class={style.home}>

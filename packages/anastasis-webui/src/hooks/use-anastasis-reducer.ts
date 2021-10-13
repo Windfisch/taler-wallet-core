@@ -46,6 +46,7 @@ export interface ReducerStateRecovery {
 
   continents: any;
   countries: any;
+  required_attributes: any;
 }
 
 export interface ReducerStateError {
@@ -74,6 +75,7 @@ export enum BackupStates {
 export enum RecoveryStates {
   ContinentSelecting = "CONTINENT_SELECTING",
   CountrySelecting = "COUNTRY_SELECTING",
+  UserAttributesCollecting = "USER_ATTRIBUTES_COLLECTING",
 }
 
 const reducerBaseUrl = "http://localhost:5000/";
