@@ -217,7 +217,7 @@ async function processOnePendingOperation(
   logger.trace(`running pending ${JSON.stringify(pending, undefined, 2)}`);
   switch (pending.type) {
     case PendingTaskType.ExchangeUpdate:
-      await updateExchangeFromUrl(ws, pending.exchangeBaseUrl, forceNow);
+      await updateExchangeFromUrl(ws, pending.exchangeBaseUrl, undefined, forceNow);
       break;
     case PendingTaskType.Refresh:
       await processRefreshGroup(ws, pending.refreshGroupId, forceNow);
@@ -452,20 +452,24 @@ async function acceptManualWithdrawal(
 async function getExchangeTos(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
+  acceptedFormat?: string[],
 ): Promise<GetExchangeTosResult> {
-  const { exchange, exchangeDetails } = await updateExchangeFromUrl(
+  const { exchangeDetails } = await updateExchangeFromUrl(
     ws,
     exchangeBaseUrl,
+    acceptedFormat,
   );
-  const tos = exchangeDetails.termsOfServiceText;
+  const content = exchangeDetails.termsOfServiceText;
   const currentEtag = exchangeDetails.termsOfServiceLastEtag;
-  if (!tos || !currentEtag) {
+  const contentType = exchangeDetails.termsOfServiceContentType;
+  if (content === undefined || currentEtag === undefined || contentType === undefined) {
     throw Error("exchange is in invalid state");
   }
   return {
     acceptedEtag: exchangeDetails.termsOfServiceAcceptedEtag,
     currentEtag,
-    tos,
+    content,
+    contentType,
   };
 }
 
@@ -485,7 +489,7 @@ async function getExchanges(
         if (!dp) {
           continue;
         }
-        const { currency, masterPublicKey } = dp;
+        const { currency } = dp;
         const exchangeDetails = await getExchangeDetails(tx, r.baseUrl);
         if (!exchangeDetails) {
           continue;
@@ -684,7 +688,7 @@ async function dispatchRequestInternal(
     }
     case "addExchange": {
       const req = codecForAddExchangeRequest().decode(payload);
-      await updateExchangeFromUrl(ws, req.exchangeBaseUrl, req.forceUpdate);
+      await updateExchangeFromUrl(ws, req.exchangeBaseUrl, undefined, req.forceUpdate);
       return {};
     }
     case "listExchanges": {
@@ -696,7 +700,7 @@ async function dispatchRequestInternal(
     }
     case "getExchangeWithdrawalInfo": {
       const req = codecForGetExchangeWithdrawalInfo().decode(payload);
-      return await getExchangeWithdrawalInfo(ws, req.exchangeBaseUrl, req.amount, req.tosAcceptedFormat);
+      return await getExchangeWithdrawalInfo(ws, req.exchangeBaseUrl, req.amount);
     }
     case "acceptManualWithdrawal": {
       const req = codecForAcceptManualWithdrawalRequet().decode(payload);
@@ -744,7 +748,7 @@ async function dispatchRequestInternal(
     }
     case "getExchangeTos": {
       const req = codecForGetExchangeTosRequest().decode(payload);
-      return getExchangeTos(ws, req.exchangeBaseUrl);
+      return getExchangeTos(ws, req.exchangeBaseUrl , req.acceptedFormat);
     }
     case "retryPendingNow": {
       await runPending(ws, true);

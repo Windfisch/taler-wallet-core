@@ -45,6 +45,7 @@ import {
   AmountJson,
   ExchangesListRespose,
   AddExchangeRequest,
+  GetExchangeTosResult,
 } from "@gnu-taler/taler-util";
 import { AddBackupProviderRequest, BackupProviderState, OperationFailedError, RemoveBackupProviderRequest } from "@gnu-taler/taler-wallet-core";
 import { BackupInfo } from "@gnu-taler/taler-wallet-core";
@@ -327,11 +328,14 @@ export function getExchangeWithdrawalInfo(
 ): Promise<ExchangeWithdrawDetails> {
   return callBackend("getExchangeWithdrawalInfo", req);
 }
-// export const codecForAddExchangeRequest = (): Codec<AddExchangeRequest> =>
-//   buildCodecForObject<AddExchangeRequest>()
-//     .property("exchangeBaseUrl", codecForString())
-//     .property("forceUpdate", codecOptional(codecForBoolean()))
-//     .build("AddExchangeRequest");
+export function getExchangeTos(
+  exchangeBaseUrl: string,
+  acceptedFormat: string[],
+): Promise<GetExchangeTosResult> {
+  return callBackend("getExchangeTos", {
+    exchangeBaseUrl, acceptedFormat
+  });
+}
 
 export function addExchange(
   req: AddExchangeRequest,

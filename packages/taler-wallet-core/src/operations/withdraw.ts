@@ -66,8 +66,6 @@ import {
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
 } from "../versions.js";
-import { stringify } from "querystring";
-import { downloadExchangeWithTermsOfService, ExchangeTosDownloadResult } from "./exchanges";
 
 /**
  * Logger for this file.
@@ -132,11 +130,6 @@ export interface ExchangeWithdrawDetails {
    * Did the user already accept the current terms of service for the exchange?
    */
   termsOfServiceAccepted: boolean;
-
-  /**
-   * Tos 
-   */
-  tosRequested: ExchangeTosDownloadResult | undefined
 
   /**
    * The exchange is trusted directly.
@@ -937,7 +930,6 @@ export async function getExchangeWithdrawalInfo(
   ws: InternalWalletState,
   baseUrl: string,
   amount: AmountJson,
-  tosAcceptedFormat?: string[],
 ): Promise<ExchangeWithdrawDetails> {
   const {
     exchange,
@@ -1004,34 +996,6 @@ export async function getExchangeWithdrawalInfo(
     }
   }
 
-  const noTosDownloaded = 
-    exchangeDetails.termsOfServiceContentType === undefined || 
-    exchangeDetails.termsOfServiceAcceptedEtag === undefined || 
-    exchangeDetails.termsOfServiceText === undefined;
-  
-  let tosFound: ExchangeTosDownloadResult | undefined = noTosDownloaded ? undefined : {
-    tosContentType: exchangeDetails.termsOfServiceContentType!,
-    tosEtag: exchangeDetails.termsOfServiceAcceptedEtag!,
-    tosText: exchangeDetails.termsOfServiceText!,
-  };
-
-  try {
-    if (tosAcceptedFormat) for (const format of tosAcceptedFormat) {
-      const resp = await downloadExchangeWithTermsOfService(
-        exchangeDetails.exchangeBaseUrl,
-        ws.http,
-        { d_ms: 1000 },
-        format
-      );
-      if (resp.tosContentType === format) {
-        tosFound = resp
-        break
-      }
-    }
-  } catch (e) {
-    tosFound = undefined
-  }
-
   const withdrawFee = Amounts.sub(
     selectedDenoms.totalWithdrawCost,
     selectedDenoms.totalCoinValue,
@@ -1054,7 +1018,6 @@ export async function getExchangeWithdrawalInfo(
     walletVersion: WALLET_EXCHANGE_PROTOCOL_VERSION,
     withdrawFee,
     termsOfServiceAccepted: tosAccepted,
-    tosRequested: tosFound
   };
   return ret;
 }

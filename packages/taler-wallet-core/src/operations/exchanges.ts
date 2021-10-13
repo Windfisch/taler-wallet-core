@@ -278,6 +278,7 @@ async function downloadExchangeWithWireInfo(
 export async function updateExchangeFromUrl(
   ws: InternalWalletState,
   baseUrl: string,
+  acceptedFormat?: string[],
   forceNow = false,
 ): Promise<{
   exchange: ExchangeRecord;
@@ -286,7 +287,7 @@ export async function updateExchangeFromUrl(
   const onOpErr = (e: TalerErrorDetails): Promise<void> =>
     handleExchangeUpdateError(ws, baseUrl, e);
   return await guardOperationException(
-    () => updateExchangeFromUrlImpl(ws, baseUrl, forceNow),
+    () => updateExchangeFromUrlImpl(ws, baseUrl, acceptedFormat, forceNow),
     onOpErr,
   );
 }
@@ -411,6 +412,7 @@ async function downloadKeysInfo(
 async function updateExchangeFromUrlImpl(
   ws: InternalWalletState,
   baseUrl: string,
+  acceptedFormat?: string[],
   forceNow = false,
 ): Promise<{
   exchange: ExchangeRecord;
@@ -468,12 +470,28 @@ async function updateExchangeFromUrlImpl(
 
   logger.info("finished validating exchange /wire info");
 
-  const tosDownload = await downloadExchangeWithTermsOfService(
-    baseUrl,
-    ws.http,
-    timeout,
-    "text/plain"
-  );
+  let tosFound: ExchangeTosDownloadResult | undefined;
+  //Remove this when exchange supports multiple content-type in accept header
+  if (acceptedFormat) for (const format of acceptedFormat) {
+    const resp = await downloadExchangeWithTermsOfService(
+      baseUrl,
+      ws.http,
+      timeout,
+      format
+    );
+    if (resp.tosContentType === format) {
+      tosFound = resp
+      break
+    }
+  }
+  // If none of the specified format was found try text/plain
+  const tosDownload = tosFound !== undefined ? tosFound :
+    await downloadExchangeWithTermsOfService(
+      baseUrl,
+      ws.http,
+      timeout,
+      "text/plain"
+    );
 
   let recoupGroupId: string | undefined = undefined;
 

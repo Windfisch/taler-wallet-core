@@ -71,6 +71,7 @@ export interface ExchangeOperations {
   updateExchangeFromUrl(
     ws: InternalWalletState,
     baseUrl: string,
+    acceptedFormat?: string[],
     forceNow?: boolean,
   ): Promise<{
     exchange: ExchangeRecord;

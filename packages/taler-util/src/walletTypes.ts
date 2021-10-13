@@ -578,7 +578,7 @@ export interface GetExchangeTosResult {
   /**
    * Markdown version of the current ToS.
    */
-  tos: string;
+  content: string;
 
   /**
    * Version tag of the current ToS.
@@ -590,6 +590,11 @@ export interface GetExchangeTosResult {
    * if any.
    */
   acceptedEtag: string | undefined;
+  
+  /**
+   * Accepted content type
+   */
+   contentType: string;
 }
 
 export interface TestPayArgs {
@@ -648,12 +653,14 @@ export const codecForForceExchangeUpdateRequest = (): Codec<AddExchangeRequest> 
 
 export interface GetExchangeTosRequest {
   exchangeBaseUrl: string;
+  acceptedFormat?: string[];
 }
 
 export const codecForGetExchangeTosRequest = (): Codec<GetExchangeTosRequest> =>
   buildCodecForObject<GetExchangeTosRequest>()
-    .property("exchangeBaseUrl", codecForString())
-    .build("GetExchangeTosRequest");
+  .property("exchangeBaseUrl", codecForString())
+  .property("acceptedFormat", codecOptional(codecForList(codecForString())))
+  .build("GetExchangeTosRequest");
 
 export interface AcceptManualWithdrawalRequest {
   exchangeBaseUrl: string;

@@ -785,21 +785,23 @@ export const NewTerms = createExample(TestedComponent, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.demo.taler.net',
     paytoUris: ['asd'],
-  },{
+  }, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.test.taler.net',
     paytoUris: ['asd'],
   }],
+  exchangeBaseUrl: 'exchange.demo.taler.net',
   details: {
-    exchangeInfo: {
-      baseUrl: 'exchange.demo.taler.net'
-    } as ExchangeRecord,
-    withdrawFee: {
-      currency: 'USD',
-      fraction: 0,
-      value: 0
-    },
-  } as ExchangeWithdrawDetails,
+    content: '',
+    contentType: '',
+    currentEtag: '',
+    acceptedEtag: undefined,
+  },
+  withdrawalFee: {
+    currency: 'USD',
+    fraction: 0,
+    value: 0
+  },
   amount: {
     currency: 'USD',
     value: 2,
@@ -821,21 +823,23 @@ export const TermsReviewingPLAIN = createExample(TestedComponent, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.demo.taler.net',
     paytoUris: ['asd'],
-  },{
+  }, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.test.taler.net',
     paytoUris: ['asd'],
   }],
+  exchangeBaseUrl: 'exchange.demo.taler.net',
   details: {
-    exchangeInfo: {
-      baseUrl: 'exchange.demo.taler.net'
-    } as ExchangeRecord,
-    withdrawFee: {
-      currency: 'USD',
-      fraction: 0,
-      value: 0
-    },
-  } as ExchangeWithdrawDetails,
+    content: '',
+    contentType: '',
+    currentEtag: '',
+    acceptedEtag: undefined,
+  },
+  withdrawalFee: {
+    currency: 'USD',
+    fraction: 0,
+    value: 0
+  },
   amount: {
     currency: 'USD',
     value: 2,
@@ -858,21 +862,23 @@ export const TermsReviewingHTML = createExample(TestedComponent, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.demo.taler.net',
     paytoUris: ['asd'],
-  },{
+  }, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.test.taler.net',
     paytoUris: ['asd'],
   }],
+  exchangeBaseUrl: 'exchange.demo.taler.net',
   details: {
-    exchangeInfo: {
-      baseUrl: 'exchange.demo.taler.net'
-    } as ExchangeRecord,
-    withdrawFee: {
-      currency: 'USD',
-      fraction: 0,
-      value: 0
-    },
-  } as ExchangeWithdrawDetails,
+    content: '',
+    contentType: '',
+    currentEtag: '',
+    acceptedEtag: undefined,
+  },
+  withdrawalFee: {
+    currency: 'USD',
+    fraction: 0,
+    value: 0
+  },
   amount: {
     currency: 'USD',
     value: 2,
@@ -910,21 +916,23 @@ export const TermsReviewingPDF = createExample(TestedComponent, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.demo.taler.net',
     paytoUris: ['asd'],
-  },{
+  }, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.test.taler.net',
     paytoUris: ['asd'],
   }],
+  exchangeBaseUrl: 'exchange.demo.taler.net',
   details: {
-    exchangeInfo: {
-      baseUrl: 'exchange.demo.taler.net'
-    } as ExchangeRecord,
-    withdrawFee: {
-      currency: 'USD',
-      fraction: 0,
-      value: 0
-    },
-  } as ExchangeWithdrawDetails,
+    content: '',
+    contentType: '',
+    currentEtag: '',
+    acceptedEtag: undefined,
+  },
+  withdrawalFee: {
+    currency: 'USD',
+    fraction: 0,
+    value: 0
+  },
   amount: {
     currency: 'USD',
     value: 2,
@@ -948,21 +956,23 @@ export const TermsReviewingXML = createExample(TestedComponent, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.demo.taler.net',
     paytoUris: ['asd'],
-  },{
+  }, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.test.taler.net',
     paytoUris: ['asd'],
   }],
+  exchangeBaseUrl: 'exchange.demo.taler.net',
   details: {
-    exchangeInfo: {
-      baseUrl: 'exchange.demo.taler.net'
-    } as ExchangeRecord,
-    withdrawFee: {
-      currency: 'USD',
-      fraction: 0,
-      value: 0
-    },
-  } as ExchangeWithdrawDetails,
+    content: '',
+    contentType: '',
+    currentEtag: '',
+    acceptedEtag: undefined,
+  },
+  withdrawalFee: {
+    currency: 'USD',
+    fraction: 0,
+    value: 0
+  },
   amount: {
     currency: 'USD',
     value: 2,
@@ -985,21 +995,23 @@ export const NewTermsAccepted = createExample(TestedComponent, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.demo.taler.net',
     paytoUris: ['asd'],
-  },{
+  }, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.test.taler.net',
     paytoUris: ['asd'],
   }],
+  exchangeBaseUrl: 'exchange.demo.taler.net',
   details: {
-    exchangeInfo: {
-      baseUrl: 'exchange.demo.taler.net'
-    } as ExchangeRecord,
-    withdrawFee: {
-      currency: 'USD',
-      fraction: 0,
-      value: 0
-    },
-  } as ExchangeWithdrawDetails,
+    content: '',
+    contentType: '',
+    currentEtag: '',
+    acceptedEtag: undefined,
+  },
+  withdrawalFee: {
+    currency: 'USD',
+    fraction: 0,
+    value: 0
+  },
   amount: {
     currency: 'USD',
     value: 2,
@@ -1021,21 +1033,23 @@ export const TermsShowAgainXML = createExample(TestedComponent, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.demo.taler.net',
     paytoUris: ['asd'],
-  },{
+  }, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.test.taler.net',
     paytoUris: ['asd'],
   }],
+  exchangeBaseUrl: 'exchange.demo.taler.net',
   details: {
-    exchangeInfo: {
-      baseUrl: 'exchange.demo.taler.net'
-    } as ExchangeRecord,
-    withdrawFee: {
-      currency: 'USD',
-      fraction: 0,
-      value: 0
-    },
-  } as ExchangeWithdrawDetails,
+    content: '',
+    contentType: '',
+    currentEtag: '',
+    acceptedEtag: undefined,
+  },
+  withdrawalFee: {
+    currency: 'USD',
+    fraction: 0,
+    value: 0
+  },
   amount: {
     currency: 'USD',
     value: 2,
@@ -1050,6 +1064,7 @@ export const TermsShowAgainXML = createExample(TestedComponent, {
     },
     status: 'new'
   },
+  reviewed: true,
   reviewing: true,
 })
 
@@ -1058,21 +1073,23 @@ export const TermsChanged = createExample(TestedComponent, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.demo.taler.net',
     paytoUris: ['asd'],
-  },{
+  }, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.test.taler.net',
     paytoUris: ['asd'],
   }],
+  exchangeBaseUrl: 'exchange.demo.taler.net',
   details: {
-    exchangeInfo: {
-      baseUrl: 'exchange.demo.taler.net'
-    } as ExchangeRecord,
-    withdrawFee: {
-      currency: 'USD',
-      fraction: 0,
-      value: 0
-    },
-  } as ExchangeWithdrawDetails,
+    content: '',
+    contentType: '',
+    currentEtag: '',
+    acceptedEtag: undefined,
+  },
+  withdrawalFee: {
+    currency: 'USD',
+    fraction: 0,
+    value: 0
+  },
   amount: {
     currency: 'USD',
     value: 2,
@@ -1094,21 +1111,23 @@ export const TermsNotFound = createExample(TestedComponent, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.demo.taler.net',
     paytoUris: ['asd'],
-  },{
+  }, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.test.taler.net',
     paytoUris: ['asd'],
   }],
+  exchangeBaseUrl: 'exchange.demo.taler.net',
   details: {
-    exchangeInfo: {
-      baseUrl: 'exchange.demo.taler.net'
-    } as ExchangeRecord,
-    withdrawFee: {
-      currency: 'USD',
-      fraction: 0,
-      value: 0
-    },
-  } as ExchangeWithdrawDetails,
+    content: '',
+    contentType: '',
+    currentEtag: '',
+    acceptedEtag: undefined,
+  },
+  withdrawalFee: {
+    currency: 'USD',
+    fraction: 0,
+    value: 0
+  },
   amount: {
     currency: 'USD',
     value: 2,
@@ -1126,21 +1145,23 @@ export const TermsAlreadyAccepted = createExample(TestedComponent, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.demo.taler.net',
     paytoUris: ['asd'],
-  },{
+  }, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.test.taler.net',
     paytoUris: ['asd'],
   }],
+  exchangeBaseUrl: 'exchange.demo.taler.net',
   details: {
-    exchangeInfo: {
-      baseUrl: 'exchange.demo.taler.net'
-    } as ExchangeRecord,
-    withdrawFee: {
-      currency: 'USD',
-      fraction: amountFractionalBase * 0.5,
-      value: 0
-    },
-  } as ExchangeWithdrawDetails,
+    content: '',
+    contentType: '',
+    currentEtag: '',
+    acceptedEtag: undefined,
+  },
+  withdrawalFee: {
+    currency: 'USD',
+    fraction: amountFractionalBase * 0.5,
+    value: 0
+  },
   amount: {
     currency: 'USD',
     value: 2,
@@ -1159,21 +1180,23 @@ export const WithoutFee = createExample(TestedComponent, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.demo.taler.net',
     paytoUris: ['asd'],
-  },{
+  }, {
     currency: 'USD',
     exchangeBaseUrl: 'exchange.test.taler.net',
     paytoUris: ['asd'],
   }],
+  exchangeBaseUrl: 'exchange.demo.taler.net',
   details: {
-    exchangeInfo: {
-      baseUrl: 'exchange.demo.taler.net'
-    } as ExchangeRecord,
-    withdrawFee: {
-      currency: 'USD',
-      fraction: 0,
-      value: 0
-    },
-  } as ExchangeWithdrawDetails,
+    content: '',
+    contentType: '',
+    currentEtag: '',
+    acceptedEtag: undefined,
+  },
+  withdrawalFee: {
+    currency: 'USD',
+    fraction: 0,
+    value: 0,
+  },
   amount: {
     currency: 'USD',
     value: 2,

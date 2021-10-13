@@ -21,7 +21,7 @@
  * @author Florian Dold
  */
 
-import { AmountJson, Amounts, ExchangeListItem, i18n, WithdrawUriInfoResponse } from '@gnu-taler/taler-util';
+import { AmountJson, Amounts, ExchangeListItem, GetExchangeTosResult, i18n, WithdrawUriInfoResponse } from '@gnu-taler/taler-util';
 import { ExchangeWithdrawDetails } from '@gnu-taler/taler-wallet-core/src/operations/withdraw';
 import { useState } from "preact/hooks";
 import { Fragment } from 'preact/jsx-runtime';
@@ -33,7 +33,7 @@ import { SelectList } from '../components/SelectList';
 import { ButtonSuccess, ButtonWarning, LinkSuccess, LinkWarning, TermsOfService, WalletAction } from '../components/styled';
 import { useAsyncAsHook } from '../hooks/useAsyncAsHook';
 import {
-  acceptWithdrawal, getExchangeWithdrawalInfo, getWithdrawalDetailsForUri, setExchangeTosAccepted, listExchanges
+  acceptWithdrawal, getExchangeWithdrawalInfo, getWithdrawalDetailsForUri, setExchangeTosAccepted, listExchanges, getExchangeTos
 } from "../wxApi";
 import { wxMain } from '../wxBackend.js';
 
@@ -42,7 +42,9 @@ interface Props {
 }
 
 export interface ViewProps {
-  details: ExchangeWithdrawDetails;
+  details: GetExchangeTosResult;
+  withdrawalFee: AmountJson;
+  exchangeBaseUrl: string;
   amount: AmountJson;
   onSwitchExchange: (ex: string) => void;
   onWithdraw: () => Promise<void>;
@@ -54,8 +56,8 @@ export interface ViewProps {
   terms: {
     value?: TermsDocument;
     status: TermsStatus;
-  },
-  knownExchanges: ExchangeListItem[]
+  };
+  knownExchanges: ExchangeListItem[];
 
 };
 
@@ -94,7 +96,7 @@ function amountToString(text: AmountJson) {
   return `${amount} ${aj.currency}`
 }
 
-export function View({ details, knownExchanges, amount, onWithdraw, onSwitchExchange, terms, reviewing, onReview, onAccept, reviewed, confirmed }: ViewProps) {
+export function View({ details, withdrawalFee, exchangeBaseUrl, knownExchanges, amount, onWithdraw, onSwitchExchange, terms, reviewing, onReview, onAccept, reviewed, confirmed }: ViewProps) {
   const needsReview = terms.status === 'changed' || terms.status === 'new'
 
   const [switchingExchange, setSwitchingExchange] = useState<string | undefined>(undefined)
@@ -107,12 +109,12 @@ export function View({ details, knownExchanges, amount, onWithdraw, onSwitchExch
         {i18n.str`Digital cash withdrawal`}
       </h2>
       <section>
-        <Part title="Total to withdraw" text={amountToString(Amounts.sub(amount, details.withdrawFee).amount)} kind='positive' />
+        <Part title="Total to withdraw" text={amountToString(Amounts.sub(amount, withdrawalFee).amount)} kind='positive' />
         <Part title="Chosen amount" text={amountToString(amount)} kind='neutral' />
-        {Amounts.isNonZero(details.withdrawFee) &&
-          <Part title="Exchange fee" text={amountToString(details.withdrawFee)} kind='negative' />
+        {Amounts.isNonZero(withdrawalFee) &&
+          <Part title="Exchange fee" text={amountToString(withdrawalFee)} kind='negative' />
         }
-        <Part title="Exchange" text={details.exchangeInfo.baseUrl} kind='neutral' big />
+        <Part title="Exchange" text={exchangeBaseUrl} kind='neutral' big />
       </section>
       {!reviewing &&
         <section>
@@ -190,7 +192,7 @@ export function View({ details, knownExchanges, amount, onWithdraw, onSwitchExch
         {terms.status === 'new' && !reviewed && !reviewing &&
           <ButtonSuccess
             upperCased
-            disabled={!details.exchangeInfo.baseUrl}
+            disabled={!exchangeBaseUrl}
             onClick={() => onReview(true)}
           >
             {i18n.str`Review exchange terms of service`}
@@ -199,7 +201,7 @@ export function View({ details, knownExchanges, amount, onWithdraw, onSwitchExch
         {terms.status === 'changed' && !reviewed && !reviewing &&
           <ButtonWarning
             upperCased
-            disabled={!details.exchangeInfo.baseUrl}
+            disabled={!exchangeBaseUrl}
             onClick={() => onReview(true)}
           >
             {i18n.str`Review new version of terms of service`}
@@ -208,7 +210,7 @@ export function View({ details, knownExchanges, amount, onWithdraw, onSwitchExch
         {(terms.status === 'accepted' || (needsReview && reviewed)) &&
           <ButtonSuccess
             upperCased
-            disabled={!details.exchangeInfo.baseUrl || confirmed}
+            disabled={!exchangeBaseUrl || confirmed}
             onClick={onWithdraw}
           >
             {i18n.str`Confirm withdrawal`}
@@ -220,7 +222,7 @@ export function View({ details, knownExchanges, amount, onWithdraw, onSwitchExch
           </LinkWarning>
           <ButtonWarning
             upperCased
-            disabled={!details.exchangeInfo.baseUrl}
+            disabled={!exchangeBaseUrl}
             onClick={onWithdraw}
           >
             {i18n.str`Withdraw anyway`}
@@ -249,11 +251,13 @@ export function WithdrawPageWithParsedURI({ uri, uriInfo }: { uri: string, uriIn
   const exchange = customExchange || uriInfo.defaultExchangeBaseUrl || thisCurrencyExchanges[0]?.exchangeBaseUrl
   const detailsHook = useAsyncAsHook(async () => {
     if (!exchange) throw Error('no default exchange')
-    return getExchangeWithdrawalInfo({
+    const tos = await getExchangeTos(exchange, ['text/xml'])
+    const info = await getExchangeWithdrawalInfo({
       exchangeBaseUrl: exchange,
       amount: withdrawAmount,
       tosAcceptedFormat: ['text/xml']
     })
+    return {tos, info}
   })
 
   if (!detailsHook) {
@@ -267,7 +271,7 @@ export function WithdrawPageWithParsedURI({ uri, uriInfo }: { uri: string, uriIn
 
   const onAccept = async (): Promise<void> => {
     try {
-      await setExchangeTosAccepted(details.exchangeInfo.baseUrl, details.tosRequested?.tosEtag)
+      await setExchangeTosAccepted(exchange, details.tos.currentEtag)
       setReviewed(true)
     } catch (e) {
       if (e instanceof Error) {
@@ -278,9 +282,9 @@ export function WithdrawPageWithParsedURI({ uri, uriInfo }: { uri: string, uriIn
 
   const onWithdraw = async (): Promise<void> => {
     setConfirmed(true)
-    console.log("accepting exchange", details.exchangeDetails.exchangeBaseUrl);
+    console.log("accepting exchange", exchange);
     try {
-      const res = await acceptWithdrawal(uri, details.exchangeInfo.baseUrl);
+      const res = await acceptWithdrawal(uri, exchange);
       console.log("accept withdrawal response", res);
       if (res.confirmTransferUrl) {
         document.location.href = res.confirmTransferUrl;
@@ -290,17 +294,18 @@ export function WithdrawPageWithParsedURI({ uri, uriInfo }: { uri: string, uriIn
     }
   };
 
-  const termsContent: TermsDocument | undefined = !details.tosRequested ? undefined : parseTermsOfServiceContent(details.tosRequested.tosContentType, details.tosRequested.tosText);
+  const termsContent: TermsDocument | undefined = parseTermsOfServiceContent(details.tos.contentType, details.tos.content);
 
   const status: TermsStatus = !termsContent ? 'notfound' : (
-    !details.exchangeDetails.termsOfServiceAcceptedEtag ? 'new' : (
-      details.tosRequested?.tosEtag !== details.exchangeDetails.termsOfServiceAcceptedEtag ? 'changed' : 'accepted'
+    !details.tos.acceptedEtag ? 'new' : (
+      details.tos.acceptedEtag !== details.tos.currentEtag ? 'changed' : 'accepted'
     ))
 
 
   return <View onWithdraw={onWithdraw}
-    // setCancelled={setCancelled} setSelecting={setSelecting}
-    details={details} amount={withdrawAmount}
+    details={details.tos} amount={withdrawAmount}
+    exchangeBaseUrl={exchange}
+    withdrawalFee={details.info.withdrawFee} //FIXME
     terms={{
       status, value: termsContent
     }}
@@ -309,7 +314,6 @@ export function WithdrawPageWithParsedURI({ uri, uriInfo }: { uri: string, uriIn
     confirmed={confirmed}
     reviewed={reviewed} onAccept={onAccept}
     reviewing={reviewing} onReview={setReviewing}
-  // terms={[]}
   />
 }
 export function WithdrawPage({ talerWithdrawUri }: Props): JSX.Element {
