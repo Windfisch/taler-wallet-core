@@ -57,11 +57,23 @@ export async function runLibeufinKeyrotationTest(t: GlobalTestState) {
     user01sandbox.ebicsBankAccount.subscriber.hostID,
   );
 
-  const resp = await LibeufinNexusApi.fetchTransactions(
-    libeufinServices.libeufinNexus,
-    user01nexus.localAccountName,
-  );
-  console.log("Attempted fetch after key rotation", resp.data);
-  t.assertTrue(resp.status == 500);
+  try {
+    await LibeufinNexusApi.fetchTransactions(
+      libeufinServices.libeufinNexus,
+      user01nexus.localAccountName,
+    );
+  } catch (e: any) {
+    /**
+     * Asserting that Nexus responded with a 500 Internal server
+     * error, because the bank signed the last response with a new
+     * key pair that was never downloaded by Nexus.
+     *
+     * NOTE: the bank accepted the request addressed to the old
+     * public key.  Should it in this case reject the request even
+     * before trying to verify it?
+     */
+    t.assertTrue(e.response.status == 500);
+    t.assertTrue(e.response.data.code == 9000);
+  }
 }
 runLibeufinKeyrotationTest.suites = ["libeufin"];
