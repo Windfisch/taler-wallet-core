@@ -63,10 +63,14 @@ import {
   TransactionsResponse,
   WalletBackupContentV1,
   WalletCurrencyInfo,
+  WithdrawFakebankRequest,
   WithdrawTestBalanceRequest,
   WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
-import { AddBackupProviderRequest, BackupInfo } from "./operations/backup/index.js";
+import {
+  AddBackupProviderRequest,
+  BackupInfo,
+} from "./operations/backup/index.js";
 import { PendingOperationsResponse } from "./pending-types.js";
 
 export enum WalletApiOperation {
@@ -110,9 +114,14 @@ export enum WalletApiOperation {
   CreateDepositGroup = "createDepositGroup",
   SetWalletDeviceId = "setWalletDeviceId",
   ExportBackupPlain = "exportBackupPlain",
+  WithdrawFakebank = "withdrawFakebank",
 }
 
 export type WalletOperations = {
+  [WalletApiOperation.WithdrawFakebank]: {
+    request: WithdrawFakebankRequest;
+    response: {};
+  };
   [WalletApiOperation.PreparePayForUri]: {
     request: PreparePayRequest;
     response: PreparePayResult;
@@ -256,7 +265,7 @@ export type WalletOperations = {
   [WalletApiOperation.TestPay]: {
     request: TestPayArgs;
     response: {};
-  }
+  };
 };
 
 export type RequestType<

@@ -353,13 +353,22 @@ export async function makeTestPayment(
   const { wallet, merchant } = args;
   const instance = args.instance ?? "default";
 
-  const orderResp = await MerchantPrivateApi.createOrder(merchant, instance, {
-    order: args.order,
-  }, auth);
+  const orderResp = await MerchantPrivateApi.createOrder(
+    merchant,
+    instance,
+    {
+      order: args.order,
+    },
+    auth,
+  );
 
-  let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
-    orderId: orderResp.order_id,
-  }, auth);
+  let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(
+    merchant,
+    {
+      orderId: orderResp.order_id,
+    },
+    auth,
+  );
 
   t.assertTrue(orderStatus.order_status === "unpaid");
 
@@ -384,10 +393,14 @@ export async function makeTestPayment(
 
   // Check if payment was successful.
 
-  orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {
-    orderId: orderResp.order_id,
-    instance,
-  }, auth);
+  orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(
+    merchant,
+    {
+      orderId: orderResp.order_id,
+      instance,
+    },
+    auth,
+  );
 
   t.assertTrue(orderStatus.order_status === "paid");
 }

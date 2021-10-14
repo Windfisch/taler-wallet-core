@@ -395,6 +395,11 @@ export interface BankConfig {
   maxDebt?: string;
 }
 
+export interface FakeBankConfig {
+  currency: string;
+  httpPort: number;
+}
+
 function setTalerPaths(config: Configuration, home: string) {
   config.setString("paths", "taler_home", home);
   // We need to make sure that the path of taler_runtime_dir isn't too long,
@@ -710,6 +715,62 @@ export class BankService implements BankServiceInterface {
 
   async pingUntilAvailable(): Promise<void> {
     const url = `http://localhost:${this.bankConfig.httpPort}/config`;
+    await pingProc(this.proc, url, "bank");
+  }
+}
+
+export class FakeBankService {
+  proc: ProcessWrapper | undefined;
+
+  static fromExistingConfig(gc: GlobalTestState): FakeBankService {
+    const cfgFilename = gc.testDir + "/bank.conf";
+    console.log("reading fakebank config from", cfgFilename);
+    const config = Configuration.load(cfgFilename);
+    const bc: FakeBankConfig = {
+      currency: config.getString("taler", "currency").required(),
+      httpPort: config.getNumber("bank", "http_port").required(),
+    };
+    return new FakeBankService(gc, bc, cfgFilename);
+  }
+
+  static async create(
+    gc: GlobalTestState,
+    bc: FakeBankConfig,
+  ): Promise<FakeBankService> {
+    const config = new Configuration();
+    setTalerPaths(config, gc.testDir + "/talerhome");
+    config.setString("taler", "currency", bc.currency);
+    config.setString("bank", "http_port", `${bc.httpPort}`);
+    const cfgFilename = gc.testDir + "/bank.conf";
+    config.write(cfgFilename);
+    return new FakeBankService(gc, bc, cfgFilename);
+  }
+
+  get baseUrl(): string {
+    return `http://localhost:${this.bankConfig.httpPort}/`;
+  }
+
+  get port() {
+    return this.bankConfig.httpPort;
+  }
+
+  private constructor(
+    private globalTestState: GlobalTestState,
+    private bankConfig: FakeBankConfig,
+    private configFile: string,
+  ) {}
+
+  async start(): Promise<void> {
+    this.proc = this.globalTestState.spawnService(
+      "taler-fakebank-run",
+      ["-c", this.configFile],
+      "fakebank",
+    );
+  }
+
+  async pingUntilAvailable(): Promise<void> {
+    // Fakebank doesn't have "/config", so we ping just "/".
+    const url = `http://localhost:${this.bankConfig.httpPort}/`;
     await pingProc(this.proc, url, "bank");
   }
 }

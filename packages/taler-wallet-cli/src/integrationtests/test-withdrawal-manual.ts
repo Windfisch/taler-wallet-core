@@ -19,8 +19,6 @@
  */
 import { GlobalTestState, BankApi } from "./harness";
 import { createSimpleTestkudosEnvironment } from "./helpers";
-import { CoreApiResponse } from "@gnu-taler/taler-util";
-import { codecForBalancesResponse } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**
@@ -39,8 +37,6 @@ export async function runTestWithdrawalManualTest(t: GlobalTestState) {
   // Create a withdrawal operation
 
   const user = await BankApi.createRandomBankUser(bank);
-
-  let wresp: CoreApiResponse;
 
   await wallet.client.call(WalletApiOperation.AddExchange, {
     exchangeBaseUrl: exchange.baseUrl,

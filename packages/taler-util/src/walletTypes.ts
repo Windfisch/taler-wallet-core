@@ -590,11 +590,11 @@ export interface GetExchangeTosResult {
    * if any.
    */
   acceptedEtag: string | undefined;
-  
+
   /**
    * Accepted content type
    */
-   contentType: string;
+  contentType: string;
 }
 
 export interface TestPayArgs {
@@ -658,9 +658,9 @@ export interface GetExchangeTosRequest {
 
 export const codecForGetExchangeTosRequest = (): Codec<GetExchangeTosRequest> =>
   buildCodecForObject<GetExchangeTosRequest>()
-  .property("exchangeBaseUrl", codecForString())
-  .property("acceptedFormat", codecOptional(codecForList(codecForString())))
-  .build("GetExchangeTosRequest");
+    .property("exchangeBaseUrl", codecForString())
+    .property("acceptedFormat", codecOptional(codecForList(codecForString())))
+    .build("GetExchangeTosRequest");
 
 export interface AcceptManualWithdrawalRequest {
   exchangeBaseUrl: string;
@@ -734,7 +734,10 @@ export const codecForGetExchangeWithdrawalInfo = (): Codec<GetExchangeWithdrawal
   buildCodecForObject<GetExchangeWithdrawalInfo>()
     .property("exchangeBaseUrl", codecForString())
     .property("amount", codecForAmountJson())
-    .property("tosAcceptedFormat", codecOptional(codecForList(codecForString())))
+    .property(
+      "tosAcceptedFormat",
+      codecOptional(codecForList(codecForString())),
+    )
     .build("GetExchangeWithdrawalInfo");
 
 export interface AbortProposalRequest {
@@ -1029,3 +1032,16 @@ export const codecForSetWalletDeviceIdRequest = (): Codec<SetWalletDeviceIdReque
   buildCodecForObject<SetWalletDeviceIdRequest>()
     .property("walletDeviceId", codecForString())
     .build("SetWalletDeviceIdRequest");
+
+export interface WithdrawFakebankRequest {
+  amount: AmountString;
+  exchange: string;
+  bank: string;
+}
+
+export const codecForWithdrawFakebankRequest = (): Codec<WithdrawFakebankRequest> =>
+  buildCodecForObject<WithdrawFakebankRequest>()
+    .property("amount", codecForAmountString())
+    .property("bank", codecForString())
+    .property("exchange", codecForString())
+    .build("WithdrawFakebankRequest");

@@ -38,6 +38,9 @@ import {
   Timestamp,
   timestampMin,
   WalletNotification,
+  codecForWithdrawFakebankRequest,
+  URL,
+  parsePaytoUri,
 } from "@gnu-taler/taler-util";
 import {
   addBackupProvider,
@@ -173,7 +176,10 @@ import {
   openPromise,
 } from "./util/promiseUtils.js";
 import { DbAccess } from "./util/query.js";
-import { HttpRequestLibrary } from "./util/http.js";
+import {
+  HttpRequestLibrary,
+  readSuccessResponseJsonOrThrow,
+} from "./util/http.js";
 
 const builtinAuditors: AuditorTrustRecord[] = [
   {
@@ -217,7 +223,12 @@ async function processOnePendingOperation(
   logger.trace(`running pending ${JSON.stringify(pending, undefined, 2)}`);
   switch (pending.type) {
     case PendingTaskType.ExchangeUpdate:
-      await updateExchangeFromUrl(ws, pending.exchangeBaseUrl, undefined, forceNow);
+      await updateExchangeFromUrl(
+        ws,
+        pending.exchangeBaseUrl,
+        undefined,
+        forceNow,
+      );
       break;
     case PendingTaskType.Refresh:
       await processRefreshGroup(ws, pending.refreshGroupId, forceNow);
@@ -418,7 +429,7 @@ async function fillDefaults(ws: InternalWalletState): Promise<void> {
 }
 
 /**
- * Create a reserve, but do not flag it as confirmed yet.
+ * Create a reserve for a manual withdrawal.
  *
  * Adds the corresponding exchange as a trusted exchange if it is neither
  * audited nor trusted already.
@@ -462,7 +473,11 @@ async function getExchangeTos(
   const content = exchangeDetails.termsOfServiceText;
   const currentEtag = exchangeDetails.termsOfServiceLastEtag;
   const contentType = exchangeDetails.termsOfServiceContentType;
-  if (content === undefined || currentEtag === undefined || contentType === undefined) {
+  if (
+    content === undefined ||
+    currentEtag === undefined ||
+    contentType === undefined
+  ) {
     throw Error("exchange is in invalid state");
   }
   return {
@@ -688,7 +703,12 @@ async function dispatchRequestInternal(
     }
     case "addExchange": {
       const req = codecForAddExchangeRequest().decode(payload);
-      await updateExchangeFromUrl(ws, req.exchangeBaseUrl, undefined, req.forceUpdate);
+      await updateExchangeFromUrl(
+        ws,
+        req.exchangeBaseUrl,
+        undefined,
+        req.forceUpdate,
+      );
       return {};
     }
     case "listExchanges": {
@@ -700,7 +720,11 @@ async function dispatchRequestInternal(
     }
     case "getExchangeWithdrawalInfo": {
       const req = codecForGetExchangeWithdrawalInfo().decode(payload);
-      return await getExchangeWithdrawalInfo(ws, req.exchangeBaseUrl, req.amount);
+      return await getExchangeWithdrawalInfo(
+        ws,
+        req.exchangeBaseUrl,
+        req.amount,
+      );
     }
     case "acceptManualWithdrawal": {
       const req = codecForAcceptManualWithdrawalRequet().decode(payload);
@@ -748,7 +772,7 @@ async function dispatchRequestInternal(
     }
     case "getExchangeTos": {
       const req = codecForGetExchangeTosRequest().decode(payload);
-      return getExchangeTos(ws, req.exchangeBaseUrl , req.acceptedFormat);
+      return getExchangeTos(ws, req.exchangeBaseUrl, req.acceptedFormat);
     }
     case "retryPendingNow": {
       await runPending(ws, true);
@@ -889,6 +913,35 @@ async function dispatchRequestInternal(
           };
         });
     }
+    case "withdrawFakebank": {
+      const req = codecForWithdrawFakebankRequest().decode(payload);
+      const amount = Amounts.parseOrThrow(req.amount);
+      const details = await getWithdrawalDetailsForAmount(
+        ws,
+        req.exchange,
+        amount,
+      );
+      const wres = await acceptManualWithdrawal(ws, req.exchange, amount);
+      const paytoUri = details.paytoUris[0];
+      const pt = parsePaytoUri(paytoUri);
+      if (!pt) {
+        throw Error("failed to parse payto URI");
+      }
+      const components = pt.targetPath.split("/");
+      const creditorAcct = components[components.length - 1];
+      logger.info(`making testbank transfer to '${creditorAcct}''`)
+      const fbReq = await ws.http.postJson(
+        new URL(`${creditorAcct}/admin/add-incoming`, req.bank).href,
+        {
+          amount: Amounts.stringify(amount),
+          reserve_pub: wres.reservePub,
+          debit_account: "payto://x-taler-bank/localhost/testdebtor",
+        },
+      );
+      const fbResp = await readSuccessResponseJsonOrThrow(fbReq, codecForAny());
+      logger.info(`started fakebank withdrawal: ${j2s(fbResp)}`);
+      return {};
+    }
   }
   throw OperationFailedError.fromCode(
     TalerErrorCode.WALLET_CORE_API_OPERATION_UNKNOWN,
@@ -916,7 +969,7 @@ export async function handleCoreApiRequest(
       id,
       result,
     };
-  } catch (e) {
+  } catch (e: any) {
     if (
       e instanceof OperationFailedError ||
       e instanceof OperationFailedAndReportedError
@@ -928,6 +981,10 @@ export async function handleCoreApiRequest(
         error: e.operationError,
       };
     } else {
+      try {
+        logger.error("Caught unexpected exception:");
+        logger.error(e.stack);
+      } catch (e) {}
       return {
         type: "error",
         operation,

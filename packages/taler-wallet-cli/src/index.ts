@@ -635,6 +635,29 @@ const advancedCli = walletCli.subcommand("advancedArgs", "advanced", {
 });
 
 advancedCli
+  .subcommand("withdrawFakebank", "withdraw-fakebank", {
+    help: "Withdraw via a fakebank.",
+  })
+  .requiredOption("exchange", ["--exchange"], clk.STRING, {
+    help: "Base URL of the exchange to use",
+  })
+  .requiredOption("amount", ["--amount"], clk.STRING, {
+    help: "Amount to withdraw (before fees)."
+  })
+  .requiredOption("bank", ["--bank"], clk.STRING, {
+    help: "Base URL of the Taler fakebank service.",
+  })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      await wallet.client.call(WalletApiOperation.WithdrawFakebank, {
+        amount: args.withdrawFakebank.amount,
+        bank: args.withdrawFakebank.bank,
+        exchange: args.withdrawFakebank.exchange,
+      });
+    });
+  });
+
+advancedCli
   .subcommand("manualWithdrawalDetails", "manual-withdrawal-details", {
     help: "Query withdrawal fees.",
   })
@@ -1064,6 +1087,5 @@ export function main() {
     logger.warn("Allowing withdrawal of late denominations for debugging");
     walletCoreDebugFlags.denomselAllowLate = true;
   }
-  logger.trace(`running wallet-cli with`, process.argv);
   walletCli.run();
 }
