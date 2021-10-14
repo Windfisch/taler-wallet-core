@@ -829,7 +829,7 @@ export namespace LibeufinSandboxApi {
     await axios.post(url.href, {}, {
       auth: {
         username: "admin",
-        password: "test",
+        password: "secret",
       },
     });
   }
@@ -846,7 +846,7 @@ export namespace LibeufinSandboxApi {
     {
       auth: {
         username: "admin",
-        password: "test",
+        password: "secret",
       },
     });
   }
@@ -860,7 +860,7 @@ export namespace LibeufinSandboxApi {
     await axios.post(url.href, req, {
       auth: {
         username: "admin",
-        password: "test",
+        password: "secret",
       },
     });
   }
@@ -874,7 +874,7 @@ export namespace LibeufinSandboxApi {
     await axios.post(url.href, req, {
       auth: {
         username: "admin",
-        password: "test",
+        password: "secret",
       },
     });
   }
@@ -888,7 +888,7 @@ export namespace LibeufinSandboxApi {
     await axios.post(url.href, req, {
       auth: {
         username: "admin",
-        password: "test",
+        password: "secret",
       },
     });
   }
@@ -902,7 +902,7 @@ export namespace LibeufinSandboxApi {
     await axios.post(url.href, req, {
       auth: {
         username: "admin",
-        password: "test",
+        password: "secret",
       },
     });
   }
@@ -944,7 +944,7 @@ export namespace LibeufinSandboxApi {
     await axios.post(url.href, req, {
       auth: {
         username: "admin",
-        password: "test",
+        password: "secret",
       },
     });
   }
@@ -961,7 +961,7 @@ export namespace LibeufinSandboxApi {
     const res = await axios.get(url.href, {
       auth: {
         username: "admin",
-        password: "test",
+        password: "secret",
       },
     });
     return res.data as SandboxAccountTransactions;
@@ -980,7 +980,7 @@ export namespace LibeufinSandboxApi {
     {
       auth: {
         username: "admin",
-        password: "test",
+        password: "secret",
       },
     });
   }
@@ -997,7 +997,7 @@ export namespace LibeufinSandboxApi {
     return await axios.get(url.href, {
       auth: {
         username: "admin",
-        password: "test",
+        password: "secret",
       },
     });
   }
@@ -1343,7 +1343,6 @@ export namespace LibeufinNexusApi {
           username: username,
           password: password,
         },
-        validateStatus: () => true,
       },
     );
   }

@@ -100,6 +100,7 @@ export async function runLibeufinC5xTest(t: GlobalTestState) {
   );
   t.assertTrue(expectOne.data.newTransactions == 1);
   t.assertTrue(expectOne.data.downloadedTransactions == 1);
+
   let expectZero = await LibeufinNexusApi.fetchTransactions(
     libeufinServices.libeufinNexus,
     user01nexus.localAccountName,
