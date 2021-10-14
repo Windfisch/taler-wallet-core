@@ -218,17 +218,6 @@ export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
         LIBEUFIN_SANDBOX_DB_CONNECTION: this.sandboxConfig.databaseJdbcUri,
       },
     );
-    await runCommand(
-      this.globalTestState,
-      "libeufin-sandbox-superuser",
-      "libeufin-sandbox",
-      ["superuser", "admin", "--password", "test"],
-      {
-        ...process.env,
-        LIBEUFIN_SANDBOX_DB_CONNECTION: this.sandboxConfig.databaseJdbcUri,
-      },
-    );
-
     this.sandboxProc = this.globalTestState.spawnService(
       "libeufin-sandbox",
       ["serve", "--port", `${this.sandboxConfig.httpPort}`],
@@ -236,6 +225,7 @@ export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
       {
         ...process.env,
         LIBEUFIN_SANDBOX_DB_CONNECTION: this.sandboxConfig.databaseJdbcUri,
+        LIBEUFIN_SANDBOX_ADMIN_PASSWORD: "secret",
       },
     );
   }
@@ -271,7 +261,7 @@ export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
   }
 
   async pingUntilAvailable(): Promise<void> {
-    const url = `${this.baseUrl}config`;
+    const url = this.baseUrl;
     await pingProc(this.sandboxProc, url, "libeufin-sandbox");
   }
 }
@@ -485,14 +475,22 @@ export class LibeufinCli {
     this.cliDetails = cd;
   }
 
+  env(): any {
+    return {
+      ...process.env,
+      LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl,
+      LIBEUFIN_SANDBOX_USERNAME: "admin",
+      LIBEUFIN_SANDBOX_PASSWORD: "secret",
+    }
+  }
+
   async checkSandbox(): Promise<void> {
     const stdout = await sh(
       this.globalTestState,
       "libeufin-cli-checksandbox",
       "libeufin-cli sandbox check",
-      { ...process.env, LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl },
+      this.env()
     );
-    console.log(stdout);
   }
 
   async createEbicsHost(hostId: string): Promise<void> {
@@ -500,7 +498,7 @@ export class LibeufinCli {
       this.globalTestState,
       "libeufin-cli-createebicshost",
       `libeufin-cli sandbox ebicshost create --host-id=${hostId}`,
-      { ...process.env, LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl },
+      this.env()
     );
     console.log(stdout);
   }
@@ -515,7 +513,7 @@ export class LibeufinCli {
         ` --host-id=${details.hostId}` +
         ` --partner-id=${details.partnerId}` +
         ` --user-id=${details.userId}`,
-      { ...process.env, LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl },
+      this.env()
     );
     console.log(stdout);
   }
@@ -536,7 +534,7 @@ export class LibeufinCli {
         ` --ebics-host-id=${sd.hostId}` +
         ` --ebics-partner-id=${sd.partnerId}` +
         ` --ebics-user-id=${sd.userId}`,
-      { ...process.env, LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl },
+      this.env()
     );
     console.log(stdout);
   }
@@ -546,7 +544,7 @@ export class LibeufinCli {
       this.globalTestState,
       "libeufin-cli-generatetransactions",
       `libeufin-cli sandbox bankaccount generate-transactions ${accountName}`,
-      { ...process.env, LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl },
+      this.env()
     );
     console.log(stdout);
   }
@@ -556,7 +554,7 @@ export class LibeufinCli {
       this.globalTestState,
       "libeufin-cli-showsandboxtransactions",
       `libeufin-cli sandbox bankaccount transactions ${accountName}`,
-      { ...process.env, LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl },
+      this.env()
     );
     console.log(stdout);
   }
