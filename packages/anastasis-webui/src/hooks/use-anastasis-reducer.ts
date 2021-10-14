@@ -1,3 +1,4 @@
+import { TalerErrorCode } from "@gnu-taler/taler-util";
 import { useState } from "preact/hooks";
 
 export type ReducerState =
@@ -138,13 +139,44 @@ export enum RecoveryStates {
 const reducerBaseUrl = "http://localhost:5000/";
 
 async function getBackupStartState(): Promise<ReducerState> {
-  const resp = await fetch(new URL("start-backup", reducerBaseUrl).href);
-  return await resp.json();
+  let resp: Response;
+
+  try {
+    resp = await fetch(new URL("start-backup", reducerBaseUrl).href);
+  } catch (e) {
+    return {
+      code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
+      message: `Network request to remote reducer ${reducerBaseUrl} failed`,
+    } as any;
+  }
+  try {
+    return await resp.json();
+  } catch (e) {
+    return {
+      code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
+      message: `Could not parse response from reducer`,
+    } as any;
+  }
 }
 
 async function getRecoveryStartState(): Promise<ReducerState> {
-  const resp = await fetch(new URL("start-recovery", reducerBaseUrl).href);
-  return await resp.json();
+  let resp: Response;
+  try {
+    resp = await fetch(new URL("start-recovery", reducerBaseUrl).href);
+  } catch (e) {
+    return {
+      code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
+      message: `Network request to remote reducer ${reducerBaseUrl} failed`,
+    } as any;
+  }
+  try {
+    return await resp.json();
+  } catch (e) {
+    return {
+      code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
+      message: `Could not parse response from reducer`,
+    } as any;
+  }
 }
 
 async function reduceState(
@@ -152,19 +184,34 @@ async function reduceState(
   action: string,
   args: any,
 ): Promise<ReducerState> {
-  const resp = await fetch(new URL("action", reducerBaseUrl).href, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      state,
-      action,
-      arguments: args,
-    }),
-  });
-  return resp.json();
+  let resp: Response;
+  try {
+    resp = await fetch(new URL("action", reducerBaseUrl).href, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        state,
+        action,
+        arguments: args,
+      }),
+    });
+  } catch (e) {
+    return {
+      code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
+      message: `Network request to remote reducer ${reducerBaseUrl} failed`,
+    } as any;
+  }
+  try {
+    return await resp.json();
+  } catch (e) {
+    return {
+      code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
+      message: `Could not parse response from reducer`,
+    } as any;
+  }
 }
 
 export interface ReducerTransactionHandle {
@@ -244,19 +291,33 @@ export function useAnastasisReducer(): AnastasisReducerApi {
     currentError: anastasisState.currentError,
     async startBackup() {
       const s = await getBackupStartState();
-      setAnastasisState({
-        ...anastasisState,
-        currentError: undefined,
-        reducerState: s,
-      });
+      if (s.code !== undefined) {
+        setAnastasisState({
+          ...anastasisState,
+          currentError: s,
+        });
+      } else {
+        setAnastasisState({
+          ...anastasisState,
+          currentError: undefined,
+          reducerState: s,
+        });
+      }
     },
     async startRecover() {
       const s = await getRecoveryStartState();
-      setAnastasisState({
-        ...anastasisState,
-        currentError: undefined,
-        reducerState: s,
-      });
+      if (s.code !== undefined) {
+        setAnastasisState({
+          ...anastasisState,
+          currentError: s,
+        });
+      } else {
+        setAnastasisState({
+          ...anastasisState,
+          currentError: undefined,
+          reducerState: s,
+        });
+      }
     },
     transition(action: string, args: any) {
       doTransition(action, args);
