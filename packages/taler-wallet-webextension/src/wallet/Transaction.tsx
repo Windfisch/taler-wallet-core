@@ -22,7 +22,7 @@ import { useEffect, useState } from "preact/hooks";
 import * as wxApi from "../wxApi";
 import { Pages } from "../NavigationBar";
 import emptyImg from "../../static/img/empty.png"
-import { Button, ButtonBox, ButtonBoxDestructive, ButtonDestructive, ButtonPrimary, ExtraLargeText, FontIcon, LargeText, ListOfProducts, PopupBox, Row, RowBorderGray, SmallLightText, WalletBox } from "../components/styled";
+import { Button, ButtonBox, ButtonBoxDestructive, ButtonDestructive, ButtonPrimary, ExtraLargeText, FontIcon, LargeText, ListOfProducts, PopupBox, Row, RowBorderGray, SmallLightText, WalletBox, WarningBox } from "../components/styled";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { Part } from "../components/Part";
 
@@ -55,28 +55,21 @@ export function TransactionPage({ tid }: { tid: string; }): JSX.Element {
 }
 
 export interface WalletTransactionProps {
-  transaction: Transaction,
-  onDelete: () => void,
-  onRetry: () => void,
-  onBack: () => void,
+  transaction: Transaction;
+  onDelete: () => void;
+  onRetry: () => void;
+  onBack: () => void;
 }
 
 export function TransactionView({ transaction, onDelete, onRetry, onBack }: WalletTransactionProps) {
 
-  function Status() {
-    if (transaction.error) {
-      return <span style={{ fontWeight: 'normal', fontSize: 16, color: 'red' }}>(failed)</span>
-    }
-    if (transaction.pending) {
-      return <span style={{ fontWeight: 'normal', fontSize: 16, color: 'gray' }}>(pending...)</span>
-    }
-    return null
-  }
-
   function TransactionTemplate({ children }: { children: VNode[] }) {
     return <WalletBox>
-      <section>
+      <section style={{ padding: 8, textAlign: 'center'}}>
         <ErrorMessage title={transaction?.error?.hint} />
+        {transaction.pending && <WarningBox>This transaction is not completed</WarningBox>}
+      </section>
+      <section>
         <div style={{ textAlign: 'center' }}>
           {children}
         </div>
@@ -104,8 +97,8 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount
     return <TransactionTemplate>
-      <h2>Withdrawal <Status /></h2>
-      <div>{transaction.timestamp.t_ms === 'never' ? 'never': format(transaction.timestamp.t_ms, 'dd MMMM yyyy, HH:mm')}</div>
+      <h2>Withdrawal</h2>
+      <div>{transaction.timestamp.t_ms === 'never' ? 'never' : format(transaction.timestamp.t_ms, 'dd MMMM yyyy, HH:mm')}</div>
       <br />
       <Part title="Total withdrawn" text={amountToString(transaction.amountEffective)} kind='positive' />
       <Part title="Chosen amount" text={amountToString(transaction.amountRaw)} kind='neutral' />
@@ -125,8 +118,8 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
     ).amount
 
     return <TransactionTemplate>
-      <h2>Payment <Status /></h2>
-      <div>{transaction.timestamp.t_ms === 'never' ? 'never': format(transaction.timestamp.t_ms, 'dd MMMM yyyy, HH:mm')}</div>
+      <h2>Payment </h2>
+      <div>{transaction.timestamp.t_ms === 'never' ? 'never' : format(transaction.timestamp.t_ms, 'dd MMMM yyyy, HH:mm')}</div>
       <br />
       <Part big title="Total paid" text={amountToString(transaction.amountEffective)} kind='negative' />
       <Part big title="Purchase amount" text={amountToString(transaction.amountRaw)} kind='neutral' />
@@ -138,7 +131,7 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
       <div>
         {transaction.info.products && transaction.info.products.length > 0 &&
           <ListOfProducts>
-            {transaction.info.products.map(p => <RowBorderGray>
+            {transaction.info.products.map((p, k) => <RowBorderGray key={k}>
               <a href="#" onClick={showLargePic}>
                 <img src={p.image ? p.image : emptyImg} />
               </a>
@@ -159,8 +152,8 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount
     return <TransactionTemplate>
-      <h2>Deposit <Status /></h2>
-      <div>{transaction.timestamp.t_ms === 'never' ? 'never': format(transaction.timestamp.t_ms, 'dd MMMM yyyy, HH:mm')}</div>
+      <h2>Deposit </h2>
+      <div>{transaction.timestamp.t_ms === 'never' ? 'never' : format(transaction.timestamp.t_ms, 'dd MMMM yyyy, HH:mm')}</div>
       <br />
       <Part big title="Total deposit" text={amountToString(transaction.amountEffective)} kind='negative' />
       <Part big title="Purchase amount" text={amountToString(transaction.amountRaw)} kind='neutral' />
@@ -174,8 +167,8 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount
     return <TransactionTemplate>
-      <h2>Refresh <Status /></h2>
-      <div>{transaction.timestamp.t_ms === 'never' ? 'never': format(transaction.timestamp.t_ms, 'dd MMMM yyyy, HH:mm')}</div>
+      <h2>Refresh</h2>
+      <div>{transaction.timestamp.t_ms === 'never' ? 'never' : format(transaction.timestamp.t_ms, 'dd MMMM yyyy, HH:mm')}</div>
       <br />
       <Part big title="Total refresh" text={amountToString(transaction.amountEffective)} kind='negative' />
       <Part big title="Refresh amount" text={amountToString(transaction.amountRaw)} kind='neutral' />
@@ -189,8 +182,8 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount
     return <TransactionTemplate>
-      <h2>Tip <Status /></h2>
-      <div>{transaction.timestamp.t_ms === 'never' ? 'never': format(transaction.timestamp.t_ms, 'dd MMMM yyyy, HH:mm')}</div>
+      <h2>Tip</h2>
+      <div>{transaction.timestamp.t_ms === 'never' ? 'never' : format(transaction.timestamp.t_ms, 'dd MMMM yyyy, HH:mm')}</div>
       <br />
       <Part big title="Total tip" text={amountToString(transaction.amountEffective)} kind='positive' />
       <Part big title="Received amount" text={amountToString(transaction.amountRaw)} kind='neutral' />
@@ -204,8 +197,8 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount
     return <TransactionTemplate>
-      <h2>Refund <Status /></h2>
-      <div>{transaction.timestamp.t_ms === 'never' ? 'never': format(transaction.timestamp.t_ms, 'dd MMMM yyyy, HH:mm')}</div>
+      <h2>Refund</h2>
+      <div>{transaction.timestamp.t_ms === 'never' ? 'never' : format(transaction.timestamp.t_ms, 'dd MMMM yyyy, HH:mm')}</div>
       <br />
       <Part big title="Total refund" text={amountToString(transaction.amountEffective)} kind='positive' />
       <Part big title="Refund amount" text={amountToString(transaction.amountRaw)} kind='neutral' />
@@ -220,7 +213,7 @@ export function TransactionView({ transaction, onDelete, onRetry, onBack }: Wall
       <div>
         {transaction.info.products && transaction.info.products.length > 0 &&
           <ListOfProducts>
-            {transaction.info.products.map(p => <RowBorderGray>
+            {transaction.info.products.map((p, k) => <RowBorderGray key={k}>
               <a href="#" onClick={showLargePic}>
                 <img src={p.image ? p.image : emptyImg} />
               </a>

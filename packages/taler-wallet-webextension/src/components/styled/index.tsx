@@ -459,6 +459,10 @@ export const LightText = styled.div`
   color: gray;
 `
 
+export const WarningText = styled.div`
+  color: rgb(223, 117, 20);
+`
+
 export const SmallText = styled.div`
   font-size: small; 
 `

@@ -30,7 +30,7 @@ import { ExchangeXmlTos } from '../components/ExchangeToS';
 import { LogoHeader } from '../components/LogoHeader';
 import { Part } from '../components/Part';
 import { SelectList } from '../components/SelectList';
-import { ButtonSuccess, ButtonWarning, LinkSuccess, LinkWarning, TermsOfService, WalletAction } from '../components/styled';
+import { ButtonSuccess, ButtonWarning, LinkSuccess, LinkWarning, TermsOfService, WalletAction, WarningText } from '../components/styled';
 import { useAsyncAsHook } from '../hooks/useAsyncAsHook';
 import {
   acceptWithdrawal, getExchangeWithdrawalInfo, getWithdrawalDetailsForUri, setExchangeTosAccepted, listExchanges, getExchangeTos
@@ -142,6 +142,13 @@ export function View({ details, withdrawalFee, exchangeBaseUrl, knownExchanges, 
           </LinkSuccess>
         </section>
       }
+      {terms.status === 'notfound' &&
+        <section>
+          <WarningText>
+            {i18n.str`Exchange doesn't have terms of service`}
+          </WarningText>
+        </section>
+      }
       {reviewing &&
         <section>
           {terms.status !== 'accepted' && terms.value && terms.value.type === 'xml' &&
@@ -216,10 +223,7 @@ export function View({ details, withdrawalFee, exchangeBaseUrl, knownExchanges, 
             {i18n.str`Confirm withdrawal`}
           </ButtonSuccess>
         }
-        {terms.status === 'notfound' && <Fragment>
-          <LinkWarning>
-            {i18n.str`Exchange doesn't have terms of service`}
-          </LinkWarning>
+        {terms.status === 'notfound' &&
           <ButtonWarning
             upperCased
             disabled={!exchangeBaseUrl}
@@ -227,7 +231,6 @@ export function View({ details, withdrawalFee, exchangeBaseUrl, knownExchanges, 
           >
             {i18n.str`Withdraw anyway`}
           </ButtonWarning>
-        </Fragment>
         }
       </section>
     </WalletAction>
@@ -257,7 +260,7 @@ export function WithdrawPageWithParsedURI({ uri, uriInfo }: { uri: string, uriIn
       amount: withdrawAmount,
       tosAcceptedFormat: ['text/xml']
     })
-    return {tos, info}
+    return { tos, info }
   })
 
   if (!detailsHook) {
