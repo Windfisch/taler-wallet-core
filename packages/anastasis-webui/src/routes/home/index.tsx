@@ -45,43 +45,39 @@ function withProcessLabel(reducer: AnastasisReducerApi, text: string): string {
 
 function ContinentSelection(props: CommonReducerProps) {
   const { reducer, reducerState } = props;
+  const sel = (x: string) =>
+    reducer.transition("select_continent", { continent: x });
   return (
     <AnastasisClientFrame
       hideNext
       title={withProcessLabel(reducer, "Select Continent")}
     >
-      {reducerState.continents.map((x: any) => {
-        const sel = (x: string) =>
-          reducer.transition("select_continent", { continent: x });
-        return (
-          <button onClick={() => sel(x.name)} key={x.name}>
-            {x.name}
-          </button>
-        );
-      })}
+      {reducerState.continents.map((x: any) => (
+        <button onClick={() => sel(x.name)} key={x.name}>
+          {x.name}
+        </button>
+      ))}
     </AnastasisClientFrame>
   );
 }
 
 function CountrySelection(props: CommonReducerProps) {
   const { reducer, reducerState } = props;
+  const sel = (x: any) =>
+    reducer.transition("select_country", {
+      country_code: x.code,
+      currencies: [x.currency],
+    });
   return (
     <AnastasisClientFrame
       hideNext
       title={withProcessLabel(reducer, "Select Country")}
     >
-      {reducerState.countries.map((x: any) => {
-        const sel = (x: any) =>
-          reducer.transition("select_country", {
-            country_code: x.code,
-            currencies: [x.currency],
-          });
-        return (
-          <button onClick={() => sel(x)} key={x.name}>
-            {x.name} ({x.currency})
-          </button>
-        );
-      })}
+      {reducerState.countries.map((x: any) => (
+        <button onClick={() => sel(x)} key={x.name}>
+          {x.name} ({x.currency})
+        </button>
+      ))}
     </AnastasisClientFrame>
   );
 }
@@ -106,21 +102,85 @@ function SolveQuestionEntry(props: SolveEntryProps) {
     >
       <p>Feedback: {JSON.stringify(feedback)}</p>
       <p>Question: {challenge.instructions}</p>
-      <label>
-        <input
-          value={answer}
-          onChange={(e) => setAnswer((e.target as HTMLInputElement).value)}
-          type="test"
-        />
-      </label>
+      <LabeledInput label="Answer" grabFocus bind={[answer, setAnswer]} />
+    </AnastasisClientFrame>
+  );
+}
+
+function SolveSmsEntry(props: SolveEntryProps) {
+  const [answer, setAnswer] = useState("");
+  const { reducer, challenge, feedback } = props;
+  const next = () =>
+    reducer.transition("solve_challenge", {
+      answer,
+    });
+  return (
+    <AnastasisClientFrame
+      title="Recovery: Solve challenge"
+      onNext={() => next()}
+    >
+      <p>Feedback: {JSON.stringify(feedback)}</p>
+      <p>{challenge.instructions}</p>
+      <LabeledInput label="Answer" grabFocus bind={[answer, setAnswer]} />
+    </AnastasisClientFrame>
+  );
+}
+
+function SolvePostEntry(props: SolveEntryProps) {
+  const [answer, setAnswer] = useState("");
+  const { reducer, challenge, feedback } = props;
+  const next = () =>
+    reducer.transition("solve_challenge", {
+      answer,
+    });
+  return (
+    <AnastasisClientFrame
+      title="Recovery: Solve challenge"
+      onNext={() => next()}
+    >
+      <p>Feedback: {JSON.stringify(feedback)}</p>
+      <p>{challenge.instructions}</p>
+      <LabeledInput label="Answer" grabFocus bind={[answer, setAnswer]} />
+    </AnastasisClientFrame>
+  );
+}
+
+function SolveEmailEntry(props: SolveEntryProps) {
+  const [answer, setAnswer] = useState("");
+  const { reducer, challenge, feedback } = props;
+  const next = () =>
+    reducer.transition("solve_challenge", {
+      answer,
+    });
+  return (
+    <AnastasisClientFrame
+      title="Recovery: Solve challenge"
+      onNext={() => next()}
+    >
+      <p>Feedback: {JSON.stringify(feedback)}</p>
+      <p>{challenge.instructions}</p>
+      <LabeledInput label="Answer" grabFocus bind={[answer, setAnswer]} />
+    </AnastasisClientFrame>
+  );
+}
+
+function SolveUnsupportedEntry(props: SolveEntryProps) {
+  return (
+    <AnastasisClientFrame hideNext title="Recovery: Solve challenge">
+      <p>{JSON.stringify(props.challenge)}</p>
+      <p>Challenge not supported.</p>
     </AnastasisClientFrame>
   );
 }
 
 function SecretEditor(props: BackupReducerProps) {
   const { reducer } = props;
-  const [secretName, setSecretName] = useState("");
-  const [secretValue, setSecretValue] = useState("");
+  const [secretName, setSecretName] = useState(
+    props.backupState.secret_name ?? "",
+  );
+  const [secretValue, setSecretValue] = useState(
+    props.backupState.core_secret?.value ?? "" ?? "",
+  );
   const secretNext = () => {
     reducer.runTransaction(async (tx) => {
       await tx.transition("enter_secret_name", {
@@ -144,34 +204,17 @@ function SecretEditor(props: BackupReducerProps) {
       onNext={() => secretNext()}
     >
       <div>
-        <label>
-          Secret name:{" "}
-          <input
-            value={secretName}
-            onChange={(e) =>
-              setSecretName((e.target as HTMLInputElement).value)
-            }
-            type="text"
-          />
-        </label>
+        <LabeledInput
+          label="Secret Name:"
+          grabFocus
+          bind={[secretName, setSecretName]}
+        />
       </div>
       <div>
-        <label>
-          Secret value:{" "}
-          <input
-            value={secretValue}
-            onChange={(e) =>
-              setSecretValue((e.target as HTMLInputElement).value)
-            }
-            type="text"
-          />
-        </label>
-      </div>
-      or:
-      <div>
-        <label>
-          File Upload: <input type="file" />
-        </label>
+        <LabeledInput
+          label="Secret Value:"
+          bind={[secretValue, setSecretValue]}
+        />
       </div>
     </AnastasisClientFrame>
   );
@@ -234,6 +277,7 @@ function SecretSelection(props: RecoveryReducerProps) {
   const [otherVersion, setOtherVersion] = useState<number>(
     recoveryState.recovery_document?.version ?? 0,
   );
+  const recoveryDocument = recoveryState.recovery_document!;
   const [otherProvider, setOtherProvider] = useState<string>("");
   function selectVersion(p: string, n: number) {
     reducer.runTransaction(async (tx) => {
@@ -250,9 +294,11 @@ function SecretSelection(props: RecoveryReducerProps) {
         <p>Select a different version of the secret</p>
         <select onChange={(e) => setOtherProvider((e.target as any).value)}>
           {Object.keys(recoveryState.authentication_providers ?? {}).map(
-            (x) => {
-              return <option value={x}>{x}</option>;
-            },
+            (x) => (
+              <option selected={x === recoveryDocument.provider_url} value={x}>
+                {x}
+              </option>
+            ),
           )}
         </select>
         <div>
@@ -264,7 +310,7 @@ function SecretSelection(props: RecoveryReducerProps) {
             type="number"
           />
           <button onClick={() => selectVersion(otherProvider, otherVersion)}>
-            Select
+            Use this version
           </button>
         </div>
         <div>
@@ -280,9 +326,9 @@ function SecretSelection(props: RecoveryReducerProps) {
   }
   return (
     <AnastasisClientFrame title="Recovery: Select secret">
-      <p>Provider: {recoveryState.recovery_document!.provider_url}</p>
-      <p>Secret version: {recoveryState.recovery_document!.version}</p>
-      <p>Secret name: {recoveryState.recovery_document!.version}</p>
+      <p>Provider: {recoveryDocument.provider_url}</p>
+      <p>Secret version: {recoveryDocument.version}</p>
+      <p>Secret name: {recoveryDocument.version}</p>
       <button onClick={() => setSelectingVersion(true)}>
         Select different secret
       </button>
@@ -305,37 +351,99 @@ interface AnastasisClientFrameProps {
 }
 
 function AnastasisClientFrame(props: AnastasisClientFrameProps) {
+  const reducer = useContext(WithReducer);
+  if (!reducer) {
+    return <p>Fatal: Reducer must be in context.</p>;
+  }
+  const next = () => {
+    if (props.onNext) {
+      props.onNext();
+    } else {
+      reducer.transition("next", {});
+    }
+  };
+  const handleKeyPress = (e: h.JSX.TargetedKeyboardEvent<HTMLDivElement>) => {
+    console.log("Got key press", e.key);
+    // FIXME: By default, "next" action should be executed here
+  };
   return (
-    <WithReducer.Consumer>
-      {(reducer) => {
-        if (!reducer) {
-          return <p>Fatal: Reducer must be in context.</p>;
-        }
-        const next = () => {
-          if (props.onNext) {
-            props.onNext();
-          } else {
-            reducer.transition("next", {});
-          }
-        };
+    <div class={style.home} onKeyPress={(e) => handleKeyPress(e)}>
+      <button onClick={() => reducer.reset()}>Reset session</button>
+      <h1>{props.title}</h1>
+      <ErrorBanner reducer={reducer} />
+      {props.children}
+      {!props.hideNav ? (
+        <div>
+          <button onClick={() => reducer.back()}>Back</button>
+          {!props.hideNext ? (
+            <button onClick={() => next()}>Next</button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ChallengeOverview(props: RecoveryReducerProps) {
+  const { recoveryState, reducer } = props;
+  const policies = recoveryState.recovery_information!.policies;
+  const chArr = recoveryState.recovery_information!.challenges;
+  const challenges: {
+    [uuid: string]: {
+      type: string;
+      instructions: string;
+      cost: string;
+    };
+  } = {};
+  for (const ch of chArr) {
+    challenges[ch.uuid] = {
+      type: ch.type,
+      cost: ch.cost,
+      instructions: ch.instructions,
+    };
+  }
+  return (
+    <AnastasisClientFrame title="Recovery: Solve challenges">
+      <h2>Policies</h2>
+      {policies.map((x, i) => {
         return (
-          <div class={style.home}>
-            <button onClick={() => reducer.reset()}>Reset session</button>
-            <h1>{props.title}</h1>
-            <ErrorBanner reducer={reducer} />
-            {props.children}
-            {!props.hideNav ? (
-              <div>
-                <button onClick={() => reducer.back()}>Back</button>
-                {!props.hideNext ? (
-                  <button onClick={() => next()}>Next</button>
-                ) : null}
-              </div>
-            ) : null}
+          <div>
+            <h3>Policy #{i + 1}</h3>
+            {x.map((x) => {
+              const ch = challenges[x.uuid];
+              const feedback = recoveryState.challenge_feedback?.[x.uuid];
+              return (
+                <div
+                  style={{
+                    borderLeft: "2px solid gray",
+                    paddingLeft: "0.5em",
+                    borderRadius: "0.5em",
+                    marginTop: "0.5em",
+                    marginBottom: "0.5em",
+                  }}
+                >
+                  <h4>
+                    {ch.type} ({ch.instructions})
+                  </h4>
+                  <p>Status: {feedback?.state ?? "unknown"}</p>
+                  {feedback?.state !== "solved" ? (
+                    <button
+                      onClick={() =>
+                        reducer.transition("select_challenge", {
+                          uuid: x.uuid,
+                        })
+                      }
+                    >
+                      Solve
+                    </button>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         );
-      }}
-    </WithReducer.Consumer>
+      })}
+    </AnastasisClientFrame>
   );
 }
 
@@ -472,51 +580,7 @@ const AnastasisClientImpl: FunctionalComponent = () => {
   }
 
   if (reducerState.recovery_state === RecoveryStates.ChallengeSelecting) {
-    const policies = reducerState.recovery_information!.policies;
-    const chArr = reducerState.recovery_information!.challenges;
-    const challenges: {
-      [uuid: string]: {
-        type: string;
-        instructions: string;
-        cost: string;
-      };
-    } = {};
-    for (const ch of chArr) {
-      challenges[ch.uuid] = {
-        type: ch.type,
-        cost: ch.cost,
-        instructions: ch.instructions,
-      };
-    }
-    return (
-      <AnastasisClientFrame title="Recovery: Solve challenges">
-        <h2>Policies</h2>
-        {policies.map((x, i) => {
-          return (
-            <div>
-              <h3>Policy #{i + 1}</h3>
-              {x.map((x) => {
-                const ch = challenges[x.uuid];
-                return (
-                  <div>
-                    {ch.type} ({ch.instructions})
-                    <button
-                      onClick={() =>
-                        reducer.transition("select_challenge", {
-                          uuid: x.uuid,
-                        })
-                      }
-                    >
-                      Solve
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
-      </AnastasisClientFrame>
-    );
+    return <ChallengeOverview reducer={reducer} recoveryState={reducerState} />;
   }
 
   if (reducerState.recovery_state === RecoveryStates.ChallengeSolving) {
@@ -530,22 +594,21 @@ const AnastasisClientImpl: FunctionalComponent = () => {
       challenges[ch.uuid] = ch;
     }
     const selectedChallenge = challenges[selectedUuid];
-    if (selectedChallenge.type === "question") {
-      return (
-        <SolveQuestionEntry
-          challenge={selectedChallenge}
-          reducer={reducer}
-          feedback={challengeFeedback[selectedUuid]}
-        />
-      );
-    } else {
-      return (
-        <AnastasisClientFrame hideNext title="Recovery: Solve challenge">
-          <p>{JSON.stringify(selectedChallenge)}</p>
-          <p>Challenge not supported.</p>
-        </AnastasisClientFrame>
-      );
-    }
+    const dialogMap: Record<string, (p: SolveEntryProps) => h.JSX.Element> = {
+      question: SolveQuestionEntry,
+      sms: SolveSmsEntry,
+      email: SolveEmailEntry,
+      post: SolvePostEntry,
+    };
+    const SolveDialog =
+      dialogMap[selectedChallenge.type] ?? SolveUnsupportedEntry;
+    return (
+      <SolveDialog
+        challenge={selectedChallenge}
+        reducer={reducer}
+        feedback={challengeFeedback[selectedUuid]}
+      />
+    );
   }
 
   if (reducerState.recovery_state === RecoveryStates.RecoveryFinished) {
@@ -620,6 +683,14 @@ function AuthMethodSmsSetup(props: AuthMethodSetupProps) {
 function AuthMethodQuestionSetup(props: AuthMethodSetupProps) {
   const [questionText, setQuestionText] = useState("");
   const [answerText, setAnswerText] = useState("");
+  const addQuestionAuth = () =>
+    props.addAuthMethod({
+      authentication_method: {
+        type: "question",
+        instructions: questionText,
+        challenge: encodeCrock(stringToBytes(answerText)),
+      },
+    });
   return (
     <AnastasisClientFrame hideNav title="Add Security Question">
       <div>
@@ -630,44 +701,18 @@ function AuthMethodQuestionSetup(props: AuthMethodSetupProps) {
           here.
         </p>
         <div>
-          <label>
-            Security question:{" "}
-            <input
-              value={questionText}
-              style={{ display: "block" }}
-              autoFocus
-              onChange={(e) => setQuestionText((e.target as any).value)}
-              type="text"
-            />
-          </label>
+          <LabeledInput
+            label="Security question"
+            grabFocus
+            bind={[questionText, setQuestionText]}
+          />
         </div>
         <div>
-          <label>
-            Answer:{" "}
-            <input
-              value={answerText}
-              style={{ display: "block" }}
-              autoFocus
-              onChange={(e) => setAnswerText((e.target as any).value)}
-              type="text"
-            />
-          </label>
+          <LabeledInput label="Answer" bind={[answerText, setAnswerText]} />
         </div>
         <div>
           <button onClick={() => props.cancel()}>Cancel</button>
-          <button
-            onClick={() =>
-              props.addAuthMethod({
-                authentication_method: {
-                  type: "question",
-                  instructions: questionText,
-                  challenge: encodeCrock(stringToBytes(answerText)),
-                },
-              })
-            }
-          >
-            Add
-          </button>
+          <button onClick={() => addQuestionAuth()}>Add</button>
         </div>
       </div>
     </AnastasisClientFrame>
@@ -684,16 +729,11 @@ function AuthMethodEmailSetup(props: AuthMethodSetupProps) {
         email.
       </p>
       <div>
-        <label>
-          Email address:{" "}
-          <input
-            style={{ display: "block" }}
-            value={email}
-            autoFocus
-            onChange={(e) => setEmail((e.target as any).value)}
-            type="text"
-          />
-        </label>
+        <LabeledInput
+          label="Email address"
+          grabFocus
+          bind={[email, setEmail]}
+        />
       </div>
       <div>
         <button onClick={() => props.cancel()}>Cancel</button>
@@ -723,24 +763,20 @@ function AuthMethodPostSetup(props: AuthMethodSetupProps) {
   const [country, setCountry] = useState("");
 
   const addPostAuth = () => {
-    () =>
-      props.addAuthMethod({
-        authentication_method: {
-          type: "email",
-          instructions: `Letter to address in postal code ${postcode}`,
-          challenge: encodeCrock(
-            stringToBytes(
-              canonicalJson({
-                full_name: fullName,
-                street,
-                city,
-                postcode,
-                country,
-              }),
-            ),
-          ),
-        },
-      });
+    const challengeJson = {
+      full_name: fullName,
+      street,
+      city,
+      postcode,
+      country,
+    };
+    props.addAuthMethod({
+      authentication_method: {
+        type: "email",
+        instructions: `Letter to address in postal code ${postcode}`,
+        challenge: encodeCrock(stringToBytes(canonicalJson(challengeJson))),
+      },
+    });
   };
 
   return (
@@ -753,59 +789,23 @@ function AuthMethodPostSetup(props: AuthMethodSetupProps) {
           code that you will receive in a letter to that address.
         </p>
         <div>
-          <label>
-            Full Name
-            <input
-              value={fullName}
-              autoFocus
-              onChange={(e) => setFullName((e.target as any).value)}
-              type="text"
-            />
-          </label>
+          <LabeledInput
+            grabFocus
+            label="Full Name"
+            bind={[fullName, setFullName]}
+          />
         </div>
         <div>
-          <label>
-            Street
-            <input
-              value={street}
-              autoFocus
-              onChange={(e) => setStreet((e.target as any).value)}
-              type="text"
-            />
-          </label>
+          <LabeledInput label="Street" bind={[street, setStreet]} />
         </div>
         <div>
-          <label>
-            City
-            <input
-              value={city}
-              autoFocus
-              onChange={(e) => setCity((e.target as any).value)}
-              type="text"
-            />
-          </label>
+          <LabeledInput label="City" bind={[city, setCity]} />
         </div>
         <div>
-          <label>
-            Postal Code
-            <input
-              value={postcode}
-              autoFocus
-              onChange={(e) => setPostcode((e.target as any).value)}
-              type="text"
-            />
-          </label>
+          <LabeledInput label="Postal Code" bind={[postcode, setPostcode]} />
         </div>
         <div>
-          <label>
-            Country
-            <input
-              value={country}
-              autoFocus
-              onChange={(e) => setCountry((e.target as any).value)}
-              type="text"
-            />
-          </label>
+          <LabeledInput label="Country" bind={[country, setCountry]} />
         </div>
         <div>
           <button onClick={() => props.cancel()}>Cancel</button>
@@ -851,48 +851,23 @@ function AuthenticationEditor(props: AuthenticationEditorProps) {
       reducer.transition("add_authentication", args);
       setSelectedMethod(undefined);
     };
-    switch (selectedMethod) {
-      case "sms":
-        return (
-          <AuthMethodSmsSetup
-            cancel={cancel}
-            addAuthMethod={addMethod}
-            method="sms"
-          />
-        );
-      case "question":
-        return (
-          <AuthMethodQuestionSetup
-            cancel={cancel}
-            addAuthMethod={addMethod}
-            method="question"
-          />
-        );
-      case "email":
-        return (
-          <AuthMethodEmailSetup
-            cancel={cancel}
-            addAuthMethod={addMethod}
-            method="email"
-          />
-        );
-      case "post":
-        return (
-          <AuthMethodPostSetup
-            cancel={cancel}
-            addAuthMethod={addMethod}
-            method="post"
-          />
-        );
-      default:
-        return (
-          <AuthMethodNotImplemented
-            cancel={cancel}
-            addAuthMethod={addMethod}
-            method={selectedMethod}
-          />
-        );
-    }
+    const methodMap: Record<
+      string,
+      (props: AuthMethodSetupProps) => h.JSX.Element
+    > = {
+      sms: AuthMethodSmsSetup,
+      question: AuthMethodQuestionSetup,
+      email: AuthMethodEmailSetup,
+      post: AuthMethodPostSetup,
+    };
+    const AuthSetup = methodMap[selectedMethod] ?? AuthMethodNotImplemented;
+    return (
+      <AuthSetup
+        cancel={cancel}
+        addAuthMethod={addMethod}
+        method={selectedMethod}
+      />
+    );
   }
   function MethodButton(props: { method: string; label: String }) {
     return (
@@ -978,6 +953,32 @@ function AttributeEntry(props: AttributeEntryProps) {
   );
 }
 
+interface LabeledInputProps {
+  label: string;
+  grabFocus?: boolean;
+  bind: [string, (x: string) => void];
+}
+
+function LabeledInput(props: LabeledInputProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  useLayoutEffect(() => {
+    if (props.grabFocus) {
+      inputRef.current?.focus();
+    }
+  }, []);
+  return (
+    <label>
+      {props.label}
+      <input
+        value={props.bind[0]}
+        onChange={(e) => props.bind[1]((e.target as HTMLInputElement).value)}
+        ref={inputRef}
+        style={{ display: "block" }}
+      />
+    </label>
+  );
+}
+
 export interface AttributeEntryFieldProps {
   isFirst: boolean;
   value: string;
@@ -988,13 +989,10 @@ export interface AttributeEntryFieldProps {
 function AttributeEntryField(props: AttributeEntryFieldProps) {
   return (
     <div>
-      <label>{props.spec.label}:</label>
-      <input
-        style={{ display: "block" }}
-        autoFocus={props.isFirst}
-        type="text"
-        value={props.value}
-        onChange={(e) => props.setValue((e as any).target.value)}
+      <LabeledInput
+        grabFocus={props.isFirst}
+        label={props.spec.label}
+        bind={[props.value, props.setValue]}
       />
     </div>
   );

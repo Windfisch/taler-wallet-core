@@ -32,6 +32,11 @@ export interface ReducerStateBackup {
     payto: string;
     provider: string;
   }[];
+
+  core_secret?: {
+    mime: string;
+    value: string;
+  };
 }
 
 export interface AuthMethod {
