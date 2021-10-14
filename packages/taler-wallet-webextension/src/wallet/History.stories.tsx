@@ -41,7 +41,7 @@ const commonTransaction = () => ({
   amountEffective: 'USD:9',
   pending: false,
   timestamp: {
-    t_ms: new Date().getTime() - (count++ * 1000*60*60*7)
+    t_ms: new Date().getTime() - (count++ * 1000 * 60 * 60 * 7)
   },
   transactionId: '12',
 } as TransactionCommon)
@@ -131,7 +131,8 @@ export const One = createExample(TestedComponent, {
 });
 
 export const OnePending = createExample(TestedComponent, {
-  list: [{...exampleData.withdraw, 
+  list: [{
+    ...exampleData.withdraw,
     pending: true
   }],
   balances: [{
@@ -149,7 +150,13 @@ export const Several = createExample(TestedComponent, {
     exampleData.payment,
     exampleData.withdraw,
     exampleData.payment,
-    exampleData.refresh,
+    {
+      ...exampleData.payment,
+      info: {
+        ...exampleData.payment.info,
+        summary: 'this is a long summary that may be cropped because its too long',
+      },
+    },
     exampleData.refund,
     exampleData.tip,
     exampleData.deposit,
@@ -180,7 +187,7 @@ export const SeveralWithTwoCurrencies = createExample(TestedComponent, {
     pendingOutgoing: 'TESTKUDOS:0',
     hasPendingTransactions: false,
     requiresUserInput: false,
-  },{
+  }, {
     available: 'USD:10',
     pendingIncoming: 'USD:0',
     pendingOutgoing: 'USD:0',

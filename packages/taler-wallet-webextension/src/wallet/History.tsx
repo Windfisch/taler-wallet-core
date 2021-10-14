@@ -74,8 +74,8 @@ export function HistoryView({ list, balances }: { list: Transaction[], balances:
       </div>}
     </header>}
     <section>
-      {Object.keys(byDate).map(d => {
-        return <Fragment>
+      {Object.keys(byDate).map((d,i) => {
+        return <Fragment key={i}>
           <DateSeparator>{d}</DateSeparator>
           {byDate[d].map((tx, i) => (
             <TransactionItem key={i} tx={tx} multiCurrency={multiCurrency}/>

@@ -39,7 +39,7 @@ export function TransactionItem(props: { tx: Transaction, multiCurrency: boolean
           iconPath={imageBank}
           pending={tx.pending}
           multiCurrency={props.multiCurrency}
-        ></TransactionLayout>
+        />
       );
     case TransactionType.Payment:
       return (
@@ -48,11 +48,12 @@ export function TransactionItem(props: { tx: Transaction, multiCurrency: boolean
           amount={tx.amountEffective}
           debitCreditIndicator={"debit"}
           title={tx.info.merchant.name}
+          subtitle={tx.info.summary}
           timestamp={tx.timestamp}
           iconPath={imageShoppingCart}
           pending={tx.pending}
           multiCurrency={props.multiCurrency}
-        ></TransactionLayout>
+        />
       );
     case TransactionType.Refund:
       return (
@@ -65,7 +66,7 @@ export function TransactionItem(props: { tx: Transaction, multiCurrency: boolean
           iconPath={imageRefund}
           pending={tx.pending}
           multiCurrency={props.multiCurrency}
-        ></TransactionLayout>
+        />
       );
     case TransactionType.Tip:
       return (
@@ -78,7 +79,7 @@ export function TransactionItem(props: { tx: Transaction, multiCurrency: boolean
           iconPath={imageHandHeart}
           pending={tx.pending}
           multiCurrency={props.multiCurrency}
-        ></TransactionLayout>
+        />
       );
     case TransactionType.Refresh:
       return (
@@ -91,7 +92,7 @@ export function TransactionItem(props: { tx: Transaction, multiCurrency: boolean
           iconPath={imageRefresh}
           pending={tx.pending}
           multiCurrency={props.multiCurrency}
-        ></TransactionLayout>
+        />
       );
     case TransactionType.Deposit:
       return (
@@ -104,7 +105,7 @@ export function TransactionItem(props: { tx: Transaction, multiCurrency: boolean
           iconPath={imageRefresh}
           pending={tx.pending}
           multiCurrency={props.multiCurrency}
-        ></TransactionLayout>
+        />
       );
   }
 }
@@ -118,12 +119,13 @@ function TransactionLayout(props: TransactionLayoutProps): JSX.Element {
       <img src={props.iconPath} />
       <Column>
         <LargeText>
-          <span>{props.title}</span>
+          <div>{props.title}</div>
+          {props.subtitle && <div style={{color:'gray', fontSize:'medium', marginTop: 5}}>{props.subtitle}</div>}
         </LargeText>
         {props.pending &&
-          <LightText style={{marginTop: 5, marginBottom: 5}}>Waiting for confirmation</LightText>
+          <LightText style={{ marginTop: 5, marginBottom: 5 }}>Waiting for confirmation</LightText>
         }
-        <SmallLightText>{dateStr}</SmallLightText>
+        <SmallLightText style={{marginTop:5 }}>{dateStr}</SmallLightText>
       </Column>
       <TransactionAmount
         pending={props.pending}
@@ -140,6 +142,7 @@ interface TransactionLayoutProps {
   amount: AmountString | "unknown";
   timestamp: Timestamp;
   title: string;
+  subtitle?: string;
   id: string;
   iconPath: string;
   pending: boolean;
