@@ -235,10 +235,23 @@ export interface AnastasisReducerApi {
   runTransaction(f: (h: ReducerTransactionHandle) => Promise<void>): void;
 }
 
+function storageGet(key: string): string | null {
+  if (typeof localStorage === "object") {
+    return localStorage.getItem(key);
+  }
+  return null;
+}
+
+function storageSet(key: string, value: any): void {
+  if (typeof localStorage === "object") {
+    return localStorage.setItem(key, value);
+  }
+}
+
 function restoreState(): any {
   let state: any;
   try {
-    let s = localStorage.getItem("anastasisReducerState");
+    let s = storageGet("anastasisReducerState");
     if (s === "undefined") {
       state = undefined;
     } else if (s) {
@@ -261,7 +274,7 @@ export function useAnastasisReducer(): AnastasisReducerApi {
 
   const setAnastasisState = (newState: AnastasisState) => {
     try {
-      localStorage.setItem(
+      storageSet(
         "anastasisReducerState",
         JSON.stringify(newState.reducerState),
       );
