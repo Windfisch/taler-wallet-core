@@ -1,144 +1,16 @@
 import { TalerErrorCode } from "@gnu-taler/taler-util";
+import { BackupStates, getBackupStartState, getRecoveryStartState, RecoveryStates, reduceAction, ReducerState } from "anastasis-core";
 import { useState } from "preact/hooks";
 
-export type ReducerState =
-  | ReducerStateBackup
-  | ReducerStateRecovery
-  | ReducerStateError;
-
-export interface ReducerStateBackup {
-  recovery_state: undefined;
-  backup_state: BackupStates;
-  code: undefined;
-  continents: any;
-  countries: any;
-  identity_attributes?: { [n: string]: string };
-  authentication_providers: any;
-  authentication_methods?: AuthMethod[];
-  required_attributes: any;
-  secret_name?: string;
-  policies?: {
-    methods: {
-      authentication_method: number;
-      provider: string;
-    }[];
-  }[];
-  success_details: {
-    [provider_url: string]: {
-      policy_version: number;
-    };
-  };
-  payments?: string[];
-  policy_payment_requests?: {
-    payto: string;
-    provider: string;
-  }[];
-
-  core_secret?: {
-    mime: string;
-    value: string;
-  };
-}
-
-export interface AuthMethod {
-  type: string;
-  instructions: string;
-  challenge: string;
-}
-
-export interface ChallengeInfo {
-  cost: string;
-  instructions: string;
-  type: string;
-  uuid: string;
-}
-
-export interface ReducerStateRecovery {
-  backup_state: undefined;
-  recovery_state: RecoveryStates;
-  code: undefined;
-
-  identity_attributes?: { [n: string]: string };
-
-  continents: any;
-  countries: any;
-  required_attributes: any;
-
-  recovery_information?: {
-    challenges: ChallengeInfo[];
-    policies: {
-      /**
-       * UUID of the associated challenge.
-       */
-      uuid: string;
-    }[][];
-  };
-
-  recovery_document?: {
-    secret_name: string;
-    provider_url: string;
-    version: number;
-  };
-
-  selected_challenge_uuid?: string;
-
-  challenge_feedback?: { [uuid: string]: ChallengeFeedback };
-
-  core_secret?: {
-    mime: string;
-    value: string;
-  };
-
-  authentication_providers?: {
-    [url: string]: {
-      business_name: string;
-    };
-  };
-
-  recovery_error: any;
-}
-
-export interface ChallengeFeedback {
-  state: string;
-}
-
-export interface ReducerStateError {
-  backup_state: undefined;
-  recovery_state: undefined;
-  code: number;
-}
+const reducerBaseUrl = "http://localhost:5000/";
+let remoteReducer = true;
 
 interface AnastasisState {
   reducerState: ReducerState | undefined;
   currentError: any;
 }
 
-export enum BackupStates {
-  ContinentSelecting = "CONTINENT_SELECTING",
-  CountrySelecting = "COUNTRY_SELECTING",
-  UserAttributesCollecting = "USER_ATTRIBUTES_COLLECTING",
-  AuthenticationsEditing = "AUTHENTICATIONS_EDITING",
-  PoliciesReviewing = "POLICIES_REVIEWING",
-  SecretEditing = "SECRET_EDITING",
-  TruthsPaying = "TRUTHS_PAYING",
-  PoliciesPaying = "POLICIES_PAYING",
-  BackupFinished = "BACKUP_FINISHED",
-}
-
-export enum RecoveryStates {
-  ContinentSelecting = "CONTINENT_SELECTING",
-  CountrySelecting = "COUNTRY_SELECTING",
-  UserAttributesCollecting = "USER_ATTRIBUTES_COLLECTING",
-  SecretSelecting = "SECRET_SELECTING",
-  ChallengeSelecting = "CHALLENGE_SELECTING",
-  ChallengePaying = "CHALLENGE_PAYING",
-  ChallengeSolving = "CHALLENGE_SOLVING",
-  RecoveryFinished = "RECOVERY_FINISHED",
-}
-
-const reducerBaseUrl = "http://localhost:5000/";
-
-async function getBackupStartState(): Promise<ReducerState> {
+async function getBackupStartStateRemote(): Promise<ReducerState> {
   let resp: Response;
 
   try {
@@ -159,7 +31,7 @@ async function getBackupStartState(): Promise<ReducerState> {
   }
 }
 
-async function getRecoveryStartState(): Promise<ReducerState> {
+async function getRecoveryStartStateRemote(): Promise<ReducerState> {
   let resp: Response;
   try {
     resp = await fetch(new URL("start-recovery", reducerBaseUrl).href);
@@ -179,7 +51,7 @@ async function getRecoveryStartState(): Promise<ReducerState> {
   }
 }
 
-async function reduceState(
+async function reduceStateRemote(
   state: any,
   action: string,
   args: any,
@@ -286,7 +158,12 @@ export function useAnastasisReducer(): AnastasisReducerApi {
 
   async function doTransition(action: string, args: any) {
     console.log("reducing with", action, args);
-    const s = await reduceState(anastasisState.reducerState, action, args);
+    let s: ReducerState;
+    if (remoteReducer) {
+      s = await reduceStateRemote(anastasisState.reducerState, action, args);
+    } else {
+      s = await reduceAction(anastasisState.reducerState!, action, args);
+    }
     console.log("got new state from reducer", s);
     if (s.code) {
       setAnastasisState({ ...anastasisState, currentError: s });
@@ -303,7 +180,12 @@ export function useAnastasisReducer(): AnastasisReducerApi {
     currentReducerState: anastasisState.reducerState,
     currentError: anastasisState.currentError,
     async startBackup() {
-      const s = await getBackupStartState();
+      let s: ReducerState;
+      if (remoteReducer) {
+        s = await getBackupStartStateRemote();
+      } else {
+        s = await getBackupStartState();
+      }
       if (s.code !== undefined) {
         setAnastasisState({
           ...anastasisState,
@@ -318,7 +200,12 @@ export function useAnastasisReducer(): AnastasisReducerApi {
       }
     },
     async startRecover() {
-      const s = await getRecoveryStartState();
+      let s: ReducerState;
+      if (remoteReducer) {
+        s = await getRecoveryStartStateRemote();
+      } else {
+        s = await getRecoveryStartState();
+      }
       if (s.code !== undefined) {
         setAnastasisState({
           ...anastasisState,
@@ -394,12 +281,14 @@ export function useAnastasisReducer(): AnastasisReducerApi {
 class ReducerTxImpl implements ReducerTransactionHandle {
   constructor(public transactionState: ReducerState) {}
   async transition(action: string, args: any): Promise<ReducerState> {
+    let s: ReducerState;
+    if (remoteReducer) {
+      s = await reduceStateRemote(this.transactionState, action, args);
+    } else {
+      s = await reduceAction(this.transactionState, action, args);
+    }
     console.log("making transition in transaction", action);
-    this.transactionState = await reduceState(
-      this.transactionState,
-      action,
-      args,
-    );
+    this.transactionState = s;
     // Abort transaction as soon as we transition into an error state.
     if (this.transactionState.code !== undefined) {
       throw Error("transition resulted in error");

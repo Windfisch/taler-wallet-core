@@ -6,6 +6,15 @@ import {
   stringToBytes,
 } from "@gnu-taler/taler-util";
 import {
+  AuthMethod,
+  BackupStates,
+  ChallengeFeedback,
+  ChallengeInfo,
+  RecoveryStates,
+  ReducerStateBackup,
+  ReducerStateRecovery,
+} from "anastasis-core";
+import {
   FunctionalComponent,
   ComponentChildren,
   h,
@@ -14,13 +23,6 @@ import {
 import { useState, useContext, useRef, useLayoutEffect } from "preact/hooks";
 import {
   AnastasisReducerApi,
-  AuthMethod,
-  BackupStates,
-  ChallengeFeedback,
-  ChallengeInfo,
-  RecoveryStates,
-  ReducerStateBackup,
-  ReducerStateRecovery,
   useAnastasisReducer,
 } from "../../hooks/use-anastasis-reducer";
 import style from "./style.css";
@@ -511,8 +513,8 @@ const AnastasisClientImpl: FunctionalComponent = () => {
         </p>
         <p>The backup is stored by the following providers:</p>
         <ul>
-          {Object.keys(backupState.success_details).map((x, i) => {
-            const sd = backupState.success_details[x];
+          {Object.keys(backupState.success_details!).map((x, i) => {
+            const sd = backupState.success_details![x];
             return (
               <li>
                 {x} (Policy version {sd.policy_version})
@@ -835,11 +837,11 @@ function AuthenticationEditor(props: AuthenticationEditorProps) {
     undefined,
   );
   const { reducer, backupState } = props;
-  const providers = backupState.authentication_providers;
+  const providers = backupState.authentication_providers!;
   const authAvailableSet = new Set<string>();
   for (const provKey of Object.keys(providers)) {
     const p = providers[provKey];
-    if (p.methods) {
+    if ("http_status" in p && (!("error_code" in p)) && p.methods) {
       for (const meth of p.methods) {
         authAvailableSet.add(meth.type);
       }
