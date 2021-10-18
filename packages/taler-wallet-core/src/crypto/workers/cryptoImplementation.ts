@@ -34,7 +34,14 @@ import {
   CoinSourceType,
 } from "../../db.js";
 
-import { CoinDepositPermission, RecoupRequest, RefreshPlanchetInfo } from "@gnu-taler/taler-util";
+import {
+  buildSigPS,
+  CoinDepositPermission,
+  RecoupRequest,
+  RefreshPlanchetInfo,
+  SignaturePurposeBuilder,
+  TalerSignaturePurpose,
+} from "@gnu-taler/taler-util";
 // FIXME: These types should be internal to the wallet!
 import {
   BenchmarkResult,
@@ -80,24 +87,6 @@ import bigint from "big-integer";
 
 const logger = new Logger("cryptoImplementation.ts");
 
-enum SignaturePurpose {
-  MERCHANT_TRACK_TRANSACTION = 1103,
-  WALLET_RESERVE_WITHDRAW = 1200,
-  WALLET_COIN_DEPOSIT = 1201,
-  MASTER_DENOMINATION_KEY_VALIDITY = 1025,
-  MASTER_WIRE_FEES = 1028,
-  MASTER_WIRE_DETAILS = 1030,
-  WALLET_COIN_MELT = 1202,
-  TEST = 4242,
-  MERCHANT_PAYMENT_OK = 1104,
-  MERCHANT_CONTRACT = 1101,
-  WALLET_COIN_RECOUP = 1203,
-  WALLET_COIN_LINK = 1204,
-  EXCHANGE_CONFIRM_RECOUP = 1039,
-  EXCHANGE_CONFIRM_RECOUP_REFRESH = 1041,
-  SYNC_BACKUP_UPLOAD = 1450,
-}
-
 function amountToBuffer(amount: AmountJson): Uint8Array {
   const buffer = new ArrayBuffer(8 + 4 + 12);
   const dvbuf = new DataView(buffer);
@@ -139,38 +128,6 @@ function timestampRoundedToBuffer(ts: Timestamp): Uint8Array {
   return new Uint8Array(b);
 }
 
-class SignaturePurposeBuilder {
-  private chunks: Uint8Array[] = [];
-
-  constructor(private purposeNum: number) { }
-
-  put(bytes: Uint8Array): SignaturePurposeBuilder {
-    this.chunks.push(Uint8Array.from(bytes));
-    return this;
-  }
-
-  build(): Uint8Array {
-    let payloadLen = 0;
-    for (const c of this.chunks) {
-      payloadLen += c.byteLength;
-    }
-    const buf = new ArrayBuffer(4 + 4 + payloadLen);
-    const u8buf = new Uint8Array(buf);
-    let p = 8;
-    for (const c of this.chunks) {
-      u8buf.set(c, p);
-      p += c.byteLength;
-    }
-    const dvbuf = new DataView(buf);
-    dvbuf.setUint32(0, payloadLen + 4 + 4);
-    dvbuf.setUint32(4, this.purposeNum);
-    return u8buf;
-  }
-}
-
-function buildSigPS(purposeNum: number): SignaturePurposeBuilder {
-  return new SignaturePurposeBuilder(purposeNum);
-}
 export class CryptoImplementation {
   static enableTracing = false;
 
@@ -192,7 +149,9 @@ export class CryptoImplementation {
     const denomPubHash = hash(denomPub);
     const evHash = hash(ev);
 
-    const withdrawRequest = buildSigPS(SignaturePurpose.WALLET_RESERVE_WITHDRAW)
+    const withdrawRequest = buildSigPS(
+      TalerSignaturePurpose.WALLET_RESERVE_WITHDRAW,
+    )
       .put(reservePub)
       .put(amountToBuffer(amountWithFee))
       .put(denomPubHash)
@@ -236,7 +195,7 @@ export class CryptoImplementation {
   }
 
   signTrackTransaction(req: SignTrackTransactionRequest): string {
-    const p = buildSigPS(SignaturePurpose.MERCHANT_TRACK_TRANSACTION)
+    const p = buildSigPS(TalerSignaturePurpose.MERCHANT_TRACK_TRANSACTION)
       .put(decodeCrock(req.contractTermsHash))
       .put(decodeCrock(req.wireHash))
       .put(decodeCrock(req.merchantPub))
@@ -249,7 +208,7 @@ export class CryptoImplementation {
    * Create and sign a message to recoup a coin.
    */
   createRecoupRequest(coin: CoinRecord): RecoupRequest {
-    const p = buildSigPS(SignaturePurpose.WALLET_COIN_RECOUP)
+    const p = buildSigPS(TalerSignaturePurpose.WALLET_COIN_RECOUP)
       .put(decodeCrock(coin.coinPub))
       .put(decodeCrock(coin.denomPubHash))
       .put(decodeCrock(coin.blindingKey))
@@ -276,7 +235,7 @@ export class CryptoImplementation {
     contractHash: string,
     merchantPub: string,
   ): boolean {
-    const p = buildSigPS(SignaturePurpose.MERCHANT_PAYMENT_OK)
+    const p = buildSigPS(TalerSignaturePurpose.MERCHANT_PAYMENT_OK)
       .put(decodeCrock(contractHash))
       .build();
     const sigBytes = decodeCrock(sig);
@@ -288,7 +247,7 @@ export class CryptoImplementation {
    * Check if a wire fee is correctly signed.
    */
   isValidWireFee(type: string, wf: WireFee, masterPub: string): boolean {
-    const p = buildSigPS(SignaturePurpose.MASTER_WIRE_FEES)
+    const p = buildSigPS(TalerSignaturePurpose.MASTER_WIRE_FEES)
       .put(hash(stringToBytes(type + "\0")))
       .put(timestampRoundedToBuffer(wf.startStamp))
       .put(timestampRoundedToBuffer(wf.endStamp))
@@ -304,7 +263,7 @@ export class CryptoImplementation {
    * Check if the signature of a denomination is valid.
    */
   isValidDenom(denom: DenominationRecord, masterPub: string): boolean {
-    const p = buildSigPS(SignaturePurpose.MASTER_DENOMINATION_KEY_VALIDITY)
+    const p = buildSigPS(TalerSignaturePurpose.MASTER_DENOMINATION_KEY_VALIDITY)
       .put(decodeCrock(masterPub))
       .put(timestampRoundedToBuffer(denom.stampStart))
       .put(timestampRoundedToBuffer(denom.stampExpireWithdraw))
@@ -334,7 +293,9 @@ export class CryptoImplementation {
       stringToBytes(paytoUri + "\0"),
       new Uint8Array(0),
     );
-    const p = buildSigPS(SignaturePurpose.MASTER_WIRE_DETAILS).put(h).build();
+    const p = buildSigPS(TalerSignaturePurpose.MASTER_WIRE_DETAILS)
+      .put(h)
+      .build();
     return eddsaVerify(p, decodeCrock(sig), decodeCrock(masterPub));
   }
 
@@ -344,7 +305,7 @@ export class CryptoImplementation {
     merchantPub: string,
   ): boolean {
     const cthDec = decodeCrock(contractTermsHash);
-    const p = buildSigPS(SignaturePurpose.MERCHANT_CONTRACT)
+    const p = buildSigPS(TalerSignaturePurpose.MERCHANT_CONTRACT)
       .put(cthDec)
       .build();
     return eddsaVerify(p, decodeCrock(sig), decodeCrock(merchantPub));
@@ -364,8 +325,8 @@ export class CryptoImplementation {
   eddsaGetPublic(key: string): { priv: string; pub: string } {
     return {
       priv: key,
-      pub: encodeCrock(eddsaGetPublic(decodeCrock(key)))
-    }
+      pub: encodeCrock(eddsaGetPublic(decodeCrock(key))),
+    };
   }
 
   /**
@@ -392,7 +353,7 @@ export class CryptoImplementation {
    * and deposit permissions for each given coin.
    */
   signDepositPermission(depositInfo: DepositInfo): CoinDepositPermission {
-    const d = buildSigPS(SignaturePurpose.WALLET_COIN_DEPOSIT)
+    const d = buildSigPS(TalerSignaturePurpose.WALLET_COIN_DEPOSIT)
       .put(decodeCrock(depositInfo.contractTermsHash))
       .put(decodeCrock(depositInfo.wireInfoHash))
       .put(decodeCrock(depositInfo.denomPubHash))
@@ -503,7 +464,7 @@ export class CryptoImplementation {
     }
 
     const sessionHash = sessionHc.finish();
-    const confirmData = buildSigPS(SignaturePurpose.WALLET_COIN_MELT)
+    const confirmData = buildSigPS(TalerSignaturePurpose.WALLET_COIN_MELT)
       .put(sessionHash)
       .put(decodeCrock(meltCoinDenomPubHash))
       .put(amountToBuffer(valueWithFee))
@@ -549,7 +510,7 @@ export class CryptoImplementation {
     coinEv: string,
   ): string {
     const coinEvHash = hash(decodeCrock(coinEv));
-    const coinLink = buildSigPS(SignaturePurpose.WALLET_COIN_LINK)
+    const coinLink = buildSigPS(TalerSignaturePurpose.WALLET_COIN_LINK)
       .put(decodeCrock(newDenomHash))
       .put(decodeCrock(transferPub))
       .put(coinEvHash)
@@ -622,9 +583,7 @@ export class CryptoImplementation {
     } else {
       hOld = new Uint8Array(64);
     }
-    const sigBlob = new SignaturePurposeBuilder(
-      SignaturePurpose.SYNC_BACKUP_UPLOAD,
-    )
+    const sigBlob = buildSigPS(TalerSignaturePurpose.SYNC_BACKUP_UPLOAD)
       .put(hOld)
       .put(hNew)
       .build();

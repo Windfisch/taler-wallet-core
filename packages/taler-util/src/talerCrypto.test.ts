@@ -69,7 +69,7 @@ test("taler-exchange-tvg eddsa key", (t) => {
   const priv = "9TM70AKDTS57AWY9JK2J4TMBTMW6K62WHHGZWYDG0VM5ABPZKD40";
   const pub = "8GSJZ649T2PXMKZC01Y4ANNBE7MF14QVK9SQEC4E46ZHKCVG8AS0";
 
-  const pair = nacl.sign_keyPair_fromSeed(decodeCrock(priv));
+  const pair = nacl.crypto_sign_keyPair_fromSeed(decodeCrock(priv));
   t.deepEqual(encodeCrock(pair.publicKey), pub);
 });
 

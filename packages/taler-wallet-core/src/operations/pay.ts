@@ -763,6 +763,8 @@ async function processDownloadProposalImpl(
     proposalResp.contract_terms,
   );
 
+  logger.info(`Contract terms hash: ${contractTermsHash}`);
+
   let parsedContractTerms: ContractTerms;
 
   try {

@@ -126,7 +126,7 @@ export function decodeCrock(encoded: string): Uint8Array {
 }
 
 export function eddsaGetPublic(eddsaPriv: Uint8Array): Uint8Array {
-  const pair = nacl.sign_keyPair_fromSeed(eddsaPriv);
+  const pair = nacl.crypto_sign_keyPair_fromSeed(eddsaPriv);
   return pair.publicKey;
 }
 
@@ -353,7 +353,7 @@ export function hash(d: Uint8Array): Uint8Array {
 }
 
 export function eddsaSign(msg: Uint8Array, eddsaPriv: Uint8Array): Uint8Array {
-  const pair = nacl.sign_keyPair_fromSeed(eddsaPriv);
+  const pair = nacl.crypto_sign_keyPair_fromSeed(eddsaPriv);
   return nacl.sign_detached(msg, pair.secretKey);
 }
 
@@ -446,4 +446,57 @@ export function setupRefreshTransferPub(
     ecdhePriv: out,
     ecdhePub: ecdheGetPublic(out),
   };
+}
+
+export enum TalerSignaturePurpose {
+  MERCHANT_TRACK_TRANSACTION = 1103,
+  WALLET_RESERVE_WITHDRAW = 1200,
+  WALLET_COIN_DEPOSIT = 1201,
+  MASTER_DENOMINATION_KEY_VALIDITY = 1025,
+  MASTER_WIRE_FEES = 1028,
+  MASTER_WIRE_DETAILS = 1030,
+  WALLET_COIN_MELT = 1202,
+  TEST = 4242,
+  MERCHANT_PAYMENT_OK = 1104,
+  MERCHANT_CONTRACT = 1101,
+  WALLET_COIN_RECOUP = 1203,
+  WALLET_COIN_LINK = 1204,
+  EXCHANGE_CONFIRM_RECOUP = 1039,
+  EXCHANGE_CONFIRM_RECOUP_REFRESH = 1041,
+  ANASTASIS_POLICY_UPLOAD = 1400,
+  ANASTASIS_POLICY_DOWNLOAD = 1401,
+  SYNC_BACKUP_UPLOAD = 1450,
+}
+
+export class SignaturePurposeBuilder {
+  private chunks: Uint8Array[] = [];
+
+  constructor(private purposeNum: number) {}
+
+  put(bytes: Uint8Array): SignaturePurposeBuilder {
+    this.chunks.push(Uint8Array.from(bytes));
+    return this;
+  }
+
+  build(): Uint8Array {
+    let payloadLen = 0;
+    for (const c of this.chunks) {
+      payloadLen += c.byteLength;
+    }
+    const buf = new ArrayBuffer(4 + 4 + payloadLen);
+    const u8buf = new Uint8Array(buf);
+    let p = 8;
+    for (const c of this.chunks) {
+      u8buf.set(c, p);
+      p += c.byteLength;
+    }
+    const dvbuf = new DataView(buf);
+    dvbuf.setUint32(0, payloadLen + 4 + 4);
+    dvbuf.setUint32(4, this.purposeNum);
+    return u8buf;
+  }
+}
+
+export function buildSigPS(purposeNum: number): SignaturePurposeBuilder {
+  return new SignaturePurposeBuilder(purposeNum);
 }

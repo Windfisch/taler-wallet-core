@@ -2894,7 +2894,6 @@ export function x25519_edwards_keyPair_fromSecretKey(
     throw new Error("bad secret key size");
   }
   d.set(secretKey, 0);
-  //crypto_hash(d, secretKey, 32);
 
   d[0] &= 248;
   d[31] &= 127;
@@ -2906,7 +2905,7 @@ export function x25519_edwards_keyPair_fromSecretKey(
   return pk;
 }
 
-export function sign_keyPair_fromSecretKey(
+export function crypto_sign_keyPair_fromSecretKey(
   secretKey: Uint8Array,
 ): {
   publicKey: Uint8Array;
@@ -2920,7 +2919,7 @@ export function sign_keyPair_fromSecretKey(
   return { publicKey: pk, secretKey: new Uint8Array(secretKey) };
 }
 
-export function sign_keyPair_fromSeed(
+export function crypto_sign_keyPair_fromSeed(
   seed: Uint8Array,
 ): {
   publicKey: Uint8Array;

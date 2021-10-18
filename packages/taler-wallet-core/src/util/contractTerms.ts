@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { canonicalJson } from "@gnu-taler/taler-util";
+import { canonicalJson, Logger } from "@gnu-taler/taler-util";
 import { kdf } from "@gnu-taler/taler-util";
 import {
   decodeCrock,
@@ -23,6 +23,8 @@ import {
   hash,
   stringToBytes,
 } from "@gnu-taler/taler-util";
+
+const logger = new Logger("contractTerms.ts");
 
 export namespace ContractTermsUtil {
   export type PathPredicate = (path: string[]) => boolean;
@@ -222,6 +224,8 @@ export namespace ContractTermsUtil {
   export function hashContractTerms(contractTerms: unknown): string {
     const cleaned = scrub(contractTerms);
     const canon = canonicalJson(cleaned) + "\0";
-    return encodeCrock(hash(stringToBytes(canon)));
+    const bytes = stringToBytes(canon);
+    logger.info(`contract terms before hashing: ${encodeCrock(bytes)}`);
+    return encodeCrock(hash(bytes));
   }
 }

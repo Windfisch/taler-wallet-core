@@ -36,8 +36,10 @@ import {
 } from "./reducer-types.js";
 import fetchPonyfill from "fetch-ponyfill";
 import {
+  accountKeypairDerive,
   coreSecretEncrypt,
   encryptKeyshare,
+  encryptRecoveryDocument,
   encryptTruth,
   PolicyKey,
   policyKeyDerive,
@@ -492,14 +494,25 @@ async function uploadSecret(
     policies: policies.map((x, i) => {
       return {
         master_key: csr.encMasterKeys[i],
+        // FIXME: ...
         uuid: [],
-        salt: 
+        salt: undefined as any,
       };
     }),
   };
 
   for (const prov of state.policy_providers!) {
+    const uid = uidMap[prov.provider_url]
+    const acctKeypair = accountKeypairDerive(uid);
+    const encRecoveryDoc = await encryptRecoveryDocument(uid, rd);
     // FIXME: Upload recovery document.
+    const resp = await fetch(
+      new URL(`policy/${acctKeypair.pub}`, prov.provider_url).href,
+      {
+        method: "POST",
+        body: decodeCrock(encRecoveryDoc),
+      },
+    );
   }
 
   return {

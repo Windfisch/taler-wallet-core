@@ -22,4 +22,9 @@ export * from "./url.js";
 export { fnutil } from "./fnutils.js";
 export * from "./kdf.js";
 export * from "./talerCrypto.js";
-export { randomBytes, secretbox, secretbox_open } from "./nacl-fast.js";
+export {
+  randomBytes,
+  secretbox,
+  secretbox_open,
+  crypto_sign_keyPair_fromSeed,
+} from "./nacl-fast.js";

@@ -5,7 +5,9 @@ import {
   encodeCrock,
   getRandomBytes,
   kdf,
+  kdfKw,
   secretbox,
+  crypto_sign_keyPair_fromSeed,
   stringToBytes,
 } from "@gnu-taler/taler-util";
 import { argon2id } from "hash-wasm";
@@ -25,6 +27,8 @@ export type EncryptedKeyShare = Flavor<string, "EncryptedKeyShare">;
 export type EncryptedTruth = Flavor<string, "EncryptedTruth">;
 export type EncryptedCoreSecret = Flavor<string, "EncryptedCoreSecret">;
 export type EncryptedMasterKey = Flavor<string, "EncryptedMasterKey">;
+export type EddsaPublicKey = Flavor<string, "EddsaPublicKey">;
+export type EddsaPrivateKey = Flavor<string, "EddsaPrivateKey">;
 /**
  * Truth key, found in the recovery document.
  */
@@ -51,6 +55,43 @@ export async function userIdentifierDerive(
     outputType: "binary",
   });
   return encodeCrock(result);
+}
+
+export interface AccountKeyPair {
+  priv: EddsaPrivateKey;
+  pub: EddsaPublicKey;
+}
+
+export function accountKeypairDerive(userId: UserIdentifier): AccountKeyPair {
+  // FIXME: the KDF invocation looks fishy, but that's what the C code presently does.
+  const d = kdfKw({
+    outputLength: 32,
+    ikm: stringToBytes("ver"),
+    salt: decodeCrock(userId),
+  });
+  // FIXME: This bit twiddling seems wrong/unnecessary.
+  d[0] &= 248;
+  d[31] &= 127;
+  d[31] |= 64;
+  const pair = crypto_sign_keyPair_fromSeed(d);
+  return {
+    priv: encodeCrock(pair.secretKey),
+    pub: encodeCrock(pair.publicKey),
+  };
+}
+
+export async function encryptRecoveryDocument(
+  userId: UserIdentifier,
+  recoveryDoc: any,
+): Promise<OpaqueData> {
+  const plaintext = stringToBytes(JSON.stringify(recoveryDoc));
+  const nonce = encodeCrock(getRandomBytes(nonceSize));
+  return anastasisEncrypt(
+    nonce,
+    asOpaque(userId),
+    encodeCrock(plaintext),
+    "erd",
+  );
 }
 
 function taConcat(chunks: Uint8Array[]): Uint8Array {
