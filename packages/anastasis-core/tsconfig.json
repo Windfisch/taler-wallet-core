@@ -6,7 +6,7 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "sourceMap": true,
-    "lib": ["es6"],
+    "lib": ["es6", "DOM"],
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "strict": true,

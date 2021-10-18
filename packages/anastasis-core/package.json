@@ -2,7 +2,9 @@
   "name": "anastasis-core",
   "version": "0.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "./lib/index.js",
+  "module": "./lib/index.js",
+  "types": "./lib/index.d.ts",
   "scripts": {
     "prepare": "tsc",
     "compile": "tsc",
@@ -20,7 +22,9 @@
   },
   "dependencies": {
     "@gnu-taler/taler-util": "workspace:^0.8.3",
-    "hash-wasm": "^4.9.0"
+    "fetch-ponyfill": "^7.1.0",
+    "hash-wasm": "^4.9.0",
+    "node-fetch": "^3.0.0"
   },
   "ava": {
     "files": [
