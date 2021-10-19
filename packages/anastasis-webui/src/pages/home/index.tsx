@@ -27,6 +27,7 @@ import { SecretSelectionScreen } from "./SecretSelectionScreen";
 import { SolveScreen } from "./SolveScreen";
 import { StartScreen } from "./StartScreen";
 import { TruthsPayingScreen } from "./TruthsPayingScreen";
+import "./../home/style"
 
 const WithReducer = createContext<AnastasisReducerApi | undefined>(undefined);
 
@@ -89,7 +90,7 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
   return (<Fragment>
     <Menu title="Anastasis" />
     <section class="section">
-      <div onKeyPress={(e) => handleKeyPress(e)}> {/* class={style.home} */}
+      <div class="home" onKeyPress={(e) => handleKeyPress(e)}> 
         <button onClick={() => reducer.reset()}>Reset session</button>
         <h1>{props.title}</h1>
         <ErrorBanner reducer={reducer} />
@@ -234,7 +235,7 @@ function ErrorBanner(props: ErrorBannerProps): VNode | null {
   const currentError = props.reducer.currentError;
   if (currentError) {
     return (
-      <div id="error"> {/* style.error */}
+      <div id="error"> 
         <p>Error: {JSON.stringify(currentError)}</p>
         <button onClick={() => props.reducer.dismissError()}>
           Dismiss Error

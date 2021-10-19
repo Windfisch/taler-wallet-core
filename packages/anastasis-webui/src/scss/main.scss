@@ -189,3 +189,41 @@ div[data-tooltip]::before {
   background-color: #fffbdd;
   border: solid 1px #f2e9bf;
 }
+
+
+.home {
+  padding: 1em 1em;
+  min-height: 100%;
+  width: 100%;
+  max-width: 40em;
+}
+
+.home div {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.policy {
+  padding: 0.5em;
+  border: 1px solid black;
+  border-radius: 0.5em;
+  border-radius: 0.5em;
+}
+
+.home > #error {
+  padding: 0.5em;
+  border: 1px solid black;
+  background-color: rgb(228, 189, 197);
+  border-radius: 0.5em;
+}
+
+.profile {
+	padding: 56px 20px;
+	min-height: 100%;
+	width: 100%;
+}
+
+.notfound {
+  padding: 0 5%;
+  margin: 100px 0;
+}

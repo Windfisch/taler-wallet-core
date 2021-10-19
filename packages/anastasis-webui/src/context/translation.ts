@@ -52,7 +52,7 @@ export const TranslationProvider = ({ initial, children, forceLang }: Props): VN
       changeLanguage(forceLang)
     }
   })
-  const handler = new jedLib.Jed(strings[lang]);
+  const handler = new jedLib.Jed(strings[lang] || strings['en']);
   return h(Context.Provider, { value: { lang, handler, changeLanguage }, children });
 }
 

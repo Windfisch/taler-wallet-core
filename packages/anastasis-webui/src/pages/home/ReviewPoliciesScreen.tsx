@@ -12,8 +12,7 @@ export function ReviewPoliciesScreen(props: BackupReducerProps): VNode {
           .map((x, i) => authMethods[x.authentication_method].type)
           .join(" + ");
         return (
-          <div key={i}>
-          {/* <div key={i} class={style.policy}> */}
+          <div key={i} class="policy">
             <h3>
               Policy #{i + 1}: {policyName}
             </h3>

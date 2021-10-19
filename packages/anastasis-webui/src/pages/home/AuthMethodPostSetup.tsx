@@ -33,7 +33,7 @@ export function AuthMethodPostSetup(props: AuthMethodSetupProps): VNode {
   };
 
   return (
-    <div > {/* class={style.home} */}
+    <div class="home"> 
       <h1>Add {props.method} authentication</h1>
       <div>
         <p>
