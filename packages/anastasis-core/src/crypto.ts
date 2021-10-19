@@ -12,9 +12,11 @@ import {
 } from "@gnu-taler/taler-util";
 import { argon2id } from "hash-wasm";
 
-export type Flavor<T, FlavorT> = T & { _flavor?: FlavorT };
-export type FlavorP<T, FlavorT, S extends number> = T & {
-  _flavor?: FlavorT;
+export type Flavor<T, FlavorT extends string> = T & {
+  _flavor?: `anastasis.${FlavorT}`;
+};
+export type FlavorP<T, FlavorT extends string, S extends number> = T & {
+  _flavor?: `anastasis.${FlavorT}`;
   _size?: S;
 };
 
@@ -29,6 +31,9 @@ export type EncryptedCoreSecret = Flavor<string, "EncryptedCoreSecret">;
 export type EncryptedMasterKey = Flavor<string, "EncryptedMasterKey">;
 export type EddsaPublicKey = Flavor<string, "EddsaPublicKey">;
 export type EddsaPrivateKey = Flavor<string, "EddsaPrivateKey">;
+export type TruthUuid = Flavor<string, "TruthUuid">;
+export type SecureAnswerHash = Flavor<string, "SecureAnswerHash">;
+export type QuestionSalt = Flavor<string, "QuestionSalt">;
 /**
  * Truth key, found in the recovery document.
  */
@@ -110,12 +115,13 @@ export async function policyKeyDerive(
   policySalt: PolicySalt,
 ): Promise<PolicyKey> {
   const chunks = keyShares.map((x) => decodeCrock(x));
-  const polKey = kdf(
-    64,
-    taConcat(chunks),
-    decodeCrock(policySalt),
-    new Uint8Array(0),
-  );
+  const polKey = kdfKw({
+    outputLength: 64,
+    ikm: taConcat(chunks),
+    salt: decodeCrock(policySalt),
+    info: stringToBytes("anastasis-policy-key-derive"),
+  });
+
   return encodeCrock(polKey);
 }
 
@@ -124,7 +130,12 @@ async function deriveKey(
   nonce: EncryptionNonce,
   salt: string,
 ): Promise<Uint8Array> {
-  return kdf(32, decodeCrock(keySeed), stringToBytes(salt), decodeCrock(nonce));
+  return kdfKw({
+    outputLength: 32,
+    salt: decodeCrock(nonce),
+    ikm: decodeCrock(keySeed),
+    info: stringToBytes(salt),
+  });
 }
 
 async function anastasisEncrypt(
@@ -200,4 +211,27 @@ export async function coreSecretEncrypt(
     encCoreSecret,
     encMasterKeys,
   };
+}
+
+export async function secureAnswerHash(
+  answer: string,
+  truthUuid: TruthUuid,
+  questionSalt: QuestionSalt,
+): Promise<SecureAnswerHash> {
+  const powResult = await argon2id({
+    hashLength: 64,
+    iterations: 3,
+    memorySize: 1024 /* kibibytes */,
+    parallelism: 1,
+    password: stringToBytes(answer),
+    salt: decodeCrock(questionSalt),
+    outputType: "binary",
+  });
+  const kdfResult = kdfKw({
+    outputLength: 64,
+    salt: decodeCrock(truthUuid),
+    ikm: powResult,
+    info: stringToBytes("anastasis-secure-question-hashing"),
+  });
+  return encodeCrock(kdfResult);
 }
