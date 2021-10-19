@@ -33,7 +33,10 @@ export type EddsaPublicKey = Flavor<string, "EddsaPublicKey">;
 export type EddsaPrivateKey = Flavor<string, "EddsaPrivateKey">;
 export type TruthUuid = Flavor<string, "TruthUuid">;
 export type SecureAnswerHash = Flavor<string, "SecureAnswerHash">;
-export type QuestionSalt = Flavor<string, "QuestionSalt">;
+/**
+ * Truth-specific randomness, also called question salt sometimes.
+ */
+export type TruthSalt = Flavor<string, "TruthSalt">;
 /**
  * Truth key, found in the recovery document.
  */
@@ -150,7 +153,7 @@ async function anastasisEncrypt(
   return encodeCrock(taConcat([nonceBuf, cipherText]));
 }
 
-const asOpaque = (x: string): OpaqueData => x;
+export const asOpaque = (x: string): OpaqueData => x;
 const asEncryptedKeyShare = (x: OpaqueData): EncryptedKeyShare => x as string;
 const asEncryptedTruth = (x: OpaqueData): EncryptedTruth => x as string;
 
@@ -216,7 +219,7 @@ export async function coreSecretEncrypt(
 export async function secureAnswerHash(
   answer: string,
   truthUuid: TruthUuid,
-  questionSalt: QuestionSalt,
+  questionSalt: TruthSalt,
 ): Promise<SecureAnswerHash> {
   const powResult = await argon2id({
     hashLength: 64,

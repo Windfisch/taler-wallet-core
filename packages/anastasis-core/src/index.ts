@@ -1,14 +1,15 @@
 import {
   AmountString,
   buildSigPS,
-  codecForGetExchangeWithdrawalInfo,
   decodeCrock,
   eddsaSign,
   encodeCrock,
   getRandomBytes,
   hash,
+  stringToBytes,
   TalerErrorCode,
   TalerSignaturePurpose,
+  Timestamp,
 } from "@gnu-taler/taler-util";
 import { anastasisData } from "./anastasis-data.js";
 import {
@@ -42,13 +43,19 @@ import {
 import fetchPonyfill from "fetch-ponyfill";
 import {
   accountKeypairDerive,
+  asOpaque,
   coreSecretEncrypt,
   encryptKeyshare,
   encryptRecoveryDocument,
   encryptTruth,
+  OpaqueData,
   PolicyKey,
   policyKeyDerive,
   PolicySalt,
+  TruthSalt,
+  secureAnswerHash,
+  TruthKey,
+  TruthUuid,
   UserIdentifier,
   userIdentifierDerive,
 } from "./crypto.js";
@@ -100,13 +107,13 @@ interface EscrowMethod {
    */
   escrow_type: string;
 
-  // UUID of the escrow method (see /truth/ API below).
+  // UUID of the escrow method.
   // 16 bytes base32-crock encoded.
-  uuid: string;
+  uuid: TruthUuid;
 
   // Key used to encrypt the Truth this EscrowMethod is related to.
   // Client has to provide this key to the server when using /truth/.
-  truth_key: string;
+  truth_key: TruthKey;
 
   // Salt used to encrypt the truth on the Anastasis server.
   salt: string;
@@ -117,11 +124,6 @@ interface EscrowMethod {
 
   // The instructions to give to the user (i.e. the security question
   // if this is challenge-response).
-  // (Q: as string in base32 encoding?)
-  // (Q: what is the mime-type of this value?)
-  //
-  // The plaintext challenge is not revealed to the
-  // Anastasis server.
   instructions: string;
 }
 
@@ -388,7 +390,28 @@ interface TruthMetaData {
   /**
    * Truth-specific salt.
    */
-  salt: string;
+  truth_salt: string;
+}
+
+async function getTruthValue(
+  authMethod: AuthMethod,
+  truthUuid: string,
+  questionSalt: TruthSalt,
+): Promise<OpaqueData> {
+  switch (authMethod.type) {
+    case "question": {
+      return asOpaque(
+        await secureAnswerHash(authMethod.challenge, truthUuid, questionSalt),
+      );
+    }
+    case "sms":
+    case "email":
+    case "totp":
+    case "iban":
+      return encodeCrock(stringToBytes(authMethod.type));
+    default:
+      throw Error("unknown auth type");
+  }
 }
 
 async function uploadSecret(
@@ -421,7 +444,7 @@ async function uploadSecret(
       const tm: TruthMetaData = {
         key_share: keyShare,
         nonce: encodeCrock(getRandomBytes(24)),
-        salt: encodeCrock(getRandomBytes(16)),
+        truth_salt: encodeCrock(getRandomBytes(16)),
         truth_key: encodeCrock(getRandomBytes(32)),
         uuid: encodeCrock(getRandomBytes(32)),
         pol_method_index: methIndex,
@@ -459,13 +482,18 @@ async function uploadSecret(
     const provider = state.authentication_providers![
       meth.provider
     ] as AuthenticationProviderStatusOk;
+    const truthValue = await getTruthValue(authMethod, tm.uuid, tm.truth_salt);
     const encryptedTruth = await encryptTruth(
       tm.nonce,
       tm.truth_key,
-      authMethod.challenge,
+      truthValue,
     );
     const uid = uidMap[meth.provider];
-    const encryptedKeyShare = await encryptKeyshare(tm.key_share, uid, tm.salt);
+    const encryptedKeyShare = await encryptKeyshare(
+      tm.key_share,
+      uid,
+      tm.truth_salt,
+    );
     console.log(
       "encrypted key share len",
       decodeCrock(encryptedKeyShare).length,
@@ -496,7 +524,7 @@ async function uploadSecret(
       escrow_type: authMethod.type,
       instructions: authMethod.instructions,
       provider_salt: provider.salt,
-      salt: tm.salt,
+      salt: tm.truth_salt,
       truth_key: tm.truth_key,
       url: meth.provider,
       uuid: tm.uuid,
@@ -549,14 +577,19 @@ async function uploadSecret(
       };
     }
     let policyVersion = 0;
-    console.log(resp);
-    console.log(resp.headers);
-    console.log(resp.headers.get("Anastasis-Version"));
+    let policyExpiration: Timestamp = { t_ms: 0 };
     try {
       policyVersion = Number(resp.headers.get("Anastasis-Version") ?? "0");
     } catch (e) {}
+    try {
+      policyExpiration = {
+        t_ms:
+          1000 * Number(resp.headers.get("Anastasis-Policy-Expiration") ?? "0"),
+      };
+    } catch (e) {}
     successDetails[prov.provider_url] = {
       policy_version: policyVersion,
+      policy_expiration: policyExpiration,
     };
   }
 

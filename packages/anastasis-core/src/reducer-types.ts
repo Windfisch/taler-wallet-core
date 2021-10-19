@@ -1,4 +1,4 @@
-import { Duration } from "@gnu-taler/taler-util";
+import { Duration, Timestamp } from "@gnu-taler/taler-util";
 
 export type ReducerState =
   | ReducerStateBackup
@@ -30,6 +30,7 @@ export interface PolicyProvider {
 export interface SuccessDetails {
   [provider_url: string]: {
     policy_version: number;
+    policy_expiration: Timestamp;
   };
 }
 
