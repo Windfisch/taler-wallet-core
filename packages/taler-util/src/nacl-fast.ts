@@ -2926,7 +2926,8 @@ export function crypto_sign_keyPair_fromSeed(
   secretKey: Uint8Array;
 } {
   checkArrayTypes(seed);
-  if (seed.length !== crypto_sign_SEEDBYTES) throw new Error("bad seed size");
+  if (seed.length !== crypto_sign_SEEDBYTES)
+    throw new Error(`bad seed size: ${seed.length}`);
   const pk = new Uint8Array(crypto_sign_PUBLICKEYBYTES);
   const sk = new Uint8Array(crypto_sign_SECRETKEYBYTES);
   for (let i = 0; i < 32; i++) sk[i] = seed[i];
@@ -3015,4 +3016,3 @@ export function secretbox_open(
   if (crypto_secretbox_open(m, c, c.length, nonce, key) !== 0) return undefined;
   return m.subarray(crypto_secretbox_ZEROBYTES);
 }
-

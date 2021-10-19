@@ -27,6 +27,12 @@ export interface PolicyProvider {
   provider_url: string;
 }
 
+export interface SuccessDetails {
+  [provider_url: string]: {
+    policy_version: number;
+  };
+}
+
 export interface ReducerStateBackup {
   recovery_state?: undefined;
   backup_state: BackupStates;
@@ -47,11 +53,7 @@ export interface ReducerStateBackup {
    * and that are actually used in policies.
    */
   policy_providers?: PolicyProvider[];
-  success_details?: {
-    [provider_url: string]: {
-      policy_version: number;
-    };
-  };
+  success_details?: SuccessDetails;
   payments?: string[];
   policy_payment_requests?: {
     payto: string;

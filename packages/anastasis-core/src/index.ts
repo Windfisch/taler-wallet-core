@@ -1,10 +1,14 @@
 import {
   AmountString,
+  buildSigPS,
   codecForGetExchangeWithdrawalInfo,
   decodeCrock,
+  eddsaSign,
   encodeCrock,
   getRandomBytes,
+  hash,
   TalerErrorCode,
+  TalerSignaturePurpose,
 } from "@gnu-taler/taler-util";
 import { anastasisData } from "./anastasis-data.js";
 import {
@@ -33,6 +37,7 @@ import {
   ReducerStateBackupUserAttributesCollecting,
   ReducerStateError,
   ReducerStateRecovery,
+  SuccessDetails,
 } from "./reducer-types.js";
 import fetchPonyfill from "fetch-ponyfill";
 import {
@@ -43,6 +48,7 @@ import {
   encryptTruth,
   PolicyKey,
   policyKeyDerive,
+  PolicySalt,
   UserIdentifier,
   userIdentifierDerive,
 } from "./crypto.js";
@@ -393,12 +399,17 @@ async function uploadSecret(
   const coreSecret = state.core_secret?.value!;
   // Truth key is `${methodIndex}/${providerUrl}`
   const truthMetadataMap: Record<string, TruthMetaData> = {};
+
   const policyKeys: PolicyKey[] = [];
+  const policySalts: PolicySalt[] = [];
+  // truth UUIDs for every policy.
+  const policyUuids: string[][] = [];
 
   for (let policyIndex = 0; policyIndex < policies.length; policyIndex++) {
     const pol = policies[policyIndex];
     const policySalt = encodeCrock(getRandomBytes(64));
     const keyShares: string[] = [];
+    const methUuids: string[] = [];
     for (let methIndex = 0; methIndex < pol.methods.length; methIndex++) {
       const meth = pol.methods[methIndex];
       const truthKey = `${meth.authentication_method}:${meth.provider}`;
@@ -416,10 +427,12 @@ async function uploadSecret(
         pol_method_index: methIndex,
         policy_index: policyIndex,
       };
+      methUuids.push(tm.uuid);
       truthMetadataMap[truthKey] = tm;
     }
     const policyKey = await policyKeyDerive(keyShares, policySalt);
     policyKeys.push(policyKey);
+    policySalts.push(policySalt);
   }
 
   const csr = await coreSecretEncrypt(policyKeys, coreSecret);
@@ -472,6 +485,13 @@ async function uploadSecret(
       body: JSON.stringify(tur),
     });
 
+    if (resp.status !== 204) {
+      return {
+        code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
+        hint: "could not upload policy",
+      };
+    }
+
     escrowMethods.push({
       escrow_type: authMethod.type,
       instructions: authMethod.instructions,
@@ -494,30 +514,56 @@ async function uploadSecret(
     policies: policies.map((x, i) => {
       return {
         master_key: csr.encMasterKeys[i],
-        // FIXME: ...
-        uuid: [],
-        salt: undefined as any,
+        uuid: policyUuids[i],
+        salt: policySalts[i],
       };
     }),
   };
 
+  const successDetails: SuccessDetails = {};
+
   for (const prov of state.policy_providers!) {
-    const uid = uidMap[prov.provider_url]
+    const uid = uidMap[prov.provider_url];
     const acctKeypair = accountKeypairDerive(uid);
     const encRecoveryDoc = await encryptRecoveryDocument(uid, rd);
-    // FIXME: Upload recovery document.
+    const bodyHash = hash(decodeCrock(encRecoveryDoc));
+    const sigPS = buildSigPS(TalerSignaturePurpose.ANASTASIS_POLICY_UPLOAD)
+      .put(bodyHash)
+      .build();
+    const sig = eddsaSign(sigPS, decodeCrock(acctKeypair.priv));
     const resp = await fetch(
       new URL(`policy/${acctKeypair.pub}`, prov.provider_url).href,
       {
         method: "POST",
+        headers: {
+          "Anastasis-Policy-Signature": encodeCrock(sig),
+          "If-None-Match": encodeCrock(bodyHash),
+        },
         body: decodeCrock(encRecoveryDoc),
       },
     );
+    if (resp.status !== 204) {
+      return {
+        code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
+        hint: "could not upload policy",
+      };
+    }
+    let policyVersion = 0;
+    console.log(resp);
+    console.log(resp.headers);
+    console.log(resp.headers.get("Anastasis-Version"));
+    try {
+      policyVersion = Number(resp.headers.get("Anastasis-Version") ?? "0");
+    } catch (e) {}
+    successDetails[prov.provider_url] = {
+      policy_version: policyVersion,
+    };
   }
 
   return {
-    code: 123,
-    hint: "not implemented",
+    ...state,
+    backup_state: BackupStates.BackupFinished,
+    success_details: successDetails,
   };
 }
 
@@ -696,6 +742,19 @@ export async function reduceAction(
       };
     } else if (action === "next") {
       return uploadSecret(state);
+    } else {
+      return {
+        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
+        hint: `Unsupported action '${action}'`,
+      };
+    }
+  }
+  if (state.backup_state === BackupStates.BackupFinished) {
+    if (action === "back") {
+      return {
+        ...state,
+        backup_state: BackupStates.SecretEditing,
+      };
     } else {
       return {
         code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,

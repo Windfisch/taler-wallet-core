@@ -66,16 +66,12 @@ export function accountKeypairDerive(userId: UserIdentifier): AccountKeyPair {
   // FIXME: the KDF invocation looks fishy, but that's what the C code presently does.
   const d = kdfKw({
     outputLength: 32,
-    ikm: stringToBytes("ver"),
-    salt: decodeCrock(userId),
+    ikm: decodeCrock(userId),
+    info: stringToBytes("ver"),
   });
-  // FIXME: This bit twiddling seems wrong/unnecessary.
-  d[0] &= 248;
-  d[31] &= 127;
-  d[31] |= 64;
   const pair = crypto_sign_keyPair_fromSeed(d);
   return {
-    priv: encodeCrock(pair.secretKey),
+    priv: encodeCrock(d),
     pub: encodeCrock(pair.publicKey),
   };
 }
