@@ -417,7 +417,7 @@ async function getTruthValue(
     case "email":
     case "totp":
     case "iban":
-      return encodeCrock(stringToBytes(authMethod.type));
+      return authMethod.challenge;
     default:
       throw Error("unknown auth type");
   }
@@ -429,7 +429,6 @@ async function getTruthValue(
 async function compressRecoveryDoc(rd: any): Promise<Uint8Array> {
   console.log("recovery document", rd);
   const docBytes = stringToBytes(JSON.stringify(rd));
-  console.log("plain doc length", docBytes.length);
   const sizeHeaderBuf = new ArrayBuffer(4);
   const dvbuf = new DataView(sizeHeaderBuf);
   dvbuf.setUint32(0, docBytes.length, false);
@@ -461,22 +460,21 @@ async function uploadSecret(
     for (let methIndex = 0; methIndex < pol.methods.length; methIndex++) {
       const meth = pol.methods[methIndex];
       const truthReference = `${meth.authentication_method}:${meth.provider}`;
-      if (truthMetadataMap[truthReference]) {
-        continue;
+      let tm = truthMetadataMap[truthReference];
+      if (!tm) {
+        tm = {
+          key_share: encodeCrock(getRandomBytes(32)),
+          nonce: encodeCrock(getRandomBytes(24)),
+          truth_salt: encodeCrock(getRandomBytes(16)),
+          truth_key: encodeCrock(getRandomBytes(64)),
+          uuid: encodeCrock(getRandomBytes(32)),
+          pol_method_index: methIndex,
+          policy_index: policyIndex,
+        };
+        truthMetadataMap[truthReference] = tm;
       }
-      const keyShare = encodeCrock(getRandomBytes(32));
-      keyShares.push(keyShare);
-      const tm: TruthMetaData = {
-        key_share: keyShare,
-        nonce: encodeCrock(getRandomBytes(24)),
-        truth_salt: encodeCrock(getRandomBytes(16)),
-        truth_key: encodeCrock(getRandomBytes(64)),
-        uuid: encodeCrock(getRandomBytes(32)),
-        pol_method_index: methIndex,
-        policy_index: policyIndex,
-      };
+      keyShares.push(tm.key_share);
       methUuids.push(tm.uuid);
-      truthMetadataMap[truthReference] = tm;
     }
     const policyKey = await policyKeyDerive(keyShares, policySalt);
     policyUuids.push(methUuids);
@@ -563,6 +561,8 @@ async function uploadSecret(
   // the state, since it's possible that we'll run into
   // a provider that requests a payment.
 
+  console.log("policy UUIDs", policyUuids);
+
   const rd: RecoveryDocument = {
     secret_name: secretName,
     encrypted_core_secret: csr.encCoreSecret,
@@ -582,7 +582,6 @@ async function uploadSecret(
     const uid = uidMap[prov.provider_url];
     const acctKeypair = accountKeypairDerive(uid);
     const zippedDoc = await compressRecoveryDoc(rd);
-    console.log("zipped doc", zippedDoc);
     const encRecoveryDoc = await encryptRecoveryDocument(
       uid,
       encodeCrock(zippedDoc),
