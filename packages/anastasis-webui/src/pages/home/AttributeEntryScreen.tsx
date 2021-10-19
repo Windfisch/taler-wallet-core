@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { AnastasisReducerApi, ReducerStateRecovery, ReducerStateBackup } from "../../hooks/use-anastasis-reducer";
+import { ReducerStateRecovery, ReducerStateBackup } from "../../../../anastasis-core/lib";
+import { AnastasisReducerApi } from "../../hooks/use-anastasis-reducer";
 import { AnastasisClientFrame, withProcessLabel, LabeledInput } from "./index";
 
 export function AttributeEntryScreen(props: AttributeEntryProps): VNode {

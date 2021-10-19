@@ -38,9 +38,9 @@ const names: LangsNames = {
   it: 'Italiano [it]',
 }
 
-function getLangName(s: keyof LangsNames | string) {
+function getLangName(s: keyof LangsNames | string): string {
   if (names[s]) return names[s]
-  return s
+  return String(s)
 }
 
 export function LangSelector(): VNode {

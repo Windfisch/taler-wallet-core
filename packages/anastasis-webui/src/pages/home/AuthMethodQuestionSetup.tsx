@@ -5,7 +5,8 @@ import {
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { AuthMethodSetupProps, AnastasisClientFrame, LabeledInput } from "./index";
+import { AuthMethodSetupProps } from "./AuthenticationEditorScreen";
+import { AnastasisClientFrame, LabeledInput } from "./index";
 
 export function AuthMethodQuestionSetup(props: AuthMethodSetupProps): VNode {
   const [questionText, setQuestionText] = useState("");

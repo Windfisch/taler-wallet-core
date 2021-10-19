@@ -5,7 +5,8 @@ import {
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { AuthMethodSetupProps, LabeledInput } from "./index";
+import { AuthMethodSetupProps } from "./AuthenticationEditorScreen";
+import { LabeledInput } from "./index";
 
 export function AuthMethodPostSetup(props: AuthMethodSetupProps): VNode {
   const [fullName, setFullName] = useState("");
@@ -32,7 +33,7 @@ export function AuthMethodPostSetup(props: AuthMethodSetupProps): VNode {
   };
 
   return (
-    <div class={style.home}>
+    <div > {/* class={style.home} */}
       <h1>Add {props.method} authentication</h1>
       <div>
         <p>

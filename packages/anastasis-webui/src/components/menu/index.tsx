@@ -88,7 +88,7 @@ export function NotYetReadyAppMenu({ onLogout, title }: NotYetReadyAppMenuProps)
 
   return <div class={mobileOpen ? "has-aside-mobile-expanded" : ""} onClick={() => setMobileOpen(false)}>
     <NavigationBar onMobileMenu={() => setMobileOpen(!mobileOpen)} title={title} />
-    {onLogout && <Sidebar onLogout={onLogout} mobile={mobileOpen} />}
+    {onLogout && <Sidebar mobile={mobileOpen} />}
   </div>
 
 }

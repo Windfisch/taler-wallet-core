@@ -1,11 +1,12 @@
 import { h, VNode } from "preact";
-import { AnastasisReducerApi, ChallengeFeedback, ChallengeInfo } from "../../hooks/use-anastasis-reducer";
+import { AnastasisReducerApi } from "../../hooks/use-anastasis-reducer";
 import { SolveEmailEntry } from "./SolveEmailEntry";
 import { SolvePostEntry } from "./SolvePostEntry";
 import { SolveQuestionEntry } from "./SolveQuestionEntry";
 import { SolveSmsEntry } from "./SolveSmsEntry";
 import { SolveUnsupportedEntry } from "./SolveUnsupportedEntry";
 import { RecoveryReducerProps } from "./index";
+import { ChallengeInfo, ChallengeFeedback } from "../../../../anastasis-core/lib";
 
 export function SolveScreen(props: RecoveryReducerProps): VNode {
   const chArr = props.recoveryState.recovery_information!.challenges;

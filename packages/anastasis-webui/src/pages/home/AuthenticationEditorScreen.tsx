@@ -94,7 +94,7 @@ export function AuthenticationEditorScreen(props: AuthenticationEditorProps): VN
   );
 }
 
-interface AuthMethodSetupProps {
+export interface AuthMethodSetupProps {
   method: string;
   addAuthMethod: (x: any) => void;
   cancel: () => void;

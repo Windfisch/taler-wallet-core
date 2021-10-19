@@ -5,7 +5,8 @@ import {
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useState, useRef, useLayoutEffect } from "preact/hooks";
-import { AuthMethodSetupProps, AnastasisClientFrame } from "./index";
+import { AuthMethodSetupProps } from "./AuthenticationEditorScreen";
+import { AnastasisClientFrame } from "./index";
 
 export function AuthMethodSmsSetup(props: AuthMethodSetupProps): VNode {
   const [mobileNumber, setMobileNumber] = useState("");
