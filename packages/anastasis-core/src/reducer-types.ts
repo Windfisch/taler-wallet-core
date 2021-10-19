@@ -34,6 +34,11 @@ export interface SuccessDetails {
   };
 }
 
+export interface CoreSecret {
+  mime: string;
+  value: string;
+}
+
 export interface ReducerStateBackup {
   recovery_state?: undefined;
   backup_state: BackupStates;
@@ -61,10 +66,7 @@ export interface ReducerStateBackup {
     provider: string;
   }[];
 
-  core_secret?: {
-    mime: string;
-    value: string;
-  };
+  core_secret?: CoreSecret;
 
   expiration?: Duration;
 }

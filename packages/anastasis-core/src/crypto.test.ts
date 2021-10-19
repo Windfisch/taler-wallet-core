@@ -1,6 +1,7 @@
 import test from "ava";
 import {
   accountKeypairDerive,
+  encryptKeyshare,
   encryptTruth,
   policyKeyDerive,
   secureAnswerHash,

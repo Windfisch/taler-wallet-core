@@ -23,6 +23,7 @@
   "dependencies": {
     "@gnu-taler/taler-util": "workspace:^0.8.3",
     "fetch-ponyfill": "^7.1.0",
+    "fflate": "^0.6.0",
     "hash-wasm": "^4.9.0",
     "node-fetch": "^3.0.0"
   },

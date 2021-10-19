@@ -1,20 +1,19 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import {
-  encodeCrock,
-  stringToBytes
-} from "@gnu-taler/taler-util";
+import { encodeCrock, stringToBytes } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { BackupReducerProps, AnastasisClientFrame, LabeledInput } from "./index";
+import {
+  BackupReducerProps,
+  AnastasisClientFrame,
+  LabeledInput,
+} from "./index";
 
 export function SecretEditorScreen(props: BackupReducerProps): VNode {
   const { reducer } = props;
   const [secretName, setSecretName] = useState(
-    props.backupState.secret_name ?? ""
+    props.backupState.secret_name ?? "",
   );
-  const [secretValue, setSecretValue] = useState(
-    props.backupState.core_secret?.value ?? "" ?? ""
-  );
+  const [secretValue, setSecretValue] = useState("");
   const secretNext = (): void => {
     reducer.runTransaction(async (tx) => {
       await tx.transition("enter_secret_name", {
@@ -41,12 +40,14 @@ export function SecretEditorScreen(props: BackupReducerProps): VNode {
         <LabeledInput
           label="Secret Name:"
           grabFocus
-          bind={[secretName, setSecretName]} />
+          bind={[secretName, setSecretName]}
+        />
       </div>
       <div>
         <LabeledInput
           label="Secret Value:"
-          bind={[secretValue, setSecretValue]} />
+          bind={[secretValue, setSecretValue]}
+        />
       </div>
     </AnastasisClientFrame>
   );

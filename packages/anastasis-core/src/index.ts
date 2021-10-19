@@ -1,6 +1,7 @@
 import {
   AmountString,
   buildSigPS,
+  bytesToString,
   decodeCrock,
   eddsaSign,
   encodeCrock,
@@ -58,7 +59,9 @@ import {
   TruthUuid,
   UserIdentifier,
   userIdentifierDerive,
+  typedArrayConcat,
 } from "./crypto.js";
+import { zlibSync } from "fflate";
 
 const { fetch, Request, Response, Headers } = fetchPonyfill({});
 
@@ -93,7 +96,7 @@ interface DecryptionPolicy {
   /**
    * List of escrow methods identified by their UUID.
    */
-  uuid: string[];
+  uuids: string[];
 }
 
 interface EscrowMethod {
@@ -115,8 +118,10 @@ interface EscrowMethod {
   // Client has to provide this key to the server when using /truth/.
   truth_key: TruthKey;
 
-  // Salt used to encrypt the truth on the Anastasis server.
-  salt: string;
+  /**
+   * Salt to hash the security question answer if applicable.
+   */
+  truth_salt: TruthSalt;
 
   // Salt from the provider to derive the user ID
   // at this provider.
@@ -401,7 +406,11 @@ async function getTruthValue(
   switch (authMethod.type) {
     case "question": {
       return asOpaque(
-        await secureAnswerHash(authMethod.challenge, truthUuid, questionSalt),
+        await secureAnswerHash(
+          bytesToString(decodeCrock(authMethod.challenge)),
+          truthUuid,
+          questionSalt,
+        ),
       );
     }
     case "sms":
@@ -414,12 +423,28 @@ async function getTruthValue(
   }
 }
 
+/**
+ * Compress the recovery document and add a size header.
+ */
+async function compressRecoveryDoc(rd: any): Promise<Uint8Array> {
+  console.log("recovery document", rd);
+  const docBytes = stringToBytes(JSON.stringify(rd));
+  console.log("plain doc length", docBytes.length);
+  const sizeHeaderBuf = new ArrayBuffer(4);
+  const dvbuf = new DataView(sizeHeaderBuf);
+  dvbuf.setUint32(0, docBytes.length, false);
+  const zippedDoc = zlibSync(docBytes);
+  return typedArrayConcat([new Uint8Array(sizeHeaderBuf), zippedDoc]);
+}
+
 async function uploadSecret(
   state: ReducerStateBackup,
 ): Promise<ReducerStateBackup | ReducerStateError> {
   const policies = state.policies!;
   const secretName = state.secret_name!;
-  const coreSecret = state.core_secret?.value!;
+  const coreSecret: OpaqueData = encodeCrock(
+    stringToBytes(JSON.stringify(state.core_secret!)),
+  );
   // Truth key is `${methodIndex}/${providerUrl}`
   const truthMetadataMap: Record<string, TruthMetaData> = {};
 
@@ -435,8 +460,8 @@ async function uploadSecret(
     const methUuids: string[] = [];
     for (let methIndex = 0; methIndex < pol.methods.length; methIndex++) {
       const meth = pol.methods[methIndex];
-      const truthKey = `${meth.authentication_method}:${meth.provider}`;
-      if (truthMetadataMap[truthKey]) {
+      const truthReference = `${meth.authentication_method}:${meth.provider}`;
+      if (truthMetadataMap[truthReference]) {
         continue;
       }
       const keyShare = encodeCrock(getRandomBytes(32));
@@ -445,15 +470,16 @@ async function uploadSecret(
         key_share: keyShare,
         nonce: encodeCrock(getRandomBytes(24)),
         truth_salt: encodeCrock(getRandomBytes(16)),
-        truth_key: encodeCrock(getRandomBytes(32)),
+        truth_key: encodeCrock(getRandomBytes(64)),
         uuid: encodeCrock(getRandomBytes(32)),
         pol_method_index: methIndex,
         policy_index: policyIndex,
       };
       methUuids.push(tm.uuid);
-      truthMetadataMap[truthKey] = tm;
+      truthMetadataMap[truthReference] = tm;
     }
     const policyKey = await policyKeyDerive(keyShares, policySalt);
+    policyUuids.push(methUuids);
     policyKeys.push(policyKey);
     policySalts.push(policySalt);
   }
@@ -492,7 +518,9 @@ async function uploadSecret(
     const encryptedKeyShare = await encryptKeyshare(
       tm.key_share,
       uid,
-      tm.truth_salt,
+      authMethod.type === "question"
+        ? bytesToString(decodeCrock(authMethod.challenge))
+        : undefined,
     );
     console.log(
       "encrypted key share len",
@@ -524,7 +552,7 @@ async function uploadSecret(
       escrow_type: authMethod.type,
       instructions: authMethod.instructions,
       provider_salt: provider.salt,
-      salt: tm.truth_salt,
+      truth_salt: tm.truth_salt,
       truth_key: tm.truth_key,
       url: meth.provider,
       uuid: tm.uuid,
@@ -542,7 +570,7 @@ async function uploadSecret(
     policies: policies.map((x, i) => {
       return {
         master_key: csr.encMasterKeys[i],
-        uuid: policyUuids[i],
+        uuids: policyUuids[i],
         salt: policySalts[i],
       };
     }),
@@ -553,7 +581,12 @@ async function uploadSecret(
   for (const prov of state.policy_providers!) {
     const uid = uidMap[prov.provider_url];
     const acctKeypair = accountKeypairDerive(uid);
-    const encRecoveryDoc = await encryptRecoveryDocument(uid, rd);
+    const zippedDoc = await compressRecoveryDoc(rd);
+    console.log("zipped doc", zippedDoc);
+    const encRecoveryDoc = await encryptRecoveryDocument(
+      uid,
+      encodeCrock(zippedDoc),
+    );
     const bodyHash = hash(decodeCrock(encRecoveryDoc));
     const sigPS = buildSigPS(TalerSignaturePurpose.ANASTASIS_POLICY_UPLOAD)
       .put(bodyHash)

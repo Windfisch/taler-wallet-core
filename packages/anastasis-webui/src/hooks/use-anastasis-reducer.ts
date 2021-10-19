@@ -3,7 +3,7 @@ import { BackupStates, getBackupStartState, getRecoveryStartState, RecoveryState
 import { useState } from "preact/hooks";
 
 const reducerBaseUrl = "http://localhost:5000/";
-const remoteReducer = true;
+const remoteReducer = false;
 
 interface AnastasisState {
   reducerState: ReducerState | undefined;

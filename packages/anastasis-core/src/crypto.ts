@@ -10,6 +10,7 @@ import {
   crypto_sign_keyPair_fromSeed,
   stringToBytes,
 } from "@gnu-taler/taler-util";
+import { gzipSync } from "fflate";
 import { argon2id } from "hash-wasm";
 
 export type Flavor<T, FlavorT extends string> = T & {
@@ -84,21 +85,25 @@ export function accountKeypairDerive(userId: UserIdentifier): AccountKeyPair {
   };
 }
 
+/**
+ * Encrypt the recovery document.
+ * 
+ * The caller should first compress the recovery doc.
+ */
 export async function encryptRecoveryDocument(
   userId: UserIdentifier,
-  recoveryDoc: any,
+  recoveryDocData: OpaqueData,
 ): Promise<OpaqueData> {
-  const plaintext = stringToBytes(JSON.stringify(recoveryDoc));
   const nonce = encodeCrock(getRandomBytes(nonceSize));
   return anastasisEncrypt(
     nonce,
     asOpaque(userId),
-    encodeCrock(plaintext),
+    recoveryDocData,
     "erd",
   );
 }
 
-function taConcat(chunks: Uint8Array[]): Uint8Array {
+export function typedArrayConcat(chunks: Uint8Array[]): Uint8Array {
   let payloadLen = 0;
   for (const c of chunks) {
     payloadLen += c.byteLength;
@@ -120,7 +125,7 @@ export async function policyKeyDerive(
   const chunks = keyShares.map((x) => decodeCrock(x));
   const polKey = kdfKw({
     outputLength: 64,
-    ikm: taConcat(chunks),
+    ikm: typedArrayConcat(chunks),
     salt: decodeCrock(policySalt),
     info: stringToBytes("anastasis-policy-key-derive"),
   });
@@ -150,7 +155,7 @@ async function anastasisEncrypt(
   const key = await deriveKey(keySeed, nonce, salt);
   const nonceBuf = decodeCrock(nonce);
   const cipherText = secretbox(decodeCrock(plaintext), decodeCrock(nonce), key);
-  return encodeCrock(taConcat([nonceBuf, cipherText]));
+  return encodeCrock(typedArrayConcat([nonceBuf, cipherText]));
 }
 
 export const asOpaque = (x: string): OpaqueData => x;
