@@ -1,12 +1,15 @@
 import { FunctionalComponent, h } from "preact";
+import { TranslationProvider } from "../context/translation";
 
-import AnastasisClient from "../routes/home";
+import AnastasisClient from "../pages/home";
 
 const App: FunctionalComponent = () => {
   return (
-    <div id="preact_root">
-      <AnastasisClient />
-    </div>
+    <TranslationProvider>
+      <div id="app" class="has-navbar-fixed-top">
+        <AnastasisClient />
+      </div>
+    </TranslationProvider>
   );
 };
 

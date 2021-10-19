@@ -3,7 +3,7 @@ import { BackupStates, getBackupStartState, getRecoveryStartState, RecoveryState
 import { useState } from "preact/hooks";
 
 const reducerBaseUrl = "http://localhost:5000/";
-let remoteReducer = true;
+const remoteReducer = true;
 
 interface AnastasisState {
   reducerState: ReducerState | undefined;
@@ -123,7 +123,7 @@ function storageSet(key: string, value: any): void {
 function restoreState(): any {
   let state: any;
   try {
-    let s = storageGet("anastasisReducerState");
+    const s = storageGet("anastasisReducerState");
     if (s === "undefined") {
       state = undefined;
     } else if (s) {

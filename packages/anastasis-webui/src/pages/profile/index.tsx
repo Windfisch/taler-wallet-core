@@ -1,6 +1,5 @@
 import { FunctionalComponent, h } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
-import style from './style.css';
 
 interface Props {
     user: string;
@@ -27,7 +26,7 @@ const Profile: FunctionalComponent<Props> = (props: Props) => {
     };
 
     return (
-        <div class={style.profile}>
+        <div>
             <h1>Profile: {user}</h1>
             <p>This is the user profile for a user named {user}.</p>
 
