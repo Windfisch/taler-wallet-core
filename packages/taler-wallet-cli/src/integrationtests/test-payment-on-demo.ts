@@ -22,10 +22,10 @@ import {
   BankApi,
   WalletCli,
   BankAccessApi
-} from "./harness";
+} from "../harness/harness.js";
 import {
   makeTestPayment,
-} from "./helpers";
+} from "../harness/helpers.js";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**

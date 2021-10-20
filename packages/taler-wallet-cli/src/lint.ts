@@ -43,7 +43,7 @@ import {
 } from "@gnu-taler/taler-wallet-core";
 import { URL } from "url";
 import { spawn } from "child_process";
-import { delayMs } from "./integrationtests/harness.js";
+import { delayMs } from "./harness/harness.js";
 
 interface BasicConf {
   mainCurrency: string;

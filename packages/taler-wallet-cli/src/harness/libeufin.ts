@@ -19,7 +19,7 @@
  */
 import axios from "axios";
 import { URL } from "@gnu-taler/taler-util";
-import { getRandomIban, getRandomString } from "./helpers";
+import { getRandomIban, getRandomString } from "../harness/helpers.js";
 import {
   GlobalTestState,
   DbInfo,
@@ -28,7 +28,7 @@ import {
   runCommand,
   setupDb,
   sh,
-} from "./harness";
+} from "../harness/harness.js";
 
 export interface LibeufinSandboxServiceInterface {
   baseUrl: string;

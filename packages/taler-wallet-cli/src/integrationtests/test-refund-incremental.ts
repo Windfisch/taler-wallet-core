@@ -17,8 +17,8 @@
 /**
  * Imports.
  */
-import { GlobalTestState, delayMs, MerchantPrivateApi } from "./harness";
-import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
+import { GlobalTestState, delayMs, MerchantPrivateApi } from "../harness/harness.js";
+import { createSimpleTestkudosEnvironment, withdrawViaBank } from "../harness/helpers.js";
 import {
   TransactionType,
   Amounts,

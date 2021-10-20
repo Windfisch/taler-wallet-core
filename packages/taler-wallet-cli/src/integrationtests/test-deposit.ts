@@ -18,8 +18,8 @@
  * Imports.
  */
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { GlobalTestState } from "./harness";
-import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
+import { GlobalTestState } from "../harness/harness.js";
+import { createSimpleTestkudosEnvironment, withdrawViaBank } from "../harness/helpers.js";
 
 /**
  * Run test for basic, bank-integrated withdrawal and payment.

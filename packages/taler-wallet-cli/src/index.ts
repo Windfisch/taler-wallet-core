@@ -19,6 +19,7 @@
  */
 import os from "os";
 import fs from "fs";
+import path from "path";
 import { deepStrictEqual } from "assert";
 // Polyfill for encoding which isn't present globally in older nodejs versions
 import { TextEncoder, TextDecoder } from "util";
@@ -56,6 +57,9 @@ import {
   Wallet,
 } from "@gnu-taler/taler-wallet-core";
 import { lintExchangeDeployment } from "./lint.js";
+import { runBench1 } from "./bench1.js";
+import { runEnv1 } from "./env1.js";
+import { GlobalTestState, runTestWithState } from "./harness/harness.js";
 
 // This module also serves as the entry point for the crypto
 // thread worker, and thus must expose these two handlers.
@@ -635,6 +639,33 @@ const advancedCli = walletCli.subcommand("advancedArgs", "advanced", {
 });
 
 advancedCli
+  .subcommand("bench1", "bench1", {
+    help: "Run the 'bench1' benchmark",
+  })
+  .requiredOption("configJson", ["--config-json"], clk.STRING)
+  .action(async (args) => {
+    let config: any;
+    try {
+      config = JSON.parse(args.bench1.configJson);
+    } catch (e) {
+      console.log("Could not parse config JSON");
+    }
+    await runBench1(config);
+  });
+
+advancedCli
+  .subcommand("env1", "env1", {
+    help: "Run a test environment for bench1",
+  })
+  .action(async (args) => {
+    const testDir = fs.mkdtempSync(path.join(os.tmpdir(), "taler-env1-"));
+    const testState = new GlobalTestState({
+      testDir,
+    });
+    await runTestWithState(testState, runEnv1, "env1", true);
+  });
+
+advancedCli
   .subcommand("withdrawFakebank", "withdraw-fakebank", {
     help: "Withdraw via a fakebank.",
   })
@@ -642,7 +673,7 @@ advancedCli
     help: "Base URL of the exchange to use",
   })
   .requiredOption("amount", ["--amount"], clk.STRING, {
-    help: "Amount to withdraw (before fees)."
+    help: "Amount to withdraw (before fees).",
   })
   .requiredOption("bank", ["--bank"], clk.STRING, {
     help: "Base URL of the Taler fakebank service.",

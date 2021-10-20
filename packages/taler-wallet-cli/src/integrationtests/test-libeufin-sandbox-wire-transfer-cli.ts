@@ -17,7 +17,7 @@
 /**
  * Imports.
  */
-import { GlobalTestState } from "./harness";
+import { GlobalTestState } from "../harness/harness.js";
 import {
   NexusUserBundle,
   LibeufinNexusApi,
@@ -25,7 +25,7 @@ import {
   LibeufinSandboxService,
   LibeufinSandboxApi,
   findNexusPayment,
-} from "./libeufin";
+} from "../harness/libeufin";
 
 export async function runLibeufinSandboxWireTransferCliTest(t: GlobalTestState) {
 

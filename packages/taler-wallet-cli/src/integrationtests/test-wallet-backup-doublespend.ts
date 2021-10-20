@@ -19,13 +19,13 @@
  */
 import { PreparePayResultType } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { GlobalTestState, WalletCli, MerchantPrivateApi } from "./harness";
+import { GlobalTestState, WalletCli, MerchantPrivateApi } from "../harness/harness.js";
 import {
   createSimpleTestkudosEnvironment,
   makeTestPayment,
   withdrawViaBank,
-} from "./helpers";
-import { SyncService } from "./sync";
+} from "../harness/helpers.js";
+import { SyncService } from "../harness/sync";
 
 /**
  * Run test for basic, bank-integrated withdrawal.

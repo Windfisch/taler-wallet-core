@@ -28,6 +28,7 @@ import * as util from "util";
 import * as fs from "fs";
 import * as path from "path";
 import * as http from "http";
+import * as readline from "readline";
 import { deepStrictEqual } from "assert";
 import { ChildProcess, spawn } from "child_process";
 import { URL } from "url";
@@ -1626,6 +1627,7 @@ export async function runTestWithState(
   gc: GlobalTestState,
   testMain: (t: GlobalTestState) => Promise<void>,
   testName: string,
+  linger: boolean = false,
 ): Promise<TestRunResult> {
   const startMs = new Date().getTime();
 
@@ -1649,6 +1651,19 @@ export async function runTestWithState(
     console.log("running test in directory", gc.testDir);
     await Promise.race([testMain(gc), p.promise]);
     status = "pass";
+    if (linger) {
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+        terminal: true,
+      });
+      await new Promise<void>((resolve, reject) => {
+        rl.question("Press enter to shut down test.", () => {
+          resolve();
+        });
+      });
+      rl.close();
+    }
   } catch (e) {
     console.error("FATAL: test failed with exception", e);
     status = "fail";

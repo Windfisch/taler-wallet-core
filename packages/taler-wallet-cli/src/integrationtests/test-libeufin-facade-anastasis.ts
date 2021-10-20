@@ -17,14 +17,14 @@
 /**
  * Imports.
  */
-import { GlobalTestState } from "./harness";
+import { GlobalTestState } from "../harness/harness.js";
 import {
   SandboxUserBundle,
   NexusUserBundle,
   launchLibeufinServices,
   LibeufinNexusApi,
   LibeufinSandboxApi,
-} from "./libeufin";
+} from "../harness/libeufin";
 
 /**
  * Testing the Anastasis API, offered by the Anastasis facade.

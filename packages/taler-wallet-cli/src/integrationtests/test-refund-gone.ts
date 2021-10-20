@@ -17,12 +17,12 @@
 /**
  * Imports.
  */
-import { GlobalTestState, MerchantPrivateApi } from "./harness";
+import { GlobalTestState, MerchantPrivateApi } from "../harness/harness.js";
 import {
   createSimpleTestkudosEnvironment,
   withdrawViaBank,
   applyTimeTravel,
-} from "./helpers";
+} from "../harness/helpers.js";
 import {
   durationFromSpec,
   timestampAddDuration,

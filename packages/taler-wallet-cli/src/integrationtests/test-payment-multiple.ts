@@ -25,9 +25,9 @@ import {
   MerchantService,
   WalletCli,
   MerchantPrivateApi,
-} from "./harness";
-import { withdrawViaBank } from "./helpers";
-import { coin_ct10, coin_u1 } from "./denomStructures";
+} from "../harness/harness.js";
+import { withdrawViaBank } from "../harness/helpers.js";
+import { coin_ct10, coin_u1 } from "../harness/denomStructures";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 async function setupTest(

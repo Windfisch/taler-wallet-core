@@ -31,7 +31,7 @@ import {
   readSuccessResponseJsonOrThrow,
   WalletApiOperation,
 } from "@gnu-taler/taler-wallet-core";
-import { makeNoFeeCoinConfig } from "./denomStructures";
+import { makeNoFeeCoinConfig } from "../harness/denomStructures";
 import {
   BankService,
   ExchangeService,
@@ -40,8 +40,8 @@ import {
   MerchantService,
   setupDb,
   WalletCli,
-} from "./harness";
-import { startWithdrawViaBank, withdrawViaBank } from "./helpers";
+} from "../harness/harness.js";
+import { startWithdrawViaBank, withdrawViaBank } from "../harness/helpers.js";
 
 async function applyTimeTravel(
   timetravelDuration: Duration,

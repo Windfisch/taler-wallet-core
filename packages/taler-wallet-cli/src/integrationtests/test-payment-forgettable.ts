@@ -17,12 +17,12 @@
 /**
  * Imports.
  */
-import { GlobalTestState } from "./harness";
+import { GlobalTestState } from "../harness/harness.js";
 import {
   createSimpleTestkudosEnvironment,
   withdrawViaBank,
   makeTestPayment,
-} from "./helpers";
+} from "../harness/helpers.js";
 
 /**
  * Run test for payment with a contract that has forgettable fields.

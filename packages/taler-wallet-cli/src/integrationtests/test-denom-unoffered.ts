@@ -27,8 +27,8 @@ import {
   WalletApiOperation,
 } from "@gnu-taler/taler-wallet-core";
 import { makeEventId } from "@gnu-taler/taler-wallet-core";
-import { GlobalTestState, MerchantPrivateApi } from "./harness";
-import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
+import { GlobalTestState, MerchantPrivateApi } from "../harness/harness.js";
+import { createSimpleTestkudosEnvironment, withdrawViaBank } from "../harness/helpers.js";
 
 export async function runDenomUnofferedTest(t: GlobalTestState) {
   // Set up test environment

@@ -18,7 +18,7 @@
  * Imports.
  */
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { CoinConfig } from "./denomStructures";
+import { CoinConfig } from "../harness/denomStructures";
 import {
   GlobalTestState,
   ExchangeService,
@@ -27,12 +27,12 @@ import {
   setupDb,
   BankService,
   delayMs,
-} from "./harness";
+} from "../harness/harness.js";
 import {
   withdrawViaBank,
   makeTestPayment,
   SimpleTestEnvironment,
-} from "./helpers";
+} from "../harness/helpers.js";
 
 async function revokeAllWalletCoins(req: {
   wallet: WalletCli;

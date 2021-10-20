@@ -24,8 +24,8 @@ import {
   MerchantServiceInterface,
   WalletCli,
   ExchangeServiceInterface,
-} from "./harness";
-import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
+} from "../harness/harness.js";
+import { createSimpleTestkudosEnvironment, withdrawViaBank } from "../harness/helpers.js";
 import {
   URL,
   durationFromSpec,

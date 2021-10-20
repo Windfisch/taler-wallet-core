@@ -31,14 +31,14 @@ import {
   MerchantPrivateApi,
   BankApi,
   BankAccessApi,
-} from "./harness";
+} from "../harness/harness.js";
 import {
   FaultInjectedExchangeService,
   FaultInjectionRequestContext,
   FaultInjectionResponseContext,
-} from "./faultInjection";
+} from "../harness/faultInjection";
 import { CoreApiResponse } from "@gnu-taler/taler-util";
-import { defaultCoinConfig } from "./denomStructures";
+import { defaultCoinConfig } from "../harness/denomStructures";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**

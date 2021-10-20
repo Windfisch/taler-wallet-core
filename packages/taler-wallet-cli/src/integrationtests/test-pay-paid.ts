@@ -17,11 +17,11 @@
 /**
  * Imports.
  */
-import { GlobalTestState, MerchantPrivateApi } from "./harness";
+import { GlobalTestState, MerchantPrivateApi } from "../harness/harness.js";
 import {
   withdrawViaBank,
   createFaultInjectedMerchantTestkudosEnvironment,
-} from "./helpers";
+} from "../harness/helpers.js";
 import {
   PreparePayResultType,
   codecForMerchantOrderStatusUnpaid,
@@ -29,7 +29,7 @@ import {
   URL,
 } from "@gnu-taler/taler-util";
 import axios from "axios";
-import { FaultInjectionRequestContext } from "./faultInjection";
+import { FaultInjectionRequestContext } from "../harness/faultInjection";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**

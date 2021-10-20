@@ -17,16 +17,16 @@
 /**
  * Imports.
  */
-import { GlobalTestState, MerchantPrivateApi } from "./harness";
+import { GlobalTestState, MerchantPrivateApi } from "../harness/harness.js";
 import {
   withdrawViaBank,
   createFaultInjectedMerchantTestkudosEnvironment,
-} from "./helpers";
+} from "../harness/helpers.js";
 import axios from "axios";
 import {
   FaultInjectionRequestContext,
   FaultInjectionResponseContext,
-} from "./faultInjection";
+} from "../harness/faultInjection";
 import {
   codecForMerchantOrderStatusUnpaid,
   ConfirmPayResultType,

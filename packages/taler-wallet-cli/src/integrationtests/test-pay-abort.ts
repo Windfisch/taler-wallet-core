@@ -27,12 +27,12 @@ import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import {
   FaultInjectionRequestContext,
   FaultInjectionResponseContext,
-} from "./faultInjection";
-import { GlobalTestState, MerchantPrivateApi, setupDb } from "./harness";
+} from "../harness/faultInjection";
+import { GlobalTestState, MerchantPrivateApi, setupDb } from "../harness/harness.js";
 import {
   createFaultInjectedMerchantTestkudosEnvironment,
   withdrawViaBank,
-} from "./helpers";
+} from "../harness/helpers.js";
 
 /**
  * Run test for basic, bank-integrated withdrawal.

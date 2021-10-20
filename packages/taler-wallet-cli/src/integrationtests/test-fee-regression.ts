@@ -25,12 +25,12 @@ import {
   MerchantService,
   setupDb,
   WalletCli,
-} from "./harness";
+} from "../harness/harness.js";
 import {
   withdrawViaBank,
   makeTestPayment,
   SimpleTestEnvironment,
-} from "./helpers";
+} from "../harness/helpers.js";
 
 /**
  * Run a test case with a simple TESTKUDOS Taler environment, consisting

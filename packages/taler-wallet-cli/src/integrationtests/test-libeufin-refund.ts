@@ -17,14 +17,14 @@
 /**
  * Imports.
  */
-import { GlobalTestState, delayMs } from "./harness";
+import { GlobalTestState, delayMs } from "../harness/harness.js";
 import {
   SandboxUserBundle,
   NexusUserBundle,
   launchLibeufinServices,
   LibeufinSandboxApi,
   LibeufinNexusApi,
-} from "./libeufin";
+} from "../harness/libeufin";
 
 /**
  * Run basic test with LibEuFin.

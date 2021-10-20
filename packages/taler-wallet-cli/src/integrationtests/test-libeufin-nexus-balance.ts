@@ -17,14 +17,14 @@
 /**
  * Imports.
  */
-import { GlobalTestState, delayMs } from "./harness";
+import { GlobalTestState, delayMs } from "../harness/harness.js";
 import {
   SandboxUserBundle,
   NexusUserBundle,
   launchLibeufinServices,
   LibeufinSandboxApi,
   LibeufinNexusApi,
-} from "./libeufin";
+} from "../harness/libeufin";
 
 /**
  * This test checks how the C52 and C53 coordinate.  It'll test

@@ -31,7 +31,7 @@ import {
   ExchangeServiceInterface,
   MerchantServiceInterface,
   MerchantService,
-} from "./harness";
+} from "../harness/harness.js";
 
 export interface FaultProxyConfig {
   inboundPort: number;

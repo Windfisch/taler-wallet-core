@@ -19,13 +19,13 @@
  */
 import axios from "axios";
 import { URL } from "@gnu-taler/taler-util";
-import { GlobalTestState } from "./harness";
+import { GlobalTestState } from "../harness/harness.js";
 import {
   SandboxUserBundle,
   NexusUserBundle,
   launchLibeufinServices,
   LibeufinNexusApi,
-} from "./libeufin";
+} from "../harness/libeufin";
 
 export async function runLibeufinApiFacadeBadRequestTest(t: GlobalTestState) {
 

@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2020 Taler Systems S.A.
+ (C) 2021 Taler Systems S.A.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -17,25 +17,22 @@
 /**
  * Imports.
  */
+import { URL } from "@gnu-taler/taler-util";
+import { CoinConfig, defaultCoinConfig } from "./harness/denomStructures.js";
 import {
   GlobalTestState,
-  BankApi,
-  WalletCli,
   setupDb,
-  ExchangeService,
   FakeBankService,
-} from "../harness/harness.js";
-import { createSimpleTestkudosEnvironment } from "../harness/helpers.js";
-import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { CoinConfig, defaultCoinConfig } from "../harness/denomStructures.js";
-import { URL } from "@gnu-taler/taler-util";
+  ExchangeService,
+} from "./harness/harness.js";
 
 /**
- * Run test for basic, bank-integrated withdrawal.
+ * Entry point for the benchmark.
+ *
+ * The benchmark runs against an existing Taler deployment and does not
+ * set up its own services.
  */
-export async function runTestWithdrawalFakebankTest(t: GlobalTestState) {
-  // Set up test environment
-
+export async function runEnv1(t: GlobalTestState): Promise<void> {
   const db = await setupDb(t);
 
   const bank = await FakeBankService.create(t, {
@@ -68,29 +65,4 @@ export async function runTestWithdrawalFakebankTest(t: GlobalTestState) {
   await exchange.pingUntilAvailable();
 
   console.log("setup done!");
-
-  const wallet = new WalletCli(t);
-
-  await wallet.client.call(WalletApiOperation.AddExchange, {
-    exchangeBaseUrl: exchange.baseUrl,
-  });
-
-  await wallet.client.call(WalletApiOperation.WithdrawFakebank, {
-    exchange: exchange.baseUrl,
-    amount: "TESTKUDOS:10",
-    bank: bank.baseUrl,
-  });
-
-  await exchange.runWirewatchOnce();
-
-  await wallet.runUntilDone();
-
-  // Check balance
-
-  const balResp = await wallet.client.call(WalletApiOperation.GetBalances, {});
-  t.assertAmountEquals("TESTKUDOS:9.72", balResp.balances[0].available);
-
-  await t.shutdown();
 }
-
-runTestWithdrawalFakebankTest.suites = ["wallet"];

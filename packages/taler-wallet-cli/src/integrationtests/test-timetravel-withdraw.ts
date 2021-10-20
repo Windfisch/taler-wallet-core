@@ -17,12 +17,12 @@
 /**
  * Imports.
  */
-import { GlobalTestState } from "./harness";
+import { GlobalTestState } from "../harness/harness.js";
 import {
   createSimpleTestkudosEnvironment,
   withdrawViaBank,
   startWithdrawViaBank,
-} from "./helpers";
+} from "../harness/helpers.js";
 import { Duration, TransactionType } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 

@@ -17,8 +17,8 @@
 /**
  * Imports.
  */
-import { GlobalTestState, BankApi } from "./harness";
-import { createSimpleTestkudosEnvironment } from "./helpers";
+import { GlobalTestState, BankApi } from "../harness/harness.js";
+import { createSimpleTestkudosEnvironment } from "../harness/helpers.js";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**

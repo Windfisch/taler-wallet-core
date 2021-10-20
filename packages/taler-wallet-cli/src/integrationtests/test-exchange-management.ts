@@ -26,7 +26,7 @@ import {
   MerchantService,
   BankApi,
   BankAccessApi,
-} from "./harness";
+} from "../harness/harness.js";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import {
   ExchangesListRespose,
@@ -36,8 +36,8 @@ import {
 import {
   FaultInjectedExchangeService,
   FaultInjectionResponseContext,
-} from "./faultInjection";
-import { defaultCoinConfig } from "./denomStructures";
+} from "../harness/faultInjection";
+import { defaultCoinConfig } from "../harness/denomStructures";
 
 /**
  * Test if the wallet handles outdated exchange versions correct.y

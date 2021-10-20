@@ -25,12 +25,12 @@ import {
   MerchantService,
   setupDb,
   WalletCli,
-} from "./harness";
+} from "../harness/harness.js";
 import {
   withdrawViaBank,
   createFaultInjectedMerchantTestkudosEnvironment,
   FaultyMerchantTestEnvironment,
-} from "./helpers";
+} from "../harness/helpers.js";
 import {
   PreparePayResultType,
   codecForMerchantOrderStatusUnpaid,
@@ -41,8 +41,8 @@ import {
   FaultInjectedExchangeService,
   FaultInjectedMerchantService,
   FaultInjectionRequestContext,
-} from "./faultInjection";
-import { defaultCoinConfig } from "./denomStructures";
+} from "../harness/faultInjection";
+import { defaultCoinConfig } from "../harness/denomStructures";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { URL } from "url";
 

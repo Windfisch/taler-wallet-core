@@ -27,9 +27,9 @@ import {
   BankApi,
   BankAccessApi,
   CreditDebitIndicator,
-} from "./harness";
+} from "../harness/harness.js";
 import { createEddsaKeyPair, encodeCrock } from "@gnu-taler/taler-util";
-import { defaultCoinConfig } from "./denomStructures";
+import { defaultCoinConfig } from "../harness/denomStructures";
 
 /**
  * Run test for basic, bank-integrated withdrawal.

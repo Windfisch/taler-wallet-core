@@ -17,7 +17,7 @@
 /**
  * Imports.
  */
-import { GlobalTestState, setupDb } from "./harness";
+import { GlobalTestState, setupDb } from "../harness/harness.js";
 import {
   SandboxUserBundle,
   NexusUserBundle,
@@ -25,7 +25,7 @@ import {
   LibeufinSandboxApi,
   LibeufinNexusApi,
   LibeufinNexusService,
-} from "./libeufin";
+} from "../harness/libeufin";
 
 /**
  * Test Nexus scheduling API.  It creates a task, check whether it shows
@@ -72,7 +72,7 @@ export async function runLibeufinApiSchedulingTest(t: GlobalTestState) {
       user01nexus.localAccountName,
       "test-task",
     );
-  } catch (err) {
+  } catch (err: any) {
     t.assertTrue(err.response.status == 404);
   }
 
@@ -100,7 +100,7 @@ export async function runLibeufinApiSchedulingTest(t: GlobalTestState) {
       user01nexus.localAccountName,
       "test-task",
     );
-  } catch (err) {
+  } catch (err: any) {
     t.assertTrue(err.response.status == 404);
   }
 }

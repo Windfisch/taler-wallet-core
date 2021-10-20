@@ -24,7 +24,7 @@
  */
 import { Amounts } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { CoinConfig, defaultCoinConfig } from "./denomStructures.js";
+import { CoinConfig, defaultCoinConfig } from "../harness/denomStructures.js";
 import {
   BankService,
   ExchangeService,
@@ -32,8 +32,8 @@ import {
   MerchantService,
   setupDb,
   WalletCli,
-} from "./harness.js";
-import { SimpleTestEnvironment } from "./helpers.js";
+} from "../harness/harness.js";
+import { SimpleTestEnvironment } from "../harness/helpers.js";
 
 const merchantAuthToken = "secret-token:sandbox";
 

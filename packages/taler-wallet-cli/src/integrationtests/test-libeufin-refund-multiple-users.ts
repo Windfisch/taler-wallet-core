@@ -17,14 +17,14 @@
 /**
  * Imports.
  */
-import { GlobalTestState, delayMs } from "./harness";
+import { GlobalTestState, delayMs } from "../harness/harness.js";
 import {
   SandboxUserBundle,
   NexusUserBundle,
   launchLibeufinServices,
   LibeufinSandboxApi,
   LibeufinNexusApi,
-} from "./libeufin";
+} from "../harness/libeufin";
 
 /**
  * User 01 expects a refund from user 02, and expectedly user 03

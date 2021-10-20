@@ -17,8 +17,8 @@
 /**
  * Imports.
  */
-import { GlobalTestState, MerchantPrivateApi, WalletCli } from "./harness";
-import { createSimpleTestkudosEnvironment, withdrawViaBank } from "./helpers";
+import { GlobalTestState, MerchantPrivateApi, WalletCli } from "../harness/harness.js";
+import { createSimpleTestkudosEnvironment, withdrawViaBank } from "../harness/helpers.js";
 import { PreparePayResultType } from "@gnu-taler/taler-util";
 import { TalerErrorCode } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";

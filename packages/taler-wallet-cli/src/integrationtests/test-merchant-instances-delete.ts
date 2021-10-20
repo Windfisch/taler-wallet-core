@@ -25,7 +25,7 @@ import {
   MerchantApiClient,
   MerchantService,
   setupDb,
-} from "./harness";
+} from "../harness/harness.js";
 
 /**
  * Test instance deletion and authentication for it

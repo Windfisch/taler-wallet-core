@@ -19,7 +19,7 @@
  */
 import { CoreApiResponse } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { CoinConfig, defaultCoinConfig } from "./denomStructures";
+import { CoinConfig, defaultCoinConfig } from "../harness/denomStructures";
 import {
   DbInfo,
   HarnessExchangeBankAccount,
@@ -28,14 +28,14 @@ import {
   MerchantService,
   setupDb,
   WalletCli,
-} from "./harness";
-import { makeTestPayment } from "./helpers";
+} from "../harness/harness.js";
+import { makeTestPayment } from "../harness/helpers.js";
 import {
   LibeufinNexusApi,
   LibeufinNexusService,
   LibeufinSandboxApi,
   LibeufinSandboxService,
-} from "./libeufin";
+} from "../harness/libeufin";
 
 const exchangeIban = "DE71500105179674997361";
 const customerIban = "DE84500105176881385584";

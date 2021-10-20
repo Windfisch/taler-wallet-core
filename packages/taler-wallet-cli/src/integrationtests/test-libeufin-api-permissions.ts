@@ -17,12 +17,12 @@
 /**
  * Imports.
  */
-import { GlobalTestState } from "./harness";
+import { GlobalTestState } from "../harness/harness.js";
 import {
   NexusUserBundle,
   LibeufinNexusApi,
   LibeufinNexusService,
-} from "./libeufin";
+} from "../harness/libeufin";
 
 /**
  * Run basic test with LibEuFin.

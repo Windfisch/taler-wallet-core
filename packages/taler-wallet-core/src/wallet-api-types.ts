@@ -118,6 +118,10 @@ export enum WalletApiOperation {
 }
 
 export type WalletOperations = {
+  [WalletApiOperation.InitWallet]: {
+    request: {};
+    response: {};
+  };
   [WalletApiOperation.WithdrawFakebank]: {
     request: WithdrawFakebankRequest;
     response: {};

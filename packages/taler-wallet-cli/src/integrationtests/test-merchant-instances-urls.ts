@@ -24,7 +24,7 @@ import {
   MerchantApiClient,
   MerchantService,
   setupDb,
-} from "./harness";
+} from "../harness/harness.js";
 
 /**
  * Do basic checks on instance management and authentication.

@@ -24,7 +24,7 @@ import {
   GlobalTestState,
   pingProc,
   ProcessWrapper,
-} from "./harness";
+} from "../harness/harness.js";
 import { Configuration } from "@gnu-taler/taler-util";
 
 const exec = util.promisify(require("child_process").exec);

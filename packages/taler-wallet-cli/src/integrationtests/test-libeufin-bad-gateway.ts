@@ -17,13 +17,13 @@
 /**
  * Imports.
  */
-import { GlobalTestState, delayMs } from "./harness";
+import { GlobalTestState, delayMs } from "../harness/harness.js";
 import {
   NexusUserBundle,
   LibeufinNexusApi,
   LibeufinNexusService,
   LibeufinSandboxService,
-} from "./libeufin";
+} from "../harness/libeufin";
 
 /**
  * Testing how Nexus reacts when the Sandbox is unreachable.
@@ -65,7 +65,7 @@ export async function runLibeufinBadGatewayTest(t: GlobalTestState) {
       libeufinNexus,
       user01nexus.connReq.name,
     );
-  } catch(e) {
+  } catch(e: any) {
     t.assertTrue(e.response.status == 502);
     return;
   }

@@ -22,7 +22,7 @@ import {
   runTestWithState,
   shouldLingerInTest,
   TestRunResult,
-} from "./harness";
+} from "../harness/harness.js";
 import { runPaymentTest } from "./test-payment";
 import { runPaymentDemoTest } from "./test-payment-on-demo";
 import * as fs from "fs";

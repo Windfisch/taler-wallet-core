@@ -32,11 +32,11 @@ import {
   MerchantPrivateApi,
   MerchantService,
   WalletCli,
-} from "./harness";
+} from "../harness/harness.js";
 import {
   createSimpleTestkudosEnvironment,
   withdrawViaBank,
-} from "./helpers.js";
+} from "../harness/helpers.js";
 
 const httpLib = new NodeHttpLib();
 
