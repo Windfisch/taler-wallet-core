@@ -17,7 +17,12 @@
 /**
  * Imports.
  */
-import { buildCodecForObject, codecForString } from "@gnu-taler/taler-util";
+import {
+  buildCodecForObject,
+  codecForNumber,
+  codecForString,
+  codecOptional,
+} from "@gnu-taler/taler-util";
 import {
   getDefaultNodeWallet,
   NodeHttpLib,
@@ -42,24 +47,28 @@ export async function runBench1(configJson: any): Promise<void> {
   });
   await wallet.client.call(WalletApiOperation.InitWallet, {});
 
-  await wallet.client.call(WalletApiOperation.WithdrawFakebank, {
-    amount: "TESTKUDOS:10",
-    bank: b1conf.bank,
-    exchange: b1conf.exchange,
-  });
+  const numIter = b1conf.iterations ?? 1;
 
-  await wallet.runTaskLoop({
-    stopWhenDone: true,
-  });
+  for (let i = 0; i < numIter; i++) {
+    await wallet.client.call(WalletApiOperation.WithdrawFakebank, {
+      amount: "TESTKUDOS:10",
+      bank: b1conf.bank,
+      exchange: b1conf.exchange,
+    });
 
-  await wallet.client.call(WalletApiOperation.CreateDepositGroup, {
-    amount: "TESTKUDOS:5",
-    depositPaytoUri: "payto://x-taler-bank/localhost/foo",
-  });
+    await wallet.runTaskLoop({
+      stopWhenDone: true,
+    });
 
-  await wallet.runTaskLoop({
-    stopWhenDone: true,
-  });
+    await wallet.client.call(WalletApiOperation.CreateDepositGroup, {
+      amount: "TESTKUDOS:5",
+      depositPaytoUri: "payto://x-taler-bank/localhost/foo",
+    });
+
+    await wallet.runTaskLoop({
+      stopWhenDone: true,
+    });
+  }
 
   wallet.stop();
 }
@@ -77,6 +86,12 @@ interface Bench1Config {
    * Base URL of the exchange.
    */
   exchange: string;
+
+  /**
+   * How many withdraw/deposit iterations should be made?
+   * Defaults to 1.
+   */
+  iterations?: number;
 }
 
 /**
@@ -86,4 +101,5 @@ const codecForBench1Config = () =>
   buildCodecForObject<Bench1Config>()
     .property("bank", codecForString())
     .property("exchange", codecForString())
+    .property("iterations", codecOptional(codecForNumber()))
     .build("Bench1Config");
