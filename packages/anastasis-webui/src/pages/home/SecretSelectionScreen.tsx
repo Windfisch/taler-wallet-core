@@ -57,7 +57,7 @@ export function SecretSelectionScreen(props: RecoveryReducerProps): VNode {
     <AnastasisClientFrame title="Recovery: Select secret">
       <p>Provider: {recoveryDocument.provider_url}</p>
       <p>Secret version: {recoveryDocument.version}</p>
-      <p>Secret name: {recoveryDocument.version}</p>
+      <p>Secret name: {recoveryDocument.secret_name}</p>
       <button onClick={() => setSelectingVersion(true)}>
         Select different secret
       </button>

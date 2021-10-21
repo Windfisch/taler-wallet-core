@@ -9,6 +9,7 @@ import {
   secretbox,
   crypto_sign_keyPair_fromSeed,
   stringToBytes,
+  secretbox_open,
 } from "@gnu-taler/taler-util";
 import { gzipSync } from "fflate";
 import { argon2id } from "hash-wasm";
@@ -87,7 +88,7 @@ export function accountKeypairDerive(userId: UserIdentifier): AccountKeyPair {
 
 /**
  * Encrypt the recovery document.
- * 
+ *
  * The caller should first compress the recovery doc.
  */
 export async function encryptRecoveryDocument(
@@ -95,12 +96,19 @@ export async function encryptRecoveryDocument(
   recoveryDocData: OpaqueData,
 ): Promise<OpaqueData> {
   const nonce = encodeCrock(getRandomBytes(nonceSize));
-  return anastasisEncrypt(
-    nonce,
-    asOpaque(userId),
-    recoveryDocData,
-    "erd",
-  );
+  return anastasisEncrypt(nonce, asOpaque(userId), recoveryDocData, "erd");
+}
+
+/**
+ * Encrypt the recovery document.
+ *
+ * The caller should first compress the recovery doc.
+ */
+export async function decryptRecoveryDocument(
+  userId: UserIdentifier,
+  recoveryDocData: OpaqueData,
+): Promise<OpaqueData> {
+  return anastasisDecrypt(asOpaque(userId), recoveryDocData, "erd");
 }
 
 export function typedArrayConcat(chunks: Uint8Array[]): Uint8Array {
@@ -158,6 +166,22 @@ async function anastasisEncrypt(
   return encodeCrock(typedArrayConcat([nonceBuf, cipherText]));
 }
 
+async function anastasisDecrypt(
+  keySeed: OpaqueData,
+  ciphertext: OpaqueData,
+  salt: string,
+): Promise<OpaqueData> {
+  const ctBuf = decodeCrock(ciphertext);
+  const nonceBuf = ctBuf.slice(0, nonceSize);
+  const enc = ctBuf.slice(nonceSize);
+  const key = await deriveKey(keySeed, encodeCrock(nonceBuf), salt);
+  const cipherText = secretbox_open(enc, nonceBuf, key);
+  if (!cipherText) {
+    throw Error("could not decrypt");
+  }
+  return encodeCrock(cipherText);
+}
+
 export const asOpaque = (x: string): OpaqueData => x;
 const asEncryptedKeyShare = (x: OpaqueData): EncryptedKeyShare => x as string;
 const asEncryptedTruth = (x: OpaqueData): EncryptedTruth => x as string;
@@ -182,6 +206,18 @@ export async function encryptTruth(
   const salt = "ect";
   return asEncryptedTruth(
     await anastasisEncrypt(nonce, asOpaque(truthEncKey), truth, salt),
+  );
+}
+
+export async function decryptTruth(
+  truthEncKey: TruthKey,
+  truthEnc: EncryptedTruth,
+): Promise<OpaqueData> {
+  const salt = "ect";
+  return await anastasisDecrypt(
+    asOpaque(truthEncKey),
+    asOpaque(truthEnc),
+    salt,
   );
 }
 

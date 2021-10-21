@@ -1,17 +1,28 @@
 import {
-  ComponentChildren, createContext,
-  Fragment, FunctionalComponent, h, VNode
+  Component,
+  ComponentChildren,
+  createContext,
+  Fragment,
+  FunctionalComponent,
+  h,
+  VNode,
 } from "preact";
-import { useContext, useLayoutEffect, useRef } from "preact/hooks";
+import {
+  useContext,
+  useErrorBoundary,
+  useLayoutEffect,
+  useRef,
+} from "preact/hooks";
 import { Menu } from "../../components/menu";
 import {
-  BackupStates, RecoveryStates,
+  BackupStates,
+  RecoveryStates,
   ReducerStateBackup,
   ReducerStateRecovery,
 } from "anastasis-core";
 import {
   AnastasisReducerApi,
-  useAnastasisReducer
+  useAnastasisReducer,
 } from "../../hooks/use-anastasis-reducer";
 import { AttributeEntryScreen } from "./AttributeEntryScreen";
 import { AuthenticationEditorScreen } from "./AuthenticationEditorScreen";
@@ -27,7 +38,7 @@ import { SecretSelectionScreen } from "./SecretSelectionScreen";
 import { SolveScreen } from "./SolveScreen";
 import { StartScreen } from "./StartScreen";
 import { TruthsPayingScreen } from "./TruthsPayingScreen";
-import "./../home/style"
+import "./../home/style";
 
 const WithReducer = createContext<AnastasisReducerApi | undefined>(undefined);
 
@@ -40,7 +51,10 @@ export interface CommonReducerProps {
   reducerState: ReducerStateBackup | ReducerStateRecovery;
 }
 
-export function withProcessLabel(reducer: AnastasisReducerApi, text: string): string {
+export function withProcessLabel(
+  reducer: AnastasisReducerApi,
+  text: string,
+): string {
   if (isBackup(reducer)) {
     return `Backup: ${text}`;
   }
@@ -71,6 +85,33 @@ interface AnastasisClientFrameProps {
   hideNext?: boolean;
 }
 
+function ErrorBoundary(props: {
+  reducer: AnastasisReducerApi;
+  children: ComponentChildren;
+}) {
+  const [error, resetError] = useErrorBoundary((error) =>
+    console.log("got error", error),
+  );
+  if (error) {
+    return (
+      <div>
+        <button
+          onClick={() => {
+            props.reducer.reset();
+            resetError();
+          }}
+        >
+          Reset
+        </button>
+        <p>
+          Error: <pre>{error.stack}</pre>
+        </p>
+      </div>
+    );
+  }
+  return <div>{props.children}</div>;
+}
+
 export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
   const reducer = useContext(WithReducer);
   if (!reducer) {
@@ -83,29 +124,30 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
       reducer.transition("next", {});
     }
   };
-  const handleKeyPress = (e: h.JSX.TargetedKeyboardEvent<HTMLDivElement>): void => {
+  const handleKeyPress = (
+    e: h.JSX.TargetedKeyboardEvent<HTMLDivElement>,
+  ): void => {
     console.log("Got key press", e.key);
     // FIXME: By default, "next" action should be executed here
   };
-  return (<Fragment>
-    <Menu title="Anastasis" />
-    <section class="section">
-      <div class="home" onKeyPress={(e) => handleKeyPress(e)}> 
-        <button onClick={() => reducer.reset()}>Reset session</button>
-        <h1>{props.title}</h1>
-        <ErrorBanner reducer={reducer} />
-        {props.children}
-        {!props.hideNav ? (
-          <div>
-            <button onClick={() => reducer.back()}>Back</button>
-            {!props.hideNext ? (
-              <button onClick={next}>Next</button>
-            ) : null}
-          </div>
-        ) : null}
+  return (
+    <Fragment>
+      <Menu title="Anastasis" />
+      <div>
+        <div class="home" onKeyPress={(e) => handleKeyPress(e)}>
+          <button onClick={() => reducer.reset()}>Reset session</button>
+          <h1>{props.title}</h1>
+          <ErrorBanner reducer={reducer} />
+          {props.children}
+          {!props.hideNav ? (
+            <div>
+              <button onClick={() => reducer.back()}>Back</button>
+              {!props.hideNext ? <button onClick={next}>Next</button> : null}
+            </div>
+          ) : null}
+        </div>
       </div>
-    </section>
-  </Fragment>
+    </Fragment>
   );
 }
 
@@ -113,7 +155,9 @@ const AnastasisClient: FunctionalComponent = () => {
   const reducer = useAnastasisReducer();
   return (
     <WithReducer.Provider value={reducer}>
-      <AnastasisClientImpl />
+      <ErrorBoundary reducer={reducer}>
+        <AnastasisClientImpl />
+      </ErrorBoundary>
     </WithReducer.Provider>
   );
 };
@@ -130,27 +174,38 @@ const AnastasisClientImpl: FunctionalComponent = () => {
     reducerState.backup_state === BackupStates.ContinentSelecting ||
     reducerState.recovery_state === RecoveryStates.ContinentSelecting
   ) {
-    return <ContinentSelectionScreen reducer={reducer} reducerState={reducerState} />;
+    return (
+      <ContinentSelectionScreen reducer={reducer} reducerState={reducerState} />
+    );
   }
   if (
     reducerState.backup_state === BackupStates.CountrySelecting ||
     reducerState.recovery_state === RecoveryStates.CountrySelecting
   ) {
-    return <CountrySelectionScreen reducer={reducer} reducerState={reducerState} />;
+    return (
+      <CountrySelectionScreen reducer={reducer} reducerState={reducerState} />
+    );
   }
   if (
     reducerState.backup_state === BackupStates.UserAttributesCollecting ||
     reducerState.recovery_state === RecoveryStates.UserAttributesCollecting
   ) {
-    return <AttributeEntryScreen reducer={reducer} reducerState={reducerState} />;
+    return (
+      <AttributeEntryScreen reducer={reducer} reducerState={reducerState} />
+    );
   }
   if (reducerState.backup_state === BackupStates.AuthenticationsEditing) {
     return (
-      <AuthenticationEditorScreen backupState={reducerState} reducer={reducer} />
+      <AuthenticationEditorScreen
+        backupState={reducerState}
+        reducer={reducer}
+      />
     );
   }
   if (reducerState.backup_state === BackupStates.PoliciesReviewing) {
-    return <ReviewPoliciesScreen reducer={reducer} backupState={reducerState} />;
+    return (
+      <ReviewPoliciesScreen reducer={reducer} backupState={reducerState} />
+    );
   }
   if (reducerState.backup_state === BackupStates.SecretEditing) {
     return <SecretEditorScreen reducer={reducer} backupState={reducerState} />;
@@ -162,29 +217,34 @@ const AnastasisClientImpl: FunctionalComponent = () => {
   }
 
   if (reducerState.backup_state === BackupStates.TruthsPaying) {
-    return <TruthsPayingScreen reducer={reducer} backupState={reducerState} />
-
+    return <TruthsPayingScreen reducer={reducer} backupState={reducerState} />;
   }
 
   if (reducerState.backup_state === BackupStates.PoliciesPaying) {
     const backupState: ReducerStateBackup = reducerState;
-    return <PoliciesPayingScreen reducer={reducer} backupState={backupState} />
+    return <PoliciesPayingScreen reducer={reducer} backupState={backupState} />;
   }
 
   if (reducerState.recovery_state === RecoveryStates.SecretSelecting) {
-    return <SecretSelectionScreen reducer={reducer} recoveryState={reducerState} />;
+    return (
+      <SecretSelectionScreen reducer={reducer} recoveryState={reducerState} />
+    );
   }
 
   if (reducerState.recovery_state === RecoveryStates.ChallengeSelecting) {
-    return <ChallengeOverviewScreen reducer={reducer} recoveryState={reducerState} />;
+    return (
+      <ChallengeOverviewScreen reducer={reducer} recoveryState={reducerState} />
+    );
   }
 
   if (reducerState.recovery_state === RecoveryStates.ChallengeSolving) {
-    return <SolveScreen reducer={reducer} recoveryState={reducerState} />
+    return <SolveScreen reducer={reducer} recoveryState={reducerState} />;
   }
 
   if (reducerState.recovery_state === RecoveryStates.RecoveryFinished) {
-    return <RecoveryFinishedScreen reducer={reducer} recoveryState={reducerState} />
+    return (
+      <RecoveryFinishedScreen reducer={reducer} recoveryState={reducerState} />
+    );
   }
 
   console.log("unknown state", reducer.currentReducerState);
@@ -195,7 +255,6 @@ const AnastasisClientImpl: FunctionalComponent = () => {
     </AnastasisClientFrame>
   );
 };
-
 
 interface LabeledInputProps {
   label: string;
@@ -223,7 +282,6 @@ export function LabeledInput(props: LabeledInputProps): VNode {
   );
 }
 
-
 interface ErrorBannerProps {
   reducer: AnastasisReducerApi;
 }
@@ -235,7 +293,7 @@ function ErrorBanner(props: ErrorBannerProps): VNode | null {
   const currentError = props.reducer.currentError;
   if (currentError) {
     return (
-      <div id="error"> 
+      <div id="error">
         <p>Error: {JSON.stringify(currentError)}</p>
         <button onClick={() => props.reducer.dismissError()}>
           Dismiss Error

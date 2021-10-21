@@ -39,7 +39,8 @@
     "search.exclude": {
         "dist": true,
         "prebuilt": true,
-        "src/i18n/*.po": true
+        "src/i18n/*.po": true,
+        "vendor": true
     },
     "search.collapseResults": "auto",
     "files.associations": {

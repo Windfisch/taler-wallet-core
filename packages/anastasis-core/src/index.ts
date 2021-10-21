@@ -2,6 +2,8 @@ import {
   AmountString,
   buildSigPS,
   bytesToString,
+  Codec,
+  codecForAny,
   decodeCrock,
   eddsaSign,
   encodeCrock,
@@ -24,6 +26,7 @@ import {
   ActionArgEnterSecret,
   ActionArgEnterSecretName,
   ActionArgEnterUserAttributes,
+  ActionArgSelectChallenge,
   AuthenticationProviderStatus,
   AuthenticationProviderStatusOk,
   AuthMethod,
@@ -33,6 +36,8 @@ import {
   MethodSpec,
   Policy,
   PolicyProvider,
+  RecoveryInformation,
+  RecoveryInternalData,
   RecoveryStates,
   ReducerState,
   ReducerStateBackup,
@@ -60,77 +65,14 @@ import {
   UserIdentifier,
   userIdentifierDerive,
   typedArrayConcat,
+  decryptRecoveryDocument,
 } from "./crypto.js";
-import { zlibSync } from "fflate";
+import { unzlibSync, zlibSync } from "fflate";
+import { EscrowMethod, RecoveryDocument } from "./recovery-document-types.js";
 
 const { fetch, Request, Response, Headers } = fetchPonyfill({});
 
 export * from "./reducer-types.js";
-
-interface RecoveryDocument {
-  // Human-readable name of the secret
-  secret_name?: string;
-
-  // Encrypted core secret.
-  encrypted_core_secret: string; // bytearray of undefined length
-
-  // List of escrow providers and selected authentication method.
-  escrow_methods: EscrowMethod[];
-
-  // List of possible decryption policies.
-  policies: DecryptionPolicy[];
-}
-
-interface DecryptionPolicy {
-  // Salt included to encrypt master key share when
-  // using this decryption policy.
-  salt: string;
-
-  /**
-   * Master key, AES-encrypted with key derived from
-   * salt and keyshares revealed by the following list of
-   * escrow methods identified by UUID.
-   */
-  master_key: string;
-
-  /**
-   * List of escrow methods identified by their UUID.
-   */
-  uuids: string[];
-}
-
-interface EscrowMethod {
-  /**
-   * URL of the escrow provider (including possibly this Anastasis server).
-   */
-  url: string;
-
-  /**
-   * Type of the escrow method (e.g. security question, SMS etc.).
-   */
-  escrow_type: string;
-
-  // UUID of the escrow method.
-  // 16 bytes base32-crock encoded.
-  uuid: TruthUuid;
-
-  // Key used to encrypt the Truth this EscrowMethod is related to.
-  // Client has to provide this key to the server when using /truth/.
-  truth_key: TruthKey;
-
-  /**
-   * Salt to hash the security question answer if applicable.
-   */
-  truth_salt: TruthSalt;
-
-  // Salt from the provider to derive the user ID
-  // at this provider.
-  provider_salt: string;
-
-  // The instructions to give to the user (i.e. the security question
-  // if this is challenge-response).
-  instructions: string;
-}
 
 function getContinents(): ContinentInfo[] {
   const continentSet = new Set<string>();
@@ -196,6 +138,41 @@ async function backupSelectCountry(
   return {
     ...state,
     backup_state: BackupStates.UserAttributesCollecting,
+    selected_country: countryCode,
+    currencies,
+    required_attributes: ra,
+    authentication_providers: providers,
+  };
+}
+
+async function recoverySelectCountry(
+  state: ReducerStateRecovery,
+  countryCode: string,
+  currencies: string[],
+): Promise<ReducerStateError | ReducerStateRecovery> {
+  const country = anastasisData.countriesList.countries.find(
+    (x) => x.code === countryCode,
+  );
+  if (!country) {
+    return {
+      code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
+      hint: "invalid country selected",
+    };
+  }
+
+  const providers: { [x: string]: {} } = {};
+  for (const prov of anastasisData.providersList.anastasis_provider) {
+    if (currencies.includes(prov.currency)) {
+      providers[prov.url] = {};
+    }
+  }
+
+  const ra = (anastasisData.countryDetails as any)[countryCode]
+    .required_attributes;
+
+  return {
+    ...state,
+    recovery_state: RecoveryStates.UserAttributesCollecting,
     selected_country: countryCode,
     currencies,
     required_attributes: ra,
@@ -436,6 +413,13 @@ async function compressRecoveryDoc(rd: any): Promise<Uint8Array> {
   return typedArrayConcat([new Uint8Array(sizeHeaderBuf), zippedDoc]);
 }
 
+async function uncompressRecoveryDoc(zippedRd: Uint8Array): Promise<any> {
+  const header = zippedRd.slice(0, 4);
+  const data = zippedRd.slice(4);
+  const res = unzlibSync(data);
+  return JSON.parse(bytesToString(res));
+}
+
 async function uploadSecret(
   state: ReducerStateBackup,
 ): Promise<ReducerStateBackup | ReducerStateError> {
@@ -630,6 +614,97 @@ async function uploadSecret(
     backup_state: BackupStates.BackupFinished,
     success_details: successDetails,
   };
+}
+
+/**
+ * Download policy based on current user attributes and selected
+ * version in the state.
+ */
+async function downloadPolicy(
+  state: ReducerStateRecovery,
+): Promise<ReducerStateRecovery | ReducerStateError> {
+  const providerUrls = Object.keys(state.authentication_providers ?? {});
+  let foundRecoveryInfo: RecoveryInternalData | undefined = undefined;
+  let recoveryDoc: RecoveryDocument | undefined = undefined;
+  const newProviderStatus: { [url: string]: AuthenticationProviderStatus } = {};
+  const userAttributes = state.identity_attributes!;
+  for (const url of providerUrls) {
+    const pi = await getProviderInfo(url);
+    if ("error_code" in pi || !("http_status" in pi)) {
+      // Could not even get /config of the provider
+      continue;
+    }
+    newProviderStatus[url] = pi;
+    const userId = await userIdentifierDerive(userAttributes, pi.salt);
+    const acctKeypair = accountKeypairDerive(userId);
+    const resp = await fetch(new URL(`policy/${acctKeypair.pub}`, url).href);
+    if (resp.status !== 200) {
+      continue;
+    }
+    const body = await resp.arrayBuffer();
+    const bodyDecrypted = await decryptRecoveryDocument(
+      userId,
+      encodeCrock(body),
+    );
+    const rd: RecoveryDocument = await uncompressRecoveryDoc(
+      decodeCrock(bodyDecrypted),
+    );
+    console.log("rd", rd);
+    let policyVersion = 0;
+    try {
+      policyVersion = Number(resp.headers.get("Anastasis-Version") ?? "0");
+    } catch (e) {}
+    foundRecoveryInfo = {
+      provider_url: url,
+      secret_name: rd.secret_name ?? "<unknown>",
+      version: policyVersion,
+    };
+    recoveryDoc = rd;
+    break;
+  }
+  if (!foundRecoveryInfo || !recoveryDoc) {
+    return {
+      code: TalerErrorCode.ANASTASIS_REDUCER_POLICY_LOOKUP_FAILED,
+      hint: "No backups found at any provider for your identity information.",
+    };
+  }
+  const recoveryInfo: RecoveryInformation = {
+    challenges: recoveryDoc.escrow_methods.map((x) => {
+      console.log("providers", state.authentication_providers);
+      const prov = newProviderStatus[x.url] as AuthenticationProviderStatusOk;
+      return {
+        cost: prov.methods.find((m) => m.type === x.escrow_type)?.usage_fee!,
+        instructions: x.instructions,
+        type: x.escrow_type,
+        uuid: x.uuid,
+      };
+    }),
+    policies: recoveryDoc.policies.map((x) => {
+      return x.uuids.map((m) => {
+        return {
+          uuid: m,
+        };
+      });
+    }),
+  };
+  return {
+    ...state,
+    recovery_state: RecoveryStates.SecretSelecting,
+    recovery_document: foundRecoveryInfo,
+    recovery_information: recoveryInfo,
+  };
+}
+
+async function recoveryEnterUserAttributes(
+  state: ReducerStateRecovery,
+  attributes: Record<string, string>,
+): Promise<ReducerStateRecovery | ReducerStateError> {
+  // FIXME: validate attributes
+  const st: ReducerStateRecovery = {
+    ...state,
+    identity_attributes: attributes,
+  };
+  return downloadPolicy(st);
 }
 
 export async function reduceAction(
@@ -827,6 +902,128 @@ export async function reduceAction(
       };
     }
   }
+
+  if (state.recovery_state === RecoveryStates.ContinentSelecting) {
+    if (action === "select_continent") {
+      const continent: string = args.continent;
+      if (typeof continent !== "string") {
+        return {
+          code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
+          hint: "continent required",
+        };
+      }
+      return {
+        ...state,
+        recovery_state: RecoveryStates.CountrySelecting,
+        countries: getCountries(continent),
+        selected_continent: continent,
+      };
+    } else {
+      return {
+        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
+        hint: `Unsupported action '${action}'`,
+      };
+    }
+  }
+
+  if (state.recovery_state === RecoveryStates.CountrySelecting) {
+    if (action === "back") {
+      return {
+        ...state,
+        recovery_state: RecoveryStates.ContinentSelecting,
+        countries: undefined,
+      };
+    } else if (action === "select_country") {
+      const countryCode = args.country_code;
+      if (typeof countryCode !== "string") {
+        return {
+          code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
+          hint: "country_code required",
+        };
+      }
+      const currencies = args.currencies;
+      return recoverySelectCountry(state, countryCode, currencies);
+    } else {
+      return {
+        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
+        hint: `Unsupported action '${action}'`,
+      };
+    }
+  }
+
+  if (state.recovery_state === RecoveryStates.UserAttributesCollecting) {
+    if (action === "back") {
+      return {
+        ...state,
+        recovery_state: RecoveryStates.CountrySelecting,
+      };
+    } else if (action === "enter_user_attributes") {
+      const ta = args as ActionArgEnterUserAttributes;
+      return recoveryEnterUserAttributes(state, ta.identity_attributes);
+    } else {
+      return {
+        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
+        hint: `Unsupported action '${action}'`,
+      };
+    }
+  }
+
+  if (state.recovery_state === RecoveryStates.SecretSelecting) {
+    if (action === "back") {
+      return {
+        ...state,
+        recovery_state: RecoveryStates.UserAttributesCollecting,
+      };
+    } else if (action === "next") {
+      return {
+        ...state,
+        recovery_state: RecoveryStates.ChallengeSelecting,
+      };
+    } else {
+      return {
+        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
+        hint: `Unsupported action '${action}'`,
+      };
+    }
+  }
+
+  if (state.recovery_state === RecoveryStates.ChallengeSelecting) {
+    if (action === "select_challenge") {
+      const ta: ActionArgSelectChallenge = args;
+      return {
+        ...state,
+        recovery_state: RecoveryStates.ChallengeSolving,
+        selected_challenge_uuid: ta.uuid,
+      };
+    } else if (action === "back") {
+      return {
+        ...state,
+        recovery_state: RecoveryStates.SecretSelecting,
+      };
+    } else {
+      return {
+        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
+        hint: `Unsupported action '${action}'`,
+      };
+    }
+  }
+
+  if (state.recovery_state === RecoveryStates.ChallengeSolving) {
+    if (action === "back") {
+      const ta: ActionArgSelectChallenge = args;
+      return {
+        ...state,
+        selected_challenge_uuid: undefined,
+        recovery_state: RecoveryStates.ChallengeSelecting,
+      };
+    } else {
+      return {
+        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
+        hint: `Unsupported action '${action}'`,
+      };
+    }
+  }
+
   return {
     code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
     hint: "Reducer action invalid",

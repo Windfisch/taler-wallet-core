@@ -1,6 +1,7 @@
 import test from "ava";
 import {
   accountKeypairDerive,
+  decryptTruth,
   encryptKeyshare,
   encryptTruth,
   policyKeyDerive,
@@ -94,4 +95,8 @@ test("truth encryption", async (t) => {
     tv.input_truth,
   );
   t.is(enc, tv.output_encrypted_truth);
+
+  const dec = await decryptTruth(tv.input_truth_enc_key, enc);
+
+  t.is(dec, tv.input_truth);
 });

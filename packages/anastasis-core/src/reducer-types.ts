@@ -93,6 +93,22 @@ export interface UserAttributeSpec {
   widget: string;
 }
 
+export interface RecoveryInternalData {
+  secret_name: string;
+  provider_url: string;
+  version: number;
+}
+
+export interface RecoveryInformation {
+  challenges: ChallengeInfo[];
+  policies: {
+    /**
+     * UUID of the associated challenge.
+     */
+    uuid: string;
+  }[][];
+}
+
 export interface ReducerStateRecovery {
   backup_state?: undefined;
   recovery_state: RecoveryStates;
@@ -102,23 +118,20 @@ export interface ReducerStateRecovery {
 
   continents?: any;
   countries?: any;
+
+  selected_continent?: string;
+  selected_country?: string;
+  currencies?: string[];
+
   required_attributes?: any;
 
-  recovery_information?: {
-    challenges: ChallengeInfo[];
-    policies: {
-      /**
-       * UUID of the associated challenge.
-       */
-      uuid: string;
-    }[][];
-  };
+  /**
+   * Recovery information, used by the UI.
+   */
+  recovery_information?: RecoveryInformation;
 
-  recovery_document?: {
-    secret_name: string;
-    provider_url: string;
-    version: number;
-  };
+  // FIXME: This should really be renamed to recovery_internal_data
+  recovery_document?: RecoveryInternalData;
 
   selected_challenge_uuid?: string;
 
@@ -129,11 +142,7 @@ export interface ReducerStateRecovery {
     value: string;
   };
 
-  authentication_providers?: {
-    [url: string]: {
-      business_name: string;
-    };
-  };
+  authentication_providers?: { [url: string]: AuthenticationProviderStatus };
 
   recovery_error?: any;
 }
@@ -243,4 +252,8 @@ export interface ActionArgEnterSecret {
     mime?: string;
   };
   expiration: Duration;
+}
+
+export interface ActionArgSelectChallenge {
+  uuid: string;
 }

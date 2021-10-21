@@ -164,10 +164,12 @@ export function useAnastasisReducer(): AnastasisReducerApi {
     } else {
       s = await reduceAction(anastasisState.reducerState!, action, args);
     }
-    console.log("got new state from reducer", s);
+    console.log("got response from reducer", s);
     if (s.code) {
+      console.log("response is an error");
       setAnastasisState({ ...anastasisState, currentError: s });
     } else {
+      console.log("response is a new state");
       setAnastasisState({
         ...anastasisState,
         currentError: undefined,
