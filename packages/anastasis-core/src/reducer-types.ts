@@ -1,4 +1,6 @@
 import { Duration, Timestamp } from "@gnu-taler/taler-util";
+import { KeyShare } from "./crypto.js";
+import { RecoveryDocument } from "./recovery-document-types.js";
 
 export type ReducerState =
   | ReducerStateBackup
@@ -110,8 +112,16 @@ export interface RecoveryInformation {
 }
 
 export interface ReducerStateRecovery {
-  backup_state?: undefined;
   recovery_state: RecoveryStates;
+
+  /**
+   * Unused in the recovery states.
+   */
+  backup_state?: undefined;
+
+  /**
+   * Unused in the recovery states.
+   */
   code?: undefined;
 
   identity_attributes?: { [n: string]: string };
@@ -133,9 +143,17 @@ export interface ReducerStateRecovery {
   // FIXME: This should really be renamed to recovery_internal_data
   recovery_document?: RecoveryInternalData;
 
+  // FIXME: The C reducer should also use this!
+  verbatim_recovery_document?: RecoveryDocument;
+
   selected_challenge_uuid?: string;
 
   challenge_feedback?: { [uuid: string]: ChallengeFeedback };
+
+  /**
+   * Key shares that we managed to recover so far.
+   */
+  recovered_key_shares?: { [truth_uuid: string]: KeyShare };
 
   core_secret?: {
     mime: string;
@@ -254,6 +272,12 @@ export interface ActionArgEnterSecret {
   expiration: Duration;
 }
 
-export interface ActionArgSelectChallenge {
+export interface ActionArgsSelectChallenge {
   uuid: string;
+}
+
+export type ActionArgsSolveChallengeRequest = SolveChallengeAnswerRequest;
+
+export interface SolveChallengeAnswerRequest {
+  answer: string;
 }

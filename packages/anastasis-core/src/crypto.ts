@@ -185,6 +185,7 @@ async function anastasisDecrypt(
 export const asOpaque = (x: string): OpaqueData => x;
 const asEncryptedKeyShare = (x: OpaqueData): EncryptedKeyShare => x as string;
 const asEncryptedTruth = (x: OpaqueData): EncryptedTruth => x as string;
+const asKeyShare = (x: OpaqueData): KeyShare => x as string;
 
 export async function encryptKeyshare(
   keyShare: KeyShare,
@@ -195,6 +196,17 @@ export async function encryptKeyshare(
   const nonce = encodeCrock(getRandomBytes(24));
   return asEncryptedKeyShare(
     await anastasisEncrypt(nonce, asOpaque(userId), asOpaque(keyShare), s),
+  );
+}
+
+export async function decryptKeyShare(
+  encKeyShare: EncryptedKeyShare,
+  userId: UserIdentifier,
+  answerSalt?: string,
+): Promise<KeyShare> {
+  const s = answerSalt ?? "eks";
+  return asKeyShare(
+    await anastasisDecrypt(asOpaque(userId), asOpaque(encKeyShare), s),
   );
 }
 
@@ -224,6 +236,20 @@ export async function decryptTruth(
 export interface CoreSecretEncResult {
   encCoreSecret: EncryptedCoreSecret;
   encMasterKeys: EncryptedMasterKey[];
+}
+
+export async function coreSecretRecover(args: {
+  encryptedMasterKey: OpaqueData;
+  policyKey: PolicyKey;
+  encryptedCoreSecret: OpaqueData;
+}): Promise<OpaqueData> {
+  const masterKey = await anastasisDecrypt(
+    asOpaque(args.policyKey),
+    args.encryptedMasterKey,
+    "emk",
+  );
+  console.log("recovered master key", masterKey);
+  return await anastasisDecrypt(masterKey, args.encryptedCoreSecret, "cse");
 }
 
 export async function coreSecretEncrypt(

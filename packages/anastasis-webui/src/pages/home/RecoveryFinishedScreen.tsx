@@ -8,7 +8,6 @@ import { RecoveryReducerProps, AnastasisClientFrame } from "./index";
 export function RecoveryFinishedScreen(props: RecoveryReducerProps): VNode {
   return (
     <AnastasisClientFrame title="Recovery Finished" hideNext>
-      <h1>Recovery Finished</h1>
       <p>
         Secret: {bytesToString(decodeCrock(props.recoveryState.core_secret?.value!))}
       </p>

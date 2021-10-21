@@ -26,7 +26,8 @@ import {
   ActionArgEnterSecret,
   ActionArgEnterSecretName,
   ActionArgEnterUserAttributes,
-  ActionArgSelectChallenge,
+  ActionArgsSelectChallenge,
+  ActionArgsSolveChallengeRequest,
   AuthenticationProviderStatus,
   AuthenticationProviderStatusOk,
   AuthMethod,
@@ -66,6 +67,9 @@ import {
   userIdentifierDerive,
   typedArrayConcat,
   decryptRecoveryDocument,
+  decryptKeyShare,
+  KeyShare,
+  coreSecretRecover,
 } from "./crypto.js";
 import { unzlibSync, zlibSync } from "fflate";
 import { EscrowMethod, RecoveryDocument } from "./recovery-document-types.js";
@@ -626,8 +630,10 @@ async function downloadPolicy(
   const providerUrls = Object.keys(state.authentication_providers ?? {});
   let foundRecoveryInfo: RecoveryInternalData | undefined = undefined;
   let recoveryDoc: RecoveryDocument | undefined = undefined;
-  const newProviderStatus: { [url: string]: AuthenticationProviderStatus } = {};
+  const newProviderStatus: { [url: string]: AuthenticationProviderStatusOk } =
+    {};
   const userAttributes = state.identity_attributes!;
+  // FIXME:  Shouldn't we also store the status of bad providers?
   for (const url of providerUrls) {
     const pi = await getProviderInfo(url);
     if ("error_code" in pi || !("http_status" in pi)) {
@@ -635,6 +641,12 @@ async function downloadPolicy(
       continue;
     }
     newProviderStatus[url] = pi;
+  }
+  for (const url of providerUrls) {
+    const pi = newProviderStatus[url];
+    if (!pi) {
+      continue;
+    }
     const userId = await userIdentifierDerive(userAttributes, pi.salt);
     const acctKeypair = accountKeypairDerive(userId);
     const resp = await fetch(new URL(`policy/${acctKeypair.pub}`, url).href);
@@ -670,7 +682,7 @@ async function downloadPolicy(
   }
   const recoveryInfo: RecoveryInformation = {
     challenges: recoveryDoc.escrow_methods.map((x) => {
-      console.log("providers", state.authentication_providers);
+      console.log("providers", newProviderStatus);
       const prov = newProviderStatus[x.url] as AuthenticationProviderStatusOk;
       return {
         cost: prov.methods.find((m) => m.type === x.escrow_type)?.usage_fee!,
@@ -692,7 +704,122 @@ async function downloadPolicy(
     recovery_state: RecoveryStates.SecretSelecting,
     recovery_document: foundRecoveryInfo,
     recovery_information: recoveryInfo,
+    verbatim_recovery_document: recoveryDoc,
   };
+}
+
+/**
+ * Try to reconstruct the secret from the available shares.
+ *
+ * Returns the state unmodified if not enough key shares are available yet.
+ */
+async function tryRecoverSecret(
+  state: ReducerStateRecovery,
+): Promise<ReducerStateRecovery | ReducerStateError> {
+  const rd = state.verbatim_recovery_document!;
+  for (const p of rd.policies) {
+    const keyShares: KeyShare[] = [];
+    let missing = false;
+    for (const truthUuid of p.uuids) {
+      const ks = (state.recovered_key_shares ?? {})[truthUuid];
+      if (!ks) {
+        missing = true;
+        break;
+      }
+      keyShares.push(ks);
+    }
+
+    if (missing) {
+      continue;
+    }
+
+    const policyKey = await policyKeyDerive(keyShares, p.salt);
+    const coreSecretBytes = await coreSecretRecover({
+      encryptedCoreSecret: rd.encrypted_core_secret,
+      encryptedMasterKey: p.master_key,
+      policyKey,
+    });
+
+    return {
+      ...state,
+      recovery_state: RecoveryStates.RecoveryFinished,
+      selected_challenge_uuid: undefined,
+      core_secret: JSON.parse(bytesToString(decodeCrock(coreSecretBytes))),
+    };
+  }
+  return { ...state };
+}
+
+async function solveChallenge(
+  state: ReducerStateRecovery,
+  ta: ActionArgsSolveChallengeRequest,
+): Promise<ReducerStateRecovery | ReducerStateError> {
+  const recDoc: RecoveryDocument = state.verbatim_recovery_document!;
+  const truth = recDoc.escrow_methods.find(
+    (x) => x.uuid === state.selected_challenge_uuid,
+  );
+  if (!truth) {
+    throw "truth for challenge not found";
+  }
+
+  const url = new URL(`/truth/${truth.uuid}`, truth.url);
+
+  // FIXME: This isn't correct for non-question truth responses.
+  url.searchParams.set(
+    "response",
+    await secureAnswerHash(ta.answer, truth.uuid, truth.truth_salt),
+  );
+
+  const resp = await fetch(url.href, {
+    headers: {
+      "Anastasis-Truth-Decryption-Key": truth.truth_key,
+    },
+  });
+
+  console.log(resp);
+
+  if (resp.status !== 200) {
+    return {
+      code: TalerErrorCode.ANASTASIS_TRUTH_CHALLENGE_FAILED,
+      hint: "got non-200 response",
+      http_status: resp.status,
+    } as ReducerStateError;
+  }
+
+  const answerSalt = truth.escrow_type === "question" ? ta.answer : undefined;
+
+  const userId = await userIdentifierDerive(
+    state.identity_attributes,
+    truth.provider_salt,
+  );
+
+  const respBody = new Uint8Array(await resp.arrayBuffer());
+  const keyShare = await decryptKeyShare(
+    encodeCrock(respBody),
+    userId,
+    answerSalt,
+  );
+
+  const recoveredKeyShares = {
+    ...(state.recovered_key_shares ?? {}),
+    [truth.uuid]: keyShare,
+  };
+
+  const challengeFeedback = {
+    ...state.challenge_feedback,
+    [truth.uuid]: {
+      state: "solved",
+    },
+  };
+
+  const newState: ReducerStateRecovery = {
+    ...state,
+    recovery_state: RecoveryStates.ChallengeSelecting,
+    challenge_feedback: challengeFeedback,
+    recovered_key_shares: recoveredKeyShares,
+  };
+
+  return tryRecoverSecret(newState);
 }
 
 async function recoveryEnterUserAttributes(
@@ -705,6 +832,33 @@ async function recoveryEnterUserAttributes(
     identity_attributes: attributes,
   };
   return downloadPolicy(st);
+}
+
+async function selectChallenge(
+  state: ReducerStateRecovery,
+  ta: ActionArgsSelectChallenge,
+): Promise<ReducerStateRecovery | ReducerStateError> {
+  const recDoc: RecoveryDocument = state.verbatim_recovery_document!;
+  const truth = recDoc.escrow_methods.find((x) => x.uuid === ta.uuid);
+  if (!truth) {
+    throw "truth for challenge not found";
+  }
+
+  const url = new URL(`/truth/${truth.uuid}`, truth.url);
+
+  const resp = await fetch(url.href, {
+    headers: {
+      "Anastasis-Truth-Decryption-Key": truth.truth_key,
+    },
+  });
+
+  console.log(resp);
+
+  return {
+    ...state,
+    recovery_state: RecoveryStates.ChallengeSolving,
+    selected_challenge_uuid: ta.uuid,
+  };
 }
 
 export async function reduceAction(
@@ -989,16 +1143,21 @@ export async function reduceAction(
 
   if (state.recovery_state === RecoveryStates.ChallengeSelecting) {
     if (action === "select_challenge") {
-      const ta: ActionArgSelectChallenge = args;
-      return {
-        ...state,
-        recovery_state: RecoveryStates.ChallengeSolving,
-        selected_challenge_uuid: ta.uuid,
-      };
+      const ta: ActionArgsSelectChallenge = args;
+      return selectChallenge(state, ta);
     } else if (action === "back") {
       return {
         ...state,
         recovery_state: RecoveryStates.SecretSelecting,
+      };
+    } else if (action === "next") {
+      const s2 = await tryRecoverSecret(state);
+      if (s2.recovery_state === RecoveryStates.RecoveryFinished) {
+        return s2;
+      }
+      return {
+        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
+        hint: "Not enough challenges solved",
       };
     } else {
       return {
@@ -1010,12 +1169,34 @@ export async function reduceAction(
 
   if (state.recovery_state === RecoveryStates.ChallengeSolving) {
     if (action === "back") {
-      const ta: ActionArgSelectChallenge = args;
+      const ta: ActionArgsSelectChallenge = args;
       return {
         ...state,
         selected_challenge_uuid: undefined,
         recovery_state: RecoveryStates.ChallengeSelecting,
       };
+    } else if (action === "solve_challenge") {
+      const ta: ActionArgsSolveChallengeRequest = args;
+      return solveChallenge(state, ta);
+    } else {
+      return {
+        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
+        hint: `Unsupported action '${action}'`,
+      };
+    }
+  }
+
+  if (state.recovery_state === RecoveryStates.RecoveryFinished) {
+    if (action === "back") {
+      const ta: ActionArgsSelectChallenge = args;
+      return {
+        ...state,
+        selected_challenge_uuid: undefined,
+        recovery_state: RecoveryStates.ChallengeSelecting,
+      };
+    } else if (action === "solve_challenge") {
+      const ta: ActionArgsSolveChallengeRequest = args;
+      return solveChallenge(state, ta);
     } else {
       return {
         code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,

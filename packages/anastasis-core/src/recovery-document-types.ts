@@ -1,22 +1,37 @@
 import { TruthKey, TruthSalt, TruthUuid } from "./crypto.js";
 
 export interface RecoveryDocument {
-  // Human-readable name of the secret
+  /**
+   * Human-readable name of the secret
+   * FIXME: Why is this optional?
+   */
   secret_name?: string;
 
-  // Encrypted core secret.
-  encrypted_core_secret: string; // bytearray of undefined length
+  /**
+   * Encrypted core secret.
+   * 
+   * Variable-size length, base32-crock encoded.
+   */
+  encrypted_core_secret: string;
 
-  // List of escrow providers and selected authentication method.
+  /**
+   * List of escrow providers and selected authentication method.
+   */
   escrow_methods: EscrowMethod[];
 
-  // List of possible decryption policies.
+  /**
+   * List of possible decryption policies.
+   */
   policies: DecryptionPolicy[];
 }
 
 export interface DecryptionPolicy {
-  // Salt included to encrypt master key share when
-  // using this decryption policy.
+  /**
+   * Salt included to encrypt master key share when
+   * using this decryption policy.
+   *
+   * FIXME: Rename to policy_salt
+   */
   salt: string;
 
   /**
@@ -43,12 +58,16 @@ export interface EscrowMethod {
    */
   escrow_type: string;
 
-  // UUID of the escrow method.
-  // 16 bytes base32-crock encoded.
+  /**
+   * UUID of the escrow method.
+   * 16 bytes base32-crock encoded.
+   */
   uuid: TruthUuid;
 
-  // Key used to encrypt the Truth this EscrowMethod is related to.
-  // Client has to provide this key to the server when using /truth/.
+  /**
+   * Key used to encrypt the Truth this EscrowMethod is related to.
+   * Client has to provide this key to the server when using /truth/.
+   */
   truth_key: TruthKey;
 
   /**
@@ -60,7 +79,9 @@ export interface EscrowMethod {
   // at this provider.
   provider_salt: string;
 
-  // The instructions to give to the user (i.e. the security question
-  // if this is challenge-response).
+  /**
+   * The instructions to give to the user (i.e. the security question
+   * if this is challenge-response).
+   */
   instructions: string;
 }
