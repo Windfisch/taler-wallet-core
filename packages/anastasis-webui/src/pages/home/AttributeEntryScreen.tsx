@@ -1,15 +1,24 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { ReducerStateRecovery, ReducerStateBackup } from "../../../../anastasis-core/lib";
+import { ReducerStateRecovery, ReducerStateBackup, UserAttributeSpec } from "anastasis-core/lib";
+import { useAnastasisContext } from "../../context/anastasis";
 import { AnastasisReducerApi } from "../../hooks/use-anastasis-reducer";
 import { AnastasisClientFrame, withProcessLabel, LabeledInput } from "./index";
 
-export function AttributeEntryScreen(props: AttributeEntryProps): VNode {
-  const { reducer, reducerState: backupState } = props;
-  const [attrs, setAttrs] = useState<Record<string, string>>(
-    props.reducerState.identity_attributes ?? {}
-  );
+export function AttributeEntryScreen(): VNode {
+  const reducer = useAnastasisContext()
+  const state = reducer?.currentReducerState
+  const currentIdentityAttributes = state && "identity_attributes" in state ? (state.identity_attributes || {}) : {}
+  const [attrs, setAttrs] = useState<Record<string, string>>(currentIdentityAttributes);
+
+  if (!reducer) {
+    return <div>no reducer in context</div>
+  }
+  if (!reducer.currentReducerState || !("required_attributes" in reducer.currentReducerState)) {
+    return <div>invalid state</div>
+  }
+  
   return (
     <AnastasisClientFrame
       title={withProcessLabel(reducer, "Select Country")}
@@ -17,7 +26,7 @@ export function AttributeEntryScreen(props: AttributeEntryProps): VNode {
         identity_attributes: attrs,
       })}
     >
-      {backupState.required_attributes.map((x: any, i: number) => {
+      {reducer.currentReducerState.required_attributes?.map((x, i: number) => {
         return (
           <AttributeEntryField
             key={i}
@@ -40,7 +49,7 @@ export interface AttributeEntryFieldProps {
   isFirst: boolean;
   value: string;
   setValue: (newValue: string) => void;
-  spec: any;
+  spec: UserAttributeSpec;
 }
 
 export function AttributeEntryField(props: AttributeEntryFieldProps): VNode {

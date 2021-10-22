@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/camelcase */
+import { AuthMethod, ReducerStateBackup } from "anastasis-core";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { AuthMethod, ReducerStateBackup } from "anastasis-core";
+import { useAnastasisContext } from "../../context/anastasis";
 import { AnastasisReducerApi } from "../../hooks/use-anastasis-reducer";
 import { AuthMethodEmailSetup } from "./AuthMethodEmailSetup";
 import { AuthMethodPostSetup } from "./AuthMethodPostSetup";
@@ -9,12 +10,18 @@ import { AuthMethodQuestionSetup } from "./AuthMethodQuestionSetup";
 import { AuthMethodSmsSetup } from "./AuthMethodSmsSetup";
 import { AnastasisClientFrame } from "./index";
 
-export function AuthenticationEditorScreen(props: AuthenticationEditorProps): VNode {
+export function AuthenticationEditorScreen(): VNode {
   const [selectedMethod, setSelectedMethod] = useState<string | undefined>(
     undefined
   );
-  const { reducer, backupState } = props;
-  const providers = backupState.authentication_providers!;
+  const reducer = useAnastasisContext()
+  if (!reducer) {
+    return <div>no reducer in context</div>
+  }
+  if (!reducer.currentReducerState || reducer.currentReducerState.backup_state === undefined) {
+    return <div>invalid state</div>
+  }
+  const providers = reducer.currentReducerState.authentication_providers!;
   const authAvailableSet = new Set<string>();
   for (const provKey of Object.keys(providers)) {
     const p = providers[provKey];
@@ -52,14 +59,14 @@ export function AuthenticationEditorScreen(props: AuthenticationEditorProps): VN
         disabled={!authAvailableSet.has(props.method)}
         onClick={() => {
           setSelectedMethod(props.method);
-          reducer.dismissError();
+          if (reducer) reducer.dismissError();
         }}
       >
         {props.label}
       </button>
     );
   }
-  const configuredAuthMethods: AuthMethod[] = backupState.authentication_methods ?? [];
+  const configuredAuthMethods: AuthMethod[] = reducer.currentReducerState.authentication_methods ?? [];
   const haveMethodsConfigured = configuredAuthMethods.length;
   return (
     <AnastasisClientFrame title="Backup: Configure Authentication Methods">

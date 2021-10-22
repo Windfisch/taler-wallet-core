@@ -1,10 +1,21 @@
 import { h, VNode } from "preact";
-import { RecoveryReducerProps, AnastasisClientFrame } from "./index";
+import { useAnastasisContext } from "../../context/anastasis";
+import { AnastasisClientFrame } from "./index";
 
-export function ChallengeOverviewScreen(props: RecoveryReducerProps): VNode {
-  const { recoveryState, reducer } = props;
-  const policies = recoveryState.recovery_information!.policies;
-  const chArr = recoveryState.recovery_information!.challenges;
+export function ChallengeOverviewScreen(): VNode {
+  const reducer = useAnastasisContext()
+
+  if (!reducer) {
+    return <div>no reducer in context</div>
+  }
+  if (!reducer.currentReducerState || reducer.currentReducerState.recovery_state === undefined) {
+    return <div>invalid state</div>
+  }
+
+  const policies = reducer.currentReducerState.recovery_information?.policies ?? [];
+  const chArr = reducer.currentReducerState.recovery_information?.challenges ?? [];
+  const challengeFeedback = reducer.currentReducerState?.challenge_feedback;
+
   const challenges: {
     [uuid: string]: {
       type: string;
@@ -22,15 +33,21 @@ export function ChallengeOverviewScreen(props: RecoveryReducerProps): VNode {
   return (
     <AnastasisClientFrame title="Recovery: Solve challenges">
       <h2>Policies</h2>
-      {policies.map((x, i) => {
+      {!policies.length && <p>
+        No policies found
+      </p>}
+      {policies.map((row, i) => {
         return (
           <div key={i}>
             <h3>Policy #{i + 1}</h3>
-            {x.map((x, j) => {
-              const ch = challenges[x.uuid];
-              const feedback = recoveryState.challenge_feedback?.[x.uuid];
+            {row.map(column => {
+              const ch = challenges[column.uuid];
+              if (!ch) return <div>
+                There is no challenge for this policy
+              </div>
+              const feedback = challengeFeedback?.[column.uuid];
               return (
-                <div key={j}
+                <div key={column.uuid}
                   style={{
                     borderLeft: "2px solid gray",
                     paddingLeft: "0.5em",
@@ -46,7 +63,7 @@ export function ChallengeOverviewScreen(props: RecoveryReducerProps): VNode {
                   {feedback?.state !== "solved" ? (
                     <button
                       onClick={() => reducer.transition("select_challenge", {
-                        uuid: x.uuid,
+                        uuid: column.uuid,
                       })}
                     >
                       Solve

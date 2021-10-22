@@ -1,17 +1,31 @@
 import { h, VNode } from "preact";
-import { AnastasisReducerApi } from "../../hooks/use-anastasis-reducer";
+import { ChallengeFeedback, ChallengeInfo } from "../../../../anastasis-core/lib";
+import { useAnastasisContext } from "../../context/anastasis";
 import { SolveEmailEntry } from "./SolveEmailEntry";
 import { SolvePostEntry } from "./SolvePostEntry";
 import { SolveQuestionEntry } from "./SolveQuestionEntry";
 import { SolveSmsEntry } from "./SolveSmsEntry";
 import { SolveUnsupportedEntry } from "./SolveUnsupportedEntry";
-import { RecoveryReducerProps } from "./index";
-import { ChallengeInfo, ChallengeFeedback } from "../../../../anastasis-core/lib";
 
-export function SolveScreen(props: RecoveryReducerProps): VNode {
-  const chArr = props.recoveryState.recovery_information!.challenges;
-  const challengeFeedback = props.recoveryState.challenge_feedback ?? {};
-  const selectedUuid = props.recoveryState.selected_challenge_uuid!;
+export function SolveScreen(): VNode {
+  const reducer = useAnastasisContext()
+
+  if (!reducer) {
+    return <div>no reducer in context</div>
+  }
+  if (!reducer.currentReducerState || reducer.currentReducerState.recovery_state === undefined) {
+    return <div>invalid state</div>
+  }
+
+  if (!reducer.currentReducerState.recovery_information) {
+    return <div>no recovery information found</div>
+  }
+  if (!reducer.currentReducerState.selected_challenge_uuid) {
+    return <div>no selected uuid</div>
+  }
+  const chArr = reducer.currentReducerState.recovery_information.challenges;
+  const challengeFeedback = reducer.currentReducerState.challenge_feedback ?? {};
+  const selectedUuid = reducer.currentReducerState.selected_challenge_uuid;
   const challenges: {
     [uuid: string]: ChallengeInfo;
   } = {};
@@ -25,17 +39,15 @@ export function SolveScreen(props: RecoveryReducerProps): VNode {
     email: SolveEmailEntry,
     post: SolvePostEntry,
   };
-  const SolveDialog = dialogMap[selectedChallenge.type] ?? SolveUnsupportedEntry;
+  const SolveDialog = dialogMap[selectedChallenge?.type] ?? SolveUnsupportedEntry;
   return (
     <SolveDialog
       challenge={selectedChallenge}
-      reducer={props.reducer}
       feedback={challengeFeedback[selectedUuid]} />
   );
 }
 
 export interface SolveEntryProps {
-  reducer: AnastasisReducerApi;
   challenge: ChallengeInfo;
   feedback?: ChallengeFeedback;
 }

@@ -23,7 +23,7 @@ export interface Policy {
     authentication_method: number;
     provider: string;
   }[];
-}
+} 
 
 export interface PolicyProvider {
   provider_url: string;
@@ -51,7 +51,7 @@ export interface ReducerStateBackup {
   identity_attributes?: { [n: string]: string };
   authentication_providers?: { [url: string]: AuthenticationProviderStatus };
   authentication_methods?: AuthMethod[];
-  required_attributes?: any;
+  required_attributes?: UserAttributeSpec[];
   selected_continent?: string;
   selected_country?: string;
   secret_name?: string;
@@ -133,7 +133,7 @@ export interface ReducerStateRecovery {
   selected_country?: string;
   currencies?: string[];
 
-  required_attributes?: any;
+  required_attributes?: UserAttributeSpec[];
 
   /**
    * Recovery information, used by the UI.

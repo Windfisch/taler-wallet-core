@@ -20,7 +20,9 @@
 */
 
 
-import { h, VNode } from 'preact';
+import { Fragment, h, VNode } from 'preact';
+import { BackupStates, RecoveryStates } from '../../../../anastasis-core/lib';
+import { useAnastasisContext } from '../../context/anastasis';
 import { Translate } from '../../i18n';
 import { LangSelector } from './LangSelector';
 
@@ -31,8 +33,9 @@ interface Props {
 export function Sidebar({ mobile }: Props): VNode {
   // const config = useConfigContext();
   const config = { version: 'none' }
-  const process = { env : { __VERSION__: '0.0.0'}}
-  
+  const process = { env: { __VERSION__: '0.0.0' } }
+  const reducer = useAnastasisContext()!
+
   return (
     <aside class="aside is-placed-left is-expanded">
       {mobile && <div class="footer" onClick={(e) => { return e.stopImmediatePropagation() }}>
@@ -47,52 +50,117 @@ export function Sidebar({ mobile }: Props): VNode {
         </div>
       </div>
       <div class="menu is-menu-main">
-        <p class="menu-label">
-          <Translate>Back up a secret</Translate>
-        </p>
+        {!reducer.currentReducerState &&
+          <p class="menu-label">
+            <Translate>Backup or Recorver</Translate>
+          </p>
+        }
         <ul class="menu-list">
-          <li>
-            <div class="has-icon">
-              <span class="icon"><i class="mdi mdi-square-edit-outline" /></span>
-              <span class="menu-item-label"><Translate>Location &amp; Currency</Translate></span>
-            </div>
-          </li>
-          <li class="is-active">
-            <div class="has-icon">
-              <span class="icon"><i class="mdi mdi-cash-register" /></span>
-              <span class="menu-item-label"><Translate>Personal information</Translate></span>
-            </div>
-          </li>
-          <li>
-            <div class="has-icon">
-              <span class="icon"><i class="mdi mdi-shopping" /></span>
-              <span class="menu-item-label"><Translate>Authorization methods</Translate></span>
-            </div>
-          </li>
-          <li>
-            <div  class="has-icon">
-              <span class="icon"><i class="mdi mdi-bank" /></span>
-              <span class="menu-item-label"><Translate>Recovery policies</Translate></span>
-            </div>
-          </li>
-          <li>
-            <div  class="has-icon">
-              <span class="icon"><i class="mdi mdi-bank" /></span>
-              <span class="menu-item-label"><Translate>Enter secrets</Translate></span>
-            </div>
-          </li>
-          <li>
-            <div  class="has-icon">
-              <span class="icon"><i class="mdi mdi-bank" /></span>
-              <span class="menu-item-label"><Translate>Payment (optional)</Translate></span>
-            </div>
-          </li>
-          <li>
-            <div  class="has-icon">
-              <span class="icon"><i class="mdi mdi-cash" /></span>
-              <span class="menu-item-label">Backup completed</span>
-            </div>
-          </li>
+          {!reducer.currentReducerState &&
+            <li>
+              <div class="ml-4">
+                <span class="menu-item-label"><Translate>Start one options</Translate></span>
+              </div>
+            </li>
+          }
+          {reducer.currentReducerState && reducer.currentReducerState.backup_state ? <Fragment>
+            <li class={reducer.currentReducerState.backup_state === BackupStates.ContinentSelecting ? 'is-active' : ''}>
+              <div class="ml-4">
+                <span class="menu-item-label"><Translate>Continent selection</Translate></span>
+              </div>
+            </li>
+            <li class={reducer.currentReducerState.backup_state === BackupStates.CountrySelecting ? 'is-active' : ''}>
+              <div class="ml-4">
+                <span class="menu-item-label"><Translate>Country selection</Translate></span>
+              </div>
+            </li>
+            <li class={reducer.currentReducerState.backup_state === BackupStates.UserAttributesCollecting ? 'is-active' : ''}>
+              <div class="ml-4">
+
+                <span class="menu-item-label"><Translate>User attributes</Translate></span>
+              </div>
+            </li>
+            <li class={reducer.currentReducerState.backup_state === BackupStates.AuthenticationsEditing ? 'is-active' : ''}>
+              <div class="ml-4">
+
+                <span class="menu-item-label"><Translate>Auth methods</Translate></span>
+              </div>
+            </li>
+            <li class={reducer.currentReducerState.backup_state === BackupStates.PoliciesReviewing ? 'is-active' : ''}>
+              <div class="ml-4">
+
+                <span class="menu-item-label"><Translate>PoliciesReviewing</Translate></span>
+              </div>
+            </li>
+            <li class={reducer.currentReducerState.backup_state === BackupStates.SecretEditing ? 'is-active' : ''}>
+              <div class="ml-4">
+
+                <span class="menu-item-label"><Translate>SecretEditing</Translate></span>
+              </div>
+            </li>
+            <li class={reducer.currentReducerState.backup_state === BackupStates.PoliciesPaying ? 'is-active' : ''}>
+              <div class="ml-4">
+
+                <span class="menu-item-label"><Translate>PoliciesPaying</Translate></span>
+              </div>
+            </li>
+            <li class={reducer.currentReducerState.backup_state === BackupStates.BackupFinished ? 'is-active' : ''}>
+              <div class="ml-4">
+
+                <span class="menu-item-label"><Translate>BackupFinished</Translate></span>
+              </div>
+            </li>
+            <li class={reducer.currentReducerState.backup_state === BackupStates.TruthsPaying ? 'is-active' : ''}>
+              <div class="ml-4">
+
+                <span class="menu-item-label"><Translate>TruthsPaying</Translate></span>
+              </div>
+            </li>
+          </Fragment> : (reducer.currentReducerState && reducer.currentReducerState?.recovery_state && <Fragment>
+            <li class={reducer.currentReducerState.recovery_state === RecoveryStates.ContinentSelecting ? 'is-active' : ''}>
+              <div class="ml-4">
+                <span class="menu-item-label"><Translate>TruthsPaying</Translate></span>
+              </div>
+            </li>
+            <li class={reducer.currentReducerState.recovery_state === RecoveryStates.CountrySelecting ? 'is-active' : ''}>
+              <div class="ml-4">
+                <span class="menu-item-label"><Translate>CountrySelecting</Translate></span>
+              </div>
+            </li>
+            <li class={reducer.currentReducerState.recovery_state === RecoveryStates.UserAttributesCollecting ? 'is-active' : ''}>
+              <div class="ml-4">
+                <span class="menu-item-label"><Translate>UserAttributesCollecting</Translate></span>
+              </div>
+            </li>
+            <li class={reducer.currentReducerState.recovery_state === RecoveryStates.SecretSelecting ? 'is-active' : ''}>
+              <div class="ml-4">
+                <span class="menu-item-label"><Translate>SecretSelecting</Translate></span>
+              </div>
+            </li>
+            <li class={reducer.currentReducerState.recovery_state === RecoveryStates.ChallengeSelecting ? 'is-active' : ''}>
+              <div class="ml-4">
+                <span class="menu-item-label"><Translate>ChallengeSelecting</Translate></span>
+              </div>
+            </li>
+            <li class={reducer.currentReducerState.recovery_state === RecoveryStates.ChallengeSolving ? 'is-active' : ''}>
+              <div class="ml-4">
+                <span class="menu-item-label"><Translate>ChallengeSolving</Translate></span>
+              </div>
+            </li>
+            <li class={reducer.currentReducerState.recovery_state === RecoveryStates.RecoveryFinished ? 'is-active' : ''}>
+              <div class="ml-4">
+                <span class="menu-item-label"><Translate>RecoveryFinished</Translate></span>
+              </div>
+            </li>
+          </Fragment>)}
+          {reducer.currentReducerState &&
+            <li>
+              <div class="buttons ml-4">
+                <button class="button is-danger is-right" onClick={() => reducer.reset()}>Reset session</button>
+              </div>
+            </li>
+          }
+
         </ul>
       </div>
     </aside>

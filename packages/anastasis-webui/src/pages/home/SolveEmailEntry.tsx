@@ -1,14 +1,17 @@
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
+import { useAnastasisContext } from "../../context/anastasis";
 import { AnastasisClientFrame, LabeledInput } from "./index";
 import { SolveEntryProps } from "./SolveScreen";
 
-export function SolveEmailEntry(props: SolveEntryProps): VNode {
+export function SolveEmailEntry({ challenge, feedback }: SolveEntryProps): VNode {
   const [answer, setAnswer] = useState("");
-  const { reducer, challenge, feedback } = props;
-  const next = (): void => reducer.transition("solve_challenge", {
-    answer,
-  });
+  const reducer = useAnastasisContext()
+  const next = (): void => {
+    if (reducer) reducer.transition("solve_challenge", {
+      answer,
+    })
+  };
   return (
     <AnastasisClientFrame
       title="Recovery: Solve challenge"

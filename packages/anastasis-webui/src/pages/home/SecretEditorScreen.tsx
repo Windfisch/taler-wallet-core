@@ -2,18 +2,29 @@
 import { encodeCrock, stringToBytes } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
+import { useAnastasisContext } from "../../context/anastasis";
 import {
-  BackupReducerProps,
   AnastasisClientFrame,
-  LabeledInput,
+  LabeledInput
 } from "./index";
 
-export function SecretEditorScreen(props: BackupReducerProps): VNode {
-  const { reducer } = props;
-  const [secretName, setSecretName] = useState(
-    props.backupState.secret_name ?? "",
-  );
+export function SecretEditorScreen(): VNode {
+  const reducer = useAnastasisContext()
   const [secretValue, setSecretValue] = useState("");
+
+  const currentSecretName = reducer?.currentReducerState 
+    && ("secret_name" in reducer.currentReducerState) 
+    && reducer.currentReducerState.secret_name;
+
+  const [secretName, setSecretName] = useState(currentSecretName || "");
+  
+  if (!reducer) {
+    return <div>no reducer in context</div>
+  }
+  if (!reducer.currentReducerState || reducer.currentReducerState.backup_state === undefined) {
+    return <div>invalid state</div>
+  }
+
   const secretNext = (): void => {
     reducer.runTransaction(async (tx) => {
       await tx.transition("enter_secret_name", {
