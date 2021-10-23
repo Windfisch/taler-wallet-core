@@ -40,7 +40,6 @@ export async function runLibeufinApiSandboxTransactionsTest(t: GlobalTestState) 
     bic: "BELADEBEXXX",
     name: "Mock Name",
     label: "mock-account",
-    currency: "EUR"
   });
   await LibeufinSandboxApi.simulateIncomingTransaction(
     sandbox, 

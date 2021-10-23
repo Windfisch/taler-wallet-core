@@ -158,7 +158,6 @@ export interface BankAccountInfo {
   iban: string;
   bic: string;
   name: string;
-  currency: string;
   label: string;
 }
 
@@ -209,15 +208,6 @@ export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
   }
 
   async start(): Promise<void> {
-    const stdout = await sh(
-      this.globalTestState,
-      "libeufin-sandbox-config",
-      "libeufin-sandbox config localhost",
-      {
-        ...process.env,
-        LIBEUFIN_SANDBOX_DB_CONNECTION: this.sandboxConfig.databaseJdbcUri,
-      },
-    );
     this.sandboxProc = this.globalTestState.spawnService(
       "libeufin-sandbox",
       ["serve", "--port", `${this.sandboxConfig.httpPort}`],
@@ -353,7 +343,6 @@ interface CreateEbicsBankAccountRequest {
   bic: string;
   // human name
   name: string;
-  currency: string;
   label: string;
 }
 
@@ -452,7 +441,6 @@ export class SandboxUserBundle {
   ebicsBankAccount: CreateEbicsBankAccountRequest;
   constructor(salt: string) {
     this.ebicsBankAccount = {
-      currency: "EUR",
       bic: "BELADEBEXXX",
       iban: getRandomIban("DE"),
       label: `remote-account-${salt}`,
@@ -526,7 +514,6 @@ export class LibeufinCli {
       this.globalTestState,
       "libeufin-cli-createebicsbankaccount",
       "libeufin-cli sandbox ebicsbankaccount create" +
-        ` --currency=${bankAccountDetails.currency}` +
         ` --iban=${bankAccountDetails.iban}` +
         ` --bic=${bankAccountDetails.bic}` +
         ` --person-name='${bankAccountDetails.personName}'` +

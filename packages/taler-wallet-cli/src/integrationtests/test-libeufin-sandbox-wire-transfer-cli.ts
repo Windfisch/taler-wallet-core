@@ -40,7 +40,6 @@ export async function runLibeufinSandboxWireTransferCliTest(t: GlobalTestState) 
     bic: "BELADEBEXXX",
     name: "Mock Name",
     label: "mock-account",
-    currency: "EUR"
   });
 
   await LibeufinSandboxApi.createBankAccount(sandbox, {
@@ -48,7 +47,6 @@ export async function runLibeufinSandboxWireTransferCliTest(t: GlobalTestState) 
     bic: "BELADEBEXXX",
     name: "Mock Name 2",
     label: "mock-account-2",
-    currency: "EUR"
   });
   await sandbox.makeTransaction(
     "mock-account", "mock-account-2", "EUR:1", "one!"

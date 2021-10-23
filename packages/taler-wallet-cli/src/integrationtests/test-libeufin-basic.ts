@@ -94,7 +94,6 @@ export async function createLibeufinTestEnvironment(
       partnerID: "partner01",
       userID: "user01",
     },
-    currency: "EUR",
   });
   // Subscriber and bank Account for the merchant
   // (Merchant doesn't need EBICS access, but sandbox right now only supports EBICS
@@ -114,7 +113,6 @@ export async function createLibeufinTestEnvironment(
       partnerID: "partner02",
       userID: "user02",
     },
-    currency: "EUR",
   });
 
   await LibeufinNexusApi.createEbicsBankConnection(libeufinNexus, {

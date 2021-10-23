@@ -43,14 +43,12 @@ export async function runLibeufinApiSandboxCamtTest(t: GlobalTestState) {
     bic: "BELADEBEXXX",
     name: "Mock Name",
     label: "mock-account-0",
-    currency: "EUR"
   });
   await LibeufinSandboxApi.createBankAccount(sandbox, {
     iban: "DE71500105179674997361",
     bic: "BELADEBEXXX",
     name: "Mock Name",
     label: "mock-account-1",
-    currency: "EUR"
   });
   await sandbox.makeTransaction("mock-account-0", "mock-account-1", "EUR:1", "+1");
   await sandbox.makeTransaction("mock-account-0", "mock-account-1", "EUR:1", "+1");

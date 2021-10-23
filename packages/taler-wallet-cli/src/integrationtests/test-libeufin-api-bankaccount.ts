@@ -63,7 +63,6 @@ export async function runLibeufinApiBankaccountTest(t: GlobalTestState) {
     iban: "DE71500105179674997361",
     bic: "BELADEBEXXX",
     name: "mock",
-    currency: "EUR",
     label: "mock",
   });
   await LibeufinNexusApi.createEbicsBankConnection(nexus, {
