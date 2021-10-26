@@ -20,23 +20,27 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 
-import { ReducerState } from 'anastasis-core';
+import { RecoveryStates, ReducerState } from 'anastasis-core';
 import { createExample, reducerStatesExample } from '../../utils';
 import { ChallengeOverviewScreen as TestedComponent } from './ChallengeOverviewScreen';
 
 
 export default {
-  title: 'Pages/ChallengeOverviewScreen',
+  title: 'Pages/recovery/ChallengeOverviewScreen',
   component: TestedComponent,
+  args: {
+    order: 5,
+  },
   argTypes: {
     onUpdate: { action: 'onUpdate' },
     onBack: { action: 'onBack' },
   },
 };
 
-export const OneChallenge = createExample(TestedComponent, {...reducerStatesExample.challengeSelecting,
+export const OneChallenge = createExample(TestedComponent, {
+  ...reducerStatesExample.challengeSelecting,
   recovery_information: {
-    policies: [[{uuid:'1'}]],
+    policies: [[{ uuid: '1' }]],
     challenges: [{
       cost: 'USD:1',
       instructions: 'just go for it',
@@ -46,37 +50,44 @@ export const OneChallenge = createExample(TestedComponent, {...reducerStatesExam
   },
 } as ReducerState);
 
-export const MoreChallenges = createExample(TestedComponent, {...reducerStatesExample.challengeSelecting,
+export const MoreChallenges = createExample(TestedComponent, {
+  ...reducerStatesExample.challengeSelecting,
   recovery_information: {
-    policies: [[{uuid:'1'}, {uuid:'2'}],[{uuid:'3'}]],
+    policies: [[{ uuid: '1' }, { uuid: '2' }], [{ uuid: 'uuid-3' }]],
     challenges: [{
       cost: 'USD:1',
       instructions: 'just go for it',
       type: 'question',
       uuid: '1',
-    },{
+    }, {
       cost: 'USD:1',
       instructions: 'just go for it',
       type: 'question',
       uuid: '2',
-    },{
+    }, {
       cost: 'USD:1',
       instructions: 'just go for it',
       type: 'question',
-      uuid: '3',
+      uuid: 'uuid-3',
     }]
   },
+  challenge_feedback: {
+    'uuid-3': {
+      state: 'solved'
+    }
+  }
 } as ReducerState);
 
-export const OneBadConfiguredPolicy = createExample(TestedComponent, {...reducerStatesExample.challengeSelecting,
+export const OneBadConfiguredPolicy = createExample(TestedComponent, {
+  ...reducerStatesExample.challengeSelecting,
   recovery_information: {
-    policies: [[{uuid:'2'}]],
+    policies: [[{ uuid: '2' }]],
     challenges: [{
       cost: 'USD:1',
       instructions: 'just go for it',
       type: 'sasd',
       uuid: '1',
-    }]
+    }],
   },
 } as ReducerState);
 

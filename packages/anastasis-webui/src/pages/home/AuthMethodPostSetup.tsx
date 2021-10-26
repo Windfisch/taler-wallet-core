@@ -6,7 +6,7 @@ import {
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { AuthMethodSetupProps } from "./AuthenticationEditorScreen";
-import { LabeledInput } from "./index";
+import { LabeledInput } from "../../components/fields/LabeledInput";
 
 export function AuthMethodPostSetup(props: AuthMethodSetupProps): VNode {
   const [fullName, setFullName] = useState("");

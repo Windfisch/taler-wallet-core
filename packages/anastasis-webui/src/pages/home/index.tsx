@@ -11,10 +11,7 @@ import {
   VNode
 } from "preact";
 import {
-  useErrorBoundary,
-  useLayoutEffect,
-  useRef
-} from "preact/hooks";
+  useErrorBoundary} from "preact/hooks";
 import { Menu } from "../../components/menu";
 import { AnastasisProvider, useAnastasisContext } from "../../context/anastasis";
 import {
@@ -25,6 +22,7 @@ import { AttributeEntryScreen } from "./AttributeEntryScreen";
 import { AuthenticationEditorScreen } from "./AuthenticationEditorScreen";
 import { BackupFinishedScreen } from "./BackupFinishedScreen";
 import { ChallengeOverviewScreen } from "./ChallengeOverviewScreen";
+import { ChallengePayingScreen } from "./ChallengePayingScreen";
 import { ContinentSelectionScreen } from "./ContinentSelectionScreen";
 import { CountrySelectionScreen } from "./CountrySelectionScreen";
 import { PoliciesPayingScreen } from "./PoliciesPayingScreen";
@@ -118,9 +116,9 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
           <ErrorBanner />
           {props.children}
           {!props.hideNav ? (
-            <div>
-              <button onClick={() => reducer.back()}>Back</button>
-              {!props.hideNext ? <button onClick={next}>Next</button> : null}
+            <div style={{marginTop: '2em', display:'flex', justifyContent:'space-between'}}>
+              <button class="button" onClick={() => reducer.back()}>Back</button>
+              {!props.hideNext ? <button class="button is-info"onClick={next}>Next</button> : null}
             </div>
           ) : null}
         </div>
@@ -222,7 +220,9 @@ const AnastasisClientImpl: FunctionalComponent = () => {
       <RecoveryFinishedScreen />
     );
   }
-
+  if (state.recovery_state === RecoveryStates.ChallengePaying) {
+    return <ChallengePayingScreen />;
+  }
   console.log("unknown state", reducer.currentReducerState);
   return (
     <AnastasisClientFrame hideNav title="Bug">
@@ -233,32 +233,6 @@ const AnastasisClientImpl: FunctionalComponent = () => {
     </AnastasisClientFrame>
   );
 };
-
-interface LabeledInputProps {
-  label: string;
-  grabFocus?: boolean;
-  bind: [string, (x: string) => void];
-}
-
-export function LabeledInput(props: LabeledInputProps): VNode {
-  const inputRef = useRef<HTMLInputElement>(null);
-  useLayoutEffect(() => {
-    if (props.grabFocus) {
-      inputRef.current?.focus();
-    }
-  }, [props.grabFocus]);
-  return (
-    <label>
-      {props.label}
-      <input
-        value={props.bind[0]}
-        onChange={(e) => props.bind[1]((e.target as HTMLInputElement).value)}
-        ref={inputRef}
-        style={{ display: "block" }}
-      />
-    </label>
-  );
-}
 
 /**
  * Show a dismissible error banner if there is a current error.

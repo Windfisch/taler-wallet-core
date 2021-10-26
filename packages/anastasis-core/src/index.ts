@@ -77,6 +77,7 @@ import { EscrowMethod, RecoveryDocument } from "./recovery-document-types.js";
 const { fetch, Request, Response, Headers } = fetchPonyfill({});
 
 export * from "./reducer-types.js";
+export * as validators from './validators.js';
 
 function getContinents(): ContinentInfo[] {
   const continentSet = new Set<string>();

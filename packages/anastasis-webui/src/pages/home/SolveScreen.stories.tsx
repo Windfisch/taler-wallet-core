@@ -26,8 +26,11 @@ import { SolveScreen as TestedComponent } from './SolveScreen';
 
 
 export default {
-  title: 'Pages/SolveScreen',
+  title: 'Pages/recovery/SolveScreen',
   component: TestedComponent,
+  args: {
+    order: 6,
+  },
   argTypes: {
     onUpdate: { action: 'onUpdate' },
     onBack: { action: 'onBack' },

@@ -7,11 +7,11 @@ export function ContinentSelectionScreen(): VNode {
   if (!reducer || !reducer.currentReducerState || !("continents" in reducer.currentReducerState)) {
     return <div />
   }
-  const sel = (x: string): void => reducer.transition("select_continent", { continent: x });
+  const select = (continent: string) => (): void => reducer.transition("select_continent", { continent });
   return (
     <AnastasisClientFrame hideNext title={withProcessLabel(reducer, "Select Continent")}>
       {reducer.currentReducerState.continents.map((x: any) => (
-        <button onClick={() => sel(x.name)} key={x.name}>
+        <button class="button" onClick={select(x.name)} key={x.name}>
           {x.name}
         </button>
       ))}

@@ -6,7 +6,8 @@ import {
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { AuthMethodSetupProps } from "./AuthenticationEditorScreen";
-import { AnastasisClientFrame, LabeledInput } from "./index";
+import { AnastasisClientFrame } from "./index";
+import { LabeledInput } from "../../components/fields/LabeledInput";
 
 export function AuthMethodEmailSetup(props: AuthMethodSetupProps): VNode {
   const [email, setEmail] = useState("");

@@ -24,8 +24,11 @@ import { AuthenticationEditorScreen as TestedComponent } from './AuthenticationE
 
 
 export default {
-  title: 'Pages/AuthenticationEditorScreen',
+  title: 'Pages/backup/AuthenticationEditorScreen',
   component: TestedComponent,
+  args: {
+    order: 5,
+  },
   argTypes: {
     onUpdate: { action: 'onUpdate' },
     onBack: { action: 'onBack' },

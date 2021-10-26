@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/camelcase */
+import { UserAttributeSpec, validators } from "anastasis-core";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { ReducerStateRecovery, ReducerStateBackup, UserAttributeSpec } from "anastasis-core/lib";
 import { useAnastasisContext } from "../../context/anastasis";
-import { AnastasisReducerApi } from "../../hooks/use-anastasis-reducer";
-import { AnastasisClientFrame, withProcessLabel, LabeledInput } from "./index";
+import { AnastasisClientFrame, withProcessLabel } from "./index";
+import { LabeledInput } from "../../components/fields/LabeledInput";
+import { DateInput } from "../../components/fields/DateInput";
 
 export function AttributeEntryScreen(): VNode {
   const reducer = useAnastasisContext()
@@ -18,48 +19,105 @@ export function AttributeEntryScreen(): VNode {
   if (!reducer.currentReducerState || !("required_attributes" in reducer.currentReducerState)) {
     return <div>invalid state</div>
   }
-  
+
+
   return (
     <AnastasisClientFrame
-      title={withProcessLabel(reducer, "Select Country")}
+      title={withProcessLabel(reducer, "Who are you?")}
       onNext={() => reducer.transition("enter_user_attributes", {
         identity_attributes: attrs,
       })}
     >
-      {reducer.currentReducerState.required_attributes?.map((x, i: number) => {
-        return (
-          <AttributeEntryField
-            key={i}
-            isFirst={i == 0}
-            setValue={(v: string) => setAttrs({ ...attrs, [x.name]: v })}
-            spec={x}
-            value={attrs[x.name]} />
-        );
-      })}
+      <div class="columns">
+        <div class="column is-half">
+
+          {reducer.currentReducerState.required_attributes?.map((x, i: number) => {
+            const value = attrs[x.name]
+            function checkIfValid(): string | undefined {
+              const pattern = x['validation-regex']
+              if (pattern) {
+                const re = new RegExp(pattern)
+                if (!re.test(value)) return 'The value is invalid'
+              }
+              const logic = x['validation-logic']
+              if (logic) {
+                const func = (validators as any)[logic];
+                if (func && typeof func === 'function' && !func(value)) return 'Please check the value'
+              }
+              const optional = x.optional
+              console.log('optiona', optional)
+              if (!optional && !value) {
+                return 'This value is required'
+              }
+              return undefined
+            }
+
+            return (
+              <AttributeEntryField
+                key={i}
+                isFirst={i == 0}
+                setValue={(v: string) => setAttrs({ ...attrs, [x.name]: v })}
+                spec={x}
+                isValid={checkIfValid}
+                value={value} />
+            );
+          })}
+
+        </div>
+        <div class="column is-half" >
+          <h1><b>This stay private</b></h1>
+          <p>The information you have entered here:
+          </p>
+          <ul>
+            <li>
+              <span class="icon is-right">
+                <i class="mdi mdi-circle-small" />
+              </span>
+              Will be hashed, and therefore unreadable
+            </li>
+            <li><span class="icon is-right">
+              <i class="mdi mdi-circle-small" />
+            </span>The non-hashed version is not shared</li>
+          </ul>
+        </div>
+      </div>
     </AnastasisClientFrame>
   );
 }
 
-interface AttributeEntryProps {
-  reducer: AnastasisReducerApi;
-  reducerState: ReducerStateRecovery | ReducerStateBackup;
-}
-
-export interface AttributeEntryFieldProps {
+interface AttributeEntryFieldProps {
   isFirst: boolean;
   value: string;
   setValue: (newValue: string) => void;
   spec: UserAttributeSpec;
+  isValid: () => string | undefined;
 }
 
-export function AttributeEntryField(props: AttributeEntryFieldProps): VNode {
+function AttributeEntryField(props: AttributeEntryFieldProps): VNode {
+  const errorMessage = props.isValid()
+
   return (
     <div>
-      <LabeledInput
-        grabFocus={props.isFirst}
-        label={props.spec.label}
-        bind={[props.value, props.setValue]}
-      />
+      {props.spec.type === 'date' ?
+        <DateInput
+          grabFocus={props.isFirst}
+          label={props.spec.label}
+          error={errorMessage}
+          bind={[props.value, props.setValue]}
+        /> :
+        <LabeledInput
+          grabFocus={props.isFirst}
+          label={props.spec.label}
+          error={errorMessage}
+          bind={[props.value, props.setValue]}
+        />
+      }
+      <span>
+        <span class="icon is-right">
+          <i class="mdi mdi-eye-off" />
+        </span>
+        This stay private
+      </span>
     </div>
   );
 }

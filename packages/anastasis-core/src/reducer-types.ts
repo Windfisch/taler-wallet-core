@@ -93,6 +93,9 @@ export interface UserAttributeSpec {
   type: string;
   uuid: string;
   widget: string;
+  optional?: boolean;
+  'validation-regex': string | undefined;
+  'validation-logic': string | undefined;
 }
 
 export interface RecoveryInternalData {

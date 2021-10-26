@@ -1,0 +1,40 @@
+import { h, VNode } from "preact";
+import { useLayoutEffect, useRef, useState } from "preact/hooks";
+
+export interface LabeledInputProps {
+  label: string;
+  grabFocus?: boolean;
+  error?: string;
+  tooltip?: string;
+  bind: [string, (x: string) => void];
+}
+
+export function LabeledInput(props: LabeledInputProps): VNode {
+  const inputRef = useRef<HTMLInputElement>(null);
+  useLayoutEffect(() => {
+    if (props.grabFocus) {
+      inputRef.current?.focus();
+    }
+  }, [props.grabFocus]);
+  const value = props.bind[0];
+  const [dirty, setDirty] = useState(false)
+  const showError = dirty && props.error
+  return (<div class="field">
+    <label class="label">
+      {props.label}
+      {props.tooltip && <span class="icon has-tooltip-right" data-tooltip={props.tooltip}>
+        <i class="mdi mdi-information" />
+      </span>}
+    </label>
+    <div class="control has-icons-right">
+      <input
+        value={value}
+        class={showError ? 'input is-danger' : 'input'}
+        onChange={(e) => {setDirty(true); props.bind[1]((e.target as HTMLInputElement).value)}}
+        ref={inputRef}
+        style={{ display: "block" }} />
+    </div>
+    {showError && <p class="help is-danger">{props.error}</p>}
+  </div>
+  );
+}

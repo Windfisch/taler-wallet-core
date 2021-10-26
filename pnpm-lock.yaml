@@ -49,6 +49,7 @@ importers:
       bulma: ^0.9.3
       bulma-checkbox: ^1.1.1
       bulma-radio: ^1.1.1
+      date-fns: 2.22.1
       enzyme: ^3.11.0
       enzyme-adapter-preact-pure: ^3.1.0
       eslint: ^6.8.0
@@ -67,6 +68,7 @@ importers:
     dependencies:
       '@gnu-taler/taler-util': link:../taler-util
       anastasis-core: link:../anastasis-core
+      date-fns: 2.22.1
       jed: 1.1.1
       preact: 10.5.14
       preact-render-to-string: 5.1.19_preact@10.5.14
@@ -8821,7 +8823,7 @@ packages:
   /axios/0.21.1:
     resolution: {integrity: sha512-dKQiRHxGD9PPRIUNIWvZhPTPpl1rf/OxTYKsqKUDjBwYylTvV7SjSHJb9ratfyzM6wCdLCOYLzs73qpg5c4iGA==}
     dependencies:
-      follow-redirects: 1.14.2
+      follow-redirects: 1.14.2_debug@4.3.2
     transitivePeerDependencies:
       - debug
 
@@ -10877,6 +10879,11 @@ packages:
       whatwg-url: 8.7.0
     dev: true
 
+  /date-fns/2.22.1:
+    resolution: {integrity: sha512-yUFPQjrxEmIsMqlHhAhmxkuH769baF21Kk+nZwZGyrMoyLA+LugaQtC0+Tqf9CBUUULWwUJt6Q5ySI3LJDDCGg==}
+    engines: {node: '>=0.11'}
+    dev: false
+
   /date-fns/2.23.0:
     resolution: {integrity: sha512-5ycpauovVyAk0kXNZz6ZoB9AYMZB4DObse7P3BPWmyEjXNORTI8EJ6X0uaSAq4sCHzM1uajzrkr6HnsLQpxGXA==}
     engines: {node: '>=0.11'}
@@ -12618,7 +12625,7 @@ packages:
       readable-stream: 2.3.7
     dev: true
 
-  /follow-redirects/1.14.2:
+  /follow-redirects/1.14.2_debug@4.3.2:
     resolution: {integrity: sha512-yLR6WaE2lbF0x4K2qE2p9PEXKLDjUjnR/xmjS3wHAYxtlsI9MLLBJUZirAHKzUZDGLxje7w/cXR49WOUo4rbsA==}
     engines: {node: '>=4.0'}
     peerDependencies:
@@ -12626,6 +12633,8 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
+    dependencies:
+      debug: 4.3.2_supports-color@6.1.0
 
   /for-each/0.3.3:
     resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}
@@ -13660,7 +13669,7 @@ packages:
     engines: {node: '>=8.0.0'}
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.14.2
+      follow-redirects: 1.14.2_debug@4.3.2
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug
@@ -17139,7 +17148,7 @@ packages:
     resolution: {integrity: sha512-7Wjy+9E3WwLOEL30D+m8TSTF7qJJUJLONBnwQp0518siuMxUQUbgZwssaFX+QKlZkjHZcw/IpZCt/H0srrntSg==}
     engines: {node: '>=6'}
     dependencies:
-      ts-pnp: 1.2.0_typescript@3.9.10
+      ts-pnp: 1.2.0_typescript@4.4.3
     transitivePeerDependencies:
       - typescript
     dev: true
@@ -17157,7 +17166,7 @@ packages:
     resolution: {integrity: sha512-2Rb3vm+EXble/sMXNSu6eoBx8e79gKqhNq9F5ZWW6ERNCTE/Q0wQNne5541tE5vKjfM8hpNCYL+LGc1YTfI0dg==}
     engines: {node: '>=6'}
     dependencies:
-      ts-pnp: 1.2.0_typescript@4.3.5
+      ts-pnp: 1.2.0_typescript@4.4.3
     transitivePeerDependencies:
       - typescript
     dev: true
@@ -20910,18 +20919,6 @@ packages:
     resolution: {integrity: sha512-3IVX4nI6B5cc31/GFFE+i8ey/N2eA0CZDbo6n0yrz0zDX8ZJ8djmU1p+XRz7G3is0F3bB3pu2pAroFdAWQKU3w==}
     dev: true
 
-  /ts-pnp/1.2.0_typescript@3.9.10:
-    resolution: {integrity: sha512-csd+vJOb/gkzvcCHgTGSChYpy5f1/XKNsmvBGO4JXS+z1v2HobugDz4s1IeFXM3wZB44uczs+eazB5Q/ccdhQw==}
-    engines: {node: '>=6'}
-    peerDependencies:
-      typescript: '*'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-    dependencies:
-      typescript: 3.9.10
-    dev: true
-
   /ts-pnp/1.2.0_typescript@4.3.5:
     resolution: {integrity: sha512-csd+vJOb/gkzvcCHgTGSChYpy5f1/XKNsmvBGO4JXS+z1v2HobugDz4s1IeFXM3wZB44uczs+eazB5Q/ccdhQw==}
     engines: {node: '>=6'}
@@ -20932,6 +20929,18 @@ packages:
         optional: true
     dependencies:
       typescript: 4.3.5
+    dev: true
+
+  /ts-pnp/1.2.0_typescript@4.4.3:
+    resolution: {integrity: sha512-csd+vJOb/gkzvcCHgTGSChYpy5f1/XKNsmvBGO4JXS+z1v2HobugDz4s1IeFXM3wZB44uczs+eazB5Q/ccdhQw==}
+    engines: {node: '>=6'}
+    peerDependencies:
+      typescript: '*'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+    dependencies:
+      typescript: 4.4.3
     dev: true
 
   /tsconfig-paths/3.9.0:

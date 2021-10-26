@@ -26,11 +26,14 @@ import { ContinentSelectionScreen as TestedComponent } from './ContinentSelectio
 export default {
   title: 'Pages/ContinentSelectionScreen',
   component: TestedComponent,
+  args: {
+    order: 2,
+  },
   argTypes: {
     onUpdate: { action: 'onUpdate' },
     onBack: { action: 'onBack' },
   },
 };
 
-export const Backup = createExample(TestedComponent, reducerStatesExample.backupSelectCountry);
-export const Recovery = createExample(TestedComponent, reducerStatesExample.recoverySelectCountry);
+export const Backup = createExample(TestedComponent, reducerStatesExample.backupSelectContinent);
+export const Recovery = createExample(TestedComponent, reducerStatesExample.recoverySelectContinent);

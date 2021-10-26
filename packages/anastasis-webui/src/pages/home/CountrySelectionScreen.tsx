@@ -17,11 +17,15 @@ export function CountrySelectionScreen(): VNode {
   });
   return (
     <AnastasisClientFrame hideNext title={withProcessLabel(reducer, "Select Country")} >
-      {reducer.currentReducerState.countries.map((x: any) => (
-        <button onClick={() => sel(x)} key={x.name}>
-          {x.name} ({x.currency})
-        </button>
-      ))}
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {reducer.currentReducerState.countries.map((x: any) => (
+          <div key={x.name}>
+            <button class="button" onClick={() => sel(x)} >
+              {x.name} ({x.currency})
+            </button>
+          </div>
+        ))}
+      </div>
     </AnastasisClientFrame>
   );
 }

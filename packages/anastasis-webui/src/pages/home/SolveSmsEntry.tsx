@@ -1,7 +1,8 @@
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useAnastasisContext } from "../../context/anastasis";
-import { AnastasisClientFrame, LabeledInput } from "./index";
+import { AnastasisClientFrame } from "./index";
+import { LabeledInput } from "../../components/fields/LabeledInput";
 import { SolveEntryProps } from "./SolveScreen";
 
 export function SolveSmsEntry({ challenge, feedback }: SolveEntryProps): VNode {

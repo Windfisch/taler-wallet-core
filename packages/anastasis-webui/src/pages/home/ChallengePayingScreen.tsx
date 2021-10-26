@@ -2,19 +2,19 @@ import { h, VNode } from "preact";
 import { useAnastasisContext } from "../../context/anastasis";
 import { AnastasisClientFrame } from "./index";
 
-export function TruthsPayingScreen(): VNode {
+export function ChallengePayingScreen(): VNode {
   const reducer = useAnastasisContext()
   if (!reducer) {
     return <div>no reducer in context</div>
   }
-  if (!reducer.currentReducerState || reducer.currentReducerState.backup_state === undefined) {
+  if (!reducer.currentReducerState || reducer.currentReducerState.recovery_state === undefined) {
     return <div>invalid state</div>
   }
-  const payments = reducer.currentReducerState.payments ?? [];
+  const payments = ['']; //reducer.currentReducerState.payments ?? 
   return (
     <AnastasisClientFrame
       hideNext
-      title="Backup: Truths Paying"
+      title="Recovery: Challenge Paying"
     >
       <p>
         Some of the providers require a payment to store the encrypted

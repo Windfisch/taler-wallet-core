@@ -26,8 +26,11 @@ import { SecretSelectionScreen as TestedComponent } from './SecretSelectionScree
 
 
 export default {
-  title: 'Pages/SecretSelectionScreen',
+  title: 'Pages/recovery/SecretSelectionScreen',
   component: TestedComponent,
+  args: {
+    order: 4,
+  },
   argTypes: {
     onUpdate: { action: 'onUpdate' },
     onBack: { action: 'onBack' },

@@ -26,7 +26,10 @@ import { ReviewPoliciesScreen as TestedComponent } from './ReviewPoliciesScreen'
 
 
 export default {
-  title: 'Pages/ReviewPoliciesScreen',
+  title: 'Pages/backup/ReviewPoliciesScreen',
+  args: {
+    order: 6,
+  },
   component: TestedComponent,
   argTypes: {
     onUpdate: { action: 'onUpdate' },

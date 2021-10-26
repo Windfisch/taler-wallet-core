@@ -59,25 +59,21 @@ export function Sidebar({ mobile }: Props): VNode {
           {!reducer.currentReducerState &&
             <li>
               <div class="ml-4">
-                <span class="menu-item-label"><Translate>Start one options</Translate></span>
+                <span class="menu-item-label"><Translate>Select one option</Translate></span>
               </div>
             </li>
           }
           {reducer.currentReducerState && reducer.currentReducerState.backup_state ? <Fragment>
-            <li class={reducer.currentReducerState.backup_state === BackupStates.ContinentSelecting ? 'is-active' : ''}>
+            <li class={
+                reducer.currentReducerState.backup_state === BackupStates.ContinentSelecting ||
+                reducer.currentReducerState.backup_state === BackupStates.CountrySelecting ? 'is-active' : ''}>
               <div class="ml-4">
-                <span class="menu-item-label"><Translate>Continent selection</Translate></span>
-              </div>
-            </li>
-            <li class={reducer.currentReducerState.backup_state === BackupStates.CountrySelecting ? 'is-active' : ''}>
-              <div class="ml-4">
-                <span class="menu-item-label"><Translate>Country selection</Translate></span>
+                <span class="menu-item-label"><Translate>Location &amp; Currency</Translate></span>
               </div>
             </li>
             <li class={reducer.currentReducerState.backup_state === BackupStates.UserAttributesCollecting ? 'is-active' : ''}>
               <div class="ml-4">
-
-                <span class="menu-item-label"><Translate>User attributes</Translate></span>
+                <span class="menu-item-label"><Translate>Personal information</Translate></span>
               </div>
             </li>
             <li class={reducer.currentReducerState.backup_state === BackupStates.AuthenticationsEditing ? 'is-active' : ''}>
@@ -119,7 +115,7 @@ export function Sidebar({ mobile }: Props): VNode {
           </Fragment> : (reducer.currentReducerState && reducer.currentReducerState?.recovery_state && <Fragment>
             <li class={reducer.currentReducerState.recovery_state === RecoveryStates.ContinentSelecting ? 'is-active' : ''}>
               <div class="ml-4">
-                <span class="menu-item-label"><Translate>TruthsPaying</Translate></span>
+                <span class="menu-item-label"><Translate>ContinentSelecting</Translate></span>
               </div>
             </li>
             <li class={reducer.currentReducerState.recovery_state === RecoveryStates.CountrySelecting ? 'is-active' : ''}>

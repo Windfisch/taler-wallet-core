@@ -26,7 +26,10 @@ import { RecoveryFinishedScreen as TestedComponent } from './RecoveryFinishedScr
 
 
 export default {
-  title: 'Pages/RecoveryFinishedScreen',
+  title: 'Pages/recovery/FinishedScreen',
+  args: {
+    order: 7,
+  },
   component: TestedComponent,
   argTypes: {
     onUpdate: { action: 'onUpdate' },

@@ -4,9 +4,8 @@ import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useAnastasisContext } from "../../context/anastasis";
 import {
-  AnastasisClientFrame,
-  LabeledInput
-} from "./index";
+  AnastasisClientFrame} from "./index";
+import { LabeledInput } from "../../components/fields/LabeledInput";
 
 export function SecretEditorScreen(): VNode {
   const reducer = useAnastasisContext()

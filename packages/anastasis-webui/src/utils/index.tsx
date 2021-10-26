@@ -115,14 +115,8 @@ export const reducerStatesExample = {
   recoverySelectCountry: {...base,
     recovery_state: RecoveryStates.CountrySelecting
   } as ReducerState,
-  backupSelectCountry: {...base,
-    backup_state: BackupStates.CountrySelecting
-  } as ReducerState,
   recoverySelectContinent: {...base,
     recovery_state: RecoveryStates.ContinentSelecting,
-  } as ReducerState,
-  backupSelectContinent: {...base,
-    backup_state: BackupStates.ContinentSelecting,
   } as ReducerState,
   secretSelection: {...base,
     recovery_state: RecoveryStates.SecretSelecting,
@@ -135,6 +129,18 @@ export const reducerStatesExample = {
   } as ReducerState,
   challengeSolving: {...base,
     recovery_state: RecoveryStates.ChallengeSolving,
+  } as ReducerState,
+  challengePaying: {...base,
+    recovery_state: RecoveryStates.ChallengePaying,
+  } as ReducerState,
+  recoveryAttributeEditing: {...base,
+    recovery_state: RecoveryStates.UserAttributesCollecting
+  } as ReducerState,
+  backupSelectCountry: {...base,
+    backup_state: BackupStates.CountrySelecting
+  } as ReducerState,
+  backupSelectContinent: {...base,
+    backup_state: BackupStates.ContinentSelecting,
   } as ReducerState,
   secretEdition: {...base,
     backup_state: BackupStates.SecretEditing,
@@ -151,7 +157,7 @@ export const reducerStatesExample = {
   authEditing: {...base,
     backup_state: BackupStates.AuthenticationsEditing
   } as ReducerState,
-  attributeEditing: {...base,
+  backupAttributeEditing: {...base,
     backup_state: BackupStates.UserAttributesCollecting
   } as ReducerState,
   truthsPaying: {...base,
