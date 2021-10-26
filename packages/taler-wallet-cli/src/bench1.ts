@@ -48,10 +48,13 @@ export async function runBench1(configJson: any): Promise<void> {
   await wallet.client.call(WalletApiOperation.InitWallet, {});
 
   const numIter = b1conf.iterations ?? 1;
+  const numDeposits = b1conf.deposits ?? 5;
+
+  const withdrawAmount = (numDeposits + 1) * 10;
 
   for (let i = 0; i < numIter; i++) {
     await wallet.client.call(WalletApiOperation.WithdrawFakebank, {
-      amount: "TESTKUDOS:10",
+      amount: b1conf.currency + ":" + string(withdrawAmount),
       bank: b1conf.bank,
       exchange: b1conf.exchange,
     });
@@ -60,14 +63,16 @@ export async function runBench1(configJson: any): Promise<void> {
       stopWhenDone: true,
     });
 
-    await wallet.client.call(WalletApiOperation.CreateDepositGroup, {
-      amount: "TESTKUDOS:5",
-      depositPaytoUri: "payto://x-taler-bank/localhost/foo",
-    });
+    for (let i = 0; i < numDeposits; i++) {
+      await wallet.client.call(WalletApiOperation.CreateDepositGroup, {
+        amount: b1conf.currency + ":10",
+        depositPaytoUri: b1conf.payto,
+      });
 
-    await wallet.runTaskLoop({
-      stopWhenDone: true,
-    });
+      await wallet.runTaskLoop({
+        stopWhenDone: true,
+      });
+    }
   }
 
   wallet.stop();
@@ -83,6 +88,11 @@ interface Bench1Config {
   bank: string;
 
   /**
+   * Payto url for deposits.
+   */
+  payto: string;
+
+  /**
    * Base URL of the exchange.
    */
   exchange: string;
@@ -92,6 +102,10 @@ interface Bench1Config {
    * Defaults to 1.
    */
   iterations?: number;
+
+  currency: string;
+
+  deposits?: number;
 }
 
 /**
@@ -100,6 +114,9 @@ interface Bench1Config {
 const codecForBench1Config = () =>
   buildCodecForObject<Bench1Config>()
     .property("bank", codecForString())
+    .property("payto", codecForString())
     .property("exchange", codecForString())
     .property("iterations", codecOptional(codecForNumber()))
+    .property("deposits", codecOptional(codecForNumber()))
+    .property("currency", codecForString())
     .build("Bench1Config");
