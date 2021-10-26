@@ -54,7 +54,7 @@ export async function runBench1(configJson: any): Promise<void> {
 
   for (let i = 0; i < numIter; i++) {
     await wallet.client.call(WalletApiOperation.WithdrawFakebank, {
-      amount: b1conf.currency + ":" + string(withdrawAmount),
+      amount: b1conf.currency + ":" + withdrawAmount,
       bank: b1conf.bank,
       exchange: b1conf.exchange,
     });
