@@ -164,8 +164,6 @@ export interface ReducerStateRecovery {
   };
 
   authentication_providers?: { [url: string]: AuthenticationProviderStatus };
-
-  recovery_error?: any;
 }
 
 export interface ChallengeFeedback {
