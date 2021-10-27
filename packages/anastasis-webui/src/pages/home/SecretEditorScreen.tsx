@@ -5,7 +5,7 @@ import { useState } from "preact/hooks";
 import { useAnastasisContext } from "../../context/anastasis";
 import {
   AnastasisClientFrame} from "./index";
-import { LabeledInput } from "../../components/fields/LabeledInput";
+import { TextInput } from "../../components/fields/TextInput";
 
 export function SecretEditorScreen(): VNode {
   const reducer = useAnastasisContext()
@@ -47,14 +47,14 @@ export function SecretEditorScreen(): VNode {
       onNext={() => secretNext()}
     >
       <div>
-        <LabeledInput
+        <TextInput
           label="Secret Name:"
           grabFocus
           bind={[secretName, setSecretName]}
         />
       </div>
       <div>
-        <LabeledInput
+        <TextInput
           label="Secret Value:"
           bind={[secretValue, setSecretValue]}
         />

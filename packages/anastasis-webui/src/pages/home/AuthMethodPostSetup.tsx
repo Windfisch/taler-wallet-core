@@ -6,7 +6,7 @@ import {
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { AuthMethodSetupProps } from "./AuthenticationEditorScreen";
-import { LabeledInput } from "../../components/fields/LabeledInput";
+import { TextInput } from "../../components/fields/TextInput";
 
 export function AuthMethodPostSetup(props: AuthMethodSetupProps): VNode {
   const [fullName, setFullName] = useState("");
@@ -42,22 +42,22 @@ export function AuthMethodPostSetup(props: AuthMethodSetupProps): VNode {
           code that you will receive in a letter to that address.
         </p>
         <div>
-          <LabeledInput
+          <TextInput
             grabFocus
             label="Full Name"
             bind={[fullName, setFullName]} />
         </div>
         <div>
-          <LabeledInput label="Street" bind={[street, setStreet]} />
+          <TextInput label="Street" bind={[street, setStreet]} />
         </div>
         <div>
-          <LabeledInput label="City" bind={[city, setCity]} />
+          <TextInput label="City" bind={[city, setCity]} />
         </div>
         <div>
-          <LabeledInput label="Postal Code" bind={[postcode, setPostcode]} />
+          <TextInput label="Postal Code" bind={[postcode, setPostcode]} />
         </div>
         <div>
-          <LabeledInput label="Country" bind={[country, setCountry]} />
+          <TextInput label="Country" bind={[country, setCountry]} />
         </div>
         <div>
           <button onClick={() => props.cancel()}>Cancel</button>

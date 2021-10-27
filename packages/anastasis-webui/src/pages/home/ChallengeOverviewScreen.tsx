@@ -1,3 +1,4 @@
+import { ChallengeFeedback } from "anastasis-core";
 import { h, VNode } from "preact";
 import { useAnastasisContext } from "../../context/anastasis";
 import { AnastasisClientFrame } from "./index";
@@ -13,65 +14,94 @@ export function ChallengeOverviewScreen(): VNode {
   }
 
   const policies = reducer.currentReducerState.recovery_information?.policies ?? [];
-  const chArr = reducer.currentReducerState.recovery_information?.challenges ?? [];
-  const challengeFeedback = reducer.currentReducerState?.challenge_feedback;
+  const knownChallengesArray = reducer.currentReducerState.recovery_information?.challenges ?? [];
+  const challengeFeedback = reducer.currentReducerState?.challenge_feedback ?? {};
 
-  const challenges: {
+  const knownChallengesMap: {
     [uuid: string]: {
       type: string;
       instructions: string;
       cost: string;
+      feedback: ChallengeFeedback | undefined;
     };
   } = {};
-  for (const ch of chArr) {
-    challenges[ch.uuid] = {
+  for (const ch of knownChallengesArray) {
+    knownChallengesMap[ch.uuid] = {
       type: ch.type,
       cost: ch.cost,
       instructions: ch.instructions,
+      feedback: challengeFeedback[ch.uuid]
     };
   }
+  const policiesWithInfo = policies.map(row => {
+    let isPolicySolved = true
+    const challenges = row.map(({ uuid }) => {
+      const info = knownChallengesMap[uuid];
+      const isChallengeSolved = info?.feedback?.state === 'solved'
+      isPolicySolved = isPolicySolved && isChallengeSolved
+      return { info, uuid, isChallengeSolved }
+    }).filter(ch => ch.info !== undefined)
+
+    return { isPolicySolved, challenges }
+  })
+
+  const atLeastThereIsOnePolicySolved = policiesWithInfo.find(p => p.isPolicySolved) !== undefined
+
   return (
-    <AnastasisClientFrame title="Recovery: Solve challenges">
-      <h2>Policies</h2>
-      {!policies.length && <p>
-        No policies found
-      </p>}
-      {policies.map((row, i) => {
+    <AnastasisClientFrame hideNext={!atLeastThereIsOnePolicySolved} title="Recovery: Solve challenges">
+      {!policies.length ? <p>
+        No policies found, try with another version of the secret
+      </p> : (policies.length === 1 ? <p>
+        One policy found for this secret. You need to solve all the challenges in order to recover your secret.
+      </p> : <p>
+        We have found {policies.length} polices. You need to solve all the challenges from one policy in order
+        to recover your secret.
+      </p>)}
+      {policiesWithInfo.map((row, i) => {
+        const tableBody = row.challenges.map(({ info, uuid }) => {
+          return (
+            <tr key={uuid}>
+              <td>{info.type}</td>
+              <td>
+                {info.instructions}
+              </td>
+              <td>{info.feedback?.state ?? "unknown"}</td>
+              <td>{info.cost}</td>
+              <td>
+                {info.feedback?.state !== "solved" ? (
+                  <a onClick={() => reducer.transition("select_challenge", { uuid })}>
+                    Solve
+                  </a>
+                ) : null}
+              </td>
+            </tr>
+          );
+        })
         return (
           <div key={i}>
-            <h3>Policy #{i + 1}</h3>
-            {row.map(column => {
-              const ch = challenges[column.uuid];
-              if (!ch) return <div>
-                There is no challenge for this policy
-              </div>
-              const feedback = challengeFeedback?.[column.uuid];
-              return (
-                <div key={column.uuid}
-                  style={{
-                    borderLeft: "2px solid gray",
-                    paddingLeft: "0.5em",
-                    borderRadius: "0.5em",
-                    marginTop: "0.5em",
-                    marginBottom: "0.5em",
-                  }}
-                >
-                  <h4>
-                    {ch.type} ({ch.instructions})
-                  </h4>
-                  <p>Status: {feedback?.state ?? "unknown"}</p>
-                  {feedback?.state !== "solved" ? (
-                    <button
-                      onClick={() => reducer.transition("select_challenge", {
-                        uuid: column.uuid,
-                      })}
-                    >
-                      Solve
-                    </button>
-                  ) : null}
-                </div>
-              );
-            })}
+            <b>Policy #{i + 1}</b>
+            {row.challenges.length === 0 && <p>
+              This policy doesn't have challenges
+            </p>}
+            {row.challenges.length === 1 && <p>
+              This policy just have one challenge to be solved
+            </p>}
+            {row.challenges.length > 1 && <p>
+              This policy have {row.challenges.length} challenges
+            </p>}
+            <table class="table">
+              <thead>
+                <tr>
+                  <td>Challenge type</td>
+                  <td>Description</td>
+                  <td>Status</td>
+                  <td>Cost</td>
+                </tr>
+              </thead>
+              <tbody>
+                {tableBody}
+              </tbody>
+            </table>
           </div>
         );
       })}

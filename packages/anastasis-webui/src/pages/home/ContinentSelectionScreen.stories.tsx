@@ -36,4 +36,5 @@ export default {
 };
 
 export const Backup = createExample(TestedComponent, reducerStatesExample.backupSelectContinent);
+
 export const Recovery = createExample(TestedComponent, reducerStatesExample.recoverySelectContinent);

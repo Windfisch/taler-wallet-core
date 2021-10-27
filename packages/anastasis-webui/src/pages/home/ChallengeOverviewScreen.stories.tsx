@@ -37,7 +37,7 @@ export default {
   },
 };
 
-export const OneChallenge = createExample(TestedComponent, {
+export const OneUnsolvedPolicy = createExample(TestedComponent, {
   ...reducerStatesExample.challengeSelecting,
   recovery_information: {
     policies: [[{ uuid: '1' }]],
@@ -50,7 +50,7 @@ export const OneChallenge = createExample(TestedComponent, {
   },
 } as ReducerState);
 
-export const MoreChallenges = createExample(TestedComponent, {
+export const SomePoliciesOneSolved = createExample(TestedComponent, {
   ...reducerStatesExample.challengeSelecting,
   recovery_information: {
     policies: [[{ uuid: '1' }, { uuid: '2' }], [{ uuid: 'uuid-3' }]],
@@ -75,13 +75,13 @@ export const MoreChallenges = createExample(TestedComponent, {
     'uuid-3': {
       state: 'solved'
     }
-  }
+  },
 } as ReducerState);
 
 export const OneBadConfiguredPolicy = createExample(TestedComponent, {
   ...reducerStatesExample.challengeSelecting,
   recovery_information: {
-    policies: [[{ uuid: '2' }]],
+    policies: [[{ uuid: '1' }, { uuid: '2' }]],
     challenges: [{
       cost: 'USD:1',
       instructions: 'just go for it',
@@ -91,4 +91,130 @@ export const OneBadConfiguredPolicy = createExample(TestedComponent, {
   },
 } as ReducerState);
 
+export const OnePolicyWithAllTheChallenges = createExample(TestedComponent, {
+  ...reducerStatesExample.challengeSelecting,
+  recovery_information: {
+    policies: [[
+      { uuid: '1' },
+      { uuid: '2' },
+      { uuid: '3' },
+      { uuid: '4' },
+      { uuid: '5' },
+      { uuid: '6' },
+    ]],
+    challenges: [{
+      cost: 'USD:1',
+      instructions: 'answer the a question correctly',
+      type: 'question',
+      uuid: '1',
+    },{
+      cost: 'USD:1',
+      instructions: 'enter a text received by a sms',
+      type: 'sms',
+      uuid: '2',
+    },{
+      cost: 'USD:1',
+      instructions: 'enter a text received by a email',
+      type: 'email',
+      uuid: '3',
+    },{
+      cost: 'USD:1',
+      instructions: 'enter a code based on a time-based one-time password',
+      type: 'totp',
+      uuid: '4',
+    },{
+      cost: 'USD:1',
+      instructions: 'send a wire transfer to an account',
+      type: 'iban',
+      uuid: '5',
+    },{
+      cost: 'USD:1',
+      instructions: 'just go for it',
+      type: 'new-type-of-challenge',
+      uuid: '6',
+    }],
+  },
+} as ReducerState);
+
+
+export const OnePolicyWithAllTheChallengesInDifferentState = createExample(TestedComponent, {
+  ...reducerStatesExample.challengeSelecting,
+  recovery_information: {
+    policies: [[
+      { uuid: '1' },
+      { uuid: '2' },
+      { uuid: '3' },
+      { uuid: '4' },
+      { uuid: '5' },
+      { uuid: '6' },
+      { uuid: '7' },
+      { uuid: '8' },
+      { uuid: '9' },
+      { uuid: '10' },
+    ]],
+    challenges: [{
+      cost: 'USD:1',
+      instructions: 'answer the a question correctly',
+      type: 'question',
+      uuid: '1',
+    },{
+      cost: 'USD:1',
+      instructions: 'answer the a question correctly',
+      type: 'question',
+      uuid: '2',
+    },{
+      cost: 'USD:1',
+      instructions: 'answer the a question correctly',
+      type: 'question',
+      uuid: '3',
+    },{
+      cost: 'USD:1',
+      instructions: 'answer the a question correctly',
+      type: 'question',
+      uuid: '4',
+    },{
+      cost: 'USD:1',
+      instructions: 'answer the a question correctly',
+      type: 'question',
+      uuid: '5',
+    },{
+      cost: 'USD:1',
+      instructions: 'answer the a question correctly',
+      type: 'question',
+      uuid: '6',
+    },{
+      cost: 'USD:1',
+      instructions: 'answer the a question correctly',
+      type: 'question',
+      uuid: '7',
+    },{
+      cost: 'USD:1',
+      instructions: 'answer the a question correctly',
+      type: 'question',
+      uuid: '8',
+    },{
+      cost: 'USD:1',
+      instructions: 'answer the a question correctly',
+      type: 'question',
+      uuid: '9',
+    },{
+      cost: 'USD:1',
+      instructions: 'answer the a question correctly',
+      type: 'question',
+      uuid: '10',
+    }],
+  },
+  challenge_feedback: {
+    1: { state: 'solved' },
+    2: { state: 'hint' },
+    3: { state: 'details' },
+    4: { state: 'body' },
+    5: { state: 'redirect' },
+    6: { state: 'server-failure' },
+    7: { state: 'truth-unknown' },
+    8: { state: 'rate-limit-exceeded' },
+    9: { state: 'authentication-timeout' },
+    10: { state: 'external-instructions' },
+  }
+} as ReducerState);
 export const NoPolicies = createExample(TestedComponent, reducerStatesExample.challengeSelecting);

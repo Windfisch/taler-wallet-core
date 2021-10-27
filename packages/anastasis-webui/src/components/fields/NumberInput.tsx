@@ -1,7 +1,7 @@
 import { h, VNode } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 
-export interface LabeledInputProps {
+export interface TextInputProps {
   label: string;
   grabFocus?: boolean;
   error?: string;
@@ -9,7 +9,7 @@ export interface LabeledInputProps {
   bind: [string, (x: string) => void];
 }
 
-export function LabeledInput(props: LabeledInputProps): VNode {
+export function NumberInput(props: TextInputProps): VNode {
   const inputRef = useRef<HTMLInputElement>(null);
   useLayoutEffect(() => {
     if (props.grabFocus) {
@@ -29,6 +29,7 @@ export function LabeledInput(props: LabeledInputProps): VNode {
     <div class="control has-icons-right">
       <input
         value={value}
+        type="number"
         class={showError ? 'input is-danger' : 'input'}
         onChange={(e) => {setDirty(true); props.bind[1]((e.target as HTMLInputElement).value)}}
         ref={inputRef}

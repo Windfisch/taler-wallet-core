@@ -40,21 +40,21 @@ export default {
 export const Backup = createExample(TestedComponent, {
   ...reducerStatesExample.backupAttributeEditing,
   required_attributes: [{
-    name: 'first',
+    name: 'first name',
     label: 'first',
-    type: 'type',
+    type: 'string',
     uuid: 'asdasdsa1',
     widget: 'wid',
   }, {
-    name: 'pepe',
+    name: 'last name',
     label: 'second',
-    type: 'type',
+    type: 'string',
     uuid: 'asdasdsa2',
     widget: 'wid',
   }, {
-    name: 'pepe2',
+    name: 'date',
     label: 'third',
-    type: 'type',
+    type: 'date',
     uuid: 'asdasdsa3',
     widget: 'calendar',
   }]
@@ -65,19 +65,19 @@ export const Recovery = createExample(TestedComponent, {
   required_attributes: [{
     name: 'first',
     label: 'first',
-    type: 'type',
+    type: 'string',
     uuid: 'asdasdsa1',
     widget: 'wid',
   }, {
     name: 'pepe',
     label: 'second',
-    type: 'type',
+    type: 'string',
     uuid: 'asdasdsa2',
     widget: 'wid',
   }, {
     name: 'pepe2',
     label: 'third',
-    type: 'type',
+    type: 'date',
     uuid: 'asdasdsa3',
     widget: 'calendar',
   }]
@@ -110,12 +110,20 @@ const allWidgets = [
   "anastasis_gtk_xx_square",
 ]
 
+function typeForWidget(name: string): string {
+  if (["anastasis_gtk_xx_prime",
+    "anastasis_gtk_xx_square",
+  ].includes(name)) return "number";
+  if (["anastasis_gtk_ia_birthdate"].includes(name)) return "date"
+  return "string";
+}
+
 export const WithAllPosibleWidget = createExample(TestedComponent, {
   ...reducerStatesExample.backupAttributeEditing,
   required_attributes: allWidgets.map(w => ({
     name: w,
     label: `widget: ${w}`,
-    type: 'type',
+    type: typeForWidget(w),
     uuid: `uuid-${w}`,
     widget: w
   }))

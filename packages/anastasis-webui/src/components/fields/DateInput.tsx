@@ -8,6 +8,7 @@ export interface DateInputProps {
   grabFocus?: boolean;
   tooltip?: string;
   error?: string;
+  years?: Array<number>;
   bind: [string, (x: string) => void];
 }
 
@@ -19,7 +20,7 @@ export function DateInput(props: DateInputProps): VNode {
     }
   }, [props.grabFocus]);
   const [opened, setOpened2] = useState(false)
-  function setOpened(v: boolean) {
+  function setOpened(v: boolean): void {
     console.log('dale', v)
     setOpened2(v)
   }
@@ -50,6 +51,7 @@ export function DateInput(props: DateInputProps): VNode {
     {showError && <p class="help is-danger">{props.error}</p>}
     <DatePicker
       opened={opened}
+      years={props.years}
       closeFunction={() => setOpened(false)}
       dateReceiver={(d) => {
         setDirty(true)

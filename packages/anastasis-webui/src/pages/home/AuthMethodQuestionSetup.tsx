@@ -7,7 +7,7 @@ import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { AuthMethodSetupProps } from "./AuthenticationEditorScreen";
 import { AnastasisClientFrame } from "./index";
-import { LabeledInput } from "../../components/fields/LabeledInput";
+import { TextInput } from "../../components/fields/TextInput";
 
 export function AuthMethodQuestionSetup(props: AuthMethodSetupProps): VNode {
   const [questionText, setQuestionText] = useState("");
@@ -29,13 +29,13 @@ export function AuthMethodQuestionSetup(props: AuthMethodSetupProps): VNode {
           here.
         </p>
         <div>
-          <LabeledInput
+          <TextInput
             label="Security question"
             grabFocus
             bind={[questionText, setQuestionText]} />
         </div>
         <div>
-          <LabeledInput label="Answer" bind={[answerText, setAnswerText]} />
+          <TextInput label="Answer" bind={[answerText, setAnswerText]} />
         </div>
         <div>
           <button onClick={() => props.cancel()}>Cancel</button>

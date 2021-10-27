@@ -37,7 +37,7 @@ export default {
   },
 };
 
-export const NormalEnding = createExample(TestedComponent, {
+export const GoodEnding = createExample(TestedComponent, {
   ...reducerStatesExample.recoveryFinished,
   core_secret: { mime: 'text/plain', value: 'hello' }
 } as ReducerState);

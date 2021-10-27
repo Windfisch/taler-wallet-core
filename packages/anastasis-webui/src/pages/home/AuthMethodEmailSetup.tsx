@@ -7,7 +7,7 @@ import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { AuthMethodSetupProps } from "./AuthenticationEditorScreen";
 import { AnastasisClientFrame } from "./index";
-import { LabeledInput } from "../../components/fields/LabeledInput";
+import { TextInput } from "../../components/fields/TextInput";
 
 export function AuthMethodEmailSetup(props: AuthMethodSetupProps): VNode {
   const [email, setEmail] = useState("");
@@ -19,7 +19,7 @@ export function AuthMethodEmailSetup(props: AuthMethodSetupProps): VNode {
         email.
       </p>
       <div>
-        <LabeledInput
+        <TextInput
           label="Email address"
           grabFocus
           bind={[email, setEmail]} />

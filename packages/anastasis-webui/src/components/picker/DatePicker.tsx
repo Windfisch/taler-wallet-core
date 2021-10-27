@@ -24,6 +24,7 @@ import { h, Component } from "preact";
 interface Props {
   closeFunction?: () => void;
   dateReceiver?: (d: Date) => void;
+  years?: Array<number>;
   opened?: boolean;
 }
 interface State {
@@ -207,9 +208,9 @@ export class DatePicker extends Component<Props, State> {
   }
 
   componentDidUpdate() {
-    if (this.state.selectYearMode) {
-      document.getElementsByClassName('selected')[0].scrollIntoView(); // works in every browser incl. IE, replace with scrollIntoViewIfNeeded when browsers support it
-    }
+    // if (this.state.selectYearMode) {
+    //   document.getElementsByClassName('selected')[0].scrollIntoView(); // works in every browser incl. IE, replace with scrollIntoViewIfNeeded when browsers support it
+    // }
   }
 
   constructor() {
@@ -296,8 +297,7 @@ export class DatePicker extends Component<Props, State> {
             </div>}
 
             {selectYearMode && <div class="datePicker--selectYear">
-
-              {yearArr.map(year => (
+              {(this.props.years || yearArr).map(year => (
                 <span key={year} class={(year === displayedYear) ? 'selected' : ''} onClick={this.changeDisplayedYear}>
                   {year}
                 </span>

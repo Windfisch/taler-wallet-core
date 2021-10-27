@@ -4,8 +4,9 @@ import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useAnastasisContext } from "../../context/anastasis";
 import { AnastasisClientFrame, withProcessLabel } from "./index";
-import { LabeledInput } from "../../components/fields/LabeledInput";
+import { TextInput } from "../../components/fields/TextInput";
 import { DateInput } from "../../components/fields/DateInput";
+import { NumberInput } from "../../components/fields/NumberInput";
 
 export function AttributeEntryScreen(): VNode {
   const reducer = useAnastasisContext()
@@ -65,6 +66,7 @@ export function AttributeEntryScreen(): VNode {
 
         </div>
         <div class="column is-half" >
+          <p>This personal information will help to locate your secret in the first place</p>
           <h1><b>This stay private</b></h1>
           <p>The information you have entered here:
           </p>
@@ -92,20 +94,33 @@ interface AttributeEntryFieldProps {
   spec: UserAttributeSpec;
   isValid: () => string | undefined;
 }
-
+const possibleBirthdayYear: Array<number> = []
+for (let i = 0; i < 100; i++ ) {
+  possibleBirthdayYear.push(2020 - i)
+}
 function AttributeEntryField(props: AttributeEntryFieldProps): VNode {
   const errorMessage = props.isValid()
 
   return (
     <div>
-      {props.spec.type === 'date' ?
+      {props.spec.type === 'date' &&
         <DateInput
+          grabFocus={props.isFirst}
+          label={props.spec.label}
+          years={possibleBirthdayYear}
+          error={errorMessage}
+          bind={[props.value, props.setValue]}
+        />}
+      {props.spec.type === 'number' &&
+        <NumberInput
           grabFocus={props.isFirst}
           label={props.spec.label}
           error={errorMessage}
           bind={[props.value, props.setValue]}
-        /> :
-        <LabeledInput
+        />
+      }
+      {props.spec.type === 'string' &&
+        <TextInput
           grabFocus={props.isFirst}
           label={props.spec.label}
           error={errorMessage}

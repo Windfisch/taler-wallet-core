@@ -29,15 +29,31 @@ export function SecretSelectionScreen(): VNode {
         version: n,
         provider_url: p,
       });
-      setSelectingVersion(false);
     });
+    setSelectingVersion(false);
   }
 
+  const providerList = Object.keys(reducer.currentReducerState.authentication_providers ?? {})
   const recoveryDocument = reducer.currentReducerState.recovery_document
   if (!recoveryDocument) {
     return (
-      <AnastasisClientFrame hideNav title="Recovery: Problem">
-        <p>No recovery document found</p>
+      <AnastasisClientFrame hideNext title="Recovery: Problem">
+        <p>No recovery document found, try with another provider</p>
+        <table class="table">
+          <tr>
+            <td><b>Provider</b></td>
+            <td>
+              <select onChange={(e) => setOtherProvider((e.target as any).value)}>
+                <option key="none" disabled selected > Choose another provider </option>
+                {providerList.map(prov => (
+                  <option key={prov} value={prov}>
+                    {prov}
+                  </option>
+                ))}
+              </select>
+            </td>
+          </tr>
+        </table>
       </AnastasisClientFrame>
     )
   }
@@ -45,43 +61,75 @@ export function SecretSelectionScreen(): VNode {
     return (
       <AnastasisClientFrame hideNav title="Recovery: Select secret">
         <p>Select a different version of the secret</p>
-        <select onChange={(e) => setOtherProvider((e.target as any).value)}>
-          {Object.keys(reducer.currentReducerState.authentication_providers ?? {}).map(
-            (x, i) => (
-              <option key={i} selected={x === recoveryDocument.provider_url} value={x}>
-                {x}
-              </option>
-            )
-          )}
-        </select>
-        <div>
-          <input
-            value={otherVersion}
-            onChange={(e) => setOtherVersion(Number((e.target as HTMLInputElement).value))}
-            type="number" />
-          <button onClick={() => selectVersion(otherProvider, otherVersion)}>
-            Use this version
-          </button>
+        <table class="table">
+          <tr>
+            <td><b>Provider</b></td>
+            <td>
+              <select onChange={(e) => setOtherProvider((e.target as any).value)}>
+                {providerList.map(prov => (
+                  <option key={prov} selected={prov === recoveryDocument.provider_url} value={prov}>
+                    {prov}
+                  </option>
+                ))}
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <td><b>Version</b></td>
+            <td>
+              <input
+                value={otherVersion}
+                onChange={(e) => setOtherVersion(Number((e.target as HTMLInputElement).value))}
+                type="number" />
+            </td>
+            <td>
+              <a onClick={() => setOtherVersion(0)}>set to latest version</a>
+            </td>
+          </tr>
+        </table>
+        <div style={{ marginTop: '2em', display: 'flex', justifyContent: 'space-between' }}>
+          <button class="button" onClick={() => setSelectingVersion(false)}>Cancel</button>
+          <button class="button is-info" onClick={() => selectVersion(otherProvider, otherVersion)}>Confirm</button>
         </div>
-        <div>
-          <button onClick={() => selectVersion(otherProvider, 0)}>
-            Use latest version
-          </button>
-        </div>
-        <div>
-          <button onClick={() => setSelectingVersion(false)}>Cancel</button>
-        </div>
+
       </AnastasisClientFrame>
     );
   }
   return (
     <AnastasisClientFrame title="Recovery: Select secret">
-      <p>Provider: {recoveryDocument.provider_url}</p>
-      <p>Secret version: {recoveryDocument.version}</p>
-      <p>Secret name: {recoveryDocument.secret_name}</p>
-      <button onClick={() => setSelectingVersion(true)}>
-        Select different secret
-      </button>
+      <p>Secret found, you can select another version or continue to the challenges solving</p>
+      <table class="table">
+        <tr>
+          <td>
+            <b>Provider</b>
+            <span class="icon has-tooltip-right" data-tooltip="Service provider backing up your secret">
+              <i class="mdi mdi-information" />
+            </span>
+          </td>
+          <td>{recoveryDocument.provider_url}</td>
+          <td><a onClick={() => setSelectingVersion(true)}>use another provider</a></td>
+        </tr>
+        <tr>
+          <td>
+            <b>Secret version</b>
+            <span class="icon has-tooltip-right" data-tooltip="Secret version to be recovered">
+              <i class="mdi mdi-information" />
+            </span>
+          </td>
+          <td>{recoveryDocument.version}</td>
+          <td><a onClick={() => setSelectingVersion(true)}>use another version</a></td>
+        </tr>
+        <tr>
+          <td>
+            <b>Secret name</b>
+            <span class="icon has-tooltip-right" data-tooltip="Secret identifier">
+              <i class="mdi mdi-information" />
+            </span>
+          </td>
+          <td>{recoveryDocument.secret_name}</td>
+          <td> </td>
+        </tr>
+      </table>
     </AnastasisClientFrame>
   );
 }

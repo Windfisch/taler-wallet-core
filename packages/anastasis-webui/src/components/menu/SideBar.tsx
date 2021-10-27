@@ -64,9 +64,8 @@ export function Sidebar({ mobile }: Props): VNode {
             </li>
           }
           {reducer.currentReducerState && reducer.currentReducerState.backup_state ? <Fragment>
-            <li class={
-                reducer.currentReducerState.backup_state === BackupStates.ContinentSelecting ||
-                reducer.currentReducerState.backup_state === BackupStates.CountrySelecting ? 'is-active' : ''}>
+            <li class={reducer.currentReducerState.backup_state === BackupStates.ContinentSelecting ||
+              reducer.currentReducerState.backup_state === BackupStates.CountrySelecting ? 'is-active' : ''}>
               <div class="ml-4">
                 <span class="menu-item-label"><Translate>Location &amp; Currency</Translate></span>
               </div>
@@ -79,73 +78,65 @@ export function Sidebar({ mobile }: Props): VNode {
             <li class={reducer.currentReducerState.backup_state === BackupStates.AuthenticationsEditing ? 'is-active' : ''}>
               <div class="ml-4">
 
-                <span class="menu-item-label"><Translate>Auth methods</Translate></span>
+                <span class="menu-item-label"><Translate>Authorization methods</Translate></span>
               </div>
             </li>
             <li class={reducer.currentReducerState.backup_state === BackupStates.PoliciesReviewing ? 'is-active' : ''}>
               <div class="ml-4">
 
-                <span class="menu-item-label"><Translate>PoliciesReviewing</Translate></span>
+                <span class="menu-item-label"><Translate>Policies reviewing</Translate></span>
               </div>
             </li>
             <li class={reducer.currentReducerState.backup_state === BackupStates.SecretEditing ? 'is-active' : ''}>
               <div class="ml-4">
 
-                <span class="menu-item-label"><Translate>SecretEditing</Translate></span>
+                <span class="menu-item-label"><Translate>Secret input</Translate></span>
               </div>
             </li>
             <li class={reducer.currentReducerState.backup_state === BackupStates.PoliciesPaying ? 'is-active' : ''}>
               <div class="ml-4">
 
-                <span class="menu-item-label"><Translate>PoliciesPaying</Translate></span>
+                <span class="menu-item-label"><Translate>Payment (optional)</Translate></span>
               </div>
             </li>
             <li class={reducer.currentReducerState.backup_state === BackupStates.BackupFinished ? 'is-active' : ''}>
               <div class="ml-4">
 
-                <span class="menu-item-label"><Translate>BackupFinished</Translate></span>
+                <span class="menu-item-label"><Translate>Backup completed</Translate></span>
               </div>
             </li>
             <li class={reducer.currentReducerState.backup_state === BackupStates.TruthsPaying ? 'is-active' : ''}>
               <div class="ml-4">
 
-                <span class="menu-item-label"><Translate>TruthsPaying</Translate></span>
+                <span class="menu-item-label"><Translate>Truth Paying</Translate></span>
               </div>
             </li>
           </Fragment> : (reducer.currentReducerState && reducer.currentReducerState?.recovery_state && <Fragment>
-            <li class={reducer.currentReducerState.recovery_state === RecoveryStates.ContinentSelecting ? 'is-active' : ''}>
+            <li class={reducer.currentReducerState.recovery_state === RecoveryStates.ContinentSelecting ||
+              reducer.currentReducerState.recovery_state === RecoveryStates.CountrySelecting ? 'is-active' : ''}>
               <div class="ml-4">
-                <span class="menu-item-label"><Translate>ContinentSelecting</Translate></span>
-              </div>
-            </li>
-            <li class={reducer.currentReducerState.recovery_state === RecoveryStates.CountrySelecting ? 'is-active' : ''}>
-              <div class="ml-4">
-                <span class="menu-item-label"><Translate>CountrySelecting</Translate></span>
+                <span class="menu-item-label"><Translate>Location &amp; Currency</Translate></span>
               </div>
             </li>
             <li class={reducer.currentReducerState.recovery_state === RecoveryStates.UserAttributesCollecting ? 'is-active' : ''}>
               <div class="ml-4">
-                <span class="menu-item-label"><Translate>UserAttributesCollecting</Translate></span>
+                <span class="menu-item-label"><Translate>Personal information</Translate></span>
               </div>
             </li>
             <li class={reducer.currentReducerState.recovery_state === RecoveryStates.SecretSelecting ? 'is-active' : ''}>
               <div class="ml-4">
-                <span class="menu-item-label"><Translate>SecretSelecting</Translate></span>
+                <span class="menu-item-label"><Translate>Secret selection</Translate></span>
               </div>
             </li>
-            <li class={reducer.currentReducerState.recovery_state === RecoveryStates.ChallengeSelecting ? 'is-active' : ''}>
+            <li class={reducer.currentReducerState.recovery_state === RecoveryStates.ChallengeSelecting ||
+              reducer.currentReducerState.recovery_state === RecoveryStates.ChallengeSolving ? 'is-active' : ''}>
               <div class="ml-4">
-                <span class="menu-item-label"><Translate>ChallengeSelecting</Translate></span>
-              </div>
-            </li>
-            <li class={reducer.currentReducerState.recovery_state === RecoveryStates.ChallengeSolving ? 'is-active' : ''}>
-              <div class="ml-4">
-                <span class="menu-item-label"><Translate>ChallengeSolving</Translate></span>
+                <span class="menu-item-label"><Translate>Solve Challenges</Translate></span>
               </div>
             </li>
             <li class={reducer.currentReducerState.recovery_state === RecoveryStates.RecoveryFinished ? 'is-active' : ''}>
               <div class="ml-4">
-                <span class="menu-item-label"><Translate>RecoveryFinished</Translate></span>
+                <span class="menu-item-label"><Translate>Secret recovered</Translate></span>
               </div>
             </li>
           </Fragment>)}
