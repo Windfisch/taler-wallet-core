@@ -63,7 +63,7 @@ export interface SimpleTestEnvironment {
 }
 
 export function getRandomIban(countryCode: string): string {
-  return `${countryCode}715001051796${Math.floor(Math.random() * 1000000)}`;
+  return `${countryCode}715001051796${(Math.random().toString().substring(2, 8))}`
 }
 
 export function getRandomString(): string {

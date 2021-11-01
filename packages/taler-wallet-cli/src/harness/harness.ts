@@ -607,126 +607,114 @@ export namespace BankApi {
   }
 }
 
-/**
- * Method explained here:
- * https://github.com/microsoft/TypeScript/issues/2552
- */
-module BankServices {
-  export class PybankService implements BankServiceInterface {
-    proc: ProcessWrapper | undefined;
-  
-    static fromExistingConfig(gc: GlobalTestState): BankService {
-      const cfgFilename = gc.testDir + "/bank.conf";
-      console.log("reading bank config from", cfgFilename);
-      const config = Configuration.load(cfgFilename);
-      const bc: BankConfig = {
-        allowRegistrations: config
-          .getYesNo("bank", "allow_registrations")
-          .required(),
-        currency: config.getString("taler", "currency").required(),
-        database: config.getString("bank", "database").required(),
-        httpPort: config.getNumber("bank", "http_port").required(),
-      };
-      return new BankService(gc, bc, cfgFilename);
-    }
-  
-    static async create(
-      gc: GlobalTestState,
-      bc: BankConfig,
-    ): Promise<BankService> {
-      const config = new Configuration();
-      setTalerPaths(config, gc.testDir + "/talerhome");
-      config.setString("taler", "currency", bc.currency);
-      config.setString("bank", "database", bc.database);
-      config.setString("bank", "http_port", `${bc.httpPort}`);
-      config.setString("bank", "serve", "http");
-      config.setString("bank", "max_debt_bank", `${bc.currency}:999999`);
-      config.setString("bank", "max_debt", bc.maxDebt ?? `${bc.currency}:100`);
-      config.setString(
-        "bank",
-        "allow_registrations",
-        bc.allowRegistrations ? "yes" : "no",
-      );
-      const cfgFilename = gc.testDir + "/bank.conf";
-      config.write(cfgFilename);
-  
-      await sh(
-        gc,
-        "taler-bank-manage_django",
-        `taler-bank-manage -c '${cfgFilename}' django migrate`,
-      );
-      await sh(
-        gc,
-        "taler-bank-manage_django",
-        `taler-bank-manage -c '${cfgFilename}' django provide_accounts`,
-      );
-  
-      return new BankService(gc, bc, cfgFilename);
-    }
-  
-    setSuggestedExchange(e: ExchangeServiceInterface, exchangePayto: string) {
-      const config = Configuration.load(this.configFile);
-      config.setString("bank", "suggested_exchange", e.baseUrl);
-      config.setString("bank", "suggested_exchange_payto", exchangePayto);
-    }
-  
-    get baseUrl(): string {
-      return `http://localhost:${this.bankConfig.httpPort}/`;
-    }
-  
-    async createExchangeAccount(
-      accountName: string,
-      password: string,
-    ): Promise<HarnessExchangeBankAccount> {
-      await sh(
-        this.globalTestState,
-        "taler-bank-manage_django",
-        `taler-bank-manage -c '${this.configFile}' django add_bank_account ${accountName}`,
-      );
-      await sh(
-        this.globalTestState,
-        "taler-bank-manage_django",
-        `taler-bank-manage -c '${this.configFile}' django changepassword_unsafe ${accountName} ${password}`,
-      );
-      await sh(
-        this.globalTestState,
-        "taler-bank-manage_django",
-        `taler-bank-manage -c '${this.configFile}' django top_up ${accountName} ${this.bankConfig.currency}:100000`,
-      );
-      return {
-        accountName: accountName,
-        accountPassword: password,
-        accountPaytoUri: `payto://x-taler-bank/${accountName}`,
-        wireGatewayApiBaseUrl: `http://localhost:${this.bankConfig.httpPort}/taler-wire-gateway/${accountName}/`,
-      };
-    }
-  
-    get port() {
-      return this.bankConfig.httpPort;
-    }
-  
-    private constructor(
-      private globalTestState: GlobalTestState,
-      private bankConfig: BankConfig,
-      private configFile: string,
-    ) {}
-  
-    async start(): Promise<void> {
-      this.proc = this.globalTestState.spawnService(
-        "taler-bank-manage",
-        ["-c", this.configFile, "serve"],
-        "bank",
-      );
-    }
-  
-    async pingUntilAvailable(): Promise<void> {
-      const url = `http://localhost:${this.bankConfig.httpPort}/config`;
-      await pingProc(this.proc, url, "bank");
-    }
+export class BankService implements BankServiceInterface {
+  proc: ProcessWrapper | undefined;
+
+  static async create(
+    gc: GlobalTestState,
+    bc: BankConfig,
+  ): Promise<BankService> {
+    const config = new Configuration();
+    setTalerPaths(config, gc.testDir + "/talerhome");
+    config.setString("taler", "currency", bc.currency);
+    config.setString("bank", "database", bc.database);
+    config.setString("bank", "http_port", `${bc.httpPort}`);
+    config.setString("bank", "serve", "http");
+    config.setString("bank", "max_debt_bank", `${bc.currency}:999999`);
+    config.setString("bank", "max_debt", bc.maxDebt ?? `${bc.currency}:100`);
+    config.setString(
+      "bank",
+      "allow_registrations",
+      bc.allowRegistrations ? "yes" : "no",
+    );
+    const cfgFilename = gc.testDir + "/bank.conf";
+    config.write(cfgFilename);
+
+    await sh(
+      gc,
+      "taler-bank-manage_django",
+      `taler-bank-manage -c '${cfgFilename}' django migrate`,
+    );
+    await sh(
+      gc,
+      "taler-bank-manage_django",
+      `taler-bank-manage -c '${cfgFilename}' django provide_accounts`,
+    );
+
+    return new BankService(gc, bc, cfgFilename);
+  }
+
+  setSuggestedExchange(e: ExchangeServiceInterface, exchangePayto: string) {
+    const config = Configuration.load(this.configFile);
+    config.setString("bank", "suggested_exchange", e.baseUrl);
+    config.setString("bank", "suggested_exchange_payto", exchangePayto);
+  }
+
+  get baseUrl(): string {
+    return `http://localhost:${this.bankConfig.httpPort}/`;
+  }
+
+  async createExchangeAccount(
+    accountName: string,
+    password: string,
+  ): Promise<HarnessExchangeBankAccount> {
+    await sh(
+      this.globalTestState,
+      "taler-bank-manage_django",
+      `taler-bank-manage -c '${this.configFile}' django add_bank_account ${accountName}`,
+    );
+    await sh(
+      this.globalTestState,
+      "taler-bank-manage_django",
+      `taler-bank-manage -c '${this.configFile}' django changepassword_unsafe ${accountName} ${password}`,
+    );
+    await sh(
+      this.globalTestState,
+      "taler-bank-manage_django",
+      `taler-bank-manage -c '${this.configFile}' django top_up ${accountName} ${this.bankConfig.currency}:100000`,
+    );
+    return {
+      accountName: accountName,
+      accountPassword: password,
+      accountPaytoUri: `payto://x-taler-bank/${accountName}`,
+      wireGatewayApiBaseUrl: `http://localhost:${this.bankConfig.httpPort}/taler-wire-gateway/${accountName}/`,
+    };
+  }
+
+  get port() {
+    return this.bankConfig.httpPort;
+  }
+
+  private constructor(
+    private globalTestState: GlobalTestState,
+    private bankConfig: BankConfig,
+    private configFile: string,
+  ) {}
+
+  async start(): Promise<void> {
+    this.proc = this.globalTestState.spawnService(
+      "taler-bank-manage",
+      ["-c", this.configFile, "serve"],
+      "bank",
+    );
+  }
+
+  async pingUntilAvailable(): Promise<void> {
+    const url = `http://localhost:${this.bankConfig.httpPort}/config`;
+    await pingProc(this.proc, url, "bank");
   }
 }
-import BankService = BankServices.PybankService;
-export { BankService };
+
+/**
+ * euFin migration:
+ *
+ * if (process.env.WALLET_HARNESS_WITH_EUFIN) {
+ *   BankService.prototype = {
+ *     // methods from euFin ..
+ *   };
+ * } 
+ *
+ */
 
 export class FakeBankService {
   proc: ProcessWrapper | undefined;
