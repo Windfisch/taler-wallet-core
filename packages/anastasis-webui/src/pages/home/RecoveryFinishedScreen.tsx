@@ -17,7 +17,7 @@ export function RecoveryFinishedScreen(): VNode {
   }
   const encodedSecret = reducer.currentReducerState.core_secret?.value
   if (!encodedSecret) {
-    return <AnastasisClientFrame title="Recovery Problem" hideNext>
+    return <AnastasisClientFrame title="Recovery Problem" hideNav>
       <p>
         Secret not found
       </p>
@@ -25,7 +25,7 @@ export function RecoveryFinishedScreen(): VNode {
   }
   const secret = bytesToString(decodeCrock(encodedSecret))
   return (
-    <AnastasisClientFrame title="Recovery Finished" hideNext>
+    <AnastasisClientFrame title="Recovery Finished" hideNav>
       <p>
         Secret: {secret}
       </p>

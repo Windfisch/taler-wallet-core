@@ -37,7 +37,7 @@ export function SecretSelectionScreen(): VNode {
   const recoveryDocument = reducer.currentReducerState.recovery_document
   if (!recoveryDocument) {
     return (
-      <AnastasisClientFrame hideNext title="Recovery: Problem">
+      <AnastasisClientFrame hideNext="Recovery document not found" title="Recovery: Problem">
         <p>No recovery document found, try with another provider</p>
         <table class="table">
           <tr>

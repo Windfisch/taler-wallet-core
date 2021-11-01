@@ -33,6 +33,7 @@ interface Props {
 export function Sidebar({ mobile }: Props): VNode {
   // const config = useConfigContext();
   const config = { version: 'none' }
+  // FIXME: add replacement for __VERSION__ with the current version
   const process = { env: { __VERSION__: '0.0.0' } }
   const reducer = useAnastasisContext()!
 
@@ -105,12 +106,12 @@ export function Sidebar({ mobile }: Props): VNode {
                 <span class="menu-item-label"><Translate>Backup completed</Translate></span>
               </div>
             </li>
-            <li class={reducer.currentReducerState.backup_state === BackupStates.TruthsPaying ? 'is-active' : ''}>
+            {/* <li class={reducer.currentReducerState.backup_state === BackupStates.TruthsPaying ? 'is-active' : ''}>
               <div class="ml-4">
 
                 <span class="menu-item-label"><Translate>Truth Paying</Translate></span>
               </div>
-            </li>
+            </li> */}
           </Fragment> : (reducer.currentReducerState && reducer.currentReducerState?.recovery_state && <Fragment>
             <li class={reducer.currentReducerState.recovery_state === RecoveryStates.ContinentSelecting ||
               reducer.currentReducerState.recovery_state === RecoveryStates.CountrySelecting ? 'is-active' : ''}>

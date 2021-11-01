@@ -10,7 +10,7 @@ export interface TextInputProps {
   bind: [string, (x: string) => void];
 }
 
-export function NumberInput(props: TextInputProps): VNode {
+export function EmailInput(props: TextInputProps): VNode {
   const inputRef = useRef<HTMLInputElement>(null);
   useLayoutEffect(() => {
     if (props.grabFocus) {
@@ -30,8 +30,9 @@ export function NumberInput(props: TextInputProps): VNode {
     <div class="control has-icons-right">
       <input
         value={value}
-        type="number"
+        required
         placeholder={props.placeholder}
+        type="email"
         class={showError ? 'input is-danger' : 'input'}
         onChange={(e) => {setDirty(true); props.bind[1]((e.target as HTMLInputElement).value)}}
         ref={inputRef}

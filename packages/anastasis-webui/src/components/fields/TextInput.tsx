@@ -5,6 +5,7 @@ export interface TextInputProps {
   label: string;
   grabFocus?: boolean;
   error?: string;
+  placeholder?: string;
   tooltip?: string;
   bind: [string, (x: string) => void];
 }
@@ -29,6 +30,7 @@ export function TextInput(props: TextInputProps): VNode {
     <div class="control has-icons-right">
       <input
         value={value}
+        placeholder={props.placeholder}
         class={showError ? 'input is-danger' : 'input'}
         onChange={(e) => {setDirty(true); props.bind[1]((e.target as HTMLInputElement).value)}}
         ref={inputRef}

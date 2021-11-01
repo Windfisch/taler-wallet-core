@@ -44,7 +44,7 @@ export const NotSupportedChallenge = createExample(TestedComponent, {
   recovery_information: {
     challenges: [{
       cost: 'USD:1',
-      instructions: 'follow htis instructions',
+      instructions: 'does P equals NP?',
       type: 'chall-type',
       uuid: 'ASDASDSAD!1'
     }],
@@ -58,7 +58,7 @@ export const MismatchedChallengeId = createExample(TestedComponent, {
   recovery_information: {
     challenges: [{
       cost: 'USD:1',
-      instructions: 'follow htis instructions',
+      instructions: 'does P equals NP?',
       type: 'chall-type',
       uuid: 'ASDASDSAD!1'
     }],
@@ -72,7 +72,7 @@ export const SmsChallenge = createExample(TestedComponent, {
   recovery_information: {
     challenges: [{
       cost: 'USD:1',
-      instructions: 'follow htis instructions',
+      instructions: 'SMS to 555-5555',
       type: 'sms',
       uuid: 'ASDASDSAD!1'
     }],
@@ -86,7 +86,7 @@ export const QuestionChallenge = createExample(TestedComponent, {
   recovery_information: {
     challenges: [{
       cost: 'USD:1',
-      instructions: 'follow htis instructions',
+      instructions: 'does P equals NP?',
       type: 'question',
       uuid: 'ASDASDSAD!1'
     }],
@@ -100,7 +100,7 @@ export const EmailChallenge = createExample(TestedComponent, {
   recovery_information: {
     challenges: [{
       cost: 'USD:1',
-      instructions: 'follow htis instructions',
+      instructions: 'Email to sebasjm@some-domain.com',
       type: 'email',
       uuid: 'ASDASDSAD!1'
     }],
@@ -114,7 +114,7 @@ export const PostChallenge = createExample(TestedComponent, {
   recovery_information: {
     challenges: [{
       cost: 'USD:1',
-      instructions: 'follow htis instructions',
+      instructions: 'Letter to address in postal code ABC123',
       type: 'post',
       uuid: 'ASDASDSAD!1'
     }],

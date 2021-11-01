@@ -20,16 +20,15 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 
-import { ReducerState } from 'anastasis-core';
-import { createExample, reducerStatesExample } from '../../utils';
-import { BackupFinishedScreen as TestedComponent } from './BackupFinishedScreen';
+import { createExample, reducerStatesExample } from '../../../utils';
+import { authMethods as TestedComponent, KnownAuthMethods } from './index';
 
 
 export default {
-  title: 'Pages/backup/FinishedScreen',
+  title: 'Pages/backup/authMethods/TOTP',
   component: TestedComponent,
   args: {
-    order: 9,
+    order: 5,
   },
   argTypes: {
     onUpdate: { action: 'onUpdate' },
@@ -37,27 +36,29 @@ export default {
   },
 };
 
-export const WithoutName = createExample(TestedComponent, reducerStatesExample.backupFinished);
+const type: KnownAuthMethods = 'totp'
 
-export const WithName = createExample(TestedComponent, {...reducerStatesExample.backupFinished,
-  secret_name: 'super_secret',
-} as ReducerState);
-
-export const WithDetails = createExample(TestedComponent, {
-  ...reducerStatesExample.backupFinished,
-  secret_name: 'super_secret',
-  success_details: {
-    'http://anastasis.net': {
-      policy_expiration: {
-        t_ms: 'never'
-      },
-      policy_version: 0
-    },
-    'http://taler.net': {
-      policy_expiration: {
-        t_ms: new Date().getTime() + 60*60*24*1000
-      },
-      policy_version: 1
-    },
-  }
-} as ReducerState);
+export const Empty = createExample(TestedComponent[type].screen, reducerStatesExample.authEditing, {
+  configured: []
+});
+export const WithOneExample = createExample(TestedComponent[type].screen, reducerStatesExample.authEditing, {
+  configured: [{
+    challenge: 'qwe',
+    type,
+    instructions: 'instr',
+    remove: () => null
+  }]
+});
+export const WithMoreExample = createExample(TestedComponent[type].screen, reducerStatesExample.authEditing, {
+  configured: [{
+    challenge: 'qwe',
+    type,
+    instructions: 'instr',
+    remove: () => null
+  },{
+    challenge: 'qwe',
+    type,
+    instructions: 'instr',
+    remove: () => null
+  }]
+});

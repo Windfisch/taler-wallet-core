@@ -25,7 +25,7 @@ export function DateInput(props: DateInputProps): VNode {
     setOpened2(v)
   }
 
-  const value = props.bind[0];
+  const value = props.bind[0] || "";
   const [dirty, setDirty] = useState(false)
   const showError = dirty && props.error
 
@@ -40,7 +40,8 @@ export function DateInput(props: DateInputProps): VNode {
       <input
         type="text"
         class={showError ? 'input is-danger' : 'input'}
-        onClick={() => { setOpened(true) }}
+        readonly
+        onFocus={() => { setOpened(true) } }
         value={value}
         ref={inputRef} />
 

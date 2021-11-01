@@ -47,8 +47,9 @@ export function ChallengeOverviewScreen(): VNode {
 
   const atLeastThereIsOnePolicySolved = policiesWithInfo.find(p => p.isPolicySolved) !== undefined
 
+  const errors = !atLeastThereIsOnePolicySolved ? "Solve one policy before proceeding" : undefined;
   return (
-    <AnastasisClientFrame hideNext={!atLeastThereIsOnePolicySolved} title="Recovery: Solve challenges">
+    <AnastasisClientFrame hideNext={errors} title="Recovery: Solve challenges">
       {!policies.length ? <p>
         No policies found, try with another version of the secret
       </p> : (policies.length === 1 ? <p>

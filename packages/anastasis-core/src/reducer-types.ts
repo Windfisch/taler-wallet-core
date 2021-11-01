@@ -47,7 +47,7 @@ export interface ReducerStateBackup {
   code?: undefined;
   currencies?: string[];
   continents?: ContinentInfo[];
-  countries?: any;
+  countries?: CountryInfo[];
   identity_attributes?: { [n: string]: string };
   authentication_providers?: { [url: string]: AuthenticationProviderStatus };
   authentication_methods?: AuthMethod[];
@@ -129,8 +129,8 @@ export interface ReducerStateRecovery {
 
   identity_attributes?: { [n: string]: string };
 
-  continents?: any;
-  countries?: any;
+  continents?: ContinentInfo[];
+  countries?: CountryInfo[];
 
   selected_continent?: string;
   selected_country?: string;

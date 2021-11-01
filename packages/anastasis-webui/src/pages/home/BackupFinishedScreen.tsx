@@ -1,3 +1,4 @@
+import { format } from "date-fns";
 import { h, VNode } from "preact";
 import { useAnastasisContext } from "../../context/anastasis";
 import { AnastasisClientFrame } from "./index";
@@ -11,23 +12,30 @@ export function BackupFinishedScreen(): VNode {
     return <div>invalid state</div>
   }
   const details = reducer.currentReducerState.success_details
-  return (<AnastasisClientFrame hideNext title="Backup finished">
-    <p>
-      Your backup of secret "{reducer.currentReducerState.secret_name ?? "??"}" was
-      successful.
-    </p>
-    <p>The backup is stored by the following providers:</p>
 
-    {details && <ul>
+  return (<AnastasisClientFrame hideNav title="Backup finished">
+    {reducer.currentReducerState.secret_name ? <p>
+      Your backup of secret <b>"{reducer.currentReducerState.secret_name}"</b> was
+      successful.
+    </p> :
+      <p>
+        Your secret was successfully backed up.
+      </p>}
+
+    {details && <div class="block">
+    <p>The backup is stored by the following providers:</p>
       {Object.keys(details).map((x, i) => {
         const sd = details[x];
         return (
-          <li key={i}>
-            {x} (Policy version {sd.policy_version})
-          </li>
+          <div key={i} class="box">
+            {x}
+            <p>
+              version {sd.policy_version}
+              {sd.policy_expiration.t_ms !== 'never' ? ` expires at: ${format(sd.policy_expiration.t_ms, 'dd/MM/yyyy')}` : ' without expiration date'}
+            </p>
+          </div>
         );
       })}
-    </ul>}
-    <button onClick={() => reducer.reset()}>Back to start</button>
+    </div>}
   </AnastasisClientFrame>);
 }

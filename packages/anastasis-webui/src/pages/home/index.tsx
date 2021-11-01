@@ -11,7 +11,8 @@ import {
   VNode
 } from "preact";
 import {
-  useErrorBoundary} from "preact/hooks";
+  useErrorBoundary
+} from "preact/hooks";
 import { Menu } from "../../components/menu";
 import { AnastasisProvider, useAnastasisContext } from "../../context/anastasis";
 import {
@@ -59,7 +60,7 @@ interface AnastasisClientFrameProps {
   /**
    * Hide only the "next" button.
    */
-  hideNext?: boolean;
+  hideNext?: string;
 }
 
 function ErrorBoundary(props: {
@@ -112,13 +113,15 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
       <Menu title="Anastasis" />
       <div>
         <div class="home" onKeyPress={(e) => handleKeyPress(e)}>
-          <h1>{props.title}</h1>
+          <h1 class="title">{props.title}</h1>
           <ErrorBanner />
           {props.children}
           {!props.hideNav ? (
-            <div style={{marginTop: '2em', display:'flex', justifyContent:'space-between'}}>
+            <div style={{ marginTop: '2em', display: 'flex', justifyContent: 'space-between' }}>
               <button class="button" onClick={() => reducer.back()}>Back</button>
-              {!props.hideNext ? <button class="button is-info"onClick={next}>Next</button> : null}
+              <span data-tooltip={props.hideNext}>
+                <button class="button is-info" onClick={next} disabled={props.hideNext !== undefined}>Next</button>
+              </span>
             </div>
           ) : null}
         </div>
@@ -151,18 +154,12 @@ const AnastasisClientImpl: FunctionalComponent = () => {
 
   if (
     state.backup_state === BackupStates.ContinentSelecting ||
-    state.recovery_state === RecoveryStates.ContinentSelecting
-  ) {
-    return (
-      <ContinentSelectionScreen />
-    );
-  }
-  if (
+    state.recovery_state === RecoveryStates.ContinentSelecting ||
     state.backup_state === BackupStates.CountrySelecting ||
     state.recovery_state === RecoveryStates.CountrySelecting
   ) {
     return (
-      <CountrySelectionScreen />
+      <ContinentSelectionScreen />
     );
   }
   if (

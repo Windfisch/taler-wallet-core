@@ -8,26 +8,26 @@ import { useAnastasisContext } from "../../context/anastasis";
 export function SolveScreen(): VNode {
   const reducer = useAnastasisContext()
   const [answer, setAnswer] = useState("");
-  
+
   if (!reducer) {
-    return <AnastasisClientFrame hideNext title="Recovery problem">
+    return <AnastasisClientFrame hideNav title="Recovery problem">
       <div>no reducer in context</div>
     </AnastasisClientFrame>
   }
   if (!reducer.currentReducerState || reducer.currentReducerState.recovery_state === undefined) {
-    return <AnastasisClientFrame hideNext title="Recovery problem">
+    return <AnastasisClientFrame hideNav title="Recovery problem">
       <div>invalid state</div>
     </AnastasisClientFrame>
   }
 
   if (!reducer.currentReducerState.recovery_information) {
-    return <AnastasisClientFrame hideNext title="Recovery problem">
+    return <AnastasisClientFrame hideNext="Recovery document not found" title="Recovery problem">
       <div>no recovery information found</div>
     </AnastasisClientFrame>
   }
   if (!reducer.currentReducerState.selected_challenge_uuid) {
-    return <AnastasisClientFrame hideNext title="Recovery problem">
-      <div>no selected uuid</div>
+    return <AnastasisClientFrame hideNav title="Recovery problem">
+      <div>invalid state</div>
     </AnastasisClientFrame>
   }
 
@@ -55,7 +55,7 @@ export function SolveScreen(): VNode {
   function onCancel(): void {
     reducer?.back()
   }
-  
+
 
   return (
     <AnastasisClientFrame
@@ -70,9 +70,9 @@ export function SolveScreen(): VNode {
         feedback={challengeFeedback[selectedUuid]} />
 
       <div style={{ marginTop: '2em', display: 'flex', justifyContent: 'space-between' }}>
-          <button class="button" onClick={onCancel}>Cancel</button>
-          <button class="button is-info" onClick={onNext} >Confirm</button>
-        </div>
+        <button class="button" onClick={onCancel}>Cancel</button>
+        <button class="button is-info" onClick={onNext} >Confirm</button>
+      </div>
     </AnastasisClientFrame>
   );
 }
@@ -82,13 +82,13 @@ export interface SolveEntryProps {
   challenge: ChallengeInfo;
   feedback?: ChallengeFeedback;
   answer: string;
-  setAnswer: (s:string) => void;
+  setAnswer: (s: string) => void;
 }
 
 function SolveSmsEntry({ challenge, answer, setAnswer }: SolveEntryProps): VNode {
   return (<Fragment>
-      <p>An sms has been sent to "<b>{challenge.instructions}</b>". Type the code below</p>
-      <TextInput label="Answer" grabFocus bind={[answer, setAnswer]} />
+    <p>An sms has been sent to "<b>{challenge.instructions}</b>". Type the code below</p>
+    <TextInput label="Answer" grabFocus bind={[answer, setAnswer]} />
   </Fragment>
   );
 }

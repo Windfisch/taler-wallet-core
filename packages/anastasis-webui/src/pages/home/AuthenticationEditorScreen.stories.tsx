@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/camelcase */
 /*
  This file is part of GNU Taler
  (C) 2021 Taler Systems S.A.
@@ -19,6 +20,7 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 
+import { ReducerState } from 'anastasis-core';
 import { createExample, reducerStatesExample } from '../../utils';
 import { AuthenticationEditorScreen as TestedComponent } from './AuthenticationEditorScreen';
 
@@ -36,3 +38,56 @@ export default {
 };
 
 export const Example = createExample(TestedComponent, reducerStatesExample.authEditing);
+export const OneAuthMethodConfigured = createExample(TestedComponent, {
+  ...reducerStatesExample.authEditing,
+  authentication_methods: [{
+    type: 'question',
+    instructions: 'what time is it?',
+    challenge: 'asd',
+  }]
+} as ReducerState);
+
+
+export const SomeMoreAuthMethodConfigured = createExample(TestedComponent, {
+  ...reducerStatesExample.authEditing,
+  authentication_methods: [{
+    type: 'question',
+    instructions: 'what time is it?',
+    challenge: 'asd',
+  },{
+    type: 'question',
+    instructions: 'what time is it?',
+    challenge: 'qwe',
+  },{
+    type: 'sms',
+    instructions: 'what time is it?',
+    challenge: 'asd',
+  },{
+    type: 'email',
+    instructions: 'what time is it?',
+    challenge: 'asd',
+  },{
+    type: 'email',
+    instructions: 'what time is it?',
+    challenge: 'asd',
+  },{
+    type: 'email',
+    instructions: 'what time is it?',
+    challenge: 'asd',
+  },{
+    type: 'email',
+    instructions: 'what time is it?',
+    challenge: 'asd',
+  }]
+} as ReducerState);
+
+export const NoAuthMethodProvided = createExample(TestedComponent, {
+  ...reducerStatesExample.authEditing,
+  authentication_providers: {},
+  authentication_methods: []
+} as ReducerState);
+
+  // type: string;
+  // instructions: string;
+  // challenge: string;
+  // mime_type?: string;

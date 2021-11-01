@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import { UserAttributeSpec, validators } from "anastasis-core";
-import { h, VNode } from "preact";
+import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useAnastasisContext } from "../../context/anastasis";
 import { AnastasisClientFrame, withProcessLabel } from "./index";
@@ -20,53 +20,38 @@ export function AttributeEntryScreen(): VNode {
   if (!reducer.currentReducerState || !("required_attributes" in reducer.currentReducerState)) {
     return <div>invalid state</div>
   }
+  const reqAttr = reducer.currentReducerState.required_attributes || []
+  let hasErrors = false;
 
+  const fieldList: VNode[] = reqAttr.map((spec, i: number) => {
+    const value = attrs[spec.name]
+    const error = checkIfValid(value, spec)
+    hasErrors = hasErrors || error !== undefined
+    return (
+      <AttributeEntryField
+        key={i}
+        isFirst={i == 0}
+        setValue={(v: string) => setAttrs({ ...attrs, [spec.name]: v })}
+        spec={spec}
+        errorMessage={error}
+        value={value} />
+    );
+  })
 
   return (
     <AnastasisClientFrame
       title={withProcessLabel(reducer, "Who are you?")}
+      hideNext={hasErrors ? "Complete the form." : undefined}
       onNext={() => reducer.transition("enter_user_attributes", {
         identity_attributes: attrs,
       })}
     >
       <div class="columns">
         <div class="column is-half">
-
-          {reducer.currentReducerState.required_attributes?.map((x, i: number) => {
-            const value = attrs[x.name]
-            function checkIfValid(): string | undefined {
-              const pattern = x['validation-regex']
-              if (pattern) {
-                const re = new RegExp(pattern)
-                if (!re.test(value)) return 'The value is invalid'
-              }
-              const logic = x['validation-logic']
-              if (logic) {
-                const func = (validators as any)[logic];
-                if (func && typeof func === 'function' && !func(value)) return 'Please check the value'
-              }
-              const optional = x.optional
-              console.log('optiona', optional)
-              if (!optional && !value) {
-                return 'This value is required'
-              }
-              return undefined
-            }
-
-            return (
-              <AttributeEntryField
-                key={i}
-                isFirst={i == 0}
-                setValue={(v: string) => setAttrs({ ...attrs, [x.name]: v })}
-                spec={x}
-                isValid={checkIfValid}
-                value={value} />
-            );
-          })}
-
+          {fieldList}
         </div>
         <div class="column is-half" >
-          <p>This personal information will help to locate your secret in the first place</p>
+          <p>This personal information will help to locate your secret.</p>
           <h1><b>This stay private</b></h1>
           <p>The information you have entered here:
           </p>
@@ -92,14 +77,13 @@ interface AttributeEntryFieldProps {
   value: string;
   setValue: (newValue: string) => void;
   spec: UserAttributeSpec;
-  isValid: () => string | undefined;
+  errorMessage: string | undefined;
 }
 const possibleBirthdayYear: Array<number> = []
-for (let i = 0; i < 100; i++ ) {
+for (let i = 0; i < 100; i++) {
   possibleBirthdayYear.push(2020 - i)
 }
 function AttributeEntryField(props: AttributeEntryFieldProps): VNode {
-  const errorMessage = props.isValid()
 
   return (
     <div>
@@ -108,14 +92,14 @@ function AttributeEntryField(props: AttributeEntryFieldProps): VNode {
           grabFocus={props.isFirst}
           label={props.spec.label}
           years={possibleBirthdayYear}
-          error={errorMessage}
+          error={props.errorMessage}
           bind={[props.value, props.setValue]}
         />}
       {props.spec.type === 'number' &&
         <NumberInput
           grabFocus={props.isFirst}
           label={props.spec.label}
-          error={errorMessage}
+          error={props.errorMessage}
           bind={[props.value, props.setValue]}
         />
       }
@@ -123,7 +107,7 @@ function AttributeEntryField(props: AttributeEntryFieldProps): VNode {
         <TextInput
           grabFocus={props.isFirst}
           label={props.spec.label}
-          error={errorMessage}
+          error={props.errorMessage}
           bind={[props.value, props.setValue]}
         />
       }
@@ -135,4 +119,22 @@ function AttributeEntryField(props: AttributeEntryFieldProps): VNode {
       </span>
     </div>
   );
+}
+
+function checkIfValid(value: string, spec: UserAttributeSpec): string | undefined {
+  const pattern = spec['validation-regex']
+  if (pattern) {
+    const re = new RegExp(pattern)
+    if (!re.test(value)) return 'The value is invalid'
+  }
+  const logic = spec['validation-logic']
+  if (logic) {
+    const func = (validators as any)[logic];
+    if (func && typeof func === 'function' && !func(value)) return 'Please check the value'
+  }
+  const optional = spec.optional
+  if (!optional && !value) {
+    return 'This value is required'
+  }
+  return undefined
 }

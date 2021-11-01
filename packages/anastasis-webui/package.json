@@ -29,7 +29,8 @@
     "jed": "1.1.1",
     "preact": "^10.3.1",
     "preact-render-to-string": "^5.1.4",
-    "preact-router": "^3.2.1"
+    "preact-router": "^3.2.1",
+    "qrcode-generator": "^1.4.4"
   },
   "devDependencies": {
     "@creativebulma/bulma-tooltip": "^1.2.0",

@@ -6,6 +6,7 @@ import { useAnastasisContext } from "../../context/anastasis";
 import {
   AnastasisClientFrame} from "./index";
 import { TextInput } from "../../components/fields/TextInput";
+import { FileInput } from "../../components/fields/FileInput";
 
 export function SecretEditorScreen(): VNode {
   const reducer = useAnastasisContext()
@@ -56,6 +57,10 @@ export function SecretEditorScreen(): VNode {
       <div>
         <TextInput
           label="Secret Value:"
+          bind={[secretValue, setSecretValue]}
+        /> or import a file
+        <FileInput 
+          label="Open file from your device"
           bind={[secretValue, setSecretValue]}
         />
       </div>

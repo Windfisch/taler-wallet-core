@@ -13,7 +13,7 @@ export function ChallengePayingScreen(): VNode {
   const payments = ['']; //reducer.currentReducerState.payments ?? 
   return (
     <AnastasisClientFrame
-      hideNext
+      hideNav
       title="Recovery: Challenge Paying"
     >
       <p>

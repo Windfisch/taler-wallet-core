@@ -86,7 +86,13 @@ const base = {
         {
           type: "question",
           usage_fee: "COL:0"
-        }
+        },{
+          type: "sms",
+          usage_fee: "COL:0"
+        },{
+          type: "email",
+          usage_fee: "COL:0"
+        },
       ],
       salt: "WBMDD76BR1E90YQ5AHBMKPH7GW",
       storage_limit_in_megabytes: 16,
