@@ -8,7 +8,7 @@ import fs from "fs";
 
 export const reducerCli = clk
   .program("reducer", {
-    help: "Command line interface for the GNU Taler wallet.",
+    help: "Command line interface for Anastasis.",
   })
   .flag("initBackup", ["-b", "--backup"])
   .flag("initRecovery", ["-r", "--restore"])

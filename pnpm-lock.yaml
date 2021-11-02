@@ -245,7 +245,7 @@ importers:
       po2json: ^0.4.5
       prettier: ^2.2.1
       rimraf: ^3.0.2
-      rollup: ^2.37.1
+      rollup: ^2.38
       rollup-plugin-sourcemaps: ^0.6.3
       source-map-resolve: ^0.6.0
       source-map-support: ^0.5.19
@@ -279,8 +279,8 @@ importers:
       po2json: 0.4.5
       prettier: 2.2.1
       rimraf: 3.0.2
-      rollup: 2.37.1
-      rollup-plugin-sourcemaps: 0.6.3_38ff52cc32daa1ae80c428f8a47a4e22
+      rollup: 2.59.0
+      rollup-plugin-sourcemaps: 0.6.3_57eeb328ceff0756ae1d32f4d22d60f9
       source-map-resolve: 0.6.0
       typedoc: 0.20.16_typescript@4.1.3
       typescript: 4.1.3
@@ -5625,7 +5625,7 @@ packages:
     dependencies:
       '@types/estree': 0.0.39
       estree-walker: 1.0.1
-      picomatch: 2.3.0
+      picomatch: 2.2.2
       rollup: 2.59.0
     dev: true
 
@@ -20345,6 +20345,22 @@ packages:
       '@rollup/pluginutils': 3.1.0_rollup@2.37.1
       '@types/node': 14.14.22
       rollup: 2.37.1
+      source-map-resolve: 0.6.0
+    dev: true
+
+  /rollup-plugin-sourcemaps/0.6.3_57eeb328ceff0756ae1d32f4d22d60f9:
+    resolution: {integrity: sha512-paFu+nT1xvuO1tPFYXGe+XnQvg4Hjqv/eIhG8i5EspfYYPBKL57X7iVbfv55aNVASg3dzWvES9dmWsL2KhfByw==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      '@types/node': '>=10.0.0'
+      rollup: '>=0.31.2'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+    dependencies:
+      '@rollup/pluginutils': 3.1.0_rollup@2.59.0
+      '@types/node': 14.14.22
+      rollup: 2.59.0
       source-map-resolve: 0.6.0
     dev: true
 
