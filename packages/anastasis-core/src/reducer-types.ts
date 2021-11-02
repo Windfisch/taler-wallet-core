@@ -6,7 +6,6 @@ import {
   codecForNumber,
   codecForString,
   codecForTimestamp,
-  Duration,
   Timestamp,
 } from "@gnu-taler/taler-util";
 import { KeyShare } from "./crypto.js";

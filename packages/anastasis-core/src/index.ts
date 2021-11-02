@@ -1194,7 +1194,7 @@ const backupTransitions: Record<
     ...transition("delete_policy", codecForAny(), deletePolicy),
   },
   [BackupStates.SecretEditing]: {
-    ...transitionBackupJump("back", BackupStates.PoliciesPaying),
+    ...transitionBackupJump("back", BackupStates.PoliciesReviewing),
     ...transition("next", codecForAny(), uploadSecret),
     ...transition("enter_secret", codecForAny(), enterSecret),
     ...transition(
