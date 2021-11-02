@@ -21,3 +21,4 @@ initNodePrng();
 export * from "./index.js";
 export * from "./talerconfig.js";
 export * from "./globbing/minimatch.js";
+export { clk } from "./clk.js";

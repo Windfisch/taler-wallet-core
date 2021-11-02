@@ -1,4 +1,14 @@
-import { Duration, Timestamp } from "@gnu-taler/taler-util";
+import {
+  AmountString,
+  buildCodecForObject,
+  codecForAny,
+  codecForList,
+  codecForNumber,
+  codecForString,
+  codecForTimestamp,
+  Duration,
+  Timestamp,
+} from "@gnu-taler/taler-util";
 import { KeyShare } from "./crypto.js";
 import { RecoveryDocument } from "./recovery-document-types.js";
 
@@ -23,7 +33,7 @@ export interface Policy {
     authentication_method: number;
     provider: string;
   }[];
-} 
+}
 
 export interface PolicyProvider {
   provider_url: string;
@@ -70,7 +80,9 @@ export interface ReducerStateBackup {
 
   core_secret?: CoreSecret;
 
-  expiration?: Duration;
+  expiration?: Timestamp;
+
+  upload_fees?: AmountString[];
 }
 
 export interface AuthMethod {
@@ -94,8 +106,8 @@ export interface UserAttributeSpec {
   uuid: string;
   widget: string;
   optional?: boolean;
-  'validation-regex': string | undefined;
-  'validation-logic': string | undefined;
+  "validation-regex": string | undefined;
+  "validation-logic": string | undefined;
 }
 
 export interface RecoveryInternalData {
@@ -244,6 +256,11 @@ export interface ActionArgEnterUserAttributes {
   identity_attributes: Record<string, string>;
 }
 
+export const codecForActionArgEnterUserAttributes = () =>
+  buildCodecForObject<ActionArgEnterUserAttributes>()
+    .property("identity_attributes", codecForAny())
+    .build("ActionArgEnterUserAttributes");
+
 export interface ActionArgAddAuthentication {
   authentication_method: {
     type: string;
@@ -270,15 +287,69 @@ export interface ActionArgEnterSecret {
     value: string;
     mime?: string;
   };
-  expiration: Duration;
+  expiration: Timestamp;
 }
+
+export interface ActionArgSelectContinent {
+  continent: string;
+}
+
+export const codecForActionArgSelectContinent = () =>
+  buildCodecForObject<ActionArgSelectContinent>()
+    .property("continent", codecForString())
+    .build("ActionArgSelectContinent");
+
+export interface ActionArgSelectCountry {
+  country_code: string;
+  currencies: string[];
+}
+
+export const codecForActionArgSelectCountry = () =>
+  buildCodecForObject<ActionArgSelectCountry>()
+    .property("country_code", codecForString())
+    .property("currencies", codecForList(codecForString()))
+    .build("ActionArgSelectCountry");
 
 export interface ActionArgsSelectChallenge {
   uuid: string;
 }
+
+export const codecForActionArgSelectChallenge = () =>
+  buildCodecForObject<ActionArgsSelectChallenge>()
+    .property("uuid", codecForString())
+    .build("ActionArgSelectChallenge");
 
 export type ActionArgsSolveChallengeRequest = SolveChallengeAnswerRequest;
 
 export interface SolveChallengeAnswerRequest {
   answer: string;
 }
+
+export interface PolicyMember {
+  authentication_method: number;
+  provider: string;
+}
+
+export interface ActionArgsAddPolicy {
+  policy: PolicyMember[];
+}
+
+export const codecForPolicyMember = () =>
+  buildCodecForObject<PolicyMember>()
+    .property("authentication_method", codecForNumber())
+    .property("provider", codecForString())
+    .build("PolicyMember");
+
+export const codecForActionArgsAddPolicy = () =>
+  buildCodecForObject<ActionArgsAddPolicy>()
+    .property("policy", codecForList(codecForPolicyMember()))
+    .build("ActionArgsAddPolicy");
+
+export interface ActionArgsUpdateExpiration {
+  expiration: Timestamp;
+}
+
+export const codecForActionArgsUpdateExpiration = () =>
+  buildCodecForObject<ActionArgsUpdateExpiration>()
+    .property("expiration", codecForTimestamp)
+    .build("ActionArgsUpdateExpiration");
