@@ -17,5 +17,4 @@ declare module '*.png' {
 declare module 'jed' {
     const x: any;
     export = x;
-  }
-  
+}

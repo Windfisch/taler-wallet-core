@@ -45,7 +45,7 @@ export const WithOneExample = createExample(TestedComponent[type].screen, reduce
   configured: [{
     challenge: 'qwe',
     type,
-    instructions: 'instr',
+    instructions: 'Enter 8 digits code for "Anastasis"',
     remove: () => null
   }]
 });
@@ -53,12 +53,12 @@ export const WithMoreExample = createExample(TestedComponent[type].screen, reduc
   configured: [{
     challenge: 'qwe',
     type,
-    instructions: 'instr',
+    instructions: 'Enter 8 digits code for "Anastasis1"',
     remove: () => null
   },{
     challenge: 'qwe',
     type,
-    instructions: 'instr',
+    instructions: 'Enter 8 digits code for "Anastasis2"',
     remove: () => null
   }]
 });

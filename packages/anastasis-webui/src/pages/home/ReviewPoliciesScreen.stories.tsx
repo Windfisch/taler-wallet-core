@@ -244,5 +244,5 @@ export const SomePoliciesWithMethods = createExample(TestedComponent, {
     type: "question",
     instructions: "Does P equal NP?",
     challenge: "C5SP8"
-  }]
+}]
 } as ReducerState);
