@@ -15,7 +15,7 @@ export function AuthMethodVideoSetup({cancel, addAuthMethod, configured}: AuthMe
     addAuthMethod({
       authentication_method: {
         type: "video",
-        instructions: image,
+        instructions: 'Join a video call',
         challenge: encodeCrock(stringToBytes(image)),
       },
     })

@@ -56,17 +56,17 @@ export const SomePoliciesOneSolved = createExample(TestedComponent, {
     policies: [[{ uuid: '1' }, { uuid: '2' }], [{ uuid: 'uuid-3' }]],
     challenges: [{
       cost: 'USD:1',
-      instructions: 'just go for it',
+      instructions: 'this question cost 1 USD',
       type: 'question',
       uuid: '1',
     }, {
-      cost: 'USD:1',
-      instructions: 'just go for it',
+      cost: 'USD:0',
+      instructions: 'answering this question is free',
       type: 'question',
       uuid: '2',
     }, {
       cost: 'USD:1',
-      instructions: 'just go for it',
+      instructions: 'this question is already answered',
       type: 'question',
       uuid: 'uuid-3',
     }]
@@ -84,8 +84,8 @@ export const OneBadConfiguredPolicy = createExample(TestedComponent, {
     policies: [[{ uuid: '1' }, { uuid: '2' }]],
     challenges: [{
       cost: 'USD:1',
-      instructions: 'just go for it',
-      type: 'sasd',
+      instructions: 'this policy has a missing uuid (the other auth method)',
+      type: 'totp',
       uuid: '1',
     }],
   },
@@ -101,35 +101,48 @@ export const OnePolicyWithAllTheChallenges = createExample(TestedComponent, {
       { uuid: '4' },
       { uuid: '5' },
       { uuid: '6' },
+      { uuid: '7' },
+      { uuid: '8' },
     ]],
     challenges: [{
       cost: 'USD:1',
-      instructions: 'answer the a question correctly',
+      instructions: 'Does P equals NP?',
       type: 'question',
       uuid: '1',
     },{
       cost: 'USD:1',
-      instructions: 'enter a text received by a sms',
+      instructions: 'SMS to 555-555',
       type: 'sms',
       uuid: '2',
     },{
       cost: 'USD:1',
-      instructions: 'enter a text received by a email',
+      instructions: 'Email to qwe@asd.com',
       type: 'email',
       uuid: '3',
     },{
       cost: 'USD:1',
-      instructions: 'enter a code based on a time-based one-time password',
+      instructions: 'Enter 8 digits code for "Anastasis"',
       type: 'totp',
       uuid: '4',
-    },{
-      cost: 'USD:1',
-      instructions: 'send a wire transfer to an account',
+    },{//
+      cost: 'USD:0',
+      instructions: 'Wire transfer from ASDXCVQWE123123 with holder Florian',
       type: 'iban',
       uuid: '5',
     },{
       cost: 'USD:1',
-      instructions: 'just go for it',
+      instructions: 'Join a video call',
+      type: 'video',//Enter 8 digits code for "Anastasis"
+      uuid: '7',
+    },{
+    },{
+      cost: 'USD:1',
+      instructions: 'Letter to address in postal code DE123123',
+      type: 'post',//Enter 8 digits code for "Anastasis"
+      uuid: '8',
+    },{
+      cost: 'USD:1',
+      instructions: 'instruction for an unknown type of challenge',
       type: 'new-type-of-challenge',
       uuid: '6',
     }],
@@ -154,52 +167,52 @@ export const OnePolicyWithAllTheChallengesInDifferentState = createExample(Teste
     ]],
     challenges: [{
       cost: 'USD:1',
-      instructions: 'answer the a question correctly',
+      instructions: 'in state "solved"',
       type: 'question',
       uuid: '1',
     },{
       cost: 'USD:1',
-      instructions: 'answer the a question correctly',
+      instructions: 'in state "hint"',
       type: 'question',
       uuid: '2',
     },{
       cost: 'USD:1',
-      instructions: 'answer the a question correctly',
+      instructions: 'in state "details"',
       type: 'question',
       uuid: '3',
     },{
       cost: 'USD:1',
-      instructions: 'answer the a question correctly',
+      instructions: 'in state "body"',
       type: 'question',
       uuid: '4',
     },{
       cost: 'USD:1',
-      instructions: 'answer the a question correctly',
+      instructions: 'in state "redirect"',
       type: 'question',
       uuid: '5',
     },{
       cost: 'USD:1',
-      instructions: 'answer the a question correctly',
+      instructions: 'in state "server-failure"',
       type: 'question',
       uuid: '6',
     },{
       cost: 'USD:1',
-      instructions: 'answer the a question correctly',
+      instructions: 'in state "truth-unknown"',
       type: 'question',
       uuid: '7',
     },{
       cost: 'USD:1',
-      instructions: 'answer the a question correctly',
+      instructions: 'in state "rate-limit-exceeded"',
       type: 'question',
       uuid: '8',
     },{
       cost: 'USD:1',
-      instructions: 'answer the a question correctly',
+      instructions: 'in state "authentication-timeout"',
       type: 'question',
       uuid: '9',
     },{
       cost: 'USD:1',
-      instructions: 'answer the a question correctly',
+      instructions: 'in state "external-instructions"',
       type: 'question',
       uuid: '10',
     }],

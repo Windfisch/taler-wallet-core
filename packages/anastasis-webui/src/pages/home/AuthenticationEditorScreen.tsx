@@ -3,7 +3,7 @@ import { AuthMethod } from "anastasis-core";
 import { ComponentChildren, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useAnastasisContext } from "../../context/anastasis";
-import { authMethods, KnownAuthMethods } from "./authMethodSetup";
+import { authMethods, KnownAuthMethods } from "./authMethod";
 import { AnastasisClientFrame } from "./index";
 
 

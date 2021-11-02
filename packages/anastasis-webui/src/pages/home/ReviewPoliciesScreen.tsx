@@ -2,7 +2,7 @@
 import { h, VNode } from "preact";
 import { useAnastasisContext } from "../../context/anastasis";
 import { AnastasisClientFrame } from "./index";
-import { authMethods, KnownAuthMethods } from "./authMethodSetup";
+import { authMethods, KnownAuthMethods } from "./authMethod";
 
 export function ReviewPoliciesScreen(): VNode {
   const reducer = useAnastasisContext()

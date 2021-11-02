@@ -25,7 +25,7 @@ export function AuthMethodTotpSetup({ addAuthMethod, cancel, configured }: AuthM
   const addTotpAuth = (): void => addAuthMethod({
     authentication_method: {
       type: "totp",
-      instructions: `Enter ${digits} digits code for ${name}`,
+      instructions: `Enter ${digits} digits code for "${name}"`,
       challenge: encodeCrock(stringToBytes(totpURL)),
     },
   });

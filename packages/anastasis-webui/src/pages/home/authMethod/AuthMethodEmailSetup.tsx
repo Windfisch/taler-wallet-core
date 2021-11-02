@@ -51,7 +51,7 @@ export function AuthMethodEmailSetup({ cancel, addAuthMethod, configured }: Auth
         </div></section>}
       <div>
         <div style={{ marginTop: '2em', display: 'flex', justifyContent: 'space-between' }}>
-          <button class="button" onClick={cancel}>Canceul</button>
+          <button class="button" onClick={cancel}>Cancel</button>
           <span data-tooltip={errors}>
             <button class="button is-info" disabled={errors !== undefined} onClick={addEmailAuth}>Add</button>
           </span>
