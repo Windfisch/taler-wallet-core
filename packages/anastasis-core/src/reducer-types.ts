@@ -73,7 +73,14 @@ export interface ReducerStateBackup {
    */
   policy_providers?: PolicyProvider[];
   success_details?: SuccessDetails;
+
+  /**
+   * Currently requested payments.
+   *
+   * List of taler://pay URIs.
+   */
   payments?: string[];
+
   policy_payment_requests?: {
     payto: string;
     provider: string;

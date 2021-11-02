@@ -570,7 +570,7 @@ async function uploadSecret(
     if (resp.status !== 204) {
       return {
         code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
-        hint: "could not upload policy",
+        hint: `could not upload truth (HTTP status ${resp.status})`,
       };
     }
 
@@ -631,7 +631,7 @@ async function uploadSecret(
     if (resp.status !== 204) {
       return {
         code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
-        hint: "could not upload policy",
+        hint: `could not upload policy (http status ${resp.status})`,
       };
     }
     let policyVersion = 0;
