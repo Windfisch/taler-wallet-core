@@ -1,13 +1,19 @@
 import {
+  AmountJson,
+  AmountLike,
+  Amounts,
   AmountString,
   buildSigPS,
   bytesToString,
   Codec,
   codecForAny,
   decodeCrock,
+  Duration,
   eddsaSign,
   encodeCrock,
+  getDurationRemaining,
   getRandomBytes,
+  getTimestampNow,
   hash,
   j2s,
   Logger,
@@ -1051,27 +1057,62 @@ async function nextFromAuthenticationsEditing(
 async function updateUploadFees(
   state: ReducerStateBackup,
 ): Promise<ReducerStateBackup | ReducerStateError> {
-  for (const prov of state.policy_providers ?? []) {
-    const info = state.authentication_providers![prov.provider_url];
-    if (!("currency" in info)) {
-      continue;
+  const expiration = state.expiration;
+  if (!expiration) {
+    return { ...state };
+  }
+  logger.info("updating upload fees");
+  const feePerCurrency: Record<string, AmountJson> = {};
+  const coveredProviders = new Set<string>();
+  const addFee = (x: AmountLike) => {
+    x = Amounts.jsonifyAmount(x);
+    feePerCurrency[x.currency] = Amounts.add(
+      feePerCurrency[x.currency] ?? Amounts.getZero(x.currency),
+      x,
+    ).amount;
+  };
+  const years = Duration.toIntegerYears(Duration.getRemaining(expiration));
+  logger.info(`computing fees for ${years} years`);
+  for (const x of state.policies ?? []) {
+    for (const m of x.methods) {
+      const prov = state.authentication_providers![
+        m.provider
+      ] as AuthenticationProviderStatusOk;
+      const authMethod = state.authentication_methods![m.authentication_method];
+      if (!coveredProviders.has(m.provider)) {
+        const annualFee = Amounts.mult(prov.annual_fee, years).amount;
+        logger.info(`adding annual fee ${Amounts.stringify(annualFee)}`);
+        addFee(annualFee);
+        coveredProviders.add(m.provider);
+      }
+      for (const pm of prov.methods) {
+        if (pm.type === authMethod.type) {
+          addFee(pm.usage_fee);
+          break;
+        }
+      }
     }
   }
-  return { ...state, upload_fees: [] };
+  return {
+    ...state,
+    upload_fees: Object.values(feePerCurrency).map((x) => ({
+      fee: Amounts.stringify(x),
+    })),
+  };
 }
 
 async function enterSecret(
   state: ReducerStateBackup,
   args: ActionArgEnterSecret,
 ): Promise<ReducerStateBackup | ReducerStateError> {
-  return {
+  return updateUploadFees({
     ...state,
     expiration: args.expiration,
     core_secret: {
       mime: args.secret.mime ?? "text/plain",
       value: args.secret.value,
     },
-  };
+  });
 }
 
 async function nextFromChallengeSelecting(
@@ -1102,11 +1143,10 @@ async function updateSecretExpiration(
   state: ReducerStateBackup,
   args: ActionArgsUpdateExpiration,
 ): Promise<ReducerStateBackup | ReducerStateError> {
-  // FIXME: implement!
-  return {
+  return updateUploadFees({
     ...state,
     expiration: args.expiration,
-  };
+  });
 }
 
 const backupTransitions: Record<

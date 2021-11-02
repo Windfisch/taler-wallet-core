@@ -66,6 +66,7 @@ export interface ReducerStateBackup {
   selected_country?: string;
   secret_name?: string;
   policies?: Policy[];
+
   /**
    * Policy providers are providers that we checked to be functional
    * and that are actually used in policies.
@@ -82,7 +83,7 @@ export interface ReducerStateBackup {
 
   expiration?: Timestamp;
 
-  upload_fees?: AmountString[];
+  upload_fees?: { fee: AmountString }[];
 }
 
 export interface AuthMethod {
