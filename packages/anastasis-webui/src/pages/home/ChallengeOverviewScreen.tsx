@@ -5,6 +5,38 @@ import { useAnastasisContext } from "../../context/anastasis";
 import { AnastasisClientFrame } from "./index";
 import { authMethods, KnownAuthMethods } from "./authMethod";
 
+function FeedbackDisplay(props: { feedback?: ChallengeFeedback }) {
+  const { feedback } = props;
+  if (!feedback) {
+    return null;
+  }
+  switch (feedback.state) {
+    case ChallengeFeedbackStatus.Message:
+      return (
+        <div>
+          <p>{feedback.message}</p>
+        </div>
+      );
+    case ChallengeFeedbackStatus.Pending:
+    case ChallengeFeedbackStatus.AuthIban:
+      return null;
+    case ChallengeFeedbackStatus.RateLimitExceeded:
+      return <div>Rate limit exceeded.</div>;
+    case ChallengeFeedbackStatus.Redirect:
+      return <div>Redirect (FIXME: not supported)</div>;
+    case ChallengeFeedbackStatus.Unsupported:
+      return <div>Challenge not supported by client.</div>;
+    case ChallengeFeedbackStatus.TruthUnknown:
+      return <div>Truth unknown</div>;
+    default:
+      return (
+        <div>
+          <pre>{JSON.stringify(feedback)}</pre>
+        </div>
+      );
+  }
+}
+
 export function ChallengeOverviewScreen(): VNode {
   const reducer = useAnastasisContext();
 
@@ -98,11 +130,7 @@ export function ChallengeOverviewScreen(): VNode {
                   <span class="icon">{method?.icon}</span>
                   <span>{info.instructions}</span>
                 </div>
-                {info.feedback?.state === ChallengeFeedbackStatus.Message ? (
-                  <div>
-                    <p>{info.feedback.message}</p>
-                  </div>
-                ) : null}
+                <FeedbackDisplay feedback={info.feedback} />
               </div>
               <div>
                 {method && info.feedback?.state !== "solved" ? (
