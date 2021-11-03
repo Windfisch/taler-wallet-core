@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { encodeCrock, getRandomBytes } from "@gnu-taler/taler-util";
+import { encodeCrock, getRandomBytes, HttpStatusCode } from "@gnu-taler/taler-util";
 import {
   CoinRecord,
   CoinSourceType,
@@ -40,7 +40,6 @@ import {
 import { AmountJson, Amounts } from "@gnu-taler/taler-util";
 import { amountToPretty } from "@gnu-taler/taler-util";
 import {
-  HttpResponseStatus,
   readSuccessResponseJsonOrThrow,
   readUnexpectedResponseDetails,
 } from "../util/http.js";
@@ -377,7 +376,7 @@ async function refreshMelt(
     });
   });
 
-  if (resp.status === HttpResponseStatus.NotFound) {
+  if (resp.status === HttpStatusCode.NotFound) {
     const errDetails = await readUnexpectedResponseDetails(resp);
     await ws.db
       .mktx((x) => ({

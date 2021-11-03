@@ -59,17 +59,6 @@ export interface HttpRequestOptions {
   body?: string | ArrayBuffer | ArrayBufferView;
 }
 
-export enum HttpResponseStatus {
-  Ok = 200,
-  NoContent = 204,
-  Gone = 210,
-  NotModified = 304,
-  BadRequest = 400,
-  PaymentRequired = 402,
-  NotFound = 404,
-  Conflict = 409,
-}
-
 /**
  * Headers, roughly modeled after the fetch API's headers object.
  */

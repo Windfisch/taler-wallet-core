@@ -22,6 +22,7 @@ export * from "./url.js";
 export { fnutil } from "./fnutils.js";
 export * from "./kdf.js";
 export * from "./talerCrypto.js";
+export * from "./http-status-codes.js";
 export {
   randomBytes,
   secretbox,

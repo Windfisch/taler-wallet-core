@@ -53,6 +53,7 @@ import {
   Logger,
   URL,
   getDurationRemaining,
+  HttpStatusCode,
 } from "@gnu-taler/taler-util";
 import { encodeCrock, getRandomBytes } from "@gnu-taler/taler-util";
 import {
@@ -89,7 +90,6 @@ import {
 } from "../db.js";
 import {
   getHttpResponseErrorDetails,
-  HttpResponseStatus,
   readSuccessResponseJsonOrErrorCode,
   readSuccessResponseJsonOrThrow,
   readTalerErrorResponse,
@@ -1222,7 +1222,7 @@ async function submitPay(
       };
     }
 
-    if (resp.status === HttpResponseStatus.BadRequest) {
+    if (resp.status === HttpStatusCode.BadRequest) {
       const errDetails = await readUnexpectedResponseDetails(resp);
       logger.warn("unexpected 400 response for /pay");
       logger.warn(j2s(errDetails));
@@ -1242,7 +1242,7 @@ async function submitPay(
       throw new OperationFailedAndReportedError(errDetails);
     }
 
-    if (resp.status === HttpResponseStatus.Conflict) {
+    if (resp.status === HttpStatusCode.Conflict) {
       const err = await readTalerErrorResponse(resp);
       if (
         err.code ===
