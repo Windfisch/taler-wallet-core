@@ -5,7 +5,7 @@ import { useAnastasisContext } from "../../context/anastasis";
 import { AnastasisClientFrame } from "./index";
 import { authMethods, KnownAuthMethods } from "./authMethod";
 
-function FeedbackDisplay(props: { feedback?: ChallengeFeedback }) {
+function OverviewFeedbackDisplay(props: { feedback?: ChallengeFeedback }) {
   const { feedback } = props;
   if (!feedback) {
     return null;
@@ -130,7 +130,7 @@ export function ChallengeOverviewScreen(): VNode {
                   <span class="icon">{method?.icon}</span>
                   <span>{info.instructions}</span>
                 </div>
-                <FeedbackDisplay feedback={info.feedback} />
+                <OverviewFeedbackDisplay feedback={info.feedback} />
               </div>
               <div>
                 {method && info.feedback?.state !== "solved" ? (
