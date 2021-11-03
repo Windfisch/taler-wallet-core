@@ -90,6 +90,7 @@ import {
 } from "./crypto.js";
 import { unzlibSync, zlibSync } from "fflate";
 import { EscrowMethod, RecoveryDocument } from "./recovery-document-types.js";
+import { ProviderInfo, suggestPolicies } from "./policy-suggestion.js";
 
 const { fetch } = fetchPonyfill({});
 
@@ -290,109 +291,6 @@ async function backupEnterUserAttributes(
   return newState;
 }
 
-interface PolicySelectionResult {
-  policies: Policy[];
-  policy_providers: PolicyProvider[];
-}
-
-type MethodSelection = number[];
-
-function enumerateSelections(n: number, m: number): MethodSelection[] {
-  const selections: MethodSelection[] = [];
-  const a = new Array(n);
-  const sel = (i: number) => {
-    if (i === n) {
-      selections.push([...a]);
-      return;
-    }
-    const start = i == 0 ? 0 : a[i - 1] + 1;
-    for (let j = start; j < m; j++) {
-      a[i] = j;
-      sel(i + 1);
-    }
-  };
-  sel(0);
-  return selections;
-}
-
-/**
- * Provider information used during provider/method mapping.
- */
-interface ProviderInfo {
-  url: string;
-  methodCost: Record<string, AmountString>;
-}
-
-/**
- * Assign providers to a method selection.
- */
-function assignProviders(
-  methods: AuthMethod[],
-  providers: ProviderInfo[],
-  methodSelection: number[],
-): Policy | undefined {
-  const selectedProviders: string[] = [];
-  for (const mi of methodSelection) {
-    const m = methods[mi];
-    let found = false;
-    for (const prov of providers) {
-      if (prov.methodCost[m.type]) {
-        selectedProviders.push(prov.url);
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      /* No provider found for this method */
-      return undefined;
-    }
-  }
-  return {
-    methods: methodSelection.map((x, i) => {
-      return {
-        authentication_method: x,
-        provider: selectedProviders[i],
-      };
-    }),
-  };
-}
-
-function suggestPolicies(
-  methods: AuthMethod[],
-  providers: ProviderInfo[],
-): PolicySelectionResult {
-  const numMethods = methods.length;
-  if (numMethods === 0) {
-    throw Error("no methods");
-  }
-  let numSel: number;
-  if (numMethods <= 2) {
-    numSel = numMethods;
-  } else if (numMethods <= 4) {
-    numSel = numMethods - 1;
-  } else if (numMethods <= 6) {
-    numSel = numMethods - 2;
-  } else if (numMethods == 7) {
-    numSel = numMethods - 3;
-  } else {
-    numSel = 4;
-  }
-  const policies: Policy[] = [];
-  const selections = enumerateSelections(numSel, numMethods);
-  logger.info(`selections: ${j2s(selections)}`);
-  for (const sel of selections) {
-    const p = assignProviders(methods, providers, sel);
-    if (p) {
-      policies.push(p);
-    }
-  }
-  return {
-    policies,
-    policy_providers: providers.map((x) => ({
-      provider_url: x.url,
-    })),
-  };
-}
 
 /**
  * Truth data as stored in the reducer.
