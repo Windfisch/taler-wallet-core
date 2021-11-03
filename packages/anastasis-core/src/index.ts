@@ -96,6 +96,7 @@ const { fetch } = fetchPonyfill({});
 
 export * from "./reducer-types.js";
 export * as validators from "./validators.js";
+export * from "./challenge-feedback-types.js";
 
 const logger = new Logger("anastasis-core:index.ts");
 

@@ -13,7 +13,7 @@ export function TruthsPayingScreen(): VNode {
   const payments = reducer.currentReducerState.payments ?? [];
   return (
     <AnastasisClientFrame
-      hideNext
+      hideNext={"FIXME"}
       title="Backup: Truths Paying"
     >
       <p>

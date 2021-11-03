@@ -16,7 +16,7 @@ export function CountrySelectionScreen(): VNode {
     currencies: [x.currency],
   });
   return (
-    <AnastasisClientFrame hideNext title={withProcessLabel(reducer, "Select Country")} >
+    <AnastasisClientFrame hideNext={"FIXME"} title={withProcessLabel(reducer, "Select Country")} >
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {reducer.currentReducerState.countries!.map((x: any) => (
           <div key={x.name}>
