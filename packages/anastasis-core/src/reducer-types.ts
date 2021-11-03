@@ -8,6 +8,7 @@ import {
   codecForTimestamp,
   Timestamp,
 } from "@gnu-taler/taler-util";
+import { ChallengeFeedback } from "./challenge-feedback-types.js";
 import { KeyShare } from "./crypto.js";
 import { RecoveryDocument } from "./recovery-document-types.js";
 
@@ -185,10 +186,6 @@ export interface ReducerStateRecovery {
   authentication_providers?: { [url: string]: AuthenticationProviderStatus };
 }
 
-export interface ChallengeFeedback {
-  state: string;
-}
-
 export interface ReducerStateError {
   backup_state?: undefined;
   recovery_state?: undefined;
@@ -311,20 +308,9 @@ export interface ActionArgSelectCountry {
   currencies: string[];
 }
 
-export const codecForActionArgSelectCountry = () =>
-  buildCodecForObject<ActionArgSelectCountry>()
-    .property("country_code", codecForString())
-    .property("currencies", codecForList(codecForString()))
-    .build("ActionArgSelectCountry");
-
 export interface ActionArgsSelectChallenge {
   uuid: string;
 }
-
-export const codecForActionArgSelectChallenge = () =>
-  buildCodecForObject<ActionArgsSelectChallenge>()
-    .property("uuid", codecForString())
-    .build("ActionArgSelectChallenge");
 
 export type ActionArgsSolveChallengeRequest = SolveChallengeAnswerRequest;
 
@@ -341,6 +327,10 @@ export interface ActionArgsAddPolicy {
   policy: PolicyMember[];
 }
 
+export interface ActionArgsUpdateExpiration {
+  expiration: Timestamp;
+}
+
 export const codecForPolicyMember = () =>
   buildCodecForObject<PolicyMember>()
     .property("authentication_method", codecForNumber())
@@ -352,11 +342,18 @@ export const codecForActionArgsAddPolicy = () =>
     .property("policy", codecForList(codecForPolicyMember()))
     .build("ActionArgsAddPolicy");
 
-export interface ActionArgsUpdateExpiration {
-  expiration: Timestamp;
-}
-
 export const codecForActionArgsUpdateExpiration = () =>
   buildCodecForObject<ActionArgsUpdateExpiration>()
     .property("expiration", codecForTimestamp)
     .build("ActionArgsUpdateExpiration");
+
+export const codecForActionArgSelectChallenge = () =>
+  buildCodecForObject<ActionArgsSelectChallenge>()
+    .property("uuid", codecForString())
+    .build("ActionArgSelectChallenge");
+
+export const codecForActionArgSelectCountry = () =>
+  buildCodecForObject<ActionArgSelectCountry>()
+    .property("country_code", codecForString())
+    .property("currencies", codecForList(codecForString()))
+    .build("ActionArgSelectCountry");

@@ -11,10 +11,9 @@ import {
   Duration,
   eddsaSign,
   encodeCrock,
-  getDurationRemaining,
   getRandomBytes,
-  getTimestampNow,
   hash,
+  HttpStatusCode,
   j2s,
   Logger,
   stringToBytes,
@@ -91,6 +90,7 @@ import {
 import { unzlibSync, zlibSync } from "fflate";
 import { EscrowMethod, RecoveryDocument } from "./recovery-document-types.js";
 import { ProviderInfo, suggestPolicies } from "./policy-suggestion.js";
+import { ChallengeFeedback, ChallengeFeedbackStatus } from "./challenge-feedback-types.js";
 
 const { fetch } = fetchPonyfill({});
 
@@ -290,7 +290,6 @@ async function backupEnterUserAttributes(
   };
   return newState;
 }
-
 
 /**
  * Truth data as stored in the reducer.
@@ -551,6 +550,7 @@ async function uploadSecret(
 
   return {
     ...state,
+    core_secret: undefined,
     backup_state: BackupStates.BackupFinished,
     success_details: successDetails,
   };
@@ -684,6 +684,92 @@ async function tryRecoverSecret(
   return { ...state };
 }
 
+/**
+ * Request a truth, optionally with a challenge solution
+ * provided by the user.
+ */
+async function requestTruth(
+  state: ReducerStateRecovery,
+  truth: EscrowMethod,
+  solveRequest?: ActionArgsSolveChallengeRequest,
+): Promise<ReducerStateRecovery | ReducerStateError> {
+  const url = new URL(`/truth/${truth.uuid}`, truth.url);
+
+  if (solveRequest) {
+    // FIXME: This isn't correct for non-question truth responses.
+    url.searchParams.set(
+      "response",
+      await secureAnswerHash(solveRequest.answer, truth.uuid, truth.truth_salt),
+    );
+  }
+
+  const resp = await fetch(url.href, {
+    headers: {
+      "Anastasis-Truth-Decryption-Key": truth.truth_key,
+    },
+  });
+
+  if (resp.status === HttpStatusCode.Ok) {
+    const answerSalt =
+      solveRequest && truth.escrow_type === "question"
+        ? solveRequest.answer
+        : undefined;
+
+    const userId = await userIdentifierDerive(
+      state.identity_attributes,
+      truth.provider_salt,
+    );
+
+    const respBody = new Uint8Array(await resp.arrayBuffer());
+    const keyShare = await decryptKeyShare(
+      encodeCrock(respBody),
+      userId,
+      answerSalt,
+    );
+
+    const recoveredKeyShares = {
+      ...(state.recovered_key_shares ?? {}),
+      [truth.uuid]: keyShare,
+    };
+
+    const challengeFeedback: { [x: string]: ChallengeFeedback } = {
+      ...state.challenge_feedback,
+      [truth.uuid]: {
+        state: ChallengeFeedbackStatus.Solved,
+      },
+    };
+
+    const newState: ReducerStateRecovery = {
+      ...state,
+      recovery_state: RecoveryStates.ChallengeSelecting,
+      challenge_feedback: challengeFeedback,
+      recovered_key_shares: recoveredKeyShares,
+    };
+
+    return tryRecoverSecret(newState);
+  }
+
+  if (resp.status === HttpStatusCode.Forbidden) {
+    return {
+      ...state,
+      recovery_state: RecoveryStates.ChallengeSolving,
+      challenge_feedback: {
+        ...state.challenge_feedback,
+        [truth.uuid]: {
+          state: ChallengeFeedbackStatus.Message,
+          message: "Challenge should be solved",
+        },
+      },
+    };
+  }
+
+  return {
+    code: TalerErrorCode.ANASTASIS_TRUTH_CHALLENGE_FAILED,
+    hint: "got unexpected /truth/ response status",
+    http_status: resp.status,
+  } as ReducerStateError;
+}
+
 async function solveChallenge(
   state: ReducerStateRecovery,
   ta: ActionArgsSolveChallengeRequest,
@@ -693,65 +779,9 @@ async function solveChallenge(
     (x) => x.uuid === state.selected_challenge_uuid,
   );
   if (!truth) {
-    throw "truth for challenge not found";
+    throw Error("truth for challenge not found");
   }
-
-  const url = new URL(`/truth/${truth.uuid}`, truth.url);
-
-  // FIXME: This isn't correct for non-question truth responses.
-  url.searchParams.set(
-    "response",
-    await secureAnswerHash(ta.answer, truth.uuid, truth.truth_salt),
-  );
-
-  const resp = await fetch(url.href, {
-    headers: {
-      "Anastasis-Truth-Decryption-Key": truth.truth_key,
-    },
-  });
-
-  if (resp.status !== 200) {
-    return {
-      code: TalerErrorCode.ANASTASIS_TRUTH_CHALLENGE_FAILED,
-      hint: "got non-200 response",
-      http_status: resp.status,
-    } as ReducerStateError;
-  }
-
-  const answerSalt = truth.escrow_type === "question" ? ta.answer : undefined;
-
-  const userId = await userIdentifierDerive(
-    state.identity_attributes,
-    truth.provider_salt,
-  );
-
-  const respBody = new Uint8Array(await resp.arrayBuffer());
-  const keyShare = await decryptKeyShare(
-    encodeCrock(respBody),
-    userId,
-    answerSalt,
-  );
-
-  const recoveredKeyShares = {
-    ...(state.recovered_key_shares ?? {}),
-    [truth.uuid]: keyShare,
-  };
-
-  const challengeFeedback = {
-    ...state.challenge_feedback,
-    [truth.uuid]: {
-      state: "solved",
-    },
-  };
-
-  const newState: ReducerStateRecovery = {
-    ...state,
-    recovery_state: RecoveryStates.ChallengeSelecting,
-    challenge_feedback: challengeFeedback,
-    recovered_key_shares: recoveredKeyShares,
-  };
-
-  return tryRecoverSecret(newState);
+  return requestTruth(state, truth, ta);
 }
 
 async function recoveryEnterUserAttributes(
@@ -776,19 +806,7 @@ async function selectChallenge(
     throw "truth for challenge not found";
   }
 
-  const url = new URL(`/truth/${truth.uuid}`, truth.url);
-
-  const resp = await fetch(url.href, {
-    headers: {
-      "Anastasis-Truth-Decryption-Key": truth.truth_key,
-    },
-  });
-
-  return {
-    ...state,
-    recovery_state: RecoveryStates.ChallengeSolving,
-    selected_challenge_uuid: ta.uuid,
-  };
+  return requestTruth({ ...state, selected_challenge_uuid: ta.uuid }, truth);
 }
 
 async function backupSelectContinent(
