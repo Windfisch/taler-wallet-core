@@ -27,7 +27,7 @@ export function AuthMethodQuestionSetup({ cancel, addAuthMethod, configured }: A
     <AnastasisClientFrame hideNav title="Add Security Question">
       <div>
         <p>
-          For security question authentication, you need to provide a question
+          For2 security question authentication, you need to provide a question
           and its answer. When recovering your secret, you will be shown the
           question and you will need to type the answer exactly as you typed it
           here.
@@ -47,6 +47,13 @@ export function AuthMethodQuestionSetup({ cancel, addAuthMethod, configured }: A
           />
         </div>
 
+        <div style={{ marginTop: '2em', display: 'flex', justifyContent: 'space-between' }}>
+          <button class="button" onClick={cancel}>Cancel</button>
+          <span data-tooltip={errors}>
+            <button class="button is-info" disabled={errors !== undefined} onClick={addQuestionAuth}>Add</button>
+          </span>
+        </div>
+
         {configured.length > 0 && <section class="section">
           <div class="block">
             Your security questions:
@@ -58,12 +65,6 @@ export function AuthMethodQuestionSetup({ cancel, addAuthMethod, configured }: A
               </div>
             })}
           </div></section>}
-        <div style={{ marginTop: '2em', display: 'flex', justifyContent: 'space-between' }}>
-          <button class="button" onClick={cancel}>Cancel</button>
-          <span data-tooltip={errors}>
-            <button class="button is-info" disabled={errors !== undefined} onClick={addQuestionAuth}>Add</button>
-          </span>
-        </div>
       </div>
     </AnastasisClientFrame >
   );

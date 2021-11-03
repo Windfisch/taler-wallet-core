@@ -233,16 +233,16 @@ export const SomePoliciesWithMethods = createExample(TestedComponent, {
     instructions: "Does P equal NP?",
     challenge: "C5SP8"
   },{
-    type: "email",
-    instructions: "Email to qwe@asd.com",
+    type: "totp",
+    instructions: "Response code for 'Anastasis'",
     challenge: "E5VPA"
   }, {
     type: "sms",
-    instructions: "SMS to 555-555",
+    instructions: "SMS to 6666-6666",
     challenge: ""
   }, {
     type: "question",
-    instructions: "Does P equal NP?",
+    instructions: "How did the chicken cross the road?",
     challenge: "C5SP8"
 }]
 } as ReducerState);

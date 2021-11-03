@@ -39,9 +39,9 @@ export function Sidebar({ mobile }: Props): VNode {
 
   return (
     <aside class="aside is-placed-left is-expanded">
-      {mobile && <div class="footer" onClick={(e) => { return e.stopImmediatePropagation() }}>
+      {/* {mobile && <div class="footer" onClick={(e) => { return e.stopImmediatePropagation() }}>
         <LangSelector />
-      </div>}
+      </div>} */}
       <div class="aside-tools">
         <div class="aside-tools-label">
           <div><b>Anastasis</b> Reducer</div>
@@ -68,7 +68,7 @@ export function Sidebar({ mobile }: Props): VNode {
             <li class={reducer.currentReducerState.backup_state === BackupStates.ContinentSelecting ||
               reducer.currentReducerState.backup_state === BackupStates.CountrySelecting ? 'is-active' : ''}>
               <div class="ml-4">
-                <span class="menu-item-label"><Translate>Location &amp; Currency</Translate></span>
+                <span class="menu-item-label"><Translate>Location</Translate></span>
               </div>
             </li>
             <li class={reducer.currentReducerState.backup_state === BackupStates.UserAttributesCollecting ? 'is-active' : ''}>
@@ -85,7 +85,7 @@ export function Sidebar({ mobile }: Props): VNode {
             <li class={reducer.currentReducerState.backup_state === BackupStates.PoliciesReviewing ? 'is-active' : ''}>
               <div class="ml-4">
 
-                <span class="menu-item-label"><Translate>Policies reviewing</Translate></span>
+                <span class="menu-item-label"><Translate>Policies</Translate></span>
               </div>
             </li>
             <li class={reducer.currentReducerState.backup_state === BackupStates.SecretEditing ? 'is-active' : ''}>
@@ -94,12 +94,12 @@ export function Sidebar({ mobile }: Props): VNode {
                 <span class="menu-item-label"><Translate>Secret input</Translate></span>
               </div>
             </li>
-            <li class={reducer.currentReducerState.backup_state === BackupStates.PoliciesPaying ? 'is-active' : ''}>
+            {/* <li class={reducer.currentReducerState.backup_state === BackupStates.PoliciesPaying ? 'is-active' : ''}>
               <div class="ml-4">
 
                 <span class="menu-item-label"><Translate>Payment (optional)</Translate></span>
               </div>
-            </li>
+            </li> */}
             <li class={reducer.currentReducerState.backup_state === BackupStates.BackupFinished ? 'is-active' : ''}>
               <div class="ml-4">
 
@@ -116,7 +116,7 @@ export function Sidebar({ mobile }: Props): VNode {
             <li class={reducer.currentReducerState.recovery_state === RecoveryStates.ContinentSelecting ||
               reducer.currentReducerState.recovery_state === RecoveryStates.CountrySelecting ? 'is-active' : ''}>
               <div class="ml-4">
-                <span class="menu-item-label"><Translate>Location &amp; Currency</Translate></span>
+                <span class="menu-item-label"><Translate>Location</Translate></span>
               </div>
             </li>
             <li class={reducer.currentReducerState.recovery_state === RecoveryStates.UserAttributesCollecting ? 'is-active' : ''}>

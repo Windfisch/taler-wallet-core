@@ -52,8 +52,8 @@ export const Backup = createExample(TestedComponent, {
     uuid: 'asdasdsa2',
     widget: 'wid',
   }, {
-    name: 'date',
-    label: 'third',
+    name: 'birthdate',
+    label: 'birthdate',
     type: 'date',
     uuid: 'asdasdsa3',
     widget: 'calendar',

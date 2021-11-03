@@ -7,6 +7,7 @@ import { AnastasisClientFrame, withProcessLabel } from "./index";
 import { TextInput } from "../../components/fields/TextInput";
 import { DateInput } from "../../components/fields/DateInput";
 import { NumberInput } from "../../components/fields/NumberInput";
+import { isAfter, parse } from "date-fns";
 
 export function AttributeEntryScreen(): VNode {
   const reducer = useAnastasisContext()
@@ -46,15 +47,14 @@ export function AttributeEntryScreen(): VNode {
         identity_attributes: attrs,
       })}
     >
-      <div class="columns">
-        <div class="column is-half">
+      <div class="columns" style={{ maxWidth: 'unset' }}>
+        <div class="column is-one-third">
           {fieldList}
         </div>
-        <div class="column is-half" >
+        <div class="column is-two-third" >
           <p>This personal information will help to locate your secret.</p>
-          <h1><b>This stay private</b></h1>
-          <p>The information you have entered here:
-          </p>
+          <h1 class="title">This stays private</h1>
+          <p>The information you have entered here:</p>
           <ul>
             <li>
               <span class="icon is-right">
@@ -111,15 +111,17 @@ function AttributeEntryField(props: AttributeEntryFieldProps): VNode {
           bind={[props.value, props.setValue]}
         />
       }
-      <span>
+      <div class="block">
+        This stays private
         <span class="icon is-right">
           <i class="mdi mdi-eye-off" />
         </span>
-        This stay private
-      </span>
+      </div>
     </div>
   );
 }
+const YEAR_REGEX = /^[0-9]+-[0-9]+-[0-9]+$/
+
 
 function checkIfValid(value: string, spec: UserAttributeSpec): string | undefined {
   const pattern = spec['validation-regex']
@@ -135,6 +137,23 @@ function checkIfValid(value: string, spec: UserAttributeSpec): string | undefine
   const optional = spec.optional
   if (!optional && !value) {
     return 'This value is required'
+  }
+  if ("date" === spec.type) {
+    if (!YEAR_REGEX.test(value)) {
+      return "The date doesn't follow the format"
+    }
+
+    try {
+      const v = parse(value, 'yyyy-MM-dd', new Date());
+      if (Number.isNaN(v.getTime())) {
+        return "Some numeric values seems out of range for a date"
+      }
+      if ("birthdate" === spec.name && isAfter(v, new Date())) {
+        return "A birthdate cannot be in the future"
+      }
+    } catch (e) {
+      return "Could not parse the date"
+    }
   }
   return undefined
 }

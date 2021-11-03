@@ -36,20 +36,21 @@ export function ContinentSelectionScreen(): VNode {
     })
   }
 
-  const step1 = reducer.currentReducerState.backup_state === BackupStates.ContinentSelecting ||
-    reducer.currentReducerState.recovery_state === RecoveryStates.ContinentSelecting;
+  // const step1 = reducer.currentReducerState.backup_state === BackupStates.ContinentSelecting ||
+  //   reducer.currentReducerState.recovery_state === RecoveryStates.ContinentSelecting;
 
   const errors = !theCountry ? "Select a country" : undefined 
 
   return (
-    <AnastasisClientFrame hideNext={errors} title={withProcessLabel(reducer, "Select location")} onNext={selectCountryAction}>
-      <div class="columns">
-        <div class="column is-half">
+    <AnastasisClientFrame hideNext={errors} title={withProcessLabel(reducer, "Where do you live?")} onNext={selectCountryAction}>
+
+      <div class="columns" >
+        <div class="column is-one-third">
           <div class="field">
             <label class="label">Continent</label>
-            <div class="control has-icons-left">
-              <div class="select " >
-                <select onChange={(e) => selectContinent(e.currentTarget.value)} value={theContinent} disabled={!step1}>
+            <div class="control is-expanded has-icons-left">
+              <div class="select is-fullwidth" >
+                <select onChange={(e) => selectContinent(e.currentTarget.value)} value={theContinent} >
                   <option key="none" disabled selected value=""> Choose a continent </option>
                   {continentList.map(prov => (
                     <option key={prov.name} value={prov.name}>
@@ -61,18 +62,13 @@ export function ContinentSelectionScreen(): VNode {
                   <i class="mdi mdi-earth" />
                 </div>
               </div>
-              {!step1 && <span class="control">
-                <a class="button is-danger" onClick={() => reducer.back()}>
-                  X
-                </a>
-              </span>}
             </div>
           </div>
 
           <div class="field">
             <label class="label">Country</label>
-            <div class="control has-icons-left">
-              <div class="select" >
+            <div class="control is-expanded has-icons-left">
+              <div class="select is-fullwidth" >
                 <select onChange={(e) => selectCountry((e.target as any).value)} disabled={!theContinent} value={theCountry?.code || ""}>
                   <option key="none" disabled selected value=""> Choose a country </option>
                   {countryList.map(prov => (
@@ -88,17 +84,17 @@ export function ContinentSelectionScreen(): VNode {
             </div>
           </div>
 
-          {theCountry && <div class="field">
+          {/* {theCountry && <div class="field">
             <label class="label">Available currencies:</label>
             <div class="control">
               <input class="input is-small" type="text" readonly value={theCountry.currency} />
             </div>
-          </div>}
+          </div>} */}
         </div>
-        <div class="column is-half">
+        <div class="column is-two-third">
           <p>
-            A location will help to define a common information that will be use to locate your secret and a currency
-            for payments if needed.
+            Your location will help us to determine which personal information 
+            ask you for the next step.
           </p>
         </div>
       </div>

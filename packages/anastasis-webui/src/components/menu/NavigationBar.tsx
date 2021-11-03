@@ -49,7 +49,7 @@ export function NavigationBar({ onMobileMenu, title }: Props): VNode {
       </a>
       <div class="navbar-end">
         <div class="navbar-item" style={{ paddingTop: 4, paddingBottom: 4 }}>
-          <LangSelector />
+          {/* <LangSelector /> */}
         </div>
       </div>
     </div>

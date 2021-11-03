@@ -13,6 +13,7 @@ import {
 import {
   useErrorBoundary
 } from "preact/hooks";
+import { AsyncButton } from "../../components/AsyncButton";
 import { Menu } from "../../components/menu";
 import { AnastasisProvider, useAnastasisContext } from "../../context/anastasis";
 import {
@@ -25,7 +26,6 @@ import { BackupFinishedScreen } from "./BackupFinishedScreen";
 import { ChallengeOverviewScreen } from "./ChallengeOverviewScreen";
 import { ChallengePayingScreen } from "./ChallengePayingScreen";
 import { ContinentSelectionScreen } from "./ContinentSelectionScreen";
-import { CountrySelectionScreen } from "./CountrySelectionScreen";
 import { PoliciesPayingScreen } from "./PoliciesPayingScreen";
 import { RecoveryFinishedScreen } from "./RecoveryFinishedScreen";
 import { ReviewPoliciesScreen } from "./ReviewPoliciesScreen";
@@ -95,12 +95,19 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
   if (!reducer) {
     return <p>Fatal: Reducer must be in context.</p>;
   }
-  const next = (): void => {
-    if (props.onNext) {
-      props.onNext();
-    } else {
-      reducer.transition("next", {});
-    }
+  const next = async (): Promise<void> => {
+    return new Promise((res, rej) => {
+      try {
+        if (props.onNext) {
+          props.onNext();
+        } else {
+          reducer.transition("next", {});
+        }
+        res()
+      } catch {
+        rej()
+      }
+    })
   };
   const handleKeyPress = (
     e: h.JSX.TargetedKeyboardEvent<HTMLDivElement>,
@@ -111,20 +118,18 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
   return (
     <Fragment>
       <Menu title="Anastasis" />
-      <div>
-        <div class="home" onKeyPress={(e) => handleKeyPress(e)}>
-          <h1 class="title">{props.title}</h1>
+      <div class="home" onKeyPress={(e) => handleKeyPress(e)}>
+        <h1 class="title">{props.title}</h1>
+        <section class="section is-main-section">
           <ErrorBanner />
           {props.children}
           {!props.hideNav ? (
             <div style={{ marginTop: '2em', display: 'flex', justifyContent: 'space-between' }}>
               <button class="button" onClick={() => reducer.back()}>Back</button>
-              <span data-tooltip={props.hideNext}>
-                <button class="button is-info" onClick={next} disabled={props.hideNext !== undefined}>Next</button>
-              </span>
+              <AsyncButton data-tooltip={props.hideNext} onClick={next} disabled={props.hideNext !== undefined}>Next</AsyncButton>
             </div>
           ) : null}
-        </div>
+        </section>
       </div>
     </Fragment>
   );

@@ -142,6 +142,10 @@ export function AuthenticationEditorScreen(): VNode {
         </div>
         <div class="column is-half">
           When recovering your wallet, you will be asked to verify your identity via the methods you configure here.
+
+          <b>Explain the exclamation marks</b>
+
+          <a>Explain how to add providers</a>
         </div>
       </div>
     </AnastasisClientFrame>

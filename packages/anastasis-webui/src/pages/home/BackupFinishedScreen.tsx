@@ -23,7 +23,7 @@ export function BackupFinishedScreen(): VNode {
       </p>}
 
     {details && <div class="block">
-    <p>The backup is stored by the following providers:</p>
+      <p>The backup is stored by the following providers:</p>
       {Object.keys(details).map((x, i) => {
         const sd = details[x];
         return (
@@ -31,11 +31,14 @@ export function BackupFinishedScreen(): VNode {
             {x}
             <p>
               version {sd.policy_version}
-              {sd.policy_expiration.t_ms !== 'never' ? ` expires at: ${format(sd.policy_expiration.t_ms, 'dd/MM/yyyy')}` : ' without expiration date'}
+              {sd.policy_expiration.t_ms !== 'never' ? ` expires at: ${format(sd.policy_expiration.t_ms, 'dd-MM-yyyy')}` : ' without expiration date'}
             </p>
           </div>
         );
       })}
     </div>}
+    <div style={{ marginTop: '2em', display: 'flex', justifyContent: 'space-between' }}>
+      <button class="button" onClick={() => reducer.back()}>Back</button>
+    </div>
   </AnastasisClientFrame>);
 }

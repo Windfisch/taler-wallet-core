@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { format, isAfter, parse, sub, subYears } from "date-fns";
 import { h, VNode } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { DatePicker } from "../picker/DatePicker";
@@ -19,16 +19,14 @@ export function DateInput(props: DateInputProps): VNode {
       inputRef.current?.focus();
     }
   }, [props.grabFocus]);
-  const [opened, setOpened2] = useState(false)
-  function setOpened(v: boolean): void {
-    console.log('dale', v)
-    setOpened2(v)
-  }
+  const [opened, setOpened] = useState(false)
 
   const value = props.bind[0] || "";
   const [dirty, setDirty] = useState(false)
   const showError = dirty && props.error
 
+  const calendar = subYears(new Date(), 30)
+  
   return <div class="field">
     <label class="label">
       {props.label}
@@ -36,27 +34,37 @@ export function DateInput(props: DateInputProps): VNode {
         <i class="mdi mdi-information" />
       </span>}
     </label>
-    <div class="control has-icons-right">
-      <input
-        type="text"
-        class={showError ? 'input is-danger' : 'input'}
-        readonly
-        onFocus={() => { setOpened(true) } }
-        value={value}
-        ref={inputRef} />
-
-      <span class="control icon is-right">
-        <span class="icon"><i class="mdi mdi-calendar" /></span>
-      </span>
+    <div class="control">
+      <div class="field has-addons">
+        <p class="control">
+          <input
+            type="text"
+            class={showError ? 'input is-danger' : 'input'}
+            value={value}
+            onChange={(e) => {
+              const text = e.currentTarget.value
+              setDirty(true)
+              props.bind[1](text);
+            }}
+            ref={inputRef} />
+        </p>
+        <p class="control">
+          <a class="button" onClick={() => { setOpened(true) }}>
+            <span class="icon"><i class="mdi mdi-calendar" /></span>
+          </a>
+        </p>
+      </div>
     </div>
+    <p class="help">Using the format yyyy-mm-dd</p>
     {showError && <p class="help is-danger">{props.error}</p>}
     <DatePicker
       opened={opened}
+      initialDate={calendar}
       years={props.years}
       closeFunction={() => setOpened(false)}
       dateReceiver={(d) => {
         setDirty(true)
-        const v = format(d, 'yyyy/MM/dd')
+        const v = format(d, 'yyyy-MM-dd')
         props.bind[1](v);
       }}
     />

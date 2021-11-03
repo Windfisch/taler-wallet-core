@@ -24,6 +24,7 @@ import { h, Component } from "preact";
 interface Props {
   closeFunction?: () => void;
   dateReceiver?: (d: Date) => void;
+  initialDate?: Date;
   years?: Array<number>;
   opened?: boolean;
 }
@@ -213,8 +214,8 @@ export class DatePicker extends Component<Props, State> {
     // }
   }
 
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
 
     this.closeDatePicker = this.closeDatePicker.bind(this);
     this.dayClicked = this.dayClicked.bind(this);
@@ -226,11 +227,12 @@ export class DatePicker extends Component<Props, State> {
     this.toggleYearSelector = this.toggleYearSelector.bind(this);
     this.displaySelectedMonth = this.displaySelectedMonth.bind(this);
 
+    const initial = props.initialDate || now;
 
     this.state = {
-      currentDate: now,
-      displayedMonth: now.getMonth(),
-      displayedYear: now.getFullYear(),
+      currentDate: initial,
+      displayedMonth: initial.getMonth(),
+      displayedYear: initial.getFullYear(),
       selectYearMode: false
     }
   }

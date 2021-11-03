@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/camelcase */
 /*
  This file is part of GNU Taler
  (C) 2021 Taler Systems S.A.
@@ -19,12 +20,13 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 
+import { ReducerState } from 'anastasis-core';
 import { createExample, reducerStatesExample } from '../../utils';
 import { ContinentSelectionScreen as TestedComponent } from './ContinentSelectionScreen';
 
 
 export default {
-  title: 'Pages/ContinentSelectionScreen',
+  title: 'Pages/Location',
   component: TestedComponent,
   args: {
     order: 2,
@@ -35,6 +37,16 @@ export default {
   },
 };
 
-export const Backup = createExample(TestedComponent, reducerStatesExample.backupSelectContinent);
+export const BackupSelectContinent = createExample(TestedComponent, reducerStatesExample.backupSelectContinent);
 
-export const Recovery = createExample(TestedComponent, reducerStatesExample.recoverySelectContinent);
+export const BackupSelectCountry = createExample(TestedComponent, {
+  ...reducerStatesExample.backupSelectContinent,
+  selected_continent: 'Testcontinent',
+} as ReducerState);
+
+export const RecoverySelectContinent = createExample(TestedComponent, reducerStatesExample.recoverySelectContinent);
+
+export const RecoverySelectCountry = createExample(TestedComponent, {
+  ...reducerStatesExample.recoverySelectContinent,
+  selected_continent: 'Testcontinent',
+} as ReducerState);

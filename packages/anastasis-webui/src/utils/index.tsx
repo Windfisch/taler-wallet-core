@@ -86,10 +86,10 @@ const base = {
         {
           type: "question",
           usage_fee: "COL:0"
-        },{
+        }, {
           type: "sms",
           usage_fee: "COL:0"
-        },{
+        }, {
           type: "email",
           usage_fee: "COL:0"
         },
@@ -98,6 +98,48 @@ const base = {
       storage_limit_in_megabytes: 16,
       truth_upload_fee: "COL:0"
     },
+    "https://kudos.demo.anastasis.lu/": {
+      http_status: 200,
+      annual_fee: "COL:0",
+      business_name: "ana",
+      currency: "COL",
+      liability_limit: "COL:10",
+      methods: [
+        {
+          type: "question",
+          usage_fee: "COL:0"
+        }, {
+          type: "email",
+          usage_fee: "COL:0"
+        },
+      ],
+      salt: "WBMDD76BR1E90YQ5AHBMKPH7GW",
+      storage_limit_in_megabytes: 16,
+      truth_upload_fee: "COL:0"
+    },
+    "https://anastasis.demo.taler.net/": {
+      http_status: 200,
+      annual_fee: "COL:0",
+      business_name: "ana",
+      currency: "COL",
+      liability_limit: "COL:10",
+      methods: [
+        {
+          type: "question",
+          usage_fee: "COL:0"
+        }, {
+          type: "sms",
+          usage_fee: "COL:0"
+        }, {
+          type: "totp",
+          usage_fee: "COL:0"
+        },
+      ],
+      salt: "WBMDD76BR1E90YQ5AHBMKPH7GW",
+      storage_limit_in_megabytes: 16,
+      truth_upload_fee: "COL:0"
+    },
+
     "http://localhost:8087/": {
       code: 8414,
       hint: "request to provider failed"
@@ -118,55 +160,72 @@ const base = {
 
 export const reducerStatesExample = {
   initial: undefined,
-  recoverySelectCountry: {...base,
+  recoverySelectCountry: {
+    ...base,
     recovery_state: RecoveryStates.CountrySelecting
   } as ReducerState,
-  recoverySelectContinent: {...base,
+  recoverySelectContinent: {
+    ...base,
     recovery_state: RecoveryStates.ContinentSelecting,
   } as ReducerState,
-  secretSelection: {...base,
+  secretSelection: {
+    ...base,
     recovery_state: RecoveryStates.SecretSelecting,
   } as ReducerState,
-  recoveryFinished: {...base,
+  recoveryFinished: {
+    ...base,
     recovery_state: RecoveryStates.RecoveryFinished,
   } as ReducerState,
-  challengeSelecting: {...base,
+  challengeSelecting: {
+    ...base,
     recovery_state: RecoveryStates.ChallengeSelecting,
   } as ReducerState,
-  challengeSolving: {...base,
+  challengeSolving: {
+    ...base,
     recovery_state: RecoveryStates.ChallengeSolving,
   } as ReducerState,
-  challengePaying: {...base,
+  challengePaying: {
+    ...base,
     recovery_state: RecoveryStates.ChallengePaying,
   } as ReducerState,
-  recoveryAttributeEditing: {...base,
+  recoveryAttributeEditing: {
+    ...base,
     recovery_state: RecoveryStates.UserAttributesCollecting
   } as ReducerState,
-  backupSelectCountry: {...base,
+  backupSelectCountry: {
+    ...base,
     backup_state: BackupStates.CountrySelecting
   } as ReducerState,
-  backupSelectContinent: {...base,
+  backupSelectContinent: {
+    ...base,
     backup_state: BackupStates.ContinentSelecting,
   } as ReducerState,
-  secretEdition: {...base,
+  secretEdition: {
+    ...base,
     backup_state: BackupStates.SecretEditing,
   } as ReducerState,
-  policyReview: {...base,
+  policyReview: {
+    ...base,
     backup_state: BackupStates.PoliciesReviewing,
   } as ReducerState,
-  policyPay: {...base,
+  policyPay: {
+    ...base,
     backup_state: BackupStates.PoliciesPaying,
   } as ReducerState,
-  backupFinished: {...base,
+  backupFinished: {
+    ...base,
     backup_state: BackupStates.BackupFinished,
   } as ReducerState,
-  authEditing: {...base,
+  authEditing: {
+    ...base,
     backup_state: BackupStates.AuthenticationsEditing
   } as ReducerState,
-  backupAttributeEditing: {...base,
+  backupAttributeEditing: {
+    ...base,
     backup_state: BackupStates.UserAttributesCollecting
   } as ReducerState,
-  truthsPaying: {...base,
+  truthsPaying: {
+    ...base,
     backup_state: BackupStates.TruthsPaying
   } as ReducerState,
 
