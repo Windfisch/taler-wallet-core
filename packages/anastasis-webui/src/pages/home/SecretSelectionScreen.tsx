@@ -97,39 +97,44 @@ export function SecretSelectionScreen(): VNode {
   }
   return (
     <AnastasisClientFrame title="Recovery: Select secret">
-      <p>Secret found, you can select another version or continue to the challenges solving</p>
-      <table class="table">
-        <tr>
-          <td>
-            <b>Provider</b>
-            <span class="icon has-tooltip-right" data-tooltip="Service provider backing up your secret">
-              <i class="mdi mdi-information" />
-            </span>
-          </td>
-          <td>{recoveryDocument.provider_url}</td>
-          <td><a onClick={() => setSelectingVersion(true)}>use another provider</a></td>
-        </tr>
-        <tr>
-          <td>
-            <b>Secret version</b>
-            <span class="icon has-tooltip-right" data-tooltip="Secret version to be recovered">
-              <i class="mdi mdi-information" />
-            </span>
-          </td>
-          <td>{recoveryDocument.version}</td>
-          <td><a onClick={() => setSelectingVersion(true)}>use another version</a></td>
-        </tr>
-        <tr>
-          <td>
-            <b>Secret name</b>
-            <span class="icon has-tooltip-right" data-tooltip="Secret identifier">
-              <i class="mdi mdi-information" />
-            </span>
-          </td>
-          <td>{recoveryDocument.secret_name}</td>
-          <td> </td>
-        </tr>
-      </table>
+      <div class="columns">
+        <div class="column is-half">
+          <div class="box">
+            <h1 class="subtitle">{recoveryDocument.provider_url}</h1>
+            <table class="table">
+              <tr>
+                <td>
+                  <b>Secret version</b>
+                  <span class="icon has-tooltip-right" data-tooltip="Secret version to be recovered">
+                    <i class="mdi mdi-information" />
+                  </span>
+                </td>
+                <td>{recoveryDocument.version}</td>
+                <td><a onClick={() => setSelectingVersion(true)}>use another version</a></td>
+              </tr>
+              <tr>
+                <td>
+                  <b>Secret name</b>
+                  <span class="icon has-tooltip-right" data-tooltip="Secret identifier">
+                    <i class="mdi mdi-information" />
+                  </span>
+                </td>
+                <td>{recoveryDocument.secret_name}</td>
+                <td> </td>
+              </tr>
+            </table>
+            <div class="buttons is-right">
+              <button class="button" disabled onClick={() => reducer.reset()}>Use this provider</button>
+            </div>
+          </div>
+          <div class="buttons is-right">
+            <button class="button" disabled onClick={() => reducer.reset()}>Change provider</button>
+          </div>
+        </div>
+        <div class="column is-two-third">
+          <p>Secret found, you can select another version or continue to the challenges solving</p>
+        </div>
+      </div>
     </AnastasisClientFrame>
   );
 }

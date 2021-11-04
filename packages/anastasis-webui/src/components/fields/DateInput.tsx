@@ -41,7 +41,7 @@ export function DateInput(props: DateInputProps): VNode {
             type="text"
             class={showError ? 'input is-danger' : 'input'}
             value={value}
-            onChange={(e) => {
+            onInput={(e) => {
               const text = e.currentTarget.value
               setDirty(true)
               props.bind[1](text);

@@ -43,14 +43,14 @@ export function useAsync<T>(fn?: (...args: any) => Promise<T>, { slowTolerance: 
   const request = async (...args: any) => {
     if (!fn) return;
     setLoading(true);
-    console.log("loading true")
     const handler = setTimeout(() => {
       setSlow(true)
     }, tooLong)
 
     try {
+      console.log("calling async", args)
       const result = await fn(...args);
-      console.log(result)
+      console.log("async back", result)
       setData(result);
     } catch (error) {
       setError(error);

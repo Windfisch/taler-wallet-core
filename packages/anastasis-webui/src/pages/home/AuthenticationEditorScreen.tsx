@@ -135,7 +135,7 @@ export function AuthenticationEditorScreen(): VNode {
   return (
     <AnastasisClientFrame title="Backup: Configure Authentication Methods" hideNext={errors}>
       <div class="columns">
-        <div class="column one-third">
+        <div class="column is-half">
           <div>
             {getKeys(authMethods).map(method => <MethodButton key={method} method={method} />)}
           </div>
@@ -152,7 +152,7 @@ export function AuthenticationEditorScreen(): VNode {
             </p>
           </ConfirmModal>}
         </div>
-        <div class="column two-third">
+        <div class="column is-half">
           <p class="block">
             When recovering your wallet, you will be asked to verify your identity via the methods you configure here.
             The list of authentication method is defined by the backup provider list.

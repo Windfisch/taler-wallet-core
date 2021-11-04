@@ -77,6 +77,9 @@ export function SolveScreen(): VNode {
     return (
       <AnastasisClientFrame hideNav title="Recovery problem">
         <div>invalid state</div>
+        <div style={{ marginTop: '2em', display: 'flex', justifyContent: 'space-between' }}>
+        <button class="button" onClick={() => reducer.back()}>Back</button>
+      </div>
       </AnastasisClientFrame>
     );
   }

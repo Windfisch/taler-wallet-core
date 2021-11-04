@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import { ChallengeFeedback, ChallengeFeedbackStatus } from "anastasis-core";
 import { h, VNode } from "preact";
 import { useAnastasisContext } from "../../context/anastasis";

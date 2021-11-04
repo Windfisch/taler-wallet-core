@@ -29,6 +29,9 @@ export function RecoveryFinishedScreen(): VNode {
       <p>
         Secret: {secret}
       </p>
+      <div style={{ marginTop: '2em', display: 'flex', justifyContent: 'space-between' }}>
+        <button class="button" onClick={() => reducer.back()}>Back</button>
+      </div>
     </AnastasisClientFrame>
   );
 }

@@ -37,9 +37,7 @@ export function AsyncButton({ onClick, disabled, children, ...rest }: Props): VN
   // if (isSlow) {
   //   return <LoadingModal onCancel={cancel} />;
   // }
-  console.log(isLoading)
-  if (isLoading) {
-    
+  if (isLoading) {    
     return <button class="button">Loading...</button>;
   }
 

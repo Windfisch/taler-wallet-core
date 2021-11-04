@@ -48,10 +48,10 @@ export function AttributeEntryScreen(): VNode {
       })}
     >
       <div class="columns" style={{ maxWidth: 'unset' }}>
-        <div class="column is-one-third">
+        <div class="column is-half">
           {fieldList}
         </div>
-        <div class="column is-two-third" >
+        <div class="column is-is-half" >
           <p>This personal information will help to locate your secret.</p>
           <h1 class="title">This stays private</h1>
           <p>The information you have entered here:</p>

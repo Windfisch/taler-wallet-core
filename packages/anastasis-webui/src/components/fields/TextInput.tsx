@@ -32,7 +32,7 @@ export function TextInput(props: TextInputProps): VNode {
         value={value}
         placeholder={props.placeholder}
         class={showError ? 'input is-danger' : 'input'}
-        onChange={(e) => {setDirty(true); props.bind[1]((e.target as HTMLInputElement).value)}}
+        onInput={(e) => {setDirty(true); props.bind[1]((e.target as HTMLInputElement).value)}}
         ref={inputRef}
         style={{ display: "block" }} />
     </div>

@@ -34,7 +34,7 @@ export function EmailInput(props: TextInputProps): VNode {
         placeholder={props.placeholder}
         type="email"
         class={showError ? 'input is-danger' : 'input'}
-        onChange={(e) => {setDirty(true); props.bind[1]((e.target as HTMLInputElement).value)}}
+        onInput={(e) => {setDirty(true); props.bind[1]((e.target as HTMLInputElement).value)}}
         ref={inputRef}
         style={{ display: "block" }} />
     </div>

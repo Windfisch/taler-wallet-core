@@ -96,12 +96,12 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
     return <p>Fatal: Reducer must be in context.</p>;
   }
   const next = async (): Promise<void> => {
-    return new Promise((res, rej) => {
+    return new Promise(async (res, rej) => {
       try {
         if (props.onNext) {
-          props.onNext();
+          await props.onNext();
         } else {
-          reducer.transition("next", {});
+          await reducer.transition("next", {});
         }
         res()
       } catch {

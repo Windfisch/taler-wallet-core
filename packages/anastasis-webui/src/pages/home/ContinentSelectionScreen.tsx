@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { BackupStates, ContinentInfo, RecoveryStates } from "anastasis-core";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useAnastasisContext } from "../../context/anastasis";
@@ -9,7 +8,8 @@ export function ContinentSelectionScreen(): VNode {
   const reducer = useAnastasisContext()
 
   //FIXME: remove this when #7056 is fixed
-  const [countryCode, setCountryCode] = useState("")
+  const countryFromReducer = (reducer?.currentReducerState as any).selected_country || "" 
+  const [countryCode, setCountryCode] = useState( countryFromReducer )
 
   if (!reducer || !reducer.currentReducerState || !("continents" in reducer.currentReducerState)) {
     return <div />

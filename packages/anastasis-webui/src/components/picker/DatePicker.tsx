@@ -214,7 +214,7 @@ export class DatePicker extends Component<Props, State> {
     // }
   }
 
-  constructor(props) {
+  constructor(props: any) {
     super(props);
 
     this.closeDatePicker = this.closeDatePicker.bind(this);

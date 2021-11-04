@@ -8,13 +8,13 @@ export function createExample<Props>(Component: FunctionalComponent<Props>, curr
     return <AnastasisProvider value={{
       currentReducerState,
       currentError: undefined,
-      back: () => { null },
-      dismissError: () => { null },
+      back: async () => { null },
+      dismissError: async () => { null },
       reset: () => { null },
-      runTransaction: () => { null },
+      runTransaction: async () => { null },
       startBackup: () => { null },
       startRecover: () => { null },
-      transition: () => { null },
+      transition: async () => { null },
     }}>
       <Component {...args} />
     </AnastasisProvider>
