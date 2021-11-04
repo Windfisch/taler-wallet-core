@@ -79,7 +79,7 @@ importers:
       preact-render-to-string: ^5.1.19
       preact-router: ^3.2.1
       qrcode-generator: ^1.4.4
-      sass: 1.43.4
+      sass: 1.32.13
       sass-loader: ^10
       sirv-cli: ^1.0.14
       typescript: ^4.4.4
@@ -115,8 +115,8 @@ importers:
       jest-preset-preact: 4.0.5_726380f5f23d12d9b6cc402fef7b8b84
       jssha: 3.2.0
       preact-cli: 3.3.1_bb0f676d04cdcea3d812adbcf5208138
-      sass: 1.43.4
-      sass-loader: 10.2.0_sass@1.43.4
+      sass: 1.32.13
+      sass-loader: 10.2.0_sass@1.32.13
       sirv-cli: 1.0.14
       typescript: 4.4.4
 
@@ -9384,7 +9384,7 @@ packages:
       sass-loader: '*'
       style-loader: '*'
     dependencies:
-      sass-loader: 10.2.0_sass@1.43.4
+      sass-loader: 10.2.0_sass@1.32.13
     dev: true
 
   /@storybook/router/6.3.12:
@@ -11397,7 +11397,7 @@ packages:
   /axios/0.21.4:
     resolution: {integrity: sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==}
     dependencies:
-      follow-redirects: 1.14.5_debug@4.3.2
+      follow-redirects: 1.14.5
     transitivePeerDependencies:
       - debug
     dev: true
@@ -15470,6 +15470,16 @@ packages:
       debug:
         optional: true
     dev: false
+
+  /follow-redirects/1.14.5:
+    resolution: {integrity: sha512-wtphSXy7d4/OR+MvIFbCVBDzZ5520qV8XfPklSN5QtxuMUJZ+b0Wnst1e1lCDocfzuCkHqj8k0FpZqO+UIaKNA==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+    dev: true
 
   /follow-redirects/1.14.5_debug@4.3.2:
     resolution: {integrity: sha512-wtphSXy7d4/OR+MvIFbCVBDzZ5520qV8XfPklSN5QtxuMUJZ+b0Wnst1e1lCDocfzuCkHqj8k0FpZqO+UIaKNA==}
@@ -20703,7 +20713,7 @@ packages:
     resolution: {integrity: sha512-7Wjy+9E3WwLOEL30D+m8TSTF7qJJUJLONBnwQp0518siuMxUQUbgZwssaFX+QKlZkjHZcw/IpZCt/H0srrntSg==}
     engines: {node: '>=6'}
     dependencies:
-      ts-pnp: 1.2.0_typescript@4.3.5
+      ts-pnp: 1.2.0_typescript@4.4.3
     transitivePeerDependencies:
       - typescript
     dev: true
@@ -21703,7 +21713,7 @@ packages:
       react-refresh: 0.10.0
       rimraf: 3.0.2
       sade: 1.7.4
-      sass-loader: 10.2.0_sass@1.43.4
+      sass-loader: 10.2.0_sass@1.32.13
       size-plugin: 3.0.0_webpack@4.46.0
       source-map: 0.7.3
       stack-trace: 0.0.10
@@ -23274,7 +23284,7 @@ packages:
       walker: 1.0.8
     dev: true
 
-  /sass-loader/10.2.0_sass@1.43.4:
+  /sass-loader/10.2.0_sass@1.32.13:
     resolution: {integrity: sha512-kUceLzC1gIHz0zNJPpqRsJyisWatGYNFRmv2CKZK2/ngMJgLqxTbXwe/hJ85luyvZkgqU3VlJ33UVF2T/0g6mw==}
     engines: {node: '>= 10.13.0'}
     peerDependencies:
@@ -23293,13 +23303,13 @@ packages:
       klona: 2.0.5
       loader-utils: 2.0.2
       neo-async: 2.6.2
-      sass: 1.43.4
+      sass: 1.32.13
       schema-utils: 3.1.1
       semver: 7.3.5
     dev: true
 
-  /sass/1.43.4:
-    resolution: {integrity: sha512-/ptG7KE9lxpGSYiXn7Ar+lKOv37xfWsZRtFYal2QHNigyVQDx685VFT/h7ejVr+R8w7H4tmUgtulsKl5YpveOg==}
+  /sass/1.32.13:
+    resolution: {integrity: sha512-dEgI9nShraqP7cXQH+lEXVf73WOPCse0QlFzSD8k+1TcOxCMwVXfQlr0jtoluZysQOyJGnfr21dLvYKDJq8HkA==}
     engines: {node: '>=8.9.0'}
     hasBin: true
     dependencies:
@@ -24764,18 +24774,6 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       tslib: 2.3.1
-    dev: true
-
-  /ts-pnp/1.2.0_typescript@4.3.5:
-    resolution: {integrity: sha512-csd+vJOb/gkzvcCHgTGSChYpy5f1/XKNsmvBGO4JXS+z1v2HobugDz4s1IeFXM3wZB44uczs+eazB5Q/ccdhQw==}
-    engines: {node: '>=6'}
-    peerDependencies:
-      typescript: '*'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-    dependencies:
-      typescript: 4.3.5
     dev: true
 
   /ts-pnp/1.2.0_typescript@4.4.3:
