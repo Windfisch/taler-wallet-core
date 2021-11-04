@@ -17,6 +17,7 @@ interface AuthMethodConfiguration {
   icon: VNode;
   label: string;
   screen: (props: AuthMethodSetupProps) => VNode;
+  skip?: boolean;
 }
 export type KnownAuthMethods = "sms" | "email" | "post" | "question" | "video" | "totp" | "iban";
 
@@ -62,7 +63,7 @@ export const authMethods: KnowMethodConfig = {
   video: {
     icon: <img src={videoIcon} />,
     label: "Video",
-    screen: VideScreen
-    
+    screen: VideScreen,
+    skip: true,  
   }
 }

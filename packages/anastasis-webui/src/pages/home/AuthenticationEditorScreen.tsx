@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import { AuthMethod } from "anastasis-core";
-import { ComponentChildren, h, VNode } from "preact";
+import { ComponentChildren, Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
+import { TextInput } from "../../components/fields/TextInput";
 import { useAnastasisContext } from "../../context/anastasis";
 import { authMethods, KnownAuthMethods } from "./authMethod";
 import { AnastasisClientFrame } from "./index";
@@ -13,6 +14,7 @@ const getKeys = Object.keys as <T extends object>(obj: T) => Array<keyof T>
 export function AuthenticationEditorScreen(): VNode {
   const [noProvidersAck, setNoProvidersAck] = useState(false)
   const [selectedMethod, setSelectedMethod] = useState<KnownAuthMethods | undefined>(undefined);
+  const [addingProvider, setAddingProvider] = useState<string | undefined>(undefined)
 
   const reducer = useAnastasisContext()
   if (!reducer) {
@@ -62,36 +64,58 @@ export function AuthenticationEditorScreen(): VNode {
     };
 
     const AuthSetup = authMethods[selectedMethod].screen ?? AuthMethodNotImplemented;
-    return (
+    return (<Fragment>
       <AuthSetup
         cancel={cancel}
         configured={camByType[selectedMethod] || []}
         addAuthMethod={addMethod}
         method={selectedMethod} />
+
+      {!authAvailableSet.has(selectedMethod) && <ConfirmModal active
+        onCancel={cancel} description="No providers founds" label="Add a provider manually"
+        onConfirm={() => {
+          null
+        }}
+      >
+        We have found no trusted cloud providers for your recovery secret. You can add a provider manually.
+        To add a provider you must know the provider URL (e.g. https://provider.com)
+        <p>
+          <a>More about cloud providers</a>
+        </p>
+      </ConfirmModal>}
+
+    </Fragment>
     );
   }
+
+  if (addingProvider !== undefined) {
+    return <div />
+  }
+
   function MethodButton(props: { method: KnownAuthMethods }): VNode {
+    if (authMethods[props.method].skip) return <div />
+    
     return (
       <div class="block">
         <button
           style={{ justifyContent: 'space-between' }}
           class="button is-fullwidth"
           onClick={() => {
-            if (!authAvailableSet.has(props.method)) {
-              //open add sms dialog
-            } else {
-              setSelectedMethod(props.method);
-            }
-            if (reducer) reducer.dismissError();
+            setSelectedMethod(props.method);
           }}
         >
           <div style={{ display: 'flex' }}>
             <span class="icon ">
               {authMethods[props.method].icon}
             </span>
-            <span>
-              {authMethods[props.method].label}
-            </span>
+            {authAvailableSet.has(props.method) ?
+              <span>
+                Add a {authMethods[props.method].label} challenge
+              </span> :
+              <span>
+                Add a {authMethods[props.method].label} provider
+              </span>
+            }
           </div>
           {!authAvailableSet.has(props.method) &&
             <span class="icon has-text-danger" >
@@ -111,41 +135,34 @@ export function AuthenticationEditorScreen(): VNode {
   return (
     <AnastasisClientFrame title="Backup: Configure Authentication Methods" hideNext={errors}>
       <div class="columns">
-        <div class="column is-half">
+        <div class="column one-third">
           <div>
             {getKeys(authMethods).map(method => <MethodButton key={method} method={method} />)}
           </div>
-          {authAvailableSet.size === 0 && <ConfirmModal active={!noProvidersAck} onCancel={() => setNoProvidersAck(true)} description="No providers founds" label="Add a provider manually">
+          {authAvailableSet.size === 0 && <ConfirmModal active={!noProvidersAck}
+            onCancel={() => setNoProvidersAck(true)} description="No providers founds" label="Add a provider manually"
+            onConfirm={() => {
+              null
+            }}
+          >
             We have found no trusted cloud providers for your recovery secret. You can add a provider manually.
             To add a provider you must know the provider URL (e.g. https://provider.com)
             <p>
               <a>More about cloud providers</a>
             </p>
           </ConfirmModal>}
-
-          {/* {haveMethodsConfigured && (
-            configuredAuthMethods.map((x, i) => {
-              return (
-                <p key={i}>
-                  {x.type} ({x.instructions}){" "}
-                  <button class="button is-danger is-small"
-                    onClick={() => reducer.transition("delete_authentication", {
-                      authentication_method: i,
-                    })}
-                  >
-                    Remove
-                  </button>
-                </p>
-              );
-            })
-          )} */}
         </div>
-        <div class="column is-half">
-          When recovering your wallet, you will be asked to verify your identity via the methods you configure here.
-
-          <b>Explain the exclamation marks</b>
-
-          <a>Explain how to add providers</a>
+        <div class="column two-third">
+          <p class="block">
+            When recovering your wallet, you will be asked to verify your identity via the methods you configure here.
+            The list of authentication method is defined by the backup provider list.
+          </p>
+          <p class="block">
+            <button class="button is-info">Manage the backup provider's list</button>
+          </p>
+          {authAvailableSet.size > 0 && <p class="block">
+            We couldn't find provider for some of the authentication methods.
+          </p>}
         </div>
       </div>
     </AnastasisClientFrame>

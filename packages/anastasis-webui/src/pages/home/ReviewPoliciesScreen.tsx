@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { AuthMethod } from "anastasis-core";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useAnastasisContext } from "../../context/anastasis";
@@ -51,8 +50,8 @@ export function ReviewPoliciesScreen(): VNode {
       {policies.length < 1 && <p class="block">
         No policies had been created. Go back and add more authentication methods.
       </p>}
-      <div class="block" onClick={() => setEditingPolicy(policies.length + 1)}>
-        <button class="button is-success">Add new policy</button>
+      <div class="block" style={{justifyContent:'flex-end'}} >
+        <button class="button is-success" onClick={() => setEditingPolicy(policies.length + 1)}>Add new policy</button>
       </div>
       {policies.map((p, policy_index) => {
         const methods = p.methods
