@@ -15,11 +15,19 @@
  */
 
 /**
+ * This file defines euFin test logic that needs state
+ * and that depends on the main harness.ts.  The other
+ * definitions - mainly helper functions to call RESTful
+ * APIs - moved to libeufin-apis.ts.  That enables harness.ts
+ * to depend on such API calls, in contrast to the previous
+ * situation where harness.ts had to include this file causing
+ * a circular dependency.  */
+
+/**
  * Imports.
  */
 import axios from "axios";
 import { URL } from "@gnu-taler/taler-util";
-import { getRandomIban, getRandomString } from "../harness/helpers.js";
 import {
   GlobalTestState,
   DbInfo,
@@ -30,12 +38,27 @@ import {
   sh,
 } from "../harness/harness.js";
 
-export interface LibeufinSandboxServiceInterface {
-  baseUrl: string;
-}
+import {
+  LibeufinSandboxApi,
+  LibeufinNexusApi,
+  CreateEbicsBankAccountRequest,
+  LibeufinSandboxServiceInterface,
+  CreateTalerWireGatewayFacadeRequest,
+  SimulateIncomingTransactionRequest,
+  SandboxAccountTransactions,
+  DeleteBankConnectionRequest,
+  CreateEbicsBankConnectionRequest,
+  UpdateNexusUserRequest,
+  NexusAuth,
+  CreateAnastasisFacadeRequest,
+  PostNexusTaskRequest,
+  PostNexusPermissionRequest,
+  CreateNexusUserRequest
+} from "../harness/libeufin-apis.js";
 
-export interface LibeufinNexusServiceInterface {
-  baseUrl: string;
+export {
+  LibeufinSandboxApi,
+  LibeufinNexusApi
 }
 
 export interface LibeufinServices {
@@ -52,10 +75,6 @@ export interface LibeufinSandboxConfig {
 export interface LibeufinNexusConfig {
   httpPort: number;
   databaseJdbcUri: string;
-}
-
-export interface DeleteBankConnectionRequest {
-  bankConnectionId: string;
 }
 
 interface LibeufinNexusMoneyMovement {
@@ -154,13 +173,6 @@ export interface LibeufinBankAccountImportDetails {
   connectionName: string;
 }
 
-export interface BankAccountInfo {
-  iban: string;
-  bic: string;
-  name: string;
-  label: string;
-}
-
 export interface LibeufinPreparedPaymentDetails {
   creditorIban: string;
   creditorBic: string;
@@ -171,18 +183,8 @@ export interface LibeufinPreparedPaymentDetails {
   nexusBankAccountName: string;
 }
 
-export interface LibeufinSandboxAddIncomingRequest {
-  creditorIban: string;
-  creditorBic: string;
-  creditorName: string;
-  debtorIban: string;
-  debtorBic: string;
-  debtorName: string;
-  subject: string;
-  amount: string;
-  currency: string;
-  uid: string;
-  direction: string;
+function getRandomIban(countryCode: string): string {
+  return `${countryCode}715001051796${(Math.random().toString().substring(2, 8))}`
 }
 
 export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
@@ -317,49 +319,10 @@ export class LibeufinNexusService {
   }
 }
 
-export interface CreateEbicsSubscriberRequest {
-  hostID: string;
-  userID: string;
-  partnerID: string;
-  systemID?: string;
-}
-
 export interface TwgAddIncomingRequest {
   amount: string;
   reserve_pub: string;
   debit_account: string;
-}
-
-interface CreateEbicsBankAccountRequest {
-  subscriber: {
-    hostID: string;
-    partnerID: string;
-    userID: string;
-    systemID?: string;
-  };
-  // IBAN
-  iban: string;
-  // BIC
-  bic: string;
-  // human name
-  name: string;
-  label: string;
-}
-
-export interface SimulateIncomingTransactionRequest {
-  debtorIban: string;
-  debtorBic: string;
-  debtorName: string;
-
-  /**
-   * Subject / unstructured remittance info.
-   */
-  subject: string;
-
-  /**
-   * Decimal amount without currency.
-   */
-  amount: string;
 }
 
 /**
@@ -756,7 +719,6 @@ export class LibeufinCli {
     console.log(stdout);
   }
 
-
   async newTalerWireGatewayFacade(req: NewTalerWireGatewayReq): Promise<void> {
     const stdout = await sh(
       this.globalTestState,
@@ -803,752 +765,6 @@ interface NewTalerWireGatewayReq {
   connectionName: string;
   accountName: string;
   currency: string;
-}
-
-export namespace LibeufinSandboxApi {
-
-  export async function rotateKeys(
-    libeufinSandboxService: LibeufinSandboxServiceInterface,
-    hostID: string,
-  ) {
-    const baseUrl = libeufinSandboxService.baseUrl;
-    let url = new URL(`admin/ebics/hosts/${hostID}/rotate-keys`, baseUrl);
-    await axios.post(url.href, {}, {
-      auth: {
-        username: "admin",
-        password: "secret",
-      },
-    });
-  }
-  export async function createEbicsHost(
-    libeufinSandboxService: LibeufinSandboxServiceInterface,
-    hostID: string,
-  ) {
-    const baseUrl = libeufinSandboxService.baseUrl;
-    let url = new URL("admin/ebics/hosts", baseUrl);
-    await axios.post(url.href, {
-      hostID,
-      ebicsVersion: "2.5",
-    },
-    {
-      auth: {
-        username: "admin",
-        password: "secret",
-      },
-    });
-  }
-
-  export async function createBankAccount(
-    libeufinSandboxService: LibeufinSandboxServiceInterface,
-    req: BankAccountInfo,
-  ) {
-    const baseUrl = libeufinSandboxService.baseUrl;
-    let url = new URL(`admin/bank-accounts/${req.label}`, baseUrl);
-    await axios.post(url.href, req, {
-      auth: {
-        username: "admin",
-        password: "secret",
-      },
-    });
-  }
-
-  export async function createEbicsSubscriber(
-    libeufinSandboxService: LibeufinSandboxServiceInterface,
-    req: CreateEbicsSubscriberRequest,
-  ) {
-    const baseUrl = libeufinSandboxService.baseUrl;
-    let url = new URL("admin/ebics/subscribers", baseUrl);
-    await axios.post(url.href, req, {
-      auth: {
-        username: "admin",
-        password: "secret",
-      },
-    });
-  }
-
-  export async function createEbicsBankAccount(
-    libeufinSandboxService: LibeufinSandboxServiceInterface,
-    req: CreateEbicsBankAccountRequest,
-  ) {
-    const baseUrl = libeufinSandboxService.baseUrl;
-    let url = new URL("admin/ebics/bank-accounts", baseUrl);
-    await axios.post(url.href, req, {
-      auth: {
-        username: "admin",
-        password: "secret",
-      },
-    });
-  }
-
-  export async function bookPayment2(
-    libeufinSandboxService: LibeufinSandboxService,
-    req: LibeufinSandboxAddIncomingRequest,
-  ) {
-    const baseUrl = libeufinSandboxService.baseUrl;
-    let url = new URL("admin/payments", baseUrl);
-    await axios.post(url.href, req, {
-      auth: {
-        username: "admin",
-        password: "secret",
-      },
-    });
-  }
-
-  export async function bookPayment(
-    libeufinSandboxService: LibeufinSandboxService,
-    creditorBundle: SandboxUserBundle,
-    debitorBundle: SandboxUserBundle,
-    subject: string,
-    amount: string,
-    currency: string,
-  ) {
-    let req: LibeufinSandboxAddIncomingRequest = {
-      creditorIban: creditorBundle.ebicsBankAccount.iban,
-      creditorBic: creditorBundle.ebicsBankAccount.bic,
-      creditorName: creditorBundle.ebicsBankAccount.name,
-      debtorIban: debitorBundle.ebicsBankAccount.iban,
-      debtorBic: debitorBundle.ebicsBankAccount.bic,
-      debtorName: debitorBundle.ebicsBankAccount.name,
-      subject: subject,
-      amount: amount,
-      currency: currency,
-      uid: getRandomString(),
-      direction: "CRDT",
-    };
-    await bookPayment2(libeufinSandboxService, req);
-  }
-
-  export async function simulateIncomingTransaction(
-    libeufinSandboxService: LibeufinSandboxServiceInterface,
-    accountLabel: string,
-    req: SimulateIncomingTransactionRequest,
-  ) {
-    const baseUrl = libeufinSandboxService.baseUrl;
-    let url = new URL(
-      `admin/bank-accounts/${accountLabel}/simulate-incoming-transaction`,
-      baseUrl,
-    );
-    await axios.post(url.href, req, {
-      auth: {
-        username: "admin",
-        password: "secret",
-      },
-    });
-  }
-
-  export async function getAccountTransactions(
-    libeufinSandboxService: LibeufinSandboxServiceInterface,
-    accountLabel: string,
-  ): Promise<SandboxAccountTransactions> {
-    const baseUrl = libeufinSandboxService.baseUrl;
-    let url = new URL(
-      `admin/bank-accounts/${accountLabel}/transactions`,
-      baseUrl,
-    );
-    const res = await axios.get(url.href, {
-      auth: {
-        username: "admin",
-        password: "secret",
-      },
-    });
-    return res.data as SandboxAccountTransactions;
-  }
-
-  export async function getCamt053(
-    libeufinSandboxService: LibeufinSandboxServiceInterface,
-    accountLabel: string,
-  ): Promise<any> {
-    const baseUrl = libeufinSandboxService.baseUrl;
-    let url = new URL("admin/payments/camt", baseUrl);
-    return await axios.post(url.href, {
-      bankaccount: accountLabel,
-      type: 53, 
-    },
-    {
-      auth: {
-        username: "admin",
-        password: "secret",
-      },
-    });
-  }
-
-  export async function getAccountInfoWithBalance(
-    libeufinSandboxService: LibeufinSandboxServiceInterface,
-    accountLabel: string,
-  ): Promise<any> {
-    const baseUrl = libeufinSandboxService.baseUrl;
-    let url = new URL(
-      `admin/bank-accounts/${accountLabel}`,
-      baseUrl,
-    );
-    return await axios.get(url.href, {
-      auth: {
-        username: "admin",
-        password: "secret",
-      },
-    });
-  }
-}
-
-export interface SandboxAccountTransactions {
-  payments: {
-    accountLabel: string;
-    creditorIban: string;
-    creditorBic?: string;
-    creditorName: string;
-    debtorIban: string;
-    debtorBic: string;
-    debtorName: string;
-    amount: string;
-    currency: string;
-    subject: string;
-    date: string;
-    creditDebitIndicator: "debit" | "credit";
-    accountServicerReference: string;
-  }[];
-}
-
-export interface CreateEbicsBankConnectionRequest {
-  name: string;
-  ebicsURL: string;
-  hostID: string;
-  userID: string;
-  partnerID: string;
-  systemID?: string;
-}
-
-export interface CreateAnastasisFacadeRequest {
-  name: string;
-  connectionName: string;
-  accountName: string;
-  currency: string;
-  reserveTransferLevel: "report" | "statement" | "notification";
-}
-
-
-export interface CreateTalerWireGatewayFacadeRequest {
-  name: string;
-  connectionName: string;
-  accountName: string;
-  currency: string;
-  reserveTransferLevel: "report" | "statement" | "notification";
-}
-
-export interface UpdateNexusUserRequest {
-  newPassword: string;
-}
-
-export interface NexusAuth {
-  auth: {
-    username: string;
-    password: string;
-  };
-}
-
-export interface CreateNexusUserRequest {
-  username: string;
-  password: string;
-}
-
-export interface PostNexusTaskRequest {
-  name: string;
-  cronspec: string;
-  type: string; // fetch | submit
-  params:
-    | {
-        level: string; // report | statement | all
-        rangeType: string; // all | since-last | previous-days | latest
-      }
-    | {};
-}
-
-export interface PostNexusPermissionRequest {
-  action: "revoke" | "grant";
-  permission: {
-    subjectType: string;
-    subjectId: string;
-    resourceType: string;
-    resourceId: string;
-    permissionName: string;
-  };
-}
-
-export namespace LibeufinNexusApi {
-  export async function getAllConnections(
-    nexus: LibeufinNexusServiceInterface,
-  ): Promise<any> {
-    let url = new URL("bank-connections", nexus.baseUrl);
-    const res = await axios.get(url.href, {
-      auth: {
-        username: "admin",
-        password: "test",
-      },
-    });
-    return res;
-  }
-
-  export async function deleteBankConnection(
-    libeufinNexusService: LibeufinNexusServiceInterface,
-    req: DeleteBankConnectionRequest,
-  ): Promise<any> {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL("bank-connections/delete-connection", baseUrl);
-    return await axios.post(url.href, req, {
-      auth: {
-        username: "admin",
-        password: "test",
-      },
-    });
-  }
-
-  export async function createEbicsBankConnection(
-    libeufinNexusService: LibeufinNexusServiceInterface,
-    req: CreateEbicsBankConnectionRequest,
-  ): Promise<void> {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL("bank-connections", baseUrl);
-    await axios.post(
-      url.href,
-      {
-        source: "new",
-        type: "ebics",
-        name: req.name,
-        data: {
-          ebicsURL: req.ebicsURL,
-          hostID: req.hostID,
-          userID: req.userID,
-          partnerID: req.partnerID,
-          systemID: req.systemID,
-        },
-      },
-      {
-        auth: {
-          username: "admin",
-          password: "test",
-        },
-      },
-    );
-  }
-
-  export async function getBankAccount(
-    libeufinNexusService: LibeufinNexusServiceInterface,
-    accountName: string,
-  ): Promise<any> {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(
-      `bank-accounts/${accountName}`,
-      baseUrl,
-    );
-    return await axios.get(
-      url.href,
-      {
-        auth: {
-          username: "admin",
-          password: "test",
-        },
-      },
-    );
-  }
-
-
-  export async function submitInitiatedPayment(
-    libeufinNexusService: LibeufinNexusServiceInterface,
-    accountName: string,
-    paymentId: string,
-  ): Promise<void> {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(
-      `bank-accounts/${accountName}/payment-initiations/${paymentId}/submit`,
-      baseUrl,
-    );
-    await axios.post(
-      url.href,
-      {},
-      {
-        auth: {
-          username: "admin",
-          password: "test",
-        },
-      },
-    );
-  }
-
-  export async function fetchAccounts(
-    libeufinNexusService: LibeufinNexusServiceInterface,
-    connectionName: string,
-  ): Promise<void> {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(
-      `bank-connections/${connectionName}/fetch-accounts`,
-      baseUrl,
-    );
-    await axios.post(
-      url.href,
-      {},
-      {
-        auth: {
-          username: "admin",
-          password: "test",
-        },
-      },
-    );
-  }
-
-  export async function importConnectionAccount(
-    libeufinNexusService: LibeufinNexusServiceInterface,
-    connectionName: string,
-    offeredAccountId: string,
-    nexusBankAccountId: string,
-  ): Promise<void> {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(
-      `bank-connections/${connectionName}/import-account`,
-      baseUrl,
-    );
-    await axios.post(
-      url.href,
-      {
-        offeredAccountId,
-        nexusBankAccountId,
-      },
-      {
-        auth: {
-          username: "admin",
-          password: "test",
-        },
-      },
-    );
-  }
-
-  export async function connectBankConnection(
-    libeufinNexusService: LibeufinNexusServiceInterface,
-    connectionName: string,
-  ) {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(`bank-connections/${connectionName}/connect`, baseUrl);
-    await axios.post(
-      url.href,
-      {},
-      {
-        auth: {
-          username: "admin",
-          password: "test",
-        },
-      },
-    );
-  }
-
-  export async function getPaymentInitiations(
-    libeufinNexusService: LibeufinNexusService,
-    accountName: string,
-    username: string = "admin",
-    password: string = "test",
-  ): Promise<void> {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(
-      `/bank-accounts/${accountName}/payment-initiations`,
-      baseUrl,
-    );
-    let response = await axios.get(url.href, {
-      auth: {
-        username: username,
-        password: password,
-      },
-    });
-    console.log(
-      `Payment initiations of: ${accountName}`,
-      JSON.stringify(response.data, null, 2),
-    );
-  }
-
-  export async function getConfig(
-    libeufinNexusService: LibeufinNexusService,
-  ): Promise<void> {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(`/config`, baseUrl);
-    let response = await axios.get(url.href);
-  }
-
-  // Uses the Anastasis API to get a list of transactions.
-  export async function getAnastasisTransactions(
-    libeufinNexusService: LibeufinNexusService,
-    anastasisBaseUrl: string,
-    params: {}, // of the request: {delta: 5, ..}
-    username: string = "admin",
-    password: string = "test",
-  ): Promise<any> {
-    let url = new URL("history/incoming", anastasisBaseUrl);
-    let response = await axios.get(url.href, { params: params,
-      auth: {
-        username: username,
-        password: password,
-      },
-    });
-    return response;
-  }
-
-  // FIXME: this function should return some structured
-  // object that represents a history.
-  export async function getAccountTransactions(
-    libeufinNexusService: LibeufinNexusService,
-    accountName: string,
-    username: string = "admin",
-    password: string = "test",
-  ): Promise<any> {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(`/bank-accounts/${accountName}/transactions`, baseUrl);
-    let response = await axios.get(url.href, {
-      auth: {
-        username: username,
-        password: password,
-      },
-    });
-    return response;
-  }
-
-  export async function fetchTransactions(
-    libeufinNexusService: LibeufinNexusService,
-    accountName: string,
-    rangeType: string = "all",
-    level: string = "report",
-    username: string = "admin",
-    password: string = "test",
-  ): Promise<any> {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(
-      `/bank-accounts/${accountName}/fetch-transactions`,
-      baseUrl,
-    );
-    return await axios.post(
-      url.href,
-      {
-        rangeType: rangeType,
-        level: level,
-      },
-      {
-        auth: {
-          username: username,
-          password: password,
-        },
-      },
-    );
-  }
-
-  export async function changePassword(
-    libeufinNexusService: LibeufinNexusServiceInterface,
-    username: string,
-    req: UpdateNexusUserRequest,
-    auth: NexusAuth,
-  ) {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(`/users/${username}/password`, baseUrl);
-    await axios.post(url.href, req, auth);
-  }
-
-  export async function getUser(
-    libeufinNexusService: LibeufinNexusServiceInterface,
-    auth: NexusAuth,
-  ): Promise<any> {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(`/user`, baseUrl);
-    return await axios.get(url.href, auth);
-  }
-
-  export async function createUser(
-    libeufinNexusService: LibeufinNexusServiceInterface,
-    req: CreateNexusUserRequest,
-  ) {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(`/users`, baseUrl);
-    await axios.post(url.href, req, {
-      auth: {
-        username: "admin",
-        password: "test",
-      },
-    });
-  }
-
-  export async function getAllPermissions(
-    libeufinNexusService: LibeufinNexusServiceInterface,
-  ): Promise<any> {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(`/permissions`, baseUrl);
-    return await axios.get(url.href, {
-      auth: {
-        username: "admin",
-        password: "test",
-      },
-    });
-  }
-
-  export async function postPermission(
-    libeufinNexusService: LibeufinNexusServiceInterface,
-    req: PostNexusPermissionRequest,
-  ) {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(`/permissions`, baseUrl);
-    await axios.post(url.href, req, {
-      auth: {
-        username: "admin",
-        password: "test",
-      },
-    });
-  }
-
-  export async function getTasks(
-    libeufinNexusService: LibeufinNexusServiceInterface,
-    bankAccountName: string,
-    // When void, the request returns the list of all the
-    // tasks under this bank account.
-    taskName: string | void,
-  ): Promise<any> {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(`/bank-accounts/${bankAccountName}/schedule`, baseUrl);
-    if (taskName) url = new URL(taskName, `${url}/`);
-
-    // It's caller's responsibility to interpret the response.
-    return await axios.get(url.href, {
-      auth: {
-        username: "admin",
-        password: "test",
-      },
-    });
-  }
-
-  export async function deleteTask(
-    libeufinNexusService: LibeufinNexusServiceInterface,
-    bankAccountName: string,
-    taskName: string,
-  ) {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(
-      `/bank-accounts/${bankAccountName}/schedule/${taskName}`,
-      baseUrl,
-    );
-    await axios.delete(url.href, {
-      auth: {
-        username: "admin",
-        password: "test",
-      },
-    });
-  }
-
-  export async function postTask(
-    libeufinNexusService: LibeufinNexusServiceInterface,
-    bankAccountName: string,
-    req: PostNexusTaskRequest,
-  ): Promise<any> {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(`/bank-accounts/${bankAccountName}/schedule`, baseUrl);
-    return await axios.post(url.href, req, {
-      auth: {
-        username: "admin",
-        password: "test",
-      },
-    });
-  }
-
-  export async function deleteFacade(
-    libeufinNexusService: LibeufinNexusServiceInterface,
-    facadeName: string,
-  ): Promise<any> {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(`facades/${facadeName}`, baseUrl);
-    return await axios.delete(url.href, {
-      auth: {
-        username: "admin",
-        password: "test",
-      },
-    });
-  }
-
-  export async function getAllFacades(
-    libeufinNexusService: LibeufinNexusServiceInterface,
-  ): Promise<any> {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL("facades", baseUrl);
-    return await axios.get(url.href, {
-      auth: {
-        username: "admin",
-        password: "test",
-      },
-    });
-  }
-
-  export async function createAnastasisFacade(
-    libeufinNexusService: LibeufinNexusServiceInterface,
-    req: CreateAnastasisFacadeRequest,
-  ) {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL("facades", baseUrl);
-    await axios.post(
-      url.href,
-      {
-        name: req.name,
-        type: "anastasis",
-        config: {
-          bankAccount: req.accountName,
-          bankConnection: req.connectionName,
-          currency: req.currency,
-          reserveTransferLevel: req.reserveTransferLevel,
-        },
-      },
-      {
-        auth: {
-          username: "admin",
-          password: "test",
-        },
-      },
-    );
-  }
-
-  export async function createTwgFacade(
-    libeufinNexusService: LibeufinNexusServiceInterface,
-    req: CreateTalerWireGatewayFacadeRequest,
-  ) {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL("facades", baseUrl);
-    await axios.post(
-      url.href,
-      {
-        name: req.name,
-        type: "taler-wire-gateway",
-        config: {
-          bankAccount: req.accountName,
-          bankConnection: req.connectionName,
-          currency: req.currency,
-          reserveTransferLevel: req.reserveTransferLevel,
-        },
-      },
-      {
-        auth: {
-          username: "admin",
-          password: "test",
-        },
-      },
-    );
-  }
-
-  export async function submitAllPaymentInitiations(
-    libeufinNexusService: LibeufinNexusServiceInterface,
-    accountId: string,
-  ) {
-    const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(
-      `/bank-accounts/${accountId}/submit-all-payment-initiations`,
-      baseUrl,
-    );
-    await axios.post(
-      url.href,
-      {},
-      {
-        auth: {
-          username: "admin",
-          password: "test",
-        },
-      },
-    );
-  }
 }
 
 /**
