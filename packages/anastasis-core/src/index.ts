@@ -62,6 +62,7 @@ import {
   codecForActionArgsChangeVersion,
   ActionArgsChangeVersion,
   TruthMetaData,
+  ActionArgsUpdatePolicy,
 } from "./reducer-types.js";
 import fetchPonyfill from "fetch-ponyfill";
 import {
@@ -1038,6 +1039,18 @@ async function deletePolicy(
   };
 }
 
+async function updatePolicy(
+  state: ReducerStateBackup,
+  args: ActionArgsUpdatePolicy,
+): Promise<ReducerStateBackup> {
+  const policies = [...(state.policies ?? [])];
+  policies[args.policy_index] = { methods: args.policy };
+  return {
+    ...state,
+    policies,
+  };
+}
+
 async function addPolicy(
   state: ReducerStateBackup,
   args: ActionArgsAddPolicy,
@@ -1230,6 +1243,7 @@ const backupTransitions: Record<
     ...transitionBackupJump("next", BackupStates.SecretEditing),
     ...transition("add_policy", codecForActionArgsAddPolicy(), addPolicy),
     ...transition("delete_policy", codecForAny(), deletePolicy),
+    ...transition("update_policy", codecForAny(), updatePolicy),
   },
   [BackupStates.SecretEditing]: {
     ...transitionBackupJump("back", BackupStates.PoliciesReviewing),

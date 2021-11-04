@@ -418,6 +418,11 @@ export interface ActionArgsChangeVersion {
   version: number;
 }
 
+export interface ActionArgsUpdatePolicy {
+  policy_index: number;
+  policy: PolicyMember[];
+}
+
 export const codecForActionArgsChangeVersion = () =>
   buildCodecForObject<ActionArgsChangeVersion>()
     .property("provider_url", codecForString())
