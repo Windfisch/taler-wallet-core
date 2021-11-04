@@ -68,6 +68,13 @@ export interface ReducerStateBackup {
   policies?: Policy[];
 
   /**
+   * Map from truth key (`${methodIndex}/${providerUrl}`) to
+   * the truth metadata.
+   */
+  truth_metadata?: Record<string, TruthMetaData>;
+  recovery_document?: RecoveryDocument;
+
+  /**
    * Policy providers are providers that we checked to be functional
    * and that are actually used in policies.
    */
@@ -196,6 +203,35 @@ export interface ReducerStateRecovery {
   };
 
   authentication_providers?: { [url: string]: AuthenticationProviderStatus };
+}
+
+/**
+ * Truth data as stored in the reducer.
+ */
+export interface TruthMetaData {
+  uuid: string;
+
+  key_share: string;
+
+  policy_index: number;
+
+  pol_method_index: number;
+
+  /**
+   * Nonce used for encrypting the truth.
+   */
+  nonce: string;
+
+  /**
+   * Key that the truth (i.e. secret question answer, email address, mobile number, ...)
+   * is encrypted with when stored at the provider.
+   */
+  truth_key: string;
+
+  /**
+   * Truth-specific salt.
+   */
+  truth_salt: string;
 }
 
 export interface ReducerStateError {

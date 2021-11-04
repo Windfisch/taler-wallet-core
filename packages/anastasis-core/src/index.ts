@@ -51,21 +51,17 @@ import {
   codecForActionArgsUpdateExpiration,
   ContinentInfo,
   CountryInfo,
-  MethodSpec,
-  Policy,
-  PolicyProvider,
   RecoveryInformation,
   RecoveryInternalData,
   RecoveryStates,
   ReducerState,
   ReducerStateBackup,
-  ReducerStateBackupUserAttributesCollecting,
   ReducerStateError,
   ReducerStateRecovery,
   SuccessDetails,
-  UserAttributeSpec,
   codecForActionArgsChangeVersion,
   ActionArgsChangeVersion,
+  TruthMetaData,
 } from "./reducer-types.js";
 import fetchPonyfill from "fetch-ponyfill";
 import {
@@ -302,35 +298,6 @@ async function backupEnterUserAttributes(
   return newState;
 }
 
-/**
- * Truth data as stored in the reducer.
- */
-interface TruthMetaData {
-  uuid: string;
-
-  key_share: string;
-
-  policy_index: number;
-
-  pol_method_index: number;
-
-  /**
-   * Nonce used for encrypting the truth.
-   */
-  nonce: string;
-
-  /**
-   * Key that the truth (i.e. secret question answer, email address, mobile number, ...)
-   * is encrypted with when stored at the provider.
-   */
-  truth_key: string;
-
-  /**
-   * Truth-specific salt.
-   */
-  truth_salt: string;
-}
-
 async function getTruthValue(
   authMethod: AuthMethod,
   truthUuid: string,
@@ -512,6 +479,8 @@ async function uploadSecret(
 
   const successDetails: SuccessDetails = {};
 
+  const policyPayUris: string[] = [];
+
   for (const prov of state.policy_providers!) {
     const uid = uidMap[prov.provider_url];
     const acctKeypair = accountKeypairDerive(uid);
@@ -536,26 +505,46 @@ async function uploadSecret(
         body: decodeCrock(encRecoveryDoc),
       },
     );
-    if (resp.status !== 204) {
-      return {
-        code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
-        hint: `could not upload policy (http status ${resp.status})`,
+    if (resp.status === HttpStatusCode.Accepted) {
+      let policyVersion = 0;
+      let policyExpiration: Timestamp = { t_ms: 0 };
+      try {
+        policyVersion = Number(resp.headers.get("Anastasis-Version") ?? "0");
+      } catch (e) {}
+      try {
+        policyExpiration = {
+          t_ms:
+            1000 *
+            Number(resp.headers.get("Anastasis-Policy-Expiration") ?? "0"),
+        };
+      } catch (e) {}
+      successDetails[prov.provider_url] = {
+        policy_version: policyVersion,
+        policy_expiration: policyExpiration,
       };
     }
-    let policyVersion = 0;
-    let policyExpiration: Timestamp = { t_ms: 0 };
-    try {
-      policyVersion = Number(resp.headers.get("Anastasis-Version") ?? "0");
-    } catch (e) {}
-    try {
-      policyExpiration = {
-        t_ms:
-          1000 * Number(resp.headers.get("Anastasis-Policy-Expiration") ?? "0"),
-      };
-    } catch (e) {}
-    successDetails[prov.provider_url] = {
-      policy_version: policyVersion,
-      policy_expiration: policyExpiration,
+    if (resp.status === HttpStatusCode.PaymentRequired) {
+      const talerPayUri = resp.headers.get("Taler");
+      if (!talerPayUri) {
+        return {
+          code: TalerErrorCode.ANASTASIS_REDUCER_BACKEND_FAILURE,
+          hint: `payment requested, but no taler://pay URI given`,
+        };
+      }
+      policyPayUris.push(talerPayUri);
+      continue;
+    }
+    return {
+      code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
+      hint: `could not upload policy (http status ${resp.status})`,
+    };
+  }
+
+  if (policyPayUris.length > 0) {
+    return {
+      ...state,
+      backup_state: BackupStates.PoliciesPaying,
+      payments: policyPayUris,
     };
   }
 
@@ -1048,7 +1037,6 @@ async function updateUploadFees(
   }
   logger.info("updating upload fees");
   const feePerCurrency: Record<string, AmountJson> = {};
-  const coveredProviders = new Set<string>();
   const addFee = (x: AmountLike) => {
     x = Amounts.jsonifyAmount(x);
     feePerCurrency[x.currency] = Amounts.add(
@@ -1058,24 +1046,31 @@ async function updateUploadFees(
   };
   const years = Duration.toIntegerYears(Duration.getRemaining(expiration));
   logger.info(`computing fees for ${years} years`);
+  // For now, we compute fees for *all* available providers.
+  for (const provUrl in state.authentication_providers ?? {}) {
+    const prov = state.authentication_providers![provUrl];
+    if ("annual_fee" in prov) {
+      const annualFee = Amounts.mult(prov.annual_fee, years).amount;
+      logger.info(`adding annual fee ${Amounts.stringify(annualFee)}`);
+      addFee(annualFee);
+    }
+  }
+  const coveredProvTruth = new Set<string>();
   for (const x of state.policies ?? []) {
     for (const m of x.methods) {
       const prov = state.authentication_providers![
         m.provider
       ] as AuthenticationProviderStatusOk;
       const authMethod = state.authentication_methods![m.authentication_method];
-      if (!coveredProviders.has(m.provider)) {
-        const annualFee = Amounts.mult(prov.annual_fee, years).amount;
-        logger.info(`adding annual fee ${Amounts.stringify(annualFee)}`);
-        addFee(annualFee);
-        coveredProviders.add(m.provider);
+      const key = `${m.authentication_method}@${m.provider}`;
+      if (coveredProvTruth.has(key)) {
+        continue;
       }
-      for (const pm of prov.methods) {
-        if (pm.type === authMethod.type) {
-          addFee(pm.usage_fee);
-          break;
-        }
-      }
+      logger.info(
+        `adding cost for auth method ${authMethod.challenge} / "${authMethod.instructions}" at ${m.provider}`,
+      );
+      coveredProvTruth.add(key);
+      addFee(prov.truth_upload_fee);
     }
   }
   return {
@@ -1252,7 +1247,9 @@ const recoveryTransitions: Record<
     ...transition("solve_challenge", codecForAny(), solveChallenge),
   },
   [RecoveryStates.ChallengePaying]: {},
-  [RecoveryStates.RecoveryFinished]: {},
+  [RecoveryStates.RecoveryFinished]: {
+    ...transitionRecoveryJump("back", RecoveryStates.ChallengeSelecting),
+  },
 };
 
 export async function reduceAction(
