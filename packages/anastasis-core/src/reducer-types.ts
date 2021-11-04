@@ -312,10 +312,42 @@ export interface ActionArgsSelectChallenge {
   uuid: string;
 }
 
-export type ActionArgsSolveChallengeRequest = SolveChallengeAnswerRequest;
+export type ActionArgsSolveChallengeRequest =
+  | SolveChallengeAnswerRequest
+  | SolveChallengePinRequest
+  | SolveChallengeHashRequest;
 
+/**
+ * Answer to a challenge.
+ *
+ * For "question" challenges, this is a string with the answer.
+ *
+ * For "sms" / "email" / "post" this is a numeric code with optionally
+ * the "A-" prefix.
+ */
 export interface SolveChallengeAnswerRequest {
   answer: string;
+}
+
+/**
+ * Answer to a challenge that requires a numeric response.
+ *
+ * XXX: Should be deprecated in favor of just "answer".
+ */
+export interface SolveChallengePinRequest {
+  pin: number;
+}
+
+/**
+ * Answer to a challenge by directly providing the hash.
+ *
+ * XXX: When / why is this even used?
+ */
+ export interface SolveChallengeHashRequest {
+  /**
+   * Base32-crock encoded hash code.
+   */
+  hash: string;
 }
 
 export interface PolicyMember {

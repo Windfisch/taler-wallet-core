@@ -10,6 +10,7 @@ import {
   crypto_sign_keyPair_fromSeed,
   stringToBytes,
   secretbox_open,
+  hash,
 } from "@gnu-taler/taler-util";
 import { gzipSync } from "fflate";
 import { argon2id } from "hash-wasm";
@@ -281,6 +282,10 @@ export async function coreSecretEncrypt(
     encCoreSecret,
     encMasterKeys,
   };
+}
+
+export async function pinAnswerHash(pin: number): Promise<SecureAnswerHash> {
+  return encodeCrock(hash(stringToBytes(pin.toString())));
 }
 
 export async function secureAnswerHash(

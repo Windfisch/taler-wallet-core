@@ -86,11 +86,19 @@ import {
   decryptKeyShare,
   KeyShare,
   coreSecretRecover,
+  pinAnswerHash,
 } from "./crypto.js";
 import { unzlibSync, zlibSync } from "fflate";
-import { EscrowMethod, RecoveryDocument } from "./recovery-document-types.js";
+import {
+  ChallengeType,
+  EscrowMethod,
+  RecoveryDocument,
+} from "./recovery-document-types.js";
 import { ProviderInfo, suggestPolicies } from "./policy-suggestion.js";
-import { ChallengeFeedback, ChallengeFeedbackStatus } from "./challenge-feedback-types.js";
+import {
+  ChallengeFeedback,
+  ChallengeFeedbackStatus,
+} from "./challenge-feedback-types.js";
 
 const { fetch } = fetchPonyfill({});
 
@@ -473,7 +481,7 @@ async function uploadSecret(
     }
 
     escrowMethods.push({
-      escrow_type: authMethod.type,
+      escrow_type: authMethod.type as any,
       instructions: authMethod.instructions,
       provider_salt: provider.salt,
       truth_salt: tm.truth_salt,
@@ -697,11 +705,43 @@ async function requestTruth(
   const url = new URL(`/truth/${truth.uuid}`, truth.url);
 
   if (solveRequest) {
-    // FIXME: This isn't correct for non-question truth responses.
-    url.searchParams.set(
-      "response",
-      await secureAnswerHash(solveRequest.answer, truth.uuid, truth.truth_salt),
-    );
+    let respHash: string;
+    switch (truth.escrow_type) {
+      case ChallengeType.Question:
+        if ("answer" in solveRequest) {
+          respHash = await secureAnswerHash(
+            solveRequest.answer,
+            truth.uuid,
+            truth.truth_salt,
+          );
+        } else {
+          throw Error("unsupported answer request");
+        }
+        break;
+      case ChallengeType.Email:
+      case ChallengeType.Sms:
+      case ChallengeType.Post:
+      case ChallengeType.Totp: {
+        if ("answer" in solveRequest) {
+          const s = solveRequest.answer.trim().replace(/^A-/, "");
+          let pin: number;
+          try {
+            pin = Number.parseInt(s);
+          } catch (e) {
+            throw Error("invalid pin format");
+          }
+          respHash = await pinAnswerHash(pin);
+        } else if ("pin" in solveRequest) {
+          respHash = await pinAnswerHash(solveRequest.pin);
+        } else {
+          throw Error("unsupported answer request");
+        }
+        break;
+      }
+      default:
+        throw Error("unsupported challenge type");
+    }
+    url.searchParams.set("response", respHash);
   }
 
   const resp = await fetch(url.href, {
@@ -711,10 +751,14 @@ async function requestTruth(
   });
 
   if (resp.status === HttpStatusCode.Ok) {
-    const answerSalt =
-      solveRequest && truth.escrow_type === "question"
-        ? solveRequest.answer
-        : undefined;
+    let answerSalt: string | undefined = undefined;
+    if (
+      solveRequest &&
+      truth.escrow_type === "question" &&
+      "answer" in solveRequest
+    ) {
+      answerSalt = solveRequest.answer;
+    }
 
     const userId = await userIdentifierDerive(
       state.identity_attributes,
