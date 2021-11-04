@@ -27,15 +27,15 @@ import {
   TruthUploadRequest,
 } from "./provider-types.js";
 import {
-  ActionArgAddAuthentication,
-  ActionArgDeleteAuthentication,
-  ActionArgDeletePolicy,
-  ActionArgEnterSecret,
-  ActionArgEnterSecretName,
-  ActionArgEnterUserAttributes,
+  ActionArgsAddAuthentication,
+  ActionArgsDeleteAuthentication,
+  ActionArgsDeletePolicy,
+  ActionArgsEnterSecret,
+  ActionArgsEnterSecretName,
+  ActionArgsEnterUserAttributes,
   ActionArgsAddPolicy,
-  ActionArgSelectContinent,
-  ActionArgSelectCountry,
+  ActionArgsSelectContinent,
+  ActionArgsSelectCountry,
   ActionArgsSelectChallenge,
   ActionArgsSolveChallengeRequest,
   ActionArgsUpdateExpiration,
@@ -43,9 +43,9 @@ import {
   AuthenticationProviderStatusOk,
   AuthMethod,
   BackupStates,
-  codecForActionArgEnterUserAttributes,
+  codecForActionArgsEnterUserAttributes,
   codecForActionArgsAddPolicy,
-  codecForActionArgSelectChallenge,
+  codecForActionArgsSelectChallenge,
   codecForActionArgSelectContinent,
   codecForActionArgSelectCountry,
   codecForActionArgsUpdateExpiration,
@@ -168,7 +168,7 @@ export async function getRecoveryStartState(): Promise<ReducerStateRecovery> {
 
 async function selectCountry(
   selectedContinent: string,
-  args: ActionArgSelectCountry,
+  args: ActionArgsSelectCountry,
 ): Promise<Partial<ReducerStateBackup> & Partial<ReducerStateRecovery>> {
   const countryCode = args.country_code;
   const currencies = args.currencies;
@@ -209,7 +209,7 @@ async function selectCountry(
 
 async function backupSelectCountry(
   state: ReducerStateBackup,
-  args: ActionArgSelectCountry,
+  args: ActionArgsSelectCountry,
 ): Promise<ReducerStateError | ReducerStateBackup> {
   return {
     ...state,
@@ -220,7 +220,7 @@ async function backupSelectCountry(
 
 async function recoverySelectCountry(
   state: ReducerStateRecovery,
-  args: ActionArgSelectCountry,
+  args: ActionArgsSelectCountry,
 ): Promise<ReducerStateError | ReducerStateRecovery> {
   return {
     ...state,
@@ -275,7 +275,7 @@ async function getProviderInfo(
 
 async function backupEnterUserAttributes(
   state: ReducerStateBackup,
-  args: ActionArgEnterUserAttributes,
+  args: ActionArgsEnterUserAttributes,
 ): Promise<ReducerStateBackup> {
   const attributes = args.identity_attributes;
   const providerUrls = Object.keys(state.authentication_providers ?? {});
@@ -787,7 +787,7 @@ async function solveChallenge(
 
 async function recoveryEnterUserAttributes(
   state: ReducerStateRecovery,
-  args: ActionArgEnterUserAttributes,
+  args: ActionArgsEnterUserAttributes,
 ): Promise<ReducerStateRecovery | ReducerStateError> {
   // FIXME: validate attributes
   const st: ReducerStateRecovery = {
@@ -812,7 +812,7 @@ async function selectChallenge(
 
 async function backupSelectContinent(
   state: ReducerStateBackup,
-  args: ActionArgSelectContinent,
+  args: ActionArgsSelectContinent,
 ): Promise<ReducerStateBackup | ReducerStateError> {
   const countries = getCountries(args.continent);
   if (countries.length <= 0) {
@@ -831,7 +831,7 @@ async function backupSelectContinent(
 
 async function recoverySelectContinent(
   state: ReducerStateRecovery,
-  args: ActionArgSelectContinent,
+  args: ActionArgsSelectContinent,
 ): Promise<ReducerStateRecovery | ReducerStateError> {
   const countries = getCountries(args.continent);
   return {
@@ -890,7 +890,7 @@ function transitionRecoveryJump(
 
 async function addAuthentication(
   state: ReducerStateBackup,
-  args: ActionArgAddAuthentication,
+  args: ActionArgsAddAuthentication,
 ): Promise<ReducerStateBackup> {
   return {
     ...state,
@@ -903,7 +903,7 @@ async function addAuthentication(
 
 async function deleteAuthentication(
   state: ReducerStateBackup,
-  args: ActionArgDeleteAuthentication,
+  args: ActionArgsDeleteAuthentication,
 ): Promise<ReducerStateBackup> {
   const m = state.authentication_methods ?? [];
   m.splice(args.authentication_method, 1);
@@ -915,7 +915,7 @@ async function deleteAuthentication(
 
 async function deletePolicy(
   state: ReducerStateBackup,
-  args: ActionArgDeletePolicy,
+  args: ActionArgsDeletePolicy,
 ): Promise<ReducerStateBackup> {
   const policies = [...(state.policies ?? [])];
   policies.splice(args.policy_index, 1);
@@ -1020,7 +1020,7 @@ async function updateUploadFees(
 
 async function enterSecret(
   state: ReducerStateBackup,
-  args: ActionArgEnterSecret,
+  args: ActionArgsEnterSecret,
 ): Promise<ReducerStateBackup | ReducerStateError> {
   return updateUploadFees({
     ...state,
@@ -1048,7 +1048,7 @@ async function nextFromChallengeSelecting(
 
 async function enterSecretName(
   state: ReducerStateBackup,
-  args: ActionArgEnterSecretName,
+  args: ActionArgsEnterSecretName,
 ): Promise<ReducerStateBackup | ReducerStateError> {
   return {
     ...state,
@@ -1094,7 +1094,7 @@ const backupTransitions: Record<
     ...transitionBackupJump("back", BackupStates.CountrySelecting),
     ...transition(
       "enter_user_attributes",
-      codecForActionArgEnterUserAttributes(),
+      codecForActionArgsEnterUserAttributes(),
       backupEnterUserAttributes,
     ),
   },
@@ -1157,7 +1157,7 @@ const recoveryTransitions: Record<
     ...transitionRecoveryJump("back", RecoveryStates.CountrySelecting),
     ...transition(
       "enter_user_attributes",
-      codecForActionArgEnterUserAttributes(),
+      codecForActionArgsEnterUserAttributes(),
       recoveryEnterUserAttributes,
     ),
   },
@@ -1169,7 +1169,7 @@ const recoveryTransitions: Record<
     ...transitionRecoveryJump("back", RecoveryStates.SecretSelecting),
     ...transition(
       "select_challenge",
-      codecForActionArgSelectChallenge(),
+      codecForActionArgsSelectChallenge(),
       selectChallenge,
     ),
     ...transition("next", codecForAny(), nextFromChallengeSelecting),

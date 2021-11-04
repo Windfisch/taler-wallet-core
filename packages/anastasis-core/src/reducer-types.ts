@@ -256,16 +256,16 @@ export interface ReducerStateBackupUserAttributesCollecting
   authentication_providers: { [url: string]: AuthenticationProviderStatus };
 }
 
-export interface ActionArgEnterUserAttributes {
+export interface ActionArgsEnterUserAttributes {
   identity_attributes: Record<string, string>;
 }
 
-export const codecForActionArgEnterUserAttributes = () =>
-  buildCodecForObject<ActionArgEnterUserAttributes>()
+export const codecForActionArgsEnterUserAttributes = () =>
+  buildCodecForObject<ActionArgsEnterUserAttributes>()
     .property("identity_attributes", codecForAny())
-    .build("ActionArgEnterUserAttributes");
+    .build("ActionArgsEnterUserAttributes");
 
-export interface ActionArgAddAuthentication {
+export interface ActionArgsAddAuthentication {
   authentication_method: {
     type: string;
     instructions: string;
@@ -274,19 +274,19 @@ export interface ActionArgAddAuthentication {
   };
 }
 
-export interface ActionArgDeleteAuthentication {
+export interface ActionArgsDeleteAuthentication {
   authentication_method: number;
 }
 
-export interface ActionArgDeletePolicy {
+export interface ActionArgsDeletePolicy {
   policy_index: number;
 }
 
-export interface ActionArgEnterSecretName {
+export interface ActionArgsEnterSecretName {
   name: string;
 }
 
-export interface ActionArgEnterSecret {
+export interface ActionArgsEnterSecret {
   secret: {
     value: string;
     mime?: string;
@@ -294,16 +294,16 @@ export interface ActionArgEnterSecret {
   expiration: Timestamp;
 }
 
-export interface ActionArgSelectContinent {
+export interface ActionArgsSelectContinent {
   continent: string;
 }
 
 export const codecForActionArgSelectContinent = () =>
-  buildCodecForObject<ActionArgSelectContinent>()
+  buildCodecForObject<ActionArgsSelectContinent>()
     .property("continent", codecForString())
     .build("ActionArgSelectContinent");
 
-export interface ActionArgSelectCountry {
+export interface ActionArgsSelectCountry {
   country_code: string;
   currencies: string[];
 }
@@ -347,13 +347,13 @@ export const codecForActionArgsUpdateExpiration = () =>
     .property("expiration", codecForTimestamp)
     .build("ActionArgsUpdateExpiration");
 
-export const codecForActionArgSelectChallenge = () =>
+export const codecForActionArgsSelectChallenge = () =>
   buildCodecForObject<ActionArgsSelectChallenge>()
     .property("uuid", codecForString())
-    .build("ActionArgSelectChallenge");
+    .build("ActionArgsSelectChallenge");
 
 export const codecForActionArgSelectCountry = () =>
-  buildCodecForObject<ActionArgSelectCountry>()
+  buildCodecForObject<ActionArgsSelectCountry>()
     .property("country_code", codecForString())
     .property("currencies", codecForList(codecForString()))
     .build("ActionArgSelectCountry");
