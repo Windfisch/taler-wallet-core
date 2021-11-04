@@ -171,6 +171,18 @@ export interface ReducerStateRecovery {
 
   selected_challenge_uuid?: string;
 
+  /**
+   * Explicitly selected version by the user.
+   * FIXME: In the C reducer this is called "version".
+   */
+  selected_version?: number;
+
+  /**
+   * Explicitly selected provider URL by the user.
+   * FIXME: In the C reducer this is called "provider_url".
+   */
+  selected_provider_url?: string;
+
   challenge_feedback?: { [uuid: string]: ChallengeFeedback };
 
   /**
@@ -343,7 +355,7 @@ export interface SolveChallengePinRequest {
  *
  * XXX: When / why is this even used?
  */
- export interface SolveChallengeHashRequest {
+export interface SolveChallengeHashRequest {
   /**
    * Base32-crock encoded hash code.
    */
@@ -362,6 +374,17 @@ export interface ActionArgsAddPolicy {
 export interface ActionArgsUpdateExpiration {
   expiration: Timestamp;
 }
+
+export interface ActionArgsChangeVersion {
+  provider_url: string;
+  version: number;
+}
+
+export const codecForActionArgsChangeVersion = () =>
+  buildCodecForObject<ActionArgsChangeVersion>()
+    .property("provider_url", codecForString())
+    .property("version", codecForNumber())
+    .build("ActionArgsChangeVersion");
 
 export const codecForPolicyMember = () =>
   buildCodecForObject<PolicyMember>()

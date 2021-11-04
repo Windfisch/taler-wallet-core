@@ -64,6 +64,8 @@ import {
   ReducerStateRecovery,
   SuccessDetails,
   UserAttributeSpec,
+  codecForActionArgsChangeVersion,
+  ActionArgsChangeVersion,
 } from "./reducer-types.js";
 import fetchPonyfill from "fetch-ponyfill";
 import {
@@ -578,6 +580,7 @@ async function downloadPolicy(
   const newProviderStatus: { [url: string]: AuthenticationProviderStatusOk } =
     {};
   const userAttributes = state.identity_attributes!;
+  const restrictProvider = state.selected_provider_url;
   // FIXME:  Shouldn't we also store the status of bad providers?
   for (const url of providerUrls) {
     const pi = await getProviderInfo(url);
@@ -592,9 +595,17 @@ async function downloadPolicy(
     if (!pi) {
       continue;
     }
+    if (restrictProvider && url !== state.selected_provider_url) {
+      // User wants specific provider.
+      continue;
+    }
     const userId = await userIdentifierDerive(userAttributes, pi.salt);
     const acctKeypair = accountKeypairDerive(userId);
-    const resp = await fetch(new URL(`policy/${acctKeypair.pub}`, url).href);
+    const reqUrl = new URL(`policy/${acctKeypair.pub}`, url);
+    if (state.selected_version) {
+      reqUrl.searchParams.set("version", `${state.selected_version}`);
+    }
+    const resp = await fetch(reqUrl.href);
     if (resp.status !== 200) {
       continue;
     }
@@ -838,6 +849,18 @@ async function recoveryEnterUserAttributes(
   const st: ReducerStateRecovery = {
     ...state,
     identity_attributes: args.identity_attributes,
+  };
+  return downloadPolicy(st);
+}
+
+async function changeVersion(
+  state: ReducerStateRecovery,
+  args: ActionArgsChangeVersion,
+): Promise<ReducerStateRecovery | ReducerStateError> {
+  const st: ReducerStateRecovery = {
+    ...state,
+    selected_version: args.version,
+    selected_provider_url: args.provider_url,
   };
   return downloadPolicy(st);
 }
@@ -1209,6 +1232,11 @@ const recoveryTransitions: Record<
   [RecoveryStates.SecretSelecting]: {
     ...transitionRecoveryJump("back", RecoveryStates.UserAttributesCollecting),
     ...transitionRecoveryJump("next", RecoveryStates.ChallengeSelecting),
+    ...transition(
+      "change_version",
+      codecForActionArgsChangeVersion(),
+      changeVersion,
+    ),
   },
   [RecoveryStates.ChallengeSelecting]: {
     ...transitionRecoveryJump("back", RecoveryStates.SecretSelecting),
