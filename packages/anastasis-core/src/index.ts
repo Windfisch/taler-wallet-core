@@ -458,6 +458,19 @@ async function uploadSecret(
 
   const truthPayUris: string[] = [];
   const userIdCache: Record<string, UserIdentifier> = {};
+  const getUserIdCaching = async (providerUrl: string) => {
+    let userId = userIdCache[providerUrl];
+    if (!userId) {
+      const provider = state.authentication_providers![
+        providerUrl
+      ] as AuthenticationProviderStatusOk;
+      userId = userIdCache[providerUrl] = await userIdentifierDerive(
+        state.identity_attributes!,
+        provider.salt,
+      );
+    }
+    return userId;
+  };
   for (const truthKey of Object.keys(truthMetadataMap)) {
     const tm = truthMetadataMap[truthKey];
     const pol = state.policies![tm.policy_index];
@@ -471,16 +484,7 @@ async function uploadSecret(
       truthValue,
     );
     logger.info(`uploading to ${meth.provider}`);
-    let userId = userIdCache[meth.provider];
-    if (!userId) {
-      const provider = state.authentication_providers![
-        meth.provider
-      ] as AuthenticationProviderStatusOk;
-      userId = userIdCache[meth.provider] = await userIdentifierDerive(
-        state.identity_attributes!,
-        provider.salt,
-      );
-    }
+    const userId = await getUserIdCaching(meth.provider);
     // FIXME: check that the question salt is okay here, looks weird.
     const encryptedKeyShare = await encryptKeyshare(
       tm.key_share,
@@ -537,11 +541,11 @@ async function uploadSecret(
   const policyPayUris: string[] = [];
 
   for (const prov of state.policy_providers!) {
-    const uid = userIdCache[prov.provider_url];
-    const acctKeypair = accountKeypairDerive(uid);
+    const userId = await getUserIdCaching(prov.provider_url);
+    const acctKeypair = accountKeypairDerive(userId);
     const zippedDoc = await compressRecoveryDoc(rd);
     const encRecoveryDoc = await encryptRecoveryDocument(
-      uid,
+      userId,
       encodeCrock(zippedDoc),
     );
     const bodyHash = hash(decodeCrock(encRecoveryDoc));
