@@ -6,6 +6,7 @@ import {
   ChallengeFeedbackStatus,
   ChallengeInfo,
 } from "../../../../anastasis-core/lib";
+import { AsyncButton } from "../../components/AsyncButton";
 import { TextInput } from "../../components/fields/TextInput";
 import { useAnastasisContext } from "../../context/anastasis";
 
@@ -106,8 +107,8 @@ export function SolveScreen(): VNode {
       ? SolveUndefinedEntry
       : dialogMap[selectedChallenge.type] ?? SolveUnsupportedEntry;
 
-  function onNext(): void {
-    reducer?.transition("solve_challenge", { answer });
+  async function onNext(): Promise<void> {
+    return reducer?.transition("solve_challenge", { answer });
   }
   function onCancel(): void {
     reducer?.back();
@@ -136,9 +137,9 @@ export function SolveScreen(): VNode {
         <button class="button" onClick={onCancel}>
           Cancel
         </button>
-        <button class="button is-info" onClick={onNext}>
+        <AsyncButton onClick={onNext} disabled={false}>
           Confirm
-        </button>
+        </AsyncButton>
       </div>
     </AnastasisClientFrame>
   );

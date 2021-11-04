@@ -25,10 +25,10 @@ export function StartScreen(): VNode {
               <span>Recover a secret</span>
             </button>
 
-            <button class="button">
+            {/* <button class="button">
               <div class="icon"><i class="mdi mdi-file" /></div>
               <span>Restore a session</span>
-            </button>
+            </button> */}
           </div>
 
         </div>

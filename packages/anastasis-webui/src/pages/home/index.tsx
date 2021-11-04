@@ -15,6 +15,7 @@ import {
 } from "preact/hooks";
 import { AsyncButton } from "../../components/AsyncButton";
 import { Menu } from "../../components/menu";
+import { Notifications } from "../../components/Notifications";
 import { AnastasisProvider, useAnastasisContext } from "../../context/anastasis";
 import {
   AnastasisReducerApi,
@@ -96,18 +97,11 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
     return <p>Fatal: Reducer must be in context.</p>;
   }
   const next = async (): Promise<void> => {
-    return new Promise(async (res, rej) => {
-      try {
-        if (props.onNext) {
-          await props.onNext();
-        } else {
-          await reducer.transition("next", {});
-        }
-        res()
-      } catch {
-        rej()
-      }
-    })
+    if (props.onNext) {
+      await props.onNext();
+    } else {
+      await reducer.transition("next", {});
+    }
   };
   const handleKeyPress = (
     e: h.JSX.TargetedKeyboardEvent<HTMLDivElement>,
@@ -120,8 +114,8 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
       <Menu title="Anastasis" />
       <div class="home" onKeyPress={(e) => handleKeyPress(e)}>
         <h1 class="title">{props.title}</h1>
+        <ErrorBanner />
         <section class="section is-main-section">
-          <ErrorBanner />
           {props.children}
           {!props.hideNav ? (
             <div style={{ marginTop: '2em', display: 'flex', justifyContent: 'space-between' }}>
@@ -242,13 +236,11 @@ const AnastasisClientImpl: FunctionalComponent = () => {
 function ErrorBanner(): VNode | null {
   const reducer = useAnastasisContext();
   if (!reducer || !reducer.currentError) return null;
-  return (
-    <div id="error">
-      <p>Error: {JSON.stringify(reducer.currentError)}</p>
-      <button onClick={() => reducer.dismissError()}>
-        Dismiss Error
-      </button>
-    </div>
+  return (<Notifications removeNotification={reducer.dismissError} notifications={[{
+    type: "ERROR",
+    message: `Error code: ${reducer.currentError.code}`,
+    description: reducer.currentError.hint
+  }]} />
   );
 }
 

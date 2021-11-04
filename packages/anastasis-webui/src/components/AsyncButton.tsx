@@ -26,7 +26,7 @@ import { useAsync } from "../hooks/async";
 
 type Props = {
   children: ComponentChildren;
-  disabled: boolean;
+  disabled?: boolean;
   onClick?: () => Promise<void>;
   [rest: string]: any;
 };
