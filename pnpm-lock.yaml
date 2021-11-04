@@ -79,7 +79,7 @@ importers:
       preact-render-to-string: ^5.1.4
       preact-router: ^3.2.1
       qrcode-generator: ^1.4.4
-      sass: ^1.32.13
+      sass: 1.32.13
       sass-loader: ^10.1.1
       sirv-cli: ^1.0.0-next.3
       typescript: ^3.7.5
@@ -115,8 +115,8 @@ importers:
       jest-preset-preact: 4.0.2_9b3f24ae35a87c3c82fffbe3fdf70e1e
       jssha: 3.2.0
       preact-cli: 3.2.2_8d1b4ee21ca5a56b4aabd4a3e659b2d7
-      sass: 1.43.2
-      sass-loader: 10.2.0_sass@1.43.2
+      sass: 1.32.13
+      sass-loader: 10.2.0_sass@1.32.13
       sirv-cli: 1.0.14
       typescript: 3.9.10
 
@@ -8140,7 +8140,7 @@ packages:
       sass-loader: '*'
       style-loader: '*'
     dependencies:
-      sass-loader: 10.2.0_sass@1.43.2
+      sass-loader: 10.2.0_sass@1.32.13
     dev: true
 
   /@storybook/router/6.3.12:
@@ -19126,7 +19126,7 @@ packages:
       react-refresh: 0.10.0
       rimraf: 3.0.2
       sade: 1.7.4
-      sass-loader: 10.2.0_sass@1.43.2
+      sass-loader: 10.2.0_sass@1.32.13
       size-plugin: 3.0.0_webpack@4.46.0
       source-map: 0.7.3
       stack-trace: 0.0.10
@@ -20561,7 +20561,7 @@ packages:
       walker: 1.0.7
     dev: true
 
-  /sass-loader/10.2.0_sass@1.43.2:
+  /sass-loader/10.2.0_sass@1.32.13:
     resolution: {integrity: sha512-kUceLzC1gIHz0zNJPpqRsJyisWatGYNFRmv2CKZK2/ngMJgLqxTbXwe/hJ85luyvZkgqU3VlJ33UVF2T/0g6mw==}
     engines: {node: '>= 10.13.0'}
     peerDependencies:
@@ -20580,13 +20580,13 @@ packages:
       klona: 2.0.4
       loader-utils: 2.0.0
       neo-async: 2.6.2
-      sass: 1.43.2
+      sass: 1.32.13
       schema-utils: 3.1.1
       semver: 7.3.5
     dev: true
 
-  /sass/1.43.2:
-    resolution: {integrity: sha512-DncYhjl3wBaPMMJR0kIUaH3sF536rVrOcqqVGmTZHQRRzj7LQlyGV7Mb8aCKFyILMr5VsPHwRYtyKpnKYlmQSQ==}
+  /sass/1.32.13:
+    resolution: {integrity: sha512-dEgI9nShraqP7cXQH+lEXVf73WOPCse0QlFzSD8k+1TcOxCMwVXfQlr0jtoluZysQOyJGnfr21dLvYKDJq8HkA==}
     engines: {node: '>=8.9.0'}
     hasBin: true
     dependencies:
