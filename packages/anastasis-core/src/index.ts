@@ -466,6 +466,8 @@ async function uploadSecret(
   const truthMetadataMap = recoveryData.truth_metadata;
   const rd = recoveryData.recovery_document;
 
+  const truthPayUris: string[] = [];
+
   for (const truthKey of Object.keys(truthMetadataMap)) {
     const tm = truthMetadataMap[truthKey];
     const pol = state.policies![tm.policy_index];
@@ -501,12 +503,31 @@ async function uploadSecret(
       body: JSON.stringify(tur),
     });
 
-    if (resp.status !== 204) {
-      return {
-        code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
-        hint: `could not upload truth (HTTP status ${resp.status})`,
-      };
+    if (resp.status === HttpStatusCode.NoContent) {
+      continue;
     }
+    if (resp.status === HttpStatusCode.PaymentRequired) {
+      const talerPayUri = resp.headers.get("Taler");
+      if (!talerPayUri) {
+        return {
+          code: TalerErrorCode.ANASTASIS_REDUCER_BACKEND_FAILURE,
+          hint: `payment requested, but no taler://pay URI given`,
+        };
+      }
+      truthPayUris.push(talerPayUri);
+    }
+    return {
+      code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
+      hint: `could not upload truth (HTTP status ${resp.status})`,
+    };
+  }
+
+  if (truthPayUris.length > 0) {
+    return {
+      ...state,
+      backup_state: BackupStates.TruthsPaying,
+      payments: truthPayUris,
+    };
   }
 
   const successDetails: SuccessDetails = {};
@@ -537,7 +558,7 @@ async function uploadSecret(
         body: decodeCrock(encRecoveryDoc),
       },
     );
-    if (resp.status === HttpStatusCode.Accepted) {
+    if (resp.status === HttpStatusCode.NoContent) {
       let policyVersion = 0;
       let policyExpiration: Timestamp = { t_ms: 0 };
       try {
@@ -554,6 +575,7 @@ async function uploadSecret(
         policy_version: policyVersion,
         policy_expiration: policyExpiration,
       };
+      continue;
     }
     if (resp.status === HttpStatusCode.PaymentRequired) {
       const talerPayUri = resp.headers.get("Taler");
