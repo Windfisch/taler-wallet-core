@@ -1,5 +1,12 @@
 import { TalerErrorCode } from "@gnu-taler/taler-util";
-import { BackupStates, getBackupStartState, getRecoveryStartState, RecoveryStates, reduceAction, ReducerState } from "anastasis-core";
+import {
+  BackupStates,
+  getBackupStartState,
+  getRecoveryStartState,
+  RecoveryStates,
+  reduceAction,
+  ReducerState,
+} from "anastasis-core";
 import { useState } from "preact/hooks";
 
 const reducerBaseUrl = "http://localhost:5000/";
@@ -98,13 +105,15 @@ export interface AnastasisReducerApi {
   startBackup: () => void;
   startRecover: () => void;
   reset: () => void;
-  back: () => void;
-  transition(action: string, args: any): void;
+  back: () => Promise<void>;
+  transition(action: string, args: any): Promise<void>;
   /**
    * Run multiple reducer steps in a transaction without
    * affecting the UI-visible transition state in-between.
    */
-  runTransaction(f: (h: ReducerTransactionHandle) => Promise<void>): void;
+  runTransaction(
+    f: (h: ReducerTransactionHandle) => Promise<void>,
+  ): Promise<void>;
 }
 
 function storageGet(key: string): string | null {
@@ -222,9 +231,9 @@ export function useAnastasisReducer(): AnastasisReducerApi {
       }
     },
     transition(action: string, args: any) {
-      doTransition(action, args);
+      return doTransition(action, args);
     },
-    back() {
+    async back() {
       const reducerState = anastasisState.reducerState;
       if (!reducerState) {
         return;
@@ -239,7 +248,7 @@ export function useAnastasisReducer(): AnastasisReducerApi {
           reducerState: undefined,
         });
       } else {
-        doTransition("back", {});
+        await doTransition("back", {});
       }
     },
     dismissError() {
@@ -252,30 +261,27 @@ export function useAnastasisReducer(): AnastasisReducerApi {
         reducerState: undefined,
       });
     },
-    runTransaction(f) {
-      async function run() {
-        const txHandle = new ReducerTxImpl(anastasisState.reducerState!);
-        try {
-          await f(txHandle);
-        } catch (e) {
-          console.log("exception during reducer transaction", e);
-        }
-        const s = txHandle.transactionState;
-        console.log("transaction finished, new state", s);
-        if (s.code !== undefined) {
-          setAnastasisState({
-            ...anastasisState,
-            currentError: txHandle.transactionState,
-          });
-        } else {
-          setAnastasisState({
-            ...anastasisState,
-            reducerState: txHandle.transactionState,
-            currentError: undefined,
-          });
-        }
+    async runTransaction(f) {
+      const txHandle = new ReducerTxImpl(anastasisState.reducerState!);
+      try {
+        await f(txHandle);
+      } catch (e) {
+        console.log("exception during reducer transaction", e);
       }
-      run();
+      const s = txHandle.transactionState;
+      console.log("transaction finished, new state", s);
+      if (s.code !== undefined) {
+        setAnastasisState({
+          ...anastasisState,
+          currentError: txHandle.transactionState,
+        });
+      } else {
+        setAnastasisState({
+          ...anastasisState,
+          reducerState: txHandle.transactionState,
+          currentError: undefined,
+        });
+      }
     },
   };
 }
