@@ -343,14 +343,19 @@ async function uncompressRecoveryDoc(zippedRd: Uint8Array): Promise<any> {
   return JSON.parse(bytesToString(res));
 }
 
-async function uploadSecret(
+/**
+ * Prepare the recovery document and truth metadata based
+ * on the selected policies.
+ */
+async function prepareRecoveryData(
   state: ReducerStateBackup,
-): Promise<ReducerStateBackup | ReducerStateError> {
+): Promise<ReducerStateBackup> {
   const policies = state.policies!;
   const secretName = state.secret_name!;
   const coreSecret: OpaqueData = encodeCrock(
     stringToBytes(JSON.stringify(state.core_secret!)),
   );
+
   // Truth key is `${methodIndex}/${providerUrl}`
   const truthMetadataMap: Record<string, TruthMetaData> = {};
 
@@ -391,17 +396,6 @@ async function uploadSecret(
 
   const csr = await coreSecretEncrypt(policyKeys, coreSecret);
 
-  const uidMap: Record<string, UserIdentifier> = {};
-  for (const prov of state.policy_providers!) {
-    const provider = state.authentication_providers![
-      prov.provider_url
-    ] as AuthenticationProviderStatusOk;
-    uidMap[prov.provider_url] = await userIdentifierDerive(
-      state.identity_attributes!,
-      provider.salt,
-    );
-  }
-
   const escrowMethods: EscrowMethod[] = [];
 
   for (const truthKey of Object.keys(truthMetadataMap)) {
@@ -413,6 +407,71 @@ async function uploadSecret(
     const provider = state.authentication_providers![
       meth.provider
     ] as AuthenticationProviderStatusOk;
+    escrowMethods.push({
+      escrow_type: authMethod.type as any,
+      instructions: authMethod.instructions,
+      provider_salt: provider.salt,
+      truth_salt: tm.truth_salt,
+      truth_key: tm.truth_key,
+      url: meth.provider,
+      uuid: tm.uuid,
+    });
+  }
+
+  const rd: RecoveryDocument = {
+    secret_name: secretName,
+    encrypted_core_secret: csr.encCoreSecret,
+    escrow_methods: escrowMethods,
+    policies: policies.map((x, i) => {
+      return {
+        master_key: csr.encMasterKeys[i],
+        uuids: policyUuids[i],
+        salt: policySalts[i],
+      };
+    }),
+  };
+
+  return {
+    ...state,
+    recovery_data: {
+      recovery_document: rd,
+      truth_metadata: truthMetadataMap,
+    },
+  };
+}
+
+async function uploadSecret(
+  state: ReducerStateBackup,
+): Promise<ReducerStateBackup | ReducerStateError> {
+  const uidMap: Record<string, UserIdentifier> = {};
+  for (const prov of state.policy_providers!) {
+    const provider = state.authentication_providers![
+      prov.provider_url
+    ] as AuthenticationProviderStatusOk;
+    uidMap[prov.provider_url] = await userIdentifierDerive(
+      state.identity_attributes!,
+      provider.salt,
+    );
+  }
+
+  if (!state.recovery_data) {
+    state = await prepareRecoveryData(state);
+  }
+
+  const recoveryData = state.recovery_data;
+  if (!recoveryData) {
+    throw Error("invariant failed");
+  }
+
+  const truthMetadataMap = recoveryData.truth_metadata;
+  const rd = recoveryData.recovery_document;
+
+  for (const truthKey of Object.keys(truthMetadataMap)) {
+    const tm = truthMetadataMap[truthKey];
+    const pol = state.policies![tm.policy_index];
+    const meth = pol.methods[tm.pol_method_index];
+    const authMethod =
+      state.authentication_methods![meth.authentication_method];
     const truthValue = await getTruthValue(authMethod, tm.uuid, tm.truth_salt);
     const encryptedTruth = await encryptTruth(
       tm.nonce,
@@ -448,34 +507,7 @@ async function uploadSecret(
         hint: `could not upload truth (HTTP status ${resp.status})`,
       };
     }
-
-    escrowMethods.push({
-      escrow_type: authMethod.type as any,
-      instructions: authMethod.instructions,
-      provider_salt: provider.salt,
-      truth_salt: tm.truth_salt,
-      truth_key: tm.truth_key,
-      url: meth.provider,
-      uuid: tm.uuid,
-    });
   }
-
-  // FIXME: We need to store the truth metadata in
-  // the state, since it's possible that we'll run into
-  // a provider that requests a payment.
-
-  const rd: RecoveryDocument = {
-    secret_name: secretName,
-    encrypted_core_secret: csr.encCoreSecret,
-    escrow_methods: escrowMethods,
-    policies: policies.map((x, i) => {
-      return {
-        master_key: csr.encMasterKeys[i],
-        uuids: policyUuids[i],
-        salt: policySalts[i],
-      };
-    }),
-  };
 
   const successDetails: SuccessDetails = {};
 
@@ -1092,6 +1124,8 @@ async function enterSecret(
       mime: args.secret.mime ?? "text/plain",
       value: args.secret.value,
     },
+    // A new secret invalidates the existing recovery data.
+    recovery_data: undefined,
   });
 }
 

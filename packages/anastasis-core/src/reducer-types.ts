@@ -67,12 +67,14 @@ export interface ReducerStateBackup {
   secret_name?: string;
   policies?: Policy[];
 
-  /**
-   * Map from truth key (`${methodIndex}/${providerUrl}`) to
-   * the truth metadata.
-   */
-  truth_metadata?: Record<string, TruthMetaData>;
-  recovery_document?: RecoveryDocument;
+  recovery_data?: {
+    /**
+     * Map from truth key (`${methodIndex}/${providerUrl}`) to
+     * the truth metadata.
+     */
+    truth_metadata: Record<string, TruthMetaData>;
+    recovery_document: RecoveryDocument;
+  };
 
   /**
    * Policy providers are providers that we checked to be functional
