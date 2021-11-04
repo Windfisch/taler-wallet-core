@@ -707,7 +707,7 @@ async function requestTruth(
   if (solveRequest) {
     let respHash: string;
     switch (truth.escrow_type) {
-      case ChallengeType.Question:
+      case ChallengeType.Question: {
         if ("answer" in solveRequest) {
           respHash = await secureAnswerHash(
             solveRequest.answer,
@@ -718,6 +718,7 @@ async function requestTruth(
           throw Error("unsupported answer request");
         }
         break;
+      }
       case ChallengeType.Email:
       case ChallengeType.Sms:
       case ChallengeType.Post:
