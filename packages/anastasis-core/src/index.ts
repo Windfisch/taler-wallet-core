@@ -443,17 +443,6 @@ async function prepareRecoveryData(
 async function uploadSecret(
   state: ReducerStateBackup,
 ): Promise<ReducerStateBackup | ReducerStateError> {
-  const uidMap: Record<string, UserIdentifier> = {};
-  for (const prov of state.policy_providers!) {
-    const provider = state.authentication_providers![
-      prov.provider_url
-    ] as AuthenticationProviderStatusOk;
-    uidMap[prov.provider_url] = await userIdentifierDerive(
-      state.identity_attributes!,
-      provider.salt,
-    );
-  }
-
   if (!state.recovery_data) {
     state = await prepareRecoveryData(state);
   }
@@ -467,7 +456,7 @@ async function uploadSecret(
   const rd = recoveryData.recovery_document;
 
   const truthPayUris: string[] = [];
-
+  const userIdCache: Record<string, UserIdentifier> = {};
   for (const truthKey of Object.keys(truthMetadataMap)) {
     const tm = truthMetadataMap[truthKey];
     const pol = state.policies![tm.policy_index];
@@ -480,10 +469,21 @@ async function uploadSecret(
       tm.truth_key,
       truthValue,
     );
-    const uid = uidMap[meth.provider];
+    logger.info(`uploading to ${meth.provider}`);
+    let userId = userIdCache[meth.provider];
+    if (!userId) {
+      const provider = state.authentication_providers![
+        meth.provider
+      ] as AuthenticationProviderStatusOk;
+      userId = userIdCache[meth.provider] = await userIdentifierDerive(
+        state.identity_attributes!,
+        provider.salt,
+      );
+    }
+    // FIXME: check that the question salt is okay here, looks weird.
     const encryptedKeyShare = await encryptKeyshare(
       tm.key_share,
-      uid,
+      userId,
       authMethod.type === "question"
         ? bytesToString(decodeCrock(authMethod.challenge))
         : undefined,
@@ -515,6 +515,7 @@ async function uploadSecret(
         };
       }
       truthPayUris.push(talerPayUri);
+      continue;
     }
     return {
       code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
@@ -535,7 +536,7 @@ async function uploadSecret(
   const policyPayUris: string[] = [];
 
   for (const prov of state.policy_providers!) {
-    const uid = uidMap[prov.provider_url];
+    const uid = userIdCache[prov.provider_url];
     const acctKeypair = accountKeypairDerive(uid);
     const zippedDoc = await compressRecoveryDoc(rd);
     const encRecoveryDoc = await encryptRecoveryDocument(
@@ -607,6 +608,7 @@ async function uploadSecret(
     core_secret: undefined,
     backup_state: BackupStates.BackupFinished,
     success_details: successDetails,
+    payments: undefined,
   };
 }
 
@@ -1240,9 +1242,14 @@ const backupTransitions: Record<
     ),
     ...transition("enter_secret_name", codecForAny(), enterSecretName),
   },
-  [BackupStates.PoliciesPaying]: {},
-  [BackupStates.TruthsPaying]: {},
-  [BackupStates.PoliciesPaying]: {},
+  [BackupStates.PoliciesPaying]: {
+    ...transitionBackupJump("back", BackupStates.SecretEditing),
+    ...transition("pay", codecForAny(), uploadSecret),
+  },
+  [BackupStates.TruthsPaying]: {
+    ...transitionBackupJump("back", BackupStates.SecretEditing),
+    ...transition("pay", codecForAny(), uploadSecret),
+  },
   [BackupStates.BackupFinished]: {
     ...transitionBackupJump("back", BackupStates.SecretEditing),
   },
