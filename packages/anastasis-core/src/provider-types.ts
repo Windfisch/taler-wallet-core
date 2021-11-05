@@ -1,4 +1,4 @@
-import { AmountString } from "@gnu-taler/taler-util";
+import { Amounts, AmountString } from "@gnu-taler/taler-util";
 
 export interface EscrowConfigurationResponse {
   // Protocol identifier, clarifies that this is an Anastasis provider.
@@ -71,4 +71,15 @@ export interface TruthUploadRequest {
   // For how many years from now would the client like us to
   // store the truth?
   storage_duration_years: number;
+}
+
+export interface IbanExternalAuthResponse {
+  method: "iban";
+  answer_code: number;
+  details: {
+    challenge_amount: AmountString;
+    credit_iban: string;
+    business_name: string;
+    wire_transfer_subject: string;
+  };
 }

@@ -25,6 +25,7 @@ import {
 import { anastasisData } from "./anastasis-data.js";
 import {
   EscrowConfigurationResponse,
+  IbanExternalAuthResponse,
   TruthUploadRequest,
 } from "./provider-types.js";
 import {
@@ -810,6 +811,39 @@ async function tryRecoverSecret(
 }
 
 /**
+ * Re-check the status of challenges that are solved asynchronously.
+ */
+async function pollChallenges(
+  state: ReducerStateRecovery,
+  args: void,
+): Promise<ReducerStateRecovery | ReducerStateError> {
+  for (const truthUuid in state.challenge_feedback) {
+    if (state.recovery_state === RecoveryStates.RecoveryFinished) {
+      break;
+    }
+    const feedback = state.challenge_feedback[truthUuid];
+    const truth = state.verbatim_recovery_document!.escrow_methods.find(
+      (x) => x.uuid === truthUuid,
+    );
+    if (!truth) {
+      logger.warn(
+        "truth for challenge feedback entry not found in recovery document",
+      );
+      continue;
+    }
+    if (feedback.state === ChallengeFeedbackStatus.AuthIban) {
+      const s2 = await requestTruth(state, truth, {
+        pin: feedback.answer_code,
+      });
+      if (s2.recovery_state) {
+        state = s2;
+      }
+    }
+  }
+  return state;
+}
+
+/**
  * Request a truth, optionally with a challenge solution
  * provided by the user.
  */
@@ -839,6 +873,7 @@ async function requestTruth(
       case ChallengeType.Email:
       case ChallengeType.Sms:
       case ChallengeType.Post:
+      case ChallengeType.Iban:
       case ChallengeType.Totp: {
         if ("answer" in solveRequest) {
           const s = solveRequest.answer.trim().replace(/^A-/, "");
@@ -857,7 +892,7 @@ async function requestTruth(
         break;
       }
       default:
-        throw Error("unsupported challenge type");
+        throw Error(`unsupported challenge type "${truth.escrow_type}""`);
     }
     url.searchParams.set("response", respHash);
   }
@@ -934,7 +969,24 @@ async function requestTruth(
     const body = await resp.json();
     logger.info(`got body ${j2s(body)}`);
     if (body.method === "iban") {
-      // FIXME:
+      const b = body as IbanExternalAuthResponse;
+      return {
+        ...state,
+        recovery_state: RecoveryStates.ChallengeSolving,
+        challenge_feedback: {
+          ...state.challenge_feedback,
+          [truth.uuid]: {
+            state: ChallengeFeedbackStatus.AuthIban,
+            answer_code: b.answer_code,
+            business_name: b.details.business_name,
+            challenge_amount: b.details.challenge_amount,
+            credit_iban: b.details.credit_iban,
+            wire_transfer_subject: b.details.wire_transfer_subject,
+            details: b.details,
+            method: "iban",
+          },
+        },
+      };
     } else {
       return {
         code: TalerErrorCode.ANASTASIS_TRUTH_CHALLENGE_FAILED,
@@ -1395,6 +1447,7 @@ const recoveryTransitions: Record<
       codecForActionArgsSelectChallenge(),
       selectChallenge,
     ),
+    ...transition("poll", codecForAny(), pollChallenges),
     ...transition("next", codecForAny(), nextFromChallengeSelecting),
   },
   [RecoveryStates.ChallengeSolving]: {

@@ -80,6 +80,25 @@ export interface ChallengeFeedbackAuthIban {
    * be contained in the bank transfer.
    */
   wire_transfer_subject: string;
+
+  /**
+   * FIXME: This field is only present for compatibility with
+   * the C reducer test suite.
+   */
+  method: "iban";
+
+  answer_code: number;
+
+  /**
+   * FIXME: This field is only present for compatibility with
+   * the C reducer test suite.
+   */
+  details: {
+    challenge_amount: AmountString;
+    credit_iban: string;
+    business_name: string;
+    wire_transfer_subject: string;
+  };
 }
 
 /**

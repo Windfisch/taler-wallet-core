@@ -6,6 +6,7 @@ import {
   codecForNumber,
   codecForString,
   codecForTimestamp,
+  Duration,
   Timestamp,
 } from "@gnu-taler/taler-util";
 import { ChallengeFeedback } from "./challenge-feedback-types.js";
