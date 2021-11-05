@@ -24,14 +24,10 @@ export function ReviewPoliciesScreen(): VNode {
       <EditPoliciesScreen
         index={editingPolicy}
         cancel={() => setEditingPolicy(undefined)}
-        confirm={(newMethods) => {
-          reducer.runTransaction(async (tx) => {
-            await tx.transition("delete_policy", {
-              policy_index: editingPolicy
-            });
-            await tx.transition("add_policy", {
-              policy: newMethods
-            });
+        confirm={async (newMethods) => {
+          await reducer.transition("update_policy", {
+            policy_index: editingPolicy,
+            policy: newMethods,
           });
           setEditingPolicy(undefined)
         }}
@@ -50,7 +46,7 @@ export function ReviewPoliciesScreen(): VNode {
       {policies.length < 1 && <p class="block">
         No policies had been created. Go back and add more authentication methods.
       </p>}
-      <div class="block" style={{justifyContent:'flex-end'}} >
+      <div class="block" style={{ justifyContent: 'flex-end' }} >
         <button class="button is-success" onClick={() => setEditingPolicy(policies.length + 1)}>Add new policy</button>
       </div>
       {policies.map((p, policy_index) => {
