@@ -868,6 +868,10 @@ async function requestTruth(
     },
   });
 
+  logger.info(
+    `got GET /truth response from ${truth.url}, http status ${resp.status}`,
+  );
+
   if (resp.status === HttpStatusCode.Ok) {
     let answerSalt: string | undefined = undefined;
     if (

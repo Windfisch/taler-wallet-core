@@ -3,6 +3,9 @@ import { AuthMethod, Policy, PolicyProvider } from "./reducer-types.js";
 
 const logger = new Logger("anastasis-core:policy-suggestion.ts");
 
+const maxMethodSelections = 200;
+const maxPolicyEvaluations = 10000;
+
 /**
  * Provider information used during provider/method mapping.
  */
@@ -32,7 +35,11 @@ export function suggestPolicies(
     numSel = 4;
   }
   const policies: Policy[] = [];
-  const selections = enumerateMethodSelections(numSel, numMethods);
+  const selections = enumerateMethodSelections(
+    numSel,
+    numMethods,
+    maxMethodSelections,
+  );
   logger.info(`selections: ${j2s(selections)}`);
   for (const sel of selections) {
     const p = assignProviders(policies, methods, providers, sel);
@@ -40,6 +47,7 @@ export function suggestPolicies(
       policies.push(p);
     }
   }
+  logger.info(`suggesting policies ${j2s(policies)}`);
   return {
     policies,
     policy_providers: providers.map((x) => ({
@@ -63,10 +71,15 @@ function assignProviders(
   const providerSelections = enumerateProviderMappings(
     methodSelection.length,
     providers.length,
+    maxPolicyEvaluations,
   );
 
   let bestProvSel: ProviderSelection | undefined;
+  // Number of different providers selected, larger is better
   let bestDiversity = 0;
+  // Number of identical challenges duplicated at different providers,
+  // smaller is better
+  let bestDuplication = Number.MAX_SAFE_INTEGER;
 
   for (const provSel of providerSelections) {
     // First, check if selection is even possible with the methods offered
@@ -87,22 +100,53 @@ function assignProviders(
     // Evaluate diversity, always prefer policies
     // that increase diversity.
     const providerSet = new Set<string>();
-    for (const pol of existingPolicies) {
-      for (const m of pol.methods) {
-        providerSet.add(m.provider);
-      }
-    }
+    // The C reducer evaluates diversity only per policy
+    // for (const pol of existingPolicies) {
+    //   for (const m of pol.methods) {
+    //     providerSet.add(m.provider);
+    //   }
+    // }
     for (const provIndex of provSel) {
       const prov = providers[provIndex];
       providerSet.add(prov.url);
     }
 
     const diversity = providerSet.size;
+
+    // Number of providers that each method shows up at.
+    const provPerMethod: Set<string>[] = [];
+    for (let i = 0; i < methods.length; i++) {
+      provPerMethod[i] = new Set<string>();
+    }
+    for (const pol of existingPolicies) {
+      for (const m of pol.methods) {
+        provPerMethod[m.authentication_method].add(m.provider);
+      }
+    }
+    for (const methSelIndex in provSel) {
+      const prov = providers[provSel[methSelIndex]];
+      provPerMethod[methodSelection[methSelIndex]].add(prov.url);
+    }
+
+    let duplication = 0;
+    for (const provSet of provPerMethod) {
+      duplication += provSet.size;
+    }
+
+    logger.info(`diversity ${diversity}, duplication ${duplication}`);
+
     if (!bestProvSel || diversity > bestDiversity) {
       bestProvSel = provSel;
       bestDiversity = diversity;
+      bestDuplication = duplication;
+      logger.info(`taking based on diversity`);
+    } else if (diversity == bestDiversity && duplication < bestDuplication) {
+      bestProvSel = provSel;
+      bestDiversity = diversity;
+      bestDuplication = duplication;
+      logger.info(`taking based on duplication`);
     }
-    // TODO: also evaluate costs and duplicates (same challenge at same provider)
+    // TODO: also evaluate costs
   }
 
   if (!bestProvSel) {
@@ -117,13 +161,20 @@ function assignProviders(
   };
 }
 
+/**
+ * A provider selection maps a method selection index to a provider index.
+ */
 type ProviderSelection = number[];
 
 /**
  * Compute provider mappings.
  * Enumerates all n-combinations with repetition of m providers.
  */
-function enumerateProviderMappings(n: number, m: number): ProviderSelection[] {
+function enumerateProviderMappings(
+  n: number,
+  m: number,
+  limit?: number,
+): ProviderSelection[] {
   const selections: ProviderSelection[] = [];
   const a = new Array(n);
   const sel = (i: number, start: number = 0) => {
@@ -134,6 +185,9 @@ function enumerateProviderMappings(n: number, m: number): ProviderSelection[] {
     for (let j = start; j < m; j++) {
       a[i] = j;
       sel(i + 1, j);
+      if (limit && selections.length >= limit) {
+        break;
+      }
     }
   };
   sel(0);
@@ -151,7 +205,11 @@ type MethodSelection = number[];
  * Compute method selections.
  * Enumerates all n-combinations without repetition of m methods.
  */
-function enumerateMethodSelections(n: number, m: number): MethodSelection[] {
+function enumerateMethodSelections(
+  n: number,
+  m: number,
+  limit?: number,
+): MethodSelection[] {
   const selections: MethodSelection[] = [];
   const a = new Array(n);
   const sel = (i: number, start: number = 0) => {
@@ -162,6 +220,9 @@ function enumerateMethodSelections(n: number, m: number): MethodSelection[] {
     for (let j = start; j < m; j++) {
       a[i] = j;
       sel(i + 1, j + 1);
+      if (limit && selections.length >= limit) {
+        break;
+      }
     }
   };
   sel(0);

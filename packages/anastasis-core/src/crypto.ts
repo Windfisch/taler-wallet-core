@@ -250,7 +250,6 @@ export async function coreSecretRecover(args: {
     args.encryptedMasterKey,
     "emk",
   );
-  console.log("recovered master key", masterKey);
   return await anastasisDecrypt(masterKey, args.encryptedCoreSecret, "cse");
 }
 
