@@ -952,6 +952,21 @@ async function requestTruth(
   }
 
   if (resp.status === HttpStatusCode.Forbidden) {
+    const body = await resp.json();
+    if (
+      body.code === TalerErrorCode.ANASTASIS_TRUTH_CHALLENGE_RESPONSE_REQUIRED
+    ) {
+      return {
+        ...state,
+        recovery_state: RecoveryStates.ChallengeSolving,
+        challenge_feedback: {
+          ...state.challenge_feedback,
+          [truth.uuid]: {
+            state: ChallengeFeedbackStatus.Pending,
+          },
+        },
+      };
+    }
     return {
       ...state,
       recovery_state: RecoveryStates.ChallengeSolving,
@@ -959,7 +974,7 @@ async function requestTruth(
         ...state.challenge_feedback,
         [truth.uuid]: {
           state: ChallengeFeedbackStatus.Message,
-          message: "Challenge should be solved",
+          message: body.hint ?? "Challenge should be solved",
         },
       },
     };
