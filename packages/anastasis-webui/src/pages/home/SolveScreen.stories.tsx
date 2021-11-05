@@ -19,7 +19,7 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 
-import { ChallengeFeedbackStatus, ReducerState } from 'anastasis-core';
+import { ChallengeFeedbackStatus, RecoveryStates, ReducerState } from 'anastasis-core';
 import { createExample, reducerStatesExample } from '../../utils';
 import { SolveScreen as TestedComponent } from './SolveScreen';
 
@@ -257,6 +257,7 @@ export const QuestionChallengeTruthUnknownFeedback = createExample(TestedCompone
 
 export const QuestionChallengeAuthIbanFeedback = createExample(TestedComponent, {
   ...reducerStatesExample.challengeSolving,
+  recovery_state: RecoveryStates.ChallengeSelecting,
   recovery_information: {
     challenges: [{
       cost: 'USD:1',
@@ -273,7 +274,17 @@ export const QuestionChallengeAuthIbanFeedback = createExample(TestedComponent, 
       challenge_amount: "EUR:1",
       credit_iban: "DE12345789000",
       business_name: "Data Loss Incorporated",
-      wire_transfer_subject: "Anastasis 987654321"
+      wire_transfer_subject: "Anastasis 987654321",
+      answer_code: 987654321,
+      // Fields that follow are only for compatibility with C reducer,
+      // will be removed eventually,
+      details: {
+        business_name: "foo",
+        challenge_amount: "foo",
+        credit_iban: "foo",
+        wire_transfer_subject: "foo",
+      },
+      method: "iban",
     }
   }
 
