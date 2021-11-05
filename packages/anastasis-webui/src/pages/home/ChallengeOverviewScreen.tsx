@@ -17,6 +17,7 @@ function OverviewFeedbackDisplay(props: { feedback?: ChallengeFeedback }) {
     case ChallengeFeedbackStatus.Solved:
       return <div />
     case ChallengeFeedbackStatus.Pending:
+    case ChallengeFeedbackStatus.Solved:
     case ChallengeFeedbackStatus.AuthIban:
       return null;
     case ChallengeFeedbackStatus.ServerFailure:
