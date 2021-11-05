@@ -23,6 +23,47 @@ const isNode =
   typeof process.release !== "undefined" &&
   process.release.name === "node";
 
+export enum LogLevel {
+  Trace = "trace",
+  Message = "message",
+  Info = "info",
+  Warn = "warn",
+  Error = "error",
+  None = "none",
+}
+
+export let globalLogLevel = LogLevel.Info;
+
+export function setGlobalLogLevelFromString(logLevelStr: string) {
+  let level: LogLevel;
+  switch (logLevelStr.toLowerCase()) {
+    case "trace":
+      level = LogLevel.Trace;
+      break;
+    case "info":
+      level = LogLevel.Info;
+      break;
+    case "warn":
+    case "warning":
+      level = LogLevel.Warn;
+      break;
+    case "error":
+      level = LogLevel.Error;
+      break;
+    case "none":
+      level = LogLevel.None;
+      break;
+    default:
+      if (isNode) {
+        process.stderr.write(`Invalid log level, defaulting to WARNING`);
+      } else {
+        console.warn(`Invalid log level, defaulting to WARNING`);
+      }
+      level = LogLevel.Warn;
+  }
+  globalLogLevel = level;
+}
+
 function writeNodeLog(
   message: any,
   tag: string,
@@ -57,21 +98,60 @@ export class Logger {
   constructor(private tag: string) {}
 
   shouldLogTrace() {
-    // FIXME: Implement logic to check loglevel
-    return true;
+    switch (globalLogLevel) {
+      case LogLevel.Trace:
+        return true;
+      case LogLevel.Message:
+      case LogLevel.Info:
+      case LogLevel.Warn:
+      case LogLevel.Error:
+      case LogLevel.None:
+        return false;
+    }
   }
 
   shouldLogInfo() {
-    // FIXME: Implement logic to check loglevel
-    return true;
+    switch (globalLogLevel) {
+      case LogLevel.Trace:
+      case LogLevel.Message:
+      case LogLevel.Info:
+        return true;
+      case LogLevel.Warn:
+      case LogLevel.Error:
+      case LogLevel.None:
+        return false;
+    }
   }
 
   shouldLogWarn() {
-    // FIXME: Implement logic to check loglevel
-    return true;
+    switch (globalLogLevel) {
+      case LogLevel.Trace:
+      case LogLevel.Message:
+      case LogLevel.Info:
+      case LogLevel.Warn:
+        return true;
+      case LogLevel.Error:
+      case LogLevel.None:
+        return false;
+    }
+  }
+
+  shouldLogError() {
+    switch (globalLogLevel) {
+      case LogLevel.Trace:
+      case LogLevel.Message:
+      case LogLevel.Info:
+      case LogLevel.Warn:
+      case LogLevel.Error:
+      case LogLevel.None:
+        return false;
+    }
   }
 
   info(message: string, ...args: any[]): void {
+    if (!this.shouldLogInfo()) {
+      return;
+    }
     if (isNode) {
       writeNodeLog(message, this.tag, "INFO", args);
     } else {
@@ -83,6 +163,9 @@ export class Logger {
   }
 
   warn(message: string, ...args: any[]): void {
+    if (!this.shouldLogWarn()) {
+      return;
+    }
     if (isNode) {
       writeNodeLog(message, this.tag, "WARN", args);
     } else {
@@ -94,6 +177,9 @@ export class Logger {
   }
 
   error(message: string, ...args: any[]): void {
+    if (!this.shouldLogError()) {
+      return;
+    }
     if (isNode) {
       writeNodeLog(message, this.tag, "ERROR", args);
     } else {
@@ -105,6 +191,9 @@ export class Logger {
   }
 
   trace(message: any, ...args: any[]): void {
+    if (!this.shouldLogTrace()) {
+      return;
+    }
     if (isNode) {
       writeNodeLog(message, this.tag, "TRACE", args);
     } else {

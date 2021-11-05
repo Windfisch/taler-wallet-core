@@ -40,16 +40,17 @@ export async function runBench1(configJson: any): Promise<void> {
   const b1conf = codecForBench1Config().decode(configJson);
 
   const myHttpLib = new NodeHttpLib();
-  const wallet = await getDefaultNodeWallet({
-    // No persistent DB storage.
-    persistentStoragePath: undefined,
-    httpLib: myHttpLib,
-  });
-  await wallet.client.call(WalletApiOperation.InitWallet, {});
 
   const numIter = b1conf.iterations ?? 1;
 
   for (let i = 0; i < numIter; i++) {
+    const wallet = await getDefaultNodeWallet({
+      // No persistent DB storage.
+      persistentStoragePath: undefined,
+      httpLib: myHttpLib,
+    });
+    await wallet.client.call(WalletApiOperation.InitWallet, {});
+
     await wallet.client.call(WalletApiOperation.WithdrawFakebank, {
       amount: "TESTKUDOS:10",
       bank: b1conf.bank,
@@ -68,9 +69,9 @@ export async function runBench1(configJson: any): Promise<void> {
     await wallet.runTaskLoop({
       stopWhenDone: true,
     });
-  }
 
-  wallet.stop();
+    wallet.stop();
+  }
 }
 
 /**
