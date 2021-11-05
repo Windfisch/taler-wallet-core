@@ -54,7 +54,7 @@
     "po2json": "^0.4.5",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
-    "rollup": "^2.37.1",
+    "rollup": "^2.38",
     "rollup-plugin-sourcemaps": "^0.6.3",
     "source-map-resolve": "^0.6.0",
     "typedoc": "^0.20.16",

@@ -1,14 +1,22 @@
 import {
+  AmountJson,
+  AmountLike,
+  Amounts,
   AmountString,
   buildSigPS,
   bytesToString,
   Codec,
   codecForAny,
   decodeCrock,
+  Duration,
   eddsaSign,
   encodeCrock,
   getRandomBytes,
   hash,
+  HttpStatusCode,
+  j2s,
+  Logger,
+  parsePayUri,
   stringToBytes,
   TalerErrorCode,
   TalerSignaturePurpose,
@@ -17,35 +25,46 @@ import {
 import { anastasisData } from "./anastasis-data.js";
 import {
   EscrowConfigurationResponse,
+  IbanExternalAuthResponse,
   TruthUploadRequest,
 } from "./provider-types.js";
 import {
-  ActionArgAddAuthentication,
-  ActionArgDeleteAuthentication,
-  ActionArgDeletePolicy,
-  ActionArgEnterSecret,
-  ActionArgEnterSecretName,
-  ActionArgEnterUserAttributes,
+  ActionArgsAddAuthentication,
+  ActionArgsDeleteAuthentication,
+  ActionArgsDeletePolicy,
+  ActionArgsEnterSecret,
+  ActionArgsEnterSecretName,
+  ActionArgsEnterUserAttributes,
+  ActionArgsAddPolicy,
+  ActionArgsSelectContinent,
+  ActionArgsSelectCountry,
   ActionArgsSelectChallenge,
   ActionArgsSolveChallengeRequest,
+  ActionArgsUpdateExpiration,
   AuthenticationProviderStatus,
   AuthenticationProviderStatusOk,
   AuthMethod,
   BackupStates,
+  codecForActionArgsEnterUserAttributes,
+  codecForActionArgsAddPolicy,
+  codecForActionArgsSelectChallenge,
+  codecForActionArgSelectContinent,
+  codecForActionArgSelectCountry,
+  codecForActionArgsUpdateExpiration,
   ContinentInfo,
   CountryInfo,
-  MethodSpec,
-  Policy,
-  PolicyProvider,
   RecoveryInformation,
   RecoveryInternalData,
   RecoveryStates,
   ReducerState,
   ReducerStateBackup,
-  ReducerStateBackupUserAttributesCollecting,
   ReducerStateError,
   ReducerStateRecovery,
   SuccessDetails,
+  codecForActionArgsChangeVersion,
+  ActionArgsChangeVersion,
+  TruthMetaData,
+  ActionArgsUpdatePolicy,
 } from "./reducer-types.js";
 import fetchPonyfill from "fetch-ponyfill";
 import {
@@ -61,8 +80,6 @@ import {
   PolicySalt,
   TruthSalt,
   secureAnswerHash,
-  TruthKey,
-  TruthUuid,
   UserIdentifier,
   userIdentifierDerive,
   typedArrayConcat,
@@ -70,13 +87,27 @@ import {
   decryptKeyShare,
   KeyShare,
   coreSecretRecover,
+  pinAnswerHash,
 } from "./crypto.js";
 import { unzlibSync, zlibSync } from "fflate";
-import { EscrowMethod, RecoveryDocument } from "./recovery-document-types.js";
+import {
+  ChallengeType,
+  EscrowMethod,
+  RecoveryDocument,
+} from "./recovery-document-types.js";
+import { ProviderInfo, suggestPolicies } from "./policy-suggestion.js";
+import {
+  ChallengeFeedback,
+  ChallengeFeedbackStatus,
+} from "./challenge-feedback-types.js";
 
-const { fetch, Request, Response, Headers } = fetchPonyfill({});
+const { fetch } = fetchPonyfill({});
 
 export * from "./reducer-types.js";
+export * as validators from "./validators.js";
+export * from "./challenge-feedback-types.js";
+
+const logger = new Logger("anastasis-core:index.ts");
 
 function getContinents(): ContinentInfo[] {
   const continentSet = new Set<string>();
@@ -94,10 +125,40 @@ function getContinents(): ContinentInfo[] {
   return continents;
 }
 
+interface ErrorDetails {
+  code: TalerErrorCode;
+  message?: string;
+  hint?: string;
+}
+
+export class ReducerError extends Error {
+  constructor(public errorJson: ErrorDetails) {
+    super(
+      errorJson.message ??
+        errorJson.hint ??
+        `${TalerErrorCode[errorJson.code]}`,
+    );
+
+    // Set the prototype explicitly.
+    Object.setPrototypeOf(this, ReducerError.prototype);
+  }
+}
+
+/**
+ * Get countries for a continent, abort with ReducerError
+ * exception when continent doesn't exist.
+ */
 function getCountries(continent: string): CountryInfo[] {
-  return anastasisData.countriesList.countries.filter(
+  const countries = anastasisData.countriesList.countries.filter(
     (x) => x.continent === continent,
   );
+  if (countries.length <= 0) {
+    throw new ReducerError({
+      code: TalerErrorCode.ANASTASIS_REDUCER_INPUT_INVALID,
+      hint: "continent not found",
+    });
+  }
+  return countries;
 }
 
 export async function getBackupStartState(): Promise<ReducerStateBackup> {
@@ -114,19 +175,27 @@ export async function getRecoveryStartState(): Promise<ReducerStateRecovery> {
   };
 }
 
-async function backupSelectCountry(
-  state: ReducerStateBackup,
-  countryCode: string,
-  currencies: string[],
-): Promise<ReducerStateError | ReducerStateBackupUserAttributesCollecting> {
+async function selectCountry(
+  selectedContinent: string,
+  args: ActionArgsSelectCountry,
+): Promise<Partial<ReducerStateBackup> & Partial<ReducerStateRecovery>> {
+  const countryCode = args.country_code;
+  const currencies = args.currencies;
   const country = anastasisData.countriesList.countries.find(
     (x) => x.code === countryCode,
   );
   if (!country) {
-    return {
+    throw new ReducerError({
       code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
       hint: "invalid country selected",
-    };
+    });
+  }
+
+  if (country.continent !== selectedContinent) {
+    throw new ReducerError({
+      code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
+      hint: "selected country is not in selected continent",
+    });
   }
 
   const providers: { [x: string]: {} } = {};
@@ -140,8 +209,6 @@ async function backupSelectCountry(
     .required_attributes;
 
   return {
-    ...state,
-    backup_state: BackupStates.UserAttributesCollecting,
     selected_country: countryCode,
     currencies,
     required_attributes: ra,
@@ -149,38 +216,25 @@ async function backupSelectCountry(
   };
 }
 
+async function backupSelectCountry(
+  state: ReducerStateBackup,
+  args: ActionArgsSelectCountry,
+): Promise<ReducerStateError | ReducerStateBackup> {
+  return {
+    ...state,
+    ...(await selectCountry(state.selected_continent!, args)),
+    backup_state: BackupStates.UserAttributesCollecting,
+  };
+}
+
 async function recoverySelectCountry(
   state: ReducerStateRecovery,
-  countryCode: string,
-  currencies: string[],
+  args: ActionArgsSelectCountry,
 ): Promise<ReducerStateError | ReducerStateRecovery> {
-  const country = anastasisData.countriesList.countries.find(
-    (x) => x.code === countryCode,
-  );
-  if (!country) {
-    return {
-      code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-      hint: "invalid country selected",
-    };
-  }
-
-  const providers: { [x: string]: {} } = {};
-  for (const prov of anastasisData.providersList.anastasis_provider) {
-    if (currencies.includes(prov.currency)) {
-      providers[prov.url] = {};
-    }
-  }
-
-  const ra = (anastasisData.countryDetails as any)[countryCode]
-    .required_attributes;
-
   return {
     ...state,
     recovery_state: RecoveryStates.UserAttributesCollecting,
-    selected_country: countryCode,
-    currencies,
-    required_attributes: ra,
-    authentication_providers: providers,
+    ...(await selectCountry(state.selected_continent!, args)),
   };
 }
 
@@ -230,8 +284,9 @@ async function getProviderInfo(
 
 async function backupEnterUserAttributes(
   state: ReducerStateBackup,
-  attributes: Record<string, string>,
+  args: ActionArgsEnterUserAttributes,
 ): Promise<ReducerStateBackup> {
+  const attributes = args.identity_attributes;
   const providerUrls = Object.keys(state.authentication_providers ?? {});
   const newProviders = state.authentication_providers ?? {};
   for (const url of providerUrls) {
@@ -244,139 +299,6 @@ async function backupEnterUserAttributes(
     identity_attributes: attributes,
   };
   return newState;
-}
-
-interface PolicySelectionResult {
-  policies: Policy[];
-  policy_providers: PolicyProvider[];
-}
-
-type MethodSelection = number[];
-
-function enumerateSelections(n: number, m: number): MethodSelection[] {
-  const selections: MethodSelection[] = [];
-  const a = new Array(n);
-  const sel = (i: number) => {
-    if (i === n) {
-      selections.push([...a]);
-      return;
-    }
-    const start = i == 0 ? 0 : a[i - 1] + 1;
-    for (let j = start; j < m; j++) {
-      a[i] = j;
-      sel(i + 1);
-    }
-  };
-  sel(0);
-  return selections;
-}
-
-/**
- * Provider information used during provider/method mapping.
- */
-interface ProviderInfo {
-  url: string;
-  methodCost: Record<string, AmountString>;
-}
-
-/**
- * Assign providers to a method selection.
- */
-function assignProviders(
-  methods: AuthMethod[],
-  providers: ProviderInfo[],
-  methodSelection: number[],
-): Policy | undefined {
-  const selectedProviders: string[] = [];
-  for (const mi of methodSelection) {
-    const m = methods[mi];
-    let found = false;
-    for (const prov of providers) {
-      if (prov.methodCost[m.type]) {
-        selectedProviders.push(prov.url);
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      /* No provider found for this method */
-      return undefined;
-    }
-  }
-  return {
-    methods: methodSelection.map((x, i) => {
-      return {
-        authentication_method: x,
-        provider: selectedProviders[i],
-      };
-    }),
-  };
-}
-
-function suggestPolicies(
-  methods: AuthMethod[],
-  providers: ProviderInfo[],
-): PolicySelectionResult {
-  const numMethods = methods.length;
-  if (numMethods === 0) {
-    throw Error("no methods");
-  }
-  let numSel: number;
-  if (numMethods <= 2) {
-    numSel = numMethods;
-  } else if (numMethods <= 4) {
-    numSel = numMethods - 1;
-  } else if (numMethods <= 6) {
-    numSel = numMethods - 2;
-  } else if (numMethods == 7) {
-    numSel = numMethods - 3;
-  } else {
-    numSel = 4;
-  }
-  const policies: Policy[] = [];
-  const selections = enumerateSelections(numSel, numMethods);
-  console.log("selections", selections);
-  for (const sel of selections) {
-    const p = assignProviders(methods, providers, sel);
-    if (p) {
-      policies.push(p);
-    }
-  }
-  return {
-    policies,
-    policy_providers: providers.map((x) => ({
-      provider_url: x.url,
-    })),
-  };
-}
-
-/**
- * Truth data as stored in the reducer.
- */
-interface TruthMetaData {
-  uuid: string;
-
-  key_share: string;
-
-  policy_index: number;
-
-  pol_method_index: number;
-
-  /**
-   * Nonce used for encrypting the truth.
-   */
-  nonce: string;
-
-  /**
-   * Key that the truth (i.e. secret question answer, email address, mobile number, ...)
-   * is encrypted with when stored at the provider.
-   */
-  truth_key: string;
-
-  /**
-   * Truth-specific salt.
-   */
-  truth_salt: string;
 }
 
 async function getTruthValue(
@@ -408,7 +330,6 @@ async function getTruthValue(
  * Compress the recovery document and add a size header.
  */
 async function compressRecoveryDoc(rd: any): Promise<Uint8Array> {
-  console.log("recovery document", rd);
   const docBytes = stringToBytes(JSON.stringify(rd));
   const sizeHeaderBuf = new ArrayBuffer(4);
   const dvbuf = new DataView(sizeHeaderBuf);
@@ -424,14 +345,19 @@ async function uncompressRecoveryDoc(zippedRd: Uint8Array): Promise<any> {
   return JSON.parse(bytesToString(res));
 }
 
-async function uploadSecret(
+/**
+ * Prepare the recovery document and truth metadata based
+ * on the selected policies.
+ */
+async function prepareRecoveryData(
   state: ReducerStateBackup,
-): Promise<ReducerStateBackup | ReducerStateError> {
+): Promise<ReducerStateBackup> {
   const policies = state.policies!;
   const secretName = state.secret_name!;
   const coreSecret: OpaqueData = encodeCrock(
     stringToBytes(JSON.stringify(state.core_secret!)),
   );
+
   // Truth key is `${methodIndex}/${providerUrl}`
   const truthMetadataMap: Record<string, TruthMetaData> = {};
 
@@ -472,17 +398,6 @@ async function uploadSecret(
 
   const csr = await coreSecretEncrypt(policyKeys, coreSecret);
 
-  const uidMap: Record<string, UserIdentifier> = {};
-  for (const prov of state.policy_providers!) {
-    const provider = state.authentication_providers![
-      prov.provider_url
-    ] as AuthenticationProviderStatusOk;
-    uidMap[prov.provider_url] = await userIdentifierDerive(
-      state.identity_attributes!,
-      provider.salt,
-    );
-  }
-
   const escrowMethods: EscrowMethod[] = [];
 
   for (const truthKey of Object.keys(truthMetadataMap)) {
@@ -494,48 +409,8 @@ async function uploadSecret(
     const provider = state.authentication_providers![
       meth.provider
     ] as AuthenticationProviderStatusOk;
-    const truthValue = await getTruthValue(authMethod, tm.uuid, tm.truth_salt);
-    const encryptedTruth = await encryptTruth(
-      tm.nonce,
-      tm.truth_key,
-      truthValue,
-    );
-    const uid = uidMap[meth.provider];
-    const encryptedKeyShare = await encryptKeyshare(
-      tm.key_share,
-      uid,
-      authMethod.type === "question"
-        ? bytesToString(decodeCrock(authMethod.challenge))
-        : undefined,
-    );
-    console.log(
-      "encrypted key share len",
-      decodeCrock(encryptedKeyShare).length,
-    );
-    const tur: TruthUploadRequest = {
-      encrypted_truth: encryptedTruth,
-      key_share_data: encryptedKeyShare,
-      storage_duration_years: 5 /* FIXME */,
-      type: authMethod.type,
-      truth_mime: authMethod.mime_type,
-    };
-    const resp = await fetch(new URL(`truth/${tm.uuid}`, meth.provider).href, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify(tur),
-    });
-
-    if (resp.status !== 204) {
-      return {
-        code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
-        hint: "could not upload policy",
-      };
-    }
-
     escrowMethods.push({
-      escrow_type: authMethod.type,
+      escrow_type: authMethod.type as any,
       instructions: authMethod.instructions,
       provider_salt: provider.salt,
       truth_salt: tm.truth_salt,
@@ -544,12 +419,6 @@ async function uploadSecret(
       uuid: tm.uuid,
     });
   }
-
-  // FIXME: We need to store the truth metadata in
-  // the state, since it's possible that we'll run into
-  // a provider that requests a payment.
-
-  console.log("policy UUIDs", policyUuids);
 
   const rd: RecoveryDocument = {
     secret_name: secretName,
@@ -564,14 +433,143 @@ async function uploadSecret(
     }),
   };
 
+  return {
+    ...state,
+    recovery_data: {
+      recovery_document: rd,
+      truth_metadata: truthMetadataMap,
+    },
+  };
+}
+
+async function uploadSecret(
+  state: ReducerStateBackup,
+): Promise<ReducerStateBackup | ReducerStateError> {
+  if (!state.recovery_data) {
+    state = await prepareRecoveryData(state);
+  }
+
+  const recoveryData = state.recovery_data;
+  if (!recoveryData) {
+    throw Error("invariant failed");
+  }
+
+  const truthMetadataMap = recoveryData.truth_metadata;
+  const rd = recoveryData.recovery_document;
+
+  const truthPayUris: string[] = [];
+  const truthPaySecrets: Record<string, string> = {};
+
+  const userIdCache: Record<string, UserIdentifier> = {};
+  const getUserIdCaching = async (providerUrl: string) => {
+    let userId = userIdCache[providerUrl];
+    if (!userId) {
+      const provider = state.authentication_providers![
+        providerUrl
+      ] as AuthenticationProviderStatusOk;
+      userId = userIdCache[providerUrl] = await userIdentifierDerive(
+        state.identity_attributes!,
+        provider.salt,
+      );
+    }
+    return userId;
+  };
+  for (const truthKey of Object.keys(truthMetadataMap)) {
+    const tm = truthMetadataMap[truthKey];
+    const pol = state.policies![tm.policy_index];
+    const meth = pol.methods[tm.pol_method_index];
+    const authMethod =
+      state.authentication_methods![meth.authentication_method];
+    const truthValue = await getTruthValue(authMethod, tm.uuid, tm.truth_salt);
+    const encryptedTruth = await encryptTruth(
+      tm.nonce,
+      tm.truth_key,
+      truthValue,
+    );
+    logger.info(`uploading truth to ${meth.provider}`);
+    const userId = await getUserIdCaching(meth.provider);
+    const encryptedKeyShare = await encryptKeyshare(
+      tm.key_share,
+      userId,
+      authMethod.type === "question"
+        ? bytesToString(decodeCrock(authMethod.challenge))
+        : undefined,
+    );
+    const tur: TruthUploadRequest = {
+      encrypted_truth: encryptedTruth,
+      key_share_data: encryptedKeyShare,
+      storage_duration_years: 5 /* FIXME */,
+      type: authMethod.type,
+      truth_mime: authMethod.mime_type,
+    };
+    const reqUrl = new URL(`truth/${tm.uuid}`, meth.provider);
+    const paySecret = (state.truth_upload_payment_secrets ?? {})[meth.provider];
+    if (paySecret) {
+      // FIXME: Get this from the params
+      reqUrl.searchParams.set("timeout_ms", "500");
+    }
+    const resp = await fetch(reqUrl.href, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...(paySecret
+          ? {
+              "Anastasis-Payment-Identifier": paySecret,
+            }
+          : {}),
+      },
+      body: JSON.stringify(tur),
+    });
+
+    if (resp.status === HttpStatusCode.NoContent) {
+      continue;
+    }
+    if (resp.status === HttpStatusCode.PaymentRequired) {
+      const talerPayUri = resp.headers.get("Taler");
+      if (!talerPayUri) {
+        return {
+          code: TalerErrorCode.ANASTASIS_REDUCER_BACKEND_FAILURE,
+          hint: `payment requested, but no taler://pay URI given`,
+        };
+      }
+      truthPayUris.push(talerPayUri);
+      const parsedUri = parsePayUri(talerPayUri);
+      if (!parsedUri) {
+        return {
+          code: TalerErrorCode.ANASTASIS_REDUCER_BACKEND_FAILURE,
+          hint: `payment requested, but no taler://pay URI given`,
+        };
+      }
+      truthPaySecrets[meth.provider] = parsedUri.orderId;
+      continue;
+    }
+    return {
+      code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
+      hint: `could not upload truth (HTTP status ${resp.status})`,
+    };
+  }
+
+  if (truthPayUris.length > 0) {
+    return {
+      ...state,
+      backup_state: BackupStates.TruthsPaying,
+      truth_upload_payment_secrets: truthPaySecrets,
+      payments: truthPayUris,
+    };
+  }
+
   const successDetails: SuccessDetails = {};
 
+  const policyPayUris: string[] = [];
+  const policyPayUriMap: Record<string, string> = {};
+  //const policyPaySecrets: Record<string, string> = {};
+
   for (const prov of state.policy_providers!) {
-    const uid = uidMap[prov.provider_url];
-    const acctKeypair = accountKeypairDerive(uid);
+    const userId = await getUserIdCaching(prov.provider_url);
+    const acctKeypair = accountKeypairDerive(userId);
     const zippedDoc = await compressRecoveryDoc(rd);
     const encRecoveryDoc = await encryptRecoveryDocument(
-      uid,
+      userId,
       encodeCrock(zippedDoc),
     );
     const bodyHash = hash(decodeCrock(encRecoveryDoc));
@@ -579,44 +577,99 @@ async function uploadSecret(
       .put(bodyHash)
       .build();
     const sig = eddsaSign(sigPS, decodeCrock(acctKeypair.priv));
-    const resp = await fetch(
-      new URL(`policy/${acctKeypair.pub}`, prov.provider_url).href,
-      {
-        method: "POST",
-        headers: {
-          "Anastasis-Policy-Signature": encodeCrock(sig),
-          "If-None-Match": encodeCrock(bodyHash),
-        },
-        body: decodeCrock(encRecoveryDoc),
-      },
-    );
-    if (resp.status !== 204) {
-      return {
-        code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
-        hint: "could not upload policy",
-      };
+    const talerPayUri = state.policy_payment_requests?.find(
+      (x) => x.provider === prov.provider_url,
+    )?.payto;
+    let paySecret: string | undefined;
+    if (talerPayUri) {
+      paySecret = parsePayUri(talerPayUri)!.orderId;
     }
-    let policyVersion = 0;
-    let policyExpiration: Timestamp = { t_ms: 0 };
-    try {
-      policyVersion = Number(resp.headers.get("Anastasis-Version") ?? "0");
-    } catch (e) {}
-    try {
-      policyExpiration = {
-        t_ms:
-          1000 * Number(resp.headers.get("Anastasis-Policy-Expiration") ?? "0"),
+    const reqUrl = new URL(`policy/${acctKeypair.pub}`, prov.provider_url);
+    if (paySecret) {
+      // FIXME: Get this from the params
+      reqUrl.searchParams.set("timeout_ms", "500");
+    }
+    logger.info(`uploading policy to ${prov.provider_url}`);
+    const resp = await fetch(reqUrl.href, {
+      method: "POST",
+      headers: {
+        "Anastasis-Policy-Signature": encodeCrock(sig),
+        "If-None-Match": encodeCrock(bodyHash),
+        ...(paySecret
+          ? {
+              "Anastasis-Payment-Identifier": paySecret,
+            }
+          : {}),
+      },
+      body: decodeCrock(encRecoveryDoc),
+    });
+    logger.info(`got response for policy upload (http status ${resp.status})`);
+    if (resp.status === HttpStatusCode.NoContent) {
+      let policyVersion = 0;
+      let policyExpiration: Timestamp = { t_ms: 0 };
+      try {
+        policyVersion = Number(resp.headers.get("Anastasis-Version") ?? "0");
+      } catch (e) {}
+      try {
+        policyExpiration = {
+          t_ms:
+            1000 *
+            Number(resp.headers.get("Anastasis-Policy-Expiration") ?? "0"),
+        };
+      } catch (e) {}
+      successDetails[prov.provider_url] = {
+        policy_version: policyVersion,
+        policy_expiration: policyExpiration,
       };
-    } catch (e) {}
-    successDetails[prov.provider_url] = {
-      policy_version: policyVersion,
-      policy_expiration: policyExpiration,
+      continue;
+    }
+    if (resp.status === HttpStatusCode.PaymentRequired) {
+      const talerPayUri = resp.headers.get("Taler");
+      if (!talerPayUri) {
+        return {
+          code: TalerErrorCode.ANASTASIS_REDUCER_BACKEND_FAILURE,
+          hint: `payment requested, but no taler://pay URI given`,
+        };
+      }
+      policyPayUris.push(talerPayUri);
+      const parsedUri = parsePayUri(talerPayUri);
+      if (!parsedUri) {
+        return {
+          code: TalerErrorCode.ANASTASIS_REDUCER_BACKEND_FAILURE,
+          hint: `payment requested, but no taler://pay URI given`,
+        };
+      }
+      policyPayUriMap[prov.provider_url] = talerPayUri;
+      continue;
+    }
+    return {
+      code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
+      hint: `could not upload policy (http status ${resp.status})`,
     };
   }
 
+  if (policyPayUris.length > 0) {
+    return {
+      ...state,
+      backup_state: BackupStates.PoliciesPaying,
+      payments: policyPayUris,
+      policy_payment_requests: Object.keys(policyPayUriMap).map((x) => {
+        return {
+          payto: policyPayUriMap[x],
+          provider: x,
+        };
+      }),
+    };
+  }
+
+  logger.info("backup finished");
+
   return {
     ...state,
+    core_secret: undefined,
     backup_state: BackupStates.BackupFinished,
     success_details: successDetails,
+    payments: undefined,
   };
 }
 
@@ -633,6 +686,7 @@ async function downloadPolicy(
   const newProviderStatus: { [url: string]: AuthenticationProviderStatusOk } =
     {};
   const userAttributes = state.identity_attributes!;
+  const restrictProvider = state.selected_provider_url;
   // FIXME:  Shouldn't we also store the status of bad providers?
   for (const url of providerUrls) {
     const pi = await getProviderInfo(url);
@@ -647,9 +701,17 @@ async function downloadPolicy(
     if (!pi) {
       continue;
     }
+    if (restrictProvider && url !== state.selected_provider_url) {
+      // User wants specific provider.
+      continue;
+    }
     const userId = await userIdentifierDerive(userAttributes, pi.salt);
     const acctKeypair = accountKeypairDerive(userId);
-    const resp = await fetch(new URL(`policy/${acctKeypair.pub}`, url).href);
+    const reqUrl = new URL(`policy/${acctKeypair.pub}`, url);
+    if (state.selected_version) {
+      reqUrl.searchParams.set("version", `${state.selected_version}`);
+    }
+    const resp = await fetch(reqUrl.href);
     if (resp.status !== 200) {
       continue;
     }
@@ -661,7 +723,6 @@ async function downloadPolicy(
     const rd: RecoveryDocument = await uncompressRecoveryDoc(
       decodeCrock(bodyDecrypted),
     );
-    console.log("rd", rd);
     let policyVersion = 0;
     try {
       policyVersion = Number(resp.headers.get("Anastasis-Version") ?? "0");
@@ -682,7 +743,6 @@ async function downloadPolicy(
   }
   const recoveryInfo: RecoveryInformation = {
     challenges: recoveryDoc.escrow_methods.map((x) => {
-      console.log("providers", newProviderStatus);
       const prov = newProviderStatus[x.url] as AuthenticationProviderStatusOk;
       return {
         cost: prov.methods.find((m) => m.type === x.escrow_type)?.usage_fee!,
@@ -750,6 +810,199 @@ async function tryRecoverSecret(
   return { ...state };
 }
 
+/**
+ * Re-check the status of challenges that are solved asynchronously.
+ */
+async function pollChallenges(
+  state: ReducerStateRecovery,
+  args: void,
+): Promise<ReducerStateRecovery | ReducerStateError> {
+  for (const truthUuid in state.challenge_feedback) {
+    if (state.recovery_state === RecoveryStates.RecoveryFinished) {
+      break;
+    }
+    const feedback = state.challenge_feedback[truthUuid];
+    const truth = state.verbatim_recovery_document!.escrow_methods.find(
+      (x) => x.uuid === truthUuid,
+    );
+    if (!truth) {
+      logger.warn(
+        "truth for challenge feedback entry not found in recovery document",
+      );
+      continue;
+    }
+    if (feedback.state === ChallengeFeedbackStatus.AuthIban) {
+      const s2 = await requestTruth(state, truth, {
+        pin: feedback.answer_code,
+      });
+      if (s2.recovery_state) {
+        state = s2;
+      }
+    }
+  }
+  return state;
+}
+
+/**
+ * Request a truth, optionally with a challenge solution
+ * provided by the user.
+ */
+async function requestTruth(
+  state: ReducerStateRecovery,
+  truth: EscrowMethod,
+  solveRequest?: ActionArgsSolveChallengeRequest,
+): Promise<ReducerStateRecovery | ReducerStateError> {
+  const url = new URL(`/truth/${truth.uuid}`, truth.url);
+
+  if (solveRequest) {
+    logger.info(`handling solve request ${j2s(solveRequest)}`);
+    let respHash: string;
+    switch (truth.escrow_type) {
+      case ChallengeType.Question: {
+        if ("answer" in solveRequest) {
+          respHash = await secureAnswerHash(
+            solveRequest.answer,
+            truth.uuid,
+            truth.truth_salt,
+          );
+        } else {
+          throw Error("unsupported answer request");
+        }
+        break;
+      }
+      case ChallengeType.Email:
+      case ChallengeType.Sms:
+      case ChallengeType.Post:
+      case ChallengeType.Iban:
+      case ChallengeType.Totp: {
+        if ("answer" in solveRequest) {
+          const s = solveRequest.answer.trim().replace(/^A-/, "");
+          let pin: number;
+          try {
+            pin = Number.parseInt(s);
+          } catch (e) {
+            throw Error("invalid pin format");
+          }
+          respHash = await pinAnswerHash(pin);
+        } else if ("pin" in solveRequest) {
+          respHash = await pinAnswerHash(solveRequest.pin);
+        } else {
+          throw Error("unsupported answer request");
+        }
+        break;
+      }
+      default:
+        throw Error(`unsupported challenge type "${truth.escrow_type}""`);
+    }
+    url.searchParams.set("response", respHash);
+  }
+
+  const resp = await fetch(url.href, {
+    headers: {
+      "Anastasis-Truth-Decryption-Key": truth.truth_key,
+    },
+  });
+
+  logger.info(
+    `got GET /truth response from ${truth.url}, http status ${resp.status}`,
+  );
+
+  if (resp.status === HttpStatusCode.Ok) {
+    let answerSalt: string | undefined = undefined;
+    if (
+      solveRequest &&
+      truth.escrow_type === "question" &&
+      "answer" in solveRequest
+    ) {
+      answerSalt = solveRequest.answer;
+    }
+
+    const userId = await userIdentifierDerive(
+      state.identity_attributes,
+      truth.provider_salt,
+    );
+
+    const respBody = new Uint8Array(await resp.arrayBuffer());
+    const keyShare = await decryptKeyShare(
+      encodeCrock(respBody),
+      userId,
+      answerSalt,
+    );
+
+    const recoveredKeyShares = {
+      ...(state.recovered_key_shares ?? {}),
+      [truth.uuid]: keyShare,
+    };
+
+    const challengeFeedback: { [x: string]: ChallengeFeedback } = {
+      ...state.challenge_feedback,
+      [truth.uuid]: {
+        state: ChallengeFeedbackStatus.Solved,
+      },
+    };
+
+    const newState: ReducerStateRecovery = {
+      ...state,
+      recovery_state: RecoveryStates.ChallengeSelecting,
+      challenge_feedback: challengeFeedback,
+      recovered_key_shares: recoveredKeyShares,
+    };
+
+    return tryRecoverSecret(newState);
+  }
+
+  if (resp.status === HttpStatusCode.Forbidden) {
+    return {
+      ...state,
+      recovery_state: RecoveryStates.ChallengeSolving,
+      challenge_feedback: {
+        ...state.challenge_feedback,
+        [truth.uuid]: {
+          state: ChallengeFeedbackStatus.Message,
+          message: "Challenge should be solved",
+        },
+      },
+    };
+  }
+
+  if (resp.status === HttpStatusCode.Accepted) {
+    const body = await resp.json();
+    logger.info(`got body ${j2s(body)}`);
+    if (body.method === "iban") {
+      const b = body as IbanExternalAuthResponse;
+      return {
+        ...state,
+        recovery_state: RecoveryStates.ChallengeSolving,
+        challenge_feedback: {
+          ...state.challenge_feedback,
+          [truth.uuid]: {
+            state: ChallengeFeedbackStatus.AuthIban,
+            answer_code: b.answer_code,
+            business_name: b.details.business_name,
+            challenge_amount: b.details.challenge_amount,
+            credit_iban: b.details.credit_iban,
+            wire_transfer_subject: b.details.wire_transfer_subject,
+            details: b.details,
+            method: "iban",
+          },
+        },
+      };
+    } else {
+      return {
+        code: TalerErrorCode.ANASTASIS_TRUTH_CHALLENGE_FAILED,
+        hint: "unknown external authentication method",
+        http_status: resp.status,
+      } as ReducerStateError;
+    }
+  }
+
+  return {
+    code: TalerErrorCode.ANASTASIS_TRUTH_CHALLENGE_FAILED,
+    hint: "got unexpected /truth/ response status",
+    http_status: resp.status,
+  } as ReducerStateError;
+}
+
 async function solveChallenge(
   state: ReducerStateRecovery,
   ta: ActionArgsSolveChallengeRequest,
@@ -759,77 +1012,31 @@ async function solveChallenge(
     (x) => x.uuid === state.selected_challenge_uuid,
   );
   if (!truth) {
-    throw "truth for challenge not found";
+    throw Error("truth for challenge not found");
   }
-
-  const url = new URL(`/truth/${truth.uuid}`, truth.url);
-
-  // FIXME: This isn't correct for non-question truth responses.
-  url.searchParams.set(
-    "response",
-    await secureAnswerHash(ta.answer, truth.uuid, truth.truth_salt),
-  );
-
-  const resp = await fetch(url.href, {
-    headers: {
-      "Anastasis-Truth-Decryption-Key": truth.truth_key,
-    },
-  });
-
-  console.log(resp);
-
-  if (resp.status !== 200) {
-    return {
-      code: TalerErrorCode.ANASTASIS_TRUTH_CHALLENGE_FAILED,
-      hint: "got non-200 response",
-      http_status: resp.status,
-    } as ReducerStateError;
-  }
-
-  const answerSalt = truth.escrow_type === "question" ? ta.answer : undefined;
-
-  const userId = await userIdentifierDerive(
-    state.identity_attributes,
-    truth.provider_salt,
-  );
-
-  const respBody = new Uint8Array(await resp.arrayBuffer());
-  const keyShare = await decryptKeyShare(
-    encodeCrock(respBody),
-    userId,
-    answerSalt,
-  );
-
-  const recoveredKeyShares = {
-    ...(state.recovered_key_shares ?? {}),
-    [truth.uuid]: keyShare,
-  };
-
-  const challengeFeedback = {
-    ...state.challenge_feedback,
-    [truth.uuid]: {
-      state: "solved",
-    },
-  };
-
-  const newState: ReducerStateRecovery = {
-    ...state,
-    recovery_state: RecoveryStates.ChallengeSelecting,
-    challenge_feedback: challengeFeedback,
-    recovered_key_shares: recoveredKeyShares,
-  };
-
-  return tryRecoverSecret(newState);
+  return requestTruth(state, truth, ta);
 }
 
 async function recoveryEnterUserAttributes(
   state: ReducerStateRecovery,
-  attributes: Record<string, string>,
+  args: ActionArgsEnterUserAttributes,
 ): Promise<ReducerStateRecovery | ReducerStateError> {
   // FIXME: validate attributes
   const st: ReducerStateRecovery = {
     ...state,
-    identity_attributes: attributes,
+    identity_attributes: args.identity_attributes,
+  };
+  return downloadPolicy(st);
+}
+
+async function changeVersion(
+  state: ReducerStateRecovery,
+  args: ActionArgsChangeVersion,
+): Promise<ReducerStateRecovery | ReducerStateError> {
+  const st: ReducerStateRecovery = {
+    ...state,
+    selected_version: args.version,
+    selected_provider_url: args.provider_url,
   };
   return downloadPolicy(st);
 }
@@ -844,369 +1051,457 @@ async function selectChallenge(
     throw "truth for challenge not found";
   }
 
-  const url = new URL(`/truth/${truth.uuid}`, truth.url);
+  return requestTruth({ ...state, selected_challenge_uuid: ta.uuid }, truth);
+}
 
-  const resp = await fetch(url.href, {
-    headers: {
-      "Anastasis-Truth-Decryption-Key": truth.truth_key,
-    },
-  });
-
-  console.log(resp);
-
+async function backupSelectContinent(
+  state: ReducerStateBackup,
+  args: ActionArgsSelectContinent,
+): Promise<ReducerStateBackup | ReducerStateError> {
+  const countries = getCountries(args.continent);
+  if (countries.length <= 0) {
+    return {
+      code: TalerErrorCode.ANASTASIS_REDUCER_INPUT_INVALID,
+      hint: "continent not found",
+    };
+  }
   return {
     ...state,
-    recovery_state: RecoveryStates.ChallengeSolving,
-    selected_challenge_uuid: ta.uuid,
+    backup_state: BackupStates.CountrySelecting,
+    countries,
+    selected_continent: args.continent,
   };
 }
+
+async function recoverySelectContinent(
+  state: ReducerStateRecovery,
+  args: ActionArgsSelectContinent,
+): Promise<ReducerStateRecovery | ReducerStateError> {
+  const countries = getCountries(args.continent);
+  return {
+    ...state,
+    recovery_state: RecoveryStates.CountrySelecting,
+    countries,
+    selected_continent: args.continent,
+  };
+}
+
+interface TransitionImpl<S, T> {
+  argCodec: Codec<T>;
+  handler: (s: S, args: T) => Promise<S | ReducerStateError>;
+}
+
+interface Transition<S, T> {
+  [x: string]: TransitionImpl<S, T>;
+}
+
+function transition<S, T>(
+  action: string,
+  argCodec: Codec<T>,
+  handler: (s: S, args: T) => Promise<S | ReducerStateError>,
+): Transition<S, T> {
+  return {
+    [action]: {
+      argCodec,
+      handler,
+    },
+  };
+}
+
+function transitionBackupJump(
+  action: string,
+  st: BackupStates,
+): Transition<ReducerStateBackup, void> {
+  return {
+    [action]: {
+      argCodec: codecForAny(),
+      handler: async (s, a) => ({ ...s, backup_state: st }),
+    },
+  };
+}
+
+function transitionRecoveryJump(
+  action: string,
+  st: RecoveryStates,
+): Transition<ReducerStateRecovery, void> {
+  return {
+    [action]: {
+      argCodec: codecForAny(),
+      handler: async (s, a) => ({ ...s, recovery_state: st }),
+    },
+  };
+}
+
+async function addAuthentication(
+  state: ReducerStateBackup,
+  args: ActionArgsAddAuthentication,
+): Promise<ReducerStateBackup> {
+  return {
+    ...state,
+    authentication_methods: [
+      ...(state.authentication_methods ?? []),
+      args.authentication_method,
+    ],
+  };
+}
+
+async function deleteAuthentication(
+  state: ReducerStateBackup,
+  args: ActionArgsDeleteAuthentication,
+): Promise<ReducerStateBackup> {
+  const m = state.authentication_methods ?? [];
+  m.splice(args.authentication_method, 1);
+  return {
+    ...state,
+    authentication_methods: m,
+  };
+}
+
+async function deletePolicy(
+  state: ReducerStateBackup,
+  args: ActionArgsDeletePolicy,
+): Promise<ReducerStateBackup> {
+  const policies = [...(state.policies ?? [])];
+  policies.splice(args.policy_index, 1);
+  return {
+    ...state,
+    policies,
+  };
+}
+
+async function updatePolicy(
+  state: ReducerStateBackup,
+  args: ActionArgsUpdatePolicy,
+): Promise<ReducerStateBackup> {
+  const policies = [...(state.policies ?? [])];
+  policies[args.policy_index] = { methods: args.policy };
+  return {
+    ...state,
+    policies,
+  };
+}
+
+async function addPolicy(
+  state: ReducerStateBackup,
+  args: ActionArgsAddPolicy,
+): Promise<ReducerStateBackup> {
+  return {
+    ...state,
+    policies: [
+      ...(state.policies ?? []),
+      {
+        methods: args.policy,
+      },
+    ],
+  };
+}
+
+async function nextFromAuthenticationsEditing(
+  state: ReducerStateBackup,
+  args: {},
+): Promise<ReducerStateBackup | ReducerStateError> {
+  const methods = state.authentication_methods ?? [];
+  const providers: ProviderInfo[] = [];
+  for (const provUrl of Object.keys(state.authentication_providers ?? {})) {
+    const prov = state.authentication_providers![provUrl];
+    if ("error_code" in prov) {
+      continue;
+    }
+    if (!("http_status" in prov && prov.http_status === 200)) {
+      continue;
+    }
+    const methodCost: Record<string, AmountString> = {};
+    for (const meth of prov.methods) {
+      methodCost[meth.type] = meth.usage_fee;
+    }
+    providers.push({
+      methodCost,
+      url: provUrl,
+    });
+  }
+  const pol = suggestPolicies(methods, providers);
+  return {
+    ...state,
+    backup_state: BackupStates.PoliciesReviewing,
+    ...pol,
+  };
+}
+
+async function updateUploadFees(
+  state: ReducerStateBackup,
+): Promise<ReducerStateBackup | ReducerStateError> {
+  const expiration = state.expiration;
+  if (!expiration) {
+    return { ...state };
+  }
+  logger.info("updating upload fees");
+  const feePerCurrency: Record<string, AmountJson> = {};
+  const addFee = (x: AmountLike) => {
+    x = Amounts.jsonifyAmount(x);
+    feePerCurrency[x.currency] = Amounts.add(
+      feePerCurrency[x.currency] ?? Amounts.getZero(x.currency),
+      x,
+    ).amount;
+  };
+  const years = Duration.toIntegerYears(Duration.getRemaining(expiration));
+  logger.info(`computing fees for ${years} years`);
+  // For now, we compute fees for *all* available providers.
+  for (const provUrl in state.authentication_providers ?? {}) {
+    const prov = state.authentication_providers![provUrl];
+    if ("annual_fee" in prov) {
+      const annualFee = Amounts.mult(prov.annual_fee, years).amount;
+      logger.info(`adding annual fee ${Amounts.stringify(annualFee)}`);
+      addFee(annualFee);
+    }
+  }
+  const coveredProvTruth = new Set<string>();
+  for (const x of state.policies ?? []) {
+    for (const m of x.methods) {
+      const prov = state.authentication_providers![
+        m.provider
+      ] as AuthenticationProviderStatusOk;
+      const authMethod = state.authentication_methods![m.authentication_method];
+      const key = `${m.authentication_method}@${m.provider}`;
+      if (coveredProvTruth.has(key)) {
+        continue;
+      }
+      logger.info(
+        `adding cost for auth method ${authMethod.challenge} / "${authMethod.instructions}" at ${m.provider}`,
+      );
+      coveredProvTruth.add(key);
+      addFee(prov.truth_upload_fee);
+    }
+  }
+  return {
+    ...state,
+    upload_fees: Object.values(feePerCurrency).map((x) => ({
+      fee: Amounts.stringify(x),
+    })),
+  };
+}
+
+async function enterSecret(
+  state: ReducerStateBackup,
+  args: ActionArgsEnterSecret,
+): Promise<ReducerStateBackup | ReducerStateError> {
+  return updateUploadFees({
+    ...state,
+    expiration: args.expiration,
+    core_secret: {
+      mime: args.secret.mime ?? "text/plain",
+      value: args.secret.value,
+    },
+    // A new secret invalidates the existing recovery data.
+    recovery_data: undefined,
+  });
+}
+
+async function nextFromChallengeSelecting(
+  state: ReducerStateRecovery,
+  args: void,
+): Promise<ReducerStateRecovery | ReducerStateError> {
+  const s2 = await tryRecoverSecret(state);
+  if (s2.recovery_state === RecoveryStates.RecoveryFinished) {
+    return s2;
+  }
+  return {
+    code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
+    hint: "Not enough challenges solved",
+  };
+}
+
+async function enterSecretName(
+  state: ReducerStateBackup,
+  args: ActionArgsEnterSecretName,
+): Promise<ReducerStateBackup | ReducerStateError> {
+  return {
+    ...state,
+    secret_name: args.name,
+  };
+}
+
+async function updateSecretExpiration(
+  state: ReducerStateBackup,
+  args: ActionArgsUpdateExpiration,
+): Promise<ReducerStateBackup | ReducerStateError> {
+  return updateUploadFees({
+    ...state,
+    expiration: args.expiration,
+  });
+}
+
+const backupTransitions: Record<
+  BackupStates,
+  Transition<ReducerStateBackup, any>
+> = {
+  [BackupStates.ContinentSelecting]: {
+    ...transition(
+      "select_continent",
+      codecForActionArgSelectContinent(),
+      backupSelectContinent,
+    ),
+  },
+  [BackupStates.CountrySelecting]: {
+    ...transitionBackupJump("back", BackupStates.ContinentSelecting),
+    ...transition(
+      "select_country",
+      codecForActionArgSelectCountry(),
+      backupSelectCountry,
+    ),
+    ...transition(
+      "select_continent",
+      codecForActionArgSelectContinent(),
+      backupSelectContinent,
+    ),
+  },
+  [BackupStates.UserAttributesCollecting]: {
+    ...transitionBackupJump("back", BackupStates.CountrySelecting),
+    ...transition(
+      "enter_user_attributes",
+      codecForActionArgsEnterUserAttributes(),
+      backupEnterUserAttributes,
+    ),
+  },
+  [BackupStates.AuthenticationsEditing]: {
+    ...transitionBackupJump("back", BackupStates.UserAttributesCollecting),
+    ...transition("add_authentication", codecForAny(), addAuthentication),
+    ...transition("delete_authentication", codecForAny(), deleteAuthentication),
+    ...transition("next", codecForAny(), nextFromAuthenticationsEditing),
+  },
+  [BackupStates.PoliciesReviewing]: {
+    ...transitionBackupJump("back", BackupStates.AuthenticationsEditing),
+    ...transitionBackupJump("next", BackupStates.SecretEditing),
+    ...transition("add_policy", codecForActionArgsAddPolicy(), addPolicy),
+    ...transition("delete_policy", codecForAny(), deletePolicy),
+    ...transition("update_policy", codecForAny(), updatePolicy),
+  },
+  [BackupStates.SecretEditing]: {
+    ...transitionBackupJump("back", BackupStates.PoliciesReviewing),
+    ...transition("next", codecForAny(), uploadSecret),
+    ...transition("enter_secret", codecForAny(), enterSecret),
+    ...transition(
+      "update_expiration",
+      codecForActionArgsUpdateExpiration(),
+      updateSecretExpiration,
+    ),
+    ...transition("enter_secret_name", codecForAny(), enterSecretName),
+  },
+  [BackupStates.PoliciesPaying]: {
+    ...transitionBackupJump("back", BackupStates.SecretEditing),
+    ...transition("pay", codecForAny(), uploadSecret),
+  },
+  [BackupStates.TruthsPaying]: {
+    ...transitionBackupJump("back", BackupStates.SecretEditing),
+    ...transition("pay", codecForAny(), uploadSecret),
+  },
+  [BackupStates.BackupFinished]: {
+    ...transitionBackupJump("back", BackupStates.SecretEditing),
+  },
+};
+
+const recoveryTransitions: Record<
+  RecoveryStates,
+  Transition<ReducerStateRecovery, any>
+> = {
+  [RecoveryStates.ContinentSelecting]: {
+    ...transition(
+      "select_continent",
+      codecForActionArgSelectContinent(),
+      recoverySelectContinent,
+    ),
+  },
+  [RecoveryStates.CountrySelecting]: {
+    ...transitionRecoveryJump("back", RecoveryStates.ContinentSelecting),
+    ...transition(
+      "select_country",
+      codecForActionArgSelectCountry(),
+      recoverySelectCountry,
+    ),
+    ...transition(
+      "select_continent",
+      codecForActionArgSelectContinent(),
+      recoverySelectContinent,
+    ),
+  },
+  [RecoveryStates.UserAttributesCollecting]: {
+    ...transitionRecoveryJump("back", RecoveryStates.CountrySelecting),
+    ...transition(
+      "enter_user_attributes",
+      codecForActionArgsEnterUserAttributes(),
+      recoveryEnterUserAttributes,
+    ),
+  },
+  [RecoveryStates.SecretSelecting]: {
+    ...transitionRecoveryJump("back", RecoveryStates.UserAttributesCollecting),
+    ...transitionRecoveryJump("next", RecoveryStates.ChallengeSelecting),
+    ...transition(
+      "change_version",
+      codecForActionArgsChangeVersion(),
+      changeVersion,
+    ),
+  },
+  [RecoveryStates.ChallengeSelecting]: {
+    ...transitionRecoveryJump("back", RecoveryStates.SecretSelecting),
+    ...transition(
+      "select_challenge",
+      codecForActionArgsSelectChallenge(),
+      selectChallenge,
+    ),
+    ...transition("poll", codecForAny(), pollChallenges),
+    ...transition("next", codecForAny(), nextFromChallengeSelecting),
+  },
+  [RecoveryStates.ChallengeSolving]: {
+    ...transitionRecoveryJump("back", RecoveryStates.ChallengeSelecting),
+    ...transition("solve_challenge", codecForAny(), solveChallenge),
+  },
+  [RecoveryStates.ChallengePaying]: {},
+  [RecoveryStates.RecoveryFinished]: {
+    ...transitionRecoveryJump("back", RecoveryStates.ChallengeSelecting),
+  },
+};
 
 export async function reduceAction(
   state: ReducerState,
   action: string,
   args: any,
 ): Promise<ReducerState> {
-  console.log(`ts reducer: handling action ${action}`);
-  if (state.backup_state === BackupStates.ContinentSelecting) {
-    if (action === "select_continent") {
-      const continent: string = args.continent;
-      if (typeof continent !== "string") {
-        return {
-          code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-          hint: "continent required",
-        };
-      }
-      return {
-        ...state,
-        backup_state: BackupStates.CountrySelecting,
-        countries: getCountries(continent),
-        selected_continent: continent,
-      };
-    } else {
-      return {
-        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-        hint: `Unsupported action '${action}'`,
-      };
-    }
+  let h: TransitionImpl<any, any>;
+  let stateName: string;
+  if ("backup_state" in state && state.backup_state) {
+    stateName = state.backup_state;
+    h = backupTransitions[state.backup_state][action];
+  } else if ("recovery_state" in state && state.recovery_state) {
+    stateName = state.recovery_state;
+    h = recoveryTransitions[state.recovery_state][action];
+  } else {
+    return {
+      code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
+      hint: `Invalid state (needs backup_state or recovery_state)`,
+    };
   }
-  if (state.backup_state === BackupStates.CountrySelecting) {
-    if (action === "back") {
-      return {
-        ...state,
-        backup_state: BackupStates.ContinentSelecting,
-        countries: undefined,
-      };
-    } else if (action === "select_country") {
-      const countryCode = args.country_code;
-      if (typeof countryCode !== "string") {
-        return {
-          code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-          hint: "country_code required",
-        };
-      }
-      const currencies = args.currencies;
-      return backupSelectCountry(state, countryCode, currencies);
-    } else {
-      return {
-        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-        hint: `Unsupported action '${action}'`,
-      };
-    }
+  if (!h) {
+    return {
+      code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
+      hint: `Unsupported action '${action}' in state '${stateName}'`,
+    };
   }
-  if (state.backup_state === BackupStates.UserAttributesCollecting) {
-    if (action === "back") {
-      return {
-        ...state,
-        backup_state: BackupStates.CountrySelecting,
-      };
-    } else if (action === "enter_user_attributes") {
-      const ta = args as ActionArgEnterUserAttributes;
-      return backupEnterUserAttributes(state, ta.identity_attributes);
-    } else {
-      return {
-        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-        hint: `Unsupported action '${action}'`,
-      };
-    }
+  let parsedArgs: any;
+  try {
+    parsedArgs = h.argCodec.decode(args);
+  } catch (e: any) {
+    return {
+      code: TalerErrorCode.ANASTASIS_REDUCER_INPUT_INVALID,
+      hint: "argument validation failed",
+      message: e.toString(),
+    };
   }
-  if (state.backup_state === BackupStates.AuthenticationsEditing) {
-    if (action === "back") {
-      return {
-        ...state,
-        backup_state: BackupStates.UserAttributesCollecting,
-      };
-    } else if (action === "add_authentication") {
-      const ta = args as ActionArgAddAuthentication;
-      return {
-        ...state,
-        authentication_methods: [
-          ...(state.authentication_methods ?? []),
-          ta.authentication_method,
-        ],
-      };
-    } else if (action === "delete_authentication") {
-      const ta = args as ActionArgDeleteAuthentication;
-      const m = state.authentication_methods ?? [];
-      m.splice(ta.authentication_method, 1);
-      return {
-        ...state,
-        authentication_methods: m,
-      };
-    } else if (action === "next") {
-      const methods = state.authentication_methods ?? [];
-      const providers: ProviderInfo[] = [];
-      for (const provUrl of Object.keys(state.authentication_providers ?? {})) {
-        const prov = state.authentication_providers![provUrl];
-        if ("error_code" in prov) {
-          continue;
-        }
-        if (!("http_status" in prov && prov.http_status === 200)) {
-          continue;
-        }
-        const methodCost: Record<string, AmountString> = {};
-        for (const meth of prov.methods) {
-          methodCost[meth.type] = meth.usage_fee;
-        }
-        providers.push({
-          methodCost,
-          url: provUrl,
-        });
-      }
-      const pol = suggestPolicies(methods, providers);
-      console.log("policies", pol);
-      return {
-        ...state,
-        backup_state: BackupStates.PoliciesReviewing,
-        ...pol,
-      };
-    } else {
-      return {
-        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-        hint: `Unsupported action '${action}'`,
-      };
+  try {
+    return await h.handler(state, parsedArgs);
+  } catch (e) {
+    logger.error("action handler failed");
+    if (e instanceof ReducerError) {
+      return e.errorJson;
     }
+    throw e;
   }
-  if (state.backup_state === BackupStates.PoliciesReviewing) {
-    if (action === "back") {
-      return {
-        ...state,
-        backup_state: BackupStates.AuthenticationsEditing,
-      };
-    } else if (action === "delete_policy") {
-      const ta = args as ActionArgDeletePolicy;
-      const policies = [...(state.policies ?? [])];
-      policies.splice(ta.policy_index, 1);
-      return {
-        ...state,
-        policies,
-      };
-    } else if (action === "next") {
-      return {
-        ...state,
-        backup_state: BackupStates.SecretEditing,
-      };
-    } else {
-      return {
-        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-        hint: `Unsupported action '${action}'`,
-      };
-    }
-  }
-  if (state.backup_state === BackupStates.SecretEditing) {
-    if (action === "back") {
-      return {
-        ...state,
-        backup_state: BackupStates.PoliciesReviewing,
-      };
-    } else if (action === "enter_secret_name") {
-      const ta = args as ActionArgEnterSecretName;
-      return {
-        ...state,
-        secret_name: ta.name,
-      };
-    } else if (action === "enter_secret") {
-      const ta = args as ActionArgEnterSecret;
-      return {
-        ...state,
-        expiration: ta.expiration,
-        core_secret: {
-          mime: ta.secret.mime ?? "text/plain",
-          value: ta.secret.value,
-        },
-      };
-    } else if (action === "next") {
-      return uploadSecret(state);
-    } else {
-      return {
-        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-        hint: `Unsupported action '${action}'`,
-      };
-    }
-  }
-  if (state.backup_state === BackupStates.BackupFinished) {
-    if (action === "back") {
-      return {
-        ...state,
-        backup_state: BackupStates.SecretEditing,
-      };
-    } else {
-      return {
-        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-        hint: `Unsupported action '${action}'`,
-      };
-    }
-  }
-
-  if (state.recovery_state === RecoveryStates.ContinentSelecting) {
-    if (action === "select_continent") {
-      const continent: string = args.continent;
-      if (typeof continent !== "string") {
-        return {
-          code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-          hint: "continent required",
-        };
-      }
-      return {
-        ...state,
-        recovery_state: RecoveryStates.CountrySelecting,
-        countries: getCountries(continent),
-        selected_continent: continent,
-      };
-    } else {
-      return {
-        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-        hint: `Unsupported action '${action}'`,
-      };
-    }
-  }
-
-  if (state.recovery_state === RecoveryStates.CountrySelecting) {
-    if (action === "back") {
-      return {
-        ...state,
-        recovery_state: RecoveryStates.ContinentSelecting,
-        countries: undefined,
-      };
-    } else if (action === "select_country") {
-      const countryCode = args.country_code;
-      if (typeof countryCode !== "string") {
-        return {
-          code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-          hint: "country_code required",
-        };
-      }
-      const currencies = args.currencies;
-      return recoverySelectCountry(state, countryCode, currencies);
-    } else {
-      return {
-        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-        hint: `Unsupported action '${action}'`,
-      };
-    }
-  }
-
-  if (state.recovery_state === RecoveryStates.UserAttributesCollecting) {
-    if (action === "back") {
-      return {
-        ...state,
-        recovery_state: RecoveryStates.CountrySelecting,
-      };
-    } else if (action === "enter_user_attributes") {
-      const ta = args as ActionArgEnterUserAttributes;
-      return recoveryEnterUserAttributes(state, ta.identity_attributes);
-    } else {
-      return {
-        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-        hint: `Unsupported action '${action}'`,
-      };
-    }
-  }
-
-  if (state.recovery_state === RecoveryStates.SecretSelecting) {
-    if (action === "back") {
-      return {
-        ...state,
-        recovery_state: RecoveryStates.UserAttributesCollecting,
-      };
-    } else if (action === "next") {
-      return {
-        ...state,
-        recovery_state: RecoveryStates.ChallengeSelecting,
-      };
-    } else {
-      return {
-        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-        hint: `Unsupported action '${action}'`,
-      };
-    }
-  }
-
-  if (state.recovery_state === RecoveryStates.ChallengeSelecting) {
-    if (action === "select_challenge") {
-      const ta: ActionArgsSelectChallenge = args;
-      return selectChallenge(state, ta);
-    } else if (action === "back") {
-      return {
-        ...state,
-        recovery_state: RecoveryStates.SecretSelecting,
-      };
-    } else if (action === "next") {
-      const s2 = await tryRecoverSecret(state);
-      if (s2.recovery_state === RecoveryStates.RecoveryFinished) {
-        return s2;
-      }
-      return {
-        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-        hint: "Not enough challenges solved",
-      };
-    } else {
-      return {
-        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-        hint: `Unsupported action '${action}'`,
-      };
-    }
-  }
-
-  if (state.recovery_state === RecoveryStates.ChallengeSolving) {
-    if (action === "back") {
-      const ta: ActionArgsSelectChallenge = args;
-      return {
-        ...state,
-        selected_challenge_uuid: undefined,
-        recovery_state: RecoveryStates.ChallengeSelecting,
-      };
-    } else if (action === "solve_challenge") {
-      const ta: ActionArgsSolveChallengeRequest = args;
-      return solveChallenge(state, ta);
-    } else {
-      return {
-        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-        hint: `Unsupported action '${action}'`,
-      };
-    }
-  }
-
-  if (state.recovery_state === RecoveryStates.RecoveryFinished) {
-    if (action === "back") {
-      const ta: ActionArgsSelectChallenge = args;
-      return {
-        ...state,
-        selected_challenge_uuid: undefined,
-        recovery_state: RecoveryStates.ChallengeSelecting,
-      };
-    } else if (action === "solve_challenge") {
-      const ta: ActionArgsSolveChallengeRequest = args;
-      return solveChallenge(state, ta);
-    } else {
-      return {
-        code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-        hint: `Unsupported action '${action}'`,
-      };
-    }
-  }
-
-  return {
-    code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
-    hint: "Reducer action invalid",
-  };
 }

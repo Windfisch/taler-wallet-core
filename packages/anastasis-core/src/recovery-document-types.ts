@@ -1,5 +1,14 @@
 import { TruthKey, TruthSalt, TruthUuid } from "./crypto.js";
 
+export enum ChallengeType {
+  Question = "question",
+  Sms = "sms",
+  Email = "email",
+  Post = "post",
+  Totp = "totp",
+  Iban = "iban",
+}
+
 export interface RecoveryDocument {
   /**
    * Human-readable name of the secret
@@ -9,7 +18,7 @@ export interface RecoveryDocument {
 
   /**
    * Encrypted core secret.
-   * 
+   *
    * Variable-size length, base32-crock encoded.
    */
   encrypted_core_secret: string;
@@ -56,7 +65,7 @@ export interface EscrowMethod {
   /**
    * Type of the escrow method (e.g. security question, SMS etc.).
    */
-  escrow_type: string;
+  escrow_type: ChallengeType;
 
   /**
    * UUID of the escrow method.

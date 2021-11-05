@@ -13,8 +13,8 @@ export function TruthsPayingScreen(): VNode {
   const payments = reducer.currentReducerState.payments ?? [];
   return (
     <AnastasisClientFrame
-      hideNext
-      title="Backup: Authentication Storage Payments"
+      hideNext={"FIXME"}
+      title="Backup: Truths Paying"
     >
       <p>
         Some of the providers require a payment to store the encrypted

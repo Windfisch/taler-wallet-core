@@ -11,11 +11,11 @@ import {
   VNode
 } from "preact";
 import {
-  useErrorBoundary,
-  useLayoutEffect,
-  useRef
+  useErrorBoundary
 } from "preact/hooks";
+import { AsyncButton } from "../../components/AsyncButton";
 import { Menu } from "../../components/menu";
+import { Notifications } from "../../components/Notifications";
 import { AnastasisProvider, useAnastasisContext } from "../../context/anastasis";
 import {
   AnastasisReducerApi,
@@ -25,8 +25,8 @@ import { AttributeEntryScreen } from "./AttributeEntryScreen";
 import { AuthenticationEditorScreen } from "./AuthenticationEditorScreen";
 import { BackupFinishedScreen } from "./BackupFinishedScreen";
 import { ChallengeOverviewScreen } from "./ChallengeOverviewScreen";
+import { ChallengePayingScreen } from "./ChallengePayingScreen";
 import { ContinentSelectionScreen } from "./ContinentSelectionScreen";
-import { CountrySelectionScreen } from "./CountrySelectionScreen";
 import { PoliciesPayingScreen } from "./PoliciesPayingScreen";
 import { RecoveryFinishedScreen } from "./RecoveryFinishedScreen";
 import { ReviewPoliciesScreen } from "./ReviewPoliciesScreen";
@@ -61,7 +61,7 @@ interface AnastasisClientFrameProps {
   /**
    * Hide only the "next" button.
    */
-  hideNext?: boolean;
+  hideNext?: string;
 }
 
 function ErrorBoundary(props: {
@@ -96,11 +96,11 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
   if (!reducer) {
     return <p>Fatal: Reducer must be in context.</p>;
   }
-  const next = (): void => {
+  const next = async (): Promise<void> => {
     if (props.onNext) {
-      props.onNext();
+      await props.onNext();
     } else {
-      reducer.transition("next", {});
+      await reducer.transition("next", {});
     }
   };
   const handleKeyPress = (
@@ -112,18 +112,18 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
   return (
     <Fragment>
       <Menu title="Anastasis" />
-      <div>
-        <div class="home" onKeyPress={(e) => handleKeyPress(e)}>
-          <h1>{props.title}</h1>
-          <ErrorBanner />
+      <div class="home" onKeyPress={(e) => handleKeyPress(e)}>
+        <h1 class="title">{props.title}</h1>
+        <ErrorBanner />
+        <section class="section is-main-section">
           {props.children}
           {!props.hideNav ? (
-            <div>
-              <button onClick={() => reducer.back()}>Back</button>
-              {!props.hideNext ? <button onClick={next}>Next</button> : null}
+            <div style={{ marginTop: '2em', display: 'flex', justifyContent: 'space-between' }}>
+              <button class="button" onClick={() => reducer.back()}>Back</button>
+              <AsyncButton class="button is-info" data-tooltip={props.hideNext} onClick={next} disabled={props.hideNext !== undefined}>Next</AsyncButton>
             </div>
           ) : null}
-        </div>
+        </section>
       </div>
     </Fragment>
   );
@@ -140,7 +140,7 @@ const AnastasisClient: FunctionalComponent = () => {
   );
 };
 
-const AnastasisClientImpl: FunctionalComponent = () => {
+function AnastasisClientImpl(): VNode {
   const reducer = useAnastasisContext()
   if (!reducer) {
     return <p>Fatal: Reducer must be in context.</p>;
@@ -153,18 +153,12 @@ const AnastasisClientImpl: FunctionalComponent = () => {
 
   if (
     state.backup_state === BackupStates.ContinentSelecting ||
-    state.recovery_state === RecoveryStates.ContinentSelecting
-  ) {
-    return (
-      <ContinentSelectionScreen />
-    );
-  }
-  if (
+    state.recovery_state === RecoveryStates.ContinentSelecting ||
     state.backup_state === BackupStates.CountrySelecting ||
     state.recovery_state === RecoveryStates.CountrySelecting
   ) {
     return (
-      <CountrySelectionScreen />
+      <ContinentSelectionScreen />
     );
   }
   if (
@@ -222,7 +216,9 @@ const AnastasisClientImpl: FunctionalComponent = () => {
       <RecoveryFinishedScreen />
     );
   }
-
+  if (state.recovery_state === RecoveryStates.ChallengePaying) {
+    return <ChallengePayingScreen />;
+  }
   console.log("unknown state", reducer.currentReducerState);
   return (
     <AnastasisClientFrame hideNav title="Bug">
@@ -232,32 +228,6 @@ const AnastasisClientImpl: FunctionalComponent = () => {
       </div>
     </AnastasisClientFrame>
   );
-};
-
-interface LabeledInputProps {
-  label: string;
-  grabFocus?: boolean;
-  bind: [string, (x: string) => void];
-}
-
-export function LabeledInput(props: LabeledInputProps): VNode {
-  const inputRef = useRef<HTMLInputElement>(null);
-  useLayoutEffect(() => {
-    if (props.grabFocus) {
-      inputRef.current?.focus();
-    }
-  }, [props.grabFocus]);
-  return (
-    <label>
-      {props.label}
-      <input
-        value={props.bind[0]}
-        onChange={(e) => props.bind[1]((e.target as HTMLInputElement).value)}
-        ref={inputRef}
-        style={{ display: "block" }}
-      />
-    </label>
-  );
 }
 
 /**
@@ -266,13 +236,11 @@ export function LabeledInput(props: LabeledInputProps): VNode {
 function ErrorBanner(): VNode | null {
   const reducer = useAnastasisContext();
   if (!reducer || !reducer.currentError) return null;
-  return (
-    <div id="error">
-      <p>Error: {JSON.stringify(reducer.currentError)}</p>
-      <button onClick={() => reducer.dismissError()}>
-        Dismiss Error
-      </button>
-    </div>
+  return (<Notifications removeNotification={reducer.dismissError} notifications={[{
+    type: "ERROR",
+    message: `Error code: ${reducer.currentError.code}`,
+    description: reducer.currentError.hint
+  }]} />
   );
 }
 

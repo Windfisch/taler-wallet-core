@@ -69,6 +69,20 @@ export function getDurationRemaining(
   return { d_ms: deadline.t_ms - now.t_ms };
 }
 
+export namespace Duration {
+  export const getRemaining = getDurationRemaining;
+  export function toIntegerYears(d: Duration): number {
+    if (typeof d.d_ms !== "number") {
+      throw Error("infinite duration");
+    }
+    return Math.ceil(d.d_ms / 1000 / 60 / 60 / 24 / 365);
+  }
+}
+
+export namespace Timestamp {
+  export const min = timestampMin;
+}
+
 export function timestampMin(t1: Timestamp, t2: Timestamp): Timestamp {
   if (t1.t_ms === "never") {
     return { t_ms: t2.t_ms };

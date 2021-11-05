@@ -43,6 +43,8 @@ import {
   Configuration,
   decodeCrock,
   rsaBlind,
+  LogLevel,
+  setGlobalLogLevelFromString,
 } from "@gnu-taler/taler-util";
 import {
   NodeHttpLib,
@@ -159,6 +161,12 @@ export const walletCli = clk
       // Convert microseconds to milliseconds and do timetravel
       logger.info(`timetravelling ${x} microseconds`);
       setDangerousTimetravel(x / 1000);
+    },
+  })
+  .maybeOption("log", ["-L", "--log"], clk.STRING, {
+    help: "configure log level (NONE, ..., TRACE)",
+    onPresentHandler: (x) => {
+      setGlobalLogLevelFromString(x);
     },
   })
   .maybeOption("inhibit", ["--inhibit"], clk.STRING, {

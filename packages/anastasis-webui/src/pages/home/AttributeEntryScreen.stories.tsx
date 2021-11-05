@@ -28,36 +28,103 @@ import { AttributeEntryScreen as TestedComponent } from './AttributeEntryScreen'
 export default {
   title: 'Pages/AttributeEntryScreen',
   component: TestedComponent,
+  args: {
+    order: 4,
+  },
   argTypes: {
     onUpdate: { action: 'onUpdate' },
     onBack: { action: 'onBack' },
   },
 };
 
-export const WithSomeAttributes = createExample(TestedComponent, {
-  ...reducerStatesExample.attributeEditing,
+export const Backup = createExample(TestedComponent, {
+  ...reducerStatesExample.backupAttributeEditing,
   required_attributes: [{
-    name: 'first',
+    name: 'first name',
     label: 'first',
-    type: 'type',
+    type: 'string',
     uuid: 'asdasdsa1',
     widget: 'wid',
   }, {
-    name: 'pepe',
+    name: 'last name',
     label: 'second',
-    type: 'type',
+    type: 'string',
     uuid: 'asdasdsa2',
     widget: 'wid',
   }, {
-    name: 'pepe2',
-    label: 'third',
-    type: 'type',
+    name: 'birthdate',
+    label: 'birthdate',
+    type: 'date',
     uuid: 'asdasdsa3',
     widget: 'calendar',
   }]
 } as ReducerState);
 
-export const Empty = createExample(TestedComponent, {
-  ...reducerStatesExample.attributeEditing,
+export const Recovery = createExample(TestedComponent, {
+  ...reducerStatesExample.recoveryAttributeEditing,
+  required_attributes: [{
+    name: 'first',
+    label: 'first',
+    type: 'string',
+    uuid: 'asdasdsa1',
+    widget: 'wid',
+  }, {
+    name: 'pepe',
+    label: 'second',
+    type: 'string',
+    uuid: 'asdasdsa2',
+    widget: 'wid',
+  }, {
+    name: 'pepe2',
+    label: 'third',
+    type: 'date',
+    uuid: 'asdasdsa3',
+    widget: 'calendar',
+  }]
+} as ReducerState);
+
+export const WithNoRequiredAttribute = createExample(TestedComponent, {
+  ...reducerStatesExample.backupAttributeEditing,
   required_attributes: undefined
+} as ReducerState);
+
+const allWidgets = [
+  "anastasis_gtk_ia_aadhar_in",
+  "anastasis_gtk_ia_ahv",
+  "anastasis_gtk_ia_birthdate",
+  "anastasis_gtk_ia_birthnumber_cz",
+  "anastasis_gtk_ia_birthnumber_sk",
+  "anastasis_gtk_ia_birthplace",
+  "anastasis_gtk_ia_cf_it",
+  "anastasis_gtk_ia_cpr_dk",
+  "anastasis_gtk_ia_es_dni",
+  "anastasis_gtk_ia_es_ssn",
+  "anastasis_gtk_ia_full_name",
+  "anastasis_gtk_ia_my_jp",
+  "anastasis_gtk_ia_nid_al",
+  "anastasis_gtk_ia_nid_be",
+  "anastasis_gtk_ia_ssn_de",
+  "anastasis_gtk_ia_ssn_us",
+  "anastasis_gtk_ia_tax_de",
+  "anastasis_gtk_xx_prime",
+  "anastasis_gtk_xx_square",
+]
+
+function typeForWidget(name: string): string {
+  if (["anastasis_gtk_xx_prime",
+    "anastasis_gtk_xx_square",
+  ].includes(name)) return "number";
+  if (["anastasis_gtk_ia_birthdate"].includes(name)) return "date"
+  return "string";
+}
+
+export const WithAllPosibleWidget = createExample(TestedComponent, {
+  ...reducerStatesExample.backupAttributeEditing,
+  required_attributes: allWidgets.map(w => ({
+    name: w,
+    label: `widget: ${w}`,
+    type: typeForWidget(w),
+    uuid: `uuid-${w}`,
+    widget: w
+  }))
 } as ReducerState);

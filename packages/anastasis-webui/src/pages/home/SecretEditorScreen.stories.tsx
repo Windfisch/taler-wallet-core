@@ -26,8 +26,11 @@ import { SecretEditorScreen as TestedComponent } from './SecretEditorScreen';
 
 
 export default {
-  title: 'Pages/SecretEditorScreen',
+  title: 'Pages/backup/SecretEditorScreen',
   component: TestedComponent,
+  args: {
+    order: 7,
+  },
   argTypes: {
     onUpdate: { action: 'onUpdate' },
     onBack: { action: 'onBack' },

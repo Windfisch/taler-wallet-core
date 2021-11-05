@@ -4,20 +4,21 @@ import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useAnastasisContext } from "../../context/anastasis";
 import {
-  AnastasisClientFrame,
-  LabeledInput
+  AnastasisClientFrame
 } from "./index";
+import { TextInput } from "../../components/fields/TextInput";
+import { FileInput } from "../../components/fields/FileInput";
 
 export function SecretEditorScreen(): VNode {
   const reducer = useAnastasisContext()
   const [secretValue, setSecretValue] = useState("");
 
-  const currentSecretName = reducer?.currentReducerState 
-    && ("secret_name" in reducer.currentReducerState) 
+  const currentSecretName = reducer?.currentReducerState
+    && ("secret_name" in reducer.currentReducerState)
     && reducer.currentReducerState.secret_name;
 
   const [secretName, setSecretName] = useState(currentSecretName || "");
-  
+
   if (!reducer) {
     return <div>no reducer in context</div>
   }
@@ -25,8 +26,8 @@ export function SecretEditorScreen(): VNode {
     return <div>invalid state</div>
   }
 
-  const secretNext = (): void => {
-    reducer.runTransaction(async (tx) => {
+  const secretNext = async (): Promise<void> => {
+    return reducer.runTransaction(async (tx) => {
       await tx.transition("enter_secret_name", {
         name: secretName,
       });
@@ -44,21 +45,29 @@ export function SecretEditorScreen(): VNode {
   };
   return (
     <AnastasisClientFrame
-      title="Backup: Provide secret"
+      title="Backup: Provide secret to backup"
       onNext={() => secretNext()}
     >
       <div>
-        <LabeledInput
-          label="Secret Name:"
+        <TextInput
+          label="Secret's name:"
           grabFocus
           bind={[secretName, setSecretName]}
         />
       </div>
       <div>
-        <LabeledInput
-          label="Secret Value:"
+        <TextInput
+          label="Enter the secret as text:"
           bind={[secretValue, setSecretValue]}
         />
+        <div style={{display:'flex',}}>
+          or&nbsp; 
+          <FileInput
+            label="click here"
+            bind={[secretValue, setSecretValue]}
+          />
+          &nbsp;to import a file
+        </div>
       </div>
     </AnastasisClientFrame>
   );

@@ -13,7 +13,7 @@ export function PoliciesPayingScreen(): VNode {
   const payments = reducer.currentReducerState.policy_payment_requests ?? [];
   
   return (
-    <AnastasisClientFrame hideNext title="Backup: Recovery Document Payments">
+    <AnastasisClientFrame hideNav title="Backup: Recovery Document Payments">
       <p>
         Some of the providers require a payment to store the encrypted
         recovery document.

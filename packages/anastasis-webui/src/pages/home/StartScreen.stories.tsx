@@ -26,6 +26,9 @@ import { StartScreen as TestedComponent } from './StartScreen';
 export default {
   title: 'Pages/StartScreen',
   component: TestedComponent,
+  args: {
+    order: 1,
+  },
   argTypes: {
     onUpdate: { action: 'onUpdate' },
     onBack: { action: 'onBack' },

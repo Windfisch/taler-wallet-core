@@ -26,8 +26,11 @@ import { PoliciesPayingScreen as TestedComponent } from './PoliciesPayingScreen'
 
 
 export default {
-  title: 'Pages/PoliciesPayingScreen',
+  title: 'Pages/backup/PoliciesPayingScreen',
   component: TestedComponent,
+  args: {
+    order: 8,
+  },
   argTypes: {
     onUpdate: { action: 'onUpdate' },
     onBack: { action: 'onBack' },

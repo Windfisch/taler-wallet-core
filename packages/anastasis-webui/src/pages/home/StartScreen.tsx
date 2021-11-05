@@ -10,24 +10,29 @@ export function StartScreen(): VNode {
   }
   return (
     <AnastasisClientFrame hideNav title="Home">
-      <div>
-        <section class="section is-main-section">
-          <div class="columns">
-            <div class="column" />
-            <div class="column is-four-fifths">
+      <div class="columns">
+        <div class="column" />
+        <div class="column is-four-fifths">
 
-              <div class="buttons is-right">
-                <button class="button is-success" autoFocus onClick={() => reducer.startBackup()}>
-                  Backup
-                </button>
+          <div class="buttons">
+            <button class="button is-success" autoFocus onClick={() => reducer.startBackup()}>
+              <div class="icon"><i class="mdi mdi-arrow-up" /></div>
+              <span>Backup a secret</span>
+            </button>
 
-                <button class="button is-info" onClick={() => reducer.startRecover()}>Recover</button>
-              </div>
+            <button class="button is-info" onClick={() => reducer.startRecover()}>
+              <div class="icon"><i class="mdi mdi-arrow-down" /></div>
+              <span>Recover a secret</span>
+            </button>
 
-            </div>
-            <div class="column" />
+            {/* <button class="button">
+              <div class="icon"><i class="mdi mdi-file" /></div>
+              <span>Restore a session</span>
+            </button> */}
           </div>
-        </section>
+
+        </div>
+        <div class="column" />
       </div>
     </AnastasisClientFrame>
   );

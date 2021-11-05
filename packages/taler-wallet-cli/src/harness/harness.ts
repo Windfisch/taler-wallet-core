@@ -67,6 +67,7 @@ import {
   getRandomBytes,
 } from "@gnu-taler/taler-util";
 import { CoinConfig } from "./denomStructures.js";
+import { LibeufinNexusApi, LibeufinSandboxApi } from "./libeufin-apis.js";
 
 const exec = util.promisify(require("child_process").exec);
 
@@ -607,23 +608,201 @@ export namespace BankApi {
   }
 }
 
-export class BankService implements BankServiceInterface {
+
+class BankServiceBase {
   proc: ProcessWrapper | undefined;
 
-  static fromExistingConfig(gc: GlobalTestState): BankService {
-    const cfgFilename = gc.testDir + "/bank.conf";
-    console.log("reading bank config from", cfgFilename);
-    const config = Configuration.load(cfgFilename);
-    const bc: BankConfig = {
-      allowRegistrations: config
-        .getYesNo("bank", "allow_registrations")
-        .required(),
-      currency: config.getString("taler", "currency").required(),
-      database: config.getString("bank", "database").required(),
-      httpPort: config.getNumber("bank", "http_port").required(),
-    };
-    return new BankService(gc, bc, cfgFilename);
+  protected constructor(
+    protected globalTestState: GlobalTestState,
+    protected bankConfig: BankConfig,
+    protected configFile: string,
+  ) {}
+}
+
+/**
+ * Work in progress.  The key point is that both Sandbox and Nexus
+ * will be configured and started by this class.
+ */
+class LibeufinBankService extends BankServiceBase implements BankService {
+  sandboxProc: ProcessWrapper | undefined;
+  nexusProc: ProcessWrapper | undefined;
+
+  static async create(
+    gc: GlobalTestState,
+    bc: BankConfig,
+  ): Promise<BankService> {
+  
+    return new LibeufinBankService(gc, bc, "foo");
   }
+
+  get port() {
+    return this.bankConfig.httpPort;
+  }
+
+  get nexusBaseUrl(): string {
+    return `http://localhost:${this.bankConfig.httpPort + 1}`;
+  }
+
+  get baseUrl(): string {
+    return `http://localhost:${this.bankConfig.httpPort}/demobanks/default/access-api`;
+  }
+
+  async setSuggestedExchange(
+    e: ExchangeServiceInterface,
+    exchangePayto: string
+  ) {
+    await sh(
+      this.globalTestState,
+      "libeufin-sandbox-set-default-exchange",
+      `libeufin-sandbox default-exchange ${exchangePayto}`
+    );
+  }
+
+  // Create one at both sides: Sandbox and Nexus.
+  async createExchangeAccount(
+    accountName: string,
+    password: string,
+  ): Promise<HarnessExchangeBankAccount> {
+
+    await LibeufinSandboxApi.createDemobankAccount(
+      accountName,
+      password,
+      { baseUrl: this.baseUrl }
+    ); 
+    let bankAccountLabel = `${accountName}-acct`
+    await LibeufinSandboxApi.createDemobankEbicsSubscriber(
+      {
+        hostID: "talertest-ebics-host",
+        userID: "exchange-ebics-user",
+        partnerID: "exchange-ebics-partner",
+      },
+      bankAccountLabel,
+      { baseUrl: this.baseUrl }
+    );
+     
+    await LibeufinNexusApi.createUser(
+      { baseUrl: this.nexusBaseUrl },
+      {
+        username: `${accountName}-nexus-username`,
+	password: `${password}-nexus-password`
+      }
+    );
+    await LibeufinNexusApi.createEbicsBankConnection(
+      { baseUrl: this.nexusBaseUrl },
+      {
+        name: "ebics-connection", // connection name.
+        ebicsURL: `http://localhost:${this.bankConfig.httpPort}/ebicsweb`,
+        hostID: "talertest-ebics-host",
+        userID: "exchange-ebics-user",
+        partnerID: "exchange-ebics-partner",
+      }
+    );
+    await LibeufinNexusApi.connectBankConnection(
+      { baseUrl: this.nexusBaseUrl }, "ebics-connection"
+    );
+    await LibeufinNexusApi.fetchAccounts(
+      { baseUrl: this.nexusBaseUrl }, "ebics-connection"
+    );
+    await LibeufinNexusApi.importConnectionAccount(
+      { baseUrl: this.nexusBaseUrl },
+      "ebics-connection", // connection name
+      `${accountName}-acct`, // offered account label
+      `${accountName}-nexus-label` // bank account label at Nexus
+    );
+    await LibeufinNexusApi.createTwgFacade(
+      { baseUrl: this.nexusBaseUrl },
+      {
+        name: "exchange-facade",
+	connectionName: "ebics-connection",
+        accountName: `${accountName}-nexus-label`,
+	currency: "EUR",
+        reserveTransferLevel: "report"
+      }
+    );
+    await LibeufinNexusApi.postPermission(
+      { baseUrl: this.nexusBaseUrl },
+      {
+        action: "grant",
+        permission: {
+          subjectId: `${accountName}-nexus-username`,
+          subjectType: "user",
+          resourceType: "facade",
+          resourceId: "exchange-facade", // facade name
+          permissionName: "facade.talerWireGateway.transfer",
+        },
+      }
+    );
+    await LibeufinNexusApi.postPermission(
+      { baseUrl: this.nexusBaseUrl },
+      {
+        action: "grant",
+        permission: {
+          subjectId: `${accountName}-nexus-username`,
+          subjectType: "user",
+          resourceType: "facade",
+          resourceId: "exchange-facade", // facade name
+          permissionName: "facade.talerWireGateway.history",
+        },
+      }
+    );
+    let facadesResp = await LibeufinNexusApi.getAllFacades({ baseUrl: this.nexusBaseUrl });
+    let accountInfoResp = await LibeufinSandboxApi.demobankAccountInfo(
+      accountName, // username
+      password,
+      { baseUrl: this.nexusBaseUrl },
+      `${accountName}acct` // bank account label.
+    );
+    return {
+      accountName: accountName,
+      accountPassword: password,
+      accountPaytoUri: accountInfoResp.data.paytoUri,
+      wireGatewayApiBaseUrl: facadesResp.data.facades[0].baseUrl,
+    };
+  }
+
+  async start(): Promise<void> {
+    let sandboxDb = `jdbc:sqlite:${this.globalTestState.testDir}/libeufin-sandbox.sqlite3`;
+    let nexusDb = `jdbc:sqlite:${this.globalTestState.testDir}/libeufin-nexus.sqlite3`;
+    this.sandboxProc = this.globalTestState.spawnService(
+      "libeufin-sandbox",
+      ["serve", "--port", `${this.port}`],
+      "libeufin-sandbox",
+      {
+        ...process.env,
+        LIBEUFIN_SANDBOX_DB_CONNECTION: sandboxDb,
+        LIBEUFIN_SANDBOX_ADMIN_PASSWORD: "secret",
+      },
+    ); 
+    await runCommand(
+      this.globalTestState,
+      "libeufin-nexus-superuser",
+      "libeufin-nexus",
+      ["superuser", "admin", "--password", "test"],
+      {
+        ...process.env,
+        LIBEUFIN_NEXUS_DB_CONNECTION: nexusDb,
+      },
+    );
+
+    this.nexusProc = this.globalTestState.spawnService(
+      "libeufin-nexus",
+      ["serve", "--port", `${this.port + 1}`],
+      "libeufin-nexus",
+      {
+        ...process.env,
+        LIBEUFIN_NEXUS_DB_CONNECTION: nexusDb,
+      },
+    );
+  }
+
+  async pingUntilAvailable(): Promise<void> {
+    await pingProc(this.sandboxProc, this.baseUrl, "libeufin-sandbox");
+    await pingProc(this.nexusProc, `${this.baseUrl}config`, "libeufin-nexus");
+  }
+}
+
+export class BankService extends BankServiceBase implements BankServiceInterface {
+  proc: ProcessWrapper | undefined;
 
   static async create(
     gc: GlobalTestState,
@@ -700,12 +879,6 @@ export class BankService implements BankServiceInterface {
     return this.bankConfig.httpPort;
   }
 
-  private constructor(
-    private globalTestState: GlobalTestState,
-    private bankConfig: BankConfig,
-    private configFile: string,
-  ) {}
-
   async start(): Promise<void> {
     this.proc = this.globalTestState.spawnService(
       "taler-bank-manage",
@@ -719,6 +892,12 @@ export class BankService implements BankServiceInterface {
     await pingProc(this.proc, url, "bank");
   }
 }
+
+// Still work in progress..
+if (false && process.env.WALLET_HARNESS_WITH_EUFIN) {
+  BankService.create = LibeufinBankService.create;
+  BankService.prototype = Object.create(LibeufinBankService.prototype);
+} 
 
 export class FakeBankService {
   proc: ProcessWrapper | undefined;

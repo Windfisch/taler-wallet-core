@@ -19,18 +19,32 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 
-import { createExample, reducerStatesExample } from '../../utils';
-import { CountrySelectionScreen as TestedComponent } from './CountrySelectionScreen';
+import { h, FunctionalComponent } from 'preact';
+import { useState } from 'preact/hooks';
+import { DurationPicker as TestedComponent } from './DurationPicker';
 
 
 export default {
-  title: 'Pages/CountrySelectionScreen',
+  title: 'Components/Picker/Duration',
   component: TestedComponent,
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
-  },
+    onCreate: { action: 'onCreate' },
+    goBack: { action: 'goBack' },
+  }
 };
 
-export const Backup = createExample(TestedComponent, reducerStatesExample.backupSelectCountry);
-export const Recovery = createExample(TestedComponent, reducerStatesExample.recoverySelectCountry);
+function createExample<Props>(Component: FunctionalComponent<Props>, props: Partial<Props>) {
+  const r = (args: any) => <Component {...args} />
+  r.args = props
+  return r
+}
+
+export const Example = createExample(TestedComponent, {
+  days: true, minutes: true, hours: true, seconds: true,
+  value: 10000000
+});
+
+export const WithState = () => {
+  const [v,s] = useState<number>(1000000)
+  return <TestedComponent value={v} onChange={s} days minutes hours seconds />
+}

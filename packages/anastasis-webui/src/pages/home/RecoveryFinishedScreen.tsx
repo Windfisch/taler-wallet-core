@@ -15,20 +15,26 @@ export function RecoveryFinishedScreen(): VNode {
   if (!reducer.currentReducerState || reducer.currentReducerState.recovery_state === undefined) {
     return <div>invalid state</div>
   }
-  const encodedSecret = reducer.currentReducerState.core_secret?.value
+  const encodedSecret = reducer.currentReducerState.core_secret
   if (!encodedSecret) {
-    return <AnastasisClientFrame title="Recovery Problem" hideNext>
+    return <AnastasisClientFrame title="Recovery Problem" hideNav>
       <p>
         Secret not found
       </p>
+      <div style={{ marginTop: '2em', display: 'flex', justifyContent: 'space-between' }}>
+        <button class="button" onClick={() => reducer.back()}>Back</button>
+      </div>
     </AnastasisClientFrame>
   }
-  const secret = bytesToString(decodeCrock(encodedSecret))
+  const secret = bytesToString(decodeCrock(encodedSecret.value))
   return (
-    <AnastasisClientFrame title="Recovery Finished" hideNext>
+    <AnastasisClientFrame title="Recovery Finished" hideNav>
       <p>
         Secret: {secret}
       </p>
+      <div style={{ marginTop: '2em', display: 'flex', justifyContent: 'space-between' }}>
+        <button class="button" onClick={() => reducer.back()}>Back</button>
+      </div>
     </AnastasisClientFrame>
   );
 }

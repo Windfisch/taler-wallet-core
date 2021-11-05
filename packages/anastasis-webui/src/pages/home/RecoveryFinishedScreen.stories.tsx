@@ -26,7 +26,10 @@ import { RecoveryFinishedScreen as TestedComponent } from './RecoveryFinishedScr
 
 
 export default {
-  title: 'Pages/RecoveryFinishedScreen',
+  title: 'Pages/recovery/FinishedScreen',
+  args: {
+    order: 7,
+  },
   component: TestedComponent,
   argTypes: {
     onUpdate: { action: 'onUpdate' },
@@ -34,7 +37,7 @@ export default {
   },
 };
 
-export const NormalEnding = createExample(TestedComponent, {
+export const GoodEnding = createExample(TestedComponent, {
   ...reducerStatesExample.recoveryFinished,
   core_secret: { mime: 'text/plain', value: 'hello' }
 } as ReducerState);

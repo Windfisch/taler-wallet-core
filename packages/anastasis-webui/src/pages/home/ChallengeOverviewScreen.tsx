@@ -1,77 +1,184 @@
+import { ChallengeFeedback, ChallengeFeedbackStatus } from "anastasis-core";
 import { h, VNode } from "preact";
 import { useAnastasisContext } from "../../context/anastasis";
 import { AnastasisClientFrame } from "./index";
+import { authMethods, KnownAuthMethods } from "./authMethod";
+
+function OverviewFeedbackDisplay(props: { feedback?: ChallengeFeedback }) {
+  const { feedback } = props;
+  if (!feedback) {
+    return null;
+  }
+  switch (feedback.state) {
+    case ChallengeFeedbackStatus.Message:
+      return (
+        <div>
+          <p>{feedback.message}</p>
+        </div>
+      );
+    case ChallengeFeedbackStatus.Pending:
+    case ChallengeFeedbackStatus.AuthIban:
+      return null;
+    case ChallengeFeedbackStatus.RateLimitExceeded:
+      return <div>Rate limit exceeded.</div>;
+    case ChallengeFeedbackStatus.Redirect:
+      return <div>Redirect (FIXME: not supported)</div>;
+    case ChallengeFeedbackStatus.Unsupported:
+      return <div>Challenge not supported by client.</div>;
+    case ChallengeFeedbackStatus.TruthUnknown:
+      return <div>Truth unknown</div>;
+    default:
+      return (
+        <div>
+          <pre>{JSON.stringify(feedback)}</pre>
+        </div>
+      );
+  }
+}
 
 export function ChallengeOverviewScreen(): VNode {
-  const reducer = useAnastasisContext()
+  const reducer = useAnastasisContext();
 
   if (!reducer) {
-    return <div>no reducer in context</div>
+    return <div>no reducer in context</div>;
   }
-  if (!reducer.currentReducerState || reducer.currentReducerState.recovery_state === undefined) {
-    return <div>invalid state</div>
+  if (
+    !reducer.currentReducerState ||
+    reducer.currentReducerState.recovery_state === undefined
+  ) {
+    return <div>invalid state</div>;
   }
 
-  const policies = reducer.currentReducerState.recovery_information?.policies ?? [];
-  const chArr = reducer.currentReducerState.recovery_information?.challenges ?? [];
-  const challengeFeedback = reducer.currentReducerState?.challenge_feedback;
+  const policies =
+    reducer.currentReducerState.recovery_information?.policies ?? [];
+  const knownChallengesArray =
+    reducer.currentReducerState.recovery_information?.challenges ?? [];
+  const challengeFeedback =
+    reducer.currentReducerState?.challenge_feedback ?? {};
 
-  const challenges: {
+  const knownChallengesMap: {
     [uuid: string]: {
       type: string;
       instructions: string;
       cost: string;
+      feedback: ChallengeFeedback | undefined;
     };
   } = {};
-  for (const ch of chArr) {
-    challenges[ch.uuid] = {
+  for (const ch of knownChallengesArray) {
+    knownChallengesMap[ch.uuid] = {
       type: ch.type,
       cost: ch.cost,
       instructions: ch.instructions,
+      feedback: challengeFeedback[ch.uuid],
     };
   }
+  const policiesWithInfo = policies.map((row) => {
+    let isPolicySolved = true;
+    const challenges = row
+      .map(({ uuid }) => {
+        const info = knownChallengesMap[uuid];
+        const isChallengeSolved = info?.feedback?.state === "solved";
+        isPolicySolved = isPolicySolved && isChallengeSolved;
+        return { info, uuid, isChallengeSolved };
+      })
+      .filter((ch) => ch.info !== undefined);
+
+    return { isPolicySolved, challenges };
+  });
+
+  const atLeastThereIsOnePolicySolved =
+    policiesWithInfo.find((p) => p.isPolicySolved) !== undefined;
+
+  const errors = !atLeastThereIsOnePolicySolved
+    ? "Solve one policy before proceeding"
+    : undefined;
   return (
-    <AnastasisClientFrame title="Recovery: Solve challenges">
-      <h2>Policies</h2>
-      {!policies.length && <p>
-        No policies found
-      </p>}
-      {policies.map((row, i) => {
-        return (
-          <div key={i}>
-            <h3>Policy #{i + 1}</h3>
-            {row.map(column => {
-              const ch = challenges[column.uuid];
-              if (!ch) return <div>
-                There is no challenge for this policy
-              </div>
-              const feedback = challengeFeedback?.[column.uuid];
-              return (
-                <div key={column.uuid}
-                  style={{
-                    borderLeft: "2px solid gray",
-                    paddingLeft: "0.5em",
-                    borderRadius: "0.5em",
-                    marginTop: "0.5em",
-                    marginBottom: "0.5em",
-                  }}
-                >
-                  <h4>
-                    {ch.type} ({ch.instructions})
-                  </h4>
-                  <p>Status: {feedback?.state ?? "unknown"}</p>
-                  {feedback?.state !== "solved" ? (
-                    <button
-                      onClick={() => reducer.transition("select_challenge", {
-                        uuid: column.uuid,
-                      })}
-                    >
-                      Solve
-                    </button>
-                  ) : null}
+    <AnastasisClientFrame hideNext={errors} title="Recovery: Solve challenges">
+      {!policies.length ? (
+        <p class="block">
+          No policies found, try with another version of the secret
+        </p>
+      ) : policies.length === 1 ? (
+        <p class="block">
+          One policy found for this secret. You need to solve all the challenges
+          in order to recover your secret.
+        </p>
+      ) : (
+        <p class="block">
+          We have found {policies.length} polices. You need to solve all the
+          challenges from one policy in order to recover your secret.
+        </p>
+      )}
+      {policiesWithInfo.map((policy, policy_index) => {
+        const tableBody = policy.challenges.map(({ info, uuid }) => {
+          const isFree = !info.cost || info.cost.endsWith(":0");
+          const method = authMethods[info.type as KnownAuthMethods];
+          return (
+            <div
+              key={uuid}
+              class="block"
+              style={{ display: "flex", justifyContent: "space-between" }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <span class="icon">{method?.icon}</span>
+                  <span>{info.instructions}</span>
                 </div>
-              );
-            })}
+                <OverviewFeedbackDisplay feedback={info.feedback} />
+              </div>
+              <div>
+                {method && info.feedback?.state !== "solved" ? (
+                  <a
+                    class="button"
+                    onClick={() =>
+                      reducer.transition("select_challenge", { uuid })
+                    }
+                  >
+                    {isFree ? "Solve" : `Pay and Solve`}
+                  </a>
+                ) : null}
+                {info.feedback?.state === "solved" ? (
+                  <a class="button is-success"> Solved </a>
+                ) : null}
+              </div>
+            </div>
+          );
+        });
+
+        const policyName = policy.challenges
+          .map((x) => x.info.type)
+          .join(" + ");
+        const opa = !atLeastThereIsOnePolicySolved
+          ? undefined
+          : policy.isPolicySolved
+          ? undefined
+          : "0.6";
+        return (
+          <div
+            key={policy_index}
+            class="box"
+            style={{
+              opacity: opa,
+            }}
+          >
+            <h3 class="subtitle">
+              Policy #{policy_index + 1}: {policyName}
+            </h3>
+            {policy.challenges.length === 0 && (
+              <p>This policy doesn't have challenges.</p>
+            )}
+            {policy.challenges.length === 1 && (
+              <p>This policy just have one challenge.</p>
+            )}
+            {policy.challenges.length > 1 && (
+              <p>This policy have {policy.challenges.length} challenges.</p>
+            )}
+            {tableBody}
           </div>
         );
       })}

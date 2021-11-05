@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 /*
  This file is part of GNU Taler
  (C) 2021 Taler Systems S.A.
@@ -26,8 +25,11 @@ import { SecretSelectionScreen as TestedComponent } from './SecretSelectionScree
 
 
 export default {
-  title: 'Pages/SecretSelectionScreen',
+  title: 'Pages/recovery/SecretSelectionScreen',
   component: TestedComponent,
+  args: {
+    order: 4,
+  },
   argTypes: {
     onUpdate: { action: 'onUpdate' },
     onBack: { action: 'onBack' },
@@ -37,7 +39,7 @@ export default {
 export const Example = createExample(TestedComponent, {
   ...reducerStatesExample.secretSelection,
   recovery_document: {
-    provider_url: 'http://anastasis.url/',
+    provider_url: 'https://kudos.demo.anastasis.lu/',
     secret_name: 'secretName',
     version: 1,
   },

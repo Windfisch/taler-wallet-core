@@ -25,8 +25,11 @@ import { TruthsPayingScreen as TestedComponent } from './TruthsPayingScreen';
 
 
 export default {
-  title: 'Pages/TruthsPayingScreen',
+  title: 'Pages/backup/__TruthsPayingScreen',
   component: TestedComponent,
+  args: {
+    order: 10,
+  },
   argTypes: {
     onUpdate: { action: 'onUpdate' },
     onBack: { action: 'onBack' },

@@ -26,7 +26,10 @@ import { ReviewPoliciesScreen as TestedComponent } from './ReviewPoliciesScreen'
 
 
 export default {
-  title: 'Pages/ReviewPoliciesScreen',
+  title: 'Pages/backup/ReviewPoliciesScreen',
+  args: {
+    order: 6,
+  },
   component: TestedComponent,
   argTypes: {
     onUpdate: { action: 'onUpdate' },
@@ -40,11 +43,11 @@ export const HasPoliciesButMethodListIsEmpty = createExample(TestedComponent, {
     methods: [{
       authentication_method: 0,
       provider: 'asd'
-    },{
+    }, {
       authentication_method: 1,
       provider: 'asd'
     }]
-  },{
+  }, {
     methods: [{
       authentication_method: 1,
       provider: 'asd'
@@ -55,27 +58,191 @@ export const HasPoliciesButMethodListIsEmpty = createExample(TestedComponent, {
 
 export const SomePoliciesWithMethods = createExample(TestedComponent, {
   ...reducerStatesExample.policyReview,
-  policies: [{
-    methods: [{
-      authentication_method: 0,
-      provider: 'asd'
-    },{
-      authentication_method: 1,
-      provider: 'asd'
-    }]
-  },{
-    methods: [{
-      authentication_method: 1,
-      provider: 'asd'
-    }]
-  }],
+  policies: [
+    {
+      methods: [
+        {
+          authentication_method: 0,
+          provider: "https://kudos.demo.anastasis.lu/"
+        },
+        {
+          authentication_method: 1,
+          provider: "https://kudos.demo.anastasis.lu/"
+        },
+        {
+          authentication_method: 2,
+          provider: "https://kudos.demo.anastasis.lu/"
+        }
+      ]
+    },
+    {
+      methods: [
+        {
+          authentication_method: 0,
+          provider: "https://kudos.demo.anastasis.lu/"
+        },
+        {
+          authentication_method: 1,
+          provider: "https://kudos.demo.anastasis.lu/"
+        },
+        {
+          authentication_method: 3,
+          provider: "https://anastasis.demo.taler.net/"
+        }
+      ]
+    },
+    {
+      methods: [
+        {
+          authentication_method: 0,
+          provider: "https://kudos.demo.anastasis.lu/"
+        },
+        {
+          authentication_method: 1,
+          provider: "https://kudos.demo.anastasis.lu/"
+        },
+        {
+          authentication_method: 4,
+          provider: "https://anastasis.demo.taler.net/"
+        }
+      ]
+    },
+    {
+      methods: [
+        {
+          authentication_method: 0,
+          provider: "https://kudos.demo.anastasis.lu/"
+        },
+        {
+          authentication_method: 2,
+          provider: "https://kudos.demo.anastasis.lu/"
+        },
+        {
+          authentication_method: 3,
+          provider: "https://anastasis.demo.taler.net/"
+        }
+      ]
+    },
+    {
+      methods: [
+        {
+          authentication_method: 0,
+          provider: "https://kudos.demo.anastasis.lu/"
+        },
+        {
+          authentication_method: 2,
+          provider: "https://kudos.demo.anastasis.lu/"
+        },
+        {
+          authentication_method: 4,
+          provider: "https://anastasis.demo.taler.net/"
+        }
+      ]
+    },
+    {
+      methods: [
+        {
+          authentication_method: 0,
+          provider: "https://kudos.demo.anastasis.lu/"
+        },
+        {
+          authentication_method: 3,
+          provider: "https://anastasis.demo.taler.net/"
+        },
+        {
+          authentication_method: 4,
+          provider: "https://anastasis.demo.taler.net/"
+        }
+      ]
+    },
+    {
+      methods: [
+        {
+          authentication_method: 1,
+          provider: "https://kudos.demo.anastasis.lu/"
+        },
+        {
+          authentication_method: 2,
+          provider: "https://kudos.demo.anastasis.lu/"
+        },
+        {
+          authentication_method: 3,
+          provider: "https://anastasis.demo.taler.net/"
+        }
+      ]
+    },
+    {
+      methods: [
+        {
+          authentication_method: 1,
+          provider: "https://kudos.demo.anastasis.lu/"
+        },
+        {
+          authentication_method: 2,
+          provider: "https://kudos.demo.anastasis.lu/"
+        },
+        {
+          authentication_method: 4,
+          provider: "https://anastasis.demo.taler.net/"
+        }
+      ]
+    },
+    {
+      methods: [
+        {
+          authentication_method: 1,
+          provider: "https://kudos.demo.anastasis.lu/"
+        },
+        {
+          authentication_method: 3,
+          provider: "https://anastasis.demo.taler.net/"
+        },
+        {
+          authentication_method: 4,
+          provider: "https://anastasis.demo.taler.net/"
+        }
+      ]
+    },
+    {
+      methods: [
+        {
+          authentication_method: 2,
+          provider: "https://kudos.demo.anastasis.lu/"
+        },
+        {
+          authentication_method: 3,
+          provider: "https://anastasis.demo.taler.net/"
+        },
+        {
+          authentication_method: 4,
+          provider: "https://anastasis.demo.taler.net/"
+        }
+      ]
+    }
+  ],
   authentication_methods: [{
-    challenge: 'asd',
-    instructions: 'ins',
-    type: 'type',
+    type: "email",
+    instructions: "Email to qwe@asd.com",
+    challenge: "E5VPA"
+  }, {
+    type: "sms",
+    instructions: "SMS to 555-555",
+    challenge: ""
+  }, {
+    type: "question",
+    instructions: "Does P equal NP?",
+    challenge: "C5SP8"
   },{
-    challenge: 'asd2',
-    instructions: 'ins2',
-    type: 'type2',
-  }]
+    type: "totp",
+    instructions: "Response code for 'Anastasis'",
+    challenge: "E5VPA"
+  }, {
+    type: "sms",
+    instructions: "SMS to 6666-6666",
+    challenge: ""
+  }, {
+    type: "question",
+    instructions: "How did the chicken cross the road?",
+    challenge: "C5SP8"
+}]
 } as ReducerState);

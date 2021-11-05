@@ -40,6 +40,7 @@ import {
   ConfirmPayResultType,
   durationFromSpec,
   getTimestampNow,
+  HttpStatusCode,
   j2s,
   Logger,
   notEmpty,
@@ -84,7 +85,6 @@ import {
 } from "../../db.js";
 import { guardOperationException } from "../../errors.js";
 import {
-  HttpResponseStatus,
   readSuccessResponseJsonOrThrow,
   readTalerErrorResponse,
 } from "../../util/http.js";
@@ -317,7 +317,7 @@ async function runBackupCycleForProvider(
 
   logger.trace(`sync response status: ${resp.status}`);
 
-  if (resp.status === HttpResponseStatus.NotModified) {
+  if (resp.status === HttpStatusCode.NotModified) {
     await ws.db
       .mktx((x) => ({ backupProvider: x.backupProviders }))
       .runReadWrite(async (tx) => {
@@ -335,7 +335,7 @@ async function runBackupCycleForProvider(
     return;
   }
 
-  if (resp.status === HttpResponseStatus.PaymentRequired) {
+  if (resp.status === HttpStatusCode.PaymentRequired) {
     logger.trace("payment required for backup");
     logger.trace(`headers: ${j2s(resp.headers)}`);
     const talerUri = resp.headers.get("taler");
@@ -396,7 +396,7 @@ async function runBackupCycleForProvider(
     return;
   }
 
-  if (resp.status === HttpResponseStatus.NoContent) {
+  if (resp.status === HttpStatusCode.NoContent) {
     await ws.db
       .mktx((x) => ({ backupProviders: x.backupProviders }))
       .runReadWrite(async (tx) => {
@@ -415,7 +415,7 @@ async function runBackupCycleForProvider(
     return;
   }
 
-  if (resp.status === HttpResponseStatus.Conflict) {
+  if (resp.status === HttpStatusCode.Conflict) {
     logger.info("conflicting backup found");
     const backupEnc = new Uint8Array(await resp.bytes());
     const backupConfig = await provideBackupState(ws);

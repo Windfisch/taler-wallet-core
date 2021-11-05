@@ -22,6 +22,7 @@ import {
   codecForNumber,
   codecForString,
   codecOptional,
+  Logger,
 } from "@gnu-taler/taler-util";
 import {
   getDefaultNodeWallet,
@@ -36,6 +37,9 @@ import {
  * set up its own services.
  */
 export async function runBench1(configJson: any): Promise<void> {
+
+  const logger = new Logger("Bench1");
+
   // Validate the configuration file for this benchmark.
   const b1conf = codecForBench1Config().decode(configJson);
 
@@ -47,8 +51,9 @@ export async function runBench1(configJson: any): Promise<void> {
 
   const withdrawAmount = (numDeposits + 1) * 10;
 
+  logger.info(`Starting Benchmark with ${numIter} Iterations`);
+
   for (let i = 0; i < numIter; i++) {
-     
     // Create a new wallet in each iteration 
     // otherwise the TPS go down 
     // my assumption is that the in-memory db file gets too large 
@@ -58,6 +63,8 @@ export async function runBench1(configJson: any): Promise<void> {
       httpLib: myHttpLib,
     });
     await wallet.client.call(WalletApiOperation.InitWallet, {});
+
+    logger.info(`Starting withdrawal of ${withdrawAmount} ${b1conf.currency}`);
 
     await wallet.client.call(WalletApiOperation.WithdrawFakebank, {
       amount: b1conf.currency + ":" + withdrawAmount,
@@ -69,7 +76,11 @@ export async function runBench1(configJson: any): Promise<void> {
       stopWhenDone: true,
     });
 
+    logger.info(`Finished withdrawal`);
+
     for (let i = 0; i < numDeposits; i++) {
+
+      logger.info(`Starting deposit of 10 ${b1conf.currency}`);
       await wallet.client.call(WalletApiOperation.CreateDepositGroup, {
         amount: b1conf.currency + ":10",
         depositPaytoUri: b1conf.payto,
@@ -78,6 +89,7 @@ export async function runBench1(configJson: any): Promise<void> {
       await wallet.runTaskLoop({
         stopWhenDone: true,
       });
+      logger.info(`Deposit succesful`);
     }
 
     wallet.stop();

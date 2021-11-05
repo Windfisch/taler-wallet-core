@@ -14,17 +14,17 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountJson, AmountLike, Amounts, i18n, Transaction, TransactionType } from "@gnu-taler/taler-util";
+import { AmountLike, Amounts, i18n, Transaction, TransactionType } from "@gnu-taler/taler-util";
 import { format } from "date-fns";
-import { Fragment, JSX, VNode, h } from "preact";
+import { JSX, VNode } from "preact";
 import { route } from 'preact-router';
 import { useEffect, useState } from "preact/hooks";
-import * as wxApi from "../wxApi";
-import { Pages } from "../NavigationBar";
-import emptyImg from "../../static/img/empty.png"
-import { Button, ButtonBox, ButtonBoxDestructive, ButtonDestructive, ButtonPrimary, ExtraLargeText, FontIcon, LargeText, ListOfProducts, PopupBox, Row, RowBorderGray, SmallLightText, WalletBox, WarningBox } from "../components/styled";
+import emptyImg from "../../static/img/empty.png";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { Part } from "../components/Part";
+import { ButtonBox, ButtonBoxDestructive, ButtonPrimary, FontIcon, ListOfProducts, RowBorderGray, SmallLightText, WalletBox, WarningBox } from "../components/styled";
+import { Pages } from "../NavigationBar";
+import * as wxApi from "../wxApi";
 
 export function TransactionPage({ tid }: { tid: string; }): JSX.Element {
   const [transaction, setTransaction] = useState<
@@ -42,7 +42,7 @@ export function TransactionPage({ tid }: { tid: string; }): JSX.Element {
       }
     };
     fetchData();
-  }, []);
+  }, [tid]);
 
   if (!transaction) {
     return <div><i18n.Translate>Loading ...</i18n.Translate></div>;

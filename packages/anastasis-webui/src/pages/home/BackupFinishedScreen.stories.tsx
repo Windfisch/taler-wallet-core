@@ -26,15 +26,18 @@ import { BackupFinishedScreen as TestedComponent } from './BackupFinishedScreen'
 
 
 export default {
-  title: 'Pages/BackupFinishedScreen',
+  title: 'Pages/backup/FinishedScreen',
   component: TestedComponent,
+  args: {
+    order: 9,
+  },
   argTypes: {
     onUpdate: { action: 'onUpdate' },
     onBack: { action: 'onBack' },
   },
 };
 
-export const Simple = createExample(TestedComponent, reducerStatesExample.backupFinished);
+export const WithoutName = createExample(TestedComponent, reducerStatesExample.backupFinished);
 
 export const WithName = createExample(TestedComponent, {...reducerStatesExample.backupFinished,
   secret_name: 'super_secret',

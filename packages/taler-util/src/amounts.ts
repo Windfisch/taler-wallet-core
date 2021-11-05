@@ -349,7 +349,8 @@ export class Amounts {
     }
   }
 
-  static mult(a: AmountJson, n: number): Result {
+  static mult(a: AmountLike, n: number): Result {
+    a = this.jsonifyAmount(a);
     if (!Number.isInteger(n)) {
       throw Error("amount can only be multipied by an integer");
     }

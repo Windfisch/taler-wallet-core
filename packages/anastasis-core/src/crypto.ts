@@ -10,8 +10,10 @@ import {
   crypto_sign_keyPair_fromSeed,
   stringToBytes,
   secretbox_open,
+  hash,
+  Logger,
+  j2s,
 } from "@gnu-taler/taler-util";
-import { gzipSync } from "fflate";
 import { argon2id } from "hash-wasm";
 
 export type Flavor<T, FlavorT extends string> = T & {
@@ -248,7 +250,6 @@ export async function coreSecretRecover(args: {
     args.encryptedMasterKey,
     "emk",
   );
-  console.log("recovered master key", masterKey);
   return await anastasisDecrypt(masterKey, args.encryptedCoreSecret, "cse");
 }
 
@@ -281,6 +282,10 @@ export async function coreSecretEncrypt(
     encCoreSecret,
     encMasterKeys,
   };
+}
+
+export async function pinAnswerHash(pin: number): Promise<SecureAnswerHash> {
+  return encodeCrock(hash(stringToBytes(pin.toString())));
 }
 
 export async function secureAnswerHash(
