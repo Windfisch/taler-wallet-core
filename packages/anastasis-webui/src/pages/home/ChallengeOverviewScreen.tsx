@@ -12,27 +12,24 @@ function OverviewFeedbackDisplay(props: { feedback?: ChallengeFeedback }) {
   switch (feedback.state) {
     case ChallengeFeedbackStatus.Message:
       return (
-        <div>
-          <p>{feedback.message}</p>
-        </div>
+        <div class="block has-text-danger">{feedback.message}</div>
       );
+    case ChallengeFeedbackStatus.Solved:
+      return <div />
     case ChallengeFeedbackStatus.Pending:
     case ChallengeFeedbackStatus.AuthIban:
       return null;
+    case ChallengeFeedbackStatus.ServerFailure:
+      return <div class="block has-text-danger">Server error.</div>;
     case ChallengeFeedbackStatus.RateLimitExceeded:
-      return <div>Rate limit exceeded.</div>;
-    case ChallengeFeedbackStatus.Redirect:
-      return <div>Redirect (FIXME: not supported)</div>;
+      return <div class="block has-text-danger">There were to many failed attempts.</div>;
     case ChallengeFeedbackStatus.Unsupported:
-      return <div>Challenge not supported by client.</div>;
+      return <div class="block has-text-danger">This client doesn't support solving this type of challenge. Use another version or contact the provider.</div>;
     case ChallengeFeedbackStatus.TruthUnknown:
-      return <div>Truth unknown</div>;
+      return <div class="block has-text-danger">Provider doesn't recognize the challenge of the policy. Contact the provider for further information.</div>;
+    case ChallengeFeedbackStatus.Redirect:
     default:
-      return (
-        <div>
-          <pre>{JSON.stringify(feedback)}</pre>
-        </div>
-      );
+      return <div />;
   }
 }
 
@@ -113,6 +110,77 @@ export function ChallengeOverviewScreen(): VNode {
         const tableBody = policy.challenges.map(({ info, uuid }) => {
           const isFree = !info.cost || info.cost.endsWith(":0");
           const method = authMethods[info.type as KnownAuthMethods];
+
+          if (!method) {
+            return <div
+              key={uuid}
+              class="block"
+              style={{ display: "flex", justifyContent: "space-between" }}
+            >
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <span>unknown challenge</span>
+              </div>
+
+            </div>
+          }
+
+          function ChallengeButton({ id, feedback }: { id: string; feedback?: ChallengeFeedback }): VNode {
+            function selectChallenge(): void {
+              if (reducer) reducer.transition("select_challenge", { uuid: id })
+            }
+            if (!feedback) {
+              return <div>
+                <button class="button" onClick={selectChallenge}>
+                  Solve
+                </button>
+              </div>
+            }
+            switch (feedback.state) {
+              case ChallengeFeedbackStatus.ServerFailure:
+              case ChallengeFeedbackStatus.Unsupported:
+              case ChallengeFeedbackStatus.TruthUnknown:
+              case ChallengeFeedbackStatus.RateLimitExceeded: return <div />
+              case ChallengeFeedbackStatus.AuthIban:
+              case ChallengeFeedbackStatus.Payment: return <div>
+                <button class="button" onClick={selectChallenge}>
+                  Pay
+                </button>
+              </div>
+              case ChallengeFeedbackStatus.Redirect: return <div>
+                <button class="button" onClick={selectChallenge}>
+                  Go to {feedback.redirect_url}
+                </button>
+              </div>
+              case ChallengeFeedbackStatus.Solved: return <div>
+                <div class="tag is-success is-large">
+                  Solved
+                </div>
+              </div>
+              default: return <div>
+                <button class="button" onClick={selectChallenge}>
+                  Solve
+                </button>
+              </div>
+
+            }
+            // return <div>
+            //   {feedback.state !== "solved" ? (
+            //     <a
+            //       class="button"
+            //       onClick={() =>
+
+            //       }
+            //     >
+            //       {isFree ? "Solve" : `Pay and Solve`}
+            //     </a>
+            //   ) : null}
+            //   {feedback.state === "solved" ? (
+            //     // <div class="block is-success" > Solved </div>
+            //     <div class="tag is-success is-large">Solved</div>
+
+            //   ) : null}
+            // </div>
+          }
           return (
             <div
               key={uuid}
@@ -131,21 +199,9 @@ export function ChallengeOverviewScreen(): VNode {
                 </div>
                 <OverviewFeedbackDisplay feedback={info.feedback} />
               </div>
-              <div>
-                {method && info.feedback?.state !== "solved" ? (
-                  <a
-                    class="button"
-                    onClick={() =>
-                      reducer.transition("select_challenge", { uuid })
-                    }
-                  >
-                    {isFree ? "Solve" : `Pay and Solve`}
-                  </a>
-                ) : null}
-                {info.feedback?.state === "solved" ? (
-                  <a class="button is-success"> Solved </a>
-                ) : null}
-              </div>
+
+              <ChallengeButton id={uuid} feedback={info.feedback} />
+
             </div>
           );
         });
@@ -156,8 +212,8 @@ export function ChallengeOverviewScreen(): VNode {
         const opa = !atLeastThereIsOnePolicySolved
           ? undefined
           : policy.isPolicySolved
-          ? undefined
-          : "0.6";
+            ? undefined
+            : "0.6";
         return (
           <div
             key={policy_index}

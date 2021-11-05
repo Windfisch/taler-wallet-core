@@ -46,10 +46,10 @@ function messageStyle(type: MessageType): string {
 
 export function Notifications({ notifications, removeNotification }: Props): VNode {
   return <div class="block">
-    {notifications.map((n,i) => <article key={i} class={messageStyle(n.type)}>
+    {notifications.map((n, i) => <article key={i} class={messageStyle(n.type)}>
       <div class="message-header">
         <p>{n.message}</p>
-        <button class="delete" onClick={() => removeNotification && removeNotification(n)} />
+        {removeNotification && <button class="delete" onClick={() => removeNotification && removeNotification(n)} />}
       </div>
       {n.description && <div class="message-body">
         {n.description}

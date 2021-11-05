@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 /*
  This file is part of GNU Taler
  (C) 2021 Taler Systems S.A.
@@ -20,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { RecoveryStates, ReducerState } from "anastasis-core";
+import { ChallengeFeedbackStatus, RecoveryStates, ReducerState } from "anastasis-core";
 import { createExample, reducerStatesExample } from "../../utils";
 import { ChallengeOverviewScreen as TestedComponent } from "./ChallengeOverviewScreen";
 
@@ -176,16 +175,15 @@ export const OnePolicyWithAllTheChallengesInDifferentState = createExample(
     recovery_information: {
       policies: [
         [
-          { uuid: "1" },
-          { uuid: "2" },
-          { uuid: "3" },
-          { uuid: "4" },
-          { uuid: "5" },
-          { uuid: "6" },
-          { uuid: "7" },
-          { uuid: "8" },
-          { uuid: "9" },
-          { uuid: "10" },
+          { uuid: "uuid-1" },
+          { uuid: "uuid-2" },
+          { uuid: "uuid-3" },
+          { uuid: "uuid-4" },
+          { uuid: "uuid-5" },
+          { uuid: "uuid-6" },
+          { uuid: "uuid-7" },
+          { uuid: "uuid-8" },
+          { uuid: "uuid-9" },
         ],
       ],
       challenges: [
@@ -193,20 +191,96 @@ export const OnePolicyWithAllTheChallengesInDifferentState = createExample(
           cost: "USD:1",
           instructions: 'in state "solved"',
           type: "question",
-          uuid: "1",
+          uuid: "uuid-1",
         },
         {
           cost: "USD:1",
           instructions: 'in state "message"',
           type: "question",
-          uuid: "2",
+          uuid: "uuid-2",
+        },
+        {
+          cost: "USD:1",
+          instructions: 'in state "auth iban"',
+          type: "question",
+          uuid: "uuid-3",
+        },
+        {
+          cost: "USD:1",
+          instructions: 'in state "payment "',
+          type: "question",
+          uuid: "uuid-4",
+        },
+        {
+          cost: "USD:1",
+          instructions: 'in state "rate limit"',
+          type: "question",
+          uuid: "uuid-5",
+        },
+        {
+          cost: "USD:1",
+          instructions: 'in state "redirect"',
+          type: "question",
+          uuid: "uuid-6",
+        },
+        {
+          cost: "USD:1",
+          instructions: 'in state "server failure"',
+          type: "question",
+          uuid: "uuid-7",
+        },
+        {
+          cost: "USD:1",
+          instructions: 'in state "truth unknown"',
+          type: "question",
+          uuid: "uuid-8",
+        },
+        {
+          cost: "USD:1",
+          instructions: 'in state "unsupported"',
+          type: "question",
+          uuid: "uuid-9",
         },
       ],
     },
     challenge_feedback: {
-      1: { state: "solved" },
-      2: { state: "message", message: "Security question was not solved correctly" },
-      // FIXME: add missing feedback states here!
+      "uuid-1": { state: ChallengeFeedbackStatus.Solved.toString() },
+      "uuid-2": {
+        state: ChallengeFeedbackStatus.Message.toString(),
+        message: 'Challenge should be solved'
+      },
+      "uuid-3": {
+        state: ChallengeFeedbackStatus.AuthIban.toString(),
+        challenge_amount: "EUR:1",
+        credit_iban: "DE12345789000",
+        business_name: "Data Loss Incorporated",
+        wire_transfer_subject: "Anastasis 987654321"
+      },
+      "uuid-4": {
+        state: ChallengeFeedbackStatus.Payment.toString(),
+        taler_pay_uri: "taler://pay/...",
+        provider: "https://localhost:8080/",
+        payment_secret: "3P4561HAMHRRYEYD6CM6J7TS5VTD5SR2K2EXJDZEFSX92XKHR4KG"
+      },
+      "uuid-5": {
+        state: ChallengeFeedbackStatus.RateLimitExceeded.toString(),
+        // "error_code": 8121
+      },
+      "uuid-6": {
+        state: ChallengeFeedbackStatus.Redirect.toString(),
+        redirect_url: "https://videoconf.example.com/",
+        http_status: 303
+      },
+      "uuid-7": {
+        state: ChallengeFeedbackStatus.ServerFailure.toString(),
+        http_status: 500,
+        error_response: "some error message or error object",
+      },
+      "uuid-8": {
+        state: ChallengeFeedbackStatus.TruthUnknown.toString(),
+        // "error_code": 8108
+      },
+      "uuid-9": { state: ChallengeFeedbackStatus.Unsupported.toString() },
     },
   } as ReducerState,
 );

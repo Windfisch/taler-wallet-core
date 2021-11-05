@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useAnastasisContext } from "../../context/anastasis";

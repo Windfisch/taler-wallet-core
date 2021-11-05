@@ -104,7 +104,7 @@ function ChooseAnotherProviderScreen({ providers, selected, onChange }: { select
 
 function SelectOtherVersionProviderScreen({ providers, provider, version, onConfirm, onCancel }: { onCancel: () => void; provider: string; version: number; providers: string[]; onConfirm: (prov: string, v: number) => Promise<void>; }): VNode {
   const [otherProvider, setOtherProvider] = useState<string>(provider);
-  const [otherVersion, setOtherVersion] = useState(`${version}`);
+  const [otherVersion, setOtherVersion] = useState(version > 0 ? String(version) : "");
 
   return (
     <AnastasisClientFrame hideNav title="Recovery: Select secret">

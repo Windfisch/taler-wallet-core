@@ -8,31 +8,67 @@ import {
 } from "../../../../anastasis-core/lib";
 import { AsyncButton } from "../../components/AsyncButton";
 import { TextInput } from "../../components/fields/TextInput";
+import { Notifications } from "../../components/Notifications";
 import { useAnastasisContext } from "../../context/anastasis";
 
-function SolveOverviewFeedbackDisplay(props: { feedback?: ChallengeFeedback }) {
+function SolveOverviewFeedbackDisplay(props: { feedback?: ChallengeFeedback }): VNode {
   const { feedback } = props;
   if (!feedback) {
-    return null;
+    return <div />;
   }
   switch (feedback.state) {
     case ChallengeFeedbackStatus.Message:
-      return (
-        <div>
-          <p>{feedback.message}</p>
-        </div>
-      );
-    case ChallengeFeedbackStatus.Pending:
+      return (<Notifications notifications={[{
+        type: "INFO",
+        message: `Message from provider`,
+        description: feedback.message
+      }]} />);
+    case ChallengeFeedbackStatus.Payment:
+      return <Notifications notifications={[{
+        type: "INFO",
+        message: `Message from provider`,
+        description: <span>
+          To pay you can <a href={feedback.taler_pay_uri}>click here</a>
+        </span>
+      }]} />
     case ChallengeFeedbackStatus.AuthIban:
-      return null;
+      return <Notifications notifications={[{
+        type: "INFO",
+        message: `Message from provider`,
+        description: `Need to send a wire transfer to "${feedback.business_name}"`
+      }]} />;
+    case ChallengeFeedbackStatus.ServerFailure:
+      return (<Notifications notifications={[{
+        type: "ERROR",
+        message: `Server error: Code ${feedback.http_status}`,
+        description: feedback.error_response
+      }]} />);
     case ChallengeFeedbackStatus.RateLimitExceeded:
-      return <div>Rate limit exceeded.</div>;
+      return (<Notifications notifications={[{
+        type: "ERROR",
+        message: `Message from provider`,
+        description: "There were to many failed attempts."
+      }]} />);
     case ChallengeFeedbackStatus.Redirect:
-      return <div>Redirect (FIXME: not supported)</div>;
+      return (<Notifications notifications={[{
+        type: "INFO",
+        message: `Message from provider`,
+        description: <span>
+          Please visit this link: <a>{feedback.redirect_url}</a>
+        </span>
+      }]} />);
     case ChallengeFeedbackStatus.Unsupported:
-      return <div>Challenge not supported by client.</div>;
+      return (<Notifications notifications={[{
+        type: "ERROR",
+        message: `This client doesn't support solving this type of challenge`,
+        description: `Use another version or contact the provider. Type of challenge "${feedback.unsupported_method}"`
+      }]} />);
     case ChallengeFeedbackStatus.TruthUnknown:
-      return <div>Truth unknown</div>;
+      return (<Notifications notifications={[{
+        type: "ERROR",
+        message: `Provider doesn't recognize the type of challenge`,
+        description: "Contact the provider for further information"
+      }]} />);
     default:
       return (
         <div>
@@ -79,8 +115,8 @@ export function SolveScreen(): VNode {
       <AnastasisClientFrame hideNav title="Recovery problem">
         <div>invalid state</div>
         <div style={{ marginTop: '2em', display: 'flex', justifyContent: 'space-between' }}>
-        <button class="button" onClick={() => reducer.back()}>Back</button>
-      </div>
+          <button class="button" onClick={() => reducer.back()}>Back</button>
+        </div>
       </AnastasisClientFrame>
     );
   }
@@ -114,17 +150,23 @@ export function SolveScreen(): VNode {
     reducer?.back();
   }
 
+  const feedback = challengeFeedback[selectedUuid]
+  const shouldHideConfirm = feedback?.state === ChallengeFeedbackStatus.RateLimitExceeded
+    || feedback?.state === ChallengeFeedbackStatus.Redirect
+    || feedback?.state === ChallengeFeedbackStatus.Unsupported
+    || feedback?.state === ChallengeFeedbackStatus.TruthUnknown
+
   return (
     <AnastasisClientFrame hideNav title="Recovery: Solve challenge">
       <SolveOverviewFeedbackDisplay
-        feedback={challengeFeedback[selectedUuid]}
+        feedback={feedback}
       />
       <SolveDialog
         id={selectedUuid}
         answer={answer}
         setAnswer={setAnswer}
         challenge={selectedChallenge}
-        feedback={challengeFeedback[selectedUuid]}
+        feedback={feedback}
       />
 
       <div
@@ -137,9 +179,9 @@ export function SolveScreen(): VNode {
         <button class="button" onClick={onCancel}>
           Cancel
         </button>
-        <AsyncButton class="button is-info" onClick={onNext}>
+        {!shouldHideConfirm && <AsyncButton class="button is-info" onClick={onNext}>
           Confirm
-        </AsyncButton>
+        </AsyncButton>}
       </div>
     </AnastasisClientFrame>
   );
@@ -160,6 +202,7 @@ function SolveSmsEntry({
 }: SolveEntryProps): VNode {
   return (
     <Fragment>
+
       <p>
         An sms has been sent to "<b>{challenge.instructions}</b>". Type the code
         below
