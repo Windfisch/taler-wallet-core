@@ -137,7 +137,7 @@ export function SolveScreen(): VNode {
         <button class="button" onClick={onCancel}>
           Cancel
         </button>
-        <AsyncButton onClick={onNext} disabled={false}>
+        <AsyncButton class="button is-info" onClick={onNext}>
           Confirm
         </AsyncButton>
       </div>

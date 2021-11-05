@@ -41,8 +41,8 @@ export function AsyncButton({ onClick, disabled, children, ...rest }: Props): VN
     return <button class="button">Loading...</button>;
   }
 
-  return <span {...rest}>
-    <button class="button is-info" onClick={request} disabled={disabled}>
+  return <span data-tooltip={rest['data-tooltip']} style={{marginLeft: 5}}>
+    <button {...rest} onClick={request} disabled={disabled}>
       {children}
     </button>
   </span>;

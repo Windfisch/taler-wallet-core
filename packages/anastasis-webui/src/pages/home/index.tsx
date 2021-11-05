@@ -120,7 +120,7 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
           {!props.hideNav ? (
             <div style={{ marginTop: '2em', display: 'flex', justifyContent: 'space-between' }}>
               <button class="button" onClick={() => reducer.back()}>Back</button>
-              <AsyncButton data-tooltip={props.hideNext} onClick={next} disabled={props.hideNext !== undefined}>Next</AsyncButton>
+              <AsyncButton class="button is-info" data-tooltip={props.hideNext} onClick={next} disabled={props.hideNext !== undefined}>Next</AsyncButton>
             </div>
           ) : null}
         </section>
@@ -140,7 +140,7 @@ const AnastasisClient: FunctionalComponent = () => {
   );
 };
 
-const AnastasisClientImpl: FunctionalComponent = () => {
+function AnastasisClientImpl(): VNode {
   const reducer = useAnastasisContext()
   if (!reducer) {
     return <p>Fatal: Reducer must be in context.</p>;
@@ -228,7 +228,7 @@ const AnastasisClientImpl: FunctionalComponent = () => {
       </div>
     </AnastasisClientFrame>
   );
-};
+}
 
 /**
  * Show a dismissible error banner if there is a current error.
