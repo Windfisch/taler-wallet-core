@@ -930,6 +930,20 @@ async function requestTruth(
     };
   }
 
+  if (resp.status === HttpStatusCode.Accepted) {
+    const body = await resp.json();
+    logger.info(`got body ${j2s(body)}`);
+    if (body.method === "iban") {
+      // FIXME:
+    } else {
+      return {
+        code: TalerErrorCode.ANASTASIS_TRUTH_CHALLENGE_FAILED,
+        hint: "unknown external authentication method",
+        http_status: resp.status,
+      } as ReducerStateError;
+    }
+  }
+
   return {
     code: TalerErrorCode.ANASTASIS_TRUTH_CHALLENGE_FAILED,
     hint: "got unexpected /truth/ response status",
