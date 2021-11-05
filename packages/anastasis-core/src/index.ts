@@ -16,6 +16,7 @@ import {
   HttpStatusCode,
   j2s,
   Logger,
+  parsePayUri,
   stringToBytes,
   TalerErrorCode,
   TalerSignaturePurpose,
@@ -328,7 +329,6 @@ async function getTruthValue(
  * Compress the recovery document and add a size header.
  */
 async function compressRecoveryDoc(rd: any): Promise<Uint8Array> {
-  logger.info(`recovery document: ${j2s(rd)}`);
   const docBytes = stringToBytes(JSON.stringify(rd));
   const sizeHeaderBuf = new ArrayBuffer(4);
   const dvbuf = new DataView(sizeHeaderBuf);
@@ -457,6 +457,8 @@ async function uploadSecret(
   const rd = recoveryData.recovery_document;
 
   const truthPayUris: string[] = [];
+  const truthPaySecrets: Record<string, string> = {};
+
   const userIdCache: Record<string, UserIdentifier> = {};
   const getUserIdCaching = async (providerUrl: string) => {
     let userId = userIdCache[providerUrl];
@@ -483,9 +485,8 @@ async function uploadSecret(
       tm.truth_key,
       truthValue,
     );
-    logger.info(`uploading to ${meth.provider}`);
+    logger.info(`uploading truth to ${meth.provider}`);
     const userId = await getUserIdCaching(meth.provider);
-    // FIXME: check that the question salt is okay here, looks weird.
     const encryptedKeyShare = await encryptKeyshare(
       tm.key_share,
       userId,
@@ -500,10 +501,21 @@ async function uploadSecret(
       type: authMethod.type,
       truth_mime: authMethod.mime_type,
     };
-    const resp = await fetch(new URL(`truth/${tm.uuid}`, meth.provider).href, {
+    const reqUrl = new URL(`truth/${tm.uuid}`, meth.provider);
+    const paySecret = (state.truth_upload_payment_secrets ?? {})[meth.provider];
+    if (paySecret) {
+      // FIXME: Get this from the params
+      reqUrl.searchParams.set("timeout_ms", "500");
+    }
+    const resp = await fetch(reqUrl.href, {
       method: "POST",
       headers: {
         "content-type": "application/json",
+        ...(paySecret
+          ? {
+              "Anastasis-Payment-Identifier": paySecret,
+            }
+          : {}),
       },
       body: JSON.stringify(tur),
     });
@@ -520,6 +532,14 @@ async function uploadSecret(
         };
       }
       truthPayUris.push(talerPayUri);
+      const parsedUri = parsePayUri(talerPayUri);
+      if (!parsedUri) {
+        return {
+          code: TalerErrorCode.ANASTASIS_REDUCER_BACKEND_FAILURE,
+          hint: `payment requested, but no taler://pay URI given`,
+        };
+      }
+      truthPaySecrets[meth.provider] = parsedUri.orderId;
       continue;
     }
     return {
@@ -532,6 +552,7 @@ async function uploadSecret(
     return {
       ...state,
       backup_state: BackupStates.TruthsPaying,
+      truth_upload_payment_secrets: truthPaySecrets,
       payments: truthPayUris,
     };
   }
@@ -539,6 +560,8 @@ async function uploadSecret(
   const successDetails: SuccessDetails = {};
 
   const policyPayUris: string[] = [];
+  const policyPayUriMap: Record<string, string> = {};
+  //const policyPaySecrets: Record<string, string> = {};
 
   for (const prov of state.policy_providers!) {
     const userId = await getUserIdCaching(prov.provider_url);
@@ -553,17 +576,33 @@ async function uploadSecret(
       .put(bodyHash)
       .build();
     const sig = eddsaSign(sigPS, decodeCrock(acctKeypair.priv));
-    const resp = await fetch(
-      new URL(`policy/${acctKeypair.pub}`, prov.provider_url).href,
-      {
-        method: "POST",
-        headers: {
-          "Anastasis-Policy-Signature": encodeCrock(sig),
-          "If-None-Match": encodeCrock(bodyHash),
-        },
-        body: decodeCrock(encRecoveryDoc),
+    const talerPayUri = state.policy_payment_requests?.find(
+      (x) => x.provider === prov.provider_url,
+    )?.payto;
+    let paySecret: string | undefined;
+    if (talerPayUri) {
+      paySecret = parsePayUri(talerPayUri)!.orderId;
+    }
+    const reqUrl = new URL(`policy/${acctKeypair.pub}`, prov.provider_url);
+    if (paySecret) {
+      // FIXME: Get this from the params
+      reqUrl.searchParams.set("timeout_ms", "500");
+    }
+    logger.info(`uploading policy to ${prov.provider_url}`);
+    const resp = await fetch(reqUrl.href, {
+      method: "POST",
+      headers: {
+        "Anastasis-Policy-Signature": encodeCrock(sig),
+        "If-None-Match": encodeCrock(bodyHash),
+        ...(paySecret
+          ? {
+              "Anastasis-Payment-Identifier": paySecret,
+            }
+          : {}),
       },
-    );
+      body: decodeCrock(encRecoveryDoc),
+    });
+    logger.info(`got response for policy upload (http status ${resp.status})`);
     if (resp.status === HttpStatusCode.NoContent) {
       let policyVersion = 0;
       let policyExpiration: Timestamp = { t_ms: 0 };
@@ -592,6 +631,14 @@ async function uploadSecret(
         };
       }
       policyPayUris.push(talerPayUri);
+      const parsedUri = parsePayUri(talerPayUri);
+      if (!parsedUri) {
+        return {
+          code: TalerErrorCode.ANASTASIS_REDUCER_BACKEND_FAILURE,
+          hint: `payment requested, but no taler://pay URI given`,
+        };
+      }
+      policyPayUriMap[prov.provider_url] = talerPayUri;
       continue;
     }
     return {
@@ -605,8 +652,16 @@ async function uploadSecret(
       ...state,
       backup_state: BackupStates.PoliciesPaying,
       payments: policyPayUris,
+      policy_payment_requests: Object.keys(policyPayUriMap).map((x) => {
+        return {
+          payto: policyPayUriMap[x],
+          provider: x,
+        };
+      }),
     };
   }
+
+  logger.info("backup finished");
 
   return {
     ...state,
@@ -766,6 +821,7 @@ async function requestTruth(
   const url = new URL(`/truth/${truth.uuid}`, truth.url);
 
   if (solveRequest) {
+    logger.info(`handling solve request ${j2s(solveRequest)}`);
     let respHash: string;
     switch (truth.escrow_type) {
       case ChallengeType.Question: {

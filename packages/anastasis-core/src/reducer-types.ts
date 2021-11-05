@@ -87,10 +87,19 @@ export interface ReducerStateBackup {
    * Currently requested payments.
    *
    * List of taler://pay URIs.
+   *
+   * FIXME: There should be more information in this,
+   * including the provider and amount.
    */
   payments?: string[];
 
+  /**
+   * FIXME: Why is this not a map from provider to payto?
+   */
   policy_payment_requests?: {
+    /**
+     * FIXME: This is not a payto URI, right?!
+     */
     payto: string;
     provider: string;
   }[];
@@ -100,6 +109,10 @@ export interface ReducerStateBackup {
   expiration?: Timestamp;
 
   upload_fees?: { fee: AmountString }[];
+
+  // FIXME: The payment secrets and pay URIs should
+  // probably be consolidated into a single field.
+  truth_upload_payment_secrets?: Record<string, string>;
 }
 
 export interface AuthMethod {

@@ -11,8 +11,9 @@ import {
   stringToBytes,
   secretbox_open,
   hash,
+  Logger,
+  j2s,
 } from "@gnu-taler/taler-util";
-import { gzipSync } from "fflate";
 import { argon2id } from "hash-wasm";
 
 export type Flavor<T, FlavorT extends string> = T & {
