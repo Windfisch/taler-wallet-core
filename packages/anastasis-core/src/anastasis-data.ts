@@ -1,6 +1,7 @@
 // This file is auto-generated, do not modify.
 // Generated from v0.2.0-4-g61ea83c on Tue, 05 Oct 2021 10:40:32 +0200
 // To re-generate, run contrib/gen-ts.sh from the main anastasis code base.
+// XXX: Modified for demo, allowing demo providers for EUR
 
 export const anastasisData = {
   providersList: {
@@ -14,6 +15,14 @@ export const anastasisData = {
       {
         url: "https://kudos.demo.anastasis.lu/",
         currency: "KUDOS",
+      },
+      {
+        url: "https://anastasis.demo.taler.net/",
+        currency: "EUR",
+      },
+      {
+        url: "https://kudos.demo.anastasis.lu/",
+        currency: "EUR",
       },
       {
         url: "http://localhost:8086/",

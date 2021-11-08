@@ -84,9 +84,16 @@ function assignProviders(
   for (const provSel of providerSelections) {
     // First, check if selection is even possible with the methods offered
     let possible = true;
-    for (const methIndex in provSel) {
-      const provIndex = provSel[methIndex];
+    for (const methSelIndex in provSel) {
+      const provIndex = provSel[methSelIndex];
+      if (typeof provIndex !== "number") {
+        throw Error("invariant failed");
+      }
+      const methIndex = methodSelection[methSelIndex];
       const meth = methods[methIndex];
+      if (!meth) {
+        throw Error("invariant failed");
+      }
       const prov = providers[provIndex];
       if (!prov.methodCost[meth.type]) {
         possible = false;
@@ -96,7 +103,6 @@ function assignProviders(
     if (!possible) {
       continue;
     }
-
     // Evaluate diversity, always prefer policies
     // that increase diversity.
     const providerSet = new Set<string>();
@@ -163,8 +169,17 @@ function assignProviders(
 
 /**
  * A provider selection maps a method selection index to a provider index.
+ *
+ * I.e. "PSEL[i] = x" means that provider with index "x" should be used
+ * for method with index "MSEL[i]"
  */
 type ProviderSelection = number[];
+
+/**
+ * A method selection "MSEL[j] = y" means that policy method j
+ * should use method y.
+ */
+type MethodSelection = number[];
 
 /**
  * Compute provider mappings.
@@ -184,7 +199,7 @@ function enumerateProviderMappings(
     }
     for (let j = start; j < m; j++) {
       a[i] = j;
-      sel(i + 1, j);
+      sel(i + 1, 0);
       if (limit && selections.length >= limit) {
         break;
       }
@@ -198,8 +213,6 @@ interface PolicySelectionResult {
   policies: Policy[];
   policy_providers: PolicyProvider[];
 }
-
-type MethodSelection = number[];
 
 /**
  * Compute method selections.
