@@ -25,10 +25,10 @@ import { AddingProviderScreen as TestedComponent } from './AddingProviderScreen'
 
 
 export default {
-  title: 'Pages/backup/AuthorizationMethod/AddingProvider',
+  title: 'Pages/ManageProvider',
   component: TestedComponent,
   args: {
-    order: 4,
+    order: 1,
   },
   argTypes: {
     onUpdate: { action: 'onUpdate' },
