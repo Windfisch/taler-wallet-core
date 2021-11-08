@@ -1,13 +1,12 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import { UserAttributeSpec, validators } from "anastasis-core";
-import { Fragment, h, VNode } from "preact";
+import { isAfter, parse } from "date-fns";
+import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { useAnastasisContext } from "../../context/anastasis";
-import { AnastasisClientFrame, withProcessLabel } from "./index";
-import { TextInput } from "../../components/fields/TextInput";
 import { DateInput } from "../../components/fields/DateInput";
 import { NumberInput } from "../../components/fields/NumberInput";
-import { isAfter, parse } from "date-fns";
+import { TextInput } from "../../components/fields/TextInput";
+import { useAnastasisContext } from "../../context/anastasis";
+import { AnastasisClientFrame, withProcessLabel } from "./index";
 
 export function AttributeEntryScreen(): VNode {
   const reducer = useAnastasisContext()
@@ -48,10 +47,10 @@ export function AttributeEntryScreen(): VNode {
       })}
     >
       <div class="columns" style={{ maxWidth: 'unset' }}>
-        <div class="column is-half">
+        <div class="column">
           {fieldList}
         </div>
-        <div class="column is-is-half" >
+        <div class="column" >
           <p>This personal information will help to locate your secret.</p>
           <h1 class="title">This stays private</h1>
           <p>The information you have entered here:</p>

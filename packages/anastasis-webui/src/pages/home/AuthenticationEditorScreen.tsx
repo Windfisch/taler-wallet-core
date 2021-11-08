@@ -156,7 +156,7 @@ export function AuthenticationEditorScreen(): VNode {
       onNext={handleNext}
     >
       <div class="columns">
-        <div class="column is-half">
+        <div class="column">
           <div>
             {getKeys(authMethods).map((method) => (
               <MethodButton key={method} method={method} />
@@ -195,7 +195,7 @@ export function AuthenticationEditorScreen(): VNode {
             </ConfirmModal>
           )}
         </div>
-        <div class="column is-half">
+        <div class="column">
           <p class="block">
             When recovering your wallet, you will be asked to verify your
             identity via the methods you configure here. The list of

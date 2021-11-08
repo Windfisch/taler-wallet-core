@@ -1,4 +1,4 @@
-import { Fragment, h, VNode } from "preact";
+import { h, VNode } from "preact";
 import { AnastasisClientFrame } from ".";
 import {
   ChallengeFeedback,
@@ -6,7 +6,7 @@ import {
 } from "../../../../anastasis-core/lib";
 import { Notifications } from "../../components/Notifications";
 import { useAnastasisContext } from "../../context/anastasis";
-import { authMethods, AuthMethodSolveProps, KnownAuthMethods } from "./authMethod";
+import { authMethods, KnownAuthMethods } from "./authMethod";
 
 export function SolveOverviewFeedbackDisplay(props: { feedback?: ChallengeFeedback }): VNode {
   const { feedback } = props;

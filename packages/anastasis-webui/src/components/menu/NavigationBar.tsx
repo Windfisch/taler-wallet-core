@@ -51,7 +51,7 @@ export function NavigationBar({ onMobileMenu, title }: Props): VNode {
         >
           Report a bug
         </a>
-        <a
+        {/* <a
           role="button"
           class="navbar-burger"
           aria-label="menu"
@@ -64,7 +64,7 @@ export function NavigationBar({ onMobileMenu, title }: Props): VNode {
           <span aria-hidden="true" />
           <span aria-hidden="true" />
           <span aria-hidden="true" />
-        </a>
+        </a> */}
       </div>
 
       <div class="navbar-menu ">
