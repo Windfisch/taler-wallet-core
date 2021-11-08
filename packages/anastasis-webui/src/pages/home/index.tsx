@@ -1,23 +1,22 @@
+import { BackupStates, RecoveryStates } from "anastasis-core";
 import {
-  BackupStates,
-  RecoveryStates
-} from "anastasis-core";
-import {
-  ComponentChildren, Fragment,
+  ComponentChildren,
+  Fragment,
   FunctionalComponent,
   h,
-  VNode
+  VNode,
 } from "preact";
-import {
-  useErrorBoundary
-} from "preact/hooks";
+import { useErrorBoundary } from "preact/hooks";
 import { AsyncButton } from "../../components/AsyncButton";
 import { Menu } from "../../components/menu";
 import { Notifications } from "../../components/Notifications";
-import { AnastasisProvider, useAnastasisContext } from "../../context/anastasis";
+import {
+  AnastasisProvider,
+  useAnastasisContext,
+} from "../../context/anastasis";
 import {
   AnastasisReducerApi,
-  useAnastasisReducer
+  useAnastasisReducer,
 } from "../../hooks/use-anastasis-reducer";
 import { AttributeEntryScreen } from "./AttributeEntryScreen";
 import { AuthenticationEditorScreen } from "./AuthenticationEditorScreen";
@@ -50,6 +49,10 @@ export function withProcessLabel(
 
 interface AnastasisClientFrameProps {
   onNext?(): void;
+  /**
+   * Override for the "back" functionality.
+   */
+  onBack?(): Promise<void>;
   title: string;
   children: ComponentChildren;
   /**
@@ -116,9 +119,27 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
         <section class="section is-main-section">
           {props.children}
           {!props.hideNav ? (
-            <div style={{ marginTop: '2em', display: 'flex', justifyContent: 'space-between' }}>
-              <button class="button" onClick={() => reducer.back()}>Back</button>
-              <AsyncButton class="button is-info" data-tooltip={props.hideNext} onClick={next} disabled={props.hideNext !== undefined}>Next</AsyncButton>
+            <div
+              style={{
+                marginTop: "2em",
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+            >
+              <button
+                class="button"
+                onClick={() => (props.onBack ?? reducer.back)()}
+              >
+                Back
+              </button>
+              <AsyncButton
+                class="button is-info"
+                data-tooltip={props.hideNext}
+                onClick={next}
+                disabled={props.hideNext !== undefined}
+              >
+                Next
+              </AsyncButton>
             </div>
           ) : null}
         </section>
@@ -139,7 +160,7 @@ const AnastasisClient: FunctionalComponent = () => {
 };
 
 function AnastasisClientImpl(): VNode {
-  const reducer = useAnastasisContext()
+  const reducer = useAnastasisContext();
   if (!reducer) {
     return <p>Fatal: Reducer must be in context.</p>;
   }
@@ -155,27 +176,19 @@ function AnastasisClientImpl(): VNode {
     state.backup_state === BackupStates.CountrySelecting ||
     state.recovery_state === RecoveryStates.CountrySelecting
   ) {
-    return (
-      <ContinentSelectionScreen />
-    );
+    return <ContinentSelectionScreen />;
   }
   if (
     state.backup_state === BackupStates.UserAttributesCollecting ||
     state.recovery_state === RecoveryStates.UserAttributesCollecting
   ) {
-    return (
-      <AttributeEntryScreen />
-    );
+    return <AttributeEntryScreen />;
   }
   if (state.backup_state === BackupStates.AuthenticationsEditing) {
-    return (
-      <AuthenticationEditorScreen />
-    );
+    return <AuthenticationEditorScreen />;
   }
   if (state.backup_state === BackupStates.PoliciesReviewing) {
-    return (
-      <ReviewPoliciesScreen />
-    );
+    return <ReviewPoliciesScreen />;
   }
   if (state.backup_state === BackupStates.SecretEditing) {
     return <SecretEditorScreen />;
@@ -194,15 +207,11 @@ function AnastasisClientImpl(): VNode {
   }
 
   if (state.recovery_state === RecoveryStates.SecretSelecting) {
-    return (
-      <SecretSelectionScreen />
-    );
+    return <SecretSelectionScreen />;
   }
 
   if (state.recovery_state === RecoveryStates.ChallengeSelecting) {
-    return (
-      <ChallengeOverviewScreen />
-    );
+    return <ChallengeOverviewScreen />;
   }
 
   if (state.recovery_state === RecoveryStates.ChallengeSolving) {
@@ -210,9 +219,7 @@ function AnastasisClientImpl(): VNode {
   }
 
   if (state.recovery_state === RecoveryStates.RecoveryFinished) {
-    return (
-      <RecoveryFinishedScreen />
-    );
+    return <RecoveryFinishedScreen />;
   }
   if (state.recovery_state === RecoveryStates.ChallengePaying) {
     return <ChallengePayingScreen />;
@@ -222,7 +229,9 @@ function AnastasisClientImpl(): VNode {
     <AnastasisClientFrame hideNav title="Bug">
       <p>Bug: Unknown state.</p>
       <div class="buttons is-right">
-        <button class="button" onClick={() => reducer.reset()}>Reset</button>
+        <button class="button" onClick={() => reducer.reset()}>
+          Reset
+        </button>
       </div>
     </AnastasisClientFrame>
   );
@@ -234,11 +243,17 @@ function AnastasisClientImpl(): VNode {
 function ErrorBanner(): VNode | null {
   const reducer = useAnastasisContext();
   if (!reducer || !reducer.currentError) return null;
-  return (<Notifications removeNotification={reducer.dismissError} notifications={[{
-    type: "ERROR",
-    message: `Error code: ${reducer.currentError.code}`,
-    description: reducer.currentError.hint
-  }]} />
+  return (
+    <Notifications
+      removeNotification={reducer.dismissError}
+      notifications={[
+        {
+          type: "ERROR",
+          message: `Error code: ${reducer.currentError.code}`,
+          description: reducer.currentError.hint,
+        },
+      ]}
+    />
   );
 }
 
