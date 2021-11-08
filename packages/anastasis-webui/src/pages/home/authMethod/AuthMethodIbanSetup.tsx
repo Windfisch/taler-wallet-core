@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import {
   canonicalJson,
   encodeCrock,
@@ -6,8 +5,8 @@ import {
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
+import { AuthMethodSetupProps } from ".";
 import { TextInput } from "../../../components/fields/TextInput";
-import { AuthMethodSetupProps } from "../AuthenticationEditorScreen";
 import { AnastasisClientFrame } from "../index";
 
 export function AuthMethodIbanSetup({ addAuthMethod, cancel, configured }: AuthMethodSetupProps): VNode {

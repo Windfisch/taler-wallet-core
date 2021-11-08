@@ -26,7 +26,7 @@ import { RecoveryFinishedScreen as TestedComponent } from './RecoveryFinishedScr
 
 
 export default {
-  title: 'Pages/recovery/FinishedScreen',
+  title: 'Pages/recovery/Finished',
   args: {
     order: 7,
   },

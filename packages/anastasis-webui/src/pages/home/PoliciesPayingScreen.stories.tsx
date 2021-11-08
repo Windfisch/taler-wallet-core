@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 /*
  This file is part of GNU Taler
  (C) 2021 Taler Systems S.A.
@@ -26,10 +25,10 @@ import { PoliciesPayingScreen as TestedComponent } from './PoliciesPayingScreen'
 
 
 export default {
-  title: 'Pages/backup/PoliciesPayingScreen',
+  title: 'Pages/backup/__PoliciesPaying',
   component: TestedComponent,
   args: {
-    order: 8,
+    order: 9,
   },
   argTypes: {
     onUpdate: { action: 'onUpdate' },

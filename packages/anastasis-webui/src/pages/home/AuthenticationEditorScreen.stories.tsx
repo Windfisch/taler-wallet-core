@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 /*
  This file is part of GNU Taler
  (C) 2021 Taler Systems S.A.
@@ -26,10 +25,10 @@ import { AuthenticationEditorScreen as TestedComponent } from './AuthenticationE
 
 
 export default {
-  title: 'Pages/backup/AuthenticationEditorScreen',
+  title: 'Pages/backup/AuthorizationMethod',
   component: TestedComponent,
   args: {
-    order: 5,
+    order: 4,
   },
   argTypes: {
     onUpdate: { action: 'onUpdate' },
@@ -37,7 +36,7 @@ export default {
   },
 };
 
-export const Example = createExample(TestedComponent, reducerStatesExample.authEditing);
+export const InitialState = createExample(TestedComponent, reducerStatesExample.authEditing);
 export const OneAuthMethodConfigured = createExample(TestedComponent, {
   ...reducerStatesExample.authEditing,
   authentication_methods: [{
@@ -86,8 +85,3 @@ export const NoAuthMethodProvided = createExample(TestedComponent, {
   authentication_providers: {},
   authentication_methods: []
 } as ReducerState);
-
-  // type: string;
-  // instructions: string;
-  // challenge: string;
-  // mime_type?: string;

@@ -24,7 +24,7 @@ import { createExample, reducerStatesExample } from "../../utils";
 import { ChallengeOverviewScreen as TestedComponent } from "./ChallengeOverviewScreen";
 
 export default {
-  title: "Pages/recovery/ChallengeOverviewScreen",
+  title: "Pages/recovery/SolveChallenge/Overview",
   component: TestedComponent,
   args: {
     order: 5,

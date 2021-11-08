@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import {
   encodeCrock,
   stringToBytes
@@ -6,7 +5,7 @@ import {
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { ImageInput } from "../../../components/fields/ImageInput";
-import { AuthMethodSetupProps } from "../AuthenticationEditorScreen";
+import { AuthMethodSetupProps } from "./index";
 import { AnastasisClientFrame } from "../index";
 
 export function AuthMethodVideoSetup({cancel, addAuthMethod, configured}: AuthMethodSetupProps): VNode {

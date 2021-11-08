@@ -25,7 +25,7 @@ import { SolveScreen as TestedComponent } from './SolveScreen';
 
 
 export default {
-  title: 'Pages/recovery/SolveScreen',
+  title: 'Pages/recovery/SolveChallenge/Solve',
   component: TestedComponent,
   args: {
     order: 6,

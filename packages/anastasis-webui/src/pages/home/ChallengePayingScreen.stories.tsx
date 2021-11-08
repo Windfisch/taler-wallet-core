@@ -24,7 +24,7 @@ import { ChallengePayingScreen as TestedComponent } from './ChallengePayingScree
 
 
 export default {
-  title: 'Pages/recovery/__ChallengePayingScreen',
+  title: 'Pages/recovery/__ChallengePaying',
   component: TestedComponent,
   args: {
     order: 10,

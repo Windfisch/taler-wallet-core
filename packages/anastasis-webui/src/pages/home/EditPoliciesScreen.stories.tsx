@@ -26,7 +26,7 @@ import { EditPoliciesScreen as TestedComponent } from './EditPoliciesScreen';
 
 
 export default {
-  title: 'Pages/backup/ReviewPoliciesScreen/EditPoliciesScreen',
+  title: 'Pages/backup/ReviewPolicies/EditPolicies',
   args: {
     order: 6,
   },

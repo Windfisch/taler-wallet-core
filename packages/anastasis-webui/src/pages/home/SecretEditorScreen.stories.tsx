@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 /*
  This file is part of GNU Taler
  (C) 2021 Taler Systems S.A.
@@ -26,7 +25,7 @@ import { SecretEditorScreen as TestedComponent } from './SecretEditorScreen';
 
 
 export default {
-  title: 'Pages/backup/SecretEditorScreen',
+  title: 'Pages/backup/SecretInput',
   component: TestedComponent,
   args: {
     order: 7,

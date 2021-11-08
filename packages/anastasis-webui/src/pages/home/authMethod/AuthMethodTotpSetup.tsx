@@ -1,11 +1,10 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import {
   encodeCrock,
   stringToBytes
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useMemo, useState } from "preact/hooks";
-import { AuthMethodSetupProps } from "../AuthenticationEditorScreen";
+import { AuthMethodSetupProps } from "./index";
 import { AnastasisClientFrame } from "../index";
 import { TextInput } from "../../../components/fields/TextInput";
 import { QR } from "../../../components/QR";

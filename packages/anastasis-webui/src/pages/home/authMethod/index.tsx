@@ -1,22 +1,44 @@
+import { AuthMethod } from "anastasis-core";
 import { h, VNode } from "preact";
-import { AuthMethodSetupProps } from "../AuthenticationEditorScreen";
-
-import { AuthMethodEmailSetup as EmailScreen } from "./AuthMethodEmailSetup";
-import { AuthMethodIbanSetup as IbanScreen } from "./AuthMethodIbanSetup";
-import { AuthMethodPostSetup as PostalScreen } from "./AuthMethodPostSetup";
-import { AuthMethodQuestionSetup as QuestionScreen } from "./AuthMethodQuestionSetup";
-import { AuthMethodSmsSetup as SmsScreen } from "./AuthMethodSmsSetup";
-import { AuthMethodTotpSetup as TotpScreen } from "./AuthMethodTotpSetup";
-import { AuthMethodVideoSetup as VideScreen } from "./AuthMethodVideoSetup";
 import postalIcon from '../../../assets/icons/auth_method/postal.svg';
 import questionIcon from '../../../assets/icons/auth_method/question.svg';
 import smsIcon from '../../../assets/icons/auth_method/sms.svg';
 import videoIcon from '../../../assets/icons/auth_method/video.svg';
+import { AuthMethodEmailSetup as EmailSetup } from "./AuthMethodEmailSetup";
+import { AuthMethodEmailSolve as EmailSolve } from "./AuthMethodEmailSolve";
+import { AuthMethodIbanSetup as IbanSetup } from "./AuthMethodIbanSetup";
+import { AuthMethodPostSetup as PostalSetup } from "./AuthMethodPostSetup";
+import { AuthMethodQuestionSetup as QuestionSetup } from "./AuthMethodQuestionSetup";
+import { AuthMethodSmsSetup as SmsSetup } from "./AuthMethodSmsSetup";
+import { AuthMethodTotpSetup as TotpSetup } from "./AuthMethodTotpSetup";
+import { AuthMethodVideoSetup as VideoSetup } from "./AuthMethodVideoSetup";
+
+import { AuthMethodIbanSolve as IbanSolve } from "./AuthMethodIbanSolve";
+import { AuthMethodPostSolve as PostalSolve } from "./AuthMethodPostSolve";
+import { AuthMethodQuestionSolve as QuestionSolve } from "./AuthMethodQuestionSolve";
+import { AuthMethodSmsSolve as SmsSolve } from "./AuthMethodSmsSolve";
+import { AuthMethodTotpSolve as TotpSolve } from "./AuthMethodTotpSolve";
+import { AuthMethodVideoSolve as VideoSolve } from "./AuthMethodVideoSolve";
+
+
+export type AuthMethodWithRemove = AuthMethod & { remove: () => void }
+
+export interface AuthMethodSetupProps {
+  method: string;
+  addAuthMethod: (x: any) => void;
+  configured: AuthMethodWithRemove[];
+  cancel: () => void;
+}
+
+export interface AuthMethodSolveProps {
+  id: string;
+}
 
 interface AuthMethodConfiguration {
   icon: VNode;
   label: string;
-  screen: (props: AuthMethodSetupProps) => VNode;
+  setup: (props: AuthMethodSetupProps) => VNode;
+  solve: (props: AuthMethodSolveProps) => VNode;
   skip?: boolean;
 }
 export type KnownAuthMethods = "sms" | "email" | "post" | "question" | "video" | "totp" | "iban";
@@ -29,41 +51,44 @@ export const authMethods: KnowMethodConfig = {
   question: {
     icon: <img src={questionIcon} />,
     label: "Question",
-    screen: QuestionScreen
+    setup: QuestionSetup,
+    solve: QuestionSolve,
   },
   sms: {
     icon: <img src={smsIcon} />,
     label: "SMS",
-    screen: SmsScreen
+    setup: SmsSetup,
+    solve: SmsSolve,
   },
   email: {
     icon: <i class="mdi mdi-email" />,
     label: "Email",
-    screen: EmailScreen
-    
+    setup: EmailSetup,
+    solve: EmailSolve,
   },
   iban: {
     icon: <i class="mdi mdi-bank" />,
     label: "IBAN",
-    screen: IbanScreen
-    
+    setup: IbanSetup,
+    solve: IbanSolve,
   },
   post: {
     icon: <img src={postalIcon} />,
     label: "Physical mail",
-    screen: PostalScreen
-    
+    setup: PostalSetup,
+    solve: PostalSolve,
   },
   totp: {
     icon: <i class="mdi mdi-devices" />,
     label: "TOTP",
-    screen: TotpScreen
-    
+    setup: TotpSetup,
+    solve: TotpSolve,
   },
   video: {
     icon: <img src={videoIcon} />,
     label: "Video",
-    screen: VideScreen,
-    skip: true,  
+    setup: VideoSetup,
+    solve: VideoSolve,
+    skip: true,
   }
 }

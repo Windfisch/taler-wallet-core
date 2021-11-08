@@ -1,8 +1,6 @@
 import {
   BackupStates,
-  RecoveryStates,
-  ReducerStateBackup,
-  ReducerStateRecovery
+  RecoveryStates
 } from "anastasis-core";
 import {
   ComponentChildren, Fragment,

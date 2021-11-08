@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 /*
  This file is part of GNU Taler
  (C) 2021 Taler Systems S.A.
@@ -26,10 +25,10 @@ import { BackupFinishedScreen as TestedComponent } from './BackupFinishedScreen'
 
 
 export default {
-  title: 'Pages/backup/FinishedScreen',
+  title: 'Pages/backup/Finished',
   component: TestedComponent,
   args: {
-    order: 9,
+    order: 8,
   },
   argTypes: {
     onUpdate: { action: 'onUpdate' },

@@ -1,13 +1,12 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import {
   canonicalJson, encodeCrock,
   stringToBytes
 } from "@gnu-taler/taler-util";
-import { Fragment, h, VNode } from "preact";
+import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { AuthMethodSetupProps } from "../AuthenticationEditorScreen";
-import { TextInput } from "../../../components/fields/TextInput";
 import { AnastasisClientFrame } from "..";
+import { TextInput } from "../../../components/fields/TextInput";
+import { AuthMethodSetupProps } from "./index";
 
 export function AuthMethodPostSetup({ addAuthMethod, cancel, configured }: AuthMethodSetupProps): VNode {
   const [fullName, setFullName] = useState("");

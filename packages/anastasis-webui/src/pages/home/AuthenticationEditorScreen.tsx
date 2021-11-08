@@ -1,10 +1,8 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import { AuthMethod } from "anastasis-core";
 import { ComponentChildren, Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { TextInput } from "../../components/fields/TextInput";
 import { useAnastasisContext } from "../../context/anastasis";
-import { authMethods, KnownAuthMethods } from "./authMethod";
+import { authMethods, AuthMethodSetupProps, AuthMethodWithRemove, KnownAuthMethods } from "./authMethod";
 import { AnastasisClientFrame } from "./index";
 
 
@@ -14,7 +12,7 @@ const getKeys = Object.keys as <T extends object>(obj: T) => Array<keyof T>
 export function AuthenticationEditorScreen(): VNode {
   const [noProvidersAck, setNoProvidersAck] = useState(false)
   const [selectedMethod, setSelectedMethod] = useState<KnownAuthMethods | undefined>(undefined);
-  const [addingProvider, setAddingProvider] = useState<string | undefined>(undefined)
+  // const [addingProvider, setAddingProvider] = useState<string | undefined>(undefined)
 
   const reducer = useAnastasisContext()
   if (!reducer) {
@@ -63,7 +61,7 @@ export function AuthenticationEditorScreen(): VNode {
       setSelectedMethod(undefined);
     };
 
-    const AuthSetup = authMethods[selectedMethod].screen ?? AuthMethodNotImplemented;
+    const AuthSetup = authMethods[selectedMethod].setup ?? AuthMethodNotImplemented;
     return (<Fragment>
       <AuthSetup
         cancel={cancel}
@@ -86,10 +84,6 @@ export function AuthenticationEditorScreen(): VNode {
 
     </Fragment>
     );
-  }
-
-  if (addingProvider !== undefined) {
-    return <div />
   }
 
   function MethodButton(props: { method: KnownAuthMethods }): VNode {
@@ -167,14 +161,6 @@ export function AuthenticationEditorScreen(): VNode {
       </div>
     </AnastasisClientFrame>
   );
-}
-
-type AuthMethodWithRemove = AuthMethod & { remove: () => void }
-export interface AuthMethodSetupProps {
-  method: string;
-  addAuthMethod: (x: any) => void;
-  configured: AuthMethodWithRemove[];
-  cancel: () => void;
 }
 
 function AuthMethodNotImplemented(props: AuthMethodSetupProps): VNode {

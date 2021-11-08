@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 /*
  This file is part of GNU Taler
  (C) 2021 Taler Systems S.A.
@@ -26,7 +25,7 @@ import { AddingProviderScreen as TestedComponent } from './AddingProviderScreen'
 
 
 export default {
-  title: 'Pages/backup/AddingProviderScreen',
+  title: 'Pages/backup/AuthorizationMethod/AddingProvider',
   component: TestedComponent,
   args: {
     order: 4,

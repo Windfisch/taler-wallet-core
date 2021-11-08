@@ -1,14 +1,12 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import {
   encodeCrock,
   stringToBytes
 } from "@gnu-taler/taler-util";
-import { Fragment, h, VNode } from "preact";
+import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { AuthMethodSetupProps } from "../AuthenticationEditorScreen";
-import { AnastasisClientFrame } from "../index";
-import { TextInput } from "../../../components/fields/TextInput";
 import { EmailInput } from "../../../components/fields/EmailInput";
+import { AnastasisClientFrame } from "../index";
+import { AuthMethodSetupProps } from "./index";
 
 const EMAIL_PATTERN = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 

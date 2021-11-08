@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 /*
  This file is part of GNU Taler
  (C) 2021 Taler Systems S.A.
@@ -20,12 +19,13 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 
+import { ChallengeFeedbackStatus, ReducerState } from 'anastasis-core';
 import { createExample, reducerStatesExample } from '../../../utils';
 import { authMethods as TestedComponent, KnownAuthMethods } from './index';
 
 
 export default {
-  title: 'Pages/backup/AuthorizationMethod/AuthMethods/Question',
+  title: 'Pages/recovery/SolveChallenge/AuthMethods/video',
   component: TestedComponent,
   args: {
     order: 5,
@@ -36,31 +36,21 @@ export default {
   },
 };
 
-const type: KnownAuthMethods = 'question'
+const type: KnownAuthMethods = 'video'
 
-export const Empty = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
-  configured: []
+export const WithoutFeedback = createExample(TestedComponent[type].solve, {
+  ...reducerStatesExample.challengeSolving,
+  recovery_information: {
+    challenges: [{
+      cost: 'USD:1',
+      instructions: 'does P equals NP?',
+      type: 'question',
+      uuid: 'uuid-1'
+    }],
+    policies: [],
+  },
+  selected_challenge_uuid: 'uuid-1',
+} as ReducerState, {
+  id: 'uuid-1',
 });
 
-export const WithOneExample = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
-  configured: [{
-    challenge: 'qwe',
-    type,
-    instructions: 'Is integer factorization polynomial? (non-quantum computer)',
-    remove: () => null
-  }]
-});
-
-export const WithMoreExamples = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
-  configured: [{
-    challenge: 'qwe',
-    type,
-    instructions: 'Does P equal NP?',
-    remove: () => null
-  },{
-    challenge: 'asd',
-    type,
-    instructions: 'Are continuous groups automatically differential groups?',
-    remove: () => null
-  }]
-});

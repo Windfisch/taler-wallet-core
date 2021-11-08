@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import {
   encodeCrock,
   stringToBytes
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
+import { AuthMethodSetupProps } from ".";
 import { NumberInput } from "../../../components/fields/NumberInput";
-import { AuthMethodSetupProps } from "../AuthenticationEditorScreen";
 import { AnastasisClientFrame } from "../index";
 
 export function AuthMethodSmsSetup({ addAuthMethod, cancel, configured }: AuthMethodSetupProps): VNode {

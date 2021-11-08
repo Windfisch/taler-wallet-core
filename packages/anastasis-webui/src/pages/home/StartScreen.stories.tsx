@@ -24,7 +24,7 @@ import { StartScreen as TestedComponent } from './StartScreen';
 
 
 export default {
-  title: 'Pages/StartScreen',
+  title: 'Pages/Start',
   component: TestedComponent,
   args: {
     order: 1,

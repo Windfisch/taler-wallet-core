@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 /*
  This file is part of GNU Taler
  (C) 2021 Taler Systems S.A.
@@ -25,7 +24,7 @@ import { authMethods as TestedComponent, KnownAuthMethods } from './index';
 
 
 export default {
-  title: 'Pages/backup/authMethods/email',
+  title: 'Pages/backup/AuthorizationMethod/AuthMethods/email',
   component: TestedComponent,
   args: {
     order: 5,
@@ -38,11 +37,11 @@ export default {
 
 const type: KnownAuthMethods = 'email'
 
-export const Empty = createExample(TestedComponent[type].screen, reducerStatesExample.authEditing, {
+export const Empty = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
   configured: []
 });
 
-export const WithOneExample = createExample(TestedComponent[type].screen, reducerStatesExample.authEditing, {
+export const WithOneExample = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
   configured: [{
     challenge: 'qwe',
     type,
@@ -51,7 +50,7 @@ export const WithOneExample = createExample(TestedComponent[type].screen, reduce
   }]
 });
 
-export const WithMoreExamples = createExample(TestedComponent[type].screen, reducerStatesExample.authEditing, {
+export const WithMoreExamples = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
   configured: [{
     challenge: 'qwe',
     type,

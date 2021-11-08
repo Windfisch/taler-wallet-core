@@ -25,7 +25,7 @@ import { TruthsPayingScreen as TestedComponent } from './TruthsPayingScreen';
 
 
 export default {
-  title: 'Pages/backup/__TruthsPayingScreen',
+  title: 'Pages/backup/__TruthsPaying',
   component: TestedComponent,
   args: {
     order: 10,

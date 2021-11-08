@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 /*
  This file is part of GNU Taler
  (C) 2021 Taler Systems S.A.
@@ -26,7 +25,7 @@ import { ReviewPoliciesScreen as TestedComponent } from './ReviewPoliciesScreen'
 
 
 export default {
-  title: 'Pages/backup/ReviewPoliciesScreen',
+  title: 'Pages/backup/ReviewPolicies',
   args: {
     order: 6,
   },

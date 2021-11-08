@@ -25,7 +25,7 @@ import { authMethods as TestedComponent, KnownAuthMethods } from './index';
 
 
 export default {
-  title: 'Pages/backup/authMethods/TOTP',
+  title: 'Pages/backup/AuthorizationMethod/AuthMethods/TOTP',
   component: TestedComponent,
   args: {
     order: 5,
@@ -38,10 +38,10 @@ export default {
 
 const type: KnownAuthMethods = 'totp'
 
-export const Empty = createExample(TestedComponent[type].screen, reducerStatesExample.authEditing, {
+export const Empty = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
   configured: []
 });
-export const WithOneExample = createExample(TestedComponent[type].screen, reducerStatesExample.authEditing, {
+export const WithOneExample = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
   configured: [{
     challenge: 'qwe',
     type,
@@ -49,7 +49,7 @@ export const WithOneExample = createExample(TestedComponent[type].screen, reduce
     remove: () => null
   }]
 });
-export const WithMoreExample = createExample(TestedComponent[type].screen, reducerStatesExample.authEditing, {
+export const WithMoreExample = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
   configured: [{
     challenge: 'qwe',
     type,

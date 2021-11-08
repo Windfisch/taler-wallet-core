@@ -25,7 +25,7 @@ import { SecretSelectionScreen as TestedComponent } from './SecretSelectionScree
 
 
 export default {
-  title: 'Pages/recovery/SecretSelectionScreen',
+  title: 'Pages/recovery/SecretSelection',
   component: TestedComponent,
   args: {
     order: 4,

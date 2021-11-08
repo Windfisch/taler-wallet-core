@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 /*
  This file is part of GNU Taler
  (C) 2021 Taler Systems S.A.
@@ -26,10 +25,10 @@ import { AttributeEntryScreen as TestedComponent } from './AttributeEntryScreen'
 
 
 export default {
-  title: 'Pages/AttributeEntryScreen',
+  title: 'Pages/PersonalInformation',
   component: TestedComponent,
   args: {
-    order: 4,
+    order: 3,
   },
   argTypes: {
     onUpdate: { action: 'onUpdate' },
