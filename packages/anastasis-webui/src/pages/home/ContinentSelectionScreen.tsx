@@ -32,7 +32,7 @@ export function ContinentSelectionScreen(): VNode {
   const theContinent = reducer.currentReducerState.selected_continent || "";
   // const cc = reducer.currentReducerState.selected_country || "";
   const theCountry = countryList.find((c) => c.code === countryCode);
-  const selectCountryAction = () => {
+  const selectCountryAction = async () => {
     //selection should be when the select box changes it value
     if (!theCountry) return;
     reducer.transition("select_country", {
@@ -123,8 +123,8 @@ export function ContinentSelectionScreen(): VNode {
         </div>
         <div class="column is-two-third">
           <p>
-            Your choice will help us with asking the right information to unique
-            identify you when you want to recover your backed up secrets.
+            Your selection will help us ask right information to uniquely
+            identify you when you want to recover your secret again.
           </p>
           <p>
             Choose the country that issued most of your long-term legal

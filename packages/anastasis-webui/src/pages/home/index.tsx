@@ -48,7 +48,7 @@ export function withProcessLabel(
 }
 
 interface AnastasisClientFrameProps {
-  onNext?(): void;
+  onNext?(): Promise<void>;
   /**
    * Override for the "back" functionality.
    */
