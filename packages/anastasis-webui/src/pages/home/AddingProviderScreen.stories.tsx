@@ -40,7 +40,11 @@ export const NewProvider = createExample(TestedComponent, {
   ...reducerStatesExample.authEditing,
 } as ReducerState);
 
-export const NewSMSProvider = createExample(TestedComponent, {
+export const NewVideoProvider = createExample(TestedComponent, {
+  ...reducerStatesExample.authEditing,
+} as ReducerState, { providerType: 'video'});
+
+export const NewSmsProvider = createExample(TestedComponent, {
   ...reducerStatesExample.authEditing,
 } as ReducerState, { providerType: 'sms'});
 

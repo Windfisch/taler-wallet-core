@@ -19,12 +19,13 @@ async function testProvider(url: string, expectedMethodType?: string): Promise<v
     if (!("methods" in json) || !Array.isArray(json.methods)) {
       throw Error("This provider doesn't have authentication method. Check the provider URL")
     }
+    console.log("expected", expectedMethodType)
     if (!expectedMethodType) {
       return
     }
     let found = false
     for (let i = 0; i < json.methods.length && !found; i++) {
-      found = json.methods[i].type !== expectedMethodType
+      found = json.methods[i].type === expectedMethodType
     }
     if (!found) {
       throw Error(`This provider does not support authentication method ${expectedMethodType}`)
