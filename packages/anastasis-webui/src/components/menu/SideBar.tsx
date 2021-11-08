@@ -44,9 +44,9 @@ export function Sidebar({ mobile }: Props): VNode {
       </div>} */}
       <div class="aside-tools">
         <div class="aside-tools-label">
-          <div><b>Anastasis</b> Reducer</div>
+          <div><b>Anastasis</b></div>
           <div class="is-size-7 has-text-right" style={{ lineHeight: 0, marginTop: -10 }}>
-            {process.env.__VERSION__} ({config.version})
+            Version {process.env.__VERSION__} ({config.version})
           </div>
         </div>
       </div>

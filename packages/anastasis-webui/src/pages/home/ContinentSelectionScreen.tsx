@@ -123,13 +123,35 @@ export function ContinentSelectionScreen(): VNode {
         </div>
         <div class="column is-two-third">
           <p>
-            Your location will help us to determine which personal information
-            to ask you for the next step.
+            Your choice will help us with asking the right information to unique
+            identify you when you want to recover your backed up secrets.
           </p>
           <p>
-            You should choose the country that issued most of your long-term
-            legal documents or personal identifiers.
+            Choose the country that issued most of your long-term legal
+            documents or personal identifiers.
           </p>
+          <div
+            style={{
+              border: "1px solid gray",
+              borderRadius: "0.5em",
+              backgroundColor: "#fbfcbd",
+              padding: "0.5em",
+            }}
+          >
+            <p>
+              If you just want to try out Anastasis, we recomment that you
+              choose <b>Testcontinent</b> with <b>Demoland</b>. For this special
+              country, you will be asked for a simple number and not real,
+              personal identifiable information.
+            </p>
+            {/*             
+            <p>
+              Because of the diversity of personally identifying information in
+              different countries and cultures, we do not support all countries
+              yet. If you want to improve the supported countries,{" "}
+              <a href="mailto:contact@anastasis.lu">contact us</a>.
+            </p> */}
+          </div>
         </div>
       </div>
     </AnastasisClientFrame>

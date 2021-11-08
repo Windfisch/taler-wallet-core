@@ -15,41 +15,53 @@
  */
 
 import { ComponentChildren, Fragment, h, VNode } from "preact";
-import Match from 'preact-router/match';
+import Match from "preact-router/match";
 import { useEffect, useState } from "preact/hooks";
 import { NavigationBar } from "./NavigationBar";
 import { Sidebar } from "./SideBar";
-
-
-
 
 interface MenuProps {
   title: string;
 }
 
-function WithTitle({ title, children }: { title: string; children: ComponentChildren }): VNode {
+function WithTitle({
+  title,
+  children,
+}: {
+  title: string;
+  children: ComponentChildren;
+}): VNode {
   useEffect(() => {
-    document.title = `Taler Backoffice: ${title}`
-  }, [title])
-  return <Fragment>{children}</Fragment>
+    document.title = `${title}`;
+  }, [title]);
+  return <Fragment>{children}</Fragment>;
 }
 
 export function Menu({ title }: MenuProps): VNode {
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  return <Match>{({ path }: { path: string }) => {
-    const titleWithSubtitle = title // title ? title : (!admin ? getInstanceTitle(path, instance) : getAdminTitle(path, instance))
-    return (<WithTitle title={titleWithSubtitle}>
-      <div class={mobileOpen ? "has-aside-mobile-expanded" : ""} onClick={() => setMobileOpen(false)}>
-        <NavigationBar onMobileMenu={() => setMobileOpen(!mobileOpen)} title={titleWithSubtitle} />
+  return (
+    <Match>
+      {({ path }: { path: string }) => {
+        const titleWithSubtitle = title; // title ? title : (!admin ? getInstanceTitle(path, instance) : getAdminTitle(path, instance))
+        return (
+          <WithTitle title={titleWithSubtitle}>
+            <div
+              class={mobileOpen ? "has-aside-mobile-expanded" : ""}
+              onClick={() => setMobileOpen(false)}
+            >
+              <NavigationBar
+                onMobileMenu={() => setMobileOpen(!mobileOpen)}
+                title={titleWithSubtitle}
+              />
 
-        <Sidebar mobile={mobileOpen} />
-
-      </div>
-    </WithTitle>
-    )
-  }}</Match>
-
+              <Sidebar mobile={mobileOpen} />
+            </div>
+          </WithTitle>
+        );
+      }}
+    </Match>
+  );
 }
 
 interface NotYetReadyAppMenuProps {
@@ -60,37 +72,56 @@ interface NotYetReadyAppMenuProps {
 interface NotifProps {
   notification?: Notification;
 }
-export function NotificationCard({ notification: n }: NotifProps): VNode | null {
-  if (!n) return null
-  return <div class="notification">
-    <div class="columns is-vcentered">
-      <div class="column is-12">
-        <article class={n.type === 'ERROR' ? "message is-danger" : (n.type === 'WARN' ? "message is-warning" : "message is-info")}>
-          <div class="message-header">
-            <p>{n.message}</p>
-          </div>
-          {n.description &&
-            <div class="message-body">
-              {n.description}
-            </div>}
-        </article>
+export function NotificationCard({
+  notification: n,
+}: NotifProps): VNode | null {
+  if (!n) return null;
+  return (
+    <div class="notification">
+      <div class="columns is-vcentered">
+        <div class="column is-12">
+          <article
+            class={
+              n.type === "ERROR"
+                ? "message is-danger"
+                : n.type === "WARN"
+                ? "message is-warning"
+                : "message is-info"
+            }
+          >
+            <div class="message-header">
+              <p>{n.message}</p>
+            </div>
+            {n.description && <div class="message-body">{n.description}</div>}
+          </article>
+        </div>
       </div>
     </div>
-  </div>
+  );
 }
 
-export function NotYetReadyAppMenu({ onLogout, title }: NotYetReadyAppMenuProps): VNode {
-  const [mobileOpen, setMobileOpen] = useState(false)
+export function NotYetReadyAppMenu({
+  onLogout,
+  title,
+}: NotYetReadyAppMenuProps): VNode {
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    document.title = `Taler Backoffice: ${title}`
-  }, [title])
+    document.title = `Taler Backoffice: ${title}`;
+  }, [title]);
 
-  return <div class={mobileOpen ? "has-aside-mobile-expanded" : ""} onClick={() => setMobileOpen(false)}>
-    <NavigationBar onMobileMenu={() => setMobileOpen(!mobileOpen)} title={title} />
-    {onLogout && <Sidebar mobile={mobileOpen} />}
-  </div>
-
+  return (
+    <div
+      class={mobileOpen ? "has-aside-mobile-expanded" : ""}
+      onClick={() => setMobileOpen(false)}
+    >
+      <NavigationBar
+        onMobileMenu={() => setMobileOpen(!mobileOpen)}
+        title={title}
+      />
+      {onLogout && <Sidebar mobile={mobileOpen} />}
+    </div>
+  );
 }
 
 export interface Notification {
@@ -99,6 +130,5 @@ export interface Notification {
   type: MessageType;
 }
 
-export type ValueOrFunction<T> = T | ((p: T) => T)
-export type MessageType = 'INFO' | 'WARN' | 'ERROR' | 'SUCCESS'
-
+export type ValueOrFunction<T> = T | ((p: T) => T);
+export type MessageType = "INFO" | "WARN" | "ERROR" | "SUCCESS";
