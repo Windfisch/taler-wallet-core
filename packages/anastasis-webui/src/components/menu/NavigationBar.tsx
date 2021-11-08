@@ -44,9 +44,6 @@ export function NavigationBar({ onMobileMenu, title }: Props): VNode {
     </div>
 
     <div class="navbar-menu ">
-      <a class="navbar-start is-justify-content-center is-flex-grow-1" href="https://taler.net">
-        <img src={logo} style={{ height: 50, maxHeight: 50 }} />
-      </a>
       <div class="navbar-end">
         <div class="navbar-item" style={{ paddingTop: 4, paddingBottom: 4 }}>
           {/* <LangSelector /> */}
