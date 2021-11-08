@@ -3,27 +3,29 @@ import { encodeCrock, stringToBytes } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useAnastasisContext } from "../../context/anastasis";
-import {
-  AnastasisClientFrame
-} from "./index";
+import { AnastasisClientFrame } from "./index";
 import { TextInput } from "../../components/fields/TextInput";
 import { FileInput } from "../../components/fields/FileInput";
 
 export function SecretEditorScreen(): VNode {
-  const reducer = useAnastasisContext()
+  const reducer = useAnastasisContext();
   const [secretValue, setSecretValue] = useState("");
 
-  const currentSecretName = reducer?.currentReducerState
-    && ("secret_name" in reducer.currentReducerState)
-    && reducer.currentReducerState.secret_name;
+  const currentSecretName =
+    reducer?.currentReducerState &&
+    "secret_name" in reducer.currentReducerState &&
+    reducer.currentReducerState.secret_name;
 
   const [secretName, setSecretName] = useState(currentSecretName || "");
 
   if (!reducer) {
-    return <div>no reducer in context</div>
+    return <div>no reducer in context</div>;
   }
-  if (!reducer.currentReducerState || reducer.currentReducerState.backup_state === undefined) {
-    return <div>invalid state</div>
+  if (
+    !reducer.currentReducerState ||
+    reducer.currentReducerState.backup_state === undefined
+  ) {
+    return <div>invalid state</div>;
   }
 
   const secretNext = async (): Promise<void> => {
@@ -50,7 +52,8 @@ export function SecretEditorScreen(): VNode {
     >
       <div>
         <TextInput
-          label="Secret's name:"
+          label="Secret name:"
+          tooltip="The secret name allows you to identify your secret when restoring it. It is a label that you can choose freely."
           grabFocus
           bind={[secretName, setSecretName]}
         />
@@ -60,14 +63,11 @@ export function SecretEditorScreen(): VNode {
           label="Enter the secret as text:"
           bind={[secretValue, setSecretValue]}
         />
-        <div style={{display:'flex',}}>
-          or&nbsp; 
-          <FileInput
-            label="click here"
-            bind={[secretValue, setSecretValue]}
-          />
+        {/* <div style={{ display: "flex" }}>
+          or&nbsp;
+          <FileInput label="click here" bind={[secretValue, setSecretValue]} />
           &nbsp;to import a file
-        </div>
+        </div> */}
       </div>
     </AnastasisClientFrame>
   );

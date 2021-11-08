@@ -50,6 +50,11 @@ export interface SuccessDetails {
 export interface CoreSecret {
   mime: string;
   value: string;
+  /**
+   * Filename, only set if the secret comes from
+   * a file.  Should be set unless the mime type is "text/plain";
+   */
+  filename?: string;
 }
 
 export interface ReducerStateBackup {

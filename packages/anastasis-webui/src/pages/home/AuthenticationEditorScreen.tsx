@@ -86,7 +86,7 @@ export function AuthenticationEditorScreen(): VNode {
             active
             onCancel={cancel}
             description="No providers founds"
-            label="Add a provider manually"
+            label="Add a provider manually (not implemented!)"
             onConfirm={() => {
               null;
             }}
@@ -179,7 +179,7 @@ export function AuthenticationEditorScreen(): VNode {
               active={!noProvidersAck}
               onCancel={() => setNoProvidersAck(true)}
               description="No providers founds"
-              label="Add a provider manually"
+              label="Add a provider manually (not implemented!)"
               onConfirm={() => {
                 null;
               }}
@@ -197,15 +197,15 @@ export function AuthenticationEditorScreen(): VNode {
         </div>
         <div class="column">
           <p class="block">
-            When recovering your wallet, you will be asked to verify your
+            When recovering your secret data, you will be asked to verify your
             identity via the methods you configure here. The list of
             authentication method is defined by the backup provider list.
           </p>
-          <p class="block">
+          {/* <p class="block">
             <button class="button is-info">
-              Manage the backup provider's list
+              Manage backup providers
             </button>
-          </p>
+          </p> */}
           {authAvailableSet.size > 0 && (
             <p class="block">
               We couldn't find provider for some of the authentication methods.
