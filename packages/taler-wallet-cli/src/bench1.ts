@@ -77,7 +77,7 @@ export async function runBench1(configJson: any): Promise<void> {
       stopWhenDone: true,
     });
 
-    logger.info(`Finished withdrawal amount=${withdrawAmount} time=${console.time('withdraw')}`);
+    logger.info(`Finished withdrawal amount=${withdrawAmount} time=${console.timeEnd('withdraw')}`);
 
     for (let i = 0; i < numDeposits; i++) {
 
@@ -93,7 +93,7 @@ export async function runBench1(configJson: any): Promise<void> {
         stopWhenDone: true,
       });
 
-      logger.info(`Finished deposit amount=10 time=${console.time('deposit')}`);
+      logger.info(`Finished deposit amount=10 time=${console.timeEnd('deposit')}`);
     }
 
     wallet.stop();
