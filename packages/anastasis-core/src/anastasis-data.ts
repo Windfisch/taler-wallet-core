@@ -25,6 +25,14 @@ export const anastasisData = {
         currency: "EUR",
       },
       {
+        url: "https://anastasis.demo.taler.net/",
+        currency: "CHF",
+      },
+      {
+        url: "https://kudos.demo.anastasis.lu/",
+        currency: "CHF",
+      },
+      {
         url: "http://localhost:8086/",
         currency: "TESTKUDOS",
       },
