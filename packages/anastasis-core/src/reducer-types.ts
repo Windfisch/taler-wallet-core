@@ -334,6 +334,14 @@ export const codecForActionArgsEnterUserAttributes = () =>
     .property("identity_attributes", codecForAny())
     .build("ActionArgsEnterUserAttributes");
 
+export interface ActionArgsAddProvider {
+  provider_url: string;
+}
+
+export interface ActionArgsDeleteProvider {
+  provider_url: string;
+}
+
 export interface ActionArgsAddAuthentication {
   authentication_method: {
     type: string;

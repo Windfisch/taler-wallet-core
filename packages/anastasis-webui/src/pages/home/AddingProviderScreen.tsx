@@ -1,6 +1,6 @@
 import { AuthenticationProviderStatusOk } from "anastasis-core";
 import { h, VNode } from "preact";
-import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { TextInput } from "../../components/fields/TextInput";
 import { useAnastasisContext } from "../../context/anastasis";
 import { authMethods, KnownAuthMethods } from "./authMethod";
@@ -8,13 +8,13 @@ import { AnastasisClientFrame } from "./index";
 
 interface Props {
   providerType?: KnownAuthMethods;
-  cancel: () => void;
+  onCancel: () => void;
 }
 
 
 async function testProvider(url: string, expectedMethodType?: string): Promise<void> {
   try {
-    const response = await fetch(`${url}/config`)
+    const response = await fetch(new URL("config", url).href)
     const json = await (response.json().catch(d => ({})))
     if (!("methods" in json) || !Array.isArray(json.methods)) {
       throw Error("This provider doesn't have authentication method. Check the provider URL")
@@ -41,7 +41,7 @@ async function testProvider(url: string, expectedMethodType?: string): Promise<v
 
 }
 
-export function AddingProviderScreen({ providerType, cancel }: Props): VNode {
+export function AddingProviderScreen({ providerType, onCancel }: Props): VNode {
   const reducer = useAnastasisContext();
 
   const [providerURL, setProviderURL] = useState("");
@@ -54,8 +54,8 @@ export function AddingProviderScreen({ providerType, cancel }: Props): VNode {
   useEffect(() => {
     if (timeout) window.clearTimeout(timeout.current)
     timeout.current = window.setTimeout(async () => {
-      const url = providerURL.endsWith('/') ? providerURL.substring(0, providerURL.length - 1) : providerURL
-      if (!url) return;
+      const url = providerURL.endsWith('/') ? providerURL : (providerURL + '/')
+      if (!providerURL || authProviders.includes(url)) return;
       try {
         setTesting(true)
         await testProvider(url, providerType)
@@ -67,39 +67,49 @@ export function AddingProviderScreen({ providerType, cancel }: Props): VNode {
         if (e instanceof Error) setError(e.message)
       }
       setTesting(false)
-    }, 1000);
-  }, [providerURL])
+    }, 200);
+  }, [providerURL, reducer])
 
 
   if (!reducer) {
     return <div>no reducer in context</div>;
   }
 
-  function addProvider(): void {
-    // addAuthMethod({
-    //   authentication_method: {
-    //     type: "sms",
-    //     instructions: `SMS to ${providerURL}`,
-    //     challenge: encodeCrock(stringToBytes(providerURL)),
-    //   },
-    // });
+  if (!reducer.currentReducerState || !("authentication_providers" in reducer.currentReducerState)) {
+    return <div>invalid state</div>
   }
 
+  async function addProvider(provider_url: string): Promise<void> {
+    await reducer?.transition("add_provider", { provider_url })
+    onCancel()
+  }
+  function deleteProvider(provider_url: string): void {
+    reducer?.transition("delete_provider", { provider_url })
+  }
+
+  const allAuthProviders = reducer.currentReducerState.authentication_providers || {}
+  const authProviders = Object.keys(allAuthProviders).filter(provUrl => {
+    const p = allAuthProviders[provUrl];
+    if (!providerLabel) {
+      return p && ("currency" in p)
+    } else {
+      return p && ("currency" in p) && p.methods.findIndex(m => m.type === providerType) !== -1
+    }
+  })
+
   let errors = !providerURL ? 'Add provider URL' : undefined
+  let url: string | undefined;
   try {
-    new URL(providerURL)
+    url = new URL("",providerURL).href
   } catch {
     errors = 'Check the URL'
   }
   if (!!error && !errors) {
     errors = error
   }
-
-  if (!reducer.currentReducerState || !("authentication_providers" in reducer.currentReducerState)) {
-    return <div>invalid state</div>
+  if (!errors && authProviders.includes(url!)) {
+    errors = 'That provider is already known'
   }
-
-  const authProviders = reducer.currentReducerState.authentication_providers || {}
 
   return (
     <AnastasisClientFrame hideNav
@@ -119,40 +129,45 @@ export function AddingProviderScreen({ providerType, cancel }: Props): VNode {
             label="Provider URL"
             placeholder="https://provider.com"
             grabFocus
+            error={errors}
             bind={[providerURL, setProviderURL]} />
         </div>
         <p class="block">
           Example: https://kudos.demo.anastasis.lu
         </p>
-
-        {testing && <p class="block has-text-info">Testing</p>}
-        {!!error && <p class="block has-text-danger">{error}</p>}
-        {error === "" && <p class="block has-text-success">This provider worked!</p>}
-
+        {testing && <p class="has-text-info">Testing</p>}
+        
         <div class="block" style={{ marginTop: '2em', display: 'flex', justifyContent: 'space-between' }}>
-          <button class="button" onClick={cancel}>Cancel</button>
+          <button class="button" onClick={onCancel}>Cancel</button>
           <span data-tooltip={errors}>
-            <button class="button is-info" disabled={error !== "" || testing} onClick={addProvider}>Add</button>
+            <button class="button is-info" disabled={error !== "" || testing} onClick={() => addProvider(url!)}>Add</button>
           </span>
         </div>
 
-        <p class="subtitle">
-          Current providers
-        </p>
-        {/* <table class="table"> */}
-        {Object.keys(authProviders).map(k => {
-          const p = authProviders[k]
-          if (("currency" in p)) {
-            return <TableRow url={k} info={p} />
-          }
-        }
+        {authProviders.length > 0 ? (
+          !providerLabel ?
+            <p class="subtitle">
+              Current providers
+            </p> : <p class="subtitle">
+              Current providers for {providerLabel} service
+            </p>
+        ) : (
+          !providerLabel ? <p class="subtitle">
+            No known providers, add one.
+          </p> : <p class="subtitle">
+            No known providers for {providerLabel} service
+          </p>
         )}
-        {/* </table> */}
+
+        {authProviders.map(k => {
+          const p = allAuthProviders[k] as AuthenticationProviderStatusOk
+          return <TableRow url={k} info={p} onDelete={deleteProvider} />
+        })}
       </div>
     </AnastasisClientFrame>
   );
 }
-function TableRow({ url, info }: { url: string, info: AuthenticationProviderStatusOk }) {
+function TableRow({ url, info, onDelete }: { onDelete: (s: string) => void, url: string, info: AuthenticationProviderStatusOk }) {
   const [status, setStatus] = useState("checking")
   useEffect(function () {
     testProvider(url.endsWith('/') ? url.substring(0, url.length - 1) : url)
@@ -174,7 +189,7 @@ function TableRow({ url, info }: { url: string, info: AuthenticationProviderStat
       </dl>
     </div>
     <div class="block" style={{ marginTop: 'auto', marginBottom: 'auto', display: 'flex', justifyContent: 'space-between', flexDirection: 'column' }}>
-      <button class="button is-danger" >Remove</button>
+      <button class="button is-danger" onClick={() => onDelete(url)}>Remove</button>
     </div>
   </div>
 }

@@ -2,10 +2,12 @@ import { AuthMethod, ReducerStateBackup } from "anastasis-core";
 import { ComponentChildren, Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useAnastasisContext } from "../../context/anastasis";
+import { AddingProviderScreen } from "./AddingProviderScreen";
 import {
   authMethods,
   AuthMethodSetupProps,
   AuthMethodWithRemove,
+  isKnownAuthMethods,
   KnownAuthMethods,
 } from "./authMethod";
 import { AnastasisClientFrame } from "./index";
@@ -18,6 +20,8 @@ export function AuthenticationEditorScreen(): VNode {
     KnownAuthMethods | undefined
   >(undefined);
   const [tooFewAuths, setTooFewAuths] = useState(false);
+  const [manageProvider, setManageProvider] = useState<string | undefined>(undefined)
+
   // const [addingProvider, setAddingProvider] = useState<string | undefined>(undefined)
   const reducer = useAnastasisContext();
   if (!reducer) {
@@ -63,6 +67,14 @@ export function AuthenticationEditorScreen(): VNode {
     }
   }
 
+  if (manageProvider !== undefined) {
+    
+    return <AddingProviderScreen
+      onCancel={() => setManageProvider(undefined)}
+      providerType={isKnownAuthMethods(manageProvider) ? manageProvider : undefined}
+    />
+  }
+
   if (selectedMethod) {
     const cancel = (): void => setSelectedMethod(undefined);
     const addMethod = (args: any): void => {
@@ -86,9 +98,9 @@ export function AuthenticationEditorScreen(): VNode {
             active
             onCancel={cancel}
             description="No providers founds"
-            label="Add a provider manually (not implemented!)"
+            label="Add a provider manually"
             onConfirm={() => {
-              null;
+              setManageProvider(selectedMethod)
             }}
           >
             <p>
@@ -179,9 +191,9 @@ export function AuthenticationEditorScreen(): VNode {
               active={!noProvidersAck}
               onCancel={() => setNoProvidersAck(true)}
               description="No providers founds"
-              label="Add a provider manually (not implemented!)"
+              label="Add a provider manually"
               onConfirm={() => {
-                null;
+                setManageProvider("")
               }}
             >
               <p>
@@ -201,11 +213,11 @@ export function AuthenticationEditorScreen(): VNode {
             identity via the methods you configure here. The list of
             authentication method is defined by the backup provider list.
           </p>
-          {/* <p class="block">
-            <button class="button is-info">
+          <p class="block">
+            <button class="button is-info" onClick={() => setManageProvider("")}>
               Manage backup providers
             </button>
-          </p> */}
+          </p>
           {authAvailableSet.size > 0 && (
             <p class="block">
               We couldn't find provider for some of the authentication methods.

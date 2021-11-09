@@ -65,6 +65,8 @@ import {
   ActionArgsChangeVersion,
   TruthMetaData,
   ActionArgsUpdatePolicy,
+  ActionArgsAddProvider,
+  ActionArgsDeleteProvider,
 } from "./reducer-types.js";
 import fetchPonyfill from "fetch-ponyfill";
 import {
@@ -1060,9 +1062,15 @@ async function recoveryEnterUserAttributes(
   args: ActionArgsEnterUserAttributes,
 ): Promise<ReducerStateRecovery | ReducerStateError> {
   // FIXME: validate attributes
+  const providerUrls = Object.keys(state.authentication_providers ?? {});
+  const newProviders = state.authentication_providers ?? {};
+  for (const url of providerUrls) {
+    newProviders[url] = await getProviderInfo(url);
+  }
   const st: ReducerStateRecovery = {
     ...state,
     identity_attributes: args.identity_attributes,
+    authentication_providers: newProviders,
   };
   return downloadPolicy(st);
 }
@@ -1171,6 +1179,60 @@ function transitionRecoveryJump(
       argCodec: codecForAny(),
       handler: async (s, a) => ({ ...s, recovery_state: st }),
     },
+  };
+}
+
+//FIXME: doest the same that addProviderRecovery, but type are not generic enough
+async function addProviderBackup(
+  state: ReducerStateBackup,
+  args: ActionArgsAddProvider,
+): Promise<ReducerStateBackup> {
+  const info = await getProviderInfo(args.provider_url)
+  return {
+    ...state,
+    authentication_providers: {
+      ...(state.authentication_providers ?? {}),
+      [args.provider_url]: info,
+    },
+  };
+}
+
+//FIXME: doest the same that deleteProviderRecovery, but type are not generic enough
+async function deleteProviderBackup(
+  state: ReducerStateBackup,
+  args: ActionArgsDeleteProvider,
+): Promise<ReducerStateBackup> {
+  const authentication_providers = {... state.authentication_providers ?? {} }
+  delete authentication_providers[args.provider_url]
+  return {
+    ...state,
+    authentication_providers,
+  };
+}
+
+async function addProviderRecovery(
+  state: ReducerStateRecovery,
+  args: ActionArgsAddProvider,
+): Promise<ReducerStateRecovery> {
+  const info = await getProviderInfo(args.provider_url)
+  return {
+    ...state,
+    authentication_providers: {
+      ...(state.authentication_providers ?? {}),
+      [args.provider_url]: info,
+    },
+  };
+}
+
+async function deleteProviderRecovery(
+  state: ReducerStateRecovery,
+  args: ActionArgsDeleteProvider,
+): Promise<ReducerStateRecovery> {
+  const authentication_providers = {... state.authentication_providers ?? {} }
+  delete authentication_providers[args.provider_url]
+  return {
+    ...state,
+    authentication_providers,
   };
 }
 
@@ -1408,6 +1470,8 @@ const backupTransitions: Record<
     ...transitionBackupJump("back", BackupStates.UserAttributesCollecting),
     ...transition("add_authentication", codecForAny(), addAuthentication),
     ...transition("delete_authentication", codecForAny(), deleteAuthentication),
+    ...transition("add_provider", codecForAny(), addProviderBackup),
+    ...transition("delete_provider", codecForAny(), deleteProviderBackup),
     ...transition("next", codecForAny(), nextFromAuthenticationsEditing),
   },
   [BackupStates.PoliciesReviewing]: {
@@ -1476,6 +1540,8 @@ const recoveryTransitions: Record<
   [RecoveryStates.SecretSelecting]: {
     ...transitionRecoveryJump("back", RecoveryStates.UserAttributesCollecting),
     ...transitionRecoveryJump("next", RecoveryStates.ChallengeSelecting),
+    ...transition("add_provider", codecForAny(), addProviderRecovery),
+    ...transition("delete_provider", codecForAny(), deleteProviderRecovery),
     ...transition(
       "change_version",
       codecForActionArgsChangeVersion(),

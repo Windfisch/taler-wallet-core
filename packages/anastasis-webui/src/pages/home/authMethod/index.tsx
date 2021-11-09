@@ -41,7 +41,13 @@ interface AuthMethodConfiguration {
   solve: (props: AuthMethodSolveProps) => VNode;
   skip?: boolean;
 }
-export type KnownAuthMethods = "sms" | "email" | "post" | "question" | "video" | "totp" | "iban";
+// export type KnownAuthMethods = "sms" | "email" | "post" | "question" | "video" | "totp" | "iban";
+
+const ALL_METHODS = ['sms', 'email', 'post', 'question', 'video' , 'totp', 'iban'] as const;
+export type KnownAuthMethods = (typeof ALL_METHODS)[number];
+export function isKnownAuthMethods(value: string): value is KnownAuthMethods {
+  return ALL_METHODS.includes(value as KnownAuthMethods)
+}
 
 type KnowMethodConfig = {
   [name in KnownAuthMethods]: AuthMethodConfiguration;

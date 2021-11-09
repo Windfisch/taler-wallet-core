@@ -3,12 +3,14 @@ import { useState } from "preact/hooks";
 import { AsyncButton } from "../../components/AsyncButton";
 import { NumberInput } from "../../components/fields/NumberInput";
 import { useAnastasisContext } from "../../context/anastasis";
+import { AddingProviderScreen } from "./AddingProviderScreen";
 import { AnastasisClientFrame } from "./index";
 
 export function SecretSelectionScreen(): VNode {
   const [selectingVersion, setSelectingVersion] = useState<boolean>(false);
   const reducer = useAnastasisContext()
 
+  const [manageProvider, setManageProvider] = useState(false)
   const currentVersion = (reducer?.currentReducerState
     && ("recovery_document" in reducer.currentReducerState)
     && reducer.currentReducerState.recovery_document?.version) || 0;
@@ -49,6 +51,10 @@ export function SecretSelectionScreen(): VNode {
     />
   }
 
+  if (manageProvider) {
+    return <AddingProviderScreen onCancel={() => setManageProvider(false)} />
+  }
+
   return (
     <AnastasisClientFrame title="Recovery: Select secret">
       <div class="columns">
@@ -69,6 +75,12 @@ export function SecretSelectionScreen(): VNode {
         </div>
         <div class="column">
           <p>Secret found, you can select another version or continue to the challenges solving</p>
+          <p class="block">
+            <button class="button is-info" onClick={() => setManageProvider(true)}>
+              Manage recovery providers
+            </button>
+          </p>
+
         </div>
       </div>
     </AnastasisClientFrame>
