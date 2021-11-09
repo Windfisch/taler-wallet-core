@@ -1,7 +1,7 @@
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { AsyncButton } from "../../components/AsyncButton";
-import { NumberInput } from "../../components/fields/NumberInput";
+import { PhoneNumberInput } from "../../components/fields/NumberInput";
 import { useAnastasisContext } from "../../context/anastasis";
 import { AddingProviderScreen } from "./AddingProviderScreen";
 import { AnastasisClientFrame } from "./index";
@@ -152,7 +152,7 @@ function SelectOtherVersionProviderScreen({ providers, provider, version, onConf
               </div>
             </div>
             <div class="container">
-              <NumberInput
+              <PhoneNumberInput
                 label="Version"
                 placeholder="version number to recover"
                 grabFocus

@@ -3,7 +3,7 @@ import { isAfter, parse } from "date-fns";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { DateInput } from "../../components/fields/DateInput";
-import { NumberInput } from "../../components/fields/NumberInput";
+import { PhoneNumberInput } from "../../components/fields/NumberInput";
 import { TextInput } from "../../components/fields/TextInput";
 import { useAnastasisContext } from "../../context/anastasis";
 import { AnastasisClientFrame, withProcessLabel } from "./index";
@@ -95,7 +95,7 @@ function AttributeEntryField(props: AttributeEntryFieldProps): VNode {
           bind={[props.value, props.setValue]}
         />}
       {props.spec.type === 'number' &&
-        <NumberInput
+        <PhoneNumberInput
           grabFocus={props.isFirst}
           label={props.spec.label}
           error={props.errorMessage}

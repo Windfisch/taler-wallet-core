@@ -5,7 +5,7 @@ import {
 import { Fragment, h, VNode } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { AuthMethodSetupProps } from ".";
-import { NumberInput } from "../../../components/fields/NumberInput";
+import { PhoneNumberInput } from "../../../components/fields/NumberInput";
 import { AnastasisClientFrame } from "../index";
 
 export function AuthMethodSmsSetup({ addAuthMethod, cancel, configured }: AuthMethodSetupProps): VNode {
@@ -33,7 +33,7 @@ export function AuthMethodSmsSetup({ addAuthMethod, cancel, configured }: AuthMe
           receive via SMS.
         </p>
         <div class="container">
-          <NumberInput
+          <PhoneNumberInput
             label="Mobile number"
             placeholder="Your mobile number"
             grabFocus
