@@ -30,7 +30,7 @@ export function AuthMethodQuestionSetup({
     <AnastasisClientFrame hideNav title="Add Security Question">
       <div>
         <p>
-          For2 security question authentication, you need to provide a question
+          For security question authentication, you need to provide a question
           and its answer. When recovering your secret, you will be shown the
           question and you will need to type the answer exactly as you typed it
           here.

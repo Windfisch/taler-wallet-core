@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState } from "preact/hooks";
 export interface TextInputProps {
   label: string;
   grabFocus?: boolean;
+  disabled?: boolean;
   error?: string;
   placeholder?: string;
   tooltip?: string;
@@ -33,6 +34,7 @@ export function TextInput(props: TextInputProps): VNode {
       <div class="control has-icons-right">
         <input
           value={value}
+          disabled={props.disabled}
           placeholder={props.placeholder}
           class={showError ? "input is-danger" : "input"}
           onInput={(e) => {

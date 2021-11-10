@@ -20,11 +20,26 @@
  */
 import { h, VNode } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
-import { TextInputProps } from "./TextInput";
 
 const MAX_IMAGE_UPLOAD_SIZE = 1024 * 1024;
 
-export function FileInput(props: TextInputProps): VNode {
+export interface FileTypeContent {
+  content: string;
+  type: string;
+  name: string;
+}
+
+export interface FileInputProps {
+  label: string;
+  grabFocus?: boolean;
+  disabled?: boolean;
+  error?: string;
+  placeholder?: string;
+  tooltip?: string;
+  onChange: (v: FileTypeContent | undefined) => void;
+}
+
+export function FileInput(props: FileInputProps): VNode {
   const inputRef = useRef<HTMLInputElement>(null);
   useLayoutEffect(() => {
     if (props.grabFocus) {
@@ -32,18 +47,19 @@ export function FileInput(props: TextInputProps): VNode {
     }
   }, [props.grabFocus]);
 
-  const value = props.bind[0];
-  // const [dirty, setDirty] = useState(false)
-  const image = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [sizeError, setSizeError] = useState(false);
-  function onChange(v: string): void {
-    // setDirty(true);
-    props.bind[1](v);
-  }
   return (
     <div class="field">
       <label class="label">
-        <a onClick={() => image.current?.click()}>{props.label}</a>
+        <a class="button" onClick={(e) => fileInputRef.current?.click()}>
+          <div class="icon is-small ">
+            <i class="mdi mdi-folder" />
+          </div>
+          <span>
+            {props.label}
+          </span>
+        </a>
         {props.tooltip && (
           <span class="icon has-tooltip-right" data-tooltip={props.tooltip}>
             <i class="mdi mdi-information" />
@@ -52,18 +68,19 @@ export function FileInput(props: TextInputProps): VNode {
       </label>
       <div class="control">
         <input
-          ref={image}
+          ref={fileInputRef}
           style={{ display: "none" }}
           type="file"
-          name={String(name)}
+          // name={String(name)}
           onChange={(e) => {
             const f: FileList | null = e.currentTarget.files;
             if (!f || f.length != 1) {
-              return onChange("");
+              return props.onChange(undefined);
             }
+            console.log(f)
             if (f[0].size > MAX_IMAGE_UPLOAD_SIZE) {
               setSizeError(true);
-              return onChange("");
+              return props.onChange(undefined);
             }
             setSizeError(false);
             return f[0].arrayBuffer().then((b) => {
@@ -73,7 +90,7 @@ export function FileInput(props: TextInputProps): VNode {
                   "",
                 ),
               );
-              return onChange(`data:${f[0].type};base64,${b64}` as any);
+              return props.onChange({content: `data:${f[0].type};base64,${b64}`, name: f[0].name, type: f[0].type});
             });
           }}
         />

@@ -1,3 +1,4 @@
+import { AuthenticationProviderStatusOk } from "anastasis-core";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useAnastasisContext } from "../../context/anastasis";
@@ -22,6 +23,7 @@ export function ReviewPoliciesScreen(): VNode {
     reducer.currentReducerState.authentication_methods ?? [];
   const policies = reducer.currentReducerState.policies ?? [];
 
+  const providers = reducer.currentReducerState.authentication_providers ?? {}
   
   if (editingPolicy !== undefined) {
     return (
@@ -96,6 +98,7 @@ export function ReviewPoliciesScreen(): VNode {
               </h3>
               {!methods.length && <p>No auth method found</p>}
               {methods.map((m, i) => {
+                const p = providers[m.provider] as AuthenticationProviderStatusOk
                 return (
                   <p
                     key={i}
@@ -107,7 +110,7 @@ export function ReviewPoliciesScreen(): VNode {
                     </span>
                     <span>
                       {m.instructions} recovery provided by{" "}
-                      <a href={m.provider}>{m.provider}</a>
+                      <a href={m.provider} target="_blank" rel="noreferrer" >{p.business_name}</a>
                     </span>
                   </p>
                 );
