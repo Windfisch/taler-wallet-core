@@ -22,6 +22,7 @@ export function ReviewPoliciesScreen(): VNode {
     reducer.currentReducerState.authentication_methods ?? [];
   const policies = reducer.currentReducerState.policies ?? [];
 
+  
   if (editingPolicy !== undefined) {
     return (
       <EditPoliciesScreen
@@ -60,7 +61,7 @@ export function ReviewPoliciesScreen(): VNode {
       <div class="block" style={{ justifyContent: "flex-end" }}>
         <button
           class="button is-success"
-          onClick={() => setEditingPolicy(policies.length + 1)}
+          onClick={() => setEditingPolicy(policies.length)}
         >
           Add new policy
         </button>
