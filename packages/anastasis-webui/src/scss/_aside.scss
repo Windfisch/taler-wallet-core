@@ -19,38 +19,38 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-  html {
-    &.has-aside-left {
-      &.has-aside-expanded {
-        nav.navbar,
-        body {
-          padding-left: $aside-width;
-        }
+html {
+  &.has-aside-left {
+    &.has-aside-expanded {
+      nav.navbar,
+      body {
+        padding-left: $aside-width;
       }
-      aside.is-placed-left {
+    }
+    aside.is-placed-left {
+      display: block;
+    }
+  }
+}
+
+aside.aside.is-expanded {
+  width: $aside-width;
+
+  .menu-list {
+    @include icon-with-update-mark($aside-icon-width);
+
+    span.menu-item-label {
+      display: inline-block;
+    }
+
+    li.is-active {
+      ul {
         display: block;
       }
+      background-color: $body-background-color;
     }
   }
-
-  aside.aside.is-expanded {
-    width: $aside-width;
-
-    .menu-list {
-      @include icon-with-update-mark($aside-icon-width);
-
-      span.menu-item-label {
-        display: inline-block;
-      }
-
-      li.is-active {
-        ul {
-          display: block;
-        }
-        background-color: $body-background-color;
-      }
-    }
-  }
+}
 
 aside.aside {
   display: none;
@@ -126,4 +126,3 @@ aside.aside {
     margin-bottom: $default-padding * 0.5;
   }
 }
-
