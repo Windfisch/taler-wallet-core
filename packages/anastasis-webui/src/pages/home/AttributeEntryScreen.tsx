@@ -6,6 +6,7 @@ import { DateInput } from "../../components/fields/DateInput";
 import { PhoneNumberInput } from "../../components/fields/NumberInput";
 import { TextInput } from "../../components/fields/TextInput";
 import { useAnastasisContext } from "../../context/anastasis";
+import { ConfirmModal } from "./ConfirmModal";
 import { AnastasisClientFrame, withProcessLabel } from "./index";
 
 export function AttributeEntryScreen(): VNode {
@@ -18,6 +19,7 @@ export function AttributeEntryScreen(): VNode {
   const [attrs, setAttrs] = useState<Record<string, string>>(
     currentIdentityAttributes,
   );
+  const [askUserIfSure, setAskUserIfSure] = useState(false);
 
   if (!reducer) {
     return <div>no reducer in context</div>;
@@ -51,12 +53,25 @@ export function AttributeEntryScreen(): VNode {
     <AnastasisClientFrame
       title={withProcessLabel(reducer, "Who are you?")}
       hideNext={hasErrors ? "Complete the form." : undefined}
-      onNext={() =>
-        reducer.transition("enter_user_attributes", {
-          identity_attributes: attrs,
-        })
-      }
+      onNext={async () => setAskUserIfSure(true) }
     >
+      {askUserIfSure ? (
+        <ConfirmModal
+          active
+          onCancel={() => setAskUserIfSure(false)}
+          description="You can not forget what you had entered"
+          label="I am sure"
+          cancelLabel="Wait, I want to check"
+          onConfirm={() => reducer.transition("enter_user_attributes", {
+            identity_attributes: attrs,
+          })}
+        >
+          You personal information is used to define the location where your 
+          secret will be safely stored. If you forget what you have entered or 
+          if there is a misspell you will be unable to recover your secret again.
+        </ConfirmModal>
+      ) : null}
+
       <div class="columns" style={{ maxWidth: "unset" }}>
         <div class="column">{fieldList}</div>
         <div class="column">

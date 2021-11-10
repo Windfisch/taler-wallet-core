@@ -10,6 +10,7 @@ import {
   isKnownAuthMethods,
   KnownAuthMethods,
 } from "./authMethod";
+import { ConfirmModal } from "./ConfirmModal";
 import { AnastasisClientFrame } from "./index";
 
 const getKeys = Object.keys as <T extends object>(obj: T) => Array<keyof T>;
@@ -246,60 +247,3 @@ function AuthMethodNotImplemented(props: AuthMethodSetupProps): VNode {
   );
 }
 
-function ConfirmModal({
-  active,
-  description,
-  onCancel,
-  onConfirm,
-  children,
-  danger,
-  disabled,
-  label = "Confirm",
-}: ConfirmModelProps): VNode {
-  return (
-    <div class={active ? "modal is-active" : "modal"}>
-      <div class="modal-background " onClick={onCancel} />
-      <div class="modal-card" style={{ maxWidth: 700 }}>
-        <header class="modal-card-head">
-          {!description ? null : (
-            <p class="modal-card-title">
-              <b>{description}</b>
-            </p>
-          )}
-          <button class="delete " aria-label="close" onClick={onCancel} />
-        </header>
-        <section class="modal-card-body">{children}</section>
-        <footer class="modal-card-foot">
-          <button class="button" onClick={onCancel}>
-            Dismiss
-          </button>
-          <div class="buttons is-right" style={{ width: "100%" }}>
-            <button
-              class={danger ? "button is-danger " : "button is-info "}
-              disabled={disabled}
-              onClick={onConfirm}
-            >
-              {label}
-            </button>
-          </div>
-        </footer>
-      </div>
-      <button
-        class="modal-close is-large "
-        aria-label="close"
-        onClick={onCancel}
-      />
-    </div>
-  );
-}
-
-interface ConfirmModelProps {
-  active?: boolean;
-  description?: string;
-  onCancel?: () => void;
-  onConfirm?: () => void;
-  label?: string;
-  children?: ComponentChildren;
-  danger?: boolean;
-  disabled?: boolean;
-}
