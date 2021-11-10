@@ -65,7 +65,7 @@ export async function runBench1(configJson: any): Promise<void> {
     await wallet.client.call(WalletApiOperation.InitWallet, {});
 	
     logger.trace(`Starting withdrawal amount=${withdrawAmount}`);
-    console.time('withdraw');
+    let start = Date.now();
 
     await wallet.client.call(WalletApiOperation.WithdrawFakebank, {
       amount: b1conf.currency + ":" + withdrawAmount,
@@ -77,12 +77,12 @@ export async function runBench1(configJson: any): Promise<void> {
       stopWhenDone: true,
     });
 
-    logger.info(`Finished withdrawal amount=${withdrawAmount} time=${console.timeEnd('withdraw')}`);
+    logger.info(`Finished withdrawal amount=${withdrawAmount} time=${Date.now() - start}`);
 
     for (let i = 0; i < numDeposits; i++) {
 
       logger.trace(`Starting deposit amount=10`);
-      console.time('deposit')
+      start = Date.now()
 
       await wallet.client.call(WalletApiOperation.CreateDepositGroup, {
         amount: b1conf.currency + ":10",
@@ -93,7 +93,7 @@ export async function runBench1(configJson: any): Promise<void> {
         stopWhenDone: true,
       });
 
-      logger.info(`Finished deposit amount=10 time=${console.timeEnd('deposit')}`);
+      logger.info(`Finished deposit amount=10 time=${Date.now() - start}`);
     }
 
     wallet.stop();
