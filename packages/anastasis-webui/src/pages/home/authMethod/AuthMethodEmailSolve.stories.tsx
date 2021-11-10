@@ -15,66 +15,76 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { ChallengeFeedbackStatus, ReducerState } from 'anastasis-core';
-import { createExample, reducerStatesExample } from '../../../utils';
-import { authMethods as TestedComponent, KnownAuthMethods } from './index';
-
+import { ChallengeFeedbackStatus, ReducerState } from "anastasis-core";
+import { createExample, reducerStatesExample } from "../../../utils";
+import { authMethods as TestedComponent, KnownAuthMethods } from "./index";
 
 export default {
-  title: 'Pages/recovery/SolveChallenge/AuthMethods/email',
+  title: "Pages/recovery/SolveChallenge/AuthMethods/email",
   component: TestedComponent,
   args: {
     order: 5,
   },
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
-const type: KnownAuthMethods = 'email'
+const type: KnownAuthMethods = "email";
 
-export const WithoutFeedback = createExample(TestedComponent[type].solve, {
-  ...reducerStatesExample.challengeSolving,
-  recovery_information: {
-    challenges: [{
-      cost: 'USD:1',
-      instructions: 'does P equals NP?',
-      type: 'question',
-      uuid: 'uuid-1'
-    }],
-    policies: [],
+export const WithoutFeedback = createExample(
+  TestedComponent[type].solve,
+  {
+    ...reducerStatesExample.challengeSolving,
+    recovery_information: {
+      challenges: [
+        {
+          cost: "USD:1",
+          instructions: "does P equals NP?",
+          type: "question",
+          uuid: "uuid-1",
+        },
+      ],
+      policies: [],
+    },
+    selected_challenge_uuid: "uuid-1",
+  } as ReducerState,
+  {
+    id: "uuid-1",
   },
-  selected_challenge_uuid: 'uuid-1',
-} as ReducerState, {
-  id: 'uuid-1',
-});
+);
 
-export const PaymentFeedback = createExample(TestedComponent[type].solve, {
-  ...reducerStatesExample.challengeSolving,
-  recovery_information: {
-    challenges: [{
-      cost: 'USD:1',
-      instructions: 'does P equals NP?',
-      type: 'question',
-      uuid: 'uuid-1'
-    }],
-    policies: [],
+export const PaymentFeedback = createExample(
+  TestedComponent[type].solve,
+  {
+    ...reducerStatesExample.challengeSolving,
+    recovery_information: {
+      challenges: [
+        {
+          cost: "USD:1",
+          instructions: "does P equals NP?",
+          type: "question",
+          uuid: "uuid-1",
+        },
+      ],
+      policies: [],
+    },
+    selected_challenge_uuid: "uuid-1",
+    challenge_feedback: {
+      "uuid-1": {
+        state: ChallengeFeedbackStatus.Payment,
+        taler_pay_uri: "taler://pay/...",
+        provider: "https://localhost:8080/",
+        payment_secret: "3P4561HAMHRRYEYD6CM6J7TS5VTD5SR2K2EXJDZEFSX92XKHR4KG",
+      },
+    },
+  } as ReducerState,
+  {
+    id: "uuid-1",
   },
-  selected_challenge_uuid: 'uuid-1',
-  challenge_feedback: {
-    'uuid-1': {
-      state: ChallengeFeedbackStatus.Payment,
-      taler_pay_uri: "taler://pay/...",
-      provider: "https://localhost:8080/",
-      payment_secret: "3P4561HAMHRRYEYD6CM6J7TS5VTD5SR2K2EXJDZEFSX92XKHR4KG"
-    }
-  }
-} as ReducerState, {
-  id: 'uuid-1',
-});
-
+);

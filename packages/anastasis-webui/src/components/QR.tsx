@@ -21,15 +21,28 @@ import qrcode from "qrcode-generator";
 export function QR({ text }: { text: string }): VNode {
   const divRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const qr = qrcode(0, 'L');
+    const qr = qrcode(0, "L");
     qr.addData(text);
     qr.make();
-    if (divRef.current) divRef.current.innerHTML = qr.createSvgTag({
-      scalable: true,
-    });
+    if (divRef.current)
+      divRef.current.innerHTML = qr.createSvgTag({
+        scalable: true,
+      });
   });
 
-  return <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-    <div style={{ width: '50%', minWidth: 200, maxWidth: 300 }} ref={divRef} />
-  </div>;
+  return (
+    <div
+      style={{
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      <div
+        style={{ width: "50%", minWidth: 200, maxWidth: 300 }}
+        ref={divRef}
+      />
+    </div>
+  );
 }

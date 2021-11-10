@@ -3,19 +3,19 @@ import { useAnastasisContext } from "../../context/anastasis";
 import { AnastasisClientFrame } from "./index";
 
 export function ChallengePayingScreen(): VNode {
-  const reducer = useAnastasisContext()
+  const reducer = useAnastasisContext();
   if (!reducer) {
-    return <div>no reducer in context</div>
+    return <div>no reducer in context</div>;
   }
-  if (!reducer.currentReducerState || reducer.currentReducerState.recovery_state === undefined) {
-    return <div>invalid state</div>
+  if (
+    !reducer.currentReducerState ||
+    reducer.currentReducerState.recovery_state === undefined
+  ) {
+    return <div>invalid state</div>;
   }
-  const payments = ['']; //reducer.currentReducerState.payments ?? 
+  const payments = [""]; //reducer.currentReducerState.payments ??
   return (
-    <AnastasisClientFrame
-      hideNav
-      title="Recovery: Challenge Paying"
-    >
+    <AnastasisClientFrame hideNav title="Recovery: Challenge Paying">
       <p>
         Some of the providers require a payment to store the encrypted
         authentication information.

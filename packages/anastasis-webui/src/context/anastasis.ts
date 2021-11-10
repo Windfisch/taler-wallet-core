@@ -15,19 +15,19 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createContext, h, VNode } from 'preact';
-import { useContext } from 'preact/hooks';
-import { AnastasisReducerApi } from '../hooks/use-anastasis-reducer';
+import { createContext, h, VNode } from "preact";
+import { useContext } from "preact/hooks";
+import { AnastasisReducerApi } from "../hooks/use-anastasis-reducer";
 
 type Type = AnastasisReducerApi | undefined;
 
-const initial = undefined
+const initial = undefined;
 
-const Context = createContext<Type>(initial)
+const Context = createContext<Type>(initial);
 
 interface Props {
   value: AnastasisReducerApi;
@@ -36,6 +36,6 @@ interface Props {
 
 export const AnastasisProvider = ({ value, children }: Props): VNode => {
   return h(Context.Provider, { value, children });
-}
+};
 
 export const useAnastasisContext = (): Type => useContext(Context);

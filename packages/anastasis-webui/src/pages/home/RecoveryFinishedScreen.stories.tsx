@@ -16,30 +16,32 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { ReducerState } from 'anastasis-core';
-import { createExample, reducerStatesExample } from '../../utils';
-import { RecoveryFinishedScreen as TestedComponent } from './RecoveryFinishedScreen';
-
+import { ReducerState } from "anastasis-core";
+import { createExample, reducerStatesExample } from "../../utils";
+import { RecoveryFinishedScreen as TestedComponent } from "./RecoveryFinishedScreen";
 
 export default {
-  title: 'Pages/recovery/Finished',
+  title: "Pages/recovery/Finished",
   args: {
     order: 7,
   },
   component: TestedComponent,
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
 export const GoodEnding = createExample(TestedComponent, {
   ...reducerStatesExample.recoveryFinished,
-  core_secret: { mime: 'text/plain', value: 'hello' }
+  core_secret: { mime: "text/plain", value: "hello" },
 } as ReducerState);
 
-export const BadEnding = createExample(TestedComponent, reducerStatesExample.recoveryFinished);
+export const BadEnding = createExample(
+  TestedComponent,
+  reducerStatesExample.recoveryFinished,
+);

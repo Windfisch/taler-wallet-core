@@ -16,37 +16,42 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { ReducerState } from 'anastasis-core';
-import { createExample, reducerStatesExample } from '../../utils';
-import { ContinentSelectionScreen as TestedComponent } from './ContinentSelectionScreen';
-
+import { ReducerState } from "anastasis-core";
+import { createExample, reducerStatesExample } from "../../utils";
+import { ContinentSelectionScreen as TestedComponent } from "./ContinentSelectionScreen";
 
 export default {
-  title: 'Pages/Location',
+  title: "Pages/Location",
   component: TestedComponent,
   args: {
     order: 2,
   },
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
-export const BackupSelectContinent = createExample(TestedComponent, reducerStatesExample.backupSelectContinent);
+export const BackupSelectContinent = createExample(
+  TestedComponent,
+  reducerStatesExample.backupSelectContinent,
+);
 
 export const BackupSelectCountry = createExample(TestedComponent, {
   ...reducerStatesExample.backupSelectContinent,
-  selected_continent: 'Testcontinent',
+  selected_continent: "Testcontinent",
 } as ReducerState);
 
-export const RecoverySelectContinent = createExample(TestedComponent, reducerStatesExample.recoverySelectContinent);
+export const RecoverySelectContinent = createExample(
+  TestedComponent,
+  reducerStatesExample.recoverySelectContinent,
+);
 
 export const RecoverySelectCountry = createExample(TestedComponent, {
   ...reducerStatesExample.recoverySelectContinent,
-  selected_continent: 'Testcontinent',
+  selected_continent: "Testcontinent",
 } as ReducerState);

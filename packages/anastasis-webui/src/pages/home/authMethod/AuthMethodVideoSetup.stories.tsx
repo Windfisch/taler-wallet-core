@@ -16,51 +16,68 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createExample, reducerStatesExample } from '../../../utils';
-import { authMethods as TestedComponent, KnownAuthMethods } from './index';
-import logoImage from '../../../assets/logo.jpeg'
+import { createExample, reducerStatesExample } from "../../../utils";
+import { authMethods as TestedComponent, KnownAuthMethods } from "./index";
+import logoImage from "../../../assets/logo.jpeg";
 
 export default {
-  title: 'Pages/backup/AuthorizationMethod/AuthMethods/Video',
+  title: "Pages/backup/AuthorizationMethod/AuthMethods/Video",
   component: TestedComponent,
   args: {
     order: 5,
   },
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
-const type: KnownAuthMethods = 'video'
+const type: KnownAuthMethods = "video";
 
-export const Empty = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
-  configured: []
-});
+export const Empty = createExample(
+  TestedComponent[type].setup,
+  reducerStatesExample.authEditing,
+  {
+    configured: [],
+  },
+);
 
-export const WithOneExample = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
-  configured: [{
-    challenge: 'qwe',
-    type,
-    instructions: logoImage,
-    remove: () => null
-  }]
-});
+export const WithOneExample = createExample(
+  TestedComponent[type].setup,
+  reducerStatesExample.authEditing,
+  {
+    configured: [
+      {
+        challenge: "qwe",
+        type,
+        instructions: logoImage,
+        remove: () => null,
+      },
+    ],
+  },
+);
 
-export const WithMoreExamples = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
-  configured: [{
-    challenge: 'qwe',
-    type,
-    instructions: logoImage,
-    remove: () => null
-  },{
-    challenge: 'qwe',
-    type,
-    instructions: logoImage,
-    remove: () => null
-  }]
-});
+export const WithMoreExamples = createExample(
+  TestedComponent[type].setup,
+  reducerStatesExample.authEditing,
+  {
+    configured: [
+      {
+        challenge: "qwe",
+        type,
+        instructions: logoImage,
+        remove: () => null,
+      },
+      {
+        challenge: "qwe",
+        type,
+        instructions: logoImage,
+        remove: () => null,
+      },
+    ],
+  },
+);

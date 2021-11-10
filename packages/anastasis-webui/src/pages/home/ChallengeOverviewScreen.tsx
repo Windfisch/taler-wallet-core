@@ -11,23 +11,34 @@ function OverviewFeedbackDisplay(props: { feedback?: ChallengeFeedback }) {
   }
   switch (feedback.state) {
     case ChallengeFeedbackStatus.Message:
-      return (
-        <div class="block has-text-danger">{feedback.message}</div>
-      );
+      return <div class="block has-text-danger">{feedback.message}</div>;
     case ChallengeFeedbackStatus.Solved:
-      return <div />
+      return <div />;
     case ChallengeFeedbackStatus.Pending:
-    case ChallengeFeedbackStatus.Solved:
     case ChallengeFeedbackStatus.AuthIban:
       return null;
     case ChallengeFeedbackStatus.ServerFailure:
       return <div class="block has-text-danger">Server error.</div>;
     case ChallengeFeedbackStatus.RateLimitExceeded:
-      return <div class="block has-text-danger">There were to many failed attempts.</div>;
+      return (
+        <div class="block has-text-danger">
+          There were to many failed attempts.
+        </div>
+      );
     case ChallengeFeedbackStatus.Unsupported:
-      return <div class="block has-text-danger">This client doesn't support solving this type of challenge. Use another version or contact the provider.</div>;
+      return (
+        <div class="block has-text-danger">
+          This client doesn't support solving this type of challenge. Use
+          another version or contact the provider.
+        </div>
+      );
     case ChallengeFeedbackStatus.TruthUnknown:
-      return <div class="block has-text-danger">Provider doesn't recognize the challenge of the policy. Contact the provider for further information.</div>;
+      return (
+        <div class="block has-text-danger">
+          Provider doesn't recognize the challenge of the policy. Contact the
+          provider for further information.
+        </div>
+      );
     case ChallengeFeedbackStatus.Redirect:
     default:
       return <div />;
@@ -70,19 +81,25 @@ export function ChallengeOverviewScreen(): VNode {
       feedback: challengeFeedback[ch.uuid],
     };
   }
-  const policiesWithInfo = policies.map((row) => {
-    let isPolicySolved = true;
-    const challenges = row
-      .map(({ uuid }) => {
-        const info = knownChallengesMap[uuid];
-        const isChallengeSolved = info?.feedback?.state === "solved";
-        isPolicySolved = isPolicySolved && isChallengeSolved;
-        return { info, uuid, isChallengeSolved };
-      })
-      .filter((ch) => ch.info !== undefined);
+  const policiesWithInfo = policies
+    .map((row) => {
+      let isPolicySolved = true;
+      const challenges = row
+        .map(({ uuid }) => {
+          const info = knownChallengesMap[uuid];
+          const isChallengeSolved = info?.feedback?.state === "solved";
+          isPolicySolved = isPolicySolved && isChallengeSolved;
+          return { info, uuid, isChallengeSolved };
+        })
+        .filter((ch) => ch.info !== undefined);
 
-    return { isPolicySolved, challenges };
-  });
+      return {
+        isPolicySolved,
+        challenges,
+        corrupted: row.length > challenges.length,
+      };
+    })
+    .filter((p) => !p.corrupted);
 
   const atLeastThereIsOnePolicySolved =
     policiesWithInfo.find((p) => p.isPolicySolved) !== undefined;
@@ -92,19 +109,19 @@ export function ChallengeOverviewScreen(): VNode {
     : undefined;
   return (
     <AnastasisClientFrame hideNext={errors} title="Recovery: Solve challenges">
-      {!policies.length ? (
+      {!policiesWithInfo.length ? (
         <p class="block">
           No policies found, try with another version of the secret
         </p>
-      ) : policies.length === 1 ? (
+      ) : policiesWithInfo.length === 1 ? (
         <p class="block">
           One policy found for this secret. You need to solve all the challenges
           in order to recover your secret.
         </p>
       ) : (
         <p class="block">
-          We have found {policies.length} polices. You need to solve all the
-          challenges from one policy in order to recover your secret.
+          We have found {policiesWithInfo.length} polices. You need to solve all
+          the challenges from one policy in order to recover your secret.
         </p>
       )}
       {policiesWithInfo.map((policy, policy_index) => {
@@ -113,74 +130,100 @@ export function ChallengeOverviewScreen(): VNode {
           const method = authMethods[info.type as KnownAuthMethods];
 
           if (!method) {
-            return <div
-              key={uuid}
-              class="block"
-              style={{ display: "flex", justifyContent: "space-between" }}
-            >
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <span>unknown challenge</span>
+            return (
+              <div
+                key={uuid}
+                class="block"
+                style={{ display: "flex", justifyContent: "space-between" }}
+              >
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <span>unknown challenge</span>
+                </div>
               </div>
-
-            </div>
+            );
           }
 
-          function ChallengeButton({ id, feedback }: { id: string; feedback?: ChallengeFeedback }): VNode {
+          function ChallengeButton({
+            id,
+            feedback,
+          }: {
+            id: string;
+            feedback?: ChallengeFeedback;
+          }): VNode {
             function selectChallenge(): void {
-              if (reducer) reducer.transition("select_challenge", { uuid: id })
+              if (reducer) reducer.transition("select_challenge", { uuid: id });
             }
             if (!feedback) {
-              return <div>
-                <button class="button" onClick={selectChallenge}>
-                  Solve
-                </button>
-              </div>
+              return (
+                <div>
+                  <button
+                    class="button"
+                    disabled={
+                      atLeastThereIsOnePolicySolved && !policy.isPolicySolved
+                    }
+                    onClick={selectChallenge}
+                  >
+                    Solve
+                  </button>
+                </div>
+              );
             }
             switch (feedback.state) {
               case ChallengeFeedbackStatus.ServerFailure:
               case ChallengeFeedbackStatus.Unsupported:
               case ChallengeFeedbackStatus.TruthUnknown:
-              case ChallengeFeedbackStatus.RateLimitExceeded: return <div />
+              case ChallengeFeedbackStatus.RateLimitExceeded:
+                return <div />;
               case ChallengeFeedbackStatus.AuthIban:
-              case ChallengeFeedbackStatus.Payment: return <div>
-                <button class="button" onClick={selectChallenge}>
-                  Pay
-                </button>
-              </div>
-              case ChallengeFeedbackStatus.Redirect: return <div>
-                <button class="button" onClick={selectChallenge}>
-                  Go to {feedback.redirect_url}
-                </button>
-              </div>
-              case ChallengeFeedbackStatus.Solved: return <div>
-                <div class="tag is-success is-large">
-                  Solved
-                </div>
-              </div>
-              default: return <div>
-                <button class="button" onClick={selectChallenge}>
-                  Solve
-                </button>
-              </div>
-
+              case ChallengeFeedbackStatus.Payment:
+                return (
+                  <div>
+                    <button
+                      class="button"
+                      disabled={
+                        atLeastThereIsOnePolicySolved && !policy.isPolicySolved
+                      }
+                      onClick={selectChallenge}
+                    >
+                      Pay
+                    </button>
+                  </div>
+                );
+              case ChallengeFeedbackStatus.Redirect:
+                return (
+                  <div>
+                    <button
+                      class="button"
+                      disabled={
+                        atLeastThereIsOnePolicySolved && !policy.isPolicySolved
+                      }
+                      onClick={selectChallenge}
+                    >
+                      Go to {feedback.redirect_url}
+                    </button>
+                  </div>
+                );
+              case ChallengeFeedbackStatus.Solved:
+                return (
+                  <div>
+                    <div class="tag is-success is-large">Solved</div>
+                  </div>
+                );
+              default:
+                return (
+                  <div>
+                    <button
+                      class="button"
+                      disabled={
+                        atLeastThereIsOnePolicySolved && !policy.isPolicySolved
+                      }
+                      onClick={selectChallenge}
+                    >
+                      Solve
+                    </button>
+                  </div>
+                );
             }
-            // return <div>
-            //   {feedback.state !== "solved" ? (
-            //     <a
-            //       class="button"
-            //       onClick={() =>
-
-            //       }
-            //     >
-            //       {isFree ? "Solve" : `Pay and Solve`}
-            //     </a>
-            //   ) : null}
-            //   {feedback.state === "solved" ? (
-            //     // <div class="block is-success" > Solved </div>
-            //     <div class="tag is-success is-large">Solved</div>
-
-            //   ) : null}
-            // </div>
           }
           return (
             <div
@@ -202,7 +245,6 @@ export function ChallengeOverviewScreen(): VNode {
               </div>
 
               <ChallengeButton id={uuid} feedback={info.feedback} />
-
             </div>
           );
         });
@@ -210,11 +252,13 @@ export function ChallengeOverviewScreen(): VNode {
         const policyName = policy.challenges
           .map((x) => x.info.type)
           .join(" + ");
+
         const opa = !atLeastThereIsOnePolicySolved
           ? undefined
           : policy.isPolicySolved
-            ? undefined
-            : "0.6";
+          ? undefined
+          : "0.6";
+
         return (
           <div
             key={policy_index}

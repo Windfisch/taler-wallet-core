@@ -85,8 +85,8 @@ export function NotificationCard({
               n.type === "ERROR"
                 ? "message is-danger"
                 : n.type === "WARN"
-                  ? "message is-warning"
-                  : "message is-info"
+                ? "message is-warning"
+                : "message is-info"
             }
           >
             <div class="message-header">
@@ -113,7 +113,7 @@ export function NotYetReadyAppMenu({
   return (
     <div
       class="has-aside-mobile-expanded"
-      // class={mobileOpen ? "has-aside-mobile-expanded" : ""} 
+      // class={mobileOpen ? "has-aside-mobile-expanded" : ""}
       onClick={() => setMobileOpen(false)}
     >
       <NavigationBar

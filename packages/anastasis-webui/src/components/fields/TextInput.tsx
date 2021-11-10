@@ -18,25 +18,32 @@ export function TextInput(props: TextInputProps): VNode {
     }
   }, [props.grabFocus]);
   const value = props.bind[0];
-  const [dirty, setDirty] = useState(false)
-  const showError = dirty && props.error
-  return (<div class="field">
-    <label class="label">
-      {props.label}
-      {props.tooltip && <span class="icon has-tooltip-right" data-tooltip={props.tooltip}>
-        <i class="mdi mdi-information" />
-      </span>}
-    </label>
-    <div class="control has-icons-right">
-      <input
-        value={value}
-        placeholder={props.placeholder}
-        class={showError ? 'input is-danger' : 'input'}
-        onInput={(e) => {setDirty(true); props.bind[1]((e.target as HTMLInputElement).value)}}
-        ref={inputRef}
-        style={{ display: "block" }} />
+  const [dirty, setDirty] = useState(false);
+  const showError = dirty && props.error;
+  return (
+    <div class="field">
+      <label class="label">
+        {props.label}
+        {props.tooltip && (
+          <span class="icon has-tooltip-right" data-tooltip={props.tooltip}>
+            <i class="mdi mdi-information" />
+          </span>
+        )}
+      </label>
+      <div class="control has-icons-right">
+        <input
+          value={value}
+          placeholder={props.placeholder}
+          class={showError ? "input is-danger" : "input"}
+          onInput={(e) => {
+            setDirty(true);
+            props.bind[1]((e.target as HTMLInputElement).value);
+          }}
+          ref={inputRef}
+          style={{ display: "block" }}
+        />
+      </div>
+      {showError && <p class="help is-danger">{props.error}</p>}
     </div>
-    {showError && <p class="help is-danger">{props.error}</p>}
-  </div>
   );
 }

@@ -44,8 +44,16 @@ export function AuthMethodTotpSolve({ id }: AuthMethodSolveProps): VNode {
     return (
       <AnastasisClientFrame hideNav title="Recovery problem">
         <div>invalid state</div>
-        <div style={{ marginTop: '2em', display: 'flex', justifyContent: 'space-between' }}>
-          <button class="button" onClick={() => reducer.back()}>Back</button>
+        <div
+          style={{
+            marginTop: "2em",
+            display: "flex",
+            justifyContent: "space-between",
+          }}
+        >
+          <button class="button" onClick={() => reducer.back()}>
+            Back
+          </button>
         </div>
       </AnastasisClientFrame>
     );
@@ -62,8 +70,7 @@ export function AuthMethodTotpSolve({ id }: AuthMethodSolveProps): VNode {
     challenges[ch.uuid] = ch;
   }
   const selectedChallenge = challenges[selectedUuid];
-  const feedback = challengeFeedback[selectedUuid]
-
+  const feedback = challengeFeedback[selectedUuid];
 
   async function onNext(): Promise<void> {
     return reducer?.transition("solve_challenge", { answer });
@@ -72,18 +79,16 @@ export function AuthMethodTotpSolve({ id }: AuthMethodSolveProps): VNode {
     reducer?.back();
   }
 
-
-  const shouldHideConfirm = feedback?.state === ChallengeFeedbackStatus.RateLimitExceeded
-    || feedback?.state === ChallengeFeedbackStatus.Redirect
-    || feedback?.state === ChallengeFeedbackStatus.Unsupported
-    || feedback?.state === ChallengeFeedbackStatus.TruthUnknown
+  const shouldHideConfirm =
+    feedback?.state === ChallengeFeedbackStatus.RateLimitExceeded ||
+    feedback?.state === ChallengeFeedbackStatus.Redirect ||
+    feedback?.state === ChallengeFeedbackStatus.Unsupported ||
+    feedback?.state === ChallengeFeedbackStatus.TruthUnknown;
 
   return (
     <AnastasisClientFrame hideNav title="Add email authentication">
       <SolveOverviewFeedbackDisplay feedback={feedback} />
-      <p>
-        enter the totp solution
-      </p>
+      <p>enter the totp solution</p>
       <TextInput label="Answer" grabFocus bind={[answer, setAnswer]} />
 
       <div
@@ -96,9 +101,11 @@ export function AuthMethodTotpSolve({ id }: AuthMethodSolveProps): VNode {
         <button class="button" onClick={onCancel}>
           Cancel
         </button>
-        {!shouldHideConfirm && <AsyncButton class="button is-info" onClick={onNext}>
-          Confirm
-        </AsyncButton>}
+        {!shouldHideConfirm && (
+          <AsyncButton class="button is-info" onClick={onNext}>
+            Confirm
+          </AsyncButton>
+        )}
       </div>
     </AnastasisClientFrame>
   );

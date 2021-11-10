@@ -15,48 +15,51 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { ReducerState } from 'anastasis-core';
-import { createExample, reducerStatesExample } from '../../utils';
-import { BackupFinishedScreen as TestedComponent } from './BackupFinishedScreen';
-
+import { ReducerState } from "anastasis-core";
+import { createExample, reducerStatesExample } from "../../utils";
+import { BackupFinishedScreen as TestedComponent } from "./BackupFinishedScreen";
 
 export default {
-  title: 'Pages/backup/Finished',
+  title: "Pages/backup/Finished",
   component: TestedComponent,
   args: {
     order: 8,
   },
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
-export const WithoutName = createExample(TestedComponent, reducerStatesExample.backupFinished);
+export const WithoutName = createExample(
+  TestedComponent,
+  reducerStatesExample.backupFinished,
+);
 
-export const WithName = createExample(TestedComponent, {...reducerStatesExample.backupFinished,
-  secret_name: 'super_secret',
+export const WithName = createExample(TestedComponent, {
+  ...reducerStatesExample.backupFinished,
+  secret_name: "super_secret",
 } as ReducerState);
 
 export const WithDetails = createExample(TestedComponent, {
   ...reducerStatesExample.backupFinished,
-  secret_name: 'super_secret',
+  secret_name: "super_secret",
   success_details: {
-    'http://anastasis.net': {
+    "http://anastasis.net": {
       policy_expiration: {
-        t_ms: 'never'
+        t_ms: "never",
       },
-      policy_version: 0
+      policy_version: 0,
     },
-    'http://taler.net': {
+    "http://taler.net": {
       policy_expiration: {
-        t_ms: new Date().getTime() + 60*60*24*1000
+        t_ms: new Date().getTime() + 60 * 60 * 24 * 1000,
       },
-      policy_version: 1
+      policy_version: 1,
     },
-  }
+  },
 } as ReducerState);

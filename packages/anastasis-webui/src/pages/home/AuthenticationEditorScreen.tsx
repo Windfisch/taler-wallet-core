@@ -20,7 +20,9 @@ export function AuthenticationEditorScreen(): VNode {
     KnownAuthMethods | undefined
   >(undefined);
   const [tooFewAuths, setTooFewAuths] = useState(false);
-  const [manageProvider, setManageProvider] = useState<string | undefined>(undefined)
+  const [manageProvider, setManageProvider] = useState<string | undefined>(
+    undefined,
+  );
 
   // const [addingProvider, setAddingProvider] = useState<string | undefined>(undefined)
   const reducer = useAnastasisContext();
@@ -68,11 +70,14 @@ export function AuthenticationEditorScreen(): VNode {
   }
 
   if (manageProvider !== undefined) {
-    
-    return <AddingProviderScreen
-      onCancel={() => setManageProvider(undefined)}
-      providerType={isKnownAuthMethods(manageProvider) ? manageProvider : undefined}
-    />
+    return (
+      <AddingProviderScreen
+        onCancel={() => setManageProvider(undefined)}
+        providerType={
+          isKnownAuthMethods(manageProvider) ? manageProvider : undefined
+        }
+      />
+    );
   }
 
   if (selectedMethod) {
@@ -100,7 +105,7 @@ export function AuthenticationEditorScreen(): VNode {
             description="No providers founds"
             label="Add a provider manually"
             onConfirm={() => {
-              setManageProvider(selectedMethod)
+              setManageProvider(selectedMethod);
             }}
           >
             <p>
@@ -193,7 +198,7 @@ export function AuthenticationEditorScreen(): VNode {
               description="No providers founds"
               label="Add a provider manually"
               onConfirm={() => {
-                setManageProvider("")
+                setManageProvider("");
               }}
             >
               <p>
@@ -214,7 +219,10 @@ export function AuthenticationEditorScreen(): VNode {
             authentication method is defined by the backup provider list.
           </p>
           <p class="block">
-            <button class="button is-info" onClick={() => setManageProvider("")}>
+            <button
+              class="button is-info"
+              onClick={() => setManageProvider("")}
+            >
               Manage backup providers
             </button>
           </p>

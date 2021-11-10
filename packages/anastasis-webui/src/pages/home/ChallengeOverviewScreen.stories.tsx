@@ -19,7 +19,11 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { ChallengeFeedbackStatus, RecoveryStates, ReducerState } from "anastasis-core";
+import {
+  ChallengeFeedbackStatus,
+  RecoveryStates,
+  ReducerState,
+} from "anastasis-core";
 import { createExample, reducerStatesExample } from "../../utils";
 import { ChallengeOverviewScreen as TestedComponent } from "./ChallengeOverviewScreen";
 
@@ -247,20 +251,20 @@ export const OnePolicyWithAllTheChallengesInDifferentState = createExample(
       "uuid-1": { state: ChallengeFeedbackStatus.Solved.toString() },
       "uuid-2": {
         state: ChallengeFeedbackStatus.Message.toString(),
-        message: 'Challenge should be solved'
+        message: "Challenge should be solved",
       },
       "uuid-3": {
         state: ChallengeFeedbackStatus.AuthIban.toString(),
         challenge_amount: "EUR:1",
         credit_iban: "DE12345789000",
         business_name: "Data Loss Incorporated",
-        wire_transfer_subject: "Anastasis 987654321"
+        wire_transfer_subject: "Anastasis 987654321",
       },
       "uuid-4": {
         state: ChallengeFeedbackStatus.Payment.toString(),
         taler_pay_uri: "taler://pay/...",
         provider: "https://localhost:8080/",
-        payment_secret: "3P4561HAMHRRYEYD6CM6J7TS5VTD5SR2K2EXJDZEFSX92XKHR4KG"
+        payment_secret: "3P4561HAMHRRYEYD6CM6J7TS5VTD5SR2K2EXJDZEFSX92XKHR4KG",
       },
       "uuid-5": {
         state: ChallengeFeedbackStatus.RateLimitExceeded.toString(),
@@ -269,7 +273,7 @@ export const OnePolicyWithAllTheChallengesInDifferentState = createExample(
       "uuid-6": {
         state: ChallengeFeedbackStatus.Redirect.toString(),
         redirect_url: "https://videoconf.example.com/",
-        http_status: 303
+        http_status: 303,
       },
       "uuid-7": {
         state: ChallengeFeedbackStatus.ServerFailure.toString(),

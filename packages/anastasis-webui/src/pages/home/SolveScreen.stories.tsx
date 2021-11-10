@@ -15,55 +15,63 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { ChallengeFeedbackStatus, RecoveryStates, ReducerState } from 'anastasis-core';
-import { createExample, reducerStatesExample } from '../../utils';
-import { SolveScreen as TestedComponent } from './SolveScreen';
-
+import {
+  ChallengeFeedbackStatus,
+  RecoveryStates,
+  ReducerState,
+} from "anastasis-core";
+import { createExample, reducerStatesExample } from "../../utils";
+import { SolveScreen as TestedComponent } from "./SolveScreen";
 
 export default {
-  title: 'Pages/recovery/SolveChallenge/Solve',
+  title: "Pages/recovery/SolveChallenge/Solve",
   component: TestedComponent,
   args: {
     order: 6,
   },
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
-export const NoInformation = createExample(TestedComponent, reducerStatesExample.challengeSolving);
+export const NoInformation = createExample(
+  TestedComponent,
+  reducerStatesExample.challengeSolving,
+);
 
 export const NotSupportedChallenge = createExample(TestedComponent, {
   ...reducerStatesExample.challengeSolving,
   recovery_information: {
-    challenges: [{
-      cost: 'USD:1',
-      instructions: 'does P equals NP?',
-      type: 'chall-type',
-      uuid: 'ASDASDSAD!1'
-    }],
+    challenges: [
+      {
+        cost: "USD:1",
+        instructions: "does P equals NP?",
+        type: "chall-type",
+        uuid: "ASDASDSAD!1",
+      },
+    ],
     policies: [],
   },
-  selected_challenge_uuid: 'ASDASDSAD!1',
-
+  selected_challenge_uuid: "ASDASDSAD!1",
 } as ReducerState);
 
 export const MismatchedChallengeId = createExample(TestedComponent, {
   ...reducerStatesExample.challengeSolving,
   recovery_information: {
-    challenges: [{
-      cost: 'USD:1',
-      instructions: 'does P equals NP?',
-      type: 'chall-type',
-      uuid: 'ASDASDSAD!1'
-    }],
+    challenges: [
+      {
+        cost: "USD:1",
+        instructions: "does P equals NP?",
+        type: "chall-type",
+        uuid: "ASDASDSAD!1",
+      },
+    ],
     policies: [],
   },
-  selected_challenge_uuid: 'no-no-no'
+  selected_challenge_uuid: "no-no-no",
 } as ReducerState);
-

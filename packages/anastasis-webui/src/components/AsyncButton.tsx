@@ -15,9 +15,9 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
 import { ComponentChildren, h, VNode } from "preact";
 // import { LoadingModal } from "../modal";
@@ -31,19 +31,26 @@ type Props = {
   [rest: string]: any;
 };
 
-export function AsyncButton({ onClick, disabled, children, ...rest }: Props): VNode {
+export function AsyncButton({
+  onClick,
+  disabled,
+  children,
+  ...rest
+}: Props): VNode {
   const { isLoading, request } = useAsync(onClick);
 
   // if (isSlow) {
   //   return <LoadingModal onCancel={cancel} />;
   // }
-  if (isLoading) {    
+  if (isLoading) {
     return <button class="button">Loading...</button>;
   }
 
-  return <span data-tooltip={rest['data-tooltip']} style={{marginLeft: 5}}>
-    <button {...rest} onClick={request} disabled={disabled}>
-      {children}
-    </button>
-  </span>;
+  return (
+    <span data-tooltip={rest["data-tooltip"]} style={{ marginLeft: 5 }}>
+      <button {...rest} onClick={request} disabled={disabled}>
+        {children}
+      </button>
+    </span>
+  );
 }

@@ -1,5 +1,3 @@
 {
-    "presets": [ 
-        "preact-cli/babel"
-    ]
+  "presets": ["preact-cli/babel"]
 }

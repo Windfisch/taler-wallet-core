@@ -15,14 +15,14 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 import { h, VNode } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { TextInputProps } from "./TextInput";
 
-const MAX_IMAGE_UPLOAD_SIZE = 1024 * 1024
+const MAX_IMAGE_UPLOAD_SIZE = 1024 * 1024;
 
 export function FileInput(props: TextInputProps): VNode {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -34,48 +34,54 @@ export function FileInput(props: TextInputProps): VNode {
 
   const value = props.bind[0];
   // const [dirty, setDirty] = useState(false)
-  const image = useRef<HTMLInputElement>(null)
-  const [sizeError, setSizeError] = useState(false)
+  const image = useRef<HTMLInputElement>(null);
+  const [sizeError, setSizeError] = useState(false);
   function onChange(v: string): void {
     // setDirty(true);
     props.bind[1](v);
   }
-  return <div class="field">
-    <label class="label">
-      <a onClick={() => image.current?.click()}>
-        {props.label}
-      </a>
-      {props.tooltip && <span class="icon has-tooltip-right" data-tooltip={props.tooltip}>
-        <i class="mdi mdi-information" />
-      </span>}
-    </label>
-    <div class="control">
-      <input
-        ref={image} style={{ display: 'none' }}
-        type="file" name={String(name)}
-        onChange={e => {
-          const f: FileList | null = e.currentTarget.files
-          if (!f || f.length != 1) {
-            return onChange("")
-          }
-          if (f[0].size > MAX_IMAGE_UPLOAD_SIZE) {
-            setSizeError(true)
-            return onChange("")
-          }
-          setSizeError(false)
-          return f[0].arrayBuffer().then(b => {
-            const b64 = btoa(
-              new Uint8Array(b)
-                .reduce((data, byte) => data + String.fromCharCode(byte), '')
-            )
-            return onChange(`data:${f[0].type};base64,${b64}` as any)
-          })
-        }} />
-      {props.error && <p class="help is-danger">{props.error}</p>}
-      {sizeError && <p class="help is-danger">
-        File should be smaller than 1 MB
-      </p>}
+  return (
+    <div class="field">
+      <label class="label">
+        <a onClick={() => image.current?.click()}>{props.label}</a>
+        {props.tooltip && (
+          <span class="icon has-tooltip-right" data-tooltip={props.tooltip}>
+            <i class="mdi mdi-information" />
+          </span>
+        )}
+      </label>
+      <div class="control">
+        <input
+          ref={image}
+          style={{ display: "none" }}
+          type="file"
+          name={String(name)}
+          onChange={(e) => {
+            const f: FileList | null = e.currentTarget.files;
+            if (!f || f.length != 1) {
+              return onChange("");
+            }
+            if (f[0].size > MAX_IMAGE_UPLOAD_SIZE) {
+              setSizeError(true);
+              return onChange("");
+            }
+            setSizeError(false);
+            return f[0].arrayBuffer().then((b) => {
+              const b64 = btoa(
+                new Uint8Array(b).reduce(
+                  (data, byte) => data + String.fromCharCode(byte),
+                  "",
+                ),
+              );
+              return onChange(`data:${f[0].type};base64,${b64}` as any);
+            });
+          }}
+        />
+        {props.error && <p class="help is-danger">{props.error}</p>}
+        {sizeError && (
+          <p class="help is-danger">File should be smaller than 1 MB</p>
+        )}
+      </div>
     </div>
-  </div>
+  );
 }
-

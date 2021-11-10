@@ -15,35 +15,40 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { ReducerState } from 'anastasis-core';
-import { createExample, reducerStatesExample } from '../../utils';
-import { PoliciesPayingScreen as TestedComponent } from './PoliciesPayingScreen';
-
+import { ReducerState } from "anastasis-core";
+import { createExample, reducerStatesExample } from "../../utils";
+import { PoliciesPayingScreen as TestedComponent } from "./PoliciesPayingScreen";
 
 export default {
-  title: 'Pages/backup/__PoliciesPaying',
+  title: "Pages/backup/__PoliciesPaying",
   component: TestedComponent,
   args: {
     order: 9,
   },
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
-export const Example = createExample(TestedComponent, reducerStatesExample.policyPay);
+export const Example = createExample(
+  TestedComponent,
+  reducerStatesExample.policyPay,
+);
 export const WithSomePaymentRequest = createExample(TestedComponent, {
   ...reducerStatesExample.policyPay,
-  policy_payment_requests: [{
-    payto: 'payto://x-taler-bank/bank.taler/account-a',
-    provider: 'provider1'
-  }, {
-    payto: 'payto://x-taler-bank/bank.taler/account-b',
-    provider: 'provider2'
-  }]
+  policy_payment_requests: [
+    {
+      payto: "payto://x-taler-bank/bank.taler/account-a",
+      provider: "provider1",
+    },
+    {
+      payto: "payto://x-taler-bank/bank.taler/account-b",
+      provider: "provider2",
+    },
+  ],
 } as ReducerState);

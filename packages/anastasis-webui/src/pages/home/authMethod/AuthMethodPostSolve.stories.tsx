@@ -15,42 +15,46 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { ChallengeFeedbackStatus, ReducerState } from 'anastasis-core';
-import { createExample, reducerStatesExample } from '../../../utils';
-import { authMethods as TestedComponent, KnownAuthMethods } from './index';
-
+import { ChallengeFeedbackStatus, ReducerState } from "anastasis-core";
+import { createExample, reducerStatesExample } from "../../../utils";
+import { authMethods as TestedComponent, KnownAuthMethods } from "./index";
 
 export default {
-  title: 'Pages/recovery/SolveChallenge/AuthMethods/post',
+  title: "Pages/recovery/SolveChallenge/AuthMethods/post",
   component: TestedComponent,
   args: {
     order: 5,
   },
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
-const type: KnownAuthMethods = 'post'
+const type: KnownAuthMethods = "post";
 
-export const WithoutFeedback = createExample(TestedComponent[type].solve, {
-  ...reducerStatesExample.challengeSolving,
-  recovery_information: {
-    challenges: [{
-      cost: 'USD:1',
-      instructions: 'does P equals NP?',
-      type: 'question',
-      uuid: 'uuid-1'
-    }],
-    policies: [],
+export const WithoutFeedback = createExample(
+  TestedComponent[type].solve,
+  {
+    ...reducerStatesExample.challengeSolving,
+    recovery_information: {
+      challenges: [
+        {
+          cost: "USD:1",
+          instructions: "does P equals NP?",
+          type: "question",
+          uuid: "uuid-1",
+        },
+      ],
+      policies: [],
+    },
+    selected_challenge_uuid: "uuid-1",
+  } as ReducerState,
+  {
+    id: "uuid-1",
   },
-  selected_challenge_uuid: 'uuid-1',
-} as ReducerState, {
-  id: 'uuid-1',
-});
-
+);

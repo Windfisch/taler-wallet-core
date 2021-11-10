@@ -15,30 +15,30 @@
  */
 
 /*eslint quote-props: ["error", "consistent"]*/
-export const strings: {[s: string]: any} = {};
+export const strings: { [s: string]: any } = {};
 
-strings['de'] = {
-  "domain": "messages",
-  "locale_data": {
-    "messages": {
+strings["de"] = {
+  domain: "messages",
+  locale_data: {
+    messages: {
       "": {
-        "domain": "messages",
-        "plural_forms": "nplurals=2; plural=(n != 1);",
-        "lang": ""
+        domain: "messages",
+        plural_forms: "nplurals=2; plural=(n != 1);",
+        lang: "",
       },
-    }
-  }
+    },
+  },
 };
 
-strings['en'] = {
-  "domain": "messages",
-  "locale_data": {
-    "messages": {
+strings["en"] = {
+  domain: "messages",
+  locale_data: {
+    messages: {
       "": {
-        "domain": "messages",
-        "plural_forms": "nplurals=2; plural=(n != 1);",
-        "lang": ""
+        domain: "messages",
+        plural_forms: "nplurals=2; plural=(n != 1);",
+        lang: "",
       },
-    }
-  }
+    },
+  },
 };

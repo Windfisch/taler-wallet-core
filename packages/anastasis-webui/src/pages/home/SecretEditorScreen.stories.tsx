@@ -15,30 +15,29 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { ReducerState } from 'anastasis-core';
-import { createExample, reducerStatesExample } from '../../utils';
-import { SecretEditorScreen as TestedComponent } from './SecretEditorScreen';
-
+import { ReducerState } from "anastasis-core";
+import { createExample, reducerStatesExample } from "../../utils";
+import { SecretEditorScreen as TestedComponent } from "./SecretEditorScreen";
 
 export default {
-  title: 'Pages/backup/SecretInput',
+  title: "Pages/backup/SecretInput",
   component: TestedComponent,
   args: {
     order: 7,
   },
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
 export const WithSecretNamePreselected = createExample(TestedComponent, {
   ...reducerStatesExample.secretEdition,
-  secret_name: 'someSecretName',
+  secret_name: "someSecretName",
 } as ReducerState);
 
 export const WithoutName = createExample(TestedComponent, {

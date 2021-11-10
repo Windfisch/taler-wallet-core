@@ -15,24 +15,26 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createExample, reducerStatesExample } from '../../utils';
-import { StartScreen as TestedComponent } from './StartScreen';
-
+import { createExample, reducerStatesExample } from "../../utils";
+import { StartScreen as TestedComponent } from "./StartScreen";
 
 export default {
-  title: 'Pages/Start',
+  title: "Pages/Start",
   component: TestedComponent,
   args: {
     order: 1,
   },
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
-export const InitialState = createExample(TestedComponent, reducerStatesExample.initial);
+export const InitialState = createExample(
+  TestedComponent,
+  reducerStatesExample.initial,
+);

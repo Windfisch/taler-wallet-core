@@ -15,24 +15,26 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createExample, reducerStatesExample } from '../../utils';
-import { ChallengePayingScreen as TestedComponent } from './ChallengePayingScreen';
-
+import { createExample, reducerStatesExample } from "../../utils";
+import { ChallengePayingScreen as TestedComponent } from "./ChallengePayingScreen";
 
 export default {
-  title: 'Pages/recovery/__ChallengePaying',
+  title: "Pages/recovery/__ChallengePaying",
   component: TestedComponent,
   args: {
     order: 10,
   },
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
-export const Example = createExample(TestedComponent, reducerStatesExample.challengePaying);
+export const Example = createExample(
+  TestedComponent,
+  reducerStatesExample.challengePaying,
+);

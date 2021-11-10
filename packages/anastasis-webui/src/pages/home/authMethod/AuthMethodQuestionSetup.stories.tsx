@@ -16,51 +16,69 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createExample, reducerStatesExample } from '../../../utils';
-import { authMethods as TestedComponent, KnownAuthMethods } from './index';
-
+import { createExample, reducerStatesExample } from "../../../utils";
+import { authMethods as TestedComponent, KnownAuthMethods } from "./index";
 
 export default {
-  title: 'Pages/backup/AuthorizationMethod/AuthMethods/Question',
+  title: "Pages/backup/AuthorizationMethod/AuthMethods/Question",
   component: TestedComponent,
   args: {
     order: 5,
   },
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
-const type: KnownAuthMethods = 'question'
+const type: KnownAuthMethods = "question";
 
-export const Empty = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
-  configured: []
-});
+export const Empty = createExample(
+  TestedComponent[type].setup,
+  reducerStatesExample.authEditing,
+  {
+    configured: [],
+  },
+);
 
-export const WithOneExample = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
-  configured: [{
-    challenge: 'qwe',
-    type,
-    instructions: 'Is integer factorization polynomial? (non-quantum computer)',
-    remove: () => null
-  }]
-});
+export const WithOneExample = createExample(
+  TestedComponent[type].setup,
+  reducerStatesExample.authEditing,
+  {
+    configured: [
+      {
+        challenge: "qwe",
+        type,
+        instructions:
+          "Is integer factorization polynomial? (non-quantum computer)",
+        remove: () => null,
+      },
+    ],
+  },
+);
 
-export const WithMoreExamples = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
-  configured: [{
-    challenge: 'qwe',
-    type,
-    instructions: 'Does P equal NP?',
-    remove: () => null
-  },{
-    challenge: 'asd',
-    type,
-    instructions: 'Are continuous groups automatically differential groups?',
-    remove: () => null
-  }]
-});
+export const WithMoreExamples = createExample(
+  TestedComponent[type].setup,
+  reducerStatesExample.authEditing,
+  {
+    configured: [
+      {
+        challenge: "qwe",
+        type,
+        instructions: "Does P equal NP?",
+        remove: () => null,
+      },
+      {
+        challenge: "asd",
+        type,
+        instructions:
+          "Are continuous groups automatically differential groups?",
+        remove: () => null,
+      },
+    ],
+  },
+);

@@ -1,9 +1,9 @@
 import { AuthMethod } from "anastasis-core";
 import { h, VNode } from "preact";
-import postalIcon from '../../../assets/icons/auth_method/postal.svg';
-import questionIcon from '../../../assets/icons/auth_method/question.svg';
-import smsIcon from '../../../assets/icons/auth_method/sms.svg';
-import videoIcon from '../../../assets/icons/auth_method/video.svg';
+import postalIcon from "../../../assets/icons/auth_method/postal.svg";
+import questionIcon from "../../../assets/icons/auth_method/question.svg";
+import smsIcon from "../../../assets/icons/auth_method/sms.svg";
+import videoIcon from "../../../assets/icons/auth_method/video.svg";
 import { AuthMethodEmailSetup as EmailSetup } from "./AuthMethodEmailSetup";
 import { AuthMethodEmailSolve as EmailSolve } from "./AuthMethodEmailSolve";
 import { AuthMethodIbanSetup as IbanSetup } from "./AuthMethodIbanSetup";
@@ -20,8 +20,7 @@ import { AuthMethodSmsSolve as SmsSolve } from "./AuthMethodSmsSolve";
 import { AuthMethodTotpSolve as TotpSolve } from "./AuthMethodTotpSolve";
 import { AuthMethodVideoSolve as VideoSolve } from "./AuthMethodVideoSolve";
 
-
-export type AuthMethodWithRemove = AuthMethod & { remove: () => void }
+export type AuthMethodWithRemove = AuthMethod & { remove: () => void };
 
 export interface AuthMethodSetupProps {
   method: string;
@@ -43,10 +42,18 @@ interface AuthMethodConfiguration {
 }
 // export type KnownAuthMethods = "sms" | "email" | "post" | "question" | "video" | "totp" | "iban";
 
-const ALL_METHODS = ['sms', 'email', 'post', 'question', 'video' , 'totp', 'iban'] as const;
-export type KnownAuthMethods = (typeof ALL_METHODS)[number];
+const ALL_METHODS = [
+  "sms",
+  "email",
+  "post",
+  "question",
+  "video",
+  "totp",
+  "iban",
+] as const;
+export type KnownAuthMethods = typeof ALL_METHODS[number];
 export function isKnownAuthMethods(value: string): value is KnownAuthMethods {
-  return ALL_METHODS.includes(value as KnownAuthMethods)
+  return ALL_METHODS.includes(value as KnownAuthMethods);
 }
 
 type KnowMethodConfig = {
@@ -96,5 +103,5 @@ export const authMethods: KnowMethodConfig = {
     setup: VideoSetup,
     solve: VideoSolve,
     skip: true,
-  }
-}
+  },
+};

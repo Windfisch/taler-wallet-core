@@ -27,23 +27,25 @@ import { useTranslationContext } from "../context/translation";
 
 export function useTranslator() {
   const ctx = useTranslationContext();
-  const jed = ctx.handler
-  return function str(stringSeq: TemplateStringsArray, ...values: any[]): string {
+  const jed = ctx.handler;
+  return function str(
+    stringSeq: TemplateStringsArray,
+    ...values: any[]
+  ): string {
     const s = toI18nString(stringSeq);
-    if (!s) return s
+    if (!s) return s;
     const tr = jed
       .translate(s)
       .ifPlural(1, s)
       .fetch(...values);
     return tr;
-  }
+  };
 }
-
 
 /**
  * Convert template strings to a msgid
  */
- function toI18nString(stringSeq: ReadonlyArray<string>): string {
+function toI18nString(stringSeq: ReadonlyArray<string>): string {
   let s = "";
   for (let i = 0; i < stringSeq.length; i++) {
     s += stringSeq[i];
@@ -53,7 +55,6 @@ export function useTranslator() {
   }
   return s;
 }
-
 
 interface TranslateSwitchProps {
   target: number;
@@ -110,7 +111,7 @@ function getTranslatedChildren(
       // Text
       result.push(tr[i]);
     } else {
-      const childIdx = Number.parseInt(tr[i],10) - 1;
+      const childIdx = Number.parseInt(tr[i], 10) - 1;
       result.push(placeholderChildren[childIdx]);
     }
   }
@@ -131,9 +132,9 @@ function getTranslatedChildren(
  */
 export function Translate({ children }: TranslateProps): VNode {
   const s = stringifyChildren(children);
-  const ctx = useTranslationContext()
+  const ctx = useTranslationContext();
   const translation: string = ctx.handler.ngettext(s, s, 1);
-  const result = getTranslatedChildren(translation, children)
+  const result = getTranslatedChildren(translation, children);
   return <Fragment>{result}</Fragment>;
 }
 
@@ -154,14 +155,16 @@ export function TranslateSwitch({ children, target }: TranslateSwitchProps) {
   let plural: VNode<TranslationPluralProps> | undefined;
   // const children = this.props.children;
   if (children) {
-    (children instanceof Array ? children : [children]).forEach((child: any) => {
-      if (child.type === TranslatePlural) {
-        plural = child;
-      }
-      if (child.type === TranslateSingular) {
-        singular = child;
-      }
-    });
+    (children instanceof Array ? children : [children]).forEach(
+      (child: any) => {
+        if (child.type === TranslatePlural) {
+          plural = child;
+        }
+        if (child.type === TranslateSingular) {
+          singular = child;
+        }
+      },
+    );
   }
   if (!singular || !plural) {
     console.error("translation not found");
@@ -182,9 +185,12 @@ interface TranslationPluralProps {
 /**
  * See [[TranslateSwitch]].
  */
-export function TranslatePlural({ children, target }: TranslationPluralProps): VNode {
+export function TranslatePlural({
+  children,
+  target,
+}: TranslationPluralProps): VNode {
   const s = stringifyChildren(children);
-  const ctx = useTranslationContext()
+  const ctx = useTranslationContext();
   const translation = ctx.handler.ngettext(s, s, 1);
   const result = getTranslatedChildren(translation, children);
   return <Fragment>{result}</Fragment>;
@@ -193,11 +199,13 @@ export function TranslatePlural({ children, target }: TranslationPluralProps): V
 /**
  * See [[TranslateSwitch]].
  */
-export function TranslateSingular({ children, target }: TranslationPluralProps): VNode {
+export function TranslateSingular({
+  children,
+  target,
+}: TranslationPluralProps): VNode {
   const s = stringifyChildren(children);
-  const ctx = useTranslationContext()
+  const ctx = useTranslationContext();
   const translation = ctx.handler.ngettext(s, s, target);
   const result = getTranslatedChildren(translation, children);
   return <Fragment>{result}</Fragment>;
-
 }

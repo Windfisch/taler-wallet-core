@@ -15,51 +15,67 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createExample, reducerStatesExample } from '../../../utils';
-import { authMethods as TestedComponent, KnownAuthMethods } from './index';
-
+import { createExample, reducerStatesExample } from "../../../utils";
+import { authMethods as TestedComponent, KnownAuthMethods } from "./index";
 
 export default {
-  title: 'Pages/backup/AuthorizationMethod/AuthMethods/email',
+  title: "Pages/backup/AuthorizationMethod/AuthMethods/email",
   component: TestedComponent,
   args: {
     order: 5,
   },
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
-const type: KnownAuthMethods = 'email'
+const type: KnownAuthMethods = "email";
 
-export const Empty = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
-  configured: []
-});
+export const Empty = createExample(
+  TestedComponent[type].setup,
+  reducerStatesExample.authEditing,
+  {
+    configured: [],
+  },
+);
 
-export const WithOneExample = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
-  configured: [{
-    challenge: 'qwe',
-    type,
-    instructions: 'Email to sebasjm@email.com ',
-    remove: () => null
-  }]
-});
+export const WithOneExample = createExample(
+  TestedComponent[type].setup,
+  reducerStatesExample.authEditing,
+  {
+    configured: [
+      {
+        challenge: "qwe",
+        type,
+        instructions: "Email to sebasjm@email.com ",
+        remove: () => null,
+      },
+    ],
+  },
+);
 
-export const WithMoreExamples = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
-  configured: [{
-    challenge: 'qwe',
-    type,
-    instructions: 'Email to sebasjm@email.com',
-    remove: () => null
-  },{
-    challenge: 'qwe',
-    type,
-    instructions: 'Email to someone@sebasjm.com',
-    remove: () => null
-  }]
-});
+export const WithMoreExamples = createExample(
+  TestedComponent[type].setup,
+  reducerStatesExample.authEditing,
+  {
+    configured: [
+      {
+        challenge: "qwe",
+        type,
+        instructions: "Email to sebasjm@email.com",
+        remove: () => null,
+      },
+      {
+        challenge: "qwe",
+        type,
+        instructions: "Email to someone@sebasjm.com",
+        remove: () => null,
+      },
+    ],
+  },
+);

@@ -15,36 +15,34 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { ReducerState } from 'anastasis-core';
-import { createExample, reducerStatesExample } from '../../utils';
-import { SecretSelectionScreen as TestedComponent } from './SecretSelectionScreen';
-
+import { ReducerState } from "anastasis-core";
+import { createExample, reducerStatesExample } from "../../utils";
+import { SecretSelectionScreen as TestedComponent } from "./SecretSelectionScreen";
 
 export default {
-  title: 'Pages/recovery/SecretSelection',
+  title: "Pages/recovery/SecretSelection",
   component: TestedComponent,
   args: {
     order: 4,
   },
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
 export const Example = createExample(TestedComponent, {
   ...reducerStatesExample.secretSelection,
   recovery_document: {
-    provider_url: 'https://kudos.demo.anastasis.lu/',
-    secret_name: 'secretName',
+    provider_url: "https://kudos.demo.anastasis.lu/",
+    secret_name: "secretName",
     version: 1,
   },
 } as ReducerState);
-
 
 export const NoRecoveryDocumentFound = createExample(TestedComponent, {
   ...reducerStatesExample.secretSelection,

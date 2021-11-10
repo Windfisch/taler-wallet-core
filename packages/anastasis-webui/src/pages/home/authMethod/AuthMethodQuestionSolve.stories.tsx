@@ -15,186 +15,205 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { ChallengeFeedbackStatus, ReducerState } from 'anastasis-core';
-import { createExample, reducerStatesExample } from '../../../utils';
-import { authMethods as TestedComponent, KnownAuthMethods } from './index';
-
+import { ChallengeFeedbackStatus, ReducerState } from "anastasis-core";
+import { createExample, reducerStatesExample } from "../../../utils";
+import { authMethods as TestedComponent, KnownAuthMethods } from "./index";
 
 export default {
-  title: 'Pages/recovery/SolveChallenge/AuthMethods/question',
+  title: "Pages/recovery/SolveChallenge/AuthMethods/question",
   component: TestedComponent,
   args: {
     order: 5,
   },
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
-const type: KnownAuthMethods = 'question'
+const type: KnownAuthMethods = "question";
 
-export const WithoutFeedback = createExample(TestedComponent[type].solve, {
-  ...reducerStatesExample.challengeSolving,
-  recovery_information: {
-    challenges: [{
-      cost: 'USD:1',
-      instructions: 'does P equals NP?',
-      type: 'question',
-      uuid: 'uuid-1'
-    }],
-    policies: [],
+export const WithoutFeedback = createExample(
+  TestedComponent[type].solve,
+  {
+    ...reducerStatesExample.challengeSolving,
+    recovery_information: {
+      challenges: [
+        {
+          cost: "USD:1",
+          instructions: "does P equals NP?",
+          type: "question",
+          uuid: "uuid-1",
+        },
+      ],
+      policies: [],
+    },
+    selected_challenge_uuid: "uuid-1",
+  } as ReducerState,
+  {
+    id: "uuid-1",
   },
-  selected_challenge_uuid: 'uuid-1',
-} as ReducerState, {
-  id: 'uuid-1',
-});
+);
 
 export const MessageFeedback = createExample(TestedComponent[type].solve, {
   ...reducerStatesExample.challengeSolving,
   recovery_information: {
-    challenges: [{
-      cost: 'USD:1',
-      instructions: 'does P equals NP?',
-      type: 'question',
-      uuid: 'ASDASDSAD!1'
-    }],
+    challenges: [
+      {
+        cost: "USD:1",
+        instructions: "does P equals NP?",
+        type: "question",
+        uuid: "ASDASDSAD!1",
+      },
+    ],
     policies: [],
   },
-  selected_challenge_uuid: 'ASDASDSAD!1',
+  selected_challenge_uuid: "ASDASDSAD!1",
   challenge_feedback: {
-    'ASDASDSAD!1': {
+    "ASDASDSAD!1": {
       state: ChallengeFeedbackStatus.Message,
-      message: 'Challenge should be solved'
-    }
-  }
-
-} as ReducerState);
-
-export const ServerFailureFeedback = createExample(TestedComponent[type].solve, {
-  ...reducerStatesExample.challengeSolving,
-  recovery_information: {
-    challenges: [{
-      cost: 'USD:1',
-      instructions: 'does P equals NP?',
-      type: 'question',
-      uuid: 'ASDASDSAD!1'
-    }],
-    policies: [],
+      message: "Challenge should be solved",
+    },
   },
-  selected_challenge_uuid: 'ASDASDSAD!1',
-  challenge_feedback: {
-    'ASDASDSAD!1': {
-      state: ChallengeFeedbackStatus.ServerFailure,
-      http_status: 500,
-      error_response: "Couldn't connect to mysql"
-    }
-  }
-
 } as ReducerState);
+
+export const ServerFailureFeedback = createExample(
+  TestedComponent[type].solve,
+  {
+    ...reducerStatesExample.challengeSolving,
+    recovery_information: {
+      challenges: [
+        {
+          cost: "USD:1",
+          instructions: "does P equals NP?",
+          type: "question",
+          uuid: "ASDASDSAD!1",
+        },
+      ],
+      policies: [],
+    },
+    selected_challenge_uuid: "ASDASDSAD!1",
+    challenge_feedback: {
+      "ASDASDSAD!1": {
+        state: ChallengeFeedbackStatus.ServerFailure,
+        http_status: 500,
+        error_response: "Couldn't connect to mysql",
+      },
+    },
+  } as ReducerState,
+);
 
 export const RedirectFeedback = createExample(TestedComponent[type].solve, {
   ...reducerStatesExample.challengeSolving,
   recovery_information: {
-    challenges: [{
-      cost: 'USD:1',
-      instructions: 'does P equals NP?',
-      type: 'question',
-      uuid: 'ASDASDSAD!1'
-    }],
+    challenges: [
+      {
+        cost: "USD:1",
+        instructions: "does P equals NP?",
+        type: "question",
+        uuid: "ASDASDSAD!1",
+      },
+    ],
     policies: [],
   },
-  selected_challenge_uuid: 'ASDASDSAD!1',
+  selected_challenge_uuid: "ASDASDSAD!1",
   challenge_feedback: {
-    'ASDASDSAD!1': {
+    "ASDASDSAD!1": {
       state: ChallengeFeedbackStatus.Redirect,
       http_status: 302,
-      redirect_url: 'http://video.taler.net'
-    }
-  }
-
-} as ReducerState);
-
-export const MessageRateLimitExceededFeedback = createExample(TestedComponent[type].solve, {
-  ...reducerStatesExample.challengeSolving,
-  recovery_information: {
-    challenges: [{
-      cost: 'USD:1',
-      instructions: 'does P equals NP?',
-      type: 'question',
-      uuid: 'ASDASDSAD!1'
-    }],
-    policies: [],
+      redirect_url: "http://video.taler.net",
+    },
   },
-  selected_challenge_uuid: 'ASDASDSAD!1',
-  challenge_feedback: {
-    'ASDASDSAD!1': {
-      state: ChallengeFeedbackStatus.RateLimitExceeded,
-    }
-  }
-
 } as ReducerState);
+
+export const MessageRateLimitExceededFeedback = createExample(
+  TestedComponent[type].solve,
+  {
+    ...reducerStatesExample.challengeSolving,
+    recovery_information: {
+      challenges: [
+        {
+          cost: "USD:1",
+          instructions: "does P equals NP?",
+          type: "question",
+          uuid: "ASDASDSAD!1",
+        },
+      ],
+      policies: [],
+    },
+    selected_challenge_uuid: "ASDASDSAD!1",
+    challenge_feedback: {
+      "ASDASDSAD!1": {
+        state: ChallengeFeedbackStatus.RateLimitExceeded,
+      },
+    },
+  } as ReducerState,
+);
 
 export const UnsupportedFeedback = createExample(TestedComponent[type].solve, {
   ...reducerStatesExample.challengeSolving,
   recovery_information: {
-    challenges: [{
-      cost: 'USD:1',
-      instructions: 'does P equals NP?',
-      type: 'question',
-      uuid: 'ASDASDSAD!1'
-    }],
+    challenges: [
+      {
+        cost: "USD:1",
+        instructions: "does P equals NP?",
+        type: "question",
+        uuid: "ASDASDSAD!1",
+      },
+    ],
     policies: [],
   },
-  selected_challenge_uuid: 'ASDASDSAD!1',
+  selected_challenge_uuid: "ASDASDSAD!1",
   challenge_feedback: {
-    'ASDASDSAD!1': {
+    "ASDASDSAD!1": {
       state: ChallengeFeedbackStatus.Unsupported,
       http_status: 500,
-      unsupported_method: 'Question'
-    }
-  }
-
+      unsupported_method: "Question",
+    },
+  },
 } as ReducerState);
 
 export const TruthUnknownFeedback = createExample(TestedComponent[type].solve, {
   ...reducerStatesExample.challengeSolving,
   recovery_information: {
-    challenges: [{
-      cost: 'USD:1',
-      instructions: 'does P equals NP?',
-      type: 'question',
-      uuid: 'ASDASDSAD!1'
-    }],
+    challenges: [
+      {
+        cost: "USD:1",
+        instructions: "does P equals NP?",
+        type: "question",
+        uuid: "ASDASDSAD!1",
+      },
+    ],
     policies: [],
   },
-  selected_challenge_uuid: 'ASDASDSAD!1',
+  selected_challenge_uuid: "ASDASDSAD!1",
   challenge_feedback: {
-    'ASDASDSAD!1': {
+    "ASDASDSAD!1": {
       state: ChallengeFeedbackStatus.TruthUnknown,
-    }
-  }
-
+    },
+  },
 } as ReducerState);
 
 export const AuthIbanFeedback = createExample(TestedComponent[type].solve, {
   ...reducerStatesExample.challengeSolving,
   recovery_information: {
-    challenges: [{
-      cost: 'USD:1',
-      instructions: 'does P equals NP?',
-      type: 'question',
-      uuid: 'ASDASDSAD!1'
-    }],
+    challenges: [
+      {
+        cost: "USD:1",
+        instructions: "does P equals NP?",
+        type: "question",
+        uuid: "ASDASDSAD!1",
+      },
+    ],
     policies: [],
   },
-  selected_challenge_uuid: 'ASDASDSAD!1',
+  selected_challenge_uuid: "ASDASDSAD!1",
   challenge_feedback: {
-    'ASDASDSAD!1': {
+    "ASDASDSAD!1": {
       state: ChallengeFeedbackStatus.AuthIban,
       challenge_amount: "EUR:1",
       credit_iban: "DE12345789000",
@@ -210,30 +229,30 @@ export const AuthIbanFeedback = createExample(TestedComponent[type].solve, {
         wire_transfer_subject: "foo",
       },
       method: "iban",
-    }
-  }
-
+    },
+  },
 } as ReducerState);
 
 export const PaymentFeedback = createExample(TestedComponent[type].solve, {
   ...reducerStatesExample.challengeSolving,
   recovery_information: {
-    challenges: [{
-      cost: 'USD:1',
-      instructions: 'does P equals NP?',
-      type: 'question',
-      uuid: 'ASDASDSAD!1'
-    }],
+    challenges: [
+      {
+        cost: "USD:1",
+        instructions: "does P equals NP?",
+        type: "question",
+        uuid: "ASDASDSAD!1",
+      },
+    ],
     policies: [],
   },
-  selected_challenge_uuid: 'ASDASDSAD!1',
+  selected_challenge_uuid: "ASDASDSAD!1",
   challenge_feedback: {
-    'ASDASDSAD!1': {
+    "ASDASDSAD!1": {
       state: ChallengeFeedbackStatus.Payment,
-      taler_pay_uri : "taler://pay/...",
-      provider : "https://localhost:8080/",
-      payment_secret : "3P4561HAMHRRYEYD6CM6J7TS5VTD5SR2K2EXJDZEFSX92XKHR4KG"
-     }
-  }
+      taler_pay_uri: "taler://pay/...",
+      provider: "https://localhost:8080/",
+      payment_secret: "3P4561HAMHRRYEYD6CM6J7TS5VTD5SR2K2EXJDZEFSX92XKHR4KG",
+    },
+  },
 } as ReducerState);
-

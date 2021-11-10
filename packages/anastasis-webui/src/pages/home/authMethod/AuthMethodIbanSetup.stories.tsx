@@ -15,50 +15,66 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createExample, reducerStatesExample } from '../../../utils';
-import { authMethods as TestedComponent, KnownAuthMethods } from './index';
-
+import { createExample, reducerStatesExample } from "../../../utils";
+import { authMethods as TestedComponent, KnownAuthMethods } from "./index";
 
 export default {
-  title: 'Pages/backup/AuthorizationMethod/AuthMethods/IBAN',
+  title: "Pages/backup/AuthorizationMethod/AuthMethods/IBAN",
   component: TestedComponent,
   args: {
     order: 5,
   },
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
-const type: KnownAuthMethods = 'iban'
+const type: KnownAuthMethods = "iban";
 
-export const Empty = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
-  configured: []
-});
+export const Empty = createExample(
+  TestedComponent[type].setup,
+  reducerStatesExample.authEditing,
+  {
+    configured: [],
+  },
+);
 
-export const WithOneExample = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
-  configured: [{
-    challenge: 'qwe',
-    type,
-    instructions: 'Wire transfer from QWEASD123123 with holder Sebastian',
-    remove: () => null
-  }]
-});
-export const WithMoreExamples = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
-  configured: [{
-    challenge: 'qwe',
-    type,
-    instructions: 'Wire transfer from QWEASD123123 with holder Javier',
-    remove: () => null
-  },{
-    challenge: 'qwe',
-    type,
-    instructions: 'Wire transfer from QWEASD123123 with holder Sebastian',
-    remove: () => null
-  }]
-},);
+export const WithOneExample = createExample(
+  TestedComponent[type].setup,
+  reducerStatesExample.authEditing,
+  {
+    configured: [
+      {
+        challenge: "qwe",
+        type,
+        instructions: "Wire transfer from QWEASD123123 with holder Sebastian",
+        remove: () => null,
+      },
+    ],
+  },
+);
+export const WithMoreExamples = createExample(
+  TestedComponent[type].setup,
+  reducerStatesExample.authEditing,
+  {
+    configured: [
+      {
+        challenge: "qwe",
+        type,
+        instructions: "Wire transfer from QWEASD123123 with holder Javier",
+        remove: () => null,
+      },
+      {
+        challenge: "qwe",
+        type,
+        instructions: "Wire transfer from QWEASD123123 with holder Sebastian",
+        remove: () => null,
+      },
+    ],
+  },
+);

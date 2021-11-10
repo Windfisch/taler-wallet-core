@@ -15,76 +15,83 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { ReducerState } from 'anastasis-core';
-import { createExample, reducerStatesExample } from '../../utils';
-import { AttributeEntryScreen as TestedComponent } from './AttributeEntryScreen';
-
+import { ReducerState } from "anastasis-core";
+import { createExample, reducerStatesExample } from "../../utils";
+import { AttributeEntryScreen as TestedComponent } from "./AttributeEntryScreen";
 
 export default {
-  title: 'Pages/PersonalInformation',
+  title: "Pages/PersonalInformation",
   component: TestedComponent,
   args: {
     order: 3,
   },
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
 export const Backup = createExample(TestedComponent, {
   ...reducerStatesExample.backupAttributeEditing,
-  required_attributes: [{
-    name: 'first name',
-    label: 'first',
-    type: 'string',
-    uuid: 'asdasdsa1',
-    widget: 'wid',
-  }, {
-    name: 'last name',
-    label: 'second',
-    type: 'string',
-    uuid: 'asdasdsa2',
-    widget: 'wid',
-  }, {
-    name: 'birthdate',
-    label: 'birthdate',
-    type: 'date',
-    uuid: 'asdasdsa3',
-    widget: 'calendar',
-  }]
+  required_attributes: [
+    {
+      name: "first name",
+      label: "first",
+      type: "string",
+      uuid: "asdasdsa1",
+      widget: "wid",
+    },
+    {
+      name: "last name",
+      label: "second",
+      type: "string",
+      uuid: "asdasdsa2",
+      widget: "wid",
+    },
+    {
+      name: "birthdate",
+      label: "birthdate",
+      type: "date",
+      uuid: "asdasdsa3",
+      widget: "calendar",
+    },
+  ],
 } as ReducerState);
 
 export const Recovery = createExample(TestedComponent, {
   ...reducerStatesExample.recoveryAttributeEditing,
-  required_attributes: [{
-    name: 'first',
-    label: 'first',
-    type: 'string',
-    uuid: 'asdasdsa1',
-    widget: 'wid',
-  }, {
-    name: 'pepe',
-    label: 'second',
-    type: 'string',
-    uuid: 'asdasdsa2',
-    widget: 'wid',
-  }, {
-    name: 'pepe2',
-    label: 'third',
-    type: 'date',
-    uuid: 'asdasdsa3',
-    widget: 'calendar',
-  }]
+  required_attributes: [
+    {
+      name: "first",
+      label: "first",
+      type: "string",
+      uuid: "asdasdsa1",
+      widget: "wid",
+    },
+    {
+      name: "pepe",
+      label: "second",
+      type: "string",
+      uuid: "asdasdsa2",
+      widget: "wid",
+    },
+    {
+      name: "pepe2",
+      label: "third",
+      type: "date",
+      uuid: "asdasdsa3",
+      widget: "calendar",
+    },
+  ],
 } as ReducerState);
 
 export const WithNoRequiredAttribute = createExample(TestedComponent, {
   ...reducerStatesExample.backupAttributeEditing,
-  required_attributes: undefined
+  required_attributes: undefined,
 } as ReducerState);
 
 const allWidgets = [
@@ -107,23 +114,22 @@ const allWidgets = [
   "anastasis_gtk_ia_tax_de",
   "anastasis_gtk_xx_prime",
   "anastasis_gtk_xx_square",
-]
+];
 
 function typeForWidget(name: string): string {
-  if (["anastasis_gtk_xx_prime",
-    "anastasis_gtk_xx_square",
-  ].includes(name)) return "number";
-  if (["anastasis_gtk_ia_birthdate"].includes(name)) return "date"
+  if (["anastasis_gtk_xx_prime", "anastasis_gtk_xx_square"].includes(name))
+    return "number";
+  if (["anastasis_gtk_ia_birthdate"].includes(name)) return "date";
   return "string";
 }
 
 export const WithAllPosibleWidget = createExample(TestedComponent, {
   ...reducerStatesExample.backupAttributeEditing,
-  required_attributes: allWidgets.map(w => ({
+  required_attributes: allWidgets.map((w) => ({
     name: w,
     label: `widget: ${w}`,
     type: typeForWidget(w),
     uuid: `uuid-${w}`,
-    widget: w
-  }))
+    widget: w,
+  })),
 } as ReducerState);

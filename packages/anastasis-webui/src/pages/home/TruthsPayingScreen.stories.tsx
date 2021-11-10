@@ -15,29 +15,31 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { ReducerState } from 'anastasis-core';
-import { createExample, reducerStatesExample } from '../../utils';
-import { TruthsPayingScreen as TestedComponent } from './TruthsPayingScreen';
-
+import { ReducerState } from "anastasis-core";
+import { createExample, reducerStatesExample } from "../../utils";
+import { TruthsPayingScreen as TestedComponent } from "./TruthsPayingScreen";
 
 export default {
-  title: 'Pages/backup/__TruthsPaying',
+  title: "Pages/backup/__TruthsPaying",
   component: TestedComponent,
   args: {
     order: 10,
   },
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
-export const Example = createExample(TestedComponent, reducerStatesExample.truthsPaying);
+export const Example = createExample(
+  TestedComponent,
+  reducerStatesExample.truthsPaying,
+);
 export const WithPaytoList = createExample(TestedComponent, {
   ...reducerStatesExample.truthsPaying,
-  payments: ['payto://x-taler-bank/bank/account']
+  payments: ["payto://x-taler-bank/bank/account"],
 } as ReducerState);

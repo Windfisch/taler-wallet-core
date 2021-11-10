@@ -15,24 +15,23 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { ReducerState } from 'anastasis-core';
-import { createExample, reducerStatesExample } from '../../utils';
-import { AddingProviderScreen as TestedComponent } from './AddingProviderScreen';
-
+import { ReducerState } from "anastasis-core";
+import { createExample, reducerStatesExample } from "../../utils";
+import { AddingProviderScreen as TestedComponent } from "./AddingProviderScreen";
 
 export default {
-  title: 'Pages/ManageProvider',
+  title: "Pages/ManageProvider",
   component: TestedComponent,
   args: {
     order: 1,
   },
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
@@ -40,20 +39,31 @@ export const NewProvider = createExample(TestedComponent, {
   ...reducerStatesExample.authEditing,
 } as ReducerState);
 
-
 export const NewProviderWithoutProviderList = createExample(TestedComponent, {
   ...reducerStatesExample.authEditing,
-  authentication_providers: {}
+  authentication_providers: {},
 } as ReducerState);
 
-export const NewVideoProvider = createExample(TestedComponent, {
-  ...reducerStatesExample.authEditing,
-} as ReducerState, { providerType: 'video'});
+export const NewVideoProvider = createExample(
+  TestedComponent,
+  {
+    ...reducerStatesExample.authEditing,
+  } as ReducerState,
+  { providerType: "video" },
+);
 
-export const NewSmsProvider = createExample(TestedComponent, {
-  ...reducerStatesExample.authEditing,
-} as ReducerState, { providerType: 'sms'});
+export const NewSmsProvider = createExample(
+  TestedComponent,
+  {
+    ...reducerStatesExample.authEditing,
+  } as ReducerState,
+  { providerType: "sms" },
+);
 
-export const NewIBANProvider = createExample(TestedComponent, {
-  ...reducerStatesExample.authEditing,
-} as ReducerState, { providerType: 'iban' });
+export const NewIBANProvider = createExample(
+  TestedComponent,
+  {
+    ...reducerStatesExample.authEditing,
+  } as ReducerState,
+  { providerType: "iban" },
+);

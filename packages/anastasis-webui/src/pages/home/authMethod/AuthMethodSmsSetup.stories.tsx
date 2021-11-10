@@ -16,51 +16,67 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createExample, reducerStatesExample } from '../../../utils';
-import { authMethods as TestedComponent, KnownAuthMethods } from './index';
-
+import { createExample, reducerStatesExample } from "../../../utils";
+import { authMethods as TestedComponent, KnownAuthMethods } from "./index";
 
 export default {
-  title: 'Pages/backup/AuthorizationMethod/AuthMethods/Sms',
+  title: "Pages/backup/AuthorizationMethod/AuthMethods/Sms",
   component: TestedComponent,
   args: {
     order: 5,
   },
   argTypes: {
-    onUpdate: { action: 'onUpdate' },
-    onBack: { action: 'onBack' },
+    onUpdate: { action: "onUpdate" },
+    onBack: { action: "onBack" },
   },
 };
 
-const type: KnownAuthMethods = 'sms'
+const type: KnownAuthMethods = "sms";
 
-export const Empty = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
-  configured: []
-});
+export const Empty = createExample(
+  TestedComponent[type].setup,
+  reducerStatesExample.authEditing,
+  {
+    configured: [],
+  },
+);
 
-export const WithOneExample = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
-  configured: [{
-    challenge: 'qwe',
-    type,
-    instructions: 'SMS to +11-1234-2345',
-    remove: () => null
-  }]
-});
+export const WithOneExample = createExample(
+  TestedComponent[type].setup,
+  reducerStatesExample.authEditing,
+  {
+    configured: [
+      {
+        challenge: "qwe",
+        type,
+        instructions: "SMS to +11-1234-2345",
+        remove: () => null,
+      },
+    ],
+  },
+);
 
-export const WithMoreExamples = createExample(TestedComponent[type].setup, reducerStatesExample.authEditing, {
-  configured: [{
-    challenge: 'qwe',
-    type,
-    instructions: 'SMS to +11-1234-2345',
-    remove: () => null
-  },{
-    challenge: 'qwe',
-    type,
-    instructions: 'SMS to +11-5555-2345',
-    remove: () => null
-  }]
-});
+export const WithMoreExamples = createExample(
+  TestedComponent[type].setup,
+  reducerStatesExample.authEditing,
+  {
+    configured: [
+      {
+        challenge: "qwe",
+        type,
+        instructions: "SMS to +11-1234-2345",
+        remove: () => null,
+      },
+      {
+        challenge: "qwe",
+        type,
+        instructions: "SMS to +11-5555-2345",
+        remove: () => null,
+      },
+    ],
+  },
+);
