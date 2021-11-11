@@ -49,13 +49,13 @@ export const WithDetails = createExample(TestedComponent, {
   ...reducerStatesExample.backupFinished,
   secret_name: "super_secret",
   success_details: {
-    "http://anastasis.net": {
+    "https://anastasis.demo.taler.net/": {
       policy_expiration: {
         t_ms: "never",
       },
       policy_version: 0,
     },
-    "http://taler.net": {
+    "https://kudos.demo.anastasis.lu/": {
       policy_expiration: {
         t_ms: new Date().getTime() + 60 * 60 * 24 * 1000,
       },

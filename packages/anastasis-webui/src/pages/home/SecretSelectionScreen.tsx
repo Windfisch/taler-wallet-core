@@ -1,3 +1,4 @@
+import { AuthenticationProviderStatus, AuthenticationProviderStatusOk } from "anastasis-core";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { AsyncButton } from "../../components/AsyncButton";
@@ -38,15 +39,13 @@ export function SecretSelectionScreen(): VNode {
     });
   }
 
-  const providerList = Object.keys(
-    reducer.currentReducerState.authentication_providers ?? {},
-  );
+  const provs = reducer.currentReducerState.authentication_providers ?? {};
   const recoveryDocument = reducer.currentReducerState.recovery_document;
 
   if (!recoveryDocument) {
     return (
       <ChooseAnotherProviderScreen
-        providers={providerList}
+        providers={provs}
         selected=""
         onChange={(newProv) => doSelectVersion(newProv, 0)}
       />
@@ -56,7 +55,7 @@ export function SecretSelectionScreen(): VNode {
   if (selectingVersion) {
     return (
       <SelectOtherVersionProviderScreen
-        providers={providerList}
+        providers={provs}
         provider={recoveryDocument.provider_url}
         version={recoveryDocument.version}
         onCancel={() => setSelectingVersion(false)}
@@ -69,12 +68,15 @@ export function SecretSelectionScreen(): VNode {
     return <AddingProviderScreen onCancel={() => setManageProvider(false)} />;
   }
 
+  const provierInfo = provs[recoveryDocument.provider_url] as AuthenticationProviderStatusOk
   return (
     <AnastasisClientFrame title="Recovery: Select secret">
       <div class="columns">
         <div class="column">
           <div class="box" style={{ border: "2px solid green" }}>
-            <h1 class="subtitle">{recoveryDocument.provider_url}</h1>
+            <h1 class="subtitle">
+              {provierInfo.business_name}
+            </h1>
             <div class="block">
               {currentVersion === 0 ? (
                 <p>Set to recover the latest version</p>
@@ -111,7 +113,7 @@ function ChooseAnotherProviderScreen({
   onChange,
 }: {
   selected: string;
-  providers: string[];
+  providers: { [url: string]: AuthenticationProviderStatus };
   onChange: (prov: string) => void;
 }): VNode {
   return (
@@ -132,11 +134,13 @@ function ChooseAnotherProviderScreen({
                 {" "}
                 Choose a provider{" "}
               </option>
-              {providers.map((prov) => (
-                <option key={prov} value={prov}>
-                  {prov}
+              {Object.keys(providers).map((url) => {
+                const p = providers[url]
+                if (!("methods" in p)) return null
+                return <option key={url} value={url}>
+                  {p.business_name}
                 </option>
-              ))}
+              })}
             </select>
             <div class="icon is-small is-left">
               <i class="mdi mdi-earth" />
@@ -158,20 +162,21 @@ function SelectOtherVersionProviderScreen({
   onCancel: () => void;
   provider: string;
   version: number;
-  providers: string[];
+  providers: { [url: string]: AuthenticationProviderStatus };
   onConfirm: (prov: string, v: number) => Promise<void>;
 }): VNode {
   const [otherProvider, setOtherProvider] = useState<string>(provider);
   const [otherVersion, setOtherVersion] = useState(
     version > 0 ? String(version) : "",
   );
+  const otherProviderInfo = providers[otherProvider] as AuthenticationProviderStatusOk
 
   return (
     <AnastasisClientFrame hideNav title="Recovery: Select secret">
       <div class="columns">
         <div class="column">
           <div class="box">
-            <h1 class="subtitle">Provider {otherProvider}</h1>
+            <h1 class="subtitle">Provider {otherProviderInfo.business_name}</h1>
             <div class="block">
               {version === 0 ? (
                 <p>Set to recover the latest version</p>
@@ -193,11 +198,13 @@ function SelectOtherVersionProviderScreen({
                       {" "}
                       Choose a provider{" "}
                     </option>
-                    {providers.map((prov) => (
-                      <option key={prov} value={prov}>
-                        {prov}
+                    {Object.keys(providers).map((url) => {
+                      const p = providers[url]
+                      if (!("methods" in p)) return null
+                      return <option key={url} value={url}>
+                        {p.business_name}
                       </option>
-                    ))}
+                    })}
                   </select>
                   <div class="icon is-small is-left">
                     <i class="mdi mdi-earth" />
@@ -242,7 +249,6 @@ function SelectOtherVersionProviderScreen({
             </div>
           </div>
         </div>
-        <div class="column">.</div>
       </div>
     </AnastasisClientFrame>
   );

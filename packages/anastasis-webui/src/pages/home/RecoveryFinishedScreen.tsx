@@ -1,10 +1,18 @@
 import { bytesToString, decodeCrock } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
+import { useEffect, useState } from "preact/hooks";
+import { QR } from "../../components/QR";
 import { useAnastasisContext } from "../../context/anastasis";
 import { AnastasisClientFrame } from "./index";
 
 export function RecoveryFinishedScreen(): VNode {
   const reducer = useAnastasisContext();
+  const [copied, setCopied] = useState(false)
+  useEffect(() => {
+    setTimeout(() => {
+      setCopied(false)
+    },1000)
+  }, [copied])
 
   if (!reducer) {
     return <div>no reducer in context</div>;
@@ -15,6 +23,7 @@ export function RecoveryFinishedScreen(): VNode {
   ) {
     return <div>invalid state</div>;
   }
+  const secretName = reducer.currentReducerState.recovery_document?.secret_name;
   const encodedSecret = reducer.currentReducerState.core_secret;
   if (!encodedSecret) {
     return (
@@ -35,19 +44,33 @@ export function RecoveryFinishedScreen(): VNode {
     );
   }
   const secret = bytesToString(decodeCrock(encodedSecret.value));
+  const contentURI = `data:${encodedSecret.mime},${secret}`
+  // const fileName = encodedSecret['filename']
+  // data:plain/text;base64,asdasd
   return (
-    <AnastasisClientFrame title="Recovery Finished" hideNav>
-      <p>Your secret: {secret}</p>
-      <div
-        style={{
-          marginTop: "2em",
-          display: "flex",
-          justifyContent: "space-between",
-        }}
-      >
-        <button class="button" onClick={() => reducer.back()}>
-          Back
+    <AnastasisClientFrame title="Recovery Success" hideNav>
+      <h2 class="subtitle">Your secret was recovered</h2>
+      {secretName && <p class="block">
+        <b>Secret name:</b> {secretName}
+      </p>}
+      <div class="block buttons" disabled={copied}>
+        <button class="button" onClick={() => {
+          navigator.clipboard.writeText(secret); 
+          setCopied(true)
+        }}>
+          { !copied ? 'Copy' : 'Copied'}
         </button>
+        <a class="button is-info" download="secret.txt" href={contentURI}>
+          <div class="icon is-small ">
+            <i class="mdi mdi-download" />
+          </div>
+          <span>
+            Save as
+          </span>
+        </a>
+      </div>
+      <div class="block">
+        <QR text={secret} />
       </div>
     </AnastasisClientFrame>
   );

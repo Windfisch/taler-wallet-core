@@ -59,16 +59,16 @@ export function AttributeEntryScreen(): VNode {
         <ConfirmModal
           active
           onCancel={() => setAskUserIfSure(false)}
-          description="You can not forget what you had entered"
+          description="The values in the form must be correct"
           label="I am sure"
           cancelLabel="Wait, I want to check"
           onConfirm={() => reducer.transition("enter_user_attributes", {
             identity_attributes: attrs,
-          })}
+          }).then(() => setAskUserIfSure(false) )}
         >
           You personal information is used to define the location where your 
           secret will be safely stored. If you forget what you have entered or 
-          if there is a misspell you will be unable to recover your secret again.
+          if there is a misspell you will be unable to recover your secret.
         </ConfirmModal>
       ) : null}
 

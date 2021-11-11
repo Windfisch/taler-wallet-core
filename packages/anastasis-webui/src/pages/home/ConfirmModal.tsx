@@ -1,10 +1,11 @@
 import { ComponentChildren, h, VNode } from "preact";
+import { AsyncButton } from "../../components/AsyncButton";
 
 export interface ConfirmModelProps {
   active?: boolean;
   description?: string;
   onCancel?: () => void;
-  onConfirm?: () => void;
+  onConfirm?: () => Promise<void>;
   label?: string;
   cancelLabel?: string;
   children?: ComponentChildren;
@@ -33,13 +34,13 @@ export function ConfirmModal({
             {cancelLabel}
           </button>
           <div class="buttons is-right" style={{ width: "100%" }}>
-            <button
+            <AsyncButton
               class={danger ? "button is-danger " : "button is-info "}
               disabled={disabled}
               onClick={onConfirm}
             >
               {label}
-            </button>
+            </AsyncButton>
           </div>
         </footer>
       </div>

@@ -86,9 +86,15 @@ export function AuthMethodQuestionSolve({ id }: AuthMethodSolveProps): VNode {
     feedback?.state === ChallengeFeedbackStatus.TruthUnknown;
 
   return (
-    <AnastasisClientFrame hideNav title="Add email authentication">
+    <AnastasisClientFrame hideNav title="Question challenge">
       <SolveOverviewFeedbackDisplay feedback={feedback} />
-      <p>Answer the question please</p>
+      <p>
+        In this challenge you need to provide the answer for the next question:
+      </p>
+      <pre>
+        {selectedChallenge.instructions}
+      </pre>
+      <p>Type the answer below</p>
       <TextInput label="Answer" grabFocus bind={[answer, setAnswer]} />
 
       <div

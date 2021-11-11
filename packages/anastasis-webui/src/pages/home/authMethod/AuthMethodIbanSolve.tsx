@@ -86,7 +86,7 @@ export function AuthMethodIbanSolve({ id }: AuthMethodSolveProps): VNode {
     feedback?.state === ChallengeFeedbackStatus.TruthUnknown;
 
   return (
-    <AnastasisClientFrame hideNav title="Add email authentication">
+    <AnastasisClientFrame hideNav title="IBAN Challenge">
       <SolveOverviewFeedbackDisplay feedback={feedback} />
       <p>Send a wire transfer to the address,</p>
       <button class="button">Check</button>

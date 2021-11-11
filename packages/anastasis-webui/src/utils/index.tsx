@@ -101,7 +101,7 @@ const base = {
     "http://localhost:8086/": {
       http_status: 200,
       annual_fee: "COL:0",
-      business_name: "ana",
+      business_name: "Anastasis Local",
       currency: "COL",
       liability_limit: "COL:10",
       methods: [
@@ -125,7 +125,7 @@ const base = {
     "https://kudos.demo.anastasis.lu/": {
       http_status: 200,
       annual_fee: "COL:0",
-      business_name: "ana",
+      business_name: "Anastasis Kudo",
       currency: "COL",
       liability_limit: "COL:10",
       methods: [
@@ -145,7 +145,7 @@ const base = {
     "https://anastasis.demo.taler.net/": {
       http_status: 200,
       annual_fee: "COL:0",
-      business_name: "ana",
+      business_name: "Anastasis Demo",
       currency: "COL",
       liability_limit: "COL:10",
       methods: [
@@ -180,9 +180,6 @@ const base = {
       hint: "request to provider failed",
     },
   },
-  // expiration: {
-  //   d_ms: 1792525051855 // check t_ms
-  // },
 } as Partial<ReducerState>;
 
 export const reducerStatesExample = {

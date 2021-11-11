@@ -86,7 +86,7 @@ export function AuthMethodPostSolve({ id }: AuthMethodSolveProps): VNode {
     feedback?.state === ChallengeFeedbackStatus.TruthUnknown;
 
   return (
-    <AnastasisClientFrame hideNav title="Add email authentication">
+    <AnastasisClientFrame hideNav title="Postal Challenge">
       <SolveOverviewFeedbackDisplay feedback={feedback} />
       <p>Wait for the answer</p>
       <TextInput label="Answer" grabFocus bind={[answer, setAnswer]} />

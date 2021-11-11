@@ -3,6 +3,7 @@ import { h, VNode } from "preact";
 import { useAnastasisContext } from "../../context/anastasis";
 import { AnastasisClientFrame } from "./index";
 import { authMethods, KnownAuthMethods } from "./authMethod";
+import { AsyncButton } from "../../components/AsyncButton";
 
 function OverviewFeedbackDisplay(props: { feedback?: ChallengeFeedback }) {
   const { feedback } = props;
@@ -150,13 +151,15 @@ export function ChallengeOverviewScreen(): VNode {
             id: string;
             feedback?: ChallengeFeedback;
           }): VNode {
-            function selectChallenge(): void {
-              if (reducer) reducer.transition("select_challenge", { uuid: id });
+            async function selectChallenge(): Promise<void> {
+              if (reducer) {
+                return reducer.transition("select_challenge", { uuid: id });
+              }
             }
             if (!feedback) {
               return (
                 <div>
-                  <button
+                  <AsyncButton
                     class="button"
                     disabled={
                       atLeastThereIsOnePolicySolved && !policy.isPolicySolved
@@ -164,7 +167,7 @@ export function ChallengeOverviewScreen(): VNode {
                     onClick={selectChallenge}
                   >
                     Solve
-                  </button>
+                  </AsyncButton>
                 </div>
               );
             }
@@ -178,7 +181,7 @@ export function ChallengeOverviewScreen(): VNode {
               case ChallengeFeedbackStatus.Payment:
                 return (
                   <div>
-                    <button
+                    <AsyncButton
                       class="button"
                       disabled={
                         atLeastThereIsOnePolicySolved && !policy.isPolicySolved
@@ -186,13 +189,13 @@ export function ChallengeOverviewScreen(): VNode {
                       onClick={selectChallenge}
                     >
                       Pay
-                    </button>
+                    </AsyncButton>
                   </div>
                 );
               case ChallengeFeedbackStatus.Redirect:
                 return (
                   <div>
-                    <button
+                    <AsyncButton
                       class="button"
                       disabled={
                         atLeastThereIsOnePolicySolved && !policy.isPolicySolved
@@ -200,7 +203,7 @@ export function ChallengeOverviewScreen(): VNode {
                       onClick={selectChallenge}
                     >
                       Go to {feedback.redirect_url}
-                    </button>
+                    </AsyncButton>
                   </div>
                 );
               case ChallengeFeedbackStatus.Solved:
@@ -212,7 +215,7 @@ export function ChallengeOverviewScreen(): VNode {
               default:
                 return (
                   <div>
-                    <button
+                    <AsyncButton
                       class="button"
                       disabled={
                         atLeastThereIsOnePolicySolved && !policy.isPolicySolved
@@ -220,7 +223,7 @@ export function ChallengeOverviewScreen(): VNode {
                       onClick={selectChallenge}
                     >
                       Solve
-                    </button>
+                    </AsyncButton>
                   </div>
                 );
             }

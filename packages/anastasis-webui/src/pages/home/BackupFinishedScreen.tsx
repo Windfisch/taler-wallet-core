@@ -1,3 +1,4 @@
+import { AuthenticationProviderStatusOk } from "anastasis-core";
 import { format } from "date-fns";
 import { h, VNode } from "preact";
 import { useAnastasisContext } from "../../context/anastasis";
@@ -15,33 +16,28 @@ export function BackupFinishedScreen(): VNode {
     return <div>invalid state</div>;
   }
   const details = reducer.currentReducerState.success_details;
+  const providers = reducer.currentReducerState.authentication_providers ?? {}
 
   return (
-    <AnastasisClientFrame hideNav title="Backup finished">
-      {reducer.currentReducerState.secret_name ? (
-        <p>
-          Your backup of secret{" "}
-          <b>"{reducer.currentReducerState.secret_name}"</b> was successful.
-        </p>
-      ) : (
-        <p>Your secret was successfully backed up.</p>
-      )}
+    <AnastasisClientFrame hideNav title="Backup success!">
+      <p>Your backup is complete.</p>
 
       {details && (
         <div class="block">
           <p>The backup is stored by the following providers:</p>
-          {Object.keys(details).map((x, i) => {
-            const sd = details[x];
+          {Object.keys(details).map((url, i) => {
+            const sd = details[url];
+            const p = providers[url] as AuthenticationProviderStatusOk
             return (
               <div key={i} class="box">
-                {x}
+                <a href={url} target="_blank" rel="noreferrer">{p.business_name}</a>
                 <p>
                   version {sd.policy_version}
                   {sd.policy_expiration.t_ms !== "never"
                     ? ` expires at: ${format(
-                        sd.policy_expiration.t_ms,
-                        "dd-MM-yyyy",
-                      )}`
+                      new Date(sd.policy_expiration.t_ms),
+                      "dd-MM-yyyy",
+                    )}`
                     : " without expiration date"}
                 </p>
               </div>
@@ -49,17 +45,6 @@ export function BackupFinishedScreen(): VNode {
           })}
         </div>
       )}
-      <div
-        style={{
-          marginTop: "2em",
-          display: "flex",
-          justifyContent: "space-between",
-        }}
-      >
-        <button class="button" onClick={() => reducer.back()}>
-          Back
-        </button>
-      </div>
     </AnastasisClientFrame>
   );
 }

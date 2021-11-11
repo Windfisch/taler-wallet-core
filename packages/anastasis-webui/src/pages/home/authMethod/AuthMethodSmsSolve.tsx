@@ -11,6 +11,7 @@ import { AuthMethodSolveProps } from "./index";
 export function AuthMethodSmsSolve({ id }: AuthMethodSolveProps): VNode {
   const [answer, setAnswer] = useState("");
 
+  const [expanded, setExpanded] = useState(false)
   const reducer = useAnastasisContext();
   if (!reducer) {
     return (
@@ -86,13 +87,30 @@ export function AuthMethodSmsSolve({ id }: AuthMethodSolveProps): VNode {
     feedback?.state === ChallengeFeedbackStatus.TruthUnknown;
 
   return (
-    <AnastasisClientFrame hideNav title="Add email authentication">
+    <AnastasisClientFrame hideNav title="SMS Challenge">
       <SolveOverviewFeedbackDisplay feedback={feedback} />
       <p>
-        An sms has been sent to "<b>{selectedChallenge.instructions}</b>". Type
-        the code below
+        An sms has been sent to "<b>{selectedChallenge.instructions}</b>". The
+        message has and identification code and recovery code that starts with "<b>A-</b>".
+        Wait the message to arrive and the enter the recovery code below.
       </p>
-      <TextInput label="Answer" grabFocus bind={[answer, setAnswer]} />
+      {!expanded ? <p>
+        The identification code in the SMS should start with "{selectedUuid.substring(0, 10)}"
+        <span class="icon has-tooltip-top" data-tooltip="click to expand" onClick={() => setExpanded(e => !e)}>
+          <i class="mdi mdi-information" />
+        </span>
+      </p>
+        : <p>
+        The identification code in the SMS is "{selectedUuid}"
+        <span class="icon has-tooltip-top" data-tooltip="click to show less code" onClick={() => setExpanded(e => !e)}>
+          <i class="mdi mdi-information" />
+        </span>
+        </p>}
+      <TextInput label="Answer"
+        grabFocus
+        bind={[answer, setAnswer]}
+        placeholder="A-1234567812345678"
+      />
 
       <div
         style={{

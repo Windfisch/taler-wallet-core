@@ -86,7 +86,7 @@ export function AuthMethodTotpSolve({ id }: AuthMethodSolveProps): VNode {
     feedback?.state === ChallengeFeedbackStatus.TruthUnknown;
 
   return (
-    <AnastasisClientFrame hideNav title="Add email authentication">
+    <AnastasisClientFrame hideNav title="TOTP Challenge">
       <SolveOverviewFeedbackDisplay feedback={feedback} />
       <p>enter the totp solution</p>
       <TextInput label="Answer" grabFocus bind={[answer, setAnswer]} />
@@ -110,3 +110,4 @@ export function AuthMethodTotpSolve({ id }: AuthMethodSolveProps): VNode {
     </AnastasisClientFrame>
   );
 }
+// NKE8 VD857T X033X6RG WEGPYP6D70 Q7YE XN8D2 ZN79SCN 231B4QK0
