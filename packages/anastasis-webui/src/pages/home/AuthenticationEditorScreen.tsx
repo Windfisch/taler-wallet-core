@@ -38,7 +38,6 @@ export function AuthenticationEditorScreen(): VNode {
   }
   const configuredAuthMethods: AuthMethod[] =
     reducer.currentReducerState.authentication_methods ?? [];
-  const haveMethodsConfigured = configuredAuthMethods.length > 0;
 
   function removeByIndex(index: number): void {
     if (reducer)
@@ -105,7 +104,7 @@ export function AuthenticationEditorScreen(): VNode {
             onCancel={cancel}
             description="No providers founds"
             label="Add a provider manually"
-            onConfirm={() => {
+            onConfirm={async () => {
               setManageProvider(selectedMethod);
             }}
           >
@@ -156,9 +155,7 @@ export function AuthenticationEditorScreen(): VNode {
       </div>
     );
   }
-  const errors = !haveMethodsConfigured
-    ? "There is not enough authentication methods."
-    : undefined;
+  const errors = configuredAuthMethods.length < 2 ? "There is not enough authentication methods." : undefined;
   const handleNext = async () => {
     const st = reducer.currentReducerState as ReducerStateBackup;
     if ((st.authentication_methods ?? []).length <= 2) {
@@ -188,8 +185,8 @@ export function AuthenticationEditorScreen(): VNode {
               label="Proceed anyway"
               onConfirm={() => reducer.transition("next", {})}
             >
-              You have selected fewer than three authentication methods. We
-              recommend that you add at least three.
+              You have selected fewer than 3 authentication methods. We
+              recommend that you add at least 3.
             </ConfirmModal>
           ) : null}
           {authAvailableSet.size === 0 && (
@@ -198,7 +195,7 @@ export function AuthenticationEditorScreen(): VNode {
               onCancel={() => setNoProvidersAck(true)}
               description="No providers founds"
               label="Add a provider manually"
-              onConfirm={() => {
+              onConfirm={async () => {
                 setManageProvider("");
               }}
             >
