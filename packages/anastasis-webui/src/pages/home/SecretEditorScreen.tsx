@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import { encodeCrock, stringToBytes } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";

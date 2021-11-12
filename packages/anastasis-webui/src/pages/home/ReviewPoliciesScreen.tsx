@@ -1,13 +1,16 @@
 import { AuthenticationProviderStatusOk } from "anastasis-core";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
+import { AsyncButton } from "../../components/AsyncButton";
 import { useAnastasisContext } from "../../context/anastasis";
 import { authMethods, KnownAuthMethods } from "./authMethod";
+import { ConfirmModal } from "./ConfirmModal";
 import { EditPoliciesScreen } from "./EditPoliciesScreen";
 import { AnastasisClientFrame } from "./index";
 
 export function ReviewPoliciesScreen(): VNode {
   const [editingPolicy, setEditingPolicy] = useState<number | undefined>();
+  const [confirmReset, setConfirmReset] = useState(false);
   const reducer = useAnastasisContext();
   if (!reducer) {
     return <div>no reducer in context</div>;
@@ -23,8 +26,8 @@ export function ReviewPoliciesScreen(): VNode {
     reducer.currentReducerState.authentication_methods ?? [];
   const policies = reducer.currentReducerState.policies ?? [];
 
-  const providers = reducer.currentReducerState.authentication_providers ?? {}
-  
+  const providers = reducer.currentReducerState.authentication_providers ?? {};
+
   if (editingPolicy !== undefined) {
     return (
       <EditPoliciesScreen
@@ -39,6 +42,14 @@ export function ReviewPoliciesScreen(): VNode {
         }}
       />
     );
+  }
+  async function resetPolicies(): Promise<void> {
+    if (!reducer) return Promise.resolve();
+    return reducer.runTransaction(async (tx) => {
+      await tx.transition("back", {});
+      await tx.transition("next", {});
+      setConfirmReset(false);
+    });
   }
 
   const errors = policies.length < 1 ? "Need more policies" : undefined;
@@ -60,9 +71,13 @@ export function ReviewPoliciesScreen(): VNode {
           methods.
         </p>
       )}
-      <div class="block" style={{ justifyContent: "flex-end" }}>
+      <div class="block">
+        <AsyncButton class="button" onClick={async () => setConfirmReset(true)}>
+          Reset policies
+        </AsyncButton>
         <button
           class="button is-success"
+          style={{ marginLeft: 10 }}
           onClick={() => setEditingPolicy(policies.length)}
         >
           Add new policy
@@ -98,7 +113,9 @@ export function ReviewPoliciesScreen(): VNode {
               </h3>
               {!methods.length && <p>No auth method found</p>}
               {methods.map((m, i) => {
-                const p = providers[m.provider] as AuthenticationProviderStatusOk
+                const p = providers[
+                  m.provider
+                ] as AuthenticationProviderStatusOk;
                 return (
                   <p
                     key={i}
@@ -110,7 +127,9 @@ export function ReviewPoliciesScreen(): VNode {
                     </span>
                     <span>
                       {m.instructions} recovery provided by{" "}
-                      <a href={m.provider} target="_blank" rel="noreferrer" >{p.business_name}</a>
+                      <a href={m.provider} target="_blank" rel="noreferrer">
+                        {p.business_name}
+                      </a>
                     </span>
                   </p>
                 );
@@ -143,6 +162,21 @@ export function ReviewPoliciesScreen(): VNode {
           </div>
         );
       })}
+      {confirmReset && (
+        <ConfirmModal
+          active
+          onCancel={() => setConfirmReset(false)}
+          description="Do you want to reset the policies to default state?"
+          label="Reset policies"
+          cancelLabel="Cancel"
+          onConfirm={resetPolicies}
+        >
+          <p>
+            All policies will be recalculated based on the authentication
+            providers configured and any change that you did will be lost
+          </p>
+        </ConfirmModal>
+      )}
     </AnastasisClientFrame>
   );
 }
