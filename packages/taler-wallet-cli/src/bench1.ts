@@ -28,6 +28,7 @@ import {
   getDefaultNodeWallet,
   NodeHttpLib,
   WalletApiOperation,
+  Wallet,
 } from "@gnu-taler/taler-wallet-core";
 
 /**
@@ -48,20 +49,25 @@ export async function runBench1(configJson: any): Promise<void> {
 
   const numIter = b1conf.iterations ?? 1;
   const numDeposits = b1conf.deposits ?? 5;
+  const restartWallet = b1conf.restartAfter ?? 20;
 
   const withdrawAmount = (numDeposits + 1) * 10;
 
   logger.info(`Starting Benchmark iterations=${numIter} deposits=${numDeposits}`);
 
+  let wallet = {} as Wallet;
+
   for (let i = 0; i < numIter; i++) {
     // Create a new wallet in each iteration 
     // otherwise the TPS go down 
     // my assumption is that the in-memory db file gets too large 
-    const wallet = await getDefaultNodeWallet({
-      // No persistent DB storage.
-      persistentStoragePath: undefined,
-      httpLib: myHttpLib,
-    });
+    if (i % restartWallet == 0) {
+      wallet = await getDefaultNodeWallet({
+        // No persistent DB storage.
+        persistentStoragePath: undefined,
+        httpLib: myHttpLib,
+      });
+    }
     await wallet.client.call(WalletApiOperation.InitWallet, {});
 	
     logger.trace(`Starting withdrawal amount=${withdrawAmount}`);
@@ -128,6 +134,12 @@ interface Bench1Config {
   currency: string;
 
   deposits?: number;
+
+  /**
+   * How any iterations run until the wallet db gets purged
+   * Defaults to 20.
+   */
+  restartAfter?: number;
 }
 
 /**
@@ -141,4 +153,5 @@ const codecForBench1Config = () =>
     .property("iterations", codecOptional(codecForNumber()))
     .property("deposits", codecOptional(codecForNumber()))
     .property("currency", codecForString())
+    .property("restartAfter", codecOptional(codecForNumber()))
     .build("Bench1Config");
