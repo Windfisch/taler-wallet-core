@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 /*
  This file is part of GNU Taler
  (C) 2021 Taler Systems S.A.
@@ -20,6 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
+import { encodeCrock, stringToBytes } from "@gnu-taler/taler-util";
 import { ReducerState } from "anastasis-core";
 import { createExample, reducerStatesExample } from "../../utils";
 import { RecoveryFinishedScreen as TestedComponent } from "./RecoveryFinishedScreen";
@@ -38,7 +38,15 @@ export default {
 
 export const GoodEnding = createExample(TestedComponent, {
   ...reducerStatesExample.recoveryFinished,
-  core_secret: { mime: "text/plain", value: "hello" },
+  recovery_document: {
+    secret_name: "the_name_of_the_secret",
+  },
+  core_secret: {
+    mime: "text/plain",
+    value: encodeCrock(
+      stringToBytes("hello this is my secret, don't tell anybody"),
+    ),
+  },
 } as ReducerState);
 
 export const BadEnding = createExample(
