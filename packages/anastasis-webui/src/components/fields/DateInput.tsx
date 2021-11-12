@@ -1,4 +1,4 @@
-import { format, isAfter, parse, sub, subYears } from "date-fns";
+import { format, subYears } from "date-fns";
 import { h, VNode } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { DatePicker } from "../picker/DatePicker";
@@ -9,6 +9,7 @@ export interface DateInputProps {
   tooltip?: string;
   error?: string;
   years?: Array<number>;
+  onConfirm?: () => void;
   bind: [string, (x: string) => void];
 }
 
@@ -44,7 +45,12 @@ export function DateInput(props: DateInputProps): VNode {
               type="text"
               class={showError ? "input is-danger" : "input"}
               value={value}
-              onInput={(e) => {
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && props.onConfirm) {
+                  props.onConfirm()
+                }
+              }}
+                  onInput={(e) => {
                 const text = e.currentTarget.value;
                 setDirty(true);
                 props.bind[1](text);

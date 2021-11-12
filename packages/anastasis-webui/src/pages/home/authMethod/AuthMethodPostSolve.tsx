@@ -89,7 +89,12 @@ export function AuthMethodPostSolve({ id }: AuthMethodSolveProps): VNode {
     <AnastasisClientFrame hideNav title="Postal Challenge">
       <SolveOverviewFeedbackDisplay feedback={feedback} />
       <p>Wait for the answer</p>
-      <TextInput label="Answer" grabFocus bind={[answer, setAnswer]} />
+      <TextInput
+        onConfirm={onNext}
+        label="Answer"
+        grabFocus
+        bind={[answer, setAnswer]}
+      />
 
       <div
         style={{

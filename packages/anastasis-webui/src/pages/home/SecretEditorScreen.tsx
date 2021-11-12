@@ -10,10 +10,12 @@ import { FileInput, FileTypeContent } from "../../components/fields/FileInput";
 export function SecretEditorScreen(): VNode {
   const reducer = useAnastasisContext();
   const [secretValue, setSecretValue] = useState("");
-  const [secretFile, _setSecretFile] = useState<FileTypeContent | undefined>(undefined);
+  const [secretFile, _setSecretFile] = useState<FileTypeContent | undefined>(
+    undefined,
+  );
   function setSecretFile(v) {
-    setSecretValue("") // reset secret value when uploading a file
-    _setSecretFile(v)
+    setSecretValue(""); // reset secret value when uploading a file
+    _setSecretFile(v);
   }
 
   const currentSecretName =
@@ -34,14 +36,16 @@ export function SecretEditorScreen(): VNode {
   }
 
   const secretNext = async (): Promise<void> => {
-    const secret = secretFile ? {
-      value: encodeCrock(stringToBytes(secretValue)),
-      filename: secretFile.name,
-      mime: secretFile.type,
-    } : {
-      value: encodeCrock(stringToBytes(secretValue)),
-      mime: "text/plain",
-    }
+    const secret = secretFile
+      ? {
+          value: encodeCrock(stringToBytes(secretValue)),
+          filename: secretFile.name,
+          mime: secretFile.type,
+        }
+      : {
+          value: encodeCrock(stringToBytes(secretValue)),
+          mime: "text/plain",
+        };
     return reducer.runTransaction(async (tx) => {
       await tx.transition("enter_secret_name", {
         name: secretName,
@@ -55,9 +59,14 @@ export function SecretEditorScreen(): VNode {
       await tx.transition("next", {});
     });
   };
-  const errors = !secretName ? 'Add a secret name' : (
-    (!secretValue && !secretFile) ? 'Add a secret value or a choose a file to upload' : undefined
-  )
+  const errors = !secretName
+    ? "Add a secret name"
+    : !secretValue && !secretFile
+    ? "Add a secret value or a choose a file to upload"
+    : undefined;
+  function goNextIfNoErrors(): void {
+    if (!errors) secretNext();
+  }
   return (
     <AnastasisClientFrame
       hideNext={errors}
@@ -69,12 +78,14 @@ export function SecretEditorScreen(): VNode {
           label="Secret name:"
           tooltip="The secret name allows you to identify your secret when restoring it. It is a label that you can choose freely."
           grabFocus
+          onConfirm={goNextIfNoErrors}
           bind={[secretName, setSecretName]}
         />
       </div>
       <div class="block">
         <TextInput
           disabled={!!secretFile}
+          onConfirm={goNextIfNoErrors}
           label="Enter the secret as text:"
           bind={[secretValue, setSecretValue]}
         />
@@ -82,10 +93,12 @@ export function SecretEditorScreen(): VNode {
       <div class="block">
         Or upload a secret file
         <FileInput label="Choose file" onChange={setSecretFile} />
-        {secretFile && <div>
-          Uploading secret file <b>{secretFile.name}</b> <a onClick={() => setSecretFile(undefined)}>cancel</a>
-        </div>
-        }
+        {secretFile && (
+          <div>
+            Uploading secret file <b>{secretFile.name}</b>{" "}
+            <a onClick={() => setSecretFile(undefined)}>cancel</a>
+          </div>
+        )}
       </div>
     </AnastasisClientFrame>
   );

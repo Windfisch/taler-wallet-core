@@ -1,4 +1,6 @@
+import { differenceInBusinessDays } from "date-fns";
 import { ComponentChildren, h, VNode } from "preact";
+import { useLayoutEffect, useRef } from "preact/hooks";
 import { AsyncButton } from "../../components/AsyncButton";
 
 export interface ConfirmModelProps {
@@ -17,7 +19,7 @@ export function ConfirmModal({
   active, description, onCancel, onConfirm, children, danger, disabled, label = "Confirm", cancelLabel = "Dismiss"
 }: ConfirmModelProps): VNode {
   return (
-    <div class={active ? "modal is-active" : "modal"}>
+    <div class={active ? "modal is-active" : "modal"} >
       <div class="modal-background " onClick={onCancel} />
       <div class="modal-card" style={{ maxWidth: 700 }}>
         <header class="modal-card-head">
@@ -33,8 +35,11 @@ export function ConfirmModal({
           <button class="button" onClick={onCancel}>
             {cancelLabel}
           </button>
-          <div class="buttons is-right" style={{ width: "100%" }}>
+          <div class="buttons is-right" style={{ width: "100%" }} onKeyDown={(e) => {
+            if (e.key === 'Escape' && onCancel) onCancel()
+          }}>
             <AsyncButton
+              grabFocus
               class={danger ? "button is-danger " : "button is-info "}
               disabled={disabled}
               onClick={onConfirm}

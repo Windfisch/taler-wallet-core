@@ -48,6 +48,10 @@ export function AuthMethodPostSetup({
     : !country
     ? "The country is missing"
     : undefined;
+
+  function goNextIfNoErrors(): void {
+    if (!errors) addPostAuth();
+  }
   return (
     <AnastasisClientFrame hideNav title="Add postal authentication">
       <p>
@@ -56,19 +60,40 @@ export function AuthMethodPostSetup({
         will receive in a letter to that address.
       </p>
       <div>
-        <TextInput grabFocus label="Full Name" bind={[fullName, setFullName]} />
+        <TextInput
+          grabFocus
+          label="Full Name"
+          bind={[fullName, setFullName]}
+          onConfirm={goNextIfNoErrors}
+        />
       </div>
       <div>
-        <TextInput label="Street" bind={[street, setStreet]} />
+        <TextInput
+          onConfirm={goNextIfNoErrors}
+          label="Street"
+          bind={[street, setStreet]}
+        />
       </div>
       <div>
-        <TextInput label="City" bind={[city, setCity]} />
+        <TextInput
+          onConfirm={goNextIfNoErrors}
+          label="City"
+          bind={[city, setCity]}
+        />
       </div>
       <div>
-        <TextInput label="Postal Code" bind={[postcode, setPostcode]} />
+        <TextInput
+          onConfirm={goNextIfNoErrors}
+          label="Postal Code"
+          bind={[postcode, setPostcode]}
+        />
       </div>
       <div>
-        <TextInput label="Country" bind={[country, setCountry]} />
+        <TextInput
+          onConfirm={goNextIfNoErrors}
+          label="Country"
+          bind={[country, setCountry]}
+        />
       </div>
 
       {configured.length > 0 && (

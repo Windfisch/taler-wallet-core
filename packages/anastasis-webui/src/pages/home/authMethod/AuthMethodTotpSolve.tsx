@@ -89,7 +89,12 @@ export function AuthMethodTotpSolve({ id }: AuthMethodSolveProps): VNode {
     <AnastasisClientFrame hideNav title="TOTP Challenge">
       <SolveOverviewFeedbackDisplay feedback={feedback} />
       <p>enter the totp solution</p>
-      <TextInput label="Answer" grabFocus bind={[answer, setAnswer]} />
+      <TextInput
+        label="Answer"
+        onConfirm={onNext}
+        grabFocus
+        bind={[answer, setAnswer]}
+      />
 
       <div
         style={{

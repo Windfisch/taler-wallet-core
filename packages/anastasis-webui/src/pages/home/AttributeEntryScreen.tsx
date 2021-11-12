@@ -44,6 +44,11 @@ export function AttributeEntryScreen(): VNode {
         setValue={(v: string) => setAttrs({ ...attrs, [spec.name]: v })}
         spec={spec}
         errorMessage={error}
+        onConfirm={() => {
+          if (!hasErrors) {
+            setAskUserIfSure(true)
+          }
+        }}
         value={value}
       />
     );
@@ -104,6 +109,7 @@ interface AttributeEntryFieldProps {
   setValue: (newValue: string) => void;
   spec: UserAttributeSpec;
   errorMessage: string | undefined;
+  onConfirm: () => void;
 }
 const possibleBirthdayYear: Array<number> = [];
 for (let i = 0; i < 100; i++) {
@@ -117,6 +123,7 @@ function AttributeEntryField(props: AttributeEntryFieldProps): VNode {
           grabFocus={props.isFirst}
           label={props.spec.label}
           years={possibleBirthdayYear}
+          onConfirm={props.onConfirm}
           error={props.errorMessage}
           bind={[props.value, props.setValue]}
         />
@@ -125,6 +132,7 @@ function AttributeEntryField(props: AttributeEntryFieldProps): VNode {
         <PhoneNumberInput
           grabFocus={props.isFirst}
           label={props.spec.label}
+          onConfirm={props.onConfirm}
           error={props.errorMessage}
           bind={[props.value, props.setValue]}
         />
@@ -133,6 +141,7 @@ function AttributeEntryField(props: AttributeEntryFieldProps): VNode {
         <TextInput
           grabFocus={props.isFirst}
           label={props.spec.label}
+          onConfirm={props.onConfirm}
           error={props.errorMessage}
           bind={[props.value, props.setValue]}
         />

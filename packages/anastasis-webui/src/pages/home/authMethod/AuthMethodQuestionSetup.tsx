@@ -26,6 +26,9 @@ export function AuthMethodQuestionSetup({
     : !answerText
     ? "Add the answer to your question"
     : undefined;
+  function goNextIfNoErrors(): void {
+    if (!errors) addQuestionAuth();
+  }
   return (
     <AnastasisClientFrame hideNav title="Add Security Question">
       <div>
@@ -39,6 +42,7 @@ export function AuthMethodQuestionSetup({
           <TextInput
             label="Security question"
             grabFocus
+            onConfirm={goNextIfNoErrors}
             placeholder="Your question"
             bind={[questionText, setQuestionText]}
           />
@@ -46,6 +50,7 @@ export function AuthMethodQuestionSetup({
         <div>
           <TextInput
             label="Answer"
+            onConfirm={goNextIfNoErrors}
             placeholder="Your answer"
             bind={[answerText, setAnswerText]}
           />

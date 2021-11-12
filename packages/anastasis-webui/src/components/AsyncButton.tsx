@@ -20,6 +20,7 @@
  */
 
 import { ComponentChildren, h, VNode } from "preact";
+import { useLayoutEffect, useRef } from "preact/hooks";
 // import { LoadingModal } from "../modal";
 import { useAsync } from "../hooks/async";
 // import { Translate } from "../../i18n";
@@ -28,16 +29,25 @@ type Props = {
   children: ComponentChildren;
   disabled?: boolean;
   onClick?: () => Promise<void>;
+  grabFocus?: boolean;
   [rest: string]: any;
 };
 
 export function AsyncButton({
   onClick,
+  grabFocus,
   disabled,
   children,
   ...rest
 }: Props): VNode {
   const { isLoading, request } = useAsync(onClick);
+
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  useLayoutEffect(() => {
+    if (grabFocus) {
+      buttonRef.current?.focus();
+    }
+  }, [grabFocus]);
 
   // if (isSlow) {
   //   return <LoadingModal onCancel={cancel} />;
@@ -48,7 +58,7 @@ export function AsyncButton({
 
   return (
     <span data-tooltip={rest["data-tooltip"]} style={{ marginLeft: 5 }}>
-      <button {...rest} onClick={request} disabled={disabled}>
+      <button {...rest} ref={buttonRef} onClick={request} disabled={disabled}>
         {children}
       </button>
     </span>

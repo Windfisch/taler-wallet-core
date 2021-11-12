@@ -7,6 +7,7 @@ export interface TextInputProps {
   error?: string;
   placeholder?: string;
   tooltip?: string;
+  onConfirm?: () => void;
   bind: [string, (x: string) => void];
 }
 
@@ -37,6 +38,11 @@ export function EmailInput(props: TextInputProps): VNode {
           placeholder={props.placeholder}
           type="email"
           class={showError ? "input is-danger" : "input"}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter' && props.onConfirm) {
+              props.onConfirm()
+            }
+          }}
           onInput={(e) => {
             setDirty(true);
             props.bind[1]((e.target as HTMLInputElement).value);

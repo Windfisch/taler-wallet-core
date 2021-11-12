@@ -10,7 +10,7 @@ import { AuthMethodSolveProps } from "./index";
 
 export function AuthMethodEmailSolve({ id }: AuthMethodSolveProps): VNode {
   const [answer, setAnswer] = useState("");
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(false);
 
   const reducer = useAnastasisContext();
   if (!reducer) {
@@ -91,23 +91,38 @@ export function AuthMethodEmailSolve({ id }: AuthMethodSolveProps): VNode {
       <SolveOverviewFeedbackDisplay feedback={feedback} />
       <p>
         An email has been sent to "<b>{selectedChallenge.instructions}</b>". The
-        message has and identification code and recovery code that starts with "<b>A-</b>".
-        Wait the message to arrive and the enter the recovery code below.
+        message has and identification code and recovery code that starts with "
+        <b>A-</b>". Wait the message to arrive and the enter the recovery code
+        below.
       </p>
-      {!expanded ? <p>
-        The identification code in the email should start with "{selectedUuid.substring(0, 10)}"
-        <span class="icon has-tooltip-top" data-tooltip="click to expand" onClick={() => setExpanded(e => !e)}>
-          <i class="mdi mdi-information" />
-        </span>
-      </p>
-        : <p>
-        The identification code in the email is "{selectedUuid}"
-        <span class="icon has-tooltip-top" data-tooltip="click to show less code" onClick={() => setExpanded(e => !e)}>
-          <i class="mdi mdi-information" />
-        </span>
-        </p>}
-      <TextInput label="Answer"
+      {!expanded ? (
+        <p>
+          The identification code in the email should start with "
+          {selectedUuid.substring(0, 10)}"
+          <span
+            class="icon has-tooltip-top"
+            data-tooltip="click to expand"
+            onClick={() => setExpanded((e) => !e)}
+          >
+            <i class="mdi mdi-information" />
+          </span>
+        </p>
+      ) : (
+        <p>
+          The identification code in the email is "{selectedUuid}"
+          <span
+            class="icon has-tooltip-top"
+            data-tooltip="click to show less code"
+            onClick={() => setExpanded((e) => !e)}
+          >
+            <i class="mdi mdi-information" />
+          </span>
+        </p>
+      )}
+      <TextInput
+        label="Answer"
         grabFocus
+        onConfirm={onNext}
         bind={[answer, setAnswer]}
         placeholder="A-1234567812345678"
       />

@@ -26,6 +26,9 @@ export function AuthMethodEmailSetup({
     : undefined;
   const errors = !email ? "Add your email" : emailError;
 
+  function goNextIfNoErrors(): void {
+    if (!errors) addEmailAuth();
+  }
   return (
     <AnastasisClientFrame hideNav title="Add email authentication">
       <p>
@@ -37,6 +40,7 @@ export function AuthMethodEmailSetup({
         <EmailInput
           label="Email address"
           error={emailError}
+          onConfirm={goNextIfNoErrors}
           placeholder="email@domain.com"
           bind={[email, setEmail]}
         />

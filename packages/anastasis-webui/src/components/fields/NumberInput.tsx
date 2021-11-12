@@ -7,6 +7,7 @@ export interface TextInputProps {
   error?: string;
   placeholder?: string;
   tooltip?: string;
+  onConfirm?: () => void;
   bind: [string, (x: string) => void];
 }
 
@@ -36,6 +37,11 @@ export function PhoneNumberInput(props: TextInputProps): VNode {
           type="tel"
           placeholder={props.placeholder}
           class={showError ? "input is-danger" : "input"}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter' && props.onConfirm) {
+              props.onConfirm()
+            }
+          }}
           onInput={(e) => {
             setDirty(true);
             props.bind[1]((e.target as HTMLInputElement).value);

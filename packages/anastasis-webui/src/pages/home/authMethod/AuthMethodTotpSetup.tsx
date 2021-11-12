@@ -38,6 +38,9 @@ export function AuthMethodTotpSetup({
     : !testCodeMatches
     ? "The test code doesnt match"
     : undefined;
+  function goNextIfNoErrors(): void {
+    if (!errors) addTotpAuth();
+  }
   return (
     <AnastasisClientFrame hideNav title="Add TOTP authentication">
       <p>
@@ -54,7 +57,11 @@ export function AuthMethodTotpSetup({
       <p>
         After scanning the code with your TOTP App, test it in the input below.
       </p>
-      <TextInput label="Test code" bind={[test, setTest]} />
+      <TextInput
+        label="Test code"
+        onConfirm={goNextIfNoErrors}
+        bind={[test, setTest]}
+      />
       {configured.length > 0 && (
         <section class="section">
           <div class="block">Your TOTP numbers:</div>

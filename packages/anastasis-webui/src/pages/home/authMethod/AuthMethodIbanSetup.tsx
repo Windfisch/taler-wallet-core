@@ -36,6 +36,9 @@ export function AuthMethodIbanSetup({
     : !account
     ? "Add an account IBAN number"
     : undefined;
+  function goNextIfNoErrors(): void {
+    if (!errors) addIbanAuth();
+  }
   return (
     <AnastasisClientFrame hideNav title="Add bank transfer authentication">
       <p>
@@ -49,11 +52,13 @@ export function AuthMethodIbanSetup({
           label="Bank account holder name"
           grabFocus
           placeholder="John Smith"
+          onConfirm={goNextIfNoErrors}
           bind={[name, setName]}
         />
         <TextInput
           label="IBAN"
           placeholder="DE91100000000123456789"
+          onConfirm={goNextIfNoErrors}
           bind={[account, setAccount]}
         />
       </div>

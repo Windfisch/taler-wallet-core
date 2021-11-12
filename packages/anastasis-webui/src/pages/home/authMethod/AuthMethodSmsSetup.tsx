@@ -25,6 +25,9 @@ export function AuthMethodSmsSetup({
     inputRef.current?.focus();
   }, []);
   const errors = !mobileNumber ? "Add a mobile number" : undefined;
+  function goNextIfNoErrors(): void {
+    if (!errors) addSmsAuth();
+  }
   return (
     <AnastasisClientFrame hideNav title="Add SMS authentication">
       <div>
@@ -37,6 +40,7 @@ export function AuthMethodSmsSetup({
           <PhoneNumberInput
             label="Mobile number"
             placeholder="Your mobile number"
+            onConfirm={goNextIfNoErrors}
             grabFocus
             bind={[mobileNumber, setMobileNumber]}
           />

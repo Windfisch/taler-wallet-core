@@ -20,6 +20,9 @@ export function AuthMethodVideoSetup({
       },
     });
   };
+  function goNextIfNoErrors(): void {
+    addVideoAuth();
+  }
   return (
     <AnastasisClientFrame hideNav title="Add video authentication">
       <p>
@@ -32,6 +35,7 @@ export function AuthMethodVideoSetup({
         <ImageInput
           label="Choose photograph"
           grabFocus
+          onConfirm={goNextIfNoErrors}
           bind={[image, setImage]}
         />
       </div>
