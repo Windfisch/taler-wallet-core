@@ -9,7 +9,7 @@ import { SolveOverviewFeedbackDisplay } from "../SolveScreen";
 import { AuthMethodSolveProps } from "./index";
 
 export function AuthMethodPostSolve({ id }: AuthMethodSolveProps): VNode {
-  const [answer, setAnswer] = useState("");
+  const [answer, setAnswer] = useState("A-");
 
   const reducer = useAnastasisContext();
   if (!reducer) {

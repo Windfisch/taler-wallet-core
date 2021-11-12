@@ -38,11 +38,6 @@
       name="theme-color"
       content="<%= htmlWebpackPlugin.options.manifest.theme_color %>"
     />
-    <% } %> <% for (const index in htmlWebpackPlugin.files.css) { %> <% const
-    file = htmlWebpackPlugin.files.css[index] %>
-    <style data-href="<%= file %>">
-      <%= compilation.assets[file.substr(htmlWebpackPlugin.files.publicPath.length)].source() %>
-    </style>
     <% } %>
   </head>
   <body>

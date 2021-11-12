@@ -45,7 +45,7 @@ export const WithoutFeedback = createExample(
       challenges: [
         {
           cost: "USD:1",
-          instructions: "does P equals NP?",
+          instructions: "Email to me@domain.com",
           type: "question",
           uuid: "uuid-1",
         },
@@ -67,7 +67,7 @@ export const PaymentFeedback = createExample(
       challenges: [
         {
           cost: "USD:1",
-          instructions: "does P equals NP?",
+          instructions: "Email to me@domain.com",
           type: "question",
           uuid: "uuid-1",
         },

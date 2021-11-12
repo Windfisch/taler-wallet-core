@@ -45,7 +45,7 @@ export const WithoutFeedback = createExample(
       challenges: [
         {
           cost: "USD:1",
-          instructions: "does P equals NP?",
+          instructions: "SMS to +54 11 2233 4455",
           type: "question",
           uuid: "uuid-1",
         },

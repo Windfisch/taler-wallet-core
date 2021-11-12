@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "build": "preact build --no-sw --no-esm",
+    "build": "preact build --no-sw --no-esm --no-inline-css",
     "serve": "sirv build --port ${PORT:=8080} --cors --single",
     "dev": "preact watch --port ${PORT:=8080} --no-sw --no-esm",
     "lint": "eslint 'src/**/*.{js,jsx,ts,tsx}'",

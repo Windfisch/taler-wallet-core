@@ -12,7 +12,7 @@ export function SecretEditorScreen(): VNode {
   const [secretFile, _setSecretFile] = useState<FileTypeContent | undefined>(
     undefined,
   );
-  function setSecretFile(v) {
+  function setSecretFile(v: FileTypeContent | undefined): void {
     setSecretValue(""); // reset secret value when uploading a file
     _setSecretFile(v);
   }
