@@ -50,6 +50,7 @@ export async function runTestWithdrawalManualTest(t: GlobalTestState) {
 
   const reservePub: string = wres.reservePub;
 
+  // Bug.
   await BankApi.adminAddIncoming(bank, {
     exchangeBankAccount,
     amount: "TESTKUDOS:10",

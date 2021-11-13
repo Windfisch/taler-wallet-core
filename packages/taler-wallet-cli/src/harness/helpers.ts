@@ -50,6 +50,7 @@ import {
   MerchantPrivateApi,
   HarnessExchangeBankAccount,
   WithAuthorization,
+  getPayto
 } from "./harness.js";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
@@ -94,7 +95,7 @@ export async function createSimpleTestkudosEnvironment(
   });
 
   const exchangeBankAccount = await bank.createExchangeAccount(
-    "MyExchange",
+    "myexchange",
     "x",
   );
   exchange.addBankAccount("1", exchangeBankAccount);
@@ -118,13 +119,13 @@ export async function createSimpleTestkudosEnvironment(
   await merchant.addInstance({
     id: "default",
     name: "Default Instance",
-    paytoUris: [`payto://x-taler-bank/merchant-default`],
+    paytoUris: [getPayto("merchant-default")],
   });
 
   await merchant.addInstance({
     id: "minst1",
     name: "minst1",
-    paytoUris: ["payto://x-taler-bank/minst1"],
+    paytoUris: [getPayto("minst1")],
   });
 
   console.log("setup done!");
@@ -186,7 +187,7 @@ export async function createFaultInjectedMerchantTestkudosEnvironment(
   const faultyExchange = new FaultInjectedExchangeService(t, exchange, 9081);
 
   const exchangeBankAccount = await bank.createExchangeAccount(
-    "MyExchange",
+    "myexchange",
     "x",
   );
   exchange.addBankAccount("1", exchangeBankAccount);
@@ -213,13 +214,13 @@ export async function createFaultInjectedMerchantTestkudosEnvironment(
   await merchant.addInstance({
     id: "default",
     name: "Default Instance",
-    paytoUris: [`payto://x-taler-bank/merchant-default`],
+    paytoUris: [getPayto("merchant-default")],
   });
 
   await merchant.addInstance({
     id: "minst1",
     name: "minst1",
-    paytoUris: ["payto://x-taler-bank/minst1"],
+    paytoUris: [getPayto("minst1")],
   });
 
   console.log("setup done!");
@@ -263,16 +264,19 @@ export async function startWithdrawViaBank(
 
   await wallet.runPending();
 
-  // Confirm it
-
-  await BankApi.confirmWithdrawalOperation(bank, user, wop);
-
-  // Withdraw
+  // Withdraw (AKA select)
 
   await wallet.client.call(WalletApiOperation.AcceptBankIntegratedWithdrawal, {
     exchangeBaseUrl: exchange.baseUrl,
     talerWithdrawUri: wop.taler_withdraw_uri,
   });
+  
+  // Confirm it
+
+  await BankApi.confirmWithdrawalOperation(bank, user, wop);
+
+  await wallet.runPending();
+  await wallet.runUntilDone();
 }
 
 /**

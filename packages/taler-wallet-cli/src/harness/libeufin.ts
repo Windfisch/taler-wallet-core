@@ -36,8 +36,8 @@ import {
   runCommand,
   setupDb,
   sh,
+  getRandomIban
 } from "../harness/harness.js";
-
 import {
   LibeufinSandboxApi,
   LibeufinNexusApi,
@@ -181,10 +181,6 @@ export interface LibeufinPreparedPaymentDetails {
   amount: string;
   currency: string;
   nexusBankAccountName: string;
-}
-
-function getRandomIban(countryCode: string): string {
-  return `${countryCode}715001051796${(Math.random().toString().substring(2, 8))}`
 }
 
 export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
@@ -405,7 +401,7 @@ export class SandboxUserBundle {
   constructor(salt: string) {
     this.ebicsBankAccount = {
       bic: "BELADEBEXXX",
-      iban: getRandomIban("DE"),
+      iban: getRandomIban(),
       label: `remote-account-${salt}`,
       name: `Taler Exchange: ${salt}`,
       subscriber: {

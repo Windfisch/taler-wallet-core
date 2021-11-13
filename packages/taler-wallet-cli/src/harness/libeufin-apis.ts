@@ -184,7 +184,7 @@ export namespace LibeufinSandboxApi {
     libeufinSandboxService: LibeufinSandboxServiceInterface,
     accountLabel: string
   ) {
-    let url = new URL(`${libeufinSandboxService.baseUrl}/accounts/${accountLabel}`); 
+    let url = new URL(`accounts/${accountLabel}`,libeufinSandboxService.baseUrl); 
     return await axios.get(url.href, {
       auth: {
         username: username,
@@ -199,7 +199,7 @@ export namespace LibeufinSandboxApi {
     password: string,
     libeufinSandboxService: LibeufinSandboxServiceInterface,
   ) {
-    let url = new URL(`${libeufinSandboxService.baseUrl}/testing/register`); 
+    let url = new URL("testing/register", libeufinSandboxService.baseUrl); 
     await axios.post(url.href, {
       username: username,
       password: password 
@@ -214,11 +214,11 @@ export namespace LibeufinSandboxApi {
     password: string = "secret",
   ) {
     // baseUrl should already be pointed to one demobank.
-    let url = new URL(libeufinSandboxService.baseUrl);
+    let url = new URL("ebics/subscribers", libeufinSandboxService.baseUrl);
     await axios.post(url.href, {
       userID: req.userID,
       hostID: req.hostID,
-      partnerID: req.userID,
+      partnerID: req.partnerID,
       demobankAccountLabel: demobankAccountLabel,
     }, {
       auth: {

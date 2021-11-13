@@ -18,7 +18,7 @@
  * Imports.
  */
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { GlobalTestState } from "../harness/harness.js";
+import { GlobalTestState, getPayto } from "../harness/harness.js";
 import { createSimpleTestkudosEnvironment, withdrawViaBank } from "../harness/helpers.js";
 
 /**
@@ -44,7 +44,7 @@ export async function runDepositTest(t: GlobalTestState) {
     WalletApiOperation.CreateDepositGroup,
     {
       amount: "TESTKUDOS:10",
-      depositPaytoUri: "payto://x-taler-bank/localhost/foo",
+      depositPaytoUri: getPayto("foo"),
     },
   );
 

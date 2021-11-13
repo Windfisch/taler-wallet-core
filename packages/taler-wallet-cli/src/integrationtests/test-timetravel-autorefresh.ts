@@ -36,6 +36,7 @@ import {
   MerchantService,
   setupDb,
   WalletCli,
+  getPayto
 } from "../harness/harness.js";
 import { startWithdrawViaBank, withdrawViaBank } from "../harness/helpers.js";
 
@@ -97,7 +98,7 @@ export async function runTimetravelAutorefreshTest(t: GlobalTestState) {
   });
 
   const exchangeBankAccount = await bank.createExchangeAccount(
-    "MyExchange",
+    "myexchange",
     "x",
   );
   exchange.addBankAccount("1", exchangeBankAccount);
@@ -121,13 +122,13 @@ export async function runTimetravelAutorefreshTest(t: GlobalTestState) {
   await merchant.addInstance({
     id: "default",
     name: "Default Instance",
-    paytoUris: [`payto://x-taler-bank/merchant-default`],
+    paytoUris: [getPayto("merchant-default")],
   });
 
   await merchant.addInstance({
     id: "minst1",
     name: "minst1",
-    paytoUris: ["payto://x-taler-bank/minst1"],
+    paytoUris: [getPayto("minst1")],
   });
 
   console.log("setup done!");

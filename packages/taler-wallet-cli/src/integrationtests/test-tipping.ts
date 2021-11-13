@@ -18,7 +18,7 @@
  * Imports.
  */
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { GlobalTestState, MerchantPrivateApi, BankApi } from "../harness/harness.js";
+import { GlobalTestState, MerchantPrivateApi, BankApi, getWireMethod } from "../harness/harness.js";
 import { createSimpleTestkudosEnvironment } from "../harness/helpers.js";
 
 /**
@@ -43,7 +43,7 @@ export async function runTippingTest(t: GlobalTestState) {
     {
       exchange_url: exchange.baseUrl,
       initial_balance: "TESTKUDOS:10",
-      wire_method: "x-taler-bank",
+      wire_method: getWireMethod(),
     },
   );
 

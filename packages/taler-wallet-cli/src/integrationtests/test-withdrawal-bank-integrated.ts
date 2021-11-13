@@ -47,16 +47,18 @@ export async function runWithdrawalBankIntegratedTest(t: GlobalTestState) {
 
   await wallet.runPending();
 
-  // Confirm it
-
-  await BankApi.confirmWithdrawalOperation(bank, user, wop);
-
   // Withdraw
 
   const r2 = await wallet.client.call(WalletApiOperation.AcceptBankIntegratedWithdrawal, {
     exchangeBaseUrl: exchange.baseUrl,
     talerWithdrawUri: wop.taler_withdraw_uri,
   });
+  await wallet.runPending();
+
+  // Confirm it
+
+  await BankApi.confirmWithdrawalOperation(bank, user, wop);
+
   await wallet.runUntilDone();
 
   // Check balance

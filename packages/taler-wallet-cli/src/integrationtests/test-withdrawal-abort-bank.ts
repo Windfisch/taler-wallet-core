@@ -47,12 +47,18 @@ export async function runWithdrawalAbortBankTest(t: GlobalTestState) {
 
   await wallet.runPending();
 
-  // Confirm it
+  // Abort it
 
   await BankApi.abortWithdrawalOperation(bank, user, wop);
 
   // Withdraw
 
+  // Difference:
+  // -> with euFin, the wallet selects
+  // -> with PyBank, the wallet stops _before_
+  //
+  // WHY ?!
+  //
   const e = await t.assertThrowsOperationErrorAsync(async () => {
     await wallet.client.call(
       WalletApiOperation.AcceptBankIntegratedWithdrawal,

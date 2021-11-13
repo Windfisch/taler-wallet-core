@@ -175,7 +175,7 @@ export async function getEffectiveDepositAmount(
       for (let i = 0; i < pcs.coinPubs.length; i++) {
         const coin = await tx.coins.get(pcs.coinPubs[i]);
         if (!coin) {
-          throw Error("can't calculate deposit amountt, coin not found");
+          throw Error("can't calculate deposit amount, coin not found");
         }
         const denom = await tx.denominations.get([
           coin.exchangeBaseUrl,
@@ -193,6 +193,9 @@ export async function getEffectiveDepositAmount(
         if (!exchangeDetails) {
           continue;
         }
+	// FIXME/NOTE: the line below _likely_ throws exception
+	// about "find method not found on undefined" when the wireType
+	// is not supported by the Exchange.
         const fee = exchangeDetails.wireInfo.feesForType[wireType].find((x) => {
           return timestampIsBetween(
             getTimestampNow(),

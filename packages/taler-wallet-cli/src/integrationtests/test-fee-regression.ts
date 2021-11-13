@@ -25,6 +25,7 @@ import {
   MerchantService,
   setupDb,
   WalletCli,
+  getPayto
 } from "../harness/harness.js";
 import {
   withdrawViaBank,
@@ -63,7 +64,7 @@ export async function createMyTestkudosEnvironment(
   });
 
   const exchangeBankAccount = await bank.createExchangeAccount(
-    "MyExchange",
+    "myexchange",
     "x",
   );
   exchange.addBankAccount("1", exchangeBankAccount);
@@ -140,7 +141,7 @@ export async function createMyTestkudosEnvironment(
   await merchant.addInstance({
     id: "minst1",
     name: "minst1",
-    paytoUris: ["payto://x-taler-bank/minst1"],
+    paytoUris: [getPayto("minst1")],
   });
 
   console.log("setup done!");

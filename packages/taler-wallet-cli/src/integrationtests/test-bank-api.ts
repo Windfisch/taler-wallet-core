@@ -27,6 +27,7 @@ import {
   BankApi,
   BankAccessApi,
   CreditDebitIndicator,
+  getPayto
 } from "../harness/harness.js";
 import { createEddsaKeyPair, encodeCrock } from "@gnu-taler/taler-util";
 import { defaultCoinConfig } from "../harness/denomStructures";
@@ -61,7 +62,7 @@ export async function runBankApiTest(t: GlobalTestState) {
   });
 
   const exchangeBankAccount = await bank.createExchangeAccount(
-    "MyExchange",
+    "myexchange",
     "x",
   );
   exchange.addBankAccount("1", exchangeBankAccount);
@@ -85,13 +86,13 @@ export async function runBankApiTest(t: GlobalTestState) {
   await merchant.addInstance({
     id: "minst1",
     name: "minst1",
-    paytoUris: ["payto://x-taler-bank/minst1"],
+    paytoUris: [getPayto("minst1")],
   });
 
   await merchant.addInstance({
     id: "default",
     name: "Default Instance",
-    paytoUris: [`payto://x-taler-bank/merchant-default`],
+    paytoUris: [getPayto("merchant-default")],
   });
 
   console.log("setup done!");

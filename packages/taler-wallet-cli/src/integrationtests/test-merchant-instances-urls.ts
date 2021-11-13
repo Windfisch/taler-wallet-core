@@ -24,6 +24,7 @@ import {
   MerchantApiClient,
   MerchantService,
   setupDb,
+  getPayto
 } from "../harness/harness.js";
 
 /**
@@ -71,7 +72,7 @@ export async function runMerchantInstancesUrlsTest(t: GlobalTestState) {
     default_wire_transfer_delay: { d_ms: 60000 },
     jurisdiction: {},
     name: "My Default Instance",
-    payto_uris: ["payto://x-taler-bank/foo/bar"],
+    payto_uris: [getPayto("bar")],
     auth: {
       method: "token",
       token: "secret-token:i-am-default",
@@ -88,7 +89,7 @@ export async function runMerchantInstancesUrlsTest(t: GlobalTestState) {
     default_wire_transfer_delay: { d_ms: 60000 },
     jurisdiction: {},
     name: "My Second Instance",
-    payto_uris: ["payto://x-taler-bank/foo/bar"],
+    payto_uris: [getPayto("bar")],
     auth: {
       method: "token",
       token: "secret-token:i-am-myinst",

@@ -57,6 +57,13 @@ export function parseWithdrawUri(s: string): WithdrawUriResult | undefined {
 
   const host = parts[0].toLowerCase();
   const pathSegments = parts.slice(1, parts.length - 1);
+  /**
+   * The statement below does not tolerate a slash-ended URI.
+   * This results in (1) the withdrawalId being passed as the
+   * empty string, and (2) the bankIntegrationApi ending with the
+   * actual withdrawal operation ID.  That can be fixed by
+   * trimming the parts-list.  FIXME
+   */
   const withdrawId = parts[parts.length - 1];
   const p = [host, ...pathSegments].join("/");
 

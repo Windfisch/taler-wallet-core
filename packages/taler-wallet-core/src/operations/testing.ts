@@ -174,7 +174,8 @@ async function registerRandomBankUser(
   const reqUrl = new URL("testing/register", bankBaseUrl).href;
   const randId = makeId(8);
   const bankUser: BankUser = {
-    username: `testuser-${randId}`,
+    // euFin doesn't allow resource names to have upper case letters.
+    username: `testuser-${randId.toLowerCase()}`,
     password: `testpw-${randId}`,
   };
 

@@ -25,6 +25,7 @@ import {
   MerchantService,
   WalletCli,
   MerchantPrivateApi,
+  getPayto
 } from "../harness/harness.js";
 import { withdrawViaBank } from "../harness/helpers.js";
 import { coin_ct10, coin_u1 } from "../harness/denomStructures";
@@ -54,7 +55,7 @@ async function setupTest(
   });
 
   const exchangeBankAccount = await bank.createExchangeAccount(
-    "MyExchange",
+    "myexchange",
     "x",
   );
 
@@ -86,13 +87,13 @@ async function setupTest(
   await merchant.addInstance({
     id: "default",
     name: "Default Instance",
-    paytoUris: [`payto://x-taler-bank/merchant-default`],
+    paytoUris: [getPayto("merchant-default")],
   });
 
   await merchant.addInstance({
     id: "minst1",
     name: "minst1",
-    paytoUris: ["payto://x-taler-bank/minst1"],
+    paytoUris: [getPayto("minst1")],
   });
 
   console.log("setup done!");

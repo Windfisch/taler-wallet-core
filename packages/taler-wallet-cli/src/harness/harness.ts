@@ -65,6 +65,8 @@ import {
   EddsaKeyPair,
   encodeCrock,
   getRandomBytes,
+  hash,
+  stringToBytes
 } from "@gnu-taler/taler-util";
 import { CoinConfig } from "./denomStructures.js";
 import { LibeufinNexusApi, LibeufinSandboxApi } from "./libeufin-apis.js";
@@ -431,8 +433,7 @@ function setCoin(config: Configuration, c: CoinConfig) {
 }
 
 /**
- * Send an HTTP request until it succeeds or the
- * process dies.
+ * Send an HTTP request until it suceeds or the process dies.
  */
 export async function pingProc(
   proc: ProcessWrapper | undefined,
@@ -523,22 +524,26 @@ export namespace BankApi {
     password: string,
   ): Promise<BankUser> {
     const url = new URL("testing/register", bank.baseUrl);
-    await axios.post(url.href, {
+    let resp = await axios.post(url.href, {
       username,
       password,
     });
+    let paytoUri = `payto://x-taler-bank/localhost/${username}`;
+    if (process.env.WALLET_HARNESS_WITH_EUFIN) {
+      paytoUri = resp.data.paytoUri;
+    }
     return {
       password,
       username,
-      accountPaytoUri: `payto://x-taler-bank/localhost/${username}`,
+      accountPaytoUri: paytoUri,
     };
   }
 
   export async function createRandomBankUser(
     bank: BankServiceInterface,
   ): Promise<BankUser> {
-    const username = "user-" + encodeCrock(getRandomBytes(10));
-    const password = "pw-" + encodeCrock(getRandomBytes(10));
+    const username = "user-" + encodeCrock(getRandomBytes(10)).toLowerCase();
+    const password = "pw-" + encodeCrock(getRandomBytes(10)).toLowerCase();
     return await registerAccount(bank, username, password);
   }
 
@@ -551,9 +556,14 @@ export namespace BankApi {
       debitAccountPayto: string;
     },
   ) {
-    const url = new URL(
+
+    let maybeBaseUrl = bank.baseUrl;
+    if (process.env.WALLET_HARNESS_WITH_EUFIN) {
+      maybeBaseUrl = (bank as EufinBankService).baseUrlDemobank;
+    }
+    let url = new URL(
       `taler-wire-gateway/${params.exchangeBankAccount.accountName}/admin/add-incoming`,
-      bank.baseUrl,
+      maybeBaseUrl,
     );
     await axios.post(
       url.href,
@@ -623,28 +633,55 @@ class BankServiceBase {
  * Work in progress.  The key point is that both Sandbox and Nexus
  * will be configured and started by this class.
  */
-class LibeufinBankService extends BankServiceBase implements BankService {
+class EufinBankService extends BankServiceBase implements BankServiceInterface {
   sandboxProc: ProcessWrapper | undefined;
   nexusProc: ProcessWrapper | undefined;
 
   static async create(
     gc: GlobalTestState,
     bc: BankConfig,
-  ): Promise<BankService> {
+  ): Promise<EufinBankService> {
   
-    return new LibeufinBankService(gc, bc, "foo");
+    return new EufinBankService(gc, bc, "foo");
   }
 
   get port() {
     return this.bankConfig.httpPort;
   }
+  get nexusPort() {
+    return this.bankConfig.httpPort + 1000;
+  
+  }
+
+  get nexusDbConn(): string {
+    return `jdbc:sqlite:${this.globalTestState.testDir}/libeufin-nexus.sqlite3`; 
+  }
+
+  get sandboxDbConn(): string {
+    return `jdbc:sqlite:${this.globalTestState.testDir}/libeufin-sandbox.sqlite3`; 
+  
+  }
 
   get nexusBaseUrl(): string {
-    return `http://localhost:${this.bankConfig.httpPort + 1}`;
+    return `http://localhost:${this.nexusPort}`;
+  }
+
+  get baseUrlDemobank(): string {
+    let url = new URL("demobanks/default/", this.baseUrlNetloc);
+    return url.href;
+  }
+
+  get baseUrlAccessApi(): string {
+    let url = new URL("access-api/", this.baseUrlDemobank);
+    return url.href; 
+  }
+  
+  get baseUrlNetloc(): string {
+    return `http://localhost:${this.bankConfig.httpPort}/`;
   }
 
   get baseUrl(): string {
-    return `http://localhost:${this.bankConfig.httpPort}/demobanks/default/access-api`;
+    return this.baseUrlAccessApi;
   }
 
   async setSuggestedExchange(
@@ -654,7 +691,11 @@ class LibeufinBankService extends BankServiceBase implements BankService {
     await sh(
       this.globalTestState,
       "libeufin-sandbox-set-default-exchange",
-      `libeufin-sandbox default-exchange ${exchangePayto}`
+      `libeufin-sandbox default-exchange ${e.baseUrl} ${exchangePayto}`,
+      {
+        ...process.env,
+        LIBEUFIN_SANDBOX_DB_CONNECTION: this.sandboxDbConn,
+      },
     );
   }
 
@@ -663,38 +704,45 @@ class LibeufinBankService extends BankServiceBase implements BankService {
     accountName: string,
     password: string,
   ): Promise<HarnessExchangeBankAccount> {
-
+    console.log("Create Exchange account(s)!");
+    /**
+     * Many test cases try to create a Exchange account before
+     * starting the bank;  that's because the Pybank did it entirely
+     * via the configuration file.
+     */
+    await this.start();
+    await this.pingUntilAvailable();
     await LibeufinSandboxApi.createDemobankAccount(
       accountName,
       password,
-      { baseUrl: this.baseUrl }
+      { baseUrl: this.baseUrlAccessApi }
     ); 
-    let bankAccountLabel = `${accountName}-acct`
+    let bankAccountLabel = accountName;
     await LibeufinSandboxApi.createDemobankEbicsSubscriber(
       {
-        hostID: "talertest-ebics-host",
-        userID: "exchange-ebics-user",
-        partnerID: "exchange-ebics-partner",
+        hostID: "talertestEbicsHost",
+        userID: "exchangeEbicsUser",
+        partnerID: "exchangeEbicsPartner",
       },
       bankAccountLabel,
-      { baseUrl: this.baseUrl }
+      { baseUrl: this.baseUrlDemobank }
     );
      
     await LibeufinNexusApi.createUser(
       { baseUrl: this.nexusBaseUrl },
       {
-        username: `${accountName}-nexus-username`,
-	password: `${password}-nexus-password`
+        username: accountName,
+	password: password
       }
     );
     await LibeufinNexusApi.createEbicsBankConnection(
       { baseUrl: this.nexusBaseUrl },
       {
         name: "ebics-connection", // connection name.
-        ebicsURL: `http://localhost:${this.bankConfig.httpPort}/ebicsweb`,
-        hostID: "talertest-ebics-host",
-        userID: "exchange-ebics-user",
-        partnerID: "exchange-ebics-partner",
+        ebicsURL: (new URL("ebicsweb", this.baseUrlNetloc)).href,
+        hostID: "talertestEbicsHost",
+        userID: "exchangeEbicsUser",
+        partnerID: "exchangeEbicsPartner",
       }
     );
     await LibeufinNexusApi.connectBankConnection(
@@ -706,7 +754,7 @@ class LibeufinBankService extends BankServiceBase implements BankService {
     await LibeufinNexusApi.importConnectionAccount(
       { baseUrl: this.nexusBaseUrl },
       "ebics-connection", // connection name
-      `${accountName}-acct`, // offered account label
+      accountName, // offered account label
       `${accountName}-nexus-label` // bank account label at Nexus
     );
     await LibeufinNexusApi.createTwgFacade(
@@ -724,7 +772,7 @@ class LibeufinBankService extends BankServiceBase implements BankService {
       {
         action: "grant",
         permission: {
-          subjectId: `${accountName}-nexus-username`,
+          subjectId: accountName,
           subjectType: "user",
           resourceType: "facade",
           resourceId: "exchange-facade", // facade name
@@ -737,7 +785,7 @@ class LibeufinBankService extends BankServiceBase implements BankService {
       {
         action: "grant",
         permission: {
-          subjectId: `${accountName}-nexus-username`,
+          subjectId: accountName,
           subjectType: "user",
           resourceType: "facade",
           resourceId: "exchange-facade", // facade name
@@ -745,12 +793,35 @@ class LibeufinBankService extends BankServiceBase implements BankService {
         },
       }
     );
+    // Set fetch task.
+    await LibeufinNexusApi.postTask(
+      { baseUrl: this.nexusBaseUrl },
+      `${accountName}-nexus-label`,
+      {
+        name: "wirewatch-task",
+        cronspec: "* * *",
+        type: "fetch",
+        params: {
+          level: "all",
+          rangeType: "all",
+      },
+    });
+    await LibeufinNexusApi.postTask(
+      { baseUrl: this.nexusBaseUrl },
+      `${accountName}-nexus-label`,
+      {
+        name: "aggregator-task",
+        cronspec: "* * *",
+        type: "submit",
+        params: {},
+      }
+    );
     let facadesResp = await LibeufinNexusApi.getAllFacades({ baseUrl: this.nexusBaseUrl });
     let accountInfoResp = await LibeufinSandboxApi.demobankAccountInfo(
-      accountName, // username
-      password,
-      { baseUrl: this.nexusBaseUrl },
-      `${accountName}acct` // bank account label.
+      "admin",
+      "secret",
+      { baseUrl: this.baseUrlAccessApi },
+      accountName // bank account label.
     );
     return {
       accountName: accountName,
@@ -761,15 +832,36 @@ class LibeufinBankService extends BankServiceBase implements BankService {
   }
 
   async start(): Promise<void> {
-    let sandboxDb = `jdbc:sqlite:${this.globalTestState.testDir}/libeufin-sandbox.sqlite3`;
-    let nexusDb = `jdbc:sqlite:${this.globalTestState.testDir}/libeufin-nexus.sqlite3`;
+    /**
+     * Because many test cases try to create a Exchange bank
+     * account _before_ starting the bank (Pybank did it only via
+     * the config), it is possible that at this point Sandbox and
+     * Nexus are already running.  Hence, this method only launches
+     * them if they weren't launched earlier.
+     */
+
+    // Only go ahead if BOTH aren't running. 
+    if (this.sandboxProc || this.nexusProc) {
+      console.log("Nexus or Sandbox already running, not taking any action.");
+      return;
+    }
+    await sh(
+      this.globalTestState,
+      "libeufin-sandbox-config-demobank",
+      `libeufin-sandbox config --currency=${this.bankConfig.currency} default`,
+      {
+        ...process.env,
+        LIBEUFIN_SANDBOX_DB_CONNECTION: this.sandboxDbConn,
+        LIBEUFIN_SANDBOX_ADMIN_PASSWORD: "secret",
+      },
+    );
     this.sandboxProc = this.globalTestState.spawnService(
       "libeufin-sandbox",
       ["serve", "--port", `${this.port}`],
       "libeufin-sandbox",
       {
         ...process.env,
-        LIBEUFIN_SANDBOX_DB_CONNECTION: sandboxDb,
+        LIBEUFIN_SANDBOX_DB_CONNECTION: this.sandboxDbConn,
         LIBEUFIN_SANDBOX_ADMIN_PASSWORD: "secret",
       },
     ); 
@@ -780,34 +872,48 @@ class LibeufinBankService extends BankServiceBase implements BankService {
       ["superuser", "admin", "--password", "test"],
       {
         ...process.env,
-        LIBEUFIN_NEXUS_DB_CONNECTION: nexusDb,
+        LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusDbConn,
       },
     );
-
     this.nexusProc = this.globalTestState.spawnService(
       "libeufin-nexus",
-      ["serve", "--port", `${this.port + 1}`],
+      ["serve", "--port", `${this.nexusPort}`],
       "libeufin-nexus",
       {
         ...process.env,
-        LIBEUFIN_NEXUS_DB_CONNECTION: nexusDb,
+        LIBEUFIN_NEXUS_DB_CONNECTION: this.nexusDbConn,
       },
+    );
+    // need to wait here, because at this point
+    // a Ebics host needs to be created (RESTfully)
+    await this.pingUntilAvailable();
+    LibeufinSandboxApi.createEbicsHost(
+      { baseUrl: this.baseUrlNetloc },
+      "talertestEbicsHost"
     );
   }
 
   async pingUntilAvailable(): Promise<void> {
-    await pingProc(this.sandboxProc, this.baseUrl, "libeufin-sandbox");
-    await pingProc(this.nexusProc, `${this.baseUrl}config`, "libeufin-nexus");
+    await pingProc(
+      this.sandboxProc,
+      `http://localhost:${this.bankConfig.httpPort}`,
+      "libeufin-sandbox"
+    );
+    await pingProc(
+      this.nexusProc,
+      `${this.nexusBaseUrl}/config`,
+      "libeufin-nexus"
+    );
   }
 }
 
-export class BankService extends BankServiceBase implements BankServiceInterface {
+class PybankService extends BankServiceBase implements BankServiceInterface {
   proc: ProcessWrapper | undefined;
 
   static async create(
     gc: GlobalTestState,
     bc: BankConfig,
-  ): Promise<BankService> {
+  ): Promise<PybankService> {
     const config = new Configuration();
     setTalerPaths(config, gc.testDir + "/talerhome");
     config.setString("taler", "currency", bc.currency);
@@ -835,7 +941,7 @@ export class BankService extends BankServiceBase implements BankServiceInterface
       `taler-bank-manage -c '${cfgFilename}' django provide_accounts`,
     );
 
-    return new BankService(gc, bc, cfgFilename);
+    return new PybankService(gc, bc, cfgFilename);
   }
 
   setSuggestedExchange(e: ExchangeServiceInterface, exchangePayto: string) {
@@ -870,7 +976,7 @@ export class BankService extends BankServiceBase implements BankServiceInterface
     return {
       accountName: accountName,
       accountPassword: password,
-      accountPaytoUri: `payto://x-taler-bank/${accountName}`,
+      accountPaytoUri: getPayto(accountName),
       wireGatewayApiBaseUrl: `http://localhost:${this.bankConfig.httpPort}/taler-wire-gateway/${accountName}/`,
     };
   }
@@ -893,11 +999,31 @@ export class BankService extends BankServiceBase implements BankServiceInterface
   }
 }
 
-// Still work in progress..
-if (false && process.env.WALLET_HARNESS_WITH_EUFIN) {
-  BankService.create = LibeufinBankService.create;
-  BankService.prototype = Object.create(LibeufinBankService.prototype);
-} 
+
+/**
+ * Return a euFin or a pyBank implementation of
+ * the exported BankService class.  This allows
+ * to "dynamically export" such class depending
+ * on a particular env variable.
+ */
+function getBankServiceImpl(): {
+  prototype: typeof PybankService.prototype,
+  create: typeof PybankService.create
+} {
+
+  if (process.env.WALLET_HARNESS_WITH_EUFIN) 
+    return {
+      prototype: EufinBankService.prototype,
+      create: EufinBankService.create
+    }
+  return {
+    prototype: PybankService.prototype,
+    create: PybankService.create
+  }
+}
+
+export type BankService = PybankService;
+export const BankService = getBankServiceImpl();
 
 export class FakeBankService {
   proc: ProcessWrapper | undefined;
@@ -1038,6 +1164,10 @@ export class ExchangeService implements ExchangeServiceInterface {
   }
 
   async runWirewatchOnce() {
+    if (process.env.WALLET_HARNESS_WITH_EUFIN) {
+      // Not even 2 secods showed to be enough!
+      await waitMs(4000);
+    }
     await runCommand(
       this.globalState,
       `exchange-${this.name}-wirewatch-once`,
@@ -1699,7 +1829,7 @@ export class MerchantService implements MerchantServiceInterface {
     return await this.addInstance({
       id: "default",
       name: "Default Instance",
-      paytoUris: [`payto://x-taler-bank/merchant-default`],
+      paytoUris: [getPayto("merchant-default")],
       auth: {
         method: "external",
       },
@@ -1955,4 +2085,47 @@ export class WalletCli {
       ],
     );
   }
+}
+
+export function getRandomIban(salt: string | null = null): string {
+
+  function getBban(salt: string | null): string {
+    if (!salt)
+      return Math.random().toString().substring(2, 6);
+    let hashed = hash(stringToBytes(salt));
+    let ret = "";
+    for (let i = 0; i < hashed.length; i++) {
+      ret += hashed[i].toString();
+    }
+    return ret.substring(0, 4);
+  }
+
+  let cc_no_check = "131400"; // == DE00
+  let bban = getBban(salt)
+  let check_digits = (98 - (Number.parseInt(`${bban}${cc_no_check}`) % 97)).toString();
+  if (check_digits.length == 1) {
+    check_digits = `0${check_digits}`;
+  }
+  return `DE${check_digits}${bban}`;   
+}
+
+// Only used in one tipping test.
+export function getWireMethod(): string {
+  if (process.env.WALLET_HARNESS_WITH_EUFIN)
+    return "iban"
+  return "x-taler-bank"
+}
+
+/**
+ * Generate a payto address, whose authority depends
+ * on whether the banking is served by euFin or Pybank.
+ */
+export function getPayto(label: string): string {
+  if (process.env.WALLET_HARNESS_WITH_EUFIN)
+    return `payto://iban/SANDBOXX/${getRandomIban(label)}?receiver-name=${label}`
+  return `payto://x-taler-bank/${label}`
+}
+
+function waitMs(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }

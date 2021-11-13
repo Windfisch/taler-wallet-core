@@ -25,6 +25,7 @@ import {
   MerchantApiClient,
   MerchantService,
   setupDb,
+  getPayto
 } from "../harness/harness.js";
 
 /**
@@ -74,7 +75,7 @@ export async function runMerchantInstancesDeleteTest(t: GlobalTestState) {
   await merchant.addInstance({
     id: "default",
     name: "Default Instance",
-    paytoUris: [`payto://x-taler-bank/merchant-default`],
+    paytoUris: [getPayto("merchant-default")],
     auth: {
       method: "external",
     },
@@ -84,7 +85,7 @@ export async function runMerchantInstancesDeleteTest(t: GlobalTestState) {
   await merchant.addInstance({
     id: "myinst",
     name: "Second Instance",
-    paytoUris: [`payto://x-taler-bank/merchant-default`],
+    paytoUris: [getPayto("merchant-default")],
     auth: {
       method: "external",
     },

@@ -32,6 +32,7 @@ import {
   MerchantService,
   setupDb,
   WalletCli,
+  getPayto
 } from "../harness/harness.js";
 import { SimpleTestEnvironment } from "../harness/helpers.js";
 
@@ -69,7 +70,7 @@ export async function createMyEnvironment(
   });
 
   const exchangeBankAccount = await bank.createExchangeAccount(
-    "MyExchange",
+    "myexchange",
     "x",
   );
   exchange.addBankAccount("1", exchangeBankAccount);
@@ -93,7 +94,7 @@ export async function createMyEnvironment(
   await merchant.addInstance({
     id: "default",
     name: "Default Instance",
-    paytoUris: [`payto://x-taler-bank/merchant-default`],
+    paytoUris: [getPayto("merchant-default")],
   });
 
   console.log("setup done!");

@@ -31,6 +31,7 @@ import {
   MerchantPrivateApi,
   BankApi,
   BankAccessApi,
+  getPayto
 } from "../harness/harness.js";
 import {
   FaultInjectedExchangeService,
@@ -64,7 +65,7 @@ export async function runPaymentFaultTest(t: GlobalTestState) {
   });
 
   const exchangeBankAccount = await bank.createExchangeAccount(
-    "MyExchange",
+    "myexchange",
     "x",
   );
 
@@ -107,7 +108,7 @@ export async function runPaymentFaultTest(t: GlobalTestState) {
   await merchant.addInstance({
     id: "default",
     name: "Default Instance",
-    paytoUris: [`payto://x-taler-bank/merchant-default`],
+    paytoUris: [getPayto("merchant-default")],
   });
 
   console.log("setup done!");
@@ -131,17 +132,20 @@ export async function runPaymentFaultTest(t: GlobalTestState) {
 
   await wallet.runPending();
 
-  // Confirm it
-
-  await BankApi.confirmWithdrawalOperation(bank, user, wop);
-
   // Withdraw
 
   await wallet.client.call(WalletApiOperation.AcceptBankIntegratedWithdrawal, {
     exchangeBaseUrl: faultyExchange.baseUrl,
     talerWithdrawUri: wop.taler_withdraw_uri,
   });
+  await wallet.runPending();
+
+  // Confirm it
+
+  await BankApi.confirmWithdrawalOperation(bank, user, wop);
+
   await wallet.runUntilDone();
+
 
   // Check balance
 
