@@ -62,13 +62,16 @@ export async function runBench1(configJson: any): Promise<void> {
     // otherwise the TPS go down 
     // my assumption is that the in-memory db file gets too large 
     if (i % restartWallet == 0) {
+      if (Object.keys(wallet).length !== 0) {
+	      wallet.stop();
+      }
       wallet = await getDefaultNodeWallet({
         // No persistent DB storage.
         persistentStoragePath: undefined,
         httpLib: myHttpLib,
       });
+      await wallet.client.call(WalletApiOperation.InitWallet, {});
     }
-    await wallet.client.call(WalletApiOperation.InitWallet, {});
 	
     logger.trace(`Starting withdrawal amount=${withdrawAmount}`);
     let start = Date.now();
@@ -101,8 +104,6 @@ export async function runBench1(configJson: any): Promise<void> {
 
       logger.info(`Finished deposit amount=10 time=${Date.now() - start}`);
     }
-
-    wallet.stop();
   }
 }
 
