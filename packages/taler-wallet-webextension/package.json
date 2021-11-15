@@ -13,6 +13,7 @@
     "compile": "tsc && rollup -c",
     "build-storybook": "build-storybook",
     "storybook": "start-storybook -s . -p 6006",
+    "pretty": "prettier --write src",
     "watch": "tsc --watch & rollup -w -c"
   },
   "dependencies": {

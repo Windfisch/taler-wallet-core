@@ -18,7 +18,6 @@ import { BalancesResponse } from "@gnu-taler/taler-util";
 import { useEffect, useState } from "preact/hooks";
 import * as wxApi from "../wxApi";
 
-
 interface BalancesHookOk {
   hasError: false;
   response: BalancesResponse;
@@ -46,7 +45,7 @@ export function useBalances(): BalancesHook {
         }
       }
     }
-    checkBalance()
+    checkBalance();
     return wxApi.onUpdateNotification(checkBalance);
   }, []);
 

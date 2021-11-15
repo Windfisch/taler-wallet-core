@@ -16,7 +16,7 @@
 
 import { JSX } from "preact/jsx-runtime";
 import { Outlined, StyledCheckboxLabel } from "./styled/index";
-import { h } from 'preact';
+import { h } from "preact";
 
 interface Props {
   enabled: boolean;
@@ -25,28 +25,39 @@ interface Props {
   name: string;
 }
 
+const Tick = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+    focusable="false"
+    style={{ backgroundColor: "green" }}
+  >
+    <path
+      fill="none"
+      stroke="white"
+      stroke-width="3"
+      d="M1.73 12.91l6.37 6.37L22.79 4.59"
+    />
+  </svg>
+);
 
-const Tick = () => <svg
-  xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 24 24"
-  aria-hidden="true"
-  focusable="false"
-  style={{ backgroundColor: 'green' }}
->
-  <path
-    fill="none"
-    stroke="white"
-    stroke-width="3"
-    d="M1.73 12.91l6.37 6.37L22.79 4.59"
-  />
-</svg>
-
-export function CheckboxOutlined({ name, enabled, onToggle, label }: Props): JSX.Element {
+export function CheckboxOutlined({
+  name,
+  enabled,
+  onToggle,
+  label,
+}: Props): JSX.Element {
   return (
     <Outlined>
       <StyledCheckboxLabel onClick={onToggle}>
         <span>
-          <input type="checkbox" name={name} checked={enabled} disabled={false} />
+          <input
+            type="checkbox"
+            name={name}
+            checked={enabled}
+            disabled={false}
+          />
           <div>
             <Tick />
           </div>

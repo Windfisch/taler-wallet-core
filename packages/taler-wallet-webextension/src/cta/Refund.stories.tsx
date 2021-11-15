@@ -15,63 +15,61 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { OrderShortInfo } from '@gnu-taler/taler-util';
-import { createExample } from '../test-utils';
-import { View as TestedComponent } from './Refund';
-
+import { OrderShortInfo } from "@gnu-taler/taler-util";
+import { createExample } from "../test-utils";
+import { View as TestedComponent } from "./Refund";
 
 export default {
-  title: 'cta/refund',
+  title: "cta/refund",
   component: TestedComponent,
-  argTypes: {
-  },
+  argTypes: {},
 };
 
 export const Complete = createExample(TestedComponent, {
   applyResult: {
-    amountEffectivePaid: 'USD:10',
-    amountRefundGone: 'USD:0',
-    amountRefundGranted: 'USD:2',
-    contractTermsHash: 'QWEASDZXC',
-    info: {
-      summary: 'tasty cold beer',
-      contractTermsHash: 'QWEASDZXC',
-    } as Partial<OrderShortInfo> as any,
+    amountEffectivePaid: "USD:10",
+    amountRefundGone: "USD:0",
+    amountRefundGranted: "USD:2",
+    contractTermsHash: "QWEASDZXC",
+    info: ({
+      summary: "tasty cold beer",
+      contractTermsHash: "QWEASDZXC",
+    } as Partial<OrderShortInfo>) as any,
     pendingAtExchange: false,
     proposalId: "proposal123",
-  }
+  },
 });
 
 export const Partial = createExample(TestedComponent, {
   applyResult: {
-    amountEffectivePaid: 'USD:10',
-    amountRefundGone: 'USD:1',
-    amountRefundGranted: 'USD:2',
-    contractTermsHash: 'QWEASDZXC',
-    info: {
-      summary: 'tasty cold beer',
-      contractTermsHash: 'QWEASDZXC',
-    } as Partial<OrderShortInfo> as any,
+    amountEffectivePaid: "USD:10",
+    amountRefundGone: "USD:1",
+    amountRefundGranted: "USD:2",
+    contractTermsHash: "QWEASDZXC",
+    info: ({
+      summary: "tasty cold beer",
+      contractTermsHash: "QWEASDZXC",
+    } as Partial<OrderShortInfo>) as any,
     pendingAtExchange: false,
     proposalId: "proposal123",
-  }
+  },
 });
 
 export const InProgress = createExample(TestedComponent, {
   applyResult: {
-    amountEffectivePaid: 'USD:10',
-    amountRefundGone: 'USD:1',
-    amountRefundGranted: 'USD:2',
-    contractTermsHash: 'QWEASDZXC',
-    info: {
-      summary: 'tasty cold beer',
-      contractTermsHash: 'QWEASDZXC',
-    } as Partial<OrderShortInfo> as any,
+    amountEffectivePaid: "USD:10",
+    amountRefundGone: "USD:1",
+    amountRefundGranted: "USD:2",
+    contractTermsHash: "QWEASDZXC",
+    info: ({
+      summary: "tasty cold beer",
+      contractTermsHash: "QWEASDZXC",
+    } as Partial<OrderShortInfo>) as any,
     pendingAtExchange: true,
     proposalId: "proposal123",
-  }
+  },
 });

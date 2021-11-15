@@ -15,42 +15,39 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createExample } from '../test-utils';
-import { CreateManualWithdraw as TestedComponent } from './CreateManualWithdraw';
+import { createExample } from "../test-utils";
+import { CreateManualWithdraw as TestedComponent } from "./CreateManualWithdraw";
 
 export default {
-  title: 'wallet/manual withdraw/creation',
+  title: "wallet/manual withdraw/creation",
   component: TestedComponent,
-  argTypes: {
-  }
+  argTypes: {},
 };
 
-
-export const InitialState = createExample(TestedComponent, {
-});
+export const InitialState = createExample(TestedComponent, {});
 
 export const WithExchangeFilled = createExample(TestedComponent, {
-  currency: 'COL',
-  initialExchange: 'http://exchange.taler:8081',
+  currency: "COL",
+  initialExchange: "http://exchange.taler:8081",
 });
 
 export const WithExchangeAndAmountFilled = createExample(TestedComponent, {
-  currency: 'COL',
-  initialExchange: 'http://exchange.taler:8081',
-  initialAmount: '10'
+  currency: "COL",
+  initialExchange: "http://exchange.taler:8081",
+  initialAmount: "10",
 });
 
 export const WithExchangeError = createExample(TestedComponent, {
-  initialExchange: 'http://exchange.tal',
-  error: 'The exchange url seems invalid'
+  initialExchange: "http://exchange.tal",
+  error: "The exchange url seems invalid",
 });
 
 export const WithAmountError = createExample(TestedComponent, {
-  currency: 'COL',
-  initialExchange: 'http://exchange.taler:8081',
-  initialAmount: 'e'
+  currency: "COL",
+  initialExchange: "http://exchange.taler:8081",
+  initialAmount: "e",
 });

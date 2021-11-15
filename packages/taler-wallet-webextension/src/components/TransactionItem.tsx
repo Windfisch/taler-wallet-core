@@ -14,18 +14,33 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountString, Timestamp, Transaction, TransactionType } from '@gnu-taler/taler-util';
-import { format, formatDistance } from 'date-fns';
-import { h } from 'preact';
-import imageBank from '../../static/img/ri-bank-line.svg';
-import imageHandHeart from '../../static/img/ri-hand-heart-line.svg';
-import imageRefresh from '../../static/img/ri-refresh-line.svg';
-import imageRefund from '../../static/img/ri-refund-2-line.svg';
-import imageShoppingCart from '../../static/img/ri-shopping-cart-line.svg';
+import {
+  AmountString,
+  Timestamp,
+  Transaction,
+  TransactionType,
+} from "@gnu-taler/taler-util";
+import { format, formatDistance } from "date-fns";
+import { h } from "preact";
+import imageBank from "../../static/img/ri-bank-line.svg";
+import imageHandHeart from "../../static/img/ri-hand-heart-line.svg";
+import imageRefresh from "../../static/img/ri-refresh-line.svg";
+import imageRefund from "../../static/img/ri-refund-2-line.svg";
+import imageShoppingCart from "../../static/img/ri-shopping-cart-line.svg";
 import { Pages } from "../NavigationBar";
-import { Column, ExtraLargeText, HistoryRow, SmallLightText, LargeText, LightText } from './styled/index';
+import {
+  Column,
+  ExtraLargeText,
+  HistoryRow,
+  SmallLightText,
+  LargeText,
+  LightText,
+} from "./styled/index";
 
-export function TransactionItem(props: { tx: Transaction, multiCurrency: boolean }): JSX.Element {
+export function TransactionItem(props: {
+  tx: Transaction;
+  multiCurrency: boolean;
+}): JSX.Element {
   const tx = props.tx;
   switch (tx.type) {
     case TransactionType.Withdrawal:
@@ -112,20 +127,26 @@ export function TransactionItem(props: { tx: Transaction, multiCurrency: boolean
 
 function TransactionLayout(props: TransactionLayoutProps): JSX.Element {
   const date = new Date(props.timestamp.t_ms);
-  const dateStr = format(date, 'dd MMM, hh:mm')
+  const dateStr = format(date, "dd MMM, hh:mm");
 
   return (
-    <HistoryRow href={Pages.transaction.replace(':tid', props.id)}>
+    <HistoryRow href={Pages.transaction.replace(":tid", props.id)}>
       <img src={props.iconPath} />
       <Column>
         <LargeText>
           <div>{props.title}</div>
-          {props.subtitle && <div style={{color:'gray', fontSize:'medium', marginTop: 5}}>{props.subtitle}</div>}
+          {props.subtitle && (
+            <div style={{ color: "gray", fontSize: "medium", marginTop: 5 }}>
+              {props.subtitle}
+            </div>
+          )}
         </LargeText>
-        {props.pending &&
-          <LightText style={{ marginTop: 5, marginBottom: 5 }}>Waiting for confirmation</LightText>
-        }
-        <SmallLightText style={{marginTop:5 }}>{dateStr}</SmallLightText>
+        {props.pending && (
+          <LightText style={{ marginTop: 5, marginBottom: 5 }}>
+            Waiting for confirmation
+          </LightText>
+        )}
+        <SmallLightText style={{ marginTop: 5 }}>{dateStr}</SmallLightText>
       </Column>
       <TransactionAmount
         pending={props.pending}
@@ -170,14 +191,18 @@ function TransactionAmount(props: TransactionAmountProps): JSX.Element {
       sign = "";
   }
   return (
-    <Column style={{
-      textAlign: 'center',
-      color:
-        props.pending ? "gray" :
-          (sign === '+' ? 'darkgreen' :
-            (sign === '-' ? 'darkred' :
-              undefined))
-    }}>
+    <Column
+      style={{
+        textAlign: "center",
+        color: props.pending
+          ? "gray"
+          : sign === "+"
+          ? "darkgreen"
+          : sign === "-"
+          ? "darkred"
+          : undefined,
+      }}
+    >
       <ExtraLargeText>
         {sign}
         {amount}
@@ -187,4 +212,3 @@ function TransactionAmount(props: TransactionAmountProps): JSX.Element {
     </Column>
   );
 }
-

@@ -15,28 +15,25 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createExample, NullLink } from '../test-utils';
-import { BalanceView as TestedComponent } from './BalancePage';
+import { createExample, NullLink } from "../test-utils";
+import { BalanceView as TestedComponent } from "./BalancePage";
 
 export default {
-  title: 'wallet/balance',
+  title: "wallet/balance",
   component: TestedComponent,
-  argTypes: {
-  }
+  argTypes: {},
 };
 
-
-export const NotYetLoaded = createExample(TestedComponent, {
-});
+export const NotYetLoaded = createExample(TestedComponent, {});
 
 export const GotError = createExample(TestedComponent, {
   balance: {
     hasError: true,
-    message: 'Network error'
+    message: "Network error",
   },
   Linker: NullLink,
 });
@@ -45,7 +42,7 @@ export const EmptyBalance = createExample(TestedComponent, {
   balance: {
     hasError: false,
     response: {
-      balances: []
+      balances: [],
     },
   },
   Linker: NullLink,
@@ -55,13 +52,15 @@ export const SomeCoins = createExample(TestedComponent, {
   balance: {
     hasError: false,
     response: {
-      balances: [{
-        available: 'USD:10.5',
-        hasPendingTransactions: false,
-        pendingIncoming: 'USD:0',
-        pendingOutgoing: 'USD:0',
-        requiresUserInput: false
-      }]
+      balances: [
+        {
+          available: "USD:10.5",
+          hasPendingTransactions: false,
+          pendingIncoming: "USD:0",
+          pendingOutgoing: "USD:0",
+          requiresUserInput: false,
+        },
+      ],
     },
   },
   Linker: NullLink,
@@ -71,13 +70,15 @@ export const SomeCoinsAndIncomingMoney = createExample(TestedComponent, {
   balance: {
     hasError: false,
     response: {
-      balances: [{
-        available: 'USD:2.23',
-        hasPendingTransactions: false,
-        pendingIncoming: 'USD:5.11',
-        pendingOutgoing: 'USD:0',
-        requiresUserInput: false
-      }]
+      balances: [
+        {
+          available: "USD:2.23",
+          hasPendingTransactions: false,
+          pendingIncoming: "USD:5.11",
+          pendingOutgoing: "USD:0",
+          requiresUserInput: false,
+        },
+      ],
     },
   },
   Linker: NullLink,
@@ -87,19 +88,22 @@ export const SomeCoinsInTwoCurrencies = createExample(TestedComponent, {
   balance: {
     hasError: false,
     response: {
-      balances: [{
-        available: 'USD:2',
-        hasPendingTransactions: false,
-        pendingIncoming: 'USD:5',
-        pendingOutgoing: 'USD:0',
-        requiresUserInput: false
-      },{
-        available: 'EUR:4',
-        hasPendingTransactions: false,
-        pendingIncoming: 'EUR:5',
-        pendingOutgoing: 'EUR:0',
-        requiresUserInput: false
-      }]
+      balances: [
+        {
+          available: "USD:2",
+          hasPendingTransactions: false,
+          pendingIncoming: "USD:5",
+          pendingOutgoing: "USD:0",
+          requiresUserInput: false,
+        },
+        {
+          available: "EUR:4",
+          hasPendingTransactions: false,
+          pendingIncoming: "EUR:5",
+          pendingOutgoing: "EUR:0",
+          requiresUserInput: false,
+        },
+      ],
     },
   },
   Linker: NullLink,

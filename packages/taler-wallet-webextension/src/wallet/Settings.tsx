@@ -14,7 +14,6 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
 */
 
-
 import { ExchangeListItem, i18n } from "@gnu-taler/taler-util";
 import { VNode, h, Fragment } from "preact";
 import { Checkbox } from "../components/Checkbox";
@@ -30,18 +29,28 @@ import * as wxApi from "../wxApi";
 
 export function SettingsPage(): VNode {
   const [permissionsEnabled, togglePermissions] = useExtendedPermissions();
-  const { devMode, toggleDevMode } = useDevContext()
-  const { name, update } = useBackupDeviceName()
-  const [lang, changeLang] = useLang()
+  const { devMode, toggleDevMode } = useDevContext();
+  const { name, update } = useBackupDeviceName();
+  const [lang, changeLang] = useLang();
   const exchangesHook = useAsyncAsHook(() => wxApi.listExchanges());
 
-  return <SettingsView
-    lang={lang} changeLang={changeLang}
-    knownExchanges={!exchangesHook || exchangesHook.hasError ? [] : exchangesHook.response.exchanges}
-    deviceName={name} setDeviceName={update}
-    permissionsEnabled={permissionsEnabled} togglePermissions={togglePermissions}
-    developerMode={devMode} toggleDeveloperMode={toggleDevMode}
-  />;
+  return (
+    <SettingsView
+      lang={lang}
+      changeLang={changeLang}
+      knownExchanges={
+        !exchangesHook || exchangesHook.hasError
+          ? []
+          : exchangesHook.response.exchanges
+      }
+      deviceName={name}
+      setDeviceName={update}
+      permissionsEnabled={permissionsEnabled}
+      togglePermissions={togglePermissions}
+      developerMode={devMode}
+      toggleDeveloperMode={toggleDevMode}
+    />
+  );
 }
 
 export interface ViewProps {
@@ -56,52 +65,72 @@ export interface ViewProps {
   knownExchanges: Array<ExchangeListItem>;
 }
 
-import { strings as messages } from '../i18n/strings'
+import { strings as messages } from "../i18n/strings";
 
 type LangsNames = {
-  [P in keyof typeof messages]: string
-}
+  [P in keyof typeof messages]: string;
+};
 
 const names: LangsNames = {
-  es: 'Español [es]',
-  en: 'English [en]',
-  fr: 'Français [fr]',
-  de: 'Deutsch [de]',
-  sv: 'Svenska [sv]',
-  it: 'Italiano [it]',
-}
+  es: "Español [es]",
+  en: "English [en]",
+  fr: "Français [fr]",
+  de: "Deutsch [de]",
+  sv: "Svenska [sv]",
+  it: "Italiano [it]",
+};
 
-
-export function SettingsView({ knownExchanges, lang, changeLang, deviceName, setDeviceName, permissionsEnabled, togglePermissions, developerMode, toggleDeveloperMode }: ViewProps): VNode {
+export function SettingsView({
+  knownExchanges,
+  lang,
+  changeLang,
+  deviceName,
+  setDeviceName,
+  permissionsEnabled,
+  togglePermissions,
+  developerMode,
+  toggleDeveloperMode,
+}: ViewProps): VNode {
   return (
     <WalletBox>
       <section>
-
-        <h2><i18n.Translate>Known exchanges</i18n.Translate></h2>
-        {!knownExchanges || !knownExchanges.length ? <div>
-          No exchange yet!
-        </div> :
+        <h2>
+          <i18n.Translate>Known exchanges</i18n.Translate>
+        </h2>
+        {!knownExchanges || !knownExchanges.length ? (
+          <div>No exchange yet!</div>
+        ) : (
           <table>
-            {knownExchanges.map(e => <tr>
-              <td>{e.currency}</td>
-              <td><a href={e.exchangeBaseUrl}>{e.exchangeBaseUrl}</a></td>
-            </tr>)}
+            {knownExchanges.map((e) => (
+              <tr>
+                <td>{e.currency}</td>
+                <td>
+                  <a href={e.exchangeBaseUrl}>{e.exchangeBaseUrl}</a>
+                </td>
+              </tr>
+            ))}
           </table>
-        }
-        
-        <h2><i18n.Translate>Permissions</i18n.Translate></h2>
-        <Checkbox label="Automatically open wallet based on page content"
+        )}
+
+        <h2>
+          <i18n.Translate>Permissions</i18n.Translate>
+        </h2>
+        <Checkbox
+          label="Automatically open wallet based on page content"
           name="perm"
           description="(Enabling this option below will make using the wallet faster, but requires more permissions from your browser.)"
-          enabled={permissionsEnabled} onToggle={togglePermissions}
+          enabled={permissionsEnabled}
+          onToggle={togglePermissions}
         />
         <h2>Config</h2>
-        <Checkbox label="Developer mode"
+        <Checkbox
+          label="Developer mode"
           name="devMode"
           description="(More options and information useful for debugging)"
-          enabled={developerMode} onToggle={toggleDeveloperMode}
+          enabled={developerMode}
+          onToggle={toggleDeveloperMode}
         />
       </section>
     </WalletBox>
-  )
+  );
 }

@@ -63,7 +63,7 @@ class ResetNotification extends Component<any, State> {
             type="checkbox"
             checked={this.state.checked}
             onChange={() => {
-              this.setState(prev => ({ checked: prev.checked }))
+              this.setState((prev) => ({ checked: prev.checked }));
             }}
           />{" "}
           <label htmlFor="check">

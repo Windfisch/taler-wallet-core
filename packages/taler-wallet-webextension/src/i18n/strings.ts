@@ -193,7 +193,7 @@ strings["es"] = {
       "Order redirected": [""],
       "Payment aborted": [""],
       "Payment Sent": [""],
-      "Backup": ["Resguardo"],
+      Backup: ["Resguardo"],
       "Order accepted": [""],
       "Reserve balance updated": [""],
       "Payment refund": [""],

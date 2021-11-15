@@ -24,7 +24,13 @@ interface Props {
   name: string;
   description?: string;
 }
-export function Checkbox({ name, enabled, onToggle, label, description }: Props): JSX.Element {
+export function Checkbox({
+  name,
+  enabled,
+  onToggle,
+  label,
+  description,
+}: Props): JSX.Element {
   return (
     <div>
       <input
@@ -32,23 +38,26 @@ export function Checkbox({ name, enabled, onToggle, label, description }: Props)
         onClick={onToggle}
         type="checkbox"
         id={`checkbox-${name}`}
-        style={{ width: "1.5em", height: "1.5em", verticalAlign: "middle" }} />
+        style={{ width: "1.5em", height: "1.5em", verticalAlign: "middle" }}
+      />
       <label
         htmlFor={`checkbox-${name}`}
         style={{ marginLeft: "0.5em", fontWeight: "bold" }}
       >
         {label}
       </label>
-      {description && <span
-        style={{
-          color: "#383838",
-          fontSize: "smaller",
-          display: "block",
-          marginLeft: "2em",
-        }}
-      >
-        {description}
-      </span>}
+      {description && (
+        <span
+          style={{
+            color: "#383838",
+            fontSize: "smaller",
+            display: "block",
+            marginLeft: "2em",
+          }}
+        >
+          {description}
+        </span>
+      )}
     </div>
   );
 }

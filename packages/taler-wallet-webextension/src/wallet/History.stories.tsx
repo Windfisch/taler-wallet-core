@@ -15,133 +15,146 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
 import {
   PaymentStatus,
-  TransactionCommon, TransactionDeposit, TransactionPayment,
-  TransactionRefresh, TransactionRefund, TransactionTip, TransactionType,
+  TransactionCommon,
+  TransactionDeposit,
+  TransactionPayment,
+  TransactionRefresh,
+  TransactionRefund,
+  TransactionTip,
+  TransactionType,
   TransactionWithdrawal,
-  WithdrawalType
-} from '@gnu-taler/taler-util';
-import { HistoryView as TestedComponent } from './History';
-import { createExample } from '../test-utils';
-
+  WithdrawalType,
+} from "@gnu-taler/taler-util";
+import { HistoryView as TestedComponent } from "./History";
+import { createExample } from "../test-utils";
 
 export default {
-  title: 'wallet/history/list',
+  title: "wallet/history/list",
   component: TestedComponent,
 };
 
-let count = 0
-const commonTransaction = () => ({
-  amountRaw: 'USD:10',
-  amountEffective: 'USD:9',
-  pending: false,
-  timestamp: {
-    t_ms: new Date().getTime() - (count++ * 1000 * 60 * 60 * 7)
-  },
-  transactionId: '12',
-} as TransactionCommon)
+let count = 0;
+const commonTransaction = () =>
+  ({
+    amountRaw: "USD:10",
+    amountEffective: "USD:9",
+    pending: false,
+    timestamp: {
+      t_ms: new Date().getTime() - count++ * 1000 * 60 * 60 * 7,
+    },
+    transactionId: "12",
+  } as TransactionCommon);
 
 const exampleData = {
   withdraw: {
     ...commonTransaction(),
     type: TransactionType.Withdrawal,
-    exchangeBaseUrl: 'http://exchange.demo.taler.net',
+    exchangeBaseUrl: "http://exchange.demo.taler.net",
     withdrawalDetails: {
       confirmed: false,
-      exchangePaytoUris: ['payto://x-taler-bank/bank/account'],
+      exchangePaytoUris: ["payto://x-taler-bank/bank/account"],
       type: WithdrawalType.ManualTransfer,
-    }
+    },
   } as TransactionWithdrawal,
   payment: {
     ...commonTransaction(),
-    amountEffective: 'USD:11',
+    amountEffective: "USD:11",
     type: TransactionType.Payment,
     info: {
-      contractTermsHash: 'ASDZXCASD',
+      contractTermsHash: "ASDZXCASD",
       merchant: {
-        name: 'Blog',
+        name: "Blog",
       },
-      orderId: '2021.167-03NPY6MCYMVGT',
+      orderId: "2021.167-03NPY6MCYMVGT",
       products: [],
-      summary: 'the summary',
-      fulfillmentMessage: '',
+      summary: "the summary",
+      fulfillmentMessage: "",
     },
-    proposalId: '1EMJJH8EP1NX3XF7733NCYS2DBEJW4Q2KA5KEB37MCQJQ8Q5HMC0',
+    proposalId: "1EMJJH8EP1NX3XF7733NCYS2DBEJW4Q2KA5KEB37MCQJQ8Q5HMC0",
     status: PaymentStatus.Accepted,
   } as TransactionPayment,
   deposit: {
     ...commonTransaction(),
     type: TransactionType.Deposit,
-    depositGroupId: '#groupId',
-    targetPaytoUri: 'payto://x-taler-bank/bank/account',
+    depositGroupId: "#groupId",
+    targetPaytoUri: "payto://x-taler-bank/bank/account",
   } as TransactionDeposit,
   refresh: {
     ...commonTransaction(),
     type: TransactionType.Refresh,
-    exchangeBaseUrl: 'http://exchange.taler',
+    exchangeBaseUrl: "http://exchange.taler",
   } as TransactionRefresh,
   tip: {
     ...commonTransaction(),
     type: TransactionType.Tip,
-    merchantBaseUrl: 'http://ads.merchant.taler.net/',
+    merchantBaseUrl: "http://ads.merchant.taler.net/",
   } as TransactionTip,
   refund: {
     ...commonTransaction(),
     type: TransactionType.Refund,
-    refundedTransactionId: 'payment:1EMJJH8EP1NX3XF7733NCYS2DBEJW4Q2KA5KEB37MCQJQ8Q5HMC0',
+    refundedTransactionId:
+      "payment:1EMJJH8EP1NX3XF7733NCYS2DBEJW4Q2KA5KEB37MCQJQ8Q5HMC0",
     info: {
-      contractTermsHash: 'ASDZXCASD',
+      contractTermsHash: "ASDZXCASD",
       merchant: {
-        name: 'the merchant',
+        name: "the merchant",
       },
-      orderId: '2021.167-03NPY6MCYMVGT',
+      orderId: "2021.167-03NPY6MCYMVGT",
       products: [],
-      summary: 'the summary',
-      fulfillmentMessage: '',
+      summary: "the summary",
+      fulfillmentMessage: "",
     },
   } as TransactionRefund,
-}
+};
 
 export const Empty = createExample(TestedComponent, {
   list: [],
-  balances: [{
-    available: 'TESTKUDOS:10',
-    pendingIncoming: 'TESTKUDOS:0',
-    pendingOutgoing: 'TESTKUDOS:0',
-    hasPendingTransactions: false,
-    requiresUserInput: false,
-  }]
+  balances: [
+    {
+      available: "TESTKUDOS:10",
+      pendingIncoming: "TESTKUDOS:0",
+      pendingOutgoing: "TESTKUDOS:0",
+      hasPendingTransactions: false,
+      requiresUserInput: false,
+    },
+  ],
 });
-
 
 export const One = createExample(TestedComponent, {
   list: [exampleData.withdraw],
-  balances: [{
-    available: 'USD:10',
-    pendingIncoming: 'USD:0',
-    pendingOutgoing: 'USD:0',
-    hasPendingTransactions: false,
-    requiresUserInput: false,
-  }]
+  balances: [
+    {
+      available: "USD:10",
+      pendingIncoming: "USD:0",
+      pendingOutgoing: "USD:0",
+      hasPendingTransactions: false,
+      requiresUserInput: false,
+    },
+  ],
 });
 
 export const OnePending = createExample(TestedComponent, {
-  list: [{
-    ...exampleData.withdraw,
-    pending: true
-  }],
-  balances: [{
-    available: 'USD:10',
-    pendingIncoming: 'USD:0',
-    pendingOutgoing: 'USD:0',
-    hasPendingTransactions: false,
-    requiresUserInput: false,
-  }]
+  list: [
+    {
+      ...exampleData.withdraw,
+      pending: true,
+    },
+  ],
+  balances: [
+    {
+      available: "USD:10",
+      pendingIncoming: "USD:0",
+      pendingOutgoing: "USD:0",
+      hasPendingTransactions: false,
+      requiresUserInput: false,
+    },
+  ],
 });
 
 export const Several = createExample(TestedComponent, {
@@ -154,20 +167,23 @@ export const Several = createExample(TestedComponent, {
       ...exampleData.payment,
       info: {
         ...exampleData.payment.info,
-        summary: 'this is a long summary that may be cropped because its too long',
+        summary:
+          "this is a long summary that may be cropped because its too long",
       },
     },
     exampleData.refund,
     exampleData.tip,
     exampleData.deposit,
   ],
-  balances: [{
-    available: 'TESTKUDOS:10',
-    pendingIncoming: 'TESTKUDOS:0',
-    pendingOutgoing: 'TESTKUDOS:0',
-    hasPendingTransactions: false,
-    requiresUserInput: false,
-  }]
+  balances: [
+    {
+      available: "TESTKUDOS:10",
+      pendingIncoming: "TESTKUDOS:0",
+      pendingOutgoing: "TESTKUDOS:0",
+      hasPendingTransactions: false,
+      requiresUserInput: false,
+    },
+  ],
 });
 
 export const SeveralWithTwoCurrencies = createExample(TestedComponent, {
@@ -181,18 +197,20 @@ export const SeveralWithTwoCurrencies = createExample(TestedComponent, {
     exampleData.tip,
     exampleData.deposit,
   ],
-  balances: [{
-    available: 'TESTKUDOS:10',
-    pendingIncoming: 'TESTKUDOS:0',
-    pendingOutgoing: 'TESTKUDOS:0',
-    hasPendingTransactions: false,
-    requiresUserInput: false,
-  }, {
-    available: 'USD:10',
-    pendingIncoming: 'USD:0',
-    pendingOutgoing: 'USD:0',
-    hasPendingTransactions: false,
-    requiresUserInput: false,
-  }]
+  balances: [
+    {
+      available: "TESTKUDOS:10",
+      pendingIncoming: "TESTKUDOS:0",
+      pendingOutgoing: "TESTKUDOS:0",
+      hasPendingTransactions: false,
+      requiresUserInput: false,
+    },
+    {
+      available: "USD:10",
+      pendingIncoming: "USD:0",
+      pendingOutgoing: "USD:0",
+      hasPendingTransactions: false,
+      requiresUserInput: false,
+    },
+  ],
 });
-

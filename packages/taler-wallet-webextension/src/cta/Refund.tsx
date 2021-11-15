@@ -22,45 +22,46 @@
 
 import * as wxApi from "../wxApi";
 import { AmountView } from "../renderHtml";
-import {
-  ApplyRefundResponse,
-  Amounts,
-} from "@gnu-taler/taler-util";
+import { ApplyRefundResponse, Amounts } from "@gnu-taler/taler-util";
 import { useEffect, useState } from "preact/hooks";
 import { JSX } from "preact/jsx-runtime";
-import { h } from 'preact';
+import { h } from "preact";
 
 interface Props {
-  talerRefundUri?: string
+  talerRefundUri?: string;
 }
 export interface ViewProps {
   applyResult: ApplyRefundResponse;
 }
 export function View({ applyResult }: ViewProps) {
-  return <section class="main">
-    <h1>GNU Taler Wallet</h1>
-    <article class="fade">
-      <h2>Refund Status</h2>
-      <p>
-        The product <em>{applyResult.info.summary}</em> has received a total
-        effective refund of{" "}
-        <AmountView amount={applyResult.amountRefundGranted} />.
-      </p>
-      {applyResult.pendingAtExchange ? (
-        <p>Refund processing is still in progress.</p>
-      ) : null}
-      {!Amounts.isZero(applyResult.amountRefundGone) ? (
+  return (
+    <section class="main">
+      <h1>GNU Taler Wallet</h1>
+      <article class="fade">
+        <h2>Refund Status</h2>
         <p>
-          The refund amount of{" "}
-          <AmountView amount={applyResult.amountRefundGone} />{" "}
-          could not be applied.
+          The product <em>{applyResult.info.summary}</em> has received a total
+          effective refund of{" "}
+          <AmountView amount={applyResult.amountRefundGranted} />.
         </p>
-      ) : null}
-    </article>
-  </section>
+        {applyResult.pendingAtExchange ? (
+          <p>Refund processing is still in progress.</p>
+        ) : null}
+        {!Amounts.isZero(applyResult.amountRefundGone) ? (
+          <p>
+            The refund amount of{" "}
+            <AmountView amount={applyResult.amountRefundGone} /> could not be
+            applied.
+          </p>
+        ) : null}
+      </article>
+    </section>
+  );
 }
 export function RefundPage({ talerRefundUri }: Props): JSX.Element {
-  const [applyResult, setApplyResult] = useState<ApplyRefundResponse | undefined>(undefined);
+  const [applyResult, setApplyResult] = useState<
+    ApplyRefundResponse | undefined
+  >(undefined);
   const [errMsg, setErrMsg] = useState<string | undefined>(undefined);
 
   useEffect(() => {

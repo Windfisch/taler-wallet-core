@@ -47,7 +47,12 @@ import {
   AddExchangeRequest,
   GetExchangeTosResult,
 } from "@gnu-taler/taler-util";
-import { AddBackupProviderRequest, BackupProviderState, OperationFailedError, RemoveBackupProviderRequest } from "@gnu-taler/taler-wallet-core";
+import {
+  AddBackupProviderRequest,
+  BackupProviderState,
+  OperationFailedError,
+  RemoveBackupProviderRequest,
+} from "@gnu-taler/taler-wallet-core";
 import { BackupInfo } from "@gnu-taler/taler-wallet-core";
 import { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core/src/operations/withdraw";
 
@@ -149,78 +154,89 @@ interface CurrencyInfo {
   pub: string;
 }
 interface ListOfKnownCurrencies {
-  auditors: CurrencyInfo[],
-  exchanges: CurrencyInfo[],
+  auditors: CurrencyInfo[];
+  exchanges: CurrencyInfo[];
 }
 
 /**
  * Get a list of currencies from known auditors and exchanges
  */
 export function listKnownCurrencies(): Promise<ListOfKnownCurrencies> {
-  return callBackend("listCurrencies", {}).then(result => {
-    console.log("result list", result)
-    const auditors = result.trustedAuditors.map((a: Record<string, string>) => ({
-      name: a.currency,
-      baseUrl: a.auditorBaseUrl,
-      pub: a.auditorPub,
-    }))
-    const exchanges = result.trustedExchanges.map((a: Record<string, string>) => ({
-      name: a.currency,
-      baseUrl: a.exchangeBaseUrl,
-      pub: a.exchangeMasterPub,
-    }))
-    return { auditors, exchanges }
+  return callBackend("listCurrencies", {}).then((result) => {
+    console.log("result list", result);
+    const auditors = result.trustedAuditors.map(
+      (a: Record<string, string>) => ({
+        name: a.currency,
+        baseUrl: a.auditorBaseUrl,
+        pub: a.auditorPub,
+      }),
+    );
+    const exchanges = result.trustedExchanges.map(
+      (a: Record<string, string>) => ({
+        name: a.currency,
+        baseUrl: a.exchangeBaseUrl,
+        pub: a.exchangeMasterPub,
+      }),
+    );
+    return { auditors, exchanges };
   });
 }
 
 export function listExchanges(): Promise<ExchangesListRespose> {
-  return callBackend("listExchanges", {})
+  return callBackend("listExchanges", {});
 }
 
 /**
  * Get information about the current state of wallet backups.
  */
 export function getBackupInfo(): Promise<BackupInfo> {
-  return callBackend("getBackupInfo", {})
+  return callBackend("getBackupInfo", {});
 }
 
 /**
  * Add a backup provider and activate it
  */
-export function addBackupProvider(backupProviderBaseUrl: string, name: string): Promise<void> {
+export function addBackupProvider(
+  backupProviderBaseUrl: string,
+  name: string,
+): Promise<void> {
   return callBackend("addBackupProvider", {
-    backupProviderBaseUrl, activate: true, name
-  } as AddBackupProviderRequest)
+    backupProviderBaseUrl,
+    activate: true,
+    name,
+  } as AddBackupProviderRequest);
 }
 
 export function setWalletDeviceId(walletDeviceId: string): Promise<void> {
   return callBackend("setWalletDeviceId", {
-    walletDeviceId
-  } as SetWalletDeviceIdRequest)
+    walletDeviceId,
+  } as SetWalletDeviceIdRequest);
 }
 
 export function syncAllProviders(): Promise<void> {
-  return callBackend("runBackupCycle", {})
+  return callBackend("runBackupCycle", {});
 }
 
 export function syncOneProvider(url: string): Promise<void> {
-  return callBackend("runBackupCycle", { providers: [url] })
+  return callBackend("runBackupCycle", { providers: [url] });
 }
 export function removeProvider(url: string): Promise<void> {
-  return callBackend("removeBackupProvider", { provider: url } as RemoveBackupProviderRequest)
+  return callBackend("removeBackupProvider", {
+    provider: url,
+  } as RemoveBackupProviderRequest);
 }
 export function extendedProvider(url: string): Promise<void> {
-  return callBackend("extendBackupProvider", { provider: url })
+  return callBackend("extendBackupProvider", { provider: url });
 }
 
 /**
  * Retry a transaction
- * @param transactionId 
- * @returns 
+ * @param transactionId
+ * @returns
  */
 export function retryTransaction(transactionId: string): Promise<void> {
   return callBackend("retryTransaction", {
-    transactionId
+    transactionId,
   } as RetryTransactionRequest);
 }
 
@@ -229,7 +245,7 @@ export function retryTransaction(transactionId: string): Promise<void> {
  */
 export function deleteTransaction(transactionId: string): Promise<void> {
   return callBackend("deleteTransaction", {
-    transactionId
+    transactionId,
   } as DeleteTransactionRequest);
 }
 
@@ -264,28 +280,29 @@ export function acceptWithdrawal(
 
 /**
  * Create a reserve into the exchange that expect the amount indicated
- * @param exchangeBaseUrl 
- * @param amount 
- * @returns 
+ * @param exchangeBaseUrl
+ * @param amount
+ * @returns
  */
 export function acceptManualWithdrawal(
   exchangeBaseUrl: string,
   amount: string,
 ): Promise<AcceptManualWithdrawalResult> {
   return callBackend("acceptManualWithdrawal", {
-    amount, exchangeBaseUrl
+    amount,
+    exchangeBaseUrl,
   });
 }
 
 export function setExchangeTosAccepted(
   exchangeBaseUrl: string,
-  etag: string | undefined
+  etag: string | undefined,
 ): Promise<void> {
   return callBackend("setExchangeTosAccepted", {
-    exchangeBaseUrl, etag
-  } as AcceptExchangeTosRequest)
+    exchangeBaseUrl,
+    etag,
+  } as AcceptExchangeTosRequest);
 }
-
 
 /**
  * Get diagnostics information
@@ -319,7 +336,6 @@ export function getWithdrawalDetailsForUri(
   return callBackend("getWithdrawalDetailsForUri", req);
 }
 
-
 /**
  * Get diagnostics information
  */
@@ -333,16 +349,14 @@ export function getExchangeTos(
   acceptedFormat: string[],
 ): Promise<GetExchangeTosResult> {
   return callBackend("getExchangeTos", {
-    exchangeBaseUrl, acceptedFormat
+    exchangeBaseUrl,
+    acceptedFormat,
   });
 }
 
-export function addExchange(
-  req: AddExchangeRequest,
-): Promise<void> {
+export function addExchange(req: AddExchangeRequest): Promise<void> {
   return callBackend("addExchange", req);
 }
-
 
 export function prepareTip(req: PrepareTipRequest): Promise<PrepareTipResult> {
   return callBackend("prepareTip", req);

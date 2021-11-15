@@ -15,110 +15,116 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
 import {
   PaymentStatus,
-  TransactionCommon, TransactionDeposit, TransactionPayment,
-  TransactionRefresh, TransactionRefund, TransactionTip, TransactionType,
+  TransactionCommon,
+  TransactionDeposit,
+  TransactionPayment,
+  TransactionRefresh,
+  TransactionRefund,
+  TransactionTip,
+  TransactionType,
   TransactionWithdrawal,
-  WithdrawalType
-} from '@gnu-taler/taler-util';
-import { createExample } from '../test-utils';
-import { TransactionView as TestedComponent } from './Transaction';
+  WithdrawalType,
+} from "@gnu-taler/taler-util";
+import { createExample } from "../test-utils";
+import { TransactionView as TestedComponent } from "./Transaction";
 
 export default {
-  title: 'wallet/history/details',
+  title: "wallet/history/details",
   component: TestedComponent,
   argTypes: {
-    onRetry: { action: 'onRetry' },
-    onDelete: { action: 'onDelete' },
-    onBack: { action: 'onBack' },
-  }
+    onRetry: { action: "onRetry" },
+    onDelete: { action: "onDelete" },
+    onBack: { action: "onBack" },
+  },
 };
 
 const commonTransaction = {
-  amountRaw: 'KUDOS:11',
-  amountEffective: 'KUDOS:9.2',
+  amountRaw: "KUDOS:11",
+  amountEffective: "KUDOS:9.2",
   pending: false,
   timestamp: {
-    t_ms: new Date().getTime()
+    t_ms: new Date().getTime(),
   },
-  transactionId: '12',
-} as TransactionCommon
+  transactionId: "12",
+} as TransactionCommon;
 
 const exampleData = {
   withdraw: {
     ...commonTransaction,
     type: TransactionType.Withdrawal,
-    exchangeBaseUrl: 'http://exchange.taler',
+    exchangeBaseUrl: "http://exchange.taler",
     withdrawalDetails: {
       confirmed: false,
-      exchangePaytoUris: ['payto://x-taler-bank/bank/account'],
+      exchangePaytoUris: ["payto://x-taler-bank/bank/account"],
       type: WithdrawalType.ManualTransfer,
-    }
+    },
   } as TransactionWithdrawal,
   payment: {
     ...commonTransaction,
-    amountEffective: 'KUDOS:11',
+    amountEffective: "KUDOS:11",
     type: TransactionType.Payment,
     info: {
-      contractTermsHash: 'ASDZXCASD',
+      contractTermsHash: "ASDZXCASD",
       merchant: {
-        name: 'the merchant',
+        name: "the merchant",
       },
-      orderId: '2021.167-03NPY6MCYMVGT',
+      orderId: "2021.167-03NPY6MCYMVGT",
       products: [],
       summary: "Essay: Why the Devil's Advocate Doesn't Help Reach the Truth",
-      fulfillmentMessage: '',
+      fulfillmentMessage: "",
     },
-    proposalId: '1EMJJH8EP1NX3XF7733NCYS2DBEJW4Q2KA5KEB37MCQJQ8Q5HMC0',
+    proposalId: "1EMJJH8EP1NX3XF7733NCYS2DBEJW4Q2KA5KEB37MCQJQ8Q5HMC0",
     status: PaymentStatus.Accepted,
   } as TransactionPayment,
   deposit: {
     ...commonTransaction,
     type: TransactionType.Deposit,
-    depositGroupId: '#groupId',
-    targetPaytoUri: 'payto://x-taler-bank/bank/account',
+    depositGroupId: "#groupId",
+    targetPaytoUri: "payto://x-taler-bank/bank/account",
   } as TransactionDeposit,
   refresh: {
     ...commonTransaction,
     type: TransactionType.Refresh,
-    exchangeBaseUrl: 'http://exchange.taler',
+    exchangeBaseUrl: "http://exchange.taler",
   } as TransactionRefresh,
   tip: {
     ...commonTransaction,
     type: TransactionType.Tip,
-    merchantBaseUrl: 'http://merchant.taler',
+    merchantBaseUrl: "http://merchant.taler",
   } as TransactionTip,
   refund: {
     ...commonTransaction,
     type: TransactionType.Refund,
-    refundedTransactionId: 'payment:1EMJJH8EP1NX3XF7733NCYS2DBEJW4Q2KA5KEB37MCQJQ8Q5HMC0',
+    refundedTransactionId:
+      "payment:1EMJJH8EP1NX3XF7733NCYS2DBEJW4Q2KA5KEB37MCQJQ8Q5HMC0",
     info: {
-      contractTermsHash: 'ASDZXCASD',
+      contractTermsHash: "ASDZXCASD",
       merchant: {
-        name: 'the merchant',
+        name: "the merchant",
       },
-      orderId: '2021.167-03NPY6MCYMVGT',
+      orderId: "2021.167-03NPY6MCYMVGT",
       products: [],
-      summary: 'the summary',
-      fulfillmentMessage: '',
+      summary: "the summary",
+      fulfillmentMessage: "",
     },
   } as TransactionRefund,
-}
+};
 
 const transactionError = {
   code: 2000,
   details: "details",
   hint: "this is a hint for the error",
-  message: 'message'
-}
+  message: "message",
+};
 
 export const Withdraw = createExample(TestedComponent, {
-  transaction: exampleData.withdraw
+  transaction: exampleData.withdraw,
 });
 
 export const WithdrawError = createExample(TestedComponent, {
@@ -132,24 +138,22 @@ export const WithdrawPending = createExample(TestedComponent, {
   transaction: { ...exampleData.withdraw, pending: true },
 });
 
-
 export const Payment = createExample(TestedComponent, {
-  transaction: exampleData.payment
+  transaction: exampleData.payment,
 });
 
 export const PaymentError = createExample(TestedComponent, {
   transaction: {
     ...exampleData.payment,
-    error: transactionError
+    error: transactionError,
   },
 });
 
 export const PaymentWithoutFee = createExample(TestedComponent, {
   transaction: {
     ...exampleData.payment,
-    amountRaw: 'KUDOS:11',
-
-  }
+    amountRaw: "KUDOS:11",
+  },
 });
 
 export const PaymentPending = createExample(TestedComponent, {
@@ -161,27 +165,33 @@ export const PaymentWithProducts = createExample(TestedComponent, {
     ...exampleData.payment,
     info: {
       ...exampleData.payment.info,
-      summary: 'this order has 5 products',
-      products: [{
-        description: 't-shirt',
-        unit: 'shirts',
-        quantity: 1,
-      }, {
-        description: 't-shirt',
-        unit: 'shirts',
-        quantity: 1,
-      }, {
-        description: 'e-book',
-      }, {
-        description: 'beer',
-        unit: 'pint',
-        quantity: 15,
-      }, {
-        description: 'beer',
-        unit: 'pint',
-        quantity: 15,
-      }]
-    }
+      summary: "this order has 5 products",
+      products: [
+        {
+          description: "t-shirt",
+          unit: "shirts",
+          quantity: 1,
+        },
+        {
+          description: "t-shirt",
+          unit: "shirts",
+          quantity: 1,
+        },
+        {
+          description: "e-book",
+        },
+        {
+          description: "beer",
+          unit: "pint",
+          quantity: 15,
+        },
+        {
+          description: "beer",
+          unit: "pint",
+          quantity: 15,
+        },
+      ],
+    },
   } as TransactionPayment,
 });
 
@@ -190,75 +200,79 @@ export const PaymentWithLongSummary = createExample(TestedComponent, {
     ...exampleData.payment,
     info: {
       ...exampleData.payment.info,
-      summary: 'this is a very long summary that will occupy severals lines, this is a very long summary that will occupy severals lines, this is a very long summary that will occupy severals lines, this is a very long summary that will occupy severals lines, ',
-      products: [{
-        description: 'an xl sized t-shirt with some drawings on it, color pink',
-        unit: 'shirts',
-        quantity: 1,
-      }, {
-        description: 'beer',
-        unit: 'pint',
-        quantity: 15,
-      }]
-    }
+      summary:
+        "this is a very long summary that will occupy severals lines, this is a very long summary that will occupy severals lines, this is a very long summary that will occupy severals lines, this is a very long summary that will occupy severals lines, ",
+      products: [
+        {
+          description:
+            "an xl sized t-shirt with some drawings on it, color pink",
+          unit: "shirts",
+          quantity: 1,
+        },
+        {
+          description: "beer",
+          unit: "pint",
+          quantity: 15,
+        },
+      ],
+    },
   } as TransactionPayment,
 });
 
-
 export const Deposit = createExample(TestedComponent, {
-  transaction: exampleData.deposit
+  transaction: exampleData.deposit,
 });
 
 export const DepositError = createExample(TestedComponent, {
   transaction: {
     ...exampleData.deposit,
-    error: transactionError
+    error: transactionError,
   },
 });
 
 export const DepositPending = createExample(TestedComponent, {
-  transaction: { ...exampleData.deposit, pending: true }
+  transaction: { ...exampleData.deposit, pending: true },
 });
 
 export const Refresh = createExample(TestedComponent, {
-  transaction: exampleData.refresh
+  transaction: exampleData.refresh,
 });
 
 export const RefreshError = createExample(TestedComponent, {
   transaction: {
     ...exampleData.refresh,
-    error: transactionError
+    error: transactionError,
   },
 });
 
 export const Tip = createExample(TestedComponent, {
-  transaction: exampleData.tip
+  transaction: exampleData.tip,
 });
 
 export const TipError = createExample(TestedComponent, {
   transaction: {
     ...exampleData.tip,
-    error: transactionError
+    error: transactionError,
   },
 });
 
 export const TipPending = createExample(TestedComponent, {
-  transaction: { ...exampleData.tip, pending: true }
+  transaction: { ...exampleData.tip, pending: true },
 });
 
 export const Refund = createExample(TestedComponent, {
-  transaction: exampleData.refund
+  transaction: exampleData.refund,
 });
 
 export const RefundError = createExample(TestedComponent, {
   transaction: {
     ...exampleData.refund,
-    error: transactionError
+    error: transactionError,
   },
 });
 
 export const RefundPending = createExample(TestedComponent, {
-  transaction: { ...exampleData.refund, pending: true }
+  transaction: { ...exampleData.refund, pending: true },
 });
 
 export const RefundWithProducts = createExample(TestedComponent, {
@@ -266,11 +280,14 @@ export const RefundWithProducts = createExample(TestedComponent, {
     ...exampleData.refund,
     info: {
       ...exampleData.refund.info,
-      products: [{
-        description: 't-shirt',
-      }, {
-        description: 'beer',
-      }]
-    }
+      products: [
+        {
+          description: "t-shirt",
+        },
+        {
+          description: "beer",
+        },
+      ],
+    },
   } as TransactionRefund,
 });

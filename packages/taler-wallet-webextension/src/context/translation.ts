@@ -15,54 +15,58 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createContext, h, VNode } from 'preact'
-import { useContext, useEffect } from 'preact/hooks'
-import { useLang } from '../hooks/useLang'
+import { createContext, h, VNode } from "preact";
+import { useContext, useEffect } from "preact/hooks";
+import { useLang } from "../hooks/useLang";
 //@ts-ignore: type declaration
 import * as jedLib from "jed";
 import { strings } from "../i18n/strings";
-import { setupI18n } from '@gnu-taler/taler-util';
+import { setupI18n } from "@gnu-taler/taler-util";
 
 interface Type {
   lang: string;
   changeLanguage: (l: string) => void;
 }
 const initial = {
-  lang: 'en',
+  lang: "en",
   changeLanguage: () => {
     // do not change anything
-  }
-}
-const Context = createContext<Type>(initial)
+  },
+};
+const Context = createContext<Type>(initial);
 
 interface Props {
-  initial?: string,
-  children: any,
-  forceLang?: string
+  initial?: string;
+  children: any;
+  forceLang?: string;
 }
 
-//we use forceLang when we don't want to use the saved state, but sone forced 
-//runtime lang predefined lang 
-export const TranslationProvider = ({ initial, children, forceLang }: Props): VNode => {
-  const [lang, changeLanguage] = useLang(initial)
+//we use forceLang when we don't want to use the saved state, but sone forced
+//runtime lang predefined lang
+export const TranslationProvider = ({
+  initial,
+  children,
+  forceLang,
+}: Props): VNode => {
+  const [lang, changeLanguage] = useLang(initial);
   useEffect(() => {
     if (forceLang) {
-      changeLanguage(forceLang)
+      changeLanguage(forceLang);
     }
-  })
-  useEffect(()=> {
-    setupI18n(lang, strings)
-  },[lang])
+  });
+  useEffect(() => {
+    setupI18n(lang, strings);
+  }, [lang]);
   if (forceLang) {
-    setupI18n(forceLang, strings)
+    setupI18n(forceLang, strings);
   } else {
-    setupI18n(lang, strings)    
+    setupI18n(lang, strings);
   }
   return h(Context.Provider, { value: { lang, changeLanguage }, children });
-}
+};
 
 export const useTranslationContext = (): Type => useContext(Context);

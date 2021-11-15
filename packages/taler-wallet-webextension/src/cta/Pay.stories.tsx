@@ -15,150 +15,156 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { ContractTerms, PreparePayResultType } from '@gnu-taler/taler-util';
-import { createExample } from '../test-utils';
-import { PaymentRequestView as TestedComponent } from './Pay';
+import { ContractTerms, PreparePayResultType } from "@gnu-taler/taler-util";
+import { createExample } from "../test-utils";
+import { PaymentRequestView as TestedComponent } from "./Pay";
 
 export default {
-  title: 'cta/pay',
+  title: "cta/pay",
   component: TestedComponent,
-  argTypes: {
-  },
+  argTypes: {},
 };
 
 export const NoBalance = createExample(TestedComponent, {
   payStatus: {
     status: PreparePayResultType.InsufficientBalance,
-    noncePriv: '',
+    noncePriv: "",
     proposalId: "proposal1234",
-    contractTerms: {
+    contractTerms: ({
       merchant: {
-        name: 'someone'
+        name: "someone",
       },
-      summary: 'some beers',
-      amount: 'USD:10',
-    } as Partial<ContractTerms> as any,
-    amountRaw: 'USD:10',
-  }
+      summary: "some beers",
+      amount: "USD:10",
+    } as Partial<ContractTerms>) as any,
+    amountRaw: "USD:10",
+  },
 });
 
 export const NoEnoughBalance = createExample(TestedComponent, {
   payStatus: {
     status: PreparePayResultType.InsufficientBalance,
-    noncePriv: '',
+    noncePriv: "",
     proposalId: "proposal1234",
-    contractTerms: {
+    contractTerms: ({
       merchant: {
-        name: 'someone'
+        name: "someone",
       },
-      summary: 'some beers',
-      amount: 'USD:10',
-    } as Partial<ContractTerms> as any,
-    amountRaw: 'USD:10',
+      summary: "some beers",
+      amount: "USD:10",
+    } as Partial<ContractTerms>) as any,
+    amountRaw: "USD:10",
   },
   balance: {
-    currency: 'USD',
+    currency: "USD",
     fraction: 40000000,
-    value: 9
-  }
+    value: 9,
+  },
 });
 
 export const PaymentPossible = createExample(TestedComponent, {
-  uri: 'taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0',
+  uri:
+    "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
   payStatus: {
     status: PreparePayResultType.PaymentPossible,
-    amountEffective: 'USD:10',
-    amountRaw: 'USD:10',
-    noncePriv: '',
-    contractTerms: {
-      nonce: '123213123',
+    amountEffective: "USD:10",
+    amountRaw: "USD:10",
+    noncePriv: "",
+    contractTerms: ({
+      nonce: "123213123",
       merchant: {
-        name: 'someone'
+        name: "someone",
       },
-      amount: 'USD:10',
-      summary: 'some beers',
-    } as Partial<ContractTerms> as any,
-    contractTermsHash: '123456',
-    proposalId: 'proposal1234'
-  }
+      amount: "USD:10",
+      summary: "some beers",
+    } as Partial<ContractTerms>) as any,
+    contractTermsHash: "123456",
+    proposalId: "proposal1234",
+  },
 });
 
 export const PaymentPossibleWithFee = createExample(TestedComponent, {
-  uri: 'taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0',
+  uri:
+    "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
   payStatus: {
     status: PreparePayResultType.PaymentPossible,
-    amountEffective: 'USD:10.20',
-    amountRaw: 'USD:10',
-    noncePriv: '',
-    contractTerms: {
-      nonce: '123213123',
+    amountEffective: "USD:10.20",
+    amountRaw: "USD:10",
+    noncePriv: "",
+    contractTerms: ({
+      nonce: "123213123",
       merchant: {
-        name: 'someone'
+        name: "someone",
       },
-      amount: 'USD:10',
-      summary: 'some beers',
-    } as Partial<ContractTerms> as any,
-    contractTermsHash: '123456',
-    proposalId: 'proposal1234'
-  }
+      amount: "USD:10",
+      summary: "some beers",
+    } as Partial<ContractTerms>) as any,
+    contractTermsHash: "123456",
+    proposalId: "proposal1234",
+  },
 });
 
 export const AlreadyConfirmedWithFullfilment = createExample(TestedComponent, {
   payStatus: {
     status: PreparePayResultType.AlreadyConfirmed,
-    amountEffective: 'USD:10',
-    amountRaw: 'USD:10',
-    contractTerms: {
+    amountEffective: "USD:10",
+    amountRaw: "USD:10",
+    contractTerms: ({
       merchant: {
-        name: 'someone'
+        name: "someone",
       },
-      fulfillment_message: 'congratulations! you are looking at the fulfillment message! ',
-      summary: 'some beers',
-      amount: 'USD:10',
-    } as Partial<ContractTerms> as any,
-    contractTermsHash: '123456',
-    proposalId: 'proposal1234',
+      fulfillment_message:
+        "congratulations! you are looking at the fulfillment message! ",
+      summary: "some beers",
+      amount: "USD:10",
+    } as Partial<ContractTerms>) as any,
+    contractTermsHash: "123456",
+    proposalId: "proposal1234",
     paid: false,
-  }
+  },
 });
 
-export const AlreadyConfirmedWithoutFullfilment = createExample(TestedComponent, {
-  payStatus: {
-    status: PreparePayResultType.AlreadyConfirmed,
-    amountEffective: 'USD:10',
-    amountRaw: 'USD:10',
-    contractTerms: {
-      merchant: {
-        name: 'someone'
-      },
-      summary: 'some beers',
-      amount: 'USD:10',
-    } as Partial<ContractTerms> as any,
-    contractTermsHash: '123456',
-    proposalId: 'proposal1234',
-    paid: false,
-  }
-});
+export const AlreadyConfirmedWithoutFullfilment = createExample(
+  TestedComponent,
+  {
+    payStatus: {
+      status: PreparePayResultType.AlreadyConfirmed,
+      amountEffective: "USD:10",
+      amountRaw: "USD:10",
+      contractTerms: ({
+        merchant: {
+          name: "someone",
+        },
+        summary: "some beers",
+        amount: "USD:10",
+      } as Partial<ContractTerms>) as any,
+      contractTermsHash: "123456",
+      proposalId: "proposal1234",
+      paid: false,
+    },
+  },
+);
 
 export const AlreadyPaid = createExample(TestedComponent, {
   payStatus: {
     status: PreparePayResultType.AlreadyConfirmed,
-    amountEffective: 'USD:10',
-    amountRaw: 'USD:10',
-    contractTerms: {
+    amountEffective: "USD:10",
+    amountRaw: "USD:10",
+    contractTerms: ({
       merchant: {
-        name: 'someone'
+        name: "someone",
       },
-      fulfillment_message: 'congratulations! you are looking at the fulfillment message! ',
-      summary: 'some beers',
-      amount: 'USD:10',
-    } as Partial<ContractTerms> as any,
-    contractTermsHash: '123456',
-    proposalId: 'proposal1234',
+      fulfillment_message:
+        "congratulations! you are looking at the fulfillment message! ",
+      summary: "some beers",
+      amount: "USD:10",
+    } as Partial<ContractTerms>) as any,
+    contractTermsHash: "123456",
+    proposalId: "proposal1234",
     paid: true,
-  }
+  },
 });

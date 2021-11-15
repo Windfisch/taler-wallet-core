@@ -15,38 +15,52 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
 import { StateUpdater, useState } from "preact/hooks";
 
-export function useLocalStorage(key: string, initialValue?: string): [string | undefined, StateUpdater<string | undefined>] {
-  const [storedValue, setStoredValue] = useState<string | undefined>((): string | undefined => {
-    return typeof window !== "undefined" ? window.localStorage.getItem(key) || initialValue : initialValue;
+export function useLocalStorage(
+  key: string,
+  initialValue?: string,
+): [string | undefined, StateUpdater<string | undefined>] {
+  const [storedValue, setStoredValue] = useState<string | undefined>(():
+    | string
+    | undefined => {
+    return typeof window !== "undefined"
+      ? window.localStorage.getItem(key) || initialValue
+      : initialValue;
   });
 
-  const setValue = (value?: string | ((val?: string) => string | undefined)) => {
-    setStoredValue(p => {
-      const toStore = value instanceof Function ? value(p) : value
+  const setValue = (
+    value?: string | ((val?: string) => string | undefined),
+  ) => {
+    setStoredValue((p) => {
+      const toStore = value instanceof Function ? value(p) : value;
       if (typeof window !== "undefined") {
         if (!toStore) {
-          window.localStorage.removeItem(key)
+          window.localStorage.removeItem(key);
         } else {
           window.localStorage.setItem(key, toStore);
         }
       }
-      return toStore
-    })
+      return toStore;
+    });
   };
 
   return [storedValue, setValue];
 }
 
 //TODO: merge with the above function
-export function useNotNullLocalStorage(key: string, initialValue: string): [string, StateUpdater<string>] {
+export function useNotNullLocalStorage(
+  key: string,
+  initialValue: string,
+): [string, StateUpdater<string>] {
   const [storedValue, setStoredValue] = useState<string>((): string => {
-    return typeof window !== "undefined" ? window.localStorage.getItem(key) || initialValue : initialValue;
+    return typeof window !== "undefined"
+      ? window.localStorage.getItem(key) || initialValue
+      : initialValue;
   });
 
   const setValue = (value: string | ((val: string) => string)) => {
@@ -54,7 +68,7 @@ export function useNotNullLocalStorage(key: string, initialValue: string): [stri
     setStoredValue(valueToStore);
     if (typeof window !== "undefined") {
       if (!valueToStore) {
-        window.localStorage.removeItem(key)
+        window.localStorage.removeItem(key);
       } else {
         window.localStorage.setItem(key, valueToStore);
       }

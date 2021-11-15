@@ -14,9 +14,15 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
- import { JSX, h } from "preact";
+import { JSX, h } from "preact";
 
-export function DebugCheckbox({ enabled, onToggle }: { enabled: boolean; onToggle: () => void; }): JSX.Element {
+export function DebugCheckbox({
+  enabled,
+  onToggle,
+}: {
+  enabled: boolean;
+  onToggle: () => void;
+}): JSX.Element {
   return (
     <div>
       <input
@@ -24,7 +30,8 @@ export function DebugCheckbox({ enabled, onToggle }: { enabled: boolean; onToggl
         onClick={onToggle}
         type="checkbox"
         id="checkbox-perm"
-        style={{ width: "1.5em", height: "1.5em", verticalAlign: "middle" }} />
+        style={{ width: "1.5em", height: "1.5em", verticalAlign: "middle" }}
+      />
       <label
         htmlFor="checkbox-perm"
         style={{ marginLeft: "0.5em", fontWeight: "bold" }}

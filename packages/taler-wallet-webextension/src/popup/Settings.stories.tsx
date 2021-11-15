@@ -15,29 +15,28 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createExample } from '../test-utils';
-import { SettingsView as TestedComponent } from './Settings';
+import { createExample } from "../test-utils";
+import { SettingsView as TestedComponent } from "./Settings";
 
 export default {
-  title: 'popup/settings',
+  title: "popup/settings",
   component: TestedComponent,
   argTypes: {
     setDeviceName: () => Promise.resolve(),
-  }
+  },
 };
 
 export const AllOff = createExample(TestedComponent, {
-  deviceName: 'this-is-the-device-name',
+  deviceName: "this-is-the-device-name",
   setDeviceName: () => Promise.resolve(),
 });
 
 export const OneChecked = createExample(TestedComponent, {
-  deviceName: 'this-is-the-device-name',
+  deviceName: "this-is-the-device-name",
   permissionsEnabled: true,
   setDeviceName: () => Promise.resolve(),
 });
-

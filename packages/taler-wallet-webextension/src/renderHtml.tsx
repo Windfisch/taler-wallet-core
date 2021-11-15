@@ -87,10 +87,7 @@ interface CollapsibleProps {
  * Component that shows/hides its children when clicking
  * a heading.
  */
-export class Collapsible extends Component<
-  CollapsibleProps,
-  CollapsibleState
-> {
+export class Collapsible extends Component<CollapsibleProps, CollapsibleState> {
   constructor(props: CollapsibleProps) {
     super(props);
     this.state = { collapsed: props.initiallyCollapsed };
@@ -139,23 +136,20 @@ export function ExpanderText({ text }: ExpanderTextProps): JSX.Element {
   return <span>{text}</span>;
 }
 
-export interface LoadingButtonProps extends JSX.HTMLAttributes<HTMLButtonElement> {
+export interface LoadingButtonProps
+  extends JSX.HTMLAttributes<HTMLButtonElement> {
   isLoading: boolean;
 }
 
-export function ProgressButton({isLoading, ...rest}: LoadingButtonProps): JSX.Element {
+export function ProgressButton({
+  isLoading,
+  ...rest
+}: LoadingButtonProps): JSX.Element {
   return (
-    <button
-      class="pure-button pure-button-primary"
-      type="button"
-      {...rest}
-    >
+    <button class="pure-button pure-button-primary" type="button" {...rest}>
       {isLoading ? (
         <span>
-          <object
-            class="svg-icon svg-baseline"
-            data="/img/spinner-bars.svg"
-          />
+          <object class="svg-icon svg-baseline" data="/img/spinner-bars.svg" />
         </span>
       ) : null}{" "}
       {rest.children}
@@ -163,17 +157,13 @@ export function ProgressButton({isLoading, ...rest}: LoadingButtonProps): JSX.El
   );
 }
 
-export function PageLink(
-  props: { pageName: string, children?: ComponentChildren },
-): JSX.Element {
+export function PageLink(props: {
+  pageName: string;
+  children?: ComponentChildren;
+}): JSX.Element {
   const url = chrome.extension.getURL(`/static/wallet.html#/${props.pageName}`);
   return (
-    <a
-      class="actionLink"
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-    >
+    <a class="actionLink" href={url} target="_blank" rel="noopener noreferrer">
       {props.children}
     </a>
   );

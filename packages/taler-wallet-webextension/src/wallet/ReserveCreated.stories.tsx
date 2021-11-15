@@ -15,26 +15,23 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createExample } from '../test-utils';
-import { ReserveCreated as TestedComponent } from './ReserveCreated';
+import { createExample } from "../test-utils";
+import { ReserveCreated as TestedComponent } from "./ReserveCreated";
 
 export default {
-  title: 'wallet/manual withdraw/reserve created',
+  title: "wallet/manual withdraw/reserve created",
   component: TestedComponent,
-  argTypes: {
-  }
+  argTypes: {},
 };
 
-
 export const InitialState = createExample(TestedComponent, {
-  reservePub: 'ASLKDJQWLKEJASLKDJSADLKASJDLKSADJ',
+  reservePub: "ASLKDJQWLKEJASLKDJSADLKASJDLKSADJ",
   paytos: [
-    'payto://x-taler-bank/bank.taler:5882/exchangeminator?amount=COL%3A1&message=Taler+Withdrawal+A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG',
-    'payto://x-taler-bank/international-bank.com/myaccount?amount=COL%3A1&message=Taler+Withdrawal+TYQTE7VA4M9GZQ4TR06YBNGA05AJGMFNSK4Q62NXR2FKNDB1J4EX',
-  ]
+    "payto://x-taler-bank/bank.taler:5882/exchangeminator?amount=COL%3A1&message=Taler+Withdrawal+A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
+    "payto://x-taler-bank/international-bank.com/myaccount?amount=COL%3A1&message=Taler+Withdrawal+TYQTE7VA4M9GZQ4TR06YBNGA05AJGMFNSK4Q62NXR2FKNDB1J4EX",
+  ],
 });
-

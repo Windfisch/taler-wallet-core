@@ -15,13 +15,13 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createContext, h, VNode } from 'preact'
-import { useContext, useState } from 'preact/hooks'
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { createContext, h, VNode } from "preact";
+import { useContext, useState } from "preact/hooks";
+import { useLocalStorage } from "../hooks/useLocalStorage";
 
 interface Type {
   devMode: boolean;
@@ -29,14 +29,14 @@ interface Type {
 }
 const Context = createContext<Type>({
   devMode: false,
-  toggleDevMode: () => null
-})
+  toggleDevMode: () => null,
+});
 
 export const useDevContext = (): Type => useContext(Context);
 
 export const DevContextProvider = ({ children }: { children: any }): VNode => {
-  const [value, setter] = useLocalStorage('devMode')
-  const devMode = value === "true"
-  const toggleDevMode = () => setter(v => !v ? "true" : undefined)
+  const [value, setter] = useLocalStorage("devMode");
+  const devMode = value === "true";
+  const toggleDevMode = () => setter((v) => (!v ? "true" : undefined));
   return h(Context.Provider, { value: { devMode, toggleDevMode }, children });
-}
+};

@@ -21,24 +21,23 @@ exports.BrowserCryptoWorkerFactory = void 0;
  * @author Florian Dold
  */
 class BrowserCryptoWorkerFactory {
-    startWorker() {
-        const workerCtor = Worker;
-        const workerPath = "/browserWorkerEntry.js";
-        return new workerCtor(workerPath);
+  startWorker() {
+    const workerCtor = Worker;
+    const workerPath = "/browserWorkerEntry.js";
+    return new workerCtor(workerPath);
+  }
+  getConcurrency() {
+    let concurrency = 2;
+    try {
+      // only works in the browser
+      // tslint:disable-next-line:no-string-literal
+      concurrency = navigator["hardwareConcurrency"];
+      concurrency = Math.max(1, Math.ceil(concurrency / 2));
+    } catch (e) {
+      concurrency = 2;
     }
-    getConcurrency() {
-        let concurrency = 2;
-        try {
-            // only works in the browser
-            // tslint:disable-next-line:no-string-literal
-            concurrency = navigator["hardwareConcurrency"];
-            concurrency = Math.max(1, Math.ceil(concurrency / 2));
-        }
-        catch (e) {
-            concurrency = 2;
-        }
-        return concurrency;
-    }
+    return concurrency;
+  }
 }
 exports.BrowserCryptoWorkerFactory = BrowserCryptoWorkerFactory;
 //# sourceMappingURL=browserCryptoWorkerFactory.js.map

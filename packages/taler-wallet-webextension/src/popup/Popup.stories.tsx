@@ -15,30 +15,29 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createExample } from '../test-utils';
-import { NavBar as TestedComponent } from '../NavigationBar';
+import { createExample } from "../test-utils";
+import { NavBar as TestedComponent } from "../NavigationBar";
 
 export default {
-  title: 'popup/header',
+  title: "popup/header",
   // component: TestedComponent,
   argTypes: {
-    onRetry: { action: 'onRetry' },
-    onDelete: { action: 'onDelete' },
-    onBack: { action: 'onBack' },
-  }
+    onRetry: { action: "onRetry" },
+    onDelete: { action: "onDelete" },
+    onBack: { action: "onBack" },
+  },
 };
 
-
 export const OnBalance = createExample(TestedComponent, {
-  devMode:false,
-  path:'/balance'
+  devMode: false,
+  path: "/balance",
 });
 
 export const OnHistoryWithDevMode = createExample(TestedComponent, {
-  devMode:true,
-  path:'/history'
+  devMode: true,
+  path: "/history",
 });

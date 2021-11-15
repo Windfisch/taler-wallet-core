@@ -21,7 +21,7 @@ import * as wxApi from "../wxApi";
 export function useDiagnostics(): [WalletDiagnostics | undefined, boolean] {
   const [timedOut, setTimedOut] = useState(false);
   const [diagnostics, setDiagnostics] = useState<WalletDiagnostics | undefined>(
-    undefined
+    undefined,
   );
 
   useEffect(() => {
@@ -41,5 +41,5 @@ export function useDiagnostics(): [WalletDiagnostics | undefined, boolean] {
     console.log("fetching diagnostics");
     doFetch();
   }, []);
-  return [diagnostics, timedOut]
+  return [diagnostics, timedOut];
 }

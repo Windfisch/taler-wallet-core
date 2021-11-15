@@ -19,13 +19,12 @@ import * as wxApi from "../wxApi";
 import { getPermissionsApi } from "../compat";
 import { extendedPermissions } from "../permissions";
 
-
 export function useExtendedPermissions(): [boolean, () => void] {
   const [enabled, setEnabled] = useState(false);
 
   const toggle = () => {
-    setEnabled(v => !v);
-    handleExtendedPerm(enabled).then(result => {
+    setEnabled((v) => !v);
+    handleExtendedPerm(enabled).then((result) => {
       setEnabled(result);
     });
   };
@@ -65,5 +64,5 @@ async function handleExtendedPerm(isEnabled: boolean): Promise<boolean> {
     nextVal = res.newValue;
   }
   console.log("new permissions applied:", nextVal ?? false);
-  return nextVal ?? false
+  return nextVal ?? false;
 }

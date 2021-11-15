@@ -15,16 +15,15 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createExample } from '../test-utils';
-import { View as TestedComponent } from './Welcome';
-
+import { createExample } from "../test-utils";
+import { View as TestedComponent } from "./Welcome";
 
 export default {
-  title: 'wallet/welcome',
+  title: "wallet/welcome",
   component: TestedComponent,
 };
 
@@ -32,11 +31,11 @@ export const Normal = createExample(TestedComponent, {
   permissionsEnabled: true,
   diagnostics: {
     errors: [],
-    walletManifestVersion: '1.0',
-    walletManifestDisplayVersion: '1.0',
+    walletManifestVersion: "1.0",
+    walletManifestDisplayVersion: "1.0",
     firefoxIdbProblem: false,
     dbOutdated: false,
-  }
+  },
 });
 
 export const TimedoutDiagnostics = createExample(TestedComponent, {
@@ -47,4 +46,3 @@ export const TimedoutDiagnostics = createExample(TestedComponent, {
 export const RunningDiagnostics = createExample(TestedComponent, {
   permissionsEnabled: false,
 });
-

@@ -15,23 +15,22 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { amountFractionalBase, Amounts } from '@gnu-taler/taler-util';
-import { ExchangeRecord } from '@gnu-taler/taler-wallet-core';
-import { ExchangeWithdrawDetails } from '@gnu-taler/taler-wallet-core/src/operations/withdraw';
-import { getMaxListeners } from 'process';
-import { createExample } from '../test-utils';
-import { View as TestedComponent } from './Withdraw';
-
+import { amountFractionalBase, Amounts } from "@gnu-taler/taler-util";
+import { ExchangeRecord } from "@gnu-taler/taler-wallet-core";
+import { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core/src/operations/withdraw";
+import { getMaxListeners } from "process";
+import { createExample } from "../test-utils";
+import { View as TestedComponent } from "./Withdraw";
 
 export default {
-  title: 'cta/withdraw',
+  title: "cta/withdraw",
   component: TestedComponent,
   argTypes: {
-    onSwitchExchange: { action: 'onRetry' },
+    onSwitchExchange: { action: "onRetry" },
   },
 };
 
@@ -48,7 +47,7 @@ const termsHtml = `<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
   </div>
 </body>
 </html>
-`
+`;
 const termsPlain = `
 Terms Of Service
 ****************
@@ -432,7 +431,7 @@ Questions or comments
 We welcome comments, questions, concerns, or suggestions. Please send
 us a message on our contact page at legal@taler-systems.com.
 
-`
+`;
 
 const termsXml = `<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE document PUBLIC "+//IDN docutils.sourceforge.net//DTD Docutils Generic//EN//XML" "http://docutils.sourceforge.net/docs/ref/docutils.dtd">
@@ -781,120 +780,131 @@ const termsXml = `<?xml version="1.0" encoding="utf-8"?>
 `;
 
 export const NewTerms = createExample(TestedComponent, {
-  knownExchanges: [{
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.demo.taler.net',
-    paytoUris: ['asd'],
-  }, {
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.test.taler.net',
-    paytoUris: ['asd'],
-  }],
-  exchangeBaseUrl: 'exchange.demo.taler.net',
+  knownExchanges: [
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.demo.taler.net",
+      paytoUris: ["asd"],
+    },
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.test.taler.net",
+      paytoUris: ["asd"],
+    },
+  ],
+  exchangeBaseUrl: "exchange.demo.taler.net",
   details: {
-    content: '',
-    contentType: '',
-    currentEtag: '',
+    content: "",
+    contentType: "",
+    currentEtag: "",
     acceptedEtag: undefined,
   },
   withdrawalFee: {
-    currency: 'USD',
+    currency: "USD",
     fraction: 0,
-    value: 0
+    value: 0,
   },
   amount: {
-    currency: 'USD',
+    currency: "USD",
     value: 2,
-    fraction: 10000000
+    fraction: 10000000,
   },
 
-  onSwitchExchange: async () => { },
+  onSwitchExchange: async () => {},
   terms: {
     value: {
-      type: 'xml',
+      type: "xml",
       document: new DOMParser().parseFromString(termsXml, "text/xml"),
     },
-    status: 'new'
+    status: "new",
   },
-})
+});
 
 export const TermsReviewingPLAIN = createExample(TestedComponent, {
-  knownExchanges: [{
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.demo.taler.net',
-    paytoUris: ['asd'],
-  }, {
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.test.taler.net',
-    paytoUris: ['asd'],
-  }],
-  exchangeBaseUrl: 'exchange.demo.taler.net',
+  knownExchanges: [
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.demo.taler.net",
+      paytoUris: ["asd"],
+    },
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.test.taler.net",
+      paytoUris: ["asd"],
+    },
+  ],
+  exchangeBaseUrl: "exchange.demo.taler.net",
   details: {
-    content: '',
-    contentType: '',
-    currentEtag: '',
+    content: "",
+    contentType: "",
+    currentEtag: "",
     acceptedEtag: undefined,
   },
   withdrawalFee: {
-    currency: 'USD',
+    currency: "USD",
     fraction: 0,
-    value: 0
+    value: 0,
   },
   amount: {
-    currency: 'USD',
+    currency: "USD",
     value: 2,
-    fraction: 10000000
+    fraction: 10000000,
   },
 
-  onSwitchExchange: async () => { },
+  onSwitchExchange: async () => {},
   terms: {
     value: {
-      type: 'plain',
-      content: termsPlain
+      type: "plain",
+      content: termsPlain,
     },
-    status: 'new'
+    status: "new",
   },
-  reviewing: true
-})
+  reviewing: true,
+});
 
 export const TermsReviewingHTML = createExample(TestedComponent, {
-  knownExchanges: [{
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.demo.taler.net',
-    paytoUris: ['asd'],
-  }, {
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.test.taler.net',
-    paytoUris: ['asd'],
-  }],
-  exchangeBaseUrl: 'exchange.demo.taler.net',
+  knownExchanges: [
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.demo.taler.net",
+      paytoUris: ["asd"],
+    },
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.test.taler.net",
+      paytoUris: ["asd"],
+    },
+  ],
+  exchangeBaseUrl: "exchange.demo.taler.net",
   details: {
-    content: '',
-    contentType: '',
-    currentEtag: '',
+    content: "",
+    contentType: "",
+    currentEtag: "",
     acceptedEtag: undefined,
   },
   withdrawalFee: {
-    currency: 'USD',
+    currency: "USD",
     fraction: 0,
-    value: 0
+    value: 0,
   },
   amount: {
-    currency: 'USD',
+    currency: "USD",
     value: 2,
-    fraction: 10000000
+    fraction: 10000000,
   },
 
-  onSwitchExchange: async () => { },
+  onSwitchExchange: async () => {},
   terms: {
     value: {
-      type: 'html',
-      href: new URL(`data:text/html;base64,${Buffer.from(termsHtml).toString('base64')}`),
+      type: "html",
+      href: new URL(
+        `data:text/html;base64,${Buffer.from(termsHtml).toString("base64")}`,
+      ),
     },
-    status: 'new'
+    status: "new",
   },
-  reviewing: true
-})
+  reviewing: true,
+});
 
 const termsPdf = `
 %PDF-1.2 
@@ -909,306 +919,330 @@ endobj
 trailer
 << /Root 3 0 R >>
 %%EOF
-`
+`;
 
 export const TermsReviewingPDF = createExample(TestedComponent, {
-  knownExchanges: [{
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.demo.taler.net',
-    paytoUris: ['asd'],
-  }, {
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.test.taler.net',
-    paytoUris: ['asd'],
-  }],
-  exchangeBaseUrl: 'exchange.demo.taler.net',
-  details: {
-    content: '',
-    contentType: '',
-    currentEtag: '',
-    acceptedEtag: undefined,
-  },
-  withdrawalFee: {
-    currency: 'USD',
-    fraction: 0,
-    value: 0
-  },
-  amount: {
-    currency: 'USD',
-    value: 2,
-    fraction: 10000000
-  },
-
-  onSwitchExchange: async () => { },
-  terms: {
-    value: {
-      type: 'pdf',
-      location: new URL(`data:text/html;base64,${Buffer.from(termsPdf).toString('base64')}`),
+  knownExchanges: [
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.demo.taler.net",
+      paytoUris: ["asd"],
     },
-    status: 'new'
-  },
-  reviewing: true
-})
-
-
-export const TermsReviewingXML = createExample(TestedComponent, {
-  knownExchanges: [{
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.demo.taler.net',
-    paytoUris: ['asd'],
-  }, {
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.test.taler.net',
-    paytoUris: ['asd'],
-  }],
-  exchangeBaseUrl: 'exchange.demo.taler.net',
-  details: {
-    content: '',
-    contentType: '',
-    currentEtag: '',
-    acceptedEtag: undefined,
-  },
-  withdrawalFee: {
-    currency: 'USD',
-    fraction: 0,
-    value: 0
-  },
-  amount: {
-    currency: 'USD',
-    value: 2,
-    fraction: 10000000
-  },
-
-  onSwitchExchange: async () => { },
-  terms: {
-    value: {
-      type: 'xml',
-      document: new DOMParser().parseFromString(termsXml, "text/xml"),
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.test.taler.net",
+      paytoUris: ["asd"],
     },
-    status: 'new'
-  },
-  reviewing: true
-})
-
-export const NewTermsAccepted = createExample(TestedComponent, {
-  knownExchanges: [{
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.demo.taler.net',
-    paytoUris: ['asd'],
-  }, {
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.test.taler.net',
-    paytoUris: ['asd'],
-  }],
-  exchangeBaseUrl: 'exchange.demo.taler.net',
+  ],
+  exchangeBaseUrl: "exchange.demo.taler.net",
   details: {
-    content: '',
-    contentType: '',
-    currentEtag: '',
+    content: "",
+    contentType: "",
+    currentEtag: "",
     acceptedEtag: undefined,
   },
   withdrawalFee: {
-    currency: 'USD',
-    fraction: 0,
-    value: 0
-  },
-  amount: {
-    currency: 'USD',
-    value: 2,
-    fraction: 10000000
-  },
-  onSwitchExchange: async () => { },
-  terms: {
-    value: {
-      type: 'xml',
-      document: new DOMParser().parseFromString(termsXml, "text/xml"),
-    },
-    status: 'new'
-  },
-  reviewed: true
-})
-
-export const TermsShowAgainXML = createExample(TestedComponent, {
-  knownExchanges: [{
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.demo.taler.net',
-    paytoUris: ['asd'],
-  }, {
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.test.taler.net',
-    paytoUris: ['asd'],
-  }],
-  exchangeBaseUrl: 'exchange.demo.taler.net',
-  details: {
-    content: '',
-    contentType: '',
-    currentEtag: '',
-    acceptedEtag: undefined,
-  },
-  withdrawalFee: {
-    currency: 'USD',
-    fraction: 0,
-    value: 0
-  },
-  amount: {
-    currency: 'USD',
-    value: 2,
-    fraction: 10000000
-  },
-
-  onSwitchExchange: async () => { },
-  terms: {
-    value: {
-      type: 'xml',
-      document: new DOMParser().parseFromString(termsXml, "text/xml"),
-    },
-    status: 'new'
-  },
-  reviewed: true,
-  reviewing: true,
-})
-
-export const TermsChanged = createExample(TestedComponent, {
-  knownExchanges: [{
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.demo.taler.net',
-    paytoUris: ['asd'],
-  }, {
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.test.taler.net',
-    paytoUris: ['asd'],
-  }],
-  exchangeBaseUrl: 'exchange.demo.taler.net',
-  details: {
-    content: '',
-    contentType: '',
-    currentEtag: '',
-    acceptedEtag: undefined,
-  },
-  withdrawalFee: {
-    currency: 'USD',
-    fraction: 0,
-    value: 0
-  },
-  amount: {
-    currency: 'USD',
-    value: 2,
-    fraction: 10000000
-  },
-
-  onSwitchExchange: async () => { },
-  terms: {
-    value: {
-      type: 'xml',
-      document: new DOMParser().parseFromString(termsXml, "text/xml"),
-    },
-    status: 'changed'
-  },
-})
-
-export const TermsNotFound = createExample(TestedComponent, {
-  knownExchanges: [{
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.demo.taler.net',
-    paytoUris: ['asd'],
-  }, {
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.test.taler.net',
-    paytoUris: ['asd'],
-  }],
-  exchangeBaseUrl: 'exchange.demo.taler.net',
-  details: {
-    content: '',
-    contentType: '',
-    currentEtag: '',
-    acceptedEtag: undefined,
-  },
-  withdrawalFee: {
-    currency: 'USD',
-    fraction: 0,
-    value: 0
-  },
-  amount: {
-    currency: 'USD',
-    value: 2,
-    fraction: 10000000
-  },
-
-  onSwitchExchange: async () => { },
-  terms: {
-    status: 'notfound'
-  },
-})
-
-export const TermsAlreadyAccepted = createExample(TestedComponent, {
-  knownExchanges: [{
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.demo.taler.net',
-    paytoUris: ['asd'],
-  }, {
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.test.taler.net',
-    paytoUris: ['asd'],
-  }],
-  exchangeBaseUrl: 'exchange.demo.taler.net',
-  details: {
-    content: '',
-    contentType: '',
-    currentEtag: '',
-    acceptedEtag: undefined,
-  },
-  withdrawalFee: {
-    currency: 'USD',
-    fraction: amountFractionalBase * 0.5,
-    value: 0
-  },
-  amount: {
-    currency: 'USD',
-    value: 2,
-    fraction: 10000000
-  },
-
-  onSwitchExchange: async () => { },
-  terms: {
-    status: 'accepted'
-  },
-})
-
-
-export const WithoutFee = createExample(TestedComponent, {
-  knownExchanges: [{
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.demo.taler.net',
-    paytoUris: ['asd'],
-  }, {
-    currency: 'USD',
-    exchangeBaseUrl: 'exchange.test.taler.net',
-    paytoUris: ['asd'],
-  }],
-  exchangeBaseUrl: 'exchange.demo.taler.net',
-  details: {
-    content: '',
-    contentType: '',
-    currentEtag: '',
-    acceptedEtag: undefined,
-  },
-  withdrawalFee: {
-    currency: 'USD',
+    currency: "USD",
     fraction: 0,
     value: 0,
   },
   amount: {
-    currency: 'USD',
+    currency: "USD",
     value: 2,
-    fraction: 10000000
+    fraction: 10000000,
   },
 
-  onSwitchExchange: async () => { },
+  onSwitchExchange: async () => {},
   terms: {
     value: {
-      type: 'xml',
+      type: "pdf",
+      location: new URL(
+        `data:text/html;base64,${Buffer.from(termsPdf).toString("base64")}`,
+      ),
+    },
+    status: "new",
+  },
+  reviewing: true,
+});
+
+export const TermsReviewingXML = createExample(TestedComponent, {
+  knownExchanges: [
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.demo.taler.net",
+      paytoUris: ["asd"],
+    },
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.test.taler.net",
+      paytoUris: ["asd"],
+    },
+  ],
+  exchangeBaseUrl: "exchange.demo.taler.net",
+  details: {
+    content: "",
+    contentType: "",
+    currentEtag: "",
+    acceptedEtag: undefined,
+  },
+  withdrawalFee: {
+    currency: "USD",
+    fraction: 0,
+    value: 0,
+  },
+  amount: {
+    currency: "USD",
+    value: 2,
+    fraction: 10000000,
+  },
+
+  onSwitchExchange: async () => {},
+  terms: {
+    value: {
+      type: "xml",
       document: new DOMParser().parseFromString(termsXml, "text/xml"),
     },
-    status: 'accepted',
-  }
-})
+    status: "new",
+  },
+  reviewing: true,
+});
+
+export const NewTermsAccepted = createExample(TestedComponent, {
+  knownExchanges: [
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.demo.taler.net",
+      paytoUris: ["asd"],
+    },
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.test.taler.net",
+      paytoUris: ["asd"],
+    },
+  ],
+  exchangeBaseUrl: "exchange.demo.taler.net",
+  details: {
+    content: "",
+    contentType: "",
+    currentEtag: "",
+    acceptedEtag: undefined,
+  },
+  withdrawalFee: {
+    currency: "USD",
+    fraction: 0,
+    value: 0,
+  },
+  amount: {
+    currency: "USD",
+    value: 2,
+    fraction: 10000000,
+  },
+  onSwitchExchange: async () => {},
+  terms: {
+    value: {
+      type: "xml",
+      document: new DOMParser().parseFromString(termsXml, "text/xml"),
+    },
+    status: "new",
+  },
+  reviewed: true,
+});
+
+export const TermsShowAgainXML = createExample(TestedComponent, {
+  knownExchanges: [
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.demo.taler.net",
+      paytoUris: ["asd"],
+    },
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.test.taler.net",
+      paytoUris: ["asd"],
+    },
+  ],
+  exchangeBaseUrl: "exchange.demo.taler.net",
+  details: {
+    content: "",
+    contentType: "",
+    currentEtag: "",
+    acceptedEtag: undefined,
+  },
+  withdrawalFee: {
+    currency: "USD",
+    fraction: 0,
+    value: 0,
+  },
+  amount: {
+    currency: "USD",
+    value: 2,
+    fraction: 10000000,
+  },
+
+  onSwitchExchange: async () => {},
+  terms: {
+    value: {
+      type: "xml",
+      document: new DOMParser().parseFromString(termsXml, "text/xml"),
+    },
+    status: "new",
+  },
+  reviewed: true,
+  reviewing: true,
+});
+
+export const TermsChanged = createExample(TestedComponent, {
+  knownExchanges: [
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.demo.taler.net",
+      paytoUris: ["asd"],
+    },
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.test.taler.net",
+      paytoUris: ["asd"],
+    },
+  ],
+  exchangeBaseUrl: "exchange.demo.taler.net",
+  details: {
+    content: "",
+    contentType: "",
+    currentEtag: "",
+    acceptedEtag: undefined,
+  },
+  withdrawalFee: {
+    currency: "USD",
+    fraction: 0,
+    value: 0,
+  },
+  amount: {
+    currency: "USD",
+    value: 2,
+    fraction: 10000000,
+  },
+
+  onSwitchExchange: async () => {},
+  terms: {
+    value: {
+      type: "xml",
+      document: new DOMParser().parseFromString(termsXml, "text/xml"),
+    },
+    status: "changed",
+  },
+});
+
+export const TermsNotFound = createExample(TestedComponent, {
+  knownExchanges: [
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.demo.taler.net",
+      paytoUris: ["asd"],
+    },
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.test.taler.net",
+      paytoUris: ["asd"],
+    },
+  ],
+  exchangeBaseUrl: "exchange.demo.taler.net",
+  details: {
+    content: "",
+    contentType: "",
+    currentEtag: "",
+    acceptedEtag: undefined,
+  },
+  withdrawalFee: {
+    currency: "USD",
+    fraction: 0,
+    value: 0,
+  },
+  amount: {
+    currency: "USD",
+    value: 2,
+    fraction: 10000000,
+  },
+
+  onSwitchExchange: async () => {},
+  terms: {
+    status: "notfound",
+  },
+});
+
+export const TermsAlreadyAccepted = createExample(TestedComponent, {
+  knownExchanges: [
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.demo.taler.net",
+      paytoUris: ["asd"],
+    },
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.test.taler.net",
+      paytoUris: ["asd"],
+    },
+  ],
+  exchangeBaseUrl: "exchange.demo.taler.net",
+  details: {
+    content: "",
+    contentType: "",
+    currentEtag: "",
+    acceptedEtag: undefined,
+  },
+  withdrawalFee: {
+    currency: "USD",
+    fraction: amountFractionalBase * 0.5,
+    value: 0,
+  },
+  amount: {
+    currency: "USD",
+    value: 2,
+    fraction: 10000000,
+  },
+
+  onSwitchExchange: async () => {},
+  terms: {
+    status: "accepted",
+  },
+});
+
+export const WithoutFee = createExample(TestedComponent, {
+  knownExchanges: [
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.demo.taler.net",
+      paytoUris: ["asd"],
+    },
+    {
+      currency: "USD",
+      exchangeBaseUrl: "exchange.test.taler.net",
+      paytoUris: ["asd"],
+    },
+  ],
+  exchangeBaseUrl: "exchange.demo.taler.net",
+  details: {
+    content: "",
+    contentType: "",
+    currentEtag: "",
+    acceptedEtag: undefined,
+  },
+  withdrawalFee: {
+    currency: "USD",
+    fraction: 0,
+    value: 0,
+  },
+  amount: {
+    currency: "USD",
+    value: 2,
+    fraction: 10000000,
+  },
+
+  onSwitchExchange: async () => {},
+  terms: {
+    value: {
+      type: "xml",
+      document: new DOMParser().parseFromString(termsXml, "text/xml"),
+    },
+    status: "accepted",
+  },
+});

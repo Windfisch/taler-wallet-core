@@ -28,29 +28,29 @@ import { i18n } from "@gnu-taler/taler-util";
 import { ComponentChildren, JSX, h } from "preact";
 import Match from "preact-router/match";
 import { useDevContext } from "./context/devContext";
-import { PopupNavigation } from './components/styled'
+import { PopupNavigation } from "./components/styled";
 
 export enum Pages {
-  welcome = '/welcome',
-  balance = '/balance',
-  manual_withdraw = '/manual-withdraw',
-  settings = '/settings',
-  dev = '/dev',
-  cta = '/cta',
-  backup = '/backup',
-  history = '/history',
-  transaction = '/transaction/:tid',
-  provider_detail = '/provider/:pid',
-  provider_add = '/provider/add',
+  welcome = "/welcome",
+  balance = "/balance",
+  manual_withdraw = "/manual-withdraw",
+  settings = "/settings",
+  dev = "/dev",
+  cta = "/cta",
+  backup = "/backup",
+  history = "/history",
+  transaction = "/transaction/:tid",
+  provider_detail = "/provider/:pid",
+  provider_add = "/provider/add",
 
-  reset_required = '/reset-required',
-  payback = '/payback',
-  return_coins = '/return-coins',
+  reset_required = "/reset-required",
+  payback = "/payback",
+  return_coins = "/return-coins",
 
-  pay = '/pay',
-  refund = '/refund',
-  tips = '/tip',
-  withdraw = '/withdraw',
+  pay = "/pay",
+  refund = "/refund",
+  tips = "/tip",
+  withdraw = "/withdraw",
 }
 
 interface TabProps {
@@ -71,23 +71,28 @@ function Tab(props: TabProps): JSX.Element {
   );
 }
 
-export function NavBar({ devMode, path }: { path: string, devMode: boolean }) {
-  return <PopupNavigation devMode={devMode}>
-    <div>
-      <Tab target="/balance" current={path}>{i18n.str`Balance`}</Tab>
-      <Tab target="/history" current={path}>{i18n.str`History`}</Tab>
-      <Tab target="/backup" current={path}>{i18n.str`Backup`}</Tab>
-      <Tab target="/settings" current={path}>{i18n.str`Settings`}</Tab>
-      {devMode && <Tab target="/dev" current={path}>{i18n.str`Dev`}</Tab>}
-    </div>
-  </PopupNavigation>
+export function NavBar({ devMode, path }: { path: string; devMode: boolean }) {
+  return (
+    <PopupNavigation devMode={devMode}>
+      <div>
+        <Tab target="/balance" current={path}>{i18n.str`Balance`}</Tab>
+        <Tab target="/history" current={path}>{i18n.str`History`}</Tab>
+        <Tab target="/backup" current={path}>{i18n.str`Backup`}</Tab>
+        <Tab target="/settings" current={path}>{i18n.str`Settings`}</Tab>
+        {devMode && <Tab target="/dev" current={path}>{i18n.str`Dev`}</Tab>}
+      </div>
+    </PopupNavigation>
+  );
 }
 
 export function WalletNavBar() {
-  const { devMode } = useDevContext()
-  return <Match>{({ path }: any) => {
-    console.log("path", path)
-    return <NavBar devMode={devMode} path={path} />
-  }}</Match>
+  const { devMode } = useDevContext();
+  return (
+    <Match>
+      {({ path }: any) => {
+        console.log("path", path);
+        return <NavBar devMode={devMode} path={path} />;
+      }}
+    </Match>
+  );
 }
-

@@ -27,43 +27,55 @@ import { Diagnostics } from "../components/Diagnostics";
 import { WalletBox } from "../components/styled";
 import { useDiagnostics } from "../hooks/useDiagnostics";
 import { WalletDiagnostics } from "@gnu-taler/taler-util";
-import { h } from 'preact';
+import { h } from "preact";
 
 export function WelcomePage() {
-  const [permissionsEnabled, togglePermissions] = useExtendedPermissions()
-  const [diagnostics, timedOut] = useDiagnostics()
-  return <View
-    permissionsEnabled={permissionsEnabled} togglePermissions={togglePermissions}
-    diagnostics={diagnostics} timedOut={timedOut}
-  />
+  const [permissionsEnabled, togglePermissions] = useExtendedPermissions();
+  const [diagnostics, timedOut] = useDiagnostics();
+  return (
+    <View
+      permissionsEnabled={permissionsEnabled}
+      togglePermissions={togglePermissions}
+      diagnostics={diagnostics}
+      timedOut={timedOut}
+    />
+  );
 }
 
 export interface ViewProps {
-  permissionsEnabled: boolean,
-  togglePermissions: () => void,
-  diagnostics: WalletDiagnostics | undefined,
-  timedOut: boolean,
+  permissionsEnabled: boolean;
+  togglePermissions: () => void;
+  diagnostics: WalletDiagnostics | undefined;
+  timedOut: boolean;
 }
-export function View({ permissionsEnabled, togglePermissions, diagnostics, timedOut }: ViewProps): JSX.Element {
-  return (<WalletBox>
-    <h1>Browser Extension Installed!</h1>
-    <div>
-      <p>Thank you for installing the wallet.</p>
-      <Diagnostics diagnostics={diagnostics} timedOut={timedOut} />
-      <h2>Permissions</h2>
-      <Checkbox label="Automatically open wallet based on page content"
-        name="perm"
-        description="(Enabling this option below will make using the wallet faster, but requires more permissions from your browser.)"
-        enabled={permissionsEnabled} onToggle={togglePermissions}
-      />
-      <h2>Next Steps</h2>
-      <a href="https://demo.taler.net/" style={{ display: "block" }}>
-        Try the demo »
-      </a>
-      <a href="https://demo.taler.net/" style={{ display: "block" }}>
-        Learn how to top up your wallet balance »
-      </a>
-    </div>
-  </WalletBox>
+export function View({
+  permissionsEnabled,
+  togglePermissions,
+  diagnostics,
+  timedOut,
+}: ViewProps): JSX.Element {
+  return (
+    <WalletBox>
+      <h1>Browser Extension Installed!</h1>
+      <div>
+        <p>Thank you for installing the wallet.</p>
+        <Diagnostics diagnostics={diagnostics} timedOut={timedOut} />
+        <h2>Permissions</h2>
+        <Checkbox
+          label="Automatically open wallet based on page content"
+          name="perm"
+          description="(Enabling this option below will make using the wallet faster, but requires more permissions from your browser.)"
+          enabled={permissionsEnabled}
+          onToggle={togglePermissions}
+        />
+        <h2>Next Steps</h2>
+        <a href="https://demo.taler.net/" style={{ display: "block" }}>
+          Try the demo »
+        </a>
+        <a href="https://demo.taler.net/" style={{ display: "block" }}>
+          Learn how to top up your wallet balance »
+        </a>
+      </div>
+    </WalletBox>
   );
 }

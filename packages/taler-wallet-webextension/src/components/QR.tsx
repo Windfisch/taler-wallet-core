@@ -14,24 +14,35 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
- import { h, VNode } from "preact";
- import { useEffect, useRef } from "preact/hooks";
- import qrcode from "qrcode-generator";
- 
- export function QR({ text }: { text: string; }):VNode {
-   const divRef = useRef<HTMLDivElement>(null);
-   useEffect(() => {
-     if (!divRef.current) return
-     const qr = qrcode(0, 'L');
-     qr.addData(text);
-     qr.make();
-     divRef.current.innerHTML = qr.createSvgTag({
-       scalable: true,
-     });
-   });
- 
-   return <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-     <div style={{ width: '50%', minWidth: 200, maxWidth: 300 }} ref={divRef} />
-   </div>;
- }
- 
+import { h, VNode } from "preact";
+import { useEffect, useRef } from "preact/hooks";
+import qrcode from "qrcode-generator";
+
+export function QR({ text }: { text: string }): VNode {
+  const divRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!divRef.current) return;
+    const qr = qrcode(0, "L");
+    qr.addData(text);
+    qr.make();
+    divRef.current.innerHTML = qr.createSvgTag({
+      scalable: true,
+    });
+  });
+
+  return (
+    <div
+      style={{
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      <div
+        style={{ width: "50%", minWidth: 200, maxWidth: 300 }}
+        ref={divRef}
+      />
+    </div>
+  );
+}

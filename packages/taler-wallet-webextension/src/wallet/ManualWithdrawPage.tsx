@@ -14,68 +14,84 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
 */
 
-
-import { VNode } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { VNode, h } from "preact";
+import { useState } from "preact/hooks";
 import { CreateManualWithdraw } from "./CreateManualWithdraw";
-import * as wxApi from '../wxApi'
-import { AcceptManualWithdrawalResult, AmountJson, Amounts } from "@gnu-taler/taler-util";
+import * as wxApi from "../wxApi";
+import {
+  AcceptManualWithdrawalResult,
+  AmountJson,
+  Amounts,
+} from "@gnu-taler/taler-util";
 import { ReserveCreated } from "./ReserveCreated.js";
-import { route } from 'preact-router';
+import { route } from "preact-router";
 import { Pages } from "../NavigationBar.js";
 
-interface Props {
+interface Props {}
 
-}
+export function ManualWithdrawPage({}: Props): VNode {
+  const [success, setSuccess] = useState<
+    AcceptManualWithdrawalResult | undefined
+  >(undefined);
+  const [currency, setCurrency] = useState<string | undefined>(undefined);
+  const [error, setError] = useState<string | undefined>(undefined);
 
-export function ManualWithdrawPage({ }: Props): VNode {
-  const [success, setSuccess] = useState<AcceptManualWithdrawalResult | undefined>(undefined)
-  const [currency, setCurrency] = useState<string | undefined>(undefined)
-  const [error, setError] = useState<string | undefined>(undefined)
-
-  async function onExchangeChange(exchange: string | undefined) {
-    if (!exchange) return
+  async function onExchangeChange(exchange: string | undefined): Promise<void> {
+    if (!exchange) return;
     try {
-      const r = await fetch(`${exchange}/keys`)
-      const j = await r.json()
+      const r = await fetch(`${exchange}/keys`);
+      const j = await r.json();
       if (j.currency) {
         await wxApi.addExchange({
           exchangeBaseUrl: `${exchange}/`,
-          forceUpdate: true
-        })
-        setCurrency(j.currency)
+          forceUpdate: true,
+        });
+        setCurrency(j.currency);
       }
     } catch (e) {
-      setError('The exchange url seems invalid')
-      setCurrency(undefined)
+      setError("The exchange url seems invalid");
+      setCurrency(undefined);
     }
   }
 
-  async function doCreate(exchangeBaseUrl: string, amount: AmountJson) {
+  async function doCreate(
+    exchangeBaseUrl: string,
+    amount: AmountJson,
+  ): Promise<void> {
     try {
-      const resp = await wxApi.acceptManualWithdrawal(exchangeBaseUrl, Amounts.stringify(amount))
-      setSuccess(resp)
+      const resp = await wxApi.acceptManualWithdrawal(
+        exchangeBaseUrl,
+        Amounts.stringify(amount),
+      );
+      setSuccess(resp);
     } catch (e) {
       if (e instanceof Error) {
-        setError(e.message)
+        setError(e.message);
       } else {
-        setError('unexpected error')
+        setError("unexpected error");
       }
-      setSuccess(undefined)
+      setSuccess(undefined);
     }
   }
 
   if (success) {
-    return <ReserveCreated reservePub={success.reservePub} paytos={success.exchangePaytoUris} onBack={() => {
-      route(Pages.balance)
-    }}/>
+    return (
+      <ReserveCreated
+        reservePub={success.reservePub}
+        paytos={success.exchangePaytoUris}
+        onBack={() => {
+          route(Pages.balance);
+        }}
+      />
+    );
   }
 
-  return <CreateManualWithdraw
-    error={error} currency={currency}
-    onCreate={doCreate} onExchangeChange={onExchangeChange}
-  />;
+  return (
+    <CreateManualWithdraw
+      error={error}
+      currency={currency}
+      onCreate={doCreate}
+      onExchangeChange={onExchangeChange}
+    />
+  );
 }
-
-
-

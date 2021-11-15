@@ -19,13 +19,14 @@ import { Diagnostics } from "../components/Diagnostics";
 import { useDiagnostics } from "../hooks/useDiagnostics.js";
 import * as wxApi from "../wxApi";
 
-
 export function DeveloperPage(props: any): JSX.Element {
   const [status, timedOut] = useDiagnostics();
   return (
     <div>
       <p>Debug tools:</p>
-      <button onClick={openExtensionPage("/static/popup.html")}>wallet tab</button>
+      <button onClick={openExtensionPage("/static/popup.html")}>
+        wallet tab
+      </button>
       <br />
       <button onClick={confirmReset}>reset</button>
       <Diagnostics diagnostics={status} timedOut={timedOut} />
@@ -46,7 +47,7 @@ export async function confirmReset(): Promise<void> {
   if (
     confirm(
       "Do you want to IRREVOCABLY DESTROY everything inside your" +
-      " wallet and LOSE ALL YOUR COINS?",
+        " wallet and LOSE ALL YOUR COINS?",
     )
   ) {
     await wxApi.resetDb();
@@ -61,4 +62,3 @@ export function openExtensionPage(page: string) {
     });
   };
 }
-

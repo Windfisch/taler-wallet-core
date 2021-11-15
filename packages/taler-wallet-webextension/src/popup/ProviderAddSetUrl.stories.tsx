@@ -15,39 +15,37 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createExample } from '../test-utils';
-import { SetUrlView as TestedComponent } from './ProviderAddPage';
+import { createExample } from "../test-utils";
+import { SetUrlView as TestedComponent } from "./ProviderAddPage";
 
 export default {
-  title: 'popup/backup/add',
+  title: "popup/backup/add",
   component: TestedComponent,
   argTypes: {
-    onRetry: { action: 'onRetry' },
-    onDelete: { action: 'onDelete' },
-    onBack: { action: 'onBack' },
-  }
+    onRetry: { action: "onRetry" },
+    onDelete: { action: "onDelete" },
+    onBack: { action: "onBack" },
+  },
 };
 
-
-export const Initial = createExample(TestedComponent, {
-}); 
+export const Initial = createExample(TestedComponent, {});
 
 export const WithValue = createExample(TestedComponent, {
-  initialValue: 'sync.demo.taler.net'
-}); 
+  initialValue: "sync.demo.taler.net",
+});
 
 export const WithConnectionError = createExample(TestedComponent, {
-  withError: 'Network error'
-}); 
+  withError: "Network error",
+});
 
 export const WithClientError = createExample(TestedComponent, {
-  withError: 'URL may not be right: (404) Not Found'
-}); 
+  withError: "URL may not be right: (404) Not Found",
+});
 
 export const WithServerError = createExample(TestedComponent, {
-  withError: 'Try another server: (500) Internal Server Error'
-}); 
+  withError: "Try another server: (500) Internal Server Error",
+});

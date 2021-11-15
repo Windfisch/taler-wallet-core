@@ -23,46 +23,67 @@ interface Props {
   onChange: (s: string) => void;
   label: string;
   list: {
-    [label: string]: string
-  }
+    [label: string]: string;
+  };
   name: string;
   description?: string;
   canBeNull?: boolean;
 }
 
-export function SelectList({ name, value, list, canBeNull, onChange, label, description }: Props): JSX.Element {
-  return <div>
-    <label
-      htmlFor={`text-${name}`}
-      style={{ marginLeft: "0.5em", fontWeight: "bold" }}
-    > {label}</label>
-    <NiceSelect>
-      <select name={name} onChange={(e) => {
-        console.log(e.currentTarget.value, value)
-        onChange(e.currentTarget.value)
-      }}>
-        {value !== undefined ? <option selected>
-          {list[value]}
-        </option> : <option selected disabled>
-            Select one option
-        </option>}
-        {Object.keys(list)
-          .filter((l) => l !== value)
-          .map(key => <option value={key} key={key}>{list[key]}</option>)
-        }
-      </select>
-    </NiceSelect>
-    {description && <span
-      style={{
-        color: "#383838",
-        fontSize: "smaller",
-        display: "block",
-        marginLeft: "2em",
-      }}
-    >
-      {description}
-    </span>}
-
-  </div>
-
+export function SelectList({
+  name,
+  value,
+  list,
+  canBeNull,
+  onChange,
+  label,
+  description,
+}: Props): JSX.Element {
+  return (
+    <div>
+      <label
+        htmlFor={`text-${name}`}
+        style={{ marginLeft: "0.5em", fontWeight: "bold" }}
+      >
+        {" "}
+        {label}
+      </label>
+      <NiceSelect>
+        <select
+          name={name}
+          onChange={(e) => {
+            console.log(e.currentTarget.value, value);
+            onChange(e.currentTarget.value);
+          }}
+        >
+          {value !== undefined ? (
+            <option selected>{list[value]}</option>
+          ) : (
+            <option selected disabled>
+              Select one option
+            </option>
+          )}
+          {Object.keys(list)
+            .filter((l) => l !== value)
+            .map((key) => (
+              <option value={key} key={key}>
+                {list[key]}
+              </option>
+            ))}
+        </select>
+      </NiceSelect>
+      {description && (
+        <span
+          style={{
+            color: "#383838",
+            fontSize: "smaller",
+            display: "block",
+            marginLeft: "2em",
+          }}
+        >
+          {description}
+        </span>
+      )}
+    </div>
+  );
 }

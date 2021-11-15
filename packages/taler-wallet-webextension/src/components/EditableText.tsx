@@ -25,25 +25,37 @@ interface Props {
   name: string;
   description?: string;
 }
-export function EditableText({ name, value, onChange, label, description }: Props): JSX.Element {
-  const [editing, setEditing] = useState(false)
-  const ref = useRef<HTMLInputElement>(null)
+export function EditableText({
+  name,
+  value,
+  onChange,
+  label,
+  description,
+}: Props): JSX.Element {
+  const [editing, setEditing] = useState(false);
+  const ref = useRef<HTMLInputElement>(null);
   let InputText;
   if (!editing) {
-    InputText = () => <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-      <p>{value}</p>
-      <button onClick={() => setEditing(true)}>edit</button>
-    </div>
+    InputText = () => (
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <p>{value}</p>
+        <button onClick={() => setEditing(true)}>edit</button>
+      </div>
+    );
   } else {
-    InputText = () => <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-      <input
-        value={value}
-        ref={ref}
-        type="text"
-        id={`text-${name}`}
-      />
-      <button onClick={() => { if (ref.current) onChange(ref.current.value).then(r => setEditing(false)) }}>confirm</button>
-    </div>
+    InputText = () => (
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <input value={value} ref={ref} type="text" id={`text-${name}`} />
+        <button
+          onClick={() => {
+            if (ref.current)
+              onChange(ref.current.value).then((r) => setEditing(false));
+          }}
+        >
+          confirm
+        </button>
+      </div>
+    );
   }
   return (
     <div>
@@ -54,16 +66,18 @@ export function EditableText({ name, value, onChange, label, description }: Prop
         {label}
       </label>
       <InputText />
-      {description && <span
-        style={{
-          color: "#383838",
-          fontSize: "smaller",
-          display: "block",
-          marginLeft: "2em",
-        }}
-      >
-        {description}
-      </span>}
+      {description && (
+        <span
+          style={{
+            color: "#383838",
+            fontSize: "smaller",
+            display: "block",
+            marginLeft: "2em",
+          }}
+        >
+          {description}
+        </span>
+      )}
     </div>
   );
 }

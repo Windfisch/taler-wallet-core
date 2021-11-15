@@ -15,45 +15,43 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createExample } from '../test-utils';
-import { View as TestedComponent } from './Tip';
-
+import { createExample } from "../test-utils";
+import { View as TestedComponent } from "./Tip";
 
 export default {
-  title: 'cta/tip',
+  title: "cta/tip",
   component: TestedComponent,
-  argTypes: {
-  },
+  argTypes: {},
 };
 
 export const Accepted = createExample(TestedComponent, {
   prepareTipResult: {
     accepted: true,
-    merchantBaseUrl: '',
-    exchangeBaseUrl: '',
-    expirationTimestamp : {
-      t_ms: 0
+    merchantBaseUrl: "",
+    exchangeBaseUrl: "",
+    expirationTimestamp: {
+      t_ms: 0,
     },
-    tipAmountEffective: 'USD:10',
-    tipAmountRaw: 'USD:5',
-    walletTipId: 'id'
-  }
+    tipAmountEffective: "USD:10",
+    tipAmountRaw: "USD:5",
+    walletTipId: "id",
+  },
 });
 
 export const NotYetAccepted = createExample(TestedComponent, {
   prepareTipResult: {
     accepted: false,
-    merchantBaseUrl: 'http://merchant.url/',
-    exchangeBaseUrl: 'http://exchange.url/',
-    expirationTimestamp : {
-      t_ms: 0
+    merchantBaseUrl: "http://merchant.url/",
+    exchangeBaseUrl: "http://exchange.url/",
+    expirationTimestamp: {
+      t_ms: 0,
     },
-    tipAmountEffective: 'USD:10',
-    tipAmountRaw: 'USD:5',
-    walletTipId: 'id'
-  }
+    tipAmountEffective: "USD:10",
+    tipAmountRaw: "USD:5",
+    walletTipId: "id",
+  },
 });

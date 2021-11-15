@@ -15,19 +15,30 @@
  */
 
 import {
-  amountFractionalBase, Amounts,
-  Balance, BalancesResponse,
-  i18n
+  amountFractionalBase,
+  Amounts,
+  Balance,
+  BalancesResponse,
+  i18n,
 } from "@gnu-taler/taler-util";
-import { JSX } from "preact";
+import { JSX, h } from "preact";
 import { ButtonPrimary, Centered, WalletBox } from "../components/styled/index";
 import { BalancesHook, useBalances } from "../hooks/useBalances";
 import { PageLink, renderAmount } from "../renderHtml";
 
-
-export function BalancePage({ goToWalletManualWithdraw }: { goToWalletManualWithdraw: () => void }) {
-  const balance = useBalances()
-  return <BalanceView balance={balance} Linker={PageLink} goToWalletManualWithdraw={goToWalletManualWithdraw} />
+export function BalancePage({
+  goToWalletManualWithdraw,
+}: {
+  goToWalletManualWithdraw: () => void;
+}) {
+  const balance = useBalances();
+  return (
+    <BalanceView
+      balance={balance}
+      Linker={PageLink}
+      goToWalletManualWithdraw={goToWalletManualWithdraw}
+    />
+  );
 }
 
 export interface BalanceViewProps {
@@ -36,9 +47,13 @@ export interface BalanceViewProps {
   goToWalletManualWithdraw: () => void;
 }
 
-export function BalanceView({ balance, Linker, goToWalletManualWithdraw }: BalanceViewProps) {
+export function BalanceView({
+  balance,
+  Linker,
+  goToWalletManualWithdraw,
+}: BalanceViewProps) {
   if (!balance) {
-    return <span />
+    return <span />;
   }
 
   if (balance.hasError) {
@@ -50,19 +65,24 @@ export function BalanceView({ balance, Linker, goToWalletManualWithdraw }: Balan
           diagnostics.
         </p>
       </div>
-    )
+    );
   }
   if (balance.response.balances.length === 0) {
     return (
-      <p><i18n.Translate>
-        You have no balance to show. Need some{" "}
-        <Linker pageName="/welcome">help</Linker> getting started?
-      </i18n.Translate></p>
-    )
+      <p>
+        <i18n.Translate>
+          You have no balance to show. Need some{" "}
+          <Linker pageName="/welcome">help</Linker> getting started?
+        </i18n.Translate>
+      </p>
+    );
   }
-  return <ShowBalances wallet={balance.response}
-    onWithdraw={goToWalletManualWithdraw}
-  />
+  return (
+    <ShowBalances
+      wallet={balance.response}
+      onWithdraw={goToWalletManualWithdraw}
+    />
+  );
 }
 
 function formatPending(entry: Balance): JSX.Element {
@@ -75,13 +95,15 @@ function formatPending(entry: Balance): JSX.Element {
 
   if (!Amounts.isZero(pendingIncoming)) {
     incoming = (
-      <span><i18n.Translate>
-        <span style={{ color: "darkgreen" }}>
-          {"+"}
-          {renderAmount(entry.pendingIncoming)}
-        </span>{" "}
-        incoming
-      </i18n.Translate></span>
+      <span>
+        <i18n.Translate>
+          <span style={{ color: "darkgreen" }}>
+            {"+"}
+            {renderAmount(entry.pendingIncoming)}
+          </span>{" "}
+          incoming
+        </i18n.Translate>
+      </span>
     );
   }
 
@@ -100,27 +122,36 @@ function formatPending(entry: Balance): JSX.Element {
   );
 }
 
-
-function ShowBalances({ wallet, onWithdraw }: { wallet: BalancesResponse, onWithdraw: () => void }) {
-  return <WalletBox>
-    <section>
-      <Centered>{wallet.balances.map((entry) => {
-        const av = Amounts.parseOrThrow(entry.available);
-        const v = av.value + av.fraction / amountFractionalBase;
-        return (
-          <p key={av.currency}>
-            <span>
-              <span style={{ fontSize: "5em", display: "block" }}>{v}</span>{" "}
-              <span>{av.currency}</span>
-            </span>
-            {formatPending(entry)}
-          </p>
-        );
-      })}</Centered>
-    </section>
-    <footer>
-      <div />
-      <ButtonPrimary onClick={onWithdraw} >Withdraw</ButtonPrimary>
-    </footer>
-  </WalletBox>
+function ShowBalances({
+  wallet,
+  onWithdraw,
+}: {
+  wallet: BalancesResponse;
+  onWithdraw: () => void;
+}) {
+  return (
+    <WalletBox>
+      <section>
+        <Centered>
+          {wallet.balances.map((entry) => {
+            const av = Amounts.parseOrThrow(entry.available);
+            const v = av.value + av.fraction / amountFractionalBase;
+            return (
+              <p key={av.currency}>
+                <span>
+                  <span style={{ fontSize: "5em", display: "block" }}>{v}</span>{" "}
+                  <span>{av.currency}</span>
+                </span>
+                {formatPending(entry)}
+              </p>
+            );
+          })}
+        </Centered>
+      </section>
+      <footer>
+        <div />
+        <ButtonPrimary onClick={onWithdraw}>Withdraw</ButtonPrimary>
+      </footer>
+    </WalletBox>
+  );
 }

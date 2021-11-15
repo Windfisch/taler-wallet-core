@@ -22,19 +22,17 @@
 
 import { setupI18n } from "@gnu-taler/taler-util";
 import { createHashHistory } from "history";
-import { render, h, VNode } from "preact";
-import Router, { route, Route, getCurrentUrl } from "preact-router";
-import { useEffect, useState } from "preact/hooks";
+import { render, h } from "preact";
+import Router, { route, Route } from "preact-router";
+import { useEffect } from "preact/hooks";
 import { DevContextProvider } from "./context/devContext";
 import { useTalerActionURL } from "./hooks/useTalerActionURL";
 import { strings } from "./i18n/strings";
+import { Pages, WalletNavBar } from "./NavigationBar";
 import { BackupPage } from "./popup/BackupPage";
 import { BalancePage } from "./popup/BalancePage";
-import { DeveloperPage as DeveloperPage } from "./popup/Debug";
+import { DeveloperPage } from "./popup/Debug";
 import { HistoryPage } from "./popup/History";
-import {
-  Pages, WalletNavBar
-} from "./NavigationBar";
 import { ProviderAddPage } from "./popup/ProviderAddPage";
 import { ProviderDetailPage } from "./popup/ProviderDetailPage";
 import { SettingsPage } from "./popup/Settings";
@@ -64,11 +62,11 @@ if (document.readyState === "loading") {
 }
 
 function Application() {
-  const [talerActionUrl, setDismissed] = useTalerActionURL()
+  const [talerActionUrl, setDismissed] = useTalerActionURL();
 
   useEffect(() => {
-    if (talerActionUrl) route(Pages.cta)
-  },[talerActionUrl])
+    if (talerActionUrl) route(Pages.cta);
+  }, [talerActionUrl]);
 
   return (
     <div>
@@ -78,33 +76,54 @@ function Application() {
           <Router history={createHashHistory()}>
             <Route path={Pages.dev} component={DeveloperPage} />
 
-            <Route path={Pages.balance} component={BalancePage}
-              goToWalletManualWithdraw={() => goToWalletPage(Pages.manual_withdraw)}
+            <Route
+              path={Pages.balance}
+              component={BalancePage}
+              goToWalletManualWithdraw={() =>
+                goToWalletPage(Pages.manual_withdraw)
+              }
             />
             <Route path={Pages.settings} component={SettingsPage} />
-            <Route path={Pages.cta} component={() => <TalerActionFound url={talerActionUrl!} onDismiss={() => {
-              setDismissed(true)
-              route(Pages.balance)
-            }} />} />
+            <Route
+              path={Pages.cta}
+              component={() => (
+                <TalerActionFound
+                  url={talerActionUrl!}
+                  onDismiss={() => {
+                    setDismissed(true);
+                    route(Pages.balance);
+                  }}
+                />
+              )}
+            />
 
-            <Route path={Pages.transaction}
-              component={({ tid }: { tid: string }) => goToWalletPage(Pages.transaction.replace(':tid', tid))}
+            <Route
+              path={Pages.transaction}
+              component={({ tid }: { tid: string }) =>
+                goToWalletPage(Pages.transaction.replace(":tid", tid))
+              }
             />
 
             <Route path={Pages.history} component={HistoryPage} />
-            <Route path={Pages.backup} component={BackupPage}
+            <Route
+              path={Pages.backup}
+              component={BackupPage}
               onAddProvider={() => {
-                route(Pages.provider_add)
+                route(Pages.provider_add);
               }}
             />
-            <Route path={Pages.provider_detail} component={ProviderDetailPage}
+            <Route
+              path={Pages.provider_detail}
+              component={ProviderDetailPage}
               onBack={() => {
-                route(Pages.backup)
+                route(Pages.backup);
               }}
             />
-            <Route path={Pages.provider_add} component={ProviderAddPage}
+            <Route
+              path={Pages.provider_add}
+              component={ProviderAddPage}
               onBack={() => {
-                route(Pages.backup)
+                route(Pages.backup);
               }}
             />
             <Route default component={Redirect} to={Pages.balance} />
@@ -119,13 +138,13 @@ function goToWalletPage(page: Pages | string): null {
   chrome.tabs.create({
     active: true,
     url: chrome.extension.getURL(`/static/wallet.html#${page}`),
-  })
-  return null
+  });
+  return null;
 }
 
 function Redirect({ to }: { to: string }): null {
   useEffect(() => {
-    route(to, true)
-  })
-  return null
+    route(to, true);
+  });
+  return null;
 }

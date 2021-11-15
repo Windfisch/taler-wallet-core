@@ -14,7 +14,6 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
 */
 
-
 import { i18n } from "@gnu-taler/taler-util";
 import { VNode, h } from "preact";
 import { Checkbox } from "../components/Checkbox";
@@ -28,15 +27,21 @@ import { useLang } from "../hooks/useLang";
 
 export function SettingsPage(): VNode {
   const [permissionsEnabled, togglePermissions] = useExtendedPermissions();
-  const { devMode, toggleDevMode } = useDevContext()
-  const { name, update } = useBackupDeviceName()
-  const [lang, changeLang] = useLang()
-  return <SettingsView
-    lang={lang} changeLang={changeLang}
-    deviceName={name} setDeviceName={update}
-    permissionsEnabled={permissionsEnabled} togglePermissions={togglePermissions}
-    developerMode={devMode} toggleDeveloperMode={toggleDevMode}
-  />;
+  const { devMode, toggleDevMode } = useDevContext();
+  const { name, update } = useBackupDeviceName();
+  const [lang, changeLang] = useLang();
+  return (
+    <SettingsView
+      lang={lang}
+      changeLang={changeLang}
+      deviceName={name}
+      setDeviceName={update}
+      permissionsEnabled={permissionsEnabled}
+      togglePermissions={togglePermissions}
+      developerMode={devMode}
+      toggleDeveloperMode={toggleDevMode}
+    />
+  );
 }
 
 export interface ViewProps {
@@ -50,23 +55,31 @@ export interface ViewProps {
   toggleDeveloperMode: () => void;
 }
 
-import { strings as messages } from '../i18n/strings'
+import { strings as messages } from "../i18n/strings";
 
 type LangsNames = {
-  [P in keyof typeof messages]: string
-}
+  [P in keyof typeof messages]: string;
+};
 
 const names: LangsNames = {
-  es: 'Español [es]',
-  en: 'English [en]',
-  fr: 'Français [fr]',
-  de: 'Deutsch [de]',
-  sv: 'Svenska [sv]',
-  it: 'Italiano [it]',
-}
+  es: "Español [es]",
+  en: "English [en]",
+  fr: "Français [fr]",
+  de: "Deutsch [de]",
+  sv: "Svenska [sv]",
+  it: "Italiano [it]",
+};
 
-
-export function SettingsView({ lang, changeLang, deviceName, setDeviceName, permissionsEnabled, togglePermissions, developerMode, toggleDeveloperMode }: ViewProps): VNode {
+export function SettingsView({
+  lang,
+  changeLang,
+  deviceName,
+  setDeviceName,
+  permissionsEnabled,
+  togglePermissions,
+  developerMode,
+  toggleDeveloperMode,
+}: ViewProps): VNode {
   return (
     <PopupBox>
       <section>
@@ -86,25 +99,39 @@ export function SettingsView({ lang, changeLang, deviceName, setDeviceName, perm
           label={i18n.str`Device name`}
           description="(This is how you will recognize the wallet in the backup provider)"
         /> */}
-        <h2><i18n.Translate>Permissions</i18n.Translate></h2>
-        <Checkbox label="Automatically open wallet based on page content"
+        <h2>
+          <i18n.Translate>Permissions</i18n.Translate>
+        </h2>
+        <Checkbox
+          label="Automatically open wallet based on page content"
           name="perm"
           description="(Enabling this option below will make using the wallet faster, but requires more permissions from your browser.)"
-          enabled={permissionsEnabled} onToggle={togglePermissions}
+          enabled={permissionsEnabled}
+          onToggle={togglePermissions}
         />
         <h2>Config</h2>
-        <Checkbox label="Developer mode"
+        <Checkbox
+          label="Developer mode"
           name="devMode"
           description="(More options and information useful for debugging)"
-          enabled={developerMode} onToggle={toggleDeveloperMode}
+          enabled={developerMode}
+          onToggle={toggleDeveloperMode}
         />
       </section>
-      <footer style={{ justifyContent: 'space-around' }}>
-        <a target="_blank"
+      <footer style={{ justifyContent: "space-around" }}>
+        <a
+          target="_blank"
           rel="noopener noreferrer"
-          style={{ color: 'darkgreen', textDecoration: 'none' }}
-          href={chrome.extension ? chrome.extension.getURL(`/static/wallet.html#/settings`) : '#'}>VIEW MORE SETTINGS</a>
+          style={{ color: "darkgreen", textDecoration: "none" }}
+          href={
+            chrome.extension
+              ? chrome.extension.getURL(`/static/wallet.html#/settings`)
+              : "#"
+          }
+        >
+          VIEW MORE SETTINGS
+        </a>
       </footer>
     </PopupBox>
-  )
+  );
 }

@@ -15,38 +15,37 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { createExample } from '../test-utils';
-import { ConfirmProviderView as TestedComponent } from './ProviderAddPage';
+import { createExample } from "../test-utils";
+import { ConfirmProviderView as TestedComponent } from "./ProviderAddPage";
 
 export default {
-  title: 'popup/backup/confirm',
+  title: "popup/backup/confirm",
   component: TestedComponent,
   argTypes: {
-    onRetry: { action: 'onRetry' },
-    onDelete: { action: 'onDelete' },
-    onBack: { action: 'onBack' },
-  }
+    onRetry: { action: "onRetry" },
+    onDelete: { action: "onDelete" },
+    onBack: { action: "onBack" },
+  },
 };
 
-
 export const DemoService = createExample(TestedComponent, {
-  url: 'https://sync.demo.taler.net/',
+  url: "https://sync.demo.taler.net/",
   provider: {
-    annual_fee: 'KUDOS:0.1',
-    storage_limit_in_megabytes: 20, 
-    supported_protocol_version: '1'
-  }
+    annual_fee: "KUDOS:0.1",
+    storage_limit_in_megabytes: 20,
+    supported_protocol_version: "1",
+  },
 });
 
 export const FreeService = createExample(TestedComponent, {
-  url: 'https://sync.taler:9667/',
+  url: "https://sync.taler:9667/",
   provider: {
-    annual_fee: 'ARS:0',
-    storage_limit_in_megabytes: 20, 
-    supported_protocol_version: '1'
-  }
+    annual_fee: "ARS:0",
+    storage_limit_in_megabytes: 20,
+    supported_protocol_version: "1",
+  },
 });

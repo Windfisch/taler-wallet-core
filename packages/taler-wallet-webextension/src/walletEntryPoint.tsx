@@ -21,7 +21,7 @@
  */
 
 import { setupI18n } from "@gnu-taler/taler-util";
-import { createHashHistory } from 'history';
+import { createHashHistory } from "history";
 import { Fragment, h, render } from "preact";
 import Router, { route, Route } from "preact-router";
 import { useEffect } from "preact/hooks";
@@ -29,21 +29,18 @@ import { LogoHeader } from "./components/LogoHeader";
 import { DevContextProvider } from "./context/devContext";
 import { PayPage } from "./cta/Pay";
 import { RefundPage } from "./cta/Refund";
-import { TipPage } from './cta/Tip';
+import { TipPage } from "./cta/Tip";
 import { WithdrawPage } from "./cta/Withdraw";
 import { strings } from "./i18n/strings";
-import {
-  Pages, WalletNavBar
-} from "./NavigationBar";
+import { Pages, WalletNavBar } from "./NavigationBar";
 import { BalancePage } from "./wallet/BalancePage";
 import { HistoryPage } from "./wallet/History";
 import { SettingsPage } from "./wallet/Settings";
-import { TransactionPage } from './wallet/Transaction';
+import { TransactionPage } from "./wallet/Transaction";
 import { WelcomePage } from "./wallet/Welcome";
-import { BackupPage } from './wallet/BackupPage';
+import { BackupPage } from "./wallet/BackupPage";
 import { DeveloperPage } from "./popup/Debug.js";
 import { ManualWithdrawPage } from "./wallet/ManualWithdrawPage.js";
-
 
 function main(): void {
   try {
@@ -69,51 +66,86 @@ if (document.readyState === "loading") {
 }
 
 function withLogoAndNavBar(Component: any) {
-  return (props: any) => <Fragment>
-    <LogoHeader />
-    <WalletNavBar />
-    <Component {...props} />
-  </Fragment>
+  return (props: any) => (
+    <Fragment>
+      <LogoHeader />
+      <WalletNavBar />
+      <Component {...props} />
+    </Fragment>
+  );
 }
 
 function Application() {
-  return <div>
-    <DevContextProvider>
-      <Router history={createHashHistory()} >
+  return (
+    <div>
+      <DevContextProvider>
+        <Router history={createHashHistory()}>
+          <Route
+            path={Pages.welcome}
+            component={withLogoAndNavBar(WelcomePage)}
+          />
 
-        <Route path={Pages.welcome} component={withLogoAndNavBar(WelcomePage)} />
+          <Route
+            path={Pages.history}
+            component={withLogoAndNavBar(HistoryPage)}
+          />
+          <Route
+            path={Pages.transaction}
+            component={withLogoAndNavBar(TransactionPage)}
+          />
+          <Route
+            path={Pages.balance}
+            component={withLogoAndNavBar(BalancePage)}
+            goToWalletManualWithdraw={() => route(Pages.manual_withdraw)}
+          />
+          <Route
+            path={Pages.settings}
+            component={withLogoAndNavBar(SettingsPage)}
+          />
+          <Route
+            path={Pages.backup}
+            component={withLogoAndNavBar(BackupPage)}
+          />
 
-        <Route path={Pages.history} component={withLogoAndNavBar(HistoryPage)} />
-        <Route path={Pages.transaction} component={withLogoAndNavBar(TransactionPage)} />
-        <Route path={Pages.balance} component={withLogoAndNavBar(BalancePage)} 
-              goToWalletManualWithdraw={() => route(Pages.manual_withdraw)} 
-        />
-        <Route path={Pages.settings} component={withLogoAndNavBar(SettingsPage)} />
-        <Route path={Pages.backup} component={withLogoAndNavBar(BackupPage)} />
+          <Route
+            path={Pages.manual_withdraw}
+            component={withLogoAndNavBar(ManualWithdrawPage)}
+          />
 
-        <Route path={Pages.manual_withdraw} component={withLogoAndNavBar(ManualWithdrawPage)} />
+          <Route
+            path={Pages.reset_required}
+            component={() => <div>no yet implemented</div>}
+          />
+          <Route
+            path={Pages.payback}
+            component={() => <div>no yet implemented</div>}
+          />
+          <Route
+            path={Pages.return_coins}
+            component={() => <div>no yet implemented</div>}
+          />
 
-        <Route path={Pages.reset_required} component={() => <div>no yet implemented</div>} />
-        <Route path={Pages.payback} component={() => <div>no yet implemented</div>} />
-        <Route path={Pages.return_coins} component={() => <div>no yet implemented</div>} />
+          <Route
+            path={Pages.dev}
+            component={withLogoAndNavBar(DeveloperPage)}
+          />
 
-        <Route path={Pages.dev} component={withLogoAndNavBar(DeveloperPage)} />
+          {/** call to action */}
+          <Route path={Pages.pay} component={PayPage} />
+          <Route path={Pages.refund} component={RefundPage} />
+          <Route path={Pages.tips} component={TipPage} />
+          <Route path={Pages.withdraw} component={WithdrawPage} />
 
-        {/** call to action */}
-        <Route path={Pages.pay} component={PayPage} />
-        <Route path={Pages.refund} component={RefundPage} />
-        <Route path={Pages.tips} component={TipPage} />
-        <Route path={Pages.withdraw} component={WithdrawPage} />
-
-        <Route default component={Redirect} to={Pages.history} />
-      </Router>
-    </DevContextProvider>
-  </div>
+          <Route default component={Redirect} to={Pages.history} />
+        </Router>
+      </DevContextProvider>
+    </div>
+  );
 }
 
 function Redirect({ to }: { to: string }): null {
   useEffect(() => {
-    route(to, true)
-  })
-  return null
+    route(to, true);
+  });
+  return null;
 }

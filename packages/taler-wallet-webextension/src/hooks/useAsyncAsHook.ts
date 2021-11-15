@@ -29,7 +29,7 @@ interface HookError {
 
 export type HookResponse<T> = HookOk<T> | HookError | undefined;
 
-export function useAsyncAsHook<T> (fn: (() => Promise<T>)): HookResponse<T> {
+export function useAsyncAsHook<T>(fn: () => Promise<T>): HookResponse<T> {
   const [result, setHookResponse] = useState<HookResponse<T>>(undefined);
   useEffect(() => {
     async function doAsync() {
@@ -42,7 +42,7 @@ export function useAsyncAsHook<T> (fn: (() => Promise<T>)): HookResponse<T> {
         }
       }
     }
-    doAsync()
+    doAsync();
   }, []);
   return result;
 }

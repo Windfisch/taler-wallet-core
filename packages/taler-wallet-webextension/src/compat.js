@@ -21,41 +21,44 @@ exports.getPermissionsApi = exports.isNode = exports.isFirefox = void 0;
  * WebExtension APIs consistently.
  */
 function isFirefox() {
-    const rt = chrome.runtime;
-    if (typeof rt.getBrowserInfo === "function") {
-        return true;
-    }
-    return false;
+  const rt = chrome.runtime;
+  if (typeof rt.getBrowserInfo === "function") {
+    return true;
+  }
+  return false;
 }
 exports.isFirefox = isFirefox;
 /**
  * Check if we are running under nodejs.
  */
 function isNode() {
-    return typeof process !== "undefined" && process.release.name === "node";
+  return typeof process !== "undefined" && process.release.name === "node";
 }
 exports.isNode = isNode;
 function getPermissionsApi() {
-    const myBrowser = globalThis.browser;
-    if (typeof myBrowser === "object" &&
-        typeof myBrowser.permissions === "object") {
-        return {
-            addPermissionsListener: () => {
-                // Not supported yet.
-            },
-            contains: myBrowser.permissions.contains,
-            request: myBrowser.permissions.request,
-            remove: myBrowser.permissions.remove,
-        };
-    }
-    else {
-        return {
-            addPermissionsListener: chrome.permissions.onAdded.addListener.bind(chrome.permissions.onAdded),
-            contains: chrome.permissions.contains,
-            request: chrome.permissions.request,
-            remove: chrome.permissions.remove,
-        };
-    }
+  const myBrowser = globalThis.browser;
+  if (
+    typeof myBrowser === "object" &&
+    typeof myBrowser.permissions === "object"
+  ) {
+    return {
+      addPermissionsListener: () => {
+        // Not supported yet.
+      },
+      contains: myBrowser.permissions.contains,
+      request: myBrowser.permissions.request,
+      remove: myBrowser.permissions.remove,
+    };
+  } else {
+    return {
+      addPermissionsListener: chrome.permissions.onAdded.addListener.bind(
+        chrome.permissions.onAdded,
+      ),
+      contains: chrome.permissions.contains,
+      request: chrome.permissions.request,
+      remove: chrome.permissions.remove,
+    };
+  }
 }
 exports.getPermissionsApi = getPermissionsApi;
 //# sourceMappingURL=compat.js.map

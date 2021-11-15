@@ -14,7 +14,13 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountString, Balance, i18n, Transaction, TransactionsResponse } from "@gnu-taler/taler-util";
+import {
+  AmountString,
+  Balance,
+  i18n,
+  Transaction,
+  TransactionsResponse,
+} from "@gnu-taler/taler-util";
 import { h, JSX } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { PopupBox } from "../components/styled";
@@ -22,13 +28,14 @@ import { TransactionItem } from "../components/TransactionItem";
 import { useBalances } from "../hooks/useBalances";
 import * as wxApi from "../wxApi";
 
-
 export function HistoryPage(props: any): JSX.Element {
   const [transactions, setTransactions] = useState<
     TransactionsResponse | undefined
   >(undefined);
-  const balance = useBalances()
-  const balanceWithoutError = balance?.hasError ? [] : (balance?.response.balances || [])
+  const balance = useBalances();
+  const balanceWithoutError = balance?.hasError
+    ? []
+    : balance?.response.balances || [];
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
@@ -42,46 +49,79 @@ export function HistoryPage(props: any): JSX.Element {
     return <div>Loading ...</div>;
   }
 
-  return <HistoryView balances={balanceWithoutError} list={[...transactions.transactions].reverse()} />;
+  return (
+    <HistoryView
+      balances={balanceWithoutError}
+      list={[...transactions.transactions].reverse()}
+    />
+  );
 }
 
 function amountToString(c: AmountString) {
-  const idx = c.indexOf(':')
-  return `${c.substring(idx + 1)} ${c.substring(0, idx)}`
+  const idx = c.indexOf(":");
+  return `${c.substring(idx + 1)} ${c.substring(0, idx)}`;
 }
 
-
-
-export function HistoryView({ list, balances }: { list: Transaction[], balances: Balance[] }) {
-  const multiCurrency = balances.length > 1
-  return <PopupBox noPadding>
-    {balances.length > 0 && <header>
-      {multiCurrency ? <div class="title">
-        Balance: <ul style={{ margin: 0 }}>
-          {balances.map(b => <li>{b.available}</li>)}
-        </ul>
-      </div> : <div class="title">
-        Balance: <span>{amountToString(balances[0].available)}</span>
-      </div>}
-    </header>}
-    {list.length === 0 ? <section data-expanded data-centered>
-      <p><i18n.Translate>
-        You have no history yet, here you will be able to check your last transactions.
-      </i18n.Translate></p>
-    </section> :
-      <section>
-        {list.slice(0, 3).map((tx, i) => (
-          <TransactionItem key={i} tx={tx} multiCurrency={multiCurrency} />
-        ))}
-      </section>
-    }
-    <footer style={{ justifyContent: 'space-around' }}>
-      {list.length > 0 &&
-        <a target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: 'darkgreen', textDecoration: 'none' }}
-          href={chrome.extension ? chrome.extension.getURL(`/static/wallet.html#/history`) : '#'}>VIEW MORE TRANSACTIONS</a>
-      }
-    </footer>
-  </PopupBox>
+export function HistoryView({
+  list,
+  balances,
+}: {
+  list: Transaction[];
+  balances: Balance[];
+}) {
+  const multiCurrency = balances.length > 1;
+  return (
+    <PopupBox noPadding>
+      {balances.length > 0 && (
+        <header>
+          {multiCurrency ? (
+            <div class="title">
+              Balance:{" "}
+              <ul style={{ margin: 0 }}>
+                {balances.map((b) => (
+                  <li>{b.available}</li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div class="title">
+              Balance: <span>{amountToString(balances[0].available)}</span>
+            </div>
+          )}
+        </header>
+      )}
+      {list.length === 0 ? (
+        <section data-expanded data-centered>
+          <p>
+            <i18n.Translate>
+              You have no history yet, here you will be able to check your last
+              transactions.
+            </i18n.Translate>
+          </p>
+        </section>
+      ) : (
+        <section>
+          {list.slice(0, 3).map((tx, i) => (
+            <TransactionItem key={i} tx={tx} multiCurrency={multiCurrency} />
+          ))}
+        </section>
+      )}
+      <footer style={{ justifyContent: "space-around" }}>
+        {list.length > 0 && (
+          <a
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "darkgreen", textDecoration: "none" }}
+            href={
+              chrome.extension
+                ? chrome.extension.getURL(`/static/wallet.html#/history`)
+                : "#"
+            }
+          >
+            VIEW MORE TRANSACTIONS
+          </a>
+        )}
+      </footer>
+    </PopupBox>
+  );
 }

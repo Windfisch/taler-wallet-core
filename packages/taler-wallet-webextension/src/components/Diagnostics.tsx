@@ -21,11 +21,13 @@ import { PageLink } from "../renderHtml";
 
 interface Props {
   timedOut: boolean;
-  diagnostics: WalletDiagnostics | undefined
+  diagnostics: WalletDiagnostics | undefined;
 }
 
-export function Diagnostics({timedOut, diagnostics}: Props): JSX.Element | null {
-
+export function Diagnostics({
+  timedOut,
+  diagnostics,
+}: Props): JSX.Element | null {
   if (timedOut) {
     return <p>Diagnostics timed out. Could not talk to the wallet backend.</p>;
   }
@@ -60,8 +62,8 @@ export function Diagnostics({timedOut, diagnostics}: Props): JSX.Element | null 
             <p>
               Your wallet database is outdated. Currently automatic migration is
               not supported. Please go{" "}
-              <PageLink pageName="/reset-required">here</PageLink> to reset
-              the wallet database.
+              <PageLink pageName="/reset-required">here</PageLink> to reset the
+              wallet database.
             </p>
           ) : null}
         </div>

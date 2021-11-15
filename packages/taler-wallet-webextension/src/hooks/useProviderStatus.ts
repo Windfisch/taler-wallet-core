@@ -32,7 +32,9 @@ export function useProviderStatus(url: string): ProviderStatus | undefined {
       //create a first list of backup info by currency
       const status = await wxApi.getBackupInfo();
 
-      const providers = status.providers.filter(p => p.syncProviderBaseUrl === url);
+      const providers = status.providers.filter(
+        (p) => p.syncProviderBaseUrl === url,
+      );
       const info = providers.length ? providers[0] : undefined;
 
       async function sync() {

@@ -17,15 +17,18 @@
 import { classifyTalerUri, TalerUriType } from "@gnu-taler/taler-util";
 import { useEffect, useState } from "preact/hooks";
 
-export function useTalerActionURL(): [string | undefined, (s: boolean) => void] {
+export function useTalerActionURL(): [
+  string | undefined,
+  (s: boolean) => void,
+] {
   const [talerActionUrl, setTalerActionUrl] = useState<string | undefined>(
-    undefined
+    undefined,
   );
   const [dismissed, setDismissed] = useState(false);
   useEffect(() => {
     async function check(): Promise<void> {
       const talerUri = await findTalerUriInActiveTab();
-      setTalerActionUrl(talerUri)
+      setTalerActionUrl(talerUri);
     }
     check();
   }, []);
