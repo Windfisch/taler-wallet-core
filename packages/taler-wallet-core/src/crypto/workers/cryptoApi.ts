@@ -24,7 +24,7 @@
  */
 import { CoinRecord, DenominationRecord, WireFee } from "../../db.js";
 
-import { CryptoWorker } from "./cryptoWorker.js";
+import { CryptoWorker } from "./cryptoWorkerInterface.js";
 
 import { RecoupRequest, CoinDepositPermission } from "@gnu-taler/taler-util";
 

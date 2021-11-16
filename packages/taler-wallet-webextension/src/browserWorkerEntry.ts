@@ -42,7 +42,7 @@ async function handleRequest(
   }
 
   try {
-    const result = (impl as any)[operation](...args);
+    const result = await (impl as any)[operation](...args);
     worker.postMessage({ result, id });
   } catch (e) {
     logger.error("error during operation", e);

@@ -11,8 +11,6 @@ import {
   stringToBytes,
   secretbox_open,
   hash,
-  Logger,
-  j2s,
 } from "@gnu-taler/taler-util";
 import { argon2id } from "hash-wasm";
 

@@ -161,10 +161,6 @@ interface RsaPub {
   e: bigint.BigInteger;
 }
 
-interface RsaBlindingKey {
-  r: bigint.BigInteger;
-}
-
 /**
  * KDF modulo a big integer.
  */

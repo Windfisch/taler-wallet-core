@@ -14,10 +14,107 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { CryptoImplementation } from "./cryptoImplementation.js";
+import {
+  CryptoImplementation,
+  PrimitiveWorker,
+} from "./cryptoImplementation.js";
 
 import { CryptoWorkerFactory } from "./cryptoApi.js";
-import { CryptoWorker } from "./cryptoWorker.js";
+import { CryptoWorker } from "./cryptoWorkerInterface.js";
+
+import child_process from "child_process";
+import type internal from "stream";
+import { OpenedPromise, openPromise } from "../../index.js";
+import { FreshCoin, Logger } from "@gnu-taler/taler-util";
+
+const logger = new Logger("synchronousWorker.ts");
+
+class MyPrimitiveWorker implements PrimitiveWorker {
+  proc: child_process.ChildProcessByStdio<
+    internal.Writable,
+    internal.Readable,
+    null
+  >;
+  requests: Array<{
+    p: OpenedPromise<any>;
+    req: any;
+  }> = [];
+
+  constructor() {
+    const stdoutChunks: Buffer[] = [];
+    this.proc = child_process.spawn("taler-crypto-worker", {
+      //stdio: ["pipe", "pipe", "inherit"],
+      stdio: ["pipe", "pipe", "inherit"],
+      detached: true,
+    });
+    this.proc.on("close", function (code) {
+      logger.error("child process exited");
+    });
+    (this.proc.stdout as any).unref();
+    (this.proc.stdin as any).unref();
+    this.proc.unref();
+
+    this.proc.stdout.on("data", (x) => {
+      // console.log("got chunk", x.toString("utf-8"));
+      if (x instanceof Buffer) {
+        const nlIndex = x.indexOf("\n");
+        if (nlIndex >= 0) {
+          const before = x.slice(0, nlIndex);
+          const after = x.slice(nlIndex + 1);
+          stdoutChunks.push(after);
+          const str = Buffer.concat([...stdoutChunks, before]).toString(
+            "utf-8",
+          );
+          const req = this.requests.shift()!;
+          if (this.requests.length === 0) {
+            this.proc.unref();
+          }
+          //logger.info(`got response: ${str}`);
+          req.p.resolve(JSON.parse(str));
+        } else {
+          stdoutChunks.push(x);
+        }
+      } else {
+        throw Error(`unexpected data chunk type (${typeof x})`);
+      }
+    });
+  }
+
+  async setupRefreshPlanchet(req: {
+    transfer_secret: string;
+    coin_index: number;
+  }): Promise<{
+    coin_pub: string;
+    coin_priv: string;
+    blinding_key: string;
+  }> {
+    return this.queueRequest({
+      op: "setup_refresh_planchet",
+      args: req,
+    });
+  }
+
+  async queueRequest(req: any): Promise<any> {
+    const p = openPromise<any>();
+    if (this.requests.length === 0) {
+      this.proc.ref();
+    }
+    this.requests.push({ req, p });
+    this.proc.stdin.write(JSON.stringify(req) + "\n");
+    return p.promise;
+  }
+
+  async eddsaVerify(req: {
+    msg: string;
+    sig: string;
+    pub: string;
+  }): Promise<{ valid: boolean }> {
+    return this.queueRequest({
+      op: "eddsa_verify",
+      args: req,
+    });
+  }
+}
 
 /**
  * The synchronous crypto worker produced by this factory doesn't run in the
@@ -50,9 +147,14 @@ export class SynchronousCryptoWorker {
    */
   onerror: undefined | ((m: any) => void);
 
+  primitiveWorker: PrimitiveWorker;
+
   constructor() {
     this.onerror = undefined;
     this.onmessage = undefined;
+    if (process.env["TALER_WALLET_PRIMITIVE_WORKER"]) {
+      this.primitiveWorker = new MyPrimitiveWorker();
+    }
   }
 
   /**
@@ -80,7 +182,7 @@ export class SynchronousCryptoWorker {
     id: number,
     args: string[],
   ): Promise<void> {
-    const impl = new CryptoImplementation();
+    const impl = new CryptoImplementation(this.primitiveWorker);
 
     if (!(operation in impl)) {
       console.error(`crypto operation '${operation}' not found`);
@@ -89,16 +191,16 @@ export class SynchronousCryptoWorker {
 
     let result: any;
     try {
-      result = (impl as any)[operation](...args);
+      result = await (impl as any)[operation](...args);
     } catch (e) {
-      console.log("error during operation", e);
+      logger.error("error during operation", e);
       return;
     }
 
     try {
       setTimeout(() => this.dispatchMessage({ result, id }), 0);
     } catch (e) {
-      console.log("got error during dispatch", e);
+      logger.error("got error during dispatch", e);
     }
   }
 

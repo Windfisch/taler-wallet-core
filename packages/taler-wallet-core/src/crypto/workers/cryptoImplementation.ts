@@ -15,9 +15,7 @@
  */
 
 /**
- * Synchronous implementation of crypto-related functions for the wallet.
- *
- * The functionality is parameterized over an Emscripten environment.
+ * Implementation of crypto-related high-level functions for the Taler wallet.
  *
  * @author Florian Dold <dold@taler.net>
  */
@@ -37,9 +35,9 @@ import {
 import {
   buildSigPS,
   CoinDepositPermission,
+  FreshCoin,
   RecoupRequest,
   RefreshPlanchetInfo,
-  SignaturePurposeBuilder,
   TalerSignaturePurpose,
 } from "@gnu-taler/taler-util";
 // FIXME: These types should be internal to the wallet!
@@ -128,8 +126,26 @@ function timestampRoundedToBuffer(ts: Timestamp): Uint8Array {
   return new Uint8Array(b);
 }
 
+export interface PrimitiveWorker {
+  setupRefreshPlanchet(arg0: {
+    transfer_secret: string;
+    coin_index: number;
+  }): Promise<{
+    coin_pub: string;
+    coin_priv: string;
+    blinding_key: string;
+  }>;
+  eddsaVerify(req: {
+    msg: string;
+    sig: string;
+    pub: string;
+  }): Promise<{ valid: boolean }>;
+}
+
 export class CryptoImplementation {
   static enableTracing = false;
+
+  constructor(private primitiveWorker?: PrimitiveWorker) {}
 
   /**
    * Create a pre-coin of the given denomination to be withdrawn from then given
@@ -246,7 +262,11 @@ export class CryptoImplementation {
   /**
    * Check if a wire fee is correctly signed.
    */
-  isValidWireFee(type: string, wf: WireFee, masterPub: string): boolean {
+  async isValidWireFee(
+    type: string,
+    wf: WireFee,
+    masterPub: string,
+  ): Promise<boolean> {
     const p = buildSigPS(TalerSignaturePurpose.MASTER_WIRE_FEES)
       .put(hash(stringToBytes(type + "\0")))
       .put(timestampRoundedToBuffer(wf.startStamp))
@@ -256,13 +276,25 @@ export class CryptoImplementation {
       .build();
     const sig = decodeCrock(wf.sig);
     const pub = decodeCrock(masterPub);
+    if (this.primitiveWorker) {
+      return (
+        await this.primitiveWorker.eddsaVerify({
+          msg: encodeCrock(p),
+          pub: masterPub,
+          sig: encodeCrock(sig),
+        })
+      ).valid;
+    }
     return eddsaVerify(p, sig, pub);
   }
 
   /**
    * Check if the signature of a denomination is valid.
    */
-  isValidDenom(denom: DenominationRecord, masterPub: string): boolean {
+  async isValidDenom(
+    denom: DenominationRecord,
+    masterPub: string,
+  ): Promise<boolean> {
     const p = buildSigPS(TalerSignaturePurpose.MASTER_DENOMINATION_KEY_VALIDITY)
       .put(decodeCrock(masterPub))
       .put(timestampRoundedToBuffer(denom.stampStart))
@@ -377,9 +409,9 @@ export class CryptoImplementation {
     return s;
   }
 
-  deriveRefreshSession(
+  async deriveRefreshSession(
     req: DeriveRefreshSessionRequest,
-  ): DerivedRefreshSession {
+  ): Promise<DerivedRefreshSession> {
     const {
       newCoinDenoms,
       feeRefresh: meltFee,
@@ -435,17 +467,33 @@ export class CryptoImplementation {
       for (let j = 0; j < newCoinDenoms.length; j++) {
         const denomSel = newCoinDenoms[j];
         for (let k = 0; k < denomSel.count; k++) {
-          const coinNumber = planchets.length;
+          const coinIndex = planchets.length;
           const transferPriv = decodeCrock(transferPrivs[i]);
           const oldCoinPub = decodeCrock(meltCoinPub);
           const transferSecret = keyExchangeEcdheEddsa(
             transferPriv,
             oldCoinPub,
           );
-          const fresh = setupRefreshPlanchet(transferSecret, coinNumber);
-          const coinPriv = fresh.coinPriv;
-          const coinPub = fresh.coinPub;
-          const blindingFactor = fresh.bks;
+          let coinPub: Uint8Array;
+          let coinPriv: Uint8Array;
+          let blindingFactor: Uint8Array;
+          if (this.primitiveWorker) {
+            const r = await this.primitiveWorker.setupRefreshPlanchet({
+              transfer_secret: encodeCrock(transferSecret),
+              coin_index: coinIndex,
+            });
+            coinPub = decodeCrock(r.coin_pub);
+            coinPriv = decodeCrock(r.coin_priv);
+            blindingFactor = decodeCrock(r.blinding_key);
+          } else {
+            let fresh: FreshCoin = setupRefreshPlanchet(
+              transferSecret,
+              coinIndex,
+            );
+            coinPriv = fresh.coinPriv;
+            coinPub = fresh.coinPub;
+            blindingFactor = fresh.bks;
+          }
           const pubHash = hash(coinPub);
           const denomPub = decodeCrock(denomSel.denomPub);
           const ev = rsaBlind(pubHash, blindingFactor, denomPub);

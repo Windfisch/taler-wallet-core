@@ -142,19 +142,23 @@ export async function getDefaultNodeWallet(
   const myDb = await openTalerDatabase(myIdbFactory, myVersionChange);
 
   let workerFactory;
-  try {
-    // Try if we have worker threads available, fails in older node versions.
-    const _r = "require";
-    const worker_threads = module[_r]("worker_threads");
-    // require("worker_threads");
-    workerFactory = new NodeThreadCryptoWorkerFactory();
-  } catch (e) {
-    logger.warn(
-      "worker threads not available, falling back to synchronous workers",
-    );
+  if (process.env["TALER_WALLET_SYNC_CRYPTO"]) {
+    logger.info("using synchronous crypto worker");
     workerFactory = new SynchronousCryptoWorkerFactory();
+  } else {
+    try {
+      // Try if we have worker threads available, fails in older node versions.
+      const _r = "require";
+      const worker_threads = module[_r]("worker_threads");
+      // require("worker_threads");
+      workerFactory = new NodeThreadCryptoWorkerFactory();
+    } catch (e) {
+      logger.warn(
+        "worker threads not available, falling back to synchronous workers",
+      );
+      workerFactory = new SynchronousCryptoWorkerFactory();
+    }
   }
-
   const w = await Wallet.create(myDb, myHttpLib, workerFactory);
 
   if (args.notifyHandler) {

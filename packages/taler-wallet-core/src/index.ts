@@ -34,7 +34,7 @@ export * from "./db-utils.js";
 // Crypto and crypto workers
 // export * from "./crypto/workers/nodeThreadWorker.js";
 export { CryptoImplementation } from "./crypto/workers/cryptoImplementation.js";
-export type { CryptoWorker } from "./crypto/workers/cryptoWorker.js";
+export type { CryptoWorker } from "./crypto/workers/cryptoWorkerInterface.js";
 export { CryptoWorkerFactory, CryptoApi } from "./crypto/workers/cryptoApi.js";
 
 export * from "./pending-types.js";

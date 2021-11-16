@@ -18,7 +18,7 @@
  * Imports
  */
 import { CryptoWorkerFactory } from "./cryptoApi.js";
-import { CryptoWorker } from "./cryptoWorker.js";
+import { CryptoWorker } from "./cryptoWorkerInterface.js";
 import os from "os";
 import { CryptoImplementation } from "./cryptoImplementation.js";
 import { Logger } from "@gnu-taler/taler-util";
@@ -94,7 +94,7 @@ export function handleWorkerMessage(msg: any): void {
     }
 
     try {
-      const result = (impl as any)[operation](...args);
+      const result = await (impl as any)[operation](...args);
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const _r = "require";
       const worker_threads: typeof import("worker_threads") = module[_r](

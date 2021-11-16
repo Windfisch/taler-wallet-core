@@ -40,6 +40,7 @@ export async function runBench1(configJson: any): Promise<void> {
   const b1conf = codecForBench1Config().decode(configJson);
 
   const myHttpLib = new NodeHttpLib();
+  myHttpLib.setThrottling(false);
 
   const numIter = b1conf.iterations ?? 1;
 
