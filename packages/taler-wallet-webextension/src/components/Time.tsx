@@ -1,6 +1,6 @@
 /*
  This file is part of TALER
- (C) 2017 Inria
+ (C) 2016 GNUnet e.V.
 
  TALER is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -14,18 +14,28 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { Timestamp } from "@gnu-taler/taler-util";
+import { formatISO, format } from "date-fns";
 import { h, VNode } from "preact";
 
-/**
- * View and edit auditors.
- *
- * @author Florian Dold
- */
-
-/**
- * Imports.
- */
-
-export function makePaybackPage(): VNode {
-  return <div>not implemented</div>;
+export function Time({
+  timestamp,
+  format: formatString,
+}: {
+  timestamp: Timestamp | undefined;
+  format: string;
+}): VNode {
+  return (
+    <time
+      dateTime={
+        !timestamp || timestamp.t_ms === "never"
+          ? undefined
+          : formatISO(timestamp.t_ms)
+      }
+    >
+      {!timestamp || timestamp.t_ms === "never"
+        ? "never"
+        : format(timestamp.t_ms, formatString)}
+    </time>
+  );
 }

@@ -14,9 +14,8 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { h } from "preact";
+import { h, VNode } from "preact";
 import { useRef, useState } from "preact/hooks";
-import { JSX } from "preact/jsx-runtime";
 
 interface Props {
   value: string;
@@ -31,31 +30,35 @@ export function EditableText({
   onChange,
   label,
   description,
-}: Props): JSX.Element {
+}: Props): VNode {
   const [editing, setEditing] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
   let InputText;
   if (!editing) {
-    InputText = () => (
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <p>{value}</p>
-        <button onClick={() => setEditing(true)}>edit</button>
-      </div>
-    );
+    InputText = function InputToEdit(): VNode {
+      return (
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <p>{value}</p>
+          <button onClick={() => setEditing(true)}>edit</button>
+        </div>
+      );
+    };
   } else {
-    InputText = () => (
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <input value={value} ref={ref} type="text" id={`text-${name}`} />
-        <button
-          onClick={() => {
-            if (ref.current)
-              onChange(ref.current.value).then((r) => setEditing(false));
-          }}
-        >
-          confirm
-        </button>
-      </div>
-    );
+    InputText = function InputEditing(): VNode {
+      return (
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <input value={value} ref={ref} type="text" id={`text-${name}`} />
+          <button
+            onClick={() => {
+              if (ref.current)
+                onChange(ref.current.value).then(() => setEditing(false));
+            }}
+          >
+            confirm
+          </button>
+        </div>
+      );
+    };
   }
   return (
     <div>

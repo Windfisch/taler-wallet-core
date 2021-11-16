@@ -14,8 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { JSX } from "preact/jsx-runtime";
-import { h } from "preact";
+import { h, VNode } from "preact";
 
 interface Props {
   enabled: boolean;
@@ -30,7 +29,7 @@ export function Checkbox({
   onToggle,
   label,
   description,
-}: Props): JSX.Element {
+}: Props): VNode {
   return (
     <div>
       <input

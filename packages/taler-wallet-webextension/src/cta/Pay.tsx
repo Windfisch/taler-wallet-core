@@ -36,7 +36,7 @@ import {
   PreparePayResult,
   PreparePayResultType,
 } from "@gnu-taler/taler-util";
-import { h, Fragment, JSX, VNode } from "preact";
+import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { LogoHeader } from "../components/LogoHeader";
 import { Part } from "../components/Part";
@@ -100,7 +100,7 @@ const doPayment = async (
   return res;
 };
 
-export function PayPage({ talerPayUri }: Props): JSX.Element {
+export function PayPage({ talerPayUri }: Props): VNode {
   const [payStatus, setPayStatus] = useState<PreparePayResult | undefined>(
     undefined,
   );
@@ -159,7 +159,7 @@ export function PayPage({ talerPayUri }: Props): JSX.Element {
     return <span>Loading payment information ...</span>;
   }
 
-  const onClick = async () => {
+  const onClick = async (): Promise<void> => {
     try {
       const res = await doPayment(payStatus);
       setPayResult(res);
@@ -198,7 +198,7 @@ export function PaymentRequestView({
   onClick,
   payErrMsg,
   balance,
-}: PaymentRequestViewProps) {
+}: PaymentRequestViewProps): VNode {
   let totalFees: AmountJson = Amounts.getZero(payStatus.amountRaw);
   const contractTerms: ContractTerms = payStatus.contractTerms;
 
@@ -225,7 +225,7 @@ export function PaymentRequestView({
     merchantName = <strong>(pub: {contractTerms.merchant_pub})</strong>;
   }
 
-  function Alternative() {
+  function Alternative(): VNode {
     const [showQR, setShowQR] = useState<boolean>(false);
     const privateUri =
       payStatus.status !== PreparePayResultType.AlreadyConfirmed
@@ -246,7 +246,7 @@ export function PaymentRequestView({
     );
   }
 
-  function ButtonsSection() {
+  function ButtonsSection(): VNode {
     if (payResult) {
       if (payResult.type === ConfirmPayResultType.Pending) {
         return (
@@ -257,7 +257,7 @@ export function PaymentRequestView({
           </section>
         );
       }
-      return null;
+      return <Fragment />;
     }
     if (payErrMsg) {
       return (
@@ -392,7 +392,7 @@ export function PaymentRequestView({
   );
 }
 
-function amountToString(text: AmountLike) {
+function amountToString(text: AmountLike): string {
   const aj = Amounts.jsonifyAmount(text);
   const amount = Amounts.stringifyValue(aj, 2);
   return `${amount} ${aj.currency}`;

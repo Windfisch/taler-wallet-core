@@ -20,12 +20,11 @@
  * @author Florian Dold
  */
 
-import * as wxApi from "../wxApi";
-import { AmountView } from "../renderHtml";
-import { ApplyRefundResponse, Amounts } from "@gnu-taler/taler-util";
+import { Amounts, ApplyRefundResponse } from "@gnu-taler/taler-util";
+import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { JSX } from "preact/jsx-runtime";
-import { h } from "preact";
+import { AmountView } from "../renderHtml";
+import * as wxApi from "../wxApi";
 
 interface Props {
   talerRefundUri?: string;
@@ -33,7 +32,7 @@ interface Props {
 export interface ViewProps {
   applyResult: ApplyRefundResponse;
 }
-export function View({ applyResult }: ViewProps) {
+export function View({ applyResult }: ViewProps): VNode {
   return (
     <section class="main">
       <h1>GNU Taler Wallet</h1>
@@ -58,7 +57,7 @@ export function View({ applyResult }: ViewProps) {
     </section>
   );
 }
-export function RefundPage({ talerRefundUri }: Props): JSX.Element {
+export function RefundPage({ talerRefundUri }: Props): VNode {
   const [applyResult, setApplyResult] = useState<
     ApplyRefundResponse | undefined
   >(undefined);
@@ -71,9 +70,10 @@ export function RefundPage({ talerRefundUri }: Props): JSX.Element {
         const result = await wxApi.applyRefund(talerRefundUri);
         setApplyResult(result);
       } catch (e) {
-        console.error(e);
-        setErrMsg(e.message);
-        console.log("err message", e.message);
+        if (e instanceof Error) {
+          setErrMsg(e.message);
+          console.log("err message", e.message);
+        }
       }
     };
     doFetch();

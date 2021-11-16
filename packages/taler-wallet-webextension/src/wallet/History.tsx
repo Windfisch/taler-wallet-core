@@ -20,15 +20,15 @@ import {
   Transaction,
   TransactionsResponse,
 } from "@gnu-taler/taler-util";
-import { format } from "date-fns";
-import { Fragment, h, JSX } from "preact";
+import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { DateSeparator, WalletBox } from "../components/styled";
+import { Time } from "../components/Time";
 import { TransactionItem } from "../components/TransactionItem";
 import { useBalances } from "../hooks/useBalances";
 import * as wxApi from "../wxApi";
 
-export function HistoryPage(props: any): JSX.Element {
+export function HistoryPage(): VNode {
   const [transactions, setTransactions] = useState<
     TransactionsResponse | undefined
   >(undefined);
@@ -57,9 +57,14 @@ export function HistoryPage(props: any): JSX.Element {
   );
 }
 
-function amountToString(c: AmountString) {
+function amountToString(c: AmountString): string {
   const idx = c.indexOf(":");
   return `${c.substring(idx + 1)} ${c.substring(0, idx)}`;
+}
+
+const term = 1000 * 60 * 60 * 24;
+function normalizeToDay(x: number): number {
+  return Math.round(x / term) * term;
 }
 
 export function HistoryView({
@@ -68,13 +73,14 @@ export function HistoryView({
 }: {
   list: Transaction[];
   balances: Balance[];
-}) {
-  const byDate = list.reduce(function (rv, x) {
+}): VNode {
+  const byDate = list.reduce((rv, x) => {
     const theDate =
-      x.timestamp.t_ms === "never"
-        ? "never"
-        : format(x.timestamp.t_ms, "dd MMMM yyyy");
-    (rv[theDate] = rv[theDate] || []).push(x);
+      x.timestamp.t_ms === "never" ? 0 : normalizeToDay(x.timestamp.t_ms);
+    if (theDate) {
+      (rv[theDate] = rv[theDate] || []).push(x);
+    }
+
     return rv;
   }, {} as { [x: string]: Transaction[] });
 
@@ -93,8 +99,8 @@ export function HistoryView({
             <div class="title">
               Balance:{" "}
               <ul style={{ margin: 0 }}>
-                {balances.map((b) => (
-                  <li>{b.available}</li>
+                {balances.map((b, i) => (
+                  <li key={i}>{b.available}</li>
                 ))}
               </ul>
             </div>
@@ -105,7 +111,12 @@ export function HistoryView({
         {Object.keys(byDate).map((d, i) => {
           return (
             <Fragment key={i}>
-              <DateSeparator>{d}</DateSeparator>
+              <DateSeparator>
+                <Time
+                  timestamp={{ t_ms: Number.parseInt(d, 10) }}
+                  format="dd MMMM yyyy"
+                />
+              </DateSeparator>
               {byDate[d].map((tx, i) => (
                 <TransactionItem
                   key={i}

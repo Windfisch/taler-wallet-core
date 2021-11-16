@@ -20,16 +20,15 @@
  * @author Florian Dold
  */
 
-import { JSX } from "preact/jsx-runtime";
 import { Checkbox } from "../components/Checkbox";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
 import { Diagnostics } from "../components/Diagnostics";
 import { WalletBox } from "../components/styled";
 import { useDiagnostics } from "../hooks/useDiagnostics";
 import { WalletDiagnostics } from "@gnu-taler/taler-util";
-import { h } from "preact";
+import { h, VNode } from "preact";
 
-export function WelcomePage() {
+export function WelcomePage(): VNode {
   const [permissionsEnabled, togglePermissions] = useExtendedPermissions();
   const [diagnostics, timedOut] = useDiagnostics();
   return (
@@ -53,7 +52,7 @@ export function View({
   togglePermissions,
   diagnostics,
   timedOut,
-}: ViewProps): JSX.Element {
+}: ViewProps): VNode {
   return (
     <WalletBox>
       <h1>Browser Extension Installed!</h1>

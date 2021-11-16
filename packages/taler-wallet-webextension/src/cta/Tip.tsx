@@ -20,12 +20,11 @@
  * @author Florian Dold <dold@taler.net>
  */
 
-import { useEffect, useState } from "preact/hooks";
 import { PrepareTipResult } from "@gnu-taler/taler-util";
+import { h, VNode } from "preact";
+import { useEffect, useState } from "preact/hooks";
 import { AmountView } from "../renderHtml";
 import * as wxApi from "../wxApi";
-import { JSX } from "preact/jsx-runtime";
-import { h } from "preact";
 
 interface Props {
   talerTipUri?: string;
@@ -35,7 +34,11 @@ export interface ViewProps {
   onAccept: () => void;
   onIgnore: () => void;
 }
-export function View({ prepareTipResult, onAccept, onIgnore }: ViewProps) {
+export function View({
+  prepareTipResult,
+  onAccept,
+  onIgnore,
+}: ViewProps): VNode {
   return (
     <section class="main">
       <h1>GNU Taler Wallet</h1>
@@ -64,7 +67,7 @@ export function View({ prepareTipResult, onAccept, onIgnore }: ViewProps) {
   );
 }
 
-export function TipPage({ talerTipUri }: Props): JSX.Element {
+export function TipPage({ talerTipUri }: Props): VNode {
   const [updateCounter, setUpdateCounter] = useState<number>(0);
   const [prepareTipResult, setPrepareTipResult] = useState<
     PrepareTipResult | undefined

@@ -85,7 +85,7 @@ export const WalletBox = styled.div<{ noPadding?: boolean }>`
     overflow: auto;
 
     table td {
-      padding: 5px 10px;
+      padding: 5px 5px;
     }
     table tr {
       border-bottom: 1px solid black;
@@ -328,7 +328,8 @@ const ButtonVariant = styled(Button)`
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
 `;
 
-export const ButtonPrimary = styled(ButtonVariant)`
+export const ButtonPrimary = styled(ButtonVariant)<{ small?: boolean }>`
+  font-size: ${({ small }) => (small ? "small" : "inherit")};
   background-color: rgb(66, 184, 221);
 `;
 export const ButtonBoxPrimary = styled(ButtonBox)`
@@ -501,29 +502,40 @@ export const Input = styled.div<{ invalid?: boolean }>`
 `;
 
 export const InputWithLabel = styled.div<{ invalid?: boolean }>`
+  /* display: flex; */
+
   & label {
     display: block;
+    font-weight: bold;
+    margin-left: 0.5em;
     padding: 5px;
     color: ${({ invalid }) => (!invalid ? "inherit" : "red")};
   }
-  & > div {
-    position: relative;
+
+  & div {
+    line-height: 24px;
     display: flex;
-    top: 0px;
-    bottom: 0px;
-
-    & > div {
-      position: absolute;
-      background-color: lightgray;
-      padding: 5px;
-      margin: 2px;
-    }
-
-    & > input {
-      flex: 1;
-      padding: 5px;
-      border-color: ${({ invalid }) => (!invalid ? "inherit" : "red")};
-    }
+  }
+  & div > span {
+    background-color: lightgray;
+    box-sizing: border-box;
+    border-bottom-left-radius: 0.25em;
+    border-top-left-radius: 0.25em;
+    height: 2em;
+    display: inline-block;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    align-items: center;
+    display: flex;
+  }
+  & input {
+    border-width: 1px;
+    box-sizing: border-box;
+    height: 2em;
+    /* border-color: lightgray; */
+    border-bottom-right-radius: 0.25em;
+    border-top-right-radius: 0.25em;
+    border-color: ${({ invalid }) => (!invalid ? "lightgray" : "red")};
   }
 `;
 
@@ -535,6 +547,7 @@ export const ErrorBox = styled.div`
   flex-direction: column;
   /* margin: 0.5em; */
   padding: 1em;
+  margin: 1em;
   /* width: 100%; */
   color: #721c24;
   background: #f8d7da;
@@ -592,6 +605,8 @@ export const PopupNavigation = styled.div<{ devMode?: boolean }>`
   }
 `;
 
+const image = `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`;
+
 export const NiceSelect = styled.div`
   & > select {
     -webkit-appearance: none;
@@ -600,11 +615,18 @@ export const NiceSelect = styled.div`
     appearance: none;
     outline: 0;
     box-shadow: none;
-    background-image: none;
+
+    background-image: ${image};
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+
     background-color: white;
 
-    flex: 1;
-    padding: 0.5em 1em;
+    border-radius: 0.25rem;
+    font-size: 1em;
+    padding: 0.5em 3em 0.5em 1em;
     cursor: pointer;
   }
 
@@ -613,27 +635,6 @@ export const NiceSelect = styled.div`
   /* width: 10em; */
   overflow: hidden;
   border-radius: 0.25em;
-
-  &::after {
-    content: "\u25BC";
-    position: absolute;
-    top: 0;
-    right: 0;
-    padding: 0.5em 1em;
-    cursor: pointer;
-    pointer-events: none;
-    -webkit-transition: 0.25s all ease;
-    -o-transition: 0.25s all ease;
-    transition: 0.25s all ease;
-  }
-
-  &:hover::after {
-    /* color: #f39c12; */
-  }
-
-  &::-ms-expand {
-    display: none;
-  }
 `;
 
 export const Outlined = styled.div`

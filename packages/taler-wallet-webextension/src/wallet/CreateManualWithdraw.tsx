@@ -20,9 +20,10 @@
  */
 
 import { AmountJson, Amounts } from "@gnu-taler/taler-util";
-import { VNode, h } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { h, VNode } from "preact";
+import { useState } from "preact/hooks";
 import { ErrorMessage } from "../components/ErrorMessage";
+import { SelectList } from "../components/SelectList";
 import {
   ButtonPrimary,
   Input,
@@ -33,32 +34,56 @@ import {
 
 export interface Props {
   error: string | undefined;
-  currency: string | undefined;
-  initialExchange?: string;
   initialAmount?: string;
-  onExchangeChange: (exchange: string) => void;
+  exchangeList: Record<string, string>;
   onCreate: (exchangeBaseUrl: string, amount: AmountJson) => Promise<void>;
 }
 
 export function CreateManualWithdraw({
-  onExchangeChange,
-  initialExchange,
   initialAmount,
+  exchangeList,
   error,
-  currency,
   onCreate,
 }: Props): VNode {
+  const exchangeSelectList = Object.keys(exchangeList);
+  const currencySelectList = Object.values(exchangeList);
+  const exchangeMap = exchangeSelectList.reduce(
+    (p, c) => ({ ...p, [c]: `${c} (${exchangeList[c]})` }),
+    {} as Record<string, string>,
+  );
+  const currencyMap = currencySelectList.reduce(
+    (p, c) => ({ ...p, [c]: c }),
+    {} as Record<string, string>,
+  );
+
+  const initialExchange =
+    exchangeSelectList.length > 0 ? exchangeSelectList[0] : "";
+
   const [exchange, setExchange] = useState(initialExchange || "");
+  const [currency, setCurrency] = useState(exchangeList[initialExchange] ?? "");
+
   const [amount, setAmount] = useState(initialAmount || "");
   const parsedAmount = Amounts.parse(`${currency}:${amount}`);
 
-  let timeout = useRef<number | undefined>(undefined);
-  useEffect(() => {
-    if (timeout) window.clearTimeout(timeout.current);
-    timeout.current = window.setTimeout(async () => {
-      onExchangeChange(exchange);
-    }, 1000);
-  }, [exchange]);
+  function changeExchange(exchange: string): void {
+    setExchange(exchange);
+    setCurrency(exchangeList[exchange]);
+  }
+
+  function changeCurrency(currency: string): void {
+    setCurrency(currency);
+    const found = Object.entries(exchangeList).find((e) => e[1] === currency);
+
+    if (found) {
+      setExchange(found[0]);
+    } else {
+      setExchange("");
+    }
+  }
+
+  if (!initialExchange) {
+    return <div>There is no known exchange where to withdraw, add one</div>;
+  }
 
   return (
     <WalletBox>
@@ -73,26 +98,38 @@ export function CreateManualWithdraw({
           withdraw the coins
         </LightText>
         <p>
-          <Input invalid={!!exchange && !currency}>
-            <label>Exchange</label>
-            <input
-              type="text"
-              placeholder="https://"
-              value={exchange}
-              onChange={(e) => setExchange(e.currentTarget.value)}
+          <Input>
+            <SelectList
+              label="Currency"
+              list={currencyMap}
+              name="currency"
+              value={currency}
+              onChange={changeCurrency}
             />
-            <small>http://exchange.taler:8081</small>
           </Input>
+          <Input>
+            <SelectList
+              label="Exchange"
+              list={exchangeMap}
+              name="currency"
+              value={exchange}
+              onChange={changeExchange}
+            />
+          </Input>
+          {/* <p style={{ display: "flex", justifyContent: "right" }}>
+            <a href="" style={{ marginLeft: "auto" }}>
+              Add new exchange
+            </a>
+          </p> */}
           {currency && (
             <InputWithLabel invalid={!!amount && !parsedAmount}>
               <label>Amount</label>
               <div>
-                <div>{currency}</div>
+                <span>{currency}</span>
                 <input
                   type="number"
-                  style={{ paddingLeft: `${currency.length}em` }}
                   value={amount}
-                  onChange={(e) => setAmount(e.currentTarget.value)}
+                  onInput={(e) => setAmount(e.currentTarget.value)}
                 />
               </div>
             </InputWithLabel>
@@ -105,7 +142,7 @@ export function CreateManualWithdraw({
           disabled={!parsedAmount || !exchange}
           onClick={() => onCreate(exchange, parsedAmount!)}
         >
-          Create
+          Start withdrawal
         </ButtonPrimary>
       </footer>
     </WalletBox>

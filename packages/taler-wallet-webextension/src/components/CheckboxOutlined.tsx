@@ -14,9 +14,8 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { JSX } from "preact/jsx-runtime";
 import { Outlined, StyledCheckboxLabel } from "./styled/index";
-import { h } from "preact";
+import { h, VNode } from "preact";
 
 interface Props {
   enabled: boolean;
@@ -47,7 +46,7 @@ export function CheckboxOutlined({
   enabled,
   onToggle,
   label,
-}: Props): JSX.Element {
+}: Props): VNode {
   return (
     <Outlined>
       <StyledCheckboxLabel onClick={onToggle}>

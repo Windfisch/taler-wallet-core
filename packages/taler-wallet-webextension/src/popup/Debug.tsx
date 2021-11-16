@@ -14,12 +14,12 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { JSX, h } from "preact";
+import { h, VNode } from "preact";
 import { Diagnostics } from "../components/Diagnostics";
 import { useDiagnostics } from "../hooks/useDiagnostics.js";
 import * as wxApi from "../wxApi";
 
-export function DeveloperPage(props: any): JSX.Element {
+export function DeveloperPage(): VNode {
   const [status, timedOut] = useDiagnostics();
   return (
     <div>
@@ -36,6 +36,7 @@ export function DeveloperPage(props: any): JSX.Element {
 
 export function reload(): void {
   try {
+    // eslint-disable-next-line no-undef
     chrome.runtime.reload();
     window.close();
   } catch (e) {
@@ -57,7 +58,9 @@ export async function confirmReset(): Promise<void> {
 
 export function openExtensionPage(page: string) {
   return () => {
+    // eslint-disable-next-line no-undef
     chrome.tabs.create({
+      // eslint-disable-next-line no-undef
       url: chrome.extension.getURL(page),
     });
   };

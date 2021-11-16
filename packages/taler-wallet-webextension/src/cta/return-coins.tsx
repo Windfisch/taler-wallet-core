@@ -14,8 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { JSX } from "preact/jsx-runtime";
-import { h } from "preact";
+import { h, VNode } from "preact";
 /**
  * Return coins to own bank account.
  *
@@ -25,6 +24,6 @@ import { h } from "preact";
 /**
  * Imports.
  */
-export function createReturnCoinsPage(): JSX.Element {
+export function createReturnCoinsPage(): VNode {
   return <span>Not implemented yet.</span>;
 }

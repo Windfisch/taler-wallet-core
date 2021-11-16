@@ -28,26 +28,27 @@ export default {
   argTypes: {},
 };
 
-export const InitialState = createExample(TestedComponent, {});
+// ,
+const exchangeList = {
+  "http://exchange.taler:8081": "COL",
+  "http://exchange.tal": "EUR",
+};
 
-export const WithExchangeFilled = createExample(TestedComponent, {
-  currency: "COL",
-  initialExchange: "http://exchange.taler:8081",
+export const InitialState = createExample(TestedComponent, {
+  exchangeList,
 });
 
-export const WithExchangeAndAmountFilled = createExample(TestedComponent, {
-  currency: "COL",
-  initialExchange: "http://exchange.taler:8081",
+export const WithAmountInitialized = createExample(TestedComponent, {
   initialAmount: "10",
+  exchangeList,
 });
 
 export const WithExchangeError = createExample(TestedComponent, {
-  initialExchange: "http://exchange.tal",
   error: "The exchange url seems invalid",
+  exchangeList,
 });
 
 export const WithAmountError = createExample(TestedComponent, {
-  currency: "COL",
-  initialExchange: "http://exchange.taler:8081",
   initialAmount: "e",
+  exchangeList,
 });

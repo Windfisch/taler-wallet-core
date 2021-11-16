@@ -16,10 +16,29 @@
 
 import { URLSearchParams } from "./url.js";
 
-interface PaytoUri {
+export type PaytoUri = PaytoUriUnknown | PaytoUriIBAN | PaytoUriTalerBank;
+
+interface PaytoUriGeneric {
   targetType: string;
   targetPath: string;
   params: { [name: string]: string };
+}
+
+interface PaytoUriUnknown extends PaytoUriGeneric {
+  isKnown: false;
+}
+
+interface PaytoUriIBAN extends PaytoUriGeneric {
+  isKnown: true;
+  targetType: 'iban',
+  iban: string;
+}
+
+interface PaytoUriTalerBank extends PaytoUriGeneric {
+  isKnown: true;
+  targetType: 'x-taler-bank',
+  host: string;
+  account: string;
 }
 
 const paytoPfx = "payto://";
@@ -63,9 +82,33 @@ export function parsePaytoUri(s: string): PaytoUri | undefined {
     params[v] = k;
   });
 
+  if (targetType === 'x-taler-bank') {
+    const parts = targetPath.split('/')
+    const host = parts[0]
+    const account = parts[1]
+    return {
+      targetPath,
+      targetType,
+      params,
+      isKnown: true,
+      host, account,
+    };
+
+  }
+  if (targetType === 'iban') {
+    return {
+      isKnown: true,
+      targetPath,
+      targetType,
+      params,
+      iban: targetPath
+    };
+
+  }
   return {
     targetPath,
     targetType,
     params,
+    isKnown: false
   };
 }

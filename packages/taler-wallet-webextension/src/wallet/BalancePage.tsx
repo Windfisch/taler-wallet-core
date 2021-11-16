@@ -21,7 +21,7 @@ import {
   BalancesResponse,
   i18n,
 } from "@gnu-taler/taler-util";
-import { JSX, h } from "preact";
+import { h, VNode } from "preact";
 import { ButtonPrimary, Centered, WalletBox } from "../components/styled/index";
 import { BalancesHook, useBalances } from "../hooks/useBalances";
 import { PageLink, renderAmount } from "../renderHtml";
@@ -30,7 +30,7 @@ export function BalancePage({
   goToWalletManualWithdraw,
 }: {
   goToWalletManualWithdraw: () => void;
-}) {
+}): VNode {
   const balance = useBalances();
   return (
     <BalanceView
@@ -51,7 +51,7 @@ export function BalanceView({
   balance,
   Linker,
   goToWalletManualWithdraw,
-}: BalanceViewProps) {
+}: BalanceViewProps): VNode {
   if (!balance) {
     return <span />;
   }
@@ -85,13 +85,13 @@ export function BalanceView({
   );
 }
 
-function formatPending(entry: Balance): JSX.Element {
-  let incoming: JSX.Element | undefined;
-  let payment: JSX.Element | undefined;
+function formatPending(entry: Balance): VNode {
+  let incoming: VNode | undefined;
+  let payment: VNode | undefined;
 
-  const available = Amounts.parseOrThrow(entry.available);
+  // const available = Amounts.parseOrThrow(entry.available);
   const pendingIncoming = Amounts.parseOrThrow(entry.pendingIncoming);
-  const pendingOutgoing = Amounts.parseOrThrow(entry.pendingOutgoing);
+  // const pendingOutgoing = Amounts.parseOrThrow(entry.pendingOutgoing);
 
   if (!Amounts.isZero(pendingIncoming)) {
     incoming = (
@@ -128,7 +128,7 @@ function ShowBalances({
 }: {
   wallet: BalancesResponse;
   onWithdraw: () => void;
-}) {
+}): VNode {
   return (
     <WalletBox>
       <section>

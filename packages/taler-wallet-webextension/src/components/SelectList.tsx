@@ -14,9 +14,8 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { JSX } from "preact/jsx-runtime";
+import { Fragment, h, VNode } from "preact";
 import { NiceSelect } from "./styled/index";
-import { h } from "preact";
 
 interface Props {
   value?: string;
@@ -34,13 +33,12 @@ export function SelectList({
   name,
   value,
   list,
-  canBeNull,
   onChange,
   label,
   description,
-}: Props): JSX.Element {
+}: Props): VNode {
   return (
-    <div>
+    <Fragment>
       <label
         htmlFor={`text-${name}`}
         style={{ marginLeft: "0.5em", fontWeight: "bold" }}
@@ -84,6 +82,6 @@ export function SelectList({
           {description}
         </span>
       )}
-    </div>
+    </Fragment>
   );
 }

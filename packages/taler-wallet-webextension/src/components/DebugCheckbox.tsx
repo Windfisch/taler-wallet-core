@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { JSX, h } from "preact";
+import { h, VNode } from "preact";
 
 export function DebugCheckbox({
   enabled,
@@ -22,7 +22,7 @@ export function DebugCheckbox({
 }: {
   enabled: boolean;
   onToggle: () => void;
-}): JSX.Element {
+}): VNode {
   return (
     <div>
       <input

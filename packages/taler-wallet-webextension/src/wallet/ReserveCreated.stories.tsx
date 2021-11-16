@@ -28,10 +28,26 @@ export default {
   argTypes: {},
 };
 
-export const InitialState = createExample(TestedComponent, {
-  reservePub: "ASLKDJQWLKEJASLKDJSADLKASJDLKSADJ",
-  paytos: [
+export const TalerBank = createExample(TestedComponent, {
+  reservePub: "A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
+  payto:
     "payto://x-taler-bank/bank.taler:5882/exchangeminator?amount=COL%3A1&message=Taler+Withdrawal+A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
-    "payto://x-taler-bank/international-bank.com/myaccount?amount=COL%3A1&message=Taler+Withdrawal+TYQTE7VA4M9GZQ4TR06YBNGA05AJGMFNSK4Q62NXR2FKNDB1J4EX",
-  ],
+  amount: {
+    currency: "USD",
+    value: 10,
+    fraction: 0,
+  },
+  exchangeBaseUrl: "https://exchange.demo.taler.net",
+});
+
+export const IBAN = createExample(TestedComponent, {
+  reservePub: "A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
+  payto:
+    "payto://iban/ASDQWEASDZXCASDQWE?amount=COL%3A1&message=Taler+Withdrawal+A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
+  amount: {
+    currency: "USD",
+    value: 10,
+    fraction: 0,
+  },
+  exchangeBaseUrl: "https://exchange.demo.taler.net",
 });

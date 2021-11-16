@@ -29,9 +29,8 @@ import {
   i18n,
   WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
-import { VNode, h } from "preact";
+import { VNode, h, Fragment } from "preact";
 import { useState } from "preact/hooks";
-import { Fragment } from "preact/jsx-runtime";
 import { CheckboxOutlined } from "../components/CheckboxOutlined";
 import { ExchangeXmlTos } from "../components/ExchangeToS";
 import { LogoHeader } from "../components/LogoHeader";
@@ -60,7 +59,6 @@ interface Props {
 }
 
 export interface ViewProps {
-  details: GetExchangeTosResult;
   withdrawalFee: AmountJson;
   exchangeBaseUrl: string;
   amount: AmountJson;
@@ -112,14 +110,13 @@ interface TermsDocumentPdf {
   location: URL;
 }
 
-function amountToString(text: AmountJson) {
+function amountToString(text: AmountJson): string {
   const aj = Amounts.jsonifyAmount(text);
   const amount = Amounts.stringifyValue(aj);
   return `${amount} ${aj.currency}`;
 }
 
 export function View({
-  details,
   withdrawalFee,
   exchangeBaseUrl,
   knownExchanges,
@@ -132,7 +129,7 @@ export function View({
   onAccept,
   reviewed,
   confirmed,
-}: ViewProps) {
+}: ViewProps): VNode {
   const needsReview = terms.status === "changed" || terms.status === "new";
 
   const [switchingExchange, setSwitchingExchange] = useState<
@@ -309,7 +306,7 @@ export function WithdrawPageWithParsedURI({
 }: {
   uri: string;
   uriInfo: WithdrawUriInfoResponse;
-}) {
+}): VNode {
   const [customExchange, setCustomExchange] = useState<string | undefined>(
     undefined,
   );
@@ -407,7 +404,7 @@ export function WithdrawPageWithParsedURI({
   return (
     <View
       onWithdraw={onWithdraw}
-      details={details.tos}
+      // details={details.tos}
       amount={withdrawAmount}
       exchangeBaseUrl={exchange}
       withdrawalFee={details.info.withdrawFee} //FIXME

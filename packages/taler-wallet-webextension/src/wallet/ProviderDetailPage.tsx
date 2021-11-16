@@ -14,23 +14,23 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
 */
 
-import { i18n, Timestamp } from "@gnu-taler/taler-util";
+import { i18n } from "@gnu-taler/taler-util";
 import {
   ProviderInfo,
   ProviderPaymentStatus,
   ProviderPaymentType,
 } from "@gnu-taler/taler-wallet-core";
-import { format, formatDuration, intervalToDuration } from "date-fns";
-import { Fragment, VNode, h } from "preact";
+import { Fragment, h, VNode } from "preact";
 import { ErrorMessage } from "../components/ErrorMessage";
 import {
   Button,
   ButtonDestructive,
   ButtonPrimary,
   PaymentStatus,
-  WalletBox,
   SmallLightText,
+  WalletBox,
 } from "../components/styled";
+import { Time } from "../components/Time";
 import { useProviderStatus } from "../hooks/useProviderStatus";
 
 interface Props {
@@ -97,10 +97,7 @@ export function ProviderView({
       </header>
       <section>
         <p>
-          <b>Last backup:</b>{" "}
-          {lb == null || lb.t_ms == "never"
-            ? "never"
-            : format(lb.t_ms, "dd MMM yyyy")}{" "}
+          <b>Last backup:</b> <Time timestamp={lb} format="dd MMMM yyyy" />
         </p>
         <ButtonPrimary onClick={onSync}>
           <i18n.Translate>Back up</i18n.Translate>
@@ -128,7 +125,7 @@ export function ProviderView({
             <table>
               <thead>
                 <tr>
-                  <td></td>
+                  <td>&nbsp;</td>
                   <td>
                     <i18n.Translate>old</i18n.Translate>
                   </td>
@@ -174,32 +171,32 @@ export function ProviderView({
   );
 }
 
-function daysSince(d?: Timestamp) {
-  if (!d || d.t_ms === "never") return "never synced";
-  const duration = intervalToDuration({
-    start: d.t_ms,
-    end: new Date(),
-  });
-  const str = formatDuration(duration, {
-    delimiter: ", ",
-    format: [
-      duration?.years
-        ? i18n.str`years`
-        : duration?.months
-        ? i18n.str`months`
-        : duration?.days
-        ? i18n.str`days`
-        : duration?.hours
-        ? i18n.str`hours`
-        : duration?.minutes
-        ? i18n.str`minutes`
-        : i18n.str`seconds`,
-    ],
-  });
-  return `synced ${str} ago`;
-}
+// function daysSince(d?: Timestamp): string {
+//   if (!d || d.t_ms === "never") return "never synced";
+//   const duration = intervalToDuration({
+//     start: d.t_ms,
+//     end: new Date(),
+//   });
+//   const str = formatDuration(duration, {
+//     delimiter: ", ",
+//     format: [
+//       duration?.years
+//         ? i18n.str`years`
+//         : duration?.months
+//         ? i18n.str`months`
+//         : duration?.days
+//         ? i18n.str`days`
+//         : duration?.hours
+//         ? i18n.str`hours`
+//         : duration?.minutes
+//         ? i18n.str`minutes`
+//         : i18n.str`seconds`,
+//     ],
+//   });
+//   return `synced ${str} ago`;
+// }
 
-function Error({ info }: { info: ProviderInfo }) {
+function Error({ info }: { info: ProviderInfo }): VNode {
   if (info.lastError) {
     return <ErrorMessage title={info.lastError.hint} />;
   }
@@ -234,45 +231,45 @@ function Error({ info }: { info: ProviderInfo }) {
         );
     }
   }
-  return null;
+  return <Fragment />;
 }
 
-function colorByStatus(status: ProviderPaymentType) {
-  switch (status) {
-    case ProviderPaymentType.InsufficientBalance:
-      return "rgb(223, 117, 20)";
-    case ProviderPaymentType.Unpaid:
-      return "rgb(202, 60, 60)";
-    case ProviderPaymentType.Paid:
-      return "rgb(28, 184, 65)";
-    case ProviderPaymentType.Pending:
-      return "gray";
-    case ProviderPaymentType.InsufficientBalance:
-      return "rgb(202, 60, 60)";
-    case ProviderPaymentType.TermsChanged:
-      return "rgb(202, 60, 60)";
-  }
-}
+// function colorByStatus(status: ProviderPaymentType): string {
+//   switch (status) {
+//     case ProviderPaymentType.InsufficientBalance:
+//       return "rgb(223, 117, 20)";
+//     case ProviderPaymentType.Unpaid:
+//       return "rgb(202, 60, 60)";
+//     case ProviderPaymentType.Paid:
+//       return "rgb(28, 184, 65)";
+//     case ProviderPaymentType.Pending:
+//       return "gray";
+//     // case ProviderPaymentType.InsufficientBalance:
+//     //   return "rgb(202, 60, 60)";
+//     case ProviderPaymentType.TermsChanged:
+//       return "rgb(202, 60, 60)";
+//   }
+// }
 
-function descriptionByStatus(status: ProviderPaymentStatus) {
+function descriptionByStatus(status: ProviderPaymentStatus): VNode {
   switch (status.type) {
     // return i18n.str`no enough balance to make the payment`
     // return i18n.str`not paid yet`
     case ProviderPaymentType.Paid:
     case ProviderPaymentType.TermsChanged:
       if (status.paidUntil.t_ms === "never") {
-        return i18n.str`service paid`;
-      } else {
-        return (
-          <Fragment>
-            <b>Backup valid until:</b>{" "}
-            {format(status.paidUntil.t_ms, "dd MMM yyyy")}
-          </Fragment>
-        );
+        return <span>{i18n.str`service paid`}</span>;
       }
+      return (
+        <Fragment>
+          <b>Backup valid until:</b>{" "}
+          <Time timestamp={status.paidUntil} format="dd MMM yyyy" />
+        </Fragment>
+      );
+
     case ProviderPaymentType.Unpaid:
     case ProviderPaymentType.InsufficientBalance:
     case ProviderPaymentType.Pending:
-      return "";
+      return <span />;
   }
 }

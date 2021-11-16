@@ -18,17 +18,14 @@ import {
   amountFractionalBase,
   Amounts,
   Balance,
-  BalancesResponse,
   i18n,
 } from "@gnu-taler/taler-util";
-import { JSX, h, Fragment } from "preact";
-import { ErrorMessage } from "../components/ErrorMessage";
+import { h, VNode } from "preact";
 import {
-  PopupBox,
-  Centered,
   ButtonPrimary,
   ErrorBox,
   Middle,
+  PopupBox,
 } from "../components/styled/index";
 import { BalancesHook, useBalances } from "../hooks/useBalances";
 import { PageLink, renderAmount } from "../renderHtml";
@@ -37,7 +34,7 @@ export function BalancePage({
   goToWalletManualWithdraw,
 }: {
   goToWalletManualWithdraw: () => void;
-}) {
+}): VNode {
   const balance = useBalances();
   return (
     <BalanceView
@@ -53,11 +50,11 @@ export interface BalanceViewProps {
   goToWalletManualWithdraw: () => void;
 }
 
-function formatPending(entry: Balance): JSX.Element {
-  let incoming: JSX.Element | undefined;
-  let payment: JSX.Element | undefined;
+function formatPending(entry: Balance): VNode {
+  let incoming: VNode | undefined;
+  let payment: VNode | undefined;
 
-  const available = Amounts.parseOrThrow(entry.available);
+  // const available = Amounts.parseOrThrow(entry.available);
   const pendingIncoming = Amounts.parseOrThrow(entry.pendingIncoming);
   const pendingOutgoing = Amounts.parseOrThrow(entry.pendingOutgoing);
 
@@ -105,8 +102,8 @@ export function BalanceView({
   balance,
   Linker,
   goToWalletManualWithdraw,
-}: BalanceViewProps) {
-  function Content() {
+}: BalanceViewProps): VNode {
+  function Content(): VNode {
     if (!balance) {
       return <span />;
     }
@@ -139,7 +136,7 @@ export function BalanceView({
     return (
       <section data-expanded data-centered>
         <table style={{ width: "100%" }}>
-          {balance.response.balances.map((entry) => {
+          {balance.response.balances.map((entry, idx) => {
             const av = Amounts.parseOrThrow(entry.available);
             // Create our number formatter.
             let formatter;
@@ -168,7 +165,7 @@ export function BalanceView({
             const fontSize =
               v.length < 8 ? "3em" : v.length < 13 ? "2em" : "1em";
             return (
-              <tr>
+              <tr key={idx}>
                 <td
                   style={{
                     height: 50,

@@ -13,12 +13,10 @@
  You should have received a copy of the GNU General Public License along with
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-import { Fragment, VNode } from "preact";
+import { Fragment, VNode, h } from "preact";
 import { useState } from "preact/hooks";
-import { JSXInternal } from "preact/src/jsx";
-import { h } from "preact";
 
-export function ExchangeXmlTos({ doc }: { doc: Document }) {
+export function ExchangeXmlTos({ doc }: { doc: Document }): VNode {
   const termsNode = doc.querySelector("[ids=terms-of-service]");
   if (!termsNode) {
     return (
@@ -70,7 +68,7 @@ function renderChild(child: Element): VNode {
     default:
       return (
         <div style={{ color: "red", display: "hidden" }}>
-          unknown tag {child.nodeName} <a></a>
+          unknown tag {child.nodeName}
         </div>
       );
   }
@@ -81,10 +79,10 @@ function renderChild(child: Element): VNode {
  * @returns
  */
 function AnchorWithOpenState(
-  props: JSXInternal.HTMLAttributes<HTMLAnchorElement>,
-) {
+  props: h.JSX.HTMLAttributes<HTMLAnchorElement>,
+): VNode {
   const [open, setOpen] = useState<boolean>(false);
-  function doClick(e: JSXInternal.TargetedMouseEvent<HTMLAnchorElement>) {
+  function doClick(e: h.JSX.TargetedMouseEvent<HTMLAnchorElement>): void {
     setOpen(!open);
     e.preventDefault();
   }

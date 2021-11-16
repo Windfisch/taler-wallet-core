@@ -24,18 +24,18 @@ import {
   formatDuration,
   intervalToDuration,
 } from "date-fns";
-import { Fragment, JSX, VNode, h } from "preact";
+import { Fragment, h, VNode } from "preact";
 import {
   BoldLight,
   ButtonPrimary,
   ButtonSuccess,
   Centered,
-  CenteredText,
   CenteredBoldText,
+  CenteredText,
   PopupBox,
   RowBorderGray,
-  SmallText,
   SmallLightText,
+  SmallText,
 } from "../components/styled";
 import { useBackupStatus } from "../hooks/useBackupStatus";
 import { Pages } from "../NavigationBar";
@@ -72,8 +72,9 @@ export function BackupView({
   return (
     <PopupBox>
       <section>
-        {providers.map((provider) => (
+        {providers.map((provider, idx) => (
           <BackupLayout
+            key={idx}
             status={provider.paymentStatus}
             timestamp={provider.lastSuccessfulBackupTimestamp}
             id={provider.syncProviderBaseUrl}
@@ -117,7 +118,7 @@ interface TransactionLayoutProps {
   active: boolean;
 }
 
-function BackupLayout(props: TransactionLayoutProps): JSX.Element {
+function BackupLayout(props: TransactionLayoutProps): VNode {
   const date = !props.timestamp ? undefined : new Date(props.timestamp.t_ms);
   const dateStr = date?.toLocaleString([], {
     dateStyle: "medium",

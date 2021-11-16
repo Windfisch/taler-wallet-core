@@ -21,28 +21,27 @@ import {
   Transaction,
   TransactionType,
 } from "@gnu-taler/taler-util";
-import { format } from "date-fns";
-import { JSX, VNode, h } from "preact";
+import { h, VNode } from "preact";
 import { route } from "preact-router";
 import { useEffect, useState } from "preact/hooks";
 import emptyImg from "../../static/img/empty.png";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { Part } from "../components/Part";
 import {
-  ButtonBox,
-  ButtonBoxDestructive,
+  Button,
+  ButtonDestructive,
   ButtonPrimary,
-  FontIcon,
   ListOfProducts,
   RowBorderGray,
   SmallLightText,
   WalletBox,
   WarningBox,
 } from "../components/styled";
+import { Time } from "../components/Time";
 import { Pages } from "../NavigationBar";
 import * as wxApi from "../wxApi";
 
-export function TransactionPage({ tid }: { tid: string }): JSX.Element {
+export function TransactionPage({ tid }: { tid: string }): VNode {
   const [transaction, setTransaction] = useState<Transaction | undefined>(
     undefined,
   );
@@ -70,8 +69,8 @@ export function TransactionPage({ tid }: { tid: string }): JSX.Element {
   return (
     <TransactionView
       transaction={transaction}
-      onDelete={() => wxApi.deleteTransaction(tid).then((_) => history.go(-1))}
-      onRetry={() => wxApi.retryTransaction(tid).then((_) => history.go(-1))}
+      onDelete={() => wxApi.deleteTransaction(tid).then(() => history.go(-1))}
+      onRetry={() => wxApi.retryTransaction(tid).then(() => history.go(-1))}
       onBack={() => {
         route(Pages.history);
       }}
@@ -91,42 +90,42 @@ export function TransactionView({
   onDelete,
   onRetry,
   onBack,
-}: WalletTransactionProps) {
-  function TransactionTemplate({ children }: { children: VNode[] }) {
+}: WalletTransactionProps): VNode {
+  function TransactionTemplate({ children }: { children: VNode[] }): VNode {
     return (
       <WalletBox>
         <section style={{ padding: 8, textAlign: "center" }}>
           <ErrorMessage title={transaction?.error?.hint} />
           {transaction.pending && (
-            <WarningBox>This transaction is not completed</WarningBox>
+            <WarningBox>
+              This transaction is not completed
+              <a href="">more info...</a>
+            </WarningBox>
           )}
         </section>
         <section>
           <div style={{ textAlign: "center" }}>{children}</div>
         </section>
         <footer>
-          <ButtonBox onClick={onBack}>
-            <i18n.Translate>
-              {" "}
-              <FontIcon>&#x2190;</FontIcon>{" "}
-            </i18n.Translate>
-          </ButtonBox>
+          <Button onClick={onBack}>
+            <i18n.Translate> &lt; Back </i18n.Translate>
+          </Button>
           <div>
             {transaction?.error ? (
               <ButtonPrimary onClick={onRetry}>
                 <i18n.Translate>retry</i18n.Translate>
               </ButtonPrimary>
             ) : null}
-            <ButtonBoxDestructive onClick={onDelete}>
-              <i18n.Translate>&#x1F5D1;</i18n.Translate>
-            </ButtonBoxDestructive>
+            <ButtonDestructive onClick={onDelete}>
+              <i18n.Translate> Forget </i18n.Translate>
+            </ButtonDestructive>
           </div>
         </footer>
       </WalletBox>
     );
   }
 
-  function amountToString(text: AmountLike) {
+  function amountToString(text: AmountLike): string {
     const aj = Amounts.jsonifyAmount(text);
     const amount = Amounts.stringifyValue(aj);
     return `${amount} ${aj.currency}`;
@@ -140,23 +139,26 @@ export function TransactionView({
     return (
       <TransactionTemplate>
         <h2>Withdrawal</h2>
-        <div>
-          {transaction.timestamp.t_ms === "never"
-            ? "never"
-            : format(transaction.timestamp.t_ms, "dd MMMM yyyy, HH:mm")}
-        </div>
+        <Time timestamp={transaction.timestamp} format="dd MMMM yyyy, HH:mm" />
         <br />
         <Part
+          big
           title="Total withdrawn"
           text={amountToString(transaction.amountEffective)}
           kind="positive"
         />
         <Part
+          big
           title="Chosen amount"
           text={amountToString(transaction.amountRaw)}
           kind="neutral"
         />
-        <Part title="Exchange fee" text={amountToString(fee)} kind="negative" />
+        <Part
+          big
+          title="Exchange fee"
+          text={amountToString(fee)}
+          kind="negative"
+        />
         <Part
           title="Exchange"
           text={new URL(transaction.exchangeBaseUrl).hostname}
@@ -166,7 +168,9 @@ export function TransactionView({
     );
   }
 
-  const showLargePic = () => {};
+  const showLargePic = (): void => {
+    return;
+  };
 
   if (transaction.type === TransactionType.Payment) {
     const fee = Amounts.sub(
@@ -177,11 +181,7 @@ export function TransactionView({
     return (
       <TransactionTemplate>
         <h2>Payment </h2>
-        <div>
-          {transaction.timestamp.t_ms === "never"
-            ? "never"
-            : format(transaction.timestamp.t_ms, "dd MMMM yyyy, HH:mm")}
-        </div>
+        <Time timestamp={transaction.timestamp} format="dd MMMM yyyy, HH:mm" />
         <br />
         <Part
           big
@@ -241,11 +241,7 @@ export function TransactionView({
     return (
       <TransactionTemplate>
         <h2>Deposit </h2>
-        <div>
-          {transaction.timestamp.t_ms === "never"
-            ? "never"
-            : format(transaction.timestamp.t_ms, "dd MMMM yyyy, HH:mm")}
-        </div>
+        <Time timestamp={transaction.timestamp} format="dd MMMM yyyy, HH:mm" />
         <br />
         <Part
           big
@@ -272,11 +268,7 @@ export function TransactionView({
     return (
       <TransactionTemplate>
         <h2>Refresh</h2>
-        <div>
-          {transaction.timestamp.t_ms === "never"
-            ? "never"
-            : format(transaction.timestamp.t_ms, "dd MMMM yyyy, HH:mm")}
-        </div>
+        <Time timestamp={transaction.timestamp} format="dd MMMM yyyy, HH:mm" />
         <br />
         <Part
           big
@@ -303,11 +295,7 @@ export function TransactionView({
     return (
       <TransactionTemplate>
         <h2>Tip</h2>
-        <div>
-          {transaction.timestamp.t_ms === "never"
-            ? "never"
-            : format(transaction.timestamp.t_ms, "dd MMMM yyyy, HH:mm")}
-        </div>
+        <Time timestamp={transaction.timestamp} format="dd MMMM yyyy, HH:mm" />
         <br />
         <Part
           big
@@ -334,11 +322,7 @@ export function TransactionView({
     return (
       <TransactionTemplate>
         <h2>Refund</h2>
-        <div>
-          {transaction.timestamp.t_ms === "never"
-            ? "never"
-            : format(transaction.timestamp.t_ms, "dd MMMM yyyy, HH:mm")}
-        </div>
+        <Time timestamp={transaction.timestamp} format="dd MMMM yyyy, HH:mm" />
         <br />
         <Part
           big
@@ -391,5 +375,5 @@ export function TransactionView({
     );
   }
 
-  return <div></div>;
+  return <div />;
 }

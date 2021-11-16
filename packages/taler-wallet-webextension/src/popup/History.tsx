@@ -21,14 +21,14 @@ import {
   Transaction,
   TransactionsResponse,
 } from "@gnu-taler/taler-util";
-import { h, JSX } from "preact";
+import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { PopupBox } from "../components/styled";
 import { TransactionItem } from "../components/TransactionItem";
 import { useBalances } from "../hooks/useBalances";
 import * as wxApi from "../wxApi";
 
-export function HistoryPage(props: any): JSX.Element {
+export function HistoryPage(): VNode {
   const [transactions, setTransactions] = useState<
     TransactionsResponse | undefined
   >(undefined);

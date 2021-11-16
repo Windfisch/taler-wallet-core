@@ -28,13 +28,13 @@ import {
   Amounts,
   amountFractionalBase,
 } from "@gnu-taler/taler-util";
-import { Component, ComponentChildren, JSX, h } from "preact";
+import { Component, ComponentChildren, h, VNode } from "preact";
 
 /**
  * Render amount as HTML, which non-breaking space between
  * decimal value and currency.
  */
-export function renderAmount(amount: AmountJson | string): JSX.Element {
+export function renderAmount(amount: AmountJson | string): VNode {
   let a;
   if (typeof amount === "string") {
     a = Amounts.parse(amount);
@@ -56,13 +56,13 @@ export const AmountView = ({
   amount,
 }: {
   amount: AmountJson | string;
-}): JSX.Element => renderAmount(amount);
+}): VNode => renderAmount(amount);
 
 /**
  * Abbreviate a string to a given length, and show the full
  * string on hover as a tooltip.
  */
-export function abbrev(s: string, n = 5): JSX.Element {
+export function abbrev(s: string, n = 5): VNode {
   let sAbbrev = s;
   if (s.length > n) {
     sAbbrev = s.slice(0, n) + "..";
@@ -92,7 +92,7 @@ export class Collapsible extends Component<CollapsibleProps, CollapsibleState> {
     super(props);
     this.state = { collapsed: props.initiallyCollapsed };
   }
-  render(): JSX.Element {
+  render(): VNode {
     const doOpen = (e: any): void => {
       this.setState({ collapsed: false });
       e.preventDefault();
@@ -132,19 +132,19 @@ interface ExpanderTextProps {
 /**
  * Show a heading with a toggle to show/hide the expandable content.
  */
-export function ExpanderText({ text }: ExpanderTextProps): JSX.Element {
+export function ExpanderText({ text }: ExpanderTextProps): VNode {
   return <span>{text}</span>;
 }
 
 export interface LoadingButtonProps
-  extends JSX.HTMLAttributes<HTMLButtonElement> {
+  extends h.JSX.HTMLAttributes<HTMLButtonElement> {
   isLoading: boolean;
 }
 
 export function ProgressButton({
   isLoading,
   ...rest
-}: LoadingButtonProps): JSX.Element {
+}: LoadingButtonProps): VNode {
   return (
     <button class="pure-button pure-button-primary" type="button" {...rest}>
       {isLoading ? (
@@ -160,7 +160,8 @@ export function ProgressButton({
 export function PageLink(props: {
   pageName: string;
   children?: ComponentChildren;
-}): JSX.Element {
+}): VNode {
+  // eslint-disable-next-line no-undef
   const url = chrome.extension.getURL(`/static/wallet.html#/${props.pageName}`);
   return (
     <a class="actionLink" href={url} target="_blank" rel="noopener noreferrer">

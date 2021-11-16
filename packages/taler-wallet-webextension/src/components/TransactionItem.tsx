@@ -20,8 +20,7 @@ import {
   Transaction,
   TransactionType,
 } from "@gnu-taler/taler-util";
-import { format, formatDistance } from "date-fns";
-import { h } from "preact";
+import { h, VNode } from "preact";
 import imageBank from "../../static/img/ri-bank-line.svg";
 import imageHandHeart from "../../static/img/ri-hand-heart-line.svg";
 import imageRefresh from "../../static/img/ri-refresh-line.svg";
@@ -36,11 +35,12 @@ import {
   LargeText,
   LightText,
 } from "./styled/index";
+import { Time } from "./Time";
 
 export function TransactionItem(props: {
   tx: Transaction;
   multiCurrency: boolean;
-}): JSX.Element {
+}): VNode {
   const tx = props.tx;
   switch (tx.type) {
     case TransactionType.Withdrawal:
@@ -125,10 +125,7 @@ export function TransactionItem(props: {
   }
 }
 
-function TransactionLayout(props: TransactionLayoutProps): JSX.Element {
-  const date = new Date(props.timestamp.t_ms);
-  const dateStr = format(date, "dd MMM, hh:mm");
-
+function TransactionLayout(props: TransactionLayoutProps): VNode {
   return (
     <HistoryRow href={Pages.transaction.replace(":tid", props.id)}>
       <img src={props.iconPath} />
@@ -146,7 +143,9 @@ function TransactionLayout(props: TransactionLayoutProps): JSX.Element {
             Waiting for confirmation
           </LightText>
         )}
-        <SmallLightText style={{ marginTop: 5 }}>{dateStr}</SmallLightText>
+        <SmallLightText style={{ marginTop: 5 }}>
+          <Time timestamp={props.timestamp} format="dd MMM, hh:mm" />
+        </SmallLightText>
       </Column>
       <TransactionAmount
         pending={props.pending}
@@ -177,7 +176,7 @@ interface TransactionAmountProps {
   multiCurrency: boolean;
 }
 
-function TransactionAmount(props: TransactionAmountProps): JSX.Element {
+function TransactionAmount(props: TransactionAmountProps): VNode {
   const [currency, amount] = props.amount.split(":");
   let sign: string;
   switch (props.debitCreditIndicator) {

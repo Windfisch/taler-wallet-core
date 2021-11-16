@@ -20,7 +20,7 @@
  * @author Florian Dold
  */
 
-import { Component, JSX, h } from "preact";
+import { Component, h, VNode } from "preact";
 import * as wxApi from "../wxApi";
 
 interface State {
@@ -45,7 +45,7 @@ class ResetNotification extends Component<any, State> {
     const res = await wxApi.checkUpgrade();
     this.setState({ resetRequired: res.dbResetRequired });
   }
-  render(): JSX.Element {
+  render(): VNode {
     if (this.state.resetRequired) {
       return (
         <div>
@@ -92,6 +92,6 @@ class ResetNotification extends Component<any, State> {
 /**
  * @deprecated to be removed
  */
-export function createResetRequiredPage(): JSX.Element {
+export function createResetRequiredPage(): VNode {
   return <ResetNotification />;
 }

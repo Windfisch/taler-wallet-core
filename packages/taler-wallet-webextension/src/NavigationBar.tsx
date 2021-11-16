@@ -25,10 +25,10 @@
  * Imports.
  */
 import { i18n } from "@gnu-taler/taler-util";
-import { ComponentChildren, JSX, h } from "preact";
+import { ComponentChildren, h, VNode } from "preact";
 import Match from "preact-router/match";
-import { useDevContext } from "./context/devContext";
 import { PopupNavigation } from "./components/styled";
+import { useDevContext } from "./context/devContext";
 
 export enum Pages {
   welcome = "/welcome",
@@ -59,7 +59,7 @@ interface TabProps {
   children?: ComponentChildren;
 }
 
-function Tab(props: TabProps): JSX.Element {
+function Tab(props: TabProps): VNode {
   let cssClass = "";
   if (props.current?.startsWith(props.target)) {
     cssClass = "active";

@@ -26,44 +26,31 @@ import {
 import { ReserveCreated } from "./ReserveCreated.js";
 import { route } from "preact-router";
 import { Pages } from "../NavigationBar.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 
-interface Props {}
-
-export function ManualWithdrawPage({}: Props): VNode {
+export function ManualWithdrawPage(): VNode {
   const [success, setSuccess] = useState<
-    AcceptManualWithdrawalResult | undefined
+    | {
+        response: AcceptManualWithdrawalResult;
+        exchangeBaseUrl: string;
+        amount: AmountJson;
+      }
+    | undefined
   >(undefined);
-  const [currency, setCurrency] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
 
-  async function onExchangeChange(exchange: string | undefined): Promise<void> {
-    if (!exchange) return;
-    try {
-      const r = await fetch(`${exchange}/keys`);
-      const j = await r.json();
-      if (j.currency) {
-        await wxApi.addExchange({
-          exchangeBaseUrl: `${exchange}/`,
-          forceUpdate: true,
-        });
-        setCurrency(j.currency);
-      }
-    } catch (e) {
-      setError("The exchange url seems invalid");
-      setCurrency(undefined);
-    }
-  }
+  const knownExchangesHook = useAsyncAsHook(() => wxApi.listExchanges());
 
   async function doCreate(
     exchangeBaseUrl: string,
     amount: AmountJson,
   ): Promise<void> {
     try {
-      const resp = await wxApi.acceptManualWithdrawal(
+      const response = await wxApi.acceptManualWithdrawal(
         exchangeBaseUrl,
         Amounts.stringify(amount),
       );
-      setSuccess(resp);
+      setSuccess({ exchangeBaseUrl, response, amount });
     } catch (e) {
       if (e instanceof Error) {
         setError(e.message);
@@ -77,8 +64,10 @@ export function ManualWithdrawPage({}: Props): VNode {
   if (success) {
     return (
       <ReserveCreated
-        reservePub={success.reservePub}
-        paytos={success.exchangePaytoUris}
+        reservePub={success.response.reservePub}
+        payto={success.response.exchangePaytoUris[0]}
+        exchangeBaseUrl={success.exchangeBaseUrl}
+        amount={success.amount}
         onBack={() => {
           route(Pages.balance);
         }}
@@ -86,12 +75,22 @@ export function ManualWithdrawPage({}: Props): VNode {
     );
   }
 
+  if (!knownExchangesHook || knownExchangesHook.hasError) {
+    return <div>No Known exchanges</div>;
+  }
+  const exchangeList = knownExchangesHook.response.exchanges.reduce(
+    (p, c) => ({
+      ...p,
+      [c.exchangeBaseUrl]: c.currency,
+    }),
+    {} as Record<string, string>,
+  );
+
   return (
     <CreateManualWithdraw
       error={error}
-      currency={currency}
+      exchangeList={exchangeList}
       onCreate={doCreate}
-      onExchangeChange={onExchangeChange}
     />
   );
 }

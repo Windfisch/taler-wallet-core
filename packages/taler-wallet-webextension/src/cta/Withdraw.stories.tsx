@@ -19,10 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { amountFractionalBase, Amounts } from "@gnu-taler/taler-util";
-import { ExchangeRecord } from "@gnu-taler/taler-wallet-core";
-import { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core/src/operations/withdraw";
-import { getMaxListeners } from "process";
+import { amountFractionalBase } from "@gnu-taler/taler-util";
 import { createExample } from "../test-utils";
 import { View as TestedComponent } from "./Withdraw";
 
@@ -793,12 +790,6 @@ export const NewTerms = createExample(TestedComponent, {
     },
   ],
   exchangeBaseUrl: "exchange.demo.taler.net",
-  details: {
-    content: "",
-    contentType: "",
-    currentEtag: "",
-    acceptedEtag: undefined,
-  },
   withdrawalFee: {
     currency: "USD",
     fraction: 0,
@@ -810,7 +801,9 @@ export const NewTerms = createExample(TestedComponent, {
     fraction: 10000000,
   },
 
-  onSwitchExchange: async () => {},
+  onSwitchExchange: async () => {
+    null;
+  },
   terms: {
     value: {
       type: "xml",
@@ -834,12 +827,6 @@ export const TermsReviewingPLAIN = createExample(TestedComponent, {
     },
   ],
   exchangeBaseUrl: "exchange.demo.taler.net",
-  details: {
-    content: "",
-    contentType: "",
-    currentEtag: "",
-    acceptedEtag: undefined,
-  },
   withdrawalFee: {
     currency: "USD",
     fraction: 0,
@@ -851,7 +838,9 @@ export const TermsReviewingPLAIN = createExample(TestedComponent, {
     fraction: 10000000,
   },
 
-  onSwitchExchange: async () => {},
+  onSwitchExchange: async () => {
+    null;
+  },
   terms: {
     value: {
       type: "plain",
@@ -876,12 +865,6 @@ export const TermsReviewingHTML = createExample(TestedComponent, {
     },
   ],
   exchangeBaseUrl: "exchange.demo.taler.net",
-  details: {
-    content: "",
-    contentType: "",
-    currentEtag: "",
-    acceptedEtag: undefined,
-  },
   withdrawalFee: {
     currency: "USD",
     fraction: 0,
@@ -893,7 +876,9 @@ export const TermsReviewingHTML = createExample(TestedComponent, {
     fraction: 10000000,
   },
 
-  onSwitchExchange: async () => {},
+  onSwitchExchange: async () => {
+    null;
+  },
   terms: {
     value: {
       type: "html",
@@ -935,12 +920,6 @@ export const TermsReviewingPDF = createExample(TestedComponent, {
     },
   ],
   exchangeBaseUrl: "exchange.demo.taler.net",
-  details: {
-    content: "",
-    contentType: "",
-    currentEtag: "",
-    acceptedEtag: undefined,
-  },
   withdrawalFee: {
     currency: "USD",
     fraction: 0,
@@ -952,7 +931,9 @@ export const TermsReviewingPDF = createExample(TestedComponent, {
     fraction: 10000000,
   },
 
-  onSwitchExchange: async () => {},
+  onSwitchExchange: async () => {
+    null;
+  },
   terms: {
     value: {
       type: "pdf",
@@ -979,12 +960,6 @@ export const TermsReviewingXML = createExample(TestedComponent, {
     },
   ],
   exchangeBaseUrl: "exchange.demo.taler.net",
-  details: {
-    content: "",
-    contentType: "",
-    currentEtag: "",
-    acceptedEtag: undefined,
-  },
   withdrawalFee: {
     currency: "USD",
     fraction: 0,
@@ -996,7 +971,9 @@ export const TermsReviewingXML = createExample(TestedComponent, {
     fraction: 10000000,
   },
 
-  onSwitchExchange: async () => {},
+  onSwitchExchange: async () => {
+    null;
+  },
   terms: {
     value: {
       type: "xml",
@@ -1021,12 +998,6 @@ export const NewTermsAccepted = createExample(TestedComponent, {
     },
   ],
   exchangeBaseUrl: "exchange.demo.taler.net",
-  details: {
-    content: "",
-    contentType: "",
-    currentEtag: "",
-    acceptedEtag: undefined,
-  },
   withdrawalFee: {
     currency: "USD",
     fraction: 0,
@@ -1037,7 +1008,9 @@ export const NewTermsAccepted = createExample(TestedComponent, {
     value: 2,
     fraction: 10000000,
   },
-  onSwitchExchange: async () => {},
+  onSwitchExchange: async () => {
+    null;
+  },
   terms: {
     value: {
       type: "xml",
@@ -1062,12 +1035,6 @@ export const TermsShowAgainXML = createExample(TestedComponent, {
     },
   ],
   exchangeBaseUrl: "exchange.demo.taler.net",
-  details: {
-    content: "",
-    contentType: "",
-    currentEtag: "",
-    acceptedEtag: undefined,
-  },
   withdrawalFee: {
     currency: "USD",
     fraction: 0,
@@ -1079,7 +1046,9 @@ export const TermsShowAgainXML = createExample(TestedComponent, {
     fraction: 10000000,
   },
 
-  onSwitchExchange: async () => {},
+  onSwitchExchange: async () => {
+    null;
+  },
   terms: {
     value: {
       type: "xml",
@@ -1105,12 +1074,6 @@ export const TermsChanged = createExample(TestedComponent, {
     },
   ],
   exchangeBaseUrl: "exchange.demo.taler.net",
-  details: {
-    content: "",
-    contentType: "",
-    currentEtag: "",
-    acceptedEtag: undefined,
-  },
   withdrawalFee: {
     currency: "USD",
     fraction: 0,
@@ -1122,7 +1085,9 @@ export const TermsChanged = createExample(TestedComponent, {
     fraction: 10000000,
   },
 
-  onSwitchExchange: async () => {},
+  onSwitchExchange: async () => {
+    null;
+  },
   terms: {
     value: {
       type: "xml",
@@ -1146,12 +1111,6 @@ export const TermsNotFound = createExample(TestedComponent, {
     },
   ],
   exchangeBaseUrl: "exchange.demo.taler.net",
-  details: {
-    content: "",
-    contentType: "",
-    currentEtag: "",
-    acceptedEtag: undefined,
-  },
   withdrawalFee: {
     currency: "USD",
     fraction: 0,
@@ -1163,7 +1122,9 @@ export const TermsNotFound = createExample(TestedComponent, {
     fraction: 10000000,
   },
 
-  onSwitchExchange: async () => {},
+  onSwitchExchange: async () => {
+    null;
+  },
   terms: {
     status: "notfound",
   },
@@ -1183,12 +1144,6 @@ export const TermsAlreadyAccepted = createExample(TestedComponent, {
     },
   ],
   exchangeBaseUrl: "exchange.demo.taler.net",
-  details: {
-    content: "",
-    contentType: "",
-    currentEtag: "",
-    acceptedEtag: undefined,
-  },
   withdrawalFee: {
     currency: "USD",
     fraction: amountFractionalBase * 0.5,
@@ -1200,7 +1155,9 @@ export const TermsAlreadyAccepted = createExample(TestedComponent, {
     fraction: 10000000,
   },
 
-  onSwitchExchange: async () => {},
+  onSwitchExchange: async () => {
+    null;
+  },
   terms: {
     status: "accepted",
   },
@@ -1220,12 +1177,6 @@ export const WithoutFee = createExample(TestedComponent, {
     },
   ],
   exchangeBaseUrl: "exchange.demo.taler.net",
-  details: {
-    content: "",
-    contentType: "",
-    currentEtag: "",
-    acceptedEtag: undefined,
-  },
   withdrawalFee: {
     currency: "USD",
     fraction: 0,
@@ -1237,7 +1188,9 @@ export const WithoutFee = createExample(TestedComponent, {
     fraction: 10000000,
   },
 
-  onSwitchExchange: async () => {},
+  onSwitchExchange: async () => {
+    null;
+  },
   terms: {
     value: {
       type: "xml",
