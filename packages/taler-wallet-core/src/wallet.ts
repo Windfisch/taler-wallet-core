@@ -387,6 +387,7 @@ async function runTaskLoop(
         } catch (e) {
           if (e instanceof OperationFailedAndReportedError) {
             logger.warn("operation processed resulted in reported error");
+            logger.warn(`reporred error was: ${j2s(e.operationError)}`);
           } else {
             logger.error("Uncaught exception", e);
             ws.notify({
@@ -929,7 +930,7 @@ async function dispatchRequestInternal(
       }
       const components = pt.targetPath.split("/");
       const creditorAcct = components[components.length - 1];
-      logger.info(`making testbank transfer to '${creditorAcct}''`)
+      logger.info(`making testbank transfer to '${creditorAcct}''`);
       const fbReq = await ws.http.postJson(
         new URL(`${creditorAcct}/admin/add-incoming`, req.bank).href,
         {

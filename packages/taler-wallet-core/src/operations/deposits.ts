@@ -25,6 +25,7 @@ import {
   ContractTerms,
   CreateDepositGroupRequest,
   CreateDepositGroupResponse,
+  decodeCrock,
   durationFromSpec,
   getTimestampNow,
   Logger,
@@ -106,7 +107,7 @@ function hashWire(paytoUri: string, salt: string): string {
   const r = kdf(
     64,
     stringToBytes(paytoUri + "\0"),
-    stringToBytes(salt + "\0"),
+    decodeCrock(salt),
     stringToBytes("merchant-wire-signature"),
   );
   return encodeCrock(r);
@@ -213,8 +214,8 @@ async function processDepositGroupImpl(
     const url = new URL(`coins/${perm.coin_pub}/deposit`, perm.exchange_url);
     const httpResp = await ws.http.postJson(url.href, {
       contribution: Amounts.stringify(perm.contribution),
-      wire: depositGroup.wire,
-      h_wire: depositGroup.contractTermsRaw.h_wire,
+      merchant_payto_uri: depositGroup.wire.payto_uri,
+      wire_salt: depositGroup.wire.salt,
       h_contract_terms: depositGroup.contractTermsHash,
       ub_sig: perm.ub_sig,
       timestamp: depositGroup.contractTermsRaw.timestamp,
@@ -355,7 +356,7 @@ export async function createDepositGroup(
   const timestampRound = timestampTruncateToSecond(timestamp);
   const noncePair = await ws.cryptoApi.createEddsaKeypair();
   const merchantPair = await ws.cryptoApi.createEddsaKeypair();
-  const wireSalt = encodeCrock(getRandomBytes(64));
+  const wireSalt = encodeCrock(getRandomBytes(16));
   const wireHash = hashWire(req.depositPaytoUri, wireSalt);
   const contractTerms: ContractTerms = {
     auditors: [],

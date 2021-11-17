@@ -94,7 +94,7 @@ export function canonicalJson(obj: any): string {
 /**
  * Lexically compare two strings.
  */
-export function strcmp(s1: string, s2: string): number {
+export function strcmp(s1: string, s2: string): -1 | 0 | 1 {
   if (s1 < s2) {
     return -1;
   }
@@ -113,15 +113,14 @@ export function j2s(x: any): string {
 
 /**
  * Use this to filter null or undefined from an array in a type-safe fashion
- * 
+ *
  * example:
  * const array: Array<T | undefined> = [undefined, null]
  * const filtered: Array<T> = array.filter(notEmpty)
- * 
- * @param value 
- * @returns 
+ *
+ * @param value
+ * @returns
  */
 export function notEmpty<T>(value: T | null | undefined): value is T {
   return value !== null && value !== undefined;
 }
-

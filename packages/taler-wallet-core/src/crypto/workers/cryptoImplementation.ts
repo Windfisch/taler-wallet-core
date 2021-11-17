@@ -35,7 +35,9 @@ import {
 import {
   buildSigPS,
   CoinDepositPermission,
+  DenomKeyType,
   FreshCoin,
+  hashDenomPub,
   RecoupRequest,
   RefreshPlanchetInfo,
   TalerSignaturePurpose,
@@ -152,17 +154,20 @@ export class CryptoImplementation {
    * reserve.
    */
   createPlanchet(req: PlanchetCreationRequest): PlanchetCreationResult {
+    if (req.denomPub.cipher !== 1) {
+      throw Error("unsupported cipher");
+    }
     const reservePub = decodeCrock(req.reservePub);
     const reservePriv = decodeCrock(req.reservePriv);
-    const denomPub = decodeCrock(req.denomPub);
+    const denomPubRsa = decodeCrock(req.denomPub.rsa_public_key);
     const derivedPlanchet = setupWithdrawPlanchet(
       decodeCrock(req.secretSeed),
       req.coinIndex,
     );
     const coinPubHash = hash(derivedPlanchet.coinPub);
-    const ev = rsaBlind(coinPubHash, derivedPlanchet.bks, denomPub);
+    const ev = rsaBlind(coinPubHash, derivedPlanchet.bks, denomPubRsa);
     const amountWithFee = Amounts.add(req.value, req.feeWithdraw).amount;
-    const denomPubHash = hash(denomPub);
+    const denomPubHash = hashDenomPub(req.denomPub);
     const evHash = hash(ev);
 
     const withdrawRequest = buildSigPS(
@@ -182,7 +187,10 @@ export class CryptoImplementation {
       coinPriv: encodeCrock(derivedPlanchet.coinPriv),
       coinPub: encodeCrock(derivedPlanchet.coinPub),
       coinValue: req.value,
-      denomPub: encodeCrock(denomPub),
+      denomPub: {
+        cipher: 1,
+        rsa_public_key: encodeCrock(denomPubRsa),
+      },
       denomPubHash: encodeCrock(denomPubHash),
       reservePub: encodeCrock(reservePub),
       withdrawSig: encodeCrock(sig),
@@ -195,8 +203,11 @@ export class CryptoImplementation {
    * Create a planchet used for tipping, including the private keys.
    */
   createTipPlanchet(req: DeriveTipRequest): DerivedTipPlanchet {
+    if (req.denomPub.cipher !== 1) {
+      throw Error("unsupported cipher");
+    }
     const fc = setupTipPlanchet(decodeCrock(req.secretSeed), req.planchetIndex);
-    const denomPub = decodeCrock(req.denomPub);
+    const denomPub = decodeCrock(req.denomPub.rsa_public_key);
     const coinPubHash = hash(fc.coinPub);
     const ev = rsaBlind(coinPubHash, fc.bks, denomPub);
 
@@ -319,14 +330,9 @@ export class CryptoImplementation {
     sig: string,
     masterPub: string,
   ): boolean {
-    const h = kdf(
-      64,
-      stringToBytes("exchange-wire-signature"),
-      stringToBytes(paytoUri + "\0"),
-      new Uint8Array(0),
-    );
+    const paytoHash = hash(stringToBytes(paytoUri + "\0"));
     const p = buildSigPS(TalerSignaturePurpose.MASTER_WIRE_DETAILS)
-      .put(h)
+      .put(paytoHash)
       .build();
     return eddsaVerify(p, decodeCrock(sig), decodeCrock(masterPub));
   }
@@ -385,8 +391,11 @@ export class CryptoImplementation {
    * and deposit permissions for each given coin.
    */
   signDepositPermission(depositInfo: DepositInfo): CoinDepositPermission {
+    // FIXME: put extensions here if used
+    const hExt = new Uint8Array(64);
     const d = buildSigPS(TalerSignaturePurpose.WALLET_COIN_DEPOSIT)
       .put(decodeCrock(depositInfo.contractTermsHash))
+      .put(hExt)
       .put(decodeCrock(depositInfo.wireInfoHash))
       .put(decodeCrock(depositInfo.denomPubHash))
       .put(timestampRoundedToBuffer(depositInfo.timestamp))
@@ -394,7 +403,6 @@ export class CryptoImplementation {
       .put(amountToBuffer(depositInfo.spendAmount))
       .put(amountToBuffer(depositInfo.feeDeposit))
       .put(decodeCrock(depositInfo.merchantPub))
-      .put(decodeCrock(depositInfo.coinPub))
       .build();
     const coinSig = eddsaSign(d, decodeCrock(depositInfo.coinPriv));
 
@@ -404,7 +412,10 @@ export class CryptoImplementation {
       contribution: Amounts.stringify(depositInfo.spendAmount),
       h_denom: depositInfo.denomPubHash,
       exchange_url: depositInfo.exchangeBaseUrl,
-      ub_sig: depositInfo.denomSig,
+      ub_sig: {
+        cipher: DenomKeyType.Rsa,
+        rsa_signature: depositInfo.denomSig.rsa_signature,
+      },
     };
     return s;
   }
@@ -455,8 +466,10 @@ export class CryptoImplementation {
 
     for (const denomSel of newCoinDenoms) {
       for (let i = 0; i < denomSel.count; i++) {
-        const r = decodeCrock(denomSel.denomPub);
-        sessionHc.update(r);
+        if (denomSel.denomPub.cipher !== 1) {
+          throw Error("unsupported cipher");
+        }
+        sessionHc.update(hashDenomPub(denomSel.denomPub));
       }
     }
 
@@ -495,7 +508,10 @@ export class CryptoImplementation {
             blindingFactor = fresh.bks;
           }
           const pubHash = hash(coinPub);
-          const denomPub = decodeCrock(denomSel.denomPub);
+          if (denomSel.denomPub.cipher !== 1) {
+            throw Error("unsupported cipher");
+          }
+          const denomPub = decodeCrock(denomSel.denomPub.rsa_public_key);
           const ev = rsaBlind(pubHash, blindingFactor, denomPub);
           const planchet: RefreshPlanchetInfo = {
             blindingKey: encodeCrock(blindingFactor),

@@ -30,6 +30,7 @@ import {
   codecForTipResponse,
   Logger,
   URL,
+  DenomKeyType,
 } from "@gnu-taler/taler-util";
 import { DerivedTipPlanchet } from "../crypto/cryptoTypes.js";
 import {
@@ -322,16 +323,20 @@ async function processTipImpl(
     const planchet = planchets[i];
     checkLogicInvariant(!!planchet);
 
-    const denomSig = await ws.cryptoApi.rsaUnblind(
+    if (denom.denomPub.cipher !== 1) {
+      throw Error("unsupported cipher");
+    }
+
+    const denomSigRsa = await ws.cryptoApi.rsaUnblind(
       blindedSig,
       planchet.blindingKey,
-      denom.denomPub,
+      denom.denomPub.rsa_public_key,
     );
 
     const isValid = await ws.cryptoApi.rsaVerify(
       planchet.coinPub,
-      denomSig,
-      denom.denomPub,
+      denomSigRsa,
+      denom.denomPub.rsa_public_key,
     );
 
     if (!isValid) {
@@ -364,7 +369,7 @@ async function processTipImpl(
       currentAmount: denom.value,
       denomPub: denom.denomPub,
       denomPubHash: denom.denomPubHash,
-      denomSig: denomSig,
+      denomSig: { cipher: DenomKeyType.Rsa, rsa_signature: denomSigRsa },
       exchangeBaseUrl: tipRecord.exchangeBaseUrl,
       status: CoinStatus.Fresh,
       suspended: false,

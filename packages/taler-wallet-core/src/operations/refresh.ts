@@ -14,7 +14,12 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { encodeCrock, getRandomBytes, HttpStatusCode } from "@gnu-taler/taler-util";
+import {
+  DenomKeyType,
+  encodeCrock,
+  getRandomBytes,
+  HttpStatusCode,
+} from "@gnu-taler/taler-util";
 import {
   CoinRecord,
   CoinSourceType,
@@ -599,10 +604,17 @@ async function refreshReveal(
         continue;
       }
       const pc = derived.planchetsForGammas[norevealIndex][newCoinIndex];
-      const denomSig = await ws.cryptoApi.rsaUnblind(
-        reveal.ev_sigs[newCoinIndex].ev_sig,
+      if (denom.denomPub.cipher !== 1) {
+        throw Error("cipher unsupported");
+      }
+      const evSig = reveal.ev_sigs[newCoinIndex].ev_sig;
+      if (evSig.cipher !== DenomKeyType.Rsa) {
+        throw Error("unsupported cipher");
+      }
+      const denomSigRsa = await ws.cryptoApi.rsaUnblind(
+        evSig.blinded_rsa_signature,
         pc.blindingKey,
-        denom.denomPub,
+        denom.denomPub.rsa_public_key,
       );
       const coin: CoinRecord = {
         blindingKey: pc.blindingKey,
@@ -611,7 +623,10 @@ async function refreshReveal(
         currentAmount: denom.value,
         denomPub: denom.denomPub,
         denomPubHash: denom.denomPubHash,
-        denomSig,
+        denomSig: {
+          cipher: DenomKeyType.Rsa,
+          rsa_signature: denomSigRsa,
+        },
         exchangeBaseUrl: oldCoin.exchangeBaseUrl,
         status: CoinStatus.Fresh,
         coinSource: {

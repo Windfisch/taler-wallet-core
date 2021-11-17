@@ -53,6 +53,7 @@
 /**
  * Imports.
  */
+import { DenominationPubKey, UnblindedSignature } from "./talerTypes.js";
 import { Duration, Timestamp } from "./time.js";
 
 /**
@@ -440,7 +441,7 @@ export interface BackupCoin {
   /**
    * Unblinded signature by the exchange.
    */
-  denom_sig: string;
+  denom_sig: UnblindedSignature;
 
   /**
    * Amount that's left on the coin.
@@ -831,7 +832,7 @@ export interface BackupDenomination {
   /**
    * The denomination public key.
    */
-  denom_pub: string;
+  denom_pub: DenominationPubKey;
 
   /**
    * Fee for withdrawing.

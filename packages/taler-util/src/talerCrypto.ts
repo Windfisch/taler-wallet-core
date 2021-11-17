@@ -24,6 +24,7 @@
 import * as nacl from "./nacl-fast.js";
 import { kdf } from "./kdf.js";
 import bigint from "big-integer";
+import { DenominationPubKey } from "./talerTypes.js";
 
 export function getRandomBytes(n: number): Uint8Array {
   return nacl.randomBytes(n);
@@ -346,6 +347,20 @@ export function createEcdheKeyPair(): EcdheKeyPair {
 
 export function hash(d: Uint8Array): Uint8Array {
   return nacl.hash(d);
+}
+
+export function hashDenomPub(pub: DenominationPubKey): Uint8Array {
+  if (pub.cipher !== 1) {
+    throw Error("unsupported cipher");
+  }
+  const pubBuf = decodeCrock(pub.rsa_public_key);
+  const hashInputBuf = new ArrayBuffer(pubBuf.length + 4 + 4);
+  const uint8ArrayBuf = new Uint8Array(hashInputBuf);
+  const dv = new DataView(hashInputBuf);
+  dv.setUint32(0, pub.age_mask ?? 0);
+  dv.setUint32(4, pub.cipher);
+  uint8ArrayBuf.set(pubBuf, 8);
+  return nacl.hash(uint8ArrayBuf);
 }
 
 export function eddsaSign(msg: Uint8Array, eddsaPriv: Uint8Array): Uint8Array {

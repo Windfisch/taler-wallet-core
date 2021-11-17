@@ -39,6 +39,7 @@ import {
   URL,
   TalerErrorDetails,
   Timestamp,
+  hashDenomPub,
 } from "@gnu-taler/taler-util";
 import { decodeCrock, encodeCrock, hash } from "@gnu-taler/taler-util";
 import { CryptoApi } from "../crypto/workers/cryptoApi.js";
@@ -78,7 +79,7 @@ function denominationRecordFromKeys(
   listIssueDate: Timestamp,
   denomIn: Denomination,
 ): DenominationRecord {
-  const denomPubHash = encodeCrock(hash(decodeCrock(denomIn.denom_pub)));
+  const denomPubHash = encodeCrock(hashDenomPub(denomIn.denom_pub));
   const d: DenominationRecord = {
     denomPub: denomIn.denom_pub,
     denomPubHash,
@@ -472,26 +473,29 @@ async function updateExchangeFromUrlImpl(
 
   let tosFound: ExchangeTosDownloadResult | undefined;
   //Remove this when exchange supports multiple content-type in accept header
-  if (acceptedFormat) for (const format of acceptedFormat) {
-    const resp = await downloadExchangeWithTermsOfService(
-      baseUrl,
-      ws.http,
-      timeout,
-      format
-    );
-    if (resp.tosContentType === format) {
-      tosFound = resp
-      break
+  if (acceptedFormat)
+    for (const format of acceptedFormat) {
+      const resp = await downloadExchangeWithTermsOfService(
+        baseUrl,
+        ws.http,
+        timeout,
+        format,
+      );
+      if (resp.tosContentType === format) {
+        tosFound = resp;
+        break;
+      }
     }
-  }
   // If none of the specified format was found try text/plain
-  const tosDownload = tosFound !== undefined ? tosFound :
-    await downloadExchangeWithTermsOfService(
-      baseUrl,
-      ws.http,
-      timeout,
-      "text/plain"
-    );
+  const tosDownload =
+    tosFound !== undefined
+      ? tosFound
+      : await downloadExchangeWithTermsOfService(
+          baseUrl,
+          ws.http,
+          timeout,
+          "text/plain",
+        );
 
   let recoupGroupId: string | undefined = undefined;
 

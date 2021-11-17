@@ -40,6 +40,7 @@ import {
   ConfirmPayResultType,
   durationFromSpec,
   getTimestampNow,
+  hashDenomPub,
   HttpStatusCode,
   j2s,
   Logger,
@@ -57,10 +58,7 @@ import {
 import { gunzipSync, gzipSync } from "fflate";
 import { InternalWalletState } from "../../common.js";
 import { kdf } from "@gnu-taler/taler-util";
-import {
-  secretbox,
-  secretbox_open,
-} from "@gnu-taler/taler-util";
+import { secretbox, secretbox_open } from "@gnu-taler/taler-util";
 import {
   bytesToString,
   decodeCrock,
@@ -162,13 +160,16 @@ async function computeBackupCryptoData(
 ): Promise<BackupCryptoPrecomputedData> {
   const cryptoData: BackupCryptoPrecomputedData = {
     coinPrivToCompletedCoin: {},
-    denomPubToHash: {},
+    rsaDenomPubToHash: {},
     proposalIdToContractTermsHash: {},
     proposalNoncePrivToPub: {},
     reservePrivToPub: {},
   };
   for (const backupExchangeDetails of backupContent.exchange_details) {
     for (const backupDenom of backupExchangeDetails.denominations) {
+      if (backupDenom.denom_pub.cipher !== 1) {
+        throw Error("unsupported cipher");
+      }
       for (const backupCoin of backupDenom.coins) {
         const coinPub = encodeCrock(
           eddsaGetPublic(decodeCrock(backupCoin.coin_priv)),
@@ -176,16 +177,16 @@ async function computeBackupCryptoData(
         const blindedCoin = rsaBlind(
           hash(decodeCrock(backupCoin.coin_priv)),
           decodeCrock(backupCoin.blinding_key),
-          decodeCrock(backupDenom.denom_pub),
+          decodeCrock(backupDenom.denom_pub.rsa_public_key),
         );
         cryptoData.coinPrivToCompletedCoin[backupCoin.coin_priv] = {
           coinEvHash: encodeCrock(hash(blindedCoin)),
           coinPub,
         };
       }
-      cryptoData.denomPubToHash[backupDenom.denom_pub] = encodeCrock(
-        hash(decodeCrock(backupDenom.denom_pub)),
-      );
+      cryptoData.rsaDenomPubToHash[
+        backupDenom.denom_pub.rsa_public_key
+      ] = encodeCrock(hashDenomPub(backupDenom.denom_pub));
     }
     for (const backupReserve of backupExchangeDetails.reserves) {
       cryptoData.reservePrivToPub[backupReserve.reserve_priv] = encodeCrock(

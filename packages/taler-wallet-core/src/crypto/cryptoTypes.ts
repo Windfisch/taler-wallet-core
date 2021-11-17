@@ -27,13 +27,13 @@
 /**
  * Imports.
  */
-import { AmountJson } from "@gnu-taler/taler-util";
+import { AmountJson, DenominationPubKey } from "@gnu-taler/taler-util";
 
 export interface RefreshNewDenomInfo {
   count: number;
   value: AmountJson;
   feeWithdraw: AmountJson;
-  denomPub: string;
+  denomPub: DenominationPubKey;
 }
 
 /**
@@ -117,7 +117,7 @@ export interface DerivedRefreshSession {
 
 export interface DeriveTipRequest {
   secretSeed: string;
-  denomPub: string;
+  denomPub: DenominationPubKey;
   planchetIndex: number;
 }
 

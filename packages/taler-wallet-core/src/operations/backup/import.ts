@@ -202,7 +202,7 @@ export interface CompletedCoin {
  * as the async crypto worker communication would auto-close the database transaction.
  */
 export interface BackupCryptoPrecomputedData {
-  denomPubToHash: Record<string, string>;
+  rsaDenomPubToHash: Record<string, string>;
   coinPrivToCompletedCoin: Record<string, CompletedCoin>;
   proposalNoncePrivToPub: { [priv: string]: string };
   proposalIdToContractTermsHash: { [proposalId: string]: string };
@@ -330,8 +330,13 @@ export async function importBackup(
         }
 
         for (const backupDenomination of backupExchangeDetails.denominations) {
+          if (backupDenomination.denom_pub.cipher !== 1) {
+            throw Error("unsupported cipher");
+          }
           const denomPubHash =
-            cryptoComp.denomPubToHash[backupDenomination.denom_pub];
+            cryptoComp.rsaDenomPubToHash[
+              backupDenomination.denom_pub.rsa_public_key
+            ];
           checkLogicInvariant(!!denomPubHash);
           const existingDenom = await tx.denominations.get([
             backupExchangeDetails.base_url,

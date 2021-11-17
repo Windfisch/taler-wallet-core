@@ -23,7 +23,7 @@
 /**
  * Imports.
  */
-import { AmountJson, Amounts } from "@gnu-taler/taler-util";
+import { AmountJson, Amounts, DenominationPubKey } from "@gnu-taler/taler-util";
 import { strcmp, Logger } from "@gnu-taler/taler-util";
 
 const logger = new Logger("coinSelection.ts");
@@ -72,7 +72,7 @@ export interface AvailableCoinInfo {
   /**
    * Coin's denomination public key.
    */
-  denomPub: string;
+  denomPub: DenominationPubKey;
 
   /**
    * Amount still remaining (typically the full amount,
@@ -206,6 +206,21 @@ function tallyFees(
   };
 }
 
+function denomPubCmp(
+  p1: DenominationPubKey,
+  p2: DenominationPubKey,
+): -1 | 0 | 1 {
+  if (p1.cipher < p2.cipher) {
+    return -1;
+  } else if (p1.cipher > p2.cipher) {
+    return +1;
+  }
+  if (p1.cipher !== 1 || p2.cipher !== 1) {
+    throw Error("unsupported cipher");
+  }
+  return strcmp(p1.rsa_public_key, p2.rsa_public_key);
+}
+
 /**
  * Given a list of candidate coins, select coins to spend under the merchant's
  * constraints.
@@ -272,7 +287,7 @@ export function selectPayCoins(
     (o1, o2) =>
       -Amounts.cmp(o1.availableAmount, o2.availableAmount) ||
       Amounts.cmp(o1.feeDeposit, o2.feeDeposit) ||
-      strcmp(o1.denomPub, o2.denomPub),
+      denomPubCmp(o1.denomPub, o2.denomPub),
   );
 
   // FIXME:  Here, we should select coins in a smarter way.

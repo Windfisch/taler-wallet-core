@@ -41,6 +41,7 @@ import {
   URL,
   WithdrawUriInfoResponse,
   VersionMatchResult,
+  DenomKeyType,
 } from "@gnu-taler/taler-util";
 import {
   CoinRecord,
@@ -495,7 +496,7 @@ async function processPlanchetExchangeRequest(
       ]);
 
       if (!denom) {
-        console.error("db inconsistent: denom for planchet not found");
+        logger.error("db inconsistent: denom for planchet not found");
         return;
       }
 
@@ -589,16 +590,26 @@ async function processPlanchetVerifyAndStoreCoin(
 
   const { planchet, exchangeBaseUrl } = d;
 
-  const denomSig = await ws.cryptoApi.rsaUnblind(
-    resp.ev_sig,
+  const planchetDenomPub = planchet.denomPub;
+  if (planchetDenomPub.cipher !== DenomKeyType.Rsa) {
+    throw Error("cipher not supported");
+  }
+
+  const evSig = resp.ev_sig;
+  if (evSig.cipher !== DenomKeyType.Rsa) {
+    throw Error("unsupported cipher");
+  }
+
+  const denomSigRsa = await ws.cryptoApi.rsaUnblind(
+    evSig.blinded_rsa_signature,
     planchet.blindingKey,
-    planchet.denomPub,
+    planchetDenomPub.rsa_public_key,
   );
 
   const isValid = await ws.cryptoApi.rsaVerify(
     planchet.coinPub,
-    denomSig,
-    planchet.denomPub,
+    denomSigRsa,
+    planchetDenomPub.rsa_public_key,
   );
 
   if (!isValid) {
@@ -629,7 +640,10 @@ async function processPlanchetVerifyAndStoreCoin(
     currentAmount: planchet.coinValue,
     denomPub: planchet.denomPub,
     denomPubHash: planchet.denomPubHash,
-    denomSig,
+    denomSig: {
+      cipher: DenomKeyType.Rsa,
+      rsa_signature: denomSigRsa,
+    },
     coinEvHash: planchet.coinEvHash,
     exchangeBaseUrl: exchangeBaseUrl,
     status: CoinStatus.Fresh,
@@ -728,7 +742,9 @@ export async function updateWithdrawalDenoms(
       batchIdx++, current++
     ) {
       const denom = denominations[current];
-      if (denom.verificationStatus === DenominationVerificationStatus.Unverified) {
+      if (
+        denom.verificationStatus === DenominationVerificationStatus.Unverified
+      ) {
         logger.trace(
           `Validating denomination (${current + 1}/${
             denominations.length
@@ -745,7 +761,8 @@ export async function updateWithdrawalDenoms(
           );
           denom.verificationStatus = DenominationVerificationStatus.VerifiedBad;
         } else {
-          denom.verificationStatus = DenominationVerificationStatus.VerifiedGood;
+          denom.verificationStatus =
+            DenominationVerificationStatus.VerifiedGood;
         }
         updatedDenominations.push(denom);
       }

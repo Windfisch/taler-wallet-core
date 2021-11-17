@@ -59,7 +59,7 @@ export class Denomination {
   /**
    * Public signing key of the denomination.
    */
-  denom_pub: string;
+  denom_pub: DenominationPubKey;
 
   /**
    * Fee for withdrawing.
@@ -158,7 +158,7 @@ export interface RecoupRequest {
   /**
    * Signature over the coin public key by the denomination.
    */
-  denom_sig: string;
+  denom_sig: UnblindedSignature;
 
   /**
    * Coin public key of the coin we want to refund.
@@ -198,6 +198,11 @@ export interface RecoupConfirmation {
   old_coin_pub?: string;
 }
 
+export interface UnblindedSignature {
+  cipher: DenomKeyType.Rsa;
+  rsa_signature: string;
+}
+
 /**
  * Deposit permission for a single coin.
  */
@@ -213,7 +218,7 @@ export interface CoinDepositPermission {
   /**
    * Signature made by the denomination public key.
    */
-  ub_sig: string;
+  ub_sig: UnblindedSignature;
   /**
    * The denomination public key associated with this coin.
    */
@@ -779,8 +784,38 @@ export class TipPickupGetResponse {
   expiration: Timestamp;
 }
 
+export enum DenomKeyType {
+  Rsa = 1,
+  ClauseSchnorr = 2,
+}
+
+export interface RsaBlindedDenominationSignature {
+  cipher: DenomKeyType.Rsa;
+  blinded_rsa_signature: string;
+}
+
+export interface CSBlindedDenominationSignature {
+  cipher: DenomKeyType.ClauseSchnorr;
+}
+
+export type BlindedDenominationSignature =
+  | RsaBlindedDenominationSignature
+  | CSBlindedDenominationSignature;
+
+export const codecForBlindedDenominationSignature = () =>
+  buildCodecForUnion<BlindedDenominationSignature>()
+    .discriminateOn("cipher")
+    .alternative(1, codecForRsaBlindedDenominationSignature())
+    .build("BlindedDenominationSignature");
+
+export const codecForRsaBlindedDenominationSignature = () =>
+  buildCodecForObject<RsaBlindedDenominationSignature>()
+    .property("cipher", codecForConstNumber(1))
+    .property("blinded_rsa_signature", codecForString())
+    .build("RsaBlindedDenominationSignature");
+
 export class WithdrawResponse {
-  ev_sig: string;
+  ev_sig: BlindedDenominationSignature;
 }
 
 /**
@@ -792,7 +827,7 @@ export interface CoinDumpJson {
     /**
      * The coin's denomination's public key.
      */
-    denom_pub: string;
+    denom_pub: DenominationPubKey;
     /**
      * Hash of denom_pub.
      */
@@ -875,7 +910,7 @@ export interface ExchangeMeltResponse {
 }
 
 export interface ExchangeRevealItem {
-  ev_sig: string;
+  ev_sig: BlindedDenominationSignature;
 }
 
 export interface ExchangeRevealResponse {
@@ -994,6 +1029,30 @@ export interface BankWithdrawalOperationPostResponse {
   transfer_done: boolean;
 }
 
+export type DenominationPubKey = RsaDenominationPubKey | CsDenominationPubKey;
+
+export interface RsaDenominationPubKey {
+  cipher: 1;
+  rsa_public_key: string;
+  age_mask?: number;
+}
+
+export interface CsDenominationPubKey {
+  cipher: 2;
+}
+
+export const codecForDenominationPubKey = () =>
+  buildCodecForUnion<DenominationPubKey>()
+    .discriminateOn("cipher")
+    .alternative(1, codecForRsaDenominationPubKey())
+    .build("DenominationPubKey");
+
+export const codecForRsaDenominationPubKey = () =>
+  buildCodecForObject<RsaDenominationPubKey>()
+    .property("cipher", codecForConstNumber(1))
+    .property("rsa_public_key", codecForString())
+    .build("DenominationPubKey");
+
 export const codecForBankWithdrawalOperationPostResponse = (): Codec<BankWithdrawalOperationPostResponse> =>
   buildCodecForObject<BankWithdrawalOperationPostResponse>()
     .property("transfer_done", codecForBoolean())
@@ -1008,7 +1067,7 @@ export type CoinPublicKeyString = string;
 export const codecForDenomination = (): Codec<Denomination> =>
   buildCodecForObject<Denomination>()
     .property("value", codecForString())
-    .property("denom_pub", codecForString())
+    .property("denom_pub", codecForDenominationPubKey())
     .property("fee_withdraw", codecForString())
     .property("fee_deposit", codecForString())
     .property("fee_refresh", codecForString())
@@ -1242,7 +1301,7 @@ export const codecForRecoupConfirmation = (): Codec<RecoupConfirmation> =>
 
 export const codecForWithdrawResponse = (): Codec<WithdrawResponse> =>
   buildCodecForObject<WithdrawResponse>()
-    .property("ev_sig", codecForString())
+    .property("ev_sig", codecForBlindedDenominationSignature())
     .build("WithdrawResponse");
 
 export const codecForMerchantPayResponse = (): Codec<MerchantPayResponse> =>
@@ -1260,7 +1319,7 @@ export const codecForExchangeMeltResponse = (): Codec<ExchangeMeltResponse> =>
 
 export const codecForExchangeRevealItem = (): Codec<ExchangeRevealItem> =>
   buildCodecForObject<ExchangeRevealItem>()
-    .property("ev_sig", codecForString())
+    .property("ev_sig", codecForBlindedDenominationSignature())
     .build("ExchangeRevealItem");
 
 export const codecForExchangeRevealResponse = (): Codec<ExchangeRevealResponse> =>

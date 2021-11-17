@@ -33,7 +33,10 @@ function fakeAci(current: string, feeDeposit: string): AvailableCoinInfo {
   return {
     availableAmount: a(current),
     coinPub: "foobar",
-    denomPub: "foobar",
+    denomPub: {
+      cipher: 1,
+      rsa_public_key: "foobar",
+    },
     feeDeposit: a(feeDeposit),
     exchangeBaseUrl: "https://example.com/",
   };

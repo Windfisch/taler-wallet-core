@@ -48,6 +48,8 @@ import {
   AmountString,
   codecForContractTerms,
   ContractTerms,
+  DenominationPubKey,
+  UnblindedSignature,
 } from "./talerTypes.js";
 import { OrderShortInfo, codecForOrderShortInfo } from "./transactionsTypes.js";
 import { BackupRecovery } from "./backupTypes.js";
@@ -454,7 +456,7 @@ export interface PlanchetCreationResult {
   coinPriv: string;
   reservePub: string;
   denomPubHash: string;
-  denomPub: string;
+  denomPub: DenominationPubKey;
   blindingKey: string;
   withdrawSig: string;
   coinEv: string;
@@ -467,7 +469,7 @@ export interface PlanchetCreationRequest {
   coinIndex: number;
   value: AmountJson;
   feeWithdraw: AmountJson;
-  denomPub: string;
+  denomPub: DenominationPubKey;
   reservePub: string;
   reservePriv: string;
 }
@@ -514,7 +516,7 @@ export interface DepositInfo {
   feeDeposit: AmountJson;
   wireInfoHash: string;
   denomPubHash: string;
-  denomSig: string;
+  denomSig: UnblindedSignature;
 }
 
 export interface ExchangesListRespose {

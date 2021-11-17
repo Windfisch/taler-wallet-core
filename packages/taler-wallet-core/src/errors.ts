@@ -93,7 +93,7 @@ export async function guardOperationException<T>(
 ): Promise<T> {
   try {
     return await op();
-  } catch (e) {
+  } catch (e: any) {
     if (e instanceof OperationFailedAndReportedError) {
       throw e;
     }

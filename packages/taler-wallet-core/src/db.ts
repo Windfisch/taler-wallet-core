@@ -28,6 +28,7 @@ import {
   Auditor,
   CoinDepositPermission,
   ContractTerms,
+  DenominationPubKey,
   Duration,
   ExchangeSignKeyJson,
   InternationalizedString,
@@ -36,6 +37,7 @@ import {
   RefreshReason,
   TalerErrorDetails,
   Timestamp,
+  UnblindedSignature,
 } from "@gnu-taler/taler-util";
 import { RetryInfo } from "./util/retries.js";
 import { PayCoinSelection } from "./util/coinSelection.js";
@@ -310,7 +312,7 @@ export interface DenominationRecord {
   /**
    * The denomination public key.
    */
-  denomPub: string;
+  denomPub: DenominationPubKey;
 
   /**
    * Hash of the denomination public key.
@@ -452,7 +454,7 @@ export interface ExchangeDetailsRecord {
   /**
    * content-type of the last downloaded termsOfServiceText.
    */
-   termsOfServiceContentType: string | undefined;
+  termsOfServiceContentType: string | undefined;
 
   /**
    * ETag for last terms of service download.
@@ -578,7 +580,8 @@ export interface PlanchetRecord {
 
   denomPubHash: string;
 
-  denomPub: string;
+  // FIXME: maybe too redundant?
+  denomPub: DenominationPubKey;
 
   blindingKey: string;
 
@@ -668,7 +671,7 @@ export interface CoinRecord {
   /**
    * Key used by the exchange used to sign the coin.
    */
-  denomPub: string;
+  denomPub: DenominationPubKey;
 
   /**
    * Hash of the public key that signs the coin.
@@ -678,7 +681,7 @@ export interface CoinRecord {
   /**
    * Unblinded signature by the exchange.
    */
-  denomSig: string;
+  denomSig: UnblindedSignature;
 
   /**
    * Amount that's left on the coin.
