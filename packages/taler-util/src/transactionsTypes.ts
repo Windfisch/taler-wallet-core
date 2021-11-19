@@ -130,6 +130,9 @@ interface WithdrawalDetailsForManualTransfer {
    * Already contains the amount and message.
    */
   exchangePaytoUris: string[];
+
+  // Public key of the reserve
+  reservePub: string;
 }
 
 interface WithdrawalDetailsForTalerBankIntegrationApi {
@@ -147,6 +150,9 @@ interface WithdrawalDetailsForTalerBankIntegrationApi {
    * initiated confirmation.
    */
   bankConfirmationUrl?: string;
+
+  // Public key of the reserve
+  reservePub: string;
 }
 
 // This should only be used for actual withdrawals

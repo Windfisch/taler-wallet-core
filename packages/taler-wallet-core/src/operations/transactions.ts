@@ -17,32 +17,22 @@
 /**
  * Imports.
  */
+import {
+  AmountJson,
+  Amounts, OrderShortInfo, PaymentStatus, timestampCmp, Transaction, TransactionsRequest,
+  TransactionsResponse, TransactionType, WithdrawalDetails, WithdrawalType
+} from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../common.js";
 import {
-  WalletRefundItem,
-  RefundState,
-  ReserveRecordStatus,
-  AbortStatus,
-  ReserveRecord,
+  AbortStatus, RefundState, ReserveRecord, ReserveRecordStatus, WalletRefundItem
 } from "../db.js";
-import { AmountJson, Amounts, timestampCmp } from "@gnu-taler/taler-util";
-import {
-  TransactionsRequest,
-  TransactionsResponse,
-  Transaction,
-  TransactionType,
-  PaymentStatus,
-  WithdrawalType,
-  WithdrawalDetails,
-  OrderShortInfo,
-} from "@gnu-taler/taler-util";
-import { getFundingPaytoUris } from "./reserves.js";
-import { getExchangeDetails } from "./exchanges.js";
-import { processWithdrawGroup } from "./withdraw.js";
-import { processPurchasePay } from "./pay.js";
 import { processDepositGroup } from "./deposits.js";
-import { processTip } from "./tip.js";
+import { getExchangeDetails } from "./exchanges.js";
+import { processPurchasePay } from "./pay.js";
 import { processRefreshGroup } from "./refresh.js";
+import { getFundingPaytoUris } from "./reserves.js";
+import { processTip } from "./tip.js";
+import { processWithdrawGroup } from "./withdraw.js";
 
 /**
  * Create an event ID from the type and the primary key for the event.
@@ -138,6 +128,7 @@ export async function getTransactions(
             withdrawalDetails = {
               type: WithdrawalType.TalerBankIntegrationApi,
               confirmed: true,
+              reservePub: wsr.reservePub,
               bankConfirmationUrl: r.bankInfo.confirmUrl,
             };
           } else {
@@ -151,11 +142,13 @@ export async function getTransactions(
             }
             withdrawalDetails = {
               type: WithdrawalType.ManualTransfer,
+              reservePub: wsr.reservePub,
               exchangePaytoUris:
                 exchangeDetails.wireInfo?.accounts.map((x) => x.payto_uri) ??
                 [],
             };
           }
+
           transactions.push({
             type: TransactionType.Withdrawal,
             amountEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
@@ -194,11 +187,13 @@ export async function getTransactions(
             withdrawalDetails = {
               type: WithdrawalType.TalerBankIntegrationApi,
               confirmed: false,
+              reservePub: r.reservePub,
               bankConfirmationUrl: r.bankInfo.confirmUrl,
             };
           } else {
             withdrawalDetails = {
               type: WithdrawalType.ManualTransfer,
+              reservePub: r.reservePub,
               exchangePaytoUris: await getFundingPaytoUris(tx, r.reservePub),
             };
           }
@@ -439,7 +434,7 @@ export async function retryTransaction(
       const proposalId = rest[0];
       await processPurchasePay(ws, proposalId, true);
       break;
-    case TransactionType.Tip: 
+    case TransactionType.Tip:
       const walletTipId = rest[0];
       await processTip(ws, walletTipId, true);
       break;
@@ -483,8 +478,8 @@ export async function deleteTransaction(
         const reserveRecord:
           | ReserveRecord
           | undefined = await tx.reserves.indexes.byInitialWithdrawalGroupId.get(
-          withdrawalGroupId,
-        );
+            withdrawalGroupId,
+          );
         if (reserveRecord && !reserveRecord.initialWithdrawalStarted) {
           const reservePub = reserveRecord.reservePub;
           await tx.reserves.delete(reservePub);

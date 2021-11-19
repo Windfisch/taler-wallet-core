@@ -15,62 +15,36 @@
  */
 
 import {
-  CreateReserveRequest,
-  CreateReserveResponse,
-  TalerErrorDetails,
-  AcceptWithdrawalResponse,
-  Amounts,
-  codecForBankWithdrawalOperationPostResponse,
+  AcceptWithdrawalResponse, addPaytoQueryParams, Amounts, canonicalizeBaseUrl, codecForBankWithdrawalOperationPostResponse,
   codecForReserveStatus,
-  codecForWithdrawOperationStatusResponse,
-  Duration,
+  codecForWithdrawOperationStatusResponse, CreateReserveRequest,
+  CreateReserveResponse, Duration,
   durationMax,
-  durationMin,
-  getTimestampNow,
-  NotificationType,
-  ReserveTransactionType,
-  TalerErrorCode,
-  addPaytoQueryParams,
+  durationMin, encodeCrock, getRandomBytes, getTimestampNow, Logger, NotificationType, randomBytes, ReserveTransactionType,
+  TalerErrorCode, TalerErrorDetails, URL
 } from "@gnu-taler/taler-util";
-import { randomBytes } from "@gnu-taler/taler-util";
-import {
-  ReserveRecordStatus,
-  ReserveBankInfo,
-  ReserveRecord,
-  WithdrawalGroupRecord,
-  WalletStoresV1,
-} from "../db.js";
-import { assertUnreachable } from "../util/assertUnreachable.js";
-import { canonicalizeBaseUrl } from "@gnu-taler/taler-util";
-import {
-  initRetryInfo,
-  getRetryDuration,
-  updateRetryInfoTimeout,
-} from "../util/retries.js";
-import { guardOperationException, OperationFailedError } from "../errors.js";
-import {
-  updateExchangeFromUrl,
-  getExchangePaytoUri,
-  getExchangeDetails,
-  getExchangeTrust,
-} from "./exchanges.js";
 import { InternalWalletState } from "../common.js";
 import {
-  updateWithdrawalDenoms,
-  getCandidateWithdrawalDenoms,
-  selectWithdrawalDenominations,
-  denomSelectionInfoToState,
-  processWithdrawGroup,
-  getBankWithdrawalInfo,
-} from "./withdraw.js";
-import { encodeCrock, getRandomBytes } from "@gnu-taler/taler-util";
-import { Logger, URL } from "@gnu-taler/taler-util";
+  ReserveBankInfo,
+  ReserveRecord, ReserveRecordStatus, WalletStoresV1, WithdrawalGroupRecord
+} from "../db.js";
+import { guardOperationException, OperationFailedError } from "../errors.js";
+import { assertUnreachable } from "../util/assertUnreachable.js";
 import {
   readSuccessResponseJsonOrErrorCode,
   readSuccessResponseJsonOrThrow,
-  throwUnexpectedRequestError,
+  throwUnexpectedRequestError
 } from "../util/http.js";
 import { GetReadOnlyAccess } from "../util/query.js";
+import {
+  getRetryDuration, initRetryInfo, updateRetryInfoTimeout
+} from "../util/retries.js";
+import {
+  getExchangeDetails, getExchangePaytoUri, getExchangeTrust, updateExchangeFromUrl
+} from "./exchanges.js";
+import {
+  denomSelectionInfoToState, getBankWithdrawalInfo, getCandidateWithdrawalDenoms, processWithdrawGroup, selectWithdrawalDenominations, updateWithdrawalDenoms
+} from "./withdraw.js";
 
 const logger = new Logger("reserves.ts");
 
@@ -540,7 +514,7 @@ async function updateReserve(
     if (
       resp.status === 404 &&
       result.talerErrorResponse.code ===
-        TalerErrorCode.EXCHANGE_RESERVES_GET_STATUS_UNKNOWN
+      TalerErrorCode.EXCHANGE_RESERVES_GET_STATUS_UNKNOWN
     ) {
       ws.notify({
         type: NotificationType.ReserveNotYetFound,
@@ -643,8 +617,7 @@ async function updateReserve(
       logger.trace(
         `Remaining unclaimed amount in reseve is ${Amounts.stringify(
           remainingAmount,
-        )} and can be withdrawn with ${
-          denomSelInfo.selectedDenoms.length
+        )} and can be withdrawn with ${denomSelInfo.selectedDenoms.length
         } coins`,
       );
 
@@ -731,7 +704,7 @@ async function processReserveImpl(
     case ReserveRecordStatus.REGISTERING_BANK:
       await processReserveBankStatus(ws, reservePub);
       return await processReserveImpl(ws, reservePub, true);
-    case ReserveRecordStatus.QUERYING_STATUS: 
+    case ReserveRecordStatus.QUERYING_STATUS:
       const res = await updateReserve(ws, reservePub);
       if (res.ready) {
         return await processReserveImpl(ws, reservePub, true);
