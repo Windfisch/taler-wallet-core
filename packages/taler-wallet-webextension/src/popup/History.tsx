@@ -21,18 +21,18 @@ import {
   Transaction,
   TransactionsResponse,
 } from "@gnu-taler/taler-util";
-import { h, VNode } from "preact";
+import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { PopupBox } from "../components/styled";
 import { TransactionItem } from "../components/TransactionItem";
-import { useBalances } from "../hooks/useBalances";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import * as wxApi from "../wxApi";
 
 export function HistoryPage(): VNode {
   const [transactions, setTransactions] = useState<
     TransactionsResponse | undefined
   >(undefined);
-  const balance = useBalances();
+  const balance = useAsyncAsHook(wxApi.getBalance);
   const balanceWithoutError = balance?.hasError
     ? []
     : balance?.response.balances || [];
@@ -57,7 +57,7 @@ export function HistoryPage(): VNode {
   );
 }
 
-function amountToString(c: AmountString) {
+function amountToString(c: AmountString): string {
   const idx = c.indexOf(":");
   return `${c.substring(idx + 1)} ${c.substring(0, idx)}`;
 }
@@ -68,18 +68,18 @@ export function HistoryView({
 }: {
   list: Transaction[];
   balances: Balance[];
-}) {
+}): VNode {
   const multiCurrency = balances.length > 1;
   return (
-    <PopupBox noPadding>
+    <Fragment>
       {balances.length > 0 && (
         <header>
           {multiCurrency ? (
             <div class="title">
               Balance:{" "}
               <ul style={{ margin: 0 }}>
-                {balances.map((b) => (
-                  <li>{b.available}</li>
+                {balances.map((b, i) => (
+                  <li key={i}>{b.available}</li>
                 ))}
               </ul>
             </div>
@@ -113,8 +113,10 @@ export function HistoryView({
             rel="noopener noreferrer"
             style={{ color: "darkgreen", textDecoration: "none" }}
             href={
+              // eslint-disable-next-line no-undef
               chrome.extension
-                ? chrome.extension.getURL(`/static/wallet.html#/history`)
+                ? // eslint-disable-next-line no-undef
+                  chrome.extension.getURL(`/static/wallet.html#/history`)
                 : "#"
             }
           >
@@ -122,6 +124,6 @@ export function HistoryView({
           </a>
         )}
       </footer>
-    </PopupBox>
+    </Fragment>
   );
 }

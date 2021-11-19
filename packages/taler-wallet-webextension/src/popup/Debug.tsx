@@ -16,7 +16,7 @@
 
 import { h, VNode } from "preact";
 import { Diagnostics } from "../components/Diagnostics";
-import { useDiagnostics } from "../hooks/useDiagnostics.js";
+import { useDiagnostics } from "../hooks/useDiagnostics";
 import * as wxApi from "../wxApi";
 
 export function DeveloperPage(): VNode {

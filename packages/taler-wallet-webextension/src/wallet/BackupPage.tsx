@@ -35,7 +35,6 @@ import {
   RowBorderGray,
   SmallLightText,
   SmallText,
-  WalletBox,
 } from "../components/styled";
 import { useBackupStatus } from "../hooks/useBackupStatus";
 import { Pages } from "../NavigationBar";
@@ -70,7 +69,7 @@ export function BackupView({
   onSyncAll,
 }: ViewProps): VNode {
   return (
-    <WalletBox>
+    <Fragment>
       <section>
         {providers.map((provider, idx) => (
           <BackupLayout
@@ -106,7 +105,7 @@ export function BackupView({
           </div>
         </footer>
       )}
-    </WalletBox>
+    </Fragment>
   );
 }
 
@@ -155,7 +154,7 @@ function BackupLayout(props: TransactionLayoutProps): VNode {
   );
 }
 
-function ExpirationText({ until }: { until: Timestamp }) {
+function ExpirationText({ until }: { until: Timestamp }): VNode {
   return (
     <Fragment>
       <CenteredText> Expires in </CenteredText>
@@ -167,14 +166,14 @@ function ExpirationText({ until }: { until: Timestamp }) {
   );
 }
 
-function colorByTimeToExpire(d: Timestamp) {
+function colorByTimeToExpire(d: Timestamp): string {
   if (d.t_ms === "never") return "rgb(28, 184, 65)";
   const months = differenceInMonths(d.t_ms, new Date());
   return months > 1 ? "rgb(28, 184, 65)" : "rgb(223, 117, 20)";
 }
 
-function daysUntil(d: Timestamp) {
-  if (d.t_ms === "never") return undefined;
+function daysUntil(d: Timestamp): string {
+  if (d.t_ms === "never") return "";
   const duration = intervalToDuration({
     start: d.t_ms,
     end: new Date(),

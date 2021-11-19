@@ -25,16 +25,17 @@ import { createHashHistory } from "history";
 import { render, h } from "preact";
 import Router, { route, Route } from "preact-router";
 import { useEffect } from "preact/hooks";
+import { PopupBox } from "./components/styled";
 import { DevContextProvider } from "./context/devContext";
 import { useTalerActionURL } from "./hooks/useTalerActionURL";
 import { strings } from "./i18n/strings";
 import { Pages, WalletNavBar } from "./NavigationBar";
-import { BackupPage } from "./popup/BackupPage";
+import { BackupPage } from "./wallet/BackupPage";
 import { BalancePage } from "./popup/BalancePage";
 import { DeveloperPage } from "./popup/Debug";
 import { HistoryPage } from "./popup/History";
-import { ProviderAddPage } from "./popup/ProviderAddPage";
-import { ProviderDetailPage } from "./popup/ProviderDetailPage";
+import { ProviderAddPage } from "./wallet/ProviderAddPage";
+import { ProviderDetailPage } from "./wallet/ProviderDetailPage";
 import { SettingsPage } from "./popup/Settings";
 import { TalerActionFound } from "./popup/TalerActionFound";
 
@@ -72,7 +73,7 @@ function Application() {
     <div>
       <DevContextProvider>
         <WalletNavBar />
-        <div style={{ width: 400, height: 290 }}>
+        <PopupBox>
           <Router history={createHashHistory()}>
             <Route path={Pages.dev} component={DeveloperPage} />
 
@@ -128,15 +129,17 @@ function Application() {
             />
             <Route default component={Redirect} to={Pages.balance} />
           </Router>
-        </div>
+        </PopupBox>
       </DevContextProvider>
     </div>
   );
 }
 
 function goToWalletPage(page: Pages | string): null {
+  // eslint-disable-next-line no-undef
   chrome.tabs.create({
     active: true,
+    // eslint-disable-next-line no-undef
     url: chrome.extension.getURL(`/static/wallet.html#${page}`),
   });
   return null;

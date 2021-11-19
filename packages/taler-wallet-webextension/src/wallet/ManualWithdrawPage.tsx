@@ -23,9 +23,9 @@ import {
   AmountJson,
   Amounts,
 } from "@gnu-taler/taler-util";
-import { ReserveCreated } from "./ReserveCreated.js";
+import { ReserveCreated } from "./ReserveCreated";
 import { route } from "preact-router";
-import { Pages } from "../NavigationBar.js";
+import { Pages } from "../NavigationBar";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 
 export function ManualWithdrawPage(): VNode {
@@ -39,7 +39,7 @@ export function ManualWithdrawPage(): VNode {
   >(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
 
-  const knownExchangesHook = useAsyncAsHook(() => wxApi.listExchanges());
+  const state = useAsyncAsHook(() => wxApi.listExchanges());
 
   async function doCreate(
     exchangeBaseUrl: string,
@@ -75,10 +75,13 @@ export function ManualWithdrawPage(): VNode {
     );
   }
 
-  if (!knownExchangesHook || knownExchangesHook.hasError) {
-    return <div>No Known exchanges</div>;
+  if (!state) {
+    return <div>loading...</div>;
   }
-  const exchangeList = knownExchangesHook.response.exchanges.reduce(
+  if (state.hasError) {
+    return <div>There was an error getting the known exchanges</div>;
+  }
+  const exchangeList = state.response.exchanges.reduce(
     (p, c) => ({
       ...p,
       [c.exchangeBaseUrl]: c.currency,

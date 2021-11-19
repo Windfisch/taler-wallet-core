@@ -20,13 +20,12 @@
  * @author Florian Dold
  */
 
-import { Checkbox } from "../components/Checkbox";
-import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
-import { Diagnostics } from "../components/Diagnostics";
-import { WalletBox } from "../components/styled";
-import { useDiagnostics } from "../hooks/useDiagnostics";
 import { WalletDiagnostics } from "@gnu-taler/taler-util";
-import { h, VNode } from "preact";
+import { Fragment, h, VNode } from "preact";
+import { Checkbox } from "../components/Checkbox";
+import { Diagnostics } from "../components/Diagnostics";
+import { useDiagnostics } from "../hooks/useDiagnostics";
+import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
 
 export function WelcomePage(): VNode {
   const [permissionsEnabled, togglePermissions] = useExtendedPermissions();
@@ -54,7 +53,7 @@ export function View({
   timedOut,
 }: ViewProps): VNode {
   return (
-    <WalletBox>
+    <Fragment>
       <h1>Browser Extension Installed!</h1>
       <div>
         <p>Thank you for installing the wallet.</p>
@@ -75,6 +74,6 @@ export function View({
           Learn how to top up your wallet balance »
         </a>
       </div>
-    </WalletBox>
+    </Fragment>
   );
 }

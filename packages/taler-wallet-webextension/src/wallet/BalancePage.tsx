@@ -14,27 +14,23 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import {
-  amountFractionalBase,
-  Amounts,
-  Balance,
-  BalancesResponse,
-  i18n,
-} from "@gnu-taler/taler-util";
-import { h, VNode } from "preact";
-import { ButtonPrimary, Centered, WalletBox } from "../components/styled/index";
-import { BalancesHook, useBalances } from "../hooks/useBalances";
-import { PageLink, renderAmount } from "../renderHtml";
+import { BalancesResponse, i18n } from "@gnu-taler/taler-util";
+import { Fragment, h, VNode } from "preact";
+import { BalanceTable } from "../components/BalanceTable";
+import { ButtonPrimary, ErrorBox } from "../components/styled/index";
+import { HookResponse, useAsyncAsHook } from "../hooks/useAsyncAsHook";
+import { PageLink } from "../renderHtml";
+import * as wxApi from "../wxApi";
 
 export function BalancePage({
   goToWalletManualWithdraw,
 }: {
   goToWalletManualWithdraw: () => void;
 }): VNode {
-  const balance = useBalances();
+  const state = useAsyncAsHook(wxApi.getBalance);
   return (
     <BalanceView
-      balance={balance}
+      balance={state}
       Linker={PageLink}
       goToWalletManualWithdraw={goToWalletManualWithdraw}
     />
@@ -42,7 +38,7 @@ export function BalancePage({
 }
 
 export interface BalanceViewProps {
-  balance: BalancesHook;
+  balance: HookResponse<BalancesResponse>;
   Linker: typeof PageLink;
   goToWalletManualWithdraw: () => void;
 }
@@ -53,18 +49,18 @@ export function BalanceView({
   goToWalletManualWithdraw,
 }: BalanceViewProps): VNode {
   if (!balance) {
-    return <span />;
+    return <div>Loading...</div>;
   }
 
   if (balance.hasError) {
     return (
-      <div>
-        <p>{i18n.str`Error: could not retrieve balance information.`}</p>
+      <Fragment>
+        <ErrorBox>{balance.message}</ErrorBox>
         <p>
           Click <Linker pageName="welcome">here</Linker> for help and
           diagnostics.
         </p>
-      </div>
+      </Fragment>
     );
   }
   if (balance.response.balances.length === 0) {
@@ -77,81 +73,17 @@ export function BalanceView({
       </p>
     );
   }
+
   return (
-    <ShowBalances
-      wallet={balance.response}
-      onWithdraw={goToWalletManualWithdraw}
-    />
-  );
-}
-
-function formatPending(entry: Balance): VNode {
-  let incoming: VNode | undefined;
-  let payment: VNode | undefined;
-
-  // const available = Amounts.parseOrThrow(entry.available);
-  const pendingIncoming = Amounts.parseOrThrow(entry.pendingIncoming);
-  // const pendingOutgoing = Amounts.parseOrThrow(entry.pendingOutgoing);
-
-  if (!Amounts.isZero(pendingIncoming)) {
-    incoming = (
-      <span>
-        <i18n.Translate>
-          <span style={{ color: "darkgreen" }}>
-            {"+"}
-            {renderAmount(entry.pendingIncoming)}
-          </span>{" "}
-          incoming
-        </i18n.Translate>
-      </span>
-    );
-  }
-
-  const l = [incoming, payment].filter((x) => x !== undefined);
-  if (l.length === 0) {
-    return <span />;
-  }
-
-  if (l.length === 1) {
-    return <span>({l})</span>;
-  }
-  return (
-    <span>
-      ({l[0]}, {l[1]})
-    </span>
-  );
-}
-
-function ShowBalances({
-  wallet,
-  onWithdraw,
-}: {
-  wallet: BalancesResponse;
-  onWithdraw: () => void;
-}): VNode {
-  return (
-    <WalletBox>
+    <Fragment>
       <section>
-        <Centered>
-          {wallet.balances.map((entry) => {
-            const av = Amounts.parseOrThrow(entry.available);
-            const v = av.value + av.fraction / amountFractionalBase;
-            return (
-              <p key={av.currency}>
-                <span>
-                  <span style={{ fontSize: "5em", display: "block" }}>{v}</span>{" "}
-                  <span>{av.currency}</span>
-                </span>
-                {formatPending(entry)}
-              </p>
-            );
-          })}
-        </Centered>
+        <BalanceTable balances={balance.response.balances} />
       </section>
-      <footer>
-        <div />
-        <ButtonPrimary onClick={onWithdraw}>Withdraw</ButtonPrimary>
+      <footer style={{ justifyContent: "space-around" }}>
+        <ButtonPrimary onClick={goToWalletManualWithdraw}>
+          Withdraw
+        </ButtonPrimary>
       </footer>
-    </WalletBox>
+    </Fragment>
   );
 }

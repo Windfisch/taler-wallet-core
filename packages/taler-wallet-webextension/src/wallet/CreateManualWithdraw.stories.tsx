@@ -34,6 +34,10 @@ const exchangeList = {
   "http://exchange.tal": "EUR",
 };
 
+export const WithoutAnyExchangeKnown = createExample(TestedComponent, {
+  exchangeList: {},
+});
+
 export const InitialState = createExample(TestedComponent, {
   exchangeList,
 });

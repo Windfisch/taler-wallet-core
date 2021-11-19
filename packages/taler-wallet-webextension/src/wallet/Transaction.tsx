@@ -18,62 +18,80 @@ import {
   AmountLike,
   Amounts,
   i18n,
+  NotificationType,
+  parsePaytoUri,
   Transaction,
   TransactionType,
+  WithdrawalType,
 } from "@gnu-taler/taler-util";
-import { h, VNode } from "preact";
+import { ComponentChildren, Fragment, h, VNode } from "preact";
 import { route } from "preact-router";
-import { useEffect, useState } from "preact/hooks";
+import { useState } from "preact/hooks";
 import emptyImg from "../../static/img/empty.png";
+import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { Part } from "../components/Part";
 import {
   Button,
   ButtonDestructive,
   ButtonPrimary,
+  CenteredDialog,
+  InfoBox,
   ListOfProducts,
+  Overlay,
   RowBorderGray,
   SmallLightText,
-  WalletBox,
   WarningBox,
 } from "../components/styled";
 import { Time } from "../components/Time";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { Pages } from "../NavigationBar";
 import * as wxApi from "../wxApi";
 
 export function TransactionPage({ tid }: { tid: string }): VNode {
-  const [transaction, setTransaction] = useState<Transaction | undefined>(
-    undefined,
-  );
+  async function getTransaction(): Promise<Transaction> {
+    const res = await wxApi.getTransactions();
+    const ts = res.transactions.filter((t) => t.transactionId === tid);
+    if (ts.length > 1) throw Error("more than one transaction with this id");
+    if (ts.length === 1) {
+      return ts[0];
+    }
+    throw Error("no transaction found");
+  }
 
-  useEffect(() => {
-    const fetchData = async (): Promise<void> => {
-      const res = await wxApi.getTransactions();
-      const ts = res.transactions.filter((t) => t.transactionId === tid);
-      if (ts.length === 1) {
-        setTransaction(ts[0]);
-      } else {
-        route(Pages.history);
-      }
-    };
-    fetchData();
-  }, [tid]);
+  const state = useAsyncAsHook(getTransaction, [
+    NotificationType.WithdrawGroupFinished,
+  ]);
 
-  if (!transaction) {
+  if (!state) {
     return (
       <div>
         <i18n.Translate>Loading ...</i18n.Translate>
       </div>
     );
   }
+
+  if (state.hasError) {
+    route(Pages.history);
+    return (
+      <div>
+        <i18n.Translate>
+          There was an error. Redirecting into the history page
+        </i18n.Translate>
+      </div>
+    );
+  }
+
+  function goToHistory(): void {
+    route(Pages.history);
+  }
+
   return (
     <TransactionView
-      transaction={transaction}
-      onDelete={() => wxApi.deleteTransaction(tid).then(() => history.go(-1))}
-      onRetry={() => wxApi.retryTransaction(tid).then(() => history.go(-1))}
-      onBack={() => {
-        route(Pages.history);
-      }}
+      transaction={state.response}
+      onDelete={() => wxApi.deleteTransaction(tid).then(goToHistory)}
+      onRetry={() => wxApi.retryTransaction(tid).then(goToHistory)}
+      onBack={goToHistory}
     />
   );
 }
@@ -91,16 +109,28 @@ export function TransactionView({
   onRetry,
   onBack,
 }: WalletTransactionProps): VNode {
-  function TransactionTemplate({ children }: { children: VNode[] }): VNode {
+  const [confirmBeforeForget, setConfirmBeforeForget] = useState(false);
+  function doCheckBeforeForget(): void {
+    if (
+      transaction.pending &&
+      transaction.type === TransactionType.Withdrawal
+    ) {
+      setConfirmBeforeForget(true);
+    } else {
+      onDelete();
+    }
+  }
+  function TransactionTemplate({
+    children,
+  }: {
+    children: ComponentChildren;
+  }): VNode {
     return (
-      <WalletBox>
+      <Fragment>
         <section style={{ padding: 8, textAlign: "center" }}>
           <ErrorMessage title={transaction?.error?.hint} />
           {transaction.pending && (
-            <WarningBox>
-              This transaction is not completed
-              <a href="">more info...</a>
-            </WarningBox>
+            <WarningBox>This transaction is not completed</WarningBox>
           )}
         </section>
         <section>
@@ -116,12 +146,12 @@ export function TransactionView({
                 <i18n.Translate>retry</i18n.Translate>
               </ButtonPrimary>
             ) : null}
-            <ButtonDestructive onClick={onDelete}>
+            <ButtonDestructive onClick={doCheckBeforeForget}>
               <i18n.Translate> Forget </i18n.Translate>
             </ButtonDestructive>
           </div>
         </footer>
-      </WalletBox>
+      </Fragment>
     );
   }
 
@@ -138,27 +168,119 @@ export function TransactionView({
     ).amount;
     return (
       <TransactionTemplate>
+        {confirmBeforeForget ? (
+          <Overlay>
+            <CenteredDialog>
+              <header>Caution!</header>
+              <section>
+                If you have already wired money to the exchange you will loose
+                the chance to get the coins form it.
+              </section>
+              <footer>
+                <Button onClick={() => setConfirmBeforeForget(false)}>
+                  <i18n.Translate> Cancel </i18n.Translate>
+                </Button>
+
+                <ButtonDestructive onClick={onDelete}>
+                  <i18n.Translate> Confirm </i18n.Translate>
+                </ButtonDestructive>
+              </footer>
+            </CenteredDialog>
+          </Overlay>
+        ) : undefined}
         <h2>Withdrawal</h2>
         <Time timestamp={transaction.timestamp} format="dd MMMM yyyy, HH:mm" />
-        <br />
-        <Part
-          big
-          title="Total withdrawn"
-          text={amountToString(transaction.amountEffective)}
-          kind="positive"
-        />
-        <Part
-          big
-          title="Chosen amount"
-          text={amountToString(transaction.amountRaw)}
-          kind="neutral"
-        />
-        <Part
-          big
-          title="Exchange fee"
-          text={amountToString(fee)}
-          kind="negative"
-        />
+        {transaction.pending ? (
+          transaction.withdrawalDetails.type ===
+          WithdrawalType.ManualTransfer ? (
+            <Fragment>
+              <BankDetailsByPaytoType
+                amount={amountToString(transaction.amountRaw)}
+                exchangeBaseUrl={transaction.exchangeBaseUrl}
+                payto={parsePaytoUri(
+                  transaction.withdrawalDetails.exchangePaytoUris[0],
+                )}
+                subject={transaction.withdrawalDetails.reservePub}
+              />
+              <p>
+                <WarningBox>
+                  Make sure to use the correct subject, otherwise the money will
+                  not arrive in this wallet.
+                </WarningBox>
+              </p>
+              <Part
+                big
+                title="Total withdrawn"
+                text={amountToString(transaction.amountEffective)}
+                kind="positive"
+              />
+              <Part
+                big
+                title="Exchange fee"
+                text={amountToString(fee)}
+                kind="negative"
+              />
+            </Fragment>
+          ) : (
+            <Fragment>
+              {!transaction.withdrawalDetails.confirmed &&
+              transaction.withdrawalDetails.bankConfirmationUrl ? (
+                <InfoBox>
+                  The bank is waiting for confirmation. Go to the
+                  <a
+                    href={transaction.withdrawalDetails.bankConfirmationUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    bank site
+                  </a>
+                </InfoBox>
+              ) : undefined}
+              {transaction.withdrawalDetails.confirmed && (
+                <InfoBox>Waiting for the coins to arrive</InfoBox>
+              )}
+              <Part
+                big
+                title="Total withdrawn"
+                text={amountToString(transaction.amountEffective)}
+                kind="positive"
+              />
+              <Part
+                big
+                title="Chosen amount"
+                text={amountToString(transaction.amountRaw)}
+                kind="neutral"
+              />
+              <Part
+                big
+                title="Exchange fee"
+                text={amountToString(fee)}
+                kind="negative"
+              />
+            </Fragment>
+          )
+        ) : (
+          <Fragment>
+            <Part
+              big
+              title="Total withdrawn"
+              text={amountToString(transaction.amountEffective)}
+              kind="positive"
+            />
+            <Part
+              big
+              title="Chosen amount"
+              text={amountToString(transaction.amountRaw)}
+              kind="neutral"
+            />
+            <Part
+              big
+              title="Exchange fee"
+              text={amountToString(fee)}
+              kind="negative"
+            />
+          </Fragment>
+        )}
         <Part
           title="Exchange"
           text={new URL(transaction.exchangeBaseUrl).hostname}

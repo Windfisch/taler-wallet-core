@@ -28,34 +28,62 @@ import {
   ButtonPrimary,
   PaymentStatus,
   SmallLightText,
-  WalletBox,
 } from "../components/styled";
 import { Time } from "../components/Time";
-import { useProviderStatus } from "../hooks/useProviderStatus";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
+import * as wxApi from "../wxApi";
 
 interface Props {
   pid: string;
   onBack: () => void;
 }
 
-export function ProviderDetailPage({ pid, onBack }: Props): VNode {
-  const status = useProviderStatus(pid);
-  if (!status) {
+export function ProviderDetailPage({ pid: providerURL, onBack }: Props): VNode {
+  async function getProviderInfo(): Promise<ProviderInfo | null> {
+    //create a first list of backup info by currency
+    const status = await wxApi.getBackupInfo();
+
+    const providers = status.providers.filter(
+      (p) => p.syncProviderBaseUrl === providerURL,
+    );
+    return providers.length ? providers[0] : null;
+  }
+
+  const state = useAsyncAsHook(getProviderInfo);
+
+  if (!state) {
     return (
       <div>
         <i18n.Translate>Loading...</i18n.Translate>
       </div>
     );
   }
-  if (!status.info) {
+  if (state.hasError) {
+    return (
+      <div>
+        <i18n.Translate>
+          There was an error loading the provider detail for "{providerURL}"
+        </i18n.Translate>
+      </div>
+    );
+  }
+
+  if (state.response === null) {
     onBack();
-    return <div />;
+    return (
+      <div>
+        <i18n.Translate>
+          There is not known provider with url "{providerURL}". Redirecting
+          back...
+        </i18n.Translate>
+      </div>
+    );
   }
   return (
     <ProviderView
-      info={status.info}
-      onSync={status.sync}
-      onDelete={() => status.remove().then(onBack)}
+      info={state.response}
+      onSync={async () => wxApi.syncOneProvider(providerURL)}
+      onDelete={async () => wxApi.syncOneProvider(providerURL).then(onBack)}
       onBack={onBack}
       onExtend={() => {
         null;
@@ -84,7 +112,7 @@ export function ProviderView({
     info.paymentStatus.type === ProviderPaymentType.Paid ||
     info.paymentStatus.type === ProviderPaymentType.TermsChanged;
   return (
-    <WalletBox>
+    <Fragment>
       <Error info={info} />
       <header>
         <h3>
@@ -167,34 +195,9 @@ export function ProviderView({
           </ButtonDestructive>
         </div>
       </footer>
-    </WalletBox>
+    </Fragment>
   );
 }
-
-// function daysSince(d?: Timestamp): string {
-//   if (!d || d.t_ms === "never") return "never synced";
-//   const duration = intervalToDuration({
-//     start: d.t_ms,
-//     end: new Date(),
-//   });
-//   const str = formatDuration(duration, {
-//     delimiter: ", ",
-//     format: [
-//       duration?.years
-//         ? i18n.str`years`
-//         : duration?.months
-//         ? i18n.str`months`
-//         : duration?.days
-//         ? i18n.str`days`
-//         : duration?.hours
-//         ? i18n.str`hours`
-//         : duration?.minutes
-//         ? i18n.str`minutes`
-//         : i18n.str`seconds`,
-//     ],
-//   });
-//   return `synced ${str} ago`;
-// }
 
 function Error({ info }: { info: ProviderInfo }): VNode {
   if (info.lastError) {
@@ -233,23 +236,6 @@ function Error({ info }: { info: ProviderInfo }): VNode {
   }
   return <Fragment />;
 }
-
-// function colorByStatus(status: ProviderPaymentType): string {
-//   switch (status) {
-//     case ProviderPaymentType.InsufficientBalance:
-//       return "rgb(223, 117, 20)";
-//     case ProviderPaymentType.Unpaid:
-//       return "rgb(202, 60, 60)";
-//     case ProviderPaymentType.Paid:
-//       return "rgb(28, 184, 65)";
-//     case ProviderPaymentType.Pending:
-//       return "gray";
-//     // case ProviderPaymentType.InsufficientBalance:
-//     //   return "rgb(202, 60, 60)";
-//     case ProviderPaymentType.TermsChanged:
-//       return "rgb(202, 60, 60)";
-//   }
-// }
 
 function descriptionByStatus(status: ProviderPaymentStatus): VNode {
   switch (status.type) {

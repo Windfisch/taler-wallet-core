@@ -55,6 +55,7 @@ const exampleData = {
     type: TransactionType.Withdrawal,
     exchangeBaseUrl: "http://exchange.demo.taler.net",
     withdrawalDetails: {
+      reservePub: "A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
       confirmed: false,
       exchangePaytoUris: ["payto://x-taler-bank/bank/account"],
       type: WithdrawalType.ManualTransfer,

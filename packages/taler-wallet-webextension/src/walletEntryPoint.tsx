@@ -22,7 +22,7 @@
 
 import { setupI18n } from "@gnu-taler/taler-util";
 import { createHashHistory } from "history";
-import { Fragment, h, render } from "preact";
+import { Fragment, h, render, VNode } from "preact";
 import Router, { route, Route } from "preact-router";
 import { useEffect } from "preact/hooks";
 import { LogoHeader } from "./components/LogoHeader";
@@ -39,8 +39,11 @@ import { SettingsPage } from "./wallet/Settings";
 import { TransactionPage } from "./wallet/Transaction";
 import { WelcomePage } from "./wallet/Welcome";
 import { BackupPage } from "./wallet/BackupPage";
-import { DeveloperPage } from "./popup/Debug.js";
-import { ManualWithdrawPage } from "./wallet/ManualWithdrawPage.js";
+import { DeveloperPage } from "./popup/Debug";
+import { ManualWithdrawPage } from "./wallet/ManualWithdrawPage";
+import { WalletBox } from "./components/styled";
+import { ProviderDetailPage } from "./wallet/ProviderDetailPage";
+import { ProviderAddPage } from "./wallet/ProviderAddPage";
 
 function main(): void {
   try {
@@ -66,16 +69,20 @@ if (document.readyState === "loading") {
 }
 
 function withLogoAndNavBar(Component: any) {
-  return (props: any) => (
-    <Fragment>
-      <LogoHeader />
-      <WalletNavBar />
-      <Component {...props} />
-    </Fragment>
-  );
+  return function withLogoAndNavBarComponent(props: any): VNode {
+    return (
+      <Fragment>
+        <LogoHeader />
+        <WalletNavBar />
+        <WalletBox>
+          <Component {...props} />
+        </WalletBox>
+      </Fragment>
+    );
+  };
 }
 
-function Application() {
+function Application(): VNode {
   return (
     <div>
       <DevContextProvider>
@@ -105,6 +112,23 @@ function Application() {
           <Route
             path={Pages.backup}
             component={withLogoAndNavBar(BackupPage)}
+            onAddProvider={() => {
+              route(Pages.provider_add);
+            }}
+          />
+          <Route
+            path={Pages.provider_detail}
+            component={withLogoAndNavBar(ProviderDetailPage)}
+            onBack={() => {
+              route(Pages.backup);
+            }}
+          />
+          <Route
+            path={Pages.provider_add}
+            component={withLogoAndNavBar(ProviderAddPage)}
+            onBack={() => {
+              route(Pages.backup);
+            }}
           />
 
           <Route

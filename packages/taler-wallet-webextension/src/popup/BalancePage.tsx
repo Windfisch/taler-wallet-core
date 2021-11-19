@@ -14,88 +14,32 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import {
-  amountFractionalBase,
-  Amounts,
-  Balance,
-  i18n,
-} from "@gnu-taler/taler-util";
-import { h, VNode } from "preact";
-import {
-  ButtonPrimary,
-  ErrorBox,
-  Middle,
-  PopupBox,
-} from "../components/styled/index";
-import { BalancesHook, useBalances } from "../hooks/useBalances";
-import { PageLink, renderAmount } from "../renderHtml";
+import { BalancesResponse, i18n } from "@gnu-taler/taler-util";
+import { Fragment, h, VNode } from "preact";
+import { BalanceTable } from "../components/BalanceTable";
+import { ButtonPrimary, ErrorBox } from "../components/styled/index";
+import { HookResponse, useAsyncAsHook } from "../hooks/useAsyncAsHook";
+import { PageLink } from "../renderHtml";
+import * as wxApi from "../wxApi";
 
 export function BalancePage({
   goToWalletManualWithdraw,
 }: {
   goToWalletManualWithdraw: () => void;
 }): VNode {
-  const balance = useBalances();
+  const state = useAsyncAsHook(wxApi.getBalance);
   return (
     <BalanceView
-      balance={balance}
+      balance={state}
       Linker={PageLink}
       goToWalletManualWithdraw={goToWalletManualWithdraw}
     />
   );
 }
 export interface BalanceViewProps {
-  balance: BalancesHook;
+  balance: HookResponse<BalancesResponse>;
   Linker: typeof PageLink;
   goToWalletManualWithdraw: () => void;
-}
-
-function formatPending(entry: Balance): VNode {
-  let incoming: VNode | undefined;
-  let payment: VNode | undefined;
-
-  // const available = Amounts.parseOrThrow(entry.available);
-  const pendingIncoming = Amounts.parseOrThrow(entry.pendingIncoming);
-  const pendingOutgoing = Amounts.parseOrThrow(entry.pendingOutgoing);
-
-  if (!Amounts.isZero(pendingIncoming)) {
-    incoming = (
-      <span>
-        <i18n.Translate>
-          <span style={{ color: "darkgreen" }} title="incoming amount">
-            {"+"}
-            {renderAmount(entry.pendingIncoming)}
-          </span>{" "}
-        </i18n.Translate>
-      </span>
-    );
-  }
-  if (!Amounts.isZero(pendingOutgoing)) {
-    payment = (
-      <span>
-        <i18n.Translate>
-          <span style={{ color: "darkred" }} title="outgoing amount">
-            {"-"}
-            {renderAmount(entry.pendingOutgoing)}
-          </span>{" "}
-        </i18n.Translate>
-      </span>
-    );
-  }
-
-  const l = [incoming, payment].filter((x) => x !== undefined);
-  if (l.length === 0) {
-    return <span />;
-  }
-
-  if (l.length === 1) {
-    return <span>{l}</span>;
-  }
-  return (
-    <span>
-      {l[0]}, {l[1]}
-    </span>
-  );
 }
 
 export function BalanceView({
@@ -103,105 +47,44 @@ export function BalanceView({
   Linker,
   goToWalletManualWithdraw,
 }: BalanceViewProps): VNode {
-  function Content(): VNode {
-    if (!balance) {
-      return <span />;
-    }
+  if (!balance) {
+    return <div>Loading...</div>;
+  }
 
-    if (balance.hasError) {
-      return (
-        <section>
-          <ErrorBox>{balance.message}</ErrorBox>
-          <p>
-            Click <Linker pageName="welcome">here</Linker> for help and
-            diagnostics.
-          </p>
-        </section>
-      );
-    }
-    if (balance.response.balances.length === 0) {
-      return (
-        <section data-expanded>
-          <Middle>
-            <p>
-              <i18n.Translate>
-                You have no balance to show. Need some{" "}
-                <Linker pageName="/welcome">help</Linker> getting started?
-              </i18n.Translate>
-            </p>
-          </Middle>
-        </section>
-      );
-    }
+  if (balance.hasError) {
     return (
-      <section data-expanded data-centered>
-        <table style={{ width: "100%" }}>
-          {balance.response.balances.map((entry, idx) => {
-            const av = Amounts.parseOrThrow(entry.available);
-            // Create our number formatter.
-            let formatter;
-            try {
-              formatter = new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: av.currency,
-                currencyDisplay: "symbol",
-                // These options are needed to round to whole numbers if that's what you want.
-                //minimumFractionDigits: 0, // (this suffices for whole numbers, but will print 2500.10 as $2,500.1)
-                //maximumFractionDigits: 0, // (causes 2500.99 to be printed as $2,501)
-              });
-            } catch {
-              formatter = new Intl.NumberFormat("en-US", {
-                // style: 'currency',
-                // currency: av.currency,
-                // These options are needed to round to whole numbers if that's what you want.
-                //minimumFractionDigits: 0, // (this suffices for whole numbers, but will print 2500.10 as $2,500.1)
-                //maximumFractionDigits: 0, // (causes 2500.99 to be printed as $2,501)
-              });
-            }
-
-            const v = formatter.format(
-              av.value + av.fraction / amountFractionalBase,
-            );
-            const fontSize =
-              v.length < 8 ? "3em" : v.length < 13 ? "2em" : "1em";
-            return (
-              <tr key={idx}>
-                <td
-                  style={{
-                    height: 50,
-                    fontSize,
-                    width: "60%",
-                    textAlign: "right",
-                    padding: 0,
-                  }}
-                >
-                  {v}
-                </td>
-                <td style={{ maxWidth: "2em", overflowX: "hidden" }}>
-                  {av.currency}
-                </td>
-                <td style={{ fontSize: "small", color: "gray" }}>
-                  {formatPending(entry)}
-                </td>
-              </tr>
-            );
-          })}
-        </table>
-      </section>
+      <Fragment>
+        <ErrorBox>{balance.message}</ErrorBox>
+        <p>
+          Click <Linker pageName="welcome">here</Linker> for help and
+          diagnostics.
+        </p>
+      </Fragment>
+    );
+  }
+  if (balance.response.balances.length === 0) {
+    return (
+      <Fragment>
+        <p>
+          <i18n.Translate>
+            You have no balance to show. Need some{" "}
+            <Linker pageName="/welcome">help</Linker> getting started?
+          </i18n.Translate>
+        </p>
+      </Fragment>
     );
   }
 
   return (
-    <PopupBox>
-      {/* <section> */}
-      <Content />
-      {/* </section> */}
-      <footer>
-        <div />
+    <Fragment>
+      <section>
+        <BalanceTable balances={balance.response.balances} />
+      </section>
+      <footer style={{ justifyContent: "space-around" }}>
         <ButtonPrimary onClick={goToWalletManualWithdraw}>
           Withdraw
         </ButtonPrimary>
       </footer>
-    </PopupBox>
+    </Fragment>
   );
 }

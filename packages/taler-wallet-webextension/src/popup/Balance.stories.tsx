@@ -158,7 +158,7 @@ export const SomeCoinsInTreeCurrencies = createExample(TestedComponent, {
           requiresUserInput: false,
         },
         {
-          available: "COL:2000",
+          available: "TESTKUDOS:2000",
           hasPendingTransactions: false,
           pendingIncoming: "USD:0",
           pendingOutgoing: "USD:0",

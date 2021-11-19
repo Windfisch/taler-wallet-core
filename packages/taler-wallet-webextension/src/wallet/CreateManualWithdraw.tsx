@@ -19,17 +19,19 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { AmountJson, Amounts } from "@gnu-taler/taler-util";
-import { h, VNode } from "preact";
+import { AmountJson, Amounts, i18n } from "@gnu-taler/taler-util";
+import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { SelectList } from "../components/SelectList";
 import {
+  BoldLight,
   ButtonPrimary,
+  ButtonSuccess,
+  Centered,
   Input,
   InputWithLabel,
   LightText,
-  WalletBox,
 } from "../components/styled";
 
 export interface Props {
@@ -82,11 +84,23 @@ export function CreateManualWithdraw({
   }
 
   if (!initialExchange) {
-    return <div>There is no known exchange where to withdraw, add one</div>;
+    return (
+      <Centered style={{ marginTop: 100 }}>
+        <BoldLight>No exchange configured</BoldLight>
+        <ButtonSuccess
+          //FIXME: add exchange feature
+          onClick={() => {
+            null;
+          }}
+        >
+          <i18n.Translate>Add exchange</i18n.Translate>
+        </ButtonSuccess>
+      </Centered>
+    );
   }
 
   return (
-    <WalletBox>
+    <Fragment>
       <section>
         <ErrorMessage
           title={error && "Can't create the reserve"}
@@ -145,6 +159,6 @@ export function CreateManualWithdraw({
           Start withdrawal
         </ButtonPrimary>
       </footer>
-    </WalletBox>
+    </Fragment>
   );
 }

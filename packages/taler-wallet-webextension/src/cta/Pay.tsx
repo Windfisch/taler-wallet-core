@@ -49,7 +49,7 @@ import {
   WalletAction,
   WarningBox,
 } from "../components/styled";
-import { useBalances } from "../hooks/useBalances";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import * as wxApi from "../wxApi";
 
 interface Props {
@@ -109,7 +109,7 @@ export function PayPage({ talerPayUri }: Props): VNode {
   );
   const [payErrMsg, setPayErrMsg] = useState<string | undefined>(undefined);
 
-  const balance = useBalances();
+  const balance = useAsyncAsHook(wxApi.getBalance);
   const balanceWithoutError = balance?.hasError
     ? []
     : balance?.response.balances || [];

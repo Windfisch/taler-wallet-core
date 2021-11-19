@@ -22,39 +22,21 @@
  * Imports.
  */
 import {
-  CoreApiResponse,
-  ConfirmPayResult,
-  BalancesResponse,
-  TransactionsResponse,
-  ApplyRefundResponse,
-  PreparePayResult,
-  AcceptWithdrawalResponse,
-  WalletDiagnostics,
-  GetWithdrawalDetailsForUriRequest,
-  WithdrawUriInfoResponse,
-  PrepareTipRequest,
-  PrepareTipResult,
-  AcceptTipRequest,
-  DeleteTransactionRequest,
-  RetryTransactionRequest,
-  SetWalletDeviceIdRequest,
-  GetExchangeWithdrawalInfo,
   AcceptExchangeTosRequest,
-  AcceptManualWithdrawalResult,
-  AcceptManualWithdrawalRequest,
-  AmountJson,
-  ExchangesListRespose,
-  AddExchangeRequest,
-  GetExchangeTosResult,
+  AcceptManualWithdrawalResult, AcceptTipRequest, AcceptWithdrawalResponse,
+  AddExchangeRequest, ApplyRefundResponse, BalancesResponse, ConfirmPayResult,
+  CoreApiResponse, DeleteTransactionRequest, ExchangesListRespose,
+  GetExchangeTosResult, GetExchangeWithdrawalInfo,
+  GetWithdrawalDetailsForUriRequest, NotificationType, PreparePayResult, PrepareTipRequest,
+  PrepareTipResult, RetryTransactionRequest,
+  SetWalletDeviceIdRequest, TransactionsResponse, WalletDiagnostics, WithdrawUriInfoResponse
 } from "@gnu-taler/taler-util";
 import {
-  AddBackupProviderRequest,
-  BackupProviderState,
-  OperationFailedError,
-  RemoveBackupProviderRequest,
+  AddBackupProviderRequest, BackupInfo, OperationFailedError,
+  RemoveBackupProviderRequest
 } from "@gnu-taler/taler-wallet-core";
-import { BackupInfo } from "@gnu-taler/taler-wallet-core";
 import { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core/src/operations/withdraw";
+import { MessageFromBackend } from "./wxBackend.js";
 
 export interface ExtendedPermissionsResponse {
   newValue: boolean;
@@ -83,7 +65,9 @@ export interface UpgradeResponse {
 
 async function callBackend(operation: string, payload: any): Promise<any> {
   return new Promise<any>((resolve, reject) => {
+    // eslint-disable-next-line no-undef
     chrome.runtime.sendMessage({ operation, payload, id: "(none)" }, (resp) => {
+      // eslint-disable-next-line no-undef
       if (chrome.runtime.lastError) {
         console.log("Error calling backend");
         reject(
@@ -366,10 +350,13 @@ export function acceptTip(req: AcceptTipRequest): Promise<void> {
   return callBackend("acceptTip", req);
 }
 
-export function onUpdateNotification(f: () => void): () => void {
+export function onUpdateNotification(messageType: Array<NotificationType>, doCallback: () => void): () => void {
+  // eslint-disable-next-line no-undef
   const port = chrome.runtime.connect({ name: "notifications" });
-  const listener = (): void => {
-    f();
+  const listener = (message: MessageFromBackend): void => {
+    if (messageType.includes(message.type)) {
+      doCallback();
+    }
   };
   port.onMessage.addListener(listener);
   return () => {

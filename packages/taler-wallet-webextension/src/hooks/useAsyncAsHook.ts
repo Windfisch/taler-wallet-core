@@ -13,7 +13,7 @@
  You should have received a copy of the GNU General Public License along with
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-import { ExchangesListRespose } from "@gnu-taler/taler-util";
+import { ExchangesListRespose, NotificationType } from "@gnu-taler/taler-util";
 import { useEffect, useState } from "preact/hooks";
 import * as wxApi from "../wxApi";
 
@@ -29,7 +29,8 @@ interface HookError {
 
 export type HookResponse<T> = HookOk<T> | HookError | undefined;
 
-export function useAsyncAsHook<T>(fn: () => Promise<T>): HookResponse<T> {
+//"withdraw-group-finished"
+export function useAsyncAsHook<T>(fn: () => Promise<T>, updateOnNotification?: Array<NotificationType>): HookResponse<T> {
   const [result, setHookResponse] = useState<HookResponse<T>>(undefined);
   useEffect(() => {
     async function doAsync() {
@@ -43,6 +44,11 @@ export function useAsyncAsHook<T>(fn: () => Promise<T>): HookResponse<T> {
       }
     }
     doAsync();
+    if (updateOnNotification && updateOnNotification.length > 0) {
+      return wxApi.onUpdateNotification(updateOnNotification, () => {
+        doAsync()
+      });
+    }
   }, []);
   return result;
 }

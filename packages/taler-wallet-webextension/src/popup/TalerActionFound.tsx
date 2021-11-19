@@ -20,12 +20,8 @@
  */
 
 import { classifyTalerUri, TalerUriType } from "@gnu-taler/taler-util";
-import {
-  ButtonPrimary,
-  ButtonSuccess,
-  PopupBox,
-} from "../components/styled/index";
-import { h } from "preact";
+import { Fragment, h } from "preact";
+import { ButtonPrimary, ButtonSuccess } from "../components/styled/index";
 
 export interface Props {
   url: string;
@@ -35,7 +31,7 @@ export interface Props {
 export function TalerActionFound({ url, onDismiss }: Props) {
   const uriType = classifyTalerUri(url);
   return (
-    <PopupBox>
+    <Fragment>
       <section>
         <h1>Taler Action </h1>
         {uriType === TalerUriType.TalerPay && (
@@ -109,7 +105,7 @@ export function TalerActionFound({ url, onDismiss }: Props) {
         <div />
         <ButtonPrimary onClick={() => onDismiss()}> Dismiss </ButtonPrimary>
       </footer>
-    </PopupBox>
+    </Fragment>
   );
 }
 

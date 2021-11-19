@@ -15,6 +15,8 @@
  */
 
 // need to import linaria types, otherwise compiler will complain
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line no-unused-vars
 import type * as Linaria from "@linaria/core";
 
 import { styled } from "@linaria/react";
@@ -78,9 +80,8 @@ export const WalletBox = styled.div<{ noPadding?: boolean }>`
     width: 400px;
   }
   & > section {
-    padding-left: ${({ noPadding }) => (noPadding ? "0px" : "8px")};
-    padding-right: ${({ noPadding }) => (noPadding ? "0px" : "8px")};
-    // this margin will send the section up when used with a header
+    padding: ${({ noPadding }) => (noPadding ? "0px" : "8px")};
+
     margin-bottom: auto;
     overflow: auto;
 
@@ -202,6 +203,152 @@ export const PopupBox = styled.div<{ noPadding?: boolean }>`
   }
 `;
 
+export const TableWithRoundRows = styled.table`
+  border-collapse: separate;
+  border-spacing: 0px 10px;
+  margin-top: -10px;
+
+  td {
+    border: solid 1px #000;
+    border-style: solid none;
+    padding: 10px;
+  }
+  td:first-child {
+    border-left-style: solid;
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+  }
+  td:last-child {
+    border-right-style: solid;
+    border-bottom-right-radius: 5px;
+    border-top-right-radius: 5px;
+  }
+`;
+
+const Tooltip = styled.div<{ content: string }>`
+  display: block;
+  position: relative;
+
+  ::before {
+    position: absolute;
+    z-index: 1000001;
+    width: 0;
+    height: 0;
+    color: darkgray;
+    pointer-events: none;
+    content: "";
+    border: 6px solid transparent;
+
+    border-bottom-color: darkgray;
+  }
+
+  ::after {
+    position: absolute;
+    z-index: 1000001;
+    padding: 0.5em 0.75em;
+    font: normal normal 11px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI",
+      Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    -webkit-font-smoothing: subpixel-antialiased;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    text-shadow: none;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: break-word;
+    white-space: pre;
+    pointer-events: none;
+    content: attr(content);
+    background: darkgray;
+    border-radius: 6px;
+  }
+`;
+
+export const TooltipBottom = styled(Tooltip)`
+  ::before {
+    top: auto;
+    right: 50%;
+    bottom: -7px;
+    margin-right: -6px;
+  }
+  ::after {
+    top: 100%;
+    right: -50%;
+    margin-top: 6px;
+  }
+`;
+
+export const TooltipRight = styled(Tooltip)`
+  ::before {
+    top: 0px;
+    left: 16px;
+    transform: rotate(-90deg);
+  }
+  ::after {
+    top: -50%;
+    left: 28px;
+    margin-top: 6px;
+  }
+`;
+
+export const Overlay = styled.div`
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 2;
+  cursor: pointer;
+`;
+
+export const CenteredDialog = styled.div`
+  position: absolute;
+  text-align: left;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  top: 50%;
+  left: 50%;
+  /* font-size: 50px; */
+  color: black;
+  transform: translate(-50%, -50%);
+  -ms-transform: translate(-50%, -50%);
+  cursor: initial;
+  background-color: white;
+  border-radius: 10px;
+
+  max-height: 70%;
+
+  & > header {
+    border-top-right-radius: 6px;
+    border-top-left-radius: 6px;
+    padding: 10px;
+    background-color: #f5f5f5;
+    border-bottom: 1px solid #dbdbdb;
+    font-weight: bold;
+  }
+  & > section {
+    padding: 10px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    overflow: auto;
+  }
+  & > footer {
+    border-top: 1px solid #dbdbdb;
+    border-bottom-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    padding: 10px;
+    background-color: #f5f5f5;
+    display: flex;
+    justify-content: space-between;
+  }
+`;
+
 export const Button = styled.button<{ upperCased?: boolean }>`
   display: inline-block;
   zoom: 1;
@@ -217,7 +364,7 @@ export const Button = styled.button<{ upperCased?: boolean }>`
   font-family: inherit;
   font-size: 100%;
   padding: 0.5em 1em;
-  color: #444; /* rgba not supported (IE 8) */
+  /* color: #444; rgba not supported (IE 8) */
   color: rgba(0, 0, 0, 0.8); /* rgba supported */
   border: 1px solid #999; /*IE 6/7/8*/
   border: none rgba(0, 0, 0, 0); /*IE9 + everything else*/
@@ -305,8 +452,7 @@ export const FontIcon = styled.div`
 `;
 export const ButtonBox = styled(Button)`
   padding: 0.5em;
-  width: fit-content;
-  height: 2em;
+  font-size: x-small;
 
   & > ${FontIcon} {
     width: 1em;
@@ -320,6 +466,8 @@ export const ButtonBox = styled(Button)`
   border-radius: 4px;
   border-color: black;
   color: black;
+  /* -webkit-border-horizontal-spacing: 0px;
+  -webkit-border-vertical-spacing: 0px; */
 `;
 
 const ButtonVariant = styled(Button)`
@@ -377,6 +525,7 @@ export const Centered = styled.div`
     margin-top: 15px;
   }
 `;
+
 export const Row = styled.div`
   display: flex;
   margin: 0.5em 0;
@@ -564,6 +713,12 @@ export const ErrorBox = styled.div`
       width: 28px;
     }
   }
+`;
+
+export const InfoBox = styled(ErrorBox)`
+  color: black;
+  background-color: #d1e7dd;
+  border-color: #badbcc;
 `;
 
 export const SuccessBox = styled(ErrorBox)`

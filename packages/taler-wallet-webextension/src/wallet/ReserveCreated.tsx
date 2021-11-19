@@ -1,18 +1,8 @@
-import {
-  AmountJson,
-  Amounts,
-  parsePaytoUri,
-  PaytoUri,
-} from "@gnu-taler/taler-util";
+import { AmountJson, Amounts, parsePaytoUri } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
-import { useEffect, useState } from "preact/hooks";
+import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType";
 import { QR } from "../components/QR";
-import {
-  ButtonDestructive,
-  ButtonPrimary,
-  WalletBox,
-  WarningBox,
-} from "../components/styled";
+import { ButtonDestructive, WarningBox } from "../components/styled";
 export interface Props {
   reservePub: string;
   payto: string;
@@ -21,92 +11,6 @@ export interface Props {
   onBack: () => void;
 }
 
-interface BankDetailsProps {
-  payto: PaytoUri;
-  exchangeBaseUrl: string;
-  subject: string;
-  amount: string;
-}
-
-function Row({
-  name,
-  value,
-  literal,
-}: {
-  name: string;
-  value: string;
-  literal?: boolean;
-}): VNode {
-  const [copied, setCopied] = useState(false);
-  function copyText(): void {
-    navigator.clipboard.writeText(value);
-    setCopied(true);
-  }
-  useEffect(() => {
-    setTimeout(() => {
-      setCopied(false);
-    }, 1000);
-  }, [copied]);
-  return (
-    <tr>
-      <td>
-        {!copied ? (
-          <ButtonPrimary small onClick={copyText}>
-            &nbsp; Copy &nbsp;
-          </ButtonPrimary>
-        ) : (
-          <ButtonPrimary small disabled>
-            Copied
-          </ButtonPrimary>
-        )}
-      </td>
-      <td>
-        <b>{name}</b>
-      </td>
-      {literal ? (
-        <td>
-          <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-            {value}
-          </pre>
-        </td>
-      ) : (
-        <td>{value}</td>
-      )}
-    </tr>
-  );
-}
-
-function BankDetailsByPaytoType({
-  payto,
-  subject,
-  exchangeBaseUrl,
-  amount,
-}: BankDetailsProps): VNode {
-  const firstPart = !payto.isKnown ? (
-    <Fragment>
-      <Row name="Account" value={payto.targetPath} />
-      <Row name="Exchange" value={exchangeBaseUrl} />
-    </Fragment>
-  ) : payto.targetType === "x-taler-bank" ? (
-    <Fragment>
-      <Row name="Bank host" value={payto.host} />
-      <Row name="Bank account" value={payto.account} />
-      <Row name="Exchange" value={exchangeBaseUrl} />
-    </Fragment>
-  ) : payto.targetType === "iban" ? (
-    <Fragment>
-      <Row name="IBAN" value={payto.iban} />
-      <Row name="Exchange" value={exchangeBaseUrl} />
-    </Fragment>
-  ) : undefined;
-  return (
-    <table>
-      {firstPart}
-      <Row name="Amount" value={amount} />
-      <Row name="Subject" value={subject} literal />
-    </table>
-  );
-}
 export function ReserveCreated({
   reservePub,
   payto,
@@ -120,11 +24,12 @@ export function ReserveCreated({
     return <div>could not parse payto uri from exchange {payto}</div>;
   }
   return (
-    <WalletBox>
+    <Fragment>
       <section>
-        <h1>Bank transfer details</h1>
+        <h1>Exchange is ready for withdrawal!</h1>
         <p>
-          Please wire <b>{Amounts.stringify(amount)}</b> to:
+          To complete the process you need to wire{" "}
+          <b>{Amounts.stringify(amount)}</b> to the exchange bank account
         </p>
         <BankDetailsByPaytoType
           amount={Amounts.stringify(amount)}
@@ -132,14 +37,14 @@ export function ReserveCreated({
           payto={paytoURI}
           subject={reservePub}
         />
-      </section>
-      <section>
         <p>
           <WarningBox>
             Make sure to use the correct subject, otherwise the money will not
             arrive in this wallet.
           </WarningBox>
         </p>
+      </section>
+      <section>
         <p>
           Alternative, you can also scan this QR code or open{" "}
           <a href={payto}>this link</a> if you have a banking app installed that
@@ -149,8 +54,10 @@ export function ReserveCreated({
       </section>
       <footer>
         <div />
-        <ButtonDestructive onClick={onBack}>Cancel withdraw</ButtonDestructive>
+        <ButtonDestructive onClick={onBack}>
+          Cancel withdrawal
+        </ButtonDestructive>
       </footer>
-    </WalletBox>
+    </Fragment>
   );
 }

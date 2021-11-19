@@ -17,42 +17,37 @@
 import {
   AmountString,
   Balance,
+  NotificationType,
   Transaction,
-  TransactionsResponse,
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
-import { useEffect, useState } from "preact/hooks";
-import { DateSeparator, WalletBox } from "../components/styled";
+import { DateSeparator } from "../components/styled";
 import { Time } from "../components/Time";
 import { TransactionItem } from "../components/TransactionItem";
-import { useBalances } from "../hooks/useBalances";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import * as wxApi from "../wxApi";
 
 export function HistoryPage(): VNode {
-  const [transactions, setTransactions] = useState<
-    TransactionsResponse | undefined
-  >(undefined);
-  const balance = useBalances();
+  const balance = useAsyncAsHook(wxApi.getBalance);
   const balanceWithoutError = balance?.hasError
     ? []
     : balance?.response.balances || [];
 
-  useEffect(() => {
-    const fetchData = async (): Promise<void> => {
-      const res = await wxApi.getTransactions();
-      setTransactions(res);
-    };
-    fetchData();
-  }, []);
+  const transactionQuery = useAsyncAsHook(wxApi.getTransactions, [
+    NotificationType.WithdrawGroupFinished,
+  ]);
 
-  if (!transactions) {
+  if (!transactionQuery) {
     return <div>Loading ...</div>;
+  }
+  if (transactionQuery.hasError) {
+    return <div>There was an error loading the transactions.</div>;
   }
 
   return (
     <HistoryView
       balances={balanceWithoutError}
-      list={[...transactions.transactions].reverse()}
+      list={[...transactionQuery.response.transactions].reverse()}
     />
   );
 }
@@ -87,7 +82,7 @@ export function HistoryView({
   const multiCurrency = balances.length > 1;
 
   return (
-    <WalletBox noPadding>
+    <Fragment>
       {balances.length > 0 && (
         <header>
           {balances.length === 1 && (
@@ -128,6 +123,6 @@ export function HistoryView({
           );
         })}
       </section>
-    </WalletBox>
+    </Fragment>
   );
 }

@@ -18,7 +18,7 @@ import { h, Fragment } from "preact"
 import { NavBar } from '../src/NavigationBar'
 import { LogoHeader } from '../src/components/LogoHeader'
 import { TranslationProvider } from '../src/context/translation'
-
+import { PopupBox, WalletBox } from '../src/components/styled'
 export const parameters = {
   controls: { expanded: true },
   actions: { argTypesRegex: "^on[A-Z].*" },
@@ -58,9 +58,9 @@ export const decorators = [
         // add a fake header so it looks similar
         return <Fragment>
           <NavBar path={path} devMode={path === '/dev'} />
-          <div style={{ width: 400, height: 290 }}>
+          <PopupBox>
             <Story />
-          </div>
+          </PopupBox>
         </Fragment>
       }
 
@@ -125,7 +125,7 @@ export const decorators = [
         <link key="1" rel="stylesheet" type="text/css" href="/static/style/pure.css" />
         <link key="2" rel="stylesheet" type="text/css" href="/static/style/wallet.css" />
         <Story />
-      </div>      
+      </div>
     }
     if (kind.startsWith('wallet')) {
       const path = /wallet(\/.*).*/.exec(kind)[1];
@@ -157,7 +157,9 @@ export const decorators = [
         </style>
         <LogoHeader />
         <NavBar path={path} devMode={path === '/dev'} />
-        <Story />
+        <WalletBox>
+          <Story />
+        </WalletBox>
       </div>
     }
     return <div>

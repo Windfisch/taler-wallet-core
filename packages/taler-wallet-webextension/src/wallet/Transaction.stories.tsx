@@ -61,6 +61,7 @@ const exampleData = {
     exchangeBaseUrl: "http://exchange.taler",
     withdrawalDetails: {
       confirmed: false,
+      reservePub: "A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
       exchangePaytoUris: ["payto://x-taler-bank/bank/account"],
       type: WithdrawalType.ManualTransfer,
     },
@@ -134,9 +135,48 @@ export const WithdrawError = createExample(TestedComponent, {
   },
 });
 
-export const WithdrawPending = createExample(TestedComponent, {
-  transaction: { ...exampleData.withdraw, pending: true },
+export const WithdrawPendingManual = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.withdraw,
+    withdrawalDetails: {
+      type: WithdrawalType.ManualTransfer,
+      exchangePaytoUris: ["payto://iban/asdasdasd"],
+      reservePub: "A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
+    },
+    pending: true,
+  },
 });
+
+export const WithdrawPendingTalerBankUnconfirmed = createExample(
+  TestedComponent,
+  {
+    transaction: {
+      ...exampleData.withdraw,
+      withdrawalDetails: {
+        type: WithdrawalType.TalerBankIntegrationApi,
+        confirmed: false,
+        reservePub: "A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
+        bankConfirmationUrl: "http://bank.demo.taler.net",
+      },
+      pending: true,
+    },
+  },
+);
+
+export const WithdrawPendingTalerBankConfirmed = createExample(
+  TestedComponent,
+  {
+    transaction: {
+      ...exampleData.withdraw,
+      withdrawalDetails: {
+        type: WithdrawalType.TalerBankIntegrationApi,
+        confirmed: true,
+        reservePub: "A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
+      },
+      pending: true,
+    },
+  },
+);
 
 export const Payment = createExample(TestedComponent, {
   transaction: exampleData.payment,

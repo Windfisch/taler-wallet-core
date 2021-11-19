@@ -20,7 +20,7 @@ import {
   canonicalizeBaseUrl,
   i18n,
 } from "@gnu-taler/taler-util";
-import { VNode, h } from "preact";
+import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { Checkbox } from "../components/Checkbox";
 import { ErrorMessage } from "../components/ErrorMessage";
@@ -29,7 +29,6 @@ import {
   ButtonPrimary,
   Input,
   LightText,
-  WalletBox,
   SmallLightText,
 } from "../components/styled/index";
 import * as wxApi from "../wxApi";
@@ -64,7 +63,7 @@ export function ProviderAddPage({ onBack }: Props): VNode {
   async function getProviderInfo(
     url: string,
   ): Promise<BackupBackupProviderTerms> {
-    return fetch(`${url}config`)
+    return fetch(new URL("config", url).href)
       .catch((e) => {
         throw new Error(`Network error`);
       })
@@ -137,7 +136,7 @@ export function SetUrlView({
     }
   }, [value]);
   return (
-    <WalletBox>
+    <Fragment>
       <section>
         <h1> Add backup provider</h1>
         <ErrorMessage
@@ -182,7 +181,7 @@ export function SetUrlView({
           <i18n.Translate>Next</i18n.Translate>
         </ButtonPrimary>
       </footer>
-    </WalletBox>
+    </Fragment>
   );
 }
 
@@ -201,7 +200,7 @@ export function ConfirmProviderView({
   const [accepted, setAccepted] = useState(false);
 
   return (
-    <WalletBox>
+    <Fragment>
       <section>
         <h1>Review terms of service</h1>
         <div>
@@ -239,6 +238,6 @@ export function ConfirmProviderView({
           <i18n.Translate>Add provider</i18n.Translate>
         </ButtonPrimary>
       </footer>
-    </WalletBox>
+    </Fragment>
   );
 }

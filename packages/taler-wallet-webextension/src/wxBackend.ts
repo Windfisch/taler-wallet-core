@@ -39,6 +39,7 @@ import {
   classifyTalerUri,
   CoreApiResponse,
   CoreApiResponseSuccess,
+  NotificationType,
   TalerErrorCode,
   TalerUriType,
   WalletDiagnostics,
@@ -237,6 +238,10 @@ function makeSyncWalletRedirect(
   return { redirectUrl: innerUrl.href };
 }
 
+export type MessageFromBackend = {
+  type: NotificationType
+}
+
 async function reinitWallet(): Promise<void> {
   if (currentWallet) {
     currentWallet.stop();
@@ -266,9 +271,10 @@ async function reinitWallet(): Promise<void> {
     return;
   }
   wallet.addNotificationListener((x) => {
-    for (const x of notificationPorts) {
+    for (const notif of notificationPorts) {
+      const message: MessageFromBackend = { type: x.type };
       try {
-        x.postMessage({ type: "notification" });
+        notif.postMessage(message);
       } catch (e) {
         console.error(e);
       }

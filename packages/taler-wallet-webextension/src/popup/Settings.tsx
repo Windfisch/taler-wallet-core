@@ -14,26 +14,34 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
 */
 
-import { i18n } from "@gnu-taler/taler-util";
-import { VNode, h } from "preact";
+import { ExchangeListItem, i18n } from "@gnu-taler/taler-util";
+import { Fragment, h, VNode } from "preact";
 import { Checkbox } from "../components/Checkbox";
-import { EditableText } from "../components/EditableText";
-import { SelectList } from "../components/SelectList";
-import { PopupBox } from "../components/styled";
+import { ButtonPrimary } from "../components/styled";
 import { useDevContext } from "../context/devContext";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { useBackupDeviceName } from "../hooks/useBackupDeviceName";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
 import { useLang } from "../hooks/useLang";
+// import { strings as messages } from "../i18n/strings";
+import * as wxApi from "../wxApi";
 
 export function SettingsPage(): VNode {
   const [permissionsEnabled, togglePermissions] = useExtendedPermissions();
   const { devMode, toggleDevMode } = useDevContext();
   const { name, update } = useBackupDeviceName();
   const [lang, changeLang] = useLang();
+  const exchangesHook = useAsyncAsHook(wxApi.listExchanges);
+
   return (
     <SettingsView
       lang={lang}
       changeLang={changeLang}
+      knownExchanges={
+        !exchangesHook || exchangesHook.hasError
+          ? []
+          : exchangesHook.response.exchanges
+      }
       deviceName={name}
       setDeviceName={update}
       permissionsEnabled={permissionsEnabled}
@@ -53,36 +61,59 @@ export interface ViewProps {
   togglePermissions: () => void;
   developerMode: boolean;
   toggleDeveloperMode: () => void;
+  knownExchanges: Array<ExchangeListItem>;
 }
 
-import { strings as messages } from "../i18n/strings";
+// type LangsNames = {
+//   [P in keyof typeof messages]: string;
+// };
 
-type LangsNames = {
-  [P in keyof typeof messages]: string;
-};
-
-const names: LangsNames = {
-  es: "Español [es]",
-  en: "English [en]",
-  fr: "Français [fr]",
-  de: "Deutsch [de]",
-  sv: "Svenska [sv]",
-  it: "Italiano [it]",
-};
+// const names: LangsNames = {
+//   es: "Español [es]",
+//   en: "English [en]",
+//   fr: "Français [fr]",
+//   de: "Deutsch [de]",
+//   sv: "Svenska [sv]",
+//   it: "Italiano [it]",
+// };
 
 export function SettingsView({
-  lang,
-  changeLang,
-  deviceName,
-  setDeviceName,
+  knownExchanges,
+  // lang,
+  // changeLang,
+  // deviceName,
+  // setDeviceName,
   permissionsEnabled,
   togglePermissions,
   developerMode,
   toggleDeveloperMode,
 }: ViewProps): VNode {
   return (
-    <PopupBox>
+    <Fragment>
       <section>
+        <h2>
+          <i18n.Translate>Known exchanges</i18n.Translate>
+        </h2>
+        {!knownExchanges || !knownExchanges.length ? (
+          <div>No exchange yet!</div>
+        ) : (
+          <Fragment>
+            <table>
+              {knownExchanges.map((e, idx) => (
+                <tr key={idx}>
+                  <td>{e.currency}</td>
+                  <td>
+                    <a href={e.exchangeBaseUrl}>{e.exchangeBaseUrl}</a>
+                  </td>
+                </tr>
+              ))}
+            </table>
+          </Fragment>
+        )}
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <div />
+          <ButtonPrimary>Manage exchange</ButtonPrimary>
+        </div>
         {/* <h2><i18n.Translate>Wallet</i18n.Translate></h2> */}
         {/* <SelectList
           value={lang}
@@ -124,14 +155,16 @@ export function SettingsView({
           rel="noopener noreferrer"
           style={{ color: "darkgreen", textDecoration: "none" }}
           href={
+            // eslint-disable-next-line no-undef
             chrome.extension
-              ? chrome.extension.getURL(`/static/wallet.html#/settings`)
+              ? // eslint-disable-next-line no-undef
+                chrome.extension.getURL(`/static/wallet.html#/settings`)
               : "#"
           }
         >
           VIEW MORE SETTINGS
         </a>
       </footer>
-    </PopupBox>
+    </Fragment>
   );
 }
