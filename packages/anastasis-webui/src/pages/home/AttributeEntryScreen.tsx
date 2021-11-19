@@ -19,6 +19,7 @@ export function AttributeEntryScreen(): VNode {
   const [attrs, setAttrs] = useState<Record<string, string>>(
     currentIdentityAttributes,
   );
+  const isBackup = state && state.backup_state;
   const [askUserIfSure, setAskUserIfSure] = useState(false);
 
   if (!reducer) {
@@ -54,11 +55,17 @@ export function AttributeEntryScreen(): VNode {
     );
   });
 
+  const doConfirm = async () => {
+    await reducer.transition("enter_user_attributes", {
+      identity_attributes: attrs,
+    });
+  };
+
   return (
     <AnastasisClientFrame
       title={withProcessLabel(reducer, "Who are you?")}
       hideNext={hasErrors ? "Complete the form." : undefined}
-      onNext={async () => setAskUserIfSure(true) }
+      onNext={async () => isBackup ? setAskUserIfSure(true) : doConfirm() }
     >
       {askUserIfSure ? (
         <ConfirmModal
@@ -67,9 +74,7 @@ export function AttributeEntryScreen(): VNode {
           description="The values in the form must be correct"
           label="I am sure"
           cancelLabel="Wait, I want to check"
-          onConfirm={() => reducer.transition("enter_user_attributes", {
-            identity_attributes: attrs,
-          }).then(() => setAskUserIfSure(false) )}
+          onConfirm={() => doConfirm().then(() => setAskUserIfSure(false) )}
         >
           You personal information is used to define the location where your 
           secret will be safely stored. If you forget what you have entered or 
