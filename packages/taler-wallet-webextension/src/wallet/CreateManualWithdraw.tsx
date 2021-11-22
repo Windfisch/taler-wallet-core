@@ -21,6 +21,7 @@
 
 import { AmountJson, Amounts, i18n } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
+import { route } from "preact-router";
 import { useState } from "preact/hooks";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { SelectList } from "../components/SelectList";
@@ -32,7 +33,9 @@ import {
   Input,
   InputWithLabel,
   LightText,
+  LinkPrimary,
 } from "../components/styled";
+import { Pages } from "../NavigationBar";
 
 export interface Props {
   error: string | undefined;
@@ -87,12 +90,7 @@ export function CreateManualWithdraw({
     return (
       <Centered style={{ marginTop: 100 }}>
         <BoldLight>No exchange configured</BoldLight>
-        <ButtonSuccess
-          //FIXME: add exchange feature
-          onClick={() => {
-            null;
-          }}
-        >
+        <ButtonSuccess onClick={() => route(Pages.exchange_add)}>
           <i18n.Translate>Add exchange</i18n.Translate>
         </ButtonSuccess>
       </Centered>
@@ -108,8 +106,9 @@ export function CreateManualWithdraw({
         />
         <h2>Manual Withdrawal</h2>
         <LightText>
-          Choose a exchange to create a reserve and then fill the reserve to
-          withdraw the coins
+          Choose a exchange from where the coins will be withdrawn. The exchange
+          will send the coins to this wallet after receiving a wire transfer
+          with the correct subject.
         </LightText>
         <p>
           <Input>
@@ -130,11 +129,14 @@ export function CreateManualWithdraw({
               onChange={changeExchange}
             />
           </Input>
-          {/* <p style={{ display: "flex", justifyContent: "right" }}>
-            <a href="" style={{ marginLeft: "auto" }}>
-              Add new exchange
-            </a>
-          </p> */}
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <LinkPrimary
+              onClick={() => route(Pages.exchange_add)}
+              style={{ marginLeft: "auto" }}
+            >
+              <i18n.Translate>Add exchange</i18n.Translate>
+            </LinkPrimary>
+          </div>
           {currency && (
             <InputWithLabel invalid={!!amount && !parsedAmount}>
               <label>Amount</label>

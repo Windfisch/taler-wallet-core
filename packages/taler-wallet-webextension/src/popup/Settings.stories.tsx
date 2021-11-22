@@ -30,13 +30,8 @@ export default {
   },
 };
 
-export const AllOff = createExample(TestedComponent, {
-  deviceName: "this-is-the-device-name",
-  setDeviceName: () => Promise.resolve(),
-});
+export const AllOff = createExample(TestedComponent, {});
 
 export const OneChecked = createExample(TestedComponent, {
-  deviceName: "this-is-the-device-name",
   permissionsEnabled: true,
-  setDeviceName: () => Promise.resolve(),
 });

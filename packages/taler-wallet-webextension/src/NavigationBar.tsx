@@ -42,6 +42,7 @@ export enum Pages {
   transaction = "/transaction/:tid",
   provider_detail = "/provider/:pid",
   provider_add = "/provider/add",
+  exchange_add = "/exchange/add",
 
   reset_required = "/reset-required",
   payback = "/payback",

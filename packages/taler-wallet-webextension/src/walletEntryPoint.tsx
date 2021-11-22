@@ -44,6 +44,7 @@ import { ManualWithdrawPage } from "./wallet/ManualWithdrawPage";
 import { WalletBox } from "./components/styled";
 import { ProviderDetailPage } from "./wallet/ProviderDetailPage";
 import { ProviderAddPage } from "./wallet/ProviderAddPage";
+import { ExchangeAddPage } from "./wallet/ExchangeAddPage";
 
 function main(): void {
   try {
@@ -128,6 +129,14 @@ function Application(): VNode {
             component={withLogoAndNavBar(ProviderAddPage)}
             onBack={() => {
               route(Pages.backup);
+            }}
+          />
+
+          <Route
+            path={Pages.exchange_add}
+            component={withLogoAndNavBar(ExchangeAddPage)}
+            onBack={() => {
+              route(Pages.balance);
             }}
           />
 

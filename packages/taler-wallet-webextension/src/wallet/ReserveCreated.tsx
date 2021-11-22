@@ -3,6 +3,7 @@ import { Fragment, h, VNode } from "preact";
 import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType";
 import { QR } from "../components/QR";
 import { ButtonDestructive, WarningBox } from "../components/styled";
+import { amountToString } from "../utils";
 export interface Props {
   reservePub: string;
   payto: string;
@@ -29,10 +30,10 @@ export function ReserveCreated({
         <h1>Exchange is ready for withdrawal!</h1>
         <p>
           To complete the process you need to wire{" "}
-          <b>{Amounts.stringify(amount)}</b> to the exchange bank account
+          <b>{amountToString(amount)}</b> to the exchange bank account
         </p>
         <BankDetailsByPaytoType
-          amount={Amounts.stringify(amount)}
+          amount={amountToString(amount)}
           exchangeBaseUrl={exchangeBaseUrl}
           payto={paytoURI}
           subject={reservePub}

@@ -31,27 +31,12 @@ import {
   LightText,
   SmallLightText,
 } from "../components/styled/index";
+import { queryToSlashConfig } from "../utils";
 import * as wxApi from "../wxApi";
 
 interface Props {
   currency: string;
   onBack: () => void;
-}
-
-function getJsonIfOk(r: Response) {
-  if (r.ok) {
-    return r.json();
-  } else {
-    if (r.status >= 400 && r.status < 500) {
-      throw new Error(`URL may not be right: (${r.status}) ${r.statusText}`);
-    } else {
-      throw new Error(
-        `Try another server: (${r.status}) ${
-          r.statusText || "internal server error"
-        }`,
-      );
-    }
-  }
 }
 
 export function ProviderAddPage({ onBack }: Props): VNode {
@@ -60,23 +45,13 @@ export function ProviderAddPage({ onBack }: Props): VNode {
     | undefined
   >(undefined);
 
-  async function getProviderInfo(
-    url: string,
-  ): Promise<BackupBackupProviderTerms> {
-    return fetch(new URL("config", url).href)
-      .catch((e) => {
-        throw new Error(`Network error`);
-      })
-      .then(getJsonIfOk);
-  }
-
   if (!verifying) {
     return (
       <SetUrlView
         onCancel={onBack}
-        onVerify={(url) => getProviderInfo(url)}
+        onVerify={(url) => queryToSlashConfig(url)}
         onConfirm={(url, name) =>
-          getProviderInfo(url)
+          queryToSlashConfig<BackupBackupProviderTerms>(url)
             .then((provider) => {
               setVerifying({ url, name, provider });
             })

@@ -48,8 +48,8 @@ export function CheckboxOutlined({
   label,
 }: Props): VNode {
   return (
-    <Outlined>
-      <StyledCheckboxLabel onClick={onToggle}>
+    <StyledCheckboxLabel onClick={onToggle}>
+      <Outlined>
         <span>
           <input
             type="checkbox"
@@ -62,7 +62,7 @@ export function CheckboxOutlined({
           </div>
           <label for={name}>{label}</label>
         </span>
-      </StyledCheckboxLabel>
-    </Outlined>
+      </Outlined>
+    </StyledCheckboxLabel>
   );
 }

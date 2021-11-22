@@ -38,6 +38,7 @@ import { ProviderAddPage } from "./wallet/ProviderAddPage";
 import { ProviderDetailPage } from "./wallet/ProviderDetailPage";
 import { SettingsPage } from "./popup/Settings";
 import { TalerActionFound } from "./popup/TalerActionFound";
+import { ExchangeAddPage } from "./wallet/ExchangeAddPage";
 
 function main(): void {
   try {
@@ -127,6 +128,15 @@ function Application() {
                 route(Pages.backup);
               }}
             />
+
+            <Route
+              path={Pages.exchange_add}
+              component={ExchangeAddPage}
+              onBack={() => {
+                route(Pages.balance);
+              }}
+            />
+
             <Route default component={Redirect} to={Pages.balance} />
           </Router>
         </PopupBox>

@@ -17,7 +17,7 @@
 import { BalancesResponse, i18n } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { BalanceTable } from "../components/BalanceTable";
-import { ButtonPrimary, ErrorBox } from "../components/styled/index";
+import { ButtonPrimary, Centered, ErrorBox } from "../components/styled/index";
 import { HookResponse, useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { PageLink } from "../renderHtml";
 import * as wxApi from "../wxApi";
@@ -66,10 +66,17 @@ export function BalanceView({
   if (balance.response.balances.length === 0) {
     return (
       <p>
-        <i18n.Translate>
-          You have no balance to show. Need some{" "}
-          <Linker pageName="/welcome">help</Linker> getting started?
-        </i18n.Translate>
+        <Centered style={{ marginTop: 100 }}>
+          <i18n.Translate>
+            You have no balance to show. Need some{" "}
+            <Linker pageName="/welcome">help</Linker> getting started?
+          </i18n.Translate>
+          <div>
+            <ButtonPrimary onClick={goToWalletManualWithdraw}>
+              Withdraw
+            </ButtonPrimary>
+          </div>
+        </Centered>
       </p>
     );
   }

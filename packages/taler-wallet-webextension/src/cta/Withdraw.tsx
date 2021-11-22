@@ -25,14 +25,11 @@ import {
   AmountJson,
   Amounts,
   ExchangeListItem,
-  GetExchangeTosResult,
   i18n,
   WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
-import { VNode, h, Fragment } from "preact";
+import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { CheckboxOutlined } from "../components/CheckboxOutlined";
-import { ExchangeXmlTos } from "../components/ExchangeToS";
 import { LogoHeader } from "../components/LogoHeader";
 import { Part } from "../components/Part";
 import { SelectList } from "../components/SelectList";
@@ -40,19 +37,13 @@ import {
   ButtonSuccess,
   ButtonWarning,
   LinkSuccess,
-  TermsOfService,
   WalletAction,
   WarningText,
 } from "../components/styled";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import {
-  acceptWithdrawal,
-  getExchangeTos,
-  getExchangeWithdrawalInfo,
-  getWithdrawalDetailsForUri,
-  listExchanges,
-  setExchangeTosAccepted,
-} from "../wxApi";
+import { amountToString, buildTermsOfServiceState, TermsState } from "../utils";
+import * as wxApi from "../wxApi";
+import { TermsOfServiceSection } from "./TermsOfServiceSection";
 
 interface Props {
   talerWithdrawUri?: string;
@@ -60,7 +51,7 @@ interface Props {
 
 export interface ViewProps {
   withdrawalFee: AmountJson;
-  exchangeBaseUrl: string;
+  exchangeBaseUrl?: string;
   amount: AmountJson;
   onSwitchExchange: (ex: string) => void;
   onWithdraw: () => Promise<void>;
@@ -69,51 +60,8 @@ export interface ViewProps {
   reviewing: boolean;
   reviewed: boolean;
   confirmed: boolean;
-  terms: {
-    value?: TermsDocument;
-    status: TermsStatus;
-  };
+  terms: TermsState;
   knownExchanges: ExchangeListItem[];
-}
-
-type TermsStatus = "new" | "accepted" | "changed" | "notfound";
-
-type TermsDocument =
-  | TermsDocumentXml
-  | TermsDocumentHtml
-  | TermsDocumentPlain
-  | TermsDocumentJson
-  | TermsDocumentPdf;
-
-interface TermsDocumentXml {
-  type: "xml";
-  document: Document;
-}
-
-interface TermsDocumentHtml {
-  type: "html";
-  href: URL;
-}
-
-interface TermsDocumentPlain {
-  type: "plain";
-  content: string;
-}
-
-interface TermsDocumentJson {
-  type: "json";
-  data: any;
-}
-
-interface TermsDocumentPdf {
-  type: "pdf";
-  location: URL;
-}
-
-function amountToString(text: AmountJson): string {
-  const aj = Amounts.jsonifyAmount(text);
-  const amount = Amounts.stringifyValue(aj);
-  return `${amount} ${aj.currency}`;
 }
 
 export function View({
@@ -162,7 +110,9 @@ export function View({
             kind="negative"
           />
         )}
-        <Part title="Exchange" text={exchangeBaseUrl} kind="neutral" big />
+        {exchangeBaseUrl && (
+          <Part title="Exchange" text={exchangeBaseUrl} kind="neutral" big />
+        )}
       </section>
       {!reviewing && (
         <section>
@@ -190,13 +140,6 @@ export function View({
           )}
         </section>
       )}
-      {!reviewing && reviewed && (
-        <section>
-          <LinkSuccess upperCased onClick={() => onReview(true)}>
-            {i18n.str`Show terms of service`}
-          </LinkSuccess>
-        </section>
-      )}
       {terms.status === "notfound" && (
         <section>
           <WarningText>
@@ -204,79 +147,14 @@ export function View({
           </WarningText>
         </section>
       )}
-      {reviewing && (
-        <section>
-          {terms.status !== "accepted" &&
-            terms.value &&
-            terms.value.type === "xml" && (
-              <TermsOfService>
-                <ExchangeXmlTos doc={terms.value.document} />
-              </TermsOfService>
-            )}
-          {terms.status !== "accepted" &&
-            terms.value &&
-            terms.value.type === "plain" && (
-              <div style={{ textAlign: "left" }}>
-                <pre>{terms.value.content}</pre>
-              </div>
-            )}
-          {terms.status !== "accepted" &&
-            terms.value &&
-            terms.value.type === "html" && (
-              <iframe src={terms.value.href.toString()} />
-            )}
-          {terms.status !== "accepted" &&
-            terms.value &&
-            terms.value.type === "pdf" && (
-              <a href={terms.value.location.toString()} download="tos.pdf">
-                Download Terms of Service
-              </a>
-            )}
-        </section>
-      )}
-      {reviewing && reviewed && (
-        <section>
-          <LinkSuccess upperCased onClick={() => onReview(false)}>
-            {i18n.str`Hide terms of service`}
-          </LinkSuccess>
-        </section>
-      )}
-      {(reviewing || reviewed) && (
-        <section>
-          <CheckboxOutlined
-            name="terms"
-            enabled={reviewed}
-            label={i18n.str`I accept the exchange terms of service`}
-            onToggle={() => {
-              onAccept(!reviewed);
-              onReview(false);
-            }}
-          />
-        </section>
-      )}
-
-      {/**
-       * Main action section
-       */}
+      <TermsOfServiceSection
+        reviewed={reviewed}
+        reviewing={reviewing}
+        terms={terms}
+        onAccept={onAccept}
+        onReview={onReview}
+      />
       <section>
-        {terms.status === "new" && !reviewed && !reviewing && (
-          <ButtonSuccess
-            upperCased
-            disabled={!exchangeBaseUrl}
-            onClick={() => onReview(true)}
-          >
-            {i18n.str`Review exchange terms of service`}
-          </ButtonSuccess>
-        )}
-        {terms.status === "changed" && !reviewed && !reviewing && (
-          <ButtonWarning
-            upperCased
-            disabled={!exchangeBaseUrl}
-            onClick={() => onReview(true)}
-          >
-            {i18n.str`Review new version of terms of service`}
-          </ButtonWarning>
-        )}
         {(terms.status === "accepted" || (needsReview && reviewed)) && (
           <ButtonSuccess
             upperCased
@@ -310,15 +188,15 @@ export function WithdrawPageWithParsedURI({
   const [customExchange, setCustomExchange] = useState<string | undefined>(
     undefined,
   );
-  const [errorAccepting, setErrorAccepting] = useState<string | undefined>(
-    undefined,
-  );
+  // const [errorAccepting, setErrorAccepting] = useState<string | undefined>(
+  //   undefined,
+  // );
 
   const [reviewing, setReviewing] = useState<boolean>(false);
   const [reviewed, setReviewed] = useState<boolean>(false);
   const [confirmed, setConfirmed] = useState<boolean>(false);
 
-  const knownExchangesHook = useAsyncAsHook(() => listExchanges());
+  const knownExchangesHook = useAsyncAsHook(() => wxApi.listExchanges());
 
   const knownExchanges =
     !knownExchangesHook || knownExchangesHook.hasError
@@ -329,19 +207,25 @@ export function WithdrawPageWithParsedURI({
     (ex) => ex.currency === withdrawAmount.currency,
   );
 
-  const exchange =
-    customExchange ||
-    uriInfo.defaultExchangeBaseUrl ||
-    thisCurrencyExchanges[0]?.exchangeBaseUrl;
+  const exchange: string | undefined =
+    customExchange ??
+    uriInfo.defaultExchangeBaseUrl ??
+    (thisCurrencyExchanges[0]
+      ? thisCurrencyExchanges[0].exchangeBaseUrl
+      : undefined);
+
   const detailsHook = useAsyncAsHook(async () => {
     if (!exchange) throw Error("no default exchange");
-    const tos = await getExchangeTos(exchange, ["text/xml"]);
-    const info = await getExchangeWithdrawalInfo({
+    const tos = await wxApi.getExchangeTos(exchange, ["text/xml"]);
+
+    const tosState = buildTermsOfServiceState(tos);
+
+    const info = await wxApi.getExchangeWithdrawalInfo({
       exchangeBaseUrl: exchange,
       amount: withdrawAmount,
       tosAcceptedFormat: ["text/xml"],
     });
-    return { tos, info };
+    return { tos: tosState, info };
   });
 
   if (!detailsHook) {
@@ -364,21 +248,24 @@ export function WithdrawPageWithParsedURI({
   const details = detailsHook.response;
 
   const onAccept = async (): Promise<void> => {
+    if (!exchange) return;
     try {
-      await setExchangeTosAccepted(exchange, details.tos.currentEtag);
+      await wxApi.setExchangeTosAccepted(exchange, details.tos.version);
       setReviewed(true);
     } catch (e) {
       if (e instanceof Error) {
-        setErrorAccepting(e.message);
+        //FIXME: uncomment this and display error
+        // setErrorAccepting(e.message);
       }
     }
   };
 
   const onWithdraw = async (): Promise<void> => {
+    if (!exchange) return;
     setConfirmed(true);
     console.log("accepting exchange", exchange);
     try {
-      const res = await acceptWithdrawal(uri, exchange);
+      const res = await wxApi.acceptWithdrawal(uri, exchange);
       console.log("accept withdrawal response", res);
       if (res.confirmTransferUrl) {
         document.location.href = res.confirmTransferUrl;
@@ -388,30 +275,13 @@ export function WithdrawPageWithParsedURI({
     }
   };
 
-  const termsContent: TermsDocument | undefined = parseTermsOfServiceContent(
-    details.tos.contentType,
-    details.tos.content,
-  );
-
-  const status: TermsStatus = !termsContent
-    ? "notfound"
-    : !details.tos.acceptedEtag
-    ? "new"
-    : details.tos.acceptedEtag !== details.tos.currentEtag
-    ? "changed"
-    : "accepted";
-
   return (
     <View
       onWithdraw={onWithdraw}
-      // details={details.tos}
       amount={withdrawAmount}
       exchangeBaseUrl={exchange}
       withdrawalFee={details.info.withdrawFee} //FIXME
-      terms={{
-        status,
-        value: termsContent,
-      }}
+      terms={detailsHook.response.tos}
       onSwitchExchange={setCustomExchange}
       knownExchanges={knownExchanges}
       confirmed={confirmed}
@@ -426,7 +296,7 @@ export function WithdrawPage({ talerWithdrawUri }: Props): VNode {
   const uriInfoHook = useAsyncAsHook(() =>
     !talerWithdrawUri
       ? Promise.reject(undefined)
-      : getWithdrawalDetailsForUri({ talerWithdrawUri }),
+      : wxApi.getWithdrawalDetailsForUri({ talerWithdrawUri }),
   );
 
   if (!talerWithdrawUri) {
@@ -458,47 +328,4 @@ export function WithdrawPage({ talerWithdrawUri }: Props): VNode {
       uriInfo={uriInfoHook.response}
     />
   );
-}
-
-function parseTermsOfServiceContent(
-  type: string,
-  text: string,
-): TermsDocument | undefined {
-  if (type === "text/xml") {
-    try {
-      const document = new DOMParser().parseFromString(text, "text/xml");
-      return { type: "xml", document };
-    } catch (e) {
-      console.log(e);
-    }
-  } else if (type === "text/html") {
-    try {
-      const href = new URL(text);
-      return { type: "html", href };
-    } catch (e) {
-      console.log(e);
-    }
-  } else if (type === "text/json") {
-    try {
-      const data = JSON.parse(text);
-      return { type: "json", data };
-    } catch (e) {
-      console.log(e);
-    }
-  } else if (type === "text/pdf") {
-    try {
-      const location = new URL(text);
-      return { type: "pdf", location };
-    } catch (e) {
-      console.log(e);
-    }
-  } else if (type === "text/plain") {
-    try {
-      const content = text;
-      return { type: "plain", content };
-    } catch (e) {
-      console.log(e);
-    }
-  }
-  return undefined;
 }

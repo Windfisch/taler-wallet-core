@@ -17,12 +17,13 @@
 import { ExchangeListItem, i18n } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { Checkbox } from "../components/Checkbox";
-import { ButtonPrimary } from "../components/styled";
+import { LinkPrimary } from "../components/styled";
 import { useDevContext } from "../context/devContext";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { useBackupDeviceName } from "../hooks/useBackupDeviceName";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
 import { useLang } from "../hooks/useLang";
+import { Pages } from "../NavigationBar";
 // import { strings as messages } from "../i18n/strings";
 import * as wxApi from "../wxApi";
 
@@ -112,7 +113,7 @@ export function SettingsView({
         )}
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <div />
-          <ButtonPrimary>Manage exchange</ButtonPrimary>
+          <LinkPrimary href={Pages.exchange_add}>Add an exchange</LinkPrimary>
         </div>
 
         <h2>

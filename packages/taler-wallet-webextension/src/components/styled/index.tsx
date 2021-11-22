@@ -476,6 +476,14 @@ const ButtonVariant = styled(Button)`
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
 `;
 
+export const LinkDestructive = styled(Link)`
+  background-color: rgb(202, 60, 60);
+`;
+
+export const LinkPrimary = styled(Link)`
+  color: rgb(66, 184, 221);
+`;
+
 export const ButtonPrimary = styled(ButtonVariant)<{ small?: boolean }>`
   font-size: ${({ small }) => (small ? "small" : "inherit")};
   background-color: rgb(66, 184, 221);
@@ -892,12 +900,14 @@ export const StyledCheckboxLabel = styled.div`
   text-transform: uppercase;
   /* font-weight: bold; */
   text-align: center;
+  cursor: pointer;
   span {
     input {
       display: none;
       opacity: 0;
       width: 1em;
       height: 1em;
+      cursor: pointer;
     }
     div {
       display: inline-grid;
@@ -916,6 +926,7 @@ export const StyledCheckboxLabel = styled.div`
     label {
       padding: 0px;
       font-size: small;
+      cursor: pointer;
     }
   }
 

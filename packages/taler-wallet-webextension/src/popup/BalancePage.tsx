@@ -71,6 +71,11 @@ export function BalanceView({
             <Linker pageName="/welcome">help</Linker> getting started?
           </i18n.Translate>
         </p>
+        <footer style={{ justifyContent: "space-around" }}>
+          <ButtonPrimary onClick={goToWalletManualWithdraw}>
+            Withdraw
+          </ButtonPrimary>
+        </footer>
       </Fragment>
     );
   }
