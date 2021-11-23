@@ -273,6 +273,7 @@ export async function exportBackup(
           currency: dp.currency,
           master_public_key: dp.masterPublicKey,
           update_clock: dp.updateClock,
+          protocol_version_range: dp.protocolVersionRange,
         });
       });
 

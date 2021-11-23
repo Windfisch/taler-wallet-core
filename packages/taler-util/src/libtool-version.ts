@@ -40,49 +40,51 @@ interface Version {
   age: number;
 }
 
-/**
- * Compare two libtool-style version strings.
- */
-export function compare(
-  me: string,
-  other: string,
-): VersionMatchResult | undefined {
-  const meVer = parseVersion(me);
-  const otherVer = parseVersion(other);
+export namespace LibtoolVersion {
+  /**
+   * Compare two libtool-style version strings.
+   */
+  export function compare(
+    me: string,
+    other: string,
+  ): VersionMatchResult | undefined {
+    const meVer = parseVersion(me);
+    const otherVer = parseVersion(other);
 
-  if (!(meVer && otherVer)) {
-    return undefined;
+    if (!(meVer && otherVer)) {
+      return undefined;
+    }
+
+    const compatible =
+      meVer.current - meVer.age <= otherVer.current &&
+      meVer.current >= otherVer.current - otherVer.age;
+
+    const currentCmp = Math.sign(meVer.current - otherVer.current);
+
+    return { compatible, currentCmp };
   }
 
-  const compatible =
-    meVer.current - meVer.age <= otherVer.current &&
-    meVer.current >= otherVer.current - otherVer.age;
+  function parseVersion(v: string): Version | undefined {
+    const [currentStr, revisionStr, ageStr, ...rest] = v.split(":");
+    if (rest.length !== 0) {
+      return undefined;
+    }
+    const current = Number.parseInt(currentStr);
+    const revision = Number.parseInt(revisionStr);
+    const age = Number.parseInt(ageStr);
 
-  const currentCmp = Math.sign(meVer.current - otherVer.current);
+    if (Number.isNaN(current)) {
+      return undefined;
+    }
 
-  return { compatible, currentCmp };
-}
+    if (Number.isNaN(revision)) {
+      return undefined;
+    }
 
-function parseVersion(v: string): Version | undefined {
-  const [currentStr, revisionStr, ageStr, ...rest] = v.split(":");
-  if (rest.length !== 0) {
-    return undefined;
+    if (Number.isNaN(age)) {
+      return undefined;
+    }
+
+    return { current, revision, age };
   }
-  const current = Number.parseInt(currentStr);
-  const revision = Number.parseInt(revisionStr);
-  const age = Number.parseInt(ageStr);
-
-  if (Number.isNaN(current)) {
-    return undefined;
-  }
-
-  if (Number.isNaN(revision)) {
-    return undefined;
-  }
-
-  if (Number.isNaN(age)) {
-    return undefined;
-  }
-
-  return { current, revision, age };
 }

@@ -1102,6 +1102,8 @@ export interface BackupExchange {
 
   currency: string;
 
+  protocol_version_range: string;
+
   /**
    * Time when the pointer to the exchange details
    * was last updated.

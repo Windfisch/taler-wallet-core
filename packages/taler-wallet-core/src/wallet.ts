@@ -99,6 +99,8 @@ import {
 import {
   ExchangeOperations,
   InternalWalletState,
+  MerchantInfo,
+  MerchantOperations,
   NotificationListener,
   RecoupOperations,
 } from "./common.js";
@@ -180,6 +182,7 @@ import {
   HttpRequestLibrary,
   readSuccessResponseJsonOrThrow,
 } from "./util/http.js";
+import { getMerchantInfo } from "./operations/merchants.js";
 
 const builtinAuditors: AuditorTrustRecord[] = [
   {
@@ -1069,6 +1072,8 @@ class InternalWalletStateImpl implements InternalWalletState {
   memoProcessDeposit: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
   cryptoApi: CryptoApi;
 
+  merchantInfoCache: Record<string, MerchantInfo> = {};
+
   timerGroup: TimerGroup = new TimerGroup();
   latch = new AsyncCondition();
   stopped = false;
@@ -1086,6 +1091,10 @@ class InternalWalletStateImpl implements InternalWalletState {
   recoupOps: RecoupOperations = {
     createRecoupGroup: createRecoupGroup,
     processRecoupGroup: processRecoupGroup,
+  };
+
+  merchantOps: MerchantOperations = {
+    getMerchantInfo: getMerchantInfo,
   };
 
   /**

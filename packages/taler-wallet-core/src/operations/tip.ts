@@ -27,10 +27,12 @@ import {
   NotificationType,
   TipPlanchetDetail,
   TalerErrorCode,
-  codecForTipResponse,
+  codecForMerchantTipResponseV1,
   Logger,
   URL,
   DenomKeyType,
+  BlindedDenominationSignature,
+  codecForMerchantTipResponseV2,
 } from "@gnu-taler/taler-util";
 import { DerivedTipPlanchet } from "../crypto/cryptoTypes.js";
 import {
@@ -304,31 +306,57 @@ async function processTipImpl(
     return;
   }
 
-  const response = await readSuccessResponseJsonOrThrow(
-    merchantResp,
-    codecForTipResponse(),
+  // FIXME: Do this earlier?
+  const merchantInfo = await ws.merchantOps.getMerchantInfo(
+    ws,
+    tipRecord.merchantBaseUrl,
   );
 
-  if (response.blind_sigs.length !== planchets.length) {
+  let blindedSigs: BlindedDenominationSignature[] = [];
+
+  if (merchantInfo.supportsMerchantProtocolV2) {
+    const response = await readSuccessResponseJsonOrThrow(
+      merchantResp,
+      codecForMerchantTipResponseV2(),
+    );
+    blindedSigs = response.blind_sigs.map((x) => x.blind_sig);
+  } else if (merchantInfo.supportsMerchantProtocolV1) {
+    const response = await readSuccessResponseJsonOrThrow(
+      merchantResp,
+      codecForMerchantTipResponseV1(),
+    );
+    blindedSigs = response.blind_sigs.map((x) => ({
+      cipher: DenomKeyType.Rsa,
+      blinded_rsa_signature: x.blind_sig,
+    }));
+  } else {
+    throw Error("unsupported merchant protocol version");
+  }
+
+  if (blindedSigs.length !== planchets.length) {
     throw Error("number of tip responses does not match requested planchets");
   }
 
   const newCoinRecords: CoinRecord[] = [];
 
-  for (let i = 0; i < response.blind_sigs.length; i++) {
-    const blindedSig = response.blind_sigs[i].blind_sig;
+  for (let i = 0; i < blindedSigs.length; i++) {
+    const blindedSig = blindedSigs[i];
 
     const denom = denomForPlanchet[i];
     checkLogicInvariant(!!denom);
     const planchet = planchets[i];
     checkLogicInvariant(!!planchet);
 
-    if (denom.denomPub.cipher !== 1) {
+    if (denom.denomPub.cipher !== DenomKeyType.Rsa) {
+      throw Error("unsupported cipher");
+    }
+
+    if (blindedSig.cipher !== DenomKeyType.Rsa) {
       throw Error("unsupported cipher");
     }
 
     const denomSigRsa = await ws.cryptoApi.rsaUnblind(
-      blindedSig,
+      blindedSig.blinded_rsa_signature,
       planchet.blindingKey,
       denom.denomPub.rsa_public_key,
     );

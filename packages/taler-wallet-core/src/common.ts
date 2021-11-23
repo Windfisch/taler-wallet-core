@@ -51,6 +51,21 @@ export interface TrustInfo {
   isAudited: boolean;
 }
 
+export interface MerchantInfo {
+  supportsMerchantProtocolV1: boolean;
+  supportsMerchantProtocolV2: boolean;
+}
+
+/**
+ * Interface for merchant-related operations.
+ */
+export interface MerchantOperations {
+  getMerchantInfo(
+    ws: InternalWalletState,
+    merchantBaseUrl: string,
+  ): Promise<MerchantInfo>;
+}
+
 /**
  * Interface for exchange-related operations.
  */
@@ -131,8 +146,11 @@ export interface InternalWalletState {
 
   initCalled: boolean;
 
+  merchantInfoCache: Record<string, MerchantInfo>;
+
   exchangeOps: ExchangeOperations;
   recoupOps: RecoupOperations;
+  merchantOps: MerchantOperations;
 
   db: DbAccess<typeof WalletStoresV1>;
   http: HttpRequestLibrary;

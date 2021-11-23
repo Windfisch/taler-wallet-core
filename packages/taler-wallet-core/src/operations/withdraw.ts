@@ -24,7 +24,6 @@ import {
   codecForTalerConfigResponse,
   codecForWithdrawOperationStatusResponse,
   codecForWithdrawResponse,
-  compare,
   durationFromSpec,
   ExchangeListItem,
   getDurationRemaining,
@@ -42,6 +41,7 @@ import {
   WithdrawUriInfoResponse,
   VersionMatchResult,
   DenomKeyType,
+  LibtoolVersion,
 } from "@gnu-taler/taler-util";
 import {
   CoinRecord,
@@ -285,7 +285,7 @@ export async function getBankWithdrawalInfo(
     codecForTalerConfigResponse(),
   );
 
-  const versionRes = compare(
+  const versionRes = LibtoolVersion.compare(
     WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
     config.version,
   );
@@ -985,7 +985,7 @@ export async function getExchangeWithdrawalInfo(
 
   let versionMatch;
   if (exchangeDetails.protocolVersion) {
-    versionMatch = compare(
+    versionMatch = LibtoolVersion.compare(
       WALLET_EXCHANGE_PROTOCOL_VERSION,
       exchangeDetails.protocolVersion,
     );

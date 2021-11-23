@@ -484,7 +484,13 @@ export interface WireInfo {
 
 export interface ExchangeDetailsPointer {
   masterPublicKey: string;
+
   currency: string;
+
+  /**
+   * Last observed protocol version range offered by the exchange.
+   */
+  protocolVersionRange: string;
 
   /**
    * Timestamp when the (masterPublicKey, currency) pointer

@@ -24,7 +24,7 @@
 import * as nacl from "./nacl-fast.js";
 import { kdf } from "./kdf.js";
 import bigint from "big-integer";
-import { DenominationPubKey } from "./talerTypes.js";
+import { DenominationPubKey, DenomKeyType } from "./talerTypes.js";
 
 export function getRandomBytes(n: number): Uint8Array {
   return nacl.randomBytes(n);
@@ -350,7 +350,7 @@ export function hash(d: Uint8Array): Uint8Array {
 }
 
 export function hashDenomPub(pub: DenominationPubKey): Uint8Array {
-  if (pub.cipher !== 1) {
+  if (pub.cipher !== DenomKeyType.Rsa) {
     throw Error("unsupported cipher");
   }
   const pubBuf = decodeCrock(pub.rsa_public_key);

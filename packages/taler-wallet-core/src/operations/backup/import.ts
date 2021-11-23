@@ -267,6 +267,7 @@ export async function importBackup(
             currency: backupExchange.currency,
             masterPublicKey: backupExchange.master_public_key,
             updateClock: backupExchange.update_clock,
+            protocolVersionRange: backupExchange.protocol_version_range,
           },
           permanent: true,
           retryInfo: initRetryInfo(),

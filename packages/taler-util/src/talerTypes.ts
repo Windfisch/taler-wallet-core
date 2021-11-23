@@ -598,9 +598,9 @@ export interface TipPickupRequest {
 
 /**
  * Reserve signature, defined as separate class to facilitate
- * schema validation with "@Checkable".
+ * schema validation.
  */
-export interface BlindSigWrapper {
+export interface MerchantBlindSigWrapperV1 {
   /**
    * Reserve signature.
    */
@@ -611,11 +611,26 @@ export interface BlindSigWrapper {
  * Response of the merchant
  * to the TipPickupRequest.
  */
-export interface TipResponse {
+export interface MerchantTipResponseV1 {
   /**
    * The order of the signatures matches the planchets list.
    */
-  blind_sigs: BlindSigWrapper[];
+  blind_sigs: MerchantBlindSigWrapperV1[];
+}
+
+export interface MerchantBlindSigWrapperV2 {
+  blind_sig: BlindedDenominationSignature;
+}
+
+/**
+ * Response of the merchant
+ * to the TipPickupRequest.
+ */
+export interface MerchantTipResponseV2 {
+  /**
+   * The order of the signatures matches the planchets list.
+   */
+  blind_sigs: MerchantBlindSigWrapperV2[];
 }
 
 /**
@@ -1032,13 +1047,14 @@ export interface BankWithdrawalOperationPostResponse {
 export type DenominationPubKey = RsaDenominationPubKey | CsDenominationPubKey;
 
 export interface RsaDenominationPubKey {
-  cipher: 1;
+  cipher: DenomKeyType.Rsa;
   rsa_public_key: string;
   age_mask?: number;
 }
 
 export interface CsDenominationPubKey {
-  cipher: 2;
+  cipher: DenomKeyType.ClauseSchnorr;
+  // FIXME: finish definition
 }
 
 export const codecForDenominationPubKey = () =>
@@ -1201,15 +1217,25 @@ export const codecForMerchantRefundResponse = (): Codec<MerchantRefundResponse> 
     .property("refunds", codecForList(codecForMerchantRefundPermission()))
     .build("MerchantRefundResponse");
 
-export const codecForBlindSigWrapper = (): Codec<BlindSigWrapper> =>
-  buildCodecForObject<BlindSigWrapper>()
+export const codecForMerchantBlindSigWrapperV1 = (): Codec<MerchantBlindSigWrapperV1> =>
+  buildCodecForObject<MerchantBlindSigWrapperV1>()
     .property("blind_sig", codecForString())
     .build("BlindSigWrapper");
 
-export const codecForTipResponse = (): Codec<TipResponse> =>
-  buildCodecForObject<TipResponse>()
-    .property("blind_sigs", codecForList(codecForBlindSigWrapper()))
-    .build("TipResponse");
+export const codecForMerchantTipResponseV1 = (): Codec<MerchantTipResponseV1> =>
+  buildCodecForObject<MerchantTipResponseV1>()
+    .property("blind_sigs", codecForList(codecForMerchantBlindSigWrapperV1()))
+    .build("MerchantTipResponseV1");
+
+export const codecForBlindSigWrapperV2 = (): Codec<MerchantBlindSigWrapperV2> =>
+  buildCodecForObject<MerchantBlindSigWrapperV2>()
+    .property("blind_sig", codecForBlindedDenominationSignature())
+    .build("MerchantBlindSigWrapperV2");
+
+export const codecForMerchantTipResponseV2 = (): Codec<MerchantTipResponseV2> =>
+  buildCodecForObject<MerchantTipResponseV2>()
+    .property("blind_sigs", codecForList(codecForBlindSigWrapperV2()))
+    .build("MerchantTipResponseV2");
 
 export const codecForRecoup = (): Codec<Recoup> =>
   buildCodecForObject<Recoup>()
@@ -1510,3 +1536,16 @@ export const codecForKeysManagementResponse = (): Codec<FutureKeysResponse> =>
     .property("denom_secmod_public_key", codecForAny())
     .property("signkey_secmod_public_key", codecForAny())
     .build("FutureKeysResponse");
+
+export interface MerchantConfigResponse {
+  currency: string;
+  name: string;
+  version: string;
+}
+
+export const codecForMerchantConfigResponse = (): Codec<MerchantConfigResponse> =>
+  buildCodecForObject<MerchantConfigResponse>()
+    .property("currency", codecForString())
+    .property("name", codecForString())
+    .property("version", codecForString())
+    .build("MerchantConfigResponse");

@@ -23,7 +23,6 @@ import {
   canonicalizeBaseUrl,
   codecForExchangeKeysJson,
   codecForExchangeWireJson,
-  compare,
   Denomination,
   Duration,
   durationFromSpec,
@@ -40,6 +39,7 @@ import {
   TalerErrorDetails,
   Timestamp,
   hashDenomPub,
+  LibtoolVersion,
 } from "@gnu-taler/taler-util";
 import { decodeCrock, encodeCrock, hash } from "@gnu-taler/taler-util";
 import { CryptoApi } from "../crypto/workers/cryptoApi.js";
@@ -365,7 +365,10 @@ async function downloadKeysInfo(
 
   const protocolVersion = exchangeKeysJson.version;
 
-  const versionRes = compare(WALLET_EXCHANGE_PROTOCOL_VERSION, protocolVersion);
+  const versionRes = LibtoolVersion.compare(
+    WALLET_EXCHANGE_PROTOCOL_VERSION,
+    protocolVersion,
+  );
   if (versionRes?.compatible != true) {
     const opErr = makeErrorDetails(
       TalerErrorCode.WALLET_EXCHANGE_PROTOCOL_VERSION_INCOMPATIBLE,
@@ -548,6 +551,7 @@ async function updateExchangeFromUrlImpl(
         masterPublicKey: details.masterPublicKey,
         // FIXME: only change if pointer really changed
         updateClock: getTimestampNow(),
+        protocolVersionRange: keysInfo.protocolVersion,
       };
       await tx.exchanges.put(r);
       await tx.exchangeDetails.put(details);
