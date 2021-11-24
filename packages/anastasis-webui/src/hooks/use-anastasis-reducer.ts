@@ -107,6 +107,8 @@ export interface AnastasisReducerApi {
   reset: () => void;
   back: () => Promise<void>;
   transition(action: string, args: any): Promise<void>;
+  exportState: () => string;
+  importState: (s: string) => void;
   /**
    * Run multiple reducer steps in a transaction without
    * affecting the UI-visible transition state in-between.
@@ -129,7 +131,7 @@ function storageSet(key: string, value: any): void {
   }
 }
 
-function restoreState(): any {
+function getStateFromStorage(): any {
   let state: any;
   try {
     const s = storageGet("anastasisReducerState");
@@ -148,7 +150,7 @@ function restoreState(): any {
 export function useAnastasisReducer(): AnastasisReducerApi {
   const [anastasisState, setAnastasisStateInternal] = useState<AnastasisState>(
     () => ({
-      reducerState: restoreState(),
+      reducerState: getStateFromStorage(),
       currentError: undefined,
     }),
   );
@@ -165,7 +167,7 @@ export function useAnastasisReducer(): AnastasisReducerApi {
     setAnastasisStateInternal(newState);
   };
 
-  async function doTransition(action: string, args: any) {
+  async function doTransition(action: string, args: any): Promise<void> {
     console.log("reducing with", action, args);
     let s: ReducerState;
     if (remoteReducer) {
@@ -208,6 +210,18 @@ export function useAnastasisReducer(): AnastasisReducerApi {
           currentError: undefined,
           reducerState: s,
         });
+      }
+    },
+    exportState() {
+      const state = getStateFromStorage()
+      return JSON.stringify(state)
+    },
+    importState(s: string) {
+      try {
+        const state = JSON.parse(s)
+        setAnastasisState({ reducerState: state, currentError: undefined })
+      } catch (e) {
+        throw Error('could not restore the state')
       }
     },
     async startRecover() {
@@ -287,7 +301,7 @@ export function useAnastasisReducer(): AnastasisReducerApi {
 }
 
 class ReducerTxImpl implements ReducerTransactionHandle {
-  constructor(public transactionState: ReducerState) {}
+  constructor(public transactionState: ReducerState) { }
   async transition(action: string, args: any): Promise<ReducerState> {
     let s: ReducerState;
     if (remoteReducer) {

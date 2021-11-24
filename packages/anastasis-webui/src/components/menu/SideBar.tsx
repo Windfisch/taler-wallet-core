@@ -36,6 +36,14 @@ export function Sidebar({ mobile }: Props): VNode {
   const process = { env: { __VERSION__: "0.0.0" } };
   const reducer = useAnastasisContext()!;
 
+  function saveSession(): void {
+    const state = reducer.exportState();
+    const link = document.createElement("a");
+    link.download = "anastasis.json";
+    link.href = `data:text/plain,${state}`;
+    link.click();
+  }
+
   return (
     <aside class="aside is-placed-left is-expanded">
       {/* {mobile && <div class="footer" onClick={(e) => { return e.stopImmediatePropagation() }}>
@@ -171,6 +179,16 @@ export function Sidebar({ mobile }: Props): VNode {
                 <span class="menu-item-label"><Translate>Truth Paying</Translate></span>
               </div>
             </li> */}
+              <li>
+                <div class="buttons ml-4">
+                  <button
+                    class="button is-primary is-right"
+                    onClick={saveSession}
+                  >
+                    Save backup session
+                  </button>
+                </div>
+              </li>
             </Fragment>
           ) : (
             reducer.currentReducerState &&
@@ -248,6 +266,16 @@ export function Sidebar({ mobile }: Props): VNode {
                     <span class="menu-item-label">
                       <Translate>Secret recovered</Translate>
                     </span>
+                  </div>
+                </li>
+                <li>
+                  <div class="buttons ml-4">
+                    <button
+                      class="button is-primary is-right"
+                      onClick={saveSession}
+                    >
+                      Save recovery session
+                    </button>
                   </div>
                 </li>
               </Fragment>

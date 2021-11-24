@@ -1,4 +1,6 @@
 import { h, VNode } from "preact";
+import { FileInput } from "../../components/fields/FileInput";
+import { FileButton } from "../../components/FlieButton";
 import { useAnastasisContext } from "../../context/anastasis";
 import { AnastasisClientFrame } from "./index";
 
@@ -33,6 +35,15 @@ export function StartScreen(): VNode {
               </div>
               <span>Recover a secret</span>
             </button>
+
+            <FileButton
+              label="Restore a session"
+              onChange={(content) => {
+                if (content?.type === "application/json") {
+                  reducer.importState(content.content);
+                }
+              }}
+            />
 
             {/* <button class="button">
               <div class="icon"><i class="mdi mdi-file" /></div>
