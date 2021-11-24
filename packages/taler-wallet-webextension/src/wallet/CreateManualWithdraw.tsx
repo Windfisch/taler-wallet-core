@@ -21,7 +21,6 @@
 
 import { AmountJson, Amounts, i18n } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
-import { route } from "preact-router";
 import { useState } from "preact/hooks";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { SelectList } from "../components/SelectList";
@@ -35,13 +34,13 @@ import {
   LightText,
   LinkPrimary,
 } from "../components/styled";
-import { Pages } from "../NavigationBar";
 
 export interface Props {
   error: string | undefined;
   initialAmount?: string;
   exchangeList: Record<string, string>;
   onCreate: (exchangeBaseUrl: string, amount: AmountJson) => Promise<void>;
+  onAddExchange: () => void;
 }
 
 export function CreateManualWithdraw({
@@ -49,6 +48,7 @@ export function CreateManualWithdraw({
   exchangeList,
   error,
   onCreate,
+  onAddExchange,
 }: Props): VNode {
   const exchangeSelectList = Object.keys(exchangeList);
   const currencySelectList = Object.values(exchangeList);
@@ -90,7 +90,7 @@ export function CreateManualWithdraw({
     return (
       <Centered style={{ marginTop: 100 }}>
         <BoldLight>No exchange configured</BoldLight>
-        <ButtonSuccess onClick={() => route(Pages.exchange_add)}>
+        <ButtonSuccess onClick={onAddExchange}>
           <i18n.Translate>Add exchange</i18n.Translate>
         </ButtonSuccess>
       </Centered>
@@ -130,10 +130,7 @@ export function CreateManualWithdraw({
             />
           </Input>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <LinkPrimary
-              onClick={() => route(Pages.exchange_add)}
-              style={{ marginLeft: "auto" }}
-            >
+            <LinkPrimary onClick={onAddExchange} style={{ marginLeft: "auto" }}>
               <i18n.Translate>Add exchange</i18n.Translate>
             </LinkPrimary>
           </div>

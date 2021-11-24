@@ -55,6 +55,12 @@ export const WithDemoAsKnownExchange = createExample(TestedComponent, {
     {
       currency: "TESTKUDOS",
       exchangeBaseUrl: "https://exchange.demo.taler.net/",
+      tos: {
+        currentVersion: "1",
+        acceptedVersion: "1",
+        content: "content of tos",
+        contentType: "text/plain",
+      },
       paytoUris: [],
     },
   ],

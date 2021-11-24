@@ -5,7 +5,6 @@ import {
   Button,
   ButtonSuccess,
   ButtonWarning,
-  WarningBox,
 } from "../components/styled/index";
 import { TermsOfServiceSection } from "../cta/TermsOfServiceSection";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
@@ -97,14 +96,6 @@ export function View({
           </a>
         </div>
       </section>
-      {terms && terms.status === "notfound" && (
-        <section>
-          <WarningBox>
-            {i18n.str`Exchange doesn't have terms of service`}
-          </WarningBox>
-        </section>
-      )}
-
       {terms && (
         <TermsOfServiceSection
           reviewed={reviewed}

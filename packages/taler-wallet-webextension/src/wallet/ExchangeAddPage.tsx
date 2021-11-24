@@ -27,7 +27,7 @@ import { ExchangeAddConfirmPage } from "./ExchangeAddConfirm";
 import { ExchangeSetUrlPage } from "./ExchangeSetUrl";
 
 interface Props {
-  currency: string;
+  currency?: string;
   onBack: () => void;
 }
 

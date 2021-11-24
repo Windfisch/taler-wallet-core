@@ -8,6 +8,7 @@ import {
   LinkSuccess,
   TermsOfService,
   WarningBox,
+  WarningText,
 } from "../components/styled";
 import { TermsState } from "../utils";
 
@@ -28,10 +29,27 @@ export function TermsOfServiceSection({
   if (!reviewing) {
     if (!reviewed) {
       if (!onReview) {
-        return <section>Terms of service status: {terms.status}</section>;
+        return (
+          <Fragment>
+            {terms.status === "notfound" && (
+              <section>
+                <WarningText>
+                  {i18n.str`Exchange doesn't have terms of service`}
+                </WarningText>
+              </section>
+            )}
+          </Fragment>
+        );
       }
       return (
         <Fragment>
+          {terms.status === "notfound" && (
+            <section>
+              <WarningText>
+                {i18n.str`Exchange doesn't have terms of service`}
+              </WarningText>
+            </section>
+          )}
           {terms.status === "new" && (
             <section>
               <ButtonSuccess upperCased onClick={() => onReview(true)}>
@@ -64,7 +82,6 @@ export function TermsOfServiceSection({
             enabled={reviewed}
             label={i18n.str`I accept the exchange terms of service`}
             onToggle={() => {
-              console.log("asdasd", reviewed);
               onAccept(!reviewed);
               if (onReview) onReview(false);
             }}

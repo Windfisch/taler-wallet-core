@@ -17,19 +17,15 @@
 import { i18n } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { Checkbox } from "../components/Checkbox";
-import { useDevContext } from "../context/devContext";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
 
 export function SettingsPage(): VNode {
   const [permissionsEnabled, togglePermissions] = useExtendedPermissions();
-  const { devMode, toggleDevMode } = useDevContext();
 
   return (
     <SettingsView
       permissionsEnabled={permissionsEnabled}
       togglePermissions={togglePermissions}
-      developerMode={devMode}
-      toggleDeveloperMode={toggleDevMode}
     />
   );
 }
@@ -37,15 +33,11 @@ export function SettingsPage(): VNode {
 export interface ViewProps {
   permissionsEnabled: boolean;
   togglePermissions: () => void;
-  developerMode: boolean;
-  toggleDeveloperMode: () => void;
 }
 
 export function SettingsView({
   permissionsEnabled,
   togglePermissions,
-  developerMode,
-  toggleDeveloperMode,
 }: ViewProps): VNode {
   return (
     <Fragment>
@@ -59,14 +51,6 @@ export function SettingsView({
           description="(Enabling this option below will make using the wallet faster, but requires more permissions from your browser.)"
           enabled={permissionsEnabled}
           onToggle={togglePermissions}
-        />
-        <h2>Config</h2>
-        <Checkbox
-          label="Developer mode"
-          name="devMode"
-          description="(More options and information useful for debugging)"
-          enabled={developerMode}
-          onToggle={toggleDeveloperMode}
         />
       </section>
       <footer style={{ justifyContent: "space-around" }}>

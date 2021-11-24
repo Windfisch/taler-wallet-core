@@ -38,7 +38,6 @@ import {
   ButtonWarning,
   LinkSuccess,
   WalletAction,
-  WarningText,
 } from "../components/styled";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { amountToString, buildTermsOfServiceState, TermsState } from "../utils";
@@ -98,17 +97,19 @@ export function View({
           text={amountToString(Amounts.sub(amount, withdrawalFee).amount)}
           kind="positive"
         />
-        <Part
-          title="Chosen amount"
-          text={amountToString(amount)}
-          kind="neutral"
-        />
         {Amounts.isNonZero(withdrawalFee) && (
-          <Part
-            title="Exchange fee"
-            text={amountToString(withdrawalFee)}
-            kind="negative"
-          />
+          <Fragment>
+            <Part
+              title="Chosen amount"
+              text={amountToString(amount)}
+              kind="neutral"
+            />
+            <Part
+              title="Exchange fee"
+              text={amountToString(withdrawalFee)}
+              kind="negative"
+            />
+          </Fragment>
         )}
         {exchangeBaseUrl && (
           <Part title="Exchange" text={exchangeBaseUrl} kind="neutral" big />
@@ -138,13 +139,6 @@ export function View({
               {i18n.str`Switch exchange`}
             </LinkSuccess>
           )}
-        </section>
-      )}
-      {terms.status === "notfound" && (
-        <section>
-          <WarningText>
-            {i18n.str`Exchange doesn't have terms of service`}
-          </WarningText>
         </section>
       )}
       <TermsOfServiceSection

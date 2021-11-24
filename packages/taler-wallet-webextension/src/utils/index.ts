@@ -60,15 +60,19 @@ export function buildTermsOfServiceState(tos: GetExchangeTosResult): TermsState 
     tos.content,
   );
 
-  const status: TermsStatus = !content
-    ? "notfound"
-    : !tos.acceptedEtag
-      ? "new"
-      : tos.acceptedEtag !== tos.currentEtag
-        ? "changed"
-        : "accepted";
+  const status: TermsStatus = buildTermsOfServiceStatus(tos.content, tos.acceptedEtag, tos.currentEtag);
 
   return { content, status, version: tos.currentEtag }
+
+}
+export function buildTermsOfServiceStatus(content: string | undefined, acceptedVersion: string | undefined, currentVersion: string | undefined): TermsStatus {
+  return !content
+    ? "notfound"
+    : !acceptedVersion
+      ? "new"
+      : acceptedVersion !== currentVersion
+        ? "changed"
+        : "accepted";
 }
 
 function parseTermsOfServiceContent(

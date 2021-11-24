@@ -17,14 +17,19 @@
 import { ExchangeListItem, i18n } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { Checkbox } from "../components/Checkbox";
-import { LinkPrimary } from "../components/styled";
+import {
+  DestructiveText,
+  LinkPrimary,
+  SuccessText,
+  WarningText,
+} from "../components/styled";
 import { useDevContext } from "../context/devContext";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { useBackupDeviceName } from "../hooks/useBackupDeviceName";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
 import { useLang } from "../hooks/useLang";
 import { Pages } from "../NavigationBar";
-// import { strings as messages } from "../i18n/strings";
+import { buildTermsOfServiceStatus } from "../utils";
 import * as wxApi from "../wxApi";
 
 export function SettingsPage(): VNode {
@@ -65,25 +70,8 @@ export interface ViewProps {
   knownExchanges: Array<ExchangeListItem>;
 }
 
-// type LangsNames = {
-//   [P in keyof typeof messages]: string;
-// };
-
-// const names: LangsNames = {
-//   es: "Español [es]",
-//   en: "English [en]",
-//   fr: "Français [fr]",
-//   de: "Deutsch [de]",
-//   sv: "Svenska [sv]",
-//   it: "Italiano [it]",
-// };
-
 export function SettingsView({
   knownExchanges,
-  // lang,
-  // changeLang,
-  // deviceName,
-  // setDeviceName,
   permissionsEnabled,
   togglePermissions,
   developerMode,
@@ -92,30 +80,6 @@ export function SettingsView({
   return (
     <Fragment>
       <section>
-        <h2>
-          <i18n.Translate>Known exchanges</i18n.Translate>
-        </h2>
-        {!knownExchanges || !knownExchanges.length ? (
-          <div>No exchange yet!</div>
-        ) : (
-          <Fragment>
-            <table>
-              {knownExchanges.map((e, idx) => (
-                <tr key={idx}>
-                  <td>{e.currency}</td>
-                  <td>
-                    <a href={e.exchangeBaseUrl}>{e.exchangeBaseUrl}</a>
-                  </td>
-                </tr>
-              ))}
-            </table>
-          </Fragment>
-        )}
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <div />
-          <LinkPrimary href={Pages.exchange_add}>Add an exchange</LinkPrimary>
-        </div>
-
         <h2>
           <i18n.Translate>Permissions</i18n.Translate>
         </h2>
@@ -126,6 +90,61 @@ export function SettingsView({
           enabled={permissionsEnabled}
           onToggle={togglePermissions}
         />
+
+        <h2>
+          <i18n.Translate>Known exchanges</i18n.Translate>
+        </h2>
+        {!knownExchanges || !knownExchanges.length ? (
+          <div>No exchange yet!</div>
+        ) : (
+          <Fragment>
+            <table>
+              <thead>
+                <tr>
+                  <th>currency</th>
+                  <th>url</th>
+                  <th>term of service</th>
+                </tr>
+              </thead>
+              <tbody>
+                {knownExchanges.map((e, idx) => {
+                  function Status(): VNode {
+                    const status = buildTermsOfServiceStatus(
+                      e.tos.content,
+                      e.tos.acceptedVersion,
+                      e.tos.currentVersion,
+                    );
+                    switch (status) {
+                      case "accepted":
+                        return <SuccessText>ok</SuccessText>;
+                      case "changed":
+                        return <WarningText>changed!</WarningText>;
+                      case "new":
+                      case "notfound":
+                        return <DestructiveText>not accepted</DestructiveText>;
+                    }
+                  }
+                  return (
+                    <tr key={idx}>
+                      <td>{e.currency}</td>
+                      <td>
+                        <a href={e.exchangeBaseUrl}>{e.exchangeBaseUrl}</a>
+                      </td>
+                      <td>
+                        <Status />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </Fragment>
+        )}
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <div />
+          <LinkPrimary href={Pages.exchange_add}>Add an exchange</LinkPrimary>
+        </div>
+
         <h2>Config</h2>
         <Checkbox
           label="Developer mode"

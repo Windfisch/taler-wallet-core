@@ -19,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { amountFractionalBase } from "@gnu-taler/taler-util";
+import { amountFractionalBase, ExchangeListItem } from "@gnu-taler/taler-util";
 import { createExample } from "../test-utils";
 import { termsHtml, termsPdf, termsPlain, termsXml } from "./termsExample";
 import { View as TestedComponent } from "./Withdraw";
@@ -32,24 +32,38 @@ export default {
   },
 };
 
+const exchangeList: ExchangeListItem[] = [
+  {
+    currency: "USD",
+    exchangeBaseUrl: "exchange.demo.taler.net",
+    tos: {
+      currentVersion: "1",
+      acceptedVersion: "1",
+      content: "terms of service content",
+      contentType: "text/plain",
+    },
+    paytoUris: ["asd"],
+  },
+  {
+    currency: "USD",
+    exchangeBaseUrl: "exchange.test.taler.net",
+    tos: {
+      currentVersion: "1",
+      acceptedVersion: "1",
+      content: "terms of service content",
+      contentType: "text/plain",
+    },
+    paytoUris: ["asd"],
+  },
+];
+
 export const NewTerms = createExample(TestedComponent, {
-  knownExchanges: [
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.demo.taler.net",
-      paytoUris: ["asd"],
-    },
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.test.taler.net",
-      paytoUris: ["asd"],
-    },
-  ],
+  knownExchanges: exchangeList,
   exchangeBaseUrl: "exchange.demo.taler.net",
   withdrawalFee: {
     currency: "USD",
     fraction: 0,
-    value: 0,
+    value: 1,
   },
   amount: {
     currency: "USD",
@@ -71,18 +85,7 @@ export const NewTerms = createExample(TestedComponent, {
 });
 
 export const TermsReviewingPLAIN = createExample(TestedComponent, {
-  knownExchanges: [
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.demo.taler.net",
-      paytoUris: ["asd"],
-    },
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.test.taler.net",
-      paytoUris: ["asd"],
-    },
-  ],
+  knownExchanges: exchangeList,
   exchangeBaseUrl: "exchange.demo.taler.net",
   withdrawalFee: {
     currency: "USD",
@@ -110,18 +113,7 @@ export const TermsReviewingPLAIN = createExample(TestedComponent, {
 });
 
 export const TermsReviewingHTML = createExample(TestedComponent, {
-  knownExchanges: [
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.demo.taler.net",
-      paytoUris: ["asd"],
-    },
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.test.taler.net",
-      paytoUris: ["asd"],
-    },
-  ],
+  knownExchanges: exchangeList,
   exchangeBaseUrl: "exchange.demo.taler.net",
   withdrawalFee: {
     currency: "USD",
@@ -151,18 +143,7 @@ export const TermsReviewingHTML = createExample(TestedComponent, {
 });
 
 export const TermsReviewingPDF = createExample(TestedComponent, {
-  knownExchanges: [
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.demo.taler.net",
-      paytoUris: ["asd"],
-    },
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.test.taler.net",
-      paytoUris: ["asd"],
-    },
-  ],
+  knownExchanges: exchangeList,
   exchangeBaseUrl: "exchange.demo.taler.net",
   withdrawalFee: {
     currency: "USD",
@@ -192,18 +173,7 @@ export const TermsReviewingPDF = createExample(TestedComponent, {
 });
 
 export const TermsReviewingXML = createExample(TestedComponent, {
-  knownExchanges: [
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.demo.taler.net",
-      paytoUris: ["asd"],
-    },
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.test.taler.net",
-      paytoUris: ["asd"],
-    },
-  ],
+  knownExchanges: exchangeList,
   exchangeBaseUrl: "exchange.demo.taler.net",
   withdrawalFee: {
     currency: "USD",
@@ -231,18 +201,7 @@ export const TermsReviewingXML = createExample(TestedComponent, {
 });
 
 export const NewTermsAccepted = createExample(TestedComponent, {
-  knownExchanges: [
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.demo.taler.net",
-      paytoUris: ["asd"],
-    },
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.test.taler.net",
-      paytoUris: ["asd"],
-    },
-  ],
+  knownExchanges: exchangeList,
   exchangeBaseUrl: "exchange.demo.taler.net",
   withdrawalFee: {
     currency: "USD",
@@ -269,18 +228,7 @@ export const NewTermsAccepted = createExample(TestedComponent, {
 });
 
 export const TermsShowAgainXML = createExample(TestedComponent, {
-  knownExchanges: [
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.demo.taler.net",
-      paytoUris: ["asd"],
-    },
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.test.taler.net",
-      paytoUris: ["asd"],
-    },
-  ],
+  knownExchanges: exchangeList,
   exchangeBaseUrl: "exchange.demo.taler.net",
   withdrawalFee: {
     currency: "USD",
@@ -309,18 +257,7 @@ export const TermsShowAgainXML = createExample(TestedComponent, {
 });
 
 export const TermsChanged = createExample(TestedComponent, {
-  knownExchanges: [
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.demo.taler.net",
-      paytoUris: ["asd"],
-    },
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.test.taler.net",
-      paytoUris: ["asd"],
-    },
-  ],
+  knownExchanges: exchangeList,
   exchangeBaseUrl: "exchange.demo.taler.net",
   withdrawalFee: {
     currency: "USD",
@@ -347,18 +284,7 @@ export const TermsChanged = createExample(TestedComponent, {
 });
 
 export const TermsNotFound = createExample(TestedComponent, {
-  knownExchanges: [
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.demo.taler.net",
-      paytoUris: ["asd"],
-    },
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.test.taler.net",
-      paytoUris: ["asd"],
-    },
-  ],
+  knownExchanges: exchangeList,
   exchangeBaseUrl: "exchange.demo.taler.net",
   withdrawalFee: {
     currency: "USD",
@@ -382,18 +308,7 @@ export const TermsNotFound = createExample(TestedComponent, {
 });
 
 export const TermsAlreadyAccepted = createExample(TestedComponent, {
-  knownExchanges: [
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.demo.taler.net",
-      paytoUris: ["asd"],
-    },
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.test.taler.net",
-      paytoUris: ["asd"],
-    },
-  ],
+  knownExchanges: exchangeList,
   exchangeBaseUrl: "exchange.demo.taler.net",
   withdrawalFee: {
     currency: "USD",
@@ -417,18 +332,7 @@ export const TermsAlreadyAccepted = createExample(TestedComponent, {
 });
 
 export const WithoutFee = createExample(TestedComponent, {
-  knownExchanges: [
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.demo.taler.net",
-      paytoUris: ["asd"],
-    },
-    {
-      currency: "USD",
-      exchangeBaseUrl: "exchange.test.taler.net",
-      paytoUris: ["asd"],
-    },
-  ],
+  knownExchanges: exchangeList,
   exchangeBaseUrl: "exchange.demo.taler.net",
   withdrawalFee: {
     currency: "USD",

@@ -49,6 +49,52 @@ export const WithOneExchange = createExample(TestedComponent, {
     {
       currency: "USD",
       exchangeBaseUrl: "http://exchange.taler",
+      tos: {
+        currentVersion: "1",
+        acceptedVersion: "1",
+        content: "content of tos",
+        contentType: "text/plain",
+      },
+      paytoUris: ["payto://x-taler-bank/bank.rpi.sebasjm.com/exchangeminator"],
+    },
+  ],
+});
+
+export const WithExchangeInDifferentState = createExample(TestedComponent, {
+  deviceName: "this-is-the-device-name",
+  permissionsEnabled: true,
+  setDeviceName: () => Promise.resolve(),
+  knownExchanges: [
+    {
+      currency: "USD",
+      exchangeBaseUrl: "http://exchange1.taler",
+      tos: {
+        currentVersion: "1",
+        acceptedVersion: "1",
+        content: "content of tos",
+        contentType: "text/plain",
+      },
+      paytoUris: ["payto://x-taler-bank/bank.rpi.sebasjm.com/exchangeminator"],
+    },
+    {
+      currency: "USD",
+      exchangeBaseUrl: "http://exchange2.taler",
+      tos: {
+        currentVersion: "2",
+        acceptedVersion: "1",
+        content: "content of tos",
+        contentType: "text/plain",
+      },
+      paytoUris: ["payto://x-taler-bank/bank.rpi.sebasjm.com/exchangeminator"],
+    },
+    {
+      currency: "USD",
+      exchangeBaseUrl: "http://exchange3.taler",
+      tos: {
+        currentVersion: "1",
+        content: "content of tos",
+        contentType: "text/plain",
+      },
       paytoUris: ["payto://x-taler-bank/bank.rpi.sebasjm.com/exchangeminator"],
     },
   ],

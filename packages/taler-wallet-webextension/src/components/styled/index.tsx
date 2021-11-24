@@ -613,6 +613,14 @@ export const LightText = styled.div`
   color: gray;
 `;
 
+export const SuccessText = styled.div`
+  color: #388e3c;
+`;
+
+export const DestructiveText = styled.div`
+  color: rgb(202, 60, 60);
+`;
+
 export const WarningText = styled.div`
   color: rgb(223, 117, 20);
 `;

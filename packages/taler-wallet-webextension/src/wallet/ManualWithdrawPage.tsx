@@ -22,11 +22,13 @@ import {
   AcceptManualWithdrawalResult,
   AmountJson,
   Amounts,
+  NotificationType,
 } from "@gnu-taler/taler-util";
 import { ReserveCreated } from "./ReserveCreated";
 import { route } from "preact-router";
 import { Pages } from "../NavigationBar";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
+import { ExchangeAddPage } from "./ExchangeAddPage";
 
 export function ManualWithdrawPage(): VNode {
   const [success, setSuccess] = useState<
@@ -39,7 +41,9 @@ export function ManualWithdrawPage(): VNode {
   >(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
 
-  const state = useAsyncAsHook(() => wxApi.listExchanges());
+  const state = useAsyncAsHook(wxApi.listExchanges, [
+    NotificationType.ExchangeAdded,
+  ]);
 
   async function doCreate(
     exchangeBaseUrl: string,
@@ -59,6 +63,12 @@ export function ManualWithdrawPage(): VNode {
       }
       setSuccess(undefined);
     }
+  }
+
+  const [addingExchange, setAddingExchange] = useState(false);
+
+  if (addingExchange) {
+    return <ExchangeAddPage onBack={() => setAddingExchange(false)} />;
   }
 
   if (success) {
@@ -91,6 +101,7 @@ export function ManualWithdrawPage(): VNode {
 
   return (
     <CreateManualWithdraw
+      onAddExchange={() => setAddingExchange(true)}
       error={error}
       exchangeList={exchangeList}
       onCreate={doCreate}

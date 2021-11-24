@@ -350,11 +350,13 @@ export function acceptTip(req: AcceptTipRequest): Promise<void> {
   return callBackend("acceptTip", req);
 }
 
-export function onUpdateNotification(messageType: Array<NotificationType>, doCallback: () => void): () => void {
+export function onUpdateNotification(messageTypes: Array<NotificationType>, doCallback: () => void): () => void {
   // eslint-disable-next-line no-undef
   const port = chrome.runtime.connect({ name: "notifications" });
   const listener = (message: MessageFromBackend): void => {
-    if (messageType.includes(message.type)) {
+    const shouldNotify = messageTypes.includes(message.type)
+    console.log("Notification arrived, should notify?", shouldNotify, message.type, messageTypes)
+    if (shouldNotify) {
       doCallback();
     }
   };
