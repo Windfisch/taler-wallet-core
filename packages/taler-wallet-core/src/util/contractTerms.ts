@@ -225,7 +225,6 @@ export namespace ContractTermsUtil {
     const cleaned = scrub(contractTerms);
     const canon = canonicalJson(cleaned) + "\0";
     const bytes = stringToBytes(canon);
-    logger.info(`contract terms before hashing: ${encodeCrock(bytes)}`);
     return encodeCrock(hash(bytes));
   }
 }

@@ -17,7 +17,12 @@
 /**
  * Imports.
  */
-import { CoreApiResponse } from "@gnu-taler/taler-util";
+import {
+  ContractTerms,
+  CoreApiResponse,
+  getTimestampNow,
+  timestampTruncateToSecond,
+} from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { CoinConfig, defaultCoinConfig } from "../harness/denomStructures";
 import {
@@ -272,10 +277,11 @@ export async function runLibeufinBasicTest(t: GlobalTestState) {
   console.log("balances", JSON.stringify(bal, undefined, 2));
   t.assertAmountEquals(bal.balances[0].available, "EUR:14.7");
 
-  const order = {
+  const order: Partial<ContractTerms> = {
     summary: "Buy me!",
     amount: "EUR:5",
     fulfillment_url: "taler://fulfillment-success/thx",
+    wire_transfer_deadline: timestampTruncateToSecond(getTimestampNow()),
   };
 
   await makeTestPayment(t, { wallet, merchant, order });

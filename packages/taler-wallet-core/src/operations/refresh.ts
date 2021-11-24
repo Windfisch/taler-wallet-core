@@ -897,7 +897,7 @@ export async function createRefreshGroup(
   logger.trace(`created refresh group ${refreshGroupId}`);
 
   processRefreshGroup(ws, refreshGroupId).catch((e) => {
-    logger.warn(`processing refresh group ${refreshGroupId} failed`);
+    logger.warn(`processing refresh group ${refreshGroupId} failed: ${e}`);
   });
 
   return {

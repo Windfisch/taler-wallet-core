@@ -110,8 +110,8 @@ export async function runRefundGoneTest(t: GlobalTestState) {
     talerRefundUri: ref.talerRefundUri,
   });
 
+  console.log("refund response:", rr);
   t.assertAmountEquals(rr.amountRefundGone, "TESTKUDOS:5");
-  console.log(rr);
 
   await wallet.runUntilDone();
 
