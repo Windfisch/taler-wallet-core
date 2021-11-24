@@ -38,6 +38,10 @@ export function AuthMethodQuestionSetup({
           question and you will need to type the answer exactly as you typed it
           here.
         </p>
+        <p class="notification is-warning">
+          Note that the answer is case-sensitive and must be entered in exactly
+          the same way (punctuation, spaces) during recovery.
+        </p>
         <div>
           <TextInput
             label="Security question"
