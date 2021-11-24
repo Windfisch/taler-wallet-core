@@ -79,9 +79,11 @@ export function View({
 }: ViewProps): VNode {
   const needsReview = terms.status === "changed" || terms.status === "new";
 
-  const [switchingExchange, setSwitchingExchange] = useState<
-    string | undefined
-  >(undefined);
+  const [switchingExchange, setSwitchingExchange] = useState(false);
+  const [nextExchange, setNextExchange] = useState<string | undefined>(
+    undefined,
+  );
+
   const exchanges = knownExchanges.reduce(
     (prev, ex) => ({ ...prev, [ex.exchangeBaseUrl]: ex.exchangeBaseUrl }),
     {},
@@ -117,25 +119,33 @@ export function View({
       </section>
       {!reviewing && (
         <section>
-          {switchingExchange !== undefined ? (
+          {switchingExchange ? (
             <Fragment>
               <div>
                 <SelectList
                   label="Known exchanges"
                   list={exchanges}
-                  name=""
-                  onChange={onSwitchExchange}
+                  value={nextExchange}
+                  name="switchingExchange"
+                  onChange={setNextExchange}
                 />
               </div>
               <LinkSuccess
                 upperCased
-                onClick={() => onSwitchExchange(switchingExchange)}
+                onClick={() => {
+                  if (nextExchange !== undefined) {
+                    onSwitchExchange(nextExchange);
+                  }
+                  setSwitchingExchange(false);
+                }}
               >
-                {i18n.str`Confirm exchange selection`}
+                {nextExchange === undefined
+                  ? i18n.str`Cancel exchange selection`
+                  : i18n.str`Confirm exchange selection`}
               </LinkSuccess>
             </Fragment>
           ) : (
-            <LinkSuccess upperCased onClick={() => setSwitchingExchange("")}>
+            <LinkSuccess upperCased onClick={() => setSwitchingExchange(true)}>
               {i18n.str`Switch exchange`}
             </LinkSuccess>
           )}

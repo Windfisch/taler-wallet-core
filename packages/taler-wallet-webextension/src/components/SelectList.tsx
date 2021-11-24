@@ -36,6 +36,7 @@ export function SelectList({
   onChange,
   label,
   description,
+  canBeNull,
 }: Props): VNode {
   return (
     <Fragment>
@@ -49,20 +50,21 @@ export function SelectList({
       <NiceSelect>
         <select
           name={name}
+          value={value}
           onChange={(e) => {
-            console.log(e.currentTarget.value, value);
             onChange(e.currentTarget.value);
           }}
         >
-          {value !== undefined ? (
-            <option selected>{list[value]}</option>
-          ) : (
-            <option selected disabled>
-              Select one option
-            </option>
-          )}
+          {value === undefined ||
+            (canBeNull && (
+              <option selected disabled>
+                Select one option
+              </option>
+              // ) : (
+              //   <option selected>{list[value]}</option>
+            ))}
           {Object.keys(list)
-            .filter((l) => l !== value)
+            // .filter((l) => l !== value)
             .map((key) => (
               <option value={key} key={key}>
                 {list[key]}
