@@ -2,6 +2,7 @@ import { h, VNode } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 
 export interface TextInputProps {
+  inputType?: "text" | "number" | "multiline" | "password";
   label: string;
   grabFocus?: boolean;
   disabled?: boolean;
@@ -12,13 +13,22 @@ export interface TextInputProps {
   bind: [string, (x: string) => void];
 }
 
-export function TextInput(props: TextInputProps): VNode {
+const TextInputType = function ({ inputType, grabFocus, ...rest }: any): VNode {
   const inputRef = useRef<HTMLInputElement>(null);
   useLayoutEffect(() => {
-    if (props.grabFocus) {
+    if (grabFocus) {
       inputRef.current?.focus();
     }
-  }, [props.grabFocus]);
+  }, [grabFocus]);
+
+  return inputType === "multiline" ? (
+    <textarea {...rest} rows={5} ref={inputRef} style={{ height: "unset" }} />
+  ) : (
+    <input {...rest} type={inputType} ref={inputRef} />
+  );
+};
+
+export function TextInput(props: TextInputProps): VNode {
   const value = props.bind[0];
   const [dirty, setDirty] = useState(false);
   const showError = dirty && props.error;
@@ -33,21 +43,22 @@ export function TextInput(props: TextInputProps): VNode {
         )}
       </label>
       <div class="control has-icons-right">
-        <input
+        <TextInputType
+          inputType={props.inputType}
           value={value}
+          grabFocus={props.grabFocus}
           disabled={props.disabled}
           placeholder={props.placeholder}
           class={showError ? "input is-danger" : "input"}
-          onKeyPress={(e) => {
-            if (e.key === 'Enter' && props.onConfirm) {
-              props.onConfirm()
+          onKeyPress={(e: any) => {
+            if (e.key === "Enter" && props.onConfirm) {
+              props.onConfirm();
             }
           }}
-          onInput={(e) => {
+          onInput={(e: any) => {
             setDirty(true);
             props.bind[1]((e.target as HTMLInputElement).value);
           }}
-          ref={inputRef}
           style={{ display: "block" }}
         />
       </div>

@@ -83,6 +83,7 @@ export function SecretEditorScreen(): VNode {
       </div>
       <div class="block">
         <TextInput
+          inputType="multiline"
           disabled={!!secretFile}
           onConfirm={goNextIfNoErrors}
           label="Enter the secret as text:"
