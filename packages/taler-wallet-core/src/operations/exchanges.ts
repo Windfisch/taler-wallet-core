@@ -494,11 +494,11 @@ async function updateExchangeFromUrlImpl(
     tosFound !== undefined
       ? tosFound
       : await downloadExchangeWithTermsOfService(
-          baseUrl,
-          ws.http,
-          timeout,
-          "text/plain",
-        );
+        baseUrl,
+        ws.http,
+        timeout,
+        "text/plain",
+      );
 
   let recoupGroupId: string | undefined = undefined;
 
@@ -657,6 +657,9 @@ async function updateExchangeFromUrlImpl(
 
   logger.trace("done updating exchange info in database");
 
+  ws.notify({
+    type: NotificationType.ExchangeAdded,
+  });
   return {
     exchange: updated.exchange,
     exchangeDetails: updated.exchangeDetails,

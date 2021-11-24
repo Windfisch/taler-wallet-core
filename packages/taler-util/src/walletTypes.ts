@@ -523,17 +523,32 @@ export interface ExchangesListRespose {
   exchanges: ExchangeListItem[];
 }
 
+export interface ExchangeTos {
+  acceptedVersion?: string;
+  currentVersion?: string;
+  contentType?: string;
+  content?: string;
+}
 export interface ExchangeListItem {
   exchangeBaseUrl: string;
   currency: string;
   paytoUris: string[];
+  tos: ExchangeTos;
 }
+
+const codecForExchangeTos = (): Codec<ExchangeTos> => buildCodecForObject<ExchangeTos>()
+  .property("acceptedVersion", codecOptional(codecForString()))
+  .property("currentVersion", codecOptional(codecForString()))
+  .property("contentType", codecOptional(codecForString()))
+  .property("content", codecOptional(codecForString()))
+  .build("ExchangeTos")
 
 export const codecForExchangeListItem = (): Codec<ExchangeListItem> =>
   buildCodecForObject<ExchangeListItem>()
     .property("currency", codecForString())
     .property("exchangeBaseUrl", codecForString())
     .property("paytoUris", codecForList(codecForString()))
+    .property("tos", codecForExchangeTos())
     .build("ExchangeListItem");
 
 export const codecForExchangesListResponse = (): Codec<ExchangesListRespose> =>

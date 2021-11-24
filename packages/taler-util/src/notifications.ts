@@ -45,6 +45,7 @@ export enum NotificationType {
   RefundQueried = "refund-queried",
   RefundFinished = "refund-finished",
   ExchangeOperationError = "exchange-operation-error",
+  ExchangeAdded = "exchange-added",
   RefreshOperationError = "refresh-operation-error",
   RecoupOperationError = "recoup-operation-error",
   RefundApplyOperationError = "refund-apply-error",
@@ -150,6 +151,10 @@ export interface RefundFinishedNotification {
   type: NotificationType.RefundFinished;
 }
 
+export interface ExchangeAddedNotification {
+  type: NotificationType.ExchangeAdded;
+}
+
 export interface ExchangeOperationErrorNotification {
   type: NotificationType.ExchangeOperationError;
   error: TalerErrorDetails;
@@ -243,6 +248,7 @@ export type WalletNotification =
   | BackupOperationErrorNotification
   | WithdrawOperationErrorNotification
   | ReserveOperationErrorNotification
+  | ExchangeAddedNotification
   | ExchangeOperationErrorNotification
   | RefreshOperationErrorNotification
   | RefundStatusOperationErrorNotification

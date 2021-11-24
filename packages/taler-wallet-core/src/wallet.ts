@@ -513,9 +513,16 @@ async function getExchanges(
         if (!exchangeDetails) {
           continue;
         }
+
         exchanges.push({
           exchangeBaseUrl: r.baseUrl,
           currency,
+          tos: {
+            acceptedVersion: exchangeDetails.termsOfServiceAcceptedEtag,
+            currentVersion: exchangeDetails.termsOfServiceLastEtag,
+            contentType: exchangeDetails.termsOfServiceContentType,
+            content: exchangeDetails.termsOfServiceText,
+          },
           paytoUris: exchangeDetails.wireInfo.accounts.map((x) => x.payto_uri),
         });
       }
@@ -988,7 +995,7 @@ export async function handleCoreApiRequest(
       try {
         logger.error("Caught unexpected exception:");
         logger.error(e.stack);
-      } catch (e) {}
+      } catch (e) { }
       return {
         type: "error",
         operation,
