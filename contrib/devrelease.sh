@@ -16,7 +16,7 @@ fi
 
 mkdir -p prebuilt/$devtag
 
-cp packages/taler-wallet-android/dist/taler-wallet-android.js prebuilt/$devtag/
+cp packages/taler-wallet-embedded/dist/taler-wallet-embedded.js prebuilt/$devtag/
 cd prebuilt
 git add -A $devtag
 git commit -m "prebuilt files for $devtag" || true
