@@ -52,15 +52,13 @@ export async function getMerchantInfo(
     `merchant "${canonBaseUrl}" reports protocol ${configResp.version}"`,
   );
 
+  const parsedVersion = LibtoolVersion.parseVersion(configResp.version);
+  if (!parsedVersion) {
+    throw Error("invalid merchant version");
+  }
+
   const merchantInfo: MerchantInfo = {
-    supportsMerchantProtocolV1: !!LibtoolVersion.compare(
-      "1:0:0",
-      configResp.version,
-    )?.compatible,
-    supportsMerchantProtocolV2: !!LibtoolVersion.compare(
-      "2:0:0",
-      configResp.version,
-    )?.compatible,
+    protocolVersionCurrent: parsedVersion.current,
   };
 
   ws.merchantInfoCache[canonBaseUrl] = merchantInfo;

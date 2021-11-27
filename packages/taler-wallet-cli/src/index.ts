@@ -1018,6 +1018,13 @@ const testCli = walletCli.subcommand("testingArgs", "testing", {
   help: "Subcommands for testing.",
 });
 
+testCli.subcommand("logtest", "logtest").action(async (args) => {
+  logger.trace("This is a trace message.");
+  logger.info("This is an info message.");
+  logger.warn("This is an warning message.");
+  logger.error("This is an error message.");
+});
+
 testCli
   .subcommand("listIntegrationtests", "list-integrationtests")
   .action(async (args) => {

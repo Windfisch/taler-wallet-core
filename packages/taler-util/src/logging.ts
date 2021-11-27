@@ -55,7 +55,7 @@ export function setGlobalLogLevelFromString(logLevelStr: string) {
       break;
     default:
       if (isNode) {
-        process.stderr.write(`Invalid log level, defaulting to WARNING`);
+        process.stderr.write(`Invalid log level, defaulting to WARNING\n`);
       } else {
         console.warn(`Invalid log level, defaulting to WARNING`);
       }
@@ -143,6 +143,7 @@ export class Logger {
       case LogLevel.Info:
       case LogLevel.Warn:
       case LogLevel.Error:
+        return true;
       case LogLevel.None:
         return false;
     }

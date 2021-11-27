@@ -27,14 +27,15 @@ export interface VersionMatchResult {
    * Is the first version compatible with the second?
    */
   compatible: boolean;
+
   /**
-   * Is the first version older (-1), newser (+1) or
+   * Is the first version older (-1), newer (+1) or
    * identical (0)?
    */
   currentCmp: number;
 }
 
-interface Version {
+export interface Version {
   current: number;
   revision: number;
   age: number;
@@ -64,7 +65,7 @@ export namespace LibtoolVersion {
     return { compatible, currentCmp };
   }
 
-  function parseVersion(v: string): Version | undefined {
+  export function parseVersion(v: string): Version | undefined {
     const [currentStr, revisionStr, ageStr, ...rest] = v.split(":");
     if (rest.length !== 0) {
       return undefined;

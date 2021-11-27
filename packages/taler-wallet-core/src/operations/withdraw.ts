@@ -42,6 +42,7 @@ import {
   VersionMatchResult,
   DenomKeyType,
   LibtoolVersion,
+  UnblindedSignature,
 } from "@gnu-taler/taler-util";
 import {
   CoinRecord,
@@ -591,12 +592,28 @@ async function processPlanchetVerifyAndStoreCoin(
   const { planchet, exchangeBaseUrl } = d;
 
   const planchetDenomPub = planchet.denomPub;
-  if (planchetDenomPub.cipher !== DenomKeyType.Rsa) {
-    throw Error("cipher not supported");
+  if (
+    planchetDenomPub.cipher !== DenomKeyType.Rsa &&
+    planchetDenomPub.cipher !== DenomKeyType.LegacyRsa
+  ) {
+    throw Error(`cipher (${planchetDenomPub.cipher}) not supported`);
   }
 
-  const evSig = resp.ev_sig;
-  if (evSig.cipher !== DenomKeyType.Rsa) {
+  let evSig = resp.ev_sig;
+  if (typeof resp.ev_sig === "string") {
+    evSig = {
+      cipher: DenomKeyType.LegacyRsa,
+      blinded_rsa_signature: resp.ev_sig,
+    };
+  } else {
+    evSig = resp.ev_sig;
+  }
+  if (
+    !(
+      evSig.cipher === DenomKeyType.Rsa ||
+      evSig.cipher === DenomKeyType.LegacyRsa
+    )
+  ) {
     throw Error("unsupported cipher");
   }
 
@@ -633,6 +650,19 @@ async function processPlanchetVerifyAndStoreCoin(
     return;
   }
 
+  let denomSig: UnblindedSignature;
+  if (
+    planchet.denomPub.cipher === DenomKeyType.LegacyRsa ||
+    planchet.denomPub.cipher === DenomKeyType.Rsa
+  ) {
+    denomSig = {
+      cipher: planchet.denomPub.cipher,
+      rsa_signature: denomSigRsa,
+    };
+  } else {
+    throw Error("unsupported cipher");
+  }
+
   const coin: CoinRecord = {
     blindingKey: planchet.blindingKey,
     coinPriv: planchet.coinPriv,
@@ -640,10 +670,7 @@ async function processPlanchetVerifyAndStoreCoin(
     currentAmount: planchet.coinValue,
     denomPub: planchet.denomPub,
     denomPubHash: planchet.denomPubHash,
-    denomSig: {
-      cipher: DenomKeyType.Rsa,
-      rsa_signature: denomSigRsa,
-    },
+    denomSig,
     coinEvHash: planchet.coinEvHash,
     exchangeBaseUrl: exchangeBaseUrl,
     status: CoinStatus.Fresh,

@@ -19,11 +19,11 @@
  */
 import {
   Amounts,
-  Auditor,
+  ExchangeAuditor,
   canonicalizeBaseUrl,
   codecForExchangeKeysJson,
   codecForExchangeWireJson,
-  Denomination,
+  ExchangeDenomination,
   Duration,
   durationFromSpec,
   ExchangeSignKeyJson,
@@ -40,6 +40,9 @@ import {
   Timestamp,
   hashDenomPub,
   LibtoolVersion,
+  codecForAny,
+  DenominationPubKey,
+  DenomKeyType,
 } from "@gnu-taler/taler-util";
 import { decodeCrock, encodeCrock, hash } from "@gnu-taler/taler-util";
 import { CryptoApi } from "../crypto/workers/cryptoApi.js";
@@ -77,11 +80,21 @@ function denominationRecordFromKeys(
   exchangeBaseUrl: string,
   exchangeMasterPub: string,
   listIssueDate: Timestamp,
-  denomIn: Denomination,
+  denomIn: ExchangeDenomination,
 ): DenominationRecord {
-  const denomPubHash = encodeCrock(hashDenomPub(denomIn.denom_pub));
+  let denomPub: DenominationPubKey;
+  // We support exchange protocol v9 and v10.
+  if (typeof denomIn.denom_pub === "string") {
+    denomPub = {
+      cipher: DenomKeyType.LegacyRsa,
+      rsa_public_key: denomIn.denom_pub,
+    };
+  } else {
+    denomPub = denomIn.denom_pub;
+  }
+  const denomPubHash = encodeCrock(hashDenomPub(denomPub));
   const d: DenominationRecord = {
-    denomPub: denomIn.denom_pub,
+    denomPub,
     denomPubHash,
     exchangeBaseUrl,
     exchangeMasterPub,
@@ -205,6 +218,7 @@ export async function acceptExchangeTermsOfService(
 }
 
 async function validateWireInfo(
+  versionCurrent: number,
   wireInfo: ExchangeWireJson,
   masterPublicKey: string,
   cryptoApi: CryptoApi,
@@ -212,6 +226,7 @@ async function validateWireInfo(
   for (const a of wireInfo.accounts) {
     logger.trace("validating exchange acct");
     const isValid = await cryptoApi.isValidWireAccount(
+      versionCurrent,
       a.payto_uri,
       a.master_sig,
       masterPublicKey,
@@ -321,7 +336,7 @@ async function provideExchangeRecord(
 interface ExchangeKeysDownloadResult {
   masterPublicKey: string;
   currency: string;
-  auditors: Auditor[];
+  auditors: ExchangeAuditor[];
   currentDenominations: DenominationRecord[];
   protocolVersion: string;
   signingKeys: ExchangeSignKeyJson[];
@@ -345,14 +360,14 @@ async function downloadKeysInfo(
   const resp = await http.get(keysUrl.href, {
     timeout,
   });
-  const exchangeKeysJson = await readSuccessResponseJsonOrThrow(
+  const exchangeKeysJsonUnchecked = await readSuccessResponseJsonOrThrow(
     resp,
     codecForExchangeKeysJson(),
   );
 
   logger.info("received /keys response");
 
-  if (exchangeKeysJson.denoms.length === 0) {
+  if (exchangeKeysJsonUnchecked.denoms.length === 0) {
     const opErr = makeErrorDetails(
       TalerErrorCode.WALLET_EXCHANGE_DENOMINATIONS_INSUFFICIENT,
       "exchange doesn't offer any denominations",
@@ -363,7 +378,7 @@ async function downloadKeysInfo(
     throw new OperationFailedError(opErr);
   }
 
-  const protocolVersion = exchangeKeysJson.version;
+  const protocolVersion = exchangeKeysJsonUnchecked.version;
 
   const versionRes = LibtoolVersion.compare(
     WALLET_EXCHANGE_PROTOCOL_VERSION,
@@ -382,29 +397,29 @@ async function downloadKeysInfo(
   }
 
   const currency = Amounts.parseOrThrow(
-    exchangeKeysJson.denoms[0].value,
+    exchangeKeysJsonUnchecked.denoms[0].value,
   ).currency.toUpperCase();
 
   return {
-    masterPublicKey: exchangeKeysJson.master_public_key,
+    masterPublicKey: exchangeKeysJsonUnchecked.master_public_key,
     currency,
-    auditors: exchangeKeysJson.auditors,
-    currentDenominations: exchangeKeysJson.denoms.map((d) =>
+    auditors: exchangeKeysJsonUnchecked.auditors,
+    currentDenominations: exchangeKeysJsonUnchecked.denoms.map((d) =>
       denominationRecordFromKeys(
         baseUrl,
-        exchangeKeysJson.master_public_key,
-        exchangeKeysJson.list_issue_date,
+        exchangeKeysJsonUnchecked.master_public_key,
+        exchangeKeysJsonUnchecked.list_issue_date,
         d,
       ),
     ),
-    protocolVersion: exchangeKeysJson.version,
-    signingKeys: exchangeKeysJson.signkeys,
-    reserveClosingDelay: exchangeKeysJson.reserve_closing_delay,
+    protocolVersion: exchangeKeysJsonUnchecked.version,
+    signingKeys: exchangeKeysJsonUnchecked.signkeys,
+    reserveClosingDelay: exchangeKeysJsonUnchecked.reserve_closing_delay,
     expiry: getExpiryTimestamp(resp, {
       minDuration: durationFromSpec({ hours: 1 }),
     }),
-    recoup: exchangeKeysJson.recoup ?? [],
-    listIssueDate: exchangeKeysJson.list_issue_date,
+    recoup: exchangeKeysJsonUnchecked.recoup ?? [],
+    listIssueDate: exchangeKeysJsonUnchecked.list_issue_date,
   };
 }
 
@@ -466,7 +481,14 @@ async function updateExchangeFromUrlImpl(
 
   logger.info("validating exchange /wire info");
 
+  const version = LibtoolVersion.parseVersion(keysInfo.protocolVersion);
+  if (!version) {
+    // Should have been validated earlier.
+    throw Error("unexpected invalid version");
+  }
+
   const wireInfo = await validateWireInfo(
+    version.current,
     wireInfoDownload,
     keysInfo.masterPublicKey,
     ws.cryptoApi,

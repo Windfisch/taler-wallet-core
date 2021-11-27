@@ -154,56 +154,63 @@ export class CryptoImplementation {
    * reserve.
    */
   createPlanchet(req: PlanchetCreationRequest): PlanchetCreationResult {
-    if (req.denomPub.cipher !== 1) {
-      throw Error("unsupported cipher");
+    if (
+      req.denomPub.cipher === DenomKeyType.Rsa ||
+      req.denomPub.cipher === DenomKeyType.LegacyRsa
+    ) {
+      const reservePub = decodeCrock(req.reservePub);
+      const reservePriv = decodeCrock(req.reservePriv);
+      const denomPubRsa = decodeCrock(req.denomPub.rsa_public_key);
+      const derivedPlanchet = setupWithdrawPlanchet(
+        decodeCrock(req.secretSeed),
+        req.coinIndex,
+      );
+      const coinPubHash = hash(derivedPlanchet.coinPub);
+      const ev = rsaBlind(coinPubHash, derivedPlanchet.bks, denomPubRsa);
+      const amountWithFee = Amounts.add(req.value, req.feeWithdraw).amount;
+      const denomPubHash = hashDenomPub(req.denomPub);
+      const evHash = hash(ev);
+
+      const withdrawRequest = buildSigPS(
+        TalerSignaturePurpose.WALLET_RESERVE_WITHDRAW,
+      )
+        .put(reservePub)
+        .put(amountToBuffer(amountWithFee))
+        .put(denomPubHash)
+        .put(evHash)
+        .build();
+
+      const sig = eddsaSign(withdrawRequest, reservePriv);
+
+      const planchet: PlanchetCreationResult = {
+        blindingKey: encodeCrock(derivedPlanchet.bks),
+        coinEv: encodeCrock(ev),
+        coinPriv: encodeCrock(derivedPlanchet.coinPriv),
+        coinPub: encodeCrock(derivedPlanchet.coinPub),
+        coinValue: req.value,
+        denomPub: {
+          cipher: req.denomPub.cipher,
+          rsa_public_key: encodeCrock(denomPubRsa),
+        },
+        denomPubHash: encodeCrock(denomPubHash),
+        reservePub: encodeCrock(reservePub),
+        withdrawSig: encodeCrock(sig),
+        coinEvHash: encodeCrock(evHash),
+      };
+      return planchet;
+    } else {
+      throw Error("unsupported cipher, unable to create planchet");
     }
-    const reservePub = decodeCrock(req.reservePub);
-    const reservePriv = decodeCrock(req.reservePriv);
-    const denomPubRsa = decodeCrock(req.denomPub.rsa_public_key);
-    const derivedPlanchet = setupWithdrawPlanchet(
-      decodeCrock(req.secretSeed),
-      req.coinIndex,
-    );
-    const coinPubHash = hash(derivedPlanchet.coinPub);
-    const ev = rsaBlind(coinPubHash, derivedPlanchet.bks, denomPubRsa);
-    const amountWithFee = Amounts.add(req.value, req.feeWithdraw).amount;
-    const denomPubHash = hashDenomPub(req.denomPub);
-    const evHash = hash(ev);
-
-    const withdrawRequest = buildSigPS(
-      TalerSignaturePurpose.WALLET_RESERVE_WITHDRAW,
-    )
-      .put(reservePub)
-      .put(amountToBuffer(amountWithFee))
-      .put(denomPubHash)
-      .put(evHash)
-      .build();
-
-    const sig = eddsaSign(withdrawRequest, reservePriv);
-
-    const planchet: PlanchetCreationResult = {
-      blindingKey: encodeCrock(derivedPlanchet.bks),
-      coinEv: encodeCrock(ev),
-      coinPriv: encodeCrock(derivedPlanchet.coinPriv),
-      coinPub: encodeCrock(derivedPlanchet.coinPub),
-      coinValue: req.value,
-      denomPub: {
-        cipher: 1,
-        rsa_public_key: encodeCrock(denomPubRsa),
-      },
-      denomPubHash: encodeCrock(denomPubHash),
-      reservePub: encodeCrock(reservePub),
-      withdrawSig: encodeCrock(sig),
-      coinEvHash: encodeCrock(evHash),
-    };
-    return planchet;
   }
 
   /**
    * Create a planchet used for tipping, including the private keys.
    */
   createTipPlanchet(req: DeriveTipRequest): DerivedTipPlanchet {
-    if (req.denomPub.cipher !== 1) {
+    if (
+      req.denomPub.cipher !== DenomKeyType.Rsa &&
+      req.denomPub.cipher !== DenomKeyType.LegacyRsa
+    ) {
       throw Error("unsupported cipher");
     }
     const fc = setupTipPlanchet(decodeCrock(req.secretSeed), req.planchetIndex);
@@ -243,15 +250,29 @@ export class CryptoImplementation {
 
     const coinPriv = decodeCrock(coin.coinPriv);
     const coinSig = eddsaSign(p, coinPriv);
-    const paybackRequest: RecoupRequest = {
-      coin_blind_key_secret: coin.blindingKey,
-      coin_pub: coin.coinPub,
-      coin_sig: encodeCrock(coinSig),
-      denom_pub_hash: coin.denomPubHash,
-      denom_sig: coin.denomSig,
-      refreshed: coin.coinSource.type === CoinSourceType.Refresh,
-    };
-    return paybackRequest;
+    if (coin.denomPub.cipher === DenomKeyType.LegacyRsa) {
+      logger.info("creating legacy recoup request");
+      const paybackRequest: RecoupRequest = {
+        coin_blind_key_secret: coin.blindingKey,
+        coin_pub: coin.coinPub,
+        coin_sig: encodeCrock(coinSig),
+        denom_pub_hash: coin.denomPubHash,
+        denom_sig: coin.denomSig.rsa_signature,
+        refreshed: coin.coinSource.type === CoinSourceType.Refresh,
+      };
+      return paybackRequest;
+    } else {
+      logger.info("creating v10 recoup request");
+      const paybackRequest: RecoupRequest = {
+        coin_blind_key_secret: coin.blindingKey,
+        coin_pub: coin.coinPub,
+        coin_sig: encodeCrock(coinSig),
+        denom_pub_hash: coin.denomPubHash,
+        denom_sig: coin.denomSig,
+        refreshed: coin.coinSource.type === CoinSourceType.Refresh,
+      };
+      return paybackRequest;
+    }
   }
 
   /**
@@ -326,15 +347,31 @@ export class CryptoImplementation {
   }
 
   isValidWireAccount(
+    versionCurrent: number,
     paytoUri: string,
     sig: string,
     masterPub: string,
   ): boolean {
-    const paytoHash = hash(stringToBytes(paytoUri + "\0"));
-    const p = buildSigPS(TalerSignaturePurpose.MASTER_WIRE_DETAILS)
-      .put(paytoHash)
-      .build();
-    return eddsaVerify(p, decodeCrock(sig), decodeCrock(masterPub));
+    if (versionCurrent === 10) {
+      const paytoHash = hash(stringToBytes(paytoUri + "\0"));
+      const p = buildSigPS(TalerSignaturePurpose.MASTER_WIRE_DETAILS)
+        .put(paytoHash)
+        .build();
+      return eddsaVerify(p, decodeCrock(sig), decodeCrock(masterPub));
+    } else if (versionCurrent === 9) {
+      const h = kdf(
+        64,
+        stringToBytes("exchange-wire-signature"),
+        stringToBytes(paytoUri + "\0"),
+        new Uint8Array(0),
+      );
+      const p = buildSigPS(TalerSignaturePurpose.MASTER_WIRE_DETAILS)
+        .put(h)
+        .build();
+      return eddsaVerify(p, decodeCrock(sig), decodeCrock(masterPub));
+    } else {
+      throw Error(`unsupported version (${versionCurrent})`);
+    }
   }
 
   isValidContractTermsSignature(
@@ -393,31 +430,64 @@ export class CryptoImplementation {
   signDepositPermission(depositInfo: DepositInfo): CoinDepositPermission {
     // FIXME: put extensions here if used
     const hExt = new Uint8Array(64);
-    const d = buildSigPS(TalerSignaturePurpose.WALLET_COIN_DEPOSIT)
-      .put(decodeCrock(depositInfo.contractTermsHash))
-      .put(hExt)
-      .put(decodeCrock(depositInfo.wireInfoHash))
-      .put(decodeCrock(depositInfo.denomPubHash))
-      .put(timestampRoundedToBuffer(depositInfo.timestamp))
-      .put(timestampRoundedToBuffer(depositInfo.refundDeadline))
-      .put(amountToBuffer(depositInfo.spendAmount))
-      .put(amountToBuffer(depositInfo.feeDeposit))
-      .put(decodeCrock(depositInfo.merchantPub))
-      .build();
+    let d: Uint8Array;
+    if (depositInfo.denomKeyType === DenomKeyType.Rsa) {
+      logger.warn("signing v10 deposit permission");
+      d = buildSigPS(TalerSignaturePurpose.WALLET_COIN_DEPOSIT)
+        .put(decodeCrock(depositInfo.contractTermsHash))
+        .put(hExt)
+        .put(decodeCrock(depositInfo.wireInfoHash))
+        .put(decodeCrock(depositInfo.denomPubHash))
+        .put(timestampRoundedToBuffer(depositInfo.timestamp))
+        .put(timestampRoundedToBuffer(depositInfo.refundDeadline))
+        .put(amountToBuffer(depositInfo.spendAmount))
+        .put(amountToBuffer(depositInfo.feeDeposit))
+        .put(decodeCrock(depositInfo.merchantPub))
+        .build();
+    } else if (depositInfo.denomKeyType === DenomKeyType.LegacyRsa) {
+      logger.warn("signing legacy deposit permission");
+      d = buildSigPS(TalerSignaturePurpose.WALLET_COIN_DEPOSIT)
+        .put(decodeCrock(depositInfo.contractTermsHash))
+        .put(decodeCrock(depositInfo.wireInfoHash))
+        .put(decodeCrock(depositInfo.denomPubHash))
+        .put(timestampRoundedToBuffer(depositInfo.timestamp))
+        .put(timestampRoundedToBuffer(depositInfo.refundDeadline))
+        .put(amountToBuffer(depositInfo.spendAmount))
+        .put(amountToBuffer(depositInfo.feeDeposit))
+        .put(decodeCrock(depositInfo.merchantPub))
+        .put(decodeCrock(depositInfo.coinPub))
+        .build();
+    } else {
+      throw Error("unsupported exchange protocol version");
+    }
     const coinSig = eddsaSign(d, decodeCrock(depositInfo.coinPriv));
 
-    const s: CoinDepositPermission = {
-      coin_pub: depositInfo.coinPub,
-      coin_sig: encodeCrock(coinSig),
-      contribution: Amounts.stringify(depositInfo.spendAmount),
-      h_denom: depositInfo.denomPubHash,
-      exchange_url: depositInfo.exchangeBaseUrl,
-      ub_sig: {
-        cipher: DenomKeyType.Rsa,
-        rsa_signature: depositInfo.denomSig.rsa_signature,
-      },
-    };
-    return s;
+    if (depositInfo.denomKeyType === DenomKeyType.Rsa) {
+      const s: CoinDepositPermission = {
+        coin_pub: depositInfo.coinPub,
+        coin_sig: encodeCrock(coinSig),
+        contribution: Amounts.stringify(depositInfo.spendAmount),
+        h_denom: depositInfo.denomPubHash,
+        exchange_url: depositInfo.exchangeBaseUrl,
+        ub_sig: {
+          cipher: DenomKeyType.Rsa,
+          rsa_signature: depositInfo.denomSig.rsa_signature,
+        },
+      };
+      return s;
+    } else if (depositInfo.denomKeyType === DenomKeyType.LegacyRsa) {
+      const s: CoinDepositPermission = {
+        coin_pub: depositInfo.coinPub,
+        coin_sig: encodeCrock(coinSig),
+        contribution: Amounts.stringify(depositInfo.spendAmount),
+        h_denom: depositInfo.denomPubHash,
+        exchange_url: depositInfo.exchangeBaseUrl,
+        ub_sig: depositInfo.denomSig.rsa_signature,
+      };
+      return s;
+    } else {
+      throw Error("unsupported merchant protocol version");
+    }
   }
 
   async deriveRefreshSession(
@@ -466,10 +536,12 @@ export class CryptoImplementation {
 
     for (const denomSel of newCoinDenoms) {
       for (let i = 0; i < denomSel.count; i++) {
-        if (denomSel.denomPub.cipher !== 1) {
-          throw Error("unsupported cipher");
+        if (denomSel.denomPub.cipher === DenomKeyType.LegacyRsa) {
+          const r = decodeCrock(denomSel.denomPub.rsa_public_key);
+          sessionHc.update(r);
+        } else {
+          sessionHc.update(hashDenomPub(denomSel.denomPub));
         }
-        sessionHc.update(hashDenomPub(denomSel.denomPub));
       }
     }
 
@@ -508,8 +580,11 @@ export class CryptoImplementation {
             blindingFactor = fresh.bks;
           }
           const pubHash = hash(coinPub);
-          if (denomSel.denomPub.cipher !== 1) {
-            throw Error("unsupported cipher");
+          if (
+            denomSel.denomPub.cipher !== DenomKeyType.Rsa &&
+            denomSel.denomPub.cipher !== DenomKeyType.LegacyRsa
+          ) {
+            throw Error("unsupported cipher, can't create refresh session");
           }
           const denomPub = decodeCrock(denomSel.denomPub.rsa_public_key);
           const ev = rsaBlind(pubHash, blindingFactor, denomPub);

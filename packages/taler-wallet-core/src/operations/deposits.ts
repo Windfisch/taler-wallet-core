@@ -26,6 +26,7 @@ import {
   CreateDepositGroupRequest,
   CreateDepositGroupResponse,
   decodeCrock,
+  DenomKeyType,
   durationFromSpec,
   getTimestampNow,
   Logger,
@@ -59,6 +60,8 @@ import {
   getCandidatePayCoins,
   getEffectiveDepositAmount,
   getTotalPaymentCost,
+  hashWire,
+  hashWireLegacy,
 } from "./pay.js";
 
 /**
@@ -102,16 +105,6 @@ const codecForDepositSuccess = (): Codec<DepositSuccess> =>
     .property("exchange_timestamp", codecForTimestamp)
     .property("transaction_base_url", codecOptional(codecForString()))
     .build("DepositSuccess");
-
-function hashWire(paytoUri: string, salt: string): string {
-  const r = kdf(
-    64,
-    stringToBytes(paytoUri + "\0"),
-    decodeCrock(salt),
-    stringToBytes("merchant-wire-signature"),
-  );
-  return encodeCrock(r);
-}
 
 async function resetDepositGroupRetry(
   ws: InternalWalletState,
@@ -211,21 +204,50 @@ async function processDepositGroupImpl(
       continue;
     }
     const perm = depositPermissions[i];
+    let requestBody: any;
+    if (
+      typeof perm.ub_sig === "string" ||
+      perm.ub_sig.cipher === DenomKeyType.LegacyRsa
+    ) {
+      // Legacy request
+      logger.info("creating legacy deposit request");
+      const wireHash = hashWireLegacy(
+        depositGroup.wire.payto_uri,
+        depositGroup.wire.salt,
+      );
+      requestBody = {
+        contribution: Amounts.stringify(perm.contribution),
+        wire: depositGroup.wire,
+        h_wire: wireHash,
+        h_contract_terms: depositGroup.contractTermsHash,
+        ub_sig: perm.ub_sig,
+        timestamp: depositGroup.contractTermsRaw.timestamp,
+        wire_transfer_deadline:
+          depositGroup.contractTermsRaw.wire_transfer_deadline,
+        refund_deadline: depositGroup.contractTermsRaw.refund_deadline,
+        coin_sig: perm.coin_sig,
+        denom_pub_hash: perm.h_denom,
+        merchant_pub: depositGroup.merchantPub,
+      };
+    } else {
+      logger.info("creating v10 deposit request");
+      requestBody = {
+        contribution: Amounts.stringify(perm.contribution),
+        merchant_payto_uri: depositGroup.wire.payto_uri,
+        wire_salt: depositGroup.wire.salt,
+        h_contract_terms: depositGroup.contractTermsHash,
+        ub_sig: perm.ub_sig,
+        timestamp: depositGroup.contractTermsRaw.timestamp,
+        wire_transfer_deadline:
+          depositGroup.contractTermsRaw.wire_transfer_deadline,
+        refund_deadline: depositGroup.contractTermsRaw.refund_deadline,
+        coin_sig: perm.coin_sig,
+        denom_pub_hash: perm.h_denom,
+        merchant_pub: depositGroup.merchantPub,
+      };
+    }
     const url = new URL(`coins/${perm.coin_pub}/deposit`, perm.exchange_url);
-    const httpResp = await ws.http.postJson(url.href, {
-      contribution: Amounts.stringify(perm.contribution),
-      merchant_payto_uri: depositGroup.wire.payto_uri,
-      wire_salt: depositGroup.wire.salt,
-      h_contract_terms: depositGroup.contractTermsHash,
-      ub_sig: perm.ub_sig,
-      timestamp: depositGroup.contractTermsRaw.timestamp,
-      wire_transfer_deadline:
-        depositGroup.contractTermsRaw.wire_transfer_deadline,
-      refund_deadline: depositGroup.contractTermsRaw.refund_deadline,
-      coin_sig: perm.coin_sig,
-      denom_pub_hash: perm.h_denom,
-      merchant_pub: depositGroup.merchantPub,
-    });
+    const httpResp = await ws.http.postJson(url.href, requestBody);
     await readSuccessResponseJsonOrThrow(httpResp, codecForDepositSuccess());
     await ws.db
       .mktx((x) => ({ depositGroups: x.depositGroups }))
@@ -358,6 +380,7 @@ export async function createDepositGroup(
   const merchantPair = await ws.cryptoApi.createEddsaKeypair();
   const wireSalt = encodeCrock(getRandomBytes(16));
   const wireHash = hashWire(req.depositPaytoUri, wireSalt);
+  const wireHashLegacy = hashWireLegacy(req.depositPaytoUri, wireSalt);
   const contractTerms: ContractTerms = {
     auditors: [],
     exchanges: exchangeInfos,
@@ -371,7 +394,10 @@ export async function createDepositGroup(
     nonce: noncePair.pub,
     wire_transfer_deadline: timestampRound,
     order_id: "",
+    // This is always the v2 wire hash, as we're the "merchant" and support v2.
     h_wire: wireHash,
+    // Required for older exchanges.
+    h_wire_legacy: wireHashLegacy,
     pay_deadline: timestampAddDuration(
       timestampRound,
       durationFromSpec({ hours: 1 }),

@@ -51,9 +51,8 @@ export interface TrustInfo {
   isAudited: boolean;
 }
 
-export interface MerchantInfo {
-  supportsMerchantProtocolV1: boolean;
-  supportsMerchantProtocolV2: boolean;
+export interface MerchantInfo { 
+  protocolVersionCurrent: number;
 }
 
 /**

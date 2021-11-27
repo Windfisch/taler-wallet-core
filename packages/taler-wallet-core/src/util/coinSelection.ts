@@ -23,7 +23,12 @@
 /**
  * Imports.
  */
-import { AmountJson, Amounts, DenominationPubKey } from "@gnu-taler/taler-util";
+import {
+  AmountJson,
+  Amounts,
+  DenominationPubKey,
+  DenomKeyType,
+} from "@gnu-taler/taler-util";
 import { strcmp, Logger } from "@gnu-taler/taler-util";
 
 const logger = new Logger("coinSelection.ts");
@@ -215,10 +220,21 @@ function denomPubCmp(
   } else if (p1.cipher > p2.cipher) {
     return +1;
   }
-  if (p1.cipher !== 1 || p2.cipher !== 1) {
+  if (
+    p1.cipher === DenomKeyType.LegacyRsa &&
+    p2.cipher === DenomKeyType.LegacyRsa
+  ) {
+    return strcmp(p1.rsa_public_key, p2.rsa_public_key);
+  } else if (p1.cipher === DenomKeyType.Rsa && p2.cipher === DenomKeyType.Rsa) {
+    if ((p1.age_mask ?? 0) < (p2.age_mask ?? 0)) {
+      return -1;
+    } else if ((p1.age_mask ?? 0) > (p2.age_mask ?? 0)) {
+      return 1;
+    }
+    return strcmp(p1.rsa_public_key, p2.rsa_public_key);
+  } else {
     throw Error("unsupported cipher");
   }
-  return strcmp(p1.rsa_public_key, p2.rsa_public_key);
 }
 
 /**

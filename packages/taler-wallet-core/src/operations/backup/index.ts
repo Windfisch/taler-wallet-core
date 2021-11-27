@@ -38,14 +38,15 @@ import {
   codecForString,
   codecOptional,
   ConfirmPayResultType,
+  DenomKeyType,
   durationFromSpec,
   getTimestampNow,
   hashDenomPub,
   HttpStatusCode,
   j2s,
+  LibtoolVersion,
   Logger,
   notEmpty,
-  NotificationType,
   PreparePayResultType,
   RecoveryLoadRequest,
   RecoveryMergeStrategy,
@@ -167,7 +168,10 @@ async function computeBackupCryptoData(
   };
   for (const backupExchangeDetails of backupContent.exchange_details) {
     for (const backupDenom of backupExchangeDetails.denominations) {
-      if (backupDenom.denom_pub.cipher !== 1) {
+      if (
+        backupDenom.denom_pub.cipher !== DenomKeyType.Rsa &&
+        backupDenom.denom_pub.cipher !== DenomKeyType.LegacyRsa
+      ) {
         throw Error("unsupported cipher");
       }
       for (const backupCoin of backupDenom.coins) {
@@ -184,9 +188,25 @@ async function computeBackupCryptoData(
           coinPub,
         };
       }
-      cryptoData.rsaDenomPubToHash[
-        backupDenom.denom_pub.rsa_public_key
-      ] = encodeCrock(hashDenomPub(backupDenom.denom_pub));
+      if (
+        LibtoolVersion.compare(backupExchangeDetails.protocol_version, "9")
+          ?.compatible
+      ) {
+        cryptoData.rsaDenomPubToHash[
+          backupDenom.denom_pub.rsa_public_key
+        ] = encodeCrock(
+          hash(decodeCrock(backupDenom.denom_pub.rsa_public_key)),
+        );
+      } else if (
+        LibtoolVersion.compare(backupExchangeDetails.protocol_version, "10")
+          ?.compatible
+      ) {
+        cryptoData.rsaDenomPubToHash[
+          backupDenom.denom_pub.rsa_public_key
+        ] = encodeCrock(hashDenomPub(backupDenom.denom_pub));
+      } else {
+        throw Error("unsupported exchange protocol version");
+      }
     }
     for (const backupReserve of backupExchangeDetails.reserves) {
       cryptoData.reservePrivToPub[backupReserve.reserve_priv] = encodeCrock(

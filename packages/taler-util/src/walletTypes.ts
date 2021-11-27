@@ -49,6 +49,7 @@ import {
   codecForContractTerms,
   ContractTerms,
   DenominationPubKey,
+  DenomKeyType,
   UnblindedSignature,
 } from "./talerTypes.js";
 import { OrderShortInfo, codecForOrderShortInfo } from "./transactionsTypes.js";
@@ -515,6 +516,7 @@ export interface DepositInfo {
   merchantPub: string;
   feeDeposit: AmountJson;
   wireInfoHash: string;
+  denomKeyType: DenomKeyType;
   denomPubHash: string;
   denomSig: UnblindedSignature;
 }

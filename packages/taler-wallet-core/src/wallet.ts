@@ -390,7 +390,7 @@ async function runTaskLoop(
         } catch (e) {
           if (e instanceof OperationFailedAndReportedError) {
             logger.warn("operation processed resulted in reported error");
-            logger.warn(`reporred error was: ${j2s(e.operationError)}`);
+            logger.warn(`reported error was: ${j2s(e.operationError)}`);
           } else {
             logger.error("Uncaught exception", e);
             ws.notify({
@@ -985,6 +985,8 @@ export async function handleCoreApiRequest(
       e instanceof OperationFailedError ||
       e instanceof OperationFailedAndReportedError
     ) {
+      logger.error("Caught operation failed error");
+      logger.trace((e as any).stack);
       return {
         type: "error",
         operation,

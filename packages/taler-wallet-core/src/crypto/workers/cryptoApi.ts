@@ -392,6 +392,7 @@ export class CryptoApi {
   }
 
   isValidWireAccount(
+    versionCurrent: number,
     paytoUri: string,
     sig: string,
     masterPub: string,
@@ -399,6 +400,7 @@ export class CryptoApi {
     return this.doRpc<boolean>(
       "isValidWireAccount",
       4,
+      versionCurrent,
       paytoUri,
       sig,
       masterPub,

@@ -417,3 +417,26 @@ export function codecOptional<V>(innerCodec: Codec<V>): Codec<V | undefined> {
     },
   };
 }
+
+export type CodecType<T> = T extends Codec<infer X> ? X : any;
+
+export function codecForEither<T extends Array<Codec<unknown>>>(
+  ...alts: [...T]
+): Codec<CodecType<T[number]>> {
+  return {
+    decode(x: any, c?: Context): any {
+      for (const alt of alts) {
+        try {
+          return alt.decode(x, c);
+        } catch (e) {
+          continue;
+        }
+      }
+      throw new DecodingError(
+        `No alternative matched at at ${renderContext(c)}`,
+      );
+    },
+  };
+}
+
+const x = codecForEither(codecForString(), codecForNumber());

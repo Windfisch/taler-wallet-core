@@ -54,6 +54,10 @@ import {
   URL,
   getDurationRemaining,
   HttpStatusCode,
+  DenomKeyType,
+  kdf,
+  stringToBytes,
+  decodeCrock,
 } from "@gnu-taler/taler-util";
 import { encodeCrock, getRandomBytes } from "@gnu-taler/taler-util";
 import {
@@ -107,6 +111,26 @@ import {
  * Logger.
  */
 const logger = new Logger("pay.ts");
+
+export function hashWire(paytoUri: string, salt: string): string {
+  const r = kdf(
+    64,
+    stringToBytes(paytoUri + "\0"),
+    decodeCrock(salt),
+    stringToBytes("merchant-wire-signature"),
+  );
+  return encodeCrock(r);
+}
+
+export function hashWireLegacy(paytoUri: string, salt: string): string {
+  const r = kdf(
+    64,
+    stringToBytes(paytoUri + "\0"),
+    stringToBytes(salt + "\0"),
+    stringToBytes("merchant-wire-signature"),
+  );
+  return encodeCrock(r);
+}
 
 /**
  * Compute the total cost of a payment to the customer.
@@ -193,9 +217,9 @@ export async function getEffectiveDepositAmount(
         if (!exchangeDetails) {
           continue;
         }
-	// FIXME/NOTE: the line below _likely_ throws exception
-	// about "find method not found on undefined" when the wireType
-	// is not supported by the Exchange.
+        // FIXME/NOTE: the line below _likely_ throws exception
+        // about "find method not found on undefined" when the wireType
+        // is not supported by the Exchange.
         const fee = exchangeDetails.wireInfo.feesForType[wireType].find((x) => {
           return timestampIsBetween(
             getTimestampNow(),
@@ -669,6 +693,7 @@ export function extractContractData(
     timestamp: parsedContractTerms.timestamp,
     wireMethod: parsedContractTerms.wire_method,
     wireInfoHash: parsedContractTerms.h_wire,
+    wireInfoLegacyHash: parsedContractTerms.h_wire_legacy,
     maxDepositFee: Amounts.parseOrThrow(parsedContractTerms.max_fee),
     merchant: parsedContractTerms.merchant,
     products: parsedContractTerms.products,
@@ -882,7 +907,6 @@ async function startDownloadProposal(
   claimToken: string | undefined,
   noncePriv: string | undefined,
 ): Promise<string> {
-
   const oldProposal = await ws.db
     .mktx((x) => ({ proposals: x.proposals }))
     .runReadOnly(async (tx) => {
@@ -891,20 +915,24 @@ async function startDownloadProposal(
         orderId,
       ]);
     });
-  
+
   /**
    * If we have already claimed this proposal with the same sessionId
    * nonce and claim token, reuse it.
    */
-  if (oldProposal && 
-      oldProposal.downloadSessionId === sessionId &&
-      (!noncePriv || oldProposal.noncePriv === noncePriv) &&
-      oldProposal.claimToken === claimToken) {
+  if (
+    oldProposal &&
+    oldProposal.downloadSessionId === sessionId &&
+    (!noncePriv || oldProposal.noncePriv === noncePriv) &&
+    oldProposal.claimToken === claimToken
+  ) {
     await processDownloadProposal(ws, oldProposal.proposalId);
     return oldProposal.proposalId;
   }
 
-  const { priv, pub } = await (noncePriv ? ws.cryptoApi.eddsaGetPublic(noncePriv) : ws.cryptoApi.createEddsaKeypair());
+  const { priv, pub } = await (noncePriv
+    ? ws.cryptoApi.eddsaGetPublic(noncePriv)
+    : ws.cryptoApi.createEddsaKeypair());
   const proposalId = encodeCrock(getRandomBytes(32));
 
   const proposalRecord: ProposalRecord = {
@@ -1168,6 +1196,11 @@ async function submitPay(
   const sessionId = purchase.lastSessionId;
 
   logger.trace("paying with session ID", sessionId);
+
+  const merchantInfo = await ws.merchantOps.getMerchantInfo(
+    ws,
+    purchase.download.contractData.merchantBaseUrl,
+  );
 
   if (!purchase.merchantPaySig) {
     const payUrl = new URL(
@@ -1568,11 +1601,21 @@ export async function generateDepositPermissions(
 
   for (let i = 0; i < payCoinSel.coinPubs.length; i++) {
     const { coin, denom } = coinWithDenom[i];
+    let wireInfoHash: string;
+    if (
+      coin.denomPub.cipher === DenomKeyType.LegacyRsa &&
+      contractData.wireInfoLegacyHash
+    ) {
+      wireInfoHash = contractData.wireInfoLegacyHash;
+    } else {
+      wireInfoHash = contractData.wireInfoHash;
+    }
     const dp = await ws.cryptoApi.signDepositPermission({
       coinPriv: coin.coinPriv,
       coinPub: coin.coinPub,
       contractTermsHash: contractData.contractTermsHash,
       denomPubHash: coin.denomPubHash,
+      denomKeyType: coin.denomPub.cipher,
       denomSig: coin.denomSig,
       exchangeBaseUrl: coin.exchangeBaseUrl,
       feeDeposit: denom.feeDeposit,
@@ -1580,7 +1623,7 @@ export async function generateDepositPermissions(
       refundDeadline: contractData.refundDeadline,
       spendAmount: payCoinSel.coinContributions[i],
       timestamp: contractData.timestamp,
-      wireInfoHash: contractData.wireInfoHash,
+      wireInfoHash,
     });
     depositPermissions.push(dp);
   }
@@ -1612,6 +1655,11 @@ export async function confirmPay(
   if (!d) {
     throw Error("proposal is in invalid state");
   }
+
+  const merchantInfo = await ws.merchantOps.getMerchantInfo(
+    ws,
+    d.contractData.merchantBaseUrl,
+  );
 
   const existingPurchase = await ws.db
     .mktx((x) => ({ purchases: x.purchases }))

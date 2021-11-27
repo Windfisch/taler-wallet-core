@@ -27,6 +27,7 @@ import {
   BackupRefundState,
   RefreshReason,
   BackupRefreshReason,
+  DenomKeyType,
 } from "@gnu-taler/taler-util";
 import {
   WalletContractData,
@@ -331,7 +332,10 @@ export async function importBackup(
         }
 
         for (const backupDenomination of backupExchangeDetails.denominations) {
-          if (backupDenomination.denom_pub.cipher !== 1) {
+          if (
+            backupDenomination.denom_pub.cipher !== DenomKeyType.Rsa &&
+            backupDenomination.denom_pub.cipher !== DenomKeyType.LegacyRsa
+          ) {
             throw Error("unsupported cipher");
           }
           const denomPubHash =

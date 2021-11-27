@@ -38,6 +38,7 @@ import {
   codecForConstNumber,
   buildCodecForUnion,
   codecForConstString,
+  codecForEither,
 } from "./codec.js";
 import {
   Timestamp,
@@ -50,7 +51,7 @@ import { codecForAmountString } from "./amounts.js";
 /**
  * Denomination as found in the /keys response from the exchange.
  */
-export class Denomination {
+export class ExchangeDenomination {
   /**
    * Value of one coin of the denomination.
    */
@@ -58,8 +59,11 @@ export class Denomination {
 
   /**
    * Public signing key of the denomination.
+   *
+   * The "string" alternative is for the old exchange protocol (v9) that
+   * only supports RSA keys.
    */
-  denom_pub: DenominationPubKey;
+  denom_pub: DenominationPubKey | string;
 
   /**
    * Fee for withdrawing.
@@ -128,7 +132,7 @@ export class AuditorDenomSig {
 /**
  * Auditor information as given by the exchange in /keys.
  */
-export class Auditor {
+export class ExchangeAuditor {
   /**
    * Auditor's public key.
    */
@@ -157,8 +161,10 @@ export interface RecoupRequest {
 
   /**
    * Signature over the coin public key by the denomination.
+   * 
+   * The string variant is for the legacy exchange protocol.
    */
-  denom_sig: UnblindedSignature;
+  denom_sig: UnblindedSignature | string;
 
   /**
    * Coin public key of the coin we want to refund.
@@ -198,8 +204,17 @@ export interface RecoupConfirmation {
   old_coin_pub?: string;
 }
 
-export interface UnblindedSignature {
+export type UnblindedSignature =
+  | RsaUnblindedSignature
+  | LegacyRsaUnblindedSignature;
+
+export interface RsaUnblindedSignature {
   cipher: DenomKeyType.Rsa;
+  rsa_signature: string;
+}
+
+export interface LegacyRsaUnblindedSignature {
+  cipher: DenomKeyType.LegacyRsa;
   rsa_signature: string;
 }
 
@@ -211,18 +226,25 @@ export interface CoinDepositPermission {
    * Signature by the coin.
    */
   coin_sig: string;
+
   /**
    * Public key of the coin being spend.
    */
   coin_pub: string;
+
   /**
    * Signature made by the denomination public key.
+   *
+   * The string variant is for legacy protocol support.
    */
-  ub_sig: UnblindedSignature;
+
+  ub_sig: UnblindedSignature | string;
+
   /**
    * The denomination public key associated with this coin.
    */
   h_denom: string;
+
   /**
    * The amount that is subtracted from this coin with this payment.
    */
@@ -357,6 +379,11 @@ export interface ContractTerms {
    * Hash of the merchant's wire details.
    */
   h_wire: string;
+
+  /**
+   * Legacy wire hash, used for deposit operations with an older exchange.
+   */
+  h_wire_legacy?: string;
 
   /**
    * Hash of the merchant's wire details.
@@ -662,7 +689,7 @@ export class ExchangeKeysJson {
   /**
    * List of offered denominations.
    */
-  denoms: Denomination[];
+  denoms: ExchangeDenomination[];
 
   /**
    * The exchange's master public key.
@@ -672,7 +699,7 @@ export class ExchangeKeysJson {
   /**
    * The list of auditors (partially) auditing the exchange.
    */
-  auditors: Auditor[];
+  auditors: ExchangeAuditor[];
 
   /**
    * Timestamp when this response was issued.
@@ -802,10 +829,16 @@ export class TipPickupGetResponse {
 export enum DenomKeyType {
   Rsa = 1,
   ClauseSchnorr = 2,
+  LegacyRsa = 3,
 }
 
 export interface RsaBlindedDenominationSignature {
   cipher: DenomKeyType.Rsa;
+  blinded_rsa_signature: string;
+}
+
+export interface LegacyRsaBlindedDenominationSignature {
+  cipher: DenomKeyType.LegacyRsa;
   blinded_rsa_signature: string;
 }
 
@@ -815,12 +848,14 @@ export interface CSBlindedDenominationSignature {
 
 export type BlindedDenominationSignature =
   | RsaBlindedDenominationSignature
-  | CSBlindedDenominationSignature;
+  | CSBlindedDenominationSignature
+  | LegacyRsaBlindedDenominationSignature;
 
 export const codecForBlindedDenominationSignature = () =>
   buildCodecForUnion<BlindedDenominationSignature>()
     .discriminateOn("cipher")
     .alternative(1, codecForRsaBlindedDenominationSignature())
+    .alternative(3, codecForLegacyRsaBlindedDenominationSignature())
     .build("BlindedDenominationSignature");
 
 export const codecForRsaBlindedDenominationSignature = () =>
@@ -829,8 +864,17 @@ export const codecForRsaBlindedDenominationSignature = () =>
     .property("blinded_rsa_signature", codecForString())
     .build("RsaBlindedDenominationSignature");
 
+export const codecForLegacyRsaBlindedDenominationSignature = () =>
+  buildCodecForObject<LegacyRsaBlindedDenominationSignature>()
+    .property("cipher", codecForConstNumber(1))
+    .property("blinded_rsa_signature", codecForString())
+    .build("LegacyRsaBlindedDenominationSignature");
+
 export class WithdrawResponse {
-  ev_sig: BlindedDenominationSignature;
+  /**
+   * The string variant is for legacy protocol support.
+   */
+  ev_sig: BlindedDenominationSignature | string;
 }
 
 /**
@@ -925,7 +969,10 @@ export interface ExchangeMeltResponse {
 }
 
 export interface ExchangeRevealItem {
-  ev_sig: BlindedDenominationSignature;
+  /**
+   * The string variant is for the legacy v9 protocol.
+   */
+  ev_sig: BlindedDenominationSignature | string;
 }
 
 export interface ExchangeRevealResponse {
@@ -1044,7 +1091,15 @@ export interface BankWithdrawalOperationPostResponse {
   transfer_done: boolean;
 }
 
-export type DenominationPubKey = RsaDenominationPubKey | CsDenominationPubKey;
+export type DenominationPubKey =
+  | RsaDenominationPubKey
+  | CsDenominationPubKey
+  | LegacyRsaDenominationPubKey;
+
+export interface LegacyRsaDenominationPubKey {
+  cipher: DenomKeyType.LegacyRsa;
+  rsa_public_key: string;
+}
 
 export interface RsaDenominationPubKey {
   cipher: DenomKeyType.Rsa;
@@ -1061,6 +1116,7 @@ export const codecForDenominationPubKey = () =>
   buildCodecForUnion<DenominationPubKey>()
     .discriminateOn("cipher")
     .alternative(1, codecForRsaDenominationPubKey())
+    .alternative(3, codecForLegacyRsaDenominationPubKey())
     .build("DenominationPubKey");
 
 export const codecForRsaDenominationPubKey = () =>
@@ -1068,6 +1124,12 @@ export const codecForRsaDenominationPubKey = () =>
     .property("cipher", codecForConstNumber(1))
     .property("rsa_public_key", codecForString())
     .build("DenominationPubKey");
+
+export const codecForLegacyRsaDenominationPubKey = () =>
+  buildCodecForObject<LegacyRsaDenominationPubKey>()
+    .property("cipher", codecForConstNumber(3))
+    .property("rsa_public_key", codecForString())
+    .build("LegacyRsaDenominationPubKey");
 
 export const codecForBankWithdrawalOperationPostResponse = (): Codec<BankWithdrawalOperationPostResponse> =>
   buildCodecForObject<BankWithdrawalOperationPostResponse>()
@@ -1080,10 +1142,13 @@ export type EddsaSignatureString = string;
 export type EddsaPublicKeyString = string;
 export type CoinPublicKeyString = string;
 
-export const codecForDenomination = (): Codec<Denomination> =>
-  buildCodecForObject<Denomination>()
+export const codecForDenomination = (): Codec<ExchangeDenomination> =>
+  buildCodecForObject<ExchangeDenomination>()
     .property("value", codecForString())
-    .property("denom_pub", codecForDenominationPubKey())
+    .property(
+      "denom_pub",
+      codecForEither(codecForDenominationPubKey(), codecForString()),
+    )
     .property("fee_withdraw", codecForString())
     .property("fee_deposit", codecForString())
     .property("fee_refresh", codecForString())
@@ -1101,8 +1166,8 @@ export const codecForAuditorDenomSig = (): Codec<AuditorDenomSig> =>
     .property("auditor_sig", codecForString())
     .build("AuditorDenomSig");
 
-export const codecForAuditor = (): Codec<Auditor> =>
-  buildCodecForObject<Auditor>()
+export const codecForAuditor = (): Codec<ExchangeAuditor> =>
+  buildCodecForObject<ExchangeAuditor>()
     .property("auditor_pub", codecForString())
     .property("auditor_url", codecForString())
     .property("denomination_keys", codecForList(codecForAuditorDenomSig()))
@@ -1261,7 +1326,7 @@ export const codecForExchangeKeysJson = (): Codec<ExchangeKeysJson> =>
     .property("signkeys", codecForList(codecForExchangeSigningKey()))
     .property("version", codecForString())
     .property("reserve_closing_delay", codecForDuration)
-    .build("KeysJson");
+    .build("ExchangeKeysJson");
 
 export const codecForWireFeesJson = (): Codec<WireFeesJson> =>
   buildCodecForObject<WireFeesJson>()
@@ -1327,7 +1392,10 @@ export const codecForRecoupConfirmation = (): Codec<RecoupConfirmation> =>
 
 export const codecForWithdrawResponse = (): Codec<WithdrawResponse> =>
   buildCodecForObject<WithdrawResponse>()
-    .property("ev_sig", codecForBlindedDenominationSignature())
+    .property(
+      "ev_sig",
+      codecForEither(codecForBlindedDenominationSignature(), codecForString()),
+    )
     .build("WithdrawResponse");
 
 export const codecForMerchantPayResponse = (): Codec<MerchantPayResponse> =>
@@ -1345,7 +1413,10 @@ export const codecForExchangeMeltResponse = (): Codec<ExchangeMeltResponse> =>
 
 export const codecForExchangeRevealItem = (): Codec<ExchangeRevealItem> =>
   buildCodecForObject<ExchangeRevealItem>()
-    .property("ev_sig", codecForBlindedDenominationSignature())
+    .property(
+      "ev_sig",
+      codecForEither(codecForBlindedDenominationSignature(), codecForString()),
+    )
     .build("ExchangeRevealItem");
 
 export const codecForExchangeRevealResponse = (): Codec<ExchangeRevealResponse> =>

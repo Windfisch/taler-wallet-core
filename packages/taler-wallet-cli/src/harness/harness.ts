@@ -1173,12 +1173,24 @@ export class ExchangeService implements ExchangeServiceInterface {
   }
 
   async runAggregatorOnce() {
-    await runCommand(
-      this.globalState,
-      `exchange-${this.name}-aggregator-once`,
-      "taler-exchange-aggregator",
-      [...this.timetravelArgArr, "-c", this.configFilename, "-t"],
-    );
+    try {
+      await runCommand(
+        this.globalState,
+        `exchange-${this.name}-aggregator-once`,
+        "taler-exchange-aggregator",
+        [...this.timetravelArgArr, "-c", this.configFilename, "-t", "-y"],
+      );
+    } catch (e) {
+      console.log(
+        "running aggregator with KYC off didn't work, might be old version, running again",
+      );
+      await runCommand(
+        this.globalState,
+        `exchange-${this.name}-aggregator-once`,
+        "taler-exchange-aggregator",
+        [...this.timetravelArgArr, "-c", this.configFilename, "-t"],
+      );
+    }
   }
 
   async runTransferOnce() {

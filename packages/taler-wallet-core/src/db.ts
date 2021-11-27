@@ -25,7 +25,7 @@ import {
 import {
   AmountJson,
   AmountString,
-  Auditor,
+  ExchangeAuditor,
   CoinDepositPermission,
   ContractTerms,
   DenominationPubKey,
@@ -427,7 +427,7 @@ export interface ExchangeDetailsRecord {
   /**
    * Auditors (partially) auditing the exchange.
    */
-  auditors: Auditor[];
+  auditors: ExchangeAuditor[];
 
   /**
    * Last observed protocol version.
@@ -1136,6 +1136,7 @@ export interface WalletContractData {
   timestamp: Timestamp;
   wireMethod: string;
   wireInfoHash: string;
+  wireInfoLegacyHash?: string;
   maxDepositFee: AmountJson;
 }
 

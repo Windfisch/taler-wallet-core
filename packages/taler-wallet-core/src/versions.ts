@@ -19,14 +19,14 @@
  *
  * Uses libtool's current:revision:age versioning.
  */
-export const WALLET_EXCHANGE_PROTOCOL_VERSION = "10:0:0";
+export const WALLET_EXCHANGE_PROTOCOL_VERSION = "10:0:1";
 
 /**
  * Protocol version spoken with the merchant.
  *
  * Uses libtool's current:revision:age versioning.
  */
-export const WALLET_MERCHANT_PROTOCOL_VERSION = "1:0:0";
+export const WALLET_MERCHANT_PROTOCOL_VERSION = "2:0:1";
 
 /**
  * Protocol version spoken with the merchant.
@@ -42,4 +42,4 @@ export const WALLET_BANK_INTEGRATION_PROTOCOL_VERSION = "0:0:0";
  *
  * This is only a temporary measure.
  */
-export const WALLET_CACHE_BREAKER_CLIENT_VERSION = "3";
+export const WALLET_CACHE_BREAKER_CLIENT_VERSION = "4";

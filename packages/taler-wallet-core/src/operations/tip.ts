@@ -314,13 +314,13 @@ async function processTipImpl(
 
   let blindedSigs: BlindedDenominationSignature[] = [];
 
-  if (merchantInfo.supportsMerchantProtocolV2) {
+  if (merchantInfo.protocolVersionCurrent === 2) {
     const response = await readSuccessResponseJsonOrThrow(
       merchantResp,
       codecForMerchantTipResponseV2(),
     );
     blindedSigs = response.blind_sigs.map((x) => x.blind_sig);
-  } else if (merchantInfo.supportsMerchantProtocolV1) {
+  } else if (merchantInfo.protocolVersionCurrent === 1) {
     const response = await readSuccessResponseJsonOrThrow(
       merchantResp,
       codecForMerchantTipResponseV1(),
@@ -347,11 +347,17 @@ async function processTipImpl(
     const planchet = planchets[i];
     checkLogicInvariant(!!planchet);
 
-    if (denom.denomPub.cipher !== DenomKeyType.Rsa) {
+    if (
+      denom.denomPub.cipher !== DenomKeyType.Rsa &&
+      denom.denomPub.cipher !== DenomKeyType.LegacyRsa
+    ) {
       throw Error("unsupported cipher");
     }
 
-    if (blindedSig.cipher !== DenomKeyType.Rsa) {
+    if (
+      blindedSig.cipher !== DenomKeyType.Rsa &&
+      blindedSig.cipher !== DenomKeyType.LegacyRsa
+    ) {
       throw Error("unsupported cipher");
     }
 

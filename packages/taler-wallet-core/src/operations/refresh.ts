@@ -365,18 +365,29 @@ async function refreshMelt(
     `coins/${oldCoin.coinPub}/melt`,
     oldCoin.exchangeBaseUrl,
   );
-  const meltReq = {
-    coin_pub: oldCoin.coinPub,
-    confirm_sig: derived.confirmSig,
-    denom_pub_hash: oldCoin.denomPubHash,
-    denom_sig: oldCoin.denomSig,
-    rc: derived.hash,
-    value_with_fee: Amounts.stringify(derived.meltValueWithFee),
-  };
-  logger.trace(`melt request for coin:`, meltReq);
+  let meltReqBody: any;
+  if (oldCoin.denomPub.cipher === DenomKeyType.LegacyRsa) {
+    meltReqBody = {
+      coin_pub: oldCoin.coinPub,
+      confirm_sig: derived.confirmSig,
+      denom_pub_hash: oldCoin.denomPubHash,
+      denom_sig: oldCoin.denomSig.rsa_signature,
+      rc: derived.hash,
+      value_with_fee: Amounts.stringify(derived.meltValueWithFee),
+    };
+  } else {
+    meltReqBody = {
+      coin_pub: oldCoin.coinPub,
+      confirm_sig: derived.confirmSig,
+      denom_pub_hash: oldCoin.denomPubHash,
+      denom_sig: oldCoin.denomSig,
+      rc: derived.hash,
+      value_with_fee: Amounts.stringify(derived.meltValueWithFee),
+    };
+  }
 
   const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], async () => {
-    return await ws.http.postJson(reqUrl.href, meltReq, {
+    return await ws.http.postJson(reqUrl.href, meltReqBody, {
       timeout: getRefreshRequestTimeout(refreshGroup),
     });
   });
@@ -604,15 +615,26 @@ async function refreshReveal(
         continue;
       }
       const pc = derived.planchetsForGammas[norevealIndex][newCoinIndex];
-      if (denom.denomPub.cipher !== 1) {
+      if (
+        denom.denomPub.cipher !== DenomKeyType.Rsa &&
+        denom.denomPub.cipher !== DenomKeyType.LegacyRsa
+      ) {
         throw Error("cipher unsupported");
       }
       const evSig = reveal.ev_sigs[newCoinIndex].ev_sig;
-      if (evSig.cipher !== DenomKeyType.Rsa) {
+      let rsaSig: string;
+      if (typeof evSig === "string") {
+        rsaSig = evSig;
+      } else if (
+        evSig.cipher === DenomKeyType.Rsa ||
+        evSig.cipher === DenomKeyType.LegacyRsa
+      ) {
+        rsaSig = evSig.blinded_rsa_signature;
+      } else {
         throw Error("unsupported cipher");
       }
       const denomSigRsa = await ws.cryptoApi.rsaUnblind(
-        evSig.blinded_rsa_signature,
+        rsaSig,
         pc.blindingKey,
         denom.denomPub.rsa_public_key,
       );
