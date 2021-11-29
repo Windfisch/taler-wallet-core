@@ -36,8 +36,10 @@ import {
   PreparePayResult,
   PreparePayResultType,
 } from "@gnu-taler/taler-util";
+import { OperationFailedError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
+import { ErrorTalerOperation } from "../components/ErrorTalerOperation";
 import { LogoHeader } from "../components/LogoHeader";
 import { Part } from "../components/Part";
 import { QR } from "../components/QR";
@@ -107,7 +109,9 @@ export function PayPage({ talerPayUri }: Props): VNode {
   const [payResult, setPayResult] = useState<ConfirmPayResult | undefined>(
     undefined,
   );
-  const [payErrMsg, setPayErrMsg] = useState<string | undefined>(undefined);
+  const [payErrMsg, setPayErrMsg] = useState<
+    OperationFailedError | string | undefined
+  >(undefined);
 
   const balance = useAsyncAsHook(wxApi.getBalance);
   const balanceWithoutError = balance?.hasError
@@ -131,6 +135,9 @@ export function PayPage({ talerPayUri }: Props): VNode {
         const p = await wxApi.preparePay(talerPayUri);
         setPayStatus(p);
       } catch (e) {
+        if (e instanceof OperationFailedError) {
+          setPayErrMsg(e);
+        }
         if (e instanceof Error) {
           setPayErrMsg(e.message);
         }
@@ -144,6 +151,20 @@ export function PayPage({ talerPayUri }: Props): VNode {
   }
 
   if (!payStatus) {
+    if (payErrMsg instanceof OperationFailedError) {
+      return (
+        <WalletAction>
+          <LogoHeader />
+          <h2>{i18n.str`Digital cash payment`}</h2>
+          <section>
+            <ErrorTalerOperation
+              title="Could not get the payment information for this order"
+              error={payErrMsg?.operationError}
+            />
+          </section>
+        </WalletAction>
+      );
+    }
     if (payErrMsg) {
       return (
         <WalletAction>
@@ -177,7 +198,6 @@ export function PayPage({ talerPayUri }: Props): VNode {
       payStatus={payStatus}
       payResult={payResult}
       onClick={onClick}
-      payErrMsg={payErrMsg}
       balance={foundAmount}
     />
   );
@@ -196,7 +216,6 @@ export function PaymentRequestView({
   payStatus,
   payResult,
   onClick,
-  payErrMsg,
   balance,
 }: PaymentRequestViewProps): VNode {
   let totalFees: AmountJson = Amounts.getZero(payStatus.amountRaw);
@@ -218,12 +237,12 @@ export function PaymentRequestView({
     totalFees = Amounts.sub(amountEffective, amountRaw).amount;
   }
 
-  let merchantName: VNode;
-  if (contractTerms.merchant && contractTerms.merchant.name) {
-    merchantName = <strong>{contractTerms.merchant.name}</strong>;
-  } else {
-    merchantName = <strong>(pub: {contractTerms.merchant_pub})</strong>;
-  }
+  // let merchantName: VNode;
+  // if (contractTerms.merchant && contractTerms.merchant.name) {
+  //   merchantName = <strong>{contractTerms.merchant.name}</strong>;
+  // } else {
+  // merchantName = <strong>(pub: {contractTerms.merchant_pub})</strong>;
+  // }
 
   function Alternative(): VNode {
     const [showQR, setShowQR] = useState<boolean>(false);
@@ -258,18 +277,6 @@ export function PaymentRequestView({
         );
       }
       return <Fragment />;
-    }
-    if (payErrMsg) {
-      return (
-        <section>
-          <div>
-            <p>Payment failed: {payErrMsg}</p>
-            <button class="pure-button button-success" onClick={onClick}>
-              {i18n.str`Retry`}
-            </button>
-          </div>
-        </section>
-      );
     }
     if (payStatus.status === PreparePayResultType.PaymentPossible) {
       return (

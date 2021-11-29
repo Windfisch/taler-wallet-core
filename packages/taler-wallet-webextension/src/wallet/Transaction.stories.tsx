@@ -121,7 +121,7 @@ const transactionError = {
   code: 2000,
   details: "details",
   hint: "this is a hint for the error",
-  message: "message",
+  message: "this is the error message with get from the app",
 };
 
 export const Withdraw = createExample(TestedComponent, {

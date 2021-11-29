@@ -29,7 +29,7 @@ import { route } from "preact-router";
 import { useState } from "preact/hooks";
 import emptyImg from "../../static/img/empty.png";
 import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType";
-import { ErrorMessage } from "../components/ErrorMessage";
+import { ErrorTalerOperation } from "../components/ErrorTalerOperation";
 import { Part } from "../components/Part";
 import {
   Button,
@@ -128,7 +128,10 @@ export function TransactionView({
     return (
       <Fragment>
         <section style={{ padding: 8, textAlign: "center" }}>
-          <ErrorMessage title={transaction?.error?.hint} />
+          <ErrorTalerOperation
+            title="There was an error trying to complete the transaction"
+            error={transaction?.error}
+          />
           {transaction.pending && (
             <WarningBox>This transaction is not completed</WarningBox>
           )}
