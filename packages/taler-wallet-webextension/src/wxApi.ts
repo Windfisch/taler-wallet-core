@@ -33,6 +33,7 @@ import {
 } from "@gnu-taler/taler-util";
 import {
   AddBackupProviderRequest, BackupInfo, OperationFailedError,
+  PendingOperationsResponse,
   RemoveBackupProviderRequest
 } from "@gnu-taler/taler-wallet-core";
 import { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core/src/operations/withdraw";
@@ -336,6 +337,10 @@ export function getExchangeTos(
     exchangeBaseUrl,
     acceptedFormat,
   });
+}
+
+export function getPendingOperations(): Promise<PendingOperationsResponse> {
+  return callBackend("getPendingOperations", {});
 }
 
 export function addExchange(req: AddExchangeRequest): Promise<void> {

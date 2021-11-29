@@ -32,7 +32,7 @@ import { strings } from "./i18n/strings";
 import { Pages, WalletNavBar } from "./NavigationBar";
 import { BackupPage } from "./wallet/BackupPage";
 import { BalancePage } from "./popup/BalancePage";
-import { DeveloperPage } from "./popup/Debug";
+import { DeveloperPage } from "./popup/DeveloperPage";
 import { HistoryPage } from "./popup/History";
 import { ProviderAddPage } from "./wallet/ProviderAddPage";
 import { ProviderDetailPage } from "./wallet/ProviderDetailPage";

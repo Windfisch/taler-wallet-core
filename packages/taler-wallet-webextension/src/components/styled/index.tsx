@@ -304,6 +304,18 @@ export const Overlay = styled.div`
   cursor: pointer;
 `;
 
+export const NotifyUpdateFadeOut = styled.div`
+  border: 2px solid red;
+  transition: all 0.4s ease-out;
+  animation: fadeout 1s forwards;
+  animation-delay: 0.1s;
+  @keyframes fadeout {
+    to {
+      border-color: #f5f5f5;
+    }
+  }
+`;
+
 export const CenteredDialog = styled.div`
   position: absolute;
   text-align: left;

@@ -39,7 +39,7 @@ import { SettingsPage } from "./wallet/Settings";
 import { TransactionPage } from "./wallet/Transaction";
 import { WelcomePage } from "./wallet/Welcome";
 import { BackupPage } from "./wallet/BackupPage";
-import { DeveloperPage } from "./popup/Debug";
+import { DeveloperPage } from "./popup/DeveloperPage";
 import { ManualWithdrawPage } from "./wallet/ManualWithdrawPage";
 import { WalletBox } from "./components/styled";
 import { ProviderDetailPage } from "./wallet/ProviderDetailPage";
