@@ -22,6 +22,7 @@
 import { classifyTalerUri, TalerUriType } from "@gnu-taler/taler-util";
 import { Fragment, h } from "preact";
 import { ButtonPrimary, ButtonSuccess } from "../components/styled/index";
+import { actionForTalerUri } from "../utils/index";
 
 export interface Props {
   url: string;
@@ -107,51 +108,4 @@ export function TalerActionFound({ url, onDismiss }: Props) {
       </footer>
     </Fragment>
   );
-}
-
-function actionForTalerUri(
-  uriType: TalerUriType,
-  talerUri: string,
-): string | undefined {
-  switch (uriType) {
-    case TalerUriType.TalerWithdraw:
-      return makeExtensionUrlWithParams("static/wallet.html#/withdraw", {
-        talerWithdrawUri: talerUri,
-      });
-    case TalerUriType.TalerPay:
-      return makeExtensionUrlWithParams("static/wallet.html#/pay", {
-        talerPayUri: talerUri,
-      });
-    case TalerUriType.TalerTip:
-      return makeExtensionUrlWithParams("static/wallet.html#/tip", {
-        talerTipUri: talerUri,
-      });
-    case TalerUriType.TalerRefund:
-      return makeExtensionUrlWithParams("static/wallet.html#/refund", {
-        talerRefundUri: talerUri,
-      });
-    case TalerUriType.TalerNotifyReserve:
-      // FIXME: implement
-      break;
-    default:
-      console.warn(
-        "Response with HTTP 402 has Taler header, but header value is not a taler:// URI.",
-      );
-      break;
-  }
-  return undefined;
-}
-
-function makeExtensionUrlWithParams(
-  url: string,
-  params?: { [name: string]: string | undefined },
-): string {
-  const innerUrl = new URL(chrome.extension.getURL("/" + url));
-  if (params) {
-    const hParams = Object.keys(params)
-      .map((k) => `${k}=${params[k]}`)
-      .join("&");
-    innerUrl.hash = innerUrl.hash + "?" + hParams;
-  }
-  return innerUrl.href;
 }

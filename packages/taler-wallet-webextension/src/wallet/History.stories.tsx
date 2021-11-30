@@ -127,6 +127,11 @@ export const Empty = createExample(TestedComponent, {
   ],
 });
 
+export const EmptyWithNoBalance = createExample(TestedComponent, {
+  list: [],
+  balances: [],
+});
+
 export const One = createExample(TestedComponent, {
   list: [exampleData.withdraw],
   balances: [

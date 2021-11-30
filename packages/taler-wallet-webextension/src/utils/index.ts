@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountJson, Amounts, GetExchangeTosResult } from "@gnu-taler/taler-util";
+import { AmountJson, Amounts, GetExchangeTosResult, TalerUriType } from "@gnu-taler/taler-util";
 
 
 function getJsonIfOk(r: Response): Promise<any> {
@@ -163,4 +163,53 @@ export function amountToString(text: AmountJson): string {
   const amount = Amounts.stringifyValue(aj);
   return `${amount} ${aj.currency}`;
 }
+
+export function actionForTalerUri(
+  uriType: TalerUriType,
+  talerUri: string,
+): string | undefined {
+  switch (uriType) {
+    case TalerUriType.TalerWithdraw:
+      return makeExtensionUrlWithParams("static/wallet.html#/withdraw", {
+        talerWithdrawUri: talerUri,
+      });
+    case TalerUriType.TalerPay:
+      return makeExtensionUrlWithParams("static/wallet.html#/pay", {
+        talerPayUri: talerUri,
+      });
+    case TalerUriType.TalerTip:
+      return makeExtensionUrlWithParams("static/wallet.html#/tip", {
+        talerTipUri: talerUri,
+      });
+    case TalerUriType.TalerRefund:
+      return makeExtensionUrlWithParams("static/wallet.html#/refund", {
+        talerRefundUri: talerUri,
+      });
+    case TalerUriType.TalerNotifyReserve:
+      // FIXME: implement
+      break;
+    default:
+      console.warn(
+        "Response with HTTP 402 has Taler header, but header value is not a taler:// URI.",
+      );
+      break;
+  }
+  return undefined;
+}
+
+function makeExtensionUrlWithParams(
+  url: string,
+  params?: { [name: string]: string | undefined },
+): string {
+  // eslint-disable-next-line no-undef
+  const innerUrl = new URL(chrome.extension.getURL("/" + url));
+  if (params) {
+    const hParams = Object.keys(params)
+      .map((k) => `${k}=${params[k]}`)
+      .join("&");
+    innerUrl.hash = innerUrl.hash + "?" + hParams;
+  }
+  return innerUrl.href;
+}
+
 

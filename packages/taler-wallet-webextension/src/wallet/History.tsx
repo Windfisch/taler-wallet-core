@@ -21,10 +21,12 @@ import {
   Transaction,
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
-import { DateSeparator } from "../components/styled";
+import { useState } from "preact/hooks";
+import { ButtonPrimary, DateSeparator } from "../components/styled";
 import { Time } from "../components/Time";
 import { TransactionItem } from "../components/TransactionItem";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
+import { AddNewActionView } from "../popup/AddNewActionView";
 import * as wxApi from "../wxApi";
 
 export function HistoryPage(): VNode {
@@ -37,6 +39,12 @@ export function HistoryPage(): VNode {
     NotificationType.WithdrawGroupFinished,
   ]);
 
+  const [addingAction, setAddingAction] = useState(false);
+
+  if (addingAction) {
+    return <AddNewActionView onCancel={() => setAddingAction(false)} />;
+  }
+
   if (!transactionQuery) {
     return <div>Loading ...</div>;
   }
@@ -48,6 +56,7 @@ export function HistoryPage(): VNode {
     <HistoryView
       balances={balanceWithoutError}
       list={[...transactionQuery.response.transactions].reverse()}
+      onAddNewAction={() => setAddingAction(true)}
     />
   );
 }
@@ -65,9 +74,11 @@ function normalizeToDay(x: number): number {
 export function HistoryView({
   list,
   balances,
+  onAddNewAction,
 }: {
   list: Transaction[];
   balances: Balance[];
+  onAddNewAction: () => void;
 }): VNode {
   const byDate = list.reduce((rv, x) => {
     const theDate =
@@ -83,25 +94,34 @@ export function HistoryView({
 
   return (
     <Fragment>
-      {balances.length > 0 && (
-        <header>
-          {balances.length === 1 && (
-            <div class="title">
-              Balance: <span>{amountToString(balances[0].available)}</span>
-            </div>
-          )}
-          {balances.length > 1 && (
-            <div class="title">
-              Balance:{" "}
-              <ul style={{ margin: 0 }}>
-                {balances.map((b, i) => (
-                  <li key={i}>{b.available}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </header>
-      )}
+      <header>
+        {balances.length > 0 ? (
+          <Fragment>
+            {balances.length === 1 && (
+              <div class="title">
+                Balance: <span>{amountToString(balances[0].available)}</span>
+              </div>
+            )}
+            {balances.length > 1 && (
+              <div class="title">
+                Balance:{" "}
+                <ul style={{ margin: 0 }}>
+                  {balances.map((b, i) => (
+                    <li key={i}>{b.available}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </Fragment>
+        ) : (
+          <div />
+        )}
+        <div>
+          <ButtonPrimary onClick={onAddNewAction}>
+            <b>+</b>
+          </ButtonPrimary>
+        </div>
+      </header>
       <section>
         {Object.keys(byDate).map((d, i) => {
           return (
