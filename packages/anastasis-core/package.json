@@ -1,6 +1,6 @@
 {
-  "name": "anastasis-core",
-  "version": "0.0.1",
+  "name": "@gnu-taler/anastasis-core",
+  "version": "0.0.2",
   "description": "",
   "main": "./lib/index.js",
   "module": "./lib/index.js",

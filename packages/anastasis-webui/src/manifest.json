@@ -1,6 +1,6 @@
 {
-  "name": "anastasis-webui",
-  "short_name": "anastasis-webui",
+  "name": "GNU Anastasis (git)",
+  "short_name": "Password-less key recovery",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

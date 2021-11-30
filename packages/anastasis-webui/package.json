@@ -1,7 +1,7 @@
 {
   "private": true,
-  "name": "anastasis-webui",
-  "version": "0.0.0",
+  "name": "@gnu-taler/anastasis-webui",
+  "version": "0.0.2",
   "license": "MIT",
   "scripts": {
     "build": "preact build --no-sw --no-esm --no-inline-css",
