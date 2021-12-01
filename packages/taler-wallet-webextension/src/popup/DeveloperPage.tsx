@@ -46,7 +46,10 @@ export function DeveloperPage(): VNode {
   return <View status={status} 
     timedOut={timedOut} 
     operations={operations} 
-    onDownloadDatabase={async () => "content"}
+    onDownloadDatabase={async () => {
+      const db = await wxApi.exportDB()
+      return JSON.stringify(db)
+    }}
   />;
 }
 
@@ -81,7 +84,7 @@ export function View({ status, timedOut, operations, onDownloadDatabase }: Props
       <br />
       <button onClick={onExportDatabase}>export database</button>
       {downloadedDatabase && <div>
-        Database exported at <Time timestamp={{t_ms: downloadedDatabase.time.getTime()}} format="yyyy/MM/dd HH:mm:ss" /> <a href={`data:text/plain;charset=utf-8;base64,${Buffer.from(downloadedDatabase.content).toString('base64')}`} download={`taler-wallet-database-${format(downloadedDatabase.time, 'yyyy/MM/dd_HH:mm')}.json`}>click here</a> to download
+        Database exported at <Time timestamp={{t_ms: downloadedDatabase.time.getTime()}} format="yyyy/MM/dd HH:mm:ss" /> <a href={`data:text/plain;charset=utf-8;base64,${btoa(downloadedDatabase.content)}`} download={`taler-wallet-database-${format(downloadedDatabase.time, 'yyyy/MM/dd_HH:mm')}.json`}>click here</a> to download
         </div>}
       <br />
       <Diagnostics diagnostics={status} timedOut={timedOut} />

@@ -355,6 +355,10 @@ export function acceptTip(req: AcceptTipRequest): Promise<void> {
   return callBackend("acceptTip", req);
 }
 
+export function exportDB(): Promise<any> {
+  return callBackend("exportDb", {});
+}
+
 export function onUpdateNotification(messageTypes: Array<NotificationType>, doCallback: () => void): () => void {
   // eslint-disable-next-line no-undef
   const port = chrome.runtime.connect({ name: "notifications" });
