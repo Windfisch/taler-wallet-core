@@ -32,6 +32,7 @@ export default {
 };
 
 export const AllOff = createExample(TestedComponent, {
+  onDownloadDatabase: async () => "this is the content of the database", 
   operations: [
     {
       type: PendingTaskType.ExchangeUpdate,

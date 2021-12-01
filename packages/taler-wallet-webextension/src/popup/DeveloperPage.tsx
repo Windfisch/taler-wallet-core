@@ -16,15 +16,19 @@
 
 import { NotificationType } from "@gnu-taler/taler-util";
 import { PendingTaskInfo } from "@gnu-taler/taler-wallet-core";
+import { format } from "date-fns";
 import { Fragment, h, VNode } from "preact";
+import { useState } from "preact/hooks";
 import { Diagnostics } from "../components/Diagnostics";
 import { NotifyUpdateFadeOut } from "../components/styled/index";
+import { Time } from "../components/Time";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { useDiagnostics } from "../hooks/useDiagnostics";
 import * as wxApi from "../wxApi";
 
 export function DeveloperPage(): VNode {
   const [status, timedOut] = useDiagnostics();
+
   const listenAllEvents = Array.from<NotificationType>({ length: 1 });
   listenAllEvents.includes = () => true; // includes every event
   const operationsResponse = useAsyncAsHook(
@@ -39,19 +43,33 @@ export function DeveloperPage(): VNode {
       ? []
       : operationsResponse.response.pendingOperations;
 
-  return <View status={status} timedOut={timedOut} operations={operations} />;
+  return <View status={status} 
+    timedOut={timedOut} 
+    operations={operations} 
+    onDownloadDatabase={async () => "content"}
+  />;
 }
+
 export interface Props {
   status: any;
   timedOut: boolean;
   operations: PendingTaskInfo[];
+  onDownloadDatabase: () => Promise<string>;
 }
 
 function hashObjectId(o: any): string {
   return JSON.stringify(o);
 }
 
-export function View({ status, timedOut, operations }: Props): VNode {
+export function View({ status, timedOut, operations, onDownloadDatabase }: Props): VNode {
+  const [downloadedDatabase, setDownloadedDatabase] = useState<{time: Date; content: string}|undefined>(undefined)
+  async function onExportDatabase(): Promise<void> {
+    const content = await onDownloadDatabase()
+    setDownloadedDatabase({
+      time: new Date(),
+      content
+    })
+  }
   return (
     <div>
       <p>Debug tools:</p>
@@ -60,6 +78,11 @@ export function View({ status, timedOut, operations }: Props): VNode {
       </button>
 
       <button onClick={confirmReset}>reset</button>
+      <br />
+      <button onClick={onExportDatabase}>export database</button>
+      {downloadedDatabase && <div>
+        Database exported at <Time timestamp={{t_ms: downloadedDatabase.time.getTime()}} format="yyyy/MM/dd HH:mm:ss" /> <a href={`data:text/plain;charset=utf-8;base64,${Buffer.from(downloadedDatabase.content).toString('base64')}`} download={`taler-wallet-database-${format(downloadedDatabase.time, 'yyyy/MM/dd_HH:mm')}.json`}>click here</a> to download
+        </div>}
       <br />
       <Diagnostics diagnostics={status} timedOut={timedOut} />
       {operations && operations.length > 0 && (
