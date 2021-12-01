@@ -71,22 +71,23 @@ function writeNodeLog(
   args: any[],
 ): void {
   try {
-    process.stderr.write(`${new Date().toISOString()} ${tag} ${level} `);
-    process.stderr.write(`${message}`);
+    let msg = `${new Date().toISOString()} ${tag} ${level} ${message}`;
     if (args.length != 0) {
-      process.stderr.write(" ");
-      process.stderr.write(JSON.stringify(args, undefined, 2));
+      msg += ` ${JSON.stringify(args, undefined, 2)}\n`;
+    } else {
+      msg += `\n`;
     }
-    process.stderr.write("\n");
+    process.stderr.write(msg);
   } catch (e) {
     // This can happen when we're trying to log something that doesn't want to be
     // converted to a string.
-    process.stderr.write(`${new Date().toISOString()} (logger) FATAL `);
+    let msg = `${new Date().toISOString()} (logger) FATAL `;
     if (e instanceof Error) {
-      process.stderr.write("failed to write log: ");
-      process.stderr.write(e.message);
+      msg += `failed to write log: ${e.message}\n`;
+    } else {
+      msg += "failed to write log\n";
     }
-    process.stderr.write("\n");
+    process.stderr.write(msg);
   }
 }
 
