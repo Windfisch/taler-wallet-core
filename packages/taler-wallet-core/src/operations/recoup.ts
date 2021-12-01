@@ -118,8 +118,8 @@ async function putGroupAsFinished(
         recoupGroup.scheduleRefreshCoins.map((x) => ({ coinPub: x })),
         RefreshReason.Recoup,
       );
-      processRefreshGroup(ws, refreshGroupId.refreshGroupId).then((e) => {
-        console.error("error while refreshing after recoup", e);
+      processRefreshGroup(ws, refreshGroupId.refreshGroupId).catch((e) => {
+        logger.error(`error while refreshing after recoup ${e}`);
       });
     }
   }
