@@ -151,7 +151,7 @@ export class Amounts {
     }
     let fraction = first.fraction % amountFractionalBase;
     for (const x of rest) {
-      if (x.currency !== currency) {
+      if (x.currency.toUpperCase() !== currency.toUpperCase()) {
         throw Error(`Mismatched currency: ${x.currency} and ${currency}`);
       }
 
@@ -187,7 +187,7 @@ export class Amounts {
     let fraction = a.fraction;
 
     for (const b of rest) {
-      if (b.currency !== currency) {
+      if (b.currency.toUpperCase() !== a.currency.toUpperCase()) {
         throw Error(`Mismatched currency: ${b.currency} and ${currency}`);
       }
       if (fraction < b.fraction) {
@@ -299,7 +299,7 @@ export class Amounts {
       return undefined;
     }
     return {
-      currency: res[1],
+      currency: res[1].toUpperCase(),
       fraction: Math.round(amountFractionalBase * Number.parseFloat(tail)),
       value,
     };
@@ -403,9 +403,15 @@ export class Amounts {
    */
   static stringify(a: AmountLike): string {
     a = Amounts.jsonifyAmount(a);
-    const s = this.stringifyValue(a)
+    const s = this.stringifyValue(a);
 
     return `${a.currency}:${s}`;
+  }
+
+  static isSameCurrency(a1: AmountLike, a2: AmountLike): boolean {
+    const x1 = this.jsonifyAmount(a1);
+    const x2 = this.jsonifyAmount(a2);
+    return x1.currency.toUpperCase() === x2.currency.toUpperCase();
   }
 
   static stringifyValue(a: AmountJson, minFractional: number = 0): string {
@@ -424,6 +430,6 @@ export class Amounts {
         n = (n * 10) % amountFractionalBase;
       }
     }
-    return s
+    return s;
   }
 }
