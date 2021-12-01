@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@gnu-taler/taler-util": "workspace:*",
-    "anastasis-core": "workspace:^0.0.1",
+    "@gnu-taler/anastasis-core": "workspace:*",
     "base64-inline-loader": "1.1.1",
     "date-fns": "2.25.0",
     "jed": "1.1.1",

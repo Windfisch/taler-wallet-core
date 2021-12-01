@@ -52,6 +52,7 @@ importers:
   packages/anastasis-webui:
     specifiers:
       '@creativebulma/bulma-tooltip': ^1.2.0
+      '@gnu-taler/anastasis-core': workspace:*
       '@gnu-taler/taler-util': workspace:*
       '@storybook/addon-a11y': ^6.3.12
       '@storybook/addon-actions': ^6.3.12
@@ -63,7 +64,6 @@ importers:
       '@types/jest': ^27.0.2
       '@typescript-eslint/eslint-plugin': ^5.3.0
       '@typescript-eslint/parser': ^5.3.0
-      anastasis-core: workspace:^0.0.1
       base64-inline-loader: 1.1.1
       bulma: ^0.9.3
       bulma-checkbox: ^1.1.1
@@ -87,8 +87,8 @@ importers:
       sirv-cli: ^1.0.14
       typescript: ^4.4.4
     dependencies:
+      '@gnu-taler/anastasis-core': link:../anastasis-core
       '@gnu-taler/taler-util': link:../taler-util
-      anastasis-core: link:../anastasis-core
       base64-inline-loader: 1.1.1
       date-fns: 2.25.0
       jed: 1.1.1
