@@ -219,7 +219,7 @@ export function selectWithdrawalDenominations(
   for (const d of denoms) {
     let count = 0;
     const cost = Amounts.add(d.value, d.feeWithdraw).amount;
-    for (; ;) {
+    for (;;) {
       if (Amounts.cmp(remaining, cost) < 0) {
         break;
       }
@@ -773,7 +773,8 @@ export async function updateWithdrawalDenoms(
         denom.verificationStatus === DenominationVerificationStatus.Unverified
       ) {
         logger.trace(
-          `Validating denomination (${current + 1}/${denominations.length
+          `Validating denomination (${current + 1}/${
+            denominations.length
           }) signature of ${denom.denomPubHash}`,
         );
         const valid = await ws.cryptoApi.isValidDenom(
@@ -1023,7 +1024,7 @@ export async function getExchangeWithdrawalInfo(
     ) {
       console.warn(
         `wallet's support for exchange protocol version ${WALLET_EXCHANGE_PROTOCOL_VERSION} might be outdated ` +
-        `(exchange has ${exchangeDetails.protocolVersion}), checking for updates`,
+          `(exchange has ${exchangeDetails.protocolVersion}), checking for updates`,
       );
     }
   }

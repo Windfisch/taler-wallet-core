@@ -162,8 +162,10 @@ export async function getTotalPaymentCost(
           );
         }
         const allDenoms = await tx.denominations.indexes.byExchangeBaseUrl
-          .iter()
-          .toArray();
+          .iter(coin.exchangeBaseUrl)
+          .filter((x) =>
+            Amounts.isSameCurrency(x.value, pcs.coinContributions[i]),
+          );
         const amountLeft = Amounts.sub(denom.value, pcs.coinContributions[i])
           .amount;
         const refreshCost = getTotalRefreshCost(allDenoms, denom, amountLeft);
