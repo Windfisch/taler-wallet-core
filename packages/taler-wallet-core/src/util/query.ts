@@ -488,9 +488,12 @@ function makeReadContext(
           return new ResultStream<any>(req);
         },
         getAll(query, count) {
-          const req = tx.objectStore(storeName).index(indexName).getAll(query, count);
+          const req = tx
+            .objectStore(storeName)
+            .index(indexName)
+            .getAll(query, count);
           return requestToPromise(req);
-        }
+        },
       };
     }
     ctx[storeAlias] = {
@@ -534,9 +537,12 @@ function makeWriteContext(
           return new ResultStream<any>(req);
         },
         getAll(query, count) {
-          const req = tx.objectStore(storeName).index(indexName).getAll(query, count);
+          const req = tx
+            .objectStore(storeName)
+            .index(indexName)
+            .getAll(query, count);
           return requestToPromise(req);
-        }
+        },
       };
     }
     ctx[storeAlias] = {
@@ -573,6 +579,10 @@ function makeWriteContext(
  */
 export class DbAccess<StoreMap> {
   constructor(private db: IDBDatabase, private stores: StoreMap) {}
+
+  idbHandle(): IDBDatabase {
+    return this.db;
+  }
 
   mktx<
     PickerType extends (x: StoreMap) => unknown,

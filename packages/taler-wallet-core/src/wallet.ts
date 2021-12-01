@@ -123,6 +123,7 @@ import {
 import {
   AuditorTrustRecord,
   CoinSourceType,
+  exportDb,
   ReserveRecordStatus,
   WalletStoresV1,
 } from "./db.js";
@@ -183,6 +184,7 @@ import {
   readSuccessResponseJsonOrThrow,
 } from "./util/http.js";
 import { getMerchantInfo } from "./operations/merchants.js";
+import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
 
 const builtinAuditors: AuditorTrustRecord[] = [
   {
@@ -953,6 +955,10 @@ async function dispatchRequestInternal(
       logger.info(`started fakebank withdrawal: ${j2s(fbResp)}`);
       return {};
     }
+    case "exportDb": {
+      const dbDump = await exportDb(ws.db.idbHandle());
+      return dbDump;
+    }
   }
   throw OperationFailedError.fromCode(
     TalerErrorCode.WALLET_CORE_API_OPERATION_UNKNOWN,
@@ -997,7 +1003,7 @@ export async function handleCoreApiRequest(
       try {
         logger.error("Caught unexpected exception:");
         logger.error(e.stack);
-      } catch (e) { }
+      } catch (e) {}
       return {
         type: "error",
         operation,

@@ -115,6 +115,7 @@ export enum WalletApiOperation {
   SetWalletDeviceId = "setWalletDeviceId",
   ExportBackupPlain = "exportBackupPlain",
   WithdrawFakebank = "withdrawFakebank",
+  ExportDb = "exportDb",
 }
 
 export type WalletOperations = {
@@ -269,6 +270,10 @@ export type WalletOperations = {
   [WalletApiOperation.TestPay]: {
     request: TestPayArgs;
     response: {};
+  };
+  [WalletApiOperation.ExportDb]: {
+    request: {};
+    response: any;
   };
 };
 

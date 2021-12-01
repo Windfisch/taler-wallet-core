@@ -41,6 +41,7 @@ import {
 } from "@gnu-taler/taler-util";
 import { RetryInfo } from "./util/retries.js";
 import { PayCoinSelection } from "./util/coinSelection.js";
+import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
 
 /**
  * Name of the Taler database.  This is effectively the major
@@ -1773,3 +1774,33 @@ export const walletMetadataStore = {
     {},
   ),
 };
+
+export function exportDb(db: IDBDatabase): Promise<any> {
+  const dump = {
+    name: db.name,
+    stores: {} as { [s: string]: any },
+    version: db.version,
+  };
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(Array.from(db.objectStoreNames));
+    tx.addEventListener("complete", () => {
+      resolve(dump);
+    });
+    // tslint:disable-next-line:prefer-for-of
+    for (let i = 0; i < db.objectStoreNames.length; i++) {
+      const name = db.objectStoreNames[i];
+      const storeDump = {} as { [s: string]: any };
+      dump.stores[name] = storeDump;
+      tx.objectStore(name)
+        .openCursor()
+        .addEventListener("success", (e: Event) => {
+          const cursor = (e.target as any).result;
+          if (cursor) {
+            storeDump[cursor.key] = cursor.value;
+            cursor.continue();
+          }
+        });
+    }
+  });
+}
