@@ -14,15 +14,27 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { ComponentChildren, FunctionalComponent, h as render } from "preact";
+import { ComponentChildren, FunctionalComponent, h as render, VNode } from "preact";
 
 export function createExample<Props>(
   Component: FunctionalComponent<Props>,
   props: Partial<Props>,
-) {
-  const r = (args: any) => render(Component, args);
-  r.args = props;
-  return r;
+): ComponentChildren {
+  const Render = (args: any) => render(Component, args);
+  Render.args = props;
+  return Render;
+}
+
+export function createExampleWithCustomContext<Props, ContextProps>(
+  Component: FunctionalComponent<Props>,
+  props: Partial<Props>,
+  ContextProvider: FunctionalComponent<ContextProps>,
+  contextProps: Partial<ContextProps>,
+): ComponentChildren {
+  const Render = (args: any): VNode => render(Component, args);
+  const WithContext = (args: any): VNode => render(ContextProvider, { ...contextProps, children: [Render(args)] } as any);
+  WithContext.args = props
+  return WithContext
 }
 
 export function NullLink({ children }: { children?: ComponentChildren }) {

@@ -17,6 +17,7 @@ import { TalerErrorDetails } from "@gnu-taler/taler-util";
 import { VNode, h, Fragment } from "preact";
 import { useState } from "preact/hooks";
 import arrowDown from "../../static/img/chevron-down.svg";
+import { useDevContext } from "../context/devContext";
 import { ErrorBox } from "./styled";
 
 export function ErrorTalerOperation({
@@ -26,8 +27,8 @@ export function ErrorTalerOperation({
   title?: string;
   error?: TalerErrorDetails;
 }): VNode | null {
+  const { devMode } = useDevContext();
   const [showErrorDetail, setShowErrorDetail] = useState(false);
-  const [showExtraInfo, setShowExtraInfo] = useState(false);
   if (!title || !error) return null;
   return (
     <ErrorBox style={{ paddingTop: 0, paddingBottom: 0 }}>
@@ -47,11 +48,8 @@ export function ErrorTalerOperation({
         <Fragment>
           <div style={{ padding: 5, textAlign: "left" }}>
             <div>{error.message}</div>
-            <a href="#" onClick={() => setShowExtraInfo((v) => !v)}>
-              more
-            </a>
           </div>
-          {showExtraInfo && (
+          {devMode && (
             <div style={{ textAlign: "left", overflowX: "auto" }}>
               <pre>{JSON.stringify(error, undefined, 2)}</pre>
             </div>

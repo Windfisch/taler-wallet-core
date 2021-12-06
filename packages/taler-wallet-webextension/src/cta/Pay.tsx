@@ -33,6 +33,7 @@ import {
   ConfirmPayResultType,
   ContractTerms,
   i18n,
+  NotificationType,
   PreparePayResult,
   PreparePayResultType,
 } from "@gnu-taler/taler-util";
@@ -56,6 +57,7 @@ import * as wxApi from "../wxApi";
 
 interface Props {
   talerPayUri?: string;
+  goToWalletManualWithdraw: () => void;
 }
 
 // export function AlreadyPaid({ payStatus }: { payStatus: PreparePayResult }) {
@@ -102,7 +104,10 @@ const doPayment = async (
   return res;
 };
 
-export function PayPage({ talerPayUri }: Props): VNode {
+export function PayPage({
+  talerPayUri,
+  goToWalletManualWithdraw,
+}: Props): VNode {
   const [payStatus, setPayStatus] = useState<PreparePayResult | undefined>(
     undefined,
   );
@@ -113,7 +118,9 @@ export function PayPage({ talerPayUri }: Props): VNode {
     OperationFailedError | string | undefined
   >(undefined);
 
-  const balance = useAsyncAsHook(wxApi.getBalance);
+  const balance = useAsyncAsHook(wxApi.getBalance, [
+    NotificationType.CoinWithdrawn,
+  ]);
   const balanceWithoutError = balance?.hasError
     ? []
     : balance?.response.balances || [];
@@ -144,7 +151,7 @@ export function PayPage({ talerPayUri }: Props): VNode {
       }
     };
     doFetch();
-  }, [talerPayUri]);
+  }, [talerPayUri, foundAmount]);
 
   if (!talerPayUri) {
     return <span>missing pay uri</span>;
@@ -198,6 +205,7 @@ export function PayPage({ talerPayUri }: Props): VNode {
       payStatus={payStatus}
       payResult={payResult}
       onClick={onClick}
+      goToWalletManualWithdraw={goToWalletManualWithdraw}
       balance={foundAmount}
     />
   );
@@ -209,6 +217,7 @@ export interface PaymentRequestViewProps {
   onClick: () => void;
   payErrMsg?: string;
   uri: string;
+  goToWalletManualWithdraw: () => void;
   balance: AmountJson | undefined;
 }
 export function PaymentRequestView({
@@ -216,6 +225,7 @@ export function PaymentRequestView({
   payStatus,
   payResult,
   onClick,
+  goToWalletManualWithdraw,
   balance,
 }: PaymentRequestViewProps): VNode {
   let totalFees: AmountJson = Amounts.getZero(payStatus.amountRaw);
@@ -306,7 +316,7 @@ export function PaymentRequestView({
             )}
           </section>
           <section>
-            <ButtonSuccess upperCased>
+            <ButtonSuccess upperCased onClick={goToWalletManualWithdraw}>
               {i18n.str`Withdraw digital cash`}
             </ButtonSuccess>
           </section>

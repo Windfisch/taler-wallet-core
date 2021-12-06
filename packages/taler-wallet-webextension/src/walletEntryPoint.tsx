@@ -164,7 +164,13 @@ function Application(): VNode {
           />
 
           {/** call to action */}
-          <Route path={Pages.pay} component={PayPage} />
+          <Route
+            path={Pages.pay}
+            component={PayPage}
+            goToWalletManualWithdraw={() =>
+              goToWalletPage(Pages.manual_withdraw)
+            }
+          />
           <Route path={Pages.refund} component={RefundPage} />
           <Route path={Pages.tips} component={TipPage} />
           <Route path={Pages.withdraw} component={WithdrawPage} />
@@ -174,6 +180,16 @@ function Application(): VNode {
       </DevContextProvider>
     </div>
   );
+}
+
+function goToWalletPage(page: Pages | string): null {
+  // eslint-disable-next-line no-undef
+  chrome.tabs.create({
+    active: true,
+    // eslint-disable-next-line no-undef
+    url: chrome.extension.getURL(`/static/wallet.html#${page}`),
+  });
+  return null;
 }
 
 function Redirect({ to }: { to: string }): null {

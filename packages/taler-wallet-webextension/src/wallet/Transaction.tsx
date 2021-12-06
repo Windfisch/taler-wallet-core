@@ -24,6 +24,7 @@ import {
   TransactionType,
   WithdrawalType,
 } from "@gnu-taler/taler-util";
+import { differenceInSeconds } from "date-fns";
 import { ComponentChildren, Fragment, h, VNode } from "preact";
 import { route } from "preact-router";
 import { useState } from "preact/hooks";
@@ -110,6 +111,7 @@ export function TransactionView({
   onBack,
 }: WalletTransactionProps): VNode {
   const [confirmBeforeForget, setConfirmBeforeForget] = useState(false);
+
   function doCheckBeforeForget(): void {
     if (
       transaction.pending &&
@@ -120,11 +122,18 @@ export function TransactionView({
       onDelete();
     }
   }
+
   function TransactionTemplate({
     children,
   }: {
     children: ComponentChildren;
   }): VNode {
+    const showRetry =
+      transaction.error !== undefined ||
+      transaction.timestamp.t_ms === "never" ||
+      (transaction.pending &&
+        differenceInSeconds(new Date(), transaction.timestamp.t_ms) > 10);
+
     return (
       <Fragment>
         <section style={{ padding: 8, textAlign: "center" }}>
@@ -144,7 +153,7 @@ export function TransactionView({
             <i18n.Translate> &lt; Back </i18n.Translate>
           </Button>
           <div>
-            {transaction?.error ? (
+            {showRetry ? (
               <ButtonPrimary onClick={onRetry}>
                 <i18n.Translate>retry</i18n.Translate>
               </ButtonPrimary>

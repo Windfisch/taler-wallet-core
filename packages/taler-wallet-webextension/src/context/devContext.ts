@@ -20,7 +20,7 @@
  */
 
 import { createContext, h, VNode } from "preact";
-import { useContext, useState } from "preact/hooks";
+import { useContext } from "preact/hooks";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 
 interface Type {
@@ -33,6 +33,10 @@ const Context = createContext<Type>({
 });
 
 export const useDevContext = (): Type => useContext(Context);
+
+export const DevContextProviderForTesting = ({ value, children }: { value: boolean, children: any }): VNode => {
+  return h(Context.Provider, { value: { devMode: value, toggleDevMode: () => { null } }, children });
+};
 
 export const DevContextProvider = ({ children }: { children: any }): VNode => {
   const [value, setter] = useLocalStorage("devMode");

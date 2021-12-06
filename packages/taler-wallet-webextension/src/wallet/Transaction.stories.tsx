@@ -31,7 +31,12 @@ import {
   TransactionWithdrawal,
   WithdrawalType,
 } from "@gnu-taler/taler-util";
-import { createExample } from "../test-utils";
+import { ComponentChildren, h } from "preact";
+import { DevContextProviderForTesting } from "../context/devContext";
+import {
+  createExample,
+  createExampleWithCustomContext as createExampleInCustomContext,
+} from "../test-utils";
 import { TransactionView as TestedComponent } from "./Transaction";
 
 export default {
@@ -128,12 +133,43 @@ export const Withdraw = createExample(TestedComponent, {
   transaction: exampleData.withdraw,
 });
 
+export const WithdrawOneMinuteAgo = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.withdraw,
+    timestamp: {
+      t_ms: new Date().getTime() - 60 * 1000,
+    },
+  },
+});
+
+export const WithdrawOneMinuteAgoAndPending = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.withdraw,
+    timestamp: {
+      t_ms: new Date().getTime() - 60 * 1000,
+    },
+    pending: true,
+  },
+});
+
 export const WithdrawError = createExample(TestedComponent, {
   transaction: {
     ...exampleData.withdraw,
     error: transactionError,
   },
 });
+
+export const WithdrawErrorInDevMode = createExampleInCustomContext(
+  TestedComponent,
+  {
+    transaction: {
+      ...exampleData.withdraw,
+      error: transactionError,
+    },
+  },
+  DevContextProviderForTesting,
+  { value: true },
+);
 
 export const WithdrawPendingManual = createExample(TestedComponent, {
   transaction: {
