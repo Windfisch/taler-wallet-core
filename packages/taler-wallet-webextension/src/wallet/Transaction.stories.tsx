@@ -123,10 +123,17 @@ const exampleData = {
 };
 
 const transactionError = {
-  code: 2000,
-  details: "details",
-  hint: "this is a hint for the error",
-  message: "this is the error message with get from the app",
+  code: 7005,
+  details: {
+    requestUrl: "http://merchant-backend.taler:9966/orders/2021.340-02AD5XCC97MQM/pay",
+    httpStatusCode: 410,
+    errorResponse: {
+      code: 2161,
+      hint: "The payment is too late, the offer has expired."
+    }
+  },
+  hint: "Error: WALLET_UNEXPECTED_REQUEST_ERROR",
+  message: "Unexpected error code in response",
 };
 
 export const Withdraw = createExample(TestedComponent, {
