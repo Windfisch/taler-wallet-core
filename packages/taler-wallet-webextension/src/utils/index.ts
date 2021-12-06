@@ -43,14 +43,37 @@ export async function queryToSlashConfig<T>(
     .then(getJsonIfOk);
 }
 
+function timeout<T>(ms: number, promise: Promise<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`Timeout: the query took longer than ${Math.floor(ms / 1000)} secs`))
+    }, ms)
+
+    promise
+      .then(value => {
+        clearTimeout(timer)
+        resolve(value)
+      })
+      .catch(reason => {
+        clearTimeout(timer)
+        reject(reason)
+      })
+  })
+}
+
 export async function queryToSlashKeys<T>(
   url: string,
 ): Promise<T> {
-  return fetch(new URL("keys", url).href)
+  const endpoint = new URL("keys", url)
+  endpoint.searchParams.set("cacheBreaker", new Date().getTime() + "");
+
+  const query = fetch(endpoint.href)
     .catch(() => {
       throw new Error(`Network error`);
     })
     .then(getJsonIfOk);
+
+  return timeout(3000, query)
 }
 
 export function buildTermsOfServiceState(tos: GetExchangeTosResult): TermsState {

@@ -36,33 +36,39 @@ export default {
 export const ExpectedUSD = createExample(TestedComponent, {
   expectedCurrency: "USD",
   onVerify: queryToSlashKeys,
-  knownExchanges: [],
 });
 
 export const ExpectedKUDOS = createExample(TestedComponent, {
   expectedCurrency: "KUDOS",
   onVerify: queryToSlashKeys,
-  knownExchanges: [],
 });
 
 export const InitialState = createExample(TestedComponent, {
   onVerify: queryToSlashKeys,
-  knownExchanges: [],
 });
 
-export const WithDemoAsKnownExchange = createExample(TestedComponent, {
-  knownExchanges: [
-    {
-      currency: "TESTKUDOS",
-      exchangeBaseUrl: "https://exchange.demo.taler.net/",
-      tos: {
-        currentVersion: "1",
-        acceptedVersion: "1",
-        content: "content of tos",
-        contentType: "text/plain",
-      },
-      paytoUris: [],
+const knownExchanges = [
+  {
+    currency: "TESTKUDOS",
+    exchangeBaseUrl: "https://exchange.demo.taler.net/",
+    tos: {
+      currentVersion: "1",
+      acceptedVersion: "1",
+      content: "content of tos",
+      contentType: "text/plain",
     },
-  ],
-  onVerify: queryToSlashKeys,
+    paytoUris: [],
+  },
+];
+
+export const WithDemoAsKnownExchange = createExample(TestedComponent, {
+  onVerify: async (url) => {
+    const found =
+      knownExchanges.findIndex((e) => e.exchangeBaseUrl === url) !== -1;
+
+    if (found) {
+      throw Error("This exchange is already known");
+    }
+    return queryToSlashKeys(url);
+  },
 });

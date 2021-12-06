@@ -47,8 +47,15 @@ export function ExchangeAddPage({ onBack }: Props): VNode {
     return (
       <ExchangeSetUrlPage
         onCancel={onBack}
-        knownExchanges={knownExchanges}
-        onVerify={(url) => queryToSlashKeys(url)}
+        onVerify={async (url) => {
+          const found =
+            knownExchanges.findIndex((e) => e.exchangeBaseUrl === url) !== -1;
+
+          if (found) {
+            throw Error("This exchange is already known");
+          }
+          return queryToSlashKeys(url);
+        }}
         onConfirm={(url) =>
           queryToSlashKeys<TalerConfigResponse>(url)
             .then((config) => {
