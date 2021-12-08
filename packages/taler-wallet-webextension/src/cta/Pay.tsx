@@ -134,6 +134,8 @@ export function PayPage({
   const foundAmount = foundBalance
     ? Amounts.parseOrThrow(foundBalance.available)
     : undefined;
+  // We use a string here so that dependency tracking for useEffect works properly
+  const foundAmountStr = foundAmount ? Amounts.stringify(foundAmount) : undefined;
 
   useEffect(() => {
     if (!talerPayUri) return;
@@ -142,6 +144,7 @@ export function PayPage({
         const p = await wxApi.preparePay(talerPayUri);
         setPayStatus(p);
       } catch (e) {
+        console.log("Got error while trying to pay", e);
         if (e instanceof OperationFailedError) {
           setPayErrMsg(e);
         }
@@ -151,7 +154,7 @@ export function PayPage({
       }
     };
     doFetch();
-  }, [talerPayUri, foundAmount]);
+  }, [talerPayUri, foundAmountStr]);
 
   if (!talerPayUri) {
     return <span>missing pay uri</span>;
