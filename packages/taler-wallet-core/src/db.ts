@@ -539,6 +539,10 @@ export interface ExchangeRecord {
    */
   nextRefreshCheck: Timestamp;
 
+  /**
+   * Last error (if any) for fetching updated information about the
+   * exchange.
+   */
   lastError?: TalerErrorDetails;
 
   /**
