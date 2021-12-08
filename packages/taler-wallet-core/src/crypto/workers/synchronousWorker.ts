@@ -25,7 +25,7 @@ import { CryptoWorker } from "./cryptoWorkerInterface.js";
 import child_process from "child_process";
 import type internal from "stream";
 import { OpenedPromise, openPromise } from "../../index.js";
-import { FreshCoin, Logger } from "@gnu-taler/taler-util";
+import { Logger } from "@gnu-taler/taler-util";
 
 const logger = new Logger("synchronousWorker.ts");
 

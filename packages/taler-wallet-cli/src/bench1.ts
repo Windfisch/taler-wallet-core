@@ -105,6 +105,8 @@ export async function runBench1(configJson: any): Promise<void> {
       logger.info(`Finished deposit amount=10 time=${Date.now() - start}`);
     }
   }
+
+  wallet.stop();
 }
 
 /**

@@ -133,6 +133,8 @@ export interface InternalWalletState {
   timerGroup: TimerGroup;
   stopped: boolean;
 
+  insecureTrustExchange: boolean;
+
   /**
    * Asynchronous condition to interrupt the sleep of the
    * retry loop.

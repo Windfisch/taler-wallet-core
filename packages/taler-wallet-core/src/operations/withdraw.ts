@@ -777,10 +777,15 @@ export async function updateWithdrawalDenoms(
             denominations.length
           }) signature of ${denom.denomPubHash}`,
         );
-        const valid = await ws.cryptoApi.isValidDenom(
-          denom,
-          exchangeDetails.masterPublicKey,
-        );
+        let valid: boolean = false;
+        if (ws.insecureTrustExchange) {
+          valid = true;
+        } else {
+          valid = await ws.cryptoApi.isValidDenom(
+            denom,
+            exchangeDetails.masterPublicKey,
+          );
+        }
         logger.trace(`Done validating ${denom.denomPubHash}`);
         if (!valid) {
           logger.warn(

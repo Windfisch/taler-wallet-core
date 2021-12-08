@@ -218,19 +218,24 @@ export async function acceptExchangeTermsOfService(
 }
 
 async function validateWireInfo(
+  ws: InternalWalletState,
   versionCurrent: number,
   wireInfo: ExchangeWireJson,
   masterPublicKey: string,
-  cryptoApi: CryptoApi,
 ): Promise<WireInfo> {
   for (const a of wireInfo.accounts) {
     logger.trace("validating exchange acct");
-    const isValid = await cryptoApi.isValidWireAccount(
-      versionCurrent,
-      a.payto_uri,
-      a.master_sig,
-      masterPublicKey,
-    );
+    let isValid = false;
+    if (ws.insecureTrustExchange) {
+      isValid = true;
+    } else {
+      isValid = await ws.cryptoApi.isValidWireAccount(
+        versionCurrent,
+        a.payto_uri,
+        a.master_sig,
+        masterPublicKey,
+      );
+    }
     if (!isValid) {
       throw Error("exchange acct signature invalid");
     }
@@ -248,11 +253,16 @@ async function validateWireInfo(
         startStamp,
         wireFee: Amounts.parseOrThrow(x.wire_fee),
       };
-      const isValid = await cryptoApi.isValidWireFee(
-        wireMethod,
-        fee,
-        masterPublicKey,
-      );
+      let isValid = false;
+      if (ws.insecureTrustExchange) {
+        isValid = true;
+      } else {
+        isValid = await ws.cryptoApi.isValidWireFee(
+          wireMethod,
+          fee,
+          masterPublicKey,
+        );
+      }
       if (!isValid) {
         throw Error("exchange wire fee signature invalid");
       }
@@ -488,10 +498,10 @@ async function updateExchangeFromUrlImpl(
   }
 
   const wireInfo = await validateWireInfo(
+    ws,
     version.current,
     wireInfoDownload,
     keysInfo.masterPublicKey,
-    ws.cryptoApi,
   );
 
   logger.info("finished validating exchange /wire info");
@@ -516,11 +526,11 @@ async function updateExchangeFromUrlImpl(
     tosFound !== undefined
       ? tosFound
       : await downloadExchangeWithTermsOfService(
-        baseUrl,
-        ws.http,
-        timeout,
-        "text/plain",
-      );
+          baseUrl,
+          ws.http,
+          timeout,
+          "text/plain",
+        );
 
   let recoupGroupId: string | undefined = undefined;
 

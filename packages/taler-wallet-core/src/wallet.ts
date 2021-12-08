@@ -1037,6 +1037,14 @@ export class Wallet {
     return this._client;
   }
 
+  /**
+   * Trust the exchange, do not validate signatures.
+   * Only used to benchmark the exchange.
+   */
+  setInsecureTrustExchange() {
+    this.ws.insecureTrustExchange = true;
+  }
+
   static async create(
     db: DbAccess<typeof WalletStoresV1>,
     http: HttpRequestLibrary,
@@ -1088,6 +1096,8 @@ class InternalWalletStateImpl implements InternalWalletState {
   cryptoApi: CryptoApi;
 
   merchantInfoCache: Record<string, MerchantInfo> = {};
+
+  insecureTrustExchange: boolean = false;
 
   timerGroup: TimerGroup = new TimerGroup();
   latch = new AsyncCondition();
