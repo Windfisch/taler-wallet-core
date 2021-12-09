@@ -1658,11 +1658,6 @@ export async function confirmPay(
     throw Error("proposal is in invalid state");
   }
 
-  const merchantInfo = await ws.merchantOps.getMerchantInfo(
-    ws,
-    d.contractData.merchantBaseUrl,
-  );
-
   const existingPurchase = await ws.db
     .mktx((x) => ({ purchases: x.purchases }))
     .runReadWrite(async (tx) => {

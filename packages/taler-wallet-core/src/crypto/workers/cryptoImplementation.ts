@@ -270,7 +270,6 @@ export class CryptoImplementation {
     const coinPriv = decodeCrock(coin.coinPriv);
     const coinSig = eddsaSign(p, coinPriv);
     if (coin.denomPub.cipher === DenomKeyType.LegacyRsa) {
-      logger.info("creating legacy recoup request");
       const paybackRequest: RecoupRequest = {
         coin_blind_key_secret: coin.blindingKey,
         coin_pub: coin.coinPub,
@@ -281,7 +280,6 @@ export class CryptoImplementation {
       };
       return paybackRequest;
     } else {
-      logger.info("creating v10 recoup request");
       const paybackRequest: RecoupRequest = {
         coin_blind_key_secret: coin.blindingKey,
         coin_pub: coin.coinPub,
@@ -453,7 +451,6 @@ export class CryptoImplementation {
     const hExt = new Uint8Array(64);
     let d: Uint8Array;
     if (depositInfo.denomKeyType === DenomKeyType.Rsa) {
-      logger.warn("signing v10 deposit permission");
       d = buildSigPS(TalerSignaturePurpose.WALLET_COIN_DEPOSIT)
         .put(decodeCrock(depositInfo.contractTermsHash))
         .put(hExt)
@@ -466,7 +463,6 @@ export class CryptoImplementation {
         .put(decodeCrock(depositInfo.merchantPub))
         .build();
     } else if (depositInfo.denomKeyType === DenomKeyType.LegacyRsa) {
-      logger.warn("signing legacy deposit permission");
       d = buildSigPS(TalerSignaturePurpose.WALLET_COIN_DEPOSIT)
         .put(decodeCrock(depositInfo.contractTermsHash))
         .put(decodeCrock(depositInfo.wireInfoHash))

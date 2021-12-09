@@ -14,6 +14,8 @@
  permissions and limitations under the License.
 */
 
+import cloneDeep from "lodash/cloneDeep";
+
 const { toString: toStr } = {};
 const hasOwn = {}.hasOwnProperty;
 const getProto = Object.getPrototypeOf;
@@ -260,5 +262,5 @@ export function structuredRevive(val: any): any {
  * Structured clone for IndexedDB.
  */
 export function structuredClone(val: any): any {
-  return structuredRevive(structuredEncapsulate(val));
+  return cloneDeep(val);
 }
