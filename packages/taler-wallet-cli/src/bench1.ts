@@ -56,6 +56,13 @@ export async function runBench1(configJson: any): Promise<void> {
     `Starting Benchmark iterations=${numIter} deposits=${numDeposits}`,
   );
 
+  const trustExchange = !!process.env["TALER_WALLET_INSECURE_TRUST_EXCHANGE"];
+  if (trustExchange) {
+    logger.info("trusting exchange (not validating signatures)");
+  } else {
+    logger.info("not trusting exchange (validating signatures)");
+  }
+
   let wallet = {} as Wallet;
 
   for (let i = 0; i < numIter; i++) {
@@ -71,7 +78,9 @@ export async function runBench1(configJson: any): Promise<void> {
         persistentStoragePath: undefined,
         httpLib: myHttpLib,
       });
-      wallet.setInsecureTrustExchange();
+      if (trustExchange) {
+        wallet.setInsecureTrustExchange();
+      }
       await wallet.client.call(WalletApiOperation.InitWallet, {});
     }
 
