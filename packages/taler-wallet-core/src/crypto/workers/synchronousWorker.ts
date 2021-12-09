@@ -114,6 +114,16 @@ class MyPrimitiveWorker implements PrimitiveWorker {
       args: req,
     });
   }
+
+  async eddsaSign(req: {
+    msg: string;
+    priv: string;
+  }): Promise<{ sig: string }> {
+    return this.queueRequest({
+      op: "eddsa_sign",
+      args: req,
+    });
+  }
 }
 
 /**

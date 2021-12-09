@@ -38,7 +38,6 @@ import {
  * set up its own services.
  */
 export async function runBench1(configJson: any): Promise<void> {
-
   const logger = new Logger("Bench1");
 
   // Validate the configuration file for this benchmark.
@@ -53,26 +52,29 @@ export async function runBench1(configJson: any): Promise<void> {
 
   const withdrawAmount = (numDeposits + 1) * 10;
 
-  logger.info(`Starting Benchmark iterations=${numIter} deposits=${numDeposits}`);
+  logger.info(
+    `Starting Benchmark iterations=${numIter} deposits=${numDeposits}`,
+  );
 
   let wallet = {} as Wallet;
 
   for (let i = 0; i < numIter; i++) {
-    // Create a new wallet in each iteration 
-    // otherwise the TPS go down 
-    // my assumption is that the in-memory db file gets too large 
+    // Create a new wallet in each iteration
+    // otherwise the TPS go down
+    // my assumption is that the in-memory db file gets too large
     if (i % restartWallet == 0) {
       if (Object.keys(wallet).length !== 0) {
-	      wallet.stop();
+        wallet.stop();
       }
       wallet = await getDefaultNodeWallet({
         // No persistent DB storage.
         persistentStoragePath: undefined,
         httpLib: myHttpLib,
       });
+      wallet.setInsecureTrustExchange();
       await wallet.client.call(WalletApiOperation.InitWallet, {});
     }
-	
+
     logger.trace(`Starting withdrawal amount=${withdrawAmount}`);
     let start = Date.now();
 
@@ -86,12 +88,13 @@ export async function runBench1(configJson: any): Promise<void> {
       stopWhenDone: true,
     });
 
-    logger.info(`Finished withdrawal amount=${withdrawAmount} time=${Date.now() - start}`);
+    logger.info(
+      `Finished withdrawal amount=${withdrawAmount} time=${Date.now() - start}`,
+    );
 
     for (let i = 0; i < numDeposits; i++) {
-
       logger.trace(`Starting deposit amount=10`);
-      start = Date.now()
+      start = Date.now();
 
       await wallet.client.call(WalletApiOperation.CreateDepositGroup, {
         amount: b1conf.currency + ":10",

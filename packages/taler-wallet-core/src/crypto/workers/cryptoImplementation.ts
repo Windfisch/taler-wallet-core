@@ -142,6 +142,21 @@ export interface PrimitiveWorker {
     sig: string;
     pub: string;
   }): Promise<{ valid: boolean }>;
+
+  eddsaSign(req: { msg: string; priv: string }): Promise<{ sig: string }>;
+}
+
+async function myEddsaSign(
+  primitiveWorker: PrimitiveWorker | undefined,
+  req: { msg: string; priv: string },
+): Promise<{ sig: string }> {
+  if (primitiveWorker) {
+    return primitiveWorker.eddsaSign(req);
+  }
+  const sig = eddsaSign(decodeCrock(req.msg), decodeCrock(req.priv));
+  return {
+    sig: encodeCrock(sig),
+  };
 }
 
 export class CryptoImplementation {
@@ -153,13 +168,14 @@ export class CryptoImplementation {
    * Create a pre-coin of the given denomination to be withdrawn from then given
    * reserve.
    */
-  createPlanchet(req: PlanchetCreationRequest): PlanchetCreationResult {
+  async createPlanchet(
+    req: PlanchetCreationRequest,
+  ): Promise<PlanchetCreationResult> {
     if (
       req.denomPub.cipher === DenomKeyType.Rsa ||
       req.denomPub.cipher === DenomKeyType.LegacyRsa
     ) {
       const reservePub = decodeCrock(req.reservePub);
-      const reservePriv = decodeCrock(req.reservePriv);
       const denomPubRsa = decodeCrock(req.denomPub.rsa_public_key);
       const derivedPlanchet = setupWithdrawPlanchet(
         decodeCrock(req.secretSeed),
@@ -180,7 +196,10 @@ export class CryptoImplementation {
         .put(evHash)
         .build();
 
-      const sig = eddsaSign(withdrawRequest, reservePriv);
+      const sigResult = await myEddsaSign(this.primitiveWorker, {
+        msg: encodeCrock(withdrawRequest),
+        priv: req.reservePriv,
+      });
 
       const planchet: PlanchetCreationResult = {
         blindingKey: encodeCrock(derivedPlanchet.bks),
@@ -194,7 +213,7 @@ export class CryptoImplementation {
         },
         denomPubHash: encodeCrock(denomPubHash),
         reservePub: encodeCrock(reservePub),
-        withdrawSig: encodeCrock(sig),
+        withdrawSig: sigResult.sig,
         coinEvHash: encodeCrock(evHash),
       };
       return planchet;
@@ -427,7 +446,9 @@ export class CryptoImplementation {
    * Generate updated coins (to store in the database)
    * and deposit permissions for each given coin.
    */
-  signDepositPermission(depositInfo: DepositInfo): CoinDepositPermission {
+  async signDepositPermission(
+    depositInfo: DepositInfo,
+  ): Promise<CoinDepositPermission> {
     // FIXME: put extensions here if used
     const hExt = new Uint8Array(64);
     let d: Uint8Array;
@@ -460,12 +481,15 @@ export class CryptoImplementation {
     } else {
       throw Error("unsupported exchange protocol version");
     }
-    const coinSig = eddsaSign(d, decodeCrock(depositInfo.coinPriv));
+    const coinSigRes = await myEddsaSign(this.primitiveWorker, {
+      msg: encodeCrock(d),
+      priv: depositInfo.coinPriv,
+    });
 
     if (depositInfo.denomKeyType === DenomKeyType.Rsa) {
       const s: CoinDepositPermission = {
         coin_pub: depositInfo.coinPub,
-        coin_sig: encodeCrock(coinSig),
+        coin_sig: coinSigRes.sig,
         contribution: Amounts.stringify(depositInfo.spendAmount),
         h_denom: depositInfo.denomPubHash,
         exchange_url: depositInfo.exchangeBaseUrl,
@@ -478,7 +502,7 @@ export class CryptoImplementation {
     } else if (depositInfo.denomKeyType === DenomKeyType.LegacyRsa) {
       const s: CoinDepositPermission = {
         coin_pub: depositInfo.coinPub,
-        coin_sig: encodeCrock(coinSig),
+        coin_sig: coinSigRes.sig,
         contribution: Amounts.stringify(depositInfo.spendAmount),
         h_denom: depositInfo.denomPubHash,
         exchange_url: depositInfo.exchangeBaseUrl,
@@ -611,10 +635,13 @@ export class CryptoImplementation {
       .put(decodeCrock(meltCoinPub))
       .build();
 
-    const confirmSig = eddsaSign(confirmData, decodeCrock(meltCoinPriv));
+    const confirmSigResp = await myEddsaSign(this.primitiveWorker, {
+      msg: encodeCrock(confirmData),
+      priv: meltCoinPriv,
+    });
 
     const refreshSession: DerivedRefreshSession = {
-      confirmSig: encodeCrock(confirmSig),
+      confirmSig: confirmSigResp.sig,
       hash: encodeCrock(sessionHash),
       meltCoinPub: meltCoinPub,
       planchetsForGammas: planchetsForGammas,
@@ -641,22 +668,24 @@ export class CryptoImplementation {
     return encodeCrock(hash(decodeCrock(encodedBytes)));
   }
 
-  signCoinLink(
+  async signCoinLink(
     oldCoinPriv: string,
     newDenomHash: string,
     oldCoinPub: string,
     transferPub: string,
     coinEv: string,
-  ): string {
+  ): Promise<string> {
     const coinEvHash = hash(decodeCrock(coinEv));
     const coinLink = buildSigPS(TalerSignaturePurpose.WALLET_COIN_LINK)
       .put(decodeCrock(newDenomHash))
       .put(decodeCrock(transferPub))
       .put(coinEvHash)
       .build();
-    const coinPriv = decodeCrock(oldCoinPriv);
-    const sig = eddsaSign(coinLink, coinPriv);
-    return encodeCrock(sig);
+    const sig = await myEddsaSign(this.primitiveWorker, {
+      msg: encodeCrock(coinLink),
+      priv: oldCoinPriv,
+    });
+    return sig.sig;
   }
 
   benchmark(repetitions: number): BenchmarkResult {
