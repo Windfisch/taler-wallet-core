@@ -890,10 +890,7 @@ async function processWithdrawGroupImpl(
         const r = await tx.reserves.indexes.byInitialWithdrawalGroupId.get(
           withdrawalGroupId,
         );
-        if (r) {
-          return r.reservePub;
-        }
-        return undefined;
+        return r?.reservePub;
       });
     if (!reservePub) {
       logger.warn(
