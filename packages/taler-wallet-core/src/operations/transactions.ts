@@ -19,12 +19,25 @@
  */
 import {
   AmountJson,
-  Amounts, OrderShortInfo, PaymentStatus, timestampCmp, Transaction, TransactionsRequest,
-  TransactionsResponse, TransactionType, WithdrawalDetails, WithdrawalType
+  Amounts,
+  Logger,
+  OrderShortInfo,
+  PaymentStatus,
+  timestampCmp,
+  Transaction,
+  TransactionsRequest,
+  TransactionsResponse,
+  TransactionType,
+  WithdrawalDetails,
+  WithdrawalType,
 } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../common.js";
 import {
-  AbortStatus, RefundState, ReserveRecord, ReserveRecordStatus, WalletRefundItem
+  AbortStatus,
+  RefundState,
+  ReserveRecord,
+  ReserveRecordStatus,
+  WalletRefundItem,
 } from "../db.js";
 import { processDepositGroup } from "./deposits.js";
 import { getExchangeDetails } from "./exchanges.js";
@@ -33,6 +46,8 @@ import { processRefreshGroup } from "./refresh.js";
 import { getFundingPaytoUris } from "./reserves.js";
 import { processTip } from "./tip.js";
 import { processWithdrawGroup } from "./withdraw.js";
+
+const logger = new Logger("taler-wallet-core:transactions.ts");
 
 /**
  * Create an event ID from the type and the primary key for the event.
@@ -404,13 +419,6 @@ export enum TombstoneTag {
   DeleteRefund = "delete-refund",
 }
 
-export async function retryTransactionNow(
-  ws: InternalWalletState,
-  transactionId: string,
-): Promise<void> {
-  const [type, ...rest] = transactionId.split(":");
-}
-
 /**
  * Immediately retry the underlying operation
  * of a transaction.
@@ -419,6 +427,8 @@ export async function retryTransaction(
   ws: InternalWalletState,
   transactionId: string,
 ): Promise<void> {
+  logger.info(`retrying transaction ${transactionId}`);
+
   const [type, ...rest] = transactionId.split(":");
 
   switch (type) {
@@ -478,8 +488,8 @@ export async function deleteTransaction(
         const reserveRecord:
           | ReserveRecord
           | undefined = await tx.reserves.indexes.byInitialWithdrawalGroupId.get(
-            withdrawalGroupId,
-          );
+          withdrawalGroupId,
+        );
         if (reserveRecord && !reserveRecord.initialWithdrawalStarted) {
           const reservePub = reserveRecord.reservePub;
           await tx.reserves.delete(reservePub);

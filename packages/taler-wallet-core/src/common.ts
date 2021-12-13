@@ -51,7 +51,7 @@ export interface TrustInfo {
   isAudited: boolean;
 }
 
-export interface MerchantInfo { 
+export interface MerchantInfo {
   protocolVersionCurrent: number;
 }
 
@@ -63,6 +63,14 @@ export interface MerchantOperations {
     ws: InternalWalletState,
     merchantBaseUrl: string,
   ): Promise<MerchantInfo>;
+}
+
+export interface ReserveOperations {
+  processReserve(
+    ws: InternalWalletState,
+    reservePub: string,
+    forceNow?: boolean,
+  ): Promise<void>;
 }
 
 /**
@@ -152,6 +160,7 @@ export interface InternalWalletState {
   exchangeOps: ExchangeOperations;
   recoupOps: RecoupOperations;
   merchantOps: MerchantOperations;
+  reserveOps: ReserveOperations;
 
   db: DbAccess<typeof WalletStoresV1>;
   http: HttpRequestLibrary;

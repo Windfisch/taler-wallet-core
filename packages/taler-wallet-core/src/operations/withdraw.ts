@@ -854,7 +854,10 @@ async function resetWithdrawalGroupRetry(
   withdrawalGroupId: string,
 ): Promise<void> {
   await ws.db
-    .mktx((x) => ({ withdrawalGroups: x.withdrawalGroups }))
+    .mktx((x) => ({
+      withdrawalGroups: x.withdrawalGroups,
+      reserves: x.reserves,
+    }))
     .runReadWrite(async (tx) => {
       const x = await tx.withdrawalGroups.get(withdrawalGroupId);
       if (x) {
@@ -879,8 +882,26 @@ async function processWithdrawGroupImpl(
       return tx.withdrawalGroups.get(withdrawalGroupId);
     });
   if (!withdrawalGroup) {
-    logger.trace("withdraw session doesn't exist");
-    return;
+    // Withdrawal group doesn't exist yet, but reserve might exist
+    // (and reference the yet to be created withdrawal group)
+    const reservePub = await ws.db
+      .mktx((x) => ({ reserves: x.reserves }))
+      .runReadOnly(async (tx) => {
+        const r = await tx.reserves.indexes.byInitialWithdrawalGroupId.get(
+          withdrawalGroupId,
+        );
+        if (r) {
+          return r.reservePub;
+        }
+        return undefined;
+      });
+    if (!reservePub) {
+      logger.warn(
+        "withdrawal group doesn't exist (and reserve doesn't exist either)",
+      );
+      return;
+    }
+    return await ws.reserveOps.processReserve(ws, reservePub, forceNow);
   }
 
   await ws.exchangeOps.updateExchangeFromUrl(

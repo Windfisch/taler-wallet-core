@@ -103,6 +103,7 @@ import {
   MerchantOperations,
   NotificationListener,
   RecoupOperations,
+  ReserveOperations,
 } from "./common.js";
 import {
   runIntegrationTest,
@@ -1121,6 +1122,10 @@ class InternalWalletStateImpl implements InternalWalletState {
   merchantOps: MerchantOperations = {
     getMerchantInfo: getMerchantInfo,
   };
+
+  reserveOps: ReserveOperations = {
+    processReserve: processReserve,
+  }
 
   /**
    * Promises that are waiting for a particular resource.
