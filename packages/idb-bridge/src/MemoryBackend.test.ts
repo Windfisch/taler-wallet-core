@@ -23,6 +23,12 @@ import {
   BridgeIDBRequest,
   BridgeIDBTransaction,
 } from "./bridge-idb";
+import {
+  IDBCursorDirection,
+  IDBCursorWithValue,
+  IDBKeyRange,
+  IDBValidKey,
+} from "./idbtypes.js";
 import { MemoryBackend } from "./MemoryBackend";
 
 function promiseFromRequest(request: BridgeIDBRequest): Promise<any> {
@@ -104,6 +110,7 @@ test("Spec: Example 1 Part 2", async (t) => {
 
 test("Spec: Example 1 Part 3", async (t) => {
   const backend = new MemoryBackend();
+  backend.enableTracing = true;
   const idb = new BridgeIDBFactory(backend);
 
   const request = idb.open("library");
@@ -346,5 +353,186 @@ test("export", async (t) => {
 
   t.is(exportedData.databases["library"].schema.databaseVersion, 42);
   t.is(exportedData2.databases["library"].schema.databaseVersion, 42);
+  t.pass();
+});
+
+test("range queries", async (t) => {
+  const backend = new MemoryBackend();
+  backend.enableTracing = true;
+  const idb = new BridgeIDBFactory(backend);
+
+  const request = idb.open("mydb");
+  request.onupgradeneeded = () => {
+    const db = request.result;
+    const store = db.createObjectStore("bla", { keyPath: "x" });
+    store.createIndex("by_y", "y");
+    store.createIndex("by_z", "z");
+  };
+
+  const db: BridgeIDBDatabase = await promiseFromRequest(request);
+
+  t.is(db.name, "mydb");
+
+  const tx = db.transaction("bla", "readwrite");
+
+  const store = tx.objectStore("bla");
+
+  store.put({ x: 0, y: "a" });
+  store.put({ x: 2, y: "a" });
+  store.put({ x: 4, y: "b" });
+  store.put({ x: 8, y: "b" });
+  store.put({ x: 10, y: "c" });
+  store.put({ x: 12, y: "c" });
+
+  await promiseFromTransaction(tx);
+
+  async function doCursorStoreQuery(
+    range: IDBKeyRange | IDBValidKey | undefined,
+    direction: IDBCursorDirection | undefined,
+    expected: any[],
+  ): Promise<void> {
+    const tx = db.transaction("bla", "readwrite");
+    const store = tx.objectStore("bla");
+    const vals: any[] = [];
+
+    const req = store.openCursor(range, direction);
+    while (1) {
+      await promiseFromRequest(req);
+      const cursor: IDBCursorWithValue = req.result;
+      if (!cursor) {
+        break;
+      }
+      cursor.continue();
+      vals.push(cursor.value);
+    }
+
+    await promiseFromTransaction(tx);
+
+    t.deepEqual(vals, expected);
+  }
+
+  async function doCursorIndexQuery(
+    range: IDBKeyRange | IDBValidKey | undefined,
+    direction: IDBCursorDirection | undefined,
+    expected: any[],
+  ): Promise<void> {
+    const tx = db.transaction("bla", "readwrite");
+    const store = tx.objectStore("bla");
+    const index = store.index("by_y");
+    const vals: any[] = [];
+
+    const req = index.openCursor(range, direction);
+    while (1) {
+      await promiseFromRequest(req);
+      const cursor: IDBCursorWithValue = req.result;
+      if (!cursor) {
+        break;
+      }
+      cursor.continue();
+      vals.push(cursor.value);
+    }
+
+    await promiseFromTransaction(tx);
+
+    t.deepEqual(vals, expected);
+  }
+
+  await doCursorStoreQuery(undefined, undefined, [
+    {
+      x: 0,
+      y: "a",
+    },
+    {
+      x: 2,
+      y: "a",
+    },
+    {
+      x: 4,
+      y: "b",
+    },
+    {
+      x: 8,
+      y: "b",
+    },
+    {
+      x: 10,
+      y: "c",
+    },
+    {
+      x: 12,
+      y: "c",
+    },
+  ]);
+
+  await doCursorStoreQuery(
+    BridgeIDBKeyRange.bound(0, 12, true, true),
+    undefined,
+    [
+      {
+        x: 2,
+        y: "a",
+      },
+      {
+        x: 4,
+        y: "b",
+      },
+      {
+        x: 8,
+        y: "b",
+      },
+      {
+        x: 10,
+        y: "c",
+      },
+    ],
+  );
+
+  await doCursorIndexQuery(
+    BridgeIDBKeyRange.bound("a", "c", true, true),
+    undefined,
+    [
+      {
+        x: 4,
+        y: "b",
+      },
+      {
+        x: 8,
+        y: "b",
+      },
+    ],
+  );
+
+  await doCursorIndexQuery(undefined, "nextunique", [
+    {
+      x: 0,
+      y: "a",
+    },
+    {
+      x: 4,
+      y: "b",
+    },
+    {
+      x: 10,
+      y: "c",
+    },
+  ]);
+
+  await doCursorIndexQuery(undefined, "prevunique", [
+    {
+      x: 10,
+      y: "c",
+    },
+    {
+      x: 4,
+      y: "b",
+    },
+    {
+      x: 0,
+      y: "a",
+    },
+  ]);
+
+  db.close();
+
   t.pass();
 });

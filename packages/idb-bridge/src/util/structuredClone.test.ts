@@ -46,9 +46,16 @@ test("structured clone", (t) => {
   });
 });
 
-test("structured clone (cycles)", (t) => {
+test("structured clone (array cycles)", (t) => {
   const obj1: any[] = [1, 2];
   obj1.push(obj1);
   const obj1Clone = structuredClone(obj1);
   t.is(obj1Clone, obj1Clone[2]);
+});
+
+test("structured clone (object cycles)", (t) => {
+  const obj1: any = { a: 1, b: 2 };
+  obj1.c = obj1;
+  const obj1Clone = structuredClone(obj1);
+  t.is(obj1Clone, obj1Clone.c);
 });

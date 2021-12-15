@@ -16,7 +16,6 @@ import { Listener } from "./util/FakeEventTarget";
 import {
   DatabaseDump,
   ObjectStoreDump,
-  IndexDump,
   IndexRecord,
   ObjectStoreRecord,
   MemoryBackendDump,
@@ -64,7 +63,6 @@ export type {
   RequestObj,
   DatabaseDump,
   ObjectStoreDump,
-  IndexDump,
   IndexRecord,
   ObjectStoreRecord,
   IndexProperties,

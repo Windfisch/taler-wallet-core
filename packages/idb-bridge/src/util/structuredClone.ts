@@ -14,7 +14,7 @@
  permissions and limitations under the License.
 */
 
-import cloneDeep from "lodash/cloneDeep";
+import { DataCloneError } from "./errors.js";
 
 const { toString: toStr } = {};
 const hasOwn = {}.hasOwnProperty;
@@ -75,6 +75,100 @@ function isUserObject(val: any): boolean {
 
 function isRegExp(val: any): boolean {
   return toStringTag(val) === "RegExp";
+}
+
+function copyBuffer(cur: any) {
+  if (cur instanceof Buffer) {
+    return Buffer.from(cur);
+  }
+
+  return new cur.constructor(cur.buffer.slice(), cur.byteOffset, cur.length);
+}
+
+function checkCloneableOrThrow(x: any) {
+  if (x == null) return;
+  if (typeof x !== "object" && typeof x !== "function") return;
+  if (x instanceof Date) return;
+  if (Array.isArray(x)) return;
+  if (x instanceof Map) return;
+  if (x instanceof Set) return;
+  if (isUserObject(x)) return;
+  if (isPlainObject(x)) return;
+  throw new DataCloneError();
+}
+
+export function mkDeepClone() {
+  const refs = [] as any;
+  const refsNew = [] as any;
+
+  return clone;
+
+  function cloneArray(a: any) {
+    var keys = Object.keys(a);
+    var a2 = new Array(keys.length);
+    refs.push(a);
+    refsNew.push(a2);
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i] as any;
+      var cur = a[k];
+      checkCloneableOrThrow(cur);
+      if (typeof cur !== "object" || cur === null) {
+        a2[k] = cur;
+      } else if (cur instanceof Date) {
+        a2[k] = new Date(cur);
+      } else if (ArrayBuffer.isView(cur)) {
+        a2[k] = copyBuffer(cur);
+      } else {
+        var index = refs.indexOf(cur);
+        if (index !== -1) {
+          a2[k] = refsNew[index];
+        } else {
+          a2[k] = clone(cur);
+        }
+      }
+    }
+    refs.pop();
+    refsNew.pop();
+    return a2;
+  }
+
+  function clone(o: any) {
+    checkCloneableOrThrow(o);
+    if (typeof o !== "object" || o === null) return o;
+    if (o instanceof Date) return new Date(o);
+    if (Array.isArray(o)) return cloneArray(o);
+    if (o instanceof Map) return new Map(cloneArray(Array.from(o)));
+    if (o instanceof Set) return new Set(cloneArray(Array.from(o)));
+    var o2 = {} as any;
+    refs.push(o);
+    refsNew.push(o2);
+    for (var k in o) {
+      if (Object.hasOwnProperty.call(o, k) === false) continue;
+      var cur = o[k] as any;
+      checkCloneableOrThrow(cur);
+      if (typeof cur !== "object" || cur === null) {
+        o2[k] = cur;
+      } else if (cur instanceof Date) {
+        o2[k] = new Date(cur);
+      } else if (cur instanceof Map) {
+        o2[k] = new Map(cloneArray(Array.from(cur)));
+      } else if (cur instanceof Set) {
+        o2[k] = new Set(cloneArray(Array.from(cur)));
+      } else if (ArrayBuffer.isView(cur)) {
+        o2[k] = copyBuffer(cur);
+      } else {
+        var i = refs.indexOf(cur);
+        if (i !== -1) {
+          o2[k] = refsNew[i];
+        } else {
+          o2[k] = clone(cur);
+        }
+      }
+    }
+    refs.pop();
+    refsNew.pop();
+    return o2;
+  }
 }
 
 function internalEncapsulate(
@@ -262,5 +356,5 @@ export function structuredRevive(val: any): any {
  * Structured clone for IndexedDB.
  */
 export function structuredClone(val: any): any {
-  return cloneDeep(val);
+  return mkDeepClone()(val);
 }

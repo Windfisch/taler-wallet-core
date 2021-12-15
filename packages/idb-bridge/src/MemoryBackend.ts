@@ -33,7 +33,7 @@ import {
   structuredRevive,
 } from "./util/structuredClone";
 import { ConstraintError, DataError } from "./util/errors";
-import BTree, { ISortedMapF } from "./tree/b+tree";
+import BTree, { ISortedMapF, ISortedSetF } from "./tree/b+tree";
 import { compareKeys } from "./util/cmp";
 import { StoreKeyResult, makeStoreKeyValue } from "./util/makeStoreKeyValue";
 import { getIndexKeys } from "./util/getIndexKeys";
@@ -96,17 +96,10 @@ interface Database {
 }
 
 /** @public */
-export interface IndexDump {
-  name: string;
-  records: IndexRecord[];
-}
-
-/** @public */
 export interface ObjectStoreDump {
   name: string;
   keyGenerator: number;
   records: ObjectStoreRecord[];
-  indexes: { [name: string]: IndexDump };
 }
 
 /** @public */
@@ -140,7 +133,7 @@ interface Connection {
 /** @public */
 export interface IndexRecord {
   indexKey: Key;
-  primaryKeys: Key[];
+  primaryKeys: ISortedSetF<Key>;
 }
 
 /** @public */
@@ -185,6 +178,27 @@ function nextStoreKey<T>(
   return res[1].primaryKey;
 }
 
+function assertInvariant(cond: boolean): asserts cond {
+  if (!cond) {
+    throw Error("invariant failed");
+  }
+}
+
+function nextKey(
+  forward: boolean,
+  tree: ISortedSetF<IDBValidKey>,
+  key: IDBValidKey | undefined,
+): IDBValidKey | undefined {
+  if (key != null) {
+    return forward ? tree.nextHigherKey(key) : tree.nextLowerKey(key);
+  }
+  return forward ? tree.minKey() : tree.maxKey();
+}
+
+/**
+ * Return the key that is furthest in
+ * the direction indicated by the 'forward' flag.
+ */
 function furthestKey(
   forward: boolean,
   key1: Key | undefined,
@@ -258,21 +272,19 @@ export class MemoryBackend implements Backend {
    * Must be called before any connections to the database backend have
    * been made.
    */
-  importDump(data: any) {
-    if (this.enableTracing) {
-      console.log("importing dump (a)");
-    }
+  importDump(dataJson: any) {
     if (this.transactionIdCounter != 1 || this.connectionIdCounter != 1) {
       throw Error(
         "data must be imported before first transaction or connection",
       );
     }
 
+    // FIXME: validate!
+    const data = structuredRevive(dataJson) as MemoryBackendDump;
+
     if (typeof data !== "object") {
       throw Error("db dump corrupt");
     }
-
-    data = structuredRevive(data);
 
     this.databases = {};
 
@@ -285,28 +297,9 @@ export class MemoryBackend implements Backend {
       for (const objectStoreName of Object.keys(
         data.databases[dbName].objectStores,
       )) {
-        const dumpedObjectStore =
+        const storeSchema = schema.objectStores[objectStoreName];
+        const dumpedObjectStore: ObjectStoreDump =
           data.databases[dbName].objectStores[objectStoreName];
-
-        const indexes: { [name: string]: Index } = {};
-        for (const indexName of Object.keys(dumpedObjectStore.indexes)) {
-          const dumpedIndex = dumpedObjectStore.indexes[indexName];
-          const pairs = dumpedIndex.records.map((r: any) => {
-            return structuredClone([r.indexKey, r]);
-          });
-          const indexData: ISortedMapF<Key, IndexRecord> = new BTree(
-            pairs,
-            compareKeys,
-          );
-          const index: Index = {
-            deleted: false,
-            modifiedData: undefined,
-            modifiedName: undefined,
-            originalName: indexName,
-            originalData: indexData,
-          };
-          indexes[indexName] = index;
-        }
 
         const pairs = dumpedObjectStore.records.map((r: any) => {
           return structuredClone([r.primaryKey, r]);
@@ -323,10 +316,34 @@ export class MemoryBackend implements Backend {
           originalData: objectStoreData,
           originalName: objectStoreName,
           originalKeyGenerator: dumpedObjectStore.keyGenerator,
-          committedIndexes: indexes,
+          committedIndexes: {},
           modifiedIndexes: {},
         };
         objectStores[objectStoreName] = objectStore;
+
+        for (const indexName in storeSchema.indexes) {
+          const indexSchema = storeSchema.indexes[indexName];
+          const newIndex: Index = {
+            deleted: false,
+            modifiedData: undefined,
+            modifiedName: undefined,
+            originalData: new BTree([], compareKeys),
+            originalName: indexName,
+          };
+          const storeData = objectStoreData;
+
+          storeData.forEach((v, k) => {
+            try {
+              this.insertIntoIndex(newIndex, k, v.value, indexSchema);
+            } catch (e) {
+              if (e instanceof DataError) {
+                // We don't propagate this error here.
+                return;
+              }
+              throw e;
+            }
+          });
+        }
       }
       const db: Database = {
         deleted: false,
@@ -368,16 +385,6 @@ export class MemoryBackend implements Backend {
       const objectStores: { [name: string]: ObjectStoreDump } = {};
       for (const objectStoreName of Object.keys(db.committedObjectStores)) {
         const objectStore = db.committedObjectStores[objectStoreName];
-
-        const indexes: { [name: string]: IndexDump } = {};
-        for (const indexName of Object.keys(objectStore.committedIndexes)) {
-          const index = objectStore.committedIndexes[indexName];
-          const indexRecords: IndexRecord[] = [];
-          index.originalData.forEach((v: IndexRecord) => {
-            indexRecords.push(structuredClone(v));
-          });
-          indexes[indexName] = { name: indexName, records: indexRecords };
-        }
         const objectStoreRecords: ObjectStoreRecord[] = [];
         objectStore.originalData.forEach((v: ObjectStoreRecord) => {
           objectStoreRecords.push(structuredClone(v));
@@ -386,7 +393,6 @@ export class MemoryBackend implements Backend {
           name: objectStoreName,
           records: objectStoreRecords,
           keyGenerator: objectStore.originalKeyGenerator,
-          indexes: indexes,
         };
       }
       const dbDump: DatabaseDump = {
@@ -1047,17 +1053,17 @@ export class MemoryBackend implements Backend {
       indexProperties.multiEntry,
     );
     for (const indexKey of indexKeys) {
-      const existingRecord = indexData.get(indexKey);
-      if (!existingRecord) {
+      const existingIndexRecord = indexData.get(indexKey);
+      if (!existingIndexRecord) {
         throw Error("db inconsistent: expected index entry missing");
       }
-      const newPrimaryKeys = existingRecord.primaryKeys.filter(
-        (x) => compareKeys(x, primaryKey) !== 0,
+      const newPrimaryKeys = existingIndexRecord.primaryKeys.without(
+        primaryKey,
       );
-      if (newPrimaryKeys.length === 0) {
+      if (newPrimaryKeys.size === 0) {
         index.modifiedData = indexData.without(indexKey);
       } else {
-        const newIndexRecord = {
+        const newIndexRecord: IndexRecord = {
           indexKey,
           primaryKeys: newPrimaryKeys,
         };
@@ -1117,11 +1123,6 @@ export class MemoryBackend implements Backend {
       );
     }
 
-    let numResults = 0;
-    let indexKeys: Key[] = [];
-    let primaryKeys: Key[] = [];
-    let values: Value[] = [];
-
     const forward: boolean =
       req.direction === "next" || req.direction === "nextunique";
     const unique: boolean =
@@ -1133,280 +1134,44 @@ export class MemoryBackend implements Backend {
 
     const haveIndex = req.indexName !== undefined;
 
+    let resp: RecordGetResponse;
+
     if (haveIndex) {
       const index =
         myConn.objectStoreMap[req.objectStoreName].indexMap[req.indexName!];
       const indexData = index.modifiedData || index.originalData;
-      let indexPos = req.lastIndexPosition;
-
-      if (indexPos === undefined) {
-        // First time we iterate!  So start at the beginning (lower/upper)
-        // of our allowed range.
-        indexPos = forward ? range.lower : range.upper;
-      }
-
-      let primaryPos = req.lastObjectStorePosition;
-
-      // We might have to advance the index key further!
-      if (req.advanceIndexKey !== undefined) {
-        const compareResult = compareKeys(req.advanceIndexKey, indexPos);
-        if ((forward && compareResult > 0) || (!forward && compareResult > 0)) {
-          indexPos = req.advanceIndexKey;
-        } else if (compareResult == 0 && req.advancePrimaryKey !== undefined) {
-          // index keys are the same, so advance the primary key
-          if (primaryPos === undefined) {
-            primaryPos = req.advancePrimaryKey;
-          } else {
-            const primCompareResult = compareKeys(
-              req.advancePrimaryKey,
-              primaryPos,
-            );
-            if (
-              (forward && primCompareResult > 0) ||
-              (!forward && primCompareResult < 0)
-            ) {
-              primaryPos = req.advancePrimaryKey;
-            }
-          }
-        }
-      }
-
-      if (indexPos === undefined || indexPos === null) {
-        indexPos = forward ? indexData.minKey() : indexData.maxKey();
-      }
-
-      if (indexPos === undefined) {
-        throw Error("invariant violated");
-      }
-
-      let indexEntry: IndexRecord | undefined;
-      indexEntry = indexData.get(indexPos);
-      if (!indexEntry) {
-        const res = forward
-          ? indexData.nextHigherPair(indexPos)
-          : indexData.nextLowerPair(indexPos);
-        if (res) {
-          indexEntry = res[1];
-          indexPos = indexEntry.indexKey;
-        }
-      }
-
-      if (unique) {
-        while (1) {
-          if (req.limit != 0 && numResults == req.limit) {
-            break;
-          }
-          if (indexPos === undefined) {
-            break;
-          }
-          if (!range.includes(indexPos)) {
-            break;
-          }
-          if (indexEntry === undefined) {
-            break;
-          }
-
-          if (
-            req.lastIndexPosition === null ||
-            req.lastIndexPosition === undefined ||
-            compareKeys(indexEntry.indexKey, req.lastIndexPosition) !== 0
-          ) {
-            indexKeys.push(indexEntry.indexKey);
-            primaryKeys.push(indexEntry.primaryKeys[0]);
-            numResults++;
-          }
-
-          const res: any = forward
-            ? indexData.nextHigherPair(indexPos)
-            : indexData.nextLowerPair(indexPos);
-          if (res) {
-            indexPos = res[1].indexKey;
-            indexEntry = res[1] as IndexRecord;
-          } else {
-            break;
-          }
-        }
-      } else {
-        let primkeySubPos = 0;
-
-        // Sort out the case where the index key is the same, so we have
-        // to get the prev/next primary key
-        if (
-          indexEntry !== undefined &&
-          req.lastIndexPosition !== undefined &&
-          compareKeys(indexEntry.indexKey, req.lastIndexPosition) === 0
-        ) {
-          let pos = forward ? 0 : indexEntry.primaryKeys.length - 1;
-          this.enableTracing &&
-            console.log(
-              "number of primary keys",
-              indexEntry.primaryKeys.length,
-            );
-          this.enableTracing && console.log("start pos is", pos);
-          // Advance past the lastObjectStorePosition
-          do {
-            const cmpResult = compareKeys(
-              req.lastObjectStorePosition,
-              indexEntry.primaryKeys[pos],
-            );
-            this.enableTracing && console.log("cmp result is", cmpResult);
-            if ((forward && cmpResult < 0) || (!forward && cmpResult > 0)) {
-              break;
-            }
-            pos += forward ? 1 : -1;
-            this.enableTracing && console.log("now pos is", pos);
-          } while (pos >= 0 && pos < indexEntry.primaryKeys.length);
-
-          // Make sure we're at least at advancedPrimaryPos
-          while (
-            primaryPos !== undefined &&
-            pos >= 0 &&
-            pos < indexEntry.primaryKeys.length
-          ) {
-            const cmpResult = compareKeys(
-              primaryPos,
-              indexEntry.primaryKeys[pos],
-            );
-            if ((forward && cmpResult <= 0) || (!forward && cmpResult >= 0)) {
-              break;
-            }
-            pos += forward ? 1 : -1;
-          }
-          primkeySubPos = pos;
-        } else if (indexEntry !== undefined) {
-          primkeySubPos = forward ? 0 : indexEntry.primaryKeys.length - 1;
-        }
-
-        if (this.enableTracing) {
-          console.log("subPos=", primkeySubPos);
-          console.log("indexPos=", indexPos);
-        }
-
-        while (1) {
-          if (req.limit != 0 && numResults == req.limit) {
-            break;
-          }
-          if (indexPos === undefined) {
-            break;
-          }
-          if (!range.includes(indexPos)) {
-            break;
-          }
-          if (indexEntry === undefined) {
-            break;
-          }
-          if (
-            primkeySubPos < 0 ||
-            primkeySubPos >= indexEntry.primaryKeys.length
-          ) {
-            const res: any = forward
-              ? indexData.nextHigherPair(indexPos)
-              : indexData.nextLowerPair(indexPos);
-            if (res) {
-              indexPos = res[1].indexKey;
-              indexEntry = res[1];
-              primkeySubPos = forward ? 0 : indexEntry!.primaryKeys.length - 1;
-              continue;
-            } else {
-              break;
-            }
-          }
-          indexKeys.push(indexEntry.indexKey);
-          primaryKeys.push(indexEntry.primaryKeys[primkeySubPos]);
-          numResults++;
-          primkeySubPos += forward ? 1 : -1;
-        }
-      }
-
-      // Now we can collect the values based on the primary keys,
-      // if requested.
-      if (req.resultLevel === ResultLevel.Full) {
-        for (let i = 0; i < numResults; i++) {
-          const result = storeData.get(primaryKeys[i]);
-          if (!result) {
-            console.error("invariant violated during read");
-            console.error("request was", req);
-            throw Error("invariant violated during read");
-          }
-          values.push(result.value);
-        }
-      }
+      resp = getIndexRecords({
+        forward,
+        indexData,
+        storeData,
+        limit: req.limit,
+        unique,
+        range,
+        resultLevel: req.resultLevel,
+        advanceIndexKey: req.advanceIndexKey,
+        advancePrimaryKey: req.advancePrimaryKey,
+        lastIndexPosition: req.lastIndexPosition,
+        lastObjectStorePosition: req.lastObjectStorePosition,
+      });
     } else {
-      // only based on object store, no index involved, phew!
-      let storePos = req.lastObjectStorePosition;
-      if (storePos === undefined) {
-        storePos = forward ? range.lower : range.upper;
-      }
-
       if (req.advanceIndexKey !== undefined) {
         throw Error("unsupported request");
       }
-
-      storePos = furthestKey(forward, req.advancePrimaryKey, storePos);
-
-      if (storePos !== null && storePos !== undefined) {
-        // Advance store position if we are either still at the last returned
-        // store key, or if we are currently not on a key.
-        const storeEntry = storeData.get(storePos);
-        if (this.enableTracing) {
-          console.log("store entry:", storeEntry);
-        }
-        if (
-          !storeEntry ||
-          (req.lastObjectStorePosition !== undefined &&
-            compareKeys(req.lastObjectStorePosition, storePos) === 0)
-        ) {
-          storePos = storeData.nextHigherKey(storePos);
-        }
-      } else {
-        storePos = forward ? storeData.minKey() : storeData.maxKey();
-        if (this.enableTracing) {
-          console.log("setting starting store pos to", storePos);
-        }
-      }
-
-      while (1) {
-        if (req.limit != 0 && numResults == req.limit) {
-          break;
-        }
-        if (storePos === null || storePos === undefined) {
-          break;
-        }
-        if (!range.includes(storePos)) {
-          break;
-        }
-
-        const res = storeData.get(storePos);
-
-        if (res === undefined) {
-          break;
-        }
-
-        if (req.resultLevel >= ResultLevel.OnlyKeys) {
-          primaryKeys.push(structuredClone(storePos));
-        }
-
-        if (req.resultLevel >= ResultLevel.Full) {
-          values.push(structuredClone(res.value));
-        }
-
-        numResults++;
-        storePos = nextStoreKey(forward, storeData, storePos);
-      }
+      resp = getObjectStoreRecords({
+        forward,
+        storeData,
+        limit: req.limit,
+        range,
+        resultLevel: req.resultLevel,
+        advancePrimaryKey: req.advancePrimaryKey,
+        lastIndexPosition: req.lastIndexPosition,
+        lastObjectStorePosition: req.lastObjectStorePosition,
+      });
     }
     if (this.enableTracing) {
-      console.log(`TRACING: getRecords got ${numResults} results`);
+      console.log(`TRACING: getRecords got ${resp.count} results`);
     }
-    return {
-      count: numResults,
-      indexKeys:
-        req.resultLevel >= ResultLevel.OnlyKeys && haveIndex
-          ? indexKeys
-          : undefined,
-      primaryKeys:
-        req.resultLevel >= ResultLevel.OnlyKeys ? primaryKeys : undefined,
-      values: req.resultLevel >= ResultLevel.Full ? values : undefined,
-    };
+    return resp;
   }
 
   async storeRecord(
@@ -1586,21 +1351,20 @@ export class MemoryBackend implements Backend {
         if (indexProperties.unique) {
           throw new ConstraintError();
         } else {
-          const pred = (x: Key) => compareKeys(x, primaryKey) === 0;
-          if (existingRecord.primaryKeys.findIndex(pred) === -1) {
-            const newIndexRecord = {
-              indexKey: indexKey,
-              primaryKeys: [...existingRecord.primaryKeys, primaryKey].sort(
-                compareKeys,
-              ),
-            };
-            index.modifiedData = indexData.with(indexKey, newIndexRecord, true);
-          }
+          const newIndexRecord: IndexRecord = {
+            indexKey: indexKey,
+            primaryKeys: existingRecord.primaryKeys.with(primaryKey),
+          };
+          index.modifiedData = indexData.with(indexKey, newIndexRecord, true);
         }
       } else {
+        const primaryKeys: ISortedSetF<IDBValidKey> = new BTree(
+          [[primaryKey, undefined]],
+          compareKeys,
+        );
         const newIndexRecord: IndexRecord = {
           indexKey: indexKey,
-          primaryKeys: [primaryKey],
+          primaryKeys,
         };
         index.modifiedData = indexData.with(indexKey, newIndexRecord, true);
       }
@@ -1698,4 +1462,287 @@ export class MemoryBackend implements Backend {
       await this.afterCommitCallback();
     }
   }
+}
+
+function getIndexRecords(req: {
+  indexData: ISortedMapF<IDBValidKey, IndexRecord>;
+  storeData: ISortedMapF<IDBValidKey, ObjectStoreRecord>;
+  lastIndexPosition?: IDBValidKey;
+  forward: boolean;
+  unique: boolean;
+  range: IDBKeyRange;
+  lastObjectStorePosition?: IDBValidKey;
+  advancePrimaryKey?: IDBValidKey;
+  advanceIndexKey?: IDBValidKey;
+  limit: number;
+  resultLevel: ResultLevel;
+}): RecordGetResponse {
+  let numResults = 0;
+  const indexKeys: Key[] = [];
+  const primaryKeys: Key[] = [];
+  const values: Value[] = [];
+  const { unique, range, forward, indexData } = req;
+  let indexPos = req.lastIndexPosition;
+  let objectStorePos: IDBValidKey | undefined = undefined;
+  let indexEntry: IndexRecord | undefined = undefined;
+  const rangeStart = forward ? range.lower : range.upper;
+  const dataStart = forward ? indexData.minKey() : indexData.maxKey();
+  indexPos = furthestKey(forward, indexPos, rangeStart);
+  indexPos = furthestKey(forward, indexPos, dataStart);
+
+  function nextIndexEntry(): IndexRecord | undefined {
+    assertInvariant(indexPos != null);
+    const res: [IDBValidKey, IndexRecord] | undefined = forward
+      ? indexData.nextHigherPair(indexPos)
+      : indexData.nextLowerPair(indexPos);
+    if (res) {
+      indexEntry = res[1];
+      indexPos = indexEntry.indexKey;
+      return indexEntry;
+    } else {
+      indexEntry = undefined;
+      indexPos = undefined;
+      return undefined;
+    }
+  }
+
+  function packResult(): RecordGetResponse {
+    return {
+      count: numResults,
+      indexKeys:
+        req.resultLevel >= ResultLevel.OnlyKeys ? indexKeys : undefined,
+      primaryKeys:
+        req.resultLevel >= ResultLevel.OnlyKeys ? primaryKeys : undefined,
+      values: req.resultLevel >= ResultLevel.Full ? values : undefined,
+    };
+  }
+
+  if (indexPos == null) {
+    return packResult();
+  }
+
+  // Now we align at indexPos and after objectStorePos
+
+  indexEntry = indexData.get(indexPos);
+  if (!indexEntry) {
+    // We're not aligned to an index key, go to next index entry
+    nextIndexEntry();
+  }
+  if (indexEntry) {
+    objectStorePos = nextKey(
+      true,
+      indexEntry.primaryKeys,
+      req.lastObjectStorePosition,
+    );
+  }
+
+  if (
+    forward &&
+    range.lowerOpen &&
+    range.lower != null &&
+    compareKeys(range.lower, indexPos) === 0
+  ) {
+    const e = nextIndexEntry();
+    objectStorePos = e?.primaryKeys.minKey();
+  }
+
+  if (
+    !forward &&
+    range.upperOpen &&
+    range.upper != null &&
+    compareKeys(range.upper, indexPos) === 0
+  ) {
+    const e = nextIndexEntry();
+    objectStorePos = e?.primaryKeys.minKey();
+  }
+
+  if (
+    unique &&
+    indexPos != null &&
+    req.lastIndexPosition != null &&
+    compareKeys(indexPos, req.lastIndexPosition) === 0
+  ) {
+    const e = nextIndexEntry();
+    objectStorePos = e?.primaryKeys.minKey();
+  }
+
+  if (req.advancePrimaryKey) {
+    indexPos = furthestKey(forward, indexPos, req.advanceIndexKey);
+    if (indexPos) {
+      indexEntry = indexData.get(indexPos);
+      if (!indexEntry) {
+        nextIndexEntry();
+      }
+    }
+  }
+
+  // Use advancePrimaryKey if necessary
+  if (
+    req.advanceIndexKey != null &&
+    req.advancePrimaryKey &&
+    indexPos != null &&
+    indexEntry &&
+    compareKeys(indexPos, req.advanceIndexKey) == 0
+  ) {
+    if (
+      objectStorePos == null ||
+      compareKeys(req.advancePrimaryKey, objectStorePos) > 0
+    ) {
+      objectStorePos = nextKey(
+        true,
+        indexEntry.primaryKeys,
+        req.advancePrimaryKey,
+      );
+    }
+  }
+
+  while (1) {
+    if (indexPos === undefined) {
+      break;
+    }
+    if (req.limit != 0 && numResults == req.limit) {
+      break;
+    }
+    if (!range.includes(indexPos)) {
+      break;
+    }
+    if (indexEntry === undefined) {
+      break;
+    }
+    if (objectStorePos == null) {
+      // We don't have any more records with the current index key.
+      nextIndexEntry();
+      if (indexEntry) {
+        objectStorePos = indexEntry.primaryKeys.minKey();
+      }
+      continue;
+    }
+    indexKeys.push(indexEntry.indexKey);
+    primaryKeys.push(objectStorePos);
+    numResults++;
+    if (unique) {
+      objectStorePos = undefined;
+    } else {
+      objectStorePos = indexEntry.primaryKeys.nextHigherKey(objectStorePos);
+    }
+  }
+
+  // Now we can collect the values based on the primary keys,
+  // if requested.
+  if (req.resultLevel === ResultLevel.Full) {
+    for (let i = 0; i < numResults; i++) {
+      const result = req.storeData.get(primaryKeys[i]);
+      if (!result) {
+        console.error("invariant violated during read");
+        console.error("request was", req);
+        throw Error("invariant violated during read");
+      }
+      values.push(result.value);
+    }
+  }
+
+  return packResult();
+}
+
+function getObjectStoreRecords(req: {
+  storeData: ISortedMapF<IDBValidKey, ObjectStoreRecord>;
+  lastIndexPosition?: IDBValidKey;
+  forward: boolean;
+  range: IDBKeyRange;
+  lastObjectStorePosition?: IDBValidKey;
+  advancePrimaryKey?: IDBValidKey;
+  limit: number;
+  resultLevel: ResultLevel;
+}): RecordGetResponse {
+  let numResults = 0;
+  const indexKeys: Key[] = [];
+  const primaryKeys: Key[] = [];
+  const values: Value[] = [];
+  const { storeData, range, forward } = req;
+
+  function packResult(): RecordGetResponse {
+    return {
+      count: numResults,
+      indexKeys:
+        req.resultLevel >= ResultLevel.OnlyKeys ? indexKeys : undefined,
+      primaryKeys:
+        req.resultLevel >= ResultLevel.OnlyKeys ? primaryKeys : undefined,
+      values: req.resultLevel >= ResultLevel.Full ? values : undefined,
+    };
+  }
+
+  const rangeStart = forward ? range.lower : range.upper;
+  const dataStart = forward ? storeData.minKey() : storeData.maxKey();
+  let storePos = req.lastObjectStorePosition;
+  storePos = furthestKey(forward, storePos, rangeStart);
+  storePos = furthestKey(forward, storePos, dataStart);
+  storePos = furthestKey(forward, storePos, req.advancePrimaryKey);
+
+  if (storePos != null) {
+    // Advance store position if we are either still at the last returned
+    // store key, or if we are currently not on a key.
+    const storeEntry = storeData.get(storePos);
+    if (
+      !storeEntry ||
+      (req.lastObjectStorePosition != null &&
+        compareKeys(req.lastObjectStorePosition, storePos) === 0)
+    ) {
+      storePos = forward
+        ? storeData.nextHigherKey(storePos)
+        : storeData.nextLowerKey(storePos);
+    }
+  } else {
+    storePos = forward ? storeData.minKey() : storeData.maxKey();
+  }
+
+  if (
+    storePos != null &&
+    forward &&
+    range.lowerOpen &&
+    range.lower != null &&
+    compareKeys(range.lower, storePos) === 0
+  ) {
+    storePos = storeData.nextHigherKey(storePos);
+  }
+
+  if (
+    storePos != null &&
+    !forward &&
+    range.upperOpen &&
+    range.upper != null &&
+    compareKeys(range.upper, storePos) === 0
+  ) {
+    storePos = storeData.nextLowerKey(storePos);
+  }
+
+  while (1) {
+    if (req.limit != 0 && numResults == req.limit) {
+      break;
+    }
+    if (storePos === null || storePos === undefined) {
+      break;
+    }
+    if (!range.includes(storePos)) {
+      break;
+    }
+
+    const res = storeData.get(storePos);
+
+    if (res === undefined) {
+      break;
+    }
+
+    if (req.resultLevel >= ResultLevel.OnlyKeys) {
+      primaryKeys.push(structuredClone(storePos));
+    }
+
+    if (req.resultLevel >= ResultLevel.Full) {
+      values.push(structuredClone(res.value));
+    }
+
+    numResults++;
+    storePos = nextStoreKey(forward, storeData, storePos);
+  }
+
+  return packResult();
 }

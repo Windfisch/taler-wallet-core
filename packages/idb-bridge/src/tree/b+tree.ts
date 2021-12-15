@@ -1,30 +1,6 @@
-/*
-Copyright (c) 2018 David Piepgrass
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-SPDX-License-Identifier: MIT
-*/
-
-// Original repository: https://github.com/qwertie/btree-typescript
-
+// B+ tree by David Piepgrass. License: MIT
 import { ISortedMap, ISortedMapF } from "./interfaces";
+
 export type {
   ISetSource,
   ISetSink,
@@ -71,17 +47,108 @@ type index = number;
 //   - Objects can be used like arrays (e.g. have length property) but are slower
 //   - V8 source (NewElementsCapacity in src/objects.h): arrays grow by 50% + 16 elements
 
-/** Compares two numbers, strings, arrays of numbers/strings, Dates,
- *  or objects that have a valueOf() method returning a number or string.
- *  Optimized for numbers. Returns 1 if a>b, -1 if a<b, and 0 if a===b.
+/**
+ * Types that BTree supports by default
  */
-export function defaultComparator(a: any, b: any) {
-  var c = a - b;
-  if (c === c) return c; // a & b are number
-  // General case (c is NaN): string / arrays / Date / incomparable things
-  if (a) a = a.valueOf();
-  if (b) b = b.valueOf();
-  return a < b ? -1 : a > b ? 1 : a == b ? 0 : c;
+export type DefaultComparable =
+  | number
+  | string
+  | Date
+  | boolean
+  | null
+  | undefined
+  | (number | string)[]
+  | {
+      valueOf: () =>
+        | number
+        | string
+        | Date
+        | boolean
+        | null
+        | undefined
+        | (number | string)[];
+    };
+
+/**
+ * Compares DefaultComparables to form a strict partial ordering.
+ *
+ * Handles +/-0 and NaN like Map: NaN is equal to NaN, and -0 is equal to +0.
+ *
+ * Arrays are compared using '<' and '>', which may cause unexpected equality:
+ * for example [1] will be considered equal to ['1'].
+ *
+ * Two objects with equal valueOf compare the same, but compare unequal to
+ * primitives that have the same value.
+ */
+export function defaultComparator(
+  a: DefaultComparable,
+  b: DefaultComparable,
+): number {
+  // Special case finite numbers first for performance.
+  // Note that the trick of using 'a - b' and checking for NaN to detect non-numbers
+  // does not work if the strings are numeric (ex: "5"). This would leading most
+  // comparison functions using that approach to fail to have transitivity.
+  if (Number.isFinite(a as any) && Number.isFinite(b as any)) {
+    return (a as number) - (b as number);
+  }
+
+  // The default < and > operators are not totally ordered. To allow types to be mixed
+  // in a single collection, compare types and order values of different types by type.
+  let ta = typeof a;
+  let tb = typeof b;
+  if (ta !== tb) {
+    return ta < tb ? -1 : 1;
+  }
+
+  if (ta === "object") {
+    // standardized JavaScript bug: null is not an object, but typeof says it is
+    if (a === null) return b === null ? 0 : -1;
+    else if (b === null) return 1;
+
+    a = a!.valueOf() as DefaultComparable;
+    b = b!.valueOf() as DefaultComparable;
+    ta = typeof a;
+    tb = typeof b;
+    // Deal with the two valueOf()s producing different types
+    if (ta !== tb) {
+      return ta < tb ? -1 : 1;
+    }
+  }
+
+  // a and b are now the same type, and will be a number, string or array
+  // (which we assume holds numbers or strings), or something unsupported.
+  if (a! < b!) return -1;
+  if (a! > b!) return 1;
+  if (a === b) return 0;
+
+  // Order NaN less than other numbers
+  if (Number.isNaN(a as any)) return Number.isNaN(b as any) ? 0 : -1;
+  else if (Number.isNaN(b as any)) return 1;
+  // This could be two objects (e.g. [7] and ['7']) that aren't ordered
+  return Array.isArray(a) ? 0 : Number.NaN;
+}
+
+/**
+ * Compares items using the < and > operators. This function is probably slightly
+ * faster than the defaultComparator for Dates and strings, but has not been benchmarked.
+ * Unlike defaultComparator, this comparator doesn't support mixed types correctly,
+ * i.e. use it with `BTree<string>` or `BTree<number>` but not `BTree<string|number>`.
+ *
+ * NaN is not supported.
+ *
+ * Note: null is treated like 0 when compared with numbers or Date, but in general
+ *   null is not ordered with respect to strings (neither greater nor less), and
+ *   undefined is not ordered with other types.
+ */
+export function simpleComparator(a: string, b: string): number;
+export function simpleComparator(a: number | null, b: number | null): number;
+export function simpleComparator(a: Date | null, b: Date | null): number;
+export function simpleComparator(
+  a: (number | string)[],
+  b: (number | string)[],
+): number;
+export function simpleComparator(a: any, b: any): number {
+  return a > b ? 1 : a < b ? -1 : 0;
 }
 
 /**
@@ -153,12 +220,17 @@ export default class BTree<K = any, V = any>
   private _root: BNode<K, V> = EmptyLeaf as BNode<K, V>;
   _size: number = 0;
   _maxNodeSize: number;
+
+  /**
+   * provides a total order over keys (and a strict partial order over the type K)
+   * @returns a negative value if a < b, 0 if a === b and a positive value if a > b
+   */
   _compare: (a: K, b: K) => number;
 
   /**
    * Initializes an empty B+ tree.
    * @param compare Custom function to compare pairs of elements in the tree.
-   *   This is not required for numbers, strings and arrays of numbers/strings.
+   *   If not specified, defaultComparator will be used which is valid as long as K extends DefaultComparable.
    * @param entries A set of key-value pairs to initialize the tree
    * @param maxNodeSize Branching factor (maximum items or children per node)
    *   Must be in range 4..256. If undefined or <4 then default is used; if >256 then 256.
@@ -169,11 +241,13 @@ export default class BTree<K = any, V = any>
     maxNodeSize?: number,
   ) {
     this._maxNodeSize = maxNodeSize! >= 4 ? Math.min(maxNodeSize!, 256) : 32;
-    this._compare = compare || defaultComparator;
+    this._compare =
+      compare || ((defaultComparator as any) as (a: K, b: K) => number);
     if (entries) this.setPairs(entries);
   }
 
-  // ES6 Map<K,V> methods ///////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  // ES6 Map<K,V> methods /////////////////////////////////////////////////////
 
   /** Gets the number of key-value pairs in the tree. */
   get size() {
@@ -292,7 +366,8 @@ export default class BTree<K = any, V = any>
     return this.editRange(key, key, true, DeleteRange) !== 0;
   }
 
-  // Clone-mutators /////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  // Clone-mutators ///////////////////////////////////////////////////////////
 
   /** Returns a copy of the tree with the specified key set (the value is undefined). */
   with(key: K): BTree<K, V | undefined>;
@@ -437,7 +512,8 @@ export default class BTree<K = any, V = any>
     return p;
   }
 
-  // Iterator methods ///////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  // Iterator methods /////////////////////////////////////////////////////////
 
   /** Returns an iterator that provides items in order (ascending order if
    *  the collection's comparator uses ascending order, as is the default.)
@@ -500,7 +576,7 @@ export default class BTree<K = any, V = any>
 
   /** Returns an iterator that provides items in reversed order.
    *  @param highestKey Key at which to start iterating, or undefined to
-   *         start at minKey(). If the specified key doesn't exist then iteration
+   *         start at maxKey(). If the specified key doesn't exist then iteration
    *         starts at the next lower key (according to the comparator).
    *  @param reusedArray Optional array used repeatedly to store key-value
    *         pairs, to avoid creating a new array on every iteration.
@@ -512,13 +588,21 @@ export default class BTree<K = any, V = any>
     reusedArray?: (K | V)[],
     skipHighest?: boolean,
   ): IterableIterator<[K, V]> {
-    if ((highestKey = highestKey || this.maxKey()) === undefined)
-      return iterator<[K, V]>(); // collection is empty
+    if (highestKey === undefined) {
+      highestKey = this.maxKey();
+      skipHighest = undefined;
+      if (highestKey === undefined) return iterator<[K, V]>(); // collection is empty
+    }
     var { nodequeue, nodeindex, leaf } =
       this.findPath(highestKey) || this.findPath(this.maxKey())!;
     check(!nodequeue[0] || leaf === nodequeue[0][nodeindex[0]], "wat!");
     var i = leaf.indexOf(highestKey, 0, this._compare);
-    if (!(skipHighest || this._compare(leaf.keys[i], highestKey) > 0)) i++;
+    if (
+      !skipHighest &&
+      i < leaf.keys.length &&
+      this._compare(leaf.keys[i], highestKey) <= 0
+    )
+      i++;
     var state = reusedArray !== undefined ? 1 : 0;
 
     return iterator<[K, V]>(() => {
@@ -596,6 +680,319 @@ export default class BTree<K = any, V = any>
     return { nodequeue, nodeindex, leaf: nextnode };
   }
 
+  /**
+   * Computes the differences between `this` and `other`.
+   * For efficiency, the diff is returned via invocations of supplied handlers.
+   * The computation is optimized for the case in which the two trees have large amounts
+   * of shared data (obtained by calling the `clone` or `with` APIs) and will avoid
+   * any iteration of shared state.
+   * The handlers can cause computation to early exit by returning {break: R}.
+   * Neither of the collections should be changed during the comparison process (in your callbacks), as this method assumes they will not be mutated.
+   * @param other The tree to compute a diff against.
+   * @param onlyThis Callback invoked for all keys only present in `this`.
+   * @param onlyOther Callback invoked for all keys only present in `other`.
+   * @param different Callback invoked for all keys with differing values.
+   */
+  diffAgainst<R>(
+    other: BTree<K, V>,
+    onlyThis?: (k: K, v: V) => { break?: R } | void,
+    onlyOther?: (k: K, v: V) => { break?: R } | void,
+    different?: (k: K, vThis: V, vOther: V) => { break?: R } | void,
+  ): R | undefined {
+    if (other._compare !== this._compare) {
+      throw new Error("Tree comparators are not the same.");
+    }
+
+    if (this.isEmpty || other.isEmpty) {
+      if (this.isEmpty && other.isEmpty) return undefined;
+      // If one tree is empty, everything will be an onlyThis/onlyOther.
+      if (this.isEmpty)
+        return onlyOther === undefined
+          ? undefined
+          : BTree.stepToEnd(BTree.makeDiffCursor(other), onlyOther);
+      return onlyThis === undefined
+        ? undefined
+        : BTree.stepToEnd(BTree.makeDiffCursor(this), onlyThis);
+    }
+
+    // Cursor-based diff algorithm is as follows:
+    // - Until neither cursor has navigated to the end of the tree, do the following:
+    //  - If the `this` cursor is "behind" the `other` cursor (strictly <, via compare), advance it.
+    //  - Otherwise, advance the `other` cursor.
+    //  - Any time a cursor is stepped, perform the following:
+    //    - If either cursor points to a key/value pair:
+    //      - If thisCursor === otherCursor and the values differ, it is a Different.
+    //      - If thisCursor > otherCursor and otherCursor is at a key/value pair, it is an OnlyOther.
+    //      - If thisCursor < otherCursor and thisCursor is at a key/value pair, it is an OnlyThis as long as the most recent
+    //        cursor step was *not* otherCursor advancing from a tie. The extra condition avoids erroneous OnlyOther calls
+    //        that would occur due to otherCursor being the "leader".
+    //    - Otherwise, if both cursors point to nodes, compare them. If they are equal by reference (shared), skip
+    //      both cursors to the next node in the walk.
+    // - Once one cursor has finished stepping, any remaining steps (if any) are taken and key/value pairs are logged
+    //   as OnlyOther (if otherCursor is stepping) or OnlyThis (if thisCursor is stepping).
+    // This algorithm gives the critical guarantee that all locations (both nodes and key/value pairs) in both trees that
+    // are identical by value (and possibly by reference) will be visited *at the same time* by the cursors.
+    // This removes the possibility of emitting incorrect diffs, as well as allowing for skipping shared nodes.
+    const { _compare } = this;
+    const thisCursor = BTree.makeDiffCursor(this);
+    const otherCursor = BTree.makeDiffCursor(other);
+    // It doesn't matter how thisSteppedLast is initialized.
+    // Step order is only used when either cursor is at a leaf, and cursors always start at a node.
+    let thisSuccess = true,
+      otherSuccess = true,
+      prevCursorOrder = BTree.compare(thisCursor, otherCursor, _compare);
+    while (thisSuccess && otherSuccess) {
+      const cursorOrder = BTree.compare(thisCursor, otherCursor, _compare);
+      const {
+        leaf: thisLeaf,
+        internalSpine: thisInternalSpine,
+        levelIndices: thisLevelIndices,
+      } = thisCursor;
+      const {
+        leaf: otherLeaf,
+        internalSpine: otherInternalSpine,
+        levelIndices: otherLevelIndices,
+      } = otherCursor;
+      if (thisLeaf || otherLeaf) {
+        // If the cursors were at the same location last step, then there is no work to be done.
+        if (prevCursorOrder !== 0) {
+          if (cursorOrder === 0) {
+            if (thisLeaf && otherLeaf && different) {
+              // Equal keys, check for modifications
+              const valThis =
+                thisLeaf.values[thisLevelIndices[thisLevelIndices.length - 1]];
+              const valOther =
+                otherLeaf.values[
+                  otherLevelIndices[otherLevelIndices.length - 1]
+                ];
+              if (!Object.is(valThis, valOther)) {
+                const result = different(
+                  thisCursor.currentKey,
+                  valThis,
+                  valOther,
+                );
+                if (result && result.break) return result.break;
+              }
+            }
+          } else if (cursorOrder > 0) {
+            // If this is the case, we know that either:
+            // 1. otherCursor stepped last from a starting position that trailed thisCursor, and is still behind, or
+            // 2. thisCursor stepped last and leapfrogged otherCursor
+            // Either of these cases is an "only other"
+            if (otherLeaf && onlyOther) {
+              const otherVal =
+                otherLeaf.values[
+                  otherLevelIndices[otherLevelIndices.length - 1]
+                ];
+              const result = onlyOther(otherCursor.currentKey, otherVal);
+              if (result && result.break) return result.break;
+            }
+          } else if (onlyThis) {
+            if (thisLeaf && prevCursorOrder !== 0) {
+              const valThis =
+                thisLeaf.values[thisLevelIndices[thisLevelIndices.length - 1]];
+              const result = onlyThis(thisCursor.currentKey, valThis);
+              if (result && result.break) return result.break;
+            }
+          }
+        }
+      } else if (!thisLeaf && !otherLeaf && cursorOrder === 0) {
+        const lastThis = thisInternalSpine.length - 1;
+        const lastOther = otherInternalSpine.length - 1;
+        const nodeThis =
+          thisInternalSpine[lastThis][thisLevelIndices[lastThis]];
+        const nodeOther =
+          otherInternalSpine[lastOther][otherLevelIndices[lastOther]];
+        if (nodeOther === nodeThis) {
+          prevCursorOrder = 0;
+          thisSuccess = BTree.step(thisCursor, true);
+          otherSuccess = BTree.step(otherCursor, true);
+          continue;
+        }
+      }
+      prevCursorOrder = cursorOrder;
+      if (cursorOrder < 0) {
+        thisSuccess = BTree.step(thisCursor);
+      } else {
+        otherSuccess = BTree.step(otherCursor);
+      }
+    }
+
+    if (thisSuccess && onlyThis)
+      return BTree.finishCursorWalk(
+        thisCursor,
+        otherCursor,
+        _compare,
+        onlyThis,
+      );
+    if (otherSuccess && onlyOther)
+      return BTree.finishCursorWalk(
+        otherCursor,
+        thisCursor,
+        _compare,
+        onlyOther,
+      );
+  }
+
+  ///////////////////////////////////////////////////////////////////////////
+  // Helper methods for diffAgainst /////////////////////////////////////////
+
+  private static finishCursorWalk<K, V, R>(
+    cursor: DiffCursor<K, V>,
+    cursorFinished: DiffCursor<K, V>,
+    compareKeys: (a: K, b: K) => number,
+    callback: (k: K, v: V) => { break?: R } | void,
+  ): R | undefined {
+    const compared = BTree.compare(cursor, cursorFinished, compareKeys);
+    if (compared === 0) {
+      if (!BTree.step(cursor)) return undefined;
+    } else if (compared < 0) {
+      check(false, "cursor walk terminated early");
+    }
+    return BTree.stepToEnd(cursor, callback);
+  }
+
+  private static stepToEnd<K, V, R>(
+    cursor: DiffCursor<K, V>,
+    callback: (k: K, v: V) => { break?: R } | void,
+  ): R | undefined {
+    let canStep: boolean = true;
+    while (canStep) {
+      const { leaf, levelIndices, currentKey } = cursor;
+      if (leaf) {
+        const value = leaf.values[levelIndices[levelIndices.length - 1]];
+        const result = callback(currentKey, value);
+        if (result && result.break) return result.break;
+      }
+      canStep = BTree.step(cursor);
+    }
+    return undefined;
+  }
+
+  private static makeDiffCursor<K, V>(tree: BTree<K, V>): DiffCursor<K, V> {
+    const { _root, height } = tree;
+    return {
+      height: height,
+      internalSpine: [[_root]],
+      levelIndices: [0],
+      leaf: undefined,
+      currentKey: _root.maxKey(),
+    };
+  }
+
+  /**
+   * Advances the cursor to the next step in the walk of its tree.
+   * Cursors are walked backwards in sort order, as this allows them to leverage maxKey() in order to be compared in O(1).
+   * @param cursor The cursor to step
+   * @param stepToNode If true, the cursor will be advanced to the next node (skipping values)
+   * @returns true if the step was completed and false if the step would have caused the cursor to move beyond the end of the tree.
+   */
+  private static step<K, V>(
+    cursor: DiffCursor<K, V>,
+    stepToNode?: boolean,
+  ): boolean {
+    const { internalSpine, levelIndices, leaf } = cursor;
+    if (stepToNode === true || leaf) {
+      const levelsLength = levelIndices.length;
+      // Step to the next node only if:
+      // - We are explicitly directed to via stepToNode, or
+      // - There are no key/value pairs left to step to in this leaf
+      if (stepToNode === true || levelIndices[levelsLength - 1] === 0) {
+        const spineLength = internalSpine.length;
+        // Root is leaf
+        if (spineLength === 0) return false;
+        // Walk back up the tree until we find a new subtree to descend into
+        const nodeLevelIndex = spineLength - 1;
+        let levelIndexWalkBack = nodeLevelIndex;
+        while (levelIndexWalkBack >= 0) {
+          if (levelIndices[levelIndexWalkBack] > 0) {
+            if (levelIndexWalkBack < levelsLength - 1) {
+              // Remove leaf state from cursor
+              cursor.leaf = undefined;
+              levelIndices.pop();
+            }
+            // If we walked upwards past any internal node, slice them out
+            if (levelIndexWalkBack < nodeLevelIndex)
+              cursor.internalSpine = internalSpine.slice(
+                0,
+                levelIndexWalkBack + 1,
+              );
+            // Move to new internal node
+            cursor.currentKey = internalSpine[levelIndexWalkBack][
+              --levelIndices[levelIndexWalkBack]
+            ].maxKey();
+            return true;
+          }
+          levelIndexWalkBack--;
+        }
+        // Cursor is in the far left leaf of the tree, no more nodes to enumerate
+        return false;
+      } else {
+        // Move to new leaf value
+        const valueIndex = --levelIndices[levelsLength - 1];
+        cursor.currentKey = ((leaf as unknown) as BNode<K, V>).keys[valueIndex];
+        return true;
+      }
+    } else {
+      // Cursor does not point to a value in a leaf, so move downwards
+      const nextLevel = internalSpine.length;
+      const currentLevel = nextLevel - 1;
+      const node = internalSpine[currentLevel][levelIndices[currentLevel]];
+      if (node.isLeaf) {
+        // Entering into a leaf. Set the cursor to point at the last key/value pair.
+        cursor.leaf = node;
+        const valueIndex = (levelIndices[nextLevel] = node.values.length - 1);
+        cursor.currentKey = node.keys[valueIndex];
+      } else {
+        const children = (node as BNodeInternal<K, V>).children;
+        internalSpine[nextLevel] = children;
+        const childIndex = children.length - 1;
+        levelIndices[nextLevel] = childIndex;
+        cursor.currentKey = children[childIndex].maxKey();
+      }
+      return true;
+    }
+  }
+
+  /**
+   * Compares the two cursors. Returns a value indicating which cursor is ahead in a walk.
+   * Note that cursors are advanced in reverse sorting order.
+   */
+  private static compare<K, V>(
+    cursorA: DiffCursor<K, V>,
+    cursorB: DiffCursor<K, V>,
+    compareKeys: (a: K, b: K) => number,
+  ): number {
+    const {
+      height: heightA,
+      currentKey: currentKeyA,
+      levelIndices: levelIndicesA,
+    } = cursorA;
+    const {
+      height: heightB,
+      currentKey: currentKeyB,
+      levelIndices: levelIndicesB,
+    } = cursorB;
+    // Reverse the comparison order, as cursors are advanced in reverse sorting order
+    const keyComparison = compareKeys(currentKeyB, currentKeyA);
+    if (keyComparison !== 0) {
+      return keyComparison;
+    }
+
+    // Normalize depth values relative to the shortest tree.
+    // This ensures that concurrent cursor walks of trees of differing heights can reliably land on shared nodes at the same time.
+    // To accomplish this, a cursor that is on an internal node at depth D1 with maxKey X is considered "behind" a cursor on an
+    // internal node at depth D2 with maxKey Y, when D1 < D2. Thus, always walking the cursor that is "behind" will allow the cursor
+    // at shallower depth (but equal maxKey) to "catch up" and land on shared nodes.
+    const heightMin = heightA < heightB ? heightA : heightB;
+    const depthANormalized = levelIndicesA.length - (heightA - heightMin);
+    const depthBNormalized = levelIndicesB.length - (heightB - heightMin);
+    return depthANormalized - depthBNormalized;
+  }
+
+  // End of helper methods for diffAgainst //////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////
+
   /** Returns a new iterator for iterating the keys of each pair in ascending order.
    *  @param firstKey: Minimum key to include in the output. */
   keys(firstKey?: K): IterableIterator<K> {
@@ -618,7 +1015,8 @@ export default class BTree<K = any, V = any>
     });
   }
 
-  // Additional methods /////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  // Additional methods ///////////////////////////////////////////////////////
 
   /** Returns the maximum number of children/values before nodes will split. */
   get maxNodeSize() {
@@ -714,30 +1112,90 @@ export default class BTree<K = any, V = any>
     return this.set(key, value, false);
   }
 
-  /** Returns the next pair whose key is larger than the specified key (or undefined if there is none) */
-  nextHigherPair(key: K): [K, V] | undefined {
-    var it = this.entries(key, ReusedArray);
-    var r = it.next();
-    if (!r.done && this._compare(r.value[0], key) <= 0) r = it.next();
-    return r.value;
+  /** Returns the next pair whose key is larger than the specified key (or undefined if there is none).
+   * If key === undefined, this function returns the lowest pair.
+   * @param key The key to search for.
+   * @param reusedArray Optional array used repeatedly to store key-value pairs, to
+   * avoid creating a new array on every iteration.
+   */
+  nextHigherPair(key: K | undefined, reusedArray?: [K, V]): [K, V] | undefined {
+    reusedArray = reusedArray || (([] as unknown) as [K, V]);
+    if (key === undefined) {
+      return this._root.minPair(reusedArray);
+    }
+    return this._root.getPairOrNextHigher(
+      key,
+      this._compare,
+      false,
+      reusedArray,
+    );
   }
 
-  /** Returns the next key larger than the specified key (or undefined if there is none) */
-  nextHigherKey(key: K): K | undefined {
-    var p = this.nextHigherPair(key);
-    return p ? p[0] : p;
+  /** Returns the next key larger than the specified key, or undefined if there is none.
+   *  Also, nextHigherKey(undefined) returns the lowest key.
+   */
+  nextHigherKey(key: K | undefined): K | undefined {
+    var p = this.nextHigherPair(key, ReusedArray as [K, V]);
+    return p && p[0];
   }
 
-  /** Returns the next pair whose key is smaller than the specified key (or undefined if there is none) */
-  nextLowerPair(key: K): [K, V] | undefined {
-    var it = this.entriesReversed(key, ReusedArray, true);
-    return it.next().value;
+  /** Returns the next pair whose key is smaller than the specified key (or undefined if there is none).
+   *  If key === undefined, this function returns the highest pair.
+   * @param key The key to search for.
+   * @param reusedArray Optional array used repeatedly to store key-value pairs, to
+   *        avoid creating a new array each time you call this method.
+   */
+  nextLowerPair(key: K | undefined, reusedArray?: [K, V]): [K, V] | undefined {
+    reusedArray = reusedArray || (([] as unknown) as [K, V]);
+    if (key === undefined) {
+      return this._root.maxPair(reusedArray);
+    }
+    return this._root.getPairOrNextLower(
+      key,
+      this._compare,
+      false,
+      reusedArray,
+    );
   }
 
-  /** Returns the next key smaller than the specified key (or undefined if there is none) */
-  nextLowerKey(key: K): K | undefined {
-    var p = this.nextLowerPair(key);
-    return p ? p[0] : p;
+  /** Returns the next key smaller than the specified key, or undefined if there is none.
+   *  Also, nextLowerKey(undefined) returns the highest key.
+   */
+  nextLowerKey(key: K | undefined): K | undefined {
+    var p = this.nextLowerPair(key, ReusedArray as [K, V]);
+    return p && p[0];
+  }
+
+  /** Returns the key-value pair associated with the supplied key if it exists
+   *  or the pair associated with the next lower pair otherwise. If there is no
+   *  next lower pair, undefined is returned.
+   * @param key The key to search for.
+   * @param reusedArray Optional array used repeatedly to store key-value pairs, to
+   *        avoid creating a new array each time you call this method.
+   * */
+  getPairOrNextLower(key: K, reusedArray?: [K, V]): [K, V] | undefined {
+    return this._root.getPairOrNextLower(
+      key,
+      this._compare,
+      true,
+      reusedArray || (([] as unknown) as [K, V]),
+    );
+  }
+
+  /** Returns the key-value pair associated with the supplied key if it exists
+   *  or the pair associated with the next lower pair otherwise. If there is no
+   *  next lower pair, undefined is returned.
+   * @param key The key to search for.
+   * @param reusedArray Optional array used repeatedly to store key-value pairs, to
+   *        avoid creating a new array each time you call this method.
+   * */
+  getPairOrNextHigher(key: K, reusedArray?: [K, V]): [K, V] | undefined {
+    return this._root.getPairOrNextHigher(
+      key,
+      this._compare,
+      true,
+      reusedArray || (([] as unknown) as [K, V]),
+    );
   }
 
   /** Edits the value associated with a key in the tree, if it already exists.
@@ -836,7 +1294,7 @@ export default class BTree<K = any, V = any>
   /**
    * Scans and potentially modifies values for a subsequence of keys.
    * Note: the callback `onFound` should ideally be a pure function.
-   *   Specifically, it must not insert items, call clone(), or change
+   *   Specfically, it must not insert items, call clone(), or change
    *   the collection except via return value; out-of-band editing may
    *   cause an exception or may cause incorrect data to be sent to
    *   the callback (duplicate or missed items). It must not cause a
@@ -926,9 +1384,15 @@ export default class BTree<K = any, V = any>
   /** Gets the height of the tree: the number of internal nodes between the
    *  BTree object and its leaf nodes (zero if there are no internal nodes). */
   get height(): number {
-    for (var node = this._root, h = -1; node != null; h++)
-      node = (node as any).children;
-    return h;
+    let node: BNode<K, V> | undefined = this._root;
+    let height = -1;
+    while (node) {
+      height++;
+      node = node.isLeaf
+        ? undefined
+        : ((node as unknown) as BNodeInternal<K, V>).children[0];
+    }
+    return height;
   }
 
   /** Makes the object read-only to ensure it is not accidentally modified.
@@ -948,7 +1412,8 @@ export default class BTree<K = any, V = any>
 
   /** Ensures mutations are allowed, reversing the effect of freeze(). */
   unfreeze() {
-    // @ts-ignore
+    // @ts-ignore "The operand of a 'delete' operator must be optional."
+    //            (wrong: delete does not affect the prototype.)
     delete this.clear;
     // @ts-ignore
     delete this.set;
@@ -967,7 +1432,7 @@ export default class BTree<K = any, V = any>
    *  skips the most expensive test - whether all keys are sorted - but it
    *  does check that maxKey() of the children of internal nodes are sorted. */
   checkValid() {
-    var size = this._root.checkValid(0, this);
+    var size = this._root.checkValid(0, this, 0);
     check(
       size === this.size,
       "size mismatch: counted ",
@@ -987,10 +1452,7 @@ if (Symbol && Symbol.iterator)
 (BTree as any).prototype.add = BTree.prototype.set;
 
 function iterator<T>(
-  next: () => { done?: boolean; value?: T } = () => ({
-    done: true,
-    value: undefined,
-  }),
+  next: () => IteratorResult<T> = () => ({ done: true, value: undefined }),
 ): IterableIterator<T> {
   var result: any = { next };
   if (Symbol && Symbol.iterator)
@@ -1016,6 +1478,7 @@ class BNode<K, V> {
     this.isShared = undefined;
   }
 
+  ///////////////////////////////////////////////////////////////////////////
   // Shared methods /////////////////////////////////////////////////////////
 
   maxKey() {
@@ -1025,7 +1488,6 @@ class BNode<K, V> {
   // If key not found, returns i^failXor where i is the insertion index.
   // Callers that don't care whether there was a match will set failXor=0.
   indexOf(key: K, failXor: number, cmp: (a: K, b: K) => number): index {
-    // TODO: benchmark multiple search strategies
     const keys = this.keys;
     var lo = 0,
       hi = keys.length,
@@ -1094,10 +1556,26 @@ class BNode<K, V> {
     return c === 0 ? i : i ^ failXor;*/
   }
 
+  /////////////////////////////////////////////////////////////////////////////
   // Leaf Node: misc //////////////////////////////////////////////////////////
 
-  minKey() {
+  minKey(): K | undefined {
     return this.keys[0];
+  }
+
+  minPair(reusedArray: [K, V]): [K, V] | undefined {
+    if (this.keys.length === 0) return undefined;
+    reusedArray[0] = this.keys[0];
+    reusedArray[1] = this.values[0];
+    return reusedArray;
+  }
+
+  maxPair(reusedArray: [K, V]): [K, V] | undefined {
+    if (this.keys.length === 0) return undefined;
+    const lastIndex = this.keys.length - 1;
+    reusedArray[0] = this.keys[lastIndex];
+    reusedArray[1] = this.values[lastIndex];
+    return reusedArray;
   }
 
   clone(): BNode<K, V> {
@@ -1117,7 +1595,40 @@ class BNode<K, V> {
     return i < 0 ? defaultValue : this.values[i];
   }
 
-  checkValid(depth: number, tree: BTree<K, V>): number {
+  getPairOrNextLower(
+    key: K,
+    compare: (a: K, b: K) => number,
+    inclusive: boolean,
+    reusedArray: [K, V],
+  ): [K, V] | undefined {
+    var i = this.indexOf(key, -1, compare);
+    const indexOrLower = i < 0 ? ~i - 1 : inclusive ? i : i - 1;
+    if (indexOrLower >= 0) {
+      reusedArray[0] = this.keys[indexOrLower];
+      reusedArray[1] = this.values[indexOrLower];
+      return reusedArray;
+    }
+    return undefined;
+  }
+
+  getPairOrNextHigher(
+    key: K,
+    compare: (a: K, b: K) => number,
+    inclusive: boolean,
+    reusedArray: [K, V],
+  ): [K, V] | undefined {
+    var i = this.indexOf(key, -1, compare);
+    const indexOrLower = i < 0 ? ~i : inclusive ? i : i + 1;
+    const keys = this.keys;
+    if (indexOrLower < keys.length) {
+      reusedArray[0] = keys[indexOrLower];
+      reusedArray[1] = this.values[indexOrLower];
+      return reusedArray;
+    }
+    return undefined;
+  }
+
+  checkValid(depth: number, tree: BTree<K, V>, baseIndex: number): number {
     var kL = this.keys.length,
       vL = this.values.length;
     check(
@@ -1127,16 +1638,25 @@ class BNode<K, V> {
       "with lengths",
       kL,
       vL,
+      "and baseIndex",
+      baseIndex,
     );
     // Note: we don't check for "node too small" because sometimes a node
     // can legitimately have size 1. This occurs if there is a batch
     // deletion, leaving a node of size 1, and the siblings are full so
     // it can't be merged with adjacent nodes. However, the parent will
     // verify that the average node size is at least half of the maximum.
-    check(depth == 0 || kL > 0, "empty leaf at depth", depth);
+    check(
+      depth == 0 || kL > 0,
+      "empty leaf at depth",
+      depth,
+      "and baseIndex",
+      baseIndex,
+    );
     return kL;
   }
 
+  /////////////////////////////////////////////////////////////////////////////
   // Leaf Node: set & node splitting //////////////////////////////////////////
 
   set(
@@ -1233,6 +1753,7 @@ class BNode<K, V> {
     return new BNode<K, V>(keys, values);
   }
 
+  /////////////////////////////////////////////////////////////////////////////
   // Leaf Node: scanning & deletions //////////////////////////////////////////
 
   forRange<R>(
@@ -1331,6 +1852,14 @@ class BNodeInternal<K, V> extends BNode<K, V> {
     return this.children[0].minKey();
   }
 
+  minPair(reusedArray: [K, V]): [K, V] | undefined {
+    return this.children[0].minPair(reusedArray);
+  }
+
+  maxPair(reusedArray: [K, V]): [K, V] | undefined {
+    return this.children[this.children.length - 1].maxPair(reusedArray);
+  }
+
   get(key: K, defaultValue: V | undefined, tree: BTree<K, V>): V | undefined {
     var i = this.indexOf(key, 0, tree._compare),
       children = this.children;
@@ -1339,8 +1868,51 @@ class BNodeInternal<K, V> extends BNode<K, V> {
       : undefined;
   }
 
-  checkValid(depth: number, tree: BTree<K, V>): number {
-    var kL = this.keys.length,
+  getPairOrNextLower(
+    key: K,
+    compare: (a: K, b: K) => number,
+    inclusive: boolean,
+    reusedArray: [K, V],
+  ): [K, V] | undefined {
+    var i = this.indexOf(key, 0, compare),
+      children = this.children;
+    if (i >= children.length) return this.maxPair(reusedArray);
+    const result = children[i].getPairOrNextLower(
+      key,
+      compare,
+      inclusive,
+      reusedArray,
+    );
+    if (result === undefined && i > 0) {
+      return children[i - 1].maxPair(reusedArray);
+    }
+    return result;
+  }
+
+  getPairOrNextHigher(
+    key: K,
+    compare: (a: K, b: K) => number,
+    inclusive: boolean,
+    reusedArray: [K, V],
+  ): [K, V] | undefined {
+    var i = this.indexOf(key, 0, compare),
+      children = this.children,
+      length = children.length;
+    if (i >= length) return undefined;
+    const result = children[i].getPairOrNextHigher(
+      key,
+      compare,
+      inclusive,
+      reusedArray,
+    );
+    if (result === undefined && i < length - 1) {
+      return children[i + 1].minPair(reusedArray);
+    }
+    return result;
+  }
+
+  checkValid(depth: number, tree: BTree<K, V>, baseIndex: number): number {
+    let kL = this.keys.length,
       cL = this.children.length;
     check(
       kL === cL,
@@ -1349,19 +1921,30 @@ class BNodeInternal<K, V> extends BNode<K, V> {
       "lengths",
       kL,
       cL,
+      "baseIndex",
+      baseIndex,
     );
-    check(kL > 1, "internal node has length", kL, "at depth", depth);
-    var size = 0,
+    check(
+      kL > 1 || depth > 0,
+      "internal node has length",
+      kL,
+      "at depth",
+      depth,
+      "baseIndex",
+      baseIndex,
+    );
+    let size = 0,
       c = this.children,
       k = this.keys,
       childSize = 0;
     for (var i = 0; i < cL; i++) {
-      size += c[i].checkValid(depth + 1, tree);
+      size += c[i].checkValid(depth + 1, tree, baseIndex + size);
       childSize += c[i].keys.length;
-      check(size >= childSize, "wtf"); // no way this will ever fail
+      check(size >= childSize, "wtf", baseIndex); // no way this will ever fail
       check(
         i === 0 || c[i - 1].constructor === c[i].constructor,
-        "type mismatch",
+        "type mismatch, baseIndex:",
+        baseIndex,
       );
       if (c[i].maxKey() != k[i])
         check(
@@ -1374,6 +1957,8 @@ class BNodeInternal<K, V> extends BNode<K, V> {
           c[i].maxKey(),
           "at depth",
           depth,
+          "baseIndex",
+          baseIndex,
         );
       if (!(i === 0 || tree._compare(k[i - 1], k[i]) < 0))
         check(
@@ -1387,7 +1972,9 @@ class BNodeInternal<K, V> extends BNode<K, V> {
           k[i],
         );
     }
-    var toofew = childSize < (tree.maxNodeSize >> 1) * cL;
+    // 2020/08: BTree doesn't always avoid grossly undersized nodes,
+    // but AFAIK such nodes are pretty harmless, so accept them.
+    let toofew = childSize === 0; // childSize < (tree.maxNodeSize >> 1)*cL;
     if (toofew || childSize > tree.maxNodeSize * cL)
       check(
         false,
@@ -1397,14 +1984,17 @@ class BNodeInternal<K, V> extends BNode<K, V> {
         size,
         ") at depth",
         depth,
-        ", maxNodeSize:",
+        "maxNodeSize:",
         tree.maxNodeSize,
         "children.length:",
         cL,
+        "baseIndex:",
+        baseIndex,
       );
     return size;
   }
 
+  /////////////////////////////////////////////////////////////////////////////
   // Internal Node: set & node splitting //////////////////////////////////////
 
   set(
@@ -1497,8 +2087,12 @@ class BNodeInternal<K, V> extends BNode<K, V> {
     this.children.unshift((lhs as BNodeInternal<K, V>).children.pop()!);
   }
 
+  /////////////////////////////////////////////////////////////////////////////
   // Internal Node: scanning & deletions //////////////////////////////////////
 
+  // Note: `count` is the next value of the third argument to `onFound`.
+  //       A leaf node's `forRange` function returns a new value for this counter,
+  //       unless the operation is to stop early.
   forRange<R>(
     low: K,
     high: K,
@@ -1509,14 +2103,14 @@ class BNodeInternal<K, V> extends BNode<K, V> {
     onFound?: (k: K, v: V, counter: number) => EditRangeResult<V, R> | void,
   ): EditRangeResult<V, R> | number {
     var cmp = tree._compare;
+    var keys = this.keys,
+      children = this.children;
     var iLow = this.indexOf(low, 0, cmp),
       i = iLow;
     var iHigh = Math.min(
       high === low ? iLow : this.indexOf(high, 0, cmp),
-      this.keys.length - 1,
+      keys.length - 1,
     );
-    var keys = this.keys,
-      children = this.children;
     if (!editMode) {
       // Simple case
       for (; i <= iHigh; i++) {
@@ -1545,6 +2139,8 @@ class BNodeInternal<K, V> extends BNode<K, V> {
             count,
             onFound,
           );
+          // Note: if children[i] is empty then keys[i]=undefined.
+          //       This is an invalid state, but it is fixed below.
           keys[i] = children[i].maxKey();
           if (typeof result !== "number") return result;
           count = result;
@@ -1554,15 +2150,18 @@ class BNodeInternal<K, V> extends BNode<K, V> {
         var half = tree._maxNodeSize >> 1;
         if (iLow > 0) iLow--;
         for (i = iHigh; i >= iLow; i--) {
-          if (children[i].keys.length <= half)
-            this.tryMerge(i, tree._maxNodeSize);
+          if (children[i].keys.length <= half) {
+            if (children[i].keys.length !== 0) {
+              this.tryMerge(i, tree._maxNodeSize);
+            } else {
+              // child is empty! delete it!
+              keys.splice(i, 1);
+              children.splice(i, 1);
+            }
+          }
         }
-        // Are we completely empty?
-        if (children[0].keys.length === 0) {
-          check(children.length === 1 && keys.length === 1, "emptiness bug");
-          children.shift();
-          keys.shift();
-        }
+        if (children.length !== 0 && children[0].keys.length === 0)
+          check(false, "emptiness bug");
       }
     }
     return count;
@@ -1601,6 +2200,27 @@ class BNodeInternal<K, V> extends BNode<K, V> {
   }
 }
 
+/**
+ * A walkable pointer into a BTree for computing efficient diffs between trees with shared data.
+ * - A cursor points to either a key/value pair (KVP) or a node (which can be either a leaf or an internal node).
+ *    As a consequence, a cursor cannot be created for an empty tree.
+ * - A cursor can be walked forwards using `step`. A cursor can be compared to another cursor to
+ *    determine which is ahead in advancement.
+ * - A cursor is valid only for the tree it was created from, and only until the first edit made to
+ *    that tree since the cursor's creation.
+ * - A cursor contains a key for the current location, which is the maxKey when the cursor points to a node
+ *    and a key corresponding to a value when pointing to a leaf.
+ * - Leaf is only populated if the cursor points to a KVP. If this is the case, levelIndices.length === internalSpine.length + 1
+ *    and levelIndices[levelIndices.length - 1] is the index of the value.
+ */
+type DiffCursor<K, V> = {
+  height: number;
+  internalSpine: BNode<K, V>[][];
+  levelIndices: number[];
+  leaf: BNode<K, V> | undefined;
+  currentKey: K;
+};
+
 // Optimization: this array of `undefined`s is used instead of a normal
 // array of values in nodes where `undefined` is the only value.
 // Its length is extended to max node size on first use; since it can
@@ -1608,6 +2228,10 @@ class BNodeInternal<K, V> extends BNode<K, V> {
 // increase, never decrease. Its type should be undefined[] but strangely
 // TypeScript won't allow the comparison V[] === undefined[]. To prevent
 // users from making this array too large, BTree has a maximum node size.
+//
+// FAQ: undefVals[i] is already undefined, so why increase the array size?
+// Reading outside the bounds of an array is relatively slow because it
+// has the side effect of scanning the prototype chain.
 var undefVals: any[] = [];
 
 const Delete = { delete: true },
@@ -1623,7 +2247,7 @@ const ReusedArray: any[] = []; // assumed thread-local
 
 function check(fact: boolean, ...args: any[]) {
   if (!fact) {
-    args.unshift("B+ tree "); // at beginning of message
+    args.unshift("B+ tree"); // at beginning of message
     throw new Error(args.join(" "));
   }
 }

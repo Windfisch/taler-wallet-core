@@ -1,7 +1,5 @@
 import test from "ava";
 import { BridgeIDBCursor, BridgeIDBKeyRange } from "..";
-import { BridgeIDBCursorWithValue } from "../bridge-idb";
-import { IDBDatabase } from "../idbtypes";
 import {
   createDatabase,
   createdb,

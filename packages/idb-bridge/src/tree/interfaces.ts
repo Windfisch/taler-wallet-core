@@ -1,28 +1,4 @@
-/*
-Copyright (c) 2018 David Piepgrass
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-SPDX-License-Identifier: MIT
-*/
-
-// Original repository: https://github.com/qwertie/btree-typescript
+// B+ tree by David Piepgrass. License: MIT
 
 /** Read-only set interface (subinterface of IMapSource<K,any>).
  *  The word "set" usually means that each item in the collection is unique
@@ -350,6 +326,8 @@ export interface IMapF<K = any, V = any> extends IMapSource<K, V>, ISetF<K> {
 export interface ISortedSetF<K = any> extends ISetF<K>, ISortedSetSource<K> {
   // TypeScript requires this method of ISortedSetSource to be repeated
   keys(firstKey?: K): IterableIterator<K>;
+  without(key: K): ISortedSetF<K>;
+  with(key: K): ISortedSetF<K>;
 }
 
 export interface ISortedMapF<K = any, V = any>
