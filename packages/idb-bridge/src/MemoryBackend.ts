@@ -1078,7 +1078,6 @@ export class MemoryBackend implements Backend {
     btx: DatabaseTransaction,
     req: RecordGetRequest,
   ): Promise<RecordGetResponse> {
-    console.log(`getRecords ${req.objectStoreName}`);
     if (this.enableTracing) {
       console.log(`TRACING: getRecords`);
       console.log("query", req);
