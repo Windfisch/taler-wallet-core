@@ -2655,13 +2655,13 @@ export class BridgeIDBTransaction
         }
       }
 
-      await waitMacroQueue();
-
       if (!request._source) {
         // Special requests like indexes that just need to run some code,
         // with error handling already built into operation
         await operation();
       } else {
+        await waitMacroQueue();
+
         let event;
         try {
           BridgeIDBFactory.enableTracing &&

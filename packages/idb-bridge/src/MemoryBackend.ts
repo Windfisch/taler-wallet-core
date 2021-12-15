@@ -562,10 +562,12 @@ export class MemoryBackend implements Backend {
       throw Error("connection not found - already closed?");
     }
     const myDb = this.databases[myConn.dbName];
-    // FIXME: what if we're still in a transaction?
-    myDb.connectionCookies = myDb.connectionCookies.filter(
-      (x) => x != conn.connectionCookie,
-    );
+    if (myDb) {
+      // FIXME: what if we're still in a transaction?
+      myDb.connectionCookies = myDb.connectionCookies.filter(
+        (x) => x != conn.connectionCookie,
+      );
+    }
     delete this.connections[conn.connectionCookie];
     this.disconnectCond.trigger();
   }
