@@ -84,6 +84,12 @@ function build_preact_compat() {
   esbuild $BUNDLE_OPTIONS --loader:.js=jsx vendor/preact/test-utils/src/index.js > $DIST/react-dom/test-utils/index.js
 }
 
+function build_qrcode() {
+  mkdir -p $DIST/qrcode-generator
+
+  esbuild $BUNDLE_OPTIONS vendor/qrcode-generator/js/qrcode.js > $DIST/qrcode-generator/index.js
+}
+
 function build_history() {
   mkdir -p $DIST/{history,resolve-pathname,value-equal,tiny-warning,tiny-invariant}
 
@@ -133,6 +139,7 @@ build_preact
 build_preact-router
 build_preact_compat
 
+build_qrcode
 build_history
 build_linaria
 
