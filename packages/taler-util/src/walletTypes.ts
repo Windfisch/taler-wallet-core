@@ -54,6 +54,7 @@ import {
 } from "./talerTypes.js";
 import { OrderShortInfo, codecForOrderShortInfo } from "./transactionsTypes.js";
 import { BackupRecovery } from "./backupTypes.js";
+import { PaytoUri } from "./payto.js";
 
 /**
  * Response for the create reserve request to the wallet.
@@ -525,6 +526,10 @@ export interface ExchangesListRespose {
   exchanges: ExchangeListItem[];
 }
 
+export interface KnownBankAccounts {
+  accounts: PaytoUri[];
+}
+
 export interface ExchangeTos {
   acceptedVersion?: string;
   currentVersion?: string;
@@ -737,11 +742,18 @@ export const codecForApplyRefundRequest = (): Codec<ApplyRefundRequest> =>
 export interface GetWithdrawalDetailsForUriRequest {
   talerWithdrawUri: string;
 }
-
 export const codecForGetWithdrawalDetailsForUri = (): Codec<GetWithdrawalDetailsForUriRequest> =>
   buildCodecForObject<GetWithdrawalDetailsForUriRequest>()
     .property("talerWithdrawUri", codecForString())
     .build("GetWithdrawalDetailsForUriRequest");
+
+export interface ListKnownBankAccountsRequest {
+  currency?: string;
+}
+export const codecForListKnownBankAccounts = (): Codec<ListKnownBankAccountsRequest> =>
+  buildCodecForObject<ListKnownBankAccountsRequest>()
+    .property("currency", codecOptional(codecForString()))
+    .build("ListKnownBankAccountsRequest");
 
 export interface GetExchangeWithdrawalInfo {
   exchangeBaseUrl: string;
@@ -965,10 +977,22 @@ export const codecForAbortPayWithRefundRequest = (): Codec<AbortPayWithRefundReq
     .property("proposalId", codecForString())
     .build("AbortPayWithRefundRequest");
 
+export interface GetFeeForDepositRequest {
+  depositPaytoUri: string;
+  amount: AmountString;
+}
+
 export interface CreateDepositGroupRequest {
   depositPaytoUri: string;
-  amount: string;
+  amount: AmountString;
 }
+
+
+export const codecForGetFeeForDeposit = (): Codec<GetFeeForDepositRequest> =>
+  buildCodecForObject<GetFeeForDepositRequest>()
+    .property("amount", codecForAmountString())
+    .property("depositPaytoUri", codecForString())
+    .build("GetFeeForDepositRequest");
 
 export const codecForCreateDepositGroupRequest = (): Codec<CreateDepositGroupRequest> =>
   buildCodecForObject<CreateDepositGroupRequest>()

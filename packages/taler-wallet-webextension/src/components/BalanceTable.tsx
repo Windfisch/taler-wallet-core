@@ -16,9 +16,18 @@
 
 import { amountFractionalBase, Amounts, Balance } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
-import { TableWithRoundRows as TableWithRoundedRows } from "./styled/index";
+import {
+  ButtonPrimary,
+  TableWithRoundRows as TableWithRoundedRows,
+} from "./styled/index";
 
-export function BalanceTable({ balances }: { balances: Balance[] }): VNode {
+export function BalanceTable({
+  balances,
+  goToWalletDeposit,
+}: {
+  balances: Balance[];
+  goToWalletDeposit: (currency: string) => void;
+}): VNode {
   const currencyFormatter = new Intl.NumberFormat("en-US");
   return (
     <TableWithRoundedRows>
@@ -39,6 +48,11 @@ export function BalanceTable({ balances }: { balances: Balance[] }): VNode {
               }}
             >
               {v}
+            </td>
+            <td>
+              <ButtonPrimary onClick={() => goToWalletDeposit(av.currency)}>
+                Deposit
+              </ButtonPrimary>
             </td>
           </tr>
         );

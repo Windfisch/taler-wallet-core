@@ -43,14 +43,17 @@ export function DeveloperPage(): VNode {
       ? []
       : operationsResponse.response.pendingOperations;
 
-  return <View status={status} 
-    timedOut={timedOut} 
-    operations={operations} 
-    onDownloadDatabase={async () => {
-      const db = await wxApi.exportDB()
-      return JSON.stringify(db)
-    }}
-  />;
+  return (
+    <View
+      status={status}
+      timedOut={timedOut}
+      operations={operations}
+      onDownloadDatabase={async () => {
+        const db = await wxApi.exportDB();
+        return JSON.stringify(db);
+      }}
+    />
+  );
 }
 
 export interface Props {
@@ -64,14 +67,21 @@ function hashObjectId(o: any): string {
   return JSON.stringify(o);
 }
 
-export function View({ status, timedOut, operations, onDownloadDatabase }: Props): VNode {
-  const [downloadedDatabase, setDownloadedDatabase] = useState<{time: Date; content: string}|undefined>(undefined)
+export function View({
+  status,
+  timedOut,
+  operations,
+  onDownloadDatabase,
+}: Props): VNode {
+  const [downloadedDatabase, setDownloadedDatabase] = useState<
+    { time: Date; content: string } | undefined
+  >(undefined);
   async function onExportDatabase(): Promise<void> {
-    const content = await onDownloadDatabase()
+    const content = await onDownloadDatabase();
     setDownloadedDatabase({
       time: new Date(),
-      content
-    })
+      content,
+    });
   }
   return (
     <div>
@@ -83,9 +93,27 @@ export function View({ status, timedOut, operations, onDownloadDatabase }: Props
       <button onClick={confirmReset}>reset</button>
       <br />
       <button onClick={onExportDatabase}>export database</button>
-      {downloadedDatabase && <div>
-        Database exported at <Time timestamp={{t_ms: downloadedDatabase.time.getTime()}} format="yyyy/MM/dd HH:mm:ss" /> <a href={`data:text/plain;charset=utf-8;base64,${btoa(downloadedDatabase.content)}`} download={`taler-wallet-database-${format(downloadedDatabase.time, 'yyyy/MM/dd_HH:mm')}.json`}>click here</a> to download
-        </div>}
+      {downloadedDatabase && (
+        <div>
+          Database exported at
+          <Time
+            timestamp={{ t_ms: downloadedDatabase.time.getTime() }}
+            format="yyyy/MM/dd HH:mm:ss"
+          />
+          <a
+            href={`data:text/plain;charset=utf-8;base64,${toBase64(
+              downloadedDatabase.content,
+            )}`}
+            download={`taler-wallet-database-${format(
+              downloadedDatabase.time,
+              "yyyy/MM/dd_HH:mm",
+            )}.json`}
+          >
+            click here
+          </a>
+          to download
+        </div>
+      )}
       <br />
       <Diagnostics diagnostics={status} timedOut={timedOut} />
       {operations && operations.length > 0 && (
@@ -106,6 +134,14 @@ export function View({ status, timedOut, operations, onDownloadDatabase }: Props
         </Fragment>
       )}
     </div>
+  );
+}
+
+function toBase64(str: string): string {
+  return btoa(
+    encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
+      return String.fromCharCode(parseInt(p1, 16));
+    }),
   );
 }
 

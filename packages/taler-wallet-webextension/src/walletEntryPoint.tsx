@@ -45,6 +45,7 @@ import { WalletBox } from "./components/styled";
 import { ProviderDetailPage } from "./wallet/ProviderDetailPage";
 import { ProviderAddPage } from "./wallet/ProviderAddPage";
 import { ExchangeAddPage } from "./wallet/ExchangeAddPage";
+import { DepositPage } from "./wallet/DepositPage";
 
 function main(): void {
   try {
@@ -105,6 +106,9 @@ function Application(): VNode {
             path={Pages.balance}
             component={withLogoAndNavBar(BalancePage)}
             goToWalletManualWithdraw={() => route(Pages.manual_withdraw)}
+            goToWalletDeposit={(currency: string) =>
+              route(Pages.deposit.replace(":currency", currency))
+            }
           />
           <Route
             path={Pages.settings}
@@ -145,6 +149,10 @@ function Application(): VNode {
             component={withLogoAndNavBar(ManualWithdrawPage)}
           />
 
+          <Route
+            path={Pages.deposit}
+            component={withLogoAndNavBar(DepositPage)}
+          />
           <Route
             path={Pages.reset_required}
             component={() => <div>no yet implemented</div>}

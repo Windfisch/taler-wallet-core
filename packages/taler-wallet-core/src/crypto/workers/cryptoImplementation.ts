@@ -162,7 +162,7 @@ async function myEddsaSign(
 export class CryptoImplementation {
   static enableTracing = false;
 
-  constructor(private primitiveWorker?: PrimitiveWorker) {}
+  constructor(private primitiveWorker?: PrimitiveWorker) { }
 
   /**
    * Create a pre-coin of the given denomination to be withdrawn from then given
@@ -369,7 +369,7 @@ export class CryptoImplementation {
     sig: string,
     masterPub: string,
   ): boolean {
-    if (versionCurrent === 10) {
+    if (versionCurrent === 10 || versionCurrent === 11) {
       const paytoHash = hash(stringToBytes(paytoUri + "\0"));
       const p = buildSigPS(TalerSignaturePurpose.MASTER_WIRE_DETAILS)
         .put(paytoHash)

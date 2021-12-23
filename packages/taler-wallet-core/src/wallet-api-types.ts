@@ -83,6 +83,7 @@ export enum WalletApiOperation {
   AddExchange = "addExchange",
   GetTransactions = "getTransactions",
   ListExchanges = "listExchanges",
+  ListKnownBankAccounts = "listKnownBankAccounts",
   GetWithdrawalDetailsForUri = "getWithdrawalDetailsForUri",
   GetWithdrawalDetailsForAmount = "getWithdrawalDetailsForAmount",
   AcceptManualWithdrawal = "acceptManualWithdrawal",
@@ -279,11 +280,11 @@ export type WalletOperations = {
 
 export type RequestType<
   Op extends WalletApiOperation & keyof WalletOperations
-> = WalletOperations[Op] extends { request: infer T } ? T : never;
+  > = WalletOperations[Op] extends { request: infer T } ? T : never;
 
 export type ResponseType<
   Op extends WalletApiOperation & keyof WalletOperations
-> = WalletOperations[Op] extends { response: infer T } ? T : never;
+  > = WalletOperations[Op] extends { response: infer T } ? T : never;
 
 export interface WalletCoreApiClient {
   call<Op extends WalletApiOperation & keyof WalletOperations>(

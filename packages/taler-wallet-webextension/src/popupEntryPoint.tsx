@@ -84,6 +84,9 @@ function Application() {
               goToWalletManualWithdraw={() =>
                 goToWalletPage(Pages.manual_withdraw)
               }
+              goToWalletDeposit={(currency: string) =>
+                goToWalletPage(Pages.deposit.replace(":currency", currency))
+              }
             />
             <Route path={Pages.settings} component={SettingsPage} />
             <Route
@@ -107,6 +110,7 @@ function Application() {
             />
 
             <Route path={Pages.history} component={HistoryPage} />
+
             <Route
               path={Pages.backup}
               component={BackupPage}

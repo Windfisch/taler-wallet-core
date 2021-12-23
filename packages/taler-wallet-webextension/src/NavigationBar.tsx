@@ -34,6 +34,7 @@ export enum Pages {
   welcome = "/welcome",
   balance = "/balance",
   manual_withdraw = "/manual-withdraw",
+  deposit = "/deposit/:currency",
   settings = "/settings",
   dev = "/dev",
   cta = "/cta",

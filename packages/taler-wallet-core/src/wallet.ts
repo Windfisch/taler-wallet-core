@@ -41,6 +41,10 @@ import {
   codecForWithdrawFakebankRequest,
   URL,
   parsePaytoUri,
+  KnownBankAccounts,
+  PaytoUri,
+  codecForGetFeeForDeposit,
+  codecForListKnownBankAccounts,
 } from "@gnu-taler/taler-util";
 import {
   addBackupProvider,
@@ -58,6 +62,7 @@ import { exportBackup } from "./operations/backup/export.js";
 import { getBalances } from "./operations/balance.js";
 import {
   createDepositGroup,
+  getFeeForDeposit,
   processDepositGroup,
   trackDepositGroup,
 } from "./operations/deposits.js";
@@ -495,6 +500,30 @@ async function getExchangeTos(
   };
 }
 
+async function listKnownBankAccounts(
+  ws: InternalWalletState,
+  currency?: string,
+): Promise<KnownBankAccounts> {
+  const accounts: PaytoUri[] = []
+  await ws.db
+    .mktx((x) => ({
+      reserves: x.reserves,
+    }))
+    .runReadOnly(async (tx) => {
+      const reservesRecords = await tx.reserves.iter().toArray()
+      for (const r of reservesRecords) {
+        if (currency && currency !== r.currency) {
+          continue
+        }
+        const payto = r.senderWire ? parsePaytoUri(r.senderWire) : undefined
+        if (payto) {
+          accounts.push(payto)
+        }
+      }
+    })
+  return { accounts }
+}
+
 async function getExchanges(
   ws: InternalWalletState,
 ): Promise<ExchangesListRespose> {
@@ -728,6 +757,10 @@ async function dispatchRequestInternal(
     case "listExchanges": {
       return await getExchanges(ws);
     }
+    case "listKnownBankAccounts": {
+      const req = codecForListKnownBankAccounts().decode(payload);
+      return await listKnownBankAccounts(ws, req.currency);
+    }
     case "getWithdrawalDetailsForUri": {
       const req = codecForGetWithdrawalDetailsForUri().decode(payload);
       return await getWithdrawalDetailsForUri(ws, req.talerWithdrawUri);
@@ -881,6 +914,10 @@ async function dispatchRequestInternal(
       const resp = await getBackupInfo(ws);
       return resp;
     }
+    case "getFeeForDeposit": {
+      const req = codecForGetFeeForDeposit().decode(payload);
+      return await getFeeForDeposit(ws, req);
+    }
     case "createDepositGroup": {
       const req = codecForCreateDepositGroupRequest().decode(payload);
       return await createDepositGroup(ws, req);
@@ -1004,7 +1041,7 @@ export async function handleCoreApiRequest(
       try {
         logger.error("Caught unexpected exception:");
         logger.error(e.stack);
-      } catch (e) {}
+      } catch (e) { }
       return {
         type: "error",
         operation,

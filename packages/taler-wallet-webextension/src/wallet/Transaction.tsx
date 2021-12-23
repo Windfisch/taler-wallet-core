@@ -369,8 +369,8 @@ export function TransactionView({
 
   if (transaction.type === TransactionType.Deposit) {
     const fee = Amounts.sub(
-      Amounts.parseOrThrow(transaction.amountRaw),
       Amounts.parseOrThrow(transaction.amountEffective),
+      Amounts.parseOrThrow(transaction.amountRaw),
     ).amount;
     return (
       <TransactionTemplate>
@@ -379,15 +379,15 @@ export function TransactionView({
         <br />
         <Part
           big
-          title="Total deposit"
+          title="Total send"
           text={amountToString(transaction.amountEffective)}
-          kind="negative"
+          kind="neutral"
         />
         <Part
           big
-          title="Purchase amount"
+          title="Deposit amount"
           text={amountToString(transaction.amountRaw)}
-          kind="neutral"
+          kind="positive"
         />
         <Part big title="Fee" text={amountToString(fee)} kind="negative" />
       </TransactionTemplate>

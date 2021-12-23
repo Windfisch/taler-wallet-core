@@ -24,7 +24,9 @@ import * as wxApi from "../wxApi";
 
 export function BalancePage({
   goToWalletManualWithdraw,
+  goToWalletDeposit,
 }: {
+  goToWalletDeposit: (currency: string) => void;
   goToWalletManualWithdraw: () => void;
 }): VNode {
   const state = useAsyncAsHook(wxApi.getBalance);
@@ -33,6 +35,7 @@ export function BalancePage({
       balance={state}
       Linker={PageLink}
       goToWalletManualWithdraw={goToWalletManualWithdraw}
+      goToWalletDeposit={goToWalletDeposit}
     />
   );
 }
@@ -41,12 +44,14 @@ export interface BalanceViewProps {
   balance: HookResponse<BalancesResponse>;
   Linker: typeof PageLink;
   goToWalletManualWithdraw: () => void;
+  goToWalletDeposit: (currency: string) => void;
 }
 
 export function BalanceView({
   balance,
   Linker,
   goToWalletManualWithdraw,
+  goToWalletDeposit,
 }: BalanceViewProps): VNode {
   if (!balance) {
     return <div>Loading...</div>;
@@ -65,28 +70,35 @@ export function BalanceView({
   }
   if (balance.response.balances.length === 0) {
     return (
-      <p>
-        <Centered style={{ marginTop: 100 }}>
-          <i18n.Translate>
-            You have no balance to show. Need some{" "}
-            <Linker pageName="/welcome">help</Linker> getting started?
-          </i18n.Translate>
-          <div>
-            <ButtonPrimary onClick={goToWalletManualWithdraw}>
-              Withdraw
-            </ButtonPrimary>
-          </div>
-        </Centered>
-      </p>
+      <Fragment>
+        <p>
+          <Centered style={{ marginTop: 100 }}>
+            <i18n.Translate>
+              You have no balance to show. Need some{" "}
+              <Linker pageName="/welcome">help</Linker> getting started?
+            </i18n.Translate>
+          </Centered>
+        </p>
+        <footer style={{ justifyContent: "space-between" }}>
+          <div />
+          <ButtonPrimary onClick={goToWalletManualWithdraw}>
+            Withdraw
+          </ButtonPrimary>
+        </footer>
+      </Fragment>
     );
   }
 
   return (
     <Fragment>
       <section>
-        <BalanceTable balances={balance.response.balances} />
+        <BalanceTable
+          balances={balance.response.balances}
+          goToWalletDeposit={goToWalletDeposit}
+        />
       </section>
-      <footer style={{ justifyContent: "space-around" }}>
+      <footer style={{ justifyContent: "space-between" }}>
+        <div />
         <ButtonPrimary onClick={goToWalletManualWithdraw}>
           Withdraw
         </ButtonPrimary>

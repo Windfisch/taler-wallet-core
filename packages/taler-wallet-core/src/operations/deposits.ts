@@ -15,6 +15,7 @@
  */
 
 import {
+  AmountJson,
   Amounts,
   buildCodecForObject,
   canonicalJson,
@@ -28,6 +29,7 @@ import {
   decodeCrock,
   DenomKeyType,
   durationFromSpec,
+  GetFeeForDepositRequest,
   getTimestampNow,
   Logger,
   NotificationType,
@@ -35,6 +37,7 @@ import {
   TalerErrorDetails,
   Timestamp,
   timestampAddDuration,
+  timestampIsBetween,
   timestampTruncateToSecond,
   TrackDepositGroupRequest,
   TrackDepositGroupResponse,
@@ -49,7 +52,7 @@ import {
 } from "@gnu-taler/taler-util";
 import { DepositGroupRecord } from "../db.js";
 import { guardOperationException } from "../errors.js";
-import { selectPayCoins } from "../util/coinSelection.js";
+import { PayCoinSelection, selectPayCoins } from "../util/coinSelection.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
 import { getExchangeDetails } from "./exchanges.js";
@@ -58,11 +61,11 @@ import {
   extractContractData,
   generateDepositPermissions,
   getCandidatePayCoins,
-  getEffectiveDepositAmount,
   getTotalPaymentCost,
   hashWire,
   hashWireLegacy,
 } from "./pay.js";
+import { getTotalRefreshCost } from "./refresh.js";
 
 /**
  * Logger.
@@ -342,6 +345,100 @@ export async function trackDepositGroup(
   };
 }
 
+export async function getFeeForDeposit(
+  ws: InternalWalletState,
+  req: GetFeeForDepositRequest,
+): Promise<DepositFee> {
+  const p = parsePaytoUri(req.depositPaytoUri);
+  if (!p) {
+    throw Error("invalid payto URI");
+  }
+
+  const amount = Amounts.parseOrThrow(req.amount);
+
+  const exchangeInfos: { url: string; master_pub: string }[] = [];
+
+  await ws.db
+    .mktx((x) => ({
+      exchanges: x.exchanges,
+      exchangeDetails: x.exchangeDetails,
+    }))
+    .runReadOnly(async (tx) => {
+      const allExchanges = await tx.exchanges.iter().toArray();
+      for (const e of allExchanges) {
+        const details = await getExchangeDetails(tx, e.baseUrl);
+        if (!details) {
+          continue;
+        }
+        exchangeInfos.push({
+          master_pub: details.masterPublicKey,
+          url: e.baseUrl,
+        });
+      }
+    });
+
+  const timestamp = getTimestampNow();
+  const timestampRound = timestampTruncateToSecond(timestamp);
+  // const noncePair = await ws.cryptoApi.createEddsaKeypair();
+  // const merchantPair = await ws.cryptoApi.createEddsaKeypair();
+  // const wireSalt = encodeCrock(getRandomBytes(16));
+  // const wireHash = hashWire(req.depositPaytoUri, wireSalt);
+  // const wireHashLegacy = hashWireLegacy(req.depositPaytoUri, wireSalt);
+  const contractTerms: ContractTerms = {
+    auditors: [],
+    exchanges: exchangeInfos,
+    amount: req.amount,
+    max_fee: Amounts.stringify(amount),
+    max_wire_fee: Amounts.stringify(amount),
+    wire_method: p.targetType,
+    timestamp: timestampRound,
+    merchant_base_url: "",
+    summary: "",
+    nonce: "",
+    wire_transfer_deadline: timestampRound,
+    order_id: "",
+    h_wire: "",
+    pay_deadline: timestampAddDuration(
+      timestampRound,
+      durationFromSpec({ hours: 1 }),
+    ),
+    merchant: {
+      name: "",
+    },
+    merchant_pub: "",
+    refund_deadline: { t_ms: 0 },
+  };
+
+  const contractData = extractContractData(
+    contractTerms,
+    "",
+    "",
+  );
+
+  const candidates = await getCandidatePayCoins(ws, contractData);
+
+  const payCoinSel = selectPayCoins({
+    candidates,
+    contractTermsAmount: contractData.amount,
+    depositFeeLimit: contractData.maxDepositFee,
+    wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
+    wireFeeLimit: contractData.maxWireFee,
+    prevPayCoins: [],
+  });
+
+  if (!payCoinSel) {
+    throw Error("insufficient funds");
+  }
+
+  return await getTotalFeeForDepositAmount(
+    ws,
+    p.targetType,
+    amount,
+    payCoinSel,
+  );
+
+}
+
 export async function createDepositGroup(
   ws: InternalWalletState,
   req: CreateDepositGroupRequest,
@@ -494,4 +591,153 @@ export async function createDepositGroup(
     });
 
   return { depositGroupId };
+}
+
+/**
+ * Get the amount that will be deposited on the merchant's bank
+ * account, not considering aggregation.
+ */
+export async function getEffectiveDepositAmount(
+  ws: InternalWalletState,
+  wireType: string,
+  pcs: PayCoinSelection,
+): Promise<AmountJson> {
+  const amt: AmountJson[] = [];
+  const fees: AmountJson[] = [];
+  const exchangeSet: Set<string> = new Set();
+
+  await ws.db
+    .mktx((x) => ({
+      coins: x.coins,
+      denominations: x.denominations,
+      exchanges: x.exchanges,
+      exchangeDetails: x.exchangeDetails,
+    }))
+    .runReadOnly(async (tx) => {
+      for (let i = 0; i < pcs.coinPubs.length; i++) {
+        const coin = await tx.coins.get(pcs.coinPubs[i]);
+        if (!coin) {
+          throw Error("can't calculate deposit amount, coin not found");
+        }
+        const denom = await tx.denominations.get([
+          coin.exchangeBaseUrl,
+          coin.denomPubHash,
+        ]);
+        if (!denom) {
+          throw Error("can't find denomination to calculate deposit amount");
+        }
+        amt.push(pcs.coinContributions[i]);
+        fees.push(denom.feeDeposit);
+        exchangeSet.add(coin.exchangeBaseUrl);
+      }
+
+      for (const exchangeUrl of exchangeSet.values()) {
+        const exchangeDetails = await getExchangeDetails(tx, exchangeUrl);
+        if (!exchangeDetails) {
+          continue;
+        }
+
+        // FIXME/NOTE: the line below _likely_ throws exception
+        // about "find method not found on undefined" when the wireType
+        // is not supported by the Exchange.
+        const fee = exchangeDetails.wireInfo.feesForType[wireType].find((x) => {
+          return timestampIsBetween(
+            getTimestampNow(),
+            x.startStamp,
+            x.endStamp,
+          );
+        })?.wireFee;
+        if (fee) {
+          fees.push(fee);
+        }
+      }
+    });
+  return Amounts.sub(Amounts.sum(amt).amount, Amounts.sum(fees).amount).amount;
+}
+
+export interface DepositFee {
+  coin: AmountJson;
+  wire: AmountJson;
+  refresh: AmountJson;
+}
+
+/**
+ * Get the fee amount that will be charged when trying to deposit the
+ * specified amount using the selected coins and the wire method.
+ */
+export async function getTotalFeeForDepositAmount(
+  ws: InternalWalletState,
+  wireType: string,
+  total: AmountJson,
+  pcs: PayCoinSelection,
+): Promise<DepositFee> {
+  const wireFee: AmountJson[] = [];
+  const coinFee: AmountJson[] = [];
+  const refreshFee: AmountJson[] = [];
+  const exchangeSet: Set<string> = new Set();
+
+  // let acc: AmountJson = Amounts.getZero(total.currency);
+
+  await ws.db
+    .mktx((x) => ({
+      coins: x.coins,
+      denominations: x.denominations,
+      exchanges: x.exchanges,
+      exchangeDetails: x.exchangeDetails,
+    }))
+    .runReadOnly(async (tx) => {
+      for (let i = 0; i < pcs.coinPubs.length; i++) {
+        const coin = await tx.coins.get(pcs.coinPubs[i]);
+        if (!coin) {
+          throw Error("can't calculate deposit amount, coin not found");
+        }
+        const denom = await tx.denominations.get([
+          coin.exchangeBaseUrl,
+          coin.denomPubHash,
+        ]);
+        if (!denom) {
+          throw Error("can't find denomination to calculate deposit amount");
+        }
+        // const cc = pcs.coinContributions[i]
+        // acc = Amounts.add(acc, cc).amount
+        coinFee.push(denom.feeDeposit);
+        exchangeSet.add(coin.exchangeBaseUrl);
+
+        const allDenoms = await tx.denominations.indexes.byExchangeBaseUrl
+          .iter(coin.exchangeBaseUrl)
+          .filter((x) =>
+            Amounts.isSameCurrency(x.value, pcs.coinContributions[i]),
+          );
+        const amountLeft = Amounts.sub(denom.value, pcs.coinContributions[i])
+          .amount;
+        const refreshCost = getTotalRefreshCost(allDenoms, denom, amountLeft);
+        refreshFee.push(refreshCost);
+      }
+
+      for (const exchangeUrl of exchangeSet.values()) {
+        const exchangeDetails = await getExchangeDetails(tx, exchangeUrl);
+        if (!exchangeDetails) {
+          continue;
+        }
+        // FIXME/NOTE: the line below _likely_ throws exception
+        // about "find method not found on undefined" when the wireType
+        // is not supported by the Exchange.
+        const fee = exchangeDetails.wireInfo.feesForType[wireType].find((x) => {
+          return timestampIsBetween(
+            getTimestampNow(),
+            x.startStamp,
+            x.endStamp,
+          );
+        })?.wireFee;
+        if (fee) {
+          wireFee.push(fee);
+        }
+      }
+    });
+
+  return {
+    coin: coinFee.length === 0 ? Amounts.getZero(total.currency) : Amounts.sum(coinFee).amount,
+    wire: wireFee.length === 0 ? Amounts.getZero(total.currency) : Amounts.sum(wireFee).amount,
+    refresh: refreshFee.length === 0 ? Amounts.getZero(total.currency) : Amounts.sum(refreshFee).amount
+  };
 }

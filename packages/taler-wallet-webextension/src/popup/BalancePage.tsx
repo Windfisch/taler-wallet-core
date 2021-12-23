@@ -21,18 +21,21 @@ import { ButtonPrimary, ErrorBox } from "../components/styled/index";
 import { HookResponse, useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { PageLink } from "../renderHtml";
 import * as wxApi from "../wxApi";
-
+interface Props {
+  goToWalletDeposit: (currency: string) => void;
+  goToWalletManualWithdraw: () => void;
+}
 export function BalancePage({
   goToWalletManualWithdraw,
-}: {
-  goToWalletManualWithdraw: () => void;
-}): VNode {
+  goToWalletDeposit,
+}: Props): VNode {
   const state = useAsyncAsHook(wxApi.getBalance);
   return (
     <BalanceView
       balance={state}
       Linker={PageLink}
       goToWalletManualWithdraw={goToWalletManualWithdraw}
+      goToWalletDeposit={goToWalletDeposit}
     />
   );
 }
@@ -40,12 +43,14 @@ export interface BalanceViewProps {
   balance: HookResponse<BalancesResponse>;
   Linker: typeof PageLink;
   goToWalletManualWithdraw: () => void;
+  goToWalletDeposit: (currency: string) => void;
 }
 
 export function BalanceView({
   balance,
   Linker,
   goToWalletManualWithdraw,
+  goToWalletDeposit,
 }: BalanceViewProps): VNode {
   if (!balance) {
     return <div>Loading...</div>;
@@ -71,7 +76,8 @@ export function BalanceView({
             <Linker pageName="/welcome">help</Linker> getting started?
           </i18n.Translate>
         </p>
-        <footer style={{ justifyContent: "space-around" }}>
+        <footer style={{ justifyContent: "space-between" }}>
+          <div />
           <ButtonPrimary onClick={goToWalletManualWithdraw}>
             Withdraw
           </ButtonPrimary>
@@ -83,9 +89,13 @@ export function BalanceView({
   return (
     <Fragment>
       <section>
-        <BalanceTable balances={balance.response.balances} />
+        <BalanceTable
+          balances={balance.response.balances}
+          goToWalletDeposit={goToWalletDeposit}
+        />
       </section>
-      <footer style={{ justifyContent: "space-around" }}>
+      <footer style={{ justifyContent: "space-between" }}>
+        <div />
         <ButtonPrimary onClick={goToWalletManualWithdraw}>
           Withdraw
         </ButtonPrimary>

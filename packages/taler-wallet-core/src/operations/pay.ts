@@ -177,66 +177,6 @@ export async function getTotalPaymentCost(
     });
 }
 
-/**
- * Get the amount that will be deposited on the merchant's bank
- * account, not considering aggregation.
- */
-export async function getEffectiveDepositAmount(
-  ws: InternalWalletState,
-  wireType: string,
-  pcs: PayCoinSelection,
-): Promise<AmountJson> {
-  const amt: AmountJson[] = [];
-  const fees: AmountJson[] = [];
-  const exchangeSet: Set<string> = new Set();
-
-  await ws.db
-    .mktx((x) => ({
-      coins: x.coins,
-      denominations: x.denominations,
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-    }))
-    .runReadOnly(async (tx) => {
-      for (let i = 0; i < pcs.coinPubs.length; i++) {
-        const coin = await tx.coins.get(pcs.coinPubs[i]);
-        if (!coin) {
-          throw Error("can't calculate deposit amount, coin not found");
-        }
-        const denom = await tx.denominations.get([
-          coin.exchangeBaseUrl,
-          coin.denomPubHash,
-        ]);
-        if (!denom) {
-          throw Error("can't find denomination to calculate deposit amount");
-        }
-        amt.push(pcs.coinContributions[i]);
-        fees.push(denom.feeDeposit);
-        exchangeSet.add(coin.exchangeBaseUrl);
-      }
-      for (const exchangeUrl of exchangeSet.values()) {
-        const exchangeDetails = await getExchangeDetails(tx, exchangeUrl);
-        if (!exchangeDetails) {
-          continue;
-        }
-        // FIXME/NOTE: the line below _likely_ throws exception
-        // about "find method not found on undefined" when the wireType
-        // is not supported by the Exchange.
-        const fee = exchangeDetails.wireInfo.feesForType[wireType].find((x) => {
-          return timestampIsBetween(
-            getTimestampNow(),
-            x.startStamp,
-            x.endStamp,
-          );
-        })?.wireFee;
-        if (fee) {
-          fees.push(fee);
-        }
-      }
-    });
-  return Amounts.sub(Amounts.sum(amt).amount, Amounts.sum(fees).amount).amount;
-}
-
 function isSpendableCoin(coin: CoinRecord, denom: DenominationRecord): boolean {
   if (coin.suspended) {
     return false;
@@ -585,8 +525,7 @@ async function incrementPurchasePayRetry(
       pr.payRetryInfo.retryCounter++;
       updateRetryInfoTimeout(pr.payRetryInfo);
       logger.trace(
-        `retrying pay in ${
-          getDurationRemaining(pr.payRetryInfo.nextRetry).d_ms
+        `retrying pay in ${getDurationRemaining(pr.payRetryInfo.nextRetry).d_ms
         } ms`,
       );
       pr.lastPayError = err;

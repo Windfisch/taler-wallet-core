@@ -716,6 +716,10 @@ export const InputWithLabel = styled.div<{ invalid?: boolean }>`
   }
 `;
 
+export const ErrorText = styled.div`
+  color: red;
+`;
+
 export const ErrorBox = styled.div`
   border: 2px solid #f5c6cb;
   border-radius: 0.25em;

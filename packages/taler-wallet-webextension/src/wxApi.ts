@@ -24,10 +24,11 @@
 import {
   AcceptExchangeTosRequest,
   AcceptManualWithdrawalResult, AcceptTipRequest, AcceptWithdrawalResponse,
-  AddExchangeRequest, ApplyRefundResponse, BalancesResponse, ConfirmPayResult,
-  CoreApiResponse, DeleteTransactionRequest, ExchangesListRespose,
+  AddExchangeRequest, AmountJson, AmountString, ApplyRefundResponse, BalancesResponse, ConfirmPayResult,
+  CoreApiResponse, CreateDepositGroupRequest, CreateDepositGroupResponse, DeleteTransactionRequest, ExchangesListRespose,
   GetExchangeTosResult, GetExchangeWithdrawalInfo,
-  GetWithdrawalDetailsForUriRequest, NotificationType, PreparePayResult, PrepareTipRequest,
+  GetFeeForDepositRequest,
+  GetWithdrawalDetailsForUriRequest, KnownBankAccounts, NotificationType, PreparePayResult, PrepareTipRequest,
   PrepareTipResult, RetryTransactionRequest,
   SetWalletDeviceIdRequest, TransactionsResponse, WalletDiagnostics, WithdrawUriInfoResponse
 } from "@gnu-taler/taler-util";
@@ -36,6 +37,7 @@ import {
   PendingOperationsResponse,
   RemoveBackupProviderRequest
 } from "@gnu-taler/taler-wallet-core";
+import { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core/src/operations/withdraw";
 import { MessageFromBackend } from "./wxBackend.js";
 
@@ -119,6 +121,18 @@ export function resetDb(): Promise<void> {
   return callBackend("reset-db", {});
 }
 
+export function getFeeForDeposit(depositPaytoUri: string, amount: AmountString): Promise<DepositFee> {
+  return callBackend("getFeeForDeposit", {
+    depositPaytoUri, amount
+  } as GetFeeForDepositRequest);
+}
+
+export function createDepositGroup(depositPaytoUri: string, amount: AmountString): Promise<CreateDepositGroupResponse> {
+  return callBackend("createDepositGroup", {
+    depositPaytoUri, amount
+  } as CreateDepositGroupRequest);
+}
+
 /**
  * Get balances for all currencies/exchanges.
  */
@@ -169,6 +183,9 @@ export function listKnownCurrencies(): Promise<ListOfKnownCurrencies> {
 
 export function listExchanges(): Promise<ExchangesListRespose> {
   return callBackend("listExchanges", {});
+}
+export function listKnownBankAccounts(currency?: string): Promise<KnownBankAccounts> {
+  return callBackend("listKnownBankAccounts", { currency });
 }
 
 /**
