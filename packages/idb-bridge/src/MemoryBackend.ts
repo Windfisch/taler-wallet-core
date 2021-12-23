@@ -330,9 +330,8 @@ export class MemoryBackend implements Backend {
             originalData: new BTree([], compareKeys),
             originalName: indexName,
           };
-          const storeData = objectStoreData;
-
-          storeData.forEach((v, k) => {
+          objectStore.committedIndexes[indexName] = newIndex;
+          objectStoreData.forEach((v, k) => {
             try {
               this.insertIntoIndex(newIndex, k, v.value, indexSchema);
             } catch (e) {
