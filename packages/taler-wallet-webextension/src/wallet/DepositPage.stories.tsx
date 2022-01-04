@@ -19,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { AmountJson, Amounts, parsePaytoUri } from "@gnu-taler/taler-util";
+import { Amounts, parsePaytoUri } from "@gnu-taler/taler-util";
 import { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import { createExample } from "../test-utils";
 import { View as TestedComponent } from "./DepositPage";

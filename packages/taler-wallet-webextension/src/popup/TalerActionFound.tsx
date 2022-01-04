@@ -21,7 +21,7 @@
 
 import { classifyTalerUri, TalerUriType } from "@gnu-taler/taler-util";
 import { Fragment, h } from "preact";
-import { ButtonPrimary, ButtonSuccess } from "../components/styled/index";
+import { ButtonPrimary, ButtonSuccess } from "../components/styled";
 import { actionForTalerUri } from "../utils/index";
 
 export interface Props {

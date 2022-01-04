@@ -34,13 +34,13 @@ export const NoBalance = createExample(TestedComponent, {
     status: PreparePayResultType.InsufficientBalance,
     noncePriv: "",
     proposalId: "proposal1234",
-    contractTerms: ({
+    contractTerms: {
       merchant: {
         name: "someone",
       },
       summary: "some beers",
       amount: "USD:10",
-    } as Partial<ContractTerms>) as any,
+    } as Partial<ContractTerms> as any,
     amountRaw: "USD:10",
   },
 });
@@ -50,13 +50,13 @@ export const NoEnoughBalance = createExample(TestedComponent, {
     status: PreparePayResultType.InsufficientBalance,
     noncePriv: "",
     proposalId: "proposal1234",
-    contractTerms: ({
+    contractTerms: {
       merchant: {
         name: "someone",
       },
       summary: "some beers",
       amount: "USD:10",
-    } as Partial<ContractTerms>) as any,
+    } as Partial<ContractTerms> as any,
     amountRaw: "USD:10",
   },
   balance: {
@@ -67,42 +67,40 @@ export const NoEnoughBalance = createExample(TestedComponent, {
 });
 
 export const PaymentPossible = createExample(TestedComponent, {
-  uri:
-    "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
+  uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
   payStatus: {
     status: PreparePayResultType.PaymentPossible,
     amountEffective: "USD:10",
     amountRaw: "USD:10",
     noncePriv: "",
-    contractTerms: ({
+    contractTerms: {
       nonce: "123213123",
       merchant: {
         name: "someone",
       },
       amount: "USD:10",
       summary: "some beers",
-    } as Partial<ContractTerms>) as any,
+    } as Partial<ContractTerms> as any,
     contractTermsHash: "123456",
     proposalId: "proposal1234",
   },
 });
 
 export const PaymentPossibleWithFee = createExample(TestedComponent, {
-  uri:
-    "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
+  uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
   payStatus: {
     status: PreparePayResultType.PaymentPossible,
     amountEffective: "USD:10.20",
     amountRaw: "USD:10",
     noncePriv: "",
-    contractTerms: ({
+    contractTerms: {
       nonce: "123213123",
       merchant: {
         name: "someone",
       },
       amount: "USD:10",
       summary: "some beers",
-    } as Partial<ContractTerms>) as any,
+    } as Partial<ContractTerms> as any,
     contractTermsHash: "123456",
     proposalId: "proposal1234",
   },
@@ -113,7 +111,7 @@ export const AlreadyConfirmedWithFullfilment = createExample(TestedComponent, {
     status: PreparePayResultType.AlreadyConfirmed,
     amountEffective: "USD:10",
     amountRaw: "USD:10",
-    contractTerms: ({
+    contractTerms: {
       merchant: {
         name: "someone",
       },
@@ -121,7 +119,7 @@ export const AlreadyConfirmedWithFullfilment = createExample(TestedComponent, {
         "congratulations! you are looking at the fulfillment message! ",
       summary: "some beers",
       amount: "USD:10",
-    } as Partial<ContractTerms>) as any,
+    } as Partial<ContractTerms> as any,
     contractTermsHash: "123456",
     proposalId: "proposal1234",
     paid: false,
@@ -135,13 +133,13 @@ export const AlreadyConfirmedWithoutFullfilment = createExample(
       status: PreparePayResultType.AlreadyConfirmed,
       amountEffective: "USD:10",
       amountRaw: "USD:10",
-      contractTerms: ({
+      contractTerms: {
         merchant: {
           name: "someone",
         },
         summary: "some beers",
         amount: "USD:10",
-      } as Partial<ContractTerms>) as any,
+      } as Partial<ContractTerms> as any,
       contractTermsHash: "123456",
       proposalId: "proposal1234",
       paid: false,
@@ -154,7 +152,7 @@ export const AlreadyPaid = createExample(TestedComponent, {
     status: PreparePayResultType.AlreadyConfirmed,
     amountEffective: "USD:10",
     amountRaw: "USD:10",
-    contractTerms: ({
+    contractTerms: {
       merchant: {
         name: "someone",
       },
@@ -162,7 +160,7 @@ export const AlreadyPaid = createExample(TestedComponent, {
         "congratulations! you are looking at the fulfillment message! ",
       summary: "some beers",
       amount: "USD:10",
-    } as Partial<ContractTerms>) as any,
+    } as Partial<ContractTerms> as any,
     contractTermsHash: "123456",
     proposalId: "proposal1234",
     paid: true,

@@ -30,8 +30,8 @@ import {
   Input,
   LightText,
   SmallLightText,
-} from "../components/styled/index";
-import { queryToSlashConfig } from "../utils";
+} from "../components/styled";
+import { queryToSlashConfig } from "../utils/index";
 import * as wxApi from "../wxApi";
 
 interface Props {

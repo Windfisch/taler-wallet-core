@@ -48,14 +48,14 @@ module.exports = {
   webpackFinal: (config) => {
     // should be removed after storybook 6.3
     // https://github.com/storybookjs/storybook/issues/12853#issuecomment-821576113
-	  // removing workaround since this creates another problem
-	  // https://github.com/storybookjs/storybook/issues/16623
-	  // https://github.com/nodejs/node/issues/33460
-	  // FIXME: remove this comments in 2022 if no problem arise 
-//    config.resolve.alias = {
-//      react: "preact/compat",
-//      "react-dom": "preact/compat",
-//    };
+    // removing workaround since this creates another problem
+    // https://github.com/storybookjs/storybook/issues/16623
+    // https://github.com/nodejs/node/issues/33460
+    // FIXME: remove this comments in 2022 if no problem arise 
+    //    config.resolve.alias = {
+    //      react: "preact/compat",
+    //      "react-dom": "preact/compat",
+    //    };
 
     // we need to add @linaria loader AFTER the babel-loader
     // https://github.com/callstack/linaria/blob/master/docs/BUNDLERS_INTEGRATION.md#webpack  
@@ -65,7 +65,7 @@ module.exports = {
       use: [
         {
           ...(config.module.rules[0].use[0]),
-          loader: 'babel-loader',          
+          loader: 'babel-loader',
         },
         {
           loader: '@linaria/webpack-loader',
@@ -74,7 +74,7 @@ module.exports = {
             babelOptions: {
               presets: config.module.rules[0].use[0].options.presets,
             }
-             // Pass the current babel options to linaria's babel instance
+            // Pass the current babel options to linaria's babel instance
           }
         }
       ]

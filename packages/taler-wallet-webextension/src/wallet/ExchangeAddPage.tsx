@@ -21,7 +21,7 @@ import {
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import { queryToSlashKeys } from "../utils";
+import { queryToSlashKeys } from "../utils/index";
 import * as wxApi from "../wxApi";
 import { ExchangeAddConfirmPage } from "./ExchangeAddConfirm";
 import { ExchangeSetUrlPage } from "./ExchangeSetUrl";

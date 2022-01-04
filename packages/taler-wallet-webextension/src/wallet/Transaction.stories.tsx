@@ -125,12 +125,13 @@ const exampleData = {
 const transactionError = {
   code: 7005,
   details: {
-    requestUrl: "http://merchant-backend.taler:9966/orders/2021.340-02AD5XCC97MQM/pay",
+    requestUrl:
+      "http://merchant-backend.taler:9966/orders/2021.340-02AD5XCC97MQM/pay",
     httpStatusCode: 410,
     errorResponse: {
       code: 2161,
-      hint: "The payment is too late, the offer has expired."
-    }
+      hint: "The payment is too late, the offer has expired.",
+    },
   },
   hint: "Error: WALLET_UNEXPECTED_REQUEST_ERROR",
   message: "Unexpected error code in response",

@@ -22,7 +22,7 @@
 
 import { setupI18n } from "@gnu-taler/taler-util";
 import { createHashHistory } from "history";
-import { render, h } from "preact";
+import { render, h, VNode, Fragment } from "preact";
 import Router, { route, Route } from "preact-router";
 import { useEffect } from "preact/hooks";
 import { PopupBox } from "./components/styled";
@@ -39,6 +39,7 @@ import { ProviderDetailPage } from "./wallet/ProviderDetailPage";
 import { SettingsPage } from "./popup/Settings";
 import { TalerActionFound } from "./popup/TalerActionFound";
 import { ExchangeAddPage } from "./wallet/ExchangeAddPage";
+import { IoCProviderForRuntime } from "./context/iocContext";
 
 function main(): void {
   try {
@@ -63,87 +64,99 @@ if (document.readyState === "loading") {
   main();
 }
 
-function Application() {
-  const [talerActionUrl, setDismissed] = useTalerActionURL();
+function CheckTalerActionComponent(): VNode {
+  const [talerActionUrl] = useTalerActionURL();
 
   useEffect(() => {
-    if (talerActionUrl) route(Pages.cta);
+    if (talerActionUrl)
+      route(Pages.cta.replace(":action", encodeURIComponent(talerActionUrl)));
   }, [talerActionUrl]);
 
+  return <Fragment />;
+}
+
+function Application() {
   return (
     <div>
       <DevContextProvider>
-        <WalletNavBar />
-        <PopupBox>
-          <Router history={createHashHistory()}>
-            <Route path={Pages.dev} component={DeveloperPage} />
+        <IoCProviderForRuntime>
+          <WalletNavBar />
+          <CheckTalerActionComponent />
+          <PopupBox>
+            <Router history={createHashHistory()}>
+              <Route path={Pages.dev} component={DeveloperPage} />
 
-            <Route
-              path={Pages.balance}
-              component={BalancePage}
-              goToWalletManualWithdraw={() =>
-                goToWalletPage(Pages.manual_withdraw)
-              }
-              goToWalletDeposit={(currency: string) =>
-                goToWalletPage(Pages.deposit.replace(":currency", currency))
-              }
-            />
-            <Route path={Pages.settings} component={SettingsPage} />
-            <Route
-              path={Pages.cta}
-              component={() => (
-                <TalerActionFound
-                  url={talerActionUrl!}
-                  onDismiss={() => {
-                    setDismissed(true);
-                    route(Pages.balance);
-                  }}
-                />
-              )}
-            />
+              <Route
+                path={Pages.balance}
+                component={BalancePage}
+                goToWalletManualWithdraw={() =>
+                  goToWalletPage(Pages.manual_withdraw)
+                }
+                goToWalletDeposit={(currency: string) =>
+                  goToWalletPage(Pages.deposit.replace(":currency", currency))
+                }
+              />
+              <Route path={Pages.settings} component={SettingsPage} />
+              <Route
+                path={Pages.cta}
+                component={function Action({ action }: { action: string }) {
+                  const [, setDismissed] = useTalerActionURL();
 
-            <Route
-              path={Pages.transaction}
-              component={({ tid }: { tid: string }) =>
-                goToWalletPage(Pages.transaction.replace(":tid", tid))
-              }
-            />
+                  return (
+                    <TalerActionFound
+                      url={decodeURIComponent(action)}
+                      onDismiss={() => {
+                        setDismissed(true);
+                        route(Pages.balance);
+                      }}
+                    />
+                  );
+                }}
+              />
 
-            <Route path={Pages.history} component={HistoryPage} />
+              <Route
+                path={Pages.transaction}
+                component={({ tid }: { tid: string }) =>
+                  goToWalletPage(Pages.transaction.replace(":tid", tid))
+                }
+              />
 
-            <Route
-              path={Pages.backup}
-              component={BackupPage}
-              onAddProvider={() => {
-                route(Pages.provider_add);
-              }}
-            />
-            <Route
-              path={Pages.provider_detail}
-              component={ProviderDetailPage}
-              onBack={() => {
-                route(Pages.backup);
-              }}
-            />
-            <Route
-              path={Pages.provider_add}
-              component={ProviderAddPage}
-              onBack={() => {
-                route(Pages.backup);
-              }}
-            />
+              <Route path={Pages.history} component={HistoryPage} />
 
-            <Route
-              path={Pages.exchange_add}
-              component={ExchangeAddPage}
-              onBack={() => {
-                route(Pages.balance);
-              }}
-            />
+              <Route
+                path={Pages.backup}
+                component={BackupPage}
+                onAddProvider={() => {
+                  route(Pages.provider_add);
+                }}
+              />
+              <Route
+                path={Pages.provider_detail}
+                component={ProviderDetailPage}
+                onBack={() => {
+                  route(Pages.backup);
+                }}
+              />
+              <Route
+                path={Pages.provider_add}
+                component={ProviderAddPage}
+                onBack={() => {
+                  route(Pages.backup);
+                }}
+              />
 
-            <Route default component={Redirect} to={Pages.balance} />
-          </Router>
-        </PopupBox>
+              <Route
+                path={Pages.exchange_add}
+                component={ExchangeAddPage}
+                onBack={() => {
+                  route(Pages.balance);
+                }}
+              />
+
+              <Route default component={Redirect} to={Pages.balance} />
+            </Router>
+          </PopupBox>
+        </IoCProviderForRuntime>
       </DevContextProvider>
     </div>
   );

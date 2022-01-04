@@ -1,14 +1,10 @@
 import { i18n } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import {
-  Button,
-  ButtonSuccess,
-  ButtonWarning,
-} from "../components/styled/index";
+import { Button, ButtonSuccess, ButtonWarning } from "../components/styled";
 import { TermsOfServiceSection } from "../cta/TermsOfServiceSection";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import { buildTermsOfServiceState, TermsState } from "../utils";
+import { buildTermsOfServiceState, TermsState } from "../utils/index";
 import * as wxApi from "../wxApi";
 
 export interface Props {

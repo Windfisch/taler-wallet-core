@@ -14,8 +14,8 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { classifyTalerUri, TalerUriType } from "@gnu-taler/taler-util";
 import { useEffect, useState } from "preact/hooks";
+import { useIocContext } from "../context/iocContext";
 
 export function useTalerActionURL(): [
   string | undefined,
@@ -25,6 +25,8 @@ export function useTalerActionURL(): [
     undefined,
   );
   const [dismissed, setDismissed] = useState(false);
+  const { findTalerUriInActiveTab } = useIocContext()
+
   useEffect(() => {
     async function check(): Promise<void> {
       const talerUri = await findTalerUriInActiveTab();
@@ -34,29 +36,4 @@ export function useTalerActionURL(): [
   }, []);
   const url = dismissed ? undefined : talerActionUrl;
   return [url, setDismissed];
-}
-
-async function findTalerUriInActiveTab(): Promise<string | undefined> {
-  return new Promise((resolve, reject) => {
-    chrome.tabs.executeScript(
-      {
-        code: `
-        (() => {
-          let x = document.querySelector("a[href^='taler://'") || document.querySelector("a[href^='taler+http://'");
-          return x ? x.href.toString() : null;
-        })();
-      `,
-        allFrames: false,
-      },
-      (result) => {
-        if (chrome.runtime.lastError) {
-          console.error(chrome.runtime.lastError);
-          resolve(undefined);
-          return;
-        }
-        console.log("got result", result);
-        resolve(result[0]);
-      },
-    );
-  });
 }

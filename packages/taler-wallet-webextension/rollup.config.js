@@ -8,48 +8,77 @@ import nodeResolve from "@rollup/plugin-node-resolve";
 import replace from "@rollup/plugin-replace";
 import css from 'rollup-plugin-css-only';
 import ignore from "rollup-plugin-ignore";
+import typescript from '@rollup/plugin-typescript';
+
+import path from 'path';
+import fs from 'fs';
+
+function fromDir(startPath, regex) {
+  if (!fs.existsSync(startPath)) {
+    return;
+  }
+  const files = fs.readdirSync(startPath);
+  const result = files.flatMap(file => {
+    const filename = path.join(startPath, file);
+
+    const stat = fs.lstatSync(filename);
+    if (stat.isDirectory()) {
+      return fromDir(filename, regex);
+    }
+    else if (regex.test(filename)) {
+      return filename
+    }
+  }).filter(x => !!x)
+
+  return result
+}
 
 const makePlugins = () => [
-    alias({
-      entries: [
-        { find: 'react', replacement: 'preact/compat' },
-        { find: 'react-dom', replacement: 'preact/compat' }
-      ]
-    }),
+  typescript({
+    outputToFilesystem: false,
+  }),
 
-    ignore(["module", "os"]),
-    nodeResolve({
-      browser: true,
-      preferBuiltins: true,
-    }),
+  alias({
+    entries: [
+      { find: 'react', replacement: 'preact/compat' },
+      { find: 'react-dom', replacement: 'preact/compat' }
+    ]
+  }),
 
-    //terser(),
-    
+  ignore(["module", "os"]),
+  nodeResolve({
+    browser: true,
+    preferBuiltins: true,
+  }),
 
-    replace({
-      "process.env.NODE_ENV": JSON.stringify("production"),
-      "__filename": "'__webextension__'",
-    }),
+  //terser(),
 
-    commonjs({
-      include: [/node_modules/, /dist/],
-      extensions: [".js"],
-      ignoreGlobal: true,
-      sourceMap: true,
-    }),
 
-    json(),
-    image(),
+  replace({
+    "process.env.NODE_ENV": JSON.stringify("production"),
+    // "__filename": "'__webextension__'",
+    preventAssignment: true
+  }),
 
-    linaria({
-      sourceMap: process.env.NODE_ENV !== 'production',
-    }),
-    
+  commonjs({
+    include: [/node_modules/, /dist/],
+    extensions: [".js"],
+    ignoreGlobal: true,
+    sourceMap: true,
+  }),
+
+  json(),
+  image(),
+
+  linaria({
+    sourceMap: process.env.NODE_ENV !== 'production',
+  }),
+
 ];
 
 
 const webExtensionWalletEntryPoint = {
-  input: "lib/walletEntryPoint.js",
+  input: "src/walletEntryPoint.tsx",
   output: {
     file: "dist/walletEntryPoint.js",
     format: "iife",
@@ -60,12 +89,12 @@ const webExtensionWalletEntryPoint = {
     ...makePlugins(),
     css({
       output: 'walletEntryPoint.css',
-     }),
-   ],
+    }),
+  ],
 };
 
 const webExtensionPopupEntryPoint = {
-  input: "lib/popupEntryPoint.js",
+  input: "src/popupEntryPoint.tsx",
   output: {
     file: "dist/popupEntryPoint.js",
     format: "iife",
@@ -76,12 +105,12 @@ const webExtensionPopupEntryPoint = {
     ...makePlugins(),
     css({
       output: 'popupEntryPoint.css',
-     }),
-   ],
+    }),
+  ],
 };
 
 const webExtensionBackgroundPageScript = {
-  input: "lib/background.js",
+  input: "src/background.ts",
   output: {
     file: "dist/background.js",
     format: "iife",
@@ -92,7 +121,7 @@ const webExtensionBackgroundPageScript = {
 };
 
 const webExtensionCryptoWorker = {
-  input: "lib/browserWorkerEntry.js",
+  input: "src/browserWorkerEntry.ts",
   output: {
     file: "dist/browserWorkerEntry.js",
     format: "iife",
@@ -102,9 +131,26 @@ const webExtensionCryptoWorker = {
   plugins: makePlugins(),
 };
 
+const tests = fromDir('./src', /.test.ts$/).map(test => ({
+  input: test,
+  output: {
+    file: test.replace(/^src/, 'dist').replace(/\.ts$/, '.js'),
+    format: "iife",
+    exports: "none",
+    name: test,
+  },
+  plugins: [
+    ...makePlugins(),
+    css({
+      output: 'walletEntryPoint.css',
+    }),
+  ],
+}))
+
 export default [
   webExtensionPopupEntryPoint,
   webExtensionWalletEntryPoint,
   webExtensionBackgroundPageScript,
   webExtensionCryptoWorker,
+  ...tests,
 ];

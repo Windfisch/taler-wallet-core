@@ -14,11 +14,16 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
- /**
+/**
  *
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-// This fixed an error related to the CSS and loading gif breaking my Jest test
-// See https://facebook.github.io/jest/docs/en/webpack.html#handling-static-assets
-export default 'test-file-stub';
+import * as a1 from "./AddNewActionView.stories";
+import * as a2 from "./Balance.stories";
+import * as a3 from "./DeveloperPage.stories";
+import * as a4 from "./History.stories";
+import * as a5 from "./Popup.stories";
+import * as a6 from "./TalerActionFound.stories";
+
+export default [a1, a2, a3, a4, a5, a6];

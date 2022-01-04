@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Outlined, StyledCheckboxLabel } from "./styled/index";
+import { Outlined, StyledCheckboxLabel } from "./styled";
 import { h, VNode } from "preact";
 
 interface Props {

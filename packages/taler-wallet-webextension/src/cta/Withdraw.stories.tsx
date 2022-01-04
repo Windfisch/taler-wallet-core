@@ -24,12 +24,16 @@ import { createExample } from "../test-utils";
 import { termsHtml, termsPdf, termsPlain, termsXml } from "./termsExample";
 import { View as TestedComponent } from "./Withdraw";
 
+function parseFromString(s: string): Document {
+  if (typeof window === "undefined") {
+    return {} as Document;
+  }
+  return new window.DOMParser().parseFromString(s, "text/xml");
+}
+
 export default {
   title: "cta/withdraw",
   component: TestedComponent,
-  argTypes: {
-    onSwitchExchange: { action: "onRetry" },
-  },
 };
 
 const exchangeList: ExchangeListItem[] = [
@@ -77,7 +81,7 @@ export const NewTerms = createExample(TestedComponent, {
   terms: {
     content: {
       type: "xml",
-      document: new DOMParser().parseFromString(termsXml, "text/xml"),
+      document: parseFromString(termsXml),
     },
     status: "new",
     version: "",
@@ -192,7 +196,7 @@ export const TermsReviewingXML = createExample(TestedComponent, {
   terms: {
     content: {
       type: "xml",
-      document: new DOMParser().parseFromString(termsXml, "text/xml"),
+      document: parseFromString(termsXml),
     },
     status: "new",
     version: "",
@@ -219,7 +223,7 @@ export const NewTermsAccepted = createExample(TestedComponent, {
   terms: {
     content: {
       type: "xml",
-      document: new DOMParser().parseFromString(termsXml, "text/xml"),
+      document: parseFromString(termsXml),
     },
     status: "new",
     version: "",
@@ -247,7 +251,7 @@ export const TermsShowAgainXML = createExample(TestedComponent, {
   terms: {
     content: {
       type: "xml",
-      document: new DOMParser().parseFromString(termsXml, "text/xml"),
+      document: parseFromString(termsXml),
     },
     version: "",
     status: "new",
@@ -276,7 +280,7 @@ export const TermsChanged = createExample(TestedComponent, {
   terms: {
     content: {
       type: "xml",
-      document: new DOMParser().parseFromString(termsXml, "text/xml"),
+      document: parseFromString(termsXml),
     },
     version: "",
     status: "changed",
@@ -351,7 +355,7 @@ export const WithoutFee = createExample(TestedComponent, {
   terms: {
     content: {
       type: "xml",
-      document: new DOMParser().parseFromString(termsXml, "text/xml"),
+      document: parseFromString(termsXml),
     },
     status: "accepted",
     version: "",

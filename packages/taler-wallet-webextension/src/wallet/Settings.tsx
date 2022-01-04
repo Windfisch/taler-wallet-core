@@ -29,7 +29,7 @@ import { useBackupDeviceName } from "../hooks/useBackupDeviceName";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
 import { useLang } from "../hooks/useLang";
 import { Pages } from "../NavigationBar";
-import { buildTermsOfServiceStatus } from "../utils";
+import { buildTermsOfServiceStatus } from "../utils/index";
 import * as wxApi from "../wxApi";
 
 export function SettingsPage(): VNode {

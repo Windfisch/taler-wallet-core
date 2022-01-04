@@ -135,7 +135,9 @@ export function PayPage({
     ? Amounts.parseOrThrow(foundBalance.available)
     : undefined;
   // We use a string here so that dependency tracking for useEffect works properly
-  const foundAmountStr = foundAmount ? Amounts.stringify(foundAmount) : undefined;
+  const foundAmountStr = foundAmount
+    ? Amounts.stringify(foundAmount)
+    : undefined;
 
   useEffect(() => {
     if (!talerPayUri) return;

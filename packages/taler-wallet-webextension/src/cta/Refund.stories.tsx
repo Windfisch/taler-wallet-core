@@ -35,10 +35,10 @@ export const Complete = createExample(TestedComponent, {
     amountRefundGone: "USD:0",
     amountRefundGranted: "USD:2",
     contractTermsHash: "QWEASDZXC",
-    info: ({
+    info: {
       summary: "tasty cold beer",
       contractTermsHash: "QWEASDZXC",
-    } as Partial<OrderShortInfo>) as any,
+    } as Partial<OrderShortInfo> as any,
     pendingAtExchange: false,
     proposalId: "proposal123",
   },
@@ -50,10 +50,10 @@ export const Partial = createExample(TestedComponent, {
     amountRefundGone: "USD:1",
     amountRefundGranted: "USD:2",
     contractTermsHash: "QWEASDZXC",
-    info: ({
+    info: {
       summary: "tasty cold beer",
       contractTermsHash: "QWEASDZXC",
-    } as Partial<OrderShortInfo>) as any,
+    } as Partial<OrderShortInfo> as any,
     pendingAtExchange: false,
     proposalId: "proposal123",
   },
@@ -65,10 +65,10 @@ export const InProgress = createExample(TestedComponent, {
     amountRefundGone: "USD:1",
     amountRefundGranted: "USD:2",
     contractTermsHash: "QWEASDZXC",
-    info: ({
+    info: {
       summary: "tasty cold beer",
       contractTermsHash: "QWEASDZXC",
-    } as Partial<OrderShortInfo>) as any,
+    } as Partial<OrderShortInfo> as any,
     pendingAtExchange: true,
     proposalId: "proposal123",
   },

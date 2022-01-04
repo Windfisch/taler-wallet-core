@@ -34,7 +34,7 @@ import {
   SmallLightText,
   LargeText,
   LightText,
-} from "./styled/index";
+} from "./styled";
 import { Time } from "./Time";
 
 export function TransactionItem(props: {

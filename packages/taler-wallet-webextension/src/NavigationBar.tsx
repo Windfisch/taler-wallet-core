@@ -37,7 +37,7 @@ export enum Pages {
   deposit = "/deposit/:currency",
   settings = "/settings",
   dev = "/dev",
-  cta = "/cta",
+  cta = "/cta/:action",
   backup = "/backup",
   history = "/history",
   transaction = "/transaction/:tid",

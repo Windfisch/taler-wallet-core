@@ -23,7 +23,7 @@ import {
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { ButtonPrimary } from "../components/styled/index";
+import { ButtonPrimary } from "../components/styled";
 import { TransactionItem } from "../components/TransactionItem";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import * as wxApi from "../wxApi";
@@ -133,7 +133,7 @@ export function HistoryView({
             style={{ color: "darkgreen", textDecoration: "none" }}
             href={
               // eslint-disable-next-line no-undef
-              chrome.extension
+              typeof chrome !== "undefined" && chrome.extension
                 ? // eslint-disable-next-line no-undef
                   chrome.extension.getURL(`/static/wallet.html#/history`)
                 : "#"

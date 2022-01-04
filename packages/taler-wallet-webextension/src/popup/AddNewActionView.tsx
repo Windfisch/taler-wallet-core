@@ -1,11 +1,7 @@
 import { classifyTalerUri, TalerUriType } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import {
-  Button,
-  ButtonSuccess,
-  InputWithLabel,
-} from "../components/styled/index";
+import { Button, ButtonSuccess, InputWithLabel } from "../components/styled";
 import { actionForTalerUri } from "../utils/index";
 
 export interface Props {

@@ -3,7 +3,7 @@ import { Fragment, h, VNode } from "preact";
 import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType";
 import { QR } from "../components/QR";
 import { ButtonDestructive, WarningBox } from "../components/styled";
-import { amountToString } from "../utils";
+import { amountToString } from "../utils/index";
 export interface Props {
   reservePub: string;
   payto: string;

@@ -40,7 +40,11 @@ import {
   WalletAction,
 } from "../components/styled";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import { amountToString, buildTermsOfServiceState, TermsState } from "../utils";
+import {
+  amountToString,
+  buildTermsOfServiceState,
+  TermsState,
+} from "../utils/index";
 import * as wxApi from "../wxApi";
 import { TermsOfServiceSection } from "./TermsOfServiceSection";
 

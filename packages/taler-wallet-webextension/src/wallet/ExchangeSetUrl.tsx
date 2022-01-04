@@ -7,12 +7,7 @@ import {
 import { Fragment, h } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { ErrorMessage } from "../components/ErrorMessage";
-import {
-  Button,
-  ButtonPrimary,
-  Input,
-  WarningBox,
-} from "../components/styled/index";
+import { Button, ButtonPrimary, Input, WarningBox } from "../components/styled";
 
 export interface Props {
   initialValue?: string;

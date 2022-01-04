@@ -29,10 +29,11 @@ export function ErrorTalerOperation({
 }): VNode | null {
   const { devMode } = useDevContext();
   const [showErrorDetail, setShowErrorDetail] = useState(false);
-  
+
   if (!title || !error) return null;
   // const errorCode: number | undefined = (error.details as any)?.errorResponse?.code
-  const errorHint: string | undefined = (error.details as any)?.errorResponse?.hint
+  const errorHint: string | undefined = (error.details as any)?.errorResponse
+    ?.hint;
 
   return (
     <ErrorBox style={{ paddingTop: 0, paddingBottom: 0 }}>
@@ -53,11 +54,11 @@ export function ErrorTalerOperation({
           <div style={{ padding: 5, textAlign: "left" }}>
             <div>{error.message}</div>
           </div>
-          {errorHint && 
-          <div style={{ padding: 5, textAlign: "left" }}>
-            <div>{errorHint}</div>
-          </div>
-          }
+          {errorHint && (
+            <div style={{ padding: 5, textAlign: "left" }}>
+              <div>{errorHint}</div>
+            </div>
+          )}
           {devMode && (
             <div style={{ textAlign: "left", overflowX: "auto" }}>
               <pre>{JSON.stringify(error, undefined, 2)}</pre>

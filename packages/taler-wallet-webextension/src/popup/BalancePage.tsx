@@ -17,7 +17,7 @@
 import { BalancesResponse, i18n } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { BalanceTable } from "../components/BalanceTable";
-import { ButtonPrimary, ErrorBox } from "../components/styled/index";
+import { ButtonPrimary, ErrorBox } from "../components/styled";
 import { HookResponse, useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { PageLink } from "../renderHtml";
 import * as wxApi from "../wxApi";

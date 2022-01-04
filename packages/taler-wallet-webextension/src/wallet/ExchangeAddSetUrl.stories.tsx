@@ -20,7 +20,7 @@
  */
 
 import { createExample } from "../test-utils";
-import { queryToSlashKeys } from "../utils";
+import { queryToSlashKeys } from "../utils/index";
 import { ExchangeSetUrlPage as TestedComponent } from "./ExchangeSetUrl";
 
 export default {

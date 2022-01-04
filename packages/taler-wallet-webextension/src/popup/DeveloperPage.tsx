@@ -20,7 +20,7 @@ import { format } from "date-fns";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { Diagnostics } from "../components/Diagnostics";
-import { NotifyUpdateFadeOut } from "../components/styled/index";
+import { NotifyUpdateFadeOut } from "../components/styled";
 import { Time } from "../components/Time";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { useDiagnostics } from "../hooks/useDiagnostics";

@@ -23,6 +23,17 @@ import { termsXml } from "../cta/termsExample";
 import { createExample } from "../test-utils";
 import { View as TestedComponent } from "./ExchangeAddConfirm";
 
+function parseFromString(s: string): Document {
+  if (typeof window === "undefined") {
+    return {
+      querySelector: () => ({
+        children: [],
+      }),
+    } as any;
+  }
+  return new window.DOMParser().parseFromString(s, "text/xml");
+}
+
 export default {
   title: "wallet/exchange add/confirm",
   component: TestedComponent,
@@ -60,7 +71,7 @@ export const TermsChanged = createExample(TestedComponent, {
     version: "1",
     content: {
       type: "xml",
-      document: new DOMParser().parseFromString(termsXml, "text/xml"),
+      document: parseFromString(termsXml),
     },
   },
   onAccept: async () => undefined,

@@ -19,7 +19,7 @@ import { h, VNode } from "preact";
 import {
   ButtonPrimary,
   TableWithRoundRows as TableWithRoundedRows,
-} from "./styled/index";
+} from "./styled";
 
 export function BalanceTable({
   balances,

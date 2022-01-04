@@ -108,8 +108,13 @@ export function View({
   const currency = balance.currency;
   const amountStr: AmountString = `${currency}:${amount}`;
 
-  const account = knownBankAccounts[accountIdx];
-  const accountURI = `payto://${account.targetType}/${account.targetPath}`;
+  const account = knownBankAccounts.length
+    ? knownBankAccounts[accountIdx]
+    : undefined;
+  const accountURI = !account
+    ? ""
+    : `payto://${account.targetType}/${account.targetPath}`;
+
   useEffect(() => {
     if (amount === undefined) return;
     onCalculateFee(accountURI, amountStr).then((result) => {

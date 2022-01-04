@@ -21,7 +21,6 @@ import { TranslationProvider } from '../src/context/translation'
 import { PopupBox, WalletBox } from '../src/components/styled'
 export const parameters = {
   controls: { expanded: true },
-  actions: { argTypesRegex: "^on[A-Z].*" },
 }
 
 export const globalTypes = {

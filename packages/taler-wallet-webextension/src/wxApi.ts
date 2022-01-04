@@ -39,7 +39,7 @@ import {
 } from "@gnu-taler/taler-wallet-core";
 import { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core/src/operations/withdraw";
-import { MessageFromBackend } from "./wxBackend.js";
+import { MessageFromBackend } from "./wxBackend";
 
 export interface ExtendedPermissionsResponse {
   newValue: boolean;
@@ -75,7 +75,7 @@ async function callBackend(operation: string, payload: any): Promise<any> {
         console.log("Error calling backend");
         reject(
           new Error(
-            `Error contacting backend: chrome.runtime.lastError.message`,
+            `Error contacting backend: ${chrome.runtime.lastError.message}`,
           ),
         );
       }

@@ -10,7 +10,7 @@ import {
   WarningBox,
   WarningText,
 } from "../components/styled";
-import { TermsState } from "../utils";
+import { TermsState } from "../utils/index";
 
 interface Props {
   reviewing: boolean;

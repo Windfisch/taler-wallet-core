@@ -19,30 +19,19 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { PendingTaskType } from "@gnu-taler/taler-wallet-core";
-import { createExample } from "../test-utils";
-import { View as TestedComponent } from "./DeveloperPage";
+import * as a1 from "./Backup.stories";
+import * as a2 from "./Balance.stories";
+import * as a3 from "./CreateManualWithdraw.stories";
+import * as a4 from "./DepositPage.stories";
+import * as a5 from "./ExchangeAddConfirm.stories";
+import * as a6 from "./ExchangeAddSetUrl.stories";
+import * as a7 from "./History.stories";
+import * as a8 from "./ProviderAddConfirmProvider.stories";
+import * as a9 from "./ProviderAddSetUrl.stories";
+import * as a10 from "./ProviderDetail.stories";
+import * as a11 from "./ReserveCreated.stories";
+import * as a12 from "./Settings.stories";
+import * as a13 from "./Transaction.stories";
+import * as a14 from "./Welcome.stories";
 
-export default {
-  title: "wallet/developer",
-  component: TestedComponent,
-  argTypes: {
-    setDeviceName: () => Promise.resolve(),
-  },
-};
-
-export const AllOff = createExample(TestedComponent, {
-  onDownloadDatabase: async () => "this is the content of the database",
-  operations: [
-    {
-      type: PendingTaskType.ExchangeUpdate,
-      exchangeBaseUrl: "http://exchange.url.",
-      givesLifeness: false,
-      lastError: undefined,
-      timestampDue: {
-        t_ms: 123123213,
-      },
-      retryInfo: undefined,
-    },
-  ],
-});
+export default [a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14];

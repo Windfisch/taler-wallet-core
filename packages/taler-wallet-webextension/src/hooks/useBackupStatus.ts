@@ -43,8 +43,8 @@ function getStatusPaidOrder(a: ProviderPaymentPaid, b: ProviderPaymentPaid) {
   return a.paidUntil.t_ms === "never"
     ? -1
     : b.paidUntil.t_ms === "never"
-    ? 1
-    : a.paidUntil.t_ms - b.paidUntil.t_ms;
+      ? 1
+      : a.paidUntil.t_ms - b.paidUntil.t_ms;
 }
 
 export function useBackupStatus(): BackupStatus | undefined {

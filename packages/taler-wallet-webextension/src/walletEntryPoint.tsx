@@ -46,6 +46,7 @@ import { ProviderDetailPage } from "./wallet/ProviderDetailPage";
 import { ProviderAddPage } from "./wallet/ProviderAddPage";
 import { ExchangeAddPage } from "./wallet/ExchangeAddPage";
 import { DepositPage } from "./wallet/DepositPage";
+import { IoCProviderForRuntime } from "./context/iocContext";
 
 function main(): void {
   try {
@@ -88,103 +89,105 @@ function Application(): VNode {
   return (
     <div>
       <DevContextProvider>
-        <Router history={createHashHistory()}>
-          <Route
-            path={Pages.welcome}
-            component={withLogoAndNavBar(WelcomePage)}
-          />
+        <IoCProviderForRuntime>
+          <Router history={createHashHistory()}>
+            <Route
+              path={Pages.welcome}
+              component={withLogoAndNavBar(WelcomePage)}
+            />
 
-          <Route
-            path={Pages.history}
-            component={withLogoAndNavBar(HistoryPage)}
-          />
-          <Route
-            path={Pages.transaction}
-            component={withLogoAndNavBar(TransactionPage)}
-          />
-          <Route
-            path={Pages.balance}
-            component={withLogoAndNavBar(BalancePage)}
-            goToWalletManualWithdraw={() => route(Pages.manual_withdraw)}
-            goToWalletDeposit={(currency: string) =>
-              route(Pages.deposit.replace(":currency", currency))
-            }
-          />
-          <Route
-            path={Pages.settings}
-            component={withLogoAndNavBar(SettingsPage)}
-          />
-          <Route
-            path={Pages.backup}
-            component={withLogoAndNavBar(BackupPage)}
-            onAddProvider={() => {
-              route(Pages.provider_add);
-            }}
-          />
-          <Route
-            path={Pages.provider_detail}
-            component={withLogoAndNavBar(ProviderDetailPage)}
-            onBack={() => {
-              route(Pages.backup);
-            }}
-          />
-          <Route
-            path={Pages.provider_add}
-            component={withLogoAndNavBar(ProviderAddPage)}
-            onBack={() => {
-              route(Pages.backup);
-            }}
-          />
+            <Route
+              path={Pages.history}
+              component={withLogoAndNavBar(HistoryPage)}
+            />
+            <Route
+              path={Pages.transaction}
+              component={withLogoAndNavBar(TransactionPage)}
+            />
+            <Route
+              path={Pages.balance}
+              component={withLogoAndNavBar(BalancePage)}
+              goToWalletManualWithdraw={() => route(Pages.manual_withdraw)}
+              goToWalletDeposit={(currency: string) =>
+                route(Pages.deposit.replace(":currency", currency))
+              }
+            />
+            <Route
+              path={Pages.settings}
+              component={withLogoAndNavBar(SettingsPage)}
+            />
+            <Route
+              path={Pages.backup}
+              component={withLogoAndNavBar(BackupPage)}
+              onAddProvider={() => {
+                route(Pages.provider_add);
+              }}
+            />
+            <Route
+              path={Pages.provider_detail}
+              component={withLogoAndNavBar(ProviderDetailPage)}
+              onBack={() => {
+                route(Pages.backup);
+              }}
+            />
+            <Route
+              path={Pages.provider_add}
+              component={withLogoAndNavBar(ProviderAddPage)}
+              onBack={() => {
+                route(Pages.backup);
+              }}
+            />
 
-          <Route
-            path={Pages.exchange_add}
-            component={withLogoAndNavBar(ExchangeAddPage)}
-            onBack={() => {
-              route(Pages.balance);
-            }}
-          />
+            <Route
+              path={Pages.exchange_add}
+              component={withLogoAndNavBar(ExchangeAddPage)}
+              onBack={() => {
+                route(Pages.balance);
+              }}
+            />
 
-          <Route
-            path={Pages.manual_withdraw}
-            component={withLogoAndNavBar(ManualWithdrawPage)}
-          />
+            <Route
+              path={Pages.manual_withdraw}
+              component={withLogoAndNavBar(ManualWithdrawPage)}
+            />
 
-          <Route
-            path={Pages.deposit}
-            component={withLogoAndNavBar(DepositPage)}
-          />
-          <Route
-            path={Pages.reset_required}
-            component={() => <div>no yet implemented</div>}
-          />
-          <Route
-            path={Pages.payback}
-            component={() => <div>no yet implemented</div>}
-          />
-          <Route
-            path={Pages.return_coins}
-            component={() => <div>no yet implemented</div>}
-          />
+            <Route
+              path={Pages.deposit}
+              component={withLogoAndNavBar(DepositPage)}
+            />
+            <Route
+              path={Pages.reset_required}
+              component={() => <div>no yet implemented</div>}
+            />
+            <Route
+              path={Pages.payback}
+              component={() => <div>no yet implemented</div>}
+            />
+            <Route
+              path={Pages.return_coins}
+              component={() => <div>no yet implemented</div>}
+            />
 
-          <Route
-            path={Pages.dev}
-            component={withLogoAndNavBar(DeveloperPage)}
-          />
+            <Route
+              path={Pages.dev}
+              component={withLogoAndNavBar(DeveloperPage)}
+            />
 
-          {/** call to action */}
-          <Route
-            path={Pages.pay}
-            component={PayPage}
-            goToWalletManualWithdraw={() =>
-              goToWalletPage(Pages.manual_withdraw)
-            }
-          />
-          <Route path={Pages.refund} component={RefundPage} />
-          <Route path={Pages.tips} component={TipPage} />
-          <Route path={Pages.withdraw} component={WithdrawPage} />
+            {/** call to action */}
+            <Route
+              path={Pages.pay}
+              component={PayPage}
+              goToWalletManualWithdraw={() =>
+                goToWalletPage(Pages.manual_withdraw)
+              }
+            />
+            <Route path={Pages.refund} component={RefundPage} />
+            <Route path={Pages.tips} component={TipPage} />
+            <Route path={Pages.withdraw} component={WithdrawPage} />
 
-          <Route default component={Redirect} to={Pages.history} />
-        </Router>
+            <Route default component={Redirect} to={Pages.history} />
+          </Router>
+        </IoCProviderForRuntime>
       </DevContextProvider>
     </div>
   );

@@ -15,7 +15,7 @@
  */
 
 import { Fragment, h, VNode } from "preact";
-import { NiceSelect } from "./styled/index";
+import { NiceSelect } from "./styled";
 
 interface Props {
   value?: string;
