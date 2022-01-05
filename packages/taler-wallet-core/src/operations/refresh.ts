@@ -17,6 +17,7 @@
 import {
   DenomKeyType,
   encodeCrock,
+  ExchangeProtocolVersion,
   getRandomBytes,
   HttpStatusCode,
 } from "@gnu-taler/taler-util";
@@ -91,8 +92,10 @@ export function getTotalRefreshCost(
   refreshedDenom: DenominationRecord,
   amountLeft: AmountJson,
 ): AmountJson {
-  const withdrawAmount = Amounts.sub(amountLeft, refreshedDenom.feeRefresh)
-    .amount;
+  const withdrawAmount = Amounts.sub(
+    amountLeft,
+    refreshedDenom.feeRefresh,
+  ).amount;
   const withdrawDenoms = selectWithdrawalDenominations(withdrawAmount, denoms);
   const resultingAmount = Amounts.add(
     Amounts.getZero(withdrawAmount.currency),
@@ -198,9 +201,10 @@ async function refreshCreateSession(
       }
 
       // FIXME: use an index here, based on the withdrawal expiration time.
-      const availableDenoms: DenominationRecord[] = await tx.denominations.indexes.byExchangeBaseUrl
-        .iter(exchange.baseUrl)
-        .toArray();
+      const availableDenoms: DenominationRecord[] =
+        await tx.denominations.indexes.byExchangeBaseUrl
+          .iter(exchange.baseUrl)
+          .toArray();
 
       const availableAmount = Amounts.sub(
         refreshGroup.inputPerCoin[coinIndex],
@@ -351,7 +355,22 @@ async function refreshMelt(
 
   const { newCoinDenoms, oldCoin, oldDenom, refreshGroup, refreshSession } = d;
 
+  let exchangeProtocolVersion: ExchangeProtocolVersion;
+  switch (d.oldDenom.denomPub.cipher) {
+    case DenomKeyType.LegacyRsa: {
+      exchangeProtocolVersion = ExchangeProtocolVersion.V9;
+      break;
+    }
+    case DenomKeyType.Rsa: {
+      exchangeProtocolVersion = ExchangeProtocolVersion.V12;
+      break;
+    }
+    default:
+      throw Error("unsupported key type");
+  }
+
   const derived = await ws.cryptoApi.deriveRefreshSession({
+    exchangeProtocolVersion,
     kappa: 3,
     meltCoinDenomPubHash: oldCoin.denomPubHash,
     meltCoinPriv: oldCoin.coinPriv,
@@ -531,7 +550,22 @@ async function refreshReveal(
     norevealIndex,
   } = d;
 
+  let exchangeProtocolVersion: ExchangeProtocolVersion;
+  switch (d.oldDenom.denomPub.cipher) {
+    case DenomKeyType.LegacyRsa: {
+      exchangeProtocolVersion = ExchangeProtocolVersion.V9;
+      break;
+    }
+    case DenomKeyType.Rsa: {
+      exchangeProtocolVersion = ExchangeProtocolVersion.V12;
+      break;
+    }
+    default:
+      throw Error("unsupported key type");
+  }
+
   const derived = await ws.cryptoApi.deriveRefreshSession({
+    exchangeProtocolVersion,
     kappa: 3,
     meltCoinDenomPubHash: oldCoin.denomPubHash,
     meltCoinPriv: oldCoin.coinPriv,

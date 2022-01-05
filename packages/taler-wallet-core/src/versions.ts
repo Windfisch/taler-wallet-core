@@ -19,7 +19,7 @@
  *
  * Uses libtool's current:revision:age versioning.
  */
-export const WALLET_EXCHANGE_PROTOCOL_VERSION = "10:0:1";
+export const WALLET_EXCHANGE_PROTOCOL_VERSION = "12:0:0";
 
 /**
  * Protocol version spoken with the merchant.

@@ -1620,3 +1620,9 @@ export const codecForMerchantConfigResponse = (): Codec<MerchantConfigResponse> 
     .property("name", codecForString())
     .property("version", codecForString())
     .build("MerchantConfigResponse");
+
+
+export enum ExchangeProtocolVersion {
+  V9 = 9,
+  V12 = 12,
+}

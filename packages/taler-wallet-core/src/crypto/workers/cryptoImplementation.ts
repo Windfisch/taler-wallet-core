@@ -36,6 +36,7 @@ import {
   buildSigPS,
   CoinDepositPermission,
   DenomKeyType,
+  ExchangeProtocolVersion,
   FreshCoin,
   hashDenomPub,
   RecoupRequest,
@@ -162,7 +163,7 @@ async function myEddsaSign(
 export class CryptoImplementation {
   static enableTracing = false;
 
-  constructor(private primitiveWorker?: PrimitiveWorker) { }
+  constructor(private primitiveWorker?: PrimitiveWorker) {}
 
   /**
    * Create a pre-coin of the given denomination to be withdrawn from then given
@@ -364,18 +365,18 @@ export class CryptoImplementation {
   }
 
   isValidWireAccount(
-    versionCurrent: number,
+    versionCurrent: ExchangeProtocolVersion,
     paytoUri: string,
     sig: string,
     masterPub: string,
   ): boolean {
-    if (versionCurrent === 10 || versionCurrent === 11) {
+    if (versionCurrent === ExchangeProtocolVersion.V12) {
       const paytoHash = hash(stringToBytes(paytoUri + "\0"));
       const p = buildSigPS(TalerSignaturePurpose.MASTER_WIRE_DETAILS)
         .put(paytoHash)
         .build();
       return eddsaVerify(p, decodeCrock(sig), decodeCrock(masterPub));
-    } else if (versionCurrent === 9) {
+    } else if (versionCurrent === ExchangeProtocolVersion.V9) {
       const h = kdf(
         64,
         stringToBytes("exchange-wire-signature"),
@@ -623,13 +624,27 @@ export class CryptoImplementation {
     }
 
     const sessionHash = sessionHc.finish();
-    const confirmData = buildSigPS(TalerSignaturePurpose.WALLET_COIN_MELT)
-      .put(sessionHash)
-      .put(decodeCrock(meltCoinDenomPubHash))
-      .put(amountToBuffer(valueWithFee))
-      .put(amountToBuffer(meltFee))
-      .put(decodeCrock(meltCoinPub))
-      .build();
+    let confirmData: Uint8Array;
+    if (req.exchangeProtocolVersion === ExchangeProtocolVersion.V9) {
+      confirmData = buildSigPS(TalerSignaturePurpose.WALLET_COIN_MELT)
+        .put(sessionHash)
+        .put(decodeCrock(meltCoinDenomPubHash))
+        .put(amountToBuffer(valueWithFee))
+        .put(amountToBuffer(meltFee))
+        .put(decodeCrock(meltCoinPub))
+        .build();
+    } else if (req.exchangeProtocolVersion === ExchangeProtocolVersion.V12) {
+      confirmData = buildSigPS(TalerSignaturePurpose.WALLET_COIN_MELT)
+        .put(sessionHash)
+        .put(decodeCrock(meltCoinDenomPubHash))
+        .put(amountToBuffer(valueWithFee))
+        .put(amountToBuffer(meltFee))
+        .build();
+    } else {
+      throw Error(
+        `Exchange protocol version (${req.exchangeProtocolVersion}) not supported`,
+      );
+    }
 
     const confirmSigResp = await myEddsaSign(this.primitiveWorker, {
       msg: encodeCrock(confirmData),

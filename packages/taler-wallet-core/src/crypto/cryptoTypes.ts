@@ -27,7 +27,7 @@
 /**
  * Imports.
  */
-import { AmountJson, DenominationPubKey } from "@gnu-taler/taler-util";
+import { AmountJson, DenominationPubKey, ExchangeProtocolVersion } from "@gnu-taler/taler-util";
 
 export interface RefreshNewDenomInfo {
   count: number;
@@ -41,6 +41,7 @@ export interface RefreshNewDenomInfo {
  * secret seed.
  */
 export interface DeriveRefreshSessionRequest {
+  exchangeProtocolVersion: ExchangeProtocolVersion;
   sessionSecretSeed: string;
   kappa: number;
   meltCoinPub: string;
