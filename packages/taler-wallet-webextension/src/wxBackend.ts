@@ -125,7 +125,7 @@ async function dispatch(
       break;
     }
     case "reset-db": {
-      await deleteTalerDatabase(indexedDB);
+      await deleteTalerDatabase(indexedDB as any);
       r = wrapResponse(await reinitWallet());
       break;
     }
@@ -250,7 +250,7 @@ async function reinitWallet(): Promise<void> {
   currentDatabase = undefined;
   setBadgeText({ text: "" });
   try {
-    currentDatabase = await openTalerDatabase(indexedDB, reinitWallet);
+    currentDatabase = await openTalerDatabase(indexedDB as any, reinitWallet);
   } catch (e) {
     console.error("could not open database", e);
     walletInit.reject(e);
