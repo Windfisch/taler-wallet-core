@@ -267,7 +267,7 @@ export interface IDBCursor {
   /**
    * Returns the IDBObjectStore or IDBIndex the cursor was opened from.
    */
-  readonly source: IDBObjectStore | IDBIndex;
+  readonly source: IDBObjectStore | IDBIndex | IDBCursor;
   /**
    * Advances the cursor through the next count records in range.
    */
@@ -820,7 +820,7 @@ export interface IDBTransaction extends EventTarget {
   /**
    * If the transaction was aborted, returns the error (a DOMException) providing the reason.
    */
-  readonly error: DOMException;
+  readonly error: DOMException | null;
   /**
    * Returns the mode the transaction was created with ("readonly" or "readwrite"), or "versionchange" for an upgrade transaction.
    */
@@ -836,6 +836,7 @@ export interface IDBTransaction extends EventTarget {
    * Aborts the transaction. All pending requests will fail with a "AbortError" DOMException and all changes made to the database will be reverted.
    */
   abort(): void;
+  commit(): void;
   /**
    * Returns an IDBObjectStore in the transaction's scope.
    */

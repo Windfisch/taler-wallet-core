@@ -239,8 +239,8 @@ function makeSyncWalletRedirect(
 }
 
 export type MessageFromBackend = {
-  type: NotificationType
-}
+  type: NotificationType;
+};
 
 async function reinitWallet(): Promise<void> {
   if (currentWallet) {

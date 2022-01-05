@@ -46,7 +46,7 @@ export const validateKeyPath = (
       if (myKeyPath.length >= 1 && validIdentifierRegex.test(myKeyPath)) {
         return;
       }
-    } catch (err) {
+    } catch (err: any) {
       throw new SyntaxError(err.message);
     }
     if (myKeyPath.indexOf(" ") >= 0) {

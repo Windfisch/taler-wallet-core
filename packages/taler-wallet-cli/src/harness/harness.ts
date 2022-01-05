@@ -1609,7 +1609,7 @@ export namespace MerchantPrivateApi {
     const baseUrl = merchantService.makeInstanceBaseUrl(instanceName);
     let url = new URL("private/orders", baseUrl);
     const resp = await axios.post(url.href, req, {
-      headers: withAuthorization,
+      headers: withAuthorization as Record<string, string>,
     });
     return codecForPostOrderResponse().decode(resp.data);
   }
@@ -1626,7 +1626,9 @@ export namespace MerchantPrivateApi {
     if (query.sessionId) {
       reqUrl.searchParams.set("session_id", query.sessionId);
     }
-    const resp = await axios.get(reqUrl.href, { headers: withAuthorization });
+    const resp = await axios.get(reqUrl.href, {
+      headers: withAuthorization as Record<string, string>,
+    });
     return codecForMerchantOrderPrivateStatusResponse().decode(resp.data);
   }
 
