@@ -451,6 +451,7 @@ export async function pingProc(
       return;
     } catch (e: any) {
       console.log(`service ${serviceName} not ready:`, e.toString());
+      //console.log(e);
       await delayMs(1000);
     }
     if (!proc || proc.proc.exitCode !== null) {

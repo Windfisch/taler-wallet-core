@@ -17,6 +17,7 @@ export default {
   plugins: [
     nodeResolve({
       preferBuiltins: true,
+      exportConditions: ["node"],
     }),
 
     sourcemaps(),

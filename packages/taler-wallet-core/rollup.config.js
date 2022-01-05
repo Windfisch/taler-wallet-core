@@ -4,7 +4,7 @@ import nodeResolve from "@rollup/plugin-node-resolve";
 import json from "@rollup/plugin-json";
 import builtins from "builtin-modules";
 import pkg from "./package.json";
-import sourcemaps from 'rollup-plugin-sourcemaps';
+import sourcemaps from "rollup-plugin-sourcemaps";
 
 const nodeEntryPoint = {
   input: "lib/index.node.js",
@@ -17,6 +17,7 @@ const nodeEntryPoint = {
   plugins: [
     nodeResolve({
       preferBuiltins: true,
+      exportConditions: ["node"],
     }),
 
     sourcemaps(),
@@ -30,7 +31,7 @@ const nodeEntryPoint = {
 
     json(),
   ],
-}
+};
 
 const browserEntryPoint = {
   input: "lib/index.browser.js",
@@ -57,10 +58,6 @@ const browserEntryPoint = {
 
     json(),
   ],
-}
+};
 
-export default [
-  nodeEntryPoint,
-  browserEntryPoint
-]
-
+export default [nodeEntryPoint, browserEntryPoint];
