@@ -267,7 +267,7 @@ export interface IDBCursor {
   /**
    * Returns the IDBObjectStore or IDBIndex the cursor was opened from.
    */
-  readonly source: IDBObjectStore | IDBIndex | IDBCursor;
+  readonly source: IDBObjectStore | IDBIndex;
   /**
    * Advances the cursor through the next count records in range.
    */
