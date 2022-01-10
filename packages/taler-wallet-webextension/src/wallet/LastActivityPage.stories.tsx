@@ -19,10 +19,15 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import * as a1 from "../wallet/AddNewActionView.stories";
-import * as a2 from "./Balance.stories";
-import * as a3 from "./DeveloperPage.stories";
-import * as a5 from "./Popup.stories";
-import * as a6 from "./TalerActionFound.stories";
+import { createExample } from "../test-utils";
+import { queryToSlashKeys } from "../utils/index";
+import { LastActivityPage as TestedComponent } from "./LastActivityPage";
 
-export default [a1, a2, a3, a5, a6];
+export default {
+  title: "wallet/last activity",
+  component: TestedComponent,
+};
+
+export const InitialState = createExample(TestedComponent, {
+  onVerify: queryToSlashKeys,
+});

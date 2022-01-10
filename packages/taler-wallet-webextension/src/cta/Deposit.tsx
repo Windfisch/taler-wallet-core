@@ -26,8 +26,8 @@
 
 import {
   AmountJson,
-  AmountLike,
   Amounts,
+  amountToPretty,
   ConfirmPayResult,
   ConfirmPayResultDone,
   ConfirmPayResultType,
@@ -43,11 +43,8 @@ import { useEffect, useState } from "preact/hooks";
 import { ErrorTalerOperation } from "../components/ErrorTalerOperation";
 import { LogoHeader } from "../components/LogoHeader";
 import { Part } from "../components/Part";
-import { QR } from "../components/QR";
 import {
-  ButtonSuccess,
   ErrorBox,
-  LinkSuccess,
   SuccessBox,
   WalletAction,
   WarningBox,
@@ -57,32 +54,10 @@ import * as wxApi from "../wxApi";
 
 interface Props {
   talerPayUri?: string;
-  goToWalletManualWithdraw: (currency?: string) => void;
   goBack: () => void;
 }
 
-const doPayment = async (
-  payStatus: PreparePayResult,
-): Promise<ConfirmPayResultDone> => {
-  if (payStatus.status !== "payment-possible") {
-    throw Error(`invalid state: ${payStatus.status}`);
-  }
-  const proposalId = payStatus.proposalId;
-  const res = await wxApi.confirmPay(proposalId, undefined);
-  if (res.type !== ConfirmPayResultType.Done) {
-    throw Error("payment pending");
-  }
-  const fu = res.contractTerms.fulfillment_url;
-  if (fu) {
-    document.location.href = fu;
-  }
-  return res;
-};
-
-export function PayPage({
-  talerPayUri,
-  goToWalletManualWithdraw,
-}: Props): VNode {
+export function DepositPage({ talerPayUri, goBack }: Props): VNode {
   const [payStatus, setPayStatus] = useState<PreparePayResult | undefined>(
     undefined,
   );
@@ -168,15 +143,15 @@ export function PayPage({
   }
 
   const onClick = async (): Promise<void> => {
-    try {
-      const res = await doPayment(payStatus);
-      setPayResult(res);
-    } catch (e) {
-      console.error(e);
-      if (e instanceof Error) {
-        setPayErrMsg(e.message);
-      }
-    }
+    // try {
+    //   const res = await doPayment(payStatus);
+    //   setPayResult(res);
+    // } catch (e) {
+    //   console.error(e);
+    //   if (e instanceof Error) {
+    //     setPayErrMsg(e.message);
+    //   }
+    // }
   };
 
   return (
@@ -185,7 +160,6 @@ export function PayPage({
       payStatus={payStatus}
       payResult={payResult}
       onClick={onClick}
-      goToWalletManualWithdraw={goToWalletManualWithdraw}
       balance={foundAmount}
     />
   );
@@ -197,7 +171,6 @@ export interface PaymentRequestViewProps {
   onClick: () => void;
   payErrMsg?: string;
   uri: string;
-  goToWalletManualWithdraw: () => void;
   balance: AmountJson | undefined;
 }
 export function PaymentRequestView({
@@ -205,129 +178,16 @@ export function PaymentRequestView({
   payStatus,
   payResult,
   onClick,
-  goToWalletManualWithdraw,
   balance,
 }: PaymentRequestViewProps): VNode {
   let totalFees: AmountJson = Amounts.getZero(payStatus.amountRaw);
   const contractTerms: ContractTerms = payStatus.contractTerms;
 
-  if (!contractTerms) {
-    return (
-      <span>
-        Error: did not get contract terms from merchant or wallet backend.
-      </span>
-    );
-  }
-
-  if (payStatus.status === PreparePayResultType.PaymentPossible) {
-    const amountRaw = Amounts.parseOrThrow(payStatus.amountRaw);
-    const amountEffective: AmountJson = Amounts.parseOrThrow(
-      payStatus.amountEffective,
-    );
-    totalFees = Amounts.sub(amountEffective, amountRaw).amount;
-  }
-
-  // let merchantName: VNode;
-  // if (contractTerms.merchant && contractTerms.merchant.name) {
-  //   merchantName = <strong>{contractTerms.merchant.name}</strong>;
-  // } else {
-  // merchantName = <strong>(pub: {contractTerms.merchant_pub})</strong>;
-  // }
-
-  function Alternative(): VNode {
-    const [showQR, setShowQR] = useState<boolean>(false);
-    const privateUri =
-      payStatus.status !== PreparePayResultType.AlreadyConfirmed
-        ? `${uri}&n=${payStatus.noncePriv}`
-        : uri;
-    return (
-      <section>
-        <LinkSuccess upperCased onClick={() => setShowQR((qr) => !qr)}>
-          {!showQR ? i18n.str`Pay with a mobile phone` : i18n.str`Hide QR`}
-        </LinkSuccess>
-        {showQR && (
-          <div>
-            <QR text={privateUri} />
-            Scan the QR code or <a href={privateUri}>click here</a>
-          </div>
-        )}
-      </section>
-    );
-  }
-
-  function ButtonsSection(): VNode {
-    if (payResult) {
-      if (payResult.type === ConfirmPayResultType.Pending) {
-        return (
-          <section>
-            <div>
-              <p>Processing...</p>
-            </div>
-          </section>
-        );
-      }
-      return <Fragment />;
-    }
-    if (payStatus.status === PreparePayResultType.PaymentPossible) {
-      return (
-        <Fragment>
-          <section>
-            <ButtonSuccess upperCased onClick={onClick}>
-              {i18n.str`Pay`} {amountToString(payStatus.amountEffective)}
-            </ButtonSuccess>
-          </section>
-          <Alternative />
-        </Fragment>
-      );
-    }
-    if (payStatus.status === PreparePayResultType.InsufficientBalance) {
-      return (
-        <Fragment>
-          <section>
-            {balance ? (
-              <WarningBox>
-                Your balance of {amountToString(balance)} is not enough to pay
-                for this purchase
-              </WarningBox>
-            ) : (
-              <WarningBox>
-                Your balance is not enough to pay for this purchase.
-              </WarningBox>
-            )}
-          </section>
-          <section>
-            <ButtonSuccess upperCased onClick={goToWalletManualWithdraw}>
-              {i18n.str`Withdraw digital cash`}
-            </ButtonSuccess>
-          </section>
-          <Alternative />
-        </Fragment>
-      );
-    }
-    if (payStatus.status === PreparePayResultType.AlreadyConfirmed) {
-      return (
-        <Fragment>
-          <section>
-            {payStatus.paid && contractTerms.fulfillment_message && (
-              <Part
-                title="Merchant message"
-                text={contractTerms.fulfillment_message}
-                kind="neutral"
-              />
-            )}
-          </section>
-          {!payStatus.paid && <Alternative />}
-        </Fragment>
-      );
-    }
-    return <span />;
-  }
-
   return (
     <WalletAction>
       <LogoHeader />
 
-      <h2>{i18n.str`Digital cash payment`}</h2>
+      <h2>{i18n.str`Digital cash deposit`}</h2>
       {payStatus.status === PreparePayResultType.AlreadyConfirmed &&
         (payStatus.paid ? (
           <SuccessBox> Already paid </SuccessBox>
@@ -350,14 +210,16 @@ export function PaymentRequestView({
             <Part
               big
               title="Total to pay"
-              text={amountToString(payStatus.amountEffective)}
+              text={amountToPretty(
+                Amounts.parseOrThrow(payStatus.amountEffective),
+              )}
               kind="negative"
             />
           )}
         <Part
           big
           title="Purchase amount"
-          text={amountToString(payStatus.amountRaw)}
+          text={amountToPretty(Amounts.parseOrThrow(payStatus.amountRaw))}
           kind="neutral"
         />
         {Amounts.isNonZero(totalFees) && (
@@ -365,7 +227,7 @@ export function PaymentRequestView({
             <Part
               big
               title="Fee"
-              text={amountToString(totalFees)}
+              text={amountToPretty(totalFees)}
               kind="negative"
             />
           </Fragment>
@@ -384,13 +246,6 @@ export function PaymentRequestView({
           />
         )}
       </section>
-      <ButtonsSection />
     </WalletAction>
   );
-}
-
-function amountToString(text: AmountLike): string {
-  const aj = Amounts.jsonifyAmount(text);
-  const amount = Amounts.stringifyValue(aj, 2);
-  return `${amount} ${aj.currency}`;
 }

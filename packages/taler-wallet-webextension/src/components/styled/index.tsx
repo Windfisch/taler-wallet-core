@@ -43,7 +43,7 @@ export const WalletAction = styled.div`
   }
   section {
     margin-bottom: 2em;
-    & button {
+    button {
       margin-right: 8px;
       margin-left: 8px;
     }
@@ -92,6 +92,10 @@ export const WalletBox = styled.div<{ noPadding?: boolean }>`
       border-bottom: 1px solid black;
       border-top: 1px solid black;
     }
+    button {
+      margin-right: 8px;
+      margin-left: 8px;
+    }
   }
 
   & > header {
@@ -123,7 +127,7 @@ export const WalletBox = styled.div<{ noPadding?: boolean }>`
     justify-content: space-between;
     display: flex;
     background-color: #f7f7f7;
-    & button {
+    button {
       margin-right: 8px;
       margin-left: 8px;
     }
@@ -136,9 +140,9 @@ export const Middle = styled.div`
   height: 100%;
 `;
 
-export const PopupBox = styled.div<{ noPadding?: boolean }>`
+export const PopupBox = styled.div<{ noPadding?: boolean; devMode: boolean }>`
   height: 290px;
-  width: 400px;
+  width: ${({ devMode }) => (!devMode ? "400px" : "500px")};
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -155,6 +159,10 @@ export const PopupBox = styled.div<{ noPadding?: boolean }>`
     table tr {
       border-bottom: 1px solid black;
       border-top: 1px solid black;
+    }
+    button {
+      margin-right: 8px;
+      margin-left: 8px;
     }
   }
 
@@ -196,7 +204,7 @@ export const PopupBox = styled.div<{ noPadding?: boolean }>`
     flex-direction: row;
     justify-content: space-between;
     display: flex;
-    & button {
+    button {
       margin-right: 8px;
       margin-left: 8px;
     }
@@ -363,11 +371,11 @@ export const CenteredDialog = styled.div`
 
 export const Button = styled.button<{ upperCased?: boolean }>`
   display: inline-block;
-  zoom: 1;
+  /* zoom: 1; */
   line-height: normal;
   white-space: nowrap;
-  vertical-align: middle;
-  text-align: center;
+  vertical-align: middle; //check this
+  /* text-align: center; */
   cursor: pointer;
   user-select: none;
   box-sizing: border-box;
@@ -379,7 +387,7 @@ export const Button = styled.button<{ upperCased?: boolean }>`
   /* color: #444; rgba not supported (IE 8) */
   color: rgba(0, 0, 0, 0.8); /* rgba supported */
   border: 1px solid #999; /*IE 6/7/8*/
-  border: none rgba(0, 0, 0, 0); /*IE9 + everything else*/
+  /* border: none rgba(0, 0, 0, 0); IE9 + everything else */
   background-color: "#e6e6e6";
   text-decoration: none;
   border-radius: 2px;
@@ -401,11 +409,11 @@ export const Button = styled.button<{ upperCased?: boolean }>`
   }
 
   :hover {
-    filter: alpha(opacity=90);
+    filter: alpha(opacity=80);
     background-image: linear-gradient(
       transparent,
-      rgba(0, 0, 0, 0.05) 40%,
-      rgba(0, 0, 0, 0.1)
+      rgba(0, 0, 0, 0.1) 40%,
+      rgba(0, 0, 0, 0.2)
     );
   }
 `;
@@ -415,7 +423,7 @@ export const Link = styled.a<{ upperCased?: boolean }>`
   zoom: 1;
   line-height: normal;
   white-space: nowrap;
-  vertical-align: middle;
+  /* vertical-align: middle; */
   text-align: center;
   cursor: pointer;
   user-select: none;
@@ -463,8 +471,8 @@ export const FontIcon = styled.div`
   /* vertical-align: text-top; */
 `;
 export const ButtonBox = styled(Button)`
-  padding: 0.5em;
-  font-size: x-small;
+  padding: 8px;
+  /* font-size: small; */
 
   & > ${FontIcon} {
     width: 1em;
@@ -472,12 +480,13 @@ export const ButtonBox = styled(Button)`
     display: inline;
     line-height: 0px;
   }
-  background-color: transparent;
+  background-color: #f7f7f7;
 
   border: 1px solid;
   border-radius: 4px;
   border-color: black;
   color: black;
+  /* text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2); */
   /* -webkit-border-horizontal-spacing: 0px;
   -webkit-border-vertical-spacing: 0px; */
 `;
@@ -499,6 +508,7 @@ export const LinkPrimary = styled(Link)`
 export const ButtonPrimary = styled(ButtonVariant)<{ small?: boolean }>`
   font-size: ${({ small }) => (small ? "small" : "inherit")};
   background-color: rgb(66, 184, 221);
+  border-color: rgb(66, 184, 221);
 `;
 export const ButtonBoxPrimary = styled(ButtonBox)`
   color: rgb(66, 184, 221);
@@ -714,6 +724,7 @@ export const InputWithLabel = styled.div<{ invalid?: boolean }>`
     border-top-right-radius: 0.25em;
     border-color: ${({ invalid }) => (!invalid ? "lightgray" : "red")};
   }
+  margin-bottom: 16px;
 `;
 
 export const ErrorText = styled.div`
@@ -772,13 +783,13 @@ export const PopupNavigation = styled.div<{ devMode?: boolean }>`
   display: flex;
 
   & > div {
-    width: 400px;
+    width: ${({ devMode }) => (!devMode ? "400px" : "500px")};
   }
 
   & > div > a {
     color: #f8faf7;
     display: inline-block;
-    width: calc(400px / ${({ devMode }) => (!devMode ? 4 : 5)});
+    width: 100px;
     text-align: center;
     text-decoration: none;
     vertical-align: middle;
@@ -804,10 +815,9 @@ export const NiceSelect = styled.div`
     box-shadow: none;
 
     background-image: ${image};
-    background-position: right 0.5rem center;
+    background-position: right 8px center;
     background-repeat: no-repeat;
     background-size: 1.5em 1.5em;
-    padding-right: 2.5rem;
 
     background-color: white;
 
@@ -965,5 +975,19 @@ export const StyledCheckboxLabel = styled.div`
   }
   input:focus + div + label {
     box-shadow: 0 0 0 0.05em #fff, 0 0 0.15em 0.1em currentColor;
+  }
+`;
+
+export const ParagraphClickable = styled.p`
+  cursor: pointer;
+  margin: 0px;
+  padding: 8px 16px;
+  :hover {
+    filter: alpha(opacity=80);
+    background-image: linear-gradient(
+      transparent,
+      rgba(0, 0, 0, 0.1) 40%,
+      rgba(0, 0, 0, 0.2)
+    );
   }
 `;

@@ -162,7 +162,12 @@ export function PageLink(props: {
   children?: ComponentChildren;
 }): VNode {
   // eslint-disable-next-line no-undef
-  const url = chrome.extension.getURL(`/static/wallet.html#/${props.pageName}`);
+
+  const url =
+    typeof chrome === "undefined"
+      ? undefined
+      : // eslint-disable-next-line no-undef
+        chrome.extension?.getURL(`/static/wallet.html#/${props.pageName}`);
   return (
     <a class="actionLink" href={url} target="_blank" rel="noopener noreferrer">
       {props.children}

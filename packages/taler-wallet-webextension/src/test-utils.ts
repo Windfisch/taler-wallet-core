@@ -117,5 +117,6 @@ export function mountBrowser<T>(callback: () => T, Context?: ({ children }: { ch
   }
 }
 
+const nullTestFunction = {} as TestFunction
 export const justBrowser_it: PendingTestFunction | TestFunction =
-  typeof window === 'undefined' ? it.skip : it
+  typeof it === 'undefined' ? nullTestFunction : (typeof window === 'undefined' ? it.skip : it)

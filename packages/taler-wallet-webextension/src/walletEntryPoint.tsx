@@ -22,31 +22,32 @@
 
 import { setupI18n } from "@gnu-taler/taler-util";
 import { createHashHistory } from "history";
-import { Fragment, h, render, VNode } from "preact";
+import { h, render, VNode } from "preact";
 import Router, { route, Route } from "preact-router";
-import { useEffect } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { LogoHeader } from "./components/LogoHeader";
+import { SuccessBox, WalletBox } from "./components/styled";
 import { DevContextProvider } from "./context/devContext";
+import { IoCProviderForRuntime } from "./context/iocContext";
 import { PayPage } from "./cta/Pay";
 import { RefundPage } from "./cta/Refund";
 import { TipPage } from "./cta/Tip";
 import { WithdrawPage } from "./cta/Withdraw";
 import { strings } from "./i18n/strings";
 import { Pages, WalletNavBar } from "./NavigationBar";
+import { DeveloperPage } from "./popup/DeveloperPage";
+import { BackupPage } from "./wallet/BackupPage";
 import { BalancePage } from "./wallet/BalancePage";
+import { DepositPage } from "./wallet/DepositPage";
+import { ExchangeAddPage } from "./wallet/ExchangeAddPage";
 import { HistoryPage } from "./wallet/History";
+import { LastActivityPage } from "./wallet/LastActivityPage";
+import { ManualWithdrawPage } from "./wallet/ManualWithdrawPage";
+import { ProviderAddPage } from "./wallet/ProviderAddPage";
+import { ProviderDetailPage } from "./wallet/ProviderDetailPage";
 import { SettingsPage } from "./wallet/Settings";
 import { TransactionPage } from "./wallet/Transaction";
 import { WelcomePage } from "./wallet/Welcome";
-import { BackupPage } from "./wallet/BackupPage";
-import { DeveloperPage } from "./popup/DeveloperPage";
-import { ManualWithdrawPage } from "./wallet/ManualWithdrawPage";
-import { WalletBox } from "./components/styled";
-import { ProviderDetailPage } from "./wallet/ProviderDetailPage";
-import { ProviderAddPage } from "./wallet/ProviderAddPage";
-import { ExchangeAddPage } from "./wallet/ExchangeAddPage";
-import { DepositPage } from "./wallet/DepositPage";
-import { IoCProviderForRuntime } from "./context/iocContext";
 
 function main(): void {
   try {
@@ -71,140 +72,156 @@ if (document.readyState === "loading") {
   main();
 }
 
-function withLogoAndNavBar(Component: any) {
-  return function withLogoAndNavBarComponent(props: any): VNode {
-    return (
-      <Fragment>
-        <LogoHeader />
-        <WalletNavBar />
-        <WalletBox>
-          <Component {...props} />
-        </WalletBox>
-      </Fragment>
-    );
-  };
-}
-
 function Application(): VNode {
+  const [globalNotification, setGlobalNotification] = useState<
+    string | undefined
+  >(undefined);
   return (
     <div>
       <DevContextProvider>
-        <IoCProviderForRuntime>
-          <Router history={createHashHistory()}>
-            <Route
-              path={Pages.welcome}
-              component={withLogoAndNavBar(WelcomePage)}
-            />
+        {({ devMode }: { devMode: boolean }) => (
+          <IoCProviderForRuntime>
+            <LogoHeader />
+            <WalletNavBar devMode={devMode} />
+            <WalletBox>
+              {globalNotification && (
+                <SuccessBox onClick={() => setGlobalNotification(undefined)}>
+                  <div>{globalNotification}</div>
+                </SuccessBox>
+              )}
+              <Router history={createHashHistory()}>
+                <Route path={Pages.welcome} component={WelcomePage} />
 
-            <Route
-              path={Pages.history}
-              component={withLogoAndNavBar(HistoryPage)}
-            />
-            <Route
-              path={Pages.transaction}
-              component={withLogoAndNavBar(TransactionPage)}
-            />
-            <Route
-              path={Pages.balance}
-              component={withLogoAndNavBar(BalancePage)}
-              goToWalletManualWithdraw={() => route(Pages.manual_withdraw)}
-              goToWalletDeposit={(currency: string) =>
-                route(Pages.deposit.replace(":currency", currency))
-              }
-            />
-            <Route
-              path={Pages.settings}
-              component={withLogoAndNavBar(SettingsPage)}
-            />
-            <Route
-              path={Pages.backup}
-              component={withLogoAndNavBar(BackupPage)}
-              onAddProvider={() => {
-                route(Pages.provider_add);
-              }}
-            />
-            <Route
-              path={Pages.provider_detail}
-              component={withLogoAndNavBar(ProviderDetailPage)}
-              onBack={() => {
-                route(Pages.backup);
-              }}
-            />
-            <Route
-              path={Pages.provider_add}
-              component={withLogoAndNavBar(ProviderAddPage)}
-              onBack={() => {
-                route(Pages.backup);
-              }}
-            />
+                <Route
+                  path={Pages.balance}
+                  component={BalancePage}
+                  goToWalletManualWithdraw={() =>
+                    route(Pages.manual_withdraw.replace(":currency?", ""))
+                  }
+                  goToWalletDeposit={(currency: string) =>
+                    route(Pages.deposit.replace(":currency", currency))
+                  }
+                  goToWalletHistory={(currency: string) =>
+                    route(Pages.balance_history.replace(":currency", currency))
+                  }
+                />
+                <Route
+                  path={Pages.balance_history}
+                  component={HistoryPage}
+                  goToWalletDeposit={(currency: string) =>
+                    route(Pages.deposit.replace(":currency", currency))
+                  }
+                  goToWalletManualWithdraw={(currency?: string) =>
+                    route(
+                      Pages.manual_withdraw.replace(
+                        ":currency?",
+                        currency || "",
+                      ),
+                    )
+                  }
+                />
+                <Route
+                  path={Pages.last_activity}
+                  component={LastActivityPage}
+                />
+                <Route path={Pages.transaction} component={TransactionPage} />
+                <Route path={Pages.settings} component={SettingsPage} />
+                <Route
+                  path={Pages.backup}
+                  component={BackupPage}
+                  onAddProvider={() => {
+                    route(Pages.provider_add);
+                  }}
+                />
+                <Route
+                  path={Pages.provider_detail}
+                  component={ProviderDetailPage}
+                  onBack={() => {
+                    route(Pages.backup);
+                  }}
+                />
+                <Route
+                  path={Pages.provider_add}
+                  component={ProviderAddPage}
+                  onBack={() => {
+                    route(Pages.backup);
+                  }}
+                />
 
-            <Route
-              path={Pages.exchange_add}
-              component={withLogoAndNavBar(ExchangeAddPage)}
-              onBack={() => {
-                route(Pages.balance);
-              }}
-            />
+                <Route
+                  path={Pages.exchange_add}
+                  component={ExchangeAddPage}
+                  onBack={() => {
+                    route(Pages.balance);
+                  }}
+                />
 
-            <Route
-              path={Pages.manual_withdraw}
-              component={withLogoAndNavBar(ManualWithdrawPage)}
-            />
+                <Route
+                  path={Pages.manual_withdraw}
+                  component={ManualWithdrawPage}
+                />
 
-            <Route
-              path={Pages.deposit}
-              component={withLogoAndNavBar(DepositPage)}
-            />
-            <Route
-              path={Pages.reset_required}
-              component={() => <div>no yet implemented</div>}
-            />
-            <Route
-              path={Pages.payback}
-              component={() => <div>no yet implemented</div>}
-            />
-            <Route
-              path={Pages.return_coins}
-              component={() => <div>no yet implemented</div>}
-            />
+                <Route
+                  path={Pages.deposit}
+                  component={DepositPage}
+                  onSuccess={(currency: string) => {
+                    route(Pages.balance_history.replace(":currency", currency));
+                    setGlobalNotification(
+                      "All done, your transaction is in progress",
+                    );
+                  }}
+                />
+                <Route
+                  path={Pages.reset_required}
+                  component={() => <div>no yet implemented</div>}
+                />
+                <Route
+                  path={Pages.payback}
+                  component={() => <div>no yet implemented</div>}
+                />
+                <Route
+                  path={Pages.return_coins}
+                  component={() => <div>no yet implemented</div>}
+                />
 
-            <Route
-              path={Pages.dev}
-              component={withLogoAndNavBar(DeveloperPage)}
-            />
+                <Route path={Pages.dev} component={DeveloperPage} />
 
-            {/** call to action */}
-            <Route
-              path={Pages.pay}
-              component={PayPage}
-              goToWalletManualWithdraw={() =>
-                goToWalletPage(Pages.manual_withdraw)
-              }
-            />
-            <Route path={Pages.refund} component={RefundPage} />
-            <Route path={Pages.tips} component={TipPage} />
-            <Route path={Pages.withdraw} component={WithdrawPage} />
+                {/** call to action */}
+                <Route
+                  path={Pages.pay}
+                  component={PayPage}
+                  goToWalletManualWithdraw={(currency?: string) =>
+                    route(
+                      Pages.manual_withdraw.replace(
+                        ":currency?",
+                        currency || "",
+                      ),
+                    )
+                  }
+                  goBack={() => route(Pages.balance)}
+                />
+                <Route
+                  path={Pages.pay}
+                  component={PayPage}
+                  goBack={() => route(Pages.balance)}
+                />
+                <Route path={Pages.refund} component={RefundPage} />
+                <Route path={Pages.tips} component={TipPage} />
+                <Route path={Pages.withdraw} component={WithdrawPage} />
 
-            <Route default component={Redirect} to={Pages.history} />
-          </Router>
-        </IoCProviderForRuntime>
+                <Route default component={Redirect} to={Pages.balance} />
+              </Router>
+            </WalletBox>
+          </IoCProviderForRuntime>
+        )}
       </DevContextProvider>
     </div>
   );
 }
 
-function goToWalletPage(page: Pages | string): null {
-  // eslint-disable-next-line no-undef
-  chrome.tabs.create({
-    active: true,
-    // eslint-disable-next-line no-undef
-    url: chrome.extension.getURL(`/static/wallet.html#${page}`),
-  });
-  return null;
-}
-
 function Redirect({ to }: { to: string }): null {
   useEffect(() => {
+    console.log("go some wrong route");
     route(to, true);
   });
   return null;

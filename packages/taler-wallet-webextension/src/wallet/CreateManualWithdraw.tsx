@@ -41,12 +41,14 @@ export interface Props {
   exchangeList: Record<string, string>;
   onCreate: (exchangeBaseUrl: string, amount: AmountJson) => Promise<void>;
   onAddExchange: () => void;
+  initialCurrency?: string;
 }
 
 export function CreateManualWithdraw({
   initialAmount,
   exchangeList,
   error,
+  initialCurrency,
   onCreate,
   onAddExchange,
 }: Props): VNode {
@@ -61,8 +63,16 @@ export function CreateManualWithdraw({
     {} as Record<string, string>,
   );
 
+  const foundExchangeForCurrency = exchangeSelectList.findIndex(
+    (e) => exchangeList[e] === initialCurrency,
+  );
+
   const initialExchange =
-    exchangeSelectList.length > 0 ? exchangeSelectList[0] : "";
+    foundExchangeForCurrency !== -1
+      ? exchangeSelectList[foundExchangeForCurrency]
+      : exchangeSelectList.length > 0
+      ? exchangeSelectList[0]
+      : "";
 
   const [exchange, setExchange] = useState(initialExchange || "");
   const [currency, setCurrency] = useState(exchangeList[initialExchange] ?? "");

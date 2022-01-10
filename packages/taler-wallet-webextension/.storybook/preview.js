@@ -48,7 +48,7 @@ export const decorators = [
         const isTestingHeader = (/.*\/header\/?.*/.test(kind));
         if (isTestingHeader) {
           // simple box with correct width and height
-          return <div style={{ width: 400, height: 320 }}>
+          return <div style={{ width: "fit-content" }}>
             <Story />
           </div>
         }
@@ -90,7 +90,7 @@ export const decorators = [
           font-family: Arial, Helvetica, sans-serif;
         }`}
         </style>
-        <div style={{ width: 400, border: 'black solid 1px' }}>
+        <div style={{ border: 'black solid 1px', width: "fit-content" }}>
           <Body />
         </div>
       </div>

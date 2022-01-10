@@ -24,7 +24,7 @@
 import {
   AcceptExchangeTosRequest,
   AcceptManualWithdrawalResult, AcceptTipRequest, AcceptWithdrawalResponse,
-  AddExchangeRequest, AmountJson, AmountString, ApplyRefundResponse, BalancesResponse, ConfirmPayResult,
+  AddExchangeRequest, AmountString, ApplyRefundResponse, BalancesResponse, ConfirmPayResult,
   CoreApiResponse, CreateDepositGroupRequest, CreateDepositGroupResponse, DeleteTransactionRequest, ExchangesListRespose,
   GetExchangeTosResult, GetExchangeWithdrawalInfo,
   GetFeeForDepositRequest,

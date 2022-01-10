@@ -35,7 +35,7 @@ import { HistoryView as TestedComponent } from "./History";
 import { createExample } from "../test-utils";
 
 export default {
-  title: "wallet/history/list",
+  title: "wallet/balance/history",
   component: TestedComponent,
 };
 
@@ -114,8 +114,13 @@ const exampleData = {
   } as TransactionRefund,
 };
 
-export const Empty = createExample(TestedComponent, {
-  list: [],
+export const NoBalance = createExample(TestedComponent, {
+  transactions: [],
+  balances: [],
+});
+
+export const SomeBalanceWithNoTransactions = createExample(TestedComponent, {
+  transactions: [],
   balances: [
     {
       available: "TESTKUDOS:10",
@@ -127,13 +132,8 @@ export const Empty = createExample(TestedComponent, {
   ],
 });
 
-export const EmptyWithNoBalance = createExample(TestedComponent, {
-  list: [],
-  balances: [],
-});
-
-export const One = createExample(TestedComponent, {
-  list: [exampleData.withdraw],
+export const OneSimpleTransaction = createExample(TestedComponent, {
+  transactions: [exampleData.withdraw],
   balances: [
     {
       available: "USD:10",
@@ -145,8 +145,21 @@ export const One = createExample(TestedComponent, {
   ],
 });
 
-export const OnePending = createExample(TestedComponent, {
-  list: [
+export const TwoTransactionsAndZeroBalance = createExample(TestedComponent, {
+  transactions: [exampleData.withdraw, exampleData.deposit],
+  balances: [
+    {
+      available: "USD:0",
+      pendingIncoming: "USD:0",
+      pendingOutgoing: "USD:0",
+      hasPendingTransactions: false,
+      requiresUserInput: false,
+    },
+  ],
+});
+
+export const OneTransactionPending = createExample(TestedComponent, {
+  transactions: [
     {
       ...exampleData.withdraw,
       pending: true,
@@ -163,8 +176,8 @@ export const OnePending = createExample(TestedComponent, {
   ],
 });
 
-export const Several = createExample(TestedComponent, {
-  list: [
+export const SomeTransactions = createExample(TestedComponent, {
+  transactions: [
     exampleData.withdraw,
     exampleData.payment,
     exampleData.withdraw,
@@ -183,38 +196,82 @@ export const Several = createExample(TestedComponent, {
   ],
   balances: [
     {
-      available: "TESTKUDOS:10",
-      pendingIncoming: "TESTKUDOS:0",
-      pendingOutgoing: "TESTKUDOS:0",
+      available: "USD:10",
+      pendingIncoming: "USD:0",
+      pendingOutgoing: "USD:0",
       hasPendingTransactions: false,
       requiresUserInput: false,
     },
   ],
 });
 
-export const SeveralWithTwoCurrencies = createExample(TestedComponent, {
-  list: [
-    exampleData.withdraw,
-    exampleData.payment,
-    exampleData.withdraw,
-    exampleData.payment,
-    exampleData.refresh,
-    exampleData.refund,
-    exampleData.tip,
-    exampleData.deposit,
-  ],
+export const SomeTransactionsWithTwoCurrencies = createExample(
+  TestedComponent,
+  {
+    transactions: [
+      exampleData.withdraw,
+      exampleData.payment,
+      exampleData.withdraw,
+      exampleData.payment,
+      exampleData.refresh,
+      exampleData.refund,
+      exampleData.tip,
+      exampleData.deposit,
+    ],
+    balances: [
+      {
+        available: "USD:0",
+        pendingIncoming: "USD:0",
+        pendingOutgoing: "USD:0",
+        hasPendingTransactions: false,
+        requiresUserInput: false,
+      },
+      {
+        available: "TESTKUDOS:10",
+        pendingIncoming: "TESTKUDOS:0",
+        pendingOutgoing: "TESTKUDOS:0",
+        hasPendingTransactions: false,
+        requiresUserInput: false,
+      },
+    ],
+  },
+);
+
+export const FiveOfficialCurrencies = createExample(TestedComponent, {
+  transactions: [exampleData.withdraw],
   balances: [
     {
-      available: "TESTKUDOS:10",
+      available: "USD:1000",
+      pendingIncoming: "USD:0",
+      pendingOutgoing: "USD:0",
+      hasPendingTransactions: false,
+      requiresUserInput: false,
+    },
+    {
+      available: "EUR:881",
       pendingIncoming: "TESTKUDOS:0",
       pendingOutgoing: "TESTKUDOS:0",
       hasPendingTransactions: false,
       requiresUserInput: false,
     },
     {
-      available: "USD:10",
-      pendingIncoming: "USD:0",
-      pendingOutgoing: "USD:0",
+      available: "COL:4043000.5",
+      pendingIncoming: "TESTKUDOS:0",
+      pendingOutgoing: "TESTKUDOS:0",
+      hasPendingTransactions: false,
+      requiresUserInput: false,
+    },
+    {
+      available: "JPY:11564450.6",
+      pendingIncoming: "TESTKUDOS:0",
+      pendingOutgoing: "TESTKUDOS:0",
+      hasPendingTransactions: false,
+      requiresUserInput: false,
+    },
+    {
+      available: "GBP:736",
+      pendingIncoming: "TESTKUDOS:0",
+      pendingOutgoing: "TESTKUDOS:0",
       hasPendingTransactions: false,
       requiresUserInput: false,
     },

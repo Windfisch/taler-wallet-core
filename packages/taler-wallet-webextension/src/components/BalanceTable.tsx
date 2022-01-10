@@ -14,31 +14,28 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { amountFractionalBase, Amounts, Balance } from "@gnu-taler/taler-util";
+import { Amounts, amountToPretty, Balance } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
-import {
-  ButtonPrimary,
-  TableWithRoundRows as TableWithRoundedRows,
-} from "./styled";
+import { TableWithRoundRows as TableWithRoundedRows } from "./styled";
 
 export function BalanceTable({
   balances,
-  goToWalletDeposit,
+  goToWalletHistory,
 }: {
   balances: Balance[];
-  goToWalletDeposit: (currency: string) => void;
+  goToWalletHistory: (currency: string) => void;
 }): VNode {
-  const currencyFormatter = new Intl.NumberFormat("en-US");
   return (
     <TableWithRoundedRows>
       {balances.map((entry, idx) => {
         const av = Amounts.parseOrThrow(entry.available);
 
-        const v = currencyFormatter.format(
-          av.value + av.fraction / amountFractionalBase,
-        );
         return (
-          <tr key={idx}>
+          <tr
+            key={idx}
+            onClick={() => goToWalletHistory(av.currency)}
+            style={{ cursor: "pointer" }}
+          >
             <td>{av.currency}</td>
             <td
               style={{
@@ -47,12 +44,7 @@ export function BalanceTable({
                 width: "100%",
               }}
             >
-              {v}
-            </td>
-            <td>
-              <ButtonPrimary onClick={() => goToWalletDeposit(av.currency)}>
-                Deposit
-              </ButtonPrimary>
+              {Amounts.stringifyValue(av)}
             </td>
           </tr>
         );

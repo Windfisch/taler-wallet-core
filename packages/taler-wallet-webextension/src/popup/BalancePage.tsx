@@ -14,70 +14,81 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { BalancesResponse, i18n } from "@gnu-taler/taler-util";
+import { Amounts, Balance, i18n } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { BalanceTable } from "../components/BalanceTable";
 import { ButtonPrimary, ErrorBox } from "../components/styled";
-import { HookResponse, useAsyncAsHook } from "../hooks/useAsyncAsHook";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { PageLink } from "../renderHtml";
 import * as wxApi from "../wxApi";
+import { MultiActionButton } from "../components/MultiActionButton";
+import { Loading } from "../components/Loading";
+
 interface Props {
   goToWalletDeposit: (currency: string) => void;
+  goToWalletHistory: (currency: string) => void;
   goToWalletManualWithdraw: () => void;
 }
 export function BalancePage({
   goToWalletManualWithdraw,
   goToWalletDeposit,
+  goToWalletHistory,
 }: Props): VNode {
   const state = useAsyncAsHook(wxApi.getBalance);
-  return (
-    <BalanceView
-      balance={state}
-      Linker={PageLink}
-      goToWalletManualWithdraw={goToWalletManualWithdraw}
-      goToWalletDeposit={goToWalletDeposit}
-    />
-  );
-}
-export interface BalanceViewProps {
-  balance: HookResponse<BalancesResponse>;
-  Linker: typeof PageLink;
-  goToWalletManualWithdraw: () => void;
-  goToWalletDeposit: (currency: string) => void;
-}
+  const balances = !state || state.hasError ? [] : state.response.balances;
 
-export function BalanceView({
-  balance,
-  Linker,
-  goToWalletManualWithdraw,
-  goToWalletDeposit,
-}: BalanceViewProps): VNode {
-  if (!balance) {
-    return <div>Loading...</div>;
+  if (!state) {
+    return <Loading />;
   }
 
-  if (balance.hasError) {
+  if (state.hasError) {
     return (
       <Fragment>
-        <ErrorBox>{balance.message}</ErrorBox>
+        <ErrorBox>{state.message}</ErrorBox>
         <p>
-          Click <Linker pageName="welcome">here</Linker> for help and
+          Click <PageLink pageName="welcome">here</PageLink> for help and
           diagnostics.
         </p>
       </Fragment>
     );
   }
-  if (balance.response.balances.length === 0) {
+
+  return (
+    <BalanceView
+      balances={balances}
+      goToWalletManualWithdraw={goToWalletManualWithdraw}
+      goToWalletDeposit={goToWalletDeposit}
+      goToWalletHistory={goToWalletHistory}
+    />
+  );
+}
+export interface BalanceViewProps {
+  balances: Balance[];
+  goToWalletManualWithdraw: () => void;
+  goToWalletDeposit: (currency: string) => void;
+  goToWalletHistory: (currency: string) => void;
+}
+
+export function BalanceView({
+  balances,
+  goToWalletManualWithdraw,
+  goToWalletDeposit,
+  goToWalletHistory,
+}: BalanceViewProps): VNode {
+  const currencyWithNonZeroAmount = balances
+    .filter((b) => !Amounts.isZero(b.available))
+    .map((b) => b.available.split(":")[0]);
+
+  if (balances.length === 0) {
     return (
       <Fragment>
         <p>
           <i18n.Translate>
             You have no balance to show. Need some{" "}
-            <Linker pageName="/welcome">help</Linker> getting started?
+            <PageLink pageName="/welcome">help</PageLink> getting started?
           </i18n.Translate>
         </p>
         <footer style={{ justifyContent: "space-between" }}>
-          <div />
           <ButtonPrimary onClick={goToWalletManualWithdraw}>
             Withdraw
           </ButtonPrimary>
@@ -90,15 +101,21 @@ export function BalanceView({
     <Fragment>
       <section>
         <BalanceTable
-          balances={balance.response.balances}
-          goToWalletDeposit={goToWalletDeposit}
+          balances={balances}
+          goToWalletHistory={goToWalletHistory}
         />
       </section>
       <footer style={{ justifyContent: "space-between" }}>
-        <div />
         <ButtonPrimary onClick={goToWalletManualWithdraw}>
           Withdraw
         </ButtonPrimary>
+        {currencyWithNonZeroAmount.length > 0 && (
+          <MultiActionButton
+            label={(s) => `Deposit ${s}`}
+            actions={currencyWithNonZeroAmount}
+            onClick={(c) => goToWalletDeposit(c)}
+          />
+        )}
       </footer>
     </Fragment>
   );

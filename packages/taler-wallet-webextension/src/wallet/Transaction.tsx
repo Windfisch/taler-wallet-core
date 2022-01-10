@@ -73,7 +73,7 @@ export function TransactionPage({ tid }: { tid: string }): VNode {
   }
 
   if (state.hasError) {
-    route(Pages.history);
+    route(Pages.balance);
     return (
       <div>
         <i18n.Translate>
@@ -84,7 +84,16 @@ export function TransactionPage({ tid }: { tid: string }): VNode {
   }
 
   function goToHistory(): void {
-    route(Pages.history);
+    const currency =
+      state !== undefined && !state.hasError
+        ? Amounts.parseOrThrow(state.response.amountRaw).currency
+        : undefined;
+
+    if (currency) {
+      route(Pages.balance_history.replace(":currency", currency));
+    } else {
+      route(Pages.balance);
+    }
   }
 
   return (

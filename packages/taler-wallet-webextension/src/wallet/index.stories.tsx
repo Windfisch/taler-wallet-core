@@ -33,5 +33,22 @@ import * as a11 from "./ReserveCreated.stories";
 import * as a12 from "./Settings.stories";
 import * as a13 from "./Transaction.stories";
 import * as a14 from "./Welcome.stories";
+import * as a15 from "./AddNewActionView.stories";
 
-export default [a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14];
+export default [
+  a1,
+  a2,
+  a3,
+  a4,
+  a5,
+  a6,
+  a7,
+  a8,
+  a9,
+  a10,
+  a11,
+  a12,
+  a13,
+  a14,
+  a15,
+];

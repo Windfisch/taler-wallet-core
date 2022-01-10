@@ -33,13 +33,13 @@ import { Pages, WalletNavBar } from "./NavigationBar";
 import { BackupPage } from "./wallet/BackupPage";
 import { BalancePage } from "./popup/BalancePage";
 import { DeveloperPage } from "./popup/DeveloperPage";
-import { HistoryPage } from "./popup/History";
 import { ProviderAddPage } from "./wallet/ProviderAddPage";
 import { ProviderDetailPage } from "./wallet/ProviderDetailPage";
 import { SettingsPage } from "./popup/Settings";
 import { TalerActionFound } from "./popup/TalerActionFound";
 import { ExchangeAddPage } from "./wallet/ExchangeAddPage";
 import { IoCProviderForRuntime } from "./context/iocContext";
+import { LastActivityPage } from "./wallet/LastActivityPage";
 
 function main(): void {
   try {
@@ -77,12 +77,13 @@ function CheckTalerActionComponent(): VNode {
 
 function Application() {
   return (
-    <div>
-      <DevContextProvider>
+    // <div>
+    <DevContextProvider>
+      {({ devMode }: { devMode: boolean }) => (
         <IoCProviderForRuntime>
-          <WalletNavBar />
+          <WalletNavBar devMode={devMode} />
           <CheckTalerActionComponent />
-          <PopupBox>
+          <PopupBox devMode={devMode}>
             <Router history={createHashHistory()}>
               <Route path={Pages.dev} component={DeveloperPage} />
 
@@ -90,10 +91,14 @@ function Application() {
                 path={Pages.balance}
                 component={BalancePage}
                 goToWalletManualWithdraw={() =>
-                  goToWalletPage(Pages.manual_withdraw)
+                  goToWalletPage(
+                    Pages.manual_withdraw.replace(":currency?", ""),
+                  )
                 }
-                goToWalletDeposit={(currency: string) =>
-                  goToWalletPage(Pages.deposit.replace(":currency", currency))
+                goToWalletHistory={(currency: string) =>
+                  goToWalletPage(
+                    Pages.balance_history.replace(":currency", currency),
+                  )
                 }
               />
               <Route path={Pages.settings} component={SettingsPage} />
@@ -114,14 +119,14 @@ function Application() {
                 }}
               />
 
+              <Route path={Pages.last_activity} component={LastActivityPage} />
+
               <Route
                 path={Pages.transaction}
                 component={({ tid }: { tid: string }) =>
                   goToWalletPage(Pages.transaction.replace(":tid", tid))
                 }
               />
-
-              <Route path={Pages.history} component={HistoryPage} />
 
               <Route
                 path={Pages.backup}
@@ -157,8 +162,9 @@ function Application() {
             </Router>
           </PopupBox>
         </IoCProviderForRuntime>
-      </DevContextProvider>
-    </div>
+      )}
+    </DevContextProvider>
+    // </div>
   );
 }
 

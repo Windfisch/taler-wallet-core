@@ -19,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { createExample, NullLink } from "../test-utils";
+import { createExample } from "../test-utils";
 import { BalanceView as TestedComponent } from "./BalancePage";
 
 export default {
@@ -28,83 +28,124 @@ export default {
   argTypes: {},
 };
 
-export const NotYetLoaded = createExample(TestedComponent, {});
-
-export const GotError = createExample(TestedComponent, {
-  balance: {
-    hasError: true,
-    message: "Network error",
-  },
-  Linker: NullLink,
-});
-
 export const EmptyBalance = createExample(TestedComponent, {
-  balance: {
-    hasError: false,
-    response: {
-      balances: [],
-    },
-  },
-  Linker: NullLink,
+  balances: [],
 });
 
 export const SomeCoins = createExample(TestedComponent, {
-  balance: {
-    hasError: false,
-    response: {
-      balances: [
-        {
-          available: "USD:10.5",
-          hasPendingTransactions: false,
-          pendingIncoming: "USD:0",
-          pendingOutgoing: "USD:0",
-          requiresUserInput: false,
-        },
-      ],
+  balances: [
+    {
+      available: "USD:10.5",
+      hasPendingTransactions: false,
+      pendingIncoming: "USD:0",
+      pendingOutgoing: "USD:0",
+      requiresUserInput: false,
     },
-  },
-  Linker: NullLink,
+  ],
 });
 
-export const SomeCoinsAndIncomingMoney = createExample(TestedComponent, {
-  balance: {
-    hasError: false,
-    response: {
-      balances: [
-        {
-          available: "USD:2.23",
-          hasPendingTransactions: false,
-          pendingIncoming: "USD:5.11",
-          pendingOutgoing: "USD:0",
-          requiresUserInput: false,
-        },
-      ],
+export const SomeCoinsInTreeCurrencies = createExample(TestedComponent, {
+  balances: [
+    {
+      available: "EUR:1",
+      hasPendingTransactions: false,
+      pendingIncoming: "USD:0",
+      pendingOutgoing: "USD:0",
+      requiresUserInput: false,
     },
-  },
-  Linker: NullLink,
+    {
+      available: "TESTKUDOS:2000",
+      hasPendingTransactions: false,
+      pendingIncoming: "USD:0",
+      pendingOutgoing: "USD:0",
+      requiresUserInput: false,
+    },
+    {
+      available: "JPY:4",
+      hasPendingTransactions: false,
+      pendingIncoming: "EUR:15",
+      pendingOutgoing: "EUR:0",
+      requiresUserInput: false,
+    },
+  ],
 });
 
-export const SomeCoinsInTwoCurrencies = createExample(TestedComponent, {
-  balance: {
-    hasError: false,
-    response: {
-      balances: [
-        {
-          available: "USD:2",
-          hasPendingTransactions: false,
-          pendingIncoming: "USD:5",
-          pendingOutgoing: "USD:0",
-          requiresUserInput: false,
-        },
-        {
-          available: "EUR:4",
-          hasPendingTransactions: false,
-          pendingIncoming: "EUR:5",
-          pendingOutgoing: "EUR:0",
-          requiresUserInput: false,
-        },
-      ],
+export const NoCoinsInTreeCurrencies = createExample(TestedComponent, {
+  balances: [
+    {
+      available: "EUR:3",
+      hasPendingTransactions: false,
+      pendingIncoming: "USD:0",
+      pendingOutgoing: "USD:0",
+      requiresUserInput: false,
     },
-  },
-  Linker: NullLink,
+    {
+      available: "USD:2",
+      hasPendingTransactions: false,
+      pendingIncoming: "USD:0",
+      pendingOutgoing: "USD:0",
+      requiresUserInput: false,
+    },
+    {
+      available: "ARS:1",
+      hasPendingTransactions: false,
+      pendingIncoming: "EUR:15",
+      pendingOutgoing: "EUR:0",
+      requiresUserInput: false,
+    },
+  ],
+});
+
+export const SomeCoinsInFiveCurrencies = createExample(TestedComponent, {
+  balances: [
+    {
+      available: "USD:0",
+      hasPendingTransactions: false,
+      pendingIncoming: "USD:0",
+      pendingOutgoing: "USD:0",
+      requiresUserInput: false,
+    },
+    {
+      available: "ARS:13451",
+      hasPendingTransactions: false,
+      pendingIncoming: "USD:0",
+      pendingOutgoing: "USD:0",
+      requiresUserInput: false,
+    },
+    {
+      available: "EUR:202.02",
+      hasPendingTransactions: false,
+      pendingIncoming: "EUR:0",
+      pendingOutgoing: "EUR:0",
+      requiresUserInput: false,
+    },
+    {
+      available: "JPY:0",
+      hasPendingTransactions: false,
+      pendingIncoming: "EUR:0",
+      pendingOutgoing: "EUR:0",
+      requiresUserInput: false,
+    },
+    {
+      available: "JPY:51223233",
+      hasPendingTransactions: false,
+      pendingIncoming: "EUR:0",
+      pendingOutgoing: "EUR:0",
+      requiresUserInput: false,
+    },
+    {
+      available: "DEMOKUDOS:6",
+      hasPendingTransactions: false,
+      pendingIncoming: "USD:0",
+      pendingOutgoing: "USD:0",
+      requiresUserInput: false,
+    },
+    {
+      available: "TESTKUDOS:6",
+      hasPendingTransactions: false,
+      pendingIncoming: "USD:5",
+      pendingOutgoing: "USD:0",
+      requiresUserInput: false,
+    },
+  ],
 });

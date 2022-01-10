@@ -23,23 +23,24 @@ import {
 import { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { Part } from "../components/Part";
+import { Loading } from "../components/Loading";
 import { SelectList } from "../components/SelectList";
 import {
+  ButtonBoxWarning,
   ButtonPrimary,
   ErrorText,
   Input,
   InputWithLabel,
+  WarningBox,
 } from "../components/styled";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import * as wxApi from "../wxApi";
 
 interface Props {
   currency: string;
+  onSuccess: (currency: string) => void;
 }
-export function DepositPage({ currency }: Props): VNode {
-  const [success, setSuccess] = useState(false);
-
+export function DepositPage({ currency, onSuccess }: Props): VNode {
   const state = useAsyncAsHook(async () => {
     const balance = await wxApi.getBalance();
     const bs = balance.balances.filter((b) => b.available.startsWith(currency));
@@ -63,7 +64,7 @@ export function DepositPage({ currency }: Props): VNode {
 
   async function doSend(account: string, amount: AmountString): Promise<void> {
     await wxApi.createDepositGroup(account, amount);
-    setSuccess(true);
+    onSuccess(currency);
   }
 
   async function getFeeForAmount(
@@ -73,8 +74,8 @@ export function DepositPage({ currency }: Props): VNode {
     return await wxApi.getFeeForDeposit(account, amount);
   }
 
-  if (accounts.length === 0) return <div>loading..</div>;
-  if (success) return <div>deposit created</div>;
+  if (accounts.length === 0) return <Loading />;
+
   return (
     <View
       knownBankAccounts={accounts}
@@ -105,8 +106,17 @@ export function View({
   const [accountIdx, setAccountIdx] = useState(0);
   const [amount, setAmount] = useState<number | undefined>(undefined);
   const [fee, setFee] = useState<DepositFee | undefined>(undefined);
+  function updateAmount(num: number | undefined) {
+    setAmount(num);
+    setFee(undefined);
+  }
+  const feeHasBeenCalculated = fee !== undefined;
   const currency = balance.currency;
   const amountStr: AmountString = `${currency}:${amount}`;
+  const feeSum =
+    fee !== undefined
+      ? Amounts.sum([fee.wire, fee.coin, fee.refresh]).amount
+      : Amounts.getZero(currency);
 
   const account = knownBankAccounts.length
     ? knownBankAccounts[accountIdx]
@@ -126,7 +136,12 @@ export function View({
     return <div>no balance</div>;
   }
   if (!knownBankAccounts || !knownBankAccounts.length) {
-    return <div>there is no known bank account to send money to</div>;
+    return (
+      <WarningBox>
+        <p>There is no known bank account to send money to</p>
+        <ButtonBoxWarning>Withdraw</ButtonBoxWarning>
+      </WarningBox>
+    );
   }
   const parsedAmount =
     amount === undefined ? undefined : Amounts.parse(amountStr);
@@ -136,8 +151,15 @@ export function View({
     : !parsedAmount
     ? "Invalid amount"
     : Amounts.cmp(balance, parsedAmount) === -1
-    ? `To much, your current balance is ${balance.value}`
+    ? `To much, your current balance is ${Amounts.stringifyValue(balance)}`
     : undefined;
+
+  const totalToDeposit = parsedAmount
+    ? Amounts.sub(parsedAmount, feeSum).amount
+    : Amounts.getZero(currency);
+
+  const unableToDeposit =
+    Amounts.isZero(totalToDeposit) && feeHasBeenCalculated;
 
   return (
     <Fragment>
@@ -153,7 +175,7 @@ export function View({
           />
         </Input>
         <InputWithLabel invalid={!!error}>
-          <label>Amount to send</label>
+          <label>Amount</label>
           <div>
             <span>{currency}</span>
             <input
@@ -161,11 +183,10 @@ export function View({
               value={amount}
               onInput={(e) => {
                 const num = parseFloat(e.currentTarget.value);
-                console.log(num);
                 if (!Number.isNaN(num)) {
-                  setAmount(num);
+                  updateAmount(num);
                 } else {
-                  setAmount(undefined);
+                  updateAmount(undefined);
                   setFee(undefined);
                 }
               }}
@@ -173,40 +194,41 @@ export function View({
           </div>
           {error && <ErrorText>{error}</ErrorText>}
         </InputWithLabel>
-        {!error && fee && (
-          <div style={{ textAlign: "center" }}>
-            <Part
-              title="Exchange fee"
-              text={Amounts.stringify(Amounts.sum([fee.wire, fee.coin]).amount)}
-              kind="negative"
-            />
-            <Part
-              title="Change cost"
-              text={Amounts.stringify(fee.refresh)}
-              kind="negative"
-            />
-            {parsedAmount && (
-              <Part
-                title="Total received"
-                text={Amounts.stringify(
-                  Amounts.sub(
-                    parsedAmount,
-                    Amounts.sum([fee.wire, fee.coin]).amount,
-                  ).amount,
-                )}
-                kind="positive"
-              />
-            )}
-          </div>
-        )}
+        {
+          <Fragment>
+            <InputWithLabel>
+              <label>Deposit fee</label>
+              <div>
+                <span>{currency}</span>
+                <input
+                  type="number"
+                  disabled
+                  value={Amounts.stringifyValue(feeSum)}
+                />
+              </div>
+            </InputWithLabel>
+
+            <InputWithLabel>
+              <label>Total deposit</label>
+              <div>
+                <span>{currency}</span>
+                <input
+                  type="number"
+                  disabled
+                  value={Amounts.stringifyValue(totalToDeposit)}
+                />
+              </div>
+            </InputWithLabel>
+          </Fragment>
+        }
       </section>
       <footer>
         <div />
         <ButtonPrimary
-          disabled={!parsedAmount}
+          disabled={unableToDeposit}
           onClick={() => onSend(accountURI, amountStr)}
         >
-          Send
+          Deposit {Amounts.stringifyValue(totalToDeposit)} {currency}
         </ButtonPrimary>
       </footer>
     </Fragment>

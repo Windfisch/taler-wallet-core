@@ -42,5 +42,6 @@ export const DevContextProvider = ({ children }: { children: any }): VNode => {
   const [value, setter] = useLocalStorage("devMode");
   const devMode = value === "true";
   const toggleDevMode = () => setter((v) => (!v ? "true" : undefined));
+  children = children.length === 1 && typeof children === "function" ? children({ devMode }) : children;
   return h(Context.Provider, { value: { devMode, toggleDevMode }, children });
 };

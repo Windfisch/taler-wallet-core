@@ -86,10 +86,6 @@ export function View({
   return (
     <div>
       <p>Debug tools:</p>
-      <button onClick={openExtensionPage("/static/popup.html")}>
-        wallet tab
-      </button>
-
       <button onClick={confirmReset}>reset</button>
       <br />
       <button onClick={onExportDatabase}>export database</button>
@@ -109,7 +105,8 @@ export function View({
               "yyyy/MM/dd_HH:mm",
             )}.json`}
           >
-            click here
+            {" "}
+            click here{" "}
           </a>
           to download
         </div>

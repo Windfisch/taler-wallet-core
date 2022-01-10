@@ -15,21 +15,38 @@
  */
 
 import {
-  AmountString,
+  Amounts,
   Balance,
   NotificationType,
   Transaction,
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { ButtonPrimary, DateSeparator } from "../components/styled";
+import { Loading } from "../components/Loading";
+import {
+  ButtonBoxPrimary,
+  ButtonBoxWarning,
+  ButtonPrimary,
+  DateSeparator,
+  ErrorBox,
+  NiceSelect,
+  WarningBox,
+} from "../components/styled";
 import { Time } from "../components/Time";
 import { TransactionItem } from "../components/TransactionItem";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import { AddNewActionView } from "../popup/AddNewActionView";
 import * as wxApi from "../wxApi";
 
-export function HistoryPage(): VNode {
+interface Props {
+  currency?: string;
+  goToWalletDeposit: (currency: string) => void;
+  goToWalletManualWithdraw: (currency?: string) => void;
+}
+export function HistoryPage({
+  currency,
+  goToWalletManualWithdraw,
+  goToWalletDeposit,
+}: Props): VNode {
   const balance = useAsyncAsHook(wxApi.getBalance);
   const balanceWithoutError = balance?.hasError
     ? []
@@ -39,31 +56,28 @@ export function HistoryPage(): VNode {
     NotificationType.WithdrawGroupFinished,
   ]);
 
-  const [addingAction, setAddingAction] = useState(false);
-
-  if (addingAction) {
-    return <AddNewActionView onCancel={() => setAddingAction(false)} />;
+  if (!transactionQuery || !balance) {
+    return <Loading />;
   }
 
-  if (!transactionQuery) {
-    return <div>Loading ...</div>;
-  }
   if (transactionQuery.hasError) {
-    return <div>There was an error loading the transactions.</div>;
+    return (
+      <Fragment>
+        <ErrorBox>{transactionQuery.message}</ErrorBox>
+        <p>There was an error loading the transactions.</p>
+      </Fragment>
+    );
   }
 
   return (
     <HistoryView
       balances={balanceWithoutError}
-      list={[...transactionQuery.response.transactions].reverse()}
-      onAddNewAction={() => setAddingAction(true)}
+      defaultCurrency={currency}
+      goToWalletManualWithdraw={goToWalletManualWithdraw}
+      goToWalletDeposit={goToWalletDeposit}
+      transactions={[...transactionQuery.response.transactions].reverse()}
     />
   );
-}
-
-function amountToString(c: AmountString): string {
-  const idx = c.indexOf(":");
-  return `${c.substring(idx + 1)} ${c.substring(0, idx)}`;
 }
 
 const term = 1000 * 60 * 60 * 24;
@@ -72,77 +86,136 @@ function normalizeToDay(x: number): number {
 }
 
 export function HistoryView({
-  list,
+  defaultCurrency,
+  transactions,
   balances,
-  onAddNewAction,
+  goToWalletManualWithdraw,
+  goToWalletDeposit,
 }: {
-  list: Transaction[];
+  goToWalletDeposit: (currency: string) => void;
+  goToWalletManualWithdraw: (currency?: string) => void;
+  defaultCurrency?: string;
+  transactions: Transaction[];
   balances: Balance[];
-  onAddNewAction: () => void;
 }): VNode {
-  const byDate = list.reduce((rv, x) => {
-    const theDate =
-      x.timestamp.t_ms === "never" ? 0 : normalizeToDay(x.timestamp.t_ms);
-    if (theDate) {
-      (rv[theDate] = rv[theDate] || []).push(x);
-    }
+  const currencies = balances.map((b) => b.available.split(":")[0]);
 
-    return rv;
-  }, {} as { [x: string]: Transaction[] });
+  const defaultCurrencyIndex = currencies.findIndex(
+    (c) => c === defaultCurrency,
+  );
+  const [currencyIndex, setCurrencyIndex] = useState(
+    defaultCurrencyIndex === -1 ? 0 : defaultCurrencyIndex,
+  );
+  const selectedCurrency =
+    currencies.length > 0 ? currencies[currencyIndex] : undefined;
+
+  const currencyAmount = balances[currencyIndex]
+    ? Amounts.jsonifyAmount(balances[currencyIndex].available)
+    : undefined;
+
+  const byDate = transactions
+    .filter((t) => t.amountRaw.split(":")[0] === selectedCurrency)
+    .reduce((rv, x) => {
+      const theDate =
+        x.timestamp.t_ms === "never" ? 0 : normalizeToDay(x.timestamp.t_ms);
+      if (theDate) {
+        (rv[theDate] = rv[theDate] || []).push(x);
+      }
+
+      return rv;
+    }, {} as { [x: string]: Transaction[] });
+  const datesWithTransaction = Object.keys(byDate);
 
   const multiCurrency = balances.length > 1;
 
+  if (balances.length === 0 || !selectedCurrency) {
+    return (
+      <WarningBox>
+        <p>
+          You have <b>no balance</b>. Withdraw some founds into your wallet
+        </p>
+        <ButtonBoxWarning onClick={() => goToWalletManualWithdraw()}>
+          Withdraw
+        </ButtonBoxWarning>
+      </WarningBox>
+    );
+  }
   return (
     <Fragment>
-      <header>
-        {balances.length > 0 ? (
-          <Fragment>
-            {balances.length === 1 && (
-              <div class="title">
-                Balance: <span>{amountToString(balances[0].available)}</span>
-              </div>
-            )}
-            {balances.length > 1 && (
-              <div class="title">
-                Balance:{" "}
-                <ul style={{ margin: 0 }}>
-                  {balances.map((b, i) => (
-                    <li key={i}>{b.available}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </Fragment>
-        ) : (
-          <div />
-        )}
-        <div>
-          <ButtonPrimary onClick={onAddNewAction}>
-            <b>+</b>
-          </ButtonPrimary>
-        </div>
-      </header>
       <section>
-        {Object.keys(byDate).map((d, i) => {
-          return (
-            <Fragment key={i}>
-              <DateSeparator>
-                <Time
-                  timestamp={{ t_ms: Number.parseInt(d, 10) }}
-                  format="dd MMMM yyyy"
-                />
-              </DateSeparator>
-              {byDate[d].map((tx, i) => (
-                <TransactionItem
-                  key={i}
-                  tx={tx}
-                  multiCurrency={multiCurrency}
-                />
-              ))}
-            </Fragment>
-          );
-        })}
+        <p
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          {currencies.length === 1 ? (
+            <div style={{ fontSize: "large" }}>{selectedCurrency}</div>
+          ) : (
+            <NiceSelect>
+              <select
+                value={currencyIndex}
+                onChange={(e) => {
+                  setCurrencyIndex(Number(e.currentTarget.value));
+                }}
+              >
+                {currencies.map((currency, index) => {
+                  return (
+                    <option value={index} key={currency}>
+                      {currency}
+                    </option>
+                  );
+                })}
+              </select>
+            </NiceSelect>
+          )}
+          {currencyAmount && (
+            <h2 style={{ margin: 0 }}>
+              {Amounts.stringifyValue(currencyAmount)}
+            </h2>
+          )}
+        </p>
+        <div style={{ marginLeft: "auto", width: "fit-content" }}>
+          <ButtonPrimary
+            onClick={() => goToWalletManualWithdraw(selectedCurrency)}
+          >
+            Withdraw
+          </ButtonPrimary>
+          {currencyAmount && Amounts.isNonZero(currencyAmount) && (
+            <ButtonBoxPrimary
+              onClick={() => goToWalletDeposit(selectedCurrency)}
+            >
+              Deposit
+            </ButtonBoxPrimary>
+          )}
+        </div>
       </section>
+      {datesWithTransaction.length === 0 ? (
+        <section>There is no history for this currency</section>
+      ) : (
+        <section>
+          {datesWithTransaction.map((d, i) => {
+            return (
+              <Fragment key={i}>
+                <DateSeparator>
+                  <Time
+                    timestamp={{ t_ms: Number.parseInt(d, 10) }}
+                    format="dd MMMM yyyy"
+                  />
+                </DateSeparator>
+                {byDate[d].map((tx, i) => (
+                  <TransactionItem
+                    key={i}
+                    tx={tx}
+                    multiCurrency={multiCurrency}
+                  />
+                ))}
+              </Fragment>
+            );
+          })}
+        </section>
+      )}
     </Fragment>
   );
 }
