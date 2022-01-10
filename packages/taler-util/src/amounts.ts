@@ -430,6 +430,8 @@ export class Amounts {
         n = (n * 10) % amountFractionalBase;
       }
     }
-    return s;
+
+    const currencyFormatter = new Intl.NumberFormat("en-US");
+    return currencyFormatter.format(Number(s));
   }
 }
