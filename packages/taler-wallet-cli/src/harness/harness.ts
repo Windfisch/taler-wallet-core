@@ -2035,13 +2035,19 @@ export class WalletCli {
             JSON.stringify(payload),
           )}`,
         );
+        console.log("--- wallet core response ---");
         console.log(resp);
-        const ar = JSON.parse(resp) as CoreApiResponse;
+        console.log("--- end of response ---");
+        let ar: any;
+        try {
+          ar = JSON.parse(resp) as CoreApiResponse;
+        } catch (e) {
+          throw new Error("wallet CLI did not return a proper JSON response");
+        }
         if (ar.type === "error") {
           throw new OperationFailedError(ar.error);
-        } else {
-          return ar.result;
         }
+        return ar.result;
       },
     };
   }

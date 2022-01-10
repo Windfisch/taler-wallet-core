@@ -998,10 +998,8 @@ export async function getExchangeWithdrawalInfo(
   baseUrl: string,
   amount: AmountJson,
 ): Promise<ExchangeWithdrawDetails> {
-  const {
-    exchange,
-    exchangeDetails,
-  } = await ws.exchangeOps.updateExchangeFromUrl(ws, baseUrl);
+  const { exchange, exchangeDetails } =
+    await ws.exchangeOps.updateExchangeFromUrl(ws, baseUrl);
   await updateWithdrawalDenoms(ws, baseUrl);
   const denoms = await getCandidateWithdrawalDenoms(ws, baseUrl);
   const selectedDenoms = selectWithdrawalDenominations(amount, denoms);
