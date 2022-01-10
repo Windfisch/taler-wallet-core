@@ -367,7 +367,7 @@ export async function getFeeForDeposit(
       const allExchanges = await tx.exchanges.iter().toArray();
       for (const e of allExchanges) {
         const details = await getExchangeDetails(tx, e.baseUrl);
-        if (!details) {
+        if (!details || amount.currency !== details.currency) {
           continue;
         }
         exchangeInfos.push({
@@ -461,7 +461,7 @@ export async function createDepositGroup(
       const allExchanges = await tx.exchanges.iter().toArray();
       for (const e of allExchanges) {
         const details = await getExchangeDetails(tx, e.baseUrl);
-        if (!details) {
+        if (!details || amount.currency !== details.currency) {
           continue;
         }
         exchangeInfos.push({
