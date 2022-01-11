@@ -651,7 +651,7 @@ async function updateExchangeFromUrlImpl(
           logger.trace("denom already revoked");
           continue;
         }
-        logger.trace("revoking denom", recoupInfo.h_denom_pub);
+        logger.info("revoking denom", recoupInfo.h_denom_pub);
         oldDenom.isRevoked = true;
         await tx.denominations.put(oldDenom);
         const affectedCoins = await tx.coins.indexes.byDenomPubHash
@@ -662,7 +662,7 @@ async function updateExchangeFromUrlImpl(
         }
       }
       if (newlyRevokedCoinPubs.length != 0) {
-        logger.trace("recouping coins", newlyRevokedCoinPubs);
+        logger.info("recouping coins", newlyRevokedCoinPubs);
         recoupGroupId = await ws.recoupOps.createRecoupGroup(
           ws,
           tx,

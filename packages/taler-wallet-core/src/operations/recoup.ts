@@ -28,6 +28,7 @@ import {
   Amounts,
   codecForRecoupConfirmation,
   getTimestampNow,
+  j2s,
   NotificationType,
   RefreshReason,
   TalerErrorDetails,
@@ -107,7 +108,7 @@ async function putGroupAsFinished(
     }
   }
   if (allFinished) {
-    logger.trace("all recoups of recoup group are finished");
+    logger.info("all recoups of recoup group are finished");
     recoupGroup.timestampFinished = getTimestampNow();
     recoupGroup.retryInfo = initRetryInfo();
     recoupGroup.lastError = undefined;
@@ -178,8 +179,17 @@ async function recoupWithdrawCoin(
     type: NotificationType.RecoupStarted,
   });
 
-  const recoupRequest = await ws.cryptoApi.createRecoupRequest(coin);
+  const recoupRequest = await ws.cryptoApi.createRecoupRequest({
+    blindingKey: coin.blindingKey,
+    coinPriv: coin.coinPriv,
+    coinPub: coin.coinPub,
+    denomPub: coin.denomPub,
+    denomPubHash: coin.denomPubHash,
+    denomSig: coin.denomSig,
+    recoupAmount: coin.currentAmount,
+  });
   const reqUrl = new URL(`/coins/${coin.coinPub}/recoup`, coin.exchangeBaseUrl);
+  logger.trace(`requesting recoup via ${reqUrl.href}`);
   const resp = await ws.http.postJson(reqUrl.href, recoupRequest, {
     timeout: getReserveRequestTimeout(reserve),
   });
@@ -187,6 +197,8 @@ async function recoupWithdrawCoin(
     resp,
     codecForRecoupConfirmation(),
   );
+
+  logger.trace(`got recoup confirmation ${j2s(recoupConfirmation)}`);
 
   if (recoupConfirmation.reserve_pub !== reservePub) {
     throw Error(`Coin's reserve doesn't match reserve on recoup`);
@@ -249,7 +261,15 @@ async function recoupRefreshCoin(
     type: NotificationType.RecoupStarted,
   });
 
-  const recoupRequest = await ws.cryptoApi.createRecoupRequest(coin);
+  const recoupRequest = await ws.cryptoApi.createRecoupRefreshRequest({
+    blindingKey: coin.blindingKey,
+    coinPriv: coin.coinPriv,
+    coinPub: coin.coinPub,
+    denomPub: coin.denomPub,
+    denomPubHash: coin.denomPubHash,
+    denomSig: coin.denomSig,
+    recoupAmount: coin.currentAmount,
+  });
   const reqUrl = new URL(`/coins/${coin.coinPub}/recoup`, coin.exchangeBaseUrl);
   logger.trace(`making recoup request for ${coin.coinPub}`);
 
@@ -359,9 +379,14 @@ async function processRecoupGroupImpl(
     logger.trace("recoup group finished");
     return;
   }
-  const ps = recoupGroup.coinPubs.map((x, i) =>
-    processRecoup(ws, recoupGroupId, i),
-  );
+  const ps = recoupGroup.coinPubs.map(async (x, i) => {
+    try {
+      processRecoup(ws, recoupGroupId, i);
+    } catch (e) {
+      logger.warn(`processRecoup failed: ${e}`);
+      throw e;
+    }
+  });
   await Promise.all(ps);
 
   const reserveSet = new Set<string>();

@@ -26,7 +26,11 @@ import { CoinRecord, DenominationRecord, WireFee } from "../../db.js";
 
 import { CryptoWorker } from "./cryptoWorkerInterface.js";
 
-import { RecoupRequest, CoinDepositPermission } from "@gnu-taler/taler-util";
+import {
+  CoinDepositPermission,
+  RecoupRefreshRequest,
+  RecoupRequest,
+} from "@gnu-taler/taler-util";
 
 import {
   BenchmarkResult,
@@ -39,6 +43,8 @@ import {
 import * as timer from "../../util/timer.js";
 import { Logger } from "@gnu-taler/taler-util";
 import {
+  CreateRecoupRefreshReqRequest,
+  CreateRecoupReqRequest,
   DerivedRefreshSession,
   DerivedTipPlanchet,
   DeriveRefreshSessionRequest,
@@ -421,8 +427,18 @@ export class CryptoApi {
     );
   }
 
-  createRecoupRequest(coin: CoinRecord): Promise<RecoupRequest> {
-    return this.doRpc<RecoupRequest>("createRecoupRequest", 1, coin);
+  createRecoupRequest(req: CreateRecoupReqRequest): Promise<RecoupRequest> {
+    return this.doRpc<RecoupRequest>("createRecoupRequest", 1, req);
+  }
+
+  createRecoupRefreshRequest(
+    req: CreateRecoupRefreshReqRequest,
+  ): Promise<RecoupRefreshRequest> {
+    return this.doRpc<RecoupRefreshRequest>(
+      "createRecoupRefreshRequest",
+      1,
+      req,
+    );
   }
 
   deriveRefreshSession(

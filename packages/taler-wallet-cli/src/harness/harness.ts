@@ -2031,9 +2031,9 @@ export class WalletCli {
           `wallet-${self.name}`,
           `taler-wallet-cli ${
             self.timetravelArg ?? ""
-          } --no-throttle --wallet-db '${self.dbfile}' api '${op}' ${shellWrap(
-            JSON.stringify(payload),
-          )}`,
+          } --no-throttle -LTRACE --wallet-db '${
+            self.dbfile
+          }' api '${op}' ${shellWrap(JSON.stringify(payload))}`,
         );
         console.log("--- wallet core response ---");
         console.log(resp);
@@ -2080,6 +2080,7 @@ export class WalletCli {
       [
         "--no-throttle",
         ...this.timetravelArgArr,
+        "-LTRACE",
         "--wallet-db",
         this.dbfile,
         "run-until-done",
@@ -2095,6 +2096,7 @@ export class WalletCli {
       "taler-wallet-cli",
       [
         "--no-throttle",
+        "-LTRACE",
         ...this.timetravelArgArr,
         "--wallet-db",
         this.dbfile,

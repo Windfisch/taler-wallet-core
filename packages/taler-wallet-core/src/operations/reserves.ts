@@ -30,6 +30,7 @@ import {
   encodeCrock,
   getRandomBytes,
   getTimestampNow,
+  j2s,
   Logger,
   NotificationType,
   randomBytes,
@@ -538,6 +539,7 @@ async function updateReserve(
     resp,
     codecForReserveStatus(),
   );
+
   if (result.isError) {
     if (
       resp.status === 404 &&
@@ -554,6 +556,8 @@ async function updateReserve(
       throwUnexpectedRequestError(resp, result.talerErrorResponse);
     }
   }
+
+  logger.trace(`got reserve status ${j2s(result.response)}`);
 
   const reserveInfo = result.response;
   const balance = Amounts.parseOrThrow(reserveInfo.balance);
@@ -635,8 +639,10 @@ async function updateReserve(
         }
       }
 
-      const remainingAmount = Amounts.sub(amountReservePlus, amountReserveMinus)
-        .amount;
+      const remainingAmount = Amounts.sub(
+        amountReservePlus,
+        amountReserveMinus,
+      ).amount;
       const denomSelInfo = selectWithdrawalDenominations(
         remainingAmount,
         denoms,

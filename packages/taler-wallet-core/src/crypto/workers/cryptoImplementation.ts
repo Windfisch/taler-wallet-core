@@ -25,12 +25,7 @@
  */
 
 // FIXME: Crypto should not use DB Types!
-import {
-  CoinRecord,
-  DenominationRecord,
-  WireFee,
-  CoinSourceType,
-} from "../../db.js";
+import { DenominationRecord, WireFee } from "../../db.js";
 
 import {
   buildSigPS,
@@ -39,6 +34,7 @@ import {
   ExchangeProtocolVersion,
   FreshCoin,
   hashDenomPub,
+  RecoupRefreshRequest,
   RecoupRequest,
   RefreshPlanchetInfo,
   TalerSignaturePurpose,
@@ -78,6 +74,8 @@ import { Timestamp, timestampTruncateToSecond } from "@gnu-taler/taler-util";
 
 import { Logger } from "@gnu-taler/taler-util";
 import {
+  CreateRecoupRefreshReqRequest,
+  CreateRecoupReqRequest,
   DerivedRefreshSession,
   DerivedTipPlanchet,
   DeriveRefreshSessionRequest,
@@ -261,33 +259,64 @@ export class CryptoImplementation {
   /**
    * Create and sign a message to recoup a coin.
    */
-  createRecoupRequest(coin: CoinRecord): RecoupRequest {
+  createRecoupRequest(req: CreateRecoupReqRequest): RecoupRequest {
     const p = buildSigPS(TalerSignaturePurpose.WALLET_COIN_RECOUP)
-      .put(decodeCrock(coin.coinPub))
-      .put(decodeCrock(coin.denomPubHash))
-      .put(decodeCrock(coin.blindingKey))
+      .put(decodeCrock(req.denomPubHash))
+      .put(decodeCrock(req.blindingKey))
+      .put(amountToBuffer(Amounts.jsonifyAmount(req.recoupAmount)))
       .build();
 
-    const coinPriv = decodeCrock(coin.coinPriv);
+    const coinPriv = decodeCrock(req.coinPriv);
     const coinSig = eddsaSign(p, coinPriv);
-    if (coin.denomPub.cipher === DenomKeyType.LegacyRsa) {
+    if (req.denomPub.cipher === DenomKeyType.LegacyRsa) {
       const paybackRequest: RecoupRequest = {
-        coin_blind_key_secret: coin.blindingKey,
-        coin_pub: coin.coinPub,
+        coin_blind_key_secret: req.blindingKey,
         coin_sig: encodeCrock(coinSig),
-        denom_pub_hash: coin.denomPubHash,
-        denom_sig: coin.denomSig.rsa_signature,
-        refreshed: coin.coinSource.type === CoinSourceType.Refresh,
+        denom_pub_hash: req.denomPubHash,
+        denom_sig: req.denomSig.rsa_signature,
+        amount: Amounts.stringify(req.recoupAmount),
       };
       return paybackRequest;
     } else {
       const paybackRequest: RecoupRequest = {
-        coin_blind_key_secret: coin.blindingKey,
-        coin_pub: coin.coinPub,
+        coin_blind_key_secret: req.blindingKey,
         coin_sig: encodeCrock(coinSig),
-        denom_pub_hash: coin.denomPubHash,
-        denom_sig: coin.denomSig,
-        refreshed: coin.coinSource.type === CoinSourceType.Refresh,
+        denom_pub_hash: req.denomPubHash,
+        denom_sig: req.denomSig,
+        amount: Amounts.stringify(req.recoupAmount),
+      };
+      return paybackRequest;
+    }
+  }
+
+  /**
+   * Create and sign a message to recoup a coin.
+   */
+   createRecoupRefreshRequest(req: CreateRecoupRefreshReqRequest): RecoupRefreshRequest {
+    const p = buildSigPS(TalerSignaturePurpose.WALLET_COIN_RECOUP_REFRESH)
+      .put(decodeCrock(req.denomPubHash))
+      .put(decodeCrock(req.blindingKey))
+      .put(amountToBuffer(Amounts.jsonifyAmount(req.recoupAmount)))
+      .build();
+
+    const coinPriv = decodeCrock(req.coinPriv);
+    const coinSig = eddsaSign(p, coinPriv);
+    if (req.denomPub.cipher === DenomKeyType.LegacyRsa) {
+      const paybackRequest: RecoupRefreshRequest = {
+        coin_blind_key_secret: req.blindingKey,
+        coin_sig: encodeCrock(coinSig),
+        denom_pub_hash: req.denomPubHash,
+        denom_sig: req.denomSig.rsa_signature,
+        amount: Amounts.stringify(req.recoupAmount),
+      };
+      return paybackRequest;
+    } else {
+      const paybackRequest: RecoupRefreshRequest = {
+        coin_blind_key_secret: req.blindingKey,
+        coin_sig: encodeCrock(coinSig),
+        denom_pub_hash: req.denomPubHash,
+        denom_sig: req.denomSig,
+        amount: Amounts.stringify(req.recoupAmount),
       };
       return paybackRequest;
     }

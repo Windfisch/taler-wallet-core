@@ -27,7 +27,13 @@
 /**
  * Imports.
  */
-import { AmountJson, DenominationPubKey, ExchangeProtocolVersion } from "@gnu-taler/taler-util";
+import {
+  AmountJson,
+  AmountString,
+  DenominationPubKey,
+  ExchangeProtocolVersion,
+  UnblindedSignature,
+} from "@gnu-taler/taler-util";
 
 export interface RefreshNewDenomInfo {
   count: number;
@@ -139,4 +145,30 @@ export interface SignTrackTransactionRequest {
   coinPub: string;
   merchantPriv: string;
   merchantPub: string;
+}
+
+/**
+ * Request to create a recoup request payload.
+ */
+export interface CreateRecoupReqRequest {
+  coinPub: string;
+  coinPriv: string;
+  blindingKey: string;
+  denomPub: DenominationPubKey;
+  denomPubHash: string;
+  denomSig: UnblindedSignature;
+  recoupAmount: AmountJson;
+}
+
+/**
+ * Request to create a recoup-refresh request payload.
+ */
+export interface CreateRecoupRefreshReqRequest {
+  coinPub: string;
+  coinPriv: string;
+  blindingKey: string;
+  denomPub: DenominationPubKey;
+  denomPubHash: string;
+  denomSig: UnblindedSignature;
+  recoupAmount: AmountJson;
 }

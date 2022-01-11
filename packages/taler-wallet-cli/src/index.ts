@@ -249,6 +249,7 @@ walletCli
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
       let requestJson;
+      logger.info(`handling 'api' request (${args.api.operation})`);
       try {
         requestJson = JSON.parse(args.api.request);
       } catch (e) {
@@ -293,12 +294,6 @@ walletCli
     });
   });
 
-async function asyncSleep(milliSeconds: number): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    setTimeout(() => resolve(), milliSeconds);
-  });
-}
-
 walletCli
   .subcommand("runPendingOpt", "run-pending", {
     help: "Run pending operations.",
@@ -330,6 +325,7 @@ walletCli
   .maybeOption("maxRetries", ["--max-retries"], clk.INT)
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
+      logger.info("running until pending operations are finished");
       await wallet.ws.runTaskLoop({
         maxRetries: args.finishPendingOpt.maxRetries,
         stopWhenDone: true,
