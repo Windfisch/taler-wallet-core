@@ -47,10 +47,6 @@ export async function getBalancesInsideTransaction(
     withdrawalGroups: typeof WalletStoresV1.withdrawalGroups;
   }>,
 ): Promise<BalancesResponse> {
-  return {
-    balances: [],
-  };
-
   const balanceStore: Record<string, WalletBalance> = {};
 
   /**
@@ -152,9 +148,6 @@ export async function getBalancesInsideTransaction(
 export async function getBalances(
   ws: InternalWalletState,
 ): Promise<BalancesResponse> {
-  return {
-    balances: [],
-  };
   logger.trace("starting to compute balance");
 
   const wbal = await ws.db
