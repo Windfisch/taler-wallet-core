@@ -53,6 +53,7 @@ import {
   DenomSelectionState,
   ExchangeDetailsRecord,
   ExchangeRecord,
+  OperationStatus,
   PlanchetRecord,
 } from "../db.js";
 import { walletCoreDebugFlags } from "../util/debugFlags.js";
@@ -968,7 +969,8 @@ async function processWithdrawGroupImpl(
       if (wg.timestampFinish === undefined && numFinished === numTotalCoins) {
         finishedForFirstTime = true;
         wg.timestampFinish = getTimestampNow();
-        wg.lastError = undefined;
+        wg.operationStatus = OperationStatus.Finished;
+        delete wg.lastError;
         wg.retryInfo = initRetryInfo();
       }
 

@@ -50,7 +50,7 @@ import {
   getRandomBytes,
   stringToBytes,
 } from "@gnu-taler/taler-util";
-import { DepositGroupRecord } from "../db.js";
+import { DepositGroupRecord, OperationStatus } from "../db.js";
 import { guardOperationException } from "../errors.js";
 import { PayCoinSelection, selectPayCoins } from "../util/coinSelection.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
@@ -281,6 +281,7 @@ async function processDepositGroupImpl(
       }
       if (allDeposited) {
         dg.timestampFinished = getTimestampNow();
+        dg.operationStatus = OperationStatus.Finished;
         delete dg.lastError;
         delete dg.retryInfo;
         await tx.depositGroups.put(dg);
@@ -409,11 +410,7 @@ export async function getFeeForDeposit(
     refund_deadline: { t_ms: 0 },
   };
 
-  const contractData = extractContractData(
-    contractTerms,
-    "",
-    "",
-  );
+  const contractData = extractContractData(contractTerms, "", "");
 
   const candidates = await getCandidatePayCoins(ws, contractData);
 
@@ -436,7 +433,6 @@ export async function getFeeForDeposit(
     amount,
     payCoinSel,
   );
-
 }
 
 export async function createDepositGroup(
@@ -570,6 +566,7 @@ export async function createDepositGroup(
       salt: wireSalt,
     },
     retryInfo: initRetryInfo(),
+    operationStatus: OperationStatus.Pending,
     lastError: undefined,
   };
 
@@ -708,8 +705,10 @@ export async function getTotalFeeForDepositAmount(
           .filter((x) =>
             Amounts.isSameCurrency(x.value, pcs.coinContributions[i]),
           );
-        const amountLeft = Amounts.sub(denom.value, pcs.coinContributions[i])
-          .amount;
+        const amountLeft = Amounts.sub(
+          denom.value,
+          pcs.coinContributions[i],
+        ).amount;
         const refreshCost = getTotalRefreshCost(allDenoms, denom, amountLeft);
         refreshFee.push(refreshCost);
       }
@@ -736,8 +735,17 @@ export async function getTotalFeeForDepositAmount(
     });
 
   return {
-    coin: coinFee.length === 0 ? Amounts.getZero(total.currency) : Amounts.sum(coinFee).amount,
-    wire: wireFee.length === 0 ? Amounts.getZero(total.currency) : Amounts.sum(wireFee).amount,
-    refresh: refreshFee.length === 0 ? Amounts.getZero(total.currency) : Amounts.sum(refreshFee).amount
+    coin:
+      coinFee.length === 0
+        ? Amounts.getZero(total.currency)
+        : Amounts.sum(coinFee).amount,
+    wire:
+      wireFee.length === 0
+        ? Amounts.getZero(total.currency)
+        : Amounts.sum(wireFee).amount,
+    refresh:
+      refreshFee.length === 0
+        ? Amounts.getZero(total.currency)
+        : Amounts.sum(refreshFee).amount,
   };
 }

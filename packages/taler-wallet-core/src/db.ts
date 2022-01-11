@@ -42,6 +42,7 @@ import {
 import { RetryInfo } from "./util/retries.js";
 import { PayCoinSelection } from "./util/coinSelection.js";
 import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
+import { PendingTaskInfo } from "./pending-types.js";
 
 /**
  * Name of the Taler database.  This is effectively the major
@@ -152,6 +153,8 @@ export interface ReserveRecord {
    * Time when the reserve was created.
    */
   timestampCreated: Timestamp;
+
+  operationStatus: OperationStatus;
 
   /**
    * Time when the information about this reserve was posted to the bank.
@@ -914,10 +917,19 @@ export enum RefreshCoinStatus {
   Frozen = "frozen",
 }
 
+export enum OperationStatus {
+  Finished = "finished",
+  Pending = "pending",
+}
+
 export interface RefreshGroupRecord {
+  operationStatus: OperationStatus;
+
   /**
    * Retry info, even present when the operation isn't active to allow indexing
    * on the next retry timestamp.
+   *
+   * FIXME: No, this can be optional, indexing is still possible
    */
   retryInfo: RetryInfo;
 
@@ -1350,6 +1362,8 @@ export interface WithdrawalGroupRecord {
    */
   timestampFinish?: Timestamp;
 
+  operationStatus: OperationStatus;
+
   /**
    * Amount including fees (i.e. the amount subtracted from the
    * reserve to withdraw all coins in this withdrawal session).
@@ -1561,6 +1575,8 @@ export interface DepositGroupRecord {
 
   timestampFinished: Timestamp | undefined;
 
+  operationStatus: OperationStatus;
+
   lastError: TalerErrorDetails | undefined;
 
   /**
@@ -1599,6 +1615,18 @@ export interface TombstoneRecord {
    * Tombstone ID, with the syntax "<type>:<key>".
    */
   id: string;
+}
+
+export interface BalancePerCurrencyRecord {
+  currency: string;
+
+  availableNow: AmountString;
+
+  availableExpected: AmountString;
+
+  pendingIncoming: AmountString;
+
+  pendingOutgoing: AmountString;
 }
 
 export const WalletStoresV1 = {
@@ -1671,7 +1699,9 @@ export const WalletStoresV1 = {
     describeContents<RefreshGroupRecord>("refreshGroups", {
       keyPath: "refreshGroupId",
     }),
-    {},
+    {
+      byStatus: describeIndex("byStatus", "operationStatus"),
+    },
   ),
   recoupGroups: describeStore(
     describeContents<RecoupGroupRecord>("recoupGroups", {
@@ -1686,6 +1716,7 @@ export const WalletStoresV1 = {
         "byInitialWithdrawalGroupId",
         "initialWithdrawalGroupId",
       ),
+      byStatus: describeIndex("byStatus", "operationStatus"),
     },
   ),
   purchases: describeStore(
@@ -1716,6 +1747,7 @@ export const WalletStoresV1 = {
     }),
     {
       byReservePub: describeIndex("byReservePub", "reservePub"),
+      byStatus: describeIndex("byStatus", "operationStatus"),
     },
   ),
   planchets: describeStore(
@@ -1753,7 +1785,9 @@ export const WalletStoresV1 = {
     describeContents<DepositGroupRecord>("depositGroups", {
       keyPath: "depositGroupId",
     }),
-    {},
+    {
+      byStatus: describeIndex("byStatus", "operationStatus"),
+    },
   ),
   tombstones: describeStore(
     describeContents<TombstoneRecord>("tombstones", { keyPath: "id" }),
@@ -1762,6 +1796,12 @@ export const WalletStoresV1 = {
   ghostDepositGroups: describeStore(
     describeContents<GhostDepositGroupRecord>("ghostDepositGroups", {
       keyPath: "contractTermsHash",
+    }),
+    {},
+  ),
+  balancesPerCurrency: describeStore(
+    describeContents<BalancePerCurrencyRecord>("balancesPerCurrency", {
+      keyPath: "currency",
     }),
     {},
   ),

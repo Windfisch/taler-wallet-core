@@ -22,13 +22,15 @@ import {
   codecForNumber,
   codecForString,
   codecOptional,
+  j2s,
   Logger,
 } from "@gnu-taler/taler-util";
 import {
-  getDefaultNodeWallet,
+  getDefaultNodeWallet2,
   NodeHttpLib,
   WalletApiOperation,
   Wallet,
+  AccessStats,
 } from "@gnu-taler/taler-wallet-core";
 
 /**
@@ -64,6 +66,7 @@ export async function runBench1(configJson: any): Promise<void> {
   }
 
   let wallet = {} as Wallet;
+  let getDbStats: () => AccessStats;
 
   for (let i = 0; i < numIter; i++) {
     // Create a new wallet in each iteration
@@ -72,12 +75,16 @@ export async function runBench1(configJson: any): Promise<void> {
     if (i % restartWallet == 0) {
       if (Object.keys(wallet).length !== 0) {
         wallet.stop();
+        console.log("wallet DB stats", j2s(getDbStats!()));
       }
-      wallet = await getDefaultNodeWallet({
+
+      const res = await getDefaultNodeWallet2({
         // No persistent DB storage.
         persistentStoragePath: undefined,
         httpLib: myHttpLib,
       });
+      wallet = res.wallet;
+      getDbStats = res.getDbStats;
       if (trustExchange) {
         wallet.setInsecureTrustExchange();
       }
@@ -119,6 +126,7 @@ export async function runBench1(configJson: any): Promise<void> {
   }
 
   wallet.stop();
+  console.log("wallet DB stats", j2s(getDbStats!()));
 }
 
 /**

@@ -10,7 +10,6 @@ import {
 // IDBCursor.update() - index - modify a record in the object store
 test.cb("WPT test idbcursor_update_index.htm", (t) => {
   var db: any,
-    count = 0,
     records = [
       { pKey: "primaryKey_0", iKey: "indexKey_0" },
       { pKey: "primaryKey_1", iKey: "indexKey_1" },

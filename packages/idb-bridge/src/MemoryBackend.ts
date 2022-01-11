@@ -229,6 +229,16 @@ function furthestKey(
   }
 }
 
+export interface AccessStats {
+  writeTransactions: number;
+  readTransactions: number;
+  writesPerStore: Record<string, number>;
+  readsPerStore: Record<string, number>;
+  readsPerIndex: Record<string, number>;
+  readItemsPerIndex: Record<string, number>;
+  readItemsPerStore: Record<string, number>;
+}
+
 /**
  * Primitive in-memory backend.
  *
@@ -265,6 +275,18 @@ export class MemoryBackend implements Backend {
   afterCommitCallback?: () => Promise<void>;
 
   enableTracing: boolean = false;
+
+  trackStats: boolean = true;
+
+  accessStats: AccessStats = {
+    readTransactions: 0,
+    writeTransactions: 0,
+    readsPerStore: {},
+    readsPerIndex: {},
+    readItemsPerIndex: {},
+    readItemsPerStore: {},
+    writesPerStore: {},
+  };
 
   /**
    * Load the data in this IndexedDB backend from a dump in JSON format.
@@ -510,6 +532,14 @@ export class MemoryBackend implements Backend {
       myDb.txLevel = TransactionLevel.Write;
     } else {
       throw Error("unsupported transaction mode");
+    }
+
+    if (this.trackStats) {
+      if (mode === "readonly") {
+        this.accessStats.readTransactions++;
+      } else if (mode === "readwrite") {
+        this.accessStats.writeTransactions++;
+      }
     }
 
     myDb.txRestrictObjectStores = [...objectStores];
@@ -1153,6 +1183,13 @@ export class MemoryBackend implements Backend {
         lastIndexPosition: req.lastIndexPosition,
         lastObjectStorePosition: req.lastObjectStorePosition,
       });
+      if (this.trackStats) {
+        const k = `${req.objectStoreName}.${req.indexName}`;
+        this.accessStats.readsPerIndex[k] =
+          (this.accessStats.readsPerIndex[k] ?? 0) + 1;
+        this.accessStats.readItemsPerIndex[k] =
+          (this.accessStats.readItemsPerIndex[k] ?? 0) + resp.count;
+      }
     } else {
       if (req.advanceIndexKey !== undefined) {
         throw Error("unsupported request");
@@ -1167,6 +1204,13 @@ export class MemoryBackend implements Backend {
         lastIndexPosition: req.lastIndexPosition,
         lastObjectStorePosition: req.lastObjectStorePosition,
       });
+      if (this.trackStats) {
+        const k = `${req.objectStoreName}`;
+        this.accessStats.readsPerStore[k] =
+          (this.accessStats.readsPerStore[k] ?? 0) + 1;
+        this.accessStats.readItemsPerStore[k] =
+          (this.accessStats.readItemsPerStore[k] ?? 0) + resp.count;
+      }
     }
     if (this.enableTracing) {
       console.log(`TRACING: getRecords got ${resp.count} results`);
@@ -1180,6 +1224,11 @@ export class MemoryBackend implements Backend {
   ): Promise<RecordStoreResponse> {
     if (this.enableTracing) {
       console.log(`TRACING: storeRecord`);
+      console.log(
+        `key ${storeReq.key}, record ${JSON.stringify(
+          structuredEncapsulate(storeReq.value),
+        )}`,
+      );
     }
     const myConn = this.requireConnectionFromTransaction(btx);
     const db = this.databases[myConn.dbName];
@@ -1199,6 +1248,12 @@ export class MemoryBackend implements Backend {
         }', transaction is over ${JSON.stringify(db.txRestrictObjectStores)}`,
       );
     }
+
+    if (this.trackStats) {
+      this.accessStats.writesPerStore[storeReq.objectStoreName] =
+        (this.accessStats.writesPerStore[storeReq.objectStoreName] ?? 0) + 1;
+    }
+
     const schema = myConn.modifiedSchema;
     const objectStoreMapEntry = myConn.objectStoreMap[storeReq.objectStoreName];
 
@@ -1275,7 +1330,9 @@ export class MemoryBackend implements Backend {
       }
     }
 
-    const objectStoreRecord: ObjectStoreRecord = {
+    const oldStoreRecord = modifiedData.get(key);
+
+    const newObjectStoreRecord: ObjectStoreRecord = {
       // FIXME: We should serialize the key here, not just clone it.
       primaryKey: structuredClone(key),
       value: structuredClone(value),
@@ -1283,7 +1340,7 @@ export class MemoryBackend implements Backend {
 
     objectStoreMapEntry.store.modifiedData = modifiedData.with(
       key,
-      objectStoreRecord,
+      newObjectStoreRecord,
       true,
     );
 
@@ -1297,6 +1354,11 @@ export class MemoryBackend implements Backend {
       }
       const indexProperties =
         schema.objectStores[storeReq.objectStoreName].indexes[indexName];
+
+      // Remove old index entry first!
+      if (oldStoreRecord) {
+        this.deleteFromIndex(index, key, oldStoreRecord.value, indexProperties);
+      }
       try {
         this.insertIntoIndex(index, key, value, indexProperties);
       } catch (e) {
@@ -1482,31 +1544,28 @@ function getIndexRecords(req: {
   const primaryKeys: Key[] = [];
   const values: Value[] = [];
   const { unique, range, forward, indexData } = req;
-  let indexPos = req.lastIndexPosition;
-  let objectStorePos: IDBValidKey | undefined = undefined;
-  let indexEntry: IndexRecord | undefined = undefined;
-  const rangeStart = forward ? range.lower : range.upper;
-  const dataStart = forward ? indexData.minKey() : indexData.maxKey();
-  indexPos = furthestKey(forward, indexPos, rangeStart);
-  indexPos = furthestKey(forward, indexPos, dataStart);
 
-  function nextIndexEntry(): IndexRecord | undefined {
-    assertInvariant(indexPos != null);
+  function nextIndexEntry(prevPos: IDBValidKey): IndexRecord | undefined {
     const res: [IDBValidKey, IndexRecord] | undefined = forward
-      ? indexData.nextHigherPair(indexPos)
-      : indexData.nextLowerPair(indexPos);
-    if (res) {
-      indexEntry = res[1];
-      indexPos = indexEntry.indexKey;
-      return indexEntry;
-    } else {
-      indexEntry = undefined;
-      indexPos = undefined;
-      return undefined;
-    }
+      ? indexData.nextHigherPair(prevPos)
+      : indexData.nextLowerPair(prevPos);
+    return res ? res[1] : undefined;
   }
 
   function packResult(): RecordGetResponse {
+    // Collect the values based on the primary keys,
+    // if requested.
+    if (req.resultLevel === ResultLevel.Full) {
+      for (let i = 0; i < numResults; i++) {
+        const result = req.storeData.get(primaryKeys[i]);
+        if (!result) {
+          console.error("invariant violated during read");
+          console.error("request was", req);
+          throw Error("invariant violated during read");
+        }
+        values.push(structuredClone(result.value));
+      }
+    }
     return {
       count: numResults,
       indexKeys:
@@ -1517,18 +1576,39 @@ function getIndexRecords(req: {
     };
   }
 
-  if (indexPos == null) {
+  let firstIndexPos = req.lastIndexPosition;
+  {
+    const rangeStart = forward ? range.lower : range.upper;
+    const dataStart = forward ? indexData.minKey() : indexData.maxKey();
+    firstIndexPos = furthestKey(forward, firstIndexPos, rangeStart);
+    firstIndexPos = furthestKey(forward, firstIndexPos, dataStart);
+  }
+
+  if (firstIndexPos == null) {
     return packResult();
   }
 
+  let objectStorePos: IDBValidKey | undefined = undefined;
+  let indexEntry: IndexRecord | undefined = undefined;
+
   // Now we align at indexPos and after objectStorePos
 
-  indexEntry = indexData.get(indexPos);
+  indexEntry = indexData.get(firstIndexPos);
   if (!indexEntry) {
     // We're not aligned to an index key, go to next index entry
-    nextIndexEntry();
-  }
-  if (indexEntry) {
+    indexEntry = nextIndexEntry(firstIndexPos);
+    if (!indexEntry) {
+      return packResult();
+    }
+    objectStorePos = nextKey(true, indexEntry.primaryKeys, undefined);
+  } else if (
+    req.lastIndexPosition != null &&
+    compareKeys(req.lastIndexPosition, indexEntry.indexKey) !== 0
+  ) {
+    // We're already past the desired lastIndexPosition, don't use
+    // lastObjectStorePosition.
+    objectStorePos = nextKey(true, indexEntry.primaryKeys, undefined);
+  } else {
     objectStorePos = nextKey(
       true,
       indexEntry.primaryKeys,
@@ -1536,43 +1616,56 @@ function getIndexRecords(req: {
     );
   }
 
+  // Now skip lower/upper bound of open ranges
+
   if (
     forward &&
     range.lowerOpen &&
     range.lower != null &&
-    compareKeys(range.lower, indexPos) === 0
+    compareKeys(range.lower, indexEntry.indexKey) === 0
   ) {
-    const e = nextIndexEntry();
-    objectStorePos = e?.primaryKeys.minKey();
+    indexEntry = nextIndexEntry(indexEntry.indexKey);
+    if (!indexEntry) {
+      return packResult();
+    }
+    objectStorePos = indexEntry.primaryKeys.minKey();
   }
 
   if (
     !forward &&
     range.upperOpen &&
     range.upper != null &&
-    compareKeys(range.upper, indexPos) === 0
+    compareKeys(range.upper, indexEntry.indexKey) === 0
   ) {
-    const e = nextIndexEntry();
-    objectStorePos = e?.primaryKeys.minKey();
+    indexEntry = nextIndexEntry(indexEntry.indexKey);
+    if (!indexEntry) {
+      return packResult();
+    }
+    objectStorePos = indexEntry.primaryKeys.minKey();
   }
+
+  // If requested, return only unique results
 
   if (
     unique &&
-    indexPos != null &&
     req.lastIndexPosition != null &&
-    compareKeys(indexPos, req.lastIndexPosition) === 0
+    compareKeys(indexEntry.indexKey, req.lastIndexPosition) === 0
   ) {
-    const e = nextIndexEntry();
-    objectStorePos = e?.primaryKeys.minKey();
+    indexEntry = nextIndexEntry(indexEntry.indexKey);
+    if (!indexEntry) {
+      return packResult();
+    }
+    objectStorePos = indexEntry.primaryKeys.minKey();
   }
 
-  if (req.advancePrimaryKey) {
-    indexPos = furthestKey(forward, indexPos, req.advanceIndexKey);
-    if (indexPos) {
-      indexEntry = indexData.get(indexPos);
-      if (!indexEntry) {
-        nextIndexEntry();
-      }
+  if (req.advanceIndexKey != null) {
+    const ik = furthestKey(forward, indexEntry.indexKey, req.advanceIndexKey)!;
+    indexEntry = indexData.get(ik);
+    if (!indexEntry) {
+      indexEntry = nextIndexEntry(ik);
+    }
+    if (!indexEntry) {
+      return packResult();
     }
   }
 
@@ -1580,9 +1673,7 @@ function getIndexRecords(req: {
   if (
     req.advanceIndexKey != null &&
     req.advancePrimaryKey &&
-    indexPos != null &&
-    indexEntry &&
-    compareKeys(indexPos, req.advanceIndexKey) == 0
+    compareKeys(indexEntry.indexKey, req.advanceIndexKey) == 0
   ) {
     if (
       objectStorePos == null ||
@@ -1597,13 +1688,10 @@ function getIndexRecords(req: {
   }
 
   while (1) {
-    if (indexPos === undefined) {
-      break;
-    }
     if (req.limit != 0 && numResults == req.limit) {
       break;
     }
-    if (!range.includes(indexPos)) {
+    if (!range.includes(indexEntry.indexKey)) {
       break;
     }
     if (indexEntry === undefined) {
@@ -1611,33 +1699,21 @@ function getIndexRecords(req: {
     }
     if (objectStorePos == null) {
       // We don't have any more records with the current index key.
-      nextIndexEntry();
-      if (indexEntry) {
-        objectStorePos = indexEntry.primaryKeys.minKey();
+      indexEntry = nextIndexEntry(indexEntry.indexKey);
+      if (!indexEntry) {
+        return packResult();
       }
+      objectStorePos = indexEntry.primaryKeys.minKey();
       continue;
     }
-    indexKeys.push(indexEntry.indexKey);
-    primaryKeys.push(objectStorePos);
+
+    indexKeys.push(structuredClone(indexEntry.indexKey));
+    primaryKeys.push(structuredClone(objectStorePos));
     numResults++;
     if (unique) {
       objectStorePos = undefined;
     } else {
       objectStorePos = indexEntry.primaryKeys.nextHigherKey(objectStorePos);
-    }
-  }
-
-  // Now we can collect the values based on the primary keys,
-  // if requested.
-  if (req.resultLevel === ResultLevel.Full) {
-    for (let i = 0; i < numResults; i++) {
-      const result = req.storeData.get(primaryKeys[i]);
-      if (!result) {
-        console.error("invariant violated during read");
-        console.error("request was", req);
-        throw Error("invariant violated during read");
-      }
-      values.push(result.value);
     }
   }
 

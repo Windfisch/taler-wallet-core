@@ -37,6 +37,7 @@ import type { IDBFactory } from "@gnu-taler/idb-bridge";
 import { WalletNotification } from "@gnu-taler/taler-util";
 import { Wallet } from "../wallet.js";
 import * as fs from "fs";
+import { AccessStats } from "@gnu-taler/idb-bridge/src/MemoryBackend";
 
 const logger = new Logger("headless/helpers.ts");
 
@@ -80,6 +81,21 @@ function makeId(length: number): string {
 export async function getDefaultNodeWallet(
   args: DefaultNodeWalletArgs = {},
 ): Promise<Wallet> {
+  const res = await getDefaultNodeWallet2(args);
+  return res.wallet;
+}
+
+/**
+ * Get a wallet instance with default settings for node.
+ *
+ * Extended version that allows getting DB stats.
+ */
+export async function getDefaultNodeWallet2(
+  args: DefaultNodeWalletArgs = {},
+): Promise<{
+  wallet: Wallet;
+  getDbStats: () => AccessStats;
+}> {
   BridgeIDBFactory.enableTracing = false;
   const myBackend = new MemoryBackend();
   myBackend.enableTracing = false;
@@ -121,7 +137,7 @@ export async function getDefaultNodeWallet(
   BridgeIDBFactory.enableTracing = false;
 
   const myBridgeIdbFactory = new BridgeIDBFactory(myBackend);
-  const myIdbFactory: IDBFactory = (myBridgeIdbFactory as any) as IDBFactory;
+  const myIdbFactory: IDBFactory = myBridgeIdbFactory as any as IDBFactory;
 
   let myHttpLib;
   if (args.httpLib) {
@@ -164,5 +180,8 @@ export async function getDefaultNodeWallet(
   if (args.notifyHandler) {
     w.addNotificationListener(args.notifyHandler);
   }
-  return w;
+  return {
+    wallet: w,
+    getDbStats: () => myBackend.accessStats,
+  };
 }

@@ -20,6 +20,9 @@ export * from "./index.js";
 export { NodeHttpLib } from "./headless/NodeHttpLib.js";
 export {
   getDefaultNodeWallet,
+  getDefaultNodeWallet2,
   DefaultNodeWalletArgs,
 } from "./headless/helpers.js";
 export * from "./crypto/workers/nodeThreadWorker.js";
+
+export type { AccessStats } from "@gnu-taler/idb-bridge";

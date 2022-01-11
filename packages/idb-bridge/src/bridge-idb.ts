@@ -64,7 +64,10 @@ import { makeStoreKeyValue } from "./util/makeStoreKeyValue";
 import { normalizeKeyPath } from "./util/normalizeKeyPath";
 import { openPromise } from "./util/openPromise";
 import queueTask from "./util/queueTask";
-import { structuredClone } from "./util/structuredClone";
+import {
+  checkStructuredCloneOrThrow,
+  structuredClone,
+} from "./util/structuredClone";
 import { validateKeyPath } from "./util/validateKeyPath";
 import { valueToKey } from "./util/valueToKey";
 
@@ -303,7 +306,7 @@ export class BridgeIDBCursor implements IDBCursor {
 
     try {
       // Only called for the side effect of throwing an exception
-      structuredClone(value);
+      checkStructuredCloneOrThrow(value);
     } catch (e) {
       throw new DataCloneError();
     }
@@ -327,6 +330,7 @@ export class BridgeIDBCursor implements IDBCursor {
       }
       const { btx } = this.source._confirmStartedBackendTransaction();
       await this._backend.storeRecord(btx, storeReq);
+      // FIXME: update the index position here!
     };
     return transaction._execRequestAsync({
       operation,

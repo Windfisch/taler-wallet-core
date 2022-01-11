@@ -72,6 +72,7 @@ export type {
 };
 
 export { MemoryBackend } from "./MemoryBackend";
+export type { AccessStats } from "./MemoryBackend";
 
 // globalThis polyfill, see https://mathiasbynens.be/notes/globalthis
 (function () {

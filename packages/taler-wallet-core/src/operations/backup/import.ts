@@ -47,6 +47,7 @@ import {
   WireInfo,
   WalletStoresV1,
   RefreshCoinStatus,
+  OperationStatus,
 } from "../../db.js";
 import { PayCoinSelection } from "../../util/coinSelection.js";
 import { j2s } from "@gnu-taler/taler-util";
@@ -180,8 +181,11 @@ async function getDenomSelStateFromBackup(
     const d = await tx.denominations.get([exchangeBaseUrl, s.denom_pub_hash]);
     checkBackupInvariant(!!d);
     totalCoinValue = Amounts.add(totalCoinValue, d.value).amount;
-    totalWithdrawCost = Amounts.add(totalWithdrawCost, d.value, d.feeWithdraw)
-      .amount;
+    totalWithdrawCost = Amounts.add(
+      totalWithdrawCost,
+      d.value,
+      d.feeWithdraw,
+    ).amount;
   }
   return {
     selectedDenoms,
@@ -475,6 +479,8 @@ export async function importBackup(
                 backupExchangeDetails.base_url,
                 backupReserve.initial_selected_denoms,
               ),
+              // FIXME!
+              operationStatus: OperationStatus.Pending,
             });
           }
           for (const backupWg of backupReserve.withdrawal_groups) {
@@ -507,6 +513,9 @@ export async function importBackup(
                 timestampFinish: backupWg.timestamp_finish,
                 withdrawalGroupId: backupWg.withdrawal_group_id,
                 denomSelUid: backupWg.selected_denoms_id,
+                operationStatus: backupWg.timestamp_finish
+                  ? OperationStatus.Finished
+                  : OperationStatus.Pending,
               });
             }
           }
@@ -758,7 +767,8 @@ export async function importBackup(
             // FIXME!
             payRetryInfo: initRetryInfo(),
             download,
-            paymentSubmitPending: !backupPurchase.timestamp_first_successful_pay,
+            paymentSubmitPending:
+              !backupPurchase.timestamp_first_successful_pay,
             refundQueryRequested: false,
             payCoinSelection: await recoverPayCoinSelection(
               tx,
@@ -809,10 +819,8 @@ export async function importBackup(
               reason = RefreshReason.Scheduled;
               break;
           }
-          const refreshSessionPerCoin: (
-            | RefreshSessionRecord
-            | undefined
-          )[] = [];
+          const refreshSessionPerCoin: (RefreshSessionRecord | undefined)[] =
+            [];
           for (const oldCoin of backupRefreshGroup.old_coins) {
             const c = await tx.coins.get(oldCoin.coin_pub);
             checkBackupInvariant(!!c);
@@ -848,6 +856,9 @@ export async function importBackup(
                 ? RefreshCoinStatus.Finished
                 : RefreshCoinStatus.Pending,
             ),
+            operationStatus: backupRefreshGroup.timestamp_finish
+              ? OperationStatus.Finished
+              : OperationStatus.Pending,
             inputPerCoin: backupRefreshGroup.old_coins.map((x) =>
               Amounts.parseOrThrow(x.input_amount),
             ),

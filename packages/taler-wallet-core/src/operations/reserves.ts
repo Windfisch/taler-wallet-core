@@ -41,6 +41,7 @@ import {
 } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../common.js";
 import {
+  OperationStatus,
   ReserveBankInfo,
   ReserveRecord,
   ReserveRecordStatus,
@@ -155,6 +156,7 @@ export async function createReserve(
     lastError: undefined,
     currency: req.amount.currency,
     requestedQuery: false,
+    operationStatus: OperationStatus.Pending,
   };
 
   const exchangeInfo = await updateExchangeFromUrl(ws, req.exchange);
@@ -250,6 +252,7 @@ export async function forceQueryReserve(
       switch (reserve.reserveStatus) {
         case ReserveRecordStatus.DORMANT:
           reserve.reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
+          reserve.operationStatus = OperationStatus.Pending;
           break;
         default:
           reserve.requestedQuery = true;
@@ -338,6 +341,7 @@ async function registerReserveWithBank(
       }
       r.timestampReserveInfoPosted = getTimestampNow();
       r.reserveStatus = ReserveRecordStatus.WAIT_CONFIRM_BANK;
+      r.operationStatus = OperationStatus.Pending;
       if (!r.bankInfo) {
         throw Error("invariant failed");
       }
@@ -419,6 +423,7 @@ async function processReserveBankStatusImpl(
         const now = getTimestampNow();
         r.timestampBankConfirmed = now;
         r.reserveStatus = ReserveRecordStatus.BANK_ABORTED;
+        r.operationStatus = OperationStatus.Finished;
         r.retryInfo = initRetryInfo();
         await tx.reserves.put(r);
       });
@@ -455,6 +460,7 @@ async function processReserveBankStatusImpl(
         const now = getTimestampNow();
         r.timestampBankConfirmed = now;
         r.reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
+        r.operationStatus = OperationStatus.Pending;
         r.retryInfo = initRetryInfo();
       } else {
         switch (r.reserveStatus) {
@@ -658,6 +664,7 @@ async function updateReserve(
 
       if (denomSelInfo.selectedDenoms.length === 0) {
         newReserve.reserveStatus = ReserveRecordStatus.DORMANT;
+        newReserve.operationStatus = OperationStatus.Finished;
         newReserve.lastError = undefined;
         newReserve.retryInfo = initRetryInfo();
         await tx.reserves.put(newReserve);
@@ -684,11 +691,13 @@ async function updateReserve(
         denomsSel: denomSelectionInfoToState(denomSelInfo),
         secretSeed: encodeCrock(getRandomBytes(64)),
         denomSelUid: encodeCrock(getRandomBytes(32)),
+        operationStatus: OperationStatus.Pending,
       };
 
       newReserve.lastError = undefined;
       newReserve.retryInfo = initRetryInfo();
       newReserve.reserveStatus = ReserveRecordStatus.DORMANT;
+      newReserve.operationStatus = OperationStatus.Finished;
 
       await tx.reserves.put(newReserve);
       await tx.withdrawalGroups.put(withdrawalRecord);

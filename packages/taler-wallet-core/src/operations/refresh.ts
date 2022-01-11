@@ -26,6 +26,7 @@ import {
   CoinSourceType,
   CoinStatus,
   DenominationRecord,
+  OperationStatus,
   RefreshCoinStatus,
   RefreshGroupRecord,
   WalletStoresV1,
@@ -127,6 +128,7 @@ function updateGroupStatus(rg: RefreshGroupRecord): void {
       rg.retryInfo = initRetryInfo();
     } else {
       rg.timestampFinished = getTimestampNow();
+      rg.operationStatus = OperationStatus.Finished;
       rg.retryInfo = initRetryInfo();
     }
   }
@@ -929,6 +931,7 @@ export async function createRefreshGroup(
   }
 
   const refreshGroup: RefreshGroupRecord = {
+    operationStatus: OperationStatus.Pending,
     timestampFinished: undefined,
     statusPerCoin: oldCoinPubs.map(() => RefreshCoinStatus.Pending),
     lastError: undefined,

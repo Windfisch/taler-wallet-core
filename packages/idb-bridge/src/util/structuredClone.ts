@@ -171,6 +171,75 @@ export function mkDeepClone() {
   }
 }
 
+/**
+ * Check if an object is deeply cloneable.
+ * Only called for the side-effect of throwing an exception.
+ */
+export function mkDeepCloneCheckOnly() {
+  const refs = [] as any;
+
+  return clone;
+
+  function cloneArray(a: any) {
+    var keys = Object.keys(a);
+    refs.push(a);
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i] as any;
+      var cur = a[k];
+      checkCloneableOrThrow(cur);
+      if (typeof cur !== "object" || cur === null) {
+        // do nothing
+      } else if (cur instanceof Date) {
+        // do nothing
+      } else if (ArrayBuffer.isView(cur)) {
+        // do nothing
+      } else {
+        var index = refs.indexOf(cur);
+        if (index !== -1) {
+          // do nothing
+        } else {
+          clone(cur);
+        }
+      }
+    }
+    refs.pop();
+  }
+
+  function clone(o: any) {
+    checkCloneableOrThrow(o);
+    if (typeof o !== "object" || o === null) return o;
+    if (o instanceof Date) return;
+    if (Array.isArray(o)) return cloneArray(o);
+    if (o instanceof Map) return cloneArray(Array.from(o));
+    if (o instanceof Set) return cloneArray(Array.from(o));
+    refs.push(o);
+    for (var k in o) {
+      if (Object.hasOwnProperty.call(o, k) === false) continue;
+      var cur = o[k] as any;
+      checkCloneableOrThrow(cur);
+      if (typeof cur !== "object" || cur === null) {
+        // do nothing
+      } else if (cur instanceof Date) {
+        // do nothing
+      } else if (cur instanceof Map) {
+        cloneArray(Array.from(cur));
+      } else if (cur instanceof Set) {
+        cloneArray(Array.from(cur));
+      } else if (ArrayBuffer.isView(cur)) {
+        // do nothing
+      } else {
+        var i = refs.indexOf(cur);
+        if (i !== -1) {
+          // do nothing
+        } else {
+          clone(cur);
+        }
+      }
+    }
+    refs.pop();
+  }
+}
+
 function internalEncapsulate(
   val: any,
   outRoot: any,
@@ -357,4 +426,11 @@ export function structuredRevive(val: any): any {
  */
 export function structuredClone(val: any): any {
   return mkDeepClone()(val);
+}
+
+/**
+ * Structured clone for IndexedDB.
+ */
+export function checkStructuredCloneOrThrow(val: any): void {
+  return mkDeepCloneCheckOnly()(val);
 }
