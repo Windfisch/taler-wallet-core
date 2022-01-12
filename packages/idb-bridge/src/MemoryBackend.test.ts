@@ -356,6 +356,59 @@ test("export", async (t) => {
   t.pass();
 });
 
+test("update with non-existent index values", async (t) => {
+  const backend = new MemoryBackend();
+  backend.enableTracing = true;
+  const idb = new BridgeIDBFactory(backend);
+  const request = idb.open("mydb");
+  request.onupgradeneeded = () => {
+    const db = request.result;
+    const store = db.createObjectStore("bla", { keyPath: "x" });
+    store.createIndex("by_y", "y");
+    store.createIndex("by_z", "z");
+  };
+
+  const db: BridgeIDBDatabase = await promiseFromRequest(request);
+
+  t.is(db.name, "mydb");
+
+  {
+    const tx = db.transaction("bla", "readwrite");
+    const store = tx.objectStore("bla");
+    store.put({ x: 0, y: "a", z: 42 });
+    const index = store.index("by_z");
+    const indRes = await promiseFromRequest(index.get(42));
+    t.is(indRes.x, 0);
+    const res = await promiseFromRequest(store.get(0));
+    t.is(res.z, 42);
+    await promiseFromTransaction(tx);
+  }
+
+  {
+    const tx = db.transaction("bla", "readwrite");
+    const store = tx.objectStore("bla");
+    store.put({ x: 0, y: "a" });
+    const res = await promiseFromRequest(store.get(0));
+    t.is(res.z, undefined);
+    await promiseFromTransaction(tx);
+  }
+
+  {
+    const tx = db.transaction("bla", "readwrite");
+    const store = tx.objectStore("bla");
+    const index = store.index("by_z");
+    {
+      const indRes = await promiseFromRequest(index.get(42));
+      t.is(indRes, undefined);
+    }
+    const res = await promiseFromRequest(store.get(0));
+    t.is(res.z, undefined);
+    await promiseFromTransaction(tx);
+  }
+
+  t.pass();
+});
+
 test("range queries", async (t) => {
   const backend = new MemoryBackend();
   backend.enableTracing = true;
