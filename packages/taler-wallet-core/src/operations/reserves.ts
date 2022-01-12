@@ -155,7 +155,6 @@ export async function createReserve(
     retryInfo: initRetryInfo(),
     lastError: undefined,
     currency: req.amount.currency,
-    requestedQuery: false,
     operationStatus: OperationStatus.Pending,
   };
 
@@ -255,7 +254,6 @@ export async function forceQueryReserve(
           reserve.operationStatus = OperationStatus.Pending;
           break;
         default:
-          reserve.requestedQuery = true;
           break;
       }
       reserve.retryInfo = initRetryInfo();

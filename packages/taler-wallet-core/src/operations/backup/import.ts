@@ -457,7 +457,6 @@ export async function importBackup(
               exchangeBaseUrl: backupExchangeDetails.base_url,
               reservePub,
               reservePriv: backupReserve.reserve_priv,
-              requestedQuery: false,
               bankInfo,
               timestampCreated: backupReserve.timestamp_created,
               timestampBankConfirmed:

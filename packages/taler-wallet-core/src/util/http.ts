@@ -164,7 +164,7 @@ export async function readUnexpectedResponseDetails(
   }
   return makeErrorDetails(
     TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
-    "Unexpected error code in response",
+    `Unexpected HTTP status (${httpResponse.status}) in response`,
     {
       requestUrl: httpResponse.requestUrl,
       httpStatusCode: httpResponse.status,
@@ -220,7 +220,7 @@ export function throwUnexpectedRequestError(
   throw new OperationFailedError(
     makeErrorDetails(
       TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
-      "Unexpected error code in response",
+      `Unexpected HTTP status ${httpResponse.status} in response`,
       {
         requestUrl: httpResponse.requestUrl,
         httpStatusCode: httpResponse.status,

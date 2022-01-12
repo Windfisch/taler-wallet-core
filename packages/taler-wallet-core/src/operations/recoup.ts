@@ -43,6 +43,7 @@ import {
   ReserveRecordStatus,
   WithdrawCoinSource,
   WalletStoresV1,
+  OperationStatus,
 } from "../db.js";
 
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
@@ -186,7 +187,6 @@ async function recoupWithdrawCoin(
     denomPub: coin.denomPub,
     denomPubHash: coin.denomPubHash,
     denomSig: coin.denomSig,
-    recoupAmount: coin.currentAmount,
   });
   const reqUrl = new URL(`/coins/${coin.coinPub}/recoup`, coin.exchangeBaseUrl);
   logger.trace(`requesting recoup via ${reqUrl.href}`);
@@ -233,13 +233,9 @@ async function recoupWithdrawCoin(
       updatedCoin.status = CoinStatus.Dormant;
       const currency = updatedCoin.currentAmount.currency;
       updatedCoin.currentAmount = Amounts.getZero(currency);
-      if (updatedReserve.reserveStatus === ReserveRecordStatus.DORMANT) {
-        updatedReserve.reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
-        updatedReserve.retryInfo = initRetryInfo();
-      } else {
-        updatedReserve.requestedQuery = true;
-        updatedReserve.retryInfo = initRetryInfo();
-      }
+      updatedReserve.reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
+      updatedReserve.retryInfo = initRetryInfo();
+      updatedReserve.operationStatus = OperationStatus.Pending;
       await tx.coins.put(updatedCoin);
       await tx.reserves.put(updatedReserve);
       await putGroupAsFinished(ws, tx, recoupGroup, coinIdx);
@@ -268,9 +264,11 @@ async function recoupRefreshCoin(
     denomPub: coin.denomPub,
     denomPubHash: coin.denomPubHash,
     denomSig: coin.denomSig,
-    recoupAmount: coin.currentAmount,
   });
-  const reqUrl = new URL(`/coins/${coin.coinPub}/recoup`, coin.exchangeBaseUrl);
+  const reqUrl = new URL(
+    `/coins/${coin.coinPub}/recoup-refresh`,
+    coin.exchangeBaseUrl,
+  );
   logger.trace(`making recoup request for ${coin.coinPub}`);
 
   const resp = await ws.http.postJson(reqUrl.href, recoupRequest);
@@ -381,7 +379,7 @@ async function processRecoupGroupImpl(
   }
   const ps = recoupGroup.coinPubs.map(async (x, i) => {
     try {
-      processRecoup(ws, recoupGroupId, i);
+      await processRecoup(ws, recoupGroupId, i);
     } catch (e) {
       logger.warn(`processRecoup failed: ${e}`);
       throw e;
@@ -408,7 +406,7 @@ async function processRecoupGroupImpl(
   }
 
   for (const r of reserveSet.values()) {
-    processReserve(ws, r).catch((e) => {
+    processReserve(ws, r, true).catch((e) => {
       logger.error(`processing reserve ${r} after recoup failed`);
     });
   }
@@ -460,6 +458,9 @@ export async function createRecoupGroup(
   return recoupGroupId;
 }
 
+/**
+ * Run the recoup protocol for a single coin in a recoup group.
+ */
 async function processRecoup(
   ws: InternalWalletState,
   recoupGroupId: string,
@@ -486,7 +487,7 @@ async function processRecoup(
 
       const coin = await tx.coins.get(coinPub);
       if (!coin) {
-        throw Error(`Coin ${coinPub} not found, can't request payback`);
+        throw Error(`Coin ${coinPub} not found, can't request recoup`);
       }
       return coin;
     });

@@ -173,11 +173,6 @@ export interface RecoupRequest {
    * Signature of TALER_RecoupRequestPS created with the coin's private key.
    */
   coin_sig: string;
-
-  /**
-   * Amount being recouped.
-   */
-  amount: AmountString;
 }
 
 export interface RecoupRefreshRequest {
@@ -204,11 +199,6 @@ export interface RecoupRefreshRequest {
    * the coin's private key.
    */
   coin_sig: string;
-
-  /**
-   * Amount being recouped.
-   */
-  amount: AmountString;
 }
 
 /**

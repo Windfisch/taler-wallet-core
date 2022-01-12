@@ -157,7 +157,6 @@ export interface CreateRecoupReqRequest {
   denomPub: DenominationPubKey;
   denomPubHash: string;
   denomSig: UnblindedSignature;
-  recoupAmount: AmountJson;
 }
 
 /**
@@ -170,5 +169,4 @@ export interface CreateRecoupRefreshReqRequest {
   denomPub: DenominationPubKey;
   denomPubHash: string;
   denomSig: UnblindedSignature;
-  recoupAmount: AmountJson;
 }

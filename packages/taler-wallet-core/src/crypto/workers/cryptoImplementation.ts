@@ -263,7 +263,6 @@ export class CryptoImplementation {
     const p = buildSigPS(TalerSignaturePurpose.WALLET_COIN_RECOUP)
       .put(decodeCrock(req.denomPubHash))
       .put(decodeCrock(req.blindingKey))
-      .put(amountToBuffer(Amounts.jsonifyAmount(req.recoupAmount)))
       .build();
 
     const coinPriv = decodeCrock(req.coinPriv);
@@ -274,7 +273,6 @@ export class CryptoImplementation {
         coin_sig: encodeCrock(coinSig),
         denom_pub_hash: req.denomPubHash,
         denom_sig: req.denomSig.rsa_signature,
-        amount: Amounts.stringify(req.recoupAmount),
       };
       return paybackRequest;
     } else {
@@ -283,7 +281,6 @@ export class CryptoImplementation {
         coin_sig: encodeCrock(coinSig),
         denom_pub_hash: req.denomPubHash,
         denom_sig: req.denomSig,
-        amount: Amounts.stringify(req.recoupAmount),
       };
       return paybackRequest;
     }
@@ -292,33 +289,32 @@ export class CryptoImplementation {
   /**
    * Create and sign a message to recoup a coin.
    */
-   createRecoupRefreshRequest(req: CreateRecoupRefreshReqRequest): RecoupRefreshRequest {
+  createRecoupRefreshRequest(
+    req: CreateRecoupRefreshReqRequest,
+  ): RecoupRefreshRequest {
     const p = buildSigPS(TalerSignaturePurpose.WALLET_COIN_RECOUP_REFRESH)
       .put(decodeCrock(req.denomPubHash))
       .put(decodeCrock(req.blindingKey))
-      .put(amountToBuffer(Amounts.jsonifyAmount(req.recoupAmount)))
       .build();
 
     const coinPriv = decodeCrock(req.coinPriv);
     const coinSig = eddsaSign(p, coinPriv);
     if (req.denomPub.cipher === DenomKeyType.LegacyRsa) {
-      const paybackRequest: RecoupRefreshRequest = {
+      const recoupRequest: RecoupRefreshRequest = {
         coin_blind_key_secret: req.blindingKey,
         coin_sig: encodeCrock(coinSig),
         denom_pub_hash: req.denomPubHash,
         denom_sig: req.denomSig.rsa_signature,
-        amount: Amounts.stringify(req.recoupAmount),
       };
-      return paybackRequest;
+      return recoupRequest;
     } else {
-      const paybackRequest: RecoupRefreshRequest = {
+      const recoupRequest: RecoupRefreshRequest = {
         coin_blind_key_secret: req.blindingKey,
         coin_sig: encodeCrock(coinSig),
         denom_pub_hash: req.denomPubHash,
         denom_sig: req.denomSig,
-        amount: Amounts.stringify(req.recoupAmount),
       };
-      return paybackRequest;
+      return recoupRequest;
     }
   }
 

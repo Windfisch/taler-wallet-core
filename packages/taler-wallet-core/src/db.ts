@@ -42,7 +42,6 @@ import {
 import { RetryInfo } from "./util/retries.js";
 import { PayCoinSelection } from "./util/coinSelection.js";
 import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
-import { PendingTaskInfo } from "./pending-types.js";
 
 /**
  * Name of the Taler database.  This is effectively the major
@@ -140,7 +139,7 @@ export interface ReserveRecord {
   reservePriv: string;
 
   /**
-   * The exchange base URL.
+   * The exchange base URL for the reserve.
    */
   exchangeBaseUrl: string;
 
@@ -153,8 +152,6 @@ export interface ReserveRecord {
    * Time when the reserve was created.
    */
   timestampCreated: Timestamp;
-
-  operationStatus: OperationStatus;
 
   /**
    * Time when the information about this reserve was posted to the bank.
@@ -206,13 +203,17 @@ export interface ReserveRecord {
    */
   initialDenomSel: DenomSelectionState;
 
+  /**
+   * Current status of the reserve.
+   */
   reserveStatus: ReserveRecordStatus;
 
   /**
-   * Was a reserve query requested?  If so, query again instead
-   * of going into dormant status.
+   * Is there any work to be done for this reserve?
+   * 
+   * FIXME: Technically redundant, since the reserveStatus would indicate this.
    */
-  requestedQuery: boolean;
+  operationStatus: OperationStatus;
 
   /**
    * Time of the last successful status query.
