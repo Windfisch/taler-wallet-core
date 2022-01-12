@@ -55,6 +55,7 @@ import {
   ExchangeRecord,
   OperationStatus,
   PlanchetRecord,
+  WithdrawalGroupRecord,
 } from "../db.js";
 import { walletCoreDebugFlags } from "../util/debugFlags.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
@@ -73,7 +74,7 @@ import {
 /**
  * Logger for this file.
  */
-const logger = new Logger("withdraw.ts");
+const logger = new Logger("operations/withdraw.ts");
 
 /**
  * FIXME: Eliminate this in favor of DenomSelectionState.
@@ -351,106 +352,95 @@ export async function getCandidateWithdrawalDenoms(
  */
 async function processPlanchetGenerate(
   ws: InternalWalletState,
-  withdrawalGroupId: string,
+  withdrawalGroup: WithdrawalGroupRecord,
   coinIdx: number,
 ): Promise<void> {
-  const withdrawalGroup = await ws.db
-    .mktx((x) => ({ withdrawalGroups: x.withdrawalGroups }))
-    .runReadOnly(async (tx) => {
-      return await tx.withdrawalGroups.get(withdrawalGroupId);
-    });
-  if (!withdrawalGroup) {
-    return;
-  }
   let planchet = await ws.db
     .mktx((x) => ({
       planchets: x.planchets,
     }))
     .runReadOnly(async (tx) => {
       return tx.planchets.indexes.byGroupAndIndex.get([
-        withdrawalGroupId,
+        withdrawalGroup.withdrawalGroupId,
         coinIdx,
       ]);
     });
-  if (!planchet) {
-    let ci = 0;
-    let denomPubHash: string | undefined;
-    for (
-      let di = 0;
-      di < withdrawalGroup.denomsSel.selectedDenoms.length;
-      di++
-    ) {
-      const d = withdrawalGroup.denomsSel.selectedDenoms[di];
-      if (coinIdx >= ci && coinIdx < ci + d.count) {
-        denomPubHash = d.denomPubHash;
-        break;
-      }
-      ci += d.count;
-    }
-    if (!denomPubHash) {
-      throw Error("invariant violated");
-    }
-
-    const { denom, reserve } = await ws.db
-      .mktx((x) => ({
-        reserves: x.reserves,
-        denominations: x.denominations,
-      }))
-      .runReadOnly(async (tx) => {
-        const denom = await tx.denominations.get([
-          withdrawalGroup.exchangeBaseUrl,
-          denomPubHash!,
-        ]);
-        if (!denom) {
-          throw Error("invariant violated");
-        }
-        const reserve = await tx.reserves.get(withdrawalGroup.reservePub);
-        if (!reserve) {
-          throw Error("invariant violated");
-        }
-        return { denom, reserve };
-      });
-    const r = await ws.cryptoApi.createPlanchet({
-      denomPub: denom.denomPub,
-      feeWithdraw: denom.feeWithdraw,
-      reservePriv: reserve.reservePriv,
-      reservePub: reserve.reservePub,
-      value: denom.value,
-      coinIndex: coinIdx,
-      secretSeed: withdrawalGroup.secretSeed,
-    });
-    const newPlanchet: PlanchetRecord = {
-      blindingKey: r.blindingKey,
-      coinEv: r.coinEv,
-      coinEvHash: r.coinEvHash,
-      coinIdx,
-      coinPriv: r.coinPriv,
-      coinPub: r.coinPub,
-      coinValue: r.coinValue,
-      denomPub: r.denomPub,
-      denomPubHash: r.denomPubHash,
-      isFromTip: false,
-      reservePub: r.reservePub,
-      withdrawalDone: false,
-      withdrawSig: r.withdrawSig,
-      withdrawalGroupId: withdrawalGroupId,
-      lastError: undefined,
-    };
-    await ws.db
-      .mktx((x) => ({ planchets: x.planchets }))
-      .runReadWrite(async (tx) => {
-        const p = await tx.planchets.indexes.byGroupAndIndex.get([
-          withdrawalGroupId,
-          coinIdx,
-        ]);
-        if (p) {
-          planchet = p;
-          return;
-        }
-        await tx.planchets.put(newPlanchet);
-        planchet = newPlanchet;
-      });
+  if (planchet) {
+    return;
   }
+  let ci = 0;
+  let denomPubHash: string | undefined;
+  for (let di = 0; di < withdrawalGroup.denomsSel.selectedDenoms.length; di++) {
+    const d = withdrawalGroup.denomsSel.selectedDenoms[di];
+    if (coinIdx >= ci && coinIdx < ci + d.count) {
+      denomPubHash = d.denomPubHash;
+      break;
+    }
+    ci += d.count;
+  }
+  if (!denomPubHash) {
+    throw Error("invariant violated");
+  }
+
+  const { denom, reserve } = await ws.db
+    .mktx((x) => ({
+      reserves: x.reserves,
+      denominations: x.denominations,
+    }))
+    .runReadOnly(async (tx) => {
+      const denom = await tx.denominations.get([
+        withdrawalGroup.exchangeBaseUrl,
+        denomPubHash!,
+      ]);
+      if (!denom) {
+        throw Error("invariant violated");
+      }
+      const reserve = await tx.reserves.get(withdrawalGroup.reservePub);
+      if (!reserve) {
+        throw Error("invariant violated");
+      }
+      return { denom, reserve };
+    });
+  const r = await ws.cryptoApi.createPlanchet({
+    denomPub: denom.denomPub,
+    feeWithdraw: denom.feeWithdraw,
+    reservePriv: reserve.reservePriv,
+    reservePub: reserve.reservePub,
+    value: denom.value,
+    coinIndex: coinIdx,
+    secretSeed: withdrawalGroup.secretSeed,
+  });
+  const newPlanchet: PlanchetRecord = {
+    blindingKey: r.blindingKey,
+    coinEv: r.coinEv,
+    coinEvHash: r.coinEvHash,
+    coinIdx,
+    coinPriv: r.coinPriv,
+    coinPub: r.coinPub,
+    coinValue: r.coinValue,
+    denomPub: r.denomPub,
+    denomPubHash: r.denomPubHash,
+    isFromTip: false,
+    reservePub: r.reservePub,
+    withdrawalDone: false,
+    withdrawSig: r.withdrawSig,
+    withdrawalGroupId: withdrawalGroup.withdrawalGroupId,
+    lastError: undefined,
+  };
+  await ws.db
+    .mktx((x) => ({ planchets: x.planchets }))
+    .runReadWrite(async (tx) => {
+      const p = await tx.planchets.indexes.byGroupAndIndex.get([
+        withdrawalGroup.withdrawalGroupId,
+        coinIdx,
+      ]);
+      if (p) {
+        planchet = p;
+        return;
+      }
+      await tx.planchets.put(newPlanchet);
+      planchet = newPlanchet;
+    });
 }
 
 /**
@@ -460,7 +450,7 @@ async function processPlanchetGenerate(
  */
 async function processPlanchetExchangeRequest(
   ws: InternalWalletState,
-  withdrawalGroupId: string,
+  withdrawalGroup: WithdrawalGroupRecord,
   coinIdx: number,
 ): Promise<WithdrawResponse | undefined> {
   const d = await ws.db
@@ -471,12 +461,8 @@ async function processPlanchetExchangeRequest(
       denominations: x.denominations,
     }))
     .runReadOnly(async (tx) => {
-      const withdrawalGroup = await tx.withdrawalGroups.get(withdrawalGroupId);
-      if (!withdrawalGroup) {
-        return;
-      }
       let planchet = await tx.planchets.indexes.byGroupAndIndex.get([
-        withdrawalGroupId,
+        withdrawalGroup.withdrawalGroupId,
         coinIdx,
       ]);
       if (!planchet) {
@@ -503,7 +489,7 @@ async function processPlanchetExchangeRequest(
       }
 
       logger.trace(
-        `processing planchet #${coinIdx} in withdrawal ${withdrawalGroupId}`,
+        `processing planchet #${coinIdx} in withdrawal ${withdrawalGroup.withdrawalGroupId}`,
       );
 
       const reqBody: any = {
@@ -543,7 +529,7 @@ async function processPlanchetExchangeRequest(
       .mktx((x) => ({ planchets: x.planchets }))
       .runReadWrite(async (tx) => {
         let planchet = await tx.planchets.indexes.byGroupAndIndex.get([
-          withdrawalGroupId,
+          withdrawalGroup.withdrawalGroupId,
           coinIdx,
         ]);
         if (!planchet) {
@@ -558,7 +544,7 @@ async function processPlanchetExchangeRequest(
 
 async function processPlanchetVerifyAndStoreCoin(
   ws: InternalWalletState,
-  withdrawalGroupId: string,
+  withdrawalGroup: WithdrawalGroupRecord,
   coinIdx: number,
   resp: WithdrawResponse,
 ): Promise<void> {
@@ -568,12 +554,8 @@ async function processPlanchetVerifyAndStoreCoin(
       planchets: x.planchets,
     }))
     .runReadOnly(async (tx) => {
-      const withdrawalGroup = await tx.withdrawalGroups.get(withdrawalGroupId);
-      if (!withdrawalGroup) {
-        return;
-      }
       let planchet = await tx.planchets.indexes.byGroupAndIndex.get([
-        withdrawalGroupId,
+        withdrawalGroup.withdrawalGroupId,
         coinIdx,
       ]);
       if (!planchet) {
@@ -635,7 +617,7 @@ async function processPlanchetVerifyAndStoreCoin(
       .mktx((x) => ({ planchets: x.planchets }))
       .runReadWrite(async (tx) => {
         let planchet = await tx.planchets.indexes.byGroupAndIndex.get([
-          withdrawalGroupId,
+          withdrawalGroup.withdrawalGroupId,
           coinIdx,
         ]);
         if (!planchet) {
@@ -679,7 +661,7 @@ async function processPlanchetVerifyAndStoreCoin(
       type: CoinSourceType.Withdraw,
       coinIndex: coinIdx,
       reservePub: planchet.reservePub,
-      withdrawalGroupId: withdrawalGroupId,
+      withdrawalGroupId: withdrawalGroup.withdrawalGroupId,
     },
     suspended: false,
   };
@@ -694,10 +676,6 @@ async function processPlanchetVerifyAndStoreCoin(
       planchets: x.planchets,
     }))
     .runReadWrite(async (tx) => {
-      const ws = await tx.withdrawalGroups.get(withdrawalGroupId);
-      if (!ws) {
-        return false;
-      }
       const p = await tx.planchets.get(planchetCoinPub);
       if (!p || p.withdrawalDone) {
         return false;
@@ -914,7 +892,7 @@ async function processWithdrawGroupImpl(
   let work: Promise<void>[] = [];
 
   for (let i = 0; i < numTotalCoins; i++) {
-    work.push(processPlanchetGenerate(ws, withdrawalGroupId, i));
+    work.push(processPlanchetGenerate(ws, withdrawalGroup, i));
   }
 
   // Generate coins concurrently (parallelism only happens in the crypto API workers)
@@ -925,14 +903,14 @@ async function processWithdrawGroupImpl(
   for (let coinIdx = 0; coinIdx < numTotalCoins; coinIdx++) {
     const resp = await processPlanchetExchangeRequest(
       ws,
-      withdrawalGroupId,
+      withdrawalGroup,
       coinIdx,
     );
     if (!resp) {
       continue;
     }
     work.push(
-      processPlanchetVerifyAndStoreCoin(ws, withdrawalGroupId, coinIdx, resp),
+      processPlanchetVerifyAndStoreCoin(ws, withdrawalGroup, coinIdx, resp),
     );
   }
 
@@ -1089,6 +1067,13 @@ export async function getExchangeWithdrawalInfo(
   return ret;
 }
 
+/**
+ * Get more information about a taler://withdraw URI.
+ *
+ * As side effects, the bank (via the bank integration API) is queried
+ * and the exchange suggested by the bank is permanently added
+ * to the wallet's list of known exchanges.
+ */
 export async function getWithdrawalDetailsForUri(
   ws: InternalWalletState,
   talerWithdrawUri: string,
@@ -1109,6 +1094,9 @@ export async function getWithdrawalDetailsForUri(
       );
     }
   }
+
+  // Extract information about possible exchanges for the withdrawal
+  // operation from the database.
 
   const exchanges: ExchangeListItem[] = [];
 

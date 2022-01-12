@@ -37,13 +37,9 @@ import {
 } from "../pending-types.js";
 import {
   getTimestampNow,
-  isTimestampExpired,
-  j2s,
-  Logger,
   Timestamp,
 } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../common.js";
-import { getBalancesInsideTransaction } from "./balance.js";
 import { GetReadOnlyAccess } from "../util/query.js";
 
 async function gatherExchangePending(
@@ -353,9 +349,7 @@ export async function getPendingOperations(
       recoupGroups: x.recoupGroups,
     }))
     .runReadWrite(async (tx) => {
-      const walletBalance = await getBalancesInsideTransaction(ws, tx);
       const resp: PendingOperationsResponse = {
-        walletBalance,
         pendingOperations: [],
       };
       await gatherExchangePending(tx, now, resp);

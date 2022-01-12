@@ -248,9 +248,4 @@ export interface PendingOperationsResponse {
    * List of pending operations.
    */
   pendingOperations: PendingTaskInfo[];
-
-  /**
-   * Current wallet balance, including pending balances.
-   */
-  walletBalance: BalancesResponse;
 }

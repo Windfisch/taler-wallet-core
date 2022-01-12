@@ -158,7 +158,7 @@ export interface ReserveRecord {
    *
    * Only applies if bankWithdrawStatusUrl is defined.
    *
-   * Set to 0 if that hasn't happened yet.
+   * Set to undefined if that hasn't happened yet.
    */
   timestampReserveInfoPosted: Timestamp | undefined;
 
@@ -210,7 +210,7 @@ export interface ReserveRecord {
 
   /**
    * Is there any work to be done for this reserve?
-   * 
+   *
    * FIXME: Technically redundant, since the reserveStatus would indicate this.
    */
   operationStatus: OperationStatus;
@@ -1341,6 +1341,9 @@ export interface DenomSelectionState {
  * the coin selection we want to withdraw.
  */
 export interface WithdrawalGroupRecord {
+  /**
+   * Unique identifier for the withdrawal group.
+   */
   withdrawalGroupId: string;
 
   /**
@@ -1348,8 +1351,15 @@ export interface WithdrawalGroupRecord {
    */
   secretSeed: string;
 
+  /**
+   * Public key of the reserve that we're withdrawing from.
+   */
   reservePub: string;
 
+  /**
+   * The exchange base URL that we're withdrawing from.
+   * (Redundantly stored, as the reserve record also has this info.)
+   */
   exchangeBaseUrl: string;
 
   /**
@@ -1363,6 +1373,10 @@ export interface WithdrawalGroupRecord {
    */
   timestampFinish?: Timestamp;
 
+  /**
+   * Operation status of the withdrawal group.
+   * Used for indexing in the database.
+   */
   operationStatus: OperationStatus;
 
   /**
@@ -1371,8 +1385,18 @@ export interface WithdrawalGroupRecord {
    */
   rawWithdrawalAmount: AmountJson;
 
+  /**
+   * Denominations selected for withdrawal.
+   */
   denomsSel: DenomSelectionState;
 
+  /**
+   * UID of the denomination selection.
+   * 
+   * Used for merging backups.
+   * 
+   * FIXME: Should this not also include a timestamp for more logical merging?
+   */
   denomSelUid: string;
 
   /**
