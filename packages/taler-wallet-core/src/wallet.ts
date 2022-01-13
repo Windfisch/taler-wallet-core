@@ -626,6 +626,7 @@ async function setCoinSuspended(
  */
 async function dumpCoins(ws: InternalWalletState): Promise<CoinDumpJson> {
   const coinsJson: CoinDumpJson = { coins: [] };
+  logger.info("dumping coins");
   await ws.db
     .mktx((x) => ({
       coins: x.coins,
@@ -1206,9 +1207,15 @@ class InternalWalletStateImpl implements InternalWalletState {
     const key = `${exchangeBaseUrl}:${denomPubHash}`;
     const cached = this.denomCache[key];
     if (cached) {
+      logger.info("using cached denom");
       return cached;
     }
-    return await tx.denominations.get([exchangeBaseUrl, denomPubHash]);
+    logger.info("looking up denom denom");
+    const d = await tx.denominations.get([exchangeBaseUrl, denomPubHash]);
+    if (d) {
+      this.denomCache[key] = d;
+    }
+    return d;
   }
 
   notify(n: WalletNotification): void {

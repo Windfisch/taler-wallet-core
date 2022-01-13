@@ -228,7 +228,7 @@ export interface InternalWalletState {
 
   getDenomInfo(
     ws: InternalWalletState,
-    tx: GetReadWriteAccess<{
+    tx: GetReadOnlyAccess<{
       denominations: typeof WalletStoresV1.denominations;
     }>,
     exchangeBaseUrl: string,

@@ -67,7 +67,11 @@ import {
 } from "@gnu-taler/taler-util";
 import { guardOperationException } from "../errors.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
-import { EXCHANGE_COINS_LOCK, InternalWalletState } from "../common.js";
+import {
+  DenomInfo,
+  EXCHANGE_COINS_LOCK,
+  InternalWalletState,
+} from "../common.js";
 import {
   isWithdrawableDenom,
   selectWithdrawalDenominations,
@@ -90,7 +94,7 @@ const logger = new Logger("refresh.ts");
  */
 export function getTotalRefreshCost(
   denoms: DenominationRecord[],
-  refreshedDenom: DenominationRecord,
+  refreshedDenom: DenomInfo,
   amountLeft: AmountJson,
 ): AmountJson {
   const withdrawAmount = Amounts.sub(
@@ -193,10 +197,12 @@ async function refreshCreateSession(
       denominations: x.denominations,
     }))
     .runReadOnly(async (tx) => {
-      const oldDenom = await tx.denominations.get([
+      const oldDenom = await ws.getDenomInfo(
+        ws,
+        tx,
         exchange.baseUrl,
         coin.denomPubHash,
-      ]);
+      );
 
       if (!oldDenom) {
         throw Error("db inconsistent: denomination for coin not found");
@@ -321,10 +327,12 @@ async function refreshMelt(
 
       const oldCoin = await tx.coins.get(refreshGroup.oldCoinPubs[coinIndex]);
       checkDbInvariant(!!oldCoin, "melt coin doesn't exist");
-      const oldDenom = await tx.denominations.get([
+      const oldDenom = await ws.getDenomInfo(
+        ws,
+        tx,
         oldCoin.exchangeBaseUrl,
         oldCoin.denomPubHash,
-      ]);
+      );
       checkDbInvariant(
         !!oldDenom,
         "denomination for melted coin doesn't exist",
@@ -333,10 +341,12 @@ async function refreshMelt(
       const newCoinDenoms: RefreshNewDenomInfo[] = [];
 
       for (const dh of refreshSession.newDenoms) {
-        const newDenom = await tx.denominations.get([
+        const newDenom = await ws.getDenomInfo(
+          ws,
+          tx,
           oldCoin.exchangeBaseUrl,
           dh.denomPubHash,
-        ]);
+        );
         checkDbInvariant(
           !!newDenom,
           "new denomination for refresh not in database",
@@ -480,6 +490,7 @@ async function refreshReveal(
   refreshGroupId: string,
   coinIndex: number,
 ): Promise<void> {
+  logger.info("doing refresh reveal");
   const d = await ws.db
     .mktx((x) => ({
       refreshGroups: x.refreshGroups,
@@ -502,10 +513,12 @@ async function refreshReveal(
 
       const oldCoin = await tx.coins.get(refreshGroup.oldCoinPubs[coinIndex]);
       checkDbInvariant(!!oldCoin, "melt coin doesn't exist");
-      const oldDenom = await tx.denominations.get([
+      const oldDenom = await ws.getDenomInfo(
+        ws,
+        tx,
         oldCoin.exchangeBaseUrl,
         oldCoin.denomPubHash,
-      ]);
+      );
       checkDbInvariant(
         !!oldDenom,
         "denomination for melted coin doesn't exist",
@@ -514,10 +527,12 @@ async function refreshReveal(
       const newCoinDenoms: RefreshNewDenomInfo[] = [];
 
       for (const dh of refreshSession.newDenoms) {
-        const newDenom = await tx.denominations.get([
+        const newDenom = await ws.getDenomInfo(
+          ws,
+          tx,
           oldCoin.exchangeBaseUrl,
           dh.denomPubHash,
-        ]);
+        );
         checkDbInvariant(
           !!newDenom,
           "new denomination for refresh not in database",
@@ -794,6 +809,7 @@ async function processRefreshGroupImpl(
   refreshGroupId: string,
   forceNow: boolean,
 ): Promise<void> {
+  logger.info(`processing refresh group ${refreshGroupId}`);
   if (forceNow) {
     await resetRefreshGroupRetry(ws, refreshGroupId);
   }
@@ -823,7 +839,7 @@ async function processRefreshSession(
   refreshGroupId: string,
   coinIndex: number,
 ): Promise<void> {
-  logger.trace(
+  logger.info(
     `processing refresh session for coin ${coinIndex} of group ${refreshGroupId}`,
   );
   let refreshGroup = await ws.db
@@ -911,10 +927,12 @@ export async function createRefreshGroup(
   for (const ocp of oldCoinPubs) {
     const coin = await tx.coins.get(ocp.coinPub);
     checkDbInvariant(!!coin, "coin must be in database");
-    const denom = await tx.denominations.get([
+    const denom = await ws.getDenomInfo(
+      ws,
+      tx,
       coin.exchangeBaseUrl,
       coin.denomPubHash,
-    ]);
+    );
     checkDbInvariant(
       !!denom,
       "denomination for existing coin must be in database",
@@ -949,11 +967,12 @@ export async function createRefreshGroup(
   if (oldCoinPubs.length == 0) {
     logger.warn("created refresh group with zero coins");
     refreshGroup.timestampFinished = getTimestampNow();
+    refreshGroup.operationStatus = OperationStatus.Finished;
   }
 
   await tx.refreshGroups.put(refreshGroup);
 
-  logger.trace(`created refresh group ${refreshGroupId}`);
+  logger.info(`created refresh group ${refreshGroupId}`);
 
   processRefreshGroup(ws, refreshGroupId).catch((e) => {
     logger.warn(`processing refresh group ${refreshGroupId} failed: ${e}`);

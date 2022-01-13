@@ -26,7 +26,6 @@ import {
   ContractTerms,
   CreateDepositGroupRequest,
   CreateDepositGroupResponse,
-  decodeCrock,
   DenomKeyType,
   durationFromSpec,
   GetFeeForDepositRequest,
@@ -250,6 +249,7 @@ async function processDepositGroupImpl(
       };
     }
     const url = new URL(`coins/${perm.coin_pub}/deposit`, perm.exchange_url);
+    logger.info(`depositing to ${url}`);
     const httpResp = await ws.http.postJson(url.href, requestBody);
     await readSuccessResponseJsonOrThrow(httpResp, codecForDepositSuccess());
     await ws.db
@@ -616,10 +616,12 @@ export async function getEffectiveDepositAmount(
         if (!coin) {
           throw Error("can't calculate deposit amount, coin not found");
         }
-        const denom = await tx.denominations.get([
+        const denom = await ws.getDenomInfo(
+          ws,
+          tx,
           coin.exchangeBaseUrl,
           coin.denomPubHash,
-        ]);
+        );
         if (!denom) {
           throw Error("can't find denomination to calculate deposit amount");
         }
@@ -688,10 +690,12 @@ export async function getTotalFeeForDepositAmount(
         if (!coin) {
           throw Error("can't calculate deposit amount, coin not found");
         }
-        const denom = await tx.denominations.get([
+        const denom = await ws.getDenomInfo(
+          ws,
+          tx,
           coin.exchangeBaseUrl,
           coin.denomPubHash,
-        ]);
+        );
         if (!denom) {
           throw Error("can't find denomination to calculate deposit amount");
         }

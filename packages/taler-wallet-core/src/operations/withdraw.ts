@@ -453,6 +453,9 @@ async function processPlanchetExchangeRequest(
   withdrawalGroup: WithdrawalGroupRecord,
   coinIdx: number,
 ): Promise<WithdrawResponse | undefined> {
+  logger.info(
+    `processing planchet exchange request ${withdrawalGroup.withdrawalGroupId}/${coinIdx}`,
+  );
   const d = await ws.db
     .mktx((x) => ({
       withdrawalGroups: x.withdrawalGroups,
@@ -478,10 +481,12 @@ async function processPlanchetExchangeRequest(
         return;
       }
 
-      const denom = await tx.denominations.get([
+      const denom = await ws.getDenomInfo(
+        ws,
+        tx,
         withdrawalGroup.exchangeBaseUrl,
         planchet.denomPubHash,
-      ]);
+      );
 
       if (!denom) {
         logger.error("db inconsistent: denom for planchet not found");

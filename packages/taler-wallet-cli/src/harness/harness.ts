@@ -1979,6 +1979,7 @@ export async function runTestWithState(
       });
       await new Promise<void>((resolve, reject) => {
         rl.question("Press enter to shut down test.", () => {
+          console.error("Requested shutdown");
           resolve();
         });
       });

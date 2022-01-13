@@ -166,8 +166,10 @@ export async function getTotalPaymentCost(
           .filter((x) =>
             Amounts.isSameCurrency(x.value, pcs.coinContributions[i]),
           );
-        const amountLeft = Amounts.sub(denom.value, pcs.coinContributions[i])
-          .amount;
+        const amountLeft = Amounts.sub(
+          denom.value,
+          pcs.coinContributions[i],
+        ).amount;
         const refreshCost = getTotalRefreshCost(allDenoms, denom, amountLeft);
         costs.push(pcs.coinContributions[i]);
         costs.push(refreshCost);
@@ -290,10 +292,12 @@ export async function getCandidatePayCoins(
 
         // Denomination of the first coin, we assume that all other
         // coins have the same currency
-        const firstDenom = await tx.denominations.get([
+        const firstDenom = await ws.getDenomInfo(
+          ws,
+          tx,
           exchange.baseUrl,
           coins[0].denomPubHash,
-        ]);
+        );
         if (!firstDenom) {
           throw Error("db inconsistent");
         }
@@ -365,6 +369,7 @@ export async function applyCoinSpend(
   coinSelection: PayCoinSelection,
   allocationId: string,
 ) {
+  logger.info(`applying coin spend ${j2s(coinSelection)}`);
   for (let i = 0; i < coinSelection.coinPubs.length; i++) {
     const coin = await tx.coins.get(coinSelection.coinPubs[i]);
     if (!coin) {
@@ -525,7 +530,8 @@ async function incrementPurchasePayRetry(
       pr.payRetryInfo.retryCounter++;
       updateRetryInfoTimeout(pr.payRetryInfo);
       logger.trace(
-        `retrying pay in ${getDurationRemaining(pr.payRetryInfo.nextRetry).d_ms
+        `retrying pay in ${
+          getDurationRemaining(pr.payRetryInfo.nextRetry).d_ms
         } ms`,
       );
       pr.lastPayError = err;
@@ -812,9 +818,8 @@ async function processDownloadProposalImpl(
         (fulfillmentUrl.startsWith("http://") ||
           fulfillmentUrl.startsWith("https://"))
       ) {
-        const differentPurchase = await tx.purchases.indexes.byFulfillmentUrl.get(
-          fulfillmentUrl,
-        );
+        const differentPurchase =
+          await tx.purchases.indexes.byFulfillmentUrl.get(fulfillmentUrl);
         if (differentPurchase) {
           logger.warn("repurchase detected");
           p.proposalStatus = ProposalStatus.REPURCHASE;

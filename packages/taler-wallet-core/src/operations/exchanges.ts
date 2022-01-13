@@ -131,7 +131,7 @@ async function handleExchangeUpdateError(
       exchange.retryInfo.retryCounter++;
       updateRetryInfoTimeout(exchange.retryInfo);
       exchange.lastError = err;
-      await tx.exchanges.put(exchange)
+      await tx.exchanges.put(exchange);
     });
   if (err) {
     ws.notify({ type: NotificationType.ExchangeOperationError, error: err });
@@ -527,11 +527,11 @@ async function updateExchangeFromUrlImpl(
     tosFound !== undefined
       ? tosFound
       : await downloadExchangeWithTermsOfService(
-        baseUrl,
-        ws.http,
-        timeout,
-        "text/plain",
-      );
+          baseUrl,
+          ws.http,
+          timeout,
+          "text/plain",
+        );
 
   let recoupGroupId: string | undefined = undefined;
 
@@ -589,7 +589,7 @@ async function updateExchangeFromUrlImpl(
       await tx.exchanges.put(r);
       await tx.exchangeDetails.put(details);
 
-      logger.trace("updating denominations in database");
+      logger.info("updating denominations in database");
       const currentDenomSet = new Set<string>(
         keysInfo.currentDenominations.map((x) => x.denomPubHash),
       );
@@ -750,9 +750,10 @@ export async function getExchangeTrust(
       if (!exchangeDetails) {
         throw Error(`exchange ${exchangeInfo.baseUrl} details not available`);
       }
-      const exchangeTrustRecord = await tx.exchangesTrustStore.indexes.byExchangeMasterPub.get(
-        exchangeDetails.masterPublicKey,
-      );
+      const exchangeTrustRecord =
+        await tx.exchangesTrustStore.indexes.byExchangeMasterPub.get(
+          exchangeDetails.masterPublicKey,
+        );
       if (
         exchangeTrustRecord &&
         exchangeTrustRecord.uids.length > 0 &&
@@ -762,9 +763,8 @@ export async function getExchangeTrust(
       }
 
       for (const auditor of exchangeDetails.auditors) {
-        const auditorTrustRecord = await tx.auditorTrust.indexes.byAuditorPub.get(
-          auditor.auditor_pub,
-        );
+        const auditorTrustRecord =
+          await tx.auditorTrust.indexes.byAuditorPub.get(auditor.auditor_pub);
         if (auditorTrustRecord && auditorTrustRecord.uids.length > 0) {
           isAudited = true;
           break;

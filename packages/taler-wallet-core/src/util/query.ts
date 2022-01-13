@@ -333,7 +333,7 @@ export interface StoreReadWriteAccessor<RecordType, IndexMap> {
 
 export interface StoreWithIndexes<
   SD extends StoreDescriptor<unknown>,
-  IndexMap
+  IndexMap,
 > {
   store: SD;
   indexMap: IndexMap;
@@ -586,7 +586,7 @@ export class DbAccess<StoreMap> {
 
   mktx<
     PickerType extends (x: StoreMap) => unknown,
-    BoundStores extends GetPickerType<PickerType, StoreMap>
+    BoundStores extends GetPickerType<PickerType, StoreMap>,
   >(f: PickerType): TransactionContext<BoundStores> {
     const storePick = f(this.stores) as any;
     if (typeof storePick !== "object" || storePick === null) {
