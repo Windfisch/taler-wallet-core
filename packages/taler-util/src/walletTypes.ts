@@ -1088,3 +1088,11 @@ export const codecForWithdrawFakebankRequest = (): Codec<WithdrawFakebankRequest
     .property("bank", codecForString())
     .property("exchange", codecForString())
     .build("WithdrawFakebankRequest");
+
+export interface ImportDb {
+  dump: any;
+}
+export const codecForImportDbRequest = (): Codec<ImportDb> =>
+  buildCodecForObject<ImportDb>()
+    .property("dump", codecForAny())
+    .build("ImportDbRequest")

@@ -18,7 +18,7 @@ import { NotificationType } from "@gnu-taler/taler-util";
 import { PendingTaskInfo } from "@gnu-taler/taler-wallet-core";
 import { format } from "date-fns";
 import { Fragment, h, VNode } from "preact";
-import { useState } from "preact/hooks";
+import { useRef, useState } from "preact/hooks";
 import { Diagnostics } from "../components/Diagnostics";
 import { NotifyUpdateFadeOut } from "../components/styled";
 import { Time } from "../components/Time";
@@ -83,10 +83,33 @@ export function View({
       content,
     });
   }
+  const fileRef = useRef<HTMLInputElement>(null);
+  async function onImportDatabase(str: string): Promise<void> {
+    return wxApi.importDB(JSON.parse(str));
+  }
   return (
     <div>
       <p>Debug tools:</p>
       <button onClick={confirmReset}>reset</button>
+      <br />
+      <button onClick={() => fileRef?.current?.click()}>import database</button>
+      <input
+        ref={fileRef}
+        style={{ display: "none" }}
+        type="file"
+        onChange={async (e) => {
+          const f: FileList | null = e.currentTarget.files;
+          if (!f || f.length != 1) {
+            return Promise.reject();
+          }
+          const buf = await f[0].arrayBuffer();
+          const str = new Uint8Array(buf).reduce(
+            (data, byte) => data + String.fromCharCode(byte),
+            "",
+          );
+          return onImportDatabase(str);
+        }}
+      />
       <br />
       <button onClick={onExportDatabase}>export database</button>
       {downloadedDatabase && (
@@ -151,6 +174,8 @@ export function reload(): void {
     // Functionality missing in firefox, ignore!
   }
 }
+
+function runIntegrationTest() {}
 
 export async function confirmReset(): Promise<void> {
   if (

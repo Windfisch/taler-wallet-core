@@ -45,6 +45,7 @@ import {
   PaytoUri,
   codecForGetFeeForDeposit,
   codecForListKnownBankAccounts,
+  codecForImportDbRequest,
 } from "@gnu-taler/taler-util";
 import {
   addBackupProvider,
@@ -130,6 +131,7 @@ import {
   AuditorTrustRecord,
   CoinSourceType,
   exportDb,
+  importDb,
   ReserveRecordStatus,
   WalletStoresV1,
 } from "./db.js";
@@ -996,6 +998,11 @@ async function dispatchRequestInternal(
     case "exportDb": {
       const dbDump = await exportDb(ws.db.idbHandle());
       return dbDump;
+    }
+    case "importDb": {
+      const req = codecForImportDbRequest().decode(payload);
+      await importDb(ws.db.idbHandle(), req.dump);
+      return [];
     }
   }
   throw OperationFailedError.fromCode(

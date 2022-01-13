@@ -376,6 +376,10 @@ export function exportDB(): Promise<any> {
   return callBackend("exportDb", {});
 }
 
+export function importDB(dump: any): Promise<void> {
+  return callBackend("importDb", { dump })
+}
+
 export function onUpdateNotification(messageTypes: Array<NotificationType>, doCallback: () => void): () => void {
   // eslint-disable-next-line no-undef
   const port = chrome.runtime.connect({ name: "notifications" });

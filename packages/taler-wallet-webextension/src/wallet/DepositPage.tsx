@@ -110,7 +110,6 @@ export function View({
     setAmount(num);
     setFee(undefined);
   }
-  const feeHasBeenCalculated = fee !== undefined;
   const currency = balance.currency;
   const amountStr: AmountString = `${currency}:${amount}`;
   const feeSum =
@@ -151,7 +150,7 @@ export function View({
     : !parsedAmount
     ? "Invalid amount"
     : Amounts.cmp(balance, parsedAmount) === -1
-    ? `To much, your current balance is ${Amounts.stringifyValue(balance)}`
+    ? `Too much, your current balance is ${Amounts.stringifyValue(balance)}`
     : undefined;
 
   const totalToDeposit = parsedAmount
@@ -159,7 +158,7 @@ export function View({
     : Amounts.getZero(currency);
 
   const unableToDeposit =
-    Amounts.isZero(totalToDeposit) && feeHasBeenCalculated;
+    Amounts.isZero(totalToDeposit) || fee === undefined || error !== undefined;
 
   return (
     <Fragment>
@@ -224,12 +223,13 @@ export function View({
       </section>
       <footer>
         <div />
-        <ButtonPrimary
-          disabled={unableToDeposit}
-          onClick={() => onSend(accountURI, amountStr)}
-        >
-          Deposit {Amounts.stringifyValue(totalToDeposit)} {currency}
-        </ButtonPrimary>
+        {unableToDeposit ? (
+          <ButtonPrimary disabled>Deposit</ButtonPrimary>
+        ) : (
+          <ButtonPrimary onClick={() => onSend(accountURI, amountStr)}>
+            Deposit {Amounts.stringifyValue(totalToDeposit)} {currency}
+          </ButtonPrimary>
+        )}
       </footer>
     </Fragment>
   );
