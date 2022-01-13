@@ -20,7 +20,7 @@
  * management, etc.).
  *
  * Some operations can be accessed via this state object.  This allows mutual
- * recursion between operations, without having cycling dependencies between
+ * recursion between operations, without having cyclic dependencies between
  * the respective TypeScript files.
  *
  * (You can think of this as a "header file" for the wallet implementation.)
@@ -29,7 +29,13 @@
 /**
  * Imports.
  */
-import { WalletNotification, BalancesResponse } from "@gnu-taler/taler-util";
+import {
+  WalletNotification,
+  BalancesResponse,
+  AmountJson,
+  DenominationPubKey,
+  Timestamp,
+} from "@gnu-taler/taler-util";
 import { CryptoApi } from "./crypto/workers/cryptoApi.js";
 import { ExchangeDetailsRecord, ExchangeRecord, WalletStoresV1 } from "./db.js";
 import { PendingOperationsResponse } from "./pending-types.js";
@@ -119,6 +125,64 @@ export interface RecoupOperations {
   ): Promise<void>;
 }
 
+export interface DenomInfo {
+  /**
+   * Value of one coin of the denomination.
+   */
+  value: AmountJson;
+
+  /**
+   * The denomination public key.
+   */
+  denomPub: DenominationPubKey;
+
+  /**
+   * Hash of the denomination public key.
+   * Stored in the database for faster lookups.
+   */
+  denomPubHash: string;
+
+  /**
+   * Fee for withdrawing.
+   */
+  feeWithdraw: AmountJson;
+
+  /**
+   * Fee for depositing.
+   */
+  feeDeposit: AmountJson;
+
+  /**
+   * Fee for refreshing.
+   */
+  feeRefresh: AmountJson;
+
+  /**
+   * Fee for refunding.
+   */
+  feeRefund: AmountJson;
+
+  /**
+   * Validity start date of the denomination.
+   */
+  stampStart: Timestamp;
+
+  /**
+   * Date after which the currency can't be withdrawn anymore.
+   */
+  stampExpireWithdraw: Timestamp;
+
+  /**
+   * Date after the denomination officially doesn't exist anymore.
+   */
+  stampExpireLegal: Timestamp;
+
+  /**
+   * Data after which coins of this denomination can't be deposited anymore.
+   */
+  stampExpireDeposit: Timestamp;
+}
+
 export type NotificationListener = (n: WalletNotification) => void;
 
 /**
@@ -161,6 +225,15 @@ export interface InternalWalletState {
   recoupOps: RecoupOperations;
   merchantOps: MerchantOperations;
   reserveOps: ReserveOperations;
+
+  getDenomInfo(
+    ws: InternalWalletState,
+    tx: GetReadWriteAccess<{
+      denominations: typeof WalletStoresV1.denominations;
+    }>,
+    exchangeBaseUrl: string,
+    denomPubHash: string,
+  ): Promise<DenomInfo | undefined>;
 
   db: DbAccess<typeof WalletStoresV1>;
   http: HttpRequestLibrary;

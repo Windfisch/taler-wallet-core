@@ -975,13 +975,13 @@ async function processWithdrawGroupImpl(
 
 export async function getExchangeWithdrawalInfo(
   ws: InternalWalletState,
-  baseUrl: string,
+  exchangeBaseUrl: string,
   amount: AmountJson,
 ): Promise<ExchangeWithdrawDetails> {
   const { exchange, exchangeDetails } =
-    await ws.exchangeOps.updateExchangeFromUrl(ws, baseUrl);
-  await updateWithdrawalDenoms(ws, baseUrl);
-  const denoms = await getCandidateWithdrawalDenoms(ws, baseUrl);
+    await ws.exchangeOps.updateExchangeFromUrl(ws, exchangeBaseUrl);
+  await updateWithdrawalDenoms(ws, exchangeBaseUrl);
+  const denoms = await getCandidateWithdrawalDenoms(ws, exchangeBaseUrl);
   const selectedDenoms = selectWithdrawalDenominations(amount, denoms);
   const exchangeWireAccounts: string[] = [];
   for (const account of exchangeDetails.wireInfo.accounts) {
@@ -1006,9 +1006,10 @@ export async function getExchangeWithdrawalInfo(
   const possibleDenoms = await ws.db
     .mktx((x) => ({ denominations: x.denominations }))
     .runReadOnly(async (tx) => {
-      return tx.denominations.indexes.byExchangeBaseUrl
-        .iter()
-        .filter((d) => d.isOffered);
+      const ds = await tx.denominations.indexes.byExchangeBaseUrl.getAll(
+        exchangeBaseUrl,
+      );
+      return ds.filter((x) => x.isOffered);
     });
 
   let versionMatch;

@@ -103,6 +103,7 @@ import {
   processReserve,
 } from "./operations/reserves.js";
 import {
+  DenomInfo,
   ExchangeOperations,
   InternalWalletState,
   MerchantInfo,
@@ -186,13 +187,12 @@ import {
   OpenedPromise,
   openPromise,
 } from "./util/promiseUtils.js";
-import { DbAccess } from "./util/query.js";
+import { DbAccess, GetReadWriteAccess } from "./util/query.js";
 import {
   HttpRequestLibrary,
   readSuccessResponseJsonOrThrow,
 } from "./util/http.js";
 import { getMerchantInfo } from "./operations/merchants.js";
-import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
 
 const builtinAuditors: AuditorTrustRecord[] = [
   {
@@ -506,24 +506,24 @@ async function listKnownBankAccounts(
   ws: InternalWalletState,
   currency?: string,
 ): Promise<KnownBankAccounts> {
-  const accounts: PaytoUri[] = []
+  const accounts: PaytoUri[] = [];
   await ws.db
     .mktx((x) => ({
       reserves: x.reserves,
     }))
     .runReadOnly(async (tx) => {
-      const reservesRecords = await tx.reserves.iter().toArray()
+      const reservesRecords = await tx.reserves.iter().toArray();
       for (const r of reservesRecords) {
         if (currency && currency !== r.currency) {
-          continue
+          continue;
         }
-        const payto = r.senderWire ? parsePaytoUri(r.senderWire) : undefined
+        const payto = r.senderWire ? parsePaytoUri(r.senderWire) : undefined;
         if (payto) {
-          accounts.push(payto)
+          accounts.push(payto);
         }
       }
-    })
-  return { accounts }
+    });
+  return { accounts };
 }
 
 async function getExchanges(
@@ -785,9 +785,8 @@ async function dispatchRequestInternal(
       return res;
     }
     case "getWithdrawalDetailsForAmount": {
-      const req = codecForGetWithdrawalDetailsForAmountRequest().decode(
-        payload,
-      );
+      const req =
+        codecForGetWithdrawalDetailsForAmountRequest().decode(payload);
       return await getWithdrawalDetailsForAmount(
         ws,
         req.exchangeBaseUrl,
@@ -810,9 +809,8 @@ async function dispatchRequestInternal(
       return await applyRefund(ws, req.talerRefundUri);
     }
     case "acceptBankIntegratedWithdrawal": {
-      const req = codecForAcceptBankIntegratedWithdrawalRequest().decode(
-        payload,
-      );
+      const req =
+        codecForAcceptBankIntegratedWithdrawalRequest().decode(payload);
       return await acceptWithdrawal(
         ws,
         req.talerWithdrawUri,
@@ -1048,7 +1046,7 @@ export async function handleCoreApiRequest(
       try {
         logger.error("Caught unexpected exception:");
         logger.error(e.stack);
-      } catch (e) { }
+      } catch (e) {}
       return {
         type: "error",
         operation,
@@ -1133,7 +1131,8 @@ export class Wallet {
 class InternalWalletStateImpl implements InternalWalletState {
   memoProcessReserve: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
   memoMakePlanchet: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
-  memoGetPending: AsyncOpMemoSingle<PendingOperationsResponse> = new AsyncOpMemoSingle();
+  memoGetPending: AsyncOpMemoSingle<PendingOperationsResponse> =
+    new AsyncOpMemoSingle();
   memoGetBalance: AsyncOpMemoSingle<BalancesResponse> = new AsyncOpMemoSingle();
   memoProcessRefresh: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
   memoProcessRecoup: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
@@ -1169,7 +1168,10 @@ class InternalWalletStateImpl implements InternalWalletState {
 
   reserveOps: ReserveOperations = {
     processReserve: processReserve,
-  }
+  };
+
+  // FIXME: Use an LRU cache here.
+  private denomCache: Record<string, DenomInfo> = {};
 
   /**
    * Promises that are waiting for a particular resource.
@@ -1191,6 +1193,22 @@ class InternalWalletStateImpl implements InternalWalletState {
     cryptoWorkerFactory: CryptoWorkerFactory,
   ) {
     this.cryptoApi = new CryptoApi(cryptoWorkerFactory);
+  }
+
+  async getDenomInfo(
+    ws: InternalWalletState,
+    tx: GetReadWriteAccess<{
+      denominations: typeof WalletStoresV1.denominations;
+    }>,
+    exchangeBaseUrl: string,
+    denomPubHash: string,
+  ): Promise<DenomInfo | undefined> {
+    const key = `${exchangeBaseUrl}:${denomPubHash}`;
+    const cached = this.denomCache[key];
+    if (cached) {
+      return cached;
+    }
+    return await tx.denominations.get([exchangeBaseUrl, denomPubHash]);
   }
 
   notify(n: WalletNotification): void {

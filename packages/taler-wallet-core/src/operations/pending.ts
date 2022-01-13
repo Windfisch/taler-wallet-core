@@ -35,10 +35,7 @@ import {
   PendingTaskType,
   ReserveType,
 } from "../pending-types.js";
-import {
-  getTimestampNow,
-  Timestamp,
-} from "@gnu-taler/taler-util";
+import { getTimestampNow, Timestamp } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../common.js";
 import { GetReadOnlyAccess } from "../util/query.js";
 
@@ -74,35 +71,36 @@ async function gatherReservePending(
   now: Timestamp,
   resp: PendingOperationsResponse,
 ): Promise<void> {
-  await tx.reserves.indexes.byStatus
-    .iter(OperationStatus.Pending)
-    .forEach((reserve) => {
-      const reserveType = reserve.bankInfo
-        ? ReserveType.TalerBankWithdraw
-        : ReserveType.Manual;
-      switch (reserve.reserveStatus) {
-        case ReserveRecordStatus.DORMANT:
-          // nothing to report as pending
-          break;
-        case ReserveRecordStatus.WAIT_CONFIRM_BANK:
-        case ReserveRecordStatus.QUERYING_STATUS:
-        case ReserveRecordStatus.REGISTERING_BANK:
-          resp.pendingOperations.push({
-            type: PendingTaskType.Reserve,
-            givesLifeness: true,
-            timestampDue: reserve.retryInfo.nextRetry,
-            stage: reserve.reserveStatus,
-            timestampCreated: reserve.timestampCreated,
-            reserveType,
-            reservePub: reserve.reservePub,
-            retryInfo: reserve.retryInfo,
-          });
-          break;
-        default:
-          // FIXME: report problem!
-          break;
-      }
-    });
+  const reserves = await tx.reserves.indexes.byStatus.getAll(
+    OperationStatus.Pending,
+  );
+  for (const reserve of reserves) {
+    const reserveType = reserve.bankInfo
+      ? ReserveType.TalerBankWithdraw
+      : ReserveType.Manual;
+    switch (reserve.reserveStatus) {
+      case ReserveRecordStatus.DORMANT:
+        // nothing to report as pending
+        break;
+      case ReserveRecordStatus.WAIT_CONFIRM_BANK:
+      case ReserveRecordStatus.QUERYING_STATUS:
+      case ReserveRecordStatus.REGISTERING_BANK:
+        resp.pendingOperations.push({
+          type: PendingTaskType.Reserve,
+          givesLifeness: true,
+          timestampDue: reserve.retryInfo.nextRetry,
+          stage: reserve.reserveStatus,
+          timestampCreated: reserve.timestampCreated,
+          reserveType,
+          reservePub: reserve.reservePub,
+          retryInfo: reserve.retryInfo,
+        });
+        break;
+      default:
+        // FIXME: report problem!
+        break;
+    }
+  }
 }
 
 async function gatherRefreshPending(
@@ -110,26 +108,27 @@ async function gatherRefreshPending(
   now: Timestamp,
   resp: PendingOperationsResponse,
 ): Promise<void> {
-  await tx.refreshGroups.indexes.byStatus
-    .iter(OperationStatus.Pending)
-    .forEach((r) => {
-      if (r.timestampFinished) {
-        return;
-      }
-      if (r.frozen) {
-        return;
-      }
-      resp.pendingOperations.push({
-        type: PendingTaskType.Refresh,
-        givesLifeness: true,
-        timestampDue: r.retryInfo.nextRetry,
-        refreshGroupId: r.refreshGroupId,
-        finishedPerCoin: r.statusPerCoin.map(
-          (x) => x === RefreshCoinStatus.Finished,
-        ),
-        retryInfo: r.retryInfo,
-      });
+  const refreshGroups = await tx.refreshGroups.indexes.byStatus.getAll(
+    OperationStatus.Pending,
+  );
+  for (const r of refreshGroups) {
+    if (r.timestampFinished) {
+      return;
+    }
+    if (r.frozen) {
+      return;
+    }
+    resp.pendingOperations.push({
+      type: PendingTaskType.Refresh,
+      givesLifeness: true,
+      timestampDue: r.retryInfo.nextRetry,
+      refreshGroupId: r.refreshGroupId,
+      finishedPerCoin: r.statusPerCoin.map(
+        (x) => x === RefreshCoinStatus.Finished,
+      ),
+      retryInfo: r.retryInfo,
     });
+  }
 }
 
 async function gatherWithdrawalPending(
@@ -140,31 +139,32 @@ async function gatherWithdrawalPending(
   now: Timestamp,
   resp: PendingOperationsResponse,
 ): Promise<void> {
-  await tx.withdrawalGroups.indexes.byStatus
-    .iter(OperationStatus.Pending)
-    .forEachAsync(async (wsr) => {
-      if (wsr.timestampFinish) {
-        return;
-      }
-      let numCoinsWithdrawn = 0;
-      let numCoinsTotal = 0;
-      await tx.planchets.indexes.byGroup
-        .iter(wsr.withdrawalGroupId)
-        .forEach((x) => {
-          numCoinsTotal++;
-          if (x.withdrawalDone) {
-            numCoinsWithdrawn++;
-          }
-        });
-      resp.pendingOperations.push({
-        type: PendingTaskType.Withdraw,
-        givesLifeness: true,
-        timestampDue: wsr.retryInfo.nextRetry,
-        withdrawalGroupId: wsr.withdrawalGroupId,
-        lastError: wsr.lastError,
-        retryInfo: wsr.retryInfo,
+  const wsrs = await tx.withdrawalGroups.indexes.byStatus.getAll(
+    OperationStatus.Pending,
+  );
+  for (const wsr of wsrs) {
+    if (wsr.timestampFinish) {
+      return;
+    }
+    let numCoinsWithdrawn = 0;
+    let numCoinsTotal = 0;
+    await tx.planchets.indexes.byGroup
+      .iter(wsr.withdrawalGroupId)
+      .forEach((x) => {
+        numCoinsTotal++;
+        if (x.withdrawalDone) {
+          numCoinsWithdrawn++;
+        }
       });
+    resp.pendingOperations.push({
+      type: PendingTaskType.Withdraw,
+      givesLifeness: true,
+      timestampDue: wsr.retryInfo.nextRetry,
+      withdrawalGroupId: wsr.withdrawalGroupId,
+      lastError: wsr.lastError,
+      retryInfo: wsr.retryInfo,
     });
+  }
 }
 
 async function gatherProposalPending(
@@ -197,22 +197,23 @@ async function gatherDepositPending(
   now: Timestamp,
   resp: PendingOperationsResponse,
 ): Promise<void> {
-  await tx.depositGroups.indexes.byStatus
-    .iter(OperationStatus.Pending)
-    .forEach((dg) => {
-      if (dg.timestampFinished) {
-        return;
-      }
-      const timestampDue = dg.retryInfo?.nextRetry ?? getTimestampNow();
-      resp.pendingOperations.push({
-        type: PendingTaskType.Deposit,
-        givesLifeness: true,
-        timestampDue,
-        depositGroupId: dg.depositGroupId,
-        lastError: dg.lastError,
-        retryInfo: dg.retryInfo,
-      });
+  const dgs = await tx.depositGroups.indexes.byStatus.getAll(
+    OperationStatus.Pending,
+  );
+  for (const dg of dgs) {
+    if (dg.timestampFinished) {
+      return;
+    }
+    const timestampDue = dg.retryInfo?.nextRetry ?? getTimestampNow();
+    resp.pendingOperations.push({
+      type: PendingTaskType.Deposit,
+      givesLifeness: true,
+      timestampDue,
+      depositGroupId: dg.depositGroupId,
+      lastError: dg.lastError,
+      retryInfo: dg.retryInfo,
     });
+  }
 }
 
 async function gatherTipPending(
