@@ -32,11 +32,13 @@ export interface RetryInfo {
 export interface RetryPolicy {
   readonly backoffDelta: Duration;
   readonly backoffBase: number;
+  readonly maxTimeout: Duration;
 }
 
 const defaultRetryPolicy: RetryPolicy = {
   backoffBase: 1.5,
   backoffDelta: { d_ms: 200 },
+  maxTimeout: { d_ms: 6000 },
 };
 
 export function updateRetryInfoTimeout(
@@ -51,8 +53,11 @@ export function updateRetryInfoTimeout(
     r.nextRetry = { t_ms: "never" };
     return;
   }
+
+  const nextIncrement = p.backoffDelta.d_ms * Math.pow(p.backoffBase, r.retryCounter)
+
   const t =
-    now.t_ms + p.backoffDelta.d_ms * Math.pow(p.backoffBase, r.retryCounter);
+    now.t_ms + (p.maxTimeout.d_ms === "forever" ? nextIncrement : Math.min(p.maxTimeout.d_ms, nextIncrement));
   r.nextRetry = { t_ms: t };
 }
 
@@ -68,7 +73,7 @@ export function getRetryDuration(
     return { d_ms: "forever" };
   }
   const t = p.backoffDelta.d_ms * Math.pow(p.backoffBase, r.retryCounter);
-  return { d_ms: t };
+  return { d_ms: p.maxTimeout.d_ms === "forever" ? t : Math.min(p.maxTimeout.d_ms, t) };
 }
 
 export function initRetryInfo(
