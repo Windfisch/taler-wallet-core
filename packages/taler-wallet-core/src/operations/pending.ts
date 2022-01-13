@@ -51,25 +51,18 @@ async function gatherExchangePending(
   resp: PendingOperationsResponse,
 ): Promise<void> {
   await tx.exchanges.iter().forEachAsync(async (e) => {
-    let exchangeUpdateTimestampDue: Timestamp;
-
-    if (e.lastError) {
-      exchangeUpdateTimestampDue = e.retryInfo.nextRetry;
-    } else {
-      exchangeUpdateTimestampDue = e.nextUpdate;
-    }
 
     resp.pendingOperations.push({
       type: PendingTaskType.ExchangeUpdate,
       givesLifeness: false,
-      timestampDue: exchangeUpdateTimestampDue,
+      timestampDue: e.lastError ? e.retryInfo.nextRetry : e.nextUpdate,
       exchangeBaseUrl: e.baseUrl,
       lastError: e.lastError,
     });
 
     resp.pendingOperations.push({
       type: PendingTaskType.ExchangeCheckRefresh,
-      timestampDue: e.nextRefreshCheck,
+      timestampDue: e.lastError ? e.retryInfo.nextRetry : e.nextRefreshCheck,
       givesLifeness: false,
       exchangeBaseUrl: e.baseUrl,
     });

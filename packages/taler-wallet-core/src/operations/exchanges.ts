@@ -123,7 +123,7 @@ async function handleExchangeUpdateError(
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({ exchanges: x.exchanges }))
-    .runReadOnly(async (tx) => {
+    .runReadWrite(async (tx) => {
       const exchange = await tx.exchanges.get(baseUrl);
       if (!exchange) {
         return;
@@ -131,6 +131,7 @@ async function handleExchangeUpdateError(
       exchange.retryInfo.retryCounter++;
       updateRetryInfoTimeout(exchange.retryInfo);
       exchange.lastError = err;
+      await tx.exchanges.put(exchange)
     });
   if (err) {
     ws.notify({ type: NotificationType.ExchangeOperationError, error: err });
@@ -526,11 +527,11 @@ async function updateExchangeFromUrlImpl(
     tosFound !== undefined
       ? tosFound
       : await downloadExchangeWithTermsOfService(
-          baseUrl,
-          ws.http,
-          timeout,
-          "text/plain",
-        );
+        baseUrl,
+        ws.http,
+        timeout,
+        "text/plain",
+      );
 
   let recoupGroupId: string | undefined = undefined;
 
