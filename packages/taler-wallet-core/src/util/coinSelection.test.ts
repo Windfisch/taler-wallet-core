@@ -42,11 +42,12 @@ function fakeAci(current: string, feeDeposit: string): AvailableCoinInfo {
   };
 }
 
-test("coin selection 1", (t) => {
+test("it should be able to pay if merchant takes the fees", (t) => {
   const acis: AvailableCoinInfo[] = [
     fakeAci("EUR:1.0", "EUR:0.1"),
     fakeAci("EUR:1.0", "EUR:0.0"),
   ];
+  acis.forEach((x, i) => x.coinPub = String(i));
 
   const res = selectPayCoins({
     candidates: {
@@ -63,17 +64,18 @@ test("coin selection 1", (t) => {
     t.fail();
     return;
   }
-  t.true(res.coinPubs.length === 2);
+  t.deepEqual(res.coinPubs, ["1", "0"]);
   t.pass();
 });
 
-test("coin selection 2", (t) => {
+test("it should take the last two coins if it pays less fees", (t) => {
   const acis: AvailableCoinInfo[] = [
     fakeAci("EUR:1.0", "EUR:0.5"),
     fakeAci("EUR:1.0", "EUR:0.0"),
     // Merchant covers the fee, this one shouldn't be used
     fakeAci("EUR:1.0", "EUR:0.0"),
   ];
+  acis.forEach((x, i) => x.coinPub = String(i));
 
   const res = selectPayCoins({
     candidates: {
@@ -90,17 +92,18 @@ test("coin selection 2", (t) => {
     t.fail();
     return;
   }
-  t.true(res.coinPubs.length === 2);
+  t.deepEqual(res.coinPubs, ["1", "2"]);
   t.pass();
 });
 
-test("coin selection 3", (t) => {
+test("it should take the last coins if the merchant doest not take all the fee", (t) => {
   const acis: AvailableCoinInfo[] = [
     fakeAci("EUR:1.0", "EUR:0.5"),
     fakeAci("EUR:1.0", "EUR:0.5"),
     // this coin should be selected instead of previous one with fee
     fakeAci("EUR:1.0", "EUR:0.0"),
-  ];
+  ]
+  acis.forEach((x, i) => x.coinPub = String(i));
 
   const res = selectPayCoins({
     candidates: {
@@ -117,15 +120,15 @@ test("coin selection 3", (t) => {
     t.fail();
     return;
   }
-  t.true(res.coinPubs.length === 2);
+  t.deepEqual(res.coinPubs, ["2", "0"]);
   t.pass();
 });
 
-test("coin selection 4", (t) => {
+test("it should use 3 coins to cover fees and payment", (t) => {
   const acis: AvailableCoinInfo[] = [
-    fakeAci("EUR:1.0", "EUR:0.5"),
-    fakeAci("EUR:1.0", "EUR:0.5"),
-    fakeAci("EUR:1.0", "EUR:0.5"),
+    fakeAci("EUR:1.0", "EUR:0.5"), //contributed value 1 (fee by the merchant)
+    fakeAci("EUR:1.0", "EUR:0.5"), //contributed value .5
+    fakeAci("EUR:1.0", "EUR:0.5"), //contributed value .5
   ];
 
   const res = selectPayCoins({
@@ -147,7 +150,7 @@ test("coin selection 4", (t) => {
   t.pass();
 });
 
-test("coin selection 5", (t) => {
+test("it should return undefined if there is not enough coins", (t) => {
   const acis: AvailableCoinInfo[] = [
     fakeAci("EUR:1.0", "EUR:0.5"),
     fakeAci("EUR:1.0", "EUR:0.5"),
@@ -169,7 +172,7 @@ test("coin selection 5", (t) => {
   t.pass();
 });
 
-test("coin selection 6", (t) => {
+test("it should return undefined if there is not enough coins (taking into account fees)", (t) => {
   const acis: AvailableCoinInfo[] = [
     fakeAci("EUR:1.0", "EUR:0.5"),
     fakeAci("EUR:1.0", "EUR:0.5"),
@@ -188,7 +191,7 @@ test("coin selection 6", (t) => {
   t.pass();
 });
 
-test("coin selection 7", (t) => {
+test("it should not count into customer fee if merchant can afford it", (t) => {
   const acis: AvailableCoinInfo[] = [
     fakeAci("EUR:1.0", "EUR:0.1"),
     fakeAci("EUR:1.0", "EUR:0.1"),
@@ -211,13 +214,15 @@ test("coin selection 7", (t) => {
   t.pass();
 });
 
-test("coin selection 8", (t) => {
+test("it should use the coins that spent less relative fee", (t) => {
   const acis: AvailableCoinInfo[] = [
     fakeAci("EUR:1.0", "EUR:0.2"),
     fakeAci("EUR:0.1", "EUR:0.2"),
     fakeAci("EUR:0.05", "EUR:0.05"),
     fakeAci("EUR:0.05", "EUR:0.05"),
   ];
+  acis.forEach((x, i) => x.coinPub = String(i));
+
   const res = selectPayCoins({
     candidates: {
       candidateCoins: acis,
@@ -228,8 +233,11 @@ test("coin selection 8", (t) => {
     wireFeeLimit: a("EUR:0"),
     wireFeeAmortization: 1,
   });
-  t.truthy(res);
-  t.true(res!.coinContributions.length === 3);
+  if (!res) {
+    t.fail();
+    return;
+  }
+  t.deepEqual(res.coinPubs, ["0", "2", "3"]);
   t.pass();
 });
 
@@ -248,10 +256,13 @@ test("coin selection 9", (t) => {
     wireFeeLimit: a("EUR:0"),
     wireFeeAmortization: 1,
   });
-  t.truthy(res);
-  t.true(res!.coinContributions.length === 2);
+  if (!res) {
+    t.fail();
+    return;
+  }
+  t.true(res.coinContributions.length === 2);
   t.true(
-    Amounts.cmp(Amounts.sum(res!.coinContributions).amount, "EUR:1.2") === 0,
+    Amounts.cmp(Amounts.sum(res.coinContributions).amount, "EUR:1.2") === 0,
   );
   t.pass();
 });

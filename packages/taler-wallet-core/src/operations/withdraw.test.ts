@@ -357,9 +357,6 @@ test("withdrawal selection bug repro", (t) => {
 
   const res = selectWithdrawalDenominations(amount, denoms);
 
-  console.error("cost", Amounts.stringify(res.totalWithdrawCost));
-  console.error("withdraw amount", Amounts.stringify(amount));
-
   t.assert(Amounts.cmp(res.totalWithdrawCost, amount) <= 0);
   t.pass();
 });

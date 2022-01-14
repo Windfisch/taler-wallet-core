@@ -16,7 +16,8 @@
     "compile": "tsc && rollup -c",
     "pretty": "prettier --write src",
     "test": "tsc && ava",
-    "coverage": "tsc && nyc ava",
+    "coverage": "tsc && c8 --src src --all ava",
+    "coverage:html": "tsc && c8 -r html --src src --all ava",
     "clean": "rimraf dist lib tsconfig.tsbuildinfo"
   },
   "files": [
@@ -42,6 +43,7 @@
     "@typescript-eslint/eslint-plugin": "^5.9.0",
     "@typescript-eslint/parser": "^5.9.0",
     "ava": "^4.0.0",
+    "c8": "^7.11.0",
     "eslint": "^8.6.0",
     "eslint-config-airbnb-typescript": "^16.1.0",
     "eslint-plugin-import": "^2.25.4",
@@ -49,7 +51,6 @@
     "eslint-plugin-react": "^7.28.0",
     "eslint-plugin-react-hooks": "^4.3.0",
     "jed": "^1.1.1",
-    "nyc": "^15.1.0",
     "po2json": "^0.4.5",
     "prettier": "^2.5.1",
     "rimraf": "^3.0.2",
