@@ -45,8 +45,9 @@ export class ServiceWorkerHttpLib implements HttpRequestLibrary {
     })
 
     const headerMap = new Headers();
-    response.headers.forEach(addLineToMap(headerMap));
-
+    response.headers.forEach((value, key) => {
+      headerMap.set(key, value);
+    })
     return {
       headers: headerMap,
       status: response.status,
@@ -132,15 +133,3 @@ function makeJsonHandler(response: Response, requestUrl: string) {
   }
 }
 
-function addLineToMap(map: { set(k: string, v: string): void }) {
-  return (line: string) => {
-    const parts = line.split(": ");
-    const headerName = parts.shift();
-    if (!headerName) {
-      logger.warn("skipping invalid header");
-      return;
-    }
-    const value = parts.join(": ");
-    map.set(headerName, value);
-  }
-}

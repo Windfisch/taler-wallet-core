@@ -441,6 +441,7 @@ async function getExchangeTos(
     ws,
     exchangeBaseUrl,
     acceptedFormat,
+    true,
   );
   const content = exchangeDetails.termsOfServiceText;
   const currentEtag = exchangeDetails.termsOfServiceLastEtag;
