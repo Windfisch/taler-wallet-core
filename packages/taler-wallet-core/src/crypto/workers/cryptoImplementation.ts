@@ -25,54 +25,24 @@
  */
 
 // FIXME: Crypto should not use DB Types!
-import { DenominationRecord, WireFee } from "../../db.js";
-
 import {
-  buildSigPS,
-  CoinDepositPermission,
-  DenomKeyType,
-  ExchangeProtocolVersion,
-  FreshCoin,
-  hashDenomPub,
-  RecoupRefreshRequest,
+  AmountJson, Amounts, BenchmarkResult, buildSigPS,
+  CoinDepositPermission, createEddsaKeyPair, createHashContext, decodeCrock,
+  DenomKeyType, DepositInfo, eddsaGetPublic, eddsaSign, eddsaVerify,
+  encodeCrock, ExchangeProtocolVersion,
+  FreshCoin, hash, hashDenomPub, kdf, keyExchangeEcdheEddsa,
+  // Logger,
+  MakeSyncSignatureRequest, PlanchetCreationRequest, PlanchetCreationResult,
+  randomBytes, RecoupRefreshRequest,
   RecoupRequest,
-  RefreshPlanchetInfo,
-  TalerSignaturePurpose,
-} from "@gnu-taler/taler-util";
-// FIXME: These types should be internal to the wallet!
-import {
-  BenchmarkResult,
-  PlanchetCreationResult,
-  PlanchetCreationRequest,
-  DepositInfo,
-  MakeSyncSignatureRequest,
-} from "@gnu-taler/taler-util";
-import { AmountJson, Amounts } from "@gnu-taler/taler-util";
-import * as timer from "../../util/timer.js";
-import {
-  encodeCrock,
-  decodeCrock,
-  createEddsaKeyPair,
-  hash,
-  rsaBlind,
-  eddsaVerify,
-  eddsaSign,
-  rsaUnblind,
-  stringToBytes,
-  createHashContext,
-  keyExchangeEcdheEddsa,
-  setupRefreshPlanchet,
-  rsaVerify,
+  RefreshPlanchetInfo, rsaBlind, rsaUnblind, rsaVerify, setupRefreshPlanchet,
   setupRefreshTransferPub,
   setupTipPlanchet,
-  setupWithdrawPlanchet,
-  eddsaGetPublic,
+  setupWithdrawPlanchet, stringToBytes, TalerSignaturePurpose, Timestamp, timestampTruncateToSecond
 } from "@gnu-taler/taler-util";
-import { randomBytes } from "@gnu-taler/taler-util";
-import { kdf } from "@gnu-taler/taler-util";
-import { Timestamp, timestampTruncateToSecond } from "@gnu-taler/taler-util";
-
-import { Logger } from "@gnu-taler/taler-util";
+import bigint from "big-integer";
+import { DenominationRecord, WireFee } from "../../db.js";
+import * as timer from "../../util/timer.js";
 import {
   CreateRecoupRefreshReqRequest,
   CreateRecoupReqRequest,
@@ -80,11 +50,10 @@ import {
   DerivedTipPlanchet,
   DeriveRefreshSessionRequest,
   DeriveTipRequest,
-  SignTrackTransactionRequest,
+  SignTrackTransactionRequest
 } from "../cryptoTypes.js";
-import bigint from "big-integer";
 
-const logger = new Logger("cryptoImplementation.ts");
+// const logger = new Logger("cryptoImplementation.ts");
 
 function amountToBuffer(amount: AmountJson): Uint8Array {
   const buffer = new ArrayBuffer(8 + 4 + 12);
@@ -161,7 +130,7 @@ async function myEddsaSign(
 export class CryptoImplementation {
   static enableTracing = false;
 
-  constructor(private primitiveWorker?: PrimitiveWorker) {}
+  constructor(private primitiveWorker?: PrimitiveWorker) { }
 
   /**
    * Create a pre-coin of the given denomination to be withdrawn from then given
