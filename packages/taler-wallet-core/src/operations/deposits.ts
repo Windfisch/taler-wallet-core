@@ -27,9 +27,7 @@ import {
   CreateDepositGroupRequest,
   CreateDepositGroupResponse,
   DenomKeyType,
-  durationFromSpec,
-  GetFeeForDepositRequest,
-  getTimestampNow,
+  durationFromSpec, encodeCrock, GetFeeForDepositRequest, getRandomBytes, getTimestampNow,
   Logger,
   NotificationType,
   parsePaytoUri,
@@ -40,15 +38,9 @@ import {
   timestampTruncateToSecond,
   TrackDepositGroupRequest,
   TrackDepositGroupResponse,
-  URL,
+  URL
 } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../common.js";
-import { kdf } from "@gnu-taler/taler-util";
-import {
-  encodeCrock,
-  getRandomBytes,
-  stringToBytes,
-} from "@gnu-taler/taler-util";
 import { DepositGroupRecord, OperationStatus } from "../db.js";
 import { guardOperationException } from "../errors.js";
 import { PayCoinSelection, selectPayCoins } from "../util/coinSelection.js";
@@ -62,7 +54,7 @@ import {
   getCandidatePayCoins,
   getTotalPaymentCost,
   hashWire,
-  hashWireLegacy,
+  hashWireLegacy
 } from "./pay.js";
 import { getTotalRefreshCost } from "./refresh.js";
 
@@ -168,7 +160,7 @@ export async function processDepositGroup(
 async function processDepositGroupImpl(
   ws: InternalWalletState,
   depositGroupId: string,
-  forceNow: boolean = false,
+  forceNow = false,
 ): Promise<void> {
   if (forceNow) {
     await resetDepositGroupRetry(ws, depositGroupId);

@@ -26,58 +26,14 @@
  */
 import {
   AmountJson,
-  Amounts,
-  timestampIsBetween,
-  getTimestampNow,
-  isTimestampExpired,
-  Timestamp,
-  RefreshReason,
-  CoinDepositPermission,
-  NotificationType,
-  TalerErrorDetails,
-  Duration,
+  Amounts, codecForContractTerms, codecForMerchantPayResponse, codecForProposal, CoinDepositPermission, ConfirmPayResult,
+  ConfirmPayResultType, ContractTerms, decodeCrock, DenomKeyType, Duration,
   durationMax,
   durationMin,
-  durationMul,
-  ContractTerms,
-  codecForProposal,
-  TalerErrorCode,
-  codecForContractTerms,
-  timestampAddDuration,
-  ConfirmPayResult,
-  ConfirmPayResultType,
-  codecForMerchantPayResponse,
-  PreparePayResult,
-  PreparePayResultType,
-  parsePayUri,
-  Logger,
-  URL,
-  getDurationRemaining,
-  HttpStatusCode,
-  DenomKeyType,
-  kdf,
-  stringToBytes,
-  decodeCrock,
+  durationMul, encodeCrock, getDurationRemaining, getRandomBytes, getTimestampNow, HttpStatusCode, isTimestampExpired, j2s, kdf, Logger, NotificationType, parsePayUri, PreparePayResult,
+  PreparePayResultType, RefreshReason, stringToBytes, TalerErrorCode, TalerErrorDetails, Timestamp, timestampAddDuration, URL
 } from "@gnu-taler/taler-util";
-import { encodeCrock, getRandomBytes } from "@gnu-taler/taler-util";
-import {
-  PayCoinSelection,
-  CoinCandidateSelection,
-  AvailableCoinInfo,
-  selectPayCoins,
-  PreviousPayCoins,
-} from "../util/coinSelection.js";
-import { j2s } from "@gnu-taler/taler-util";
-import {
-  initRetryInfo,
-  updateRetryInfoTimeout,
-  getRetryDuration,
-} from "../util/retries.js";
-import { getTotalRefreshCost, createRefreshGroup } from "./refresh.js";
-import { InternalWalletState, EXCHANGE_COINS_LOCK } from "../common.js";
-import { ContractTermsUtil } from "../util/contractTerms.js";
-import { getExchangeDetails } from "./exchanges.js";
-import { GetReadWriteAccess } from "../util/query.js";
+import { EXCHANGE_COINS_LOCK, InternalWalletState } from "../common.js";
 import {
   AbortStatus,
   AllowedAuditorInfo,
@@ -90,22 +46,33 @@ import {
   ProposalStatus,
   PurchaseRecord,
   WalletContractData,
-  WalletStoresV1,
+  WalletStoresV1
 } from "../db.js";
+import {
+  guardOperationException,
+  makeErrorDetails,
+  OperationFailedAndReportedError,
+  OperationFailedError
+} from "../errors.js";
+import {
+  AvailableCoinInfo, CoinCandidateSelection, PayCoinSelection, PreviousPayCoins, selectPayCoins
+} from "../util/coinSelection.js";
+import { ContractTermsUtil } from "../util/contractTerms.js";
 import {
   getHttpResponseErrorDetails,
   readSuccessResponseJsonOrErrorCode,
   readSuccessResponseJsonOrThrow,
   readTalerErrorResponse,
   readUnexpectedResponseDetails,
-  throwUnexpectedRequestError,
+  throwUnexpectedRequestError
 } from "../util/http.js";
+import { GetReadWriteAccess } from "../util/query.js";
 import {
-  guardOperationException,
-  makeErrorDetails,
-  OperationFailedAndReportedError,
-  OperationFailedError,
-} from "../errors.js";
+  getRetryDuration, initRetryInfo,
+  updateRetryInfoTimeout
+} from "../util/retries.js";
+import { getExchangeDetails } from "./exchanges.js";
+import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
 
 /**
  * Logger.
@@ -368,7 +335,7 @@ export async function applyCoinSpend(
   }>,
   coinSelection: PayCoinSelection,
   allocationId: string,
-) {
+): Promise<void> {
   logger.info(`applying coin spend ${j2s(coinSelection)}`);
   for (let i = 0; i < coinSelection.coinPubs.length; i++) {
     const coin = await tx.coins.get(coinSelection.coinPubs[i]);
@@ -530,8 +497,7 @@ async function incrementPurchasePayRetry(
       pr.payRetryInfo.retryCounter++;
       updateRetryInfoTimeout(pr.payRetryInfo);
       logger.trace(
-        `retrying pay in ${
-          getDurationRemaining(pr.payRetryInfo.nextRetry).d_ms
+        `retrying pay in ${getDurationRemaining(pr.payRetryInfo.nextRetry).d_ms
         } ms`,
       );
       pr.lastPayError = err;
@@ -1105,7 +1071,7 @@ async function unblockBackup(
   await ws.db
     .mktx((x) => ({ backupProviders: x.backupProviders }))
     .runReadWrite(async (tx) => {
-      const bp = await tx.backupProviders.indexes.byPaymentProposalId
+      await tx.backupProviders.indexes.byPaymentProposalId
         .iter(proposalId)
         .forEachAsync(async (bp) => {
           if (bp.state.tag === BackupProviderStateTag.Retrying) {
@@ -1143,6 +1109,7 @@ async function submitPay(
 
   logger.trace("paying with session ID", sessionId);
 
+  //FIXME: not used, does it expect a side effect?
   const merchantInfo = await ws.merchantOps.getMerchantInfo(
     ws,
     purchase.download.contractData.merchantBaseUrl,

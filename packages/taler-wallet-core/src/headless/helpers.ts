@@ -22,22 +22,20 @@
 /**
  * Imports.
  */
+import type { IDBFactory } from "@gnu-taler/idb-bridge";
+// eslint-disable-next-line no-duplicate-imports
 import {
-  MemoryBackend,
-  BridgeIDBFactory,
-  shimIndexedDB,
+  BridgeIDBFactory, MemoryBackend, shimIndexedDB
 } from "@gnu-taler/idb-bridge";
+import { AccessStats } from "@gnu-taler/idb-bridge/src/MemoryBackend";
+import { Logger, WalletNotification } from "@gnu-taler/taler-util";
+import * as fs from "fs";
+import { NodeThreadCryptoWorkerFactory } from "../crypto/workers/nodeThreadWorker.js";
+import { SynchronousCryptoWorkerFactory } from "../crypto/workers/synchronousWorkerFactory.js";
 import { openTalerDatabase } from "../db-utils.js";
 import { HttpRequestLibrary } from "../util/http.js";
-import { NodeThreadCryptoWorkerFactory } from "../crypto/workers/nodeThreadWorker.js";
-import { NodeHttpLib } from "./NodeHttpLib.js";
-import { Logger } from "@gnu-taler/taler-util";
-import { SynchronousCryptoWorkerFactory } from "../crypto/workers/synchronousWorker.js";
-import type { IDBFactory } from "@gnu-taler/idb-bridge";
-import { WalletNotification } from "@gnu-taler/taler-util";
 import { Wallet } from "../wallet.js";
-import * as fs from "fs";
-import { AccessStats } from "@gnu-taler/idb-bridge/src/MemoryBackend";
+import { NodeHttpLib } from "./NodeHttpLib.js";
 
 const logger = new Logger("headless/helpers.ts");
 
@@ -165,6 +163,7 @@ export async function getDefaultNodeWallet2(
     try {
       // Try if we have worker threads available, fails in older node versions.
       const _r = "require";
+      // eslint-disable-next-line no-unused-vars
       const worker_threads = module[_r]("worker_threads");
       // require("worker_threads");
       workerFactory = new NodeThreadCryptoWorkerFactory();

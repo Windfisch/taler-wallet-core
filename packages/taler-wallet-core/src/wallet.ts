@@ -23,30 +23,50 @@
  * Imports.
  */
 import {
-  BalancesResponse,
-  codecForAny,
-  codecForDeleteTransactionRequest,
-  codecForRetryTransactionRequest,
-  codecForSetWalletDeviceIdRequest,
-  codecForGetExchangeWithdrawalInfo,
-  durationFromSpec,
-  durationMin,
-  getDurationRemaining,
-  isTimestampExpired,
-  j2s,
-  TalerErrorCode,
+  AcceptManualWithdrawalResult,
+  AcceptWithdrawalResponse, AmountJson, Amounts, BalancesResponse, codecForAbortPayWithRefundRequest,
+  codecForAcceptBankIntegratedWithdrawalRequest,
+  codecForAcceptExchangeTosRequest,
+  codecForAcceptManualWithdrawalRequet,
+  codecForAcceptTipRequest,
+  codecForAddExchangeRequest, codecForAny, codecForApplyRefundRequest,
+  codecForConfirmPayRequest,
+  codecForCreateDepositGroupRequest, codecForDeleteTransactionRequest, codecForForceRefreshRequest,
+  codecForGetExchangeTosRequest, codecForGetExchangeWithdrawalInfo, codecForGetFeeForDeposit, codecForGetWithdrawalDetailsForAmountRequest,
+  codecForGetWithdrawalDetailsForUri, codecForImportDbRequest, codecForIntegrationTestArgs, codecForListKnownBankAccounts, codecForPreparePayRequest,
+  codecForPrepareTipRequest, codecForRetryTransactionRequest, codecForSetCoinSuspendedRequest, codecForSetWalletDeviceIdRequest, codecForTestPayArgs,
+  codecForTrackDepositGroupRequest, codecForTransactionsRequest, codecForWithdrawFakebankRequest, codecForWithdrawTestBalance, CoinDumpJson, CoreApiResponse, durationFromSpec,
+  durationMin, ExchangeListItem,
+  ExchangesListRespose, getDurationRemaining, GetExchangeTosResult, isTimestampExpired,
+  j2s, KnownBankAccounts, Logger, ManualWithdrawalDetails, NotificationType, parsePaytoUri, PaytoUri, RefreshReason, TalerErrorCode,
   Timestamp,
-  timestampMin,
-  WalletNotification,
-  codecForWithdrawFakebankRequest,
-  URL,
-  parsePaytoUri,
-  KnownBankAccounts,
-  PaytoUri,
-  codecForGetFeeForDeposit,
-  codecForListKnownBankAccounts,
-  codecForImportDbRequest,
+  timestampMin, URL, WalletNotification
 } from "@gnu-taler/taler-util";
+import {
+  DenomInfo,
+  ExchangeOperations,
+  InternalWalletState,
+  MerchantInfo,
+  MerchantOperations,
+  NotificationListener,
+  RecoupOperations,
+  ReserveOperations
+} from "./common.js";
+import { CryptoApi, CryptoWorkerFactory } from "./crypto/workers/cryptoApi.js";
+import {
+  AuditorTrustRecord,
+  CoinSourceType,
+  exportDb,
+  importDb,
+  ReserveRecordStatus,
+  WalletStoresV1
+} from "./db.js";
+import {
+  makeErrorDetails,
+  OperationFailedAndReportedError,
+  OperationFailedError
+} from "./errors.js";
+import { exportBackup } from "./operations/backup/export.js";
 import {
   addBackupProvider,
   codecForAddBackupProviderRequest,
@@ -57,142 +77,80 @@ import {
   loadBackupRecovery,
   processBackupForProvider,
   removeBackupProvider,
-  runBackupCycle,
+  runBackupCycle
 } from "./operations/backup/index.js";
-import { exportBackup } from "./operations/backup/export.js";
+import { setWalletDeviceId } from "./operations/backup/state.js";
 import { getBalances } from "./operations/balance.js";
 import {
   createDepositGroup,
   getFeeForDeposit,
   processDepositGroup,
-  trackDepositGroup,
+  trackDepositGroup
 } from "./operations/deposits.js";
-import {
-  makeErrorDetails,
-  OperationFailedAndReportedError,
-  OperationFailedError,
-} from "./errors.js";
 import {
   acceptExchangeTermsOfService,
   getExchangeDetails,
   getExchangeTrust,
-  updateExchangeFromUrl,
+  updateExchangeFromUrl
 } from "./operations/exchanges.js";
+import { getMerchantInfo } from "./operations/merchants.js";
 import {
   confirmPay,
   preparePayForUri,
   processDownloadProposal,
-  processPurchasePay,
+  processPurchasePay
 } from "./operations/pay.js";
 import { getPendingOperations } from "./operations/pending.js";
 import { createRecoupGroup, processRecoupGroup } from "./operations/recoup.js";
 import {
   autoRefresh,
   createRefreshGroup,
-  processRefreshGroup,
+  processRefreshGroup
 } from "./operations/refresh.js";
 import {
   abortFailedPayWithRefund,
   applyRefund,
-  processPurchaseQueryRefund,
+  processPurchaseQueryRefund
 } from "./operations/refund.js";
 import {
   createReserve,
   createTalerWithdrawReserve,
   getFundingPaytoUris,
-  processReserve,
+  processReserve
 } from "./operations/reserves.js";
-import {
-  DenomInfo,
-  ExchangeOperations,
-  InternalWalletState,
-  MerchantInfo,
-  MerchantOperations,
-  NotificationListener,
-  RecoupOperations,
-  ReserveOperations,
-} from "./common.js";
 import {
   runIntegrationTest,
   testPay,
-  withdrawTestBalance,
+  withdrawTestBalance
 } from "./operations/testing.js";
 import { acceptTip, prepareTip, processTip } from "./operations/tip.js";
 import {
   deleteTransaction,
   getTransactions,
-  retryTransaction,
+  retryTransaction
 } from "./operations/transactions.js";
 import {
   getExchangeWithdrawalInfo,
   getWithdrawalDetailsForUri,
-  processWithdrawGroup,
+  processWithdrawGroup
 } from "./operations/withdraw.js";
 import {
-  AuditorTrustRecord,
-  CoinSourceType,
-  exportDb,
-  importDb,
-  ReserveRecordStatus,
-  WalletStoresV1,
-} from "./db.js";
-import { NotificationType } from "@gnu-taler/taler-util";
-import {
-  PendingTaskInfo,
-  PendingOperationsResponse,
-  PendingTaskType,
+  PendingOperationsResponse, PendingTaskInfo, PendingTaskType
 } from "./pending-types.js";
-import { CoinDumpJson } from "@gnu-taler/taler-util";
-import { codecForTransactionsRequest } from "@gnu-taler/taler-util";
-import {
-  AcceptManualWithdrawalResult,
-  AcceptWithdrawalResponse,
-  codecForAbortPayWithRefundRequest,
-  codecForAcceptBankIntegratedWithdrawalRequest,
-  codecForAcceptExchangeTosRequest,
-  codecForAcceptManualWithdrawalRequet,
-  codecForAcceptTipRequest,
-  codecForAddExchangeRequest,
-  codecForApplyRefundRequest,
-  codecForConfirmPayRequest,
-  codecForCreateDepositGroupRequest,
-  codecForForceRefreshRequest,
-  codecForGetExchangeTosRequest,
-  codecForGetWithdrawalDetailsForAmountRequest,
-  codecForGetWithdrawalDetailsForUri,
-  codecForIntegrationTestArgs,
-  codecForPreparePayRequest,
-  codecForPrepareTipRequest,
-  codecForSetCoinSuspendedRequest,
-  codecForTestPayArgs,
-  codecForTrackDepositGroupRequest,
-  codecForWithdrawTestBalance,
-  CoreApiResponse,
-  ExchangeListItem,
-  ExchangesListRespose,
-  GetExchangeTosResult,
-  ManualWithdrawalDetails,
-  RefreshReason,
-} from "@gnu-taler/taler-util";
-import { AmountJson, Amounts } from "@gnu-taler/taler-util";
 import { assertUnreachable } from "./util/assertUnreachable.js";
-import { Logger } from "@gnu-taler/taler-util";
-import { setWalletDeviceId } from "./operations/backup/state.js";
-import { WalletCoreApiClient } from "./wallet-api-types.js";
 import { AsyncOpMemoMap, AsyncOpMemoSingle } from "./util/asyncMemo.js";
-import { CryptoApi, CryptoWorkerFactory } from "./crypto/workers/cryptoApi.js";
-import { TimerGroup } from "./util/timer.js";
+import {
+  HttpRequestLibrary,
+  readSuccessResponseJsonOrThrow
+} from "./util/http.js";
 import {
   AsyncCondition,
   OpenedPromise,
-  openPromise,
+  openPromise
 } from "./util/promiseUtils.js";
 import { DbAccess, GetReadWriteAccess } from "./util/query.js";
-import {
-  HttpRequestLibrary,
-  readSuccessResponseJsonOrThrow,
-} from "./util/http.js";
-import { getMerchantInfo } from "./operations/merchants.js";
+import { TimerGroup } from "./util/timer.js";
+import { WalletCoreApiClient } from "./wallet-api-types.js";
 
 const builtinAuditors: AuditorTrustRecord[] = [
   {
@@ -1047,7 +1005,7 @@ export async function handleCoreApiRequest(
       try {
         logger.error("Caught unexpected exception:");
         logger.error(e.stack);
-      } catch (e) {}
+      } catch (e) { }
       return {
         type: "error",
         operation,
@@ -1077,7 +1035,7 @@ export class Wallet {
     this.ws = new InternalWalletStateImpl(db, http, cryptoWorkerFactory);
   }
 
-  get client() {
+  get client(): WalletCoreApiClient {
     return this._client;
   }
 
@@ -1085,7 +1043,7 @@ export class Wallet {
    * Trust the exchange, do not validate signatures.
    * Only used to benchmark the exchange.
    */
-  setInsecureTrustExchange() {
+  setInsecureTrustExchange(): void {
     this.ws.insecureTrustExchange = true;
   }
 
@@ -1107,11 +1065,11 @@ export class Wallet {
     this.ws.stop();
   }
 
-  runPending(forceNow: boolean = false) {
+  runPending(forceNow = false): Promise<void> {
     return runPending(this.ws, forceNow);
   }
 
-  runTaskLoop(opts?: RetryLoopOpts) {
+  runTaskLoop(opts?: RetryLoopOpts): Promise<void> {
     return runTaskLoop(this.ws, opts);
   }
 
@@ -1142,7 +1100,7 @@ class InternalWalletStateImpl implements InternalWalletState {
 
   merchantInfoCache: Record<string, MerchantInfo> = {};
 
-  insecureTrustExchange: boolean = false;
+  insecureTrustExchange = false;
 
   timerGroup: TimerGroup = new TimerGroup();
   latch = new AsyncCondition();
@@ -1150,7 +1108,7 @@ class InternalWalletStateImpl implements InternalWalletState {
 
   listeners: NotificationListener[] = [];
 
-  initCalled: boolean = false;
+  initCalled = false;
 
   exchangeOps: ExchangeOperations = {
     getExchangeDetails,
@@ -1159,16 +1117,16 @@ class InternalWalletStateImpl implements InternalWalletState {
   };
 
   recoupOps: RecoupOperations = {
-    createRecoupGroup: createRecoupGroup,
-    processRecoupGroup: processRecoupGroup,
+    createRecoupGroup,
+    processRecoupGroup,
   };
 
   merchantOps: MerchantOperations = {
-    getMerchantInfo: getMerchantInfo,
+    getMerchantInfo,
   };
 
   reserveOps: ReserveOperations = {
-    processReserve: processReserve,
+    processReserve,
   };
 
   // FIXME: Use an LRU cache here.
@@ -1253,7 +1211,7 @@ class InternalWalletStateImpl implements InternalWalletState {
    * Run an async function after acquiring a list of locks, identified
    * by string tokens.
    */
-  async runSequentialized<T>(tokens: string[], f: () => Promise<T>) {
+  async runSequentialized<T>(tokens: string[], f: () => Promise<T>): Promise<T> {
     // Make sure locks are always acquired in the same order
     tokens = [...tokens].sort();
 
