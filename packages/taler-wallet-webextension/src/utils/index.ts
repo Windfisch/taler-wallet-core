@@ -225,7 +225,7 @@ function makeExtensionUrlWithParams(
   params?: { [name: string]: string | undefined },
 ): string {
   // eslint-disable-next-line no-undef
-  const innerUrl = new URL(chrome.extension.getURL("/" + url));
+  const innerUrl = new URL(chrome.runtime.getURL("/" + url));
   if (params) {
     const hParams = Object.keys(params)
       .map((k) => `${k}=${params[k]}`)

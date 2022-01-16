@@ -194,7 +194,7 @@ export function openExtensionPage(page: string) {
     // eslint-disable-next-line no-undef
     chrome.tabs.create({
       // eslint-disable-next-line no-undef
-      url: chrome.extension.getURL(page),
+      url: chrome.runtime.getURL(page),
     });
   };
 }

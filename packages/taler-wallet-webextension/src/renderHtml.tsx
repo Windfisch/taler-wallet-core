@@ -167,7 +167,7 @@ export function PageLink(props: {
     typeof chrome === "undefined"
       ? undefined
       : // eslint-disable-next-line no-undef
-        chrome.extension?.getURL(`/static/wallet.html#/${props.pageName}`);
+        chrome.runtime?.getURL(`/static/wallet.html#/${props.pageName}`);
   return (
     <a class="actionLink" href={url} target="_blank" rel="noopener noreferrer">
       {props.children}

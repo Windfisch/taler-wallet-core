@@ -198,7 +198,7 @@ export class ChromeBadge {
           this.canvas.width,
           this.canvas.height,
         );
-        chrome.browserAction.setIcon({ imageData });
+        chrome.action.setIcon({ imageData });
       } catch (e) {
         // Might fail if browser has over-eager canvas fingerprinting countermeasures.
         // There's nothing we can do then ...

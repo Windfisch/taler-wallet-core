@@ -60,9 +60,9 @@ export function SettingsView({
           style={{ color: "darkgreen", textDecoration: "none" }}
           href={
             // eslint-disable-next-line no-undef
-            chrome.extension
+            chrome.runtime
               ? // eslint-disable-next-line no-undef
-                chrome.extension.getURL(`/static/wallet.html#/settings`)
+                chrome.runtime.getURL(`/static/wallet.html#/settings`)
               : "#"
           }
         >

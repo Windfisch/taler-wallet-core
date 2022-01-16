@@ -173,7 +173,7 @@ function goToWalletPage(page: Pages | string): null {
   chrome.tabs.create({
     active: true,
     // eslint-disable-next-line no-undef
-    url: chrome.extension.getURL(`/static/wallet.html#${page}`),
+    url: chrome.runtime.getURL(`/static/wallet.html#${page}`),
   });
   return null;
 }

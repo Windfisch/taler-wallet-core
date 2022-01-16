@@ -15,6 +15,6 @@
  */
 
 export const extendedPermissions = {
-  permissions: ["webRequest", "webRequestBlocking"],
+  permissions: ["webRequest"],
   origins: ["http://*/*", "https://*/*"],
 };

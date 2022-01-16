@@ -25,6 +25,12 @@
  */
 import { wxMain } from "./wxBackend";
 
-window.addEventListener("load", () => {
+const loadedFromWebpage = typeof window !== "undefined"
+
+if (chrome.runtime.getManifest().manifest_version === 3) {
   wxMain();
-});
+} else {
+  window.addEventListener("load", () => {
+    wxMain();
+  });
+}

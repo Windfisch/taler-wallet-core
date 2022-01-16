@@ -23,18 +23,6 @@
 /**
  * Imports.
  */
-import { isFirefox, getPermissionsApi } from "./compat";
-import { extendedPermissions } from "./permissions";
-import {
-  OpenedPromise,
-  openPromise,
-  openTalerDatabase,
-  makeErrorDetails,
-  deleteTalerDatabase,
-  DbAccess,
-  WalletStoresV1,
-  Wallet,
-} from "@gnu-taler/taler-wallet-core";
 import {
   classifyTalerUri,
   CoreApiResponse,
@@ -42,10 +30,19 @@ import {
   NotificationType,
   TalerErrorCode,
   TalerUriType,
-  WalletDiagnostics,
+  WalletDiagnostics
 } from "@gnu-taler/taler-util";
-import { BrowserHttpLib } from "./browserHttpLib";
+import {
+  DbAccess, deleteTalerDatabase, makeErrorDetails, OpenedPromise,
+  openPromise,
+  openTalerDatabase, Wallet, WalletStoresV1
+} from "@gnu-taler/taler-wallet-core";
 import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory";
+import { BrowserHttpLib } from "./browserHttpLib";
+import { getPermissionsApi, isFirefox } from "./compat";
+import { extendedPermissions } from "./permissions";
+import { SynchronousCryptoWorkerFactory } from "./serviceWorkerCryptoWorkerFactory.js";
+import { ServiceWorkerHttpLib } from "./serviceWorkerHttpLib";
 
 /**
  * Currently active wallet instance.  Might be unloaded and
@@ -188,10 +185,10 @@ function getTab(tabId: number): Promise<chrome.tabs.Tab> {
   });
 }
 
-function setBadgeText(options: chrome.browserAction.BadgeTextDetails): void {
+function setBadgeText(options: chrome.action.BadgeTextDetails): void {
   // not supported by all browsers ...
-  if (chrome && chrome.browserAction && chrome.browserAction.setBadgeText) {
-    chrome.browserAction.setBadgeText(options);
+  if (chrome && chrome.action && chrome.action.setBadgeText) {
+    chrome.action.setBadgeText(options);
   } else {
     console.warn("can't set badge text, not supported", options);
   }
@@ -214,7 +211,7 @@ function makeSyncWalletRedirect(
   oldUrl: string,
   params?: { [name: string]: string | undefined },
 ): Record<string, unknown> {
-  const innerUrl = new URL(chrome.extension.getURL(url));
+  const innerUrl = new URL(chrome.runtime.getURL(url));
   if (params) {
     const hParams = Object.keys(params)
       .map((k) => `${k}=${params[k]}`)
@@ -256,12 +253,22 @@ async function reinitWallet(): Promise<void> {
     walletInit.reject(e);
     return;
   }
-  const http = new BrowserHttpLib();
+  let httpLib;
+  let cryptoWorker;
+
+  if (chrome.runtime.getManifest().manifest_version === 3) {
+    httpLib = new ServiceWorkerHttpLib()
+    cryptoWorker = new SynchronousCryptoWorkerFactory();
+  } else {
+    httpLib = new BrowserHttpLib()
+    cryptoWorker = new BrowserCryptoWorkerFactory()
+  }
+
   console.log("setting wallet");
   const wallet = await Wallet.create(
     currentDatabase,
-    http,
-    new BrowserCryptoWorkerFactory(),
+    httpLib,
+    cryptoWorker,
   );
   try {
     await wallet.handleCoreApiRequest("initWallet", "native-init", {});
@@ -284,7 +291,9 @@ async function reinitWallet(): Promise<void> {
     console.log("error during wallet task loop", e);
   });
   // Useful for debugging in the background page.
-  (window as any).talerWallet = wallet;
+  if (typeof window !== "undefined") {
+    (window as any).talerWallet = wallet;
+  }
   currentWallet = wallet;
   walletInit.resolve();
 }
@@ -295,8 +304,8 @@ try {
   chrome.runtime.onInstalled.addListener((details) => {
     console.log("onInstalled with reason", details.reason);
     if (details.reason === "install") {
-      const url = chrome.extension.getURL("/static/wallet.html#/welcome");
-      chrome.tabs.create({ active: true, url: url });
+      const url = chrome.runtime.getURL("/static/wallet.html#/welcome");
+      chrome.tabs.create({ active: true, url });
     }
   });
 } catch (e) {
@@ -387,6 +396,10 @@ function headerListener(
 }
 
 function setupHeaderListener(): void {
+  if (chrome.runtime.getManifest().manifest_version === 3) {
+    console.error("cannot block request on manfest v3")
+    return
+  }
   console.log("setting up header listener");
   // Handlers for catching HTTP requests
   getPermissionsApi().contains(extendedPermissions, (result: boolean) => {
@@ -427,12 +440,14 @@ export async function wxMain(): Promise<void> {
     console.log("update available:", details);
     chrome.runtime.reload();
   });
-  reinitWallet();
+  const afterWalletIsInitialized = reinitWallet();
 
   // Handlers for messages coming directly from the content
   // script on the page
   chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
-    dispatch(req, sender, sendResponse);
+    afterWalletIsInitialized.then(() => {
+      dispatch(req, sender, sendResponse);
+    })
     return true;
   });
 
@@ -447,7 +462,9 @@ export async function wxMain(): Promise<void> {
   });
 
   try {
-    setupHeaderListener();
+    if (chrome.runtime.getManifest().manifest_version === 2) {
+      setupHeaderListener();
+    }
   } catch (e) {
     console.log(e);
   }
