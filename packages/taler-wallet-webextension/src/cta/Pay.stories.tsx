@@ -106,6 +106,42 @@ export const PaymentPossibleWithFee = createExample(TestedComponent, {
   },
 });
 
+import beer from "../../static-dev/beer.png";
+
+export const TicketWithAProductList = createExample(TestedComponent, {
+  uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
+  payStatus: {
+    status: PreparePayResultType.PaymentPossible,
+    amountEffective: "USD:10",
+    amountRaw: "USD:10",
+    noncePriv: "",
+    contractTerms: {
+      nonce: "123213123",
+      merchant: {
+        name: "someone",
+      },
+      amount: "USD:10",
+      products: [
+        {
+          description: "beer",
+          price: "USD:1",
+          quantity: 10,
+          image: beer,
+        },
+        {
+          description: "brown beer",
+          price: "USD:2",
+          quantity: 10,
+          image: beer,
+        },
+      ],
+      summary: "some beers",
+    } as Partial<ContractTerms> as any,
+    contractTermsHash: "123456",
+    proposalId: "proposal1234",
+  },
+});
+
 export const AlreadyConfirmedWithFullfilment = createExample(TestedComponent, {
   payStatus: {
     status: PreparePayResultType.AlreadyConfirmed,

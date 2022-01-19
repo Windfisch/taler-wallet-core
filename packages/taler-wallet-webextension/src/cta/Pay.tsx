@@ -36,6 +36,7 @@ import {
   NotificationType,
   PreparePayResult,
   PreparePayResultType,
+  Product,
 } from "@gnu-taler/taler-util";
 import { OperationFailedError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
@@ -48,6 +49,7 @@ import {
   ButtonSuccess,
   ErrorBox,
   LinkSuccess,
+  SmallLightText,
   SuccessBox,
   WalletAction,
   WarningBox,
@@ -240,6 +242,7 @@ export function PaymentRequestView({
       payStatus.status !== PreparePayResultType.AlreadyConfirmed
         ? `${uri}&n=${payStatus.noncePriv}`
         : uri;
+    if (!uri) return <Fragment />;
     return (
       <section>
         <LinkSuccess upperCased onClick={() => setShowQR((qr) => !qr)}>
@@ -383,9 +386,37 @@ export function PaymentRequestView({
             kind="neutral"
           />
         )}
+        {contractTerms.products && (
+          <ProductList products={contractTerms.products} />
+        )}
       </section>
       <ButtonsSection />
     </WalletAction>
+  );
+}
+
+function ProductList({ products }: { products: Product[] }): VNode {
+  return (
+    <Fragment>
+      <SmallLightText style={{ margin: ".5em" }}>
+        List of products
+      </SmallLightText>
+      <dl>
+        {products.map((p, i) => (
+          <div key={i} style={{ display: "flex", textAlign: "left" }}>
+            <div>
+              <img src={p.image} style={{ width: 32, height: 32 }} />
+            </div>
+            <div>
+              <dt>{p.description}</dt>
+              <dd>
+                {p.price} x {p.quantity} {p.unit ? `(${p.unit})` : ``}
+              </dd>
+            </div>
+          </div>
+        ))}
+      </dl>
+    </Fragment>
   );
 }
 
