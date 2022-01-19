@@ -24,6 +24,7 @@ import { setupI18n } from "@gnu-taler/taler-util";
 import { createHashHistory } from "history";
 import { h, render, VNode } from "preact";
 import Router, { route, Route } from "preact-router";
+import Match from "preact-router/match";
 import { useEffect, useState } from "preact/hooks";
 import { LogoHeader } from "./components/LogoHeader";
 import { SuccessBox, WalletBox } from "./components/styled";
@@ -34,7 +35,7 @@ import { RefundPage } from "./cta/Refund";
 import { TipPage } from "./cta/Tip";
 import { WithdrawPage } from "./cta/Withdraw";
 import { strings } from "./i18n/strings";
-import { Pages, WalletNavBar } from "./NavigationBar";
+import { NavBar, Pages } from "./NavigationBar";
 import { DeveloperPage } from "./popup/DeveloperPage";
 import { BackupPage } from "./wallet/BackupPage";
 import { BalancePage } from "./wallet/BalancePage";
@@ -76,20 +77,28 @@ function Application(): VNode {
   const [globalNotification, setGlobalNotification] = useState<
     string | undefined
   >(undefined);
+  const hash_history = createHashHistory();
   return (
     <div>
       <DevContextProvider>
         {({ devMode }: { devMode: boolean }) => (
           <IoCProviderForRuntime>
             <LogoHeader />
-            <WalletNavBar devMode={devMode} />
+            {/* <Match/> won't work in the first render if <Router /> is not called first */}
+            {/* https://github.com/preactjs/preact-router/issues/415 */}
+            <Router history={hash_history} />
+            <Match>
+              {({ path }: { path: string }) => (
+                <NavBar devMode={devMode} path={path} />
+              )}
+            </Match>
             <WalletBox>
               {globalNotification && (
                 <SuccessBox onClick={() => setGlobalNotification(undefined)}>
                   <div>{globalNotification}</div>
                 </SuccessBox>
               )}
-              <Router history={createHashHistory()}>
+              <Router history={hash_history}>
                 <Route path={Pages.welcome} component={WelcomePage} />
 
                 <Route

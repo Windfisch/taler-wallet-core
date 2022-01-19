@@ -26,21 +26,20 @@
  */
 import { i18n } from "@gnu-taler/taler-util";
 import { ComponentChildren, h, VNode } from "preact";
-import Match from "preact-router/match";
 import { PopupNavigation } from "./components/styled";
 
 export enum Pages {
   welcome = "/welcome",
   balance = "/balance",
   balance_history = "/balance/history/:currency",
-  manual_withdraw = "/manual-withdraw/:currency?",
-  deposit = "/deposit/:currency",
+  manual_withdraw = "/balance/manual-withdraw/:currency?",
+  deposit = "/balance/deposit/:currency",
+  transaction = "/balance/transaction/:tid",
   settings = "/settings",
   dev = "/dev",
   cta = "/cta/:action",
   backup = "/backup",
   last_activity = "/last-activity",
-  transaction = "/transaction/:tid",
   provider_detail = "/provider/:pid",
   provider_add = "/provider/add",
   exchange_add = "/exchange/add",
@@ -73,7 +72,13 @@ function Tab(props: TabProps): VNode {
   );
 }
 
-export function NavBar({ devMode, path }: { path: string; devMode: boolean }) {
+export function NavBar({
+  devMode,
+  path,
+}: {
+  path: string;
+  devMode: boolean;
+}): VNode {
   return (
     <PopupNavigation devMode={devMode}>
       <div>
@@ -87,17 +92,5 @@ export function NavBar({ devMode, path }: { path: string; devMode: boolean }) {
         {devMode && <Tab target="/dev" current={path}>{i18n.str`Dev`}</Tab>}
       </div>
     </PopupNavigation>
-  );
-}
-
-export function WalletNavBar({ devMode }: { devMode: boolean }) {
-  // const { devMode } = useDevContext();
-  return (
-    <Match>
-      {({ path }: any) => {
-        console.log("path", path);
-        return <NavBar devMode={devMode} path={path} />;
-      }}
-    </Match>
   );
 }

@@ -29,7 +29,7 @@ import { PopupBox } from "./components/styled";
 import { DevContextProvider } from "./context/devContext";
 import { useTalerActionURL } from "./hooks/useTalerActionURL";
 import { strings } from "./i18n/strings";
-import { Pages, WalletNavBar } from "./NavigationBar";
+import { NavBar, Pages } from "./NavigationBar";
 import { BackupPage } from "./wallet/BackupPage";
 import { BalancePage } from "./popup/BalancePage";
 import { DeveloperPage } from "./popup/DeveloperPage";
@@ -40,6 +40,7 @@ import { TalerActionFound } from "./popup/TalerActionFound";
 import { ExchangeAddPage } from "./wallet/ExchangeAddPage";
 import { IoCProviderForRuntime } from "./context/iocContext";
 import { LastActivityPage } from "./wallet/LastActivityPage";
+import { Match } from "preact-router/match";
 
 function main(): void {
   try {
@@ -75,16 +76,21 @@ function CheckTalerActionComponent(): VNode {
   return <Fragment />;
 }
 
-function Application() {
+function Application(): VNode {
+  const hash_history = createHashHistory();
   return (
     // <div>
     <DevContextProvider>
       {({ devMode }: { devMode: boolean }) => (
         <IoCProviderForRuntime>
-          <WalletNavBar devMode={devMode} />
+          <Match>
+            {({ path }: { path: string }) => (
+              <NavBar devMode={devMode} path={path} />
+            )}
+          </Match>
           <CheckTalerActionComponent />
           <PopupBox devMode={devMode}>
-            <Router history={createHashHistory()}>
+            <Router history={hash_history}>
               <Route path={Pages.dev} component={DeveloperPage} />
 
               <Route
