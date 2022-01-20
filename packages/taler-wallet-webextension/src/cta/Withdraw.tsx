@@ -30,6 +30,8 @@ import {
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
+import { Loading } from "../components/Loading";
+import { LoadingError } from "../components/LoadingError";
 import { LogoHeader } from "../components/LogoHeader";
 import { Part } from "../components/Part";
 import { SelectList } from "../components/SelectList";
@@ -237,19 +239,14 @@ export function WithdrawPageWithParsedURI({
   });
 
   if (!detailsHook) {
-    return (
-      <span>
-        <i18n.Translate>Getting withdrawal details.</i18n.Translate>
-      </span>
-    );
+    return <Loading />;
   }
   if (detailsHook.hasError) {
     return (
-      <span>
-        <i18n.Translate>
-          Problems getting details: {detailsHook.message}
-        </i18n.Translate>
-      </span>
+      <LoadingError
+        title="Could not load the withdrawal details"
+        error={detailsHook}
+      />
     );
   }
 
@@ -315,21 +312,17 @@ export function WithdrawPage({ talerWithdrawUri }: Props): VNode {
     );
   }
   if (!uriInfoHook) {
-    return (
-      <span>
-        <i18n.Translate>Loading...</i18n.Translate>
-      </span>
-    );
+    return <Loading />;
   }
   if (uriInfoHook.hasError) {
     return (
-      <span>
-        <i18n.Translate>
-          This URI is not valid anymore: {uriInfoHook.message}
-        </i18n.Translate>
-      </span>
+      <LoadingError
+        title="Could not get the info from the URI"
+        error={uriInfoHook}
+      />
     );
   }
+
   return (
     <WithdrawPageWithParsedURI
       uri={talerWithdrawUri}

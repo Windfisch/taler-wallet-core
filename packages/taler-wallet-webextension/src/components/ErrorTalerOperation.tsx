@@ -13,8 +13,8 @@
  You should have received a copy of the GNU General Public License along with
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-import { TalerErrorCode, TalerErrorDetails } from "@gnu-taler/taler-util";
-import { VNode, h, Fragment } from "preact";
+import { TalerErrorDetails } from "@gnu-taler/taler-util";
+import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import arrowDown from "../../static/img/chevron-down.svg";
 import { useDevContext } from "../context/devContext";
@@ -45,20 +45,23 @@ export function ErrorTalerOperation({
               setShowErrorDetail((v) => !v);
             }}
           >
-            <img style={{ height: "1.5em" }} src={arrowDown} />
+            <img
+              style={{
+                transform: !showErrorDetail ? undefined : "scaleY(-1)",
+                height: "1.5em",
+              }}
+              src={arrowDown}
+            />
           </button>
         )}
       </div>
       {showErrorDetail && (
         <Fragment>
           <div style={{ padding: 5, textAlign: "left" }}>
-            <div>{error.message}</div>
-          </div>
-          {errorHint && (
-            <div style={{ padding: 5, textAlign: "left" }}>
-              <div>{errorHint}</div>
+            <div>
+              <b>{error.message}</b> {!errorHint ? "" : `: ${errorHint}`}{" "}
             </div>
-          )}
+          </div>
           {devMode && (
             <div style={{ textAlign: "left", overflowX: "auto" }}>
               <pre>{JSON.stringify(error, undefined, 2)}</pre>

@@ -30,28 +30,29 @@ import { PopupNavigation } from "./components/styled";
 
 export enum Pages {
   welcome = "/welcome",
+
   balance = "/balance",
   balance_history = "/balance/history/:currency",
-  manual_withdraw = "/balance/manual-withdraw/:currency?",
-  deposit = "/balance/deposit/:currency",
-  transaction = "/balance/transaction/:tid",
-  settings = "/settings",
+  balance_manual_withdraw = "/balance/manual-withdraw/:currency?",
+  balance_deposit = "/balance/deposit/:currency",
+  balance_transaction = "/balance/transaction/:tid",
+
   dev = "/dev",
-  cta = "/cta/:action",
+
   backup = "/backup",
+  backup_provider_detail = "/backup/provider/:pid",
+  backup_provider_add = "/backup/provider/add",
+
   last_activity = "/last-activity",
-  provider_detail = "/provider/:pid",
-  provider_add = "/provider/add",
-  exchange_add = "/exchange/add",
 
-  reset_required = "/reset-required",
-  payback = "/payback",
-  return_coins = "/return-coins",
+  settings = "/settings",
+  settings_exchange_add = "/settings/exchange/add",
 
-  pay = "/pay",
-  refund = "/refund",
-  tips = "/tip",
-  withdraw = "/withdraw",
+  cta = "/cta/:action",
+  cta_pay = "/cta/pay",
+  cta_refund = "/cta/refund",
+  cta_tips = "/cta/tip",
+  cta_withdraw = "/cta/withdraw",
 }
 
 interface TabProps {

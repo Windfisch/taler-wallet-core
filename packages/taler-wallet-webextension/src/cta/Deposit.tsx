@@ -29,7 +29,6 @@ import {
   Amounts,
   amountToPretty,
   ConfirmPayResult,
-  ConfirmPayResultDone,
   ConfirmPayResultType,
   ContractTerms,
   i18n,
@@ -174,11 +173,8 @@ export interface PaymentRequestViewProps {
   balance: AmountJson | undefined;
 }
 export function PaymentRequestView({
-  uri,
   payStatus,
   payResult,
-  onClick,
-  balance,
 }: PaymentRequestViewProps): VNode {
   let totalFees: AmountJson = Amounts.getZero(payStatus.amountRaw);
   const contractTerms: ContractTerms = payStatus.contractTerms;

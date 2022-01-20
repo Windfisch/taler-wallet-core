@@ -40,14 +40,14 @@ import {
 } from "@gnu-taler/taler-util";
 import { OperationFailedError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
-import { useEffect, useState } from "preact/hooks";
-import { ErrorTalerOperation } from "../components/ErrorTalerOperation";
+import { useState } from "preact/hooks";
+import { Loading } from "../components/Loading";
+import { LoadingError } from "../components/LoadingError";
 import { LogoHeader } from "../components/LogoHeader";
 import { Part } from "../components/Part";
 import { QR } from "../components/QR";
 import {
   ButtonSuccess,
-  ErrorBox,
   LinkSuccess,
   SmallLightText,
   SuccessBox,
@@ -84,10 +84,8 @@ const doPayment = async (
 export function PayPage({
   talerPayUri,
   goToWalletManualWithdraw,
+  goBack,
 }: Props): VNode {
-  const [payStatus, setPayStatus] = useState<PreparePayResult | undefined>(
-    undefined,
-  );
   const [payResult, setPayResult] = useState<ConfirmPayResult | undefined>(
     undefined,
   );
@@ -95,83 +93,33 @@ export function PayPage({
     OperationFailedError | string | undefined
   >(undefined);
 
-  const balance = useAsyncAsHook(wxApi.getBalance, [
-    NotificationType.CoinWithdrawn,
-  ]);
-  const balanceWithoutError = balance?.hasError
-    ? []
-    : balance?.response.balances || [];
+  const hook = useAsyncAsHook(async () => {
+    if (!talerPayUri) throw Error("Missing pay uri");
+    const payStatus = await wxApi.preparePay(talerPayUri);
+    const balance = await wxApi.getBalance();
+    return { payStatus, balance };
+  }, [NotificationType.CoinWithdrawn]);
 
-  const foundBalance = balanceWithoutError.find(
+  if (!hook) {
+    return <Loading />;
+  }
+
+  if (hook.hasError) {
+    return <LoadingError title="Could not load pay status" error={hook} />;
+  }
+
+  const foundBalance = hook.response.balance.balances.find(
     (b) =>
-      payStatus &&
       Amounts.parseOrThrow(b.available).currency ===
-        Amounts.parseOrThrow(payStatus?.amountRaw).currency,
+      Amounts.parseOrThrow(hook.response.payStatus.amountRaw).currency,
   );
   const foundAmount = foundBalance
     ? Amounts.parseOrThrow(foundBalance.available)
     : undefined;
-  // We use a string here so that dependency tracking for useEffect works properly
-  const foundAmountStr = foundAmount
-    ? Amounts.stringify(foundAmount)
-    : undefined;
-
-  useEffect(() => {
-    if (!talerPayUri) return;
-    const doFetch = async (): Promise<void> => {
-      try {
-        const p = await wxApi.preparePay(talerPayUri);
-        setPayStatus(p);
-      } catch (e) {
-        console.log("Got error while trying to pay", e);
-        if (e instanceof OperationFailedError) {
-          setPayErrMsg(e);
-        }
-        if (e instanceof Error) {
-          setPayErrMsg(e.message);
-        }
-      }
-    };
-    doFetch();
-  }, [talerPayUri, foundAmountStr]);
-
-  if (!talerPayUri) {
-    return <span>missing pay uri</span>;
-  }
-
-  if (!payStatus) {
-    if (payErrMsg instanceof OperationFailedError) {
-      return (
-        <WalletAction>
-          <LogoHeader />
-          <h2>{i18n.str`Digital cash payment`}</h2>
-          <section>
-            <ErrorTalerOperation
-              title="Could not get the payment information for this order"
-              error={payErrMsg?.operationError}
-            />
-          </section>
-        </WalletAction>
-      );
-    }
-    if (payErrMsg) {
-      return (
-        <WalletAction>
-          <LogoHeader />
-          <h2>{i18n.str`Digital cash payment`}</h2>
-          <section>
-            <p>Could not get the payment information for this order</p>
-            <ErrorBox>{payErrMsg}</ErrorBox>
-          </section>
-        </WalletAction>
-      );
-    }
-    return <span>Loading payment information ...</span>;
-  }
 
   const onClick = async (): Promise<void> => {
     try {
-      const res = await doPayment(payStatus);
+      const res = await doPayment(hook.response.payStatus);
       setPayResult(res);
     } catch (e) {
       console.error(e);
@@ -183,8 +131,8 @@ export function PayPage({
 
   return (
     <PaymentRequestView
-      uri={talerPayUri}
-      payStatus={payStatus}
+      uri={talerPayUri!}
+      payStatus={hook.response.payStatus}
       payResult={payResult}
       onClick={onClick}
       goToWalletManualWithdraw={goToWalletManualWithdraw}

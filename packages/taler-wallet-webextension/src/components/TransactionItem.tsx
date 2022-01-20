@@ -127,7 +127,7 @@ export function TransactionItem(props: {
 
 function TransactionLayout(props: TransactionLayoutProps): VNode {
   return (
-    <HistoryRow href={Pages.transaction.replace(":tid", props.id)}>
+    <HistoryRow href={Pages.balance_transaction.replace(":tid", props.id)}>
       <img src={props.iconPath} />
       <Column>
         <LargeText>
