@@ -14,23 +14,23 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
 */
 
-import { VNode, h, Fragment } from "preact";
-import { useState } from "preact/hooks";
-import { CreateManualWithdraw } from "./CreateManualWithdraw";
-import * as wxApi from "../wxApi";
 import {
   AcceptManualWithdrawalResult,
   AmountJson,
   Amounts,
   NotificationType,
 } from "@gnu-taler/taler-util";
-import { ReserveCreated } from "./ReserveCreated";
+import { h, VNode } from "preact";
 import { route } from "preact-router";
-import { Pages } from "../NavigationBar";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import { ExchangeAddPage } from "./ExchangeAddPage";
+import { useState } from "preact/hooks";
 import { Loading } from "../components/Loading";
-import { ErrorBox } from "../components/styled";
+import { LoadingError } from "../components/LoadingError";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
+import { Pages } from "../NavigationBar";
+import * as wxApi from "../wxApi";
+import { CreateManualWithdraw } from "./CreateManualWithdraw";
+import { ExchangeAddPage } from "./ExchangeAddPage";
+import { ReserveCreated } from "./ReserveCreated";
 
 export function ManualWithdrawPage({ currency }: { currency?: string }): VNode {
   const [success, setSuccess] = useState<
@@ -92,12 +92,13 @@ export function ManualWithdrawPage({ currency }: { currency?: string }): VNode {
   }
   if (state.hasError) {
     return (
-      <Fragment>
-        <ErrorBox>{state.message}</ErrorBox>
-        <p>There was an error getting the known exchanges</p>
-      </Fragment>
+      <LoadingError
+        title="Could not load the list of known exchanges"
+        error={state}
+      />
     );
   }
+
   const exchangeList = state.response.exchanges.reduce(
     (p, c) => ({
       ...p,

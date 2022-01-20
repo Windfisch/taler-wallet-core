@@ -98,7 +98,7 @@ function Application(): VNode {
                 component={BalancePage}
                 goToWalletManualWithdraw={() =>
                   goToWalletPage(
-                    Pages.manual_withdraw.replace(":currency?", ""),
+                    Pages.balance_manual_withdraw.replace(":currency?", ""),
                   )
                 }
                 goToWalletHistory={(currency: string) =>
@@ -128,9 +128,9 @@ function Application(): VNode {
               <Route path={Pages.last_activity} component={LastActivityPage} />
 
               <Route
-                path={Pages.transaction}
+                path={Pages.balance_transaction}
                 component={({ tid }: { tid: string }) =>
-                  goToWalletPage(Pages.transaction.replace(":tid", tid))
+                  goToWalletPage(Pages.balance_transaction.replace(":tid", tid))
                 }
               />
 
@@ -138,18 +138,18 @@ function Application(): VNode {
                 path={Pages.backup}
                 component={BackupPage}
                 onAddProvider={() => {
-                  route(Pages.provider_add);
+                  route(Pages.backup_provider_add);
                 }}
               />
               <Route
-                path={Pages.provider_detail}
+                path={Pages.backup_provider_detail}
                 component={ProviderDetailPage}
                 onBack={() => {
                   route(Pages.backup);
                 }}
               />
               <Route
-                path={Pages.provider_add}
+                path={Pages.backup_provider_add}
                 component={ProviderAddPage}
                 onBack={() => {
                   route(Pages.backup);
@@ -157,7 +157,7 @@ function Application(): VNode {
               />
 
               <Route
-                path={Pages.exchange_add}
+                path={Pages.settings_exchange_add}
                 component={ExchangeAddPage}
                 onBack={() => {
                   route(Pages.balance);

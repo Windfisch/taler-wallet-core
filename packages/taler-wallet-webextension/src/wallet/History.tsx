@@ -23,12 +23,12 @@ import {
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { Loading } from "../components/Loading";
+import { LoadingError } from "../components/LoadingError";
 import {
   ButtonBoxPrimary,
   ButtonBoxWarning,
   ButtonPrimary,
   DateSeparator,
-  ErrorBox,
   NiceSelect,
   WarningBox,
 } from "../components/styled";
@@ -62,10 +62,10 @@ export function HistoryPage({
 
   if (transactionQuery.hasError) {
     return (
-      <Fragment>
-        <ErrorBox>{transactionQuery.message}</ErrorBox>
-        <p>There was an error loading the transactions.</p>
-      </Fragment>
+      <LoadingError
+        title="Could not load the list of transactions"
+        error={transactionQuery}
+      />
     );
   }
 

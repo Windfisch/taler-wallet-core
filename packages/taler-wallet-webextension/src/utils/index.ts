@@ -193,19 +193,19 @@ export function actionForTalerUri(
 ): string | undefined {
   switch (uriType) {
     case TalerUriType.TalerWithdraw:
-      return makeExtensionUrlWithParams("static/wallet.html#/withdraw", {
+      return makeExtensionUrlWithParams("static/wallet.html#/cta/withdraw", {
         talerWithdrawUri: talerUri,
       });
     case TalerUriType.TalerPay:
-      return makeExtensionUrlWithParams("static/wallet.html#/pay", {
+      return makeExtensionUrlWithParams("static/wallet.html#/cta/pay", {
         talerPayUri: talerUri,
       });
     case TalerUriType.TalerTip:
-      return makeExtensionUrlWithParams("static/wallet.html#/tip", {
+      return makeExtensionUrlWithParams("static/wallet.html#/cta/tip", {
         talerTipUri: talerUri,
       });
     case TalerUriType.TalerRefund:
-      return makeExtensionUrlWithParams("static/wallet.html#/refund", {
+      return makeExtensionUrlWithParams("static/wallet.html#/cta/refund", {
         talerRefundUri: talerUri,
       });
     case TalerUriType.TalerNotifyReserve:

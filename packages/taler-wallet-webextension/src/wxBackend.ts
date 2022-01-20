@@ -40,7 +40,7 @@ import {
 import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory";
 import { BrowserHttpLib } from "./browserHttpLib";
 import { getPermissionsApi, isFirefox } from "./compat";
-import { extendedPermissions } from "./permissions";
+import { getReadRequestPermissions } from "./permissions";
 import { SynchronousCryptoWorkerFactory } from "./serviceWorkerCryptoWorkerFactory.js";
 import { ServiceWorkerHttpLib } from "./serviceWorkerHttpLib";
 
@@ -128,7 +128,7 @@ async function dispatch(
     }
     case "wxGetExtendedPermissions": {
       const res = await new Promise((resolve, reject) => {
-        getPermissionsApi().contains(extendedPermissions, (result: boolean) => {
+        getPermissionsApi().contains(getReadRequestPermissions(), (result: boolean) => {
           resolve(result);
         });
       });
@@ -143,7 +143,7 @@ async function dispatch(
         r = wrapResponse({ newValue: true });
       } else {
         await new Promise<void>((resolve, reject) => {
-          getPermissionsApi().remove(extendedPermissions, (rem) => {
+          getPermissionsApi().remove(getReadRequestPermissions(), (rem) => {
             console.log("permissions removed:", rem);
             resolve();
           });
@@ -339,7 +339,7 @@ function headerListener(
         switch (uriType) {
           case TalerUriType.TalerWithdraw:
             return makeSyncWalletRedirect(
-              "/static/wallet.html#/withdraw",
+              "/static/wallet.html#/cta/withdraw",
               details.tabId,
               details.url,
               {
@@ -348,7 +348,7 @@ function headerListener(
             );
           case TalerUriType.TalerPay:
             return makeSyncWalletRedirect(
-              "/static/wallet.html#/pay",
+              "/static/wallet.html#/cta/pay",
               details.tabId,
               details.url,
               {
@@ -357,7 +357,7 @@ function headerListener(
             );
           case TalerUriType.TalerTip:
             return makeSyncWalletRedirect(
-              "/static/wallet.html#/tip",
+              "/static/wallet.html#/cta/tip",
               details.tabId,
               details.url,
               {
@@ -366,7 +366,7 @@ function headerListener(
             );
           case TalerUriType.TalerRefund:
             return makeSyncWalletRedirect(
-              "/static/wallet.html#/refund",
+              "/static/wallet.html#/cta/refund",
               details.tabId,
               details.url,
               {
@@ -402,7 +402,7 @@ function setupHeaderListener(): void {
   }
   console.log("setting up header listener");
   // Handlers for catching HTTP requests
-  getPermissionsApi().contains(extendedPermissions, (result: boolean) => {
+  getPermissionsApi().contains(getReadRequestPermissions(), (result: boolean) => {
     if (
       "webRequest" in chrome &&
       "onHeadersReceived" in chrome.webRequest &&

@@ -17,7 +17,9 @@
 import { i18n, Timestamp } from "@gnu-taler/taler-util";
 import {
   ProviderInfo,
+  ProviderPaymentPaid,
   ProviderPaymentStatus,
+  ProviderPaymentType,
 } from "@gnu-taler/taler-wallet-core";
 import {
   differenceInMonths,
@@ -25,6 +27,8 @@ import {
   intervalToDuration,
 } from "date-fns";
 import { Fragment, h, VNode } from "preact";
+import { Loading } from "../components/Loading";
+import { LoadingError } from "../components/LoadingError";
 import {
   BoldLight,
   ButtonPrimary,
@@ -36,23 +40,58 @@ import {
   SmallLightText,
   SmallText,
 } from "../components/styled";
-import { useBackupStatus } from "../hooks/useBackupStatus";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { Pages } from "../NavigationBar";
+import * as wxApi from "../wxApi";
 
 interface Props {
   onAddProvider: () => void;
 }
 
+// interface BackupStatus {
+//   deviceName: string;
+//   providers: ProviderInfo[];
+// }
+
+// async function getBackupInfoOrdered(): BackupStatus {
+//   //create a first list of backup info by currency
+//   const status = await wxApi.getBackupInfo();
+
+//   return { deviceName: status.deviceId, providers };
+// }
+
+// async function sync() {
+//   await wxApi.syncAllProviders();
+// }
+
 export function BackupPage({ onAddProvider }: Props): VNode {
-  const status = useBackupStatus();
+  const status = useAsyncAsHook(wxApi.getBackupInfo);
   if (!status) {
-    return <div>Loading...</div>;
+    return <Loading />;
   }
+  if (status.hasError) {
+    return (
+      <LoadingError title="Could not load backup providers" error={status} />
+    );
+  }
+
+  const providers = status.response.providers.sort((a, b) => {
+    if (
+      a.paymentStatus.type === ProviderPaymentType.Paid &&
+      b.paymentStatus.type === ProviderPaymentType.Paid
+    ) {
+      return getStatusPaidOrder(a.paymentStatus, b.paymentStatus);
+    }
+    return (
+      getStatusTypeOrder(a.paymentStatus) - getStatusTypeOrder(b.paymentStatus)
+    );
+  });
+
   return (
     <BackupView
-      providers={status.providers}
+      providers={providers}
       onAddProvider={onAddProvider}
-      onSyncAll={status.sync}
+      onSyncAll={wxApi.syncAllProviders}
     />
   );
 }
@@ -128,7 +167,7 @@ function BackupLayout(props: TransactionLayoutProps): VNode {
     <RowBorderGray>
       <div style={{ color: !props.active ? "grey" : undefined }}>
         <a
-          href={Pages.provider_detail.replace(
+          href={Pages.backup_provider_detail.replace(
             ":pid",
             encodeURIComponent(props.id),
           )}
@@ -193,4 +232,22 @@ function daysUntil(d: Timestamp): string {
     ],
   });
   return `${str}`;
+}
+
+function getStatusTypeOrder(t: ProviderPaymentStatus) {
+  return [
+    ProviderPaymentType.InsufficientBalance,
+    ProviderPaymentType.TermsChanged,
+    ProviderPaymentType.Unpaid,
+    ProviderPaymentType.Paid,
+    ProviderPaymentType.Pending,
+  ].indexOf(t.type);
+}
+
+function getStatusPaidOrder(a: ProviderPaymentPaid, b: ProviderPaymentPaid) {
+  return a.paidUntil.t_ms === "never"
+    ? -1
+    : b.paidUntil.t_ms === "never"
+    ? 1
+    : a.paidUntil.t_ms - b.paidUntil.t_ms;
 }

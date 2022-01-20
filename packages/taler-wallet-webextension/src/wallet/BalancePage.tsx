@@ -18,13 +18,9 @@ import { Amounts, Balance, i18n } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { BalanceTable } from "../components/BalanceTable";
 import { Loading } from "../components/Loading";
+import { LoadingError } from "../components/LoadingError";
 import { MultiActionButton } from "../components/MultiActionButton";
-import {
-  ButtonPrimary,
-  Centered,
-  ErrorBox,
-  SuccessBox,
-} from "../components/styled";
+import { ButtonPrimary, Centered } from "../components/styled";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { PageLink } from "../renderHtml";
 import * as wxApi from "../wxApi";
@@ -49,15 +45,7 @@ export function BalancePage({
   }
 
   if (state.hasError) {
-    return (
-      <Fragment>
-        <ErrorBox>{state.message}</ErrorBox>
-        <p>
-          Click <PageLink pageName="welcome">here</PageLink> for help and
-          diagnostics.
-        </p>
-      </Fragment>
-    );
+    return <LoadingError title="Could not load balance page" error={state} />;
   }
 
   return (

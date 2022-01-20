@@ -142,7 +142,9 @@ export function SettingsView({
         )}
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <div />
-          <LinkPrimary href={Pages.exchange_add}>Add an exchange</LinkPrimary>
+          <LinkPrimary href={Pages.settings_exchange_add}>
+            Add an exchange
+          </LinkPrimary>
         </div>
 
         <h2>Config</h2>

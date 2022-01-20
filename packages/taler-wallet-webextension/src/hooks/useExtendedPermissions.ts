@@ -17,16 +17,13 @@
 import { useState, useEffect } from "preact/hooks";
 import * as wxApi from "../wxApi";
 import { getPermissionsApi } from "../compat";
-import { extendedPermissions } from "../permissions";
+import { getReadRequestPermissions } from "../permissions";
 
 export function useExtendedPermissions(): [boolean, () => void] {
   const [enabled, setEnabled] = useState(false);
 
   const toggle = () => {
-    setEnabled((v) => !v);
-    handleExtendedPerm(enabled).then((result) => {
-      setEnabled(result);
-    });
+    handleExtendedPerm(enabled, setEnabled)
   };
 
   useEffect(() => {
@@ -39,30 +36,22 @@ export function useExtendedPermissions(): [boolean, () => void] {
   return [enabled, toggle];
 }
 
-async function handleExtendedPerm(isEnabled: boolean): Promise<boolean> {
-  let nextVal: boolean | undefined;
-
+function handleExtendedPerm(isEnabled: boolean, onChange: (value: boolean) => void): void {
   if (!isEnabled) {
-    const granted = await new Promise<boolean>((resolve, reject) => {
-      // We set permissions here, since apparently FF wants this to be done
-      // as the result of an input event ...
-      getPermissionsApi().request(extendedPermissions, (granted: boolean) => {
-        if (chrome.runtime.lastError) {
-          console.error("error requesting permissions");
-          console.error(chrome.runtime.lastError);
-          reject(chrome.runtime.lastError);
-          return;
-        }
-        console.log("permissions granted:", granted);
-        resolve(granted);
-      });
+    // We set permissions here, since apparently FF wants this to be done
+    // as the result of an input event ...
+    getPermissionsApi().request(getReadRequestPermissions(), async (granted: boolean) => {
+      if (chrome.runtime.lastError) {
+        console.error("error requesting permissions");
+        console.error(chrome.runtime.lastError);
+        onChange(false);
+        return;
+      }
+      console.log("permissions granted:", granted);
+      const res = await wxApi.setExtendedPermissions(granted);
+      onChange(res.newValue);
     });
-    const res = await wxApi.setExtendedPermissions(granted);
-    nextVal = res.newValue;
   } else {
-    const res = await wxApi.setExtendedPermissions(false);
-    nextVal = res.newValue;
+    wxApi.setExtendedPermissions(false).then(r => onChange(r.newValue));
   }
-  console.log("new permissions applied:", nextVal ?? false);
-  return nextVal ?? false;
 }

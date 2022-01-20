@@ -1,6 +1,5 @@
 import {
   canonicalizeBaseUrl,
-  ExchangeListItem,
   i18n,
   TalerConfigResponse,
 } from "@gnu-taler/taler-util";

@@ -13,18 +13,28 @@
  You should have received a copy of the GNU General Public License along with
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-import { NotificationType } from "@gnu-taler/taler-util";
+import { NotificationType, TalerErrorDetails } from "@gnu-taler/taler-util";
 import { useEffect, useState } from "preact/hooks";
 import * as wxApi from "../wxApi";
+import { OperationFailedError } from "@gnu-taler/taler-wallet-core";
 
 interface HookOk<T> {
   hasError: false;
   response: T;
 }
 
-interface HookError {
+export type HookError = HookGenericError | HookOperationalError
+
+export interface HookGenericError {
   hasError: true;
+  operational: false,
   message: string;
+}
+
+export interface HookOperationalError {
+  hasError: true;
+  operational: true,
+  details: TalerErrorDetails;
 }
 
 export type HookResponse<T> = HookOk<T> | HookError | undefined;
@@ -41,8 +51,10 @@ export function useAsyncAsHook<T>(
         const response = await fn();
         setHookResponse({ hasError: false, response });
       } catch (e) {
-        if (e instanceof Error) {
-          setHookResponse({ hasError: true, message: e.message });
+        if (e instanceof OperationFailedError) {
+          setHookResponse({ hasError: true, operational: true, details: e.operationError });
+        } else if (e instanceof Error) {
+          setHookResponse({ hasError: true, operational: false, message: e.message });
         }
       }
     }
