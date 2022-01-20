@@ -14,11 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-export const getReadRequestPermissions = () =>
-  chrome.runtime.getManifest().manifest_version === 3 ? ({
-    permissions: ["webRequest"],
-    origins: ["http://*/*", "https://*/*"],
-  }) : ({
-    permissions: ["webRequest", "webRequestBlocking"],
-    origins: ["http://*/*", "https://*/*"],
-  });
+export const getReadRequestPermissions = () => ({
+  permissions: ["webRequest"],
+  origins: ["http://*/*", "https://*/*"],
+})

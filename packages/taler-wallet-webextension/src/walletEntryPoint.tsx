@@ -22,7 +22,7 @@
 
 import { setupI18n } from "@gnu-taler/taler-util";
 import { createHashHistory } from "history";
-import { h, render, VNode } from "preact";
+import { Fragment, h, render, VNode } from "preact";
 import Router, { route, Route } from "preact-router";
 import Match from "preact-router/match";
 import { useEffect, useState } from "preact/hooks";
@@ -86,14 +86,19 @@ function Application(): VNode {
       <DevContextProvider>
         {({ devMode }: { devMode: boolean }) => (
           <IoCProviderForRuntime>
-            <LogoHeader />
             {/* <Match/> won't work in the first render if <Router /> is not called first */}
             {/* https://github.com/preactjs/preact-router/issues/415 */}
             <Router history={hash_history} />
             <Match>
-              {({ path }: { path: string }) => (
-                <NavBar devMode={devMode} path={path} />
-              )}
+              {({ path }: { path: string }) => {
+                if (path && path.startsWith("/cta")) return;
+                return (
+                  <Fragment>
+                    <LogoHeader />
+                    <NavBar devMode={devMode} path={path} />
+                  </Fragment>
+                );
+              }}
             </Match>
             <WalletBox>
               {globalNotification && (

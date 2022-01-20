@@ -396,10 +396,10 @@ function headerListener(
 }
 
 function setupHeaderListener(): void {
-  if (chrome.runtime.getManifest().manifest_version === 3) {
-    console.error("cannot block request on manfest v3")
-    return
-  }
+  // if (chrome.runtime.getManifest().manifest_version === 3) {
+  //   console.error("cannot block request on manfest v3")
+  //   return
+  // }
   console.log("setting up header listener");
   // Handlers for catching HTTP requests
   getPermissionsApi().contains(getReadRequestPermissions(), (result: boolean) => {
@@ -415,7 +415,7 @@ function setupHeaderListener(): void {
       chrome.webRequest.onHeadersReceived.addListener(
         headerListener,
         { urls: ["<all_urls>"] },
-        ["responseHeaders", "blocking"],
+        ["responseHeaders"]
       );
     }
     if ("webRequest" in chrome) {
