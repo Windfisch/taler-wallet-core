@@ -133,3 +133,20 @@ export const WithAllPosibleWidget = createExample(TestedComponent, {
     widget: w,
   })),
 } as ReducerState);
+
+export const WithAutocompleteFeature = createExample(TestedComponent, {
+  ...reducerStatesExample.backupAttributeEditing,
+  required_attributes: [
+    {
+      name: "ahv_number",
+      label: "AHV Number",
+      type: "string",
+      uuid: "asdasdsa1",
+      widget: "wid",
+      "validation-regex":
+        "^(756)\\.[0-9]{4}\\.[0-9]{4}\\.[0-9]{2}|(756)[0-9]{10}$",
+      "validation-logic": "CH_AHV_check",
+      autocomplete: "???.????.????.??",
+    },
+  ],
+} as ReducerState);

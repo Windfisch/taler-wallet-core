@@ -37,12 +37,27 @@ export function AttributeEntryScreen(): VNode {
   const fieldList: VNode[] = reqAttr.map((spec, i: number) => {
     const value = attrs[spec.name];
     const error = checkIfValid(value, spec);
+
+    function addAutocomplete(newValue: string): string {
+      const ac = spec.autocomplete;
+      if (!ac || ac.length < newValue.length || ac[newValue.length] === "?")
+        return newValue;
+
+      if (!value || newValue.length < value.length) {
+        return newValue.slice(0, -1);
+      }
+
+      return newValue + ac[newValue.length];
+    }
+
     hasErrors = hasErrors || error !== undefined;
     return (
       <AttributeEntryField
         key={i}
         isFirst={i == 0}
-        setValue={(v: string) => setAttrs({ ...attrs, [spec.name]: v })}
+        setValue={(v: string) =>
+          setAttrs({ ...attrs, [spec.name]: addAutocomplete(v) })
+        }
         spec={spec}
         errorMessage={error}
         onConfirm={() => {
