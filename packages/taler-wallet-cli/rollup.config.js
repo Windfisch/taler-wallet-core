@@ -6,6 +6,10 @@ import builtins from "builtin-modules";
 import pkg from "./package.json";
 import sourcemaps from "rollup-plugin-sourcemaps";
 import path from "path";
+import replace from "@rollup/plugin-replace";
+import child_process from 'child_process';
+
+const printedVersion = `${pkg.version}-${getGitRevision()}`
 
 export default {
   input: "lib/index.js",
@@ -25,6 +29,10 @@ export default {
   },
   external: builtins,
   plugins: [
+    replace({
+      __VERSION__: printedVersion,
+    }),
+
     nodeResolve({
       preferBuiltins: true,
       exportConditions: ["node"],
@@ -40,3 +48,10 @@ export default {
     json(),
   ],
 };
+
+function getGitRevision() {
+  return child_process.execSync(`git rev-parse --abbrev-ref HEAD`, {
+    encoding: 'utf-8',
+    windowsHide: true,
+  }).trim();
+}
