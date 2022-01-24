@@ -1,4 +1,4 @@
-import { AuthMethod } from "anastasis-core";
+import { AuthMethod } from "@gnu-taler/anastasis-core";
 import { h, VNode } from "preact";
 import postalIcon from "../../../assets/icons/auth_method/postal.svg";
 import questionIcon from "../../../assets/icons/auth_method/question.svg";

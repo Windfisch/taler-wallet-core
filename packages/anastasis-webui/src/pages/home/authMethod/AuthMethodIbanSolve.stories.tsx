@@ -19,7 +19,10 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { ChallengeFeedbackStatus, ReducerState } from "anastasis-core";
+import {
+  ChallengeFeedbackStatus,
+  ReducerState,
+} from "@gnu-taler/anastasis-core";
 import { createExample, reducerStatesExample } from "../../../utils";
 import { authMethods as TestedComponent, KnownAuthMethods } from "./index";
 

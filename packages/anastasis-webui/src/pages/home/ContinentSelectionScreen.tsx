@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { BackupStates, RecoveryStates } from "anastasis-core";
+import { BackupStates, RecoveryStates } from "@gnu-taler/anastasis-core";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useAnastasisContext } from "../../context/anastasis";

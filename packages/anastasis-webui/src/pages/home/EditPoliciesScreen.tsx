@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { AuthMethod, Policy } from "anastasis-core";
+import { AuthMethod, Policy } from "@gnu-taler/anastasis-core";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useAnastasisContext } from "../../context/anastasis";

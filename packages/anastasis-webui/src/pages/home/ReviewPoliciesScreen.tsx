@@ -1,4 +1,4 @@
-import { AuthenticationProviderStatusOk } from "anastasis-core";
+import { AuthenticationProviderStatusOk } from "@gnu-taler/anastasis-core";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { AsyncButton } from "../../components/AsyncButton";

@@ -20,7 +20,7 @@
  */
 
 import { Fragment, h, VNode } from "preact";
-import { BackupStates, RecoveryStates } from "../../../../anastasis-core/lib";
+import { BackupStates, RecoveryStates } from "@gnu-taler/anastasis-core";
 import { useAnastasisContext } from "../../context/anastasis";
 import { Translate } from "../../i18n";
 import { LangSelector } from "./LangSelector";

@@ -20,7 +20,7 @@
  */
 
 import { encodeCrock, stringToBytes } from "@gnu-taler/taler-util";
-import { ReducerState } from "anastasis-core";
+import { ReducerState } from "@gnu-taler/anastasis-core";
 import { createExample, reducerStatesExample } from "../../utils";
 import { RecoveryFinishedScreen as TestedComponent } from "./RecoveryFinishedScreen";
 

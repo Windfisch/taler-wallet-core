@@ -6,7 +6,7 @@ import {
   RecoveryStates,
   reduceAction,
   ReducerState,
-} from "anastasis-core";
+} from "@gnu-taler/anastasis-core";
 import { useState } from "preact/hooks";
 
 const reducerBaseUrl = "http://localhost:5000/";

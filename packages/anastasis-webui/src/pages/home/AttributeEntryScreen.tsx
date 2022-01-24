@@ -1,4 +1,4 @@
-import { UserAttributeSpec, validators } from "anastasis-core";
+import { UserAttributeSpec, validators } from "@gnu-taler/anastasis-core";
 import { isAfter, parse } from "date-fns";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
@@ -47,7 +47,7 @@ export function AttributeEntryScreen(): VNode {
         errorMessage={error}
         onConfirm={() => {
           if (!hasErrors) {
-            setAskUserIfSure(true)
+            setAskUserIfSure(true);
           }
         }}
         value={value}
@@ -65,7 +65,7 @@ export function AttributeEntryScreen(): VNode {
     <AnastasisClientFrame
       title={withProcessLabel(reducer, "Who are you?")}
       hideNext={hasErrors ? "Complete the form." : undefined}
-      onNext={async () => isBackup ? setAskUserIfSure(true) : doConfirm() }
+      onNext={async () => (isBackup ? setAskUserIfSure(true) : doConfirm())}
     >
       {askUserIfSure ? (
         <ConfirmModal
@@ -74,10 +74,10 @@ export function AttributeEntryScreen(): VNode {
           description="The values in the form must be correct"
           label="I am sure"
           cancelLabel="Wait, I want to check"
-          onConfirm={() => doConfirm().then(() => setAskUserIfSure(false) )}
+          onConfirm={() => doConfirm().then(() => setAskUserIfSure(false))}
         >
-          You personal information is used to define the location where your 
-          secret will be safely stored. If you forget what you have entered or 
+          You personal information is used to define the location where your
+          secret will be safely stored. If you forget what you have entered or
           if there is a misspell you will be unable to recover your secret.
         </ConfirmModal>
       ) : null}
@@ -123,7 +123,7 @@ for (let i = 0; i < 100; i++) {
 function AttributeEntryField(props: AttributeEntryFieldProps): VNode {
   return (
     <div>
-      {props.spec.type === "date" &&
+      {props.spec.type === "date" && (
         <DateInput
           grabFocus={props.isFirst}
           label={props.spec.label}
@@ -132,8 +132,8 @@ function AttributeEntryField(props: AttributeEntryFieldProps): VNode {
           error={props.errorMessage}
           bind={[props.value, props.setValue]}
         />
-      }
-      {props.spec.type === 'number' &&
+      )}
+      {props.spec.type === "number" && (
         <PhoneNumberInput
           grabFocus={props.isFirst}
           label={props.spec.label}
@@ -141,7 +141,7 @@ function AttributeEntryField(props: AttributeEntryFieldProps): VNode {
           error={props.errorMessage}
           bind={[props.value, props.setValue]}
         />
-      }
+      )}
       {props.spec.type === "string" && (
         <TextInput
           grabFocus={props.isFirst}

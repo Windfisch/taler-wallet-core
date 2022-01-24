@@ -1,4 +1,4 @@
-import { AuthMethod, ReducerStateBackup } from "anastasis-core";
+import { AuthMethod, ReducerStateBackup } from "@gnu-taler/anastasis-core";
 import { ComponentChildren, Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useAnastasisContext } from "../../context/anastasis";
@@ -155,7 +155,10 @@ export function AuthenticationEditorScreen(): VNode {
       </div>
     );
   }
-  const errors = configuredAuthMethods.length < 2 ? "There is not enough authentication methods." : undefined;
+  const errors =
+    configuredAuthMethods.length < 2
+      ? "There is not enough authentication methods."
+      : undefined;
   const handleNext = async () => {
     const st = reducer.currentReducerState as ReducerStateBackup;
     if ((st.authentication_methods ?? []).length <= 2) {
@@ -243,4 +246,3 @@ function AuthMethodNotImplemented(props: AuthMethodSetupProps): VNode {
     </AnastasisClientFrame>
   );
 }
-

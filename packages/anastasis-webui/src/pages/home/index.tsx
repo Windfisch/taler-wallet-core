@@ -1,4 +1,4 @@
-import { BackupStates, RecoveryStates } from "anastasis-core";
+import { BackupStates, RecoveryStates } from "@gnu-taler/anastasis-core";
 import {
   ComponentChildren,
   Fragment,

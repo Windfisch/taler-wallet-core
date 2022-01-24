@@ -23,7 +23,7 @@ import {
   ChallengeFeedbackStatus,
   RecoveryStates,
   ReducerState,
-} from "anastasis-core";
+} from "@gnu-taler/anastasis-core";
 import { createExample, reducerStatesExample } from "../../utils";
 import { SolveScreen as TestedComponent } from "./SolveScreen";
 

@@ -1,4 +1,7 @@
-import { ChallengeFeedbackStatus, ChallengeInfo } from "anastasis-core";
+import {
+  ChallengeFeedbackStatus,
+  ChallengeInfo,
+} from "@gnu-taler/anastasis-core";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { AsyncButton } from "../../../components/AsyncButton";

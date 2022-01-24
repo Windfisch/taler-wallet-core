@@ -1,4 +1,4 @@
-import { AuthenticationProviderStatusOk } from "anastasis-core";
+import { AuthenticationProviderStatusOk } from "@gnu-taler/anastasis-core";
 import { format } from "date-fns";
 import { h, VNode } from "preact";
 import { useAnastasisContext } from "../../context/anastasis";
@@ -16,7 +16,7 @@ export function BackupFinishedScreen(): VNode {
     return <div>invalid state</div>;
   }
   const details = reducer.currentReducerState.success_details;
-  const providers = reducer.currentReducerState.authentication_providers ?? {}
+  const providers = reducer.currentReducerState.authentication_providers ?? {};
 
   return (
     <AnastasisClientFrame hideNav title="Backup success!">
@@ -27,17 +27,19 @@ export function BackupFinishedScreen(): VNode {
           <p>The backup is stored by the following providers:</p>
           {Object.keys(details).map((url, i) => {
             const sd = details[url];
-            const p = providers[url] as AuthenticationProviderStatusOk
+            const p = providers[url] as AuthenticationProviderStatusOk;
             return (
               <div key={i} class="box">
-                <a href={url} target="_blank" rel="noreferrer">{p.business_name}</a>
+                <a href={url} target="_blank" rel="noreferrer">
+                  {p.business_name}
+                </a>
                 <p>
                   version {sd.policy_version}
                   {sd.policy_expiration.t_ms !== "never"
                     ? ` expires at: ${format(
-                      new Date(sd.policy_expiration.t_ms),
-                      "dd-MM-yyyy",
-                    )}`
+                        new Date(sd.policy_expiration.t_ms),
+                        "dd-MM-yyyy",
+                      )}`
                     : " without expiration date"}
                 </p>
               </div>

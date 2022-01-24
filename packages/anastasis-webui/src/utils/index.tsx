@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import { BackupStates, RecoveryStates, ReducerState } from "anastasis-core";
+import {
+  BackupStates,
+  RecoveryStates,
+  ReducerState,
+} from "@gnu-taler/anastasis-core";
 import { FunctionalComponent, h, VNode } from "preact";
 import { AnastasisProvider } from "../context/anastasis";
 

@@ -3,7 +3,7 @@ import { AnastasisClientFrame } from ".";
 import {
   ChallengeFeedback,
   ChallengeFeedbackStatus,
-} from "../../../../anastasis-core/lib";
+} from "@gnu-taler/anastasis-core";
 import { Notifications } from "../../components/Notifications";
 import { useAnastasisContext } from "../../context/anastasis";
 import { authMethods, KnownAuthMethods } from "./authMethod";

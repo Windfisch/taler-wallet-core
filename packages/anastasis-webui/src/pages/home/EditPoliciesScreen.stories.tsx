@@ -20,7 +20,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { ReducerState } from "anastasis-core";
+import { ReducerState } from "@gnu-taler/anastasis-core";
 import { createExample, reducerStatesExample } from "../../utils";
 import { EditPoliciesScreen as TestedComponent } from "./EditPoliciesScreen";
 

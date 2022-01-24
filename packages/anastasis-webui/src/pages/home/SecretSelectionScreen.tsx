@@ -1,4 +1,7 @@
-import { AuthenticationProviderStatus, AuthenticationProviderStatusOk } from "anastasis-core";
+import {
+  AuthenticationProviderStatus,
+  AuthenticationProviderStatusOk,
+} from "@gnu-taler/anastasis-core";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { AsyncButton } from "../../components/AsyncButton";
@@ -68,15 +71,15 @@ export function SecretSelectionScreen(): VNode {
     return <AddingProviderScreen onCancel={() => setManageProvider(false)} />;
   }
 
-  const provierInfo = provs[recoveryDocument.provider_url] as AuthenticationProviderStatusOk
+  const provierInfo = provs[
+    recoveryDocument.provider_url
+  ] as AuthenticationProviderStatusOk;
   return (
     <AnastasisClientFrame title="Recovery: Select secret">
       <div class="columns">
         <div class="column">
           <div class="box" style={{ border: "2px solid green" }}>
-            <h1 class="subtitle">
-              {provierInfo.business_name}
-            </h1>
+            <h1 class="subtitle">{provierInfo.business_name}</h1>
             <div class="block">
               {currentVersion === 0 ? (
                 <p>Set to recover the latest version</p>
@@ -135,11 +138,13 @@ function ChooseAnotherProviderScreen({
                 Choose a provider{" "}
               </option>
               {Object.keys(providers).map((url) => {
-                const p = providers[url]
-                if (!("methods" in p)) return null
-                return <option key={url} value={url}>
-                  {p.business_name}
-                </option>
+                const p = providers[url];
+                if (!("methods" in p)) return null;
+                return (
+                  <option key={url} value={url}>
+                    {p.business_name}
+                  </option>
+                );
               })}
             </select>
             <div class="icon is-small is-left">
@@ -169,7 +174,9 @@ function SelectOtherVersionProviderScreen({
   const [otherVersion, setOtherVersion] = useState(
     version > 0 ? String(version) : "",
   );
-  const otherProviderInfo = providers[otherProvider] as AuthenticationProviderStatusOk
+  const otherProviderInfo = providers[
+    otherProvider
+  ] as AuthenticationProviderStatusOk;
 
   return (
     <AnastasisClientFrame hideNav title="Recovery: Select secret">
@@ -199,11 +206,13 @@ function SelectOtherVersionProviderScreen({
                       Choose a provider{" "}
                     </option>
                     {Object.keys(providers).map((url) => {
-                      const p = providers[url]
-                      if (!("methods" in p)) return null
-                      return <option key={url} value={url}>
-                        {p.business_name}
-                      </option>
+                      const p = providers[url];
+                      if (!("methods" in p)) return null;
+                      return (
+                        <option key={url} value={url}>
+                          {p.business_name}
+                        </option>
+                      );
                     })}
                   </select>
                   <div class="icon is-small is-left">
