@@ -28,6 +28,8 @@ import {
   ButtonBoxPrimary,
   ButtonBoxWarning,
   ButtonPrimary,
+  CenteredBoldText,
+  CenteredText,
   DateSeparator,
   NiceSelect,
   WarningBox,
@@ -126,8 +128,6 @@ export function HistoryView({
     }, {} as { [x: string]: Transaction[] });
   const datesWithTransaction = Object.keys(byDate);
 
-  const multiCurrency = balances.length > 1;
-
   if (balances.length === 0 || !selectedCurrency) {
     return (
       <WarningBox>
@@ -143,52 +143,73 @@ export function HistoryView({
   return (
     <Fragment>
       <section>
-        <p
+        <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
+            flexWrap: "wrap",
             alignItems: "center",
+            justifyContent: "space-between",
           }}
         >
-          {currencies.length === 1 ? (
-            <div style={{ fontSize: "large" }}>{selectedCurrency}</div>
-          ) : (
-            <NiceSelect>
-              <select
-                value={currencyIndex}
-                onChange={(e) => {
-                  setCurrencyIndex(Number(e.currentTarget.value));
+          <div
+            style={{
+              width: "fit-content",
+              display: "flex",
+            }}
+          >
+            {currencies.length === 1 ? (
+              <CenteredText style={{ fontSize: "x-large", margin: 8 }}>
+                {selectedCurrency}
+              </CenteredText>
+            ) : (
+              <NiceSelect>
+                <select
+                  style={{
+                    fontSize: "x-large",
+                  }}
+                  value={currencyIndex}
+                  onChange={(e) => {
+                    setCurrencyIndex(Number(e.currentTarget.value));
+                  }}
+                >
+                  {currencies.map((currency, index) => {
+                    return (
+                      <option value={index} key={currency}>
+                        {currency}
+                      </option>
+                    );
+                  })}
+                </select>
+              </NiceSelect>
+            )}
+            {currencyAmount && (
+              <CenteredBoldText
+                style={{
+                  display: "inline-block",
+                  fontSize: "x-large",
+                  margin: 8,
                 }}
               >
-                {currencies.map((currency, index) => {
-                  return (
-                    <option value={index} key={currency}>
-                      {currency}
-                    </option>
-                  );
-                })}
-              </select>
-            </NiceSelect>
-          )}
-          {currencyAmount && (
-            <h2 style={{ margin: 0 }}>
-              {Amounts.stringifyValue(currencyAmount)}
-            </h2>
-          )}
-        </p>
-        <div style={{ marginLeft: "auto", width: "fit-content" }}>
-          <ButtonPrimary
-            onClick={() => goToWalletManualWithdraw(selectedCurrency)}
-          >
-            Withdraw
-          </ButtonPrimary>
-          {currencyAmount && Amounts.isNonZero(currencyAmount) && (
-            <ButtonBoxPrimary
-              onClick={() => goToWalletDeposit(selectedCurrency)}
+                {Amounts.stringifyValue(currencyAmount)}
+              </CenteredBoldText>
+            )}
+          </div>
+          <div>
+            <ButtonPrimary
+              style={{ marginLeft: 0, marginTop: 8 }}
+              onClick={() => goToWalletManualWithdraw(selectedCurrency)}
             >
-              Deposit
-            </ButtonBoxPrimary>
-          )}
+              Withdraw
+            </ButtonPrimary>
+            {currencyAmount && Amounts.isNonZero(currencyAmount) && (
+              <ButtonBoxPrimary
+                style={{ marginLeft: 0, marginTop: 8 }}
+                onClick={() => goToWalletDeposit(selectedCurrency)}
+              >
+                Deposit
+              </ButtonBoxPrimary>
+            )}
+          </div>
         </div>
       </section>
       {datesWithTransaction.length === 0 ? (
@@ -205,11 +226,7 @@ export function HistoryView({
                   />
                 </DateSeparator>
                 {byDate[d].map((tx, i) => (
-                  <TransactionItem
-                    key={i}
-                    tx={tx}
-                    multiCurrency={multiCurrency}
-                  />
+                  <TransactionItem key={i} tx={tx} />
                 ))}
               </Fragment>
             );

@@ -277,3 +277,47 @@ export const FiveOfficialCurrencies = createExample(TestedComponent, {
     },
   ],
 });
+
+export const FiveOfficialCurrenciesWithHighValue = createExample(
+  TestedComponent,
+  {
+    transactions: [exampleData.withdraw],
+    balances: [
+      {
+        available: "USD:881001321230000",
+        pendingIncoming: "USD:0",
+        pendingOutgoing: "USD:0",
+        hasPendingTransactions: false,
+        requiresUserInput: false,
+      },
+      {
+        available: "EUR:10",
+        pendingIncoming: "TESTKUDOS:0",
+        pendingOutgoing: "TESTKUDOS:0",
+        hasPendingTransactions: false,
+        requiresUserInput: false,
+      },
+      {
+        available: "COL:443000123123000.5123123",
+        pendingIncoming: "TESTKUDOS:0",
+        pendingOutgoing: "TESTKUDOS:0",
+        hasPendingTransactions: false,
+        requiresUserInput: false,
+      },
+      {
+        available: "JPY:1564450000000.6123123",
+        pendingIncoming: "TESTKUDOS:0",
+        pendingOutgoing: "TESTKUDOS:0",
+        hasPendingTransactions: false,
+        requiresUserInput: false,
+      },
+      {
+        available: "GBP:736001231231200.23123",
+        pendingIncoming: "TESTKUDOS:0",
+        pendingOutgoing: "TESTKUDOS:0",
+        hasPendingTransactions: false,
+        requiresUserInput: false,
+      },
+    ],
+  },
+);

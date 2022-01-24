@@ -39,7 +39,7 @@ import { SettingsPage } from "./popup/Settings";
 import { TalerActionFound } from "./popup/TalerActionFound";
 import { ExchangeAddPage } from "./wallet/ExchangeAddPage";
 import { IoCProviderForRuntime } from "./context/iocContext";
-import { LastActivityPage } from "./wallet/LastActivityPage";
+import { Pending } from "./wallet/PendingPage";
 import { Match } from "preact-router/match";
 
 function main(): void {
@@ -125,7 +125,7 @@ function Application(): VNode {
                 }}
               />
 
-              <Route path={Pages.last_activity} component={LastActivityPage} />
+              <Route path={Pages.pending} component={Pending} />
 
               <Route
                 path={Pages.balance_transaction}

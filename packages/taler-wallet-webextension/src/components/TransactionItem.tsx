@@ -15,6 +15,8 @@
  */
 
 import {
+  AmountJson,
+  Amounts,
   AmountString,
   Timestamp,
   Transaction,
@@ -37,10 +39,7 @@ import {
 } from "./styled";
 import { Time } from "./Time";
 
-export function TransactionItem(props: {
-  tx: Transaction;
-  multiCurrency: boolean;
-}): VNode {
+export function TransactionItem(props: { tx: Transaction }): VNode {
   const tx = props.tx;
   switch (tx.type) {
     case TransactionType.Withdrawal:
@@ -53,7 +52,6 @@ export function TransactionItem(props: {
           timestamp={tx.timestamp}
           iconPath={imageBank}
           pending={tx.pending}
-          multiCurrency={props.multiCurrency}
         />
       );
     case TransactionType.Payment:
@@ -67,7 +65,6 @@ export function TransactionItem(props: {
           timestamp={tx.timestamp}
           iconPath={imageShoppingCart}
           pending={tx.pending}
-          multiCurrency={props.multiCurrency}
         />
       );
     case TransactionType.Refund:
@@ -80,7 +77,6 @@ export function TransactionItem(props: {
           timestamp={tx.timestamp}
           iconPath={imageRefund}
           pending={tx.pending}
-          multiCurrency={props.multiCurrency}
         />
       );
     case TransactionType.Tip:
@@ -93,7 +89,6 @@ export function TransactionItem(props: {
           timestamp={tx.timestamp}
           iconPath={imageHandHeart}
           pending={tx.pending}
-          multiCurrency={props.multiCurrency}
         />
       );
     case TransactionType.Refresh:
@@ -106,7 +101,6 @@ export function TransactionItem(props: {
           timestamp={tx.timestamp}
           iconPath={imageRefresh}
           pending={tx.pending}
-          multiCurrency={props.multiCurrency}
         />
       );
     case TransactionType.Deposit:
@@ -119,7 +113,6 @@ export function TransactionItem(props: {
           timestamp={tx.timestamp}
           iconPath={imageRefresh}
           pending={tx.pending}
-          multiCurrency={props.multiCurrency}
         />
       );
   }
@@ -144,13 +137,12 @@ function TransactionLayout(props: TransactionLayoutProps): VNode {
           </LightText>
         )}
         <SmallLightText style={{ marginTop: 5 }}>
-          <Time timestamp={props.timestamp} format="dd MMM, hh:mm" />
+          <Time timestamp={props.timestamp} format="hh:mm" />
         </SmallLightText>
       </Column>
       <TransactionAmount
         pending={props.pending}
-        amount={props.amount}
-        multiCurrency={props.multiCurrency}
+        amount={Amounts.parseOrThrow(props.amount)}
         debitCreditIndicator={props.debitCreditIndicator}
       />
     </HistoryRow>
@@ -166,18 +158,15 @@ interface TransactionLayoutProps {
   id: string;
   iconPath: string;
   pending: boolean;
-  multiCurrency: boolean;
 }
 
 interface TransactionAmountProps {
   debitCreditIndicator: "debit" | "credit" | "unknown";
-  amount: AmountString | "unknown";
+  amount: AmountJson;
   pending: boolean;
-  multiCurrency: boolean;
 }
 
 function TransactionAmount(props: TransactionAmountProps): VNode {
-  const [currency, amount] = props.amount.split(":");
   let sign: string;
   switch (props.debitCreditIndicator) {
     case "credit":
@@ -204,9 +193,8 @@ function TransactionAmount(props: TransactionAmountProps): VNode {
     >
       <ExtraLargeText>
         {sign}
-        {amount}
+        {Amounts.stringifyValue(props.amount)}
       </ExtraLargeText>
-      {props.multiCurrency && <div>{currency}</div>}
       {props.pending && <div>PENDING</div>}
     </Column>
   );

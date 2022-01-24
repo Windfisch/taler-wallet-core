@@ -138,7 +138,7 @@ async function handleExchangeUpdateError(
   }
 }
 
-function getExchangeRequestTimeout(e: ExchangeRecord): Duration {
+export function getExchangeRequestTimeout(): Duration {
   return { d_ms: 5000 };
 }
 
@@ -198,6 +198,27 @@ getExchangeDetails.makeContext = (db: DbAccess<typeof WalletStoresV1>) =>
     exchanges: x.exchanges,
     exchangeDetails: x.exchangeDetails,
   }));
+
+export async function updateExchangeTermsOfService(
+  ws: InternalWalletState,
+  exchangeBaseUrl: string,
+  tos: ExchangeTosDownloadResult,
+): Promise<void> {
+  await ws.db
+    .mktx((x) => ({
+      exchanges: x.exchanges,
+      exchangeDetails: x.exchangeDetails,
+    }))
+    .runReadWrite(async (tx) => {
+      const d = await getExchangeDetails(tx, exchangeBaseUrl);
+      if (d) {
+        d.termsOfServiceText = tos.tosText;
+        d.termsOfServiceContentType = tos.tosContentType;
+        d.termsOfServiceLastEtag = tos.tosEtag;
+        await tx.exchangeDetails.put(d);
+      }
+    });
+}
 
 export async function acceptExchangeTermsOfService(
   ws: InternalWalletState,
@@ -434,6 +455,36 @@ async function downloadKeysInfo(
   };
 }
 
+export async function downloadTosFromAcceptedFormat(
+  ws: InternalWalletState,
+  baseUrl: string,
+  timeout: Duration,
+  acceptedFormat?: string[]): Promise<ExchangeTosDownloadResult> {
+  let tosFound: ExchangeTosDownloadResult | undefined;
+  //Remove this when exchange supports multiple content-type in accept header
+  if (acceptedFormat)
+    for (const format of acceptedFormat) {
+      const resp = await downloadExchangeWithTermsOfService(
+        baseUrl,
+        ws.http,
+        timeout,
+        format,
+      );
+      if (resp.tosContentType === format) {
+        tosFound = resp;
+        break;
+      }
+    }
+  if (tosFound !== undefined) return tosFound
+  // If none of the specified format was found try text/plain
+  return await downloadExchangeWithTermsOfService(
+    baseUrl,
+    ws.http,
+    timeout,
+    "text/plain",
+  );
+}
+
 /**
  * Update or add exchange DB entry by fetching the /keys and /wire information.
  * Optionally link the reserve entry to the new or existing
@@ -479,7 +530,7 @@ async function updateExchangeFromUrlImpl(
 
   logger.info("updating exchange /keys info");
 
-  const timeout = getExchangeRequestTimeout(r);
+  const timeout = getExchangeRequestTimeout();
 
   const keysInfo = await downloadKeysInfo(baseUrl, ws.http, timeout);
 
@@ -507,33 +558,10 @@ async function updateExchangeFromUrlImpl(
 
   logger.info("finished validating exchange /wire info");
 
-  let tosFound: ExchangeTosDownloadResult | undefined;
-  //Remove this when exchange supports multiple content-type in accept header
-  if (acceptedFormat)
-    for (const format of acceptedFormat) {
-      const resp = await downloadExchangeWithTermsOfService(
-        baseUrl,
-        ws.http,
-        timeout,
-        format,
-      );
-      if (resp.tosContentType === format) {
-        tosFound = resp;
-        break;
-      }
-    }
-  // If none of the specified format was found try text/plain
-  const tosDownload =
-    tosFound !== undefined
-      ? tosFound
-      : await downloadExchangeWithTermsOfService(
-          baseUrl,
-          ws.http,
-          timeout,
-          "text/plain",
-        );
 
-  let recoupGroupId: string | undefined = undefined;
+  const tosDownload = await downloadTosFromAcceptedFormat(ws, baseUrl, timeout, acceptedFormat)
+
+  let recoupGroupId: string | undefined;
 
   logger.trace("updating exchange info in database");
 

@@ -43,7 +43,7 @@ export enum Pages {
   backup_provider_detail = "/backup/provider/:pid",
   backup_provider_add = "/backup/provider/add",
 
-  last_activity = "/last-activity",
+  pending = "/pending",
 
   settings = "/settings",
   settings_exchange_add = "/settings/exchange/add",
@@ -84,10 +84,7 @@ export function NavBar({
     <PopupNavigation devMode={devMode}>
       <div>
         <Tab target="/balance" current={path}>{i18n.str`Balance`}</Tab>
-        <Tab
-          target="/last-activity"
-          current={path}
-        >{i18n.str`Last Activity`}</Tab>
+        <Tab target="/pending" current={path}>{i18n.str`Pending`}</Tab>
         <Tab target="/backup" current={path}>{i18n.str`Backup`}</Tab>
         <Tab target="/settings" current={path}>{i18n.str`Settings`}</Tab>
         {devMode && <Tab target="/dev" current={path}>{i18n.str`Dev`}</Tab>}

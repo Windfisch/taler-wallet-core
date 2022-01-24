@@ -38,12 +38,11 @@ import { strings } from "./i18n/strings";
 import { NavBar, Pages } from "./NavigationBar";
 import { DeveloperPage } from "./popup/DeveloperPage";
 import { BackupPage } from "./wallet/BackupPage";
-import { BalancePage } from "./wallet/BalancePage";
 import { DepositPage } from "./wallet/DepositPage";
 import { ExchangeAddPage } from "./wallet/ExchangeAddPage";
 import { HistoryPage } from "./wallet/History";
-import { LastActivityPage } from "./wallet/LastActivityPage";
 import { ManualWithdrawPage } from "./wallet/ManualWithdrawPage";
+import { Pending } from "./wallet/PendingPage";
 import { ProviderAddPage } from "./wallet/ProviderAddPage";
 import { ProviderDetailPage } from "./wallet/ProviderDetailPage";
 import { SettingsPage } from "./wallet/Settings";
@@ -124,19 +123,10 @@ function Application(): VNode {
 
                 <Route
                   path={Pages.balance}
-                  component={BalancePage}
-                  goToWalletManualWithdraw={() =>
-                    route(
-                      Pages.balance_manual_withdraw.replace(":currency?", ""),
-                    )
-                  }
-                  goToWalletDeposit={(currency: string) =>
-                    route(Pages.balance_deposit.replace(":currency", currency))
-                  }
-                  goToWalletHistory={(currency: string) =>
-                    route(Pages.balance_history.replace(":currency", currency))
-                  }
+                  component={Redirect}
+                  to={Pages.balance_history.replace(":currency", "")}
                 />
+
                 <Route
                   path={Pages.balance_history}
                   component={HistoryPage}
@@ -173,12 +163,9 @@ function Application(): VNode {
                   }}
                 />
                 {/**
-                 * LAST ACTIVITY
+                 * PENDING
                  */}
-                <Route
-                  path={Pages.last_activity}
-                  component={LastActivityPage}
-                />
+                <Route path={Pages.pending} component={Pending} />
                 <Route path={Pages.settings} component={SettingsPage} />
 
                 {/**
@@ -246,7 +233,11 @@ function Application(): VNode {
                 {/**
                  * NOT FOUND
                  */}
-                <Route default component={Redirect} to={Pages.balance} />
+                <Route
+                  default
+                  component={Redirect}
+                  to={Pages.balance_history.replace(":currency", "")}
+                />
               </Router>
             </WalletBox>
           </IoCProviderForRuntime>

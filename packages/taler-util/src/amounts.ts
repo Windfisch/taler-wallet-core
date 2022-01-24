@@ -431,7 +431,9 @@ export class Amounts {
       }
     }
 
-    const currencyFormatter = new Intl.NumberFormat("en-US");
-    return currencyFormatter.format(Number(s));
+    const currencyFormatter = new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: minFractional,
+    });
+    return currencyFormatter.format(s as any);
   }
 }

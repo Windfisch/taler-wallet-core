@@ -89,9 +89,12 @@ import {
 } from "./operations/deposits.js";
 import {
   acceptExchangeTermsOfService,
+  downloadTosFromAcceptedFormat,
   getExchangeDetails,
+  getExchangeRequestTimeout,
   getExchangeTrust,
-  updateExchangeFromUrl
+  updateExchangeFromUrl,
+  updateExchangeTermsOfService
 } from "./operations/exchanges.js";
 import { getMerchantInfo } from "./operations/merchants.js";
 import {
@@ -441,7 +444,6 @@ async function getExchangeTos(
     ws,
     exchangeBaseUrl,
     acceptedFormat,
-    true,
   );
   const content = exchangeDetails.termsOfServiceText;
   const currentEtag = exchangeDetails.termsOfServiceLastEtag;
@@ -453,12 +455,34 @@ async function getExchangeTos(
   ) {
     throw Error("exchange is in invalid state");
   }
+  if (acceptedFormat && acceptedFormat.findIndex(f => f === contentType) !== -1) {
+    return {
+      acceptedEtag: exchangeDetails.termsOfServiceAcceptedEtag,
+      currentEtag,
+      content,
+      contentType,
+    };
+  }
+
+  const tosDownload = await downloadTosFromAcceptedFormat(ws, exchangeBaseUrl, getExchangeRequestTimeout(), acceptedFormat);
+
+  if (tosDownload.tosContentType === contentType) {
+    return {
+      acceptedEtag: exchangeDetails.termsOfServiceAcceptedEtag,
+      currentEtag,
+      content,
+      contentType,
+    };
+  }
+  await updateExchangeTermsOfService(ws, exchangeBaseUrl, tosDownload)
+
   return {
     acceptedEtag: exchangeDetails.termsOfServiceAcceptedEtag,
-    currentEtag,
-    content,
-    contentType,
+    currentEtag: tosDownload.tosEtag,
+    content: tosDownload.tosText,
+    contentType: tosDownload.tosContentType,
   };
+
 }
 
 async function listKnownBankAccounts(
@@ -1245,3 +1269,4 @@ class InternalWalletStateImpl implements InternalWalletState {
     }
   }
 }
+

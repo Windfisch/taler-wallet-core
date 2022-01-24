@@ -21,10 +21,10 @@
 
 import { createExample } from "../test-utils";
 import { queryToSlashKeys } from "../utils/index";
-import { LastActivityPage as TestedComponent } from "./LastActivityPage";
+import { Pending as TestedComponent } from "./PendingPage";
 
 export default {
-  title: "wallet/last activity",
+  title: "wallet/pending",
   component: TestedComponent,
 };
 

@@ -77,7 +77,7 @@ export const WalletBox = styled.div<{ noPadding?: boolean }>`
   justify-content: space-between;
   align-items: center;
   & > * {
-    width: 400px;
+    width: 500px;
   }
   & > section {
     padding: ${({ noPadding }) => (noPadding ? "0px" : "8px")};
@@ -142,7 +142,7 @@ export const Middle = styled.div`
 
 export const PopupBox = styled.div<{ noPadding?: boolean; devMode: boolean }>`
   height: 290px;
-  width: ${({ devMode }) => (!devMode ? "400px" : "500px")};
+  width: 500px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -783,7 +783,7 @@ export const PopupNavigation = styled.div<{ devMode?: boolean }>`
   display: flex;
 
   & > div {
-    width: ${({ devMode }) => (!devMode ? "400px" : "500px")};
+    width: 500px;
   }
 
   & > div > a {
@@ -815,15 +815,16 @@ export const NiceSelect = styled.div`
     box-shadow: none;
 
     background-image: ${image};
-    background-position: right 8px center;
+    background-position: right 4px center;
     background-repeat: no-repeat;
-    background-size: 1.5em 1.5em;
+    background-size: 32px 32px;
 
     background-color: white;
 
     border-radius: 0.25rem;
     font-size: 1em;
-    padding: 0.5em 3em 0.5em 1em;
+    padding: 8px 32px 8px 8px;
+    /* 0.5em 3em 0.5em 1em; */
     cursor: pointer;
   }
 

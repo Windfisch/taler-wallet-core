@@ -19,7 +19,7 @@ import { useState } from "preact/hooks";
 import { ButtonPrimary } from "../components/styled";
 import { AddNewActionView } from "./AddNewActionView";
 
-export function LastActivityPage(): VNode {
+export function Pending(): VNode {
   const [addingAction, setAddingAction] = useState(false);
 
   if (addingAction) {
