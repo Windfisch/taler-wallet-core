@@ -50,7 +50,7 @@ import {
   MerchantPrivateApi,
   HarnessExchangeBankAccount,
   WithAuthorization,
-  getPayto
+  getPayto,
 } from "./harness.js";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
@@ -120,12 +120,14 @@ export async function createSimpleTestkudosEnvironment(
     id: "default",
     name: "Default Instance",
     paytoUris: [getPayto("merchant-default")],
+    defaultWireTransferDelay: Duration.fromSpec({ minutes: 1 }),
   });
 
   await merchant.addInstance({
     id: "minst1",
     name: "minst1",
     paytoUris: [getPayto("minst1")],
+    defaultWireTransferDelay: Duration.fromSpec({ minutes: 1 }),
   });
 
   console.log("setup done!");
@@ -270,7 +272,7 @@ export async function startWithdrawViaBank(
     exchangeBaseUrl: exchange.baseUrl,
     talerWithdrawUri: wop.taler_withdraw_uri,
   });
-  
+
   // Confirm it
 
   await BankApi.confirmWithdrawalOperation(bank, user, wop);

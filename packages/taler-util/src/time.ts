@@ -77,6 +77,7 @@ export namespace Duration {
     }
     return Math.ceil(d.d_ms / 1000 / 60 / 60 / 24 / 365);
   }
+  export const fromSpec = durationFromSpec;
 }
 
 export namespace Timestamp {
