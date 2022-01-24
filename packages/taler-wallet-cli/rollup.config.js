@@ -50,7 +50,7 @@ export default {
 };
 
 function getGitRevision() {
-  return child_process.execSync(`git rev-parse --abbrev-ref HEAD`, {
+  return child_process.execSync(`git rev-parse --short HEAD`, {
     encoding: 'utf-8',
     windowsHide: true,
   }).trim();
