@@ -1654,3 +1654,14 @@ export enum ExchangeProtocolVersion {
   V9 = 9,
   V12 = 12,
 }
+
+export enum MerchantProtocolVersion {
+  /**
+   * Legacy version that is still supported.
+   */
+  V1 = 1,
+  /**
+   * Current version supported by the wallet.
+   */
+  V3 = 3,
+}

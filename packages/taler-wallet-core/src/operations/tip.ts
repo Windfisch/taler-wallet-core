@@ -33,6 +33,7 @@ import {
   DenomKeyType,
   BlindedDenominationSignature,
   codecForMerchantTipResponseV2,
+  MerchantProtocolVersion,
 } from "@gnu-taler/taler-util";
 import { DerivedTipPlanchet } from "../crypto/cryptoTypes.js";
 import {
@@ -314,13 +315,15 @@ async function processTipImpl(
 
   let blindedSigs: BlindedDenominationSignature[] = [];
 
-  if (merchantInfo.protocolVersionCurrent === 2) {
+  if (merchantInfo.protocolVersionCurrent === MerchantProtocolVersion.V3) {
     const response = await readSuccessResponseJsonOrThrow(
       merchantResp,
       codecForMerchantTipResponseV2(),
     );
     blindedSigs = response.blind_sigs.map((x) => x.blind_sig);
-  } else if (merchantInfo.protocolVersionCurrent === 1) {
+  } else if (
+    merchantInfo.protocolVersionCurrent === MerchantProtocolVersion.V1
+  ) {
     const response = await readSuccessResponseJsonOrThrow(
       merchantResp,
       codecForMerchantTipResponseV1(),
@@ -330,7 +333,9 @@ async function processTipImpl(
       blinded_rsa_signature: x.blind_sig,
     }));
   } else {
-    throw Error("unsupported merchant protocol version");
+    throw Error(
+      `unsupported merchant protocol version (${merchantInfo.protocolVersionCurrent})`,
+    );
   }
 
   if (blindedSigs.length !== planchets.length) {
