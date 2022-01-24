@@ -87,7 +87,7 @@ import { runPaymentZeroTest } from "./test-payment-zero.js";
 import { runMerchantSpecPublicOrdersTest } from "./test-merchant-spec-public-orders.js";
 import { runExchangeTimetravelTest } from "./test-exchange-timetravel.js";
 import { runDenomUnofferedTest } from "./test-denom-unoffered.js";
-import { runTestWithdrawalFakebankTest } from "./test-withdrawal-fakebank.js";
+import { runWithdrawalFakebankTest } from "./test-withdrawal-fakebank.js";
 
 /**
  * Test runner.
@@ -155,7 +155,7 @@ const allTests: TestMainFunction[] = [
   runRefundTest,
   runRevocationTest,
   runTestWithdrawalManualTest,
-  runTestWithdrawalFakebankTest,
+  runWithdrawalFakebankTest,
   runTimetravelAutorefreshTest,
   runTimetravelWithdrawTest,
   runTippingTest,

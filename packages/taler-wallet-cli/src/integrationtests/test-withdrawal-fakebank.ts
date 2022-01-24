@@ -33,7 +33,7 @@ import { URL } from "@gnu-taler/taler-util";
 /**
  * Run test for basic, bank-integrated withdrawal.
  */
-export async function runTestWithdrawalFakebankTest(t: GlobalTestState) {
+export async function runWithdrawalFakebankTest(t: GlobalTestState) {
   // Set up test environment
 
   const db = await setupDb(t);
@@ -93,4 +93,4 @@ export async function runTestWithdrawalFakebankTest(t: GlobalTestState) {
   await t.shutdown();
 }
 
-runTestWithdrawalFakebankTest.suites = ["wallet"];
+runWithdrawalFakebankTest.suites = ["wallet"];

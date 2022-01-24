@@ -67,6 +67,7 @@ import {
   getRandomBytes,
   hash,
   stringToBytes,
+  j2s,
 } from "@gnu-taler/taler-util";
 import { CoinConfig } from "./denomStructures.js";
 import { LibeufinNexusApi, LibeufinSandboxApi } from "./libeufin-apis.js";
@@ -319,7 +320,7 @@ export class GlobalTestState {
       console.log(`could not start process (${command})`, err);
     });
     proc.on("exit", (code, signal) => {
-      console.log(`process ${logName} exited`);
+      console.log(`process ${logName} exited ${j2s({ code, signal })}`);
     });
     const stderrLogFileName = this.testDir + `/${logName}-stderr.log`;
     const stderrLog = fs.createWriteStream(stderrLogFileName, {
@@ -454,7 +455,7 @@ export async function pingProc(
       //console.log(e);
       await delayMs(1000);
     }
-    if (!proc || proc.proc.exitCode !== null) {
+    if (!proc || proc.proc.exitCode != null || proc.proc.signalCode != null) {
       throw Error(`service process ${serviceName} stopped unexpectedly`);
     }
   }
@@ -1044,6 +1045,7 @@ export class FakeBankService {
     setTalerPaths(config, gc.testDir + "/talerhome");
     config.setString("taler", "currency", bc.currency);
     config.setString("bank", "http_port", `${bc.httpPort}`);
+    config.setString("bank", "ram_limit", `${1024}`);
     const cfgFilename = gc.testDir + "/bank.conf";
     config.write(cfgFilename);
     return new FakeBankService(gc, bc, cfgFilename);
