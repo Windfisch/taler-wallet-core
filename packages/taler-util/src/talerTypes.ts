@@ -47,6 +47,7 @@ import {
   codecForDuration,
 } from "./time.js";
 import { Amounts, codecForAmountString } from "./amounts.js";
+import { strcmp } from "./helpers.js";
 
 /**
  * Denomination as found in the /keys response from the exchange.
@@ -1123,6 +1124,47 @@ export interface RsaDenominationPubKey {
 export interface CsDenominationPubKey {
   cipher: DenomKeyType.ClauseSchnorr;
   // FIXME: finish definition
+}
+
+export namespace DenominationPubKey {
+  export function cmp(
+    p1: DenominationPubKey,
+    p2: DenominationPubKey,
+  ): -1 | 0 | 1 {
+    if (p1.cipher < p2.cipher) {
+      return -1;
+    } else if (p1.cipher > p2.cipher) {
+      return +1;
+    }
+    if (
+      p1.cipher === DenomKeyType.LegacyRsa &&
+      p2.cipher === DenomKeyType.LegacyRsa
+    ) {
+      return strcmp(p1.rsa_public_key, p2.rsa_public_key);
+    } else if (
+      p1.cipher === DenomKeyType.Rsa &&
+      p2.cipher === DenomKeyType.Rsa
+    ) {
+      if ((p1.age_mask ?? 0) < (p2.age_mask ?? 0)) {
+        return -1;
+      } else if ((p1.age_mask ?? 0) > (p2.age_mask ?? 0)) {
+        return 1;
+      }
+      return strcmp(p1.rsa_public_key, p2.rsa_public_key);
+    } else {
+      throw Error("unsupported cipher");
+    }
+  }
+
+  export function lift(p1: DenominationPubKey | string): DenominationPubKey {
+    if (typeof p1 === "string") {
+      return {
+        cipher: DenomKeyType.LegacyRsa,
+        rsa_public_key: p1,
+      };
+    }
+    return p1;
+  }
 }
 
 export const codecForDenominationPubKey = () =>

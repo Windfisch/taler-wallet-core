@@ -19,17 +19,14 @@
  */
 import {
   codecForExchangeKeysJson,
-  ConfirmPayResultType,
+  DenominationPubKey,
   Duration,
   durationFromSpec,
-  PreparePayResultType,
   stringifyTimestamp,
 } from "@gnu-taler/taler-util";
 import {
   NodeHttpLib,
-  PendingOperationsResponse,
   readSuccessResponseJsonOrThrow,
-  WalletApiOperation,
 } from "@gnu-taler/taler-wallet-core";
 import { makeNoFeeCoinConfig } from "../harness/denomStructures";
 import {
@@ -40,7 +37,7 @@ import {
   MerchantService,
   setupDb,
   WalletCli,
-  getPayto
+  getPayto,
 } from "../harness/harness.js";
 import { startWithdrawViaBank, withdrawViaBank } from "../harness/helpers.js";
 
@@ -192,19 +189,30 @@ export async function runExchangeTimetravelTest(t: GlobalTestState) {
   console.log("=== KEYS RESPONSE 1 ===");
 
   console.log("list issue date", stringifyTimestamp(keys1.list_issue_date));
-  console.log("num denoms", keys1.denoms.length)
+  console.log("num denoms", keys1.denoms.length);
   console.log("denoms", JSON.stringify(denomPubs1, undefined, 2));
 
   console.log("=== KEYS RESPONSE 2 ===");
 
   console.log("list issue date", stringifyTimestamp(keys2.list_issue_date));
-  console.log("num denoms", keys2.denoms.length)
+  console.log("num denoms", keys2.denoms.length);
   console.log("denoms", JSON.stringify(denomPubs2, undefined, 2));
 
   for (const da of denomPubs1) {
-    if (!dps2.has(da.denomPub)) {
+    let found = false;
+    for (const db of denomPubs2) {
+      const d1 = DenominationPubKey.lift(da.denomPub);
+      const d2 = DenominationPubKey.lift(db.denomPub);
+      if (DenominationPubKey.cmp(d1, d2) === 0) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
       console.log("=== ERROR ===");
-      console.log(`denomination with public key ${da.denomPub} is not present in new /keys response`);
+      console.log(
+        `denomination with public key ${da.denomPub} is not present in new /keys response`,
+      );
       console.log(
         `the new /keys response was issued ${stringifyTimestamp(
           keys2.list_issue_date,

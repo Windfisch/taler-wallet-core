@@ -27,7 +27,9 @@ import {
   AmountJson,
   Amounts,
   DenominationPubKey,
-  DenomKeyType, Logger, strcmp
+  DenomKeyType,
+  Logger,
+  strcmp,
 } from "@gnu-taler/taler-util";
 
 const logger = new Logger("coinSelection.ts");
@@ -210,32 +212,6 @@ function tallyFees(
   };
 }
 
-function denomPubCmp(
-  p1: DenominationPubKey,
-  p2: DenominationPubKey,
-): -1 | 0 | 1 {
-  if (p1.cipher < p2.cipher) {
-    return -1;
-  } else if (p1.cipher > p2.cipher) {
-    return +1;
-  }
-  if (
-    p1.cipher === DenomKeyType.LegacyRsa &&
-    p2.cipher === DenomKeyType.LegacyRsa
-  ) {
-    return strcmp(p1.rsa_public_key, p2.rsa_public_key);
-  } else if (p1.cipher === DenomKeyType.Rsa && p2.cipher === DenomKeyType.Rsa) {
-    if ((p1.age_mask ?? 0) < (p2.age_mask ?? 0)) {
-      return -1;
-    } else if ((p1.age_mask ?? 0) > (p2.age_mask ?? 0)) {
-      return 1;
-    }
-    return strcmp(p1.rsa_public_key, p2.rsa_public_key);
-  } else {
-    throw Error("unsupported cipher");
-  }
-}
-
 /**
  * Given a list of candidate coins, select coins to spend under the merchant's
  * constraints.
@@ -302,7 +278,7 @@ export function selectPayCoins(
     (o1, o2) =>
       -Amounts.cmp(o1.availableAmount, o2.availableAmount) ||
       Amounts.cmp(o1.feeDeposit, o2.feeDeposit) ||
-      denomPubCmp(o1.denomPub, o2.denomPub),
+      DenominationPubKey.cmp(o1.denomPub, o2.denomPub),
   );
 
   // FIXME:  Here, we should select coins in a smarter way.
