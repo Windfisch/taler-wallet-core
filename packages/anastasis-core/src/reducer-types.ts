@@ -144,6 +144,7 @@ export interface UserAttributeSpec {
   optional?: boolean;
   "validation-regex": string | undefined;
   "validation-logic": string | undefined;
+  autocomplete?: string;
 }
 
 export interface RecoveryInternalData {

@@ -339,6 +339,7 @@ export const anastasisData = {
           "validation-regex":
             "^(756).[0-9]{4}.[0-9]{4}.[0-9]{2}|(756)[0-9]{10}$",
           "validation-logic": "CH_AHV_check",
+          autocomplete: "???.????.????.??"
         },
       ],
     },
@@ -693,7 +694,8 @@ export const anastasisData = {
           },
           widget: "anastasis_gtk_ia_ssn_us",
           uuid: "310a138c-b0b7-4985-b8b8-d00e765e9f9b",
-          "validation-regex": "^d{3}-d{2}-d{4}$",
+          "validation-regex": "^[0-9]{3}-[0-9]{2}-[0-9]{4}$",
+          autocomplete: "???-??-????",
         },
       ],
     },
