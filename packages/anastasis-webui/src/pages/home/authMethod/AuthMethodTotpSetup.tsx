@@ -55,13 +55,19 @@ export function AuthMethodTotpSetup({
         <QR text={totpURL} />
       </div>
       <p>
-        After scanning the code with your TOTP App, test it in the input below.
+        Confirm that your TOTP App works by entering the current 8-digit TOTP
+        code here:
       </p>
       <TextInput
         label="Test code"
         onConfirm={goNextIfNoErrors}
         bind={[test, setTest]}
       />
+      <div>
+        We note that Google's implementation of TOTP is incomplete and will not
+        work. We recommend using FreeOTP+.
+      </div>
+
       {configured.length > 0 && (
         <section class="section">
           <div class="block">Your TOTP numbers:</div>

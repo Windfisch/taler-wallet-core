@@ -12,7 +12,28 @@ import { SolveOverviewFeedbackDisplay } from "../SolveScreen";
 import { AuthMethodSolveProps } from "./index";
 
 export function AuthMethodPostSolve({ id }: AuthMethodSolveProps): VNode {
-  const [answer, setAnswer] = useState("A-");
+  const [answer, _setAnswer] = useState("A-");
+
+  function setAnswer(str: string): void {
+    //A-12345-678-1234-5678
+    const unformatted = str
+      .replace(/^A-/, "")
+      .replace(/-/g, "")
+      .toLocaleUpperCase();
+
+    let result = `A-${unformatted.substring(0, 5)}`;
+    if (unformatted.length > 5) {
+      result += `-${unformatted.substring(5, 8)}`;
+    }
+    if (unformatted.length > 8) {
+      result += `-${unformatted.substring(8, 12)}`;
+    }
+    if (unformatted.length > 12) {
+      result += `-${unformatted.substring(12, 16)}`;
+    }
+
+    _setAnswer(result);
+  }
 
   const reducer = useAnastasisContext();
   if (!reducer) {
@@ -76,7 +97,9 @@ export function AuthMethodPostSolve({ id }: AuthMethodSolveProps): VNode {
   const feedback = challengeFeedback[selectedUuid];
 
   async function onNext(): Promise<void> {
-    return reducer?.transition("solve_challenge", { answer });
+    return reducer?.transition("solve_challenge", {
+      answer: `A-${answer.replace(/^A-/, "").replace(/-/g, "").trim()}`,
+    });
   }
   function onCancel(): void {
     reducer?.back();
@@ -96,6 +119,7 @@ export function AuthMethodPostSolve({ id }: AuthMethodSolveProps): VNode {
         onConfirm={onNext}
         label="Answer"
         grabFocus
+        placeholder="A-12345-678-1234-5678"
         bind={[answer, setAnswer]}
       />
 

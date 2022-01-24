@@ -5,12 +5,18 @@ import { AuthMethodSetupProps } from ".";
 import { PhoneNumberInput } from "../../../components/fields/NumberInput";
 import { AnastasisClientFrame } from "../index";
 
+const REGEX_JUST_NUMBERS = /^\+[0-9 ]*$/;
+
+function isJustNumbers(str: string): boolean {
+  return REGEX_JUST_NUMBERS.test(str);
+}
+
 export function AuthMethodSmsSetup({
   addAuthMethod,
   cancel,
   configured,
 }: AuthMethodSetupProps): VNode {
-  const [mobileNumber, setMobileNumber] = useState("");
+  const [mobileNumber, setMobileNumber] = useState("+");
   const addSmsAuth = (): void => {
     addAuthMethod({
       authentication_method: {
@@ -24,7 +30,13 @@ export function AuthMethodSmsSetup({
   useLayoutEffect(() => {
     inputRef.current?.focus();
   }, []);
-  const errors = !mobileNumber ? "Add a mobile number" : undefined;
+  const errors = !mobileNumber
+    ? "Add a mobile number"
+    : !mobileNumber.startsWith("+")
+    ? "Mobile number should start with '+'"
+    : !isJustNumbers(mobileNumber)
+    ? "Mobile number can't have other than numbers"
+    : undefined;
   function goNextIfNoErrors(): void {
     if (!errors) addSmsAuth();
   }
@@ -41,9 +53,13 @@ export function AuthMethodSmsSetup({
             label="Mobile number"
             placeholder="Your mobile number"
             onConfirm={goNextIfNoErrors}
+            error={errors}
             grabFocus
             bind={[mobileNumber, setMobileNumber]}
           />
+          <div>
+            Enter mobile number including +CC international dialing prefix.
+          </div>
         </div>
         {configured.length > 0 && (
           <section class="section">

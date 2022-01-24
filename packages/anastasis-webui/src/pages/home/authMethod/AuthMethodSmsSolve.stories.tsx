@@ -50,14 +50,15 @@ export const WithoutFeedback = createExample(
           cost: "USD:1",
           instructions: "SMS to +54 11 2233 4455",
           type: "question",
-          uuid: "uuid-1",
+          uuid: "AHCC4ZJ3Z1AF8TWBKGVGEKCQ3R7HXHJ51MJ45NHNZMHYZTKJ9NW0",
         },
       ],
       policies: [],
     },
-    selected_challenge_uuid: "uuid-1",
+    selected_challenge_uuid:
+      "AHCC4ZJ3Z1AF8TWBKGVGEKCQ3R7HXHJ51MJ45NHNZMHYZTKJ9NW0",
   } as ReducerState,
   {
-    id: "uuid-1",
+    id: "AHCC4ZJ3Z1AF8TWBKGVGEKCQ3R7HXHJ51MJ45NHNZMHYZTKJ9NW0",
   },
 );

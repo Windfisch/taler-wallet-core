@@ -39,15 +39,15 @@ export const Backup = createExample(TestedComponent, {
   ...reducerStatesExample.backupAttributeEditing,
   required_attributes: [
     {
-      name: "first name",
-      label: "first",
+      name: "full_name",
+      label: "Full name",
       type: "string",
       uuid: "asdasdsa1",
       widget: "wid",
     },
     {
-      name: "last name",
-      label: "second",
+      name: "birthplace",
+      label: "Birthplace",
       type: "string",
       uuid: "asdasdsa2",
       widget: "wid",
@@ -66,15 +66,15 @@ export const Recovery = createExample(TestedComponent, {
   ...reducerStatesExample.recoveryAttributeEditing,
   required_attributes: [
     {
-      name: "first",
-      label: "first",
+      name: "full_name",
+      label: "Full name",
       type: "string",
       uuid: "asdasdsa1",
       widget: "wid",
     },
     {
-      name: "pepe",
-      label: "second",
+      name: "birthplace",
+      label: "Birthplace",
       type: "string",
       uuid: "asdasdsa2",
       widget: "wid",

@@ -75,11 +75,15 @@ export function SecretEditorScreen(): VNode {
       <div class="block">
         <TextInput
           label="Secret name:"
-          tooltip="The secret name allows you to identify your secret when restoring it. It is a label that you can choose freely."
+          tooltip="This allows you to uniquely identify a secret if you have made multiple back ups. The value entered here will NOT be protected by the authentication checks!"
           grabFocus
           onConfirm={goNextIfNoErrors}
           bind={[secretName, setSecretName]}
         />
+        <div>
+          Names should be unique, so that you can easily identify your secret
+          later.
+        </div>
       </div>
       <div class="block">
         <TextInput

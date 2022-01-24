@@ -1,6 +1,6 @@
 import { UserAttributeSpec, validators } from "@gnu-taler/anastasis-core";
 import { isAfter, parse } from "date-fns";
-import { h, VNode } from "preact";
+import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { DateInput } from "../../components/fields/DateInput";
 import { PhoneNumberInput } from "../../components/fields/NumberInput";
@@ -122,7 +122,7 @@ for (let i = 0; i < 100; i++) {
 }
 function AttributeEntryField(props: AttributeEntryFieldProps): VNode {
   return (
-    <div>
+    <div style={{ marginTop: 16 }}>
       {props.spec.type === "date" && (
         <DateInput
           grabFocus={props.isFirst}
@@ -150,6 +150,17 @@ function AttributeEntryField(props: AttributeEntryFieldProps): VNode {
           error={props.errorMessage}
           bind={[props.value, props.setValue]}
         />
+      )}
+      {props.spec.type === "string" && (
+        <div>
+          This field is case-sensitive. You must enter exactly the same value
+          during recovery.
+        </div>
+      )}
+      {props.spec.name === "full_name" && (
+        <div>
+          If possible, use "LASTNAME, Firstname(s)" without abbreviations.
+        </div>
       )}
       <div class="block">
         This stays private
