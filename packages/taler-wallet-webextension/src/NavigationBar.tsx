@@ -32,7 +32,7 @@ export enum Pages {
   welcome = "/welcome",
 
   balance = "/balance",
-  balance_history = "/balance/history/:currency",
+  balance_history = "/balance/history/:currency?",
   balance_manual_withdraw = "/balance/manual-withdraw/:currency?",
   balance_deposit = "/balance/deposit/:currency",
   balance_transaction = "/balance/transaction/:tid",

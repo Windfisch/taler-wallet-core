@@ -21,7 +21,6 @@ import {
   NotificationType,
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
-import { route } from "preact-router";
 import { useState } from "preact/hooks";
 import { Loading } from "../components/Loading";
 import { LoadingError } from "../components/LoadingError";
@@ -32,7 +31,12 @@ import { CreateManualWithdraw } from "./CreateManualWithdraw";
 import { ExchangeAddPage } from "./ExchangeAddPage";
 import { ReserveCreated } from "./ReserveCreated";
 
-export function ManualWithdrawPage({ currency }: { currency?: string }): VNode {
+interface Props {
+  currency?: string;
+  onCancel: () => void;
+}
+
+export function ManualWithdrawPage({ currency, onCancel }: Props): VNode {
   const [success, setSuccess] = useState<
     | {
         response: AcceptManualWithdrawalResult;
@@ -80,9 +84,7 @@ export function ManualWithdrawPage({ currency }: { currency?: string }): VNode {
         payto={success.response.exchangePaytoUris[0]}
         exchangeBaseUrl={success.exchangeBaseUrl}
         amount={success.amount}
-        onBack={() => {
-          route(Pages.balance);
-        }}
+        onCancel={onCancel}
       />
     );
   }

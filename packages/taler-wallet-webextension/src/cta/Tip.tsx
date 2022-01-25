@@ -23,6 +23,7 @@
 import { PrepareTipResult } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
+import { Loading } from "../components/Loading";
 import { AmountView } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
@@ -105,7 +106,7 @@ export function TipPage({ talerTipUri }: Props): VNode {
   }
 
   if (!prepareTipResult) {
-    return <span>Loading ...</span>;
+    return <Loading />;
   }
 
   return (

@@ -9,13 +9,13 @@ export interface Props {
   payto: string;
   exchangeBaseUrl: string;
   amount: AmountJson;
-  onBack: () => void;
+  onCancel: () => void;
 }
 
 export function ReserveCreated({
   reservePub,
   payto,
-  onBack,
+  onCancel,
   exchangeBaseUrl,
   amount,
 }: Props): VNode {
@@ -55,7 +55,7 @@ export function ReserveCreated({
       </section>
       <footer>
         <div />
-        <ButtonDestructive onClick={onBack}>
+        <ButtonDestructive onClick={onCancel}>
           Cancel withdrawal
         </ButtonDestructive>
       </footer>

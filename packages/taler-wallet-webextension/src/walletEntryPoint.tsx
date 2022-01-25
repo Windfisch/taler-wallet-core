@@ -122,12 +122,6 @@ function Application(): VNode {
                  */}
 
                 <Route
-                  path={Pages.balance}
-                  component={Redirect}
-                  to={Pages.balance_history.replace(":currency", "")}
-                />
-
-                <Route
                   path={Pages.balance_history}
                   component={HistoryPage}
                   goToWalletDeposit={(currency: string) =>
@@ -145,11 +139,22 @@ function Application(): VNode {
                 <Route
                   path={Pages.balance_transaction}
                   component={TransactionPage}
+                  goToWalletHistory={(currency?: string) => {
+                    route(
+                      Pages.balance_history.replace(
+                        ":currency",
+                        currency || "",
+                      ),
+                    );
+                  }}
                 />
 
                 <Route
                   path={Pages.balance_manual_withdraw}
                   component={ManualWithdrawPage}
+                  onCancel={() => {
+                    route(Pages.balance);
+                  }}
                 />
 
                 <Route
@@ -232,7 +237,14 @@ function Application(): VNode {
 
                 {/**
                  * NOT FOUND
+                 * all redirects should be at the end
                  */}
+                <Route
+                  path={Pages.balance}
+                  component={Redirect}
+                  to={Pages.balance_history.replace(":currency", "")}
+                />
+
                 <Route
                   default
                   component={Redirect}

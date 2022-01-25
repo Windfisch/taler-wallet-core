@@ -128,13 +128,6 @@ function Application(): VNode {
               <Route path={Pages.pending} component={Pending} />
 
               <Route
-                path={Pages.balance_transaction}
-                component={({ tid }: { tid: string }) =>
-                  goToWalletPage(Pages.balance_transaction.replace(":tid", tid))
-                }
-              />
-
-              <Route
                 path={Pages.backup}
                 component={BackupPage}
                 onAddProvider={() => {

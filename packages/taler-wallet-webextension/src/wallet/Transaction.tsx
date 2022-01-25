@@ -26,11 +26,12 @@ import {
 } from "@gnu-taler/taler-util";
 import { differenceInSeconds } from "date-fns";
 import { ComponentChildren, Fragment, h, VNode } from "preact";
-import { route } from "preact-router";
 import { useState } from "preact/hooks";
 import emptyImg from "../../static/img/empty.png";
 import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType";
 import { ErrorTalerOperation } from "../components/ErrorTalerOperation";
+import { Loading } from "../components/Loading";
+import { LoadingError } from "../components/LoadingError";
 import { Part } from "../components/Part";
 import {
   Button,
@@ -49,7 +50,11 @@ import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { Pages } from "../NavigationBar";
 import * as wxApi from "../wxApi";
 
-export function TransactionPage({ tid }: { tid: string }): VNode {
+interface Props {
+  tid: string;
+  goToWalletHistory: (currency?: string) => void;
+}
+export function TransactionPage({ tid, goToWalletHistory }: Props): VNode {
   async function getTransaction(): Promise<Transaction> {
     const res = await wxApi.getTransactions();
     const ts = res.transactions.filter((t) => t.transactionId === tid);
@@ -65,43 +70,30 @@ export function TransactionPage({ tid }: { tid: string }): VNode {
   ]);
 
   if (!state) {
-    return (
-      <div>
-        <i18n.Translate>Loading ...</i18n.Translate>
-      </div>
-    );
+    return <Loading />;
   }
 
   if (state.hasError) {
-    route(Pages.balance);
     return (
-      <div>
-        <i18n.Translate>
-          There was an error. Redirecting into the history page
-        </i18n.Translate>
-      </div>
+      <LoadingError
+        title="Could not load the transaction information"
+        error={state}
+      />
     );
   }
 
-  function goToHistory(): void {
-    const currency =
-      state !== undefined && !state.hasError
-        ? Amounts.parseOrThrow(state.response.amountRaw).currency
-        : undefined;
-
-    if (currency) {
-      route(Pages.balance_history.replace(":currency", currency));
-    } else {
-      route(Pages.balance);
-    }
-  }
+  const currency = Amounts.parse(state.response.amountRaw)?.currency;
 
   return (
     <TransactionView
       transaction={state.response}
-      onDelete={() => wxApi.deleteTransaction(tid).then(goToHistory)}
-      onRetry={() => wxApi.retryTransaction(tid).then(goToHistory)}
-      onBack={goToHistory}
+      onDelete={() =>
+        wxApi.deleteTransaction(tid).then(() => goToWalletHistory(currency))
+      }
+      onRetry={() =>
+        wxApi.retryTransaction(tid).then(() => goToWalletHistory(currency))
+      }
+      onBack={() => goToWalletHistory(currency)}
     />
   );
 }
