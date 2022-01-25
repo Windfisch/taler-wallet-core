@@ -30,6 +30,11 @@ import {
 } from "./talerCrypto.js";
 import { sha512, kdf } from "./kdf.js";
 import * as nacl from "./nacl-fast.js";
+import { initNodePrng } from "./prng-node.js";
+
+// Since we import nacl-fast directly (and not via index.node.ts), we need to
+// init the PRNG manually.
+initNodePrng();
 
 test("encoding", (t) => {
   const s = "Hello, World";
