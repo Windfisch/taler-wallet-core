@@ -23,8 +23,12 @@ export const parameters = {
   controls: { expanded: true },
   options: {
     storySort: (a, b) => {
-      return (a[1].args.order ?? 0) - (b[1].args.order ?? 0)
-      // return a[1].kind === b[1].kind ? 0 : a[1].id.localeCompare(b[1].id, undefined, { numeric: true })
+      if (!a || !a[1]) {
+        // https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#v7-style-story-sort
+        console.log(a, b)
+        return (a?.args.order ?? 0) - (b?.args.order ?? 0)
+      }
+      return (a?.[1]?.args?.order ?? 0) - (b?.[1]?.args?.order ?? 0)
     }
   },
 }

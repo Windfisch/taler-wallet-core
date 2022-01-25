@@ -40,7 +40,7 @@ export function AttributeEntryScreen(): VNode {
 
     function addAutocomplete(newValue: string): string {
       const ac = spec.autocomplete;
-      if (!ac || ac.length < newValue.length || ac[newValue.length] === "?")
+      if (!ac || ac.length <= newValue.length || ac[newValue.length] === "?")
         return newValue;
 
       if (!value || newValue.length < value.length) {
