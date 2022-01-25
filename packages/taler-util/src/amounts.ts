@@ -414,7 +414,7 @@ export class Amounts {
     return x1.currency.toUpperCase() === x2.currency.toUpperCase();
   }
 
-  static stringifyValue(a: AmountJson, minFractional: number = 0): string {
+  static stringifyValue(a: AmountJson, minFractional = 0): string {
     const av = a.value + Math.floor(a.fraction / amountFractionalBase);
     const af = a.fraction % amountFractionalBase;
     let s = av.toString();
@@ -431,9 +431,6 @@ export class Amounts {
       }
     }
 
-    const currencyFormatter = new Intl.NumberFormat("en-US", {
-      minimumFractionDigits: minFractional,
-    });
-    return currencyFormatter.format(s as any);
+    return s;
   }
 }
