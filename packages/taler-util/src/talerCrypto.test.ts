@@ -27,6 +27,13 @@ import {
   keyExchangeEcdheEddsa,
   stringToBytes,
   bytesToString,
+  hash,
+  deriveBSeed,
+  csBlind,
+  calcS,
+  csUnblind,
+  csVerify,
+  CsSignature,
 } from "./talerCrypto.js";
 import { sha512, kdf } from "./kdf.js";
 import * as nacl from "./nacl-fast.js";
@@ -35,6 +42,7 @@ import { initNodePrng } from "./prng-node.js";
 // Since we import nacl-fast directly (and not via index.node.ts), we need to
 // init the PRNG manually.
 initNodePrng();
+import { AssertionError } from "assert";
 
 test("encoding", (t) => {
   const s = "Hello, World";
@@ -188,4 +196,63 @@ test("taler-exchange-tvg eddsa_ecdh #2", (t) => {
     decodeCrock(pub_eddsa),
   );
   t.deepEqual(encodeCrock(myKm2), key_material);
+});
+
+test("taler CS blind c", async (t) => {
+  type CsBlindSignature = {
+    sBlind: Uint8Array;
+    rPubBlind: Uint8Array;
+  };
+  /**
+   * CS denomination keypair
+   */
+  const priv = "9TM70AKDTS57AWY9JK2J4TMBTMW6K62WHHGZWYDG0VM5ABPZKD40";
+  const pub = "8GSJZ649T2PXMKZC01Y4ANNBE7MF14QVK9SQEC4E46ZHKCVG8AS0";
+
+  /**
+   * rPub is returned from the exchange's new /csr API
+   */
+  const rPriv1 = "9TM70AKDTS57AWY9JK2J4TMBTMW6K62WHHGZWYDG0VM5ABPZKD41";
+  const rPriv2 = "8TM70AKDTS57AWY9JK2J4TMBTMW6K62WHHGZWYDG0VM5ABPZKD42";
+  const rPub1 = nacl.crypto_sign_keyPair_fromSeed(
+    decodeCrock(rPriv1),
+  ).publicKey;
+  const rPub2 = nacl.crypto_sign_keyPair_fromSeed(
+    decodeCrock(rPriv2),
+  ).publicKey;
+  const rPub:[Uint8Array,Uint8Array] = [rPub1, rPub2];
+
+  /**
+   * Coin key pair
+   */
+  const priv_eddsa = "1KG54M8T3X8BSFSZXCR3SQBSR7Y9P53NX61M864S7TEVMJ2XVPF0";
+  const pub_eddsa = eddsaGetPublic(decodeCrock(priv_eddsa));
+
+  const bseed = deriveBSeed(decodeCrock(priv_eddsa), [rPub1, rPub2]);
+
+  // Check that derivation is deterministic
+  const bseed2 = deriveBSeed(decodeCrock(priv_eddsa), [rPub1, rPub2]);
+  t.deepEqual(bseed, bseed2);
+
+  const coinPubHash = hash(pub_eddsa);
+
+  const c = await csBlind(bseed, [rPub1, rPub2], decodeCrock(pub), coinPubHash);
+
+  const b = Buffer.from(kdf(1, decodeCrock(priv), new Uint8Array(),new Uint8Array())).readUInt8() % 2;
+  if(b !=1 && b !=0){
+    throw new AssertionError();
+  }
+  const blindsig: CsBlindSignature ={
+    sBlind: await calcS(rPub[b],c[b],decodeCrock(priv)),
+    rPubBlind: rPub[b],
+  };
+  const sigblindsig: CsSignature = {
+    s: blindsig.sBlind,
+    rPub: blindsig.rPubBlind,
+  };
+
+  const sig = await csUnblind(bseed,rPub, decodeCrock(pub),b,blindsig);
+  
+  //const res = await csVerify(coinPubHash, sig, decodeCrock(pub));
+  t.deepEqual(res, true);
 });

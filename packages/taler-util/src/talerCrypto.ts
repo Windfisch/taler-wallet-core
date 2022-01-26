@@ -24,7 +24,9 @@
 import * as nacl from "./nacl-fast.js";
 import { kdf } from "./kdf.js";
 import bigint from "big-integer";
+import sodium, { compare } from "libsodium-wrappers-sumo";
 import { DenominationPubKey, DenomKeyType } from "./talerTypes.js";
+import { AssertionError, equal } from "assert";
 
 export function getRandomBytes(n: number): Uint8Array {
   return nacl.randomBytes(n);
@@ -321,6 +323,159 @@ export function rsaVerify(
   const sig = loadBigInt(rsaSig);
   const sig_e = sig.modPow(rsaPub.e, rsaPub.N);
   return sig_e.equals(d);
+}
+
+export type CsSignature = {
+  s: Uint8Array;
+  rPub: Uint8Array;
+};
+
+export type CsBlindSignature = {
+  sBlind: Uint8Array;
+  rPubBlind: Uint8Array;
+};
+
+type BlindingSecrets = {
+  alpha: [Uint8Array,Uint8Array];
+  beta: [Uint8Array,Uint8Array];
+};
+
+//FIXME: Set correct salt
+function deriveSecrets(bseed: Uint8Array): BlindingSecrets {
+  const outLen = 128;
+  const salt = "94KPT83PCNS7J83KC5P78Y8";
+  const rndout = kdf(outLen, bseed, decodeCrock(salt));
+  const secrets: BlindingSecrets = {
+    alpha: [rndout.slice(0, 32), rndout.slice(32, 64)],
+    beta:  [rndout.slice(64, 96), rndout.slice(96, 128)],
+  };
+  return secrets;
+}
+
+function calcRDash(
+  csPub: Uint8Array,
+  secrets: BlindingSecrets,
+  rPub: [Uint8Array, Uint8Array],
+): [Uint8Array, Uint8Array] {
+  //const aG1 = nacl.scalarMult_base();
+  //const aG2 = nacl.scalarMult_base(secrets.alpha2);
+  //const bDp1 = nacl.scalarMult(secrets.beta1, csPub);
+  //const bDp2 = nacl.scalarMult(secrets.beta2, csPub);
+
+  const aG0 = sodium.crypto_scalarmult_ed25519_base_noclamp(secrets.alpha[0]);
+  const aG2 = sodium.crypto_scalarmult_ed25519_base_noclamp(secrets.alpha[1]);
+
+  const bDp0 = sodium.crypto_scalarmult_ed25519(secrets.beta[0], csPub);
+  const bDp1 = sodium.crypto_scalarmult_ed25519(secrets.beta[1], csPub);
+
+  const res0 = sodium.crypto_core_ed25519_add(aG0, bDp0);
+  const res2 = sodium.crypto_core_ed25519_add(aG2, bDp1);
+  return [
+    sodium.crypto_core_ed25519_add(rPub[0], res0),
+    sodium.crypto_core_ed25519_add(rPub[1], res2),
+  ];
+}
+
+//FIXME: How to pad two ikms correctly?
+//FIXME:_Is kdfMod used correctly?
+//FIXME: CDash1 is a JS Number array -> are they broken? how to convert bigint back to uint8arrays?
+function csFDH(
+  hm: Uint8Array,
+  rPub: Uint8Array,
+) : Uint8Array{
+  const lMod = Array.from(new Uint8Array([
+    0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2,
+    0xde, 0xf9, 0xde, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
+  ]));
+  const L = bigint.fromArray(lMod, 256, false);
+  const res = kdfMod(L, hm, rPub, rPub).toArray(256).value;
+  return new Uint8Array(res);
+}
+
+
+function deriveC(
+  hm: Uint8Array,
+  rPubDash: [Uint8Array, Uint8Array],
+): [Uint8Array, Uint8Array] {
+  const cDash1 = csFDH(hm,rPubDash[0]);
+  const cDash2 = csFDH(hm,rPubDash[1]);
+  return [cDash1, cDash2];
+}
+
+
+//FIXME: Set correct salt and do correct KDF
+// How to do this in one round with Uint8Array?
+// How to pad two ikms correctly?
+export function deriveBSeed(
+  coinPriv: Uint8Array,
+  rPub: [Uint8Array, Uint8Array],
+): Uint8Array {
+  const outLen = 32;
+  const salt = "94KPT83PCNS7J83KC5P78Y8";
+  const res = kdf(outLen, coinPriv, decodeCrock(salt), rPub[0]);
+  return kdf(outLen, res, decodeCrock(salt), rPub[1]);
+}
+
+export async function csBlind(
+  bseed: Uint8Array,
+  rPub: [Uint8Array, Uint8Array],
+  csPub: Uint8Array,
+  hm: Uint8Array,
+): Promise<[Uint8Array, Uint8Array]> {
+  await sodium.ready;
+  const secrets = deriveSecrets(bseed);
+  const rPubDash = calcRDash(csPub, secrets, rPub);
+  const c = deriveC(hm, rPubDash);
+  return [
+    sodium.crypto_core_ed25519_scalar_add(c[0], secrets.beta[0]),
+    sodium.crypto_core_ed25519_scalar_add(c[1], secrets.beta[1]),
+  ];
+}
+
+export async function calcS(
+  rPubB: Uint8Array,
+  cB: Uint8Array,
+  csPriv: Uint8Array,
+): Promise<Uint8Array> {
+  await sodium.ready;
+  const cBcsPriv = sodium.crypto_core_ed25519_scalar_mul(cB,csPriv);
+  return sodium.crypto_core_ed25519_scalar_add(rPubB,cBcsPriv);
+}
+
+//FIXME: Whats an int here??
+export async function csUnblind(
+  bseed: Uint8Array,
+  rPub: [Uint8Array, Uint8Array],
+  csPub: Uint8Array,
+  b: number,
+  csSig: CsBlindSignature,
+): Promise<CsSignature> {
+  
+  if(b != 0 && b !=1){
+    throw new AssertionError();
+  }
+  await sodium.ready;
+  const secrets = deriveSecrets(bseed);
+  const rPubDash = calcRDash(csPub, secrets, rPub)[b];
+  const sig :CsSignature = {
+    s: sodium.crypto_core_ed25519_scalar_add(csSig.sBlind, secrets.alpha[b]),
+    rPub: rPubDash,
+  };
+  return sig;
+}
+
+export async function csVerify(
+  hm: Uint8Array,
+  csSig: CsSignature,
+  csPub: Uint8Array,
+): Promise<boolean> {
+  await sodium.ready;
+  const cDash = csFDH(hm, csSig.rPub);
+  const sG = sodium.crypto_scalarmult_ed25519_base_noclamp(csSig.s);
+  const cbDp = sodium.crypto_scalarmult_ed25519_noclamp(cDash,csPub);
+  const sGeq = sodium.crypto_core_ed25519_add(csSig.rPub,cbDp);
+  return sodium.memcmp(sG,sGeq);
 }
 
 export interface EddsaKeyPair {
