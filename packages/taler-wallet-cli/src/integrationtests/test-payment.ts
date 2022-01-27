@@ -48,7 +48,10 @@ export async function runPaymentTest(t: GlobalTestState) {
   };
 
   await makeTestPayment(t, { wallet, merchant, order });
+  await wallet.runUntilDone();
 
+  // Test JSON normalization of contract terms: Does the wallet
+  // agree with the merchant?
   const order2 = {
     summary: "Testing “unicode” characters",
     amount: "TESTKUDOS:5",
@@ -56,6 +59,17 @@ export async function runPaymentTest(t: GlobalTestState) {
   };
 
   await makeTestPayment(t, { wallet, merchant, order: order2 });
+  await wallet.runUntilDone();
+
+  // Test JSON normalization of contract terms: Does the wallet
+  // agree with the merchant?
+  const order3 = {
+    summary: "Testing\nNewlines\rAnd\tStuff\nHere\b",
+    amount: "TESTKUDOS:5",
+    fulfillment_url: "taler://fulfillment-success/thx",
+  };
+
+  await makeTestPayment(t, { wallet, merchant, order: order3 });
 
   await wallet.runUntilDone();
 }
