@@ -49,6 +49,14 @@ export async function runPaymentTest(t: GlobalTestState) {
 
   await makeTestPayment(t, { wallet, merchant, order });
 
+  const order2 = {
+    summary: "Testing “unicode” characters",
+    amount: "TESTKUDOS:5",
+    fulfillment_url: "taler://fulfillment-success/thx",
+  };
+
+  await makeTestPayment(t, { wallet, merchant, order: order2 });
+
   await wallet.runUntilDone();
 }
 
