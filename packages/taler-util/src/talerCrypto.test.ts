@@ -27,13 +27,13 @@ import {
   keyExchangeEcdheEddsa,
   stringToBytes,
   bytesToString,
-  hash,
   deriveBSeed,
   csBlind,
-  calcS,
   csUnblind,
   csVerify,
-  CsSignature,
+  scalarMultBase25519,
+  deriveSecrets,
+  calcRBlind,
 } from "./talerCrypto.js";
 import { sha512, kdf } from "./kdf.js";
 import * as nacl from "./nacl-fast.js";
@@ -42,6 +42,7 @@ import { initNodePrng } from "./prng-node.js";
 // Since we import nacl-fast directly (and not via index.node.ts), we need to
 // init the PRNG manually.
 initNodePrng();
+import bigint from "big-integer";
 import { AssertionError } from "assert";
 
 test("encoding", (t) => {
@@ -199,6 +200,37 @@ test("taler-exchange-tvg eddsa_ecdh #2", (t) => {
 });
 
 test("taler CS blind c", async (t) => {
+  /**$
+   * Test Vectors:
+    {
+      "operation": "cs_blind_signing",
+      "message_hash": "KZ7540050MWFPPPJ6C0910TC15AWD6KN6GMK4YH8PY5Z2RKP7NQMHZ1NDD7JHD9CA2CZXDKYN7XRX521YERAF6N50VJZMHWPH18TCFG",
+      "cs_public_key": "1903SZ7QE1K8T4BHTJ32KDJ153SBXT22DGNQDY5NKJE535J72H2G",
+      "cs_private_key": "K43QAMEPE9KJJTX6AJZD6N4SN1N3ARVAXZ2MRNPT85FHD4QD2C60",
+      "cs_nonce": "GWPVFP9160XNADYQZ4T6S7RACB2482KG1JCY0X2Z5R52W74YXY3G",
+      "cs_r_priv_0": "B01FJCRCST8JM10K17SJXY7S7HH7T65JMFQ03H6PNYY9Z167Q1T0",
+      "cs_r_priv_1": "N3GW5X6VYSB8PY83CYNHJ3PN6TCA5N5BCS4WT2WEEQH7MTK915P0",
+      "cs_r_pub_0": "J5XFBKFP9T6BM02H6ZV6Y568PQ2K398MD339036F25XTSP1A7T3G",
+      "cs_r_pub_1": "GA2CZKJ6CWFS81ZN1T5R4GQFHF7XJV6HWHDR1JA9VATKKXQN89J0",
+      "cs_bs_alpha_0": "R06FWJ4XEK4JKKKA03JARGD0PD5JAX8DK2N6J0K8CAZZMVQEJ1T0",
+      "cs_bs_alpha_1": "13NXE2FEHJS0Q5XCWNRF4V1NC3BSAHN6BW02WZ07PG6967156HYG",
+      "cs_bs_beta_0": "T3EZP42RJQXRTJ4FTDWF18Z422VX7KFGN8GJ3QCCM1QV3N456HD0",
+      "cs_bs_beta_1": "P3MECYGCCR58QVEDSW443699CDXVT8C8W5ZT22PPNRJ363M72H6G",
+      "cs_r_pub_blind_0": "CHK7JC4SXZ4Y9RDA3881S82F7BP99H35Q361WR6RBXN5YN2ZM1M0",
+      "cs_r_pub_blind_1": "4C65R74GA9PPDX4DC2B948W96T3Z6QEENK2NDJQPNB9QBTKCT590",
+      "cs_c_0": "F288QXT67TR36E6DHE399G8J24RM6C3DP16HGMH74B6WZ1DETR10",
+      "cs_c_1": "EFK5WTN01NCVS3DZCG20MQDHRHBATRG8589BA0XSZDZ6D0HFR470",
+      "cs_blind_s": "6KZF904YZA8KK4C8X5JV57E7B84SR8TDDN9GDC8QTRRSNTHJTM4G",
+      "cs_b": "0000000",
+      "cs_sig_s": "F4ZKMFW3Q7DFN0N94KAMG2JFFHAC362T0QZ6ZCVZ73RS8P91CR70",
+      "cs_sig_R": "CHK7JC4SXZ4Y9RDA3881S82F7BP99H35Q361WR6RBXN5YN2ZM1M0",
+      "cs_c_blind_0": "6TN5454DZCHBDXFAGQFXQY37FNX6YRKW0MPFEX4TG5EHXC98M840",
+      "cs_c_blind_1": "EX6MYRZX6EC93YB4EE3M7AR3PQDYYG4092917YF29HD36X58NG0G",
+      "cs_prehash_0": "D29BBP762HEN6ZHZ5T2T6S4VMV400K9Y659M1QQZYZ0WJS3V3EJSF0FVXSCD1E99JJJMW295EY8TEE97YEGSGEQ0Q0A9DDMS2NCAG9R",
+      "cs_prehash_1": "9BYD02BC29ZF26BG88DWFCCENCS8CD8VZN76XP8JPWKTN9JS73MBCD0F36N0JSM223MRNJZACNYPMW23SGRHYVSP6BTT79GSSK5R228"
+    }
+   */
+
   type CsBlindSignature = {
     sBlind: Uint8Array;
     rPubBlind: Uint8Array;
@@ -206,53 +238,114 @@ test("taler CS blind c", async (t) => {
   /**
    * CS denomination keypair
    */
-  const priv = "9TM70AKDTS57AWY9JK2J4TMBTMW6K62WHHGZWYDG0VM5ABPZKD40";
-  const pub = "8GSJZ649T2PXMKZC01Y4ANNBE7MF14QVK9SQEC4E46ZHKCVG8AS0";
+  const priv = "K43QAMEPE9KJJTX6AJZD6N4SN1N3ARVAXZ2MRNPT85FHD4QD2C60";
+  const pub_cmp = "1903SZ7QE1K8T4BHTJ32KDJ153SBXT22DGNQDY5NKJE535J72H2G";
+  const pub = await scalarMultBase25519(decodeCrock(priv));
+  t.deepEqual(decodeCrock(pub_cmp), pub);
+
+  const nonce = "GWPVFP9160XNADYQZ4T6S7RACB2482KG1JCY0X2Z5R52W74YXY3G";
+  const msg_hash =
+    "KZ7540050MWFPPPJ6C0910TC15AWD6KN6GMK4YH8PY5Z2RKP7NQMHZ1NDD7JHD9CA2CZXDKYN7XRX521YERAF6N50VJZMHWPH18TCFG";
 
   /**
    * rPub is returned from the exchange's new /csr API
    */
-  const rPriv1 = "9TM70AKDTS57AWY9JK2J4TMBTMW6K62WHHGZWYDG0VM5ABPZKD41";
-  const rPriv2 = "8TM70AKDTS57AWY9JK2J4TMBTMW6K62WHHGZWYDG0VM5ABPZKD42";
-  const rPub1 = nacl.crypto_sign_keyPair_fromSeed(
-    decodeCrock(rPriv1),
-  ).publicKey;
-  const rPub2 = nacl.crypto_sign_keyPair_fromSeed(
-    decodeCrock(rPriv2),
-  ).publicKey;
-  const rPub:[Uint8Array,Uint8Array] = [rPub1, rPub2];
+  const rPriv0 = "B01FJCRCST8JM10K17SJXY7S7HH7T65JMFQ03H6PNYY9Z167Q1T0";
+  const rPriv1 = "N3GW5X6VYSB8PY83CYNHJ3PN6TCA5N5BCS4WT2WEEQH7MTK915P0";
+  const rPub0 = await scalarMultBase25519(decodeCrock(rPriv0));
+  const rPub1 = await scalarMultBase25519(decodeCrock(rPriv1));
+
+  const rPub: [Uint8Array, Uint8Array] = [rPub0, rPub1];
+
+  t.deepEqual(
+    rPub[0],
+    decodeCrock("J5XFBKFP9T6BM02H6ZV6Y568PQ2K398MD339036F25XTSP1A7T3G"),
+  );
+  t.deepEqual(
+    rPub[1],
+    decodeCrock("GA2CZKJ6CWFS81ZN1T5R4GQFHF7XJV6HWHDR1JA9VATKKXQN89J0"),
+  );
 
   /**
-   * Coin key pair
+   * Test if blinding seed derivation is deterministic
+   * In the wallet the b-seed MUST be different from the Withdraw-Nonce or Refresh Nonce!
+   * (Eg. derive two different values from coin priv) -> See CS protocols for details
    */
   const priv_eddsa = "1KG54M8T3X8BSFSZXCR3SQBSR7Y9P53NX61M864S7TEVMJ2XVPF0";
-  const pub_eddsa = eddsaGetPublic(decodeCrock(priv_eddsa));
+  // const pub_eddsa = eddsaGetPublic(decodeCrock(priv_eddsa));
+  const bseed1 = deriveBSeed(decodeCrock(priv_eddsa), rPub);
+  const bseed2 = deriveBSeed(decodeCrock(priv_eddsa), rPub);
+  t.deepEqual(bseed1, bseed2);
 
-  const bseed = deriveBSeed(decodeCrock(priv_eddsa), [rPub1, rPub2]);
+  /**
+   * In this scenario the nonce from the test vectors is used as b-seed and refresh.
+   * This is only used in testing to test functionality.
+   * DO NOT USE the same values for blinding-seed and nonce anywhere else.
+   *
+   * Tests whether the blinding secrets are derived as in the exchange implementation
+   */
+  const bseed = decodeCrock(nonce);
+  const secrets = deriveSecrets(bseed);
+  t.deepEqual(
+    secrets.alpha[0],
+    decodeCrock("R06FWJ4XEK4JKKKA03JARGD0PD5JAX8DK2N6J0K8CAZZMVQEJ1T0"),
+  );
+  t.deepEqual(
+    secrets.alpha[1],
+    decodeCrock("13NXE2FEHJS0Q5XCWNRF4V1NC3BSAHN6BW02WZ07PG6967156HYG"),
+  );
+  t.deepEqual(
+    secrets.beta[0],
+    decodeCrock("T3EZP42RJQXRTJ4FTDWF18Z422VX7KFGN8GJ3QCCM1QV3N456HD0"),
+  );
+  t.deepEqual(
+    secrets.beta[1],
+    decodeCrock("P3MECYGCCR58QVEDSW443699CDXVT8C8W5ZT22PPNRJ363M72H6G"),
+  );
 
-  // Check that derivation is deterministic
-  const bseed2 = deriveBSeed(decodeCrock(priv_eddsa), [rPub1, rPub2]);
-  t.deepEqual(bseed, bseed2);
+  const rBlind = calcRBlind(pub, secrets, rPub);
+  t.deepEqual(
+    rBlind[0],
+    decodeCrock("CHK7JC4SXZ4Y9RDA3881S82F7BP99H35Q361WR6RBXN5YN2ZM1M0"),
+  );
+  t.deepEqual(
+    rBlind[1],
+    decodeCrock("4C65R74GA9PPDX4DC2B948W96T3Z6QEENK2NDJQPNB9QBTKCT590"),
+  );
 
-  const coinPubHash = hash(pub_eddsa);
+  const c = await csBlind(bseed, rPub, pub, decodeCrock(msg_hash));
+  t.deepEqual(
+    c[0],
+    decodeCrock("F288QXT67TR36E6DHE399G8J24RM6C3DP16HGMH74B6WZ1DETR10"),
+  );
+  t.deepEqual(
+    c[1],
+    decodeCrock("EFK5WTN01NCVS3DZCG20MQDHRHBATRG8589BA0XSZDZ6D0HFR470"),
+  );
 
-  const c = await csBlind(bseed, [rPub1, rPub2], decodeCrock(pub), coinPubHash);
-
-  const b = Buffer.from(kdf(1, decodeCrock(priv), new Uint8Array(),new Uint8Array())).readUInt8() % 2;
-  if(b !=1 && b !=0){
-    throw new AssertionError();
+  const lMod = Array.from(
+    new Uint8Array([
+      0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x14, 0xde, 0xf9, 0xde, 0xa2, 0xf7, 0x9c, 0xd6,
+      0x58, 0x12, 0x63, 0x1a, 0x5c, 0xf5, 0xd3, 0xed,
+    ]),
+  );
+  const L = bigint.fromArray(lMod, 256, false).toString();
+  //Lmod needs to be 2^252+27742317777372353535851937790883648493
+  if (!L.startsWith("723700")) {
+    throw new AssertionError({ message: L });
   }
-  const blindsig: CsBlindSignature ={
-    sBlind: await calcS(rPub[b],c[b],decodeCrock(priv)),
+
+  const b = 0;
+  const blindsig: CsBlindSignature = {
+    sBlind: decodeCrock("6KZF904YZA8KK4C8X5JV57E7B84SR8TDDN9GDC8QTRRSNTHJTM4G"),
     rPubBlind: rPub[b],
   };
-  const sigblindsig: CsSignature = {
-    s: blindsig.sBlind,
-    rPub: blindsig.rPubBlind,
-  };
 
-  const sig = await csUnblind(bseed,rPub, decodeCrock(pub),b,blindsig);
-  
-  //const res = await csVerify(coinPubHash, sig, decodeCrock(pub));
+  const sig = await csUnblind(bseed, rPub, pub, b, blindsig);
+  t.deepEqual(sig.s, decodeCrock("F4ZKMFW3Q7DFN0N94KAMG2JFFHAC362T0QZ6ZCVZ73RS8P91CR70"));
+  t.deepEqual(sig.rPub, decodeCrock("CHK7JC4SXZ4Y9RDA3881S82F7BP99H35Q361WR6RBXN5YN2ZM1M0"));
+
+  const res = await csVerify(decodeCrock(msg_hash), sig, pub);
   t.deepEqual(res, true);
 });
