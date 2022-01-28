@@ -102,7 +102,7 @@ export function AuthenticationEditorScreen(): VNode {
           <ConfirmModal
             active
             onCancel={cancel}
-            description="No providers founds"
+            description="No providers found"
             label="Add a provider manually"
             onConfirm={async () => {
               setManageProvider(selectedMethod);
@@ -196,7 +196,7 @@ export function AuthenticationEditorScreen(): VNode {
             <ConfirmModal
               active={!noProvidersAck}
               onCancel={() => setNoProvidersAck(true)}
-              description="No providers founds"
+              description="No providers found"
               label="Add a provider manually"
               onConfirm={async () => {
                 setManageProvider("");

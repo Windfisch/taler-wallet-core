@@ -132,7 +132,7 @@ export function HistoryView({
     return (
       <WarningBox>
         <p>
-          You have <b>no balance</b>. Withdraw some founds into your wallet
+          You have <b>no balance</b>. Withdraw some funds into your wallet
         </p>
         <ButtonBoxWarning onClick={() => goToWalletManualWithdraw()}>
           Withdraw
