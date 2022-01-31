@@ -357,7 +357,7 @@ export function PaymentRequestView({
             kind="neutral"
           />
         )}
-        {contractTerms.products && (
+        {contractTerms.products && contractTerms.products.length > 0 && (
           <ProductList products={contractTerms.products} />
         )}
       </section>

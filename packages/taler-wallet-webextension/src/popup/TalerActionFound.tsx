@@ -29,6 +29,24 @@ export interface Props {
   onDismiss: () => void;
 }
 
+async function getCurrentTab(): Promise<chrome.tabs.Tab> {
+  let queryOptions = { active: true, currentWindow: true };
+  const tab = await new Promise<chrome.tabs.Tab>((res, rej) => {
+    chrome.tabs.query(queryOptions, (tabs) => {
+      res(tabs[0]);
+    });
+  });
+  return tab;
+}
+
+async function navigateTo(url?: string) {
+  if (!url) return;
+  const tab = await getCurrentTab();
+  if (!tab.id) return;
+  await chrome.tabs.update(tab.id, { url });
+  window.close();
+}
+
 export function TalerActionFound({ url, onDismiss }: Props) {
   const uriType = classifyTalerUri(url);
   return (
@@ -40,7 +58,7 @@ export function TalerActionFound({ url, onDismiss }: Props) {
             <p>This page has pay action.</p>
             <ButtonSuccess
               onClick={() => {
-                chrome.tabs.create({ url: actionForTalerUri(uriType, url) });
+                navigateTo(actionForTalerUri(uriType, url));
               }}
             >
               Open pay page
@@ -52,7 +70,7 @@ export function TalerActionFound({ url, onDismiss }: Props) {
             <p>This page has a withdrawal action.</p>
             <ButtonSuccess
               onClick={() => {
-                chrome.tabs.create({ url: actionForTalerUri(uriType, url) });
+                navigateTo(actionForTalerUri(uriType, url));
               }}
             >
               Open withdraw page
@@ -64,7 +82,7 @@ export function TalerActionFound({ url, onDismiss }: Props) {
             <p>This page has a tip action.</p>
             <ButtonSuccess
               onClick={() => {
-                chrome.tabs.create({ url: actionForTalerUri(uriType, url) });
+                navigateTo(actionForTalerUri(uriType, url));
               }}
             >
               Open tip page
@@ -76,7 +94,7 @@ export function TalerActionFound({ url, onDismiss }: Props) {
             <p>This page has a notify reserve action.</p>
             <ButtonSuccess
               onClick={() => {
-                chrome.tabs.create({ url: actionForTalerUri(uriType, url) });
+                navigateTo(actionForTalerUri(uriType, url));
               }}
             >
               Notify
@@ -88,7 +106,7 @@ export function TalerActionFound({ url, onDismiss }: Props) {
             <p>This page has a refund action.</p>
             <ButtonSuccess
               onClick={() => {
-                chrome.tabs.create({ url: actionForTalerUri(uriType, url) });
+                navigateTo(actionForTalerUri(uriType, url));
               }}
             >
               Open refund page

@@ -8,7 +8,7 @@
     "serve": "sirv build --port ${PORT:=8080} --cors --single",
     "dev": "preact watch --port ${PORT:=8080} --no-sw --no-esm",
     "lint": "eslint 'src/**/*.{js,jsx,ts,tsx}'",
-    "test": "jest ./tests",
+    "test": "echo no tests",
     "build-storybook": "build-storybook",
     "build-single": "preact build --no-sw --no-esm -c preact.single-config.js --dest single && sh remove-link-stylesheet.sh",
     "serve-single": "sirv single --port ${PORT:=8080} --cors --single",
