@@ -40,7 +40,7 @@ import {
 } from "@gnu-taler/taler-util";
 import { OperationFailedError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { Loading } from "../components/Loading";
 import { LoadingError } from "../components/LoadingError";
 import { LogoHeader } from "../components/LogoHeader";
@@ -160,6 +160,20 @@ export function PaymentRequestView({
 }: PaymentRequestViewProps): VNode {
   let totalFees: AmountJson = Amounts.getZero(payStatus.amountRaw);
   const contractTerms: ContractTerms = payStatus.contractTerms;
+
+  useEffect(() => {
+    if (
+      payStatus.status === PreparePayResultType.AlreadyConfirmed &&
+      payStatus.paid
+    ) {
+      const fu = payStatus.contractTerms.fulfillment_url;
+      if (fu) {
+        setTimeout(() => {
+          document.location.href = fu;
+        }, 3000);
+      }
+    }
+  });
 
   if (!contractTerms) {
     return (
@@ -281,7 +295,16 @@ export function PaymentRequestView({
       <h2>{i18n.str`Digital cash payment`}</h2>
       {payStatus.status === PreparePayResultType.AlreadyConfirmed &&
         (payStatus.paid ? (
-          <SuccessBox> Already paid </SuccessBox>
+          payStatus.contractTerms.fulfillment_url ? (
+            <SuccessBox>
+              Already paid, you are going to be redirected to{" "}
+              <a href={payStatus.contractTerms.fulfillment_url}>
+                {payStatus.contractTerms.fulfillment_url}
+              </a>
+            </SuccessBox>
+          ) : (
+            <SuccessBox> Already paid </SuccessBox>
+          )
         ) : (
           <WarningBox> Already claimed </WarningBox>
         ))}
