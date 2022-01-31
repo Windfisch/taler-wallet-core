@@ -101,6 +101,11 @@ function Application(): VNode {
                     Pages.balance_manual_withdraw.replace(":currency?", ""),
                   )
                 }
+                goToWalletDeposit={(currency: string) =>
+                  goToWalletPage(
+                    Pages.balance_deposit.replace(":currency", currency),
+                  )
+                }
                 goToWalletHistory={(currency: string) =>
                   goToWalletPage(
                     Pages.balance_history.replace(":currency", currency),
@@ -167,14 +172,15 @@ function Application(): VNode {
   );
 }
 
-function goToWalletPage(page: Pages | string): null {
+async function goToWalletPage(page: Pages | string): Promise<void> {
   // eslint-disable-next-line no-undef
-  chrome.tabs.create({
+  await chrome.tabs.create({
     active: true,
     // eslint-disable-next-line no-undef
     url: chrome.runtime.getURL(`/static/wallet.html#${page}`),
   });
-  return null;
+  window.close();
+  // return null;
 }
 
 function Redirect({ to }: { to: string }): null {
