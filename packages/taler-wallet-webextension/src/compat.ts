@@ -81,6 +81,7 @@ export function getPermissionsApi(): CrossBrowserPermissionsApi {
   ) {
     return {
       addPermissionsListener: () => {
+        console.log("not supported for firefox")
         // Not supported yet.
       },
       contains: myBrowser.permissions.contains,

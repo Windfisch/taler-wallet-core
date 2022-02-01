@@ -111,7 +111,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           debitCreditIndicator={"debit"}
           title={tx.targetPaytoUri}
           timestamp={tx.timestamp}
-          iconPath={imageRefresh}
+          iconPath={imageBank}
           pending={tx.pending}
         />
       );

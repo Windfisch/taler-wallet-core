@@ -83,7 +83,7 @@ export function ProviderDetailPage({ pid: providerURL, onBack }: Props): VNode {
     <ProviderView
       info={state.response}
       onSync={async () => wxApi.syncOneProvider(providerURL)}
-      onDelete={async () => wxApi.syncOneProvider(providerURL).then(onBack)}
+      onDelete={async () => wxApi.removeProvider(providerURL).then(onBack)}
       onBack={onBack}
       onExtend={() => {
         null;

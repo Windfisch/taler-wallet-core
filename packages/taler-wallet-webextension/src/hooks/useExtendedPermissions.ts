@@ -19,11 +19,11 @@ import * as wxApi from "../wxApi";
 import { getPermissionsApi } from "../compat";
 import { getReadRequestPermissions } from "../permissions";
 
-export function useExtendedPermissions(): [boolean, () => void] {
+export function useExtendedPermissions(): [boolean, () => Promise<void>] {
   const [enabled, setEnabled] = useState(false);
 
-  const toggle = () => {
-    handleExtendedPerm(enabled, setEnabled)
+  const toggle = async () => {
+    return handleExtendedPerm(enabled, setEnabled)
   };
 
   useEffect(() => {
@@ -36,22 +36,29 @@ export function useExtendedPermissions(): [boolean, () => void] {
   return [enabled, toggle];
 }
 
-function handleExtendedPerm(isEnabled: boolean, onChange: (value: boolean) => void): void {
+async function handleExtendedPerm(isEnabled: boolean, onChange: (value: boolean) => void): Promise<void> {
   if (!isEnabled) {
     // We set permissions here, since apparently FF wants this to be done
     // as the result of an input event ...
-    getPermissionsApi().request(getReadRequestPermissions(), async (granted: boolean) => {
-      if (chrome.runtime.lastError) {
-        console.error("error requesting permissions");
-        console.error(chrome.runtime.lastError);
-        onChange(false);
-        return;
-      }
-      console.log("permissions granted:", granted);
-      const res = await wxApi.setExtendedPermissions(granted);
-      onChange(res.newValue);
-    });
-  } else {
-    wxApi.setExtendedPermissions(false).then(r => onChange(r.newValue));
+    return new Promise<void>((res) => {
+      getPermissionsApi().request(getReadRequestPermissions(), async (granted: boolean) => {
+        console.log("permissions granted:", granted);
+        if (chrome.runtime.lastError) {
+          console.error("error requesting permissions");
+          console.error(chrome.runtime.lastError);
+          onChange(false);
+          return;
+        }
+        try {
+          const res = await wxApi.setExtendedPermissions(granted);
+          onChange(res.newValue);
+        } finally {
+          res()
+        }
+
+      });
+    })
   }
+  await wxApi.setExtendedPermissions(false).then(r => onChange(r.newValue));
+  return
 }
