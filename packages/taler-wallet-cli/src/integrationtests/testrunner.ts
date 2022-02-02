@@ -14,9 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import {
-  minimatch
-} from "@gnu-taler/taler-util";
+import { minimatch } from "@gnu-taler/taler-util";
 import {
   GlobalTestState,
   runTestWithState,
@@ -88,6 +86,7 @@ import { runMerchantSpecPublicOrdersTest } from "./test-merchant-spec-public-ord
 import { runExchangeTimetravelTest } from "./test-exchange-timetravel.js";
 import { runDenomUnofferedTest } from "./test-denom-unoffered.js";
 import { runWithdrawalFakebankTest } from "./test-withdrawal-fakebank.js";
+import { runClauseSchnorrTest } from "./test-clause-schnorr.js";
 
 /**
  * Test runner.
@@ -106,6 +105,7 @@ interface TestMainFunction {
 const allTests: TestMainFunction[] = [
   runBankApiTest,
   runClaimLoopTest,
+  runClauseSchnorrTest,
   runDepositTest,
   runDenomUnofferedTest,
   runExchangeManagementTest,

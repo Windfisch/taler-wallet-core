@@ -27,7 +27,7 @@ import {
   setupDb,
   BankService,
   delayMs,
-  getPayto
+  getPayto,
 } from "../harness/harness.js";
 import {
   withdrawViaBank,
@@ -97,6 +97,7 @@ async function createTestEnvironment(
   await bank.pingUntilAvailable();
 
   const coin_u1: CoinConfig = {
+    cipher: "RSA" as const,
     durationLegal: "3 years",
     durationSpend: "2 years",
     durationWithdraw: "7 days",

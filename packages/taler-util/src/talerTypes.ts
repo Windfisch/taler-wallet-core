@@ -1123,7 +1123,8 @@ export interface RsaDenominationPubKey {
 
 export interface CsDenominationPubKey {
   cipher: DenomKeyType.ClauseSchnorr;
-  // FIXME: finish definition
+  age_mask: number;
+  cs_public_key: string;
 }
 
 export namespace DenominationPubKey {
@@ -1151,6 +1152,16 @@ export namespace DenominationPubKey {
         return 1;
       }
       return strcmp(p1.rsa_public_key, p2.rsa_public_key);
+    } else if (
+      p1.cipher === DenomKeyType.ClauseSchnorr &&
+      p2.cipher === DenomKeyType.ClauseSchnorr
+    ) {
+      if ((p1.age_mask ?? 0) < (p2.age_mask ?? 0)) {
+        return -1;
+      } else if ((p1.age_mask ?? 0) > (p2.age_mask ?? 0)) {
+        return 1;
+      }
+      return strcmp(p1.cs_public_key, p2.cs_public_key);
     } else {
       throw Error("unsupported cipher");
     }
@@ -1171,6 +1182,7 @@ export const codecForDenominationPubKey = () =>
   buildCodecForUnion<DenominationPubKey>()
     .discriminateOn("cipher")
     .alternative(1, codecForRsaDenominationPubKey())
+    .alternative(2, codecForCsDenominationPubKey())
     .alternative(3, codecForLegacyRsaDenominationPubKey())
     .build("DenominationPubKey");
 
@@ -1185,6 +1197,12 @@ export const codecForLegacyRsaDenominationPubKey = () =>
     .property("cipher", codecForConstNumber(3))
     .property("rsa_public_key", codecForString())
     .build("LegacyRsaDenominationPubKey");
+
+export const codecForCsDenominationPubKey = () =>
+  buildCodecForObject<CsDenominationPubKey>()
+    .property("cipher", codecForConstNumber(2))
+    .property("cs_public_key", codecForString())
+    .build("CsDenominationPubKey");
 
 export const codecForBankWithdrawalOperationPostResponse =
   (): Codec<BankWithdrawalOperationPostResponse> =>

@@ -616,8 +616,21 @@ export function hashDenomPub(pub: DenominationPubKey): Uint8Array {
     return nacl.hash(uint8ArrayBuf);
   } else if (pub.cipher === DenomKeyType.LegacyRsa) {
     return hash(decodeCrock(pub.rsa_public_key));
+  } else if (pub.cipher === DenomKeyType.ClauseSchnorr) {
+    const pubBuf = decodeCrock(pub.cs_public_key);
+    const hashInputBuf = new ArrayBuffer(pubBuf.length + 4 + 4);
+    const uint8ArrayBuf = new Uint8Array(hashInputBuf);
+    const dv = new DataView(hashInputBuf);
+    dv.setUint32(0, pub.age_mask ?? 0);
+    dv.setUint32(4, pub.cipher);
+    uint8ArrayBuf.set(pubBuf, 8);
+    return nacl.hash(uint8ArrayBuf);
   } else {
-    throw Error(`unsupported cipher (${pub.cipher}), unable to hash`);
+    throw Error(
+      `unsupported cipher (${
+        (pub as DenominationPubKey).cipher
+      }), unable to hash`,
+    );
   }
 }
 

@@ -76,6 +76,7 @@ export async function createMyTestkudosEnvironment(
   await bank.pingUntilAvailable();
 
   const coinCommon = {
+    cipher: "RSA" as const,
     durationLegal: "3 years",
     durationSpend: "2 years",
     durationWithdraw: "7 days",

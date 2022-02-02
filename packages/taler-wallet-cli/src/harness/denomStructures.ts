@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-export interface CoinConfig {
+export interface CoinCoinfigCommon {
   name: string;
   value: string;
   durationWithdraw: string;
@@ -24,10 +24,24 @@ export interface CoinConfig {
   feeDeposit: string;
   feeRefresh: string;
   feeRefund: string;
+}
+
+export interface CoinConfigRsa extends CoinCoinfigCommon {
+  cipher: "RSA";
   rsaKeySize: number;
 }
 
-const coinCommon = {
+/**
+ * Clause Schnorr coin config.
+ */
+export interface CoinConfigCs extends CoinCoinfigCommon {
+  cipher: "CS";
+}
+
+export type CoinConfig = CoinConfigRsa | CoinConfigCs;
+
+const coinRsaCommon = {
+  cipher: "RSA" as const,
   durationLegal: "3 years",
   durationSpend: "2 years",
   durationWithdraw: "7 days",
@@ -35,7 +49,7 @@ const coinCommon = {
 };
 
 export const coin_ct1 = (curr: string): CoinConfig => ({
-  ...coinCommon,
+  ...coinRsaCommon,
   name: `${curr}_ct1`,
   value: `${curr}:0.01`,
   feeDeposit: `${curr}:0.00`,
@@ -45,7 +59,7 @@ export const coin_ct1 = (curr: string): CoinConfig => ({
 });
 
 export const coin_ct10 = (curr: string): CoinConfig => ({
-  ...coinCommon,
+  ...coinRsaCommon,
   name: `${curr}_ct10`,
   value: `${curr}:0.10`,
   feeDeposit: `${curr}:0.01`,
@@ -55,7 +69,7 @@ export const coin_ct10 = (curr: string): CoinConfig => ({
 });
 
 export const coin_u1 = (curr: string): CoinConfig => ({
-  ...coinCommon,
+  ...coinRsaCommon,
   name: `${curr}_u1`,
   value: `${curr}:1`,
   feeDeposit: `${curr}:0.02`,
@@ -65,7 +79,7 @@ export const coin_u1 = (curr: string): CoinConfig => ({
 });
 
 export const coin_u2 = (curr: string): CoinConfig => ({
-  ...coinCommon,
+  ...coinRsaCommon,
   name: `${curr}_u2`,
   value: `${curr}:2`,
   feeDeposit: `${curr}:0.02`,
@@ -75,7 +89,7 @@ export const coin_u2 = (curr: string): CoinConfig => ({
 });
 
 export const coin_u4 = (curr: string): CoinConfig => ({
-  ...coinCommon,
+  ...coinRsaCommon,
   name: `${curr}_u4`,
   value: `${curr}:4`,
   feeDeposit: `${curr}:0.02`,
@@ -85,7 +99,7 @@ export const coin_u4 = (curr: string): CoinConfig => ({
 });
 
 export const coin_u8 = (curr: string): CoinConfig => ({
-  ...coinCommon,
+  ...coinRsaCommon,
   name: `${curr}_u8`,
   value: `${curr}:8`,
   feeDeposit: `${curr}:0.16`,
@@ -95,7 +109,7 @@ export const coin_u8 = (curr: string): CoinConfig => ({
 });
 
 const coin_u10 = (curr: string): CoinConfig => ({
-  ...coinCommon,
+  ...coinRsaCommon,
   name: `${curr}_u10`,
   value: `${curr}:10`,
   feeDeposit: `${curr}:0.2`,
@@ -114,16 +128,6 @@ export const defaultCoinConfig = [
   coin_u10,
 ];
 
-const coinCheapCommon = (curr: string) => ({
-  durationLegal: "3 years",
-  durationSpend: "2 years",
-  durationWithdraw: "7 days",
-  rsaKeySize: 1024,
-  feeRefresh: `${curr}:0.2`,
-  feeRefund: `${curr}:0.2`,
-  feeWithdraw: `${curr}:0.2`,
-});
-
 export function makeNoFeeCoinConfig(curr: string): CoinConfig[] {
   const cc: CoinConfig[] = [];
 
@@ -134,6 +138,7 @@ export function makeNoFeeCoinConfig(curr: string): CoinConfig[] {
     const cent = ct % 100;
 
     cc.push({
+      cipher: "RSA",
       durationLegal: "3 years",
       durationSpend: "2 years",
       durationWithdraw: "7 days",

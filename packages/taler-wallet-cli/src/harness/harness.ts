@@ -430,7 +430,14 @@ function setCoin(config: Configuration, c: CoinConfig) {
   config.setString(s, "fee_withdraw", c.feeWithdraw);
   config.setString(s, "fee_refresh", c.feeRefresh);
   config.setString(s, "fee_refund", c.feeRefund);
-  config.setString(s, "rsa_keysize", `${c.rsaKeySize}`);
+  if (c.cipher === "RSA") {
+    config.setString(s, "rsa_keysize", `${c.rsaKeySize}`);
+    config.setString(s, "cipher", "RSA");
+  } else if (c.cipher === "CS") {
+    config.setString(s, "cipher", "CS");
+  } else {
+    throw new Error();
+  }
 }
 
 /**
@@ -1328,6 +1335,7 @@ export class ExchangeService implements ExchangeServiceInterface {
 
   helperCryptoRsaProc: ProcessWrapper | undefined;
   helperCryptoEddsaProc: ProcessWrapper | undefined;
+  helperCryptoCsProc: ProcessWrapper | undefined;
 
   constructor(
     private globalState: GlobalTestState,
@@ -1372,6 +1380,12 @@ export class ExchangeService implements ExchangeServiceInterface {
       cryptoEddsa.proc.kill("SIGTERM");
       await cryptoEddsa.wait();
       this.helperCryptoRsaProc = undefined;
+    }
+    const cryptoCs = this.helperCryptoCsProc;
+    if (cryptoCs) {
+      cryptoCs.proc.kill("SIGTERM");
+      await cryptoCs.wait();
+      this.helperCryptoCsProc = undefined;
     }
   }
 
@@ -1489,6 +1503,12 @@ export class ExchangeService implements ExchangeServiceInterface {
       "taler-exchange-secmod-eddsa",
       ["-c", this.configFilename, "-LDEBUG", ...this.timetravelArgArr],
       `exchange-crypto-eddsa-${this.name}`,
+    );
+
+    this.helperCryptoCsProc = this.globalState.spawnService(
+      "taler-exchange-secmod-cs",
+      ["-c", this.configFilename, "-LDEBUG", ...this.timetravelArgArr],
+      `exchange-crypto-cs-${this.name}`,
     );
 
     this.helperCryptoRsaProc = this.globalState.spawnService(
