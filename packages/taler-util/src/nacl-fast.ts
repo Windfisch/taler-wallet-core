@@ -24,94 +24,24 @@ const gf0 = gf();
 const gf1 = gf([1]);
 const _121665 = gf([0xdb41, 1]);
 const D = gf([
-  0x78a3,
-  0x1359,
-  0x4dca,
-  0x75eb,
-  0xd8ab,
-  0x4141,
-  0x0a4d,
-  0x0070,
-  0xe898,
-  0x7779,
-  0x4079,
-  0x8cc7,
-  0xfe73,
-  0x2b6f,
-  0x6cee,
-  0x5203,
+  0x78a3, 0x1359, 0x4dca, 0x75eb, 0xd8ab, 0x4141, 0x0a4d, 0x0070, 0xe898,
+  0x7779, 0x4079, 0x8cc7, 0xfe73, 0x2b6f, 0x6cee, 0x5203,
 ]);
 const D2 = gf([
-  0xf159,
-  0x26b2,
-  0x9b94,
-  0xebd6,
-  0xb156,
-  0x8283,
-  0x149a,
-  0x00e0,
-  0xd130,
-  0xeef3,
-  0x80f2,
-  0x198e,
-  0xfce7,
-  0x56df,
-  0xd9dc,
-  0x2406,
+  0xf159, 0x26b2, 0x9b94, 0xebd6, 0xb156, 0x8283, 0x149a, 0x00e0, 0xd130,
+  0xeef3, 0x80f2, 0x198e, 0xfce7, 0x56df, 0xd9dc, 0x2406,
 ]);
 const X = gf([
-  0xd51a,
-  0x8f25,
-  0x2d60,
-  0xc956,
-  0xa7b2,
-  0x9525,
-  0xc760,
-  0x692c,
-  0xdc5c,
-  0xfdd6,
-  0xe231,
-  0xc0a4,
-  0x53fe,
-  0xcd6e,
-  0x36d3,
-  0x2169,
+  0xd51a, 0x8f25, 0x2d60, 0xc956, 0xa7b2, 0x9525, 0xc760, 0x692c, 0xdc5c,
+  0xfdd6, 0xe231, 0xc0a4, 0x53fe, 0xcd6e, 0x36d3, 0x2169,
 ]);
 const Y = gf([
-  0x6658,
-  0x6666,
-  0x6666,
-  0x6666,
-  0x6666,
-  0x6666,
-  0x6666,
-  0x6666,
-  0x6666,
-  0x6666,
-  0x6666,
-  0x6666,
-  0x6666,
-  0x6666,
-  0x6666,
-  0x6666,
+  0x6658, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666,
+  0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666,
 ]);
 const I = gf([
-  0xa0b0,
-  0x4a0e,
-  0x1b27,
-  0xc4ee,
-  0xe478,
-  0xad2f,
-  0x1806,
-  0x2f43,
-  0xd7a7,
-  0x3dfb,
-  0x0099,
-  0x2b4d,
-  0xdf0b,
-  0x4fc1,
-  0x2480,
-  0x2b83,
+  0xa0b0, 0x4a0e, 0x1b27, 0xc4ee, 0xe478, 0xad2f, 0x1806, 0x2f43, 0xd7a7,
+  0x3dfb, 0x0099, 0x2b4d, 0xdf0b, 0x4fc1, 0x2480, 0x2b83,
 ]);
 
 function ts64(x: Uint8Array, i: number, h: number, l: number): void {
@@ -653,22 +583,7 @@ function core_hsalsa20(
 }
 
 var sigma = new Uint8Array([
-  101,
-  120,
-  112,
-  97,
-  110,
-  100,
-  32,
-  51,
-  50,
-  45,
-  98,
-  121,
-  116,
-  101,
-  32,
-  107,
+  101, 120, 112, 97, 110, 100, 32, 51, 50, 45, 98, 121, 116, 101, 32, 107,
 ]);
 // "expand 32-byte k"
 
@@ -1854,6 +1769,74 @@ function crypto_scalarmult_base(q: Uint8Array, n: Uint8Array): number {
   return crypto_scalarmult(q, n, _9);
 }
 
+function crypto_scalarmult_noclamp(
+  q: Uint8Array,
+  n: Uint8Array,
+  p: Uint8Array,
+): number {
+  const z = new Uint8Array(32);
+  const x = new Float64Array(80);
+  let r;
+  let i;
+  const a = gf(),
+    b = gf(),
+    c = gf(),
+    d = gf(),
+    e = gf(),
+    f = gf();
+  for (i = 0; i < 31; i++) z[i] = n[i];
+  unpack25519(x, p);
+  for (i = 0; i < 16; i++) {
+    b[i] = x[i];
+    d[i] = a[i] = c[i] = 0;
+  }
+  a[0] = d[0] = 1;
+  for (i = 254; i >= 0; --i) {
+    r = (z[i >>> 3] >>> (i & 7)) & 1;
+    sel25519(a, b, r);
+    sel25519(c, d, r);
+    A(e, a, c);
+    Z(a, a, c);
+    A(c, b, d);
+    Z(b, b, d);
+    S(d, e);
+    S(f, a);
+    M(a, c, a);
+    M(c, b, e);
+    A(e, a, c);
+    Z(a, a, c);
+    S(b, a);
+    Z(c, d, f);
+    M(a, c, _121665);
+    A(a, a, d);
+    M(c, c, a);
+    M(a, d, f);
+    M(d, b, x);
+    S(b, e);
+    sel25519(a, b, r);
+    sel25519(c, d, r);
+  }
+  for (i = 0; i < 16; i++) {
+    x[i + 16] = a[i];
+    x[i + 32] = c[i];
+    x[i + 48] = b[i];
+    x[i + 64] = d[i];
+  }
+  const x32 = x.subarray(32);
+  const x16 = x.subarray(16);
+  inv25519(x32, x32);
+  M(x16, x16, x32);
+  pack25519(q, x16);
+  return 0;
+}
+
+export function crypto_scalarmult_base_noclamp(
+  q: Uint8Array,
+  n: Uint8Array,
+): number {
+  return crypto_scalarmult_noclamp(q, n, _9);
+}
+
 // prettier-ignore
 const K = [
   0x428a2f98, 0xd728ae22, 0x71374491, 0x23ef65cd,
@@ -2533,6 +2516,9 @@ function pack(r: Uint8Array, p: Float64Array[]): void {
   r[31] ^= par25519(tx) << 7;
 }
 
+/**
+ * Ed25519 scalar multiplication
+ */
 function scalarmult(p: Float64Array[], q: Float64Array[], s: Uint8Array): void {
   let b, i;
   set25519(p[0], gf0);
@@ -2579,38 +2565,8 @@ function crypto_sign_keypair(
 }
 
 const L = new Float64Array([
-  0xed,
-  0xd3,
-  0xf5,
-  0x5c,
-  0x1a,
-  0x63,
-  0x12,
-  0x58,
-  0xd6,
-  0x9c,
-  0xf7,
-  0xa2,
-  0xde,
-  0xf9,
-  0xde,
-  0x14,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0x10,
+  0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde,
+  0xf9, 0xde, 0x14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10,
 ]);
 
 function modL(r: Uint8Array, x: Float64Array): void {
@@ -2689,6 +2645,18 @@ function crypto_sign(
   return smlen;
 }
 
+function unpackpos(r: Float64Array[], p: Uint8Array): number {
+  // FIXME: implement directly
+  const q = [gf(), gf(), gf(), gf()];
+  if (unpackneg(q, p)) return -1;
+  const scalar0 = new Uint8Array(32);
+  const scalar1 = new Uint8Array(32);
+  scalar1[0] = 1;
+  const scalarNeg1 = crypto_core_ed25519_scalar_sub(scalar0, scalar1);
+  scalarmult(r, q, scalarNeg1);
+  return 0;
+}
+
 function unpackneg(r: Float64Array[], p: Uint8Array): number {
   const t = gf();
   const chk = gf();
@@ -2729,6 +2697,45 @@ function unpackneg(r: Float64Array[], p: Uint8Array): number {
 
   M(r[3], r[0], r[1]);
   return 0;
+}
+
+export function crypto_scalarmult_ed25519_base_noclamp(
+  s: Uint8Array,
+): Uint8Array {
+  const r = new Uint8Array(32);
+  const p = [gf(), gf(), gf(), gf()];
+
+  scalarbase(p, s);
+  pack(r, p);
+  return r;
+}
+
+export function crypto_scalarmult_ed25519_noclamp(
+  s: Uint8Array,
+  q: Uint8Array,
+): Uint8Array {
+  const r = new Uint8Array(32);
+  const p = [gf(), gf(), gf(), gf()];
+  const ql = [gf(), gf(), gf(), gf()];
+
+  if (unpackpos(ql, q)) throw new Error();
+  scalarmult(p, ql, s);
+  pack(r, p);
+  return r;
+}
+
+export function crypto_core_ed25519_add(
+  p1: Uint8Array,
+  p2: Uint8Array,
+): Uint8Array {
+  const q1 = [gf(), gf(), gf(), gf()];
+  const q2 = [gf(), gf(), gf(), gf()];
+  const res = new Uint8Array(32);
+  if (unpackpos(q1, p1)) throw new Error();
+  if (unpackpos(q2, p2)) throw new Error();
+  add(q1, q2);
+  pack(res, q1);
+  return res;
 }
 
 function crypto_sign_open(
@@ -2905,9 +2912,7 @@ export function x25519_edwards_keyPair_fromSecretKey(
   return pk;
 }
 
-export function crypto_sign_keyPair_fromSecretKey(
-  secretKey: Uint8Array,
-): {
+export function crypto_sign_keyPair_fromSecretKey(secretKey: Uint8Array): {
   publicKey: Uint8Array;
   secretKey: Uint8Array;
 } {
@@ -2919,9 +2924,7 @@ export function crypto_sign_keyPair_fromSecretKey(
   return { publicKey: pk, secretKey: new Uint8Array(secretKey) };
 }
 
-export function crypto_sign_keyPair_fromSeed(
-  seed: Uint8Array,
-): {
+export function crypto_sign_keyPair_fromSeed(seed: Uint8Array): {
   publicKey: Uint8Array;
   secretKey: Uint8Array;
 } {
@@ -3015,4 +3018,30 @@ export function secretbox_open(
   if (c.length < 32) return undefined;
   if (crypto_secretbox_open(m, c, c.length, nonce, key) !== 0) return undefined;
   return m.subarray(crypto_secretbox_ZEROBYTES);
+}
+
+export function crypto_core_ed25519_scalar_add(
+  x: Uint8Array,
+  y: Uint8Array,
+): Uint8Array {
+  const z = new Float64Array(64);
+  for (let i = 0; i < 32; i++) {
+    z[i] = x[i] + y[i];
+  }
+  const o = new Uint8Array(32);
+  modL(o, z);
+  return o;
+}
+
+export function crypto_core_ed25519_scalar_sub(
+  x: Uint8Array,
+  y: Uint8Array,
+): Uint8Array {
+  const z = new Float64Array(64);
+  for (let i = 0; i < 32; i++) {
+    z[i] = x[i] - y[i];
+  }
+  const o = new Uint8Array(32);
+  modL(o, z);
+  return o;
 }

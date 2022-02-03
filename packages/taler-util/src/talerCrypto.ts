@@ -24,7 +24,6 @@
 import * as nacl from "./nacl-fast.js";
 import { kdf } from "./kdf.js";
 import bigint from "big-integer";
-import sodium from "libsodium-wrappers-sumo";
 import { DenominationPubKey, DenomKeyType } from "./talerTypes.js";
 import { AssertionError, equal } from "assert";
 
@@ -410,13 +409,12 @@ export function deriveSecrets(bseed: Uint8Array): CsBlindingSecrets {
 }
 
 /**
- * Used for testing, simple scalar multiplication with base point of Cuve25519
+ * Used for testing, simple scalar multiplication with base point of Ed25519
  * @param s scalar
  * @returns new point sG
  */
 export async function scalarMultBase25519(s: Uint8Array): Promise<Uint8Array> {
-  await sodium.ready;
-  return sodium.crypto_scalarmult_ed25519_base_noclamp(s);
+  return nacl.crypto_scalarmult_ed25519_base_noclamp(s);
 }
 
 /**
@@ -425,22 +423,22 @@ export async function scalarMultBase25519(s: Uint8Array): Promise<Uint8Array> {
  * @param secrets client blinding secrets
  * @param rPub public R received from /csr API
  */
-export function calcRBlind(
+export async function calcRBlind(
   csPub: Uint8Array,
   secrets: CsBlindingSecrets,
   rPub: [Uint8Array, Uint8Array],
-): [Uint8Array, Uint8Array] {
-  const aG0 = sodium.crypto_scalarmult_ed25519_base_noclamp(secrets.alpha[0]);
-  const aG1 = sodium.crypto_scalarmult_ed25519_base_noclamp(secrets.alpha[1]);
+): Promise<[Uint8Array, Uint8Array]> {
+  const aG0 = nacl.crypto_scalarmult_ed25519_base_noclamp(secrets.alpha[0]);
+  const aG1 = nacl.crypto_scalarmult_ed25519_base_noclamp(secrets.alpha[1]);
 
-  const bDp0 = sodium.crypto_scalarmult_ed25519_noclamp(secrets.beta[0], csPub);
-  const bDp1 = sodium.crypto_scalarmult_ed25519_noclamp(secrets.beta[1], csPub);
+  const bDp0 = nacl.crypto_scalarmult_ed25519_noclamp(secrets.beta[0], csPub);
+  const bDp1 = nacl.crypto_scalarmult_ed25519_noclamp(secrets.beta[1], csPub);
 
-  const res0 = sodium.crypto_core_ed25519_add(aG0, bDp0);
-  const res1 = sodium.crypto_core_ed25519_add(aG1, bDp1);
+  const res0 = nacl.crypto_core_ed25519_add(aG0, bDp0);
+  const res1 = nacl.crypto_core_ed25519_add(aG1, bDp1);
   return [
-    sodium.crypto_core_ed25519_add(rPub[0], res0),
-    sodium.crypto_core_ed25519_add(rPub[1], res1),
+    nacl.crypto_core_ed25519_add(rPub[0], res0),
+    nacl.crypto_core_ed25519_add(rPub[1], res1),
   ];
 }
 
@@ -466,7 +464,7 @@ function csFDH(
   const L = bigint.fromArray(lMod, 256, false);
 
   const info = stringToBytes("Curve25519FDH");
-  const preshash = sodium.crypto_hash_sha512(typedArrayConcat([rPub, hm]));
+  const preshash = nacl.hash(typedArrayConcat([rPub, hm]));
   return csKdfMod(L, preshash, csPub, info).reverse();
 }
 
@@ -514,14 +512,13 @@ export async function csBlind(
   csPub: Uint8Array,
   hm: Uint8Array,
 ): Promise<[Uint8Array, Uint8Array]> {
-  await sodium.ready;
   const secrets = deriveSecrets(bseed);
-  const rPubBlind = calcRBlind(csPub, secrets, rPub);
+  const rPubBlind = await calcRBlind(csPub, secrets, rPub);
   const c_0 = csFDH(hm, rPubBlind[0], csPub);
   const c_1 = csFDH(hm, rPubBlind[1], csPub);
   return [
-    sodium.crypto_core_ed25519_scalar_add(c_0, secrets.beta[0]),
-    sodium.crypto_core_ed25519_scalar_add(c_1, secrets.beta[1]),
+    nacl.crypto_core_ed25519_scalar_add(c_0, secrets.beta[0]),
+    nacl.crypto_core_ed25519_scalar_add(c_1, secrets.beta[1]),
   ];
 }
 
@@ -544,11 +541,10 @@ export async function csUnblind(
   if (b != 0 && b != 1) {
     throw new AssertionError();
   }
-  await sodium.ready;
   const secrets = deriveSecrets(bseed);
-  const rPubDash = calcRBlind(csPub, secrets, rPub)[b];
+  const rPubDash = (await calcRBlind(csPub, secrets, rPub))[b];
   const sig: CsSignature = {
-    s: sodium.crypto_core_ed25519_scalar_add(csSig.sBlind, secrets.alpha[b]),
+    s: nacl.crypto_core_ed25519_scalar_add(csSig.sBlind, secrets.alpha[b]),
     rPub: rPubDash,
   };
   return sig;
@@ -566,12 +562,11 @@ export async function csVerify(
   csSig: CsSignature,
   csPub: Uint8Array,
 ): Promise<boolean> {
-  await sodium.ready;
   const cDash = csFDH(hm, csSig.rPub, csPub);
-  const sG = sodium.crypto_scalarmult_ed25519_base_noclamp(csSig.s);
-  const cbDp = sodium.crypto_scalarmult_ed25519_noclamp(cDash, csPub);
-  const sGeq = sodium.crypto_core_ed25519_add(csSig.rPub, cbDp);
-  return sodium.memcmp(sG, sGeq);
+  const sG = nacl.crypto_scalarmult_ed25519_base_noclamp(csSig.s);
+  const cbDp = nacl.crypto_scalarmult_ed25519_noclamp(cDash, csPub);
+  const sGeq = nacl.crypto_core_ed25519_add(csSig.rPub, cbDp);
+  return nacl.verify(sG, sGeq);
 }
 
 export interface EddsaKeyPair {

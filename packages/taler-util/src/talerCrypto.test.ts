@@ -303,7 +303,7 @@ test("taler CS blind c", async (t) => {
     decodeCrock("P3MECYGCCR58QVEDSW443699CDXVT8C8W5ZT22PPNRJ363M72H6G"),
   );
 
-  const rBlind = calcRBlind(pub, secrets, rPub);
+  const rBlind = await calcRBlind(pub, secrets, rPub);
   t.deepEqual(
     rBlind[0],
     decodeCrock("CHK7JC4SXZ4Y9RDA3881S82F7BP99H35Q361WR6RBXN5YN2ZM1M0"),

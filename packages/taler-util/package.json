@@ -32,7 +32,6 @@
     "pretty": "prettier --write src"
   },
   "devDependencies": {
-    "@types/libsodium-wrappers-sumo": "^0.7.5",
     "@types/node": "^17.0.8",
     "ava": "^4.0.0",
     "esbuild": "^0.14.10",
@@ -43,7 +42,6 @@
   "dependencies": {
     "big-integer": "^1.6.51",
     "jed": "^1.1.1",
-    "libsodium-wrappers-sumo": "^0.7.9",
     "tslib": "^2.3.1"
   },
   "ava": {
