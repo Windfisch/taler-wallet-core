@@ -16,8 +16,7 @@
     "scripting"
   ],
   "optional_permissions": [
-    "webRequest",
-    "webRequestBlocking"
+    "webRequest"
   ],
   "host_permissions": [
     "http://*/*",
