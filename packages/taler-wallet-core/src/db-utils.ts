@@ -168,6 +168,12 @@ export async function openTalerDatabase(
   return new DbAccess(mainDbHandle, WalletStoresV1);
 }
 
-export function deleteTalerDatabase(idbFactory: IDBFactory): void {
-  idbFactory.deleteDatabase(TALER_DB_NAME);
+export async function deleteTalerDatabase(
+  idbFactory: IDBFactory,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const req = idbFactory.deleteDatabase(TALER_DB_NAME);
+    req.onerror = () => reject(req.error);
+    req.onsuccess = () => resolve();
+  });
 }

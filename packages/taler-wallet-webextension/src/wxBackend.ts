@@ -30,12 +30,17 @@ import {
   NotificationType,
   TalerErrorCode,
   TalerUriType,
-  WalletDiagnostics
+  WalletDiagnostics,
 } from "@gnu-taler/taler-util";
 import {
-  DbAccess, deleteTalerDatabase, makeErrorDetails, OpenedPromise,
+  DbAccess,
+  deleteTalerDatabase,
+  makeErrorDetails,
+  OpenedPromise,
   openPromise,
-  openTalerDatabase, Wallet, WalletStoresV1
+  openTalerDatabase,
+  Wallet,
+  WalletStoresV1,
 } from "@gnu-taler/taler-wallet-core";
 import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory";
 import { BrowserHttpLib } from "./browserHttpLib";
@@ -55,7 +60,7 @@ let currentWallet: Wallet | undefined;
 let currentDatabase: DbAccess<typeof WalletStoresV1> | undefined;
 
 /**
- * Last version if an outdated DB, if applicable.
+ * Last version of an outdated DB, if applicable.
  */
 let outdatedDbVersion: number | undefined;
 
@@ -128,9 +133,12 @@ async function dispatch(
     }
     case "wxGetExtendedPermissions": {
       const res = await new Promise((resolve, reject) => {
-        getPermissionsApi().contains(getReadRequestPermissions(), (result: boolean) => {
-          resolve(result);
-        });
+        getPermissionsApi().contains(
+          getReadRequestPermissions(),
+          (result: boolean) => {
+            resolve(result);
+          },
+        );
       });
       r = wrapResponse({ newValue: res });
       break;
@@ -257,19 +265,15 @@ async function reinitWallet(): Promise<void> {
   let cryptoWorker;
 
   if (chrome.runtime.getManifest().manifest_version === 3) {
-    httpLib = new ServiceWorkerHttpLib()
+    httpLib = new ServiceWorkerHttpLib();
     cryptoWorker = new SynchronousCryptoWorkerFactory();
   } else {
-    httpLib = new BrowserHttpLib()
-    cryptoWorker = new BrowserCryptoWorkerFactory()
+    httpLib = new BrowserHttpLib();
+    cryptoWorker = new BrowserCryptoWorkerFactory();
   }
 
   console.log("setting wallet");
-  const wallet = await Wallet.create(
-    currentDatabase,
-    httpLib,
-    cryptoWorker,
-  );
+  const wallet = await Wallet.create(currentDatabase, httpLib, cryptoWorker);
   try {
     await wallet.handleCoreApiRequest("initWallet", "native-init", {});
   } catch (e) {
@@ -402,30 +406,33 @@ function setupHeaderListener(): void {
   // }
   console.log("setting up header listener");
   // Handlers for catching HTTP requests
-  getPermissionsApi().contains(getReadRequestPermissions(), (result: boolean) => {
-    if (
-      "webRequest" in chrome &&
-      "onHeadersReceived" in chrome.webRequest &&
-      chrome.webRequest.onHeadersReceived.hasListener(headerListener)
-    ) {
-      chrome.webRequest.onHeadersReceived.removeListener(headerListener);
-    }
-    if (result) {
-      console.log("actually adding listener");
-      chrome.webRequest.onHeadersReceived.addListener(
-        headerListener,
-        { urls: ["<all_urls>"] },
-        ["responseHeaders"]
-      );
-    }
-    if ("webRequest" in chrome) {
-      chrome.webRequest.handlerBehaviorChanged(() => {
-        if (chrome.runtime.lastError) {
-          console.error(chrome.runtime.lastError);
-        }
-      });
-    }
-  });
+  getPermissionsApi().contains(
+    getReadRequestPermissions(),
+    (result: boolean) => {
+      if (
+        "webRequest" in chrome &&
+        "onHeadersReceived" in chrome.webRequest &&
+        chrome.webRequest.onHeadersReceived.hasListener(headerListener)
+      ) {
+        chrome.webRequest.onHeadersReceived.removeListener(headerListener);
+      }
+      if (result) {
+        console.log("actually adding listener");
+        chrome.webRequest.onHeadersReceived.addListener(
+          headerListener,
+          { urls: ["<all_urls>"] },
+          ["responseHeaders"],
+        );
+      }
+      if ("webRequest" in chrome) {
+        chrome.webRequest.handlerBehaviorChanged(() => {
+          if (chrome.runtime.lastError) {
+            console.error(chrome.runtime.lastError);
+          }
+        });
+      }
+    },
+  );
 }
 
 /**
@@ -447,7 +454,7 @@ export async function wxMain(): Promise<void> {
   chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
     afterWalletIsInitialized.then(() => {
       dispatch(req, sender, sendResponse);
-    })
+    });
     return true;
   });
 
