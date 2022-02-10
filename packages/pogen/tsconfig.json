@@ -1,13 +1,14 @@
 {
-    "compilerOptions": {
-        "module": "commonjs",
-        "target": "es5",
-        "noImplicitAny": false,
-        "sourceMap": false,
-        "outDir": "lib",
-        "incremental": true
-    },
-    "files": [
-        "pogen.ts"
-    ]
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es5",
+    "noImplicitAny": false,
+    "outDir": "lib",
+    "incremental": true,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "lib": ["es6"],
+    "types": ["node"]
+  },
+  "files": ["pogen.ts"]
 }

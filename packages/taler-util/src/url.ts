@@ -44,6 +44,10 @@ interface URLSearchParams {
     callbackfn: (value: string, key: string, parent: URLSearchParams) => void,
     thisArg?: any,
   ): void;
+  entries(): IterableIterator<[string, string]>;
+  keys(): IterableIterator<string>;
+  values(): IterableIterator<string>;
+  [Symbol.iterator](): IterableIterator<[string, string]>;
 }
 
 export interface URLSearchParamsCtor {
