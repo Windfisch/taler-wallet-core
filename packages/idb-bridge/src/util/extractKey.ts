@@ -15,8 +15,8 @@
  permissions and limitations under the License.
 */
 
-import { IDBKeyPath, IDBValidKey } from "../idbtypes";
-import { valueToKey } from "./valueToKey";
+import { IDBKeyPath, IDBValidKey } from "../idbtypes.js";
+import { valueToKey } from "./valueToKey.js";
 
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#dfn-steps-for-extracting-a-key-from-a-value-using-a-key-path
 export const extractKey = (keyPath: IDBKeyPath | IDBKeyPath[], value: any) => {

@@ -1,5 +1,5 @@
 import test from "ava";
-import { createdb } from "./wptsupport";
+import { createdb } from "./wptsupport.js";
 
 // IDBTransaction - complete event
 test("WPT idbtransaction-oncomplete.htm", async (t) => {

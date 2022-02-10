@@ -1,8 +1,5 @@
 import test, { ExecutionContext } from "ava";
-import { BridgeIDBCursor } from "..";
-import { BridgeIDBRequest } from "../bridge-idb";
-import { InvalidStateError } from "../util/errors";
-import { createdb, indexeddb_test } from "./wptsupport";
+import { indexeddb_test } from "./wptsupport.js";
 
 async function t1(t: ExecutionContext, method: string): Promise<void> {
   await indexeddb_test(

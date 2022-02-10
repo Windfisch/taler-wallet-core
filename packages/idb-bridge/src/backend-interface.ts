@@ -14,12 +14,12 @@
  permissions and limitations under the License.
  */
 
-import { BridgeIDBDatabaseInfo, BridgeIDBKeyRange } from "./bridge-idb";
+import { BridgeIDBDatabaseInfo, BridgeIDBKeyRange } from "./bridge-idb.js";
 import {
   IDBCursorDirection,
   IDBTransactionMode,
   IDBValidKey,
-} from "./idbtypes";
+} from "./idbtypes.js";
 
 /** @public */
 export interface ObjectStoreProperties {

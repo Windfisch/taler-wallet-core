@@ -14,8 +14,8 @@
  permissions and limitations under the License.
  */
 
-import { IDBValidKey } from "..";
-import { DataError } from "./errors";
+import { IDBValidKey } from "../idbtypes.js";
+import { DataError } from "./errors.js";
 
 // https://www.w3.org/TR/IndexedDB-2/#convert-a-value-to-a-key
 export function valueToKey(

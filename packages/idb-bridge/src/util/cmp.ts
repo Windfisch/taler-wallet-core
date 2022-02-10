@@ -14,8 +14,8 @@
  permissions and limitations under the License.
  */
 
-import { DataError } from "./errors";
-import { valueToKey } from "./valueToKey";
+import { DataError } from "./errors.js";
+import { valueToKey } from "./valueToKey.js";
 
 const getType = (x: any) => {
   if (typeof x === "number") {

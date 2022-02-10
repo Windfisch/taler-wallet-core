@@ -14,8 +14,8 @@
  permissions and limitations under the License.
  */
 
-import { InvalidStateError } from "./errors";
-import FakeEvent, { EventType } from "./FakeEvent";
+import { InvalidStateError } from "./errors.js";
+import FakeEvent, { EventType } from "./FakeEvent.js";
 import {
   EventTarget,
   Event,

@@ -14,7 +14,6 @@
  * permissions and limitations under the License.
  */
 
-import { DOMStringList } from "../idbtypes";
 
 /** @public */
 export interface FakeDOMStringList extends Array<string> {

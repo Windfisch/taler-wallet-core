@@ -1,5 +1,5 @@
 import test from "ava";
-import { createdb, idbFactory } from "./wptsupport";
+import { idbFactory } from "./wptsupport.js";
 
 test("WPT idbfactory-cmp*.html", async (t) => {
   const indexedDB = idbFactory;

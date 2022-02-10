@@ -1,5 +1,5 @@
 import test from "ava";
-import { createdb } from "./wptsupport";
+import { createdb } from "./wptsupport.js";
 
 // Transactions have a request queue
 test("transaction-requestqueue.htm", async (t) => {
@@ -72,7 +72,7 @@ test("transaction-requestqueue.htm", async (t) => {
           "os2: 1",
           "os2: 1",
           "os1: 2",
-        ],
+        ] as any,
         "transaction keys",
       );
 
@@ -93,7 +93,7 @@ test("transaction-requestqueue.htm", async (t) => {
           "os3: 1",
           "os1: 2",
           "os4: 5",
-        ],
+        ] as any,
         "transaction 2 keys",
       );
 

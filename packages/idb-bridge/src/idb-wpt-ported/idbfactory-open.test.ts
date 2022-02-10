@@ -1,7 +1,7 @@
 import test from "ava";
-import { BridgeIDBVersionChangeEvent } from "../bridge-idb";
-import FakeEvent from "../util/FakeEvent";
-import { createdb, format_value, idbFactory } from "./wptsupport";
+import { BridgeIDBVersionChangeEvent } from "../bridge-idb.js";
+import FakeEvent from "../util/FakeEvent.js";
+import { createdb, format_value, idbFactory } from "./wptsupport.js";
 
 // IDBFactory.open() - request has no source
 test("WPT idbfactory-open.htm", async (t) => {

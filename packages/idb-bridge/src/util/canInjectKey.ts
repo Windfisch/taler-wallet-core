@@ -15,7 +15,7 @@
  permissions and limitations under the License.
 */
 
-import { IDBKeyPath } from "../idbtypes";
+import { IDBKeyPath } from "../idbtypes.js";
 
 /**
  * Check that a key could be injected into a value.

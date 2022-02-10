@@ -15,9 +15,9 @@
  permissions and limitations under the License.
 */
 
-import { IDBKeyPath, IDBValidKey } from "../idbtypes";
-import { extractKey } from "./extractKey";
-import { valueToKey } from "./valueToKey";
+import { IDBKeyPath, IDBValidKey } from "../idbtypes.js";
+import { extractKey } from "./extractKey.js";
+import { valueToKey } from "./valueToKey.js";
 
 export function getIndexKeys(
   value: any,

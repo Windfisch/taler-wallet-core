@@ -1,7 +1,6 @@
 import test from "ava";
-import { BridgeIDBRequest } from "..";
-import { EventTarget, IDBDatabase } from "../idbtypes";
-import { createdb } from "./wptsupport";
+import { EventTarget } from "../idbtypes.js";
+import { createdb } from "./wptsupport.js";
 
 // Bubbling and capturing of request events
 test("WPT request_bubble-and-capture.htm", async (t) => {

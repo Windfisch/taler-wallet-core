@@ -1,7 +1,7 @@
 import test from "ava";
-import { BridgeIDBKeyRange, BridgeIDBRequest } from "..";
-import { IDBDatabase } from "../idbtypes";
-import { createdb } from "./wptsupport";
+import { BridgeIDBKeyRange } from "../bridge-idb.js";
+import { IDBDatabase } from "../idbtypes.js";
+import { createdb } from "./wptsupport.js";
 
 // IDBIndex.get() - returns the record
 test("WPT idbindex_get.htm", async (t) => {

@@ -1,340 +1,356 @@
 import test from "ava";
-import { BridgeIDBCursor, BridgeIDBKeyRange } from "..";
+import { BridgeIDBCursor, BridgeIDBKeyRange } from "../bridge-idb.js";
 import {
   createDatabase,
   createdb,
   promiseForRequest,
   promiseForTransaction,
-} from "./wptsupport";
+} from "./wptsupport.js";
 
 // IDBCursor.update() - index - modify a record in the object store
-test.cb("WPT test idbcursor_update_index.htm", (t) => {
-  var db: any,
-    records = [
-      { pKey: "primaryKey_0", iKey: "indexKey_0" },
-      { pKey: "primaryKey_1", iKey: "indexKey_1" },
-    ];
+test("WPT test idbcursor_update_index.htm", (t) => {
+  return new Promise((resolve, reject) => {
+    var db: any,
+      records = [
+        { pKey: "primaryKey_0", iKey: "indexKey_0" },
+        { pKey: "primaryKey_1", iKey: "indexKey_1" },
+      ];
 
-  var open_rq = createdb(t);
-  open_rq.onupgradeneeded = function (e: any) {
-    db = e.target.result;
+    var open_rq = createdb(t);
+    open_rq.onupgradeneeded = function (e: any) {
+      db = e.target.result;
 
-    var objStore = db.createObjectStore("test", { keyPath: "pKey" });
-    objStore.createIndex("index", "iKey");
+      var objStore = db.createObjectStore("test", { keyPath: "pKey" });
+      objStore.createIndex("index", "iKey");
 
-    for (var i = 0; i < records.length; i++) objStore.add(records[i]);
+      for (var i = 0; i < records.length; i++) objStore.add(records[i]);
 
-    // XXX: Gecko doesn't like this
-    //e.target.transaction.oncomplete = t.step_func(CursorUpdateRecord);
-  };
-
-  open_rq.onsuccess = CursorUpdateRecord;
-
-  function CursorUpdateRecord(e: any) {
-    var txn = db.transaction("test", "readwrite"),
-      cursor_rq = txn.objectStore("test").index("index").openCursor();
-    cursor_rq.onsuccess = function (e: any) {
-      var cursor = e.target.result;
-
-      cursor.value.iKey += "_updated";
-      cursor.update(cursor.value);
+      // XXX: Gecko doesn't like this
+      //e.target.transaction.oncomplete = t.step_func(CursorUpdateRecord);
     };
 
-    txn.oncomplete = VerifyRecordWasUpdated;
-  }
+    open_rq.onsuccess = CursorUpdateRecord;
 
-  function VerifyRecordWasUpdated(e: any) {
-    var cursor_rq = db.transaction("test").objectStore("test").openCursor();
+    function CursorUpdateRecord(e: any) {
+      var txn = db.transaction("test", "readwrite"),
+        cursor_rq = txn.objectStore("test").index("index").openCursor();
+      cursor_rq.onsuccess = function (e: any) {
+        var cursor = e.target.result;
 
-    cursor_rq.onsuccess = function (e: any) {
-      var cursor = e.target.result;
+        cursor.value.iKey += "_updated";
+        cursor.update(cursor.value);
+      };
 
-      t.deepEqual(cursor.value.iKey, records[0].iKey + "_updated");
-      t.end();
-    };
-  }
+      txn.oncomplete = VerifyRecordWasUpdated;
+    }
+
+    function VerifyRecordWasUpdated(e: any) {
+      var cursor_rq = db.transaction("test").objectStore("test").openCursor();
+
+      cursor_rq.onsuccess = function (e: any) {
+        var cursor = e.target.result;
+
+        t.deepEqual(cursor.value.iKey, records[0].iKey + "_updated");
+        resolve();
+      };
+    }
+  });
 });
 
 // IDBCursor.update() - index - attempt to modify a record in a read-only transaction
-test.cb("WPT test idbcursor_update_index2.htm", (t) => {
-  var db: any,
-    records = [
-      { pKey: "primaryKey_0", iKey: "indexKey_0" },
-      { pKey: "primaryKey_1", iKey: "indexKey_1" },
-    ];
+test("WPT test idbcursor_update_index2.htm", (t) => {
+  return new Promise((resolve, reject) => {
+    var db: any,
+      records = [
+        { pKey: "primaryKey_0", iKey: "indexKey_0" },
+        { pKey: "primaryKey_1", iKey: "indexKey_1" },
+      ];
 
-  var open_rq = createdb(t);
-  open_rq.onupgradeneeded = function (e: any) {
-    db = e.target.result;
+    var open_rq = createdb(t);
+    open_rq.onupgradeneeded = function (e: any) {
+      db = e.target.result;
 
-    var objStore = db.createObjectStore("test", { keyPath: "pKey" });
-    objStore.createIndex("index", "iKey");
+      var objStore = db.createObjectStore("test", { keyPath: "pKey" });
+      objStore.createIndex("index", "iKey");
 
-    for (var i = 0; i < records.length; i++) objStore.add(records[i]);
-  };
-
-  open_rq.onsuccess = function (e: any) {
-    var cursor_rq = db
-      .transaction("test")
-      .objectStore("test")
-      .index("index")
-      .openCursor();
-
-    cursor_rq.onsuccess = function (e: any) {
-      var cursor = e.target.result;
-      t.throws(
-        function () {
-          cursor.update(cursor.value);
-        },
-        { name: "ReadOnlyError" },
-      );
-      t.end();
+      for (var i = 0; i < records.length; i++) objStore.add(records[i]);
     };
-  };
+
+    open_rq.onsuccess = function (e: any) {
+      var cursor_rq = db
+        .transaction("test")
+        .objectStore("test")
+        .index("index")
+        .openCursor();
+
+      cursor_rq.onsuccess = function (e: any) {
+        var cursor = e.target.result;
+        t.throws(
+          function () {
+            cursor.update(cursor.value);
+          },
+          { name: "ReadOnlyError" },
+        );
+        resolve();
+      };
+    };
+  });
 });
 
 //IDBCursor.update() - index - attempt to modify a record in an inactive transaction
-test.cb("WPT test idbcursor_update_index3.htm", (t) => {
-  var db: any,
-    records = [
-      { pKey: "primaryKey_0", iKey: "indexKey_0" },
-      { pKey: "primaryKey_1", iKey: "indexKey_1" },
-    ];
+test("WPT test idbcursor_update_index3.htm", (t) => {
+  return new Promise((resolve, reject) => {
+    var db: any,
+      records = [
+        { pKey: "primaryKey_0", iKey: "indexKey_0" },
+        { pKey: "primaryKey_1", iKey: "indexKey_1" },
+      ];
 
-  var open_rq = createdb(t);
-  open_rq.onupgradeneeded = function (e: any) {
-    db = e.target.result;
-    var objStore = db.createObjectStore("test", { keyPath: "pKey" });
-    var index = objStore.createIndex("index", "iKey");
+    var open_rq = createdb(t);
+    open_rq.onupgradeneeded = function (e: any) {
+      db = e.target.result;
+      var objStore = db.createObjectStore("test", { keyPath: "pKey" });
+      var index = objStore.createIndex("index", "iKey");
 
-    for (var i = 0; i < records.length; i++) objStore.add(records[i]);
+      for (var i = 0; i < records.length; i++) objStore.add(records[i]);
 
-    var cursor_rq = index.openCursor();
+      var cursor_rq = index.openCursor();
 
-    const window: any = {};
+      const window: any = {};
 
-    cursor_rq.onsuccess = function (e: any) {
-      var cursor = e.target.result;
-      t.true(cursor instanceof BridgeIDBCursor, "cursor exist");
-      window.cursor = cursor;
-      window.record = cursor.value;
+      cursor_rq.onsuccess = function (e: any) {
+        var cursor = e.target.result;
+        t.true(cursor instanceof BridgeIDBCursor, "cursor exist");
+        window.cursor = cursor;
+        window.record = cursor.value;
+      };
+
+      e.target.transaction.oncomplete = function (e: any) {
+        t.throws(
+          function () {
+            window.cursor.update(window.record);
+          },
+          { name: "TransactionInactiveError" },
+        );
+        resolve();
+      };
     };
-
-    e.target.transaction.oncomplete = function (e: any) {
-      t.throws(
-        function () {
-          window.cursor.update(window.record);
-        },
-        { name: "TransactionInactiveError" },
-      );
-      t.end();
-    };
-  };
+  });
 });
 
 // IDBCursor.update() - index - attempt to modify a record when object store been deleted
-test.cb("WPT test idbcursor_update_index4.htm", (t) => {
-  var db: any,
-    records = [
-      { pKey: "primaryKey_0", iKey: "indexKey_0" },
-      { pKey: "primaryKey_1", iKey: "indexKey_1" },
-    ];
+test("WPT test idbcursor_update_index4.htm", (t) => {
+  return new Promise((resolve, reject) => {
+    var db: any,
+      records = [
+        { pKey: "primaryKey_0", iKey: "indexKey_0" },
+        { pKey: "primaryKey_1", iKey: "indexKey_1" },
+      ];
 
-  var open_rq = createdb(t);
-  open_rq.onupgradeneeded = function (event: any) {
-    db = event.target.result;
-    var objStore = db.createObjectStore("store", { keyPath: "pKey" });
-    objStore.createIndex("index", "iKey");
-    for (var i = 0; i < records.length; i++) {
-      objStore.add(records[i]);
-    }
-    var rq = objStore.index("index").openCursor();
-    rq.onsuccess = function (event: any) {
-      var cursor = event.target.result;
-      t.true(cursor instanceof BridgeIDBCursor);
+    var open_rq = createdb(t);
+    open_rq.onupgradeneeded = function (event: any) {
+      db = event.target.result;
+      var objStore = db.createObjectStore("store", { keyPath: "pKey" });
+      objStore.createIndex("index", "iKey");
+      for (var i = 0; i < records.length; i++) {
+        objStore.add(records[i]);
+      }
+      var rq = objStore.index("index").openCursor();
+      rq.onsuccess = function (event: any) {
+        var cursor = event.target.result;
+        t.true(cursor instanceof BridgeIDBCursor);
 
-      db.deleteObjectStore("store");
-      cursor.value.iKey += "_updated";
-      t.throws(
-        function () {
-          cursor.update(cursor.value);
-        },
-        { name: "InvalidStateError" },
-        "If the cursor's source or effective object store has been deleted, the implementation MUST throw a DOMException of type InvalidStateError",
-      );
+        db.deleteObjectStore("store");
+        cursor.value.iKey += "_updated";
+        t.throws(
+          function () {
+            cursor.update(cursor.value);
+          },
+          { name: "InvalidStateError" },
+          "If the cursor's source or effective object store has been deleted, the implementation MUST throw a DOMException of type InvalidStateError",
+        );
 
-      t.end();
+        resolve();
+      };
     };
-  };
+  });
 });
 
 // IDBCursor.update() - index - throw DataCloneError
-test.cb("WPT test idbcursor_update_index5.htm", (t) => {
-  var db: any,
-    records = [
-      { pKey: "primaryKey_0", iKey: "indexKey_0" },
-      { pKey: "primaryKey_1", iKey: "indexKey_1" },
-    ];
+test("WPT test idbcursor_update_index5.htm", (t) => {
+  return new Promise((resolve, reject) => {
+    var db: any,
+      records = [
+        { pKey: "primaryKey_0", iKey: "indexKey_0" },
+        { pKey: "primaryKey_1", iKey: "indexKey_1" },
+      ];
 
-  var open_rq = createdb(t);
-  open_rq.onupgradeneeded = function (e: any) {
-    db = e.target.result;
+    var open_rq = createdb(t);
+    open_rq.onupgradeneeded = function (e: any) {
+      db = e.target.result;
 
-    var objStore = db.createObjectStore("test", { keyPath: "pKey" });
-    objStore.createIndex("index", "iKey");
+      var objStore = db.createObjectStore("test", { keyPath: "pKey" });
+      objStore.createIndex("index", "iKey");
 
-    for (var i = 0; i < records.length; i++) objStore.add(records[i]);
-  };
-
-  open_rq.onsuccess = function (e: any) {
-    var cursor_rq = db
-      .transaction("test", "readwrite")
-      .objectStore("test")
-      .index("index")
-      .openCursor();
-
-    cursor_rq.onsuccess = function (e: any) {
-      var cursor = e.target.result;
-      t.true(cursor instanceof BridgeIDBCursor);
-
-      var record = cursor.value;
-      // Original test uses different uncloneable value
-      record.data = { foo: () => {} };
-      t.throws(
-        function () {
-          cursor.update(record);
-        },
-        { name: "DataCloneError" },
-      );
-      t.end();
+      for (var i = 0; i < records.length; i++) objStore.add(records[i]);
     };
-  };
+
+    open_rq.onsuccess = function (e: any) {
+      var cursor_rq = db
+        .transaction("test", "readwrite")
+        .objectStore("test")
+        .index("index")
+        .openCursor();
+
+      cursor_rq.onsuccess = function (e: any) {
+        var cursor = e.target.result;
+        t.true(cursor instanceof BridgeIDBCursor);
+
+        var record = cursor.value;
+        // Original test uses different uncloneable value
+        record.data = { foo: () => {} };
+        t.throws(
+          function () {
+            cursor.update(record);
+          },
+          { name: "DataCloneError" },
+        );
+        resolve();
+      };
+    };
+  });
 });
 
 // IDBCursor.update() - index - no argument
-test.cb("WPT test idbcursor_update_index6.htm", (t) => {
-  var db: any,
-    records = [
-      { pKey: "primaryKey_0", iKey: "indexKey_0" },
-      { pKey: "primaryKey_1", iKey: "indexKey_1" },
-    ];
+test("WPT test idbcursor_update_index6.htm", (t) => {
+  return new Promise((resolve, reject) => {
+    var db: any,
+      records = [
+        { pKey: "primaryKey_0", iKey: "indexKey_0" },
+        { pKey: "primaryKey_1", iKey: "indexKey_1" },
+      ];
 
-  var open_rq = createdb(t);
-  open_rq.onupgradeneeded = function (e: any) {
-    db = e.target.result;
+    var open_rq = createdb(t);
+    open_rq.onupgradeneeded = function (e: any) {
+      db = e.target.result;
 
-    var objStore = db.createObjectStore("test", { keyPath: "pKey" });
-    objStore.createIndex("index", "iKey");
+      var objStore = db.createObjectStore("test", { keyPath: "pKey" });
+      objStore.createIndex("index", "iKey");
 
-    for (var i = 0; i < records.length; i++) objStore.add(records[i]);
-  };
-
-  open_rq.onsuccess = function (e: any) {
-    var cursor_rq = db
-      .transaction("test")
-      .objectStore("test")
-      .index("index")
-      .openCursor();
-
-    cursor_rq.onsuccess = function (e: any) {
-      var cursor = e.target.result;
-      t.true(cursor instanceof BridgeIDBCursor);
-
-      t.throws(
-        function () {
-          cursor.update();
-        },
-        {
-          instanceOf: TypeError,
-        },
-      );
-      t.end();
+      for (var i = 0; i < records.length; i++) objStore.add(records[i]);
     };
-  };
+
+    open_rq.onsuccess = function (e: any) {
+      var cursor_rq = db
+        .transaction("test")
+        .objectStore("test")
+        .index("index")
+        .openCursor();
+
+      cursor_rq.onsuccess = function (e: any) {
+        var cursor = e.target.result;
+        t.true(cursor instanceof BridgeIDBCursor);
+
+        t.throws(
+          function () {
+            cursor.update();
+          },
+          {
+            instanceOf: TypeError,
+          },
+        );
+        resolve();
+      };
+    };
+  });
 });
 
 // IDBCursor.update() - index - throw DataError
-test.cb("WPT test idbcursor_update_index7.htm", (t) => {
-  var db: any,
-    records = [
-      { pKey: "primaryKey_0", iKey: "indexKey_0" },
-      { pKey: "primaryKey_1", iKey: "indexKey_1" },
-    ];
+test("WPT test idbcursor_update_index7.htm", (t) => {
+  return new Promise((resolve, reject) => {
+    var db: any,
+      records = [
+        { pKey: "primaryKey_0", iKey: "indexKey_0" },
+        { pKey: "primaryKey_1", iKey: "indexKey_1" },
+      ];
 
-  var open_rq = createdb(t);
-  open_rq.onupgradeneeded = function (e: any) {
-    db = e.target.result;
+    var open_rq = createdb(t);
+    open_rq.onupgradeneeded = function (e: any) {
+      db = e.target.result;
 
-    var objStore = db.createObjectStore("test", { keyPath: "pKey" });
-    objStore.createIndex("index", "iKey");
+      var objStore = db.createObjectStore("test", { keyPath: "pKey" });
+      objStore.createIndex("index", "iKey");
 
-    for (var i = 0; i < records.length; i++) objStore.add(records[i]);
-  };
-
-  open_rq.onsuccess = function (e: any) {
-    var cursor_rq = db
-      .transaction("test", "readwrite")
-      .objectStore("test")
-      .index("index")
-      .openCursor();
-
-    cursor_rq.onsuccess = function (e: any) {
-      var cursor = e.target.result;
-      t.true(cursor instanceof BridgeIDBCursor);
-
-      t.throws(
-        function () {
-          cursor.update(null);
-        },
-        { name: "DataError" },
-      );
-      t.end();
+      for (var i = 0; i < records.length; i++) objStore.add(records[i]);
     };
-  };
+
+    open_rq.onsuccess = function (e: any) {
+      var cursor_rq = db
+        .transaction("test", "readwrite")
+        .objectStore("test")
+        .index("index")
+        .openCursor();
+
+      cursor_rq.onsuccess = function (e: any) {
+        var cursor = e.target.result;
+        t.true(cursor instanceof BridgeIDBCursor);
+
+        t.throws(
+          function () {
+            cursor.update(null);
+          },
+          { name: "DataError" },
+        );
+        resolve();
+      };
+    };
+  });
 });
 
 // IDBCursor.update() - index - throw InvalidStateError when the cursor is being iterated
-test.cb("WPT test idbcursor_update_index8.htm", (t) => {
-  var db: any,
-    records = [
-      { pKey: "primaryKey_0", iKey: "indexKey_0" },
-      { pKey: "primaryKey_1", iKey: "indexKey_1" },
-    ];
+test("WPT test idbcursor_update_index8.htm", (t) => {
+  return new Promise((resolve, reject) => {
+    var db: any,
+      records = [
+        { pKey: "primaryKey_0", iKey: "indexKey_0" },
+        { pKey: "primaryKey_1", iKey: "indexKey_1" },
+      ];
 
-  var open_rq = createdb(t);
-  open_rq.onupgradeneeded = function (e: any) {
-    db = e.target.result;
+    var open_rq = createdb(t);
+    open_rq.onupgradeneeded = function (e: any) {
+      db = e.target.result;
 
-    var objStore = db.createObjectStore("store", { keyPath: "pKey" });
-    objStore.createIndex("index", "iKey");
+      var objStore = db.createObjectStore("store", { keyPath: "pKey" });
+      objStore.createIndex("index", "iKey");
 
-    for (var i = 0; i < records.length; i++) objStore.add(records[i]);
-  };
-
-  open_rq.onsuccess = function (e: any) {
-    var cursor_rq = db
-      .transaction("store", "readwrite")
-      .objectStore("store")
-      .index("index")
-      .openCursor();
-
-    cursor_rq.onsuccess = function (e: any) {
-      var cursor = e.target.result;
-      t.true(cursor instanceof BridgeIDBCursor, "cursor exists");
-
-      cursor.continue();
-      t.throws(
-        function () {
-          cursor.update({ pKey: "primaryKey_0", iKey: "indexKey_0_updated" });
-        },
-        {
-          name: "InvalidStateError",
-        },
-      );
-
-      t.end();
+      for (var i = 0; i < records.length; i++) objStore.add(records[i]);
     };
-  };
+
+    open_rq.onsuccess = function (e: any) {
+      var cursor_rq = db
+        .transaction("store", "readwrite")
+        .objectStore("store")
+        .index("index")
+        .openCursor();
+
+      cursor_rq.onsuccess = function (e: any) {
+        var cursor = e.target.result;
+        t.true(cursor instanceof BridgeIDBCursor, "cursor exists");
+
+        cursor.continue();
+        t.throws(
+          function () {
+            cursor.update({ pKey: "primaryKey_0", iKey: "indexKey_0_updated" });
+          },
+          {
+            name: "InvalidStateError",
+          },
+        );
+
+        resolve();
+      };
+    };
+  });
 });
 
 // Index cursor - indexed values updated during iteration

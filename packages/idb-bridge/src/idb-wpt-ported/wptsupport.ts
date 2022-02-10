@@ -1,5 +1,5 @@
-import test, { ExecutionContext } from "ava";
-import { BridgeIDBFactory, BridgeIDBRequest } from "..";
+import { ExecutionContext } from "ava";
+import { BridgeIDBFactory, BridgeIDBRequest } from "../bridge-idb.js";
 import {
   IDBDatabase,
   IDBIndex,
@@ -7,10 +7,9 @@ import {
   IDBOpenDBRequest,
   IDBRequest,
   IDBTransaction,
-  IDBTransactionMode,
-} from "../idbtypes";
-import { MemoryBackend } from "../MemoryBackend";
-import { compareKeys } from "../util/cmp";
+} from "../idbtypes.js";
+import { MemoryBackend } from "../MemoryBackend.js";
+import { compareKeys } from "../util/cmp.js";
 
 BridgeIDBFactory.enableTracing = true;
 const backend = new MemoryBackend();

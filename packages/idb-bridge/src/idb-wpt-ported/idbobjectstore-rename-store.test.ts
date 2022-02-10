@@ -7,7 +7,7 @@ import {
   createDatabase,
   createNotBooksStore,
   migrateDatabase,
-} from "./wptsupport";
+} from "./wptsupport.js";
 
 // IndexedDB: object store renaming support
 // IndexedDB object store rename in new transaction

@@ -1,11 +1,10 @@
 import test from "ava";
-import { BridgeIDBRequest } from "..";
+import { BridgeIDBRequest } from "../bridge-idb.js";
 import {
-  createdb,
   indexeddb_test,
   is_transaction_active,
   keep_alive,
-} from "./wptsupport";
+} from "./wptsupport.js";
 
 test("WPT test abort-in-initial-upgradeneeded.htm (subtest 1)", async (t) => {
   // Transactions are active during success handlers

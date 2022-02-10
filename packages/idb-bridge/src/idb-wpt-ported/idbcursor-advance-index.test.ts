@@ -1,8 +1,6 @@
 import test from "ava";
-import { BridgeIDBCursor } from "..";
-import { BridgeIDBRequest } from "../bridge-idb";
-import { InvalidStateError } from "../util/errors";
-import { createdb } from "./wptsupport";
+import { BridgeIDBCursor,BridgeIDBRequest } from "../bridge-idb.js";
+import { createdb } from "./wptsupport.js";
 
 test("WPT test idbcursor_advance_index.htm", async (t) => {
   await new Promise<void>((resolve, reject) => {

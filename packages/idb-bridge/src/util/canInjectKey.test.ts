@@ -16,7 +16,7 @@
 */
 
 import test from "ava";
-import { canInjectKey } from "./canInjectKey";
+import { canInjectKey } from "./canInjectKey.js";
 
 test("canInjectKey", (t) => {
   t.false(canInjectKey("foo", null));

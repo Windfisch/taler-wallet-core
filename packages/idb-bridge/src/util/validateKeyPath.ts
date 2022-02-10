@@ -14,7 +14,7 @@
  permissions and limitations under the License.
 */
 
-import { IDBKeyPath } from "../idbtypes";
+import { IDBKeyPath } from "../idbtypes.js";
 
 // http://www.w3.org/TR/2015/REC-IndexedDB-20150108/#dfn-valid-key-path
 export const validateKeyPath = (

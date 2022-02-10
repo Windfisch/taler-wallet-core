@@ -1,5 +1,5 @@
 import test from "ava";
-import { createdb } from "./wptsupport";
+import { createdb } from "./wptsupport.js";
 
 test("WPT test abort-in-initial-upgradeneeded.htm", async (t) => {
   await new Promise<void>((resolve, reject) => {

@@ -14,8 +14,8 @@
  permissions and limitations under the License.
 */
 
-import FakeEventTarget from "./FakeEventTarget";
-import { Event, EventTarget } from "../idbtypes";
+import FakeEventTarget from "./FakeEventTarget.js";
+import { Event, EventTarget } from "../idbtypes.js";
 
 /** @public */
 export type EventType =

@@ -1,7 +1,7 @@
 import test from "ava";
-import { BridgeIDBRequest } from "..";
-import { IDBDatabase } from "../idbtypes";
-import { createdb } from "./wptsupport";
+import { BridgeIDBRequest } from "../bridge-idb.js";
+import { IDBDatabase } from "../idbtypes.js";
+import { createdb } from "./wptsupport.js";
 
 // IDBObjectStore.add() - add with an inline key
 test("WPT idbobjectstore_add.htm", async (t) => {

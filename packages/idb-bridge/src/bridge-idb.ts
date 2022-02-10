@@ -24,7 +24,7 @@ import {
   ResultLevel,
   Schema,
   StoreLevel,
-} from "./backend-interface";
+} from "./backend-interface.js";
 import {
   DOMException,
   DOMStringList,
@@ -41,10 +41,10 @@ import {
   IDBTransaction,
   IDBTransactionMode,
   IDBValidKey,
-} from "./idbtypes";
-import { canInjectKey } from "./util/canInjectKey";
-import { compareKeys } from "./util/cmp";
-import { enforceRange } from "./util/enforceRange";
+} from "./idbtypes.js";
+import { canInjectKey } from "./util/canInjectKey.js";
+import { compareKeys } from "./util/cmp.js";
+import { enforceRange } from "./util/enforceRange.js";
 import {
   AbortError,
   ConstraintError,
@@ -56,20 +56,19 @@ import {
   ReadOnlyError,
   TransactionInactiveError,
   VersionError,
-} from "./util/errors";
-import { FakeDOMStringList, fakeDOMStringList } from "./util/fakeDOMStringList";
-import FakeEvent from "./util/FakeEvent";
-import FakeEventTarget from "./util/FakeEventTarget";
-import { makeStoreKeyValue } from "./util/makeStoreKeyValue";
-import { normalizeKeyPath } from "./util/normalizeKeyPath";
-import { openPromise } from "./util/openPromise";
-import queueTask from "./util/queueTask";
+} from "./util/errors.js";
+import { FakeDOMStringList, fakeDOMStringList } from "./util/fakeDOMStringList.js";
+import FakeEvent from "./util/FakeEvent.js";
+import FakeEventTarget from "./util/FakeEventTarget.js";
+import { makeStoreKeyValue } from "./util/makeStoreKeyValue.js";
+import { normalizeKeyPath } from "./util/normalizeKeyPath.js";
+import { openPromise } from "./util/openPromise.js";
+import queueTask from "./util/queueTask.js";
 import {
   checkStructuredCloneOrThrow,
-  structuredClone,
-} from "./util/structuredClone";
-import { validateKeyPath } from "./util/validateKeyPath";
-import { valueToKey } from "./util/valueToKey";
+} from "./util/structuredClone.js";
+import { validateKeyPath } from "./util/validateKeyPath.js";
+import { valueToKey } from "./util/valueToKey.js";
 
 /** @public */
 export type CursorSource = BridgeIDBIndex | BridgeIDBObjectStore;

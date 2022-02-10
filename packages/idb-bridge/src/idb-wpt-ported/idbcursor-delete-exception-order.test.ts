@@ -1,5 +1,5 @@
 import test from "ava";
-import { createdb, indexeddb_test } from "./wptsupport";
+import { indexeddb_test } from "./wptsupport.js";
 
 test("WPT idbcursor-delete-exception-order.htm", async (t) => {
   // 'IDBCursor.delete exception order: TransactionInactiveError vs. ReadOnlyError'

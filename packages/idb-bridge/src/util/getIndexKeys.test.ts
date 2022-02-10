@@ -16,7 +16,7 @@
 */
 
 import test from "ava";
-import { getIndexKeys } from "./getIndexKeys";
+import { getIndexKeys } from "./getIndexKeys.js";
 
 test("basics", (t) => {
   t.deepEqual(getIndexKeys({ foo: 42 }, "foo", false), [42]);
@@ -31,10 +31,10 @@ test("basics", (t) => {
   });
 
   t.deepEqual(getIndexKeys({ foo: 42 }, "foo", true), [42]);
-  t.deepEqual(getIndexKeys({ foo: 42, bar: 10 }, ["foo", "bar"], true), [
-    42,
-    10,
-  ]);
+  t.deepEqual(
+    getIndexKeys({ foo: 42, bar: 10 }, ["foo", "bar"], true),
+    [42, 10],
+  );
   t.deepEqual(getIndexKeys({ foo: 42, bar: 10 }, ["foo", "bar"], false), [
     [42, 10],
   ]);

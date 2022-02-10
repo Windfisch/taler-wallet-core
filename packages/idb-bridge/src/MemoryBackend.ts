@@ -26,20 +26,20 @@ import {
   ResultLevel,
   StoreLevel,
   RecordStoreResponse,
-} from "./backend-interface";
+} from "./backend-interface.js";
 import {
   structuredClone,
   structuredEncapsulate,
   structuredRevive,
-} from "./util/structuredClone";
-import { ConstraintError, DataError } from "./util/errors";
-import BTree, { ISortedMapF, ISortedSetF } from "./tree/b+tree";
-import { compareKeys } from "./util/cmp";
-import { StoreKeyResult, makeStoreKeyValue } from "./util/makeStoreKeyValue";
-import { getIndexKeys } from "./util/getIndexKeys";
-import { openPromise } from "./util/openPromise";
-import { IDBKeyRange, IDBTransactionMode, IDBValidKey } from "./idbtypes";
-import { BridgeIDBKeyRange } from "./bridge-idb";
+} from "./util/structuredClone.js";
+import { ConstraintError, DataError } from "./util/errors.js";
+import BTree, { ISortedMapF, ISortedSetF } from "./tree/b+tree.js";
+import { compareKeys } from "./util/cmp.js";
+import { StoreKeyResult, makeStoreKeyValue } from "./util/makeStoreKeyValue.js";
+import { getIndexKeys } from "./util/getIndexKeys.js";
+import { openPromise } from "./util/openPromise.js";
+import { IDBKeyRange, IDBTransactionMode, IDBValidKey } from "./idbtypes.js";
+import { BridgeIDBKeyRange } from "./bridge-idb.js";
 
 type Key = IDBValidKey;
 type Value = unknown;

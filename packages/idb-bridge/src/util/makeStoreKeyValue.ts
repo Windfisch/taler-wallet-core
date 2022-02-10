@@ -14,11 +14,11 @@
  permissions and limitations under the License.
 */
 
-import { extractKey } from "./extractKey";
-import { DataCloneError, DataError } from "./errors";
-import { valueToKey } from "./valueToKey";
-import { structuredClone } from "./structuredClone";
-import { IDBKeyPath, IDBValidKey } from "../idbtypes";
+import { extractKey } from "./extractKey.js";
+import { DataCloneError, DataError } from "./errors.js";
+import { valueToKey } from "./valueToKey.js";
+import { structuredClone } from "./structuredClone.js";
+import { IDBKeyPath, IDBValidKey } from "../idbtypes.js";
 
 export interface StoreKeyResult {
   updatedKeyGenerator: number;

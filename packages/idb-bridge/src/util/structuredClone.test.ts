@@ -15,7 +15,7 @@
 */
 
 import test, { ExecutionContext } from "ava";
-import { structuredClone } from "./structuredClone";
+import { structuredClone } from "./structuredClone.js";
 
 function checkClone(t: ExecutionContext, x: any): void {
   t.deepEqual(structuredClone(x), x);

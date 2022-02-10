@@ -22,14 +22,14 @@ import {
   BridgeIDBKeyRange,
   BridgeIDBRequest,
   BridgeIDBTransaction,
-} from "./bridge-idb";
+} from "./bridge-idb.js";
 import {
   IDBCursorDirection,
   IDBCursorWithValue,
   IDBKeyRange,
   IDBValidKey,
 } from "./idbtypes.js";
-import { MemoryBackend } from "./MemoryBackend";
+import { MemoryBackend } from "./MemoryBackend.js";
 
 function promiseFromRequest(request: BridgeIDBRequest): Promise<any> {
   return new Promise((resolve, reject) => {
@@ -150,7 +150,7 @@ test("Spec: Example 1 Part 3", async (t) => {
 
   await promiseFromRequest(request3);
 
-  let cursor: BridgeIDBCursorWithValue;
+  let cursor: BridgeIDBCursorWithValue | null;
   cursor = request3.result as BridgeIDBCursorWithValue;
   t.is(cursor.value.author, "Fred");
   t.is(cursor.value.isbn, 123456);
@@ -172,6 +172,9 @@ test("Spec: Example 1 Part 3", async (t) => {
   await promiseFromRequest(request4);
 
   cursor = request4.result;
+  if (!cursor) {
+    throw new Error();
+  }
   t.is(cursor.value.isbn, 123456);
 
   cursor.continue();
@@ -179,6 +182,9 @@ test("Spec: Example 1 Part 3", async (t) => {
   await promiseFromRequest(request4);
 
   cursor = request4.result;
+  if (!cursor) {
+    throw new Error();
+  }
   t.is(cursor.value.isbn, 234567);
 
   cursor.continue();
@@ -186,6 +192,9 @@ test("Spec: Example 1 Part 3", async (t) => {
   await promiseFromRequest(request4);
 
   cursor = request4.result;
+  if (!cursor) {
+    throw new Error();
+  }
   t.is(cursor.value.isbn, 345678);
 
   cursor.continue();
@@ -203,16 +212,25 @@ test("Spec: Example 1 Part 3", async (t) => {
 
   await promiseFromRequest(request5);
   cursor = request5.result;
+  if (!cursor) {
+    throw new Error();
+  }
   t.is(cursor.value.author, "Barney");
   cursor.continue();
 
   await promiseFromRequest(request5);
   cursor = request5.result;
+  if (!cursor) {
+    throw new Error();
+  }
   t.is(cursor.value.author, "Fred");
   cursor.continue();
 
   await promiseFromRequest(request5);
   cursor = request5.result;
+  if (!cursor) {
+    throw new Error();
+  }
   t.is(cursor.value.author, "Fred");
   cursor.continue();
 
@@ -224,11 +242,17 @@ test("Spec: Example 1 Part 3", async (t) => {
 
   await promiseFromRequest(request6);
   cursor = request6.result;
+  if (!cursor) {
+    throw new Error();
+  }
   t.is(cursor.value.author, "Barney");
   cursor.continue();
 
   await promiseFromRequest(request6);
   cursor = request6.result;
+  if (!cursor) {
+    throw new Error();
+  }
   t.is(cursor.value.author, "Fred");
   t.is(cursor.value.isbn, 123456);
   cursor.continue();
@@ -240,12 +264,18 @@ test("Spec: Example 1 Part 3", async (t) => {
   const request7 = index5.openCursor(null, "prevunique");
   await promiseFromRequest(request7);
   cursor = request7.result;
+  if (!cursor) {
+    throw new Error();
+  }
   t.is(cursor.value.author, "Fred");
   t.is(cursor.value.isbn, 123456);
   cursor.continue();
 
   await promiseFromRequest(request7);
   cursor = request7.result;
+  if (!cursor) {
+    throw new Error();
+  }
   t.is(cursor.value.author, "Barney");
   cursor.continue();
 

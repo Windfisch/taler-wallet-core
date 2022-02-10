@@ -15,7 +15,7 @@
 */
 
 import test from "ava";
-import { makeStoreKeyValue } from "./makeStoreKeyValue";
+import { makeStoreKeyValue } from "./makeStoreKeyValue.js";
 
 test("basics", (t) => {
   let result;

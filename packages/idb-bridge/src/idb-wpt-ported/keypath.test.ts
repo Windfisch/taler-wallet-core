@@ -1,5 +1,5 @@
 import test from "ava";
-import { assert_key_equals, createdb } from "./wptsupport";
+import { assert_key_equals, createdb } from "./wptsupport.js";
 
 test("WPT test keypath.htm", async (t) => {
   function keypath(
