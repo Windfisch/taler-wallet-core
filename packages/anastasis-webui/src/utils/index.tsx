@@ -39,6 +39,12 @@ export function createExample<Props>(
           transition: async () => {
             null;
           },
+          exportState: () => {
+            return "{}";
+          },
+          importState(s: string) {
+            /* do nothing */
+          },
         }}
       >
         <Component {...args} />
