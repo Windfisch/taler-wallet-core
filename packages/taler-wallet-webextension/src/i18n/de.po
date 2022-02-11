@@ -17,7 +17,7 @@ msgstr ""
 "Project-Id-Version: Taler Wallet\n"
 "Report-Msgid-Bugs-To: languages@taler.net\n"
 "POT-Creation-Date: 2016-11-23 00:00+0100\n"
-"PO-Revision-Date: 2022-02-11 17:00+0000\n"
+"PO-Revision-Date: 2022-02-11 17:04+0000\n"
 "Last-Translator: Stefan <eintritt@hotmail.com>\n"
 "Language-Team: German <http://weblate.taler.net/projects/gnu-taler/"
 "webextensions/de/>\n"
@@ -66,17 +66,17 @@ msgstr "Der Händler %1$s bietet Ihnen zum Kauf an:"
 #: src/webex/pages/pay.tsx:136
 #, c-format
 msgid "The total price is %1$s (plus %2$s fees)."
-msgstr ""
+msgstr "Gesamtbetrag %1$s (zuzüglich %2$s Gebühren)."
 
 #: src/webex/pages/pay.tsx:141
 #, c-format
 msgid "The total price is %1$s."
-msgstr ""
+msgstr "Gesamter Zahlbetrag: %1$s."
 
 #: src/webex/pages/pay.tsx:163
 #, c-format
 msgid "Retry"
-msgstr ""
+msgstr "Erneut versuchen"
 
 #: src/webex/pages/pay.tsx:173
 #, c-format
@@ -106,12 +106,12 @@ msgstr "Sie haben kein Guthaben. Wollen Sie %1$s? abheben?"
 #: src/webex/pages/popup.tsx:238
 #, c-format
 msgid "%1$s incoming"
-msgstr ""
+msgstr "%1$s empfangen"
 
 #: src/webex/pages/popup.tsx:250
 #, c-format
 msgid "%1$s being spent"
-msgstr ""
+msgstr "%1$s ausgezahlt"
 
 #: src/webex/pages/popup.tsx:281
 #, c-format
