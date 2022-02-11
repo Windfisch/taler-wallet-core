@@ -12,35 +12,36 @@
 # You should have received a copy of the GNU General Public License along with
 # TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: Taler Wallet\n"
-"Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To: languages@taler.net\n"
 "POT-Creation-Date: 2016-11-23 00:00+0100\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"PO-Revision-Date: 2022-02-11 16:59+0000\n"
+"Last-Translator: Stefan <eintritt@hotmail.com>\n"
+"Language-Team: German <http://weblate.taler.net/projects/gnu-taler/"
+"webextensions/de/>\n"
+"Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.4.2\n"
 
 #: src/util/wire.ts:37
 #, c-format
 msgid "Invalid Wire"
-msgstr ""
+msgstr "Ungültige Überweisung"
 
 #: src/util/wire.ts:42 src/util/wire.ts:45
 #, c-format
 msgid "Invalid Test Wire Detail"
-msgstr ""
+msgstr "Ungültige Überweisungsdetails"
 
 #: src/util/wire.ts:47
 #, c-format
 msgid "Test Wire Acct #%1$s on %2$s"
-msgstr ""
+msgstr "Testkonto #%1$s auf %2$s"
 
 #: src/util/wire.ts:49
 #, c-format
@@ -58,9 +59,9 @@ msgid "time (ms/op)"
 msgstr ""
 
 #: src/webex/pages/pay.tsx:130
-#, fuzzy, c-format
+#, c-format
 msgid "The merchant %1$s offers you to purchase:"
-msgstr "Der Händler %1$s möchte einen Vertrag über %2$s mit Ihnen abschließen."
+msgstr "Der Händler %1$s bietet Ihnen zum Kauf an:"
 
 #: src/webex/pages/pay.tsx:136
 #, c-format
@@ -78,9 +79,9 @@ msgid "Retry"
 msgstr ""
 
 #: src/webex/pages/pay.tsx:173
-#, fuzzy, c-format
+#, c-format
 msgid "Confirm payment"
-msgstr "Bezahlung bestätigen"
+msgstr "Zahlung bestätigen"
 
 #: src/webex/pages/popup.tsx:153
 #, c-format
@@ -98,9 +99,9 @@ msgid "Debug"
 msgstr "Debug"
 
 #: src/webex/pages/popup.tsx:175
-#, fuzzy, c-format
+#, c-format
 msgid "You have no balance to show. Need some %1$s getting started?"
-msgstr "Sie haben kein Digitalgeld. Wollen Sie %1$s? abheben?"
+msgstr "Sie haben kein Guthaben. Wollen Sie %1$s? abheben?"
 
 #: src/webex/pages/popup.tsx:238
 #, c-format
@@ -168,9 +169,9 @@ msgid "Payment refund"
 msgstr ""
 
 #: src/webex/pages/popup.tsx:584
-#, fuzzy, c-format
+#, c-format
 msgid "Withdrawn"
-msgstr "Abheben bei %1$s"
+msgstr "Abgehoben"
 
 #: src/webex/pages/popup.tsx:596
 #, c-format
@@ -198,14 +199,14 @@ msgid "Wire to bank account"
 msgstr ""
 
 #: src/webex/pages/return-coins.tsx:206
-#, fuzzy, c-format
+#, c-format
 msgid "Confirm"
-msgstr "Bezahlung bestätigen"
+msgstr "Bestätigen"
 
 #: src/webex/pages/return-coins.tsx:209
-#, fuzzy, c-format
+#, c-format
 msgid "Cancel"
-msgstr "Saldo"
+msgstr "Abbrechen"
 
 #: src/webex/pages/withdraw.tsx:73
 #, c-format
@@ -250,9 +251,9 @@ msgid "Cancel withdraw operation"
 msgstr ""
 
 #: src/webex/renderHtml.tsx:249
-#, fuzzy, c-format
+#, c-format
 msgid "Withdrawal fees:"
-msgstr "Abheben bei"
+msgstr "Abhebegebühren:"
 
 #: src/webex/renderHtml.tsx:252
 #, c-format
@@ -275,9 +276,9 @@ msgid "Value"
 msgstr ""
 
 #: src/webex/renderHtml.tsx:264
-#, fuzzy, c-format
+#, c-format
 msgid "Withdraw Fee"
-msgstr "Abheben bei %1$s"
+msgstr "Abhebegebühr"
 
 #: src/webex/renderHtml.tsx:265
 #, c-format
