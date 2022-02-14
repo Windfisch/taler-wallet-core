@@ -10,5 +10,5 @@
     "lib": ["es6"],
     "types": ["node"]
   },
-  "files": ["pogen.ts"]
+  "include": ["src/**/*.ts"]
 }

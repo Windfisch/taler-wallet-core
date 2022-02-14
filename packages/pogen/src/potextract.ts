@@ -1,32 +1,23 @@
 /*
- This file is part of TALER
- (C) 2016 GNUnet e.V.
+ This file is part of GNU Taler
+ (C) 2019-2022 Taler Systems S.A.
 
- TALER is free software; you can redistribute it and/or modify it under the
+ GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
  Foundation; either version 3, or (at your option) any later version.
 
- TALER is distributed in the hope that it will be useful, but WITHOUT ANY
+ GNU Taler is distributed in the hope that it will be useful, but WITHOUT ANY
  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
  You should have received a copy of the GNU General Public License along with
- TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+ GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-/**
- * Generate .po file from list of source files.
- *
- * Note that duplicate message IDs are NOT merged, to get the same output as
- * you would from xgettext, just run msguniq.
- *
- * @author Florian Dold
- */
 
 /**
  * Imports.
  */
-import { readFileSync } from "fs";
 import * as ts from "typescript";
 
 function wordwrap(str: string, width: number = 80): string[] {
@@ -34,7 +25,7 @@ function wordwrap(str: string, width: number = 80): string[] {
   return str.match(RegExp(regex, "g"));
 }
 
-export function processFile(sourceFile: ts.SourceFile) {
+export function processFile(sourceFile: ts.SourceFile, outChunks: string[]) {
   processNode(sourceFile);
   let lastTokLine = 0;
   let preLastTokLine = 0;
@@ -146,11 +137,11 @@ export function processFile(sourceFile: ts.SourceFile) {
   function formatMsgComment(line: number, comment?: string) {
     if (comment) {
       for (let cl of comment.split("\n")) {
-        console.log(`#. ${cl}`);
+        outChunks.push(`#. ${cl}\n`);
       }
     }
-    console.log(`#: ${sourceFile.fileName}:${line + 1}`);
-    console.log(`#, c-format`);
+    outChunks.push(`#: ${sourceFile.fileName}:${line + 1}\n`);
+    outChunks.push(`#, c-format\n`);
   }
 
   function formatMsgLine(head: string, msg: string) {
@@ -161,11 +152,11 @@ export function processFile(sourceFile: ts.SourceFile) {
       .map((p) => wordwrap(p))
       .reduce((a, b) => a.concat(b));
     if (parts.length == 1) {
-      console.log(`${head} "${parts[0]}"`);
+      outChunks.push(`${head} "${parts[0]}"\n`);
     } else {
-      console.log(`${head} ""`);
+      outChunks.push(`${head} ""\n`);
       for (let p of parts) {
-        console.log(`"${p}"`);
+        outChunks.push(`"${p}"\n`);
       }
     }
   }
@@ -208,7 +199,7 @@ export function processFile(sourceFile: ts.SourceFile) {
       switch (childNode.kind) {
         case ts.SyntaxKind.JsxText: {
           let e = childNode as ts.JsxText;
-          let s = e.getFullText();
+          let s = e.text;
           let t = s.split("\n").map(trim).join(" ");
           if (s[0] === " ") {
             t = " " + t;
@@ -295,8 +286,8 @@ export function processFile(sourceFile: ts.SourceFile) {
           let comment = getComment(node);
           formatMsgComment(line, comment);
           formatMsgLine("msgid", content);
-          console.log(`msgstr ""`);
-          console.log();
+          outChunks.push(`msgstr ""\n`);
+          outChunks.push("\n");
           return;
         }
         if (arrayEq(path, ["i18n", "TranslateSwitch"])) {
@@ -315,9 +306,9 @@ export function processFile(sourceFile: ts.SourceFile) {
           }
           formatMsgLine("msgid", singularForm);
           formatMsgLine("msgid_plural", pluralForm);
-          console.log(`msgstr[0] ""`);
-          console.log(`msgstr[1] ""`);
-          console.log();
+          outChunks.push(`msgstr[0] ""\n`);
+          outChunks.push(`msgstr[1] ""\n`);
+          outChunks.push(`\n`);
           return;
         }
         break;
@@ -346,25 +337,24 @@ export function processFile(sourceFile: ts.SourceFile) {
         formatMsgComment(line, comment);
         formatMsgLine("msgid", t1.template);
         formatMsgLine("msgid_plural", t2.template);
-        console.log(`msgstr[0] ""`);
-        console.log(`msgstr[1] ""`);
-        console.log();
+        outChunks.push(`msgstr[0] ""\n`);
+        outChunks.push(`msgstr[1] ""\n`);
+        outChunks.push("\n");
 
         // Important: no processing for child i18n expressions here
         return;
       }
       case ts.SyntaxKind.TaggedTemplateExpression: {
         let tte = <ts.TaggedTemplateExpression>node;
-        let { comment, template, line, path } = processTaggedTemplateExpression(
-          tte,
-        );
+        let { comment, template, line, path } =
+          processTaggedTemplateExpression(tte);
         if (path[0] != "i18n") {
           break;
         }
         formatMsgComment(line, comment);
         formatMsgLine("msgid", template);
-        console.log(`msgstr ""`);
-        console.log();
+        outChunks.push(`msgstr ""\n`);
+        outChunks.push("\n");
         break;
       }
     }
@@ -373,36 +363,51 @@ export function processFile(sourceFile: ts.SourceFile) {
   }
 }
 
-export function main() {
-  const configPath = ts.findConfigFile(
-    /*searchPath*/ "./",
-    ts.sys.fileExists,
-    "tsconfig.json",
-  );
-  if (!configPath) {
-    throw new Error("Could not find a valid 'tsconfig.json'.");
-  }
+const configPath = ts.findConfigFile(
+  /*searchPath*/ "./",
+  ts.sys.fileExists,
+  "tsconfig.json",
+);
+if (!configPath) {
+  throw new Error("Could not find a valid 'tsconfig.json'.");
+}
 
-  const cmdline = ts.getParsedCommandLineOfConfigFile(
-    configPath,
-    {},
-    {
-      fileExists: ts.sys.fileExists,
-      getCurrentDirectory: ts.sys.getCurrentDirectory,
-      onUnRecoverableConfigFileDiagnostic: (e) => console.log(e),
-      readDirectory: ts.sys.readDirectory,
-      readFile: ts.sys.readFile,
-      useCaseSensitiveFileNames: true,
-    },
-  );
+console.log(configPath);
 
-  const fileNames = cmdline.fileNames;
+const cmdline = ts.getParsedCommandLineOfConfigFile(
+  configPath,
+  {},
+  {
+    fileExists: ts.sys.fileExists,
+    getCurrentDirectory: ts.sys.getCurrentDirectory,
+    onUnRecoverableConfigFileDiagnostic: (e) => console.log(e),
+    readDirectory: ts.sys.readDirectory,
+    readFile: ts.sys.readFile,
+    useCaseSensitiveFileNames: true,
+  },
+);
 
-  fileNames.sort();
+console.log(cmdline);
 
-  const outChunks: string[] = [];
+const prog = ts.createProgram({
+  options: cmdline.options,
+  rootNames: cmdline.fileNames,
+});
 
-  outChunks.push(`# SOME DESCRIPTIVE TITLE.
+const allFiles = prog.getSourceFiles();
+
+const ownFiles = allFiles.filter(
+  (x) =>
+    !x.isDeclarationFile &&
+    !prog.isSourceFileFromExternalLibrary(x) &&
+    !prog.isSourceFileDefaultLibrary(x),
+);
+
+console.log(ownFiles.map((x) => x.fileName));
+
+const chunks = [];
+
+chunks.push(`# SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
@@ -421,16 +426,8 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\\n"
 "Content-Transfer-Encoding: 8bit\\n"`);
 
-  fileNames.forEach((fileName) => {
-    let sourceFile = ts.createSourceFile(
-      fileName,
-      readFileSync(fileName).toString(),
-      ts.ScriptTarget.ES2016,
-      /*setParentNodes */ true,
-    );
-    processFile(sourceFile);
-  });
-
-  const out = outChunks.join("");
-  console.log(out);
+for (const f of ownFiles) {
+  processFile(f, chunks);
 }
+
+console.log(chunks.join(""));

@@ -150,10 +150,12 @@ importers:
   packages/pogen:
     specifiers:
       '@types/node': ^17.0.17
+      po2json: ^0.4.5
       typescript: ^4.5.5
     dependencies:
       '@types/node': 17.0.17
     devDependencies:
+      po2json: 0.4.5
       typescript: 4.5.5
 
   packages/taler-util:
