@@ -12,20 +12,21 @@
 # You should have received a copy of the GNU General Public License along with
 # TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: Taler Wallet\n"
-"Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To: languages@taler.net\n"
 "POT-Creation-Date: 2016-11-23 00:00+0100\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"PO-Revision-Date: 2022-02-15 20:41+0000\n"
+"Last-Translator: Stefan <eintritt@hotmail.com>\n"
+"Language-Team: English (United States) <http://weblate.taler.net/projects/"
+"gnu-taler/webextensions/en_US/>\n"
+"Language: en-US\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.4.2\n"
 
 #: src/util/wire.ts:37
 #, c-format
@@ -85,7 +86,7 @@ msgstr ""
 #: src/webex/pages/popup.tsx:153
 #, c-format
 msgid "Balance"
-msgstr ""
+msgstr "Credit"
 
 #: src/webex/pages/popup.tsx:154
 #, c-format
@@ -100,7 +101,7 @@ msgstr ""
 #: src/webex/pages/popup.tsx:175
 #, c-format
 msgid "You have no balance to show. Need some %1$s getting started?"
-msgstr ""
+msgstr "You have no deposit to show. Need some %1$s getting started?"
 
 #: src/webex/pages/popup.tsx:238
 #, c-format
@@ -200,12 +201,12 @@ msgstr ""
 #: src/webex/pages/return-coins.tsx:206
 #, c-format
 msgid "Confirm"
-msgstr ""
+msgstr "Accept"
 
 #: src/webex/pages/return-coins.tsx:209
 #, c-format
 msgid "Cancel"
-msgstr ""
+msgstr "Abort"
 
 #: src/webex/pages/withdraw.tsx:73
 #, c-format
