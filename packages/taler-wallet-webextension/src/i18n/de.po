@@ -17,7 +17,7 @@ msgstr ""
 "Project-Id-Version: Taler Wallet\n"
 "Report-Msgid-Bugs-To: languages@taler.net\n"
 "POT-Creation-Date: 2016-11-23 00:00+0100\n"
-"PO-Revision-Date: 2022-02-11 17:04+0000\n"
+"PO-Revision-Date: 2022-02-15 20:41+0000\n"
 "Last-Translator: Stefan <eintritt@hotmail.com>\n"
 "Language-Team: German <http://weblate.taler.net/projects/gnu-taler/"
 "webextensions/de/>\n"
@@ -86,7 +86,7 @@ msgstr "Zahlung bestätigen"
 #: src/webex/pages/popup.tsx:153
 #, c-format
 msgid "Balance"
-msgstr "Saldo"
+msgstr "Guthaben"
 
 #: src/webex/pages/popup.tsx:154
 #, c-format
