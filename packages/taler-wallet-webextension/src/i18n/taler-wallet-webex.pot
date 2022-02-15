@@ -1,21 +1,12 @@
-# This file is part of TALER
-# (C) 2016 GNUnet e.V.
-#
-# TALER is free software; you can redistribute it and/or modify it under the
-# terms of the GNU General Public License as published by the Free Software
-# Foundation; either version 3, or (at your option) any later version.
-#
-# TALER is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-# A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along with
-# TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Taler Wallet\n"
+"Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-11-23 00:00+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
@@ -25,266 +16,276 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/util/wire.ts:37
-#, c-format
-msgid "Invalid Wire"
-msgstr ""
-
-#: src/util/wire.ts:42 src/util/wire.ts:45
-#, c-format
-msgid "Invalid Test Wire Detail"
-msgstr ""
-
-#: src/util/wire.ts:47
-#, c-format
-msgid "Test Wire Acct #%1$s on %2$s"
-msgstr ""
-
-#: src/util/wire.ts:49
-#, c-format
-msgid "Unknown Wire Detail"
-msgstr ""
-
-#: src/webex/pages/benchmark.tsx:52
-#, c-format
-msgid "Operation"
-msgstr ""
-
-#: src/webex/pages/benchmark.tsx:53
-#, c-format
-msgid "time (ms/op)"
-msgstr ""
-
-#: src/webex/pages/pay.tsx:130
-#, c-format
-msgid "The merchant %1$s offers you to purchase:"
-msgstr ""
-
-#: src/webex/pages/pay.tsx:136
-#, c-format
-msgid "The total price is %1$s (plus %2$s fees)."
-msgstr ""
-
-#: src/webex/pages/pay.tsx:141
-#, c-format
-msgid "The total price is %1$s."
-msgstr ""
-
-#: src/webex/pages/pay.tsx:163
-#, c-format
-msgid "Retry"
-msgstr ""
-
-#: src/webex/pages/pay.tsx:173
-#, c-format
-msgid "Confirm payment"
-msgstr ""
-
-#: src/webex/pages/popup.tsx:153
+#: src/NavigationBar.tsx:86
 #, c-format
 msgid "Balance"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:154
+#: src/NavigationBar.tsx:87
 #, c-format
-msgid "History"
+msgid "Pending"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:155
+#: src/NavigationBar.tsx:88
 #, c-format
-msgid "Debug"
+msgid "Backup"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:175
+#: src/NavigationBar.tsx:89
+#, c-format
+msgid "Settings"
+msgstr ""
+
+#: src/NavigationBar.tsx:90
+#, c-format
+msgid "Dev"
+msgstr ""
+
+#: src/wallet/BackupPage.tsx:127
+#, c-format
+msgid "Add provider"
+msgstr ""
+
+#: src/wallet/BackupPage.tsx:137
+#, c-format
+msgid "Sync all backups"
+msgstr ""
+
+#: src/wallet/BackupPage.tsx:139
+#, c-format
+msgid "Sync now"
+msgstr ""
+
+#: src/popup/BalancePage.tsx:79
 #, c-format
 msgid "You have no balance to show. Need some %1$s getting started?"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:238
+#: src/wallet/ProviderAddPage.tsx:145
 #, c-format
-msgid "%1$s incoming"
+msgid "&lt; Back"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:250
+#: src/wallet/ProviderAddPage.tsx:156
 #, c-format
-msgid "%1$s being spent"
+msgid "Next"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:281
+#: src/wallet/ProviderDetailPage.tsx:57
 #, c-format
-msgid "Error: could not retrieve balance information."
+msgid "Loading..."
 msgstr ""
 
-#: src/webex/pages/popup.tsx:390
+#: src/wallet/ProviderDetailPage.tsx:64
 #, c-format
-msgid "Invalid "
+msgid "There was an error loading the provider detail for \"%1$s\""
 msgstr ""
 
-#: src/webex/pages/popup.tsx:396
+#: src/wallet/ProviderDetailPage.tsx:75
 #, c-format
-msgid "Fees "
+msgid "There is not known provider with url \"%1$s\". Redirecting back..."
 msgstr ""
 
-#: src/webex/pages/popup.tsx:434
+#: src/wallet/ProviderDetailPage.tsx:131
 #, c-format
-msgid "Refresh sessions has completed"
+msgid "Back up"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:451
+#: src/wallet/ProviderDetailPage.tsx:142
 #, c-format
-msgid "Order Refused"
+msgid "Extend"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:465
+#: src/wallet/ProviderDetailPage.tsx:148
 #, c-format
-msgid "Order redirected"
+msgid ""
+"terms has changed, extending the service will imply accepting the new terms of "
+"service"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:482
+#: src/wallet/ProviderDetailPage.tsx:158
 #, c-format
-msgid "Payment aborted"
+msgid "old"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:512
+#: src/wallet/ProviderDetailPage.tsx:162
 #, c-format
-msgid "Payment Sent"
+msgid "new"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:536
+#: src/wallet/ProviderDetailPage.tsx:169
 #, c-format
-msgid "Order accepted"
+msgid "fee"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:547
+#: src/wallet/ProviderDetailPage.tsx:177
 #, c-format
-msgid "Reserve balance updated"
+msgid "storage"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:559
+#: src/wallet/ProviderDetailPage.tsx:190
 #, c-format
-msgid "Payment refund"
+msgid "&lt; back"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:584
+#: src/wallet/ProviderDetailPage.tsx:194
 #, c-format
-msgid "Withdrawn"
+msgid "remove provider"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:596
+#: src/wallet/ProviderDetailPage.tsx:213
 #, c-format
-msgid "Tip Accepted"
+msgid "There is conflict with another backup from %1$s"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:606
+#: src/wallet/ProviderDetailPage.tsx:228
 #, c-format
-msgid "Tip Declined"
+msgid "Unknown backup problem: %1$s"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:615
+#: src/wallet/ProviderDetailPage.tsx:247
 #, c-format
-msgid "%1$s"
+msgid "service paid"
 msgstr ""
 
-#: src/webex/pages/popup.tsx:707
+#: src/popup/Settings.tsx:46
 #, c-format
-msgid "Your wallet has no events recorded."
+msgid "Permissions"
 msgstr ""
 
-#: src/webex/pages/return-coins.tsx:124
+#: src/cta/TermsOfServiceSection.tsx:37
 #, c-format
-msgid "Wire to bank account"
+msgid "Exchange doesn't have terms of service"
 msgstr ""
 
-#: src/webex/pages/return-coins.tsx:206
+#: src/cta/TermsOfServiceSection.tsx:56
 #, c-format
-msgid "Confirm"
+msgid "Review exchange terms of service"
 msgstr ""
 
-#: src/webex/pages/return-coins.tsx:209
+#: src/cta/TermsOfServiceSection.tsx:63
+#, c-format
+msgid "Review new version of terms of service"
+msgstr ""
+
+#: src/cta/TermsOfServiceSection.tsx:75
+#, c-format
+msgid "Show terms of service"
+msgstr ""
+
+#: src/cta/TermsOfServiceSection.tsx:83
+#, c-format
+msgid "I accept the exchange terms of service"
+msgstr ""
+
+#: src/cta/TermsOfServiceSection.tsx:127
+#, c-format
+msgid "Hide terms of service"
+msgstr ""
+
+#: src/wallet/ExchangeAddConfirm.tsx:110
 #, c-format
 msgid "Cancel"
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:73
+#: src/wallet/ExchangeAddConfirm.tsx:114
 #, c-format
-msgid "Could not get details for withdraw operation:"
+msgid "Loading terms.."
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:89 src/webex/pages/withdraw.tsx:183
+#: src/wallet/ExchangeAddConfirm.tsx:121
 #, c-format
-msgid "Chose different exchange provider"
+msgid "Add exchange"
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:109
+#: src/wallet/ExchangeAddConfirm.tsx:131
 #, c-format
-msgid ""
-"Please select an exchange.  You can review the details before after your "
-"selection."
+msgid "Add exchange anyway"
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:121
+#: src/wallet/Settings.tsx:95
 #, c-format
-msgid "Select %1$s"
+msgid "Known exchanges"
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:143
+#: src/wallet/Transaction.tsx:159
 #, c-format
-msgid "Select custom exchange"
+msgid "retry"
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:163
+#: src/wallet/Transaction.tsx:163
 #, c-format
-msgid "You are about to withdraw %1$s from your bank account into your wallet."
+msgid "Forget"
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:174
+#: src/wallet/Transaction.tsx:198
 #, c-format
-msgid "Accept fees and withdraw"
+msgid "Confirm"
 msgstr ""
 
-#: src/webex/pages/withdraw.tsx:192
+#: src/cta/Pay.tsx:211
 #, c-format
-msgid "Cancel withdraw operation"
+msgid "Pay with a mobile phone"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:249
+#: src/cta/Pay.tsx:211
 #, c-format
-msgid "Withdrawal fees:"
+msgid "Hide QR"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:252
+#: src/cta/Pay.tsx:241
 #, c-format
-msgid "Rounding loss:"
+msgid "Pay"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:254
+#: src/cta/Pay.tsx:265
 #, c-format
-msgid "Earliest expiration (for deposit): %1$s"
+msgid "Withdraw digital cash"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:262
+#: src/cta/Pay.tsx:295
 #, c-format
-msgid "# Coins"
+msgid "Digital cash payment"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:263
+#: src/cta/Withdraw.tsx:101
 #, c-format
-msgid "Value"
+msgid "Digital cash withdrawal"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:264
+#: src/cta/Withdraw.tsx:149
 #, c-format
-msgid "Withdraw Fee"
+msgid "Cancel exchange selection"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:265
+#: src/cta/Withdraw.tsx:150
 #, c-format
-msgid "Refresh Fee"
+msgid "Confirm exchange selection"
 msgstr ""
 
-#: src/webex/renderHtml.tsx:266
+#: src/cta/Withdraw.tsx:155
 #, c-format
-msgid "Deposit Fee"
+msgid "Switch exchange"
 msgstr ""
+
+#: src/cta/Withdraw.tsx:174
+#, c-format
+msgid "Confirm withdrawal"
+msgstr ""
+
+#: src/cta/Withdraw.tsx:183
+#, c-format
+msgid "Withdraw anyway"
+msgstr ""
+
+#: src/cta/Withdraw.tsx:310
+#, c-format
+msgid "missing withdraw uri"
+msgstr ""
+
+#: src/cta/Deposit.tsx:186
+#, c-format
+msgid "Digital cash deposit"
+msgstr ""
+

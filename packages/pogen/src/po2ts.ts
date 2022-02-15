@@ -23,38 +23,44 @@ import * as po2json from "po2json";
 import * as fs from "fs";
 import * as path from "path";
 
-const files = fs
-  .readdirSync("./src/i18n")
-  .filter((x) => x.endsWith(".po"))
-  .map((x) => path.join("./src/i18n/", x));
+export function po2ts(): void {
+  const files = fs
+    .readdirSync("./src/i18n")
+    .filter((x) => x.endsWith(".po"))
+    .map((x) => path.join("./src/i18n/", x));
 
-if (files.length === 0) {
-  console.error("no .po files found in src/i18n/");
-  process.exit(1);
-}
-
-console.log(files);
-
-const chunks: string[] = [];
-
-for (const filename of files) {
-  const m = filename.match(/([a-zA-Z0-9-_]+).po/);
-
-  if (!m) {
-    console.error("error: unexpected filename (expected <lang>.po)");
+  if (files.length === 0) {
+    console.error("no .po files found in src/i18n/");
     process.exit(1);
   }
 
-  const lang = m[1];
-  const pojson = po2json.parseFileSync(filename, {
-    format: "jed1.x",
-    fuzzy: true,
-  });
-  const s =
-    "strings['" + lang + "'] = " + JSON.stringify(pojson, null, "  ") + ";\n\n";
-  chunks.push(s);
+  console.log(files);
+
+  const chunks: string[] = [];
+
+  for (const filename of files) {
+    const m = filename.match(/([a-zA-Z0-9-_]+).po/);
+
+    if (!m) {
+      console.error("error: unexpected filename (expected <lang>.po)");
+      process.exit(1);
+    }
+
+    const lang = m[1];
+    const pojson = po2json.parseFileSync(filename, {
+      format: "jed1.x",
+      fuzzy: true,
+    });
+    const s =
+      "strings['" +
+      lang +
+      "'] = " +
+      JSON.stringify(pojson, null, "  ") +
+      ";\n\n";
+    chunks.push(s);
+  }
+
+  const tsContents = chunks.join("");
+
+  fs.writeFileSync("src/i18n/strings.ts", tsContents);
 }
-
-const tsContents = chunks.join("");
-
-fs.writeFileSync("src/i18n/strings.ts", tsContents);

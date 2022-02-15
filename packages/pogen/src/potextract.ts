@@ -14,21 +14,27 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 /**
  * Imports.
  */
 import * as ts from "typescript";
+import * as fs from "fs";
+import * as os from "os";
+import path = require("path/posix");
 
 function wordwrap(str: string, width: number = 80): string[] {
   var regex = ".{1," + width + "}(\\s|$)|\\S+(\\s|$)";
   return str.match(RegExp(regex, "g"));
 }
 
-export function processFile(sourceFile: ts.SourceFile, outChunks: string[]) {
-  processNode(sourceFile);
+function processFile(
+  sourceFile: ts.SourceFile,
+  outChunks: string[],
+  knownMessageIds: Set<string>,
+) {
   let lastTokLine = 0;
   let preLastTokLine = 0;
+  processNode(sourceFile);
 
   function getTemplate(node: ts.Node): string {
     switch (node.kind) {
@@ -140,7 +146,8 @@ export function processFile(sourceFile: ts.SourceFile, outChunks: string[]) {
         outChunks.push(`#. ${cl}\n`);
       }
     }
-    outChunks.push(`#: ${sourceFile.fileName}:${line + 1}\n`);
+    const fn = path.relative(process.cwd(), sourceFile.fileName);
+    outChunks.push(`#: ${fn}:${line + 1}\n`);
     outChunks.push(`#, c-format\n`);
   }
 
@@ -148,7 +155,7 @@ export function processFile(sourceFile: ts.SourceFile, outChunks: string[]) {
     // Do escaping, wrap break at newlines
     let parts = msg
       .match(/(.*\n|.+$)/g)
-      .map((x) => x.replace(/\n/g, "\\n"))
+      .map((x) => x.replace(/\n/g, "\\n").replace(/"/g, '\\"'))
       .map((p) => wordwrap(p))
       .reduce((a, b) => a.concat(b));
     if (parts.length == 1) {
@@ -188,7 +195,7 @@ export function processFile(sourceFile: ts.SourceFile, outChunks: string[]) {
     }
   }
 
-  function trim(s) {
+  function trim(s: string) {
     return s.replace(/^[ \n\t]*/, "").replace(/[ \n\t]*$/, "");
   }
 
@@ -284,10 +291,13 @@ export function processFile(sourceFile: ts.SourceFile, outChunks: string[]) {
           let content = getJsxContent(node);
           let { line } = ts.getLineAndCharacterOfPosition(sourceFile, node.pos);
           let comment = getComment(node);
-          formatMsgComment(line, comment);
-          formatMsgLine("msgid", content);
-          outChunks.push(`msgstr ""\n`);
-          outChunks.push("\n");
+          if (!knownMessageIds.has(content)) {
+            knownMessageIds.add(content);
+            formatMsgComment(line, comment);
+            formatMsgLine("msgid", content);
+            outChunks.push(`msgstr ""\n`);
+            outChunks.push("\n");
+          }
           return;
         }
         if (arrayEq(path, ["i18n", "TranslateSwitch"])) {
@@ -304,11 +314,14 @@ export function processFile(sourceFile: ts.SourceFile, outChunks: string[]) {
             console.error("plural form missing");
             process.exit(1);
           }
-          formatMsgLine("msgid", singularForm);
-          formatMsgLine("msgid_plural", pluralForm);
-          outChunks.push(`msgstr[0] ""\n`);
-          outChunks.push(`msgstr[1] ""\n`);
-          outChunks.push(`\n`);
+          if (!knownMessageIds.has(singularForm)) {
+            knownMessageIds.add(singularForm);
+            formatMsgLine("msgid", singularForm);
+            formatMsgLine("msgid_plural", pluralForm);
+            outChunks.push(`msgstr[0] ""\n`);
+            outChunks.push(`msgstr[1] ""\n`);
+            outChunks.push(`\n`);
+          }
           return;
         }
         break;
@@ -333,13 +346,16 @@ export function processFile(sourceFile: ts.SourceFile, outChunks: string[]) {
           <ts.TaggedTemplateExpression>ce.arguments[1],
         );
         let comment = getComment(ce);
-
-        formatMsgComment(line, comment);
-        formatMsgLine("msgid", t1.template);
-        formatMsgLine("msgid_plural", t2.template);
-        outChunks.push(`msgstr[0] ""\n`);
-        outChunks.push(`msgstr[1] ""\n`);
-        outChunks.push("\n");
+        const msgid = t1.template;
+        if (!knownMessageIds.has(msgid)) {
+          knownMessageIds.add(msgid);
+          formatMsgComment(line, comment);
+          formatMsgLine("msgid", t1.template);
+          formatMsgLine("msgid_plural", t2.template);
+          outChunks.push(`msgstr[0] ""\n`);
+          outChunks.push(`msgstr[1] ""\n`);
+          outChunks.push("\n");
+        }
 
         // Important: no processing for child i18n expressions here
         return;
@@ -351,10 +367,14 @@ export function processFile(sourceFile: ts.SourceFile, outChunks: string[]) {
         if (path[0] != "i18n") {
           break;
         }
-        formatMsgComment(line, comment);
-        formatMsgLine("msgid", template);
-        outChunks.push(`msgstr ""\n`);
-        outChunks.push("\n");
+        const msgid = template;
+        if (!knownMessageIds.has(msgid)) {
+          knownMessageIds.add(msgid);
+          formatMsgComment(line, comment);
+          formatMsgLine("msgid", template);
+          outChunks.push(`msgstr ""\n`);
+          outChunks.push("\n");
+        }
         break;
       }
     }
@@ -363,51 +383,48 @@ export function processFile(sourceFile: ts.SourceFile, outChunks: string[]) {
   }
 }
 
-const configPath = ts.findConfigFile(
-  /*searchPath*/ "./",
-  ts.sys.fileExists,
-  "tsconfig.json",
-);
-if (!configPath) {
-  throw new Error("Could not find a valid 'tsconfig.json'.");
-}
+export function potextract() {
+  const configPath = ts.findConfigFile(
+    /*searchPath*/ "./",
+    ts.sys.fileExists,
+    "tsconfig.json",
+  );
+  if (!configPath) {
+    throw new Error("Could not find a valid 'tsconfig.json'.");
+  }
 
-console.log(configPath);
+  const cmdline = ts.getParsedCommandLineOfConfigFile(
+    configPath,
+    {},
+    {
+      fileExists: ts.sys.fileExists,
+      getCurrentDirectory: ts.sys.getCurrentDirectory,
+      onUnRecoverableConfigFileDiagnostic: (e) => console.log(e),
+      readDirectory: ts.sys.readDirectory,
+      readFile: ts.sys.readFile,
+      useCaseSensitiveFileNames: true,
+    },
+  );
 
-const cmdline = ts.getParsedCommandLineOfConfigFile(
-  configPath,
-  {},
-  {
-    fileExists: ts.sys.fileExists,
-    getCurrentDirectory: ts.sys.getCurrentDirectory,
-    onUnRecoverableConfigFileDiagnostic: (e) => console.log(e),
-    readDirectory: ts.sys.readDirectory,
-    readFile: ts.sys.readFile,
-    useCaseSensitiveFileNames: true,
-  },
-);
+  const prog = ts.createProgram({
+    options: cmdline.options,
+    rootNames: cmdline.fileNames,
+  });
 
-console.log(cmdline);
+  const allFiles = prog.getSourceFiles();
 
-const prog = ts.createProgram({
-  options: cmdline.options,
-  rootNames: cmdline.fileNames,
-});
+  const ownFiles = allFiles.filter(
+    (x) =>
+      !x.isDeclarationFile &&
+      !prog.isSourceFileFromExternalLibrary(x) &&
+      !prog.isSourceFileDefaultLibrary(x),
+  );
 
-const allFiles = prog.getSourceFiles();
+  //console.log(ownFiles.map((x) => x.fileName));
 
-const ownFiles = allFiles.filter(
-  (x) =>
-    !x.isDeclarationFile &&
-    !prog.isSourceFileFromExternalLibrary(x) &&
-    !prog.isSourceFileDefaultLibrary(x),
-);
+  const chunks = [];
 
-console.log(ownFiles.map((x) => x.fileName));
-
-const chunks = [];
-
-chunks.push(`# SOME DESCRIPTIVE TITLE.
+  chunks.push(`# SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
@@ -424,10 +441,26 @@ msgstr ""
 "Language: \\n"
 "MIME-Version: 1.0\\n"
 "Content-Type: text/plain; charset=UTF-8\\n"
-"Content-Transfer-Encoding: 8bit\\n"`);
+"Content-Transfer-Encoding: 8bit\\n"\n\n`);
 
-for (const f of ownFiles) {
-  processFile(f, chunks);
+  const knownMessageIds = new Set<string>();
+
+  for (const f of ownFiles) {
+    processFile(f, chunks, knownMessageIds);
+  }
+
+  const pot = chunks.join("");
+
+  //console.log(pot);
+
+  const packageJson = JSON.parse(
+    fs.readFileSync("./package.json", { encoding: "utf-8" }),
+  );
+
+  const poDomain = packageJson.pogen?.domain;
+  if (!poDomain) {
+    console.error("missing 'pogen.domain' field in package.json");
+    process.exit(1);
+  }
+  fs.writeFileSync(`./src/i18n/${poDomain}.pot`, pot);
 }
-
-console.log(chunks.join(""));

@@ -15,7 +15,9 @@
     "build-storybook": "build-storybook",
     "storybook": "start-storybook -s . -p 6006",
     "pretty": "prettier --write src",
-    "watch": "tsc --watch & rollup -w -c"
+    "watch": "tsc --watch & rollup -w -c",
+    "i18n:extract": "pogen extract",
+    "i18n:msgmerge": "pogen msgmerge"
   },
   "dependencies": {
     "@gnu-taler/taler-util": "workspace:*",
@@ -71,5 +73,8 @@
       "**"
     ],
     "exclude": []
+  },
+  "pogen": {
+    "domain": "taler-wallet-webex"
   }
 }
