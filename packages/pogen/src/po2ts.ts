@@ -22,12 +22,10 @@
 import * as po2json from "po2json";
 import * as fs from "fs";
 import * as path from "path";
+import glob = require("glob");
 
 export function po2ts(): void {
-  const files = fs
-    .readdirSync("./src/i18n")
-    .filter((x) => x.endsWith(".po"))
-    .map((x) => path.join("./src/i18n/", x));
+  const files = glob.sync("src/i18n/*.po");
 
   if (files.length === 0) {
     console.error("no .po files found in src/i18n/");
