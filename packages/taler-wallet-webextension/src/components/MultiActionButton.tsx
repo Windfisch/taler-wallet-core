@@ -69,18 +69,21 @@ export function MultiActionButton({
           ))}
         </div>
       )}
-      <ButtonPrimary
+      <ButtonBoxPrimary
         onClick={() => doClick(selected)}
         style={{
           borderTopRightRadius: 0,
           borderBottomRightRadius: 0,
           marginRight: 0,
+          maxWidth: 170,
+          overflowX: "hidden",
+          textOverflow: "ellipsis",
         }}
       >
         {label(selected)}
-      </ButtonPrimary>
+      </ButtonBoxPrimary>
 
-      <ButtonBoxPrimary
+      <ButtonPrimary
         onClick={() => setOpened((s) => !s)}
         style={{
           marginLeft: 0,
@@ -89,7 +92,7 @@ export function MultiActionButton({
         }}
       >
         <img style={{ height: 14 }} src={arrowDown} />
-      </ButtonBoxPrimary>
+      </ButtonPrimary>
     </div>
   );
 }

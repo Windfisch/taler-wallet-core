@@ -22,7 +22,6 @@
 import * as a1 from "../wallet/AddNewActionView.stories";
 import * as a2 from "./Balance.stories";
 import * as a3 from "./DeveloperPage.stories";
-import * as a5 from "./Popup.stories";
 import * as a6 from "./TalerActionFound.stories";
 
-export default [a1, a2, a3, a5, a6];
+export default [a1, a2, a3, a6];

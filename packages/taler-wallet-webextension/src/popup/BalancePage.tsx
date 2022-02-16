@@ -17,10 +17,11 @@
 import { Amounts, Balance, i18n } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { BalanceTable } from "../components/BalanceTable";
+import { JustInDevMode } from "../components/JustInDevMode";
 import { Loading } from "../components/Loading";
 import { LoadingError } from "../components/LoadingError";
 import { MultiActionButton } from "../components/MultiActionButton";
-import { ButtonPrimary } from "../components/styled";
+import { ButtonBoxPrimary, ButtonPrimary } from "../components/styled";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { PageLink } from "../renderHtml";
 import * as wxApi from "../wxApi";
@@ -77,8 +78,10 @@ export function BalanceView({
       <Fragment>
         <p>
           <i18n.Translate>
-            You have no balance to show. Need some{" "}
-            <PageLink pageName="/welcome">help</PageLink> getting started?
+            You have no balance to show.
+            <a href="https://demo.taler.net/" style={{ display: "block" }}>
+              Learn how to top up your wallet balance »
+            </a>
           </i18n.Translate>
         </p>
         <footer style={{ justifyContent: "space-between" }}>
@@ -109,6 +112,9 @@ export function BalanceView({
             onClick={(c) => goToWalletDeposit(c)}
           />
         )}
+        <JustInDevMode>
+          <ButtonBoxPrimary onClick={() => null}>enter uri</ButtonBoxPrimary>
+        </JustInDevMode>
       </footer>
     </Fragment>
   );

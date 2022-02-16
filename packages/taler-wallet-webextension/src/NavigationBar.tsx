@@ -25,8 +25,9 @@
  * Imports.
  */
 import { i18n } from "@gnu-taler/taler-util";
-import { ComponentChildren, h, VNode } from "preact";
-import { PopupNavigation } from "./components/styled";
+import { VNode, h } from "preact";
+import { JustInDevMode } from "./components/JustInDevMode";
+import { NavigationHeader, NavigationHeaderHolder } from "./components/styled";
 
 export enum Pages {
   welcome = "/welcome",
@@ -55,40 +56,56 @@ export enum Pages {
   cta_withdraw = "/cta/withdraw",
 }
 
-interface TabProps {
-  target: string;
-  current?: string;
-  children?: ComponentChildren;
-}
-
-function Tab(props: TabProps): VNode {
-  let cssClass = "";
-  if (props.current?.startsWith(props.target)) {
-    cssClass = "active";
-  }
+export function PopupNavBar({ path = "" }: { path?: string }): VNode {
+  const innerUrl = chrome.runtime
+    ? new URL(chrome.runtime.getURL("/static/wallet.html#/settings")).href
+    : "#";
   return (
-    <a href={props.target} class={cssClass}>
-      {props.children}
-    </a>
+    <NavigationHeader>
+      <a
+        href="/balance"
+        class={path.startsWith("/balance") ? "active" : ""}
+      >{i18n.str`Balance`}</a>
+      <a
+        href="/backup"
+        class={path.startsWith("/backup") ? "active" : ""}
+      >{i18n.str`Backup`}</a>
+      <a />
+      <a href={innerUrl} target="_blank" rel="noreferrer">
+        <div class="settings-icon" title="Settings" />
+      </a>
+    </NavigationHeader>
   );
 }
 
-export function NavBar({
-  devMode,
-  path,
-}: {
-  path: string;
-  devMode: boolean;
-}): VNode {
+export function WalletNavBar({ path = "" }: { path?: string }): VNode {
   return (
-    <PopupNavigation devMode={devMode}>
-      <div>
-        <Tab target="/balance" current={path}>{i18n.str`Balance`}</Tab>
-        <Tab target="/pending" current={path}>{i18n.str`Pending`}</Tab>
-        <Tab target="/backup" current={path}>{i18n.str`Backup`}</Tab>
-        <Tab target="/settings" current={path}>{i18n.str`Settings`}</Tab>
-        {devMode && <Tab target="/dev" current={path}>{i18n.str`Dev`}</Tab>}
-      </div>
-    </PopupNavigation>
+    <NavigationHeaderHolder>
+      <NavigationHeader>
+        <a
+          href="/balance"
+          class={path.startsWith("/balance") ? "active" : ""}
+        >{i18n.str`Balance`}</a>
+        <a
+          href="/backup"
+          class={path.startsWith("/backup") ? "active" : ""}
+        >{i18n.str`Backup`}</a>
+
+        <JustInDevMode>
+          <a
+            href="/dev"
+            class={path.startsWith("/dev") ? "active" : ""}
+          >{i18n.str`Dev`}</a>
+        </JustInDevMode>
+
+        <a />
+        <a
+          href="/settings"
+          class={path.startsWith("/settings") ? "active" : ""}
+        >
+          <div class="settings-icon" title="Settings" />
+        </a>
+      </NavigationHeader>
+    </NavigationHeaderHolder>
   );
 }

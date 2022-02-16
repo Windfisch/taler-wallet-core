@@ -391,6 +391,7 @@ export const Button = styled.button<{ upperCased?: boolean }>`
   background-color: "#e6e6e6";
   text-decoration: none;
   border-radius: 2px;
+  text-transform: uppercase;
 
   :focus {
     outline: 0;
@@ -507,12 +508,12 @@ export const LinkPrimary = styled(Link)`
 
 export const ButtonPrimary = styled(ButtonVariant)<{ small?: boolean }>`
   font-size: ${({ small }) => (small ? "small" : "inherit")};
-  background-color: rgb(66, 184, 221);
-  border-color: rgb(66, 184, 221);
+  background-color: #0042b2;
+  border-color: #0042b2;
 `;
 export const ButtonBoxPrimary = styled(ButtonBox)`
-  color: rgb(66, 184, 221);
-  border-color: rgb(66, 184, 221);
+  color: #0042b2;
+  border-color: #0042b2;
 `;
 
 export const ButtonSuccess = styled(ButtonVariant)`
@@ -776,30 +777,52 @@ export const WarningBox = styled(ErrorBox)`
   border-color: #ffecb5;
 `;
 
-export const PopupNavigation = styled.div<{ devMode?: boolean }>`
+import settingsIcon from "../../../static/img/settings_black_24dp.svg";
+
+export const NavigationHeaderHolder = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #0042b2;
+`;
+
+export const NavigationHeader = styled.div`
   background-color: #0042b2;
   height: 35px;
   justify-content: space-around;
   display: flex;
 
-  & > div {
+  & {
     width: 500px;
   }
 
-  & > div > a {
+  & > a {
     color: #f8faf7;
     display: inline-block;
-    width: 100px;
+    width: 100%;
     text-align: center;
     text-decoration: none;
     vertical-align: middle;
     line-height: 35px;
   }
 
-  & > div > a.active {
+  & > a > div.settings-icon {
+    mask: url(${settingsIcon}) no-repeat center;
+    background-color: white;
+    width: 24px;
+    height: 24px;
+    margin-left: auto;
+    margin-right: 8px;
+    padding: 4px;
+  }
+  & > a.active {
     background-color: #f8faf7;
     color: #0042b2;
     font-weight: bold;
+  }
+  & > a.active > div.settings-icon {
+    background-color: #0042b2;
   }
 `;
 

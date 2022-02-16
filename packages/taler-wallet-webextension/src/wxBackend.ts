@@ -226,18 +226,18 @@ function makeSyncWalletRedirect(
       .join("&");
     innerUrl.hash = innerUrl.hash + "?" + hParams;
   }
-  if (isFirefox()) {
-    // Some platforms don't support the sync redirect (yet), so fall back to
-    // async redirect after a timeout.
-    const doit = async (): Promise<void> => {
-      await waitMs(150);
-      const tab = await getTab(tabId);
-      if (tab.url === oldUrl) {
-        chrome.tabs.update(tabId, { url: innerUrl.href });
-      }
-    };
-    doit();
-  }
+  // if (isFirefox()) {
+  //   // Some platforms don't support the sync redirect (yet), so fall back to
+  //   // async redirect after a timeout.
+  //   const doit = async (): Promise<void> => {
+  //     await waitMs(150);
+  //     const tab = await getTab(tabId);
+  //     if (tab.url === oldUrl) {
+  //       chrome.tabs.update(tabId, { url: innerUrl.href });
+  //     }
+  //   };
+  //   doit();
+  // }
   console.log("redirecting to", innerUrl.href);
   chrome.tabs.update(tabId, { url: innerUrl.href });
   return { redirectUrl: innerUrl.href };

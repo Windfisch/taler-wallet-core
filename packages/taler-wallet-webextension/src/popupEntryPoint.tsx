@@ -22,25 +22,24 @@
 
 import { setupI18n } from "@gnu-taler/taler-util";
 import { createHashHistory } from "history";
-import { render, h, VNode, Fragment } from "preact";
+import { Fragment, h, render, VNode } from "preact";
 import Router, { route, Route } from "preact-router";
+import { Match } from "preact-router/match";
 import { useEffect } from "preact/hooks";
 import { PopupBox } from "./components/styled";
 import { DevContextProvider } from "./context/devContext";
+import { IoCProviderForRuntime } from "./context/iocContext";
 import { useTalerActionURL } from "./hooks/useTalerActionURL";
 import { strings } from "./i18n/strings";
-import { NavBar, Pages } from "./NavigationBar";
-import { BackupPage } from "./wallet/BackupPage";
+import { Pages, PopupNavBar } from "./NavigationBar";
 import { BalancePage } from "./popup/BalancePage";
 import { DeveloperPage } from "./popup/DeveloperPage";
+import { TalerActionFound } from "./popup/TalerActionFound";
+import { BackupPage } from "./wallet/BackupPage";
+import { ExchangeAddPage } from "./wallet/ExchangeAddPage";
+import { Pending } from "./wallet/PendingPage";
 import { ProviderAddPage } from "./wallet/ProviderAddPage";
 import { ProviderDetailPage } from "./wallet/ProviderDetailPage";
-import { SettingsPage } from "./popup/Settings";
-import { TalerActionFound } from "./popup/TalerActionFound";
-import { ExchangeAddPage } from "./wallet/ExchangeAddPage";
-import { IoCProviderForRuntime } from "./context/iocContext";
-import { Pending } from "./wallet/PendingPage";
-import { Match } from "preact-router/match";
 
 function main(): void {
   try {
@@ -84,9 +83,7 @@ function Application(): VNode {
       {({ devMode }: { devMode: boolean }) => (
         <IoCProviderForRuntime>
           <Match>
-            {({ path }: { path: string }) => (
-              <NavBar devMode={devMode} path={path} />
-            )}
+            {({ path }: { path: string }) => <PopupNavBar path={path} />}
           </Match>
           <CheckTalerActionComponent />
           <PopupBox devMode={devMode}>
@@ -112,7 +109,6 @@ function Application(): VNode {
                   )
                 }
               />
-              <Route path={Pages.settings} component={SettingsPage} />
               <Route
                 path={Pages.cta}
                 component={function Action({ action }: { action: string }) {

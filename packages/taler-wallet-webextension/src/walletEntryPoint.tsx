@@ -20,14 +20,19 @@
  * @author Florian Dold <dold@taler.net>
  */
 
-import { setupI18n } from "@gnu-taler/taler-util";
+import { i18n, setupI18n } from "@gnu-taler/taler-util";
 import { createHashHistory } from "history";
 import { Fragment, h, render, VNode } from "preact";
 import Router, { route, Route } from "preact-router";
 import Match from "preact-router/match";
 import { useEffect, useState } from "preact/hooks";
 import { LogoHeader } from "./components/LogoHeader";
-import { SuccessBox, WalletBox } from "./components/styled";
+import {
+  NavigationHeader,
+  NavigationHeaderHolder,
+  SuccessBox,
+  WalletBox,
+} from "./components/styled";
 import { DevContextProvider } from "./context/devContext";
 import { IoCProviderForRuntime } from "./context/iocContext";
 import { PayPage } from "./cta/Pay";
@@ -35,7 +40,7 @@ import { RefundPage } from "./cta/Refund";
 import { TipPage } from "./cta/Tip";
 import { WithdrawPage } from "./cta/Withdraw";
 import { strings } from "./i18n/strings";
-import { NavBar, Pages } from "./NavigationBar";
+import { Pages, WalletNavBar } from "./NavigationBar";
 import { DeveloperPage } from "./popup/DeveloperPage";
 import { BackupPage } from "./wallet/BackupPage";
 import { DepositPage } from "./wallet/DepositPage";
@@ -94,7 +99,7 @@ function Application(): VNode {
                 return (
                   <Fragment>
                     <LogoHeader />
-                    <NavBar devMode={devMode} path={path} />
+                    <WalletNavBar path={path} />
                   </Fragment>
                 );
               }}

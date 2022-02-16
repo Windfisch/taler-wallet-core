@@ -15,7 +15,7 @@
  */
 
 import { h, Fragment } from "preact"
-import { NavBar } from '../src/NavigationBar'
+import { PopupNavBar, WalletNavBar } from '../src/NavigationBar'
 import { LogoHeader } from '../src/components/LogoHeader'
 import { TranslationProvider } from '../src/context/translation'
 import { PopupBox, WalletBox } from '../src/components/styled'
@@ -56,7 +56,7 @@ export const decorators = [
         const path = /popup(\/.*).*/.exec(kind)[1];
         // add a fake header so it looks similar
         return <Fragment>
-          <NavBar path={path} devMode={path === '/dev'} />
+          <PopupNavBar path={path} devMode={path === '/dev'} />
           <PopupBox>
             <Story />
           </PopupBox>
@@ -155,7 +155,7 @@ export const decorators = [
         }`}
         </style>
         <LogoHeader />
-        <NavBar path={path} devMode={path === '/dev'} />
+        <WalletNavBar path={path} />
         <WalletBox>
           <Story />
         </WalletBox>
