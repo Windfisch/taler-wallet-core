@@ -37,11 +37,11 @@ strings["de"] = {
       "The total price is %1$s.": [""],
       Retry: [""],
       "Confirm payment": ["Bezahlung bestätigen"],
-      Balance: ["Saldo"],
+      Balance: ["Guthaben"],
       History: ["Verlauf"],
       Debug: ["Debug"],
       "You have no balance to show. Need some %1$s getting started?": [
-        "Sie haben kein Digitalgeld. Wollen Sie %1$s? abheben?",
+        "Sie haben kein Guthaben. Wollen Sie %1$s abheben?",
       ],
       "%1$s incoming": [""],
       "%1$s being spent": [""],
