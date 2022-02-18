@@ -17,7 +17,7 @@ msgstr ""
 "Project-Id-Version: Taler Wallet\n"
 "Report-Msgid-Bugs-To: languages@taler.net\n"
 "POT-Creation-Date: 2016-11-23 00:00+0100\n"
-"PO-Revision-Date: 2022-02-15 20:41+0000\n"
+"PO-Revision-Date: 2022-02-18 19:31+0000\n"
 "Last-Translator: Stefan <eintritt@hotmail.com>\n"
 "Language-Team: French <http://weblate.taler.net/projects/gnu-taler/"
 "webextensions/fr/>\n"
@@ -201,7 +201,7 @@ msgstr ""
 #: src/webex/pages/return-coins.tsx:206
 #, c-format
 msgid "Confirm"
-msgstr "confirmer"
+msgstr "Confirmer"
 
 #: src/webex/pages/return-coins.tsx:209
 #, c-format
