@@ -14,8 +14,9 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Amounts, Balance, i18n } from "@gnu-taler/taler-util";
+import { Amounts, Balance } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
+import { useState } from "preact/hooks";
 import { BalanceTable } from "../components/BalanceTable";
 import { JustInDevMode } from "../components/JustInDevMode";
 import { Loading } from "../components/Loading";
@@ -23,8 +24,9 @@ import { LoadingError } from "../components/LoadingError";
 import { MultiActionButton } from "../components/MultiActionButton";
 import { ButtonBoxPrimary, ButtonPrimary } from "../components/styled";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import { PageLink } from "../renderHtml";
+import { AddNewActionView } from "../wallet/AddNewActionView";
 import * as wxApi from "../wxApi";
+import { NoBalanceHelp } from "./NoBalanceHelp";
 
 interface Props {
   goToWalletDeposit: (currency: string) => void;
@@ -36,6 +38,7 @@ export function BalancePage({
   goToWalletDeposit,
   goToWalletHistory,
 }: Props): VNode {
+  const [addingAction, setAddingAction] = useState(false);
   const state = useAsyncAsHook(wxApi.getBalance);
   const balances = !state || state.hasError ? [] : state.response.balances;
 
@@ -47,18 +50,24 @@ export function BalancePage({
     return <LoadingError title="Could not load balance page" error={state} />;
   }
 
+  if (addingAction) {
+    return <AddNewActionView onCancel={() => setAddingAction(false)} />;
+  }
+
   return (
     <BalanceView
       balances={balances}
       goToWalletManualWithdraw={goToWalletManualWithdraw}
       goToWalletDeposit={goToWalletDeposit}
       goToWalletHistory={goToWalletHistory}
+      goToAddAction={() => setAddingAction(true)}
     />
   );
 }
 export interface BalanceViewProps {
   balances: Balance[];
   goToWalletManualWithdraw: () => void;
+  goToAddAction: () => void;
   goToWalletDeposit: (currency: string) => void;
   goToWalletHistory: (currency: string) => void;
 }
@@ -68,6 +77,7 @@ export function BalanceView({
   goToWalletManualWithdraw,
   goToWalletDeposit,
   goToWalletHistory,
+  goToAddAction,
 }: BalanceViewProps): VNode {
   const currencyWithNonZeroAmount = balances
     .filter((b) => !Amounts.isZero(b.available))
@@ -75,21 +85,7 @@ export function BalanceView({
 
   if (balances.length === 0) {
     return (
-      <Fragment>
-        <p>
-          <i18n.Translate>
-            You have no balance to show.
-            <a href="https://demo.taler.net/" style={{ display: "block" }}>
-              Learn how to top up your wallet balance »
-            </a>
-          </i18n.Translate>
-        </p>
-        <footer style={{ justifyContent: "space-between" }}>
-          <ButtonPrimary onClick={goToWalletManualWithdraw}>
-            Withdraw
-          </ButtonPrimary>
-        </footer>
-      </Fragment>
+      <NoBalanceHelp goToWalletManualWithdraw={goToWalletManualWithdraw} />
     );
   }
 
@@ -113,7 +109,7 @@ export function BalanceView({
           />
         )}
         <JustInDevMode>
-          <ButtonBoxPrimary onClick={() => null}>enter uri</ButtonBoxPrimary>
+          <ButtonBoxPrimary onClick={goToAddAction}>enter uri</ButtonBoxPrimary>
         </JustInDevMode>
       </footer>
     </Fragment>

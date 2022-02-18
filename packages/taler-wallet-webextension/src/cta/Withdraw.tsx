@@ -28,10 +28,12 @@ import {
   i18n,
   WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
+import { OperationFailedError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { Loading } from "../components/Loading";
 import { LoadingError } from "../components/LoadingError";
+import { ErrorTalerOperation } from "../components/ErrorTalerOperation";
 import { LogoHeader } from "../components/LogoHeader";
 import { Part } from "../components/Part";
 import { SelectList } from "../components/SelectList";
@@ -64,7 +66,6 @@ export interface ViewProps {
   onAccept: (b: boolean) => void;
   reviewing: boolean;
   reviewed: boolean;
-  confirmed: boolean;
   terms: TermsState;
   knownExchanges: ExchangeListItem[];
 }
@@ -81,8 +82,12 @@ export function View({
   onReview,
   onAccept,
   reviewed,
-  confirmed,
 }: ViewProps): VNode {
+  const [withdrawError, setWithdrawError] = useState<
+    OperationFailedError | undefined
+  >(undefined);
+  const [confirmDisabled, setConfirmDisabled] = useState<boolean>(false);
+
   const needsReview = terms.status === "changed" || terms.status === "new";
 
   const [switchingExchange, setSwitchingExchange] = useState(false);
@@ -90,15 +95,37 @@ export function View({
     undefined,
   );
 
-  const exchanges = knownExchanges.reduce(
-    (prev, ex) => ({ ...prev, [ex.exchangeBaseUrl]: ex.exchangeBaseUrl }),
-    {},
-  );
+  const exchanges = knownExchanges
+    .filter((e) => e.currency === amount.currency)
+    .reduce(
+      (prev, ex) => ({ ...prev, [ex.exchangeBaseUrl]: ex.exchangeBaseUrl }),
+      {},
+    );
+
+  async function doWithdrawAndCheckError() {
+    try {
+      setConfirmDisabled(true);
+      await onWithdraw();
+    } catch (e) {
+      if (e instanceof OperationFailedError) {
+        setWithdrawError(e);
+      }
+      setConfirmDisabled(false);
+    }
+  }
 
   return (
     <WalletAction>
       <LogoHeader />
       <h2>{i18n.str`Digital cash withdrawal`}</h2>
+
+      {withdrawError && (
+        <ErrorTalerOperation
+          title="Could not finish the withdrawal operation"
+          error={withdrawError.operationError}
+        />
+      )}
+
       <section>
         <Part
           title="Total to withdraw"
@@ -168,8 +195,8 @@ export function View({
         {(terms.status === "accepted" || (needsReview && reviewed)) && (
           <ButtonSuccess
             upperCased
-            disabled={!exchangeBaseUrl || confirmed}
-            onClick={onWithdraw}
+            disabled={!exchangeBaseUrl || confirmDisabled}
+            onClick={doWithdrawAndCheckError}
           >
             {i18n.str`Confirm withdrawal`}
           </ButtonSuccess>
@@ -178,7 +205,7 @@ export function View({
           <ButtonWarning
             upperCased
             disabled={!exchangeBaseUrl}
-            onClick={onWithdraw}
+            onClick={doWithdrawAndCheckError}
           >
             {i18n.str`Withdraw anyway`}
           </ButtonWarning>
@@ -204,7 +231,6 @@ export function WithdrawPageWithParsedURI({
 
   const [reviewing, setReviewing] = useState<boolean>(false);
   const [reviewed, setReviewed] = useState<boolean>(false);
-  const [confirmed, setConfirmed] = useState<boolean>(false);
 
   const knownExchangesHook = useAsyncAsHook(() => wxApi.listExchanges());
 
@@ -267,16 +293,11 @@ export function WithdrawPageWithParsedURI({
 
   const onWithdraw = async (): Promise<void> => {
     if (!exchange) return;
-    setConfirmed(true);
     console.log("accepting exchange", exchange);
-    try {
-      const res = await wxApi.acceptWithdrawal(uri, exchange);
-      console.log("accept withdrawal response", res);
-      if (res.confirmTransferUrl) {
-        document.location.href = res.confirmTransferUrl;
-      }
-    } catch (e) {
-      setConfirmed(false);
+    const res = await wxApi.acceptWithdrawal(uri, exchange);
+    console.log("accept withdrawal response", res);
+    if (res.confirmTransferUrl) {
+      document.location.href = res.confirmTransferUrl;
     }
   };
 
@@ -289,7 +310,6 @@ export function WithdrawPageWithParsedURI({
       terms={detailsHook.response.tos}
       onSwitchExchange={setCustomExchange}
       knownExchanges={knownExchanges}
-      confirmed={confirmed}
       reviewed={reviewed}
       onAccept={onAccept}
       reviewing={reviewing}

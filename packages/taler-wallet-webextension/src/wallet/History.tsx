@@ -37,6 +37,7 @@ import {
 import { Time } from "../components/Time";
 import { TransactionItem } from "../components/TransactionItem";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
+import { NoBalanceHelp } from "../popup/NoBalanceHelp";
 import * as wxApi from "../wxApi";
 
 interface Props {
@@ -130,14 +131,7 @@ export function HistoryView({
 
   if (balances.length === 0 || !selectedCurrency) {
     return (
-      <WarningBox>
-        <p>
-          You have <b>no balance</b>. Withdraw some funds into your wallet
-        </p>
-        <ButtonBoxWarning onClick={() => goToWalletManualWithdraw()}>
-          Withdraw
-        </ButtonBoxWarning>
-      </WarningBox>
+      <NoBalanceHelp goToWalletManualWithdraw={goToWalletManualWithdraw} />
     );
   }
   return (

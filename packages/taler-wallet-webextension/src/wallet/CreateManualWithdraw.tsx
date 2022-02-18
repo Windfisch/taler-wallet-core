@@ -98,12 +98,20 @@ export function CreateManualWithdraw({
 
   if (!initialExchange) {
     return (
-      <Centered style={{ marginTop: 100 }}>
-        <BoldLight>No exchange configured</BoldLight>
-        <ButtonSuccess onClick={onAddExchange}>
-          <i18n.Translate>Add exchange</i18n.Translate>
-        </ButtonSuccess>
-      </Centered>
+      <section>
+        <h2>Manual Withdrawal</h2>
+        <LightText>
+          Choose a exchange from where the coins will be withdrawn. The exchange
+          will send the coins to this wallet after receiving a wire transfer
+          with the correct subject.
+        </LightText>
+        <Centered style={{ marginTop: 100 }}>
+          <BoldLight>No exchange configured</BoldLight>
+          <ButtonSuccess onClick={onAddExchange}>
+            <i18n.Translate>Add exchange</i18n.Translate>
+          </ButtonSuccess>
+        </Centered>
+      </section>
     );
   }
 

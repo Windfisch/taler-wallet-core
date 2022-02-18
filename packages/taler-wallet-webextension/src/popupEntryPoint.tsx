@@ -37,7 +37,6 @@ import { DeveloperPage } from "./popup/DeveloperPage";
 import { TalerActionFound } from "./popup/TalerActionFound";
 import { BackupPage } from "./wallet/BackupPage";
 import { ExchangeAddPage } from "./wallet/ExchangeAddPage";
-import { Pending } from "./wallet/PendingPage";
 import { ProviderAddPage } from "./wallet/ProviderAddPage";
 import { ProviderDetailPage } from "./wallet/ProviderDetailPage";
 
@@ -125,8 +124,6 @@ function Application(): VNode {
                   );
                 }}
               />
-
-              <Route path={Pages.pending} component={Pending} />
 
               <Route
                 path={Pages.backup}

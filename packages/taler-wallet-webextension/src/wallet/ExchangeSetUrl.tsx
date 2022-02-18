@@ -6,7 +6,13 @@ import {
 import { Fragment, h } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { ErrorMessage } from "../components/ErrorMessage";
-import { Button, ButtonPrimary, Input, WarningBox } from "../components/styled";
+import {
+  Button,
+  ButtonPrimary,
+  Input,
+  LightText,
+  WarningBox,
+} from "../components/styled";
 
 export interface Props {
   initialValue?: string;
@@ -88,6 +94,14 @@ export function ExchangeSetUrlPage({
           <h1>Add new exchange</h1>
         ) : (
           <h2>Add exchange for {expectedCurrency}</h2>
+        )}
+        {!result && (
+          <LightText>Enter the URL of an exchange you trust.</LightText>
+        )}
+        {result && (
+          <LightText>
+            An exchange has been found! Review the information and click next
+          </LightText>
         )}
         {result && expectedCurrency && expectedCurrency !== result.currency && (
           <WarningBox>

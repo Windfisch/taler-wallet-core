@@ -35,7 +35,7 @@ import { HistoryView as TestedComponent } from "./History";
 import { createExample } from "../test-utils";
 
 export default {
-  title: "wallet/balance/history",
+  title: "wallet/balance",
   component: TestedComponent,
 };
 

@@ -123,15 +123,20 @@ export const TicketWithAProductList = createExample(TestedComponent, {
       amount: "USD:10",
       products: [
         {
-          description: "beer",
+          description: "ten beers",
           price: "USD:1",
           quantity: 10,
           image: beer,
         },
         {
-          description: "brown beer",
-          price: "USD:2",
+          description: "beer without image",
+          price: "USD:1",
           quantity: 10,
+        },
+        {
+          description: "one brown beer",
+          price: "USD:2",
+          quantity: 1,
           image: beer,
         },
       ],

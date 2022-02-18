@@ -47,7 +47,6 @@ import { DepositPage } from "./wallet/DepositPage";
 import { ExchangeAddPage } from "./wallet/ExchangeAddPage";
 import { HistoryPage } from "./wallet/History";
 import { ManualWithdrawPage } from "./wallet/ManualWithdrawPage";
-import { Pending } from "./wallet/PendingPage";
 import { ProviderAddPage } from "./wallet/ProviderAddPage";
 import { ProviderDetailPage } from "./wallet/ProviderDetailPage";
 import { SettingsPage } from "./wallet/Settings";
@@ -85,6 +84,14 @@ function Application(): VNode {
   function clearNotification(): void {
     setGlobalNotification(undefined);
   }
+  function clearNotificationWhenMovingOut(): void {
+    // const movingOutFromNotification =
+    //   globalNotification && e.url !== globalNotification.to;
+    if (globalNotification) {
+      //&& movingOutFromNotification) {
+      setGlobalNotification(undefined);
+    }
+  }
   return (
     <div>
       <DevContextProvider>
@@ -112,13 +119,7 @@ function Application(): VNode {
               )}
               <Router
                 history={hash_history}
-                onChange={() => {
-                  // const movingOutFromNotification =
-                  //   globalNotification && e.url !== globalNotification.to;
-                  if (globalNotification) {
-                    setGlobalNotification(undefined);
-                  }
-                }}
+                onChange={clearNotificationWhenMovingOut}
               >
                 <Route path={Pages.welcome} component={WelcomePage} />
 
@@ -175,7 +176,6 @@ function Application(): VNode {
                 {/**
                  * PENDING
                  */}
-                <Route path={Pages.pending} component={Pending} />
                 <Route path={Pages.settings} component={SettingsPage} />
 
                 {/**

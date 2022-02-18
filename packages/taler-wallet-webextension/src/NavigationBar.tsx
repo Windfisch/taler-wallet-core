@@ -44,8 +44,6 @@ export enum Pages {
   backup_provider_detail = "/backup/provider/:pid",
   backup_provider_add = "/backup/provider/add",
 
-  pending = "/pending",
-
   settings = "/settings",
   settings_exchange_add = "/settings/exchange/add",
 

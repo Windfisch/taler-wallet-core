@@ -48,6 +48,7 @@ import { Part } from "../components/Part";
 import { QR } from "../components/QR";
 import {
   ButtonSuccess,
+  LightText,
   LinkSuccess,
   SmallLightText,
   SuccessBox,
@@ -313,7 +314,9 @@ export function PaymentRequestView({
           <h3>Payment complete</h3>
           <p>
             {!payResult.contractTerms.fulfillment_message
-              ? "You will now be sent back to the merchant you came from."
+              ? payResult.contractTerms.fulfillment_url
+                ? `You are going to be redirected to ${payResult.contractTerms.fulfillment_url}`
+                : "You can close this page."
               : payResult.contractTerms.fulfillment_message}
           </p>
         </SuccessBox>
@@ -373,19 +376,59 @@ function ProductList({ products }: { products: Product[] }): VNode {
         List of products
       </SmallLightText>
       <dl>
-        {products.map((p, i) => (
-          <div key={i} style={{ display: "flex", textAlign: "left" }}>
-            <div>
-              <img src={p.image} style={{ width: 32, height: 32 }} />
+        {products.map((p, i) => {
+          if (p.price) {
+            const pPrice = Amounts.parseOrThrow(p.price);
+            return (
+              <div key={i} style={{ display: "flex", textAlign: "left" }}>
+                <div>
+                  <img
+                    src={p.image ? p.image : undefined}
+                    style={{ width: 32, height: 32 }}
+                  />
+                </div>
+                <div>
+                  <dt>
+                    {p.quantity ?? 1} x {p.description}{" "}
+                    <span style={{ color: "gray" }}>
+                      {Amounts.stringify(pPrice)}
+                    </span>
+                  </dt>
+                  <dd>
+                    <b>
+                      {Amounts.stringify(
+                        Amounts.mult(pPrice, p.quantity ?? 1).amount,
+                      )}
+                    </b>
+                  </dd>
+                </div>
+              </div>
+            );
+          }
+          return (
+            <div key={i} style={{ display: "flex", textAlign: "left" }}>
+              <div>
+                <img src={p.image} style={{ width: 32, height: 32 }} />
+              </div>
+              <div>
+                <dt>
+                  {p.quantity ?? 1} x {p.description}
+                </dt>
+                <dd>
+                  Total{` `}
+                  {p.price
+                    ? `${Amounts.stringifyValue(
+                        Amounts.mult(
+                          Amounts.parseOrThrow(p.price),
+                          p.quantity ?? 1,
+                        ).amount,
+                      )} ${p}`
+                    : "free"}
+                </dd>
+              </div>
             </div>
-            <div>
-              <dt>{p.description}</dt>
-              <dd>
-                {p.price} x {p.quantity} {p.unit ? `(${p.unit})` : ``}
-              </dd>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </dl>
     </Fragment>
   );
