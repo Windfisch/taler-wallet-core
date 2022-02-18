@@ -17,7 +17,7 @@ msgstr ""
 "Project-Id-Version: Taler Wallet\n"
 "Report-Msgid-Bugs-To: languages@taler.net\n"
 "POT-Creation-Date: 2016-11-23 00:00+0100\n"
-"PO-Revision-Date: 2022-02-15 20:41+0000\n"
+"PO-Revision-Date: 2022-02-18 17:20+0000\n"
 "Last-Translator: Stefan <eintritt@hotmail.com>\n"
 "Language-Team: German <http://weblate.taler.net/projects/gnu-taler/"
 "webextensions/de/>\n"
@@ -101,7 +101,7 @@ msgstr "Debug"
 #: src/webex/pages/popup.tsx:175
 #, c-format
 msgid "You have no balance to show. Need some %1$s getting started?"
-msgstr "Sie haben kein Guthaben. Wollen Sie %1$s? abheben?"
+msgstr "Sie haben kein Guthaben. Wollen Sie %1$s abheben?"
 
 #: src/webex/pages/popup.tsx:238
 #, c-format
