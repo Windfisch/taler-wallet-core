@@ -17,7 +17,7 @@ msgstr ""
 "Project-Id-Version: Taler Wallet\n"
 "Report-Msgid-Bugs-To: languages@taler.net\n"
 "POT-Creation-Date: 2016-11-23 00:00+0100\n"
-"PO-Revision-Date: 2022-02-18 19:29+0000\n"
+"PO-Revision-Date: 2022-02-18 19:33+0000\n"
 "Last-Translator: Stefan <eintritt@hotmail.com>\n"
 "Language-Team: Swedish <http://weblate.taler.net/projects/gnu-taler/"
 "webextensions/sv/>\n"
@@ -238,11 +238,9 @@ msgid "Select custom exchange"
 msgstr ""
 
 #: src/webex/pages/withdraw.tsx:163
-#, fuzzy, c-format
+#, c-format
 msgid "You are about to withdraw %1$s from your bank account into your wallet."
-msgstr ""
-"Du är på väg att ta ut\n"
-" %1$s från ditt bankkonto till din plånbok.\n"
+msgstr "Du är på väg att ta ut %1$s från ditt bankkonto till din plånbok."
 
 #: src/webex/pages/withdraw.tsx:174
 #, c-format
