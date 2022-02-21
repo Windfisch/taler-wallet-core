@@ -1525,7 +1525,7 @@ export class ExchangeService implements ExchangeServiceInterface {
 
     this.exchangeHttpProc = this.globalState.spawnService(
       "taler-exchange-httpd",
-      ["-c", this.configFilename, ...this.timetravelArgArr],
+      ["-LINFO", "-c", this.configFilename, ...this.timetravelArgArr],
       `exchange-httpd-${this.name}`,
     );
 

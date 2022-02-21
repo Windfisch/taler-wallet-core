@@ -28,6 +28,7 @@ import { CryptoWorker } from "./cryptoWorkerInterface.js";
 
 import {
   CoinDepositPermission,
+  CoinEnvelope,
   RecoupRefreshRequest,
   RecoupRequest,
 } from "@gnu-taler/taler-util";
@@ -452,7 +453,7 @@ export class CryptoApi {
     newDenomHash: string,
     oldCoinPub: string,
     transferPub: string,
-    coinEv: string,
+    coinEv: CoinEnvelope,
   ): Promise<string> {
     return this.doRpc<string>(
       "signCoinLink",

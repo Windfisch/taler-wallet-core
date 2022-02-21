@@ -337,8 +337,7 @@ export async function importBackup(
 
         for (const backupDenomination of backupExchangeDetails.denominations) {
           if (
-            backupDenomination.denom_pub.cipher !== DenomKeyType.Rsa &&
-            backupDenomination.denom_pub.cipher !== DenomKeyType.LegacyRsa
+            backupDenomination.denom_pub.cipher !== DenomKeyType.Rsa
           ) {
             throw Error("unsupported cipher");
           }

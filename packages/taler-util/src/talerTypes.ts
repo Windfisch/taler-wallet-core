@@ -60,11 +60,8 @@ export class ExchangeDenomination {
 
   /**
    * Public signing key of the denomination.
-   *
-   * The "string" alternative is for the old exchange protocol (v9) that
-   * only supports RSA keys.
    */
-  denom_pub: DenominationPubKey | string;
+  denom_pub: DenominationPubKey;
 
   /**
    * Fee for withdrawing.
@@ -162,7 +159,7 @@ export interface RecoupRequest {
    *
    * The string variant is for the legacy exchange protocol.
    */
-  denom_sig: UnblindedSignature | string;
+  denom_sig: UnblindedSignature;
 
   /**
    * Blinding key that was used during withdraw,
@@ -188,7 +185,7 @@ export interface RecoupRefreshRequest {
    *
    * The string variant is for the legacy exchange protocol.
    */
-  denom_sig: UnblindedSignature | string;
+  denom_sig: UnblindedSignature;
 
   /**
    * Coin's blinding factor.
@@ -218,17 +215,10 @@ export interface RecoupConfirmation {
   old_coin_pub?: string;
 }
 
-export type UnblindedSignature =
-  | RsaUnblindedSignature
-  | LegacyRsaUnblindedSignature;
+export type UnblindedSignature = RsaUnblindedSignature;
 
 export interface RsaUnblindedSignature {
   cipher: DenomKeyType.Rsa;
-  rsa_signature: string;
-}
-
-export interface LegacyRsaUnblindedSignature {
-  cipher: DenomKeyType.LegacyRsa;
   rsa_signature: string;
 }
 
@@ -252,7 +242,7 @@ export interface CoinDepositPermission {
    * The string variant is for legacy protocol support.
    */
 
-  ub_sig: UnblindedSignature | string;
+  ub_sig: UnblindedSignature;
 
   /**
    * The denomination public key associated with this coin.
@@ -841,18 +831,23 @@ export class TipPickupGetResponse {
 }
 
 export enum DenomKeyType {
-  Rsa = 1,
-  ClauseSchnorr = 2,
-  LegacyRsa = 3,
+  Rsa = "RSA",
+  ClauseSchnorr = "CS",
+}
+
+export namespace DenomKeyType {
+  export function toIntTag(t: DenomKeyType): number {
+    switch (t) {
+      case DenomKeyType.Rsa:
+        return 1;
+      case DenomKeyType.ClauseSchnorr:
+        return 2;
+    }
+  }
 }
 
 export interface RsaBlindedDenominationSignature {
   cipher: DenomKeyType.Rsa;
-  blinded_rsa_signature: string;
-}
-
-export interface LegacyRsaBlindedDenominationSignature {
-  cipher: DenomKeyType.LegacyRsa;
   blinded_rsa_signature: string;
 }
 
@@ -862,33 +857,22 @@ export interface CSBlindedDenominationSignature {
 
 export type BlindedDenominationSignature =
   | RsaBlindedDenominationSignature
-  | CSBlindedDenominationSignature
-  | LegacyRsaBlindedDenominationSignature;
+  | CSBlindedDenominationSignature;
 
 export const codecForBlindedDenominationSignature = () =>
   buildCodecForUnion<BlindedDenominationSignature>()
     .discriminateOn("cipher")
-    .alternative(1, codecForRsaBlindedDenominationSignature())
-    .alternative(3, codecForLegacyRsaBlindedDenominationSignature())
+    .alternative(DenomKeyType.Rsa, codecForRsaBlindedDenominationSignature())
     .build("BlindedDenominationSignature");
 
 export const codecForRsaBlindedDenominationSignature = () =>
   buildCodecForObject<RsaBlindedDenominationSignature>()
-    .property("cipher", codecForConstNumber(1))
+    .property("cipher", codecForConstString(DenomKeyType.Rsa))
     .property("blinded_rsa_signature", codecForString())
     .build("RsaBlindedDenominationSignature");
 
-export const codecForLegacyRsaBlindedDenominationSignature = () =>
-  buildCodecForObject<LegacyRsaBlindedDenominationSignature>()
-    .property("cipher", codecForConstNumber(1))
-    .property("blinded_rsa_signature", codecForString())
-    .build("LegacyRsaBlindedDenominationSignature");
-
 export class WithdrawResponse {
-  /**
-   * The string variant is for legacy protocol support.
-   */
-  ev_sig: BlindedDenominationSignature | string;
+  ev_sig: BlindedDenominationSignature;
 }
 
 /**
@@ -983,10 +967,7 @@ export interface ExchangeMeltResponse {
 }
 
 export interface ExchangeRevealItem {
-  /**
-   * The string variant is for the legacy v9 protocol.
-   */
-  ev_sig: BlindedDenominationSignature | string;
+  ev_sig: BlindedDenominationSignature;
 }
 
 export interface ExchangeRevealResponse {
@@ -1105,26 +1086,18 @@ export interface BankWithdrawalOperationPostResponse {
   transfer_done: boolean;
 }
 
-export type DenominationPubKey =
-  | RsaDenominationPubKey
-  | CsDenominationPubKey
-  | LegacyRsaDenominationPubKey;
-
-export interface LegacyRsaDenominationPubKey {
-  cipher: DenomKeyType.LegacyRsa;
-  rsa_public_key: string;
-}
+export type DenominationPubKey = RsaDenominationPubKey | CsDenominationPubKey;
 
 export interface RsaDenominationPubKey {
-  cipher: DenomKeyType.Rsa;
-  rsa_public_key: string;
-  age_mask?: number;
+  readonly cipher: DenomKeyType.Rsa;
+  readonly rsa_public_key: string;
+  readonly age_mask?: number;
 }
 
 export interface CsDenominationPubKey {
-  cipher: DenomKeyType.ClauseSchnorr;
-  age_mask: number;
-  cs_public_key: string;
+  readonly cipher: DenomKeyType.ClauseSchnorr;
+  readonly age_mask: number;
+  readonly cs_public_key: string;
 }
 
 export namespace DenominationPubKey {
@@ -1136,12 +1109,6 @@ export namespace DenominationPubKey {
       return -1;
     } else if (p1.cipher > p2.cipher) {
       return +1;
-    }
-    if (
-      p1.cipher === DenomKeyType.LegacyRsa &&
-      p2.cipher === DenomKeyType.LegacyRsa
-    ) {
-      return strcmp(p1.rsa_public_key, p2.rsa_public_key);
     } else if (
       p1.cipher === DenomKeyType.Rsa &&
       p2.cipher === DenomKeyType.Rsa
@@ -1166,41 +1133,24 @@ export namespace DenominationPubKey {
       throw Error("unsupported cipher");
     }
   }
-
-  export function lift(p1: DenominationPubKey | string): DenominationPubKey {
-    if (typeof p1 === "string") {
-      return {
-        cipher: DenomKeyType.LegacyRsa,
-        rsa_public_key: p1,
-      };
-    }
-    return p1;
-  }
 }
 
 export const codecForDenominationPubKey = () =>
   buildCodecForUnion<DenominationPubKey>()
     .discriminateOn("cipher")
-    .alternative(1, codecForRsaDenominationPubKey())
-    .alternative(2, codecForCsDenominationPubKey())
-    .alternative(3, codecForLegacyRsaDenominationPubKey())
+    .alternative(DenomKeyType.Rsa, codecForRsaDenominationPubKey())
+    .alternative(DenomKeyType.ClauseSchnorr, codecForCsDenominationPubKey())
     .build("DenominationPubKey");
 
 export const codecForRsaDenominationPubKey = () =>
   buildCodecForObject<RsaDenominationPubKey>()
-    .property("cipher", codecForConstNumber(1))
+    .property("cipher", codecForConstString(DenomKeyType.Rsa))
     .property("rsa_public_key", codecForString())
     .build("DenominationPubKey");
 
-export const codecForLegacyRsaDenominationPubKey = () =>
-  buildCodecForObject<LegacyRsaDenominationPubKey>()
-    .property("cipher", codecForConstNumber(3))
-    .property("rsa_public_key", codecForString())
-    .build("LegacyRsaDenominationPubKey");
-
 export const codecForCsDenominationPubKey = () =>
   buildCodecForObject<CsDenominationPubKey>()
-    .property("cipher", codecForConstNumber(2))
+    .property("cipher", codecForConstString(DenomKeyType.ClauseSchnorr))
     .property("cs_public_key", codecForString())
     .build("CsDenominationPubKey");
 
@@ -1219,10 +1169,7 @@ export type CoinPublicKeyString = string;
 export const codecForDenomination = (): Codec<ExchangeDenomination> =>
   buildCodecForObject<ExchangeDenomination>()
     .property("value", codecForString())
-    .property(
-      "denom_pub",
-      codecForEither(codecForDenominationPubKey(), codecForString()),
-    )
+    .property("denom_pub", codecForDenominationPubKey())
     .property("fee_withdraw", codecForString())
     .property("fee_deposit", codecForString())
     .property("fee_refresh", codecForString())
@@ -1470,10 +1417,7 @@ export const codecForRecoupConfirmation = (): Codec<RecoupConfirmation> =>
 
 export const codecForWithdrawResponse = (): Codec<WithdrawResponse> =>
   buildCodecForObject<WithdrawResponse>()
-    .property(
-      "ev_sig",
-      codecForEither(codecForBlindedDenominationSignature(), codecForString()),
-    )
+    .property("ev_sig", codecForBlindedDenominationSignature())
     .build("WithdrawResponse");
 
 export const codecForMerchantPayResponse = (): Codec<MerchantPayResponse> =>
@@ -1491,10 +1435,7 @@ export const codecForExchangeMeltResponse = (): Codec<ExchangeMeltResponse> =>
 
 export const codecForExchangeRevealItem = (): Codec<ExchangeRevealItem> =>
   buildCodecForObject<ExchangeRevealItem>()
-    .property(
-      "ev_sig",
-      codecForEither(codecForBlindedDenominationSignature(), codecForString()),
-    )
+    .property("ev_sig", codecForBlindedDenominationSignature())
     .build("ExchangeRevealItem");
 
 export const codecForExchangeRevealResponse =
@@ -1711,17 +1652,48 @@ export const codecForMerchantConfigResponse =
       .build("MerchantConfigResponse");
 
 export enum ExchangeProtocolVersion {
-  V9 = 9,
+  /**
+   * Current version supported by the wallet.
+   */
   V12 = 12,
 }
 
 export enum MerchantProtocolVersion {
   /**
-   * Legacy version that is still supported.
-   */
-  V1 = 1,
-  /**
    * Current version supported by the wallet.
    */
   V3 = 3,
+}
+
+export type CoinEnvelope = CoinEnvelopeRsa | CoinEnvelopeCs;
+
+export interface CoinEnvelopeRsa {
+  cipher: DenomKeyType.Rsa;
+  rsa_blinded_planchet: string;
+}
+
+export interface CoinEnvelopeCs {
+  cipher: DenomKeyType.ClauseSchnorr;
+  // FIXME: add remaining fields
+}
+
+export type HashCodeString = string;
+
+export interface ExchangeWithdrawRequest {
+  denom_pub_hash: HashCodeString;
+  reserve_sig: EddsaSignatureString;
+  coin_ev: CoinEnvelope;
+}
+
+export interface ExchangeRefreshRevealRequest {
+  new_denoms_h: HashCodeString[];
+  coin_evs: CoinEnvelope[];
+  /**
+   * kappa - 1 transfer private keys (ephemeral ECDHE keys).
+   */
+  transfer_privs: string[];
+
+  transfer_pub: EddsaPublicKeyString;
+
+  link_sigs: EddsaSignatureString[];
 }

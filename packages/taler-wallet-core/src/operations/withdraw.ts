@@ -43,6 +43,7 @@ import {
   DenomKeyType,
   LibtoolVersion,
   UnblindedSignature,
+  ExchangeWithdrawRequest,
 } from "@gnu-taler/taler-util";
 import {
   CoinRecord,
@@ -497,9 +498,8 @@ async function processPlanchetExchangeRequest(
         `processing planchet #${coinIdx} in withdrawal ${withdrawalGroup.withdrawalGroupId}`,
       );
 
-      const reqBody: any = {
+      const reqBody: ExchangeWithdrawRequest = {
         denom_pub_hash: planchet.denomPubHash,
-        reserve_pub: planchet.reservePub,
         reserve_sig: planchet.withdrawSig,
         coin_ev: planchet.coinEv,
       };
@@ -580,28 +580,12 @@ async function processPlanchetVerifyAndStoreCoin(
   const { planchet, exchangeBaseUrl } = d;
 
   const planchetDenomPub = planchet.denomPub;
-  if (
-    planchetDenomPub.cipher !== DenomKeyType.Rsa &&
-    planchetDenomPub.cipher !== DenomKeyType.LegacyRsa
-  ) {
+  if (planchetDenomPub.cipher !== DenomKeyType.Rsa) {
     throw Error(`cipher (${planchetDenomPub.cipher}) not supported`);
   }
 
   let evSig = resp.ev_sig;
-  if (typeof resp.ev_sig === "string") {
-    evSig = {
-      cipher: DenomKeyType.LegacyRsa,
-      blinded_rsa_signature: resp.ev_sig,
-    };
-  } else {
-    evSig = resp.ev_sig;
-  }
-  if (
-    !(
-      evSig.cipher === DenomKeyType.Rsa ||
-      evSig.cipher === DenomKeyType.LegacyRsa
-    )
-  ) {
+  if (!(evSig.cipher === DenomKeyType.Rsa)) {
     throw Error("unsupported cipher");
   }
 
@@ -639,10 +623,7 @@ async function processPlanchetVerifyAndStoreCoin(
   }
 
   let denomSig: UnblindedSignature;
-  if (
-    planchet.denomPub.cipher === DenomKeyType.LegacyRsa ||
-    planchet.denomPub.cipher === DenomKeyType.Rsa
-  ) {
+  if (planchet.denomPub.cipher === DenomKeyType.Rsa) {
     denomSig = {
       cipher: planchet.denomPub.cipher,
       rsa_signature: denomSigRsa,

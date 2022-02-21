@@ -168,10 +168,7 @@ async function computeBackupCryptoData(
   };
   for (const backupExchangeDetails of backupContent.exchange_details) {
     for (const backupDenom of backupExchangeDetails.denominations) {
-      if (
-        backupDenom.denom_pub.cipher !== DenomKeyType.Rsa &&
-        backupDenom.denom_pub.cipher !== DenomKeyType.LegacyRsa
-      ) {
+      if (backupDenom.denom_pub.cipher !== DenomKeyType.Rsa) {
         throw Error("unsupported cipher");
       }
       for (const backupCoin of backupDenom.coins) {
@@ -192,18 +189,14 @@ async function computeBackupCryptoData(
         LibtoolVersion.compare(backupExchangeDetails.protocol_version, "9")
           ?.compatible
       ) {
-        cryptoData.rsaDenomPubToHash[
-          backupDenom.denom_pub.rsa_public_key
-        ] = encodeCrock(
-          hash(decodeCrock(backupDenom.denom_pub.rsa_public_key)),
-        );
+        cryptoData.rsaDenomPubToHash[backupDenom.denom_pub.rsa_public_key] =
+          encodeCrock(hash(decodeCrock(backupDenom.denom_pub.rsa_public_key)));
       } else if (
         LibtoolVersion.compare(backupExchangeDetails.protocol_version, "10")
           ?.compatible
       ) {
-        cryptoData.rsaDenomPubToHash[
-          backupDenom.denom_pub.rsa_public_key
-        ] = encodeCrock(hashDenomPub(backupDenom.denom_pub));
+        cryptoData.rsaDenomPubToHash[backupDenom.denom_pub.rsa_public_key] =
+          encodeCrock(hashDenomPub(backupDenom.denom_pub));
       } else {
         throw Error("unsupported exchange protocol version");
       }
@@ -220,9 +213,8 @@ async function computeBackupCryptoData(
     );
     const noncePub = encodeCrock(eddsaGetPublic(decodeCrock(prop.nonce_priv)));
     cryptoData.proposalNoncePrivToPub[prop.nonce_priv] = noncePub;
-    cryptoData.proposalIdToContractTermsHash[
-      prop.proposal_id
-    ] = contractTermsHash;
+    cryptoData.proposalIdToContractTermsHash[prop.proposal_id] =
+      contractTermsHash;
   }
   for (const purch of backupContent.purchases) {
     const contractTermsHash = await cryptoApi.hashString(
@@ -230,9 +222,8 @@ async function computeBackupCryptoData(
     );
     const noncePub = encodeCrock(eddsaGetPublic(decodeCrock(purch.nonce_priv)));
     cryptoData.proposalNoncePrivToPub[purch.nonce_priv] = noncePub;
-    cryptoData.proposalIdToContractTermsHash[
-      purch.proposal_id
-    ] = contractTermsHash;
+    cryptoData.proposalIdToContractTermsHash[purch.proposal_id] =
+      contractTermsHash;
   }
   return cryptoData;
 }
@@ -548,10 +539,11 @@ export interface RemoveBackupProviderRequest {
   provider: string;
 }
 
-export const codecForRemoveBackupProvider = (): Codec<RemoveBackupProviderRequest> =>
-  buildCodecForObject<RemoveBackupProviderRequest>()
-    .property("provider", codecForString())
-    .build("RemoveBackupProviderRequest");
+export const codecForRemoveBackupProvider =
+  (): Codec<RemoveBackupProviderRequest> =>
+    buildCodecForObject<RemoveBackupProviderRequest>()
+      .property("provider", codecForString())
+      .build("RemoveBackupProviderRequest");
 
 export async function removeBackupProvider(
   ws: InternalWalletState,
@@ -619,12 +611,13 @@ interface SyncTermsOfServiceResponse {
   version: string;
 }
 
-const codecForSyncTermsOfServiceResponse = (): Codec<SyncTermsOfServiceResponse> =>
-  buildCodecForObject<SyncTermsOfServiceResponse>()
-    .property("storage_limit_in_megabytes", codecForNumber())
-    .property("annual_fee", codecForAmountString())
-    .property("version", codecForString())
-    .build("SyncTermsOfServiceResponse");
+const codecForSyncTermsOfServiceResponse =
+  (): Codec<SyncTermsOfServiceResponse> =>
+    buildCodecForObject<SyncTermsOfServiceResponse>()
+      .property("storage_limit_in_megabytes", codecForNumber())
+      .property("annual_fee", codecForAmountString())
+      .property("version", codecForString())
+      .build("SyncTermsOfServiceResponse");
 
 export interface AddBackupProviderRequest {
   backupProviderBaseUrl: string;
@@ -637,12 +630,13 @@ export interface AddBackupProviderRequest {
   activate?: boolean;
 }
 
-export const codecForAddBackupProviderRequest = (): Codec<AddBackupProviderRequest> =>
-  buildCodecForObject<AddBackupProviderRequest>()
-    .property("backupProviderBaseUrl", codecForString())
-    .property("name", codecForString())
-    .property("activate", codecOptional(codecForBoolean()))
-    .build("AddBackupProviderRequest");
+export const codecForAddBackupProviderRequest =
+  (): Codec<AddBackupProviderRequest> =>
+    buildCodecForObject<AddBackupProviderRequest>()
+      .property("backupProviderBaseUrl", codecForString())
+      .property("name", codecForString())
+      .property("activate", codecOptional(codecForBoolean()))
+      .build("AddBackupProviderRequest");
 
 export async function addBackupProvider(
   ws: InternalWalletState,

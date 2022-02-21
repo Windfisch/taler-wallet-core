@@ -606,7 +606,6 @@ export function extractContractData(
     timestamp: parsedContractTerms.timestamp,
     wireMethod: parsedContractTerms.wire_method,
     wireInfoHash: parsedContractTerms.h_wire,
-    wireInfoLegacyHash: parsedContractTerms.h_wire_legacy,
     maxDepositFee: Amounts.parseOrThrow(parsedContractTerms.max_fee),
     merchant: parsedContractTerms.merchant,
     products: parsedContractTerms.products,
@@ -1515,14 +1514,7 @@ export async function generateDepositPermissions(
   for (let i = 0; i < payCoinSel.coinPubs.length; i++) {
     const { coin, denom } = coinWithDenom[i];
     let wireInfoHash: string;
-    if (
-      coin.denomPub.cipher === DenomKeyType.LegacyRsa &&
-      contractData.wireInfoLegacyHash
-    ) {
-      wireInfoHash = contractData.wireInfoLegacyHash;
-    } else {
-      wireInfoHash = contractData.wireInfoHash;
-    }
+    wireInfoHash = contractData.wireInfoHash;
     const dp = await ws.cryptoApi.signDepositPermission({
       coinPriv: coin.coinPriv,
       coinPub: coin.coinPub,

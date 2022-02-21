@@ -18,7 +18,7 @@
  * Imports.
  */
 import test from "ava";
-import { AmountJson, Amounts } from "@gnu-taler/taler-util";
+import { AmountJson, Amounts, DenomKeyType } from "@gnu-taler/taler-util";
 import { AvailableCoinInfo, selectPayCoins } from "./coinSelection.js";
 
 function a(x: string): AmountJson {
@@ -34,7 +34,7 @@ function fakeAci(current: string, feeDeposit: string): AvailableCoinInfo {
     availableAmount: a(current),
     coinPub: "foobar",
     denomPub: {
-      cipher: 1,
+      cipher: DenomKeyType.Rsa,
       rsa_public_key: "foobar",
     },
     feeDeposit: a(feeDeposit),
@@ -47,7 +47,7 @@ test("it should be able to pay if merchant takes the fees", (t) => {
     fakeAci("EUR:1.0", "EUR:0.1"),
     fakeAci("EUR:1.0", "EUR:0.0"),
   ];
-  acis.forEach((x, i) => x.coinPub = String(i));
+  acis.forEach((x, i) => (x.coinPub = String(i)));
 
   const res = selectPayCoins({
     candidates: {
@@ -75,7 +75,7 @@ test("it should take the last two coins if it pays less fees", (t) => {
     // Merchant covers the fee, this one shouldn't be used
     fakeAci("EUR:1.0", "EUR:0.0"),
   ];
-  acis.forEach((x, i) => x.coinPub = String(i));
+  acis.forEach((x, i) => (x.coinPub = String(i)));
 
   const res = selectPayCoins({
     candidates: {
@@ -102,8 +102,8 @@ test("it should take the last coins if the merchant doest not take all the fee",
     fakeAci("EUR:1.0", "EUR:0.5"),
     // this coin should be selected instead of previous one with fee
     fakeAci("EUR:1.0", "EUR:0.0"),
-  ]
-  acis.forEach((x, i) => x.coinPub = String(i));
+  ];
+  acis.forEach((x, i) => (x.coinPub = String(i)));
 
   const res = selectPayCoins({
     candidates: {
@@ -221,7 +221,7 @@ test("it should use the coins that spent less relative fee", (t) => {
     fakeAci("EUR:0.05", "EUR:0.05"),
     fakeAci("EUR:0.05", "EUR:0.05"),
   ];
-  acis.forEach((x, i) => x.coinPub = String(i));
+  acis.forEach((x, i) => (x.coinPub = String(i)));
 
   const res = selectPayCoins({
     candidates: {

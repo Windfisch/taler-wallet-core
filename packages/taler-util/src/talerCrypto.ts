@@ -22,10 +22,15 @@
  * Imports.
  */
 import * as nacl from "./nacl-fast.js";
-import { kdf } from "./kdf.js";
+import { kdf, kdfKw } from "./kdf.js";
 import bigint from "big-integer";
-import { DenominationPubKey, DenomKeyType } from "./talerTypes.js";
-import { AssertionError, equal } from "assert";
+import {
+  CoinEnvelope,
+  DenominationPubKey,
+  DenomKeyType,
+  HashCodeString,
+} from "./talerTypes.js";
+import { Logger } from "./logging.js";
 
 export function getRandomBytes(n: number): Uint8Array {
   return nacl.randomBytes(n);
@@ -365,7 +370,7 @@ export type CsBlindingSecrets = {
   beta: [Uint8Array, Uint8Array];
 };
 
-function typedArrayConcat(chunks: Uint8Array[]): Uint8Array {
+export function typedArrayConcat(chunks: Uint8Array[]): Uint8Array {
   let payloadLen = 0;
   for (const c of chunks) {
     payloadLen += c.byteLength;
@@ -490,9 +495,7 @@ export function deriveBSeed(
  * @param coinPriv coin private key
  * @returns nonce
  */
-export function deriveWithdrawNonce(
-  coinPriv: Uint8Array,
-): Uint8Array { 
+export function deriveWithdrawNonce(coinPriv: Uint8Array): Uint8Array {
   const outLen = 32;
   const salt = stringToBytes("n");
   return kdf(outLen, coinPriv, salt);
@@ -539,7 +542,7 @@ export async function csUnblind(
   csSig: CsBlindSignature,
 ): Promise<CsSignature> {
   if (b != 0 && b != 1) {
-    throw new AssertionError();
+    throw new Error();
   }
   const secrets = deriveSecrets(bseed);
   const rPubDash = (await calcRBlind(csPub, secrets, rPub))[b];
@@ -595,9 +598,38 @@ export function hash(d: Uint8Array): Uint8Array {
   return nacl.hash(d);
 }
 
+export function hashCoinEv(
+  coinEv: CoinEnvelope,
+  denomPubHash: HashCodeString,
+): Uint8Array {
+  const hashContext = createHashContext();
+  hashContext.update(decodeCrock(denomPubHash));
+  hashCoinEvInner(coinEv, hashContext);
+  return hashContext.finish();
+}
+
+const logger = new Logger("talerCrypto.ts");
+
+export function hashCoinEvInner(
+  coinEv: CoinEnvelope,
+  hashState: nacl.HashState,
+): void {
+  const hashInputBuf = new ArrayBuffer(4);
+  const uint8ArrayBuf = new Uint8Array(hashInputBuf);
+  const dv = new DataView(hashInputBuf);
+  dv.setUint32(0, DenomKeyType.toIntTag(coinEv.cipher));
+  hashState.update(uint8ArrayBuf);
+  switch (coinEv.cipher) {
+    case DenomKeyType.Rsa:
+      hashState.update(decodeCrock(coinEv.rsa_blinded_planchet));
+      return;
+    default:
+      throw new Error();
+  }
+}
+
 /**
- * Hash a denomination public key according to the
- * algorithm of exchange protocol v10.
+ * Hash a denomination public key.
  */
 export function hashDenomPub(pub: DenominationPubKey): Uint8Array {
   if (pub.cipher === DenomKeyType.Rsa) {
@@ -606,18 +638,16 @@ export function hashDenomPub(pub: DenominationPubKey): Uint8Array {
     const uint8ArrayBuf = new Uint8Array(hashInputBuf);
     const dv = new DataView(hashInputBuf);
     dv.setUint32(0, pub.age_mask ?? 0);
-    dv.setUint32(4, pub.cipher);
+    dv.setUint32(4, DenomKeyType.toIntTag(pub.cipher));
     uint8ArrayBuf.set(pubBuf, 8);
     return nacl.hash(uint8ArrayBuf);
-  } else if (pub.cipher === DenomKeyType.LegacyRsa) {
-    return hash(decodeCrock(pub.rsa_public_key));
   } else if (pub.cipher === DenomKeyType.ClauseSchnorr) {
     const pubBuf = decodeCrock(pub.cs_public_key);
     const hashInputBuf = new ArrayBuffer(pubBuf.length + 4 + 4);
     const uint8ArrayBuf = new Uint8Array(hashInputBuf);
     const dv = new DataView(hashInputBuf);
     dv.setUint32(0, pub.age_mask ?? 0);
-    dv.setUint32(4, pub.cipher);
+    dv.setUint32(4, DenomKeyType.toIntTag(pub.cipher));
     uint8ArrayBuf.set(pubBuf, 8);
     return nacl.hash(uint8ArrayBuf);
   } else {
@@ -652,18 +682,57 @@ export interface FreshCoin {
   bks: Uint8Array;
 }
 
+// export function setupRefreshPlanchet(
+//   secretSeed: Uint8Array,
+//   coinNumber: number,
+// ): FreshCoin {
+//   const info = stringToBytes("taler-coin-derivation");
+//   const saltArrBuf = new ArrayBuffer(4);
+//   const salt = new Uint8Array(saltArrBuf);
+//   const saltDataView = new DataView(saltArrBuf);
+//   saltDataView.setUint32(0, coinNumber);
+//   const out = kdf(64, secretSeed, salt, info);
+//   const coinPriv = out.slice(0, 32);
+//   const bks = out.slice(32, 64);
+//   return {
+//     bks,
+//     coinPriv,
+//     coinPub: eddsaGetPublic(coinPriv),
+//   };
+// }
+
+function bufferForUint32(n: number): Uint8Array {
+  const arrBuf = new ArrayBuffer(4);
+  const buf = new Uint8Array(arrBuf);
+  const dv = new DataView(arrBuf);
+  dv.setUint32(0, n);
+  return buf;
+}
+
 export function setupRefreshPlanchet(
-  secretSeed: Uint8Array,
+  transferSecret: Uint8Array,
   coinNumber: number,
 ): FreshCoin {
-  const info = stringToBytes("taler-coin-derivation");
-  const saltArrBuf = new ArrayBuffer(4);
-  const salt = new Uint8Array(saltArrBuf);
-  const saltDataView = new DataView(saltArrBuf);
-  saltDataView.setUint32(0, coinNumber);
-  const out = kdf(64, secretSeed, salt, info);
-  const coinPriv = out.slice(0, 32);
-  const bks = out.slice(32, 64);
+  // See TALER_transfer_secret_to_planchet_secret in C impl
+  const planchetMasterSecret = kdfKw({
+    ikm: transferSecret,
+    outputLength: 32,
+    salt: bufferForUint32(coinNumber),
+    info: stringToBytes("taler-coin-derivation"),
+  });
+
+  const coinPriv = kdfKw({
+    ikm: planchetMasterSecret,
+    outputLength: 32,
+    salt: stringToBytes("coin"),
+  });
+
+  const bks = kdfKw({
+    ikm: planchetMasterSecret,
+    outputLength: 32,
+    salt: stringToBytes("bks"),
+  });
+
   return {
     bks,
     coinPriv,

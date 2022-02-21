@@ -38,6 +38,7 @@ import {
   TalerErrorDetails,
   Timestamp,
   UnblindedSignature,
+  CoinEnvelope,
 } from "@gnu-taler/taler-util";
 import { RetryInfo } from "./util/retries.js";
 import { PayCoinSelection } from "./util/coinSelection.js";
@@ -602,7 +603,7 @@ export interface PlanchetRecord {
 
   withdrawSig: string;
 
-  coinEv: string;
+  coinEv: CoinEnvelope;
 
   coinEvHash: string;
 
@@ -1154,7 +1155,6 @@ export interface WalletContractData {
   timestamp: Timestamp;
   wireMethod: string;
   wireInfoHash: string;
-  wireInfoLegacyHash?: string;
   maxDepositFee: AmountJson;
 }
 
@@ -1294,9 +1294,9 @@ export const WALLET_BACKUP_STATE_KEY = "walletBackupState";
  */
 export type ConfigRecord =
   | {
-    key: typeof WALLET_BACKUP_STATE_KEY;
-    value: WalletBackupConfState;
-  }
+      key: typeof WALLET_BACKUP_STATE_KEY;
+      value: WalletBackupConfState;
+    }
   | { key: "currencyDefaultsApplied"; value: boolean };
 
 export interface WalletBackupConfState {
@@ -1392,9 +1392,9 @@ export interface WithdrawalGroupRecord {
 
   /**
    * UID of the denomination selection.
-   * 
+   *
    * Used for merging backups.
-   * 
+   *
    * FIXME: Should this not also include a timestamp for more logical merging?
    */
   denomSelUid: string;
@@ -1480,17 +1480,17 @@ export enum BackupProviderStateTag {
 
 export type BackupProviderState =
   | {
-    tag: BackupProviderStateTag.Provisional;
-  }
+      tag: BackupProviderStateTag.Provisional;
+    }
   | {
-    tag: BackupProviderStateTag.Ready;
-    nextBackupTimestamp: Timestamp;
-  }
+      tag: BackupProviderStateTag.Ready;
+      nextBackupTimestamp: Timestamp;
+    }
   | {
-    tag: BackupProviderStateTag.Retrying;
-    retryInfo: RetryInfo;
-    lastError?: TalerErrorDetails;
-  };
+      tag: BackupProviderStateTag.Retrying;
+      retryInfo: RetryInfo;
+      lastError?: TalerErrorDetails;
+    };
 
 export interface BackupProviderTerms {
   supportedProtocolVersion: string;
@@ -1875,9 +1875,9 @@ export function exportDb(db: IDBDatabase): Promise<any> {
 }
 
 export interface DatabaseDump {
-  name: string,
-  stores: { [s: string]: any },
-  version: string,
+  name: string;
+  stores: { [s: string]: any };
+  version: string;
 }
 
 export function importDb(db: IDBDatabase, dump: DatabaseDump): Promise<any> {
@@ -1891,12 +1891,11 @@ export function importDb(db: IDBDatabase, dump: DatabaseDump): Promise<any> {
       const name = db.objectStoreNames[i];
       const storeDump = dump.stores[name];
       if (!storeDump) continue;
-      Object.keys(storeDump).forEach(async key => {
-        const value = storeDump[key]
+      Object.keys(storeDump).forEach(async (key) => {
+        const value = storeDump[key];
         if (!value) return;
-        tx.objectStore(name).put(value)
-      })
-
+        tx.objectStore(name).put(value);
+      });
     }
   });
 }

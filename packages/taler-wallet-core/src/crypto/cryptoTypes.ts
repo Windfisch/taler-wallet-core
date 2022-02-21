@@ -30,8 +30,10 @@
 import {
   AmountJson,
   AmountString,
+  CoinEnvelope,
   DenominationPubKey,
   ExchangeProtocolVersion,
+  RefreshPlanchetInfo,
   UnblindedSignature,
 } from "@gnu-taler/taler-util";
 
@@ -74,32 +76,7 @@ export interface DerivedRefreshSession {
   /**
    * Planchets for each cut-and-choose instance.
    */
-  planchetsForGammas: {
-    /**
-     * Public key for the coin.
-     */
-    publicKey: string;
-
-    /**
-     * Private key for the coin.
-     */
-    privateKey: string;
-
-    /**
-     * Blinded public key.
-     */
-    coinEv: string;
-
-    /**
-     * Hash of the blinded public key.
-     */
-    coinEvHash: string;
-
-    /**
-     * Blinding key used.
-     */
-    blindingKey: string;
-  }[][];
+  planchetsForGammas: RefreshPlanchetInfo[][];
 
   /**
    * The transfer keys, kappa of them.

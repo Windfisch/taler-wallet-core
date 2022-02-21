@@ -83,15 +83,7 @@ function denominationRecordFromKeys(
   denomIn: ExchangeDenomination,
 ): DenominationRecord {
   let denomPub: DenominationPubKey;
-  // We support exchange protocol v9 and v10.
-  if (typeof denomIn.denom_pub === "string") {
-    denomPub = {
-      cipher: DenomKeyType.LegacyRsa,
-      rsa_public_key: denomIn.denom_pub,
-    };
-  } else {
-    denomPub = denomIn.denom_pub;
-  }
+  denomPub = denomIn.denom_pub;
   const denomPubHash = encodeCrock(hashDenomPub(denomPub));
   const d: DenominationRecord = {
     denomPub,

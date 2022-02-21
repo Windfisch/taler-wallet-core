@@ -27,7 +27,11 @@ import {
   CreateDepositGroupRequest,
   CreateDepositGroupResponse,
   DenomKeyType,
-  durationFromSpec, encodeCrock, GetFeeForDepositRequest, getRandomBytes, getTimestampNow,
+  durationFromSpec,
+  encodeCrock,
+  GetFeeForDepositRequest,
+  getRandomBytes,
+  getTimestampNow,
   Logger,
   NotificationType,
   parsePaytoUri,
@@ -38,7 +42,7 @@ import {
   timestampTruncateToSecond,
   TrackDepositGroupRequest,
   TrackDepositGroupResponse,
-  URL
+  URL,
 } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../common.js";
 import { DepositGroupRecord, OperationStatus } from "../db.js";
@@ -54,7 +58,7 @@ import {
   getCandidatePayCoins,
   getTotalPaymentCost,
   hashWire,
-  hashWireLegacy
+  hashWireLegacy,
 } from "./pay.js";
 import { getTotalRefreshCost } from "./refresh.js";
 
@@ -199,47 +203,21 @@ async function processDepositGroupImpl(
     }
     const perm = depositPermissions[i];
     let requestBody: any;
-    if (
-      typeof perm.ub_sig === "string" ||
-      perm.ub_sig.cipher === DenomKeyType.LegacyRsa
-    ) {
-      // Legacy request
-      logger.info("creating legacy deposit request");
-      const wireHash = hashWireLegacy(
-        depositGroup.wire.payto_uri,
-        depositGroup.wire.salt,
-      );
-      requestBody = {
-        contribution: Amounts.stringify(perm.contribution),
-        wire: depositGroup.wire,
-        h_wire: wireHash,
-        h_contract_terms: depositGroup.contractTermsHash,
-        ub_sig: perm.ub_sig,
-        timestamp: depositGroup.contractTermsRaw.timestamp,
-        wire_transfer_deadline:
-          depositGroup.contractTermsRaw.wire_transfer_deadline,
-        refund_deadline: depositGroup.contractTermsRaw.refund_deadline,
-        coin_sig: perm.coin_sig,
-        denom_pub_hash: perm.h_denom,
-        merchant_pub: depositGroup.merchantPub,
-      };
-    } else {
-      logger.info("creating v10 deposit request");
-      requestBody = {
-        contribution: Amounts.stringify(perm.contribution),
-        merchant_payto_uri: depositGroup.wire.payto_uri,
-        wire_salt: depositGroup.wire.salt,
-        h_contract_terms: depositGroup.contractTermsHash,
-        ub_sig: perm.ub_sig,
-        timestamp: depositGroup.contractTermsRaw.timestamp,
-        wire_transfer_deadline:
-          depositGroup.contractTermsRaw.wire_transfer_deadline,
-        refund_deadline: depositGroup.contractTermsRaw.refund_deadline,
-        coin_sig: perm.coin_sig,
-        denom_pub_hash: perm.h_denom,
-        merchant_pub: depositGroup.merchantPub,
-      };
-    }
+    logger.info("creating v10 deposit request");
+    requestBody = {
+      contribution: Amounts.stringify(perm.contribution),
+      merchant_payto_uri: depositGroup.wire.payto_uri,
+      wire_salt: depositGroup.wire.salt,
+      h_contract_terms: depositGroup.contractTermsHash,
+      ub_sig: perm.ub_sig,
+      timestamp: depositGroup.contractTermsRaw.timestamp,
+      wire_transfer_deadline:
+        depositGroup.contractTermsRaw.wire_transfer_deadline,
+      refund_deadline: depositGroup.contractTermsRaw.refund_deadline,
+      coin_sig: perm.coin_sig,
+      denom_pub_hash: perm.h_denom,
+      merchant_pub: depositGroup.merchantPub,
+    };
     const url = new URL(`coins/${perm.coin_pub}/deposit`, perm.exchange_url);
     logger.info(`depositing to ${url}`);
     const httpResp = await ws.http.postJson(url.href, requestBody);

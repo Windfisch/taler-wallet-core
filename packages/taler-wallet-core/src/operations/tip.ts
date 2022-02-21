@@ -306,37 +306,13 @@ async function processTipImpl(
     // FIXME: Maybe we want to signal to the caller that the transient error happened?
     return;
   }
-
-  // FIXME: Do this earlier?
-  const merchantInfo = await ws.merchantOps.getMerchantInfo(
-    ws,
-    tipRecord.merchantBaseUrl,
-  );
-
   let blindedSigs: BlindedDenominationSignature[] = [];
 
-  if (merchantInfo.protocolVersionCurrent === MerchantProtocolVersion.V3) {
-    const response = await readSuccessResponseJsonOrThrow(
-      merchantResp,
-      codecForMerchantTipResponseV2(),
-    );
-    blindedSigs = response.blind_sigs.map((x) => x.blind_sig);
-  } else if (
-    merchantInfo.protocolVersionCurrent === MerchantProtocolVersion.V1
-  ) {
-    const response = await readSuccessResponseJsonOrThrow(
-      merchantResp,
-      codecForMerchantTipResponseV1(),
-    );
-    blindedSigs = response.blind_sigs.map((x) => ({
-      cipher: DenomKeyType.Rsa,
-      blinded_rsa_signature: x.blind_sig,
-    }));
-  } else {
-    throw Error(
-      `unsupported merchant protocol version (${merchantInfo.protocolVersionCurrent})`,
-    );
-  }
+  const response = await readSuccessResponseJsonOrThrow(
+    merchantResp,
+    codecForMerchantTipResponseV2(),
+  );
+  blindedSigs = response.blind_sigs.map((x) => x.blind_sig);
 
   if (blindedSigs.length !== planchets.length) {
     throw Error("number of tip responses does not match requested planchets");
@@ -352,17 +328,11 @@ async function processTipImpl(
     const planchet = planchets[i];
     checkLogicInvariant(!!planchet);
 
-    if (
-      denom.denomPub.cipher !== DenomKeyType.Rsa &&
-      denom.denomPub.cipher !== DenomKeyType.LegacyRsa
-    ) {
+    if (denom.denomPub.cipher !== DenomKeyType.Rsa) {
       throw Error("unsupported cipher");
     }
 
-    if (
-      blindedSig.cipher !== DenomKeyType.Rsa &&
-      blindedSig.cipher !== DenomKeyType.LegacyRsa
-    ) {
+    if (blindedSig.cipher !== DenomKeyType.Rsa) {
       throw Error("unsupported cipher");
     }
 

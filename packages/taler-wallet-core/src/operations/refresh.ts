@@ -18,8 +18,10 @@ import {
   DenomKeyType,
   encodeCrock,
   ExchangeProtocolVersion,
+  ExchangeRefreshRevealRequest,
   getRandomBytes,
   HttpStatusCode,
+  j2s,
 } from "@gnu-taler/taler-util";
 import {
   CoinRecord,
@@ -369,10 +371,6 @@ async function refreshMelt(
 
   let exchangeProtocolVersion: ExchangeProtocolVersion;
   switch (d.oldDenom.denomPub.cipher) {
-    case DenomKeyType.LegacyRsa: {
-      exchangeProtocolVersion = ExchangeProtocolVersion.V9;
-      break;
-    }
     case DenomKeyType.Rsa: {
       exchangeProtocolVersion = ExchangeProtocolVersion.V12;
       break;
@@ -397,16 +395,7 @@ async function refreshMelt(
     oldCoin.exchangeBaseUrl,
   );
   let meltReqBody: any;
-  if (oldCoin.denomPub.cipher === DenomKeyType.LegacyRsa) {
-    meltReqBody = {
-      coin_pub: oldCoin.coinPub,
-      confirm_sig: derived.confirmSig,
-      denom_pub_hash: oldCoin.denomPubHash,
-      denom_sig: oldCoin.denomSig.rsa_signature,
-      rc: derived.hash,
-      value_with_fee: Amounts.stringify(derived.meltValueWithFee),
-    };
-  } else {
+  if (oldCoin.denomPub.cipher === DenomKeyType.Rsa) {
     meltReqBody = {
       coin_pub: oldCoin.coinPub,
       confirm_sig: derived.confirmSig,
@@ -569,10 +558,6 @@ async function refreshReveal(
 
   let exchangeProtocolVersion: ExchangeProtocolVersion;
   switch (d.oldDenom.denomPub.cipher) {
-    case DenomKeyType.LegacyRsa: {
-      exchangeProtocolVersion = ExchangeProtocolVersion.V9;
-      break;
-    }
     case DenomKeyType.Rsa: {
       exchangeProtocolVersion = ExchangeProtocolVersion.V12;
       break;
@@ -600,7 +585,6 @@ async function refreshReveal(
     throw Error("refresh index error");
   }
 
-  const evs = planchets.map((x: RefreshPlanchetInfo) => x.coinEv);
   const newDenomsFlat: string[] = [];
   const linkSigs: string[] = [];
 
@@ -620,10 +604,9 @@ async function refreshReveal(
     }
   }
 
-  const req = {
-    coin_evs: evs,
+  const req: ExchangeRefreshRevealRequest = {
+    coin_evs: planchets.map((x) => x.coinEv),
     new_denoms_h: newDenomsFlat,
-    rc: derived.hash,
     transfer_privs: privs,
     transfer_pub: derived.transferPubs[norevealIndex],
     link_sigs: linkSigs,
@@ -666,20 +649,14 @@ async function refreshReveal(
         continue;
       }
       const pc = derived.planchetsForGammas[norevealIndex][newCoinIndex];
-      if (
-        denom.denomPub.cipher !== DenomKeyType.Rsa &&
-        denom.denomPub.cipher !== DenomKeyType.LegacyRsa
-      ) {
+      if (denom.denomPub.cipher !== DenomKeyType.Rsa) {
         throw Error("cipher unsupported");
       }
       const evSig = reveal.ev_sigs[newCoinIndex].ev_sig;
       let rsaSig: string;
       if (typeof evSig === "string") {
         rsaSig = evSig;
-      } else if (
-        evSig.cipher === DenomKeyType.Rsa ||
-        evSig.cipher === DenomKeyType.LegacyRsa
-      ) {
+      } else if (evSig.cipher === DenomKeyType.Rsa) {
         rsaSig = evSig.blinded_rsa_signature;
       } else {
         throw Error("unsupported cipher");
@@ -691,8 +668,8 @@ async function refreshReveal(
       );
       const coin: CoinRecord = {
         blindingKey: pc.blindingKey,
-        coinPriv: pc.privateKey,
-        coinPub: pc.publicKey,
+        coinPriv: pc.coinPriv,
+        coinPub: pc.coinPub,
         currentAmount: denom.value,
         denomPub: denom.denomPub,
         denomPubHash: denom.denomPubHash,
@@ -707,7 +684,7 @@ async function refreshReveal(
           oldCoinPub: refreshGroup.oldCoinPubs[coinIndex],
         },
         suspended: false,
-        coinEvHash: pc.coinEv,
+        coinEvHash: pc.coinEvHash,
       };
 
       coins.push(coin);

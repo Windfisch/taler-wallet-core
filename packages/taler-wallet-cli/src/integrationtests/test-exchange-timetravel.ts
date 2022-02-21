@@ -201,8 +201,8 @@ export async function runExchangeTimetravelTest(t: GlobalTestState) {
   for (const da of denomPubs1) {
     let found = false;
     for (const db of denomPubs2) {
-      const d1 = DenominationPubKey.lift(da.denomPub);
-      const d2 = DenominationPubKey.lift(db.denomPub);
+      const d1 = da.denomPub;
+      const d2 = db.denomPub;
       if (DenominationPubKey.cmp(d1, d2) === 0) {
         found = true;
         break;
