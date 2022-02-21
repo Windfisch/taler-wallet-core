@@ -608,6 +608,7 @@ export function hashCoinEv(
   return hashContext.finish();
 }
 
+
 const logger = new Logger("talerCrypto.ts");
 
 export function hashCoinEvInner(
@@ -682,24 +683,6 @@ export interface FreshCoin {
   bks: Uint8Array;
 }
 
-// export function setupRefreshPlanchet(
-//   secretSeed: Uint8Array,
-//   coinNumber: number,
-// ): FreshCoin {
-//   const info = stringToBytes("taler-coin-derivation");
-//   const saltArrBuf = new ArrayBuffer(4);
-//   const salt = new Uint8Array(saltArrBuf);
-//   const saltDataView = new DataView(saltArrBuf);
-//   saltDataView.setUint32(0, coinNumber);
-//   const out = kdf(64, secretSeed, salt, info);
-//   const coinPriv = out.slice(0, 32);
-//   const bks = out.slice(32, 64);
-//   return {
-//     bks,
-//     coinPriv,
-//     coinPub: eddsaGetPublic(coinPriv),
-//   };
-// }
 
 function bufferForUint32(n: number): Uint8Array {
   const arrBuf = new ArrayBuffer(4);

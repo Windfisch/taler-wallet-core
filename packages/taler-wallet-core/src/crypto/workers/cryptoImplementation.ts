@@ -557,7 +557,8 @@ export class CryptoImplementation {
           let coinPub: Uint8Array;
           let coinPriv: Uint8Array;
           let blindingFactor: Uint8Array;
-          if (this.primitiveWorker) {
+          // disabled while not implemented in the C code
+          if (0 && this.primitiveWorker) {
             const r = await this.primitiveWorker.setupRefreshPlanchet({
               transfer_secret: encodeCrock(transferSecret),
               coin_index: coinIndex,
