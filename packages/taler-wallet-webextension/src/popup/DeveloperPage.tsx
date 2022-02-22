@@ -14,7 +14,13 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { NotificationType } from "@gnu-taler/taler-util";
+import {
+  Amounts,
+  Balance,
+  CoinDumpJson,
+  ExchangeListItem,
+  NotificationType,
+} from "@gnu-taler/taler-util";
 import { PendingTaskInfo } from "@gnu-taler/taler-wallet-core";
 import { format } from "date-fns";
 import { Fragment, h, VNode } from "preact";
@@ -25,29 +31,42 @@ import { Time } from "../components/Time";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { useDiagnostics } from "../hooks/useDiagnostics";
 import * as wxApi from "../wxApi";
+import BalanceStories from "./Balance.stories";
 
 export function DeveloperPage(): VNode {
   const [status, timedOut] = useDiagnostics();
 
   const listenAllEvents = Array.from<NotificationType>({ length: 1 });
   listenAllEvents.includes = () => true; // includes every event
-  const operationsResponse = useAsyncAsHook(
-    wxApi.getPendingOperations,
-    listenAllEvents,
-  );
 
-  const operations =
-    operationsResponse === undefined
-      ? []
-      : operationsResponse.hasError
-      ? []
-      : operationsResponse.response.pendingOperations;
+  const response = useAsyncAsHook(async () => {
+    const op = await wxApi.getPendingOperations();
+    const c = await wxApi.dumpCoins();
+    const ex = await wxApi.listExchanges();
+    return {
+      operations: op.pendingOperations,
+      coins: c.coins,
+      exchanges: ex.exchanges,
+    };
+  }, listenAllEvents);
+
+  const nonResponse = { operations: [], coins: [], exchanges: [] };
+  const { operations, coins, exchanges } =
+    response === undefined
+      ? nonResponse
+      : response.hasError
+      ? nonResponse
+      : response.response;
+
+  const balanceResponse = useAsyncAsHook(wxApi.getBalance);
 
   return (
     <View
       status={status}
       timedOut={timedOut}
       operations={operations}
+      coins={coins}
+      exchanges={exchanges}
       onDownloadDatabase={async () => {
         const db = await wxApi.exportDB();
         return JSON.stringify(db);
@@ -56,10 +75,26 @@ export function DeveloperPage(): VNode {
   );
 }
 
+type CoinsInfo = CoinDumpJson["coins"];
+type CalculatedCoinfInfo = {
+  denom_value: number;
+  remain_value: number;
+  status: string;
+  from_refresh: boolean;
+  id: string;
+};
+
+type SplitedCoinInfo = {
+  spent: CalculatedCoinfInfo[];
+  usable: CalculatedCoinfInfo[];
+};
+
 export interface Props {
   status: any;
   timedOut: boolean;
   operations: PendingTaskInfo[];
+  coins: CoinsInfo;
+  exchanges: ExchangeListItem[];
   onDownloadDatabase: () => Promise<string>;
 }
 
@@ -71,6 +106,7 @@ export function View({
   status,
   timedOut,
   operations,
+  coins,
   onDownloadDatabase,
 }: Props): VNode {
   const [downloadedDatabase, setDownloadedDatabase] = useState<
@@ -87,6 +123,30 @@ export function View({
   async function onImportDatabase(str: string): Promise<void> {
     return wxApi.importDB(JSON.parse(str));
   }
+  const currencies: { [ex: string]: string } = {};
+  const money_by_exchange = coins.reduce(
+    (prev, cur) => {
+      const denom = Amounts.parseOrThrow(cur.denom_value);
+      if (!prev[cur.exchange_base_url]) {
+        prev[cur.exchange_base_url] = [];
+        currencies[cur.exchange_base_url] = denom.currency;
+      }
+      prev[cur.exchange_base_url].push({
+        denom_value: parseFloat(Amounts.stringifyValue(denom)),
+        remain_value: parseFloat(
+          Amounts.stringifyValue(Amounts.parseOrThrow(cur.remaining_value)),
+        ),
+        status: cur.coin_suspended ? "suspended" : "ok",
+        from_refresh: cur.refresh_parent_coin_pub !== undefined,
+        id: cur.coin_pub,
+      });
+      return prev;
+    },
+    {} as {
+      [exchange_name: string]: CalculatedCoinfInfo[];
+    },
+  );
+
   return (
     <div>
       <p>Debug tools:</p>
@@ -135,6 +195,28 @@ export function View({
         </div>
       )}
       <br />
+      <p>Coins:</p>
+      {Object.keys(money_by_exchange).map((ex) => {
+        const allcoins = money_by_exchange[ex];
+        allcoins.sort((a, b) => {
+          return b.denom_value - a.denom_value;
+        });
+
+        const coins = allcoins.reduce(
+          (prev, cur) => {
+            if (cur.remain_value > 0) prev.usable.push(cur);
+            if (cur.remain_value === 0) prev.spent.push(cur);
+            return prev;
+          },
+          {
+            spent: [],
+            usable: [],
+          } as SplitedCoinInfo,
+        );
+
+        return <ShowAllCoins coins={coins} ex={ex} currencies={currencies} />;
+      })}
+      <br />
       <Diagnostics diagnostics={status} timedOut={timedOut} />
       {operations && operations.length > 0 && (
         <Fragment>
@@ -154,6 +236,79 @@ export function View({
         </Fragment>
       )}
     </div>
+  );
+}
+
+function ShowAllCoins({
+  ex,
+  coins,
+  currencies,
+}: {
+  ex: string;
+  coins: SplitedCoinInfo;
+  currencies: { [ex: string]: string };
+}) {
+  const [collapsedSpent, setCollapsedSpent] = useState(true);
+  const [collapsedUnspent, setCollapsedUnspent] = useState(false);
+  const total = coins.usable.reduce((prev, cur) => prev + cur.denom_value, 0);
+  return (
+    <Fragment>
+      <p>
+        <b>{ex}</b>: {total} {currencies[ex]}
+      </p>
+      <p>
+        <b>usable coins</b>
+      </p>
+      {collapsedUnspent ? (
+        <div onClick={() => setCollapsedUnspent(false)}>click to show</div>
+      ) : (
+        <table onClick={() => setCollapsedUnspent(true)}>
+          <tr>
+            <td>id</td>
+            <td>denom</td>
+            <td>value</td>
+            <td>status</td>
+            <td>from refresh?</td>
+          </tr>
+          {coins.usable.map((c) => {
+            return (
+              <tr>
+                <td>{c.id.substring(0, 5)}</td>
+                <td>{c.denom_value}</td>
+                <td>{c.remain_value}</td>
+                <td>{c.status}</td>
+                <td>{c.from_refresh ? "true" : "false"}</td>
+              </tr>
+            );
+          })}
+        </table>
+      )}
+      <p>spent coins</p>
+      {collapsedSpent ? (
+        <div onClick={() => setCollapsedSpent(false)}>click to show</div>
+      ) : (
+        <table onClick={() => setCollapsedSpent(true)}>
+          <tr>
+            <td>id</td>
+            <td>denom</td>
+            <td>value</td>
+            <td>status</td>
+            <td>refresh?</td>
+          </tr>
+          {coins.spent.map((c) => {
+            return (
+              <tr>
+                <td>{c.id.substring(0, 5)}</td>
+                <td>{c.denom_value}</td>
+                <td>{c.remain_value}</td>
+                <td>{c.status}</td>
+                <td>{c.from_refresh ? "true" : "false"}</td>
+              </tr>
+            );
+          })}
+        </table>
+      )}
+    </Fragment>
   );
 }
 

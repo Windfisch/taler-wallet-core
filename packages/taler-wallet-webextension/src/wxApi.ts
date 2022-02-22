@@ -24,7 +24,7 @@
 import {
   AcceptExchangeTosRequest,
   AcceptManualWithdrawalResult, AcceptTipRequest, AcceptWithdrawalResponse,
-  AddExchangeRequest, AmountString, ApplyRefundResponse, BalancesResponse, ConfirmPayResult,
+  AddExchangeRequest, AmountString, ApplyRefundResponse, BalancesResponse, CoinDumpJson, ConfirmPayResult,
   CoreApiResponse, CreateDepositGroupRequest, CreateDepositGroupResponse, DeleteTransactionRequest, ExchangesListRespose,
   GetExchangeTosResult, GetExchangeWithdrawalInfo,
   GetFeeForDepositRequest,
@@ -354,6 +354,10 @@ export function getExchangeTos(
     exchangeBaseUrl,
     acceptedFormat,
   });
+}
+
+export function dumpCoins(): Promise<CoinDumpJson> {
+  return callBackend("dumpCoins", {});
 }
 
 export function getPendingOperations(): Promise<PendingOperationsResponse> {
