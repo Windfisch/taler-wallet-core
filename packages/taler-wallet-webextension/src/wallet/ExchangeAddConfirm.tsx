@@ -85,10 +85,10 @@ export function View({
     <Fragment>
       <section>
         <h1>
-          <Translate>Review terms of service</Translate>
+          <i18n.Translate>Review terms of service</i18n.Translate>
         </h1>
         <div>
-          <Translate>Exchange URL</Translate>:
+          <i18n.Translate>Exchange URL</i18n.Translate>:
           <a href={url} target="_blank" rel="noreferrer">
             {url}
           </a>
@@ -109,28 +109,28 @@ export function View({
 
       <footer>
         <Button onClick={onCancel}>
-          <Translate>Cancel</Translate>
+          <i18n.Translate>Cancel</i18n.Translate>
         </Button>
         {!terms && (
           <Button disabled>
-            <Translate>Loading terms..</Translate>
+            <i18n.Translate>Loading terms..</i18n.Translate>
           </Button>
         )}
         {terms && (
           <Fragment>
             {needsReview && !reviewed && (
               <ButtonSuccess disabled upperCased onClick={onConfirm}>
-                <Translate>Add exchange</Translate>
+                <i18n.Translate>Add exchange</i18n.Translate>
               </ButtonSuccess>
             )}
             {(terms.status === "accepted" || (needsReview && reviewed)) && (
               <ButtonSuccess upperCased onClick={onConfirm}>
-                <Translate>Add exchange</Translate>
+                <i18n.Translate>Add exchange</i18n.Translate>
               </ButtonSuccess>
             )}
             {terms.status === "notfound" && (
               <ButtonWarning upperCased onClick={onConfirm}>
-                <Translate>Add exchange anyway</Translate>
+                <i18n.Translate>Add exchange anyway</i18n.Translate>
               </ButtonWarning>
             )}
           </Fragment>

@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { PaytoUri, Translate } from "@gnu-taler/taler-util";
+import { PaytoUri, i18n } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { CopiedIcon, CopyIcon } from "../svg";
@@ -34,23 +34,42 @@ export function BankDetailsByPaytoType({
   amount,
 }: BankDetailsProps): VNode {
   const firstPart = !payto ? undefined : !payto.isKnown ? (
-    <Row name={<Translate>Account</Translate>} value={payto.targetPath} />
+    <Row
+      name={<i18n.Translate>Account</i18n.Translate>}
+      value={payto.targetPath}
+    />
   ) : payto.targetType === "x-taler-bank" ? (
     <Fragment>
-      <Row name={<Translate>Bank host</Translate>} value={payto.host} />
-      <Row name={<Translate>Bank account</Translate>} value={payto.account} />
+      <Row
+        name={<i18n.Translate>Bank host</i18n.Translate>}
+        value={payto.host}
+      />
+      <Row
+        name={<i18n.Translate>Bank account</i18n.Translate>}
+        value={payto.account}
+      />
     </Fragment>
   ) : payto.targetType === "iban" ? (
-    <Row name={<Translate>IBAN</Translate>} value={payto.iban} />
+    <Row name={<i18n.Translate>IBAN</i18n.Translate>} value={payto.iban} />
   ) : undefined;
   return (
     <div style={{ textAlign: "left" }}>
       <p>Bank transfer details</p>
       <table>
         {firstPart}
-        <Row name={<Translate>Exchange</Translate>} value={exchangeBaseUrl} />
-        <Row name={<Translate>Chosen amount</Translate>} value={amount} />
-        <Row name={<Translate>Subject</Translate>} value={subject} literal />
+        <Row
+          name={<i18n.Translate>Exchange</i18n.Translate>}
+          value={exchangeBaseUrl}
+        />
+        <Row
+          name={<i18n.Translate>Chosen amount</i18n.Translate>}
+          value={amount}
+        />
+        <Row
+          name={<i18n.Translate>Subject</i18n.Translate>}
+          value={subject}
+          literal
+        />
       </table>
     </div>
   );

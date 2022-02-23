@@ -13,13 +13,13 @@
  You should have received a copy of the GNU General Public License along with
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-import { Translate } from "@gnu-taler/taler-util";
+import { i18n } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 
 export function Loading(): VNode {
   return (
     <div>
-      <Translate>Loading</Translate>...
+      <i18n.Translate>Loading</i18n.Translate>...
     </div>
   );
 }

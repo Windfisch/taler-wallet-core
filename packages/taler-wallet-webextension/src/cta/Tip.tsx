@@ -20,7 +20,7 @@
  * @author sebasjm <dold@taler.net>
  */
 
-import { PrepareTipResult, Translate } from "@gnu-taler/taler-util";
+import { PrepareTipResult, i18n } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { Loading } from "../components/Loading";
@@ -46,28 +46,28 @@ export function View({
       <article class="fade">
         {prepareTipResult.accepted ? (
           <span>
-            <Translate>
+            <i18n.Translate>
               Tip from <code>{prepareTipResult.merchantBaseUrl}</code> accepted.
               Check your transactions list for more details.
-            </Translate>
+            </i18n.Translate>
           </span>
         ) : (
           <div>
             <p>
-              <Translate>
+              <i18n.Translate>
                 The merchant <code>{prepareTipResult.merchantBaseUrl}</code> is
                 offering you a tip of{" "}
                 <strong>
                   <AmountView amount={prepareTipResult.tipAmountEffective} />
                 </strong>{" "}
                 via the exchange <code>{prepareTipResult.exchangeBaseUrl}</code>
-              </Translate>
+              </i18n.Translate>
             </p>
             <button onClick={onAccept}>
-              <Translate>Accept tip</Translate>
+              <i18n.Translate>Accept tip</i18n.Translate>
             </button>
             <button onClick={onIgnore}>
-              <Translate>Ignore</Translate>
+              <i18n.Translate>Ignore</i18n.Translate>
             </button>
           </div>
         )}
@@ -108,7 +108,7 @@ export function TipPage({ talerTipUri }: Props): VNode {
   if (!talerTipUri) {
     return (
       <span>
-        <Translate>missing tip uri</Translate>
+        <i18n.Translate>missing tip uri</i18n.Translate>
       </span>
     );
   }
@@ -116,7 +116,7 @@ export function TipPage({ talerTipUri }: Props): VNode {
   if (tipIgnored) {
     return (
       <span>
-        <Translate>You've ignored the tip.</Translate>
+        <i18n.Translate>You've ignored the tip.</i18n.Translate>
       </span>
     );
   }

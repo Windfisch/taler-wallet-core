@@ -67,10 +67,10 @@ export function PopupNavBar({ path = "" }: { path?: string }): VNode {
   return (
     <NavigationHeader>
       <a href="/balance" class={path.startsWith("/balance") ? "active" : ""}>
-        <Translate>Balance</Translate>
+        <i18n.Translate>Balance</i18n.Translate>
       </a>
       <a href="/backup" class={path.startsWith("/backup") ? "active" : ""}>
-        <Translate>Backup</Translate>
+        <i18n.Translate>Backup</i18n.Translate>
       </a>
       <a />
       <a href={innerUrl} target="_blank" rel="noreferrer">
@@ -85,15 +85,15 @@ export function WalletNavBar({ path = "" }: { path?: string }): VNode {
     <NavigationHeaderHolder>
       <NavigationHeader>
         <a href="/balance" class={path.startsWith("/balance") ? "active" : ""}>
-          <Translate>Balance</Translate>
+          <i18n.Translate>Balance</i18n.Translate>
         </a>
         <a href="/backup" class={path.startsWith("/backup") ? "active" : ""}>
-          <Translate>Backup</Translate>
+          <i18n.Translate>Backup</i18n.Translate>
         </a>
 
         <JustInDevMode>
           <a href="/dev" class={path.startsWith("/dev") ? "active" : ""}>
-            <Translate>Dev</Translate>
+            <i18n.Translate>Dev</i18n.Translate>
           </a>
         </JustInDevMode>
 
@@ -102,7 +102,7 @@ export function WalletNavBar({ path = "" }: { path?: string }): VNode {
           href="/settings"
           class={path.startsWith("/settings") ? "active" : ""}
         >
-          <Translate>Settings</Translate>
+          <i18n.Translate>Settings</i18n.Translate>
         </a>
       </NavigationHeader>
     </NavigationHeaderHolder>

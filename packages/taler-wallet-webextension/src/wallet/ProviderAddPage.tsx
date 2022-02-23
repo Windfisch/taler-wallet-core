@@ -115,21 +115,27 @@ export function SetUrlView({
     <Fragment>
       <section>
         <h1>
-          <Translate>Add backup provider</Translate>
+          <i18n.Translate>Add backup provider</i18n.Translate>
         </h1>
         {error && (
           <ErrorMessage
-            title={<Translate>Could not get provider information</Translate>}
+            title={
+              <i18n.Translate>
+                Could not get provider information
+              </i18n.Translate>
+            }
             description={error}
           />
         )}
         <LightText>
-          <Translate>Backup providers may charge for their service</Translate>
+          <i18n.Translate>
+            Backup providers may charge for their service
+          </i18n.Translate>
         </LightText>
         <p>
           <Input invalid={urlError}>
             <label>
-              <Translate>URL</Translate>
+              <i18n.Translate>URL</i18n.Translate>
             </label>
             <input
               type="text"
@@ -140,7 +146,7 @@ export function SetUrlView({
           </Input>
           <Input>
             <label>
-              <Translate>Name</Translate>
+              <i18n.Translate>Name</i18n.Translate>
             </label>
             <input
               type="text"
@@ -153,7 +159,7 @@ export function SetUrlView({
       </section>
       <footer>
         <Button onClick={onCancel}>
-          &lt; <Translate>Back</Translate>
+          &lt; <i18n.Translate>Back</i18n.Translate>
         </Button>
         <ButtonPrimary
           disabled={!value && !urlError}
@@ -164,7 +170,7 @@ export function SetUrlView({
             );
           }}
         >
-          <Translate>Next</Translate>
+          <i18n.Translate>Next</i18n.Translate>
         </ButtonPrimary>
       </footer>
     </Fragment>
@@ -189,40 +195,42 @@ export function ConfirmProviderView({
     <Fragment>
       <section>
         <h1>
-          <Translate>Review terms of service</Translate>
+          <i18n.Translate>Review terms of service</i18n.Translate>
         </h1>
         <div>
-          <Translate>Provider URL</Translate>:{" "}
+          <i18n.Translate>Provider URL</i18n.Translate>:{" "}
           <a href={url} target="_blank">
             {url}
           </a>
         </div>
         <SmallLightText>
-          <Translate>
+          <i18n.Translate>
             Please review and accept this provider's terms of service
-          </Translate>
+          </i18n.Translate>
         </SmallLightText>
         <h2>
-          1. <Translate>Pricing</Translate>
+          1. <i18n.Translate>Pricing</i18n.Translate>
         </h2>
         <p>
           {Amounts.isZero(provider.annual_fee) ? (
-            <Translate>free of charge</Translate>
+            <i18n.Translate>free of charge</i18n.Translate>
           ) : (
-            <Translate>{provider.annual_fee} per year of service</Translate>
+            <i18n.Translate>
+              {provider.annual_fee} per year of service
+            </i18n.Translate>
           )}
         </p>
         <h2>
-          2. <Translate>Storage</Translate>
+          2. <i18n.Translate>Storage</i18n.Translate>
         </h2>
         <p>
-          <Translate>
+          <i18n.Translate>
             {provider.storage_limit_in_megabytes} megabytes of storage per year
             of service
-          </Translate>
+          </i18n.Translate>
         </p>
         <Checkbox
-          label={<Translate>Accept terms of service</Translate>}
+          label={<i18n.Translate>Accept terms of service</i18n.Translate>}
           name="terms"
           onToggle={() => setAccepted((old) => !old)}
           enabled={accepted}
@@ -230,10 +238,10 @@ export function ConfirmProviderView({
       </section>
       <footer>
         <Button onClick={onCancel}>
-          &lt; <Translate>Back</Translate>
+          &lt; <i18n.Translate>Back</i18n.Translate>
         </Button>
         <ButtonPrimary disabled={!accepted} onClick={onConfirm}>
-          <Translate>Add provider</Translate>
+          <i18n.Translate>Add provider</i18n.Translate>
         </ButtonPrimary>
       </footer>
     </Fragment>

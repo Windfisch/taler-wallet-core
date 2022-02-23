@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Translate, WalletDiagnostics } from "@gnu-taler/taler-util";
+import { i18n, WalletDiagnostics } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { PageLink } from "../renderHtml";
 
@@ -27,9 +27,9 @@ export function Diagnostics({ timedOut, diagnostics }: Props): VNode {
   if (timedOut) {
     return (
       <p>
-        <Translate>
+        <i18n.Translate>
           Diagnostics timed out. Could not talk to the wallet backend.
-        </Translate>
+        </i18n.Translate>
       </p>
     );
   }
@@ -48,7 +48,7 @@ export function Diagnostics({ timedOut, diagnostics }: Props): VNode {
         }}
       >
         <p>
-          <Translate>Problems detected:</Translate>
+          <i18n.Translate>Problems detected:</i18n.Translate>
         </p>
         <ol>
           {diagnostics.errors.map((errMsg) => (
@@ -57,23 +57,23 @@ export function Diagnostics({ timedOut, diagnostics }: Props): VNode {
         </ol>
         {diagnostics.firefoxIdbProblem ? (
           <p>
-            <Translate>
+            <i18n.Translate>
               Please check in your <code>about:config</code> settings that you
               have IndexedDB enabled (check the preference name{" "}
               <code>dom.indexedDB.enabled</code>).
-            </Translate>
+            </i18n.Translate>
           </p>
         ) : null}
         {diagnostics.dbOutdated ? (
           <p>
-            <Translate>
+            <i18n.Translate>
               Your wallet database is outdated. Currently automatic migration is
               not supported. Please go{" "}
               <PageLink pageName="/reset-required">
-                <Translate>here</Translate>
+                <i18n.Translate>here</i18n.Translate>
               </PageLink>{" "}
               to reset the wallet database.
-            </Translate>
+            </i18n.Translate>
           </p>
         ) : null}
       </div>
@@ -82,7 +82,7 @@ export function Diagnostics({ timedOut, diagnostics }: Props): VNode {
 
   return (
     <p>
-      <Translate>Running diagnostics</Translate> ...
+      <i18n.Translate>Running diagnostics</i18n.Translate> ...
     </p>
   );
 }

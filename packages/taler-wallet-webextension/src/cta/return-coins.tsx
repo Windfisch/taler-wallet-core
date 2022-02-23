@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Translate } from "@gnu-taler/taler-util";
+import { i18n } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 /**
  * Return coins to own bank account.
@@ -28,7 +28,7 @@ import { h, VNode } from "preact";
 export function createReturnCoinsPage(): VNode {
   return (
     <span>
-      <Translate>Not implemented yet.</Translate>
+      <i18n.Translate>Not implemented yet.</i18n.Translate>
     </span>
   );
 }

@@ -151,14 +151,14 @@ export function View({
   return (
     <div>
       <p>
-        <Translate>Debug tools</Translate>:
+        <i18n.Translate>Debug tools</i18n.Translate>:
       </p>
       <button onClick={confirmReset}>
-        <Translate>reset</Translate>
+        <i18n.Translate>reset</i18n.Translate>
       </button>
       <br />
       <button onClick={() => fileRef?.current?.click()}>
-        <Translate>import database</Translate>
+        <i18n.Translate>import database</i18n.Translate>
       </button>
       <input
         ref={fileRef}
@@ -179,11 +179,11 @@ export function View({
       />
       <br />
       <button onClick={onExportDatabase}>
-        <Translate>export database</Translate>
+        <i18n.Translate>export database</i18n.Translate>
       </button>
       {downloadedDatabase && (
         <div>
-          <Translate>
+          <i18n.Translate>
             Database exported at
             <Time
               timestamp={{ t_ms: downloadedDatabase.time.getTime() }}
@@ -198,15 +198,15 @@ export function View({
                 "yyyy/MM/dd_HH:mm",
               )}.json`}
             >
-              <Translate>click here</Translate>
+              <i18n.Translate>click here</i18n.Translate>
             </a>
             to download
-          </Translate>
+          </i18n.Translate>
         </div>
       )}
       <br />
       <p>
-        <Translate>Coins</Translate>:
+        <i18n.Translate>Coins</i18n.Translate>:
       </p>
       {Object.keys(money_by_exchange).map((ex) => {
         const allcoins = money_by_exchange[ex];
@@ -233,7 +233,7 @@ export function View({
       {operations && operations.length > 0 && (
         <Fragment>
           <p>
-            <Translate>Pending operations</Translate>
+            <i18n.Translate>Pending operations</i18n.Translate>
           </p>
           <dl>
             {operations.reverse().map((o) => {
@@ -272,7 +272,7 @@ function ShowAllCoins({
       </p>
       <p>
         <b>
-          <Translate>usable coins</Translate>
+          <i18n.Translate>usable coins</i18n.Translate>
         </b>
       </p>
       {collapsedUnspent ? (
@@ -281,19 +281,19 @@ function ShowAllCoins({
         <table onClick={() => setCollapsedUnspent(true)}>
           <tr>
             <td>
-              <Translate>id</Translate>
+              <i18n.Translate>id</i18n.Translate>
             </td>
             <td>
-              <Translate>denom</Translate>
+              <i18n.Translate>denom</i18n.Translate>
             </td>
             <td>
-              <Translate>value</Translate>
+              <i18n.Translate>value</i18n.Translate>
             </td>
             <td>
-              <Translate>status</Translate>
+              <i18n.Translate>status</i18n.Translate>
             </td>
             <td>
-              <Translate>from refresh?</Translate>
+              <i18n.Translate>from refresh?</i18n.Translate>
             </td>
           </tr>
           {coins.usable.map((c) => {
@@ -310,29 +310,29 @@ function ShowAllCoins({
         </table>
       )}
       <p>
-        <Translate>spent coins</Translate>
+        <i18n.Translate>spent coins</i18n.Translate>
       </p>
       {collapsedSpent ? (
         <div onClick={() => setCollapsedSpent(false)}>
-          <Translate>click to show</Translate>
+          <i18n.Translate>click to show</i18n.Translate>
         </div>
       ) : (
         <table onClick={() => setCollapsedSpent(true)}>
           <tr>
             <td>
-              <Translate>id</Translate>
+              <i18n.Translate>id</i18n.Translate>
             </td>
             <td>
-              <Translate>denom</Translate>
+              <i18n.Translate>denom</i18n.Translate>
             </td>
             <td>
-              <Translate>value</Translate>
+              <i18n.Translate>value</i18n.Translate>
             </td>
             <td>
-              <Translate>status</Translate>
+              <i18n.Translate>status</i18n.Translate>
             </td>
             <td>
-              <Translate>from refresh?</Translate>
+              <i18n.Translate>from refresh?</i18n.Translate>
             </td>
           </tr>
           {coins.spent.map((c) => {

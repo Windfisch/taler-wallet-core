@@ -20,7 +20,7 @@
  * @author sebasjm <dold@taler.net>
  */
 
-import { setupI18n, Translate } from "@gnu-taler/taler-util";
+import { setupI18n, i18n } from "@gnu-taler/taler-util";
 import { createHashHistory } from "history";
 import { Fragment, h, render, VNode } from "preact";
 import Router, { route, Route } from "preact-router";
@@ -181,9 +181,9 @@ function RedirectToWalletPage(): VNode {
   });
   return (
     <span>
-      <Translate>
+      <i18n.Translate>
         this popup is being closed and you are being redirected to {page}
-      </Translate>
+      </i18n.Translate>
     </span>
   );
 }

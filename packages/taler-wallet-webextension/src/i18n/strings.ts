@@ -1,3 +1,5 @@
+export const strings: any = {}
+
 strings['de'] = {
   "domain": "messages",
   "locale_data": {

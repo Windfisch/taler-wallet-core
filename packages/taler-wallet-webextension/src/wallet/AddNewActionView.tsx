@@ -1,8 +1,4 @@
-import {
-  classifyTalerUri,
-  TalerUriType,
-  Translate,
-} from "@gnu-taler/taler-util";
+import { classifyTalerUri, TalerUriType, i18n } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { Button, ButtonSuccess, InputWithLabel } from "../components/styled";
@@ -15,15 +11,15 @@ export interface Props {
 function buttonLabelByTalerType(type: TalerUriType): VNode {
   switch (type) {
     case TalerUriType.TalerNotifyReserve:
-      return <Translate>Open reserve page</Translate>;
+      return <i18n.Translate>Open reserve page</i18n.Translate>;
     case TalerUriType.TalerPay:
-      return <Translate>Open pay page</Translate>;
+      return <i18n.Translate>Open pay page</i18n.Translate>;
     case TalerUriType.TalerRefund:
-      return <Translate>Open refund page</Translate>;
+      return <i18n.Translate>Open refund page</i18n.Translate>;
     case TalerUriType.TalerTip:
-      return <Translate>Open tip page</Translate>;
+      return <i18n.Translate>Open tip page</i18n.Translate>;
     case TalerUriType.TalerWithdraw:
-      return <Translate>Open withdraw page</Translate>;
+      return <i18n.Translate>Open withdraw page</i18n.Translate>;
   }
   return <Fragment />;
 }
@@ -52,7 +48,7 @@ export function AddNewActionView({ onCancel }: Props): VNode {
       </section>
       <footer>
         <Button onClick={onCancel}>
-          <Translate>Back</Translate>
+          <i18n.Translate>Back</i18n.Translate>
         </Button>
         {uriType !== TalerUriType.Unknown && (
           <ButtonSuccess

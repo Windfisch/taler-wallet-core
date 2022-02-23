@@ -72,7 +72,7 @@ export function BackupPage({ onAddProvider }: Props): VNode {
   if (status.hasError) {
     return (
       <LoadingError
-        title={<Translate>Could not load backup providers</Translate>}
+        title={<i18n.Translate>Could not load backup providers</i18n.Translate>}
         error={status}
       />
     );
@@ -126,10 +126,10 @@ export function BackupView({
         {!providers.length && (
           <Centered style={{ marginTop: 100 }}>
             <BoldLight>
-              <Translate>No backup providers configured</Translate>
+              <i18n.Translate>No backup providers configured</i18n.Translate>
             </BoldLight>
             <ButtonSuccess onClick={onAddProvider}>
-              <Translate>Add provider</Translate>
+              <i18n.Translate>Add provider</i18n.Translate>
             </ButtonSuccess>
           </Centered>
         )}
@@ -140,13 +140,13 @@ export function BackupView({
           <div>
             <ButtonPrimary onClick={onSyncAll}>
               {providers.length > 1 ? (
-                <Translate>Sync all backups</Translate>
+                <i18n.Translate>Sync all backups</i18n.Translate>
               ) : (
-                <Translate>Sync now</Translate>
+                <i18n.Translate>Sync now</i18n.Translate>
               )}
             </ButtonPrimary>
             <ButtonSuccess onClick={onAddProvider}>
-              <Translate>Add provider</Translate>
+              <i18n.Translate>Add provider</i18n.Translate>
             </ButtonSuccess>
           </div>
         </footer>
@@ -184,12 +184,12 @@ function BackupLayout(props: TransactionLayoutProps): VNode {
 
         {dateStr && (
           <SmallText style={{ marginTop: 5 }}>
-            <Translate>Last synced</Translate>: {dateStr}
+            <i18n.Translate>Last synced</i18n.Translate>: {dateStr}
           </SmallText>
         )}
         {!dateStr && (
           <SmallLightText style={{ marginTop: 5 }}>
-            <Translate>Not synced</Translate>
+            <i18n.Translate>Not synced</i18n.Translate>
           </SmallLightText>
         )}
       </div>
@@ -208,7 +208,7 @@ function ExpirationText({ until }: { until: Timestamp }): VNode {
   return (
     <Fragment>
       <CenteredText>
-        <Translate>Expires in</Translate>
+        <i18n.Translate>Expires in</i18n.Translate>
       </CenteredText>
       <CenteredBoldText {...{ color: colorByTimeToExpire(until) }}>
         {" "}

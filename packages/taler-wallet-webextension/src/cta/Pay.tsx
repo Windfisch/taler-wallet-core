@@ -110,7 +110,7 @@ export function PayPage({
   if (hook.hasError) {
     return (
       <LoadingError
-        title={<Translate>Could not load pay status</Translate>}
+        title={<i18n.Translate>Could not load pay status</i18n.Translate>}
         error={hook}
       />
     );
@@ -187,9 +187,9 @@ export function PaymentRequestView({
     return (
       <ErrorMessage
         title={
-          <Translate>
+          <i18n.Translate>
             Could not load contract terms from merchant or wallet backend.
-          </Translate>
+          </i18n.Translate>
         }
       />
     );
@@ -214,20 +214,20 @@ export function PaymentRequestView({
       <section>
         <LinkSuccess upperCased onClick={() => setShowQR((qr) => !qr)}>
           {!showQR ? (
-            <Translate>Pay with a mobile phone</Translate>
+            <i18n.Translate>Pay with a mobile phone</i18n.Translate>
           ) : (
-            <Translate>Hide QR</Translate>
+            <i18n.Translate>Hide QR</i18n.Translate>
           )}
         </LinkSuccess>
         {showQR && (
           <div>
             <QR text={privateUri} />
-            <Translate>
+            <i18n.Translate>
               Scan the QR code or
               <a href={privateUri}>
-                <Translate>click here</Translate>
+                <i18n.Translate>click here</i18n.Translate>
               </a>
-            </Translate>
+            </i18n.Translate>
           </div>
         )}
       </section>
@@ -241,7 +241,7 @@ export function PaymentRequestView({
           <section>
             <div>
               <p>
-                <Translate>Processing</Translate>...
+                <i18n.Translate>Processing</i18n.Translate>...
               </p>
             </div>
           </section>
@@ -254,9 +254,9 @@ export function PaymentRequestView({
         <Fragment>
           <section>
             <ButtonSuccess upperCased onClick={onClick}>
-              <Translate>
+              <i18n.Translate>
                 Pay {amountToString(payStatus.amountEffective)}
-              </Translate>
+              </i18n.Translate>
             </ButtonSuccess>
           </section>
           <Alternative />
@@ -269,22 +269,22 @@ export function PaymentRequestView({
           <section>
             {balance ? (
               <WarningBox>
-                <Translate>
+                <i18n.Translate>
                   Your balance of {amountToString(balance)} is not enough to pay
                   for this purchase
-                </Translate>
+                </i18n.Translate>
               </WarningBox>
             ) : (
               <WarningBox>
-                <Translate>
+                <i18n.Translate>
                   Your balance is not enough to pay for this purchase.
-                </Translate>
+                </i18n.Translate>
               </WarningBox>
             )}
           </section>
           <section>
             <ButtonSuccess upperCased onClick={goToWalletManualWithdraw}>
-              <Translate>Withdraw digital cash</Translate>
+              <i18n.Translate>Withdraw digital cash</i18n.Translate>
             </ButtonSuccess>
           </section>
           <Alternative />
@@ -297,7 +297,7 @@ export function PaymentRequestView({
           <section>
             {payStatus.paid && contractTerms.fulfillment_message && (
               <Part
-                title={<Translate>Merchant message</Translate>}
+                title={<i18n.Translate>Merchant message</i18n.Translate>}
                 text={contractTerms.fulfillment_message}
                 kind="neutral"
               />
@@ -315,43 +315,43 @@ export function PaymentRequestView({
       <LogoHeader />
 
       <h2>
-        <Translate>Digital cash payment</Translate>
+        <i18n.Translate>Digital cash payment</i18n.Translate>
       </h2>
       {payStatus.status === PreparePayResultType.AlreadyConfirmed &&
         (payStatus.paid ? (
           payStatus.contractTerms.fulfillment_url ? (
             <SuccessBox>
-              <Translate>
+              <i18n.Translate>
                 Already paid, you are going to be redirected to{" "}
                 <a href={payStatus.contractTerms.fulfillment_url}>
                   {payStatus.contractTerms.fulfillment_url}
                 </a>
-              </Translate>
+              </i18n.Translate>
             </SuccessBox>
           ) : (
             <SuccessBox>
-              <Translate>Already paid</Translate>
+              <i18n.Translate>Already paid</i18n.Translate>
             </SuccessBox>
           )
         ) : (
           <WarningBox>
-            <Translate>Already claimed</Translate>
+            <i18n.Translate>Already claimed</i18n.Translate>
           </WarningBox>
         ))}
       {payResult && payResult.type === ConfirmPayResultType.Done && (
         <SuccessBox>
           <h3>
-            <Translate>Payment complete</Translate>
+            <i18n.Translate>Payment complete</i18n.Translate>
           </h3>
           <p>
             {!payResult.contractTerms.fulfillment_message ? (
               payResult.contractTerms.fulfillment_url ? (
-                <Translate>
+                <i18n.Translate>
                   You are going to be redirected to $
                   {payResult.contractTerms.fulfillment_url}
-                </Translate>
+                </i18n.Translate>
               ) : (
-                <Translate>You can close this page.</Translate>
+                <i18n.Translate>You can close this page.</i18n.Translate>
               )
             ) : (
               payResult.contractTerms.fulfillment_message
@@ -364,14 +364,14 @@ export function PaymentRequestView({
           Amounts.isNonZero(totalFees) && (
             <Part
               big
-              title={<Translate>Total to pay</Translate>}
+              title={<i18n.Translate>Total to pay</i18n.Translate>}
               text={amountToString(payStatus.amountEffective)}
               kind="negative"
             />
           )}
         <Part
           big
-          title={<Translate>Purchase amount</Translate>}
+          title={<i18n.Translate>Purchase amount</i18n.Translate>}
           text={amountToString(payStatus.amountRaw)}
           kind="neutral"
         />
@@ -379,25 +379,25 @@ export function PaymentRequestView({
           <Fragment>
             <Part
               big
-              title={<Translate>Fee</Translate>}
+              title={<i18n.Translate>Fee</i18n.Translate>}
               text={amountToString(totalFees)}
               kind="negative"
             />
           </Fragment>
         )}
         <Part
-          title={<Translate>Merchant</Translate>}
+          title={<i18n.Translate>Merchant</i18n.Translate>}
           text={contractTerms.merchant.name}
           kind="neutral"
         />
         <Part
-          title={<Translate>Purchase</Translate>}
+          title={<i18n.Translate>Purchase</i18n.Translate>}
           text={contractTerms.summary}
           kind="neutral"
         />
         {contractTerms.order_id && (
           <Part
-            title={<Translate>Receipt</Translate>}
+            title={<i18n.Translate>Receipt</i18n.Translate>}
             text={`#${contractTerms.order_id}`}
             kind="neutral"
           />
@@ -415,7 +415,7 @@ function ProductList({ products }: { products: Product[] }): VNode {
   return (
     <Fragment>
       <SmallLightText style={{ margin: ".5em" }}>
-        <Translate>List of products</Translate>
+        <i18n.Translate>List of products</i18n.Translate>
       </SmallLightText>
       <dl>
         {products.map((p, i) => {
@@ -457,7 +457,7 @@ function ProductList({ products }: { products: Product[] }): VNode {
                   {p.quantity ?? 1} x {p.description}
                 </dt>
                 <dd>
-                  <Translate>Total</Translate>
+                  <i18n.Translate>Total</i18n.Translate>
                   {` `}
                   {p.price ? (
                     `${Amounts.stringifyValue(
@@ -467,7 +467,7 @@ function ProductList({ products }: { products: Product[] }): VNode {
                       ).amount,
                     )} ${p}`
                   ) : (
-                    <Translate>free</Translate>
+                    <i18n.Translate>free</i18n.Translate>
                   )}
                 </dd>
               </div>

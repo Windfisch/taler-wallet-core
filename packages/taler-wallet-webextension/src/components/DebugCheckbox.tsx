@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Translate } from "@gnu-taler/taler-util";
+import { i18n } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 
 export function DebugCheckbox({
@@ -37,7 +37,9 @@ export function DebugCheckbox({
         htmlFor="checkbox-perm"
         style={{ marginLeft: "0.5em", fontWeight: "bold" }}
       >
-        <Translate>Automatically open wallet based on page content</Translate>
+        <i18n.Translate>
+          Automatically open wallet based on page content
+        </i18n.Translate>
       </label>
       <span
         style={{
@@ -48,10 +50,10 @@ export function DebugCheckbox({
         }}
       >
         (
-        <Translate>
+        <i18n.Translate>
           Enabling this option below will make using the wallet faster, but
           requires more permissions from your browser.
-        </Translate>
+        </i18n.Translate>
         )
       </span>
     </div>

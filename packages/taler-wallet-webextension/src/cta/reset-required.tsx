@@ -20,7 +20,7 @@
  * @author sebasjm
  */
 
-import { Translate } from "@gnu-taler/taler-util";
+import { i18n } from "@gnu-taler/taler-util";
 import { Component, h, VNode } from "preact";
 import * as wxApi from "../wxApi";
 
@@ -51,19 +51,19 @@ class ResetNotification extends Component<any, State> {
       return (
         <div>
           <h1>
-            <Translate>Manual Reset Required</Translate>
+            <i18n.Translate>Manual Reset Required</i18n.Translate>
           </h1>
           <p>
-            <Translate>
+            <i18n.Translate>
               The wallet&apos;s database in your browser is incompatible with
               the currently installed wallet. Please reset manually.
-            </Translate>
+            </i18n.Translate>
           </p>
           <p>
-            <Translate>
+            <i18n.Translate>
               Once the database format has stabilized, we will provide automatic
               upgrades.
-            </Translate>
+            </i18n.Translate>
           </p>
           <input
             id="check"
@@ -74,7 +74,9 @@ class ResetNotification extends Component<any, State> {
             }}
           />{" "}
           <label htmlFor="check">
-            <Translate>I understand that I will lose all my data</Translate>
+            <i18n.Translate>
+              I understand that I will lose all my data
+            </i18n.Translate>
           </label>
           <br />
           <button
@@ -82,7 +84,7 @@ class ResetNotification extends Component<any, State> {
             disabled={!this.state.checked}
             onClick={() => wxApi.resetDb()}
           >
-            <Translate>Reset</Translate>
+            <i18n.Translate>Reset</i18n.Translate>
           </button>
         </div>
       );
@@ -90,12 +92,12 @@ class ResetNotification extends Component<any, State> {
     return (
       <div>
         <h1>
-          <Translate>Everything is fine!</Translate>
+          <i18n.Translate>Everything is fine!</i18n.Translate>
         </h1>
         <p>
-          <Translate>
+          <i18n.Translate>
             A reset is not required anymore, you can close this page.
-          </Translate>
+          </i18n.Translate>
         </p>
       </div>
     );

@@ -93,42 +93,46 @@ export function ExchangeSetUrlPage({
       <section>
         {!expectedCurrency ? (
           <h1>
-            <Translate>Add new exchange</Translate>
+            <i18n.Translate>Add new exchange</i18n.Translate>
           </h1>
         ) : (
           <h2>
-            <Translate>Add exchange for {expectedCurrency}</Translate>
+            <i18n.Translate>Add exchange for {expectedCurrency}</i18n.Translate>
           </h2>
         )}
         {!result && (
           <LightText>
-            <Translate>Enter the URL of an exchange you trust.</Translate>
+            <i18n.Translate>
+              Enter the URL of an exchange you trust.
+            </i18n.Translate>
           </LightText>
         )}
         {result && (
           <LightText>
-            <Translate>
+            <i18n.Translate>
               An exchange has been found! Review the information and click next
-            </Translate>
+            </i18n.Translate>
           </LightText>
         )}
         {result && expectedCurrency && expectedCurrency !== result.currency && (
           <WarningBox>
-            <Translate>
+            <i18n.Translate>
               This exchange doesn't match the expected currency
               <b>{expectedCurrency}</b>
-            </Translate>
+            </i18n.Translate>
           </WarningBox>
         )}
         {error && (
           <ErrorMessage
-            title={<Translate>Unable to verify this exchange</Translate>}
+            title={
+              <i18n.Translate>Unable to verify this exchange</i18n.Translate>
+            }
             description={error}
           />
         )}
         {confirmationError && (
           <ErrorMessage
-            title={<Translate>Unable to add this exchange</Translate>}
+            title={<i18n.Translate>Unable to add this exchange</i18n.Translate>}
             description={confirmationError}
           />
         )}
@@ -144,20 +148,20 @@ export function ExchangeSetUrlPage({
           </Input>
           {loading && (
             <div>
-              <Translate>loading</Translate>...
+              <i18n.Translate>loading</i18n.Translate>...
             </div>
           )}
           {result && !loading && (
             <Fragment>
               <Input>
                 <label>
-                  <Translate>Version</Translate>
+                  <i18n.Translate>Version</i18n.Translate>
                 </label>
                 <input type="text" disabled value={result.version} />
               </Input>
               <Input>
                 <label>
-                  <Translate>Currency</Translate>
+                  <i18n.Translate>Currency</i18n.Translate>
                 </label>
                 <input type="text" disabled value={result.currency} />
               </Input>
@@ -167,7 +171,7 @@ export function ExchangeSetUrlPage({
       </section>
       <footer>
         <Button onClick={onCancel}>
-          <Translate>Cancel</Translate>
+          <i18n.Translate>Cancel</i18n.Translate>
         </Button>
         <ButtonPrimary
           disabled={
@@ -183,7 +187,7 @@ export function ExchangeSetUrlPage({
             );
           }}
         >
-          <Translate>Next</Translate>
+          <i18n.Translate>Next</i18n.Translate>
         </ButtonPrimary>
       </footer>
     </Fragment>

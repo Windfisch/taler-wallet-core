@@ -100,21 +100,21 @@ export function CreateManualWithdraw({
     return (
       <section>
         <h2>
-          <Translate>Manual Withdrawal</Translate>
+          <i18n.Translate>Manual Withdrawal</i18n.Translate>
         </h2>
         <LightText>
-          <Translate>
+          <i18n.Translate>
             Choose a exchange from where the coins will be withdrawn. The
             exchange will send the coins to this wallet after receiving a wire
             transfer with the correct subject.
-          </Translate>
+          </i18n.Translate>
         </LightText>
         <Centered style={{ marginTop: 100 }}>
           <BoldLight>
-            <Translate>No exchange configured</Translate>
+            <i18n.Translate>No exchange configured</i18n.Translate>
           </BoldLight>
           <ButtonSuccess onClick={onAddExchange}>
-            <Translate>Add exchange</Translate>
+            <i18n.Translate>Add exchange</i18n.Translate>
           </ButtonSuccess>
         </Centered>
       </section>
@@ -126,24 +126,24 @@ export function CreateManualWithdraw({
       <section>
         {error && (
           <ErrorMessage
-            title={<Translate>Can't create the reserve</Translate>}
+            title={<i18n.Translate>Can't create the reserve</i18n.Translate>}
             description={error}
           />
         )}
         <h2>
-          <Translate>Manual Withdrawal</Translate>
+          <i18n.Translate>Manual Withdrawal</i18n.Translate>
         </h2>
         <LightText>
-          <Translate>
+          <i18n.Translate>
             Choose a exchange from where the coins will be withdrawn. The
             exchange will send the coins to this wallet after receiving a wire
             transfer with the correct subject.
-          </Translate>
+          </i18n.Translate>
         </LightText>
         <p>
           <Input>
             <SelectList
-              label={<Translate>Currency</Translate>}
+              label={<i18n.Translate>Currency</i18n.Translate>}
               list={currencyMap}
               name="currency"
               value={currency}
@@ -152,7 +152,7 @@ export function CreateManualWithdraw({
           </Input>
           <Input>
             <SelectList
-              label={<Translate>Exchange</Translate>}
+              label={<i18n.Translate>Exchange</i18n.Translate>}
               list={exchangeMap}
               name="currency"
               value={exchange}
@@ -161,13 +161,13 @@ export function CreateManualWithdraw({
           </Input>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <LinkPrimary onClick={onAddExchange} style={{ marginLeft: "auto" }}>
-              <Translate>Add Exchange</Translate>
+              <i18n.Translate>Add Exchange</i18n.Translate>
             </LinkPrimary>
           </div>
           {currency && (
             <InputWithLabel invalid={!!amount && !parsedAmount}>
               <label>
-                <Translate>Amount</Translate>
+                <i18n.Translate>Amount</i18n.Translate>
               </label>
               <div>
                 <span>{currency}</span>
@@ -187,7 +187,7 @@ export function CreateManualWithdraw({
           disabled={!parsedAmount || !exchange}
           onClick={() => onCreate(exchange, parsedAmount!)}
         >
-          <Translate>Start withdrawal</Translate>
+          <i18n.Translate>Start withdrawal</i18n.Translate>
         </ButtonPrimary>
       </footer>
     </Fragment>

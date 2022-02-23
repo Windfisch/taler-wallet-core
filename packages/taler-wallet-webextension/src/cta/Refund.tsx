@@ -20,7 +20,7 @@
  * @author sebasjm
  */
 
-import { Amounts, ApplyRefundResponse, Translate } from "@gnu-taler/taler-util";
+import { Amounts, ApplyRefundResponse, i18n } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { AmountView } from "../renderHtml";
@@ -38,27 +38,29 @@ export function View({ applyResult }: ViewProps): VNode {
       <h1>GNU Taler Wallet</h1>
       <article class="fade">
         <h2>
-          <Translate>Refund Status</Translate>
+          <i18n.Translate>Refund Status</i18n.Translate>
         </h2>
         <p>
-          <Translate>
+          <i18n.Translate>
             The product <em>{applyResult.info.summary}</em> has received a total
             effective refund of{" "}
-          </Translate>
+          </i18n.Translate>
           <AmountView amount={applyResult.amountRefundGranted} />.
         </p>
         {applyResult.pendingAtExchange ? (
           <p>
-            <Translate>Refund processing is still in progress.</Translate>
+            <i18n.Translate>
+              Refund processing is still in progress.
+            </i18n.Translate>
           </p>
         ) : null}
         {!Amounts.isZero(applyResult.amountRefundGone) ? (
           <p>
-            <Translate>
+            <i18n.Translate>
               The refund amount of{" "}
               <AmountView amount={applyResult.amountRefundGone} /> could not be
               applied.
-            </Translate>
+            </i18n.Translate>
           </p>
         ) : null}
       </article>
@@ -92,7 +94,7 @@ export function RefundPage({ talerRefundUri }: Props): VNode {
   if (!talerRefundUri) {
     return (
       <span>
-        <Translate>missing taler refund uri</Translate>
+        <i18n.Translate>missing taler refund uri</i18n.Translate>
       </span>
     );
   }
@@ -100,7 +102,7 @@ export function RefundPage({ talerRefundUri }: Props): VNode {
   if (errMsg) {
     return (
       <span>
-        <Translate>Error: {errMsg}</Translate>
+        <i18n.Translate>Error: {errMsg}</i18n.Translate>
       </span>
     );
   }
@@ -108,7 +110,7 @@ export function RefundPage({ talerRefundUri }: Props): VNode {
   if (!applyResult) {
     return (
       <span>
-        <Translate>Updating refund status</Translate>
+        <i18n.Translate>Updating refund status</i18n.Translate>
       </span>
     );
   }

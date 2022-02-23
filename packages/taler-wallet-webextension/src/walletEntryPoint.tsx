@@ -20,7 +20,7 @@
  * @author sebasjm <dold@taler.net>
  */
 
-import { i18n, setupI18n, Translate } from "@gnu-taler/taler-util";
+import { i18n, setupI18n } from "@gnu-taler/taler-util";
 import { createHashHistory } from "history";
 import { Fragment, h, render, VNode } from "preact";
 import Router, { route, Route } from "preact-router";
@@ -169,9 +169,9 @@ function Application(): VNode {
                   onSuccess={(currency: string) => {
                     route(Pages.balance_history.replace(":currency", currency));
                     setGlobalNotification(
-                      <Translate>
+                      <i18n.Translate>
                         All done, your transaction is in progress
-                      </Translate>,
+                      </i18n.Translate>,
                     );
                   }}
                 />

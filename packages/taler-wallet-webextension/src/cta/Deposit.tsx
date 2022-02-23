@@ -111,7 +111,7 @@ export function DepositPage({ talerPayUri, goBack }: Props): VNode {
   if (!talerPayUri) {
     return (
       <span>
-        <Translate>missing pay uri</Translate>
+        <i18n.Translate>missing pay uri</i18n.Translate>
       </span>
     );
   }
@@ -122,14 +122,14 @@ export function DepositPage({ talerPayUri, goBack }: Props): VNode {
         <WalletAction>
           <LogoHeader />
           <h2>
-            <Translate>Digital cash payment</Translate>
+            <i18n.Translate>Digital cash payment</i18n.Translate>
           </h2>
           <section>
             <ErrorTalerOperation
               title={
-                <Translate>
+                <i18n.Translate>
                   Could not get the payment information for this order
-                </Translate>
+                </i18n.Translate>
               }
               error={payErrMsg?.operationError}
             />
@@ -142,13 +142,13 @@ export function DepositPage({ talerPayUri, goBack }: Props): VNode {
         <WalletAction>
           <LogoHeader />
           <h2>
-            <Translate>Digital cash payment</Translate>
+            <i18n.Translate>Digital cash payment</i18n.Translate>
           </h2>
           <section>
             <p>
-              <Translate>
+              <i18n.Translate>
                 Could not get the payment information for this order
-              </Translate>
+              </i18n.Translate>
             </p>
             <ErrorBox>{payErrMsg}</ErrorBox>
           </section>
@@ -157,7 +157,7 @@ export function DepositPage({ talerPayUri, goBack }: Props): VNode {
     }
     return (
       <span>
-        <Translate>Loading payment information</Translate> ...
+        <i18n.Translate>Loading payment information</i18n.Translate> ...
       </span>
     );
   }
@@ -205,28 +205,28 @@ export function PaymentRequestView({
       <LogoHeader />
 
       <h2>
-        <Translate>Digital cash deposit</Translate>
+        <i18n.Translate>Digital cash deposit</i18n.Translate>
       </h2>
       {payStatus.status === PreparePayResultType.AlreadyConfirmed &&
         (payStatus.paid ? (
           <SuccessBox>
-            <Translate>Already paid</Translate>
+            <i18n.Translate>Already paid</i18n.Translate>
           </SuccessBox>
         ) : (
           <WarningBox>
-            <Translate>Already claimed</Translate>
+            <i18n.Translate>Already claimed</i18n.Translate>
           </WarningBox>
         ))}
       {payResult && payResult.type === ConfirmPayResultType.Done && (
         <SuccessBox>
           <h3>
-            <Translate>Payment complete</Translate>
+            <i18n.Translate>Payment complete</i18n.Translate>
           </h3>
           <p>
             {!payResult.contractTerms.fulfillment_message ? (
-              <Translate>
+              <i18n.Translate>
                 You will now be sent back to the merchant you came from.
-              </Translate>
+              </i18n.Translate>
             ) : (
               payResult.contractTerms.fulfillment_message
             )}
@@ -238,7 +238,7 @@ export function PaymentRequestView({
           Amounts.isNonZero(totalFees) && (
             <Part
               big
-              title={<Translate>Total to pay</Translate>}
+              title={<i18n.Translate>Total to pay</i18n.Translate>}
               text={amountToPretty(
                 Amounts.parseOrThrow(payStatus.amountEffective),
               )}
@@ -247,7 +247,7 @@ export function PaymentRequestView({
           )}
         <Part
           big
-          title={<Translate>Purchase amount</Translate>}
+          title={<i18n.Translate>Purchase amount</i18n.Translate>}
           text={amountToPretty(Amounts.parseOrThrow(payStatus.amountRaw))}
           kind="neutral"
         />
@@ -255,25 +255,25 @@ export function PaymentRequestView({
           <Fragment>
             <Part
               big
-              title={<Translate>Fee</Translate>}
+              title={<i18n.Translate>Fee</i18n.Translate>}
               text={amountToPretty(totalFees)}
               kind="negative"
             />
           </Fragment>
         )}
         <Part
-          title={<Translate>Merchant</Translate>}
+          title={<i18n.Translate>Merchant</i18n.Translate>}
           text={contractTerms.merchant.name}
           kind="neutral"
         />
         <Part
-          title={<Translate>Purchase</Translate>}
+          title={<i18n.Translate>Purchase</i18n.Translate>}
           text={contractTerms.summary}
           kind="neutral"
         />
         {contractTerms.order_id && (
           <Part
-            title={<Translate>Receipt</Translate>}
+            title={<i18n.Translate>Receipt</i18n.Translate>}
             text={`#${contractTerms.order_id}`}
             kind="neutral"
           />

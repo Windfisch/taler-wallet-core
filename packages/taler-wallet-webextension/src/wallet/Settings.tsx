@@ -81,31 +81,31 @@ export function SettingsView({
     <Fragment>
       <section>
         <h2>
-          <Translate>Permissions</Translate>
+          <i18n.Translate>Permissions</i18n.Translate>
         </h2>
         <Checkbox
           label={
-            <Translate>
+            <i18n.Translate>
               Automatically open wallet based on page content
-            </Translate>
+            </i18n.Translate>
           }
           name="perm"
           description={
-            <Translate>
+            <i18n.Translate>
               Enabling this option below will make using the wallet faster, but
               requires more permissions from your browser.
-            </Translate>
+            </i18n.Translate>
           }
           enabled={permissionsEnabled}
           onToggle={togglePermissions}
         />
 
         <h2>
-          <Translate>Known exchanges</Translate>
+          <i18n.Translate>Known exchanges</i18n.Translate>
         </h2>
         {!knownExchanges || !knownExchanges.length ? (
           <div>
-            <Translate>No exchange yet</Translate>
+            <i18n.Translate>No exchange yet</i18n.Translate>
           </div>
         ) : (
           <Fragment>
@@ -113,13 +113,13 @@ export function SettingsView({
               <thead>
                 <tr>
                   <th>
-                    <Translate>Currency</Translate>
+                    <i18n.Translate>Currency</i18n.Translate>
                   </th>
                   <th>
-                    <Translate>URL</Translate>
+                    <i18n.Translate>URL</i18n.Translate>
                   </th>
                   <th>
-                    <Translate>Term of Service</Translate>
+                    <i18n.Translate>Term of Service</i18n.Translate>
                   </th>
                 </tr>
               </thead>
@@ -135,20 +135,20 @@ export function SettingsView({
                       case "accepted":
                         return (
                           <SuccessText>
-                            <Translate>ok</Translate>
+                            <i18n.Translate>ok</i18n.Translate>
                           </SuccessText>
                         );
                       case "changed":
                         return (
                           <WarningText>
-                            <Translate>changed</Translate>
+                            <i18n.Translate>changed</i18n.Translate>
                           </WarningText>
                         );
                       case "new":
                       case "notfound":
                         return (
                           <DestructiveText>
-                            <Translate>not accepted</Translate>
+                            <i18n.Translate>not accepted</i18n.Translate>
                           </DestructiveText>
                         );
                     }
@@ -172,18 +172,18 @@ export function SettingsView({
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <div />
           <LinkPrimary href={Pages.settings_exchange_add}>
-            <Translate>Add an exchange</Translate>
+            <i18n.Translate>Add an exchange</i18n.Translate>
           </LinkPrimary>
         </div>
 
         <h2>Config</h2>
         <Checkbox
-          label={<Translate>Developer mode</Translate>}
+          label={<i18n.Translate>Developer mode</i18n.Translate>}
           name="devMode"
           description={
-            <Translate>
+            <i18n.Translate>
               (More options and information useful for debugging)
-            </Translate>
+            </i18n.Translate>
           }
           enabled={developerMode}
           onToggle={toggleDeveloperMode}

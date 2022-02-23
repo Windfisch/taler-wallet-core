@@ -19,11 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import {
-  classifyTalerUri,
-  TalerUriType,
-  Translate,
-} from "@gnu-taler/taler-util";
+import { classifyTalerUri, TalerUriType, i18n } from "@gnu-taler/taler-util";
 import { Fragment, h } from "preact";
 import { ButtonPrimary, ButtonSuccess } from "../components/styled";
 import { actionForTalerUri } from "../utils/index";
@@ -57,54 +53,58 @@ export function TalerActionFound({ url, onDismiss }: Props) {
     <Fragment>
       <section>
         <h1>
-          <Translate>Taler Action</Translate>
+          <i18n.Translate>Taler Action</i18n.Translate>
         </h1>
         {uriType === TalerUriType.TalerPay && (
           <div>
             <p>
-              <Translate>This page has pay action.</Translate>
+              <i18n.Translate>This page has pay action.</i18n.Translate>
             </p>
             <ButtonSuccess
               onClick={() => {
                 navigateTo(actionForTalerUri(uriType, url));
               }}
             >
-              <Translate>Open pay page</Translate>
+              <i18n.Translate>Open pay page</i18n.Translate>
             </ButtonSuccess>
           </div>
         )}
         {uriType === TalerUriType.TalerWithdraw && (
           <div>
             <p>
-              <Translate>This page has a withdrawal action.</Translate>
+              <i18n.Translate>
+                This page has a withdrawal action.
+              </i18n.Translate>
             </p>
             <ButtonSuccess
               onClick={() => {
                 navigateTo(actionForTalerUri(uriType, url));
               }}
             >
-              <Translate>Open withdraw page</Translate>
+              <i18n.Translate>Open withdraw page</i18n.Translate>
             </ButtonSuccess>
           </div>
         )}
         {uriType === TalerUriType.TalerTip && (
           <div>
             <p>
-              <Translate>This page has a tip action.</Translate>
+              <i18n.Translate>This page has a tip action.</i18n.Translate>
             </p>
             <ButtonSuccess
               onClick={() => {
                 navigateTo(actionForTalerUri(uriType, url));
               }}
             >
-              <Translate>Open tip page</Translate>
+              <i18n.Translate>Open tip page</i18n.Translate>
             </ButtonSuccess>
           </div>
         )}
         {uriType === TalerUriType.TalerNotifyReserve && (
           <div>
             <p>
-              <Translate>This page has a notify reserve action.</Translate>
+              <i18n.Translate>
+                This page has a notify reserve action.
+              </i18n.Translate>
             </p>
             <ButtonSuccess
               onClick={() => {
@@ -118,21 +118,23 @@ export function TalerActionFound({ url, onDismiss }: Props) {
         {uriType === TalerUriType.TalerRefund && (
           <div>
             <p>
-              <Translate>This page has a refund action.</Translate>
+              <i18n.Translate>This page has a refund action.</i18n.Translate>
             </p>
             <ButtonSuccess
               onClick={() => {
                 navigateTo(actionForTalerUri(uriType, url));
               }}
             >
-              <Translate>Open refund page</Translate>
+              <i18n.Translate>Open refund page</i18n.Translate>
             </ButtonSuccess>
           </div>
         )}
         {uriType === TalerUriType.Unknown && (
           <div>
             <p>
-              <Translate>This page has a malformed taler uri.</Translate>
+              <i18n.Translate>
+                This page has a malformed taler uri.
+              </i18n.Translate>
             </p>
             <p>{url}</p>
           </div>
@@ -142,7 +144,7 @@ export function TalerActionFound({ url, onDismiss }: Props) {
         <div />
         <ButtonPrimary onClick={() => onDismiss()}>
           {" "}
-          <Translate>Dismiss</Translate>{" "}
+          <i18n.Translate>Dismiss</i18n.Translate>{" "}
         </ButtonPrimary>
       </footer>
     </Fragment>

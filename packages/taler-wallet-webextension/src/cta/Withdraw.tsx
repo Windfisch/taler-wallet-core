@@ -119,13 +119,15 @@ export function View({
     <WalletAction>
       <LogoHeader />
       <h2>
-        <Translate>Digital cash withdrawal</Translate>
+        <i18n.Translate>Digital cash withdrawal</i18n.Translate>
       </h2>
 
       {withdrawError && (
         <ErrorTalerOperation
           title={
-            <Translate>Could not finish the withdrawal operation</Translate>
+            <i18n.Translate>
+              Could not finish the withdrawal operation
+            </i18n.Translate>
           }
           error={withdrawError.operationError}
         />
@@ -133,19 +135,19 @@ export function View({
 
       <section>
         <Part
-          title={<Translate>Total to withdraw</Translate>}
+          title={<i18n.Translate>Total to withdraw</i18n.Translate>}
           text={amountToString(Amounts.sub(amount, withdrawalFee).amount)}
           kind="positive"
         />
         {Amounts.isNonZero(withdrawalFee) && (
           <Fragment>
             <Part
-              title={<Translate>Chosen amount</Translate>}
+              title={<i18n.Translate>Chosen amount</i18n.Translate>}
               text={amountToString(amount)}
               kind="neutral"
             />
             <Part
-              title={<Translate>Exchange fee</Translate>}
+              title={<i18n.Translate>Exchange fee</i18n.Translate>}
               text={amountToString(withdrawalFee)}
               kind="negative"
             />
@@ -153,7 +155,7 @@ export function View({
         )}
         {exchangeBaseUrl && (
           <Part
-            title={<Translate>Exchange</Translate>}
+            title={<i18n.Translate>Exchange</i18n.Translate>}
             text={exchangeBaseUrl}
             kind="neutral"
             big
@@ -166,7 +168,7 @@ export function View({
             <Fragment>
               <div>
                 <SelectList
-                  label={<Translate>Known exchanges</Translate>}
+                  label={<i18n.Translate>Known exchanges</i18n.Translate>}
                   list={exchanges}
                   value={nextExchange}
                   name="switchingExchange"
@@ -183,15 +185,15 @@ export function View({
                 }}
               >
                 {nextExchange === undefined ? (
-                  <Translate>Cancel exchange selection</Translate>
+                  <i18n.Translate>Cancel exchange selection</i18n.Translate>
                 ) : (
-                  <Translate>Confirm exchange selection</Translate>
+                  <i18n.Translate>Confirm exchange selection</i18n.Translate>
                 )}
               </LinkSuccess>
             </Fragment>
           ) : (
             <LinkSuccess upperCased onClick={() => setSwitchingExchange(true)}>
-              <Translate>Switch exchange</Translate>
+              <i18n.Translate>Switch exchange</i18n.Translate>
             </LinkSuccess>
           )}
         </section>
@@ -210,7 +212,7 @@ export function View({
             disabled={!exchangeBaseUrl || confirmDisabled}
             onClick={doWithdrawAndCheckError}
           >
-            <Translate>Confirm withdrawal</Translate>
+            <i18n.Translate>Confirm withdrawal</i18n.Translate>
           </ButtonSuccess>
         )}
         {terms.status === "notfound" && (
@@ -219,7 +221,7 @@ export function View({
             disabled={!exchangeBaseUrl}
             onClick={doWithdrawAndCheckError}
           >
-            <Translate>Withdraw anyway</Translate>
+            <i18n.Translate>Withdraw anyway</i18n.Translate>
           </ButtonWarning>
         )}
       </section>
@@ -282,7 +284,9 @@ export function WithdrawPageWithParsedURI({
   if (detailsHook.hasError) {
     return (
       <LoadingError
-        title={<Translate>Could not load the withdrawal details</Translate>}
+        title={
+          <i18n.Translate>Could not load the withdrawal details</i18n.Translate>
+        }
         error={detailsHook}
       />
     );
@@ -337,7 +341,7 @@ export function WithdrawPage({ talerWithdrawUri }: Props): VNode {
   if (!talerWithdrawUri) {
     return (
       <span>
-        <Translate>missing withdraw uri</Translate>
+        <i18n.Translate>missing withdraw uri</i18n.Translate>
       </span>
     );
   }
@@ -347,7 +351,9 @@ export function WithdrawPage({ talerWithdrawUri }: Props): VNode {
   if (uriInfoHook.hasError) {
     return (
       <LoadingError
-        title={<Translate>Could not get the info from the URI</Translate>}
+        title={
+          <i18n.Translate>Could not get the info from the URI</i18n.Translate>
+        }
         error={uriInfoHook}
       />
     );

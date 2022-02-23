@@ -1,4 +1,4 @@
-import { Translate } from "@gnu-taler/taler-util";
+import { i18n } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { ButtonBoxWarning, WarningBox } from "../components/styled";
 
@@ -11,16 +11,16 @@ export function NoBalanceHelp({
     <WarningBox>
       <p>
         <b>
-          <Translate>You have no balance to show.</Translate>
+          <i18n.Translate>You have no balance to show.</i18n.Translate>
         </b>
         <br />
-        <Translate>
+        <i18n.Translate>
           To withdraw money you can start from your bank site or click the
           "withdraw" button to use a known exchange.
-        </Translate>
+        </i18n.Translate>
       </p>
       <ButtonBoxWarning onClick={() => goToWalletManualWithdraw()}>
-        <Translate>Withdraw</Translate>
+        <i18n.Translate>Withdraw</i18n.Translate>
       </ButtonBoxWarning>
     </WarningBox>
   );

@@ -1,9 +1,4 @@
-import {
-  AmountJson,
-  Amounts,
-  parsePaytoUri,
-  Translate,
-} from "@gnu-taler/taler-util";
+import { AmountJson, parsePaytoUri, i18n } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType";
 import { QR } from "../components/QR";
@@ -29,7 +24,9 @@ export function ReserveCreated({
   if (!paytoURI) {
     return (
       <div>
-        <Translate>could not parse payto uri from exchange {payto}</Translate>
+        <i18n.Translate>
+          could not parse payto uri from exchange {payto}
+        </i18n.Translate>
       </div>
     );
   }
@@ -37,13 +34,13 @@ export function ReserveCreated({
     <Fragment>
       <section>
         <h1>
-          <Translate>Exchange is ready for withdrawal</Translate>
+          <i18n.Translate>Exchange is ready for withdrawal</i18n.Translate>
         </h1>
         <p>
-          <Translate>
+          <i18n.Translate>
             To complete the process you need to wire
             <b>{amountToString(amount)}</b> to the exchange bank account
-          </Translate>
+          </i18n.Translate>
         </p>
         <BankDetailsByPaytoType
           amount={amountToString(amount)}
@@ -53,27 +50,27 @@ export function ReserveCreated({
         />
         <p>
           <WarningBox>
-            <Translate>
+            <i18n.Translate>
               Make sure to use the correct subject, otherwise the money will not
               arrive in this wallet.
-            </Translate>
+            </i18n.Translate>
           </WarningBox>
         </p>
       </section>
       <section>
         <p>
-          <Translate>
+          <i18n.Translate>
             Alternative, you can also scan this QR code or open
             <a href={payto}>this link</a> if you have a banking app installed
             that supports RFC 8905
-          </Translate>
+          </i18n.Translate>
         </p>
         <QR text={payto} />
       </section>
       <footer>
         <div />
         <ButtonDestructive onClick={onCancel}>
-          <Translate>Cancel withdrawal</Translate>
+          <i18n.Translate>Cancel withdrawal</i18n.Translate>
         </ButtonDestructive>
       </footer>
     </Fragment>

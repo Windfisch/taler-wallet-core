@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Translate } from "@gnu-taler/taler-util";
+import { i18n } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { NiceSelect } from "./styled";
 
@@ -59,7 +59,7 @@ export function SelectList({
           {value === undefined ||
             (canBeNull && (
               <option selected disabled>
-                <Translate>Select one option</Translate>
+                <i18n.Translate>Select one option</i18n.Translate>
               </option>
               // ) : (
               //   <option selected>{list[value]}</option>

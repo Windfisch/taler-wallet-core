@@ -19,7 +19,7 @@ import {
   AmountJson,
   Amounts,
   NotificationType,
-  Translate,
+  i18n,
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
@@ -97,7 +97,9 @@ export function ManualWithdrawPage({ currency, onCancel }: Props): VNode {
     return (
       <LoadingError
         title={
-          <Translate>Could not load the list of known exchanges</Translate>
+          <i18n.Translate>
+            Could not load the list of known exchanges
+          </i18n.Translate>
         }
         error={state}
       />

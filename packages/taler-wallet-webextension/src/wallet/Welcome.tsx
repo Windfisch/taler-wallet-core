@@ -20,7 +20,7 @@
  * @author sebasjm
  */
 
-import { Translate, WalletDiagnostics } from "@gnu-taler/taler-util";
+import { i18n, WalletDiagnostics } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { Checkbox } from "../components/Checkbox";
 import { Diagnostics } from "../components/Diagnostics";
@@ -55,40 +55,43 @@ export function View({
   return (
     <Fragment>
       <h1>
-        <Translate>Browser Extension Installed!</Translate>
+        <i18n.Translate>Browser Extension Installed!</i18n.Translate>
       </h1>
       <div>
         <p>
-          <Translate>Thank you for installing the wallet.</Translate>
+          <i18n.Translate>Thank you for installing the wallet.</i18n.Translate>
         </p>
         <Diagnostics diagnostics={diagnostics} timedOut={timedOut} />
         <h2>
-          <Translate>Permissions</Translate>
+          <i18n.Translate>Permissions</i18n.Translate>
         </h2>
         <Checkbox
           label={
-            <Translate>
+            <i18n.Translate>
               Automatically open wallet based on page content
-            </Translate>
+            </i18n.Translate>
           }
           name="perm"
           description={
-            <Translate>
+            <i18n.Translate>
               (Enabling this option below will make using the wallet faster, but
               requires more permissions from your browser.)
-            </Translate>
+            </i18n.Translate>
           }
           enabled={permissionsEnabled}
           onToggle={togglePermissions}
         />
         <h2>
-          <Translate>Next Steps</Translate>
+          <i18n.Translate>Next Steps</i18n.Translate>
         </h2>
         <a href="https://demo.taler.net/" style={{ display: "block" }}>
-          <Translate>Try the demo</Translate> »
+          <i18n.Translate>Try the demo</i18n.Translate> »
         </a>
         <a href="https://demo.taler.net/" style={{ display: "block" }}>
-          <Translate>Learn how to top up your wallet balance</Translate> »
+          <i18n.Translate>
+            Learn how to top up your wallet balance
+          </i18n.Translate>{" "}
+          »
         </a>
       </div>
     </Fragment>

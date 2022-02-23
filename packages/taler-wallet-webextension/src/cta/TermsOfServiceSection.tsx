@@ -34,7 +34,9 @@ export function TermsOfServiceSection({
             {terms.status === "notfound" && (
               <section>
                 <WarningText>
-                  <Translate>Exchange doesn't have terms of service</Translate>
+                  <i18n.Translate>
+                    Exchange doesn't have terms of service
+                  </i18n.Translate>
                 </WarningText>
               </section>
             )}
@@ -46,21 +48,27 @@ export function TermsOfServiceSection({
           {terms.status === "notfound" && (
             <section>
               <WarningText>
-                <Translate>Exchange doesn't have terms of service</Translate>
+                <i18n.Translate>
+                  Exchange doesn't have terms of service
+                </i18n.Translate>
               </WarningText>
             </section>
           )}
           {terms.status === "new" && (
             <section>
               <ButtonSuccess upperCased onClick={() => onReview(true)}>
-                <Translate>Review exchange terms of service</Translate>
+                <i18n.Translate>
+                  Review exchange terms of service
+                </i18n.Translate>
               </ButtonSuccess>
             </section>
           )}
           {terms.status === "changed" && (
             <section>
               <ButtonWarning upperCased onClick={() => onReview(true)}>
-                <Translate>Review new version of terms of service</Translate>
+                <i18n.Translate>
+                  Review new version of terms of service
+                </i18n.Translate>
               </ButtonWarning>
             </section>
           )}
@@ -72,7 +80,7 @@ export function TermsOfServiceSection({
         {onReview && (
           <section>
             <LinkSuccess upperCased onClick={() => onReview(true)}>
-              <Translate>Show terms of service</Translate>
+              <i18n.Translate>Show terms of service</i18n.Translate>
             </LinkSuccess>
           </section>
         )}
@@ -81,7 +89,9 @@ export function TermsOfServiceSection({
             name="terms"
             enabled={reviewed}
             label={
-              <Translate>I accept the exchange terms of service</Translate>
+              <i18n.Translate>
+                I accept the exchange terms of service
+              </i18n.Translate>
             }
             onToggle={() => {
               onAccept(!reviewed);
@@ -97,9 +107,9 @@ export function TermsOfServiceSection({
       {terms.status !== "notfound" && !terms.content && (
         <section>
           <WarningBox>
-            <Translate>
+            <i18n.Translate>
               The exchange reply with a empty terms of service
-            </Translate>
+            </i18n.Translate>
           </WarningBox>
         </section>
       )}
@@ -120,7 +130,7 @@ export function TermsOfServiceSection({
           )}
           {terms.content.type === "pdf" && (
             <a href={terms.content.location.toString()} download="tos.pdf">
-              <Translate>Download Terms of Service</Translate>
+              <i18n.Translate>Download Terms of Service</i18n.Translate>
             </a>
           )}
         </section>
@@ -128,7 +138,7 @@ export function TermsOfServiceSection({
       {reviewed && onReview && (
         <section>
           <LinkSuccess upperCased onClick={() => onReview(false)}>
-            <Translate>Hide terms of service</Translate>
+            <i18n.Translate>Hide terms of service</i18n.Translate>
           </LinkSuccess>
         </section>
       )}
@@ -138,7 +148,9 @@ export function TermsOfServiceSection({
             name="terms"
             enabled={reviewed}
             label={
-              <Translate>I accept the exchange terms of service</Translate>
+              <i18n.Translate>
+                I accept the exchange terms of service
+              </i18n.Translate>
             }
             onToggle={() => {
               onAccept(!reviewed);
