@@ -19,8 +19,7 @@
  */
 import * as ts from "typescript";
 import * as fs from "fs";
-import * as os from "os";
-import path = require("path/posix");
+import * as path from "path"
 
 function wordwrap(str: string, width: number = 80): string[] {
   var regex = ".{1," + width + "}(\\s|$)|\\S+(\\s|$)";
@@ -146,7 +145,7 @@ function processFile(
         outChunks.push(`#. ${cl}\n`);
       }
     }
-    const fn = path.relative(process.cwd(), sourceFile.fileName);
+    const fn = path.posix.relative(process.cwd(), sourceFile.fileName);
     outChunks.push(`#: ${fn}:${line + 1}\n`);
     outChunks.push(`#, c-format\n`);
   }
@@ -218,6 +217,7 @@ function processFile(
         }
         case ts.SyntaxKind.JsxOpeningElement:
           break;
+        case ts.SyntaxKind.JsxSelfClosingElement:
         case ts.SyntaxKind.JsxElement:
           fragments.push(`%${holeNum[0]++}$s`);
           break;
@@ -229,16 +229,13 @@ function processFile(
         case ts.SyntaxKind.JsxClosingElement:
           break;
         default:
+          console.log("unhandled node type: ", childNode.kind)
           let lc = ts.getLineAndCharacterOfPosition(
             childNode.getSourceFile(),
             childNode.getStart(),
           );
           console.error(
-            `unrecognized syntax in JSX Element ${
-              ts.SyntaxKind[childNode.kind]
-            } (${childNode.getSourceFile().fileName}:${lc.line + 1}:${
-              lc.character + 1
-            }`,
+            `unrecognized syntax in JSX Element ${ts.SyntaxKind[childNode.kind]} (${childNode.getSourceFile().fileName}:${lc.line + 1}:${lc.character + 1}`,
           );
           break;
       }
@@ -420,7 +417,7 @@ export function potextract() {
       !prog.isSourceFileDefaultLibrary(x),
   );
 
-  //console.log(ownFiles.map((x) => x.fileName));
+  // console.log(ownFiles.map((x) => x.fileName));
 
   const chunks = [];
 
