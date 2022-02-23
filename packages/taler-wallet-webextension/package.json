@@ -17,7 +17,7 @@
     "pretty": "prettier --write src",
     "watch": "tsc --watch & rollup -w -c",
     "i18n:extract": "pogen extract",
-    "i18n:msgmerge": "pogen msgmerge"
+    "i18n:merge": "pogen merge"
   },
   "dependencies": {
     "@gnu-taler/taler-util": "workspace:*",
@@ -30,6 +30,7 @@
     "tslib": "^2.3.1"
   },
   "devDependencies": {
+    "@gnu-taler/pogen": "workspace:*",
     "@babel/core": "7.13.16",
     "@babel/plugin-transform-react-jsx-source": "^7.12.13",
     "@babel/preset-typescript": "^7.13.0",
