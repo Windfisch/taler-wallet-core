@@ -18,7 +18,7 @@
  * Page shown to the user to confirm creation
  * of a reserve, usually requested by the bank.
  *
- * @author Florian Dold
+ * @author sebasjm
  */
 
 import {
@@ -26,6 +26,7 @@ import {
   Amounts,
   ExchangeListItem,
   i18n,
+  Translate,
   WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
 import { OperationFailedError } from "@gnu-taler/taler-wallet-core";
@@ -117,37 +118,46 @@ export function View({
   return (
     <WalletAction>
       <LogoHeader />
-      <h2>{i18n.str`Digital cash withdrawal`}</h2>
+      <h2>
+        <Translate>Digital cash withdrawal</Translate>
+      </h2>
 
       {withdrawError && (
         <ErrorTalerOperation
-          title="Could not finish the withdrawal operation"
+          title={
+            <Translate>Could not finish the withdrawal operation</Translate>
+          }
           error={withdrawError.operationError}
         />
       )}
 
       <section>
         <Part
-          title="Total to withdraw"
+          title={<Translate>Total to withdraw</Translate>}
           text={amountToString(Amounts.sub(amount, withdrawalFee).amount)}
           kind="positive"
         />
         {Amounts.isNonZero(withdrawalFee) && (
           <Fragment>
             <Part
-              title="Chosen amount"
+              title={<Translate>Chosen amount</Translate>}
               text={amountToString(amount)}
               kind="neutral"
             />
             <Part
-              title="Exchange fee"
+              title={<Translate>Exchange fee</Translate>}
               text={amountToString(withdrawalFee)}
               kind="negative"
             />
           </Fragment>
         )}
         {exchangeBaseUrl && (
-          <Part title="Exchange" text={exchangeBaseUrl} kind="neutral" big />
+          <Part
+            title={<Translate>Exchange</Translate>}
+            text={exchangeBaseUrl}
+            kind="neutral"
+            big
+          />
         )}
       </section>
       {!reviewing && (
@@ -156,7 +166,7 @@ export function View({
             <Fragment>
               <div>
                 <SelectList
-                  label="Known exchanges"
+                  label={<Translate>Known exchanges</Translate>}
                   list={exchanges}
                   value={nextExchange}
                   name="switchingExchange"
@@ -172,14 +182,16 @@ export function View({
                   setSwitchingExchange(false);
                 }}
               >
-                {nextExchange === undefined
-                  ? i18n.str`Cancel exchange selection`
-                  : i18n.str`Confirm exchange selection`}
+                {nextExchange === undefined ? (
+                  <Translate>Cancel exchange selection</Translate>
+                ) : (
+                  <Translate>Confirm exchange selection</Translate>
+                )}
               </LinkSuccess>
             </Fragment>
           ) : (
             <LinkSuccess upperCased onClick={() => setSwitchingExchange(true)}>
-              {i18n.str`Switch exchange`}
+              <Translate>Switch exchange</Translate>
             </LinkSuccess>
           )}
         </section>
@@ -198,7 +210,7 @@ export function View({
             disabled={!exchangeBaseUrl || confirmDisabled}
             onClick={doWithdrawAndCheckError}
           >
-            {i18n.str`Confirm withdrawal`}
+            <Translate>Confirm withdrawal</Translate>
           </ButtonSuccess>
         )}
         {terms.status === "notfound" && (
@@ -207,7 +219,7 @@ export function View({
             disabled={!exchangeBaseUrl}
             onClick={doWithdrawAndCheckError}
           >
-            {i18n.str`Withdraw anyway`}
+            <Translate>Withdraw anyway</Translate>
           </ButtonWarning>
         )}
       </section>
@@ -270,7 +282,7 @@ export function WithdrawPageWithParsedURI({
   if (detailsHook.hasError) {
     return (
       <LoadingError
-        title="Could not load the withdrawal details"
+        title={<Translate>Could not load the withdrawal details</Translate>}
         error={detailsHook}
       />
     );
@@ -293,9 +305,7 @@ export function WithdrawPageWithParsedURI({
 
   const onWithdraw = async (): Promise<void> => {
     if (!exchange) return;
-    console.log("accepting exchange", exchange);
     const res = await wxApi.acceptWithdrawal(uri, exchange);
-    console.log("accept withdrawal response", res);
     if (res.confirmTransferUrl) {
       document.location.href = res.confirmTransferUrl;
     }
@@ -327,7 +337,7 @@ export function WithdrawPage({ talerWithdrawUri }: Props): VNode {
   if (!talerWithdrawUri) {
     return (
       <span>
-        <i18n.Translate>missing withdraw uri</i18n.Translate>
+        <Translate>missing withdraw uri</Translate>
       </span>
     );
   }
@@ -337,7 +347,7 @@ export function WithdrawPage({ talerWithdrawUri }: Props): VNode {
   if (uriInfoHook.hasError) {
     return (
       <LoadingError
-        title="Could not get the info from the URI"
+        title={<Translate>Could not get the info from the URI</Translate>}
         error={uriInfoHook}
       />
     );

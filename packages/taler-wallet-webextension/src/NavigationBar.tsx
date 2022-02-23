@@ -18,16 +18,22 @@
  * Popup shown to the user when they click
  * the Taler browser action button.
  *
- * @author Florian Dold
+ * @author sebasjm
  */
 
 /**
  * Imports.
  */
-import { i18n } from "@gnu-taler/taler-util";
+import { i18n, Translate } from "@gnu-taler/taler-util";
 import { VNode, h } from "preact";
 import { JustInDevMode } from "./components/JustInDevMode";
 import { NavigationHeader, NavigationHeaderHolder } from "./components/styled";
+
+/**
+ * List of pages used by the wallet
+ *
+ * @author sebasjm
+ */
 
 export enum Pages {
   welcome = "/welcome",
@@ -60,17 +66,15 @@ export function PopupNavBar({ path = "" }: { path?: string }): VNode {
     : "#";
   return (
     <NavigationHeader>
-      <a
-        href="/balance"
-        class={path.startsWith("/balance") ? "active" : ""}
-      >{i18n.str`Balance`}</a>
-      <a
-        href="/backup"
-        class={path.startsWith("/backup") ? "active" : ""}
-      >{i18n.str`Backup`}</a>
+      <a href="/balance" class={path.startsWith("/balance") ? "active" : ""}>
+        <Translate>Balance</Translate>
+      </a>
+      <a href="/backup" class={path.startsWith("/backup") ? "active" : ""}>
+        <Translate>Backup</Translate>
+      </a>
       <a />
       <a href={innerUrl} target="_blank" rel="noreferrer">
-        <div class="settings-icon" title="Settings" />
+        <div class="settings-icon" title={i18n.str`Settings`} />
       </a>
     </NavigationHeader>
   );
@@ -80,20 +84,17 @@ export function WalletNavBar({ path = "" }: { path?: string }): VNode {
   return (
     <NavigationHeaderHolder>
       <NavigationHeader>
-        <a
-          href="/balance"
-          class={path.startsWith("/balance") ? "active" : ""}
-        >{i18n.str`Balance`}</a>
-        <a
-          href="/backup"
-          class={path.startsWith("/backup") ? "active" : ""}
-        >{i18n.str`Backup`}</a>
+        <a href="/balance" class={path.startsWith("/balance") ? "active" : ""}>
+          <Translate>Balance</Translate>
+        </a>
+        <a href="/backup" class={path.startsWith("/backup") ? "active" : ""}>
+          <Translate>Backup</Translate>
+        </a>
 
         <JustInDevMode>
-          <a
-            href="/dev"
-            class={path.startsWith("/dev") ? "active" : ""}
-          >{i18n.str`Dev`}</a>
+          <a href="/dev" class={path.startsWith("/dev") ? "active" : ""}>
+            <Translate>Dev</Translate>
+          </a>
         </JustInDevMode>
 
         <a />
@@ -101,7 +102,7 @@ export function WalletNavBar({ path = "" }: { path?: string }): VNode {
           href="/settings"
           class={path.startsWith("/settings") ? "active" : ""}
         >
-          <div class="settings-icon" title="Settings" />
+          <Translate>Settings</Translate>
         </a>
       </NavigationHeader>
     </NavigationHeaderHolder>

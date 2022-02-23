@@ -21,6 +21,7 @@ import {
   Timestamp,
   Transaction,
   TransactionType,
+  Translate,
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import imageBank from "../../static/img/ri-bank-line.svg";
@@ -133,7 +134,7 @@ function TransactionLayout(props: TransactionLayoutProps): VNode {
         </LargeText>
         {props.pending && (
           <LightText style={{ marginTop: 5, marginBottom: 5 }}>
-            Waiting for confirmation
+            <Translate>Waiting for confirmation</Translate>
           </LightText>
         )}
         <SmallLightText style={{ marginTop: 5 }}>
@@ -195,7 +196,11 @@ function TransactionAmount(props: TransactionAmountProps): VNode {
         {sign}
         {Amounts.stringifyValue(props.amount)}
       </ExtraLargeText>
-      {props.pending && <div>PENDING</div>}
+      {props.pending && (
+        <div>
+          <Translate>PENDING</Translate>
+        </div>
+      )}
     </Column>
   );
 }

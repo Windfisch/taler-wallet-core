@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { WalletDiagnostics } from "@gnu-taler/taler-util";
+import { Translate, WalletDiagnostics } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { PageLink } from "../renderHtml";
 
@@ -25,7 +25,13 @@ interface Props {
 
 export function Diagnostics({ timedOut, diagnostics }: Props): VNode {
   if (timedOut) {
-    return <p>Diagnostics timed out. Could not talk to the wallet backend.</p>;
+    return (
+      <p>
+        <Translate>
+          Diagnostics timed out. Could not talk to the wallet backend.
+        </Translate>
+      </p>
+    );
   }
 
   if (diagnostics) {
@@ -41,7 +47,9 @@ export function Diagnostics({ timedOut, diagnostics }: Props): VNode {
           paddingBottom: "0.2em",
         }}
       >
-        <p>Problems detected:</p>
+        <p>
+          <Translate>Problems detected:</Translate>
+        </p>
         <ol>
           {diagnostics.errors.map((errMsg) => (
             <li key={errMsg}>{errMsg}</li>
@@ -49,22 +57,32 @@ export function Diagnostics({ timedOut, diagnostics }: Props): VNode {
         </ol>
         {diagnostics.firefoxIdbProblem ? (
           <p>
-            Please check in your <code>about:config</code> settings that you
-            have IndexedDB enabled (check the preference name{" "}
-            <code>dom.indexedDB.enabled</code>).
+            <Translate>
+              Please check in your <code>about:config</code> settings that you
+              have IndexedDB enabled (check the preference name{" "}
+              <code>dom.indexedDB.enabled</code>).
+            </Translate>
           </p>
         ) : null}
         {diagnostics.dbOutdated ? (
           <p>
-            Your wallet database is outdated. Currently automatic migration is
-            not supported. Please go{" "}
-            <PageLink pageName="/reset-required">here</PageLink> to reset the
-            wallet database.
+            <Translate>
+              Your wallet database is outdated. Currently automatic migration is
+              not supported. Please go{" "}
+              <PageLink pageName="/reset-required">
+                <Translate>here</Translate>
+              </PageLink>{" "}
+              to reset the wallet database.
+            </Translate>
           </p>
         ) : null}
       </div>
     );
   }
 
-  return <p>Running diagnostics ...</p>;
+  return (
+    <p>
+      <Translate>Running diagnostics</Translate> ...
+    </p>
+  );
 }

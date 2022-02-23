@@ -17,10 +17,10 @@
 /**
  * Main entry point for extension pages.
  *
- * @author Florian Dold <dold@taler.net>
+ * @author sebasjm <dold@taler.net>
  */
 
-import { i18n, setupI18n } from "@gnu-taler/taler-util";
+import { i18n, setupI18n, Translate } from "@gnu-taler/taler-util";
 import { createHashHistory } from "history";
 import { Fragment, h, render, VNode } from "preact";
 import Router, { route, Route } from "preact-router";
@@ -78,7 +78,7 @@ if (document.readyState === "loading") {
 
 function Application(): VNode {
   const [globalNotification, setGlobalNotification] = useState<
-    string | undefined
+    VNode | undefined
   >(undefined);
   const hash_history = createHashHistory();
   function clearNotification(): void {
@@ -169,7 +169,9 @@ function Application(): VNode {
                   onSuccess={(currency: string) => {
                     route(Pages.balance_history.replace(":currency", currency));
                     setGlobalNotification(
-                      "All done, your transaction is in progress",
+                      <Translate>
+                        All done, your transaction is in progress
+                      </Translate>,
                     );
                   }}
                 />

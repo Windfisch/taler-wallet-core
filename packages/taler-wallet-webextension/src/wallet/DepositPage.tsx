@@ -19,6 +19,7 @@ import {
   Amounts,
   AmountString,
   PaytoUri,
+  Translate,
 } from "@gnu-taler/taler-util";
 import { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import { Fragment, h, VNode } from "preact";
@@ -132,13 +133,21 @@ export function View({
   }, [amount]);
 
   if (!balance) {
-    return <div>no balance</div>;
+    return (
+      <div>
+        <Translate>no balance</Translate>
+      </div>
+    );
   }
   if (!knownBankAccounts || !knownBankAccounts.length) {
     return (
       <WarningBox>
-        <p>There is no known bank account to send money to</p>
-        <ButtonBoxWarning>Withdraw</ButtonBoxWarning>
+        <p>
+          <Translate>There is no known bank account to send money to</Translate>
+        </p>
+        <ButtonBoxWarning>
+          <Translate>Withdraw</Translate>
+        </ButtonBoxWarning>
       </WarningBox>
     );
   }
@@ -162,11 +171,13 @@ export function View({
 
   return (
     <Fragment>
-      <h2>Send {currency} to your account</h2>
+      <h2>
+        <Translate>Send {currency} to your account</Translate>
+      </h2>
       <section>
         <Input>
           <SelectList
-            label="Bank account IBAN number"
+            label={<Translate>Bank account IBAN number</Translate>}
             list={accountMap}
             name="account"
             value={String(accountIdx)}
@@ -174,7 +185,9 @@ export function View({
           />
         </Input>
         <InputWithLabel invalid={!!error}>
-          <label>Amount</label>
+          <label>
+            <Translate>Amount</Translate>
+          </label>
           <div>
             <span>{currency}</span>
             <input
@@ -196,7 +209,9 @@ export function View({
         {
           <Fragment>
             <InputWithLabel>
-              <label>Deposit fee</label>
+              <label>
+                <Translate>Deposit fee</Translate>
+              </label>
               <div>
                 <span>{currency}</span>
                 <input
@@ -208,7 +223,9 @@ export function View({
             </InputWithLabel>
 
             <InputWithLabel>
-              <label>Total deposit</label>
+              <label>
+                <Translate>Total deposit</Translate>
+              </label>
               <div>
                 <span>{currency}</span>
                 <input
@@ -224,10 +241,14 @@ export function View({
       <footer>
         <div />
         {unableToDeposit ? (
-          <ButtonPrimary disabled>Deposit</ButtonPrimary>
+          <ButtonPrimary disabled>
+            <Translate>Deposit</Translate>
+          </ButtonPrimary>
         ) : (
           <ButtonPrimary onClick={() => onSend(accountURI, amountStr)}>
-            Deposit {Amounts.stringifyValue(totalToDeposit)} {currency}
+            <Translate>
+              Deposit {Amounts.stringifyValue(totalToDeposit)} {currency}
+            </Translate>
           </ButtonPrimary>
         )}
       </footer>

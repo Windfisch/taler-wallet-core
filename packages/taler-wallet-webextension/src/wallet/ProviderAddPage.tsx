@@ -19,6 +19,7 @@ import {
   BackupBackupProviderTerms,
   canonicalizeBaseUrl,
   i18n,
+  Translate,
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
@@ -113,15 +114,23 @@ export function SetUrlView({
   return (
     <Fragment>
       <section>
-        <h1> Add backup provider</h1>
-        <ErrorMessage
-          title={error && "Could not get provider information"}
-          description={error}
-        />
-        <LightText> Backup providers may charge for their service</LightText>
+        <h1>
+          <Translate>Add backup provider</Translate>
+        </h1>
+        {error && (
+          <ErrorMessage
+            title={<Translate>Could not get provider information</Translate>}
+            description={error}
+          />
+        )}
+        <LightText>
+          <Translate>Backup providers may charge for their service</Translate>
+        </LightText>
         <p>
           <Input invalid={urlError}>
-            <label>URL</label>
+            <label>
+              <Translate>URL</Translate>
+            </label>
             <input
               type="text"
               placeholder="https://"
@@ -130,7 +139,9 @@ export function SetUrlView({
             />
           </Input>
           <Input>
-            <label>Name</label>
+            <label>
+              <Translate>Name</Translate>
+            </label>
             <input
               type="text"
               disabled={name === undefined}
@@ -142,7 +153,7 @@ export function SetUrlView({
       </section>
       <footer>
         <Button onClick={onCancel}>
-          <i18n.Translate> &lt; Back</i18n.Translate>
+          &lt; <Translate>Back</Translate>
         </Button>
         <ButtonPrimary
           disabled={!value && !urlError}
@@ -153,7 +164,7 @@ export function SetUrlView({
             );
           }}
         >
-          <i18n.Translate>Next</i18n.Translate>
+          <Translate>Next</Translate>
         </ButtonPrimary>
       </footer>
     </Fragment>
@@ -177,29 +188,41 @@ export function ConfirmProviderView({
   return (
     <Fragment>
       <section>
-        <h1>Review terms of service</h1>
+        <h1>
+          <Translate>Review terms of service</Translate>
+        </h1>
         <div>
-          Provider URL:{" "}
+          <Translate>Provider URL</Translate>:{" "}
           <a href={url} target="_blank">
             {url}
           </a>
         </div>
         <SmallLightText>
-          Please review and accept this provider's terms of service
+          <Translate>
+            Please review and accept this provider's terms of service
+          </Translate>
         </SmallLightText>
-        <h2>1. Pricing</h2>
+        <h2>
+          1. <Translate>Pricing</Translate>
+        </h2>
         <p>
-          {Amounts.isZero(provider.annual_fee)
-            ? "free of charge"
-            : `${provider.annual_fee} per year of service`}
+          {Amounts.isZero(provider.annual_fee) ? (
+            <Translate>free of charge</Translate>
+          ) : (
+            <Translate>{provider.annual_fee} per year of service</Translate>
+          )}
         </p>
-        <h2>2. Storage</h2>
+        <h2>
+          2. <Translate>Storage</Translate>
+        </h2>
         <p>
-          {provider.storage_limit_in_megabytes} megabytes of storage per year of
-          service
+          <Translate>
+            {provider.storage_limit_in_megabytes} megabytes of storage per year
+            of service
+          </Translate>
         </p>
         <Checkbox
-          label="Accept terms of service"
+          label={<Translate>Accept terms of service</Translate>}
           name="terms"
           onToggle={() => setAccepted((old) => !old)}
           enabled={accepted}
@@ -207,10 +230,10 @@ export function ConfirmProviderView({
       </section>
       <footer>
         <Button onClick={onCancel}>
-          <i18n.Translate> &lt; Back</i18n.Translate>
+          &lt; <Translate>Back</Translate>
         </Button>
         <ButtonPrimary disabled={!accepted} onClick={onConfirm}>
-          <i18n.Translate>Add provider</i18n.Translate>
+          <Translate>Add provider</Translate>
         </ButtonPrimary>
       </footer>
     </Fragment>

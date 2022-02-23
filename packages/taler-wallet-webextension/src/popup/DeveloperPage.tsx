@@ -20,6 +20,8 @@ import {
   CoinDumpJson,
   ExchangeListItem,
   NotificationType,
+  Translate,
+  i18n,
 } from "@gnu-taler/taler-util";
 import { PendingTaskInfo } from "@gnu-taler/taler-wallet-core";
 import { format } from "date-fns";
@@ -31,7 +33,6 @@ import { Time } from "../components/Time";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { useDiagnostics } from "../hooks/useDiagnostics";
 import * as wxApi from "../wxApi";
-import BalanceStories from "./Balance.stories";
 
 export function DeveloperPage(): VNode {
   const [status, timedOut] = useDiagnostics();
@@ -149,10 +150,16 @@ export function View({
 
   return (
     <div>
-      <p>Debug tools:</p>
-      <button onClick={confirmReset}>reset</button>
+      <p>
+        <Translate>Debug tools</Translate>:
+      </p>
+      <button onClick={confirmReset}>
+        <Translate>reset</Translate>
+      </button>
       <br />
-      <button onClick={() => fileRef?.current?.click()}>import database</button>
+      <button onClick={() => fileRef?.current?.click()}>
+        <Translate>import database</Translate>
+      </button>
       <input
         ref={fileRef}
         style={{ display: "none" }}
@@ -171,31 +178,36 @@ export function View({
         }}
       />
       <br />
-      <button onClick={onExportDatabase}>export database</button>
+      <button onClick={onExportDatabase}>
+        <Translate>export database</Translate>
+      </button>
       {downloadedDatabase && (
         <div>
-          Database exported at
-          <Time
-            timestamp={{ t_ms: downloadedDatabase.time.getTime() }}
-            format="yyyy/MM/dd HH:mm:ss"
-          />
-          <a
-            href={`data:text/plain;charset=utf-8;base64,${toBase64(
-              downloadedDatabase.content,
-            )}`}
-            download={`taler-wallet-database-${format(
-              downloadedDatabase.time,
-              "yyyy/MM/dd_HH:mm",
-            )}.json`}
-          >
-            {" "}
-            click here{" "}
-          </a>
-          to download
+          <Translate>
+            Database exported at
+            <Time
+              timestamp={{ t_ms: downloadedDatabase.time.getTime() }}
+              format="yyyy/MM/dd HH:mm:ss"
+            />
+            <a
+              href={`data:text/plain;charset=utf-8;base64,${toBase64(
+                downloadedDatabase.content,
+              )}`}
+              download={`taler-wallet-database-${format(
+                downloadedDatabase.time,
+                "yyyy/MM/dd_HH:mm",
+              )}.json`}
+            >
+              <Translate>click here</Translate>
+            </a>
+            to download
+          </Translate>
         </div>
       )}
       <br />
-      <p>Coins:</p>
+      <p>
+        <Translate>Coins</Translate>:
+      </p>
       {Object.keys(money_by_exchange).map((ex) => {
         const allcoins = money_by_exchange[ex];
         allcoins.sort((a, b) => {
@@ -220,7 +232,9 @@ export function View({
       <Diagnostics diagnostics={status} timedOut={timedOut} />
       {operations && operations.length > 0 && (
         <Fragment>
-          <p>Pending operations</p>
+          <p>
+            <Translate>Pending operations</Translate>
+          </p>
           <dl>
             {operations.reverse().map((o) => {
               return (
@@ -257,18 +271,30 @@ function ShowAllCoins({
         <b>{ex}</b>: {total} {currencies[ex]}
       </p>
       <p>
-        <b>usable coins</b>
+        <b>
+          <Translate>usable coins</Translate>
+        </b>
       </p>
       {collapsedUnspent ? (
         <div onClick={() => setCollapsedUnspent(false)}>click to show</div>
       ) : (
         <table onClick={() => setCollapsedUnspent(true)}>
           <tr>
-            <td>id</td>
-            <td>denom</td>
-            <td>value</td>
-            <td>status</td>
-            <td>from refresh?</td>
+            <td>
+              <Translate>id</Translate>
+            </td>
+            <td>
+              <Translate>denom</Translate>
+            </td>
+            <td>
+              <Translate>value</Translate>
+            </td>
+            <td>
+              <Translate>status</Translate>
+            </td>
+            <td>
+              <Translate>from refresh?</Translate>
+            </td>
           </tr>
           {coins.usable.map((c) => {
             return (
@@ -283,17 +309,31 @@ function ShowAllCoins({
           })}
         </table>
       )}
-      <p>spent coins</p>
+      <p>
+        <Translate>spent coins</Translate>
+      </p>
       {collapsedSpent ? (
-        <div onClick={() => setCollapsedSpent(false)}>click to show</div>
+        <div onClick={() => setCollapsedSpent(false)}>
+          <Translate>click to show</Translate>
+        </div>
       ) : (
         <table onClick={() => setCollapsedSpent(true)}>
           <tr>
-            <td>id</td>
-            <td>denom</td>
-            <td>value</td>
-            <td>status</td>
-            <td>refresh?</td>
+            <td>
+              <Translate>id</Translate>
+            </td>
+            <td>
+              <Translate>denom</Translate>
+            </td>
+            <td>
+              <Translate>value</Translate>
+            </td>
+            <td>
+              <Translate>status</Translate>
+            </td>
+            <td>
+              <Translate>from refresh?</Translate>
+            </td>
           </tr>
           {coins.spent.map((c) => {
             return (
@@ -335,8 +375,7 @@ function runIntegrationTest() {}
 export async function confirmReset(): Promise<void> {
   if (
     confirm(
-      "Do you want to IRREVOCABLY DESTROY everything inside your" +
-        " wallet and LOSE ALL YOUR COINS?",
+      i18n.str`Do you want to IRREVOCABLY DESTROY everything inside your wallet and LOSE ALL YOUR COINS?`,
     )
   ) {
     await wxApi.resetDb();

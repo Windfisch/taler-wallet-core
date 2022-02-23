@@ -14,6 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { Translate } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useRef, useState } from "preact/hooks";
 
@@ -39,7 +40,9 @@ export function EditableText({
       return (
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <p>{value}</p>
-          <button onClick={() => setEditing(true)}>edit</button>
+          <button onClick={() => setEditing(true)}>
+            <Translate>Edit</Translate>
+          </button>
         </div>
       );
     };
@@ -54,7 +57,7 @@ export function EditableText({
                 onChange(ref.current.value).then(() => setEditing(false));
             }}
           >
-            confirm
+            <Translate>Confirm</Translate>
           </button>
         </div>
       );

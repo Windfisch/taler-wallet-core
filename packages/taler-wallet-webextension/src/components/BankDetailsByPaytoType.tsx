@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { PaytoUri } from "@gnu-taler/taler-util";
+import { PaytoUri, Translate } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { CopiedIcon, CopyIcon } from "../svg";
@@ -34,23 +34,23 @@ export function BankDetailsByPaytoType({
   amount,
 }: BankDetailsProps): VNode {
   const firstPart = !payto ? undefined : !payto.isKnown ? (
-    <Row name="Account" value={payto.targetPath} />
+    <Row name={<Translate>Account</Translate>} value={payto.targetPath} />
   ) : payto.targetType === "x-taler-bank" ? (
     <Fragment>
-      <Row name="Bank host" value={payto.host} />
-      <Row name="Bank account" value={payto.account} />
+      <Row name={<Translate>Bank host</Translate>} value={payto.host} />
+      <Row name={<Translate>Bank account</Translate>} value={payto.account} />
     </Fragment>
   ) : payto.targetType === "iban" ? (
-    <Row name="IBAN" value={payto.iban} />
+    <Row name={<Translate>IBAN</Translate>} value={payto.iban} />
   ) : undefined;
   return (
     <div style={{ textAlign: "left" }}>
       <p>Bank transfer details</p>
       <table>
         {firstPart}
-        <Row name="Exchange" value={exchangeBaseUrl} />
-        <Row name="Chosen amount" value={amount} />
-        <Row name="Subject" value={subject} literal />
+        <Row name={<Translate>Exchange</Translate>} value={exchangeBaseUrl} />
+        <Row name={<Translate>Chosen amount</Translate>} value={amount} />
+        <Row name={<Translate>Subject</Translate>} value={subject} literal />
       </table>
     </div>
   );
@@ -61,7 +61,7 @@ function Row({
   value,
   literal,
 }: {
-  name: string;
+  name: VNode;
   value: string;
   literal?: boolean;
 }): VNode {

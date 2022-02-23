@@ -17,10 +17,10 @@
 /**
  * Welcome page, shown on first installs.
  *
- * @author Florian Dold
+ * @author sebasjm
  */
 
-import { WalletDiagnostics } from "@gnu-taler/taler-util";
+import { Translate, WalletDiagnostics } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { Checkbox } from "../components/Checkbox";
 import { Diagnostics } from "../components/Diagnostics";
@@ -54,24 +54,41 @@ export function View({
 }: ViewProps): VNode {
   return (
     <Fragment>
-      <h1>Browser Extension Installed!</h1>
+      <h1>
+        <Translate>Browser Extension Installed!</Translate>
+      </h1>
       <div>
-        <p>Thank you for installing the wallet.</p>
+        <p>
+          <Translate>Thank you for installing the wallet.</Translate>
+        </p>
         <Diagnostics diagnostics={diagnostics} timedOut={timedOut} />
-        <h2>Permissions</h2>
+        <h2>
+          <Translate>Permissions</Translate>
+        </h2>
         <Checkbox
-          label="Automatically open wallet based on page content"
+          label={
+            <Translate>
+              Automatically open wallet based on page content
+            </Translate>
+          }
           name="perm"
-          description="(Enabling this option below will make using the wallet faster, but requires more permissions from your browser.)"
+          description={
+            <Translate>
+              (Enabling this option below will make using the wallet faster, but
+              requires more permissions from your browser.)
+            </Translate>
+          }
           enabled={permissionsEnabled}
           onToggle={togglePermissions}
         />
-        <h2>Next Steps</h2>
+        <h2>
+          <Translate>Next Steps</Translate>
+        </h2>
         <a href="https://demo.taler.net/" style={{ display: "block" }}>
-          Try the demo »
+          <Translate>Try the demo</Translate> »
         </a>
         <a href="https://demo.taler.net/" style={{ display: "block" }}>
-          Learn how to top up your wallet balance »
+          <Translate>Learn how to top up your wallet balance</Translate> »
         </a>
       </div>
     </Fragment>

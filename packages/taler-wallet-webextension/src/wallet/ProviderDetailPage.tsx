@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
 */
 
-import { i18n } from "@gnu-taler/taler-util";
+import { Translate } from "@gnu-taler/taler-util";
 import {
   ProviderInfo,
   ProviderPaymentStatus,
@@ -22,6 +22,8 @@ import {
 } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
 import { ErrorMessage } from "../components/ErrorMessage";
+import { Loading } from "../components/Loading";
+import { LoadingError } from "../components/LoadingError";
 import {
   Button,
   ButtonDestructive,
@@ -52,35 +54,24 @@ export function ProviderDetailPage({ pid: providerURL, onBack }: Props): VNode {
   const state = useAsyncAsHook(getProviderInfo);
 
   if (!state) {
-    return (
-      <div>
-        <i18n.Translate>Loading...</i18n.Translate>
-      </div>
-    );
+    return <Loading />;
   }
   if (state.hasError) {
     return (
-      <div>
-        <i18n.Translate>
-          There was an error loading the provider detail for "{providerURL}"
-        </i18n.Translate>
-      </div>
+      <LoadingError
+        title={
+          <Translate>
+            There was an error loading the provider detail for "{providerURL}"
+          </Translate>
+        }
+        error={state}
+      />
     );
   }
 
-  if (state.response === null) {
-    onBack();
-    return (
-      <div>
-        <i18n.Translate>
-          There is not known provider with url "{providerURL}". Redirecting
-          back...
-        </i18n.Translate>
-      </div>
-    );
-  }
   return (
     <ProviderView
+      url={providerURL}
       info={state.response}
       onSync={async () => wxApi.syncOneProvider(providerURL)}
       onDelete={async () => wxApi.removeProvider(providerURL).then(onBack)}
@@ -93,7 +84,8 @@ export function ProviderDetailPage({ pid: providerURL, onBack }: Props): VNode {
 }
 
 export interface ViewProps {
-  info: ProviderInfo;
+  url: string;
+  info: ProviderInfo | null;
   onDelete: () => void;
   onSync: () => void;
   onBack: () => void;
@@ -102,12 +94,30 @@ export interface ViewProps {
 
 export function ProviderView({
   info,
+  url,
   onDelete,
   onSync,
   onBack,
   onExtend,
 }: ViewProps): VNode {
-  const lb = info?.lastSuccessfulBackupTimestamp;
+  if (info === null) {
+    return (
+      <Fragment>
+        <section>
+          <p>
+            <Translate>There is not known provider with url "{url}".</Translate>
+          </p>
+        </section>
+        <footer>
+          <Button onClick={onBack}>
+            &lt; <Translate>Back</Translate>
+          </Button>
+          <div />
+        </footer>
+      </Fragment>
+    );
+  }
+  const lb = info.lastSuccessfulBackupTimestamp;
   const isPaid =
     info.paymentStatus.type === ProviderPaymentType.Paid ||
     info.paymentStatus.type === ProviderPaymentType.TermsChanged;
@@ -125,48 +135,55 @@ export function ProviderView({
       </header>
       <section>
         <p>
-          <b>Last backup:</b> <Time timestamp={lb} format="dd MMMM yyyy" />
+          <b>
+            <Translate>Last backup</Translate>:
+          </b>{" "}
+          <Time timestamp={lb} format="dd MMMM yyyy" />
         </p>
         <ButtonPrimary onClick={onSync}>
-          <i18n.Translate>Back up</i18n.Translate>
+          <Translate>Back up</Translate>
         </ButtonPrimary>
         {info.terms && (
           <Fragment>
             <p>
-              <b>Provider fee:</b> {info.terms && info.terms.annualFee} per year
+              <b>
+                <Translate>Provider fee</Translate>:
+              </b>{" "}
+              {info.terms && info.terms.annualFee}{" "}
+              <Translate>per year</Translate>
             </p>
           </Fragment>
         )}
         <p>{descriptionByStatus(info.paymentStatus)}</p>
         <ButtonPrimary disabled onClick={onExtend}>
-          <i18n.Translate>Extend</i18n.Translate>
+          <Translate>Extend</Translate>
         </ButtonPrimary>
 
         {info.paymentStatus.type === ProviderPaymentType.TermsChanged && (
           <div>
             <p>
-              <i18n.Translate>
+              <Translate>
                 terms has changed, extending the service will imply accepting
                 the new terms of service
-              </i18n.Translate>
+              </Translate>
             </p>
             <table>
               <thead>
                 <tr>
                   <td>&nbsp;</td>
                   <td>
-                    <i18n.Translate>old</i18n.Translate>
+                    <Translate>old</Translate>
                   </td>
                   <td> -&gt;</td>
                   <td>
-                    <i18n.Translate>new</i18n.Translate>
+                    <Translate>new</Translate>
                   </td>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <td>
-                    <i18n.Translate>fee</i18n.Translate>
+                    <Translate>fee</Translate>
                   </td>
                   <td>{info.paymentStatus.oldTerms.annualFee}</td>
                   <td>-&gt;</td>
@@ -174,7 +191,7 @@ export function ProviderView({
                 </tr>
                 <tr>
                   <td>
-                    <i18n.Translate>storage</i18n.Translate>
+                    <Translate>storage</Translate>
                   </td>
                   <td>{info.paymentStatus.oldTerms.storageLimitInMegabytes}</td>
                   <td>-&gt;</td>
@@ -187,11 +204,11 @@ export function ProviderView({
       </section>
       <footer>
         <Button onClick={onBack}>
-          <i18n.Translate> &lt; back</i18n.Translate>
+          &lt; <Translate>back</Translate>
         </Button>
         <div>
           <ButtonDestructive onClick={onDelete}>
-            <i18n.Translate>remove provider</i18n.Translate>
+            <Translate>Remove provider</Translate>
           </ButtonDestructive>
         </div>
       </footer>
@@ -201,7 +218,12 @@ export function ProviderView({
 
 function Error({ info }: { info: ProviderInfo }): VNode {
   if (info.lastError) {
-    return <ErrorMessage title={info.lastError.hint} />;
+    return (
+      <ErrorMessage
+        title={<Translate>This provider has reported an error</Translate>}
+        description={info.lastError.hint}
+      />
+    );
   }
   if (info.backupProblem) {
     switch (info.backupProblem.type) {
@@ -210,24 +232,26 @@ function Error({ info }: { info: ProviderInfo }): VNode {
           <ErrorMessage
             title={
               <Fragment>
-                <i18n.Translate>
+                <Translate>
                   There is conflict with another backup from{" "}
                   <b>{info.backupProblem.otherDeviceId}</b>
-                </i18n.Translate>
+                </Translate>
               </Fragment>
             }
           />
         );
       case "backup-unreadable":
-        return <ErrorMessage title="Backup is not readable" />;
+        return (
+          <ErrorMessage title={<Translate>Backup is not readable</Translate>} />
+        );
       default:
         return (
           <ErrorMessage
             title={
               <Fragment>
-                <i18n.Translate>
+                <Translate>
                   Unknown backup problem: {JSON.stringify(info.backupProblem)}
-                </i18n.Translate>
+                </Translate>
               </Fragment>
             }
           />
@@ -239,16 +263,20 @@ function Error({ info }: { info: ProviderInfo }): VNode {
 
 function descriptionByStatus(status: ProviderPaymentStatus): VNode {
   switch (status.type) {
-    // return i18n.str`no enough balance to make the payment`
-    // return i18n.str`not paid yet`
     case ProviderPaymentType.Paid:
     case ProviderPaymentType.TermsChanged:
       if (status.paidUntil.t_ms === "never") {
-        return <span>{i18n.str`service paid`}</span>;
+        return (
+          <span>
+            <Translate>service paid</Translate>
+          </span>
+        );
       }
       return (
         <Fragment>
-          <b>Backup valid until:</b>{" "}
+          <b>
+            <Translate>Backup valid until</Translate>:
+          </b>{" "}
           <Time timestamp={status.paidUntil} format="dd MMM yyyy" />
         </Fragment>
       );

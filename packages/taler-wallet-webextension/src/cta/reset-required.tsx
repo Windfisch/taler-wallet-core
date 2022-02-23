@@ -17,9 +17,10 @@
 /**
  * Page to inform the user when a database reset is required.
  *
- * @author Florian Dold
+ * @author sebasjm
  */
 
+import { Translate } from "@gnu-taler/taler-util";
 import { Component, h, VNode } from "preact";
 import * as wxApi from "../wxApi";
 
@@ -49,14 +50,20 @@ class ResetNotification extends Component<any, State> {
     if (this.state.resetRequired) {
       return (
         <div>
-          <h1>Manual Reset Required</h1>
+          <h1>
+            <Translate>Manual Reset Required</Translate>
+          </h1>
           <p>
-            The wallet&apos;s database in your browser is incompatible with the{" "}
-            currently installed wallet. Please reset manually.
+            <Translate>
+              The wallet&apos;s database in your browser is incompatible with
+              the currently installed wallet. Please reset manually.
+            </Translate>
           </p>
           <p>
-            Once the database format has stabilized, we will provide automatic
-            upgrades.
+            <Translate>
+              Once the database format has stabilized, we will provide automatic
+              upgrades.
+            </Translate>
           </p>
           <input
             id="check"
@@ -67,7 +74,7 @@ class ResetNotification extends Component<any, State> {
             }}
           />{" "}
           <label htmlFor="check">
-            I understand that I will lose all my data
+            <Translate>I understand that I will lose all my data</Translate>
           </label>
           <br />
           <button
@@ -75,15 +82,21 @@ class ResetNotification extends Component<any, State> {
             disabled={!this.state.checked}
             onClick={() => wxApi.resetDb()}
           >
-            Reset
+            <Translate>Reset</Translate>
           </button>
         </div>
       );
     }
     return (
       <div>
-        <h1>Everything is fine!</h1>A reset is not required anymore, you can
-        close this page.
+        <h1>
+          <Translate>Everything is fine!</Translate>
+        </h1>
+        <p>
+          <Translate>
+            A reset is not required anymore, you can close this page.
+          </Translate>
+        </p>
       </div>
     );
   }

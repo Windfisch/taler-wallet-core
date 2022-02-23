@@ -14,13 +14,14 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { Translate } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { NiceSelect } from "./styled";
 
 interface Props {
   value?: string;
   onChange: (s: string) => void;
-  label: string;
+  label: VNode;
   list: {
     [label: string]: string;
   };
@@ -58,7 +59,7 @@ export function SelectList({
           {value === undefined ||
             (canBeNull && (
               <option selected disabled>
-                Select one option
+                <Translate>Select one option</Translate>
               </option>
               // ) : (
               //   <option selected>{list[value]}</option>

@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
 */
 
-import { i18n, Timestamp } from "@gnu-taler/taler-util";
+import { i18n, Timestamp, Translate } from "@gnu-taler/taler-util";
 import {
   ProviderInfo,
   ProviderPaymentPaid,
@@ -71,7 +71,10 @@ export function BackupPage({ onAddProvider }: Props): VNode {
   }
   if (status.hasError) {
     return (
-      <LoadingError title="Could not load backup providers" error={status} />
+      <LoadingError
+        title={<Translate>Could not load backup providers</Translate>}
+        error={status}
+      />
     );
   }
 
@@ -122,9 +125,11 @@ export function BackupView({
         ))}
         {!providers.length && (
           <Centered style={{ marginTop: 100 }}>
-            <BoldLight>No backup providers configured</BoldLight>
+            <BoldLight>
+              <Translate>No backup providers configured</Translate>
+            </BoldLight>
             <ButtonSuccess onClick={onAddProvider}>
-              <i18n.Translate>Add provider</i18n.Translate>
+              <Translate>Add provider</Translate>
             </ButtonSuccess>
           </Centered>
         )}
@@ -135,12 +140,14 @@ export function BackupView({
           <div>
             <ButtonPrimary onClick={onSyncAll}>
               {providers.length > 1 ? (
-                <i18n.Translate>Sync all backups</i18n.Translate>
+                <Translate>Sync all backups</Translate>
               ) : (
-                <i18n.Translate>Sync now</i18n.Translate>
+                <Translate>Sync now</Translate>
               )}
             </ButtonPrimary>
-            <ButtonSuccess onClick={onAddProvider}>Add provider</ButtonSuccess>
+            <ButtonSuccess onClick={onAddProvider}>
+              <Translate>Add provider</Translate>
+            </ButtonSuccess>
           </div>
         </footer>
       )}
@@ -176,10 +183,14 @@ function BackupLayout(props: TransactionLayoutProps): VNode {
         </a>
 
         {dateStr && (
-          <SmallText style={{ marginTop: 5 }}>Last synced: {dateStr}</SmallText>
+          <SmallText style={{ marginTop: 5 }}>
+            <Translate>Last synced</Translate>: {dateStr}
+          </SmallText>
         )}
         {!dateStr && (
-          <SmallLightText style={{ marginTop: 5 }}>Not synced</SmallLightText>
+          <SmallLightText style={{ marginTop: 5 }}>
+            <Translate>Not synced</Translate>
+          </SmallLightText>
         )}
       </div>
       <div>
@@ -196,7 +207,9 @@ function BackupLayout(props: TransactionLayoutProps): VNode {
 function ExpirationText({ until }: { until: Timestamp }): VNode {
   return (
     <Fragment>
-      <CenteredText> Expires in </CenteredText>
+      <CenteredText>
+        <Translate>Expires in</Translate>
+      </CenteredText>
       <CenteredBoldText {...{ color: colorByTimeToExpire(until) }}>
         {" "}
         {daysUntil(until)}{" "}

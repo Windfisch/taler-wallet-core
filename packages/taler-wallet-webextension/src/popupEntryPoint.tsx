@@ -17,10 +17,10 @@
 /**
  * Main entry point for extension pages.
  *
- * @author Florian Dold <dold@taler.net>
+ * @author sebasjm <dold@taler.net>
  */
 
-import { setupI18n } from "@gnu-taler/taler-util";
+import { setupI18n, Translate } from "@gnu-taler/taler-util";
 import { createHashHistory } from "history";
 import { Fragment, h, render, VNode } from "preact";
 import Router, { route, Route } from "preact-router";
@@ -87,27 +87,20 @@ function Application(): VNode {
           <CheckTalerActionComponent />
           <PopupBox devMode={devMode}>
             <Router history={hash_history}>
-              <Route path={Pages.dev} component={DeveloperPage} />
-
               <Route
                 path={Pages.balance}
                 component={BalancePage}
                 goToWalletManualWithdraw={() =>
-                  goToWalletPage(
-                    Pages.balance_manual_withdraw.replace(":currency?", ""),
-                  )
+                  route(Pages.balance_manual_withdraw.replace(":currency?", ""))
                 }
                 goToWalletDeposit={(currency: string) =>
-                  goToWalletPage(
-                    Pages.balance_deposit.replace(":currency", currency),
-                  )
+                  route(Pages.balance_deposit.replace(":currency", currency))
                 }
                 goToWalletHistory={(currency: string) =>
-                  goToWalletPage(
-                    Pages.balance_history.replace(":currency", currency),
-                  )
+                  route(Pages.balance_history.replace(":currency", currency))
                 }
               />
+
               <Route
                 path={Pages.cta}
                 component={function Action({ action }: { action: string }) {
@@ -139,21 +132,29 @@ function Application(): VNode {
                   route(Pages.backup);
                 }}
               />
-              <Route
-                path={Pages.backup_provider_add}
-                component={ProviderAddPage}
-                onBack={() => {
-                  route(Pages.backup);
-                }}
-              />
 
               <Route
-                path={Pages.settings_exchange_add}
-                component={ExchangeAddPage}
-                onBack={() => {
-                  route(Pages.balance);
-                }}
+                path={Pages.balance_manual_withdraw}
+                component={RedirectToWalletPage}
               />
+              <Route
+                path={Pages.balance_deposit}
+                component={RedirectToWalletPage}
+              />
+              <Route
+                path={Pages.balance_history}
+                component={RedirectToWalletPage}
+              />
+              <Route
+                path={Pages.backup_provider_add}
+                component={RedirectToWalletPage}
+              />
+              <Route path={Pages.settings} component={RedirectToWalletPage} />
+              <Route
+                path={Pages.settings_exchange_add}
+                component={RedirectToWalletPage}
+              />
+              <Route path={Pages.dev} component={RedirectToWalletPage} />
 
               <Route default component={Redirect} to={Pages.balance} />
             </Router>
@@ -165,15 +166,26 @@ function Application(): VNode {
   );
 }
 
-async function goToWalletPage(page: Pages | string): Promise<void> {
-  // eslint-disable-next-line no-undef
-  await chrome.tabs.create({
-    active: true,
-    // eslint-disable-next-line no-undef
-    url: chrome.runtime.getURL(`/static/wallet.html#${page}`),
+function RedirectToWalletPage(): VNode {
+  const page = document.location.hash || "#/";
+  useEffect(() => {
+    chrome.tabs
+      .create({
+        active: true,
+        // eslint-disable-next-line no-undef
+        url: chrome.runtime.getURL(`/static/wallet.html${page}`),
+      })
+      .then(() => {
+        window.close();
+      });
   });
-  window.close();
-  // return null;
+  return (
+    <span>
+      <Translate>
+        this popup is being closed and you are being redirected to {page}
+      </Translate>
+    </span>
+  );
 }
 
 function Redirect({ to }: { to: string }): null {

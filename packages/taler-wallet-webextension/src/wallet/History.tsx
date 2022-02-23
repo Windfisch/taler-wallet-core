@@ -19,6 +19,7 @@ import {
   Balance,
   NotificationType,
   Transaction,
+  Translate,
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
@@ -66,7 +67,7 @@ export function HistoryPage({
   if (transactionQuery.hasError) {
     return (
       <LoadingError
-        title="Could not load the list of transactions"
+        title={<Translate>Could not load the list of transactions</Translate>}
         error={transactionQuery}
       />
     );
@@ -193,21 +194,23 @@ export function HistoryView({
               style={{ marginLeft: 0, marginTop: 8 }}
               onClick={() => goToWalletManualWithdraw(selectedCurrency)}
             >
-              Withdraw
+              <Translate>Withdraw</Translate>
             </ButtonPrimary>
             {currencyAmount && Amounts.isNonZero(currencyAmount) && (
               <ButtonBoxPrimary
                 style={{ marginLeft: 0, marginTop: 8 }}
                 onClick={() => goToWalletDeposit(selectedCurrency)}
               >
-                Deposit
+                <Translate>Deposit</Translate>
               </ButtonBoxPrimary>
             )}
           </div>
         </div>
       </section>
       {datesWithTransaction.length === 0 ? (
-        <section>There is no history for this currency</section>
+        <section>
+          <Translate>There is no history for this currency</Translate>
+        </section>
       ) : (
         <section>
           {datesWithTransaction.map((d, i) => {

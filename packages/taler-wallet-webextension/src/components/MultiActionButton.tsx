@@ -4,7 +4,7 @@ import { ButtonBoxPrimary, ButtonPrimary, ParagraphClickable } from "./styled";
 import { useState } from "preact/hooks";
 
 export interface Props {
-  label: (s: string) => string;
+  label: (s: string) => VNode;
   actions: string[];
   onClick: (s: string) => void;
 }

@@ -24,7 +24,7 @@ export function ErrorTalerOperation({
   title,
   error,
 }: {
-  title?: string;
+  title?: VNode;
   error?: TalerErrorDetails;
 }): VNode | null {
   const { devMode } = useDevContext();

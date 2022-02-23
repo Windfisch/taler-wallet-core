@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Amounts, Balance } from "@gnu-taler/taler-util";
+import { Amounts, Balance, Translate } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { BalanceTable } from "../components/BalanceTable";
@@ -47,7 +47,12 @@ export function BalancePage({
   }
 
   if (state.hasError) {
-    return <LoadingError title="Could not load balance page" error={state} />;
+    return (
+      <LoadingError
+        title={<Translate>Could not load balance page</Translate>}
+        error={state}
+      />
+    );
   }
 
   if (addingAction) {
@@ -99,17 +104,19 @@ export function BalanceView({
       </section>
       <footer style={{ justifyContent: "space-between" }}>
         <ButtonPrimary onClick={goToWalletManualWithdraw}>
-          Withdraw
+          <Translate>Withdraw</Translate>
         </ButtonPrimary>
         {currencyWithNonZeroAmount.length > 0 && (
           <MultiActionButton
-            label={(s) => `Deposit ${s}`}
+            label={(s) => <Translate>Deposit {s}</Translate>}
             actions={currencyWithNonZeroAmount}
             onClick={(c) => goToWalletDeposit(c)}
           />
         )}
         <JustInDevMode>
-          <ButtonBoxPrimary onClick={goToAddAction}>enter uri</ButtonBoxPrimary>
+          <ButtonBoxPrimary onClick={goToAddAction}>
+            <Translate>Enter URI</Translate>
+          </ButtonBoxPrimary>
         </JustInDevMode>
       </footer>
     </Fragment>

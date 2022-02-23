@@ -1,4 +1,4 @@
-import { i18n } from "@gnu-taler/taler-util";
+import { i18n, Translate } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { Button, ButtonSuccess, ButtonWarning } from "../components/styled";
@@ -84,9 +84,11 @@ export function View({
   return (
     <Fragment>
       <section>
-        <h1>Review terms of service</h1>
+        <h1>
+          <Translate>Review terms of service</Translate>
+        </h1>
         <div>
-          Exchange URL:
+          <Translate>Exchange URL</Translate>:
           <a href={url} target="_blank" rel="noreferrer">
             {url}
           </a>
@@ -107,28 +109,28 @@ export function View({
 
       <footer>
         <Button onClick={onCancel}>
-          <i18n.Translate>Cancel</i18n.Translate>
+          <Translate>Cancel</Translate>
         </Button>
         {!terms && (
           <Button disabled>
-            <i18n.Translate>Loading terms..</i18n.Translate>
+            <Translate>Loading terms..</Translate>
           </Button>
         )}
         {terms && (
           <Fragment>
             {needsReview && !reviewed && (
               <ButtonSuccess disabled upperCased onClick={onConfirm}>
-                {i18n.str`Add exchange`}
+                <Translate>Add exchange</Translate>
               </ButtonSuccess>
             )}
             {(terms.status === "accepted" || (needsReview && reviewed)) && (
               <ButtonSuccess upperCased onClick={onConfirm}>
-                {i18n.str`Add exchange`}
+                <Translate>Add exchange</Translate>
               </ButtonSuccess>
             )}
             {terms.status === "notfound" && (
               <ButtonWarning upperCased onClick={onConfirm}>
-                {i18n.str`Add exchange anyway`}
+                <Translate>Add exchange anyway</Translate>
               </ButtonWarning>
             )}
           </Fragment>

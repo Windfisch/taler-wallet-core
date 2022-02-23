@@ -37,10 +37,12 @@ import {
   PreparePayResult,
   PreparePayResultType,
   Product,
+  Translate,
 } from "@gnu-taler/taler-util";
 import { OperationFailedError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
+import { ErrorMessage } from "../components/ErrorMessage";
 import { Loading } from "../components/Loading";
 import { LoadingError } from "../components/LoadingError";
 import { LogoHeader } from "../components/LogoHeader";
@@ -106,7 +108,12 @@ export function PayPage({
   }
 
   if (hook.hasError) {
-    return <LoadingError title="Could not load pay status" error={hook} />;
+    return (
+      <LoadingError
+        title={<Translate>Could not load pay status</Translate>}
+        error={hook}
+      />
+    );
   }
 
   const foundBalance = hook.response.balance.balances.find(
@@ -178,9 +185,13 @@ export function PaymentRequestView({
 
   if (!contractTerms) {
     return (
-      <span>
-        Error: did not get contract terms from merchant or wallet backend.
-      </span>
+      <ErrorMessage
+        title={
+          <Translate>
+            Could not load contract terms from merchant or wallet backend.
+          </Translate>
+        }
+      />
     );
   }
 
@@ -192,13 +203,6 @@ export function PaymentRequestView({
     totalFees = Amounts.sub(amountEffective, amountRaw).amount;
   }
 
-  // let merchantName: VNode;
-  // if (contractTerms.merchant && contractTerms.merchant.name) {
-  //   merchantName = <strong>{contractTerms.merchant.name}</strong>;
-  // } else {
-  // merchantName = <strong>(pub: {contractTerms.merchant_pub})</strong>;
-  // }
-
   function Alternative(): VNode {
     const [showQR, setShowQR] = useState<boolean>(false);
     const privateUri =
@@ -209,12 +213,21 @@ export function PaymentRequestView({
     return (
       <section>
         <LinkSuccess upperCased onClick={() => setShowQR((qr) => !qr)}>
-          {!showQR ? i18n.str`Pay with a mobile phone` : i18n.str`Hide QR`}
+          {!showQR ? (
+            <Translate>Pay with a mobile phone</Translate>
+          ) : (
+            <Translate>Hide QR</Translate>
+          )}
         </LinkSuccess>
         {showQR && (
           <div>
             <QR text={privateUri} />
-            Scan the QR code or <a href={privateUri}>click here</a>
+            <Translate>
+              Scan the QR code or
+              <a href={privateUri}>
+                <Translate>click here</Translate>
+              </a>
+            </Translate>
           </div>
         )}
       </section>
@@ -227,7 +240,9 @@ export function PaymentRequestView({
         return (
           <section>
             <div>
-              <p>Processing...</p>
+              <p>
+                <Translate>Processing</Translate>...
+              </p>
             </div>
           </section>
         );
@@ -239,7 +254,9 @@ export function PaymentRequestView({
         <Fragment>
           <section>
             <ButtonSuccess upperCased onClick={onClick}>
-              {i18n.str`Pay`} {amountToString(payStatus.amountEffective)}
+              <Translate>
+                Pay {amountToString(payStatus.amountEffective)}
+              </Translate>
             </ButtonSuccess>
           </section>
           <Alternative />
@@ -252,18 +269,22 @@ export function PaymentRequestView({
           <section>
             {balance ? (
               <WarningBox>
-                Your balance of {amountToString(balance)} is not enough to pay
-                for this purchase
+                <Translate>
+                  Your balance of {amountToString(balance)} is not enough to pay
+                  for this purchase
+                </Translate>
               </WarningBox>
             ) : (
               <WarningBox>
-                Your balance is not enough to pay for this purchase.
+                <Translate>
+                  Your balance is not enough to pay for this purchase.
+                </Translate>
               </WarningBox>
             )}
           </section>
           <section>
             <ButtonSuccess upperCased onClick={goToWalletManualWithdraw}>
-              {i18n.str`Withdraw digital cash`}
+              <Translate>Withdraw digital cash</Translate>
             </ButtonSuccess>
           </section>
           <Alternative />
@@ -276,7 +297,7 @@ export function PaymentRequestView({
           <section>
             {payStatus.paid && contractTerms.fulfillment_message && (
               <Part
-                title="Merchant message"
+                title={<Translate>Merchant message</Translate>}
                 text={contractTerms.fulfillment_message}
                 kind="neutral"
               />
@@ -293,31 +314,48 @@ export function PaymentRequestView({
     <WalletAction>
       <LogoHeader />
 
-      <h2>{i18n.str`Digital cash payment`}</h2>
+      <h2>
+        <Translate>Digital cash payment</Translate>
+      </h2>
       {payStatus.status === PreparePayResultType.AlreadyConfirmed &&
         (payStatus.paid ? (
           payStatus.contractTerms.fulfillment_url ? (
             <SuccessBox>
-              Already paid, you are going to be redirected to{" "}
-              <a href={payStatus.contractTerms.fulfillment_url}>
-                {payStatus.contractTerms.fulfillment_url}
-              </a>
+              <Translate>
+                Already paid, you are going to be redirected to{" "}
+                <a href={payStatus.contractTerms.fulfillment_url}>
+                  {payStatus.contractTerms.fulfillment_url}
+                </a>
+              </Translate>
             </SuccessBox>
           ) : (
-            <SuccessBox> Already paid </SuccessBox>
+            <SuccessBox>
+              <Translate>Already paid</Translate>
+            </SuccessBox>
           )
         ) : (
-          <WarningBox> Already claimed </WarningBox>
+          <WarningBox>
+            <Translate>Already claimed</Translate>
+          </WarningBox>
         ))}
       {payResult && payResult.type === ConfirmPayResultType.Done && (
         <SuccessBox>
-          <h3>Payment complete</h3>
+          <h3>
+            <Translate>Payment complete</Translate>
+          </h3>
           <p>
-            {!payResult.contractTerms.fulfillment_message
-              ? payResult.contractTerms.fulfillment_url
-                ? `You are going to be redirected to ${payResult.contractTerms.fulfillment_url}`
-                : "You can close this page."
-              : payResult.contractTerms.fulfillment_message}
+            {!payResult.contractTerms.fulfillment_message ? (
+              payResult.contractTerms.fulfillment_url ? (
+                <Translate>
+                  You are going to be redirected to $
+                  {payResult.contractTerms.fulfillment_url}
+                </Translate>
+              ) : (
+                <Translate>You can close this page.</Translate>
+              )
+            ) : (
+              payResult.contractTerms.fulfillment_message
+            )}
           </p>
         </SuccessBox>
       )}
@@ -326,14 +364,14 @@ export function PaymentRequestView({
           Amounts.isNonZero(totalFees) && (
             <Part
               big
-              title="Total to pay"
+              title={<Translate>Total to pay</Translate>}
               text={amountToString(payStatus.amountEffective)}
               kind="negative"
             />
           )}
         <Part
           big
-          title="Purchase amount"
+          title={<Translate>Purchase amount</Translate>}
           text={amountToString(payStatus.amountRaw)}
           kind="neutral"
         />
@@ -341,21 +379,25 @@ export function PaymentRequestView({
           <Fragment>
             <Part
               big
-              title="Fee"
+              title={<Translate>Fee</Translate>}
               text={amountToString(totalFees)}
               kind="negative"
             />
           </Fragment>
         )}
         <Part
-          title="Merchant"
+          title={<Translate>Merchant</Translate>}
           text={contractTerms.merchant.name}
           kind="neutral"
         />
-        <Part title="Purchase" text={contractTerms.summary} kind="neutral" />
+        <Part
+          title={<Translate>Purchase</Translate>}
+          text={contractTerms.summary}
+          kind="neutral"
+        />
         {contractTerms.order_id && (
           <Part
-            title="Receipt"
+            title={<Translate>Receipt</Translate>}
             text={`#${contractTerms.order_id}`}
             kind="neutral"
           />
@@ -373,7 +415,7 @@ function ProductList({ products }: { products: Product[] }): VNode {
   return (
     <Fragment>
       <SmallLightText style={{ margin: ".5em" }}>
-        List of products
+        <Translate>List of products</Translate>
       </SmallLightText>
       <dl>
         {products.map((p, i) => {
@@ -415,15 +457,18 @@ function ProductList({ products }: { products: Product[] }): VNode {
                   {p.quantity ?? 1} x {p.description}
                 </dt>
                 <dd>
-                  Total{` `}
-                  {p.price
-                    ? `${Amounts.stringifyValue(
-                        Amounts.mult(
-                          Amounts.parseOrThrow(p.price),
-                          p.quantity ?? 1,
-                        ).amount,
-                      )} ${p}`
-                    : "free"}
+                  <Translate>Total</Translate>
+                  {` `}
+                  {p.price ? (
+                    `${Amounts.stringifyValue(
+                      Amounts.mult(
+                        Amounts.parseOrThrow(p.price),
+                        p.quantity ?? 1,
+                      ).amount,
+                    )} ${p}`
+                  ) : (
+                    <Translate>free</Translate>
+                  )}
                 </dd>
               </div>
             </div>

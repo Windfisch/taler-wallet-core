@@ -2,6 +2,7 @@ import {
   canonicalizeBaseUrl,
   i18n,
   TalerConfigResponse,
+  Translate,
 } from "@gnu-taler/taler-util";
 import { Fragment, h } from "preact";
 import { useEffect, useState } from "preact/hooks";
@@ -91,32 +92,46 @@ export function ExchangeSetUrlPage({
     <Fragment>
       <section>
         {!expectedCurrency ? (
-          <h1>Add new exchange</h1>
+          <h1>
+            <Translate>Add new exchange</Translate>
+          </h1>
         ) : (
-          <h2>Add exchange for {expectedCurrency}</h2>
+          <h2>
+            <Translate>Add exchange for {expectedCurrency}</Translate>
+          </h2>
         )}
         {!result && (
-          <LightText>Enter the URL of an exchange you trust.</LightText>
+          <LightText>
+            <Translate>Enter the URL of an exchange you trust.</Translate>
+          </LightText>
         )}
         {result && (
           <LightText>
-            An exchange has been found! Review the information and click next
+            <Translate>
+              An exchange has been found! Review the information and click next
+            </Translate>
           </LightText>
         )}
         {result && expectedCurrency && expectedCurrency !== result.currency && (
           <WarningBox>
-            This exchange doesn't match the expected currency{" "}
-            <b>{expectedCurrency}</b>
+            <Translate>
+              This exchange doesn't match the expected currency
+              <b>{expectedCurrency}</b>
+            </Translate>
           </WarningBox>
         )}
-        <ErrorMessage
-          title={error && "Unable to add this exchange"}
-          description={error}
-        />
-        <ErrorMessage
-          title={confirmationError && "Unable to add this exchange"}
-          description={confirmationError}
-        />
+        {error && (
+          <ErrorMessage
+            title={<Translate>Unable to verify this exchange</Translate>}
+            description={error}
+          />
+        )}
+        {confirmationError && (
+          <ErrorMessage
+            title={<Translate>Unable to add this exchange</Translate>}
+            description={confirmationError}
+          />
+        )}
         <p>
           <Input invalid={!!error}>
             <label>URL</label>
@@ -127,15 +142,23 @@ export function ExchangeSetUrlPage({
               onInput={(e) => updateEndpoint(e.currentTarget.value)}
             />
           </Input>
-          {loading && <div>loading... </div>}
+          {loading && (
+            <div>
+              <Translate>loading</Translate>...
+            </div>
+          )}
           {result && !loading && (
             <Fragment>
               <Input>
-                <label>Version</label>
+                <label>
+                  <Translate>Version</Translate>
+                </label>
                 <input type="text" disabled value={result.version} />
               </Input>
               <Input>
-                <label>Currency</label>
+                <label>
+                  <Translate>Currency</Translate>
+                </label>
                 <input type="text" disabled value={result.currency} />
               </Input>
             </Fragment>
@@ -144,7 +167,7 @@ export function ExchangeSetUrlPage({
       </section>
       <footer>
         <Button onClick={onCancel}>
-          <i18n.Translate>Cancel</i18n.Translate>
+          <Translate>Cancel</Translate>
         </Button>
         <ButtonPrimary
           disabled={
@@ -160,7 +183,7 @@ export function ExchangeSetUrlPage({
             );
           }}
         >
-          <i18n.Translate>Next</i18n.Translate>
+          <Translate>Next</Translate>
         </ButtonPrimary>
       </footer>
     </Fragment>

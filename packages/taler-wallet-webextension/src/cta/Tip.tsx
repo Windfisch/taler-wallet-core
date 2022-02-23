@@ -17,10 +17,10 @@
 /**
  * Page shown to the user to accept or ignore a tip from a merchant.
  *
- * @author Florian Dold <dold@taler.net>
+ * @author sebasjm <dold@taler.net>
  */
 
-import { PrepareTipResult } from "@gnu-taler/taler-util";
+import { PrepareTipResult, Translate } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { Loading } from "../components/Loading";
@@ -46,21 +46,29 @@ export function View({
       <article class="fade">
         {prepareTipResult.accepted ? (
           <span>
-            Tip from <code>{prepareTipResult.merchantBaseUrl}</code> accepted.
-            Check your transactions list for more details.
+            <Translate>
+              Tip from <code>{prepareTipResult.merchantBaseUrl}</code> accepted.
+              Check your transactions list for more details.
+            </Translate>
           </span>
         ) : (
           <div>
             <p>
-              The merchant <code>{prepareTipResult.merchantBaseUrl}</code> is
-              offering you a tip of{" "}
-              <strong>
-                <AmountView amount={prepareTipResult.tipAmountEffective} />
-              </strong>{" "}
-              via the exchange <code>{prepareTipResult.exchangeBaseUrl}</code>
+              <Translate>
+                The merchant <code>{prepareTipResult.merchantBaseUrl}</code> is
+                offering you a tip of{" "}
+                <strong>
+                  <AmountView amount={prepareTipResult.tipAmountEffective} />
+                </strong>{" "}
+                via the exchange <code>{prepareTipResult.exchangeBaseUrl}</code>
+              </Translate>
             </p>
-            <button onClick={onAccept}>Accept tip</button>
-            <button onClick={onIgnore}>Ignore</button>
+            <button onClick={onAccept}>
+              <Translate>Accept tip</Translate>
+            </button>
+            <button onClick={onIgnore}>
+              <Translate>Ignore</Translate>
+            </button>
           </div>
         )}
       </article>
@@ -98,11 +106,19 @@ export function TipPage({ talerTipUri }: Props): VNode {
   };
 
   if (!talerTipUri) {
-    return <span>missing tip uri</span>;
+    return (
+      <span>
+        <Translate>missing tip uri</Translate>
+      </span>
+    );
   }
 
   if (tipIgnored) {
-    return <span>You've ignored the tip.</span>;
+    return (
+      <span>
+        <Translate>You've ignored the tip.</Translate>
+      </span>
+    );
   }
 
   if (!prepareTipResult) {

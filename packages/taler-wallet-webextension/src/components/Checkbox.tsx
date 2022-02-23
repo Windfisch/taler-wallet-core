@@ -19,9 +19,9 @@ import { h, VNode } from "preact";
 interface Props {
   enabled: boolean;
   onToggle: () => void;
-  label: string;
+  label: VNode;
   name: string;
-  description?: string;
+  description?: VNode;
 }
 export function Checkbox({
   name,

@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
 */
 
-import { ExchangeListItem, i18n } from "@gnu-taler/taler-util";
+import { ExchangeListItem, i18n, Translate } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { Checkbox } from "../components/Checkbox";
 import {
@@ -81,29 +81,46 @@ export function SettingsView({
     <Fragment>
       <section>
         <h2>
-          <i18n.Translate>Permissions</i18n.Translate>
+          <Translate>Permissions</Translate>
         </h2>
         <Checkbox
-          label="Automatically open wallet based on page content"
+          label={
+            <Translate>
+              Automatically open wallet based on page content
+            </Translate>
+          }
           name="perm"
-          description="(Enabling this option below will make using the wallet faster, but requires more permissions from your browser.)"
+          description={
+            <Translate>
+              Enabling this option below will make using the wallet faster, but
+              requires more permissions from your browser.
+            </Translate>
+          }
           enabled={permissionsEnabled}
           onToggle={togglePermissions}
         />
 
         <h2>
-          <i18n.Translate>Known exchanges</i18n.Translate>
+          <Translate>Known exchanges</Translate>
         </h2>
         {!knownExchanges || !knownExchanges.length ? (
-          <div>No exchange yet!</div>
+          <div>
+            <Translate>No exchange yet</Translate>
+          </div>
         ) : (
           <Fragment>
             <table>
               <thead>
                 <tr>
-                  <th>currency</th>
-                  <th>url</th>
-                  <th>term of service</th>
+                  <th>
+                    <Translate>Currency</Translate>
+                  </th>
+                  <th>
+                    <Translate>URL</Translate>
+                  </th>
+                  <th>
+                    <Translate>Term of Service</Translate>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -116,12 +133,24 @@ export function SettingsView({
                     );
                     switch (status) {
                       case "accepted":
-                        return <SuccessText>ok</SuccessText>;
+                        return (
+                          <SuccessText>
+                            <Translate>ok</Translate>
+                          </SuccessText>
+                        );
                       case "changed":
-                        return <WarningText>changed!</WarningText>;
+                        return (
+                          <WarningText>
+                            <Translate>changed</Translate>
+                          </WarningText>
+                        );
                       case "new":
                       case "notfound":
-                        return <DestructiveText>not accepted</DestructiveText>;
+                        return (
+                          <DestructiveText>
+                            <Translate>not accepted</Translate>
+                          </DestructiveText>
+                        );
                     }
                   }
                   return (
@@ -143,15 +172,19 @@ export function SettingsView({
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <div />
           <LinkPrimary href={Pages.settings_exchange_add}>
-            Add an exchange
+            <Translate>Add an exchange</Translate>
           </LinkPrimary>
         </div>
 
         <h2>Config</h2>
         <Checkbox
-          label="Developer mode"
+          label={<Translate>Developer mode</Translate>}
           name="devMode"
-          description="(More options and information useful for debugging)"
+          description={
+            <Translate>
+              (More options and information useful for debugging)
+            </Translate>
+          }
           enabled={developerMode}
           onToggle={toggleDeveloperMode}
         />

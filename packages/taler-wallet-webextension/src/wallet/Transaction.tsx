@@ -22,6 +22,7 @@ import {
   parsePaytoUri,
   Transaction,
   TransactionType,
+  Translate,
   WithdrawalType,
 } from "@gnu-taler/taler-util";
 import { differenceInSeconds } from "date-fns";
@@ -47,7 +48,6 @@ import {
 } from "../components/styled";
 import { Time } from "../components/Time";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import { Pages } from "../NavigationBar";
 import * as wxApi from "../wxApi";
 
 interface Props {
@@ -76,7 +76,9 @@ export function TransactionPage({ tid, goToWalletHistory }: Props): VNode {
   if (state.hasError) {
     return (
       <LoadingError
-        title="Could not load the transaction information"
+        title={
+          <Translate>Could not load the transaction information</Translate>
+        }
         error={state}
       />
     );
@@ -139,11 +141,17 @@ export function TransactionView({
       <Fragment>
         <section style={{ padding: 8, textAlign: "center" }}>
           <ErrorTalerOperation
-            title="There was an error trying to complete the transaction"
+            title={
+              <Translate>
+                There was an error trying to complete the transaction
+              </Translate>
+            }
             error={transaction?.error}
           />
           {transaction.pending && (
-            <WarningBox>This transaction is not completed</WarningBox>
+            <WarningBox>
+              <Translate>This transaction is not completed</Translate>
+            </WarningBox>
           )}
         </section>
         <section>
@@ -151,16 +159,16 @@ export function TransactionView({
         </section>
         <footer>
           <Button onClick={onBack}>
-            <i18n.Translate> &lt; Back </i18n.Translate>
+            &lt; <Translate> Back </Translate>
           </Button>
           <div>
             {showRetry ? (
               <ButtonPrimary onClick={onRetry}>
-                <i18n.Translate>retry</i18n.Translate>
+                <Translate>Retry</Translate>
               </ButtonPrimary>
             ) : null}
             <ButtonDestructive onClick={doCheckBeforeForget}>
-              <i18n.Translate> Forget </i18n.Translate>
+              <Translate>Forget</Translate>
             </ButtonDestructive>
           </div>
         </footer>
@@ -184,24 +192,30 @@ export function TransactionView({
         {confirmBeforeForget ? (
           <Overlay>
             <CenteredDialog>
-              <header>Caution!</header>
+              <header>
+                <Translate>Caution!</Translate>
+              </header>
               <section>
-                If you have already wired money to the exchange you will loose
-                the chance to get the coins form it.
+                <Translate>
+                  If you have already wired money to the exchange you will loose
+                  the chance to get the coins form it.
+                </Translate>
               </section>
               <footer>
                 <Button onClick={() => setConfirmBeforeForget(false)}>
-                  <i18n.Translate> Cancel </i18n.Translate>
+                  <Translate>Cancel</Translate>
                 </Button>
 
                 <ButtonDestructive onClick={onDelete}>
-                  <i18n.Translate> Confirm </i18n.Translate>
+                  <Translate>Confirm</Translate>
                 </ButtonDestructive>
               </footer>
             </CenteredDialog>
           </Overlay>
         ) : undefined}
-        <h2>Withdrawal</h2>
+        <h2>
+          <Translate>Withdrawal</Translate>
+        </h2>
         <Time timestamp={transaction.timestamp} format="dd MMMM yyyy, HH:mm" />
         {transaction.pending ? (
           transaction.withdrawalDetails.type ===
@@ -217,19 +231,21 @@ export function TransactionView({
               />
               <p>
                 <WarningBox>
-                  Make sure to use the correct subject, otherwise the money will
-                  not arrive in this wallet.
+                  <Translate>
+                    Make sure to use the correct subject, otherwise the money
+                    will not arrive in this wallet.
+                  </Translate>
                 </WarningBox>
               </p>
               <Part
                 big
-                title="Total withdrawn"
+                title={<Translate>Total withdrawn</Translate>}
                 text={amountToString(transaction.amountEffective)}
                 kind="positive"
               />
               <Part
                 big
-                title="Exchange fee"
+                title={<Translate>Exchange fee</Translate>}
                 text={amountToString(fee)}
                 kind="negative"
               />
@@ -239,34 +255,38 @@ export function TransactionView({
               {!transaction.withdrawalDetails.confirmed &&
               transaction.withdrawalDetails.bankConfirmationUrl ? (
                 <InfoBox>
-                  The bank is waiting for confirmation. Go to the
-                  <a
-                    href={transaction.withdrawalDetails.bankConfirmationUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    bank site
-                  </a>
+                  <Translate>
+                    The bank is waiting for confirmation. Go to the
+                    <a
+                      href={transaction.withdrawalDetails.bankConfirmationUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <Translate>bank site</Translate>
+                    </a>
+                  </Translate>
                 </InfoBox>
               ) : undefined}
               {transaction.withdrawalDetails.confirmed && (
-                <InfoBox>Waiting for the coins to arrive</InfoBox>
+                <InfoBox>
+                  <Translate>Waiting for the coins to arrive</Translate>
+                </InfoBox>
               )}
               <Part
                 big
-                title="Total withdrawn"
+                title={<Translate>Total withdrawn</Translate>}
                 text={amountToString(transaction.amountEffective)}
                 kind="positive"
               />
               <Part
                 big
-                title="Chosen amount"
+                title={<Translate>Chosen amount</Translate>}
                 text={amountToString(transaction.amountRaw)}
                 kind="neutral"
               />
               <Part
                 big
-                title="Exchange fee"
+                title={<Translate>Exchange fee</Translate>}
                 text={amountToString(fee)}
                 kind="negative"
               />
@@ -276,26 +296,26 @@ export function TransactionView({
           <Fragment>
             <Part
               big
-              title="Total withdrawn"
+              title={<Translate>Total withdrawn</Translate>}
               text={amountToString(transaction.amountEffective)}
               kind="positive"
             />
             <Part
               big
-              title="Chosen amount"
+              title={<Translate>Chosen amount</Translate>}
               text={amountToString(transaction.amountRaw)}
               kind="neutral"
             />
             <Part
               big
-              title="Exchange fee"
+              title={<Translate>Exchange fee</Translate>}
               text={amountToString(fee)}
               kind="negative"
             />
           </Fragment>
         )}
         <Part
-          title="Exchange"
+          title={<Translate>Exchange</Translate>}
           text={new URL(transaction.exchangeBaseUrl).hostname}
           kind="neutral"
         />
@@ -315,30 +335,41 @@ export function TransactionView({
 
     return (
       <TransactionTemplate>
-        <h2>Payment </h2>
+        <h2>
+          <Translate>Payment</Translate>
+        </h2>
         <Time timestamp={transaction.timestamp} format="dd MMMM yyyy, HH:mm" />
         <br />
         <Part
           big
-          title="Total paid"
+          title={<Translate>Total paid</Translate>}
           text={amountToString(transaction.amountEffective)}
           kind="negative"
         />
         <Part
           big
-          title="Purchase amount"
+          title={<Translate>Purchase amount</Translate>}
           text={amountToString(transaction.amountRaw)}
           kind="neutral"
         />
-        <Part big title="Fee" text={amountToString(fee)} kind="negative" />
         <Part
-          title="Merchant"
+          big
+          title={<Translate>Fee</Translate>}
+          text={amountToString(fee)}
+          kind="negative"
+        />
+        <Part
+          title={<Translate>Merchant</Translate>}
           text={transaction.info.merchant.name}
           kind="neutral"
         />
-        <Part title="Purchase" text={transaction.info.summary} kind="neutral" />
         <Part
-          title="Receipt"
+          title={<Translate>Purchase</Translate>}
+          text={transaction.info.summary}
+          kind="neutral"
+        />
+        <Part
+          title={<Translate>Receipt</Translate>}
           text={`#${transaction.info.orderId}`}
           kind="neutral"
         />
@@ -375,22 +406,29 @@ export function TransactionView({
     ).amount;
     return (
       <TransactionTemplate>
-        <h2>Deposit </h2>
+        <h2>
+          <Translate>Deposit</Translate>
+        </h2>
         <Time timestamp={transaction.timestamp} format="dd MMMM yyyy, HH:mm" />
         <br />
         <Part
           big
-          title="Total send"
+          title={<Translate>Total send</Translate>}
           text={amountToString(transaction.amountEffective)}
           kind="neutral"
         />
         <Part
           big
-          title="Deposit amount"
+          title={<Translate>Deposit amount</Translate>}
           text={amountToString(transaction.amountRaw)}
           kind="positive"
         />
-        <Part big title="Fee" text={amountToString(fee)} kind="negative" />
+        <Part
+          big
+          title={<Translate>Fee</Translate>}
+          text={amountToString(fee)}
+          kind="negative"
+        />
       </TransactionTemplate>
     );
   }
@@ -402,22 +440,29 @@ export function TransactionView({
     ).amount;
     return (
       <TransactionTemplate>
-        <h2>Refresh</h2>
+        <h2>
+          <Translate>Refresh</Translate>
+        </h2>
         <Time timestamp={transaction.timestamp} format="dd MMMM yyyy, HH:mm" />
         <br />
         <Part
           big
-          title="Total refresh"
+          title={<Translate>Total refresh</Translate>}
           text={amountToString(transaction.amountEffective)}
           kind="negative"
         />
         <Part
           big
-          title="Refresh amount"
+          title={<Translate>Refresh amount</Translate>}
           text={amountToString(transaction.amountRaw)}
           kind="neutral"
         />
-        <Part big title="Fee" text={amountToString(fee)} kind="negative" />
+        <Part
+          big
+          title={<Translate>Fee</Translate>}
+          text={amountToString(fee)}
+          kind="negative"
+        />
       </TransactionTemplate>
     );
   }
@@ -429,22 +474,29 @@ export function TransactionView({
     ).amount;
     return (
       <TransactionTemplate>
-        <h2>Tip</h2>
+        <h2>
+          <Translate>Tip</Translate>
+        </h2>
         <Time timestamp={transaction.timestamp} format="dd MMMM yyyy, HH:mm" />
         <br />
         <Part
           big
-          title="Total tip"
+          title={<Translate>Total tip</Translate>}
           text={amountToString(transaction.amountEffective)}
           kind="positive"
         />
         <Part
           big
-          title="Received amount"
+          title={<Translate>Received amount</Translate>}
           text={amountToString(transaction.amountRaw)}
           kind="neutral"
         />
-        <Part big title="Fee" text={amountToString(fee)} kind="negative" />
+        <Part
+          big
+          title={<Translate>Fee</Translate>}
+          text={amountToString(fee)}
+          kind="negative"
+        />
       </TransactionTemplate>
     );
   }
@@ -456,30 +508,41 @@ export function TransactionView({
     ).amount;
     return (
       <TransactionTemplate>
-        <h2>Refund</h2>
+        <h2>
+          <Translate>Refund</Translate>
+        </h2>
         <Time timestamp={transaction.timestamp} format="dd MMMM yyyy, HH:mm" />
         <br />
         <Part
           big
-          title="Total refund"
+          title={<Translate>Total refund</Translate>}
           text={amountToString(transaction.amountEffective)}
           kind="positive"
         />
         <Part
           big
-          title="Refund amount"
+          title={<Translate>Refund amount</Translate>}
           text={amountToString(transaction.amountRaw)}
           kind="neutral"
         />
-        <Part big title="Fee" text={amountToString(fee)} kind="negative" />
         <Part
-          title="Merchant"
+          big
+          title={<Translate>Fee</Translate>}
+          text={amountToString(fee)}
+          kind="negative"
+        />
+        <Part
+          title={<Translate>Merchant</Translate>}
           text={transaction.info.merchant.name}
           kind="neutral"
         />
-        <Part title="Purchase" text={transaction.info.summary} kind="neutral" />
         <Part
-          title="Receipt"
+          title={<Translate>Purchase</Translate>}
+          text={transaction.info.summary}
+          kind="neutral"
+        />
+        <Part
+          title={<Translate>Receipt</Translate>}
           text={`#${transaction.info.orderId}`}
           kind="neutral"
         />

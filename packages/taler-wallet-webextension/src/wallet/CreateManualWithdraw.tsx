@@ -19,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { AmountJson, Amounts, i18n } from "@gnu-taler/taler-util";
+import { AmountJson, Amounts, i18n, Translate } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { ErrorMessage } from "../components/ErrorMessage";
@@ -99,16 +99,22 @@ export function CreateManualWithdraw({
   if (!initialExchange) {
     return (
       <section>
-        <h2>Manual Withdrawal</h2>
+        <h2>
+          <Translate>Manual Withdrawal</Translate>
+        </h2>
         <LightText>
-          Choose a exchange from where the coins will be withdrawn. The exchange
-          will send the coins to this wallet after receiving a wire transfer
-          with the correct subject.
+          <Translate>
+            Choose a exchange from where the coins will be withdrawn. The
+            exchange will send the coins to this wallet after receiving a wire
+            transfer with the correct subject.
+          </Translate>
         </LightText>
         <Centered style={{ marginTop: 100 }}>
-          <BoldLight>No exchange configured</BoldLight>
+          <BoldLight>
+            <Translate>No exchange configured</Translate>
+          </BoldLight>
           <ButtonSuccess onClick={onAddExchange}>
-            <i18n.Translate>Add exchange</i18n.Translate>
+            <Translate>Add exchange</Translate>
           </ButtonSuccess>
         </Centered>
       </section>
@@ -118,20 +124,26 @@ export function CreateManualWithdraw({
   return (
     <Fragment>
       <section>
-        <ErrorMessage
-          title={error && "Can't create the reserve"}
-          description={error}
-        />
-        <h2>Manual Withdrawal</h2>
+        {error && (
+          <ErrorMessage
+            title={<Translate>Can't create the reserve</Translate>}
+            description={error}
+          />
+        )}
+        <h2>
+          <Translate>Manual Withdrawal</Translate>
+        </h2>
         <LightText>
-          Choose a exchange from where the coins will be withdrawn. The exchange
-          will send the coins to this wallet after receiving a wire transfer
-          with the correct subject.
+          <Translate>
+            Choose a exchange from where the coins will be withdrawn. The
+            exchange will send the coins to this wallet after receiving a wire
+            transfer with the correct subject.
+          </Translate>
         </LightText>
         <p>
           <Input>
             <SelectList
-              label="Currency"
+              label={<Translate>Currency</Translate>}
               list={currencyMap}
               name="currency"
               value={currency}
@@ -140,7 +152,7 @@ export function CreateManualWithdraw({
           </Input>
           <Input>
             <SelectList
-              label="Exchange"
+              label={<Translate>Exchange</Translate>}
               list={exchangeMap}
               name="currency"
               value={exchange}
@@ -149,12 +161,14 @@ export function CreateManualWithdraw({
           </Input>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <LinkPrimary onClick={onAddExchange} style={{ marginLeft: "auto" }}>
-              <i18n.Translate>Add exchange</i18n.Translate>
+              <Translate>Add Exchange</Translate>
             </LinkPrimary>
           </div>
           {currency && (
             <InputWithLabel invalid={!!amount && !parsedAmount}>
-              <label>Amount</label>
+              <label>
+                <Translate>Amount</Translate>
+              </label>
               <div>
                 <span>{currency}</span>
                 <input
@@ -173,7 +187,7 @@ export function CreateManualWithdraw({
           disabled={!parsedAmount || !exchange}
           onClick={() => onCreate(exchange, parsedAmount!)}
         >
-          Start withdrawal
+          <Translate>Start withdrawal</Translate>
         </ButtonPrimary>
       </footer>
     </Fragment>

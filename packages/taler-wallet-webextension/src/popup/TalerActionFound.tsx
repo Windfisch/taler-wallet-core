@@ -19,7 +19,11 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { classifyTalerUri, TalerUriType } from "@gnu-taler/taler-util";
+import {
+  classifyTalerUri,
+  TalerUriType,
+  Translate,
+} from "@gnu-taler/taler-util";
 import { Fragment, h } from "preact";
 import { ButtonPrimary, ButtonSuccess } from "../components/styled";
 import { actionForTalerUri } from "../utils/index";
@@ -52,46 +56,56 @@ export function TalerActionFound({ url, onDismiss }: Props) {
   return (
     <Fragment>
       <section>
-        <h1>Taler Action </h1>
+        <h1>
+          <Translate>Taler Action</Translate>
+        </h1>
         {uriType === TalerUriType.TalerPay && (
           <div>
-            <p>This page has pay action.</p>
+            <p>
+              <Translate>This page has pay action.</Translate>
+            </p>
             <ButtonSuccess
               onClick={() => {
                 navigateTo(actionForTalerUri(uriType, url));
               }}
             >
-              Open pay page
+              <Translate>Open pay page</Translate>
             </ButtonSuccess>
           </div>
         )}
         {uriType === TalerUriType.TalerWithdraw && (
           <div>
-            <p>This page has a withdrawal action.</p>
+            <p>
+              <Translate>This page has a withdrawal action.</Translate>
+            </p>
             <ButtonSuccess
               onClick={() => {
                 navigateTo(actionForTalerUri(uriType, url));
               }}
             >
-              Open withdraw page
+              <Translate>Open withdraw page</Translate>
             </ButtonSuccess>
           </div>
         )}
         {uriType === TalerUriType.TalerTip && (
           <div>
-            <p>This page has a tip action.</p>
+            <p>
+              <Translate>This page has a tip action.</Translate>
+            </p>
             <ButtonSuccess
               onClick={() => {
                 navigateTo(actionForTalerUri(uriType, url));
               }}
             >
-              Open tip page
+              <Translate>Open tip page</Translate>
             </ButtonSuccess>
           </div>
         )}
         {uriType === TalerUriType.TalerNotifyReserve && (
           <div>
-            <p>This page has a notify reserve action.</p>
+            <p>
+              <Translate>This page has a notify reserve action.</Translate>
+            </p>
             <ButtonSuccess
               onClick={() => {
                 navigateTo(actionForTalerUri(uriType, url));
@@ -103,26 +117,33 @@ export function TalerActionFound({ url, onDismiss }: Props) {
         )}
         {uriType === TalerUriType.TalerRefund && (
           <div>
-            <p>This page has a refund action.</p>
+            <p>
+              <Translate>This page has a refund action.</Translate>
+            </p>
             <ButtonSuccess
               onClick={() => {
                 navigateTo(actionForTalerUri(uriType, url));
               }}
             >
-              Open refund page
+              <Translate>Open refund page</Translate>
             </ButtonSuccess>
           </div>
         )}
         {uriType === TalerUriType.Unknown && (
           <div>
-            <p>This page has a malformed taler uri.</p>
+            <p>
+              <Translate>This page has a malformed taler uri.</Translate>
+            </p>
             <p>{url}</p>
           </div>
         )}
       </section>
       <footer>
         <div />
-        <ButtonPrimary onClick={() => onDismiss()}> Dismiss </ButtonPrimary>
+        <ButtonPrimary onClick={() => onDismiss()}>
+          {" "}
+          <Translate>Dismiss</Translate>{" "}
+        </ButtonPrimary>
       </footer>
     </Fragment>
   );

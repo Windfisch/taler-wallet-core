@@ -19,7 +19,7 @@ import { ErrorMessage } from "./ErrorMessage";
 import { ErrorTalerOperation } from "./ErrorTalerOperation";
 
 export interface Props {
-  title: string;
+  title: VNode;
   error: HookError;
 }
 export function LoadingError({ title, error }: Props): VNode {

@@ -13,7 +13,7 @@
  You should have received a copy of the GNU General Public License along with
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-import { VNode, h } from "preact";
+import { VNode, h, ComponentChildren } from "preact";
 import { useState } from "preact/hooks";
 import arrowDown from "../../static/img/chevron-down.svg";
 import { ErrorBox } from "./styled";
@@ -22,11 +22,10 @@ export function ErrorMessage({
   title,
   description,
 }: {
-  title?: string | VNode;
+  title: VNode;
   description?: string;
 }): VNode | null {
   const [showErrorDetail, setShowErrorDetail] = useState(false);
-  if (!title) return null;
   return (
     <ErrorBox style={{ paddingTop: 0, paddingBottom: 0 }}>
       <div>

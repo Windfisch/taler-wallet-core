@@ -15,11 +15,11 @@
  */
 import { AmountLike } from "@gnu-taler/taler-util";
 import { ExtraLargeText, LargeText, SmallLightText } from "./styled";
-import { h } from "preact";
+import { h, VNode } from "preact";
 
 export type Kind = "positive" | "negative" | "neutral";
 interface Props {
-  title: string;
+  title: VNode;
   text: AmountLike;
   kind: Kind;
   big?: boolean;

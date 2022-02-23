@@ -41,6 +41,12 @@ import { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits
 import { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core/src/operations/withdraw";
 import { MessageFromBackend } from "./wxBackend";
 
+/**
+ * 
+ * @autor Florian Dold
+ * @autor sebasjm
+ */
+
 export interface ExtendedPermissionsResponse {
   newValue: boolean;
 }

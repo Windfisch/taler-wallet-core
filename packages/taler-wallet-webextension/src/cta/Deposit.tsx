@@ -35,6 +35,7 @@ import {
   NotificationType,
   PreparePayResult,
   PreparePayResultType,
+  Translate,
 } from "@gnu-taler/taler-util";
 import { OperationFailedError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
@@ -108,7 +109,11 @@ export function DepositPage({ talerPayUri, goBack }: Props): VNode {
   }, [talerPayUri, foundAmountStr]);
 
   if (!talerPayUri) {
-    return <span>missing pay uri</span>;
+    return (
+      <span>
+        <Translate>missing pay uri</Translate>
+      </span>
+    );
   }
 
   if (!payStatus) {
@@ -116,10 +121,16 @@ export function DepositPage({ talerPayUri, goBack }: Props): VNode {
       return (
         <WalletAction>
           <LogoHeader />
-          <h2>{i18n.str`Digital cash payment`}</h2>
+          <h2>
+            <Translate>Digital cash payment</Translate>
+          </h2>
           <section>
             <ErrorTalerOperation
-              title="Could not get the payment information for this order"
+              title={
+                <Translate>
+                  Could not get the payment information for this order
+                </Translate>
+              }
               error={payErrMsg?.operationError}
             />
           </section>
@@ -130,15 +141,25 @@ export function DepositPage({ talerPayUri, goBack }: Props): VNode {
       return (
         <WalletAction>
           <LogoHeader />
-          <h2>{i18n.str`Digital cash payment`}</h2>
+          <h2>
+            <Translate>Digital cash payment</Translate>
+          </h2>
           <section>
-            <p>Could not get the payment information for this order</p>
+            <p>
+              <Translate>
+                Could not get the payment information for this order
+              </Translate>
+            </p>
             <ErrorBox>{payErrMsg}</ErrorBox>
           </section>
         </WalletAction>
       );
     }
-    return <span>Loading payment information ...</span>;
+    return (
+      <span>
+        <Translate>Loading payment information</Translate> ...
+      </span>
+    );
   }
 
   const onClick = async (): Promise<void> => {
@@ -183,20 +204,32 @@ export function PaymentRequestView({
     <WalletAction>
       <LogoHeader />
 
-      <h2>{i18n.str`Digital cash deposit`}</h2>
+      <h2>
+        <Translate>Digital cash deposit</Translate>
+      </h2>
       {payStatus.status === PreparePayResultType.AlreadyConfirmed &&
         (payStatus.paid ? (
-          <SuccessBox> Already paid </SuccessBox>
+          <SuccessBox>
+            <Translate>Already paid</Translate>
+          </SuccessBox>
         ) : (
-          <WarningBox> Already claimed </WarningBox>
+          <WarningBox>
+            <Translate>Already claimed</Translate>
+          </WarningBox>
         ))}
       {payResult && payResult.type === ConfirmPayResultType.Done && (
         <SuccessBox>
-          <h3>Payment complete</h3>
+          <h3>
+            <Translate>Payment complete</Translate>
+          </h3>
           <p>
-            {!payResult.contractTerms.fulfillment_message
-              ? "You will now be sent back to the merchant you came from."
-              : payResult.contractTerms.fulfillment_message}
+            {!payResult.contractTerms.fulfillment_message ? (
+              <Translate>
+                You will now be sent back to the merchant you came from.
+              </Translate>
+            ) : (
+              payResult.contractTerms.fulfillment_message
+            )}
           </p>
         </SuccessBox>
       )}
@@ -205,7 +238,7 @@ export function PaymentRequestView({
           Amounts.isNonZero(totalFees) && (
             <Part
               big
-              title="Total to pay"
+              title={<Translate>Total to pay</Translate>}
               text={amountToPretty(
                 Amounts.parseOrThrow(payStatus.amountEffective),
               )}
@@ -214,7 +247,7 @@ export function PaymentRequestView({
           )}
         <Part
           big
-          title="Purchase amount"
+          title={<Translate>Purchase amount</Translate>}
           text={amountToPretty(Amounts.parseOrThrow(payStatus.amountRaw))}
           kind="neutral"
         />
@@ -222,21 +255,25 @@ export function PaymentRequestView({
           <Fragment>
             <Part
               big
-              title="Fee"
+              title={<Translate>Fee</Translate>}
               text={amountToPretty(totalFees)}
               kind="negative"
             />
           </Fragment>
         )}
         <Part
-          title="Merchant"
+          title={<Translate>Merchant</Translate>}
           text={contractTerms.merchant.name}
           kind="neutral"
         />
-        <Part title="Purchase" text={contractTerms.summary} kind="neutral" />
+        <Part
+          title={<Translate>Purchase</Translate>}
+          text={contractTerms.summary}
+          kind="neutral"
+        />
         {contractTerms.order_id && (
           <Part
-            title="Receipt"
+            title={<Translate>Receipt</Translate>}
             text={`#${contractTerms.order_id}`}
             kind="neutral"
           />

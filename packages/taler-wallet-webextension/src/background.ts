@@ -17,7 +17,7 @@
 /**
  * Entry point for the background page.
  *
- * @author Florian Dold
+ * @author sebasjm
  */
 
 /**

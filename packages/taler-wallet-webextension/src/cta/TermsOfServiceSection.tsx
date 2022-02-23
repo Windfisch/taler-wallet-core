@@ -1,4 +1,4 @@
-import { i18n } from "@gnu-taler/taler-util";
+import { i18n, Translate } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { CheckboxOutlined } from "../components/CheckboxOutlined";
 import { ExchangeXmlTos } from "../components/ExchangeToS";
@@ -34,7 +34,7 @@ export function TermsOfServiceSection({
             {terms.status === "notfound" && (
               <section>
                 <WarningText>
-                  {i18n.str`Exchange doesn't have terms of service`}
+                  <Translate>Exchange doesn't have terms of service</Translate>
                 </WarningText>
               </section>
             )}
@@ -46,21 +46,21 @@ export function TermsOfServiceSection({
           {terms.status === "notfound" && (
             <section>
               <WarningText>
-                {i18n.str`Exchange doesn't have terms of service`}
+                <Translate>Exchange doesn't have terms of service</Translate>
               </WarningText>
             </section>
           )}
           {terms.status === "new" && (
             <section>
               <ButtonSuccess upperCased onClick={() => onReview(true)}>
-                {i18n.str`Review exchange terms of service`}
+                <Translate>Review exchange terms of service</Translate>
               </ButtonSuccess>
             </section>
           )}
           {terms.status === "changed" && (
             <section>
               <ButtonWarning upperCased onClick={() => onReview(true)}>
-                {i18n.str`Review new version of terms of service`}
+                <Translate>Review new version of terms of service</Translate>
               </ButtonWarning>
             </section>
           )}
@@ -72,7 +72,7 @@ export function TermsOfServiceSection({
         {onReview && (
           <section>
             <LinkSuccess upperCased onClick={() => onReview(true)}>
-              {i18n.str`Show terms of service`}
+              <Translate>Show terms of service</Translate>
             </LinkSuccess>
           </section>
         )}
@@ -80,7 +80,9 @@ export function TermsOfServiceSection({
           <CheckboxOutlined
             name="terms"
             enabled={reviewed}
-            label={i18n.str`I accept the exchange terms of service`}
+            label={
+              <Translate>I accept the exchange terms of service</Translate>
+            }
             onToggle={() => {
               onAccept(!reviewed);
               if (onReview) onReview(false);
@@ -95,7 +97,9 @@ export function TermsOfServiceSection({
       {terms.status !== "notfound" && !terms.content && (
         <section>
           <WarningBox>
-            The exchange reply with a empty terms of service
+            <Translate>
+              The exchange reply with a empty terms of service
+            </Translate>
           </WarningBox>
         </section>
       )}
@@ -116,7 +120,7 @@ export function TermsOfServiceSection({
           )}
           {terms.content.type === "pdf" && (
             <a href={terms.content.location.toString()} download="tos.pdf">
-              Download Terms of Service
+              <Translate>Download Terms of Service</Translate>
             </a>
           )}
         </section>
@@ -124,7 +128,7 @@ export function TermsOfServiceSection({
       {reviewed && onReview && (
         <section>
           <LinkSuccess upperCased onClick={() => onReview(false)}>
-            {i18n.str`Hide terms of service`}
+            <Translate>Hide terms of service</Translate>
           </LinkSuccess>
         </section>
       )}
@@ -133,7 +137,9 @@ export function TermsOfServiceSection({
           <CheckboxOutlined
             name="terms"
             enabled={reviewed}
-            label={i18n.str`I accept the exchange terms of service`}
+            label={
+              <Translate>I accept the exchange terms of service</Translate>
+            }
             onToggle={() => {
               onAccept(!reviewed);
               if (onReview) onReview(false);

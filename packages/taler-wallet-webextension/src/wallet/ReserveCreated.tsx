@@ -1,4 +1,9 @@
-import { AmountJson, Amounts, parsePaytoUri } from "@gnu-taler/taler-util";
+import {
+  AmountJson,
+  Amounts,
+  parsePaytoUri,
+  Translate,
+} from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType";
 import { QR } from "../components/QR";
@@ -22,15 +27,23 @@ export function ReserveCreated({
   const paytoURI = parsePaytoUri(payto);
   // const url = new URL(paytoURI?.targetPath);
   if (!paytoURI) {
-    return <div>could not parse payto uri from exchange {payto}</div>;
+    return (
+      <div>
+        <Translate>could not parse payto uri from exchange {payto}</Translate>
+      </div>
+    );
   }
   return (
     <Fragment>
       <section>
-        <h1>Exchange is ready for withdrawal!</h1>
+        <h1>
+          <Translate>Exchange is ready for withdrawal</Translate>
+        </h1>
         <p>
-          To complete the process you need to wire{" "}
-          <b>{amountToString(amount)}</b> to the exchange bank account
+          <Translate>
+            To complete the process you need to wire
+            <b>{amountToString(amount)}</b> to the exchange bank account
+          </Translate>
         </p>
         <BankDetailsByPaytoType
           amount={amountToString(amount)}
@@ -40,23 +53,27 @@ export function ReserveCreated({
         />
         <p>
           <WarningBox>
-            Make sure to use the correct subject, otherwise the money will not
-            arrive in this wallet.
+            <Translate>
+              Make sure to use the correct subject, otherwise the money will not
+              arrive in this wallet.
+            </Translate>
           </WarningBox>
         </p>
       </section>
       <section>
         <p>
-          Alternative, you can also scan this QR code or open{" "}
-          <a href={payto}>this link</a> if you have a banking app installed that
-          supports RFC 8905
+          <Translate>
+            Alternative, you can also scan this QR code or open
+            <a href={payto}>this link</a> if you have a banking app installed
+            that supports RFC 8905
+          </Translate>
         </p>
         <QR text={payto} />
       </section>
       <footer>
         <div />
         <ButtonDestructive onClick={onCancel}>
-          Cancel withdrawal
+          <Translate>Cancel withdrawal</Translate>
         </ButtonDestructive>
       </footer>
     </Fragment>

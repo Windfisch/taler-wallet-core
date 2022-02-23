@@ -17,10 +17,10 @@
 /**
  * Page that shows refund status for purchases.
  *
- * @author Florian Dold
+ * @author sebasjm
  */
 
-import { Amounts, ApplyRefundResponse } from "@gnu-taler/taler-util";
+import { Amounts, ApplyRefundResponse, Translate } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { AmountView } from "../renderHtml";
@@ -37,20 +37,28 @@ export function View({ applyResult }: ViewProps): VNode {
     <section class="main">
       <h1>GNU Taler Wallet</h1>
       <article class="fade">
-        <h2>Refund Status</h2>
+        <h2>
+          <Translate>Refund Status</Translate>
+        </h2>
         <p>
-          The product <em>{applyResult.info.summary}</em> has received a total
-          effective refund of{" "}
+          <Translate>
+            The product <em>{applyResult.info.summary}</em> has received a total
+            effective refund of{" "}
+          </Translate>
           <AmountView amount={applyResult.amountRefundGranted} />.
         </p>
         {applyResult.pendingAtExchange ? (
-          <p>Refund processing is still in progress.</p>
+          <p>
+            <Translate>Refund processing is still in progress.</Translate>
+          </p>
         ) : null}
         {!Amounts.isZero(applyResult.amountRefundGone) ? (
           <p>
-            The refund amount of{" "}
-            <AmountView amount={applyResult.amountRefundGone} /> could not be
-            applied.
+            <Translate>
+              The refund amount of{" "}
+              <AmountView amount={applyResult.amountRefundGone} /> could not be
+              applied.
+            </Translate>
           </p>
         ) : null}
       </article>
@@ -82,15 +90,27 @@ export function RefundPage({ talerRefundUri }: Props): VNode {
   console.log("rendering");
 
   if (!talerRefundUri) {
-    return <span>missing taler refund uri</span>;
+    return (
+      <span>
+        <Translate>missing taler refund uri</Translate>
+      </span>
+    );
   }
 
   if (errMsg) {
-    return <span>Error: {errMsg}</span>;
+    return (
+      <span>
+        <Translate>Error: {errMsg}</Translate>
+      </span>
+    );
   }
 
   if (!applyResult) {
-    return <span>Updating refund status</span>;
+    return (
+      <span>
+        <Translate>Updating refund status</Translate>
+      </span>
+    );
   }
 
   return <View applyResult={applyResult} />;
