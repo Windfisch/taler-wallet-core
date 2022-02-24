@@ -41,6 +41,9 @@ const supportedLang = {
   de: "Deutsch [de]",
   sv: "Svenska [sv]",
   it: "Italiano [it]",
+  // ko: "한국어 [ko]",
+  // ru: "Ру́сский язы́к [ru]",
+  tr: "Türk [tr]"
 };
 
 
