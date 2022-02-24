@@ -74,7 +74,7 @@ msgid "Open tip page"
 msgstr ""
 
 #: src/wallet/AddNewActionView.tsx:22
-#, fuzzy, c-format
+#, c-format
 msgid "Open withdraw page"
 msgstr ""
 
@@ -93,7 +93,9 @@ msgstr "表示するバランスがありません"
 msgid ""
 "To withdraw money you can start from your bank site or click the \"withdraw"
 "\" button to use a known exchange."
-msgstr "お金を引き出すには、銀行のサイトから開始するか、[引き出し]ボタンをクリックして既知の取引所を使用します。"
+msgstr ""
+"お金を引き出すには、銀行のサイトから開始するか、[引き出し]ボタンをクリックし"
+"て既知の取引所を使用します。"
 
 #: src/popup/NoBalanceHelp.tsx:23
 #, fuzzy, c-format
@@ -145,7 +147,7 @@ msgid "Running diagnostics"
 msgstr ""
 
 #: src/popup/DeveloperPage.tsx:154
-#, fuzzy, c-format
+#, c-format
 msgid "Debug tools"
 msgstr ""
 
@@ -614,7 +616,7 @@ msgid "Select one option"
 msgstr ""
 
 #: src/wallet/CreateManualWithdraw.tsx:103
-#, fuzzy, c-format
+#, c-format
 msgid "Manual Withdrawal"
 msgstr ""
 
@@ -657,7 +659,7 @@ msgid "Start withdrawal"
 msgstr ""
 
 #: src/wallet/DepositPage.tsx:138
-#, fuzzy, c-format
+#, c-format
 msgid "no balance"
 msgstr ""
 
@@ -692,7 +694,7 @@ msgid "Deposit"
 msgstr ""
 
 #: src/wallet/DepositPage.tsx:251
-#, fuzzy, c-format
+#, c-format
 msgid "Deposit %1$s %2$s"
 msgstr ""
 
@@ -896,12 +898,12 @@ msgid "Confirm"
 msgstr ""
 
 #: src/wallet/Transaction.tsx:218
-#, fuzzy, c-format
+#, c-format
 msgid "Withdrawal"
 msgstr ""
 
 #: src/wallet/Transaction.tsx:243
-#, fuzzy, c-format
+#, c-format
 msgid "Total withdrawn"
 msgstr ""
 
@@ -921,7 +923,7 @@ msgid "Waiting for the coins to arrive"
 msgstr ""
 
 #: src/wallet/Transaction.tsx:342
-#, fuzzy, c-format
+#, c-format
 msgid "Payment"
 msgstr ""
 
@@ -1093,7 +1095,7 @@ msgid "Your balance is not enough to pay for this purchase."
 msgstr ""
 
 #: src/cta/Pay.tsx:287
-#, fuzzy, c-format
+#, c-format
 msgid "Withdraw digital cash"
 msgstr ""
 
@@ -1198,7 +1200,7 @@ msgid "Tip from %1$s accepted. Check your transactions list for more details."
 msgstr ""
 
 #: src/cta/Tip.tsx:57
-#, fuzzy, c-format
+#, c-format
 msgid "The merchant %1$s is offering you a tip of %2$s via the exchange %3$s"
 msgstr ""
 
@@ -1263,7 +1265,7 @@ msgid "Confirm withdrawal"
 msgstr ""
 
 #: src/cta/Withdraw.tsx:224
-#, fuzzy, c-format
+#, c-format
 msgid "Withdraw anyway"
 msgstr ""
 
@@ -1364,4 +1366,3 @@ msgstr ""
 #, c-format
 msgid "Not implemented yet."
 msgstr ""
-
