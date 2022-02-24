@@ -1,0 +1,289 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-11-23 00:00+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/NavigationBar.tsx:86
+#, c-format
+msgid "Balance"
+msgstr ""
+
+#: src/NavigationBar.tsx:87
+#, c-format
+msgid "Pending"
+msgstr ""
+
+#: src/NavigationBar.tsx:88
+#, c-format
+msgid "Backup"
+msgstr ""
+
+#: src/NavigationBar.tsx:89
+#, c-format
+msgid "Settings"
+msgstr ""
+
+#: src/NavigationBar.tsx:90
+#, c-format
+msgid "Dev"
+msgstr ""
+
+#: src/wallet/BackupPage.tsx:127
+#, c-format
+msgid "Add provider"
+msgstr ""
+
+#: src/wallet/BackupPage.tsx:137
+#, c-format
+msgid "Sync all backups"
+msgstr ""
+
+#: src/wallet/BackupPage.tsx:139
+#, c-format
+msgid "Sync now"
+msgstr ""
+
+#: src/popup/BalancePage.tsx:79
+#, c-format
+msgid "You have no balance to show. Need some %1$s getting started?"
+msgstr ""
+
+#: src/wallet/ProviderAddPage.tsx:145
+#, c-format
+msgid "&lt; Back"
+msgstr ""
+
+#: src/wallet/ProviderAddPage.tsx:156
+#, c-format
+msgid "Next"
+msgstr ""
+
+#: src/wallet/ProviderDetailPage.tsx:57
+#, c-format
+msgid "Loading..."
+msgstr ""
+
+#: src/wallet/ProviderDetailPage.tsx:64
+#, c-format
+msgid "There was an error loading the provider detail for \"%1$s\""
+msgstr ""
+
+#: src/wallet/ProviderDetailPage.tsx:75
+#, c-format
+msgid "There is not known provider with url \"%1$s\". Redirecting back..."
+msgstr ""
+
+#: src/wallet/ProviderDetailPage.tsx:131
+#, c-format
+msgid "Back up"
+msgstr ""
+
+#: src/wallet/ProviderDetailPage.tsx:142
+#, c-format
+msgid "Extend"
+msgstr ""
+
+#: src/wallet/ProviderDetailPage.tsx:148
+#, c-format
+msgid ""
+"terms has changed, extending the service will imply accepting the new terms of "
+"service"
+msgstr ""
+
+#: src/wallet/ProviderDetailPage.tsx:158
+#, c-format
+msgid "old"
+msgstr ""
+
+#: src/wallet/ProviderDetailPage.tsx:162
+#, c-format
+msgid "new"
+msgstr ""
+
+#: src/wallet/ProviderDetailPage.tsx:169
+#, c-format
+msgid "fee"
+msgstr ""
+
+#: src/wallet/ProviderDetailPage.tsx:177
+#, c-format
+msgid "storage"
+msgstr ""
+
+#: src/wallet/ProviderDetailPage.tsx:190
+#, c-format
+msgid "&lt; back"
+msgstr ""
+
+#: src/wallet/ProviderDetailPage.tsx:194
+#, c-format
+msgid "remove provider"
+msgstr ""
+
+#: src/wallet/ProviderDetailPage.tsx:213
+#, c-format
+msgid "There is conflict with another backup from %1$s"
+msgstr ""
+
+#: src/wallet/ProviderDetailPage.tsx:228
+#, c-format
+msgid "Unknown backup problem: %1$s"
+msgstr ""
+
+#: src/wallet/ProviderDetailPage.tsx:247
+#, c-format
+msgid "service paid"
+msgstr ""
+
+#: src/popup/Settings.tsx:46
+#, c-format
+msgid "Permissions"
+msgstr ""
+
+#: src/cta/TermsOfServiceSection.tsx:37
+#, c-format
+msgid "Exchange doesn't have terms of service"
+msgstr ""
+
+#: src/cta/TermsOfServiceSection.tsx:56
+#, c-format
+msgid "Review exchange terms of service"
+msgstr ""
+
+#: src/cta/TermsOfServiceSection.tsx:63
+#, c-format
+msgid "Review new version of terms of service"
+msgstr ""
+
+#: src/cta/TermsOfServiceSection.tsx:75
+#, c-format
+msgid "Show terms of service"
+msgstr ""
+
+#: src/cta/TermsOfServiceSection.tsx:83
+#, c-format
+msgid "I accept the exchange terms of service"
+msgstr ""
+
+#: src/cta/TermsOfServiceSection.tsx:127
+#, c-format
+msgid "Hide terms of service"
+msgstr ""
+
+#: src/wallet/ExchangeAddConfirm.tsx:110
+#, c-format
+msgid "Cancel"
+msgstr ""
+
+#: src/wallet/ExchangeAddConfirm.tsx:114
+#, c-format
+msgid "Loading terms.."
+msgstr ""
+
+#: src/wallet/ExchangeAddConfirm.tsx:121
+#, c-format
+msgid "Add exchange"
+msgstr ""
+
+#: src/wallet/ExchangeAddConfirm.tsx:131
+#, c-format
+msgid "Add exchange anyway"
+msgstr ""
+
+#: src/wallet/Settings.tsx:95
+#, c-format
+msgid "Known exchanges"
+msgstr ""
+
+#: src/wallet/Transaction.tsx:159
+#, c-format
+msgid "retry"
+msgstr ""
+
+#: src/wallet/Transaction.tsx:163
+#, c-format
+msgid "Forget"
+msgstr ""
+
+#: src/wallet/Transaction.tsx:198
+#, c-format
+msgid "Confirm"
+msgstr ""
+
+#: src/cta/Pay.tsx:211
+#, c-format
+msgid "Pay with a mobile phone"
+msgstr ""
+
+#: src/cta/Pay.tsx:211
+#, c-format
+msgid "Hide QR"
+msgstr ""
+
+#: src/cta/Pay.tsx:241
+#, c-format
+msgid "Pay"
+msgstr ""
+
+#: src/cta/Pay.tsx:265
+#, c-format
+msgid "Withdraw digital cash"
+msgstr ""
+
+#: src/cta/Pay.tsx:295
+#, c-format
+msgid "Digital cash payment"
+msgstr ""
+
+#: src/cta/Withdraw.tsx:101
+#, c-format
+msgid "Digital cash withdrawal"
+msgstr ""
+
+#: src/cta/Withdraw.tsx:149
+#, c-format
+msgid "Cancel exchange selection"
+msgstr ""
+
+#: src/cta/Withdraw.tsx:150
+#, c-format
+msgid "Confirm exchange selection"
+msgstr ""
+
+#: src/cta/Withdraw.tsx:155
+#, c-format
+msgid "Switch exchange"
+msgstr ""
+
+#: src/cta/Withdraw.tsx:174
+#, c-format
+msgid "Confirm withdrawal"
+msgstr ""
+
+#: src/cta/Withdraw.tsx:183
+#, c-format
+msgid "Withdraw anyway"
+msgstr ""
+
+#: src/cta/Withdraw.tsx:310
+#, c-format
+msgid "missing withdraw uri"
+msgstr ""
+
+#: src/cta/Deposit.tsx:186
+#, c-format
+msgid "Digital cash deposit"
+msgstr ""
