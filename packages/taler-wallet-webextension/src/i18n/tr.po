@@ -17,7 +17,7 @@ msgstr ""
 "Project-Id-Version: Taler Wallet\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-11-23 00:00+0100\n"
-"PO-Revision-Date: 2022-02-22 21:41+0000\n"
+"PO-Revision-Date: 2022-02-24 17:32+0000\n"
 "Last-Translator: Alp <berna.alp@digitalekho.com>\n"
 "Language-Team: Turkish <http://weblate.taler.net/projects/gnu-taler/"
 "webextensions/tr/>\n"
@@ -897,108 +897,108 @@ msgstr "Onaylamak"
 
 #: src/wallet/Transaction.tsx:218
 #, c-format
-msgid "Withdrawal"
-msgstr ""
+msgid "Debug"
+msgstr "Hata ayıklama"
 
-#: src/wallet/Transaction.tsx:243
-#, c-format
-msgid "Total withdrawn"
-msgstr ""
+#: src/webex/pages/popup.tsx:175
+#, c-format, fuzzy
+msgid "You have no balance to show. Need some %1$s getting started?"
+msgstr "Gösterecek bakiyeniz yok. Başlamak için %1$s'ye mi ihtiyacınız var?"
 
-#: src/wallet/Transaction.tsx:249
-#, c-format
-msgid "Exchange fee"
-msgstr ""
+#: src/webex/pages/popup.tsx:238
+#, c-format, fuzzy
+msgid "%1$s incoming"
+msgstr "%1$s gelen"
 
-#: src/wallet/Transaction.tsx:259
-#, c-format
-msgid "The bank is waiting for confirmation. Go to the %1$s"
-msgstr ""
+#: src/webex/pages/popup.tsx:250
+#, c-format, fuzzy
+msgid "%1$s being spent"
+msgstr "%1$s harcanan"
 
 #: src/wallet/Transaction.tsx:273
 #, c-format
-msgid "Waiting for the coins to arrive"
-msgstr ""
+msgid "Error: could not retrieve balance information."
+msgstr "Hata: bakiye bilgisi alınamadı."
 
 #: src/wallet/Transaction.tsx:342
 #, c-format
-msgid "Payment"
-msgstr ""
+msgid "Invalid "
+msgstr "Geçersiz "
 
 #: src/wallet/Transaction.tsx:348
 #, c-format
-msgid "Total paid"
-msgstr ""
+msgid "Fees "
+msgstr "Ücretler "
 
 #: src/wallet/Transaction.tsx:354
 #, c-format
-msgid "Purchase amount"
-msgstr ""
+msgid "Refresh sessions has completed"
+msgstr "Oturumların yenilenmesi tamamlandı"
 
 #: src/wallet/Transaction.tsx:360
 #, c-format
-msgid "Fee"
-msgstr ""
+msgid "Order Refused"
+msgstr "Sipariş reddedildi"
 
 #: src/wallet/Transaction.tsx:365
 #, c-format
-msgid "Merchant"
-msgstr ""
+msgid "Order redirected"
+msgstr "Sipariş yönlendirildi"
 
 #: src/wallet/Transaction.tsx:370
 #, c-format
-msgid "Purchase"
-msgstr ""
+msgid "Payment aborted"
+msgstr "Ödeme durduruldu"
 
 #: src/wallet/Transaction.tsx:375
 #, c-format
-msgid "Receipt"
-msgstr ""
+msgid "Payment Sent"
+msgstr "Ödeme gönderildi"
 
 #: src/wallet/Transaction.tsx:419
 #, c-format
-msgid "Total send"
-msgstr ""
+msgid "Order accepted"
+msgstr "Sipariş kabul edildi"
 
 #: src/wallet/Transaction.tsx:425
 #, c-format
-msgid "Deposit amount"
-msgstr ""
+msgid "Reserve balance updated"
+msgstr "Yedek bakiye güncellendi"
 
 #: src/wallet/Transaction.tsx:447
 #, c-format
-msgid "Refresh"
-msgstr ""
+msgid "Payment refund"
+msgstr "Ödeme iadesi"
 
 #: src/wallet/Transaction.tsx:453
 #, c-format
-msgid "Total refresh"
-msgstr ""
+msgid "Withdrawn"
+msgstr "Çekildi"
 
-#: src/wallet/Transaction.tsx:459
-#, c-format
-msgid "Refresh amount"
-msgstr ""
+#: src/webex/pages/popup.tsx:596
+#, c-format, fuzzy
+msgid "Tip Accepted"
+msgstr "İkramiye kabul edildi"
 
-#: src/wallet/Transaction.tsx:481
-#, c-format
-msgid "Tip"
-msgstr ""
+#: src/webex/pages/popup.tsx:606
+#, c-format, fuzzy
+msgid "Tip Declined"
+msgstr "İkramiye red edildi"
 
-#: src/wallet/Transaction.tsx:487
-#, c-format
-msgid "Total tip"
-msgstr ""
+#: src/webex/pages/popup.tsx:615
+#, c-format, fuzzy
+msgid "%1$s"
+msgstr "%1$s"
 
 #: src/wallet/Transaction.tsx:493
 #, c-format
-msgid "Received amount"
-msgstr ""
+msgid "Your wallet has no events recorded."
+msgstr "Cüzdanınızda kayıtlı bir haraket yok."
 
 #: src/wallet/Transaction.tsx:515
 #, c-format
-msgid "Refund"
-msgstr ""
+msgid "Wire to bank account"
+msgstr "Banka hesabına havale yap"
 
 #: src/wallet/Transaction.tsx:521
 #, c-format
@@ -1007,26 +1007,21 @@ msgstr ""
 
 #: src/wallet/Transaction.tsx:527
 #, c-format
-msgid "Refund amount"
-msgstr ""
-
-#: src/wallet/Welcome.tsx:58
-#, c-format
-msgid "Browser Extension Installed!"
-msgstr ""
+msgid "Cancel"
+msgstr "İptal et"
 
 #: src/wallet/Welcome.tsx:62
 #, c-format
-msgid "Thank you for installing the wallet."
-msgstr ""
+msgid "Could not get details for withdraw operation:"
+msgstr "Para çekme işlemi için ayrıntılar alınamadı:"
 
 #: src/wallet/Welcome.tsx:66
 #, c-format
-msgid "Permissions"
-msgstr ""
+msgid "Chose different exchange provider"
+msgstr "Farklı bir exchange sağlayıcısı seçin"
 
-#: src/wallet/Welcome.tsx:75
-#, c-format
+#: src/webex/pages/withdraw.tsx:109
+#, c-format, fuzzy
 msgid ""
 "(Enabling this option below will make using the wallet faster, but requires "
 "more permissions from your browser.)"
@@ -1296,104 +1291,69 @@ msgstr ""
 #, c-format
 msgid "Edit"
 msgstr ""
+"Lütfen bir exchange seçin. Detayları seçiminizden önce inceleyebilirsiniz."
 
-#: src/cta/Deposit.tsx:114
-#, c-format
-msgid "missing pay uri"
-msgstr ""
+#: src/webex/pages/withdraw.tsx:121
+#, c-format, fuzzy
+msgid "Select %1$s"
+msgstr "%1$s seçin"
 
 #: src/cta/Deposit.tsx:129
 #, c-format
-msgid "Could not get the payment information for this order"
-msgstr ""
+msgid "Select custom exchange"
+msgstr "Özel exchange'i seçin"
 
-#: src/cta/Deposit.tsx:160
-#, c-format
-msgid "Loading payment information"
-msgstr ""
+#: src/webex/pages/withdraw.tsx:163
+#, c-format, fuzzy
+msgid "You are about to withdraw %1$s from your bank account into your wallet."
+msgstr "Banka hesabınızdan cüzdanınıza %1$s çekmek üzeresiniz."
 
 #: src/cta/Deposit.tsx:208
 #, c-format
-msgid "Digital cash deposit"
-msgstr ""
+msgid "Accept fees and withdraw"
+msgstr "Ücretleri kabul edin ve para çekin"
 
 #: src/cta/Deposit.tsx:226
 #, c-format
-msgid "You will now be sent back to the merchant you came from."
-msgstr ""
+msgid "Cancel withdraw operation"
+msgstr "Para çekme işlemini iptal edin"
 
 #: src/cta/reset-required.tsx:54
 #, c-format
-msgid "Manual Reset Required"
-msgstr ""
+msgid "Withdrawal fees:"
+msgstr "Para çekme ücretleri:"
 
 #: src/cta/reset-required.tsx:57
 #, c-format
-msgid ""
-"The wallet&apos;s database in your browser is incompatible with the "
-"currently installed wallet. Please reset manually."
-msgstr ""
+msgid "Rounding loss:"
+msgstr "Yuvarlama kaybı:"
 
-#: src/cta/reset-required.tsx:63
-#, c-format
-msgid ""
-"Once the database format has stabilized, we will provide automatic upgrades."
-msgstr ""
+#: src/webex/renderHtml.tsx:254
+#, c-format, fuzzy
+msgid "Earliest expiration (for deposit): %1$s"
+msgstr "En erken sona erme (depozito için): %1$s"
 
-#: src/cta/reset-required.tsx:77
-#, c-format
-msgid "I understand that I will lose all my data"
-msgstr ""
+#: src/webex/renderHtml.tsx:262
+#, c-format, fuzzy
+msgid "# Coins"
+msgstr "# Madeni para"
 
 #: src/cta/reset-required.tsx:87
 #, c-format
-msgid "Reset"
-msgstr ""
+msgid "Value"
+msgstr "Değer"
 
 #: src/cta/reset-required.tsx:95
 #, c-format
-msgid "Everything is fine!"
-msgstr ""
+msgid "Withdraw Fee"
+msgstr "Para çekme Ücreti"
 
 #: src/cta/reset-required.tsx:98
 #, c-format
-msgid "A reset is not required anymore, you can close this page."
-msgstr ""
+msgid "Refresh Fee"
+msgstr "Ücreti yenile"
 
 #: src/cta/return-coins.tsx:31
 #, c-format
-msgid "Not implemented yet."
-msgstr ""
-
-#~ msgid "Invalid Wire"
-#~ msgstr "Geçersiz Havale"
-
-#~ msgid "Invalid Test Wire Detail"
-#~ msgstr "Geçersiz Test Havale Detayı"
-
-#~ msgid "Unknown Wire Detail"
-#~ msgstr "Bilinmeyen Havale Detayı"
-
-#~ msgid "Operation"
-#~ msgstr "İşlem"
-
-#~ msgid "time (ms/op)"
-#~ msgstr "zaman (ms/op)"
-
-#, fuzzy
-#~ msgid "The merchant %1$s offers you to purchase:"
-#~ msgstr "%1$s satıcısı size şunları satın almayı teklif ediyor:"
-
-#, fuzzy
-#~ msgid "The total price is %1$s (plus %2$s fees)."
-#~ msgstr "Toplam fiyat %1$s (artı %2$s ücret)."
-
-#, fuzzy
-#~ msgid "The total price is %1$s."
-#~ msgstr "Toplam fiyat %1$s."
-
-#~ msgid "Confirm payment"
-#~ msgstr "Ödemeyi Onayla"
-
-#~ msgid "History"
-#~ msgstr "Geçmiş"
+msgid "Deposit Fee"
+msgstr "Depozito Ücreti"
