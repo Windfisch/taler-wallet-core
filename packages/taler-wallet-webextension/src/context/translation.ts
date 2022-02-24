@@ -29,10 +29,24 @@ import { setupI18n } from "@gnu-taler/taler-util";
 
 interface Type {
   lang: string;
+  supportedLang: { [id in keyof typeof supportedLang]: string }
   changeLanguage: (l: string) => void;
 }
+
+const supportedLang = {
+  es: "Español [es]",
+  ja: "日本語 [ja]",
+  en: "English [en]",
+  fr: "Français [fr]",
+  de: "Deutsch [de]",
+  sv: "Svenska [sv]",
+  it: "Italiano [it]",
+};
+
+
 const initial = {
   lang: "en",
+  supportedLang,
   changeLanguage: () => {
     // do not change anything
   },
@@ -52,7 +66,11 @@ export const TranslationProvider = ({
   children,
   forceLang,
 }: Props): VNode => {
-  const [lang, changeLanguage] = useLang(initial);
+  const [lang, changeLanguage2] = useLang(initial);
+  function changeLanguage(s: string) {
+    console.log("trying to change lang to ", s, "current lang", lang)
+    changeLanguage2(s)
+  }
   useEffect(() => {
     if (forceLang) {
       changeLanguage(forceLang);
@@ -66,7 +84,7 @@ export const TranslationProvider = ({
   } else {
     setupI18n(lang, strings);
   }
-  return h(Context.Provider, { value: { lang, changeLanguage }, children });
+  return h(Context.Provider, { value: { lang, changeLanguage, supportedLang }, children });
 };
 
 export const useTranslationContext = (): Type => useContext(Context);

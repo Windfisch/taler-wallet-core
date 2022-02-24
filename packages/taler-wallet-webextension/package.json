@@ -17,7 +17,8 @@
     "pretty": "prettier --write src",
     "watch": "tsc --watch & rollup -w -c",
     "i18n:extract": "pogen extract",
-    "i18n:merge": "pogen merge"
+    "i18n:merge": "pogen merge",
+    "i18n:emit": "pogen emit"
   },
   "dependencies": {
     "@gnu-taler/taler-util": "workspace:*",

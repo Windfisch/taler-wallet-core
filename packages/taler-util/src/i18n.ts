@@ -70,11 +70,14 @@ export function translate(
 /**
  * Internationalize a string template without serializing
  */
-export function Translate({ children, ...rest }: { children: any }): any {
+export function Translate({ children, debug, }: { children: any, debug?: boolean }): any {
   const c = [].concat(children);
   const s = stringifyArray(c);
   if (!s) return [];
   const translation: string = jed.ngettext(s, s, 1);
+  if (debug) {
+    console.log("looking for ", s, "got", translation)
+  }
   return replacePlaceholderWithValues(translation, c);
 }
 

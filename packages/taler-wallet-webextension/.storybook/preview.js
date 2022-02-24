@@ -32,7 +32,9 @@ export const globalTypes = {
       icon: 'globe',
       items: [
         { value: 'en', right: '🇺🇸', title: 'English' },
-        { value: 'de', right: '🇪🇸', title: 'German' },
+        { value: 'ja', right: '🇯🇵', title: 'Japanese' },
+        { value: 'es', right: '🇪🇸', title: 'Spanish' },
+        { value: 'de', right: '🇩🇪', title: 'German' },
       ],
     },
   },

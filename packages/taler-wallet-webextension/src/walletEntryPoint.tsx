@@ -35,6 +35,7 @@ import {
 } from "./components/styled";
 import { DevContextProvider } from "./context/devContext";
 import { IoCProviderForRuntime } from "./context/iocContext";
+import { TranslationProvider } from "./context/translation";
 import { PayPage } from "./cta/Pay";
 import { RefundPage } from "./cta/Refund";
 import { TipPage } from "./cta/Tip";
@@ -93,7 +94,7 @@ function Application(): VNode {
     }
   }
   return (
-    <div>
+    <TranslationProvider>
       <DevContextProvider>
         {({ devMode }: { devMode: boolean }) => (
           <IoCProviderForRuntime>
@@ -262,7 +263,7 @@ function Application(): VNode {
           </IoCProviderForRuntime>
         )}
       </DevContextProvider>
-    </div>
+    </TranslationProvider>
   );
 }
 

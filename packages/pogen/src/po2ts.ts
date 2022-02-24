@@ -34,7 +34,9 @@ export function po2ts(): void {
 
   console.log(files);
 
-  const chunks: string[] = [];
+  const chunks: string[] = [
+    "export const strings: any = {};\n\n"
+  ];
 
   for (const filename of files) {
     const m = filename.match(/([a-zA-Z0-9-_]+).po/);

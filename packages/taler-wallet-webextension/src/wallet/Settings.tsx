@@ -17,13 +17,16 @@
 import { ExchangeListItem, i18n, Translate } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { Checkbox } from "../components/Checkbox";
+import { SelectList } from "../components/SelectList";
 import {
   DestructiveText,
+  Input,
   LinkPrimary,
   SuccessText,
   WarningText,
 } from "../components/styled";
 import { useDevContext } from "../context/devContext";
+import { useTranslationContext } from "../context/translation";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { useBackupDeviceName } from "../hooks/useBackupDeviceName";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
@@ -36,13 +39,13 @@ export function SettingsPage(): VNode {
   const [permissionsEnabled, togglePermissions] = useExtendedPermissions();
   const { devMode, toggleDevMode } = useDevContext();
   const { name, update } = useBackupDeviceName();
-  const [lang, changeLang] = useLang();
+  // const [lang, changeLang] = useLang();
   const exchangesHook = useAsyncAsHook(wxApi.listExchanges);
 
   return (
     <SettingsView
-      lang={lang}
-      changeLang={changeLang}
+      // lang={lang}
+      // changeLang={changeLang}
       knownExchanges={
         !exchangesHook || exchangesHook.hasError
           ? []
@@ -59,8 +62,8 @@ export function SettingsPage(): VNode {
 }
 
 export interface ViewProps {
-  lang: string;
-  changeLang: (s: string) => void;
+  // lang: string;
+  // changeLang: (s: string) => void;
   deviceName: string;
   setDeviceName: (s: string) => Promise<void>;
   permissionsEnabled: boolean;
@@ -77,11 +80,26 @@ export function SettingsView({
   developerMode,
   toggleDeveloperMode,
 }: ViewProps): VNode {
+  const { lang, supportedLang, changeLanguage } = useTranslationContext();
+
   return (
     <Fragment>
       <section>
         <h2>
-          <i18n.Translate>Permissions</i18n.Translate>
+          <i18n.Translate>Display</i18n.Translate>
+        </h2>
+        <Input>
+          <SelectList
+            label={<i18n.Translate>Current Language</i18n.Translate>}
+            list={supportedLang}
+            name="lang"
+            value={lang}
+            onChange={(v) => changeLanguage(v)}
+          />
+        </Input>
+
+        <h2>
+          <i18n.Translate>Navigator</i18n.Translate>
         </h2>
         <Checkbox
           label={
@@ -101,7 +119,7 @@ export function SettingsView({
         />
 
         <h2>
-          <i18n.Translate>Known exchanges</i18n.Translate>
+          <i18n.Translate>Trust</i18n.Translate>
         </h2>
         {!knownExchanges || !knownExchanges.length ? (
           <div>
@@ -176,7 +194,7 @@ export function SettingsView({
           </LinkPrimary>
         </div>
 
-        <h2>Config</h2>
+        <h2>Troubleshooting</h2>
         <Checkbox
           label={<i18n.Translate>Developer mode</i18n.Translate>}
           name="devMode"

@@ -110,7 +110,7 @@ msgstr ""
 msgid "Deposit %1$s"
 msgstr ""
 
-#: src/popup/BalancePage.tsx:118
+#: src/popup/BalancePage.tsx:120
 #, c-format
 msgid "Enter URI"
 msgstr ""
@@ -249,6 +249,11 @@ msgstr ""
 #: src/popup/TalerActionFound.tsx:105
 #, c-format
 msgid "This page has a notify reserve action."
+msgstr ""
+
+#: src/popup/TalerActionFound.tsx:114
+#, c-format
+msgid "Notify"
 msgstr ""
 
 #: src/popup/TalerActionFound.tsx:121
@@ -598,7 +603,7 @@ msgstr ""
 msgid "Backup valid until"
 msgstr ""
 
-#: src/popupEntryPoint.tsx:184
+#: src/popupEntryPoint.tsx:187
 #, c-format
 msgid "this popup is being closed and you are being redirected to %1$s"
 msgstr ""
@@ -776,64 +781,74 @@ msgstr ""
 msgid "Cancel withdrawal"
 msgstr ""
 
-#: src/wallet/Settings.tsx:84
+#: src/wallet/Settings.tsx:89
 #, c-format
-msgid "Permissions"
+msgid "Display"
 msgstr ""
 
-#: src/wallet/Settings.tsx:87
+#: src/wallet/Settings.tsx:93
+#, c-format
+msgid "Current Language"
+msgstr ""
+
+#: src/wallet/Settings.tsx:102
+#, c-format
+msgid "Navigator"
+msgstr ""
+
+#: src/wallet/Settings.tsx:105
 #, c-format
 msgid "Automatically open wallet based on page content"
 msgstr ""
 
-#: src/wallet/Settings.tsx:93
+#: src/wallet/Settings.tsx:111
 #, c-format
 msgid ""
 "Enabling this option below will make using the wallet faster, but requires "
 "more permissions from your browser."
 msgstr ""
 
-#: src/wallet/Settings.tsx:104
+#: src/wallet/Settings.tsx:122
 #, c-format
-msgid "Known exchanges"
+msgid "Trust"
 msgstr ""
 
-#: src/wallet/Settings.tsx:108
+#: src/wallet/Settings.tsx:126
 #, c-format
 msgid "No exchange yet"
 msgstr ""
 
-#: src/wallet/Settings.tsx:122
+#: src/wallet/Settings.tsx:140
 #, c-format
 msgid "Term of Service"
 msgstr ""
 
-#: src/wallet/Settings.tsx:138
+#: src/wallet/Settings.tsx:156
 #, c-format
 msgid "ok"
 msgstr ""
 
-#: src/wallet/Settings.tsx:144
+#: src/wallet/Settings.tsx:162
 #, c-format
 msgid "changed"
 msgstr ""
 
-#: src/wallet/Settings.tsx:151
+#: src/wallet/Settings.tsx:169
 #, c-format
 msgid "not accepted"
 msgstr ""
 
-#: src/wallet/Settings.tsx:175
+#: src/wallet/Settings.tsx:193
 #, c-format
 msgid "Add an exchange"
 msgstr ""
 
-#: src/wallet/Settings.tsx:181
+#: src/wallet/Settings.tsx:199
 #, c-format
 msgid "Developer mode"
 msgstr ""
 
-#: src/wallet/Settings.tsx:183
+#: src/wallet/Settings.tsx:201
 #, c-format
 msgid "(More options and information useful for debugging)"
 msgstr ""
@@ -1003,6 +1018,11 @@ msgstr ""
 #: src/wallet/Welcome.tsx:62
 #, c-format
 msgid "Thank you for installing the wallet."
+msgstr ""
+
+#: src/wallet/Welcome.tsx:66
+#, c-format
+msgid "Permissions"
 msgstr ""
 
 #: src/wallet/Welcome.tsx:75
@@ -1217,6 +1237,11 @@ msgstr ""
 msgid "Total to withdraw"
 msgstr ""
 
+#: src/cta/Withdraw.tsx:171
+#, c-format
+msgid "Known exchanges"
+msgstr ""
+
 #: src/cta/Withdraw.tsx:187
 #, c-format
 msgid "Cancel exchange selection"
@@ -1262,7 +1287,7 @@ msgstr ""
 msgid "Could not load the list of known exchanges"
 msgstr ""
 
-#: src/walletEntryPoint.tsx:171
+#: src/walletEntryPoint.tsx:172
 #, c-format
 msgid "All done, your transaction is in progress"
 msgstr ""

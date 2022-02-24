@@ -29,6 +29,7 @@ import { useEffect } from "preact/hooks";
 import { PopupBox } from "./components/styled";
 import { DevContextProvider } from "./context/devContext";
 import { IoCProviderForRuntime } from "./context/iocContext";
+import { TranslationProvider } from "./context/translation";
 import { useTalerActionURL } from "./hooks/useTalerActionURL";
 import { strings } from "./i18n/strings";
 import { Pages, PopupNavBar } from "./NavigationBar";
@@ -77,92 +78,94 @@ function CheckTalerActionComponent(): VNode {
 function Application(): VNode {
   const hash_history = createHashHistory();
   return (
-    // <div>
-    <DevContextProvider>
-      {({ devMode }: { devMode: boolean }) => (
-        <IoCProviderForRuntime>
-          <Match>
-            {({ path }: { path: string }) => <PopupNavBar path={path} />}
-          </Match>
-          <CheckTalerActionComponent />
-          <PopupBox devMode={devMode}>
-            <Router history={hash_history}>
-              <Route
-                path={Pages.balance}
-                component={BalancePage}
-                goToWalletManualWithdraw={() =>
-                  route(Pages.balance_manual_withdraw.replace(":currency?", ""))
-                }
-                goToWalletDeposit={(currency: string) =>
-                  route(Pages.balance_deposit.replace(":currency", currency))
-                }
-                goToWalletHistory={(currency: string) =>
-                  route(Pages.balance_history.replace(":currency", currency))
-                }
-              />
+    <TranslationProvider>
+      <DevContextProvider>
+        {({ devMode }: { devMode: boolean }) => (
+          <IoCProviderForRuntime>
+            <Match>
+              {({ path }: { path: string }) => <PopupNavBar path={path} />}
+            </Match>
+            <CheckTalerActionComponent />
+            <PopupBox devMode={devMode}>
+              <Router history={hash_history}>
+                <Route
+                  path={Pages.balance}
+                  component={BalancePage}
+                  goToWalletManualWithdraw={() =>
+                    route(
+                      Pages.balance_manual_withdraw.replace(":currency?", ""),
+                    )
+                  }
+                  goToWalletDeposit={(currency: string) =>
+                    route(Pages.balance_deposit.replace(":currency", currency))
+                  }
+                  goToWalletHistory={(currency: string) =>
+                    route(Pages.balance_history.replace(":currency", currency))
+                  }
+                />
 
-              <Route
-                path={Pages.cta}
-                component={function Action({ action }: { action: string }) {
-                  const [, setDismissed] = useTalerActionURL();
+                <Route
+                  path={Pages.cta}
+                  component={function Action({ action }: { action: string }) {
+                    const [, setDismissed] = useTalerActionURL();
 
-                  return (
-                    <TalerActionFound
-                      url={decodeURIComponent(action)}
-                      onDismiss={() => {
-                        setDismissed(true);
-                        route(Pages.balance);
-                      }}
-                    />
-                  );
-                }}
-              />
+                    return (
+                      <TalerActionFound
+                        url={decodeURIComponent(action)}
+                        onDismiss={() => {
+                          setDismissed(true);
+                          route(Pages.balance);
+                        }}
+                      />
+                    );
+                  }}
+                />
 
-              <Route
-                path={Pages.backup}
-                component={BackupPage}
-                onAddProvider={() => {
-                  route(Pages.backup_provider_add);
-                }}
-              />
-              <Route
-                path={Pages.backup_provider_detail}
-                component={ProviderDetailPage}
-                onBack={() => {
-                  route(Pages.backup);
-                }}
-              />
+                <Route
+                  path={Pages.backup}
+                  component={BackupPage}
+                  onAddProvider={() => {
+                    route(Pages.backup_provider_add);
+                  }}
+                />
+                <Route
+                  path={Pages.backup_provider_detail}
+                  component={ProviderDetailPage}
+                  onBack={() => {
+                    route(Pages.backup);
+                  }}
+                />
 
-              <Route
-                path={Pages.balance_manual_withdraw}
-                component={RedirectToWalletPage}
-              />
-              <Route
-                path={Pages.balance_deposit}
-                component={RedirectToWalletPage}
-              />
-              <Route
-                path={Pages.balance_history}
-                component={RedirectToWalletPage}
-              />
-              <Route
-                path={Pages.backup_provider_add}
-                component={RedirectToWalletPage}
-              />
-              <Route path={Pages.settings} component={RedirectToWalletPage} />
-              <Route
-                path={Pages.settings_exchange_add}
-                component={RedirectToWalletPage}
-              />
-              <Route path={Pages.dev} component={RedirectToWalletPage} />
+                <Route
+                  path={Pages.balance_manual_withdraw}
+                  component={RedirectToWalletPage}
+                />
+                <Route
+                  path={Pages.balance_deposit}
+                  component={RedirectToWalletPage}
+                />
+                <Route
+                  path={Pages.balance_history}
+                  component={RedirectToWalletPage}
+                />
+                <Route
+                  path={Pages.backup_provider_add}
+                  component={RedirectToWalletPage}
+                />
+                <Route path={Pages.settings} component={RedirectToWalletPage} />
+                <Route
+                  path={Pages.settings_exchange_add}
+                  component={RedirectToWalletPage}
+                />
+                <Route path={Pages.dev} component={RedirectToWalletPage} />
 
-              <Route default component={Redirect} to={Pages.balance} />
-            </Router>
-          </PopupBox>
-        </IoCProviderForRuntime>
-      )}
-    </DevContextProvider>
-    // </div>
+                <Route default component={Redirect} to={Pages.balance} />
+              </Router>
+            </PopupBox>
+          </IoCProviderForRuntime>
+        )}
+      </DevContextProvider>
+    </TranslationProvider>
   );
 }
 

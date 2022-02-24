@@ -111,7 +111,7 @@ export function TalerActionFound({ url, onDismiss }: Props) {
                 navigateTo(actionForTalerUri(uriType, url));
               }}
             >
-              Notify
+              <i18n.Translate>Notify</i18n.Translate>
             </ButtonSuccess>
           </div>
         )}
