@@ -1737,7 +1737,7 @@ strings['es'] = {
         "Esta página tiene una acción de notificación de reserva."
       ],
       "Notify": [
-        ""
+        "Notificar"
       ],
       "This page has a refund action.": [
         "Esta página tiene una acción de devolución"
@@ -2049,13 +2049,13 @@ strings['es'] = {
         "Cancelar extracción"
       ],
       "Display": [
-        ""
+        "Pantalla"
       ],
       "Current Language": [
-        ""
+        "Lenguage actual"
       ],
       "Navigator": [
-        ""
+        "Navegador"
       ],
       "Automatically open wallet based on page content": [
         "Abrir automáticamente la billetera basado en el contenido de la página"
@@ -2064,7 +2064,7 @@ strings['es'] = {
         "Habilitar esta opción debajo hará el uso de la billetera mas rápido, pero requiere mas permisos de tu navegador"
       ],
       "Trust": [
-        ""
+        "Confianza"
       ],
       "No exchange yet": [
         "No hay exchanges todavía"
@@ -2157,13 +2157,13 @@ strings['es'] = {
         "Monto a depositar"
       ],
       "Refresh": [
-        ""
+        "Actualizar"
       ],
       "Total refresh": [
-        ""
+        "Actualización total"
       ],
       "Refresh amount": [
-        ""
+        "Monto de actualización"
       ],
       "Tip": [
         "Propina"
@@ -5603,7 +5603,7 @@ strings['tr'] = {
         "lang": "tr"
       },
       "Balance": [
-        ""
+        "Bakiye"
       ],
       "Backup": [
         ""
@@ -5798,7 +5798,7 @@ strings['tr'] = {
         ""
       ],
       "Cancel": [
-        ""
+        "Bakiye"
       ],
       "Loading terms..": [
         ""
@@ -5972,7 +5972,7 @@ strings['tr'] = {
         ""
       ],
       "no balance": [
-        ""
+        "Bakiye"
       ],
       "There is no known bank account to send money to": [
         ""
@@ -5993,7 +5993,7 @@ strings['tr'] = {
         ""
       ],
       "Deposit %1$s %2$s": [
-        ""
+        "Test Havale Hesap #%1$s üzerinde %2$s"
       ],
       "Waiting for confirmation": [
         ""
@@ -6095,7 +6095,7 @@ strings['tr'] = {
         ""
       ],
       "Retry": [
-        ""
+        "Yeniden deneyin"
       ],
       "Forget": [
         ""
@@ -6110,10 +6110,10 @@ strings['tr'] = {
         "Onaylamak"
       ],
       "Withdrawal": [
-        ""
+        "Çekildi"
       ],
       "Total withdrawn": [
-        ""
+        "Çekildi"
       ],
       "Exchange fee": [
         ""
@@ -6125,7 +6125,7 @@ strings['tr'] = {
         ""
       ],
       "Payment": [
-        ""
+        "Ödeme gönderildi"
       ],
       "Total paid": [
         ""
@@ -6134,7 +6134,7 @@ strings['tr'] = {
         ""
       ],
       "Fee": [
-        ""
+        "Ücretler "
       ],
       "Merchant": [
         ""
@@ -6149,16 +6149,16 @@ strings['tr'] = {
         ""
       ],
       "Deposit amount": [
-        ""
+        "Depozito Ücreti"
       ],
       "Refresh": [
-        ""
+        "Ücreti yenile"
       ],
       "Total refresh": [
         ""
       ],
       "Refresh amount": [
-        ""
+        "Ücreti yenile"
       ],
       "Tip": [
         ""
@@ -6347,7 +6347,7 @@ strings['tr'] = {
         ""
       ],
       "Edit": [
-        ""
+        "Lütfen bir exchange seçin. Detayları seçiminizden önce inceleyebilirsiniz."
       ],
       "missing pay uri": [
         ""

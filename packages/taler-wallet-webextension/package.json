@@ -18,7 +18,8 @@
     "watch": "tsc --watch & rollup -w -c",
     "i18n:extract": "pogen extract",
     "i18n:merge": "pogen merge",
-    "i18n:emit": "pogen emit"
+    "i18n:emit": "pogen emit",
+    "i18n": "pnpm i18n:extract && pnpm i18n:merge && pnpm i18n:emit"
   },
   "dependencies": {
     "@gnu-taler/taler-util": "workspace:*",
