@@ -63,3 +63,28 @@ export const Bitcoin = createExample(TestedComponent, {
   },
   exchangeBaseUrl: "https://exchange.demo.taler.net",
 });
+
+export const BitcoinRegTest = createExample(TestedComponent, {
+  reservePub: "0ZSX8SH0M30KHX8K3Y1DAMVGDQV82XEF9DG1HC4QMQ3QWYT4AF00",
+  payto:
+    "payto://bitcoin/bcrt1q6ps8qs6v8tkqrnru4xqqqa6rfwcx5ufpdfqht4?amount=BTC:0.1&subject=0ZSX8SH0M30KHX8K3Y1DAMVGDQV82XEF9DG1HC4QMQ3QWYT4AF00",
+  amount: {
+    currency: "BTC",
+    value: 0,
+    fraction: 14000000,
+  },
+  exchangeBaseUrl: "https://exchange.demo.taler.net",
+});
+export const BitcoinTest = createExample(TestedComponent, {
+  reservePub: "0ZSX8SH0M30KHX8K3Y1DAMVGDQV82XEF9DG1HC4QMQ3QWYT4AF00",
+  payto:
+    "payto://bitcoin/tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx?amount=BTC:0.1&subject=0ZSX8SH0M30KHX8K3Y1DAMVGDQV82XEF9DG1HC4QMQ3QWYT4AF00",
+  amount: {
+    currency: "BTC",
+    value: 0,
+    fraction: 14000000,
+  },
+  exchangeBaseUrl: "https://exchange.demo.taler.net",
+});
+// tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx OK
+// tb10v8ahvcqqleage3q5rqn3agnr7pd25msd5wd4hcj

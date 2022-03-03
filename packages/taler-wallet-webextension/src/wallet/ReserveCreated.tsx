@@ -2,9 +2,9 @@ import {
   AmountJson,
   parsePaytoUri,
   i18n,
-  generateSegwitAddress,
   Amounts,
   segwitMinAmount,
+  generateFakeSegwitAddress,
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType";
@@ -40,7 +40,10 @@ export function ReserveCreated({
   function TransferDetails(): VNode {
     if (!paytoURI) return <Fragment />;
     if (paytoURI.targetType === "bitcoin") {
-      const { segwitAddr1, segwitAddr2 } = generateSegwitAddress(reservePub);
+      const { segwitAddr1, segwitAddr2 } = generateFakeSegwitAddress(
+        reservePub,
+        paytoURI.targetPath,
+      );
       const min = segwitMinAmount();
       return (
         <section>
