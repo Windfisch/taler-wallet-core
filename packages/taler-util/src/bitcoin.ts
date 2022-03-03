@@ -17,7 +17,7 @@
 import { AmountJson } from "."
 import { Amounts, } from "./amounts"
 import { getRandomBytes, decodeCrock, encodeCrock } from "./talerCrypto"
-import { encode as segwitEncode } from "bech32-buffer"
+import * as segwit from "./segwit_addr"
 /**
  *
  * @author sebasjm
@@ -34,7 +34,7 @@ function buf2hex(buffer: Uint8Array) { // buffer is an ArrayBuffer
     .join('');
 }
 
-export function generateSegwitAddress(reservePub: string): SegwitAddrs {
+export function generateFakeSegwitAddress(reservePub: string, addr: string): SegwitAddrs {
   const pub = decodeCrock(reservePub)
 
   const first_rnd = getRandomBytes(4)
@@ -49,11 +49,16 @@ export function generateSegwitAddress(reservePub: string): SegwitAddrs {
   first_part.set(pub.subarray(0, 16), 4)
   const second_part = new Uint8Array(first_rnd.length + pub.length / 2)
   second_part.set(first_rnd, 0)
-  second_part.set(pub.subarray(16, 32), 4)
+  second_part.set(pub.subarray(16), 4)
+
+  console.log(first_part.length, second_part.length)
+
+  const prefix = (addr[0] === 't' && addr[1] == 'b') ? "tb" : (addr[0] === 'b' && addr[1] == 'c' && addr[2] === 'r' && addr[3] == 't') ? 'bcrt' : (addr[0] === 'b' && addr[1] == 'c') ? 'bc' : undefined
+  if (prefix === undefined) throw new Error('unknown bitcoin net')
 
   return {
-    segwitAddr1: segwitEncode("bc", first_part),
-    segwitAddr2: segwitEncode("bc", second_part),
+    segwitAddr1: segwit.default.encode(prefix, 0, first_part),
+    segwitAddr2: segwit.default.encode(prefix, 0, second_part),
   }
 }
 
