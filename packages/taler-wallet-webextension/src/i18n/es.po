@@ -17,8 +17,8 @@ msgstr ""
 "Project-Id-Version: Taler Wallet\n"
 "Report-Msgid-Bugs-To: languages@taler.net\n"
 "POT-Creation-Date: 2016-11-23 00:00+0100\n"
-"PO-Revision-Date: 2022-03-03 11:22+0000\n"
-"Last-Translator: Javier Sepulveda <javier.sepulveda@uv.es>\n"
+"PO-Revision-Date: 2022-03-03 15:13+0000\n"
+"Last-Translator: Sebastian Marchano <sebasjm@gmail.com>\n"
 "Language-Team: Spanish <http://weblate.taler.net/projects/gnu-taler/"
 "webextensions/es/>\n"
 "Language: es\n"
@@ -76,12 +76,12 @@ msgstr "Abrir página de propina"
 #: src/wallet/AddNewActionView.tsx:22
 #, c-format
 msgid "Open withdraw page"
-msgstr "Abrir página de extracción"
+msgstr "Abrir página de retirada"
 
 #: src/wallet/AddNewActionView.tsx:51
 #, c-format
 msgid "Back"
-msgstr "Volver"
+msgstr "Atrás"
 
 #: src/popup/NoBalanceHelp.tsx:14
 #, c-format
@@ -95,12 +95,12 @@ msgid ""
 "\" button to use a known exchange."
 msgstr ""
 "Para retirar dinero puedes empezar desde el sitio de tu banco o cliquear en "
-"el botón \"extraer\" para usar un exchange conocido"
+"el botón \"retirar\" para usar un exchange conocido."
 
 #: src/popup/NoBalanceHelp.tsx:23
 #, c-format
 msgid "Withdraw"
-msgstr "Extraer"
+msgstr "Retirar"
 
 #: src/popup/BalancePage.tsx:52
 #, c-format
@@ -144,7 +144,7 @@ msgid ""
 msgstr ""
 "La base de datos de la billetera expiró. Por ahora la migración automática "
 "no está soportada. Por favor dirijasé a %1$s para reiniciar la base de datos "
-"de la billetera"
+"de la billetera."
 
 #: src/components/Diagnostics.tsx:85
 #, c-format
@@ -164,12 +164,12 @@ msgstr "Reiniciar"
 #: src/popup/DeveloperPage.tsx:161
 #, c-format
 msgid "import database"
-msgstr "Importar base de datos"
+msgstr "importar base de datos"
 
 #: src/popup/DeveloperPage.tsx:182
 #, c-format
 msgid "export database"
-msgstr "Exportar base de datos"
+msgstr "exportar base de datos"
 
 #: src/popup/DeveloperPage.tsx:186
 #, c-format
@@ -224,7 +224,7 @@ msgstr "monedas gastadas"
 #: src/popup/DeveloperPage.tsx:317
 #, c-format
 msgid "click to show"
-msgstr "cliquear para mostrar"
+msgstr "hacer clic para mostrar"
 
 #: src/popup/DeveloperPage.tsx:377
 #, c-format
@@ -243,12 +243,12 @@ msgstr "Acción Taler"
 #: src/popup/TalerActionFound.tsx:61
 #, c-format
 msgid "This page has pay action."
-msgstr "Esta página tiene una acción."
+msgstr "Esta página tiene una acción de pago."
 
 #: src/popup/TalerActionFound.tsx:75
 #, c-format
 msgid "This page has a withdrawal action."
-msgstr "Esta página tiene una acción de extracción."
+msgstr "Esta página tiene una acción de retirada."
 
 #: src/popup/TalerActionFound.tsx:91
 #, c-format
@@ -273,22 +273,22 @@ msgstr "Esta página tiene una acción de devolución."
 #: src/popup/TalerActionFound.tsx:135
 #, c-format
 msgid "This page has a malformed taler uri."
-msgstr "Esta página tiene una URI de Taler malformada"
+msgstr "Esta página tiene una URI de Taler malformada."
 
 #: src/popup/TalerActionFound.tsx:147
 #, c-format
 msgid "Dismiss"
-msgstr "Desechar"
+msgstr "Descartar"
 
 #: src/wallet/BackupPage.tsx:75
 #, c-format
 msgid "Could not load backup providers"
-msgstr "No se pudo cargar los proveedores de backup"
+msgstr "No se pudo cargar los proveedores de copias de seguridad"
 
 #: src/wallet/BackupPage.tsx:129
 #, c-format
 msgid "No backup providers configured"
-msgstr "No hay proveedores de backup configurados"
+msgstr "No hay proveedores de copias de seguridad configurados"
 
 #: src/wallet/BackupPage.tsx:132
 #, c-format
@@ -298,7 +298,7 @@ msgstr "Agregar proveedor"
 #: src/wallet/BackupPage.tsx:142
 #, c-format
 msgid "Sync all backups"
-msgstr "Sincronizar todos los backups"
+msgstr "Sincronizar todas las copias de seguridad"
 
 #: src/wallet/BackupPage.tsx:144
 #, c-format
@@ -323,12 +323,12 @@ msgstr "Expira en"
 #: src/cta/TermsOfServiceSection.tsx:37
 #, c-format
 msgid "Exchange doesn't have terms of service"
-msgstr "Exchange no tiene terminos de service"
+msgstr "El exchange no tiene los términos de servicio"
 
 #: src/cta/TermsOfServiceSection.tsx:60
 #, c-format
 msgid "Review exchange terms of service"
-msgstr "Revizar terminos de servicio"
+msgstr "Revisar los términos de servicio"
 
 #: src/cta/TermsOfServiceSection.tsx:69
 #, c-format
@@ -343,7 +343,7 @@ msgstr "Mostrar términos de servicio"
 #: src/cta/TermsOfServiceSection.tsx:91
 #, c-format
 msgid "I accept the exchange terms of service"
-msgstr "Acepto los terminos de servicio del exchange"
+msgstr "Yo acepto los términos de servicio del exchange"
 
 #: src/cta/TermsOfServiceSection.tsx:110
 #, c-format
@@ -403,18 +403,18 @@ msgstr "Agregar exchange para %1$s"
 #: src/wallet/ExchangeSetUrl.tsx:105
 #, c-format
 msgid "Enter the URL of an exchange you trust."
-msgstr "Ingresar la URL de un exchange que tu confíes."
+msgstr "Ingresar la URL de un exchange en el que confíes."
 
 #: src/wallet/ExchangeSetUrl.tsx:112
 #, c-format
 msgid "An exchange has been found! Review the information and click next"
 msgstr ""
-"Un exchange ha sido encontrado! Revisa la información y cliquea en siguente"
+"Un exchange ha sido encontrado! Revisa la información y haz clic en siguiente"
 
 #: src/wallet/ExchangeSetUrl.tsx:119
 #, c-format
 msgid "This exchange doesn't match the expected currency %1$s"
-msgstr "Este exchange no es para la divisa %1$s"
+msgstr "Este exchange no coincide con la divisa %1$s esperada"
 
 #: src/wallet/ExchangeSetUrl.tsx:127
 #, c-format
@@ -449,17 +449,17 @@ msgstr "Siguiente"
 #: src/wallet/ProviderAddPage.tsx:118
 #, c-format
 msgid "Add backup provider"
-msgstr "Agregar proveedor de backup"
+msgstr "Agregar proveedor de copias de seguridad"
 
 #: src/wallet/ProviderAddPage.tsx:122
 #, c-format
 msgid "Could not get provider information"
-msgstr "No se puedo conseguir la información del proveedor"
+msgstr "No se pudo conseguir la información del proveedor"
 
 #: src/wallet/ProviderAddPage.tsx:131
 #, c-format
 msgid "Backup providers may charge for their service"
-msgstr "Provedores de backup pueden pueden cobrarte por su servicio"
+msgstr "Los proveedores de copias de seguridad pueden cobrarte por su servicio"
 
 #: src/wallet/ProviderAddPage.tsx:138
 #, c-format
@@ -479,7 +479,7 @@ msgstr "URL del proveedor"
 #: src/wallet/ProviderAddPage.tsx:207
 #, c-format
 msgid "Please review and accept this provider's terms of service"
-msgstr "Por favor revisa y acepta los terminos de servicio del proveedor"
+msgstr "Por favor revisa y acepta, los términos de servicio del proveedor"
 
 #: src/wallet/ProviderAddPage.tsx:212
 #, c-format
@@ -509,7 +509,7 @@ msgstr "%1$s megabytes de almacenamiento por año de servicio"
 #: src/wallet/ProviderAddPage.tsx:233
 #, c-format
 msgid "Accept terms of service"
-msgstr "Aceptar terminos de servicio"
+msgstr "Aceptar los términos de servicio"
 
 #: src/wallet/ProviderDetailPage.tsx:62
 #, c-format
@@ -519,17 +519,17 @@ msgstr "Hubo un error cargando los detalles del proveedor para \"%1$s\""
 #: src/wallet/ProviderDetailPage.tsx:108
 #, c-format
 msgid "There is not known provider with url \"%1$s\"."
-msgstr "No hay proveedor conocido con url \"%1$s\"."
+msgstr "No hay proveedor conocido con la URL \"%1$s\"."
 
 #: src/wallet/ProviderDetailPage.tsx:141
 #, c-format
 msgid "Last backup"
-msgstr "Último backup"
+msgstr "Última copia de seguridad"
 
 #: src/wallet/ProviderDetailPage.tsx:146
 #, c-format
 msgid "Back up"
-msgstr "Backup"
+msgstr "Copia de seguridad"
 
 #: src/wallet/ProviderDetailPage.tsx:152
 #, c-format
@@ -552,8 +552,8 @@ msgid ""
 "terms has changed, extending the service will imply accepting the new terms "
 "of service"
 msgstr ""
-"los terminos han cambiado, extender el servicio implicará aceptar los nuevos "
-"terminos de servicio"
+"los términos han cambiado, extender el servicio implicará aceptar los nuevos "
+"términos de servicio"
 
 #: src/wallet/ProviderDetailPage.tsx:177
 #, c-format
@@ -593,17 +593,17 @@ msgstr "Este proveedor ha reportado un error"
 #: src/wallet/ProviderDetailPage.tsx:239
 #, c-format
 msgid "There is conflict with another backup from %1$s"
-msgstr "Hubo un conflicto con otro backup de %1$s"
+msgstr "Hay un conflicto con otra copia de seguridad de %1$s"
 
 #: src/wallet/ProviderDetailPage.tsx:250
 #, c-format
 msgid "Backup is not readable"
-msgstr "El backup no se puede leer"
+msgstr "La copia de seguridad no es legible"
 
 #: src/wallet/ProviderDetailPage.tsx:258
 #, c-format
 msgid "Unknown backup problem: %1$s"
-msgstr "Problema de backup desconocido: %1$s"
+msgstr "Problema de copia de seguridad desconocido: %1$s"
 
 #: src/wallet/ProviderDetailPage.tsx:277
 #, c-format
@@ -613,12 +613,12 @@ msgstr "servicio pagado"
 #: src/wallet/ProviderDetailPage.tsx:284
 #, c-format
 msgid "Backup valid until"
-msgstr "Backup valido hasta"
+msgstr "Copia de seguridad válida hasta"
 
 #: src/popupEntryPoint.tsx:187
 #, c-format
 msgid "this popup is being closed and you are being redirected to %1$s"
-msgstr "Este popup se cerrará y estás siendo redirijido a %1$s"
+msgstr "Este popup está siendo cerrado y estás siendo redirigido a %1$s"
 
 #: src/components/SelectList.tsx:62
 #, c-format
@@ -628,7 +628,7 @@ msgstr "Seleccione una opción"
 #: src/wallet/CreateManualWithdraw.tsx:103
 #, c-format
 msgid "Manual Withdrawal"
-msgstr "Extracción Manual"
+msgstr "Retirada Manual"
 
 #: src/wallet/CreateManualWithdraw.tsx:106
 #, c-format
@@ -637,9 +637,9 @@ msgid ""
 "send the coins to this wallet after receiving a wire transfer with the "
 "correct subject."
 msgstr ""
-"Elija un exchange desde donde las monedas serán extraídas. El exchange "
+"Elija un exchange desde donde las monedas serán retiradas. El exchange "
 "enviará las monedas a esta billetera después de recibir una transferencia "
-"con el asunto correcto."
+"bancaria con el asunto correcto."
 
 #: src/wallet/CreateManualWithdraw.tsx:114
 #, c-format
@@ -649,7 +649,7 @@ msgstr "Sin exchange configurado"
 #: src/wallet/CreateManualWithdraw.tsx:129
 #, c-format
 msgid "Can't create the reserve"
-msgstr "No se pudo create una reserva"
+msgstr "No se pudo crear una reserva"
 
 #: src/wallet/CreateManualWithdraw.tsx:155
 #, c-format
@@ -664,12 +664,12 @@ msgstr "Agregar Exchange"
 #: src/wallet/CreateManualWithdraw.tsx:170
 #, c-format
 msgid "Amount"
-msgstr "Monto"
+msgstr "Cantidad"
 
 #: src/wallet/CreateManualWithdraw.tsx:190
 #, c-format
 msgid "Start withdrawal"
-msgstr "Comenzar extracción"
+msgstr "Comenzar la retirada"
 
 #: src/wallet/DepositPage.tsx:138
 #, c-format
@@ -679,7 +679,7 @@ msgstr "sin balance"
 #: src/wallet/DepositPage.tsx:146
 #, c-format
 msgid "There is no known bank account to send money to"
-msgstr "No hay cuenta bancaria conocida donde enviar el dinero"
+msgstr "No hay una cuenta bancaria conocida, donde enviar el dinero"
 
 #: src/wallet/DepositPage.tsx:177
 #, c-format
@@ -694,12 +694,12 @@ msgstr "Número IBAN de cuenta bancaria"
 #: src/wallet/DepositPage.tsx:215
 #, c-format
 msgid "Deposit fee"
-msgstr "Taria de depósito"
+msgstr "Comisión de depósito"
 
 #: src/wallet/DepositPage.tsx:229
 #, c-format
 msgid "Total deposit"
-msgstr "Deposito total"
+msgstr "Depósito total"
 
 #: src/wallet/DepositPage.tsx:247
 #, c-format
@@ -739,7 +739,7 @@ msgstr "Cuenta"
 #: src/components/BankDetailsByPaytoType.tsx:44
 #, c-format
 msgid "Bank host"
-msgstr "Host del banco"
+msgstr "Banco anfitrión"
 
 #: src/components/BankDetailsByPaytoType.tsx:48
 #, c-format
@@ -754,7 +754,7 @@ msgstr "IBAN"
 #: src/components/BankDetailsByPaytoType.tsx:65
 #, c-format
 msgid "Chosen amount"
-msgstr "Elegir monto"
+msgstr "Elegir cantidad"
 
 #: src/components/BankDetailsByPaytoType.tsx:69
 #, c-format
@@ -764,19 +764,19 @@ msgstr "Asunto"
 #: src/wallet/ReserveCreated.tsx:27
 #, c-format
 msgid "could not parse payto uri from exchange %1$s"
-msgstr "No se pudo analizar la URI payto del exchange %1$s"
+msgstr "No se pudo analizar la URI pagar-a del exchange %1$s"
 
 #: src/wallet/ReserveCreated.tsx:37
 #, c-format
 msgid "Exchange is ready for withdrawal"
-msgstr "El exchange está listo para la extracción"
+msgstr "El exchange está listo para la retirada"
 
 #: src/wallet/ReserveCreated.tsx:40
 #, c-format
 msgid ""
 "To complete the process you need to wire %1$s to the exchange bank account"
 msgstr ""
-"Para completar el proceso necesitas enviar %1$s a la cuenta bancaria del "
+"Para completar el proceso necesitas transferir %1$s a la cuenta bancaria del "
 "exchange"
 
 #: src/wallet/ReserveCreated.tsx:53
@@ -785,8 +785,8 @@ msgid ""
 "Make sure to use the correct subject, otherwise the money will not arrive in "
 "this wallet."
 msgstr ""
-"Asegurate de usar el asunto correcto, de otra manera el dinero no llegará a "
-"esta billetera"
+"Asegúrate de usar el asunto correcto, de lo contrario el dinero no llegará a "
+"esta billetera."
 
 #: src/wallet/ReserveCreated.tsx:62
 #, c-format
@@ -795,12 +795,12 @@ msgid ""
 "banking app installed that supports RFC 8905"
 msgstr ""
 "Alternativamente, también puedes escanear el código QR o abrir %1$s si "
-"tienes una aplicación bancaria instalada que soporta RFC 8905"
+"tienes una App bancaria instalada que soporta RFC 8905"
 
 #: src/wallet/ReserveCreated.tsx:73
 #, c-format
 msgid "Cancel withdrawal"
-msgstr "Cancelar extracción"
+msgstr "Cancelar retirada"
 
 #: src/wallet/Settings.tsx:89
 #, c-format
@@ -820,7 +820,7 @@ msgstr "Navegador"
 #: src/wallet/Settings.tsx:105
 #, c-format
 msgid "Automatically open wallet based on page content"
-msgstr "Abrir automáticamente la billetera basado en el contenido de la página"
+msgstr "Abrir automáticamente la billetera basada en el contenido de la página"
 
 #: src/wallet/Settings.tsx:111
 #, c-format
@@ -828,8 +828,8 @@ msgid ""
 "Enabling this option below will make using the wallet faster, but requires "
 "more permissions from your browser."
 msgstr ""
-"Habilitar esta opción debajo hará el uso de la billetera mas rápido, pero "
-"requiere mas permisos de tu navegador"
+"Habilitar la opción de debajo, hará que el uso de la billetera sea mas "
+"rápido, pero requiere más permisos de tu navegador."
 
 #: src/wallet/Settings.tsx:122
 #, c-format
@@ -912,8 +912,8 @@ msgid ""
 "If you have already wired money to the exchange you will loose the chance to "
 "get the coins form it."
 msgstr ""
-"Si ya has transferido dinero al exchange perderas la oportunidad de recivir "
-"las monedas"
+"Si tú ya has transferido dinero al exchange, perderás la oportunidad de "
+"recibir las monedas desde este."
 
 #: src/wallet/Transaction.tsx:211
 #, c-format
@@ -923,7 +923,7 @@ msgstr "Confirmar"
 #: src/wallet/Transaction.tsx:218
 #, c-format
 msgid "Withdrawal"
-msgstr "Extracción"
+msgstr "Retirada"
 
 #: src/wallet/Transaction.tsx:243
 #, c-format
@@ -933,7 +933,7 @@ msgstr "Total extraído"
 #: src/wallet/Transaction.tsx:249
 #, c-format
 msgid "Exchange fee"
-msgstr "Tarifa del exchange"
+msgstr "Comisión del exchange"
 
 #: src/wallet/Transaction.tsx:259
 #, c-format
@@ -958,12 +958,12 @@ msgstr "Total pagado"
 #: src/wallet/Transaction.tsx:354
 #, c-format
 msgid "Purchase amount"
-msgstr "Monto de compra"
+msgstr "Importe de la compra"
 
 #: src/wallet/Transaction.tsx:360
 #, c-format
 msgid "Fee"
-msgstr "Tarifa"
+msgstr "Comisión"
 
 #: src/wallet/Transaction.tsx:365
 #, c-format
@@ -988,7 +988,7 @@ msgstr "Total enviado"
 #: src/wallet/Transaction.tsx:425
 #, c-format
 msgid "Deposit amount"
-msgstr "Monto a depositar"
+msgstr "Cantidad a depositar"
 
 #: src/wallet/Transaction.tsx:447
 #, c-format
@@ -1003,7 +1003,7 @@ msgstr "Actualización total"
 #: src/wallet/Transaction.tsx:459
 #, c-format
 msgid "Refresh amount"
-msgstr "Monto de actualización"
+msgstr "Refrescar cantidad"
 
 #: src/wallet/Transaction.tsx:481
 #, c-format
@@ -1018,7 +1018,7 @@ msgstr "Total de propina"
 #: src/wallet/Transaction.tsx:493
 #, c-format
 msgid "Received amount"
-msgstr "Monto recibido"
+msgstr "Cantidad recibida"
 
 #: src/wallet/Transaction.tsx:515
 #, c-format
@@ -1033,7 +1033,7 @@ msgstr "Devolución total"
 #: src/wallet/Transaction.tsx:527
 #, c-format
 msgid "Refund amount"
-msgstr "Monto de devolución"
+msgstr "Importe de la devolución"
 
 #: src/wallet/Welcome.tsx:58
 #, c-format
@@ -1056,7 +1056,7 @@ msgid ""
 "(Enabling this option below will make using the wallet faster, but requires "
 "more permissions from your browser.)"
 msgstr ""
-"(Habilitar esta opción debajo hará el uso de la billetera mas rápido, pero "
+"(Habilitar esta opción de abajo hará el uso de la billetera mas rápido, pero "
 "requiere mas permisos de tu navegador)"
 
 #: src/wallet/Welcome.tsx:85
@@ -1083,7 +1083,8 @@ msgstr "No se pudo cargar el estado del pago"
 #, c-format
 msgid "Could not load contract terms from merchant or wallet backend."
 msgstr ""
-"No se pudo cargar los terminos de contrato del comerciante o de la billetera."
+"No se pudieron cargar los términos de contrato del comerciante o de la "
+"billetera."
 
 #: src/cta/Pay.tsx:216
 #, c-format
@@ -1123,7 +1124,7 @@ msgstr "Tu balance no es suficiente para pagar esta compra."
 #: src/cta/Pay.tsx:287
 #, c-format
 msgid "Withdraw digital cash"
-msgstr "Extraer dinero digital"
+msgstr "Retirar dinero digital"
 
 #: src/cta/Pay.tsx:300
 #, c-format
@@ -1153,12 +1154,12 @@ msgstr "Ya reclamado"
 #: src/cta/Pay.tsx:344
 #, c-format
 msgid "Payment complete"
-msgstr "Pago completo"
+msgstr "Pago completado"
 
 #: src/cta/Pay.tsx:348
 #, c-format
 msgid "You are going to be redirected to $ %1$s"
-msgstr "Estas siendo redirigido a %1$s"
+msgstr "Vas a ser redirigido a %1$s"
 
 #: src/cta/Pay.tsx:353
 #, c-format
@@ -1193,17 +1194,17 @@ msgstr "Estado del reembolso"
 #: src/cta/Refund.tsx:44
 #, c-format
 msgid "The product %1$s has received a total effective refund of"
-msgstr "El producto %1$s ha recibido un total efectivo de"
+msgstr "El producto %1$s ha recibido un reembolso total efectivo de"
 
 #: src/cta/Refund.tsx:52
 #, c-format
 msgid "Refund processing is still in progress."
-msgstr "El proceso de reembolso está todavía en progreso"
+msgstr "El proceso de reembolso está todavía en progreso."
 
 #: src/cta/Refund.tsx:59
 #, c-format
 msgid "The refund amount of %1$s could not be applied."
-msgstr "El monto del reembolso de %1$s no pudo ser aplicado."
+msgstr "El importe del reembolso de %1$s no pudo ser aplicado."
 
 #: src/cta/Refund.tsx:97
 #, c-format
@@ -1230,8 +1231,8 @@ msgstr ""
 #, c-format
 msgid "The merchant %1$s is offering you a tip of %2$s via the exchange %3$s"
 msgstr ""
-"El comerciante %1$s está ofreciendo una propina de %2$s usando el exchange "
-"%3$s"
+"El comerciante %1$s te está ofreciendo una propina de %2$s a través del "
+"exchange %3$s"
 
 #: src/cta/Tip.tsx:67
 #, c-format
@@ -1246,27 +1247,27 @@ msgstr "Ignorar"
 #: src/cta/Tip.tsx:111
 #, c-format
 msgid "missing tip uri"
-msgstr "URI de propina faltante"
+msgstr "falta la URI de la propina"
 
 #: src/cta/Tip.tsx:119
 #, c-format
 msgid "You've ignored the tip."
-msgstr "Has ignorado la propina"
+msgstr "Has ignorado la propina."
 
 #: src/cta/Withdraw.tsx:122
 #, c-format
 msgid "Digital cash withdrawal"
-msgstr "Extracción de dinero digital"
+msgstr "Retirada de dinero digital"
 
 #: src/cta/Withdraw.tsx:127
 #, c-format
 msgid "Could not finish the withdrawal operation"
-msgstr "No se pudo completar la operación de extracción"
+msgstr "No se pudo completar la operación de retirada"
 
 #: src/cta/Withdraw.tsx:138
 #, c-format
 msgid "Total to withdraw"
-msgstr "Total a extraer"
+msgstr "Total a retirar"
 
 #: src/cta/Withdraw.tsx:171
 #, c-format
@@ -1276,12 +1277,12 @@ msgstr "Exchange conocidos"
 #: src/cta/Withdraw.tsx:187
 #, c-format
 msgid "Cancel exchange selection"
-msgstr "Cancelar selección de exchange"
+msgstr "Cancelar la selección de exchange"
 
 #: src/cta/Withdraw.tsx:189
 #, c-format
 msgid "Confirm exchange selection"
-msgstr "Confirmar selección de exchange"
+msgstr "Confirmar la selección de exchange"
 
 #: src/cta/Withdraw.tsx:196
 #, c-format
@@ -1291,22 +1292,22 @@ msgstr "Cambiar exchange"
 #: src/cta/Withdraw.tsx:215
 #, c-format
 msgid "Confirm withdrawal"
-msgstr "Confirmar extracción"
+msgstr "Confirmar retirada"
 
 #: src/cta/Withdraw.tsx:224
 #, c-format
 msgid "Withdraw anyway"
-msgstr "Extraer de todas maneras"
+msgstr "Retirar de todas maneras"
 
 #: src/cta/Withdraw.tsx:287
 #, c-format
 msgid "Could not load the withdrawal details"
-msgstr "No se pudo cargar los detalles de extracción"
+msgstr "No se pudieron cargar los detalles de la retirada"
 
 #: src/cta/Withdraw.tsx:344
 #, c-format
 msgid "missing withdraw uri"
-msgstr "URI de extracción faltante"
+msgstr "falta la URI de retirada"
 
 #: src/cta/Withdraw.tsx:354
 #, c-format
@@ -1331,7 +1332,7 @@ msgstr "Editar"
 #: src/cta/Deposit.tsx:114
 #, c-format
 msgid "missing pay uri"
-msgstr "URI de pago faltante"
+msgstr "falta la URI de pago"
 
 #: src/cta/Deposit.tsx:129
 #, c-format
@@ -1351,7 +1352,7 @@ msgstr "Depósito de dinero digital"
 #: src/cta/Deposit.tsx:226
 #, c-format
 msgid "You will now be sent back to the merchant you came from."
-msgstr "Ahora serás enviado otra vez al sitio del comerciante"
+msgstr "Ahora serás enviado de nuevo al comerciante desde donde viniste."
 
 #: src/cta/reset-required.tsx:54
 #, c-format
@@ -1365,15 +1366,15 @@ msgid ""
 "currently installed wallet. Please reset manually."
 msgstr ""
 "La base de datos de billetera en tu navegador es incompatible con la "
-"billetera instalada actualmente. Por favor reinicie manualmente"
+"billetera instalada actualmente. Por favor reinicie manualmente."
 
 #: src/cta/reset-required.tsx:63
 #, c-format
 msgid ""
 "Once the database format has stabilized, we will provide automatic upgrades."
 msgstr ""
-"Una vez que el formato de la base de datos esté estabilizzado, proveeremos "
-"de actualizaciones automáticas"
+"Una vez que el formato de la base de datos se haya estabilizado, proveeremos "
+"de actualizaciones automáticas."
 
 #: src/cta/reset-required.tsx:77
 #, c-format
