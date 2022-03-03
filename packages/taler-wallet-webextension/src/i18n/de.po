@@ -17,7 +17,7 @@ msgstr ""
 "Project-Id-Version: Taler Wallet\n"
 "Report-Msgid-Bugs-To: languages@taler.net\n"
 "POT-Creation-Date: 2016-11-23 00:00+0100\n"
-"PO-Revision-Date: 2022-03-03 17:31+0000\n"
+"PO-Revision-Date: 2022-03-03 17:47+0000\n"
 "Last-Translator: Stefan <eintritt@hotmail.com>\n"
 "Language-Team: German <http://weblate.taler.net/projects/gnu-taler/"
 "webextensions/de/>\n"
@@ -36,42 +36,42 @@ msgstr "Guthaben"
 #: src/NavigationBar.tsx:73
 #, c-format
 msgid "Backup"
-msgstr ""
+msgstr "Backup"
 
 #: src/NavigationBar.tsx:77
 #, c-format
 msgid "Settings"
-msgstr ""
+msgstr "Einstellungen"
 
 #: src/NavigationBar.tsx:96
 #, c-format
 msgid "Dev"
-msgstr ""
+msgstr "Dev"
 
 #: src/components/Loading.tsx:22
 #, c-format
 msgid "Loading"
-msgstr ""
+msgstr "Lädt Daten"
 
 #: src/wallet/AddNewActionView.tsx:14
 #, c-format
 msgid "Open reserve page"
-msgstr ""
+msgstr "Seite der Reserve aufrufen"
 
 #: src/wallet/AddNewActionView.tsx:16
 #, c-format
 msgid "Open pay page"
-msgstr ""
+msgstr "Seite für Zahlungen aufrufen"
 
 #: src/wallet/AddNewActionView.tsx:18
 #, c-format
 msgid "Open refund page"
-msgstr ""
+msgstr "Seite für Rückerstattungen aufrufen"
 
 #: src/wallet/AddNewActionView.tsx:20
 #, c-format
 msgid "Open tip page"
-msgstr ""
+msgstr "Seite der Aufwandsentschädigungen aufrufen"
 
 #: src/wallet/AddNewActionView.tsx:22
 #, c-format
@@ -94,6 +94,8 @@ msgid ""
 "To withdraw money you can start from your bank site or click the \"withdraw"
 "\" button to use a known exchange."
 msgstr ""
+"Zum Abheben von digitalem Geld bitte von der Bank-Seite aus starten oder "
+"\"Abheben\" drücken, um einen schon bekannten Exchange zu verwenden."
 
 #: src/popup/NoBalanceHelp.tsx:23
 #, c-format
@@ -103,7 +105,7 @@ msgstr "Abheben"
 #: src/popup/BalancePage.tsx:52
 #, c-format
 msgid "Could not load balance page"
-msgstr ""
+msgstr "Konnte die Umsatzanzeige nicht laden"
 
 #: src/popup/BalancePage.tsx:111
 #, c-format
