@@ -51,3 +51,15 @@ export const IBAN = createExample(TestedComponent, {
   },
   exchangeBaseUrl: "https://exchange.demo.taler.net",
 });
+
+export const Bitcoin = createExample(TestedComponent, {
+  reservePub: "0ZSX8SH0M30KHX8K3Y1DAMVGDQV82XEF9DG1HC4QMQ3QWYT4AF00",
+  payto:
+    "payto://bitcoin/bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4?amount=BTC:0.1&subject=0ZSX8SH0M30KHX8K3Y1DAMVGDQV82XEF9DG1HC4QMQ3QWYT4AF00",
+  amount: {
+    currency: "BTC",
+    value: 0,
+    fraction: 14000000,
+  },
+  exchangeBaseUrl: "https://exchange.demo.taler.net",
+});

@@ -164,6 +164,7 @@ importers:
     specifiers:
       '@types/node': ^17.0.17
       ava: ^4.0.1
+      bech32-buffer: ^0.2.0
       big-integer: ^1.6.51
       esbuild: ^0.14.21
       jed: ^1.1.1
@@ -172,6 +173,7 @@ importers:
       tslib: ^2.3.1
       typescript: ^4.5.5
     dependencies:
+      bech32-buffer: 0.2.0
       big-integer: 1.6.51
       jed: 1.1.1
       tslib: 2.3.1
@@ -8247,6 +8249,11 @@ packages:
     dependencies:
       tweetnacl: 0.14.5
     dev: true
+
+  /bech32-buffer/0.2.0:
+    resolution: {integrity: sha512-Ez8s82a+Xnn/m3/ftGaQJUSFG4EwNIj9adIJBw8OrHASQsXgvwLSducbcJ9El0rsrwJYJ71yBhC/hZzz3FPSCQ==}
+    engines: {node: '>=8'}
+    dev: false
 
   /better-opn/2.1.1:
     resolution: {integrity: sha512-kIPXZS5qwyKiX/HcRvDYfmBQUa8XP17I0mYZZ0y4UhpYOSvtsLHDYqmomS+Mj20aDvD3knEiQ0ecQy2nhio3yA==}
