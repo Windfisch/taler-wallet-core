@@ -15,10 +15,10 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Taler Wallet\n"
-"Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To: languages@taler.net\n"
 "POT-Creation-Date: 2016-11-23 00:00+0100\n"
-"PO-Revision-Date: 2022-02-18 19:33+0000\n"
-"Last-Translator: Stefan <eintritt@hotmail.com>\n"
+"PO-Revision-Date: 2022-03-03 11:22+0000\n"
+"Last-Translator: Javier Sepulveda <javier.sepulveda@uv.es>\n"
 "Language-Team: Spanish <http://weblate.taler.net/projects/gnu-taler/"
 "webextensions/es/>\n"
 "Language: es\n"
@@ -36,7 +36,7 @@ msgstr "Balance"
 #: src/NavigationBar.tsx:73
 #, c-format
 msgid "Backup"
-msgstr ""
+msgstr "Copia de seguridad"
 
 #: src/NavigationBar.tsx:77
 #, c-format
@@ -268,7 +268,7 @@ msgstr "Notificar"
 #: src/popup/TalerActionFound.tsx:121
 #, c-format
 msgid "This page has a refund action."
-msgstr "Esta página tiene una acción de devolución"
+msgstr "Esta página tiene una acción de devolución."
 
 #: src/popup/TalerActionFound.tsx:135
 #, c-format
@@ -303,7 +303,7 @@ msgstr "Sincronizar todos los backups"
 #: src/wallet/BackupPage.tsx:144
 #, c-format
 msgid "Sync now"
-msgstr "Syncronizar ahora"
+msgstr "Sincronizar ahora"
 
 #: src/wallet/BackupPage.tsx:187
 #, c-format
@@ -333,12 +333,12 @@ msgstr "Revizar terminos de servicio"
 #: src/cta/TermsOfServiceSection.tsx:69
 #, c-format
 msgid "Review new version of terms of service"
-msgstr "Revisar los nuevos terminos de servicio"
+msgstr "Revisar los nuevos términos de servicio"
 
 #: src/cta/TermsOfServiceSection.tsx:83
 #, c-format
 msgid "Show terms of service"
-msgstr "Mostrar terminos de servicio"
+msgstr "Mostrar términos de servicio"
 
 #: src/cta/TermsOfServiceSection.tsx:91
 #, c-format
@@ -348,22 +348,22 @@ msgstr "Acepto los terminos de servicio del exchange"
 #: src/cta/TermsOfServiceSection.tsx:110
 #, c-format
 msgid "The exchange reply with a empty terms of service"
-msgstr "El exchange respondió con unos terminos de servicio vacíos"
+msgstr "El exchange respondió con unos términos de servicio vacíos"
 
 #: src/cta/TermsOfServiceSection.tsx:133
 #, c-format
 msgid "Download Terms of Service"
-msgstr "Descargar los terminos de servicio"
+msgstr "Descargar los términos de servicio"
 
 #: src/cta/TermsOfServiceSection.tsx:141
 #, c-format
 msgid "Hide terms of service"
-msgstr "Escoder los terminos de servicio"
+msgstr "Esconder los términos de servicio"
 
 #: src/wallet/ExchangeAddConfirm.tsx:88
 #, c-format
 msgid "Review terms of service"
-msgstr "Revizar los terminos de servicio"
+msgstr "Revisar los términos de servicio"
 
 #: src/wallet/ExchangeAddConfirm.tsx:91
 #, c-format
@@ -378,7 +378,7 @@ msgstr "Cancelar"
 #: src/wallet/ExchangeAddConfirm.tsx:116
 #, c-format
 msgid "Loading terms.."
-msgstr "Cargando terminos..."
+msgstr "Cargando términos..."
 
 #: src/wallet/ExchangeAddConfirm.tsx:123
 #, c-format
@@ -810,7 +810,7 @@ msgstr "Pantalla"
 #: src/wallet/Settings.tsx:93
 #, c-format
 msgid "Current Language"
-msgstr "Lenguage actual"
+msgstr "Lenguaje actual"
 
 #: src/wallet/Settings.tsx:102
 #, c-format
@@ -844,7 +844,7 @@ msgstr "No hay exchanges todavía"
 #: src/wallet/Settings.tsx:140
 #, c-format
 msgid "Term of Service"
-msgstr "Terminos de servicio"
+msgstr "Términos de servicio"
 
 #: src/wallet/Settings.tsx:156
 #, c-format
@@ -874,7 +874,7 @@ msgstr "Modo desarrollador"
 #: src/wallet/Settings.tsx:201
 #, c-format
 msgid "(More options and information useful for debugging)"
-msgstr "(Mas información y opciones útiles para depuración)"
+msgstr "(Más información y opciones útiles para depuración)"
 
 #: src/wallet/Transaction.tsx:78
 #, c-format
@@ -889,7 +889,7 @@ msgstr "Hubo un error intentando completar la transacción"
 #: src/wallet/Transaction.tsx:154
 #, c-format
 msgid "This transaction is not completed"
-msgstr "Esta tansacción no está completa"
+msgstr "Esta transacción no está completada"
 
 #: src/wallet/Transaction.tsx:168
 #, c-format
@@ -928,7 +928,7 @@ msgstr "Extracción"
 #: src/wallet/Transaction.tsx:243
 #, c-format
 msgid "Total withdrawn"
-msgstr "Total extraido"
+msgstr "Total extraído"
 
 #: src/wallet/Transaction.tsx:249
 #, c-format
@@ -1224,7 +1224,7 @@ msgstr "Actualizando el estado de reembolso"
 #, c-format
 msgid "Tip from %1$s accepted. Check your transactions list for more details."
 msgstr ""
-"Propina de %1$s aceptada. Revisa tu lista de transacciones para mas detalle."
+"Propina de %1$s aceptada. Revisa tu lista de transacciones para más detalle."
 
 #: src/cta/Tip.tsx:57
 #, c-format
@@ -1346,7 +1346,7 @@ msgstr "Cargado la información de pago"
 #: src/cta/Deposit.tsx:208
 #, c-format
 msgid "Digital cash deposit"
-msgstr "Deposito de dinero digital"
+msgstr "Depósito de dinero digital"
 
 #: src/cta/Deposit.tsx:226
 #, c-format
@@ -1398,4 +1398,4 @@ msgstr "Un reinicio ya no es necesario, puede cerrar esta página."
 #: src/cta/return-coins.tsx:31
 #, c-format
 msgid "Not implemented yet."
-msgstr "Todavía no implementado"
+msgstr "Todavía no implementado."
