@@ -15,9 +15,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Taler Wallet\n"
-"Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To: languages@taler.net\n"
 "POT-Creation-Date: 2016-11-23 00:00+0100\n"
-"PO-Revision-Date: 2022-02-18 17:20+0000\n"
+"PO-Revision-Date: 2022-03-03 17:47+0000\n"
 "Last-Translator: Stefan <eintritt@hotmail.com>\n"
 "Language-Team: German <http://weblate.taler.net/projects/gnu-taler/"
 "webextensions/de/>\n"
@@ -36,57 +36,57 @@ msgstr "Guthaben"
 #: src/NavigationBar.tsx:73
 #, c-format
 msgid "Backup"
-msgstr ""
+msgstr "Backup"
 
 #: src/NavigationBar.tsx:77
 #, c-format
 msgid "Settings"
-msgstr ""
+msgstr "Einstellungen"
 
 #: src/NavigationBar.tsx:96
 #, c-format
 msgid "Dev"
-msgstr ""
+msgstr "Dev"
 
 #: src/components/Loading.tsx:22
 #, c-format
 msgid "Loading"
-msgstr ""
+msgstr "Lädt Daten"
 
 #: src/wallet/AddNewActionView.tsx:14
 #, c-format
 msgid "Open reserve page"
-msgstr ""
+msgstr "Seite der Reserve aufrufen"
 
 #: src/wallet/AddNewActionView.tsx:16
 #, c-format
 msgid "Open pay page"
-msgstr ""
+msgstr "Seite für Zahlungen aufrufen"
 
 #: src/wallet/AddNewActionView.tsx:18
 #, c-format
 msgid "Open refund page"
-msgstr ""
+msgstr "Seite für Rückerstattungen aufrufen"
 
 #: src/wallet/AddNewActionView.tsx:20
 #, c-format
 msgid "Open tip page"
-msgstr ""
+msgstr "Seite der Aufwandsentschädigungen aufrufen"
 
 #: src/wallet/AddNewActionView.tsx:22
-#, fuzzy, c-format
+#, c-format
 msgid "Open withdraw page"
-msgstr "Abhebegebühr"
+msgstr "Abhebeseite öffnen"
 
 #: src/wallet/AddNewActionView.tsx:51
 #, c-format
 msgid "Back"
-msgstr ""
+msgstr "Zurück"
 
 #: src/popup/NoBalanceHelp.tsx:14
-#, fuzzy, c-format
+#, c-format
 msgid "You have no balance to show."
-msgstr "Sie haben kein Guthaben. Wollen Sie %1$s abheben?"
+msgstr "Es gibt kein Guthaben anzuzeigen."
 
 #: src/popup/NoBalanceHelp.tsx:17
 #, c-format
@@ -94,16 +94,18 @@ msgid ""
 "To withdraw money you can start from your bank site or click the \"withdraw"
 "\" button to use a known exchange."
 msgstr ""
+"Zum Abheben von digitalem Geld bitte von der Bank-Seite aus starten oder "
+"\"Abheben\" drücken, um einen schon bekannten Exchange zu verwenden."
 
 #: src/popup/NoBalanceHelp.tsx:23
-#, fuzzy, c-format
+#, c-format
 msgid "Withdraw"
-msgstr "Abgehoben"
+msgstr "Abheben"
 
 #: src/popup/BalancePage.tsx:52
 #, c-format
 msgid "Could not load balance page"
-msgstr ""
+msgstr "Konnte die Umsatzanzeige nicht laden"
 
 #: src/popup/BalancePage.tsx:111
 #, c-format
@@ -145,9 +147,9 @@ msgid "Running diagnostics"
 msgstr ""
 
 #: src/popup/DeveloperPage.tsx:154
-#, fuzzy, c-format
+#, c-format
 msgid "Debug tools"
-msgstr "Debug"
+msgstr "Debugging-Tools"
 
 #: src/popup/DeveloperPage.tsx:157
 #, c-format
@@ -614,9 +616,9 @@ msgid "Select one option"
 msgstr ""
 
 #: src/wallet/CreateManualWithdraw.tsx:103
-#, fuzzy, c-format
+#, c-format
 msgid "Manual Withdrawal"
-msgstr "Abgehoben"
+msgstr "Manuelles Abheben"
 
 #: src/wallet/CreateManualWithdraw.tsx:106
 #, c-format
@@ -639,7 +641,7 @@ msgstr ""
 #: src/wallet/CreateManualWithdraw.tsx:155
 #, c-format
 msgid "Exchange"
-msgstr ""
+msgstr "Exchange"
 
 #: src/wallet/CreateManualWithdraw.tsx:164
 #, c-format
@@ -649,17 +651,17 @@ msgstr ""
 #: src/wallet/CreateManualWithdraw.tsx:170
 #, c-format
 msgid "Amount"
-msgstr ""
+msgstr "Betrag"
 
 #: src/wallet/CreateManualWithdraw.tsx:190
 #, c-format
 msgid "Start withdrawal"
-msgstr ""
+msgstr "Abhebung beginnen"
 
 #: src/wallet/DepositPage.tsx:138
-#, fuzzy, c-format
+#, c-format
 msgid "no balance"
-msgstr "Guthaben"
+msgstr "Kein Guthaben"
 
 #: src/wallet/DepositPage.tsx:146
 #, c-format
@@ -692,9 +694,9 @@ msgid "Deposit"
 msgstr ""
 
 #: src/wallet/DepositPage.tsx:251
-#, fuzzy, c-format
+#, c-format
 msgid "Deposit %1$s %2$s"
-msgstr "Testkonto #%1$s auf %2$s"
+msgstr "Einlösen %1$s %2$s"
 
 #: src/components/TransactionItem.tsx:137
 #, c-format
@@ -744,7 +746,7 @@ msgstr ""
 #: src/components/BankDetailsByPaytoType.tsx:69
 #, c-format
 msgid "Subject"
-msgstr ""
+msgstr "Verwendungszweck"
 
 #: src/wallet/ReserveCreated.tsx:27
 #, c-format
@@ -896,14 +898,14 @@ msgid "Confirm"
 msgstr "Bestätigen"
 
 #: src/wallet/Transaction.tsx:218
-#, fuzzy, c-format
+#, c-format
 msgid "Withdrawal"
-msgstr "Abgehoben"
+msgstr "Abheben"
 
 #: src/wallet/Transaction.tsx:243
-#, fuzzy, c-format
+#, c-format
 msgid "Total withdrawn"
-msgstr "Abgehoben"
+msgstr "Insgesamt abgehoben"
 
 #: src/wallet/Transaction.tsx:249
 #, c-format
@@ -921,9 +923,9 @@ msgid "Waiting for the coins to arrive"
 msgstr ""
 
 #: src/wallet/Transaction.tsx:342
-#, fuzzy, c-format
+#, c-format
 msgid "Payment"
-msgstr "Bezahlung bestätigen"
+msgstr "Zahlung"
 
 #: src/wallet/Transaction.tsx:348
 #, c-format
@@ -1093,9 +1095,9 @@ msgid "Your balance is not enough to pay for this purchase."
 msgstr ""
 
 #: src/cta/Pay.tsx:287
-#, fuzzy, c-format
+#, c-format
 msgid "Withdraw digital cash"
-msgstr "Abhebegebühren:"
+msgstr "Digitales Bargeld abheben"
 
 #: src/cta/Pay.tsx:300
 #, c-format
@@ -1198,9 +1200,11 @@ msgid "Tip from %1$s accepted. Check your transactions list for more details."
 msgstr ""
 
 #: src/cta/Tip.tsx:57
-#, fuzzy, c-format
+#, c-format
 msgid "The merchant %1$s is offering you a tip of %2$s via the exchange %3$s"
-msgstr "Der Händler %1$s bietet Ihnen zum Kauf an:"
+msgstr ""
+"Der Händler %1$s bietet Ihnen eine Aufwandsentschädigung von %2$s durch den "
+"Exchange %3$s"
 
 #: src/cta/Tip.tsx:67
 #, c-format
@@ -1263,9 +1267,9 @@ msgid "Confirm withdrawal"
 msgstr ""
 
 #: src/cta/Withdraw.tsx:224
-#, fuzzy, c-format
+#, c-format
 msgid "Withdraw anyway"
-msgstr "Abgehoben"
+msgstr "Trotzdem abheben"
 
 #: src/cta/Withdraw.tsx:287
 #, c-format
