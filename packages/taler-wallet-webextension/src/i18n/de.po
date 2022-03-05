@@ -17,8 +17,8 @@ msgstr ""
 "Project-Id-Version: Taler Wallet\n"
 "Report-Msgid-Bugs-To: languages@taler.net\n"
 "POT-Creation-Date: 2016-11-23 00:00+0100\n"
-"PO-Revision-Date: 2022-03-03 17:47+0000\n"
-"Last-Translator: Stefan <eintritt@hotmail.com>\n"
+"PO-Revision-Date: 2022-03-05 08:29+0000\n"
+"Last-Translator: Stefan Kügel <skuegel@web.de>\n"
 "Language-Team: German <http://weblate.taler.net/projects/gnu-taler/"
 "webextensions/de/>\n"
 "Language: de\n"
@@ -110,22 +110,24 @@ msgstr "Konnte die Umsatzanzeige nicht laden"
 #: src/popup/BalancePage.tsx:111
 #, c-format
 msgid "Deposit %1$s"
-msgstr ""
+msgstr "%1$s zahlen"
 
 #: src/popup/BalancePage.tsx:120
 #, c-format
 msgid "Enter URI"
-msgstr ""
+msgstr "URI eingeben"
 
 #: src/components/Diagnostics.tsx:30
 #, c-format
 msgid "Diagnostics timed out. Could not talk to the wallet backend."
 msgstr ""
+"Die Diagnostik ist abgeschlossen. Es war keine Kommunikation mit dem Wallet-"
+"Backend möglich."
 
 #: src/components/Diagnostics.tsx:51
 #, c-format
 msgid "Problems detected:"
-msgstr ""
+msgstr "Ein Problem wurde festgestellt:"
 
 #: src/components/Diagnostics.tsx:60
 #, c-format
@@ -133,6 +135,8 @@ msgid ""
 "Please check in your %1$s settings that you have IndexedDB enabled (check "
 "the preference name %2$s)."
 msgstr ""
+"Bitte prüfen Sie ihre %1$s Einstellungen, für die Sie IndexedDB verwenden ("
+"preference name %2$s prüfen)."
 
 #: src/components/Diagnostics.tsx:69
 #, c-format
@@ -140,11 +144,14 @@ msgid ""
 "Your wallet database is outdated. Currently automatic migration is not "
 "supported. Please go %1$s to reset the wallet database."
 msgstr ""
+"Die Datenbank des Wallets ist veraltet. Aktuell wird jedoch keine Migration "
+"auf eine neue Version unterstützt. Bitte wählen Sie %1$s zum Zurücksetzen "
+"der Wallet-Datenbank."
 
 #: src/components/Diagnostics.tsx:85
 #, c-format
 msgid "Running diagnostics"
-msgstr ""
+msgstr "Diagnostik wird durchgeführt"
 
 #: src/popup/DeveloperPage.tsx:154
 #, c-format
@@ -154,7 +161,7 @@ msgstr "Debugging-Tools"
 #: src/popup/DeveloperPage.tsx:157
 #, c-format
 msgid "reset"
-msgstr ""
+msgstr "zurücksetzen"
 
 #: src/popup/DeveloperPage.tsx:161
 #, c-format
