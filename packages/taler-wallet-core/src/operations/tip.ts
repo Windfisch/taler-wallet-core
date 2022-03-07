@@ -27,13 +27,11 @@ import {
   NotificationType,
   TipPlanchetDetail,
   TalerErrorCode,
-  codecForMerchantTipResponseV1,
   Logger,
   URL,
   DenomKeyType,
   BlindedDenominationSignature,
   codecForMerchantTipResponseV2,
-  MerchantProtocolVersion,
 } from "@gnu-taler/taler-util";
 import { DerivedTipPlanchet } from "../crypto/cryptoTypes.js";
 import {

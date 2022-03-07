@@ -609,7 +609,7 @@ export interface TipPlanchetDetail {
   /**
    * Coin's blinded public key.
    */
-  coin_ev: string;
+  coin_ev: CoinEnvelope;
 }
 
 /**
@@ -1306,17 +1306,6 @@ export const codecForMerchantRefundResponse =
       .property("h_contract_terms", codecForString())
       .property("refunds", codecForList(codecForMerchantRefundPermission()))
       .build("MerchantRefundResponse");
-
-export const codecForMerchantBlindSigWrapperV1 =
-  (): Codec<MerchantBlindSigWrapperV1> =>
-    buildCodecForObject<MerchantBlindSigWrapperV1>()
-      .property("blind_sig", codecForString())
-      .build("BlindSigWrapper");
-
-export const codecForMerchantTipResponseV1 = (): Codec<MerchantTipResponseV1> =>
-  buildCodecForObject<MerchantTipResponseV1>()
-    .property("blind_sigs", codecForList(codecForMerchantBlindSigWrapperV1()))
-    .build("MerchantTipResponseV1");
 
 export const codecForBlindSigWrapperV2 = (): Codec<MerchantBlindSigWrapperV2> =>
   buildCodecForObject<MerchantBlindSigWrapperV2>()

@@ -1894,9 +1894,11 @@ export class MerchantService implements MerchantServiceInterface {
       default_max_deposit_fee:
         instanceConfig.defaultMaxDepositFee ??
         `${this.merchantConfig.currency}:1.0`,
-      default_wire_transfer_delay: instanceConfig.defaultWireTransferDelay ?? {
-        d_ms: "forever",
-      },
+      default_wire_transfer_delay:
+        instanceConfig.defaultWireTransferDelay ??
+        Duration.fromSpec({
+          days: 1,
+        }),
       default_pay_delay: instanceConfig.defaultPayDelay ?? { d_ms: "forever" },
     });
   }

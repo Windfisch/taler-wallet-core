@@ -110,7 +110,7 @@ export interface DeriveTipRequest {
  */
 export interface DerivedTipPlanchet {
   blindingKey: string;
-  coinEv: string;
+  coinEv: CoinEnvelope;
   coinEvHash: string;
   coinPriv: string;
   coinPub: string;

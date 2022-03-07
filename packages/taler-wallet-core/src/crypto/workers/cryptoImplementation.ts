@@ -229,11 +229,16 @@ export class CryptoImplementation {
     const denomPub = decodeCrock(req.denomPub.rsa_public_key);
     const coinPubHash = hash(fc.coinPub);
     const ev = rsaBlind(coinPubHash, fc.bks, denomPub);
-
+    const coinEv = {
+      cipher: DenomKeyType.Rsa,
+      rsa_blinded_planchet: encodeCrock(ev),
+    };
     const tipPlanchet: DerivedTipPlanchet = {
       blindingKey: encodeCrock(fc.bks),
-      coinEv: encodeCrock(ev),
-      coinEvHash: encodeCrock(hash(ev)),
+      coinEv,
+      coinEvHash: encodeCrock(
+        hashCoinEv(coinEv, encodeCrock(hashDenomPub(req.denomPub))),
+      ),
       coinPriv: encodeCrock(fc.coinPriv),
       coinPub: encodeCrock(fc.coinPub),
     };
