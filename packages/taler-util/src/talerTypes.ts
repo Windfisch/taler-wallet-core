@@ -147,9 +147,31 @@ export class ExchangeAuditor {
   denomination_keys: AuditorDenomSig[];
 }
 
+export type ExchangeWithdrawValue =
+  | ExchangeRsaWithdrawValue
+  | ExchangeCsWithdrawValue;
+
+export interface ExchangeRsaWithdrawValue {
+  cipher: "RSA";
+}
+
+export interface ExchangeCsWithdrawValue {
+  cipher: "CS";
+
+  /**
+   *  CSR R0 value
+   */
+  r_pub_0: string;
+
+  /**
+   * CSR R1 value
+   */
+  r_pub_1: string;
+}
+
 export interface RecoupRequest {
   /**
-   * Hashed enomination public key of the coin we want to get
+   * Hashed denomination public key of the coin we want to get
    * paid back.
    */
   denom_pub_hash: string;
@@ -171,6 +193,8 @@ export interface RecoupRequest {
    * Signature of TALER_RecoupRequestPS created with the coin's private key.
    */
   coin_sig: string;
+
+  ewv: ExchangeWithdrawValue;
 }
 
 export interface RecoupRefreshRequest {
@@ -197,6 +221,8 @@ export interface RecoupRefreshRequest {
    * the coin's private key.
    */
   coin_sig: string;
+
+  ewv: ExchangeWithdrawValue;
 }
 
 /**

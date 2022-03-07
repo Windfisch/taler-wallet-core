@@ -272,6 +272,10 @@ export class CryptoImplementation {
         coin_sig: encodeCrock(coinSig),
         denom_pub_hash: req.denomPubHash,
         denom_sig: req.denomSig,
+        // FIXME!
+        ewv: {
+          cipher: "RSA",
+        },
       };
       return paybackRequest;
     } else {
@@ -298,6 +302,10 @@ export class CryptoImplementation {
         coin_sig: encodeCrock(coinSig),
         denom_pub_hash: req.denomPubHash,
         denom_sig: req.denomSig,
+        // FIXME!
+        ewv: {
+          cipher: "RSA",
+        },
       };
       return recoupRequest;
     } else {
