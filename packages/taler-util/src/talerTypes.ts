@@ -738,6 +738,8 @@ export class WireFeesJson {
    */
   wire_fee: string;
 
+  wad_fee: string;
+
   /**
    * Cost of clising a reserve.
    */
@@ -1356,6 +1358,7 @@ export const codecForWireFeesJson = (): Codec<WireFeesJson> =>
   buildCodecForObject<WireFeesJson>()
     .property("wire_fee", codecForString())
     .property("closing_fee", codecForString())
+    .property("wad_fee", codecForString())
     .property("sig", codecForString())
     .property("start_date", codecForTimestamp)
     .property("end_date", codecForTimestamp)

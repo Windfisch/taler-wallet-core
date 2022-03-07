@@ -1023,6 +1023,8 @@ export interface BackupExchangeWireFee {
    */
   wire_fee: string;
 
+  wad_fee: string;
+
   /**
    * Fees to close and refund a reserve.
    */

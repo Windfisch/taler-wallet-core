@@ -48,6 +48,7 @@ import {
   hashCoinEv,
   hashCoinEvInner,
   hashDenomPub,
+  hashTruncate32,
   keyExchangeEcdheEddsa,
   Logger,
   MakeSyncSignatureRequest,
@@ -329,6 +330,7 @@ export class CryptoImplementation {
       .put(timestampRoundedToBuffer(wf.endStamp))
       .put(amountToBuffer(wf.wireFee))
       .put(amountToBuffer(wf.closingFee))
+      .put(amountToBuffer(wf.wadFee))
       .build();
     const sig = decodeCrock(wf.sig);
     const pub = decodeCrock(masterPub);
@@ -376,7 +378,7 @@ export class CryptoImplementation {
     sig: string,
     masterPub: string,
   ): boolean {
-    const paytoHash = hash(stringToBytes(paytoUri + "\0"));
+    const paytoHash = hashTruncate32(stringToBytes(paytoUri + "\0"));
     const p = buildSigPS(TalerSignaturePurpose.MASTER_WIRE_DETAILS)
       .put(paytoHash)
       .build();

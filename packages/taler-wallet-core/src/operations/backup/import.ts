@@ -305,6 +305,7 @@ export async function importBackup(
               sig: fee.sig,
               startStamp: fee.start_stamp,
               wireFee: Amounts.parseOrThrow(fee.wire_fee),
+              wadFee: Amounts.parseOrThrow(fee.wad_fee),
             });
           }
           await tx.exchangeDetails.put({

@@ -1443,6 +1443,7 @@ export class ExchangeService implements ExchangeServiceInterface {
             accTargetType,
             `${this.exchangeConfig.currency}:0.01`,
             `${this.exchangeConfig.currency}:0.01`,
+            `${this.exchangeConfig.currency}:0.01`,
             "upload",
           ],
         );

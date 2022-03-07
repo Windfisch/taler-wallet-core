@@ -266,6 +266,7 @@ async function validateWireInfo(
         sig: x.sig,
         startStamp,
         wireFee: Amounts.parseOrThrow(x.wire_fee),
+        wadFee: Amounts.parseOrThrow(x.wad_fee),
       };
       let isValid = false;
       if (ws.insecureTrustExchange) {
@@ -451,7 +452,8 @@ export async function downloadTosFromAcceptedFormat(
   ws: InternalWalletState,
   baseUrl: string,
   timeout: Duration,
-  acceptedFormat?: string[]): Promise<ExchangeTosDownloadResult> {
+  acceptedFormat?: string[],
+): Promise<ExchangeTosDownloadResult> {
   let tosFound: ExchangeTosDownloadResult | undefined;
   //Remove this when exchange supports multiple content-type in accept header
   if (acceptedFormat)
@@ -467,7 +469,7 @@ export async function downloadTosFromAcceptedFormat(
         break;
       }
     }
-  if (tosFound !== undefined) return tosFound
+  if (tosFound !== undefined) return tosFound;
   // If none of the specified format was found try text/plain
   return await downloadExchangeWithTermsOfService(
     baseUrl,
@@ -550,8 +552,12 @@ async function updateExchangeFromUrlImpl(
 
   logger.info("finished validating exchange /wire info");
 
-
-  const tosDownload = await downloadTosFromAcceptedFormat(ws, baseUrl, timeout, acceptedFormat)
+  const tosDownload = await downloadTosFromAcceptedFormat(
+    ws,
+    baseUrl,
+    timeout,
+    acceptedFormat,
+  );
 
   let recoupGroupId: string | undefined;
 

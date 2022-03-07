@@ -113,9 +113,8 @@ export async function exportBackup(
       } = {};
 
       await tx.withdrawalGroups.iter().forEachAsync(async (wg) => {
-        const withdrawalGroups = (withdrawalGroupsByReserve[
-          wg.reservePub
-        ] ??= []);
+        const withdrawalGroups = (withdrawalGroupsByReserve[wg.reservePub] ??=
+          []);
         withdrawalGroups.push({
           raw_withdrawal_amount: Amounts.stringify(wg.rawWithdrawalAmount),
           selected_denoms: wg.denomsSel.selectedDenoms.map((x) => ({
@@ -288,6 +287,7 @@ export async function exportBackup(
             wireFees.push({
               wire_type: x,
               closing_fee: Amounts.stringify(f.closingFee),
+              wad_fee: Amounts.stringify(f.wadFee),
               end_stamp: f.endStamp,
               sig: f.sig,
               start_stamp: f.startStamp,

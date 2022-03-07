@@ -25,6 +25,7 @@ import * as nacl from "./nacl-fast.js";
 import { kdf, kdfKw } from "./kdf.js";
 import bigint from "big-integer";
 import {
+  Base32String,
   CoinEnvelope,
   DenominationPubKey,
   DenomKeyType,
@@ -598,6 +599,15 @@ export function hash(d: Uint8Array): Uint8Array {
   return nacl.hash(d);
 }
 
+/**
+ * Hash the input with SHA-512 and truncate the result
+ * to 32 bytes.
+ */
+export function hashTruncate32(d: Uint8Array): Uint8Array {
+  const sha512HashCode = nacl.hash(d);
+  return sha512HashCode.subarray(0, 32);
+}
+
 export function hashCoinEv(
   coinEv: CoinEnvelope,
   denomPubHash: HashCodeString,
@@ -607,7 +617,6 @@ export function hashCoinEv(
   hashCoinEvInner(coinEv, hashContext);
   return hashContext.finish();
 }
-
 
 const logger = new Logger("talerCrypto.ts");
 
@@ -682,7 +691,6 @@ export interface FreshCoin {
   coinPriv: Uint8Array;
   bks: Uint8Array;
 }
-
 
 function bufferForUint32(n: number): Uint8Array {
   const arrBuf = new ArrayBuffer(4);

@@ -1027,6 +1027,11 @@ export interface WireFee {
   closingFee: AmountJson;
 
   /**
+   * Fees for inter-exchange transfers from P2P payments.
+   */
+  wadFee: AmountJson;
+
+  /**
    * Start date of the fee.
    */
   startStamp: Timestamp;
