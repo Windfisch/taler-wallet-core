@@ -24,35 +24,35 @@
  * Imports
  */
 import {
+  AmountString,
+  ConfirmPayResultType,
+  ContractTerms,
+  Duration,
+  PreparePayResultType,
+} from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+import { CoinConfig, defaultCoinConfig } from "./denomStructures.js";
+import {
   FaultInjectedExchangeService,
   FaultInjectedMerchantService,
-} from "./faultInjection";
-import { CoinConfig, defaultCoinConfig } from "./denomStructures";
+} from "./faultInjection.js";
 import {
-  AmountString,
-  Duration,
-  ContractTerms,
-  PreparePayResultType,
-  ConfirmPayResultType,
-} from "@gnu-taler/taler-util";
-import {
-  DbInfo,
-  BankService,
-  ExchangeService,
-  MerchantService,
-  WalletCli,
-  GlobalTestState,
-  setupDb,
-  ExchangeServiceInterface,
-  BankApi,
   BankAccessApi,
-  MerchantServiceInterface,
-  MerchantPrivateApi,
-  HarnessExchangeBankAccount,
-  WithAuthorization,
+  BankApi,
+  BankService,
+  DbInfo,
+  ExchangeService,
+  ExchangeServiceInterface,
   getPayto,
+  GlobalTestState,
+  HarnessExchangeBankAccount,
+  MerchantPrivateApi,
+  MerchantService,
+  MerchantServiceInterface,
+  setupDb,
+  WalletCli,
+  WithAuthorization,
 } from "./harness.js";
-import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 export interface SimpleTestEnvironment {
   commonDb: DbInfo;
@@ -242,7 +242,9 @@ export async function createFaultInjectedMerchantTestkudosEnvironment(
 }
 
 /**
- * Withdraw balance.
+ * Start withdrawing into the wallet.
+ *
+ * Only starts the operation, does not wait for it to finish.
  */
 export async function startWithdrawViaBank(
   t: GlobalTestState,
@@ -277,8 +279,8 @@ export async function startWithdrawViaBank(
 
   await BankApi.confirmWithdrawalOperation(bank, user, wop);
 
-  await wallet.runPending();
-  await wallet.runUntilDone();
+  // We do *not* call runPending / runUntilDone on the wallet here.
+  // Some tests rely on the final withdraw failing.
 }
 
 /**

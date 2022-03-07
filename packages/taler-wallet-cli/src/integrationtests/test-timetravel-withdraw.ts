@@ -17,14 +17,14 @@
 /**
  * Imports.
  */
+import { Duration, TransactionType } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { GlobalTestState } from "../harness/harness.js";
 import {
   createSimpleTestkudosEnvironment,
-  withdrawViaBank,
   startWithdrawViaBank,
+  withdrawViaBank,
 } from "../harness/helpers.js";
-import { Duration, TransactionType } from "@gnu-taler/taler-util";
-import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Basic time travel test.
@@ -32,12 +32,8 @@ import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 export async function runTimetravelWithdrawTest(t: GlobalTestState) {
   // Set up test environment
 
-  const {
-    wallet,
-    bank,
-    exchange,
-    merchant,
-  } = await createSimpleTestkudosEnvironment(t);
+  const { wallet, bank, exchange, merchant } =
+    await createSimpleTestkudosEnvironment(t);
 
   // Withdraw digital cash into the wallet.
 
@@ -61,6 +57,8 @@ export async function runTimetravelWithdrawTest(t: GlobalTestState) {
   await merchant.start();
   await merchant.pingUntilAvailable();
 
+  console.log("starting withdrawal via bank");
+
   // This should fail, as the wallet didn't time travel yet.
   await startWithdrawViaBank(t, {
     wallet,
@@ -69,9 +67,13 @@ export async function runTimetravelWithdrawTest(t: GlobalTestState) {
     amount: "TESTKUDOS:20",
   });
 
+  console.log("starting withdrawal done");
+
   // Check that transactions are correct for the failed withdrawal
   {
+    console.log("running until done (should run into maxRetries limit)");
     await wallet.runUntilDone({ maxRetries: 5 });
+    console.log("wallet done running");
     const transactions = await wallet.client.call(
       WalletApiOperation.GetTransactions,
       {},
