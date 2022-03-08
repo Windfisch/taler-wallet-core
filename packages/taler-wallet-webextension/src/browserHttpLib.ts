@@ -24,7 +24,11 @@ import {
   HttpResponse,
   Headers,
 } from "@gnu-taler/taler-wallet-core";
-import { Logger, TalerErrorCode } from "@gnu-taler/taler-util";
+import {
+  Logger,
+  RequestThrottler,
+  TalerErrorCode,
+} from "@gnu-taler/taler-util";
 
 const logger = new Logger("browserHttpLib");
 
@@ -33,12 +37,32 @@ const logger = new Logger("browserHttpLib");
  * browser's XMLHttpRequest.
  */
 export class BrowserHttpLib implements HttpRequestLibrary {
-  fetch(url: string, options?: HttpRequestOptions): Promise<HttpResponse> {
-    const method = options?.method ?? "GET";
+  private throttle = new RequestThrottler();
+  private throttlingEnabled = true;
+
+  fetch(
+    requestUrl: string,
+    options?: HttpRequestOptions,
+  ): Promise<HttpResponse> {
+    const requestMethod = options?.method ?? "GET";
     let requestBody = options?.body;
+
+    if (this.throttlingEnabled && this.throttle.applyThrottle(requestUrl)) {
+      const parsedUrl = new URL(requestUrl);
+      throw OperationFailedError.fromCode(
+        TalerErrorCode.WALLET_HTTP_REQUEST_THROTTLED,
+        `request to origin ${parsedUrl.origin} was throttled`,
+        {
+          requestMethod,
+          requestUrl,
+          throttleStats: this.throttle.getThrottleStats(requestUrl),
+        },
+      );
+    }
+
     return new Promise<HttpResponse>((resolve, reject) => {
       const myRequest = new XMLHttpRequest();
-      myRequest.open(method, url);
+      myRequest.open(requestMethod, requestUrl);
       if (options?.headers) {
         for (const headerName in options.headers) {
           myRequest.setRequestHeader(headerName, options.headers[headerName]);
@@ -58,7 +82,7 @@ export class BrowserHttpLib implements HttpRequestLibrary {
             TalerErrorCode.WALLET_NETWORK_ERROR,
             "Could not make request",
             {
-              requestUrl: url,
+              requestUrl: requestUrl,
             },
           ),
         );
@@ -71,7 +95,7 @@ export class BrowserHttpLib implements HttpRequestLibrary {
               TalerErrorCode.WALLET_NETWORK_ERROR,
               "HTTP request failed (status 0, maybe URI scheme was wrong?)",
               {
-                requestUrl: url,
+                requestUrl: requestUrl,
               },
             );
             reject(exc);
@@ -92,7 +116,7 @@ export class BrowserHttpLib implements HttpRequestLibrary {
                 TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
                 "Invalid JSON from HTTP response",
                 {
-                  requestUrl: url,
+                  requestUrl: requestUrl,
                   httpStatusCode: myRequest.status,
                 },
               );
@@ -102,7 +126,7 @@ export class BrowserHttpLib implements HttpRequestLibrary {
                 TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
                 "Invalid JSON from HTTP response",
                 {
-                  requestUrl: url,
+                  requestUrl: requestUrl,
                   httpStatusCode: myRequest.status,
                 },
               );
@@ -126,10 +150,10 @@ export class BrowserHttpLib implements HttpRequestLibrary {
             headerMap.set(headerName, value);
           });
           const resp: HttpResponse = {
-            requestUrl: url,
+            requestUrl: requestUrl,
             status: myRequest.status,
             headers: headerMap,
-            requestMethod: method,
+            requestMethod: requestMethod,
             json: makeJson,
             text: makeText,
             bytes: async () => myRequest.response,

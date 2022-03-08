@@ -17,37 +17,55 @@
 /**
  * Imports.
  */
-import { Logger, TalerErrorCode } from "@gnu-taler/taler-util";
+import { RequestThrottler, TalerErrorCode } from "@gnu-taler/taler-util";
 import {
-  Headers, HttpRequestLibrary,
+  Headers,
+  HttpRequestLibrary,
   HttpRequestOptions,
   HttpResponse,
-  OperationFailedError
+  OperationFailedError,
 } from "@gnu-taler/taler-wallet-core";
-
-const logger = new Logger("browserHttpLib");
 
 /**
  * An implementation of the [[HttpRequestLibrary]] using the
  * browser's XMLHttpRequest.
  */
 export class ServiceWorkerHttpLib implements HttpRequestLibrary {
-  async fetch(requestUrl: string, options?: HttpRequestOptions): Promise<HttpResponse> {
+  private throttle = new RequestThrottler();
+  private throttlingEnabled = true;
+
+  async fetch(
+    requestUrl: string,
+    options?: HttpRequestOptions,
+  ): Promise<HttpResponse> {
     const requestMethod = options?.method ?? "GET";
     const requestBody = options?.body;
     const requestHeader = options?.headers;
+
+    if (this.throttlingEnabled && this.throttle.applyThrottle(requestUrl)) {
+      const parsedUrl = new URL(requestUrl);
+      throw OperationFailedError.fromCode(
+        TalerErrorCode.WALLET_HTTP_REQUEST_THROTTLED,
+        `request to origin ${parsedUrl.origin} was throttled`,
+        {
+          requestMethod,
+          requestUrl,
+          throttleStats: this.throttle.getThrottleStats(requestUrl),
+        },
+      );
+    }
 
     const response = await fetch(requestUrl, {
       headers: requestHeader,
       body: requestBody,
       method: requestMethod,
       // timeout: options?.timeout
-    })
+    });
 
     const headerMap = new Headers();
     response.headers.forEach((value, key) => {
       headerMap.set(key, value);
-    })
+    });
     return {
       headers: headerMap,
       status: response.status,
@@ -56,10 +74,8 @@ export class ServiceWorkerHttpLib implements HttpRequestLibrary {
       json: makeJsonHandler(response, requestUrl),
       text: makeTextHandler(response, requestUrl),
       bytes: async () => (await response.blob()).arrayBuffer(),
-    }
-
+    };
   }
-
 
   get(url: string, opt?: HttpRequestOptions): Promise<HttpResponse> {
     return this.fetch(url, {
@@ -89,7 +105,7 @@ function makeTextHandler(response: Response, requestUrl: string) {
   return async function getJsonFromResponse(): Promise<any> {
     let respText;
     try {
-      respText = await response.text()
+      respText = await response.text();
     } catch (e) {
       throw OperationFailedError.fromCode(
         TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
@@ -100,15 +116,15 @@ function makeTextHandler(response: Response, requestUrl: string) {
         },
       );
     }
-    return respText
-  }
+    return respText;
+  };
 }
 
 function makeJsonHandler(response: Response, requestUrl: string) {
   return async function getJsonFromResponse(): Promise<any> {
     let responseJson;
     try {
-      responseJson = await response.json()
+      responseJson = await response.json();
     } catch (e) {
       throw OperationFailedError.fromCode(
         TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
@@ -129,7 +145,6 @@ function makeJsonHandler(response: Response, requestUrl: string) {
         },
       );
     }
-    return responseJson
-  }
+    return responseJson;
+  };
 }
-

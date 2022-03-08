@@ -25,7 +25,7 @@ import {
   HttpRequestOptions,
   HttpResponse,
 } from "../util/http.js";
-import { RequestThrottler } from "../util/RequestThrottler.js";
+import { RequestThrottler } from "@gnu-taler/taler-util";
 import Axios, { AxiosResponse } from "axios";
 import { OperationFailedError, makeErrorDetails } from "../errors.js";
 import { Logger, bytesToString } from "@gnu-taler/taler-util";

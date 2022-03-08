@@ -14,20 +14,13 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { Logger } from "./logging.js";
+import { getTimestampNow, timestampCmp, timestampDifference } from "./time.js";
+
 /**
  * Implementation of token bucket throttling.
  */
 
-/**
- * Imports.
- */
-import {
-  getTimestampNow,
-  timestampDifference,
-  timestampCmp,
-  Logger,
-  URL,
-} from "@gnu-taler/taler-util";
 
 const logger = new Logger("RequestThrottler.ts");
 

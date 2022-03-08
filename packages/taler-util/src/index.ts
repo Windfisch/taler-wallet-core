@@ -30,3 +30,4 @@ export {
   secretbox_open,
   crypto_sign_keyPair_fromSeed,
 } from "./nacl-fast.js";
+export { RequestThrottler } from "./RequestThrottler.js";
