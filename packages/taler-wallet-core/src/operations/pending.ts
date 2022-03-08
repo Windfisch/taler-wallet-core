@@ -48,7 +48,6 @@ async function gatherExchangePending(
   resp: PendingOperationsResponse,
 ): Promise<void> {
   await tx.exchanges.iter().forEachAsync(async (e) => {
-
     resp.pendingOperations.push({
       type: PendingTaskType.ExchangeUpdate,
       givesLifeness: false,
@@ -79,16 +78,16 @@ async function gatherReservePending(
       ? ReserveType.TalerBankWithdraw
       : ReserveType.Manual;
     switch (reserve.reserveStatus) {
-      case ReserveRecordStatus.DORMANT:
+      case ReserveRecordStatus.Dormant:
         // nothing to report as pending
         break;
-      case ReserveRecordStatus.WAIT_CONFIRM_BANK:
-      case ReserveRecordStatus.QUERYING_STATUS:
-      case ReserveRecordStatus.REGISTERING_BANK:
+      case ReserveRecordStatus.WaitConfirmBank:
+      case ReserveRecordStatus.QueryingStatus:
+      case ReserveRecordStatus.RegisteringBank: {
         resp.pendingOperations.push({
           type: PendingTaskType.Reserve,
           givesLifeness: true,
-          timestampDue: reserve.retryInfo.nextRetry,
+          timestampDue: reserve.retryInfo?.nextRetry ?? Timestamp.now(),
           stage: reserve.reserveStatus,
           timestampCreated: reserve.timestampCreated,
           reserveType,
@@ -96,6 +95,7 @@ async function gatherReservePending(
           retryInfo: reserve.retryInfo,
         });
         break;
+      }
       default:
         // FIXME: report problem!
         break;

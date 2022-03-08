@@ -23,7 +23,7 @@
  */
 import { Codec, renderContext, Context } from "./codec.js";
 
-export class Timestamp {
+export interface Timestamp {
   /**
    * Timestamp in milliseconds.
    */
@@ -81,7 +81,9 @@ export namespace Duration {
 }
 
 export namespace Timestamp {
+  export const now = getTimestampNow;
   export const min = timestampMin;
+  export const isExpired = isTimestampExpired;
 }
 
 export function timestampMin(t1: Timestamp, t2: Timestamp): Timestamp {

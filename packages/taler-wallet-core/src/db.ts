@@ -75,31 +75,31 @@ export enum ReserveRecordStatus {
   /**
    * Reserve must be registered with the bank.
    */
-  REGISTERING_BANK = "registering-bank",
+  RegisteringBank = "registering-bank",
 
   /**
    * We've registered reserve's information with the bank
    * and are now waiting for the user to confirm the withdraw
    * with the bank (typically 2nd factor auth).
    */
-  WAIT_CONFIRM_BANK = "wait-confirm-bank",
+  WaitConfirmBank = "wait-confirm-bank",
 
   /**
    * Querying reserve status with the exchange.
    */
-  QUERYING_STATUS = "querying-status",
+  QueryingStatus = "querying-status",
 
   /**
    * The corresponding withdraw record has been created.
    * No further processing is done, unless explicitly requested
    * by the user.
    */
-  DORMANT = "dormant",
+  Dormant = "dormant",
 
   /**
    * The bank aborted the withdrawal.
    */
-  BANK_ABORTED = "bank-aborted",
+  BankAborted = "bank-aborted",
 }
 
 /**
@@ -212,7 +212,8 @@ export interface ReserveRecord {
   /**
    * Is there any work to be done for this reserve?
    *
-   * FIXME: Technically redundant, since the reserveStatus would indicate this.
+   * Technically redundant, since the reserveStatus would indicate this.
+   * However, we use the operationStatus for DB indexing of pending operations.
    */
   operationStatus: OperationStatus;
 
@@ -222,11 +223,11 @@ export interface ReserveRecord {
   lastSuccessfulStatusQuery: Timestamp | undefined;
 
   /**
-   * Retry info.  This field is present even if no retry is scheduled,
-   * because we need it to be present for the index on the object store
-   * to work.
+   * Retry info, in case the reserve needs to be processed again
+   * later, either due to an error or because the wallet needs to
+   * wait for something.
    */
-  retryInfo: RetryInfo;
+  retryInfo: RetryInfo | undefined;
 
   /**
    * Last error that happened in a reserve operation
@@ -830,6 +831,8 @@ export interface ProposalRecord {
   /**
    * Retry info, even present when the operation isn't active to allow indexing
    * on the next retry timestamp.
+   * 
+   * FIXME: Clarify what we even retry.
    */
   retryInfo?: RetryInfo;
 

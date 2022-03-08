@@ -194,7 +194,7 @@ export async function getTransactions(
           if (r.initialWithdrawalStarted) {
             return;
           }
-          if (r.reserveStatus === ReserveRecordStatus.BANK_ABORTED) {
+          if (r.reserveStatus === ReserveRecordStatus.BankAborted) {
             return;
           }
           let withdrawalDetails: WithdrawalDetails;

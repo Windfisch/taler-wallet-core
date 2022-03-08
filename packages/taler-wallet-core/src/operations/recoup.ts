@@ -233,7 +233,7 @@ async function recoupWithdrawCoin(
       updatedCoin.status = CoinStatus.Dormant;
       const currency = updatedCoin.currentAmount.currency;
       updatedCoin.currentAmount = Amounts.getZero(currency);
-      updatedReserve.reserveStatus = ReserveRecordStatus.QUERYING_STATUS;
+      updatedReserve.reserveStatus = ReserveRecordStatus.QueryingStatus;
       updatedReserve.retryInfo = initRetryInfo();
       updatedReserve.operationStatus = OperationStatus.Pending;
       await tx.coins.put(updatedCoin);

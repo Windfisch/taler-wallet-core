@@ -574,7 +574,7 @@ export async function handleNotifyReserve(
       return tx.reserves.iter().toArray();
     });
   for (const r of reserves) {
-    if (r.reserveStatus === ReserveRecordStatus.WAIT_CONFIRM_BANK) {
+    if (r.reserveStatus === ReserveRecordStatus.WaitConfirmBank) {
       try {
         processReserve(ws, r.reservePub);
       } catch (e) {

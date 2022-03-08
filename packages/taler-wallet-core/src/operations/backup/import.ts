@@ -472,7 +472,7 @@ export async function importBackup(
               initialWithdrawalStarted:
                 backupReserve.withdrawal_groups.length > 0,
               // FIXME!
-              reserveStatus: ReserveRecordStatus.QUERYING_STATUS,
+              reserveStatus: ReserveRecordStatus.QueryingStatus,
               initialDenomSel: await getDenomSelStateFromBackup(
                 tx,
                 backupExchangeDetails.base_url,
