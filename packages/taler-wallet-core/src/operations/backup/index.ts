@@ -185,21 +185,8 @@ async function computeBackupCryptoData(
           coinPub,
         };
       }
-      if (
-        LibtoolVersion.compare(backupExchangeDetails.protocol_version, "9")
-          ?.compatible
-      ) {
-        cryptoData.rsaDenomPubToHash[backupDenom.denom_pub.rsa_public_key] =
-          encodeCrock(hash(decodeCrock(backupDenom.denom_pub.rsa_public_key)));
-      } else if (
-        LibtoolVersion.compare(backupExchangeDetails.protocol_version, "10")
-          ?.compatible
-      ) {
-        cryptoData.rsaDenomPubToHash[backupDenom.denom_pub.rsa_public_key] =
-          encodeCrock(hashDenomPub(backupDenom.denom_pub));
-      } else {
-        throw Error("unsupported exchange protocol version");
-      }
+      cryptoData.rsaDenomPubToHash[backupDenom.denom_pub.rsa_public_key] =
+        encodeCrock(hashDenomPub(backupDenom.denom_pub));
     }
     for (const backupReserve of backupExchangeDetails.reserves) {
       cryptoData.reservePrivToPub[backupReserve.reserve_priv] = encodeCrock(
