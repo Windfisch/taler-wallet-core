@@ -42,27 +42,20 @@ submodules-update:
 
 .PHONY: check
 check:
-	pnpm i -r --frozen-lockfile
+	pnpm install -r --frozen-lockfile
 	pnpm run compile
 	pnpm run check
 
-.PHONY: webextensions
+.PHONY: webextension
 webextension:
-	pnpm i -r --frozen-lockfile
-	pnpm run compile
+	pnpm install --frozen-lockfile --filter @gnu-taler/taler-wallet-webextension...
 	cd ./packages/taler-wallet-webextension/ && ./pack.sh
 
 .PHONY: webextension-dev-view
 webextension-dev-view:
-	pnpm i -r --frozen-lockfile
+	pnpm install -r --frozen-lockfile
 	pnpm run compile
 	pnpm run --filter @gnu-taler/taler-wallet-webextension storybook
-
-.PHONY: integrationtests
-integrationtests: compile
-	pnpm i -r --frozen-lockfile
-	pnpm run compile
-	./packages/taler-integrationtests/testrunner '*'
 
 .PHONY: i18n
 i18n: compile
