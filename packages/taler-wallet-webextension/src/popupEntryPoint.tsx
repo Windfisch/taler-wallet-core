@@ -172,15 +172,16 @@ function Application(): VNode {
 function RedirectToWalletPage(): VNode {
   const page = document.location.hash || "#/";
   useEffect(() => {
-    chrome.tabs
-      .create({
+    chrome.tabs.create(
+      {
         active: true,
         // eslint-disable-next-line no-undef
         url: chrome.runtime.getURL(`/static/wallet.html${page}`),
-      })
-      .then(() => {
+      },
+      () => {
         window.close();
-      });
+      },
+    );
   });
   return (
     <span>
