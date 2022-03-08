@@ -19,6 +19,10 @@ cp -r dist static $TEMP_DIR
 mkdir -p extension/v2
 mv "$TEMP_DIR/$zipfile" ./extension/v2/
 rm -rf $TEMP_DIR
+# also provide unpacked version
+rm -rf extension/v2/unpacked
+mkdir -p extension/v2/unpacked
+(cd extension/v2/unpacked && unzip ../$zipfile)
 echo "Packed webextension: extension/v2/$zipfile"
 
 
@@ -33,4 +37,8 @@ cp -r dist static $TEMP_DIR
 mkdir -p extension/v3
 mv "$TEMP_DIR/$zipfile" ./extension/v3/
 rm -rf $TEMP_DIR
+# also provide unpacked version
+rm -rf extension/v3/unpacked
+mkdir -p extension/v3/unpacked
+(cd extension/v3/unpacked && unzip ../$zipfile)
 echo "Packed webextension: extension/v3/$zipfile"
