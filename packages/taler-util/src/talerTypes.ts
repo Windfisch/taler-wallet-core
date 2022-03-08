@@ -411,11 +411,6 @@ export interface ContractTerms {
   h_wire: string;
 
   /**
-   * Legacy wire hash, used for deposit operations with an older exchange.
-   */
-  h_wire_legacy?: string;
-
-  /**
    * Hash of the merchant's wire details.
    */
   auto_refund?: Duration;

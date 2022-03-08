@@ -751,27 +751,27 @@ export enum ProposalStatus {
   /**
    * Not downloaded yet.
    */
-  DOWNLOADING = "downloading",
+  Downloading = "downloading",
   /**
    * Proposal downloaded, but the user needs to accept/reject it.
    */
-  PROPOSED = "proposed",
+  Proposed = "proposed",
   /**
    * The user has accepted the proposal.
    */
-  ACCEPTED = "accepted",
+  Accepted = "accepted",
   /**
    * The user has rejected the proposal.
    */
-  REFUSED = "refused",
+  Refused = "refused",
   /**
    * Downloading or processing the proposal has failed permanently.
    */
-  PERMANENTLY_FAILED = "permanently-failed",
+  PermanentlyFailed = "permanently-failed",
   /**
    * Downloaded proposal was detected as a re-purchase.
    */
-  REPURCHASE = "repurchase",
+  Repurchase = "repurchase",
 }
 
 export interface ProposalDownload {
@@ -831,7 +831,7 @@ export interface ProposalRecord {
   /**
    * Retry info, even present when the operation isn't active to allow indexing
    * on the next retry timestamp.
-   * 
+   *
    * FIXME: Clarify what we even retry.
    */
   retryInfo?: RetryInfo;

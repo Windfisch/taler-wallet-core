@@ -173,9 +173,9 @@ async function gatherProposalPending(
   resp: PendingOperationsResponse,
 ): Promise<void> {
   await tx.proposals.iter().forEach((proposal) => {
-    if (proposal.proposalStatus == ProposalStatus.PROPOSED) {
+    if (proposal.proposalStatus == ProposalStatus.Proposed) {
       // Nothing to do, user needs to choose.
-    } else if (proposal.proposalStatus == ProposalStatus.DOWNLOADING) {
+    } else if (proposal.proposalStatus == ProposalStatus.Downloading) {
       const timestampDue = proposal.retryInfo?.nextRetry ?? getTimestampNow();
       resp.pendingOperations.push({
         type: PendingTaskType.ProposalDownload,

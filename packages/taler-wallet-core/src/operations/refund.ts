@@ -65,6 +65,23 @@ import { InternalWalletState } from "../common.js";
 
 const logger = new Logger("refund.ts");
 
+async function resetPurchaseQueryRefundRetry(
+  ws: InternalWalletState,
+  proposalId: string,
+): Promise<void> {
+  await ws.db
+    .mktx((x) => ({
+      purchases: x.purchases,
+    }))
+    .runReadWrite(async (tx) => {
+      const x = await tx.purchases.get(proposalId);
+      if (x) {
+        x.refundStatusRetryInfo = initRetryInfo();
+        await tx.purchases.put(x);
+      }
+    });
+}
+
 /**
  * Retry querying and applying refunds for an order later.
  */
@@ -576,23 +593,6 @@ export async function processPurchaseQueryRefund(
     () => processPurchaseQueryRefundImpl(ws, proposalId, forceNow, true),
     onOpErr,
   );
-}
-
-async function resetPurchaseQueryRefundRetry(
-  ws: InternalWalletState,
-  proposalId: string,
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({
-      purchases: x.purchases,
-    }))
-    .runReadWrite(async (tx) => {
-      const x = await tx.purchases.get(proposalId);
-      if (x) {
-        x.refundStatusRetryInfo = initRetryInfo();
-        await tx.purchases.put(x);
-      }
-    });
 }
 
 async function processPurchaseQueryRefundImpl(

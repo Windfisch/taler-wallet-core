@@ -388,19 +388,19 @@ export async function exportBackup(
         }
         let propStatus: BackupProposalStatus;
         switch (prop.proposalStatus) {
-          case ProposalStatus.ACCEPTED:
+          case ProposalStatus.Accepted:
             return;
-          case ProposalStatus.DOWNLOADING:
-          case ProposalStatus.PROPOSED:
+          case ProposalStatus.Downloading:
+          case ProposalStatus.Proposed:
             propStatus = BackupProposalStatus.Proposed;
             break;
-          case ProposalStatus.PERMANENTLY_FAILED:
+          case ProposalStatus.PermanentlyFailed:
             propStatus = BackupProposalStatus.PermanentlyFailed;
             break;
-          case ProposalStatus.REFUSED:
+          case ProposalStatus.Refused:
             propStatus = BackupProposalStatus.Refused;
             break;
-          case ProposalStatus.REPURCHASE:
+          case ProposalStatus.Repurchase:
             propStatus = BackupProposalStatus.Repurchase;
             break;
         }

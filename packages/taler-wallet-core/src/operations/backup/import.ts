@@ -538,19 +538,19 @@ export async function importBackup(
           switch (backupProposal.proposal_status) {
             case BackupProposalStatus.Proposed:
               if (backupProposal.contract_terms_raw) {
-                proposalStatus = ProposalStatus.PROPOSED;
+                proposalStatus = ProposalStatus.Proposed;
               } else {
-                proposalStatus = ProposalStatus.DOWNLOADING;
+                proposalStatus = ProposalStatus.Downloading;
               }
               break;
             case BackupProposalStatus.Refused:
-              proposalStatus = ProposalStatus.REFUSED;
+              proposalStatus = ProposalStatus.Refused;
               break;
             case BackupProposalStatus.Repurchase:
-              proposalStatus = ProposalStatus.REPURCHASE;
+              proposalStatus = ProposalStatus.Repurchase;
               break;
             case BackupProposalStatus.PermanentlyFailed:
-              proposalStatus = ProposalStatus.PERMANENTLY_FAILED;
+              proposalStatus = ProposalStatus.PermanentlyFailed;
               break;
           }
           if (backupProposal.contract_terms_raw) {

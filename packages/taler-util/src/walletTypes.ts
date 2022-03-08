@@ -132,7 +132,7 @@ export interface ConfirmPayResultDone {
 export interface ConfirmPayResultPending {
   type: ConfirmPayResultType.Pending;
 
-  lastError: TalerErrorDetails;
+  lastError: TalerErrorDetails | undefined;
 }
 
 export type ConfirmPayResult = ConfirmPayResultDone | ConfirmPayResultPending;

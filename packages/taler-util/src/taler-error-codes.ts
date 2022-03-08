@@ -37,6 +37,13 @@ export enum TalerErrorCode {
   INVALID = 1,
 
   /**
+   * An internal failure happened on the client side.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  GENERIC_CLIENT_INTERNAL_ERROR = 2,
+
+  /**
    * The response we got from the server was not even in JSON format.
    * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
    * (A value of 0 indicates that the error is generated client-side).
@@ -91,6 +98,13 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   GENERIC_JSON_INVALID = 22,
+
+  /**
+   * Some of the HTTP headers provided by the client caused the server to not be able to handle the request.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  GENERIC_HTTP_HEADERS_MALFORMED = 23,
 
   /**
    * The payto:// URI provided by the client is malformed.
@@ -219,6 +233,13 @@ export enum TalerErrorCode {
   GENERIC_JSON_ALLOCATION_FAILURE = 72,
 
   /**
+   * The HTTP server failed to allocate memory for making a CURL request.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  GENERIC_CURL_ALLOCATION_FAILURE = 73,
+
+  /**
    * Exchange is badly configured and thus cannot operate.
    * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
    * (A value of 0 indicates that the error is generated client-side).
@@ -269,7 +290,7 @@ export enum TalerErrorCode {
 
   /**
    * The exchange failed to perform the operation as it could not find the private keys. This is a problem with the exchange setup, not with the client's request.
-   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * Returned with an HTTP status code of #MHD_HTTP_SERVICE_UNAVAILABLE (503).
    * (A value of 0 indicates that the error is generated client-side).
    */
   EXCHANGE_GENERIC_KEYS_MISSING = 1007,
@@ -294,6 +315,62 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   EXCHANGE_GENERIC_DENOMINATION_REVOKED = 1010,
+
+  /**
+   * An operation where the exchange interacted with a security module timed out.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_GENERIC_SECMOD_TIMEOUT = 1011,
+
+  /**
+   * The respective coin did not have sufficient residual value for the operation.  The "history" in this response provides the "residual_value" of the coin, which may be less than its "original_value".
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_GENERIC_INSUFFICIENT_FUNDS = 1012,
+
+  /**
+   * The exchange had an internal error reconstructing the transaction history of the coin that was being processed.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_GENERIC_COIN_HISTORY_COMPUTATION_FAILED = 1013,
+
+  /**
+   * The exchange failed to obtain the transaction history of the given coin from the database while generating an insufficient funds errors.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_GENERIC_HISTORY_DB_ERROR_INSUFFICIENT_FUNDS = 1014,
+
+  /**
+   * The same coin was already used with a different age hash previously.
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_GENERIC_COIN_CONFLICTING_AGE_HASH = 1015,
+
+  /**
+   * The requested operation is not valid for the cipher used by the selected denomination.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_GENERIC_INVALID_DENOMINATION_CIPHER_FOR_OPERATION = 1016,
+
+  /**
+   * The provided arguments for the operation use inconsistent ciphers.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_GENERIC_CIPHER_MISMATCH = 1017,
+
+  /**
+   * The number of denominations specified in the request exceeds the limit of the exchange.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_GENERIC_NEW_DENOMS_ARRAY_SIZE_EXCESSIVE = 1018,
 
   /**
    * The exchange did not find information about the specified transaction in the database.
@@ -401,18 +478,18 @@ export enum TalerErrorCode {
   EXCHANGE_WITHDRAW_UNBLIND_FAILURE = 1159,
 
   /**
-   * The respective coin did not have sufficient residual value for the /deposit operation (i.e. due to double spending). The "history" in the response provides the transaction history of the coin proving this fact.
-   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
-   * (A value of 0 indicates that the error is generated client-side).
-   */
-  EXCHANGE_DEPOSIT_INSUFFICIENT_FUNDS = 1200,
-
-  /**
    * The signature made by the coin over the deposit permission is not valid.
    * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
    * (A value of 0 indicates that the error is generated client-side).
    */
   EXCHANGE_DEPOSIT_COIN_SIGNATURE_INVALID = 1205,
+
+  /**
+   * The same coin was already deposited for the same merchant and contract with other details.
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_DEPOSIT_CONFLICTING_CONTRACT = 1206,
 
   /**
    * The stated value of the coin after the deposit fee is subtracted would be negative.
@@ -427,6 +504,13 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   EXCHANGE_DEPOSIT_REFUND_DEADLINE_AFTER_WIRE_DEADLINE = 1208,
+
+  /**
+   * The stated wire deadline is "never", which makes no sense.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_DEPOSIT_WIRE_DEADLINE_IS_NEVER = 1209,
 
   /**
    * The exchange failed to canonicalize and hash the given wire format. For example, the merchant failed to provide the "salt" or a valid payto:// URI in the wire details.  Note that while the exchange will do some basic sanity checking on the wire details, it cannot warrant that the banking system will ultimately be able to route to the specified address, even if this check passed.
@@ -450,25 +534,18 @@ export enum TalerErrorCode {
   EXCHANGE_DEPOSIT_INVALID_SIGNATURE_BY_EXCHANGE = 1221,
 
   /**
+   * The deposited amount is smaller than the deposit fee, which would result in a negative contribution.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_DEPOSIT_FEE_ABOVE_AMOUNT = 1222,
+
+  /**
    * The reserve status was requested using a unknown key.
    * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
    * (A value of 0 indicates that the error is generated client-side).
    */
   EXCHANGE_RESERVES_GET_STATUS_UNKNOWN = 1250,
-
-  /**
-   * The respective coin did not have sufficient residual value for the /refresh/melt operation.  The "history" in this response provdes the "residual_value" of the coin, which may be less than its "original_value".
-   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
-   * (A value of 0 indicates that the error is generated client-side).
-   */
-  EXCHANGE_MELT_INSUFFICIENT_FUNDS = 1300,
-
-  /**
-   * The exchange had an internal error reconstructing the transaction history of the coin that was being melted.
-   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
-   * (A value of 0 indicates that the error is generated client-side).
-   */
-  EXCHANGE_MELT_COIN_HISTORY_COMPUTATION_FAILED = 1301,
 
   /**
    * The exchange encountered melt fees exceeding the melted coin's contribution.
@@ -483,13 +560,6 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   EXCHANGE_MELT_COIN_SIGNATURE_INVALID = 1303,
-
-  /**
-   * The exchange failed to obtain the transaction history of the given coin from the database while generating an insufficient funds errors.
-   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
-   * (A value of 0 indicates that the error is generated client-side).
-   */
-  EXCHANGE_MELT_HISTORY_DB_ERROR_INSUFFICIENT_FUNDS = 1304,
 
   /**
    * The denomination of the given coin has past its expiration date and it is also not a valid zombie (that is, was not refreshed with the fresh coin being subjected to recoup).
@@ -534,13 +604,6 @@ export enum TalerErrorCode {
   EXCHANGE_REFRESHES_REVEAL_CNC_TRANSFER_ARRAY_SIZE_INVALID = 1356,
 
   /**
-   * The number of coins to be created in refresh exceeds the limits of the exchange. private transfer keys request does not match #TALER_CNC_KAPPA - 1.
-   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
-   * (A value of 0 indicates that the error is generated client-side).
-   */
-  EXCHANGE_REFRESHES_REVEAL_NEW_DENOMS_ARRAY_SIZE_EXCESSIVE = 1357,
-
-  /**
    * The number of envelopes given does not match the number of denomination keys given.
    * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
@@ -581,6 +644,20 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   EXCHANGE_REFRESHES_REVEAL_OPERATION_INVALID = 1363,
+
+  /**
+   * The client provided age commitment data, but age restriction is not supported on this server.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_REFRESHES_REVEAL_AGE_RESTRICTION_NOT_SUPPORTED = 1364,
+
+  /**
+   * The client provided invalid age commitment data: missing, not an array, or  array of invalid size.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_REFRESHES_REVEAL_AGE_RESTRICTION_COMMITMENT_INVALID = 1365,
 
   /**
    * The coin specified in the link request is unknown to the exchange.
@@ -737,6 +814,34 @@ export enum TalerErrorCode {
   EXCHANGE_RECOUP_NOT_ELIGIBLE = 1555,
 
   /**
+   * The given coin signature is invalid for the request.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_RECOUP_REFRESH_SIGNATURE_INVALID = 1575,
+
+  /**
+   * The exchange could not find the corresponding melt operation. The request is denied.
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_RECOUP_REFRESH_MELT_NOT_FOUND = 1576,
+
+  /**
+   * The exchange failed to reproduce the coin's blinding.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_RECOUP_REFRESH_BLINDING_FAILED = 1578,
+
+  /**
+   * The coin's denomination has not been revoked yet.
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_RECOUP_REFRESH_NOT_ELIGIBLE = 1580,
+
+  /**
    * This exchange does not allow clients to request /keys for times other than the current (exchange) time.
    * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
    * (A value of 0 indicates that the error is generated client-side).
@@ -749,6 +854,27 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   EXCHANGE_WIRE_SIGNATURE_INVALID = 1650,
+
+  /**
+   * No bank accounts are enabled for the exchange. The administrator should enable-account using the taler-exchange-offline tool.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_WIRE_NO_ACCOUNTS_CONFIGURED = 1651,
+
+  /**
+   * The payto:// URI stored in the exchange database for its bank account is malformed.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_WIRE_INVALID_PAYTO_CONFIGURED = 1652,
+
+  /**
+   * No wire fees are configured for an enabled wire method of the exchange. The administrator must set the wire-fee using the taler-exchange-offline tool.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_WIRE_FEES_NOT_CONFIGURED = 1653,
 
   /**
    * The exchange failed to talk to the process responsible for its private denomination keys.
@@ -905,6 +1031,20 @@ export enum TalerErrorCode {
   EXCHANGE_MANAGEMENT_KEYS_SIGNKEY_ADD_SIGNATURE_INVALID = 1815,
 
   /**
+   * The signature conflicts with a previous signature affirming different fees.
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_MANAGEMENT_GLOBAL_FEE_MISMATCH = 1816,
+
+  /**
+   * The signature affirming the fee structure is invalid.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_MANAGEMENT_GLOBAL_FEE_SIGNATURE_INVALID = 1817,
+
+  /**
    * The auditor signature over the denomination meta data is invalid.
    * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
    * (A value of 0 indicates that the error is generated client-side).
@@ -924,6 +1064,41 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   EXCHANGE_AUDITORS_AUDITOR_INACTIVE = 1902,
+
+  /**
+   * The signature affirming the wallet's KYC request was invalid.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_KYC_WALLET_SIGNATURE_INVALID = 1925,
+
+  /**
+   * The exchange received an unexpected malformed response from its KYC backend.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_GATEWAY (502).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_KYC_PROOF_BACKEND_INVALID_RESPONSE = 1926,
+
+  /**
+   * The backend signaled an unexpected failure.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_GATEWAY (502).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_KYC_PROOF_BACKEND_ERROR = 1927,
+
+  /**
+   * The backend signaled an authorization failure.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_KYC_PROOF_BACKEND_AUTHORIZATION_FAILED = 1928,
+
+  /**
+   * The payto-URI hash did not match. Hence the request was denied.
+   * Returned with an HTTP status code of #MHD_HTTP_UNAUTHORIZED (401).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_KYC_CHECK_AUTHORIZATION_FAILED = 1930,
 
   /**
    * The backend could not find the merchant instance specified in the request.
@@ -1045,6 +1220,13 @@ export enum TalerErrorCode {
   MERCHANT_GENERIC_INSTANCE_DELETED = 2016,
 
   /**
+   * The backend could not find the inbound wire transfer specified in the request.
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_GENERIC_TRANSFER_UNKNOWN = 2017,
+
+  /**
    * The exchange failed to provide a valid answer to the tracking request, thus those details are not in the response.
    * Returned with an HTTP status code of #MHD_HTTP_OK (200).
    * (A value of 0 indicates that the error is generated client-side).
@@ -1066,11 +1248,18 @@ export enum TalerErrorCode {
   MERCHANT_GET_ORDERS_ID_EXCHANGE_LOOKUP_START_FAILURE = 2104,
 
   /**
-   * The token used to authenticate the client is invalid for this order.
+   * The claim token used to authenticate the client is invalid for this order.
    * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
    * (A value of 0 indicates that the error is generated client-side).
    */
   MERCHANT_GET_ORDERS_ID_INVALID_TOKEN = 2105,
+
+  /**
+   * The contract terms hash used to authenticate the client is invalid for this order.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_GET_ORDERS_ID_INVALID_CONTRACT_HASH = 2106,
 
   /**
    * The exchange responded saying that funds were insufficient (for example, due to double-spending).
@@ -1207,7 +1396,7 @@ export enum TalerErrorCode {
 
   /**
    * The contract hash does not match the given order ID.
-   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
    */
   MERCHANT_POST_ORDERS_ID_PAID_CONTRACT_HASH_MISMATCH = 2200,
@@ -1367,6 +1556,20 @@ export enum TalerErrorCode {
   MERCHANT_PRIVATE_POST_ORDERS_REFUND_AFTER_WIRE_DEADLINE = 2504,
 
   /**
+   * The request is invalid: a delivery date was given, but it is in the past.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_PRIVATE_POST_ORDERS_DELIVERY_DATE_IN_PAST = 2505,
+
+  /**
+   * The request is invalid: the wire deadline for the order would be "never".
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_PRIVATE_POST_ORDERS_WIRE_DEADLINE_IS_NEVER = 2506,
+
+  /**
    * One of the paths to forget is malformed.
    * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
@@ -1409,11 +1612,25 @@ export enum TalerErrorCode {
   MERCHANT_PRIVATE_POST_ORDERS_ID_REFUND_NOT_ALLOWED_BY_CONTRACT = 2532,
 
   /**
+   * The exchange says it does not know this transfer.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_GATEWAY (502).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_PRIVATE_POST_TRANSFERS_EXCHANGE_UNKNOWN = 2550,
+
+  /**
    * We internally failed to execute the /track/transfer request.
-   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_GATEWAY (502).
    * (A value of 0 indicates that the error is generated client-side).
    */
   MERCHANT_PRIVATE_POST_TRANSFERS_REQUEST_ERROR = 2551,
+
+  /**
+   * The amount transferred differs between what was submitted and what the exchange claimed.
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_PRIVATE_POST_TRANSFERS_CONFLICTING_TRANSFERS = 2552,
 
   /**
    * The exchange gave conflicting information about a coin which has been wire transferred.
@@ -1435,6 +1652,20 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   MERCHANT_PRIVATE_POST_TRANSFERS_ACCOUNT_NOT_FOUND = 2555,
+
+  /**
+   * The backend could not delete the transfer as the echange already replied to our inquiry about it and we have integrated the result.
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_PRIVATE_DELETE_TRANSFERS_ALREADY_CONFIRMED = 2556,
+
+  /**
+   * The backend was previously informed about a wire transfer with the same ID but a different amount. Multiple wire transfers with the same ID are not allowed. If the new amount is correct, the old transfer should first be deleted.
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_PRIVATE_POST_TRANSFERS_CONFLICTING_SUBMISSION = 2557,
 
   /**
    * The merchant backend cannot create an instance under the given identifier as one already exists. Use PATCH to modify the existing entry.
@@ -1487,7 +1718,7 @@ export enum TalerErrorCode {
 
   /**
    * The update would have mean that more stocks were lost than what remains from total inventory after sales, which is not allowed.
-   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
    */
   MERCHANT_PRIVATE_PATCH_PRODUCTS_TOTAL_LOST_EXCEEDS_STOCKS = 2661,
@@ -1498,6 +1729,13 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   MERCHANT_PRIVATE_PATCH_PRODUCTS_TOTAL_STOCKED_REDUCED = 2662,
+
+  /**
+   * The update would have reduced the total amount of product sold, which is not allowed.
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_PRIVATE_PATCH_PRODUCTS_TOTAL_SOLD_REDUCED = 2663,
 
   /**
    * The lock request is for more products than we have left (unlocked) in stock.
@@ -1666,6 +1904,13 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   BANK_WITHDRAWAL_OPERATION_RESERVE_SELECTION_CONFLICT = 5113,
+
+  /**
+   * The wire transfer subject duplicates an existing reserve public key. But wire transfer subjects must be unique.
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  BANK_DUPLICATE_RESERVE_PUB_SUBJECT = 5114,
 
   /**
    * The sync service failed find the account in its database.
@@ -1962,14 +2207,28 @@ export enum TalerErrorCode {
   ANASTASIS_GENERIC_PAYMENT_CHECK_START_FAILED = 8007,
 
   /**
-   * The truth public key is unknown to the provider.
+   * The Anastasis provider could not be reached.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_GENERIC_PROVIDER_UNREACHABLE = 8008,
+
+  /**
+   * HTTP server experienced a timeout while awaiting promised payment.
+   * Returned with an HTTP status code of #MHD_HTTP_REQUEST_TIMEOUT (408).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_PAYMENT_GENERIC_TIMEOUT = 8009,
+
+  /**
+   * The key share is unknown to the provider.
    * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
    * (A value of 0 indicates that the error is generated client-side).
    */
   ANASTASIS_TRUTH_UNKNOWN = 8108,
 
   /**
-   * The authorization method used by the truth is no longer supported by the provider.
+   * The authorization method used for the key share is no longer supported by the provider.
    * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
    * (A value of 0 indicates that the error is generated client-side).
    */
@@ -1990,8 +2249,8 @@ export enum TalerErrorCode {
   ANASTASIS_TRUTH_CHALLENGE_FAILED = 8111,
 
   /**
-   * The service is unaware of having issued a challenge.
-   * Returned with an HTTP status code of #MHD_HTTP_GONE (410).
+   * The backend is not aware of having issued the provided challenge code. Either this is the wrong code, or it has expired.
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
    * (A value of 0 indicates that the error is generated client-side).
    */
   ANASTASIS_TRUTH_CHALLENGE_UNKNOWN = 8112,
@@ -2046,8 +2305,8 @@ export enum TalerErrorCode {
   ANASTASIS_TRUTH_PAYMENT_CREATE_BACKEND_ERROR = 8119,
 
   /**
-   * The decryption of the truth object failed with the provided key.
-   * Returned with an HTTP status code of #MHD_HTTP_EXPECTATION_FAILED (417).
+   * The decryption of the key share failed with the provided key.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
    */
   ANASTASIS_TRUTH_DECRYPTION_FAILED = 8120,
@@ -2060,14 +2319,28 @@ export enum TalerErrorCode {
   ANASTASIS_TRUTH_RATE_LIMITED = 8121,
 
   /**
-   * The backend failed to store the truth because the UUID is already in use.
+   * The authentication process did not yet complete. The user should try again later.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_TRUTH_AUTH_TIMEOUT = 8122,
+
+  /**
+   * A request to issue a challenge is not valid for this authentication method.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_TRUTH_CHALLENGE_WRONG_METHOD = 8123,
+
+  /**
+   * The backend failed to store the key share because the UUID is already in use.
    * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
    * (A value of 0 indicates that the error is generated client-side).
    */
   ANASTASIS_TRUTH_UPLOAD_UUID_EXISTS = 8150,
 
   /**
-   * The backend failed to store the truth because the authorization method is not supported.
+   * The backend failed to store the key share because the authorization method is not supported.
    * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
    */
@@ -2088,7 +2361,7 @@ export enum TalerErrorCode {
   ANASTASIS_SMS_HELPER_EXEC_FAILED = 8201,
 
   /**
-   * Helper terminated with a non-successful result.
+   * Provider failed to send SMS. Helper terminated with a non-successful result.
    * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
    * (A value of 0 indicates that the error is generated client-side).
    */
@@ -2109,7 +2382,7 @@ export enum TalerErrorCode {
   ANASTASIS_EMAIL_HELPER_EXEC_FAILED = 8211,
 
   /**
-   * Helper terminated with a non-successful result.
+   * Provider failed to send E-mail. Helper terminated with a non-successful result.
    * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
    * (A value of 0 indicates that the error is generated client-side).
    */
@@ -2130,11 +2403,32 @@ export enum TalerErrorCode {
   ANASTASIS_POST_HELPER_EXEC_FAILED = 8221,
 
   /**
-   * Helper terminated with a non-successful result.
+   * Provider failed to send mail. Helper terminated with a non-successful result.
    * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
    * (A value of 0 indicates that the error is generated client-side).
    */
   ANASTASIS_POST_HELPER_COMMAND_FAILED = 8222,
+
+  /**
+   * The provided IBAN address is not an acceptable IBAN.
+   * Returned with an HTTP status code of #MHD_HTTP_EXPECTATION_FAILED (417).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_IBAN_INVALID = 8230,
+
+  /**
+   * The backend did not find a TOTP key in the data provided.
+   * Returned with an HTTP status code of #MHD_HTTP_EXPECTATION_FAILED (417).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_TOTP_KEY_MISSING = 8240,
+
+  /**
+   * The key provided does not satisfy the format restrictions for an Anastasis TOTP key.
+   * Returned with an HTTP status code of #MHD_HTTP_EXPECTATION_FAILED (417).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_TOTP_KEY_INVALID = 8241,
 
   /**
    * The given if-none-match header is malformed.
@@ -2200,7 +2494,7 @@ export enum TalerErrorCode {
   ANASTASIS_REDUCER_INPUT_INVALID = 8402,
 
   /**
-   * The selected authentication method does ot work for the Anastasis provider.
+   * The selected authentication method does not work for the Anastasis provider.
    * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
    * (A value of 0 indicates that the error is generated client-side).
    */
@@ -2249,7 +2543,7 @@ export enum TalerErrorCode {
   ANASTASIS_REDUCER_INPUT_VALIDATION_FAILED = 8409,
 
   /**
-   * Our attempts to download the recovery document failed with all providers.
+   * Our attempts to download the recovery document failed with all providers. Most likely the personal information you entered differs from the information you provided during the backup process and you should go back to the previous step. Alternatively, if you used a backup provider that is unknown to this application, you should add that provider manually.
    * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
    * (A value of 0 indicates that the error is generated client-side).
    */
@@ -2310,6 +2604,41 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   ANASTASIS_REDUCER_PROVIDER_INVALID_CONFIG = 8418,
+
+  /**
+   * The reducer encountered an internal error, likely a bug that needs to be reported.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_REDUCER_INTERNAL_ERROR = 8419,
+
+  /**
+   * A generic error happened in the LibEuFin nexus.  See the enclose details JSON for more information.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  LIBEUFIN_NEXUS_GENERIC_ERROR = 9000,
+
+  /**
+   * An uncaught exception happened in the LibEuFin nexus service.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  LIBEUFIN_NEXUS_UNCAUGHT_EXCEPTION = 9001,
+
+  /**
+   * A generic error happened in the LibEuFin sandbox.  See the enclose details JSON for more information.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  LIBEUFIN_SANDBOX_GENERIC_ERROR = 9500,
+
+  /**
+   * An uncaught exception happened in the LibEuFin sandbox service.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  LIBEUFIN_SANDBOX_UNCAUGHT_EXCEPTION = 9501,
 
   /**
    * End of error code range.

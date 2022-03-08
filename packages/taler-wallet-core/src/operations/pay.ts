@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2019 Taler Systems S.A.
+ (C) 2019-2022 Taler Systems S.A.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -26,12 +26,40 @@
  */
 import {
   AmountJson,
-  Amounts, codecForContractTerms, codecForMerchantPayResponse, codecForProposal, CoinDepositPermission, ConfirmPayResult,
-  ConfirmPayResultType, ContractTerms, decodeCrock, DenomKeyType, Duration,
+  Amounts,
+  CheckPaymentResponse,
+  codecForContractTerms,
+  codecForMerchantPayResponse,
+  codecForProposal,
+  CoinDepositPermission,
+  ConfirmPayResult,
+  ConfirmPayResultType,
+  ContractTerms,
+  decodeCrock,
+  Duration,
   durationMax,
   durationMin,
-  durationMul, encodeCrock, getDurationRemaining, getRandomBytes, getTimestampNow, HttpStatusCode, isTimestampExpired, j2s, kdf, Logger, NotificationType, parsePayUri, PreparePayResult,
-  PreparePayResultType, RefreshReason, stringToBytes, TalerErrorCode, TalerErrorDetails, Timestamp, timestampAddDuration, URL
+  durationMul,
+  encodeCrock,
+  getDurationRemaining,
+  getRandomBytes,
+  getTimestampNow,
+  HttpStatusCode,
+  isTimestampExpired,
+  j2s,
+  kdf,
+  Logger,
+  NotificationType,
+  parsePayUri,
+  PreparePayResult,
+  PreparePayResultType,
+  RefreshReason,
+  stringToBytes,
+  TalerErrorCode,
+  TalerErrorDetails,
+  Timestamp,
+  timestampAddDuration,
+  URL,
 } from "@gnu-taler/taler-util";
 import { EXCHANGE_COINS_LOCK, InternalWalletState } from "../common.js";
 import {
@@ -46,16 +74,20 @@ import {
   ProposalStatus,
   PurchaseRecord,
   WalletContractData,
-  WalletStoresV1
+  WalletStoresV1,
 } from "../db.js";
 import {
   guardOperationException,
   makeErrorDetails,
   OperationFailedAndReportedError,
-  OperationFailedError
+  OperationFailedError,
 } from "../errors.js";
 import {
-  AvailableCoinInfo, CoinCandidateSelection, PayCoinSelection, PreviousPayCoins, selectPayCoins
+  AvailableCoinInfo,
+  CoinCandidateSelection,
+  PayCoinSelection,
+  PreviousPayCoins,
+  selectPayCoins,
 } from "../util/coinSelection.js";
 import { ContractTermsUtil } from "../util/contractTerms.js";
 import {
@@ -64,12 +96,13 @@ import {
   readSuccessResponseJsonOrThrow,
   readTalerErrorResponse,
   readUnexpectedResponseDetails,
-  throwUnexpectedRequestError
+  throwUnexpectedRequestError,
 } from "../util/http.js";
 import { GetReadWriteAccess } from "../util/query.js";
 import {
-  getRetryDuration, initRetryInfo,
-  updateRetryInfoTimeout
+  getRetryDuration,
+  initRetryInfo,
+  updateRetryInfoTimeout,
 } from "../util/retries.js";
 import { getExchangeDetails } from "./exchanges.js";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
@@ -79,21 +112,14 @@ import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
  */
 const logger = new Logger("pay.ts");
 
+/**
+ * FIXME: Move this to crypto worker or at least talerCrypto.ts
+ */
 export function hashWire(paytoUri: string, salt: string): string {
   const r = kdf(
     64,
     stringToBytes(paytoUri + "\0"),
     decodeCrock(salt),
-    stringToBytes("merchant-wire-signature"),
-  );
-  return encodeCrock(r);
-}
-
-export function hashWireLegacy(paytoUri: string, salt: string): string {
-  const r = kdf(
-    64,
-    stringToBytes(paytoUri + "\0"),
-    stringToBytes(salt + "\0"),
     stringToBytes("merchant-wire-signature"),
   );
   return encodeCrock(r);
@@ -437,7 +463,7 @@ async function recordConfirmPay(
     .runReadWrite(async (tx) => {
       const p = await tx.proposals.get(proposal.proposalId);
       if (p) {
-        p.proposalStatus = ProposalStatus.ACCEPTED;
+        p.proposalStatus = ProposalStatus.Accepted;
         delete p.lastError;
         p.retryInfo = initRetryInfo();
         await tx.proposals.put(p);
@@ -453,10 +479,33 @@ async function recordConfirmPay(
   return t;
 }
 
+async function reportProposalError(
+  ws: InternalWalletState,
+  proposalId: string,
+  err: TalerErrorDetails,
+): Promise<void> {
+  await ws.db
+    .mktx((x) => ({ proposals: x.proposals }))
+    .runReadWrite(async (tx) => {
+      const pr = await tx.proposals.get(proposalId);
+      if (!pr) {
+        return;
+      }
+      if (!pr.retryInfo) {
+        logger.error(
+          `Asked to report an error for a proposal (${proposalId}) that is not active (no retryInfo)`,
+        );
+        return;
+      }
+      pr.lastError = err;
+      await tx.proposals.put(pr);
+    });
+  ws.notify({ type: NotificationType.ProposalOperationError, error: err });
+}
+
 async function incrementProposalRetry(
   ws: InternalWalletState,
   proposalId: string,
-  err: TalerErrorDetails | undefined,
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({ proposals: x.proposals }))
@@ -467,23 +516,35 @@ async function incrementProposalRetry(
       }
       if (!pr.retryInfo) {
         return;
+      } else {
+        pr.retryInfo.retryCounter++;
+        updateRetryInfoTimeout(pr.retryInfo);
       }
-      pr.retryInfo.retryCounter++;
-      updateRetryInfoTimeout(pr.retryInfo);
-      pr.lastError = err;
+      delete pr.lastError;
       await tx.proposals.put(pr);
     });
-  if (err) {
-    ws.notify({ type: NotificationType.ProposalOperationError, error: err });
-  }
+}
+
+async function resetPurchasePayRetry(
+  ws: InternalWalletState,
+  proposalId: string,
+): Promise<void> {
+  await ws.db
+    .mktx((x) => ({ purchases: x.purchases }))
+    .runReadWrite(async (tx) => {
+      const p = await tx.purchases.get(proposalId);
+      if (p) {
+        p.payRetryInfo = initRetryInfo();
+        delete p.lastPayError;
+        await tx.purchases.put(p);
+      }
+    });
 }
 
 async function incrementPurchasePayRetry(
   ws: InternalWalletState,
   proposalId: string,
-  err: TalerErrorDetails | undefined,
 ): Promise<void> {
-  logger.warn("incrementing purchase pay retry with error", err);
   await ws.db
     .mktx((x) => ({ purchases: x.purchases }))
     .runReadWrite(async (tx) => {
@@ -496,16 +557,32 @@ async function incrementPurchasePayRetry(
       }
       pr.payRetryInfo.retryCounter++;
       updateRetryInfoTimeout(pr.payRetryInfo);
-      logger.trace(
-        `retrying pay in ${getDurationRemaining(pr.payRetryInfo.nextRetry).d_ms
-        } ms`,
-      );
+      delete pr.lastPayError;
+      await tx.purchases.put(pr);
+    });
+}
+
+async function reportPurchasePayError(
+  ws: InternalWalletState,
+  proposalId: string,
+  err: TalerErrorDetails,
+): Promise<void> {
+  await ws.db
+    .mktx((x) => ({ purchases: x.purchases }))
+    .runReadWrite(async (tx) => {
+      const pr = await tx.purchases.get(proposalId);
+      if (!pr) {
+        return;
+      }
+      if (!pr.payRetryInfo) {
+        logger.error(
+          `purchase record (${proposalId}) reports error, but no retry active`,
+        );
+      }
       pr.lastPayError = err;
       await tx.purchases.put(pr);
     });
-  if (err) {
-    ws.notify({ type: NotificationType.PayOperationError, error: err });
-  }
+  ws.notify({ type: NotificationType.PayOperationError, error: err });
 }
 
 export async function processDownloadProposal(
@@ -514,7 +591,7 @@ export async function processDownloadProposal(
   forceNow = false,
 ): Promise<void> {
   const onOpErr = (err: TalerErrorDetails): Promise<void> =>
-    incrementProposalRetry(ws, proposalId, err);
+    reportProposalError(ws, proposalId, err);
   await guardOperationException(
     () => processDownloadProposalImpl(ws, proposalId, forceNow),
     onOpErr,
@@ -530,7 +607,8 @@ async function resetDownloadProposalRetry(
     .runReadWrite(async (tx) => {
       const p = await tx.proposals.get(proposalId);
       if (p) {
-        delete p.retryInfo;
+        p.retryInfo = initRetryInfo();
+        delete p.lastError;
         await tx.proposals.put(p);
       }
     });
@@ -550,7 +628,7 @@ async function failProposalPermanently(
       }
       delete p.retryInfo;
       p.lastError = err;
-      p.proposalStatus = ProposalStatus.PERMANENTLY_FAILED;
+      p.proposalStatus = ProposalStatus.PermanentlyFailed;
       await tx.proposals.put(p);
     });
 }
@@ -618,19 +696,24 @@ async function processDownloadProposalImpl(
   proposalId: string,
   forceNow: boolean,
 ): Promise<void> {
-  if (forceNow) {
-    await resetDownloadProposalRetry(ws, proposalId);
-  }
   const proposal = await ws.db
     .mktx((x) => ({ proposals: x.proposals }))
     .runReadOnly(async (tx) => {
       return tx.proposals.get(proposalId);
     });
+
   if (!proposal) {
     return;
   }
-  if (proposal.proposalStatus != ProposalStatus.DOWNLOADING) {
+
+  if (proposal.proposalStatus != ProposalStatus.Downloading) {
     return;
+  }
+
+  if (forceNow) {
+    await resetDownloadProposalRetry(ws, proposalId);
+  } else {
+    await incrementProposalRetry(ws, proposalId);
   }
 
   const orderClaimUrl = new URL(
@@ -771,7 +854,7 @@ async function processDownloadProposalImpl(
       if (!p) {
         return;
       }
-      if (p.proposalStatus !== ProposalStatus.DOWNLOADING) {
+      if (p.proposalStatus !== ProposalStatus.Downloading) {
         return;
       }
       p.download = {
@@ -787,13 +870,13 @@ async function processDownloadProposalImpl(
           await tx.purchases.indexes.byFulfillmentUrl.get(fulfillmentUrl);
         if (differentPurchase) {
           logger.warn("repurchase detected");
-          p.proposalStatus = ProposalStatus.REPURCHASE;
+          p.proposalStatus = ProposalStatus.Repurchase;
           p.repurchaseProposalId = differentPurchase.proposalId;
           await tx.proposals.put(p);
           return;
         }
       }
-      p.proposalStatus = ProposalStatus.PROPOSED;
+      p.proposalStatus = ProposalStatus.Proposed;
       await tx.proposals.put(p);
     });
 
@@ -855,7 +938,7 @@ async function startDownloadProposal(
     merchantBaseUrl,
     orderId,
     proposalId: proposalId,
-    proposalStatus: ProposalStatus.DOWNLOADING,
+    proposalStatus: ProposalStatus.Downloading,
     repurchaseProposalId: undefined,
     retryInfo: initRetryInfo(),
     lastError: undefined,
@@ -975,10 +1058,14 @@ async function handleInsufficientFunds(
 
   const exchangeReply = (err as any).exchange_reply;
   if (
-    exchangeReply.code !== TalerErrorCode.EXCHANGE_DEPOSIT_INSUFFICIENT_FUNDS
+    exchangeReply.code !== TalerErrorCode.EXCHANGE_GENERIC_INSUFFICIENT_FUNDS
   ) {
     // FIXME: set as failed
-    throw Error("can't handle error code");
+    if (logger.shouldLogTrace()) {
+      logger.trace("got exchange error reply (see below)");
+      logger.trace(j2s(exchangeReply));
+    }
+    throw Error(`unable to handle /pay error response (${exchangeReply.code})`);
   }
 
   logger.trace(`got error details: ${j2s(err)}`);
@@ -1083,213 +1170,6 @@ async function unblockBackup(
     });
 }
 
-/**
- * Submit a payment to the merchant.
- *
- * If the wallet has previously paid, it just transmits the merchant's
- * own signature certifying that the wallet has previously paid.
- */
-async function submitPay(
-  ws: InternalWalletState,
-  proposalId: string,
-): Promise<ConfirmPayResult> {
-  const purchase = await ws.db
-    .mktx((x) => ({ purchases: x.purchases }))
-    .runReadOnly(async (tx) => {
-      return tx.purchases.get(proposalId);
-    });
-  if (!purchase) {
-    throw Error("Purchase not found: " + proposalId);
-  }
-  if (purchase.abortStatus !== AbortStatus.None) {
-    throw Error("not submitting payment for aborted purchase");
-  }
-  const sessionId = purchase.lastSessionId;
-
-  logger.trace("paying with session ID", sessionId);
-
-  //FIXME: not used, does it expect a side effect?
-  const merchantInfo = await ws.merchantOps.getMerchantInfo(
-    ws,
-    purchase.download.contractData.merchantBaseUrl,
-  );
-
-  if (!purchase.merchantPaySig) {
-    const payUrl = new URL(
-      `orders/${purchase.download.contractData.orderId}/pay`,
-      purchase.download.contractData.merchantBaseUrl,
-    ).href;
-
-    let depositPermissions: CoinDepositPermission[];
-
-    if (purchase.coinDepositPermissions) {
-      depositPermissions = purchase.coinDepositPermissions;
-    } else {
-      // FIXME: also cache!
-      depositPermissions = await generateDepositPermissions(
-        ws,
-        purchase.payCoinSelection,
-        purchase.download.contractData,
-      );
-    }
-
-    const reqBody = {
-      coins: depositPermissions,
-      session_id: purchase.lastSessionId,
-    };
-
-    logger.trace(
-      "making pay request ... ",
-      JSON.stringify(reqBody, undefined, 2),
-    );
-
-    const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], () =>
-      ws.http.postJson(payUrl, reqBody, {
-        timeout: getPayRequestTimeout(purchase),
-      }),
-    );
-
-    logger.trace(`got resp ${JSON.stringify(resp)}`);
-
-    // Hide transient errors.
-    if (
-      (purchase.payRetryInfo?.retryCounter ?? 0) <= 5 &&
-      resp.status >= 500 &&
-      resp.status <= 599
-    ) {
-      logger.trace("treating /pay error as transient");
-      const err = makeErrorDetails(
-        TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
-        "/pay failed",
-        getHttpResponseErrorDetails(resp),
-      );
-      incrementPurchasePayRetry(ws, proposalId, undefined);
-      return {
-        type: ConfirmPayResultType.Pending,
-        lastError: err,
-      };
-    }
-
-    if (resp.status === HttpStatusCode.BadRequest) {
-      const errDetails = await readUnexpectedResponseDetails(resp);
-      logger.warn("unexpected 400 response for /pay");
-      logger.warn(j2s(errDetails));
-      await ws.db
-        .mktx((x) => ({ purchases: x.purchases }))
-        .runReadWrite(async (tx) => {
-          const purch = await tx.purchases.get(proposalId);
-          if (!purch) {
-            return;
-          }
-          purch.payFrozen = true;
-          purch.lastPayError = errDetails;
-          delete purch.payRetryInfo;
-          await tx.purchases.put(purch);
-        });
-      // FIXME: Maybe introduce a new return type for this instead of throwing?
-      throw new OperationFailedAndReportedError(errDetails);
-    }
-
-    if (resp.status === HttpStatusCode.Conflict) {
-      const err = await readTalerErrorResponse(resp);
-      if (
-        err.code ===
-        TalerErrorCode.MERCHANT_POST_ORDERS_ID_PAY_INSUFFICIENT_FUNDS
-      ) {
-        // Do this in the background, as it might take some time
-        handleInsufficientFunds(ws, proposalId, err).catch(async (e) => {
-          await incrementProposalRetry(ws, proposalId, {
-            code: TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
-            message: "unexpected exception",
-            hint: "unexpected exception",
-            details: {
-              exception: e.toString(),
-            },
-          });
-        });
-
-        return {
-          type: ConfirmPayResultType.Pending,
-          // FIXME: should we return something better here?
-          lastError: err,
-        };
-      }
-    }
-
-    const merchantResp = await readSuccessResponseJsonOrThrow(
-      resp,
-      codecForMerchantPayResponse(),
-    );
-
-    logger.trace("got success from pay URL", merchantResp);
-
-    const merchantPub = purchase.download.contractData.merchantPub;
-    const valid: boolean = await ws.cryptoApi.isValidPaymentSignature(
-      merchantResp.sig,
-      purchase.download.contractData.contractTermsHash,
-      merchantPub,
-    );
-
-    if (!valid) {
-      logger.error("merchant payment signature invalid");
-      // FIXME: properly display error
-      throw Error("merchant payment signature invalid");
-    }
-
-    await storeFirstPaySuccess(ws, proposalId, sessionId, merchantResp.sig);
-    await unblockBackup(ws, proposalId);
-  } else {
-    const payAgainUrl = new URL(
-      `orders/${purchase.download.contractData.orderId}/paid`,
-      purchase.download.contractData.merchantBaseUrl,
-    ).href;
-    const reqBody = {
-      sig: purchase.merchantPaySig,
-      h_contract: purchase.download.contractData.contractTermsHash,
-      session_id: sessionId ?? "",
-    };
-    const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], () =>
-      ws.http.postJson(payAgainUrl, reqBody),
-    );
-    // Hide transient errors.
-    if (
-      (purchase.payRetryInfo?.retryCounter ?? 0) <= 5 &&
-      resp.status >= 500 &&
-      resp.status <= 599
-    ) {
-      const err = makeErrorDetails(
-        TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
-        "/paid failed",
-        getHttpResponseErrorDetails(resp),
-      );
-      incrementPurchasePayRetry(ws, proposalId, undefined);
-      return {
-        type: ConfirmPayResultType.Pending,
-        lastError: err,
-      };
-    }
-    if (resp.status !== 204) {
-      throw OperationFailedError.fromCode(
-        TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
-        "/paid failed",
-        getHttpResponseErrorDetails(resp),
-      );
-    }
-    await storePayReplaySuccess(ws, proposalId, sessionId);
-    await unblockBackup(ws, proposalId);
-  }
-
-  ws.notify({
-    type: NotificationType.PayOperationSuccess,
-    proposalId: purchase.proposalId,
-  });
-
-  return {
-    type: ConfirmPayResultType.Done,
-    contractTerms: purchase.download.contractTermsRaw,
-  };
-}
-
 export async function checkPaymentByProposalId(
   ws: InternalWalletState,
   proposalId: string,
@@ -1303,7 +1183,7 @@ export async function checkPaymentByProposalId(
   if (!proposal) {
     throw Error(`could not get proposal ${proposalId}`);
   }
-  if (proposal.proposalStatus === ProposalStatus.REPURCHASE) {
+  if (proposal.proposalStatus === ProposalStatus.Repurchase) {
     const existingProposalId = proposal.repurchaseProposalId;
     if (!existingProposalId) {
       throw Error("invalid proposal state");
@@ -1397,13 +1277,10 @@ export async function checkPaymentByProposalId(
           return;
         }
         p.lastSessionId = sessionId;
+        p.paymentSubmitPending = true;
         await tx.purchases.put(p);
       });
-    const r = await guardOperationException(
-      () => submitPay(ws, proposalId),
-      (e: TalerErrorDetails): Promise<void> =>
-        incrementPurchasePayRetry(ws, proposalId, e),
-    );
+    const r = await processPurchasePay(ws, proposalId, true);
     if (r.type !== ConfirmPayResultType.Done) {
       throw Error("submitting pay failed");
     }
@@ -1580,11 +1457,7 @@ export async function confirmPay(
 
   if (existingPurchase) {
     logger.trace("confirmPay: submitting payment for existing purchase");
-    return await guardOperationException(
-      () => submitPay(ws, proposalId),
-      (e: TalerErrorDetails): Promise<void> =>
-        incrementPurchasePayRetry(ws, proposalId, e),
-    );
+    return await processPurchasePay(ws, proposalId, true);
   }
 
   logger.trace("confirmPay: purchase record does not exist yet");
@@ -1634,62 +1507,233 @@ export async function confirmPay(
     sessionIdOverride,
   );
 
-  return await guardOperationException(
-    () => submitPay(ws, proposalId),
-    (e: TalerErrorDetails): Promise<void> =>
-      incrementPurchasePayRetry(ws, proposalId, e),
-  );
+  return await processPurchasePay(ws, proposalId, true);
 }
 
 export async function processPurchasePay(
   ws: InternalWalletState,
   proposalId: string,
   forceNow = false,
-): Promise<void> {
+): Promise<ConfirmPayResult> {
   const onOpErr = (e: TalerErrorDetails): Promise<void> =>
-    incrementPurchasePayRetry(ws, proposalId, e);
-  await guardOperationException(
+    reportPurchasePayError(ws, proposalId, e);
+  return await guardOperationException(
     () => processPurchasePayImpl(ws, proposalId, forceNow),
     onOpErr,
   );
-}
-
-async function resetPurchasePayRetry(
-  ws: InternalWalletState,
-  proposalId: string,
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({ purchases: x.purchases }))
-    .runReadWrite(async (tx) => {
-      const p = await tx.purchases.get(proposalId);
-      if (p) {
-        p.payRetryInfo = initRetryInfo();
-        await tx.purchases.put(p);
-      }
-    });
 }
 
 async function processPurchasePayImpl(
   ws: InternalWalletState,
   proposalId: string,
   forceNow: boolean,
-): Promise<void> {
-  if (forceNow) {
-    await resetPurchasePayRetry(ws, proposalId);
-  }
+): Promise<ConfirmPayResult> {
   const purchase = await ws.db
     .mktx((x) => ({ purchases: x.purchases }))
     .runReadOnly(async (tx) => {
       return tx.purchases.get(proposalId);
     });
   if (!purchase) {
-    return;
+    return {
+      type: ConfirmPayResultType.Pending,
+      lastError: {
+        // FIXME: allocate more specific error code
+        code: TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
+        message: `trying to pay for purchase that is not in the database`,
+        hint: `proposal ID is ${proposalId}`,
+        details: {},
+      },
+    };
   }
   if (!purchase.paymentSubmitPending) {
-    return;
+    return {
+      type: ConfirmPayResultType.Pending,
+      lastError: purchase.lastPayError,
+    };
+  }
+  if (forceNow) {
+    await resetPurchasePayRetry(ws, proposalId);
+  } else {
+    await incrementPurchasePayRetry(ws, proposalId);
   }
   logger.trace(`processing purchase pay ${proposalId}`);
-  await submitPay(ws, proposalId);
+
+  const sessionId = purchase.lastSessionId;
+
+  logger.trace("paying with session ID", sessionId);
+
+  if (!purchase.merchantPaySig) {
+    const payUrl = new URL(
+      `orders/${purchase.download.contractData.orderId}/pay`,
+      purchase.download.contractData.merchantBaseUrl,
+    ).href;
+
+    let depositPermissions: CoinDepositPermission[];
+
+    if (purchase.coinDepositPermissions) {
+      depositPermissions = purchase.coinDepositPermissions;
+    } else {
+      // FIXME: also cache!
+      depositPermissions = await generateDepositPermissions(
+        ws,
+        purchase.payCoinSelection,
+        purchase.download.contractData,
+      );
+    }
+
+    const reqBody = {
+      coins: depositPermissions,
+      session_id: purchase.lastSessionId,
+    };
+
+    logger.trace(
+      "making pay request ... ",
+      JSON.stringify(reqBody, undefined, 2),
+    );
+
+    const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], () =>
+      ws.http.postJson(payUrl, reqBody, {
+        timeout: getPayRequestTimeout(purchase),
+      }),
+    );
+
+    logger.trace(`got resp ${JSON.stringify(resp)}`);
+
+    // Hide transient errors.
+    if (
+      (purchase.payRetryInfo?.retryCounter ?? 0) <= 5 &&
+      resp.status >= 500 &&
+      resp.status <= 599
+    ) {
+      logger.trace("treating /pay error as transient");
+      const err = makeErrorDetails(
+        TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
+        "/pay failed",
+        getHttpResponseErrorDetails(resp),
+      );
+      return {
+        type: ConfirmPayResultType.Pending,
+        lastError: err,
+      };
+    }
+
+    if (resp.status === HttpStatusCode.BadRequest) {
+      const errDetails = await readUnexpectedResponseDetails(resp);
+      logger.warn("unexpected 400 response for /pay");
+      logger.warn(j2s(errDetails));
+      await ws.db
+        .mktx((x) => ({ purchases: x.purchases }))
+        .runReadWrite(async (tx) => {
+          const purch = await tx.purchases.get(proposalId);
+          if (!purch) {
+            return;
+          }
+          purch.payFrozen = true;
+          purch.lastPayError = errDetails;
+          delete purch.payRetryInfo;
+          await tx.purchases.put(purch);
+        });
+      // FIXME: Maybe introduce a new return type for this instead of throwing?
+      throw new OperationFailedAndReportedError(errDetails);
+    }
+
+    if (resp.status === HttpStatusCode.Conflict) {
+      const err = await readTalerErrorResponse(resp);
+      if (
+        err.code ===
+        TalerErrorCode.MERCHANT_POST_ORDERS_ID_PAY_INSUFFICIENT_FUNDS
+      ) {
+        // Do this in the background, as it might take some time
+        handleInsufficientFunds(ws, proposalId, err).catch(async (e) => {
+          reportPurchasePayError(ws, proposalId, {
+            code: TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
+            message: "unexpected exception",
+            hint: "unexpected exception",
+            details: {
+              exception: e.toString(),
+            },
+          });
+        });
+
+        return {
+          type: ConfirmPayResultType.Pending,
+          // FIXME: should we return something better here?
+          lastError: err,
+        };
+      }
+    }
+
+    const merchantResp = await readSuccessResponseJsonOrThrow(
+      resp,
+      codecForMerchantPayResponse(),
+    );
+
+    logger.trace("got success from pay URL", merchantResp);
+
+    const merchantPub = purchase.download.contractData.merchantPub;
+    const valid: boolean = await ws.cryptoApi.isValidPaymentSignature(
+      merchantResp.sig,
+      purchase.download.contractData.contractTermsHash,
+      merchantPub,
+    );
+
+    if (!valid) {
+      logger.error("merchant payment signature invalid");
+      // FIXME: properly display error
+      throw Error("merchant payment signature invalid");
+    }
+
+    await storeFirstPaySuccess(ws, proposalId, sessionId, merchantResp.sig);
+    await unblockBackup(ws, proposalId);
+  } else {
+    const payAgainUrl = new URL(
+      `orders/${purchase.download.contractData.orderId}/paid`,
+      purchase.download.contractData.merchantBaseUrl,
+    ).href;
+    const reqBody = {
+      sig: purchase.merchantPaySig,
+      h_contract: purchase.download.contractData.contractTermsHash,
+      session_id: sessionId ?? "",
+    };
+    const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], () =>
+      ws.http.postJson(payAgainUrl, reqBody),
+    );
+    // Hide transient errors.
+    if (
+      (purchase.payRetryInfo?.retryCounter ?? 0) <= 5 &&
+      resp.status >= 500 &&
+      resp.status <= 599
+    ) {
+      const err = makeErrorDetails(
+        TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
+        "/paid failed",
+        getHttpResponseErrorDetails(resp),
+      );
+      return {
+        type: ConfirmPayResultType.Pending,
+        lastError: err,
+      };
+    }
+    if (resp.status !== 204) {
+      throw OperationFailedError.fromCode(
+        TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
+        "/paid failed",
+        getHttpResponseErrorDetails(resp),
+      );
+    }
+    await storePayReplaySuccess(ws, proposalId, sessionId);
+    await unblockBackup(ws, proposalId);
+  }
+
+  ws.notify({
+    type: NotificationType.PayOperationSuccess,
+    proposalId: purchase.proposalId,
+  });
+
+  return {
+    type: ConfirmPayResultType.Done,
+    contractTerms: purchase.download.contractTermsRaw,
+  };
 }
 
 export async function refuseProposal(
@@ -1704,10 +1748,10 @@ export async function refuseProposal(
         logger.trace(`proposal ${proposalId} not found, won't refuse proposal`);
         return false;
       }
-      if (proposal.proposalStatus !== ProposalStatus.PROPOSED) {
+      if (proposal.proposalStatus !== ProposalStatus.Proposed) {
         return false;
       }
-      proposal.proposalStatus = ProposalStatus.REFUSED;
+      proposal.proposalStatus = ProposalStatus.Refused;
       await tx.proposals.put(proposal);
       return true;
     });

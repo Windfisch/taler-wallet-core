@@ -58,7 +58,6 @@ import {
   getCandidatePayCoins,
   getTotalPaymentCost,
   hashWire,
-  hashWireLegacy,
 } from "./pay.js";
 import { getTotalRefreshCost } from "./refresh.js";
 
@@ -443,7 +442,6 @@ export async function createDepositGroup(
   const merchantPair = await ws.cryptoApi.createEddsaKeypair();
   const wireSalt = encodeCrock(getRandomBytes(16));
   const wireHash = hashWire(req.depositPaytoUri, wireSalt);
-  const wireHashLegacy = hashWireLegacy(req.depositPaytoUri, wireSalt);
   const contractTerms: ContractTerms = {
     auditors: [],
     exchanges: exchangeInfos,
@@ -460,7 +458,6 @@ export async function createDepositGroup(
     // This is always the v2 wire hash, as we're the "merchant" and support v2.
     h_wire: wireHash,
     // Required for older exchanges.
-    h_wire_legacy: wireHashLegacy,
     pay_deadline: timestampAddDuration(
       timestampRound,
       durationFromSpec({ hours: 1 }),
