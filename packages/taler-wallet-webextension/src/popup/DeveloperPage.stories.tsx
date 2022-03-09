@@ -45,4 +45,5 @@ export const AllOff = createExample(TestedComponent, {
       retryInfo: undefined,
     },
   ],
+  coins: [],
 });

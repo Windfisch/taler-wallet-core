@@ -86,5 +86,3 @@ export const BitcoinTest = createExample(TestedComponent, {
   },
   exchangeBaseUrl: "https://exchange.demo.taler.net",
 });
-// tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx OK
-// tb10v8ahvcqqleage3q5rqn3agnr7pd25msd5wd4hcj

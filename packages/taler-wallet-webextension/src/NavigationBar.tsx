@@ -61,9 +61,6 @@ export enum Pages {
 }
 
 export function PopupNavBar({ path = "" }: { path?: string }): VNode {
-  const innerUrl = chrome.runtime
-    ? new URL(chrome.runtime.getURL("/static/wallet.html#/settings")).href
-    : "#";
   return (
     <NavigationHeader>
       <a href="/balance" class={path.startsWith("/balance") ? "active" : ""}>
@@ -73,7 +70,7 @@ export function PopupNavBar({ path = "" }: { path?: string }): VNode {
         <i18n.Translate>Backup</i18n.Translate>
       </a>
       <a />
-      <a href={innerUrl} target="_blank" rel="noreferrer">
+      <a href="/settings">
         <div class="settings-icon" title={i18n.str`Settings`} />
       </a>
     </NavigationHeader>

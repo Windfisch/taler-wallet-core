@@ -27,7 +27,6 @@ export function ReserveCreated({
   amount,
 }: Props): VNode {
   const paytoURI = parsePaytoUri(payto);
-  // const url = new URL(paytoURI?.targetPath);
   if (!paytoURI) {
     return (
       <div>

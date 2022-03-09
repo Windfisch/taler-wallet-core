@@ -128,6 +128,11 @@ export const decorators = [
         <Story />
       </div>
     }
+    if (kind.startsWith('mui')) {
+      return <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+        <Story />
+      </div>
+    }
     if (kind.startsWith('wallet')) {
       const path = /wallet(\/.*).*/.exec(kind)[1];
       return <div class="wallet-container">

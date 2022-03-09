@@ -61,7 +61,6 @@ export function View({
         <p>
           <i18n.Translate>Thank you for installing the wallet.</i18n.Translate>
         </p>
-        <Diagnostics diagnostics={diagnostics} timedOut={timedOut} />
         <h2>
           <i18n.Translate>Permissions</i18n.Translate>
         </h2>
