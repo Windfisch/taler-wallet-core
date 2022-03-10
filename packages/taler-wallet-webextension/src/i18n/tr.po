@@ -15,10 +15,10 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Taler Wallet\n"
-"Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To: languages@taler.net\n"
 "POT-Creation-Date: 2016-11-23 00:00+0100\n"
-"PO-Revision-Date: 2022-02-24 17:32+0000\n"
-"Last-Translator: Alp <berna.alp@digitalekho.com>\n"
+"PO-Revision-Date: 2022-03-10 18:01+0000\n"
+"Last-Translator: Stefan Kügel <skuegel@web.de>\n"
 "Language-Team: Turkish <http://weblate.taler.net/projects/gnu-taler/"
 "webextensions/tr/>\n"
 "Language: tr\n"
@@ -34,39 +34,39 @@ msgid "Balance"
 msgstr "Bakiye"
 
 #: src/NavigationBar.tsx:73
-#, c-format
+#, c-format, fuzzy
 msgid "Backup"
-msgstr ""
+msgstr "Yedek"
 
 #: src/NavigationBar.tsx:77
 #, c-format
 msgid "Settings"
-msgstr ""
+msgstr "Ayarlar"
 
 #: src/NavigationBar.tsx:96
 #, c-format
 msgid "Dev"
-msgstr ""
+msgstr "Gelişim"
 
 #: src/components/Loading.tsx:22
 #, c-format
 msgid "Loading"
-msgstr ""
+msgstr "Yükleniyor"
 
 #: src/wallet/AddNewActionView.tsx:14
 #, c-format
 msgid "Open reserve page"
-msgstr ""
+msgstr "Rezerv sayfasını açın"
 
 #: src/wallet/AddNewActionView.tsx:16
 #, c-format
 msgid "Open pay page"
-msgstr ""
+msgstr "Ödeme sayfasını açın"
 
 #: src/wallet/AddNewActionView.tsx:18
 #, c-format
 msgid "Open refund page"
-msgstr ""
+msgstr "Geri ödeme sayfasını açın"
 
 #: src/wallet/AddNewActionView.tsx:20
 #, c-format
@@ -639,7 +639,7 @@ msgstr ""
 #: src/wallet/CreateManualWithdraw.tsx:155
 #, c-format
 msgid "Exchange"
-msgstr ""
+msgstr "Exchange"
 
 #: src/wallet/CreateManualWithdraw.tsx:164
 #, c-format
@@ -936,9 +936,9 @@ msgid "Purchase amount"
 msgstr ""
 
 #: src/wallet/Transaction.tsx:360
-#, fuzzy, c-format
+#, c-format
 msgid "Fee"
-msgstr "Ücretler "
+msgstr "Ücretler"
 
 #: src/wallet/Transaction.tsx:365
 #, c-format
