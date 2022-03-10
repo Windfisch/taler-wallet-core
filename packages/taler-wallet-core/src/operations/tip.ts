@@ -374,7 +374,6 @@ async function processTipImpl(
         walletTipId: walletTipId,
       },
       currentAmount: denom.value,
-      denomPub: denom.denomPub,
       denomPubHash: denom.denomPubHash,
       denomSig: { cipher: DenomKeyType.Rsa, rsa_signature: denomSigRsa },
       exchangeBaseUrl: tipRecord.exchangeBaseUrl,

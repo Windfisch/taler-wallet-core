@@ -587,8 +587,8 @@ async function updateReserve(
   logger.trace(`got reserve status ${j2s(result.response)}`);
 
   const reserveInfo = result.response;
-  const balance = Amounts.parseOrThrow(reserveInfo.balance);
-  const currency = balance.currency;
+  const reserveBalance = Amounts.parseOrThrow(reserveInfo.balance);
+  const currency = reserveBalance.currency;
 
   await updateWithdrawalDenoms(ws, reserve.exchangeBaseUrl);
   const denoms = await getCandidateWithdrawalDenoms(
@@ -598,73 +598,50 @@ async function updateReserve(
 
   const newWithdrawalGroup = await ws.db
     .mktx((x) => ({
-      coins: x.coins,
       planchets: x.planchets,
       withdrawalGroups: x.withdrawalGroups,
       reserves: x.reserves,
+      denominations: x.denominations,
     }))
     .runReadWrite(async (tx) => {
       const newReserve = await tx.reserves.get(reserve.reservePub);
       if (!newReserve) {
         return;
       }
-      let amountReservePlus = Amounts.getZero(currency);
+      let amountReservePlus = reserveBalance;
       let amountReserveMinus = Amounts.getZero(currency);
 
-      // Subtract withdrawal groups for this reserve from the available amount.
+      // Subtract amount allocated in unfinished withdrawal groups
+      // for this reserve from the available amount.
       await tx.withdrawalGroups.indexes.byReservePub
         .iter(reservePub)
-        .forEach((wg) => {
-          const cost = wg.denomsSel.totalWithdrawCost;
-          amountReserveMinus = Amounts.add(amountReserveMinus, cost).amount;
-        });
-
-      for (const entry of reserveInfo.history) {
-        switch (entry.type) {
-          case ReserveTransactionType.Credit:
-            amountReservePlus = Amounts.add(
-              amountReservePlus,
-              Amounts.parseOrThrow(entry.amount),
-            ).amount;
-            break;
-          case ReserveTransactionType.Recoup:
-            amountReservePlus = Amounts.add(
-              amountReservePlus,
-              Amounts.parseOrThrow(entry.amount),
-            ).amount;
-            break;
-          case ReserveTransactionType.Closing:
-            amountReserveMinus = Amounts.add(
-              amountReserveMinus,
-              Amounts.parseOrThrow(entry.amount),
-            ).amount;
-            break;
-          case ReserveTransactionType.Withdraw: {
-            // Now we check if the withdrawal transaction
-            // is part of any withdrawal known to this wallet.
-            const planchet = await tx.planchets.indexes.byCoinEvHash.get(
-              entry.h_coin_envelope,
-            );
-            if (planchet) {
-              // Amount is already accounted in some withdrawal session
-              break;
-            }
-            const coin = await tx.coins.indexes.byCoinEvHash.get(
-              entry.h_coin_envelope,
-            );
-            if (coin) {
-              // Amount is already accounted in some withdrawal session
-              break;
-            }
-            // Amount has been claimed by some withdrawal we don't know about
-            amountReserveMinus = Amounts.add(
-              amountReserveMinus,
-              Amounts.parseOrThrow(entry.amount),
-            ).amount;
-            break;
+        .forEachAsync(async (wg) => {
+          if (wg.timestampFinish) {
+            return;
           }
-        }
-      }
+          await tx.planchets.indexes.byGroup
+            .iter(wg.withdrawalGroupId)
+            .forEachAsync(async (pr) => {
+              if (pr.withdrawalDone) {
+                return;
+              }
+              const denomInfo = await ws.getDenomInfo(
+                ws,
+                tx,
+                wg.exchangeBaseUrl,
+                pr.denomPubHash,
+              );
+              if (!denomInfo) {
+                logger.error(`no denom info found for ${pr.denomPubHash}`);
+                return;
+              }
+              amountReserveMinus = Amounts.add(
+                amountReserveMinus,
+                denomInfo.value,
+                denomInfo.feeWithdraw,
+              ).amount;
+            });
+        });
 
       const remainingAmount = Amounts.sub(
         amountReservePlus,

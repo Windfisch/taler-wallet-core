@@ -43,15 +43,9 @@ export interface ReserveStatus {
    * Balance left in the reserve.
    */
   balance: AmountString;
-
-  /**
-   * Transaction history for the reserve.
-   */
-  history: ReserveTransaction[];
 }
 
 export const codecForReserveStatus = (): Codec<ReserveStatus> =>
   buildCodecForObject<ReserveStatus>()
     .property("balance", codecForString())
-    .property("history", codecForList(codecForReserveTransaction()))
     .build("ReserveStatus");

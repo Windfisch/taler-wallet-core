@@ -315,7 +315,7 @@ export async function getCandidatePayCoins(
           candidateCoins.push({
             availableAmount: coin.currentAmount,
             coinPub: coin.coinPub,
-            denomPub: coin.denomPub,
+            denomPub: denom.denomPub,
             feeDeposit: denom.feeDeposit,
             exchangeBaseUrl: denom.exchangeBaseUrl,
           });
@@ -1397,7 +1397,7 @@ export async function generateDepositPermissions(
       coinPub: coin.coinPub,
       contractTermsHash: contractData.contractTermsHash,
       denomPubHash: coin.denomPubHash,
-      denomKeyType: coin.denomPub.cipher,
+      denomKeyType: denom.denomPub.cipher,
       denomSig: coin.denomSig,
       exchangeBaseUrl: coin.exchangeBaseUrl,
       feeDeposit: denom.feeDeposit,

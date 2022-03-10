@@ -24,23 +24,62 @@
  */
 import {
   AcceptManualWithdrawalResult,
-  AcceptWithdrawalResponse, AmountJson, Amounts, BalancesResponse, codecForAbortPayWithRefundRequest,
+  AcceptWithdrawalResponse,
+  AmountJson,
+  Amounts,
+  BalancesResponse,
+  codecForAbortPayWithRefundRequest,
   codecForAcceptBankIntegratedWithdrawalRequest,
   codecForAcceptExchangeTosRequest,
   codecForAcceptManualWithdrawalRequet,
   codecForAcceptTipRequest,
-  codecForAddExchangeRequest, codecForAny, codecForApplyRefundRequest,
+  codecForAddExchangeRequest,
+  codecForAny,
+  codecForApplyRefundRequest,
   codecForConfirmPayRequest,
-  codecForCreateDepositGroupRequest, codecForDeleteTransactionRequest, codecForForceRefreshRequest,
-  codecForGetExchangeTosRequest, codecForGetExchangeWithdrawalInfo, codecForGetFeeForDeposit, codecForGetWithdrawalDetailsForAmountRequest,
-  codecForGetWithdrawalDetailsForUri, codecForImportDbRequest, codecForIntegrationTestArgs, codecForListKnownBankAccounts, codecForPreparePayRequest,
-  codecForPrepareTipRequest, codecForRetryTransactionRequest, codecForSetCoinSuspendedRequest, codecForSetWalletDeviceIdRequest, codecForTestPayArgs,
-  codecForTrackDepositGroupRequest, codecForTransactionsRequest, codecForWithdrawFakebankRequest, codecForWithdrawTestBalance, CoinDumpJson, CoreApiResponse, durationFromSpec,
-  durationMin, ExchangeListItem,
-  ExchangesListRespose, getDurationRemaining, GetExchangeTosResult, isTimestampExpired,
-  j2s, KnownBankAccounts, Logger, ManualWithdrawalDetails, NotificationType, parsePaytoUri, PaytoUri, RefreshReason, TalerErrorCode,
+  codecForCreateDepositGroupRequest,
+  codecForDeleteTransactionRequest,
+  codecForForceRefreshRequest,
+  codecForGetExchangeTosRequest,
+  codecForGetExchangeWithdrawalInfo,
+  codecForGetFeeForDeposit,
+  codecForGetWithdrawalDetailsForAmountRequest,
+  codecForGetWithdrawalDetailsForUri,
+  codecForImportDbRequest,
+  codecForIntegrationTestArgs,
+  codecForListKnownBankAccounts,
+  codecForPreparePayRequest,
+  codecForPrepareTipRequest,
+  codecForRetryTransactionRequest,
+  codecForSetCoinSuspendedRequest,
+  codecForSetWalletDeviceIdRequest,
+  codecForTestPayArgs,
+  codecForTrackDepositGroupRequest,
+  codecForTransactionsRequest,
+  codecForWithdrawFakebankRequest,
+  codecForWithdrawTestBalance,
+  CoinDumpJson,
+  CoreApiResponse,
+  durationFromSpec,
+  durationMin,
+  ExchangeListItem,
+  ExchangesListRespose,
+  getDurationRemaining,
+  GetExchangeTosResult,
+  isTimestampExpired,
+  j2s,
+  KnownBankAccounts,
+  Logger,
+  ManualWithdrawalDetails,
+  NotificationType,
+  parsePaytoUri,
+  PaytoUri,
+  RefreshReason,
+  TalerErrorCode,
   Timestamp,
-  timestampMin, URL, WalletNotification
+  timestampMin,
+  URL,
+  WalletNotification,
 } from "@gnu-taler/taler-util";
 import {
   DenomInfo,
@@ -50,7 +89,7 @@ import {
   MerchantOperations,
   NotificationListener,
   RecoupOperations,
-  ReserveOperations
+  ReserveOperations,
 } from "./common.js";
 import { CryptoApi, CryptoWorkerFactory } from "./crypto/workers/cryptoApi.js";
 import {
@@ -59,12 +98,12 @@ import {
   exportDb,
   importDb,
   ReserveRecordStatus,
-  WalletStoresV1
+  WalletStoresV1,
 } from "./db.js";
 import {
   makeErrorDetails,
   OperationFailedAndReportedError,
-  OperationFailedError
+  OperationFailedError,
 } from "./errors.js";
 import { exportBackup } from "./operations/backup/export.js";
 import {
@@ -77,7 +116,7 @@ import {
   loadBackupRecovery,
   processBackupForProvider,
   removeBackupProvider,
-  runBackupCycle
+  runBackupCycle,
 } from "./operations/backup/index.js";
 import { setWalletDeviceId } from "./operations/backup/state.js";
 import { getBalances } from "./operations/balance.js";
@@ -85,7 +124,7 @@ import {
   createDepositGroup,
   getFeeForDeposit,
   processDepositGroup,
-  trackDepositGroup
+  trackDepositGroup,
 } from "./operations/deposits.js";
 import {
   acceptExchangeTermsOfService,
@@ -94,62 +133,64 @@ import {
   getExchangeRequestTimeout,
   getExchangeTrust,
   updateExchangeFromUrl,
-  updateExchangeTermsOfService
+  updateExchangeTermsOfService,
 } from "./operations/exchanges.js";
 import { getMerchantInfo } from "./operations/merchants.js";
 import {
   confirmPay,
   preparePayForUri,
   processDownloadProposal,
-  processPurchasePay
+  processPurchasePay,
 } from "./operations/pay.js";
 import { getPendingOperations } from "./operations/pending.js";
 import { createRecoupGroup, processRecoupGroup } from "./operations/recoup.js";
 import {
   autoRefresh,
   createRefreshGroup,
-  processRefreshGroup
+  processRefreshGroup,
 } from "./operations/refresh.js";
 import {
   abortFailedPayWithRefund,
   applyRefund,
-  processPurchaseQueryRefund
+  processPurchaseQueryRefund,
 } from "./operations/refund.js";
 import {
   createReserve,
   createTalerWithdrawReserve,
   getFundingPaytoUris,
-  processReserve
+  processReserve,
 } from "./operations/reserves.js";
 import {
   runIntegrationTest,
   testPay,
-  withdrawTestBalance
+  withdrawTestBalance,
 } from "./operations/testing.js";
 import { acceptTip, prepareTip, processTip } from "./operations/tip.js";
 import {
   deleteTransaction,
   getTransactions,
-  retryTransaction
+  retryTransaction,
 } from "./operations/transactions.js";
 import {
   getExchangeWithdrawalInfo,
   getWithdrawalDetailsForUri,
-  processWithdrawGroup
+  processWithdrawGroup,
 } from "./operations/withdraw.js";
 import {
-  PendingOperationsResponse, PendingTaskInfo, PendingTaskType
+  PendingOperationsResponse,
+  PendingTaskInfo,
+  PendingTaskType,
 } from "./pending-types.js";
 import { assertUnreachable } from "./util/assertUnreachable.js";
 import { AsyncOpMemoMap, AsyncOpMemoSingle } from "./util/asyncMemo.js";
 import {
   HttpRequestLibrary,
-  readSuccessResponseJsonOrThrow
+  readSuccessResponseJsonOrThrow,
 } from "./util/http.js";
 import {
   AsyncCondition,
   OpenedPromise,
-  openPromise
+  openPromise,
 } from "./util/promiseUtils.js";
 import { DbAccess, GetReadWriteAccess } from "./util/query.js";
 import { TimerGroup } from "./util/timer.js";
@@ -455,7 +496,10 @@ async function getExchangeTos(
   ) {
     throw Error("exchange is in invalid state");
   }
-  if (acceptedFormat && acceptedFormat.findIndex(f => f === contentType) !== -1) {
+  if (
+    acceptedFormat &&
+    acceptedFormat.findIndex((f) => f === contentType) !== -1
+  ) {
     return {
       acceptedEtag: exchangeDetails.termsOfServiceAcceptedEtag,
       currentEtag,
@@ -464,7 +508,12 @@ async function getExchangeTos(
     };
   }
 
-  const tosDownload = await downloadTosFromAcceptedFormat(ws, exchangeBaseUrl, getExchangeRequestTimeout(), acceptedFormat);
+  const tosDownload = await downloadTosFromAcceptedFormat(
+    ws,
+    exchangeBaseUrl,
+    getExchangeRequestTimeout(),
+    acceptedFormat,
+  );
 
   if (tosDownload.tosContentType === contentType) {
     return {
@@ -474,7 +523,7 @@ async function getExchangeTos(
       contentType,
     };
   }
-  await updateExchangeTermsOfService(ws, exchangeBaseUrl, tosDownload)
+  await updateExchangeTermsOfService(ws, exchangeBaseUrl, tosDownload);
 
   return {
     acceptedEtag: exchangeDetails.termsOfServiceAcceptedEtag,
@@ -482,7 +531,6 @@ async function getExchangeTos(
     content: tosDownload.tosText,
     contentType: tosDownload.tosContentType,
   };
-
 }
 
 async function listKnownBankAccounts(
@@ -641,9 +689,15 @@ async function dumpCoins(ws: InternalWalletState): Promise<CoinDumpJson> {
           }
           withdrawalReservePub = ws.reservePub;
         }
+        const denomInfo = await ws.getDenomInfo(
+          ws,
+          tx,
+          c.exchangeBaseUrl,
+          c.denomPubHash,
+        );
         coinsJson.coins.push({
           coin_pub: c.coinPub,
-          denom_pub: c.denomPub,
+          denom_pub: denomInfo?.denomPub!,
           denom_pub_hash: c.denomPubHash,
           denom_value: Amounts.stringify(denom.value),
           exchange_base_url: c.exchangeBaseUrl,
@@ -1030,7 +1084,7 @@ export async function handleCoreApiRequest(
       try {
         logger.error("Caught unexpected exception:");
         logger.error(e.stack);
-      } catch (e) { }
+      } catch (e) {}
       return {
         type: "error",
         operation,
@@ -1236,7 +1290,10 @@ class InternalWalletStateImpl implements InternalWalletState {
    * Run an async function after acquiring a list of locks, identified
    * by string tokens.
    */
-  async runSequentialized<T>(tokens: string[], f: () => Promise<T>): Promise<T> {
+  async runSequentialized<T>(
+    tokens: string[],
+    f: () => Promise<T>,
+  ): Promise<T> {
     // Make sure locks are always acquired in the same order
     tokens = [...tokens].sort();
 
@@ -1269,4 +1326,3 @@ class InternalWalletStateImpl implements InternalWalletState {
     }
   }
 }
-

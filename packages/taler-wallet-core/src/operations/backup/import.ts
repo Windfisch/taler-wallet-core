@@ -419,7 +419,6 @@ export async function importBackup(
                 coinPub: compCoin.coinPub,
                 suspended: false,
                 exchangeBaseUrl: backupExchangeDetails.base_url,
-                denomPub: backupDenomination.denom_pub,
                 denomPubHash,
                 status: backupCoin.fresh
                   ? CoinStatus.Fresh

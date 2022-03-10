@@ -77,6 +77,8 @@ export interface AvailableCoinInfo {
 
   /**
    * Coin's denomination public key.
+   * 
+   * FIXME: We should only need the denomPubHash here, if at all.
    */
   denomPub: DenominationPubKey;
 

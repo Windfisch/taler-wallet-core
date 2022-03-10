@@ -597,9 +597,6 @@ export interface PlanchetRecord {
 
   denomPubHash: string;
 
-  // FIXME: maybe too redundant?
-  denomPub: DenominationPubKey;
-
   blindingKey: string;
 
   withdrawSig: string;
@@ -607,10 +604,6 @@ export interface PlanchetRecord {
   coinEv: CoinEnvelope;
 
   coinEvHash: string;
-
-  coinValue: AmountJson;
-
-  isFromTip: boolean;
 }
 
 /**
@@ -684,11 +677,6 @@ export interface CoinRecord {
    * Private key to authorize operations on the coin.
    */
   coinPriv: string;
-
-  /**
-   * Key used by the exchange used to sign the coin.
-   */
-  denomPub: DenominationPubKey;
 
   /**
    * Hash of the public key that signs the coin.
@@ -1378,6 +1366,8 @@ export interface WithdrawalGroupRecord {
 
   /**
    * When was the withdrawal operation completed?
+   *
+   * FIXME: We should probably drop this and introduce an OperationStatus field.
    */
   timestampFinish?: Timestamp;
 

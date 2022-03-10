@@ -395,7 +395,7 @@ async function refreshMelt(
     oldCoin.exchangeBaseUrl,
   );
   let meltReqBody: any;
-  if (oldCoin.denomPub.cipher === DenomKeyType.Rsa) {
+  if (oldDenom.denomPub.cipher === DenomKeyType.Rsa) {
     meltReqBody = {
       coin_pub: oldCoin.coinPub,
       confirm_sig: derived.confirmSig,
@@ -671,7 +671,6 @@ async function refreshReveal(
         coinPriv: pc.coinPriv,
         coinPub: pc.coinPub,
         currentAmount: denom.value,
-        denomPub: denom.denomPub,
         denomPubHash: denom.denomPubHash,
         denomSig: {
           cipher: DenomKeyType.Rsa,

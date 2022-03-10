@@ -418,10 +418,7 @@ async function processPlanchetGenerate(
     coinIdx,
     coinPriv: r.coinPriv,
     coinPub: r.coinPub,
-    coinValue: r.coinValue,
-    denomPub: r.denomPub,
     denomPubHash: r.denomPubHash,
-    isFromTip: false,
     reservePub: r.reservePub,
     withdrawalDone: false,
     withdrawSig: r.withdrawSig,
@@ -557,6 +554,7 @@ async function processPlanchetVerifyAndStoreCoin(
     .mktx((x) => ({
       withdrawalGroups: x.withdrawalGroups,
       planchets: x.planchets,
+      denominations: x.denominations,
     }))
     .runReadOnly(async (tx) => {
       let planchet = await tx.planchets.indexes.byGroupAndIndex.get([
@@ -570,16 +568,29 @@ async function processPlanchetVerifyAndStoreCoin(
         logger.warn("processPlanchet: planchet already withdrawn");
         return;
       }
-      return { planchet, exchangeBaseUrl: withdrawalGroup.exchangeBaseUrl };
+      const denomInfo = await ws.getDenomInfo(
+        ws,
+        tx,
+        withdrawalGroup.exchangeBaseUrl,
+        planchet.denomPubHash,
+      );
+      if (!denomInfo) {
+        return;
+      }
+      return {
+        planchet,
+        denomInfo,
+        exchangeBaseUrl: withdrawalGroup.exchangeBaseUrl,
+      };
     });
 
   if (!d) {
     return;
   }
 
-  const { planchet, exchangeBaseUrl } = d;
+  const { planchet, denomInfo } = d;
 
-  const planchetDenomPub = planchet.denomPub;
+  const planchetDenomPub = denomInfo.denomPub;
   if (planchetDenomPub.cipher !== DenomKeyType.Rsa) {
     throw Error(`cipher (${planchetDenomPub.cipher}) not supported`);
   }
@@ -623,9 +634,9 @@ async function processPlanchetVerifyAndStoreCoin(
   }
 
   let denomSig: UnblindedSignature;
-  if (planchet.denomPub.cipher === DenomKeyType.Rsa) {
+  if (planchetDenomPub.cipher === DenomKeyType.Rsa) {
     denomSig = {
-      cipher: planchet.denomPub.cipher,
+      cipher: planchetDenomPub.cipher,
       rsa_signature: denomSigRsa,
     };
   } else {
@@ -636,12 +647,11 @@ async function processPlanchetVerifyAndStoreCoin(
     blindingKey: planchet.blindingKey,
     coinPriv: planchet.coinPriv,
     coinPub: planchet.coinPub,
-    currentAmount: planchet.coinValue,
-    denomPub: planchet.denomPub,
+    currentAmount: denomInfo.value,
     denomPubHash: planchet.denomPubHash,
     denomSig,
     coinEvHash: planchet.coinEvHash,
-    exchangeBaseUrl: exchangeBaseUrl,
+    exchangeBaseUrl: d.exchangeBaseUrl,
     status: CoinStatus.Fresh,
     coinSource: {
       type: CoinSourceType.Withdraw,

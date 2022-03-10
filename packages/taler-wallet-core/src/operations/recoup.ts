@@ -164,17 +164,33 @@ async function recoupWithdrawCoin(
   cs: WithdrawCoinSource,
 ): Promise<void> {
   const reservePub = cs.reservePub;
-  const reserve = await ws.db
+  const d = await ws.db
     .mktx((x) => ({
       reserves: x.reserves,
+      denominations: x.denominations,
     }))
     .runReadOnly(async (tx) => {
-      return tx.reserves.get(reservePub);
+      const reserve = await tx.reserves.get(reservePub);
+      if (!reserve) {
+        return;
+      }
+      const denomInfo = await ws.getDenomInfo(
+        ws,
+        tx,
+        reserve.exchangeBaseUrl,
+        coin.denomPubHash,
+      );
+      if (!denomInfo) {
+        return;
+      }
+      return { reserve, denomInfo };
     });
-  if (!reserve) {
+  if (!d) {
     // FIXME:  We should at least emit some pending operation / warning for this?
     return;
   }
+
+  const { reserve, denomInfo } = d;
 
   ws.notify({
     type: NotificationType.RecoupStarted,
@@ -184,7 +200,7 @@ async function recoupWithdrawCoin(
     blindingKey: coin.blindingKey,
     coinPriv: coin.coinPriv,
     coinPub: coin.coinPub,
-    denomPub: coin.denomPub,
+    denomPub: denomInfo.denomPub,
     denomPubHash: coin.denomPubHash,
     denomSig: coin.denomSig,
   });
@@ -253,6 +269,28 @@ async function recoupRefreshCoin(
   coin: CoinRecord,
   cs: RefreshCoinSource,
 ): Promise<void> {
+  const d = await ws.db
+    .mktx((x) => ({
+      coins: x.coins,
+      denominations: x.denominations,
+    }))
+    .runReadOnly(async (tx) => {
+      const denomInfo = await ws.getDenomInfo(
+        ws,
+        tx,
+        coin.exchangeBaseUrl,
+        coin.denomPubHash,
+      );
+      if (!denomInfo) {
+        return;
+      }
+      return { denomInfo };
+    });
+  if (!d) {
+    // FIXME:  We should at least emit some pending operation / warning for this?
+    return;
+  }
+
   ws.notify({
     type: NotificationType.RecoupStarted,
   });
@@ -261,7 +299,7 @@ async function recoupRefreshCoin(
     blindingKey: coin.blindingKey,
     coinPriv: coin.coinPriv,
     coinPub: coin.coinPub,
-    denomPub: coin.denomPub,
+    denomPub: d.denomInfo.denomPub,
     denomPubHash: coin.denomPubHash,
     denomSig: coin.denomSig,
   });
