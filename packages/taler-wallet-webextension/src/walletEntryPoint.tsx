@@ -120,7 +120,11 @@ function Application(): VNode {
                 justifyContent: "center",
               }}
             >
-              <PendingTransactions />
+              <PendingTransactions
+                goToTransaction={(txId: string) =>
+                  route(Pages.balance_transaction.replace(":tid", txId))
+                }
+              />
             </div>
             <WalletBox>
               {globalNotification && (

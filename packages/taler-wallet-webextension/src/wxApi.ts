@@ -395,7 +395,6 @@ export function onUpdateNotification(messageTypes: Array<NotificationType>, doCa
   const port = chrome.runtime.connect({ name: "notifications" });
   const listener = (message: MessageFromBackend): void => {
     const shouldNotify = messageTypes.includes(message.type)
-    console.log("Notification arrived, should notify?", shouldNotify, message.type, messageTypes)
     if (shouldNotify) {
       doCallback();
     }

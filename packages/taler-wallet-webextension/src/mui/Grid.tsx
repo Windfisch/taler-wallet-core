@@ -1,5 +1,5 @@
 import { css } from "@linaria/core";
-import { h, Fragment, VNode, ComponentChildren, createContext } from "preact";
+import { h, JSX, VNode, ComponentChildren, createContext } from "preact";
 import { useContext } from "preact/hooks";
 import { theme } from "./style";
 
@@ -31,7 +31,7 @@ const zeroMinWidthStyle = css`
 type GridSizes = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 type SpacingSizes = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
-export interface Props {
+export interface Props extends JSX.HTMLAttributes<HTMLDivElement> {
   columns?: number | Partial<ResponsiveSize>;
   container?: boolean;
   item?: boolean;
@@ -226,6 +226,8 @@ export function Grid({
   justifyContent,
   zeroMinWidth = false,
   children,
+  onClick,
+  ...rest
 }: Props): VNode {
   const cc = useContext(GridContext);
   const columns = !cp ? cc : toResponsive(cp);
@@ -234,12 +236,7 @@ export function Grid({
   const columnSpacing = csp ? toResponsive(csp) : toResponsive(spacing);
 
   const ssize = toResponsive({ xs, md, lg, xl, sm } as any);
-  console.log(ssize);
 
-  if (container) {
-    console.log(rowSpacing);
-    console.log(columnSpacing);
-  }
   const spacingStyles = !container
     ? {}
     : {
@@ -312,7 +309,10 @@ export function Grid({
           justifyContent,
           alignItems,
           flexWrap: wrap,
+          cursor: onClick ? "pointer" : "inherit",
         }}
+        onClick={onClick}
+        {...rest}
       >
         {children}
       </div>

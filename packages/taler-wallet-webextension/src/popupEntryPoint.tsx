@@ -83,7 +83,11 @@ function Application(): VNode {
       <DevContextProvider>
         {({ devMode }: { devMode: boolean }) => (
           <IoCProviderForRuntime>
-            <PendingTransactions />
+            <PendingTransactions
+              goToTransaction={(txId: string) =>
+                route(Pages.balance_transaction.replace(":tid", txId))
+              }
+            />
             <Match>
               {({ path }: { path: string }) => <PopupNavBar path={path} />}
             </Match>
@@ -138,6 +142,10 @@ function Application(): VNode {
                   }}
                 />
 
+                <Route
+                  path={Pages.balance_transaction}
+                  component={RedirectToWalletPage}
+                />
                 <Route
                   path={Pages.balance_manual_withdraw}
                   component={RedirectToWalletPage}

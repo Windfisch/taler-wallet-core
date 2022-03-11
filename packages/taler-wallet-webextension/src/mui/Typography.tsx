@@ -75,7 +75,6 @@ export function Typography({
       : {
           textAlign: align,
         };
-  console.log("typograph", cmp, variant);
   return h(
     cmp,
     {

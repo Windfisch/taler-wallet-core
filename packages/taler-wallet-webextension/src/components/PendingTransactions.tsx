@@ -8,24 +8,35 @@ import Banner from "./Banner";
 import { Time } from "./Time";
 import * as wxApi from "../wxApi";
 
-interface Props extends JSX.HTMLAttributes {}
+interface Props extends JSX.HTMLAttributes {
+  goToTransaction: (id: string) => void;
+}
 
-export function PendingTransactions({}: Props) {
+export function PendingTransactions({ goToTransaction }: Props) {
   const state = useAsyncAsHook(wxApi.getTransactions, [
     NotificationType.WithdrawGroupFinished,
   ]);
   const transactions =
-    !state || state.hasError ? [] : state.response.transactions;
+    !state || state.hasError
+      ? []
+      : state.response.transactions.filter((t) => t.pending);
 
-  if (!state || state.hasError) {
+  if (!state || state.hasError || !transactions.length) {
     return <Fragment />;
   }
-  return <PendingTransactionsView transactions={transactions} />;
+  return (
+    <PendingTransactionsView
+      goToTransaction={goToTransaction}
+      transactions={transactions}
+    />
+  );
 }
 
 export function PendingTransactionsView({
   transactions,
+  goToTransaction,
 }: {
+  goToTransaction: (id: string) => void;
   transactions: Transaction[];
 }) {
   return (
@@ -35,6 +46,8 @@ export function PendingTransactionsView({
         backgroundColor: "lightcyan",
         maxHeight: 150,
         padding: 8,
+        flexGrow: 1,
+        maxWidth: 500,
         overflowY: transactions.length > 3 ? "scroll" : "hidden",
       }}
       elements={transactions.map((t) => {
@@ -51,6 +64,7 @@ export function PendingTransactionsView({
               {t.type.substring(0, 1)}
             </Avatar>
           ),
+          action: () => goToTransaction(t.transactionId),
           description: (
             <Typography>
               <b>

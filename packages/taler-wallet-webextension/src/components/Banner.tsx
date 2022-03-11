@@ -11,6 +11,7 @@ interface Props extends JSX.HTMLAttributes<HTMLDivElement> {
   elements: {
     icon?: VNode;
     description: VNode;
+    action?: () => void;
   }[];
   confirm?: {
     label: string;
@@ -39,6 +40,7 @@ export function Banner({ title, elements, confirm, ...rest }: Props) {
               wrap="nowrap"
               spacing={1}
               alignItems="center"
+              onClick={e.action}
             >
               {e.icon && (
                 <Grid item xs={"auto"}>

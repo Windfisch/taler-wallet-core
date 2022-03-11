@@ -29,6 +29,7 @@ import imageHandHeart from "../../static/img/ri-hand-heart-line.svg";
 import imageRefresh from "../../static/img/ri-refresh-line.svg";
 import imageRefund from "../../static/img/ri-refund-2-line.svg";
 import imageShoppingCart from "../../static/img/ri-shopping-cart-line.svg";
+import { Avatar } from "../mui/Avatar";
 import { Pages } from "../NavigationBar";
 import {
   Column,
@@ -51,7 +52,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           debitCreditIndicator={"credit"}
           title={new URL(tx.exchangeBaseUrl).hostname}
           timestamp={tx.timestamp}
-          iconPath={imageBank}
+          iconPath={"W"}
           pending={tx.pending}
         />
       );
@@ -64,7 +65,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           title={tx.info.merchant.name}
           subtitle={tx.info.summary}
           timestamp={tx.timestamp}
-          iconPath={imageShoppingCart}
+          iconPath={"P"}
           pending={tx.pending}
         />
       );
@@ -76,7 +77,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           debitCreditIndicator={"credit"}
           title={tx.info.merchant.name}
           timestamp={tx.timestamp}
-          iconPath={imageRefund}
+          iconPath={"R"}
           pending={tx.pending}
         />
       );
@@ -88,7 +89,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           debitCreditIndicator={"credit"}
           title={new URL(tx.merchantBaseUrl).hostname}
           timestamp={tx.timestamp}
-          iconPath={imageHandHeart}
+          iconPath={"T"}
           pending={tx.pending}
         />
       );
@@ -100,7 +101,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           debitCreditIndicator={"credit"}
           title={new URL(tx.exchangeBaseUrl).hostname}
           timestamp={tx.timestamp}
-          iconPath={imageRefresh}
+          iconPath={"R"}
           pending={tx.pending}
         />
       );
@@ -112,7 +113,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           debitCreditIndicator={"debit"}
           title={tx.targetPaytoUri}
           timestamp={tx.timestamp}
-          iconPath={imageBank}
+          iconPath={"D"}
           pending={tx.pending}
         />
       );
@@ -121,8 +122,22 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
 
 function TransactionLayout(props: TransactionLayoutProps): VNode {
   return (
-    <HistoryRow href={Pages.balance_transaction.replace(":tid", props.id)}>
-      <img src={props.iconPath} />
+    <HistoryRow
+      href={Pages.balance_transaction.replace(":tid", props.id)}
+      style={{
+        backgroundColor: props.pending ? "lightcyan" : "inherit",
+        alignItems: "center",
+      }}
+    >
+      <Avatar
+        style={{
+          border: "solid gray 1px",
+          color: "gray",
+          boxSizing: "border-box",
+        }}
+      >
+        {props.iconPath}
+      </Avatar>
       <Column>
         <LargeText>
           <div>{props.title}</div>
