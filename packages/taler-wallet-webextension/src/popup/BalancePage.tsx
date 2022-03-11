@@ -117,9 +117,9 @@ export function BalanceView({
 
   return (
     <Fragment>
-      {pending.length > 0 ? (
+      {/* {pending.length > 0 ? (
         <PendingTransactions transactions={pending} />
-      ) : undefined}
+      ) : undefined} */}
       <section>
         <BalanceTable
           balances={balances}
