@@ -1,5 +1,6 @@
 import { css } from "@linaria/core";
 import { h, Fragment, VNode, ComponentChildren } from "preact";
+import { theme } from "./style";
 
 type VariantEnum =
   | "body1"
@@ -74,6 +75,7 @@ export function Typography({
       : {
           textAlign: align,
         };
+  console.log("typograph", cmp, variant);
   return h(
     cmp,
     {
@@ -82,6 +84,7 @@ export function Typography({
         noWrap && noWrapStyle,
         gutterBottom && gutterBottomStyle,
         paragraph && paragraphStyle,
+        theme.typography[variant as "button"], //FIXME: implement the rest of the typography and remove the casting
       ].join(" "),
       style: {
         ...alignStyle,

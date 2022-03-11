@@ -90,6 +90,20 @@ const columnGapVariant = css`
       padding-left: var(--space-col-md);
     }
   }
+  ${theme.breakpoints.up("lg")} {
+    width: calc(100% + var(--space-col-lg));
+    margin-left: calc(-1 * var(--space-col-lg));
+    & > div {
+      padding-left: var(--space-col-lg);
+    }
+  }
+  ${theme.breakpoints.up("xl")} {
+    width: calc(100% + var(--space-col-xl));
+    margin-left: calc(-1 * var(--space-col-xl));
+    & > div {
+      padding-left: var(--space-col-xl);
+    }
+  }
 `;
 const rowGapVariant = css`
   ${theme.breakpoints.up("xs")} {
@@ -110,31 +124,77 @@ const rowGapVariant = css`
       padding-top: var(--space-row-md);
     }
   }
+  ${theme.breakpoints.up("lg")} {
+    margin-top: calc(-1 * var(--space-row-lg));
+    & > div {
+      padding-top: var(--space-row-lg);
+    }
+  }
+  ${theme.breakpoints.up("xl")} {
+    margin-top: calc(-1 * var(--space-row-xl));
+    & > div {
+      padding-top: var(--space-row-xl);
+    }
+  }
 `;
 
-const sizeVariant = css`
+const sizeVariantXS = css`
   ${theme.breakpoints.up("xs")} {
     flex-basis: var(--relation-col-vs-xs);
     flex-grow: 0;
     max-width: var(--relation-col-vs-xs);
   }
+`;
+const sizeVariantSM = css`
   ${theme.breakpoints.up("sm")} {
     flex-basis: var(--relation-col-vs-sm);
     flex-grow: 0;
     max-width: var(--relation-col-vs-sm);
   }
+`;
+const sizeVariantMD = css`
   ${theme.breakpoints.up("md")} {
     flex-basis: var(--relation-col-vs-md);
     flex-grow: 0;
     max-width: var(--relation-col-vs-md);
   }
 `;
+const sizeVariantLG = css`
+  ${theme.breakpoints.up("lg")} {
+    flex-basis: var(--relation-col-vs-lg);
+    flex-grow: 0;
+    max-width: var(--relation-col-vs-lg);
+  }
+`;
+const sizeVariantXL = css`
+  ${theme.breakpoints.up("xl")} {
+    flex-basis: var(--relation-col-vs-xl);
+    flex-grow: 0;
+    max-width: var(--relation-col-vs-xl);
+  }
+`;
 
-const GridContext = createContext<ResponsiveSize>(toResponsive(12));
+const sizeVariantExpand = css`
+  flex-basis: 0;
+  flex-grow: 1;
+  max-width: 100%;
+`;
 
-function toResponsive(v: number | Partial<ResponsiveSize>): ResponsiveSize {
+const sizeVariantAuto = css`
+  flex-basis: auto;
+  flex-grow: 0;
+  flex-shrink: 0;
+  max-width: none;
+  width: auto;
+`;
+
+const GridContext = createContext<Partial<ResponsiveSize>>(toResponsive(12));
+
+function toResponsive(
+  v: number | Partial<ResponsiveSize>,
+): Partial<ResponsiveSize> {
   const p = typeof v === "number" ? { xs: v } : v;
-  const xs = p.xs || 12;
+  const xs = p.xs;
   const sm = p.sm || xs;
   const md = p.md || sm;
   const lg = p.lg || md;
@@ -174,6 +234,7 @@ export function Grid({
   const columnSpacing = csp ? toResponsive(csp) : toResponsive(spacing);
 
   const ssize = toResponsive({ xs, md, lg, xl, sm } as any);
+  console.log(ssize);
 
   if (container) {
     console.log(rowSpacing);
@@ -197,23 +258,51 @@ export function Grid({
   const relationStyles = !item
     ? {}
     : {
-        "--relation-col-vs-sm": relation(columns, ssize, "sm"),
-        "--relation-col-vs-lg": relation(columns, ssize, "lg"),
         "--relation-col-vs-xs": relation(columns, ssize, "xs"),
-        "--relation-col-vs-xl": relation(columns, ssize, "xl"),
+        "--relation-col-vs-sm": relation(columns, ssize, "sm"),
         "--relation-col-vs-md": relation(columns, ssize, "md"),
+        "--relation-col-vs-lg": relation(columns, ssize, "lg"),
+        "--relation-col-vs-xl": relation(columns, ssize, "xl"),
       };
 
   return (
     <GridContext.Provider value={columns}>
       <div
-        id={container ? "container" : "item"}
         class={[
           root,
           container && containerStyle,
           item && itemStyle,
           zeroMinWidth && zeroMinWidthStyle,
-          sizeVariant,
+          xs &&
+            (xs === "auto"
+              ? sizeVariantAuto
+              : xs === "true"
+              ? sizeVariantExpand
+              : sizeVariantXS),
+          sm &&
+            (sm === "auto"
+              ? sizeVariantAuto
+              : sm === "true"
+              ? sizeVariantExpand
+              : sizeVariantSM),
+          md &&
+            (md === "auto"
+              ? sizeVariantAuto
+              : md === "true"
+              ? sizeVariantExpand
+              : sizeVariantMD),
+          lg &&
+            (lg === "auto"
+              ? sizeVariantAuto
+              : lg === "true"
+              ? sizeVariantExpand
+              : sizeVariantLG),
+          xl &&
+            (xl === "auto"
+              ? sizeVariantAuto
+              : xl === "true"
+              ? sizeVariantExpand
+              : sizeVariantXL),
           container && columnGapVariant,
           container && rowGapVariant,
         ].join(" ")}
@@ -222,6 +311,7 @@ export function Grid({
           ...spacingStyles,
           justifyContent,
           alignItems,
+          flexWrap: wrap,
         }}
       >
         {children}
@@ -230,8 +320,8 @@ export function Grid({
   );
 }
 function relation(
-  cols: ResponsiveSize,
-  values: ResponsiveSize,
+  cols: Partial<ResponsiveSize>,
+  values: Partial<ResponsiveSize>,
   size: ResponsiveKeys,
 ) {
   const colsNum = typeof cols === "number" ? cols : cols[size] || 12;

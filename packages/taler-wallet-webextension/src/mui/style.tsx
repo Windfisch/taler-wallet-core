@@ -24,7 +24,7 @@ export function pxToRem(size: number): string {
 
 export interface Spacing {
   (): string;
-  (value: number): string;
+  (value?: number): string;
   (topBottom: number, rightLeft: number): string;
   (top: number, rightLeft: number, bottom: number): string;
   (top: number, right: number, bottom: number, left: number): string;
@@ -184,11 +184,14 @@ function createTheme() {
       spacing: spacingInput,
     });
 
-    const spacing = (...argsInput: ReadonlyArray<number | string>): string => {
+    const spacing = (
+      ...argsInput: ReadonlyArray<number | string | undefined>
+    ): string => {
       const args = argsInput.length === 0 ? [1] : argsInput;
 
       return args
         .map((argument) => {
+          if (argument === undefined) return "";
           const output = transform(argument);
           return typeof output === "number" ? `${output}px` : output;
         })
@@ -348,6 +351,7 @@ function createTheme() {
     // ...other
     // } = typography;
     const variants = {
+      // (fontWeight, size, lineHeight, letterSpacing, casing) =>
       // h1: buildVariant(fontWeightLight, 96, 1.167, -1.5),
       // h2: buildVariant(fontWeightLight, 60, 1.2, -0.5),
       // h3: buildVariant(fontWeightRegular, 48, 1.167, 0),
@@ -356,7 +360,21 @@ function createTheme() {
       // h6: buildVariant(fontWeightMedium, 20, 1.6, 0.15),
       // subtitle1: buildVariant(fontWeightRegular, 16, 1.75, 0.15),
       // subtitle2: buildVariant(fontWeightMedium, 14, 1.57, 0.1),
+      body1: css`
+        font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+        font-weight: ${fontWeightRegular};
+        font-size: ${pxToRem(16)};
+        line-height: 1.5;
+        letter-spacing: ${round(0.15 / 16)}em;
+      `,
       // body1: buildVariant(fontWeightRegular, 16, 1.5, 0.15),
+      body2: css`
+        font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+        font-weight: ${fontWeightRegular};
+        font-size: ${pxToRem(14)};
+        line-height: 1.43;
+        letter-spacing: ${round(0.15 / 14)}em;
+      `,
       // body2: buildVariant(fontWeightRegular, 14, 1.43, 0.15),
       button: css`
         font-family: "Roboto", "Helvetica", "Arial", sans-serif;
@@ -366,6 +384,7 @@ function createTheme() {
         letter-spacing: ${round(0.4 / 14)}em;
         text-transform: uppercase;
       `,
+      /* just of caseAllCaps */
       // button: buildVariant(fontWeightMedium, 14, 1.75, 0.4, caseAllCaps),
       // caption: buildVariant(fontWeightRegular, 12, 1.66, 0.4),
       // overline: buildVariant(fontWeightRegular, 12, 2.66, 1, caseAllCaps),

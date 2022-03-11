@@ -1,5 +1,5 @@
 import { css } from "@linaria/core";
-import { h, Fragment, VNode, ComponentChildren } from "preact";
+import { h, JSX, VNode, ComponentChildren } from "preact";
 import { theme } from "./style";
 
 const root = css`
@@ -33,7 +33,7 @@ const avatarImageStyle = css`
   text-indent: 10000;
 `;
 
-interface Props {
+interface Props extends JSX.HTMLAttributes<HTMLDivElement> {
   variant?: "circular" | "rounded" | "square";
   children?: ComponentChildren;
 }

@@ -178,6 +178,26 @@ export const Responsive12Spacing = () => (
   </Fragment>
 );
 
+export const ResponsiveAuthWidth = () => (
+  <Fragment>
+    <Wrapper>
+      <Grid container columns={12}>
+        <Grid item>
+          <Item>item 1</Item>
+        </Grid>
+        <Grid item xs={1}>
+          <Item>item 2 short</Item>
+        </Grid>
+        <Grid item>
+          <Item>item 3 with long text </Item>
+        </Grid>
+        <Grid item xs={"true"}>
+          <Item>item 4</Item>
+        </Grid>
+      </Grid>
+    </Wrapper>
+  </Fragment>
+);
 export const Example = () => (
   <Wrapper>
     <p>Item row space is responsive: xs=6 sm=4 md=1</p>

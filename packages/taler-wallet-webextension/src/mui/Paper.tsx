@@ -1,5 +1,5 @@
 import { css } from "@linaria/core";
-import { h, Fragment, VNode, ComponentChildren } from "preact";
+import { h, JSX, VNode, ComponentChildren } from "preact";
 import { alpha } from "./colors/manipulation";
 import { theme } from "./style";
 
@@ -20,17 +20,20 @@ const baseStyle = css`
   }
 `;
 
+interface Props extends JSX.HTMLAttributes<HTMLDivElement> {
+  elevation?: number;
+  square?: boolean;
+  variant?: "elevation" | "outlined";
+  children?: ComponentChildren;
+}
+
 export function Paper({
   elevation = 1,
   square,
   variant = "elevation",
   children,
-}: {
-  elevation?: number;
-  square?: boolean;
-  variant?: "elevation" | "outlined";
-  children?: ComponentChildren;
-}): VNode {
+  ...rest
+}: Props): VNode {
   return (
     <div
       class={[
@@ -45,6 +48,7 @@ export function Paper({
           getOverlayAlpha(elevation),
         )}, ${alpha("#fff", getOverlayAlpha(elevation))})`,
       }}
+      {...rest}
     >
       {children}
     </div>

@@ -1,64 +1,57 @@
-import { h, Fragment, VNode } from "preact";
+import { h, Fragment, VNode, JSX } from "preact";
 import { Divider } from "../mui/Divider";
 import { Button } from "../mui/Button";
 import { Typography } from "../mui/Typography";
 import { Avatar } from "../mui/Avatar";
 import { Grid } from "../mui/Grid";
 import { Paper } from "../mui/Paper";
-import { Icon } from "./styled";
-import settingsIcon from "../../static/img/settings_black_24dp.svg";
-// & > a > div.settings-icon {
-//   mask: url(${settingsIcon}) no-repeat center;
-//   background-color: white;
-//   width: 24px;
-//   height: 24px;
-//   margin-left: auto;
-//   margin-right: 8px;
-//   padding: 4px;
-// }
-// & > a.active {
-//   background-color: #f8faf7;
-//   color: #0042b2;
-//   font-weight: bold;
-// }
-// & > a.active > div.settings-icon {
-//   background-color: #0042b2;
-// }
 
-function SignalWifiOffIcon({ ...rest }: any): VNode {
-  return <Icon {...rest} />;
+interface Props extends JSX.HTMLAttributes<HTMLDivElement> {
+  title?: string;
+  elements: {
+    icon?: VNode;
+    description: VNode;
+  }[];
+  confirm?: {
+    label: string;
+    action: () => void;
+  };
 }
 
-export function Banner({}: {}) {
+export function Banner({ title, elements, confirm, ...rest }: Props) {
   return (
     <Fragment>
-      <Paper elevation={3} /*className={classes.paper}*/>
-        <Grid
-          container
-          // wrap="nowrap"
-          // spacing={10}
-          alignItems="center"
-          columns={3}
-        >
-          <Grid item xs={1}>
-            <Avatar>
-              <SignalWifiOffIcon style={{ backgroundColor: "red" }} />
-            </Avatar>
+      <Paper elevation={0} {...rest}>
+        {title && (
+          <Grid container>
+            <Grid item>
+              <Typography>{title}</Typography>
+            </Grid>
           </Grid>
-          <Grid item xs={1}>
-            <Typography>
-              You have lost connection to the internet. This app is offline.
-            </Typography>
-          </Grid>
+        )}
+        <Grid container wrap="nowrap" spacing={1} alignItems="center">
+          {elements.map((e, i) => (
+            <Fragment key={i}>
+              {e.icon && (
+                <Grid item>
+                  <Avatar>{e.icon}</Avatar>
+                </Grid>
+              )}
+              <Grid item>{e.description}</Grid>
+            </Fragment>
+          ))}
         </Grid>
-        <Grid container justifyContent="flex-end" spacing={8} columns={3}>
-          <Grid item xs={1}>
-            <Button color="primary">Turn on wifi</Button>
+        {confirm && (
+          <Grid container justifyContent="flex-end" spacing={8}>
+            <Grid item>
+              <Button color="primary" onClick={confirm.action}>
+                {confirm.label}
+              </Button>
+            </Grid>
           </Grid>
-        </Grid>
+        )}
       </Paper>
       <Divider />
-      {/* <CssBaseline /> */}
     </Fragment>
   );
 }

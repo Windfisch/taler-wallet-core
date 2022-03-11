@@ -14,7 +14,13 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Amounts, Balance, i18n } from "@gnu-taler/taler-util";
+import {
+  Amounts,
+  Balance,
+  i18n,
+  NotificationType,
+  Transaction,
+} from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { BalanceTable } from "../components/BalanceTable";
@@ -22,6 +28,7 @@ import { JustInDevMode } from "../components/JustInDevMode";
 import { Loading } from "../components/Loading";
 import { LoadingError } from "../components/LoadingError";
 import { MultiActionButton } from "../components/MultiActionButton";
+import PendingTransactions from "../components/PendingTransactions";
 import { ButtonBoxPrimary, ButtonPrimary } from "../components/styled";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { AddNewActionView } from "../wallet/AddNewActionView";
@@ -39,8 +46,19 @@ export function BalancePage({
   goToWalletHistory,
 }: Props): VNode {
   const [addingAction, setAddingAction] = useState(false);
-  const state = useAsyncAsHook(wxApi.getBalance);
-  const balances = !state || state.hasError ? [] : state.response.balances;
+  const state = useAsyncAsHook(
+    async () => ({
+      balance: await wxApi.getBalance(),
+      pending: await wxApi.getTransactions(),
+    }),
+    [NotificationType.WithdrawGroupFinished],
+  );
+  const balances =
+    !state || state.hasError ? [] : state.response.balance.balances;
+  const pending =
+    !state || state.hasError
+      ? []
+      : state.response.pending.transactions.filter((t) => t.pending);
 
   if (!state) {
     return <Loading />;
@@ -62,6 +80,7 @@ export function BalancePage({
   return (
     <BalanceView
       balances={balances}
+      pending={pending}
       goToWalletManualWithdraw={goToWalletManualWithdraw}
       goToWalletDeposit={goToWalletDeposit}
       goToWalletHistory={goToWalletHistory}
@@ -71,6 +90,7 @@ export function BalancePage({
 }
 export interface BalanceViewProps {
   balances: Balance[];
+  pending: Transaction[];
   goToWalletManualWithdraw: () => void;
   goToAddAction: () => void;
   goToWalletDeposit: (currency: string) => void;
@@ -79,6 +99,7 @@ export interface BalanceViewProps {
 
 export function BalanceView({
   balances,
+  pending,
   goToWalletManualWithdraw,
   goToWalletDeposit,
   goToWalletHistory,
@@ -96,6 +117,9 @@ export function BalanceView({
 
   return (
     <Fragment>
+      {pending.length > 0 ? (
+        <PendingTransactions transactions={pending} />
+      ) : undefined}
       <section>
         <BalanceTable
           balances={balances}

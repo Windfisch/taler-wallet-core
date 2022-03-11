@@ -15,6 +15,7 @@ interface Props {
   startIcon?: VNode;
   variant?: "contained" | "outlined" | "text";
   color?: "primary" | "secondary" | "success" | "error" | "info" | "warning";
+  onClick: () => void;
 }
 
 const baseStyle = css`
@@ -139,6 +140,7 @@ export function Button({
   variant = "text",
   size = "medium",
   color = "primary",
+  onClick,
 }: Props): VNode {
   const style = css`
     user-select: none;

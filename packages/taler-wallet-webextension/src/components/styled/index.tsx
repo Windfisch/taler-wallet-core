@@ -778,6 +778,7 @@ export const WarningBox = styled(ErrorBox)`
 `;
 
 import settingsIcon from "../../../static/img/settings_black_24dp.svg";
+import wifiIcon from "../../../static/img/wifi.svg";
 
 export const NavigationHeaderHolder = styled.div`
   width: 100%;
@@ -827,7 +828,7 @@ export const NavigationHeader = styled.div`
 `;
 
 export const Icon = styled.div`
-  mask: url(${settingsIcon}) no-repeat center;
+  mask: url(${wifiIcon}) no-repeat center;
   background-color: gray;
   width: 24px;
   height: 24px;

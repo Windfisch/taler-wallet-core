@@ -20,7 +20,10 @@
  */
 
 import { Banner } from "./Banner";
-import { Fragment, h } from "preact";
+import { Fragment, h, VNode } from "preact";
+import { Avatar } from "../mui/Avatar";
+import { Icon } from "./styled";
+import { Typography } from "../mui/Typography";
 
 export default {
   title: "mui/banner",
@@ -44,11 +47,72 @@ function Wrapper({ children }: any) {
     </div>
   );
 }
+function SignalWifiOffIcon({ ...rest }: any): VNode {
+  return <Icon {...rest} />;
+}
 
 export const BasicExample = () => (
   <Fragment>
     <Wrapper>
-      <Banner />
+      <p>
+        Example taken from:
+        <a
+          target="_blank"
+          rel="noreferrer"
+          href="https://medium.com/material-ui/introducing-material-ui-design-system-93e921beb8df"
+        >
+          https://medium.com/material-ui/introducing-material-ui-design-system-93e921beb8df
+        </a>
+      </p>
+      <Banner
+        elements={[
+          {
+            icon: <SignalWifiOffIcon />,
+            description: (
+              <Typography>
+                You have lost connection to the internet. This app is offline.
+              </Typography>
+            ),
+          },
+        ]}
+        confirm={{
+          label: "turn on wifi",
+          action: () => {
+            return null;
+          },
+        }}
+      />
+    </Wrapper>
+  </Fragment>
+);
+
+export const PendingOperation = () => (
+  <Fragment>
+    <Wrapper>
+      <Banner
+        title="PENDING TRANSACTIONS"
+        style={{ backgroundColor: "lightblue", padding: 8 }}
+        elements={[
+          {
+            icon: (
+              <Avatar
+                style={{
+                  border: "solid blue 1px",
+                  color: "blue",
+                  boxSizing: "border-box",
+                }}
+              >
+                P
+              </Avatar>
+            ),
+            description: (
+              <Typography>
+                <b>EUR 37.95</b> - 5 feb 2022
+              </Typography>
+            ),
+          },
+        ]}
+      />
     </Wrapper>
   </Fragment>
 );
