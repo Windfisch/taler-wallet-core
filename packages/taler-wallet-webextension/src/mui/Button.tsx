@@ -185,7 +185,7 @@ export function Button({
       disabled={disabled}
       class={[
         theme.typography.button,
-        theme.shape.borderRadius,
+        theme.shape.roundBorder,
         ripple,
         baseStyle,
         button,

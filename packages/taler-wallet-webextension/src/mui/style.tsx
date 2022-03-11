@@ -22,6 +22,14 @@ export function pxToRem(size: number): string {
   return `${(size / htmlFontSize) * coef}rem`;
 }
 
+export interface Spacing {
+  (): string;
+  (value: number): string;
+  (topBottom: number, rightLeft: number): string;
+  (top: number, rightLeft: number, bottom: number): string;
+  (top: number, right: number, bottom: number, left: number): string;
+}
+
 export const theme = createTheme();
 
 export const ripple = css`
@@ -117,11 +125,78 @@ function createTheme() {
   const shadows = createAllShadows();
   const transitions = createTransitions({});
   const breakpoints = createBreakpoints({});
+  const spacing = createSpacing();
   const shape = {
-    borderRadius: css`
+    roundBorder: css`
       border-radius: 4px;
     `,
+    squareBorder: css`
+      border-radius: 0px;
+    `,
+    circularBorder: css`
+      border-radius: 50%;
+    `,
   };
+
+  /////////////////////
+  ///////////////////// SPACING
+  /////////////////////
+
+  function createUnaryUnit(theme: { spacing: number }, defaultValue: number) {
+    const themeSpacing = theme.spacing || defaultValue;
+
+    if (typeof themeSpacing === "number") {
+      return (abs: number | string) => {
+        if (typeof abs === "string") {
+          return abs;
+        }
+
+        return themeSpacing * abs;
+      };
+    }
+
+    if (Array.isArray(themeSpacing)) {
+      return (abs: number | string) => {
+        if (typeof abs === "string") {
+          return abs;
+        }
+
+        return themeSpacing[abs];
+      };
+    }
+
+    if (typeof themeSpacing === "function") {
+      return themeSpacing;
+    }
+
+    return (a: string | number) => "";
+  }
+
+  function createUnarySpacing(theme: { spacing: number }) {
+    return createUnaryUnit(theme, 8);
+  }
+
+  function createSpacing(spacingInput: number = 8): Spacing {
+    // Material Design layouts are visually balanced. Most measurements align to an 8dp grid, which aligns both spacing and the overall layout.
+    // Smaller components, such as icons, can align to a 4dp grid.
+    // https://material.io/design/layout/understanding-layout.html#usage
+    const transform = createUnarySpacing({
+      spacing: spacingInput,
+    });
+
+    const spacing = (...argsInput: ReadonlyArray<number | string>): string => {
+      const args = argsInput.length === 0 ? [1] : argsInput;
+
+      return args
+        .map((argument) => {
+          const output = transform(argument);
+          return typeof output === "number" ? `${output}px` : output;
+        })
+        .join(" ");
+    };
+
+    return spacing;
+  }
   /////////////////////
   ///////////////////// BREAKPOINTS
   /////////////////////
@@ -691,6 +766,7 @@ function createTheme() {
     shape,
     transitions,
     breakpoints,
+    spacing,
     pxToRem,
   };
 }

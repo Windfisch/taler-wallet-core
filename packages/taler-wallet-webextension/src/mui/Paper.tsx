@@ -35,7 +35,7 @@ export function Paper({
     <div
       class={[
         baseStyle,
-        !square && theme.shape.borderRadius,
+        !square && theme.shape.roundBorder,
         borderVariant[variant],
       ].join(" ")}
       style={{
