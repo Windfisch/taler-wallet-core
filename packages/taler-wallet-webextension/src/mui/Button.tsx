@@ -15,7 +15,7 @@ interface Props {
   startIcon?: VNode;
   variant?: "contained" | "outlined" | "text";
   color?: "primary" | "secondary" | "success" | "error" | "info" | "warning";
-  onClick: () => void;
+  onClick?: () => void;
 }
 
 const baseStyle = css`

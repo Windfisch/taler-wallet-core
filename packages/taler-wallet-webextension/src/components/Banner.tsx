@@ -29,16 +29,24 @@ export function Banner({ title, elements, confirm, ...rest }: Props) {
             </Grid>
           </Grid>
         )}
-        <Grid container wrap="nowrap" spacing={1} alignItems="center">
+        <Grid container columns={1}>
           {elements.map((e, i) => (
-            <Fragment key={i}>
+            <Grid
+              container
+              item
+              xs={1}
+              key={i}
+              wrap="nowrap"
+              spacing={1}
+              alignItems="center"
+            >
               {e.icon && (
-                <Grid item>
+                <Grid item xs={"auto"}>
                   <Avatar>{e.icon}</Avatar>
                 </Grid>
               )}
               <Grid item>{e.description}</Grid>
-            </Fragment>
+            </Grid>
           ))}
         </Grid>
         {confirm && (

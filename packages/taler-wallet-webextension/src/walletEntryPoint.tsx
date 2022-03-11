@@ -27,6 +27,7 @@ import Router, { route, Route } from "preact-router";
 import Match from "preact-router/match";
 import { useEffect, useState } from "preact/hooks";
 import { LogoHeader } from "./components/LogoHeader";
+import PendingTransactions from "./components/PendingTransactions";
 import {
   NavigationHeader,
   NavigationHeaderHolder,
@@ -112,6 +113,15 @@ function Application(): VNode {
                 );
               }}
             </Match>
+            <div
+              style={{
+                backgroundColor: "lightcyan",
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <PendingTransactions />
+            </div>
             <WalletBox>
               {globalNotification && (
                 <SuccessBox onClick={clearNotification}>

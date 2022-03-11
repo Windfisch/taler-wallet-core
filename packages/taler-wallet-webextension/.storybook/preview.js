@@ -128,7 +128,7 @@ export const decorators = [
         <Story />
       </div>
     }
-    if (kind.startsWith('mui')) {
+    if (kind.startsWith('mui') || kind.startsWith('component')) {
       return <div style={{ display: 'flex', flexWrap: 'wrap' }}>
         <Story />
       </div>

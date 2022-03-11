@@ -71,6 +71,10 @@ const makePlugins = () => [
   image(),
 
   linaria({
+    babelOptions: {
+      babelrc: false,
+      configFile: './babel.config-linaria.json',
+    },
     sourceMap: process.env.NODE_ENV !== 'production',
   }),
 

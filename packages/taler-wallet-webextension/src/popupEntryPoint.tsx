@@ -26,6 +26,7 @@ import { Fragment, h, render, VNode } from "preact";
 import Router, { route, Route } from "preact-router";
 import { Match } from "preact-router/match";
 import { useEffect } from "preact/hooks";
+import PendingTransactions from "./components/PendingTransactions";
 import { PopupBox } from "./components/styled";
 import { DevContextProvider } from "./context/devContext";
 import { IoCProviderForRuntime } from "./context/iocContext";
@@ -82,6 +83,7 @@ function Application(): VNode {
       <DevContextProvider>
         {({ devMode }: { devMode: boolean }) => (
           <IoCProviderForRuntime>
+            <PendingTransactions />
             <Match>
               {({ path }: { path: string }) => <PopupNavBar path={path} />}
             </Match>

@@ -91,7 +91,7 @@ export const PendingOperation = () => (
     <Wrapper>
       <Banner
         title="PENDING TRANSACTIONS"
-        style={{ backgroundColor: "lightblue", padding: 8 }}
+        style={{ backgroundColor: "lightcyan", padding: 8 }}
         elements={[
           {
             icon: (
