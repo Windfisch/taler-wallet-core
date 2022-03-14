@@ -20,7 +20,7 @@
  * @author sebasjm <dold@taler.net>
  */
 
-import { setupI18n, i18n } from "@gnu-taler/taler-util";
+import { setupI18n } from "@gnu-taler/taler-util";
 import { createHashHistory } from "history";
 import { Fragment, h, render, VNode } from "preact";
 import Router, { route, Route } from "preact-router";
@@ -30,7 +30,10 @@ import PendingTransactions from "./components/PendingTransactions";
 import { PopupBox } from "./components/styled";
 import { DevContextProvider } from "./context/devContext";
 import { IoCProviderForRuntime } from "./context/iocContext";
-import { TranslationProvider } from "./context/translation";
+import {
+  TranslationProvider,
+  useTranslationContext,
+} from "./context/translation";
 import { useTalerActionURL } from "./hooks/useTalerActionURL";
 import { strings } from "./i18n/strings";
 import { Pages, PopupNavBar } from "./NavigationBar";
@@ -193,6 +196,7 @@ function RedirectToWalletPage(): VNode {
       },
     );
   });
+  const { i18n } = useTranslationContext();
   return (
     <span>
       <i18n.Translate>

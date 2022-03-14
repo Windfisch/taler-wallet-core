@@ -24,10 +24,10 @@
 /**
  * Imports.
  */
-import { i18n, Translate } from "@gnu-taler/taler-util";
 import { VNode, h } from "preact";
 import { JustInDevMode } from "./components/JustInDevMode";
 import { NavigationHeader, NavigationHeaderHolder } from "./components/styled";
+import { useTranslationContext } from "./context/translation.js";
 
 /**
  * List of pages used by the wallet
@@ -61,6 +61,7 @@ export enum Pages {
 }
 
 export function PopupNavBar({ path = "" }: { path?: string }): VNode {
+  const { i18n } = useTranslationContext();
   return (
     <NavigationHeader>
       <a href="/balance" class={path.startsWith("/balance") ? "active" : ""}>
@@ -78,6 +79,7 @@ export function PopupNavBar({ path = "" }: { path?: string }): VNode {
 }
 
 export function WalletNavBar({ path = "" }: { path?: string }): VNode {
+  const { i18n } = useTranslationContext();
   return (
     <NavigationHeaderHolder>
       <NavigationHeader>

@@ -14,9 +14,10 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { PaytoUri, i18n } from "@gnu-taler/taler-util";
+import { PaytoUri } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
+import { useTranslationContext } from "../context/translation.js";
 import { CopiedIcon, CopyIcon } from "../svg";
 import { ButtonBox, TooltipRight } from "./styled";
 
@@ -33,6 +34,8 @@ export function BankDetailsByPaytoType({
   exchangeBaseUrl,
   amount,
 }: BankDetailsProps): VNode {
+  const { i18n } = useTranslationContext();
+
   const firstPart = !payto ? undefined : !payto.isKnown ? (
     <Row
       name={<i18n.Translate>Account</i18n.Translate>}

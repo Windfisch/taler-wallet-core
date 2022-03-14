@@ -20,7 +20,7 @@
  * @author sebasjm <dold@taler.net>
  */
 
-import { i18n, setupI18n } from "@gnu-taler/taler-util";
+import { setupI18n } from "@gnu-taler/taler-util";
 import { createHashHistory } from "history";
 import { Fragment, h, render, VNode } from "preact";
 import Router, { route, Route } from "preact-router";
@@ -36,7 +36,10 @@ import {
 } from "./components/styled";
 import { DevContextProvider } from "./context/devContext";
 import { IoCProviderForRuntime } from "./context/iocContext";
-import { TranslationProvider } from "./context/translation";
+import {
+  TranslationProvider,
+  useTranslationContext,
+} from "./context/translation";
 import { PayPage } from "./cta/Pay";
 import { RefundPage } from "./cta/Refund";
 import { TipPage } from "./cta/Tip";
@@ -94,6 +97,8 @@ function Application(): VNode {
       setGlobalNotification(undefined);
     }
   }
+  const { i18n } = useTranslationContext();
+
   return (
     <TranslationProvider>
       <DevContextProvider>

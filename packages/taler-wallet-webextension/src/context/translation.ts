@@ -25,12 +25,13 @@ import { useLang } from "../hooks/useLang";
 //@ts-ignore: type declaration
 import * as jedLib from "jed";
 import { strings } from "../i18n/strings";
-import { setupI18n } from "@gnu-taler/taler-util";
+import { setupI18n, i18n } from "@gnu-taler/taler-util";
 
 interface Type {
   lang: string;
   supportedLang: { [id in keyof typeof supportedLang]: string }
   changeLanguage: (l: string) => void;
+  i18n: typeof i18n
 }
 
 const supportedLang = {
@@ -53,6 +54,7 @@ const initial = {
   changeLanguage: () => {
     // do not change anything
   },
+  i18n
 };
 const Context = createContext<Type>(initial);
 
@@ -62,18 +64,12 @@ interface Props {
   forceLang?: string;
 }
 
-//we use forceLang when we don't want to use the saved state, but sone forced
-//runtime lang predefined lang
 export const TranslationProvider = ({
   initial,
   children,
   forceLang,
 }: Props): VNode => {
-  const [lang, changeLanguage2] = useLang(initial);
-  function changeLanguage(s: string) {
-    console.log("trying to change lang to ", s, "current lang", lang)
-    changeLanguage2(s)
-  }
+  const [lang, changeLanguage] = useLang(initial);
   useEffect(() => {
     if (forceLang) {
       changeLanguage(forceLang);
@@ -87,7 +83,7 @@ export const TranslationProvider = ({
   } else {
     setupI18n(lang, strings);
   }
-  return h(Context.Provider, { value: { lang, changeLanguage, supportedLang }, children });
+  return h(Context.Provider, { value: { lang, changeLanguage, supportedLang, i18n }, children });
 };
 
 export const useTranslationContext = (): Type => useContext(Context);
