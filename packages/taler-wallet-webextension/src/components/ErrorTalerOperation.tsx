@@ -48,7 +48,7 @@ export function ErrorTalerOperation({
             <img
               style={{
                 transform: !showErrorDetail ? undefined : "scaleY(-1)",
-                height: "1.5em",
+                height: 24,
               }}
               src={arrowDown}
             />
