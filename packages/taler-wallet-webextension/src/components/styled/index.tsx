@@ -143,6 +143,7 @@ export const Middle = styled.div`
 export const PopupBox = styled.div<{ noPadding?: boolean; devMode: boolean }>`
   height: 290px;
   width: 500px;
+  overflow-y: scroll;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
