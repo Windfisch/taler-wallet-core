@@ -17,8 +17,12 @@
 /**
  * Imports.
  */
-import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { GlobalTestState, MerchantPrivateApi, BankApi, getWireMethod } from "../harness/harness.js";
+import { WalletApiOperation, BankApi } from "@gnu-taler/taler-wallet-core";
+import {
+  GlobalTestState,
+  MerchantPrivateApi,
+  getWireMethod,
+} from "../harness/harness.js";
 import { createSimpleTestkudosEnvironment } from "../harness/helpers.js";
 
 /**
@@ -27,13 +31,8 @@ import { createSimpleTestkudosEnvironment } from "../harness/helpers.js";
 export async function runTippingTest(t: GlobalTestState) {
   // Set up test environment
 
-  const {
-    wallet,
-    bank,
-    exchange,
-    merchant,
-    exchangeBankAccount,
-  } = await createSimpleTestkudosEnvironment(t);
+  const { wallet, bank, exchange, merchant, exchangeBankAccount } =
+    await createSimpleTestkudosEnvironment(t);
 
   const mbu = await BankApi.createRandomBankUser(bank);
 

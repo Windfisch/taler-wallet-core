@@ -20,6 +20,7 @@ import {
   buildCodecForObject,
   canonicalJson,
   Codec,
+  codecForDepositSuccess,
   codecForString,
   codecForTimestamp,
   codecOptional,
@@ -32,6 +33,7 @@ import {
   GetFeeForDepositRequest,
   getRandomBytes,
   getTimestampNow,
+  hashWire,
   Logger,
   NotificationType,
   parsePaytoUri,
@@ -57,7 +59,6 @@ import {
   generateDepositPermissions,
   getCandidatePayCoins,
   getTotalPaymentCost,
-  hashWire,
 } from "./pay.js";
 import { getTotalRefreshCost } from "./refresh.js";
 
@@ -65,43 +66,6 @@ import { getTotalRefreshCost } from "./refresh.js";
  * Logger.
  */
 const logger = new Logger("deposits.ts");
-
-interface DepositSuccess {
-  // Optional base URL of the exchange for looking up wire transfers
-  // associated with this transaction.  If not given,
-  // the base URL is the same as the one used for this request.
-  // Can be used if the base URL for /transactions/ differs from that
-  // for /coins/, i.e. for load balancing.  Clients SHOULD
-  // respect the transaction_base_url if provided.  Any HTTP server
-  // belonging to an exchange MUST generate a 307 or 308 redirection
-  // to the correct base URL should a client uses the wrong base
-  // URL, or if the base URL has changed since the deposit.
-  transaction_base_url?: string;
-
-  // timestamp when the deposit was received by the exchange.
-  exchange_timestamp: Timestamp;
-
-  // the EdDSA signature of TALER_DepositConfirmationPS using a current
-  // signing key of the exchange affirming the successful
-  // deposit and that the exchange will transfer the funds after the refund
-  // deadline, or as soon as possible if the refund deadline is zero.
-  exchange_sig: string;
-
-  // public EdDSA key of the exchange that was used to
-  // generate the signature.
-  // Should match one of the exchange's signing keys from /keys.  It is given
-  // explicitly as the client might otherwise be confused by clock skew as to
-  // which signing key was used.
-  exchange_pub: string;
-}
-
-const codecForDepositSuccess = (): Codec<DepositSuccess> =>
-  buildCodecForObject<DepositSuccess>()
-    .property("exchange_pub", codecForString())
-    .property("exchange_sig", codecForString())
-    .property("exchange_timestamp", codecForTimestamp)
-    .property("transaction_base_url", codecOptional(codecForString()))
-    .build("DepositSuccess");
 
 async function resetDepositGroupRetry(
   ws: InternalWalletState,
@@ -202,7 +166,6 @@ async function processDepositGroupImpl(
     }
     const perm = depositPermissions[i];
     let requestBody: any;
-    logger.info("creating v10 deposit request");
     requestBody = {
       contribution: Amounts.stringify(perm.contribution),
       merchant_payto_uri: depositGroup.wire.payto_uri,

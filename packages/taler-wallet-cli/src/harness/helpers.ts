@@ -30,22 +30,19 @@ import {
   Duration,
   PreparePayResultType,
 } from "@gnu-taler/taler-util";
-import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+import { BankAccessApi, BankApi, HarnessExchangeBankAccount, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { CoinConfig, defaultCoinConfig } from "./denomStructures.js";
 import {
   FaultInjectedExchangeService,
   FaultInjectedMerchantService,
 } from "./faultInjection.js";
 import {
-  BankAccessApi,
-  BankApi,
   BankService,
   DbInfo,
   ExchangeService,
   ExchangeServiceInterface,
   getPayto,
   GlobalTestState,
-  HarnessExchangeBankAccount,
   MerchantPrivateApi,
   MerchantService,
   MerchantServiceInterface,

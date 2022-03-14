@@ -43,6 +43,7 @@ import {
   codecForAny,
   DenominationPubKey,
   DenomKeyType,
+  ExchangeKeysJson,
 } from "@gnu-taler/taler-util";
 import { decodeCrock, encodeCrock, hash } from "@gnu-taler/taler-util";
 import { CryptoApi } from "../crypto/workers/cryptoApi.js";
@@ -292,12 +293,37 @@ async function validateWireInfo(
   };
 }
 
+export interface ExchangeInfo {
+  wire: ExchangeWireJson;
+  keys: ExchangeKeysDownloadResult;
+}
+
+export async function downloadExchangeInfo(
+  exchangeBaseUrl: string,
+  http: HttpRequestLibrary,
+): Promise<ExchangeInfo> {
+  const wireInfo = await downloadExchangeWireInfo(
+    exchangeBaseUrl,
+    http,
+    Duration.getForever(),
+  );
+  const keysInfo = await downloadExchangeKeysInfo(
+    exchangeBaseUrl,
+    http,
+    Duration.getForever(),
+  );
+  return {
+    keys: keysInfo,
+    wire: wireInfo,
+  };
+}
+
 /**
  * Fetch wire information for an exchange.
  *
  * @param exchangeBaseUrl Exchange base URL, assumed to be already normalized.
  */
-async function downloadExchangeWithWireInfo(
+async function downloadExchangeWireInfo(
   exchangeBaseUrl: string,
   http: HttpRequestLibrary,
   timeout: Duration,
@@ -374,7 +400,7 @@ interface ExchangeKeysDownloadResult {
 /**
  * Download and validate an exchange's /keys data.
  */
-async function downloadKeysInfo(
+async function downloadExchangeKeysInfo(
   baseUrl: string,
   http: HttpRequestLibrary,
   timeout: Duration,
@@ -526,10 +552,10 @@ async function updateExchangeFromUrlImpl(
 
   const timeout = getExchangeRequestTimeout();
 
-  const keysInfo = await downloadKeysInfo(baseUrl, ws.http, timeout);
+  const keysInfo = await downloadExchangeKeysInfo(baseUrl, ws.http, timeout);
 
   logger.info("updating exchange /wire info");
-  const wireInfoDownload = await downloadExchangeWithWireInfo(
+  const wireInfoDownload = await downloadExchangeWireInfo(
     baseUrl,
     ws.http,
     timeout,

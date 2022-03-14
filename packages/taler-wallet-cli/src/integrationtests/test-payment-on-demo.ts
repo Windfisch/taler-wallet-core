@@ -17,31 +17,33 @@
 /**
  * Imports.
  */
+import { GlobalTestState, WalletCli } from "../harness/harness.js";
+import { makeTestPayment } from "../harness/helpers.js";
 import {
-  GlobalTestState,
+  WalletApiOperation,
   BankApi,
-  WalletCli,
-  BankAccessApi
-} from "../harness/harness.js";
-import {
-  makeTestPayment,
-} from "../harness/helpers.js";
-import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+  BankAccessApi,
+  BankServiceHandle,
+  NodeHttpLib,
+} from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for basic, bank-integrated withdrawal and payment.
  */
 export async function runPaymentDemoTest(t: GlobalTestState) {
-
   // Withdraw digital cash into the wallet.
-  let bankInterface = {
+  let bankInterface: BankServiceHandle = {
     baseUrl: "https://bank.demo.taler.net/",
-    port: 0 // unused.
+    http: new NodeHttpLib(),
   };
   let user = await BankApi.createRandomBankUser(bankInterface);
-  let wop = await BankAccessApi.createWithdrawalOperation(bankInterface, user, "KUDOS:20");
+  let wop = await BankAccessApi.createWithdrawalOperation(
+    bankInterface,
+    user,
+    "KUDOS:20",
+  );
 
-   let wallet = new WalletCli(t);
+  let wallet = new WalletCli(t);
   await wallet.client.call(WalletApiOperation.GetWithdrawalDetailsForUri, {
     talerWithdrawUri: wop.taler_withdraw_uri,
   });
@@ -60,7 +62,10 @@ export async function runPaymentDemoTest(t: GlobalTestState) {
   });
   await wallet.runUntilDone();
 
-  let balanceBefore = await wallet.client.call(WalletApiOperation.GetBalances, {});
+  let balanceBefore = await wallet.client.call(
+    WalletApiOperation.GetBalances,
+    {},
+  );
   t.assertTrue(balanceBefore["balances"].length == 1);
 
   const order = {
@@ -70,7 +75,7 @@ export async function runPaymentDemoTest(t: GlobalTestState) {
   };
 
   let merchant = {
-    makeInstanceBaseUrl: function(instanceName?: string) {
+    makeInstanceBaseUrl: function (instanceName?: string) {
       return "https://backend.demo.taler.net/instances/donations/";
     },
     port: 0,
@@ -82,17 +87,26 @@ export async function runPaymentDemoTest(t: GlobalTestState) {
   await makeTestPayment(
     t,
     {
-      merchant, wallet, order
+      merchant,
+      wallet,
+      order,
     },
     {
-      "Authorization": `Bearer ${process.env["TALER_ENV_FRONTENDS_APITOKEN"]}`,
-    });
+      Authorization: `Bearer ${process.env["TALER_ENV_FRONTENDS_APITOKEN"]}`,
+    },
+  );
 
   await wallet.runUntilDone();
 
-  let balanceAfter = await wallet.client.call(WalletApiOperation.GetBalances, {});
+  let balanceAfter = await wallet.client.call(
+    WalletApiOperation.GetBalances,
+    {},
+  );
   t.assertTrue(balanceAfter["balances"].length == 1);
-  t.assertTrue(balanceBefore["balances"][0]["available"] > balanceAfter["balances"][0]["available"]);
+  t.assertTrue(
+    balanceBefore["balances"][0]["available"] >
+      balanceAfter["balances"][0]["available"],
+  );
 }
 
 runPaymentDemoTest.excludeByDefault = true;

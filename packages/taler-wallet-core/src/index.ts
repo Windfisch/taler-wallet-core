@@ -36,7 +36,7 @@ export * from "./db-utils.js";
 export { CryptoImplementation } from "./crypto/workers/cryptoImplementation.js";
 export type { CryptoWorker } from "./crypto/workers/cryptoWorkerInterface.js";
 export { CryptoWorkerFactory, CryptoApi } from "./crypto/workers/cryptoApi.js";
-export { SynchronousCryptoWorker } from "./crypto/workers/synchronousWorker.js"
+export { SynchronousCryptoWorker } from "./crypto/workers/synchronousWorker.js";
 
 export * from "./pending-types.js";
 
@@ -47,3 +47,12 @@ export * from "./wallet.js";
 
 export * from "./operations/backup/index.js";
 export { makeEventId } from "./operations/transactions.js";
+
+export * from "./operations/exchanges.js";
+
+export * from "./bank-api-client.js";
+
+export * from "./operations/reserves.js";
+export * from "./operations/withdraw.js";
+
+export * from "./crypto/workers/synchronousWorkerFactory.js";

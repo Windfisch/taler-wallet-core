@@ -24,11 +24,13 @@ import {
   BankService,
   ExchangeService,
   MerchantService,
+  getPayto,
+} from "../harness/harness.js";
+import {
+  WalletApiOperation,
   BankApi,
   BankAccessApi,
-  getPayto
-} from "../harness/harness.js";
-import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+} from "@gnu-taler/taler-wallet-core";
 import {
   ExchangesListRespose,
   URL,

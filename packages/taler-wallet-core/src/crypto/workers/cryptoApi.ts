@@ -22,20 +22,22 @@
 /**
  * Imports.
  */
-import { CoinRecord, DenominationRecord, WireFee } from "../../db.js";
+import { DenominationRecord, WireFee } from "../../db.js";
 
 import { CryptoWorker } from "./cryptoWorkerInterface.js";
 
 import {
+  BlindedDenominationSignature,
   CoinDepositPermission,
   CoinEnvelope,
   RecoupRefreshRequest,
   RecoupRequest,
+  UnblindedSignature,
 } from "@gnu-taler/taler-util";
 
 import {
   BenchmarkResult,
-  PlanchetCreationResult,
+  WithdrawalPlanchet,
   PlanchetCreationRequest,
   DepositInfo,
   MakeSyncSignatureRequest,
@@ -324,10 +326,19 @@ export class CryptoApi {
     return p;
   }
 
-  createPlanchet(
-    req: PlanchetCreationRequest,
-  ): Promise<PlanchetCreationResult> {
-    return this.doRpc<PlanchetCreationResult>("createPlanchet", 1, req);
+  createPlanchet(req: PlanchetCreationRequest): Promise<WithdrawalPlanchet> {
+    return this.doRpc<WithdrawalPlanchet>("createPlanchet", 1, req);
+  }
+
+  unblindDenominationSignature(req: {
+    planchet: WithdrawalPlanchet;
+    evSig: BlindedDenominationSignature;
+  }): Promise<UnblindedSignature> {
+    return this.doRpc<UnblindedSignature>(
+      "unblindDenominationSignature",
+      1,
+      req,
+    );
   }
 
   createTipPlanchet(req: DeriveTipRequest): Promise<DerivedTipPlanchet> {

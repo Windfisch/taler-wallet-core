@@ -74,7 +74,7 @@ function makeId(length: number): string {
 /**
  * Helper function to generate the "Authorization" HTTP header.
  */
-function makeAuth(username: string, password: string): string {
+function makeBasicAuthHeader(username: string, password: string): string {
   const auth = `${username}:${password}`;
   const authEncoded: string = Buffer.from(auth).toString("base64");
   return `Basic ${authEncoded}`;
@@ -89,7 +89,7 @@ export async function withdrawTestBalance(
   const bankUser = await registerRandomBankUser(ws.http, bankBaseUrl);
   logger.trace(`Registered bank user ${JSON.stringify(bankUser)}`);
 
-  const wresp = await createBankWithdrawalUri(
+  const wresp = await createDemoBankWithdrawalUri(
     ws.http,
     bankBaseUrl,
     bankUser,
@@ -119,7 +119,11 @@ function getMerchantAuthHeader(m: MerchantBackendInfo): Record<string, string> {
   return {};
 }
 
-async function createBankWithdrawalUri(
+/**
+ * Use the testing API of a demobank to create a taler://withdraw URI
+ * that the wallet can then use to make a withdrawal.
+ */
+export async function createDemoBankWithdrawalUri(
   http: HttpRequestLibrary,
   bankBaseUrl: string,
   bankUser: BankUser,
@@ -136,7 +140,7 @@ async function createBankWithdrawalUri(
     },
     {
       headers: {
-        Authorization: makeAuth(bankUser.username, bankUser.password),
+        Authorization: makeBasicAuthHeader(bankUser.username, bankUser.password),
       },
     },
   );
@@ -159,7 +163,7 @@ async function confirmBankWithdrawalUri(
     {},
     {
       headers: {
-        Authorization: makeAuth(bankUser.username, bankUser.password),
+        Authorization: makeBasicAuthHeader(bankUser.username, bankUser.password),
       },
     },
   );

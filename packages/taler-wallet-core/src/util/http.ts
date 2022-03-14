@@ -34,6 +34,7 @@ import {
   timestampMax,
   TalerErrorDetails,
   Codec,
+  j2s,
 } from "@gnu-taler/taler-util";
 import { TalerErrorCode } from "@gnu-taler/taler-util";
 
@@ -131,6 +132,11 @@ export async function readTalerErrorResponse(
   const errJson = await httpResponse.json();
   const talerErrorCode = errJson.code;
   if (typeof talerErrorCode !== "number") {
+    logger.warn(
+      `malformed error response (status ${httpResponse.status}): ${j2s(
+        errJson,
+      )}`,
+    );
     throw new OperationFailedError(
       makeErrorDetails(
         TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,

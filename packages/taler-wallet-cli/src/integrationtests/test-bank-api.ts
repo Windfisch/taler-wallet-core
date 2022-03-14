@@ -24,13 +24,15 @@ import {
   setupDb,
   BankService,
   MerchantService,
-  BankApi,
-  BankAccessApi,
-  CreditDebitIndicator,
-  getPayto
+  getPayto,
 } from "../harness/harness.js";
 import { createEddsaKeyPair, encodeCrock } from "@gnu-taler/taler-util";
 import { defaultCoinConfig } from "../harness/denomStructures";
+import {
+  BankApi,
+  BankAccessApi,
+  CreditDebitIndicator,
+} from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for basic, bank-integrated withdrawal.
@@ -96,8 +98,6 @@ export async function runBankApiTest(t: GlobalTestState) {
   });
 
   console.log("setup done!");
-
-  const wallet = new WalletCli(t);
 
   const bankUser = await BankApi.registerAccount(bank, "user1", "pw1");
 

@@ -29,9 +29,7 @@ import {
   BankService,
   WalletCli,
   MerchantPrivateApi,
-  BankApi,
-  BankAccessApi,
-  getPayto
+  getPayto,
 } from "../harness/harness.js";
 import {
   FaultInjectedExchangeService,
@@ -40,7 +38,11 @@ import {
 } from "../harness/faultInjection";
 import { CoreApiResponse } from "@gnu-taler/taler-util";
 import { defaultCoinConfig } from "../harness/denomStructures";
-import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+import {
+  WalletApiOperation,
+  BankApi,
+  BankAccessApi,
+} from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for basic, bank-integrated withdrawal.
@@ -145,7 +147,6 @@ export async function runPaymentFaultTest(t: GlobalTestState) {
   await BankApi.confirmWithdrawalOperation(bank, user, wop);
 
   await wallet.runUntilDone();
-
 
   // Check balance
 

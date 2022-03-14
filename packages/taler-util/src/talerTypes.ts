@@ -951,6 +951,15 @@ export interface MerchantPayResponse {
   sig: string;
 }
 
+export interface ExchangeMeltRequest {
+  coin_pub: CoinPublicKeyString;
+  confirm_sig: EddsaSignatureString;
+  denom_pub_hash: HashCodeString;
+  denom_sig: UnblindedSignature;
+  rc: string;
+  value_with_fee: AmountString;
+}
+
 export interface ExchangeMeltResponse {
   /**
    * Which of the kappa indices does the client not have to reveal.
@@ -1710,3 +1719,40 @@ export interface ExchangeRefreshRevealRequest {
 
   link_sigs: EddsaSignatureString[];
 }
+
+export interface DepositSuccess {
+  // Optional base URL of the exchange for looking up wire transfers
+  // associated with this transaction.  If not given,
+  // the base URL is the same as the one used for this request.
+  // Can be used if the base URL for /transactions/ differs from that
+  // for /coins/, i.e. for load balancing.  Clients SHOULD
+  // respect the transaction_base_url if provided.  Any HTTP server
+  // belonging to an exchange MUST generate a 307 or 308 redirection
+  // to the correct base URL should a client uses the wrong base
+  // URL, or if the base URL has changed since the deposit.
+  transaction_base_url?: string;
+
+  // timestamp when the deposit was received by the exchange.
+  exchange_timestamp: Timestamp;
+
+  // the EdDSA signature of TALER_DepositConfirmationPS using a current
+  // signing key of the exchange affirming the successful
+  // deposit and that the exchange will transfer the funds after the refund
+  // deadline, or as soon as possible if the refund deadline is zero.
+  exchange_sig: string;
+
+  // public EdDSA key of the exchange that was used to
+  // generate the signature.
+  // Should match one of the exchange's signing keys from /keys.  It is given
+  // explicitly as the client might otherwise be confused by clock skew as to
+  // which signing key was used.
+  exchange_pub: string;
+}
+
+export const codecForDepositSuccess = (): Codec<DepositSuccess> =>
+  buildCodecForObject<DepositSuccess>()
+    .property("exchange_pub", codecForString())
+    .property("exchange_sig", codecForString())
+    .property("exchange_timestamp", codecForTimestamp)
+    .property("transaction_base_url", codecOptional(codecForString()))
+    .build("DepositSuccess");

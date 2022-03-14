@@ -19,13 +19,11 @@
  */
 import {
   GlobalTestState,
-  BankApi,
   WalletCli,
   setupDb,
   ExchangeService,
   FakeBankService,
 } from "../harness/harness.js";
-import { createSimpleTestkudosEnvironment } from "../harness/helpers.js";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { CoinConfig, defaultCoinConfig } from "../harness/denomStructures.js";
 import { URL } from "@gnu-taler/taler-util";

@@ -19,15 +19,16 @@
  */
 import {
   ContractTerms,
-  CoreApiResponse,
   getTimestampNow,
   timestampTruncateToSecond,
 } from "@gnu-taler/taler-util";
-import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+import {
+  WalletApiOperation,
+  HarnessExchangeBankAccount,
+} from "@gnu-taler/taler-wallet-core";
 import { CoinConfig, defaultCoinConfig } from "../harness/denomStructures";
 import {
   DbInfo,
-  HarnessExchangeBankAccount,
   ExchangeService,
   GlobalTestState,
   MerchantService,
@@ -233,13 +234,8 @@ export async function createLibeufinTestEnvironment(
 export async function runLibeufinBasicTest(t: GlobalTestState) {
   // Set up test environment
 
-  const {
-    wallet,
-    exchange,
-    merchant,
-    libeufinSandbox,
-    libeufinNexus,
-  } = await createLibeufinTestEnvironment(t);
+  const { wallet, exchange, merchant, libeufinSandbox, libeufinNexus } =
+    await createLibeufinTestEnvironment(t);
 
   await wallet.client.call(WalletApiOperation.AddExchange, {
     exchangeBaseUrl: exchange.baseUrl,

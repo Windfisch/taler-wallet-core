@@ -18,8 +18,12 @@
  * Imports.
  */
 import { TalerErrorCode } from "@gnu-taler/taler-util";
-import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { GlobalTestState, BankApi, BankAccessApi } from "../harness/harness.js";
+import {
+  WalletApiOperation,
+  BankApi,
+  BankAccessApi,
+} from "@gnu-taler/taler-wallet-core";
+import { GlobalTestState } from "../harness/harness.js";
 import { createSimpleTestkudosEnvironment } from "../harness/helpers.js";
 
 /**

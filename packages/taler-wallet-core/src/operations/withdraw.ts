@@ -59,7 +59,10 @@ import {
   WithdrawalGroupRecord,
 } from "../db.js";
 import { walletCoreDebugFlags } from "../util/debugFlags.js";
-import { readSuccessResponseJsonOrThrow } from "../util/http.js";
+import {
+  HttpRequestLibrary,
+  readSuccessResponseJsonOrThrow,
+} from "../util/http.js";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
 import {
   guardOperationException,
@@ -271,9 +274,11 @@ export function selectWithdrawalDenominations(
 /**
  * Get information about a withdrawal from
  * a taler://withdraw URI by asking the bank.
+ * 
+ * FIXME: Move into bank client.
  */
 export async function getBankWithdrawalInfo(
-  ws: InternalWalletState,
+  http: HttpRequestLibrary,
   talerWithdrawUri: string,
 ): Promise<BankWithdrawDetails> {
   const uriResult = parseWithdrawUri(talerWithdrawUri);
@@ -283,7 +288,7 @@ export async function getBankWithdrawalInfo(
 
   const configReqUrl = new URL("config", uriResult.bankIntegrationApiBaseUrl);
 
-  const configResp = await ws.http.get(configReqUrl.href);
+  const configResp = await http.get(configReqUrl.href);
   const config = await readSuccessResponseJsonOrThrow(
     configResp,
     codecForTalerConfigResponse(),
@@ -309,7 +314,7 @@ export async function getBankWithdrawalInfo(
     `withdrawal-operation/${uriResult.withdrawalOperationId}`,
     uriResult.bankIntegrationApiBaseUrl,
   );
-  const resp = await ws.http.get(reqUrl.href);
+  const resp = await http.get(reqUrl.href);
   const status = await readSuccessResponseJsonOrThrow(
     resp,
     codecForWithdrawOperationStatusResponse(),
@@ -1076,7 +1081,7 @@ export async function getWithdrawalDetailsForUri(
   talerWithdrawUri: string,
 ): Promise<WithdrawUriInfoResponse> {
   logger.trace(`getting withdrawal details for URI ${talerWithdrawUri}`);
-  const info = await getBankWithdrawalInfo(ws, talerWithdrawUri);
+  const info = await getBankWithdrawalInfo(ws.http, talerWithdrawUri);
   logger.trace(`got bank info`);
   if (info.suggestedExchange) {
     // FIXME: right now the exchange gets permanently added,

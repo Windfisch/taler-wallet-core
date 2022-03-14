@@ -45,6 +45,9 @@ import {
   MerchantInstancesResponse,
 } from "./merchantApiTypes";
 import {
+  BankServiceHandle,
+  HarnessExchangeBankAccount,
+  NodeHttpLib,
   openPromise,
   OperationFailedError,
   WalletCoreApiClient,
@@ -468,164 +471,6 @@ export async function pingProc(
   }
 }
 
-export interface HarnessExchangeBankAccount {
-  accountName: string;
-  accountPassword: string;
-  accountPaytoUri: string;
-  wireGatewayApiBaseUrl: string;
-}
-
-export interface BankServiceInterface {
-  readonly baseUrl: string;
-  readonly port: number;
-}
-
-export enum CreditDebitIndicator {
-  Credit = "credit",
-  Debit = "debit",
-}
-
-export interface BankAccountBalanceResponse {
-  balance: {
-    amount: AmountString;
-    credit_debit_indicator: CreditDebitIndicator;
-  };
-}
-
-export namespace BankAccessApi {
-  export async function getAccountBalance(
-    bank: BankServiceInterface,
-    bankUser: BankUser,
-  ): Promise<BankAccountBalanceResponse> {
-    const url = new URL(`accounts/${bankUser.username}`, bank.baseUrl);
-    const resp = await axios.get(url.href, {
-      auth: bankUser,
-    });
-    return resp.data;
-  }
-
-  export async function createWithdrawalOperation(
-    bank: BankServiceInterface,
-    bankUser: BankUser,
-    amount: string,
-  ): Promise<WithdrawalOperationInfo> {
-    const url = new URL(
-      `accounts/${bankUser.username}/withdrawals`,
-      bank.baseUrl,
-    );
-    const resp = await axios.post(
-      url.href,
-      {
-        amount,
-      },
-      {
-        auth: bankUser,
-      },
-    );
-    return codecForWithdrawalOperationInfo().decode(resp.data);
-  }
-}
-
-export namespace BankApi {
-  export async function registerAccount(
-    bank: BankServiceInterface,
-    username: string,
-    password: string,
-  ): Promise<BankUser> {
-    const url = new URL("testing/register", bank.baseUrl);
-    let resp = await axios.post(url.href, {
-      username,
-      password,
-    });
-    let paytoUri = `payto://x-taler-bank/localhost/${username}`;
-    if (process.env.WALLET_HARNESS_WITH_EUFIN) {
-      paytoUri = resp.data.paytoUri;
-    }
-    return {
-      password,
-      username,
-      accountPaytoUri: paytoUri,
-    };
-  }
-
-  export async function createRandomBankUser(
-    bank: BankServiceInterface,
-  ): Promise<BankUser> {
-    const username = "user-" + encodeCrock(getRandomBytes(10)).toLowerCase();
-    const password = "pw-" + encodeCrock(getRandomBytes(10)).toLowerCase();
-    return await registerAccount(bank, username, password);
-  }
-
-  export async function adminAddIncoming(
-    bank: BankServiceInterface,
-    params: {
-      exchangeBankAccount: HarnessExchangeBankAccount;
-      amount: string;
-      reservePub: string;
-      debitAccountPayto: string;
-    },
-  ) {
-    let maybeBaseUrl = bank.baseUrl;
-    if (process.env.WALLET_HARNESS_WITH_EUFIN) {
-      maybeBaseUrl = (bank as EufinBankService).baseUrlDemobank;
-    }
-    let url = new URL(
-      `taler-wire-gateway/${params.exchangeBankAccount.accountName}/admin/add-incoming`,
-      maybeBaseUrl,
-    );
-    await axios.post(
-      url.href,
-      {
-        amount: params.amount,
-        reserve_pub: params.reservePub,
-        debit_account: params.debitAccountPayto,
-      },
-      {
-        auth: {
-          username: params.exchangeBankAccount.accountName,
-          password: params.exchangeBankAccount.accountPassword,
-        },
-      },
-    );
-  }
-
-  export async function confirmWithdrawalOperation(
-    bank: BankServiceInterface,
-    bankUser: BankUser,
-    wopi: WithdrawalOperationInfo,
-  ): Promise<void> {
-    const url = new URL(
-      `accounts/${bankUser.username}/withdrawals/${wopi.withdrawal_id}/confirm`,
-      bank.baseUrl,
-    );
-    await axios.post(
-      url.href,
-      {},
-      {
-        auth: bankUser,
-      },
-    );
-  }
-
-  export async function abortWithdrawalOperation(
-    bank: BankServiceInterface,
-    bankUser: BankUser,
-    wopi: WithdrawalOperationInfo,
-  ): Promise<void> {
-    const url = new URL(
-      `accounts/${bankUser.username}/withdrawals/${wopi.withdrawal_id}/abort`,
-      bank.baseUrl,
-    );
-    await axios.post(
-      url.href,
-      {},
-      {
-        auth: bankUser,
-      },
-    );
-  }
-}
-
 class BankServiceBase {
   proc: ProcessWrapper | undefined;
 
@@ -640,9 +485,11 @@ class BankServiceBase {
  * Work in progress.  The key point is that both Sandbox and Nexus
  * will be configured and started by this class.
  */
-class EufinBankService extends BankServiceBase implements BankServiceInterface {
+class EufinBankService extends BankServiceBase implements BankServiceHandle {
   sandboxProc: ProcessWrapper | undefined;
   nexusProc: ProcessWrapper | undefined;
+
+  http = new NodeHttpLib();
 
   static async create(
     gc: GlobalTestState,
@@ -914,8 +761,10 @@ class EufinBankService extends BankServiceBase implements BankServiceInterface {
   }
 }
 
-class PybankService extends BankServiceBase implements BankServiceInterface {
+class PybankService extends BankServiceBase implements BankServiceHandle {
   proc: ProcessWrapper | undefined;
+
+  http = new NodeHttpLib();
 
   static async create(
     gc: GlobalTestState,
@@ -955,6 +804,7 @@ class PybankService extends BankServiceBase implements BankServiceInterface {
     const config = Configuration.load(this.configFile);
     config.setString("bank", "suggested_exchange", e.baseUrl);
     config.setString("bank", "suggested_exchange_payto", exchangePayto);
+    config.write(this.configFile);
   }
 
   get baseUrl(): string {
@@ -1086,23 +936,6 @@ export class FakeBankService {
     await pingProc(this.proc, url, "bank");
   }
 }
-
-export interface BankUser {
-  username: string;
-  password: string;
-  accountPaytoUri: string;
-}
-
-export interface WithdrawalOperationInfo {
-  withdrawal_id: string;
-  taler_withdraw_uri: string;
-}
-
-const codecForWithdrawalOperationInfo = (): Codec<WithdrawalOperationInfo> =>
-  buildCodecForObject<WithdrawalOperationInfo>()
-    .property("withdrawal_id", codecForString())
-    .property("taler_withdraw_uri", codecForString())
-    .build("WithdrawalOperationInfo");
 
 export interface ExchangeConfig {
   name: string;

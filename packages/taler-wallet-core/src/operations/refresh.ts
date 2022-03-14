@@ -17,6 +17,7 @@
 import {
   DenomKeyType,
   encodeCrock,
+  ExchangeMeltRequest,
   ExchangeProtocolVersion,
   ExchangeRefreshRevealRequest,
   getRandomBytes,
@@ -394,17 +395,14 @@ async function refreshMelt(
     `coins/${oldCoin.coinPub}/melt`,
     oldCoin.exchangeBaseUrl,
   );
-  let meltReqBody: any;
-  if (oldDenom.denomPub.cipher === DenomKeyType.Rsa) {
-    meltReqBody = {
-      coin_pub: oldCoin.coinPub,
-      confirm_sig: derived.confirmSig,
-      denom_pub_hash: oldCoin.denomPubHash,
-      denom_sig: oldCoin.denomSig,
-      rc: derived.hash,
-      value_with_fee: Amounts.stringify(derived.meltValueWithFee),
-    };
-  }
+  const meltReqBody: ExchangeMeltRequest = {
+    coin_pub: oldCoin.coinPub,
+    confirm_sig: derived.confirmSig,
+    denom_pub_hash: oldCoin.denomPubHash,
+    denom_sig: oldCoin.denomSig,
+    rc: derived.hash,
+    value_with_fee: Amounts.stringify(derived.meltValueWithFee),
+  };
 
   const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], async () => {
     return await ws.http.postJson(reqUrl.href, meltReqBody, {

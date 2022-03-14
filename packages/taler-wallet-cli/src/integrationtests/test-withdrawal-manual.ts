@@ -17,9 +17,9 @@
 /**
  * Imports.
  */
-import { GlobalTestState, BankApi } from "../harness/harness.js";
+import { GlobalTestState } from "../harness/harness.js";
 import { createSimpleTestkudosEnvironment } from "../harness/helpers.js";
-import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+import { WalletApiOperation, BankApi } from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for basic, bank-integrated withdrawal.
@@ -27,12 +27,8 @@ import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 export async function runTestWithdrawalManualTest(t: GlobalTestState) {
   // Set up test environment
 
-  const {
-    wallet,
-    bank,
-    exchange,
-    exchangeBankAccount,
-  } = await createSimpleTestkudosEnvironment(t);
+  const { wallet, bank, exchange, exchangeBankAccount } =
+    await createSimpleTestkudosEnvironment(t);
 
   // Create a withdrawal operation
 
@@ -42,11 +38,13 @@ export async function runTestWithdrawalManualTest(t: GlobalTestState) {
     exchangeBaseUrl: exchange.baseUrl,
   });
 
-
-  const wres = await wallet.client.call(WalletApiOperation.AcceptManualWithdrawal, {
-    exchangeBaseUrl: exchange.baseUrl,
-    amount: "TESTKUDOS:10",
-  });
+  const wres = await wallet.client.call(
+    WalletApiOperation.AcceptManualWithdrawal,
+    {
+      exchangeBaseUrl: exchange.baseUrl,
+      amount: "TESTKUDOS:10",
+    },
+  );
 
   const reservePub: string = wres.reservePub;
 

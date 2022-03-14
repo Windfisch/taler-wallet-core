@@ -458,7 +458,7 @@ export interface TalerErrorDetails {
   details: unknown;
 }
 
-export interface PlanchetCreationResult {
+export interface WithdrawalPlanchet {
   coinPub: string;
   coinPriv: string;
   reservePub: string;

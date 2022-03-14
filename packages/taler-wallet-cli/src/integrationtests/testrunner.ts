@@ -87,6 +87,7 @@ import { runExchangeTimetravelTest } from "./test-exchange-timetravel.js";
 import { runDenomUnofferedTest } from "./test-denom-unoffered.js";
 import { runWithdrawalFakebankTest } from "./test-withdrawal-fakebank.js";
 import { runClauseSchnorrTest } from "./test-clause-schnorr.js";
+import { runWalletDblessTest } from "./test-wallet-dbless.js";
 
 /**
  * Test runner.
@@ -162,6 +163,7 @@ const allTests: TestMainFunction[] = [
   runWalletBackupBasicTest,
   runWalletBackupDoublespendTest,
   runWallettestingTest,
+  runWalletDblessTest,
   runWithdrawalAbortBankTest,
   runWithdrawalBankIntegratedTest,
 ];

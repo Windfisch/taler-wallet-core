@@ -785,6 +785,22 @@ export function setupRefreshTransferPub(
   };
 }
 
+/**
+ * 
+ * @param paytoUri
+ * @param salt 16-byte salt 
+ * @returns 
+ */
+export function hashWire(paytoUri: string, salt: string): string {
+  const r = kdf(
+    64,
+    stringToBytes(paytoUri + "\0"),
+    decodeCrock(salt),
+    stringToBytes("merchant-wire-signature"),
+  );
+  return encodeCrock(r);
+}
+
 export enum TalerSignaturePurpose {
   MERCHANT_TRACK_TRANSACTION = 1103,
   WALLET_RESERVE_WITHDRAW = 1200,

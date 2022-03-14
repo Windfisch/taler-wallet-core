@@ -113,19 +113,6 @@ import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
 const logger = new Logger("pay.ts");
 
 /**
- * FIXME: Move this to crypto worker or at least talerCrypto.ts
- */
-export function hashWire(paytoUri: string, salt: string): string {
-  const r = kdf(
-    64,
-    stringToBytes(paytoUri + "\0"),
-    decodeCrock(salt),
-    stringToBytes("merchant-wire-signature"),
-  );
-  return encodeCrock(r);
-}
-
-/**
  * Compute the total cost of a payment to the customer.
  *
  * This includes the amount taken by the merchant, fees (wire/deposit) contributed

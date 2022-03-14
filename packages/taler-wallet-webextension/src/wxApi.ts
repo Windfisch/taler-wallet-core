@@ -38,7 +38,7 @@ import {
   RemoveBackupProviderRequest
 } from "@gnu-taler/taler-wallet-core";
 import { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
-import { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core/src/operations/withdraw";
+import type { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core/src/operations/withdraw";
 import { MessageFromBackend } from "./wxBackend";
 
 /**

@@ -17,10 +17,13 @@
 /**
  * Imports.
  */
-import { GlobalTestState, BankApi, BankAccessApi } from "../harness/harness.js";
+import { GlobalTestState } from "../harness/harness.js";
 import { createSimpleTestkudosEnvironment } from "../harness/helpers.js";
-import { codecForBalancesResponse } from "@gnu-taler/taler-util";
-import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+import {
+  WalletApiOperation,
+  BankApi,
+  BankAccessApi,
+} from "@gnu-taler/taler-wallet-core";
 
 /**
  * Run test for basic, bank-integrated withdrawal.
@@ -41,18 +44,24 @@ export async function runWithdrawalBankIntegratedTest(t: GlobalTestState) {
 
   // Hand it to the wallet
 
-  const r1 = await wallet.client.call(WalletApiOperation.GetWithdrawalDetailsForUri, {
-    talerWithdrawUri: wop.taler_withdraw_uri,
-  });
+  const r1 = await wallet.client.call(
+    WalletApiOperation.GetWithdrawalDetailsForUri,
+    {
+      talerWithdrawUri: wop.taler_withdraw_uri,
+    },
+  );
 
   await wallet.runPending();
 
   // Withdraw
 
-  const r2 = await wallet.client.call(WalletApiOperation.AcceptBankIntegratedWithdrawal, {
-    exchangeBaseUrl: exchange.baseUrl,
-    talerWithdrawUri: wop.taler_withdraw_uri,
-  });
+  const r2 = await wallet.client.call(
+    WalletApiOperation.AcceptBankIntegratedWithdrawal,
+    {
+      exchangeBaseUrl: exchange.baseUrl,
+      talerWithdrawUri: wop.taler_withdraw_uri,
+    },
+  );
   await wallet.runPending();
 
   // Confirm it

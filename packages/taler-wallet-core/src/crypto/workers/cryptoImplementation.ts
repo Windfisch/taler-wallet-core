@@ -53,7 +53,7 @@ import {
   Logger,
   MakeSyncSignatureRequest,
   PlanchetCreationRequest,
-  PlanchetCreationResult,
+  WithdrawalPlanchet,
   randomBytes,
   RecoupRefreshRequest,
   RecoupRequest,
@@ -70,6 +70,9 @@ import {
   Timestamp,
   timestampTruncateToSecond,
   typedArrayConcat,
+  BlindedDenominationSignature,
+  RsaUnblindedSignature,
+  UnblindedSignature,
 } from "@gnu-taler/taler-util";
 import bigint from "big-integer";
 import { DenominationRecord, WireFee } from "../../db.js";
@@ -169,7 +172,7 @@ export class CryptoImplementation {
    */
   async createPlanchet(
     req: PlanchetCreationRequest,
-  ): Promise<PlanchetCreationResult> {
+  ): Promise<WithdrawalPlanchet> {
     const denomPub = req.denomPub;
     if (denomPub.cipher === DenomKeyType.Rsa) {
       const reservePub = decodeCrock(req.reservePub);
@@ -200,7 +203,7 @@ export class CryptoImplementation {
         priv: req.reservePriv,
       });
 
-      const planchet: PlanchetCreationResult = {
+      const planchet: WithdrawalPlanchet = {
         blindingKey: encodeCrock(derivedPlanchet.bks),
         coinEv,
         coinPriv: encodeCrock(derivedPlanchet.coinPriv),
@@ -426,6 +429,30 @@ export class CryptoImplementation {
       priv: key,
       pub: encodeCrock(eddsaGetPublic(decodeCrock(key))),
     };
+  }
+
+  unblindDenominationSignature(req: {
+    planchet: WithdrawalPlanchet;
+    evSig: BlindedDenominationSignature;
+  }): UnblindedSignature {
+    if (req.evSig.cipher === DenomKeyType.Rsa) {
+      if (req.planchet.denomPub.cipher !== DenomKeyType.Rsa) {
+        throw new Error(
+          "planchet cipher does not match blind signature cipher",
+        );
+      }
+      const denomSig = rsaUnblind(
+        decodeCrock(req.evSig.blinded_rsa_signature),
+        decodeCrock(req.planchet.denomPub.rsa_public_key),
+        decodeCrock(req.planchet.blindingKey),
+      );
+      return {
+        cipher: DenomKeyType.Rsa,
+        rsa_signature: encodeCrock(denomSig),
+      };
+    } else {
+      throw Error(`unblinding for cipher ${req.evSig.cipher} not implemented`);
+    }
   }
 
   /**

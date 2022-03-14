@@ -780,7 +780,7 @@ export async function createTalerWithdrawReserve(
   selectedExchange: string,
 ): Promise<AcceptWithdrawalResponse> {
   await updateExchangeFromUrl(ws, selectedExchange);
-  const withdrawInfo = await getBankWithdrawalInfo(ws, talerWithdrawUri);
+  const withdrawInfo = await getBankWithdrawalInfo(ws.http, talerWithdrawUri);
   const exchangePaytoUri = await getExchangePaytoUri(
     ws,
     selectedExchange,

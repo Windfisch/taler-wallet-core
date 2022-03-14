@@ -20,25 +20,30 @@
 import {
   GlobalTestState,
   MerchantPrivateApi,
-  BankServiceInterface,
   MerchantServiceInterface,
   WalletCli,
   ExchangeServiceInterface,
 } from "../harness/harness.js";
-import { createSimpleTestkudosEnvironment, withdrawViaBank } from "../harness/helpers.js";
+import {
+  createSimpleTestkudosEnvironment,
+  withdrawViaBank,
+} from "../harness/helpers.js";
 import {
   URL,
   durationFromSpec,
   PreparePayResultType,
 } from "@gnu-taler/taler-util";
 import axios from "axios";
-import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+import {
+  WalletApiOperation,
+  BankServiceHandle,
+} from "@gnu-taler/taler-wallet-core";
 
 async function testRefundApiWithFulfillmentUrl(
   t: GlobalTestState,
   env: {
     merchant: MerchantServiceInterface;
-    bank: BankServiceInterface;
+    bank: BankServiceHandle;
     wallet: WalletCli;
     exchange: ExchangeServiceInterface;
   },
@@ -152,7 +157,7 @@ async function testRefundApiWithFulfillmentMessage(
   t: GlobalTestState,
   env: {
     merchant: MerchantServiceInterface;
-    bank: BankServiceInterface;
+    bank: BankServiceHandle;
     wallet: WalletCli;
     exchange: ExchangeServiceInterface;
   },
@@ -267,12 +272,8 @@ async function testRefundApiWithFulfillmentMessage(
 export async function runMerchantRefundApiTest(t: GlobalTestState) {
   // Set up test environment
 
-  const {
-    wallet,
-    bank,
-    exchange,
-    merchant,
-  } = await createSimpleTestkudosEnvironment(t);
+  const { wallet, bank, exchange, merchant } =
+    await createSimpleTestkudosEnvironment(t);
 
   // Withdraw digital cash into the wallet.
 
