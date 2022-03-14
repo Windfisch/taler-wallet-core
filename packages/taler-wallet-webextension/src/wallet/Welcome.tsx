@@ -20,10 +20,11 @@
  * @author sebasjm
  */
 
-import { i18n, WalletDiagnostics } from "@gnu-taler/taler-util";
+import { WalletDiagnostics } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { Checkbox } from "../components/Checkbox";
 import { Diagnostics } from "../components/Diagnostics";
+import { useTranslationContext } from "../context/translation";
 import { useDiagnostics } from "../hooks/useDiagnostics";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
 
@@ -52,6 +53,7 @@ export function View({
   diagnostics,
   timedOut,
 }: ViewProps): VNode {
+  const { i18n } = useTranslationContext();
   return (
     <Fragment>
       <h1>

@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
 */
 
-import { i18n, Timestamp, Translate } from "@gnu-taler/taler-util";
+import { Timestamp, Translate } from "@gnu-taler/taler-util";
 import {
   ProviderInfo,
   ProviderPaymentPaid,
@@ -40,6 +40,7 @@ import {
   SmallLightText,
   SmallText,
 } from "../components/styled";
+import { useTranslationContext } from "../context/translation";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { Pages } from "../NavigationBar";
 import * as wxApi from "../wxApi";
@@ -65,6 +66,7 @@ interface Props {
 // }
 
 export function BackupPage({ onAddProvider }: Props): VNode {
+  const { i18n } = useTranslationContext();
   const status = useAsyncAsHook(wxApi.getBackupInfo);
   if (!status) {
     return <Loading />;
@@ -110,6 +112,7 @@ export function BackupView({
   onAddProvider,
   onSyncAll,
 }: ViewProps): VNode {
+  const { i18n } = useTranslationContext();
   return (
     <Fragment>
       <section>
@@ -164,6 +167,7 @@ interface TransactionLayoutProps {
 }
 
 function BackupLayout(props: TransactionLayoutProps): VNode {
+  const { i18n } = useTranslationContext();
   const date = !props.timestamp ? undefined : new Date(props.timestamp.t_ms);
   const dateStr = date?.toLocaleString([], {
     dateStyle: "medium",
@@ -205,6 +209,7 @@ function BackupLayout(props: TransactionLayoutProps): VNode {
 }
 
 function ExpirationText({ until }: { until: Timestamp }): VNode {
+  const { i18n } = useTranslationContext();
   return (
     <Fragment>
       <CenteredText>

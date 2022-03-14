@@ -22,7 +22,7 @@ function getBrowserLang(): string | undefined {
   return undefined;
 }
 
-export function useLang(initial?: string): [string, (s: string) => void] {
+export function useLang(initial?: string): [string, (s: string) => void, boolean] {
   const defaultLang = (getBrowserLang() || initial || "en").substring(0, 2);
   return useNotNullLocalStorage("lang-preference", defaultLang);
 }

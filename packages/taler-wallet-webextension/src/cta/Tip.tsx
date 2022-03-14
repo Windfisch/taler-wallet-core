@@ -20,10 +20,11 @@
  * @author sebasjm <dold@taler.net>
  */
 
-import { PrepareTipResult, i18n } from "@gnu-taler/taler-util";
+import { PrepareTipResult } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { Loading } from "../components/Loading";
+import { useTranslationContext } from "../context/translation";
 import { AmountView } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
@@ -40,6 +41,7 @@ export function View({
   onAccept,
   onIgnore,
 }: ViewProps): VNode {
+  const { i18n } = useTranslationContext();
   return (
     <section class="main">
       <h1>GNU Taler Wallet</h1>
@@ -77,6 +79,7 @@ export function View({
 }
 
 export function TipPage({ talerTipUri }: Props): VNode {
+  const { i18n } = useTranslationContext();
   const [updateCounter, setUpdateCounter] = useState<number>(0);
   const [prepareTipResult, setPrepareTipResult] = useState<
     PrepareTipResult | undefined

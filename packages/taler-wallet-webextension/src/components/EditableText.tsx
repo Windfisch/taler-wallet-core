@@ -14,9 +14,9 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { i18n } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useRef, useState } from "preact/hooks";
+import { useTranslationContext } from "../context/translation";
 
 interface Props {
   value: string;
@@ -32,6 +32,7 @@ export function EditableText({
   label,
   description,
 }: Props): VNode {
+  const { i18n } = useTranslationContext();
   const [editing, setEditing] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
   let InputText;

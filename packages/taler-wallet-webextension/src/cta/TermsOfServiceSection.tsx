@@ -1,4 +1,3 @@
-import { i18n, Translate } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { CheckboxOutlined } from "../components/CheckboxOutlined";
 import { ExchangeXmlTos } from "../components/ExchangeToS";
@@ -10,6 +9,7 @@ import {
   WarningBox,
   WarningText,
 } from "../components/styled";
+import { useTranslationContext } from "../context/translation";
 import { TermsState } from "../utils/index";
 
 interface Props {
@@ -26,6 +26,7 @@ export function TermsOfServiceSection({
   onAccept,
   onReview,
 }: Props): VNode {
+  const { i18n } = useTranslationContext();
   if (!reviewing) {
     if (!reviewed) {
       if (!onReview) {

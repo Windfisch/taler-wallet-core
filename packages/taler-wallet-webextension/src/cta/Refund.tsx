@@ -20,9 +20,10 @@
  * @author sebasjm
  */
 
-import { Amounts, ApplyRefundResponse, i18n } from "@gnu-taler/taler-util";
+import { Amounts, ApplyRefundResponse } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
+import { useTranslationContext } from "../context/translation";
 import { AmountView } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
@@ -33,6 +34,7 @@ export interface ViewProps {
   applyResult: ApplyRefundResponse;
 }
 export function View({ applyResult }: ViewProps): VNode {
+  const { i18n } = useTranslationContext();
   return (
     <section class="main">
       <h1>GNU Taler Wallet</h1>
@@ -71,6 +73,7 @@ export function RefundPage({ talerRefundUri }: Props): VNode {
   const [applyResult, setApplyResult] = useState<
     ApplyRefundResponse | undefined
   >(undefined);
+  const { i18n } = useTranslationContext();
   const [errMsg, setErrMsg] = useState<string | undefined>(undefined);
 
   useEffect(() => {

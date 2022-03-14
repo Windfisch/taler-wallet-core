@@ -14,8 +14,9 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { i18n, WalletDiagnostics } from "@gnu-taler/taler-util";
+import { WalletDiagnostics } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
+import { useTranslationContext } from "../context/translation";
 import { PageLink } from "../renderHtml";
 
 interface Props {
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export function Diagnostics({ timedOut, diagnostics }: Props): VNode {
+  const { i18n } = useTranslationContext();
   if (timedOut) {
     return (
       <p>

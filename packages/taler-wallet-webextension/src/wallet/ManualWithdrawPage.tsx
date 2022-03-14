@@ -19,12 +19,12 @@ import {
   AmountJson,
   Amounts,
   NotificationType,
-  i18n,
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { Loading } from "../components/Loading";
 import { LoadingError } from "../components/LoadingError";
+import { useTranslationContext } from "../context/translation";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { Pages } from "../NavigationBar";
 import * as wxApi from "../wxApi";
@@ -51,6 +51,7 @@ export function ManualWithdrawPage({ currency, onCancel }: Props): VNode {
   const state = useAsyncAsHook(wxApi.listExchanges, [
     NotificationType.ExchangeAdded,
   ]);
+  const { i18n } = useTranslationContext();
 
   async function doCreate(
     exchangeBaseUrl: string,

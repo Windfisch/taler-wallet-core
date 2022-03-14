@@ -1,7 +1,6 @@
 import {
   AmountJson,
   parsePaytoUri,
-  i18n,
   Amounts,
   segwitMinAmount,
   generateFakeSegwitAddress,
@@ -10,6 +9,7 @@ import { Fragment, h, VNode } from "preact";
 import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType";
 import { QR } from "../components/QR";
 import { ButtonDestructive, WarningBox } from "../components/styled";
+import { useTranslationContext } from "../context/translation";
 import { amountToString } from "../utils/index";
 export interface Props {
   reservePub: string;
@@ -26,6 +26,7 @@ export function ReserveCreated({
   exchangeBaseUrl,
   amount,
 }: Props): VNode {
+  const { i18n } = useTranslationContext();
   const paytoURI = parsePaytoUri(payto);
   if (!paytoURI) {
     return (

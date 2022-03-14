@@ -14,8 +14,8 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { i18n } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
+import { useTranslationContext } from "../context/translation";
 
 export function DebugCheckbox({
   enabled,
@@ -24,6 +24,8 @@ export function DebugCheckbox({
   enabled: boolean;
   onToggle: () => void;
 }): VNode {
+  const { i18n } = useTranslationContext();
+
   return (
     <div>
       <input

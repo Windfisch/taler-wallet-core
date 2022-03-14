@@ -1,7 +1,7 @@
-import { i18n, Translate } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { Button, ButtonSuccess, ButtonWarning } from "../components/styled";
+import { useTranslationContext } from "../context/translation";
 import { TermsOfServiceSection } from "../cta/TermsOfServiceSection";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { buildTermsOfServiceState, TermsState } from "../utils/index";
@@ -77,6 +77,7 @@ export function View({
   onConfirm,
   onCancel,
 }: ViewProps): VNode {
+  const { i18n } = useTranslationContext();
   const needsReview =
     !terms || terms.status === "changed" || terms.status === "new";
   const [reviewed, setReviewed] = useState<boolean>(false);

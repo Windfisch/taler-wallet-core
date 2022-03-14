@@ -21,23 +21,18 @@ import {
   Timestamp,
   Transaction,
   TransactionType,
-  i18n,
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
-import imageBank from "../../static/img/ri-bank-line.svg";
-import imageHandHeart from "../../static/img/ri-hand-heart-line.svg";
-import imageRefresh from "../../static/img/ri-refresh-line.svg";
-import imageRefund from "../../static/img/ri-refund-2-line.svg";
-import imageShoppingCart from "../../static/img/ri-shopping-cart-line.svg";
+import { useTranslationContext } from "../context/translation";
 import { Avatar } from "../mui/Avatar";
 import { Pages } from "../NavigationBar";
 import {
   Column,
   ExtraLargeText,
   HistoryRow,
-  SmallLightText,
   LargeText,
   LightText,
+  SmallLightText,
 } from "./styled";
 import { Time } from "./Time";
 
@@ -121,6 +116,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
 }
 
 function TransactionLayout(props: TransactionLayoutProps): VNode {
+  const { i18n } = useTranslationContext();
   return (
     <HistoryRow
       href={Pages.balance_transaction.replace(":tid", props.id)}
@@ -183,6 +179,7 @@ interface TransactionAmountProps {
 }
 
 function TransactionAmount(props: TransactionAmountProps): VNode {
+  const { i18n } = useTranslationContext();
   let sign: string;
   switch (props.debitCreditIndicator) {
     case "credit":

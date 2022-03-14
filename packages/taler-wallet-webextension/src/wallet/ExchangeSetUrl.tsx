@@ -1,8 +1,6 @@
 import {
   canonicalizeBaseUrl,
-  i18n,
   TalerConfigResponse,
-  Translate,
 } from "@gnu-taler/taler-util";
 import { Fragment, h } from "preact";
 import { useEffect, useState } from "preact/hooks";
@@ -14,6 +12,7 @@ import {
   LightText,
   WarningBox,
 } from "../components/styled";
+import { useTranslationContext } from "../context/translation";
 
 export interface Props {
   initialValue?: string;
@@ -81,6 +80,7 @@ export function ExchangeSetUrlPage({
   onVerify,
   onConfirm,
 }: Props) {
+  const { i18n } = useTranslationContext();
   const { loading, result, endpoint, updateEndpoint, error } =
     useEndpointStatus(initialValue ?? "", onVerify);
 

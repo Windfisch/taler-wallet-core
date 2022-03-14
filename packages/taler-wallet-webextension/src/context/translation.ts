@@ -31,7 +31,8 @@ interface Type {
   lang: string;
   supportedLang: { [id in keyof typeof supportedLang]: string }
   changeLanguage: (l: string) => void;
-  i18n: typeof i18n
+  i18n: typeof i18n;
+  isSaved: boolean;
 }
 
 const supportedLang = {
@@ -44,7 +45,8 @@ const supportedLang = {
   it: "Italiano [it]",
   // ko: "한국어 [ko]",
   // ru: "Ру́сский язы́к [ru]",
-  tr: "Türk [tr]"
+  tr: "Türk [tr]",
+  navigator: "Defined by navigator",
 };
 
 
@@ -54,7 +56,8 @@ const initial = {
   changeLanguage: () => {
     // do not change anything
   },
-  i18n
+  i18n,
+  isSaved: false,
 };
 const Context = createContext<Type>(initial);
 
@@ -69,7 +72,7 @@ export const TranslationProvider = ({
   children,
   forceLang,
 }: Props): VNode => {
-  const [lang, changeLanguage] = useLang(initial);
+  const [lang, changeLanguage, isSaved] = useLang(initial);
   useEffect(() => {
     if (forceLang) {
       changeLanguage(forceLang);
@@ -83,7 +86,7 @@ export const TranslationProvider = ({
   } else {
     setupI18n(lang, strings);
   }
-  return h(Context.Provider, { value: { lang, changeLanguage, supportedLang, i18n }, children });
+  return h(Context.Provider, { value: { lang, changeLanguage, supportedLang, i18n, isSaved }, children });
 };
 
 export const useTranslationContext = (): Type => useContext(Context);

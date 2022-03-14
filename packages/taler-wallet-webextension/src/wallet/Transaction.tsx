@@ -17,7 +17,6 @@
 import {
   AmountLike,
   Amounts,
-  i18n,
   NotificationType,
   parsePaytoUri,
   Transaction,
@@ -46,6 +45,7 @@ import {
   WarningBox,
 } from "../components/styled";
 import { Time } from "../components/Time";
+import { useTranslationContext } from "../context/translation";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import * as wxApi from "../wxApi";
 
@@ -54,6 +54,7 @@ interface Props {
   goToWalletHistory: (currency?: string) => void;
 }
 export function TransactionPage({ tid, goToWalletHistory }: Props): VNode {
+  const { i18n } = useTranslationContext();
   async function getTransaction(): Promise<Transaction> {
     const res = await wxApi.getTransactions();
     const ts = res.transactions.filter((t) => t.transactionId === tid);
@@ -126,6 +127,8 @@ export function TransactionView({
       onDelete();
     }
   }
+
+  const { i18n } = useTranslationContext();
 
   function TransactionTemplate({
     children,

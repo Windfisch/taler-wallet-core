@@ -1,32 +1,18 @@
-import { classifyTalerUri, TalerUriType, i18n } from "@gnu-taler/taler-util";
+import { classifyTalerUri, TalerUriType } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { Button, ButtonSuccess, InputWithLabel } from "../components/styled";
+import { useTranslationContext } from "../context/translation";
 import { actionForTalerUri } from "../utils/index";
 
 export interface Props {
   onCancel: () => void;
 }
 
-function buttonLabelByTalerType(type: TalerUriType): VNode {
-  switch (type) {
-    case TalerUriType.TalerNotifyReserve:
-      return <i18n.Translate>Open reserve page</i18n.Translate>;
-    case TalerUriType.TalerPay:
-      return <i18n.Translate>Open pay page</i18n.Translate>;
-    case TalerUriType.TalerRefund:
-      return <i18n.Translate>Open refund page</i18n.Translate>;
-    case TalerUriType.TalerTip:
-      return <i18n.Translate>Open tip page</i18n.Translate>;
-    case TalerUriType.TalerWithdraw:
-      return <i18n.Translate>Open withdraw page</i18n.Translate>;
-  }
-  return <Fragment />;
-}
-
 export function AddNewActionView({ onCancel }: Props): VNode {
   const [url, setUrl] = useState("");
   const uriType = classifyTalerUri(url);
+  const { i18n } = useTranslationContext();
 
   return (
     <Fragment>
@@ -57,7 +43,21 @@ export function AddNewActionView({ onCancel }: Props): VNode {
               chrome.tabs.create({ url: actionForTalerUri(uriType, url) });
             }}
           >
-            {buttonLabelByTalerType(uriType)}
+            {(() => {
+              switch (uriType) {
+                case TalerUriType.TalerNotifyReserve:
+                  return <i18n.Translate>Open reserve page</i18n.Translate>;
+                case TalerUriType.TalerPay:
+                  return <i18n.Translate>Open pay page</i18n.Translate>;
+                case TalerUriType.TalerRefund:
+                  return <i18n.Translate>Open refund page</i18n.Translate>;
+                case TalerUriType.TalerTip:
+                  return <i18n.Translate>Open tip page</i18n.Translate>;
+                case TalerUriType.TalerWithdraw:
+                  return <i18n.Translate>Open withdraw page</i18n.Translate>;
+              }
+              return <Fragment />;
+            })()}
           </ButtonSuccess>
         )}
       </footer>

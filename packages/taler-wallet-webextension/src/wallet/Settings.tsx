@@ -14,9 +14,10 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
 */
 
-import { ExchangeListItem, i18n, Translate } from "@gnu-taler/taler-util";
+import { ExchangeListItem } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { Checkbox } from "../components/Checkbox";
+import { JustInDevMode } from "../components/JustInDevMode";
 import { SelectList } from "../components/SelectList";
 import {
   DestructiveText,
@@ -80,24 +81,11 @@ export function SettingsView({
   developerMode,
   toggleDeveloperMode,
 }: ViewProps): VNode {
-  const { lang, supportedLang, changeLanguage } = useTranslationContext();
+  const { i18n, lang, supportedLang, changeLanguage } = useTranslationContext();
 
   return (
     <Fragment>
       <section>
-        <h2>
-          <i18n.Translate>Display</i18n.Translate>
-        </h2>
-        <Input>
-          <SelectList
-            label={<i18n.Translate>Current Language</i18n.Translate>}
-            list={supportedLang}
-            name="lang"
-            value={lang}
-            onChange={(v) => changeLanguage(v)}
-          />
-        </Input>
-
         <h2>
           <i18n.Translate>Navigator</i18n.Translate>
         </h2>
@@ -206,6 +194,21 @@ export function SettingsView({
           enabled={developerMode}
           onToggle={toggleDeveloperMode}
         />
+
+        <JustInDevMode>
+          <h2>
+            <i18n.Translate>Display</i18n.Translate>
+          </h2>
+          <Input>
+            <SelectList
+              label={<i18n.Translate>Current Language</i18n.Translate>}
+              list={supportedLang}
+              name="lang"
+              value={lang}
+              onChange={(v) => changeLanguage(v)}
+            />
+          </Input>
+        </JustInDevMode>
       </section>
     </Fragment>
   );

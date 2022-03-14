@@ -1,12 +1,13 @@
-import { i18n } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { ButtonBoxWarning, WarningBox } from "../components/styled";
+import { useTranslationContext } from "../context/translation";
 
 export function NoBalanceHelp({
   goToWalletManualWithdraw,
 }: {
   goToWalletManualWithdraw: () => void;
 }): VNode {
+  const { i18n } = useTranslationContext();
   return (
     <WarningBox>
       <p>

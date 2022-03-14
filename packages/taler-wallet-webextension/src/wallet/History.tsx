@@ -19,7 +19,6 @@ import {
   Balance,
   NotificationType,
   Transaction,
-  i18n,
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
@@ -37,6 +36,7 @@ import {
 } from "../components/styled";
 import { Time } from "../components/Time";
 import { TransactionItem } from "../components/TransactionItem";
+import { useTranslationContext } from "../context/translation";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { NoBalanceHelp } from "../popup/NoBalanceHelp";
 import * as wxApi from "../wxApi";
@@ -51,6 +51,7 @@ export function HistoryPage({
   goToWalletManualWithdraw,
   goToWalletDeposit,
 }: Props): VNode {
+  const { i18n } = useTranslationContext();
   const balance = useAsyncAsHook(wxApi.getBalance);
   const balanceWithoutError = balance?.hasError
     ? []
@@ -106,6 +107,7 @@ export function HistoryView({
   transactions: Transaction[];
   balances: Balance[];
 }): VNode {
+  const { i18n } = useTranslationContext();
   const currencies = balances.map((b) => b.available.split(":")[0]);
 
   const defaultCurrencyIndex = currencies.findIndex(

@@ -17,7 +17,6 @@
 import {
   Amounts,
   Balance,
-  i18n,
   NotificationType,
   Transaction,
 } from "@gnu-taler/taler-util";
@@ -29,6 +28,7 @@ import { Loading } from "../components/Loading";
 import { LoadingError } from "../components/LoadingError";
 import { MultiActionButton } from "../components/MultiActionButton";
 import { ButtonBoxPrimary, ButtonPrimary } from "../components/styled";
+import { useTranslationContext } from "../context/translation";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { AddNewActionView } from "../wallet/AddNewActionView";
 import * as wxApi from "../wxApi";
@@ -44,6 +44,7 @@ export function BalancePage({
   goToWalletDeposit,
   goToWalletHistory,
 }: Props): VNode {
+  const { i18n } = useTranslationContext();
   const [addingAction, setAddingAction] = useState(false);
   const state = useAsyncAsHook(wxApi.getBalance, [
     NotificationType.WithdrawGroupFinished,
@@ -92,6 +93,7 @@ export function BalanceView({
   goToWalletHistory,
   goToAddAction,
 }: BalanceViewProps): VNode {
+  const { i18n } = useTranslationContext();
   const currencyWithNonZeroAmount = balances
     .filter((b) => !Amounts.isZero(b.available))
     .map((b) => b.available.split(":")[0]);

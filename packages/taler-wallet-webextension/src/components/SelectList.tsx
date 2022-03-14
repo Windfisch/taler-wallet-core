@@ -14,8 +14,8 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { i18n } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
+import { useTranslationContext } from "../context/translation";
 import { NiceSelect } from "./styled";
 
 interface Props {
@@ -39,6 +39,7 @@ export function SelectList({
   description,
   canBeNull,
 }: Props): VNode {
+  const { i18n } = useTranslationContext();
   return (
     <Fragment>
       <label

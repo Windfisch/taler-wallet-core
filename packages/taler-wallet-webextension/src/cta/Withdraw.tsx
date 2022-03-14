@@ -25,7 +25,6 @@ import {
   AmountJson,
   Amounts,
   ExchangeListItem,
-  i18n,
   Translate,
   WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
@@ -52,6 +51,7 @@ import {
 } from "../utils/index";
 import * as wxApi from "../wxApi";
 import { TermsOfServiceSection } from "./TermsOfServiceSection";
+import { useTranslationContext } from "../context/translation";
 
 interface Props {
   talerWithdrawUri?: string;
@@ -84,6 +84,7 @@ export function View({
   onAccept,
   reviewed,
 }: ViewProps): VNode {
+  const { i18n } = useTranslationContext();
   const [withdrawError, setWithdrawError] = useState<
     OperationFailedError | undefined
   >(undefined);
@@ -236,12 +237,10 @@ export function WithdrawPageWithParsedURI({
   uri: string;
   uriInfo: WithdrawUriInfoResponse;
 }): VNode {
+  const { i18n } = useTranslationContext();
   const [customExchange, setCustomExchange] = useState<string | undefined>(
     undefined,
   );
-  // const [errorAccepting, setErrorAccepting] = useState<string | undefined>(
-  //   undefined,
-  // );
 
   const [reviewing, setReviewing] = useState<boolean>(false);
   const [reviewed, setReviewed] = useState<boolean>(false);
@@ -332,6 +331,7 @@ export function WithdrawPageWithParsedURI({
   );
 }
 export function WithdrawPage({ talerWithdrawUri }: Props): VNode {
+  const { i18n } = useTranslationContext();
   const uriInfoHook = useAsyncAsHook(() =>
     !talerWithdrawUri
       ? Promise.reject(undefined)

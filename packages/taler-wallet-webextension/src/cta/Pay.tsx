@@ -22,7 +22,6 @@
 /**
  * Imports.
  */
-// import * as i18n from "../i18n";
 
 import {
   AmountJson,
@@ -32,12 +31,10 @@ import {
   ConfirmPayResultDone,
   ConfirmPayResultType,
   ContractTerms,
-  i18n,
   NotificationType,
   PreparePayResult,
   PreparePayResultType,
   Product,
-  Translate,
 } from "@gnu-taler/taler-util";
 import { OperationFailedError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
@@ -50,13 +47,13 @@ import { Part } from "../components/Part";
 import { QR } from "../components/QR";
 import {
   ButtonSuccess,
-  LightText,
   LinkSuccess,
   SmallLightText,
   SuccessBox,
   WalletAction,
   WarningBox,
 } from "../components/styled";
+import { useTranslationContext } from "../context/translation";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import * as wxApi from "../wxApi";
 
@@ -89,6 +86,7 @@ export function PayPage({
   goToWalletManualWithdraw,
   goBack,
 }: Props): VNode {
+  const { i18n } = useTranslationContext();
   const [payResult, setPayResult] = useState<ConfirmPayResult | undefined>(
     undefined,
   );
@@ -166,6 +164,7 @@ export function PaymentRequestView({
   goToWalletManualWithdraw,
   balance,
 }: PaymentRequestViewProps): VNode {
+  const { i18n } = useTranslationContext();
   let totalFees: AmountJson = Amounts.getZero(payStatus.amountRaw);
   const contractTerms: ContractTerms = payStatus.contractTerms;
 
@@ -412,6 +411,7 @@ export function PaymentRequestView({
 }
 
 function ProductList({ products }: { products: Product[] }): VNode {
+  const { i18n } = useTranslationContext();
   return (
     <Fragment>
       <SmallLightText style={{ margin: ".5em" }}>

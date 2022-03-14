@@ -13,13 +13,30 @@
  You should have received a copy of the GNU General Public License along with
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-import { i18n } from "@gnu-taler/taler-util";
-import { h, VNode } from "preact";
+import { Fragment, h, VNode } from "preact";
+import { useEffect, useState } from "preact/hooks";
+import { useTranslationContext } from "../context/translation";
+import { CenteredText } from "./styled";
 
 export function Loading(): VNode {
-  return (
-    <div>
-      <i18n.Translate>Loading</i18n.Translate>...
-    </div>
-  );
+  const { i18n } = useTranslationContext();
+  const [tooLong, setTooLong] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setTooLong(true);
+    }, 500);
+    return () => {
+      clearTimeout(id);
+    };
+  });
+  if (tooLong) {
+    return (
+      <section style={{ margin: "auto" }}>
+        <CenteredText>
+          <i18n.Translate>Loading</i18n.Translate>...
+        </CenteredText>
+      </section>
+    );
+  }
+  return <Fragment />;
 }

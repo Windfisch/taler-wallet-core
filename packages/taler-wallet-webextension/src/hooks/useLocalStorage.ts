@@ -56,7 +56,7 @@ export function useLocalStorage(
 export function useNotNullLocalStorage(
   key: string,
   initialValue: string,
-): [string, StateUpdater<string>] {
+): [string, StateUpdater<string>, boolean] {
   const [storedValue, setStoredValue] = useState<string>((): string => {
     return typeof window !== "undefined"
       ? window.localStorage.getItem(key) || initialValue
@@ -75,5 +75,6 @@ export function useNotNullLocalStorage(
     }
   };
 
-  return [storedValue, setValue];
+  const isSaved = window.localStorage.getItem(key) !== null;
+  return [storedValue, setValue, isSaved];
 }

@@ -19,7 +19,6 @@ import {
   Amounts,
   AmountString,
   PaytoUri,
-  i18n,
 } from "@gnu-taler/taler-util";
 import { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import { Fragment, h, VNode } from "preact";
@@ -34,6 +33,7 @@ import {
   InputWithLabel,
   WarningBox,
 } from "../components/styled";
+import { useTranslationContext } from "../context/translation";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import * as wxApi from "../wxApi";
 
@@ -103,6 +103,7 @@ export function View({
   onSend,
   onCalculateFee,
 }: ViewProps): VNode {
+  const { i18n } = useTranslationContext();
   const accountMap = createLabelsForBankAccount(knownBankAccounts);
   const [accountIdx, setAccountIdx] = useState(0);
   const [amount, setAmount] = useState<number | undefined>(undefined);

@@ -22,7 +22,6 @@
 /**
  * Imports.
  */
-// import * as i18n from "../i18n";
 
 import {
   AmountJson,
@@ -31,7 +30,6 @@ import {
   ConfirmPayResult,
   ConfirmPayResultType,
   ContractTerms,
-  i18n,
   NotificationType,
   PreparePayResult,
   PreparePayResultType,
@@ -49,6 +47,7 @@ import {
   WalletAction,
   WarningBox,
 } from "../components/styled";
+import { useTranslationContext } from "../context/translation";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import * as wxApi from "../wxApi";
 
@@ -58,6 +57,7 @@ interface Props {
 }
 
 export function DepositPage({ talerPayUri, goBack }: Props): VNode {
+  const { i18n } = useTranslationContext();
   const [payStatus, setPayStatus] = useState<PreparePayResult | undefined>(
     undefined,
   );
@@ -199,6 +199,7 @@ export function PaymentRequestView({
 }: PaymentRequestViewProps): VNode {
   let totalFees: AmountJson = Amounts.getZero(payStatus.amountRaw);
   const contractTerms: ContractTerms = payStatus.contractTerms;
+  const { i18n } = useTranslationContext();
 
   return (
     <WalletAction>

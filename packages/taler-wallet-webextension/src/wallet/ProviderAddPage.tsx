@@ -18,7 +18,6 @@ import {
   Amounts,
   BackupBackupProviderTerms,
   canonicalizeBaseUrl,
-  i18n,
   Translate,
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
@@ -32,6 +31,7 @@ import {
   LightText,
   SmallLightText,
 } from "../components/styled";
+import { useTranslationContext } from "../context/translation";
 import { queryToSlashConfig } from "../utils/index";
 import * as wxApi from "../wxApi";
 
@@ -90,6 +90,7 @@ export function SetUrlView({
   onConfirm,
   withError,
 }: SetUrlViewProps) {
+  const { i18n } = useTranslationContext();
   const [value, setValue] = useState<string>(initialValue || "");
   const [urlError, setUrlError] = useState(false);
   const [name, setName] = useState<string | undefined>(undefined);
@@ -190,6 +191,7 @@ export function ConfirmProviderView({
   onConfirm,
 }: ConfirmProviderViewProps) {
   const [accepted, setAccepted] = useState(false);
+  const { i18n } = useTranslationContext();
 
   return (
     <Fragment>

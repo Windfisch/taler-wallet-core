@@ -19,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { AmountJson, Amounts, i18n, Translate } from "@gnu-taler/taler-util";
+import { AmountJson, Amounts } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { ErrorMessage } from "../components/ErrorMessage";
@@ -34,6 +34,7 @@ import {
   LightText,
   LinkPrimary,
 } from "../components/styled";
+import { useTranslationContext } from "../context/translation";
 
 export interface Props {
   error: string | undefined;
@@ -52,6 +53,7 @@ export function CreateManualWithdraw({
   onCreate,
   onAddExchange,
 }: Props): VNode {
+  const { i18n } = useTranslationContext();
   const exchangeSelectList = Object.keys(exchangeList);
   const currencySelectList = Object.values(exchangeList);
   const exchangeMap = exchangeSelectList.reduce(

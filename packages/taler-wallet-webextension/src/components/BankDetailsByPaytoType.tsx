@@ -17,7 +17,7 @@
 import { PaytoUri } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { useTranslationContext } from "../context/translation.js";
+import { useTranslationContext } from "../context/translation";
 import { CopiedIcon, CopyIcon } from "../svg";
 import { ButtonBox, TooltipRight } from "./styled";
 

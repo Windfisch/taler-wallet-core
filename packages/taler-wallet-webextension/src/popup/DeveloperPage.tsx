@@ -21,7 +21,6 @@ import {
   ExchangeListItem,
   NotificationType,
   Translate,
-  i18n,
 } from "@gnu-taler/taler-util";
 import { PendingTaskInfo } from "@gnu-taler/taler-wallet-core";
 import { format } from "date-fns";
@@ -30,6 +29,7 @@ import { useRef, useState } from "preact/hooks";
 import { Diagnostics } from "../components/Diagnostics";
 import { NotifyUpdateFadeOut } from "../components/styled";
 import { Time } from "../components/Time";
+import { useTranslationContext } from "../context/translation";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import { useDiagnostics } from "../hooks/useDiagnostics";
 import * as wxApi from "../wxApi";
@@ -110,6 +110,7 @@ export function View({
   coins,
   onDownloadDatabase,
 }: Props): VNode {
+  const { i18n } = useTranslationContext();
   const [downloadedDatabase, setDownloadedDatabase] = useState<
     { time: Date; content: string } | undefined
   >(undefined);
@@ -153,7 +154,13 @@ export function View({
       <p>
         <i18n.Translate>Debug tools</i18n.Translate>:
       </p>
-      <button onClick={confirmReset}>
+      <button
+        onClick={() =>
+          confirmReset(
+            i18n.str`Do you want to IRREVOCABLY DESTROY everything inside your wallet and LOSE ALL YOUR COINS?`,
+          )
+        }
+      >
         <i18n.Translate>reset</i18n.Translate>
       </button>
       <br />
@@ -262,6 +269,7 @@ function ShowAllCoins({
   coins: SplitedCoinInfo;
   currencies: { [ex: string]: string };
 }) {
+  const { i18n } = useTranslationContext();
   const [collapsedSpent, setCollapsedSpent] = useState(true);
   const [collapsedUnspent, setCollapsedUnspent] = useState(false);
   const total = coins.usable.reduce((prev, cur) => prev + cur.denom_value, 0);
@@ -372,12 +380,10 @@ export function reload(): void {
 
 function runIntegrationTest() {}
 
-export async function confirmReset(): Promise<void> {
-  if (
-    confirm(
-      i18n.str`Do you want to IRREVOCABLY DESTROY everything inside your wallet and LOSE ALL YOUR COINS?`,
-    )
-  ) {
+export async function confirmReset(
+  confirmTheResetMessage: string,
+): Promise<void> {
+  if (confirm(confirmTheResetMessage)) {
     await wxApi.resetDb();
     window.close();
   }

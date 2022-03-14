@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
 */
 
-import { i18n } from "@gnu-taler/taler-util";
+import * as utils from "@gnu-taler/taler-util";
 import {
   ProviderInfo,
   ProviderPaymentStatus,
@@ -32,6 +32,7 @@ import {
   SmallLightText,
 } from "../components/styled";
 import { Time } from "../components/Time";
+import { useTranslationContext } from "../context/translation";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
 import * as wxApi from "../wxApi";
 
@@ -41,6 +42,7 @@ interface Props {
 }
 
 export function ProviderDetailPage({ pid: providerURL, onBack }: Props): VNode {
+  const { i18n } = useTranslationContext();
   async function getProviderInfo(): Promise<ProviderInfo | null> {
     //create a first list of backup info by currency
     const status = await wxApi.getBackupInfo();
@@ -100,6 +102,7 @@ export function ProviderView({
   onBack,
   onExtend,
 }: ViewProps): VNode {
+  const { i18n } = useTranslationContext();
   if (info === null) {
     return (
       <Fragment>
@@ -156,7 +159,7 @@ export function ProviderView({
             </p>
           </Fragment>
         )}
-        <p>{descriptionByStatus(info.paymentStatus)}</p>
+        <p>{descriptionByStatus(info.paymentStatus, i18n)}</p>
         <ButtonPrimary disabled onClick={onExtend}>
           <i18n.Translate>Extend</i18n.Translate>
         </ButtonPrimary>
@@ -219,6 +222,7 @@ export function ProviderView({
 }
 
 function Error({ info }: { info: ProviderInfo }): VNode {
+  const { i18n } = useTranslationContext();
   if (info.lastError) {
     return (
       <ErrorMessage
@@ -267,7 +271,10 @@ function Error({ info }: { info: ProviderInfo }): VNode {
   return <Fragment />;
 }
 
-function descriptionByStatus(status: ProviderPaymentStatus): VNode {
+function descriptionByStatus(
+  status: ProviderPaymentStatus,
+  i18n: typeof utils.i18n,
+): VNode {
   switch (status.type) {
     case ProviderPaymentType.Paid:
     case ProviderPaymentType.TermsChanged:

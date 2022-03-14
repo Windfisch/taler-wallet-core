@@ -27,7 +27,7 @@
 import { VNode, h } from "preact";
 import { JustInDevMode } from "./components/JustInDevMode";
 import { NavigationHeader, NavigationHeaderHolder } from "./components/styled";
-import { useTranslationContext } from "./context/translation.js";
+import { useTranslationContext } from "./context/translation";
 
 /**
  * List of pages used by the wallet

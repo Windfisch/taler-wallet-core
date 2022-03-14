@@ -19,9 +19,10 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { classifyTalerUri, TalerUriType, i18n } from "@gnu-taler/taler-util";
+import { classifyTalerUri, TalerUriType } from "@gnu-taler/taler-util";
 import { Fragment, h } from "preact";
 import { ButtonPrimary, ButtonSuccess } from "../components/styled";
+import { useTranslationContext } from "../context/translation";
 import { actionForTalerUri } from "../utils/index";
 
 export interface Props {
@@ -49,6 +50,7 @@ async function navigateTo(url?: string) {
 
 export function TalerActionFound({ url, onDismiss }: Props) {
   const uriType = classifyTalerUri(url);
+  const { i18n } = useTranslationContext();
   return (
     <Fragment>
       <section>
