@@ -30,6 +30,7 @@ import {
   BlindedDenominationSignature,
   CoinDepositPermission,
   CoinEnvelope,
+  PlanchetUnblindInfo,
   RecoupRefreshRequest,
   RecoupRequest,
   UnblindedSignature,
@@ -206,7 +207,7 @@ export class CryptoApi {
       }
     };
     ws.terminationTimerHandle = timer.after(15 * 1000, destroy);
-    //ws.terminationTimerHandle.unref();
+    ws.terminationTimerHandle.unref();
   }
 
   handleWorkerError(ws: WorkerState, e: any): void {
@@ -331,7 +332,7 @@ export class CryptoApi {
   }
 
   unblindDenominationSignature(req: {
-    planchet: WithdrawalPlanchet;
+    planchet: PlanchetUnblindInfo;
     evSig: BlindedDenominationSignature;
   }): Promise<UnblindedSignature> {
     return this.doRpc<UnblindedSignature>(

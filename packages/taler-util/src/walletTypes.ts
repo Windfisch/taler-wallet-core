@@ -458,6 +458,16 @@ export interface TalerErrorDetails {
   details: unknown;
 }
 
+/**
+ * Minimal information needed about a planchet for unblinding a signature.
+ * 
+ * Can be a withdrawal/tipping/refresh planchet.
+ */
+export interface PlanchetUnblindInfo {
+  denomPub: DenominationPubKey;
+  blindingKey: string;
+}
+
 export interface WithdrawalPlanchet {
   coinPub: string;
   coinPriv: string;

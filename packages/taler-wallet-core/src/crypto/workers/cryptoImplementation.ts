@@ -73,6 +73,7 @@ import {
   BlindedDenominationSignature,
   RsaUnblindedSignature,
   UnblindedSignature,
+  PlanchetUnblindInfo,
 } from "@gnu-taler/taler-util";
 import bigint from "big-integer";
 import { DenominationRecord, WireFee } from "../../db.js";
@@ -432,7 +433,7 @@ export class CryptoImplementation {
   }
 
   unblindDenominationSignature(req: {
-    planchet: WithdrawalPlanchet;
+    planchet: PlanchetUnblindInfo;
     evSig: BlindedDenominationSignature;
   }): UnblindedSignature {
     if (req.evSig.cipher === DenomKeyType.Rsa) {

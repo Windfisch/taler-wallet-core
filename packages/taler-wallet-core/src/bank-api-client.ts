@@ -28,12 +28,16 @@ import {
   codecForString,
   encodeCrock,
   getRandomBytes,
+  j2s,
+  Logger,
 } from "@gnu-taler/taler-util";
 import {
   HttpRequestLibrary,
   readSuccessResponseJsonOrErrorCode,
   readSuccessResponseJsonOrThrow,
 } from "./index.browser.js";
+
+const logger = new Logger("bank-api-client.ts");
 
 export enum CreditDebitIndicator {
   Credit = "credit",
@@ -98,6 +102,7 @@ export namespace BankApi {
     const resp = await bank.http.postJson(url.href, { username, password });
     let paytoUri = `payto://x-taler-bank/localhost/${username}`;
     if (resp.status !== 200 && resp.status !== 202) {
+      logger.error(`${j2s(await resp.json())}`)
       throw new Error();
     }
     try {

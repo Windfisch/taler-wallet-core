@@ -62,6 +62,7 @@ import { lintExchangeDeployment } from "./lint.js";
 import { runBench1 } from "./bench1.js";
 import { runEnv1 } from "./env1.js";
 import { GlobalTestState, runTestWithState } from "./harness/harness.js";
+import { runBench2 } from "./bench2.js";
 
 // This module also serves as the entry point for the crypto
 // thread worker, and thus must expose these two handlers.
@@ -168,8 +169,7 @@ export const walletCli = clk
     },
   })
   .maybeOption("inhibit", ["--inhibit"], clk.STRING, {
-    help:
-      "Inhibit running certain operations, useful for debugging and testing.",
+    help: "Inhibit running certain operations, useful for debugging and testing.",
   })
   .flag("noThrottle", ["--no-throttle"], {
     help: "Don't do any request throttling.",
@@ -559,8 +559,7 @@ backupCli.subcommand("status", "status").action(async (args) => {
 backupCli
   .subcommand("recoveryLoad", "load-recovery")
   .maybeOption("strategy", ["--strategy"], clk.STRING, {
-    help:
-      "Strategy for resolving a conflict with the existing wallet key ('theirs' or 'ours')",
+    help: "Strategy for resolving a conflict with the existing wallet key ('theirs' or 'ours')",
   })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
@@ -636,8 +635,7 @@ depositCli
   });
 
 const advancedCli = walletCli.subcommand("advancedArgs", "advanced", {
-  help:
-    "Subcommands for advanced operations (only use if you know what you're doing!).",
+  help: "Subcommands for advanced operations (only use if you know what you're doing!).",
 });
 
 advancedCli
@@ -653,6 +651,21 @@ advancedCli
       console.log("Could not parse config JSON");
     }
     await runBench1(config);
+  });
+
+advancedCli
+  .subcommand("bench2", "bench2", {
+    help: "Run the 'bench2' benchmark",
+  })
+  .requiredOption("configJson", ["--config-json"], clk.STRING)
+  .action(async (args) => {
+    let config: any;
+    try {
+      config = JSON.parse(args.bench2.configJson);
+    } catch (e) {
+      console.log("Could not parse config JSON");
+    }
+    await runBench2(config);
   });
 
 advancedCli

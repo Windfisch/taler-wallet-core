@@ -15,6 +15,7 @@
  */
 
 import {
+  CoinPublicKeyString,
   DenomKeyType,
   encodeCrock,
   ExchangeMeltRequest,
@@ -79,8 +80,12 @@ import {
   isWithdrawableDenom,
   selectWithdrawalDenominations,
 } from "./withdraw.js";
-import { RefreshNewDenomInfo } from "../crypto/cryptoTypes.js";
+import {
+  DerivedRefreshSession,
+  RefreshNewDenomInfo,
+} from "../crypto/cryptoTypes.js";
 import { GetReadWriteAccess } from "../util/query.js";
+import { CryptoApi } from "../index.browser.js";
 
 const logger = new Logger("refresh.ts");
 
@@ -357,6 +362,7 @@ async function refreshMelt(
         newCoinDenoms.push({
           count: dh.count,
           denomPub: newDenom.denomPub,
+          denomPubHash: newDenom.denomPubHash,
           feeWithdraw: newDenom.feeWithdraw,
           value: newDenom.value,
         });
@@ -472,6 +478,62 @@ async function refreshMelt(
   });
 }
 
+export async function assembleRefreshRevealRequest(args: {
+  cryptoApi: CryptoApi;
+  derived: DerivedRefreshSession;
+  norevealIndex: number;
+  oldCoinPub: CoinPublicKeyString;
+  oldCoinPriv: string;
+  newDenoms: {
+    denomPubHash: string;
+    count: number;
+  }[];
+}): Promise<ExchangeRefreshRevealRequest> {
+  const {
+    derived,
+    norevealIndex,
+    cryptoApi,
+    oldCoinPriv,
+    oldCoinPub,
+    newDenoms,
+  } = args;
+  const privs = Array.from(derived.transferPrivs);
+  privs.splice(norevealIndex, 1);
+
+  const planchets = derived.planchetsForGammas[norevealIndex];
+  if (!planchets) {
+    throw Error("refresh index error");
+  }
+
+  const newDenomsFlat: string[] = [];
+  const linkSigs: string[] = [];
+
+  for (let i = 0; i < newDenoms.length; i++) {
+    const dsel = newDenoms[i];
+    for (let j = 0; j < dsel.count; j++) {
+      const newCoinIndex = linkSigs.length;
+      const linkSig = await cryptoApi.signCoinLink(
+        oldCoinPriv,
+        dsel.denomPubHash,
+        oldCoinPub,
+        derived.transferPubs[norevealIndex],
+        planchets[newCoinIndex].coinEv,
+      );
+      linkSigs.push(linkSig);
+      newDenomsFlat.push(dsel.denomPubHash);
+    }
+  }
+
+  const req: ExchangeRefreshRevealRequest = {
+    coin_evs: planchets.map((x) => x.coinEv),
+    new_denoms_h: newDenomsFlat,
+    transfer_privs: privs,
+    transfer_pub: derived.transferPubs[norevealIndex],
+    link_sigs: linkSigs,
+  };
+  return req;
+}
+
 async function refreshReveal(
   ws: InternalWalletState,
   refreshGroupId: string,
@@ -527,6 +589,7 @@ async function refreshReveal(
         newCoinDenoms.push({
           count: dh.count,
           denomPub: newDenom.denomPub,
+          denomPubHash: newDenom.denomPubHash,
           feeWithdraw: newDenom.feeWithdraw,
           value: newDenom.value,
         });
@@ -575,45 +638,19 @@ async function refreshReveal(
     sessionSecretSeed: refreshSession.sessionSecretSeed,
   });
 
-  const privs = Array.from(derived.transferPrivs);
-  privs.splice(norevealIndex, 1);
-
-  const planchets = derived.planchetsForGammas[norevealIndex];
-  if (!planchets) {
-    throw Error("refresh index error");
-  }
-
-  const newDenomsFlat: string[] = [];
-  const linkSigs: string[] = [];
-
-  for (let i = 0; i < refreshSession.newDenoms.length; i++) {
-    const dsel = refreshSession.newDenoms[i];
-    for (let j = 0; j < dsel.count; j++) {
-      const newCoinIndex = linkSigs.length;
-      const linkSig = await ws.cryptoApi.signCoinLink(
-        oldCoin.coinPriv,
-        dsel.denomPubHash,
-        oldCoin.coinPub,
-        derived.transferPubs[norevealIndex],
-        planchets[newCoinIndex].coinEv,
-      );
-      linkSigs.push(linkSig);
-      newDenomsFlat.push(dsel.denomPubHash);
-    }
-  }
-
-  const req: ExchangeRefreshRevealRequest = {
-    coin_evs: planchets.map((x) => x.coinEv),
-    new_denoms_h: newDenomsFlat,
-    transfer_privs: privs,
-    transfer_pub: derived.transferPubs[norevealIndex],
-    link_sigs: linkSigs,
-  };
-
   const reqUrl = new URL(
     `refreshes/${derived.hash}/reveal`,
     oldCoin.exchangeBaseUrl,
   );
+
+  const req = await assembleRefreshRevealRequest({
+    cryptoApi: ws.cryptoApi,
+    derived,
+    newDenoms: newCoinDenoms,
+    norevealIndex: norevealIndex,
+    oldCoinPriv: oldCoin.coinPriv,
+    oldCoinPub: oldCoin.coinPub,
+  });
 
   const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], async () => {
     return await ws.http.postJson(reqUrl.href, req, {
@@ -629,51 +666,28 @@ async function refreshReveal(
   const coins: CoinRecord[] = [];
 
   for (let i = 0; i < refreshSession.newDenoms.length; i++) {
+    const ncd = newCoinDenoms[i];
     for (let j = 0; j < refreshSession.newDenoms[i].count; j++) {
       const newCoinIndex = coins.length;
-      // FIXME: Look up in earlier transaction!
-      const denom = await ws.db
-        .mktx((x) => ({
-          denominations: x.denominations,
-        }))
-        .runReadOnly(async (tx) => {
-          return tx.denominations.get([
-            oldCoin.exchangeBaseUrl,
-            refreshSession.newDenoms[i].denomPubHash,
-          ]);
-        });
-      if (!denom) {
-        console.error("denom not found");
-        continue;
-      }
       const pc = derived.planchetsForGammas[norevealIndex][newCoinIndex];
-      if (denom.denomPub.cipher !== DenomKeyType.Rsa) {
+      if (ncd.denomPub.cipher !== DenomKeyType.Rsa) {
         throw Error("cipher unsupported");
       }
       const evSig = reveal.ev_sigs[newCoinIndex].ev_sig;
-      let rsaSig: string;
-      if (typeof evSig === "string") {
-        rsaSig = evSig;
-      } else if (evSig.cipher === DenomKeyType.Rsa) {
-        rsaSig = evSig.blinded_rsa_signature;
-      } else {
-        throw Error("unsupported cipher");
-      }
-      const denomSigRsa = await ws.cryptoApi.rsaUnblind(
-        rsaSig,
-        pc.blindingKey,
-        denom.denomPub.rsa_public_key,
-      );
+      const denomSig = await ws.cryptoApi.unblindDenominationSignature({
+        planchet: {
+          blindingKey: pc.blindingKey,
+          denomPub: ncd.denomPub,
+        },
+        evSig,
+      });
       const coin: CoinRecord = {
         blindingKey: pc.blindingKey,
         coinPriv: pc.coinPriv,
         coinPub: pc.coinPub,
-        currentAmount: denom.value,
-        denomPubHash: denom.denomPubHash,
-        denomSig: {
-          cipher: DenomKeyType.Rsa,
-          rsa_signature: denomSigRsa,
-        },
+        currentAmount: ncd.value,
+        denomPubHash: ncd.denomPubHash,
+        denomSig,
         exchangeBaseUrl: oldCoin.exchangeBaseUrl,
         status: CoinStatus.Fresh,
         coinSource: {

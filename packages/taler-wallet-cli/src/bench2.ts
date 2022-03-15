@@ -22,16 +22,20 @@ import {
   codecForNumber,
   codecForString,
   codecOptional,
-  j2s,
   Logger,
 } from "@gnu-taler/taler-util";
 import {
-  getDefaultNodeWallet2,
-  NodeHttpLib,
-  WalletApiOperation,
-  Wallet,
-  AccessStats,
+  checkReserve,
+  createFakebankReserve,
+  CryptoApi,
+  depositCoin,
   downloadExchangeInfo,
+  findDenomOrThrow,
+  generateReserveKeypair,
+  NodeHttpLib,
+  refreshCoin,
+  SynchronousCryptoWorkerFactory,
+  withdrawCoin,
 } from "@gnu-taler/taler-wallet-core";
 
 /**
@@ -44,15 +48,79 @@ export async function runBench2(configJson: any): Promise<void> {
   const logger = new Logger("Bench1");
 
   // Validate the configuration file for this benchmark.
-  const benchConf = codecForBench1Config().decode(configJson);
+  const benchConf = codecForBench2Config().decode(configJson);
+  const curr = benchConf.currency;
+  const cryptoApi = new CryptoApi(new SynchronousCryptoWorkerFactory());
 
-  const myHttpLib = new NodeHttpLib();
-  myHttpLib.setThrottling(false);
+  const http = new NodeHttpLib();
+  http.setThrottling(false);
 
-  const exchangeInfo = await downloadExchangeInfo(
-    benchConf.exchange,
-    myHttpLib,
-  );
+  const numIter = benchConf.iterations ?? 1;
+  const numDeposits = benchConf.deposits ?? 5;
+
+  const reserveAmount = (numDeposits + 1) * 10;
+
+  for (let i = 0; i < numIter; i++) {
+    const exchangeInfo = await downloadExchangeInfo(benchConf.exchange, http);
+
+    const reserveKeyPair = generateReserveKeypair();
+
+    console.log("creating fakebank reserve");
+
+    await createFakebankReserve({
+      amount: `${curr}:${reserveAmount}`,
+      exchangeInfo,
+      fakebankBaseUrl: benchConf.bank,
+      http,
+      reservePub: reserveKeyPair.reservePub,
+    });
+
+    console.log("waiting for reserve");
+
+    await checkReserve(http, benchConf.exchange, reserveKeyPair.reservePub);
+
+    console.log("reserve found");
+
+    const d1 = findDenomOrThrow(exchangeInfo, `${curr}:8`);
+
+    for (let j = 0; j < numDeposits; j++) {
+      console.log("withdrawing coin");
+      const coin = await withdrawCoin({
+        http,
+        cryptoApi,
+        reserveKeyPair,
+        denom: d1,
+        exchangeBaseUrl: benchConf.exchange,
+      });
+
+      console.log("depositing coin");
+
+      await depositCoin({
+        amount: `${curr}:4`,
+        coin: coin,
+        cryptoApi,
+        exchangeBaseUrl: benchConf.exchange,
+        http,
+        depositPayto: benchConf.payto,
+      });
+
+      const refreshDenoms = [
+        findDenomOrThrow(exchangeInfo, `${curr}:1`),
+        findDenomOrThrow(exchangeInfo, `${curr}:1`),
+      ];
+
+      console.log("refreshing coin");
+
+      await refreshCoin({
+        oldCoin: coin,
+        cryptoApi,
+        http,
+        newDenoms: refreshDenoms,
+      });
+
+      console.log("refresh done");
+    }
+  }
 }
 
 /**
@@ -83,18 +151,12 @@ interface Bench2Config {
   currency: string;
 
   deposits?: number;
-
-  /**
-   * How any iterations run until the wallet db gets purged
-   * Defaults to 20.
-   */
-  restartAfter?: number;
 }
 
 /**
  * Schema validation codec for Bench1Config.
  */
-const codecForBench1Config = () =>
+const codecForBench2Config = () =>
   buildCodecForObject<Bench2Config>()
     .property("bank", codecForString())
     .property("payto", codecForString())
@@ -102,5 +164,4 @@ const codecForBench1Config = () =>
     .property("iterations", codecOptional(codecForNumber()))
     .property("deposits", codecOptional(codecForNumber()))
     .property("currency", codecForString())
-    .property("restartAfter", codecOptional(codecForNumber()))
-    .build("Bench1Config");
+    .build("Bench2Config");

@@ -42,6 +42,7 @@ export interface RefreshNewDenomInfo {
   value: AmountJson;
   feeWithdraw: AmountJson;
   denomPub: DenominationPubKey;
+  denomPubHash: string;
 }
 
 /**
