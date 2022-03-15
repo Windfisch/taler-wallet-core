@@ -26,3 +26,4 @@ export {
 export * from "./crypto/workers/nodeThreadWorker.js";
 
 export type { AccessStats } from "@gnu-taler/idb-bridge";
+export * from "./crypto/workers/synchronousWorkerFactory.js";

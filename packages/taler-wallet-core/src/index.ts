@@ -55,4 +55,3 @@ export * from "./bank-api-client.js";
 export * from "./operations/reserves.js";
 export * from "./operations/withdraw.js";
 
-export * from "./crypto/workers/synchronousWorkerFactory.js";
