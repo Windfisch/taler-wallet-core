@@ -24,7 +24,7 @@ rm -rf extension/v2/unpacked
 mkdir -p extension/v2/unpacked
 (cd extension/v2/unpacked && unzip ../$zipfile)
 echo "Packed webextension: extension/v2/$zipfile"
-
+cp -rf src extension/v2/unpacked
 
 vers_manifest=$(jq -r '.version' manifest-v3.json)
 

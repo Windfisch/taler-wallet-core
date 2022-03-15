@@ -15,6 +15,6 @@
  */
 
 export const getReadRequestPermissions = () => ({
-  permissions: ["webRequest"],
+  permissions: ["webRequest", "webRequestBlocking"],
   origins: ["http://*/*", "https://*/*"],
 })
