@@ -52,20 +52,19 @@ export function HistoryPage({
   goToWalletDeposit,
 }: Props): VNode {
   const { i18n } = useTranslationContext();
-  const balance = useAsyncAsHook(wxApi.getBalance);
-  const balanceWithoutError = balance?.hasError
-    ? []
-    : balance?.response.balances || [];
+  const state = useAsyncAsHook(
+    async () => ({
+      b: await wxApi.getBalance(),
+      tx: await wxApi.getTransactions(),
+    }),
+    [NotificationType.WithdrawGroupFinished],
+  );
 
-  const transactionQuery = useAsyncAsHook(wxApi.getTransactions, [
-    NotificationType.WithdrawGroupFinished,
-  ]);
-
-  if (!transactionQuery || !balance) {
+  if (!state) {
     return <Loading />;
   }
 
-  if (transactionQuery.hasError) {
+  if (state.hasError) {
     return (
       <LoadingError
         title={
@@ -73,18 +72,18 @@ export function HistoryPage({
             Could not load the list of transactions
           </i18n.Translate>
         }
-        error={transactionQuery}
+        error={state}
       />
     );
   }
 
   return (
     <HistoryView
-      balances={balanceWithoutError}
+      balances={state.response.b.balances}
       defaultCurrency={currency}
       goToWalletManualWithdraw={goToWalletManualWithdraw}
       goToWalletDeposit={goToWalletDeposit}
-      transactions={[...transactionQuery.response.transactions].reverse()}
+      transactions={[...state.response.tx.transactions].reverse()}
     />
   );
 }
