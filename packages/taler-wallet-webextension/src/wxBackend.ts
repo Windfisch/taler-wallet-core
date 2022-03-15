@@ -319,7 +319,6 @@ try {
 function headerListener(
   details: chrome.webRequest.WebResponseHeadersDetails,
 ): chrome.webRequest.BlockingResponse | undefined {
-  console.log("header listener");
   if (chrome.runtime.lastError) {
     console.error(chrome.runtime.lastError);
     return;
@@ -329,13 +328,11 @@ function headerListener(
     console.warn("wallet not available while handling header");
     return;
   }
-  console.log("in header listener");
   if (
     details.statusCode === 402 ||
     details.statusCode === 202 ||
     details.statusCode === 200
   ) {
-    console.log(`got 402/202 from ${details.url}`);
     for (const header of details.responseHeaders || []) {
       if (header.name.toLowerCase() === "taler") {
         const talerUri = header.value || "";

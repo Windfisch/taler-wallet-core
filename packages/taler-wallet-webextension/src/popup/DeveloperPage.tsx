@@ -20,6 +20,7 @@ import {
   CoinDumpJson,
   ExchangeListItem,
   NotificationType,
+  Timestamp,
   Translate,
 } from "@gnu-taler/taler-util";
 import { PendingTaskInfo } from "@gnu-taler/taler-wallet-core";
@@ -246,7 +247,13 @@ export function View({
             {operations.reverse().map((o) => {
               return (
                 <NotifyUpdateFadeOut key={hashObjectId(o)}>
-                  <dt>{o.type}</dt>
+                  <dt>
+                    {o.type}{" "}
+                    <Time
+                      timestamp={o.timestampDue}
+                      format="yy/MM/dd hh:mm:ss"
+                    />
+                  </dt>
                   <dd>
                     <pre>{JSON.stringify(o, undefined, 2)}</pre>
                   </dd>

@@ -293,11 +293,14 @@ export function WithdrawPageWithParsedURI({
 
   const details = detailsHook.response;
 
-  const onAccept = async (): Promise<void> => {
+  const onAccept = async (accepted: boolean): Promise<void> => {
     if (!exchange) return;
     try {
-      await wxApi.setExchangeTosAccepted(exchange, details.tos.version);
-      setReviewed(true);
+      await wxApi.setExchangeTosAccepted(
+        exchange,
+        accepted ? details.tos.version : undefined,
+      );
+      setReviewed(accepted);
     } catch (e) {
       if (e instanceof Error) {
         //FIXME: uncomment this and display error

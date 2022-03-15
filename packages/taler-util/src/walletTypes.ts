@@ -731,14 +731,14 @@ export const codecForGetWithdrawalDetailsForAmountRequest =
 
 export interface AcceptExchangeTosRequest {
   exchangeBaseUrl: string;
-  etag: string;
+  etag: string | undefined;
 }
 
 export const codecForAcceptExchangeTosRequest =
   (): Codec<AcceptExchangeTosRequest> =>
     buildCodecForObject<AcceptExchangeTosRequest>()
       .property("exchangeBaseUrl", codecForString())
-      .property("etag", codecForString())
+      .property("etag", codecOptional(codecForString()))
       .build("AcceptExchangeTosRequest");
 
 export interface ApplyRefundRequest {

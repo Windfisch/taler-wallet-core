@@ -27,9 +27,10 @@ export function TermsOfServiceSection({
   onReview,
 }: Props): VNode {
   const { i18n } = useTranslationContext();
+  const ableToReviewTermsOfService = onReview !== undefined;
   if (!reviewing) {
     if (!reviewed) {
-      if (!onReview) {
+      if (!ableToReviewTermsOfService) {
         return (
           <Fragment>
             {terms.status === "notfound" && (
@@ -78,7 +79,7 @@ export function TermsOfServiceSection({
     }
     return (
       <Fragment>
-        {onReview && (
+        {ableToReviewTermsOfService && (
           <section>
             <LinkSuccess upperCased onClick={() => onReview(true)}>
               <i18n.Translate>Show terms of service</i18n.Translate>
@@ -96,7 +97,7 @@ export function TermsOfServiceSection({
             }
             onToggle={() => {
               onAccept(!reviewed);
-              if (onReview) onReview(false);
+              if (ableToReviewTermsOfService) onReview(false);
             }}
           />
         </section>
@@ -136,7 +137,7 @@ export function TermsOfServiceSection({
           )}
         </section>
       )}
-      {reviewed && onReview && (
+      {reviewed && ableToReviewTermsOfService && (
         <section>
           <LinkSuccess upperCased onClick={() => onReview(false)}>
             <i18n.Translate>Hide terms of service</i18n.Translate>
@@ -155,7 +156,7 @@ export function TermsOfServiceSection({
             }
             onToggle={() => {
               onAccept(!reviewed);
-              if (onReview) onReview(false);
+              if (ableToReviewTermsOfService) onReview(false);
             }}
           />
         </section>

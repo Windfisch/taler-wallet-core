@@ -478,7 +478,7 @@ class BankServiceBase {
     protected globalTestState: GlobalTestState,
     protected bankConfig: BankConfig,
     protected configFile: string,
-  ) {}
+  ) { }
 }
 
 /**
@@ -920,7 +920,7 @@ export class FakeBankService {
     private globalTestState: GlobalTestState,
     private bankConfig: FakeBankConfig,
     private configFile: string,
-  ) {}
+  ) { }
 
   async start(): Promise<void> {
     this.proc = this.globalTestState.spawnService(
@@ -1175,7 +1175,7 @@ export class ExchangeService implements ExchangeServiceInterface {
     private exchangeConfig: ExchangeConfig,
     private configFilename: string,
     private keyPair: EddsaKeyPair,
-  ) {}
+  ) { }
 
   get name() {
     return this.exchangeConfig.name;
@@ -1276,7 +1276,7 @@ export class ExchangeService implements ExchangeServiceInterface {
             accTargetType,
             `${this.exchangeConfig.currency}:0.01`,
             `${this.exchangeConfig.currency}:0.01`,
-            `${this.exchangeConfig.currency}:0.01`,
+            // `${this.exchangeConfig.currency}:0.01`,
             "upload",
           ],
         );
@@ -1398,7 +1398,7 @@ export class MerchantApiClient {
   constructor(
     private baseUrl: string,
     public readonly auth: MerchantAuthConfiguration,
-  ) {}
+  ) { }
 
   async changeAuth(auth: MerchantAuthConfiguration): Promise<void> {
     const url = new URL("private/auth", this.baseUrl);
@@ -1591,7 +1591,7 @@ export class MerchantService implements MerchantServiceInterface {
     private globalState: GlobalTestState,
     private merchantConfig: MerchantConfig,
     private configFilename: string,
-  ) {}
+  ) { }
 
   private currentTimetravel: Duration | undefined;
 
@@ -1888,10 +1888,8 @@ export class WalletCli {
         const resp = await sh(
           self.globalTestState,
           `wallet-${self.name}`,
-          `taler-wallet-cli ${
-            self.timetravelArg ?? ""
-          } --no-throttle -LTRACE --wallet-db '${
-            self.dbfile
+          `taler-wallet-cli ${self.timetravelArg ?? ""
+          } --no-throttle -LTRACE --wallet-db '${self.dbfile
           }' api '${op}' ${shellWrap(JSON.stringify(payload))}`,
         );
         console.log("--- wallet core response ---");

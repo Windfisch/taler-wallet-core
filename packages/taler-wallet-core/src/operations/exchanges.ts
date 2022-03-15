@@ -363,13 +363,20 @@ async function provideExchangeRecord(
   ws: InternalWalletState,
   baseUrl: string,
   now: Timestamp,
-): Promise<ExchangeRecord> {
+): Promise<{
+  exchange: ExchangeRecord;
+  exchangeDetails: ExchangeDetailsRecord | undefined;
+}> {
+
   return await ws.db
-    .mktx((x) => ({ exchanges: x.exchanges }))
+    .mktx((x) => ({
+      exchanges: x.exchanges,
+      exchangeDetails: x.exchangeDetails,
+    }))
     .runReadWrite(async (tx) => {
-      let r = await tx.exchanges.get(baseUrl);
-      if (!r) {
-        r = {
+      let exchange = await tx.exchanges.get(baseUrl);
+      if (!exchange) {
+        const r = {
           permanent: true,
           baseUrl: baseUrl,
           retryInfo: initRetryInfo(),
@@ -379,8 +386,10 @@ async function provideExchangeRecord(
           nextRefreshCheck: now,
         };
         await tx.exchanges.put(r);
+        exchange = r;
       }
-      return r;
+      const exchangeDetails = await getExchangeDetails(tx, baseUrl);
+      return { exchange, exchangeDetails };
     });
 }
 
@@ -519,33 +528,15 @@ async function updateExchangeFromUrlImpl(
   exchange: ExchangeRecord;
   exchangeDetails: ExchangeDetailsRecord;
 }> {
-  logger.trace(`updating exchange info for ${baseUrl}`);
+  logger.info(`updating exchange info for ${baseUrl}, forced: ${forceNow}`);
   const now = getTimestampNow();
   baseUrl = canonicalizeBaseUrl(baseUrl);
 
-  const r = await provideExchangeRecord(ws, baseUrl, now);
+  const { exchange, exchangeDetails } = await provideExchangeRecord(ws, baseUrl, now);
 
-  if (!forceNow && r && !isTimestampExpired(r.nextUpdate)) {
-    const res = await ws.db
-      .mktx((x) => ({
-        exchanges: x.exchanges,
-        exchangeDetails: x.exchangeDetails,
-      }))
-      .runReadOnly(async (tx) => {
-        const exchange = await tx.exchanges.get(baseUrl);
-        if (!exchange) {
-          return;
-        }
-        const exchangeDetails = await getExchangeDetails(tx, baseUrl);
-        if (!exchangeDetails) {
-          return;
-        }
-        return { exchange, exchangeDetails };
-      });
-    if (res) {
-      logger.info("using existing exchange info");
-      return res;
-    }
+  if (!forceNow && exchangeDetails !== undefined && !isTimestampExpired(exchange.nextUpdate)) {
+    logger.info("using existing exchange info");
+    return { exchange, exchangeDetails };
   }
 
   logger.info("updating exchange /keys info");
@@ -584,6 +575,7 @@ async function updateExchangeFromUrlImpl(
     timeout,
     acceptedFormat,
   );
+  const tosHasBeenAccepted = exchangeDetails?.termsOfServiceAcceptedEtag === tosDownload.tosEtag
 
   let recoupGroupId: string | undefined;
 
@@ -619,7 +611,7 @@ async function updateExchangeFromUrlImpl(
         exchangeBaseUrl: r.baseUrl,
         wireInfo,
         termsOfServiceText: tosDownload.tosText,
-        termsOfServiceAcceptedEtag: undefined,
+        termsOfServiceAcceptedEtag: tosHasBeenAccepted ? tosDownload.tosEtag : undefined,
         termsOfServiceContentType: tosDownload.tosContentType,
         termsOfServiceLastEtag: tosDownload.tosEtag,
         termsOfServiceAcceptedTimestamp: getTimestampNow(),
