@@ -162,10 +162,8 @@ export function View({
             big
           />
         )}
-      </section>
-      {!reviewing && (
-        <section>
-          {switchingExchange ? (
+        {!reviewing &&
+          (switchingExchange ? (
             <Fragment>
               <div>
                 <SelectList
@@ -178,6 +176,7 @@ export function View({
               </div>
               <LinkSuccess
                 upperCased
+                style={{ fontSize: "small" }}
                 onClick={() => {
                   if (nextExchange !== undefined) {
                     onSwitchExchange(nextExchange);
@@ -193,12 +192,15 @@ export function View({
               </LinkSuccess>
             </Fragment>
           ) : (
-            <LinkSuccess upperCased onClick={() => setSwitchingExchange(true)}>
-              <i18n.Translate>Switch exchange</i18n.Translate>
+            <LinkSuccess
+              style={{ fontSize: "small" }}
+              upperCased
+              onClick={() => setSwitchingExchange(true)}
+            >
+              <i18n.Translate>Edit exchange</i18n.Translate>
             </LinkSuccess>
-          )}
-        </section>
-      )}
+          ))}
+      </section>
       <TermsOfServiceSection
         reviewed={reviewed}
         reviewing={reviewing}
