@@ -14,6 +14,7 @@ export function NoBalanceHelp({
         <b>
           <i18n.Translate>You have no balance.</i18n.Translate>
         </b>
+        {" "}
         <i18n.Translate>Withdraw some funds into your wallet.</i18n.Translate>
       </p>
       <ButtonBoxWarning onClick={() => goToWalletManualWithdraw()}>
