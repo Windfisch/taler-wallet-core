@@ -42,4 +42,4 @@ export const WALLET_BANK_INTEGRATION_PROTOCOL_VERSION = "0:0:0";
  *
  * This is only a temporary measure.
  */
-export const WALLET_CACHE_BREAKER_CLIENT_VERSION = "4";
+export const WALLET_CACHE_BREAKER_CLIENT_VERSION = "5";
