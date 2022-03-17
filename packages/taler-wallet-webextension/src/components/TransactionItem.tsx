@@ -70,6 +70,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           id={tx.transactionId}
           amount={tx.amountEffective}
           debitCreditIndicator={"credit"}
+          subtitle={tx.info.summary}
           title={tx.info.merchant.name}
           timestamp={tx.timestamp}
           iconPath={"R"}

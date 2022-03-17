@@ -575,7 +575,6 @@ export function TransactionView({
           kind="neutral"
         />
 
-        <p>{transaction.info.summary}</p>
         <div>
           {transaction.info.products && transaction.info.products.length > 0 && (
             <ListOfProducts>
