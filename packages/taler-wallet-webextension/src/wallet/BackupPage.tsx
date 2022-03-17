@@ -49,22 +49,6 @@ interface Props {
   onAddProvider: () => void;
 }
 
-// interface BackupStatus {
-//   deviceName: string;
-//   providers: ProviderInfo[];
-// }
-
-// async function getBackupInfoOrdered(): BackupStatus {
-//   //create a first list of backup info by currency
-//   const status = await wxApi.getBackupInfo();
-
-//   return { deviceName: status.deviceId, providers };
-// }
-
-// async function sync() {
-//   await wxApi.syncAllProviders();
-// }
-
 export function BackupPage({ onAddProvider }: Props): VNode {
   const { i18n } = useTranslationContext();
   const status = useAsyncAsHook(wxApi.getBackupInfo);

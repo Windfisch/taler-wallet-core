@@ -34,7 +34,7 @@ import { AddNewActionView } from "../wallet/AddNewActionView";
 import * as wxApi from "../wxApi";
 import { NoBalanceHelp } from "./NoBalanceHelp";
 
-interface Props {
+export interface Props {
   goToWalletDeposit: (currency: string) => void;
   goToWalletHistory: (currency: string) => void;
   goToWalletManualWithdraw: () => void;

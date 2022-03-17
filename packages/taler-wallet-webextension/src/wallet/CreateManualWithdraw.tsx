@@ -27,7 +27,6 @@ import { SelectList } from "../components/SelectList";
 import {
   BoldLight,
   ButtonPrimary,
-  ButtonSuccess,
   Centered,
   Input,
   InputWithLabel,
@@ -35,25 +34,21 @@ import {
   LinkPrimary,
 } from "../components/styled";
 import { useTranslationContext } from "../context/translation";
+import { Pages } from "../NavigationBar";
 
 export interface Props {
   error: string | undefined;
   initialAmount?: string;
   exchangeList: Record<string, string>;
   onCreate: (exchangeBaseUrl: string, amount: AmountJson) => Promise<void>;
-  onAddExchange: () => void;
   initialCurrency?: string;
 }
 
-export function CreateManualWithdraw({
-  initialAmount,
-  exchangeList,
-  error,
-  initialCurrency,
-  onCreate,
-  onAddExchange,
-}: Props): VNode {
-  const { i18n } = useTranslationContext();
+export function useComponentState(
+  exchangeList: Record<string, string>,
+  initialAmount: string | undefined,
+  initialCurrency: string | undefined,
+) {
   const exchangeSelectList = Object.keys(exchangeList);
   const currencySelectList = Object.values(exchangeList);
   const exchangeMap = exchangeSelectList.reduce(
@@ -74,10 +69,12 @@ export function CreateManualWithdraw({
       ? exchangeSelectList[foundExchangeForCurrency]
       : exchangeSelectList.length > 0
       ? exchangeSelectList[0]
-      : "";
+      : undefined;
 
   const [exchange, setExchange] = useState(initialExchange || "");
-  const [currency, setCurrency] = useState(exchangeList[initialExchange] ?? "");
+  const [currency, setCurrency] = useState(
+    initialExchange ? exchangeList[initialExchange] : "",
+  );
 
   const [amount, setAmount] = useState(initialAmount || "");
   const parsedAmount = Amounts.parse(`${currency}:${amount}`);
@@ -97,8 +94,49 @@ export function CreateManualWithdraw({
       setExchange("");
     }
   }
+  return {
+    initialExchange,
+    currency: {
+      list: currencyMap,
+      value: currency,
+      onChange: changeCurrency,
+    },
+    exchange: {
+      list: exchangeMap,
+      value: exchange,
+      onChange: changeExchange,
+    },
+    amount: {
+      value: amount,
+      onInput: (e: string) => setAmount(e),
+    },
+    parsedAmount,
+  };
+}
 
-  if (!initialExchange) {
+interface InputHandler {
+  value: string;
+  onInput: (s: string) => void;
+}
+
+interface SelectInputHandler {
+  list: Record<string, string>;
+  value: string;
+  onChange: (s: string) => void;
+}
+
+export function CreateManualWithdraw({
+  initialAmount,
+  exchangeList,
+  error,
+  initialCurrency,
+  onCreate,
+}: Props): VNode {
+  const { i18n } = useTranslationContext();
+
+  const state = useComponentState(exchangeList, initialAmount, initialCurrency);
+
+  if (!state.initialExchange) {
     return (
       <section>
         <h2>
@@ -115,9 +153,12 @@ export function CreateManualWithdraw({
           <BoldLight>
             <i18n.Translate>No exchange configured</i18n.Translate>
           </BoldLight>
-          <ButtonSuccess onClick={onAddExchange}>
-            <i18n.Translate>Add exchange</i18n.Translate>
-          </ButtonSuccess>
+          <LinkPrimary
+            href={Pages.settings_exchange_add}
+            style={{ marginLeft: "auto" }}
+          >
+            <i18n.Translate>Add Exchange</i18n.Translate>
+          </LinkPrimary>
         </Centered>
       </section>
     );
@@ -146,37 +187,38 @@ export function CreateManualWithdraw({
           <Input>
             <SelectList
               label={<i18n.Translate>Currency</i18n.Translate>}
-              list={currencyMap}
               name="currency"
-              value={currency}
-              onChange={changeCurrency}
+              {...state.currency}
             />
           </Input>
           <Input>
             <SelectList
               label={<i18n.Translate>Exchange</i18n.Translate>}
-              list={exchangeMap}
-              name="currency"
-              value={exchange}
-              onChange={changeExchange}
+              name="exchange"
+              {...state.exchange}
             />
           </Input>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <LinkPrimary onClick={onAddExchange} style={{ marginLeft: "auto" }}>
+            <LinkPrimary
+              href={Pages.settings_exchange_add}
+              style={{ marginLeft: "auto" }}
+            >
               <i18n.Translate>Add Exchange</i18n.Translate>
             </LinkPrimary>
           </div>
-          {currency && (
-            <InputWithLabel invalid={!!amount && !parsedAmount}>
+          {state.currency.value && (
+            <InputWithLabel
+              invalid={!!state.amount.value && !state.parsedAmount}
+            >
               <label>
                 <i18n.Translate>Amount</i18n.Translate>
               </label>
               <div>
-                <span>{currency}</span>
+                <span>{state.currency.value}</span>
                 <input
                   type="number"
-                  value={amount}
-                  onInput={(e) => setAmount(e.currentTarget.value)}
+                  value={state.amount.value}
+                  onInput={(e) => state.amount.onInput(e.currentTarget.value)}
                 />
               </div>
             </InputWithLabel>
@@ -186,8 +228,8 @@ export function CreateManualWithdraw({
       <footer>
         <div />
         <ButtonPrimary
-          disabled={!parsedAmount || !exchange}
-          onClick={() => onCreate(exchange, parsedAmount!)}
+          disabled={!state.parsedAmount || !state.exchange.value}
+          onClick={() => onCreate(state.exchange.value, state.parsedAmount!)}
         >
           <i18n.Translate>Start withdrawal</i18n.Translate>
         </ButtonPrimary>

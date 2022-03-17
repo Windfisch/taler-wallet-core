@@ -38,11 +38,8 @@ import { useTalerActionURL } from "./hooks/useTalerActionURL";
 import { strings } from "./i18n/strings";
 import { Pages, PopupNavBar } from "./NavigationBar";
 import { BalancePage } from "./popup/BalancePage";
-import { DeveloperPage } from "./popup/DeveloperPage";
 import { TalerActionFound } from "./popup/TalerActionFound";
 import { BackupPage } from "./wallet/BackupPage";
-import { ExchangeAddPage } from "./wallet/ExchangeAddPage";
-import { ProviderAddPage } from "./wallet/ProviderAddPage";
 import { ProviderDetailPage } from "./wallet/ProviderDetailPage";
 
 function main(): void {

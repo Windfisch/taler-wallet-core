@@ -20,7 +20,7 @@ import { h, VNode } from "preact";
 export type Kind = "positive" | "negative" | "neutral";
 interface Props {
   title: VNode;
-  text: AmountLike;
+  text: VNode | string;
   kind: Kind;
   big?: boolean;
 }

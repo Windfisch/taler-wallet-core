@@ -73,12 +73,6 @@ export function ManualWithdrawPage({ currency, onCancel }: Props): VNode {
     }
   }
 
-  const [addingExchange, setAddingExchange] = useState(false);
-
-  if (addingExchange) {
-    return <ExchangeAddPage onBack={() => setAddingExchange(false)} />;
-  }
-
   if (success) {
     return (
       <ReserveCreated
@@ -117,7 +111,6 @@ export function ManualWithdrawPage({ currency, onCancel }: Props): VNode {
 
   return (
     <CreateManualWithdraw
-      onAddExchange={() => setAddingExchange(true)}
       error={error}
       exchangeList={exchangeList}
       onCreate={doCreate}

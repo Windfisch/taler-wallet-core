@@ -47,6 +47,8 @@ import { Part } from "../components/Part";
 import { QR } from "../components/QR";
 import {
   ButtonSuccess,
+  Link,
+  LinkPrimary,
   LinkSuccess,
   SmallLightText,
   SuccessBox,
@@ -406,6 +408,11 @@ export function PaymentRequestView({
         )}
       </section>
       <ButtonsSection />
+      <section>
+        <Link upperCased>
+          <i18n.Translate>Cancel</i18n.Translate>
+        </Link>
+      </section>
     </WalletAction>
   );
 }

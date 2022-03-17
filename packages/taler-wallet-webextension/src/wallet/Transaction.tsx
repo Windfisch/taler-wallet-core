@@ -369,7 +369,19 @@ export function TransactionView({
         />
         <Part
           title={<i18n.Translate>Purchase</i18n.Translate>}
-          text={transaction.info.summary}
+          text={
+            transaction.info.fulfillmentUrl ? (
+              <a
+                href={transaction.info.fulfillmentUrl}
+                target="_bank"
+                rel="noreferrer"
+              >
+                {transaction.info.summary}
+              </a>
+            ) : (
+              transaction.info.summary
+            )
+          }
           kind="neutral"
         />
         <Part
@@ -542,7 +554,19 @@ export function TransactionView({
         />
         <Part
           title={<i18n.Translate>Purchase</i18n.Translate>}
-          text={transaction.info.summary}
+          text={
+            transaction.info.fulfillmentUrl ? (
+              <a
+                href={transaction.info.fulfillmentUrl}
+                target="_bank"
+                rel="noreferrer"
+              >
+                {transaction.info.summary}
+              </a>
+            ) : (
+              transaction.info.summary
+            )
+          }
           kind="neutral"
         />
         <Part
