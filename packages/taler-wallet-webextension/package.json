@@ -14,7 +14,7 @@
     "compile": "rollup -c -m",
     "prepare": "rollup -c -m",
     "build-storybook": "build-storybook",
-    "storybook": "start-storybook -s . -p 6006",
+    "storybook": "start-storybook -s . -p 6006 --no-open",
     "pretty": "prettier --write src",
     "watch": "tsc --watch & rollup -w -c",
     "i18n:extract": "pogen extract",

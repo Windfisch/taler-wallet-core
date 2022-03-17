@@ -186,6 +186,9 @@ function Application(): VNode {
                 <Route
                   path={Pages.balance_deposit}
                   component={DepositPage}
+                  onCancel={(currency: string) => {
+                    route(Pages.balance_history.replace(":currency", currency));
+                  }}
                   onSuccess={(currency: string) => {
                     route(Pages.balance_history.replace(":currency", currency));
                     setGlobalNotification(

@@ -13,73 +13,73 @@ strings['de'] = {
         "Guthaben"
       ],
       "Backup": [
-        ""
+        "Backup"
       ],
       "Settings": [
-        ""
+        "Einstellungen"
       ],
       "Dev": [
-        ""
+        "Dev"
       ],
       "Loading": [
-        ""
+        "Lädt Daten"
       ],
       "Open reserve page": [
-        ""
+        "Seite der Reserve aufrufen"
       ],
       "Open pay page": [
-        ""
+        "Seite für Zahlungen aufrufen"
       ],
       "Open refund page": [
-        ""
+        "Seite für Rückerstattungen aufrufen"
       ],
       "Open tip page": [
-        ""
+        "Seite der Aufwandsentschädigungen aufrufen"
       ],
       "Open withdraw page": [
-        "Abhebegebühr"
+        "Abhebeseite öffnen"
       ],
       "Back": [
-        ""
+        "Zurück"
       ],
       "You have no balance to show.": [
-        "Sie haben kein Guthaben. Wollen Sie %1$s abheben?"
+        "Es gibt kein Guthaben anzuzeigen."
       ],
       "To withdraw money you can start from your bank site or click the \"withdraw\" button to use a known exchange.": [
-        ""
+        "Zum Abheben von digitalem Geld bitte von der Bank-Seite aus starten oder \"Abheben\" drücken, um einen schon bekannten Exchange zu verwenden."
       ],
       "Withdraw": [
-        "Abgehoben"
+        "Abheben"
       ],
       "Could not load balance page": [
-        ""
+        "Konnte die Umsatzanzeige nicht laden"
       ],
       "Deposit %1$s": [
-        ""
+        "%1$s zahlen"
       ],
       "Enter URI": [
-        ""
+        "URI eingeben"
       ],
       "Diagnostics timed out. Could not talk to the wallet backend.": [
-        ""
+        "Die Diagnostik ist abgeschlossen. Es war keine Kommunikation mit dem Wallet-Backend möglich."
       ],
       "Problems detected:": [
-        ""
+        "Ein Problem wurde festgestellt:"
       ],
       "Please check in your %1$s settings that you have IndexedDB enabled (check the preference name %2$s).": [
-        ""
+        "Bitte prüfen Sie ihre %1$s Einstellungen, für die Sie IndexedDB verwenden (preference name %2$s prüfen)."
       ],
       "Your wallet database is outdated. Currently automatic migration is not supported. Please go %1$s to reset the wallet database.": [
-        ""
+        "Die Datenbank des Wallets ist veraltet. Aktuell wird jedoch keine Migration auf eine neue Version unterstützt. Bitte wählen Sie %1$s zum Zurücksetzen der Wallet-Datenbank."
       ],
       "Running diagnostics": [
-        ""
+        "Diagnostik wird durchgeführt"
       ],
       "Debug tools": [
-        "Debug"
+        "Debugging-Tools"
       ],
       "reset": [
-        ""
+        "zurücksetzen"
       ],
       "import database": [
         ""
@@ -355,7 +355,7 @@ strings['de'] = {
         ""
       ],
       "Manual Withdrawal": [
-        "Abgehoben"
+        "Manuelles Abheben"
       ],
       "Choose a exchange from where the coins will be withdrawn. The exchange will send the coins to this wallet after receiving a wire transfer with the correct subject.": [
         ""
@@ -367,19 +367,19 @@ strings['de'] = {
         ""
       ],
       "Exchange": [
-        ""
+        "Exchange"
       ],
       "Add Exchange": [
         ""
       ],
       "Amount": [
-        ""
+        "Betrag"
       ],
       "Start withdrawal": [
-        ""
+        "Abhebung beginnen"
       ],
       "no balance": [
-        "Guthaben"
+        "Kein Guthaben"
       ],
       "There is no known bank account to send money to": [
         ""
@@ -400,7 +400,7 @@ strings['de'] = {
         ""
       ],
       "Deposit %1$s %2$s": [
-        "Testkonto #%1$s auf %2$s"
+        "Einlösen %1$s %2$s"
       ],
       "Waiting for confirmation": [
         ""
@@ -430,7 +430,7 @@ strings['de'] = {
         ""
       ],
       "Subject": [
-        ""
+        "Verwendungszweck"
       ],
       "could not parse payto uri from exchange %1$s": [
         ""
@@ -517,10 +517,10 @@ strings['de'] = {
         "Bestätigen"
       ],
       "Withdrawal": [
-        "Abgehoben"
+        "Abheben"
       ],
       "Total withdrawn": [
-        "Abgehoben"
+        "Insgesamt abgehoben"
       ],
       "Exchange fee": [
         ""
@@ -532,7 +532,7 @@ strings['de'] = {
         ""
       ],
       "Payment": [
-        "Bezahlung bestätigen"
+        "Zahlung"
       ],
       "Total paid": [
         ""
@@ -634,7 +634,7 @@ strings['de'] = {
         ""
       ],
       "Withdraw digital cash": [
-        "Abhebegebühren:"
+        "Digitales Bargeld abheben"
       ],
       "Merchant message": [
         ""
@@ -697,7 +697,7 @@ strings['de'] = {
         ""
       ],
       "The merchant %1$s is offering you a tip of %2$s via the exchange %3$s": [
-        "Der Händler %1$s bietet Ihnen zum Kauf an:"
+        "Der Händler %1$s bietet Ihnen eine Aufwandsentschädigung von %2$s durch den Exchange %3$s"
       ],
       "Accept tip": [
         ""
@@ -736,7 +736,7 @@ strings['de'] = {
         ""
       ],
       "Withdraw anyway": [
-        "Abgehoben"
+        "Trotzdem abheben"
       ],
       "Could not load the withdrawal details": [
         ""
@@ -809,7 +809,7 @@ strings['en-US'] = {
         "lang": "en-US"
       },
       "Balance": [
-        "Balance"
+        ""
       ],
       "Backup": [
         ""
@@ -842,7 +842,7 @@ strings['en-US'] = {
         ""
       ],
       "You have no balance to show.": [
-        "You have no deposit to show. Need some %1$s getting started?"
+        ""
       ],
       "To withdraw money you can start from your bank site or click the \"withdraw\" button to use a known exchange.": [
         ""
@@ -1004,7 +1004,7 @@ strings['en-US'] = {
         ""
       ],
       "Cancel": [
-        "Abort"
+        ""
       ],
       "Loading terms..": [
         ""
@@ -1178,7 +1178,7 @@ strings['en-US'] = {
         ""
       ],
       "no balance": [
-        "no balance"
+        ""
       ],
       "There is no known bank account to send money to": [
         ""
@@ -1313,7 +1313,7 @@ strings['en-US'] = {
         ""
       ],
       "Confirm": [
-        "Accept"
+        ""
       ],
       "Withdrawal": [
         ""
@@ -1611,7 +1611,7 @@ strings['es'] = {
         "Balance"
       ],
       "Backup": [
-        ""
+        "Copia de seguridad"
       ],
       "Settings": [
         "Configuración"
@@ -1635,19 +1635,19 @@ strings['es'] = {
         "Abrir página de propina"
       ],
       "Open withdraw page": [
-        "Abrir página de extracción"
+        "Abrir página de retirada"
       ],
       "Back": [
-        "Volver"
+        "Atrás"
       ],
       "You have no balance to show.": [
         "No tienes balance para mostrar."
       ],
       "To withdraw money you can start from your bank site or click the \"withdraw\" button to use a known exchange.": [
-        "Para retirar dinero puedes empezar desde el sitio de tu banco o cliquear en el botón \"extraer\" para usar un exchange conocido"
+        "Para retirar dinero puedes empezar desde el sitio de tu banco o cliquear en el botón \"retirar\" para usar un exchange conocido."
       ],
       "Withdraw": [
-        "Extraer"
+        "Retirar"
       ],
       "Could not load balance page": [
         "No se pudo cargar la página"
@@ -1668,7 +1668,7 @@ strings['es'] = {
         "Por favor revisa en tu configuración %1$s que tienes IndexedDB habilitado (el nombre de la preferencia %2$s)."
       ],
       "Your wallet database is outdated. Currently automatic migration is not supported. Please go %1$s to reset the wallet database.": [
-        "La base de datos de la billetera expiró. Por ahora la migración automática no está soportada. Por favor dirijasé a %1$s para reiniciar la base de datos de la billetera"
+        "La base de datos de la billetera expiró. Por ahora la migración automática no está soportada. Por favor dirijasé a %1$s para reiniciar la base de datos de la billetera."
       ],
       "Running diagnostics": [
         "Ejecutando diagnósticos"
@@ -1680,10 +1680,10 @@ strings['es'] = {
         "Reiniciar"
       ],
       "import database": [
-        "Importar base de datos"
+        "importar base de datos"
       ],
       "export database": [
-        "Exportar base de datos"
+        "exportar base de datos"
       ],
       "Database exported at %1$s %2$s to download": [
         "Base de datos exportada a %1$s %2$s para descargar"
@@ -1716,7 +1716,7 @@ strings['es'] = {
         "monedas gastadas"
       ],
       "click to show": [
-        "cliquear para mostrar"
+        "hacer clic para mostrar"
       ],
       "Do you want to IRREVOCABLY DESTROY everything inside your wallet and LOSE ALL YOUR COINS?": [
         "Quieres DESTRUIR IRREVOCABLEMENTE todo dentro de tu billetera y PERDER TODAS TUS MONEDAS?"
@@ -1725,10 +1725,10 @@ strings['es'] = {
         "Acción Taler"
       ],
       "This page has pay action.": [
-        "Esta página tiene una acción."
+        "Esta página tiene una acción de pago."
       ],
       "This page has a withdrawal action.": [
-        "Esta página tiene una acción de extracción."
+        "Esta página tiene una acción de retirada."
       ],
       "This page has a tip action.": [
         "Esta página tiene una acción de propina."
@@ -1740,28 +1740,28 @@ strings['es'] = {
         "Notificar"
       ],
       "This page has a refund action.": [
-        "Esta página tiene una acción de devolución"
+        "Esta página tiene una acción de devolución."
       ],
       "This page has a malformed taler uri.": [
-        "Esta página tiene una URI de Taler malformada"
+        "Esta página tiene una URI de Taler malformada."
       ],
       "Dismiss": [
-        "Desechar"
+        "Descartar"
       ],
       "Could not load backup providers": [
-        "No se pudo cargar los proveedores de backup"
+        "No se pudo cargar los proveedores de copias de seguridad"
       ],
       "No backup providers configured": [
-        "No hay proveedores de backup configurados"
+        "No hay proveedores de copias de seguridad configurados"
       ],
       "Add provider": [
         "Agregar proveedor"
       ],
       "Sync all backups": [
-        "Sincronizar todos los backups"
+        "Sincronizar todas las copias de seguridad"
       ],
       "Sync now": [
-        "Syncronizar ahora"
+        "Sincronizar ahora"
       ],
       "Last synced": [
         "Ultima vez sincronizado"
@@ -1773,31 +1773,31 @@ strings['es'] = {
         "Expira en"
       ],
       "Exchange doesn't have terms of service": [
-        "Exchange no tiene terminos de service"
+        "El exchange no tiene los términos de servicio"
       ],
       "Review exchange terms of service": [
-        "Revizar terminos de servicio"
+        "Revisar los términos de servicio"
       ],
       "Review new version of terms of service": [
-        "Revisar los nuevos terminos de servicio"
+        "Revisar los nuevos términos de servicio"
       ],
       "Show terms of service": [
-        "Mostrar terminos de servicio"
+        "Mostrar términos de servicio"
       ],
       "I accept the exchange terms of service": [
-        "Acepto los terminos de servicio del exchange"
+        "Yo acepto los términos de servicio del exchange"
       ],
       "The exchange reply with a empty terms of service": [
-        "El exchange respondió con unos terminos de servicio vacíos"
+        "El exchange respondió con unos términos de servicio vacíos"
       ],
       "Download Terms of Service": [
-        "Descargar los terminos de servicio"
+        "Descargar los términos de servicio"
       ],
       "Hide terms of service": [
-        "Escoder los terminos de servicio"
+        "Esconder los términos de servicio"
       ],
       "Review terms of service": [
-        "Revizar los terminos de servicio"
+        "Revisar los términos de servicio"
       ],
       "Exchange URL": [
         "Exchange URL"
@@ -1806,7 +1806,7 @@ strings['es'] = {
         "Cancelar"
       ],
       "Loading terms..": [
-        "Cargando terminos..."
+        "Cargando términos..."
       ],
       "Add exchange": [
         "Agregar exchange"
@@ -1821,13 +1821,13 @@ strings['es'] = {
         "Agregar exchange para %1$s"
       ],
       "Enter the URL of an exchange you trust.": [
-        "Ingresar la URL de un exchange que tu confíes."
+        "Ingresar la URL de un exchange en el que confíes."
       ],
       "An exchange has been found! Review the information and click next": [
-        "Un exchange ha sido encontrado! Revisa la información y cliquea en siguente"
+        "Un exchange ha sido encontrado! Revisa la información y haz clic en siguiente"
       ],
       "This exchange doesn't match the expected currency %1$s": [
-        "Este exchange no es para la divisa %1$s"
+        "Este exchange no coincide con la divisa %1$s esperada"
       ],
       "Unable to verify this exchange": [
         "No fue posible verificar este exchange"
@@ -1848,13 +1848,13 @@ strings['es'] = {
         "Siguiente"
       ],
       "Add backup provider": [
-        "Agregar proveedor de backup"
+        "Agregar proveedor de copias de seguridad"
       ],
       "Could not get provider information": [
-        "No se puedo conseguir la información del proveedor"
+        "No se pudo conseguir la información del proveedor"
       ],
       "Backup providers may charge for their service": [
-        "Provedores de backup pueden pueden cobrarte por su servicio"
+        "Los proveedores de copias de seguridad pueden cobrarte por su servicio"
       ],
       "URL": [
         "URL"
@@ -1866,7 +1866,7 @@ strings['es'] = {
         "URL del proveedor"
       ],
       "Please review and accept this provider's terms of service": [
-        "Por favor revisa y acepta los terminos de servicio del proveedor"
+        "Por favor revisa y acepta, los términos de servicio del proveedor"
       ],
       "Pricing": [
         "Precios"
@@ -1884,19 +1884,19 @@ strings['es'] = {
         "%1$s megabytes de almacenamiento por año de servicio"
       ],
       "Accept terms of service": [
-        "Aceptar terminos de servicio"
+        "Aceptar los términos de servicio"
       ],
       "There was an error loading the provider detail for \"%1$s\"": [
         "Hubo un error cargando los detalles del proveedor para \"%1$s\""
       ],
       "There is not known provider with url \"%1$s\".": [
-        "No hay proveedor conocido con url \"%1$s\"."
+        "No hay proveedor conocido con la URL \"%1$s\"."
       ],
       "Last backup": [
-        "Último backup"
+        "Última copia de seguridad"
       ],
       "Back up": [
-        "Backup"
+        "Copia de seguridad"
       ],
       "Provider fee": [
         "Tarifa del proveedor"
@@ -1908,7 +1908,7 @@ strings['es'] = {
         "Extender"
       ],
       "terms has changed, extending the service will imply accepting the new terms of service": [
-        "los terminos han cambiado, extender el servicio implicará aceptar los nuevos terminos de servicio"
+        "los términos han cambiado, extender el servicio implicará aceptar los nuevos términos de servicio"
       ],
       "old": [
         "viejo"
@@ -1932,37 +1932,37 @@ strings['es'] = {
         "Este proveedor ha reportado un error"
       ],
       "There is conflict with another backup from %1$s": [
-        "Hubo un conflicto con otro backup de %1$s"
+        "Hay un conflicto con otra copia de seguridad de %1$s"
       ],
       "Backup is not readable": [
-        "El backup no se puede leer"
+        "La copia de seguridad no es legible"
       ],
       "Unknown backup problem: %1$s": [
-        "Problema de backup desconocido: %1$s"
+        "Problema de copia de seguridad desconocido: %1$s"
       ],
       "service paid": [
         "servicio pagado"
       ],
       "Backup valid until": [
-        "Backup valido hasta"
+        "Copia de seguridad válida hasta"
       ],
       "this popup is being closed and you are being redirected to %1$s": [
-        "Este popup se cerrará y estás siendo redirijido a %1$s"
+        "Este popup está siendo cerrado y estás siendo redirigido a %1$s"
       ],
       "Select one option": [
         "Seleccione una opción"
       ],
       "Manual Withdrawal": [
-        "Extracción Manual"
+        "Retirada Manual"
       ],
       "Choose a exchange from where the coins will be withdrawn. The exchange will send the coins to this wallet after receiving a wire transfer with the correct subject.": [
-        "Elija un exchange desde donde las monedas serán extraídas. El exchange enviará las monedas a esta billetera después de recibir una transferencia con el asunto correcto."
+        "Elija un exchange desde donde las monedas serán retiradas. El exchange enviará las monedas a esta billetera después de recibir una transferencia bancaria con el asunto correcto."
       ],
       "No exchange configured": [
         "Sin exchange configurado"
       ],
       "Can't create the reserve": [
-        "No se pudo create una reserva"
+        "No se pudo crear una reserva"
       ],
       "Exchange": [
         "Exchange"
@@ -1971,16 +1971,16 @@ strings['es'] = {
         "Agregar Exchange"
       ],
       "Amount": [
-        "Monto"
+        "Cantidad"
       ],
       "Start withdrawal": [
-        "Comenzar extracción"
+        "Comenzar la retirada"
       ],
       "no balance": [
         "sin balance"
       ],
       "There is no known bank account to send money to": [
-        "No hay cuenta bancaria conocida donde enviar el dinero"
+        "No hay una cuenta bancaria conocida, donde enviar el dinero"
       ],
       "Send %1$s to your account": [
         "Enviar %1$s a tu cuenta"
@@ -1989,10 +1989,10 @@ strings['es'] = {
         "Número IBAN de cuenta bancaria"
       ],
       "Deposit fee": [
-        "Taria de depósito"
+        "Comisión de depósito"
       ],
       "Total deposit": [
-        "Deposito total"
+        "Depósito total"
       ],
       "Deposit": [
         "Depósito"
@@ -2016,7 +2016,7 @@ strings['es'] = {
         "Cuenta"
       ],
       "Bank host": [
-        "Host del banco"
+        "Banco anfitrión"
       ],
       "Bank account": [
         "Cuenta del banco"
@@ -2025,43 +2025,43 @@ strings['es'] = {
         "IBAN"
       ],
       "Chosen amount": [
-        "Elegir monto"
+        "Elegir cantidad"
       ],
       "Subject": [
         "Asunto"
       ],
       "could not parse payto uri from exchange %1$s": [
-        "No se pudo analizar la URI payto del exchange %1$s"
+        "No se pudo analizar la URI pagar-a del exchange %1$s"
       ],
       "Exchange is ready for withdrawal": [
-        "El exchange está listo para la extracción"
+        "El exchange está listo para la retirada"
       ],
       "To complete the process you need to wire %1$s to the exchange bank account": [
-        "Para completar el proceso necesitas enviar %1$s a la cuenta bancaria del exchange"
+        "Para completar el proceso necesitas transferir %1$s a la cuenta bancaria del exchange"
       ],
       "Make sure to use the correct subject, otherwise the money will not arrive in this wallet.": [
-        "Asegurate de usar el asunto correcto, de otra manera el dinero no llegará a esta billetera"
+        "Asegúrate de usar el asunto correcto, de lo contrario el dinero no llegará a esta billetera."
       ],
       "Alternative, you can also scan this QR code or open %1$s if you have a banking app installed that supports RFC 8905": [
-        "Alternativamente, también puedes escanear el código QR o abrir %1$s si tienes una aplicación bancaria instalada que soporta RFC 8905"
+        "Alternativamente, también puedes escanear el código QR o abrir %1$s si tienes una App bancaria instalada que soporta RFC 8905"
       ],
       "Cancel withdrawal": [
-        "Cancelar extracción"
+        "Cancelar retirada"
       ],
       "Display": [
         "Pantalla"
       ],
       "Current Language": [
-        "Lenguage actual"
+        "Lenguaje actual"
       ],
       "Navigator": [
         "Navegador"
       ],
       "Automatically open wallet based on page content": [
-        "Abrir automáticamente la billetera basado en el contenido de la página"
+        "Abrir automáticamente la billetera basada en el contenido de la página"
       ],
       "Enabling this option below will make using the wallet faster, but requires more permissions from your browser.": [
-        "Habilitar esta opción debajo hará el uso de la billetera mas rápido, pero requiere mas permisos de tu navegador"
+        "Habilitar la opción de debajo, hará que el uso de la billetera sea mas rápido, pero requiere más permisos de tu navegador."
       ],
       "Trust": [
         "Confianza"
@@ -2070,7 +2070,7 @@ strings['es'] = {
         "No hay exchanges todavía"
       ],
       "Term of Service": [
-        "Terminos de servicio"
+        "Términos de servicio"
       ],
       "ok": [
         "ok"
@@ -2088,7 +2088,7 @@ strings['es'] = {
         "Modo desarrollador"
       ],
       "(More options and information useful for debugging)": [
-        "(Mas información y opciones útiles para depuración)"
+        "(Más información y opciones útiles para depuración)"
       ],
       "Could not load the transaction information": [
         "No se pudo cargar información de la transacción"
@@ -2097,7 +2097,7 @@ strings['es'] = {
         "Hubo un error intentando completar la transacción"
       ],
       "This transaction is not completed": [
-        "Esta tansacción no está completa"
+        "Esta transacción no está completada"
       ],
       "Retry": [
         "Reintentar"
@@ -2109,19 +2109,19 @@ strings['es'] = {
         "Cuidado!"
       ],
       "If you have already wired money to the exchange you will loose the chance to get the coins form it.": [
-        "Si ya has transferido dinero al exchange perderas la oportunidad de recivir las monedas"
+        "Si tú ya has transferido dinero al exchange, perderás la oportunidad de recibir las monedas desde este."
       ],
       "Confirm": [
         "Confirmar"
       ],
       "Withdrawal": [
-        "Extracción"
+        "Retirada"
       ],
       "Total withdrawn": [
-        "Total extraido"
+        "Total extraído"
       ],
       "Exchange fee": [
-        "Tarifa del exchange"
+        "Comisión del exchange"
       ],
       "The bank is waiting for confirmation. Go to the %1$s": [
         "El banco espera la confirmación. Dirigete a %1$s"
@@ -2136,10 +2136,10 @@ strings['es'] = {
         "Total pagado"
       ],
       "Purchase amount": [
-        "Monto de compra"
+        "Importe de la compra"
       ],
       "Fee": [
-        "Tarifa"
+        "Comisión"
       ],
       "Merchant": [
         "Comerciante"
@@ -2154,7 +2154,7 @@ strings['es'] = {
         "Total enviado"
       ],
       "Deposit amount": [
-        "Monto a depositar"
+        "Cantidad a depositar"
       ],
       "Refresh": [
         "Actualizar"
@@ -2163,7 +2163,7 @@ strings['es'] = {
         "Actualización total"
       ],
       "Refresh amount": [
-        "Monto de actualización"
+        "Refrescar cantidad"
       ],
       "Tip": [
         "Propina"
@@ -2172,7 +2172,7 @@ strings['es'] = {
         "Total de propina"
       ],
       "Received amount": [
-        "Monto recibido"
+        "Cantidad recibida"
       ],
       "Refund": [
         "Devolución"
@@ -2181,7 +2181,7 @@ strings['es'] = {
         "Devolución total"
       ],
       "Refund amount": [
-        "Monto de devolución"
+        "Importe de la devolución"
       ],
       "Browser Extension Installed!": [
         "Extensión del navegador instalada!"
@@ -2193,7 +2193,7 @@ strings['es'] = {
         "Permisos"
       ],
       "(Enabling this option below will make using the wallet faster, but requires more permissions from your browser.)": [
-        "(Habilitar esta opción debajo hará el uso de la billetera mas rápido, pero requiere mas permisos de tu navegador)"
+        "(Habilitar esta opción de abajo hará el uso de la billetera mas rápido, pero requiere mas permisos de tu navegador)"
       ],
       "Next Steps": [
         "Próximos pasos"
@@ -2208,7 +2208,7 @@ strings['es'] = {
         "No se pudo cargar el estado del pago"
       ],
       "Could not load contract terms from merchant or wallet backend.": [
-        "No se pudo cargar los terminos de contrato del comerciante o de la billetera."
+        "No se pudieron cargar los términos de contrato del comerciante o de la billetera."
       ],
       "Pay with a mobile phone": [
         "Pagar con un teléfono móbil"
@@ -2232,7 +2232,7 @@ strings['es'] = {
         "Tu balance no es suficiente para pagar esta compra."
       ],
       "Withdraw digital cash": [
-        "Extraer dinero digital"
+        "Retirar dinero digital"
       ],
       "Merchant message": [
         "Mensaje del comerciante"
@@ -2250,10 +2250,10 @@ strings['es'] = {
         "Ya reclamado"
       ],
       "Payment complete": [
-        "Pago completo"
+        "Pago completado"
       ],
       "You are going to be redirected to $ %1$s": [
-        "Estas siendo redirigido a %1$s"
+        "Vas a ser redirigido a %1$s"
       ],
       "You can close this page.": [
         "Puedes cerrar esta página."
@@ -2274,13 +2274,13 @@ strings['es'] = {
         "Estado del reembolso"
       ],
       "The product %1$s has received a total effective refund of": [
-        "El producto %1$s ha recibido un total efectivo de"
+        "El producto %1$s ha recibido un reembolso total efectivo de"
       ],
       "Refund processing is still in progress.": [
-        "El proceso de reembolso está todavía en progreso"
+        "El proceso de reembolso está todavía en progreso."
       ],
       "The refund amount of %1$s could not be applied.": [
-        "El monto del reembolso de %1$s no pudo ser aplicado."
+        "El importe del reembolso de %1$s no pudo ser aplicado."
       ],
       "missing taler refund uri": [
         "falta la URI Taler de reembolso"
@@ -2292,10 +2292,10 @@ strings['es'] = {
         "Actualizando el estado de reembolso"
       ],
       "Tip from %1$s accepted. Check your transactions list for more details.": [
-        "Propina de %1$s aceptada. Revisa tu lista de transacciones para mas detalle."
+        "Propina de %1$s aceptada. Revisa tu lista de transacciones para más detalle."
       ],
       "The merchant %1$s is offering you a tip of %2$s via the exchange %3$s": [
-        "El comerciante %1$s está ofreciendo una propina de %2$s usando el exchange %3$s"
+        "El comerciante %1$s te está ofreciendo una propina de %2$s a través del exchange %3$s"
       ],
       "Accept tip": [
         "Aceptar propina"
@@ -2304,43 +2304,43 @@ strings['es'] = {
         "Ignorar"
       ],
       "missing tip uri": [
-        "URI de propina faltante"
+        "falta la URI de la propina"
       ],
       "You've ignored the tip.": [
-        "Has ignorado la propina"
+        "Has ignorado la propina."
       ],
       "Digital cash withdrawal": [
-        "Extracción de dinero digital"
+        "Retirada de dinero digital"
       ],
       "Could not finish the withdrawal operation": [
-        "No se pudo completar la operación de extracción"
+        "No se pudo completar la operación de retirada"
       ],
       "Total to withdraw": [
-        "Total a extraer"
+        "Total a retirar"
       ],
       "Known exchanges": [
         "Exchange conocidos"
       ],
       "Cancel exchange selection": [
-        "Cancelar selección de exchange"
+        "Cancelar la selección de exchange"
       ],
       "Confirm exchange selection": [
-        "Confirmar selección de exchange"
+        "Confirmar la selección de exchange"
       ],
       "Switch exchange": [
         "Cambiar exchange"
       ],
       "Confirm withdrawal": [
-        "Confirmar extracción"
+        "Confirmar retirada"
       ],
       "Withdraw anyway": [
-        "Extraer de todas maneras"
+        "Retirar de todas maneras"
       ],
       "Could not load the withdrawal details": [
-        "No se pudo cargar los detalles de extracción"
+        "No se pudieron cargar los detalles de la retirada"
       ],
       "missing withdraw uri": [
-        "URI de extracción faltante"
+        "falta la URI de retirada"
       ],
       "Could not get the info from the URI": [
         "No se pudo obtener la información desde la URI"
@@ -2355,7 +2355,7 @@ strings['es'] = {
         "Editar"
       ],
       "missing pay uri": [
-        "URI de pago faltante"
+        "falta la URI de pago"
       ],
       "Could not get the payment information for this order": [
         "No se pudo obtener la información de pago para esta orden"
@@ -2364,19 +2364,19 @@ strings['es'] = {
         "Cargado la información de pago"
       ],
       "Digital cash deposit": [
-        "Deposito de dinero digital"
+        "Depósito de dinero digital"
       ],
       "You will now be sent back to the merchant you came from.": [
-        "Ahora serás enviado otra vez al sitio del comerciante"
+        "Ahora serás enviado de nuevo al comerciante desde donde viniste."
       ],
       "Manual Reset Required": [
         "Reinicio Manual Necesario"
       ],
       "The wallet&apos;s database in your browser is incompatible with the currently installed wallet. Please reset manually.": [
-        "La base de datos de billetera en tu navegador es incompatible con la billetera instalada actualmente. Por favor reinicie manualmente"
+        "La base de datos de billetera en tu navegador es incompatible con la billetera instalada actualmente. Por favor reinicie manualmente."
       ],
       "Once the database format has stabilized, we will provide automatic upgrades.": [
-        "Una vez que el formato de la base de datos esté estabilizzado, proveeremos de actualizaciones automáticas"
+        "Una vez que el formato de la base de datos se haya estabilizado, proveeremos de actualizaciones automáticas."
       ],
       "I understand that I will lose all my data": [
         "Entiendo que perderé toda mi información"
@@ -2391,7 +2391,7 @@ strings['es'] = {
         "Un reinicio ya no es necesario, puede cerrar esta página."
       ],
       "Not implemented yet.": [
-        "Todavía no implementado"
+        "Todavía no implementado."
       ]
     }
   }
@@ -5606,25 +5606,25 @@ strings['tr'] = {
         "Bakiye"
       ],
       "Backup": [
-        ""
+        "Yedek"
       ],
       "Settings": [
-        ""
+        "Ayarlar"
       ],
       "Dev": [
-        ""
+        "Gelişim"
       ],
       "Loading": [
-        ""
+        "Yükleniyor"
       ],
       "Open reserve page": [
-        ""
+        "Rezerv sayfasını açın"
       ],
       "Open pay page": [
-        ""
+        "Ödeme sayfasını açın"
       ],
       "Open refund page": [
-        ""
+        "Geri ödeme sayfasını açın"
       ],
       "Open tip page": [
         ""
@@ -5960,7 +5960,7 @@ strings['tr'] = {
         ""
       ],
       "Exchange": [
-        ""
+        "Exchange"
       ],
       "Add Exchange": [
         ""
@@ -6134,7 +6134,7 @@ strings['tr'] = {
         ""
       ],
       "Fee": [
-        "Ücretler "
+        "Ücretler"
       ],
       "Merchant": [
         ""

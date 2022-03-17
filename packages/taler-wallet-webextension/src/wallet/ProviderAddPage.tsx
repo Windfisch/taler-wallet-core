@@ -160,7 +160,7 @@ export function SetUrlView({
       </section>
       <footer>
         <Button onClick={onCancel}>
-          &lt; <i18n.Translate>Back</i18n.Translate>
+          <i18n.Translate>Cancel</i18n.Translate>
         </Button>
         <ButtonPrimary
           disabled={!value && !urlError}
@@ -240,7 +240,7 @@ export function ConfirmProviderView({
       </section>
       <footer>
         <Button onClick={onCancel}>
-          &lt; <i18n.Translate>Back</i18n.Translate>
+          <i18n.Translate>Cancel</i18n.Translate>
         </Button>
         <ButtonPrimary disabled={!accepted} onClick={onConfirm}>
           <i18n.Translate>Add provider</i18n.Translate>

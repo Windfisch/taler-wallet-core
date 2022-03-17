@@ -26,6 +26,7 @@ import { useEffect, useState } from "preact/hooks";
 import { Loading } from "../components/Loading";
 import { SelectList } from "../components/SelectList";
 import {
+  Button,
   ButtonBoxWarning,
   ButtonPrimary,
   ErrorText,
@@ -39,9 +40,10 @@ import * as wxApi from "../wxApi";
 
 interface Props {
   currency: string;
+  onCancel: (currency: string) => void;
   onSuccess: (currency: string) => void;
 }
-export function DepositPage({ currency, onSuccess }: Props): VNode {
+export function DepositPage({ currency, onCancel, onSuccess }: Props): VNode {
   const state = useAsyncAsHook(async () => {
     const balance = await wxApi.getBalance();
     const bs = balance.balances.filter((b) => b.available.startsWith(currency));
@@ -79,6 +81,7 @@ export function DepositPage({ currency, onSuccess }: Props): VNode {
 
   return (
     <View
+      onCancel={onCancel}
       knownBankAccounts={accounts}
       balance={currencyBalance}
       onSend={doSend}
@@ -90,6 +93,7 @@ export function DepositPage({ currency, onSuccess }: Props): VNode {
 interface ViewProps {
   knownBankAccounts: Array<PaytoUri>;
   balance: AmountJson;
+  onCancel: (currency: string) => void;
   onSend: (account: string, amount: AmountString) => Promise<void>;
   onCalculateFee: (
     account: string,
@@ -98,6 +102,7 @@ interface ViewProps {
 }
 
 export function View({
+  onCancel,
   knownBankAccounts,
   balance,
   onSend,
@@ -142,16 +147,23 @@ export function View({
   }
   if (!knownBankAccounts || !knownBankAccounts.length) {
     return (
-      <WarningBox>
-        <p>
-          <i18n.Translate>
-            There is no known bank account to send money to
-          </i18n.Translate>
-        </p>
-        <ButtonBoxWarning>
-          <i18n.Translate>Withdraw</i18n.Translate>
-        </ButtonBoxWarning>
-      </WarningBox>
+      <Fragment>
+        <WarningBox>
+          <p>
+            <i18n.Translate>
+              There is no known bank account to send money to
+            </i18n.Translate>
+          </p>
+          <ButtonBoxWarning>
+            <i18n.Translate>Withdraw</i18n.Translate>
+          </ButtonBoxWarning>
+        </WarningBox>
+        <footer>
+          <Button onClick={() => onCancel(currency)}>
+            <i18n.Translate>Cancel</i18n.Translate>
+          </Button>
+        </footer>
+      </Fragment>
     );
   }
   const parsedAmount =
@@ -242,7 +254,9 @@ export function View({
         }
       </section>
       <footer>
-        <div />
+        <Button onClick={() => onCancel(currency)}>
+          <i18n.Translate>Cancel</i18n.Translate>
+        </Button>
         {unableToDeposit ? (
           <ButtonPrimary disabled>
             <i18n.Translate>Deposit</i18n.Translate>

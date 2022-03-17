@@ -31,7 +31,7 @@ msgstr ""
 #: src/NavigationBar.tsx:70
 #, c-format
 msgid "Balance"
-msgstr "Balance"
+msgstr ""
 
 #: src/NavigationBar.tsx:73
 #, c-format
@@ -86,7 +86,7 @@ msgstr ""
 #: src/popup/NoBalanceHelp.tsx:14
 #, fuzzy, c-format
 msgid "You have no balance to show."
-msgstr "You have no deposit to show. Need some %1$s getting started?"
+msgstr ""
 
 #: src/popup/NoBalanceHelp.tsx:17
 #, c-format
@@ -364,7 +364,7 @@ msgstr ""
 #: src/wallet/ExchangeAddConfirm.tsx:112
 #, c-format
 msgid "Cancel"
-msgstr "Abort"
+msgstr ""
 
 #: src/wallet/ExchangeAddConfirm.tsx:116
 #, c-format
@@ -659,7 +659,7 @@ msgstr ""
 #: src/wallet/DepositPage.tsx:138
 #, fuzzy, c-format
 msgid "no balance"
-msgstr "no balance"
+msgstr ""
 
 #: src/wallet/DepositPage.tsx:146
 #, c-format
@@ -893,7 +893,7 @@ msgstr ""
 #: src/wallet/Transaction.tsx:211
 #, c-format
 msgid "Confirm"
-msgstr "Accept"
+msgstr ""
 
 #: src/wallet/Transaction.tsx:218
 #, c-format
@@ -1367,4 +1367,4 @@ msgstr ""
 
 #, fuzzy
 #~ msgid "DEBUG: Your balance on %1$s is %2$s KUDO. Get more at %3$s"
-#~ msgstr "DEBUG: Your balance is %2$s KUDO on %1$s. Get more at %3$s"
+#~ msgstr ""

@@ -115,7 +115,7 @@ export function ProviderView({
         </section>
         <footer>
           <Button onClick={onBack}>
-            &lt; <i18n.Translate>Back</i18n.Translate>
+            <i18n.Translate>See providers</i18n.Translate>
           </Button>
           <div />
         </footer>
@@ -209,7 +209,7 @@ export function ProviderView({
       </section>
       <footer>
         <Button onClick={onBack}>
-          &lt; <i18n.Translate>back</i18n.Translate>
+          <i18n.Translate>See providers</i18n.Translate>
         </Button>
         <div>
           <ButtonDestructive onClick={onDelete}>

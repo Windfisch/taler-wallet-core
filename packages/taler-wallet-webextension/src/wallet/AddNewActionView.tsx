@@ -34,7 +34,7 @@ export function AddNewActionView({ onCancel }: Props): VNode {
       </section>
       <footer>
         <Button onClick={onCancel}>
-          <i18n.Translate>Back</i18n.Translate>
+          <i18n.Translate>Cancel</i18n.Translate>
         </Button>
         {uriType !== TalerUriType.Unknown && (
           <ButtonSuccess

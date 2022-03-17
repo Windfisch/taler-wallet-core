@@ -162,9 +162,7 @@ export function TransactionView({
           <div style={{ textAlign: "center" }}>{children}</div>
         </section>
         <footer>
-          <Button onClick={onBack}>
-            &lt; <i18n.Translate> Back </i18n.Translate>
-          </Button>
+          <div />
           <div>
             {showRetry ? (
               <ButtonPrimary onClick={onRetry}>
