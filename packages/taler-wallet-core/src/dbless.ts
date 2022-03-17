@@ -41,10 +41,10 @@ import {
   ExchangeProtocolVersion,
   ExchangeWithdrawRequest,
   getRandomBytes,
-  getTimestampNow,
   hashWire,
   Logger,
   parsePaytoUri,
+  Timestamp,
   UnblindedSignature,
 } from "@gnu-taler/taler-util";
 import { DenominationRecord } from "./db.js";
@@ -223,8 +223,9 @@ export async function depositCoin(args: {
     args.depositPayto ?? "payto://x-taler-bank/localhost/foo";
   const wireSalt = encodeCrock(getRandomBytes(16));
   const contractTermsHash = encodeCrock(getRandomBytes(64));
-  const depositTimestamp = getTimestampNow();
-  const refundDeadline = getTimestampNow();
+  const depositTimestamp = Timestamp.truncateToSecond(Timestamp.now());
+  const refundDeadline = Timestamp.truncateToSecond(Timestamp.now());
+  const wireTransferDeadline = Timestamp.truncateToSecond(Timestamp.now());
   const merchantPub = encodeCrock(getRandomBytes(32));
   const dp = await cryptoApi.signDepositPermission({
     coinPriv: coin.coinPriv,
@@ -248,7 +249,7 @@ export async function depositCoin(args: {
     h_contract_terms: contractTermsHash,
     ub_sig: coin.denomSig,
     timestamp: depositTimestamp,
-    wire_transfer_deadline: getTimestampNow(),
+    wire_transfer_deadline: wireTransferDeadline,
     refund_deadline: refundDeadline,
     coin_sig: dp.coin_sig,
     denom_pub_hash: dp.h_denom,

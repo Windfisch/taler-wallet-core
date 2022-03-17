@@ -87,6 +87,7 @@ export namespace Timestamp {
   export const now = getTimestampNow;
   export const min = timestampMin;
   export const isExpired = isTimestampExpired;
+  export const truncateToSecond = timestampTruncateToSecond;
 }
 
 export function timestampMin(t1: Timestamp, t2: Timestamp): Timestamp {
