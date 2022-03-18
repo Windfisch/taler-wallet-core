@@ -14,8 +14,8 @@ export function setupI18n(lang: string, strings: { [s: string]: any }): any {
   lang = lang.replace("_", "-");
 
   if (!strings[lang]) {
-    lang = "en-US";
-    logger.warn(`language ${lang} not found, defaulting to english`);
+    strings[lang] = {}
+    logger.warn(`language ${lang} not found, defaulting to source strings`);
   }
   jed = new jedLib.Jed(strings[lang]);
 }
