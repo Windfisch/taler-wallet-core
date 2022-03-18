@@ -1,6 +1,6 @@
 import { ComponentChildren, h, VNode } from "preact";
 import { css } from "@linaria/core";
-import { theme, ripple } from "./style";
+import { theme, ripple, Colors } from "./style";
 import { alpha } from "./colors/manipulation";
 
 interface Props {
@@ -12,9 +12,9 @@ interface Props {
   fullWidth?: boolean;
   href?: string;
   size?: "small" | "medium" | "large";
-  startIcon?: VNode;
+  startIcon?: VNode | string;
   variant?: "contained" | "outlined" | "text";
-  color?: "primary" | "secondary" | "success" | "error" | "info" | "warning";
+  color?: Colors;
   onClick?: () => void;
 }
 
@@ -28,7 +28,7 @@ const baseStyle = css`
   outline: 0;
   border: 0;
   margin: 0;
-  border-radius: 0;
+  /* border-radius: 0; */
   padding: 0;
   cursor: pointer;
   user-select: none;
@@ -50,6 +50,17 @@ const button = css`
     color: ${theme.palette.action.disabled};
   }
 `;
+const colorIconVariant = {
+  outlined: css`
+    background-color: var(--color-main);
+  `,
+  contained: css`
+    background-color: var(--color-contrastText);
+  `,
+  text: css`
+    background-color: var(--color-main);
+  `,
+};
 
 const colorVariant = {
   outlined: css`
@@ -90,6 +101,47 @@ const colorVariant = {
   `,
 };
 
+const sizeIconVariant = {
+  outlined: {
+    small: css`
+      padding: 3px;
+      font-size: ${theme.pxToRem(7)};
+    `,
+    medium: css`
+      padding: 5px;
+    `,
+    large: css`
+      padding: 7px;
+      font-size: ${theme.pxToRem(10)};
+    `,
+  },
+  contained: {
+    small: css`
+      padding: 4px;
+      font-size: ${theme.pxToRem(13)};
+    `,
+    medium: css`
+      padding: 6px;
+    `,
+    large: css`
+      padding: 8px;
+      font-size: ${theme.pxToRem(10)};
+    `,
+  },
+  text: {
+    small: css`
+      padding: 4px;
+      font-size: ${theme.pxToRem(13)};
+    `,
+    medium: css`
+      padding: 6px;
+    `,
+    large: css`
+      padding: 8px;
+      font-size: ${theme.pxToRem(15)};
+    `,
+  },
+};
 const sizeVariant = {
   outlined: {
     small: css`
@@ -162,12 +214,18 @@ export function Button({
         css`
           margin-right: 8px;
           margin-left: -4px;
+          mask: var(--image) no-repeat center;
         `,
+        colorIconVariant[variant],
+        sizeIconVariant[variant][size],
         style,
       ].join(" ")}
-    >
-      {sip}
-    </span>
+      style={{
+        "--image": `url("${sip}")`,
+        "--color-main": theme.palette[color].main,
+        "--color-contrastText": theme.palette[color].contrastText,
+      }}
+    />
   );
   const endIcon = eip && (
     <span
@@ -175,12 +233,19 @@ export function Button({
         css`
           margin-right: -4px;
           margin-left: 8px;
+          mask: var(--image) no-repeat center;
         `,
+        colorIconVariant[variant],
+        sizeIconVariant[variant][size],
         style,
       ].join(" ")}
-    >
-      {eip}
-    </span>
+      style={{
+        "--image": `url("${eip}")`,
+        "--color-main": theme.palette[color].main,
+        "--color-contrastText": theme.palette[color].contrastText,
+        "--color-dark": theme.palette[color].dark,
+      }}
+    />
   );
   return (
     <button
@@ -196,8 +261,8 @@ export function Button({
       ].join(" ")}
       style={{
         "--color-main": theme.palette[color].main,
-        "--color-main-alpha-half": alpha(theme.palette[color].main, 0.5),
         "--color-contrastText": theme.palette[color].contrastText,
+        "--color-main-alpha-half": alpha(theme.palette[color].main, 0.5),
         "--color-dark": theme.palette[color].dark,
         "--color-main-alpha-opacity": alpha(
           theme.palette[color].main,

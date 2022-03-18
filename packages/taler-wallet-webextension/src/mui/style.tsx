@@ -12,6 +12,14 @@ import {
 } from "./colors/constants";
 import { getContrastRatio } from "./colors/manipulation";
 
+export type Colors =
+  | "primary"
+  | "secondary"
+  | "success"
+  | "error"
+  | "info"
+  | "warning";
+
 export function round(value: number): number {
   return Math.round(value * 1e5) / 1e5;
 }
@@ -386,6 +394,14 @@ function createTheme() {
       `,
       /* just of caseAllCaps */
       // button: buildVariant(fontWeightMedium, 14, 1.75, 0.4, caseAllCaps),
+
+      caption: css`
+        font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+        font-weight: ${fontWeightMedium};
+        font-size: ${pxToRem(12)};
+        line-height: 1.66;
+        letter-spacing: ${round(0.4 / 12)}em;
+      `,
       // caption: buildVariant(fontWeightRegular, 12, 1.66, 0.4),
       // overline: buildVariant(fontWeightRegular, 12, 2.66, 1, caseAllCaps),
     };

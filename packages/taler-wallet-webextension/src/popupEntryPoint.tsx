@@ -57,7 +57,7 @@ function main(): void {
   }
 }
 
-setupI18n("en-US", strings);
+setupI18n("en", strings);
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", main);

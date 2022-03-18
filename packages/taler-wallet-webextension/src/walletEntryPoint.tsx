@@ -73,7 +73,7 @@ function main(): void {
   }
 }
 
-setupI18n("en-US", strings);
+setupI18n("en", strings);
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", main);
@@ -102,188 +102,183 @@ function Application(): VNode {
   return (
     <TranslationProvider>
       <DevContextProvider>
-        {({ devMode }: { devMode: boolean }) => (
-          <IoCProviderForRuntime>
-            {/* <Match/> won't work in the first render if <Router /> is not called first */}
-            {/* https://github.com/preactjs/preact-router/issues/415 */}
-            <Router history={hash_history} />
-            <Match>
-              {({ path }: { path: string }) => {
-                if (path && path.startsWith("/cta")) return;
-                return (
-                  <Fragment>
-                    <LogoHeader />
-                    <WalletNavBar path={path} />
-                  </Fragment>
-                );
-              }}
-            </Match>
-            <div
-              style={{
-                backgroundColor: "lightcyan",
-                display: "flex",
-                justifyContent: "center",
-              }}
+        <IoCProviderForRuntime>
+          {/* <Match/> won't work in the first render if <Router /> is not called first */}
+          {/* https://github.com/preactjs/preact-router/issues/415 */}
+          <Router history={hash_history} />
+          <Match>
+            {({ path }: { path: string }) => {
+              if (path && path.startsWith("/cta")) return;
+              return (
+                <Fragment>
+                  <LogoHeader />
+                  <WalletNavBar path={path} />
+                </Fragment>
+              );
+            }}
+          </Match>
+          <div
+            style={{
+              backgroundColor: "lightcyan",
+              display: "flex",
+              justifyContent: "center",
+            }}
+          >
+            <PendingTransactions
+              goToTransaction={(txId: string) =>
+                route(Pages.balance_transaction.replace(":tid", txId))
+              }
+            />
+          </div>
+          <WalletBox>
+            {globalNotification && (
+              <SuccessBox onClick={clearNotification}>
+                <div>{globalNotification}</div>
+              </SuccessBox>
+            )}
+            <Router
+              history={hash_history}
+              onChange={clearNotificationWhenMovingOut}
             >
-              <PendingTransactions
-                goToTransaction={(txId: string) =>
-                  route(Pages.balance_transaction.replace(":tid", txId))
+              <Route path={Pages.welcome} component={WelcomePage} />
+
+              {/**
+               * BALANCE
+               */}
+
+              <Route
+                path={Pages.balance_history}
+                component={HistoryPage}
+                goToWalletDeposit={(currency: string) =>
+                  route(Pages.balance_deposit.replace(":currency", currency))
+                }
+                goToWalletManualWithdraw={(currency?: string) =>
+                  route(
+                    Pages.balance_manual_withdraw.replace(
+                      ":currency?",
+                      currency || "",
+                    ),
+                  )
                 }
               />
-            </div>
-            <WalletBox>
-              {globalNotification && (
-                <SuccessBox onClick={clearNotification}>
-                  <div>{globalNotification}</div>
-                </SuccessBox>
-              )}
-              <Router
-                history={hash_history}
-                onChange={clearNotificationWhenMovingOut}
-              >
-                <Route path={Pages.welcome} component={WelcomePage} />
+              <Route
+                path={Pages.balance_transaction}
+                component={TransactionPage}
+                goToWalletHistory={(currency?: string) => {
+                  route(
+                    Pages.balance_history.replace(":currency", currency || ""),
+                  );
+                }}
+              />
 
-                {/**
-                 * BALANCE
-                 */}
+              <Route
+                path={Pages.balance_manual_withdraw}
+                component={ManualWithdrawPage}
+                onCancel={() => {
+                  route(Pages.balance);
+                }}
+              />
 
-                <Route
-                  path={Pages.balance_history}
-                  component={HistoryPage}
-                  goToWalletDeposit={(currency: string) =>
-                    route(Pages.balance_deposit.replace(":currency", currency))
-                  }
-                  goToWalletManualWithdraw={(currency?: string) =>
-                    route(
-                      Pages.balance_manual_withdraw.replace(
-                        ":currency?",
-                        currency || "",
-                      ),
-                    )
-                  }
-                />
-                <Route
-                  path={Pages.balance_transaction}
-                  component={TransactionPage}
-                  goToWalletHistory={(currency?: string) => {
-                    route(
-                      Pages.balance_history.replace(
-                        ":currency",
-                        currency || "",
-                      ),
-                    );
-                  }}
-                />
+              <Route
+                path={Pages.balance_deposit}
+                component={DepositPage}
+                onCancel={(currency: string) => {
+                  route(Pages.balance_history.replace(":currency", currency));
+                }}
+                onSuccess={(currency: string) => {
+                  route(Pages.balance_history.replace(":currency", currency));
+                  setGlobalNotification(
+                    <i18n.Translate>
+                      All done, your transaction is in progress
+                    </i18n.Translate>,
+                  );
+                }}
+              />
+              {/**
+               * PENDING
+               */}
+              <Route path={Pages.settings} component={SettingsPage} />
 
-                <Route
-                  path={Pages.balance_manual_withdraw}
-                  component={ManualWithdrawPage}
-                  onCancel={() => {
-                    route(Pages.balance);
-                  }}
-                />
+              {/**
+               * BACKUP
+               */}
+              <Route
+                path={Pages.backup}
+                component={BackupPage}
+                onAddProvider={() => {
+                  route(Pages.backup_provider_add);
+                }}
+              />
+              <Route
+                path={Pages.backup_provider_detail}
+                component={ProviderDetailPage}
+                onBack={() => {
+                  route(Pages.backup);
+                }}
+              />
+              <Route
+                path={Pages.backup_provider_add}
+                component={ProviderAddPage}
+                onBack={() => {
+                  route(Pages.backup);
+                }}
+              />
 
-                <Route
-                  path={Pages.balance_deposit}
-                  component={DepositPage}
-                  onCancel={(currency: string) => {
-                    route(Pages.balance_history.replace(":currency", currency));
-                  }}
-                  onSuccess={(currency: string) => {
-                    route(Pages.balance_history.replace(":currency", currency));
-                    setGlobalNotification(
-                      <i18n.Translate>
-                        All done, your transaction is in progress
-                      </i18n.Translate>,
-                    );
-                  }}
-                />
-                {/**
-                 * PENDING
-                 */}
-                <Route path={Pages.settings} component={SettingsPage} />
+              {/**
+               * SETTINGS
+               */}
+              <Route
+                path={Pages.settings_exchange_add}
+                component={ExchangeAddPage}
+                onBack={() => {
+                  route(Pages.balance);
+                }}
+              />
 
-                {/**
-                 * BACKUP
-                 */}
-                <Route
-                  path={Pages.backup}
-                  component={BackupPage}
-                  onAddProvider={() => {
-                    route(Pages.backup_provider_add);
-                  }}
-                />
-                <Route
-                  path={Pages.backup_provider_detail}
-                  component={ProviderDetailPage}
-                  onBack={() => {
-                    route(Pages.backup);
-                  }}
-                />
-                <Route
-                  path={Pages.backup_provider_add}
-                  component={ProviderAddPage}
-                  onBack={() => {
-                    route(Pages.backup);
-                  }}
-                />
+              {/**
+               * DEV
+               */}
 
-                {/**
-                 * SETTINGS
-                 */}
-                <Route
-                  path={Pages.settings_exchange_add}
-                  component={ExchangeAddPage}
-                  onBack={() => {
-                    route(Pages.balance);
-                  }}
-                />
+              <Route path={Pages.dev} component={DeveloperPage} />
 
-                {/**
-                 * DEV
-                 */}
+              {/**
+               * CALL TO ACTION
+               */}
+              <Route
+                path={Pages.cta_pay}
+                component={PayPage}
+                goToWalletManualWithdraw={(currency?: string) =>
+                  route(
+                    Pages.balance_manual_withdraw.replace(
+                      ":currency?",
+                      currency || "",
+                    ),
+                  )
+                }
+                goBack={() => route(Pages.balance)}
+              />
+              <Route path={Pages.cta_refund} component={RefundPage} />
+              <Route path={Pages.cta_tips} component={TipPage} />
+              <Route path={Pages.cta_withdraw} component={WithdrawPage} />
 
-                <Route path={Pages.dev} component={DeveloperPage} />
+              {/**
+               * NOT FOUND
+               * all redirects should be at the end
+               */}
+              <Route
+                path={Pages.balance}
+                component={Redirect}
+                to={Pages.balance_history.replace(":currency", "")}
+              />
 
-                {/**
-                 * CALL TO ACTION
-                 */}
-                <Route
-                  path={Pages.cta_pay}
-                  component={PayPage}
-                  goToWalletManualWithdraw={(currency?: string) =>
-                    route(
-                      Pages.balance_manual_withdraw.replace(
-                        ":currency?",
-                        currency || "",
-                      ),
-                    )
-                  }
-                  goBack={() => route(Pages.balance)}
-                />
-                <Route path={Pages.cta_refund} component={RefundPage} />
-                <Route path={Pages.cta_tips} component={TipPage} />
-                <Route path={Pages.cta_withdraw} component={WithdrawPage} />
-
-                {/**
-                 * NOT FOUND
-                 * all redirects should be at the end
-                 */}
-                <Route
-                  path={Pages.balance}
-                  component={Redirect}
-                  to={Pages.balance_history.replace(":currency", "")}
-                />
-
-                <Route
-                  default
-                  component={Redirect}
-                  to={Pages.balance_history.replace(":currency", "")}
-                />
-              </Router>
-            </WalletBox>
-          </IoCProviderForRuntime>
-        )}
+              <Route
+                default
+                component={Redirect}
+                to={Pages.balance_history.replace(":currency", "")}
+              />
+            </Router>
+          </WalletBox>
+        </IoCProviderForRuntime>
       </DevContextProvider>
     </TranslationProvider>
   );
