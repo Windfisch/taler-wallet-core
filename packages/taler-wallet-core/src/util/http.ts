@@ -28,10 +28,7 @@ import { OperationFailedError, makeErrorDetails } from "../errors.js";
 import {
   Logger,
   Duration,
-  Timestamp,
-  getTimestampNow,
-  timestampAddDuration,
-  timestampMax,
+  AbsoluteTime,
   TalerErrorDetails,
   Codec,
   j2s,
@@ -314,24 +311,24 @@ export async function readSuccessResponseTextOrThrow<T>(
 /**
  * Get the timestamp at which the response's content is considered expired.
  */
-export function getExpiryTimestamp(
+export function getExpiry(
   httpResponse: HttpResponse,
   opt: { minDuration?: Duration },
-): Timestamp {
+): AbsoluteTime {
   const expiryDateMs = new Date(
     httpResponse.headers.get("expiry") ?? "",
   ).getTime();
-  let t: Timestamp;
+  let t: AbsoluteTime;
   if (Number.isNaN(expiryDateMs)) {
-    t = getTimestampNow();
+    t = AbsoluteTime.now();
   } else {
     t = {
       t_ms: expiryDateMs,
     };
   }
   if (opt.minDuration) {
-    const t2 = timestampAddDuration(getTimestampNow(), opt.minDuration);
-    return timestampMax(t, t2);
+    const t2 = AbsoluteTime.addDuration(AbsoluteTime.now(), opt.minDuration);
+    return AbsoluteTime.max(t, t2);
   }
   return t;
 }

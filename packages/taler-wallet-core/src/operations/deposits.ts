@@ -15,6 +15,7 @@
  */
 
 import {
+  AbsoluteTime,
   AmountJson,
   Amounts,
   buildCodecForObject,
@@ -27,21 +28,16 @@ import {
   ContractTerms,
   CreateDepositGroupRequest,
   CreateDepositGroupResponse,
-  DenomKeyType,
   durationFromSpec,
   encodeCrock,
   GetFeeForDepositRequest,
   getRandomBytes,
-  getTimestampNow,
   hashWire,
   Logger,
   NotificationType,
   parsePaytoUri,
   TalerErrorDetails,
-  Timestamp,
-  timestampAddDuration,
-  timestampIsBetween,
-  timestampTruncateToSecond,
+  TalerProtocolTimestamp,
   TrackDepositGroupRequest,
   TrackDepositGroupResponse,
   URL,
@@ -212,7 +208,7 @@ async function processDepositGroupImpl(
         }
       }
       if (allDeposited) {
-        dg.timestampFinished = getTimestampNow();
+        dg.timestampFinished = TalerProtocolTimestamp.now();
         dg.operationStatus = OperationStatus.Finished;
         delete dg.lastError;
         delete dg.retryInfo;
@@ -310,13 +306,8 @@ export async function getFeeForDeposit(
       }
     });
 
-  const timestamp = getTimestampNow();
-  const timestampRound = timestampTruncateToSecond(timestamp);
-  // const noncePair = await ws.cryptoApi.createEddsaKeypair();
-  // const merchantPair = await ws.cryptoApi.createEddsaKeypair();
-  // const wireSalt = encodeCrock(getRandomBytes(16));
-  // const wireHash = hashWire(req.depositPaytoUri, wireSalt);
-  // const wireHashLegacy = hashWireLegacy(req.depositPaytoUri, wireSalt);
+  const timestamp = AbsoluteTime.now();
+  const timestampRound = AbsoluteTime.toTimestamp(timestamp);
   const contractTerms: ContractTerms = {
     auditors: [],
     exchanges: exchangeInfos,
@@ -331,15 +322,14 @@ export async function getFeeForDeposit(
     wire_transfer_deadline: timestampRound,
     order_id: "",
     h_wire: "",
-    pay_deadline: timestampAddDuration(
-      timestampRound,
-      durationFromSpec({ hours: 1 }),
+    pay_deadline: AbsoluteTime.toTimestamp(
+      AbsoluteTime.addDuration(timestamp, durationFromSpec({ hours: 1 })),
     ),
     merchant: {
       name: "",
     },
     merchant_pub: "",
-    refund_deadline: { t_ms: 0 },
+    refund_deadline: TalerProtocolTimestamp.zero(),
   };
 
   const contractData = extractContractData(contractTerms, "", "");
@@ -399,8 +389,8 @@ export async function createDepositGroup(
       }
     });
 
-  const timestamp = getTimestampNow();
-  const timestampRound = timestampTruncateToSecond(timestamp);
+  const now = AbsoluteTime.now();
+  const nowRounded = AbsoluteTime.toTimestamp(now);
   const noncePair = await ws.cryptoApi.createEddsaKeypair();
   const merchantPair = await ws.cryptoApi.createEddsaKeypair();
   const wireSalt = encodeCrock(getRandomBytes(16));
@@ -412,24 +402,23 @@ export async function createDepositGroup(
     max_fee: Amounts.stringify(amount),
     max_wire_fee: Amounts.stringify(amount),
     wire_method: p.targetType,
-    timestamp: timestampRound,
+    timestamp: nowRounded,
     merchant_base_url: "",
     summary: "",
     nonce: noncePair.pub,
-    wire_transfer_deadline: timestampRound,
+    wire_transfer_deadline: nowRounded,
     order_id: "",
     // This is always the v2 wire hash, as we're the "merchant" and support v2.
     h_wire: wireHash,
     // Required for older exchanges.
-    pay_deadline: timestampAddDuration(
-      timestampRound,
-      durationFromSpec({ hours: 1 }),
+    pay_deadline: AbsoluteTime.toTimestamp(
+      AbsoluteTime.addDuration(now, durationFromSpec({ hours: 1 })),
     ),
     merchant: {
       name: "",
     },
     merchant_pub: merchantPair.pub,
-    refund_deadline: { t_ms: 0 },
+    refund_deadline: TalerProtocolTimestamp.zero(),
   };
 
   const contractTermsHash = await ws.cryptoApi.hashString(
@@ -482,7 +471,7 @@ export async function createDepositGroup(
     depositGroupId,
     noncePriv: noncePair.priv,
     noncePub: noncePair.pub,
-    timestampCreated: timestamp,
+    timestampCreated: AbsoluteTime.toTimestamp(now),
     timestampFinished: undefined,
     payCoinSelection: payCoinSel,
     payCoinSelectionUid: encodeCrock(getRandomBytes(32)),
@@ -570,10 +559,10 @@ export async function getEffectiveDepositAmount(
         // about "find method not found on undefined" when the wireType
         // is not supported by the Exchange.
         const fee = exchangeDetails.wireInfo.feesForType[wireType].find((x) => {
-          return timestampIsBetween(
-            getTimestampNow(),
-            x.startStamp,
-            x.endStamp,
+          return AbsoluteTime.isBetween(
+            AbsoluteTime.now(),
+            AbsoluteTime.fromTimestamp(x.startStamp),
+            AbsoluteTime.fromTimestamp(x.endStamp),
           );
         })?.wireFee;
         if (fee) {
@@ -656,10 +645,10 @@ export async function getTotalFeeForDepositAmount(
         // about "find method not found on undefined" when the wireType
         // is not supported by the Exchange.
         const fee = exchangeDetails.wireInfo.feesForType[wireType].find((x) => {
-          return timestampIsBetween(
-            getTimestampNow(),
-            x.startStamp,
-            x.endStamp,
+          return AbsoluteTime.isBetween(
+            AbsoluteTime.now(),
+            AbsoluteTime.fromTimestamp(x.startStamp),
+            AbsoluteTime.fromTimestamp(x.endStamp),
           );
         })?.wireFee;
         if (fee) {

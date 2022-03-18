@@ -24,10 +24,8 @@ import {
   applyTimeTravel,
 } from "../harness/helpers.js";
 import {
+  AbsoluteTime,
   durationFromSpec,
-  timestampAddDuration,
-  getTimestampNow,
-  timestampTruncateToSecond,
 } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
@@ -55,9 +53,9 @@ export async function runRefundGoneTest(t: GlobalTestState) {
       summary: "Buy me!",
       amount: "TESTKUDOS:5",
       fulfillment_url: "taler://fulfillment-success/thx",
-      pay_deadline: timestampTruncateToSecond(
-        timestampAddDuration(
-          getTimestampNow(),
+      pay_deadline: AbsoluteTime.toTimestamp(
+        AbsoluteTime.addDuration(
+          AbsoluteTime.now(),
           durationFromSpec({
             minutes: 10,
           }),

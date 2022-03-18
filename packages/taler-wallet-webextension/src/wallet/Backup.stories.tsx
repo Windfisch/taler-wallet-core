@@ -23,6 +23,7 @@ import { ProviderPaymentType } from "@gnu-taler/taler-wallet-core";
 import { addDays } from "date-fns";
 import { BackupView as TestedComponent } from "./BackupPage";
 import { createExample } from "../test-utils";
+import { TalerProtocolTimestamp } from "@gnu-taler/taler-util";
 
 export default {
   title: "wallet/backup/list",
@@ -40,9 +41,8 @@ export const LotOfProviders = createExample(TestedComponent, {
       active: true,
       name: "sync.demo",
       syncProviderBaseUrl: "http://sync.taler:9967/",
-      lastSuccessfulBackupTimestamp: {
-        t_ms: 1625063925078,
-      },
+      lastSuccessfulBackupTimestamp:
+        TalerProtocolTimestamp.fromSeconds(1625063925),
       paymentProposalIds: [
         "43Q5WWRJPNS4SE9YKS54H9THDS94089EDGXW9EHBPN6E7M184XEG",
       ],
@@ -62,9 +62,8 @@ export const LotOfProviders = createExample(TestedComponent, {
       active: true,
       name: "sync.demo",
       syncProviderBaseUrl: "http://sync.taler:9967/",
-      lastSuccessfulBackupTimestamp: {
-        t_ms: 1625063925078,
-      },
+      lastSuccessfulBackupTimestamp:
+        TalerProtocolTimestamp.fromSeconds(1625063925),
       paymentProposalIds: [
         "43Q5WWRJPNS4SE9YKS54H9THDS94089EDGXW9EHBPN6E7M184XEG",
       ],
@@ -172,9 +171,8 @@ export const OneProvider = createExample(TestedComponent, {
       active: true,
       name: "sync.demo",
       syncProviderBaseUrl: "http://sync.taler:9967/",
-      lastSuccessfulBackupTimestamp: {
-        t_ms: 1625063925078,
-      },
+      lastSuccessfulBackupTimestamp:
+        TalerProtocolTimestamp.fromSeconds(1625063925),
       paymentProposalIds: [
         "43Q5WWRJPNS4SE9YKS54H9THDS94089EDGXW9EHBPN6E7M184XEG",
       ],

@@ -19,6 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
+import { AbsoluteTime, TalerProtocolTimestamp } from "@gnu-taler/taler-util";
 import { createExample } from "../test-utils";
 import { View as TestedComponent } from "./Tip";
 
@@ -33,9 +34,7 @@ export const Accepted = createExample(TestedComponent, {
     accepted: true,
     merchantBaseUrl: "",
     exchangeBaseUrl: "",
-    expirationTimestamp: {
-      t_ms: 0,
-    },
+    expirationTimestamp: TalerProtocolTimestamp.fromSeconds(1),
     tipAmountEffective: "USD:10",
     tipAmountRaw: "USD:5",
     walletTipId: "id",
@@ -47,9 +46,7 @@ export const NotYetAccepted = createExample(TestedComponent, {
     accepted: false,
     merchantBaseUrl: "http://merchant.url/",
     exchangeBaseUrl: "http://exchange.url/",
-    expirationTimestamp: {
-      t_ms: 0,
-    },
+    expirationTimestamp: TalerProtocolTimestamp.fromSeconds(1),
     tipAmountEffective: "USD:10",
     tipAmountRaw: "USD:5",
     walletTipId: "id",

@@ -27,11 +27,11 @@
 import {
   Amounts,
   codecForRecoupConfirmation,
-  getTimestampNow,
   j2s,
   NotificationType,
   RefreshReason,
   TalerErrorDetails,
+  TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
 import { encodeCrock, getRandomBytes } from "@gnu-taler/taler-util";
 import {
@@ -110,7 +110,7 @@ async function putGroupAsFinished(
   }
   if (allFinished) {
     logger.info("all recoups of recoup group are finished");
-    recoupGroup.timestampFinished = getTimestampNow();
+    recoupGroup.timestampFinished = TalerProtocolTimestamp.now();
     recoupGroup.retryInfo = initRetryInfo();
     recoupGroup.lastError = undefined;
     if (recoupGroup.scheduleRefreshCoins.length > 0) {
@@ -467,7 +467,7 @@ export async function createRecoupGroup(
     coinPubs: coinPubs,
     lastError: undefined,
     timestampFinished: undefined,
-    timestampStarted: getTimestampNow(),
+    timestampStarted: TalerProtocolTimestamp.now(),
     retryInfo: initRetryInfo(),
     recoupFinishedPerCoin: coinPubs.map(() => false),
     // Will be populated later

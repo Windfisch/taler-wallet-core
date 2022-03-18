@@ -32,7 +32,11 @@ import {
   codecForAmountJson,
   codecForAmountString,
 } from "./amounts.js";
-import { Timestamp, codecForTimestamp } from "./time.js";
+import {
+  AbsoluteTime,
+  codecForTimestamp,
+  TalerProtocolTimestamp,
+} from "./time.js";
 import {
   buildCodecForObject,
   codecForString,
@@ -299,7 +303,7 @@ export interface PrepareTipResult {
    * Time when the tip will expire.  After it expired, it can't be picked
    * up anymore.
    */
-  expirationTimestamp: Timestamp;
+  expirationTimestamp: TalerProtocolTimestamp;
 }
 
 export const codecForPrepareTipResult = (): Codec<PrepareTipResult> =>
@@ -460,7 +464,7 @@ export interface TalerErrorDetails {
 
 /**
  * Minimal information needed about a planchet for unblinding a signature.
- * 
+ *
  * Can be a withdrawal/tipping/refresh planchet.
  */
 export interface PlanchetUnblindInfo {
@@ -527,8 +531,8 @@ export interface DepositInfo {
   coinPub: string;
   coinPriv: string;
   spendAmount: AmountJson;
-  timestamp: Timestamp;
-  refundDeadline: Timestamp;
+  timestamp: TalerProtocolTimestamp;
+  refundDeadline: TalerProtocolTimestamp;
   merchantPub: string;
   feeDeposit: AmountJson;
   wireInfoHash: string;

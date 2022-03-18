@@ -62,16 +62,16 @@ test("withdrawal selection bug repro", (t) => {
       masterSig:
         "4F0P456CNNTTWK8BFJHGM3JTD6FVVNZY8EP077GYAHDJ5Y81S5RQ3SMS925NXMDVG9A88JAAP0E2GDZBC21PP5NHFFVWHAW3AVT8J3R",
       stampExpireDeposit: {
-        t_ms: 1742909388000,
+        t_s: 1742909388,
       },
       stampExpireLegal: {
-        t_ms: 1900589388000,
+        t_s: 1900589388,
       },
       stampExpireWithdraw: {
-        t_ms: 1679837388000,
+        t_s: 1679837388,
       },
       stampStart: {
-        t_ms: 1585229388000,
+        t_s: 1585229388,
       },
       verificationStatus: DenominationVerificationStatus.Unverified,
       value: {
@@ -79,7 +79,7 @@ test("withdrawal selection bug repro", (t) => {
         fraction: 0,
         value: 1000,
       },
-      listIssueDate: { t_ms: 0 },
+      listIssueDate: { t_s: 0 },
     },
     {
       denomPub: {
@@ -117,16 +117,16 @@ test("withdrawal selection bug repro", (t) => {
       masterSig:
         "P99AW82W46MZ0AKW7Z58VQPXFNTJQM9DVTYPBDF6KVYF38PPVDAZTV7JQ8TY7HGEC7JJJAY4E7AY7J3W1WV10DAZZQHHKTAVTSRAC20",
       stampExpireDeposit: {
-        t_ms: 1742909388000,
+        t_s: 1742909388,
       },
       stampExpireLegal: {
-        t_ms: 1900589388000,
+        t_s: 1900589388,
       },
       stampExpireWithdraw: {
-        t_ms: 1679837388000,
+        t_s: 1679837388,
       },
       stampStart: {
-        t_ms: 1585229388000,
+        t_s: 1585229388,
       },
       verificationStatus: DenominationVerificationStatus.Unverified,
       value: {
@@ -134,7 +134,7 @@ test("withdrawal selection bug repro", (t) => {
         fraction: 0,
         value: 10,
       },
-      listIssueDate: { t_ms: 0 },
+      listIssueDate: { t_s: 0 },
     },
     {
       denomPub: {
@@ -171,16 +171,16 @@ test("withdrawal selection bug repro", (t) => {
       masterSig:
         "8S4VZGHE5WE0N5ZVCHYW9KZZR4YAKK15S46MV1HR1QB9AAMH3NWPW4DCR4NYGJK33Q8YNFY80SWNS6XKAP5DEVK933TM894FJ2VGE3G",
       stampExpireDeposit: {
-        t_ms: 1742909388000,
+        t_s: 1742909388,
       },
       stampExpireLegal: {
-        t_ms: 1900589388000,
+        t_s: 1900589388,
       },
       stampExpireWithdraw: {
-        t_ms: 1679837388000,
+        t_s: 1679837388,
       },
       stampStart: {
-        t_ms: 1585229388000,
+        t_s: 1585229388,
       },
       verificationStatus: DenominationVerificationStatus.Unverified,
       value: {
@@ -188,7 +188,7 @@ test("withdrawal selection bug repro", (t) => {
         fraction: 0,
         value: 5,
       },
-      listIssueDate: { t_ms: 0 },
+      listIssueDate: { t_s: 0 },
     },
     {
       denomPub: {
@@ -226,16 +226,16 @@ test("withdrawal selection bug repro", (t) => {
       masterSig:
         "E3AWGAG8VB42P3KXM8B04Z6M483SX59R3Y4T53C3NXCA2NPB6C7HVCMVX05DC6S58E9X40NGEBQNYXKYMYCF3ASY2C4WP1WCZ4ME610",
       stampExpireDeposit: {
-        t_ms: 1742909388000,
+        t_s: 1742909388,
       },
       stampExpireLegal: {
-        t_ms: 1900589388000,
+        t_s: 1900589388,
       },
       stampExpireWithdraw: {
-        t_ms: 1679837388000,
+        t_s: 1679837388,
       },
       stampStart: {
-        t_ms: 1585229388000,
+        t_s: 1585229388,
       },
       verificationStatus: DenominationVerificationStatus.Unverified,
       value: {
@@ -243,7 +243,7 @@ test("withdrawal selection bug repro", (t) => {
         fraction: 0,
         value: 1,
       },
-      listIssueDate: { t_ms: 0 },
+      listIssueDate: { t_s: 0 },
     },
     {
       denomPub: {
@@ -280,16 +280,16 @@ test("withdrawal selection bug repro", (t) => {
       masterSig:
         "0ES1RKV002XB4YP21SN0QB7RSDHGYT0XAE65JYN8AVJAA6H7JZFN7JADXT521DJS89XMGPZGR8GCXF1516Y0Q9QDV00E6NMFA6CF838",
       stampExpireDeposit: {
-        t_ms: 1742909388000,
+        t_s: 1742909388,
       },
       stampExpireLegal: {
-        t_ms: 1900589388000,
+        t_s: 1900589388,
       },
       stampExpireWithdraw: {
-        t_ms: 1679837388000,
+        t_s: 1679837388,
       },
       stampStart: {
-        t_ms: 1585229388000,
+        t_s: 1585229388,
       },
       verificationStatus: DenominationVerificationStatus.Unverified,
       value: {
@@ -297,7 +297,7 @@ test("withdrawal selection bug repro", (t) => {
         fraction: 10000000,
         value: 0,
       },
-      listIssueDate: { t_ms: 0 },
+      listIssueDate: { t_s: 0 },
     },
     {
       denomPub: {
@@ -334,16 +334,16 @@ test("withdrawal selection bug repro", (t) => {
       masterSig:
         "58QEB6C6N7602E572E3JYANVVJ9BRW0V9E2ZFDW940N47YVQDK9SAFPWBN5YGT3G1742AFKQ0CYR4DM2VWV0Z0T1XMEKWN6X2EZ9M0R",
       stampExpireDeposit: {
-        t_ms: 1742909388000,
+        t_s: 1742909388,
       },
       stampExpireLegal: {
-        t_ms: 1900589388000,
+        t_s: 1900589388,
       },
       stampExpireWithdraw: {
-        t_ms: 1679837388000,
+        t_s: 1679837388,
       },
       stampStart: {
-        t_ms: 1585229388000,
+        t_s: 1585229388,
       },
       verificationStatus: DenominationVerificationStatus.Unverified,
       value: {
@@ -351,7 +351,7 @@ test("withdrawal selection bug repro", (t) => {
         fraction: 0,
         value: 2,
       },
-      listIssueDate: { t_ms: 0 },
+      listIssueDate: { t_s: 0 },
     },
   ];
 

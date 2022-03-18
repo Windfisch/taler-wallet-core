@@ -49,14 +49,13 @@ import {
   BackupWithdrawalGroup,
   canonicalizeBaseUrl,
   canonicalJson,
-  getTimestampNow,
   Logger,
-  timestampToIsoString,
   WalletBackupContentV1,
   hash,
   encodeCrock,
   getRandomBytes,
   stringToBytes,
+  AbsoluteTime,
 } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../../common.js";
 import {
@@ -455,7 +454,7 @@ export async function exportBackup(
         });
       });
 
-      const ts = getTimestampNow();
+      const ts = AbsoluteTime.toTimestamp(AbsoluteTime.now());
 
       if (!bs.lastBackupTimestamp) {
         bs.lastBackupTimestamp = ts;
@@ -496,9 +495,9 @@ export async function exportBackup(
         );
         bs.lastBackupNonce = encodeCrock(getRandomBytes(32));
         logger.trace(
-          `setting timestamp to ${timestampToIsoString(ts)} and nonce to ${
-            bs.lastBackupNonce
-          }`,
+          `setting timestamp to ${AbsoluteTime.toIsoString(
+            AbsoluteTime.fromTimestamp(ts),
+          )} and nonce to ${bs.lastBackupNonce}`,
         );
         await tx.config.put({
           key: WALLET_BACKUP_STATE_KEY,

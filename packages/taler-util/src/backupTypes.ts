@@ -54,7 +54,7 @@
  * Imports.
  */
 import { DenominationPubKey, UnblindedSignature } from "./talerTypes.js";
-import { Duration, Timestamp } from "./time.js";
+import { TalerProtocolDuration, TalerProtocolTimestamp } from "./time.js";
 
 /**
  * Type alias for strings that are to be treated like amounts.
@@ -120,7 +120,7 @@ export interface WalletBackupContentV1 {
    * This timestamp should only be advanced if the content
    * of the backup changes.
    */
-  timestamp: Timestamp;
+  timestamp: TalerProtocolTimestamp;
 
   /**
    * Per-exchange data sorted by exchange master public key.
@@ -333,10 +333,10 @@ export interface BackupRecoupGroup {
   /**
    * Timestamp when the recoup was started.
    */
-  timestamp_created: Timestamp;
+  timestamp_created: TalerProtocolTimestamp;
 
-  timestamp_finish?: Timestamp;
-  finish_clock?: Timestamp;
+  timestamp_finish?: TalerProtocolTimestamp;
+  finish_clock?: TalerProtocolTimestamp;
   finish_is_failure?: boolean;
 
   /**
@@ -486,14 +486,14 @@ export interface BackupTip {
    * Has the user accepted the tip?  Only after the tip has been accepted coins
    * withdrawn from the tip may be used.
    */
-  timestamp_accepted: Timestamp | undefined;
+  timestamp_accepted: TalerProtocolTimestamp | undefined;
 
   /**
    * When was the tip first scanned by the wallet?
    */
-  timestamp_created: Timestamp;
+  timestamp_created: TalerProtocolTimestamp;
 
-  timestamp_finished?: Timestamp;
+  timestamp_finished?: TalerProtocolTimestamp;
   finish_is_failure?: boolean;
 
   /**
@@ -504,7 +504,7 @@ export interface BackupTip {
   /**
    * Timestamp, the tip can't be picked up anymore after this deadline.
    */
-  timestamp_expiration: Timestamp;
+  timestamp_expiration: TalerProtocolTimestamp;
 
   /**
    * The exchange that will sign our coins, chosen by the merchant.
@@ -613,9 +613,9 @@ export interface BackupRefreshGroup {
    */
   old_coins: BackupRefreshOldCoin[];
 
-  timestamp_created: Timestamp;
+  timestamp_created: TalerProtocolTimestamp;
 
-  timestamp_finish?: Timestamp;
+  timestamp_finish?: TalerProtocolTimestamp;
   finish_is_failure?: boolean;
 }
 
@@ -636,9 +636,9 @@ export interface BackupWithdrawalGroup {
    * When was the withdrawal operation started started?
    * Timestamp in milliseconds.
    */
-  timestamp_created: Timestamp;
+  timestamp_created: TalerProtocolTimestamp;
 
-  timestamp_finish?: Timestamp;
+  timestamp_finish?: TalerProtocolTimestamp;
   finish_is_failure?: boolean;
 
   /**
@@ -672,12 +672,12 @@ export interface BackupRefundItemCommon {
   /**
    * Execution time as claimed by the merchant
    */
-  execution_time: Timestamp;
+  execution_time: TalerProtocolTimestamp;
 
   /**
    * Time when the wallet became aware of the refund.
    */
-  obtained_time: Timestamp;
+  obtained_time: TalerProtocolTimestamp;
 
   /**
    * Amount refunded for the coin.
@@ -788,7 +788,7 @@ export interface BackupPurchase {
    * Timestamp of the first time that sending a payment to the merchant
    * for this purchase was successful.
    */
-  timestamp_first_successful_pay: Timestamp | undefined;
+  timestamp_first_successful_pay: TalerProtocolTimestamp | undefined;
 
   /**
    * Signature by the merchant confirming the payment.
@@ -799,7 +799,7 @@ export interface BackupPurchase {
    * When was the purchase made?
    * Refers to the time that the user accepted.
    */
-  timestamp_accept: Timestamp;
+  timestamp_accept: TalerProtocolTimestamp;
 
   /**
    * Pending refunds for the purchase.  A refund is pending
@@ -815,7 +815,7 @@ export interface BackupPurchase {
   /**
    * Continue querying the refund status until this deadline has expired.
    */
-  auto_refund_deadline: Timestamp | undefined;
+  auto_refund_deadline: TalerProtocolTimestamp | undefined;
 }
 
 /**
@@ -857,22 +857,22 @@ export interface BackupDenomination {
   /**
    * Validity start date of the denomination.
    */
-  stamp_start: Timestamp;
+  stamp_start: TalerProtocolTimestamp;
 
   /**
    * Date after which the currency can't be withdrawn anymore.
    */
-  stamp_expire_withdraw: Timestamp;
+  stamp_expire_withdraw: TalerProtocolTimestamp;
 
   /**
    * Date after the denomination officially doesn't exist anymore.
    */
-  stamp_expire_legal: Timestamp;
+  stamp_expire_legal: TalerProtocolTimestamp;
 
   /**
    * Data after which coins of this denomination can't be deposited anymore.
    */
-  stamp_expire_deposit: Timestamp;
+  stamp_expire_deposit: TalerProtocolTimestamp;
 
   /**
    * Signature by the exchange's master key over the denomination
@@ -903,7 +903,7 @@ export interface BackupDenomination {
    * The list issue date of the exchange "/keys" response
    * that this denomination was last seen in.
    */
-  list_issue_date: Timestamp;
+  list_issue_date: TalerProtocolTimestamp;
 }
 
 /**
@@ -923,14 +923,14 @@ export interface BackupReserve {
   /**
    * Time when the reserve was created.
    */
-  timestamp_created: Timestamp;
+  timestamp_created: TalerProtocolTimestamp;
 
   /**
    * Timestamp of the last observed activity.
    *
    * Used to compute when to give up querying the exchange.
    */
-  timestamp_last_activity: Timestamp;
+  timestamp_last_activity: TalerProtocolTimestamp;
 
   /**
    * Timestamp of when the reserve closed.
@@ -938,7 +938,7 @@ export interface BackupReserve {
    * Note that the last activity can be after the closing time
    * due to recouping.
    */
-  timestamp_closed?: Timestamp;
+  timestamp_closed?: TalerProtocolTimestamp;
 
   /**
    * Wire information (as payto URI) for the bank account that
@@ -977,14 +977,14 @@ export interface BackupReserve {
     /**
      * Time when the information about this reserve was posted to the bank.
      */
-    timestamp_reserve_info_posted: Timestamp | undefined;
+    timestamp_reserve_info_posted: TalerProtocolTimestamp | undefined;
 
     /**
      * Time when the reserve was confirmed by the bank.
      *
      * Set to undefined if not confirmed yet.
      */
-    timestamp_bank_confirmed: Timestamp | undefined;
+    timestamp_bank_confirmed: TalerProtocolTimestamp | undefined;
   };
 
   /**
@@ -1033,12 +1033,12 @@ export interface BackupExchangeWireFee {
   /**
    * Start date of the fee.
    */
-  start_stamp: Timestamp;
+  start_stamp: TalerProtocolTimestamp;
 
   /**
    * End date of the fee.
    */
-  end_stamp: Timestamp;
+  end_stamp: TalerProtocolTimestamp;
 
   /**
    * Signature made by the exchange master key.
@@ -1050,9 +1050,9 @@ export interface BackupExchangeWireFee {
  * Structure of one exchange signing key in the /keys response.
  */
 export class BackupExchangeSignKey {
-  stamp_start: Timestamp;
-  stamp_expire: Timestamp;
-  stamp_end: Timestamp;
+  stamp_start: TalerProtocolTimestamp;
+  stamp_expire: TalerProtocolTimestamp;
+  stamp_end: TalerProtocolTimestamp;
   key: string;
   master_sig: string;
 }
@@ -1112,7 +1112,7 @@ export interface BackupExchange {
    *
    * Used to facilitate automatic merging.
    */
-  update_clock: Timestamp;
+  update_clock: TalerProtocolTimestamp;
 }
 
 /**
@@ -1161,7 +1161,7 @@ export interface BackupExchangeDetails {
   /**
    * Closing delay of reserves.
    */
-  reserve_closing_delay: Duration;
+  reserve_closing_delay: TalerProtocolDuration;
 
   /**
    * Signing keys we got from the exchange, can also contain
@@ -1187,7 +1187,7 @@ export interface BackupExchangeDetails {
   /**
    * Timestamp when the ToS has been accepted.
    */
-  tos_accepted_timestamp: Timestamp | undefined;
+  tos_accepted_timestamp: TalerProtocolTimestamp | undefined;
 }
 
 export enum BackupProposalStatus {
@@ -1248,7 +1248,7 @@ export interface BackupProposal {
    * Timestamp of when the record
    * was created.
    */
-  timestamp: Timestamp;
+  timestamp: TalerProtocolTimestamp;
 
   /**
    * Private key for the nonce.

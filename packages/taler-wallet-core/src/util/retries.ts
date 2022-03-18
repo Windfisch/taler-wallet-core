@@ -21,11 +21,11 @@
 /**
  * Imports.
  */
-import { Timestamp, Duration, getTimestampNow } from "@gnu-taler/taler-util";
+import { AbsoluteTime, Duration } from "@gnu-taler/taler-util";
 
 export interface RetryInfo {
-  firstTry: Timestamp;
-  nextRetry: Timestamp;
+  firstTry: AbsoluteTime;
+  nextRetry: AbsoluteTime;
   retryCounter: number;
 }
 
@@ -45,7 +45,7 @@ export function updateRetryInfoTimeout(
   r: RetryInfo,
   p: RetryPolicy = defaultRetryPolicy,
 ): void {
-  const now = getTimestampNow();
+  const now = AbsoluteTime.now();
   if (now.t_ms === "never") {
     throw Error("assertion failed");
   }
@@ -54,10 +54,14 @@ export function updateRetryInfoTimeout(
     return;
   }
 
-  const nextIncrement = p.backoffDelta.d_ms * Math.pow(p.backoffBase, r.retryCounter)
+  const nextIncrement =
+    p.backoffDelta.d_ms * Math.pow(p.backoffBase, r.retryCounter);
 
   const t =
-    now.t_ms + (p.maxTimeout.d_ms === "forever" ? nextIncrement : Math.min(p.maxTimeout.d_ms, nextIncrement));
+    now.t_ms +
+    (p.maxTimeout.d_ms === "forever"
+      ? nextIncrement
+      : Math.min(p.maxTimeout.d_ms, nextIncrement));
   r.nextRetry = { t_ms: t };
 }
 
@@ -73,13 +77,13 @@ export function getRetryDuration(
     return { d_ms: "forever" };
   }
   const t = p.backoffDelta.d_ms * Math.pow(p.backoffBase, r.retryCounter);
-  return { d_ms: p.maxTimeout.d_ms === "forever" ? t : Math.min(p.maxTimeout.d_ms, t) };
+  return {
+    d_ms: p.maxTimeout.d_ms === "forever" ? t : Math.min(p.maxTimeout.d_ms, t),
+  };
 }
 
-export function initRetryInfo(
-  p: RetryPolicy = defaultRetryPolicy,
-): RetryInfo {
-  const now = getTimestampNow();
+export function initRetryInfo(p: RetryPolicy = defaultRetryPolicy): RetryInfo {
+  const now = AbsoluteTime.now();
   const info = {
     firstTry: now,
     nextRetry: now,

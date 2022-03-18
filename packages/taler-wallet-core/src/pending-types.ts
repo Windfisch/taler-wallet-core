@@ -27,7 +27,8 @@
 import {
   TalerErrorDetails,
   BalancesResponse,
-  Timestamp,
+  AbsoluteTime,
+  TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
 import { ReserveRecordStatus } from "./db.js";
 import { RetryInfo } from "./util/retries.js";
@@ -112,7 +113,7 @@ export interface PendingReserveTask {
   type: PendingTaskType.Reserve;
   retryInfo: RetryInfo | undefined;
   stage: ReserveRecordStatus;
-  timestampCreated: Timestamp;
+  timestampCreated: TalerProtocolTimestamp;
   reserveType: ReserveType;
   reservePub: string;
   bankWithdrawConfirmUrl?: string;
@@ -135,7 +136,7 @@ export interface PendingRefreshTask {
 export interface PendingProposalDownloadTask {
   type: PendingTaskType.ProposalDownload;
   merchantBaseUrl: string;
-  proposalTimestamp: Timestamp;
+  proposalTimestamp: TalerProtocolTimestamp;
   proposalId: string;
   orderId: string;
   lastError?: TalerErrorDetails;
@@ -149,7 +150,7 @@ export interface PendingProposalDownloadTask {
 export interface PendingProposalChoiceOperation {
   type: PendingTaskType.ProposalChoice;
   merchantBaseUrl: string;
-  proposalTimestamp: Timestamp;
+  proposalTimestamp: AbsoluteTime;
   proposalId: string;
 }
 
@@ -231,7 +232,7 @@ export interface PendingTaskInfoCommon {
   /**
    * Timestamp when the pending operation should be executed next.
    */
-  timestampDue: Timestamp;
+  timestampDue: AbsoluteTime;
 
   /**
    * Retry info.  Currently used to stop the wallet after any operation

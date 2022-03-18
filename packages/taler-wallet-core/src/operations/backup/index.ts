@@ -40,21 +40,19 @@ import {
   ConfirmPayResultType,
   DenomKeyType,
   durationFromSpec,
-  getTimestampNow,
   hashDenomPub,
   HttpStatusCode,
   j2s,
-  LibtoolVersion,
   Logger,
   notEmpty,
   PreparePayResultType,
   RecoveryLoadRequest,
   RecoveryMergeStrategy,
   TalerErrorDetails,
-  Timestamp,
-  timestampAddDuration,
+  AbsoluteTime,
   URL,
   WalletBackupContentV1,
+  TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
 import { gunzipSync, gzipSync } from "fflate";
 import { InternalWalletState } from "../../common.js";
@@ -250,11 +248,13 @@ interface BackupForProviderArgs {
   retryAfterPayment: boolean;
 }
 
-function getNextBackupTimestamp(): Timestamp {
+function getNextBackupTimestamp(): TalerProtocolTimestamp {
   // FIXME:  Randomize!
-  return timestampAddDuration(
-    getTimestampNow(),
-    durationFromSpec({ minutes: 5 }),
+  return AbsoluteTime.toTimestamp(
+    AbsoluteTime.addDuration(
+      AbsoluteTime.now(),
+      durationFromSpec({ minutes: 5 }),
+    ),
   );
 }
 
@@ -324,7 +324,7 @@ async function runBackupCycleForProvider(
         if (!prov) {
           return;
         }
-        prov.lastBackupCycleTimestamp = getTimestampNow();
+        prov.lastBackupCycleTimestamp = TalerProtocolTimestamp.now();
         prov.state = {
           tag: BackupProviderStateTag.Ready,
           nextBackupTimestamp: getNextBackupTimestamp(),
@@ -404,7 +404,7 @@ async function runBackupCycleForProvider(
           return;
         }
         prov.lastBackupHash = encodeCrock(currentBackupHash);
-        prov.lastBackupCycleTimestamp = getTimestampNow();
+        prov.lastBackupCycleTimestamp = TalerProtocolTimestamp.now();
         prov.state = {
           tag: BackupProviderStateTag.Ready,
           nextBackupTimestamp: getNextBackupTimestamp(),
@@ -641,7 +641,7 @@ export async function addBackupProvider(
         if (req.activate) {
           oldProv.state = {
             tag: BackupProviderStateTag.Ready,
-            nextBackupTimestamp: getTimestampNow(),
+            nextBackupTimestamp: TalerProtocolTimestamp.now(),
           };
           logger.info("setting existing backup provider to active");
           await tx.backupProviders.put(oldProv);
@@ -662,7 +662,7 @@ export async function addBackupProvider(
       if (req.activate) {
         state = {
           tag: BackupProviderStateTag.Ready,
-          nextBackupTimestamp: getTimestampNow(),
+          nextBackupTimestamp: TalerProtocolTimestamp.now(),
         };
       } else {
         state = {
@@ -701,8 +701,8 @@ export interface ProviderInfo {
    * Last communication issue with the provider.
    */
   lastError?: TalerErrorDetails;
-  lastSuccessfulBackupTimestamp?: Timestamp;
-  lastAttemptedBackupTimestamp?: Timestamp;
+  lastSuccessfulBackupTimestamp?: TalerProtocolTimestamp;
+  lastAttemptedBackupTimestamp?: TalerProtocolTimestamp;
   paymentProposalIds: string[];
   backupProblem?: BackupProblem;
   paymentStatus: ProviderPaymentStatus;
@@ -724,7 +724,7 @@ export interface BackupConflictingDeviceProblem {
   type: "backup-conflicting-device";
   otherDeviceId: string;
   myDeviceId: string;
-  backupTimestamp: Timestamp;
+  backupTimestamp: AbsoluteTime;
 }
 
 export type ProviderPaymentStatus =
@@ -774,12 +774,12 @@ export interface ProviderPaymentPending {
 
 export interface ProviderPaymentPaid {
   type: ProviderPaymentType.Paid;
-  paidUntil: Timestamp;
+  paidUntil: AbsoluteTime;
 }
 
 export interface ProviderPaymentTermsChanged {
   type: ProviderPaymentType.TermsChanged;
-  paidUntil: Timestamp;
+  paidUntil: AbsoluteTime;
   oldTerms: BackupProviderTerms;
   newTerms: BackupProviderTerms;
 }
@@ -811,8 +811,8 @@ async function getProviderPaymentInfo(
     if (status.paid) {
       return {
         type: ProviderPaymentType.Paid,
-        paidUntil: timestampAddDuration(
-          status.contractTerms.timestamp,
+        paidUntil: AbsoluteTime.addDuration(
+          AbsoluteTime.fromTimestamp(status.contractTerms.timestamp),
           durationFromSpec({ years: 1 }),
         ),
       };
@@ -915,7 +915,7 @@ async function backupRecoveryTheirs(
             paymentProposalIds: [],
             state: {
               tag: BackupProviderStateTag.Ready,
-              nextBackupTimestamp: getTimestampNow(),
+              nextBackupTimestamp: TalerProtocolTimestamp.now(),
             },
             uids: [encodeCrock(getRandomBytes(32))],
           });

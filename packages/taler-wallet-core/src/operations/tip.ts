@@ -22,7 +22,6 @@ import {
   parseTipUri,
   codecForTipPickupGetResponse,
   Amounts,
-  getTimestampNow,
   TalerErrorDetails,
   NotificationType,
   TipPlanchetDetail,
@@ -32,6 +31,7 @@ import {
   DenomKeyType,
   BlindedDenominationSignature,
   codecForMerchantTipResponseV2,
+  TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
 import { DerivedTipPlanchet } from "../crypto/cryptoTypes.js";
 import {
@@ -39,6 +39,7 @@ import {
   CoinRecord,
   CoinSourceType,
   CoinStatus,
+  TipRecord,
 } from "../db.js";
 import { j2s } from "@gnu-taler/taler-util";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
@@ -115,14 +116,14 @@ export async function prepareTip(
     const secretSeed = encodeCrock(getRandomBytes(64));
     const denomSelUid = encodeCrock(getRandomBytes(32));
 
-    const newTipRecord = {
+    const newTipRecord: TipRecord = {
       walletTipId: walletTipId,
       acceptedTimestamp: undefined,
       tipAmountRaw: amount,
       tipExpiration: tipPickupStatus.expiration,
       exchangeBaseUrl: tipPickupStatus.exchange_url,
       merchantBaseUrl: res.merchantBaseUrl,
-      createdTimestamp: getTimestampNow(),
+      createdTimestamp: TalerProtocolTimestamp.now(),
       merchantTipId: res.merchantTipId,
       tipAmountEffective: Amounts.sub(
         amount,
@@ -397,7 +398,7 @@ async function processTipImpl(
       if (tr.pickedUpTimestamp) {
         return;
       }
-      tr.pickedUpTimestamp = getTimestampNow();
+      tr.pickedUpTimestamp = TalerProtocolTimestamp.now();
       tr.lastError = undefined;
       tr.retryInfo = initRetryInfo();
       await tx.tips.put(tr);
@@ -421,7 +422,7 @@ export async function acceptTip(
         logger.error("tip not found");
         return false;
       }
-      tipRecord.acceptedTimestamp = getTimestampNow();
+      tipRecord.acceptedTimestamp = TalerProtocolTimestamp.now();
       await tx.tips.put(tipRecord);
       return true;
     });

@@ -34,7 +34,8 @@ import {
   BalancesResponse,
   AmountJson,
   DenominationPubKey,
-  Timestamp,
+  AbsoluteTime,
+  TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
 import { CryptoApi } from "./crypto/workers/cryptoApi.js";
 import { ExchangeDetailsRecord, ExchangeRecord, WalletStoresV1 } from "./db.js";
@@ -165,22 +166,22 @@ export interface DenomInfo {
   /**
    * Validity start date of the denomination.
    */
-  stampStart: Timestamp;
+  stampStart: TalerProtocolTimestamp;
 
   /**
    * Date after which the currency can't be withdrawn anymore.
    */
-  stampExpireWithdraw: Timestamp;
+  stampExpireWithdraw: TalerProtocolTimestamp;
 
   /**
    * Date after the denomination officially doesn't exist anymore.
    */
-  stampExpireLegal: Timestamp;
+  stampExpireLegal: TalerProtocolTimestamp;
 
   /**
    * Data after which coins of this denomination can't be deposited anymore.
    */
-  stampExpireDeposit: Timestamp;
+  stampExpireDeposit: TalerProtocolTimestamp;
 }
 
 export type NotificationListener = (n: WalletNotification) => void;

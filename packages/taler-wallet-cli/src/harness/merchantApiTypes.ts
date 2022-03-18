@@ -38,7 +38,7 @@ import {
   codecForAny,
   buildCodecForUnion,
   AmountString,
-  Timestamp,
+  AbsoluteTime,
   CoinPublicKeyString,
   EddsaPublicKeyString,
   codecForAmountString,
@@ -195,7 +195,7 @@ export interface RefundDetails {
   reason: string;
 
   // when was the refund approved
-  timestamp: Timestamp;
+  timestamp: AbsoluteTime;
 
   // Total amount that was refunded (minus a refund fee).
   amount: AmountString;
@@ -209,7 +209,7 @@ export interface TransactionWireTransfer {
   wtid: string;
 
   // execution time of the wire transfer
-  execution_time: Timestamp;
+  execution_time: AbsoluteTime;
 
   // Total amount that has been wire transferred
   // to the merchant
@@ -247,10 +247,10 @@ export interface ReserveStatusEntry {
   reserve_pub: string;
 
   // Timestamp when it was established
-  creation_time: Timestamp;
+  creation_time: AbsoluteTime;
 
   // Timestamp when it expires
-  expiration_time: Timestamp;
+  expiration_time: AbsoluteTime;
 
   // Initial amount as per reserve creation call
   merchant_initial_amount: AmountString;
@@ -281,7 +281,7 @@ export interface TipCreateConfirmation {
   tip_status_url: string;
 
   // when does the tip expire
-  tip_expiration: Timestamp;
+  tip_expiration: AbsoluteTime;
 }
 
 export interface TipCreateRequest {

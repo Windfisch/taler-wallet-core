@@ -64,9 +64,7 @@ import {
   durationMin,
   ExchangeListItem,
   ExchangesListRespose,
-  getDurationRemaining,
   GetExchangeTosResult,
-  isTimestampExpired,
   j2s,
   KnownBankAccounts,
   Logger,
@@ -76,11 +74,12 @@ import {
   PaytoUri,
   RefreshReason,
   TalerErrorCode,
-  Timestamp,
-  timestampMin,
+  AbsoluteTime,
   URL,
   WalletNotification,
+  Duration,
 } from "@gnu-taler/taler-util";
+import { timeStamp } from "console";
 import {
   DenomInfo,
   ExchangeOperations,
@@ -292,7 +291,7 @@ export async function runPending(
 ): Promise<void> {
   const pendingOpsResponse = await getPendingOperations(ws);
   for (const p of pendingOpsResponse.pendingOperations) {
-    if (!forceNow && !isTimestampExpired(p.timestampDue)) {
+    if (!forceNow && !AbsoluteTime.isExpired(p.timestampDue)) {
       continue;
     }
     try {
@@ -340,10 +339,10 @@ async function runTaskLoop(
     logger.trace(`pending operations: ${j2s(pending)}`);
     let numGivingLiveness = 0;
     let numDue = 0;
-    let minDue: Timestamp = { t_ms: "never" };
+    let minDue: AbsoluteTime = AbsoluteTime.never();
     for (const p of pending.pendingOperations) {
-      minDue = timestampMin(minDue, p.timestampDue);
-      if (isTimestampExpired(p.timestampDue)) {
+      minDue = AbsoluteTime.min(minDue, p.timestampDue);
+      if (AbsoluteTime.isExpired(p.timestampDue)) {
         numDue++;
       }
       if (p.givesLifeness) {
@@ -377,7 +376,7 @@ async function runTaskLoop(
         durationFromSpec({
           seconds: 5,
         }),
-        getDurationRemaining(minDue),
+        Duration.getRemaining(minDue),
       );
       logger.trace(`waiting for at most ${dt.d_ms} ms`);
       const timeout = ws.timerGroup.resolveAfter(dt);
@@ -394,7 +393,7 @@ async function runTaskLoop(
         `running ${pending.pendingOperations.length} pending operations`,
       );
       for (const p of pending.pendingOperations) {
-        if (!isTimestampExpired(p.timestampDue)) {
+        if (!AbsoluteTime.isExpired(p.timestampDue)) {
           continue;
         }
         try {

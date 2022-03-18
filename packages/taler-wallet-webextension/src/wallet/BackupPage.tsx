@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
 */
 
-import { Timestamp, Translate } from "@gnu-taler/taler-util";
+import { AbsoluteTime, Translate } from "@gnu-taler/taler-util";
 import {
   ProviderInfo,
   ProviderPaymentPaid,
@@ -104,7 +104,13 @@ export function BackupView({
           <BackupLayout
             key={idx}
             status={provider.paymentStatus}
-            timestamp={provider.lastSuccessfulBackupTimestamp}
+            timestamp={
+              provider.lastSuccessfulBackupTimestamp
+                ? AbsoluteTime.fromTimestamp(
+                    provider.lastSuccessfulBackupTimestamp,
+                  )
+                : undefined
+            }
             id={provider.syncProviderBaseUrl}
             active={provider.active}
             title={provider.name}
@@ -144,7 +150,7 @@ export function BackupView({
 
 interface TransactionLayoutProps {
   status: ProviderPaymentStatus;
-  timestamp?: Timestamp;
+  timestamp?: AbsoluteTime;
   title: string;
   id: string;
   active: boolean;
@@ -192,7 +198,7 @@ function BackupLayout(props: TransactionLayoutProps): VNode {
   );
 }
 
-function ExpirationText({ until }: { until: Timestamp }): VNode {
+function ExpirationText({ until }: { until: AbsoluteTime }): VNode {
   const { i18n } = useTranslationContext();
   return (
     <Fragment>
@@ -207,13 +213,13 @@ function ExpirationText({ until }: { until: Timestamp }): VNode {
   );
 }
 
-function colorByTimeToExpire(d: Timestamp): string {
+function colorByTimeToExpire(d: AbsoluteTime): string {
   if (d.t_ms === "never") return "rgb(28, 184, 65)";
   const months = differenceInMonths(d.t_ms, new Date());
   return months > 1 ? "rgb(28, 184, 65)" : "rgb(223, 117, 20)";
 }
 
-function daysUntil(d: Timestamp): string {
+function daysUntil(d: AbsoluteTime): string {
   if (d.t_ms === "never") return "";
   const duration = intervalToDuration({
     start: d.t_ms,

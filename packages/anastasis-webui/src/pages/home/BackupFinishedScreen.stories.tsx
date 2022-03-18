@@ -51,13 +51,13 @@ export const WithDetails = createExample(TestedComponent, {
   success_details: {
     "https://anastasis.demo.taler.net/": {
       policy_expiration: {
-        t_ms: "never",
+        t_s: "never",
       },
       policy_version: 0,
     },
     "https://kudos.demo.anastasis.lu/": {
       policy_expiration: {
-        t_ms: new Date().getTime() + 60 * 60 * 24 * 1000,
+        t_s: new Date().getTime() + 60 * 60 * 24,
       },
       policy_version: 1,
     },

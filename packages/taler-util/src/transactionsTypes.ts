@@ -24,7 +24,7 @@
 /**
  * Imports.
  */
-import { Timestamp } from "./time.js";
+import { TalerProtocolTimestamp } from "./time.js";
 import {
   AmountString,
   Product,
@@ -73,7 +73,7 @@ export interface TransactionCommon {
   type: TransactionType;
 
   // main timestamp of the transaction
-  timestamp: Timestamp;
+  timestamp: TalerProtocolTimestamp;
 
   // true if the transaction is still pending, false otherwise
   // If a transaction is not longer pending, its timestamp will be updated,

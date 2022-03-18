@@ -18,11 +18,11 @@
  * Imports.
  */
 import {
+  AbsoluteTime,
   codecForExchangeKeysJson,
   DenominationPubKey,
   Duration,
   durationFromSpec,
-  stringifyTimestamp,
 } from "@gnu-taler/taler-util";
 import {
   NodeHttpLib,
@@ -174,27 +174,37 @@ export async function runExchangeTimetravelTest(t: GlobalTestState) {
   const denomPubs1 = keys1.denoms.map((x) => {
     return {
       denomPub: x.denom_pub,
-      expireDeposit: stringifyTimestamp(x.stamp_expire_deposit),
+      expireDeposit: AbsoluteTime.stringify(
+        AbsoluteTime.fromTimestamp(x.stamp_expire_deposit),
+      ),
     };
   });
 
   const denomPubs2 = keys2.denoms.map((x) => {
     return {
       denomPub: x.denom_pub,
-      expireDeposit: stringifyTimestamp(x.stamp_expire_deposit),
+      expireDeposit: AbsoluteTime.stringify(
+        AbsoluteTime.fromTimestamp(x.stamp_expire_deposit),
+      ),
     };
   });
   const dps2 = new Set(denomPubs2.map((x) => x.denomPub));
 
   console.log("=== KEYS RESPONSE 1 ===");
 
-  console.log("list issue date", stringifyTimestamp(keys1.list_issue_date));
+  console.log(
+    "list issue date",
+    AbsoluteTime.stringify(AbsoluteTime.fromTimestamp(keys1.list_issue_date)),
+  );
   console.log("num denoms", keys1.denoms.length);
   console.log("denoms", JSON.stringify(denomPubs1, undefined, 2));
 
   console.log("=== KEYS RESPONSE 2 ===");
 
-  console.log("list issue date", stringifyTimestamp(keys2.list_issue_date));
+  console.log(
+    "list issue date",
+    AbsoluteTime.stringify(AbsoluteTime.fromTimestamp(keys2.list_issue_date)),
+  );
   console.log("num denoms", keys2.denoms.length);
   console.log("denoms", JSON.stringify(denomPubs2, undefined, 2));
 
@@ -214,8 +224,8 @@ export async function runExchangeTimetravelTest(t: GlobalTestState) {
         `denomination with public key ${da.denomPub} is not present in new /keys response`,
       );
       console.log(
-        `the new /keys response was issued ${stringifyTimestamp(
-          keys2.list_issue_date,
+        `the new /keys response was issued ${AbsoluteTime.stringify(
+          AbsoluteTime.fromTimestamp(keys2.list_issue_date),
         )}`,
       );
       console.log(

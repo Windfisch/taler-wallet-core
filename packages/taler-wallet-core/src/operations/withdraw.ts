@@ -26,16 +26,12 @@ import {
   codecForWithdrawResponse,
   durationFromSpec,
   ExchangeListItem,
-  getDurationRemaining,
-  getTimestampNow,
   Logger,
   NotificationType,
   parseWithdrawUri,
   TalerErrorCode,
   TalerErrorDetails,
-  Timestamp,
-  timestampCmp,
-  timestampSubtractDuraction,
+  AbsoluteTime,
   WithdrawResponse,
   URL,
   WithdrawUriInfoResponse,
@@ -44,6 +40,8 @@ import {
   LibtoolVersion,
   UnblindedSignature,
   ExchangeWithdrawRequest,
+  Duration,
+  TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
 import {
   CoinRecord,
@@ -147,7 +145,7 @@ export interface ExchangeWithdrawDetails {
   /**
    * The earliest deposit expiration of the selected coins.
    */
-  earliestDepositExpiration: Timestamp;
+  earliestDepositExpiration: TalerProtocolTimestamp;
 
   /**
    * Number of currently offered denominations.
@@ -184,18 +182,20 @@ export interface ExchangeWithdrawDetails {
  * revocation and offered state.
  */
 export function isWithdrawableDenom(d: DenominationRecord): boolean {
-  const now = getTimestampNow();
-  const started = timestampCmp(now, d.stampStart) >= 0;
-  let lastPossibleWithdraw: Timestamp;
+  const now = AbsoluteTime.now();
+  const start = AbsoluteTime.fromTimestamp(d.stampStart);
+  const withdrawExpire = AbsoluteTime.fromTimestamp(d.stampExpireWithdraw);
+  const started = AbsoluteTime.cmp(now, start) >= 0;
+  let lastPossibleWithdraw: AbsoluteTime;
   if (walletCoreDebugFlags.denomselAllowLate) {
-    lastPossibleWithdraw = d.stampExpireWithdraw;
+    lastPossibleWithdraw = start;
   } else {
-    lastPossibleWithdraw = timestampSubtractDuraction(
-      d.stampExpireWithdraw,
+    lastPossibleWithdraw = AbsoluteTime.subtractDuraction(
+      withdrawExpire,
       durationFromSpec({ minutes: 5 }),
     );
   }
-  const remaining = getDurationRemaining(lastPossibleWithdraw, now);
+  const remaining = Duration.getRemaining(lastPossibleWithdraw, now);
   const stillOkay = remaining.d_ms !== 0;
   return started && stillOkay && !d.isRevoked && d.isOffered;
 }
@@ -274,7 +274,7 @@ export function selectWithdrawalDenominations(
 /**
  * Get information about a withdrawal from
  * a taler://withdraw URI by asking the bank.
- * 
+ *
  * FIXME: Move into bank client.
  */
 export async function getBankWithdrawalInfo(
@@ -947,7 +947,7 @@ async function processWithdrawGroupImpl(
       logger.trace(`now withdrawn ${numFinished} of ${numTotalCoins} coins`);
       if (wg.timestampFinish === undefined && numFinished === numTotalCoins) {
         finishedForFirstTime = true;
-        wg.timestampFinish = getTimestampNow();
+        wg.timestampFinish = TalerProtocolTimestamp.now();
         wg.operationStatus = OperationStatus.Finished;
         delete wg.lastError;
         wg.retryInfo = initRetryInfo();
@@ -999,7 +999,12 @@ export async function getExchangeWithdrawalInfo(
   for (let i = 1; i < selectedDenoms.selectedDenoms.length; i++) {
     const expireDeposit =
       selectedDenoms.selectedDenoms[i].denom.stampExpireDeposit;
-    if (expireDeposit.t_ms < earliestDepositExpiration.t_ms) {
+    if (
+      AbsoluteTime.cmp(
+        AbsoluteTime.fromTimestamp(expireDeposit),
+        AbsoluteTime.fromTimestamp(earliestDepositExpiration),
+      ) < 0
+    ) {
       earliestDepositExpiration = expireDeposit;
     }
   }

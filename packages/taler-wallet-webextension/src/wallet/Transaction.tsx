@@ -15,6 +15,7 @@
  */
 
 import {
+  AbsoluteTime,
   AmountLike,
   Amounts,
   NotificationType,
@@ -137,9 +138,9 @@ export function TransactionView({
   }): VNode {
     const showRetry =
       transaction.error !== undefined ||
-      transaction.timestamp.t_ms === "never" ||
+      transaction.timestamp.t_s === "never" ||
       (transaction.pending &&
-        differenceInSeconds(new Date(), transaction.timestamp.t_ms) > 10);
+        differenceInSeconds(new Date(), transaction.timestamp.t_s * 1000) > 10);
 
     return (
       <Fragment>
@@ -218,7 +219,7 @@ export function TransactionView({
         <h2>
           <i18n.Translate>Withdrawal</i18n.Translate>
         </h2>
-        <Time timestamp={transaction.timestamp} format="dd MMMM yyyy, HH:mm" />
+        <Time timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)} format="dd MMMM yyyy, HH:mm" />
         {transaction.pending ? (
           transaction.withdrawalDetails.type ===
           WithdrawalType.ManualTransfer ? (
@@ -342,7 +343,7 @@ export function TransactionView({
         <h2>
           <i18n.Translate>Payment</i18n.Translate>
         </h2>
-        <Time timestamp={transaction.timestamp} format="dd MMMM yyyy, HH:mm" />
+        <Time timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)} format="dd MMMM yyyy, HH:mm" />
         <br />
         <Part
           big
@@ -425,7 +426,7 @@ export function TransactionView({
         <h2>
           <i18n.Translate>Deposit</i18n.Translate>
         </h2>
-        <Time timestamp={transaction.timestamp} format="dd MMMM yyyy, HH:mm" />
+        <Time timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)} format="dd MMMM yyyy, HH:mm" />
         <br />
         <Part
           big
@@ -459,7 +460,7 @@ export function TransactionView({
         <h2>
           <i18n.Translate>Refresh</i18n.Translate>
         </h2>
-        <Time timestamp={transaction.timestamp} format="dd MMMM yyyy, HH:mm" />
+        <Time timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)} format="dd MMMM yyyy, HH:mm" />
         <br />
         <Part
           big
@@ -493,7 +494,7 @@ export function TransactionView({
         <h2>
           <i18n.Translate>Tip</i18n.Translate>
         </h2>
-        <Time timestamp={transaction.timestamp} format="dd MMMM yyyy, HH:mm" />
+        <Time timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)} format="dd MMMM yyyy, HH:mm" />
         <br />
         <Part
           big
@@ -527,7 +528,10 @@ export function TransactionView({
         <h2>
           <i18n.Translate>Refund</i18n.Translate>
         </h2>
-        <Time timestamp={transaction.timestamp} format="dd MMMM yyyy, HH:mm" />
+        <Time
+          timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)}
+          format="dd MMMM yyyy, HH:mm"
+        />
         <br />
         <Part
           big

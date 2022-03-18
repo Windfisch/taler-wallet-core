@@ -21,6 +21,7 @@
 
 import {
   PaymentStatus,
+  TalerProtocolTimestamp,
   TransactionCommon,
   TransactionDeposit,
   TransactionPayment,
@@ -53,9 +54,7 @@ const commonTransaction = {
   amountRaw: "KUDOS:11",
   amountEffective: "KUDOS:9.2",
   pending: false,
-  timestamp: {
-    t_ms: new Date().getTime(),
-  },
+  timestamp: TalerProtocolTimestamp.now(),
   transactionId: "12",
 } as TransactionCommon;
 
@@ -144,18 +143,14 @@ export const Withdraw = createExample(TestedComponent, {
 export const WithdrawOneMinuteAgo = createExample(TestedComponent, {
   transaction: {
     ...exampleData.withdraw,
-    timestamp: {
-      t_ms: new Date().getTime() - 60 * 1000,
-    },
+    timestamp: TalerProtocolTimestamp.fromSeconds(new Date().getTime() - 60),
   },
 });
 
 export const WithdrawOneMinuteAgoAndPending = createExample(TestedComponent, {
   transaction: {
     ...exampleData.withdraw,
-    timestamp: {
-      t_ms: new Date().getTime() - 60 * 1000,
-    },
+    timestamp: TalerProtocolTimestamp.fromSeconds(new Date().getTime() - 60),
     pending: true,
   },
 });

@@ -18,9 +18,8 @@
  * Imports.
  */
 import {
+  AbsoluteTime,
   ContractTerms,
-  getTimestampNow,
-  timestampTruncateToSecond,
 } from "@gnu-taler/taler-util";
 import {
   WalletApiOperation,
@@ -277,7 +276,7 @@ export async function runLibeufinBasicTest(t: GlobalTestState) {
     summary: "Buy me!",
     amount: "EUR:5",
     fulfillment_url: "taler://fulfillment-success/thx",
-    wire_transfer_deadline: timestampTruncateToSecond(getTimestampNow()),
+    wire_transfer_deadline: AbsoluteTime.toTimestamp(AbsoluteTime.now()),
   };
 
   await makeTestPayment(t, { wallet, merchant, order });

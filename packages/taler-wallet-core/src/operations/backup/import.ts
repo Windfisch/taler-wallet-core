@@ -20,7 +20,6 @@ import {
   Amounts,
   BackupDenomSel,
   WalletBackupContentV1,
-  getTimestampNow,
   BackupCoinSourceType,
   BackupProposalStatus,
   codecForContractTerms,
@@ -28,6 +27,8 @@ import {
   RefreshReason,
   BackupRefreshReason,
   DenomKeyType,
+  AbsoluteTime,
+  TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
 import {
   WalletContractData,
@@ -277,8 +278,8 @@ export async function importBackup(
           permanent: true,
           retryInfo: initRetryInfo(),
           lastUpdate: undefined,
-          nextUpdate: getTimestampNow(),
-          nextRefreshCheck: getTimestampNow(),
+          nextUpdate: TalerProtocolTimestamp.now(),
+          nextRefreshCheck: TalerProtocolTimestamp.now(),
         });
       }
 
@@ -465,7 +466,6 @@ export async function importBackup(
               senderWire: backupReserve.sender_wire,
               retryInfo: initRetryInfo(),
               lastError: undefined,
-              lastSuccessfulStatusQuery: { t_ms: "never" },
               initialWithdrawalGroupId:
                 backupReserve.initial_withdrawal_group_id,
               initialWithdrawalStarted:
@@ -752,7 +752,7 @@ export async function importBackup(
             noncePub:
               cryptoComp.proposalNoncePrivToPub[backupPurchase.nonce_priv],
             lastPayError: undefined,
-            autoRefundDeadline: { t_ms: "never" },
+            autoRefundDeadline: TalerProtocolTimestamp.never(),
             refundStatusRetryInfo: initRetryInfo(),
             lastRefundStatusError: undefined,
             timestampAccept: backupPurchase.timestamp_accept,

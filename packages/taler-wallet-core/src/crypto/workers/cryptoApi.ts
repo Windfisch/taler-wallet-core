@@ -207,7 +207,7 @@ export class CryptoApi {
       }
     };
     ws.terminationTimerHandle = timer.after(15 * 1000, destroy);
-    ws.terminationTimerHandle.unref();
+    //ws.terminationTimerHandle.unref();
   }
 
   handleWorkerError(ws: WorkerState, e: any): void {

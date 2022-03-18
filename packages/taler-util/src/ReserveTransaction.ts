@@ -38,7 +38,11 @@ import {
   EddsaPublicKeyString,
   CoinPublicKeyString,
 } from "./talerTypes";
-import { Timestamp, codecForTimestamp } from "./time.js";
+import {
+  AbsoluteTime,
+  codecForTimestamp,
+  TalerProtocolTimestamp,
+} from "./time.js";
 
 export enum ReserveTransactionType {
   Withdraw = "WITHDRAW",
@@ -98,7 +102,7 @@ export interface ReserveCreditTransaction {
   /**
    * Timestamp of the incoming wire transfer.
    */
-  timestamp: Timestamp;
+  timestamp: TalerProtocolTimestamp;
 }
 
 export interface ReserveClosingTransaction {
@@ -139,7 +143,7 @@ export interface ReserveClosingTransaction {
   /**
    * Time when the reserve was closed.
    */
-  timestamp: Timestamp;
+  timestamp: TalerProtocolTimestamp;
 }
 
 export interface ReserveRecoupTransaction {
@@ -165,7 +169,7 @@ export interface ReserveRecoupTransaction {
   /**
    * Time when the funds were paid back into the reserve.
    */
-  timestamp: Timestamp;
+  timestamp: TalerProtocolTimestamp;
 
   /**
    * Public key of the coin that was paid back.
@@ -182,46 +186,50 @@ export type ReserveTransaction =
   | ReserveClosingTransaction
   | ReserveRecoupTransaction;
 
-export const codecForReserveWithdrawTransaction = (): Codec<ReserveWithdrawTransaction> =>
-  buildCodecForObject<ReserveWithdrawTransaction>()
-    .property("amount", codecForString())
-    .property("h_coin_envelope", codecForString())
-    .property("h_denom_pub", codecForString())
-    .property("reserve_sig", codecForString())
-    .property("type", codecForConstString(ReserveTransactionType.Withdraw))
-    .property("withdraw_fee", codecForString())
-    .build("ReserveWithdrawTransaction");
+export const codecForReserveWithdrawTransaction =
+  (): Codec<ReserveWithdrawTransaction> =>
+    buildCodecForObject<ReserveWithdrawTransaction>()
+      .property("amount", codecForString())
+      .property("h_coin_envelope", codecForString())
+      .property("h_denom_pub", codecForString())
+      .property("reserve_sig", codecForString())
+      .property("type", codecForConstString(ReserveTransactionType.Withdraw))
+      .property("withdraw_fee", codecForString())
+      .build("ReserveWithdrawTransaction");
 
-export const codecForReserveCreditTransaction = (): Codec<ReserveCreditTransaction> =>
-  buildCodecForObject<ReserveCreditTransaction>()
-    .property("amount", codecForString())
-    .property("sender_account_url", codecForString())
-    .property("timestamp", codecForTimestamp)
-    .property("wire_reference", codecForNumber())
-    .property("type", codecForConstString(ReserveTransactionType.Credit))
-    .build("ReserveCreditTransaction");
+export const codecForReserveCreditTransaction =
+  (): Codec<ReserveCreditTransaction> =>
+    buildCodecForObject<ReserveCreditTransaction>()
+      .property("amount", codecForString())
+      .property("sender_account_url", codecForString())
+      .property("timestamp", codecForTimestamp)
+      .property("wire_reference", codecForNumber())
+      .property("type", codecForConstString(ReserveTransactionType.Credit))
+      .build("ReserveCreditTransaction");
 
-export const codecForReserveClosingTransaction = (): Codec<ReserveClosingTransaction> =>
-  buildCodecForObject<ReserveClosingTransaction>()
-    .property("amount", codecForString())
-    .property("closing_fee", codecForString())
-    .property("exchange_pub", codecForString())
-    .property("exchange_sig", codecForString())
-    .property("h_wire", codecForString())
-    .property("timestamp", codecForTimestamp)
-    .property("type", codecForConstString(ReserveTransactionType.Closing))
-    .property("wtid", codecForString())
-    .build("ReserveClosingTransaction");
+export const codecForReserveClosingTransaction =
+  (): Codec<ReserveClosingTransaction> =>
+    buildCodecForObject<ReserveClosingTransaction>()
+      .property("amount", codecForString())
+      .property("closing_fee", codecForString())
+      .property("exchange_pub", codecForString())
+      .property("exchange_sig", codecForString())
+      .property("h_wire", codecForString())
+      .property("timestamp", codecForTimestamp)
+      .property("type", codecForConstString(ReserveTransactionType.Closing))
+      .property("wtid", codecForString())
+      .build("ReserveClosingTransaction");
 
-export const codecForReserveRecoupTransaction = (): Codec<ReserveRecoupTransaction> =>
-  buildCodecForObject<ReserveRecoupTransaction>()
-    .property("amount", codecForString())
-    .property("coin_pub", codecForString())
-    .property("exchange_pub", codecForString())
-    .property("exchange_sig", codecForString())
-    .property("timestamp", codecForTimestamp)
-    .property("type", codecForConstString(ReserveTransactionType.Recoup))
-    .build("ReserveRecoupTransaction");
+export const codecForReserveRecoupTransaction =
+  (): Codec<ReserveRecoupTransaction> =>
+    buildCodecForObject<ReserveRecoupTransaction>()
+      .property("amount", codecForString())
+      .property("coin_pub", codecForString())
+      .property("exchange_pub", codecForString())
+      .property("exchange_sig", codecForString())
+      .property("timestamp", codecForTimestamp)
+      .property("type", codecForConstString(ReserveTransactionType.Recoup))
+      .build("ReserveRecoupTransaction");
 
 export const codecForReserveTransaction = (): Codec<ReserveTransaction> =>
   buildCodecForUnion<ReserveTransaction>()

@@ -126,7 +126,7 @@ export function HistoryView({
     .filter((t) => t.amountRaw.split(":")[0] === selectedCurrency)
     .reduce((rv, x) => {
       const theDate =
-        x.timestamp.t_ms === "never" ? 0 : normalizeToDay(x.timestamp.t_ms);
+        x.timestamp.t_s === "never" ? 0 : normalizeToDay(x.timestamp.t_s * 1000);
       if (theDate) {
         (rv[theDate] = rv[theDate] || []).push(x);
       }

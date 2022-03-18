@@ -18,7 +18,10 @@
  * Imports.
  */
 import { GlobalTestState, MerchantPrivateApi } from "../harness/harness.js";
-import { createSimpleTestkudosEnvironment, withdrawViaBank } from "../harness/helpers.js";
+import {
+  createSimpleTestkudosEnvironment,
+  withdrawViaBank,
+} from "../harness/helpers.js";
 import { durationFromSpec } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
@@ -28,12 +31,8 @@ import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 export async function runRefundAutoTest(t: GlobalTestState) {
   // Set up test environment
 
-  const {
-    wallet,
-    bank,
-    exchange,
-    merchant,
-  } = await createSimpleTestkudosEnvironment(t);
+  const { wallet, bank, exchange, merchant } =
+    await createSimpleTestkudosEnvironment(t);
 
   // Withdraw digital cash into the wallet.
 
@@ -46,7 +45,7 @@ export async function runRefundAutoTest(t: GlobalTestState) {
       amount: "TESTKUDOS:5",
       fulfillment_url: "taler://fulfillment-success/thx",
       auto_refund: {
-        d_ms: 3000,
+        d_us: 3000 * 1000,
       },
     },
     refund_delay: durationFromSpec({ minutes: 5 }),

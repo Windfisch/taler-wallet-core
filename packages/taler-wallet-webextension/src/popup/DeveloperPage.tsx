@@ -20,7 +20,7 @@ import {
   CoinDumpJson,
   ExchangeListItem,
   NotificationType,
-  Timestamp,
+  AbsoluteTime,
   Translate,
 } from "@gnu-taler/taler-util";
 import { PendingTaskInfo } from "@gnu-taler/taler-wallet-core";

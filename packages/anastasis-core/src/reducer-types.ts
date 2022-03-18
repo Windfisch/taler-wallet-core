@@ -7,7 +7,8 @@ import {
   codecForString,
   codecForTimestamp,
   Duration,
-  Timestamp,
+  TalerProtocolTimestamp,
+  AbsoluteTime,
 } from "@gnu-taler/taler-util";
 import { ChallengeFeedback } from "./challenge-feedback-types.js";
 import { KeyShare } from "./crypto.js";
@@ -43,7 +44,7 @@ export interface PolicyProvider {
 export interface SuccessDetails {
   [provider_url: string]: {
     policy_version: number;
-    policy_expiration: Timestamp;
+    policy_expiration: TalerProtocolTimestamp;
   };
 }
 
@@ -112,7 +113,7 @@ export interface ReducerStateBackup {
 
   core_secret?: CoreSecret;
 
-  expiration?: Timestamp;
+  expiration?: TalerProtocolTimestamp;
 
   upload_fees?: { fee: AmountString }[];
 
@@ -369,7 +370,7 @@ export interface ActionArgsEnterSecret {
     value: string;
     mime?: string;
   };
-  expiration: Timestamp;
+  expiration: TalerProtocolTimestamp;
 }
 
 export interface ActionArgsSelectContinent {
@@ -438,7 +439,7 @@ export interface ActionArgsAddPolicy {
 }
 
 export interface ActionArgsUpdateExpiration {
-  expiration: Timestamp;
+  expiration: TalerProtocolTimestamp;
 }
 
 export interface ActionArgsChangeVersion {

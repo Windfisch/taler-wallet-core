@@ -19,8 +19,9 @@ import {
   parsePayUri,
   stringToBytes,
   TalerErrorCode,
+  TalerProtocolTimestamp,
   TalerSignaturePurpose,
-  Timestamp,
+  AbsoluteTime,
 } from "@gnu-taler/taler-util";
 import { anastasisData } from "./anastasis-data.js";
 import {
@@ -631,15 +632,13 @@ async function uploadSecret(
     logger.info(`got response for policy upload (http status ${resp.status})`);
     if (resp.status === HttpStatusCode.NoContent) {
       let policyVersion = 0;
-      let policyExpiration: Timestamp = { t_ms: 0 };
+      let policyExpiration: TalerProtocolTimestamp = { t_s: 0 };
       try {
         policyVersion = Number(resp.headers.get("Anastasis-Version") ?? "0");
       } catch (e) {}
       try {
         policyExpiration = {
-          t_ms:
-            1000 *
-            Number(resp.headers.get("Anastasis-Policy-Expiration") ?? "0"),
+          t_s: Number(resp.headers.get("Anastasis-Policy-Expiration") ?? "0"),
         };
       } catch (e) {}
       successDetails[prov.provider_url] = {
@@ -1187,7 +1186,7 @@ async function addProviderBackup(
   state: ReducerStateBackup,
   args: ActionArgsAddProvider,
 ): Promise<ReducerStateBackup> {
-  const info = await getProviderInfo(args.provider_url)
+  const info = await getProviderInfo(args.provider_url);
   return {
     ...state,
     authentication_providers: {
@@ -1202,8 +1201,10 @@ async function deleteProviderBackup(
   state: ReducerStateBackup,
   args: ActionArgsDeleteProvider,
 ): Promise<ReducerStateBackup> {
-  const authentication_providers = {... state.authentication_providers ?? {} }
-  delete authentication_providers[args.provider_url]
+  const authentication_providers = {
+    ...(state.authentication_providers ?? {}),
+  };
+  delete authentication_providers[args.provider_url];
   return {
     ...state,
     authentication_providers,
@@ -1214,7 +1215,7 @@ async function addProviderRecovery(
   state: ReducerStateRecovery,
   args: ActionArgsAddProvider,
 ): Promise<ReducerStateRecovery> {
-  const info = await getProviderInfo(args.provider_url)
+  const info = await getProviderInfo(args.provider_url);
   return {
     ...state,
     authentication_providers: {
@@ -1228,8 +1229,10 @@ async function deleteProviderRecovery(
   state: ReducerStateRecovery,
   args: ActionArgsDeleteProvider,
 ): Promise<ReducerStateRecovery> {
-  const authentication_providers = {... state.authentication_providers ?? {} }
-  delete authentication_providers[args.provider_url]
+  const authentication_providers = {
+    ...(state.authentication_providers ?? {}),
+  };
+  delete authentication_providers[args.provider_url];
   return {
     ...state,
     authentication_providers,
@@ -1347,7 +1350,8 @@ async function updateUploadFees(
       x,
     ).amount;
   };
-  const years = Duration.toIntegerYears(Duration.getRemaining(expiration));
+  const expirationTime = AbsoluteTime.fromTimestamp(expiration);
+  const years = Duration.toIntegerYears(Duration.getRemaining(expirationTime));
   logger.info(`computing fees for ${years} years`);
   // For now, we compute fees for *all* available providers.
   for (const provUrl in state.authentication_providers ?? {}) {

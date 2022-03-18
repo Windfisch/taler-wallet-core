@@ -32,7 +32,6 @@ import {
   codecForAbortResponse,
   codecForMerchantOrderRefundPickupResponse,
   CoinPublicKey,
-  getTimestampNow,
   Logger,
   MerchantCoinRefundFailureStatus,
   MerchantCoinRefundStatus,
@@ -43,9 +42,10 @@ import {
   TalerErrorCode,
   TalerErrorDetails,
   URL,
-  timestampAddDuration,
   codecForMerchantOrderStatusPaid,
-  isTimestampExpired,
+  AbsoluteTime,
+  TalerProtocolTimestamp,
+  Duration,
 } from "@gnu-taler/taler-util";
 import {
   AbortStatus,
@@ -170,7 +170,7 @@ async function applySuccessfulRefund(
 
   p.refunds[refundKey] = {
     type: RefundState.Applied,
-    obtainedTime: getTimestampNow(),
+    obtainedTime: AbsoluteTime.toTimestamp(AbsoluteTime.now()),
     executionTime: r.execution_time,
     refundAmount: Amounts.parseOrThrow(r.refund_amount),
     refundFee: denom.feeRefund,
@@ -222,7 +222,7 @@ async function storePendingRefund(
 
   p.refunds[refundKey] = {
     type: RefundState.Pending,
-    obtainedTime: getTimestampNow(),
+    obtainedTime: AbsoluteTime.toTimestamp(AbsoluteTime.now()),
     executionTime: r.execution_time,
     refundAmount: Amounts.parseOrThrow(r.refund_amount),
     refundFee: denom.feeRefund,
@@ -275,7 +275,7 @@ async function storeFailedRefund(
 
   p.refunds[refundKey] = {
     type: RefundState.Failed,
-    obtainedTime: getTimestampNow(),
+    obtainedTime: TalerProtocolTimestamp.now(),
     executionTime: r.execution_time,
     refundAmount: Amounts.parseOrThrow(r.refund_amount),
     refundFee: denom.feeRefund,
@@ -327,7 +327,7 @@ async function acceptRefunds(
   reason: RefundReason,
 ): Promise<void> {
   logger.trace("handling refunds", refunds);
-  const now = getTimestampNow();
+  const now = TalerProtocolTimestamp.now();
 
   await ws.db
     .mktx((x) => ({
@@ -401,7 +401,10 @@ async function acceptRefunds(
       if (
         p.timestampFirstSuccessfulPay &&
         p.autoRefundDeadline &&
-        p.autoRefundDeadline.t_ms > now.t_ms
+        AbsoluteTime.cmp(
+          AbsoluteTime.fromTimestamp(p.autoRefundDeadline),
+          AbsoluteTime.fromTimestamp(now),
+        ) > 0
       ) {
         queryDone = false;
       }
@@ -556,8 +559,10 @@ export async function applyRefund(
         ).amount,
       ).amount;
     } else {
-      amountRefundGone = Amounts.add(amountRefundGone, refund.refundAmount)
-        .amount;
+      amountRefundGone = Amounts.add(
+        amountRefundGone,
+        refund.refundAmount,
+      ).amount;
     }
   });
 
@@ -623,7 +628,9 @@ async function processPurchaseQueryRefundImpl(
     if (
       waitForAutoRefund &&
       purchase.autoRefundDeadline &&
-      !isTimestampExpired(purchase.autoRefundDeadline)
+      !AbsoluteTime.isExpired(
+        AbsoluteTime.fromTimestamp(purchase.autoRefundDeadline),
+      )
     ) {
       const requestUrl = new URL(
         `orders/${purchase.download.contractData.orderId}`,
@@ -731,11 +738,13 @@ async function processPurchaseQueryRefundImpl(
           purchase.payCoinSelection.coinContributions[i],
         ),
         rtransaction_id: 0,
-        execution_time: timestampAddDuration(
-          purchase.download.contractData.timestamp,
-          {
-            d_ms: 1000,
-          },
+        execution_time: AbsoluteTime.toTimestamp(
+          AbsoluteTime.addDuration(
+            AbsoluteTime.fromTimestamp(
+              purchase.download.contractData.timestamp,
+            ),
+            Duration.fromSpec({ seconds: 1 }),
+          ),
         ),
       });
     }

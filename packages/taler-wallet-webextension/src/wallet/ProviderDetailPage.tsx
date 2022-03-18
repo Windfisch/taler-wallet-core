@@ -15,6 +15,7 @@
 */
 
 import * as utils from "@gnu-taler/taler-util";
+import { AbsoluteTime } from "@gnu-taler/taler-util";
 import {
   ProviderInfo,
   ProviderPaymentStatus,
@@ -122,7 +123,9 @@ export function ProviderView({
       </Fragment>
     );
   }
-  const lb = info.lastSuccessfulBackupTimestamp;
+  const lb = info.lastSuccessfulBackupTimestamp
+    ? AbsoluteTime.fromTimestamp(info.lastSuccessfulBackupTimestamp)
+    : undefined;
   const isPaid =
     info.paymentStatus.type === ProviderPaymentType.Paid ||
     info.paymentStatus.type === ProviderPaymentType.TermsChanged;

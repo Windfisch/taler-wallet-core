@@ -36,9 +36,10 @@ import {
   Product,
   RefreshReason,
   TalerErrorDetails,
-  Timestamp,
   UnblindedSignature,
   CoinEnvelope,
+  TalerProtocolTimestamp,
+  TalerProtocolDuration,
 } from "@gnu-taler/taler-util";
 import { RetryInfo } from "./util/retries.js";
 import { PayCoinSelection } from "./util/coinSelection.js";
@@ -152,7 +153,7 @@ export interface ReserveRecord {
   /**
    * Time when the reserve was created.
    */
-  timestampCreated: Timestamp;
+  timestampCreated: TalerProtocolTimestamp;
 
   /**
    * Time when the information about this reserve was posted to the bank.
@@ -161,14 +162,14 @@ export interface ReserveRecord {
    *
    * Set to undefined if that hasn't happened yet.
    */
-  timestampReserveInfoPosted: Timestamp | undefined;
+  timestampReserveInfoPosted: TalerProtocolTimestamp | undefined;
 
   /**
    * Time when the reserve was confirmed by the bank.
    *
    * Set to undefined if not confirmed yet.
    */
-  timestampBankConfirmed: Timestamp | undefined;
+  timestampBankConfirmed: TalerProtocolTimestamp | undefined;
 
   /**
    * Wire information (as payto URI) for the bank account that
@@ -216,11 +217,6 @@ export interface ReserveRecord {
    * However, we use the operationStatus for DB indexing of pending operations.
    */
   operationStatus: OperationStatus;
-
-  /**
-   * Time of the last successful status query.
-   */
-  lastSuccessfulStatusQuery: Timestamp | undefined;
 
   /**
    * Retry info, in case the reserve needs to be processed again
@@ -350,22 +346,22 @@ export interface DenominationRecord {
   /**
    * Validity start date of the denomination.
    */
-  stampStart: Timestamp;
+  stampStart: TalerProtocolTimestamp;
 
   /**
    * Date after which the currency can't be withdrawn anymore.
    */
-  stampExpireWithdraw: Timestamp;
+  stampExpireWithdraw: TalerProtocolTimestamp;
 
   /**
    * Date after the denomination officially doesn't exist anymore.
    */
-  stampExpireLegal: Timestamp;
+  stampExpireLegal: TalerProtocolTimestamp;
 
   /**
    * Data after which coins of this denomination can't be deposited anymore.
    */
-  stampExpireDeposit: Timestamp;
+  stampExpireDeposit: TalerProtocolTimestamp;
 
   /**
    * Signature by the exchange's master key over the denomination
@@ -407,7 +403,7 @@ export interface DenominationRecord {
    * Latest list issue date of the "/keys" response
    * that includes this denomination.
    */
-  listIssueDate: Timestamp;
+  listIssueDate: TalerProtocolTimestamp;
 }
 
 /**
@@ -441,7 +437,7 @@ export interface ExchangeDetailsRecord {
    */
   protocolVersion: string;
 
-  reserveClosingDelay: Duration;
+  reserveClosingDelay: TalerProtocolDuration;
 
   /**
    * Signing keys we got from the exchange, can also contain
@@ -478,7 +474,7 @@ export interface ExchangeDetailsRecord {
    *
    * Used during backup merging.
    */
-  termsOfServiceAcceptedTimestamp: Timestamp | undefined;
+  termsOfServiceAcceptedTimestamp: TalerProtocolTimestamp | undefined;
 
   wireInfo: WireInfo;
 }
@@ -503,7 +499,7 @@ export interface ExchangeDetailsPointer {
    * Timestamp when the (masterPublicKey, currency) pointer
    * has been updated.
    */
-  updateClock: Timestamp;
+  updateClock: TalerProtocolTimestamp;
 }
 
 /**
@@ -528,14 +524,14 @@ export interface ExchangeRecord {
   /**
    * Last time when the exchange was updated.
    */
-  lastUpdate: Timestamp | undefined;
+  lastUpdate: TalerProtocolTimestamp | undefined;
 
   /**
    * Next scheduled update for the exchange.
    *
    * (This field must always be present, so we can index on the timestamp.)
    */
-  nextUpdate: Timestamp;
+  nextUpdate: TalerProtocolTimestamp;
 
   /**
    * Next time that we should check if coins need to be refreshed.
@@ -543,7 +539,7 @@ export interface ExchangeRecord {
    * Updated whenever the exchange's denominations are updated or when
    * the refresh check has been done.
    */
-  nextRefreshCheck: Timestamp;
+  nextRefreshCheck: TalerProtocolTimestamp;
 
   /**
    * Last error (if any) for fetching updated information about the
@@ -793,7 +789,7 @@ export interface ProposalRecord {
    * Timestamp (in ms) of when the record
    * was created.
    */
-  timestamp: Timestamp;
+  timestamp: TalerProtocolTimestamp;
 
   /**
    * Private key for the nonce.
@@ -837,7 +833,7 @@ export interface TipRecord {
    * Has the user accepted the tip?  Only after the tip has been accepted coins
    * withdrawn from the tip may be used.
    */
-  acceptedTimestamp: Timestamp | undefined;
+  acceptedTimestamp: TalerProtocolTimestamp | undefined;
 
   /**
    * The tipped amount.
@@ -849,7 +845,7 @@ export interface TipRecord {
   /**
    * Timestamp, the tip can't be picked up anymore after this deadline.
    */
-  tipExpiration: Timestamp;
+  tipExpiration: TalerProtocolTimestamp;
 
   /**
    * The exchange that will sign our coins, chosen by the merchant.
@@ -884,13 +880,13 @@ export interface TipRecord {
    */
   merchantTipId: string;
 
-  createdTimestamp: Timestamp;
+  createdTimestamp: TalerProtocolTimestamp;
 
   /**
    * Timestamp for when the wallet finished picking up the tip
    * from the merchant.
    */
-  pickedUpTimestamp: Timestamp | undefined;
+  pickedUpTimestamp: TalerProtocolTimestamp | undefined;
 
   /**
    * Retry info, even present when the operation isn't active to allow indexing
@@ -959,12 +955,12 @@ export interface RefreshGroupRecord {
    */
   statusPerCoin: RefreshCoinStatus[];
 
-  timestampCreated: Timestamp;
+  timestampCreated: TalerProtocolTimestamp;
 
   /**
    * Timestamp when the refresh session finished.
    */
-  timestampFinished: Timestamp | undefined;
+  timestampFinished: TalerProtocolTimestamp | undefined;
 
   /**
    * No coins are pending, but at least one is frozen.
@@ -1025,12 +1021,12 @@ export interface WireFee {
   /**
    * Start date of the fee.
    */
-  startStamp: Timestamp;
+  startStamp: TalerProtocolTimestamp;
 
   /**
    * End date of the fee.
    */
-  endStamp: Timestamp;
+  endStamp: TalerProtocolTimestamp;
 
   /**
    * Signature made by the exchange master key.
@@ -1054,12 +1050,12 @@ export type WalletRefundItem =
 
 export interface WalletRefundItemCommon {
   // Execution time as claimed by the merchant
-  executionTime: Timestamp;
+  executionTime: TalerProtocolTimestamp;
 
   /**
    * Time when the wallet became aware of the refund.
    */
-  obtainedTime: Timestamp;
+  obtainedTime: TalerProtocolTimestamp;
 
   refundAmount: AmountJson;
 
@@ -1141,14 +1137,14 @@ export interface WalletContractData {
   orderId: string;
   merchantBaseUrl: string;
   summary: string;
-  autoRefund: Duration | undefined;
+  autoRefund: TalerProtocolDuration | undefined;
   maxWireFee: AmountJson;
   wireFeeAmortization: number;
-  payDeadline: Timestamp;
-  refundDeadline: Timestamp;
+  payDeadline: TalerProtocolTimestamp;
+  refundDeadline: TalerProtocolTimestamp;
   allowedAuditors: AllowedAuditorInfo[];
   allowedExchanges: AllowedExchangeInfo[];
-  timestamp: Timestamp;
+  timestamp: TalerProtocolTimestamp;
   wireMethod: string;
   wireInfoHash: string;
   maxDepositFee: AmountJson;
@@ -1215,8 +1211,10 @@ export interface PurchaseRecord {
   /**
    * Timestamp of the first time that sending a payment to the merchant
    * for this purchase was successful.
+   *
+   * FIXME: Does this need to be a timestamp, doensn't boolean suffice?
    */
-  timestampFirstSuccessfulPay: Timestamp | undefined;
+  timestampFirstSuccessfulPay: TalerProtocolTimestamp | undefined;
 
   merchantPaySig: string | undefined;
 
@@ -1224,7 +1222,7 @@ export interface PurchaseRecord {
    * When was the purchase made?
    * Refers to the time that the user accepted.
    */
-  timestampAccept: Timestamp;
+  timestampAccept: TalerProtocolTimestamp;
 
   /**
    * Pending refunds for the purchase.  A refund is pending
@@ -1236,7 +1234,7 @@ export interface PurchaseRecord {
    * When was the last refund made?
    * Set to 0 if no refund was made on the purchase.
    */
-  timestampLastRefundStatus: Timestamp | undefined;
+  timestampLastRefundStatus: TalerProtocolTimestamp | undefined;
 
   /**
    * Last session signature that we submitted to /pay (if any).
@@ -1273,7 +1271,7 @@ export interface PurchaseRecord {
   /**
    * Continue querying the refund status until this deadline has expired.
    */
-  autoRefundDeadline: Timestamp | undefined;
+  autoRefundDeadline: TalerProtocolTimestamp | undefined;
 
   /**
    * Is the payment frozen?  I.e. did we encounter
@@ -1308,12 +1306,12 @@ export interface WalletBackupConfState {
   /**
    * Timestamp stored in the last backup.
    */
-  lastBackupTimestamp?: Timestamp;
+  lastBackupTimestamp?: TalerProtocolTimestamp;
 
   /**
    * Last time we tried to do a backup.
    */
-  lastBackupCheckTimestamp?: Timestamp;
+  lastBackupCheckTimestamp?: TalerProtocolTimestamp;
   lastBackupNonce?: string;
 }
 
@@ -1362,14 +1360,14 @@ export interface WithdrawalGroupRecord {
    * When was the withdrawal operation started started?
    * Timestamp in milliseconds.
    */
-  timestampStart: Timestamp;
+  timestampStart: TalerProtocolTimestamp;
 
   /**
    * When was the withdrawal operation completed?
    *
    * FIXME: We should probably drop this and introduce an OperationStatus field.
    */
-  timestampFinish?: Timestamp;
+  timestampFinish?: TalerProtocolTimestamp;
 
   /**
    * Operation status of the withdrawal group.
@@ -1429,9 +1427,9 @@ export interface RecoupGroupRecord {
    */
   recoupGroupId: string;
 
-  timestampStarted: Timestamp;
+  timestampStarted: TalerProtocolTimestamp;
 
-  timestampFinished: Timestamp | undefined;
+  timestampFinished: TalerProtocolTimestamp | undefined;
 
   /**
    * Public keys that identify the coins being recouped
@@ -1482,7 +1480,7 @@ export type BackupProviderState =
     }
   | {
       tag: BackupProviderStateTag.Ready;
-      nextBackupTimestamp: Timestamp;
+      nextBackupTimestamp: TalerProtocolTimestamp;
     }
   | {
       tag: BackupProviderStateTag.Retrying;
@@ -1529,7 +1527,7 @@ export interface BackupProviderRecord {
    * Does NOT correspond to the timestamp of the backup,
    * which only changes when the backup content changes.
    */
-  lastBackupCycleTimestamp?: Timestamp;
+  lastBackupCycleTimestamp?: TalerProtocolTimestamp;
 
   /**
    * Proposal that we're currently trying to pay for.
@@ -1594,9 +1592,9 @@ export interface DepositGroupRecord {
 
   depositedPerCoin: boolean[];
 
-  timestampCreated: Timestamp;
+  timestampCreated: TalerProtocolTimestamp;
 
-  timestampFinished: Timestamp | undefined;
+  timestampFinished: TalerProtocolTimestamp | undefined;
 
   operationStatus: OperationStatus;
 
@@ -1618,14 +1616,14 @@ export interface GhostDepositGroupRecord {
    * When multiple deposits for the same contract terms hash
    * have a different timestamp, we choose the earliest one.
    */
-  timestamp: Timestamp;
+  timestamp: TalerProtocolTimestamp;
 
   contractTermsHash: string;
 
   deposits: {
     coinPub: string;
     amount: AmountString;
-    timestamp: Timestamp;
+    timestamp: TalerProtocolTimestamp;
     depositFee: AmountString;
     merchantPub: string;
     coinSig: string;

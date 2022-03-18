@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Timestamp } from "@gnu-taler/taler-util";
+import { AbsoluteTime } from "@gnu-taler/taler-util";
 import { formatISO, format } from "date-fns";
 import { h, VNode } from "preact";
 
@@ -22,7 +22,7 @@ export function Time({
   timestamp,
   format: formatString,
 }: {
-  timestamp: Timestamp | undefined;
+  timestamp: AbsoluteTime | undefined;
   format: string;
 }): VNode {
   return (

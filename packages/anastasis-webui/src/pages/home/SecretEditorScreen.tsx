@@ -52,7 +52,7 @@ export function SecretEditorScreen(): VNode {
       await tx.transition("enter_secret", {
         secret,
         expiration: {
-          t_ms: new Date().getTime() + 1000 * 60 * 60 * 24 * 365 * 5,
+          t_s: new Date().getTime() + 60 * 60 * 24 * 365 * 5,
         },
       });
       await tx.transition("next", {});

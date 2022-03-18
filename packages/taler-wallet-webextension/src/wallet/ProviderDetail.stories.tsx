@@ -19,6 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
+import { TalerProtocolTimestamp } from "@gnu-taler/taler-util";
 import { ProviderPaymentType } from "@gnu-taler/taler-wallet-core";
 import { createExample } from "../test-utils";
 import { ProviderView as TestedComponent } from "./ProviderDetailPage";
@@ -38,9 +39,8 @@ export const Active = createExample(TestedComponent, {
     active: true,
     name: "sync.demo",
     syncProviderBaseUrl: "http://sync.taler:9967/",
-    lastSuccessfulBackupTimestamp: {
-      t_ms: 1625063925078,
-    },
+    lastSuccessfulBackupTimestamp:
+      TalerProtocolTimestamp.fromSeconds(1625063925),
     paymentProposalIds: [
       "43Q5WWRJPNS4SE9YKS54H9THDS94089EDGXW9EHBPN6E7M184XEG",
     ],
@@ -63,12 +63,10 @@ export const ActiveErrorSync = createExample(TestedComponent, {
     active: true,
     name: "sync.demo",
     syncProviderBaseUrl: "http://sync.taler:9967/",
-    lastSuccessfulBackupTimestamp: {
-      t_ms: 1625063925078,
-    },
-    lastAttemptedBackupTimestamp: {
-      t_ms: 1625063925078,
-    },
+    lastSuccessfulBackupTimestamp:
+      TalerProtocolTimestamp.fromSeconds(1625063925),
+    lastAttemptedBackupTimestamp:
+      TalerProtocolTimestamp.fromSeconds(1625063925078),
     paymentProposalIds: [
       "43Q5WWRJPNS4SE9YKS54H9THDS94089EDGXW9EHBPN6E7M184XEG",
     ],
@@ -97,9 +95,8 @@ export const ActiveBackupProblemUnreadable = createExample(TestedComponent, {
     active: true,
     name: "sync.demo",
     syncProviderBaseUrl: "http://sync.taler:9967/",
-    lastSuccessfulBackupTimestamp: {
-      t_ms: 1625063925078,
-    },
+    lastSuccessfulBackupTimestamp:
+      TalerProtocolTimestamp.fromSeconds(1625063925),
     paymentProposalIds: [
       "43Q5WWRJPNS4SE9YKS54H9THDS94089EDGXW9EHBPN6E7M184XEG",
     ],
@@ -125,9 +122,8 @@ export const ActiveBackupProblemDevice = createExample(TestedComponent, {
     active: true,
     name: "sync.demo",
     syncProviderBaseUrl: "http://sync.taler:9967/",
-    lastSuccessfulBackupTimestamp: {
-      t_ms: 1625063925078,
-    },
+    lastSuccessfulBackupTimestamp:
+      TalerProtocolTimestamp.fromSeconds(1625063925078),
     paymentProposalIds: [
       "43Q5WWRJPNS4SE9YKS54H9THDS94089EDGXW9EHBPN6E7M184XEG",
     ],

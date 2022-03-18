@@ -29,15 +29,13 @@ import {
   durationMin,
   encodeCrock,
   getRandomBytes,
-  getTimestampNow,
   j2s,
   Logger,
   NotificationType,
   randomBytes,
-  ReserveTransactionType,
   TalerErrorCode,
   TalerErrorDetails,
-  Timestamp,
+  AbsoluteTime,
   URL,
 } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../common.js";
@@ -172,7 +170,7 @@ export async function createReserve(
   req: CreateReserveRequest,
 ): Promise<CreateReserveResponse> {
   const keypair = await ws.cryptoApi.createEddsaKeypair();
-  const now = getTimestampNow();
+  const now = AbsoluteTime.toTimestamp(AbsoluteTime.now());
   const canonExchange = canonicalizeBaseUrl(req.exchange);
 
   let reserveStatus;
@@ -217,7 +215,6 @@ export async function createReserve(
     timestampReserveInfoPosted: undefined,
     bankInfo,
     reserveStatus,
-    lastSuccessfulStatusQuery: undefined,
     retryInfo: initRetryInfo(),
     lastError: undefined,
     currency: req.amount.currency,
@@ -403,7 +400,9 @@ async function registerReserveWithBank(
         default:
           return;
       }
-      r.timestampReserveInfoPosted = getTimestampNow();
+      r.timestampReserveInfoPosted = AbsoluteTime.toTimestamp(
+        AbsoluteTime.now(),
+      );
       r.reserveStatus = ReserveRecordStatus.WaitConfirmBank;
       r.operationStatus = OperationStatus.Pending;
       if (!r.bankInfo) {
@@ -472,7 +471,7 @@ async function processReserveBankStatus(
           default:
             return;
         }
-        const now = getTimestampNow();
+        const now = AbsoluteTime.toTimestamp(AbsoluteTime.now());
         r.timestampBankConfirmed = now;
         r.reserveStatus = ReserveRecordStatus.BankAborted;
         r.operationStatus = OperationStatus.Finished;
@@ -509,7 +508,7 @@ async function processReserveBankStatus(
           default:
             return;
         }
-        const now = getTimestampNow();
+        const now = AbsoluteTime.toTimestamp(AbsoluteTime.now());
         r.timestampBankConfirmed = now;
         r.reserveStatus = ReserveRecordStatus.QueryingStatus;
         r.operationStatus = OperationStatus.Pending;
@@ -683,7 +682,7 @@ async function updateReserve(
         exchangeBaseUrl: reserve.exchangeBaseUrl,
         reservePub: reserve.reservePub,
         rawWithdrawalAmount: remainingAmount,
-        timestampStart: getTimestampNow(),
+        timestampStart: AbsoluteTime.toTimestamp(AbsoluteTime.now()),
         retryInfo: initRetryInfo(),
         lastError: undefined,
         denomsSel: denomSelectionInfoToState(denomSelInfo),
@@ -736,7 +735,7 @@ async function processReserveImpl(
     await resetReserveRetry(ws, reservePub);
   } else if (
     reserve.retryInfo &&
-    !Timestamp.isExpired(reserve.retryInfo.nextRetry)
+    !AbsoluteTime.isExpired(reserve.retryInfo.nextRetry)
   ) {
     logger.trace("processReserve retry not due yet");
     return;

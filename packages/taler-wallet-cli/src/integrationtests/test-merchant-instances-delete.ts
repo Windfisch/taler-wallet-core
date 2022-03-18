@@ -25,7 +25,7 @@ import {
   MerchantApiClient,
   MerchantService,
   setupDb,
-  getPayto
+  getPayto,
 } from "../harness/harness.js";
 
 /**

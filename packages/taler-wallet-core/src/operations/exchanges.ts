@@ -28,8 +28,6 @@ import {
   durationFromSpec,
   ExchangeSignKeyJson,
   ExchangeWireJson,
-  getTimestampNow,
-  isTimestampExpired,
   Logger,
   NotificationType,
   parsePaytoUri,
@@ -37,13 +35,15 @@ import {
   TalerErrorCode,
   URL,
   TalerErrorDetails,
-  Timestamp,
+  AbsoluteTime,
   hashDenomPub,
   LibtoolVersion,
   codecForAny,
   DenominationPubKey,
   DenomKeyType,
   ExchangeKeysJson,
+  TalerProtocolTimestamp,
+  TalerProtocolDuration,
 } from "@gnu-taler/taler-util";
 import { decodeCrock, encodeCrock, hash } from "@gnu-taler/taler-util";
 import { CryptoApi } from "../crypto/workers/cryptoApi.js";
@@ -57,7 +57,7 @@ import {
   WireInfo,
 } from "../db.js";
 import {
-  getExpiryTimestamp,
+  getExpiry,
   HttpRequestLibrary,
   readSuccessResponseJsonOrThrow,
   readSuccessResponseTextOrThrow,
@@ -80,7 +80,7 @@ const logger = new Logger("exchanges.ts");
 function denominationRecordFromKeys(
   exchangeBaseUrl: string,
   exchangeMasterPub: string,
-  listIssueDate: Timestamp,
+  listIssueDate: TalerProtocolTimestamp,
   denomIn: ExchangeDenomination,
 ): DenominationRecord {
   let denomPub: DenominationPubKey;
@@ -132,7 +132,9 @@ async function handleExchangeUpdateError(
 }
 
 export function getExchangeRequestTimeout(): Duration {
-  return { d_ms: 5000 };
+  return Duration.fromSpec({
+    seconds: 5,
+  });
 }
 
 export interface ExchangeTosDownloadResult {
@@ -362,12 +364,11 @@ export async function updateExchangeFromUrl(
 async function provideExchangeRecord(
   ws: InternalWalletState,
   baseUrl: string,
-  now: Timestamp,
+  now: AbsoluteTime,
 ): Promise<{
   exchange: ExchangeRecord;
   exchangeDetails: ExchangeDetailsRecord | undefined;
 }> {
-
   return await ws.db
     .mktx((x) => ({
       exchanges: x.exchanges,
@@ -376,14 +377,14 @@ async function provideExchangeRecord(
     .runReadWrite(async (tx) => {
       let exchange = await tx.exchanges.get(baseUrl);
       if (!exchange) {
-        const r = {
+        const r: ExchangeRecord = {
           permanent: true,
           baseUrl: baseUrl,
           retryInfo: initRetryInfo(),
           detailsPointer: undefined,
           lastUpdate: undefined,
-          nextUpdate: now,
-          nextRefreshCheck: now,
+          nextUpdate: AbsoluteTime.toTimestamp(now),
+          nextRefreshCheck: AbsoluteTime.toTimestamp(now),
         };
         await tx.exchanges.put(r);
         exchange = r;
@@ -400,10 +401,10 @@ interface ExchangeKeysDownloadResult {
   currentDenominations: DenominationRecord[];
   protocolVersion: string;
   signingKeys: ExchangeSignKeyJson[];
-  reserveClosingDelay: Duration;
-  expiry: Timestamp;
+  reserveClosingDelay: TalerProtocolDuration;
+  expiry: TalerProtocolTimestamp;
   recoup: Recoup[];
-  listIssueDate: Timestamp;
+  listIssueDate: TalerProtocolTimestamp;
 }
 
 /**
@@ -475,9 +476,11 @@ async function downloadExchangeKeysInfo(
     protocolVersion: exchangeKeysJsonUnchecked.version,
     signingKeys: exchangeKeysJsonUnchecked.signkeys,
     reserveClosingDelay: exchangeKeysJsonUnchecked.reserve_closing_delay,
-    expiry: getExpiryTimestamp(resp, {
-      minDuration: durationFromSpec({ hours: 1 }),
-    }),
+    expiry: AbsoluteTime.toTimestamp(
+      getExpiry(resp, {
+        minDuration: durationFromSpec({ hours: 1 }),
+      }),
+    ),
     recoup: exchangeKeysJsonUnchecked.recoup ?? [],
     listIssueDate: exchangeKeysJsonUnchecked.list_issue_date,
   };
@@ -529,12 +532,20 @@ async function updateExchangeFromUrlImpl(
   exchangeDetails: ExchangeDetailsRecord;
 }> {
   logger.info(`updating exchange info for ${baseUrl}, forced: ${forceNow}`);
-  const now = getTimestampNow();
+  const now = AbsoluteTime.now();
   baseUrl = canonicalizeBaseUrl(baseUrl);
 
-  const { exchange, exchangeDetails } = await provideExchangeRecord(ws, baseUrl, now);
+  const { exchange, exchangeDetails } = await provideExchangeRecord(
+    ws,
+    baseUrl,
+    now,
+  );
 
-  if (!forceNow && exchangeDetails !== undefined && !isTimestampExpired(exchange.nextUpdate)) {
+  if (
+    !forceNow &&
+    exchangeDetails !== undefined &&
+    !AbsoluteTime.isExpired(AbsoluteTime.fromTimestamp(exchange.nextUpdate))
+  ) {
     logger.info("using existing exchange info");
     return { exchange, exchangeDetails };
   }
@@ -575,7 +586,8 @@ async function updateExchangeFromUrlImpl(
     timeout,
     acceptedFormat,
   );
-  const tosHasBeenAccepted = exchangeDetails?.termsOfServiceAcceptedEtag === tosDownload.tosEtag
+  const tosHasBeenAccepted =
+    exchangeDetails?.termsOfServiceAcceptedEtag === tosDownload.tosEtag;
 
   let recoupGroupId: string | undefined;
 
@@ -611,23 +623,25 @@ async function updateExchangeFromUrlImpl(
         exchangeBaseUrl: r.baseUrl,
         wireInfo,
         termsOfServiceText: tosDownload.tosText,
-        termsOfServiceAcceptedEtag: tosHasBeenAccepted ? tosDownload.tosEtag : undefined,
+        termsOfServiceAcceptedEtag: tosHasBeenAccepted
+          ? tosDownload.tosEtag
+          : undefined,
         termsOfServiceContentType: tosDownload.tosContentType,
         termsOfServiceLastEtag: tosDownload.tosEtag,
-        termsOfServiceAcceptedTimestamp: getTimestampNow(),
+        termsOfServiceAcceptedTimestamp: TalerProtocolTimestamp.now(),
       };
       // FIXME: only update if pointer got updated
       r.lastError = undefined;
       r.retryInfo = initRetryInfo();
-      r.lastUpdate = getTimestampNow();
+      r.lastUpdate = TalerProtocolTimestamp.now();
       r.nextUpdate = keysInfo.expiry;
       // New denominations might be available.
-      r.nextRefreshCheck = getTimestampNow();
+      r.nextRefreshCheck = TalerProtocolTimestamp.now();
       r.detailsPointer = {
         currency: details.currency,
         masterPublicKey: details.masterPublicKey,
         // FIXME: only change if pointer really changed
-        updateClock: getTimestampNow(),
+        updateClock: TalerProtocolTimestamp.now(),
         protocolVersionRange: keysInfo.protocolVersion,
       };
       await tx.exchanges.put(r);

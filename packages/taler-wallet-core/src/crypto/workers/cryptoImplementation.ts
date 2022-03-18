@@ -67,13 +67,11 @@ import {
   setupWithdrawPlanchet,
   stringToBytes,
   TalerSignaturePurpose,
-  Timestamp,
-  timestampTruncateToSecond,
-  typedArrayConcat,
+  AbsoluteTime,
   BlindedDenominationSignature,
-  RsaUnblindedSignature,
   UnblindedSignature,
   PlanchetUnblindInfo,
+  TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
 import bigint from "big-integer";
 import { DenominationRecord, WireFee } from "../../db.js";
@@ -110,18 +108,16 @@ function amountToBuffer(amount: AmountJson): Uint8Array {
   return u8buf;
 }
 
-function timestampRoundedToBuffer(ts: Timestamp): Uint8Array {
+function timestampRoundedToBuffer(ts: TalerProtocolTimestamp): Uint8Array {
   const b = new ArrayBuffer(8);
   const v = new DataView(b);
-  const tsRounded = timestampTruncateToSecond(ts);
+  // The buffer we sign over represents the timestamp in microseconds.
   if (typeof v.setBigUint64 !== "undefined") {
-    const s = BigInt(tsRounded.t_ms) * BigInt(1000);
+    const s = BigInt(ts.t_s) * BigInt(1000 * 1000);
     v.setBigUint64(0, s);
   } else {
     const s =
-      tsRounded.t_ms === "never"
-        ? bigint.zero
-        : bigint(tsRounded.t_ms).times(1000);
+      ts.t_s === "never" ? bigint.zero : bigint(ts.t_s).multiply(1000 * 1000);
     const arr = s.toArray(2 ** 8).value;
     let offset = 8 - arr.length;
     for (let i = 0; i < arr.length; i++) {

@@ -23,7 +23,7 @@ import {
   ExchangeRefreshRevealRequest,
   getRandomBytes,
   HttpStatusCode,
-  j2s,
+  TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
 import {
   CoinRecord,
@@ -42,11 +42,8 @@ import {
   fnutil,
   NotificationType,
   RefreshGroupId,
-  RefreshPlanchetInfo,
   RefreshReason,
-  stringifyTimestamp,
   TalerErrorDetails,
-  timestampToIsoString,
 } from "@gnu-taler/taler-util";
 import { AmountJson, Amounts } from "@gnu-taler/taler-util";
 import { amountToPretty } from "@gnu-taler/taler-util";
@@ -61,12 +58,7 @@ import {
   Duration,
   durationFromSpec,
   durationMul,
-  getTimestampNow,
-  isTimestampExpired,
-  Timestamp,
-  timestampAddDuration,
-  timestampDifference,
-  timestampMin,
+  AbsoluteTime,
   URL,
 } from "@gnu-taler/taler-util";
 import { guardOperationException } from "../errors.js";
@@ -139,7 +131,7 @@ function updateGroupStatus(rg: RefreshGroupRecord): void {
       rg.frozen = true;
       rg.retryInfo = initRetryInfo();
     } else {
-      rg.timestampFinished = getTimestampNow();
+      rg.timestampFinished = AbsoluteTime.toTimestamp(AbsoluteTime.now());
       rg.operationStatus = OperationStatus.Finished;
       rg.retryInfo = initRetryInfo();
     }
@@ -234,19 +226,6 @@ async function refreshCreateSession(
     availableDenoms,
   );
 
-  if (logger.shouldLogTrace()) {
-    logger.trace(`printing selected denominations for refresh`);
-    logger.trace(`current time: ${stringifyTimestamp(getTimestampNow())}`);
-    for (const denom of newCoinDenoms.selectedDenoms) {
-      logger.trace(`denom ${denom.denom}, count ${denom.count}`);
-      logger.trace(
-        `withdrawal expiration ${stringifyTimestamp(
-          denom.denom.stampExpireWithdraw,
-        )}`,
-      );
-    }
-  }
-
   if (newCoinDenoms.selectedDenoms.length === 0) {
     logger.trace(
       `not refreshing, available amount ${amountToPretty(
@@ -306,7 +285,9 @@ async function refreshCreateSession(
 }
 
 function getRefreshRequestTimeout(rg: RefreshGroupRecord): Duration {
-  return { d_ms: 5000 };
+  return Duration.fromSpec({
+    seconds: 5,
+  });
 }
 
 async function refreshMelt(
@@ -949,12 +930,12 @@ export async function createRefreshGroup(
     retryInfo: initRetryInfo(),
     inputPerCoin,
     estimatedOutputPerCoin,
-    timestampCreated: getTimestampNow(),
+    timestampCreated: TalerProtocolTimestamp.now(),
   };
 
   if (oldCoinPubs.length == 0) {
     logger.warn("created refresh group with zero coins");
-    refreshGroup.timestampFinished = getTimestampNow();
+    refreshGroup.timestampFinished = TalerProtocolTimestamp.now();
     refreshGroup.operationStatus = OperationStatus.Finished;
   }
 
@@ -974,25 +955,23 @@ export async function createRefreshGroup(
 /**
  * Timestamp after which the wallet would do the next check for an auto-refresh.
  */
-function getAutoRefreshCheckThreshold(d: DenominationRecord): Timestamp {
-  const delta = timestampDifference(
-    d.stampExpireWithdraw,
-    d.stampExpireDeposit,
-  );
+function getAutoRefreshCheckThreshold(d: DenominationRecord): AbsoluteTime {
+  const expireWithdraw = AbsoluteTime.fromTimestamp(d.stampExpireWithdraw);
+  const expireDeposit = AbsoluteTime.fromTimestamp(d.stampExpireDeposit);
+  const delta = AbsoluteTime.difference(expireWithdraw, expireDeposit);
   const deltaDiv = durationMul(delta, 0.75);
-  return timestampAddDuration(d.stampExpireWithdraw, deltaDiv);
+  return AbsoluteTime.addDuration(expireWithdraw, deltaDiv);
 }
 
 /**
  * Timestamp after which the wallet would do an auto-refresh.
  */
-function getAutoRefreshExecuteThreshold(d: DenominationRecord): Timestamp {
-  const delta = timestampDifference(
-    d.stampExpireWithdraw,
-    d.stampExpireDeposit,
-  );
+function getAutoRefreshExecuteThreshold(d: DenominationRecord): AbsoluteTime {
+  const expireWithdraw = AbsoluteTime.fromTimestamp(d.stampExpireWithdraw);
+  const expireDeposit = AbsoluteTime.fromTimestamp(d.stampExpireDeposit);
+  const delta = AbsoluteTime.difference(expireWithdraw, expireDeposit);
   const deltaDiv = durationMul(delta, 0.5);
-  return timestampAddDuration(d.stampExpireWithdraw, deltaDiv);
+  return AbsoluteTime.addDuration(expireWithdraw, deltaDiv);
 }
 
 export async function autoRefresh(
@@ -1001,8 +980,8 @@ export async function autoRefresh(
 ): Promise<void> {
   logger.info(`doing auto-refresh check for '${exchangeBaseUrl}'`);
   await updateExchangeFromUrl(ws, exchangeBaseUrl, undefined, true);
-  let minCheckThreshold = timestampAddDuration(
-    getTimestampNow(),
+  let minCheckThreshold = AbsoluteTime.addDuration(
+    AbsoluteTime.now(),
     durationFromSpec({ days: 1 }),
   );
   await ws.db
@@ -1037,11 +1016,14 @@ export async function autoRefresh(
           continue;
         }
         const executeThreshold = getAutoRefreshExecuteThreshold(denom);
-        if (isTimestampExpired(executeThreshold)) {
+        if (AbsoluteTime.isExpired(executeThreshold)) {
           refreshCoins.push(coin);
         } else {
           const checkThreshold = getAutoRefreshCheckThreshold(denom);
-          minCheckThreshold = timestampMin(minCheckThreshold, checkThreshold);
+          minCheckThreshold = AbsoluteTime.min(
+            minCheckThreshold,
+            checkThreshold,
+          );
         }
       }
       if (refreshCoins.length > 0) {
@@ -1056,12 +1038,12 @@ export async function autoRefresh(
         );
       }
       logger.info(
-        `current wallet time: ${timestampToIsoString(getTimestampNow())}`,
+        `current wallet time: ${AbsoluteTime.toIsoString(AbsoluteTime.now())}`,
       );
       logger.info(
-        `next refresh check at ${timestampToIsoString(minCheckThreshold)}`,
+        `next refresh check at ${AbsoluteTime.toIsoString(minCheckThreshold)}`,
       );
-      exchange.nextRefreshCheck = minCheckThreshold;
+      exchange.nextRefreshCheck = AbsoluteTime.toTimestamp(minCheckThreshold);
       await tx.exchanges.put(exchange);
     });
 }

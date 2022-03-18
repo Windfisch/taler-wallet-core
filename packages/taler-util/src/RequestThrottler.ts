@@ -15,7 +15,7 @@
  */
 
 import { Logger } from "./logging.js";
-import { getTimestampNow, timestampCmp, timestampDifference } from "./time.js";
+import { AbsoluteTime } from "./time.js";
 
 /**
  * Implementation of token bucket throttling.
@@ -46,16 +46,16 @@ class OriginState {
   tokensSecond: number = MAX_PER_SECOND;
   tokensMinute: number = MAX_PER_MINUTE;
   tokensHour: number = MAX_PER_HOUR;
-  private lastUpdate = getTimestampNow();
+  private lastUpdate = AbsoluteTime.now();
 
   private refill(): void {
-    const now = getTimestampNow();
-    if (timestampCmp(now, this.lastUpdate) < 0) {
+    const now = AbsoluteTime.now();
+    if (AbsoluteTime.cmp(now, this.lastUpdate) < 0) {
       // Did the system time change?
       this.lastUpdate = now;
       return;
     }
-    const d = timestampDifference(now, this.lastUpdate);
+    const d = AbsoluteTime.difference(now, this.lastUpdate);
     if (d.d_ms === "forever") {
       throw Error("assertion failed");
     }

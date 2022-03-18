@@ -27,7 +27,6 @@
 import {
   AmountJson,
   Amounts,
-  CheckPaymentResponse,
   codecForContractTerms,
   codecForMerchantPayResponse,
   codecForProposal,
@@ -41,11 +40,8 @@ import {
   durationMin,
   durationMul,
   encodeCrock,
-  getDurationRemaining,
   getRandomBytes,
-  getTimestampNow,
   HttpStatusCode,
-  isTimestampExpired,
   j2s,
   kdf,
   Logger,
@@ -57,9 +53,9 @@ import {
   stringToBytes,
   TalerErrorCode,
   TalerErrorDetails,
-  Timestamp,
-  timestampAddDuration,
+  AbsoluteTime,
   URL,
+  TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
 import { EXCHANGE_COINS_LOCK, InternalWalletState } from "../common.js";
 import {
@@ -172,7 +168,9 @@ function isSpendableCoin(coin: CoinRecord, denom: DenominationRecord): boolean {
   if (coin.status !== CoinStatus.Fresh) {
     return false;
   }
-  if (isTimestampExpired(denom.stampExpireDeposit)) {
+  if (
+    AbsoluteTime.isExpired(AbsoluteTime.fromTimestamp(denom.stampExpireDeposit))
+  ) {
     return false;
   }
   return true;
@@ -187,7 +185,7 @@ export interface CoinSelectionRequest {
   /**
    * Timestamp of the contract.
    */
-  timestamp: Timestamp;
+  timestamp: TalerProtocolTimestamp;
 
   wireMethod: string;
 
@@ -422,7 +420,7 @@ async function recordConfirmPay(
     payCoinSelectionUid: encodeCrock(getRandomBytes(32)),
     totalPayCost: payCostInfo,
     coinDepositPermissions,
-    timestampAccept: getTimestampNow(),
+    timestampAccept: AbsoluteTime.toTimestamp(AbsoluteTime.now()),
     timestampLastRefundStatus: undefined,
     proposalId: proposal.proposalId,
     lastPayError: undefined,
@@ -784,7 +782,7 @@ async function processDownloadProposalImpl(
   } catch (e) {
     const err = makeErrorDetails(
       TalerErrorCode.WALLET_CONTRACT_TERMS_MALFORMED,
-      "schema validation failed",
+      `schema validation failed: ${e}`,
       {},
     );
     await failProposalPermanently(ws, proposalId, err);
@@ -921,7 +919,7 @@ async function startDownloadProposal(
     noncePriv: priv,
     noncePub: pub,
     claimToken,
-    timestamp: getTimestampNow(),
+    timestamp: AbsoluteTime.toTimestamp(AbsoluteTime.now()),
     merchantBaseUrl,
     orderId,
     proposalId: proposalId,
@@ -956,7 +954,7 @@ async function storeFirstPaySuccess(
   sessionId: string | undefined,
   paySig: string,
 ): Promise<void> {
-  const now = getTimestampNow();
+  const now = AbsoluteTime.toTimestamp(AbsoluteTime.now());
   await ws.db
     .mktx((x) => ({ purchases: x.purchases }))
     .runReadWrite(async (tx) => {
@@ -978,13 +976,16 @@ async function storeFirstPaySuccess(
       purchase.payRetryInfo = initRetryInfo();
       purchase.merchantPaySig = paySig;
       if (isFirst) {
-        const ar = purchase.download.contractData.autoRefund;
-        if (ar) {
+        const protoAr = purchase.download.contractData.autoRefund;
+        if (protoAr) {
+          const ar = Duration.fromTalerProtocolDuration(protoAr);
           logger.info("auto_refund present");
           purchase.refundQueryRequested = true;
           purchase.refundStatusRetryInfo = initRetryInfo();
           purchase.lastRefundStatusError = undefined;
-          purchase.autoRefundDeadline = timestampAddDuration(now, ar);
+          purchase.autoRefundDeadline = AbsoluteTime.toTimestamp(
+            AbsoluteTime.addDuration(AbsoluteTime.now(), ar),
+          );
         }
       }
       await tx.purchases.put(purchase);
@@ -1150,7 +1151,7 @@ async function unblockBackup(
           if (bp.state.tag === BackupProviderStateTag.Retrying) {
             bp.state = {
               tag: BackupProviderStateTag.Ready,
-              nextBackupTimestamp: getTimestampNow(),
+              nextBackupTimestamp: TalerProtocolTimestamp.now(),
             };
           }
         });

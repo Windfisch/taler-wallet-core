@@ -35,7 +35,7 @@ import {
   PendingTaskType,
   ReserveType,
 } from "../pending-types.js";
-import { getTimestampNow, Timestamp } from "@gnu-taler/taler-util";
+import { AbsoluteTime } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../common.js";
 import { GetReadOnlyAccess } from "../util/query.js";
 
@@ -44,21 +44,25 @@ async function gatherExchangePending(
     exchanges: typeof WalletStoresV1.exchanges;
     exchangeDetails: typeof WalletStoresV1.exchangeDetails;
   }>,
-  now: Timestamp,
+  now: AbsoluteTime,
   resp: PendingOperationsResponse,
 ): Promise<void> {
   await tx.exchanges.iter().forEachAsync(async (e) => {
     resp.pendingOperations.push({
       type: PendingTaskType.ExchangeUpdate,
       givesLifeness: false,
-      timestampDue: e.lastError ? e.retryInfo.nextRetry : e.nextUpdate,
+      timestampDue: e.lastError
+        ? e.retryInfo.nextRetry
+        : AbsoluteTime.fromTimestamp(e.nextUpdate),
       exchangeBaseUrl: e.baseUrl,
       lastError: e.lastError,
     });
 
     resp.pendingOperations.push({
       type: PendingTaskType.ExchangeCheckRefresh,
-      timestampDue: e.lastError ? e.retryInfo.nextRetry : e.nextRefreshCheck,
+      timestampDue: e.lastError
+        ? e.retryInfo.nextRetry
+        : AbsoluteTime.fromTimestamp(e.nextRefreshCheck),
       givesLifeness: false,
       exchangeBaseUrl: e.baseUrl,
     });
@@ -67,7 +71,7 @@ async function gatherExchangePending(
 
 async function gatherReservePending(
   tx: GetReadOnlyAccess<{ reserves: typeof WalletStoresV1.reserves }>,
-  now: Timestamp,
+  now: AbsoluteTime,
   resp: PendingOperationsResponse,
 ): Promise<void> {
   const reserves = await tx.reserves.indexes.byStatus.getAll(
@@ -87,7 +91,7 @@ async function gatherReservePending(
         resp.pendingOperations.push({
           type: PendingTaskType.Reserve,
           givesLifeness: true,
-          timestampDue: reserve.retryInfo?.nextRetry ?? Timestamp.now(),
+          timestampDue: reserve.retryInfo?.nextRetry ?? AbsoluteTime.now(),
           stage: reserve.reserveStatus,
           timestampCreated: reserve.timestampCreated,
           reserveType,
@@ -105,7 +109,7 @@ async function gatherReservePending(
 
 async function gatherRefreshPending(
   tx: GetReadOnlyAccess<{ refreshGroups: typeof WalletStoresV1.refreshGroups }>,
-  now: Timestamp,
+  now: AbsoluteTime,
   resp: PendingOperationsResponse,
 ): Promise<void> {
   const refreshGroups = await tx.refreshGroups.indexes.byStatus.getAll(
@@ -136,7 +140,7 @@ async function gatherWithdrawalPending(
     withdrawalGroups: typeof WalletStoresV1.withdrawalGroups;
     planchets: typeof WalletStoresV1.planchets;
   }>,
-  now: Timestamp,
+  now: AbsoluteTime,
   resp: PendingOperationsResponse,
 ): Promise<void> {
   const wsrs = await tx.withdrawalGroups.indexes.byStatus.getAll(
@@ -169,14 +173,14 @@ async function gatherWithdrawalPending(
 
 async function gatherProposalPending(
   tx: GetReadOnlyAccess<{ proposals: typeof WalletStoresV1.proposals }>,
-  now: Timestamp,
+  now: AbsoluteTime,
   resp: PendingOperationsResponse,
 ): Promise<void> {
   await tx.proposals.iter().forEach((proposal) => {
     if (proposal.proposalStatus == ProposalStatus.Proposed) {
       // Nothing to do, user needs to choose.
     } else if (proposal.proposalStatus == ProposalStatus.Downloading) {
-      const timestampDue = proposal.retryInfo?.nextRetry ?? getTimestampNow();
+      const timestampDue = proposal.retryInfo?.nextRetry ?? AbsoluteTime.now();
       resp.pendingOperations.push({
         type: PendingTaskType.ProposalDownload,
         givesLifeness: true,
@@ -194,7 +198,7 @@ async function gatherProposalPending(
 
 async function gatherDepositPending(
   tx: GetReadOnlyAccess<{ depositGroups: typeof WalletStoresV1.depositGroups }>,
-  now: Timestamp,
+  now: AbsoluteTime,
   resp: PendingOperationsResponse,
 ): Promise<void> {
   const dgs = await tx.depositGroups.indexes.byStatus.getAll(
@@ -204,7 +208,7 @@ async function gatherDepositPending(
     if (dg.timestampFinished) {
       return;
     }
-    const timestampDue = dg.retryInfo?.nextRetry ?? getTimestampNow();
+    const timestampDue = dg.retryInfo?.nextRetry ?? AbsoluteTime.now();
     resp.pendingOperations.push({
       type: PendingTaskType.Deposit,
       givesLifeness: true,
@@ -218,7 +222,7 @@ async function gatherDepositPending(
 
 async function gatherTipPending(
   tx: GetReadOnlyAccess<{ tips: typeof WalletStoresV1.tips }>,
-  now: Timestamp,
+  now: AbsoluteTime,
   resp: PendingOperationsResponse,
 ): Promise<void> {
   await tx.tips.iter().forEach((tip) => {
@@ -240,7 +244,7 @@ async function gatherTipPending(
 
 async function gatherPurchasePending(
   tx: GetReadOnlyAccess<{ purchases: typeof WalletStoresV1.purchases }>,
-  now: Timestamp,
+  now: AbsoluteTime,
   resp: PendingOperationsResponse,
 ): Promise<void> {
   await tx.purchases.iter().forEach((pr) => {
@@ -249,7 +253,7 @@ async function gatherPurchasePending(
       pr.abortStatus === AbortStatus.None &&
       !pr.payFrozen
     ) {
-      const timestampDue = pr.payRetryInfo?.nextRetry ?? getTimestampNow();
+      const timestampDue = pr.payRetryInfo?.nextRetry ?? AbsoluteTime.now();
       resp.pendingOperations.push({
         type: PendingTaskType.Pay,
         givesLifeness: true,
@@ -275,7 +279,7 @@ async function gatherPurchasePending(
 
 async function gatherRecoupPending(
   tx: GetReadOnlyAccess<{ recoupGroups: typeof WalletStoresV1.recoupGroups }>,
-  now: Timestamp,
+  now: AbsoluteTime,
   resp: PendingOperationsResponse,
 ): Promise<void> {
   await tx.recoupGroups.iter().forEach((rg) => {
@@ -297,7 +301,7 @@ async function gatherBackupPending(
   tx: GetReadOnlyAccess<{
     backupProviders: typeof WalletStoresV1.backupProviders;
   }>,
-  now: Timestamp,
+  now: AbsoluteTime,
   resp: PendingOperationsResponse,
 ): Promise<void> {
   await tx.backupProviders.iter().forEach((bp) => {
@@ -305,7 +309,7 @@ async function gatherBackupPending(
       resp.pendingOperations.push({
         type: PendingTaskType.Backup,
         givesLifeness: false,
-        timestampDue: bp.state.nextBackupTimestamp,
+        timestampDue: AbsoluteTime.fromTimestamp(bp.state.nextBackupTimestamp),
         backupProviderBaseUrl: bp.baseUrl,
         lastError: undefined,
       });
@@ -325,7 +329,7 @@ async function gatherBackupPending(
 export async function getPendingOperations(
   ws: InternalWalletState,
 ): Promise<PendingOperationsResponse> {
-  const now = getTimestampNow();
+  const now = AbsoluteTime.now();
   return await ws.db
     .mktx((x) => ({
       backupProviders: x.backupProviders,

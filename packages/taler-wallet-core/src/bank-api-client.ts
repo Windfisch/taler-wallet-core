@@ -25,6 +25,7 @@ import {
   AmountString,
   buildCodecForObject,
   Codec,
+  codecForAny,
   codecForString,
   encodeCrock,
   getRandomBytes,
@@ -102,15 +103,16 @@ export namespace BankApi {
     const resp = await bank.http.postJson(url.href, { username, password });
     let paytoUri = `payto://x-taler-bank/localhost/${username}`;
     if (resp.status !== 200 && resp.status !== 202) {
-      logger.error(`${j2s(await resp.json())}`)
+      logger.error(`${j2s(await resp.json())}`);
       throw new Error();
+    }
+    const respJson = await readSuccessResponseJsonOrThrow(resp, codecForAny());
+    // LibEuFin demobank returns payto URI in response
+    if (respJson.paytoUri) {
+      paytoUri = respJson.paytoUri;
     }
     try {
       const respJson = await resp.json();
-      // LibEuFin demobank returns payto URI in response
-      if (respJson.paytoUri) {
-        paytoUri = respJson.paytoUri;
-      }
     } catch (e) {}
     return {
       password,

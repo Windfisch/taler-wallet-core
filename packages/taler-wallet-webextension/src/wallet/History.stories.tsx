@@ -21,6 +21,7 @@
 
 import {
   PaymentStatus,
+  TalerProtocolTimestamp,
   TransactionCommon,
   TransactionDeposit,
   TransactionPayment,
@@ -45,9 +46,9 @@ const commonTransaction = () =>
     amountRaw: "USD:10",
     amountEffective: "USD:9",
     pending: false,
-    timestamp: {
-      t_ms: new Date().getTime() - count++ * 1000 * 60 * 60 * 7,
-    },
+    timestamp: TalerProtocolTimestamp.fromSeconds(
+      new Date().getTime() - count++ * 60 * 60 * 7,
+    ),
     transactionId: "12",
   } as TransactionCommon);
 

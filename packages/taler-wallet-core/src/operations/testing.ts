@@ -229,8 +229,8 @@ async function createOrder(
       amount,
       summary,
       fulfillment_url: fulfillmentUrl,
-      refund_deadline: { t_ms: t * 1000 },
-      wire_transfer_deadline: { t_ms: t * 1000 },
+      refund_deadline: { t_s: t },
+      wire_transfer_deadline: { t_s: t },
     },
   };
   const resp = await http.postJson(reqUrl, orderReq, {

@@ -22,7 +22,11 @@
 import { PendingTransactionsView as TestedComponent } from "./PendingTransactions";
 import { Fragment, h, VNode } from "preact";
 import { createExample } from "../test-utils";
-import { Transaction, TransactionType } from "@gnu-taler/taler-util";
+import {
+  TalerProtocolTimestamp,
+  Transaction,
+  TransactionType,
+} from "@gnu-taler/taler-util";
 
 export default {
   title: "component/PendingTransactions",
@@ -34,9 +38,7 @@ export const OnePendingTransaction = createExample(TestedComponent, {
     {
       amountEffective: "USD:10",
       type: TransactionType.Withdrawal,
-      timestamp: {
-        t_ms: 1,
-      },
+      timestamp: TalerProtocolTimestamp.fromSeconds(1),
     } as Transaction,
   ],
 });
@@ -46,23 +48,17 @@ export const ThreePendingTransactions = createExample(TestedComponent, {
     {
       amountEffective: "USD:10",
       type: TransactionType.Withdrawal,
-      timestamp: {
-        t_ms: 1,
-      },
+      timestamp: TalerProtocolTimestamp.fromSeconds(1),
     } as Transaction,
     {
       amountEffective: "USD:10",
       type: TransactionType.Withdrawal,
-      timestamp: {
-        t_ms: 1,
-      },
+      timestamp: TalerProtocolTimestamp.fromSeconds(1),
     } as Transaction,
     {
       amountEffective: "USD:10",
       type: TransactionType.Withdrawal,
-      timestamp: {
-        t_ms: 1,
-      },
+      timestamp: TalerProtocolTimestamp.fromSeconds(1),
     } as Transaction,
   ],
 });
@@ -72,72 +68,52 @@ export const TenPendingTransactions = createExample(TestedComponent, {
     {
       amountEffective: "USD:10",
       type: TransactionType.Withdrawal,
-      timestamp: {
-        t_ms: 1,
-      },
+      timestamp: TalerProtocolTimestamp.fromSeconds(1),
     } as Transaction,
     {
       amountEffective: "USD:10",
       type: TransactionType.Withdrawal,
-      timestamp: {
-        t_ms: 1,
-      },
+      timestamp: TalerProtocolTimestamp.fromSeconds(1)
     } as Transaction,
     {
       amountEffective: "USD:10",
       type: TransactionType.Withdrawal,
-      timestamp: {
-        t_ms: 1,
-      },
+      timestamp: TalerProtocolTimestamp.fromSeconds(1),
     } as Transaction,
     {
       amountEffective: "USD:10",
       type: TransactionType.Withdrawal,
-      timestamp: {
-        t_ms: 1,
-      },
+      timestamp: TalerProtocolTimestamp.fromSeconds(1),
     } as Transaction,
     {
       amountEffective: "USD:10",
       type: TransactionType.Withdrawal,
-      timestamp: {
-        t_ms: 1,
-      },
+      timestamp: TalerProtocolTimestamp.fromSeconds(1),
     } as Transaction,
     {
       amountEffective: "USD:10",
       type: TransactionType.Withdrawal,
-      timestamp: {
-        t_ms: 1,
-      },
+      timestamp: TalerProtocolTimestamp.fromSeconds(1),
     } as Transaction,
     {
       amountEffective: "USD:10",
       type: TransactionType.Withdrawal,
-      timestamp: {
-        t_ms: 1,
-      },
+      timestamp: TalerProtocolTimestamp.fromSeconds(1),
     } as Transaction,
     {
       amountEffective: "USD:10",
       type: TransactionType.Withdrawal,
-      timestamp: {
-        t_ms: 1,
-      },
+      timestamp: TalerProtocolTimestamp.fromSeconds(1),
     } as Transaction,
     {
       amountEffective: "USD:10",
       type: TransactionType.Withdrawal,
-      timestamp: {
-        t_ms: 1,
-      },
+      timestamp: TalerProtocolTimestamp.fromSeconds(1),
     } as Transaction,
     {
       amountEffective: "USD:10",
       type: TransactionType.Withdrawal,
-      timestamp: {
-        t_ms: 1,
-      },
+      timestamp: TalerProtocolTimestamp.fromSeconds(1),
     } as Transaction,
   ],
 });

@@ -18,12 +18,12 @@
  * Imports.
  */
 import {
+  AbsoluteTime,
   AmountJson,
   Amounts,
   Logger,
   OrderShortInfo,
   PaymentStatus,
-  timestampCmp,
   Transaction,
   TransactionsRequest,
   TransactionsResponse,
@@ -309,7 +309,7 @@ export async function getTransactions(
 
           for (const rk of Object.keys(pr.refunds)) {
             const refund = pr.refunds[rk];
-            const groupKey = `${refund.executionTime.t_ms}`;
+            const groupKey = `${refund.executionTime.t_s}`;
             refundGroupKeys.add(groupKey);
           }
 
@@ -333,7 +333,7 @@ export async function getTransactions(
             let amountEffective = Amounts.getZero(contractData.amount.currency);
             for (const rk of Object.keys(pr.refunds)) {
               const refund = pr.refunds[rk];
-              const myGroupKey = `${refund.executionTime.t_ms}`;
+              const myGroupKey = `${refund.executionTime.t_s}`;
               if (myGroupKey !== groupKey) {
                 continue;
               }
@@ -403,8 +403,18 @@ export async function getTransactions(
   const txPending = transactions.filter((x) => x.pending);
   const txNotPending = transactions.filter((x) => !x.pending);
 
-  txPending.sort((h1, h2) => timestampCmp(h1.timestamp, h2.timestamp));
-  txNotPending.sort((h1, h2) => timestampCmp(h1.timestamp, h2.timestamp));
+  txPending.sort((h1, h2) =>
+    AbsoluteTime.cmp(
+      AbsoluteTime.fromTimestamp(h1.timestamp),
+      AbsoluteTime.fromTimestamp(h2.timestamp),
+    ),
+  );
+  txNotPending.sort((h1, h2) =>
+    AbsoluteTime.cmp(
+      AbsoluteTime.fromTimestamp(h1.timestamp),
+      AbsoluteTime.fromTimestamp(h2.timestamp),
+    ),
+  );
 
   return { transactions: [...txNotPending, ...txPending] };
 }
@@ -485,11 +495,10 @@ export async function deleteTransaction(
           });
           return;
         }
-        const reserveRecord:
-          | ReserveRecord
-          | undefined = await tx.reserves.indexes.byInitialWithdrawalGroupId.get(
-          withdrawalGroupId,
-        );
+        const reserveRecord: ReserveRecord | undefined =
+          await tx.reserves.indexes.byInitialWithdrawalGroupId.get(
+            withdrawalGroupId,
+          );
         if (reserveRecord && !reserveRecord.initialWithdrawalStarted) {
           const reservePub = reserveRecord.reservePub;
           await tx.reserves.delete(reservePub);

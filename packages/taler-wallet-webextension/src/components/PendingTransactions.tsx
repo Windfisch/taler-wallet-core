@@ -1,4 +1,9 @@
-import { Amounts, NotificationType, Transaction } from "@gnu-taler/taler-util";
+import {
+  AbsoluteTime,
+  Amounts,
+  NotificationType,
+  Transaction,
+} from "@gnu-taler/taler-util";
 import { PendingTaskInfo } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, JSX } from "preact";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
@@ -70,7 +75,11 @@ export function PendingTransactionsView({
               <b>
                 {amount.currency} {Amounts.stringifyValue(amount)}
               </b>{" "}
-              - <Time timestamp={t.timestamp} format="dd MMMM yyyy" />
+              -{" "}
+              <Time
+                timestamp={AbsoluteTime.fromTimestamp(t.timestamp)}
+                format="dd MMMM yyyy"
+              />
             </Typography>
           ),
         };

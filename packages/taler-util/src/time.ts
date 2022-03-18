@@ -23,11 +23,39 @@
  */
 import { Codec, renderContext, Context } from "./codec.js";
 
-export interface Timestamp {
+export interface AbsoluteTime {
   /**
    * Timestamp in milliseconds.
    */
   readonly t_ms: number | "never";
+}
+
+export interface TalerProtocolTimestamp {
+  readonly t_s: number | "never";
+}
+
+export namespace TalerProtocolTimestamp {
+  export function now(): TalerProtocolTimestamp {
+    return AbsoluteTime.toTimestamp(AbsoluteTime.now());
+  }
+
+  export function zero(): TalerProtocolTimestamp {
+    return {
+      t_s: 0,
+    };
+  }
+
+  export function never(): TalerProtocolTimestamp {
+    return {
+      t_s: "never",
+    };
+  }
+
+  export function fromSeconds(s: number): TalerProtocolTimestamp {
+    return {
+      t_s: s,
+    };
+  }
 }
 
 export interface Duration {
@@ -37,40 +65,32 @@ export interface Duration {
   readonly d_ms: number | "forever";
 }
 
+export interface TalerProtocolDuration {
+  readonly d_us: number | "forever";
+}
+
 let timeshift = 0;
 
 export function setDangerousTimetravel(dt: number): void {
   timeshift = dt;
 }
 
-export function getTimestampNow(): Timestamp {
-  return {
-    t_ms: new Date().getTime() + timeshift,
-  };
-}
-
-export function isTimestampExpired(t: Timestamp) {
-  return timestampCmp(t, getTimestampNow()) <= 0;
-}
-
-export function getDurationRemaining(
-  deadline: Timestamp,
-  now = getTimestampNow(),
-): Duration {
-  if (deadline.t_ms === "never") {
-    return { d_ms: "forever" };
-  }
-  if (now.t_ms === "never") {
-    throw Error("invalid argument for 'now'");
-  }
-  if (deadline.t_ms < now.t_ms) {
-    return { d_ms: 0 };
-  }
-  return { d_ms: deadline.t_ms - now.t_ms };
-}
-
 export namespace Duration {
-  export const getRemaining = getDurationRemaining;
+  export function getRemaining(
+    deadline: AbsoluteTime,
+    now = AbsoluteTime.now(),
+  ): Duration {
+    if (deadline.t_ms === "never") {
+      return { d_ms: "forever" };
+    }
+    if (now.t_ms === "never") {
+      throw Error("invalid argument for 'now'");
+    }
+    if (deadline.t_ms < now.t_ms) {
+      return { d_ms: 0 };
+    }
+    return { d_ms: deadline.t_ms - now.t_ms };
+  }
   export function toIntegerYears(d: Duration): number {
     if (typeof d.d_ms !== "number") {
       throw Error("infinite duration");
@@ -81,33 +101,152 @@ export namespace Duration {
   export function getForever(): Duration {
     return { d_ms: "forever" };
   }
+  export function fromTalerProtocolDuration(
+    d: TalerProtocolDuration,
+  ): Duration {
+    if (d.d_us === "forever") {
+      return {
+        d_ms: "forever",
+      };
+    }
+    return {
+      d_ms: d.d_us / 1000,
+    };
+  }
 }
 
-export namespace Timestamp {
-  export const now = getTimestampNow;
-  export const min = timestampMin;
-  export const isExpired = isTimestampExpired;
-  export const truncateToSecond = timestampTruncateToSecond;
-}
+export namespace AbsoluteTime {
+  export function now(): AbsoluteTime {
+    return {
+      t_ms: new Date().getTime() + timeshift,
+    };
+  }
 
-export function timestampMin(t1: Timestamp, t2: Timestamp): Timestamp {
-  if (t1.t_ms === "never") {
-    return { t_ms: t2.t_ms };
+  export function never(): AbsoluteTime {
+    return {
+      t_ms: "never",
+    };
   }
-  if (t2.t_ms === "never") {
-    return { t_ms: t2.t_ms };
-  }
-  return { t_ms: Math.min(t1.t_ms, t2.t_ms) };
-}
 
-export function timestampMax(t1: Timestamp, t2: Timestamp): Timestamp {
-  if (t1.t_ms === "never") {
-    return { t_ms: "never" };
+  export function cmp(t1: AbsoluteTime, t2: AbsoluteTime): number {
+    if (t1.t_ms === "never") {
+      if (t2.t_ms === "never") {
+        return 0;
+      }
+      return 1;
+    }
+    if (t2.t_ms === "never") {
+      return -1;
+    }
+    if (t1.t_ms == t2.t_ms) {
+      return 0;
+    }
+    if (t1.t_ms > t2.t_ms) {
+      return 1;
+    }
+    return -1;
   }
-  if (t2.t_ms === "never") {
-    return { t_ms: "never" };
+
+  export function min(t1: AbsoluteTime, t2: AbsoluteTime): AbsoluteTime {
+    if (t1.t_ms === "never") {
+      return { t_ms: t2.t_ms };
+    }
+    if (t2.t_ms === "never") {
+      return { t_ms: t2.t_ms };
+    }
+    return { t_ms: Math.min(t1.t_ms, t2.t_ms) };
   }
-  return { t_ms: Math.max(t1.t_ms, t2.t_ms) };
+
+  export function max(t1: AbsoluteTime, t2: AbsoluteTime): AbsoluteTime {
+    if (t1.t_ms === "never") {
+      return { t_ms: "never" };
+    }
+    if (t2.t_ms === "never") {
+      return { t_ms: "never" };
+    }
+    return { t_ms: Math.max(t1.t_ms, t2.t_ms) };
+  }
+
+  export function difference(t1: AbsoluteTime, t2: AbsoluteTime): Duration {
+    if (t1.t_ms === "never") {
+      return { d_ms: "forever" };
+    }
+    if (t2.t_ms === "never") {
+      return { d_ms: "forever" };
+    }
+    return { d_ms: Math.abs(t1.t_ms - t2.t_ms) };
+  }
+
+  export function isExpired(t: AbsoluteTime) {
+    return cmp(t, now()) <= 0;
+  }
+
+  export function fromTimestamp(t: TalerProtocolTimestamp): AbsoluteTime {
+    if (t.t_s === "never") {
+      return { t_ms: "never" };
+    }
+    return {
+      t_ms: t.t_s * 1000,
+    };
+  }
+
+  export function toTimestamp(at: AbsoluteTime): TalerProtocolTimestamp {
+    if (at.t_ms === "never") {
+      return { t_s: "never" };
+    }
+    return {
+      t_s: Math.floor(at.t_ms / 1000),
+    };
+  }
+
+  export function isBetween(
+    t: AbsoluteTime,
+    start: AbsoluteTime,
+    end: AbsoluteTime,
+  ): boolean {
+    if (cmp(t, start) < 0) {
+      return false;
+    }
+    if (cmp(t, end) > 0) {
+      return false;
+    }
+    return true;
+  }
+
+  export function toIsoString(t: AbsoluteTime): string {
+    if (t.t_ms === "never") {
+      return "<never>";
+    } else {
+      return new Date(t.t_ms).toISOString();
+    }
+  }
+
+  export function addDuration(t1: AbsoluteTime, d: Duration): AbsoluteTime {
+    if (t1.t_ms === "never" || d.d_ms === "forever") {
+      return { t_ms: "never" };
+    }
+    return { t_ms: t1.t_ms + d.d_ms };
+  }
+
+  export function subtractDuraction(
+    t1: AbsoluteTime,
+    d: Duration,
+  ): AbsoluteTime {
+    if (t1.t_ms === "never") {
+      return { t_ms: "never" };
+    }
+    if (d.d_ms === "forever") {
+      return { t_ms: 0 };
+    }
+    return { t_ms: Math.max(0, t1.t_ms - d.d_ms) };
+  }
+
+  export function stringify(t: AbsoluteTime): string {
+    if (t.t_ms === "never") {
+      return "never";
+    }
+    return new Date(t.t_ms).toISOString();
+  }
 }
 
 const SECONDS = 1000;
@@ -133,19 +272,6 @@ export function durationFromSpec(spec: {
   d_ms += (spec.months ?? 0) * MONTHS;
   d_ms += (spec.years ?? 0) * YEARS;
   return { d_ms };
-}
-
-/**
- * Truncate a timestamp so that that it represents a multiple
- * of seconds.  The timestamp is always rounded down.
- */
-export function timestampTruncateToSecond(t1: Timestamp): Timestamp {
-  if (t1.t_ms === "never") {
-    return { t_ms: "never" };
-  }
-  return {
-    t_ms: Math.floor(t1.t_ms / 1000) * 1000,
-  };
 }
 
 export function durationMin(d1: Duration, d2: Duration): Duration {
@@ -182,111 +308,33 @@ export function durationAdd(d1: Duration, d2: Duration): Duration {
   return { d_ms: d1.d_ms + d2.d_ms };
 }
 
-export function timestampCmp(t1: Timestamp, t2: Timestamp): number {
-  if (t1.t_ms === "never") {
-    if (t2.t_ms === "never") {
-      return 0;
-    }
-    return 1;
-  }
-  if (t2.t_ms === "never") {
-    return -1;
-  }
-  if (t1.t_ms == t2.t_ms) {
-    return 0;
-  }
-  if (t1.t_ms > t2.t_ms) {
-    return 1;
-  }
-  return -1;
-}
-
-export function timestampAddDuration(t1: Timestamp, d: Duration): Timestamp {
-  if (t1.t_ms === "never" || d.d_ms === "forever") {
-    return { t_ms: "never" };
-  }
-  return { t_ms: t1.t_ms + d.d_ms };
-}
-
-export function timestampSubtractDuraction(
-  t1: Timestamp,
-  d: Duration,
-): Timestamp {
-  if (t1.t_ms === "never") {
-    return { t_ms: "never" };
-  }
-  if (d.d_ms === "forever") {
-    return { t_ms: 0 };
-  }
-  return { t_ms: Math.max(0, t1.t_ms - d.d_ms) };
-}
-
-export function stringifyTimestamp(t: Timestamp): string {
-  if (t.t_ms === "never") {
-    return "never";
-  }
-  return new Date(t.t_ms).toISOString();
-}
-
-export function timestampDifference(t1: Timestamp, t2: Timestamp): Duration {
-  if (t1.t_ms === "never") {
-    return { d_ms: "forever" };
-  }
-  if (t2.t_ms === "never") {
-    return { d_ms: "forever" };
-  }
-  return { d_ms: Math.abs(t1.t_ms - t2.t_ms) };
-}
-
-export function timestampToIsoString(t: Timestamp): string {
-  if (t.t_ms === "never") {
-    return "<never>";
-  } else {
-    return new Date(t.t_ms).toISOString();
-  }
-}
-
-export function timestampIsBetween(
-  t: Timestamp,
-  start: Timestamp,
-  end: Timestamp,
-): boolean {
-  if (timestampCmp(t, start) < 0) {
-    return false;
-  }
-  if (timestampCmp(t, end) > 0) {
-    return false;
-  }
-  return true;
-}
-
-export const codecForTimestamp: Codec<Timestamp> = {
-  decode(x: any, c?: Context): Timestamp {
-    const t_ms = x.t_ms;
-    if (typeof t_ms === "string") {
-      if (t_ms === "never") {
-        return { t_ms: "never" };
+export const codecForTimestamp: Codec<TalerProtocolTimestamp> = {
+  decode(x: any, c?: Context): TalerProtocolTimestamp {
+    const t_s = x.t_s;
+    if (typeof t_s === "string") {
+      if (t_s === "never") {
+        return { t_s: "never" };
       }
       throw Error(`expected timestamp at ${renderContext(c)}`);
     }
-    if (typeof t_ms === "number") {
-      return { t_ms };
+    if (typeof t_s === "number") {
+      return { t_s };
     }
     throw Error(`expected timestamp at ${renderContext(c)}`);
   },
 };
 
-export const codecForDuration: Codec<Duration> = {
-  decode(x: any, c?: Context): Duration {
-    const d_ms = x.d_ms;
-    if (typeof d_ms === "string") {
-      if (d_ms === "forever") {
-        return { d_ms: "forever" };
+export const codecForDuration: Codec<TalerProtocolDuration> = {
+  decode(x: any, c?: Context): TalerProtocolDuration {
+    const d_us = x.d_us;
+    if (typeof d_us === "string") {
+      if (d_us === "forever") {
+        return { d_us: "forever" };
       }
       throw Error(`expected duration at ${renderContext(c)}`);
     }
-    if (typeof d_ms === "number") {
-      return { d_ms };
+    if (typeof d_us === "number") {
+      return { d_us };
     }
     throw Error(`expected duration at ${renderContext(c)}`);
   },

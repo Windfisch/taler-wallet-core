@@ -18,7 +18,7 @@ import {
   AmountJson,
   Amounts,
   AmountString,
-  Timestamp,
+  AbsoluteTime,
   Transaction,
   TransactionType,
 } from "@gnu-taler/taler-util";
@@ -46,7 +46,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           amount={tx.amountEffective}
           debitCreditIndicator={"credit"}
           title={new URL(tx.exchangeBaseUrl).hostname}
-          timestamp={tx.timestamp}
+          timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
           iconPath={"W"}
           pending={tx.pending}
         />
@@ -59,7 +59,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           debitCreditIndicator={"debit"}
           title={tx.info.merchant.name}
           subtitle={tx.info.summary}
-          timestamp={tx.timestamp}
+          timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
           iconPath={"P"}
           pending={tx.pending}
         />
@@ -72,7 +72,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           debitCreditIndicator={"credit"}
           subtitle={tx.info.summary}
           title={tx.info.merchant.name}
-          timestamp={tx.timestamp}
+          timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
           iconPath={"R"}
           pending={tx.pending}
         />
@@ -84,7 +84,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           amount={tx.amountEffective}
           debitCreditIndicator={"credit"}
           title={new URL(tx.merchantBaseUrl).hostname}
-          timestamp={tx.timestamp}
+          timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
           iconPath={"T"}
           pending={tx.pending}
         />
@@ -96,7 +96,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           amount={tx.amountEffective}
           debitCreditIndicator={"credit"}
           title={new URL(tx.exchangeBaseUrl).hostname}
-          timestamp={tx.timestamp}
+          timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
           iconPath={"R"}
           pending={tx.pending}
         />
@@ -108,7 +108,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           amount={tx.amountEffective}
           debitCreditIndicator={"debit"}
           title={tx.targetPaytoUri}
-          timestamp={tx.timestamp}
+          timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
           iconPath={"D"}
           pending={tx.pending}
         />
@@ -165,7 +165,7 @@ function TransactionLayout(props: TransactionLayoutProps): VNode {
 interface TransactionLayoutProps {
   debitCreditIndicator: "debit" | "credit" | "unknown";
   amount: AmountString | "unknown";
-  timestamp: Timestamp;
+  timestamp: AbsoluteTime;
   title: string;
   subtitle?: string;
   id: string;
