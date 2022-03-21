@@ -155,7 +155,7 @@ export interface PaymentRequestViewProps {
   onClick: () => void;
   payErrMsg?: string;
   uri: string;
-  goToWalletManualWithdraw: () => void;
+  goToWalletManualWithdraw: (s: string) => void;
   balance: AmountJson | undefined;
 }
 export function PaymentRequestView({
@@ -196,8 +196,8 @@ export function PaymentRequestView({
     );
   }
 
+  const amountRaw = Amounts.parseOrThrow(payStatus.amountRaw);
   if (payStatus.status === PreparePayResultType.PaymentPossible) {
-    const amountRaw = Amounts.parseOrThrow(payStatus.amountRaw);
     const amountEffective: AmountJson = Amounts.parseOrThrow(
       payStatus.amountEffective,
     );
@@ -284,7 +284,10 @@ export function PaymentRequestView({
             )}
           </section>
           <section>
-            <ButtonSuccess upperCased onClick={goToWalletManualWithdraw}>
+            <ButtonSuccess
+              upperCased
+              onClick={() => goToWalletManualWithdraw(amountRaw.currency)}
+            >
               <i18n.Translate>Withdraw digital cash</i18n.Translate>
             </ButtonSuccess>
           </section>
