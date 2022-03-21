@@ -31,7 +31,7 @@ interface Props {
   onBack: () => void;
 }
 
-export function ExchangeAddPage({ onBack }: Props): VNode {
+export function ExchangeAddPage({ currency, onBack }: Props): VNode {
   const [verifying, setVerifying] = useState<
     { url: string; config: TalerConfigResponse } | undefined
   >(undefined);
@@ -47,6 +47,7 @@ export function ExchangeAddPage({ onBack }: Props): VNode {
     return (
       <ExchangeSetUrlPage
         onCancel={onBack}
+        expectedCurrency={currency}
         onVerify={async (url) => {
           const found =
             knownExchanges.findIndex((e) => e.exchangeBaseUrl === url) !== -1;

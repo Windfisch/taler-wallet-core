@@ -67,9 +67,9 @@ export function useComponentState(
   const initialExchange =
     foundExchangeForCurrency !== -1
       ? exchangeSelectList[foundExchangeForCurrency]
-      : exchangeSelectList.length > 0
-      ? exchangeSelectList[0]
-      : undefined;
+      : // : exchangeSelectList.length > 0
+        // ? exchangeSelectList[0]
+        undefined;
 
   const [exchange, setExchange] = useState(initialExchange || "");
   const [currency, setCurrency] = useState(
@@ -137,6 +137,40 @@ export function CreateManualWithdraw({
   const state = useComponentState(exchangeList, initialAmount, initialCurrency);
 
   if (!state.initialExchange) {
+    if (initialCurrency !== undefined) {
+      return (
+        <section>
+          <h2>
+            <i18n.Translate>
+              Manual Withdrawal for {initialCurrency}
+            </i18n.Translate>
+          </h2>
+          <LightText>
+            <i18n.Translate>
+              Choose a exchange from where the coins will be withdrawn. The
+              exchange will send the coins to this wallet after receiving a wire
+              transfer with the correct subject.
+            </i18n.Translate>
+          </LightText>
+          <Centered style={{ marginTop: 100 }}>
+            <BoldLight>
+              <i18n.Translate>
+                No exchange found for {initialCurrency}
+              </i18n.Translate>
+            </BoldLight>
+            <LinkPrimary
+              href={Pages.settings_exchange_add.replace(
+                ":currency?",
+                initialCurrency,
+              )}
+              style={{ marginLeft: "auto" }}
+            >
+              <i18n.Translate>Add Exchange</i18n.Translate>
+            </LinkPrimary>
+          </Centered>
+        </section>
+      );
+    }
     return (
       <section>
         <h2>

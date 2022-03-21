@@ -51,7 +51,7 @@ export enum Pages {
   backup_provider_add = "/backup/provider/add",
 
   settings = "/settings",
-  settings_exchange_add = "/settings/exchange/add",
+  settings_exchange_add = "/settings/exchange/add/:currency?",
 
   cta = "/cta/:action",
   cta_pay = "/cta/pay",

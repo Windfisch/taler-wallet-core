@@ -26,10 +26,8 @@ import { Loading } from "../components/Loading";
 import { LoadingError } from "../components/LoadingError";
 import { useTranslationContext } from "../context/translation";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import { Pages } from "../NavigationBar";
 import * as wxApi from "../wxApi";
 import { CreateManualWithdraw } from "./CreateManualWithdraw";
-import { ExchangeAddPage } from "./ExchangeAddPage";
 import { ReserveCreated } from "./ReserveCreated";
 
 interface Props {
