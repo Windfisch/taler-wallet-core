@@ -233,7 +233,7 @@ function makeSyncWalletRedirect(
     const tab = await getTab(tabId);
     if (tab.url === oldUrl) {
       console.log("redirecting to", innerUrl.href);
-      chrome.tabs.update(tabId, { url: innerUrl.href });
+      chrome.tabs.update(tabId, { url: innerUrl.href, loadReplace: true } as any);
     }
   };
   doit();
