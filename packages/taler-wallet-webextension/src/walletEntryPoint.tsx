@@ -113,23 +113,23 @@ function Application(): VNode {
                 <Fragment>
                   <LogoHeader />
                   <WalletNavBar path={path} />
+                  <div
+                    style={{
+                      backgroundColor: "lightcyan",
+                      display: "flex",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <PendingTransactions
+                      goToTransaction={(txId: string) =>
+                        route(Pages.balance_transaction.replace(":tid", txId))
+                      }
+                    />
+                  </div>
                 </Fragment>
               );
             }}
           </Match>
-          <div
-            style={{
-              backgroundColor: "lightcyan",
-              display: "flex",
-              justifyContent: "center",
-            }}
-          >
-            <PendingTransactions
-              goToTransaction={(txId: string) =>
-                route(Pages.balance_transaction.replace(":tid", txId))
-              }
-            />
-          </div>
           <WalletBox>
             {globalNotification && (
               <SuccessBox onClick={clearNotification}>
@@ -166,7 +166,7 @@ function Application(): VNode {
                 component={TransactionPage}
                 goToWalletHistory={(currency?: string) => {
                   route(
-                    Pages.balance_history.replace(":currency", currency || ""),
+                    Pages.balance_history.replace(":currency?", currency || ""),
                   );
                 }}
               />
@@ -183,10 +183,10 @@ function Application(): VNode {
                 path={Pages.balance_deposit}
                 component={DepositPage}
                 onCancel={(currency: string) => {
-                  route(Pages.balance_history.replace(":currency", currency));
+                  route(Pages.balance_history.replace(":currency?", currency));
                 }}
                 onSuccess={(currency: string) => {
-                  route(Pages.balance_history.replace(":currency", currency));
+                  route(Pages.balance_history.replace(":currency?", currency));
                   setGlobalNotification(
                     <i18n.Translate>
                       All done, your transaction is in progress
@@ -268,13 +268,13 @@ function Application(): VNode {
               <Route
                 path={Pages.balance}
                 component={Redirect}
-                to={Pages.balance_history.replace(":currency", "")}
+                to={Pages.balance_history.replace(":currency?", "")}
               />
 
               <Route
                 default
                 component={Redirect}
-                to={Pages.balance_history.replace(":currency", "")}
+                to={Pages.balance_history.replace(":currency?", "")}
               />
             </Router>
           </WalletBox>

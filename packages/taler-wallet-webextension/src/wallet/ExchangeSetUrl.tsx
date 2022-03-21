@@ -177,8 +177,7 @@ export function ExchangeSetUrlPage({
           disabled={
             !result ||
             !!error ||
-            (expectedCurrency !== undefined &&
-              expectedCurrency !== result.currency)
+            (!!expectedCurrency && expectedCurrency !== result.currency)
           }
           onClick={() => {
             const url = canonicalizeBaseUrl(endpoint);

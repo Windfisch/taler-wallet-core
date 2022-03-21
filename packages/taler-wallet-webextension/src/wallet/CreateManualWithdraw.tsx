@@ -67,9 +67,9 @@ export function useComponentState(
   const initialExchange =
     foundExchangeForCurrency !== -1
       ? exchangeSelectList[foundExchangeForCurrency]
-      : // : exchangeSelectList.length > 0
-        // ? exchangeSelectList[0]
-        undefined;
+      : !initialCurrency && exchangeSelectList.length > 0
+      ? exchangeSelectList[0]
+      : undefined;
 
   const [exchange, setExchange] = useState(initialExchange || "");
   const [currency, setCurrency] = useState(
@@ -188,7 +188,7 @@ export function CreateManualWithdraw({
             <i18n.Translate>No exchange configured</i18n.Translate>
           </BoldLight>
           <LinkPrimary
-            href={Pages.settings_exchange_add}
+            href={Pages.settings_exchange_add.replace(":currency?", "")}
             style={{ marginLeft: "auto" }}
           >
             <i18n.Translate>Add Exchange</i18n.Translate>
@@ -234,7 +234,7 @@ export function CreateManualWithdraw({
           </Input>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <LinkPrimary
-              href={Pages.settings_exchange_add}
+              href={Pages.settings_exchange_add.replace(":currency?", "")}
               style={{ marginLeft: "auto" }}
             >
               <i18n.Translate>Add Exchange</i18n.Translate>
