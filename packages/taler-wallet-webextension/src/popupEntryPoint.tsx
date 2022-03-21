@@ -25,7 +25,7 @@ import { createHashHistory } from "history";
 import { Fragment, h, render, VNode } from "preact";
 import Router, { route, Route } from "preact-router";
 import { Match } from "preact-router/match";
-import { useEffect } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import PendingTransactions from "./components/PendingTransactions";
 import { PopupBox } from "./components/styled";
 import { DevContextProvider } from "./context/devContext";
@@ -181,6 +181,7 @@ function Application(): VNode {
 
 function RedirectToWalletPage(): VNode {
   const page = document.location.hash || "#/";
+  const [showText, setShowText] = useState(false);
   useEffect(() => {
     chrome.tabs.create(
       {
@@ -192,8 +193,12 @@ function RedirectToWalletPage(): VNode {
         window.close();
       },
     );
+    setTimeout(() => {
+      setShowText(true);
+    }, 250);
   });
   const { i18n } = useTranslationContext();
+  if (!showText) return <Fragment />;
   return (
     <span>
       <i18n.Translate>
