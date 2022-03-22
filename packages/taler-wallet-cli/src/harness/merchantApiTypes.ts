@@ -42,6 +42,7 @@ import {
   CoinPublicKeyString,
   EddsaPublicKeyString,
   codecForAmountString,
+  TalerProtocolDuration,
 } from "@gnu-taler/taler-util";
 
 export interface PostOrderRequest {
@@ -51,7 +52,7 @@ export interface PostOrderRequest {
 
   // if set, the backend will then set the refund deadline to the current
   // time plus the specified delay.
-  refund_delay?: Duration;
+  refund_delay?: TalerProtocolDuration;
 
   // specifies the payment target preferred by the client. Can be used
   // to select among the various (active) wire methods supported by the instance.
@@ -79,44 +80,48 @@ export const codecForPostOrderResponse = (): Codec<PostOrderResponse> =>
     .property("token", codecOptional(codecForString()))
     .build("PostOrderResponse");
 
-export const codecForCheckPaymentPaidResponse = (): Codec<CheckPaymentPaidResponse> =>
-  buildCodecForObject<CheckPaymentPaidResponse>()
-    .property("order_status_url", codecForString())
-    .property("order_status", codecForConstString("paid"))
-    .property("refunded", codecForBoolean())
-    .property("wired", codecForBoolean())
-    .property("deposit_total", codecForAmountString())
-    .property("exchange_ec", codecForNumber())
-    .property("exchange_hc", codecForNumber())
-    .property("refund_amount", codecForAmountString())
-    .property("contract_terms", codecForContractTerms())
-    // FIXME: specify
-    .property("wire_details", codecForAny())
-    .property("wire_reports", codecForAny())
-    .property("refund_details", codecForAny())
-    .build("CheckPaymentPaidResponse");
+export const codecForCheckPaymentPaidResponse =
+  (): Codec<CheckPaymentPaidResponse> =>
+    buildCodecForObject<CheckPaymentPaidResponse>()
+      .property("order_status_url", codecForString())
+      .property("order_status", codecForConstString("paid"))
+      .property("refunded", codecForBoolean())
+      .property("wired", codecForBoolean())
+      .property("deposit_total", codecForAmountString())
+      .property("exchange_ec", codecForNumber())
+      .property("exchange_hc", codecForNumber())
+      .property("refund_amount", codecForAmountString())
+      .property("contract_terms", codecForContractTerms())
+      // FIXME: specify
+      .property("wire_details", codecForAny())
+      .property("wire_reports", codecForAny())
+      .property("refund_details", codecForAny())
+      .build("CheckPaymentPaidResponse");
 
-export const codecForCheckPaymentUnpaidResponse = (): Codec<CheckPaymentUnpaidResponse> =>
-  buildCodecForObject<CheckPaymentUnpaidResponse>()
-    .property("order_status", codecForConstString("unpaid"))
-    .property("taler_pay_uri", codecForString())
-    .property("order_status_url", codecForString())
-    .property("already_paid_order_id", codecOptional(codecForString()))
-    .build("CheckPaymentPaidResponse");
+export const codecForCheckPaymentUnpaidResponse =
+  (): Codec<CheckPaymentUnpaidResponse> =>
+    buildCodecForObject<CheckPaymentUnpaidResponse>()
+      .property("order_status", codecForConstString("unpaid"))
+      .property("taler_pay_uri", codecForString())
+      .property("order_status_url", codecForString())
+      .property("already_paid_order_id", codecOptional(codecForString()))
+      .build("CheckPaymentPaidResponse");
 
-export const codecForCheckPaymentClaimedResponse = (): Codec<CheckPaymentClaimedResponse> =>
-  buildCodecForObject<CheckPaymentClaimedResponse>()
-    .property("order_status", codecForConstString("claimed"))
-    .property("contract_terms", codecForContractTerms())
-    .build("CheckPaymentClaimedResponse");
+export const codecForCheckPaymentClaimedResponse =
+  (): Codec<CheckPaymentClaimedResponse> =>
+    buildCodecForObject<CheckPaymentClaimedResponse>()
+      .property("order_status", codecForConstString("claimed"))
+      .property("contract_terms", codecForContractTerms())
+      .build("CheckPaymentClaimedResponse");
 
-export const codecForMerchantOrderPrivateStatusResponse = (): Codec<MerchantOrderPrivateStatusResponse> =>
-  buildCodecForUnion<MerchantOrderPrivateStatusResponse>()
-    .discriminateOn("order_status")
-    .alternative("paid", codecForCheckPaymentPaidResponse())
-    .alternative("unpaid", codecForCheckPaymentUnpaidResponse())
-    .alternative("claimed", codecForCheckPaymentClaimedResponse())
-    .build("MerchantOrderPrivateStatusResponse");
+export const codecForMerchantOrderPrivateStatusResponse =
+  (): Codec<MerchantOrderPrivateStatusResponse> =>
+    buildCodecForUnion<MerchantOrderPrivateStatusResponse>()
+      .discriminateOn("order_status")
+      .alternative("paid", codecForCheckPaymentPaidResponse())
+      .alternative("unpaid", codecForCheckPaymentUnpaidResponse())
+      .alternative("claimed", codecForCheckPaymentClaimedResponse())
+      .build("MerchantOrderPrivateStatusResponse");
 
 export type MerchantOrderPrivateStatusResponse =
   | CheckPaymentPaidResponse

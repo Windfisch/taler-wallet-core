@@ -53,12 +53,8 @@ export async function runClauseSchnorrTest(t: GlobalTestState) {
     name: "rsa_dummy",
   });
 
-  const {
-    wallet,
-    bank,
-    exchange,
-    merchant,
-  } = await createSimpleTestkudosEnvironment(t, coinConfig);
+  const { wallet, bank, exchange, merchant } =
+    await createSimpleTestkudosEnvironment(t, coinConfig);
 
   // Withdraw digital cash into the wallet.
 
@@ -98,3 +94,4 @@ export async function runClauseSchnorrTest(t: GlobalTestState) {
 }
 
 runClauseSchnorrTest.suites = ["wallet"];
+runClauseSchnorrTest.excludeByDefault = true;

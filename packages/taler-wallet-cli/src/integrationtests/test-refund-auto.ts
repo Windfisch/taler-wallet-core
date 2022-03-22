@@ -22,7 +22,7 @@ import {
   createSimpleTestkudosEnvironment,
   withdrawViaBank,
 } from "../harness/helpers.js";
-import { durationFromSpec } from "@gnu-taler/taler-util";
+import { Duration, durationFromSpec } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**
@@ -48,7 +48,9 @@ export async function runRefundAutoTest(t: GlobalTestState) {
         d_us: 3000 * 1000,
       },
     },
-    refund_delay: durationFromSpec({ minutes: 5 }),
+    refund_delay: Duration.toTalerProtocolDuration(
+      durationFromSpec({ minutes: 5 }),
+    ),
   });
 
   let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {

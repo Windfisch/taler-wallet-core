@@ -24,26 +24,23 @@
 /**
  * Imports
  */
-import * as util from "util";
-import * as fs from "fs";
-import * as path from "path";
-import * as http from "http";
-import * as readline from "readline";
-import { deepStrictEqual } from "assert";
-import { ChildProcess, spawn } from "child_process";
-import { URL } from "url";
-import axios, { AxiosError } from "axios";
 import {
-  codecForMerchantOrderPrivateStatusResponse,
-  codecForPostOrderResponse,
-  PostOrderRequest,
-  PostOrderResponse,
-  MerchantOrderPrivateStatusResponse,
-  TippingReserveStatus,
-  TipCreateConfirmation,
-  TipCreateRequest,
-  MerchantInstancesResponse,
-} from "./merchantApiTypes";
+  AmountJson,
+  Amounts,
+  AmountString,
+  Configuration,
+  CoreApiResponse,
+  createEddsaKeyPair,
+  Duration,
+  eddsaGetPublic,
+  EddsaKeyPair,
+  encodeCrock,
+  hash,
+  j2s,
+  parsePaytoUri,
+  stringToBytes,
+  TalerProtocolDuration,
+} from "@gnu-taler/taler-util";
 import {
   BankServiceHandle,
   HarnessExchangeBankAccount,
@@ -52,28 +49,28 @@ import {
   TalerError,
   WalletCoreApiClient,
 } from "@gnu-taler/taler-wallet-core";
-import {
-  AmountJson,
-  Amounts,
-  Configuration,
-  AmountString,
-  Codec,
-  buildCodecForObject,
-  codecForString,
-  Duration,
-  parsePaytoUri,
-  CoreApiResponse,
-  createEddsaKeyPair,
-  eddsaGetPublic,
-  EddsaKeyPair,
-  encodeCrock,
-  getRandomBytes,
-  hash,
-  stringToBytes,
-  j2s,
-} from "@gnu-taler/taler-util";
+import { deepStrictEqual } from "assert";
+import axios, { AxiosError } from "axios";
+import { ChildProcess, spawn } from "child_process";
+import * as fs from "fs";
+import * as http from "http";
+import * as path from "path";
+import * as readline from "readline";
+import { URL } from "url";
+import * as util from "util";
 import { CoinConfig } from "./denomStructures.js";
 import { LibeufinNexusApi, LibeufinSandboxApi } from "./libeufin-apis.js";
+import {
+  codecForMerchantOrderPrivateStatusResponse,
+  codecForPostOrderResponse,
+  MerchantInstancesResponse,
+  MerchantOrderPrivateStatusResponse,
+  PostOrderRequest,
+  PostOrderResponse,
+  TipCreateConfirmation,
+  TipCreateRequest,
+  TippingReserveStatus,
+} from "./merchantApiTypes";
 
 const exec = util.promisify(require("child_process").exec);
 
@@ -1712,7 +1709,8 @@ export class MerchantService implements MerchantServiceInterface {
     console.log("adding instance");
     const url = `http://localhost:${this.merchantConfig.httpPort}/management/instances`;
     const auth = instanceConfig.auth ?? { method: "external" };
-    await axios.post(url, {
+
+    const body: MerchantInstanceConfig = {
       auth,
       payto_uris: instanceConfig.paytoUris,
       id: instanceConfig.id,
@@ -1729,11 +1727,16 @@ export class MerchantService implements MerchantServiceInterface {
         `${this.merchantConfig.currency}:1.0`,
       default_wire_transfer_delay:
         instanceConfig.defaultWireTransferDelay ??
-        Duration.fromSpec({
-          days: 1,
-        }),
-      default_pay_delay: instanceConfig.defaultPayDelay ?? { d_ms: "forever" },
-    });
+        Duration.toTalerProtocolDuration(
+          Duration.fromSpec({
+            days: 1,
+          }),
+        ),
+      default_pay_delay:
+        instanceConfig.defaultPayDelay ??
+        Duration.toTalerProtocolDuration(Duration.getForever()),
+    };
+    await axios.post(url, body);
   }
 
   makeInstanceBaseUrl(instanceName?: string): string {
@@ -1765,8 +1768,8 @@ export interface PartialMerchantInstanceConfig {
   defaultMaxWireFee?: string;
   defaultMaxDepositFee?: string;
   defaultWireFeeAmortization?: number;
-  defaultWireTransferDelay?: Duration;
-  defaultPayDelay?: Duration;
+  defaultWireTransferDelay?: TalerProtocolDuration;
+  defaultPayDelay?: TalerProtocolDuration;
 }
 
 export interface MerchantInstanceConfig {
@@ -1779,8 +1782,8 @@ export interface MerchantInstanceConfig {
   default_max_wire_fee: string;
   default_max_deposit_fee: string;
   default_wire_fee_amortization: number;
-  default_wire_transfer_delay: Duration;
-  default_pay_delay: Duration;
+  default_wire_transfer_delay: TalerProtocolDuration;
+  default_pay_delay: TalerProtocolDuration;
 }
 
 type TestStatus = "pass" | "fail" | "skip";

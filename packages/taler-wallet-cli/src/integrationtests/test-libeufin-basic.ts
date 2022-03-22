@@ -20,6 +20,8 @@
 import {
   AbsoluteTime,
   ContractTerms,
+  Duration,
+  durationFromSpec,
 } from "@gnu-taler/taler-util";
 import {
   WalletApiOperation,
@@ -209,7 +211,9 @@ export async function createLibeufinTestEnvironment(
     id: "default",
     name: "Default Instance",
     paytoUris: [`payto://iban/${merchantIban}?receiver-name=Merchant`],
-    defaultWireTransferDelay: { d_ms: 0 },
+    defaultWireTransferDelay: Duration.toTalerProtocolDuration(
+      Duration.getZero(),
+    ),
   });
 
   console.log("setup done!");

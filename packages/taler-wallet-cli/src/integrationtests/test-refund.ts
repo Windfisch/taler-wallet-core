@@ -17,10 +17,13 @@
 /**
  * Imports.
  */
-import { durationFromSpec } from "@gnu-taler/taler-util";
+import { Duration, durationFromSpec } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { GlobalTestState, MerchantPrivateApi } from "../harness/harness.js";
-import { createSimpleTestkudosEnvironment, withdrawViaBank } from "../harness/helpers.js";
+import {
+  createSimpleTestkudosEnvironment,
+  withdrawViaBank,
+} from "../harness/helpers.js";
 
 /**
  * Run test for basic, bank-integrated withdrawal.
@@ -28,12 +31,8 @@ import { createSimpleTestkudosEnvironment, withdrawViaBank } from "../harness/he
 export async function runRefundTest(t: GlobalTestState) {
   // Set up test environment
 
-  const {
-    wallet,
-    bank,
-    exchange,
-    merchant,
-  } = await createSimpleTestkudosEnvironment(t);
+  const { wallet, bank, exchange, merchant } =
+    await createSimpleTestkudosEnvironment(t);
 
   // Withdraw digital cash into the wallet.
 
@@ -47,7 +46,9 @@ export async function runRefundTest(t: GlobalTestState) {
       amount: "TESTKUDOS:5",
       fulfillment_url: "taler://fulfillment-success/thx",
     },
-    refund_delay: durationFromSpec({ minutes: 5 }),
+    refund_delay: Duration.toTalerProtocolDuration(
+      durationFromSpec({ minutes: 5 }),
+    ),
   });
 
   let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {

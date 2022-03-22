@@ -25,6 +25,7 @@ import {
 } from "../harness/helpers.js";
 import {
   AbsoluteTime,
+  Duration,
   durationFromSpec,
 } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
@@ -35,12 +36,8 @@ import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 export async function runRefundGoneTest(t: GlobalTestState) {
   // Set up test environment
 
-  const {
-    wallet,
-    bank,
-    exchange,
-    merchant,
-  } = await createSimpleTestkudosEnvironment(t);
+  const { wallet, bank, exchange, merchant } =
+    await createSimpleTestkudosEnvironment(t);
 
   // Withdraw digital cash into the wallet.
 
@@ -62,7 +59,9 @@ export async function runRefundGoneTest(t: GlobalTestState) {
         ),
       ),
     },
-    refund_delay: durationFromSpec({ minutes: 1 }),
+    refund_delay: Duration.toTalerProtocolDuration(
+      durationFromSpec({ minutes: 1 }),
+    ),
   });
 
   let orderStatus = await MerchantPrivateApi.queryPrivateOrderStatus(merchant, {

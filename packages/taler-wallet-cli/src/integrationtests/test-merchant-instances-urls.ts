@@ -17,6 +17,7 @@
 /**
  * Imports.
  */
+import { Duration } from "@gnu-taler/taler-util";
 import axios from "axios";
 import {
   ExchangeService,
@@ -24,7 +25,7 @@ import {
   MerchantApiClient,
   MerchantService,
   setupDb,
-  getPayto
+  getPayto,
 } from "../harness/harness.js";
 
 /**
@@ -67,9 +68,13 @@ export async function runMerchantInstancesUrlsTest(t: GlobalTestState) {
     address: {},
     default_max_deposit_fee: "TESTKUDOS:1",
     default_max_wire_fee: "TESTKUDOS:1",
-    default_pay_delay: { d_ms: 60000 },
+    default_pay_delay: Duration.toTalerProtocolDuration(
+      Duration.fromSpec({ seconds: 60 }),
+    ),
     default_wire_fee_amortization: 1,
-    default_wire_transfer_delay: { d_ms: 60000 },
+    default_wire_transfer_delay: Duration.toTalerProtocolDuration(
+      Duration.fromSpec({ seconds: 60 }),
+    ),
     jurisdiction: {},
     name: "My Default Instance",
     payto_uris: [getPayto("bar")],
@@ -84,9 +89,13 @@ export async function runMerchantInstancesUrlsTest(t: GlobalTestState) {
     address: {},
     default_max_deposit_fee: "TESTKUDOS:1",
     default_max_wire_fee: "TESTKUDOS:1",
-    default_pay_delay: { d_ms: 60000 },
+    default_pay_delay: Duration.toTalerProtocolDuration(
+      Duration.fromSpec({ seconds: 60 }),
+    ),
     default_wire_fee_amortization: 1,
-    default_wire_transfer_delay: { d_ms: 60000 },
+    default_wire_transfer_delay: Duration.toTalerProtocolDuration(
+      Duration.fromSpec({ seconds: 60 }),
+    ),
     jurisdiction: {},
     name: "My Second Instance",
     payto_uris: [getPayto("bar")],

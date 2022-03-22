@@ -101,6 +101,9 @@ export namespace Duration {
   export function getForever(): Duration {
     return { d_ms: "forever" };
   }
+  export function getZero(): Duration {
+    return { d_ms: 0 };
+  }
   export function fromTalerProtocolDuration(
     d: TalerProtocolDuration,
   ): Duration {
@@ -111,6 +114,16 @@ export namespace Duration {
     }
     return {
       d_ms: d.d_us / 1000,
+    };
+  }
+  export function toTalerProtocolDuration(d: Duration): TalerProtocolDuration {
+    if (d.d_ms === "forever") {
+      return {
+        d_us: "forever",
+      };
+    }
+    return {
+      d_us: d.d_ms * 1000,
     };
   }
 }

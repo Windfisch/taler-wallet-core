@@ -30,7 +30,12 @@ import {
   Duration,
   PreparePayResultType,
 } from "@gnu-taler/taler-util";
-import { BankAccessApi, BankApi, HarnessExchangeBankAccount, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+import {
+  BankAccessApi,
+  BankApi,
+  HarnessExchangeBankAccount,
+  WalletApiOperation,
+} from "@gnu-taler/taler-wallet-core";
 import { CoinConfig, defaultCoinConfig } from "./denomStructures.js";
 import {
   FaultInjectedExchangeService,
@@ -117,14 +122,18 @@ export async function createSimpleTestkudosEnvironment(
     id: "default",
     name: "Default Instance",
     paytoUris: [getPayto("merchant-default")],
-    defaultWireTransferDelay: Duration.fromSpec({ minutes: 1 }),
+    defaultWireTransferDelay: Duration.toTalerProtocolDuration(
+      Duration.fromSpec({ minutes: 1 }),
+    ),
   });
 
   await merchant.addInstance({
     id: "minst1",
     name: "minst1",
     paytoUris: [getPayto("minst1")],
-    defaultWireTransferDelay: Duration.fromSpec({ minutes: 1 }),
+    defaultWireTransferDelay: Duration.toTalerProtocolDuration(
+      Duration.fromSpec({ minutes: 1 }),
+    ),
   });
 
   console.log("setup done!");
