@@ -30,7 +30,7 @@ import {
   NotificationType,
   parseWithdrawUri,
   TalerErrorCode,
-  TalerErrorDetails,
+  TalerErrorDetail,
   AbsoluteTime,
   WithdrawResponse,
   URL,
@@ -42,6 +42,7 @@ import {
   ExchangeWithdrawRequest,
   Duration,
   TalerProtocolTimestamp,
+  TransactionType,
 } from "@gnu-taler/taler-util";
 import {
   CoinRecord,
@@ -63,9 +64,11 @@ import {
 } from "../util/http.js";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
 import {
+  getErrorDetailFromException,
   guardOperationException,
-  makeErrorDetails,
-  OperationFailedError,
+  makeErrorDetail,
+  makePendingOperationFailedError,
+  TalerError,
 } from "../errors.js";
 import { InternalWalletState } from "../common.js";
 import {
@@ -299,15 +302,14 @@ export async function getBankWithdrawalInfo(
     config.version,
   );
   if (versionRes?.compatible != true) {
-    const opErr = makeErrorDetails(
+    throw TalerError.fromDetail(
       TalerErrorCode.WALLET_BANK_INTEGRATION_PROTOCOL_VERSION_INCOMPATIBLE,
-      "bank integration protocol version not compatible with wallet",
       {
         exchangeProtocolVersion: config.version,
         walletProtocolVersion: WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
       },
+      "bank integration protocol version not compatible with wallet",
     );
-    throw new OperationFailedError(opErr);
   }
 
   const reqUrl = new URL(
@@ -526,12 +528,9 @@ async function processPlanchetExchangeRequest(
     );
     return r;
   } catch (e) {
+    const errDetail = getErrorDetailFromException(e);
     logger.trace("withdrawal request failed", e);
     logger.trace(e);
-    if (!(e instanceof OperationFailedError)) {
-      throw e;
-    }
-    const errDetails = e.operationError;
     await ws.db
       .mktx((x) => ({ planchets: x.planchets }))
       .runReadWrite(async (tx) => {
@@ -542,7 +541,7 @@ async function processPlanchetExchangeRequest(
         if (!planchet) {
           return;
         }
-        planchet.lastError = errDetails;
+        planchet.lastError = errDetail;
         await tx.planchets.put(planchet);
       });
     return;
@@ -628,10 +627,10 @@ async function processPlanchetVerifyAndStoreCoin(
         if (!planchet) {
           return;
         }
-        planchet.lastError = makeErrorDetails(
+        planchet.lastError = makeErrorDetail(
           TalerErrorCode.WALLET_EXCHANGE_COIN_SIGNATURE_INVALID,
-          "invalid signature from the exchange after unblinding",
           {},
+          "invalid signature from the exchange after unblinding",
         );
         await tx.planchets.put(planchet);
       });
@@ -797,7 +796,7 @@ export async function updateWithdrawalDenoms(
 async function incrementWithdrawalRetry(
   ws: InternalWalletState,
   withdrawalGroupId: string,
-  err: TalerErrorDetails | undefined,
+  err: TalerErrorDetail | undefined,
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({ withdrawalGroups: x.withdrawalGroups }))
@@ -821,7 +820,7 @@ export async function processWithdrawGroup(
   withdrawalGroupId: string,
   forceNow = false,
 ): Promise<void> {
-  const onOpErr = (e: TalerErrorDetails): Promise<void> =>
+  const onOpErr = (e: TalerErrorDetail): Promise<void> =>
     incrementWithdrawalRetry(ws, withdrawalGroupId, e);
   await guardOperationException(
     () => processWithdrawGroupImpl(ws, withdrawalGroupId, forceNow),
@@ -919,7 +918,7 @@ async function processWithdrawGroupImpl(
 
   let numFinished = 0;
   let finishedForFirstTime = false;
-  let errorsPerCoin: Record<number, TalerErrorDetails> = {};
+  let errorsPerCoin: Record<number, TalerErrorDetail> = {};
 
   await ws.db
     .mktx((x) => ({
@@ -957,12 +956,12 @@ async function processWithdrawGroupImpl(
     });
 
   if (numFinished != numTotalCoins) {
-    throw OperationFailedError.fromCode(
+    throw TalerError.fromDetail(
       TalerErrorCode.WALLET_WITHDRAWAL_GROUP_INCOMPLETE,
-      `withdrawal did not finish (${numFinished} / ${numTotalCoins} coins withdrawn)`,
       {
         errorsPerCoin,
       },
+      `withdrawal did not finish (${numFinished} / ${numTotalCoins} coins withdrawn)`,
     );
   }
 

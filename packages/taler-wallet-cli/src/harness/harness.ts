@@ -49,7 +49,7 @@ import {
   HarnessExchangeBankAccount,
   NodeHttpLib,
   openPromise,
-  OperationFailedError,
+  TalerError,
   WalletCoreApiClient,
 } from "@gnu-taler/taler-wallet-core";
 import {
@@ -227,19 +227,19 @@ export class GlobalTestState {
     this.servers = [];
   }
 
-  async assertThrowsOperationErrorAsync(
+  async assertThrowsTalerErrorAsync(
     block: () => Promise<void>,
-  ): Promise<OperationFailedError> {
+  ): Promise<TalerError> {
     try {
       await block();
     } catch (e) {
-      if (e instanceof OperationFailedError) {
+      if (e instanceof TalerError) {
         return e;
       }
-      throw Error(`expected OperationFailedError to be thrown, but got ${e}`);
+      throw Error(`expected TalerError to be thrown, but got ${e}`);
     }
     throw Error(
-      `expected OperationFailedError to be thrown, but block finished without throwing`,
+      `expected TalerError to be thrown, but block finished without throwing`,
     );
   }
 
@@ -1904,7 +1904,7 @@ export class WalletCli {
           throw new Error("wallet CLI did not return a proper JSON response");
         }
         if (ar.type === "error") {
-          throw new OperationFailedError(ar.error);
+          throw TalerError.fromUncheckedDetail(ar.error);
         }
         return ar.result;
       },

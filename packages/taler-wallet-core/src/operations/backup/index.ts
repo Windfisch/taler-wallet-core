@@ -48,7 +48,7 @@ import {
   PreparePayResultType,
   RecoveryLoadRequest,
   RecoveryMergeStrategy,
-  TalerErrorDetails,
+  TalerErrorDetail,
   AbsoluteTime,
   URL,
   WalletBackupContentV1,
@@ -464,7 +464,7 @@ async function incrementBackupRetryInTx(
     backupProviders: typeof WalletStoresV1.backupProviders;
   }>,
   backupProviderBaseUrl: string,
-  err: TalerErrorDetails | undefined,
+  err: TalerErrorDetail | undefined,
 ): Promise<void> {
   const pr = await tx.backupProviders.get(backupProviderBaseUrl);
   if (!pr) {
@@ -487,7 +487,7 @@ async function incrementBackupRetryInTx(
 async function incrementBackupRetry(
   ws: InternalWalletState,
   backupProviderBaseUrl: string,
-  err: TalerErrorDetails | undefined,
+  err: TalerErrorDetail | undefined,
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({ backupProviders: x.backupProviders }))
@@ -509,7 +509,7 @@ export async function processBackupForProvider(
     throw Error("unknown backup provider");
   }
 
-  const onOpErr = (err: TalerErrorDetails): Promise<void> =>
+  const onOpErr = (err: TalerErrorDetail): Promise<void> =>
     incrementBackupRetry(ws, backupProviderBaseUrl, err);
 
   const run = async () => {
@@ -700,7 +700,7 @@ export interface ProviderInfo {
   /**
    * Last communication issue with the provider.
    */
-  lastError?: TalerErrorDetails;
+  lastError?: TalerErrorDetail;
   lastSuccessfulBackupTimestamp?: TalerProtocolTimestamp;
   lastAttemptedBackupTimestamp?: TalerProtocolTimestamp;
   paymentProposalIds: string[];

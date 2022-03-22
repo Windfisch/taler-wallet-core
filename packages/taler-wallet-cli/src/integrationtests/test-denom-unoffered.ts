@@ -20,25 +20,21 @@
 import {
   PreparePayResultType,
   TalerErrorCode,
-  TalerErrorDetails,
-  TransactionType,
+  TalerErrorDetail,
 } from "@gnu-taler/taler-util";
-import {
-  WalletApiOperation,
-} from "@gnu-taler/taler-wallet-core";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { makeEventId } from "@gnu-taler/taler-wallet-core";
 import { GlobalTestState, MerchantPrivateApi } from "../harness/harness.js";
-import { createSimpleTestkudosEnvironment, withdrawViaBank } from "../harness/helpers.js";
+import {
+  createSimpleTestkudosEnvironment,
+  withdrawViaBank,
+} from "../harness/helpers.js";
 
 export async function runDenomUnofferedTest(t: GlobalTestState) {
   // Set up test environment
 
-  const {
-    wallet,
-    bank,
-    exchange,
-    merchant,
-  } = await createSimpleTestkudosEnvironment(t);
+  const { wallet, bank, exchange, merchant } =
+    await createSimpleTestkudosEnvironment(t);
 
   // Withdraw digital cash into the wallet.
 
@@ -95,19 +91,23 @@ export async function runDenomUnofferedTest(t: GlobalTestState) {
       preparePayResult.status === PreparePayResultType.PaymentPossible,
     );
 
-    const exc = await t.assertThrowsAsync(async () => {
+    const exc = await t.assertThrowsTalerErrorAsync(async () => {
       await wallet.client.call(WalletApiOperation.ConfirmPay, {
         proposalId: preparePayResult.proposalId,
       });
     });
 
-    const errorDetails: TalerErrorDetails = exc.operationError;
+    t.assertTrue(
+      exc.hasErrorCode(TalerErrorCode.WALLET_PENDING_OPERATION_FAILED),
+    );
+
     // FIXME: We might want a more specific error code here!
     t.assertDeepEqual(
-      errorDetails.code,
+      exc.errorDetail.innerError.code,
       TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
     );
-    const merchantErrorCode = (errorDetails.details as any).errorResponse.code;
+    const merchantErrorCode = (exc.errorDetail.innerError.errorResponse as any)
+      .code;
     t.assertDeepEqual(
       merchantErrorCode,
       TalerErrorCode.MERCHANT_POST_ORDERS_ID_PAY_DENOMINATION_KEY_NOT_FOUND,

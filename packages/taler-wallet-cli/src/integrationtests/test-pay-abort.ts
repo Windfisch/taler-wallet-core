@@ -123,7 +123,7 @@ export async function runPayAbortTest(t: GlobalTestState) {
     },
   });
 
-  await t.assertThrowsOperationErrorAsync(async () => {
+  await t.assertThrowsTalerErrorAsync(async () => {
     await wallet.client.call(WalletApiOperation.ConfirmPay, {
       proposalId: preparePayResult.proposalId,
     });

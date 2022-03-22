@@ -32,7 +32,7 @@ import {
   ConfirmPayResultType,
   PreparePayResultType,
   TalerErrorCode,
-  TalerErrorDetails,
+  TalerErrorDetail,
   URL,
 } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
@@ -135,11 +135,9 @@ export async function runPaymentTransientTest(t: GlobalTestState) {
       }
       faultInjected = true;
       console.log("injecting pay fault");
-      const err: TalerErrorDetails = {
+      const err: TalerErrorDetail = {
         code: TalerErrorCode.GENERIC_DB_COMMIT_FAILED,
-        details: {},
-        hint: "huh",
-        message: "something went wrong",
+        hint: "something went wrong",
       };
       ctx.responseBody = Buffer.from(JSON.stringify(err));
       ctx.statusCode = 500;

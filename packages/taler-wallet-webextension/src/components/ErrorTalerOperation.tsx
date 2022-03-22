@@ -13,7 +13,7 @@
  You should have received a copy of the GNU General Public License along with
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-import { TalerErrorDetails } from "@gnu-taler/taler-util";
+import { TalerErrorDetail } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import arrowDown from "../../static/img/chevron-down.svg";
@@ -25,7 +25,7 @@ export function ErrorTalerOperation({
   error,
 }: {
   title?: VNode;
-  error?: TalerErrorDetails;
+  error?: TalerErrorDetail;
 }): VNode | null {
   const { devMode } = useDevContext();
   const [showErrorDetail, setShowErrorDetail] = useState(false);
@@ -59,7 +59,7 @@ export function ErrorTalerOperation({
         <Fragment>
           <div style={{ padding: 5, textAlign: "left" }}>
             <div>
-              <b>{error.message}</b> {!errorHint ? "" : `: ${errorHint}`}{" "}
+              <b>{error.hint}</b> {!errorHint ? "" : `: ${errorHint}`}{" "}
             </div>
           </div>
           {devMode && (

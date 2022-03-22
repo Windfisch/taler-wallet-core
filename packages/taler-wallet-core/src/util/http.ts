@@ -24,16 +24,16 @@
 /**
  * Imports
  */
-import { OperationFailedError, makeErrorDetails } from "../errors.js";
 import {
   Logger,
   Duration,
   AbsoluteTime,
-  TalerErrorDetails,
+  TalerErrorDetail,
   Codec,
   j2s,
 } from "@gnu-taler/taler-util";
 import { TalerErrorCode } from "@gnu-taler/taler-util";
+import { makeErrorDetail, TalerError } from "../errors.js";
 
 const logger = new Logger("http.ts");
 
@@ -125,7 +125,7 @@ type ResponseOrError<T> =
 
 export async function readTalerErrorResponse(
   httpResponse: HttpResponse,
-): Promise<TalerErrorDetails> {
+): Promise<TalerErrorDetail> {
   const errJson = await httpResponse.json();
   const talerErrorCode = errJson.code;
   if (typeof talerErrorCode !== "number") {
@@ -134,16 +134,14 @@ export async function readTalerErrorResponse(
         errJson,
       )}`,
     );
-    throw new OperationFailedError(
-      makeErrorDetails(
-        TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
-        "Error response did not contain error code",
-        {
-          requestUrl: httpResponse.requestUrl,
-          requestMethod: httpResponse.requestMethod,
-          httpStatusCode: httpResponse.status,
-        },
-      ),
+    throw TalerError.fromDetail(
+      TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
+      {
+        requestUrl: httpResponse.requestUrl,
+        requestMethod: httpResponse.requestMethod,
+        httpStatusCode: httpResponse.status,
+      },
+      "Error response did not contain error code",
     );
   }
   return errJson;
@@ -151,28 +149,28 @@ export async function readTalerErrorResponse(
 
 export async function readUnexpectedResponseDetails(
   httpResponse: HttpResponse,
-): Promise<TalerErrorDetails> {
+): Promise<TalerErrorDetail> {
   const errJson = await httpResponse.json();
   const talerErrorCode = errJson.code;
   if (typeof talerErrorCode !== "number") {
-    return makeErrorDetails(
+    return makeErrorDetail(
       TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
-      "Error response did not contain error code",
       {
         requestUrl: httpResponse.requestUrl,
         requestMethod: httpResponse.requestMethod,
         httpStatusCode: httpResponse.status,
       },
+      "Error response did not contain error code",
     );
   }
-  return makeErrorDetails(
+  return makeErrorDetail(
     TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
-    `Unexpected HTTP status (${httpResponse.status}) in response`,
     {
       requestUrl: httpResponse.requestUrl,
       httpStatusCode: httpResponse.status,
       errorResponse: errJson,
     },
+    `Unexpected HTTP status (${httpResponse.status}) in response`,
   );
 }
 
@@ -191,14 +189,14 @@ export async function readSuccessResponseJsonOrErrorCode<T>(
   try {
     parsedResponse = codec.decode(respJson);
   } catch (e: any) {
-    throw OperationFailedError.fromCode(
+    throw TalerError.fromDetail(
       TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
-      "Response invalid",
       {
         requestUrl: httpResponse.requestUrl,
         httpStatusCode: httpResponse.status,
         validationError: e.toString(),
       },
+      "Response invalid",
     );
   }
   return {
@@ -220,16 +218,14 @@ export function throwUnexpectedRequestError(
   httpResponse: HttpResponse,
   talerErrorResponse: TalerErrorResponse,
 ): never {
-  throw new OperationFailedError(
-    makeErrorDetails(
-      TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
-      `Unexpected HTTP status ${httpResponse.status} in response`,
-      {
-        requestUrl: httpResponse.requestUrl,
-        httpStatusCode: httpResponse.status,
-        errorResponse: talerErrorResponse,
-      },
-    ),
+  throw TalerError.fromDetail(
+    TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
+    {
+      requestUrl: httpResponse.requestUrl,
+      httpStatusCode: httpResponse.status,
+      errorResponse: talerErrorResponse,
+    },
+    `Unexpected HTTP status ${httpResponse.status} in response`,
   );
 }
 
@@ -251,16 +247,14 @@ export async function readSuccessResponseTextOrErrorCode<T>(
     const errJson = await httpResponse.json();
     const talerErrorCode = errJson.code;
     if (typeof talerErrorCode !== "number") {
-      throw new OperationFailedError(
-        makeErrorDetails(
-          TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
-          "Error response did not contain error code",
-          {
-            httpStatusCode: httpResponse.status,
-            requestUrl: httpResponse.requestUrl,
-            requestMethod: httpResponse.requestMethod,
-          },
-        ),
+      throw TalerError.fromDetail(
+        TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
+        {
+          httpStatusCode: httpResponse.status,
+          requestUrl: httpResponse.requestUrl,
+          requestMethod: httpResponse.requestMethod,
+        },
+        "Error response did not contain error code",
       );
     }
     return {
@@ -282,16 +276,14 @@ export async function checkSuccessResponseOrThrow(
     const errJson = await httpResponse.json();
     const talerErrorCode = errJson.code;
     if (typeof talerErrorCode !== "number") {
-      throw new OperationFailedError(
-        makeErrorDetails(
-          TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
-          "Error response did not contain error code",
-          {
-            httpStatusCode: httpResponse.status,
-            requestUrl: httpResponse.requestUrl,
-            requestMethod: httpResponse.requestMethod,
-          },
-        ),
+      throw TalerError.fromDetail(
+        TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
+        {
+          httpStatusCode: httpResponse.status,
+          requestUrl: httpResponse.requestUrl,
+          requestMethod: httpResponse.requestMethod,
+        },
+        "Error response did not contain error code",
       );
     }
     throwUnexpectedRequestError(httpResponse, errJson);

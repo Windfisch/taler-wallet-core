@@ -32,7 +32,6 @@ import {
   BankApi,
   BankAccessApi,
   CreditDebitIndicator,
-  OperationFailedError,
 } from "@gnu-taler/taler-wallet-core";
 
 /**
@@ -104,10 +103,10 @@ export async function runBankApiTest(t: GlobalTestState) {
 
   // Make sure that registering twice results in a 409 Conflict
   {
-    const e = await t.assertThrowsAsync(async () => {
+    const e = await t.assertThrowsTalerErrorAsync(async () => {
       await BankApi.registerAccount(bank, "user1", "pw1");
     });
-    t.assertTrue(e.details.httpStatusCode === 409);
+    t.assertTrue(e.errorDetail.httpStatusCode === 409);
   }
 
   let balResp = await BankAccessApi.getAccountBalance(bank, bankUser);

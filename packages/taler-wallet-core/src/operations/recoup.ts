@@ -30,7 +30,7 @@ import {
   j2s,
   NotificationType,
   RefreshReason,
-  TalerErrorDetails,
+  TalerErrorDetail,
   TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
 import { encodeCrock, getRandomBytes } from "@gnu-taler/taler-util";
@@ -60,7 +60,7 @@ const logger = new Logger("operations/recoup.ts");
 async function incrementRecoupRetry(
   ws: InternalWalletState,
   recoupGroupId: string,
-  err: TalerErrorDetails | undefined,
+  err: TalerErrorDetail | undefined,
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({
@@ -384,7 +384,7 @@ export async function processRecoupGroup(
   forceNow = false,
 ): Promise<void> {
   await ws.memoProcessRecoup.memo(recoupGroupId, async () => {
-    const onOpErr = (e: TalerErrorDetails): Promise<void> =>
+    const onOpErr = (e: TalerErrorDetail): Promise<void> =>
       incrementRecoupRetry(ws, recoupGroupId, e);
     return await guardOperationException(
       async () => await processRecoupGroupImpl(ws, recoupGroupId, forceNow),

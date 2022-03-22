@@ -35,7 +35,7 @@ import {
 import {
   DbAccess,
   deleteTalerDatabase,
-  makeErrorDetails,
+  makeErrorDetail,
   OpenedPromise,
   openPromise,
   openTalerDatabase,
@@ -167,10 +167,10 @@ async function dispatch(
           type: "error",
           id: req.id,
           operation: req.operation,
-          error: makeErrorDetails(
+          error: makeErrorDetail(
             TalerErrorCode.WALLET_CORE_NOT_AVAILABLE,
-            "wallet core not available",
             {},
+            "wallet core not available",
           ),
         };
         break;
@@ -233,7 +233,10 @@ function makeSyncWalletRedirect(
     const tab = await getTab(tabId);
     if (tab.url === oldUrl) {
       console.log("redirecting to", innerUrl.href);
-      chrome.tabs.update(tabId, { url: innerUrl.href, loadReplace: true } as any);
+      chrome.tabs.update(tabId, {
+        url: innerUrl.href,
+        loadReplace: true,
+      } as any);
     }
   };
   doit();

@@ -27,7 +27,7 @@ import {
 } from "../util/http.js";
 import { RequestThrottler } from "@gnu-taler/taler-util";
 import Axios, { AxiosResponse } from "axios";
-import { OperationFailedError, makeErrorDetails } from "../errors.js";
+import { TalerError } from "../errors.js";
 import { Logger, bytesToString } from "@gnu-taler/taler-util";
 import { TalerErrorCode, URL } from "@gnu-taler/taler-util";
 
@@ -55,14 +55,14 @@ export class NodeHttpLib implements HttpRequestLibrary {
 
     const parsedUrl = new URL(url);
     if (this.throttlingEnabled && this.throttle.applyThrottle(url)) {
-      throw OperationFailedError.fromCode(
+      throw TalerError.fromDetail(
         TalerErrorCode.WALLET_HTTP_REQUEST_THROTTLED,
-        `request to origin ${parsedUrl.origin} was throttled`,
         {
           requestMethod: method,
           requestUrl: url,
           throttleStats: this.throttle.getThrottleStats(url),
         },
+        `request to origin ${parsedUrl.origin} was throttled`,
       );
     }
     let timeout: number | undefined;
@@ -83,13 +83,13 @@ export class NodeHttpLib implements HttpRequestLibrary {
         maxRedirects: 0,
       });
     } catch (e: any) {
-      throw OperationFailedError.fromCode(
+      throw TalerError.fromDetail(
         TalerErrorCode.WALLET_NETWORK_ERROR,
-        `${e.message}`,
         {
           requestUrl: url,
           requestMethod: method,
         },
+        `${e.message}`,
       );
     }
 
@@ -105,30 +105,26 @@ export class NodeHttpLib implements HttpRequestLibrary {
         responseJson = JSON.parse(respText);
       } catch (e) {
         logger.trace(`invalid json: '${resp.data}'`);
-        throw new OperationFailedError(
-          makeErrorDetails(
-            TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
-            "invalid JSON",
-            {
-              httpStatusCode: resp.status,
-              requestUrl: url,
-              requestMethod: method,
-            },
-          ),
+        throw TalerError.fromDetail(
+          TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
+          {
+            httpStatusCode: resp.status,
+            requestUrl: url,
+            requestMethod: method,
+          },
+          "Could not parse response body as JSON",
         );
       }
       if (responseJson === null || typeof responseJson !== "object") {
         logger.trace(`invalid json (not an object): '${respText}'`);
-        throw new OperationFailedError(
-          makeErrorDetails(
-            TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
-            "invalid JSON",
-            {
-              httpStatusCode: resp.status,
-              requestUrl: url,
-              requestMethod: method,
-            },
-          ),
+        throw TalerError.fromDetail(
+          TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
+          {
+            httpStatusCode: resp.status,
+            requestUrl: url,
+            requestMethod: method,
+          },
+          `invalid JSON`,
         );
       }
       return responseJson;

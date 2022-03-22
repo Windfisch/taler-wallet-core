@@ -100,9 +100,8 @@ import {
   WalletStoresV1,
 } from "./db.js";
 import {
-  makeErrorDetails,
-  OperationFailedAndReportedError,
-  OperationFailedError,
+  getErrorDetailFromException,
+  TalerError,
 } from "./errors.js";
 import { exportBackup } from "./operations/backup/export.js";
 import {
@@ -297,10 +296,10 @@ export async function runPending(
     try {
       await processOnePendingOperation(ws, p, forceNow);
     } catch (e) {
-      if (e instanceof OperationFailedAndReportedError) {
+      if (e instanceof TalerError) {
         console.error(
           "Operation failed:",
-          JSON.stringify(e.operationError, undefined, 2),
+          JSON.stringify(e.errorDetail, undefined, 2),
         );
       } else {
         console.error(e);
@@ -399,10 +398,16 @@ async function runTaskLoop(
         try {
           await processOnePendingOperation(ws, p);
         } catch (e) {
-          if (e instanceof OperationFailedAndReportedError) {
-            logger.warn("operation processed resulted in reported error");
-            logger.warn(`reported error was: ${j2s(e.operationError)}`);
+          if (
+            e instanceof TalerError &&
+            e.hasErrorCode(TalerErrorCode.WALLET_PENDING_OPERATION_FAILED)
+          ) {
+            logger.warn("operation processed resulted in error");
+            logger.warn(`error was: ${j2s(e.errorDetail)}`);
           } else {
+            // This is a bug, as we expect pending operations to always
+            // do their own error handling and only throw WALLET_PENDING_OPERATION_FAILED
+            // or return something.
             logger.error("Uncaught exception", e);
             ws.notify({
               type: NotificationType.InternalError,
@@ -722,7 +727,7 @@ export async function getClientFromWalletState(
       const res = await handleCoreApiRequest(ws, op, `${id++}`, payload);
       switch (res.type) {
         case "error":
-          throw new OperationFailedError(res.error);
+          throw TalerError.fromUncheckedDetail(res.error);
         case "response":
           return res.result;
       }
@@ -1040,12 +1045,12 @@ async function dispatchRequestInternal(
       return [];
     }
   }
-  throw OperationFailedError.fromCode(
+  throw TalerError.fromDetail(
     TalerErrorCode.WALLET_CORE_API_OPERATION_UNKNOWN,
-    "unknown operation",
     {
       operation,
     },
+    "unknown operation",
   );
 }
 
@@ -1067,34 +1072,13 @@ export async function handleCoreApiRequest(
       result,
     };
   } catch (e: any) {
-    if (
-      e instanceof OperationFailedError ||
-      e instanceof OperationFailedAndReportedError
-    ) {
-      logger.error("Caught operation failed error");
-      logger.trace((e as any).stack);
-      return {
-        type: "error",
-        operation,
-        id,
-        error: e.operationError,
-      };
-    } else {
-      try {
-        logger.error("Caught unexpected exception:");
-        logger.error(e.stack);
-      } catch (e) {}
-      return {
-        type: "error",
-        operation,
-        id,
-        error: makeErrorDetails(
-          TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
-          `unexpected exception: ${e}`,
-          {},
-        ),
-      };
-    }
+    const err = getErrorDetailFromException(e);
+    return {
+      type: "error",
+      operation,
+      id,
+      error: err,
+    };
   }
 }
 

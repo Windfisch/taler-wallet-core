@@ -36,7 +36,7 @@ import {
   Logger,
   NotificationType,
   parsePaytoUri,
-  TalerErrorDetails,
+  TalerErrorDetail,
   TalerProtocolTimestamp,
   TrackDepositGroupRequest,
   TrackDepositGroupResponse,
@@ -83,7 +83,7 @@ async function resetDepositGroupRetry(
 async function incrementDepositRetry(
   ws: InternalWalletState,
   depositGroupId: string,
-  err: TalerErrorDetails | undefined,
+  err: TalerErrorDetail | undefined,
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({ depositGroups: x.depositGroups }))
@@ -111,7 +111,7 @@ export async function processDepositGroup(
   forceNow = false,
 ): Promise<void> {
   await ws.memoProcessDeposit.memo(depositGroupId, async () => {
-    const onOpErr = (e: TalerErrorDetails): Promise<void> =>
+    const onOpErr = (e: TalerErrorDetail): Promise<void> =>
       incrementDepositRetry(ws, depositGroupId, e);
     return await guardOperationException(
       async () => await processDepositGroupImpl(ws, depositGroupId, forceNow),

@@ -22,7 +22,7 @@ import {
   parseTipUri,
   codecForTipPickupGetResponse,
   Amounts,
-  TalerErrorDetails,
+  TalerErrorDetail,
   NotificationType,
   TipPlanchetDetail,
   TalerErrorCode,
@@ -44,7 +44,7 @@ import {
 import { j2s } from "@gnu-taler/taler-util";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
-import { guardOperationException, makeErrorDetails } from "../errors.js";
+import { guardOperationException, makeErrorDetail } from "../errors.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
 import { InternalWalletState } from "../common.js";
 import {
@@ -163,7 +163,7 @@ export async function prepareTip(
 async function incrementTipRetry(
   ws: InternalWalletState,
   walletTipId: string,
-  err: TalerErrorDetails | undefined,
+  err: TalerErrorDetail | undefined,
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({
@@ -192,7 +192,7 @@ export async function processTip(
   tipId: string,
   forceNow = false,
 ): Promise<void> {
-  const onOpErr = (e: TalerErrorDetails): Promise<void> =>
+  const onOpErr = (e: TalerErrorDetail): Promise<void> =>
     incrementTipRetry(ws, tipId, e);
   await guardOperationException(
     () => processTipImpl(ws, tipId, forceNow),
@@ -296,10 +296,10 @@ async function processTipImpl(
       merchantResp.status === 424)
   ) {
     logger.trace(`got transient tip error`);
-    const err = makeErrorDetails(
+    const err = makeErrorDetail(
       TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
-      "tip pickup failed (transient)",
       getHttpResponseErrorDetails(merchantResp),
+      "tip pickup failed (transient)",
     );
     await incrementTipRetry(ws, tipRecord.walletTipId, err);
     // FIXME: Maybe we want to signal to the caller that the transient error happened?
@@ -355,10 +355,10 @@ async function processTipImpl(
           if (!tipRecord) {
             return;
           }
-          tipRecord.lastError = makeErrorDetails(
+          tipRecord.lastError = makeErrorDetail(
             TalerErrorCode.WALLET_TIPPING_COIN_SIGNATURE_INVALID,
-            "invalid signature from the exchange (via merchant tip) after unblinding",
             {},
+            "invalid signature from the exchange (via merchant tip) after unblinding",
           );
           await tx.tips.put(tipRecord);
         });

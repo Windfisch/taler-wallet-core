@@ -23,26 +23,48 @@
  */
 import {
   AcceptExchangeTosRequest,
-  AcceptManualWithdrawalResult, AcceptTipRequest, AcceptWithdrawalResponse,
-  AddExchangeRequest, AmountString, ApplyRefundResponse, BalancesResponse, CoinDumpJson, ConfirmPayResult,
-  CoreApiResponse, CreateDepositGroupRequest, CreateDepositGroupResponse, DeleteTransactionRequest, ExchangesListRespose,
-  GetExchangeTosResult, GetExchangeWithdrawalInfo,
+  AcceptManualWithdrawalResult,
+  AcceptTipRequest,
+  AcceptWithdrawalResponse,
+  AddExchangeRequest,
+  AmountString,
+  ApplyRefundResponse,
+  BalancesResponse,
+  CoinDumpJson,
+  ConfirmPayResult,
+  CoreApiResponse,
+  CreateDepositGroupRequest,
+  CreateDepositGroupResponse,
+  DeleteTransactionRequest,
+  ExchangesListRespose,
+  GetExchangeTosResult,
+  GetExchangeWithdrawalInfo,
   GetFeeForDepositRequest,
-  GetWithdrawalDetailsForUriRequest, KnownBankAccounts, NotificationType, PreparePayResult, PrepareTipRequest,
-  PrepareTipResult, RetryTransactionRequest,
-  SetWalletDeviceIdRequest, TransactionsResponse, WalletDiagnostics, WithdrawUriInfoResponse
+  GetWithdrawalDetailsForUriRequest,
+  KnownBankAccounts,
+  NotificationType,
+  PreparePayResult,
+  PrepareTipRequest,
+  PrepareTipResult,
+  RetryTransactionRequest,
+  SetWalletDeviceIdRequest,
+  TransactionsResponse,
+  WalletDiagnostics,
+  WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
 import {
-  AddBackupProviderRequest, BackupInfo, OperationFailedError,
+  AddBackupProviderRequest,
+  BackupInfo,
   PendingOperationsResponse,
-  RemoveBackupProviderRequest
+  RemoveBackupProviderRequest,
+  TalerError,
 } from "@gnu-taler/taler-wallet-core";
 import { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import type { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core/src/operations/withdraw";
 import { MessageFromBackend } from "./wxBackend";
 
 /**
- * 
+ *
  * @autor Florian Dold
  * @autor sebasjm
  */
@@ -88,7 +110,7 @@ async function callBackend(operation: string, payload: any): Promise<any> {
       console.log("got response", resp);
       const r = resp as CoreApiResponse;
       if (r.type === "error") {
-        reject(new OperationFailedError(r.error));
+        reject(TalerError.fromUncheckedDetail(r.error));
         return;
       }
       resolve(r.result);
@@ -127,15 +149,23 @@ export function resetDb(): Promise<void> {
   return callBackend("reset-db", {});
 }
 
-export function getFeeForDeposit(depositPaytoUri: string, amount: AmountString): Promise<DepositFee> {
+export function getFeeForDeposit(
+  depositPaytoUri: string,
+  amount: AmountString,
+): Promise<DepositFee> {
   return callBackend("getFeeForDeposit", {
-    depositPaytoUri, amount
+    depositPaytoUri,
+    amount,
   } as GetFeeForDepositRequest);
 }
 
-export function createDepositGroup(depositPaytoUri: string, amount: AmountString): Promise<CreateDepositGroupResponse> {
+export function createDepositGroup(
+  depositPaytoUri: string,
+  amount: AmountString,
+): Promise<CreateDepositGroupResponse> {
   return callBackend("createDepositGroup", {
-    depositPaytoUri, amount
+    depositPaytoUri,
+    amount,
   } as CreateDepositGroupRequest);
 }
 
@@ -190,7 +220,9 @@ export function listKnownCurrencies(): Promise<ListOfKnownCurrencies> {
 export function listExchanges(): Promise<ExchangesListRespose> {
   return callBackend("listExchanges", {});
 }
-export function listKnownBankAccounts(currency?: string): Promise<KnownBankAccounts> {
+export function listKnownBankAccounts(
+  currency?: string,
+): Promise<KnownBankAccounts> {
   return callBackend("listKnownBankAccounts", { currency });
 }
 
@@ -387,14 +419,17 @@ export function exportDB(): Promise<any> {
 }
 
 export function importDB(dump: any): Promise<void> {
-  return callBackend("importDb", { dump })
+  return callBackend("importDb", { dump });
 }
 
-export function onUpdateNotification(messageTypes: Array<NotificationType>, doCallback: () => void): () => void {
+export function onUpdateNotification(
+  messageTypes: Array<NotificationType>,
+  doCallback: () => void,
+): () => void {
   // eslint-disable-next-line no-undef
   const port = chrome.runtime.connect({ name: "notifications" });
   const listener = (message: MessageFromBackend): void => {
-    const shouldNotify = messageTypes.includes(message.type)
+    const shouldNotify = messageTypes.includes(message.type);
     if (shouldNotify) {
       doCallback();
     }

@@ -36,7 +36,7 @@ import {
   PreparePayResultType,
   Product,
 } from "@gnu-taler/taler-util";
-import { OperationFailedError } from "@gnu-taler/taler-wallet-core";
+import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { ErrorMessage } from "../components/ErrorMessage";
@@ -93,7 +93,7 @@ export function PayPage({
     undefined,
   );
   const [payErrMsg, setPayErrMsg] = useState<
-    OperationFailedError | string | undefined
+    TalerError | string | undefined
   >(undefined);
 
   const hook = useAsyncAsHook(async () => {

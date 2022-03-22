@@ -181,16 +181,22 @@ export async function runExchangeManagementTest(t: GlobalTestState) {
     },
   });
 
-  const err1 = await t.assertThrowsOperationErrorAsync(async () => {
+  const err1 = await t.assertThrowsTalerErrorAsync(async () => {
     await wallet.client.call(WalletApiOperation.AddExchange, {
       exchangeBaseUrl: faultyExchange.baseUrl,
     });
   });
 
+  // Updating the exchange from the base URL is technically a pending operation
+  // and it will be retried later.
+  t.assertTrue(
+    err1.hasErrorCode(TalerErrorCode.WALLET_PENDING_OPERATION_FAILED),
+  );
+
   // Response is malformed, since it didn't even contain a version code
   // in a format the wallet can understand.
   t.assertTrue(
-    err1.operationError.code ===
+    err1.errorDetail.innerError.code ===
       TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
   );
 
@@ -223,14 +229,18 @@ export async function runExchangeManagementTest(t: GlobalTestState) {
     },
   });
 
-  const err2 = await t.assertThrowsOperationErrorAsync(async () => {
+  const err2 = await t.assertThrowsTalerErrorAsync(async () => {
     await wallet.client.call(WalletApiOperation.AddExchange, {
       exchangeBaseUrl: faultyExchange.baseUrl,
     });
   });
 
   t.assertTrue(
-    err2.operationError.code ===
+    err2.hasErrorCode(TalerErrorCode.WALLET_PENDING_OPERATION_FAILED),
+  );
+
+  t.assertTrue(
+    err2.errorDetail.innerError.code ===
       TalerErrorCode.WALLET_EXCHANGE_PROTOCOL_VERSION_INCOMPATIBLE,
   );
 

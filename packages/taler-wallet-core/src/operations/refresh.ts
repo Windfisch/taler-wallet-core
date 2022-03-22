@@ -43,7 +43,7 @@ import {
   NotificationType,
   RefreshGroupId,
   RefreshReason,
-  TalerErrorDetails,
+  TalerErrorDetail,
 } from "@gnu-taler/taler-util";
 import { AmountJson, Amounts } from "@gnu-taler/taler-util";
 import { amountToPretty } from "@gnu-taler/taler-util";
@@ -714,7 +714,7 @@ async function refreshReveal(
 async function incrementRefreshRetry(
   ws: InternalWalletState,
   refreshGroupId: string,
-  err: TalerErrorDetails | undefined,
+  err: TalerErrorDetail | undefined,
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({
@@ -747,7 +747,7 @@ export async function processRefreshGroup(
   forceNow = false,
 ): Promise<void> {
   await ws.memoProcessRefresh.memo(refreshGroupId, async () => {
-    const onOpErr = (e: TalerErrorDetails): Promise<void> =>
+    const onOpErr = (e: TalerErrorDetail): Promise<void> =>
       incrementRefreshRetry(ws, refreshGroupId, e);
     return await guardOperationException(
       async () => await processRefreshGroupImpl(ws, refreshGroupId, forceNow),

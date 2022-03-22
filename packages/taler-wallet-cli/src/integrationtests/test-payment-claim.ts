@@ -17,8 +17,15 @@
 /**
  * Imports.
  */
-import { GlobalTestState, MerchantPrivateApi, WalletCli } from "../harness/harness.js";
-import { createSimpleTestkudosEnvironment, withdrawViaBank } from "../harness/helpers.js";
+import {
+  GlobalTestState,
+  MerchantPrivateApi,
+  WalletCli,
+} from "../harness/harness.js";
+import {
+  createSimpleTestkudosEnvironment,
+  withdrawViaBank,
+} from "../harness/helpers.js";
 import { PreparePayResultType } from "@gnu-taler/taler-util";
 import { TalerErrorCode } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
@@ -29,12 +36,8 @@ import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 export async function runPaymentClaimTest(t: GlobalTestState) {
   // Set up test environment
 
-  const {
-    wallet,
-    bank,
-    exchange,
-    merchant,
-  } = await createSimpleTestkudosEnvironment(t);
+  const { wallet, bank, exchange, merchant } =
+    await createSimpleTestkudosEnvironment(t);
 
   const walletTwo = new WalletCli(t, "two");
 
@@ -73,7 +76,7 @@ export async function runPaymentClaimTest(t: GlobalTestState) {
     preparePayResult.status === PreparePayResultType.PaymentPossible,
   );
 
-  t.assertThrowsOperationErrorAsync(async () => {
+  t.assertThrowsTalerErrorAsync(async () => {
     await walletTwo.client.call(WalletApiOperation.PreparePayForUri, {
       talerPayUri,
     });
@@ -93,14 +96,19 @@ export async function runPaymentClaimTest(t: GlobalTestState) {
 
   walletTwo.deleteDatabase();
 
-  const err = await t.assertThrowsOperationErrorAsync(async () => {
+  const err = await t.assertThrowsTalerErrorAsync(async () => {
     await walletTwo.client.call(WalletApiOperation.PreparePayForUri, {
       talerPayUri,
     });
   });
 
   t.assertTrue(
-    err.operationError.code === TalerErrorCode.WALLET_ORDER_ALREADY_CLAIMED,
+    err.hasErrorCode(TalerErrorCode.WALLET_PENDING_OPERATION_FAILED),
+  );
+
+  t.assertTrue(
+    err.errorDetail.innerError.code ===
+      TalerErrorCode.WALLET_ORDER_ALREADY_CLAIMED,
   );
 
   await t.shutdown();

@@ -22,6 +22,8 @@
  */
 
 export enum TalerErrorCode {
+
+
   /**
    * Special code to indicate success (no error).
    * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
@@ -77,6 +79,13 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   GENERIC_CONFIGURATION_INVALID = 14,
+
+  /**
+   * The client made a request to a service, but received an error response it does not know how to handle.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  GENERIC_UNEXPECTED_REQUEST_ERROR = 15,
 
   /**
    * The HTTP method used is invalid for this endpoint.
@@ -373,6 +382,20 @@ export enum TalerErrorCode {
   EXCHANGE_GENERIC_NEW_DENOMS_ARRAY_SIZE_EXCESSIVE = 1018,
 
   /**
+   * The reserve public key was malformed.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_GENERIC_RESERVE_PUB_MALFORMED = 1019,
+
+  /**
+   * The time at the server is too far off from the time specified in the request. Most likely the client system time is wrong.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_GENERIC_CLOCK_SKEW = 1020,
+
+  /**
    * The exchange did not find information about the specified transaction in the database.
    * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
    * (A value of 0 indicates that the error is generated client-side).
@@ -541,11 +564,25 @@ export enum TalerErrorCode {
   EXCHANGE_DEPOSIT_FEE_ABOVE_AMOUNT = 1222,
 
   /**
-   * The reserve status was requested using a unknown key.
+   * The reserve balance, status or history was requested for a reserve which is not known to the exchange.
    * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
    * (A value of 0 indicates that the error is generated client-side).
    */
-  EXCHANGE_RESERVES_GET_STATUS_UNKNOWN = 1250,
+  EXCHANGE_RESERVES_STATUS_UNKNOWN = 1250,
+
+  /**
+   * The reserve status was requested with a bad signature.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_RESERVES_STATUS_BAD_SIGNATURE = 1251,
+
+  /**
+   * The reserve history was requested with a bad signature.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_RESERVES_HISTORY_BAD_SIGNATURE = 1252,
 
   /**
    * The exchange encountered melt fees exceeding the melted coin's contribution.
@@ -1395,6 +1432,27 @@ export enum TalerErrorCode {
   MERCHANT_POST_ORDERS_ID_PAY_EXCHANGE_FAILED = 2170,
 
   /**
+   * The payment required a minimum age but one of the coins (of a denomination with support for age restriction) did not provide any age_commitment.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_POST_ORDERS_ID_PAY_AGE_COMMITMENT_MISSING = 2171,
+
+  /**
+   * The payment required a minimum age but one of the coins provided an age_commitment that contained a wrong number of public keys compared to the number of age groups defined in the denomination of the coin.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_POST_ORDERS_ID_PAY_AGE_COMMITMENT_SIZE_MISMATCH = 2172,
+
+  /**
+   * The payment required a minimum age but one of the coins provided a minimum_age_sig that couldn't be verified with the given age_commitment for that particular minimum age.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  MERCHANT_POST_ORDERS_ID_PAY_AGE_VERIFICATION_FAILED = 2173,
+
+  /**
    * The contract hash does not match the given order ID.
    * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
@@ -2151,6 +2209,13 @@ export enum TalerErrorCode {
   WALLET_CONTRACT_TERMS_MALFORMED = 7020,
 
   /**
+   * A pending operation failed, and thus the request can't be completed.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  WALLET_PENDING_OPERATION_FAILED = 7021,
+
+  /**
    * We encountered a timeout with our payment backend.
    * Returned with an HTTP status code of #MHD_HTTP_GATEWAY_TIMEOUT (504).
    * (A value of 0 indicates that the error is generated client-side).
@@ -2646,4 +2711,5 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   END = 9999,
+
 }

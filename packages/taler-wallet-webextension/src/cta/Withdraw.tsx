@@ -25,10 +25,8 @@ import {
   AmountJson,
   Amounts,
   ExchangeListItem,
-  Translate,
   WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
-import { OperationFailedError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { Loading } from "../components/Loading";
@@ -52,6 +50,7 @@ import {
 import * as wxApi from "../wxApi";
 import { TermsOfServiceSection } from "./TermsOfServiceSection";
 import { useTranslationContext } from "../context/translation";
+import { TalerError } from "@gnu-taler/taler-wallet-core";
 
 interface Props {
   talerWithdrawUri?: string;
@@ -85,9 +84,9 @@ export function View({
   reviewed,
 }: ViewProps): VNode {
   const { i18n } = useTranslationContext();
-  const [withdrawError, setWithdrawError] = useState<
-    OperationFailedError | undefined
-  >(undefined);
+  const [withdrawError, setWithdrawError] = useState<TalerError | undefined>(
+    undefined,
+  );
   const [confirmDisabled, setConfirmDisabled] = useState<boolean>(false);
 
   const needsReview = terms.status === "changed" || terms.status === "new";
@@ -109,7 +108,7 @@ export function View({
       setConfirmDisabled(true);
       await onWithdraw();
     } catch (e) {
-      if (e instanceof OperationFailedError) {
+      if (e instanceof TalerError) {
         setWithdrawError(e);
       }
       setConfirmDisabled(false);
@@ -130,7 +129,7 @@ export function View({
               Could not finish the withdrawal operation
             </i18n.Translate>
           }
-          error={withdrawError.operationError}
+          error={withdrawError.errorDetail}
         />
       )}
 

@@ -22,7 +22,7 @@
 /**
  * Imports.
  */
-import { TalerErrorDetails } from "./walletTypes.js";
+import { TalerErrorDetail } from "./walletTypes.js";
 
 export enum NotificationType {
   CoinWithdrawn = "coin-withdrawn",
@@ -157,62 +157,62 @@ export interface ExchangeAddedNotification {
 
 export interface ExchangeOperationErrorNotification {
   type: NotificationType.ExchangeOperationError;
-  error: TalerErrorDetails;
+  error: TalerErrorDetail;
 }
 
 export interface RefreshOperationErrorNotification {
   type: NotificationType.RefreshOperationError;
-  error: TalerErrorDetails;
+  error: TalerErrorDetail;
 }
 
 export interface BackupOperationErrorNotification {
   type: NotificationType.BackupOperationError;
-  error: TalerErrorDetails;
+  error: TalerErrorDetail;
 }
 
 export interface RefundStatusOperationErrorNotification {
   type: NotificationType.RefundStatusOperationError;
-  error: TalerErrorDetails;
+  error: TalerErrorDetail;
 }
 
 export interface RefundApplyOperationErrorNotification {
   type: NotificationType.RefundApplyOperationError;
-  error: TalerErrorDetails;
+  error: TalerErrorDetail;
 }
 
 export interface PayOperationErrorNotification {
   type: NotificationType.PayOperationError;
-  error: TalerErrorDetails;
+  error: TalerErrorDetail;
 }
 
 export interface ProposalOperationErrorNotification {
   type: NotificationType.ProposalOperationError;
-  error: TalerErrorDetails;
+  error: TalerErrorDetail;
 }
 
 export interface TipOperationErrorNotification {
   type: NotificationType.TipOperationError;
-  error: TalerErrorDetails;
+  error: TalerErrorDetail;
 }
 
 export interface WithdrawOperationErrorNotification {
   type: NotificationType.WithdrawOperationError;
-  error: TalerErrorDetails;
+  error: TalerErrorDetail;
 }
 
 export interface RecoupOperationErrorNotification {
   type: NotificationType.RecoupOperationError;
-  error: TalerErrorDetails;
+  error: TalerErrorDetail;
 }
 
 export interface DepositOperationErrorNotification {
   type: NotificationType.DepositOperationError;
-  error: TalerErrorDetails;
+  error: TalerErrorDetail;
 }
 
 export interface ReserveOperationErrorNotification {
   type: NotificationType.ReserveOperationError;
-  error: TalerErrorDetails;
+  error: TalerErrorDetail;
 }
 
 export interface ReserveCreatedNotification {

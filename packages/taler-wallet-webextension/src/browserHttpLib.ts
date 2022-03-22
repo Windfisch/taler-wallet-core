@@ -18,11 +18,11 @@
  * Imports.
  */
 import {
-  OperationFailedError,
   HttpRequestLibrary,
   HttpRequestOptions,
   HttpResponse,
   Headers,
+  TalerError,
 } from "@gnu-taler/taler-wallet-core";
 import {
   Logger,
@@ -49,14 +49,14 @@ export class BrowserHttpLib implements HttpRequestLibrary {
 
     if (this.throttlingEnabled && this.throttle.applyThrottle(requestUrl)) {
       const parsedUrl = new URL(requestUrl);
-      throw OperationFailedError.fromCode(
+      throw TalerError.fromDetail(
         TalerErrorCode.WALLET_HTTP_REQUEST_THROTTLED,
-        `request to origin ${parsedUrl.origin} was throttled`,
         {
           requestMethod,
           requestUrl,
           throttleStats: this.throttle.getThrottleStats(requestUrl),
         },
+        `request to origin ${parsedUrl.origin} was throttled`,
       );
     }
 
@@ -78,12 +78,12 @@ export class BrowserHttpLib implements HttpRequestLibrary {
       myRequest.onerror = (e) => {
         logger.error("http request error");
         reject(
-          OperationFailedError.fromCode(
+          TalerError.fromDetail(
             TalerErrorCode.WALLET_NETWORK_ERROR,
-            "Could not make request",
             {
               requestUrl: requestUrl,
             },
+            "Could not make request",
           ),
         );
       };
@@ -91,12 +91,12 @@ export class BrowserHttpLib implements HttpRequestLibrary {
       myRequest.addEventListener("readystatechange", (e) => {
         if (myRequest.readyState === XMLHttpRequest.DONE) {
           if (myRequest.status === 0) {
-            const exc = OperationFailedError.fromCode(
+            const exc = TalerError.fromDetail(
               TalerErrorCode.WALLET_NETWORK_ERROR,
-              "HTTP request failed (status 0, maybe URI scheme was wrong?)",
               {
                 requestUrl: requestUrl,
               },
+              "HTTP request failed (status 0, maybe URI scheme was wrong?)",
             );
             reject(exc);
             return;
@@ -112,23 +112,23 @@ export class BrowserHttpLib implements HttpRequestLibrary {
               const responseString = td.decode(myRequest.response);
               responseJson = JSON.parse(responseString);
             } catch (e) {
-              throw OperationFailedError.fromCode(
+              throw TalerError.fromDetail(
                 TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
-                "Invalid JSON from HTTP response",
                 {
                   requestUrl: requestUrl,
                   httpStatusCode: myRequest.status,
                 },
+                "Invalid JSON from HTTP response",
               );
             }
             if (responseJson === null || typeof responseJson !== "object") {
-              throw OperationFailedError.fromCode(
+              throw TalerError.fromDetail(
                 TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
-                "Invalid JSON from HTTP response",
                 {
                   requestUrl: requestUrl,
                   httpStatusCode: myRequest.status,
                 },
+                "Invalid JSON from HTTP response",
               );
             }
             return responseJson;

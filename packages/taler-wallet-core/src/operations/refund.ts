@@ -40,7 +40,7 @@ import {
   parseRefundUri,
   RefreshReason,
   TalerErrorCode,
-  TalerErrorDetails,
+  TalerErrorDetail,
   URL,
   codecForMerchantOrderStatusPaid,
   AbsoluteTime,
@@ -88,7 +88,7 @@ async function resetPurchaseQueryRefundRetry(
 async function incrementPurchaseQueryRefundRetry(
   ws: InternalWalletState,
   proposalId: string,
-  err: TalerErrorDetails | undefined,
+  err: TalerErrorDetail | undefined,
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({
@@ -592,7 +592,7 @@ export async function processPurchaseQueryRefund(
   proposalId: string,
   forceNow = false,
 ): Promise<void> {
-  const onOpErr = (e: TalerErrorDetails): Promise<void> =>
+  const onOpErr = (e: TalerErrorDetail): Promise<void> =>
     incrementPurchaseQueryRefundRetry(ws, proposalId, e);
   await guardOperationException(
     () => processPurchaseQueryRefundImpl(ws, proposalId, forceNow, true),

@@ -31,7 +31,9 @@ import {
   getRandomBytes,
   j2s,
   Logger,
+  TalerErrorCode,
 } from "@gnu-taler/taler-util";
+import { TalerError } from "./errors.js";
 import {
   HttpRequestLibrary,
   readSuccessResponseJsonOrErrorCode,
@@ -104,15 +106,20 @@ export namespace BankApi {
     let paytoUri = `payto://x-taler-bank/localhost/${username}`;
     if (resp.status !== 200 && resp.status !== 202) {
       logger.error(`${j2s(await resp.json())}`);
-      throw new Error();
-    }
-    const respJson = await readSuccessResponseJsonOrThrow(resp, codecForAny());
-    // LibEuFin demobank returns payto URI in response
-    if (respJson.paytoUri) {
-      paytoUri = respJson.paytoUri;
+      throw TalerError.fromDetail(
+        TalerErrorCode.GENERIC_UNEXPECTED_REQUEST_ERROR,
+        {
+          httpStatusCode: resp.status,
+        },
+      );
     }
     try {
+      // Pybank has no body, thus this might throw.
       const respJson = await resp.json();
+      // LibEuFin demobank returns payto URI in response
+      if (respJson.paytoUri) {
+        paytoUri = respJson.paytoUri;
+      }
     } catch (e) {}
     return {
       password,

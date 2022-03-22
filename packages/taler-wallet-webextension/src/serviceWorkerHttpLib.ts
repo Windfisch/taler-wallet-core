@@ -23,7 +23,7 @@ import {
   HttpRequestLibrary,
   HttpRequestOptions,
   HttpResponse,
-  OperationFailedError,
+  TalerError,
 } from "@gnu-taler/taler-wallet-core";
 
 /**
@@ -44,14 +44,14 @@ export class ServiceWorkerHttpLib implements HttpRequestLibrary {
 
     if (this.throttlingEnabled && this.throttle.applyThrottle(requestUrl)) {
       const parsedUrl = new URL(requestUrl);
-      throw OperationFailedError.fromCode(
+      throw TalerError.fromDetail(
         TalerErrorCode.WALLET_HTTP_REQUEST_THROTTLED,
-        `request to origin ${parsedUrl.origin} was throttled`,
         {
           requestMethod,
           requestUrl,
           throttleStats: this.throttle.getThrottleStats(requestUrl),
         },
+        `request to origin ${parsedUrl.origin} was throttled`,
       );
     }
 
@@ -107,13 +107,13 @@ function makeTextHandler(response: Response, requestUrl: string) {
     try {
       respText = await response.text();
     } catch (e) {
-      throw OperationFailedError.fromCode(
+      throw TalerError.fromDetail(
         TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
-        "Invalid JSON from HTTP response",
         {
           requestUrl,
           httpStatusCode: response.status,
         },
+        "Invalid JSON from HTTP response",
       );
     }
     return respText;
@@ -126,23 +126,23 @@ function makeJsonHandler(response: Response, requestUrl: string) {
     try {
       responseJson = await response.json();
     } catch (e) {
-      throw OperationFailedError.fromCode(
+      throw TalerError.fromDetail(
         TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
-        "Invalid JSON from HTTP response",
         {
           requestUrl,
           httpStatusCode: response.status,
         },
+        "Invalid JSON from HTTP response",
       );
     }
     if (responseJson === null || typeof responseJson !== "object") {
-      throw OperationFailedError.fromCode(
+      throw TalerError.fromDetail(
         TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
-        "Invalid JSON from HTTP response",
         {
           requestUrl,
           httpStatusCode: response.status,
         },
+        "Invalid JSON from HTTP response",
       );
     }
     return responseJson;

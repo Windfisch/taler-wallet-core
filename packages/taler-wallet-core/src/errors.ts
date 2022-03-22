@@ -23,63 +23,143 @@
 /**
  * Imports.
  */
-import { TalerErrorCode, TalerErrorDetails } from "@gnu-taler/taler-util";
+import {
+  TalerErrorCode,
+  TalerErrorDetail,
+  TransactionType,
+} from "@gnu-taler/taler-util";
 
-/**
- * This exception is there to let the caller know that an error happened,
- * but the error has already been reported by writing it to the database.
- */
-export class OperationFailedAndReportedError extends Error {
-  static fromCode(
-    ec: TalerErrorCode,
-    message: string,
-    details: Record<string, unknown>,
-  ): OperationFailedAndReportedError {
-    return new OperationFailedAndReportedError(
-      makeErrorDetails(ec, message, details),
-    );
-  }
-
-  constructor(public operationError: TalerErrorDetails) {
-    super(operationError.message);
-
-    // Set the prototype explicitly.
-    Object.setPrototypeOf(this, OperationFailedAndReportedError.prototype);
-  }
-}
-
-/**
- * This exception is thrown when an error occurred and the caller is
- * responsible for recording the failure in the database.
- */
-export class OperationFailedError extends Error {
-  static fromCode(
-    ec: TalerErrorCode,
-    message: string,
-    details: Record<string, unknown>,
-  ): OperationFailedError {
-    return new OperationFailedError(makeErrorDetails(ec, message, details));
-  }
-
-  constructor(public operationError: TalerErrorDetails) {
-    super(operationError.message);
-
-    // Set the prototype explicitly.
-    Object.setPrototypeOf(this, OperationFailedError.prototype);
-  }
-}
-
-export function makeErrorDetails(
-  ec: TalerErrorCode,
-  message: string,
-  details: Record<string, unknown>,
-): TalerErrorDetails {
-  return {
-    code: ec,
-    hint: `Error: ${TalerErrorCode[ec]}`,
-    details: details,
-    message,
+export interface DetailsMap {
+  [TalerErrorCode.WALLET_PENDING_OPERATION_FAILED]: {
+    innerError: TalerErrorDetail;
+    transactionId?: string;
   };
+  [TalerErrorCode.WALLET_EXCHANGE_DENOMINATIONS_INSUFFICIENT]: {
+    exchangeBaseUrl: string;
+  };
+  [TalerErrorCode.WALLET_EXCHANGE_PROTOCOL_VERSION_INCOMPATIBLE]: {
+    exchangeProtocolVersion: string;
+    walletProtocolVersion: string;
+  };
+  [TalerErrorCode.WALLET_WITHDRAWAL_OPERATION_ABORTED_BY_BANK]: {};
+  [TalerErrorCode.WALLET_TIPPING_COIN_SIGNATURE_INVALID]: {};
+  [TalerErrorCode.WALLET_ORDER_ALREADY_CLAIMED]: {
+    orderId: string;
+    claimUrl: string;
+  };
+  [TalerErrorCode.WALLET_CONTRACT_TERMS_MALFORMED]: {};
+  [TalerErrorCode.WALLET_CONTRACT_TERMS_SIGNATURE_INVALID]: {
+    merchantPub: string;
+    orderId: string;
+  };
+  [TalerErrorCode.WALLET_CONTRACT_TERMS_BASE_URL_MISMATCH]: {
+    baseUrlForDownload: string;
+    baseUrlFromContractTerms: string;
+  };
+  [TalerErrorCode.WALLET_INVALID_TALER_PAY_URI]: {
+    talerPayUri: string;
+  };
+  [TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR]: {};
+  [TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION]: {};
+  [TalerErrorCode.WALLET_BANK_INTEGRATION_PROTOCOL_VERSION_INCOMPATIBLE]: {};
+  [TalerErrorCode.WALLET_CORE_API_OPERATION_UNKNOWN]: {};
+  [TalerErrorCode.WALLET_HTTP_REQUEST_THROTTLED]: {};
+  [TalerErrorCode.WALLET_NETWORK_ERROR]: {};
+  [TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE]: {};
+  [TalerErrorCode.WALLET_EXCHANGE_COIN_SIGNATURE_INVALID]: {};
+  [TalerErrorCode.WALLET_WITHDRAWAL_GROUP_INCOMPLETE]: {};
+  [TalerErrorCode.WALLET_CORE_NOT_AVAILABLE]: {};
+  [TalerErrorCode.GENERIC_UNEXPECTED_REQUEST_ERROR]: {};
+}
+
+type ErrBody<Y> = Y extends keyof DetailsMap ? DetailsMap[Y] : never;
+
+export function makeErrorDetail<C extends TalerErrorCode>(
+  code: C,
+  detail: ErrBody<C>,
+  hint?: string,
+): TalerErrorDetail {
+  // FIXME: include default hint?
+  return { code, hint, ...detail };
+}
+
+export function makePendingOperationFailedError(
+  innerError: TalerErrorDetail,
+  tag: TransactionType,
+  uid: string,
+): TalerError {
+  return TalerError.fromDetail(TalerErrorCode.WALLET_PENDING_OPERATION_FAILED, {
+    innerError,
+    transactionId: `${tag}:${uid}`,
+  });
+}
+
+export class TalerError<T = any> extends Error {
+  errorDetail: TalerErrorDetail & T;
+  private constructor(d: TalerErrorDetail & T) {
+    super();
+    this.errorDetail = d;
+    Object.setPrototypeOf(this, TalerError.prototype);
+  }
+
+  static fromDetail<C extends TalerErrorCode>(
+    code: C,
+    detail: ErrBody<C>,
+    hint?: string,
+  ): TalerError {
+    // FIXME: include default hint?
+    return new TalerError<unknown>({ code, hint, ...detail });
+  }
+
+  static fromUncheckedDetail(d: TalerErrorDetail): TalerError {
+    return new TalerError<unknown>({ ...d });
+  }
+
+  static fromException(e: any): TalerError {
+    const errDetail = getErrorDetailFromException(e);
+    return new TalerError(errDetail);
+  }
+
+  hasErrorCode<C extends keyof DetailsMap>(
+    code: C,
+  ): this is TalerError<DetailsMap[C]> {
+    return this.errorDetail.code === code;
+  }
+}
+
+/**
+ * Convert an exception (or anything that was thrown) into
+ * a TalerErrorDetail object.
+ */
+export function getErrorDetailFromException(e: any): TalerErrorDetail {
+  if (e instanceof TalerError) {
+    return e.errorDetail;
+  }
+  if (e instanceof Error) {
+    const err = makeErrorDetail(
+      TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
+      {
+        stack: e.stack,
+      },
+      `unexpected exception (message: ${e.message})`,
+    );
+    return err;
+  }
+  // Something was thrown that is not even an exception!
+  // Try to stringify it.
+  let excString: string;
+  try {
+    excString = e.toString();
+  } catch (e) {
+    // Something went horribly wrong.
+    excString = "can't stringify exception";
+  }
+  const err = makeErrorDetail(
+    TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
+    {},
+    `unexpected exception (not an exception, ${excString})`,
+  );
+  return err;
 }
 
 /**
@@ -89,44 +169,24 @@ export function makeErrorDetails(
  */
 export async function guardOperationException<T>(
   op: () => Promise<T>,
-  onOpError: (e: TalerErrorDetails) => Promise<void>,
+  onOpError: (e: TalerErrorDetail) => Promise<void>,
 ): Promise<T> {
   try {
     return await op();
   } catch (e: any) {
-    if (e instanceof OperationFailedAndReportedError) {
+    if (
+      e instanceof TalerError &&
+      e.hasErrorCode(TalerErrorCode.WALLET_PENDING_OPERATION_FAILED)
+    ) {
       throw e;
     }
-    if (e instanceof OperationFailedError) {
-      await onOpError(e.operationError);
-      throw new OperationFailedAndReportedError(e.operationError);
-    }
-    if (e instanceof Error) {
-      const opErr = makeErrorDetails(
-        TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
-        `unexpected exception (message: ${e.message})`,
-        {
-          stack: e.stack,
-        },
-      );
-      await onOpError(opErr);
-      throw new OperationFailedAndReportedError(opErr);
-    }
-    // Something was thrown that is not even an exception!
-    // Try to stringify it.
-    let excString: string;
-    try {
-      excString = e.toString();
-    } catch (e) {
-      // Something went horribly wrong.
-      excString = "can't stringify exception";
-    }
-    const opErr = makeErrorDetails(
-      TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
-      `unexpected exception (not an exception, ${excString})`,
-      {},
-    );
+    const opErr = getErrorDetailFromException(e);
     await onOpError(opErr);
-    throw new OperationFailedAndReportedError(opErr);
+    throw TalerError.fromDetail(
+      TalerErrorCode.WALLET_PENDING_OPERATION_FAILED,
+      {
+        innerError: e.errorDetail,
+      },
+    );
   }
 }

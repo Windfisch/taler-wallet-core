@@ -60,6 +60,7 @@ import {
 import { OrderShortInfo, codecForOrderShortInfo } from "./transactionsTypes.js";
 import { BackupRecovery } from "./backupTypes.js";
 import { PaytoUri } from "./payto.js";
+import { TalerErrorCode } from "./taler-error-codes.js";
 
 /**
  * Response for the create reserve request to the wallet.
@@ -136,7 +137,7 @@ export interface ConfirmPayResultDone {
 export interface ConfirmPayResultPending {
   type: ConfirmPayResultType.Pending;
 
-  lastError: TalerErrorDetails | undefined;
+  lastError: TalerErrorDetail | undefined;
 }
 
 export type ConfirmPayResult = ConfirmPayResultDone | ConfirmPayResultPending;
@@ -455,11 +456,10 @@ export interface WalletDiagnostics {
   dbOutdated: boolean;
 }
 
-export interface TalerErrorDetails {
-  code: number;
-  hint: string;
-  message: string;
-  details: unknown;
+export interface TalerErrorDetail {
+  code: TalerErrorCode;
+  hint?: string;
+  [x: string]: unknown;
 }
 
 /**
@@ -850,7 +850,7 @@ export interface CoreApiResponseError {
   type: "error";
   operation: string;
   id: string;
-  error: TalerErrorDetails;
+  error: TalerErrorDetail;
 }
 
 export interface WithdrawTestBalanceRequest {

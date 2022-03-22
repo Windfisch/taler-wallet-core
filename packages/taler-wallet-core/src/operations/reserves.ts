@@ -34,7 +34,7 @@ import {
   NotificationType,
   randomBytes,
   TalerErrorCode,
-  TalerErrorDetails,
+  TalerErrorDetail,
   AbsoluteTime,
   URL,
 } from "@gnu-taler/taler-util";
@@ -47,7 +47,7 @@ import {
   WalletStoresV1,
   WithdrawalGroupRecord,
 } from "../db.js";
-import { guardOperationException, OperationFailedError } from "../errors.js";
+import { guardOperationException, TalerError } from "../errors.js";
 import { assertUnreachable } from "../util/assertUnreachable.js";
 import {
   readSuccessResponseJsonOrErrorCode,
@@ -135,7 +135,7 @@ async function incrementReserveRetry(
 async function reportReserveError(
   ws: InternalWalletState,
   reservePub: string,
-  err: TalerErrorDetails,
+  err: TalerErrorDetail,
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({
@@ -338,7 +338,7 @@ export async function processReserve(
   forceNow = false,
 ): Promise<void> {
   return ws.memoProcessReserve.memo(reservePub, async () => {
-    const onOpError = (err: TalerErrorDetails): Promise<void> =>
+    const onOpError = (err: TalerErrorDetail): Promise<void> =>
       reportReserveError(ws, reservePub, err);
     await guardOperationException(
       () => processReserveImpl(ws, reservePub, forceNow),
@@ -571,7 +571,7 @@ async function updateReserve(
     if (
       resp.status === 404 &&
       result.talerErrorResponse.code ===
-        TalerErrorCode.EXCHANGE_RESERVES_GET_STATUS_UNKNOWN
+        TalerErrorCode.EXCHANGE_RESERVES_STATUS_UNKNOWN
     ) {
       ws.notify({
         type: NotificationType.ReserveNotYetFound,
@@ -803,9 +803,8 @@ export async function createTalerWithdrawReserve(
       return tx.reserves.get(reserve.reservePub);
     });
   if (processedReserve?.reserveStatus === ReserveRecordStatus.BankAborted) {
-    throw OperationFailedError.fromCode(
+    throw TalerError.fromDetail(
       TalerErrorCode.WALLET_WITHDRAWAL_OPERATION_ABORTED_BY_BANK,
-      "withdrawal aborted by bank",
       {},
     );
   }

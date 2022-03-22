@@ -34,7 +34,7 @@ import {
   Recoup,
   TalerErrorCode,
   URL,
-  TalerErrorDetails,
+  TalerErrorDetail,
   AbsoluteTime,
   hashDenomPub,
   LibtoolVersion,
@@ -64,11 +64,7 @@ import {
 } from "../util/http.js";
 import { DbAccess, GetReadOnlyAccess } from "../util/query.js";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
-import {
-  guardOperationException,
-  makeErrorDetails,
-  OperationFailedError,
-} from "../errors.js";
+import { guardOperationException, TalerError } from "../errors.js";
 import { InternalWalletState, TrustInfo } from "../common.js";
 import {
   WALLET_CACHE_BREAKER_CLIENT_VERSION,
@@ -112,7 +108,7 @@ function denominationRecordFromKeys(
 async function handleExchangeUpdateError(
   ws: InternalWalletState,
   baseUrl: string,
-  err: TalerErrorDetails,
+  err: TalerErrorDetail,
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({ exchanges: x.exchanges }))
@@ -353,7 +349,7 @@ export async function updateExchangeFromUrl(
   exchange: ExchangeRecord;
   exchangeDetails: ExchangeDetailsRecord;
 }> {
-  const onOpErr = (e: TalerErrorDetails): Promise<void> =>
+  const onOpErr = (e: TalerErrorDetail): Promise<void> =>
     handleExchangeUpdateError(ws, baseUrl, e);
   return await guardOperationException(
     () => updateExchangeFromUrlImpl(ws, baseUrl, acceptedFormat, forceNow),
@@ -429,14 +425,13 @@ async function downloadExchangeKeysInfo(
   logger.info("received /keys response");
 
   if (exchangeKeysJsonUnchecked.denoms.length === 0) {
-    const opErr = makeErrorDetails(
+    throw TalerError.fromDetail(
       TalerErrorCode.WALLET_EXCHANGE_DENOMINATIONS_INSUFFICIENT,
-      "exchange doesn't offer any denominations",
       {
         exchangeBaseUrl: baseUrl,
       },
+      "exchange doesn't offer any denominations",
     );
-    throw new OperationFailedError(opErr);
   }
 
   const protocolVersion = exchangeKeysJsonUnchecked.version;
@@ -446,15 +441,14 @@ async function downloadExchangeKeysInfo(
     protocolVersion,
   );
   if (versionRes?.compatible != true) {
-    const opErr = makeErrorDetails(
+    throw TalerError.fromDetail(
       TalerErrorCode.WALLET_EXCHANGE_PROTOCOL_VERSION_INCOMPATIBLE,
-      "exchange protocol version not compatible with wallet",
       {
         exchangeProtocolVersion: protocolVersion,
         walletProtocolVersion: WALLET_EXCHANGE_PROTOCOL_VERSION,
       },
+      "exchange protocol version not compatible with wallet",
     );
-    throw new OperationFailedError(opErr);
   }
 
   const currency = Amounts.parseOrThrow(

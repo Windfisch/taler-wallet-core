@@ -63,7 +63,7 @@ export async function runWithdrawalAbortBankTest(t: GlobalTestState) {
   //
   // WHY ?!
   //
-  const e = await t.assertThrowsOperationErrorAsync(async () => {
+  const e = await t.assertThrowsTalerErrorAsync(async () => {
     await wallet.client.call(
       WalletApiOperation.AcceptBankIntegratedWithdrawal,
       {
@@ -73,7 +73,7 @@ export async function runWithdrawalAbortBankTest(t: GlobalTestState) {
     );
   });
   t.assertDeepEqual(
-    e.operationError.code,
+    e.errorDetail.code,
     TalerErrorCode.WALLET_WITHDRAWAL_OPERATION_ABORTED_BY_BANK,
   );
 

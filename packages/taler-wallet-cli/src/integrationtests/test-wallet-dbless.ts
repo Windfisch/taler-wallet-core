@@ -26,9 +26,9 @@ import {
   findDenomOrThrow,
   generateReserveKeypair,
   NodeHttpLib,
-  OperationFailedError,
   refreshCoin,
   SynchronousCryptoWorkerFactory,
+  TalerError,
   topupReserveWithDemobank,
   withdrawCoin,
 } from "@gnu-taler/taler-wallet-core";
@@ -95,9 +95,9 @@ export async function runWalletDblessTest(t: GlobalTestState) {
       newDenoms: refreshDenoms,
     });
   } catch (e) {
-    if (e instanceof OperationFailedError) {
+    if (e instanceof TalerError) {
       console.log(e);
-      console.log(j2s(e.operationError));
+      console.log(j2s(e.errorDetail));
     } else {
       console.log(e);
     }

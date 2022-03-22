@@ -25,7 +25,7 @@
  * Imports.
  */
 import {
-  TalerErrorDetails,
+  TalerErrorDetail,
   BalancesResponse,
   AbsoluteTime,
   TalerProtocolTimestamp,
@@ -71,7 +71,7 @@ export type PendingTaskInfo = PendingTaskInfoCommon &
 export interface PendingBackupTask {
   type: PendingTaskType.Backup;
   backupProviderBaseUrl: string;
-  lastError: TalerErrorDetails | undefined;
+  lastError: TalerErrorDetail | undefined;
 }
 
 /**
@@ -80,7 +80,7 @@ export interface PendingBackupTask {
 export interface PendingExchangeUpdateTask {
   type: PendingTaskType.ExchangeUpdate;
   exchangeBaseUrl: string;
-  lastError: TalerErrorDetails | undefined;
+  lastError: TalerErrorDetail | undefined;
 }
 
 /**
@@ -124,7 +124,7 @@ export interface PendingReserveTask {
  */
 export interface PendingRefreshTask {
   type: PendingTaskType.Refresh;
-  lastError?: TalerErrorDetails;
+  lastError?: TalerErrorDetail;
   refreshGroupId: string;
   finishedPerCoin: boolean[];
   retryInfo: RetryInfo;
@@ -139,7 +139,7 @@ export interface PendingProposalDownloadTask {
   proposalTimestamp: TalerProtocolTimestamp;
   proposalId: string;
   orderId: string;
-  lastError?: TalerErrorDetails;
+  lastError?: TalerErrorDetail;
   retryInfo?: RetryInfo;
 }
 
@@ -173,7 +173,7 @@ export interface PendingPayTask {
   proposalId: string;
   isReplay: boolean;
   retryInfo?: RetryInfo;
-  lastError: TalerErrorDetails | undefined;
+  lastError: TalerErrorDetail | undefined;
 }
 
 /**
@@ -184,14 +184,14 @@ export interface PendingRefundQueryTask {
   type: PendingTaskType.RefundQuery;
   proposalId: string;
   retryInfo: RetryInfo;
-  lastError: TalerErrorDetails | undefined;
+  lastError: TalerErrorDetail | undefined;
 }
 
 export interface PendingRecoupTask {
   type: PendingTaskType.Recoup;
   recoupGroupId: string;
   retryInfo: RetryInfo;
-  lastError: TalerErrorDetails | undefined;
+  lastError: TalerErrorDetail | undefined;
 }
 
 /**
@@ -199,7 +199,7 @@ export interface PendingRecoupTask {
  */
 export interface PendingWithdrawTask {
   type: PendingTaskType.Withdraw;
-  lastError: TalerErrorDetails | undefined;
+  lastError: TalerErrorDetail | undefined;
   retryInfo: RetryInfo;
   withdrawalGroupId: string;
 }
@@ -209,7 +209,7 @@ export interface PendingWithdrawTask {
  */
 export interface PendingDepositTask {
   type: PendingTaskType.Deposit;
-  lastError: TalerErrorDetails | undefined;
+  lastError: TalerErrorDetail | undefined;
   retryInfo: RetryInfo | undefined;
   depositGroupId: string;
 }

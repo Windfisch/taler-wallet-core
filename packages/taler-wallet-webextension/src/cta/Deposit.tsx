@@ -35,7 +35,7 @@ import {
   PreparePayResultType,
   Translate,
 } from "@gnu-taler/taler-util";
-import { OperationFailedError } from "@gnu-taler/taler-wallet-core";
+import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { ErrorTalerOperation } from "../components/ErrorTalerOperation";
@@ -64,9 +64,9 @@ export function DepositPage({ talerPayUri, goBack }: Props): VNode {
   const [payResult, setPayResult] = useState<ConfirmPayResult | undefined>(
     undefined,
   );
-  const [payErrMsg, setPayErrMsg] = useState<
-    OperationFailedError | string | undefined
-  >(undefined);
+  const [payErrMsg, setPayErrMsg] = useState<TalerError | string | undefined>(
+    undefined,
+  );
 
   const balance = useAsyncAsHook(wxApi.getBalance, [
     NotificationType.CoinWithdrawn,
@@ -97,7 +97,7 @@ export function DepositPage({ talerPayUri, goBack }: Props): VNode {
         setPayStatus(p);
       } catch (e) {
         console.log("Got error while trying to pay", e);
-        if (e instanceof OperationFailedError) {
+        if (e instanceof TalerError) {
           setPayErrMsg(e);
         }
         if (e instanceof Error) {
@@ -117,7 +117,7 @@ export function DepositPage({ talerPayUri, goBack }: Props): VNode {
   }
 
   if (!payStatus) {
-    if (payErrMsg instanceof OperationFailedError) {
+    if (payErrMsg instanceof TalerError) {
       return (
         <WalletAction>
           <LogoHeader />
@@ -131,7 +131,7 @@ export function DepositPage({ talerPayUri, goBack }: Props): VNode {
                   Could not get the payment information for this order
                 </i18n.Translate>
               }
-              error={payErrMsg?.operationError}
+              error={payErrMsg?.errorDetail}
             />
           </section>
         </WalletAction>

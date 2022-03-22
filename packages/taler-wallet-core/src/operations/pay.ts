@@ -25,6 +25,7 @@
  * Imports.
  */
 import {
+  AbsoluteTime,
   AmountJson,
   Amounts,
   codecForContractTerms,
@@ -34,7 +35,6 @@ import {
   ConfirmPayResult,
   ConfirmPayResultType,
   ContractTerms,
-  decodeCrock,
   Duration,
   durationMax,
   durationMin,
@@ -43,19 +43,17 @@ import {
   getRandomBytes,
   HttpStatusCode,
   j2s,
-  kdf,
   Logger,
   NotificationType,
   parsePayUri,
   PreparePayResult,
   PreparePayResultType,
   RefreshReason,
-  stringToBytes,
   TalerErrorCode,
-  TalerErrorDetails,
-  AbsoluteTime,
-  URL,
+  TalerErrorDetail,
   TalerProtocolTimestamp,
+  TransactionType,
+  URL,
 } from "@gnu-taler/taler-util";
 import { EXCHANGE_COINS_LOCK, InternalWalletState } from "../common.js";
 import {
@@ -74,9 +72,9 @@ import {
 } from "../db.js";
 import {
   guardOperationException,
-  makeErrorDetails,
-  OperationFailedAndReportedError,
-  OperationFailedError,
+  makeErrorDetail,
+  makePendingOperationFailedError,
+  TalerError,
 } from "../errors.js";
 import {
   AvailableCoinInfo,
@@ -467,7 +465,7 @@ async function recordConfirmPay(
 async function reportProposalError(
   ws: InternalWalletState,
   proposalId: string,
-  err: TalerErrorDetails,
+  err: TalerErrorDetail,
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({ proposals: x.proposals }))
@@ -550,7 +548,7 @@ async function incrementPurchasePayRetry(
 async function reportPurchasePayError(
   ws: InternalWalletState,
   proposalId: string,
-  err: TalerErrorDetails,
+  err: TalerErrorDetail,
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({ purchases: x.purchases }))
@@ -575,7 +573,7 @@ export async function processDownloadProposal(
   proposalId: string,
   forceNow = false,
 ): Promise<void> {
-  const onOpErr = (err: TalerErrorDetails): Promise<void> =>
+  const onOpErr = (err: TalerErrorDetail): Promise<void> =>
     reportProposalError(ws, proposalId, err);
   await guardOperationException(
     () => processDownloadProposalImpl(ws, proposalId, forceNow),
@@ -602,7 +600,7 @@ async function resetDownloadProposalRetry(
 async function failProposalPermanently(
   ws: InternalWalletState,
   proposalId: string,
-  err: TalerErrorDetails,
+  err: TalerErrorDetail,
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({ proposals: x.proposals }))
@@ -727,13 +725,13 @@ async function processDownloadProposalImpl(
   if (r.isError) {
     switch (r.talerErrorResponse.code) {
       case TalerErrorCode.MERCHANT_POST_ORDERS_ID_CLAIM_ALREADY_CLAIMED:
-        throw OperationFailedError.fromCode(
+        throw TalerError.fromDetail(
           TalerErrorCode.WALLET_ORDER_ALREADY_CLAIMED,
-          "order already claimed (likely by other wallet)",
           {
             orderId: proposal.orderId,
             claimUrl: orderClaimUrl,
           },
+          "order already claimed (likely by other wallet)",
         );
       default:
         throwUnexpectedRequestError(httpResponse, r.talerErrorResponse);
@@ -758,13 +756,17 @@ async function processDownloadProposalImpl(
     logger.trace(
       `malformed contract terms: ${j2s(proposalResp.contract_terms)}`,
     );
-    const err = makeErrorDetails(
+    const err = makeErrorDetail(
       TalerErrorCode.WALLET_CONTRACT_TERMS_MALFORMED,
-      "validation for well-formedness failed",
       {},
+      "validation for well-formedness failed",
     );
     await failProposalPermanently(ws, proposalId, err);
-    throw new OperationFailedAndReportedError(err);
+    throw makePendingOperationFailedError(
+      err,
+      TransactionType.Payment,
+      proposalId,
+    );
   }
 
   const contractTermsHash = ContractTermsUtil.hashContractTerms(
@@ -780,13 +782,17 @@ async function processDownloadProposalImpl(
       proposalResp.contract_terms,
     );
   } catch (e) {
-    const err = makeErrorDetails(
+    const err = makeErrorDetail(
       TalerErrorCode.WALLET_CONTRACT_TERMS_MALFORMED,
-      `schema validation failed: ${e}`,
       {},
+      `schema validation failed: ${e}`,
     );
     await failProposalPermanently(ws, proposalId, err);
-    throw new OperationFailedAndReportedError(err);
+    throw makePendingOperationFailedError(
+      err,
+      TransactionType.Payment,
+      proposalId,
+    );
   }
 
   const sigValid = await ws.cryptoApi.isValidContractTermsSignature(
@@ -796,16 +802,20 @@ async function processDownloadProposalImpl(
   );
 
   if (!sigValid) {
-    const err = makeErrorDetails(
+    const err = makeErrorDetail(
       TalerErrorCode.WALLET_CONTRACT_TERMS_SIGNATURE_INVALID,
-      "merchant's signature on contract terms is invalid",
       {
         merchantPub: parsedContractTerms.merchant_pub,
         orderId: parsedContractTerms.order_id,
       },
+      "merchant's signature on contract terms is invalid",
     );
     await failProposalPermanently(ws, proposalId, err);
-    throw new OperationFailedAndReportedError(err);
+    throw makePendingOperationFailedError(
+      err,
+      TransactionType.Payment,
+      proposalId,
+    );
   }
 
   const fulfillmentUrl = parsedContractTerms.fulfillment_url;
@@ -814,16 +824,20 @@ async function processDownloadProposalImpl(
   const baseUrlFromContractTerms = parsedContractTerms.merchant_base_url;
 
   if (baseUrlForDownload !== baseUrlFromContractTerms) {
-    const err = makeErrorDetails(
+    const err = makeErrorDetail(
       TalerErrorCode.WALLET_CONTRACT_TERMS_BASE_URL_MISMATCH,
-      "merchant base URL mismatch",
       {
         baseUrlForDownload,
         baseUrlFromContractTerms,
       },
+      "merchant base URL mismatch",
     );
     await failProposalPermanently(ws, proposalId, err);
-    throw new OperationFailedAndReportedError(err);
+    throw makePendingOperationFailedError(
+      err,
+      TransactionType.Payment,
+      proposalId,
+    );
   }
 
   const contractData = extractContractData(
@@ -895,10 +909,8 @@ async function startDownloadProposal(
       ]);
     });
 
-  /**
-   * If we have already claimed this proposal with the same sessionId
-   * nonce and claim token, reuse it.
-   */
+  /* If we have already claimed this proposal with the same sessionId
+   * nonce and claim token, reuse it. */
   if (
     oldProposal &&
     oldProposal.downloadSessionId === sessionId &&
@@ -1029,7 +1041,7 @@ async function storePayReplaySuccess(
 async function handleInsufficientFunds(
   ws: InternalWalletState,
   proposalId: string,
-  err: TalerErrorDetails,
+  err: TalerErrorDetail,
 ): Promise<void> {
   logger.trace("handling insufficient funds, trying to re-select coins");
 
@@ -1319,12 +1331,12 @@ export async function preparePayForUri(
   const uriResult = parsePayUri(talerPayUri);
 
   if (!uriResult) {
-    throw OperationFailedError.fromCode(
+    throw TalerError.fromDetail(
       TalerErrorCode.WALLET_INVALID_TALER_PAY_URI,
-      `invalid taler://pay URI (${talerPayUri})`,
       {
         talerPayUri,
       },
+      `invalid taler://pay URI (${talerPayUri})`,
     );
   }
 
@@ -1503,7 +1515,7 @@ export async function processPurchasePay(
   proposalId: string,
   forceNow = false,
 ): Promise<ConfirmPayResult> {
-  const onOpErr = (e: TalerErrorDetails): Promise<void> =>
+  const onOpErr = (e: TalerErrorDetail): Promise<void> =>
     reportPurchasePayError(ws, proposalId, e);
   return await guardOperationException(
     () => processPurchasePayImpl(ws, proposalId, forceNow),
@@ -1527,9 +1539,8 @@ async function processPurchasePayImpl(
       lastError: {
         // FIXME: allocate more specific error code
         code: TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
-        message: `trying to pay for purchase that is not in the database`,
-        hint: `proposal ID is ${proposalId}`,
-        details: {},
+        hint: `trying to pay for purchase that is not in the database`,
+        proposalId: proposalId,
       },
     };
   }
@@ -1594,10 +1605,10 @@ async function processPurchasePayImpl(
       resp.status <= 599
     ) {
       logger.trace("treating /pay error as transient");
-      const err = makeErrorDetails(
+      const err = makeErrorDetail(
         TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
-        "/pay failed",
         getHttpResponseErrorDetails(resp),
+        "/pay failed",
       );
       return {
         type: ConfirmPayResultType.Pending,
@@ -1621,8 +1632,11 @@ async function processPurchasePayImpl(
           delete purch.payRetryInfo;
           await tx.purchases.put(purch);
         });
-      // FIXME: Maybe introduce a new return type for this instead of throwing?
-      throw new OperationFailedAndReportedError(errDetails);
+      throw makePendingOperationFailedError(
+        errDetails,
+        TransactionType.Payment,
+        proposalId,
+      );
     }
 
     if (resp.status === HttpStatusCode.Conflict) {
@@ -1692,10 +1706,10 @@ async function processPurchasePayImpl(
       resp.status >= 500 &&
       resp.status <= 599
     ) {
-      const err = makeErrorDetails(
+      const err = makeErrorDetail(
         TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
-        "/paid failed",
         getHttpResponseErrorDetails(resp),
+        "/paid failed",
       );
       return {
         type: ConfirmPayResultType.Pending,
@@ -1703,10 +1717,10 @@ async function processPurchasePayImpl(
       };
     }
     if (resp.status !== 204) {
-      throw OperationFailedError.fromCode(
+      throw TalerError.fromDetail(
         TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
-        "/paid failed",
         getHttpResponseErrorDetails(resp),
+        "/paid failed",
       );
     }
     await storePayReplaySuccess(ws, proposalId, sessionId);

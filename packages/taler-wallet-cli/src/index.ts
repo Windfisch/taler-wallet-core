@@ -49,14 +49,13 @@ import {
 import {
   NodeHttpLib,
   getDefaultNodeWallet,
-  OperationFailedAndReportedError,
-  OperationFailedError,
   NodeThreadCryptoWorkerFactory,
   CryptoApi,
   walletCoreDebugFlags,
   WalletApiOperation,
   WalletCoreApiClient,
   Wallet,
+  getErrorDetailFromException,
 } from "@gnu-taler/taler-wallet-core";
 import { lintExchangeDeployment } from "./lint.js";
 import { runBench1 } from "./bench1.js";
@@ -206,18 +205,12 @@ async function withWallet<T>(
     const ret = await f(w);
     return ret;
   } catch (e) {
-    if (
-      e instanceof OperationFailedAndReportedError ||
-      e instanceof OperationFailedError
-    ) {
-      console.error("Operation failed: " + e.message);
-      console.error(
-        "Error details:",
-        JSON.stringify(e.operationError, undefined, 2),
-      );
-    } else {
-      console.error("caught unhandled exception (bug?):", e);
-    }
+    const ed = getErrorDetailFromException(e);
+    console.error("Operation failed: " + ed.message);
+    console.error(
+      "Error details:",
+      JSON.stringify(ed.operationError, undefined, 2),
+    );
     process.exit(1);
   } finally {
     logger.info("operation with wallet finished, stopping");

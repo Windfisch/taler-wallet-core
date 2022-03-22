@@ -21,7 +21,6 @@ import {
   getDefaultNodeWallet,
   DefaultNodeWalletArgs,
   NodeHttpLib,
-  makeErrorDetails,
   handleWorkerError,
   handleWorkerMessage,
   HttpRequestLibrary,
@@ -33,6 +32,7 @@ import {
   WALLET_EXCHANGE_PROTOCOL_VERSION,
   WALLET_MERCHANT_PROTOCOL_VERSION,
   Wallet,
+  getErrorDetailFromException,
 } from "@gnu-taler/taler-wallet-core";
 
 import fs from "fs";
@@ -270,11 +270,7 @@ export function installNativeWalletListener(): void {
         type: "error",
         id,
         operation,
-        error: makeErrorDetails(
-          TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
-          "unexpected exception",
-          {},
-        ),
+        error: getErrorDetailFromException(e),
       };
       sendNativeMessage(respMsg);
       return;
