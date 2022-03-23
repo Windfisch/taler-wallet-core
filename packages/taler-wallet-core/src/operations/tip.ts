@@ -336,17 +336,17 @@ async function processTipImpl(
       throw Error("unsupported cipher");
     }
 
-    const denomSigRsa = await ws.cryptoApi.rsaUnblind(
-      blindedSig.blinded_rsa_signature,
-      planchet.blindingKey,
-      denom.denomPub.rsa_public_key,
-    );
+    const denomSigRsa = await ws.cryptoApi.rsaUnblind({
+      bk: planchet.blindingKey,
+      blindedSig: blindedSig.blinded_rsa_signature,
+      pk: denom.denomPub.rsa_public_key,
+    });
 
-    const isValid = await ws.cryptoApi.rsaVerify(
-      planchet.coinPub,
-      denomSigRsa,
-      denom.denomPub.rsa_public_key,
-    );
+    const isValid = await ws.cryptoApi.rsaVerify({
+      hm: planchet.coinPub,
+      pk: denom.denomPub.rsa_public_key,
+      sig: denomSigRsa.sig,
+    });
 
     if (!isValid) {
       await ws.db
@@ -377,7 +377,7 @@ async function processTipImpl(
       },
       currentAmount: denom.value,
       denomPubHash: denom.denomPubHash,
-      denomSig: { cipher: DenomKeyType.Rsa, rsa_signature: denomSigRsa },
+      denomSig: { cipher: DenomKeyType.Rsa, rsa_signature: denomSigRsa.sig },
       exchangeBaseUrl: tipRecord.exchangeBaseUrl,
       status: CoinStatus.Fresh,
       suspended: false,

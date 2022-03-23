@@ -16,11 +16,10 @@
 
 import { Logger } from "@gnu-taler/taler-util";
 import {
-  CryptoImplementation,
-  PrimitiveWorker
-} from "./cryptoImplementation.js";
-
-
+  nativeCryptoR,
+  TalerCryptoInterfaceR,
+} from "../cryptoImplementation.js";
+import { CryptoRpcClient } from "./rpcClient.js";
 
 const logger = new Logger("synchronousWorker.ts");
 
@@ -38,9 +37,33 @@ export class SynchronousCryptoWorker {
    */
   onerror: undefined | ((m: any) => void);
 
-  constructor(private primitiveWorker?: PrimitiveWorker) {
+  cryptoImplR: TalerCryptoInterfaceR;
+
+  rpcClient: CryptoRpcClient | undefined;
+
+  constructor() {
     this.onerror = undefined;
     this.onmessage = undefined;
+
+    this.cryptoImplR = { ...nativeCryptoR };
+
+    if (
+      process.env["TALER_WALLET_RPC_CRYPRO"] ||
+      // Old name
+      process.env["TALER_WALLET_PRIMITIVE_WORKER"]
+    ) {
+      const rpc = (this.rpcClient = new CryptoRpcClient());
+      this.cryptoImplR.eddsaSign = async (_, req) => {
+        logger.trace("making RPC request");
+        return await rpc.queueRequest({
+          op: "eddsa_sign",
+          args: {
+            msg: req.msg,
+            priv: req.priv,
+          },
+        });
+      };
+    }
   }
 
   /**
@@ -66,9 +89,9 @@ export class SynchronousCryptoWorker {
   private async handleRequest(
     operation: string,
     id: number,
-    args: string[],
+    req: unknown,
   ): Promise<void> {
-    const impl = new CryptoImplementation(this.primitiveWorker);
+    const impl = this.cryptoImplR;
 
     if (!(operation in impl)) {
       console.error(`crypto operation '${operation}' not found`);
@@ -77,7 +100,7 @@ export class SynchronousCryptoWorker {
 
     let result: any;
     try {
-      result = await (impl as any)[operation](...args);
+      result = await (impl as any)[operation](impl, req);
     } catch (e) {
       logger.error("error during operation", e);
       return;
@@ -94,9 +117,9 @@ export class SynchronousCryptoWorker {
    * Send a message to the worker thread.
    */
   postMessage(msg: any): void {
-    const args = msg.args;
-    if (!Array.isArray(args)) {
-      console.error("args must be array");
+    const req = msg.req;
+    if (typeof req !== "object") {
+      console.error("request must be an object");
       return;
     }
     const id = msg.id;
@@ -110,7 +133,7 @@ export class SynchronousCryptoWorker {
       return;
     }
 
-    this.handleRequest(operation, id, args).catch((e) => {
+    this.handleRequest(operation, id, req).catch((e) => {
       console.error("Error while handling crypto request:", e);
     });
   }

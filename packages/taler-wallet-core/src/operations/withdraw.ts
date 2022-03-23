@@ -603,17 +603,17 @@ async function processPlanchetVerifyAndStoreCoin(
     throw Error("unsupported cipher");
   }
 
-  const denomSigRsa = await ws.cryptoApi.rsaUnblind(
-    evSig.blinded_rsa_signature,
-    planchet.blindingKey,
-    planchetDenomPub.rsa_public_key,
-  );
+  const denomSigRsa = await ws.cryptoApi.rsaUnblind({
+    bk: planchet.blindingKey,
+    blindedSig: evSig.blinded_rsa_signature,
+    pk: planchetDenomPub.rsa_public_key,
+  });
 
-  const isValid = await ws.cryptoApi.rsaVerify(
-    planchet.coinPub,
-    denomSigRsa,
-    planchetDenomPub.rsa_public_key,
-  );
+  const isValid = await ws.cryptoApi.rsaVerify({
+    hm: planchet.coinPub,
+    pk: planchetDenomPub.rsa_public_key,
+    sig: denomSigRsa.sig,
+  });
 
   if (!isValid) {
     await ws.db
@@ -640,7 +640,7 @@ async function processPlanchetVerifyAndStoreCoin(
   if (planchetDenomPub.cipher === DenomKeyType.Rsa) {
     denomSig = {
       cipher: planchetDenomPub.cipher,
-      rsa_signature: denomSigRsa,
+      rsa_signature: denomSigRsa.sig,
     };
   } else {
     throw Error("unsupported cipher");
@@ -759,10 +759,11 @@ export async function updateWithdrawalDenoms(
         if (ws.insecureTrustExchange) {
           valid = true;
         } else {
-          valid = await ws.cryptoApi.isValidDenom(
+          const res = await ws.cryptoApi.isValidDenom({
             denom,
-            exchangeDetails.masterPublicKey,
-          );
+            masterPub: exchangeDetails.masterPublicKey,
+          });
+          valid = res.valid;
         }
         logger.trace(`Done validating ${denom.denomPubHash}`);
         if (!valid) {

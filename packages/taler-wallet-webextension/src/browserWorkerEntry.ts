@@ -23,18 +23,18 @@
  */
 
 import { Logger } from "@gnu-taler/taler-util";
-import { CryptoImplementation } from "@gnu-taler/taler-wallet-core";
+import { nativeCrypto } from "@gnu-taler/taler-wallet-core";
 
 const logger = new Logger("browserWorkerEntry.ts");
 
-const worker: Worker = (self as any) as Worker;
+const worker: Worker = self as any as Worker;
 
 async function handleRequest(
   operation: string,
   id: number,
   args: string[],
 ): Promise<void> {
-  const impl = new CryptoImplementation();
+  const impl = nativeCrypto;
 
   if (!(operation in impl)) {
     console.error(`crypto operation '${operation}' not found`);

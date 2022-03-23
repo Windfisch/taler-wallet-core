@@ -55,7 +55,10 @@ import {
   TransactionType,
   URL,
 } from "@gnu-taler/taler-util";
-import { EXCHANGE_COINS_LOCK, InternalWalletState } from "../internal-wallet-state.js";
+import {
+  EXCHANGE_COINS_LOCK,
+  InternalWalletState,
+} from "../internal-wallet-state.js";
 import {
   AbortStatus,
   AllowedAuditorInfo,
@@ -100,6 +103,7 @@ import {
 import { getExchangeDetails } from "./exchanges.js";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
 import { guardOperationException } from "./common.js";
+import { EddsaKeypair } from "../crypto/cryptoImplementation.js";
 
 /**
  * Logger.
@@ -795,11 +799,11 @@ async function processDownloadProposalImpl(
     );
   }
 
-  const sigValid = await ws.cryptoApi.isValidContractTermsSignature(
+  const sigValid = await ws.cryptoApi.isValidContractTermsSignature({
     contractTermsHash,
-    proposalResp.sig,
-    parsedContractTerms.merchant_pub,
-  );
+    merchantPub: parsedContractTerms.merchant_pub,
+    sig: proposalResp.sig,
+  });
 
   if (!sigValid) {
     const err = makeErrorDetail(
@@ -921,9 +925,14 @@ async function startDownloadProposal(
     return oldProposal.proposalId;
   }
 
-  const { priv, pub } = await (noncePriv
-    ? ws.cryptoApi.eddsaGetPublic(noncePriv)
-    : ws.cryptoApi.createEddsaKeypair());
+  let noncePair: EddsaKeypair;
+  if (noncePriv) {
+    noncePair = await ws.cryptoApi.eddsaGetPublic({ priv: noncePriv });
+  } else {
+    noncePair = await ws.cryptoApi.createEddsaKeypair({});
+  }
+
+  const { priv, pub } = noncePair;
   const proposalId = encodeCrock(getRandomBytes(32));
 
   const proposalRecord: ProposalRecord = {
@@ -1673,11 +1682,11 @@ async function processPurchasePayImpl(
     logger.trace("got success from pay URL", merchantResp);
 
     const merchantPub = purchase.download.contractData.merchantPub;
-    const valid: boolean = await ws.cryptoApi.isValidPaymentSignature(
-      merchantResp.sig,
-      purchase.download.contractData.contractTermsHash,
+    const { valid } = await ws.cryptoApi.isValidPaymentSignature({
+      contractHash: purchase.download.contractData.contractTermsHash,
       merchantPub,
-    );
+      sig: merchantResp.sig,
+    });
 
     if (!valid) {
       logger.error("merchant payment signature invalid");

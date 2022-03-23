@@ -20,7 +20,7 @@
 import { j2s } from "@gnu-taler/taler-util";
 import {
   checkReserve,
-  CryptoApi,
+  CryptoDispatcher,
   depositCoin,
   downloadExchangeInfo,
   findDenomOrThrow,
@@ -44,7 +44,8 @@ export async function runWalletDblessTest(t: GlobalTestState) {
   const { bank, exchange } = await createSimpleTestkudosEnvironment(t);
 
   const http = new NodeHttpLib();
-  const cryptoApi = new CryptoApi(new SynchronousCryptoWorkerFactory());
+  const cryptiDisp = new CryptoDispatcher(new SynchronousCryptoWorkerFactory());
+  const cryptoApi = cryptiDisp.cryptoApi;
 
   try {
     // Withdraw digital cash into the wallet.

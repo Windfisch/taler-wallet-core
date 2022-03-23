@@ -46,7 +46,7 @@ import {
   TalerProtocolDuration,
 } from "@gnu-taler/taler-util";
 import { decodeCrock, encodeCrock, hash } from "@gnu-taler/taler-util";
-import { CryptoApi } from "../crypto/workers/cryptoApi.js";
+import { CryptoDispatcher } from "../crypto/workers/cryptoDispatcher.js";
 import {
   DenominationRecord,
   DenominationVerificationStatus,
@@ -243,12 +243,13 @@ async function validateWireInfo(
     if (ws.insecureTrustExchange) {
       isValid = true;
     } else {
-      isValid = await ws.cryptoApi.isValidWireAccount(
+      const { valid: v } = await ws.cryptoApi.isValidWireAccount({
+        masterPub: masterPublicKey,
+        paytoUri: a.payto_uri,
+        sig: a.master_sig,
         versionCurrent,
-        a.payto_uri,
-        a.master_sig,
-        masterPublicKey,
-      );
+      });
+      isValid = v;
     }
     if (!isValid) {
       throw Error("exchange acct signature invalid");
@@ -272,11 +273,12 @@ async function validateWireInfo(
       if (ws.insecureTrustExchange) {
         isValid = true;
       } else {
-        isValid = await ws.cryptoApi.isValidWireFee(
-          wireMethod,
-          fee,
-          masterPublicKey,
-        );
+        const { valid: v } = await ws.cryptoApi.isValidWireFee({
+          masterPub: masterPublicKey,
+          type: wireMethod,
+          wf: fee,
+        });
+        isValid = v;
       }
       if (!isValid) {
         throw Error("exchange wire fee signature invalid");

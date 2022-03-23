@@ -44,7 +44,6 @@ import {
   ExchangeProtocolVersion,
   FreshCoin,
   hash,
-  HashCodeString,
   hashCoinEv,
   hashCoinEvInner,
   hashDenomPub,
@@ -67,15 +66,13 @@ import {
   setupWithdrawPlanchet,
   stringToBytes,
   TalerSignaturePurpose,
-  AbsoluteTime,
   BlindedDenominationSignature,
   UnblindedSignature,
   PlanchetUnblindInfo,
   TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
 import bigint from "big-integer";
-import { DenominationRecord, WireFee } from "../../db.js";
-import * as timer from "../../util/timer.js";
+import { DenominationRecord, WireFee } from "../db.js";
 import {
   CreateRecoupRefreshReqRequest,
   CreateRecoupReqRequest,
@@ -84,90 +81,288 @@ import {
   DeriveRefreshSessionRequest,
   DeriveTipRequest,
   SignTrackTransactionRequest,
-} from "../cryptoTypes.js";
+} from "./cryptoTypes.js";
 
-const logger = new Logger("cryptoImplementation.ts");
+//const logger = new Logger("cryptoImplementation.ts");
 
-function amountToBuffer(amount: AmountJson): Uint8Array {
-  const buffer = new ArrayBuffer(8 + 4 + 12);
-  const dvbuf = new DataView(buffer);
-  const u8buf = new Uint8Array(buffer);
-  const curr = stringToBytes(amount.currency);
-  if (typeof dvbuf.setBigUint64 !== "undefined") {
-    dvbuf.setBigUint64(0, BigInt(amount.value));
-  } else {
-    const arr = bigint(amount.value).toArray(2 ** 8).value;
-    let offset = 8 - arr.length;
-    for (let i = 0; i < arr.length; i++) {
-      dvbuf.setUint8(offset++, arr[i]);
-    }
-  }
-  dvbuf.setUint32(8, amount.fraction);
-  u8buf.set(curr, 8 + 4);
-
-  return u8buf;
-}
-
-function timestampRoundedToBuffer(ts: TalerProtocolTimestamp): Uint8Array {
-  const b = new ArrayBuffer(8);
-  const v = new DataView(b);
-  // The buffer we sign over represents the timestamp in microseconds.
-  if (typeof v.setBigUint64 !== "undefined") {
-    const s = BigInt(ts.t_s) * BigInt(1000 * 1000);
-    v.setBigUint64(0, s);
-  } else {
-    const s =
-      ts.t_s === "never" ? bigint.zero : bigint(ts.t_s).multiply(1000 * 1000);
-    const arr = s.toArray(2 ** 8).value;
-    let offset = 8 - arr.length;
-    for (let i = 0; i < arr.length; i++) {
-      v.setUint8(offset++, arr[i]);
-    }
-  }
-  return new Uint8Array(b);
-}
-
-export interface PrimitiveWorker {
-  setupRefreshPlanchet(arg0: {
-    transfer_secret: string;
-    coin_index: number;
-  }): Promise<{
-    coin_pub: string;
-    coin_priv: string;
-    blinding_key: string;
-  }>;
-  eddsaVerify(req: {
-    msg: string;
-    sig: string;
-    pub: string;
-  }): Promise<{ valid: boolean }>;
-
-  eddsaSign(req: { msg: string; priv: string }): Promise<{ sig: string }>;
-}
-
-async function myEddsaSign(
-  primitiveWorker: PrimitiveWorker | undefined,
-  req: { msg: string; priv: string },
-): Promise<{ sig: string }> {
-  if (primitiveWorker) {
-    return primitiveWorker.eddsaSign(req);
-  }
-  const sig = eddsaSign(decodeCrock(req.msg), decodeCrock(req.priv));
-  return {
-    sig: encodeCrock(sig),
-  };
-}
-
-export class CryptoImplementation {
-  static enableTracing = false;
-
-  constructor(private primitiveWorker?: PrimitiveWorker) {}
-
+/**
+ * Interface for (asynchronous) cryptographic operations that
+ * Taler uses.
+ */
+export interface TalerCryptoInterface {
   /**
    * Create a pre-coin of the given denomination to be withdrawn from then given
    * reserve.
    */
+  createPlanchet(req: PlanchetCreationRequest): Promise<WithdrawalPlanchet>;
+
+  eddsaSign(req: EddsaSignRequest): Promise<EddsaSignResponse>;
+
+  /**
+   * Create a planchet used for tipping, including the private keys.
+   */
+  createTipPlanchet(req: DeriveTipRequest): Promise<DerivedTipPlanchet>;
+
+  signTrackTransaction(
+    req: SignTrackTransactionRequest,
+  ): Promise<EddsaSigningResult>;
+
+  createRecoupRequest(req: CreateRecoupReqRequest): Promise<RecoupRequest>;
+
+  createRecoupRefreshRequest(
+    req: CreateRecoupRefreshReqRequest,
+  ): Promise<RecoupRefreshRequest>;
+
+  isValidPaymentSignature(
+    req: PaymentSignatureValidationRequest,
+  ): Promise<ValidationResult>;
+
+  isValidWireFee(req: WireFeeValidationRequest): Promise<ValidationResult>;
+
+  isValidDenom(req: DenominationValidationRequest): Promise<ValidationResult>;
+
+  isValidWireAccount(
+    req: WireAccountValidationRequest,
+  ): Promise<ValidationResult>;
+
+  isValidContractTermsSignature(
+    req: ContractTermsValidationRequest,
+  ): Promise<ValidationResult>;
+
+  createEddsaKeypair(req: {}): Promise<EddsaKeypair>;
+
+  eddsaGetPublic(req: EddsaGetPublicRequest): Promise<EddsaKeypair>;
+
+  unblindDenominationSignature(
+    req: UnblindDenominationSignatureRequest,
+  ): Promise<UnblindedSignature>;
+
+  rsaUnblind(req: RsaUnblindRequest): Promise<RsaUnblindResponse>;
+
+  rsaVerify(req: RsaVerificationRequest): Promise<ValidationResult>;
+
+  signDepositPermission(
+    depositInfo: DepositInfo,
+  ): Promise<CoinDepositPermission>;
+
+  deriveRefreshSession(
+    req: DeriveRefreshSessionRequest,
+  ): Promise<DerivedRefreshSession>;
+
+  hashString(req: HashStringRequest): Promise<HashStringResult>;
+
+  signCoinLink(req: SignCoinLinkRequest): Promise<EddsaSigningResult>;
+
+  makeSyncSignature(req: MakeSyncSignatureRequest): Promise<EddsaSigningResult>;
+}
+
+/**
+ * Implementation of the Taler crypto interface where every function
+ * always throws.  Only useful in practice as a way to iterate through
+ * all possible crypto functions.
+ *
+ * (This list can be easily auto-generated by your favorite IDE).
+ */
+export const nullCrypto: TalerCryptoInterface = {
+  createPlanchet: function (
+    req: PlanchetCreationRequest,
+  ): Promise<WithdrawalPlanchet> {
+    throw new Error("Function not implemented.");
+  },
+  eddsaSign: function (req: EddsaSignRequest): Promise<EddsaSignResponse> {
+    throw new Error("Function not implemented.");
+  },
+  createTipPlanchet: function (
+    req: DeriveTipRequest,
+  ): Promise<DerivedTipPlanchet> {
+    throw new Error("Function not implemented.");
+  },
+  signTrackTransaction: function (
+    req: SignTrackTransactionRequest,
+  ): Promise<EddsaSigningResult> {
+    throw new Error("Function not implemented.");
+  },
+  createRecoupRequest: function (
+    req: CreateRecoupReqRequest,
+  ): Promise<RecoupRequest> {
+    throw new Error("Function not implemented.");
+  },
+  createRecoupRefreshRequest: function (
+    req: CreateRecoupRefreshReqRequest,
+  ): Promise<RecoupRefreshRequest> {
+    throw new Error("Function not implemented.");
+  },
+  isValidPaymentSignature: function (
+    req: PaymentSignatureValidationRequest,
+  ): Promise<ValidationResult> {
+    throw new Error("Function not implemented.");
+  },
+  isValidWireFee: function (
+    req: WireFeeValidationRequest,
+  ): Promise<ValidationResult> {
+    throw new Error("Function not implemented.");
+  },
+  isValidDenom: function (
+    req: DenominationValidationRequest,
+  ): Promise<ValidationResult> {
+    throw new Error("Function not implemented.");
+  },
+  isValidWireAccount: function (
+    req: WireAccountValidationRequest,
+  ): Promise<ValidationResult> {
+    throw new Error("Function not implemented.");
+  },
+  isValidContractTermsSignature: function (
+    req: ContractTermsValidationRequest,
+  ): Promise<ValidationResult> {
+    throw new Error("Function not implemented.");
+  },
+  createEddsaKeypair: function (req: {}): Promise<EddsaKeypair> {
+    throw new Error("Function not implemented.");
+  },
+  eddsaGetPublic: function (req: EddsaGetPublicRequest): Promise<EddsaKeypair> {
+    throw new Error("Function not implemented.");
+  },
+  unblindDenominationSignature: function (
+    req: UnblindDenominationSignatureRequest,
+  ): Promise<UnblindedSignature> {
+    throw new Error("Function not implemented.");
+  },
+  rsaUnblind: function (req: RsaUnblindRequest): Promise<RsaUnblindResponse> {
+    throw new Error("Function not implemented.");
+  },
+  rsaVerify: function (req: RsaVerificationRequest): Promise<ValidationResult> {
+    throw new Error("Function not implemented.");
+  },
+  signDepositPermission: function (
+    depositInfo: DepositInfo,
+  ): Promise<CoinDepositPermission> {
+    throw new Error("Function not implemented.");
+  },
+  deriveRefreshSession: function (
+    req: DeriveRefreshSessionRequest,
+  ): Promise<DerivedRefreshSession> {
+    throw new Error("Function not implemented.");
+  },
+  hashString: function (req: HashStringRequest): Promise<HashStringResult> {
+    throw new Error("Function not implemented.");
+  },
+  signCoinLink: function (
+    req: SignCoinLinkRequest,
+  ): Promise<EddsaSigningResult> {
+    throw new Error("Function not implemented.");
+  },
+  makeSyncSignature: function (
+    req: MakeSyncSignatureRequest,
+  ): Promise<EddsaSigningResult> {
+    throw new Error("Function not implemented.");
+  },
+};
+
+export type WithArg<X> = X extends (req: infer T) => infer R
+  ? (tci: TalerCryptoInterfaceR, req: T) => R
+  : never;
+
+export type TalerCryptoInterfaceR = {
+  [x in keyof TalerCryptoInterface]: WithArg<TalerCryptoInterface[x]>;
+};
+
+export interface SignCoinLinkRequest {
+  oldCoinPriv: string;
+  newDenomHash: string;
+  oldCoinPub: string;
+  transferPub: string;
+  coinEv: CoinEnvelope;
+}
+
+export interface RsaVerificationRequest {
+  hm: string;
+  sig: string;
+  pk: string;
+}
+
+export interface EddsaSigningResult {
+  sig: string;
+}
+
+export interface ValidationResult {
+  valid: boolean;
+}
+
+export interface HashStringRequest {
+  str: string;
+}
+
+export interface HashStringResult {
+  h: string;
+}
+
+export interface WireFeeValidationRequest {
+  type: string;
+  wf: WireFee;
+  masterPub: string;
+}
+
+export interface DenominationValidationRequest {
+  denom: DenominationRecord;
+  masterPub: string;
+}
+
+export interface PaymentSignatureValidationRequest {
+  sig: string;
+  contractHash: string;
+  merchantPub: string;
+}
+
+export interface ContractTermsValidationRequest {
+  contractTermsHash: string;
+  sig: string;
+  merchantPub: string;
+}
+
+export interface WireAccountValidationRequest {
+  versionCurrent: ExchangeProtocolVersion;
+  paytoUri: string;
+  sig: string;
+  masterPub: string;
+}
+
+export interface EddsaKeypair {
+  priv: string;
+  pub: string;
+}
+
+export interface EddsaGetPublicRequest {
+  priv: string;
+}
+
+export interface UnblindDenominationSignatureRequest {
+  planchet: PlanchetUnblindInfo;
+  evSig: BlindedDenominationSignature;
+}
+
+export interface RsaUnblindRequest {
+  blindedSig: string;
+  bk: string;
+  pk: string;
+}
+
+export interface RsaUnblindResponse {
+  sig: string;
+}
+
+export const nativeCryptoR: TalerCryptoInterfaceR = {
+  async eddsaSign(
+    tci: TalerCryptoInterfaceR,
+    req: EddsaSignRequest,
+  ): Promise<EddsaSignResponse> {
+    return {
+      sig: encodeCrock(eddsaSign(decodeCrock(req.msg), decodeCrock(req.priv))),
+    };
+  },
+
   async createPlanchet(
+    tci: TalerCryptoInterfaceR,
     req: PlanchetCreationRequest,
   ): Promise<WithdrawalPlanchet> {
     const denomPub = req.denomPub;
@@ -195,7 +390,7 @@ export class CryptoImplementation {
         .put(evHash)
         .build();
 
-      const sigResult = await myEddsaSign(this.primitiveWorker, {
+      const sigResult = await tci.eddsaSign(tci, {
         msg: encodeCrock(withdrawRequest),
         priv: req.reservePriv,
       });
@@ -216,12 +411,12 @@ export class CryptoImplementation {
     } else {
       throw Error("unsupported cipher, unable to create planchet");
     }
-  }
+  },
 
-  /**
-   * Create a planchet used for tipping, including the private keys.
-   */
-  createTipPlanchet(req: DeriveTipRequest): DerivedTipPlanchet {
+  async createTipPlanchet(
+    tci: TalerCryptoInterfaceR,
+    req: DeriveTipRequest,
+  ): Promise<DerivedTipPlanchet> {
     if (req.denomPub.cipher !== DenomKeyType.Rsa) {
       throw Error(`unsupported cipher (${req.denomPub.cipher})`);
     }
@@ -243,22 +438,28 @@ export class CryptoImplementation {
       coinPub: encodeCrock(fc.coinPub),
     };
     return tipPlanchet;
-  }
+  },
 
-  signTrackTransaction(req: SignTrackTransactionRequest): string {
+  async signTrackTransaction(
+    tci: TalerCryptoInterfaceR,
+    req: SignTrackTransactionRequest,
+  ): Promise<EddsaSigningResult> {
     const p = buildSigPS(TalerSignaturePurpose.MERCHANT_TRACK_TRANSACTION)
       .put(decodeCrock(req.contractTermsHash))
       .put(decodeCrock(req.wireHash))
       .put(decodeCrock(req.merchantPub))
       .put(decodeCrock(req.coinPub))
       .build();
-    return encodeCrock(eddsaSign(p, decodeCrock(req.merchantPriv)));
-  }
+    return { sig: encodeCrock(eddsaSign(p, decodeCrock(req.merchantPriv))) };
+  },
 
   /**
    * Create and sign a message to recoup a coin.
    */
-  createRecoupRequest(req: CreateRecoupReqRequest): RecoupRequest {
+  async createRecoupRequest(
+    tci: TalerCryptoInterfaceR,
+    req: CreateRecoupReqRequest,
+  ): Promise<RecoupRequest> {
     const p = buildSigPS(TalerSignaturePurpose.WALLET_COIN_RECOUP)
       .put(decodeCrock(req.denomPubHash))
       .put(decodeCrock(req.blindingKey))
@@ -281,14 +482,15 @@ export class CryptoImplementation {
     } else {
       throw new Error();
     }
-  }
+  },
 
   /**
    * Create and sign a message to recoup a coin.
    */
-  createRecoupRefreshRequest(
+  async createRecoupRefreshRequest(
+    tci: TalerCryptoInterfaceR,
     req: CreateRecoupRefreshReqRequest,
-  ): RecoupRefreshRequest {
+  ): Promise<RecoupRefreshRequest> {
     const p = buildSigPS(TalerSignaturePurpose.WALLET_COIN_RECOUP_REFRESH)
       .put(decodeCrock(req.denomPubHash))
       .put(decodeCrock(req.blindingKey))
@@ -311,32 +513,32 @@ export class CryptoImplementation {
     } else {
       throw new Error();
     }
-  }
+  },
 
   /**
    * Check if a payment signature is valid.
    */
-  isValidPaymentSignature(
-    sig: string,
-    contractHash: string,
-    merchantPub: string,
-  ): boolean {
+  async isValidPaymentSignature(
+    tci: TalerCryptoInterfaceR,
+    req: PaymentSignatureValidationRequest,
+  ): Promise<ValidationResult> {
+    const { contractHash, sig, merchantPub } = req;
     const p = buildSigPS(TalerSignaturePurpose.MERCHANT_PAYMENT_OK)
       .put(decodeCrock(contractHash))
       .build();
     const sigBytes = decodeCrock(sig);
     const pubBytes = decodeCrock(merchantPub);
-    return eddsaVerify(p, sigBytes, pubBytes);
-  }
+    return { valid: eddsaVerify(p, sigBytes, pubBytes) };
+  },
 
   /**
    * Check if a wire fee is correctly signed.
    */
   async isValidWireFee(
-    type: string,
-    wf: WireFee,
-    masterPub: string,
-  ): Promise<boolean> {
+    tci: TalerCryptoInterfaceR,
+    req: WireFeeValidationRequest,
+  ): Promise<ValidationResult> {
+    const { type, wf, masterPub } = req;
     const p = buildSigPS(TalerSignaturePurpose.MASTER_WIRE_FEES)
       .put(hash(stringToBytes(type + "\0")))
       .put(timestampRoundedToBuffer(wf.startStamp))
@@ -347,25 +549,17 @@ export class CryptoImplementation {
       .build();
     const sig = decodeCrock(wf.sig);
     const pub = decodeCrock(masterPub);
-    if (this.primitiveWorker) {
-      return (
-        await this.primitiveWorker.eddsaVerify({
-          msg: encodeCrock(p),
-          pub: masterPub,
-          sig: encodeCrock(sig),
-        })
-      ).valid;
-    }
-    return eddsaVerify(p, sig, pub);
-  }
+    return { valid: eddsaVerify(p, sig, pub) };
+  },
 
   /**
    * Check if the signature of a denomination is valid.
    */
   async isValidDenom(
-    denom: DenominationRecord,
-    masterPub: string,
-  ): Promise<boolean> {
+    tci: TalerCryptoInterfaceR,
+    req: DenominationValidationRequest,
+  ): Promise<ValidationResult> {
+    const { masterPub, denom } = req;
     const p = buildSigPS(TalerSignaturePurpose.MASTER_DENOMINATION_KEY_VALIDITY)
       .put(decodeCrock(masterPub))
       .put(timestampRoundedToBuffer(denom.stampStart))
@@ -382,56 +576,59 @@ export class CryptoImplementation {
     const sig = decodeCrock(denom.masterSig);
     const pub = decodeCrock(masterPub);
     const res = eddsaVerify(p, sig, pub);
-    return res;
-  }
+    return { valid: res };
+  },
 
-  isValidWireAccount(
-    versionCurrent: ExchangeProtocolVersion,
-    paytoUri: string,
-    sig: string,
-    masterPub: string,
-  ): boolean {
+  async isValidWireAccount(
+    tci: TalerCryptoInterfaceR,
+    req: WireAccountValidationRequest,
+  ): Promise<ValidationResult> {
+    const { sig, masterPub, paytoUri } = req;
     const paytoHash = hashTruncate32(stringToBytes(paytoUri + "\0"));
     const p = buildSigPS(TalerSignaturePurpose.MASTER_WIRE_DETAILS)
       .put(paytoHash)
       .build();
-    return eddsaVerify(p, decodeCrock(sig), decodeCrock(masterPub));
-  }
+    return { valid: eddsaVerify(p, decodeCrock(sig), decodeCrock(masterPub)) };
+  },
 
-  isValidContractTermsSignature(
-    contractTermsHash: string,
-    sig: string,
-    merchantPub: string,
-  ): boolean {
-    const cthDec = decodeCrock(contractTermsHash);
+  async isValidContractTermsSignature(
+    tci: TalerCryptoInterfaceR,
+    req: ContractTermsValidationRequest,
+  ): Promise<ValidationResult> {
+    const cthDec = decodeCrock(req.contractTermsHash);
     const p = buildSigPS(TalerSignaturePurpose.MERCHANT_CONTRACT)
       .put(cthDec)
       .build();
-    return eddsaVerify(p, decodeCrock(sig), decodeCrock(merchantPub));
-  }
+    return {
+      valid: eddsaVerify(p, decodeCrock(req.sig), decodeCrock(req.merchantPub)),
+    };
+  },
 
   /**
    * Create a new EdDSA key pair.
    */
-  createEddsaKeypair(): { priv: string; pub: string } {
+  async createEddsaKeypair(tci: TalerCryptoInterfaceR): Promise<EddsaKeypair> {
     const pair = createEddsaKeyPair();
     return {
       priv: encodeCrock(pair.eddsaPriv),
       pub: encodeCrock(pair.eddsaPub),
     };
-  }
+  },
 
-  eddsaGetPublic(key: string): { priv: string; pub: string } {
+  async eddsaGetPublic(
+    tci: TalerCryptoInterfaceR,
+    req: EddsaGetPublicRequest,
+  ): Promise<EddsaKeypair> {
     return {
-      priv: key,
-      pub: encodeCrock(eddsaGetPublic(decodeCrock(key))),
+      priv: req.priv,
+      pub: encodeCrock(eddsaGetPublic(decodeCrock(req.priv))),
     };
-  }
+  },
 
-  unblindDenominationSignature(req: {
-    planchet: PlanchetUnblindInfo;
-    evSig: BlindedDenominationSignature;
-  }): UnblindedSignature {
+  async unblindDenominationSignature(
+    tci: TalerCryptoInterfaceR,
+    req: UnblindDenominationSignatureRequest,
+  ): Promise<UnblindedSignature> {
     if (req.evSig.cipher === DenomKeyType.Rsa) {
       if (req.planchet.denomPub.cipher !== DenomKeyType.Rsa) {
         throw new Error(
@@ -450,32 +647,45 @@ export class CryptoImplementation {
     } else {
       throw Error(`unblinding for cipher ${req.evSig.cipher} not implemented`);
     }
-  }
+  },
 
   /**
    * Unblind a blindly signed value.
    */
-  rsaUnblind(blindedSig: string, bk: string, pk: string): string {
+  async rsaUnblind(
+    tci: TalerCryptoInterfaceR,
+    req: RsaUnblindRequest,
+  ): Promise<RsaUnblindResponse> {
     const denomSig = rsaUnblind(
-      decodeCrock(blindedSig),
-      decodeCrock(pk),
-      decodeCrock(bk),
+      decodeCrock(req.blindedSig),
+      decodeCrock(req.pk),
+      decodeCrock(req.bk),
     );
-    return encodeCrock(denomSig);
-  }
+    return { sig: encodeCrock(denomSig) };
+  },
 
   /**
    * Unblind a blindly signed value.
    */
-  rsaVerify(hm: string, sig: string, pk: string): boolean {
-    return rsaVerify(hash(decodeCrock(hm)), decodeCrock(sig), decodeCrock(pk));
-  }
+  async rsaVerify(
+    tci: TalerCryptoInterfaceR,
+    req: RsaVerificationRequest,
+  ): Promise<ValidationResult> {
+    return {
+      valid: rsaVerify(
+        hash(decodeCrock(req.hm)),
+        decodeCrock(req.sig),
+        decodeCrock(req.pk),
+      ),
+    };
+  },
 
   /**
    * Generate updated coins (to store in the database)
    * and deposit permissions for each given coin.
    */
   async signDepositPermission(
+    tci: TalerCryptoInterfaceR,
     depositInfo: DepositInfo,
   ): Promise<CoinDepositPermission> {
     // FIXME: put extensions here if used
@@ -498,7 +708,7 @@ export class CryptoImplementation {
     } else {
       throw Error("unsupported exchange protocol version");
     }
-    const coinSigRes = await myEddsaSign(this.primitiveWorker, {
+    const coinSigRes = await this.eddsaSign(tci, {
       msg: encodeCrock(d),
       priv: depositInfo.coinPriv,
     });
@@ -521,9 +731,10 @@ export class CryptoImplementation {
         `unsupported denomination cipher (${depositInfo.denomKeyType})`,
       );
     }
-  }
+  },
 
   async deriveRefreshSession(
+    tci: TalerCryptoInterfaceR,
     req: DeriveRefreshSessionRequest,
   ): Promise<DerivedRefreshSession> {
     const {
@@ -596,24 +807,14 @@ export class CryptoImplementation {
           let coinPub: Uint8Array;
           let coinPriv: Uint8Array;
           let blindingFactor: Uint8Array;
-          // disabled while not implemented in the C code
-          if (0 && this.primitiveWorker) {
-            const r = await this.primitiveWorker.setupRefreshPlanchet({
-              transfer_secret: encodeCrock(transferSecret),
-              coin_index: coinIndex,
-            });
-            coinPub = decodeCrock(r.coin_pub);
-            coinPriv = decodeCrock(r.coin_priv);
-            blindingFactor = decodeCrock(r.blinding_key);
-          } else {
-            let fresh: FreshCoin = setupRefreshPlanchet(
-              transferSecret,
-              coinIndex,
-            );
-            coinPriv = fresh.coinPriv;
-            coinPub = fresh.coinPub;
-            blindingFactor = fresh.bks;
-          }
+          // FIXME: make setupRefreshPlanchet a crypto api fn
+          let fresh: FreshCoin = setupRefreshPlanchet(
+            transferSecret,
+            coinIndex,
+          );
+          coinPriv = fresh.coinPriv;
+          coinPub = fresh.coinPub;
+          blindingFactor = fresh.bks;
           const coinPubHash = hash(coinPub);
           if (denomSel.denomPub.cipher !== DenomKeyType.Rsa) {
             throw Error("unsupported cipher, can't create refresh session");
@@ -654,7 +855,7 @@ export class CryptoImplementation {
       .put(amountToBuffer(meltFee))
       .build();
 
-    const confirmSigResp = await myEddsaSign(this.primitiveWorker, {
+    const confirmSigResp = await tci.eddsaSign(tci, {
       msg: encodeCrock(confirmData),
       priv: meltCoinPriv,
     });
@@ -670,102 +871,42 @@ export class CryptoImplementation {
     };
 
     return refreshSession;
-  }
+  },
 
   /**
    * Hash a string including the zero terminator.
    */
-  hashString(str: string): string {
-    const b = stringToBytes(str + "\0");
-    return encodeCrock(hash(b));
-  }
-
-  /**
-   * Hash a crockford encoded value.
-   */
-  hashEncoded(encodedBytes: string): string {
-    return encodeCrock(hash(decodeCrock(encodedBytes)));
-  }
+  async hashString(
+    tci: TalerCryptoInterfaceR,
+    req: HashStringRequest,
+  ): Promise<HashStringResult> {
+    const b = stringToBytes(req.str + "\0");
+    return { h: encodeCrock(hash(b)) };
+  },
 
   async signCoinLink(
-    oldCoinPriv: string,
-    newDenomHash: string,
-    oldCoinPub: string,
-    transferPub: string,
-    coinEv: CoinEnvelope,
-  ): Promise<string> {
-    const coinEvHash = hashCoinEv(coinEv, newDenomHash);
+    tci: TalerCryptoInterfaceR,
+    req: SignCoinLinkRequest,
+  ): Promise<EddsaSigningResult> {
+    const coinEvHash = hashCoinEv(req.coinEv, req.newDenomHash);
     // FIXME: fill in
     const hAgeCommitment = new Uint8Array(32);
     const coinLink = buildSigPS(TalerSignaturePurpose.WALLET_COIN_LINK)
-      .put(decodeCrock(newDenomHash))
-      .put(decodeCrock(transferPub))
+      .put(decodeCrock(req.newDenomHash))
+      .put(decodeCrock(req.transferPub))
       .put(hAgeCommitment)
       .put(coinEvHash)
       .build();
-    const sig = await myEddsaSign(this.primitiveWorker, {
+    return tci.eddsaSign(tci, {
       msg: encodeCrock(coinLink),
-      priv: oldCoinPriv,
+      priv: req.oldCoinPriv,
     });
-    return sig.sig;
-  }
+  },
 
-  benchmark(repetitions: number): BenchmarkResult {
-    let time_hash = BigInt(0);
-    for (let i = 0; i < repetitions; i++) {
-      const start = timer.performanceNow();
-      this.hashString("hello world");
-      time_hash += timer.performanceNow() - start;
-    }
-
-    let time_hash_big = BigInt(0);
-    for (let i = 0; i < repetitions; i++) {
-      const ba = randomBytes(4096);
-      const start = timer.performanceNow();
-      hash(ba);
-      time_hash_big += timer.performanceNow() - start;
-    }
-
-    let time_eddsa_create = BigInt(0);
-    for (let i = 0; i < repetitions; i++) {
-      const start = timer.performanceNow();
-      createEddsaKeyPair();
-      time_eddsa_create += timer.performanceNow() - start;
-    }
-
-    let time_eddsa_sign = BigInt(0);
-    const p = randomBytes(4096);
-
-    const pair = createEddsaKeyPair();
-
-    for (let i = 0; i < repetitions; i++) {
-      const start = timer.performanceNow();
-      eddsaSign(p, pair.eddsaPriv);
-      time_eddsa_sign += timer.performanceNow() - start;
-    }
-
-    const sig = eddsaSign(p, pair.eddsaPriv);
-
-    let time_eddsa_verify = BigInt(0);
-    for (let i = 0; i < repetitions; i++) {
-      const start = timer.performanceNow();
-      eddsaVerify(p, sig, pair.eddsaPub);
-      time_eddsa_verify += timer.performanceNow() - start;
-    }
-
-    return {
-      repetitions,
-      time: {
-        hash_small: Number(time_hash),
-        hash_big: Number(time_hash_big),
-        eddsa_create: Number(time_eddsa_create),
-        eddsa_sign: Number(time_eddsa_sign),
-        eddsa_verify: Number(time_eddsa_verify),
-      },
-    };
-  }
-
-  makeSyncSignature(req: MakeSyncSignatureRequest): string {
+  async makeSyncSignature(
+    tci: TalerCryptoInterfaceR,
+    req: MakeSyncSignatureRequest,
+  ): Promise<EddsaSigningResult> {
     const hNew = decodeCrock(req.newHash);
     let hOld: Uint8Array;
     if (req.oldHash) {
@@ -778,6 +919,64 @@ export class CryptoImplementation {
       .put(hNew)
       .build();
     const uploadSig = eddsaSign(sigBlob, decodeCrock(req.accountPriv));
-    return encodeCrock(uploadSig);
+    return { sig: encodeCrock(uploadSig) };
+  },
+};
+
+function amountToBuffer(amount: AmountJson): Uint8Array {
+  const buffer = new ArrayBuffer(8 + 4 + 12);
+  const dvbuf = new DataView(buffer);
+  const u8buf = new Uint8Array(buffer);
+  const curr = stringToBytes(amount.currency);
+  if (typeof dvbuf.setBigUint64 !== "undefined") {
+    dvbuf.setBigUint64(0, BigInt(amount.value));
+  } else {
+    const arr = bigint(amount.value).toArray(2 ** 8).value;
+    let offset = 8 - arr.length;
+    for (let i = 0; i < arr.length; i++) {
+      dvbuf.setUint8(offset++, arr[i]);
+    }
   }
+  dvbuf.setUint32(8, amount.fraction);
+  u8buf.set(curr, 8 + 4);
+
+  return u8buf;
 }
+
+function timestampRoundedToBuffer(ts: TalerProtocolTimestamp): Uint8Array {
+  const b = new ArrayBuffer(8);
+  const v = new DataView(b);
+  // The buffer we sign over represents the timestamp in microseconds.
+  if (typeof v.setBigUint64 !== "undefined") {
+    const s = BigInt(ts.t_s) * BigInt(1000 * 1000);
+    v.setBigUint64(0, s);
+  } else {
+    const s =
+      ts.t_s === "never" ? bigint.zero : bigint(ts.t_s).multiply(1000 * 1000);
+    const arr = s.toArray(2 ** 8).value;
+    let offset = 8 - arr.length;
+    for (let i = 0; i < arr.length; i++) {
+      v.setUint8(offset++, arr[i]);
+    }
+  }
+  return new Uint8Array(b);
+}
+
+export interface EddsaSignRequest {
+  msg: string;
+  priv: string;
+}
+
+export interface EddsaSignResponse {
+  sig: string;
+}
+
+export const nativeCrypto: TalerCryptoInterface = Object.fromEntries(
+  Object.keys(nativeCryptoR).map((name) => {
+    return [
+      name,
+      (req: any) =>
+        nativeCryptoR[name as keyof TalerCryptoInterfaceR](nativeCryptoR, req),
+    ];
+  }),
+) as any;

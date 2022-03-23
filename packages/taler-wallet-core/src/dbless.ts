@@ -47,10 +47,10 @@ import {
   AbsoluteTime,
   UnblindedSignature,
 } from "@gnu-taler/taler-util";
+import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import { DenominationRecord } from "./db.js";
 import {
   assembleRefreshRevealRequest,
-  CryptoApi,
   ExchangeInfo,
   getBankWithdrawalInfo,
   HttpRequestLibrary,
@@ -149,7 +149,7 @@ export async function topupReserveWithDemobank(
 
 export async function withdrawCoin(args: {
   http: HttpRequestLibrary;
-  cryptoApi: CryptoApi;
+  cryptoApi: TalerCryptoInterface;
   reserveKeyPair: ReserveKeypair;
   denom: DenominationRecord;
   exchangeBaseUrl: string;
@@ -212,7 +212,7 @@ export function findDenomOrThrow(
 
 export async function depositCoin(args: {
   http: HttpRequestLibrary;
-  cryptoApi: CryptoApi;
+  cryptoApi: TalerCryptoInterface;
   exchangeBaseUrl: string;
   coin: CoinInfo;
   amount: AmountString;
@@ -263,7 +263,7 @@ export async function depositCoin(args: {
 
 export async function refreshCoin(req: {
   http: HttpRequestLibrary;
-  cryptoApi: CryptoApi;
+  cryptoApi: TalerCryptoInterface;
   oldCoin: CoinInfo;
   newDenoms: DenominationRecord[];
 }): Promise<void> {

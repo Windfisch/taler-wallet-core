@@ -76,9 +76,9 @@ import {
   RefreshNewDenomInfo,
 } from "../crypto/cryptoTypes.js";
 import { GetReadWriteAccess } from "../util/query.js";
-import { CryptoApi } from "../index.browser.js";
 import { guardOperationException } from "./common.js";
-import { CryptoApiStoppedError } from "../crypto/workers/cryptoApi.js";
+import { CryptoApiStoppedError } from "../crypto/workers/cryptoDispatcher.js";
+import { TalerCryptoInterface } from "../crypto/cryptoImplementation.js";
 
 const logger = new Logger("refresh.ts");
 
@@ -461,7 +461,7 @@ async function refreshMelt(
 }
 
 export async function assembleRefreshRevealRequest(args: {
-  cryptoApi: CryptoApi;
+  cryptoApi: TalerCryptoInterface;
   derived: DerivedRefreshSession;
   norevealIndex: number;
   oldCoinPub: CoinPublicKeyString;
@@ -494,14 +494,14 @@ export async function assembleRefreshRevealRequest(args: {
     const dsel = newDenoms[i];
     for (let j = 0; j < dsel.count; j++) {
       const newCoinIndex = linkSigs.length;
-      const linkSig = await cryptoApi.signCoinLink(
-        oldCoinPriv,
-        dsel.denomPubHash,
-        oldCoinPub,
-        derived.transferPubs[norevealIndex],
-        planchets[newCoinIndex].coinEv,
-      );
-      linkSigs.push(linkSig);
+      const linkSig = await cryptoApi.signCoinLink({
+        coinEv: planchets[newCoinIndex].coinEv,
+        newDenomHash: dsel.denomPubHash,
+        oldCoinPriv: oldCoinPriv,
+        oldCoinPub: oldCoinPub,
+        transferPub: derived.transferPubs[norevealIndex],
+      });
+      linkSigs.push(linkSig.sig);
       newDenomsFlat.push(dsel.denomPubHash);
     }
   }

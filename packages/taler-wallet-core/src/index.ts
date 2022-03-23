@@ -33,9 +33,11 @@ export * from "./db-utils.js";
 
 // Crypto and crypto workers
 // export * from "./crypto/workers/nodeThreadWorker.js";
-export { CryptoImplementation } from "./crypto/workers/cryptoImplementation.js";
 export type { CryptoWorker } from "./crypto/workers/cryptoWorkerInterface.js";
-export { CryptoWorkerFactory, CryptoApi } from "./crypto/workers/cryptoApi.js";
+export {
+  CryptoWorkerFactory,
+  CryptoDispatcher,
+} from "./crypto/workers/cryptoDispatcher.js";
 export { SynchronousCryptoWorker } from "./crypto/workers/synchronousWorker.js";
 
 export * from "./pending-types.js";
@@ -58,3 +60,8 @@ export * from "./operations/refresh.js";
 
 export * from "./dbless.js";
 
+export {
+  nativeCryptoR,
+  nativeCrypto,
+  nullCrypto,
+} from "./crypto/cryptoImplementation.js";

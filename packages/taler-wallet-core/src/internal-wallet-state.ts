@@ -36,7 +36,8 @@ import {
   DenominationPubKey,
   TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
-import { CryptoApi } from "./crypto/workers/cryptoApi.js";
+import { CryptoDispatcher } from "./crypto/workers/cryptoDispatcher.js";
+import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import { ExchangeDetailsRecord, ExchangeRecord, WalletStoresV1 } from "./db.js";
 import { PendingOperationsResponse } from "./pending-types.js";
 import { AsyncOpMemoMap, AsyncOpMemoSingle } from "./util/asyncMemo.js";
@@ -200,7 +201,7 @@ export interface InternalWalletState {
   memoProcessRefresh: AsyncOpMemoMap<void>;
   memoProcessRecoup: AsyncOpMemoMap<void>;
   memoProcessDeposit: AsyncOpMemoMap<void>;
-  cryptoApi: CryptoApi;
+  cryptoApi: TalerCryptoInterface;
 
   timerGroup: TimerGroup;
   stopped: boolean;

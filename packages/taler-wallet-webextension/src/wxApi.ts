@@ -97,10 +97,10 @@ export interface UpgradeResponse {
 async function callBackend(operation: string, payload: any): Promise<any> {
   let response: CoreApiResponse;
   try {
-    response = await platform.setMessageToWalletBackground(operation, payload)
+    response = await platform.setMessageToWalletBackground(operation, payload);
   } catch (e) {
     console.log("Error calling backend");
-    throw new Error(`Error contacting backend: ${e}`)
+    throw new Error(`Error contacting backend: ${e}`);
   }
   console.log("got response", response);
   if (response.type === "error") {
@@ -413,12 +413,15 @@ export function importDB(dump: any): Promise<void> {
   return callBackend("importDb", { dump });
 }
 
-export function onUpdateNotification(messageTypes: Array<NotificationType>, doCallback: () => void): () => void {
+export function onUpdateNotification(
+  messageTypes: Array<NotificationType>,
+  doCallback: () => void,
+): () => void {
   const listener = (message: MessageFromBackend): void => {
     const shouldNotify = messageTypes.includes(message.type);
     if (shouldNotify) {
       doCallback();
     }
   };
-  return platform.listenToWalletNotifications(listener)
+  return platform.listenToWalletNotifications(listener);
 }

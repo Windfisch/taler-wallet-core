@@ -69,7 +69,7 @@ import {
   rsaBlind,
   stringToBytes,
 } from "@gnu-taler/taler-util";
-import { CryptoApi } from "../../crypto/workers/cryptoApi.js";
+import { CryptoDispatcher } from "../../crypto/workers/cryptoDispatcher.js";
 import {
   BackupProviderRecord,
   BackupProviderState,
@@ -99,6 +99,7 @@ import { exportBackup } from "./export.js";
 import { BackupCryptoPrecomputedData, importBackup } from "./import.js";
 import { getWalletBackupState, provideBackupState } from "./state.js";
 import { guardOperationException } from "../common.js";
+import { TalerCryptoInterface } from "../../crypto/cryptoImplementation.js";
 
 const logger = new Logger("operations/backup.ts");
 
@@ -154,7 +155,7 @@ export async function encryptBackup(
  * FIXME: Move computations into crypto worker.
  */
 async function computeBackupCryptoData(
-  cryptoApi: CryptoApi,
+  cryptoApi: TalerCryptoInterface,
   backupContent: WalletBackupContentV1,
 ): Promise<BackupCryptoPrecomputedData> {
   const cryptoData: BackupCryptoPrecomputedData = {
@@ -193,18 +194,18 @@ async function computeBackupCryptoData(
     }
   }
   for (const prop of backupContent.proposals) {
-    const contractTermsHash = await cryptoApi.hashString(
-      canonicalJson(prop.contract_terms_raw),
-    );
+    const { h: contractTermsHash } = await cryptoApi.hashString({
+      str: canonicalJson(prop.contract_terms_raw),
+    });
     const noncePub = encodeCrock(eddsaGetPublic(decodeCrock(prop.nonce_priv)));
     cryptoData.proposalNoncePrivToPub[prop.nonce_priv] = noncePub;
     cryptoData.proposalIdToContractTermsHash[prop.proposal_id] =
       contractTermsHash;
   }
   for (const purch of backupContent.purchases) {
-    const contractTermsHash = await cryptoApi.hashString(
-      canonicalJson(purch.contract_terms_raw),
-    );
+    const { h: contractTermsHash } = await cryptoApi.hashString({
+      str: canonicalJson(purch.contract_terms_raw),
+    });
     const noncePub = encodeCrock(eddsaGetPublic(decodeCrock(purch.nonce_priv)));
     cryptoData.proposalNoncePrivToPub[purch.nonce_priv] = noncePub;
     cryptoData.proposalIdToContractTermsHash[purch.proposal_id] =
@@ -286,13 +287,13 @@ async function runBackupCycleForProvider(
   logger.trace(`trying to upload backup to ${provider.baseUrl}`);
   logger.trace(`old hash ${oldHash}, new hash ${newHash}`);
 
-  const syncSig = await ws.cryptoApi.makeSyncSignature({
+  const syncSigResp = await ws.cryptoApi.makeSyncSignature({
     newHash: encodeCrock(currentBackupHash),
     oldHash: provider.lastBackupHash,
     accountPriv: encodeCrock(accountKeyPair.eddsaPriv),
   });
 
-  logger.trace(`sync signature is ${syncSig}`);
+  logger.trace(`sync signature is ${syncSigResp}`);
 
   const accountBackupUrl = new URL(
     `/backups/${encodeCrock(accountKeyPair.eddsaPub)}`,
@@ -304,7 +305,7 @@ async function runBackupCycleForProvider(
     body: encBackup,
     headers: {
       "content-type": "application/octet-stream",
-      "sync-signature": syncSig,
+      "sync-signature": syncSigResp.sig,
       "if-none-match": newHash,
       ...(provider.lastBackupHash
         ? {

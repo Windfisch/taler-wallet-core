@@ -90,7 +90,10 @@ import {
   RecoupOperations,
   ReserveOperations,
 } from "./internal-wallet-state.js";
-import { CryptoApi, CryptoWorkerFactory } from "./crypto/workers/cryptoApi.js";
+import {
+  CryptoDispatcher,
+  CryptoWorkerFactory,
+} from "./crypto/workers/cryptoDispatcher.js";
 import {
   AuditorTrustRecord,
   CoinSourceType,
@@ -99,10 +102,7 @@ import {
   ReserveRecordStatus,
   WalletStoresV1,
 } from "./db.js";
-import {
-  getErrorDetailFromException,
-  TalerError,
-} from "./errors.js";
+import { getErrorDetailFromException, TalerError } from "./errors.js";
 import { exportBackup } from "./operations/backup/export.js";
 import {
   addBackupProvider,
@@ -193,6 +193,10 @@ import {
 import { DbAccess, GetReadWriteAccess } from "./util/query.js";
 import { TimerGroup } from "./util/timer.js";
 import { WalletCoreApiClient } from "./wallet-api-types.js";
+import {
+  TalerCryptoInterface,
+  TalerCryptoInterfaceR,
+} from "./crypto/cryptoImplementation.js";
 
 const builtinAuditors: AuditorTrustRecord[] = [
   {
@@ -1158,7 +1162,8 @@ class InternalWalletStateImpl implements InternalWalletState {
   memoProcessRefresh: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
   memoProcessRecoup: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
   memoProcessDeposit: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
-  cryptoApi: CryptoApi;
+  cryptoApi: TalerCryptoInterface;
+  cryptoDispatcher: CryptoDispatcher;
 
   merchantInfoCache: Record<string, MerchantInfo> = {};
 
@@ -1213,7 +1218,8 @@ class InternalWalletStateImpl implements InternalWalletState {
     public http: HttpRequestLibrary,
     cryptoWorkerFactory: CryptoWorkerFactory,
   ) {
-    this.cryptoApi = new CryptoApi(cryptoWorkerFactory);
+    this.cryptoDispatcher = new CryptoDispatcher(cryptoWorkerFactory);
+    this.cryptoApi = this.cryptoDispatcher.cryptoApi;
   }
 
   async getDenomInfo(
@@ -1258,7 +1264,7 @@ class InternalWalletStateImpl implements InternalWalletState {
   stop(): void {
     this.stopped = true;
     this.timerGroup.stopCurrentAndFutureTimers();
-    this.cryptoApi.stop();
+    this.cryptoDispatcher.stop();
   }
 
   async runUntilDone(

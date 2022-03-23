@@ -17,11 +17,11 @@
 /**
  * Imports
  */
-import { CryptoWorkerFactory } from "./cryptoApi.js";
+import { CryptoWorkerFactory } from "./cryptoDispatcher.js";
 import { CryptoWorker } from "./cryptoWorkerInterface.js";
 import os from "os";
-import { CryptoImplementation } from "./cryptoImplementation.js";
 import { Logger } from "@gnu-taler/taler-util";
+import { nativeCryptoR } from "../cryptoImplementation.js";
 
 const logger = new Logger("nodeThreadWorker.ts");
 
@@ -69,9 +69,9 @@ const workerCode = `
  * a message.
  */
 export function handleWorkerMessage(msg: any): void {
-  const args = msg.args;
-  if (!Array.isArray(args)) {
-    console.error("args must be array");
+  const req = msg.req;
+  if (typeof req !== "object") {
+    console.error("request must be an object");
     return;
   }
   const id = msg.id;
@@ -86,7 +86,7 @@ export function handleWorkerMessage(msg: any): void {
   }
 
   const handleRequest = async (): Promise<void> => {
-    const impl = new CryptoImplementation();
+    const impl = nativeCryptoR;
 
     if (!(operation in impl)) {
       console.error(`crypto operation '${operation}' not found`);
@@ -94,12 +94,11 @@ export function handleWorkerMessage(msg: any): void {
     }
 
     try {
-      const result = await (impl as any)[operation](...args);
+      const result = await (impl as any)[operation](impl, req);
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const _r = "require";
-      const worker_threads: typeof import("worker_threads") = module[_r](
-        "worker_threads",
-      );
+      const worker_threads: typeof import("worker_threads") =
+        module[_r]("worker_threads");
       // const worker_threads = require("worker_threads");
 
       const p = worker_threads.parentPort;

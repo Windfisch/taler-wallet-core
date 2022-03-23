@@ -22,39 +22,10 @@
 /**
  * Imports.
  */
-import { DenominationRecord, WireFee } from "../../db.js";
-
-import { CryptoWorker } from "./cryptoWorkerInterface.js";
-
-import {
-  BlindedDenominationSignature,
-  CoinDepositPermission,
-  CoinEnvelope,
-  PlanchetUnblindInfo,
-  RecoupRefreshRequest,
-  RecoupRequest,
-  UnblindedSignature,
-} from "@gnu-taler/taler-util";
-
-import {
-  BenchmarkResult,
-  WithdrawalPlanchet,
-  PlanchetCreationRequest,
-  DepositInfo,
-  MakeSyncSignatureRequest,
-} from "@gnu-taler/taler-util";
-
-import * as timer from "../../util/timer.js";
 import { Logger } from "@gnu-taler/taler-util";
-import {
-  CreateRecoupRefreshReqRequest,
-  CreateRecoupReqRequest,
-  DerivedRefreshSession,
-  DerivedTipPlanchet,
-  DeriveRefreshSessionRequest,
-  DeriveTipRequest,
-  SignTrackTransactionRequest,
-} from "../cryptoTypes.js";
+import * as timer from "../../util/timer.js";
+import { nullCrypto, TalerCryptoInterface } from "../cryptoImplementation.js";
+import { CryptoWorker } from "./cryptoWorkerInterface.js";
 
 const logger = new Logger("cryptoApi.ts");
 
@@ -80,7 +51,7 @@ interface WorkerState {
 
 interface WorkItem {
   operation: string;
-  args: any[];
+  req: unknown;
   resolve: any;
   reject: any;
 
@@ -122,10 +93,9 @@ export class CryptoApiStoppedError extends Error {
 }
 
 /**
- * Crypto API that interfaces manages a background crypto thread
- * for the execution of expensive operations.
+ * Dispatcher for cryptographic operations to underlying crypto workers.
  */
-export class CryptoApi {
+export class CryptoDispatcher {
   private nextRpcId = 1;
   private workers: WorkerState[];
   private workQueues: WorkItem[][];
@@ -191,7 +161,7 @@ export class CryptoApi {
     }
 
     const msg: any = {
-      args: work.args,
+      req: work.req,
       id: work.rpcId,
       operation: work.operation,
     };
@@ -277,7 +247,16 @@ export class CryptoApi {
     currentWorkItem.resolve(msg.data.result);
   }
 
+  cryptoApi: TalerCryptoInterface;
+
   constructor(workerFactory: CryptoWorkerFactory) {
+    const fns: any = {};
+    for (const name of Object.keys(nullCrypto)) {
+      fns[name] = (x: any) => this.doRpc(name, 0, x);
+    }
+
+    this.cryptoApi = fns;
+
     this.workerFactory = workerFactory;
     this.workers = new Array<WorkerState>(workerFactory.getConcurrency());
 
@@ -298,7 +277,7 @@ export class CryptoApi {
   private doRpc<T>(
     operation: string,
     priority: number,
-    ...args: any[]
+    req: unknown,
   ): Promise<T> {
     if (this.stopped) {
       throw new CryptoApiStoppedError();
@@ -307,7 +286,7 @@ export class CryptoApi {
       const rpcId = this.nextRpcId++;
       const workItem: WorkItem = {
         operation,
-        args,
+        req,
         resolve,
         reject,
         rpcId,
@@ -361,164 +340,5 @@ export class CryptoApi {
         reject(x);
       });
     });
-  }
-
-  createPlanchet(req: PlanchetCreationRequest): Promise<WithdrawalPlanchet> {
-    return this.doRpc<WithdrawalPlanchet>("createPlanchet", 1, req);
-  }
-
-  unblindDenominationSignature(req: {
-    planchet: PlanchetUnblindInfo;
-    evSig: BlindedDenominationSignature;
-  }): Promise<UnblindedSignature> {
-    return this.doRpc<UnblindedSignature>(
-      "unblindDenominationSignature",
-      1,
-      req,
-    );
-  }
-
-  createTipPlanchet(req: DeriveTipRequest): Promise<DerivedTipPlanchet> {
-    return this.doRpc<DerivedTipPlanchet>("createTipPlanchet", 1, req);
-  }
-
-  signTrackTransaction(req: SignTrackTransactionRequest): Promise<string> {
-    return this.doRpc<string>("signTrackTransaction", 1, req);
-  }
-
-  hashString(str: string): Promise<string> {
-    return this.doRpc<string>("hashString", 1, str);
-  }
-
-  hashEncoded(encodedBytes: string): Promise<string> {
-    return this.doRpc<string>("hashEncoded", 1, encodedBytes);
-  }
-
-  isValidDenom(denom: DenominationRecord, masterPub: string): Promise<boolean> {
-    return this.doRpc<boolean>("isValidDenom", 2, denom, masterPub);
-  }
-
-  isValidWireFee(
-    type: string,
-    wf: WireFee,
-    masterPub: string,
-  ): Promise<boolean> {
-    return this.doRpc<boolean>("isValidWireFee", 2, type, wf, masterPub);
-  }
-
-  isValidPaymentSignature(
-    sig: string,
-    contractHash: string,
-    merchantPub: string,
-  ): Promise<boolean> {
-    return this.doRpc<boolean>(
-      "isValidPaymentSignature",
-      1,
-      sig,
-      contractHash,
-      merchantPub,
-    );
-  }
-
-  signDepositPermission(
-    depositInfo: DepositInfo,
-  ): Promise<CoinDepositPermission> {
-    return this.doRpc<CoinDepositPermission>(
-      "signDepositPermission",
-      3,
-      depositInfo,
-    );
-  }
-
-  createEddsaKeypair(): Promise<{ priv: string; pub: string }> {
-    return this.doRpc<{ priv: string; pub: string }>("createEddsaKeypair", 1);
-  }
-
-  eddsaGetPublic(key: string): Promise<{ priv: string; pub: string }> {
-    return this.doRpc<{ priv: string; pub: string }>("eddsaGetPublic", 1, key);
-  }
-
-  rsaUnblind(sig: string, bk: string, pk: string): Promise<string> {
-    return this.doRpc<string>("rsaUnblind", 4, sig, bk, pk);
-  }
-
-  rsaVerify(hm: string, sig: string, pk: string): Promise<boolean> {
-    return this.doRpc<boolean>("rsaVerify", 4, hm, sig, pk);
-  }
-
-  isValidWireAccount(
-    versionCurrent: number,
-    paytoUri: string,
-    sig: string,
-    masterPub: string,
-  ): Promise<boolean> {
-    return this.doRpc<boolean>(
-      "isValidWireAccount",
-      4,
-      versionCurrent,
-      paytoUri,
-      sig,
-      masterPub,
-    );
-  }
-
-  isValidContractTermsSignature(
-    contractTermsHash: string,
-    sig: string,
-    merchantPub: string,
-  ): Promise<boolean> {
-    return this.doRpc<boolean>(
-      "isValidContractTermsSignature",
-      4,
-      contractTermsHash,
-      sig,
-      merchantPub,
-    );
-  }
-
-  createRecoupRequest(req: CreateRecoupReqRequest): Promise<RecoupRequest> {
-    return this.doRpc<RecoupRequest>("createRecoupRequest", 1, req);
-  }
-
-  createRecoupRefreshRequest(
-    req: CreateRecoupRefreshReqRequest,
-  ): Promise<RecoupRefreshRequest> {
-    return this.doRpc<RecoupRefreshRequest>(
-      "createRecoupRefreshRequest",
-      1,
-      req,
-    );
-  }
-
-  deriveRefreshSession(
-    req: DeriveRefreshSessionRequest,
-  ): Promise<DerivedRefreshSession> {
-    return this.doRpc<DerivedRefreshSession>("deriveRefreshSession", 4, req);
-  }
-
-  signCoinLink(
-    oldCoinPriv: string,
-    newDenomHash: string,
-    oldCoinPub: string,
-    transferPub: string,
-    coinEv: CoinEnvelope,
-  ): Promise<string> {
-    return this.doRpc<string>(
-      "signCoinLink",
-      4,
-      oldCoinPriv,
-      newDenomHash,
-      oldCoinPub,
-      transferPub,
-      coinEv,
-    );
-  }
-
-  benchmark(repetitions: number): Promise<BenchmarkResult> {
-    return this.doRpc<BenchmarkResult>("benchmark", 1, repetitions);
-  }
-
-  makeSyncSignature(req: MakeSyncSignatureRequest): Promise<string> {
-    return this.doRpc<string>("makeSyncSignature", 3, req);
   }
 }

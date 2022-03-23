@@ -29,7 +29,6 @@
  */
 import {
   AmountJson,
-  AmountString,
   CoinEnvelope,
   DenominationPubKey,
   ExchangeProtocolVersion,

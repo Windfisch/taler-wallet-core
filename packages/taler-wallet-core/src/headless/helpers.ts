@@ -25,7 +25,9 @@
 import type { IDBFactory } from "@gnu-taler/idb-bridge";
 // eslint-disable-next-line no-duplicate-imports
 import {
-  BridgeIDBFactory, MemoryBackend, shimIndexedDB
+  BridgeIDBFactory,
+  MemoryBackend,
+  shimIndexedDB,
 } from "@gnu-taler/idb-bridge";
 import { AccessStats } from "@gnu-taler/idb-bridge/src/MemoryBackend";
 import { Logger, WalletNotification } from "@gnu-taler/taler-util";

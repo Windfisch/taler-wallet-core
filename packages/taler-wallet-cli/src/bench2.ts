@@ -27,7 +27,7 @@ import {
 import {
   checkReserve,
   createFakebankReserve,
-  CryptoApi,
+  CryptoDispatcher,
   depositCoin,
   downloadExchangeInfo,
   findDenomOrThrow,
@@ -50,7 +50,8 @@ export async function runBench2(configJson: any): Promise<void> {
   // Validate the configuration file for this benchmark.
   const benchConf = codecForBench2Config().decode(configJson);
   const curr = benchConf.currency;
-  const cryptoApi = new CryptoApi(new SynchronousCryptoWorkerFactory());
+  const cryptoDisp = new CryptoDispatcher(new SynchronousCryptoWorkerFactory());
+  const cryptoApi = cryptoDisp.cryptoApi;
 
   const http = new NodeHttpLib();
   http.setThrottling(false);

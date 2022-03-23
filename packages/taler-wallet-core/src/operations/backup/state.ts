@@ -41,7 +41,7 @@ export async function provideBackupState(
   }
   // We need to generate the key outside of the transaction
   // due to how IndexedDB works.
-  const k = await ws.cryptoApi.createEddsaKeypair();
+  const k = await ws.cryptoApi.createEddsaKeypair({});
   const d = getRandomBytes(5);
   // FIXME: device ID should be configured when wallet is initialized
   // and be based on hostname

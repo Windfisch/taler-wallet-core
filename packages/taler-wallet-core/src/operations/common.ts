@@ -15,7 +15,7 @@
  */
 
 import { TalerErrorDetail, TalerErrorCode } from "@gnu-taler/taler-util";
-import { CryptoApiStoppedError } from "../crypto/workers/cryptoApi.js";
+import { CryptoApiStoppedError } from "../crypto/workers/cryptoDispatcher.js";
 import { TalerError, getErrorDetailFromException } from "../errors.js";
 
 /**

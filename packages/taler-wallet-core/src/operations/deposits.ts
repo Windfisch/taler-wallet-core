@@ -254,14 +254,14 @@ export async function trackDepositGroup(
       `deposits/${wireHash}/${depositGroup.merchantPub}/${depositGroup.contractTermsHash}/${dp.coin_pub}`,
       dp.exchange_url,
     );
-    const sig = await ws.cryptoApi.signTrackTransaction({
+    const sigResp = await ws.cryptoApi.signTrackTransaction({
       coinPub: dp.coin_pub,
       contractTermsHash: depositGroup.contractTermsHash,
       merchantPriv: depositGroup.merchantPriv,
       merchantPub: depositGroup.merchantPub,
       wireHash,
     });
-    url.searchParams.set("merchant_sig", sig);
+    url.searchParams.set("merchant_sig", sigResp.sig);
     const httpResp = await ws.http.get(url.href);
     const body = await httpResp.json();
     responses.push({
@@ -391,8 +391,8 @@ export async function createDepositGroup(
 
   const now = AbsoluteTime.now();
   const nowRounded = AbsoluteTime.toTimestamp(now);
-  const noncePair = await ws.cryptoApi.createEddsaKeypair();
-  const merchantPair = await ws.cryptoApi.createEddsaKeypair();
+  const noncePair = await ws.cryptoApi.createEddsaKeypair({});
+  const merchantPair = await ws.cryptoApi.createEddsaKeypair({});
   const wireSalt = encodeCrock(getRandomBytes(16));
   const wireHash = hashWire(req.depositPaytoUri, wireSalt);
   const contractTerms: ContractTerms = {
@@ -421,9 +421,9 @@ export async function createDepositGroup(
     refund_deadline: TalerProtocolTimestamp.zero(),
   };
 
-  const contractTermsHash = await ws.cryptoApi.hashString(
-    canonicalJson(contractTerms),
-  );
+  const { h: contractTermsHash } = await ws.cryptoApi.hashString({
+    str: canonicalJson(contractTerms),
+  });
 
   const contractData = extractContractData(
     contractTerms,

@@ -170,7 +170,7 @@ export async function createReserve(
   ws: InternalWalletState,
   req: CreateReserveRequest,
 ): Promise<CreateReserveResponse> {
-  const keypair = await ws.cryptoApi.createEddsaKeypair();
+  const keypair = await ws.cryptoApi.createEddsaKeypair({});
   const now = AbsoluteTime.toTimestamp(AbsoluteTime.now());
   const canonExchange = canonicalizeBaseUrl(req.exchange);
 

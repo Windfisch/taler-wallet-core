@@ -50,18 +50,21 @@ import {
   NodeHttpLib,
   getDefaultNodeWallet,
   NodeThreadCryptoWorkerFactory,
-  CryptoApi,
   walletCoreDebugFlags,
   WalletApiOperation,
   WalletCoreApiClient,
   Wallet,
   getErrorDetailFromException,
+  CryptoDispatcher,
+  SynchronousCryptoWorkerFactory,
+  nativeCrypto,
 } from "@gnu-taler/taler-wallet-core";
 import { lintExchangeDeployment } from "./lint.js";
 import { runBench1 } from "./bench1.js";
 import { runEnv1 } from "./env1.js";
 import { GlobalTestState, runTestWithState } from "./harness/harness.js";
 import { runBench2 } from "./bench2.js";
+import { TalerCryptoInterface, TalerCryptoInterfaceR } from "@gnu-taler/taler-wallet-core/src/crypto/cryptoImplementation";
 
 // This module also serves as the entry point for the crypto
 // thread worker, and thus must expose these two handlers.
@@ -1121,14 +1124,30 @@ testCli.subcommand("tvgcheck", "tvgcheck").action(async (args) => {
   console.log("check passed!");
 });
 
-testCli.subcommand("cryptoworker", "cryptoworker").action(async (args) => {
-  const workerFactory = new NodeThreadCryptoWorkerFactory();
-  const cryptoApi = new CryptoApi(workerFactory);
-  const input = "foo";
-  console.log(`testing crypto worker by hashing string '${input}'`);
-  const res = await cryptoApi.hashString(input);
-  console.log(res);
-});
+testCli
+  .subcommand("cryptoworker", "cryptoworker")
+  .maybeOption("impl", ["--impl"], clk.STRING)
+  .action(async (args) => {
+    let cryptoApi: TalerCryptoInterface;
+    if (!args.cryptoworker.impl || args.cryptoworker.impl === "node") {
+      const workerFactory = new NodeThreadCryptoWorkerFactory();
+      const cryptoDisp = new CryptoDispatcher(workerFactory);
+      cryptoApi = cryptoDisp.cryptoApi;
+    } else if (args.cryptoworker.impl === "sync") {
+      const workerFactory = new SynchronousCryptoWorkerFactory();
+      const cryptoDisp = new CryptoDispatcher(workerFactory);
+      cryptoApi = cryptoDisp.cryptoApi;
+    } else if (args.cryptoworker.impl === "none") {
+      cryptoApi = nativeCrypto;
+    } else {
+      throw Error("invalid impl");
+    }
+
+    const input = "foo";
+    console.log(`testing crypto worker by hashing string '${input}'`);
+    const res = await cryptoApi.hashString({ str: input });
+    console.log(res);
+  });
 
 export function main() {
   if (process.env["TALER_WALLET_DEBUG_DENOMSEL_ALLOW_LATE"]) {
