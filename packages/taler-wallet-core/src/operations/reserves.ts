@@ -38,7 +38,7 @@ import {
   AbsoluteTime,
   URL,
 } from "@gnu-taler/taler-util";
-import { InternalWalletState } from "../common.js";
+import { InternalWalletState } from "../internal-wallet-state.js";
 import {
   OperationStatus,
   ReserveBankInfo,
@@ -47,7 +47,7 @@ import {
   WalletStoresV1,
   WithdrawalGroupRecord,
 } from "../db.js";
-import { guardOperationException, TalerError } from "../errors.js";
+import { TalerError } from "../errors.js";
 import { assertUnreachable } from "../util/assertUnreachable.js";
 import {
   readSuccessResponseJsonOrErrorCode,
@@ -74,6 +74,7 @@ import {
   selectWithdrawalDenominations,
   updateWithdrawalDenoms,
 } from "./withdraw.js";
+import { guardOperationException } from "./common.js";
 
 const logger = new Logger("taler-wallet-core:reserves.ts");
 

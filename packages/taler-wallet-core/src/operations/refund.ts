@@ -59,9 +59,9 @@ import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { GetReadWriteAccess } from "../util/query.js";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
-import { guardOperationException } from "../errors.js";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
-import { InternalWalletState } from "../common.js";
+import { InternalWalletState } from "../internal-wallet-state.js";
+import { guardOperationException } from "./common.js";
 
 const logger = new Logger("refund.ts");
 

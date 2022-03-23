@@ -42,9 +42,8 @@ import {
   TrackDepositGroupResponse,
   URL,
 } from "@gnu-taler/taler-util";
-import { InternalWalletState } from "../common.js";
+import { InternalWalletState } from "../internal-wallet-state.js";
 import { DepositGroupRecord, OperationStatus } from "../db.js";
-import { guardOperationException } from "../errors.js";
 import { PayCoinSelection, selectPayCoins } from "../util/coinSelection.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
@@ -57,6 +56,7 @@ import {
   getTotalPaymentCost,
 } from "./pay.js";
 import { getTotalRefreshCost } from "./refresh.js";
+import { guardOperationException } from "./common.js";
 
 /**
  * Logger.

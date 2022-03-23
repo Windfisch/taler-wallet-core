@@ -61,13 +61,12 @@ import {
   AbsoluteTime,
   URL,
 } from "@gnu-taler/taler-util";
-import { guardOperationException } from "../errors.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
 import {
   DenomInfo,
   EXCHANGE_COINS_LOCK,
   InternalWalletState,
-} from "../common.js";
+} from "../internal-wallet-state.js";
 import {
   isWithdrawableDenom,
   selectWithdrawalDenominations,
@@ -78,6 +77,8 @@ import {
 } from "../crypto/cryptoTypes.js";
 import { GetReadWriteAccess } from "../util/query.js";
 import { CryptoApi } from "../index.browser.js";
+import { guardOperationException } from "./common.js";
+import { CryptoApiStoppedError } from "../crypto/workers/cryptoApi.js";
 
 const logger = new Logger("refresh.ts");
 
@@ -944,6 +945,9 @@ export async function createRefreshGroup(
   logger.info(`created refresh group ${refreshGroupId}`);
 
   processRefreshGroup(ws, refreshGroupId).catch((e) => {
+    if (e instanceof CryptoApiStoppedError) {
+      return;
+    }
     logger.warn(`processing refresh group ${refreshGroupId} failed: ${e}`);
   });
 

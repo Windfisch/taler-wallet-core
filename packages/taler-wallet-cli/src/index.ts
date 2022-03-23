@@ -1124,7 +1124,9 @@ testCli.subcommand("tvgcheck", "tvgcheck").action(async (args) => {
 testCli.subcommand("cryptoworker", "cryptoworker").action(async (args) => {
   const workerFactory = new NodeThreadCryptoWorkerFactory();
   const cryptoApi = new CryptoApi(workerFactory);
-  const res = await cryptoApi.hashString("foo");
+  const input = "foo";
+  console.log(`testing crypto worker by hashing string '${input}'`);
+  const res = await cryptoApi.hashString(input);
   console.log(res);
 });
 

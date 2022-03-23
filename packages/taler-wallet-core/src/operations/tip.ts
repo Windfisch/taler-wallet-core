@@ -44,9 +44,9 @@ import {
 import { j2s } from "@gnu-taler/taler-util";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
-import { guardOperationException, makeErrorDetail } from "../errors.js";
+import { makeErrorDetail } from "../errors.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
-import { InternalWalletState } from "../common.js";
+import { InternalWalletState } from "../internal-wallet-state.js";
 import {
   getExchangeWithdrawalInfo,
   updateWithdrawalDenoms,
@@ -59,6 +59,7 @@ import {
   readSuccessResponseJsonOrThrow,
 } from "../util/http.js";
 import { encodeCrock, getRandomBytes } from "@gnu-taler/taler-util";
+import { guardOperationException } from "./common.js";
 
 const logger = new Logger("operations/tip.ts");
 

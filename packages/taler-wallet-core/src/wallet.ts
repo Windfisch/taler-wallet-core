@@ -89,7 +89,7 @@ import {
   NotificationListener,
   RecoupOperations,
   ReserveOperations,
-} from "./common.js";
+} from "./internal-wallet-state.js";
 import { CryptoApi, CryptoWorkerFactory } from "./crypto/workers/cryptoApi.js";
 import {
   AuditorTrustRecord,

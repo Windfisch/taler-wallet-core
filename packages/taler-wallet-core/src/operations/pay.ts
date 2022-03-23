@@ -55,7 +55,7 @@ import {
   TransactionType,
   URL,
 } from "@gnu-taler/taler-util";
-import { EXCHANGE_COINS_LOCK, InternalWalletState } from "../common.js";
+import { EXCHANGE_COINS_LOCK, InternalWalletState } from "../internal-wallet-state.js";
 import {
   AbortStatus,
   AllowedAuditorInfo,
@@ -71,7 +71,6 @@ import {
   WalletStoresV1,
 } from "../db.js";
 import {
-  guardOperationException,
   makeErrorDetail,
   makePendingOperationFailedError,
   TalerError,
@@ -100,6 +99,7 @@ import {
 } from "../util/retries.js";
 import { getExchangeDetails } from "./exchanges.js";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
+import { guardOperationException } from "./common.js";
 
 /**
  * Logger.

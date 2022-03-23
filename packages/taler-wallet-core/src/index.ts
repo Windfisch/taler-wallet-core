@@ -41,7 +41,7 @@ export { SynchronousCryptoWorker } from "./crypto/workers/synchronousWorker.js";
 export * from "./pending-types.js";
 
 export * from "./util/debugFlags.js";
-export { InternalWalletState } from "./common.js";
+export { InternalWalletState } from "./internal-wallet-state.js";
 export * from "./wallet-api-types.js";
 export * from "./wallet.js";
 

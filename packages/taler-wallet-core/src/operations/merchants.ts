@@ -24,7 +24,7 @@ import {
   codecForMerchantConfigResponse,
   LibtoolVersion,
 } from "@gnu-taler/taler-util";
-import { InternalWalletState, MerchantInfo } from "../common.js";
+import { InternalWalletState, MerchantInfo } from "../internal-wallet-state.js";
 import { readSuccessResponseJsonOrThrow } from "../index.js";
 
 const logger = new Logger("taler-wallet-core:merchants.ts");

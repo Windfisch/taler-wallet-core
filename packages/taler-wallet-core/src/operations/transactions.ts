@@ -31,7 +31,7 @@ import {
   WithdrawalDetails,
   WithdrawalType,
 } from "@gnu-taler/taler-util";
-import { InternalWalletState } from "../common.js";
+import { InternalWalletState } from "../internal-wallet-state.js";
 import {
   AbortStatus,
   RefundState,

@@ -49,11 +49,11 @@ import {
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { Logger, URL } from "@gnu-taler/taler-util";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
-import { guardOperationException } from "../errors.js";
 import { createRefreshGroup, processRefreshGroup } from "./refresh.js";
 import { getReserveRequestTimeout, processReserve } from "./reserves.js";
-import { InternalWalletState } from "../common.js";
+import { InternalWalletState } from "../internal-wallet-state.js";
 import { GetReadWriteAccess } from "../util/query.js";
+import { guardOperationException } from "./common.js";
 
 const logger = new Logger("operations/recoup.ts");
 

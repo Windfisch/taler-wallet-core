@@ -65,16 +65,15 @@ import {
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
 import {
   getErrorDetailFromException,
-  guardOperationException,
   makeErrorDetail,
-  makePendingOperationFailedError,
   TalerError,
 } from "../errors.js";
-import { InternalWalletState } from "../common.js";
+import { InternalWalletState } from "../internal-wallet-state.js";
 import {
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
 } from "../versions.js";
+import { guardOperationException } from "./common.js";
 
 /**
  * Logger for this file.

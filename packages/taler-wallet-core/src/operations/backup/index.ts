@@ -55,7 +55,7 @@ import {
   TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
 import { gunzipSync, gzipSync } from "fflate";
-import { InternalWalletState } from "../../common.js";
+import { InternalWalletState } from "../../internal-wallet-state.js";
 import { kdf } from "@gnu-taler/taler-util";
 import { secretbox, secretbox_open } from "@gnu-taler/taler-util";
 import {
@@ -80,7 +80,6 @@ import {
   WalletStoresV1,
   WALLET_BACKUP_STATE_KEY,
 } from "../../db.js";
-import { guardOperationException } from "../../errors.js";
 import {
   readSuccessResponseJsonOrThrow,
   readTalerErrorResponse,
@@ -99,6 +98,7 @@ import {
 import { exportBackup } from "./export.js";
 import { BackupCryptoPrecomputedData, importBackup } from "./import.js";
 import { getWalletBackupState, provideBackupState } from "./state.js";
+import { guardOperationException } from "../common.js";
 
 const logger = new Logger("operations/backup.ts");
 

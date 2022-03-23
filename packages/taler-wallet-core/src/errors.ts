@@ -161,32 +161,3 @@ export function getErrorDetailFromException(e: any): TalerErrorDetail {
   );
   return err;
 }
-
-/**
- * Run an operation and call the onOpError callback
- * when there was an exception or operation error that must be reported.
- * The cause will be re-thrown to the caller.
- */
-export async function guardOperationException<T>(
-  op: () => Promise<T>,
-  onOpError: (e: TalerErrorDetail) => Promise<void>,
-): Promise<T> {
-  try {
-    return await op();
-  } catch (e: any) {
-    if (
-      e instanceof TalerError &&
-      e.hasErrorCode(TalerErrorCode.WALLET_PENDING_OPERATION_FAILED)
-    ) {
-      throw e;
-    }
-    const opErr = getErrorDetailFromException(e);
-    await onOpError(opErr);
-    throw TalerError.fromDetail(
-      TalerErrorCode.WALLET_PENDING_OPERATION_FAILED,
-      {
-        innerError: e.errorDetail,
-      },
-    );
-  }
-}

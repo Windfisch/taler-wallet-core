@@ -25,7 +25,7 @@ import {
 } from "@gnu-taler/taler-util";
 import { CoinStatus, WalletStoresV1 } from "../db.js";
 import { GetReadOnlyAccess } from "../util/query.js";
-import { InternalWalletState } from "../common.js";
+import { InternalWalletState } from "../internal-wallet-state.js";
 
 const logger = new Logger("operations/balance.ts");
 

@@ -64,12 +64,13 @@ import {
 } from "../util/http.js";
 import { DbAccess, GetReadOnlyAccess } from "../util/query.js";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
-import { guardOperationException, TalerError } from "../errors.js";
-import { InternalWalletState, TrustInfo } from "../common.js";
+import { TalerError } from "../errors.js";
+import { InternalWalletState, TrustInfo } from "../internal-wallet-state.js";
 import {
   WALLET_CACHE_BREAKER_CLIENT_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
 } from "../versions.js";
+import { guardOperationException } from "./common.js";
 
 const logger = new Logger("exchanges.ts");
 
