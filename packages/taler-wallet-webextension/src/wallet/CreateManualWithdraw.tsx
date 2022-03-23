@@ -55,10 +55,12 @@ export interface State {
 export interface TextFieldHandler {
   onInput: (value: string) => void;
   value: string;
+  error?: string;
 }
 
 export interface SelectFieldHandler {
   onChange: (value: string) => void;
+  error?: string;
   value: string;
   list: Record<string, string>;
 }

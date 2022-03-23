@@ -25,7 +25,7 @@ function fromDir(startPath, regex) {
 }
 
 const tests = fromDir('./src', /.test.ts$/)
-  .filter(t => t === 'src/wallet/CreateManualWithdraw.test.ts')
+  // .filter(t => t === 'src/wallet/DepositPage.test.ts')
   .map(test => ({
     input: test,
     output: {

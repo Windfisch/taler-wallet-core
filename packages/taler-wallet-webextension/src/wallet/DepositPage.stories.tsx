@@ -19,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { Amounts, parsePaytoUri } from "@gnu-taler/taler-util";
+import { Amounts, Balance, parsePaytoUri } from "@gnu-taler/taler-util";
 import { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import { createExample } from "../test-utils";
 import { View as TestedComponent } from "./DepositPage";
@@ -40,13 +40,21 @@ async function alwaysReturnFeeToOne(): Promise<DepositFee> {
 }
 
 export const WithEmptyAccountList = createExample(TestedComponent, {
-  knownBankAccounts: [],
-  balance: Amounts.parseOrThrow("USD:10"),
+  accounts: [],
+  balances: [
+    {
+      available: "USD:10",
+    } as Balance,
+  ],
   onCalculateFee: alwaysReturnFeeToOne,
 });
 
 export const WithSomeBankAccounts = createExample(TestedComponent, {
-  knownBankAccounts: [parsePaytoUri("payto://iban/ES8877998399652238")!],
-  balance: Amounts.parseOrThrow("EUR:10"),
+  accounts: [parsePaytoUri("payto://iban/ES8877998399652238")!],
+  balances: [
+    {
+      available: "USD:10",
+    } as Balance,
+  ],
   onCalculateFee: alwaysReturnFeeToOne,
 });

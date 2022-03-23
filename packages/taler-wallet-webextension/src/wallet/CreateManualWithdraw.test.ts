@@ -40,8 +40,7 @@ describe("CreateManualWithdraw states", () => {
     );
 
     if (!result.current) {
-      expect(result.current).not.to.be.undefined;
-      return;
+      expect.fail("hook didn't render");
     }
 
     expect(result.current.noExchangeFound).equal(true)
@@ -53,8 +52,7 @@ describe("CreateManualWithdraw states", () => {
     );
 
     if (!result.current) {
-      expect(result.current).not.to.be.undefined;
-      return;
+      expect.fail("hook didn't render");
     }
 
     expect(result.current.noExchangeFound).equal(true)
@@ -67,8 +65,7 @@ describe("CreateManualWithdraw states", () => {
     );
 
     if (!result.current) {
-      expect(result.current).not.to.be.undefined;
-      return;
+      expect.fail("hook didn't render");
     }
 
     expect(result.current.exchange.value).equal("url1")
@@ -80,8 +77,7 @@ describe("CreateManualWithdraw states", () => {
     );
 
     if (!result.current) {
-      expect(result.current).not.to.be.undefined;
-      return;
+      expect.fail("hook didn't render");
     }
 
     expect(result.current.exchange.value).equal("url2")
