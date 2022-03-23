@@ -17,15 +17,19 @@
 /**
  * Page shown to the user to accept or ignore a tip from a merchant.
  *
- * @author sebasjm <dold@taler.net>
+ * @author sebasjm
  */
 
-import { PrepareTipResult } from "@gnu-taler/taler-util";
+import {
+  amountFractionalBase,
+  AmountJson,
+  Amounts,
+  PrepareTipResult,
+} from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { Loading } from "../components/Loading";
 import { useTranslationContext } from "../context/translation";
-import { AmountView } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
 interface Props {
@@ -136,3 +140,24 @@ export function TipPage({ talerTipUri }: Props): VNode {
     />
   );
 }
+
+function renderAmount(amount: AmountJson | string): VNode {
+  let a;
+  if (typeof amount === "string") {
+    a = Amounts.parse(amount);
+  } else {
+    a = amount;
+  }
+  if (!a) {
+    return <span>(invalid amount)</span>;
+  }
+  const x = a.value + a.fraction / amountFractionalBase;
+  return (
+    <span>
+      {x}&nbsp;{a.currency}
+    </span>
+  );
+}
+
+const AmountView = ({ amount }: { amount: AmountJson | string }): VNode =>
+  renderAmount(amount);

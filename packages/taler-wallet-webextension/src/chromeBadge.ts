@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { isFirefox } from "./compat";
+import { platform } from "./platform/api";
 
 /**
  * Polyfill for requestAnimationFrame, which
@@ -210,7 +210,7 @@ export class ChromeBadge {
     if (this.animationRunning) {
       return;
     }
-    if (isFirefox()) {
+    if (platform.isFirefox()) {
       // Firefox does not support badge animations properly
       return;
     }

@@ -17,7 +17,6 @@
 import { WalletDiagnostics } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useTranslationContext } from "../context/translation";
-import { PageLink } from "../renderHtml";
 
 interface Props {
   timedOut: boolean;
@@ -70,10 +69,7 @@ export function Diagnostics({ timedOut, diagnostics }: Props): VNode {
           <p>
             <i18n.Translate>
               Your wallet database is outdated. Currently automatic migration is
-              not supported. Please go{" "}
-              <PageLink pageName="/reset-required">
-                <i18n.Translate>here</i18n.Translate>
-              </PageLink>{" "}
+              not supported. Please go <i18n.Translate>here</i18n.Translate>
               to reset the wallet database.
             </i18n.Translate>
           </p>

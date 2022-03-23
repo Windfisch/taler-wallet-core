@@ -17,7 +17,7 @@
 /**
  * Main entry point for extension pages.
  *
- * @author sebasjm <dold@taler.net>
+ * @author sebasjm
  */
 
 import { setupI18n } from "@gnu-taler/taler-util";
@@ -28,12 +28,7 @@ import Match from "preact-router/match";
 import { useEffect, useState } from "preact/hooks";
 import { LogoHeader } from "./components/LogoHeader";
 import PendingTransactions from "./components/PendingTransactions";
-import {
-  NavigationHeader,
-  NavigationHeaderHolder,
-  SuccessBox,
-  WalletBox,
-} from "./components/styled";
+import { SuccessBox, WalletBox } from "./components/styled";
 import { DevContextProvider } from "./context/devContext";
 import { IoCProviderForRuntime } from "./context/iocContext";
 import {
@@ -46,6 +41,9 @@ import { TipPage } from "./cta/Tip";
 import { WithdrawPage } from "./cta/Withdraw";
 import { strings } from "./i18n/strings";
 import { Pages, WalletNavBar } from "./NavigationBar";
+import { setupPlatform } from "./platform/api";
+import chromeAPI from "./platform/chrome";
+import firefoxAPI from "./platform/firefox";
 import { DeveloperPage } from "./popup/DeveloperPage";
 import { BackupPage } from "./wallet/BackupPage";
 import { DepositPage } from "./wallet/DepositPage";
@@ -74,6 +72,17 @@ function main(): void {
 }
 
 setupI18n("en", strings);
+
+const isFirefox = typeof (window as any)["InstallTrigger"] !== "undefined";
+//FIXME: create different entry point for any platform instead of
+//switching in runtime
+if (isFirefox) {
+  console.log("Wallet setup for Firefox API");
+  setupPlatform(firefoxAPI);
+} else {
+  console.log("Wallet setup for Chrome API");
+  setupPlatform(chromeAPI);
+}
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", main);

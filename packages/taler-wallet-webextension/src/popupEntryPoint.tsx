@@ -17,7 +17,7 @@
 /**
  * Main entry point for extension pages.
  *
- * @author sebasjm <dold@taler.net>
+ * @author sebasjm
  */
 
 import { setupI18n } from "@gnu-taler/taler-util";
@@ -37,6 +37,9 @@ import {
 import { useTalerActionURL } from "./hooks/useTalerActionURL";
 import { strings } from "./i18n/strings";
 import { Pages, PopupNavBar } from "./NavigationBar";
+import { platform, setupPlatform } from "./platform/api";
+import chromeAPI from "./platform/chrome";
+import firefoxAPI from "./platform/firefox";
 import { BalancePage } from "./popup/BalancePage";
 import { TalerActionFound } from "./popup/TalerActionFound";
 import { BackupPage } from "./wallet/BackupPage";
@@ -58,6 +61,17 @@ function main(): void {
 }
 
 setupI18n("en", strings);
+
+//FIXME: create different entry point for any platform instead of
+//switching in runtime
+const isFirefox = typeof (window as any)["InstallTrigger"] !== "undefined";
+if (isFirefox) {
+  console.log("Wallet setup for Firefox API");
+  setupPlatform(firefoxAPI);
+} else {
+  console.log("Wallet setup for Chrome API");
+  setupPlatform(chromeAPI);
+}
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", main);
@@ -106,7 +120,7 @@ function Application(): VNode {
                     route(Pages.balance_deposit.replace(":currency", currency))
                   }
                   goToWalletHistory={(currency: string) =>
-                    route(Pages.balance_history.replace(":currency", currency))
+                    route(Pages.balance_history.replace(":currency?", currency))
                   }
                 />
 
@@ -180,19 +194,10 @@ function Application(): VNode {
 }
 
 function RedirectToWalletPage(): VNode {
-  const page = document.location.hash || "#/";
+  const page = (document.location.hash || "#/").replace("#", "");
   const [showText, setShowText] = useState(false);
   useEffect(() => {
-    chrome.tabs.create(
-      {
-        active: true,
-        // eslint-disable-next-line no-undef
-        url: chrome.runtime.getURL(`/static/wallet.html${page}`),
-      },
-      () => {
-        window.close();
-      },
-    );
+    platform.openWalletPageFromPopup(page);
     setTimeout(() => {
       setShowText(true);
     }, 250);

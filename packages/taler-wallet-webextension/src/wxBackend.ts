@@ -26,11 +26,9 @@
 import {
   classifyTalerUri,
   CoreApiResponse,
-  CoreApiResponseSuccess,
-  NotificationType,
-  TalerErrorCode,
+  CoreApiResponseSuccess, TalerErrorCode,
   TalerUriType,
-  WalletDiagnostics,
+  WalletDiagnostics
 } from "@gnu-taler/taler-util";
 import {
   DbAccess,
@@ -40,13 +38,13 @@ import {
   openPromise,
   openTalerDatabase,
   Wallet,
-  WalletStoresV1,
+  WalletStoresV1
 } from "@gnu-taler/taler-wallet-core";
 import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory";
 import { BrowserHttpLib } from "./browserHttpLib";
-import { getPermissionsApi, isFirefox } from "./compat";
 import { getReadRequestPermissions } from "./permissions";
-import { SynchronousCryptoWorkerFactory } from "./serviceWorkerCryptoWorkerFactory.js";
+import { MessageFromBackend, platform } from "./platform/api";
+import { SynchronousCryptoWorkerFactory } from "./serviceWorkerCryptoWorkerFactory";
 import { ServiceWorkerHttpLib } from "./serviceWorkerHttpLib";
 
 /**
@@ -66,10 +64,8 @@ let outdatedDbVersion: number | undefined;
 
 const walletInit: OpenedPromise<void> = openPromise<void>();
 
-const notificationPorts: chrome.runtime.Port[] = [];
-
 async function getDiagnostics(): Promise<WalletDiagnostics> {
-  const manifestData = chrome.runtime.getManifest();
+  const manifestData = platform.getWalletVersion();
   const errors: string[] = [];
   let firefoxIdbProblem = false;
   let dbOutdated = false;
@@ -80,7 +76,7 @@ async function getDiagnostics(): Promise<WalletDiagnostics> {
     if (
       currentDatabase === undefined &&
       outdatedDbVersion === undefined &&
-      isFirefox()
+      platform.isFirefox()
     ) {
       firefoxIdbProblem = true;
     }
@@ -132,14 +128,7 @@ async function dispatch(
       break;
     }
     case "wxGetExtendedPermissions": {
-      const res = await new Promise((resolve, reject) => {
-        getPermissionsApi().contains(
-          getReadRequestPermissions(),
-          (result: boolean) => {
-            resolve(result);
-          },
-        );
-      });
+      const res = await platform.getPermissionsApi().contains(getReadRequestPermissions());
       r = wrapResponse({ newValue: res });
       break;
     }
@@ -147,15 +136,11 @@ async function dispatch(
       const newVal = req.payload.value;
       console.log("new extended permissions value", newVal);
       if (newVal) {
-        setupHeaderListener();
+        platform.registerTalerHeaderListener(parseTalerUriAndRedirect);
         r = wrapResponse({ newValue: true });
       } else {
-        await new Promise<void>((resolve, reject) => {
-          getPermissionsApi().remove(getReadRequestPermissions(), (rem) => {
-            console.log("permissions removed:", rem);
-            resolve();
-          });
-        });
+        const rem = await platform.getPermissionsApi().remove(getReadRequestPermissions());
+        console.log("permissions removed:", rem);
         r = wrapResponse({ newVal: false });
       }
       break;
@@ -187,74 +172,13 @@ async function dispatch(
   }
 }
 
-function getTab(tabId: number): Promise<chrome.tabs.Tab> {
-  return new Promise((resolve, reject) => {
-    chrome.tabs.get(tabId, (tab: chrome.tabs.Tab) => resolve(tab));
-  });
-}
-
-function setBadgeText(options: chrome.action.BadgeTextDetails): void {
-  // not supported by all browsers ...
-  if (chrome && chrome.action && chrome.action.setBadgeText) {
-    chrome.action.setBadgeText(options);
-  } else {
-    console.warn("can't set badge text, not supported", options);
-  }
-}
-
-function waitMs(timeoutMs: number): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const bgPage = chrome.extension.getBackgroundPage();
-    if (!bgPage) {
-      reject("fatal: no background page");
-      return;
-    }
-    bgPage.setTimeout(() => resolve(), timeoutMs);
-  });
-}
-
-function makeSyncWalletRedirect(
-  url: string,
-  tabId: number,
-  oldUrl: string,
-  params?: { [name: string]: string | undefined },
-): Record<string, unknown> {
-  const innerUrl = new URL(chrome.runtime.getURL(url));
-  if (params) {
-    const hParams = Object.keys(params)
-      .map((k) => `${k}=${params[k]}`)
-      .join("&");
-    innerUrl.hash = innerUrl.hash + "?" + hParams;
-  }
-  // Some platforms don't support the sync redirect (yet), so fall back to
-  // async redirect after a timeout.
-  const doit = async (): Promise<void> => {
-    await waitMs(150);
-    const tab = await getTab(tabId);
-    if (tab.url === oldUrl) {
-      console.log("redirecting to", innerUrl.href);
-      chrome.tabs.update(tabId, {
-        url: innerUrl.href,
-        loadReplace: true,
-      } as any);
-    }
-  };
-  doit();
-
-  return { redirectUrl: innerUrl.href };
-}
-
-export type MessageFromBackend = {
-  type: NotificationType;
-};
-
 async function reinitWallet(): Promise<void> {
   if (currentWallet) {
     currentWallet.stop();
     currentWallet = undefined;
   }
   currentDatabase = undefined;
-  setBadgeText({ text: "" });
+  // setBadgeText({ text: "" });
   try {
     currentDatabase = await openTalerDatabase(indexedDB as any, reinitWallet);
   } catch (e) {
@@ -265,7 +189,7 @@ async function reinitWallet(): Promise<void> {
   let httpLib;
   let cryptoWorker;
 
-  if (chrome.runtime.getManifest().manifest_version === 3) {
+  if (platform.useServiceWorkerAsBackgroundProcess()) {
     httpLib = new ServiceWorkerHttpLib();
     cryptoWorker = new SynchronousCryptoWorkerFactory();
   } else {
@@ -283,14 +207,8 @@ async function reinitWallet(): Promise<void> {
     return;
   }
   wallet.addNotificationListener((x) => {
-    for (const notif of notificationPorts) {
-      const message: MessageFromBackend = { type: x.type };
-      try {
-        notif.postMessage(message);
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    const message: MessageFromBackend = { type: x.type };
+    platform.sendMessageToAllChannels(message)
   });
   wallet.runTaskLoop().catch((e) => {
     console.log("error during wallet task loop", e);
@@ -303,135 +221,41 @@ async function reinitWallet(): Promise<void> {
   walletInit.resolve();
 }
 
-try {
-  // This needs to be outside of main, as Firefox won't fire the event if
-  // the listener isn't created synchronously on loading the backend.
-  chrome.runtime.onInstalled.addListener((details) => {
-    console.log("onInstalled with reason", details.reason);
-    if (details.reason === "install") {
-      const url = chrome.runtime.getURL("/static/wallet.html#/welcome");
-      chrome.tabs.create({ active: true, url });
-    }
-  });
-} catch (e) {
-  console.error(e);
+function parseTalerUriAndRedirect(tabId: number, talerUri: string) {
+  const uriType = classifyTalerUri(talerUri);
+  switch (uriType) {
+    case TalerUriType.TalerWithdraw:
+      return platform.redirectTabToWalletPage(
+        tabId,
+        `/cta/withdraw?talerWithdrawUri=${talerUri}`,
+      );
+    case TalerUriType.TalerPay:
+      return platform.redirectTabToWalletPage(
+        tabId,
+        `/cta/pay?talerPayUri=${talerUri}`,
+      );
+    case TalerUriType.TalerTip:
+      return platform.redirectTabToWalletPage(
+        tabId,
+        `/cta/tip?talerTipUri=${talerUri}`,
+      );
+    case TalerUriType.TalerRefund:
+      return platform.redirectTabToWalletPage(
+        tabId,
+        `/cta/refund?talerRefundUri=${talerUri}`,
+      );
+    case TalerUriType.TalerNotifyReserve:
+      // FIXME:  Is this still useful?
+      // handleNotifyReserve(w);
+      break;
+    default:
+      console.warn(
+        "Response with HTTP 402 has Taler header, but header value is not a taler:// URI.",
+      );
+      break;
+  }
 }
 
-function headerListener(
-  details: chrome.webRequest.WebResponseHeadersDetails,
-): chrome.webRequest.BlockingResponse | undefined {
-  if (chrome.runtime.lastError) {
-    console.error(chrome.runtime.lastError);
-    return;
-  }
-  const wallet = currentWallet;
-  if (!wallet) {
-    console.warn("wallet not available while handling header");
-    return;
-  }
-  if (
-    details.statusCode === 402 ||
-    details.statusCode === 202 ||
-    details.statusCode === 200
-  ) {
-    for (const header of details.responseHeaders || []) {
-      if (header.name.toLowerCase() === "taler") {
-        const talerUri = header.value || "";
-        const uriType = classifyTalerUri(talerUri);
-        switch (uriType) {
-          case TalerUriType.TalerWithdraw:
-            return makeSyncWalletRedirect(
-              "/static/wallet.html#/cta/withdraw",
-              details.tabId,
-              details.url,
-              {
-                talerWithdrawUri: talerUri,
-              },
-            );
-          case TalerUriType.TalerPay:
-            return makeSyncWalletRedirect(
-              "/static/wallet.html#/cta/pay",
-              details.tabId,
-              details.url,
-              {
-                talerPayUri: talerUri,
-              },
-            );
-          case TalerUriType.TalerTip:
-            return makeSyncWalletRedirect(
-              "/static/wallet.html#/cta/tip",
-              details.tabId,
-              details.url,
-              {
-                talerTipUri: talerUri,
-              },
-            );
-          case TalerUriType.TalerRefund:
-            return makeSyncWalletRedirect(
-              "/static/wallet.html#/cta/refund",
-              details.tabId,
-              details.url,
-              {
-                talerRefundUri: talerUri,
-              },
-            );
-          case TalerUriType.TalerNotifyReserve:
-            Promise.resolve().then(() => {
-              const w = currentWallet;
-              if (!w) {
-                return;
-              }
-              // FIXME:  Is this still useful?
-              // handleNotifyReserve(w);
-            });
-            break;
-          default:
-            console.warn(
-              "Response with HTTP 402 has Taler header, but header value is not a taler:// URI.",
-            );
-            break;
-        }
-      }
-    }
-  }
-  return;
-}
-
-function setupHeaderListener(): void {
-  // if (chrome.runtime.getManifest().manifest_version === 3) {
-  //   console.error("cannot block request on manfest v3")
-  //   return
-  // }
-  console.log("setting up header listener");
-  // Handlers for catching HTTP requests
-  getPermissionsApi().contains(
-    getReadRequestPermissions(),
-    (result: boolean) => {
-      if (
-        "webRequest" in chrome &&
-        "onHeadersReceived" in chrome.webRequest &&
-        chrome.webRequest.onHeadersReceived.hasListener(headerListener)
-      ) {
-        chrome.webRequest.onHeadersReceived.removeListener(headerListener);
-      }
-      if (result) {
-        console.log("actually adding listener");
-        chrome.webRequest.onHeadersReceived.addListener(
-          headerListener,
-          { urls: ["<all_urls>"] },
-          ["responseHeaders"],
-        );
-      }
-      if ("webRequest" in chrome) {
-        chrome.webRequest.handlerBehaviorChanged(() => {
-          if (chrome.runtime.lastError) {
-            console.error(chrome.runtime.lastError);
-          }
-        });
-      }
-    },
-  );
-}
 
 /**
  * Main function to run for the WebExtension backend.
@@ -439,48 +263,34 @@ function setupHeaderListener(): void {
  * Sets up all event handlers and other machinery.
  */
 export async function wxMain(): Promise<void> {
-  // Explicitly unload the extension page as soon as an update is available,
-  // so the update gets installed as soon as possible.
-  chrome.runtime.onUpdateAvailable.addListener((details) => {
-    console.log("update available:", details);
-    chrome.runtime.reload();
-  });
   const afterWalletIsInitialized = reinitWallet();
+
+  platform.registerReloadOnNewVersion();
 
   // Handlers for messages coming directly from the content
   // script on the page
-  chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
+  platform.registerOnNewMessage((message, sender, callback) => {
     afterWalletIsInitialized.then(() => {
-      dispatch(req, sender, sendResponse);
+      dispatch(message, sender, callback);
     });
-    return true;
-  });
+  })
 
-  chrome.runtime.onConnect.addListener((port) => {
-    notificationPorts.push(port);
-    port.onDisconnect.addListener((discoPort) => {
-      const idx = notificationPorts.indexOf(discoPort);
-      if (idx >= 0) {
-        notificationPorts.splice(idx, 1);
-      }
-    });
-  });
+  platform.registerAllIncomingConnections()
 
   try {
-    if (chrome.runtime.getManifest().manifest_version === 2) {
-      setupHeaderListener();
-    }
+    platform.registerTalerHeaderListener(parseTalerUriAndRedirect);
   } catch (e) {
     console.log(e);
   }
 
   // On platforms that support it, also listen to external
   // modification of permissions.
-  getPermissionsApi().addPermissionsListener((perm) => {
-    if (chrome.runtime.lastError) {
-      console.error(chrome.runtime.lastError);
+  platform.getPermissionsApi().addPermissionsListener((perm) => {
+    const lastError = platform.getLastError()
+    if (lastError) {
+      console.error(lastError);
       return;
     }
-    setupHeaderListener();
+    platform.registerTalerHeaderListener(parseTalerUriAndRedirect);
   });
 }

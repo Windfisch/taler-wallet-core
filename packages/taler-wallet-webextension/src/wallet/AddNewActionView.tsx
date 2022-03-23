@@ -1,9 +1,9 @@
 import { classifyTalerUri, TalerUriType } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
+import { platform } from "../platform/api";
 import { Button, ButtonSuccess, InputWithLabel } from "../components/styled";
 import { useTranslationContext } from "../context/translation";
-import { actionForTalerUri } from "../utils/index";
 
 export interface Props {
   onCancel: () => void;
@@ -13,6 +13,10 @@ export function AddNewActionView({ onCancel }: Props): VNode {
   const [url, setUrl] = useState("");
   const uriType = classifyTalerUri(url);
   const { i18n } = useTranslationContext();
+
+  function redirectToWallet() {
+    platform.openWalletURIFromPopup(uriType, url);
+  }
 
   return (
     <Fragment>
@@ -37,12 +41,7 @@ export function AddNewActionView({ onCancel }: Props): VNode {
           <i18n.Translate>Cancel</i18n.Translate>
         </Button>
         {uriType !== TalerUriType.Unknown && (
-          <ButtonSuccess
-            onClick={() => {
-              // eslint-disable-next-line no-undef
-              chrome.tabs.create({ url: actionForTalerUri(uriType, url) });
-            }}
-          >
+          <ButtonSuccess onClick={redirectToWallet}>
             {(() => {
               switch (uriType) {
                 case TalerUriType.TalerNotifyReserve:

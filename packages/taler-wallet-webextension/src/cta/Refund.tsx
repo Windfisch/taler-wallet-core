@@ -20,11 +20,15 @@
  * @author sebasjm
  */
 
-import { Amounts, ApplyRefundResponse } from "@gnu-taler/taler-util";
+import {
+  amountFractionalBase,
+  AmountJson,
+  Amounts,
+  ApplyRefundResponse,
+} from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { useTranslationContext } from "../context/translation";
-import { AmountView } from "../renderHtml";
 import * as wxApi from "../wxApi";
 
 interface Props {
@@ -120,3 +124,27 @@ export function RefundPage({ talerRefundUri }: Props): VNode {
 
   return <View applyResult={applyResult} />;
 }
+
+export function renderAmount(amount: AmountJson | string): VNode {
+  let a;
+  if (typeof amount === "string") {
+    a = Amounts.parse(amount);
+  } else {
+    a = amount;
+  }
+  if (!a) {
+    return <span>(invalid amount)</span>;
+  }
+  const x = a.value + a.fraction / amountFractionalBase;
+  return (
+    <span>
+      {x}&nbsp;{a.currency}
+    </span>
+  );
+}
+
+export const AmountView = ({
+  amount,
+}: {
+  amount: AmountJson | string;
+}): VNode => renderAmount(amount);

@@ -375,16 +375,6 @@ function toBase64(str: string): string {
   );
 }
 
-export function reload(): void {
-  try {
-    // eslint-disable-next-line no-undef
-    chrome.runtime.reload();
-    window.close();
-  } catch (e) {
-    // Functionality missing in firefox, ignore!
-  }
-}
-
 function runIntegrationTest() {}
 
 export async function confirmReset(
@@ -394,14 +384,4 @@ export async function confirmReset(
     await wxApi.resetDb();
     window.close();
   }
-}
-
-export function openExtensionPage(page: string) {
-  return () => {
-    // eslint-disable-next-line no-undef
-    chrome.tabs.create({
-      // eslint-disable-next-line no-undef
-      url: chrome.runtime.getURL(page),
-    });
-  };
 }

@@ -21,36 +21,21 @@
 
 import { classifyTalerUri, TalerUriType } from "@gnu-taler/taler-util";
 import { Fragment, h } from "preact";
+import { platform } from "../platform/api";
 import { ButtonPrimary, ButtonSuccess } from "../components/styled";
 import { useTranslationContext } from "../context/translation";
-import { actionForTalerUri } from "../utils/index";
 
 export interface Props {
   url: string;
   onDismiss: () => void;
 }
 
-async function getCurrentTab(): Promise<chrome.tabs.Tab> {
-  let queryOptions = { active: true, currentWindow: true };
-  const tab = await new Promise<chrome.tabs.Tab>((res, rej) => {
-    chrome.tabs.query(queryOptions, (tabs) => {
-      res(tabs[0]);
-    });
-  });
-  return tab;
-}
-
-async function navigateTo(url?: string) {
-  if (!url) return;
-  const tab = await getCurrentTab();
-  if (!tab.id) return;
-  await chrome.tabs.update(tab.id, { url });
-  window.close();
-}
-
 export function TalerActionFound({ url, onDismiss }: Props) {
   const uriType = classifyTalerUri(url);
   const { i18n } = useTranslationContext();
+  function redirectToWallet() {
+    platform.openWalletURIFromPopup(uriType, url);
+  }
   return (
     <Fragment>
       <section>
@@ -62,11 +47,7 @@ export function TalerActionFound({ url, onDismiss }: Props) {
             <p>
               <i18n.Translate>This page has pay action.</i18n.Translate>
             </p>
-            <ButtonSuccess
-              onClick={() => {
-                navigateTo(actionForTalerUri(uriType, url));
-              }}
-            >
+            <ButtonSuccess onClick={redirectToWallet}>
               <i18n.Translate>Open pay page</i18n.Translate>
             </ButtonSuccess>
           </div>
@@ -78,11 +59,7 @@ export function TalerActionFound({ url, onDismiss }: Props) {
                 This page has a withdrawal action.
               </i18n.Translate>
             </p>
-            <ButtonSuccess
-              onClick={() => {
-                navigateTo(actionForTalerUri(uriType, url));
-              }}
-            >
+            <ButtonSuccess onClick={redirectToWallet}>
               <i18n.Translate>Open withdraw page</i18n.Translate>
             </ButtonSuccess>
           </div>
@@ -92,11 +69,7 @@ export function TalerActionFound({ url, onDismiss }: Props) {
             <p>
               <i18n.Translate>This page has a tip action.</i18n.Translate>
             </p>
-            <ButtonSuccess
-              onClick={() => {
-                navigateTo(actionForTalerUri(uriType, url));
-              }}
-            >
+            <ButtonSuccess onClick={redirectToWallet}>
               <i18n.Translate>Open tip page</i18n.Translate>
             </ButtonSuccess>
           </div>
@@ -108,11 +81,7 @@ export function TalerActionFound({ url, onDismiss }: Props) {
                 This page has a notify reserve action.
               </i18n.Translate>
             </p>
-            <ButtonSuccess
-              onClick={() => {
-                navigateTo(actionForTalerUri(uriType, url));
-              }}
-            >
+            <ButtonSuccess onClick={redirectToWallet}>
               <i18n.Translate>Notify</i18n.Translate>
             </ButtonSuccess>
           </div>
@@ -122,11 +91,7 @@ export function TalerActionFound({ url, onDismiss }: Props) {
             <p>
               <i18n.Translate>This page has a refund action.</i18n.Translate>
             </p>
-            <ButtonSuccess
-              onClick={() => {
-                navigateTo(actionForTalerUri(uriType, url));
-              }}
-            >
+            <ButtonSuccess onClick={redirectToWallet}>
               <i18n.Translate>Open refund page</i18n.Translate>
             </ButtonSuccess>
           </div>

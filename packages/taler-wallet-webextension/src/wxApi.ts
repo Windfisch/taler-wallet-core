@@ -61,7 +61,7 @@ import {
 } from "@gnu-taler/taler-wallet-core";
 import { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import type { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core/src/operations/withdraw";
-import { MessageFromBackend } from "./wxBackend";
+import { platform, MessageFromBackend } from "./platform/api";
 
 /**
  *
@@ -95,27 +95,18 @@ export interface UpgradeResponse {
 }
 
 async function callBackend(operation: string, payload: any): Promise<any> {
-  return new Promise<any>((resolve, reject) => {
-    // eslint-disable-next-line no-undef
-    chrome.runtime.sendMessage({ operation, payload, id: "(none)" }, (resp) => {
-      // eslint-disable-next-line no-undef
-      if (chrome.runtime.lastError) {
-        console.log("Error calling backend");
-        reject(
-          new Error(
-            `Error contacting backend: ${chrome.runtime.lastError.message}`,
-          ),
-        );
-      }
-      console.log("got response", resp);
-      const r = resp as CoreApiResponse;
-      if (r.type === "error") {
-        reject(TalerError.fromUncheckedDetail(r.error));
-        return;
-      }
-      resolve(r.result);
-    });
-  });
+  let response: CoreApiResponse;
+  try {
+    response = await platform.setMessageToWalletBackground(operation, payload)
+  } catch (e) {
+    console.log("Error calling backend");
+    throw new Error(`Error contacting backend: ${e}`)
+  }
+  console.log("got response", response);
+  if (response.type === "error") {
+    throw new TalerError.fromUncheckedDetail(response.error);
+  }
+  return response.result;
 }
 
 /**
@@ -422,20 +413,12 @@ export function importDB(dump: any): Promise<void> {
   return callBackend("importDb", { dump });
 }
 
-export function onUpdateNotification(
-  messageTypes: Array<NotificationType>,
-  doCallback: () => void,
-): () => void {
-  // eslint-disable-next-line no-undef
-  const port = chrome.runtime.connect({ name: "notifications" });
+export function onUpdateNotification(messageTypes: Array<NotificationType>, doCallback: () => void): () => void {
   const listener = (message: MessageFromBackend): void => {
     const shouldNotify = messageTypes.includes(message.type);
     if (shouldNotify) {
       doCallback();
     }
   };
-  port.onMessage.addListener(listener);
-  return () => {
-    port.onMessage.removeListener(listener);
-  };
+  return platform.listenToWalletNotifications(listener)
 }

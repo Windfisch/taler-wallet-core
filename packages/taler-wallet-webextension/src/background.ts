@@ -23,14 +23,31 @@
 /**
  * Imports.
  */
+import { platform, setupPlatform } from "./platform/api";
+import firefoxAPI from "./platform/firefox"
+import chromeAPI from "./platform/chrome"
 import { wxMain } from "./wxBackend";
 
-const loadedFromWebpage = typeof window !== "undefined"
+const isFirefox = typeof (window as any)['InstallTrigger'] !== 'undefined'
 
-if (chrome.runtime.getManifest().manifest_version === 3) {
-  wxMain();
+//FIXME: create different entry point for any platform instead of 
+//switching in runtime
+if (isFirefox) {
+  console.log("Wallet setup for Firefox API")
+  setupPlatform(firefoxAPI)
 } else {
-  window.addEventListener("load", () => {
-    wxMain();
-  });
+  console.log("Wallet setup for Chrome API")
+  setupPlatform(chromeAPI)
 }
+
+try {
+  platform.registerOnInstalled(() => {
+    platform.openWalletPage("/welcome")
+  })
+} catch (e) {
+  console.error(e);
+}
+
+platform.notifyWhenAppIsReady(() => {
+  wxMain();
+})

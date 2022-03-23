@@ -21,7 +21,7 @@
 
 import { createContext, h, VNode } from "preact";
 import { useContext } from "preact/hooks";
-import { findTalerUriInActiveTab } from "../api/browser";
+import { platform } from "../platform/api";
 
 interface Type {
   findTalerUriInActiveTab: () => Promise<string | undefined>;
@@ -45,5 +45,5 @@ export const IoCProviderForTesting = ({ value, children }: { value: Type, childr
 };
 
 export const IoCProviderForRuntime = ({ children }: { children: any }): VNode => {
-  return h(Context.Provider, { value: { findTalerUriInActiveTab }, children });
+  return h(Context.Provider, { value: { findTalerUriInActiveTab: platform.findTalerUriInActiveTab }, children });
 };
