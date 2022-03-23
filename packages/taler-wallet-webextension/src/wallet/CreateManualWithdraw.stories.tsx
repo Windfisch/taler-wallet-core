@@ -29,30 +29,30 @@ export default {
 };
 
 // ,
-const exchangeList = {
+const exchangeUrlWithCurrency = {
   "http://exchange.taler:8081": "COL",
   "http://exchange.tal": "EUR",
 };
 
 export const WithoutAnyExchangeKnown = createExample(TestedComponent, {
-  exchangeList: {},
+  exchangeUrlWithCurrency: {},
 });
 
 export const InitialState = createExample(TestedComponent, {
-  exchangeList,
+  exchangeUrlWithCurrency,
 });
 
 export const WithAmountInitialized = createExample(TestedComponent, {
   initialAmount: "10",
-  exchangeList,
+  exchangeUrlWithCurrency,
 });
 
 export const WithExchangeError = createExample(TestedComponent, {
   error: "The exchange url seems invalid",
-  exchangeList,
+  exchangeUrlWithCurrency,
 });
 
 export const WithAmountError = createExample(TestedComponent, {
   initialAmount: "e",
-  exchangeList,
+  exchangeUrlWithCurrency,
 });

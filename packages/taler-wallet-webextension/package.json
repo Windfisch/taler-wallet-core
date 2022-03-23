@@ -12,6 +12,7 @@
     "test": "mocha --enable-source-maps 'dist/**/*.test.js'",
     "test:coverage": "nyc pnpm test",
     "compile": "rollup -c -m",
+    "compile:test": "rollup -c rollup.config.test.js -m",
     "prepare": "rollup -c -m",
     "build-storybook": "build-storybook",
     "storybook": "start-storybook -s . -p 6006 --no-open",

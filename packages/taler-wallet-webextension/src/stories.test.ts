@@ -31,7 +31,6 @@ function testThisStory(st: any): any {
       const Component = (st as any)[k];
       if (k === "default" || !Component) return;
 
-
       // eslint-disable-next-line jest/expect-expect
       it(`example: ${k}`, () => {
         renderNodeOrBrowser(Component, Component.args);

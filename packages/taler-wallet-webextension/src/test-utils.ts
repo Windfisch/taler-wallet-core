@@ -62,7 +62,9 @@ interface Mounted<T> {
   waitNextUpdate: () => Promise<void>;
 }
 
-export function mountBrowser<T>(callback: () => T, Context?: ({ children }: { children: any }) => VNode): Mounted<T> {
+const isNode = typeof window === "undefined"
+
+export function mountHook<T>(callback: () => T, Context?: ({ children }: { children: any }) => VNode): Mounted<T> {
   const result: { current: T | null } = {
     current: null
   }
@@ -81,23 +83,6 @@ export function mountBrowser<T>(callback: () => T, Context?: ({ children }: { ch
   // create the vdom with context if required
   const vdom = !Context ? create(Component, {}) : create(Context, { children: [create(Component, {})] },);
 
-  // in non-browser environment (server side rendering) just serialize to 
-  // string and exit
-  if (typeof window === "undefined") {
-    renderToString(vdom);
-    return { unmount: () => null, result } as any
-  }
-
-  // do the render into the DOM
-  const div = document.createElement("div");
-  document.body.appendChild(div);
-  renderIntoDom(vdom, div);
-
-  // clean up callback
-  function unmount(): any {
-    document.body.removeChild(div);
-  }
-
   // waiter callback
   async function waitNextUpdate(): Promise<void> {
     await new Promise((res, rej) => {
@@ -112,11 +97,22 @@ export function mountBrowser<T>(callback: () => T, Context?: ({ children }: { ch
     })
   }
 
+  const customElement = {} as Element
+  const parentElement = isNode ? customElement : document.createElement("div");
+  if (!isNode) {
+    document.body.appendChild(parentElement);
+  }
+
+  renderIntoDom(vdom, parentElement);
+
+  // clean up callback
+  function unmount() {
+    if (!isNode) {
+      document.body.removeChild(parentElement);
+    }
+  }
+
   return {
     unmount, result, waitNextUpdate
   }
 }
-
-const nullTestFunction = {} as TestFunction
-export const justBrowser_it: PendingTestFunction | TestFunction =
-  typeof it === 'undefined' ? nullTestFunction : (typeof window === 'undefined' ? it.skip : it)

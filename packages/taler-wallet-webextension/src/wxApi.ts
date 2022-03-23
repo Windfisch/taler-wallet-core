@@ -104,7 +104,7 @@ async function callBackend(operation: string, payload: any): Promise<any> {
   }
   console.log("got response", response);
   if (response.type === "error") {
-    throw new TalerError.fromUncheckedDetail(response.error);
+    throw TalerError.fromUncheckedDetail(response.error);
   }
   return response.result;
 }

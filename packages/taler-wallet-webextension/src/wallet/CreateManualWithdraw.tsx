@@ -39,20 +39,39 @@ import { Pages } from "../NavigationBar";
 export interface Props {
   error: string | undefined;
   initialAmount?: string;
-  exchangeList: Record<string, string>;
+  exchangeUrlWithCurrency: Record<string, string>;
   onCreate: (exchangeBaseUrl: string, amount: AmountJson) => Promise<void>;
   initialCurrency?: string;
 }
 
+export interface State {
+  noExchangeFound: boolean;
+  parsedAmount: AmountJson | undefined;
+  amount: TextFieldHandler;
+  currency: SelectFieldHandler;
+  exchange: SelectFieldHandler;
+}
+
+export interface TextFieldHandler {
+  onInput: (value: string) => void;
+  value: string;
+}
+
+export interface SelectFieldHandler {
+  onChange: (value: string) => void;
+  value: string;
+  list: Record<string, string>;
+}
+
 export function useComponentState(
-  exchangeList: Record<string, string>,
+  exchangeUrlWithCurrency: Record<string, string>,
   initialAmount: string | undefined,
   initialCurrency: string | undefined,
-) {
-  const exchangeSelectList = Object.keys(exchangeList);
-  const currencySelectList = Object.values(exchangeList);
+): State {
+  const exchangeSelectList = Object.keys(exchangeUrlWithCurrency);
+  const currencySelectList = Object.values(exchangeUrlWithCurrency);
   const exchangeMap = exchangeSelectList.reduce(
-    (p, c) => ({ ...p, [c]: `${c} (${exchangeList[c]})` }),
+    (p, c) => ({ ...p, [c]: `${c} (${exchangeUrlWithCurrency[c]})` }),
     {} as Record<string, string>,
   );
   const currencyMap = currencySelectList.reduce(
@@ -61,7 +80,7 @@ export function useComponentState(
   );
 
   const foundExchangeForCurrency = exchangeSelectList.findIndex(
-    (e) => exchangeList[e] === initialCurrency,
+    (e) => exchangeUrlWithCurrency[e] === initialCurrency,
   );
 
   const initialExchange =
@@ -73,7 +92,7 @@ export function useComponentState(
 
   const [exchange, setExchange] = useState(initialExchange || "");
   const [currency, setCurrency] = useState(
-    initialExchange ? exchangeList[initialExchange] : "",
+    initialExchange ? exchangeUrlWithCurrency[initialExchange] : "",
   );
 
   const [amount, setAmount] = useState(initialAmount || "");
@@ -81,12 +100,14 @@ export function useComponentState(
 
   function changeExchange(exchange: string): void {
     setExchange(exchange);
-    setCurrency(exchangeList[exchange]);
+    setCurrency(exchangeUrlWithCurrency[exchange]);
   }
 
   function changeCurrency(currency: string): void {
     setCurrency(currency);
-    const found = Object.entries(exchangeList).find((e) => e[1] === currency);
+    const found = Object.entries(exchangeUrlWithCurrency).find(
+      (e) => e[1] === currency,
+    );
 
     if (found) {
       setExchange(found[0]);
@@ -95,7 +116,7 @@ export function useComponentState(
     }
   }
   return {
-    initialExchange,
+    noExchangeFound: initialExchange === undefined,
     currency: {
       list: currencyMap,
       value: currency,
@@ -114,12 +135,12 @@ export function useComponentState(
   };
 }
 
-interface InputHandler {
+export interface InputHandler {
   value: string;
   onInput: (s: string) => void;
 }
 
-interface SelectInputHandler {
+export interface SelectInputHandler {
   list: Record<string, string>;
   value: string;
   onChange: (s: string) => void;
@@ -127,16 +148,20 @@ interface SelectInputHandler {
 
 export function CreateManualWithdraw({
   initialAmount,
-  exchangeList,
+  exchangeUrlWithCurrency,
   error,
   initialCurrency,
   onCreate,
 }: Props): VNode {
   const { i18n } = useTranslationContext();
 
-  const state = useComponentState(exchangeList, initialAmount, initialCurrency);
+  const state = useComponentState(
+    exchangeUrlWithCurrency,
+    initialAmount,
+    initialCurrency,
+  );
 
-  if (!state.initialExchange) {
+  if (state.noExchangeFound) {
     if (initialCurrency !== undefined) {
       return (
         <section>

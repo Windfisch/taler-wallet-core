@@ -110,7 +110,7 @@ export function ManualWithdrawPage({ currency, onCancel }: Props): VNode {
   return (
     <CreateManualWithdraw
       error={error}
-      exchangeList={exchangeList}
+      exchangeUrlWithCurrency={exchangeList}
       onCreate={doCreate}
       initialCurrency={currency}
     />

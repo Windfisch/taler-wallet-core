@@ -10,30 +10,7 @@ import css from 'rollup-plugin-css-only';
 import ignore from "rollup-plugin-ignore";
 import typescript from '@rollup/plugin-typescript';
 
-import path from 'path';
-import fs from 'fs';
-
-function fromDir(startPath, regex) {
-  if (!fs.existsSync(startPath)) {
-    return;
-  }
-  const files = fs.readdirSync(startPath);
-  const result = files.flatMap(file => {
-    const filename = path.join(startPath, file);
-
-    const stat = fs.lstatSync(filename);
-    if (stat.isDirectory()) {
-      return fromDir(filename, regex);
-    }
-    else if (regex.test(filename)) {
-      return filename
-    }
-  }).filter(x => !!x)
-
-  return result
-}
-
-const makePlugins = () => [
+export const makePlugins = () => [
   typescript({
     outputToFilesystem: false,
   }),
@@ -135,26 +112,10 @@ const webExtensionCryptoWorker = {
   plugins: makePlugins(),
 };
 
-const tests = fromDir('./src', /.test.ts$/).map(test => ({
-  input: test,
-  output: {
-    file: test.replace(/^src/, 'dist').replace(/\.ts$/, '.js'),
-    format: "iife",
-    exports: "none",
-    name: test,
-  },
-  plugins: [
-    ...makePlugins(),
-    css({
-      output: 'walletEntryPoint.css',
-    }),
-  ],
-}))
 
 export default [
   webExtensionPopupEntryPoint,
   webExtensionWalletEntryPoint,
   webExtensionBackgroundPageScript,
   webExtensionCryptoWorker,
-  ...tests,
 ];
