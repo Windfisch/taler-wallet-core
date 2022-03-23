@@ -120,7 +120,7 @@ export async function getTotalPaymentCost(
   return ws.db
     .mktx((x) => ({ coins: x.coins, denominations: x.denominations }))
     .runReadOnly(async (tx) => {
-      const costs = [];
+      const costs: AmountJson[] = [];
       for (let i = 0; i < pcs.coinPubs.length; i++) {
         const coin = await tx.coins.get(pcs.coinPubs[i]);
         if (!coin) {
