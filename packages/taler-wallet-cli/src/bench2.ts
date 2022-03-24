@@ -31,7 +31,6 @@ import {
   depositCoin,
   downloadExchangeInfo,
   findDenomOrThrow,
-  generateReserveKeypair,
   NodeHttpLib,
   refreshCoin,
   SynchronousCryptoWorkerFactory,
@@ -64,7 +63,7 @@ export async function runBench2(configJson: any): Promise<void> {
   for (let i = 0; i < numIter; i++) {
     const exchangeInfo = await downloadExchangeInfo(benchConf.exchange, http);
 
-    const reserveKeyPair = generateReserveKeypair();
+    const reserveKeyPair = await cryptoApi.createEddsaKeypair({});
 
     console.log("creating fakebank reserve");
 
@@ -73,12 +72,12 @@ export async function runBench2(configJson: any): Promise<void> {
       exchangeInfo,
       fakebankBaseUrl: benchConf.bank,
       http,
-      reservePub: reserveKeyPair.reservePub,
+      reservePub: reserveKeyPair.pub,
     });
 
     console.log("waiting for reserve");
 
-    await checkReserve(http, benchConf.exchange, reserveKeyPair.reservePub);
+    await checkReserve(http, benchConf.exchange, reserveKeyPair.pub);
 
     console.log("reserve found");
 
@@ -89,7 +88,10 @@ export async function runBench2(configJson: any): Promise<void> {
       const coin = await withdrawCoin({
         http,
         cryptoApi,
-        reserveKeyPair,
+        reserveKeyPair: {
+          reservePriv: reserveKeyPair.priv,
+          reservePub: reserveKeyPair.pub,
+        },
         denom: d1,
         exchangeBaseUrl: benchConf.exchange,
       });

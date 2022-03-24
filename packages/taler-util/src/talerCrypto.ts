@@ -700,25 +700,6 @@ export function bufferForUint32(n: number): Uint8Array {
   return buf;
 }
 
-export function setupWithdrawPlanchet(
-  secretSeed: Uint8Array,
-  coinNumber: number,
-): FreshCoin {
-  const info = stringToBytes("taler-withdrawal-coin-derivation");
-  const saltArrBuf = new ArrayBuffer(4);
-  const salt = new Uint8Array(saltArrBuf);
-  const saltDataView = new DataView(saltArrBuf);
-  saltDataView.setUint32(0, coinNumber);
-  const out = kdf(64, secretSeed, salt, info);
-  const coinPriv = out.slice(0, 32);
-  const bks = out.slice(32, 64);
-  return {
-    bks,
-    coinPriv,
-    coinPub: eddsaGetPublic(coinPriv),
-  };
-}
-
 export function setupTipPlanchet(
   secretSeed: Uint8Array,
   coinNumber: number,
@@ -737,23 +718,6 @@ export function setupTipPlanchet(
     coinPub: eddsaGetPublic(coinPriv),
   };
 }
-
-export function setupRefreshTransferPub(
-  secretSeed: Uint8Array,
-  transferPubIndex: number,
-): EcdheKeyPair {
-  const info = stringToBytes("taler-transfer-pub-derivation");
-  const saltArrBuf = new ArrayBuffer(4);
-  const salt = new Uint8Array(saltArrBuf);
-  const saltDataView = new DataView(saltArrBuf);
-  saltDataView.setUint32(0, transferPubIndex);
-  const out = kdf(32, secretSeed, salt, info);
-  return {
-    ecdhePriv: out,
-    ecdhePub: ecdheGetPublic(out),
-  };
-}
-
 /**
  *
  * @param paytoUri

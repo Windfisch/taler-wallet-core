@@ -28,7 +28,6 @@
 import {
   AmountJson,
   Amounts,
-  BenchmarkResult,
   buildSigPS,
   CoinDepositPermission,
   CoinEnvelope,
@@ -58,9 +57,7 @@ import {
   rsaBlind,
   rsaUnblind,
   rsaVerify,
-  setupRefreshTransferPub,
   setupTipPlanchet,
-  setupWithdrawPlanchet,
   stringToBytes,
   TalerSignaturePurpose,
   BlindedDenominationSignature,
@@ -69,9 +66,12 @@ import {
   TalerProtocolTimestamp,
   kdfKw,
   bufferForUint32,
+  kdf,
+  ecdheGetPublic,
+  getRandomBytes,
 } from "@gnu-taler/taler-util";
 import bigint from "big-integer";
-import { DenominationRecord, WireFee } from "../db.js";
+import { DenominationRecord, TipCoinSource, WireFee } from "../db.js";
 import {
   CreateRecoupRefreshReqRequest,
   CreateRecoupReqRequest,
@@ -130,7 +130,7 @@ export interface TalerCryptoInterface {
 
   createEddsaKeypair(req: {}): Promise<EddsaKeypair>;
 
-  eddsaGetPublic(req: EddsaGetPublicRequest): Promise<EddsaKeypair>;
+  eddsaGetPublic(req: EddsaGetPublicRequest): Promise<EddsaGetPublicResponse>;
 
   unblindDenominationSignature(
     req: UnblindDenominationSignatureRequest,
@@ -160,9 +160,19 @@ export interface TalerCryptoInterface {
     req: SetupRefreshPlanchetRequest,
   ): Promise<FreshCoinEncoded>;
 
+  setupWithdrawalPlanchet(
+    req: SetupWithdrawalPlanchetRequest,
+  ): Promise<FreshCoinEncoded>;
+
   keyExchangeEcdheEddsa(
     req: KeyExchangeEcdheEddsaRequest,
   ): Promise<KeyExchangeResult>;
+
+  ecdheGetPublic(req: EddsaGetPublicRequest): Promise<EddsaGetPublicResponse>;
+
+  setupRefreshTransferPub(
+    req: SetupRefreshTransferPubRequest,
+  ): Promise<TransferPubResponse>;
 }
 
 /**
@@ -279,6 +289,21 @@ export const nullCrypto: TalerCryptoInterface = {
   ): Promise<KeyExchangeResult> {
     throw new Error("Function not implemented.");
   },
+  setupWithdrawalPlanchet: function (
+    req: SetupWithdrawalPlanchetRequest,
+  ): Promise<FreshCoinEncoded> {
+    throw new Error("Function not implemented.");
+  },
+  ecdheGetPublic: function (
+    req: EddsaGetPublicRequest,
+  ): Promise<EddsaGetPublicResponse> {
+    throw new Error("Function not implemented.");
+  },
+  setupRefreshTransferPub: function (
+    req: SetupRefreshTransferPubRequest,
+  ): Promise<TransferPubResponse> {
+    throw new Error("Function not implemented.");
+  },
 };
 
 export type WithArg<X> = X extends (req: infer T) => infer R
@@ -299,6 +324,11 @@ export interface SignCoinLinkRequest {
 
 export interface SetupRefreshPlanchetRequest {
   transferSecret: string;
+  coinNumber: number;
+}
+
+export interface SetupWithdrawalPlanchetRequest {
+  secretSeed: string;
   coinNumber: number;
 }
 
@@ -369,6 +399,18 @@ export interface EddsaGetPublicRequest {
   priv: string;
 }
 
+export interface EddsaGetPublicResponse {
+  pub: string;
+}
+
+export interface EcdheGetPublicRequest {
+  priv: string;
+}
+
+export interface EcdheGetPublicResponse {
+  pub: string;
+}
+
 export interface UnblindDenominationSignatureRequest {
   planchet: PlanchetUnblindInfo;
   evSig: BlindedDenominationSignature;
@@ -401,6 +443,16 @@ export interface KeyExchangeEcdheEddsaRequest {
 
 export interface KeyExchangeResult {
   h: string;
+}
+
+export interface SetupRefreshTransferPubRequest {
+  secretSeed: string;
+  transferPubIndex: number;
+}
+
+export interface TransferPubResponse {
+  transferPub: string;
+  transferPriv: string;
 }
 
 export const nativeCryptoR: TalerCryptoInterfaceR = {
@@ -453,10 +505,38 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
       salt: stringToBytes("bks"),
     });
 
+    const coinPrivEnc = encodeCrock(coinPriv);
+    const coinPubRes = await tci.eddsaGetPublic(tci, {
+      priv: coinPrivEnc,
+    });
+
     return {
       bks: encodeCrock(bks),
-      coinPriv: encodeCrock(coinPriv),
-      coinPub: encodeCrock(eddsaGetPublic(coinPriv)),
+      coinPriv: coinPrivEnc,
+      coinPub: coinPubRes.pub,
+    };
+  },
+
+  async setupWithdrawalPlanchet(
+    tci: TalerCryptoInterfaceR,
+    req: SetupWithdrawalPlanchetRequest,
+  ): Promise<FreshCoinEncoded> {
+    const info = stringToBytes("taler-withdrawal-coin-derivation");
+    const saltArrBuf = new ArrayBuffer(4);
+    const salt = new Uint8Array(saltArrBuf);
+    const saltDataView = new DataView(saltArrBuf);
+    saltDataView.setUint32(0, req.coinNumber);
+    const out = kdf(64, decodeCrock(req.secretSeed), salt, info);
+    const coinPriv = out.slice(0, 32);
+    const bks = out.slice(32, 64);
+    const coinPrivEnc = encodeCrock(coinPriv);
+    const coinPubRes = await tci.eddsaGetPublic(tci, {
+      priv: coinPrivEnc,
+    });
+    return {
+      bks: encodeCrock(bks),
+      coinPriv: coinPrivEnc,
+      coinPub: coinPubRes.pub,
     };
   },
 
@@ -468,13 +548,13 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
     if (denomPub.cipher === DenomKeyType.Rsa) {
       const reservePub = decodeCrock(req.reservePub);
       const denomPubRsa = decodeCrock(denomPub.rsa_public_key);
-      const derivedPlanchet = setupWithdrawPlanchet(
-        decodeCrock(req.secretSeed),
-        req.coinIndex,
-      );
-      const coinPubHash = hash(derivedPlanchet.coinPub);
+      const derivedPlanchet = await tci.setupWithdrawalPlanchet(tci, {
+        coinNumber: req.coinIndex,
+        secretSeed: req.secretSeed,
+      });
+      const coinPubHash = hash(decodeCrock(derivedPlanchet.coinPub));
       const blindResp = await tci.rsaBlind(tci, {
-        bks: encodeCrock(derivedPlanchet.bks),
+        bks: derivedPlanchet.bks,
         hm: encodeCrock(coinPubHash),
         pub: denomPub.rsa_public_key,
       });
@@ -499,10 +579,10 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
       });
 
       const planchet: WithdrawalPlanchet = {
-        blindingKey: encodeCrock(derivedPlanchet.bks),
+        blindingKey: derivedPlanchet.bks,
         coinEv,
-        coinPriv: encodeCrock(derivedPlanchet.coinPriv),
-        coinPub: encodeCrock(derivedPlanchet.coinPub),
+        coinPriv: derivedPlanchet.coinPriv,
+        coinPub: derivedPlanchet.coinPub,
         coinValue: req.value,
         denomPub,
         denomPubHash: encodeCrock(denomPubHash),
@@ -715,10 +795,13 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
    * Create a new EdDSA key pair.
    */
   async createEddsaKeypair(tci: TalerCryptoInterfaceR): Promise<EddsaKeypair> {
-    const pair = createEddsaKeyPair();
+    const eddsaPriv = encodeCrock(getRandomBytes(32));
+    const eddsaPubRes = await tci.eddsaGetPublic(tci, {
+      priv: eddsaPriv,
+    });
     return {
-      priv: encodeCrock(pair.eddsaPriv),
-      pub: encodeCrock(pair.eddsaPub),
+      priv: eddsaPriv,
+      pub: eddsaPubRes.pub,
     };
   },
 
@@ -876,13 +959,13 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
     const planchetsForGammas: RefreshPlanchetInfo[][] = [];
 
     for (let i = 0; i < kappa; i++) {
-      const transferKeyPair = setupRefreshTransferPub(
-        decodeCrock(refreshSessionSecretSeed),
-        i,
-      );
-      sessionHc.update(transferKeyPair.ecdhePub);
-      transferPrivs.push(encodeCrock(transferKeyPair.ecdhePriv));
-      transferPubs.push(encodeCrock(transferKeyPair.ecdhePub));
+      const transferKeyPair = await tci.setupRefreshTransferPub(tci, {
+        secretSeed: refreshSessionSecretSeed,
+        transferPubIndex: i,
+      });
+      sessionHc.update(decodeCrock(transferKeyPair.transferPub));
+      transferPrivs.push(transferKeyPair.transferPriv);
+      transferPubs.push(transferKeyPair.transferPub);
     }
 
     for (const denomSel of newCoinDenoms) {
@@ -1039,6 +1122,30 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
           decodeCrock(req.eddsaPub),
         ),
       ),
+    };
+  },
+  async ecdheGetPublic(
+    tci: TalerCryptoInterfaceR,
+    req: EcdheGetPublicRequest,
+  ): Promise<EcdheGetPublicResponse> {
+    return {
+      pub: encodeCrock(ecdheGetPublic(decodeCrock(req.priv))),
+    };
+  },
+  async setupRefreshTransferPub(
+    tci: TalerCryptoInterfaceR,
+    req: SetupRefreshTransferPubRequest,
+  ): Promise<TransferPubResponse> {
+    const info = stringToBytes("taler-transfer-pub-derivation");
+    const saltArrBuf = new ArrayBuffer(4);
+    const salt = new Uint8Array(saltArrBuf);
+    const saltDataView = new DataView(saltArrBuf);
+    saltDataView.setUint32(0, req.transferPubIndex);
+    const out = kdf(32, decodeCrock(req.secretSeed), salt, info);
+    const transferPriv = encodeCrock(out);
+    return {
+      transferPriv,
+      transferPub: (await tci.ecdheGetPublic(tci, { priv: transferPriv })).pub,
     };
   },
 };

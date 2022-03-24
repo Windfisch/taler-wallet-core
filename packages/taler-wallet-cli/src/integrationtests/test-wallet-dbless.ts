@@ -24,7 +24,6 @@ import {
   depositCoin,
   downloadExchangeInfo,
   findDenomOrThrow,
-  generateReserveKeypair,
   NodeHttpLib,
   refreshCoin,
   SynchronousCryptoWorkerFactory,
@@ -52,11 +51,11 @@ export async function runWalletDblessTest(t: GlobalTestState) {
 
     const exchangeInfo = await downloadExchangeInfo(exchange.baseUrl, http);
 
-    const reserveKeyPair = generateReserveKeypair();
+    const reserveKeyPair = await cryptoApi.createEddsaKeypair({});
 
     await topupReserveWithDemobank(
       http,
-      reserveKeyPair.reservePub,
+      reserveKeyPair.pub,
       bank.baseUrl,
       exchangeInfo,
       "TESTKUDOS:10",
@@ -64,14 +63,17 @@ export async function runWalletDblessTest(t: GlobalTestState) {
 
     await exchange.runWirewatchOnce();
 
-    await checkReserve(http, exchange.baseUrl, reserveKeyPair.reservePub);
+    await checkReserve(http, exchange.baseUrl, reserveKeyPair.pub);
 
     const d1 = findDenomOrThrow(exchangeInfo, "TESTKUDOS:8");
 
     const coin = await withdrawCoin({
       http,
       cryptoApi,
-      reserveKeyPair,
+      reserveKeyPair: {
+        reservePriv: reserveKeyPair.priv,
+        reservePub: reserveKeyPair.pub,
+      },
       denom: d1,
       exchangeBaseUrl: exchange.baseUrl,
     });

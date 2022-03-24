@@ -80,15 +80,6 @@ export interface CoinInfo {
   feeRefresh: string;
 }
 
-export function generateReserveKeypair(): ReserveKeypair {
-  const priv = getRandomBytes(32);
-  const pub = eddsaGetPublic(priv);
-  return {
-    reservePriv: encodeCrock(priv),
-    reservePub: encodeCrock(pub),
-  };
-}
-
 /**
  * Check the status of a reserve, use long-polling to wait
  * until the reserve actually has been created.

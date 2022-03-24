@@ -86,7 +86,6 @@ export class SynchronousCryptoWorker {
           blinded: res.blinded,
         };
       };
-
       this.cryptoImplR.keyExchangeEcdheEddsa = async (_, req) => {
         const res = await rpc.queueRequest({
           op: "kx_ecdhe_eddsa",
@@ -97,6 +96,28 @@ export class SynchronousCryptoWorker {
         });
         return {
           h: res.h,
+        };
+      };
+      this.cryptoImplR.eddsaGetPublic = async (_, req) => {
+        const res = await rpc.queueRequest({
+          op: "eddsa_get_public",
+          args: {
+            eddsa_priv: req.priv,
+          },
+        });
+        return {
+          pub: res.eddsa_pub,
+        };
+      };
+      this.cryptoImplR.ecdheGetPublic = async (_, req) => {
+        const res = await rpc.queueRequest({
+          op: "ecdhe_get_public",
+          args: {
+            ecdhe_priv: req.priv,
+          },
+        });
+        return {
+          pub: res.ecdhe_pub,
         };
       };
     }

@@ -927,7 +927,10 @@ async function startDownloadProposal(
 
   let noncePair: EddsaKeypair;
   if (noncePriv) {
-    noncePair = await ws.cryptoApi.eddsaGetPublic({ priv: noncePriv });
+    noncePair = {
+      priv: noncePriv,
+      pub: (await ws.cryptoApi.eddsaGetPublic({ priv: noncePriv })).pub,
+    };
   } else {
     noncePair = await ws.cryptoApi.createEddsaKeypair({});
   }
