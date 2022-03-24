@@ -47,14 +47,11 @@ export class SynchronousCryptoWorker {
 
     this.cryptoImplR = { ...nativeCryptoR };
 
-    if (
-      process.env["TALER_WALLET_RPC_CRYPRO"] ||
-      // Old name
-      process.env["TALER_WALLET_PRIMITIVE_WORKER"]
-    ) {
+    if (process.env["TALER_WALLET_PRIMITIVE_WORKER"]) {
+      logger.info("using RPC for some crypto operations");
       const rpc = (this.rpcClient = new CryptoRpcClient());
       this.cryptoImplR.eddsaSign = async (_, req) => {
-        logger.trace("making RPC request");
+        logger.info("calling RPC impl of eddsaSign");
         return await rpc.queueRequest({
           op: "eddsa_sign",
           args: {
@@ -62,6 +59,46 @@ export class SynchronousCryptoWorker {
             priv: req.priv,
           },
         });
+      };
+      this.cryptoImplR.setupRefreshPlanchet = async (_, req) => {
+        const res = await rpc.queueRequest({
+          op: "setup_refresh_planchet",
+          args: {
+            coin_index: req.coinNumber,
+            transfer_secret: req.transferSecret,
+          },
+        });
+        return {
+          bks: res.blinding_key,
+          coinPriv: res.coin_priv,
+          coinPub: res.coin_pub,
+        };
+      };
+      this.cryptoImplR.rsaBlind = async (_, req) => {
+        const res = await rpc.queueRequest({
+          op: "rsa_blind",
+          args: {
+            bks: req.bks,
+            hm: req.hm,
+            pub: req.pub,
+          },
+        });
+        return {
+          blinded: res.blinded,
+        };
+      };
+
+      this.cryptoImplR.keyExchangeEcdheEddsa = async (_, req) => {
+        const res = await rpc.queueRequest({
+          op: "kx_ecdhe_eddsa",
+          args: {
+            ecdhe_priv: req.ecdhePriv,
+            eddsa_pub: req.eddsaPub,
+          },
+        });
+        return {
+          h: res.h,
+        };
       };
     }
   }
@@ -101,8 +138,8 @@ export class SynchronousCryptoWorker {
     let result: any;
     try {
       result = await (impl as any)[operation](impl, req);
-    } catch (e) {
-      logger.error("error during operation", e);
+    } catch (e: any) {
+      logger.error(`error during operation '${operation}': ${e}`);
       return;
     }
 

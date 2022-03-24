@@ -64,7 +64,10 @@ import { runBench1 } from "./bench1.js";
 import { runEnv1 } from "./env1.js";
 import { GlobalTestState, runTestWithState } from "./harness/harness.js";
 import { runBench2 } from "./bench2.js";
-import { TalerCryptoInterface, TalerCryptoInterfaceR } from "@gnu-taler/taler-wallet-core/src/crypto/cryptoImplementation";
+import {
+  TalerCryptoInterface,
+  TalerCryptoInterfaceR,
+} from "@gnu-taler/taler-wallet-core/src/crypto/cryptoImplementation";
 
 // This module also serves as the entry point for the crypto
 // thread worker, and thus must expose these two handlers.
@@ -74,6 +77,12 @@ export {
 } from "@gnu-taler/taler-wallet-core";
 
 const logger = new Logger("taler-wallet-cli.ts");
+
+process.on("unhandledRejection", (error: any) => {
+  logger.error("unhandledRejection", error.message);
+  logger.error("stack", error.stack);
+  process.exit(2);
+});
 
 const defaultWalletDbPath = os.homedir + "/" + ".talerwalletdb.json";
 
@@ -218,6 +227,7 @@ async function withWallet<T>(
   } finally {
     logger.info("operation with wallet finished, stopping");
     wallet.stop();
+    logger.info("stopped wallet");
   }
 }
 
@@ -250,13 +260,18 @@ walletCli
         console.error("Invalid JSON");
         process.exit(1);
       }
-      const resp = await wallet.ws.handleCoreApiRequest(
-        args.api.operation,
-        "reqid-1",
-        requestJson,
-      );
-      console.log(JSON.stringify(resp, undefined, 2));
+      try {
+        const resp = await wallet.ws.handleCoreApiRequest(
+          args.api.operation,
+          "reqid-1",
+          requestJson,
+        );
+        console.log(JSON.stringify(resp, undefined, 2));
+      } catch (e) {
+        logger.error(`Got exception while handling API request ${e}`);
+      }
     });
+    logger.info("finished handling API request");
   });
 
 walletCli

@@ -1077,6 +1077,7 @@ export async function handleCoreApiRequest(
     };
   } catch (e: any) {
     const err = getErrorDetailFromException(e);
+    logger.info(`finished wallet core request with error: ${j2s(err)}`);
     return {
       type: "error",
       operation,

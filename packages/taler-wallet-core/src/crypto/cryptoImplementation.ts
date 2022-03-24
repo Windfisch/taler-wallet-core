@@ -42,7 +42,6 @@ import {
   eddsaVerify,
   encodeCrock,
   ExchangeProtocolVersion,
-  FreshCoin,
   hash,
   hashCoinEv,
   hashCoinEvInner,
@@ -53,14 +52,12 @@ import {
   MakeSyncSignatureRequest,
   PlanchetCreationRequest,
   WithdrawalPlanchet,
-  randomBytes,
   RecoupRefreshRequest,
   RecoupRequest,
   RefreshPlanchetInfo,
   rsaBlind,
   rsaUnblind,
   rsaVerify,
-  setupRefreshPlanchet,
   setupRefreshTransferPub,
   setupTipPlanchet,
   setupWithdrawPlanchet,
@@ -70,6 +67,8 @@ import {
   UnblindedSignature,
   PlanchetUnblindInfo,
   TalerProtocolTimestamp,
+  kdfKw,
+  bufferForUint32,
 } from "@gnu-taler/taler-util";
 import bigint from "big-integer";
 import { DenominationRecord, WireFee } from "../db.js";
@@ -141,6 +140,8 @@ export interface TalerCryptoInterface {
 
   rsaVerify(req: RsaVerificationRequest): Promise<ValidationResult>;
 
+  rsaBlind(req: RsaBlindRequest): Promise<RsaBlindResponse>;
+
   signDepositPermission(
     depositInfo: DepositInfo,
   ): Promise<CoinDepositPermission>;
@@ -154,6 +155,14 @@ export interface TalerCryptoInterface {
   signCoinLink(req: SignCoinLinkRequest): Promise<EddsaSigningResult>;
 
   makeSyncSignature(req: MakeSyncSignatureRequest): Promise<EddsaSigningResult>;
+
+  setupRefreshPlanchet(
+    req: SetupRefreshPlanchetRequest,
+  ): Promise<FreshCoinEncoded>;
+
+  keyExchangeEcdheEddsa(
+    req: KeyExchangeEcdheEddsaRequest,
+  ): Promise<KeyExchangeResult>;
 }
 
 /**
@@ -257,6 +266,19 @@ export const nullCrypto: TalerCryptoInterface = {
   ): Promise<EddsaSigningResult> {
     throw new Error("Function not implemented.");
   },
+  setupRefreshPlanchet: function (
+    req: SetupRefreshPlanchetRequest,
+  ): Promise<FreshCoinEncoded> {
+    throw new Error("Function not implemented.");
+  },
+  rsaBlind: function (req: RsaBlindRequest): Promise<RsaBlindResponse> {
+    throw new Error("Function not implemented.");
+  },
+  keyExchangeEcdheEddsa: function (
+    req: KeyExchangeEcdheEddsaRequest,
+  ): Promise<KeyExchangeResult> {
+    throw new Error("Function not implemented.");
+  },
 };
 
 export type WithArg<X> = X extends (req: infer T) => infer R
@@ -275,10 +297,21 @@ export interface SignCoinLinkRequest {
   coinEv: CoinEnvelope;
 }
 
+export interface SetupRefreshPlanchetRequest {
+  transferSecret: string;
+  coinNumber: number;
+}
+
 export interface RsaVerificationRequest {
   hm: string;
   sig: string;
   pk: string;
+}
+
+export interface RsaBlindRequest {
+  hm: string;
+  bks: string;
+  pub: string;
 }
 
 export interface EddsaSigningResult {
@@ -341,14 +374,33 @@ export interface UnblindDenominationSignatureRequest {
   evSig: BlindedDenominationSignature;
 }
 
+export interface FreshCoinEncoded {
+  coinPub: string;
+  coinPriv: string;
+  bks: string;
+}
+
 export interface RsaUnblindRequest {
   blindedSig: string;
   bk: string;
   pk: string;
 }
 
+export interface RsaBlindResponse {
+  blinded: string;
+}
+
 export interface RsaUnblindResponse {
   sig: string;
+}
+
+export interface KeyExchangeEcdheEddsaRequest {
+  ecdhePriv: string;
+  eddsaPub: string;
+}
+
+export interface KeyExchangeResult {
+  h: string;
 }
 
 export const nativeCryptoR: TalerCryptoInterfaceR = {
@@ -358,6 +410,53 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
   ): Promise<EddsaSignResponse> {
     return {
       sig: encodeCrock(eddsaSign(decodeCrock(req.msg), decodeCrock(req.priv))),
+    };
+  },
+
+  async rsaBlind(
+    tci: TalerCryptoInterfaceR,
+    req: RsaBlindRequest,
+  ): Promise<RsaBlindResponse> {
+    const res = rsaBlind(
+      decodeCrock(req.hm),
+      decodeCrock(req.bks),
+      decodeCrock(req.pub),
+    );
+    return {
+      blinded: encodeCrock(res),
+    };
+  },
+
+  async setupRefreshPlanchet(
+    tci: TalerCryptoInterfaceR,
+    req: SetupRefreshPlanchetRequest,
+  ): Promise<FreshCoinEncoded> {
+    const transferSecret = decodeCrock(req.transferSecret);
+    const coinNumber = req.coinNumber;
+    // See TALER_transfer_secret_to_planchet_secret in C impl
+    const planchetMasterSecret = kdfKw({
+      ikm: transferSecret,
+      outputLength: 32,
+      salt: bufferForUint32(coinNumber),
+      info: stringToBytes("taler-coin-derivation"),
+    });
+
+    const coinPriv = kdfKw({
+      ikm: planchetMasterSecret,
+      outputLength: 32,
+      salt: stringToBytes("coin"),
+    });
+
+    const bks = kdfKw({
+      ikm: planchetMasterSecret,
+      outputLength: 32,
+      salt: stringToBytes("bks"),
+    });
+
+    return {
+      bks: encodeCrock(bks),
+      coinPriv: encodeCrock(coinPriv),
+      coinPub: encodeCrock(eddsaGetPublic(coinPriv)),
     };
   },
 
@@ -374,10 +473,14 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
         req.coinIndex,
       );
       const coinPubHash = hash(derivedPlanchet.coinPub);
-      const ev = rsaBlind(coinPubHash, derivedPlanchet.bks, denomPubRsa);
+      const blindResp = await tci.rsaBlind(tci, {
+        bks: encodeCrock(derivedPlanchet.bks),
+        hm: encodeCrock(coinPubHash),
+        pub: denomPub.rsa_public_key,
+      });
       const coinEv: CoinEnvelope = {
         cipher: DenomKeyType.Rsa,
-        rsa_blinded_planchet: encodeCrock(ev),
+        rsa_blinded_planchet: blindResp.blinded,
       };
       const amountWithFee = Amounts.add(req.value, req.feeWithdraw).amount;
       const denomPubHash = hashDenomPub(req.denomPub);
@@ -423,10 +526,14 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
     const fc = setupTipPlanchet(decodeCrock(req.secretSeed), req.planchetIndex);
     const denomPub = decodeCrock(req.denomPub.rsa_public_key);
     const coinPubHash = hash(fc.coinPub);
-    const ev = rsaBlind(coinPubHash, fc.bks, denomPub);
+    const blindResp = await tci.rsaBlind(tci, {
+      bks: encodeCrock(fc.bks),
+      hm: encodeCrock(coinPubHash),
+      pub: encodeCrock(denomPub),
+    });
     const coinEv = {
       cipher: DenomKeyType.Rsa,
-      rsa_blinded_planchet: encodeCrock(ev),
+      rsa_blinded_planchet: blindResp.blinded,
     };
     const tipPlanchet: DerivedTipPlanchet = {
       blindingKey: encodeCrock(fc.bks),
@@ -798,32 +905,32 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
         const denomSel = newCoinDenoms[j];
         for (let k = 0; k < denomSel.count; k++) {
           const coinIndex = planchets.length;
-          const transferPriv = decodeCrock(transferPrivs[i]);
-          const oldCoinPub = decodeCrock(meltCoinPub);
-          const transferSecret = keyExchangeEcdheEddsa(
-            transferPriv,
-            oldCoinPub,
-          );
+          const transferSecretRes = await tci.keyExchangeEcdheEddsa(tci, {
+            ecdhePriv: transferPrivs[i],
+            eddsaPub: meltCoinPub,
+          });
           let coinPub: Uint8Array;
           let coinPriv: Uint8Array;
           let blindingFactor: Uint8Array;
-          // FIXME: make setupRefreshPlanchet a crypto api fn
-          let fresh: FreshCoin = setupRefreshPlanchet(
-            transferSecret,
-            coinIndex,
-          );
-          coinPriv = fresh.coinPriv;
-          coinPub = fresh.coinPub;
-          blindingFactor = fresh.bks;
+          let fresh: FreshCoinEncoded = await tci.setupRefreshPlanchet(tci, {
+            coinNumber: coinIndex,
+            transferSecret: transferSecretRes.h,
+          });
+          coinPriv = decodeCrock(fresh.coinPriv);
+          coinPub = decodeCrock(fresh.coinPub);
+          blindingFactor = decodeCrock(fresh.bks);
           const coinPubHash = hash(coinPub);
           if (denomSel.denomPub.cipher !== DenomKeyType.Rsa) {
             throw Error("unsupported cipher, can't create refresh session");
           }
-          const rsaDenomPub = decodeCrock(denomSel.denomPub.rsa_public_key);
-          const ev = rsaBlind(coinPubHash, blindingFactor, rsaDenomPub);
+          const blindResult = await tci.rsaBlind(tci, {
+            bks: encodeCrock(blindingFactor),
+            hm: encodeCrock(coinPubHash),
+            pub: denomSel.denomPub.rsa_public_key,
+          });
           const coinEv: CoinEnvelope = {
             cipher: DenomKeyType.Rsa,
-            rsa_blinded_planchet: encodeCrock(ev),
+            rsa_blinded_planchet: blindResult.blinded,
           };
           const coinEvHash = hashCoinEv(
             coinEv,
@@ -920,6 +1027,19 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
       .build();
     const uploadSig = eddsaSign(sigBlob, decodeCrock(req.accountPriv));
     return { sig: encodeCrock(uploadSig) };
+  },
+  async keyExchangeEcdheEddsa(
+    tci: TalerCryptoInterfaceR,
+    req: KeyExchangeEcdheEddsaRequest,
+  ): Promise<KeyExchangeResult> {
+    return {
+      h: encodeCrock(
+        keyExchangeEcdheEddsa(
+          decodeCrock(req.ecdhePriv),
+          decodeCrock(req.eddsaPub),
+        ),
+      ),
+    };
   },
 };
 

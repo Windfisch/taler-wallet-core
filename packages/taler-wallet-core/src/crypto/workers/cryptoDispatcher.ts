@@ -122,7 +122,7 @@ export class CryptoDispatcher {
         worker.idleTimeoutHandle = null;
       }
       if (worker.currentWorkItem) {
-        worker.currentWorkItem.reject(Error("explicitly terminated"));
+        worker.currentWorkItem.reject(new CryptoApiStoppedError());
         worker.currentWorkItem = null;
       }
       if (worker.w) {
@@ -143,7 +143,7 @@ export class CryptoDispatcher {
    */
   wake(ws: WorkerState, work: WorkItem): void {
     if (this.stopped) {
-      throw new CryptoApiStoppedError();
+      return;
     }
     if (ws.currentWorkItem !== null) {
       throw Error("assertion failed");
@@ -331,8 +331,8 @@ export class CryptoDispatcher {
         }
         timeout.clear();
         resolve(x);
-      });
-      p.catch((x) => {
+      }).catch((x) => {
+        logger.info(`crypto RPC call ${operation} threw`);
         if (timedOut) {
           return;
         }

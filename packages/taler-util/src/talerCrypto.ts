@@ -692,43 +692,12 @@ export interface FreshCoin {
   bks: Uint8Array;
 }
 
-function bufferForUint32(n: number): Uint8Array {
+export function bufferForUint32(n: number): Uint8Array {
   const arrBuf = new ArrayBuffer(4);
   const buf = new Uint8Array(arrBuf);
   const dv = new DataView(arrBuf);
   dv.setUint32(0, n);
   return buf;
-}
-
-export function setupRefreshPlanchet(
-  transferSecret: Uint8Array,
-  coinNumber: number,
-): FreshCoin {
-  // See TALER_transfer_secret_to_planchet_secret in C impl
-  const planchetMasterSecret = kdfKw({
-    ikm: transferSecret,
-    outputLength: 32,
-    salt: bufferForUint32(coinNumber),
-    info: stringToBytes("taler-coin-derivation"),
-  });
-
-  const coinPriv = kdfKw({
-    ikm: planchetMasterSecret,
-    outputLength: 32,
-    salt: stringToBytes("coin"),
-  });
-
-  const bks = kdfKw({
-    ikm: planchetMasterSecret,
-    outputLength: 32,
-    salt: stringToBytes("bks"),
-  });
-
-  return {
-    bks,
-    coinPriv,
-    coinPub: eddsaGetPublic(coinPriv),
-  };
 }
 
 export function setupWithdrawPlanchet(
@@ -786,10 +755,10 @@ export function setupRefreshTransferPub(
 }
 
 /**
- * 
+ *
  * @param paytoUri
- * @param salt 16-byte salt 
- * @returns 
+ * @param salt 16-byte salt
+ * @returns
  */
 export function hashWire(paytoUri: string, salt: string): string {
   const r = kdf(

@@ -797,11 +797,22 @@ async function processRefreshGroupImpl(
     return;
   }
   // Process refresh sessions of the group in parallel.
+  logger.trace("processing refresh sessions for old coins");
   const ps = refreshGroup.oldCoinPubs.map((x, i) =>
-    processRefreshSession(ws, refreshGroupId, i),
+    processRefreshSession(ws, refreshGroupId, i).catch((x) => {
+      logger.warn("process refresh session got exception");
+      logger.warn(`exc ${x}`);
+      logger.warn(`exc stack ${x.stack}`);
+    }),
   );
-  await Promise.all(ps);
-  logger.trace("refresh finished");
+  try {
+    logger.trace("waiting for refreshes");
+    await Promise.all(ps);
+    logger.trace("refresh finished");
+  } catch (e) {
+    logger.warn("process refresh sessions got exception");
+    logger.warn(`exception: ${e}`);
+  }
 }
 
 async function processRefreshSession(
