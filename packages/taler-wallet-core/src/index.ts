@@ -38,7 +38,6 @@ export {
   CryptoWorkerFactory,
   CryptoDispatcher,
 } from "./crypto/workers/cryptoDispatcher.js";
-export { SynchronousCryptoWorker } from "./crypto/workers/synchronousWorker.js";
 
 export * from "./pending-types.js";
 
