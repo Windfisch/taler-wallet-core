@@ -51,7 +51,6 @@ export class SynchronousCryptoWorker {
       logger.info("using RPC for some crypto operations");
       const rpc = (this.rpcClient = new CryptoRpcClient());
       this.cryptoImplR.eddsaSign = async (_, req) => {
-        logger.info("calling RPC impl of eddsaSign");
         return await rpc.queueRequest({
           op: "eddsa_sign",
           args: {
