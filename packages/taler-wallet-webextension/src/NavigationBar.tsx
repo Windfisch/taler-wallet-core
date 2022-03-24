@@ -24,10 +24,15 @@
 /**
  * Imports.
  */
-import { VNode, h } from "preact";
+import { h, VNode } from "preact";
 import { JustInDevMode } from "./components/JustInDevMode";
-import { NavigationHeader, NavigationHeaderHolder } from "./components/styled";
+import {
+  NavigationHeader,
+  NavigationHeaderHolder,
+  SvgIcon,
+} from "./components/styled";
 import { useTranslationContext } from "./context/translation";
+import settingsIcon from "./svg/settings_black_24dp.svg";
 
 /**
  * List of pages used by the wallet
@@ -72,7 +77,11 @@ export function PopupNavBar({ path = "" }: { path?: string }): VNode {
       </a>
       <a />
       <a href="/settings">
-        <div class="settings-icon" title={i18n.str`Settings`} />
+        <SvgIcon
+          title={i18n.str`Settings`}
+          dangerouslySetInnerHTML={{ __html: settingsIcon }}
+          color="white"
+        />
       </a>
     </NavigationHeader>
   );

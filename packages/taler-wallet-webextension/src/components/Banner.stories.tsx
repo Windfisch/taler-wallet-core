@@ -22,7 +22,7 @@
 import { Banner } from "./Banner";
 import { Fragment, h, VNode } from "preact";
 import { Avatar } from "../mui/Avatar";
-import { Icon } from "./styled";
+import { Icon, SvgIcon } from "./styled";
 import { Typography } from "../mui/Typography";
 
 export default {
@@ -48,7 +48,7 @@ function Wrapper({ children }: any) {
   );
 }
 function SignalWifiOffIcon({ ...rest }: any): VNode {
-  return <Icon {...rest} />;
+  return <SvgIcon {...rest} />;
 }
 
 export const BasicExample = () => (
@@ -67,7 +67,7 @@ export const BasicExample = () => (
       <Banner
         elements={[
           {
-            icon: <SignalWifiOffIcon />,
+            icon: <SignalWifiOffIcon color="gray" />,
             description: (
               <Typography>
                 You have lost connection to the internet. This app is offline.

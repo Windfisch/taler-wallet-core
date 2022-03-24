@@ -119,7 +119,7 @@ export function BalanceView({
         {currencyWithNonZeroAmount.length > 0 && (
           <MultiActionButton
             label={(s) => (
-              <i18n.Translate debug>Deposit {<span>{s}</span>}</i18n.Translate>
+              <i18n.Translate>Deposit {<span>{s}</span>}</i18n.Translate>
             )}
             actions={currencyWithNonZeroAmount}
             onClick={(c) => goToWalletDeposit(c)}

@@ -778,9 +778,6 @@ export const WarningBox = styled(ErrorBox)`
   border-color: #ffecb5;
 `;
 
-import settingsIcon from "../../../static/img/settings_black_24dp.svg";
-import wifiIcon from "../../../static/img/wifi.svg";
-
 export const NavigationHeaderHolder = styled.div`
   width: 100%;
   display: flex;
@@ -809,27 +806,25 @@ export const NavigationHeader = styled.div`
     line-height: 35px;
   }
 
-  & > a > div.settings-icon {
-    mask: url(${settingsIcon}) no-repeat center;
-    background-color: white;
-    width: 24px;
-    height: 24px;
-    margin-left: auto;
-    margin-right: 8px;
-    padding: 4px;
-  }
   & > a.active {
     background-color: #f8faf7;
     color: #0042b2;
     font-weight: bold;
   }
-  & > a.active > div.settings-icon {
-    background-color: #0042b2;
+`;
+
+export const SvgIcon = styled.div<{ color: string }>`
+  & > svg {
+    fill: ${({ color }) => color};
   }
+  width: 24px;
+  height: 24px;
+  margin-left: auto;
+  margin-right: 8px;
+  padding: 4px;
 `;
 
 export const Icon = styled.div`
-  mask: url(${wifiIcon}) no-repeat center;
   background-color: gray;
   width: 24px;
   height: 24px;

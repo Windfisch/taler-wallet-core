@@ -14,9 +14,15 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { PendingTestFunction, TestFunction } from "mocha";
-import { ComponentChildren, Fragment, FunctionalComponent, h as create, render as renderIntoDom, VNode } from "preact";
+import { ComponentChildren, Fragment, FunctionalComponent, h as create, options, render as renderIntoDom, VNode } from "preact";
 import { render as renderToString } from "preact-render-to-string";
+
+// When doing tests we want the requestAnimationFrame to be as fast as possible.
+// without this option the RAF will timeout after 100ms making the tests slower
+options.requestAnimationFrame = (fn: () => void) => {
+  // console.log("RAF called")
+  return fn()
+}
 
 export function createExample<Props>(
   Component: FunctionalComponent<Props>,
@@ -59,7 +65,7 @@ export function renderNodeOrBrowser(Component: any, args: any): void {
 interface Mounted<T> {
   unmount: () => void;
   result: { current: T | null };
-  waitNextUpdate: () => Promise<void>;
+  waitNextUpdate: (s?: string) => Promise<void>;
 }
 
 const isNode = typeof window === "undefined"
@@ -84,10 +90,11 @@ export function mountHook<T>(callback: () => T, Context?: ({ children }: { child
   const vdom = !Context ? create(Component, {}) : create(Context, { children: [create(Component, {})] },);
 
   // waiter callback
-  async function waitNextUpdate(): Promise<void> {
+  async function waitNextUpdate(_label = ""): Promise<void> {
+    if (_label) _label = `. label: "${_label}"`
     await new Promise((res, rej) => {
       const tid = setTimeout(() => {
-        rej(Error("waiting for an update but the hook didn't make one"))
+        rej(Error(`waiting for an update but the hook didn't make one${_label}`))
       }, 100)
 
       listener.push(() => {

@@ -1,5 +1,5 @@
 import { h, VNode } from "preact";
-import arrowDown from "../../static/img/chevron-down.svg";
+import arrowDown from "../svg/chevron-down.svg";
 import { ButtonBoxPrimary, ButtonPrimary, ParagraphClickable } from "./styled";
 import { useState } from "preact/hooks";
 
@@ -91,7 +91,10 @@ export function MultiActionButton({
           borderBottomLeftRadius: 0,
         }}
       >
-        <img style={{ height: 14 }} src={arrowDown} />
+        <div
+          style={{ height: 14 }}
+          dangerouslySetInnerHTML={{ __html: arrowDown }}
+        />
       </ButtonPrimary>
     </div>
   );

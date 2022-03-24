@@ -16,7 +16,7 @@
 import { TalerErrorDetail } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import arrowDown from "../../static/img/chevron-down.svg";
+import arrowDown from "../svg/chevron-down.svg";
 import { useDevContext } from "../context/devContext";
 import { ErrorBox } from "./styled";
 
@@ -45,12 +45,12 @@ export function ErrorTalerOperation({
               setShowErrorDetail((v) => !v);
             }}
           >
-            <img
+            <div
               style={{
                 transform: !showErrorDetail ? undefined : "scaleY(-1)",
                 height: 24,
               }}
-              src={arrowDown}
+              dangerouslySetInnerHTML={{ __html: arrowDown }}
             />
           </button>
         )}

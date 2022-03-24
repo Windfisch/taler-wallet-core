@@ -4,6 +4,7 @@ import {
   Amounts,
   segwitMinAmount,
   generateFakeSegwitAddress,
+  PaytoUri,
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType";
@@ -13,6 +14,7 @@ import { useTranslationContext } from "../context/translation";
 import { amountToString } from "../utils/index";
 export interface Props {
   reservePub: string;
+  paytoURI: PaytoUri | undefined;
   payto: string;
   exchangeBaseUrl: string;
   amount: AmountJson;
@@ -21,13 +23,13 @@ export interface Props {
 
 export function ReserveCreated({
   reservePub,
+  paytoURI,
   payto,
   onCancel,
   exchangeBaseUrl,
   amount,
 }: Props): VNode {
   const { i18n } = useTranslationContext();
-  const paytoURI = parsePaytoUri(payto);
   if (!paytoURI) {
     return (
       <div>
@@ -39,11 +41,7 @@ export function ReserveCreated({
   }
   function TransferDetails(): VNode {
     if (!paytoURI) return <Fragment />;
-    if (paytoURI.targetType === "bitcoin") {
-      const { segwitAddr1, segwitAddr2 } = generateFakeSegwitAddress(
-        reservePub,
-        paytoURI.targetPath,
-      );
+    if (paytoURI.isKnown && paytoURI.targetType === "bitcoin") {
       const min = segwitMinAmount();
       return (
         <section>
@@ -64,10 +62,10 @@ export function ReserveCreated({
                 {paytoURI.targetPath} {Amounts.stringifyValue(amount)} BTC
               </li>
               <li>
-                {segwitAddr1} {Amounts.stringifyValue(min)} BTC
+                {paytoURI.addr1} {Amounts.stringifyValue(min)} BTC
               </li>
               <li>
-                {segwitAddr2} {Amounts.stringifyValue(min)} BTC
+                {paytoURI.addr2} {Amounts.stringifyValue(min)} BTC
               </li>
             </ul>
             <i18n.Translate>
@@ -79,10 +77,10 @@ export function ReserveCreated({
                 {paytoURI.targetPath},{Amounts.stringifyValue(amount)}
               </li>
               <li>
-                {segwitAddr1},{Amounts.stringifyValue(min)}
+                {paytoURI.addr1},{Amounts.stringifyValue(min)}
               </li>
               <li>
-                {segwitAddr2},{Amounts.stringifyValue(min)}
+                {paytoURI.addr2},{Amounts.stringifyValue(min)}
               </li>
             </ul>
             <i18n.Translate>

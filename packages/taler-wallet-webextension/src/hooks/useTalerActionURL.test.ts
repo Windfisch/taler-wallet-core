@@ -17,11 +17,10 @@ import { useTalerActionURL } from "./useTalerActionURL"
 import { mountHook } from "../test-utils";
 import { IoCProviderForTesting } from "../context/iocContext";
 import { h, VNode } from "preact";
-import { act } from "preact/test-utils";
+import { expect } from "chai";
 
 describe('useTalerActionURL hook', () => {
 
-  // eslint-disable-next-line jest/expect-expect
   it('should be set url to undefined when dismiss', async () => {
 
     const ctx = ({ children }: { children: any }): VNode => {
@@ -36,24 +35,25 @@ describe('useTalerActionURL hook', () => {
 
     {
       const [url] = result.current!
-      if (url !== undefined) throw Error('invalid')
+      expect(url).undefined;
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate("waiting for useEffect")
 
     {
       const [url] = result.current!
-      if (url !== "asd") throw Error(`invalid: ${url}`)
+      expect(url).equals("asd");
     }
 
-    await act(() => {
-      const [, setDismissed] = result.current!
-      setDismissed(true)
-    })
+    const [, setDismissed] = result.current!
+    setDismissed(true)
+
+    await waitNextUpdate("after dismiss")
 
     {
       const [url] = result.current!
       if (url !== undefined) throw Error('invalid')
+      expect(url).undefined;
     }
 
   })

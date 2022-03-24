@@ -19,6 +19,8 @@ import {
   AmountJson,
   Amounts,
   NotificationType,
+  parsePaytoUri,
+  PaytoUri,
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
@@ -41,6 +43,8 @@ export function ManualWithdrawPage({ currency, onCancel }: Props): VNode {
         response: AcceptManualWithdrawalResult;
         exchangeBaseUrl: string;
         amount: AmountJson;
+        paytoURI: PaytoUri | undefined;
+        payto: string;
       }
     | undefined
   >(undefined);
@@ -60,7 +64,12 @@ export function ManualWithdrawPage({ currency, onCancel }: Props): VNode {
         exchangeBaseUrl,
         Amounts.stringify(amount),
       );
-      setSuccess({ exchangeBaseUrl, response, amount });
+      const payto = response.exchangePaytoUris[0];
+      const paytoURI = parsePaytoUri(payto);
+      if (paytoURI && paytoURI.isKnown && paytoURI.targetType === "bitcoin") {
+        paytoURI.generateSegwitAddress(response.reservePub);
+      }
+      setSuccess({ exchangeBaseUrl, response, amount, paytoURI, payto });
     } catch (e) {
       if (e instanceof Error) {
         setError(e.message);
@@ -75,7 +84,8 @@ export function ManualWithdrawPage({ currency, onCancel }: Props): VNode {
     return (
       <ReserveCreated
         reservePub={success.response.reservePub}
-        payto={success.response.exchangePaytoUris[0]}
+        paytoURI={success.paytoURI}
+        payto={success.payto}
         exchangeBaseUrl={success.exchangeBaseUrl}
         amount={success.amount}
         onCancel={onCancel}

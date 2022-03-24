@@ -14,22 +14,14 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { h } from "preact";
-import logo from "../svg/logo-2021.svg";
+/**
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-export function LogoHeader() {
-  return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-around",
-        margin: "2em",
-      }}
-    >
-      <div
-        style={{ width: 150, height: 70 }}
-        dangerouslySetInnerHTML={{ __html: logo }}
-      ></div>
-    </div>
-  );
-}
+import * as a1 from "./Button.stories";
+import * as a3 from "./Grid.stories";
+import * as a4 from "./Paper.stories";
+import * as a5 from "./TextField.stories";
+
+export default [a1, a3, a4, a5];

@@ -24,8 +24,8 @@ import * as segwit from "./segwit_addr"
  */
 
 export interface SegwitAddrs {
-  segwitAddr1: string,
-  segwitAddr2: string,
+  addr1: string,
+  addr2: string,
 }
 
 function buf2hex(buffer: Uint8Array) { // buffer is an ArrayBuffer
@@ -57,8 +57,8 @@ export function generateFakeSegwitAddress(reservePub: string, addr: string): Seg
   if (prefix === undefined) throw new Error('unknown bitcoin net')
 
   return {
-    segwitAddr1: segwit.default.encode(prefix, 0, first_part),
-    segwitAddr2: segwit.default.encode(prefix, 0, second_part),
+    addr1: segwit.default.encode(prefix, 0, first_part),
+    addr2: segwit.default.encode(prefix, 0, second_part),
   }
 }
 

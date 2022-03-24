@@ -21,8 +21,8 @@
 
 import { Button } from "./Button";
 import { Fragment, h } from "preact";
-import DeleteIcon from "../../static/img/delete_24px.svg";
-import SendIcon from "../../static/img/send_24px.svg";
+import DeleteIcon from "../svg/delete_24px.svg";
+import SendIcon from "../svg/send_24px.svg";
 import { styled } from "@linaria/react";
 
 export default {

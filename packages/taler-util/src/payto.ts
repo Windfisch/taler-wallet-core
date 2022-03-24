@@ -14,9 +14,10 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { generateFakeSegwitAddress } from "./index.js";
 import { URLSearchParams } from "./url.js";
 
-export type PaytoUri = PaytoUriUnknown | PaytoUriIBAN | PaytoUriTalerBank;
+export type PaytoUri = PaytoUriUnknown | PaytoUriIBAN | PaytoUriTalerBank | PaytoUriBitcoin;
 
 interface PaytoUriGeneric {
   targetType: string;
@@ -39,6 +40,13 @@ interface PaytoUriTalerBank extends PaytoUriGeneric {
   targetType: 'x-taler-bank',
   host: string;
   account: string;
+}
+
+interface PaytoUriBitcoin extends PaytoUriGeneric {
+  isKnown: true;
+  targetType: 'bitcoin',
+  generateSegwitAddress: (r: string) => { addr1: string, addr2: string };
+  addr1?: string, addr2?: string,
 }
 
 const paytoPfx = "payto://";
@@ -103,6 +111,29 @@ export function parsePaytoUri(s: string): PaytoUri | undefined {
       params,
       iban: targetPath
     };
+
+  }
+  if (targetType === 'bitcoin') {
+
+    const result: PaytoUriBitcoin = {
+      isKnown: true,
+      targetPath,
+      targetType,
+      params,
+      generateSegwitAddress: (): any => null
+    }
+
+    //generate segwit address just once, save addr in payto object
+    //and use it as cache
+    function generateSegwitAddress(reserve: string) {
+      if (result.addr1 && result.addr2) return { addr1: result.addr1, addr2: result.addr2 };
+      const { addr1, addr2 } = generateFakeSegwitAddress(reserve, targetPath)
+      result.addr1 = addr1
+      result.addr2 = addr2
+      return { addr1, addr2 }
+    }
+    result.generateSegwitAddress = generateSegwitAddress
+    return result;
 
   }
   return {

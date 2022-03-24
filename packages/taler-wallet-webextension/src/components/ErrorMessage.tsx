@@ -15,7 +15,7 @@
  */
 import { VNode, h, ComponentChildren } from "preact";
 import { useState } from "preact/hooks";
-import arrowDown from "../../static/img/chevron-down.svg";
+import arrowDown from "../svg/chevron-down.svg";
 import { ErrorBox } from "./styled";
 
 export function ErrorMessage({
@@ -36,7 +36,10 @@ export function ErrorMessage({
               setShowErrorDetail((v) => !v);
             }}
           >
-            <img style={{ height: "1.5em" }} src={arrowDown} />
+            <div
+              style={{ height: "1.5em" }}
+              dangerouslySetInnerHTML={{ __html: arrowDown }}
+            />
           </button>
         )}
       </div>
