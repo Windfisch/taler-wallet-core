@@ -19,7 +19,7 @@
  */
 import { CryptoWorkerFactory } from "./cryptoDispatcher.js";
 import { CryptoWorker } from "./cryptoWorkerInterface.js";
-import { SynchronousCryptoWorker } from "./synchronousWorker.js";
+import { SynchronousCryptoWorker } from "./synchronousWorkerNode.js";
 
 /**
  * The synchronous crypto worker produced by this factory doesn't run in the

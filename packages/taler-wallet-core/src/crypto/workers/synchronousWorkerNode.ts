@@ -174,9 +174,9 @@ export class SynchronousCryptoWorker {
    * Send a message to the worker thread.
    */
   postMessage(msg: any): void {
-    const args = msg.args;
-    if (!Array.isArray(args)) {
-      console.error("args must be array");
+    const req = msg.req;
+    if (typeof req !== "object") {
+      console.error("request must be an object");
       return;
     }
     const id = msg.id;
@@ -190,7 +190,7 @@ export class SynchronousCryptoWorker {
       return;
     }
 
-    this.handleRequest(operation, id, args).catch((e) => {
+    this.handleRequest(operation, id, req).catch((e) => {
       console.error("Error while handling crypto request:", e);
     });
   }
