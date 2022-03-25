@@ -24,21 +24,11 @@ import { setupI18n } from "@gnu-taler/taler-util";
 import { Fragment, h, render } from "preact";
 import { strings } from "./i18n/strings";
 import { setupPlatform } from "./platform/api";
-import chromeAPI from "./platform/chrome";
-import firefoxAPI from "./platform/firefox";
-import { Application } from "./wallet/Application";
+import devAPI from "./platform/dev";
+import { Application } from "./popup/Application";
 
-const isFirefox = typeof (window as any)["InstallTrigger"] !== "undefined";
-
-//FIXME: create different entry point for any platform instead of
-//switching in runtime
-if (isFirefox) {
-  console.log("Wallet setup for Firefox API");
-  setupPlatform(firefoxAPI);
-} else {
-  console.log("Wallet setup for Chrome API");
-  setupPlatform(chromeAPI);
-}
+console.log("Wallet setup for Dev API");
+setupPlatform(devAPI);
 
 function main(): void {
   try {

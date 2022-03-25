@@ -40,41 +40,18 @@ async function handleExtendedPerm(isEnabled: boolean, onChange: (value: boolean)
   if (!isEnabled) {
     // We set permissions here, since apparently FF wants this to be done
     // as the result of an input event ...
-    const granted = await platform.getPermissionsApi().request(getReadRequestPermissions());
-    console.log("permissions granted:", granted);
-    const lastError = platform.getLastError();
-    if (lastError) {
+    let granted: boolean;
+    try {
+      granted = await platform.getPermissionsApi().request(getReadRequestPermissions());
+    } catch (lastError) {
       console.error("error requesting permissions");
       console.error(lastError);
       onChange(false);
-      return;
+      return
     }
-    // try {
+    console.log("permissions granted:", granted);
     const res = await wxApi.setExtendedPermissions(granted);
     onChange(res.newValue);
-    // } finally {
-    //   return
-    // }
-
-    // return new Promise<void>((res) => {
-    //   platform.getPermissionsApi().request(getReadRequestPermissions(), async (granted: boolean) => {
-    //     console.log("permissions granted:", granted);
-    //     const lastError = getLastError()
-    //     if (lastError) {
-    //       console.error("error requesting permissions");
-    //       console.error(lastError);
-    //       onChange(false);
-    //       return;
-    //     }
-    //     try {
-    //       const res = await wxApi.setExtendedPermissions(granted);
-    //       onChange(res.newValue);
-    //     } finally {
-    //       res()
-    //     }
-
-    //   });
-    // })
   }
   await wxApi.setExtendedPermissions(false).then(r => onChange(r.newValue));
   return

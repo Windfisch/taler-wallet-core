@@ -32,7 +32,7 @@ const worker: Worker = self as any as Worker;
 async function handleRequest(
   operation: string,
   id: number,
-  args: string[],
+  req: unknown,
 ): Promise<void> {
   const impl = nativeCrypto;
 
@@ -42,7 +42,7 @@ async function handleRequest(
   }
 
   try {
-    const result = await (impl as any)[operation](...args);
+    const result = await (impl as any)[operation](req);
     worker.postMessage({ result, id });
   } catch (e) {
     logger.error("error during operation", e);
@@ -51,9 +51,9 @@ async function handleRequest(
 }
 
 worker.onmessage = (msg: MessageEvent) => {
-  const args = msg.data.args;
-  if (!Array.isArray(args)) {
-    console.error("args must be array");
+  const req = msg.data.req;
+  if (typeof req !== "object") {
+    console.error("request must be an object");
     return;
   }
   const id = msg.data.id;
@@ -67,7 +67,7 @@ worker.onmessage = (msg: MessageEvent) => {
     return;
   }
 
-  handleRequest(operation, id, args).catch((e) => {
+  handleRequest(operation, id, req).catch((e) => {
     console.error("error in browser worker", e);
   });
 };

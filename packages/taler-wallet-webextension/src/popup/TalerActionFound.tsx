@@ -34,7 +34,7 @@ export function TalerActionFound({ url, onDismiss }: Props) {
   const uriType = classifyTalerUri(url);
   const { i18n } = useTranslationContext();
   function redirectToWallet() {
-    platform.openWalletURIFromPopup(uriType, url);
+    platform.openWalletURIFromPopup(url);
   }
   return (
     <Fragment>

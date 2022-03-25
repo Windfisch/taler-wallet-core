@@ -24,21 +24,11 @@
  * Imports.
  */
 import { platform, setupPlatform } from "./platform/api";
-import firefoxAPI from "./platform/firefox"
-import chromeAPI from "./platform/chrome"
+import devAPI from "./platform/dev"
 import { wxMain } from "./wxBackend";
 
-const isFirefox = typeof (window as any)['InstallTrigger'] !== 'undefined'
-
-// FIXME: create different entry point for any platform instead of 
-// switching in runtime
-if (isFirefox) {
-  console.log("Wallet setup for Firefox API")
-  setupPlatform(firefoxAPI)
-} else {
-  console.log("Wallet setup for Chrome API")
-  setupPlatform(chromeAPI)
-}
+console.log("Wallet setup for Dev API")
+setupPlatform(devAPI)
 
 try {
   platform.registerOnInstalled(() => {

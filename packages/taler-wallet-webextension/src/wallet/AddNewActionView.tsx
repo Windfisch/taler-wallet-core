@@ -15,7 +15,7 @@ export function AddNewActionView({ onCancel }: Props): VNode {
   const { i18n } = useTranslationContext();
 
   function redirectToWallet() {
-    platform.openWalletURIFromPopup(uriType, url);
+    platform.openWalletURIFromPopup(url);
   }
 
   return (

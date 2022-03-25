@@ -14,17 +14,16 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { TalerUriType } from "@gnu-taler/taler-util";
+import { classifyTalerUri, CoreApiResponse, TalerUriType } from "@gnu-taler/taler-util";
 import { getReadRequestPermissions } from "../permissions";
 import { CrossBrowserPermissionsApi, MessageFromBackend, Permissions, PlatformAPI } from "./api.js";
 
 const api: PlatformAPI = {
   isFirefox,
   findTalerUriInActiveTab,
-  getLastError,
   getPermissionsApi,
   getWalletVersion,
-  listenToWalletNotifications,
+  listenToWalletBackground,
   notifyWhenAppIsReady,
   openWalletPage,
   openWalletPageFromPopup,
@@ -32,12 +31,11 @@ const api: PlatformAPI = {
   redirectTabToWalletPage,
   registerAllIncomingConnections,
   registerOnInstalled,
-  registerOnNewMessage,
+  listenToAllChannels,
   registerReloadOnNewVersion,
   registerTalerHeaderListener,
-  searchForTalerLinks,
   sendMessageToAllChannels,
-  setMessageToWalletBackground,
+  sendMessageToWalletBackground,
   useServiceWorkerAsBackgroundProcess
 }
 
@@ -50,7 +48,7 @@ function isFirefox(): boolean {
 export function contains(p: Permissions): Promise<boolean> {
   return new Promise((res, rej) => {
     chrome.permissions.contains(p, (resp) => {
-      const le = getLastError()
+      const le = chrome.runtime.lastError?.message
       if (le) {
         rej(le)
       }
@@ -62,7 +60,7 @@ export function contains(p: Permissions): Promise<boolean> {
 export async function request(p: Permissions): Promise<boolean> {
   return new Promise((res, rej) => {
     chrome.permissions.request(p, (resp) => {
-      const le = getLastError()
+      const le = chrome.runtime.lastError?.message
       if (le) {
         rej(le)
       }
@@ -74,7 +72,7 @@ export async function request(p: Permissions): Promise<boolean> {
 export async function remove(p: Permissions): Promise<boolean> {
   return new Promise((res, rej) => {
     chrome.permissions.remove(p, (resp) => {
-      const le = getLastError()
+      const le = chrome.runtime.lastError?.message
       if (le) {
         rej(le)
       }
@@ -83,9 +81,12 @@ export async function remove(p: Permissions): Promise<boolean> {
   })
 }
 
-function addPermissionsListener(callback: (p: Permissions) => void): void {
+function addPermissionsListener(callback: (p: Permissions, lastError?: string) => void): void {
   console.log("addPermissionListener is not supported for Firefox");
-  chrome.permissions.onAdded.addListener(callback)
+  chrome.permissions.onAdded.addListener((perm: Permissions) => {
+    const lastError = chrome.runtime.lastError?.message;
+    callback(perm, lastError)
+  })
 }
 
 function getPermissionsApi(): CrossBrowserPermissionsApi {
@@ -107,7 +108,9 @@ function notifyWhenAppIsReady(callback: () => void) {
 }
 
 
-function openWalletURIFromPopup(uriType: TalerUriType, talerUri: string) {
+function openWalletURIFromPopup(talerUri: string) {
+  const uriType = classifyTalerUri(talerUri);
+
   let url: string | undefined = undefined;
   switch (uriType) {
     case TalerUriType.TalerWithdraw:
@@ -150,7 +153,7 @@ function openWalletPageFromPopup(page: string) {
   );
 }
 
-async function setMessageToWalletBackground(operation: string, payload: any): Promise<any> {
+async function sendMessageToWalletBackground(operation: string, payload: any): Promise<any> {
   return new Promise<any>((resolve, reject) => {
     chrome.runtime.sendMessage({ operation, payload, id: "(none)" }, (resp) => {
       if (chrome.runtime.lastError) {
@@ -164,7 +167,7 @@ async function setMessageToWalletBackground(operation: string, payload: any): Pr
 }
 
 let notificationPort: chrome.runtime.Port | undefined;
-function listenToWalletNotifications(listener: (m: any) => void) {
+function listenToWalletBackground(listener: (m: any) => void) {
   if (notificationPort === undefined) {
     notificationPort = chrome.runtime.connect({ name: "notifications" })
   }
@@ -203,7 +206,7 @@ function registerAllIncomingConnections() {
   });
 }
 
-function registerOnNewMessage(cb: (message: any, sender: any, callback: any) => void) {
+function listenToAllChannels(cb: (message: any, sender: any, callback: (r: CoreApiResponse) => void) => void) {
   chrome.runtime.onMessage.addListener((m, s, c) => {
     cb(m, s, c)
 
@@ -310,11 +313,6 @@ function registerOnInstalled(callback: () => void) {
 function useServiceWorkerAsBackgroundProcess() {
   return chrome.runtime.getManifest().manifest_version === 3
 }
-
-function getLastError() {
-  return chrome.runtime.lastError?.message;
-}
-
 
 function searchForTalerLinks(): string | undefined {
   let found;

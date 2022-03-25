@@ -269,7 +269,7 @@ export async function wxMain(): Promise<void> {
 
   // Handlers for messages coming directly from the content
   // script on the page
-  platform.registerOnNewMessage((message, sender, callback) => {
+  platform.listenToAllChannels((message, sender, callback) => {
     afterWalletIsInitialized.then(() => {
       dispatch(message, sender, callback);
     });
@@ -285,8 +285,7 @@ export async function wxMain(): Promise<void> {
 
   // On platforms that support it, also listen to external
   // modification of permissions.
-  platform.getPermissionsApi().addPermissionsListener((perm) => {
-    const lastError = platform.getLastError()
+  platform.getPermissionsApi().addPermissionsListener((perm, lastError) => {
     if (lastError) {
       console.error(lastError);
       return;

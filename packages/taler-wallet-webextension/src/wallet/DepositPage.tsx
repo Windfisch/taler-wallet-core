@@ -253,9 +253,6 @@ export function View({
               There is no known bank account to send money to
             </i18n.Translate>
           </p>
-          <ButtonBoxWarning>
-            <i18n.Translate>Withdraw</i18n.Translate>
-          </ButtonBoxWarning>
         </WarningBox>
         <footer>
           <Button onClick={onCancel}>

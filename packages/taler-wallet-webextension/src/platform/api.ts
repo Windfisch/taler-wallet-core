@@ -38,7 +38,7 @@ export interface CrossBrowserPermissionsApi {
   request(p: Permissions): Promise<boolean>;
   remove(p: Permissions): Promise<boolean>;
 
-  addPermissionsListener(callback: (p: Permissions) => void): void;
+  addPermissionsListener(callback: (p: Permissions, lastError?: string) => void): void;
 
 }
 
@@ -57,31 +57,132 @@ export interface WalletVersion {
  */
 export interface PlatformAPI {
   /**
+   * FIXME: should not be needed
+   * 
    * check if the platform is firefox
    */
   isFirefox(): boolean;
+
   /**
-   * 
+   * Permission API for checking and add a listener
    */
   getPermissionsApi(): CrossBrowserPermissionsApi;
+
+  /**
+   * Backend API
+   * 
+   * Register a callback to be called when the wallet is ready to start
+   * @param callback 
+   */
   notifyWhenAppIsReady(callback: () => void): void;
-  openWalletURIFromPopup(uriType: TalerUriType, talerUri: string): void;
+
+  /**
+   * Popup API
+   * 
+   * Used when an TalerURI is found and open up from the popup UI.
+   * Closes the popup and open the URI into the wallet UI.
+   * 
+   * @param talerUri 
+   */
+  openWalletURIFromPopup(talerUri: string): void;
+
+  /**
+   * Backend API
+   * 
+   * Open a page into the wallet UI
+   * @param page 
+   */
   openWalletPage(page: string): void;
+
+  /**
+   * Popup API
+   * 
+   * Open a page into the wallet UI and closed the popup
+   * @param page 
+   */
   openWalletPageFromPopup(page: string): void;
-  setMessageToWalletBackground(operation: string, payload: any): Promise<CoreApiResponse>;
-  listenToWalletNotifications(listener: (m: any) => void): () => void;
-  sendMessageToAllChannels(message: MessageFromBackend): void;
-  registerAllIncomingConnections(): void;
-  registerOnNewMessage(onNewMessage: (message: any, sender: any, callback: any) => void): void;
-  registerReloadOnNewVersion(): void;
+
+  /**
+   * Backend API
+   * 
+   * When a tab has been detected to have a Taler action the background process
+   * can use this function to redirect the tab to the wallet UI
+   *  
+   * @param tabId 
+   * @param page 
+   */
   redirectTabToWalletPage(tabId: number, page: string): void;
+
+  /**
+   * Get the wallet version from manifest
+   */
   getWalletVersion(): WalletVersion;
+
+
+  /**
+   * Backend API
+   */
+  registerAllIncomingConnections(): void;
+  /**
+   * Backend API
+   */
+  registerReloadOnNewVersion(): void;
+  /**
+   * Backend API
+   */
   registerTalerHeaderListener(onHeader: (tabId: number, url: string) => void): void;
+  /**
+   * Backend API
+   */
   registerOnInstalled(callback: () => void): void;
+
+  /**
+   * Backend API
+   * 
+   * Check if background process run as service worker. This is used from the 
+   * wallet use different http api and crypto worker.
+   */
   useServiceWorkerAsBackgroundProcess(): boolean;
-  getLastError(): string | undefined;
-  searchForTalerLinks(): string | undefined;
+
+  /**
+   * Popup API
+   * 
+   * Read the current tab html and try to find any Taler URI or QR code present.
+   * 
+   * @return Taler URI if found
+   */
   findTalerUriInActiveTab(): Promise<string | undefined>;
+
+  /**
+   * Used from the frontend to send commands to the wallet
+   * 
+   * @param operation 
+   * @param payload 
+   * 
+   * @return response from the backend
+   */
+  sendMessageToWalletBackground(operation: string, payload: any): Promise<CoreApiResponse>;
+
+  /**
+   * Used from the frontend to receive notifications about new information
+   * @param listener 
+   * @return function to unsubscribe the listener 
+   */
+  listenToWalletBackground(listener: (message: MessageFromBackend) => void): () => void;
+
+  /**
+   * Use by the wallet backend to receive operations from frontend (popup & wallet)
+   * and send a response back.
+   * 
+   * @param onNewMessage 
+   */
+  listenToAllChannels(onNewMessage: (message: any, sender: any, sendResponse: (r: CoreApiResponse) => void) => void): void;
+
+  /**
+   * Used by the wallet backend to send notification about new information
+   * @param message 
+   */
+  sendMessageToAllChannels(message: MessageFromBackend): void;
 }
 
 export let platform: PlatformAPI = undefined as any;
