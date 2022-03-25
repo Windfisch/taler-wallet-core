@@ -62,7 +62,7 @@ const api: PlatformAPI = ({
   },
 
   registerAllIncomingConnections: () => undefined,
-  registerOnInstalled: (fn: () => void) => fn(),
+  registerOnInstalled: (fn: () => void) => undefined,
   registerReloadOnNewVersion: () => undefined,
   registerTalerHeaderListener: () => undefined,
 

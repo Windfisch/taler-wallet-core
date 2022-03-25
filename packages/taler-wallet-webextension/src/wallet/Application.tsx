@@ -83,19 +83,21 @@ export function Application(): VNode {
                 <Fragment>
                   <LogoHeader />
                   <WalletNavBar path={path} />
-                  <div
-                    style={{
-                      backgroundColor: "lightcyan",
-                      display: "flex",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <PendingTransactions
-                      goToTransaction={(txId: string) =>
-                        route(Pages.balance_transaction.replace(":tid", txId))
-                      }
-                    />
-                  </div>
+                  {shouldShowPendingOperations(path) && (
+                    <div
+                      style={{
+                        backgroundColor: "lightcyan",
+                        display: "flex",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <PendingTransactions
+                        goToTransaction={(txId: string) =>
+                          route(Pages.balance_transaction.replace(":tid", txId))
+                        }
+                      />
+                    </div>
+                  )}
                 </Fragment>
               );
             }}
@@ -260,4 +262,8 @@ function Redirect({ to }: { to: string }): null {
     route(to, true);
   });
   return null;
+}
+
+function shouldShowPendingOperations(path: string): boolean {
+  return ["/balance/history/", "/dev", "/settings", "/backup"].includes(path);
 }
