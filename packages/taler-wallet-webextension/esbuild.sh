@@ -7,7 +7,8 @@ set -e
 echo typecheck and bundle...
 node build-fast-with-linaria.mjs &
 pnpm tsc --noEmit &
-wait
+wait -n
+wait -n
 
 echo testing...
 pnpm test -- -R dot

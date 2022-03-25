@@ -35,41 +35,49 @@ const preactCompatPlugin = {
 }
 
 const entryPoints = [
-  'src/popupEntryPoint.tsx', 'src/walletEntryPoint.tsx', 'src/background.ts', 'src/browserWorkerEntry.ts'
+  'src/popupEntryPoint.tsx',
+  'src/popupEntryPoint.dev.tsx',
+  'src/walletEntryPoint.tsx',
+  'src/walletEntryPoint.dev.tsx',
+  'src/background.ts',
+  'src/background.dev.ts',
+  'src/browserWorkerEntry.ts'
 ]
 
+export const buildConfig = {
+  entryPoints: [...entryPoints, ...allTestFiles],
+  bundle: true,
+  outdir: 'dist',
+  minify: false,
+  loader: {
+    '.svg': 'text',
+    '.png': 'file',
+  },
+  target: [
+    'es6'
+  ],
+  format: 'iife',
+  platform: 'browser',
+  sourcemap: 'external',
+  jsxFactory: 'h',
+  jsxFragment: 'Fragment',
+  // define: {
+  //   'process.env.NODE_ENV': '"development"',
+  // },
+  plugins: [
+    preactCompatPlugin,
+    linaria.default({
+      babelOptions: {
+        babelrc: false,
+        configFile: './babel.config-linaria.json',
+      },
+      sourceMap: true,
+    }),
+  ],
+}
+
 await esbuild
-  .build({
-    entryPoints: [...entryPoints, ...allTestFiles],
-    bundle: true,
-    outdir: 'dist',
-    minify: false,
-    loader: {
-      '.svg': 'text',
-      '.png': 'file',
-    },
-    target: [
-      'es6'
-    ],
-    format: 'iife',
-    platform: 'browser',
-    sourcemap: 'external',
-    jsxFactory: 'h',
-    jsxFragment: 'Fragment',
-    // define: {
-    //   'process.env.NODE_ENV': '"development"',
-    // },
-    plugins: [
-      preactCompatPlugin,
-      linaria.default({
-        babelOptions: {
-          babelrc: false,
-          configFile: './babel.config-linaria.json',
-        },
-        sourceMap: true,
-      }),
-    ],
-  })
+  .build(buildConfig)
   .catch((e) => {
     console.log(e)
     process.exit(1)
