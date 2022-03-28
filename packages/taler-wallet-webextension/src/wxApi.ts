@@ -59,9 +59,9 @@ import {
   RemoveBackupProviderRequest,
   TalerError,
 } from "@gnu-taler/taler-wallet-core";
-import { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
+import type { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import type { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core/src/operations/withdraw";
-import { platform, MessageFromBackend } from "./platform/api";
+import { platform, MessageFromBackend } from "./platform/api.js";
 
 /**
  *
