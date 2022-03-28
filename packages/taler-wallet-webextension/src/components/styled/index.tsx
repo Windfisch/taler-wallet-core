@@ -66,6 +66,17 @@ export const WalletActionOld = styled.section`
   }
 `;
 
+export const Title = styled.h1`
+  font-size: 2em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+`;
+export const SubTitle = styled.h1`
+  font-size: 1.5em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+`;
+
 export const DateSeparator = styled.div`
   color: gray;
   margin: 0.2em;
@@ -140,7 +151,7 @@ export const Middle = styled.div`
   height: 100%;
 `;
 
-export const PopupBox = styled.div<{ noPadding?: boolean; devMode: boolean }>`
+export const PopupBox = styled.div<{ noPadding?: boolean; devMode?: boolean }>`
   height: 290px;
   width: 500px;
   overflow-y: visible;

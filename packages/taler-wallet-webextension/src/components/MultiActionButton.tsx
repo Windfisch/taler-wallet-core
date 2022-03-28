@@ -89,10 +89,17 @@ export function MultiActionButton({
           marginLeft: 0,
           borderTopLeftRadius: 0,
           borderBottomLeftRadius: 0,
+          width: 36,
+          padding: 4,
+          height: 36,
+          fill: "white",
         }}
       >
         <div
-          style={{ height: 14 }}
+          style={{
+            height: 24,
+            width: 24,
+          }}
           dangerouslySetInnerHTML={{ __html: arrowDown }}
         />
       </ButtonPrimary>

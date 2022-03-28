@@ -39,7 +39,7 @@ import { RefundPage } from "../cta/Refund";
 import { TipPage } from "../cta/Tip";
 import { WithdrawPage } from "../cta/Withdraw";
 import { Pages, WalletNavBar } from "../NavigationBar";
-import { DeveloperPage } from "../popup/DeveloperPage";
+import { DeveloperPage } from "./DeveloperPage";
 import { BackupPage } from "./BackupPage";
 import { DepositPage } from "./DepositPage";
 import { ExchangeAddPage } from "./ExchangeAddPage";

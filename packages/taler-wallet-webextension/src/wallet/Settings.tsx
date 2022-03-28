@@ -23,6 +23,7 @@ import {
   DestructiveText,
   Input,
   LinkPrimary,
+  SubTitle,
   SuccessText,
   WarningText,
 } from "../components/styled";
@@ -86,9 +87,9 @@ export function SettingsView({
   return (
     <Fragment>
       <section>
-        <h2>
+        <SubTitle>
           <i18n.Translate>Navigator</i18n.Translate>
-        </h2>
+        </SubTitle>
         <Checkbox
           label={
             <i18n.Translate>
@@ -106,9 +107,9 @@ export function SettingsView({
           onToggle={togglePermissions}
         />
 
-        <h2>
+        <SubTitle>
           <i18n.Translate>Trust</i18n.Translate>
-        </h2>
+        </SubTitle>
         {!knownExchanges || !knownExchanges.length ? (
           <div>
             <i18n.Translate>No exchange yet</i18n.Translate>
@@ -184,7 +185,7 @@ export function SettingsView({
           </LinkPrimary>
         </div>
 
-        <h2>Troubleshooting</h2>
+        <SubTitle>Troubleshooting</SubTitle>
         <Checkbox
           label={<i18n.Translate>Developer mode</i18n.Translate>}
           name="devMode"
@@ -198,9 +199,9 @@ export function SettingsView({
         />
 
         <JustInDevMode>
-          <h2>
+          <SubTitle>
             <i18n.Translate>Display</i18n.Translate>
-          </h2>
+          </SubTitle>
           <Input>
             <SelectList
               label={<i18n.Translate>Current Language</i18n.Translate>}

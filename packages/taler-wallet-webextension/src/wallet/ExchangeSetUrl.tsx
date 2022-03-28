@@ -10,6 +10,8 @@ import {
   ButtonPrimary,
   Input,
   LightText,
+  SubTitle,
+  Title,
   WarningBox,
 } from "../components/styled";
 import { useTranslationContext } from "../context/translation";
@@ -92,13 +94,13 @@ export function ExchangeSetUrlPage({
     <Fragment>
       <section>
         {!expectedCurrency ? (
-          <h1>
+          <Title>
             <i18n.Translate>Add new exchange</i18n.Translate>
-          </h1>
+          </Title>
         ) : (
-          <h2>
+          <SubTitle>
             <i18n.Translate>Add exchange for {expectedCurrency}</i18n.Translate>
-          </h2>
+          </SubTitle>
         )}
         {!result && (
           <LightText>

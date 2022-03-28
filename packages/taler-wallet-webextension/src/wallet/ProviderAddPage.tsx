@@ -30,6 +30,8 @@ import {
   Input,
   LightText,
   SmallLightText,
+  SubTitle,
+  Title,
 } from "../components/styled";
 import { useTranslationContext } from "../context/translation";
 import { queryToSlashConfig } from "../utils/index";
@@ -115,9 +117,9 @@ export function SetUrlView({
   return (
     <Fragment>
       <section>
-        <h1>
+        <Title>
           <i18n.Translate>Add backup provider</i18n.Translate>
-        </h1>
+        </Title>
         {error && (
           <ErrorMessage
             title={
@@ -196,9 +198,9 @@ export function ConfirmProviderView({
   return (
     <Fragment>
       <section>
-        <h1>
+        <Title>
           <i18n.Translate>Review terms of service</i18n.Translate>
-        </h1>
+        </Title>
         <div>
           <i18n.Translate>Provider URL</i18n.Translate>:{" "}
           <a href={url} target="_blank">
@@ -210,9 +212,9 @@ export function ConfirmProviderView({
             Please review and accept this provider's terms of service
           </i18n.Translate>
         </SmallLightText>
-        <h2>
+        <SubTitle>
           1. <i18n.Translate>Pricing</i18n.Translate>
-        </h2>
+        </SubTitle>
         <p>
           {Amounts.isZero(provider.annual_fee) ? (
             <i18n.Translate>free of charge</i18n.Translate>
@@ -222,9 +224,9 @@ export function ConfirmProviderView({
             </i18n.Translate>
           )}
         </p>
-        <h2>
+        <SubTitle>
           2. <i18n.Translate>Storage</i18n.Translate>
-        </h2>
+        </SubTitle>
         <p>
           <i18n.Translate>
             {provider.storage_limit_in_megabytes} megabytes of storage per year

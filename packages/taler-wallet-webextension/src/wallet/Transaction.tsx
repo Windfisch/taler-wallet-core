@@ -43,6 +43,7 @@ import {
   Overlay,
   RowBorderGray,
   SmallLightText,
+  SubTitle,
   WarningBox,
 } from "../components/styled";
 import { Time } from "../components/Time";
@@ -216,10 +217,13 @@ export function TransactionView({
             </CenteredDialog>
           </Overlay>
         ) : undefined}
-        <h2>
+        <SubTitle>
           <i18n.Translate>Withdrawal</i18n.Translate>
-        </h2>
-        <Time timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)} format="dd MMMM yyyy, HH:mm" />
+        </SubTitle>
+        <Time
+          timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)}
+          format="dd MMMM yyyy, HH:mm"
+        />
         {transaction.pending ? (
           transaction.withdrawalDetails.type ===
           WithdrawalType.ManualTransfer ? (
@@ -340,10 +344,13 @@ export function TransactionView({
 
     return (
       <TransactionTemplate>
-        <h2>
+        <SubTitle>
           <i18n.Translate>Payment</i18n.Translate>
-        </h2>
-        <Time timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)} format="dd MMMM yyyy, HH:mm" />
+        </SubTitle>
+        <Time
+          timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)}
+          format="dd MMMM yyyy, HH:mm"
+        />
         <br />
         <Part
           big
@@ -423,10 +430,13 @@ export function TransactionView({
     ).amount;
     return (
       <TransactionTemplate>
-        <h2>
+        <SubTitle>
           <i18n.Translate>Deposit</i18n.Translate>
-        </h2>
-        <Time timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)} format="dd MMMM yyyy, HH:mm" />
+        </SubTitle>
+        <Time
+          timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)}
+          format="dd MMMM yyyy, HH:mm"
+        />
         <br />
         <Part
           big
@@ -457,10 +467,13 @@ export function TransactionView({
     ).amount;
     return (
       <TransactionTemplate>
-        <h2>
+        <SubTitle>
           <i18n.Translate>Refresh</i18n.Translate>
-        </h2>
-        <Time timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)} format="dd MMMM yyyy, HH:mm" />
+        </SubTitle>
+        <Time
+          timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)}
+          format="dd MMMM yyyy, HH:mm"
+        />
         <br />
         <Part
           big
@@ -491,10 +504,13 @@ export function TransactionView({
     ).amount;
     return (
       <TransactionTemplate>
-        <h2>
+        <SubTitle>
           <i18n.Translate>Tip</i18n.Translate>
-        </h2>
-        <Time timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)} format="dd MMMM yyyy, HH:mm" />
+        </SubTitle>
+        <Time
+          timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)}
+          format="dd MMMM yyyy, HH:mm"
+        />
         <br />
         <Part
           big
@@ -525,9 +541,9 @@ export function TransactionView({
     ).amount;
     return (
       <TransactionTemplate>
-        <h2>
+        <SubTitle>
           <i18n.Translate>Refund</i18n.Translate>
-        </h2>
+        </SubTitle>
         <Time
           timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)}
           format="dd MMMM yyyy, HH:mm"

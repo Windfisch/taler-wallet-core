@@ -14,34 +14,54 @@
       function closeWallet() {
         window.frames["wallet"].location = "about:blank";
       }
+      function openPage() {
+        window.frames["other"].location =
+          document.getElementById("page-url").value;
+      }
     </script>
-    <input type="text" />
-    <button value="asd" onclick="openPopup()">open popup</button>
-    <button value="asd" onclick="closeWallet();openWallet()">
-      reload wallet page
-    </button>
+    <input id="page-url" type="text" />
+    <button onclick="openPage()">open</button>
+    <a
+      href='javascript:void(window.frames["other"].location = "http://bank.taler:5882")'
+      >open local bank</a
+    >
     <hr />
+    <iframe
+      id="other-window"
+      name="other"
+      src="http://bank.taler:5882"
+      width="100%"
+      height="325"
+    >
+    </iframe>
+    <hr />
+    <button value="asd" onclick="openPopup()">open popup</button><br />
     <iframe
       id="popup-window"
       name="popup"
       src="about:blank"
-      name="popup"
       width="500"
       height="325"
     >
     </iframe>
     <hr />
+    <button value="asd" onclick="closeWallet();openWallet()">
+      reload wallet page
+    </button>
+    <br />
     <iframe
       id="wallet-window"
       name="wallet"
       src="/wallet.html"
-      name="wallet"
       width="800"
       height="100%"
     >
     </iframe>
     <hr />
     <iframe src="/tests.html" name="wallet" width="800" height="100%"> </iframe>
+    <hr />
+    <iframe src="/stories.html" name="wallet" width="800" height="100%">
+    </iframe>
     <hr />
     <script src="/dist/background.dev.js"></script>
   </body>

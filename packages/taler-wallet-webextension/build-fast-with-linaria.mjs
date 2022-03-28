@@ -40,6 +40,7 @@ const entryPoints = [
   'src/walletEntryPoint.tsx',
   'src/walletEntryPoint.dev.tsx',
   'src/background.ts',
+  'src/stories.tsx',
   'src/background.dev.ts',
   'src/browserWorkerEntry.ts'
 ]

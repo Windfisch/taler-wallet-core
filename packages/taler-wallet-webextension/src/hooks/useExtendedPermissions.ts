@@ -52,7 +52,8 @@ async function handleExtendedPerm(isEnabled: boolean, onChange: (value: boolean)
     console.log("permissions granted:", granted);
     const res = await wxApi.setExtendedPermissions(granted);
     onChange(res.newValue);
+  } else {
+    await wxApi.setExtendedPermissions(false).then(r => onChange(r.newValue));
   }
-  await wxApi.setExtendedPermissions(false).then(r => onChange(r.newValue));
   return
 }

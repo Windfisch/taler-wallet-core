@@ -22,7 +22,7 @@
 import { classifyTalerUri, TalerUriType } from "@gnu-taler/taler-util";
 import { Fragment, h } from "preact";
 import { platform } from "../platform/api";
-import { ButtonPrimary, ButtonSuccess } from "../components/styled";
+import { ButtonPrimary, ButtonSuccess, Title } from "../components/styled";
 import { useTranslationContext } from "../context/translation";
 
 export interface Props {
@@ -39,9 +39,9 @@ export function TalerActionFound({ url, onDismiss }: Props) {
   return (
     <Fragment>
       <section>
-        <h1>
+        <Title>
           <i18n.Translate>Taler Action</i18n.Translate>
-        </h1>
+        </Title>
         {uriType === TalerUriType.TalerPay && (
           <div>
             <p>

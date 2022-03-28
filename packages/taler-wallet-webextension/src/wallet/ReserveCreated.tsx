@@ -9,7 +9,7 @@ import {
 import { Fragment, h, VNode } from "preact";
 import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType";
 import { QR } from "../components/QR";
-import { ButtonDestructive, WarningBox } from "../components/styled";
+import { ButtonDestructive, Title, WarningBox } from "../components/styled";
 import { useTranslationContext } from "../context/translation";
 import { amountToString } from "../utils/index";
 export interface Props {
@@ -115,9 +115,9 @@ export function ReserveCreated({
   return (
     <Fragment>
       <section>
-        <h1>
+        <Title>
           <i18n.Translate>Exchange is ready for withdrawal</i18n.Translate>
-        </h1>
+        </Title>
         <p>
           <i18n.Translate>
             To complete the process you need to wire{` `}

@@ -29,6 +29,7 @@ import {
 import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { Loading } from "../components/Loading";
+import { Title } from "../components/styled";
 import { useTranslationContext } from "../context/translation";
 import * as wxApi from "../wxApi";
 
@@ -48,7 +49,7 @@ export function View({
   const { i18n } = useTranslationContext();
   return (
     <section class="main">
-      <h1>GNU Taler Wallet</h1>
+      <Title>GNU Taler Wallet</Title>
       <article class="fade">
         {prepareTipResult.accepted ? (
           <span>

@@ -35,6 +35,7 @@ import {
   ErrorText,
   Input,
   InputWithLabel,
+  SubTitle,
   WarningBox,
 } from "../components/styled";
 import { useTranslationContext } from "../context/translation";
@@ -265,9 +266,9 @@ export function View({
 
   return (
     <Fragment>
-      <h2>
+      <SubTitle>
         <i18n.Translate>Send {currency} to your account</i18n.Translate>
-      </h2>
+      </SubTitle>
       <section>
         <Input>
           <SelectList

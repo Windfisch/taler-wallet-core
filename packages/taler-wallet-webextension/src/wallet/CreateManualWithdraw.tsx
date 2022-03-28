@@ -32,6 +32,8 @@ import {
   InputWithLabel,
   LightText,
   LinkPrimary,
+  SubTitle,
+  Title,
 } from "../components/styled";
 import { useTranslationContext } from "../context/translation";
 import { Pages } from "../NavigationBar";
@@ -167,11 +169,11 @@ export function CreateManualWithdraw({
     if (initialCurrency !== undefined) {
       return (
         <section>
-          <h2>
+          <SubTitle>
             <i18n.Translate>
               Manual Withdrawal for {initialCurrency}
             </i18n.Translate>
-          </h2>
+          </SubTitle>
           <LightText>
             <i18n.Translate>
               Choose a exchange from where the coins will be withdrawn. The
@@ -200,9 +202,9 @@ export function CreateManualWithdraw({
     }
     return (
       <section>
-        <h2>
+        <SubTitle>
           <i18n.Translate>Manual Withdrawal</i18n.Translate>
-        </h2>
+        </SubTitle>
         <LightText>
           <i18n.Translate>
             Choose a exchange from where the coins will be withdrawn. The
@@ -234,9 +236,9 @@ export function CreateManualWithdraw({
             description={error}
           />
         )}
-        <h2>
+        <SubTitle>
           <i18n.Translate>Manual Withdrawal</i18n.Translate>
-        </h2>
+        </SubTitle>
         <LightText>
           <i18n.Translate>
             Choose a exchange from where the coins will be withdrawn. The

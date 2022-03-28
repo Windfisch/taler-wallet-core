@@ -39,6 +39,7 @@ import {
   ButtonSuccess,
   ButtonWarning,
   LinkSuccess,
+  SubTitle,
   WalletAction,
 } from "../components/styled";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
@@ -118,9 +119,9 @@ export function View({
   return (
     <WalletAction>
       <LogoHeader />
-      <h2>
+      <SubTitle>
         <i18n.Translate>Digital cash withdrawal</i18n.Translate>
-      </h2>
+      </SubTitle>
 
       {withdrawError && (
         <ErrorTalerOperation

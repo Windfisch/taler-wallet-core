@@ -24,6 +24,7 @@ import { WalletDiagnostics } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { Checkbox } from "../components/Checkbox";
 import { Diagnostics } from "../components/Diagnostics";
+import { SubTitle, Title } from "../components/styled";
 import { useTranslationContext } from "../context/translation";
 import { useDiagnostics } from "../hooks/useDiagnostics";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
@@ -56,16 +57,16 @@ export function View({
   const { i18n } = useTranslationContext();
   return (
     <Fragment>
-      <h1>
+      <Title>
         <i18n.Translate>Browser Extension Installed!</i18n.Translate>
-      </h1>
+      </Title>
       <div>
         <p>
           <i18n.Translate>Thank you for installing the wallet.</i18n.Translate>
         </p>
-        <h2>
+        <SubTitle>
           <i18n.Translate>Permissions</i18n.Translate>
-        </h2>
+        </SubTitle>
         <Checkbox
           label={
             <i18n.Translate>
@@ -82,9 +83,9 @@ export function View({
           enabled={permissionsEnabled}
           onToggle={togglePermissions}
         />
-        <h2>
+        <SubTitle>
           <i18n.Translate>Next Steps</i18n.Translate>
-        </h2>
+        </SubTitle>
         <a href="https://demo.taler.net/" style={{ display: "block" }}>
           <i18n.Translate>Try the demo</i18n.Translate> »
         </a>

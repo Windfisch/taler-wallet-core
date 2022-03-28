@@ -28,6 +28,7 @@ import {
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
+import { SubTitle, Title } from "../components/styled";
 import { useTranslationContext } from "../context/translation";
 import * as wxApi from "../wxApi";
 
@@ -41,11 +42,11 @@ export function View({ applyResult }: ViewProps): VNode {
   const { i18n } = useTranslationContext();
   return (
     <section class="main">
-      <h1>GNU Taler Wallet</h1>
+      <Title>GNU Taler Wallet</Title>
       <article class="fade">
-        <h2>
+        <SubTitle>
           <i18n.Translate>Refund Status</i18n.Translate>
-        </h2>
+        </SubTitle>
         <p>
           <i18n.Translate>
             The product <em>{applyResult.info.summary}</em> has received a total

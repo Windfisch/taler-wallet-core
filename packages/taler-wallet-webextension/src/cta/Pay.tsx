@@ -51,6 +51,7 @@ import {
   LinkPrimary,
   LinkSuccess,
   SmallLightText,
+  SubTitle,
   SuccessBox,
   WalletAction,
   WarningBox,
@@ -92,9 +93,9 @@ export function PayPage({
   const [payResult, setPayResult] = useState<ConfirmPayResult | undefined>(
     undefined,
   );
-  const [payErrMsg, setPayErrMsg] = useState<
-    TalerError | string | undefined
-  >(undefined);
+  const [payErrMsg, setPayErrMsg] = useState<TalerError | string | undefined>(
+    undefined,
+  );
 
   const hook = useAsyncAsHook(async () => {
     if (!talerPayUri) throw Error("Missing pay uri");
@@ -318,9 +319,9 @@ export function PaymentRequestView({
     <WalletAction>
       <LogoHeader />
 
-      <h2>
+      <SubTitle>
         <i18n.Translate>Digital cash payment</i18n.Translate>
-      </h2>
+      </SubTitle>
       {payStatus.status === PreparePayResultType.AlreadyConfirmed &&
         (payStatus.paid ? (
           payStatus.contractTerms.fulfillment_url ? (

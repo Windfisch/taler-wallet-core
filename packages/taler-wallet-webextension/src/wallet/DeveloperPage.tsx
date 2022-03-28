@@ -16,12 +16,9 @@
 
 import {
   Amounts,
-  Balance,
   CoinDumpJson,
   ExchangeListItem,
   NotificationType,
-  AbsoluteTime,
-  Translate,
 } from "@gnu-taler/taler-util";
 import { PendingTaskInfo } from "@gnu-taler/taler-wallet-core";
 import { format } from "date-fns";

@@ -1,6 +1,11 @@
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { Button, ButtonSuccess, ButtonWarning } from "../components/styled";
+import {
+  Button,
+  ButtonSuccess,
+  ButtonWarning,
+  Title,
+} from "../components/styled";
 import { useTranslationContext } from "../context/translation";
 import { TermsOfServiceSection } from "../cta/TermsOfServiceSection";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
@@ -85,9 +90,9 @@ export function View({
   return (
     <Fragment>
       <section>
-        <h1>
+        <Title>
           <i18n.Translate>Review terms of service</i18n.Translate>
-        </h1>
+        </Title>
         <div>
           <i18n.Translate>Exchange URL</i18n.Translate>:
           <a href={url} target="_blank" rel="noreferrer">

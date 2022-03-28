@@ -43,6 +43,7 @@ import { LogoHeader } from "../components/LogoHeader";
 import { Part } from "../components/Part";
 import {
   ErrorBox,
+  SubTitle,
   SuccessBox,
   WalletAction,
   WarningBox,
@@ -121,9 +122,9 @@ export function DepositPage({ talerPayUri, goBack }: Props): VNode {
       return (
         <WalletAction>
           <LogoHeader />
-          <h2>
+          <SubTitle>
             <i18n.Translate>Digital cash payment</i18n.Translate>
-          </h2>
+          </SubTitle>
           <section>
             <ErrorTalerOperation
               title={
@@ -141,9 +142,9 @@ export function DepositPage({ talerPayUri, goBack }: Props): VNode {
       return (
         <WalletAction>
           <LogoHeader />
-          <h2>
+          <SubTitle>
             <i18n.Translate>Digital cash payment</i18n.Translate>
-          </h2>
+          </SubTitle>
           <section>
             <p>
               <i18n.Translate>
@@ -205,9 +206,9 @@ export function PaymentRequestView({
     <WalletAction>
       <LogoHeader />
 
-      <h2>
+      <SubTitle>
         <i18n.Translate>Digital cash deposit</i18n.Translate>
-      </h2>
+      </SubTitle>
       {payStatus.status === PreparePayResultType.AlreadyConfirmed &&
         (payStatus.paid ? (
           <SuccessBox>
