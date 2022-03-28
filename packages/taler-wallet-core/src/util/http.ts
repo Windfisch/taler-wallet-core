@@ -31,6 +31,7 @@ import {
   TalerErrorDetail,
   Codec,
   j2s,
+  CancellationToken,
 } from "@gnu-taler/taler-util";
 import { TalerErrorCode } from "@gnu-taler/taler-util";
 import { makeErrorDetail, TalerError } from "../errors.js";
@@ -53,7 +54,18 @@ export interface HttpResponse {
 export interface HttpRequestOptions {
   method?: "POST" | "PUT" | "GET";
   headers?: { [name: string]: string };
+
+  /**
+   * Timeout after which the request should be aborted.
+   */
   timeout?: Duration;
+
+  /**
+   * Cancellation token that should abort the request when
+   * cancelled.
+   */
+  cancellationToken?: CancellationToken;
+
   body?: string | ArrayBuffer | ArrayBufferView;
 }
 

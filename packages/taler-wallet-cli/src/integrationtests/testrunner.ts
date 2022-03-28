@@ -14,80 +14,79 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { minimatch } from "@gnu-taler/taler-util";
+import { CancellationToken, minimatch } from "@gnu-taler/taler-util";
+import * as child_process from "child_process";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import {
   GlobalTestState,
   runTestWithState,
   shouldLingerInTest,
   TestRunResult,
 } from "../harness/harness.js";
-import { runPaymentTest } from "./test-payment";
-import { runPaymentDemoTest } from "./test-payment-on-demo";
-import * as fs from "fs";
-import * as path from "path";
-import * as os from "os";
-import * as child_process from "child_process";
 import { runBankApiTest } from "./test-bank-api";
 import { runClaimLoopTest } from "./test-claim-loop";
+import { runClauseSchnorrTest } from "./test-clause-schnorr.js";
+import { runDenomUnofferedTest } from "./test-denom-unoffered.js";
+import { runDepositTest } from "./test-deposit";
 import { runExchangeManagementTest } from "./test-exchange-management";
+import { runExchangeTimetravelTest } from "./test-exchange-timetravel.js";
 import { runFeeRegressionTest } from "./test-fee-regression";
+import { runLibeufinApiBankaccountTest } from "./test-libeufin-api-bankaccount";
+import { runLibeufinApiBankconnectionTest } from "./test-libeufin-api-bankconnection";
+import { runLibeufinApiFacadeTest } from "./test-libeufin-api-facade";
+import { runLibeufinApiFacadeBadRequestTest } from "./test-libeufin-api-facade-bad-request";
+import { runLibeufinApiPermissionsTest } from "./test-libeufin-api-permissions";
+import { runLibeufinApiSandboxCamtTest } from "./test-libeufin-api-sandbox-camt";
+import { runLibeufinApiSandboxTransactionsTest } from "./test-libeufin-api-sandbox-transactions";
+import { runLibeufinApiSchedulingTest } from "./test-libeufin-api-scheduling";
+import { runLibeufinApiUsersTest } from "./test-libeufin-api-users";
+import { runLibeufinBadGatewayTest } from "./test-libeufin-bad-gateway";
+import { runLibeufinBasicTest } from "./test-libeufin-basic";
+import { runLibeufinC5xTest } from "./test-libeufin-c5x";
+import { runLibeufinAnastasisFacadeTest } from "./test-libeufin-facade-anastasis";
+import { runLibeufinKeyrotationTest } from "./test-libeufin-keyrotation";
+import { runLibeufinNexusBalanceTest } from "./test-libeufin-nexus-balance";
+import { runLibeufinRefundTest } from "./test-libeufin-refund";
+import { runLibeufinRefundMultipleUsersTest } from "./test-libeufin-refund-multiple-users";
+import { runLibeufinSandboxWireTransferCliTest } from "./test-libeufin-sandbox-wire-transfer-cli";
+import { runLibeufinTutorialTest } from "./test-libeufin-tutorial";
+import { runMerchantExchangeConfusionTest } from "./test-merchant-exchange-confusion";
+import { runMerchantInstancesTest } from "./test-merchant-instances";
+import { runMerchantInstancesDeleteTest } from "./test-merchant-instances-delete";
+import { runMerchantInstancesUrlsTest } from "./test-merchant-instances-urls";
 import { runMerchantLongpollingTest } from "./test-merchant-longpolling";
 import { runMerchantRefundApiTest } from "./test-merchant-refund-api";
+import { runMerchantSpecPublicOrdersTest } from "./test-merchant-spec-public-orders.js";
 import { runPayAbortTest } from "./test-pay-abort";
 import { runPayPaidTest } from "./test-pay-paid";
+import { runPaymentTest } from "./test-payment";
 import { runPaymentClaimTest } from "./test-payment-claim";
 import { runPaymentFaultTest } from "./test-payment-fault";
+import { runPaymentForgettableTest } from "./test-payment-forgettable.js";
 import { runPaymentIdempotencyTest } from "./test-payment-idempotency";
 import { runPaymentMultipleTest } from "./test-payment-multiple";
+import { runPaymentDemoTest } from "./test-payment-on-demo";
 import { runPaymentTransientTest } from "./test-payment-transient";
+import { runPaymentZeroTest } from "./test-payment-zero.js";
 import { runPaywallFlowTest } from "./test-paywall-flow";
+import { runRefundTest } from "./test-refund";
 import { runRefundAutoTest } from "./test-refund-auto";
 import { runRefundGoneTest } from "./test-refund-gone";
 import { runRefundIncrementalTest } from "./test-refund-incremental";
-import { runRefundTest } from "./test-refund";
 import { runRevocationTest } from "./test-revocation";
 import { runTimetravelAutorefreshTest } from "./test-timetravel-autorefresh";
 import { runTimetravelWithdrawTest } from "./test-timetravel-withdraw";
 import { runTippingTest } from "./test-tipping";
+import { runWalletBackupBasicTest } from "./test-wallet-backup-basic";
+import { runWalletBackupDoublespendTest } from "./test-wallet-backup-doublespend";
+import { runWalletDblessTest } from "./test-wallet-dbless.js";
 import { runWallettestingTest } from "./test-wallettesting";
-import { runTestWithdrawalManualTest } from "./test-withdrawal-manual";
 import { runWithdrawalAbortBankTest } from "./test-withdrawal-abort-bank";
 import { runWithdrawalBankIntegratedTest } from "./test-withdrawal-bank-integrated";
-import { runMerchantExchangeConfusionTest } from "./test-merchant-exchange-confusion";
-import { runLibeufinBasicTest } from "./test-libeufin-basic";
-import { runLibeufinC5xTest } from "./test-libeufin-c5x";
-import { runLibeufinNexusBalanceTest } from "./test-libeufin-nexus-balance";
-import { runLibeufinBadGatewayTest } from "./test-libeufin-bad-gateway";
-import { runLibeufinKeyrotationTest } from "./test-libeufin-keyrotation";
-import { runLibeufinRefundTest } from "./test-libeufin-refund";
-import { runLibeufinRefundMultipleUsersTest } from "./test-libeufin-refund-multiple-users";
-import { runLibeufinTutorialTest } from "./test-libeufin-tutorial";
-import { runLibeufinApiPermissionsTest } from "./test-libeufin-api-permissions";
-import { runLibeufinApiFacadeTest } from "./test-libeufin-api-facade";
-import { runLibeufinApiFacadeBadRequestTest } from "./test-libeufin-api-facade-bad-request";
-import { runLibeufinAnastasisFacadeTest } from "./test-libeufin-facade-anastasis";
-import { runLibeufinApiSchedulingTest } from "./test-libeufin-api-scheduling";
-import { runLibeufinApiBankconnectionTest } from "./test-libeufin-api-bankconnection";
-import { runLibeufinApiUsersTest } from "./test-libeufin-api-users";
-import { runLibeufinApiBankaccountTest } from "./test-libeufin-api-bankaccount";
-import { runLibeufinApiSandboxTransactionsTest } from "./test-libeufin-api-sandbox-transactions";
-import { runLibeufinApiSandboxCamtTest } from "./test-libeufin-api-sandbox-camt";
-import { runLibeufinSandboxWireTransferCliTest } from "./test-libeufin-sandbox-wire-transfer-cli";
-import { runDepositTest } from "./test-deposit";
-import CancellationToken from "cancellationtoken";
-import { runMerchantInstancesTest } from "./test-merchant-instances";
-import { runMerchantInstancesUrlsTest } from "./test-merchant-instances-urls";
-import { runWalletBackupBasicTest } from "./test-wallet-backup-basic";
-import { runMerchantInstancesDeleteTest } from "./test-merchant-instances-delete";
-import { runWalletBackupDoublespendTest } from "./test-wallet-backup-doublespend";
-import { runPaymentForgettableTest } from "./test-payment-forgettable.js";
-import { runPaymentZeroTest } from "./test-payment-zero.js";
-import { runMerchantSpecPublicOrdersTest } from "./test-merchant-spec-public-orders.js";
-import { runExchangeTimetravelTest } from "./test-exchange-timetravel.js";
-import { runDenomUnofferedTest } from "./test-denom-unoffered.js";
 import { runWithdrawalFakebankTest } from "./test-withdrawal-fakebank.js";
-import { runClauseSchnorrTest } from "./test-clause-schnorr.js";
-import { runWalletDblessTest } from "./test-wallet-dbless.js";
+import { runTestWithdrawalManualTest } from "./test-withdrawal-manual";
 
 /**
  * Test runner.
