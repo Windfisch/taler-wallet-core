@@ -126,11 +126,7 @@ export async function prepareTip(
       merchantBaseUrl: res.merchantBaseUrl,
       createdTimestamp: TalerProtocolTimestamp.now(),
       merchantTipId: res.merchantTipId,
-      tipAmountEffective: Amounts.sub(
-        amount,
-        Amounts.add(withdrawDetails.overhead, withdrawDetails.withdrawFee)
-          .amount,
-      ).amount,
+      tipAmountEffective: selectedDenoms.totalCoinValue,
       retryInfo: initRetryInfo(),
       lastError: undefined,
       denomsSel: denomSelectionInfoToState(selectedDenoms),
