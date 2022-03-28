@@ -318,12 +318,17 @@ export function WithdrawPageWithParsedURI({
     }
   };
 
+  const withdrawalFee = Amounts.sub(
+    Amounts.parseOrThrow(details.info.withdrawalAmountRaw),
+    Amounts.parseOrThrow(details.info.withdrawalAmountEffective),
+  ).amount;
+
   return (
     <View
       onWithdraw={onWithdraw}
       amount={withdrawAmount}
       exchangeBaseUrl={exchange}
-      withdrawalFee={details.info.withdrawFee} //FIXME
+      withdrawalFee={withdrawalFee}
       terms={detailsHook.response.tos}
       onSwitchExchange={setCustomExchange}
       knownExchanges={knownExchanges}

@@ -43,6 +43,7 @@ import {
   Duration,
   TalerProtocolTimestamp,
   TransactionType,
+  AmountString,
 } from "@gnu-taler/taler-util";
 import {
   CoinRecord,
@@ -103,6 +104,8 @@ interface DenominationSelectionInfo {
 export interface ExchangeWithdrawDetails {
   /**
    * Exchange that the reserve will be created at.
+   *
+   * FIXME: Should be its own record.
    */
   exchangeInfo: ExchangeRecord;
 
@@ -117,16 +120,6 @@ export interface ExchangeWithdrawDetails {
    * Selected denominations for withdraw.
    */
   selectedDenoms: DenominationSelectionInfo;
-
-  /**
-   * Fees for withdraw.
-   */
-  withdrawFee: AmountJson;
-
-  /**
-   * Remaining balance that is too small to be withdrawn.
-   */
-  overhead: AmountJson;
 
   /**
    * Does the wallet know about an auditor for
@@ -177,6 +170,13 @@ export interface ExchangeWithdrawDetails {
    * Libtool-style version string for the wallet.
    */
   walletVersion: string;
+
+  withdrawalAmountRaw: AmountString;
+
+  /**
+   * Amount that will actually be added to the wallet's balance.
+   */
+  withdrawalAmountEffective: AmountString;
 }
 
 /**
@@ -976,13 +976,16 @@ async function processWithdrawGroupImpl(
 export async function getExchangeWithdrawalInfo(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
-  amount: AmountJson,
+  instructedAmount: AmountJson,
 ): Promise<ExchangeWithdrawDetails> {
   const { exchange, exchangeDetails } =
     await ws.exchangeOps.updateExchangeFromUrl(ws, exchangeBaseUrl);
   await updateWithdrawalDenoms(ws, exchangeBaseUrl);
   const denoms = await getCandidateWithdrawalDenoms(ws, exchangeBaseUrl);
-  const selectedDenoms = selectWithdrawalDenominations(amount, denoms);
+  const selectedDenoms = selectWithdrawalDenominations(
+    instructedAmount,
+    denoms,
+  );
   const exchangeWireAccounts: string[] = [];
   for (const account of exchangeDetails.wireInfo.accounts) {
     exchangeWireAccounts.push(account.payto_uri);
@@ -1061,14 +1064,14 @@ export async function getExchangeWithdrawalInfo(
     isAudited,
     isTrusted,
     numOfferedDenoms: possibleDenoms.length,
-    overhead: Amounts.sub(amount, selectedDenoms.totalWithdrawCost).amount,
     selectedDenoms,
     // FIXME: delete this field / replace by something we can display to the user
     trustedAuditorPubs: [],
     versionMatch,
     walletVersion: WALLET_EXCHANGE_PROTOCOL_VERSION,
-    withdrawFee,
     termsOfServiceAccepted: tosAccepted,
+    withdrawalAmountEffective: Amounts.stringify(selectedDenoms.totalCoinValue),
+    withdrawalAmountRaw: Amounts.stringify(instructedAmount),
   };
   return ret;
 }
