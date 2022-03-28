@@ -444,7 +444,9 @@ export async function retryTransaction(
   switch (type) {
     case TransactionType.Deposit:
       const depositGroupId = rest[0];
-      processDepositGroup(ws, depositGroupId, true);
+      processDepositGroup(ws, depositGroupId, {
+        forceNow: true,
+      });
       break;
     case TransactionType.Withdrawal:
       const withdrawalGroupId = rest[0];

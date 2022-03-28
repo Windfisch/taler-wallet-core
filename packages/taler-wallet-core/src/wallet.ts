@@ -78,6 +78,7 @@ import {
   URL,
   WalletNotification,
   Duration,
+  CancellationToken,
 } from "@gnu-taler/taler-util";
 import { timeStamp } from "console";
 import {
@@ -271,9 +272,19 @@ async function processOnePendingOperation(
     case PendingTaskType.ExchangeCheckRefresh:
       await autoRefresh(ws, pending.exchangeBaseUrl);
       break;
-    case PendingTaskType.Deposit:
-      await processDepositGroup(ws, pending.depositGroupId);
+    case PendingTaskType.Deposit: {
+      const cts = CancellationToken.create();
+      ws.taskCancellationSourceForDeposit = cts;
+      try {
+        await processDepositGroup(ws, pending.depositGroupId, {
+          cancellationToken: cts.token,
+        });
+      } finally {
+        cts.dispose();
+        delete ws.taskCancellationSourceForDeposit;
+      }
       break;
+    }
     case PendingTaskType.Backup:
       await processBackupForProvider(ws, pending.backupProviderBaseUrl);
       break;

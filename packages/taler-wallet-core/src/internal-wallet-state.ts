@@ -35,6 +35,7 @@ import {
   AmountJson,
   DenominationPubKey,
   TalerProtocolTimestamp,
+  CancellationToken,
 } from "@gnu-taler/taler-util";
 import { CryptoDispatcher } from "./crypto/workers/cryptoDispatcher.js";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
@@ -200,8 +201,13 @@ export interface InternalWalletState {
   memoGetBalance: AsyncOpMemoSingle<BalancesResponse>;
   memoProcessRefresh: AsyncOpMemoMap<void>;
   memoProcessRecoup: AsyncOpMemoMap<void>;
-  memoProcessDeposit: AsyncOpMemoMap<void>;
   cryptoApi: TalerCryptoInterface;
+
+  /**
+   * Cancellation token for the currently running
+   * deposit operation, if any.
+   */
+  taskCancellationSourceForDeposit?: CancellationToken.Source;
 
   timerGroup: TimerGroup;
   stopped: boolean;

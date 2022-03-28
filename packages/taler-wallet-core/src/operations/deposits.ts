@@ -21,6 +21,7 @@ import {
   AbsoluteTime,
   AmountJson,
   Amounts,
+  CancellationToken,
   canonicalJson,
   codecForDepositSuccess,
   ContractTerms,
@@ -125,23 +126,34 @@ async function reportDepositGroupError(
 export async function processDepositGroup(
   ws: InternalWalletState,
   depositGroupId: string,
-  forceNow = false,
+  options: {
+    forceNow?: boolean;
+    cancellationToken?: CancellationToken;
+  } = {},
 ): Promise<void> {
-  await ws.memoProcessDeposit.memo(depositGroupId, async () => {
-    const onOpErr = (err: TalerErrorDetail): Promise<void> =>
-      reportDepositGroupError(ws, depositGroupId, err);
-    return await guardOperationException(
-      async () => await processDepositGroupImpl(ws, depositGroupId, forceNow),
-      onOpErr,
-    );
-  });
+  if (ws.taskCancellationSourceForDeposit) {
+    ws.taskCancellationSourceForDeposit.cancel();
+  }
+  const onOpErr = (err: TalerErrorDetail): Promise<void> =>
+    reportDepositGroupError(ws, depositGroupId, err);
+  return await guardOperationException(
+    async () => await processDepositGroupImpl(ws, depositGroupId, options),
+    onOpErr,
+  );
 }
 
+/**
+ * @see {processDepositGroup}
+ */
 async function processDepositGroupImpl(
   ws: InternalWalletState,
   depositGroupId: string,
-  forceNow = false,
+  options: {
+    forceNow?: boolean;
+    cancellationToken?: CancellationToken;
+  } = {},
 ): Promise<void> {
+  const forceNow = options.forceNow ?? false;
   const depositGroup = await ws.db
     .mktx((x) => ({
       depositGroups: x.depositGroups,
@@ -170,6 +182,8 @@ async function processDepositGroupImpl(
     "",
   );
 
+  // Check for cancellation before expensive operations.
+  options.cancellationToken?.throwIfCancelled();
   const depositPermissions = await generateDepositPermissions(
     ws,
     depositGroup.payCoinSelection,
@@ -196,9 +210,13 @@ async function processDepositGroupImpl(
       denom_pub_hash: perm.h_denom,
       merchant_pub: depositGroup.merchantPub,
     };
+    // Check for cancellation before making network request.
+    options.cancellationToken?.throwIfCancelled();
     const url = new URL(`coins/${perm.coin_pub}/deposit`, perm.exchange_url);
     logger.info(`depositing to ${url}`);
-    const httpResp = await ws.http.postJson(url.href, requestBody);
+    const httpResp = await ws.http.postJson(url.href, requestBody, {
+      cancellationToken: options.cancellationToken,
+    });
     await readSuccessResponseJsonOrThrow(httpResp, codecForDepositSuccess());
     await ws.db
       .mktx((x) => ({ depositGroups: x.depositGroups }))

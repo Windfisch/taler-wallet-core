@@ -550,7 +550,7 @@ export interface ExchangeRecord {
   /**
    * Retry status for fetching updated information about the exchange.
    */
-  retryInfo: RetryInfo;
+  retryInfo?: RetryInfo;
 }
 
 /**

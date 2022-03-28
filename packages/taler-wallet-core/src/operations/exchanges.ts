@@ -61,7 +61,11 @@ import {
   readSuccessResponseTextOrThrow,
 } from "../util/http.js";
 import { DbAccess, GetReadOnlyAccess } from "../util/query.js";
-import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
+import {
+  initRetryInfo,
+  RetryInfo,
+  updateRetryInfoTimeout,
+} from "../util/retries.js";
 import {
   WALLET_CACHE_BREAKER_CLIENT_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
@@ -102,7 +106,7 @@ function denominationRecordFromKeys(
   return d;
 }
 
-async function handleExchangeUpdateError(
+async function reportExchangeUpdateError(
   ws: InternalWalletState,
   baseUrl: string,
   err: TalerErrorDetail,
@@ -114,14 +118,44 @@ async function handleExchangeUpdateError(
       if (!exchange) {
         return;
       }
-      exchange.retryInfo.retryCounter++;
-      updateRetryInfoTimeout(exchange.retryInfo);
       exchange.lastError = err;
       await tx.exchanges.put(exchange);
     });
-  if (err) {
-    ws.notify({ type: NotificationType.ExchangeOperationError, error: err });
-  }
+  ws.notify({ type: NotificationType.ExchangeOperationError, error: err });
+}
+
+async function resetExchangeUpdateRetry(
+  ws: InternalWalletState,
+  baseUrl: string,
+): Promise<void> {
+  await ws.db
+    .mktx((x) => ({ exchanges: x.exchanges }))
+    .runReadWrite(async (tx) => {
+      const exchange = await tx.exchanges.get(baseUrl);
+      if (!exchange) {
+        return;
+      }
+      delete exchange.lastError;
+      exchange.retryInfo = initRetryInfo();
+      await tx.exchanges.put(exchange);
+    });
+}
+
+async function incrementExchangeUpdateRetry(
+  ws: InternalWalletState,
+  baseUrl: string,
+): Promise<void> {
+  await ws.db
+    .mktx((x) => ({ exchanges: x.exchanges }))
+    .runReadWrite(async (tx) => {
+      const exchange = await tx.exchanges.get(baseUrl);
+      if (!exchange) {
+        return;
+      }
+      delete exchange.lastError;
+      exchange.retryInfo = RetryInfo.increment(exchange.retryInfo);
+      await tx.exchanges.put(exchange);
+    });
 }
 
 export function getExchangeRequestTimeout(): Duration {
@@ -349,7 +383,7 @@ export async function updateExchangeFromUrl(
   exchangeDetails: ExchangeDetailsRecord;
 }> {
   const onOpErr = (e: TalerErrorDetail): Promise<void> =>
-    handleExchangeUpdateError(ws, baseUrl, e);
+    reportExchangeUpdateError(ws, baseUrl, e);
   return await guardOperationException(
     () => updateExchangeFromUrlImpl(ws, baseUrl, acceptedFormat, forceNow),
     onOpErr,
@@ -543,6 +577,12 @@ async function updateExchangeFromUrlImpl(
     return { exchange, exchangeDetails };
   }
 
+  if (forceNow) {
+    await resetExchangeUpdateRetry(ws, baseUrl);
+  } else {
+    await incrementExchangeUpdateRetry(ws, baseUrl);
+  }
+
   logger.info("updating exchange /keys info");
 
   const timeout = getExchangeRequestTimeout();
@@ -624,8 +664,8 @@ async function updateExchangeFromUrlImpl(
         termsOfServiceAcceptedTimestamp: TalerProtocolTimestamp.now(),
       };
       // FIXME: only update if pointer got updated
-      r.lastError = undefined;
-      r.retryInfo = initRetryInfo();
+      delete r.lastError;
+      delete r.retryInfo;
       r.lastUpdate = TalerProtocolTimestamp.now();
       r.nextUpdate = keysInfo.expiry;
       // New denominations might be available.
