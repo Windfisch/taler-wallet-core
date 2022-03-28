@@ -33,3 +33,6 @@ packages/taler-wallet-cli/debian/taler-wallet-cli
 packages/taler-wallet-cli_*.deb
 packages/taler-wallet-cli_*.buildinfo
 packages/taler-wallet-cli_*.changes
+
+# Performance benchmarking data
+.clinic
