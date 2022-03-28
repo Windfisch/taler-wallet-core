@@ -129,6 +129,17 @@ export class Amounts {
     return Amounts.add(jsonAmounts[0], ...jsonAmounts.slice(1));
   }
 
+  static sumOrZero(currency: string, amounts: AmountLike[]): Result {
+    if (amounts.length <= 0) {
+      return {
+        amount: Amounts.getZero(currency),
+        saturated: false,
+      };
+    }
+    const jsonAmounts = amounts.map((x) => Amounts.jsonifyAmount(x));
+    return Amounts.add(jsonAmounts[0], ...jsonAmounts.slice(1));
+  }
+
   /**
    * Add two amounts.  Return the result and whether
    * the addition overflowed.  The overflow is always handled

@@ -18,32 +18,31 @@
  * Imports.
  */
 import {
+  AbsoluteTime,
   AmountJson,
   Amounts,
+  AmountString,
   BankWithdrawDetails,
   codecForTalerConfigResponse,
   codecForWithdrawOperationStatusResponse,
   codecForWithdrawResponse,
+  DenomKeyType,
+  Duration,
   durationFromSpec,
   ExchangeListItem,
+  ExchangeWithdrawRequest,
+  LibtoolVersion,
   Logger,
   NotificationType,
   parseWithdrawUri,
   TalerErrorCode,
   TalerErrorDetail,
-  AbsoluteTime,
-  WithdrawResponse,
-  URL,
-  WithdrawUriInfoResponse,
-  VersionMatchResult,
-  DenomKeyType,
-  LibtoolVersion,
-  UnblindedSignature,
-  ExchangeWithdrawRequest,
-  Duration,
   TalerProtocolTimestamp,
-  TransactionType,
-  AmountString,
+  UnblindedSignature,
+  URL,
+  VersionMatchResult,
+  WithdrawResponse,
+  WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
 import {
   CoinRecord,
@@ -58,18 +57,18 @@ import {
   PlanchetRecord,
   WithdrawalGroupRecord,
 } from "../db.js";
-import { walletCoreDebugFlags } from "../util/debugFlags.js";
-import {
-  HttpRequestLibrary,
-  readSuccessResponseJsonOrThrow,
-} from "../util/http.js";
-import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
 import {
   getErrorDetailFromException,
   makeErrorDetail,
   TalerError,
 } from "../errors.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
+import { walletCoreDebugFlags } from "../util/debugFlags.js";
+import {
+  HttpRequestLibrary,
+  readSuccessResponseJsonOrThrow,
+} from "../util/http.js";
+import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
 import {
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,

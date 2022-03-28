@@ -98,6 +98,7 @@ import { GetReadWriteAccess } from "../util/query.js";
 import {
   getRetryDuration,
   initRetryInfo,
+  RetryInfo,
   updateRetryInfoTimeout,
 } from "../util/retries.js";
 import { getExchangeDetails } from "./exchanges.js";
@@ -539,11 +540,7 @@ async function incrementPurchasePayRetry(
       if (!pr) {
         return;
       }
-      if (!pr.payRetryInfo) {
-        pr.payRetryInfo = initRetryInfo();
-      }
-      pr.payRetryInfo.retryCounter++;
-      updateRetryInfoTimeout(pr.payRetryInfo);
+      pr.payRetryInfo = RetryInfo.increment(pr.payRetryInfo);
       delete pr.lastPayError;
       await tx.purchases.put(pr);
     });

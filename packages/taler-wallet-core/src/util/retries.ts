@@ -92,3 +92,18 @@ export function initRetryInfo(p: RetryPolicy = defaultRetryPolicy): RetryInfo {
   updateRetryInfoTimeout(info, p);
   return info;
 }
+
+export namespace RetryInfo {
+  export function increment(
+    r: RetryInfo | undefined,
+    p: RetryPolicy = defaultRetryPolicy,
+  ) {
+    if (!r) {
+      return initRetryInfo(p);
+    }
+    const r2 = { ...r };
+    r2.retryCounter++;
+    updateRetryInfoTimeout(r2, p);
+    return r2;
+  }
+}

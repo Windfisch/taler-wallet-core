@@ -14,17 +14,15 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+/**
+ * Imports.
+ */
 import {
   AbsoluteTime,
   AmountJson,
   Amounts,
-  buildCodecForObject,
   canonicalJson,
-  Codec,
   codecForDepositSuccess,
-  codecForString,
-  codecForTimestamp,
-  codecOptional,
   ContractTerms,
   CreateDepositGroupRequest,
   CreateDepositGroupResponse,
@@ -42,21 +40,22 @@ import {
   TrackDepositGroupResponse,
   URL,
 } from "@gnu-taler/taler-util";
-import { InternalWalletState } from "../internal-wallet-state.js";
 import { DepositGroupRecord, OperationStatus } from "../db.js";
+import { InternalWalletState } from "../internal-wallet-state.js";
 import { PayCoinSelection, selectPayCoins } from "../util/coinSelection.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
-import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
+import { initRetryInfo, RetryInfo } from "../util/retries.js";
+import { guardOperationException } from "./common.js";
 import { getExchangeDetails } from "./exchanges.js";
 import {
   applyCoinSpend,
+  CoinSelectionRequest,
   extractContractData,
   generateDepositPermissions,
   getCandidatePayCoins,
   getTotalPaymentCost,
 } from "./pay.js";
 import { getTotalRefreshCost } from "./refresh.js";
-import { guardOperationException } from "./common.js";
 
 /**
  * Logger.
@@ -73,17 +72,36 @@ async function resetDepositGroupRetry(
     }))
     .runReadWrite(async (tx) => {
       const x = await tx.depositGroups.get(depositGroupId);
-      if (x) {
-        x.retryInfo = initRetryInfo();
-        await tx.depositGroups.put(x);
+      if (!x) {
+        return;
       }
+      x.retryInfo = initRetryInfo();
+      delete x.lastError;
+      await tx.depositGroups.put(x);
     });
 }
 
-async function incrementDepositRetry(
+async function incrementDepositGroupRetry(
   ws: InternalWalletState,
   depositGroupId: string,
-  err: TalerErrorDetail | undefined,
+): Promise<void> {
+  await ws.db
+    .mktx((x) => ({ depositGroups: x.depositGroups }))
+    .runReadWrite(async (tx) => {
+      const r = await tx.depositGroups.get(depositGroupId);
+      if (!r) {
+        return;
+      }
+      r.retryInfo = RetryInfo.increment(r.retryInfo);
+      delete r.lastError;
+      await tx.depositGroups.put(r);
+    });
+}
+
+async function reportDepositGroupError(
+  ws: InternalWalletState,
+  depositGroupId: string,
+  err: TalerErrorDetail,
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({ depositGroups: x.depositGroups }))
@@ -93,16 +111,15 @@ async function incrementDepositRetry(
         return;
       }
       if (!r.retryInfo) {
+        logger.error(
+          `deposit group record (${depositGroupId}) reports error, but no retry active`,
+        );
         return;
       }
-      r.retryInfo.retryCounter++;
-      updateRetryInfoTimeout(r.retryInfo);
       r.lastError = err;
       await tx.depositGroups.put(r);
     });
-  if (err) {
-    ws.notify({ type: NotificationType.DepositOperationError, error: err });
-  }
+  ws.notify({ type: NotificationType.DepositOperationError, error: err });
 }
 
 export async function processDepositGroup(
@@ -111,8 +128,8 @@ export async function processDepositGroup(
   forceNow = false,
 ): Promise<void> {
   await ws.memoProcessDeposit.memo(depositGroupId, async () => {
-    const onOpErr = (e: TalerErrorDetail): Promise<void> =>
-      incrementDepositRetry(ws, depositGroupId, e);
+    const onOpErr = (err: TalerErrorDetail): Promise<void> =>
+      reportDepositGroupError(ws, depositGroupId, err);
     return await guardOperationException(
       async () => await processDepositGroupImpl(ws, depositGroupId, forceNow),
       onOpErr,
@@ -125,9 +142,6 @@ async function processDepositGroupImpl(
   depositGroupId: string,
   forceNow = false,
 ): Promise<void> {
-  if (forceNow) {
-    await resetDepositGroupRetry(ws, depositGroupId);
-  }
   const depositGroup = await ws.db
     .mktx((x) => ({
       depositGroups: x.depositGroups,
@@ -142,6 +156,12 @@ async function processDepositGroupImpl(
   if (depositGroup.timestampFinished) {
     logger.trace(`deposit group ${depositGroupId} already finished`);
     return;
+  }
+
+  if (forceNow) {
+    await resetDepositGroupRetry(ws, depositGroupId);
+  } else {
+    await incrementDepositGroupRetry(ws, depositGroupId);
   }
 
   const contractData = extractContractData(
@@ -306,42 +326,25 @@ export async function getFeeForDeposit(
       }
     });
 
-  const timestamp = AbsoluteTime.now();
-  const timestampRound = AbsoluteTime.toTimestamp(timestamp);
-  const contractTerms: ContractTerms = {
-    auditors: [],
-    exchanges: exchangeInfos,
-    amount: req.amount,
-    max_fee: Amounts.stringify(amount),
-    max_wire_fee: Amounts.stringify(amount),
-    wire_method: p.targetType,
-    timestamp: timestampRound,
-    merchant_base_url: "",
-    summary: "",
-    nonce: "",
-    wire_transfer_deadline: timestampRound,
-    order_id: "",
-    h_wire: "",
-    pay_deadline: AbsoluteTime.toTimestamp(
-      AbsoluteTime.addDuration(timestamp, durationFromSpec({ hours: 1 })),
-    ),
-    merchant: {
-      name: "",
-    },
-    merchant_pub: "",
-    refund_deadline: TalerProtocolTimestamp.zero(),
+  const csr: CoinSelectionRequest = {
+    allowedAuditors: [],
+    allowedExchanges: [],
+    amount: Amounts.parseOrThrow(req.amount),
+    maxDepositFee: Amounts.parseOrThrow(req.amount),
+    maxWireFee: Amounts.parseOrThrow(req.amount),
+    timestamp: TalerProtocolTimestamp.now(),
+    wireFeeAmortization: 1,
+    wireMethod: p.targetType,
   };
 
-  const contractData = extractContractData(contractTerms, "", "");
-
-  const candidates = await getCandidatePayCoins(ws, contractData);
+  const candidates = await getCandidatePayCoins(ws, csr);
 
   const payCoinSel = selectPayCoins({
     candidates,
-    contractTermsAmount: contractData.amount,
-    depositFeeLimit: contractData.maxDepositFee,
-    wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
-    wireFeeLimit: contractData.maxWireFee,
+    contractTermsAmount: csr.amount,
+    depositFeeLimit: csr.maxDepositFee,
+    wireFeeAmortization: csr.wireFeeAmortization,
+    wireFeeLimit: csr.maxWireFee,
     prevPayCoins: [],
   });
 
@@ -573,6 +576,7 @@ export async function getEffectiveDepositAmount(
   return Amounts.sub(Amounts.sum(amt).amount, Amounts.sum(fees).amount).amount;
 }
 
+// FIXME: rename to DepositGroupFee
 export interface DepositFee {
   coin: AmountJson;
   wire: AmountJson;
@@ -593,8 +597,6 @@ export async function getTotalFeeForDepositAmount(
   const coinFee: AmountJson[] = [];
   const refreshFee: AmountJson[] = [];
   const exchangeSet: Set<string> = new Set();
-
-  // let acc: AmountJson = Amounts.getZero(total.currency);
 
   await ws.db
     .mktx((x) => ({
@@ -658,17 +660,8 @@ export async function getTotalFeeForDepositAmount(
     });
 
   return {
-    coin:
-      coinFee.length === 0
-        ? Amounts.getZero(total.currency)
-        : Amounts.sum(coinFee).amount,
-    wire:
-      wireFee.length === 0
-        ? Amounts.getZero(total.currency)
-        : Amounts.sum(wireFee).amount,
-    refresh:
-      refreshFee.length === 0
-        ? Amounts.getZero(total.currency)
-        : Amounts.sum(refreshFee).amount,
+    coin: Amounts.sumOrZero(total.currency, coinFee).amount,
+    wire: Amounts.sumOrZero(total.currency, wireFee).amount,
+    refresh: Amounts.sumOrZero(total.currency, refreshFee).amount,
   };
 }

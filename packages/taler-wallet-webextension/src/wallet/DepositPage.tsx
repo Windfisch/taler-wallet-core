@@ -22,7 +22,6 @@ import {
   PaytoUri,
 } from "@gnu-taler/taler-util";
 import { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
-import { saturate } from "polished";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { Loading } from "../components/Loading";
@@ -30,7 +29,6 @@ import { LoadingError } from "../components/LoadingError";
 import { SelectList } from "../components/SelectList";
 import {
   Button,
-  ButtonBoxWarning,
   ButtonPrimary,
   ErrorText,
   Input,

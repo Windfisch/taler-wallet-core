@@ -18,35 +18,31 @@
  * Imports.
  */
 import {
+  AbsoluteTime,
   Amounts,
-  ExchangeAuditor,
   canonicalizeBaseUrl,
   codecForExchangeKeysJson,
   codecForExchangeWireJson,
-  ExchangeDenomination,
+  DenominationPubKey,
   Duration,
   durationFromSpec,
+  encodeCrock,
+  ExchangeAuditor,
+  ExchangeDenomination,
   ExchangeSignKeyJson,
   ExchangeWireJson,
+  hashDenomPub,
+  LibtoolVersion,
   Logger,
   NotificationType,
   parsePaytoUri,
   Recoup,
   TalerErrorCode,
-  URL,
   TalerErrorDetail,
-  AbsoluteTime,
-  hashDenomPub,
-  LibtoolVersion,
-  codecForAny,
-  DenominationPubKey,
-  DenomKeyType,
-  ExchangeKeysJson,
-  TalerProtocolTimestamp,
   TalerProtocolDuration,
+  TalerProtocolTimestamp,
+  URL,
 } from "@gnu-taler/taler-util";
-import { decodeCrock, encodeCrock, hash } from "@gnu-taler/taler-util";
-import { CryptoDispatcher } from "../crypto/workers/cryptoDispatcher.js";
 import {
   DenominationRecord,
   DenominationVerificationStatus,
@@ -56,6 +52,8 @@ import {
   WireFee,
   WireInfo,
 } from "../db.js";
+import { TalerError } from "../errors.js";
+import { InternalWalletState, TrustInfo } from "../internal-wallet-state.js";
 import {
   getExpiry,
   HttpRequestLibrary,
@@ -64,8 +62,6 @@ import {
 } from "../util/http.js";
 import { DbAccess, GetReadOnlyAccess } from "../util/query.js";
 import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
-import { TalerError } from "../errors.js";
-import { InternalWalletState, TrustInfo } from "../internal-wallet-state.js";
 import {
   WALLET_CACHE_BREAKER_CLIENT_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,

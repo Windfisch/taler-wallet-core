@@ -193,10 +193,7 @@ import {
 import { DbAccess, GetReadWriteAccess } from "./util/query.js";
 import { TimerGroup } from "./util/timer.js";
 import { WalletCoreApiClient } from "./wallet-api-types.js";
-import {
-  TalerCryptoInterface,
-  TalerCryptoInterfaceR,
-} from "./crypto/cryptoImplementation.js";
+import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 
 const builtinAuditors: AuditorTrustRecord[] = [
   {

@@ -14,6 +14,9 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+/**
+ * Imports.
+ */
 import { TalerErrorDetail, TalerErrorCode } from "@gnu-taler/taler-util";
 import { CryptoApiStoppedError } from "../crypto/workers/cryptoDispatcher.js";
 import { TalerError, getErrorDetailFromException } from "../errors.js";
