@@ -31,6 +31,7 @@ import {
   durationFromSpec,
   ExchangeListItem,
   ExchangeWithdrawRequest,
+  ForcedDenomSel,
   LibtoolVersion,
   Logger,
   NotificationType,
@@ -68,6 +69,7 @@ import {
   HttpRequestLibrary,
   readSuccessResponseJsonOrThrow,
 } from "../util/http.js";
+import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
 import {
   resetRetryInfo,
   RetryInfo,
@@ -83,21 +85,6 @@ import { guardOperationException } from "./common.js";
  * Logger for this file.
  */
 const logger = new Logger("operations/withdraw.ts");
-
-/**
- * FIXME: Eliminate this in favor of DenomSelectionState.
- */
-interface DenominationSelectionInfo {
-  totalCoinValue: AmountJson;
-  totalWithdrawCost: AmountJson;
-  selectedDenoms: {
-    /**
-     * How many times do we withdraw this denomination?
-     */
-    count: number;
-    denom: DenominationRecord;
-  }[];
-}
 
 /**
  * Information about what will happen when creating a reserve.
@@ -122,7 +109,7 @@ export interface ExchangeWithdrawDetails {
   /**
    * Selected denominations for withdraw.
    */
-  selectedDenoms: DenominationSelectionInfo;
+  selectedDenoms: DenomSelectionState;
 
   /**
    * Does the wallet know about an auditor for
@@ -213,12 +200,12 @@ export function isWithdrawableDenom(d: DenominationRecord): boolean {
 export function selectWithdrawalDenominations(
   amountAvailable: AmountJson,
   denoms: DenominationRecord[],
-): DenominationSelectionInfo {
+): DenomSelectionState {
   let remaining = Amounts.copy(amountAvailable);
 
   const selectedDenoms: {
     count: number;
-    denom: DenominationRecord;
+    denomPubHash: string;
   }[] = [];
 
   let totalCoinValue = Amounts.getZero(amountAvailable.currency);
@@ -248,7 +235,7 @@ export function selectWithdrawalDenominations(
       ).amount;
       selectedDenoms.push({
         count,
-        denom: d,
+        denomPubHash: d.denomPubHash,
       });
     }
 
@@ -262,11 +249,59 @@ export function selectWithdrawalDenominations(
       `selected withdrawal denoms for ${Amounts.stringify(totalCoinValue)}`,
     );
     for (const sd of selectedDenoms) {
-      logger.trace(
-        `denom_pub_hash=${sd.denom.denomPubHash}, count=${sd.count}`,
-      );
+      logger.trace(`denom_pub_hash=${sd.denomPubHash}, count=${sd.count}`);
     }
     logger.trace("(end of withdrawal denom list)");
+  }
+
+  return {
+    selectedDenoms,
+    totalCoinValue,
+    totalWithdrawCost,
+  };
+}
+
+export function selectForcedWithdrawalDenominations(
+  amountAvailable: AmountJson,
+  denoms: DenominationRecord[],
+  forcedDenomSel: ForcedDenomSel,
+): DenomSelectionState {
+  let remaining = Amounts.copy(amountAvailable);
+
+  const selectedDenoms: {
+    count: number;
+    denomPubHash: string;
+  }[] = [];
+
+  let totalCoinValue = Amounts.getZero(amountAvailable.currency);
+  let totalWithdrawCost = Amounts.getZero(amountAvailable.currency);
+
+  denoms = denoms.filter(isWithdrawableDenom);
+  denoms.sort((d1, d2) => Amounts.cmp(d2.value, d1.value));
+
+  for (const fds of forcedDenomSel.denoms) {
+    const count = fds.count;
+    const denom = denoms.find((x) => {
+      return Amounts.cmp(x.value, fds.value) == 0;
+    });
+    if (!denom) {
+      throw Error(
+        `unable to find denom for forced selection (value ${fds.value})`,
+      );
+    }
+    const cost = Amounts.add(denom.value, denom.feeWithdraw).amount;
+    totalCoinValue = Amounts.add(
+      totalCoinValue,
+      Amounts.mult(denom.value, count).amount,
+    ).amount;
+    totalWithdrawCost = Amounts.add(
+      totalWithdrawCost,
+      Amounts.mult(cost, count).amount,
+    ).amount;
+    selectedDenoms.push({
+      count,
+      denomPubHash: denom.denomPubHash,
+    });
   }
 
   return {
@@ -695,21 +730,6 @@ async function processPlanchetVerifyAndStoreCoin(
   }
 }
 
-export function denomSelectionInfoToState(
-  dsi: DenominationSelectionInfo,
-): DenomSelectionState {
-  return {
-    selectedDenoms: dsi.selectedDenoms.map((x) => {
-      return {
-        count: x.count,
-        denomPubHash: x.denom.denomPubHash,
-      };
-    }),
-    totalCoinValue: dsi.totalCoinValue,
-    totalWithdrawCost: dsi.totalWithdrawCost,
-  };
-}
-
 /**
  * Make sure that denominations that currently can be used for withdrawal
  * are validated, and the result of validation is stored in the database.
@@ -1006,11 +1026,21 @@ export async function getExchangeWithdrawalInfo(
     exchange,
   );
 
-  let earliestDepositExpiration =
-    selectedDenoms.selectedDenoms[0].denom.stampExpireDeposit;
+  let earliestDepositExpiration: TalerProtocolTimestamp | undefined;
   for (let i = 1; i < selectedDenoms.selectedDenoms.length; i++) {
-    const expireDeposit =
-      selectedDenoms.selectedDenoms[i].denom.stampExpireDeposit;
+    const ds = selectedDenoms.selectedDenoms[i];
+    // FIXME: Do in one transaction!
+    const denom = await ws.db
+      .mktx((x) => ({ denominations: x.denominations }))
+      .runReadOnly(async (tx) => {
+        return ws.getDenomInfo(ws, tx, exchangeBaseUrl, ds.denomPubHash);
+      });
+    checkDbInvariant(!!denom);
+    const expireDeposit = denom.stampExpireDeposit;
+    if (!earliestDepositExpiration) {
+      earliestDepositExpiration = expireDeposit;
+      continue;
+    }
     if (
       AbsoluteTime.cmp(
         AbsoluteTime.fromTimestamp(expireDeposit),
@@ -1020,6 +1050,8 @@ export async function getExchangeWithdrawalInfo(
       earliestDepositExpiration = expireDeposit;
     }
   }
+
+  checkLogicInvariant(!!earliestDepositExpiration);
 
   const possibleDenoms = await ws.db
     .mktx((x) => ({ denominations: x.denominations }))

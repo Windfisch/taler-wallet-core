@@ -106,11 +106,12 @@ export function getTotalRefreshCost(
     amountLeft,
     refreshedDenom.feeRefresh,
   ).amount;
+  const denomMap = Object.fromEntries(denoms.map((x) => [x.denomPubHash, x]));
   const withdrawDenoms = selectWithdrawalDenominations(withdrawAmount, denoms);
   const resultingAmount = Amounts.add(
     Amounts.getZero(withdrawAmount.currency),
     ...withdrawDenoms.selectedDenoms.map(
-      (d) => Amounts.mult(d.denom.value, d.count).amount,
+      (d) => Amounts.mult(denomMap[d.denomPubHash].value, d.count).amount,
     ),
   ).amount;
   const totalCost = Amounts.sub(amountLeft, resultingAmount).amount;
@@ -277,7 +278,7 @@ async function refreshCreateSession(
         sessionSecretSeed: sessionSecretSeed,
         newDenoms: newCoinDenoms.selectedDenoms.map((x) => ({
           count: x.count,
-          denomPubHash: x.denom.denomPubHash,
+          denomPubHash: x.denomPubHash,
         })),
         amountRefreshOutput: newCoinDenoms.totalCoinValue,
       };

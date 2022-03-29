@@ -56,7 +56,6 @@ import {
   updateWithdrawalDenoms,
   getCandidateWithdrawalDenoms,
   selectWithdrawalDenominations,
-  denomSelectionInfoToState,
 } from "./withdraw.js";
 import {
   getHttpResponseErrorDetails,
@@ -133,7 +132,7 @@ export async function prepareTip(
       tipAmountEffective: selectedDenoms.totalCoinValue,
       retryInfo: resetRetryInfo(),
       lastError: undefined,
-      denomsSel: denomSelectionInfoToState(selectedDenoms),
+      denomsSel: selectedDenoms,
       pickedUpTimestamp: undefined,
       secretSeed,
       denomSelUid,

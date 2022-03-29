@@ -37,6 +37,8 @@ import {
   TalerErrorDetail,
   AbsoluteTime,
   URL,
+  AmountString,
+  ForcedDenomSel,
 } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import {
@@ -68,7 +70,6 @@ import {
   updateExchangeFromUrl,
 } from "./exchanges.js";
 import {
-  denomSelectionInfoToState,
   getBankWithdrawalInfo,
   getCandidateWithdrawalDenoms,
   processWithdrawGroup,
@@ -180,8 +181,7 @@ export async function createReserve(
 
   await updateWithdrawalDenoms(ws, canonExchange);
   const denoms = await getCandidateWithdrawalDenoms(ws, canonExchange);
-  const denomSelInfo = selectWithdrawalDenominations(req.amount, denoms);
-  const initialDenomSel = denomSelectionInfoToState(denomSelInfo);
+  const initialDenomSel = selectWithdrawalDenominations(req.amount, denoms);
 
   const reserveRecord: ReserveRecord = {
     instructedAmount: req.amount,
@@ -630,7 +630,7 @@ async function updateReserve(
         amountReservePlus,
         amountReserveMinus,
       ).amount;
-      const denomSelInfo = selectWithdrawalDenominations(
+      const denomSel = selectWithdrawalDenominations(
         remainingAmount,
         denoms,
       );
@@ -639,11 +639,11 @@ async function updateReserve(
         `Remaining unclaimed amount in reseve is ${Amounts.stringify(
           remainingAmount,
         )} and can be withdrawn with ${
-          denomSelInfo.selectedDenoms.length
+          denomSel.selectedDenoms.length
         } coins`,
       );
 
-      if (denomSelInfo.selectedDenoms.length === 0) {
+      if (denomSel.selectedDenoms.length === 0) {
         newReserve.reserveStatus = ReserveRecordStatus.Dormant;
         newReserve.operationStatus = OperationStatus.Finished;
         delete newReserve.lastError;
@@ -669,7 +669,7 @@ async function updateReserve(
         timestampStart: AbsoluteTime.toTimestamp(AbsoluteTime.now()),
         retryInfo: resetRetryInfo(),
         lastError: undefined,
-        denomsSel: denomSelectionInfoToState(denomSelInfo),
+        denomsSel: denomSel,
         secretSeed: encodeCrock(getRandomBytes(64)),
         denomSelUid: encodeCrock(getRandomBytes(32)),
         operationStatus: OperationStatus.Pending,
@@ -755,6 +755,9 @@ export async function createTalerWithdrawReserve(
   ws: InternalWalletState,
   talerWithdrawUri: string,
   selectedExchange: string,
+  options: {
+    forcedDenomSel?: ForcedDenomSel;
+  } = {},
 ): Promise<AcceptWithdrawalResponse> {
   await updateExchangeFromUrl(ws, selectedExchange);
   const withdrawInfo = await getBankWithdrawalInfo(ws.http, talerWithdrawUri);

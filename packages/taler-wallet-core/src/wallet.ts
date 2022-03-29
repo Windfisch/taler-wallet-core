@@ -598,18 +598,6 @@ async function getExchanges(
   return { exchanges };
 }
 
-async function acceptWithdrawal(
-  ws: InternalWalletState,
-  talerWithdrawUri: string,
-  selectedExchange: string,
-): Promise<AcceptWithdrawalResponse> {
-  try {
-    return createTalerWithdrawReserve(ws, talerWithdrawUri, selectedExchange);
-  } finally {
-    ws.latch.trigger();
-  }
-}
-
 /**
  * Inform the wallet that the status of a reserve has changed (e.g. due to a
  * confirmation from the bank.).
@@ -849,10 +837,13 @@ async function dispatchRequestInternal(
     case "acceptBankIntegratedWithdrawal": {
       const req =
         codecForAcceptBankIntegratedWithdrawalRequest().decode(payload);
-      return await acceptWithdrawal(
+      return await createTalerWithdrawReserve(
         ws,
         req.talerWithdrawUri,
         req.exchangeBaseUrl,
+        {
+          forcedDenomSel: req.forcedDenomSel,
+        },
       );
     }
     case "getExchangeTos": {

@@ -212,6 +212,12 @@ export interface CreateReserveRequest {
    * URL to fetch the withdraw status from the bank.
    */
   bankWithdrawStatusUrl?: string;
+
+  /**
+   * Forced denomination selection for the first withdrawal
+   * from this reserve, only used for testing.
+   */
+  forcedDenomSel?: ForcedDenomSel;
 }
 
 export const codecForCreateReserveRequest = (): Codec<CreateReserveRequest> =>
@@ -727,6 +733,7 @@ export interface GetWithdrawalDetailsForAmountRequest {
 export interface AcceptBankIntegratedWithdrawalRequest {
   talerWithdrawUri: string;
   exchangeBaseUrl: string;
+  forcedDenomSel?: ForcedDenomSel;
 }
 
 export const codecForAcceptBankIntegratedWithdrawalRequest =
@@ -734,6 +741,7 @@ export const codecForAcceptBankIntegratedWithdrawalRequest =
     buildCodecForObject<AcceptBankIntegratedWithdrawalRequest>()
       .property("exchangeBaseUrl", codecForString())
       .property("talerWithdrawUri", codecForString())
+      .property("forcedDenomSel", codecForAny())
       .build("AcceptBankIntegratedWithdrawalRequest");
 
 export const codecForGetWithdrawalDetailsForAmountRequest =
@@ -1134,6 +1142,9 @@ export const codecForImportDbRequest = (): Codec<ImportDb> =>
     .property("dump", codecForAny())
     .build("ImportDbRequest");
 
-
-
-    
+export interface ForcedDenomSel {
+  denoms: {
+    value: AmountString;
+    count: number;
+  }[];
+}
