@@ -13,9 +13,9 @@
  You should have received a copy of the GNU General Public License along with
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-import { useTalerActionURL } from "./useTalerActionURL"
-import { mountHook } from "../test-utils";
-import { IoCProviderForTesting } from "../context/iocContext";
+import { useTalerActionURL } from "./useTalerActionURL.js"
+import { mountHook } from "../test-utils.js";
+import { IoCProviderForTesting } from "../context/iocContext.js";
 import { h, VNode } from "preact";
 import { expect } from "chai";
 

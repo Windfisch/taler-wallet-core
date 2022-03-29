@@ -1,8 +1,9 @@
 import { css } from "@linaria/core";
 import { h, JSX } from "preact";
-import { useEffect, useLayoutEffect, useState } from "preact/hooks";
+import { useLayoutEffect } from "preact/hooks";
+// eslint-disable-next-line import/extensions
 import { theme } from "../style";
-import { FormControlContext, useFormControl } from "./FormControl";
+import { FormControlContext, useFormControl } from "./FormControl.js";
 
 const rootStyle = css`
   color: ${theme.palette.text.primary};

@@ -1,13 +1,14 @@
 import { ComponentChildren, h, VNode } from "preact";
-import { FormControl } from "./input/FormControl";
-import { FormHelperText } from "./input/FormHelperText";
-import { InputFilled } from "./input/InputFilled";
-import { InputLabel } from "./input/InputLabel";
-import { InputOutlined } from "./input/InputOutlined";
-import { InputStandard } from "./input/InputStandard";
-import { SelectFilled } from "./input/SelectFilled";
-import { SelectOutlined } from "./input/SelectOutlined";
-import { SelectStandard } from "./input/SelectStandard";
+import { FormControl } from "./input/FormControl.js";
+import { FormHelperText } from "./input/FormHelperText.js";
+import { InputFilled } from "./input/InputFilled.js";
+import { InputLabel } from "./input/InputLabel.js";
+import { InputOutlined } from "./input/InputOutlined.js";
+import { InputStandard } from "./input/InputStandard.js";
+import { SelectFilled } from "./input/SelectFilled.js";
+import { SelectOutlined } from "./input/SelectOutlined.js";
+import { SelectStandard } from "./input/SelectStandard.js";
+// eslint-disable-next-line import/extensions
 import { Colors } from "./style";
 
 export interface Props {
@@ -36,6 +37,18 @@ export interface Props {
   children?: ComponentChildren;
 }
 
+const inputVariant = {
+  standard: InputStandard,
+  filled: InputFilled,
+  outlined: InputOutlined,
+};
+
+const selectVariant = {
+  standard: SelectStandard,
+  filled: SelectFilled,
+  outlined: SelectOutlined,
+};
+
 export function TextField({
   label,
   select,
@@ -55,15 +68,3 @@ export function TextField({
     </FormControl>
   );
 }
-
-const inputVariant = {
-  standard: InputStandard,
-  filled: InputFilled,
-  outlined: InputOutlined,
-};
-
-const selectVariant = {
-  standard: SelectStandard,
-  filled: SelectFilled,
-  outlined: SelectOutlined,
-};

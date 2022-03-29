@@ -19,8 +19,8 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { createExample } from "../test-utils";
-import { View as TestedComponent } from "./Welcome";
+import { createExample } from "../test-utils.js";
+import { View as TestedComponent } from "./Welcome.js";
 
 export default {
   title: "wallet/welcome",

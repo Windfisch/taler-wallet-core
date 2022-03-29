@@ -27,8 +27,8 @@ import {
   intervalToDuration,
 } from "date-fns";
 import { Fragment, h, VNode } from "preact";
-import { Loading } from "../components/Loading";
-import { LoadingError } from "../components/LoadingError";
+import { Loading } from "../components/Loading.js";
+import { LoadingError } from "../components/LoadingError.js";
 import {
   BoldLight,
   ButtonPrimary,
@@ -39,11 +39,11 @@ import {
   RowBorderGray,
   SmallLightText,
   SmallText,
-} from "../components/styled";
-import { useTranslationContext } from "../context/translation";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import { Pages } from "../NavigationBar";
-import * as wxApi from "../wxApi";
+} from "../components/styled/index.js";
+import { useTranslationContext } from "../context/translation.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { Pages } from "../NavigationBar.js";
+import * as wxApi from "../wxApi.js";
 
 interface Props {
   onAddProvider: () => void;

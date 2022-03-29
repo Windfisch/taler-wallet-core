@@ -20,11 +20,11 @@ import {
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import { queryToSlashKeys } from "../utils/index";
-import * as wxApi from "../wxApi";
-import { ExchangeAddConfirmPage } from "./ExchangeAddConfirm";
-import { ExchangeSetUrlPage } from "./ExchangeSetUrl";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { queryToSlashKeys } from "../utils/index.js";
+import * as wxApi from "../wxApi.js";
+import { ExchangeAddConfirmPage } from "./ExchangeAddConfirm.js";
+import { ExchangeSetUrlPage } from "./ExchangeSetUrl.js";
 
 interface Props {
   currency?: string;

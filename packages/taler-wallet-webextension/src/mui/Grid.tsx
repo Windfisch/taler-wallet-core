@@ -1,6 +1,7 @@
 import { css } from "@linaria/core";
 import { h, JSX, VNode, ComponentChildren, createContext } from "preact";
 import { useContext } from "preact/hooks";
+// eslint-disable-next-line import/extensions
 import { theme } from "./style";
 
 type ResponsiveKeys = "xs" | "sm" | "md" | "lg" | "xl";

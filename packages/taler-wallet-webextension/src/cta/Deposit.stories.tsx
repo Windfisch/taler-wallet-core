@@ -20,8 +20,8 @@
  */
 
 import { ContractTerms, PreparePayResultType } from "@gnu-taler/taler-util";
-import { createExample } from "../test-utils";
-import { PaymentRequestView as TestedComponent } from "./Deposit";
+import { createExample } from "../test-utils.js";
+import { PaymentRequestView as TestedComponent } from "./Deposit.js";
 
 export default {
   title: "cta/deposit",

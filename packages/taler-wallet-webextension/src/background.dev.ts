@@ -23,9 +23,9 @@
 /**
  * Imports.
  */
-import { platform, setupPlatform } from "./platform/api";
-import devAPI from "./platform/dev"
-import { wxMain } from "./wxBackend";
+import { platform, setupPlatform } from "./platform/api.js";
+import devAPI from "./platform/dev.js";
+import { wxMain } from "./wxBackend.js";
 
 console.log("Wallet setup for Dev API")
 setupPlatform(devAPI)

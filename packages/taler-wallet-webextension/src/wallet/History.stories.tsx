@@ -32,8 +32,8 @@ import {
   TransactionWithdrawal,
   WithdrawalType,
 } from "@gnu-taler/taler-util";
-import { HistoryView as TestedComponent } from "./History";
-import { createExample } from "../test-utils";
+import { HistoryView as TestedComponent } from "./History.js";
+import { createExample } from "../test-utils.js";
 
 export default {
   title: "wallet/balance",

@@ -17,8 +17,8 @@ import { TalerErrorDetail } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import arrowDown from "../svg/chevron-down.svg";
-import { useDevContext } from "../context/devContext";
-import { ErrorBox } from "./styled";
+import { useDevContext } from "../context/devContext.js";
+import { ErrorBox } from "./styled/index.js";
 
 export function ErrorTalerOperation({
   title,

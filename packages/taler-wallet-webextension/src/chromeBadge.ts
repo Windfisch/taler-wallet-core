@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { platform } from "./platform/api";
+import { platform } from "./platform/api.js";
 
 /**
  * Polyfill for requestAnimationFrame, which

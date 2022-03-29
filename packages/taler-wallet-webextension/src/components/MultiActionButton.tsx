@@ -1,6 +1,10 @@
 import { h, VNode } from "preact";
 import arrowDown from "../svg/chevron-down.svg";
-import { ButtonBoxPrimary, ButtonPrimary, ParagraphClickable } from "./styled";
+import {
+  ButtonBoxPrimary,
+  ButtonPrimary,
+  ParagraphClickable,
+} from "./styled/index.js";
 import { useState } from "preact/hooks";
 
 export interface Props {

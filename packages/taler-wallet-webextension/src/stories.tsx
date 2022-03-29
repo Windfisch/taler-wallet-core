@@ -30,12 +30,12 @@ import {
   VNode,
 } from "preact";
 import { useEffect, useErrorBoundary, useState } from "preact/hooks";
-import { LogoHeader } from "./components/LogoHeader";
-import { PopupBox, WalletBox } from "./components/styled";
-import * as mui from "./mui/index.stories";
-import { PopupNavBar, WalletNavBar } from "./NavigationBar";
-import * as popup from "./popup/index.stories";
-import * as wallet from "./wallet/index.stories";
+import { LogoHeader } from "./components/LogoHeader.js";
+import { PopupBox, WalletBox } from "./components/styled/index.js";
+import * as mui from "./mui/index.stories.js";
+import { PopupNavBar, WalletNavBar } from "./NavigationBar.js";
+import * as popup from "./popup/index.stories.js";
+import * as wallet from "./wallet/index.stories.js";
 
 setupI18n("en", { en: {} });
 

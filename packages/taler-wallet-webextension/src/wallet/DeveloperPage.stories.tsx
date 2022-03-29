@@ -20,8 +20,8 @@
  */
 
 import { PendingTaskType } from "@gnu-taler/taler-wallet-core";
-import { createExample } from "../test-utils";
-import { View as TestedComponent } from "./DeveloperPage";
+import { createExample } from "../test-utils.js";
+import { View as TestedComponent } from "./DeveloperPage.js";
 
 export default {
   title: "wallet/developer",

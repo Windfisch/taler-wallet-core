@@ -21,8 +21,8 @@
 
 import { TalerProtocolTimestamp } from "@gnu-taler/taler-util";
 import { ProviderPaymentType } from "@gnu-taler/taler-wallet-core";
-import { createExample } from "../test-utils";
-import { ProviderView as TestedComponent } from "./ProviderDetailPage";
+import { createExample } from "../test-utils.js";
+import { ProviderView as TestedComponent } from "./ProviderDetailPage.js";
 
 export default {
   title: "wallet/backup/details",

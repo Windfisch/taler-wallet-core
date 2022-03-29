@@ -29,28 +29,28 @@ import {
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { Loading } from "../components/Loading";
-import { LoadingError } from "../components/LoadingError";
-import { ErrorTalerOperation } from "../components/ErrorTalerOperation";
-import { LogoHeader } from "../components/LogoHeader";
-import { Part } from "../components/Part";
-import { SelectList } from "../components/SelectList";
+import { Loading } from "../components/Loading.js";
+import { LoadingError } from "../components/LoadingError.js";
+import { ErrorTalerOperation } from "../components/ErrorTalerOperation.js";
+import { LogoHeader } from "../components/LogoHeader.js";
+import { Part } from "../components/Part.js";
+import { SelectList } from "../components/SelectList.js";
 import {
   ButtonSuccess,
   ButtonWarning,
   LinkSuccess,
   SubTitle,
   WalletAction,
-} from "../components/styled";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
+} from "../components/styled/index.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import {
   amountToString,
   buildTermsOfServiceState,
   TermsState,
-} from "../utils/index";
-import * as wxApi from "../wxApi";
-import { TermsOfServiceSection } from "./TermsOfServiceSection";
-import { useTranslationContext } from "../context/translation";
+} from "../utils/index.js";
+import * as wxApi from "../wxApi.js";
+import { TermsOfServiceSection } from "./TermsOfServiceSection.js";
+import { useTranslationContext } from "../context/translation.js";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 
 interface Props {

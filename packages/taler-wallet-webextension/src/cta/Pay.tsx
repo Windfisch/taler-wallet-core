@@ -39,12 +39,12 @@ import {
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { ErrorMessage } from "../components/ErrorMessage";
-import { Loading } from "../components/Loading";
-import { LoadingError } from "../components/LoadingError";
-import { LogoHeader } from "../components/LogoHeader";
-import { Part } from "../components/Part";
-import { QR } from "../components/QR";
+import { ErrorMessage } from "../components/ErrorMessage.js";
+import { Loading } from "../components/Loading.js";
+import { LoadingError } from "../components/LoadingError.js";
+import { LogoHeader } from "../components/LogoHeader.js";
+import { Part } from "../components/Part.js";
+import { QR } from "../components/QR.js";
 import {
   ButtonSuccess,
   Link,
@@ -55,10 +55,10 @@ import {
   SuccessBox,
   WalletAction,
   WarningBox,
-} from "../components/styled";
-import { useTranslationContext } from "../context/translation";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import * as wxApi from "../wxApi";
+} from "../components/styled/index.js";
+import { useTranslationContext } from "../context/translation.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import * as wxApi from "../wxApi.js";
 
 interface Props {
   talerPayUri?: string;

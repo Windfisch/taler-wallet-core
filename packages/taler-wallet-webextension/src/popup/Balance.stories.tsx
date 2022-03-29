@@ -19,8 +19,8 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { createExample } from "../test-utils";
-import { BalanceView as TestedComponent } from "./BalancePage";
+import { createExample } from "../test-utils.js";
+import { BalanceView as TestedComponent } from "./BalancePage.js";
 
 export default {
   title: "popup/balance",

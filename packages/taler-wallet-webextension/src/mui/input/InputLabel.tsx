@@ -1,8 +1,9 @@
 import { css } from "@linaria/core";
 import { ComponentChildren, h } from "preact";
+// eslint-disable-next-line import/extensions
 import { Colors, theme } from "../style";
-import { useFormControl } from "./FormControl";
-import { FormLabel } from "./FormLabel";
+import { useFormControl } from "./FormControl.js";
+import { FormLabel } from "./FormLabel.js";
 
 const root = css`
   display: block;

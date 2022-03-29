@@ -1,5 +1,5 @@
 import { ComponentChildren, Fragment, h, VNode } from "preact";
-import { useDevContext } from "../context/devContext";
+import { useDevContext } from "../context/devContext.js";
 
 export function JustInDevMode({
   children,

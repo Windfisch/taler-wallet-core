@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape */
 /*
  This file is part of GNU Taler
  (C) 2021 Taler Systems S.A.

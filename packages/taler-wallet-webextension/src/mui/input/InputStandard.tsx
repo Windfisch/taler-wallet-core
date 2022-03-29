@@ -1,8 +1,9 @@
 import { css } from "@linaria/core";
 import { h, VNode } from "preact";
+// eslint-disable-next-line import/extensions
 import { Colors, theme } from "../style";
-import { useFormControl } from "./FormControl";
-import { InputBase, InputBaseComponent, InputBaseRoot } from "./InputBase";
+import { useFormControl } from "./FormControl.js";
+import { InputBase, InputBaseComponent, InputBaseRoot } from "./InputBase.js";
 
 export interface Props {
   autoComplete?: string;

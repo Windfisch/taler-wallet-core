@@ -33,12 +33,12 @@ import {
   WithdrawalType,
 } from "@gnu-taler/taler-util";
 import { ComponentChildren, h } from "preact";
-import { DevContextProviderForTesting } from "../context/devContext";
+import { DevContextProviderForTesting } from "../context/devContext.js";
 import {
   createExample,
   createExampleWithCustomContext as createExampleInCustomContext,
-} from "../test-utils";
-import { TransactionView as TestedComponent } from "./Transaction";
+} from "../test-utils.js";
+import { TransactionView as TestedComponent } from "./Transaction.js";
 
 export default {
   title: "wallet/history/details",

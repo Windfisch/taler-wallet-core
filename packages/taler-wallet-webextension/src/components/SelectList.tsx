@@ -15,8 +15,8 @@
  */
 
 import { Fragment, h, VNode } from "preact";
-import { useTranslationContext } from "../context/translation";
-import { NiceSelect } from "./styled";
+import { useTranslationContext } from "../context/translation.js";
+import { NiceSelect } from "./styled/index.js";
 
 interface Props {
   value?: string;

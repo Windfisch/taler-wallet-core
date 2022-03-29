@@ -19,8 +19,8 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { createExample } from "../test-utils";
-import { CreateManualWithdraw as TestedComponent } from "./CreateManualWithdraw";
+import { createExample } from "../test-utils.js";
+import { CreateManualWithdraw as TestedComponent } from "./CreateManualWithdraw.js";
 
 export default {
   title: "wallet/manual withdraw/creation",

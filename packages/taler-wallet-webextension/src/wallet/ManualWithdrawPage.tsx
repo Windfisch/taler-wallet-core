@@ -24,13 +24,13 @@ import {
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { Loading } from "../components/Loading";
-import { LoadingError } from "../components/LoadingError";
-import { useTranslationContext } from "../context/translation";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import * as wxApi from "../wxApi";
-import { CreateManualWithdraw } from "./CreateManualWithdraw";
-import { ReserveCreated } from "./ReserveCreated";
+import { Loading } from "../components/Loading.js";
+import { LoadingError } from "../components/LoadingError.js";
+import { useTranslationContext } from "../context/translation.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import * as wxApi from "../wxApi.js";
+import { CreateManualWithdraw } from "./CreateManualWithdraw.js";
+import { ReserveCreated } from "./ReserveCreated.js";
 
 interface Props {
   currency?: string;

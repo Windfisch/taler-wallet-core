@@ -21,8 +21,8 @@
 
 import { ProviderPaymentType } from "@gnu-taler/taler-wallet-core";
 import { addDays } from "date-fns";
-import { BackupView as TestedComponent } from "./BackupPage";
-import { createExample } from "../test-utils";
+import { BackupView as TestedComponent } from "./BackupPage.js";
+import { createExample } from "../test-utils.js";
 import { TalerProtocolTimestamp } from "@gnu-taler/taler-util";
 
 export default {

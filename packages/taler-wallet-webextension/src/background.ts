@@ -23,10 +23,10 @@
 /**
  * Imports.
  */
-import { platform, setupPlatform } from "./platform/api";
-import firefoxAPI from "./platform/firefox"
-import chromeAPI from "./platform/chrome"
-import { wxMain } from "./wxBackend";
+import { platform, setupPlatform } from "./platform/api.js";
+import firefoxAPI from "./platform/firefox.js";
+import chromeAPI from "./platform/chrome.js";
+import { wxMain } from "./wxBackend.js";
 
 const isFirefox = typeof (window as any)['InstallTrigger'] !== 'undefined'
 

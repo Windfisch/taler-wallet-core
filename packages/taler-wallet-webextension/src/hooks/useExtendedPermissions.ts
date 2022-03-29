@@ -15,9 +15,9 @@
  */
 
 import { useState, useEffect } from "preact/hooks";
-import * as wxApi from "../wxApi";
-import { platform } from "../platform/api";
-import { getReadRequestPermissions } from "../permissions";
+import * as wxApi from "../wxApi.js";
+import { platform } from "../platform/api.js";
+import { getReadRequestPermissions } from "../permissions.js";
 
 export function useExtendedPermissions(): [boolean, () => Promise<void>] {
   const [enabled, setEnabled] = useState(false);

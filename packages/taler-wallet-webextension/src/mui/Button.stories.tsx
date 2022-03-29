@@ -19,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { Button } from "./Button";
+import { Button } from "./Button.js";
 import { Fragment, h } from "preact";
 import DeleteIcon from "../svg/delete_24px.svg";
 import SendIcon from "../svg/send_24px.svg";

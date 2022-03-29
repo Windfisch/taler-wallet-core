@@ -40,12 +40,12 @@ import {
   Wallet,
   WalletStoresV1
 } from "@gnu-taler/taler-wallet-core";
-import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory";
-import { BrowserHttpLib } from "./browserHttpLib";
-import { getReadRequestPermissions } from "./permissions";
-import { MessageFromBackend, platform } from "./platform/api";
-import { SynchronousCryptoWorkerFactory } from "./serviceWorkerCryptoWorkerFactory";
-import { ServiceWorkerHttpLib } from "./serviceWorkerHttpLib";
+import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory.js";
+import { BrowserHttpLib } from "./browserHttpLib.js";
+import { getReadRequestPermissions } from "./permissions.js";
+import { MessageFromBackend, platform } from "./platform/api.js";
+import { SynchronousCryptoWorkerFactory } from "./serviceWorkerCryptoWorkerFactory.js";
+import { ServiceWorkerHttpLib } from "./serviceWorkerHttpLib.js";
 
 /**
  * Currently active wallet instance.  Might be unloaded and

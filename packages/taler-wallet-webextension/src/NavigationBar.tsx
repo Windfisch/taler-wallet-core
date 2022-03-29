@@ -25,13 +25,13 @@
  * Imports.
  */
 import { h, VNode } from "preact";
-import { JustInDevMode } from "./components/JustInDevMode";
+import { JustInDevMode } from "./components/JustInDevMode.js";
 import {
   NavigationHeader,
   NavigationHeaderHolder,
   SvgIcon,
-} from "./components/styled";
-import { useTranslationContext } from "./context/translation";
+} from "./components/styled/index.js";
+import { useTranslationContext } from "./context/translation.js";
 import settingsIcon from "./svg/settings_black_24dp.svg";
 
 /**

@@ -24,13 +24,13 @@ import { PendingTaskInfo } from "@gnu-taler/taler-wallet-core";
 import { format } from "date-fns";
 import { Fragment, h, VNode } from "preact";
 import { useRef, useState } from "preact/hooks";
-import { Diagnostics } from "../components/Diagnostics";
-import { NotifyUpdateFadeOut } from "../components/styled";
-import { Time } from "../components/Time";
-import { useTranslationContext } from "../context/translation";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import { useDiagnostics } from "../hooks/useDiagnostics";
-import * as wxApi from "../wxApi";
+import { Diagnostics } from "../components/Diagnostics.js";
+import { NotifyUpdateFadeOut } from "../components/styled/index.js";
+import { Time } from "../components/Time.js";
+import { useTranslationContext } from "../context/translation.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { useDiagnostics } from "../hooks/useDiagnostics.js";
+import * as wxApi from "../wxApi.js";
 
 export function DeveloperPage(): VNode {
   const [status, timedOut] = useDiagnostics();
@@ -371,8 +371,6 @@ function toBase64(str: string): string {
     }),
   );
 }
-
-function runIntegrationTest() {}
 
 export async function confirmReset(
   confirmTheResetMessage: string,

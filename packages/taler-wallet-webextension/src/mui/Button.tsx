@@ -1,6 +1,8 @@
 import { ComponentChildren, h, VNode } from "preact";
 import { css } from "@linaria/core";
+// eslint-disable-next-line import/extensions
 import { theme, ripple, Colors } from "./style";
+// eslint-disable-next-line import/extensions
 import { alpha } from "./colors/manipulation";
 
 interface Props {

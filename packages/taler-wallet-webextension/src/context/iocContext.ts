@@ -21,7 +21,7 @@
 
 import { createContext, h, VNode } from "preact";
 import { useContext } from "preact/hooks";
-import { platform } from "../platform/api";
+import { platform } from "../platform/api.js";
 
 interface Type {
   findTalerUriInActiveTab: () => Promise<string | undefined>;

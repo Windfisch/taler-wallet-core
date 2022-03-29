@@ -15,7 +15,7 @@
  */
 
 import { classifyTalerUri, CoreApiResponse, TalerUriType } from "@gnu-taler/taler-util";
-import { MessageFromBackend, PlatformAPI } from "./api";
+import { MessageFromBackend, PlatformAPI } from "./api.js";
 
 const frames = ["popup", "wallet"]
 
@@ -133,8 +133,7 @@ const api: PlatformAPI = ({
 type IframeMessageType = IframeMessageNotification | IframeMessageResponse | IframeMessageCommand;
 interface IframeMessageNotification {
   type: "notification";
-  header: {
-  },
+  header: Record<string, never>,
   body: MessageFromBackend
 }
 interface IframeMessageResponse {

@@ -15,7 +15,7 @@
  */
 
 import { h, VNode } from "preact";
-import { useTranslationContext } from "../context/translation";
+import { useTranslationContext } from "../context/translation.js";
 
 export function DebugCheckbox({
   enabled,

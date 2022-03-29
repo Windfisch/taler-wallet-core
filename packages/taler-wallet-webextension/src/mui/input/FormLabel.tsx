@@ -1,7 +1,8 @@
 import { css } from "@linaria/core";
 import { ComponentChildren, h } from "preact";
+// eslint-disable-next-line import/extensions
 import { Colors, theme } from "../style";
-import { useFormControl } from "./FormControl";
+import { useFormControl } from "./FormControl.js";
 
 export interface Props {
   class?: string;

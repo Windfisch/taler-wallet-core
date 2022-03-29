@@ -23,9 +23,9 @@ import {
   TransactionType,
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
-import { useTranslationContext } from "../context/translation";
-import { Avatar } from "../mui/Avatar";
-import { Pages } from "../NavigationBar";
+import { useTranslationContext } from "../context/translation.js";
+import { Avatar } from "../mui/Avatar.js";
+import { Pages } from "../NavigationBar.js";
 import {
   Column,
   ExtraLargeText,
@@ -33,8 +33,8 @@ import {
   LargeText,
   LightText,
   SmallLightText,
-} from "./styled";
-import { Time } from "./Time";
+} from "./styled/index.js";
+import { Time } from "./Time.js";
 
 export function TransactionItem(props: { tx: Transaction }): VNode {
   const tx = props.tx;

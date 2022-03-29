@@ -15,7 +15,7 @@
  */
 
 import { CrossBrowserPermissionsApi, Permissions, PlatformAPI } from "./api.js";
-import chromePlatform, { contains as chromeContains, remove as chromeRemove, request as chromeRequest } from "./chrome";
+import chromePlatform, { contains as chromeContains, remove as chromeRemove, request as chromeRequest } from "./chrome.js";
 
 const api: PlatformAPI = {
   ...chromePlatform,

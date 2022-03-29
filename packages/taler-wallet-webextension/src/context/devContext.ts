@@ -21,7 +21,7 @@
 
 import { createContext, h, VNode } from "preact";
 import { useContext } from "preact/hooks";
-import { useLocalStorage } from "../hooks/useLocalStorage";
+import { useLocalStorage } from "../hooks/useLocalStorage.js";
 
 interface Type {
   devMode: boolean;

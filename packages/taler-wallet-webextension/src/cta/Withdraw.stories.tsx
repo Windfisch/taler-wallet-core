@@ -20,9 +20,9 @@
  */
 
 import { amountFractionalBase, ExchangeListItem } from "@gnu-taler/taler-util";
-import { createExample } from "../test-utils";
-import { termsHtml, termsPdf, termsPlain, termsXml } from "./termsExample";
-import { View as TestedComponent } from "./Withdraw";
+import { createExample } from "../test-utils.js";
+import { termsHtml, termsPdf, termsPlain, termsXml } from "./termsExample.js";
+import { View as TestedComponent } from "./Withdraw.js";
 
 function parseFromString(s: string): Document {
   if (typeof window === "undefined") {

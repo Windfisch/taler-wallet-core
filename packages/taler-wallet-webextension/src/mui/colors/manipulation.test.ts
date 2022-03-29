@@ -11,7 +11,7 @@ import {
   getContrastRatio,
   getLuminance,
   lighten,
-} from './manipulation';
+} from './manipulation.js';
 
 describe('utils/colorManipulator', () => {
   describe('recomposeColor', () => {

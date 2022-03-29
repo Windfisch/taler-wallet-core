@@ -21,8 +21,8 @@
 
 import { Amounts, Balance, parsePaytoUri } from "@gnu-taler/taler-util";
 import { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
-import { createExample } from "../test-utils";
-import { View as TestedComponent } from "./DepositPage";
+import { createExample } from "../test-utils.js";
+import { View as TestedComponent } from "./DepositPage.js";
 
 export default {
   title: "wallet/deposit",

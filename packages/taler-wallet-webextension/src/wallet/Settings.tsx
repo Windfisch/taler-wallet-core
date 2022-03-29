@@ -16,9 +16,9 @@
 
 import { ExchangeListItem } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
-import { Checkbox } from "../components/Checkbox";
-import { JustInDevMode } from "../components/JustInDevMode";
-import { SelectList } from "../components/SelectList";
+import { Checkbox } from "../components/Checkbox.js";
+import { JustInDevMode } from "../components/JustInDevMode.js";
+import { SelectList } from "../components/SelectList.js";
 import {
   DestructiveText,
   Input,
@@ -26,16 +26,16 @@ import {
   SubTitle,
   SuccessText,
   WarningText,
-} from "../components/styled";
-import { useDevContext } from "../context/devContext";
-import { useTranslationContext } from "../context/translation";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import { useBackupDeviceName } from "../hooks/useBackupDeviceName";
-import { useExtendedPermissions } from "../hooks/useExtendedPermissions";
-import { useLang } from "../hooks/useLang";
-import { Pages } from "../NavigationBar";
-import { buildTermsOfServiceStatus } from "../utils/index";
-import * as wxApi from "../wxApi";
+} from "../components/styled/index.js";
+import { useDevContext } from "../context/devContext.js";
+import { useTranslationContext } from "../context/translation.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { useBackupDeviceName } from "../hooks/useBackupDeviceName.js";
+import { useExtendedPermissions } from "../hooks/useExtendedPermissions.js";
+import { useLang } from "../hooks/useLang.js";
+import { Pages } from "../NavigationBar.js";
+import { buildTermsOfServiceStatus } from "../utils/index.js";
+import * as wxApi from "../wxApi.js";
 
 export function SettingsPage(): VNode {
   const [permissionsEnabled, togglePermissions] = useExtendedPermissions();

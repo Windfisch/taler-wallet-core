@@ -14,9 +14,9 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 import { h, VNode } from "preact";
-import { HookError } from "../hooks/useAsyncAsHook";
-import { ErrorMessage } from "./ErrorMessage";
-import { ErrorTalerOperation } from "./ErrorTalerOperation";
+import { HookError } from "../hooks/useAsyncAsHook.js";
+import { ErrorMessage } from "./ErrorMessage.js";
+import { ErrorTalerOperation } from "./ErrorTalerOperation.js";
 
 export interface Props {
   title: VNode;

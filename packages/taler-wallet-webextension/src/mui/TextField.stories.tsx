@@ -22,7 +22,7 @@
 import { styled } from "@linaria/react";
 import { Fragment, h } from "preact";
 import { useState } from "preact/hooks";
-import { TextField, Props } from "./TextField";
+import { TextField, Props } from "./TextField.js";
 
 export default {
   title: "mui/TextField",

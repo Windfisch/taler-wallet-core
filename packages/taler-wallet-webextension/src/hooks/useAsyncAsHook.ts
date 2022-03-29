@@ -20,7 +20,7 @@ import {
 } from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useState } from "preact/hooks";
-import * as wxApi from "../wxApi";
+import * as wxApi from "../wxApi.js";
 
 interface HookOk<T> {
   hasError: false;

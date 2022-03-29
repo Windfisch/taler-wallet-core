@@ -19,8 +19,8 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { createExample } from "../test-utils";
-import { AddNewActionView as TestedComponent } from "./AddNewActionView";
+import { createExample } from "../test-utils.js";
+import { AddNewActionView as TestedComponent } from "./AddNewActionView.js";
 
 export default {
   title: "wallet/add new action",

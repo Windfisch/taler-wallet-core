@@ -19,9 +19,9 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { createExample } from "../test-utils";
-import { queryToSlashKeys } from "../utils/index";
-import { ExchangeSetUrlPage as TestedComponent } from "./ExchangeSetUrl";
+import { createExample } from "../test-utils.js";
+import { queryToSlashKeys } from "../utils/index.js";
+import { ExchangeSetUrlPage as TestedComponent } from "./ExchangeSetUrl.js";
 
 export default {
   title: "wallet/exchange add/set url",

@@ -6,12 +6,12 @@ import {
 } from "@gnu-taler/taler-util";
 import { PendingTaskInfo } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, JSX } from "preact";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import { Avatar } from "../mui/Avatar";
-import { Typography } from "../mui/Typography";
-import Banner from "./Banner";
-import { Time } from "./Time";
-import * as wxApi from "../wxApi";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { Avatar } from "../mui/Avatar.js";
+import { Typography } from "../mui/Typography.js";
+import Banner from "./Banner.js";
+import { Time } from "./Time.js";
+import * as wxApi from "../wxApi.js";
 
 interface Props extends JSX.HTMLAttributes {
   goToTransaction: (id: string) => void;

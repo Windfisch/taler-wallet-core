@@ -1,6 +1,6 @@
 import { h, VNode } from "preact";
-import { ButtonBoxWarning, WarningBox } from "../components/styled";
-import { useTranslationContext } from "../context/translation";
+import { ButtonBoxWarning, WarningBox } from "../components/styled/index.js";
+import { useTranslationContext } from "../context/translation.js";
 
 export function NoBalanceHelp({
   goToWalletManualWithdraw,
@@ -13,8 +13,7 @@ export function NoBalanceHelp({
       <p>
         <b>
           <i18n.Translate>You have no balance.</i18n.Translate>
-        </b>
-        {" "}
+        </b>{" "}
         <i18n.Translate>Withdraw some funds into your wallet.</i18n.Translate>
       </p>
       <ButtonBoxWarning onClick={() => goToWalletManualWithdraw()}>

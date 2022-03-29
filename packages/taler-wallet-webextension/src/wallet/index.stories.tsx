@@ -19,21 +19,21 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import * as a1 from "./Backup.stories";
-import * as a3 from "./CreateManualWithdraw.stories";
-import * as a4 from "./DepositPage.stories";
-import * as a5 from "./ExchangeAddConfirm.stories";
-import * as a6 from "./ExchangeAddSetUrl.stories";
-import * as a7 from "./History.stories";
-import * as a8 from "./ProviderAddConfirmProvider.stories";
-import * as a9 from "./ProviderAddSetUrl.stories";
-import * as a10 from "./ProviderDetail.stories";
-import * as a11 from "./ReserveCreated.stories";
-import * as a12 from "./Settings.stories";
-import * as a13 from "./Transaction.stories";
-import * as a14 from "./Welcome.stories";
-import * as a15 from "./AddNewActionView.stories";
-import * as a16 from "./DeveloperPage.stories";
+import * as a1 from "./Backup.stories.js";
+import * as a3 from "./CreateManualWithdraw.stories.js";
+import * as a4 from "./DepositPage.stories.js";
+import * as a5 from "./ExchangeAddConfirm.stories.js";
+import * as a6 from "./ExchangeAddSetUrl.stories.js";
+import * as a7 from "./History.stories.js";
+import * as a8 from "./ProviderAddConfirmProvider.stories.js";
+import * as a9 from "./ProviderAddSetUrl.stories.js";
+import * as a10 from "./ProviderDetail.stories.js";
+import * as a11 from "./ReserveCreated.stories.js";
+import * as a12 from "./Settings.stories.js";
+import * as a13 from "./Transaction.stories.js";
+import * as a14 from "./Welcome.stories.js";
+import * as a15 from "./AddNewActionView.stories.js";
+import * as a16 from "./DeveloperPage.stories.js";
 
 export default [
   a1,

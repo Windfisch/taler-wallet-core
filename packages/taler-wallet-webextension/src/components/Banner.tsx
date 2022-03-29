@@ -1,10 +1,10 @@
 import { h, Fragment, VNode, JSX } from "preact";
-import { Divider } from "../mui/Divider";
-import { Button } from "../mui/Button";
-import { Typography } from "../mui/Typography";
-import { Avatar } from "../mui/Avatar";
-import { Grid } from "../mui/Grid";
-import { Paper } from "../mui/Paper";
+import { Divider } from "../mui/Divider.js";
+import { Button } from "../mui/Button.js";
+import { Typography } from "../mui/Typography.js";
+import { Avatar } from "../mui/Avatar.js";
+import { Grid } from "../mui/Grid.js";
+import { Paper } from "../mui/Paper.js";
 
 interface Props extends JSX.HTMLAttributes<HTMLDivElement> {
   title?: string;

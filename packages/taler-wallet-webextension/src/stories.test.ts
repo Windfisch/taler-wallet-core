@@ -18,12 +18,12 @@
  *
  * @author Sebastian Javier Marchano (sebasjm)
  */
-import * as popup from "./popup/index.stories";
-import * as wallet from "./wallet/index.stories";
-import * as mui from "./mui/index.stories";
+import * as popup from "./popup/index.stories.js";
+import * as wallet from "./wallet/index.stories.js";
+import * as mui from "./mui/index.stories.js";
 
 import { setupI18n } from "@gnu-taler/taler-util";
-import { renderNodeOrBrowser } from "./test-utils";
+import { renderNodeOrBrowser } from "./test-utils.js";
 setupI18n("en", { en: {} });
 
 function testThisStory(st: any): any {
@@ -32,7 +32,6 @@ function testThisStory(st: any): any {
       const Component = (st as any)[k];
       if (k === "default" || !Component) return;
 
-      // eslint-disable-next-line jest/expect-expect
       it(`example: ${k}`, () => {
         renderNodeOrBrowser(Component, Component.args);
       });

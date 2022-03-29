@@ -24,9 +24,9 @@ import {
 import { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { Loading } from "../components/Loading";
-import { LoadingError } from "../components/LoadingError";
-import { SelectList } from "../components/SelectList";
+import { Loading } from "../components/Loading.js";
+import { LoadingError } from "../components/LoadingError.js";
+import { SelectList } from "../components/SelectList.js";
 import {
   Button,
   ButtonPrimary,
@@ -35,11 +35,14 @@ import {
   InputWithLabel,
   SubTitle,
   WarningBox,
-} from "../components/styled";
-import { useTranslationContext } from "../context/translation";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import * as wxApi from "../wxApi";
-import { SelectFieldHandler, TextFieldHandler } from "./CreateManualWithdraw";
+} from "../components/styled/index.js";
+import { useTranslationContext } from "../context/translation.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import * as wxApi from "../wxApi.js";
+import {
+  SelectFieldHandler,
+  TextFieldHandler,
+} from "./CreateManualWithdraw.js";
 
 interface Props {
   currency: string;

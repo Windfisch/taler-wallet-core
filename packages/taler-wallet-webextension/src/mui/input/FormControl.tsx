@@ -1,6 +1,7 @@
 import { css } from "@linaria/core";
 import { ComponentChildren, createContext, h } from "preact";
 import { useContext, useState } from "preact/hooks";
+// eslint-disable-next-line import/extensions
 import { Colors } from "../style";
 
 export interface Props {
@@ -42,6 +43,8 @@ const marginVariant = {
 const fullWidthStyle = css`
   width: 100%;
 `;
+
+export const FormControlContext = createContext<FCCProps | null>(null);
 
 export function FormControl({
   color = "primary",
@@ -121,8 +124,6 @@ export interface FCCProps {
   variant: "filled" | "outlined" | "standard";
 }
 
-export const FormControlContext = createContext<FCCProps | null>(null);
-
 const defaultContextValue: FCCProps = {
   color: "primary",
   disabled: false,
@@ -132,10 +133,10 @@ const defaultContextValue: FCCProps = {
   fullWidth: false,
   hiddenLabel: false,
   size: "medium",
-  onBlur: () => {},
-  onEmpty: () => {},
-  onFilled: () => {},
-  onFocus: () => {},
+  onBlur: () => null,
+  onEmpty: () => null,
+  onFilled: () => null,
+  onFocus: () => null,
   required: false,
   variant: "outlined",
 };

@@ -15,8 +15,8 @@
  */
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { useTranslationContext } from "../context/translation";
-import { CenteredText } from "./styled";
+import { useTranslationContext } from "../context/translation.js";
+import { CenteredText } from "./styled/index.js";
 
 export function Loading(): VNode {
   const { i18n } = useTranslationContext();

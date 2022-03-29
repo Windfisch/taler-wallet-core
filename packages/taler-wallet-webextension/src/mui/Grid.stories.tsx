@@ -19,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { Grid } from "./Grid";
+import { Grid } from "./Grid.js";
 import { Fragment, h } from "preact";
 
 export default {

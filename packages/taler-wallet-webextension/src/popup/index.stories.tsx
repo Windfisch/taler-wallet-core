@@ -19,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import * as a2 from "./Balance.stories";
-import * as a6 from "./TalerActionFound.stories";
+import * as a2 from "./Balance.stories.js";
+import * as a6 from "./TalerActionFound.stories.js";
 
 export default [a2, a6];

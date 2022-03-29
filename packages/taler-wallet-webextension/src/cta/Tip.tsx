@@ -28,10 +28,10 @@ import {
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { Loading } from "../components/Loading";
-import { Title } from "../components/styled";
-import { useTranslationContext } from "../context/translation";
-import * as wxApi from "../wxApi";
+import { Loading } from "../components/Loading.js";
+import { Title } from "../components/styled/index.js";
+import { useTranslationContext } from "../context/translation.js";
+import * as wxApi from "../wxApi.js";
 
 interface Props {
   talerTipUri?: string;
@@ -160,5 +160,6 @@ function renderAmount(amount: AmountJson | string): VNode {
   );
 }
 
-const AmountView = ({ amount }: { amount: AmountJson | string }): VNode =>
-  renderAmount(amount);
+function AmountView({ amount }: { amount: AmountJson | string }): VNode {
+  return renderAmount(amount);
+}

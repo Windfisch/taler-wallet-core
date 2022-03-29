@@ -15,7 +15,7 @@
  */
 
 import { h, VNode } from "preact";
-import { useTranslationContext } from "../context/translation";
+import { useTranslationContext } from "../context/translation.js";
 /**
  * Return coins to own bank account.
  *

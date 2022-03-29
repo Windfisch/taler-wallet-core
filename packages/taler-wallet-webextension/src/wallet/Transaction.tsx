@@ -28,11 +28,11 @@ import { differenceInSeconds } from "date-fns";
 import { ComponentChildren, Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import emptyImg from "../../static/img/empty.png";
-import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType";
-import { ErrorTalerOperation } from "../components/ErrorTalerOperation";
-import { Loading } from "../components/Loading";
-import { LoadingError } from "../components/LoadingError";
-import { Part } from "../components/Part";
+import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType.js";
+import { ErrorTalerOperation } from "../components/ErrorTalerOperation.js";
+import { Loading } from "../components/Loading.js";
+import { LoadingError } from "../components/LoadingError.js";
+import { Part } from "../components/Part.js";
 import {
   Button,
   ButtonDestructive,
@@ -45,11 +45,11 @@ import {
   SmallLightText,
   SubTitle,
   WarningBox,
-} from "../components/styled";
-import { Time } from "../components/Time";
-import { useTranslationContext } from "../context/translation";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import * as wxApi from "../wxApi";
+} from "../components/styled/index.js";
+import { Time } from "../components/Time.js";
+import { useTranslationContext } from "../context/translation.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import * as wxApi from "../wxApi.js";
 
 interface Props {
   tid: string;

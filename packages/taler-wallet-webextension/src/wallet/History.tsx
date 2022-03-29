@@ -22,8 +22,8 @@ import {
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { Loading } from "../components/Loading";
-import { LoadingError } from "../components/LoadingError";
+import { Loading } from "../components/Loading.js";
+import { LoadingError } from "../components/LoadingError.js";
 import {
   ButtonBoxPrimary,
   ButtonBoxWarning,
@@ -33,13 +33,13 @@ import {
   DateSeparator,
   NiceSelect,
   WarningBox,
-} from "../components/styled";
-import { Time } from "../components/Time";
-import { TransactionItem } from "../components/TransactionItem";
-import { useTranslationContext } from "../context/translation";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import { NoBalanceHelp } from "../popup/NoBalanceHelp";
-import * as wxApi from "../wxApi";
+} from "../components/styled/index.js";
+import { Time } from "../components/Time.js";
+import { TransactionItem } from "../components/TransactionItem.js";
+import { useTranslationContext } from "../context/translation.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { NoBalanceHelp } from "../popup/NoBalanceHelp.js";
+import * as wxApi from "../wxApi.js";
 
 interface Props {
   currency?: string;
@@ -126,7 +126,9 @@ export function HistoryView({
     .filter((t) => t.amountRaw.split(":")[0] === selectedCurrency)
     .reduce((rv, x) => {
       const theDate =
-        x.timestamp.t_s === "never" ? 0 : normalizeToDay(x.timestamp.t_s * 1000);
+        x.timestamp.t_s === "never"
+          ? 0
+          : normalizeToDay(x.timestamp.t_s * 1000);
       if (theDate) {
         (rv[theDate] = rv[theDate] || []).push(x);
       }

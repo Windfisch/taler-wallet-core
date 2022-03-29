@@ -22,8 +22,8 @@
 import { AmountJson, Amounts } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { ErrorMessage } from "../components/ErrorMessage";
-import { SelectList } from "../components/SelectList";
+import { ErrorMessage } from "../components/ErrorMessage.js";
+import { SelectList } from "../components/SelectList.js";
 import {
   BoldLight,
   ButtonPrimary,
@@ -34,9 +34,9 @@ import {
   LinkPrimary,
   SubTitle,
   Title,
-} from "../components/styled";
-import { useTranslationContext } from "../context/translation";
-import { Pages } from "../NavigationBar";
+} from "../components/styled/index.js";
+import { useTranslationContext } from "../context/translation.js";
+import { Pages } from "../NavigationBar.js";
 
 export interface Props {
   error: string | undefined;

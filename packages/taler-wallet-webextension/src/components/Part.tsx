@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 import { AmountLike } from "@gnu-taler/taler-util";
-import { ExtraLargeText, LargeText, SmallLightText } from "./styled";
+import { ExtraLargeText, LargeText, SmallLightText } from "./styled/index.js";
 import { h, VNode } from "preact";
 
 export type Kind = "positive" | "negative" | "neutral";

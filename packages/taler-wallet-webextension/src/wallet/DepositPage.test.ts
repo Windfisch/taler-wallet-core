@@ -19,9 +19,9 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { useComponentState } from "./DepositPage";
+import { useComponentState } from "./DepositPage.js";
 import { expect } from "chai";
-import { mountHook } from "../test-utils";
+import { mountHook } from "../test-utils.js";
 import { Amounts, Balance } from "@gnu-taler/taler-util";
 
 

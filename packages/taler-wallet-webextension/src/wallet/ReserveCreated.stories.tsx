@@ -19,8 +19,8 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { createExample } from "../test-utils";
-import { ReserveCreated as TestedComponent } from "./ReserveCreated";
+import { createExample } from "../test-utils.js";
+import { ReserveCreated as TestedComponent } from "./ReserveCreated.js";
 
 export default {
   title: "wallet/manual withdraw/reserve created",

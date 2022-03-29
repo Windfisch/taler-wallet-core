@@ -19,8 +19,8 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { createExample } from "../test-utils";
-import { TalerActionFound as TestedComponent } from "./TalerActionFound";
+import { createExample } from "../test-utils.js";
+import { TalerActionFound as TestedComponent } from "./TalerActionFound.js";
 
 export default {
   title: "popup/TalerActionFound",

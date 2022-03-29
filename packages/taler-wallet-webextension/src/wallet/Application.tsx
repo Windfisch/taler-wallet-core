@@ -25,31 +25,31 @@ import { Fragment, h, VNode } from "preact";
 import Router, { route, Route } from "preact-router";
 import Match from "preact-router/match";
 import { useEffect, useState } from "preact/hooks";
-import { LogoHeader } from "../components/LogoHeader";
-import PendingTransactions from "../components/PendingTransactions";
-import { SuccessBox, WalletBox } from "../components/styled";
-import { DevContextProvider } from "../context/devContext";
-import { IoCProviderForRuntime } from "../context/iocContext";
+import { LogoHeader } from "../components/LogoHeader.js";
+import PendingTransactions from "../components/PendingTransactions.js";
+import { SuccessBox, WalletBox } from "../components/styled/index.js";
+import { DevContextProvider } from "../context/devContext.js";
+import { IoCProviderForRuntime } from "../context/iocContext.js";
 import {
   TranslationProvider,
   useTranslationContext,
-} from "../context/translation";
-import { PayPage } from "../cta/Pay";
-import { RefundPage } from "../cta/Refund";
-import { TipPage } from "../cta/Tip";
-import { WithdrawPage } from "../cta/Withdraw";
-import { Pages, WalletNavBar } from "../NavigationBar";
-import { DeveloperPage } from "./DeveloperPage";
-import { BackupPage } from "./BackupPage";
-import { DepositPage } from "./DepositPage";
-import { ExchangeAddPage } from "./ExchangeAddPage";
-import { HistoryPage } from "./History";
-import { ManualWithdrawPage } from "./ManualWithdrawPage";
-import { ProviderAddPage } from "./ProviderAddPage";
-import { ProviderDetailPage } from "./ProviderDetailPage";
-import { SettingsPage } from "./Settings";
-import { TransactionPage } from "./Transaction";
-import { WelcomePage } from "./Welcome";
+} from "../context/translation.js";
+import { PayPage } from "../cta/Pay.js";
+import { RefundPage } from "../cta/Refund.js";
+import { TipPage } from "../cta/Tip.js";
+import { WithdrawPage } from "../cta/Withdraw.js";
+import { Pages, WalletNavBar } from "../NavigationBar.js";
+import { DeveloperPage } from "./DeveloperPage.js";
+import { BackupPage } from "./BackupPage.js";
+import { DepositPage } from "./DepositPage.js";
+import { ExchangeAddPage } from "./ExchangeAddPage.js";
+import { HistoryPage } from "./History.js";
+import { ManualWithdrawPage } from "./ManualWithdrawPage.js";
+import { ProviderAddPage } from "./ProviderAddPage.js";
+import { ProviderDetailPage } from "./ProviderDetailPage.js";
+import { SettingsPage } from "./Settings.js";
+import { TransactionPage } from "./Transaction.js";
+import { WelcomePage } from "./Welcome.js";
 
 export function Application(): VNode {
   const [globalNotification, setGlobalNotification] = useState<

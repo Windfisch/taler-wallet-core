@@ -21,9 +21,13 @@
 
 import { classifyTalerUri, TalerUriType } from "@gnu-taler/taler-util";
 import { Fragment, h } from "preact";
-import { platform } from "../platform/api";
-import { ButtonPrimary, ButtonSuccess, Title } from "../components/styled";
-import { useTranslationContext } from "../context/translation";
+import { platform } from "../platform/api.js";
+import {
+  ButtonPrimary,
+  ButtonSuccess,
+  Title,
+} from "../components/styled/index.js";
+import { useTranslationContext } from "../context/translation.js";
 
 export interface Props {
   url: string;

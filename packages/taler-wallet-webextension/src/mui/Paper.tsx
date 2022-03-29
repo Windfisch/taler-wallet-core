@@ -1,6 +1,8 @@
 import { css } from "@linaria/core";
 import { h, JSX, VNode, ComponentChildren } from "preact";
+// eslint-disable-next-line import/extensions
 import { alpha } from "./colors/manipulation";
+// eslint-disable-next-line import/extensions
 import { theme } from "./style";
 
 const borderVariant = {
@@ -56,7 +58,7 @@ export function Paper({
 }
 
 // Inspired by https://github.com/material-components/material-components-ios/blob/bca36107405594d5b7b16265a5b0ed698f85a5ee/components/Elevation/src/UIColor%2BMaterialElevation.m#L61
-const getOverlayAlpha = (elevation: number): number => {
+function getOverlayAlpha(elevation: number): number {
   let alphaValue;
   if (elevation < 1) {
     alphaValue = 5.11916 * elevation ** 2;
@@ -64,4 +66,4 @@ const getOverlayAlpha = (elevation: number): number => {
     alphaValue = 4.5 * Math.log(elevation + 1) + 2;
   }
   return Number((alphaValue / 100).toFixed(2));
-};
+}

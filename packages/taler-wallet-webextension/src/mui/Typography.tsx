@@ -1,5 +1,6 @@
 import { css } from "@linaria/core";
-import { h, Fragment, VNode, ComponentChildren } from "preact";
+import { ComponentChildren, h, VNode } from "preact";
+// eslint-disable-next-line import/extensions
 import { theme } from "./style";
 
 type VariantEnum =

@@ -22,17 +22,17 @@ import {
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { BalanceTable } from "../components/BalanceTable";
-import { JustInDevMode } from "../components/JustInDevMode";
-import { Loading } from "../components/Loading";
-import { LoadingError } from "../components/LoadingError";
-import { MultiActionButton } from "../components/MultiActionButton";
-import { ButtonBoxPrimary, ButtonPrimary } from "../components/styled";
-import { useTranslationContext } from "../context/translation";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import { AddNewActionView } from "../wallet/AddNewActionView";
-import * as wxApi from "../wxApi";
-import { NoBalanceHelp } from "./NoBalanceHelp";
+import { BalanceTable } from "../components/BalanceTable.js";
+import { JustInDevMode } from "../components/JustInDevMode.js";
+import { Loading } from "../components/Loading.js";
+import { LoadingError } from "../components/LoadingError.js";
+import { MultiActionButton } from "../components/MultiActionButton.js";
+import { ButtonBoxPrimary, ButtonPrimary } from "../components/styled/index.js";
+import { useTranslationContext } from "../context/translation.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { AddNewActionView } from "../wallet/AddNewActionView.js";
+import * as wxApi from "../wxApi.js";
+import { NoBalanceHelp } from "./NoBalanceHelp.js";
 
 export interface Props {
   goToWalletDeposit: (currency: string) => void;

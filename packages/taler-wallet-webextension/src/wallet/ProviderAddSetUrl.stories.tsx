@@ -19,8 +19,8 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { createExample } from "../test-utils";
-import { SetUrlView as TestedComponent } from "./ProviderAddPage";
+import { createExample } from "../test-utils.js";
+import { SetUrlView as TestedComponent } from "./ProviderAddPage.js";
 
 export default {
   title: "wallet/backup/add",

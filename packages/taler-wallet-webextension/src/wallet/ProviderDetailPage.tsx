@@ -22,20 +22,20 @@ import {
   ProviderPaymentType,
 } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
-import { ErrorMessage } from "../components/ErrorMessage";
-import { Loading } from "../components/Loading";
-import { LoadingError } from "../components/LoadingError";
+import { ErrorMessage } from "../components/ErrorMessage.js";
+import { Loading } from "../components/Loading.js";
+import { LoadingError } from "../components/LoadingError.js";
 import {
   Button,
   ButtonDestructive,
   ButtonPrimary,
   PaymentStatus,
   SmallLightText,
-} from "../components/styled";
-import { Time } from "../components/Time";
-import { useTranslationContext } from "../context/translation";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import * as wxApi from "../wxApi";
+} from "../components/styled/index.js";
+import { Time } from "../components/Time.js";
+import { useTranslationContext } from "../context/translation.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import * as wxApi from "../wxApi.js";
 
 interface Props {
   pid: string;

@@ -16,7 +16,7 @@
 import { VNode, h, ComponentChildren } from "preact";
 import { useState } from "preact/hooks";
 import arrowDown from "../svg/chevron-down.svg";
-import { ErrorBox } from "./styled";
+import { ErrorBox } from "./styled/index.js";
 
 export function ErrorMessage({
   title,

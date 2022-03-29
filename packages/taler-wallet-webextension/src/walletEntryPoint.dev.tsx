@@ -22,10 +22,10 @@
 
 import { setupI18n } from "@gnu-taler/taler-util";
 import { Fragment, h, render } from "preact";
-import { strings } from "./i18n/strings";
-import { setupPlatform } from "./platform/api";
-import devAPI from "./platform/dev";
-import { Application } from "./wallet/Application";
+import { strings } from "./i18n/strings.js";
+import { setupPlatform } from "./platform/api.js";
+import devAPI from "./platform/dev.js";
+import { Application } from "./wallet/Application.js";
 
 console.log("Wallet setup for Dev API");
 setupPlatform(devAPI);

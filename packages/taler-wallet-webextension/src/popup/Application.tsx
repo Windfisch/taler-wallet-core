@@ -25,21 +25,21 @@ import { Fragment, h, VNode } from "preact";
 import Router, { route, Route } from "preact-router";
 import { Match } from "preact-router/match";
 import { useEffect, useState } from "preact/hooks";
-import PendingTransactions from "../components/PendingTransactions";
-import { PopupBox } from "../components/styled";
-import { DevContextProvider } from "../context/devContext";
-import { IoCProviderForRuntime } from "../context/iocContext";
+import PendingTransactions from "../components/PendingTransactions.js";
+import { PopupBox } from "../components/styled/index.js";
+import { DevContextProvider } from "../context/devContext.js";
+import { IoCProviderForRuntime } from "../context/iocContext.js";
 import {
   TranslationProvider,
   useTranslationContext,
-} from "../context/translation";
-import { useTalerActionURL } from "../hooks/useTalerActionURL";
-import { Pages, PopupNavBar } from "../NavigationBar";
-import { platform } from "../platform/api";
-import { BackupPage } from "../wallet/BackupPage";
-import { ProviderDetailPage } from "../wallet/ProviderDetailPage";
-import { BalancePage } from "./BalancePage";
-import { TalerActionFound } from "./TalerActionFound";
+} from "../context/translation.js";
+import { useTalerActionURL } from "../hooks/useTalerActionURL.js";
+import { Pages, PopupNavBar } from "../NavigationBar.js";
+import { platform } from "../platform/api.js";
+import { BackupPage } from "../wallet/BackupPage.js";
+import { ProviderDetailPage } from "../wallet/ProviderDetailPage.js";
+import { BalancePage } from "./BalancePage.js";
+import { TalerActionFound } from "./TalerActionFound.js";
 
 function CheckTalerActionComponent(): VNode {
   const [talerActionUrl] = useTalerActionURL();

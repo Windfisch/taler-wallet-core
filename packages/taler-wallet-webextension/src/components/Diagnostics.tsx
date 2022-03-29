@@ -16,7 +16,7 @@
 
 import { WalletDiagnostics } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
-import { useTranslationContext } from "../context/translation";
+import { useTranslationContext } from "../context/translation.js";
 
 interface Props {
   timedOut: boolean;

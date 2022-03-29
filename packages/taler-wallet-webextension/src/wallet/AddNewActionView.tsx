@@ -1,9 +1,13 @@
 import { classifyTalerUri, TalerUriType } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { platform } from "../platform/api";
-import { Button, ButtonSuccess, InputWithLabel } from "../components/styled";
-import { useTranslationContext } from "../context/translation";
+import { platform } from "../platform/api.js";
+import {
+  Button,
+  ButtonSuccess,
+  InputWithLabel,
+} from "../components/styled/index.js";
+import { useTranslationContext } from "../context/translation.js";
 
 export interface Props {
   onCancel: () => void;

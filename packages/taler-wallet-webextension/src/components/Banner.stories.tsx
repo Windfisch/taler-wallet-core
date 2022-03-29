@@ -19,11 +19,11 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { Banner } from "./Banner";
+import { Banner } from "./Banner.js";
 import { Fragment, h, VNode } from "preact";
-import { Avatar } from "../mui/Avatar";
-import { Icon, SvgIcon } from "./styled";
-import { Typography } from "../mui/Typography";
+import { Avatar } from "../mui/Avatar.js";
+import { Icon, SvgIcon } from "./styled/index.js";
+import { Typography } from "../mui/Typography.js";
 
 export default {
   title: "mui/banner",

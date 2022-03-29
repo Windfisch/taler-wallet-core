@@ -7,11 +7,15 @@ import {
   PaytoUri,
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
-import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType";
-import { QR } from "../components/QR";
-import { ButtonDestructive, Title, WarningBox } from "../components/styled";
-import { useTranslationContext } from "../context/translation";
-import { amountToString } from "../utils/index";
+import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType.js";
+import { QR } from "../components/QR.js";
+import {
+  ButtonDestructive,
+  Title,
+  WarningBox,
+} from "../components/styled/index.js";
+import { useTranslationContext } from "../context/translation.js";
+import { amountToString } from "../utils/index.js";
 export interface Props {
   reservePub: string;
   paytoURI: PaytoUri | undefined;

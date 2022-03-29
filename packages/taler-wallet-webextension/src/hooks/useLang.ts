@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { useNotNullLocalStorage } from "./useLocalStorage";
+import { useNotNullLocalStorage } from "./useLocalStorage.js";
 
 function getBrowserLang(): string | undefined {
   if (window.navigator.languages) return window.navigator.languages[0]

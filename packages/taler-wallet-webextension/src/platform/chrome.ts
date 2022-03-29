@@ -15,7 +15,7 @@
  */
 
 import { classifyTalerUri, CoreApiResponse, TalerUriType } from "@gnu-taler/taler-util";
-import { getReadRequestPermissions } from "../permissions";
+import { getReadRequestPermissions } from "../permissions.js";
 import { CrossBrowserPermissionsApi, MessageFromBackend, Permissions, PlatformAPI } from "./api.js";
 
 const api: PlatformAPI = {

@@ -16,7 +16,7 @@
 
 import { ProviderInfo } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useState } from "preact/hooks";
-import * as wxApi from "../wxApi";
+import * as wxApi from "../wxApi.js";
 
 export interface ProviderStatus {
   info?: ProviderInfo;

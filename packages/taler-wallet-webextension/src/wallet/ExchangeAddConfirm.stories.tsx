@@ -19,9 +19,9 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { termsXml } from "../cta/termsExample";
-import { createExample } from "../test-utils";
-import { View as TestedComponent } from "./ExchangeAddConfirm";
+import { termsXml } from "../cta/termsExample.js";
+import { createExample } from "../test-utils.js";
+import { View as TestedComponent } from "./ExchangeAddConfirm.js";
 
 function parseFromString(s: string): Document {
   if (typeof window === "undefined") {

@@ -38,19 +38,19 @@ import {
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { ErrorTalerOperation } from "../components/ErrorTalerOperation";
-import { LogoHeader } from "../components/LogoHeader";
-import { Part } from "../components/Part";
+import { ErrorTalerOperation } from "../components/ErrorTalerOperation.js";
+import { LogoHeader } from "../components/LogoHeader.js";
+import { Part } from "../components/Part.js";
 import {
   ErrorBox,
   SubTitle,
   SuccessBox,
   WalletAction,
   WarningBox,
-} from "../components/styled";
-import { useTranslationContext } from "../context/translation";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import * as wxApi from "../wxApi";
+} from "../components/styled/index.js";
+import { useTranslationContext } from "../context/translation.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import * as wxApi from "../wxApi.js";
 
 interface Props {
   talerPayUri?: string;

@@ -9,7 +9,9 @@ import {
   lightBlue,
   green,
   grey,
+  // eslint-disable-next-line import/extensions
 } from "./colors/constants";
+// eslint-disable-next-line import/extensions
 import { getContrastRatio } from "./colors/manipulation";
 
 export type Colors =
@@ -184,7 +186,7 @@ function createTheme() {
     return createUnaryUnit(theme, 8);
   }
 
-  function createSpacing(spacingInput: number = 8): Spacing {
+  function createSpacing(spacingInput = 8): Spacing {
     // Material Design layouts are visually balanced. Most measurements align to an 8dp grid, which aligns both spacing and the overall layout.
     // Smaller components, such as icons, can align to a 4dp grid.
     // https://material.io/design/layout/understanding-layout.html#usage

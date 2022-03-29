@@ -5,12 +5,12 @@ import {
   ButtonSuccess,
   ButtonWarning,
   Title,
-} from "../components/styled";
-import { useTranslationContext } from "../context/translation";
-import { TermsOfServiceSection } from "../cta/TermsOfServiceSection";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook";
-import { buildTermsOfServiceState, TermsState } from "../utils/index";
-import * as wxApi from "../wxApi";
+} from "../components/styled/index.js";
+import { useTranslationContext } from "../context/translation.js";
+import { TermsOfServiceSection } from "../cta/TermsOfServiceSection.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { buildTermsOfServiceState, TermsState } from "../utils/index.js";
+import * as wxApi from "../wxApi.js";
 
 export interface Props {
   url: string;

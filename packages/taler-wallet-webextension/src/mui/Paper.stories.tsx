@@ -19,8 +19,8 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { Paper } from "./Paper";
-import { createExample } from "../test-utils";
+import { Paper } from "./Paper.js";
+import { createExample } from "../test-utils.js";
 import { h } from "preact";
 
 export default {

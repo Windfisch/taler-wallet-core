@@ -1,6 +1,6 @@
 import { Fragment, h, VNode } from "preact";
-import { CheckboxOutlined } from "../components/CheckboxOutlined";
-import { ExchangeXmlTos } from "../components/ExchangeToS";
+import { CheckboxOutlined } from "../components/CheckboxOutlined.js";
+import { ExchangeXmlTos } from "../components/ExchangeToS.js";
 import {
   ButtonSuccess,
   ButtonWarning,
@@ -8,9 +8,9 @@ import {
   TermsOfService,
   WarningBox,
   WarningText,
-} from "../components/styled";
-import { useTranslationContext } from "../context/translation";
-import { TermsState } from "../utils/index";
+} from "../components/styled/index.js";
+import { useTranslationContext } from "../context/translation.js";
+import { TermsState } from "../utils/index.js";
 
 interface Props {
   reviewing: boolean;

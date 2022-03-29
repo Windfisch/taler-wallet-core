@@ -19,9 +19,9 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { SelectFieldHandler, TextFieldHandler, useComponentState } from "./CreateManualWithdraw";
+import { SelectFieldHandler, TextFieldHandler, useComponentState } from "./CreateManualWithdraw.js";
 import { expect } from "chai";
-import { mountHook } from "../test-utils";
+import { mountHook } from "../test-utils.js";
 
 
 const exchangeListWithARSandUSD = {

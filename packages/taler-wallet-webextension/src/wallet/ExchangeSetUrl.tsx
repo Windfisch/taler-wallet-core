@@ -4,7 +4,7 @@ import {
 } from "@gnu-taler/taler-util";
 import { Fragment, h } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { ErrorMessage } from "../components/ErrorMessage";
+import { ErrorMessage } from "../components/ErrorMessage.js";
 import {
   Button,
   ButtonPrimary,
@@ -13,8 +13,8 @@ import {
   SubTitle,
   Title,
   WarningBox,
-} from "../components/styled";
-import { useTranslationContext } from "../context/translation";
+} from "../components/styled/index.js";
+import { useTranslationContext } from "../context/translation.js";
 
 export interface Props {
   initialValue?: string;

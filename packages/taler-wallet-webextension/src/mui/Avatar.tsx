@@ -1,5 +1,6 @@
 import { css } from "@linaria/core";
 import { h, JSX, VNode, ComponentChildren } from "preact";
+// eslint-disable-next-line import/extensions
 import { theme } from "./style";
 
 const root = css`

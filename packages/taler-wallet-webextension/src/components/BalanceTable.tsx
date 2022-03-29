@@ -14,9 +14,9 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Amounts, amountToPretty, Balance } from "@gnu-taler/taler-util";
+import { Amounts, Balance } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
-import { TableWithRoundRows as TableWithRoundedRows } from "./styled";
+import { TableWithRoundRows as TableWithRoundedRows } from "./styled/index.js";
 
 export function BalanceTable({
   balances,

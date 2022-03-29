@@ -16,7 +16,7 @@
 
 import { h, VNode } from "preact";
 import { useRef, useState } from "preact/hooks";
-import { useTranslationContext } from "../context/translation";
+import { useTranslationContext } from "../context/translation.js";
 
 interface Props {
   value: string;

@@ -22,7 +22,7 @@ export interface ColorObjectWithoutAlpha {
  * @param {number} max The upper boundary of the output range
  * @returns {number} A number in the range [min, max]
  */
-function clamp(value: number, min: number = 0, max: number = 1): number {
+function clamp(value: number, min = 0, max = 1): number {
   // if (process.env.NODE_ENV !== 'production') {
   //   if (value < min || value > max) {
   //     console.error(`MUI: The value provided ${value} is out of range [${min}, ${max}].`);
@@ -76,8 +76,8 @@ export function decomposeColor(color: string): ColorObject {
 
   const marker = color.indexOf('(');
   const type = color.substring(0, marker);
-  if (type != 'rgba' && type != 'hsla' && type != 'rgb' && type != 'hsl') {
-  }
+  // if (type != 'rgba' && type != 'hsla' && type != 'rgb' && type != 'hsl') {
+  // }
 
   const values = color.substring(marker + 1, color.length - 1).split(',')
   if (type == 'rgb' || type == 'hsl') {
@@ -268,6 +268,6 @@ export function lighten(color: string, coefficient: number): string {
  * @param {number} coefficient=0.15 - multiplier in the range 0 - 1
  * @returns {string} A CSS color string. Hex input values are returned as rgb
  */
-export function emphasize(color: string, coefficient: number = 0.15): string {
+export function emphasize(color: string, coefficient = 0.15): string {
   return getLuminance(color) > 0.5 ? darken(color, coefficient) : lighten(color, coefficient);
 }

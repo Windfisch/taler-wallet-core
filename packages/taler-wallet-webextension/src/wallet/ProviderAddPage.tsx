@@ -22,8 +22,8 @@ import {
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { Checkbox } from "../components/Checkbox";
-import { ErrorMessage } from "../components/ErrorMessage";
+import { Checkbox } from "../components/Checkbox.js";
+import { ErrorMessage } from "../components/ErrorMessage.js";
 import {
   Button,
   ButtonPrimary,
@@ -32,10 +32,10 @@ import {
   SmallLightText,
   SubTitle,
   Title,
-} from "../components/styled";
-import { useTranslationContext } from "../context/translation";
-import { queryToSlashConfig } from "../utils/index";
-import * as wxApi from "../wxApi";
+} from "../components/styled/index.js";
+import { useTranslationContext } from "../context/translation.js";
+import { queryToSlashConfig } from "../utils/index.js";
+import * as wxApi from "../wxApi.js";
 
 interface Props {
   currency: string;

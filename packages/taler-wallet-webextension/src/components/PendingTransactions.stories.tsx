@@ -19,9 +19,9 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { PendingTransactionsView as TestedComponent } from "./PendingTransactions";
+import { PendingTransactionsView as TestedComponent } from "./PendingTransactions.js";
 import { Fragment, h, VNode } from "preact";
-import { createExample } from "../test-utils";
+import { createExample } from "../test-utils.js";
 import {
   TalerProtocolTimestamp,
   Transaction,
@@ -73,7 +73,7 @@ export const TenPendingTransactions = createExample(TestedComponent, {
     {
       amountEffective: "USD:10",
       type: TransactionType.Withdrawal,
-      timestamp: TalerProtocolTimestamp.fromSeconds(1)
+      timestamp: TalerProtocolTimestamp.fromSeconds(1),
     } as Transaction,
     {
       amountEffective: "USD:10",

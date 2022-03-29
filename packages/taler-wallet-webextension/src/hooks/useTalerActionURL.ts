@@ -15,7 +15,7 @@
  */
 
 import { useEffect, useState } from "preact/hooks";
-import { useIocContext } from "../context/iocContext";
+import { useIocContext } from "../context/iocContext.js";
 
 export function useTalerActionURL(): [
   string | undefined,

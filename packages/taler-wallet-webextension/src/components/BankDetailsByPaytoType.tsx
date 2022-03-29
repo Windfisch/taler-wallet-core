@@ -17,9 +17,9 @@
 import { PaytoUri } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { useTranslationContext } from "../context/translation";
-import { CopiedIcon, CopyIcon } from "../svg";
-import { ButtonBox, TooltipRight } from "./styled";
+import { useTranslationContext } from "../context/translation.js";
+import { CopiedIcon, CopyIcon } from "../svg/index.js";
+import { ButtonBox, TooltipRight } from "./styled/index.js";
 
 export interface BankDetailsProps {
   payto: PaytoUri | undefined;

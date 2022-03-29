@@ -20,8 +20,8 @@
  */
 
 import { OrderShortInfo } from "@gnu-taler/taler-util";
-import { createExample } from "../test-utils";
-import { View as TestedComponent } from "./Refund";
+import { createExample } from "../test-utils.js";
+import { View as TestedComponent } from "./Refund.js";
 
 export default {
   title: "cta/refund",
