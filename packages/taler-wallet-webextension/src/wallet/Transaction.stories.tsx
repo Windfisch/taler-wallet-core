@@ -32,7 +32,6 @@ import {
   TransactionWithdrawal,
   WithdrawalType,
 } from "@gnu-taler/taler-util";
-import { ComponentChildren, h } from "preact";
 import { DevContextProviderForTesting } from "../context/devContext.js";
 import {
   createExample,
@@ -239,6 +238,8 @@ export const PaymentPending = createExample(TestedComponent, {
   transaction: { ...exampleData.payment, pending: true },
 });
 
+import beer from "../../static-dev/beer.png";
+
 export const PaymentWithProducts = createExample(TestedComponent, {
   transaction: {
     ...exampleData.payment,
@@ -263,11 +264,13 @@ export const PaymentWithProducts = createExample(TestedComponent, {
           description: "beer",
           unit: "pint",
           quantity: 15,
+          image: beer,
         },
         {
           description: "beer",
           unit: "pint",
           quantity: 15,
+          image: beer,
         },
       ],
     },

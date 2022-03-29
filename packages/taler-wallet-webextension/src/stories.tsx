@@ -22,7 +22,6 @@ import { setupI18n } from "@gnu-taler/taler-util";
 import { styled } from "@linaria/react";
 import {
   ComponentChild,
-  ComponentProps,
   Fragment,
   FunctionComponent,
   h,
@@ -60,6 +59,7 @@ const SideBar = styled.div`
   height: calc(100vh - 20px);
   overflow-y: visible;
   overflow-x: hidden;
+  scroll-behavior: smooth;
   & > {
     ol {
       padding: 4px;
@@ -86,9 +86,10 @@ const SideBar = styled.div`
 
 const Content = styled.div`
   width: 100%;
+  padding: 20px;
 `;
 
-function parseExampleImport(group: string, im: any) {
+function parseExampleImport(group: string, im: any): ComponentItem {
   const component = im.default.title;
   return {
     name: component,
@@ -113,6 +114,11 @@ const allExamples = Object.entries({ popup, wallet, mui }).map(
   }),
 );
 
+interface ComponentItem {
+  name: string;
+  examples: ExampleItem[];
+}
+
 interface ExampleItem {
   group: string;
   component: string;
@@ -127,7 +133,7 @@ function findByGroupComponentName(
   group: string,
   component: string,
   name: string,
-) {
+): ExampleItem | undefined {
   const gl = allExamples.filter((e) => e.title === group);
   if (gl.length === 0) {
     return undefined;
@@ -163,7 +169,7 @@ function ExampleList({
     name: string;
     examples: ExampleItem[];
   }[];
-}) {
+}): VNode {
   const [open, setOpen] = useState(true);
   return (
     <ol>
@@ -173,17 +179,15 @@ function ExampleList({
           <li>
             <dl>
               <dt>{k.name}</dt>
-              {k.examples.map((r) => (
-                <dd>
-                  <a
-                    href={`#${encodeURIComponent(r.group)}-${encodeURIComponent(
-                      r.component,
-                    )}-${encodeURIComponent(r.name)}`}
-                  >
-                    {r.name}
-                  </a>
-                </dd>
-              ))}
+              {k.examples.map((r) => {
+                const e = encodeURIComponent;
+                const eId = `${e(r.group)}-${e(r.component)}-${e(r.name)}`;
+                return (
+                  <dd id={eId}>
+                    <a href={`#${eId}`}>{r.name}</a>
+                  </dd>
+                );
+              })}
             </dl>
           </li>
         ))}
@@ -219,7 +223,7 @@ function ErrorReport({
 }: {
   children: ComponentChild;
   selected: ExampleItem | undefined;
-}) {
+}): VNode {
   const [error] = useErrorBoundary();
   if (error) {
     return (
@@ -261,13 +265,13 @@ function getSelectionFromLocationHash(): ExampleItem | undefined {
   );
 }
 
-function Application() {
+function Application(): VNode {
   const initialSelection = getSelectionFromLocationHash();
   const [selected, updateSelected] = useState<ExampleItem | undefined>(
     initialSelection,
   );
 
-  function updateSelectedFromHashChange({ newURL, oldURL }: any) {
+  function updateSelectedFromHashChange({ newURL, oldURL }: any): void {
     const selected = getSelectionFromLocationHash();
     updateSelected(selected);
   }

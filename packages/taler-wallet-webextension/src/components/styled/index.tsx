@@ -137,7 +137,6 @@ export const WalletBox = styled.div<{ noPadding?: boolean }>`
     flex-direction: row;
     justify-content: space-between;
     display: flex;
-    background-color: #f7f7f7;
     button {
       margin-right: 8px;
       margin-left: 8px;
@@ -375,7 +374,6 @@ export const CenteredDialog = styled.div`
     border-bottom-right-radius: 6px;
     border-bottom-left-radius: 6px;
     padding: 10px;
-    background-color: #f5f5f5;
     display: flex;
     justify-content: space-between;
   }

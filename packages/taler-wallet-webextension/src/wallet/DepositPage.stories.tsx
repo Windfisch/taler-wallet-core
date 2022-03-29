@@ -19,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { Amounts, Balance, parsePaytoUri } from "@gnu-taler/taler-util";
+import { Balance, parsePaytoUri } from "@gnu-taler/taler-util";
 import { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import { createExample } from "../test-utils.js";
 import { View as TestedComponent } from "./DepositPage.js";
@@ -46,6 +46,7 @@ export const WithEmptyAccountList = createExample(TestedComponent, {
       available: "USD:10",
     } as Balance,
   ],
+  currency: "USD",
   onCalculateFee: alwaysReturnFeeToOne,
 });
 
@@ -56,5 +57,6 @@ export const WithSomeBankAccounts = createExample(TestedComponent, {
       available: "USD:10",
     } as Balance,
   ],
+  currency: "USD",
   onCalculateFee: alwaysReturnFeeToOne,
 });

@@ -52,7 +52,7 @@ export const buildConfig = {
   minify: false,
   loader: {
     '.svg': 'text',
-    '.png': 'file',
+    '.png': 'dataurl',
   },
   target: [
     'es6'
