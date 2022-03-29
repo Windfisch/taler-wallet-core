@@ -450,19 +450,19 @@ export async function retryTransaction(
       break;
     case TransactionType.Withdrawal:
       const withdrawalGroupId = rest[0];
-      await processWithdrawGroup(ws, withdrawalGroupId, true);
+      await processWithdrawGroup(ws, withdrawalGroupId, { forceNow: true });
       break;
     case TransactionType.Payment:
       const proposalId = rest[0];
-      await processPurchasePay(ws, proposalId, true);
+      await processPurchasePay(ws, proposalId, { forceNow: true });
       break;
     case TransactionType.Tip:
       const walletTipId = rest[0];
-      await processTip(ws, walletTipId, true);
+      await processTip(ws, walletTipId, { forceNow: true });
       break;
     case TransactionType.Refresh:
       const refreshGroupId = rest[0];
-      await processRefreshGroup(ws, refreshGroupId, true);
+      await processRefreshGroup(ws, refreshGroupId, { forceNow: true });
       break;
     default:
       break;
