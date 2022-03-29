@@ -57,7 +57,8 @@ import {
 import { GetReadOnlyAccess } from "../util/query.js";
 import {
   getRetryDuration,
-  initRetryInfo,
+  resetRetryInfo,
+  RetryInfo,
   updateRetryInfoTimeout,
 } from "../util/retries.js";
 import {
@@ -79,34 +80,15 @@ import { guardOperationException } from "./common.js";
 const logger = new Logger("taler-wallet-core:reserves.ts");
 
 /**
- * Reset the retry counter for the reserve
- * and reset the last error.
+ * Set up the reserve's retry timeout in preparation for
+ * processing the reserve.
  */
-async function resetReserveRetry(
+async function setupReserveRetry(
   ws: InternalWalletState,
   reservePub: string,
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({
-      reserves: x.reserves,
-    }))
-    .runReadWrite(async (tx) => {
-      const x = await tx.reserves.get(reservePub);
-      if (x) {
-        x.retryInfo = initRetryInfo();
-        delete x.lastError;
-        await tx.reserves.put(x);
-      }
-    });
-}
-
-/**
- * Increment the retry counter for the reserve and
- * reset the last eror.
- */
-async function incrementReserveRetry(
-  ws: InternalWalletState,
-  reservePub: string,
+  options: {
+    reset: boolean;
+  },
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({
@@ -117,11 +99,10 @@ async function incrementReserveRetry(
       if (!r) {
         return;
       }
-      if (!r.retryInfo) {
-        r.retryInfo = initRetryInfo();
+      if (options.reset) {
+        r.retryInfo = resetRetryInfo();
       } else {
-        r.retryInfo.retryCounter++;
-        updateRetryInfoTimeout(r.retryInfo);
+        r.retryInfo = RetryInfo.increment(r.retryInfo);
       }
       delete r.lastError;
       await tx.reserves.put(r);
@@ -216,7 +197,7 @@ export async function createReserve(
     timestampReserveInfoPosted: undefined,
     bankInfo,
     reserveStatus,
-    retryInfo: initRetryInfo(),
+    retryInfo: resetRetryInfo(),
     lastError: undefined,
     currency: req.amount.currency,
     operationStatus: OperationStatus.Pending,
@@ -288,7 +269,7 @@ export async function createReserve(
 
   // Asynchronously process the reserve, but return
   // to the caller already.
-  processReserve(ws, resp.reservePub, true).catch((e) => {
+  processReserve(ws, resp.reservePub, { forceNow: true }).catch((e) => {
     logger.error("Processing reserve (after createReserve) failed:", e);
   });
 
@@ -316,14 +297,14 @@ export async function forceQueryReserve(
         case ReserveRecordStatus.Dormant:
           reserve.reserveStatus = ReserveRecordStatus.QueryingStatus;
           reserve.operationStatus = OperationStatus.Pending;
-          reserve.retryInfo = initRetryInfo();
+          reserve.retryInfo = resetRetryInfo();
           break;
         default:
           break;
       }
       await tx.reserves.put(reserve);
     });
-  await processReserve(ws, reservePub, true);
+  await processReserve(ws, reservePub, { forceNow: true });
 }
 
 /**
@@ -336,13 +317,15 @@ export async function forceQueryReserve(
 export async function processReserve(
   ws: InternalWalletState,
   reservePub: string,
-  forceNow = false,
+  options: {
+    forceNow?: boolean;
+  } = {},
 ): Promise<void> {
   return ws.memoProcessReserve.memo(reservePub, async () => {
     const onOpError = (err: TalerErrorDetail): Promise<void> =>
       reportReserveError(ws, reservePub, err);
     await guardOperationException(
-      () => processReserveImpl(ws, reservePub, forceNow),
+      () => processReserveImpl(ws, reservePub, options),
       onOpError,
     );
   });
@@ -409,7 +392,7 @@ async function registerReserveWithBank(
       if (!r.bankInfo) {
         throw Error("invariant failed");
       }
-      r.retryInfo = initRetryInfo();
+      r.retryInfo = resetRetryInfo();
       await tx.reserves.put(r);
     });
   ws.notify({ type: NotificationType.ReserveRegisteredWithBank });
@@ -476,7 +459,7 @@ async function processReserveBankStatus(
         r.timestampBankConfirmed = now;
         r.reserveStatus = ReserveRecordStatus.BankAborted;
         r.operationStatus = OperationStatus.Finished;
-        r.retryInfo = initRetryInfo();
+        r.retryInfo = resetRetryInfo();
         await tx.reserves.put(r);
       });
     return;
@@ -513,7 +496,7 @@ async function processReserveBankStatus(
         r.timestampBankConfirmed = now;
         r.reserveStatus = ReserveRecordStatus.QueryingStatus;
         r.operationStatus = OperationStatus.Pending;
-        r.retryInfo = initRetryInfo();
+        r.retryInfo = resetRetryInfo();
       } else {
         switch (r.reserveStatus) {
           case ReserveRecordStatus.WaitConfirmBank:
@@ -684,7 +667,7 @@ async function updateReserve(
         reservePub: reserve.reservePub,
         rawWithdrawalAmount: remainingAmount,
         timestampStart: AbsoluteTime.toTimestamp(AbsoluteTime.now()),
-        retryInfo: initRetryInfo(),
+        retryInfo: resetRetryInfo(),
         lastError: undefined,
         denomsSel: denomSelectionInfoToState(denomSelInfo),
         secretSeed: encodeCrock(getRandomBytes(64)),
@@ -717,8 +700,12 @@ async function updateReserve(
 async function processReserveImpl(
   ws: InternalWalletState,
   reservePub: string,
-  forceNow = false,
+  options: {
+    forceNow?: boolean;
+  } = {},
 ): Promise<void> {
+  const forceNow = options.forceNow ?? false;
+  await setupReserveRetry(ws, reservePub, { reset: forceNow });
   const reserve = await ws.db
     .mktx((x) => ({
       reserves: x.reserves,
@@ -732,27 +719,17 @@ async function processReserveImpl(
     );
     return;
   }
-  if (forceNow) {
-    await resetReserveRetry(ws, reservePub);
-  } else if (
-    reserve.retryInfo &&
-    !AbsoluteTime.isExpired(reserve.retryInfo.nextRetry)
-  ) {
-    logger.trace("processReserve retry not due yet");
-    return;
-  }
-  await incrementReserveRetry(ws, reservePub);
   logger.trace(
     `Processing reserve ${reservePub} with status ${reserve.reserveStatus}`,
   );
   switch (reserve.reserveStatus) {
     case ReserveRecordStatus.RegisteringBank:
       await processReserveBankStatus(ws, reservePub);
-      return await processReserveImpl(ws, reservePub, true);
+      return await processReserveImpl(ws, reservePub, { forceNow: true });
     case ReserveRecordStatus.QueryingStatus:
       const res = await updateReserve(ws, reservePub);
       if (res.ready) {
-        return await processReserveImpl(ws, reservePub, true);
+        return await processReserveImpl(ws, reservePub, { forceNow: true });
       }
       break;
     case ReserveRecordStatus.Dormant:

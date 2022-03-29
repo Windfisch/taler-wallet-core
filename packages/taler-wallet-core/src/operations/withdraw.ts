@@ -68,7 +68,11 @@ import {
   HttpRequestLibrary,
   readSuccessResponseJsonOrThrow,
 } from "../util/http.js";
-import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
+import {
+  resetRetryInfo,
+  RetryInfo,
+  updateRetryInfoTimeout,
+} from "../util/retries.js";
 import {
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
@@ -792,10 +796,12 @@ export async function updateWithdrawalDenoms(
   }
 }
 
-async function incrementWithdrawalRetry(
+async function setupWithdrawalRetry(
   ws: InternalWalletState,
   withdrawalGroupId: string,
-  err: TalerErrorDetail | undefined,
+  options: {
+    reset: boolean;
+  },
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({ withdrawalGroups: x.withdrawalGroups }))
@@ -804,56 +810,61 @@ async function incrementWithdrawalRetry(
       if (!wsr) {
         return;
       }
-      wsr.retryInfo.retryCounter++;
-      updateRetryInfoTimeout(wsr.retryInfo);
+      if (options.reset) {
+        wsr.retryInfo = resetRetryInfo();
+      } else {
+        wsr.retryInfo = RetryInfo.increment(wsr.retryInfo);
+      }
+      await tx.withdrawalGroups.put(wsr);
+    });
+}
+
+async function reportWithdrawalError(
+  ws: InternalWalletState,
+  withdrawalGroupId: string,
+  err: TalerErrorDetail,
+): Promise<void> {
+  await ws.db
+    .mktx((x) => ({ withdrawalGroups: x.withdrawalGroups }))
+    .runReadWrite(async (tx) => {
+      const wsr = await tx.withdrawalGroups.get(withdrawalGroupId);
+      if (!wsr) {
+        return;
+      }
+      if (!wsr.retryInfo) {
+        logger.reportBreak();
+      }
       wsr.lastError = err;
       await tx.withdrawalGroups.put(wsr);
     });
-  if (err) {
-    ws.notify({ type: NotificationType.WithdrawOperationError, error: err });
-  }
+  ws.notify({ type: NotificationType.WithdrawOperationError, error: err });
 }
 
 export async function processWithdrawGroup(
   ws: InternalWalletState,
   withdrawalGroupId: string,
-  forceNow = false,
+  options: {
+    forceNow?: boolean;
+  } = {},
 ): Promise<void> {
   const onOpErr = (e: TalerErrorDetail): Promise<void> =>
-    incrementWithdrawalRetry(ws, withdrawalGroupId, e);
+    reportWithdrawalError(ws, withdrawalGroupId, e);
   await guardOperationException(
-    () => processWithdrawGroupImpl(ws, withdrawalGroupId, forceNow),
+    () => processWithdrawGroupImpl(ws, withdrawalGroupId, options),
     onOpErr,
   );
-}
-
-async function resetWithdrawalGroupRetry(
-  ws: InternalWalletState,
-  withdrawalGroupId: string,
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({
-      withdrawalGroups: x.withdrawalGroups,
-      reserves: x.reserves,
-    }))
-    .runReadWrite(async (tx) => {
-      const x = await tx.withdrawalGroups.get(withdrawalGroupId);
-      if (x) {
-        x.retryInfo = initRetryInfo();
-        await tx.withdrawalGroups.put(x);
-      }
-    });
 }
 
 async function processWithdrawGroupImpl(
   ws: InternalWalletState,
   withdrawalGroupId: string,
-  forceNow: boolean,
+  options: {
+    forceNow?: boolean;
+  } = {},
 ): Promise<void> {
+  const forceNow = options.forceNow ?? false;
   logger.trace("processing withdraw group", withdrawalGroupId);
-  if (forceNow) {
-    await resetWithdrawalGroupRetry(ws, withdrawalGroupId);
-  }
+  await setupWithdrawalRetry(ws, withdrawalGroupId, { reset: forceNow });
   const withdrawalGroup = await ws.db
     .mktx((x) => ({ withdrawalGroups: x.withdrawalGroups }))
     .runReadOnly(async (tx) => {
@@ -876,7 +887,7 @@ async function processWithdrawGroupImpl(
       );
       return;
     }
-    return await ws.reserveOps.processReserve(ws, reservePub, forceNow);
+    return await ws.reserveOps.processReserve(ws, reservePub, { forceNow });
   }
 
   await ws.exchangeOps.updateExchangeFromUrl(
@@ -948,7 +959,7 @@ async function processWithdrawGroupImpl(
         wg.timestampFinish = TalerProtocolTimestamp.now();
         wg.operationStatus = OperationStatus.Finished;
         delete wg.lastError;
-        wg.retryInfo = initRetryInfo();
+        wg.retryInfo = resetRetryInfo();
       }
 
       await tx.withdrawalGroups.put(wg);

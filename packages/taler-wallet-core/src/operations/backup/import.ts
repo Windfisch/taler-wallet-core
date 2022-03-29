@@ -57,7 +57,7 @@ import {
   checkLogicInvariant,
 } from "../../util/invariants.js";
 import { Logger } from "@gnu-taler/taler-util";
-import { initRetryInfo } from "../../util/retries.js";
+import { resetRetryInfo } from "../../util/retries.js";
 import { InternalWalletState } from "../../internal-wallet-state.js";
 import { provideBackupState } from "./state.js";
 import { makeEventId, TombstoneTag } from "../transactions.js";
@@ -276,7 +276,7 @@ export async function importBackup(
             protocolVersionRange: backupExchange.protocol_version_range,
           },
           permanent: true,
-          retryInfo: initRetryInfo(),
+          retryInfo: resetRetryInfo(),
           lastUpdate: undefined,
           nextUpdate: TalerProtocolTimestamp.now(),
           nextRefreshCheck: TalerProtocolTimestamp.now(),
@@ -464,7 +464,7 @@ export async function importBackup(
               timestampReserveInfoPosted:
                 backupReserve.bank_info?.timestamp_reserve_info_posted,
               senderWire: backupReserve.sender_wire,
-              retryInfo: initRetryInfo(),
+              retryInfo: resetRetryInfo(),
               lastError: undefined,
               initialWithdrawalGroupId:
                 backupReserve.initial_withdrawal_group_id,
@@ -505,7 +505,7 @@ export async function importBackup(
                   backupWg.raw_withdrawal_amount,
                 ),
                 reservePub,
-                retryInfo: initRetryInfo(),
+                retryInfo: resetRetryInfo(),
                 secretSeed: backupWg.secret_seed,
                 timestampStart: backupWg.timestamp_created,
                 timestampFinish: backupWg.timestamp_finish,
@@ -618,7 +618,7 @@ export async function importBackup(
               cryptoComp.proposalNoncePrivToPub[backupProposal.nonce_priv],
             proposalId: backupProposal.proposal_id,
             repurchaseProposalId: backupProposal.repurchase_proposal_id,
-            retryInfo: initRetryInfo(),
+            retryInfo: resetRetryInfo(),
             download,
             proposalStatus,
           });
@@ -753,7 +753,7 @@ export async function importBackup(
               cryptoComp.proposalNoncePrivToPub[backupPurchase.nonce_priv],
             lastPayError: undefined,
             autoRefundDeadline: TalerProtocolTimestamp.never(),
-            refundStatusRetryInfo: initRetryInfo(),
+            refundStatusRetryInfo: resetRetryInfo(),
             lastRefundStatusError: undefined,
             timestampAccept: backupPurchase.timestamp_accept,
             timestampFirstSuccessfulPay:
@@ -763,7 +763,7 @@ export async function importBackup(
             lastSessionId: undefined,
             abortStatus,
             // FIXME!
-            payRetryInfo: initRetryInfo(),
+            payRetryInfo: resetRetryInfo(),
             download,
             paymentSubmitPending:
               !backupPurchase.timestamp_first_successful_pay,
@@ -864,7 +864,7 @@ export async function importBackup(
               Amounts.parseOrThrow(x.estimated_output_amount),
             ),
             refreshSessionPerCoin,
-            retryInfo: initRetryInfo(),
+            retryInfo: resetRetryInfo(),
           });
         }
       }
@@ -890,7 +890,7 @@ export async function importBackup(
             merchantBaseUrl: backupTip.exchange_base_url,
             merchantTipId: backupTip.merchant_tip_id,
             pickedUpTimestamp: backupTip.timestamp_finished,
-            retryInfo: initRetryInfo(),
+            retryInfo: resetRetryInfo(),
             secretSeed: backupTip.secret_seed,
             tipAmountEffective: denomsSel.totalCoinValue,
             tipAmountRaw: Amounts.parseOrThrow(backupTip.tip_amount_raw),

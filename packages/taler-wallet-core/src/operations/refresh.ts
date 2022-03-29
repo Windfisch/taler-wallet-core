@@ -53,7 +53,11 @@ import {
 } from "../util/http.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { Logger } from "@gnu-taler/taler-util";
-import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
+import {
+  resetRetryInfo,
+  RetryInfo,
+  updateRetryInfoTimeout,
+} from "../util/retries.js";
 import {
   Duration,
   durationFromSpec,
@@ -130,11 +134,11 @@ function updateGroupStatus(rg: RefreshGroupRecord): void {
   if (allDone) {
     if (anyFrozen) {
       rg.frozen = true;
-      rg.retryInfo = initRetryInfo();
+      rg.retryInfo = resetRetryInfo();
     } else {
       rg.timestampFinished = AbsoluteTime.toTimestamp(AbsoluteTime.now());
       rg.operationStatus = OperationStatus.Finished;
-      rg.retryInfo = initRetryInfo();
+      rg.retryInfo = resetRetryInfo();
     }
   }
 }
@@ -712,7 +716,33 @@ async function refreshReveal(
   });
 }
 
-async function incrementRefreshRetry(
+async function setupRefreshRetry(
+  ws: InternalWalletState,
+  refreshGroupId: string,
+  options: {
+    reset: boolean;
+  },
+): Promise<void> {
+  await ws.db
+    .mktx((x) => ({
+      refreshGroups: x.refreshGroups,
+    }))
+    .runReadWrite(async (tx) => {
+      const r = await tx.refreshGroups.get(refreshGroupId);
+      if (!r) {
+        return;
+      }
+      if (options.reset) {
+        r.retryInfo = resetRetryInfo();
+      } else {
+        r.retryInfo = RetryInfo.increment(r.retryInfo);
+      }
+      delete r.lastError;
+      await tx.refreshGroups.put(r);
+    });
+}
+
+async function reportRefreshError(
   ws: InternalWalletState,
   refreshGroupId: string,
   err: TalerErrorDetail | undefined,
@@ -727,10 +757,10 @@ async function incrementRefreshRetry(
         return;
       }
       if (!r.retryInfo) {
-        return;
+        logger.error(
+          "reported error for inactive refresh group (no retry info)",
+        );
       }
-      r.retryInfo.retryCounter++;
-      updateRetryInfoTimeout(r.retryInfo);
       r.lastError = err;
       await tx.refreshGroups.put(r);
     });
@@ -745,44 +775,31 @@ async function incrementRefreshRetry(
 export async function processRefreshGroup(
   ws: InternalWalletState,
   refreshGroupId: string,
-  forceNow = false,
+  options: {
+    forceNow?: boolean;
+  } = {},
 ): Promise<void> {
   await ws.memoProcessRefresh.memo(refreshGroupId, async () => {
     const onOpErr = (e: TalerErrorDetail): Promise<void> =>
-      incrementRefreshRetry(ws, refreshGroupId, e);
+      reportRefreshError(ws, refreshGroupId, e);
     return await guardOperationException(
-      async () => await processRefreshGroupImpl(ws, refreshGroupId, forceNow),
+      async () => await processRefreshGroupImpl(ws, refreshGroupId, options),
       onOpErr,
     );
   });
 }
 
-async function resetRefreshGroupRetry(
-  ws: InternalWalletState,
-  refreshGroupId: string,
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({
-      refreshGroups: x.refreshGroups,
-    }))
-    .runReadWrite(async (tx) => {
-      const x = await tx.refreshGroups.get(refreshGroupId);
-      if (x) {
-        x.retryInfo = initRetryInfo();
-        await tx.refreshGroups.put(x);
-      }
-    });
-}
-
 async function processRefreshGroupImpl(
   ws: InternalWalletState,
   refreshGroupId: string,
-  forceNow: boolean,
+  options: {
+    forceNow?: boolean;
+  } = {},
 ): Promise<void> {
+  const forceNow = options.forceNow ?? false;
   logger.info(`processing refresh group ${refreshGroupId}`);
-  if (forceNow) {
-    await resetRefreshGroupRetry(ws, refreshGroupId);
-  }
+  await setupRefreshRetry(ws, refreshGroupId, { reset: forceNow });
+
   const refreshGroup = await ws.db
     .mktx((x) => ({
       refreshGroups: x.refreshGroups,
@@ -939,7 +956,7 @@ export async function createRefreshGroup(
     reason,
     refreshGroupId,
     refreshSessionPerCoin: oldCoinPubs.map(() => undefined),
-    retryInfo: initRetryInfo(),
+    retryInfo: resetRetryInfo(),
     inputPerCoin,
     estimatedOutputPerCoin,
     timestampCreated: TalerProtocolTimestamp.now(),
@@ -994,7 +1011,9 @@ export async function autoRefresh(
   exchangeBaseUrl: string,
 ): Promise<void> {
   logger.info(`doing auto-refresh check for '${exchangeBaseUrl}'`);
-  await updateExchangeFromUrl(ws, exchangeBaseUrl, undefined, true);
+  await updateExchangeFromUrl(ws, exchangeBaseUrl, {
+    forceNow: true,
+  });
   let minCheckThreshold = AbsoluteTime.addDuration(
     AbsoluteTime.now(),
     durationFromSpec({ days: 1 }),

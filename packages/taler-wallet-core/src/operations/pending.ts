@@ -51,18 +51,17 @@ async function gatherExchangePending(
     resp.pendingOperations.push({
       type: PendingTaskType.ExchangeUpdate,
       givesLifeness: false,
-      timestampDue: e.lastError
-        ? e.retryInfo.nextRetry
-        : AbsoluteTime.fromTimestamp(e.nextUpdate),
+      timestampDue:
+        e.retryInfo?.nextRetry ?? AbsoluteTime.fromTimestamp(e.nextUpdate),
       exchangeBaseUrl: e.baseUrl,
       lastError: e.lastError,
     });
 
     resp.pendingOperations.push({
       type: PendingTaskType.ExchangeCheckRefresh,
-      timestampDue: e.lastError
-        ? e.retryInfo.nextRetry
-        : AbsoluteTime.fromTimestamp(e.nextRefreshCheck),
+      timestampDue:
+        e.retryInfo?.nextRetry ??
+        AbsoluteTime.fromTimestamp(e.nextRefreshCheck),
       givesLifeness: false,
       exchangeBaseUrl: e.baseUrl,
     });

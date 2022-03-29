@@ -77,7 +77,9 @@ export interface ReserveOperations {
   processReserve(
     ws: InternalWalletState,
     reservePub: string,
-    forceNow?: boolean,
+    options?: {
+      forceNow?: boolean;
+    },
   ): Promise<void>;
 }
 
@@ -101,8 +103,10 @@ export interface ExchangeOperations {
   updateExchangeFromUrl(
     ws: InternalWalletState,
     baseUrl: string,
-    acceptedFormat?: string[],
-    forceNow?: boolean,
+    options?: {
+      forceNow?: boolean;
+      cancellationToken?: CancellationToken;
+    },
   ): Promise<{
     exchange: ExchangeRecord;
     exchangeDetails: ExchangeDetailsRecord;
@@ -123,7 +127,9 @@ export interface RecoupOperations {
   processRecoupGroup(
     ws: InternalWalletState,
     recoupGroupId: string,
-    forceNow?: boolean,
+    options?: {
+      forceNow?: boolean;
+    },
   ): Promise<void>;
 }
 
@@ -201,13 +207,8 @@ export interface InternalWalletState {
   memoGetBalance: AsyncOpMemoSingle<BalancesResponse>;
   memoProcessRefresh: AsyncOpMemoMap<void>;
   memoProcessRecoup: AsyncOpMemoMap<void>;
-  cryptoApi: TalerCryptoInterface;
 
-  /**
-   * Cancellation token for the currently running
-   * deposit operation, if any.
-   */
-  taskCancellationSourceForDeposit?: CancellationToken.Source;
+  cryptoApi: TalerCryptoInterface;
 
   timerGroup: TimerGroup;
   stopped: boolean;

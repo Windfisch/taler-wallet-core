@@ -238,51 +238,41 @@ async function processOnePendingOperation(
   logger.trace(`running pending ${JSON.stringify(pending, undefined, 2)}`);
   switch (pending.type) {
     case PendingTaskType.ExchangeUpdate:
-      await updateExchangeFromUrl(
-        ws,
-        pending.exchangeBaseUrl,
-        undefined,
+      await updateExchangeFromUrl(ws, pending.exchangeBaseUrl, {
         forceNow,
-      );
+      });
       break;
     case PendingTaskType.Refresh:
-      await processRefreshGroup(ws, pending.refreshGroupId, forceNow);
+      await processRefreshGroup(ws, pending.refreshGroupId, { forceNow });
       break;
     case PendingTaskType.Reserve:
-      await processReserve(ws, pending.reservePub, forceNow);
+      await processReserve(ws, pending.reservePub, { forceNow });
       break;
     case PendingTaskType.Withdraw:
-      await processWithdrawGroup(ws, pending.withdrawalGroupId, forceNow);
+      await processWithdrawGroup(ws, pending.withdrawalGroupId, { forceNow });
       break;
     case PendingTaskType.ProposalDownload:
-      await processDownloadProposal(ws, pending.proposalId, forceNow);
+      await processDownloadProposal(ws, pending.proposalId, { forceNow });
       break;
     case PendingTaskType.TipPickup:
-      await processTip(ws, pending.tipId, forceNow);
+      await processTip(ws, pending.tipId, { forceNow });
       break;
     case PendingTaskType.Pay:
-      await processPurchasePay(ws, pending.proposalId, forceNow);
+      await processPurchasePay(ws, pending.proposalId, { forceNow });
       break;
     case PendingTaskType.RefundQuery:
-      await processPurchaseQueryRefund(ws, pending.proposalId, forceNow);
+      await processPurchaseQueryRefund(ws, pending.proposalId, { forceNow });
       break;
     case PendingTaskType.Recoup:
-      await processRecoupGroup(ws, pending.recoupGroupId, forceNow);
+      await processRecoupGroup(ws, pending.recoupGroupId, { forceNow });
       break;
     case PendingTaskType.ExchangeCheckRefresh:
       await autoRefresh(ws, pending.exchangeBaseUrl);
       break;
     case PendingTaskType.Deposit: {
-      const cts = CancellationToken.create();
-      ws.taskCancellationSourceForDeposit = cts;
-      try {
-        await processDepositGroup(ws, pending.depositGroupId, {
-          cancellationToken: cts.token,
-        });
-      } finally {
-        cts.dispose();
-        delete ws.taskCancellationSourceForDeposit;
-      }
+      await processDepositGroup(ws, pending.depositGroupId, {
+        forceNow,
+      });
       break;
     }
     case PendingTaskType.Backup:
@@ -497,11 +487,8 @@ async function getExchangeTos(
   exchangeBaseUrl: string,
   acceptedFormat?: string[],
 ): Promise<GetExchangeTosResult> {
-  const { exchangeDetails } = await updateExchangeFromUrl(
-    ws,
-    exchangeBaseUrl,
-    acceptedFormat,
-  );
+  // FIXME: download ToS in acceptable format if passed!
+  const { exchangeDetails } = await updateExchangeFromUrl(ws, exchangeBaseUrl);
   const content = exchangeDetails.termsOfServiceText;
   const currentEtag = exchangeDetails.termsOfServiceLastEtag;
   const contentType = exchangeDetails.termsOfServiceContentType;
@@ -802,12 +789,9 @@ async function dispatchRequestInternal(
     }
     case "addExchange": {
       const req = codecForAddExchangeRequest().decode(payload);
-      await updateExchangeFromUrl(
-        ws,
-        req.exchangeBaseUrl,
-        undefined,
-        req.forceUpdate,
-      );
+      await updateExchangeFromUrl(ws, req.exchangeBaseUrl, {
+        forceNow: req.forceUpdate,
+      });
       return {};
     }
     case "listExchanges": {
@@ -919,11 +903,11 @@ async function dispatchRequestInternal(
             RefreshReason.Manual,
           );
         });
-      processRefreshGroup(ws, refreshGroupId.refreshGroupId, true).catch(
-        (x) => {
-          logger.error(x);
-        },
-      );
+      processRefreshGroup(ws, refreshGroupId.refreshGroupId, {
+        forceNow: true,
+      }).catch((x) => {
+        logger.error(x);
+      });
       return {
         refreshGroupId,
       };
@@ -1170,7 +1154,7 @@ class InternalWalletStateImpl implements InternalWalletState {
   memoGetBalance: AsyncOpMemoSingle<BalancesResponse> = new AsyncOpMemoSingle();
   memoProcessRefresh: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
   memoProcessRecoup: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
-  memoProcessDeposit: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
+
   cryptoApi: TalerCryptoInterface;
   cryptoDispatcher: CryptoDispatcher;
 

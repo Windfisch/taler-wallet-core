@@ -17,7 +17,7 @@ Generally, the code to process a pending operation should first increment the
 retryInfo (and reset the lastError) and then process the operation. This way,
 it is impossble to forget incrementing the retryInfo.
 
-For each retriable operation, there are usually `reset<Op>Retry`, `increment<Op>Retry` and
+For each retriable operation, there are usually `setup<Op>Retry`, `increment<Op>Retry` and
 `report<Op>Error` operations.
 
 Note that this means that _during_ some operation, lastError will be cleared. The UI

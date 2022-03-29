@@ -21,7 +21,7 @@ import {
   Balance,
   PaytoUri,
 } from "@gnu-taler/taler-util";
-import { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
+import { DepositGroupFees } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { Loading } from "../components/Loading.js";
@@ -68,7 +68,7 @@ export function DepositPage({ currency, onCancel, onSuccess }: Props): VNode {
   async function getFeeForAmount(
     p: PaytoUri,
     a: AmountJson,
-  ): Promise<DepositFee> {
+  ): Promise<DepositGroupFees> {
     const account = `payto://${p.targetType}/${p.targetPath}`;
     const amount = Amounts.stringify(a);
     return await wxApi.getFeeForDeposit(account, amount);
@@ -106,7 +106,7 @@ interface ViewProps {
   onCalculateFee: (
     account: PaytoUri,
     amount: AmountJson,
-  ) => Promise<DepositFee>;
+  ) => Promise<DepositGroupFees>;
 }
 
 type State = NoBalanceState | NoAccountsState | DepositState;
@@ -135,12 +135,12 @@ export function useComponentState(
   onCalculateFee: (
     account: PaytoUri,
     amount: AmountJson,
-  ) => Promise<DepositFee>,
+  ) => Promise<DepositGroupFees>,
 ): State {
   const accountMap = createLabelsForBankAccount(accounts);
   const [accountIdx, setAccountIdx] = useState(0);
   const [amount, setAmount] = useState<number | undefined>(undefined);
-  const [fee, setFee] = useState<DepositFee | undefined>(undefined);
+  const [fee, setFee] = useState<DepositGroupFees | undefined>(undefined);
   function updateAmount(num: number | undefined) {
     setAmount(num);
     setFee(undefined);

@@ -43,7 +43,11 @@ import {
 } from "../db.js";
 import { j2s } from "@gnu-taler/taler-util";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
-import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
+import {
+  resetRetryInfo,
+  RetryInfo,
+  updateRetryInfoTimeout,
+} from "../util/retries.js";
 import { makeErrorDetail } from "../errors.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
@@ -127,7 +131,7 @@ export async function prepareTip(
       createdTimestamp: TalerProtocolTimestamp.now(),
       merchantTipId: res.merchantTipId,
       tipAmountEffective: selectedDenoms.totalCoinValue,
-      retryInfo: initRetryInfo(),
+      retryInfo: resetRetryInfo(),
       lastError: undefined,
       denomsSel: denomSelectionInfoToState(selectedDenoms),
       pickedUpTimestamp: undefined,
@@ -157,10 +161,10 @@ export async function prepareTip(
   return tipStatus;
 }
 
-async function incrementTipRetry(
+async function reportTipError(
   ws: InternalWalletState,
   walletTipId: string,
-  err: TalerErrorDetail | undefined,
+  err: TalerErrorDetail,
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({
@@ -172,10 +176,8 @@ async function incrementTipRetry(
         return;
       }
       if (!t.retryInfo) {
-        return;
+        logger.reportBreak();
       }
-      t.retryInfo.retryCounter++;
-      updateRetryInfoTimeout(t.retryInfo);
       t.lastError = err;
       await tx.tips.put(t);
     });
@@ -184,15 +186,43 @@ async function incrementTipRetry(
   }
 }
 
+async function setupTipRetry(
+  ws: InternalWalletState,
+  walletTipId: string,
+  options: {
+    reset: boolean;
+  },
+): Promise<void> {
+  await ws.db
+    .mktx((x) => ({
+      tips: x.tips,
+    }))
+    .runReadWrite(async (tx) => {
+      const t = await tx.tips.get(walletTipId);
+      if (!t) {
+        return;
+      }
+      if (options.reset) {
+        t.retryInfo = resetRetryInfo();
+      } else {
+        t.retryInfo = RetryInfo.increment(t.retryInfo);
+      }
+      delete t.lastError;
+      await tx.tips.put(t);
+    });
+}
+
 export async function processTip(
   ws: InternalWalletState,
   tipId: string,
-  forceNow = false,
+  options: {
+    forceNow?: boolean;
+  } = {},
 ): Promise<void> {
   const onOpErr = (e: TalerErrorDetail): Promise<void> =>
-    incrementTipRetry(ws, tipId, e);
+    reportTipError(ws, tipId, e);
   await guardOperationException(
-    () => processTipImpl(ws, tipId, forceNow),
+    () => processTipImpl(ws, tipId, options),
     onOpErr,
   );
 }
@@ -208,7 +238,7 @@ async function resetTipRetry(
     .runReadWrite(async (tx) => {
       const x = await tx.tips.get(tipId);
       if (x) {
-        x.retryInfo = initRetryInfo();
+        x.retryInfo = resetRetryInfo();
         await tx.tips.put(x);
       }
     });
@@ -217,8 +247,11 @@ async function resetTipRetry(
 async function processTipImpl(
   ws: InternalWalletState,
   walletTipId: string,
-  forceNow: boolean,
+  options: {
+    forceNow?: boolean;
+  } = {},
 ): Promise<void> {
+  const forceNow = options.forceNow ?? false;
   if (forceNow) {
     await resetTipRetry(ws, walletTipId);
   }
@@ -293,12 +326,13 @@ async function processTipImpl(
       merchantResp.status === 424)
   ) {
     logger.trace(`got transient tip error`);
+    // FIXME: wrap in another error code that indicates a transient error
     const err = makeErrorDetail(
       TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
       getHttpResponseErrorDetails(merchantResp),
       "tip pickup failed (transient)",
     );
-    await incrementTipRetry(ws, tipRecord.walletTipId, err);
+    await reportTipError(ws, tipRecord.walletTipId, err);
     // FIXME: Maybe we want to signal to the caller that the transient error happened?
     return;
   }
@@ -397,7 +431,7 @@ async function processTipImpl(
       }
       tr.pickedUpTimestamp = TalerProtocolTimestamp.now();
       tr.lastError = undefined;
-      tr.retryInfo = initRetryInfo();
+      tr.retryInfo = resetRetryInfo();
       await tx.tips.put(tr);
       for (const cr of newCoinRecords) {
         await tx.coins.put(cr);

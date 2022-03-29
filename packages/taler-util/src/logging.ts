@@ -205,4 +205,12 @@ export class Logger {
       );
     }
   }
+
+  reportBreak(): void {
+    if (!this.shouldLogError()) {
+      return;
+    }
+    const location = new Error("programming error");
+    this.error(`assertion failed: ${location.stack}`);
+  }
 }

@@ -41,11 +41,11 @@ import {
   TrackDepositGroupResponse,
   URL,
 } from "@gnu-taler/taler-util";
-import { DepositGroupRecord, OperationStatus } from "../db.js";
+import { DepositGroupRecord, OperationStatus, WireFee } from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { PayCoinSelection, selectPayCoins } from "../util/coinSelection.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
-import { initRetryInfo, RetryInfo } from "../util/retries.js";
+import { resetRetryInfo, RetryInfo } from "../util/retries.js";
 import { guardOperationException } from "./common.js";
 import { getExchangeDetails } from "./exchanges.js";
 import {
@@ -63,9 +63,15 @@ import { getTotalRefreshCost } from "./refresh.js";
  */
 const logger = new Logger("deposits.ts");
 
-async function resetDepositGroupRetry(
+/**
+ * Set up the retry timeout for a deposit group.
+ */
+async function setupDepositGroupRetry(
   ws: InternalWalletState,
   depositGroupId: string,
+  options: {
+    resetRetry: boolean;
+  },
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({
@@ -76,29 +82,19 @@ async function resetDepositGroupRetry(
       if (!x) {
         return;
       }
-      x.retryInfo = initRetryInfo();
+      if (options.resetRetry) {
+        x.retryInfo = resetRetryInfo();
+      } else {
+        x.retryInfo = RetryInfo.increment(x.retryInfo);
+      }
       delete x.lastError;
       await tx.depositGroups.put(x);
     });
 }
 
-async function incrementDepositGroupRetry(
-  ws: InternalWalletState,
-  depositGroupId: string,
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({ depositGroups: x.depositGroups }))
-    .runReadWrite(async (tx) => {
-      const r = await tx.depositGroups.get(depositGroupId);
-      if (!r) {
-        return;
-      }
-      r.retryInfo = RetryInfo.increment(r.retryInfo);
-      delete r.lastError;
-      await tx.depositGroups.put(r);
-    });
-}
-
+/**
+ * Report an error that occurred while processing the deposit group.
+ */
 async function reportDepositGroupError(
   ws: InternalWalletState,
   depositGroupId: string,
@@ -131,9 +127,6 @@ export async function processDepositGroup(
     cancellationToken?: CancellationToken;
   } = {},
 ): Promise<void> {
-  if (ws.taskCancellationSourceForDeposit) {
-    ws.taskCancellationSourceForDeposit.cancel();
-  }
   const onOpErr = (err: TalerErrorDetail): Promise<void> =>
     reportDepositGroupError(ws, depositGroupId, err);
   return await guardOperationException(
@@ -170,11 +163,7 @@ async function processDepositGroupImpl(
     return;
   }
 
-  if (forceNow) {
-    await resetDepositGroupRetry(ws, depositGroupId);
-  } else {
-    await incrementDepositGroupRetry(ws, depositGroupId);
-  }
+  await setupDepositGroupRetry(ws, depositGroupId, { resetRetry: forceNow });
 
   const contractData = extractContractData(
     depositGroup.contractTermsRaw,
@@ -315,7 +304,7 @@ export async function trackDepositGroup(
 export async function getFeeForDeposit(
   ws: InternalWalletState,
   req: GetFeeForDepositRequest,
-): Promise<DepositFee> {
+): Promise<DepositGroupFees> {
   const p = parsePaytoUri(req.depositPaytoUri);
   if (!p) {
     throw Error("invalid payto URI");
@@ -370,7 +359,7 @@ export async function getFeeForDeposit(
     throw Error("insufficient funds");
   }
 
-  return await getTotalFeeForDepositAmount(
+  return await getTotalFeesForDepositAmount(
     ws,
     p.targetType,
     amount,
@@ -429,14 +418,12 @@ export async function createDepositGroup(
     nonce: noncePair.pub,
     wire_transfer_deadline: nowRounded,
     order_id: "",
-    // This is always the v2 wire hash, as we're the "merchant" and support v2.
     h_wire: wireHash,
-    // Required for older exchanges.
     pay_deadline: AbsoluteTime.toTimestamp(
       AbsoluteTime.addDuration(now, durationFromSpec({ hours: 1 })),
     ),
     merchant: {
-      name: "",
+      name: "(wallet)",
     },
     merchant_pub: merchantPair.pub,
     refund_deadline: TalerProtocolTimestamp.zero(),
@@ -505,7 +492,7 @@ export async function createDepositGroup(
       payto_uri: req.depositPaytoUri,
       salt: wireSalt,
     },
-    retryInfo: initRetryInfo(),
+    retryInfo: resetRetryInfo(),
     operationStatus: OperationStatus.Pending,
     lastError: undefined,
   };
@@ -594,8 +581,7 @@ export async function getEffectiveDepositAmount(
   return Amounts.sub(Amounts.sum(amt).amount, Amounts.sum(fees).amount).amount;
 }
 
-// FIXME: rename to DepositGroupFee
-export interface DepositFee {
+export interface DepositGroupFees {
   coin: AmountJson;
   wire: AmountJson;
   refresh: AmountJson;
@@ -605,12 +591,12 @@ export interface DepositFee {
  * Get the fee amount that will be charged when trying to deposit the
  * specified amount using the selected coins and the wire method.
  */
-export async function getTotalFeeForDepositAmount(
+export async function getTotalFeesForDepositAmount(
   ws: InternalWalletState,
   wireType: string,
   total: AmountJson,
   pcs: PayCoinSelection,
-): Promise<DepositFee> {
+): Promise<DepositGroupFees> {
   const wireFee: AmountJson[] = [];
   const coinFee: AmountJson[] = [];
   const refreshFee: AmountJson[] = [];
@@ -638,8 +624,6 @@ export async function getTotalFeeForDepositAmount(
         if (!denom) {
           throw Error("can't find denomination to calculate deposit amount");
         }
-        // const cc = pcs.coinContributions[i]
-        // acc = Amounts.add(acc, cc).amount
         coinFee.push(denom.feeDeposit);
         exchangeSet.add(coin.exchangeBaseUrl);
 
@@ -661,16 +645,15 @@ export async function getTotalFeeForDepositAmount(
         if (!exchangeDetails) {
           continue;
         }
-        // FIXME/NOTE: the line below _likely_ throws exception
-        // about "find method not found on undefined" when the wireType
-        // is not supported by the Exchange.
-        const fee = exchangeDetails.wireInfo.feesForType[wireType].find((x) => {
-          return AbsoluteTime.isBetween(
-            AbsoluteTime.now(),
-            AbsoluteTime.fromTimestamp(x.startStamp),
-            AbsoluteTime.fromTimestamp(x.endStamp),
-          );
-        })?.wireFee;
+        const fee = exchangeDetails.wireInfo.feesForType[wireType]?.find(
+          (x) => {
+            return AbsoluteTime.isBetween(
+              AbsoluteTime.now(),
+              AbsoluteTime.fromTimestamp(x.startStamp),
+              AbsoluteTime.fromTimestamp(x.endStamp),
+            );
+          },
+        )?.wireFee;
         if (fee) {
           wireFee.push(fee);
         }

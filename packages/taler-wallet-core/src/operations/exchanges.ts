@@ -20,6 +20,7 @@
 import {
   AbsoluteTime,
   Amounts,
+  CancellationToken,
   canonicalizeBaseUrl,
   codecForExchangeKeysJson,
   codecForExchangeWireJson,
@@ -61,11 +62,7 @@ import {
   readSuccessResponseTextOrThrow,
 } from "../util/http.js";
 import { DbAccess, GetReadOnlyAccess } from "../util/query.js";
-import {
-  initRetryInfo,
-  RetryInfo,
-  updateRetryInfoTimeout,
-} from "../util/retries.js";
+import { resetRetryInfo, RetryInfo } from "../util/retries.js";
 import {
   WALLET_CACHE_BREAKER_CLIENT_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
@@ -124,9 +121,12 @@ async function reportExchangeUpdateError(
   ws.notify({ type: NotificationType.ExchangeOperationError, error: err });
 }
 
-async function resetExchangeUpdateRetry(
+async function setupExchangeUpdateRetry(
   ws: InternalWalletState,
   baseUrl: string,
+  options: {
+    reset: boolean;
+  },
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({ exchanges: x.exchanges }))
@@ -135,25 +135,12 @@ async function resetExchangeUpdateRetry(
       if (!exchange) {
         return;
       }
-      delete exchange.lastError;
-      exchange.retryInfo = initRetryInfo();
-      await tx.exchanges.put(exchange);
-    });
-}
-
-async function incrementExchangeUpdateRetry(
-  ws: InternalWalletState,
-  baseUrl: string,
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({ exchanges: x.exchanges }))
-    .runReadWrite(async (tx) => {
-      const exchange = await tx.exchanges.get(baseUrl);
-      if (!exchange) {
-        return;
+      if (options.reset) {
+        exchange.retryInfo = resetRetryInfo();
+      } else {
+        exchange.retryInfo = RetryInfo.increment(exchange.retryInfo);
       }
       delete exchange.lastError;
-      exchange.retryInfo = RetryInfo.increment(exchange.retryInfo);
       await tx.exchanges.put(exchange);
     });
 }
@@ -376,8 +363,10 @@ async function downloadExchangeWireInfo(
 export async function updateExchangeFromUrl(
   ws: InternalWalletState,
   baseUrl: string,
-  acceptedFormat?: string[],
-  forceNow = false,
+  options: {
+    forceNow?: boolean;
+    cancellationToken?: CancellationToken;
+  } = {},
 ): Promise<{
   exchange: ExchangeRecord;
   exchangeDetails: ExchangeDetailsRecord;
@@ -385,7 +374,7 @@ export async function updateExchangeFromUrl(
   const onOpErr = (e: TalerErrorDetail): Promise<void> =>
     reportExchangeUpdateError(ws, baseUrl, e);
   return await guardOperationException(
-    () => updateExchangeFromUrlImpl(ws, baseUrl, acceptedFormat, forceNow),
+    () => updateExchangeFromUrlImpl(ws, baseUrl, options),
     onOpErr,
   );
 }
@@ -409,7 +398,7 @@ async function provideExchangeRecord(
         const r: ExchangeRecord = {
           permanent: true,
           baseUrl: baseUrl,
-          retryInfo: initRetryInfo(),
+          retryInfo: resetRetryInfo(),
           detailsPointer: undefined,
           lastUpdate: undefined,
           nextUpdate: AbsoluteTime.toTimestamp(now),
@@ -552,12 +541,15 @@ export async function downloadTosFromAcceptedFormat(
 async function updateExchangeFromUrlImpl(
   ws: InternalWalletState,
   baseUrl: string,
-  acceptedFormat?: string[],
-  forceNow = false,
+  options: {
+    forceNow?: boolean;
+    cancellationToken?: CancellationToken;
+  } = {},
 ): Promise<{
   exchange: ExchangeRecord;
   exchangeDetails: ExchangeDetailsRecord;
 }> {
+  const forceNow = options.forceNow ?? false;
   logger.info(`updating exchange info for ${baseUrl}, forced: ${forceNow}`);
   const now = AbsoluteTime.now();
   baseUrl = canonicalizeBaseUrl(baseUrl);
@@ -577,11 +569,7 @@ async function updateExchangeFromUrlImpl(
     return { exchange, exchangeDetails };
   }
 
-  if (forceNow) {
-    await resetExchangeUpdateRetry(ws, baseUrl);
-  } else {
-    await incrementExchangeUpdateRetry(ws, baseUrl);
-  }
+  await setupExchangeUpdateRetry(ws, baseUrl, { reset: forceNow });
 
   logger.info("updating exchange /keys info");
 
@@ -617,7 +605,7 @@ async function updateExchangeFromUrlImpl(
     ws,
     baseUrl,
     timeout,
-    acceptedFormat,
+    ["text/plain"],
   );
   const tosHasBeenAccepted =
     exchangeDetails?.termsOfServiceAcceptedEtag === tosDownload.tosEtag;

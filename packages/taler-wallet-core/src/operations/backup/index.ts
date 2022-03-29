@@ -89,7 +89,7 @@ import {
   checkLogicInvariant,
 } from "../../util/invariants.js";
 import { GetReadWriteAccess } from "../../util/query.js";
-import { initRetryInfo, updateRetryInfoTimeout } from "../../util/retries.js";
+import { resetRetryInfo, updateRetryInfoTimeout } from "../../util/retries.js";
 import {
   checkPaymentByProposalId,
   confirmPay,
@@ -434,7 +434,7 @@ async function runBackupCycleForProvider(
         // FIXME:  Allocate error code for this situation?
         prov.state = {
           tag: BackupProviderStateTag.Retrying,
-          retryInfo: initRetryInfo(),
+          retryInfo: resetRetryInfo(),
         };
         await tx.backupProvider.put(prov);
       });
@@ -478,7 +478,7 @@ async function incrementBackupRetryInTx(
   } else if (pr.state.tag === BackupProviderStateTag.Ready) {
     pr.state = {
       tag: BackupProviderStateTag.Retrying,
-      retryInfo: initRetryInfo(),
+      retryInfo: resetRetryInfo(),
       lastError: err,
     };
   }

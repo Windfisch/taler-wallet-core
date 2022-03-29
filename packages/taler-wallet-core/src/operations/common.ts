@@ -47,7 +47,7 @@ export async function guardOperationException<T>(
     throw TalerError.fromDetail(
       TalerErrorCode.WALLET_PENDING_OPERATION_FAILED,
       {
-        innerError: e.errorDetail,
+        innerError: opErr,
       },
     );
   }

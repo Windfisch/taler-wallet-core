@@ -51,6 +51,8 @@ export interface HttpResponse {
   bytes(): Promise<ArrayBuffer>;
 }
 
+export const DEFAULT_REQUEST_TIMEOUT_MS = 60000;
+
 export interface HttpRequestOptions {
   method?: "POST" | "PUT" | "GET";
   headers?: { [name: string]: string };

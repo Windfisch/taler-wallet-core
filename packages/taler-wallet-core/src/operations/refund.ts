@@ -58,37 +58,54 @@ import {
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { GetReadWriteAccess } from "../util/query.js";
-import { initRetryInfo, updateRetryInfoTimeout } from "../util/retries.js";
+import {
+  resetRetryInfo,
+  RetryInfo,
+  updateRetryInfoTimeout,
+} from "../util/retries.js";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { guardOperationException } from "./common.js";
 
 const logger = new Logger("refund.ts");
 
-async function resetPurchaseQueryRefundRetry(
+/**
+ * Retry querying and applying refunds for an order later.
+ */
+async function setupPurchaseQueryRefundRetry(
   ws: InternalWalletState,
   proposalId: string,
+  options: {
+    reset: boolean;
+  },
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({
       purchases: x.purchases,
     }))
     .runReadWrite(async (tx) => {
-      const x = await tx.purchases.get(proposalId);
-      if (x) {
-        x.refundStatusRetryInfo = initRetryInfo();
-        await tx.purchases.put(x);
+      const pr = await tx.purchases.get(proposalId);
+      if (!pr) {
+        return;
       }
+      if (options.reset) {
+        pr.refundStatusRetryInfo = resetRetryInfo();
+      } else {
+        pr.refundStatusRetryInfo = RetryInfo.increment(
+          pr.refundStatusRetryInfo,
+        );
+      }
+      await tx.purchases.put(pr);
     });
 }
 
 /**
- * Retry querying and applying refunds for an order later.
+ * Report an error that happending when querying for a purchase's refund.
  */
-async function incrementPurchaseQueryRefundRetry(
+async function reportPurchaseQueryRefundError(
   ws: InternalWalletState,
   proposalId: string,
-  err: TalerErrorDetail | undefined,
+  err: TalerErrorDetail,
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({
@@ -100,10 +117,10 @@ async function incrementPurchaseQueryRefundRetry(
         return;
       }
       if (!pr.refundStatusRetryInfo) {
-        return;
+        logger.error(
+          "reported error on an inactive purchase (no refund status retry info)",
+        );
       }
-      pr.refundStatusRetryInfo.retryCounter++;
-      updateRetryInfoTimeout(pr.refundStatusRetryInfo);
       pr.lastRefundStatusError = err;
       await tx.purchases.put(pr);
     });
@@ -425,7 +442,7 @@ async function acceptRefunds(
       if (queryDone) {
         p.timestampLastRefundStatus = now;
         p.lastRefundStatusError = undefined;
-        p.refundStatusRetryInfo = initRetryInfo();
+        p.refundStatusRetryInfo = resetRetryInfo();
         p.refundQueryRequested = false;
         if (p.abortStatus === AbortStatus.AbortRefund) {
           p.abortStatus = AbortStatus.AbortFinished;
@@ -506,7 +523,7 @@ export async function applyRefund(
       }
       p.refundQueryRequested = true;
       p.lastRefundStatusError = undefined;
-      p.refundStatusRetryInfo = initRetryInfo();
+      p.refundStatusRetryInfo = resetRetryInfo();
       await tx.purchases.put(p);
       return true;
     });
@@ -515,7 +532,10 @@ export async function applyRefund(
     ws.notify({
       type: NotificationType.RefundStarted,
     });
-    await processPurchaseQueryRefundImpl(ws, proposalId, true, false);
+    await processPurchaseQueryRefundImpl(ws, proposalId, {
+      forceNow: true,
+      waitForAutoRefund: false,
+    });
   }
 
   purchase = await ws.db
@@ -590,12 +610,15 @@ export async function applyRefund(
 export async function processPurchaseQueryRefund(
   ws: InternalWalletState,
   proposalId: string,
-  forceNow = false,
+  options: {
+    forceNow?: boolean;
+    waitForAutoRefund?: boolean;
+  } = {},
 ): Promise<void> {
   const onOpErr = (e: TalerErrorDetail): Promise<void> =>
-    incrementPurchaseQueryRefundRetry(ws, proposalId, e);
+    reportPurchaseQueryRefundError(ws, proposalId, e);
   await guardOperationException(
-    () => processPurchaseQueryRefundImpl(ws, proposalId, forceNow, true),
+    () => processPurchaseQueryRefundImpl(ws, proposalId, options),
     onOpErr,
   );
 }
@@ -603,12 +626,14 @@ export async function processPurchaseQueryRefund(
 async function processPurchaseQueryRefundImpl(
   ws: InternalWalletState,
   proposalId: string,
-  forceNow: boolean,
-  waitForAutoRefund: boolean,
+  options: {
+    forceNow?: boolean;
+    waitForAutoRefund?: boolean;
+  } = {},
 ): Promise<void> {
-  if (forceNow) {
-    await resetPurchaseQueryRefundRetry(ws, proposalId);
-  }
+  const forceNow = options.forceNow ?? false;
+  const waitForAutoRefund = options.waitForAutoRefund ?? false;
+  await setupPurchaseQueryRefundRetry(ws, proposalId, { reset: forceNow });
   const purchase = await ws.db
     .mktx((x) => ({
       purchases: x.purchases,
@@ -650,7 +675,7 @@ async function processPurchaseQueryRefundImpl(
         codecForMerchantOrderStatusPaid(),
       );
       if (!orderStatus.refunded) {
-        incrementPurchaseQueryRefundRetry(ws, proposalId, undefined);
+        // Wait for retry ...
         return;
       }
     }
@@ -665,11 +690,6 @@ async function processPurchaseQueryRefundImpl(
     const request = await ws.http.postJson(requestUrl.href, {
       h_contract: purchase.download.contractData.contractTermsHash,
     });
-
-    logger.trace(
-      "got json",
-      JSON.stringify(await request.json(), undefined, 2),
-    );
 
     const refundResponse = await readSuccessResponseJsonOrThrow(
       request,
@@ -777,10 +797,12 @@ export async function abortFailedPayWithRefund(
       purchase.paymentSubmitPending = false;
       purchase.abortStatus = AbortStatus.AbortRefund;
       purchase.lastPayError = undefined;
-      purchase.payRetryInfo = initRetryInfo();
+      purchase.payRetryInfo = resetRetryInfo();
       await tx.purchases.put(purchase);
     });
-  processPurchaseQueryRefund(ws, proposalId, true).catch((e) => {
+  processPurchaseQueryRefund(ws, proposalId, {
+    forceNow: true,
+  }).catch((e) => {
     logger.trace(`error during refund processing after abort pay: ${e}`);
   });
 }

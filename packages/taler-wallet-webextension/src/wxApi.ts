@@ -59,7 +59,7 @@ import {
   RemoveBackupProviderRequest,
   TalerError,
 } from "@gnu-taler/taler-wallet-core";
-import type { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
+import type { DepositGroupFees } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import type { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core/src/operations/withdraw";
 import { platform, MessageFromBackend } from "./platform/api.js";
 
@@ -143,7 +143,7 @@ export function resetDb(): Promise<void> {
 export function getFeeForDeposit(
   depositPaytoUri: string,
   amount: AmountString,
-): Promise<DepositFee> {
+): Promise<DepositGroupFees> {
   return callBackend("getFeeForDeposit", {
     depositPaytoUri,
     amount,

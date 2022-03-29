@@ -82,7 +82,7 @@ export function getRetryDuration(
   };
 }
 
-export function initRetryInfo(p: RetryPolicy = defaultRetryPolicy): RetryInfo {
+export function resetRetryInfo(p: RetryPolicy = defaultRetryPolicy): RetryInfo {
   const now = AbsoluteTime.now();
   const info = {
     firstTry: now,
@@ -99,7 +99,7 @@ export namespace RetryInfo {
     p: RetryPolicy = defaultRetryPolicy,
   ) {
     if (!r) {
-      return initRetryInfo(p);
+      return resetRetryInfo(p);
     }
     const r2 = { ...r };
     r2.retryCounter++;

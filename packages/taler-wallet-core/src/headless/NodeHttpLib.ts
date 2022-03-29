@@ -20,6 +20,7 @@
  * Imports.
  */
 import {
+  DEFAULT_REQUEST_TIMEOUT_MS,
   Headers,
   HttpRequestLibrary,
   HttpRequestOptions,
@@ -65,13 +66,16 @@ export class NodeHttpLib implements HttpRequestLibrary {
         `request to origin ${parsedUrl.origin} was throttled`,
       );
     }
-    let timeout: number | undefined;
+    let timeoutMs: number | undefined;
     if (typeof opt?.timeout?.d_ms === "number") {
-      timeout = opt.timeout.d_ms;
+      timeoutMs = opt.timeout.d_ms;
+    } else {
+      timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS;
     }
+    // FIXME: Use AbortController / etc. to handle cancellation
     let resp: AxiosResponse;
     try {
-      resp = await Axios({
+      let respPromise = Axios({
         method,
         url: url,
         responseType: "arraybuffer",
@@ -79,9 +83,13 @@ export class NodeHttpLib implements HttpRequestLibrary {
         validateStatus: () => true,
         transformResponse: (x) => x,
         data: body,
-        timeout,
+        timeout: timeoutMs,
         maxRedirects: 0,
       });
+      if (opt?.cancellationToken) {
+        respPromise = opt.cancellationToken.racePromise(respPromise);
+      }
+      resp = await respPromise;
     } catch (e: any) {
       throw TalerError.fromDetail(
         TalerErrorCode.WALLET_NETWORK_ERROR,
@@ -94,11 +102,13 @@ export class NodeHttpLib implements HttpRequestLibrary {
     }
 
     const makeText = async (): Promise<string> => {
+      opt?.cancellationToken?.throwIfCancelled();
       const respText = new Uint8Array(resp.data);
       return bytesToString(respText);
     };
 
     const makeJson = async (): Promise<any> => {
+      opt?.cancellationToken?.throwIfCancelled();
       let responseJson;
       const respText = await makeText();
       try {
@@ -130,6 +140,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
       return responseJson;
     };
     const makeBytes = async () => {
+      opt?.cancellationToken?.throwIfCancelled();
       if (typeof resp.data.byteLength !== "number") {
         throw Error("expected array buffer");
       }
@@ -150,6 +161,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
       bytes: makeBytes,
     };
   }
+
   async get(url: string, opt?: HttpRequestOptions): Promise<HttpResponse> {
     return this.fetch(url, {
       method: "GET",

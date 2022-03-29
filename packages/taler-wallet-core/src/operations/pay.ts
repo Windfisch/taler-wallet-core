@@ -97,7 +97,7 @@ import {
 import { GetReadWriteAccess } from "../util/query.js";
 import {
   getRetryDuration,
-  initRetryInfo,
+  resetRetryInfo,
   RetryInfo,
   updateRetryInfoTimeout,
 } from "../util/retries.js";
@@ -428,8 +428,8 @@ async function recordConfirmPay(
     proposalId: proposal.proposalId,
     lastPayError: undefined,
     lastRefundStatusError: undefined,
-    payRetryInfo: initRetryInfo(),
-    refundStatusRetryInfo: initRetryInfo(),
+    payRetryInfo: resetRetryInfo(),
+    refundStatusRetryInfo: resetRetryInfo(),
     refundQueryRequested: false,
     timestampFirstSuccessfulPay: undefined,
     autoRefundDeadline: undefined,
@@ -453,7 +453,7 @@ async function recordConfirmPay(
       if (p) {
         p.proposalStatus = ProposalStatus.Accepted;
         delete p.lastError;
-        p.retryInfo = initRetryInfo();
+        delete p.retryInfo;
         await tx.proposals.put(p);
       }
       await tx.purchases.put(t);
@@ -491,9 +491,12 @@ async function reportProposalError(
   ws.notify({ type: NotificationType.ProposalOperationError, error: err });
 }
 
-async function incrementProposalRetry(
+async function setupProposalRetry(
   ws: InternalWalletState,
   proposalId: string,
+  options: {
+    reset: boolean;
+  },
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({ proposals: x.proposals }))
@@ -502,47 +505,37 @@ async function incrementProposalRetry(
       if (!pr) {
         return;
       }
-      if (!pr.retryInfo) {
-        return;
+      if (options.reset) {
+        pr.retryInfo = resetRetryInfo();
       } else {
-        pr.retryInfo.retryCounter++;
-        updateRetryInfoTimeout(pr.retryInfo);
+        pr.retryInfo = RetryInfo.increment(pr.retryInfo);
       }
       delete pr.lastError;
       await tx.proposals.put(pr);
     });
 }
 
-async function resetPurchasePayRetry(
+async function setupPurchasePayRetry(
   ws: InternalWalletState,
   proposalId: string,
+  options: {
+    reset: boolean;
+  },
 ): Promise<void> {
   await ws.db
     .mktx((x) => ({ purchases: x.purchases }))
     .runReadWrite(async (tx) => {
       const p = await tx.purchases.get(proposalId);
-      if (p) {
-        p.payRetryInfo = initRetryInfo();
-        delete p.lastPayError;
-        await tx.purchases.put(p);
-      }
-    });
-}
-
-async function incrementPurchasePayRetry(
-  ws: InternalWalletState,
-  proposalId: string,
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({ purchases: x.purchases }))
-    .runReadWrite(async (tx) => {
-      const pr = await tx.purchases.get(proposalId);
-      if (!pr) {
+      if (!p) {
         return;
       }
-      pr.payRetryInfo = RetryInfo.increment(pr.payRetryInfo);
-      delete pr.lastPayError;
-      await tx.purchases.put(pr);
+      if (options.reset) {
+        p.payRetryInfo = resetRetryInfo();
+      } else {
+        p.payRetryInfo = RetryInfo.increment(p.payRetryInfo);
+      }
+      delete p.lastPayError;
+      await tx.purchases.put(p);
     });
 }
 
@@ -572,30 +565,16 @@ async function reportPurchasePayError(
 export async function processDownloadProposal(
   ws: InternalWalletState,
   proposalId: string,
-  forceNow = false,
+  options: {
+    forceNow?: boolean;
+  } = {},
 ): Promise<void> {
   const onOpErr = (err: TalerErrorDetail): Promise<void> =>
     reportProposalError(ws, proposalId, err);
   await guardOperationException(
-    () => processDownloadProposalImpl(ws, proposalId, forceNow),
+    () => processDownloadProposalImpl(ws, proposalId, options),
     onOpErr,
   );
-}
-
-async function resetDownloadProposalRetry(
-  ws: InternalWalletState,
-  proposalId: string,
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({ proposals: x.proposals }))
-    .runReadWrite(async (tx) => {
-      const p = await tx.proposals.get(proposalId);
-      if (p) {
-        p.retryInfo = initRetryInfo();
-        delete p.lastError;
-        await tx.proposals.put(p);
-      }
-    });
 }
 
 async function failProposalPermanently(
@@ -678,8 +657,11 @@ export function extractContractData(
 async function processDownloadProposalImpl(
   ws: InternalWalletState,
   proposalId: string,
-  forceNow: boolean,
+  options: {
+    forceNow?: boolean;
+  } = {},
 ): Promise<void> {
+  const forceNow = options.forceNow ?? false;
   const proposal = await ws.db
     .mktx((x) => ({ proposals: x.proposals }))
     .runReadOnly(async (tx) => {
@@ -694,11 +676,7 @@ async function processDownloadProposalImpl(
     return;
   }
 
-  if (forceNow) {
-    await resetDownloadProposalRetry(ws, proposalId);
-  } else {
-    await incrementProposalRetry(ws, proposalId);
-  }
+  await setupProposalRetry(ws, proposalId, { reset: forceNow });
 
   const orderClaimUrl = new URL(
     `orders/${proposal.orderId}/claim`,
@@ -946,7 +924,7 @@ async function startDownloadProposal(
     proposalId: proposalId,
     proposalStatus: ProposalStatus.Downloading,
     repurchaseProposalId: undefined,
-    retryInfo: initRetryInfo(),
+    retryInfo: resetRetryInfo(),
     lastError: undefined,
     downloadSessionId: sessionId,
   };
@@ -994,7 +972,7 @@ async function storeFirstPaySuccess(
       purchase.paymentSubmitPending = false;
       purchase.lastPayError = undefined;
       purchase.lastSessionId = sessionId;
-      purchase.payRetryInfo = initRetryInfo();
+      purchase.payRetryInfo = resetRetryInfo();
       purchase.merchantPaySig = paySig;
       if (isFirst) {
         const protoAr = purchase.download.contractData.autoRefund;
@@ -1002,7 +980,7 @@ async function storeFirstPaySuccess(
           const ar = Duration.fromTalerProtocolDuration(protoAr);
           logger.info("auto_refund present");
           purchase.refundQueryRequested = true;
-          purchase.refundStatusRetryInfo = initRetryInfo();
+          purchase.refundStatusRetryInfo = resetRetryInfo();
           purchase.lastRefundStatusError = undefined;
           purchase.autoRefundDeadline = AbsoluteTime.toTimestamp(
             AbsoluteTime.addDuration(AbsoluteTime.now(), ar),
@@ -1033,7 +1011,7 @@ async function storePayReplaySuccess(
       }
       purchase.paymentSubmitPending = false;
       purchase.lastPayError = undefined;
-      purchase.payRetryInfo = initRetryInfo();
+      purchase.payRetryInfo = resetRetryInfo();
       purchase.lastSessionId = sessionId;
       await tx.purchases.put(purchase);
     });
@@ -1289,7 +1267,7 @@ export async function checkPaymentByProposalId(
         p.paymentSubmitPending = true;
         await tx.purchases.put(p);
       });
-    const r = await processPurchasePay(ws, proposalId, true);
+    const r = await processPurchasePay(ws, proposalId, { forceNow: true });
     if (r.type !== ConfirmPayResultType.Done) {
       throw Error("submitting pay failed");
     }
@@ -1466,7 +1444,7 @@ export async function confirmPay(
 
   if (existingPurchase) {
     logger.trace("confirmPay: submitting payment for existing purchase");
-    return await processPurchasePay(ws, proposalId, true);
+    return await processPurchasePay(ws, proposalId, { forceNow: true });
   }
 
   logger.trace("confirmPay: purchase record does not exist yet");
@@ -1516,18 +1494,20 @@ export async function confirmPay(
     sessionIdOverride,
   );
 
-  return await processPurchasePay(ws, proposalId, true);
+  return await processPurchasePay(ws, proposalId, { forceNow: true });
 }
 
 export async function processPurchasePay(
   ws: InternalWalletState,
   proposalId: string,
-  forceNow = false,
+  options: {
+    forceNow?: boolean;
+  } = {},
 ): Promise<ConfirmPayResult> {
   const onOpErr = (e: TalerErrorDetail): Promise<void> =>
     reportPurchasePayError(ws, proposalId, e);
   return await guardOperationException(
-    () => processPurchasePayImpl(ws, proposalId, forceNow),
+    () => processPurchasePayImpl(ws, proposalId, options),
     onOpErr,
   );
 }
@@ -1535,8 +1515,11 @@ export async function processPurchasePay(
 async function processPurchasePayImpl(
   ws: InternalWalletState,
   proposalId: string,
-  forceNow: boolean,
+  options: {
+    forceNow?: boolean;
+  } = {},
 ): Promise<ConfirmPayResult> {
+  const forceNow = options.forceNow ?? false;
   const purchase = await ws.db
     .mktx((x) => ({ purchases: x.purchases }))
     .runReadOnly(async (tx) => {
@@ -1559,11 +1542,7 @@ async function processPurchasePayImpl(
       lastError: purchase.lastPayError,
     };
   }
-  if (forceNow) {
-    await resetPurchasePayRetry(ws, proposalId);
-  } else {
-    await incrementPurchasePayRetry(ws, proposalId);
-  }
+  await setupPurchasePayRetry(ws, proposalId, { reset: forceNow });
   logger.trace(`processing purchase pay ${proposalId}`);
 
   const sessionId = purchase.lastSessionId;

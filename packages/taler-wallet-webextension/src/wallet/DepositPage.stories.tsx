@@ -20,7 +20,7 @@
  */
 
 import { Balance, parsePaytoUri } from "@gnu-taler/taler-util";
-import { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
+import type { DepositGroupFees } from "@gnu-taler/taler-wallet-core/src/operations/deposits.js";
 import { createExample } from "../test-utils.js";
 import { View as TestedComponent } from "./DepositPage.js";
 
@@ -30,7 +30,7 @@ export default {
   argTypes: {},
 };
 
-async function alwaysReturnFeeToOne(): Promise<DepositFee> {
+async function alwaysReturnFeeToOne(): Promise<DepositGroupFees> {
   const fee = {
     currency: "EUR",
     value: 1,
