@@ -14,13 +14,12 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
- /**
+/**
  *
  * @author Sebastian Javier Marchano (sebasjm)
  */
-{
-    //FIXME: check if we can remove this preset and just use default storybook presets
-    "presets": [
-      "preact-cli/babel",
-    ]
-}
+
+import * as a1 from "./Banner.stories.js";
+import * as a2 from "./PendingTransactions.stories.js";
+
+export default [a1, a2];

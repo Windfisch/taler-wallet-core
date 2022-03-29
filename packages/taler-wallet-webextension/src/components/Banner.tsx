@@ -19,7 +19,7 @@ interface Props extends JSX.HTMLAttributes<HTMLDivElement> {
   };
 }
 
-export function Banner({ title, elements, confirm, ...rest }: Props) {
+export function Banner({ title, elements, confirm, ...rest }: Props): VNode {
   return (
     <Fragment>
       <Paper elevation={0} {...rest}>

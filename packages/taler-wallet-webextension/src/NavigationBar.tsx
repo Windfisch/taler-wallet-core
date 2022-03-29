@@ -75,7 +75,6 @@ export function PopupNavBar({ path = "" }: { path?: string }): VNode {
       <a href="/backup" class={path.startsWith("/backup") ? "active" : ""}>
         <i18n.Translate>Backup</i18n.Translate>
       </a>
-      <a />
       <a href="/settings">
         <SvgIcon
           title={i18n.str`Settings`}
@@ -105,7 +104,6 @@ export function WalletNavBar({ path = "" }: { path?: string }): VNode {
           </a>
         </JustInDevMode>
 
-        <a />
         <a
           href="/settings"
           class={path.startsWith("/settings") ? "active" : ""}

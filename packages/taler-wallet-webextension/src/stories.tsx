@@ -35,8 +35,13 @@ import * as mui from "./mui/index.stories.js";
 import { PopupNavBar, WalletNavBar } from "./NavigationBar.js";
 import * as popup from "./popup/index.stories.js";
 import * as wallet from "./wallet/index.stories.js";
+import * as components from "./components/index.stories.js";
+import { strings } from "./i18n/strings.js";
 
-setupI18n("en", { en: {} });
+const url = new URL(window.location.href);
+const lang = url.searchParams.get("lang") || "en";
+
+setupI18n(lang, strings);
 
 const Page = styled.div`
   * {
@@ -107,7 +112,7 @@ function parseExampleImport(group: string, im: any): ComponentItem {
   };
 }
 
-const allExamples = Object.entries({ popup, wallet, mui }).map(
+const allExamples = Object.entries({ popup, wallet, mui, components }).map(
   ([title, value]) => ({
     title,
     list: value.default.map((s) => parseExampleImport(title, s)),

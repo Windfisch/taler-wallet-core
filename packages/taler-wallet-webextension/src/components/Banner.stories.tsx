@@ -19,18 +19,18 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { Banner } from "./Banner.js";
 import { Fragment, h, VNode } from "preact";
 import { Avatar } from "../mui/Avatar.js";
-import { Icon, SvgIcon } from "./styled/index.js";
 import { Typography } from "../mui/Typography.js";
-
+import { Banner } from "./Banner.js";
+import { SvgIcon } from "./styled/index.js";
+import wifiIcon from "../svg/wifi.svg";
 export default {
   title: "mui/banner",
   component: Banner,
 };
 
-function Wrapper({ children }: any) {
+function Wrapper({ children }: any): VNode {
   return (
     <div
       style={{
@@ -48,7 +48,7 @@ function Wrapper({ children }: any) {
   );
 }
 function SignalWifiOffIcon({ ...rest }: any): VNode {
-  return <SvgIcon {...rest} />;
+  return <SvgIcon {...rest} dangerouslySetInnerHTML={{ __html: wifiIcon }} />;
 }
 
 export const BasicExample = () => (
