@@ -222,7 +222,7 @@ async function reinitWallet(): Promise<void> {
   walletInit.resolve();
 }
 
-function parseTalerUriAndRedirect(tabId: number, talerUri: string): VNode {
+function parseTalerUriAndRedirect(tabId: number, talerUri: string): void {
   const uriType = classifyTalerUri(talerUri);
   switch (uriType) {
     case TalerUriType.TalerWithdraw:
