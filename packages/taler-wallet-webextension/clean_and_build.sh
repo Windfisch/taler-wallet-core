@@ -1,6 +1,18 @@
-#!/usr/bin/env bash
-# This file is in the public domain.
+#!/bin/bash
+
 set -e
-[ "also-wallet" == "$1" ] && { pnpm -C ../taler-wallet-core/ compile || exit 1; }
-[ "also-util" == "$1" ] && { pnpm -C ../taler-util/ prepare || exit 1; }
-pnpm clean && pnpm compile && rm -rf extension/ && ./pack.sh
+
+#rm -rf dist lib tsconfig.tsbuildinfo .linaria-cache
+
+echo typecheck and bundle...
+node build-fast-with-linaria.mjs &
+pnpm tsc --noEmit &
+wait -n
+wait -n
+
+echo testing...
+pnpm test -- -R dot
+
+echo packing...
+rm -rf extension/
+./pack.sh

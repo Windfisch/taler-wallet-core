@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 
 import linaria from '@linaria/esbuild'
 import esbuild from 'esbuild'

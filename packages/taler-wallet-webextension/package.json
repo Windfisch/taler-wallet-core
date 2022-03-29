@@ -11,7 +11,7 @@
     "clean": "rimraf dist lib tsconfig.tsbuildinfo",
     "test": "mocha --enable-source-maps 'dist/**/*.test.js'",
     "test:coverage": "nyc pnpm test",
-    "compile": "rollup -c -m",
+    "compile": "tsc && ./build-fast-with-linaria.mjs",
     "compile:test": "rollup -c rollup.config.test.js -m",
     "prepare": "rollup -c -m",
     "pretty": "prettier --write src",
