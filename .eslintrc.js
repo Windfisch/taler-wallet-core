@@ -1,12 +1,11 @@
 module.exports = {
   root: true,
   parser: "@typescript-eslint/parser",
-  plugins: ["@typescript-eslint"],
+  plugins: ["import","@typescript-eslint"],
   extends: [
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
-    "preact",
   ],
   rules: {
     "no-constant-condition": ["error", { "checkLoops": false }],
@@ -25,5 +24,6 @@ module.exports = {
       "error",
       { functions: false, classes: false },
     ],
+    "import/extensions": ["error", "ignorePackages"],
   },
 };
