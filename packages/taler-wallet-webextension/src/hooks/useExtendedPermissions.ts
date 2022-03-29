@@ -22,7 +22,7 @@ import { getReadRequestPermissions } from "../permissions.js";
 export function useExtendedPermissions(): [boolean, () => Promise<void>] {
   const [enabled, setEnabled] = useState(false);
 
-  const toggle = async () => {
+  const toggle = async (): Promise<void> => {
     return handleExtendedPerm(enabled, setEnabled)
   };
 

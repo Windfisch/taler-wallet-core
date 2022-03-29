@@ -64,7 +64,7 @@ export interface Props extends JSX.HTMLAttributes<HTMLDivElement> {
 }
 theme.breakpoints.up;
 
-function getOffset(val: number | string) {
+function getOffset(val: number | string): string | number {
   if (typeof val === "number") `${val}px`;
   return val;
 }
@@ -324,7 +324,7 @@ function relation(
   cols: Partial<ResponsiveSize>,
   values: Partial<ResponsiveSize>,
   size: ResponsiveKeys,
-) {
+): string {
   const colsNum = typeof cols === "number" ? cols : cols[size] || 12;
   return (
     String(Math.round(((values[size] || 1) / colsNum) * 10e7) / 10e5) + "%"

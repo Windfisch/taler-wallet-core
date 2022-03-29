@@ -50,7 +50,7 @@ function getPermissionsApi(): CrossBrowserPermissionsApi {
  * 
  * @param callback function to be called
  */
-function notifyWhenAppIsReady(callback: () => void) {
+function notifyWhenAppIsReady(callback: () => void): void {
   if (chrome.runtime && chrome.runtime.getManifest().manifest_version === 3) {
     callback()
   } else {
@@ -62,13 +62,13 @@ function notifyWhenAppIsReady(callback: () => void) {
 function redirectTabToWalletPage(
   tabId: number,
   page: string,
-) {
+): void {
   const url = chrome.runtime.getURL(`/static/wallet.html#${page}`);
   console.log("redirecting tabId: ", tabId, " to: ", url);
   chrome.tabs.update(tabId, { url, loadReplace: true } as any);
 }
 
 
-function useServiceWorkerAsBackgroundProcess() {
+function useServiceWorkerAsBackgroundProcess(): false {
   return false
 }

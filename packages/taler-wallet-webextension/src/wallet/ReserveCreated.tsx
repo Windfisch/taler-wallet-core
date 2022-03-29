@@ -1,10 +1,8 @@
 import {
   AmountJson,
-  parsePaytoUri,
   Amounts,
-  segwitMinAmount,
-  generateFakeSegwitAddress,
   PaytoUri,
+  segwitMinAmount,
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType.js";
@@ -58,8 +56,8 @@ export function ReserveCreated({
           </p>
           <p>
             <i18n.Translate>
-              In bitcoincore wallet use 'Add Recipient' button to add two
-              additional recipient and copy adresses and amounts
+              In bitcoincore wallet use &apos;Add Recipient&apos; button to add
+              two additional recipient and copy addresses and amounts
             </i18n.Translate>
             <ul>
               <li>
@@ -73,8 +71,8 @@ export function ReserveCreated({
               </li>
             </ul>
             <i18n.Translate>
-              In Electrum wallet paste the following three lines in 'Pay to'
-              field :
+              In Electrum wallet paste the following three lines in &apos;Pay
+              to&apos; field :
             </i18n.Translate>
             <ul>
               <li>

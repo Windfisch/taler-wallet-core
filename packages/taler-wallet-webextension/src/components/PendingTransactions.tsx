@@ -4,20 +4,19 @@ import {
   NotificationType,
   Transaction,
 } from "@gnu-taler/taler-util";
-import { PendingTaskInfo } from "@gnu-taler/taler-wallet-core";
-import { Fragment, h, JSX } from "preact";
+import { Fragment, h, JSX, VNode } from "preact";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { Avatar } from "../mui/Avatar.js";
 import { Typography } from "../mui/Typography.js";
+import * as wxApi from "../wxApi.js";
 import Banner from "./Banner.js";
 import { Time } from "./Time.js";
-import * as wxApi from "../wxApi.js";
 
 interface Props extends JSX.HTMLAttributes {
   goToTransaction: (id: string) => void;
 }
 
-export function PendingTransactions({ goToTransaction }: Props) {
+export function PendingTransactions({ goToTransaction }: Props): VNode {
   const state = useAsyncAsHook(wxApi.getTransactions, [
     NotificationType.WithdrawGroupFinished,
   ]);
@@ -43,7 +42,7 @@ export function PendingTransactionsView({
 }: {
   goToTransaction: (id: string) => void;
   transactions: Transaction[];
-}) {
+}): VNode {
   return (
     <Banner
       title="PENDING OPERATIONS"

@@ -33,7 +33,6 @@ import {
   NotificationType,
   PreparePayResult,
   PreparePayResultType,
-  Translate,
 } from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";

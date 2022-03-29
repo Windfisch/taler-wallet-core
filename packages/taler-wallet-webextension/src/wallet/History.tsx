@@ -26,13 +26,11 @@ import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import {
   ButtonBoxPrimary,
-  ButtonBoxWarning,
   ButtonPrimary,
   CenteredBoldText,
   CenteredText,
   DateSeparator,
   NiceSelect,
-  WarningBox,
 } from "../components/styled/index.js";
 import { Time } from "../components/Time.js";
 import { TransactionItem } from "../components/TransactionItem.js";

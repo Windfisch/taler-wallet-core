@@ -14,10 +14,10 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { h } from "preact";
+import { h, VNode } from "preact";
 import logo from "../svg/logo-2021.svg";
 
-export function LogoHeader() {
+export function LogoHeader(): VNode {
   return (
     <div
       style={{

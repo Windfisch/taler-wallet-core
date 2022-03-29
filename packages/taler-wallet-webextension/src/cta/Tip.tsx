@@ -101,7 +101,7 @@ export function TipPage({ talerTipUri }: Props): VNode {
     doFetch();
   }, [talerTipUri, updateCounter]);
 
-  const doAccept = async () => {
+  const doAccept = async (): Promise<void> => {
     if (!prepareTipResult) {
       return;
     }
@@ -109,7 +109,7 @@ export function TipPage({ talerTipUri }: Props): VNode {
     setUpdateCounter(updateCounter + 1);
   };
 
-  const doIgnore = () => {
+  const doIgnore = (): void => {
     setTipIgnored(true);
   };
 
@@ -124,7 +124,7 @@ export function TipPage({ talerTipUri }: Props): VNode {
   if (tipIgnored) {
     return (
       <span>
-        <i18n.Translate>You've ignored the tip.</i18n.Translate>
+        <i18n.Translate>You&apos;ve ignored the tip.</i18n.Translate>
       </span>
     );
   }

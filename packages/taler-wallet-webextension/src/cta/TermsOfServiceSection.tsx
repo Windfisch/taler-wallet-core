@@ -37,7 +37,7 @@ export function TermsOfServiceSection({
               <section>
                 <WarningText>
                   <i18n.Translate>
-                    Exchange doesn't have terms of service
+                    Exchange doesn&apos;t have terms of service
                   </i18n.Translate>
                 </WarningText>
               </section>
@@ -51,7 +51,7 @@ export function TermsOfServiceSection({
             <section>
               <WarningText>
                 <i18n.Translate>
-                  Exchange doesn't have terms of service
+                  Exchange doesn&apos;t have terms of service
                 </i18n.Translate>
               </WarningText>
             </section>

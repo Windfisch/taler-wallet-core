@@ -1,14 +1,15 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { css } from "@linaria/core";
 import { darken, lighten } from "polished";
 import {
-  common,
-  purple,
-  red,
-  orange,
   blue,
-  lightBlue,
+  common,
   green,
   grey,
+  lightBlue,
+  orange,
+  purple,
+  red,
   // eslint-disable-next-line import/extensions
 } from "./colors/constants";
 // eslint-disable-next-line import/extensions
@@ -430,20 +431,20 @@ function createTheme() {
   /////////////////////
   ///////////////////// MIXINS
   /////////////////////
-  function createMixins(breakpoints: any, spacing: any, mixins: any) {
-    return {
-      toolbar: {
-        minHeight: 56,
-        [`${breakpoints.up("xs")} and (orientation: landscape)`]: {
-          minHeight: 48,
-        },
-        [breakpoints.up("sm")]: {
-          minHeight: 64,
-        },
-      },
-      ...mixins,
-    };
-  }
+  // function createMixins(breakpoints: any, spacing: any, mixins: any) {
+  //   return {
+  //     toolbar: {
+  //       minHeight: 56,
+  //       [`${breakpoints.up("xs")} and (orientation: landscape)`]: {
+  //         minHeight: 48,
+  //       },
+  //       [breakpoints.up("sm")]: {
+  //         minHeight: 64,
+  //       },
+  //     },
+  //     ...mixins,
+  //   };
+  // }
 
   /////////////////////
   ///////////////////// TRANSITION

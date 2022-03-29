@@ -1,5 +1,5 @@
 import { css } from "@linaria/core";
-import { ComponentChildren, h } from "preact";
+import { ComponentChildren, h, VNode } from "preact";
 // eslint-disable-next-line import/extensions
 import { Colors, theme } from "../style";
 import { useFormControl } from "./FormControl.js";
@@ -41,7 +41,7 @@ export function FormLabel({
   class: _class,
   children,
   ...rest
-}: Props) {
+}: Props): VNode {
   const fcs = useFormControl({
     disabled,
     error,

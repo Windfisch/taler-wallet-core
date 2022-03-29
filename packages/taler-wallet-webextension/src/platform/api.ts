@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { CoreApiResponse, NotificationType, TalerUriType } from "@gnu-taler/taler-util";
+import { CoreApiResponse, NotificationType } from "@gnu-taler/taler-util";
 
 export interface Permissions {
   /**
@@ -186,6 +186,6 @@ export interface PlatformAPI {
 }
 
 export let platform: PlatformAPI = undefined as any;
-export function setupPlatform(impl: PlatformAPI) {
+export function setupPlatform(impl: PlatformAPI): void {
   platform = impl;
 }

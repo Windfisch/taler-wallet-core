@@ -113,7 +113,7 @@ export function mountHook<T>(callback: () => T, Context?: ({ children }: { child
   renderIntoDom(vdom, parentElement);
 
   // clean up callback
-  function unmount() {
+  function unmount(): void {
     if (!isNode) {
       document.body.removeChild(parentElement);
     }

@@ -21,7 +21,7 @@
  */
 
 import { setupI18n } from "@gnu-taler/taler-util";
-import { Fragment, h, render } from "preact";
+import { h, render } from "preact";
 import { strings } from "./i18n/strings.js";
 import { setupPlatform } from "./platform/api.js";
 import chromeAPI from "./platform/chrome.js";

@@ -20,7 +20,7 @@
  */
 
 import { styled } from "@linaria/react";
-import { Fragment, h } from "preact";
+import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { TextField, Props } from "./TextField.js";
 
@@ -37,7 +37,7 @@ const Container = styled.div`
   }
 `;
 
-const BasicExample = (variant: Props["variant"]) => {
+const BasicExample = (variant: Props["variant"]): VNode => {
   const [value, onChange] = useState("");
   return (
     <Container>
@@ -80,11 +80,11 @@ const BasicExample = (variant: Props["variant"]) => {
   );
 };
 
-export const Standard = () => BasicExample("standard");
-export const Filled = () => BasicExample("filled");
-export const Outlined = () => BasicExample("outlined");
+export const Standard = (): VNode => BasicExample("standard");
+export const Filled = (): VNode => BasicExample("filled");
+export const Outlined = (): VNode => BasicExample("outlined");
 
-export const Color = () => (
+export const Color = (): VNode => (
   <Container>
     <TextField
       variant="standard"

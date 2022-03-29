@@ -33,7 +33,6 @@ import {
   LightText,
   LinkPrimary,
   SubTitle,
-  Title,
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
 import { Pages } from "../NavigationBar.js";
@@ -232,7 +231,9 @@ export function CreateManualWithdraw({
       <section>
         {error && (
           <ErrorMessage
-            title={<i18n.Translate>Can't create the reserve</i18n.Translate>}
+            title={
+              <i18n.Translate>Can&apos;t create the reserve</i18n.Translate>
+            }
             description={error}
           />
         )}

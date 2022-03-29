@@ -14,7 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
 */
 
-import { AbsoluteTime, Translate } from "@gnu-taler/taler-util";
+import { AbsoluteTime } from "@gnu-taler/taler-util";
 import {
   ProviderInfo,
   ProviderPaymentPaid,
@@ -242,7 +242,7 @@ function daysUntil(d: AbsoluteTime): string {
   return `${str}`;
 }
 
-function getStatusTypeOrder(t: ProviderPaymentStatus) {
+function getStatusTypeOrder(t: ProviderPaymentStatus): number {
   return [
     ProviderPaymentType.InsufficientBalance,
     ProviderPaymentType.TermsChanged,
@@ -252,7 +252,10 @@ function getStatusTypeOrder(t: ProviderPaymentStatus) {
   ].indexOf(t.type);
 }
 
-function getStatusPaidOrder(a: ProviderPaymentPaid, b: ProviderPaymentPaid) {
+function getStatusPaidOrder(
+  a: ProviderPaymentPaid,
+  b: ProviderPaymentPaid,
+): number {
   return a.paidUntil.t_ms === "never"
     ? -1
     : b.paidUntil.t_ms === "never"

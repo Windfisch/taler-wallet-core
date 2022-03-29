@@ -99,7 +99,7 @@ function getPermissionsApi(): CrossBrowserPermissionsApi {
  * 
  * @param callback function to be called
  */
-function notifyWhenAppIsReady(callback: () => void) {
+function notifyWhenAppIsReady(callback: () => void): void {
   if (chrome.runtime && chrome.runtime.getManifest().manifest_version === 3) {
     callback()
   } else {
@@ -108,7 +108,7 @@ function notifyWhenAppIsReady(callback: () => void) {
 }
 
 
-function openWalletURIFromPopup(talerUri: string) {
+function openWalletURIFromPopup(talerUri: string): void {
   const uriType = classifyTalerUri(talerUri);
 
   let url: string | undefined = undefined;
@@ -138,14 +138,14 @@ function openWalletURIFromPopup(talerUri: string) {
   );
 }
 
-function openWalletPage(page: string) {
+function openWalletPage(page: string): void {
   const url = chrome.runtime.getURL(`/static/wallet.html#${page}`)
   chrome.tabs.create(
     { active: true, url, },
   );
 }
 
-function openWalletPageFromPopup(page: string) {
+function openWalletPageFromPopup(page: string): void {
   const url = chrome.runtime.getURL(`/static/wallet.html#${page}`)
   chrome.tabs.create(
     { active: true, url, },
@@ -167,12 +167,12 @@ async function sendMessageToWalletBackground(operation: string, payload: any): P
 }
 
 let notificationPort: chrome.runtime.Port | undefined;
-function listenToWalletBackground(listener: (m: any) => void) {
+function listenToWalletBackground(listener: (m: any) => void): () => void {
   if (notificationPort === undefined) {
     notificationPort = chrome.runtime.connect({ name: "notifications" })
   }
   notificationPort.onMessage.addListener(listener)
-  function removeListener() {
+  function removeListener(): void {
     if (notificationPort !== undefined) {
       notificationPort.onMessage.removeListener(listener)
     }
@@ -183,7 +183,7 @@ function listenToWalletBackground(listener: (m: any) => void) {
 
 const allPorts: chrome.runtime.Port[] = [];
 
-function sendMessageToAllChannels(message: MessageFromBackend) {
+function sendMessageToAllChannels(message: MessageFromBackend): void {
   for (const notif of allPorts) {
     // const message: MessageFromBackend = { type: msg.type };
     try {
@@ -194,7 +194,7 @@ function sendMessageToAllChannels(message: MessageFromBackend) {
   }
 }
 
-function registerAllIncomingConnections() {
+function registerAllIncomingConnections(): void {
   chrome.runtime.onConnect.addListener((port) => {
     allPorts.push(port);
     port.onDisconnect.addListener((discoPort) => {
@@ -206,7 +206,7 @@ function registerAllIncomingConnections() {
   });
 }
 
-function listenToAllChannels(cb: (message: any, sender: any, callback: (r: CoreApiResponse) => void) => void) {
+function listenToAllChannels(cb: (message: any, sender: any, callback: (r: CoreApiResponse) => void) => void): void {
   chrome.runtime.onMessage.addListener((m, s, c) => {
     cb(m, s, c)
 
@@ -215,7 +215,7 @@ function listenToAllChannels(cb: (message: any, sender: any, callback: (r: CoreA
   });
 }
 
-function registerReloadOnNewVersion() {
+function registerReloadOnNewVersion(): void {
   // Explicitly unload the extension page as soon as an update is available,
   // so the update gets installed as soon as possible.
   chrome.runtime.onUpdateAvailable.addListener((details) => {
@@ -228,7 +228,7 @@ function registerReloadOnNewVersion() {
 function redirectTabToWalletPage(
   tabId: number,
   page: string,
-) {
+): void {
   const url = chrome.runtime.getURL(`/static/wallet.html#${page}`);
   console.log("redirecting tabId: ", tabId, " to: ", url);
   chrome.tabs.update(tabId, { url });
@@ -250,7 +250,7 @@ function registerTalerHeaderListener(callback: (tabId: number, url: string) => v
 
   function headerListener(
     details: chrome.webRequest.WebResponseHeadersDetails,
-  ) {
+  ): void {
     if (chrome.runtime.lastError) {
       console.error(JSON.stringify(chrome.runtime.lastError));
       return;
@@ -299,7 +299,7 @@ function registerTalerHeaderListener(callback: (tabId: number, url: string) => v
   });
 }
 
-function registerOnInstalled(callback: () => void) {
+function registerOnInstalled(callback: () => void): void {
   // This needs to be outside of main, as Firefox won't fire the event if
   // the listener isn't created synchronously on loading the backend.
   chrome.runtime.onInstalled.addListener((details) => {
@@ -310,7 +310,7 @@ function registerOnInstalled(callback: () => void) {
   });
 }
 
-function useServiceWorkerAsBackgroundProcess() {
+function useServiceWorkerAsBackgroundProcess(): boolean {
   return chrome.runtime.getManifest().manifest_version === 3
 }
 
@@ -323,9 +323,9 @@ function searchForTalerLinks(): string | undefined {
   return undefined
 }
 
-async function getCurrentTab() {
-  let queryOptions = { active: true, currentWindow: true };
-  let [tab] = await chrome.tabs.query(queryOptions);
+async function getCurrentTab(): Promise<chrome.tabs.Tab> {
+  const queryOptions = { active: true, currentWindow: true };
+  const [tab] = await chrome.tabs.query(queryOptions);
   return tab;
 }
 

@@ -19,13 +19,11 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
+import { i18n, setupI18n } from "@gnu-taler/taler-util";
 import { createContext, h, VNode } from "preact";
 import { useContext, useEffect } from "preact/hooks";
 import { useLang } from "../hooks/useLang.js";
-//@ts-ignore: type declaration
-import * as jedLib from "jed";
 import { strings } from "../i18n/strings.js";
-import { setupI18n, i18n } from "@gnu-taler/taler-util";
 
 interface Type {
   lang: string;

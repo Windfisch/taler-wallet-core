@@ -155,13 +155,19 @@ function findByGroupComponentName(
 }
 
 function getContentForExample(item: ExampleItem | undefined): () => VNode {
-  if (!item) return () => <div>select example from the list on the left</div>;
+  if (!item)
+    return function SelectExampleMessage() {
+      return <div>select example from the list on the left</div>;
+    };
   const example = findByGroupComponentName(
     item.group,
     item.component,
     item.name,
   );
-  if (!example) return () => <div>example not found</div>;
+  if (!example)
+    return function ExampleNotFoundMessage() {
+      return <div>example not found</div>;
+    };
   return () => example.render(example.render.args);
 }
 
@@ -181,14 +187,14 @@ function ExampleList({
       <div onClick={() => setOpen(!open)}>{name}</div>
       {open &&
         list.map((k) => (
-          <li>
+          <li key={k.name}>
             <dl>
               <dt>{k.name}</dt>
               {k.examples.map((r) => {
                 const e = encodeURIComponent;
                 const eId = `${e(r.group)}-${e(r.component)}-${e(r.name)}`;
                 return (
-                  <dd id={eId}>
+                  <dd id={eId} key={r.name}>
                     <a href={`#${eId}`}>{r.name}</a>
                   </dd>
                 );
@@ -203,20 +209,24 @@ function ExampleList({
 function getWrapperForGroup(group: string): FunctionComponent {
   switch (group) {
     case "popup":
-      return ({ children }: any) => (
-        <Fragment>
-          <PopupNavBar />
-          <PopupBox>{children}</PopupBox>
-        </Fragment>
-      );
+      return function PopupWrapper({ children }: any) {
+        return (
+          <Fragment>
+            <PopupNavBar />
+            <PopupBox>{children}</PopupBox>
+          </Fragment>
+        );
+      };
     case "wallet":
-      return ({ children }: any) => (
-        <Fragment>
-          <LogoHeader />
-          <WalletNavBar />
-          <WalletBox>{children}</WalletBox>
-        </Fragment>
-      );
+      return function WalletWrapper({ children }: any) {
+        return (
+          <Fragment>
+            <LogoHeader />
+            <WalletNavBar />
+            <WalletBox>{children}</WalletBox>
+          </Fragment>
+        );
+      };
     default:
       return Fragment;
   }
@@ -295,7 +305,7 @@ function Application(): VNode {
     <Page>
       <SideBar>
         {allExamples.map((e) => (
-          <ExampleList name={e.title} list={e.list} />
+          <ExampleList key={e.title} name={e.title} list={e.list} />
         ))}
         <hr />
       </SideBar>

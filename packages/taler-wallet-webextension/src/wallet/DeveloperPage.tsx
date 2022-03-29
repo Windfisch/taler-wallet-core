@@ -57,8 +57,6 @@ export function DeveloperPage(): VNode {
       ? nonResponse
       : response.response;
 
-  const balanceResponse = useAsyncAsHook(wxApi.getBalance);
-
   return (
     <View
       status={status}
@@ -213,7 +211,7 @@ export function View({
       <p>
         <i18n.Translate>Coins</i18n.Translate>:
       </p>
-      {Object.keys(money_by_exchange).map((ex) => {
+      {Object.keys(money_by_exchange).map((ex, idx) => {
         const allcoins = money_by_exchange[ex];
         allcoins.sort((a, b) => {
           return b.denom_value - a.denom_value;
@@ -231,7 +229,14 @@ export function View({
           } as SplitedCoinInfo,
         );
 
-        return <ShowAllCoins coins={coins} ex={ex} currencies={currencies} />;
+        return (
+          <ShowAllCoins
+            key={idx}
+            coins={coins}
+            ex={ex}
+            currencies={currencies}
+          />
+        );
       })}
       <br />
       <Diagnostics diagnostics={status} timedOut={timedOut} />
@@ -272,7 +277,7 @@ function ShowAllCoins({
   ex: string;
   coins: SplitedCoinInfo;
   currencies: { [ex: string]: string };
-}) {
+}): VNode {
   const { i18n } = useTranslationContext();
   const [collapsedSpent, setCollapsedSpent] = useState(true);
   const [collapsedUnspent, setCollapsedUnspent] = useState(false);
@@ -308,9 +313,9 @@ function ShowAllCoins({
               <i18n.Translate>from refresh?</i18n.Translate>
             </td>
           </tr>
-          {coins.usable.map((c) => {
+          {coins.usable.map((c, idx) => {
             return (
-              <tr>
+              <tr key={idx}>
                 <td>{c.id.substring(0, 5)}</td>
                 <td>{c.denom_value}</td>
                 <td>{c.remain_value}</td>
@@ -347,9 +352,9 @@ function ShowAllCoins({
               <i18n.Translate>from refresh?</i18n.Translate>
             </td>
           </tr>
-          {coins.spent.map((c) => {
+          {coins.spent.map((c, idx) => {
             return (
-              <tr>
+              <tr key={idx}>
                 <td>{c.id.substring(0, 5)}</td>
                 <td>{c.denom_value}</td>
                 <td>{c.remain_value}</td>

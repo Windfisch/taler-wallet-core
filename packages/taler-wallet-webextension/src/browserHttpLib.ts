@@ -45,7 +45,7 @@ export class BrowserHttpLib implements HttpRequestLibrary {
     options?: HttpRequestOptions,
   ): Promise<HttpResponse> {
     const requestMethod = options?.method ?? "GET";
-    let requestBody = options?.body;
+    const requestBody = options?.body;
 
     if (this.throttlingEnabled && this.throttle.applyThrottle(requestUrl)) {
       const parsedUrl = new URL(requestUrl);

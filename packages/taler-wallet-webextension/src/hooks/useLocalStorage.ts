@@ -35,7 +35,7 @@ export function useLocalStorage(
 
   const setValue = (
     value?: string | ((val?: string) => string | undefined),
-  ) => {
+  ): void => {
     setStoredValue((p) => {
       const toStore = value instanceof Function ? value(p) : value;
       if (typeof window !== "undefined") {
@@ -63,7 +63,7 @@ export function useNotNullLocalStorage(
       : initialValue;
   });
 
-  const setValue = (value: string | ((val: string) => string)) => {
+  const setValue = (value: string | ((val: string) => string)): void => {
     const valueToStore = value instanceof Function ? value(storedValue) : value;
     setStoredValue(valueToStore);
     if (typeof window !== "undefined") {

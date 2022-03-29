@@ -14,7 +14,8 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-export const getReadRequestPermissions = () => ({
+const perms = {
   permissions: ["webRequest", "webRequestBlocking"],
   origins: ["http://*/*", "https://*/*"],
-})
+}
+export const getReadRequestPermissions = (): typeof perms => perms

@@ -1,5 +1,5 @@
 import { css } from "@linaria/core";
-import { ComponentChildren, h } from "preact";
+import { ComponentChildren, h, VNode } from "preact";
 // eslint-disable-next-line import/extensions
 import { Colors, theme } from "../style";
 import { useFormControl } from "./FormControl.js";
@@ -83,7 +83,7 @@ interface InputLabelProps {
   variant: "filled" | "outlined" | "standard";
   children: ComponentChildren;
 }
-export function InputLabel(props: Partial<InputLabelProps>) {
+export function InputLabel(props: Partial<InputLabelProps>): VNode {
   const fcs = useFormControl(props);
   return (
     <FormLabel

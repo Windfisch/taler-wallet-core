@@ -19,16 +19,15 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
+import { h, VNode } from "preact";
 import { Paper } from "./Paper.js";
-import { createExample } from "../test-utils.js";
-import { h } from "preact";
 
 export default {
   title: "mui/paper",
   component: Paper,
 };
 
-export const BasicExample = () => (
+export const BasicExample = (): VNode => (
   <div
     style={{
       display: "flex",
@@ -54,7 +53,7 @@ export const BasicExample = () => (
   </div>
 );
 
-export const Outlined = () => (
+export const Outlined = (): VNode => (
   <div
     style={{
       display: "flex",
@@ -92,7 +91,7 @@ export const Outlined = () => (
   </div>
 );
 
-export const Elevation = () => (
+export const Elevation = (): VNode => (
   <div
     style={{
       display: "flex",
@@ -119,7 +118,7 @@ export const Elevation = () => (
   </div>
 );
 
-export const ElevationDark = () => (
+export const ElevationDark = (): VNode => (
   <div
     class="theme-dark"
     style={{

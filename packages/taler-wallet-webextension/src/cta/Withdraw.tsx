@@ -104,7 +104,7 @@ export function View({
       {},
     );
 
-  async function doWithdrawAndCheckError() {
+  async function doWithdrawAndCheckError(): Promise<void> {
     try {
       setConfirmDisabled(true);
       await onWithdraw();

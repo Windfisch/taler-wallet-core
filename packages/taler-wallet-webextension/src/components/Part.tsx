@@ -13,9 +13,8 @@
  You should have received a copy of the GNU General Public License along with
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-import { AmountLike } from "@gnu-taler/taler-util";
-import { ExtraLargeText, LargeText, SmallLightText } from "./styled/index.js";
 import { h, VNode } from "preact";
+import { ExtraLargeText, LargeText, SmallLightText } from "./styled/index.js";
 
 export type Kind = "positive" | "negative" | "neutral";
 interface Props {
@@ -24,7 +23,7 @@ interface Props {
   kind: Kind;
   big?: boolean;
 }
-export function Part({ text, title, kind, big }: Props) {
+export function Part({ text, title, kind, big }: Props): VNode {
   const Text = big ? ExtraLargeText : LargeText;
   return (
     <div style={{ margin: "1em" }}>

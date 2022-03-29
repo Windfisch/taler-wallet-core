@@ -33,7 +33,7 @@ export function useTalerActionURL(): [
       setTalerActionUrl(talerUri);
     }
     check();
-  }, []);
+  });
   const url = dismissed ? undefined : talerActionUrl;
   return [url, setDismissed];
 }

@@ -142,7 +142,7 @@ export function hslToRgb(color: string): string {
   const s = values[1] / 100;
   const l = values[2] / 100;
   const a = s * Math.min(l, 1 - l);
-  const f = (n: number, k = (n + h / 30) % 12) => l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+  const f = (n: number, k = (n + h / 30) % 12): number => l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
 
   if (colorObj.type === 'hsla') {
     return recomposeColor({

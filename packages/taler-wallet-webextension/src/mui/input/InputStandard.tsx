@@ -107,7 +107,7 @@ const underlineStyle = css`
   }
 `;
 
-function Root({ disabled, focused, error, children }: any) {
+function Root({ disabled, focused, error, children }: any): VNode {
   return (
     <InputBaseRoot
       disabled={disabled}
@@ -120,6 +120,6 @@ function Root({ disabled, focused, error, children }: any) {
   );
 }
 
-function Input(props: any) {
+function Input(props: any): VNode {
   return <InputBaseComponent {...props} />;
 }

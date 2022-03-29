@@ -19,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { AbsoluteTime, TalerProtocolTimestamp } from "@gnu-taler/taler-util";
+import { TalerProtocolTimestamp } from "@gnu-taler/taler-util";
 import { createExample } from "../test-utils.js";
 import { View as TestedComponent } from "./Tip.js";
 

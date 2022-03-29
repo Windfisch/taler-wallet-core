@@ -14,12 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import {
-  Amounts,
-  Balance,
-  NotificationType,
-  Transaction,
-} from "@gnu-taler/taler-util";
+import { Amounts, Balance, NotificationType } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { BalanceTable } from "../components/BalanceTable.js";

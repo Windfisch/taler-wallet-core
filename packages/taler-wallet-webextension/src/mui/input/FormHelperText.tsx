@@ -1,5 +1,5 @@
 import { css } from "@linaria/core";
-import { ComponentChildren, h } from "preact";
+import { ComponentChildren, h, VNode } from "preact";
 // eslint-disable-next-line import/extensions
 import { theme } from "../style";
 import { useFormControl } from "./FormControl.js";
@@ -35,7 +35,7 @@ interface Props {
   required?: boolean;
   children: ComponentChildren;
 }
-export function FormHelperText({ children, ...props }: Props) {
+export function FormHelperText({ children, ...props }: Props): VNode {
   const fcs = useFormControl(props);
   const contained = fcs.variant === "filled" || fcs.variant === "outlined";
   return (

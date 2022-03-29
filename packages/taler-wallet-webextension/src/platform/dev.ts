@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { classifyTalerUri, CoreApiResponse, TalerUriType } from "@gnu-taler/taler-util";
+import { CoreApiResponse } from "@gnu-taler/taler-util";
 import { MessageFromBackend, PlatformAPI } from "./api.js";
 
 const frames = ["popup", "wallet"]
@@ -30,7 +30,7 @@ const api: PlatformAPI = ({
   }),
   notifyWhenAppIsReady: (fn: () => void) => {
     let total = frames.length
-    function waitAndNotify() {
+    function waitAndNotify(): void {
       total--
       if (total < 1) {
         console.log('done')
@@ -96,7 +96,7 @@ const api: PlatformAPI = ({
     })
   },
   listenToWalletBackground: (onNewMessage: (m: MessageFromBackend) => void) => {
-    function listener(event: MessageEvent<IframeMessageType>) {
+    function listener(event: MessageEvent<IframeMessageType>): void {
       if (event.data.type !== 'notification') return
       onNewMessage(event.data.body)
     }
@@ -115,7 +115,7 @@ const api: PlatformAPI = ({
     window.parent.postMessage(message)
 
     return new Promise((res, rej) => {
-      function listener(event: MessageEvent<IframeMessageType>) {
+      function listener(event: MessageEvent<IframeMessageType>): void {
         if (event.data.type !== "response" || event.data.header.responseId !== replyMe) {
           return
         }

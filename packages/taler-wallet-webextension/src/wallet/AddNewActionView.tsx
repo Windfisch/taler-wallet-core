@@ -18,7 +18,7 @@ export function AddNewActionView({ onCancel }: Props): VNode {
   const uriType = classifyTalerUri(url);
   const { i18n } = useTranslationContext();
 
-  function redirectToWallet() {
+  function redirectToWallet(): void {
     platform.openWalletURIFromPopup(url);
   }
 

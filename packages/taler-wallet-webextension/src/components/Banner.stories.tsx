@@ -51,7 +51,7 @@ function SignalWifiOffIcon({ ...rest }: any): VNode {
   return <SvgIcon {...rest} dangerouslySetInnerHTML={{ __html: wifiIcon }} />;
 }
 
-export const BasicExample = () => (
+export const BasicExample = (): VNode => (
   <Fragment>
     <Wrapper>
       <p>
@@ -86,7 +86,7 @@ export const BasicExample = () => (
   </Fragment>
 );
 
-export const PendingOperation = () => (
+export const PendingOperation = (): VNode => (
   <Fragment>
     <Wrapper>
       <Banner

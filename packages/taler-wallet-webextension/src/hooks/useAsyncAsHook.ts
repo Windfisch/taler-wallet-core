@@ -14,9 +14,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 import {
-  NotificationType,
-  TalerErrorCode,
-  TalerErrorDetail,
+  NotificationType, TalerErrorDetail
 } from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useState } from "preact/hooks";
@@ -50,7 +48,7 @@ export function useAsyncAsHook<T>(
 ): HookResponse<T> {
   const [result, setHookResponse] = useState<HookResponse<T>>(undefined);
   useEffect(() => {
-    async function doAsync() {
+    async function doAsync(): Promise<void> {
       try {
         const response = await fn();
         setHookResponse({ hasError: false, response });
@@ -76,6 +74,6 @@ export function useAsyncAsHook<T>(
         doAsync();
       });
     }
-  }, []);
+  });
   return result;
 }

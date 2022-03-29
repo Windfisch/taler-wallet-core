@@ -18,7 +18,6 @@ import {
   Amounts,
   BackupBackupProviderTerms,
   canonicalizeBaseUrl,
-  Translate,
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
@@ -91,7 +90,7 @@ export function SetUrlView({
   onVerify,
   onConfirm,
   withError,
-}: SetUrlViewProps) {
+}: SetUrlViewProps): VNode {
   const { i18n } = useTranslationContext();
   const [value, setValue] = useState<string>(initialValue || "");
   const [urlError, setUrlError] = useState(false);
@@ -191,7 +190,7 @@ export function ConfirmProviderView({
   provider,
   onCancel,
   onConfirm,
-}: ConfirmProviderViewProps) {
+}: ConfirmProviderViewProps): VNode {
   const [accepted, setAccepted] = useState(false);
   const { i18n } = useTranslationContext();
 
@@ -203,13 +202,13 @@ export function ConfirmProviderView({
         </Title>
         <div>
           <i18n.Translate>Provider URL</i18n.Translate>:{" "}
-          <a href={url} target="_blank">
+          <a href={url} target="_blank" rel="noreferrer">
             {url}
           </a>
         </div>
         <SmallLightText>
           <i18n.Translate>
-            Please review and accept this provider's terms of service
+            Please review and accept this provider&apos;s terms of service
           </i18n.Translate>
         </SmallLightText>
         <SubTitle>

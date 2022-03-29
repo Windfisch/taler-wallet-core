@@ -23,7 +23,6 @@
 import { WalletDiagnostics } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { Checkbox } from "../components/Checkbox.js";
-import { Diagnostics } from "../components/Diagnostics.js";
 import { SubTitle, Title } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useDiagnostics } from "../hooks/useDiagnostics.js";

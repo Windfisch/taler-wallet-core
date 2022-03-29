@@ -20,7 +20,7 @@
  */
 
 import { classifyTalerUri, TalerUriType } from "@gnu-taler/taler-util";
-import { Fragment, h } from "preact";
+import { Fragment, h, VNode } from "preact";
 import { platform } from "../platform/api.js";
 import {
   ButtonPrimary,
@@ -34,10 +34,10 @@ export interface Props {
   onDismiss: () => void;
 }
 
-export function TalerActionFound({ url, onDismiss }: Props) {
+export function TalerActionFound({ url, onDismiss }: Props): VNode {
   const uriType = classifyTalerUri(url);
   const { i18n } = useTranslationContext();
-  function redirectToWallet() {
+  function redirectToWallet(): void {
     platform.openWalletURIFromPopup(url);
   }
   return (

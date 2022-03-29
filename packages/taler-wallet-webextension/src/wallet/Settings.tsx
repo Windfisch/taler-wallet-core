@@ -32,7 +32,6 @@ import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { useBackupDeviceName } from "../hooks/useBackupDeviceName.js";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions.js";
-import { useLang } from "../hooks/useLang.js";
 import { Pages } from "../NavigationBar.js";
 import { buildTermsOfServiceStatus } from "../utils/index.js";
 import * as wxApi from "../wxApi.js";

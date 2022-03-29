@@ -20,7 +20,7 @@
  */
 
 import { Button } from "./Button.js";
-import { Fragment, h } from "preact";
+import { Fragment, h, VNode } from "preact";
 import DeleteIcon from "../svg/delete_24px.svg";
 import SendIcon from "../svg/send_24px.svg";
 import { styled } from "@linaria/react";
@@ -35,7 +35,7 @@ const Stack = styled.div`
   flex-direction: column;
 `;
 
-export const BasicExample = () => (
+export const BasicExample = (): VNode => (
   <Fragment>
     <Stack>
       <Button size="small" variant="text">
@@ -67,7 +67,7 @@ export const BasicExample = () => (
   </Fragment>
 );
 
-export const Others = () => (
+export const Others = (): VNode => (
   <Fragment>
     <p>colors</p>
     <Stack>
@@ -94,7 +94,7 @@ export const Others = () => (
   </Fragment>
 );
 
-export const WithIcons = () => (
+export const WithIcons = (): VNode => (
   <Fragment>
     <Stack>
       <Button variant="outlined" size="small" startIcon={DeleteIcon}>

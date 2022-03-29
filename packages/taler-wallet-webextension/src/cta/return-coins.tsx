@@ -25,7 +25,7 @@ import { useTranslationContext } from "../context/translation.js";
 /**
  * Imports.
  */
-export function createReturnCoinsPage(): VNode {
+export function CreateReturnCoinsPage(): VNode {
   const { i18n } = useTranslationContext();
   return (
     <span>

@@ -1,5 +1,5 @@
 import { css } from "@linaria/core";
-import { h, JSX } from "preact";
+import { h, JSX, VNode } from "preact";
 import { useLayoutEffect } from "preact/hooks";
 // eslint-disable-next-line import/extensions
 import { theme } from "../style";
@@ -33,7 +33,7 @@ export function InputBaseRoot({
   focused,
   fullWidth,
   children,
-}: any) {
+}: any): VNode {
   const fcs = useFormControl({});
   return (
     <div
@@ -129,7 +129,7 @@ export function InputBaseComponent({
   multiline,
   type,
   ...props
-}: any) {
+}: any): VNode {
   return (
     <input
       disabled={disabled}
@@ -160,7 +160,7 @@ export function InputBase({
   value,
   onClick,
   ...props
-}: any) {
+}: any): VNode {
   const fcs = useFormControl(props);
   // const [focused, setFocused] = useState(false);
   useLayoutEffect(() => {
@@ -171,7 +171,7 @@ export function InputBase({
     }
   }, [value]);
 
-  const handleFocus = (event: JSX.TargetedFocusEvent<EventTarget>) => {
+  const handleFocus = (event: JSX.TargetedFocusEvent<EventTarget>): void => {
     // Fix a bug with IE11 where the focus/blur events are triggered
     // while the component is disabled.
     if (fcs.disabled) {
@@ -189,7 +189,7 @@ export function InputBase({
     fcs.onFocus();
   };
 
-  const handleBlur = () => {
+  const handleBlur = (): void => {
     // if (onBlur) {
     //   onBlur(event);
     // }
@@ -202,7 +202,7 @@ export function InputBase({
 
   const handleChange = (
     event: JSX.TargetedEvent<HTMLElement & { value?: string }>,
-  ) => {
+  ): void => {
     // if (inputPropsProp.onChange) {
     //   inputPropsProp.onChange(event, ...args);
     // }
@@ -215,7 +215,7 @@ export function InputBase({
 
   const handleClick = (
     event: JSX.TargetedMouseEvent<HTMLElement & { value?: string }>,
-  ) => {
+  ): void => {
     // if (inputRef.current && event.currentTarget === event.target) {
     //   inputRef.current.focus();
     // }
@@ -254,6 +254,6 @@ export function InputBase({
   );
 }
 
-export function TextareaAutoSize() {
+export function TextareaAutoSize(): VNode {
   return <input onClick={(e) => null} />;
 }

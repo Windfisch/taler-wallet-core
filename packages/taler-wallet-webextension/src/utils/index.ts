@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountJson, Amounts, GetExchangeTosResult, TalerUriType } from "@gnu-taler/taler-util";
+import { AmountJson, Amounts, GetExchangeTosResult } from "@gnu-taler/taler-util";
 
 
 function getJsonIfOk(r: Response): Promise<any> {

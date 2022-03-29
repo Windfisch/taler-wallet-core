@@ -28,7 +28,7 @@ export function useProviderStatus(url: string): ProviderStatus | undefined {
   const [status, setStatus] = useState<ProviderStatus | undefined>(undefined);
 
   useEffect(() => {
-    async function run() {
+    async function run(): Promise<void> {
       //create a first list of backup info by currency
       const status = await wxApi.getBackupInfo();
 
@@ -37,13 +37,13 @@ export function useProviderStatus(url: string): ProviderStatus | undefined {
       );
       const info = providers.length ? providers[0] : undefined;
 
-      async function sync() {
+      async function sync(): Promise<void> {
         if (info) {
           await wxApi.syncOneProvider(info.syncProviderBaseUrl);
         }
       }
 
-      async function remove() {
+      async function remove(): Promise<void> {
         if (info) {
           await wxApi.removeProvider(info.syncProviderBaseUrl);
         }
@@ -52,7 +52,7 @@ export function useProviderStatus(url: string): ProviderStatus | undefined {
       setStatus({ info, sync, remove });
     }
     run();
-  }, []);
+  });
 
   return status;
 }

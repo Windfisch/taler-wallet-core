@@ -19,9 +19,9 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { SelectFieldHandler, TextFieldHandler, useComponentState } from "./CreateManualWithdraw.js";
 import { expect } from "chai";
 import { mountHook } from "../test-utils.js";
+import { SelectFieldHandler, TextFieldHandler, useComponentState } from "./CreateManualWithdraw.js";
 
 
 const exchangeListWithARSandUSD = {
@@ -181,7 +181,7 @@ describe("CreateManualWithdraw states", () => {
 });
 
 
-async function defaultTestForInputText(awaiter: () => Promise<void>, getField: () => TextFieldHandler) {
+async function defaultTestForInputText(awaiter: () => Promise<void>, getField: () => TextFieldHandler): Promise<void> {
   const initialValue = getField().value;
   const otherValue = `${initialValue} something else`
   getField().onInput(otherValue)
@@ -192,7 +192,7 @@ async function defaultTestForInputText(awaiter: () => Promise<void>, getField: (
 }
 
 
-async function defaultTestForInputSelect(awaiter: () => Promise<void>, getField: () => SelectFieldHandler) {
+async function defaultTestForInputSelect(awaiter: () => Promise<void>, getField: () => SelectFieldHandler): Promise<void> {
   const initialValue = getField().value;
   const keys = Object.keys(getField().list)
   const nextIdx = keys.indexOf(initialValue) + 1

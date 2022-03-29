@@ -23,7 +23,7 @@ export function ExchangeXmlTos({ doc }: { doc: Document }): VNode {
       <div>
         <p>
           The exchange send us an xml but there is no node with
-          'ids=terms-of-service'. This is the content:
+          &apos;ids=terms-of-service&apos;. This is the content:
         </p>
         <pre>{new XMLSerializer().serializeToString(doc)}</pre>
       </div>

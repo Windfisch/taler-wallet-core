@@ -40,6 +40,7 @@ import {
   Wallet,
   WalletStoresV1
 } from "@gnu-taler/taler-wallet-core";
+import { VNode } from "preact";
 import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory.js";
 import { BrowserHttpLib } from "./browserHttpLib.js";
 import { getReadRequestPermissions } from "./permissions.js";
@@ -221,7 +222,7 @@ async function reinitWallet(): Promise<void> {
   walletInit.resolve();
 }
 
-function parseTalerUriAndRedirect(tabId: number, talerUri: string) {
+function parseTalerUriAndRedirect(tabId: number, talerUri: string): VNode {
   const uriType = classifyTalerUri(talerUri);
   switch (uriType) {
     case TalerUriType.TalerWithdraw:

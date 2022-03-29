@@ -13,7 +13,7 @@
  You should have received a copy of the GNU General Public License along with
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-import { VNode, h, ComponentChildren } from "preact";
+import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import arrowDown from "../svg/chevron-down.svg";
 import { ErrorBox } from "./styled/index.js";

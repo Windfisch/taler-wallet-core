@@ -41,7 +41,7 @@ export default {
 };
 
 let count = 0;
-const commonTransaction = () =>
+const commonTransaction = (): TransactionCommon =>
   ({
     amountRaw: "USD:10",
     amountEffective: "USD:9",

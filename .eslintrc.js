@@ -1,12 +1,23 @@
 module.exports = {
   root: true,
   parser: "@typescript-eslint/parser",
-  plugins: ["import","@typescript-eslint"],
+  plugins: ["import","@typescript-eslint",
+    "react",
+    "react-hooks",
+  ],
   extends: [
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended",
   ],
+  settings: {
+    react: {
+      pragma: 'h',
+      version: '16.0'
+    }
+  },
   rules: {
     "no-constant-condition": ["error", { "checkLoops": false }],
     "prefer-const": ["warn", { destructuring: "all" }],
@@ -25,5 +36,8 @@ module.exports = {
       { functions: false, classes: false },
     ],
     "import/extensions": ["error", "ignorePackages"],
+    "react/no-unknown-property": 0,
+    "react/prop-types": 0, 
+
   },
 };

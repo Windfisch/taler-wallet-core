@@ -19,14 +19,15 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { useComponentState } from "./DepositPage.js";
+import { Amounts, Balance } from "@gnu-taler/taler-util";
+import { DepositFee } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import { expect } from "chai";
 import { mountHook } from "../test-utils.js";
-import { Amounts, Balance } from "@gnu-taler/taler-util";
+import { useComponentState } from "./DepositPage.js";
 
 
 const currency = "EUR"
-const feeCalculator = async () => ({
+const feeCalculator = async (): Promise<DepositFee> => ({
   coin: Amounts.parseOrThrow(`${currency}:1`),
   wire: Amounts.parseOrThrow(`${currency}:1`),
   refresh: Amounts.parseOrThrow(`${currency}:1`)

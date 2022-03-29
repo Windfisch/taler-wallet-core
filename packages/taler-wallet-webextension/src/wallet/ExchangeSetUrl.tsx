@@ -2,7 +2,7 @@ import {
   canonicalizeBaseUrl,
   TalerConfigResponse,
 } from "@gnu-taler/taler-util";
-import { Fragment, h } from "preact";
+import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { ErrorMessage } from "../components/ErrorMessage.js";
 import {
@@ -81,7 +81,7 @@ export function ExchangeSetUrlPage({
   onCancel,
   onVerify,
   onConfirm,
-}: Props) {
+}: Props): VNode {
   const { i18n } = useTranslationContext();
   const { loading, result, endpoint, updateEndpoint, error } =
     useEndpointStatus(initialValue ?? "", onVerify);
@@ -119,7 +119,7 @@ export function ExchangeSetUrlPage({
         {result && expectedCurrency && expectedCurrency !== result.currency && (
           <WarningBox>
             <i18n.Translate>
-              This exchange doesn't match the expected currency
+              This exchange doesn&apos;t match the expected currency
               <b>{expectedCurrency}</b>
             </i18n.Translate>
           </WarningBox>

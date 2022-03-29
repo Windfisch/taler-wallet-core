@@ -20,14 +20,14 @@
  */
 
 import { Grid } from "./Grid.js";
-import { Fragment, h } from "preact";
+import { Fragment, h, VNode } from "preact";
 
 export default {
   title: "mui/grid",
   component: Grid,
 };
 
-function Item({ children }: any) {
+function Item({ children }: any): VNode {
   return (
     <div
       style={{
@@ -42,7 +42,7 @@ function Item({ children }: any) {
   );
 }
 
-function Wrapper({ children }: any) {
+function Wrapper({ children }: any): VNode {
   return (
     <div
       style={{
@@ -60,7 +60,7 @@ function Wrapper({ children }: any) {
   );
 }
 
-export const BasicExample = () => (
+export const BasicExample = (): VNode => (
   <Fragment>
     <Wrapper>
       <Grid container spacing={2}>
@@ -97,7 +97,7 @@ export const BasicExample = () => (
   </Fragment>
 );
 
-export const Responsive12ColumnsSize = () => (
+export const Responsive12ColumnsSize = (): VNode => (
   <Fragment>
     <Wrapper>
       <p>Item size is responsive: xs=6 sm=4 md=2</p>
@@ -122,7 +122,7 @@ export const Responsive12ColumnsSize = () => (
   </Fragment>
 );
 
-export const Responsive12Spacing = () => (
+export const Responsive12Spacing = (): VNode => (
   <Fragment>
     <Wrapper>
       <p>Item space is responsive: xs=1 sm=2 md=3</p>
@@ -178,7 +178,7 @@ export const Responsive12Spacing = () => (
   </Fragment>
 );
 
-export const ResponsiveAuthWidth = () => (
+export const ResponsiveAuthWidth = (): VNode => (
   <Fragment>
     <Wrapper>
       <Grid container columns={12}>
@@ -198,7 +198,7 @@ export const ResponsiveAuthWidth = () => (
     </Wrapper>
   </Fragment>
 );
-export const Example = () => (
+export const Example = (): VNode => (
   <Wrapper>
     <p>Item row space is responsive: xs=6 sm=4 md=1</p>
     <Grid container rowSpacing={3} columnSpacing={1} columns={12}>

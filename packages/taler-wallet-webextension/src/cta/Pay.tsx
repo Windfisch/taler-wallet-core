@@ -48,7 +48,6 @@ import { QR } from "../components/QR.js";
 import {
   ButtonSuccess,
   Link,
-  LinkPrimary,
   LinkSuccess,
   SmallLightText,
   SubTitle,

@@ -16,7 +16,6 @@
 
 // need to import linaria types, otherwise compiler will complain
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-// eslint-disable-next-line no-unused-vars
 import type * as Linaria from "@linaria/core";
 
 import { styled } from "@linaria/react";

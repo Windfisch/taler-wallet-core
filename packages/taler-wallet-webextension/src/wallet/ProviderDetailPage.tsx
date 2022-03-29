@@ -64,7 +64,8 @@ export function ProviderDetailPage({ pid: providerURL, onBack }: Props): VNode {
       <LoadingError
         title={
           <i18n.Translate>
-            There was an error loading the provider detail for "{providerURL}"
+            There was an error loading the provider detail for &quot;
+            {providerURL}&quot;
           </i18n.Translate>
         }
         error={state}
@@ -110,7 +111,7 @@ export function ProviderView({
         <section>
           <p>
             <i18n.Translate>
-              There is not known provider with url "{url}".
+              There is not known provider with url &quot;{url}&quot;.
             </i18n.Translate>
           </p>
         </section>

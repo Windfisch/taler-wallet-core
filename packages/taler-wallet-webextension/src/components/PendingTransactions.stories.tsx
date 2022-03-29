@@ -19,14 +19,13 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { PendingTransactionsView as TestedComponent } from "./PendingTransactions.js";
-import { Fragment, h, VNode } from "preact";
-import { createExample } from "../test-utils.js";
 import {
   TalerProtocolTimestamp,
   Transaction,
   TransactionType,
 } from "@gnu-taler/taler-util";
+import { createExample } from "../test-utils.js";
+import { PendingTransactionsView as TestedComponent } from "./PendingTransactions.js";
 
 export default {
   title: "component/PendingTransactions",

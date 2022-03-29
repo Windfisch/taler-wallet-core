@@ -141,7 +141,7 @@ export function useComponentState(
   const [accountIdx, setAccountIdx] = useState(0);
   const [amount, setAmount] = useState<number | undefined>(undefined);
   const [fee, setFee] = useState<DepositGroupFees | undefined>(undefined);
-  function updateAmount(num: number | undefined) {
+  function updateAmount(num: number | undefined): void {
     setAmount(num);
     setFee(undefined);
   }

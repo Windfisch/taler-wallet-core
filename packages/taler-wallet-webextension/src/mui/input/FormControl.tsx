@@ -1,5 +1,5 @@
 import { css } from "@linaria/core";
-import { ComponentChildren, createContext, h } from "preact";
+import { ComponentChildren, createContext, h, VNode } from "preact";
 import { useContext, useState } from "preact/hooks";
 // eslint-disable-next-line import/extensions
 import { Colors } from "../style";
@@ -58,7 +58,7 @@ export function FormControl({
   size = "medium",
   variant = "standard",
   children,
-}: Partial<Props>) {
+}: Partial<Props>): VNode {
   const [filled, setFilled] = useState(false);
   const [focusedState, setFocused] = useState(false);
   const focused =
@@ -141,7 +141,7 @@ const defaultContextValue: FCCProps = {
   variant: "outlined",
 };
 
-function withoutUndefinedProperties(obj: any) {
+function withoutUndefinedProperties(obj: any): any {
   return Object.keys(obj).reduce((acc, key) => {
     const _acc: any = acc;
     if (obj[key] !== undefined) _acc[key] = obj[key];
