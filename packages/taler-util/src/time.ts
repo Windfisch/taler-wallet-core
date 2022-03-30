@@ -323,6 +323,15 @@ export function durationAdd(d1: Duration, d2: Duration): Duration {
 
 export const codecForTimestamp: Codec<TalerProtocolTimestamp> = {
   decode(x: any, c?: Context): TalerProtocolTimestamp {
+    // Compatibility, should be removed soon.
+    const t_ms = x.t_ms;
+    if (typeof t_ms === "string") {
+      if (t_ms === "never") {
+        return { t_s: "never" };
+      }
+    } else if (typeof t_ms === "number") {
+      return { t_s: Math.floor(t_ms / 1000) };
+    }
     const t_s = x.t_s;
     if (typeof t_s === "string") {
       if (t_s === "never") {

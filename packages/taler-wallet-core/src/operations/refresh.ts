@@ -818,9 +818,15 @@ async function processRefreshGroupImpl(
   logger.trace("processing refresh sessions for old coins");
   const ps = refreshGroup.oldCoinPubs.map((x, i) =>
     processRefreshSession(ws, refreshGroupId, i).catch((x) => {
-      logger.warn("process refresh session got exception");
-      logger.warn(`exc ${x}`);
-      logger.warn(`exc stack ${x.stack}`);
+      if (x instanceof CryptoApiStoppedError) {
+        logger.info(
+          "crypto API stopped while processing refresh group, probably the wallet is during shutdown",
+        );
+      } else {
+        logger.warn("process refresh session got exception");
+        logger.warn(`exc ${x}`);
+        logger.warn(`exc stack ${x.stack}`);
+      }
     }),
   );
   try {
