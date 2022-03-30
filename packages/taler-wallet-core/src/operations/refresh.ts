@@ -820,7 +820,7 @@ async function processRefreshGroupImpl(
     processRefreshSession(ws, refreshGroupId, i).catch((x) => {
       if (x instanceof CryptoApiStoppedError) {
         logger.info(
-          "crypto API stopped while processing refresh group, probably the wallet is during shutdown",
+          "crypto API stopped while processing refresh group, probably the wallet is currently shutting down.",
         );
       } else {
         logger.warn("process refresh session got exception");
