@@ -17,7 +17,7 @@ import {
   NotificationType, TalerErrorDetail
 } from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
-import { useEffect, useState } from "preact/hooks";
+import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 import * as wxApi from "../wxApi.js";
 
 interface HookOk<T> {
@@ -41,16 +41,22 @@ export interface HookOperationalError {
 
 export type HookResponse<T> = HookOk<T> | HookError | undefined;
 
-//"withdraw-group-finished"
 export function useAsyncAsHook<T>(
   fn: () => Promise<T>,
   updateOnNotification?: Array<NotificationType>,
+  deps?: any[],
 ): HookResponse<T> {
+
+  const args = useMemo(() => ({
+    fn, updateOnNotification
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), deps || [])
   const [result, setHookResponse] = useState<HookResponse<T>>(undefined);
+
   useEffect(() => {
     async function doAsync(): Promise<void> {
       try {
-        const response = await fn();
+        const response = await args.fn();
         setHookResponse({ hasError: false, response });
       } catch (e) {
         if (e instanceof TalerError) {
@@ -69,11 +75,11 @@ export function useAsyncAsHook<T>(
       }
     }
     doAsync();
-    if (updateOnNotification && updateOnNotification.length > 0) {
-      return wxApi.onUpdateNotification(updateOnNotification, () => {
+    if (args.updateOnNotification && args.updateOnNotification.length > 0) {
+      return wxApi.onUpdateNotification(args.updateOnNotification, () => {
         doAsync();
       });
     }
-  }, [fn, updateOnNotification]);
+  }, [args]);
   return result;
 }

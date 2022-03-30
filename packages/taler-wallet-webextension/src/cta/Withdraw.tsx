@@ -247,9 +247,7 @@ export function WithdrawPageWithParsedURI({
   const [reviewing, setReviewing] = useState<boolean>(false);
   const [reviewed, setReviewed] = useState<boolean>(false);
 
-  const knownExchangesHook = useAsyncAsHook(
-    useCallback(() => wxApi.listExchanges(), []),
-  );
+  const knownExchangesHook = useAsyncAsHook(wxApi.listExchanges);
 
   const knownExchanges = useMemo(
     () =>
@@ -278,21 +276,19 @@ export function WithdrawPageWithParsedURI({
     [customExchange, thisCurrencyExchanges, uriInfo.defaultExchangeBaseUrl],
   );
 
-  const detailsHook = useAsyncAsHook(
-    useCallback(async () => {
-      if (!exchange) throw Error("no default exchange");
-      const tos = await wxApi.getExchangeTos(exchange, ["text/xml"]);
+  const detailsHook = useAsyncAsHook(async () => {
+    if (!exchange) throw Error("no default exchange");
+    const tos = await wxApi.getExchangeTos(exchange, ["text/xml"]);
 
-      const tosState = buildTermsOfServiceState(tos);
+    const tosState = buildTermsOfServiceState(tos);
 
-      const info = await wxApi.getExchangeWithdrawalInfo({
-        exchangeBaseUrl: exchange,
-        amount: withdrawAmount,
-        tosAcceptedFormat: ["text/xml"],
-      });
-      return { tos: tosState, info };
-    }, [exchange, withdrawAmount]),
-  );
+    const info = await wxApi.getExchangeWithdrawalInfo({
+      exchangeBaseUrl: exchange,
+      amount: withdrawAmount,
+      tosAcceptedFormat: ["text/xml"],
+    });
+    return { tos: tosState, info };
+  });
 
   if (!detailsHook) {
     return <Loading />;
@@ -357,14 +353,10 @@ export function WithdrawPageWithParsedURI({
 }
 export function WithdrawPage({ talerWithdrawUri }: Props): VNode {
   const { i18n } = useTranslationContext();
-  const uriInfoHook = useAsyncAsHook(
-    useCallback(
-      () =>
-        !talerWithdrawUri
-          ? Promise.reject(undefined)
-          : wxApi.getWithdrawalDetailsForUri({ talerWithdrawUri }),
-      [talerWithdrawUri],
-    ),
+  const uriInfoHook = useAsyncAsHook(() =>
+    !talerWithdrawUri
+      ? Promise.reject(undefined)
+      : wxApi.getWithdrawalDetailsForUri({ talerWithdrawUri }),
   );
 
   if (!talerWithdrawUri) {
