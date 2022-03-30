@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /*
  This file is part of TALER
  (C) 2015 GNUnet e.V.

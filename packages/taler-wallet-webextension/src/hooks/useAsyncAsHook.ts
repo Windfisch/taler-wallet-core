@@ -74,6 +74,6 @@ export function useAsyncAsHook<T>(
         doAsync();
       });
     }
-  });
+  }, [fn, updateOnNotification]);
   return result;
 }

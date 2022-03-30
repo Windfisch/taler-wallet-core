@@ -169,7 +169,7 @@ export function InputBase({
     } else {
       fcs.onEmpty();
     }
-  }, [value]);
+  }, [value, fcs]);
 
   const handleFocus = (event: JSX.TargetedFocusEvent<EventTarget>): void => {
     // Fix a bug with IE11 where the focus/blur events are triggered

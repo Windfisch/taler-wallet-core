@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /*
  This file is part of TALER
  (C) 2015 GNUnet e.V.
@@ -197,7 +198,7 @@ export function PaymentRequestView({
   payStatus,
   payResult,
 }: PaymentRequestViewProps): VNode {
-  let totalFees: AmountJson = Amounts.getZero(payStatus.amountRaw);
+  const totalFees: AmountJson = Amounts.getZero(payStatus.amountRaw);
   const contractTerms: ContractTerms = payStatus.contractTerms;
   const { i18n } = useTranslationContext();
 

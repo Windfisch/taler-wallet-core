@@ -64,7 +64,7 @@ function useEndpointStatus<T>(
       }
     }, 500);
     setHandler(h);
-  }, [value]);
+  }, [value, setHandler, handler, onVerify]);
 
   return {
     error: dirty ? error : undefined,

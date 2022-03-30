@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /*
  This file is part of TALER
  (C) 2016 GNUnet e.V.
@@ -162,7 +163,7 @@ export function useComponentState(
     onCalculateFee(selectedAccount, parsedAmount).then((result) => {
       setFee(result);
     });
-  }, [amount]);
+  }, [amount, selectedAccount, parsedAmount, onCalculateFee]);
 
   const bs = balances.filter((b) => b.available.startsWith(currency));
   const balance =

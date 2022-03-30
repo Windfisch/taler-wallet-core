@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /*
  This file is part of GNU Taler
  (C) 2021 Taler Systems S.A.

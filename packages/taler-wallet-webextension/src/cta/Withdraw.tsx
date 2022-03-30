@@ -28,7 +28,7 @@ import {
   WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
-import { useState } from "preact/hooks";
+import { useCallback, useMemo, useState } from "preact/hooks";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import { ErrorTalerOperation } from "../components/ErrorTalerOperation.js";
@@ -247,37 +247,52 @@ export function WithdrawPageWithParsedURI({
   const [reviewing, setReviewing] = useState<boolean>(false);
   const [reviewed, setReviewed] = useState<boolean>(false);
 
-  const knownExchangesHook = useAsyncAsHook(() => wxApi.listExchanges());
-
-  const knownExchanges =
-    !knownExchangesHook || knownExchangesHook.hasError
-      ? []
-      : knownExchangesHook.response.exchanges;
-  const withdrawAmount = Amounts.parseOrThrow(uriInfo.amount);
-  const thisCurrencyExchanges = knownExchanges.filter(
-    (ex) => ex.currency === withdrawAmount.currency,
+  const knownExchangesHook = useAsyncAsHook(
+    useCallback(() => wxApi.listExchanges(), []),
   );
 
-  const exchange: string | undefined =
-    customExchange ??
-    uriInfo.defaultExchangeBaseUrl ??
-    (thisCurrencyExchanges[0]
-      ? thisCurrencyExchanges[0].exchangeBaseUrl
-      : undefined);
+  const knownExchanges = useMemo(
+    () =>
+      !knownExchangesHook || knownExchangesHook.hasError
+        ? []
+        : knownExchangesHook.response.exchanges,
+    [knownExchangesHook],
+  );
+  const withdrawAmount = useMemo(
+    () => Amounts.parseOrThrow(uriInfo.amount),
+    [uriInfo.amount],
+  );
+  const thisCurrencyExchanges = useMemo(
+    () =>
+      knownExchanges.filter((ex) => ex.currency === withdrawAmount.currency),
+    [knownExchanges, withdrawAmount.currency],
+  );
 
-  const detailsHook = useAsyncAsHook(async () => {
-    if (!exchange) throw Error("no default exchange");
-    const tos = await wxApi.getExchangeTos(exchange, ["text/xml"]);
+  const exchange: string | undefined = useMemo(
+    () =>
+      customExchange ??
+      uriInfo.defaultExchangeBaseUrl ??
+      (thisCurrencyExchanges[0]
+        ? thisCurrencyExchanges[0].exchangeBaseUrl
+        : undefined),
+    [customExchange, thisCurrencyExchanges, uriInfo.defaultExchangeBaseUrl],
+  );
 
-    const tosState = buildTermsOfServiceState(tos);
+  const detailsHook = useAsyncAsHook(
+    useCallback(async () => {
+      if (!exchange) throw Error("no default exchange");
+      const tos = await wxApi.getExchangeTos(exchange, ["text/xml"]);
 
-    const info = await wxApi.getExchangeWithdrawalInfo({
-      exchangeBaseUrl: exchange,
-      amount: withdrawAmount,
-      tosAcceptedFormat: ["text/xml"],
-    });
-    return { tos: tosState, info };
-  });
+      const tosState = buildTermsOfServiceState(tos);
+
+      const info = await wxApi.getExchangeWithdrawalInfo({
+        exchangeBaseUrl: exchange,
+        amount: withdrawAmount,
+        tosAcceptedFormat: ["text/xml"],
+      });
+      return { tos: tosState, info };
+    }, [exchange, withdrawAmount]),
+  );
 
   if (!detailsHook) {
     return <Loading />;
@@ -342,10 +357,14 @@ export function WithdrawPageWithParsedURI({
 }
 export function WithdrawPage({ talerWithdrawUri }: Props): VNode {
   const { i18n } = useTranslationContext();
-  const uriInfoHook = useAsyncAsHook(() =>
-    !talerWithdrawUri
-      ? Promise.reject(undefined)
-      : wxApi.getWithdrawalDetailsForUri({ talerWithdrawUri }),
+  const uriInfoHook = useAsyncAsHook(
+    useCallback(
+      () =>
+        !talerWithdrawUri
+          ? Promise.reject(undefined)
+          : wxApi.getWithdrawalDetailsForUri({ talerWithdrawUri }),
+      [talerWithdrawUri],
+    ),
   );
 
   if (!talerWithdrawUri) {

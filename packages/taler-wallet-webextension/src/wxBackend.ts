@@ -40,7 +40,6 @@ import {
   Wallet,
   WalletStoresV1
 } from "@gnu-taler/taler-wallet-core";
-import { VNode } from "preact";
 import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory.js";
 import { BrowserHttpLib } from "./browserHttpLib.js";
 import { getReadRequestPermissions } from "./permissions.js";

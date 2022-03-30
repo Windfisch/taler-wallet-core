@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /*
  This file is part of TALER
  (C) 2017 INRIA

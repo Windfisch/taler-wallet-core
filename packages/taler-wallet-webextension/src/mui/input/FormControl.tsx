@@ -1,6 +1,6 @@
 import { css } from "@linaria/core";
 import { ComponentChildren, createContext, h, VNode } from "preact";
-import { useContext, useState } from "preact/hooks";
+import { useContext, useMemo, useState } from "preact/hooks";
 // eslint-disable-next-line import/extensions
 import { Colors } from "../style";
 
@@ -152,6 +152,10 @@ function withoutUndefinedProperties(obj: any): any {
 export function useFormControl(props: Partial<FCCProps> = {}): FCCProps {
   const ctx = useContext(FormControlContext);
   const cleanedProps = withoutUndefinedProperties(props);
-  if (!ctx) return { ...defaultContextValue, ...cleanedProps };
-  return { ...ctx, ...cleanedProps };
+
+  return useMemo(() => {
+    return !ctx
+      ? { ...defaultContextValue, ...cleanedProps }
+      : { ...ctx, ...cleanedProps };
+  }, [cleanedProps, ctx]);
 }
