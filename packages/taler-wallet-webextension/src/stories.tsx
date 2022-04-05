@@ -286,12 +286,19 @@ function Application(): VNode {
     initialSelection,
   );
 
-  function updateSelectedFromHashChange({ newURL, oldURL }: any): void {
+  function updateSelectedFromHashChange(): void {
     const selected = getSelectionFromLocationHash();
     updateSelected(selected);
   }
   useEffect(() => {
     window.addEventListener("hashchange", updateSelectedFromHashChange);
+    if (location.hash) {
+      const hash = location.hash.substring(1);
+      const found = document.getElementById(hash);
+      if (found) {
+        found.scrollIntoView();
+      }
+    }
     return () => {
       window.removeEventListener("hashchange", updateSelectedFromHashChange);
     };

@@ -1,24 +1,32 @@
-import { h, VNode } from "preact";
-import { ButtonBoxWarning, WarningBox } from "../components/styled/index.js";
-import { useTranslationContext } from "../context/translation.js";
+import { css } from "@linaria/core";
+import { Fragment, h, VNode } from "preact";
+import { Alert } from "../mui/Alert.js";
+import { Button } from "../mui/Button.js";
+import { Paper } from "../mui/Paper.js";
+import { Typography } from "../mui/Typography.js";
 
 export function NoBalanceHelp({
   goToWalletManualWithdraw,
 }: {
   goToWalletManualWithdraw: () => void;
 }): VNode {
-  const { i18n } = useTranslationContext();
   return (
-    <WarningBox>
-      <p>
-        <b>
-          <i18n.Translate>You have no balance.</i18n.Translate>
-        </b>{" "}
-        <i18n.Translate>Withdraw some funds into your wallet.</i18n.Translate>
-      </p>
-      <ButtonBoxWarning onClick={() => goToWalletManualWithdraw()}>
-        <i18n.Translate>Withdraw</i18n.Translate>
-      </ButtonBoxWarning>
-    </WarningBox>
+    <Paper
+      class={css`
+        margin: 1em;
+      `}
+    >
+      <Alert title="You have no balance." severity="warning">
+        <Typography>Withdraw some funds into your wallet.</Typography>
+        <Button
+          fullWidth
+          color="warning"
+          variant="outlined"
+          onClick={goToWalletManualWithdraw}
+        >
+          <Typography>Withdraw</Typography>
+        </Button>
+      </Alert>
+    </Paper>
   );
 }

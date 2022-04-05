@@ -34,11 +34,14 @@ export function Paper({
   square,
   variant = "elevation",
   children,
+  class: _class,
+  style,
   ...rest
 }: Props): VNode {
   return (
     <div
       class={[
+        _class,
         baseStyle,
         !square && theme.shape.roundBorder,
         borderVariant[variant],
@@ -49,6 +52,7 @@ export function Paper({
           "#fff",
           getOverlayAlpha(elevation),
         )}, ${alpha("#fff", getOverlayAlpha(elevation))})`,
+        ...(style as any),
       }}
       {...rest}
     >

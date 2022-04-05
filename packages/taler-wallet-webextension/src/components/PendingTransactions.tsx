@@ -70,16 +70,16 @@ export function PendingTransactionsView({
           ),
           action: () => goToTransaction(t.transactionId),
           description: (
-            <Typography>
-              <b>
+            <Fragment>
+              <Typography inline bold>
                 {amount.currency} {Amounts.stringifyValue(amount)}
-              </b>{" "}
-              -{" "}
+              </Typography>
+              &nbsp;-&nbsp;
               <Time
                 timestamp={AbsoluteTime.fromTimestamp(t.timestamp)}
                 format="dd MMMM yyyy"
               />
-            </Typography>
+            </Fragment>
           ),
         };
       })}

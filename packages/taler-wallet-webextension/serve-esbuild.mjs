@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-undef */
 
 import linaria from '@linaria/esbuild'
 import esbuild from 'esbuild'

@@ -1,5 +1,6 @@
 import { css } from "@linaria/core";
 import { ComponentChildren, h, VNode } from "preact";
+import { useTranslationContext } from "../context/translation.js";
 // eslint-disable-next-line import/extensions
 import { theme } from "./style";
 
@@ -22,10 +23,13 @@ type VariantEnum =
 interface Props {
   align?: "center" | "inherit" | "justify" | "left" | "right";
   gutterBottom?: boolean;
+  bold?: boolean;
+  inline?: boolean;
   noWrap?: boolean;
   paragraph?: boolean;
   variant?: VariantEnum;
-  children?: ComponentChildren;
+  children: string[] | string;
+  class?: string;
 }
 
 const defaultVariantMapping = {
@@ -57,6 +61,9 @@ const gutterBottomStyle = css`
 const paragraphStyle = css`
   margin-bottom: 16px;
 `;
+const boldStyle = css`
+  font-weight: bold;
+`;
 
 export function Typography({
   align,
@@ -64,9 +71,16 @@ export function Typography({
   noWrap = false,
   paragraph = false,
   variant = "body1",
+  bold,
+  inline,
   children,
+  class: _class,
 }: Props): VNode {
-  const cmp = paragraph
+  const { i18n } = useTranslationContext();
+
+  const Component = inline
+    ? "span"
+    : paragraph === true
     ? "p"
     : defaultVariantMapping[variant as "h1"] || "span";
 
@@ -76,20 +90,21 @@ export function Typography({
       : {
           textAlign: align,
         };
+
   return h(
-    cmp,
+    Component,
     {
       class: [
+        _class,
         root,
         noWrap && noWrapStyle,
         gutterBottom && gutterBottomStyle,
         paragraph && paragraphStyle,
+        bold && boldStyle,
         theme.typography[variant as "button"], //FIXME: implement the rest of the typography and remove the casting
       ].join(" "),
-      style: {
-        ...alignStyle,
-      },
+      style: alignStyle,
     },
-    children,
+    <i18n.Translate>{children}</i18n.Translate>,
   );
 }

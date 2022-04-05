@@ -1,26 +1,11 @@
-import { ComponentChildren, h, VNode } from "preact";
+import { ComponentChildren, h, VNode, JSX } from "preact";
 import { css } from "@linaria/core";
 // eslint-disable-next-line import/extensions
 import { theme, ripple, Colors } from "./style";
 // eslint-disable-next-line import/extensions
 import { alpha } from "./colors/manipulation";
 
-interface Props {
-  children?: ComponentChildren;
-  disabled?: boolean;
-  disableElevation?: boolean;
-  disableFocusRipple?: boolean;
-  endIcon?: VNode;
-  fullWidth?: boolean;
-  href?: string;
-  size?: "small" | "medium" | "large";
-  startIcon?: VNode | string;
-  variant?: "contained" | "outlined" | "text";
-  color?: Colors;
-  onClick?: () => void;
-}
-
-const baseStyle = css`
+const buttonBaseStyle = css`
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -30,7 +15,7 @@ const baseStyle = css`
   outline: 0;
   border: 0;
   margin: 0;
-  /* border-radius: 0; */
+  border-radius: 0;
   padding: 0;
   cursor: pointer;
   user-select: none;
@@ -38,6 +23,21 @@ const baseStyle = css`
   text-decoration: none;
   color: inherit;
 `;
+
+interface Props {
+  children?: ComponentChildren;
+  disabled?: boolean;
+  disableElevation?: boolean;
+  disableFocusRipple?: boolean;
+  endIcon?: string | VNode;
+  fullWidth?: boolean;
+  href?: string;
+  size?: "small" | "medium" | "large";
+  startIcon?: VNode | string;
+  variant?: "contained" | "outlined" | "text";
+  color?: Colors;
+  onClick?: () => void;
+}
 
 const button = css`
   min-width: 64px;
@@ -54,13 +54,13 @@ const button = css`
 `;
 const colorIconVariant = {
   outlined: css`
-    background-color: var(--color-main);
+    fill: var(--color-main);
   `,
   contained: css`
-    background-color: var(--color-contrastText);
+    fill: var(--color-contrastText);
   `,
   text: css`
-    background-color: var(--color-main);
+    fill: var(--color-main);
   `,
 };
 
@@ -68,6 +68,7 @@ const colorVariant = {
   outlined: css`
     color: var(--color-main);
     border: 1px solid var(--color-main-alpha-half);
+    background-color: var(--color-contrastText);
     &:hover {
       border: 1px solid var(--color-main);
       background-color: var(--color-main-alpha-opacity);
@@ -81,7 +82,7 @@ const colorVariant = {
     background-color: var(--color-main);
     box-shadow: ${theme.shadows[2]};
     &:hover {
-      background-color: var(--color-dark);
+      background-color: var(--color-grey-or-dark);
     }
     &:active {
       box-shadow: ${theme.shadows[8]};
@@ -186,11 +187,16 @@ const sizeVariant = {
   },
 };
 
+const fullWidthStyle = css`
+  width: 100%;
+`;
+
 export function Button({
   children,
   disabled,
   startIcon: sip,
   endIcon: eip,
+  fullWidth,
   variant = "text",
   size = "medium",
   color = "primary",
@@ -198,8 +204,8 @@ export function Button({
 }: Props): VNode {
   const style = css`
     user-select: none;
-    width: 1em;
-    height: 1em;
+    width: 24px;
+    height: 24px;
     display: inline-block;
     fill: currentColor;
     flex-shrink: 0;
@@ -222,8 +228,9 @@ export function Button({
         sizeIconVariant[variant][size],
         style,
       ].join(" ")}
+      //FIXME: check when sip can be a vnode
+      dangerouslySetInnerHTML={{ __html: sip as string }}
       style={{
-        "--image": `url("${sip}")`,
         "--color-main": theme.palette[color].main,
         "--color-contrastText": theme.palette[color].contrastText,
       }}
@@ -241,8 +248,8 @@ export function Button({
         sizeIconVariant[variant][size],
         style,
       ].join(" ")}
+      dangerouslySetInnerHTML={{ __html: eip as string }}
       style={{
-        "--image": `url("${eip}")`,
         "--color-main": theme.palette[color].main,
         "--color-contrastText": theme.palette[color].contrastText,
         "--color-dark": theme.palette[color].dark,
@@ -250,17 +257,17 @@ export function Button({
     />
   );
   return (
-    <button
+    <ButtonBase
       disabled={disabled}
       class={[
         theme.typography.button,
         theme.shape.roundBorder,
-        ripple,
-        baseStyle,
         button,
+        fullWidth && fullWidthStyle,
         colorVariant[variant],
         sizeVariant[variant][size],
       ].join(" ")}
+      onClick={onClick}
       style={{
         "--color-main": theme.palette[color].main,
         "--color-contrastText": theme.palette[color].contrastText,
@@ -274,11 +281,75 @@ export function Button({
           theme.palette.text.primary,
           theme.palette.action.hoverOpacity,
         ),
+        "--color-grey-or-dark": !color
+          ? theme.palette.grey.A100
+          : theme.palette[color].dark,
       }}
     >
       {startIcon}
       {children}
       {endIcon}
+    </ButtonBase>
+  );
+}
+
+interface BaseProps extends JSX.HTMLAttributes<HTMLButtonElement> {
+  class: string;
+  onClick?: () => void;
+  children?: ComponentChildren;
+}
+
+function ButtonBase({
+  class: _class,
+  children,
+  onClick,
+  dangerouslySetInnerHTML,
+  ...rest
+}: BaseProps): VNode {
+  function doClick(): void {
+    if (onClick) onClick();
+  }
+  const classNames = [buttonBaseStyle, _class, ripple].join(" ");
+  if (dangerouslySetInnerHTML) {
+    return (
+      <button
+        onClick={doClick}
+        class={classNames}
+        dangerouslySetInnerHTML={dangerouslySetInnerHTML}
+        {...rest}
+      />
+    );
+  }
+  return (
+    <button onClick={doClick} class={classNames} {...rest}>
+      {children}
     </button>
+  );
+}
+
+export function IconButton({
+  svg,
+  onClick,
+}: {
+  svg: any;
+  onClick?: () => void;
+}): VNode {
+  return (
+    <ButtonBase
+      onClick={onClick}
+      class={[
+        css`
+          text-align: center;
+          flex: 0 0 auto;
+          font-size: ${theme.typography.pxToRem(24)};
+          padding: 8px;
+          border-radius: 50%;
+          overflow: visible;
+          color: "inherit";
+          fill: currentColor;
+        `,
+      ].join(" ")}
+      dangerouslySetInnerHTML={{ __html: svg }}
+    />
   );
 }

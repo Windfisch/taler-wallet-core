@@ -106,9 +106,13 @@ export const PendingOperation = (): VNode => (
               </Avatar>
             ),
             description: (
-              <Typography>
-                <b>EUR 37.95</b> - 5 feb 2022
-              </Typography>
+              <Fragment>
+                <Typography inline bold>
+                  EUR 37.95
+                </Typography>
+                &nbsp;
+                <Typography inline>- 5 feb 2022</Typography>
+              </Fragment>
             ),
           },
         ]}

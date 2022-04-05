@@ -166,7 +166,7 @@ export function CreateManualWithdraw({
   );
 
   if (state.noExchangeFound) {
-    if (initialCurrency !== undefined) {
+    if (initialCurrency) {
       return (
         <section>
           <SubTitle>
