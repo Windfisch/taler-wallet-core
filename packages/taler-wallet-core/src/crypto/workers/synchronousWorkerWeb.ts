@@ -69,7 +69,7 @@ export class SynchronousCryptoWorker {
   private async handleRequest(
     operation: string,
     id: number,
-    args: string[],
+    req: unknown,
   ): Promise<void> {
     const impl = this.cryptoImplR;
 
@@ -80,7 +80,7 @@ export class SynchronousCryptoWorker {
 
     let result: any;
     try {
-      result = await (impl as any)[operation](...args);
+      result = await (impl as any)[operation](impl, req);
     } catch (e: any) {
       logger.error(`error during operation '${operation}': ${e}`);
       return;
