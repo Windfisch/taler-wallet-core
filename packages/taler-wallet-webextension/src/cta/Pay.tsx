@@ -105,6 +105,23 @@ export function PayPage({
     return { payStatus, balance };
   }, [NotificationType.CoinWithdrawn]);
 
+  useEffect(() => {
+    const payStatus =
+      hook && !hook.hasError ? hook.response.payStatus : undefined;
+    if (
+      payStatus &&
+      payStatus.status === PreparePayResultType.AlreadyConfirmed &&
+      payStatus.paid
+    ) {
+      const fu = payStatus.contractTerms.fulfillment_url;
+      if (fu) {
+        setTimeout(() => {
+          document.location.href = fu;
+        }, 3000);
+      }
+    }
+  }, []);
+
   if (!hook) {
     return <Loading />;
   }
@@ -171,20 +188,6 @@ export function PaymentRequestView({
   const { i18n } = useTranslationContext();
   let totalFees: AmountJson = Amounts.getZero(payStatus.amountRaw);
   const contractTerms: ContractTerms = payStatus.contractTerms;
-
-  useEffect(() => {
-    if (
-      payStatus.status === PreparePayResultType.AlreadyConfirmed &&
-      payStatus.paid
-    ) {
-      const fu = payStatus.contractTerms.fulfillment_url;
-      if (fu) {
-        setTimeout(() => {
-          document.location.href = fu;
-        }, 3000);
-      }
-    }
-  });
 
   if (!contractTerms) {
     return (

@@ -147,7 +147,7 @@ export const TicketWithAProductList = createExample(TestedComponent, {
   },
 });
 
-export const AlreadyConfirmedWithFullfilment = createExample(TestedComponent, {
+export const AlreadyConfirmedByOther = createExample(TestedComponent, {
   payStatus: {
     status: PreparePayResultType.AlreadyConfirmed,
     amountEffective: "USD:10",
@@ -156,8 +156,6 @@ export const AlreadyConfirmedWithFullfilment = createExample(TestedComponent, {
       merchant: {
         name: "someone",
       },
-      fulfillment_message:
-        "congratulations! you are looking at the fulfillment message! ",
       summary: "some beers",
       amount: "USD:10",
     } as Partial<ContractTerms> as any,
@@ -167,28 +165,25 @@ export const AlreadyConfirmedWithFullfilment = createExample(TestedComponent, {
   },
 });
 
-export const AlreadyConfirmedWithoutFullfilment = createExample(
-  TestedComponent,
-  {
-    payStatus: {
-      status: PreparePayResultType.AlreadyConfirmed,
-      amountEffective: "USD:10",
-      amountRaw: "USD:10",
-      contractTerms: {
-        merchant: {
-          name: "someone",
-        },
-        summary: "some beers",
-        amount: "USD:10",
-      } as Partial<ContractTerms> as any,
-      contractTermsHash: "123456",
-      proposalId: "proposal1234",
-      paid: false,
-    },
+export const AlreadyPaidWithoutFulfillment = createExample(TestedComponent, {
+  payStatus: {
+    status: PreparePayResultType.AlreadyConfirmed,
+    amountEffective: "USD:10",
+    amountRaw: "USD:10",
+    contractTerms: {
+      merchant: {
+        name: "someone",
+      },
+      summary: "some beers",
+      amount: "USD:10",
+    } as Partial<ContractTerms> as any,
+    contractTermsHash: "123456",
+    proposalId: "proposal1234",
+    paid: true,
   },
-);
+});
 
-export const AlreadyPaid = createExample(TestedComponent, {
+export const AlreadyPaidWithFulfillment = createExample(TestedComponent, {
   payStatus: {
     status: PreparePayResultType.AlreadyConfirmed,
     amountEffective: "USD:10",

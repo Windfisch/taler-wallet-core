@@ -136,15 +136,21 @@ export const TermsReviewingHTML = createExample(TestedComponent, {
   terms: {
     content: {
       type: "html",
-      href: new URL(
-        `data:text/html;base64,${Buffer.from(termsHtml).toString("base64")}`,
-      ),
+      href: new URL(`data:text/html;base64,${toBase64(termsHtml)}`),
     },
     version: "",
     status: "new",
   },
   reviewing: true,
 });
+
+function toBase64(str: string): string {
+  return btoa(
+    encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
+      return String.fromCharCode(parseInt(p1, 16));
+    }),
+  );
+}
 
 export const TermsReviewingPDF = createExample(TestedComponent, {
   knownExchanges: exchangeList,
@@ -166,9 +172,7 @@ export const TermsReviewingPDF = createExample(TestedComponent, {
   terms: {
     content: {
       type: "pdf",
-      location: new URL(
-        `data:text/html;base64,${Buffer.from(termsPdf).toString("base64")}`,
-      ),
+      location: new URL(`data:text/html;base64,${toBase64(termsPdf)}`),
     },
     status: "new",
     version: "",

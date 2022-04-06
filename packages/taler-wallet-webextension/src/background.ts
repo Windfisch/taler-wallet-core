@@ -28,7 +28,7 @@ import firefoxAPI from "./platform/firefox.js";
 import chromeAPI from "./platform/chrome.js";
 import { wxMain } from "./wxBackend.js";
 
-const isFirefox = typeof (window as any)['InstallTrigger'] !== 'undefined'
+const isFirefox = typeof (window as any) !== 'undefined' && typeof (window as any)['InstallTrigger'] !== 'undefined'
 
 // FIXME: create different entry point for any platform instead of 
 // switching in runtime

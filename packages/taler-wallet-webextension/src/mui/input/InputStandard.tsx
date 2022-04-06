@@ -50,6 +50,7 @@ export function InputStandard({
 
 const rootStyle = css`
   position: relative;
+  padding: 4px 0 5px;
 `;
 const formControlStyle = css`
   label + & {
@@ -57,6 +58,7 @@ const formControlStyle = css`
   }
 `;
 const underlineStyle = css`
+  // when is not disabled underline
   &:after {
     border-bottom: 2px solid var(--color-main);
     left: 0px;
@@ -107,11 +109,12 @@ const underlineStyle = css`
   }
 `;
 
-function Root({ disabled, focused, error, children }: any): VNode {
+function Root({ fullWidth, disabled, focused, error, children }: any): VNode {
   return (
     <InputBaseRoot
       disabled={disabled}
       focused={focused}
+      fullWidth={fullWidth}
       error={error}
       class={[rootStyle, formControlStyle, underlineStyle].join(" ")}
     >

@@ -54,7 +54,7 @@ export function TextField({
   select,
   helperText,
   children,
-  variant = "standard",
+  variant = "filled",
   ...props
 }: Props): VNode {
   // htmlFor={id} id={inputLabelId}

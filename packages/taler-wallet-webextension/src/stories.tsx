@@ -35,6 +35,7 @@ import * as mui from "./mui/index.stories.js";
 import { PopupNavBar, WalletNavBar } from "./NavigationBar.js";
 import * as popup from "./popup/index.stories.js";
 import * as wallet from "./wallet/index.stories.js";
+import * as cta from "./cta/index.stories.js";
 import * as components from "./components/index.stories.js";
 import { strings } from "./i18n/strings.js";
 
@@ -112,7 +113,7 @@ function parseExampleImport(group: string, im: any): ComponentItem {
   };
 }
 
-const allExamples = Object.entries({ popup, wallet, mui, components }).map(
+const allExamples = Object.entries({ popup, wallet, cta, mui, components }).map(
   ([title, value]) => ({
     title,
     list: value.default.map((s) => parseExampleImport(title, s)),
@@ -223,6 +224,14 @@ function getWrapperForGroup(group: string): FunctionComponent {
           <Fragment>
             <LogoHeader />
             <WalletNavBar />
+            <WalletBox>{children}</WalletBox>
+          </Fragment>
+        );
+      };
+    case "cta":
+      return function WalletWrapper({ children }: any) {
+        return (
+          <Fragment>
             <WalletBox>{children}</WalletBox>
           </Fragment>
         );

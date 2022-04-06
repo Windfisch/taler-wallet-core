@@ -147,6 +147,7 @@ function createTheme() {
     circularBorder: css`
       border-radius: 50%;
     `,
+    borderRadius: 4,
   };
 
   /////////////////////

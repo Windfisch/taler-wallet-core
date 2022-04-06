@@ -61,7 +61,6 @@ const componentStyle = css`
   font: inherit;
   letter-spacing: inherit;
   color: currentColor;
-  padding: 4px 0 5px;
   border: 0px;
   box-sizing: content-box;
   background: none;
@@ -128,6 +127,7 @@ export function InputBaseComponent({
   size,
   multiline,
   type,
+  class: _class,
   ...props
 }: any): VNode {
   return (
@@ -136,6 +136,7 @@ export function InputBaseComponent({
       type={type}
       class={[
         componentStyle,
+        _class,
         disabled && componentDisabledStyle,
         size === "small" && componentSmallStyle,
         multiline && componentMultilineStyle,

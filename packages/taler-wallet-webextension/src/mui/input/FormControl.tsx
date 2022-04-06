@@ -56,7 +56,7 @@ export function FormControl({
   margin = "none",
   required = false,
   size = "medium",
-  variant = "standard",
+  variant = "filled",
   children,
 }: Partial<Props>): VNode {
   const [filled, setFilled] = useState(false);
@@ -138,7 +138,7 @@ const defaultContextValue: FCCProps = {
   onFilled: () => null,
   onFocus: () => null,
   required: false,
-  variant: "outlined",
+  variant: "filled",
 };
 
 function withoutUndefinedProperties(obj: any): any {
