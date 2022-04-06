@@ -867,6 +867,51 @@ async function pollChallenges(
   return state;
 }
 
+async function getResponseHash(
+  truth: EscrowMethod,
+  solveRequest: ActionArgsSolveChallengeRequest,
+): Promise<string> {
+  let respHash: string;
+  switch (truth.escrow_type) {
+    case ChallengeType.Question: {
+      if ("answer" in solveRequest) {
+        respHash = await secureAnswerHash(
+          solveRequest.answer,
+          truth.uuid,
+          truth.truth_salt,
+        );
+      } else {
+        throw Error("unsupported answer request");
+      }
+      break;
+    }
+    case ChallengeType.Email:
+    case ChallengeType.Sms:
+    case ChallengeType.Post:
+    case ChallengeType.Iban:
+    case ChallengeType.Totp: {
+      if ("answer" in solveRequest) {
+        const s = solveRequest.answer.trim().replace(/^A-/, "");
+        let pin: number;
+        try {
+          pin = Number.parseInt(s);
+        } catch (e) {
+          throw Error("invalid pin format");
+        }
+        respHash = await pinAnswerHash(pin);
+      } else if ("pin" in solveRequest) {
+        respHash = await pinAnswerHash(solveRequest.pin);
+      } else {
+        throw Error("unsupported answer request");
+      }
+      break;
+    }
+    default:
+      throw Error(`unsupported challenge type "${truth.escrow_type}""`);
+  }
+  return respHash;
+}
+
 /**
  * Request a truth, optionally with a challenge solution
  * provided by the user.
@@ -874,61 +919,26 @@ async function pollChallenges(
 async function requestTruth(
   state: ReducerStateRecovery,
   truth: EscrowMethod,
-  solveRequest?: ActionArgsSolveChallengeRequest,
+  solveRequest: ActionArgsSolveChallengeRequest,
 ): Promise<ReducerStateRecovery | ReducerStateError> {
-  const url = new URL(`/truth/${truth.uuid}`, truth.url);
+  const url = new URL(`/truth/${truth.uuid}/solve`, truth.url);
 
-  if (solveRequest) {
-    logger.info(`handling solve request ${j2s(solveRequest)}`);
-    let respHash: string;
-    switch (truth.escrow_type) {
-      case ChallengeType.Question: {
-        if ("answer" in solveRequest) {
-          respHash = await secureAnswerHash(
-            solveRequest.answer,
-            truth.uuid,
-            truth.truth_salt,
-          );
-        } else {
-          throw Error("unsupported answer request");
-        }
-        break;
-      }
-      case ChallengeType.Email:
-      case ChallengeType.Sms:
-      case ChallengeType.Post:
-      case ChallengeType.Iban:
-      case ChallengeType.Totp: {
-        if ("answer" in solveRequest) {
-          const s = solveRequest.answer.trim().replace(/^A-/, "");
-          let pin: number;
-          try {
-            pin = Number.parseInt(s);
-          } catch (e) {
-            throw Error("invalid pin format");
-          }
-          respHash = await pinAnswerHash(pin);
-        } else if ("pin" in solveRequest) {
-          respHash = await pinAnswerHash(solveRequest.pin);
-        } else {
-          throw Error("unsupported answer request");
-        }
-        break;
-      }
-      default:
-        throw Error(`unsupported challenge type "${truth.escrow_type}""`);
-    }
-    url.searchParams.set("response", respHash);
-  }
+  const hresp = await getResponseHash(truth, solveRequest);
 
   const resp = await fetch(url.href, {
+    method: "POST",
     headers: {
-      "Anastasis-Truth-Decryption-Key": truth.truth_key,
+      Accept: "application/json",
+      "Content-Type": "application/json",
     },
+    body: JSON.stringify({
+      truth_decryption_key: truth.truth_key,
+      h_response: hresp,
+    }),
   });
 
   logger.info(
-    `got GET /truth response from ${truth.url}, http status ${resp.status}`,
+    `got POST /truth/.../solve response from ${truth.url}, http status ${resp.status}`,
   );
 
   if (resp.status === HttpStatusCode.Ok) {
@@ -975,66 +985,6 @@ async function requestTruth(
     return tryRecoverSecret(newState);
   }
 
-  if (resp.status === HttpStatusCode.Forbidden) {
-    const body = await resp.json();
-    if (
-      body.code === TalerErrorCode.ANASTASIS_TRUTH_CHALLENGE_RESPONSE_REQUIRED
-    ) {
-      return {
-        ...state,
-        recovery_state: RecoveryStates.ChallengeSolving,
-        challenge_feedback: {
-          ...state.challenge_feedback,
-          [truth.uuid]: {
-            state: ChallengeFeedbackStatus.Pending,
-          },
-        },
-      };
-    }
-    return {
-      ...state,
-      recovery_state: RecoveryStates.ChallengeSolving,
-      challenge_feedback: {
-        ...state.challenge_feedback,
-        [truth.uuid]: {
-          state: ChallengeFeedbackStatus.Message,
-          message: body.hint ?? "Challenge should be solved",
-        },
-      },
-    };
-  }
-
-  if (resp.status === HttpStatusCode.Accepted) {
-    const body = await resp.json();
-    logger.info(`got body ${j2s(body)}`);
-    if (body.method === "iban") {
-      const b = body as IbanExternalAuthResponse;
-      return {
-        ...state,
-        recovery_state: RecoveryStates.ChallengeSolving,
-        challenge_feedback: {
-          ...state.challenge_feedback,
-          [truth.uuid]: {
-            state: ChallengeFeedbackStatus.AuthIban,
-            answer_code: b.answer_code,
-            business_name: b.details.business_name,
-            challenge_amount: b.details.challenge_amount,
-            credit_iban: b.details.credit_iban,
-            wire_transfer_subject: b.details.wire_transfer_subject,
-            details: b.details,
-            method: "iban",
-          },
-        },
-      };
-    } else {
-      return {
-        code: TalerErrorCode.ANASTASIS_TRUTH_CHALLENGE_FAILED,
-        hint: "unknown external authentication method",
-        http_status: resp.status,
-      } as ReducerStateError;
-    }
-  }
-
   return {
     code: TalerErrorCode.ANASTASIS_TRUTH_CHALLENGE_FAILED,
     hint: "got unexpected /truth/ response status",
@@ -1053,6 +1003,7 @@ async function solveChallenge(
   if (!truth) {
     throw Error("truth for challenge not found");
   }
+
   return requestTruth(state, truth, ta);
 }
 
@@ -1096,7 +1047,58 @@ async function selectChallenge(
     throw "truth for challenge not found";
   }
 
-  return requestTruth({ ...state, selected_challenge_uuid: ta.uuid }, truth);
+  const url = new URL(`/truth/${truth.uuid}/challenge`, truth.url);
+
+  if (truth.escrow_type === ChallengeType.Question) {
+    return {
+      ...state,
+      recovery_state: RecoveryStates.ChallengeSolving,
+      selected_challenge_uuid: truth.uuid,
+      challenge_feedback: {
+        ...state.challenge_feedback,
+        [truth.uuid]: {
+          state: ChallengeFeedbackStatus.Pending,
+        },
+      },
+    };
+  }
+
+  const resp = await fetch(url.href, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      truth_decryption_key: truth.truth_key,
+    }),
+  });
+
+  logger.info(
+    `got GET /truth/.../challenge response from ${truth.url}, http status ${resp.status}`,
+  );
+
+  if (resp.status === HttpStatusCode.Ok) {
+    return {
+      ...state,
+      recovery_state: RecoveryStates.ChallengeSolving,
+      selected_challenge_uuid: truth.uuid,
+      challenge_feedback: {
+        ...state.challenge_feedback,
+        [truth.uuid]: {
+          state: ChallengeFeedbackStatus.Pending,
+        },
+      },
+    };
+  }
+
+  // FIXME: look at response, include in challenge_feedback!
+
+  return {
+    code: TalerErrorCode.ANASTASIS_TRUTH_CHALLENGE_FAILED,
+    hint: "got unexpected /truth/.../challenge response status",
+    http_status: resp.status,
+  } as ReducerStateError;
 }
 
 async function backupSelectContinent(
@@ -1140,15 +1142,15 @@ interface TransitionImpl<S, T> {
   handler: (s: S, args: T) => Promise<S | ReducerStateError>;
 }
 
-interface Transition<S, T> {
-  [x: string]: TransitionImpl<S, T>;
+interface Transition<S> {
+  [x: string]: TransitionImpl<S, any>;
 }
 
 function transition<S, T>(
   action: string,
   argCodec: Codec<T>,
   handler: (s: S, args: T) => Promise<S | ReducerStateError>,
-): Transition<S, T> {
+): Transition<S> {
   return {
     [action]: {
       argCodec,
@@ -1160,7 +1162,7 @@ function transition<S, T>(
 function transitionBackupJump(
   action: string,
   st: BackupStates,
-): Transition<ReducerStateBackup, void> {
+): Transition<ReducerStateBackup> {
   return {
     [action]: {
       argCodec: codecForAny(),
@@ -1172,7 +1174,7 @@ function transitionBackupJump(
 function transitionRecoveryJump(
   action: string,
   st: RecoveryStates,
-): Transition<ReducerStateRecovery, void> {
+): Transition<ReducerStateRecovery> {
   return {
     [action]: {
       argCodec: codecForAny(),
@@ -1440,7 +1442,7 @@ async function updateSecretExpiration(
 
 const backupTransitions: Record<
   BackupStates,
-  Transition<ReducerStateBackup, any>
+  Transition<ReducerStateBackup>
 > = {
   [BackupStates.ContinentSelecting]: {
     ...transition(
@@ -1511,7 +1513,7 @@ const backupTransitions: Record<
 
 const recoveryTransitions: Record<
   RecoveryStates,
-  Transition<ReducerStateRecovery, any>
+  Transition<ReducerStateRecovery>
 > = {
   [RecoveryStates.ContinentSelecting]: {
     ...transition(

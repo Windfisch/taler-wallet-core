@@ -221,6 +221,13 @@ export enum TalerErrorCode {
   GENERIC_FAILED_COMPUTE_JSON_HASH = 61,
 
   /**
+   * The service could not compute an amount.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  GENERIC_FAILED_COMPUTE_AMOUNT = 62,
+
+  /**
    * The HTTP server had insufficient memory to parse the request.
    * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
    * (A value of 0 indicates that the error is generated client-side).
@@ -394,6 +401,20 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   EXCHANGE_GENERIC_CLOCK_SKEW = 1020,
+
+  /**
+   * The specified amount for the coin is higher than the value of the denomination of the coin.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_GENERIC_AMOUNT_EXCEEDS_DENOMINATION_VALUE = 1021,
+
+  /**
+   * The exchange was not properly configured with global fees.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_GENERIC_GLOBAL_FEES_MISSING = 1022,
 
   /**
    * The exchange did not find information about the specified transaction in the database.
@@ -1080,6 +1101,83 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   EXCHANGE_MANAGEMENT_GLOBAL_FEE_SIGNATURE_INVALID = 1817,
+
+  /**
+   * The purse was previously created with different meta data.
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_PURSE_CREATE_CONFLICTING_META_DATA = 1850,
+
+  /**
+   * The purse was previously created with a different contract.
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_PURSE_CREATE_CONFLICTING_CONTRACT_STORED = 1851,
+
+  /**
+   * A coin signature for a deposit into the purse is invalid.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_PURSE_CREATE_COIN_SIGNATURE_INVALID = 1852,
+
+  /**
+   * The purse expiration time is in the past.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_PURSE_CREATE_EXPIRATION_BEFORE_NOW = 1853,
+
+  /**
+   * The purse expiration time is "never".
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_PURSE_CREATE_EXPIRATION_IS_NEVER = 1854,
+
+  /**
+   * The purse signature over the purse meta data is invalid.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_PURSE_CREATE_SIGNATURE_INVALID = 1855,
+
+  /**
+   * The signature over the encrypted contract is invalid.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_PURSE_ECONTRACT_SIGNATURE_INVALID = 1856,
+
+  /**
+   * The signature from the exchange over the confirmation is invalid.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_PURSE_CREATE_EXCHANGE_SIGNATURE_INVALID = 1857,
+
+  /**
+   * The coin was previously deposited with different meta data.
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_PURSE_DEPOSIT_CONFLICTING_META_DATA = 1858,
+
+  /**
+   * The encrypted contract was previously uploaded with different meta data.
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_PURSE_ECONTRACT_CONFLICTING_META_DATA = 1859,
+
+  /**
+   * The deposited amount is less than the purse fee.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_CREATE_PURSE_NEGATIVE_VALUE_AFTER_FEE = 1860,
 
   /**
    * The auditor signature over the denomination meta data is invalid.

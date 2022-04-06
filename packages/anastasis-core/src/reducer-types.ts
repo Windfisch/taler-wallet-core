@@ -6,9 +6,7 @@ import {
   codecForNumber,
   codecForString,
   codecForTimestamp,
-  Duration,
   TalerProtocolTimestamp,
-  AbsoluteTime,
 } from "@gnu-taler/taler-util";
 import { ChallengeFeedback } from "./challenge-feedback-types.js";
 import { KeyShare } from "./crypto.js";

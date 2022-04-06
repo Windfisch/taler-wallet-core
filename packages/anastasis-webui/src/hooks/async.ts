@@ -18,7 +18,7 @@
  *
  * @author Sebastian Javier Marchano (sebasjm)
  */
-import { useState } from "preact/hooks";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 // import { cancelPendingRequest } from "./backend";
 
 export interface Options {
@@ -34,6 +34,17 @@ export interface AsyncOperationApi<T> {
   error: string | undefined;
 }
 
+export function useIsMounted() {
+  const isMountedRef = useRef(true);
+  const isMounted = useCallback(() => isMountedRef.current, []);
+
+  useEffect(() => {
+    return () => void (isMountedRef.current = false);
+  }, []);
+
+  return isMounted;
+}
+
 export function useAsync<T>(
   fn?: (...args: any) => Promise<T>,
   { slowTolerance: tooLong }: Options = { slowTolerance: 1000 },
@@ -42,11 +53,15 @@ export function useAsync<T>(
   const [isLoading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<any>(undefined);
   const [isSlow, setSlow] = useState(false);
+  const isMounted = useIsMounted();
 
   const request = async (...args: any) => {
     if (!fn) return;
     setLoading(true);
     const handler = setTimeout(() => {
+      if (!isMounted()) {
+        return;
+      }
       setSlow(true);
     }, tooLong);
 
@@ -54,6 +69,10 @@ export function useAsync<T>(
       console.log("calling async", args);
       const result = await fn(...args);
       console.log("async back", result);
+      if (!isMounted()) {
+        // Possibly calling fn(...) resulted in the component being unmounted.
+        return;
+      }
       setData(result);
     } catch (error) {
       setError(error);
