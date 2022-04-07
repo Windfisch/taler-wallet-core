@@ -1,6 +1,12 @@
 import { css } from "@linaria/core";
-import { h, JSX, VNode } from "preact";
-import { useLayoutEffect } from "preact/hooks";
+import { Fragment, h, JSX, VNode } from "preact";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "preact/hooks";
 // eslint-disable-next-line import/extensions
 import { theme } from "../style";
 import { FormControlContext, useFormControl } from "./FormControl.js";
@@ -13,6 +19,10 @@ const rootStyle = css`
   cursor: text;
   display: inline-flex;
   align-items: center;
+
+  [data-multiline] {
+    padding: 4px 0 5px;
+  }
 `;
 const rootDisabledStyle = css`
   color: ${theme.palette.text.disabled};
@@ -103,6 +113,12 @@ const componentStyle = css`
     animation-duration: 5000s;
     animation-name: auto-fill;
   }
+  textarea {
+    height: "auto";
+    resize: "none";
+    padding: 0px;
+    padding-top: 0px;
+  }
 `;
 const componentDisabledStyle = css`
   opacity: 1;
@@ -139,7 +155,7 @@ export function InputBaseComponent({
         _class,
         disabled && componentDisabledStyle,
         size === "small" && componentSmallStyle,
-        multiline && componentMultilineStyle,
+        // multiline && componentMultilineStyle,
         type === "search" && searchStyle,
       ].join(" ")}
       {...props}
@@ -159,6 +175,8 @@ export function InputBase({
   rows,
   type = "text",
   value,
+  maxRows,
+  minRows,
   onClick,
   ...props
 }: any): VNode {
@@ -226,8 +244,12 @@ export function InputBase({
     }
   };
 
-  if (!Input) {
-    Input = props.multiline ? TextareaAutoSize : InputBaseComponent;
+  const rowsProps = {
+    minRows: rows ? rows : minRows,
+    maxRows: rows ? rows : maxRows,
+  };
+  if (props.multiline) {
+    Input = TextareaAutoSize;
   }
 
   return (
@@ -249,12 +271,238 @@ export function InputBase({
           onChange={handleChange}
           onBlur={handleBlur}
           onFocus={handleFocus}
+          {...rowsProps}
+          {...props}
         />
       </FormControlContext.Provider>
     </Root>
   );
 }
+const shadowStyle = css`
+  visibility: hidden;
+  position: absolute;
+  overflow: hidden;
+  height: 0px;
+  top: 0px;
+  left: 0px;
+  transform: translateZ(0);
+`;
 
-export function TextareaAutoSize(): VNode {
-  return <input onClick={(e) => null} />;
+function ownerDocument(node: Node | null | undefined): Document {
+  return (node && node.ownerDocument) || document;
+}
+function ownerWindow(node: Node | null | undefined): Window {
+  const doc = ownerDocument(node);
+  return doc.defaultView || window;
+}
+function getStyleValue(
+  computedStyle: CSSStyleDeclaration,
+  property: any,
+): number {
+  return parseInt(computedStyle[property], 10) || 0;
+}
+
+function debounce(func: any, wait = 166): any {
+  let timeout: any;
+  function debounced(...args) {
+    const later = () => {
+      func.apply(this, args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  }
+
+  debounced.clear = () => {
+    clearTimeout(timeout);
+  };
+
+  return debounced;
+}
+
+export function TextareaAutoSize({
+  // disabled,
+  // size,
+  onChange,
+  value,
+  multiline,
+  focused,
+  disabled,
+  error,
+  minRows = 1,
+  maxRows,
+  style,
+  type,
+  class: _class,
+  ...props
+}: any): VNode {
+  // const { onChange, maxRows, minRows = 1, style, value, ...other } = props;
+
+  const { current: isControlled } = useRef(value != null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  // const handleRef = useForkRef(ref, inputRef);
+  const shadowRef = useRef<HTMLTextAreaElement>(null);
+  const renders = useRef(0);
+  const [state, setState] = useState<{ outerHeightStyle: any; overflow: any }>({
+    outerHeightStyle: undefined,
+    overflow: undefined,
+  });
+
+  const syncHeight = useCallback(() => {
+    const input = inputRef.current;
+    const inputShallow = shadowRef.current;
+    if (!input || !inputShallow) return;
+    const containerWindow = ownerWindow(input);
+    const computedStyle = containerWindow.getComputedStyle(input);
+
+    // If input's width is shrunk and it's not visible, don't sync height.
+    if (computedStyle.width === "0px") {
+      return;
+    }
+
+    inputShallow.style.width = computedStyle.width;
+    inputShallow.value = input.value || props.placeholder || "x";
+    if (inputShallow.value.slice(-1) === "\n") {
+      // Certain fonts which overflow the line height will cause the textarea
+      // to report a different scrollHeight depending on whether the last line
+      // is empty. Make it non-empty to avoid this issue.
+      inputShallow.value += " ";
+    }
+
+    const boxSizing: string = computedStyle["box-sizing" as any];
+    const padding =
+      getStyleValue(computedStyle, "padding-bottom") +
+      getStyleValue(computedStyle, "padding-top");
+    const border =
+      getStyleValue(computedStyle, "border-bottom-width") +
+      getStyleValue(computedStyle, "border-top-width");
+
+    // console.log(boxSizing, padding, border);
+    // The height of the inner content
+    const innerHeight = inputShallow.scrollHeight;
+
+    // Measure height of a textarea with a single row
+    inputShallow.value = "x";
+    const singleRowHeight = inputShallow.scrollHeight;
+
+    // The height of the outer content
+    let outerHeight = innerHeight;
+
+    if (minRows) {
+      outerHeight = Math.max(Number(minRows) * singleRowHeight, outerHeight);
+    }
+    if (maxRows) {
+      outerHeight = Math.min(Number(maxRows) * singleRowHeight, outerHeight);
+    }
+    outerHeight = Math.max(outerHeight, singleRowHeight);
+
+    // Take the box sizing into account for applying this value as a style.
+    const outerHeightStyle =
+      outerHeight + (boxSizing === "border-box" ? padding + border : 0);
+    const overflow = Math.abs(outerHeight - innerHeight) <= 1;
+
+    console.log("height", outerHeight, minRows, maxRows);
+    setState((prevState) => {
+      // Need a large enough difference to update the height.
+      // This prevents infinite rendering loop.
+      if (
+        renders.current < 20 &&
+        ((outerHeightStyle > 0 &&
+          Math.abs((prevState.outerHeightStyle || 0) - outerHeightStyle) > 1) ||
+          prevState.overflow !== overflow)
+      ) {
+        renders.current += 1;
+        return {
+          overflow,
+          outerHeightStyle,
+        };
+      }
+
+      return prevState;
+    });
+  }, [maxRows, minRows, props.placeholder]);
+
+  useLayoutEffect(() => {
+    const handleResize = debounce(() => {
+      renders.current = 0;
+      syncHeight();
+    });
+    const containerWindow = ownerWindow(inputRef.current);
+    containerWindow.addEventListener("resize", handleResize);
+    let resizeObserver: any;
+
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(handleResize);
+      resizeObserver.observe(inputRef.current);
+    }
+
+    return () => {
+      handleResize.clear();
+      containerWindow.removeEventListener("resize", handleResize);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+    };
+  }, [syncHeight]);
+
+  useLayoutEffect(() => {
+    syncHeight();
+  });
+
+  useLayoutEffect(() => {
+    renders.current = 0;
+  }, [value]);
+
+  const handleChange = (event) => {
+    renders.current = 0;
+
+    if (!isControlled) {
+      syncHeight();
+    }
+
+    if (onChange) {
+      onChange(event);
+    }
+  };
+
+  return (
+    <Fragment>
+      <textarea
+        class={[
+          componentStyle,
+          componentMultilineStyle,
+          // _class,
+          disabled && componentDisabledStyle,
+          // size === "small" && componentSmallStyle,
+          multiline && componentMultilineStyle,
+          type === "search" && searchStyle,
+        ].join(" ")}
+        value={value}
+        onChange={handleChange}
+        ref={inputRef}
+        // Apply the rows prop to get a "correct" first SSR paint
+        rows={minRows}
+        style={{
+          height: state.outerHeightStyle,
+          // Need a large enough difference to allow scrolling.
+          // This prevents infinite rendering loop.
+          overflow: state.overflow ? "hidden" : null,
+          ...style,
+        }}
+        // {...props}
+      />
+
+      <textarea
+        aria-hidden
+        class={[
+          componentStyle,
+          componentMultilineStyle,
+          shadowStyle,
+          type === "search" && searchStyle,
+        ].join(" ")}
+        readOnly
+        ref={shadowRef}
+        tabIndex={-1}
+      />
+    </Fragment>
+  );
 }

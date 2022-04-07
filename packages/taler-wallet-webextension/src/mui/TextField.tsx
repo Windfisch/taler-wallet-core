@@ -28,7 +28,9 @@ export interface Props {
   onChange?: (s: string) => void;
   placeholder?: string;
   required?: boolean;
-  focused?: boolean;
+
+  //FIXME: change to "grabFocus"
+  // focused?: boolean;
   rows?: number;
   select?: boolean;
   type?: string;

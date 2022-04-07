@@ -84,25 +84,45 @@ export const Standard = (): VNode => BasicExample("standard");
 export const Filled = (): VNode => BasicExample("filled");
 export const Outlined = (): VNode => BasicExample("outlined");
 
-export const Color = (): VNode => (
-  <Container>
-    <TextField
-      variant="standard"
-      label="Outlined secondary"
-      color="secondary"
-      focused
-    />
-    <TextField
-      label="Filled success"
-      variant="standard"
-      color="success"
-      focused
-    />
-    <TextField
-      label="Standard warning"
-      variant="standard"
-      color="warning"
-      focused
-    />
-  </Container>
-);
+export const Color = (): VNode => {
+  const [value, onChange] = useState("");
+  return (
+    <Container>
+      <TextField
+        variant="standard"
+        label="Outlined secondary"
+        color="secondary"
+      />
+      <TextField label="Filled success" variant="standard" color="success" />
+      <TextField label="Standard warning" variant="standard" color="warning" />
+    </Container>
+  );
+};
+
+export const Multiline = (): VNode => {
+  const [value, onChange] = useState("");
+  return (
+    <Container>
+      {/* <TextField
+        {...{ value, onChange }}
+        label="Multiline"
+        variant="standard"
+        multiline
+      /> */}
+      <TextField
+        {...{ value, onChange }}
+        label="Max row 4"
+        variant="standard"
+        multiline
+        maxRows={4}
+      />
+      {/* <TextField
+        {...{ value, onChange }}
+        label="Row 10"
+        variant="standard"
+        multiline
+        rows={10}
+      /> */}
+    </Container>
+  );
+};
