@@ -99,6 +99,9 @@ export function useComponentState(
     undefined,
   );
 
+  /**
+   * Ask the wallet about the withdraw URI
+   */
   const uriInfoHook = useAsyncAsHook(async () => {
     if (!talerWithdrawUri) throw Error("ERROR_NO-URI-FOR-WITHDRAWAL");
 
@@ -110,6 +113,9 @@ export function useComponentState(
     return { uriInfo, knownExchanges };
   });
 
+  /**
+   * Get the amount and select one exchange
+   */
   const exchangeAndAmount = useAsyncAsHook(
     async () => {
       if (!uriInfoHook || uriInfoHook.hasError || !uriInfoHook.response) return;
@@ -136,6 +142,9 @@ export function useComponentState(
     [!uriInfoHook || uriInfoHook.hasError ? undefined : uriInfoHook],
   );
 
+  /**
+   * For the exchange selected, bring the status of the terms of service
+   */
   const terms = useAsyncAsHook(
     async () => {
       if (
@@ -159,6 +168,10 @@ export function useComponentState(
     ],
   );
 
+  /**
+   * With the exchange and amount, ask the wallet the information
+   * about the withdrawal
+   */
   const info = useAsyncAsHook(
     async () => {
       if (
@@ -466,7 +479,6 @@ export function WithdrawPage({ talerWithdrawUri }: Props): VNode {
     return <Loading />;
   }
 
-  console.log(state);
   if (state.status === "loading-uri") {
     if (!state.hook) return <Loading />;
 

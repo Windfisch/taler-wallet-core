@@ -40,12 +40,14 @@ import {
   Wallet,
   WalletStoresV1
 } from "@gnu-taler/taler-wallet-core";
+import { SetTimeoutTimerAPI, TimerGroup } from "@gnu-taler/taler-wallet-core/src/util/timer";
 import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory.js";
 import { BrowserHttpLib } from "./browserHttpLib.js";
 import { getReadRequestPermissions } from "./permissions.js";
 import { MessageFromBackend, platform } from "./platform/api.js";
 import { SynchronousCryptoWorkerFactory } from "./serviceWorkerCryptoWorkerFactory.js";
 import { ServiceWorkerHttpLib } from "./serviceWorkerHttpLib.js";
+import { ServiceWorkerTimerAPI } from "./serviceWorkerTimerAPI.js";
 
 /**
  * Currently active wallet instance.  Might be unloaded and
@@ -188,17 +190,20 @@ async function reinitWallet(): Promise<void> {
   }
   let httpLib;
   let cryptoWorker;
+  let timer;
 
   if (platform.useServiceWorkerAsBackgroundProcess()) {
     httpLib = new ServiceWorkerHttpLib();
     cryptoWorker = new SynchronousCryptoWorkerFactory();
+    timer = new ServiceWorkerTimerAPI();
   } else {
     httpLib = new BrowserHttpLib();
     cryptoWorker = new BrowserCryptoWorkerFactory();
+    timer = new SetTimeoutTimerAPI();
   }
 
   console.log("setting wallet");
-  const wallet = await Wallet.create(currentDatabase, httpLib, cryptoWorker);
+  const wallet = await Wallet.create(currentDatabase, httpLib, timer, cryptoWorker);
   try {
     await wallet.handleCoreApiRequest("initWallet", "native-init", {});
   } catch (e) {
@@ -218,7 +223,7 @@ async function reinitWallet(): Promise<void> {
     (window as any).talerWallet = wallet;
   }
   currentWallet = wallet;
-  walletInit.resolve();
+  return walletInit.resolve();
 }
 
 function parseTalerUriAndRedirect(tabId: number, talerUri: string): void {
