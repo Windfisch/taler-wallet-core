@@ -12,7 +12,7 @@ import {
 import { useTranslationContext } from "../context/translation.js";
 import { TermsState } from "../utils/index.js";
 
-interface Props {
+export interface Props {
   reviewing: boolean;
   reviewed: boolean;
   terms: TermsState;
