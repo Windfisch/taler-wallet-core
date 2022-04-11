@@ -36,174 +36,182 @@ const exchangeListEmpty = {
 
 describe("CreateManualWithdraw states", () => {
   it("should set noExchangeFound when exchange list is empty", () => {
-    const { result } = mountHook(() =>
+    const { getLastResultOrThrow } = mountHook(() =>
       useComponentState(exchangeListEmpty, undefined, undefined),
     );
 
-    if (!result.current) {
-      expect.fail("hook didn't render");
-    }
+    const { noExchangeFound } = getLastResultOrThrow()
 
-    expect(result.current.noExchangeFound).equal(true)
+    expect(noExchangeFound).equal(true)
   });
 
   it("should set noExchangeFound when exchange list doesn't include selected currency", () => {
-    const { result } = mountHook(() =>
+    const { getLastResultOrThrow } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, "COL"),
     );
 
-    if (!result.current) {
-      expect.fail("hook didn't render");
-    }
+    const { noExchangeFound } = getLastResultOrThrow()
 
-    expect(result.current.noExchangeFound).equal(true)
+    expect(noExchangeFound).equal(true)
   });
 
 
   it("should select the first exchange from the list", () => {
-    const { result } = mountHook(() =>
+    const { getLastResultOrThrow } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, undefined),
     );
 
-    if (!result.current) {
-      expect.fail("hook didn't render");
-    }
+    const { exchange } = getLastResultOrThrow()
 
-    expect(result.current.exchange.value).equal("url1")
+    expect(exchange.value).equal("url1")
   });
 
   it("should select the first exchange with the selected currency", () => {
-    const { result } = mountHook(() =>
+    const { getLastResultOrThrow } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, "ARS"),
     );
 
-    if (!result.current) {
-      expect.fail("hook didn't render");
-    }
+    const { exchange } = getLastResultOrThrow()
 
-    expect(result.current.exchange.value).equal("url2")
+    expect(exchange.value).equal("url2")
   });
 
   it("should change the exchange when currency change", async () => {
-    const { result, waitNextUpdate } = mountHook(() =>
+    const { getLastResultOrThrow, waitNextUpdate } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, "ARS"),
     );
 
-    if (!result.current) {
-      expect.fail("hook didn't render");
+
+    {
+      const { exchange, currency } = getLastResultOrThrow()
+
+      expect(exchange.value).equal("url2")
+
+      currency.onChange("USD")
     }
-
-    expect(result.current.exchange.value).equal("url2")
-
-    result.current.currency.onChange("USD")
 
     await waitNextUpdate()
 
-    expect(result.current.exchange.value).equal("url1")
+    {
+      const { exchange } = getLastResultOrThrow()
+      expect(exchange.value).equal("url1")
+    }
 
   });
 
   it("should change the currency when exchange change", async () => {
-    const { result, waitNextUpdate } = mountHook(() =>
+    const { getLastResultOrThrow, waitNextUpdate } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, "ARS"),
     );
 
-    if (!result.current) {
-      expect.fail("hook didn't render");
+    {
+      const { exchange, currency } = getLastResultOrThrow()
+
+      expect(exchange.value).equal("url2")
+      expect(currency.value).equal("ARS")
+
+      exchange.onChange("url1")
     }
-
-    expect(result.current.exchange.value).equal("url2")
-    expect(result.current.currency.value).equal("ARS")
-
-    result.current.exchange.onChange("url1")
 
     await waitNextUpdate()
 
-    expect(result.current.exchange.value).equal("url1")
-    expect(result.current.currency.value).equal("USD")
+    {
+      const { exchange, currency } = getLastResultOrThrow()
+
+      expect(exchange.value).equal("url1")
+      expect(currency.value).equal("USD")
+    }
   });
 
   it("should update parsed amount when amount change", async () => {
-    const { result, waitNextUpdate } = mountHook(() =>
+    const { getLastResultOrThrow, waitNextUpdate } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, "ARS"),
     );
 
-    if (!result.current) {
-      expect.fail("hook didn't render");
+    {
+      const { amount, parsedAmount } = getLastResultOrThrow()
+
+      expect(parsedAmount).equal(undefined)
+
+      amount.onInput("12")
     }
-
-    expect(result.current.parsedAmount).equal(undefined)
-
-    result.current.amount.onInput("12")
 
     await waitNextUpdate()
 
-    expect(result.current.parsedAmount).deep.equals({
-      value: 12, fraction: 0, currency: "ARS"
-    })
+    {
+      const { parsedAmount } = getLastResultOrThrow()
+
+      expect(parsedAmount).deep.equals({
+        value: 12, fraction: 0, currency: "ARS"
+      })
+    }
   });
 
   it("should have an amount field", async () => {
-    const { result, waitNextUpdate } = mountHook(() =>
+    const { getLastResultOrThrow, waitNextUpdate } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, "ARS"),
     );
 
-    if (!result.current) {
-      expect.fail("hook didn't render");
-    }
-
-    await defaultTestForInputText(waitNextUpdate, () => result.current!.amount)
+    await defaultTestForInputText(waitNextUpdate, () => getLastResultOrThrow().amount)
   })
 
   it("should have an exchange selector ", async () => {
-    const { result, waitNextUpdate } = mountHook(() =>
+    const { getLastResultOrThrow, waitNextUpdate } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, "ARS"),
     );
 
-    if (!result.current) {
-      expect.fail("hook didn't render");
-    }
-
-    await defaultTestForInputSelect(waitNextUpdate, () => result.current!.exchange)
+    await defaultTestForInputSelect(waitNextUpdate, () => getLastResultOrThrow().exchange)
   })
 
   it("should have a currency selector ", async () => {
-    const { result, waitNextUpdate } = mountHook(() =>
+    const { getLastResultOrThrow, waitNextUpdate } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, "ARS"),
     );
 
-    if (!result.current) {
-      expect.fail("hook didn't render");
-    }
-
-    await defaultTestForInputSelect(waitNextUpdate, () => result.current!.currency)
+    await defaultTestForInputSelect(waitNextUpdate, () => getLastResultOrThrow().currency)
   })
 
 });
 
 
 async function defaultTestForInputText(awaiter: () => Promise<void>, getField: () => TextFieldHandler): Promise<void> {
-  const initialValue = getField().value;
-  const otherValue = `${initialValue} something else`
-  getField().onInput(otherValue)
+  let nextValue = ''
+  {
+    const field = getField()
+    const initialValue = field.value;
+    nextValue = `${initialValue} something else`
+    field.onInput(nextValue)
+  }
 
   await awaiter()
 
-  expect(getField().value).equal(otherValue)
+  {
+    const field = getField()
+    expect(field.value).equal(nextValue)
+  }
 }
 
 
 async function defaultTestForInputSelect(awaiter: () => Promise<void>, getField: () => SelectFieldHandler): Promise<void> {
-  const initialValue = getField().value;
-  const keys = Object.keys(getField().list)
-  const nextIdx = keys.indexOf(initialValue) + 1
-  if (keys.length < nextIdx) {
-    throw new Error('no enough values')
+  let nextValue = ''
+
+  {
+    const field = getField();
+    const initialValue = field.value;
+    const keys = Object.keys(field.list)
+    const nextIdx = keys.indexOf(initialValue) + 1
+    if (keys.length < nextIdx) {
+      throw new Error('no enough values')
+    }
+    nextValue = keys[nextIdx]
+    field.onChange(nextValue)
   }
-  const nextValue = keys[nextIdx]
-  getField().onChange(nextValue)
 
   await awaiter()
 
-  expect(getField().value).equal(nextValue)
+  {
+    const field = getField();
+
+    expect(field.value).equal(nextValue)
+  }
 }

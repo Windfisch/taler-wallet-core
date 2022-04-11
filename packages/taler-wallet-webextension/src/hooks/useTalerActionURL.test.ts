@@ -32,30 +32,30 @@ describe('useTalerActionURL hook', () => {
       })
     }
 
-    const { result, waitNextUpdate } = mountHook(useTalerActionURL, ctx)
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(useTalerActionURL, ctx)
 
     {
-      const [url] = result.current!
+      const [url] = getLastResultOrThrow()
       expect(url).undefined;
     }
+
 
     await waitNextUpdate("waiting for useEffect")
 
     {
-      const [url] = result.current!
+      const [url, setDismissed] = getLastResultOrThrow()
       expect(url).equals("asd");
+      setDismissed(true)
     }
-
-    const [, setDismissed] = result.current!
-    setDismissed(true)
 
     await waitNextUpdate("after dismiss")
 
     {
-      const [url] = result.current!
+      const [url] = getLastResultOrThrow()
       if (url !== undefined) throw Error('invalid')
       expect(url).undefined;
     }
 
+    await assertNoPendingUpdate()
   })
 })

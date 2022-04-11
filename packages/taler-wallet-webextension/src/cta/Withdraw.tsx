@@ -21,17 +21,14 @@
  * @author sebasjm
  */
 
-import {
-  AmountJson,
-  Amounts,
-  ExchangeListItem,
-  WithdrawUriInfoResponse,
-} from "@gnu-taler/taler-util";
+import { AmountJson, Amounts } from "@gnu-taler/taler-util";
+import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
-import { useCallback, useMemo, useState } from "preact/hooks";
+import { useState } from "preact/hooks";
+import { Amount } from "../components/Amount.js";
+import { ErrorTalerOperation } from "../components/ErrorTalerOperation.js";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
-import { ErrorTalerOperation } from "../components/ErrorTalerOperation.js";
 import { LogoHeader } from "../components/LogoHeader.js";
 import { Part } from "../components/Part.js";
 import { SelectList } from "../components/SelectList.js";
@@ -42,72 +39,198 @@ import {
   SubTitle,
   WalletAction,
 } from "../components/styled/index.js";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
-import {
-  amountToString,
-  buildTermsOfServiceState,
-  TermsState,
-} from "../utils/index.js";
-import * as wxApi from "../wxApi.js";
-import { TermsOfServiceSection } from "./TermsOfServiceSection.js";
 import { useTranslationContext } from "../context/translation.js";
-import { TalerError } from "@gnu-taler/taler-wallet-core";
+import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { buildTermsOfServiceState } from "../utils/index.js";
+import {
+  ButtonHandler,
+  SelectFieldHandler,
+} from "../wallet/CreateManualWithdraw.js";
+import * as wxApi from "../wxApi.js";
+import {
+  Props as TermsOfServiceSectionProps,
+  TermsOfServiceSection,
+} from "./TermsOfServiceSection.js";
 
 interface Props {
   talerWithdrawUri?: string;
 }
 
-export interface ViewProps {
-  withdrawalFee: AmountJson;
-  exchangeBaseUrl?: string;
-  amount: AmountJson;
-  onSwitchExchange: (ex: string) => void;
-  onWithdraw: () => Promise<void>;
-  onReview: (b: boolean) => void;
-  onAccept: (b: boolean) => void;
-  reviewing: boolean;
-  reviewed: boolean;
-  terms: TermsState;
-  knownExchanges: ExchangeListItem[];
+type State = LoadingUri | LoadingExchange | LoadingInfoError | Success;
+
+interface LoadingUri {
+  status: "loading-uri";
+  hook: HookError | undefined;
+}
+interface LoadingExchange {
+  status: "loading-exchange";
+  hook: HookError | undefined;
+}
+interface LoadingInfoError {
+  status: "loading-info";
+  hook: HookError | undefined;
 }
 
-export function View({
-  withdrawalFee,
-  exchangeBaseUrl,
-  knownExchanges,
-  amount,
-  onWithdraw,
-  onSwitchExchange,
-  terms,
-  reviewing,
-  onReview,
-  onAccept,
-  reviewed,
-}: ViewProps): VNode {
-  const { i18n } = useTranslationContext();
+type Success = {
+  status: "success";
+  hook: undefined;
+
+  exchange: SelectFieldHandler;
+
+  editExchange: ButtonHandler;
+  cancelEditExchange: ButtonHandler;
+  confirmEditExchange: ButtonHandler;
+
+  showExchangeSelection: boolean;
+  chosenAmount: AmountJson;
+  withdrawalFee: AmountJson;
+  toBeReceived: AmountJson;
+
+  doWithdrawal: ButtonHandler;
+  tosProps?: TermsOfServiceSectionProps;
+  mustAcceptFirst: boolean;
+};
+
+export function useComponentState(
+  talerWithdrawUri: string | undefined,
+  api: typeof wxApi,
+): State {
+  const [customExchange, setCustomExchange] = useState<string | undefined>(
+    undefined,
+  );
+
+  const uriInfoHook = useAsyncAsHook(async () => {
+    if (!talerWithdrawUri) throw Error("ERROR_NO-URI-FOR-WITHDRAWAL");
+
+    const uriInfo = await api.getWithdrawalDetailsForUri({
+      talerWithdrawUri,
+    });
+    const { exchanges: knownExchanges } = await api.listExchanges();
+
+    return { uriInfo, knownExchanges };
+  });
+
+  const exchangeAndAmount = useAsyncAsHook(
+    async () => {
+      if (!uriInfoHook || uriInfoHook.hasError || !uriInfoHook.response) return;
+      const { uriInfo, knownExchanges } = uriInfoHook.response;
+
+      const amount = Amounts.parseOrThrow(uriInfo.amount);
+
+      const thisCurrencyExchanges = knownExchanges.filter(
+        (ex) => ex.currency === amount.currency,
+      );
+
+      const thisExchange: string | undefined =
+        customExchange ??
+        uriInfo.defaultExchangeBaseUrl ??
+        (thisCurrencyExchanges[0]
+          ? thisCurrencyExchanges[0].exchangeBaseUrl
+          : undefined);
+
+      if (!thisExchange) throw Error("ERROR_NO-DEFAULT-EXCHANGE");
+
+      return { amount, thisExchange, thisCurrencyExchanges };
+    },
+    [],
+    [!uriInfoHook || uriInfoHook.hasError ? undefined : uriInfoHook],
+  );
+
+  const terms = useAsyncAsHook(
+    async () => {
+      if (
+        !exchangeAndAmount ||
+        exchangeAndAmount.hasError ||
+        !exchangeAndAmount.response
+      )
+        return;
+      const { thisExchange } = exchangeAndAmount.response;
+      const exchangeTos = await api.getExchangeTos(thisExchange, ["text/xml"]);
+
+      const state = buildTermsOfServiceState(exchangeTos);
+
+      return { state };
+    },
+    [],
+    [
+      !exchangeAndAmount || exchangeAndAmount.hasError
+        ? undefined
+        : exchangeAndAmount,
+    ],
+  );
+
+  const info = useAsyncAsHook(
+    async () => {
+      if (
+        !exchangeAndAmount ||
+        exchangeAndAmount.hasError ||
+        !exchangeAndAmount.response
+      )
+        return;
+      const { thisExchange, amount } = exchangeAndAmount.response;
+
+      const info = await api.getExchangeWithdrawalInfo({
+        exchangeBaseUrl: thisExchange,
+        amount,
+        tosAcceptedFormat: ["text/xml"],
+      });
+
+      const withdrawalFee = Amounts.sub(
+        Amounts.parseOrThrow(info.withdrawalAmountRaw),
+        Amounts.parseOrThrow(info.withdrawalAmountEffective),
+      ).amount;
+
+      return { info, withdrawalFee };
+    },
+    [],
+    [
+      !exchangeAndAmount || exchangeAndAmount.hasError
+        ? undefined
+        : exchangeAndAmount,
+    ],
+  );
+
+  const [reviewing, setReviewing] = useState<boolean>(false);
+  const [reviewed, setReviewed] = useState<boolean>(false);
+
   const [withdrawError, setWithdrawError] = useState<TalerError | undefined>(
     undefined,
   );
   const [confirmDisabled, setConfirmDisabled] = useState<boolean>(false);
 
-  const needsReview = terms.status === "changed" || terms.status === "new";
+  const [showExchangeSelection, setShowExchangeSelection] = useState(false);
+  const [nextExchange, setNextExchange] = useState<string | undefined>();
 
-  const [switchingExchange, setSwitchingExchange] = useState(false);
-  const [nextExchange, setNextExchange] = useState<string | undefined>(
-    undefined,
-  );
+  if (!uriInfoHook || uriInfoHook.hasError) {
+    return {
+      status: "loading-uri",
+      hook: uriInfoHook,
+    };
+  }
 
-  const exchanges = knownExchanges
-    .filter((e) => e.currency === amount.currency)
-    .reduce(
-      (prev, ex) => ({ ...prev, [ex.exchangeBaseUrl]: ex.exchangeBaseUrl }),
-      {},
-    );
+  if (!exchangeAndAmount || exchangeAndAmount.hasError) {
+    return {
+      status: "loading-exchange",
+      hook: exchangeAndAmount,
+    };
+  }
+  if (!exchangeAndAmount.response) {
+    return {
+      status: "loading-exchange",
+      hook: undefined,
+    };
+  }
+  const { thisExchange, thisCurrencyExchanges, amount } =
+    exchangeAndAmount.response;
 
   async function doWithdrawAndCheckError(): Promise<void> {
     try {
       setConfirmDisabled(true);
-      await onWithdraw();
+      if (!talerWithdrawUri) return;
+      const res = await api.acceptWithdrawal(talerWithdrawUri, thisExchange);
+      if (res.confirmTransferUrl) {
+        document.location.href = res.confirmTransferUrl;
+      }
     } catch (e) {
       if (e instanceof TalerError) {
         setWithdrawError(e);
@@ -116,202 +239,64 @@ export function View({
     }
   }
 
-  return (
-    <WalletAction>
-      <LogoHeader />
-      <SubTitle>
-        <i18n.Translate>Digital cash withdrawal</i18n.Translate>
-      </SubTitle>
-
-      {withdrawError && (
-        <ErrorTalerOperation
-          title={
-            <i18n.Translate>
-              Could not finish the withdrawal operation
-            </i18n.Translate>
-          }
-          error={withdrawError.errorDetail}
-        />
-      )}
-
-      <section>
-        <Part
-          title={<i18n.Translate>Total to withdraw</i18n.Translate>}
-          text={amountToString(Amounts.sub(amount, withdrawalFee).amount)}
-          kind="positive"
-        />
-        {Amounts.isNonZero(withdrawalFee) && (
-          <Fragment>
-            <Part
-              title={<i18n.Translate>Chosen amount</i18n.Translate>}
-              text={amountToString(amount)}
-              kind="neutral"
-            />
-            <Part
-              title={<i18n.Translate>Exchange fee</i18n.Translate>}
-              text={amountToString(withdrawalFee)}
-              kind="negative"
-            />
-          </Fragment>
-        )}
-        {exchangeBaseUrl && (
-          <Part
-            title={<i18n.Translate>Exchange</i18n.Translate>}
-            text={exchangeBaseUrl}
-            kind="neutral"
-            big
-          />
-        )}
-        {!reviewing &&
-          (switchingExchange ? (
-            <Fragment>
-              <div>
-                <SelectList
-                  label={<i18n.Translate>Known exchanges</i18n.Translate>}
-                  list={exchanges}
-                  value={nextExchange}
-                  name="switchingExchange"
-                  onChange={setNextExchange}
-                />
-              </div>
-              <LinkSuccess
-                upperCased
-                style={{ fontSize: "small" }}
-                onClick={() => {
-                  if (nextExchange !== undefined) {
-                    onSwitchExchange(nextExchange);
-                  }
-                  setSwitchingExchange(false);
-                }}
-              >
-                {nextExchange === undefined ? (
-                  <i18n.Translate>Cancel exchange selection</i18n.Translate>
-                ) : (
-                  <i18n.Translate>Confirm exchange selection</i18n.Translate>
-                )}
-              </LinkSuccess>
-            </Fragment>
-          ) : (
-            <LinkSuccess
-              style={{ fontSize: "small" }}
-              upperCased
-              onClick={() => setSwitchingExchange(true)}
-            >
-              <i18n.Translate>Edit exchange</i18n.Translate>
-            </LinkSuccess>
-          ))}
-      </section>
-      <TermsOfServiceSection
-        reviewed={reviewed}
-        reviewing={reviewing}
-        terms={terms}
-        onAccept={onAccept}
-        onReview={onReview}
-      />
-      <section>
-        {(terms.status === "accepted" || (needsReview && reviewed)) && (
-          <ButtonSuccess
-            upperCased
-            disabled={!exchangeBaseUrl || confirmDisabled}
-            onClick={doWithdrawAndCheckError}
-          >
-            <i18n.Translate>Confirm withdrawal</i18n.Translate>
-          </ButtonSuccess>
-        )}
-        {terms.status === "notfound" && (
-          <ButtonWarning
-            upperCased
-            disabled={!exchangeBaseUrl}
-            onClick={doWithdrawAndCheckError}
-          >
-            <i18n.Translate>Withdraw anyway</i18n.Translate>
-          </ButtonWarning>
-        )}
-      </section>
-    </WalletAction>
-  );
-}
-
-export function WithdrawPageWithParsedURI({
-  uri,
-  uriInfo,
-}: {
-  uri: string;
-  uriInfo: WithdrawUriInfoResponse;
-}): VNode {
-  const { i18n } = useTranslationContext();
-  const [customExchange, setCustomExchange] = useState<string | undefined>(
-    undefined,
+  const exchanges = thisCurrencyExchanges.reduce(
+    (prev, ex) => ({ ...prev, [ex.exchangeBaseUrl]: ex.exchangeBaseUrl }),
+    {},
   );
 
-  const [reviewing, setReviewing] = useState<boolean>(false);
-  const [reviewed, setReviewed] = useState<boolean>(false);
-
-  const knownExchangesHook = useAsyncAsHook(wxApi.listExchanges);
-
-  const knownExchanges = useMemo(
-    () =>
-      !knownExchangesHook || knownExchangesHook.hasError
-        ? []
-        : knownExchangesHook.response.exchanges,
-    [knownExchangesHook],
-  );
-  const withdrawAmount = useMemo(
-    () => Amounts.parseOrThrow(uriInfo.amount),
-    [uriInfo.amount],
-  );
-  const thisCurrencyExchanges = useMemo(
-    () =>
-      knownExchanges.filter((ex) => ex.currency === withdrawAmount.currency),
-    [knownExchanges, withdrawAmount.currency],
-  );
-
-  const exchange: string | undefined = useMemo(
-    () =>
-      customExchange ??
-      uriInfo.defaultExchangeBaseUrl ??
-      (thisCurrencyExchanges[0]
-        ? thisCurrencyExchanges[0].exchangeBaseUrl
-        : undefined),
-    [customExchange, thisCurrencyExchanges, uriInfo.defaultExchangeBaseUrl],
-  );
-
-  const detailsHook = useAsyncAsHook(async () => {
-    if (!exchange) throw Error("no default exchange");
-    const tos = await wxApi.getExchangeTos(exchange, ["text/xml"]);
-
-    const tosState = buildTermsOfServiceState(tos);
-
-    const info = await wxApi.getExchangeWithdrawalInfo({
-      exchangeBaseUrl: exchange,
-      amount: withdrawAmount,
-      tosAcceptedFormat: ["text/xml"],
-    });
-    return { tos: tosState, info };
-  });
-
-  if (!detailsHook) {
-    return <Loading />;
+  if (!info || info.hasError) {
+    return {
+      status: "loading-info",
+      hook: info,
+    };
   }
-  if (detailsHook.hasError) {
-    return (
-      <LoadingError
-        title={
-          <i18n.Translate>Could not load the withdrawal details</i18n.Translate>
-        }
-        error={detailsHook}
-      />
-    );
+  if (!info.response) {
+    return {
+      status: "loading-info",
+      hook: undefined,
+    };
   }
 
-  const details = detailsHook.response;
+  const exchangeHandler: SelectFieldHandler = {
+    onChange: setNextExchange,
+    value: nextExchange || thisExchange,
+    list: exchanges,
+    isDirty: nextExchange !== thisExchange,
+  };
 
-  const onAccept = async (accepted: boolean): Promise<void> => {
-    if (!exchange) return;
+  const editExchange: ButtonHandler = {
+    onClick: async () => {
+      setShowExchangeSelection(true);
+    },
+  };
+  const cancelEditExchange: ButtonHandler = {
+    onClick: async () => {
+      setShowExchangeSelection(false);
+    },
+  };
+  const confirmEditExchange: ButtonHandler = {
+    onClick: async () => {
+      setCustomExchange(exchangeHandler.value);
+      setShowExchangeSelection(false);
+    },
+  };
+
+  const { withdrawalFee } = info.response;
+  const toBeReceived = Amounts.sub(amount, withdrawalFee).amount;
+
+  const { state: termsState } = (!terms
+    ? undefined
+    : terms.hasError
+    ? undefined
+    : terms.response) || { state: undefined };
+
+  async function onAccept(accepted: boolean): Promise<void> {
+    if (!termsState) return;
+
     try {
-      await wxApi.setExchangeTosAccepted(
-        exchange,
-        accepted ? details.tos.version : undefined,
+      await api.setExchangeTosAccepted(
+        thisExchange,
+        accepted ? termsState.version : undefined,
       );
       setReviewed(accepted);
     } catch (e) {
@@ -320,44 +305,154 @@ export function WithdrawPageWithParsedURI({
         // setErrorAccepting(e.message);
       }
     }
+  }
+
+  return {
+    status: "success",
+    hook: undefined,
+    exchange: exchangeHandler,
+    editExchange,
+    cancelEditExchange,
+    confirmEditExchange,
+    showExchangeSelection,
+    toBeReceived,
+    withdrawalFee,
+    chosenAmount: amount,
+    doWithdrawal: {
+      onClick: doWithdrawAndCheckError,
+      error: withdrawError,
+      disabled: confirmDisabled,
+    },
+    tosProps: !termsState
+      ? undefined
+      : {
+          onAccept,
+          onReview: setReviewing,
+          reviewed: reviewed,
+          reviewing: reviewing,
+          terms: termsState,
+        },
+    mustAcceptFirst:
+      termsState !== undefined &&
+      (termsState.status === "changed" || termsState.status === "new"),
   };
+}
 
-  const onWithdraw = async (): Promise<void> => {
-    if (!exchange) return;
-    const res = await wxApi.acceptWithdrawal(uri, exchange);
-    if (res.confirmTransferUrl) {
-      document.location.href = res.confirmTransferUrl;
-    }
-  };
-
-  const withdrawalFee = Amounts.sub(
-    Amounts.parseOrThrow(details.info.withdrawalAmountRaw),
-    Amounts.parseOrThrow(details.info.withdrawalAmountEffective),
-  ).amount;
-
+export function View({ state }: { state: Success }): VNode {
+  const { i18n } = useTranslationContext();
   return (
-    <View
-      onWithdraw={onWithdraw}
-      amount={withdrawAmount}
-      exchangeBaseUrl={exchange}
-      withdrawalFee={withdrawalFee}
-      terms={detailsHook.response.tos}
-      onSwitchExchange={setCustomExchange}
-      knownExchanges={knownExchanges}
-      reviewed={reviewed}
-      onAccept={onAccept}
-      reviewing={reviewing}
-      onReview={setReviewing}
-    />
+    <WalletAction>
+      <LogoHeader />
+      <SubTitle>
+        <i18n.Translate>Digital cash withdrawal</i18n.Translate>
+      </SubTitle>
+
+      {state.doWithdrawal.error && (
+        <ErrorTalerOperation
+          title={
+            <i18n.Translate>
+              Could not finish the withdrawal operation
+            </i18n.Translate>
+          }
+          error={state.doWithdrawal.error.errorDetail}
+        />
+      )}
+
+      <section>
+        <Part
+          title={<i18n.Translate>Total to withdraw</i18n.Translate>}
+          text={<Amount value={state.toBeReceived} />}
+          kind="positive"
+        />
+        {Amounts.isNonZero(state.withdrawalFee) && (
+          <Fragment>
+            <Part
+              title={<i18n.Translate>Chosen amount</i18n.Translate>}
+              text={<Amount value={state.chosenAmount} />}
+              kind="neutral"
+            />
+            <Part
+              title={<i18n.Translate>Exchange fee</i18n.Translate>}
+              text={<Amount value={state.withdrawalFee} />}
+              kind="negative"
+            />
+          </Fragment>
+        )}
+        <Part
+          title={<i18n.Translate>Exchange</i18n.Translate>}
+          text={state.exchange.value}
+          kind="neutral"
+          big
+        />
+        {state.showExchangeSelection ? (
+          <Fragment>
+            <div>
+              <SelectList
+                label={<i18n.Translate>Known exchanges</i18n.Translate>}
+                list={state.exchange.list}
+                value={state.exchange.value}
+                name="switchingExchange"
+                onChange={state.exchange.onChange}
+              />
+            </div>
+            <LinkSuccess
+              upperCased
+              style={{ fontSize: "small" }}
+              onClick={state.confirmEditExchange.onClick}
+            >
+              {state.exchange.isDirty ? (
+                <i18n.Translate>Confirm exchange selection</i18n.Translate>
+              ) : (
+                <i18n.Translate>Cancel exchange selection</i18n.Translate>
+              )}
+            </LinkSuccess>
+          </Fragment>
+        ) : (
+          <LinkSuccess
+            style={{ fontSize: "small" }}
+            upperCased
+            onClick={state.editExchange.onClick}
+          >
+            <i18n.Translate>Edit exchange</i18n.Translate>
+          </LinkSuccess>
+        )}
+      </section>
+      {state.tosProps && <TermsOfServiceSection {...state.tosProps} />}
+      {state.tosProps ? (
+        <section>
+          {(state.tosProps.terms.status === "accepted" ||
+            (state.mustAcceptFirst && state.tosProps.reviewed)) && (
+            <ButtonSuccess
+              upperCased
+              disabled={state.doWithdrawal.disabled}
+              onClick={state.doWithdrawal.onClick}
+            >
+              <i18n.Translate>Confirm withdrawal</i18n.Translate>
+            </ButtonSuccess>
+          )}
+          {state.tosProps.terms.status === "notfound" && (
+            <ButtonWarning
+              upperCased
+              disabled={state.doWithdrawal.disabled}
+              onClick={state.doWithdrawal.onClick}
+            >
+              <i18n.Translate>Withdraw anyway</i18n.Translate>
+            </ButtonWarning>
+          )}
+        </section>
+      ) : (
+        <section>
+          <i18n.Translate>Loading terms of service...</i18n.Translate>
+        </section>
+      )}
+    </WalletAction>
   );
 }
+
 export function WithdrawPage({ talerWithdrawUri }: Props): VNode {
   const { i18n } = useTranslationContext();
-  const uriInfoHook = useAsyncAsHook(() =>
-    !talerWithdrawUri
-      ? Promise.reject(undefined)
-      : wxApi.getWithdrawalDetailsForUri({ talerWithdrawUri }),
-  );
+
+  const state = useComponentState(talerWithdrawUri, wxApi);
 
   if (!talerWithdrawUri) {
     return (
@@ -366,24 +461,45 @@ export function WithdrawPage({ talerWithdrawUri }: Props): VNode {
       </span>
     );
   }
-  if (!uriInfoHook) {
+
+  if (!state) {
     return <Loading />;
   }
-  if (uriInfoHook.hasError) {
+
+  console.log(state);
+  if (state.status === "loading-uri") {
+    if (!state.hook) return <Loading />;
+
     return (
       <LoadingError
         title={
           <i18n.Translate>Could not get the info from the URI</i18n.Translate>
         }
-        error={uriInfoHook}
+        error={state.hook}
+      />
+    );
+  }
+  if (state.status === "loading-exchange") {
+    if (!state.hook) return <Loading />;
+
+    return (
+      <LoadingError
+        title={<i18n.Translate>Could not get exchange</i18n.Translate>}
+        error={state.hook}
+      />
+    );
+  }
+  if (state.status === "loading-info") {
+    if (!state.hook) return <Loading />;
+    return (
+      <LoadingError
+        title={
+          <i18n.Translate>Could not get info of withdrawal</i18n.Translate>
+        }
+        error={state.hook}
       />
     );
   }
 
-  return (
-    <WithdrawPageWithParsedURI
-      uri={talerWithdrawUri}
-      uriInfo={uriInfoHook.response}
-    />
-  );
+  return <View state={state} />;
 }

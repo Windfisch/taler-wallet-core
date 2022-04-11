@@ -156,34 +156,27 @@ type TermsDocument =
   | TermsDocumentJson
   | TermsDocumentPdf;
 
-interface TermsDocumentXml {
+export interface TermsDocumentXml {
   type: "xml";
   document: Document;
 }
 
-interface TermsDocumentHtml {
+export interface TermsDocumentHtml {
   type: "html";
   href: URL;
 }
 
-interface TermsDocumentPlain {
+export interface TermsDocumentPlain {
   type: "plain";
   content: string;
 }
 
-interface TermsDocumentJson {
+export interface TermsDocumentJson {
   type: "json";
   data: any;
 }
 
-interface TermsDocumentPdf {
+export interface TermsDocumentPdf {
   type: "pdf";
   location: URL;
 }
-
-export function amountToString(text: AmountJson): string {
-  const aj = Amounts.jsonifyAmount(text);
-  const amount = Amounts.stringifyValue(aj);
-  return `${amount} ${aj.currency}`;
-}
-

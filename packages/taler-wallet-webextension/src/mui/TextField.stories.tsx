@@ -103,12 +103,12 @@ export const Multiline = (): VNode => {
   const [value, onChange] = useState("");
   return (
     <Container>
-      {/* <TextField
+      <TextField
         {...{ value, onChange }}
         label="Multiline"
         variant="standard"
         multiline
-      /> */}
+      />
       <TextField
         {...{ value, onChange }}
         label="Max row 4"
@@ -116,13 +116,39 @@ export const Multiline = (): VNode => {
         multiline
         maxRows={4}
       />
-      {/* <TextField
+      <TextField
         {...{ value, onChange }}
         label="Row 10"
         variant="standard"
         multiline
         rows={10}
-      /> */}
+      />
+    </Container>
+  );
+};
+
+export const Select = (): VNode => {
+  const [value, onChange] = useState("");
+  return (
+    <Container>
+      <TextField
+        {...{ value, onChange }}
+        label="Multiline"
+        variant="standard"
+        select
+      />
+      <TextField
+        {...{ value, onChange }}
+        label="Max row 4"
+        variant="standard"
+        select
+      />
+      <TextField
+        {...{ value, onChange }}
+        label="Row 10"
+        variant="standard"
+        select
+      />
     </Container>
   );
 };

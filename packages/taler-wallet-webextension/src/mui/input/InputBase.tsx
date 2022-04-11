@@ -304,9 +304,9 @@ function getStyleValue(
 
 function debounce(func: any, wait = 166): any {
   let timeout: any;
-  function debounced(...args) {
+  function debounced(...args: any[]): void {
     const later = () => {
-      func.apply(this, args);
+      func.apply({}, args);
     };
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
@@ -452,7 +452,7 @@ export function TextareaAutoSize({
     renders.current = 0;
   }, [value]);
 
-  const handleChange = (event) => {
+  const handleChange = (event: any): void => {
     renders.current = 0;
 
     if (!isControlled) {

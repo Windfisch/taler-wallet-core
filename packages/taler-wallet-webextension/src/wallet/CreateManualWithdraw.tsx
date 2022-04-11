@@ -21,6 +21,7 @@
  */
 
 import { AmountJson, Amounts } from "@gnu-taler/taler-util";
+import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { ErrorMessage } from "../components/ErrorMessage.js";
@@ -60,10 +61,17 @@ export interface TextFieldHandler {
   error?: string;
 }
 
+export interface ButtonHandler {
+  onClick: () => Promise<void>;
+  disabled?: boolean;
+  error?: TalerError;
+}
+
 export interface SelectFieldHandler {
   onChange: (value: string) => void;
   error?: string;
   value: string;
+  isDirty?: boolean;
   list: Record<string, string>;
 }
 
@@ -137,17 +145,6 @@ export function useComponentState(
     },
     parsedAmount,
   };
-}
-
-export interface InputHandler {
-  value: string;
-  onInput: (s: string) => void;
-}
-
-export interface SelectInputHandler {
-  list: Record<string, string>;
-  value: string;
-  onChange: (s: string) => void;
 }
 
 export function CreateManualWithdraw({

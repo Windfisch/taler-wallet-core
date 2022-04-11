@@ -17,10 +17,10 @@ import {
   NotificationType, TalerErrorDetail
 } from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
-import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 import * as wxApi from "../wxApi.js";
 
-interface HookOk<T> {
+export interface HookOk<T> {
   hasError: false;
   response: T;
 }

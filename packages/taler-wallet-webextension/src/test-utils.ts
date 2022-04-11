@@ -64,23 +64,27 @@ export function renderNodeOrBrowser(Component: any, args: any): void {
 
 interface Mounted<T> {
   unmount: () => void;
-  result: { current: T | null };
+  getLastResult: () => T | null;
+  getLastResultOrThrow: () => T;
+  assertNoPendingUpdate: () => void;
   waitNextUpdate: (s?: string) => Promise<void>;
 }
 
 const isNode = typeof window === "undefined"
 
 export function mountHook<T>(callback: () => T, Context?: ({ children }: { children: any }) => VNode): Mounted<T> {
-  const result: { current: T | null } = {
-    current: null
-  }
+  // const result: { current: T | null } = {
+  //   current: null
+  // }
+  let lastResult: T | null = null;
+
   const listener: Array<() => void> = []
 
   // component that's going to hold the hook
   function Component(): VNode {
     const hookResult = callback()
     // save the hook result
-    result.current = hookResult
+    lastResult = hookResult
     // notify to everyone waiting for an update and clean the queue
     listener.splice(0, listener.length).forEach(cb => cb())
     return create(Fragment, {})
@@ -119,7 +123,34 @@ export function mountHook<T>(callback: () => T, Context?: ({ children }: { child
     }
   }
 
+  function getLastResult(): T | null {
+    const copy = lastResult
+    lastResult = null
+    return copy;
+  }
+
+  function getLastResultOrThrow(): T {
+    const r = getLastResult()
+    if (!r) throw Error('there was no last result')
+    return r;
+  }
+
+  async function assertNoPendingUpdate(): Promise<void> {
+    await new Promise((res, rej) => {
+      const tid = setTimeout(() => {
+        res(undefined)
+      }, 10)
+
+      listener.push(() => {
+        clearTimeout(tid)
+        rej(Error(`Expecting no pending result but the hook get updated. Check the dependencies of the hooks.`))
+      })
+    })
+
+    const r = getLastResult()
+    if (r) throw Error('There are still pending results. This may happen because the hook did a new update but the test didn\'t get the result using getLastResult');
+  }
   return {
-    unmount, result, waitNextUpdate
+    unmount, getLastResult, getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate
   }
 }

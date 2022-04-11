@@ -39,26 +39,26 @@ const someBalance = [{
 
 describe("DepositPage states", () => {
   it("should have status 'no-balance' when balance is empty", () => {
-    const { result } = mountHook(() =>
+    const { getLastResultOrThrow } = mountHook(() =>
       useComponentState(currency, [], [], feeCalculator),
     );
 
-    if (!result.current) {
-      expect.fail("hook didn't render");
+    {
+      const { status } = getLastResultOrThrow()
+      expect(status).equal("no-balance")
     }
 
-    expect(result.current.status).equal("no-balance")
   });
 
   it("should have status 'no-accounts' when balance is not empty and accounts is empty", () => {
-    const { result } = mountHook(() =>
+    const { getLastResultOrThrow } = mountHook(() =>
       useComponentState(currency, [], someBalance, feeCalculator),
     );
 
-    if (!result.current) {
-      expect.fail("hook didn't render");
+    {
+      const { status } = getLastResultOrThrow()
+      expect(status).equal("no-accounts")
     }
 
-    expect(result.current.status).equal("no-accounts")
   });
 });

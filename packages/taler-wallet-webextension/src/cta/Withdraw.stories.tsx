@@ -19,349 +19,203 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { amountFractionalBase, ExchangeListItem } from "@gnu-taler/taler-util";
 import { createExample } from "../test-utils.js";
-import { termsHtml, termsPdf, termsPlain, termsXml } from "./termsExample.js";
+import { TermsState } from "../utils/index.js";
 import { View as TestedComponent } from "./Withdraw.js";
-
-function parseFromString(s: string): Document {
-  if (typeof window === "undefined") {
-    return {} as Document;
-  }
-  return new window.DOMParser().parseFromString(s, "text/xml");
-}
 
 export default {
   title: "cta/withdraw",
   component: TestedComponent,
 };
 
-const exchangeList: ExchangeListItem[] = [
-  {
-    currency: "USD",
-    exchangeBaseUrl: "exchange.demo.taler.net",
-    tos: {
-      currentVersion: "1",
-      acceptedVersion: "1",
-      content: "terms of service content",
-      contentType: "text/plain",
-    },
-    paytoUris: ["asd"],
-  },
-  {
-    currency: "USD",
-    exchangeBaseUrl: "exchange.test.taler.net",
-    tos: {
-      currentVersion: "1",
-      acceptedVersion: "1",
-      content: "terms of service content",
-      contentType: "text/plain",
-    },
-    paytoUris: ["asd"],
-  },
-];
+const exchangeList = {
+  "exchange.demo.taler.net": "http://exchange.demo.taler.net (USD)",
+  "exchange.test.taler.net": "http://exchange.test.taler.net (KUDOS)",
+};
 
-export const NewTerms = createExample(TestedComponent, {
-  knownExchanges: exchangeList,
-  exchangeBaseUrl: "exchange.demo.taler.net",
-  withdrawalFee: {
-    currency: "USD",
-    fraction: 0,
-    value: 1,
-  },
-  amount: {
-    currency: "USD",
-    value: 2,
-    fraction: 10000000,
-  },
-
-  onSwitchExchange: async () => {
+const nullHandler = {
+  onClick: async (): Promise<void> => {
     null;
   },
-  terms: {
-    content: {
-      type: "xml",
-      document: parseFromString(termsXml),
-    },
-    status: "new",
-    version: "",
-  },
-});
+};
 
-export const TermsReviewingPLAIN = createExample(TestedComponent, {
-  knownExchanges: exchangeList,
-  exchangeBaseUrl: "exchange.demo.taler.net",
-  withdrawalFee: {
-    currency: "USD",
-    fraction: 0,
-    value: 0,
-  },
-  amount: {
-    currency: "USD",
-    value: 2,
-    fraction: 10000000,
-  },
-
-  onSwitchExchange: async () => {
-    null;
-  },
-  terms: {
-    content: {
-      type: "plain",
-      content: termsPlain,
-    },
-    status: "new",
-    version: "",
-  },
-  reviewing: true,
-});
-
-export const TermsReviewingHTML = createExample(TestedComponent, {
-  knownExchanges: exchangeList,
-  exchangeBaseUrl: "exchange.demo.taler.net",
-  withdrawalFee: {
-    currency: "USD",
-    fraction: 0,
-    value: 0,
-  },
-  amount: {
-    currency: "USD",
-    value: 2,
-    fraction: 10000000,
-  },
-
-  onSwitchExchange: async () => {
-    null;
-  },
-  terms: {
-    content: {
-      type: "html",
-      href: new URL(`data:text/html;base64,${toBase64(termsHtml)}`),
-    },
-    version: "",
-    status: "new",
-  },
-  reviewing: true,
-});
-
-function toBase64(str: string): string {
-  return btoa(
-    encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
-      return String.fromCharCode(parseInt(p1, 16));
-    }),
-  );
-}
-
-export const TermsReviewingPDF = createExample(TestedComponent, {
-  knownExchanges: exchangeList,
-  exchangeBaseUrl: "exchange.demo.taler.net",
-  withdrawalFee: {
-    currency: "USD",
-    fraction: 0,
-    value: 0,
-  },
-  amount: {
-    currency: "USD",
-    value: 2,
-    fraction: 10000000,
-  },
-
-  onSwitchExchange: async () => {
-    null;
-  },
-  terms: {
-    content: {
-      type: "pdf",
-      location: new URL(`data:text/html;base64,${toBase64(termsPdf)}`),
-    },
-    status: "new",
-    version: "",
-  },
-  reviewing: true,
-});
-
-export const TermsReviewingXML = createExample(TestedComponent, {
-  knownExchanges: exchangeList,
-  exchangeBaseUrl: "exchange.demo.taler.net",
-  withdrawalFee: {
-    currency: "USD",
-    fraction: 0,
-    value: 0,
-  },
-  amount: {
-    currency: "USD",
-    value: 2,
-    fraction: 10000000,
-  },
-
-  onSwitchExchange: async () => {
-    null;
-  },
-  terms: {
-    content: {
-      type: "xml",
-      document: parseFromString(termsXml),
-    },
-    status: "new",
-    version: "",
-  },
-  reviewing: true,
-});
-
-export const NewTermsAccepted = createExample(TestedComponent, {
-  knownExchanges: exchangeList,
-  exchangeBaseUrl: "exchange.demo.taler.net",
-  withdrawalFee: {
-    currency: "USD",
-    fraction: 0,
-    value: 0,
-  },
-  amount: {
-    currency: "USD",
-    value: 2,
-    fraction: 10000000,
-  },
-  onSwitchExchange: async () => {
-    null;
-  },
-  terms: {
-    content: {
-      type: "xml",
-      document: parseFromString(termsXml),
-    },
-    status: "new",
-    version: "",
-  },
-  reviewed: true,
-});
-
-export const TermsShowAgainXML = createExample(TestedComponent, {
-  knownExchanges: exchangeList,
-  exchangeBaseUrl: "exchange.demo.taler.net",
-  withdrawalFee: {
-    currency: "USD",
-    fraction: 0,
-    value: 0,
-  },
-  amount: {
-    currency: "USD",
-    value: 2,
-    fraction: 10000000,
-  },
-
-  onSwitchExchange: async () => {
-    null;
-  },
-  terms: {
-    content: {
-      type: "xml",
-      document: parseFromString(termsXml),
-    },
-    version: "",
-    status: "new",
-  },
-  reviewed: true,
-  reviewing: true,
-});
-
-export const TermsChanged = createExample(TestedComponent, {
-  knownExchanges: exchangeList,
-  exchangeBaseUrl: "exchange.demo.taler.net",
-  withdrawalFee: {
-    currency: "USD",
-    fraction: 0,
-    value: 0,
-  },
-  amount: {
-    currency: "USD",
-    value: 2,
-    fraction: 10000000,
-  },
-
-  onSwitchExchange: async () => {
-    null;
-  },
-  terms: {
-    content: {
-      type: "xml",
-      document: parseFromString(termsXml),
-    },
-    version: "",
-    status: "changed",
-  },
-});
-
-export const TermsNotFound = createExample(TestedComponent, {
-  knownExchanges: exchangeList,
-  exchangeBaseUrl: "exchange.demo.taler.net",
-  withdrawalFee: {
-    currency: "USD",
-    fraction: 0,
-    value: 0,
-  },
-  amount: {
-    currency: "USD",
-    value: 2,
-    fraction: 10000000,
-  },
-
-  onSwitchExchange: async () => {
-    null;
-  },
-  terms: {
-    content: undefined,
-    status: "notfound",
-    version: "",
-  },
-});
-
-export const TermsAlreadyAccepted = createExample(TestedComponent, {
-  knownExchanges: exchangeList,
-  exchangeBaseUrl: "exchange.demo.taler.net",
-  withdrawalFee: {
-    currency: "USD",
-    fraction: amountFractionalBase * 0.5,
-    value: 0,
-  },
-  amount: {
-    currency: "USD",
-    value: 2,
-    fraction: 10000000,
-  },
-
-  onSwitchExchange: async () => {
-    null;
-  },
+const normalTosState = {
   terms: {
     status: "accepted",
-    content: undefined,
     version: "",
+  } as TermsState,
+  onAccept: () => null,
+  onReview: () => null,
+  reviewed: false,
+  reviewing: false,
+};
+
+export const TermsOfServiceNotYetLoaded = createExample(TestedComponent, {
+  state: {
+    hook: undefined,
+    status: "success",
+    cancelEditExchange: nullHandler,
+    confirmEditExchange: nullHandler,
+    chosenAmount: {
+      currency: "USD",
+      value: 2,
+      fraction: 10000000,
+    },
+    doWithdrawal: nullHandler,
+    editExchange: nullHandler,
+    exchange: {
+      list: exchangeList,
+      value: "exchange.demo.taler.net",
+      onChange: () => null,
+    },
+    showExchangeSelection: false,
+    mustAcceptFirst: false,
+    withdrawalFee: {
+      currency: "USD",
+      fraction: 10000000,
+      value: 1,
+    },
+    toBeReceived: {
+      currency: "USD",
+      fraction: 0,
+      value: 1,
+    },
+  },
+});
+
+export const WithSomeFee = createExample(TestedComponent, {
+  state: {
+    hook: undefined,
+    status: "success",
+    cancelEditExchange: nullHandler,
+    confirmEditExchange: nullHandler,
+    chosenAmount: {
+      currency: "USD",
+      value: 2,
+      fraction: 10000000,
+    },
+    doWithdrawal: nullHandler,
+    editExchange: nullHandler,
+    exchange: {
+      list: exchangeList,
+      value: "exchange.demo.taler.net",
+      onChange: () => null,
+    },
+    showExchangeSelection: false,
+    mustAcceptFirst: false,
+    withdrawalFee: {
+      currency: "USD",
+      fraction: 10000000,
+      value: 1,
+    },
+    toBeReceived: {
+      currency: "USD",
+      fraction: 0,
+      value: 1,
+    },
+    tosProps: normalTosState,
   },
 });
 
 export const WithoutFee = createExample(TestedComponent, {
-  knownExchanges: exchangeList,
-  exchangeBaseUrl: "exchange.demo.taler.net",
-  withdrawalFee: {
-    currency: "USD",
-    fraction: 0,
-    value: 0,
-  },
-  amount: {
-    currency: "USD",
-    value: 2,
-    fraction: 10000000,
-  },
-
-  onSwitchExchange: async () => {
-    null;
-  },
-  terms: {
-    content: {
-      type: "xml",
-      document: parseFromString(termsXml),
+  state: {
+    hook: undefined,
+    status: "success",
+    cancelEditExchange: nullHandler,
+    confirmEditExchange: nullHandler,
+    chosenAmount: {
+      currency: "USD",
+      value: 2,
+      fraction: 10000000,
     },
-    status: "accepted",
-    version: "",
+    doWithdrawal: nullHandler,
+    editExchange: nullHandler,
+    exchange: {
+      list: exchangeList,
+      value: "exchange.demo.taler.net",
+      onChange: () => null,
+    },
+    showExchangeSelection: false,
+    mustAcceptFirst: false,
+    withdrawalFee: {
+      currency: "USD",
+      fraction: 0,
+      value: 0,
+    },
+    toBeReceived: {
+      currency: "USD",
+      fraction: 0,
+      value: 2,
+    },
+    tosProps: normalTosState,
+  },
+});
+
+export const EditExchangeUntouched = createExample(TestedComponent, {
+  state: {
+    hook: undefined,
+    status: "success",
+    cancelEditExchange: nullHandler,
+    confirmEditExchange: nullHandler,
+    chosenAmount: {
+      currency: "USD",
+      value: 2,
+      fraction: 10000000,
+    },
+    doWithdrawal: nullHandler,
+    editExchange: nullHandler,
+    exchange: {
+      list: exchangeList,
+      value: "exchange.demo.taler.net",
+      onChange: () => null,
+    },
+    showExchangeSelection: true,
+    mustAcceptFirst: false,
+    withdrawalFee: {
+      currency: "USD",
+      fraction: 0,
+      value: 0,
+    },
+    toBeReceived: {
+      currency: "USD",
+      fraction: 0,
+      value: 2,
+    },
+    tosProps: normalTosState,
+  },
+});
+
+export const EditExchangeModified = createExample(TestedComponent, {
+  state: {
+    hook: undefined,
+    status: "success",
+    cancelEditExchange: nullHandler,
+    confirmEditExchange: nullHandler,
+    chosenAmount: {
+      currency: "USD",
+      value: 2,
+      fraction: 10000000,
+    },
+    doWithdrawal: nullHandler,
+    editExchange: nullHandler,
+    exchange: {
+      list: exchangeList,
+      isDirty: true,
+      value: "exchange.test.taler.net",
+      onChange: () => null,
+    },
+    showExchangeSelection: true,
+    mustAcceptFirst: false,
+    withdrawalFee: {
+      currency: "USD",
+      fraction: 0,
+      value: 0,
+    },
+    toBeReceived: {
+      currency: "USD",
+      fraction: 0,
+      value: 2,
+    },
+    tosProps: normalTosState,
   },
 });
