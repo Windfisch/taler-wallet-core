@@ -85,7 +85,7 @@ export function ManualWithdrawPage({ currency, onCancel }: Props): VNode {
       <ReserveCreated
         reservePub={success.response.reservePub}
         paytoURI={success.paytoURI}
-        payto={success.payto}
+        // payto={success.payto}
         exchangeBaseUrl={success.exchangeBaseUrl}
         amount={success.amount}
         onCancel={onCancel}

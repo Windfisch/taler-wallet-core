@@ -23,7 +23,7 @@ export function ErrorMessage({
   description,
 }: {
   title: VNode;
-  description?: string;
+  description?: string | VNode;
 }): VNode | null {
   const [showErrorDetail, setShowErrorDetail] = useState(false);
   return (

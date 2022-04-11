@@ -19,6 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
+import { parsePaytoUri } from "@gnu-taler/taler-util";
 import { createExample } from "../test-utils.js";
 import { ReserveCreated as TestedComponent } from "./ReserveCreated.js";
 
@@ -30,8 +31,9 @@ export default {
 
 export const TalerBank = createExample(TestedComponent, {
   reservePub: "A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
-  payto:
+  paytoURI: parsePaytoUri(
     "payto://x-taler-bank/bank.taler:5882/exchangeminator?amount=COL%3A1&message=Taler+Withdrawal+A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
+  ),
   amount: {
     currency: "USD",
     value: 10,
@@ -42,8 +44,9 @@ export const TalerBank = createExample(TestedComponent, {
 
 export const IBAN = createExample(TestedComponent, {
   reservePub: "A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
-  payto:
+  paytoURI: parsePaytoUri(
     "payto://iban/ASDQWEASDZXCASDQWE?amount=COL%3A1&message=Taler+Withdrawal+A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
+  ),
   amount: {
     currency: "USD",
     value: 10,
@@ -54,8 +57,9 @@ export const IBAN = createExample(TestedComponent, {
 
 export const Bitcoin = createExample(TestedComponent, {
   reservePub: "0ZSX8SH0M30KHX8K3Y1DAMVGDQV82XEF9DG1HC4QMQ3QWYT4AF00",
-  payto:
+  paytoURI: parsePaytoUri(
     "payto://bitcoin/bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4?amount=BTC:0.1&subject=0ZSX8SH0M30KHX8K3Y1DAMVGDQV82XEF9DG1HC4QMQ3QWYT4AF00",
+  ),
   amount: {
     currency: "BTC",
     value: 0,
@@ -66,8 +70,9 @@ export const Bitcoin = createExample(TestedComponent, {
 
 export const BitcoinRegTest = createExample(TestedComponent, {
   reservePub: "0ZSX8SH0M30KHX8K3Y1DAMVGDQV82XEF9DG1HC4QMQ3QWYT4AF00",
-  payto:
+  paytoURI: parsePaytoUri(
     "payto://bitcoin/bcrt1q6ps8qs6v8tkqrnru4xqqqa6rfwcx5ufpdfqht4?amount=BTC:0.1&subject=0ZSX8SH0M30KHX8K3Y1DAMVGDQV82XEF9DG1HC4QMQ3QWYT4AF00",
+  ),
   amount: {
     currency: "BTC",
     value: 0,
@@ -77,8 +82,9 @@ export const BitcoinRegTest = createExample(TestedComponent, {
 });
 export const BitcoinTest = createExample(TestedComponent, {
   reservePub: "0ZSX8SH0M30KHX8K3Y1DAMVGDQV82XEF9DG1HC4QMQ3QWYT4AF00",
-  payto:
+  paytoURI: parsePaytoUri(
     "payto://bitcoin/tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx?amount=BTC:0.1&subject=0ZSX8SH0M30KHX8K3Y1DAMVGDQV82XEF9DG1HC4QMQ3QWYT4AF00",
+  ),
   amount: {
     currency: "BTC",
     value: 0,

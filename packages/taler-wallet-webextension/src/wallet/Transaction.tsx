@@ -28,6 +28,7 @@ import { differenceInSeconds } from "date-fns";
 import { ComponentChildren, Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import emptyImg from "../../static/img/empty.png";
+import { Amount } from "../components/Amount.js";
 import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType.js";
 import { ErrorTalerOperation } from "../components/ErrorTalerOperation.js";
 import { Loading } from "../components/Loading.js";
@@ -180,12 +181,6 @@ export function TransactionView({
     );
   }
 
-  function amountToString(text: AmountLike): string {
-    const aj = Amounts.jsonifyAmount(text);
-    const amount = Amounts.stringifyValue(aj);
-    return `${amount} ${aj.currency}`;
-  }
-
   if (transaction.type === TransactionType.Withdrawal) {
     const fee = Amounts.sub(
       Amounts.parseOrThrow(transaction.amountRaw),
@@ -229,7 +224,7 @@ export function TransactionView({
           WithdrawalType.ManualTransfer ? (
             <Fragment>
               <BankDetailsByPaytoType
-                amount={amountToString(transaction.amountRaw)}
+                amount={<Amount value={transaction.amountRaw} />}
                 exchangeBaseUrl={transaction.exchangeBaseUrl}
                 payto={parsePaytoUri(
                   transaction.withdrawalDetails.exchangePaytoUris[0],
@@ -247,13 +242,13 @@ export function TransactionView({
               <Part
                 big
                 title={<i18n.Translate>Total withdrawn</i18n.Translate>}
-                text={amountToString(transaction.amountEffective)}
+                text={<Amount value={transaction.amountEffective} />}
                 kind="positive"
               />
               <Part
                 big
                 title={<i18n.Translate>Exchange fee</i18n.Translate>}
-                text={amountToString(fee)}
+                text={<Amount value={fee} />}
                 kind="negative"
               />
             </Fragment>
@@ -284,19 +279,19 @@ export function TransactionView({
               <Part
                 big
                 title={<i18n.Translate>Total withdrawn</i18n.Translate>}
-                text={amountToString(transaction.amountEffective)}
+                text={<Amount value={transaction.amountEffective} />}
                 kind="positive"
               />
               <Part
                 big
                 title={<i18n.Translate>Chosen amount</i18n.Translate>}
-                text={amountToString(transaction.amountRaw)}
+                text={<Amount value={transaction.amountRaw} />}
                 kind="neutral"
               />
               <Part
                 big
                 title={<i18n.Translate>Exchange fee</i18n.Translate>}
-                text={amountToString(fee)}
+                text={<Amount value={fee} />}
                 kind="negative"
               />
             </Fragment>
@@ -306,19 +301,19 @@ export function TransactionView({
             <Part
               big
               title={<i18n.Translate>Total withdrawn</i18n.Translate>}
-              text={amountToString(transaction.amountEffective)}
+              text={<Amount value={transaction.amountEffective} />}
               kind="positive"
             />
             <Part
               big
               title={<i18n.Translate>Chosen amount</i18n.Translate>}
-              text={amountToString(transaction.amountRaw)}
+              text={<Amount value={transaction.amountRaw} />}
               kind="neutral"
             />
             <Part
               big
               title={<i18n.Translate>Exchange fee</i18n.Translate>}
-              text={amountToString(fee)}
+              text={<Amount value={fee} />}
               kind="negative"
             />
           </Fragment>
@@ -355,19 +350,19 @@ export function TransactionView({
         <Part
           big
           title={<i18n.Translate>Total paid</i18n.Translate>}
-          text={amountToString(transaction.amountEffective)}
+          text={<Amount value={transaction.amountEffective} />}
           kind="negative"
         />
         <Part
           big
           title={<i18n.Translate>Purchase amount</i18n.Translate>}
-          text={amountToString(transaction.amountRaw)}
+          text={<Amount value={transaction.amountRaw} />}
           kind="neutral"
         />
         <Part
           big
           title={<i18n.Translate>Fee</i18n.Translate>}
-          text={amountToString(fee)}
+          text={<Amount value={fee} />}
           kind="negative"
         />
         <Part
@@ -441,19 +436,19 @@ export function TransactionView({
         <Part
           big
           title={<i18n.Translate>Total send</i18n.Translate>}
-          text={amountToString(transaction.amountEffective)}
+          text={<Amount value={transaction.amountEffective} />}
           kind="neutral"
         />
         <Part
           big
           title={<i18n.Translate>Deposit amount</i18n.Translate>}
-          text={amountToString(transaction.amountRaw)}
+          text={<Amount value={transaction.amountRaw} />}
           kind="positive"
         />
         <Part
           big
           title={<i18n.Translate>Fee</i18n.Translate>}
-          text={amountToString(fee)}
+          text={<Amount value={fee} />}
           kind="negative"
         />
       </TransactionTemplate>
@@ -478,19 +473,19 @@ export function TransactionView({
         <Part
           big
           title={<i18n.Translate>Total refresh</i18n.Translate>}
-          text={amountToString(transaction.amountEffective)}
+          text={<Amount value={transaction.amountEffective} />}
           kind="negative"
         />
         <Part
           big
           title={<i18n.Translate>Refresh amount</i18n.Translate>}
-          text={amountToString(transaction.amountRaw)}
+          text={<Amount value={transaction.amountRaw} />}
           kind="neutral"
         />
         <Part
           big
           title={<i18n.Translate>Fee</i18n.Translate>}
-          text={amountToString(fee)}
+          text={<Amount value={fee} />}
           kind="negative"
         />
       </TransactionTemplate>
@@ -515,19 +510,19 @@ export function TransactionView({
         <Part
           big
           title={<i18n.Translate>Total tip</i18n.Translate>}
-          text={amountToString(transaction.amountEffective)}
+          text={<Amount value={transaction.amountEffective} />}
           kind="positive"
         />
         <Part
           big
           title={<i18n.Translate>Received amount</i18n.Translate>}
-          text={amountToString(transaction.amountRaw)}
+          text={<Amount value={transaction.amountRaw} />}
           kind="neutral"
         />
         <Part
           big
           title={<i18n.Translate>Fee</i18n.Translate>}
-          text={amountToString(fee)}
+          text={<Amount value={fee} />}
           kind="negative"
         />
       </TransactionTemplate>
@@ -552,19 +547,19 @@ export function TransactionView({
         <Part
           big
           title={<i18n.Translate>Total refund</i18n.Translate>}
-          text={amountToString(transaction.amountEffective)}
+          text={<Amount value={transaction.amountEffective} />}
           kind="positive"
         />
         <Part
           big
           title={<i18n.Translate>Refund amount</i18n.Translate>}
-          text={amountToString(transaction.amountRaw)}
+          text={<Amount value={transaction.amountRaw} />}
           kind="neutral"
         />
         <Part
           big
           title={<i18n.Translate>Fee</i18n.Translate>}
-          text={amountToString(fee)}
+          text={<Amount value={fee} />}
           kind="negative"
         />
         <Part

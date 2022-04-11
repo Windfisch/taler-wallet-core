@@ -3,9 +3,12 @@ import {
   Amounts,
   PaytoUri,
   segwitMinAmount,
+  stringifyPaytoUri,
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
+import { Amount } from "../components/Amount.js";
 import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType.js";
+import { ErrorMessage } from "../components/ErrorMessage.js";
 import { QR } from "../components/QR.js";
 import {
   ButtonDestructive,
@@ -13,11 +16,9 @@ import {
   WarningBox,
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
-import { amountToString } from "../utils/index.js";
 export interface Props {
   reservePub: string;
   paytoURI: PaytoUri | undefined;
-  payto: string;
   exchangeBaseUrl: string;
   amount: AmountJson;
   onCancel: () => void;
@@ -26,7 +27,6 @@ export interface Props {
 export function ReserveCreated({
   reservePub,
   paytoURI,
-  payto,
   onCancel,
   exchangeBaseUrl,
   amount,
@@ -34,11 +34,10 @@ export function ReserveCreated({
   const { i18n } = useTranslationContext();
   if (!paytoURI) {
     return (
-      <div>
-        <i18n.Translate>
-          could not parse payto uri from exchange {payto}
-        </i18n.Translate>
-      </div>
+      <ErrorMessage
+        title={<i18n.Translate>Could not parse the payto URI</i18n.Translate>}
+        description={<i18n.Translate>Please check the uri</i18n.Translate>}
+      />
     );
   }
   function TransferDetails(): VNode {
@@ -97,7 +96,7 @@ export function ReserveCreated({
     return (
       <section>
         <BankDetailsByPaytoType
-          amount={amountToString(amount)}
+          amount={<Amount value={amount} />}
           exchangeBaseUrl={exchangeBaseUrl}
           payto={paytoURI}
           subject={reservePub}
@@ -123,7 +122,7 @@ export function ReserveCreated({
         <p>
           <i18n.Translate>
             To complete the process you need to wire{` `}
-            <b>{amountToString(amount)}</b> to the exchange bank account
+            <b>{<Amount value={amount} />}</b> to the exchange bank account
           </i18n.Translate>
         </p>
       </section>
@@ -132,11 +131,11 @@ export function ReserveCreated({
         <p>
           <i18n.Translate>
             Alternative, you can also scan this QR code or open{" "}
-            <a href={payto}>this link</a> if you have a banking app installed
-            that supports RFC 8905
+            <a href={stringifyPaytoUri(paytoURI)}>this link</a> if you have a
+            banking app installed that supports RFC 8905
           </i18n.Translate>
         </p>
-        <QR text={payto} />
+        <QR text={stringifyPaytoUri(paytoURI)} />
       </section>
       <footer>
         <div />

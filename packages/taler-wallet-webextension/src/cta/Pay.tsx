@@ -29,6 +29,7 @@ import {
   AmountJson,
   AmountLike,
   Amounts,
+  AmountString,
   ConfirmPayResult,
   ConfirmPayResultDone,
   ConfirmPayResultType,
@@ -41,6 +42,7 @@ import {
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
+import { Amount } from "../components/Amount.js";
 import { ErrorMessage } from "../components/ErrorMessage.js";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
@@ -261,7 +263,7 @@ export function PaymentRequestView({
           <section>
             <ButtonSuccess upperCased onClick={onClick}>
               <i18n.Translate>
-                Pay {amountToString(payStatus.amountEffective)}
+                Pay {<Amount value={payStatus.amountEffective} />}
               </i18n.Translate>
             </ButtonSuccess>
           </section>
@@ -276,8 +278,8 @@ export function PaymentRequestView({
             {balance ? (
               <WarningBox>
                 <i18n.Translate>
-                  Your balance of {amountToString(balance)} is not enough to pay
-                  for this purchase
+                  Your balance of {<Amount value={balance} />} is not enough to
+                  pay for this purchase
                 </i18n.Translate>
               </WarningBox>
             ) : (
@@ -374,14 +376,14 @@ export function PaymentRequestView({
             <Part
               big
               title={<i18n.Translate>Total to pay</i18n.Translate>}
-              text={amountToString(payStatus.amountEffective)}
+              text={<Amount value={payStatus.amountEffective} />}
               kind="negative"
             />
           )}
         <Part
           big
           title={<i18n.Translate>Purchase amount</i18n.Translate>}
-          text={amountToString(payStatus.amountRaw)}
+          text={<Amount value={payStatus.amountRaw} />}
           kind="neutral"
         />
         {Amounts.isNonZero(totalFees) && (
@@ -389,7 +391,7 @@ export function PaymentRequestView({
             <Part
               big
               title={<i18n.Translate>Fee</i18n.Translate>}
-              text={amountToString(totalFees)}
+              text={<Amount value={totalFees} />}
               kind="negative"
             />
           </Fragment>
@@ -492,10 +494,4 @@ function ProductList({ products }: { products: Product[] }): VNode {
       </dl>
     </Fragment>
   );
-}
-
-function amountToString(text: AmountLike): string {
-  const aj = Amounts.jsonifyAmount(text);
-  const amount = Amounts.stringifyValue(aj, 2);
-  return `${amount} ${aj.currency}`;
 }
