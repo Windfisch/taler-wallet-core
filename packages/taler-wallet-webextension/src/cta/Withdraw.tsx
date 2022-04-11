@@ -24,7 +24,7 @@
 import { AmountJson, Amounts } from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
-import { useState } from "preact/hooks";
+import { useMemo, useState } from "preact/hooks";
 import { Amount } from "../components/Amount.js";
 import { ErrorTalerOperation } from "../components/ErrorTalerOperation.js";
 import { Loading } from "../components/Loading.js";
@@ -116,44 +116,44 @@ export function useComponentState(
   /**
    * Get the amount and select one exchange
    */
-  const exchangeAndAmount = useAsyncAsHook(
-    async () => {
-      if (!uriInfoHook || uriInfoHook.hasError || !uriInfoHook.response) return;
-      const { uriInfo, knownExchanges } = uriInfoHook.response;
+  const uriHookDep =
+    !uriInfoHook || uriInfoHook.hasError || !uriInfoHook.response
+      ? undefined
+      : uriInfoHook;
 
-      const amount = Amounts.parseOrThrow(uriInfo.amount);
+  const { amount, thisExchange, thisCurrencyExchanges } = useMemo(() => {
+    if (!uriHookDep)
+      return {
+        amount: undefined,
+        thisExchange: undefined,
+        thisCurrencyExchanges: [],
+      };
 
-      const thisCurrencyExchanges = knownExchanges.filter(
-        (ex) => ex.currency === amount.currency,
-      );
+    const { uriInfo, knownExchanges } = uriHookDep.response;
 
-      const thisExchange: string | undefined =
-        customExchange ??
-        uriInfo.defaultExchangeBaseUrl ??
-        (thisCurrencyExchanges[0]
-          ? thisCurrencyExchanges[0].exchangeBaseUrl
-          : undefined);
+    const amount = uriInfo ? Amounts.parseOrThrow(uriInfo.amount) : undefined;
+    const thisCurrencyExchanges =
+      !amount || !knownExchanges
+        ? []
+        : knownExchanges.filter((ex) => ex.currency === amount.currency);
 
-      if (!thisExchange) throw Error("ERROR_NO-DEFAULT-EXCHANGE");
+    const thisExchange: string | undefined =
+      customExchange ??
+      uriInfo?.defaultExchangeBaseUrl ??
+      (thisCurrencyExchanges && thisCurrencyExchanges[0]
+        ? thisCurrencyExchanges[0].exchangeBaseUrl
+        : undefined);
 
-      return { amount, thisExchange, thisCurrencyExchanges };
-    },
-    [],
-    [!uriInfoHook || uriInfoHook.hasError ? undefined : uriInfoHook],
-  );
+    return { amount, thisExchange, thisCurrencyExchanges };
+  }, [uriHookDep, customExchange]);
 
   /**
    * For the exchange selected, bring the status of the terms of service
    */
   const terms = useAsyncAsHook(
     async () => {
-      if (
-        !exchangeAndAmount ||
-        exchangeAndAmount.hasError ||
-        !exchangeAndAmount.response
-      )
-        return;
-      const { thisExchange } = exchangeAndAmount.response;
+      if (!thisExchange) return false;
+
       const exchangeTos = await api.getExchangeTos(thisExchange, ["text/xml"]);
 
       const state = buildTermsOfServiceState(exchangeTos);
@@ -161,11 +161,7 @@ export function useComponentState(
       return { state };
     },
     [],
-    [
-      !exchangeAndAmount || exchangeAndAmount.hasError
-        ? undefined
-        : exchangeAndAmount,
-    ],
+    [thisExchange],
   );
 
   /**
@@ -174,13 +170,7 @@ export function useComponentState(
    */
   const info = useAsyncAsHook(
     async () => {
-      if (
-        !exchangeAndAmount ||
-        exchangeAndAmount.hasError ||
-        !exchangeAndAmount.response
-      )
-        return;
-      const { thisExchange, amount } = exchangeAndAmount.response;
+      if (!thisExchange || !amount) return false;
 
       const info = await api.getExchangeWithdrawalInfo({
         exchangeBaseUrl: thisExchange,
@@ -196,11 +186,7 @@ export function useComponentState(
       return { info, withdrawalFee };
     },
     [],
-    [
-      !exchangeAndAmount || exchangeAndAmount.hasError
-        ? undefined
-        : exchangeAndAmount,
-    ],
+    [thisExchange, amount],
   );
 
   const [reviewing, setReviewing] = useState<boolean>(false);
@@ -221,26 +207,27 @@ export function useComponentState(
     };
   }
 
-  if (!exchangeAndAmount || exchangeAndAmount.hasError) {
+  if (!thisExchange || !amount) {
     return {
       status: "loading-exchange",
-      hook: exchangeAndAmount,
+      hook: {
+        hasError: true,
+        operational: false,
+        message: "ERROR_NO-DEFAULT-EXCHANGE",
+      },
     };
   }
-  if (!exchangeAndAmount.response) {
-    return {
-      status: "loading-exchange",
-      hook: undefined,
-    };
-  }
-  const { thisExchange, thisCurrencyExchanges, amount } =
-    exchangeAndAmount.response;
+
+  const selectedExchange = thisExchange;
 
   async function doWithdrawAndCheckError(): Promise<void> {
     try {
       setConfirmDisabled(true);
       if (!talerWithdrawUri) return;
-      const res = await api.acceptWithdrawal(talerWithdrawUri, thisExchange);
+      const res = await api.acceptWithdrawal(
+        talerWithdrawUri,
+        selectedExchange,
+      );
       if (res.confirmTransferUrl) {
         document.location.href = res.confirmTransferUrl;
       }
@@ -308,7 +295,7 @@ export function useComponentState(
 
     try {
       await api.setExchangeTosAccepted(
-        thisExchange,
+        selectedExchange,
         accepted ? termsState.version : undefined,
       );
       setReviewed(accepted);

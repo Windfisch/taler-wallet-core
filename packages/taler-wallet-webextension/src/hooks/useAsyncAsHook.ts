@@ -42,7 +42,7 @@ export interface HookOperationalError {
 export type HookResponse<T> = HookOk<T> | HookError | undefined;
 
 export function useAsyncAsHook<T>(
-  fn: () => Promise<T>,
+  fn: () => Promise<T | false>,
   updateOnNotification?: Array<NotificationType>,
   deps?: any[],
 ): HookResponse<T> {
@@ -57,6 +57,7 @@ export function useAsyncAsHook<T>(
     async function doAsync(): Promise<void> {
       try {
         const response = await args.fn();
+        if (response === false) return;
         setHookResponse({ hasError: false, response });
       } catch (e) {
         if (e instanceof TalerError) {

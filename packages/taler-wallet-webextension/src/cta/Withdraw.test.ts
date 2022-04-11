@@ -59,13 +59,6 @@ describe("Withdraw CTA states", () => {
       expect(status).equals('loading-uri')
       expect(hook).deep.equals({ "hasError": true, "operational": false, "message": "ERROR_NO-URI-FOR-WITHDRAWAL" });
     }
-    await waitNextUpdate()
-    {
-      const { status, hook } = getLastResultOrThrow()
-
-      expect(status).equals('loading-uri')
-      expect(hook).deep.equals({ "hasError": true, "operational": false, "message": "ERROR_NO-URI-FOR-WITHDRAWAL" });
-    }
 
     await assertNoPendingUpdate()
   });
@@ -85,25 +78,6 @@ describe("Withdraw CTA states", () => {
       const { status, hook } = getLastResultOrThrow()
       expect(status).equals('loading-uri')
       expect(hook).undefined;
-    }
-
-    await waitNextUpdate()
-
-    {
-      const { status, hook } = getLastResultOrThrow()
-
-      expect(status).equals('loading-exchange')
-      expect(hook).undefined;
-    }
-
-    await waitNextUpdate()
-
-    {
-      const { status, hook } = getLastResultOrThrow()
-
-      expect(status).equals('loading-exchange')
-
-      expect(hook).deep.equals({ "hasError": true, "operational": false, "message": "ERROR_NO-DEFAULT-EXCHANGE" });
     }
 
     await waitNextUpdate()
