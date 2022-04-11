@@ -16,7 +16,7 @@
 
 import { PaytoUri } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { useTranslationContext } from "../context/translation.js";
 import { CopiedIcon, CopyIcon } from "../svg/index.js";
 import { ButtonBox, TooltipRight } from "./styled/index.js";
@@ -25,7 +25,7 @@ export interface BankDetailsProps {
   payto: PaytoUri | undefined;
   exchangeBaseUrl: string;
   subject: string;
-  amount: string;
+  amount: string | VNode;
 }
 
 export function BankDetailsByPaytoType({
@@ -84,12 +84,17 @@ function Row({
   literal,
 }: {
   name: VNode;
-  value: string;
+  value: string | VNode;
   literal?: boolean;
 }): VNode {
   const [copied, setCopied] = useState(false);
+  const preRef = useRef<HTMLPreElement>(null);
+  const tdRef = useRef<HTMLTableCellElement>(null);
   function copyText(): void {
-    navigator.clipboard.writeText(value);
+    const content = literal
+      ? preRef.current?.textContent
+      : tdRef.current?.textContent;
+    navigator.clipboard.writeText(content || "");
     setCopied(true);
   }
   useEffect(() => {
@@ -98,7 +103,7 @@ function Row({
         setCopied(false);
       }, 1000);
     }
-  }, [copied]);
+  }, [copied, preRef]);
   return (
     <tr>
       <td>
@@ -119,12 +124,15 @@ function Row({
       </td>
       {literal ? (
         <td>
-          <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+          <pre
+            ref={preRef}
+            style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+          >
             {value}
           </pre>
         </td>
       ) : (
-        <td>{value}</td>
+        <td ref={tdRef}>{value}</td>
       )}
     </tr>
   );

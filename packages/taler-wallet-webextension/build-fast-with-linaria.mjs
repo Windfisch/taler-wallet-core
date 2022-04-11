@@ -60,7 +60,7 @@ export const buildConfig = {
   ],
   format: 'iife',
   platform: 'browser',
-  sourcemap: 'external',
+  sourcemap: true, 
   jsxFactory: 'h',
   jsxFragment: 'Fragment',
   // define: {
