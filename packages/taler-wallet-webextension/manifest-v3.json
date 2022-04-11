@@ -13,7 +13,8 @@
   "permissions": [
     "unlimitedStorage",
     "activeTab",
-    "scripting"
+    "scripting",
+    "alarms"
   ],
   "optional_permissions": [
     "webRequest"

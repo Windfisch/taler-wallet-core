@@ -45,8 +45,12 @@ export class ServiceWorkerTimerAPI implements TimerAPI {
     const seconds = delayMs / 1000;
     const periodInMinutes = Math.round(seconds < 61 ? 1 : seconds / 60);
 
+    logger.trace(`creating a alarm every ${periodInMinutes} ${delayMs}`)
     chrome.alarms.create("wallet-worker", { periodInMinutes })
-    chrome.alarms.onAlarm.addListener(callback)
+    chrome.alarms.onAlarm.addListener((a) => {
+      logger.trace(`alarm called, every: ${a.name}`)
+      callback()
+    })
 
     return new AlarmHandle();
   }
@@ -58,8 +62,12 @@ export class ServiceWorkerTimerAPI implements TimerAPI {
     const seconds = delayMs / 1000;
     const delayInMinutes = Math.round(seconds < 61 ? 1 : seconds / 60);
 
+    logger.trace(`creating a alarm after ${delayInMinutes} ${delayMs}`)
     chrome.alarms.create("wallet-worker", { delayInMinutes })
-    chrome.alarms.onAlarm.addListener(callback)
+    chrome.alarms.onAlarm.addListener((a) => {
+      logger.trace(`alarm called, after: ${a.name}`)
+      callback();
+    })
     return new AlarmHandle();
   }
 
