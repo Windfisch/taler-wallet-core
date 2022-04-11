@@ -24,5 +24,6 @@ import * as a3 from "./Pay.stories.jsx";
 import * as a4 from "./Refund.stories.jsx";
 import * as a5 from "./Tip.stories.jsx";
 import * as a6 from "./Withdraw.stories.jsx";
+import * as a7 from "./TermsOfServiceSection.stories.js";
 
-export default [a1, a3, a4, a5, a6];
+export default [a1, a3, a4, a5, a6, a7];
