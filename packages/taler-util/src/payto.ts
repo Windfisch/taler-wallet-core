@@ -51,6 +51,19 @@ interface PaytoUriBitcoin extends PaytoUriGeneric {
 
 const paytoPfx = "payto://";
 
+
+
+function buildSegwitGenerator(result: PaytoUriBitcoin, targetPath: string) {
+  //generate segwit address just once, save addr in payto object
+  //and use it as cache
+  return function generateSegwitAddress(reserve: string): { addr1: string, addr2: string } {
+    if (result.addr1 && result.addr2) return { addr1: result.addr1, addr2: result.addr2 };
+    const { addr1, addr2 } = generateFakeSegwitAddress(reserve, targetPath)
+    result.addr1 = addr1
+    result.addr2 = addr2
+    return { addr1, addr2 }
+  }
+}
 /**
  * Add query parameters to a payto URI
  */
@@ -66,6 +79,30 @@ export function addPaytoQueryParams(
   return paytoPfx + acct + "?" + searchParams.toString();
 }
 
+/**
+ * Serialize a PaytoURI into a valid payto:// string
+ * 
+ * @param p 
+ * @returns 
+ */
+export function stringifyPaytoUri(p: PaytoUri): string {
+  const url = `${paytoPfx}${p.targetType}//${p.targetPath}`
+  if (p.params) {
+    const search = Object.entries(p.params)
+      .map(([key, value]) => `${key}=${value}`)
+      .join("&");
+    return `${url}?${search}`
+  }
+  return url
+}
+
+/**
+ * Parse a valid payto:// uri into a PaytoUri object
+ * RFC 8905
+ * 
+ * @param s 
+ * @returns 
+ */
 export function parsePaytoUri(s: string): PaytoUri | undefined {
   if (!s.startsWith(paytoPfx)) {
     return undefined;
@@ -123,16 +160,7 @@ export function parsePaytoUri(s: string): PaytoUri | undefined {
       generateSegwitAddress: (): any => null
     }
 
-    //generate segwit address just once, save addr in payto object
-    //and use it as cache
-    function generateSegwitAddress(reserve: string) {
-      if (result.addr1 && result.addr2) return { addr1: result.addr1, addr2: result.addr2 };
-      const { addr1, addr2 } = generateFakeSegwitAddress(reserve, targetPath)
-      result.addr1 = addr1
-      result.addr2 = addr2
-      return { addr1, addr2 }
-    }
-    result.generateSegwitAddress = generateSegwitAddress
+    result.generateSegwitAddress = buildSegwitGenerator(result, targetPath)
     return result;
 
   }
