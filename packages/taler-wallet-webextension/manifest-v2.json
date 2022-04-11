@@ -23,7 +23,6 @@
   ],
   "optional_permissions": [
     "webRequest",
-    "webRequestBlocking",
     "http://*/*",
     "https://*/*"
   ],

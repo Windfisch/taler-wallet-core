@@ -15,7 +15,7 @@
  */
 
 const perms = {
-  permissions: ["webRequest", "webRequestBlocking"],
+  permissions: ["webRequest"],
   origins: ["http://*/*", "https://*/*"],
 }
 export const getReadRequestPermissions = (): typeof perms => perms
