@@ -192,7 +192,7 @@ import {
   openPromise,
 } from "./util/promiseUtils.js";
 import { DbAccess, GetReadWriteAccess } from "./util/query.js";
-import { TimerGroup } from "./util/timer.js";
+import { TimerAPI, TimerGroup } from "./util/timer.js";
 import { WalletCoreApiClient } from "./wallet-api-types.js";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 
@@ -1080,9 +1080,10 @@ export class Wallet {
   private constructor(
     db: DbAccess<typeof WalletStoresV1>,
     http: HttpRequestLibrary,
+    timer: TimerAPI,
     cryptoWorkerFactory: CryptoWorkerFactory,
   ) {
-    this.ws = new InternalWalletStateImpl(db, http, cryptoWorkerFactory);
+    this.ws = new InternalWalletStateImpl(db, http, timer, cryptoWorkerFactory);
   }
 
   get client(): WalletCoreApiClient {
@@ -1100,9 +1101,10 @@ export class Wallet {
   static async create(
     db: DbAccess<typeof WalletStoresV1>,
     http: HttpRequestLibrary,
+    timer: TimerAPI,
     cryptoWorkerFactory: CryptoWorkerFactory,
   ): Promise<Wallet> {
-    const w = new Wallet(db, http, cryptoWorkerFactory);
+    const w = new Wallet(db, http, timer, cryptoWorkerFactory);
     w._client = await getClientFromWalletState(w.ws);
     return w;
   }
@@ -1153,7 +1155,7 @@ class InternalWalletStateImpl implements InternalWalletState {
 
   insecureTrustExchange = false;
 
-  timerGroup: TimerGroup = new TimerGroup();
+  readonly timerGroup: TimerGroup;
   latch = new AsyncCondition();
   stopped = false;
 
@@ -1200,10 +1202,12 @@ class InternalWalletStateImpl implements InternalWalletState {
     // and throw an error in that case.
     public db: DbAccess<typeof WalletStoresV1>,
     public http: HttpRequestLibrary,
+    public timer: TimerAPI,
     cryptoWorkerFactory: CryptoWorkerFactory,
   ) {
     this.cryptoDispatcher = new CryptoDispatcher(cryptoWorkerFactory);
     this.cryptoApi = this.cryptoDispatcher.cryptoApi;
+    this.timerGroup = new TimerGroup(timer)
   }
 
   async getDenomInfo(

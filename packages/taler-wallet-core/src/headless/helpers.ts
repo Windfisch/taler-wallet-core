@@ -36,6 +36,7 @@ import { NodeThreadCryptoWorkerFactory } from "../crypto/workers/nodeThreadWorke
 import { SynchronousCryptoWorkerFactory } from "../crypto/workers/synchronousWorkerFactory.js";
 import { openTalerDatabase } from "../db-utils.js";
 import { HttpRequestLibrary } from "../util/http.js";
+import { SetTimeoutTimerAPI } from "../util/timer.js";
 import { Wallet } from "../wallet.js";
 import { NodeHttpLib } from "./NodeHttpLib.js";
 
@@ -176,7 +177,10 @@ export async function getDefaultNodeWallet2(
       workerFactory = new SynchronousCryptoWorkerFactory();
     }
   }
-  const w = await Wallet.create(myDb, myHttpLib, workerFactory);
+
+  const timer = new SetTimeoutTimerAPI()
+
+  const w = await Wallet.create(myDb, myHttpLib, timer, workerFactory);
 
   if (args.notifyHandler) {
     w.addNotificationListener(args.notifyHandler);

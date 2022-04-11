@@ -42,7 +42,7 @@ export interface TimerHandle {
 }
 
 class IntervalHandle {
-  constructor(public h: any) {}
+  constructor(public h: any) { }
 
   clear(): void {
     clearInterval(this.h);
@@ -60,7 +60,7 @@ class IntervalHandle {
 }
 
 class TimeoutHandle {
-  constructor(public h: any) {}
+  constructor(public h: any) { }
 
   clear(): void {
     clearTimeout(this.h);
@@ -97,20 +97,6 @@ export const performanceNow: () => bigint = (() => {
   return () => BigInt(0);
 })();
 
-/**
- * Call a function every time the delay given in milliseconds passes.
- */
-export function every(delayMs: number, callback: () => void): TimerHandle {
-  return new IntervalHandle(setInterval(callback, delayMs));
-}
-
-/**
- * Call a function after the delay given in milliseconds passes.
- */
-export function after(delayMs: number, callback: () => void): TimerHandle {
-  return new TimeoutHandle(setTimeout(callback, delayMs));
-}
-
 const nullTimerHandle = {
   clear() {
     // do nothing
@@ -125,12 +111,42 @@ const nullTimerHandle = {
 /**
  * Group of timers that can be destroyed at once.
  */
+export interface TimerAPI {
+  after(delayMs: number, callback: () => void): TimerHandle;
+  every(delayMs: number, callback: () => void): TimerHandle;
+}
+
+export class SetTimeoutTimerAPI implements TimerAPI {
+  /**
+   * Call a function every time the delay given in milliseconds passes.
+   */
+  every(delayMs: number, callback: () => void): TimerHandle {
+    return new IntervalHandle(setInterval(callback, delayMs));
+  }
+
+  /**
+   * Call a function after the delay given in milliseconds passes.
+   */
+  after(delayMs: number, callback: () => void): TimerHandle {
+    return new TimeoutHandle(setTimeout(callback, delayMs));
+  }
+
+
+}
+
+export const timer = new SetTimeoutTimerAPI();
+
+/**
+ * Implementation of [[TimerGroup]] using setTimeout
+ */
 export class TimerGroup {
   private stopped = false;
 
-  private timerMap: { [index: number]: TimerHandle } = {};
+  private readonly timerMap: { [index: number]: TimerHandle } = {};
 
   private idGen = 1;
+
+  constructor(public readonly timerApi: TimerAPI) { }
 
   stopCurrentAndFutureTimers(): void {
     this.stopped = true;
@@ -158,7 +174,7 @@ export class TimerGroup {
       logger.warn("dropping timer since timer group is stopped");
       return nullTimerHandle;
     }
-    const h = after(delayMs, callback);
+    const h = this.timerApi.after(delayMs, callback);
     const myId = this.idGen++;
     this.timerMap[myId] = h;
 
@@ -180,7 +196,7 @@ export class TimerGroup {
       logger.warn("dropping timer since timer group is stopped");
       return nullTimerHandle;
     }
-    const h = every(delayMs, callback);
+    const h = this.timerApi.every(delayMs, callback);
     const myId = this.idGen++;
     this.timerMap[myId] = h;
 

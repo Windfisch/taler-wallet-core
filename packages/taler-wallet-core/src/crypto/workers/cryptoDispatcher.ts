@@ -23,7 +23,7 @@
  * Imports.
  */
 import { Logger } from "@gnu-taler/taler-util";
-import * as timer from "../../util/timer.js";
+import { timer, performanceNow, TimerHandle } from "../../util/timer.js";
 import { nullCrypto, TalerCryptoInterface } from "../cryptoImplementation.js";
 import { CryptoWorker } from "./cryptoWorkerInterface.js";
 
@@ -46,7 +46,7 @@ interface WorkerState {
   /**
    * Timer to terminate the worker if it's not busy enough.
    */
-  idleTimeoutHandle: timer.TimerHandle | null;
+  idleTimeoutHandle: TimerHandle | null;
 }
 
 interface WorkItem {
@@ -166,7 +166,7 @@ export class CryptoDispatcher {
       operation: work.operation,
     };
     this.resetWorkerTimeout(ws);
-    work.startTime = timer.performanceNow();
+    work.startTime = performanceNow();
     timer.after(0, () => worker.postMessage(msg));
   }
 
