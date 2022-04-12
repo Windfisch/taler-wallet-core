@@ -1,8 +1,12 @@
 import { TalerErrorCode } from "@gnu-taler/taler-util";
 import {
+  AggregatedPolicyMetaInfo,
   BackupStates,
+  discoverPolicies,
+  DiscoveryCursor,
   getBackupStartState,
   getRecoveryStartState,
+  PolicyMetaInfo,
   RecoveryStates,
   reduceAction,
   ReducerState,
@@ -15,6 +19,7 @@ const remoteReducer = false;
 interface AnastasisState {
   reducerState: ReducerState | undefined;
   currentError: any;
+  discoveryState: DiscoveryUiState;
 }
 
 async function getBackupStartStateRemote(): Promise<ReducerState> {
@@ -98,9 +103,21 @@ export interface ReducerTransactionHandle {
   transition(action: string, args: any): Promise<ReducerState>;
 }
 
+/**
+ * UI-relevant state of the policy discovery process.
+ */
+export interface DiscoveryUiState {
+  state: "none" | "active" | "finished";
+
+  aggregatedPolicies?: AggregatedPolicyMetaInfo[];
+
+  cursor?: DiscoveryCursor;
+}
+
 export interface AnastasisReducerApi {
   currentReducerState: ReducerState | undefined;
   currentError: any;
+  discoveryState: DiscoveryUiState;
   dismissError: () => void;
   startBackup: () => void;
   startRecover: () => void;
@@ -109,6 +126,8 @@ export interface AnastasisReducerApi {
   transition(action: string, args: any): Promise<void>;
   exportState: () => string;
   importState: (s: string) => void;
+  discoverStart(): Promise<void>;
+  discoverMore(): Promise<void>;
   /**
    * Run multiple reducer steps in a transaction without
    * affecting the UI-visible transition state in-between.
@@ -152,6 +171,9 @@ export function useAnastasisReducer(): AnastasisReducerApi {
     () => ({
       reducerState: getStateFromStorage(),
       currentError: undefined,
+      discoveryState: {
+        state: "none",
+      },
     }),
   );
 
@@ -192,6 +214,7 @@ export function useAnastasisReducer(): AnastasisReducerApi {
   return {
     currentReducerState: anastasisState.reducerState,
     currentError: anastasisState.currentError,
+    discoveryState: anastasisState.discoveryState,
     async startBackup() {
       let s: ReducerState;
       if (remoteReducer) {
@@ -213,17 +236,59 @@ export function useAnastasisReducer(): AnastasisReducerApi {
       }
     },
     exportState() {
-      const state = getStateFromStorage()
-      return JSON.stringify(state)
+      const state = getStateFromStorage();
+      return JSON.stringify(state);
     },
     importState(s: string) {
       try {
-        const state = JSON.parse(s)
-        setAnastasisState({ reducerState: state, currentError: undefined })
+        const state = JSON.parse(s);
+        setAnastasisState({
+          reducerState: state,
+          currentError: undefined,
+          discoveryState: {
+            state: "none",
+          },
+        });
       } catch (e) {
-        throw Error('could not restore the state')
+        throw Error("could not restore the state");
       }
     },
+    async discoverStart(): Promise<void> {
+      const res = await discoverPolicies(this.currentReducerState!, undefined);
+      const aggregatedPolicies: AggregatedPolicyMetaInfo[] = [];
+      const polHashToIndex: Record<string, number> = {};
+      for (const pol of res.policies) {
+        const oldIndex = polHashToIndex[pol.policy_hash];
+        if (oldIndex != null) {
+          aggregatedPolicies[oldIndex].providers.push({
+            provider_url: pol.provider_url,
+            version: pol.version,
+          });
+        } else {
+          aggregatedPolicies.push({
+            attribute_mask: pol.attribute_mask,
+            policy_hash: pol.policy_hash,
+            providers: [
+              {
+                provider_url: pol.provider_url,
+                version: pol.version,
+              },
+            ],
+            secret_name: pol.secret_name,
+          });
+          polHashToIndex[pol.policy_hash] = aggregatedPolicies.length - 1;
+        }
+      }
+      setAnastasisState({
+        ...anastasisState,
+        discoveryState: {
+          state: "finished",
+          aggregatedPolicies,
+          cursor: res.cursor,
+        },
+      });
+    },
+    async discoverMore(): Promise<void> {},
     async startRecover() {
       let s: ReducerState;
       if (remoteReducer) {
@@ -301,7 +366,7 @@ export function useAnastasisReducer(): AnastasisReducerApi {
 }
 
 class ReducerTxImpl implements ReducerTransactionHandle {
-  constructor(public transactionState: ReducerState) { }
+  constructor(public transactionState: ReducerState) {}
   async transition(action: string, args: any): Promise<ReducerState> {
     let s: ReducerState;
     if (remoteReducer) {

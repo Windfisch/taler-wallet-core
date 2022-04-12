@@ -1,9 +1,10 @@
 import {
   AuthenticationProviderStatus,
   AuthenticationProviderStatusOk,
+  PolicyMetaInfo,
 } from "@gnu-taler/anastasis-core";
 import { h, VNode } from "preact";
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { AsyncButton } from "../../components/AsyncButton";
 import { PhoneNumberInput } from "../../components/fields/NumberInput";
 import { useAnastasisContext } from "../../context/anastasis";
@@ -13,8 +14,100 @@ import { AnastasisClientFrame } from "./index";
 export function SecretSelectionScreen(): VNode {
   const [selectingVersion, setSelectingVersion] = useState<boolean>(false);
   const reducer = useAnastasisContext();
-
   const [manageProvider, setManageProvider] = useState(false);
+
+  useEffect(() => {
+    async function f() {
+      if (reducer) {
+        await reducer.discoverStart();
+      }
+    }
+    f().catch((e) => console.log(e));
+  }, []);
+
+  if (!reducer) {
+    return <div>no reducer in context</div>;
+  }
+
+  if (
+    !reducer.currentReducerState ||
+    reducer.currentReducerState.recovery_state === undefined
+  ) {
+    return <div>invalid state</div>;
+  }
+
+  const provs = reducer.currentReducerState.authentication_providers ?? {};
+  const recoveryDocument = reducer.currentReducerState.recovery_document;
+
+  if (manageProvider) {
+    return <AddingProviderScreen onCancel={() => setManageProvider(false)} />;
+  }
+
+  if (reducer.discoveryState.state === "none") {
+    // Can this even happen?
+    return (
+      <AnastasisClientFrame title="Recovery: Select secret">
+        <div>waiting to start discovery</div>
+      </AnastasisClientFrame>
+    );
+  }
+
+  if (reducer.discoveryState.state === "active") {
+    return (
+      <AnastasisClientFrame title="Recovery: Select secret">
+        <div>loading secret versions</div>
+      </AnastasisClientFrame>
+    );
+  }
+
+  const policies = reducer.discoveryState.aggregatedPolicies ?? [];
+
+  if (policies.length === 0) {
+    return (
+      <ChooseAnotherProviderScreen
+        providers={provs}
+        selected=""
+        onChange={(newProv) => () => {}}
+      ></ChooseAnotherProviderScreen>
+    );
+  }
+
+  return (
+    <AnastasisClientFrame title="Recovery: Select secret" hideNext="Please select version to recover">
+      <p>Found versions:</p>
+      {policies.map((x) => (
+        <div>
+          {x.policy_hash} / {x.secret_name}
+          <button
+            onClick={async () => {
+              await reducer.transition("change_version", {
+                selection: x,
+              });
+            }}
+          >
+            Recover
+          </button>
+        </div>
+      ))}
+      <button>Load older versions</button>
+    </AnastasisClientFrame>
+  );
+}
+
+export function OldSecretSelectionScreen(): VNode {
+  const [selectingVersion, setSelectingVersion] = useState<boolean>(false);
+  const reducer = useAnastasisContext();
+  const [manageProvider, setManageProvider] = useState(false);
+
+  useEffect(() => {
+    async function f() {
+      if (reducer) {
+        await reducer.discoverStart();
+      }
+    }
+    f().catch((e) => console.log(e));
+  }, []);
+
   const currentVersion =
     (reducer?.currentReducerState &&
       "recovery_document" in reducer.currentReducerState &&
@@ -71,15 +164,16 @@ export function SecretSelectionScreen(): VNode {
     return <AddingProviderScreen onCancel={() => setManageProvider(false)} />;
   }
 
-  const provierInfo = provs[
+  const providerInfo = provs[
     recoveryDocument.provider_url
   ] as AuthenticationProviderStatusOk;
+
   return (
     <AnastasisClientFrame title="Recovery: Select secret">
       <div class="columns">
         <div class="column">
           <div class="box" style={{ border: "2px solid green" }}>
-            <h1 class="subtitle">{provierInfo.business_name}</h1>
+            <h1 class="subtitle">{providerInfo.business_name}</h1>
             <div class="block">
               {currentVersion === 0 ? (
                 <p>Set to recover the latest version</p>

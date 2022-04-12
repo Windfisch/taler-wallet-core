@@ -23,11 +23,9 @@ import { createContext, h, VNode } from "preact";
 import { useContext } from "preact/hooks";
 import { AnastasisReducerApi } from "../hooks/use-anastasis-reducer";
 
-type Type = AnastasisReducerApi | undefined;
-
 const initial = undefined;
 
-const Context = createContext<Type>(initial);
+const Context = createContext<AnastasisReducerApi | undefined>(initial);
 
 interface Props {
   value: AnastasisReducerApi;
@@ -38,4 +36,5 @@ export const AnastasisProvider = ({ value, children }: Props): VNode => {
   return h(Context.Provider, { value, children });
 };
 
-export const useAnastasisContext = (): Type => useContext(Context);
+export const useAnastasisContext = (): AnastasisReducerApi | undefined =>
+  useContext(Context);

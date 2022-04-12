@@ -202,14 +202,9 @@ export interface ReducerStateRecovery {
   /**
    * Explicitly selected version by the user.
    * FIXME: In the C reducer this is called "version".
+   * FIXME: rename to selected_secret / selected_policy?
    */
-  selected_version?: number;
-
-  /**
-   * Explicitly selected provider URL by the user.
-   * FIXME: In the C reducer this is called "provider_url".
-   */
-  selected_provider_url?: string;
+  selected_version?: AggregatedPolicyMetaInfo;
 
   challenge_feedback?: { [uuid: string]: ChallengeFeedback };
 
@@ -291,10 +286,12 @@ export interface MethodSpec {
   usage_fee: string;
 }
 
-// FIXME: This should be tagged!
-export type AuthenticationProviderStatusEmpty = {};
+export type AuthenticationProviderStatusEmpty = {
+  status: "not-contacted";
+};
 
 export interface AuthenticationProviderStatusOk {
+  status: "ok";
   annual_fee: string;
   business_name: string;
   currency: string;
@@ -304,11 +301,15 @@ export interface AuthenticationProviderStatusOk {
   storage_limit_in_megabytes: number;
   truth_upload_fee: string;
   methods: MethodSpec[];
+  // FIXME: add timestamp?
 }
 
 export interface AuthenticationProviderStatusError {
-  http_status: number;
-  error_code: number;
+  status: "error";
+  http_status?: number;
+  code: number;
+  hint?: string;
+  // FIXME: add timestamp?
 }
 
 export type AuthenticationProviderStatus =
@@ -441,8 +442,7 @@ export interface ActionArgsUpdateExpiration {
 }
 
 export interface ActionArgsChangeVersion {
-  provider_url: string;
-  version: number;
+  selection: AggregatedPolicyMetaInfo;
 }
 
 export interface ActionArgsUpdatePolicy {
@@ -450,10 +450,55 @@ export interface ActionArgsUpdatePolicy {
   policy: PolicyMember[];
 }
 
+/**
+ * Cursor for a provider discovery process.
+ */
+export interface DiscoveryCursor {
+  position: {
+    provider_url: string;
+    mask: number;
+    max_version?: number;
+  }[];
+}
+
+export interface PolicyMetaInfo {
+  policy_hash: string;
+  provider_url: string;
+  version: number;
+  attribute_mask: number;
+  server_time: TalerProtocolTimestamp;
+  secret_name?: string;
+}
+
+
+/**
+ * Aggregated / de-duplicated policy meta info.
+ */
+export interface AggregatedPolicyMetaInfo {
+  secret_name?: string;
+  policy_hash: string;
+  attribute_mask: number;
+  providers: {
+    provider_url: string;
+    version: number;
+  }[];
+}
+
+export interface DiscoveryResult {
+  /**
+   * Found policies.
+   */
+  policies: PolicyMetaInfo[];
+
+  /**
+   * Cursor that allows getting more results.
+   */
+  cursor?: DiscoveryCursor;
+}
+
 export const codecForActionArgsChangeVersion = () =>
   buildCodecForObject<ActionArgsChangeVersion>()
-    .property("provider_url", codecForString())
-    .property("version", codecForNumber())
+    .property("selection", codecForAny())
     .build("ActionArgsChangeVersion");
 
 export const codecForPolicyMember = () =>

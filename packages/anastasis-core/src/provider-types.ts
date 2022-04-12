@@ -1,4 +1,9 @@
-import { Amounts, AmountString } from "@gnu-taler/taler-util";
+import {
+  Amounts,
+  AmountString,
+  TalerProtocolDuration,
+  TalerProtocolTimestamp,
+} from "@gnu-taler/taler-util";
 
 export interface EscrowConfigurationResponse {
   // Protocol identifier, clarifies that this is an Anastasis provider.
@@ -82,4 +87,21 @@ export interface IbanExternalAuthResponse {
     business_name: string;
     wire_transfer_subject: string;
   };
+}
+
+export interface RecoveryMetaResponse {
+  /**
+   * Version numbers as a string (!) are used as keys.
+   */
+  [version: string]: RecoveryMetaDataItem;
+}
+
+export interface RecoveryMetaDataItem {
+  // The meta value can be NULL if the document
+  // exists but no meta data was provided.
+  meta?: string;
+
+  // Server-time indicative of when the recovery
+  // document was uploaded.
+  upload_time: TalerProtocolTimestamp;
 }

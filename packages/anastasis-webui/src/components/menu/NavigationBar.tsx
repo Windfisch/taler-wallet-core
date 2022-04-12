@@ -46,7 +46,7 @@ export function NavigationBar({ onMobileMenu, title }: Props): VNode {
           Contact us
         </a>
         <a
-          href="https://bugs.anastasis.li/"
+          href="https://bugs.anastasis.lu/"
           style={{ alignSelf: "center", padding: "0.5em" }}
         >
           Report a bug

@@ -1,16 +1,15 @@
 import {
-  bytesToString,
   canonicalJson,
   decodeCrock,
   encodeCrock,
   getRandomBytes,
-  kdf,
   kdfKw,
   secretbox,
   crypto_sign_keyPair_fromSeed,
   stringToBytes,
   secretbox_open,
   hash,
+  bytesToString,
 } from "@gnu-taler/taler-util";
 import { argon2id } from "hash-wasm";
 
@@ -109,6 +108,42 @@ export async function decryptRecoveryDocument(
   recoveryDocData: OpaqueData,
 ): Promise<OpaqueData> {
   return anastasisDecrypt(asOpaque(userId), recoveryDocData, "erd");
+}
+
+export interface PolicyMetadata {
+  secret_name: string;
+  policy_hash: string;
+}
+
+export async function encryptPolicyMetadata(
+  userId: UserIdentifier,
+  metadata: PolicyMetadata,
+): Promise<OpaqueData> {
+  const metadataBytes = typedArrayConcat([
+    decodeCrock(metadata.policy_hash),
+    stringToBytes(metadata.secret_name),
+  ]);
+  const nonce = encodeCrock(getRandomBytes(nonceSize));
+  return anastasisEncrypt(
+    nonce,
+    asOpaque(userId),
+    encodeCrock(metadataBytes),
+    "rmd",
+  );
+}
+
+export async function decryptPolicyMetadata(
+  userId: UserIdentifier,
+  metadataEnc: OpaqueData,
+): Promise<PolicyMetadata> {
+  const plain = await anastasisDecrypt(asOpaque(userId), metadataEnc, "rmd");
+  const metadataBytes = decodeCrock(plain);
+  const policyHash = encodeCrock(metadataBytes.slice(0, 64));
+  const secretName = bytesToString(metadataBytes.slice(64));
+  return {
+    policy_hash: policyHash,
+    secret_name: secretName,
+  };
 }
 
 export function typedArrayConcat(chunks: Uint8Array[]): Uint8Array {

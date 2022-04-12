@@ -22,11 +22,13 @@ import {
   TalerProtocolTimestamp,
   TalerSignaturePurpose,
   AbsoluteTime,
+  URL,
 } from "@gnu-taler/taler-util";
 import { anastasisData } from "./anastasis-data.js";
 import {
   EscrowConfigurationResponse,
   IbanExternalAuthResponse,
+  RecoveryMetaResponse as RecoveryMetaResponse,
   TruthUploadRequest,
 } from "./provider-types.js";
 import {
@@ -68,6 +70,10 @@ import {
   ActionArgsUpdatePolicy,
   ActionArgsAddProvider,
   ActionArgsDeleteProvider,
+  DiscoveryCursor,
+  DiscoveryResult,
+  PolicyMetaInfo,
+  ChallengeInfo,
 } from "./reducer-types.js";
 import fetchPonyfill from "fetch-ponyfill";
 import {
@@ -91,6 +97,8 @@ import {
   KeyShare,
   coreSecretRecover,
   pinAnswerHash,
+  decryptPolicyMetadata,
+  encryptPolicyMetadata,
 } from "./crypto.js";
 import { unzlibSync, zlibSync } from "fflate";
 import {
@@ -111,6 +119,8 @@ export * as validators from "./validators.js";
 export * from "./challenge-feedback-types.js";
 
 const logger = new Logger("anastasis-core:index.ts");
+
+const ANASTASIS_HTTP_HEADER_POLICY_META_DATA = "Anastasis-Policy-Meta-Data";
 
 function getContinents(
   opts: { requireProvider?: boolean } = {},
@@ -224,10 +234,12 @@ async function selectCountry(
     });
   }
 
-  const providers: { [x: string]: {} } = {};
+  const providers: { [x: string]: AuthenticationProviderStatus } = {};
   for (const prov of anastasisData.providersList.anastasis_provider) {
     if (currencies.includes(prov.currency)) {
-      providers[prov.url] = {};
+      providers[prov.url] = {
+        status: "not-contacted",
+      };
     }
   }
 
@@ -273,12 +285,14 @@ async function getProviderInfo(
     resp = await fetch(new URL("config", providerBaseUrl).href);
   } catch (e) {
     return {
+      status: "error",
       code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
       hint: "request to provider failed",
     };
   }
   if (resp.status !== 200) {
     return {
+      status: "error",
       code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
       hint: "unexpected status",
       http_status: resp.status,
@@ -287,6 +301,7 @@ async function getProviderInfo(
   try {
     const jsonResp: EscrowConfigurationResponse = await resp.json();
     return {
+      status: "ok",
       http_status: 200,
       annual_fee: jsonResp.annual_fee,
       business_name: jsonResp.business_name,
@@ -299,9 +314,10 @@ async function getProviderInfo(
       salt: jsonResp.server_salt,
       storage_limit_in_megabytes: jsonResp.storage_limit_in_megabytes,
       truth_upload_fee: jsonResp.truth_upload_fee,
-    } as AuthenticationProviderStatusOk;
+    };
   } catch (e) {
     return {
+      status: "error",
       code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
       hint: "provider did not return JSON",
     };
@@ -594,6 +610,7 @@ async function uploadSecret(
     const userId = await getUserIdCaching(prov.provider_url);
     const acctKeypair = accountKeypairDerive(userId);
     const zippedDoc = await compressRecoveryDoc(rd);
+    const recoveryDocHash = encodeCrock(hash(zippedDoc));
     const encRecoveryDoc = await encryptRecoveryDocument(
       userId,
       encodeCrock(zippedDoc),
@@ -603,6 +620,10 @@ async function uploadSecret(
       .put(bodyHash)
       .build();
     const sig = eddsaSign(sigPS, decodeCrock(acctKeypair.priv));
+    const metadataEnc = await encryptPolicyMetadata(userId, {
+      policy_hash: recoveryDocHash,
+      secret_name: state.secret_name ?? "<unnamed secret>",
+    });
     const talerPayUri = state.policy_payment_requests?.find(
       (x) => x.provider === prov.provider_url,
     )?.payto;
@@ -621,6 +642,7 @@ async function uploadSecret(
       headers: {
         "Anastasis-Policy-Signature": encodeCrock(sig),
         "If-None-Match": encodeCrock(bodyHash),
+        [ANASTASIS_HTTP_HEADER_POLICY_META_DATA]: metadataEnc,
         ...(paySecret
           ? {
               "Anastasis-Payment-Identifier": paySecret,
@@ -704,37 +726,21 @@ async function uploadSecret(
 async function downloadPolicy(
   state: ReducerStateRecovery,
 ): Promise<ReducerStateRecovery | ReducerStateError> {
-  const providerUrls = Object.keys(state.authentication_providers ?? {});
   let foundRecoveryInfo: RecoveryInternalData | undefined = undefined;
   let recoveryDoc: RecoveryDocument | undefined = undefined;
-  const newProviderStatus: { [url: string]: AuthenticationProviderStatusOk } =
-    {};
   const userAttributes = state.identity_attributes!;
-  const restrictProvider = state.selected_provider_url;
-  // FIXME:  Shouldn't we also store the status of bad providers?
-  for (const url of providerUrls) {
-    const pi = await getProviderInfo(url);
-    if ("error_code" in pi || !("http_status" in pi)) {
-      // Could not even get /config of the provider
-      continue;
-    }
-    newProviderStatus[url] = pi;
+  if (!state.selected_version) {
+    throw Error("invalid state");
   }
-  for (const url of providerUrls) {
-    const pi = newProviderStatus[url];
-    if (!pi) {
-      continue;
-    }
-    if (restrictProvider && url !== state.selected_provider_url) {
-      // User wants specific provider.
+  for (const prov of state.selected_version.providers) {
+    const pi = state.authentication_providers?.[prov.provider_url];
+    if (!pi || pi.status !== "ok") {
       continue;
     }
     const userId = await userIdentifierDerive(userAttributes, pi.salt);
     const acctKeypair = accountKeypairDerive(userId);
-    const reqUrl = new URL(`policy/${acctKeypair.pub}`, url);
-    if (state.selected_version) {
-      reqUrl.searchParams.set("version", `${state.selected_version}`);
-    }
+    const reqUrl = new URL(`policy/${acctKeypair.pub}`, prov.provider_url);
+    reqUrl.searchParams.set("version", `${prov.version}`);
     const resp = await fetch(reqUrl.href);
     if (resp.status !== 200) {
       continue;
@@ -752,7 +758,7 @@ async function downloadPolicy(
       policyVersion = Number(resp.headers.get("Anastasis-Version") ?? "0");
     } catch (e) {}
     foundRecoveryInfo = {
-      provider_url: url,
+      provider_url: prov.provider_url,
       secret_name: rd.secret_name ?? "<unknown>",
       version: policyVersion,
     };
@@ -765,16 +771,24 @@ async function downloadPolicy(
       hint: "No backups found at any provider for your identity information.",
     };
   }
+
+  const challenges: ChallengeInfo[] = [];
+
+  for (const x of recoveryDoc.escrow_methods) {
+    const pi = state.authentication_providers?.[x.url];
+    if (!pi || pi.status !== "ok") {
+      continue;
+    }
+    challenges.push({
+      cost: pi.methods.find((m) => m.type === x.escrow_type)?.usage_fee!,
+      instructions: x.instructions,
+      type: x.escrow_type,
+      uuid: x.uuid,
+    });
+  }
+
   const recoveryInfo: RecoveryInformation = {
-    challenges: recoveryDoc.escrow_methods.map((x) => {
-      const prov = newProviderStatus[x.url] as AuthenticationProviderStatusOk;
-      return {
-        cost: prov.methods.find((m) => m.type === x.escrow_type)?.usage_fee!,
-        instructions: x.instructions,
-        type: x.escrow_type,
-        uuid: x.uuid,
-      };
-    }),
+    challenges,
     policies: recoveryDoc.policies.map((x) => {
       return x.uuids.map((m) => {
         return {
@@ -785,7 +799,7 @@ async function downloadPolicy(
   };
   return {
     ...state,
-    recovery_state: RecoveryStates.SecretSelecting,
+    recovery_state: RecoveryStates.ChallengeSelecting,
     recovery_document: foundRecoveryInfo,
     recovery_information: recoveryInfo,
     verbatim_recovery_document: recoveryDoc,
@@ -1019,10 +1033,11 @@ async function recoveryEnterUserAttributes(
   }
   const st: ReducerStateRecovery = {
     ...state,
+    recovery_state: RecoveryStates.SecretSelecting,
     identity_attributes: args.identity_attributes,
     authentication_providers: newProviders,
   };
-  return downloadPolicy(st);
+  return st;
 }
 
 async function changeVersion(
@@ -1031,8 +1046,7 @@ async function changeVersion(
 ): Promise<ReducerStateRecovery | ReducerStateError> {
   const st: ReducerStateRecovery = {
     ...state,
-    selected_version: args.version,
-    selected_provider_url: args.provider_url,
+    selected_version: args.selection,
   };
   return downloadPolicy(st);
 }
@@ -1313,10 +1327,7 @@ async function nextFromAuthenticationsEditing(
   const providers: ProviderInfo[] = [];
   for (const provUrl of Object.keys(state.authentication_providers ?? {})) {
     const prov = state.authentication_providers![provUrl];
-    if ("error_code" in prov) {
-      continue;
-    }
-    if (!("http_status" in prov && prov.http_status === 200)) {
+    if (prov.status !== "ok") {
       continue;
     }
     const methodCost: Record<string, AmountString> = {};
@@ -1573,6 +1584,59 @@ const recoveryTransitions: Record<
     ...transitionRecoveryJump("back", RecoveryStates.ChallengeSelecting),
   },
 };
+
+export async function discoverPolicies(
+  state: ReducerState,
+  cursor?: DiscoveryCursor,
+): Promise<DiscoveryResult> {
+  if (!state.recovery_state) {
+    throw Error("can only discover providers in recovery state");
+  }
+
+  const policies: PolicyMetaInfo[] = [];
+
+  const providerUrls = Object.keys(state.authentication_providers || {});
+  // FIXME: Do we need to re-contact providers here / check if they're disabled?
+
+  for (const providerUrl of providerUrls) {
+    const providerInfo = await getProviderInfo(providerUrl);
+    if (providerInfo.status !== "ok") {
+      continue;
+    }
+    const userId = await userIdentifierDerive(
+      state.identity_attributes!,
+      providerInfo.salt,
+    );
+    const acctKeypair = accountKeypairDerive(userId);
+    const reqUrl = new URL(`policy/${acctKeypair.pub}/meta`, providerUrl);
+    const resp = await fetch(reqUrl.href);
+    if (resp.status !== 200) {
+      logger.warn(`Could not fetch policy metadate from ${reqUrl.href}`);
+      continue;
+    }
+    const respJson: RecoveryMetaResponse = await resp.json();
+    const versions = Object.keys(respJson);
+    for (const version of versions) {
+      const item = respJson[version];
+      if (!item.meta) {
+        continue;
+      }
+      const metaData = await decryptPolicyMetadata(userId, item.meta!);
+      policies.push({
+        attribute_mask: 0,
+        provider_url: providerUrl,
+        server_time: item.upload_time,
+        version: Number.parseInt(version, 10),
+        secret_name: metaData.secret_name,
+        policy_hash: metaData.policy_hash,
+      });
+    }
+  }
+  return {
+    policies,
+    cursor: undefined,
+  };
+}
 
 export async function reduceAction(
   state: ReducerState,
