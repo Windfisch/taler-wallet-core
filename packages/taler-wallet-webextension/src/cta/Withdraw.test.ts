@@ -19,7 +19,8 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { ExchangeListItem } from "@gnu-taler/taler-util";
+import { Amounts, ExchangeListItem, GetExchangeTosResult } from "@gnu-taler/taler-util";
+import { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
 import { mountHook } from "../test-utils.js";
 import { useComponentState } from "./Withdraw.js";
@@ -88,6 +89,158 @@ describe("Withdraw CTA states", () => {
       expect(status).equals('loading-exchange')
 
       expect(hook).deep.equals({ "hasError": true, "operational": false, "message": "ERROR_NO-DEFAULT-EXCHANGE" });
+    }
+
+    await assertNoPendingUpdate()
+  });
+
+  it("should be able to withdraw if tos are ok", async () => {
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(() =>
+      useComponentState('taler-withdraw://', {
+        listExchanges: async () => ({ exchanges }),
+        getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
+          amount: 'ARS:2',
+          possibleExchanges: exchanges,
+        }),
+        getExchangeWithdrawalInfo: async (): Promise<ExchangeWithdrawDetails> => ({
+          withdrawalAmountRaw: 'ARS:5',
+          withdrawalAmountEffective: 'ARS:5',
+        } as any),
+        getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
+          contentType: 'text',
+          content: 'just accept',
+          acceptedEtag: 'v1',
+          currentEtag: 'v1'
+        })
+      } as any),
+    );
+
+    {
+      const { status, hook } = getLastResultOrThrow()
+      expect(status).equals('loading-uri')
+      expect(hook).undefined;
+    }
+
+    await waitNextUpdate()
+
+    {
+      const { status, hook } = getLastResultOrThrow()
+
+      expect(status).equals('loading-info')
+
+      expect(hook).undefined;
+    }
+
+    await waitNextUpdate()
+
+    {
+      const state = getLastResultOrThrow()
+      expect(state.status).equals("success")
+      if (state.status !== "success") return;
+
+      expect(state.exchange.isDirty).false
+      expect(state.exchange.value).equal("http://exchange.demo.taler.net")
+      expect(state.exchange.list).deep.equal({
+        "http://exchange.demo.taler.net": "http://exchange.demo.taler.net"
+      })
+      expect(state.showExchangeSelection).false
+
+      expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"))
+      expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"))
+      expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"))
+
+      expect(state.doWithdrawal.disabled).false
+      expect(state.mustAcceptFirst).false
+
+    }
+
+    await assertNoPendingUpdate()
+  });
+
+  it("should be accept the tos before withdraw", async () => {
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(() =>
+      useComponentState('taler-withdraw://', {
+        listExchanges: async () => ({ exchanges }),
+        getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
+          amount: 'ARS:2',
+          possibleExchanges: exchanges,
+        }),
+        getExchangeWithdrawalInfo: async (): Promise<ExchangeWithdrawDetails> => ({
+          withdrawalAmountRaw: 'ARS:5',
+          withdrawalAmountEffective: 'ARS:5',
+        } as any),
+        getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
+          contentType: 'text',
+          content: 'just accept',
+          acceptedEtag: 'v1',
+          currentEtag: 'v2'
+        }),
+        setExchangeTosAccepted: async () => ({})
+      } as any),
+    );
+
+    {
+      const { status, hook } = getLastResultOrThrow()
+      expect(status).equals('loading-uri')
+      expect(hook).undefined;
+    }
+
+    await waitNextUpdate()
+
+    {
+      const { status, hook } = getLastResultOrThrow()
+
+      expect(status).equals('loading-info')
+
+      expect(hook).undefined;
+    }
+
+    await waitNextUpdate()
+
+    {
+      const state = getLastResultOrThrow()
+      expect(state.status).equals("success")
+      if (state.status !== "success") return;
+
+      expect(state.exchange.isDirty).false
+      expect(state.exchange.value).equal("http://exchange.demo.taler.net")
+      expect(state.exchange.list).deep.equal({
+        "http://exchange.demo.taler.net": "http://exchange.demo.taler.net"
+      })
+      expect(state.showExchangeSelection).false
+
+      expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"))
+      expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"))
+      expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"))
+
+      expect(state.doWithdrawal.disabled).true
+      expect(state.mustAcceptFirst).true
+
+      // accept TOS
+      state.tosProps?.onAccept(true)
+    }
+
+    await waitNextUpdate()
+
+    {
+      const state = getLastResultOrThrow()
+      expect(state.status).equals("success")
+      if (state.status !== "success") return;
+
+      expect(state.exchange.isDirty).false
+      expect(state.exchange.value).equal("http://exchange.demo.taler.net")
+      expect(state.exchange.list).deep.equal({
+        "http://exchange.demo.taler.net": "http://exchange.demo.taler.net"
+      })
+      expect(state.showExchangeSelection).false
+
+      expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"))
+      expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"))
+      expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"))
+
+      expect(state.doWithdrawal.disabled).false
+      expect(state.mustAcceptFirst).true
+
     }
 
     await assertNoPendingUpdate()

@@ -195,7 +195,7 @@ export function useComponentState(
   const [withdrawError, setWithdrawError] = useState<TalerError | undefined>(
     undefined,
   );
-  const [confirmDisabled, setConfirmDisabled] = useState<boolean>(false);
+  const [doingWithdraw, setDoingWithdraw] = useState<boolean>(false);
 
   const [showExchangeSelection, setShowExchangeSelection] = useState(false);
   const [nextExchange, setNextExchange] = useState<string | undefined>();
@@ -222,7 +222,7 @@ export function useComponentState(
 
   async function doWithdrawAndCheckError(): Promise<void> {
     try {
-      setConfirmDisabled(true);
+      setDoingWithdraw(true);
       if (!talerWithdrawUri) return;
       const res = await api.acceptWithdrawal(
         talerWithdrawUri,
@@ -235,8 +235,8 @@ export function useComponentState(
       if (e instanceof TalerError) {
         setWithdrawError(e);
       }
-      setConfirmDisabled(false);
     }
+    setDoingWithdraw(false);
   }
 
   const exchanges = thisCurrencyExchanges.reduce(
@@ -259,9 +259,9 @@ export function useComponentState(
 
   const exchangeHandler: SelectFieldHandler = {
     onChange: setNextExchange,
-    value: nextExchange || thisExchange,
+    value: nextExchange ?? thisExchange,
     list: exchanges,
-    isDirty: nextExchange !== thisExchange,
+    isDirty: nextExchange !== undefined,
   };
 
   const editExchange: ButtonHandler = {
@@ -278,6 +278,7 @@ export function useComponentState(
     onClick: async () => {
       setCustomExchange(exchangeHandler.value);
       setShowExchangeSelection(false);
+      setNextExchange(undefined);
     },
   };
 
@@ -307,6 +308,10 @@ export function useComponentState(
     }
   }
 
+  const mustAcceptFirst =
+    termsState !== undefined &&
+    (termsState.status === "changed" || termsState.status === "new");
+
   return {
     status: "success",
     hook: undefined,
@@ -321,7 +326,7 @@ export function useComponentState(
     doWithdrawal: {
       onClick: doWithdrawAndCheckError,
       error: withdrawError,
-      disabled: confirmDisabled,
+      disabled: doingWithdraw || (mustAcceptFirst && !reviewed),
     },
     tosProps: !termsState
       ? undefined
@@ -332,9 +337,7 @@ export function useComponentState(
           reviewing: reviewing,
           terms: termsState,
         },
-    mustAcceptFirst:
-      termsState !== undefined &&
-      (termsState.status === "changed" || termsState.status === "new"),
+    mustAcceptFirst,
   };
 }
 

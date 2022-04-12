@@ -2,3 +2,4 @@ extension/
 /storybook-static/
 /.linaria-cache/
 /lib
+/coverage
