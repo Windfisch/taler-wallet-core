@@ -15,31 +15,31 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { DefinePlugin } from 'webpack';
+import { DefinePlugin } from "webpack";
 
-import pack from './package.json';
-import * as cp from 'child_process';
+import pack from "./package.json";
+import * as cp from "child_process";
 
-const commitHash = cp.execSync('git rev-parse --short HEAD').toString();
+const commitHash = cp.execSync("git rev-parse --short HEAD").toString();
 
 export default {
   webpack(config, env, helpers) {
     // add __VERSION__ to be use in the html
     config.plugins.push(
       new DefinePlugin({
-        'process.env.__VERSION__': JSON.stringify(env.isProd ? pack.version : `dev-${commitHash}`),
+        "process.env.__VERSION__": JSON.stringify(
+          env.isProd ? pack.version : `dev-${commitHash}`,
+        ),
       }),
     );
-    const crittersWrapper = helpers.getPluginsByName(config, 'Critters')
+    const crittersWrapper = helpers.getPluginsByName(config, "Critters");
     if (crittersWrapper && crittersWrapper.length > 0) {
-      const [{ index }] = crittersWrapper
-      config.plugins.splice(index, 1)
+      const [{ index }] = crittersWrapper;
+      config.plugins.splice(index, 1);
     }
-
-  }
-}
-
+  },
+};

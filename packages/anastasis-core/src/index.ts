@@ -74,6 +74,7 @@ import {
   DiscoveryResult,
   PolicyMetaInfo,
   ChallengeInfo,
+  AggregatedPolicyMetaInfo,
 } from "./reducer-types.js";
 import fetchPonyfill from "fetch-ponyfill";
 import {
@@ -1449,6 +1450,37 @@ async function updateSecretExpiration(
     ...state,
     expiration: args.expiration,
   });
+}
+
+export function mergeDiscoveryAggregate(
+  newPolicies: PolicyMetaInfo[],
+  oldAgg: AggregatedPolicyMetaInfo[],
+): AggregatedPolicyMetaInfo[] {
+  const aggregatedPolicies: AggregatedPolicyMetaInfo[] = [...oldAgg] ?? [];
+  const polHashToIndex: Record<string, number> = {};
+  for (const pol of newPolicies) {
+    const oldIndex = polHashToIndex[pol.policy_hash];
+    if (oldIndex != null) {
+      aggregatedPolicies[oldIndex].providers.push({
+        provider_url: pol.provider_url,
+        version: pol.version,
+      });
+    } else {
+      aggregatedPolicies.push({
+        attribute_mask: pol.attribute_mask,
+        policy_hash: pol.policy_hash,
+        providers: [
+          {
+            provider_url: pol.provider_url,
+            version: pol.version,
+          },
+        ],
+        secret_name: pol.secret_name,
+      });
+      polHashToIndex[pol.policy_hash] = aggregatedPolicies.length - 1;
+    }
+  }
+  return aggregatedPolicies;
 }
 
 const backupTransitions: Record<

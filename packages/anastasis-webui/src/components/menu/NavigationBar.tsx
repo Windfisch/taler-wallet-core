@@ -51,6 +51,14 @@ export function NavigationBar({ onMobileMenu, title }: Props): VNode {
         >
           Report a bug
         </a>
+        <a
+          style={{
+            alignSelf: "center",
+            padding: "0.5em",
+          }}
+        >
+          Settings
+        </a>
         {/* <a
           role="button"
           class="navbar-burger"

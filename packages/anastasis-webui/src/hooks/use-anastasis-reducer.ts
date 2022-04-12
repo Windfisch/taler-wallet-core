@@ -6,6 +6,7 @@ import {
   DiscoveryCursor,
   getBackupStartState,
   getRecoveryStartState,
+  mergeDiscoveryAggregate,
   PolicyMetaInfo,
   RecoveryStates,
   reduceAction,
@@ -255,30 +256,7 @@ export function useAnastasisReducer(): AnastasisReducerApi {
     },
     async discoverStart(): Promise<void> {
       const res = await discoverPolicies(this.currentReducerState!, undefined);
-      const aggregatedPolicies: AggregatedPolicyMetaInfo[] = [];
-      const polHashToIndex: Record<string, number> = {};
-      for (const pol of res.policies) {
-        const oldIndex = polHashToIndex[pol.policy_hash];
-        if (oldIndex != null) {
-          aggregatedPolicies[oldIndex].providers.push({
-            provider_url: pol.provider_url,
-            version: pol.version,
-          });
-        } else {
-          aggregatedPolicies.push({
-            attribute_mask: pol.attribute_mask,
-            policy_hash: pol.policy_hash,
-            providers: [
-              {
-                provider_url: pol.provider_url,
-                version: pol.version,
-              },
-            ],
-            secret_name: pol.secret_name,
-          });
-          polHashToIndex[pol.policy_hash] = aggregatedPolicies.length - 1;
-        }
-      }
+      const aggregatedPolicies = mergeDiscoveryAggregate(res.policies, []);
       setAnastasisState({
         ...anastasisState,
         discoveryState: {

@@ -34,14 +34,31 @@ const Context = createContext<Type>({
 
 export const useDevContext = (): Type => useContext(Context);
 
-export const DevContextProviderForTesting = ({ value, children }: { value: boolean, children: any }): VNode => {
-  return h(Context.Provider, { value: { devMode: value, toggleDevMode: () => { null } }, children });
+export const DevContextProviderForTesting = ({
+  value,
+  children,
+}: {
+  value: boolean;
+  children: any;
+}): VNode => {
+  return h(Context.Provider, {
+    value: {
+      devMode: value,
+      toggleDevMode: () => {
+        null;
+      },
+    },
+    children,
+  });
 };
 
 export const DevContextProvider = ({ children }: { children: any }): VNode => {
   const [value, setter] = useLocalStorage("devMode");
   const devMode = value === "true";
   const toggleDevMode = (): void => setter((v) => (!v ? "true" : undefined));
-  children = children.length === 1 && typeof children === "function" ? children({ devMode }) : children;
+  children =
+    children.length === 1 && typeof children === "function"
+      ? children({ devMode })
+      : children;
   return h(Context.Provider, { value: { devMode, toggleDevMode }, children });
 };
