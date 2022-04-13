@@ -6,7 +6,7 @@ import {
   h,
   VNode,
 } from "preact";
-import { useErrorBoundary } from "preact/hooks";
+import { useCallback, useEffect, useErrorBoundary } from "preact/hooks";
 import { AsyncButton } from "../../components/AsyncButton";
 import { Menu } from "../../components/menu";
 import { Notifications } from "../../components/Notifications";
@@ -103,6 +103,28 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
     } else {
       await reducer.transition("next", {});
     }
+    reducer.currentReducerState?.reducer_type;
+
+    const stateName = !reducer.currentReducerState
+      ? "not-defined"
+      : reducer.currentReducerState.reducer_type === "backup"
+      ? `#backup-${reducer.currentReducerState.backup_state}`
+      : reducer.currentReducerState.reducer_type === "recovery"
+      ? `recovery-${reducer.currentReducerState.recovery_state}`
+      : reducer.currentReducerState.reducer_type === "error"
+      ? `error-${reducer.currentReducerState.code}`
+      : "unknown";
+
+    const id: number =
+      typeof history.state.id === "number" ? history.state.id : 1;
+
+    history.pushState(
+      {
+        id: id + 1,
+      },
+      "unused",
+      stateName,
+    );
   };
   const handleKeyPress = (
     e: h.JSX.TargetedKeyboardEvent<HTMLDivElement>,
@@ -110,6 +132,22 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
     console.log("Got key press", e.key);
     // FIXME: By default, "next" action should be executed here
   };
+
+  const browserOnBackButton = useCallback((ev: PopStateEvent) => {
+    console.log("BACK BACK", JSON.stringify(ev.state));
+    reducer.back();
+    // reducer
+    return false;
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("popstate", browserOnBackButton);
+
+    return () => {
+      window.removeEventListener("popstate", browserOnBackButton);
+    };
+  }, []);
+
   return (
     <Fragment>
       <Menu title="Anastasis" />
