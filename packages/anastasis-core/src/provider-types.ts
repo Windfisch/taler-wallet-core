@@ -16,6 +16,13 @@
 
 import {
   AmountString,
+  buildCodecForObject,
+  buildCodecForUnion,
+  Codec,
+  codecForAmountString,
+  codecForConstString,
+  codecForNumber,
+  codecForString,
   TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
 
@@ -122,3 +129,86 @@ export interface RecoveryMetaDataItem {
   // document was uploaded.
   upload_time: TalerProtocolTimestamp;
 }
+
+export type ChallengeInstructionMessage =
+  | FileChallengeInstructionMessage
+  | IbanChallengeInstructionMessage
+  | PinChallengeInstructionMessage;
+
+export interface IbanChallengeInstructionMessage {
+  // What kind of challenge is this?
+  method: "IBAN_WIRE";
+
+  // How much should be wired?
+  amount: AmountString;
+
+  // What is the target IBAN?
+  credit_iban: string;
+
+  // What is the receiver name?
+  business_name: string;
+
+  // What is the expected wire transfer subject?
+  wire_transfer_subject: string;
+
+  // What is the numeric code (also part of the
+  // wire transfer subject) to be hashed when
+  // solving the challenge?
+  answer_code: number;
+
+  // Hint about the origin account that must be used.
+  debit_account_hint: string;
+}
+
+export interface PinChallengeInstructionMessage {
+  // What kind of challenge is this?
+  method: "TAN_SENT";
+
+  // Where was the PIN code sent? Note that this
+  // address will most likely have been obscured
+  // to improve privacy.
+  tan_address_hint: string;
+}
+
+export interface FileChallengeInstructionMessage {
+  // What kind of challenge is this?
+  method: "FILE_WRITTEN";
+
+  // Name of the file where the PIN code was written.
+  filename: string;
+}
+
+export const codecForFileChallengeInstructionMessage =
+  (): Codec<FileChallengeInstructionMessage> =>
+    buildCodecForObject<FileChallengeInstructionMessage>()
+      .property("method", codecForConstString("FILE_WRITTEN"))
+      .property("filename", codecForString())
+      .build("FileChallengeInstructionMessage");
+
+export const codecForPinChallengeInstructionMessage =
+  (): Codec<PinChallengeInstructionMessage> =>
+    buildCodecForObject<PinChallengeInstructionMessage>()
+      .property("method", codecForConstString("TAN_SENT"))
+      .property("tan_address_hint", codecForString())
+      .build("PinChallengeInstructionMessage");
+
+export const codecForIbanChallengeInstructionMessage =
+  (): Codec<IbanChallengeInstructionMessage> =>
+    buildCodecForObject<IbanChallengeInstructionMessage>()
+      .property("method", codecForConstString("IBAN_WIRE"))
+      .property("amount", codecForAmountString())
+      .property("business_name", codecForString())
+      .property("credit_iban", codecForString())
+      .property("wire_transfer_subject", codecForString())
+      .property("answer_code", codecForNumber())
+      .property("debit_account_hint", codecForString())
+      .build("IbanChallengeInstructionMessage");
+
+export const codecForChallengeInstructionMessage =
+  (): Codec<ChallengeInstructionMessage> =>
+    buildCodecForUnion<ChallengeInstructionMessage>()
+      .discriminateOn("method")
+      .alternative("FILE_WRITTEN", codecForFileChallengeInstructionMessage())
+      .alternative("IBAN_WIRE", codecForIbanChallengeInstructionMessage())
+      .alternative("TAN_SENT", codecForPinChallengeInstructionMessage())
+      .build("ChallengeInstructionMessage");

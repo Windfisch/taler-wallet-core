@@ -14,11 +14,8 @@ function OverviewFeedbackDisplay(props: { feedback?: ChallengeFeedback }) {
     return null;
   }
   switch (feedback.state) {
-    case ChallengeFeedbackStatus.Message:
-      return <div class="block has-text-danger">{feedback.message}</div>;
     case ChallengeFeedbackStatus.Solved:
       return <div />;
-    case ChallengeFeedbackStatus.Pending:
     case ChallengeFeedbackStatus.AuthIban:
       return null;
     case ChallengeFeedbackStatus.ServerFailure:
@@ -43,7 +40,6 @@ function OverviewFeedbackDisplay(props: { feedback?: ChallengeFeedback }) {
           provider for further information.
         </div>
       );
-    case ChallengeFeedbackStatus.Redirect:
     default:
       return <div />;
   }
@@ -178,7 +174,7 @@ export function ChallengeOverviewScreen(): VNode {
               case ChallengeFeedbackStatus.RateLimitExceeded:
                 return <div />;
               case ChallengeFeedbackStatus.AuthIban:
-              case ChallengeFeedbackStatus.Payment:
+              case ChallengeFeedbackStatus.TalerPayment:
                 return (
                   <div>
                     <AsyncButton
@@ -189,20 +185,6 @@ export function ChallengeOverviewScreen(): VNode {
                       onClick={selectChallenge}
                     >
                       Pay
-                    </AsyncButton>
-                  </div>
-                );
-              case ChallengeFeedbackStatus.Redirect:
-                return (
-                  <div>
-                    <AsyncButton
-                      class="button"
-                      disabled={
-                        atLeastThereIsOnePolicySolved && !policy.isPolicySolved
-                      }
-                      onClick={selectChallenge}
-                    >
-                      Go to {feedback.redirect_url}
                     </AsyncButton>
                   </div>
                 );

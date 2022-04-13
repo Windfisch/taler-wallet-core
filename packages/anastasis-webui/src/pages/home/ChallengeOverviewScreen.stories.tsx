@@ -249,19 +249,15 @@ export const OnePolicyWithAllTheChallengesInDifferentState = createExample(
     },
     challenge_feedback: {
       "uuid-1": { state: ChallengeFeedbackStatus.Solved.toString() },
-      "uuid-2": {
-        state: ChallengeFeedbackStatus.Message.toString(),
-        message: "Challenge should be solved",
-      },
       "uuid-3": {
         state: ChallengeFeedbackStatus.AuthIban.toString(),
         challenge_amount: "EUR:1",
-        credit_iban: "DE12345789000",
-        business_name: "Data Loss Incorporated",
+        target_iban: "DE12345789000",
+        target_business_name: "Data Loss Incorporated",
         wire_transfer_subject: "Anastasis 987654321",
       },
       "uuid-4": {
-        state: ChallengeFeedbackStatus.Payment.toString(),
+        state: ChallengeFeedbackStatus.TalerPayment.toString(),
         taler_pay_uri: "taler://pay/...",
         provider: "https://localhost:8080/",
         payment_secret: "3P4561HAMHRRYEYD6CM6J7TS5VTD5SR2K2EXJDZEFSX92XKHR4KG",
@@ -269,11 +265,6 @@ export const OnePolicyWithAllTheChallengesInDifferentState = createExample(
       "uuid-5": {
         state: ChallengeFeedbackStatus.RateLimitExceeded.toString(),
         // "error_code": 8121
-      },
-      "uuid-6": {
-        state: ChallengeFeedbackStatus.Redirect.toString(),
-        redirect_url: "https://videoconf.example.com/",
-        http_status: 303,
       },
       "uuid-7": {
         state: ChallengeFeedbackStatus.ServerFailure.toString(),

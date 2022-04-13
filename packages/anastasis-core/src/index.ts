@@ -25,6 +25,7 @@ import {
 } from "@gnu-taler/taler-util";
 import { anastasisData } from "./anastasis-data.js";
 import {
+  codecForChallengeInstructionMessage,
   EscrowConfigurationResponse,
   RecoveryMetaResponse,
   TruthUploadRequest,
@@ -363,9 +364,10 @@ async function getTruthValue(
     case "email":
     case "totp":
     case "iban":
+    case "post":
       return authMethod.challenge;
     default:
-      throw Error("unknown auth type");
+      throw Error(`unknown auth type '${authMethod.type}'`);
   }
 }
 
@@ -947,17 +949,27 @@ async function requestTruth(
 
   const hresp = await getResponseHash(truth, solveRequest);
 
-  const resp = await fetch(url.href, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      truth_decryption_key: truth.truth_key,
-      h_response: hresp,
-    }),
-  });
+  let resp: Response;
+
+  try {
+    resp = await fetch(url.href, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        truth_decryption_key: truth.truth_key,
+        h_response: hresp,
+      }),
+    });
+  } catch (e) {
+    return {
+      reducer_type: "error",
+      code: TalerErrorCode.ANASTASIS_TRUTH_CHALLENGE_FAILED,
+      hint: "network error",
+    } as ReducerStateError;
+  }
 
   logger.info(
     `got POST /truth/.../solve response from ${truth.url}, http status ${resp.status}`,
@@ -1005,6 +1017,19 @@ async function requestTruth(
     };
 
     return tryRecoverSecret(newState);
+  }
+
+  if (resp.status === HttpStatusCode.Forbidden) {
+    const challengeFeedback: { [x: string]: ChallengeFeedback } = {
+      ...state.challenge_feedback,
+      [truth.uuid]: {
+        state: ChallengeFeedbackStatus.IncorrectAnswer,
+      },
+    };
+    return {
+      ...state,
+      challenge_feedback: challengeFeedback,
+    };
   }
 
   return {
@@ -1072,6 +1097,9 @@ async function selectChallenge(
 
   const url = new URL(`/truth/${truth.uuid}/challenge`, truth.url);
 
+  const newFeedback = { ...state.challenge_feedback };
+  delete newFeedback[truth.uuid];
+
   switch (truth.escrow_type) {
     case ChallengeType.Question:
     case ChallengeType.Totp: {
@@ -1079,51 +1107,93 @@ async function selectChallenge(
         ...state,
         recovery_state: RecoveryStates.ChallengeSolving,
         selected_challenge_uuid: truth.uuid,
-        challenge_feedback: {
-          ...state.challenge_feedback,
-          [truth.uuid]: {
-            state: ChallengeFeedbackStatus.Pending,
-          },
-        },
+        challenge_feedback: newFeedback,
       };
     }
   }
 
-  const resp = await fetch(url.href, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      truth_decryption_key: truth.truth_key,
-    }),
-  });
+  let resp: Response;
+
+  try {
+    resp = await fetch(url.href, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        truth_decryption_key: truth.truth_key,
+      }),
+    });
+  } catch (e) {
+    const feedback: ChallengeFeedback = {
+      state: ChallengeFeedbackStatus.ServerFailure,
+      http_status: 0,
+    };
+    return {
+      ...state,
+      recovery_state: RecoveryStates.ChallengeSelecting,
+      selected_challenge_uuid: truth.uuid,
+      challenge_feedback: {
+        ...state.challenge_feedback,
+        [truth.uuid]: feedback,
+      },
+    };
+  }
 
   logger.info(
     `got GET /truth/.../challenge response from ${truth.url}, http status ${resp.status}`,
   );
 
   if (resp.status === HttpStatusCode.Ok) {
+    const respBodyJson = await resp.json();
+    const instr = codecForChallengeInstructionMessage().decode(respBodyJson);
+    let feedback: ChallengeFeedback;
+    switch (instr.method) {
+      case "FILE_WRITTEN": {
+        feedback = {
+          state: ChallengeFeedbackStatus.CodeInFile,
+          display_hint: "TAN code is in file (for debugging)",
+          filename: instr.filename,
+        };
+        break;
+      }
+      case "IBAN_WIRE": {
+        feedback = {
+          state: ChallengeFeedbackStatus.AuthIban,
+          answer_code: instr.answer_code,
+          target_business_name: instr.business_name,
+          challenge_amount: instr.amount,
+          target_iban: instr.credit_iban,
+          wire_transfer_subject: instr.wire_transfer_subject,
+        };
+        break;
+      }
+      case "TAN_SENT": {
+        feedback = {
+          state: ChallengeFeedbackStatus.CodeSent,
+          address_hint: instr.tan_address_hint,
+          display_hint: "Code sent to address",
+        };
+      }
+    }
     return {
       ...state,
       recovery_state: RecoveryStates.ChallengeSolving,
       selected_challenge_uuid: truth.uuid,
       challenge_feedback: {
         ...state.challenge_feedback,
-        [truth.uuid]: {
-          state: ChallengeFeedbackStatus.Pending,
-        },
+        [truth.uuid]: feedback,
       },
     };
   }
 
-  // FIXME: look at response, include in challenge_feedback!
+  // FIXME: look at more error codes in response
 
   return {
     reducer_type: "error",
     code: TalerErrorCode.ANASTASIS_TRUTH_CHALLENGE_FAILED,
-    hint: "got unexpected /truth/.../challenge response status",
+    hint: `got unexpected /truth/.../challenge response status (${resp.status})`,
     http_status: resp.status,
   } as ReducerStateError;
 }
@@ -1727,8 +1797,9 @@ export async function reduceAction(
   }
   try {
     return await h.handler(state, parsedArgs);
-  } catch (e) {
+  } catch (e: any) {
     logger.error("action handler failed");
+    logger.error(`${e?.stack ?? e}`);
     if (e instanceof ReducerError) {
       return {
         reducer_type: "error",

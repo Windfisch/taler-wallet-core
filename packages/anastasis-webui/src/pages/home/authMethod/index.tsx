@@ -3,22 +3,18 @@ import { h, VNode } from "preact";
 import postalIcon from "../../../assets/icons/auth_method/postal.svg";
 import questionIcon from "../../../assets/icons/auth_method/question.svg";
 import smsIcon from "../../../assets/icons/auth_method/sms.svg";
-import videoIcon from "../../../assets/icons/auth_method/video.svg";
 import { AuthMethodEmailSetup as EmailSetup } from "./AuthMethodEmailSetup";
 import { AuthMethodEmailSolve as EmailSolve } from "./AuthMethodEmailSolve";
 import { AuthMethodIbanSetup as IbanSetup } from "./AuthMethodIbanSetup";
-import { AuthMethodPostSetup as PostalSetup } from "./AuthMethodPostSetup";
-import { AuthMethodQuestionSetup as QuestionSetup } from "./AuthMethodQuestionSetup";
-import { AuthMethodSmsSetup as SmsSetup } from "./AuthMethodSmsSetup";
-import { AuthMethodTotpSetup as TotpSetup } from "./AuthMethodTotpSetup";
-import { AuthMethodVideoSetup as VideoSetup } from "./AuthMethodVideoSetup";
-
 import { AuthMethodIbanSolve as IbanSolve } from "./AuthMethodIbanSolve";
+import { AuthMethodPostSetup as PostalSetup } from "./AuthMethodPostSetup";
 import { AuthMethodPostSolve as PostalSolve } from "./AuthMethodPostSolve";
+import { AuthMethodQuestionSetup as QuestionSetup } from "./AuthMethodQuestionSetup";
 import { AuthMethodQuestionSolve as QuestionSolve } from "./AuthMethodQuestionSolve";
+import { AuthMethodSmsSetup as SmsSetup } from "./AuthMethodSmsSetup";
 import { AuthMethodSmsSolve as SmsSolve } from "./AuthMethodSmsSolve";
+import { AuthMethodTotpSetup as TotpSetup } from "./AuthMethodTotpSetup";
 import { AuthMethodTotpSolve as TotpSolve } from "./AuthMethodTotpSolve";
-import { AuthMethodVideoSolve as VideoSolve } from "./AuthMethodVideoSolve";
 
 export type AuthMethodWithRemove = AuthMethod & { remove: () => void };
 
@@ -40,14 +36,12 @@ interface AuthMethodConfiguration {
   solve: (props: AuthMethodSolveProps) => VNode;
   skip?: boolean;
 }
-// export type KnownAuthMethods = "sms" | "email" | "post" | "question" | "video" | "totp" | "iban";
 
 const ALL_METHODS = [
   "sms",
   "email",
   "post",
   "question",
-  "video",
   "totp",
   "iban",
 ] as const;
@@ -96,12 +90,5 @@ export const authMethods: KnowMethodConfig = {
     label: "TOTP",
     setup: TotpSetup,
     solve: TotpSolve,
-  },
-  video: {
-    icon: <img src={videoIcon} />,
-    label: "Video",
-    setup: VideoSetup,
-    solve: VideoSolve,
-    skip: true,
   },
 };

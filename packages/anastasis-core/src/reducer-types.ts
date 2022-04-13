@@ -220,8 +220,6 @@ export interface ReducerStateRecovery {
 
   /**
    * Explicitly selected version by the user.
-   * FIXME: In the C reducer this is called "version".
-   * FIXME: rename to selected_secret / selected_policy?
    */
   selected_version?: AggregatedPolicyMetaInfo;
 

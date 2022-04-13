@@ -80,7 +80,7 @@ export const PaymentFeedback = createExample(
     selected_challenge_uuid: "uuid-1",
     challenge_feedback: {
       "uuid-1": {
-        state: ChallengeFeedbackStatus.Payment,
+        state: ChallengeFeedbackStatus.TalerPayment,
         taler_pay_uri: "taler://pay/...",
         provider: "https://localhost:8080/",
         payment_secret: "3P4561HAMHRRYEYD6CM6J7TS5VTD5SR2K2EXJDZEFSX92XKHR4KG",

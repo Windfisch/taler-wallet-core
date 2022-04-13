@@ -20,6 +20,7 @@
  */
 
 import {
+  ChallengeFeedbackBankTransferRequired,
   ChallengeFeedbackStatus,
   ReducerState,
 } from "@gnu-taler/anastasis-core";
@@ -62,28 +63,6 @@ export const WithoutFeedback = createExample(
   },
 );
 
-export const MessageFeedback = createExample(TestedComponent[type].solve, {
-  ...reducerStatesExample.challengeSolving,
-  recovery_information: {
-    challenges: [
-      {
-        cost: "USD:1",
-        instructions: "does P equals NP?",
-        type: "question",
-        uuid: "ASDASDSAD!1",
-      },
-    ],
-    policies: [],
-  },
-  selected_challenge_uuid: "ASDASDSAD!1",
-  challenge_feedback: {
-    "ASDASDSAD!1": {
-      state: ChallengeFeedbackStatus.Message,
-      message: "Challenge should be solved",
-    },
-  },
-} as ReducerState);
-
 export const ServerFailureFeedback = createExample(
   TestedComponent[type].solve,
   {
@@ -92,7 +71,7 @@ export const ServerFailureFeedback = createExample(
       challenges: [
         {
           cost: "USD:1",
-          instructions: "does P equals NP?",
+          instructions: "does P equal NP?",
           type: "question",
           uuid: "ASDASDSAD!1",
         },
@@ -109,29 +88,6 @@ export const ServerFailureFeedback = createExample(
     },
   } as ReducerState,
 );
-
-export const RedirectFeedback = createExample(TestedComponent[type].solve, {
-  ...reducerStatesExample.challengeSolving,
-  recovery_information: {
-    challenges: [
-      {
-        cost: "USD:1",
-        instructions: "does P equals NP?",
-        type: "question",
-        uuid: "ASDASDSAD!1",
-      },
-    ],
-    policies: [],
-  },
-  selected_challenge_uuid: "ASDASDSAD!1",
-  challenge_feedback: {
-    "ASDASDSAD!1": {
-      state: ChallengeFeedbackStatus.Redirect,
-      http_status: 302,
-      redirect_url: "http://video.taler.net",
-    },
-  },
-} as ReducerState);
 
 export const MessageRateLimitExceededFeedback = createExample(
   TestedComponent[type].solve,
@@ -201,6 +157,15 @@ export const TruthUnknownFeedback = createExample(TestedComponent[type].solve, {
   },
 } as ReducerState);
 
+const ibanFeedback: ChallengeFeedbackBankTransferRequired = {
+  state: ChallengeFeedbackStatus.AuthIban,
+  challenge_amount: "EUR:1",
+  target_iban: "DE12345789000",
+  target_business_name: "Data Loss Incorporated",
+  wire_transfer_subject: "Anastasis 987654321",
+  answer_code: 987654321,
+};
+
 export const AuthIbanFeedback = createExample(TestedComponent[type].solve, {
   ...reducerStatesExample.challengeSolving,
   recovery_information: {
@@ -216,23 +181,7 @@ export const AuthIbanFeedback = createExample(TestedComponent[type].solve, {
   },
   selected_challenge_uuid: "ASDASDSAD!1",
   challenge_feedback: {
-    "ASDASDSAD!1": {
-      state: ChallengeFeedbackStatus.AuthIban,
-      challenge_amount: "EUR:1",
-      credit_iban: "DE12345789000",
-      business_name: "Data Loss Incorporated",
-      wire_transfer_subject: "Anastasis 987654321",
-      answer_code: 987654321,
-      // Fields that follow are only for compatibility with C reducer,
-      // will be removed eventually,
-      details: {
-        business_name: "foo",
-        challenge_amount: "foo",
-        credit_iban: "foo",
-        wire_transfer_subject: "foo",
-      },
-      method: "iban",
-    },
+    "ASDASDSAD!1": ibanFeedback,
   },
 } as ReducerState);
 
@@ -252,7 +201,7 @@ export const PaymentFeedback = createExample(TestedComponent[type].solve, {
   selected_challenge_uuid: "ASDASDSAD!1",
   challenge_feedback: {
     "ASDASDSAD!1": {
-      state: ChallengeFeedbackStatus.Payment,
+      state: ChallengeFeedbackStatus.TalerPayment,
       taler_pay_uri: "taler://pay/...",
       provider: "https://localhost:8080/",
       payment_secret: "3P4561HAMHRRYEYD6CM6J7TS5VTD5SR2K2EXJDZEFSX92XKHR4KG",

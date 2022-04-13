@@ -9,6 +9,7 @@ import { TextInput } from "../../../components/fields/TextInput";
 import { useAnastasisContext } from "../../../context/anastasis";
 import { AnastasisClientFrame } from "../index";
 import { SolveOverviewFeedbackDisplay } from "../SolveScreen";
+import { shouldHideConfirm } from "./helpers";
 import { AuthMethodSolveProps } from "./index";
 
 export function AuthMethodPostSolve({ id }: AuthMethodSolveProps): VNode {
@@ -102,12 +103,6 @@ export function AuthMethodPostSolve({ id }: AuthMethodSolveProps): VNode {
     reducer?.back();
   }
 
-  const shouldHideConfirm =
-    feedback?.state === ChallengeFeedbackStatus.RateLimitExceeded ||
-    feedback?.state === ChallengeFeedbackStatus.Redirect ||
-    feedback?.state === ChallengeFeedbackStatus.Unsupported ||
-    feedback?.state === ChallengeFeedbackStatus.TruthUnknown;
-
   return (
     <AnastasisClientFrame hideNav title="Postal Challenge">
       <SolveOverviewFeedbackDisplay feedback={feedback} />
@@ -130,7 +125,7 @@ export function AuthMethodPostSolve({ id }: AuthMethodSolveProps): VNode {
         <button class="button" onClick={onCancel}>
           Cancel
         </button>
-        {!shouldHideConfirm && (
+        {!shouldHideConfirm(feedback) && (
           <AsyncButton class="button is-info" onClick={onNext}>
             Confirm
           </AsyncButton>

@@ -65,6 +65,7 @@ importers:
       '@types/enzyme': ^3.10.11
       '@typescript-eslint/eslint-plugin': ^5.3.0
       '@typescript-eslint/parser': ^5.3.0
+      babel-plugin-add-import-extension: ^1.6.0
       base64-inline-loader: 1.1.1
       bulma: ^0.9.3
       bulma-checkbox: ^1.1.1
@@ -106,6 +107,7 @@ importers:
       '@types/enzyme': 3.10.11
       '@typescript-eslint/eslint-plugin': 5.11.0_de5a1ddccd75ca1e499b8b8491d3dcba
       '@typescript-eslint/parser': 5.11.0_eslint@8.8.0+typescript@4.5.5
+      babel-plugin-add-import-extension: 1.6.0_@babel+core@7.13.16
       bulma: 0.9.3
       bulma-checkbox: 1.2.1
       bulma-radio: 1.2.0
@@ -7135,6 +7137,15 @@ packages:
       loader-utils: 1.4.0
       make-dir: 3.1.0
       schema-utils: 2.7.1
+    dev: true
+
+  /babel-plugin-add-import-extension/1.6.0_@babel+core@7.13.16:
+    resolution: {integrity: sha512-JVSQPMzNzN/S4wPRoKQ7+u8PlkV//BPUMnfWVbr63zcE+6yHdU2Mblz10Vf7qe+6Rmu4svF5jG7JxdcPi9VvKg==}
+    peerDependencies:
+      '@babel/core': '>=7.0.0'
+    dependencies:
+      '@babel/core': 7.13.16
+      '@babel/helper-plugin-utils': 7.16.7
     dev: true
 
   /babel-plugin-apply-mdx-type-prop/1.6.22_@babel+core@7.12.9:

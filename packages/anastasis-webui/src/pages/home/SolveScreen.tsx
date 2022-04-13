@@ -16,19 +16,7 @@ export function SolveOverviewFeedbackDisplay(props: {
     return <div />;
   }
   switch (feedback.state) {
-    case ChallengeFeedbackStatus.Message:
-      return (
-        <Notifications
-          notifications={[
-            {
-              type: "INFO",
-              message: `Message from provider`,
-              description: feedback.message,
-            },
-          ]}
-        />
-      );
-    case ChallengeFeedbackStatus.Payment:
+    case ChallengeFeedbackStatus.TalerPayment:
       return (
         <Notifications
           notifications={[
@@ -51,7 +39,7 @@ export function SolveOverviewFeedbackDisplay(props: {
             {
               type: "INFO",
               message: `Message from provider`,
-              description: `Need to send a wire transfer to "${feedback.business_name}"`,
+              description: `Need to send a wire transfer to "${feedback.target_business_name}"`,
             },
           ]}
         />
@@ -76,22 +64,6 @@ export function SolveOverviewFeedbackDisplay(props: {
               type: "ERROR",
               message: `Message from provider`,
               description: "There were to many failed attempts.",
-            },
-          ]}
-        />
-      );
-    case ChallengeFeedbackStatus.Redirect:
-      return (
-        <Notifications
-          notifications={[
-            {
-              type: "INFO",
-              message: `Message from provider`,
-              description: (
-                <span>
-                  Please visit this link: <a>{feedback.redirect_url}</a>
-                </span>
-              ),
             },
           ]}
         />
@@ -121,6 +93,9 @@ export function SolveOverviewFeedbackDisplay(props: {
         />
       );
     default:
+      console.warn(
+        `unknown challenge feedback status ${JSON.stringify(feedback)}`,
+      );
       return <div />;
   }
 }

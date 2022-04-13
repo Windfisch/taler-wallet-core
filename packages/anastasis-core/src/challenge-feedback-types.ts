@@ -1,29 +1,48 @@
+/*
+ This file is part of GNU Anastasis
+ (C) 2021-2022 Anastasis SARL
+
+ GNU Anastasis is free software; you can redistribute it and/or modify it under the
+ terms of the GNU Affero General Public License as published by the Free Software
+ Foundation; either version 3, or (at your option) any later version.
+
+ GNU Anastasis is distributed in the hope that it will be useful, but WITHOUT ANY
+ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License along with
+ GNU Anastasis; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+ */
+
+/**
+ * Imports.
+ */
 import { AmountString, HttpStatusCode } from "@gnu-taler/taler-util";
 
 export enum ChallengeFeedbackStatus {
   Solved = "solved",
+  CodeInFile = "code-in-file",
+  CodeSent = "code-sent",
   ServerFailure = "server-failure",
   TruthUnknown = "truth-unknown",
-  Redirect = "redirect",
-  Payment = "payment",
-  Pending = "pending",
-  Message = "message",
+  TalerPayment = "taler-payment",
   Unsupported = "unsupported",
   RateLimitExceeded = "rate-limit-exceeded",
   AuthIban = "auth-iban",
+  IncorrectAnswer = "incorrect-answer",
 }
 
 export type ChallengeFeedback =
   | ChallengeFeedbackSolved
-  | ChallengeFeedbackPending
-  | ChallengeFeedbackPayment
+  | ChallengeFeedbackCodeInFile
+  | ChallengeFeedbackCodeSent
+  | ChallengeFeedbackIncorrectAnswer
+  | ChallengeFeedbackTalerPaymentRequired
   | ChallengeFeedbackServerFailure
   | ChallengeFeedbackRateLimitExceeded
   | ChallengeFeedbackTruthUnknown
-  | ChallengeFeedbackRedirect
-  | ChallengeFeedbackMessage
   | ChallengeFeedbackUnsupported
-  | ChallengeFeedbackAuthIban;
+  | ChallengeFeedbackBankTransferRequired;
 
 /**
  * Challenge has been solved and the key share has
@@ -33,13 +52,29 @@ export interface ChallengeFeedbackSolved {
   state: ChallengeFeedbackStatus.Solved;
 }
 
+export interface ChallengeFeedbackIncorrectAnswer {
+  state: ChallengeFeedbackStatus.IncorrectAnswer;
+}
+
+export interface ChallengeFeedbackCodeInFile {
+  state: ChallengeFeedbackStatus.CodeInFile;
+  filename: string;
+  display_hint: string;
+}
+
+export interface ChallengeFeedbackCodeSent {
+  state: ChallengeFeedbackStatus.CodeSent;
+  display_hint: string;
+  address_hint: string;
+}
+
 /**
  * The challenge given by the server is unsupported
  * by the current anastasis client.
  */
 export interface ChallengeFeedbackUnsupported {
   state: ChallengeFeedbackStatus.Unsupported;
-  http_status: HttpStatusCode;
+
   /**
    * Human-readable identifier of the unsupported method.
    */
@@ -57,7 +92,7 @@ export interface ChallengeFeedbackRateLimitExceeded {
  * Instructions for performing authentication via an
  * IBAN bank transfer.
  */
-export interface ChallengeFeedbackAuthIban {
+export interface ChallengeFeedbackBankTransferRequired {
   state: ChallengeFeedbackStatus.AuthIban;
 
   /**
@@ -68,12 +103,12 @@ export interface ChallengeFeedbackAuthIban {
   /**
    * Account that should be credited.
    */
-  credit_iban: string;
+  target_iban: string;
 
   /**
    * Creditor name.
    */
-  business_name: string;
+  target_business_name: string;
 
   /**
    * Unstructured remittance information that should
@@ -81,41 +116,7 @@ export interface ChallengeFeedbackAuthIban {
    */
   wire_transfer_subject: string;
 
-  /**
-   * FIXME: This field is only present for compatibility with
-   * the C reducer test suite.
-   */
-  method: "iban";
-
   answer_code: number;
-
-  /**
-   * FIXME: This field is only present for compatibility with
-   * the C reducer test suite.
-   */
-  details: {
-    challenge_amount: AmountString;
-    credit_iban: string;
-    business_name: string;
-    wire_transfer_subject: string;
-  };
-}
-
-/**
- * Challenge still needs to be solved.
- */
-export interface ChallengeFeedbackPending {
-  state: ChallengeFeedbackStatus.Pending;
-}
-
-/**
- * Human-readable response from the provider
- * after the user failed to solve the challenge
- * correctly.
- */
-export interface ChallengeFeedbackMessage {
-  state: ChallengeFeedbackStatus.Message;
-  message: string;
 }
 
 /**
@@ -141,21 +142,11 @@ export interface ChallengeFeedbackTruthUnknown {
 }
 
 /**
- * The user should be asked to go to a URL
- * to complete the authentication there.
- */
-export interface ChallengeFeedbackRedirect {
-  state: ChallengeFeedbackStatus.Redirect;
-  http_status: number;
-  redirect_url: string;
-}
-
-/**
  * A payment is required before the user can
  * even attempt to solve the challenge.
  */
-export interface ChallengeFeedbackPayment {
-  state: ChallengeFeedbackStatus.Payment;
+export interface ChallengeFeedbackTalerPaymentRequired {
+  state: ChallengeFeedbackStatus.TalerPayment;
 
   taler_pay_uri: string;
 
