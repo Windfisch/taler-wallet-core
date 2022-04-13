@@ -10,7 +10,6 @@ import { AnastasisClientFrame } from "./index";
 
 export function ReviewPoliciesScreen(): VNode {
   const [editingPolicy, setEditingPolicy] = useState<number | undefined>();
-  const [confirmReset, setConfirmReset] = useState(false);
   const reducer = useAnastasisContext();
   if (!reducer) {
     return <div>no reducer in context</div>;
@@ -40,14 +39,6 @@ export function ReviewPoliciesScreen(): VNode {
       />
     );
   }
-  async function resetPolicies(): Promise<void> {
-    if (!reducer) return Promise.resolve();
-    return reducer.runTransaction(async (tx) => {
-      await tx.transition("back", {});
-      await tx.transition("next", {});
-      setConfirmReset(false);
-    });
-  }
 
   const errors = policies.length < 1 ? "Need more policies" : undefined;
   return (
@@ -69,9 +60,6 @@ export function ReviewPoliciesScreen(): VNode {
         </p>
       )}
       <div class="block">
-        <AsyncButton class="button" onClick={async () => setConfirmReset(true)}>
-          Reset policies
-        </AsyncButton>
         <button
           class="button is-success"
           style={{ marginLeft: 10 }}
@@ -159,21 +147,6 @@ export function ReviewPoliciesScreen(): VNode {
           </div>
         );
       })}
-      {confirmReset && (
-        <ConfirmModal
-          active
-          onCancel={() => setConfirmReset(false)}
-          description="Do you want to reset the policies to default state?"
-          label="Reset policies"
-          cancelLabel="Cancel"
-          onConfirm={resetPolicies}
-        >
-          <p>
-            All policies will be recalculated based on the authentication
-            providers configured and any change that you did will be lost
-          </p>
-        </ConfirmModal>
-      )}
     </AnastasisClientFrame>
   );
 }
