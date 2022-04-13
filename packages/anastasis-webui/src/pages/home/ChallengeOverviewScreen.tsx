@@ -274,13 +274,13 @@ export function ChallengeOverviewScreen(): VNode {
               Policy #{policy_index + 1}: {policyName}
             </h3>
             {policy.challenges.length === 0 && (
-              <p>This policy doesn't have challenges.</p>
+              <p>This policy doesn't have any challenges.</p>
             )}
             {policy.challenges.length === 1 && (
-              <p>This policy just have one challenge.</p>
+              <p>This policy has one challenge.</p>
             )}
             {policy.challenges.length > 1 && (
-              <p>This policy have {policy.challenges.length} challenges.</p>
+              <p>This policy has {policy.challenges.length} challenges.</p>
             )}
             {tableBody}
           </div>

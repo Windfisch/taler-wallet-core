@@ -23,8 +23,7 @@ export function AuthMethodVideoSolve({ id }: AuthMethodSolveProps): VNode {
     );
   }
   if (
-    !reducer.currentReducerState ||
-    reducer.currentReducerState.recovery_state === undefined
+    reducer.currentReducerState?.reducer_type !== "recovery"
   ) {
     return (
       <AnastasisClientFrame hideNav title="Recovery problem">

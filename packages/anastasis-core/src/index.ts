@@ -458,7 +458,7 @@ async function prepareRecoveryData(
       escrow_type: authMethod.type as any,
       instructions: authMethod.instructions,
       provider_salt: provider.provider_salt,
-      truth_salt: tm.master_salt,
+      question_salt: tm.master_salt,
       truth_key: tm.truth_key,
       url: meth.provider,
       uuid: tm.uuid,
@@ -902,7 +902,7 @@ async function getResponseHash(
         respHash = await secureAnswerHash(
           solveRequest.answer,
           truth.uuid,
-          truth.truth_salt,
+          truth.question_salt,
         );
       } else {
         throw Error("unsupported answer request");
@@ -1074,18 +1074,21 @@ async function selectChallenge(
 
   const url = new URL(`/truth/${truth.uuid}/challenge`, truth.url);
 
-  if (truth.escrow_type === ChallengeType.Question) {
-    return {
-      ...state,
-      recovery_state: RecoveryStates.ChallengeSolving,
-      selected_challenge_uuid: truth.uuid,
-      challenge_feedback: {
-        ...state.challenge_feedback,
-        [truth.uuid]: {
-          state: ChallengeFeedbackStatus.Pending,
+  switch (truth.escrow_type) {
+    case ChallengeType.Question:
+    case ChallengeType.Totp: {
+      return {
+        ...state,
+        recovery_state: RecoveryStates.ChallengeSolving,
+        selected_challenge_uuid: truth.uuid,
+        challenge_feedback: {
+          ...state.challenge_feedback,
+          [truth.uuid]: {
+            state: ChallengeFeedbackStatus.Pending,
+          },
         },
-      },
-    };
+      };
+    }
   }
 
   const resp = await fetch(url.href, {
@@ -1732,7 +1735,7 @@ export async function reduceAction(
       return {
         reducer_type: "error",
         ...e.errorJson,
-      }
+      };
     }
     throw e;
   }

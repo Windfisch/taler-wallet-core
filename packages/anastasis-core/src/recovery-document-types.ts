@@ -82,7 +82,7 @@ export interface EscrowMethod {
   /**
    * Salt to hash the security question answer if applicable.
    */
-  truth_salt: TruthSalt;
+  question_salt: TruthSalt;
 
   // Salt from the provider to derive the user ID
   // at this provider.

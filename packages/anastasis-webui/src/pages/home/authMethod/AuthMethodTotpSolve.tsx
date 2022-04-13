@@ -12,7 +12,7 @@ import { SolveOverviewFeedbackDisplay } from "../SolveScreen";
 import { AuthMethodSolveProps } from "./index";
 
 export function AuthMethodTotpSolve({ id }: AuthMethodSolveProps): VNode {
-  const [answer, setAnswer] = useState("");
+  const [answerCode, setAnswerCode] = useState("");
 
   const reducer = useAnastasisContext();
   if (!reducer) {
@@ -22,10 +22,7 @@ export function AuthMethodTotpSolve({ id }: AuthMethodSolveProps): VNode {
       </AnastasisClientFrame>
     );
   }
-  if (
-    !reducer.currentReducerState ||
-    reducer.currentReducerState.recovery_state === undefined
-  ) {
+  if (reducer.currentReducerState?.reducer_type !== "recovery") {
     return (
       <AnastasisClientFrame hideNav title="Recovery problem">
         <div>invalid state</div>
@@ -72,11 +69,13 @@ export function AuthMethodTotpSolve({ id }: AuthMethodSolveProps): VNode {
   for (const ch of chArr) {
     challenges[ch.uuid] = ch;
   }
-  const selectedChallenge = challenges[selectedUuid];
   const feedback = challengeFeedback[selectedUuid];
 
   async function onNext(): Promise<void> {
-    return reducer?.transition("solve_challenge", { answer });
+    console.log(`sending TOTP code '${answerCode}'`);
+    return reducer?.transition("solve_challenge", {
+      pin: Number.parseInt(answerCode),
+    });
   }
   function onCancel(): void {
     reducer?.back();
@@ -96,7 +95,7 @@ export function AuthMethodTotpSolve({ id }: AuthMethodSolveProps): VNode {
         label="Answer"
         onConfirm={onNext}
         grabFocus
-        bind={[answer, setAnswer]}
+        bind={[answerCode, setAnswerCode]}
       />
 
       <div
@@ -118,4 +117,3 @@ export function AuthMethodTotpSolve({ id }: AuthMethodSolveProps): VNode {
     </AnastasisClientFrame>
   );
 }
-// NKE8 VD857T X033X6RG WEGPYP6D70 Q7YE XN8D2 ZN79SCN 231B4QK0
