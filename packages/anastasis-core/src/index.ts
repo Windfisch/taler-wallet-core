@@ -196,6 +196,7 @@ function getCountries(
 
 export async function getBackupStartState(): Promise<ReducerStateBackup> {
   return {
+    reducer_type: "backup",
     backup_state: BackupStates.ContinentSelecting,
     continents: getContinents({
       requireProvider: true,
@@ -205,6 +206,7 @@ export async function getBackupStartState(): Promise<ReducerStateBackup> {
 
 export async function getRecoveryStartState(): Promise<ReducerStateRecovery> {
   return {
+    reducer_type: "recovery",
     recovery_state: RecoveryStates.ContinentSelecting,
     continents: getContinents({
       requireProvider: true,
@@ -571,6 +573,7 @@ async function uploadSecret(
       const talerPayUri = resp.headers.get("Taler");
       if (!talerPayUri) {
         return {
+          reducer_type: "error",
           code: TalerErrorCode.ANASTASIS_REDUCER_BACKEND_FAILURE,
           hint: `payment requested, but no taler://pay URI given`,
         };
@@ -579,6 +582,7 @@ async function uploadSecret(
       const parsedUri = parsePayUri(talerPayUri);
       if (!parsedUri) {
         return {
+          reducer_type: "error",
           code: TalerErrorCode.ANASTASIS_REDUCER_BACKEND_FAILURE,
           hint: `payment requested, but no taler://pay URI given`,
         };
@@ -587,6 +591,7 @@ async function uploadSecret(
       continue;
     }
     return {
+      reducer_type: "error",
       code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
       hint: `could not upload truth (HTTP status ${resp.status})`,
     };
@@ -674,6 +679,7 @@ async function uploadSecret(
       const talerPayUri = resp.headers.get("Taler");
       if (!talerPayUri) {
         return {
+          reducer_type: "error",
           code: TalerErrorCode.ANASTASIS_REDUCER_BACKEND_FAILURE,
           hint: `payment requested, but no taler://pay URI given`,
         };
@@ -682,6 +688,7 @@ async function uploadSecret(
       const parsedUri = parsePayUri(talerPayUri);
       if (!parsedUri) {
         return {
+          reducer_type: "error",
           code: TalerErrorCode.ANASTASIS_REDUCER_BACKEND_FAILURE,
           hint: `payment requested, but no taler://pay URI given`,
         };
@@ -690,6 +697,7 @@ async function uploadSecret(
       continue;
     }
     return {
+      reducer_type: "error",
       code: TalerErrorCode.ANASTASIS_REDUCER_NETWORK_FAILED,
       hint: `could not upload policy (http status ${resp.status})`,
     };
@@ -734,13 +742,13 @@ async function downloadPolicy(
     throw Error("invalid state");
   }
   for (const prov of state.selected_version.providers) {
-    const pi = state.authentication_providers?.[prov.provider_url];
+    const pi = state.authentication_providers?.[prov.url];
     if (!pi || pi.status !== "ok") {
       continue;
     }
     const userId = await userIdentifierDerive(userAttributes, pi.salt);
     const acctKeypair = accountKeypairDerive(userId);
-    const reqUrl = new URL(`policy/${acctKeypair.pub}`, prov.provider_url);
+    const reqUrl = new URL(`policy/${acctKeypair.pub}`, prov.url);
     reqUrl.searchParams.set("version", `${prov.version}`);
     const resp = await fetch(reqUrl.href);
     if (resp.status !== 200) {
@@ -759,7 +767,7 @@ async function downloadPolicy(
       policyVersion = Number(resp.headers.get("Anastasis-Version") ?? "0");
     } catch (e) {}
     foundRecoveryInfo = {
-      provider_url: prov.provider_url,
+      provider_url: prov.url,
       secret_name: rd.secret_name ?? "<unknown>",
       version: policyVersion,
     };
@@ -768,6 +776,7 @@ async function downloadPolicy(
   }
   if (!foundRecoveryInfo || !recoveryDoc) {
     return {
+      reducer_type: "error",
       code: TalerErrorCode.ANASTASIS_REDUCER_POLICY_LOOKUP_FAILED,
       hint: "No backups found at any provider for your identity information.",
     };
@@ -874,7 +883,7 @@ async function pollChallenges(
       const s2 = await requestTruth(state, truth, {
         pin: feedback.answer_code,
       });
-      if (s2.recovery_state) {
+      if (s2.reducer_type === "recovery") {
         state = s2;
       }
     }
@@ -1001,6 +1010,7 @@ async function requestTruth(
   }
 
   return {
+    reducer_type: "error",
     code: TalerErrorCode.ANASTASIS_TRUTH_CHALLENGE_FAILED,
     hint: "got unexpected /truth/ response status",
     http_status: resp.status,
@@ -1110,6 +1120,7 @@ async function selectChallenge(
   // FIXME: look at response, include in challenge_feedback!
 
   return {
+    reducer_type: "error",
     code: TalerErrorCode.ANASTASIS_TRUTH_CHALLENGE_FAILED,
     hint: "got unexpected /truth/.../challenge response status",
     http_status: resp.status,
@@ -1125,6 +1136,7 @@ async function backupSelectContinent(
   });
   if (countries.length <= 0) {
     return {
+      reducer_type: "error",
       code: TalerErrorCode.ANASTASIS_REDUCER_INPUT_INVALID,
       hint: "continent not found",
     };
@@ -1423,10 +1435,14 @@ async function nextFromChallengeSelecting(
   args: void,
 ): Promise<ReducerStateRecovery | ReducerStateError> {
   const s2 = await tryRecoverSecret(state);
-  if (s2.recovery_state === RecoveryStates.RecoveryFinished) {
+  if (
+    s2.reducer_type === "recovery" &&
+    s2.recovery_state === RecoveryStates.RecoveryFinished
+  ) {
     return s2;
   }
   return {
+    reducer_type: "error",
     code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
     hint: "Not enough challenges solved",
   };
@@ -1462,7 +1478,7 @@ export function mergeDiscoveryAggregate(
     const oldIndex = polHashToIndex[pol.policy_hash];
     if (oldIndex != null) {
       aggregatedPolicies[oldIndex].providers.push({
-        provider_url: pol.provider_url,
+        url: pol.provider_url,
         version: pol.version,
       });
     } else {
@@ -1471,7 +1487,7 @@ export function mergeDiscoveryAggregate(
         policy_hash: pol.policy_hash,
         providers: [
           {
-            provider_url: pol.provider_url,
+            url: pol.provider_url,
             version: pol.version,
           },
         ],
@@ -1592,7 +1608,7 @@ const recoveryTransitions: Record<
     ...transition("add_provider", codecForAny(), addProviderRecovery),
     ...transition("delete_provider", codecForAny(), deleteProviderRecovery),
     ...transition(
-      "change_version",
+      "select_version",
       codecForActionArgsChangeVersion(),
       changeVersion,
     ),
@@ -1621,7 +1637,7 @@ export async function discoverPolicies(
   state: ReducerState,
   cursor?: DiscoveryCursor,
 ): Promise<DiscoveryResult> {
-  if (!state.recovery_state) {
+  if (state.reducer_type !== "recovery") {
     throw Error("can only discover providers in recovery state");
   }
 
@@ -1685,12 +1701,14 @@ export async function reduceAction(
     h = recoveryTransitions[state.recovery_state][action];
   } else {
     return {
+      reducer_type: "error",
       code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
       hint: `Invalid state (needs backup_state or recovery_state)`,
     };
   }
   if (!h) {
     return {
+      reducer_type: "error",
       code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
       hint: `Unsupported action '${action}' in state '${stateName}'`,
     };
@@ -1700,9 +1718,10 @@ export async function reduceAction(
     parsedArgs = h.argCodec.decode(args);
   } catch (e: any) {
     return {
+      reducer_type: "error",
       code: TalerErrorCode.ANASTASIS_REDUCER_INPUT_INVALID,
       hint: "argument validation failed",
-      message: e.toString(),
+      detail: e.toString(),
     };
   }
   try {
@@ -1710,7 +1729,10 @@ export async function reduceAction(
   } catch (e) {
     logger.error("action handler failed");
     if (e instanceof ReducerError) {
-      return e.errorJson;
+      return {
+        reducer_type: "error",
+        ...e.errorJson,
+      }
     }
     throw e;
   }

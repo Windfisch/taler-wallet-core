@@ -38,10 +38,7 @@ export function EditPoliciesScreen({
   if (!reducer) {
     return <div>no reducer in context</div>;
   }
-  if (
-    !reducer.currentReducerState ||
-    reducer.currentReducerState.backup_state === undefined
-  ) {
+  if (reducer.currentReducerState?.reducer_type !== "backup") {
     return <div>invalid state</div>;
   }
 

@@ -135,10 +135,7 @@ export function SolveScreen(): VNode {
       </AnastasisClientFrame>
     );
   }
-  if (
-    !reducer.currentReducerState ||
-    reducer.currentReducerState.recovery_state === undefined
-  ) {
+  if (reducer.currentReducerState?.reducer_type !== "recovery") {
     return (
       <AnastasisClientFrame hideNav title="Recovery problem">
         <div>invalid state</div>

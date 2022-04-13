@@ -31,7 +31,7 @@ export function SecretSelectionScreen(): VNode {
 
   if (
     !reducer.currentReducerState ||
-    reducer.currentReducerState.recovery_state === undefined
+    reducer.currentReducerState.reducer_type !== "recovery"
   ) {
     return <div>invalid state</div>;
   }
@@ -73,14 +73,17 @@ export function SecretSelectionScreen(): VNode {
   }
 
   return (
-    <AnastasisClientFrame title="Recovery: Select secret" hideNext="Please select version to recover">
+    <AnastasisClientFrame
+      title="Recovery: Select secret"
+      hideNext="Please select version to recover"
+    >
       <p>Found versions:</p>
       {policies.map((x) => (
         <div>
           {x.policy_hash} / {x.secret_name}
           <button
             onClick={async () => {
-              await reducer.transition("change_version", {
+              await reducer.transition("select_version", {
                 selection: x,
               });
             }}
@@ -119,7 +122,7 @@ export function OldSecretSelectionScreen(): VNode {
   }
   if (
     !reducer.currentReducerState ||
-    reducer.currentReducerState.recovery_state === undefined
+    reducer.currentReducerState.reducer_type !== "recovery"
   ) {
     return <div>invalid state</div>;
   }
@@ -127,7 +130,7 @@ export function OldSecretSelectionScreen(): VNode {
   async function doSelectVersion(p: string, n: number): Promise<void> {
     if (!reducer) return Promise.resolve();
     return reducer.runTransaction(async (tx) => {
-      await tx.transition("change_version", {
+      await tx.transition("select_version", {
         version: n,
         provider_url: p,
       });

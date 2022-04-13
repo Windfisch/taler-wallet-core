@@ -73,19 +73,30 @@ export interface CoreSecret {
 }
 
 export interface ReducerStateBackup {
-  recovery_state?: undefined;
+  reducer_type: "backup";
+
   backup_state: BackupStates;
-  code?: undefined;
+
   currencies?: string[];
+
   continents?: ContinentInfo[];
+
   countries?: CountryInfo[];
+
   identity_attributes?: { [n: string]: string };
+
   authentication_providers?: { [url: string]: AuthenticationProviderStatus };
+
   authentication_methods?: AuthMethod[];
+
   required_attributes?: UserAttributeSpec[];
+
   selected_continent?: string;
+
   selected_country?: string;
+
   secret_name?: string;
+
   policies?: Policy[];
 
   recovery_data?: {
@@ -179,17 +190,9 @@ export interface RecoveryInformation {
 }
 
 export interface ReducerStateRecovery {
+  reducer_type: "recovery";
+
   recovery_state: RecoveryStates;
-
-  /**
-   * Unused in the recovery states.
-   */
-  backup_state?: undefined;
-
-  /**
-   * Unused in the recovery states.
-   */
-  code?: undefined;
 
   identity_attributes?: { [n: string]: string };
 
@@ -267,11 +270,10 @@ export interface TruthMetaData {
 }
 
 export interface ReducerStateError {
-  backup_state?: undefined;
-  recovery_state?: undefined;
+  reducer_type: "error";
   code: number;
   hint?: string;
-  message?: string;
+  detail?: string;
 }
 
 export enum BackupStates {
@@ -302,12 +304,13 @@ export interface MethodSpec {
   usage_fee: string;
 }
 
-export type AuthenticationProviderStatusEmpty = {
+export type AuthenticationProviderStatusNotContacted = {
   status: "not-contacted";
 };
 
 export interface AuthenticationProviderStatusOk {
   status: "ok";
+
   annual_fee: string;
   business_name: string;
   currency: string;
@@ -320,8 +323,13 @@ export interface AuthenticationProviderStatusOk {
   // FIXME: add timestamp?
 }
 
+export interface AuthenticationProviderStatusDisabled {
+  status: "disabled";
+}
+
 export interface AuthenticationProviderStatusError {
   status: "error";
+
   http_status?: number;
   code: number;
   hint?: string;
@@ -329,7 +337,8 @@ export interface AuthenticationProviderStatusError {
 }
 
 export type AuthenticationProviderStatus =
-  | AuthenticationProviderStatusEmpty
+  | AuthenticationProviderStatusNotContacted
+  | AuthenticationProviderStatusDisabled
   | AuthenticationProviderStatusError
   | AuthenticationProviderStatusOk;
 
@@ -486,7 +495,6 @@ export interface PolicyMetaInfo {
   secret_name?: string;
 }
 
-
 /**
  * Aggregated / de-duplicated policy meta info.
  */
@@ -495,7 +503,7 @@ export interface AggregatedPolicyMetaInfo {
   policy_hash: string;
   attribute_mask: number;
   providers: {
-    provider_url: string;
+    url: string;
     version: number;
   }[];
 }

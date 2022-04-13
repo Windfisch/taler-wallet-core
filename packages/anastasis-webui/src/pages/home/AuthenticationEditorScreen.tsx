@@ -30,10 +30,7 @@ export function AuthenticationEditorScreen(): VNode {
   if (!reducer) {
     return <div>no reducer in context</div>;
   }
-  if (
-    !reducer.currentReducerState ||
-    reducer.currentReducerState.backup_state === undefined
-  ) {
+  if (reducer.currentReducerState?.reducer_type !== "backup") {
     return <div>invalid state</div>;
   }
   const configuredAuthMethods: AuthMethod[] =
@@ -62,7 +59,7 @@ export function AuthenticationEditorScreen(): VNode {
   const authAvailableSet = new Set<string>();
   for (const provKey of Object.keys(providers)) {
     const p = providers[provKey];
-    if ("http_status" in p && !("error_code" in p) && p.methods) {
+    if (p.status === "ok") {
       for (const meth of p.methods) {
         authAvailableSet.add(meth.type);
       }

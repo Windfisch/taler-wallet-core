@@ -55,10 +55,7 @@ export function ChallengeOverviewScreen(): VNode {
   if (!reducer) {
     return <div>no reducer in context</div>;
   }
-  if (
-    !reducer.currentReducerState ||
-    reducer.currentReducerState.recovery_state === undefined
-  ) {
+  if (reducer.currentReducerState?.reducer_type !== "recovery") {
     return <div>invalid state</div>;
   }
 

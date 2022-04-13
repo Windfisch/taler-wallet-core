@@ -19,7 +19,7 @@ export function AttributeEntryScreen(): VNode {
   const [attrs, setAttrs] = useState<Record<string, string>>(
     currentIdentityAttributes,
   );
-  const isBackup = state && state.backup_state;
+  const isBackup = state?.reducer_type === "backup";
   const [askUserIfSure, setAskUserIfSure] = useState(false);
 
   if (!reducer) {
