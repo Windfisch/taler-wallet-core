@@ -54,8 +54,11 @@ export interface EscrowConfigurationResponse {
   // **provider salt** is then used in various operations to ensure
   // cryptographic operations differ by provider.  A provider must
   // never change its salt value.
-  server_salt: string;
+  provider_salt: string;
 
+  /**
+   * Human-readable business name of the provider.
+   */
   business_name: string;
 }
 

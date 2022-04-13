@@ -314,7 +314,7 @@ async function getProviderInfo(
         type: x.type,
         usage_fee: x.cost,
       })),
-      salt: jsonResp.server_salt,
+      provider_salt: jsonResp.provider_salt,
       storage_limit_in_megabytes: jsonResp.storage_limit_in_megabytes,
       truth_upload_fee: jsonResp.truth_upload_fee,
     };
@@ -424,7 +424,7 @@ async function prepareRecoveryData(
         tm = {
           key_share: encodeCrock(getRandomBytes(32)),
           nonce: encodeCrock(getRandomBytes(24)),
-          truth_salt: encodeCrock(getRandomBytes(16)),
+          master_salt: encodeCrock(getRandomBytes(16)),
           truth_key: encodeCrock(getRandomBytes(64)),
           uuid: encodeCrock(getRandomBytes(32)),
           pol_method_index: methIndex,
@@ -457,8 +457,8 @@ async function prepareRecoveryData(
     escrowMethods.push({
       escrow_type: authMethod.type as any,
       instructions: authMethod.instructions,
-      provider_salt: provider.salt,
-      truth_salt: tm.truth_salt,
+      provider_salt: provider.provider_salt,
+      truth_salt: tm.master_salt,
       truth_key: tm.truth_key,
       url: meth.provider,
       uuid: tm.uuid,
@@ -514,7 +514,7 @@ async function uploadSecret(
       ] as AuthenticationProviderStatusOk;
       userId = userIdCache[providerUrl] = await userIdentifierDerive(
         state.identity_attributes!,
-        provider.salt,
+        provider.provider_salt,
       );
     }
     return userId;
@@ -525,7 +525,7 @@ async function uploadSecret(
     const meth = pol.methods[tm.pol_method_index];
     const authMethod =
       state.authentication_methods![meth.authentication_method];
-    const truthValue = await getTruthValue(authMethod, tm.uuid, tm.truth_salt);
+    const truthValue = await getTruthValue(authMethod, tm.uuid, tm.master_salt);
     const encryptedTruth = await encryptTruth(
       tm.nonce,
       tm.truth_key,
@@ -746,7 +746,7 @@ async function downloadPolicy(
     if (!pi || pi.status !== "ok") {
       continue;
     }
-    const userId = await userIdentifierDerive(userAttributes, pi.salt);
+    const userId = await userIdentifierDerive(userAttributes, pi.provider_salt);
     const acctKeypair = accountKeypairDerive(userId);
     const reqUrl = new URL(`policy/${acctKeypair.pub}`, prov.url);
     reqUrl.searchParams.set("version", `${prov.version}`);
@@ -1653,7 +1653,7 @@ export async function discoverPolicies(
     }
     const userId = await userIdentifierDerive(
       state.identity_attributes!,
-      providerInfo.salt,
+      providerInfo.provider_salt,
     );
     const acctKeypair = accountKeypairDerive(userId);
     const reqUrl = new URL(`policy/${acctKeypair.pub}/meta`, providerUrl);

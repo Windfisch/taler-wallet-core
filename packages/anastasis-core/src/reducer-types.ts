@@ -266,7 +266,7 @@ export interface TruthMetaData {
   /**
    * Truth-specific salt.
    */
-  truth_salt: string;
+  master_salt: string;
 }
 
 export interface ReducerStateError {
@@ -316,7 +316,7 @@ export interface AuthenticationProviderStatusOk {
   currency: string;
   http_status: 200;
   liability_limit: string;
-  salt: string;
+  provider_salt: string;
   storage_limit_in_megabytes: number;
   truth_upload_fee: string;
   methods: MethodSpec[];
