@@ -86,6 +86,12 @@ const SideBar = styled.div`
       dd:nth-child(odd) {
         background-color: lightblue;
       }
+      a {
+        color: black;
+      }
+      dd[data-selected] {
+        background-color: green;
+      }
     }
   }
 `;
@@ -175,12 +181,16 @@ function getContentForExample(item: ExampleItem | undefined): () => VNode {
 function ExampleList({
   name,
   list,
+  selected,
+  onSelectStory,
 }: {
   name: string;
   list: {
     name: string;
     examples: ExampleItem[];
   }[];
+  selected: ExampleItem | undefined;
+  onSelectStory: (i: ExampleItem, id: string) => void;
 }): VNode {
   const [open, setOpen] = useState(true);
   return (
@@ -194,9 +204,22 @@ function ExampleList({
               {k.examples.map((r) => {
                 const e = encodeURIComponent;
                 const eId = `${e(r.group)}-${e(r.component)}-${e(r.name)}`;
+                const isSelected =
+                  selected &&
+                  selected.component === r.component &&
+                  selected.group === r.group &&
+                  selected.name === r.name;
                 return (
-                  <dd id={eId} key={r.name}>
-                    <a href={`#${eId}`}>{r.name}</a>
+                  <dd id={eId} key={r.name} data-selected={isSelected}>
+                    <a
+                      href={`#${eId}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onSelectStory(r, eId);
+                      }}
+                    >
+                      {r.name}
+                    </a>
                   </dd>
                 );
               })}
@@ -278,9 +301,9 @@ function ErrorReport({
   return <Fragment>{children}</Fragment>;
 }
 
-function getSelectionFromLocationHash(): ExampleItem | undefined {
-  if (!location.hash) return undefined;
-  const parts = location.hash.substring(1).split("-");
+function getSelectionFromLocationHash(hash: string): ExampleItem | undefined {
+  if (!hash) return undefined;
+  const parts = hash.substring(1).split("-");
   if (parts.length < 3) return undefined;
   return findByGroupComponentName(
     decodeURIComponent(parts[0]),
@@ -290,27 +313,20 @@ function getSelectionFromLocationHash(): ExampleItem | undefined {
 }
 
 function Application(): VNode {
-  const initialSelection = getSelectionFromLocationHash();
+  const initialSelection = getSelectionFromLocationHash(location.hash);
   const [selected, updateSelected] = useState<ExampleItem | undefined>(
     initialSelection,
   );
-
-  function updateSelectedFromHashChange(): void {
-    const selected = getSelectionFromLocationHash();
-    updateSelected(selected);
-  }
   useEffect(() => {
-    window.addEventListener("hashchange", updateSelectedFromHashChange);
     if (location.hash) {
       const hash = location.hash.substring(1);
       const found = document.getElementById(hash);
       if (found) {
-        found.scrollIntoView();
+        found.scrollIntoView({
+          block: "center",
+        });
       }
     }
-    return () => {
-      window.removeEventListener("hashchange", updateSelectedFromHashChange);
-    };
   }, []);
 
   const ExampleContent = getContentForExample(selected);
@@ -321,7 +337,18 @@ function Application(): VNode {
     <Page>
       <SideBar>
         {allExamples.map((e) => (
-          <ExampleList key={e.title} name={e.title} list={e.list} />
+          <ExampleList
+            key={e.title}
+            name={e.title}
+            list={e.list}
+            selected={selected}
+            onSelectStory={(item, htmlId) => {
+              document.getElementById(htmlId)?.scrollIntoView({
+                block: "center",
+              });
+              updateSelected(item);
+            }}
+          />
         ))}
         <hr />
       </SideBar>
