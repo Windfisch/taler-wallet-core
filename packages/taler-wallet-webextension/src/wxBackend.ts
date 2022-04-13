@@ -40,7 +40,7 @@ import {
   Wallet,
   WalletStoresV1
 } from "@gnu-taler/taler-wallet-core";
-import { SetTimeoutTimerAPI, TimerGroup } from "@gnu-taler/taler-wallet-core/src/util/timer";
+import { SetTimeoutTimerAPI } from "@gnu-taler/taler-wallet-core";
 import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory.js";
 import { BrowserHttpLib } from "./browserHttpLib.js";
 import { getReadRequestPermissions } from "./permissions.js";

@@ -64,3 +64,5 @@ export {
   nativeCrypto,
   nullCrypto,
 } from "./crypto/cryptoImplementation.js";
+
+export * from "./util/timer.js";

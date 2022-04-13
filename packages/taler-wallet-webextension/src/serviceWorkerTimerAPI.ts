@@ -17,8 +17,8 @@
 /**
  * Imports.
  */
-import { Duration, Logger } from "@gnu-taler/taler-util";
-import { TimerAPI, TimerGroup, TimerHandle } from "@gnu-taler/taler-wallet-core/src/util/timer";
+import { Logger } from "@gnu-taler/taler-util";
+import { TimerAPI, TimerHandle } from "@gnu-taler/taler-wallet-core";
 
 
 const nullTimerHandle = {
