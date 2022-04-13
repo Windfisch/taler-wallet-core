@@ -1,6 +1,6 @@
 import { UserAttributeSpec, validators } from "@gnu-taler/anastasis-core";
 import { isAfter, parse } from "date-fns";
-import { Fragment, h, VNode } from "preact";
+import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { DateInput } from "../../components/fields/DateInput";
 import { PhoneNumberInput } from "../../components/fields/NumberInput";
@@ -72,7 +72,10 @@ export function AttributeEntryScreen(): VNode {
 
   const doConfirm = async () => {
     await reducer.transition("enter_user_attributes", {
-      identity_attributes: attrs,
+      identity_attributes: {
+        application_id: "anastasis-standalone",
+        ...attrs,
+      },
     });
   };
 

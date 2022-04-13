@@ -17,6 +17,11 @@ export function createExample<Props>(
       <AnastasisProvider
         value={{
           currentReducerState,
+          discoverMore: async () => {},
+          discoverStart: async () => {},
+          discoveryState: {
+            state: "none",
+          },
           currentError: undefined,
           back: async () => {
             null;

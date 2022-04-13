@@ -14,7 +14,6 @@ import {
   getRandomBytes,
   hash,
   HttpStatusCode,
-  j2s,
   Logger,
   parsePayUri,
   stringToBytes,
@@ -27,8 +26,7 @@ import {
 import { anastasisData } from "./anastasis-data.js";
 import {
   EscrowConfigurationResponse,
-  IbanExternalAuthResponse,
-  RecoveryMetaResponse as RecoveryMetaResponse,
+  RecoveryMetaResponse,
   TruthUploadRequest,
 } from "./provider-types.js";
 import {

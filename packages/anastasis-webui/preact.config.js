@@ -28,7 +28,7 @@ const commitHash = cp.execSync("git rev-parse --short HEAD").toString();
 
 export default {
   webpack(config, env, helpers) {
-    // add __VERSION__ to be use in the html
+    // add __VERSION__ to be used in the html
     config.plugins.push(
       new DefinePlugin({
         "process.env.__VERSION__": JSON.stringify(

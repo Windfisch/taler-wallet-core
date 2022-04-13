@@ -11,7 +11,7 @@ import { AnastasisClientFrame } from "../index";
 import { SolveOverviewFeedbackDisplay } from "../SolveScreen";
 import { AuthMethodSolveProps } from "./index";
 
-export function AuthMethodTotpSolve({ id }: AuthMethodSolveProps): VNode {
+export function AuthMethodTotpSolve(props: AuthMethodSolveProps): VNode {
   const [answerCode, setAnswerCode] = useState("");
 
   const reducer = useAnastasisContext();
@@ -74,7 +74,7 @@ export function AuthMethodTotpSolve({ id }: AuthMethodSolveProps): VNode {
   async function onNext(): Promise<void> {
     console.log(`sending TOTP code '${answerCode}'`);
     return reducer?.transition("solve_challenge", {
-      pin: Number.parseInt(answerCode),
+      answer: answerCode,
     });
   }
   function onCancel(): void {

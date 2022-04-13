@@ -34,7 +34,7 @@ import { StartScreen } from "./StartScreen";
 import { TruthsPayingScreen } from "./TruthsPayingScreen";
 
 function isBackup(reducer: AnastasisReducerApi): boolean {
-  return !!reducer.currentReducerState?.backup_state;
+  return reducer.currentReducerState?.reducer_type === "backup";
 }
 
 export function withProcessLabel(
@@ -171,57 +171,96 @@ function AnastasisClientImpl(): VNode {
   console.log("state", reducer.currentReducerState);
 
   if (
-    state.backup_state === BackupStates.ContinentSelecting ||
-    state.recovery_state === RecoveryStates.ContinentSelecting ||
-    state.backup_state === BackupStates.CountrySelecting ||
-    state.recovery_state === RecoveryStates.CountrySelecting
+    (state.reducer_type === "backup" &&
+      state.backup_state === BackupStates.ContinentSelecting) ||
+    (state.reducer_type === "recovery" &&
+      state.recovery_state === RecoveryStates.ContinentSelecting) ||
+    (state.reducer_type === "backup" &&
+      state.backup_state === BackupStates.CountrySelecting) ||
+    (state.reducer_type === "recovery" &&
+      state.recovery_state === RecoveryStates.CountrySelecting)
   ) {
     return <ContinentSelectionScreen />;
   }
   if (
-    state.backup_state === BackupStates.UserAttributesCollecting ||
-    state.recovery_state === RecoveryStates.UserAttributesCollecting
+    (state.reducer_type === "backup" &&
+      state.backup_state === BackupStates.UserAttributesCollecting) ||
+    (state.reducer_type === "recovery" &&
+      state.recovery_state === RecoveryStates.UserAttributesCollecting)
   ) {
     return <AttributeEntryScreen />;
   }
-  if (state.backup_state === BackupStates.AuthenticationsEditing) {
+  if (
+    state.reducer_type === "backup" &&
+    state.backup_state === BackupStates.AuthenticationsEditing
+  ) {
     return <AuthenticationEditorScreen />;
   }
-  if (state.backup_state === BackupStates.PoliciesReviewing) {
+  if (
+    state.reducer_type === "backup" &&
+    state.backup_state === BackupStates.PoliciesReviewing
+  ) {
     return <ReviewPoliciesScreen />;
   }
-  if (state.backup_state === BackupStates.SecretEditing) {
+  if (
+    state.reducer_type === "backup" &&
+    state.backup_state === BackupStates.SecretEditing
+  ) {
     return <SecretEditorScreen />;
   }
 
-  if (state.backup_state === BackupStates.BackupFinished) {
+  if (
+    state.reducer_type === "backup" &&
+    state.backup_state === BackupStates.BackupFinished
+  ) {
     return <BackupFinishedScreen />;
   }
 
-  if (state.backup_state === BackupStates.TruthsPaying) {
+  if (
+    state.reducer_type === "backup" &&
+    state.backup_state === BackupStates.TruthsPaying
+  ) {
     return <TruthsPayingScreen />;
   }
 
-  if (state.backup_state === BackupStates.PoliciesPaying) {
+  if (
+    state.reducer_type === "backup" &&
+    state.backup_state === BackupStates.PoliciesPaying
+  ) {
     return <PoliciesPayingScreen />;
   }
 
-  if (state.recovery_state === RecoveryStates.SecretSelecting) {
+  if (
+    state.reducer_type === "recovery" &&
+    state.recovery_state === RecoveryStates.SecretSelecting
+  ) {
     return <SecretSelectionScreen />;
   }
 
-  if (state.recovery_state === RecoveryStates.ChallengeSelecting) {
+  if (
+    state.reducer_type === "recovery" &&
+    state.recovery_state === RecoveryStates.ChallengeSelecting
+  ) {
     return <ChallengeOverviewScreen />;
   }
 
-  if (state.recovery_state === RecoveryStates.ChallengeSolving) {
+  if (
+    state.reducer_type === "recovery" &&
+    state.recovery_state === RecoveryStates.ChallengeSolving
+  ) {
     return <SolveScreen />;
   }
 
-  if (state.recovery_state === RecoveryStates.RecoveryFinished) {
+  if (
+    state.reducer_type === "recovery" &&
+    state.recovery_state === RecoveryStates.RecoveryFinished
+  ) {
     return <RecoveryFinishedScreen />;
   }
-  if (state.recovery_state === RecoveryStates.ChallengePaying) {
+  if (
+    state.reducer_type === "recovery" &&
+    state.recovery_state === RecoveryStates.ChallengePaying
+  ) {
     return <ChallengePayingScreen />;
   }
   console.log("unknown state", reducer.currentReducerState);

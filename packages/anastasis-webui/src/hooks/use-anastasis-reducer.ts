@@ -199,7 +199,7 @@ export function useAnastasisReducer(): AnastasisReducerApi {
       s = await reduceAction(anastasisState.reducerState!, action, args);
     }
     console.log("got response from reducer", s);
-    if (s.code) {
+    if (s.reducer_type === "error") {
       console.log("response is an error");
       setAnastasisState({ ...anastasisState, currentError: s });
     } else {
@@ -223,7 +223,7 @@ export function useAnastasisReducer(): AnastasisReducerApi {
       } else {
         s = await getBackupStartState();
       }
-      if (s.code !== undefined) {
+      if (s.reducer_type === "error") {
         setAnastasisState({
           ...anastasisState,
           currentError: s,
@@ -274,7 +274,7 @@ export function useAnastasisReducer(): AnastasisReducerApi {
       } else {
         s = await getRecoveryStartState();
       }
-      if (s.code !== undefined) {
+      if (s.reducer_type === "error") {
         setAnastasisState({
           ...anastasisState,
           currentError: s,
@@ -296,8 +296,10 @@ export function useAnastasisReducer(): AnastasisReducerApi {
         return;
       }
       if (
-        reducerState.backup_state === BackupStates.ContinentSelecting ||
-        reducerState.recovery_state === RecoveryStates.ContinentSelecting
+        (reducerState.reducer_type === "backup" &&
+          reducerState.backup_state === BackupStates.ContinentSelecting) ||
+        (reducerState.reducer_type === "recovery" &&
+          reducerState.recovery_state === RecoveryStates.ContinentSelecting)
       ) {
         setAnastasisState({
           ...anastasisState,
@@ -327,7 +329,7 @@ export function useAnastasisReducer(): AnastasisReducerApi {
       }
       const s = txHandle.transactionState;
       console.log("transaction finished, new state", s);
-      if (s.code !== undefined) {
+      if (s.reducer_type === "error") {
         setAnastasisState({
           ...anastasisState,
           currentError: txHandle.transactionState,
@@ -355,7 +357,7 @@ class ReducerTxImpl implements ReducerTransactionHandle {
     console.log("making transition in transaction", action);
     this.transactionState = s;
     // Abort transaction as soon as we transition into an error state.
-    if (this.transactionState.code !== undefined) {
+    if (this.transactionState.reducer_type === "error") {
       throw Error("transition resulted in error");
     }
     return this.transactionState;

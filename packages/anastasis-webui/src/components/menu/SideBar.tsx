@@ -78,8 +78,7 @@ export function Sidebar({ mobile }: Props): VNode {
               </div>
             </li>
           )}
-          {reducer.currentReducerState &&
-          reducer.currentReducerState.backup_state ? (
+          {reducer.currentReducerState?.reducer_type === "backup" ? (
             <Fragment>
               <li
                 class={
@@ -191,8 +190,7 @@ export function Sidebar({ mobile }: Props): VNode {
               </li>
             </Fragment>
           ) : (
-            reducer.currentReducerState &&
-            reducer.currentReducerState?.recovery_state && (
+            reducer.currentReducerState?.reducer_type === "recovery" && (
               <Fragment>
                 <li
                   class={

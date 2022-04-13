@@ -7,6 +7,11 @@ import { TextInput } from "../../../components/fields/TextInput";
 import { QR } from "../../../components/QR";
 import { base32enc, computeTOTPandCheck } from "./totp";
 
+/**
+ * This is hard-coded in the protocol for TOTP auth.
+ */
+const ANASTASIS_TOTP_DIGITS = 8;
+
 export function AuthMethodTotpSetup({
   addAuthMethod,
   cancel,
@@ -14,20 +19,20 @@ export function AuthMethodTotpSetup({
 }: AuthMethodSetupProps): VNode {
   const [name, setName] = useState("anastasis");
   const [test, setTest] = useState("");
-  const digits = 8;
   const secretKey = useMemo(() => {
     const array = new Uint8Array(32);
     return window.crypto.getRandomValues(array);
   }, []);
+
   const secret32 = base32enc(secretKey);
-  const totpURL = `otpauth://totp/${name}?digits=${digits}&secret=${secret32}`;
+  const totpURL = `otpauth://totp/${name}?digits=${ANASTASIS_TOTP_DIGITS}&secret=${secret32}`;
 
   const addTotpAuth = (): void =>
     addAuthMethod({
       authentication_method: {
         type: "totp",
-        instructions: `Enter ${digits} digits code for "${name}"`,
-        challenge: encodeCrock(stringToBytes(totpURL)),
+        instructions: `Enter ${ANASTASIS_TOTP_DIGITS} digits code for "${name}"`,
+        challenge: encodeCrock(secretKey),
       },
     });
 

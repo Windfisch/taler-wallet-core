@@ -23,7 +23,7 @@ import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import langIcon from "../../assets/icons/languageicon.svg";
 import { useTranslationContext } from "../../context/translation";
-import { strings as messages } from "../../i18n/strings";
+import { strings as messages } from "../../i18n/strings.js";
 
 type LangsNames = {
   [P in keyof typeof messages]: string;

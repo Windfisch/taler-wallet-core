@@ -15,6 +15,7 @@
     "pretty": "prettier --write src",
     "storybook": "start-storybook -p 6006"
   },
+  "type": "module",
   "eslintConfig": {
     "parser": "@typescript-eslint/parser",
     "extends": [
