@@ -17,8 +17,8 @@ msgstr ""
 "Project-Id-Version: Taler Wallet\n"
 "Report-Msgid-Bugs-To: languages@taler.net\n"
 "POT-Creation-Date: 2016-11-23 00:00+0100\n"
-"PO-Revision-Date: 2022-03-10 18:01+0000\n"
-"Last-Translator: Stefan Kügel <skuegel@web.de>\n"
+"PO-Revision-Date: 2022-04-13 16:06+0000\n"
+"Last-Translator: Alp <berna.alp@digitalekho.com>\n"
 "Language-Team: Turkish <http://weblate.taler.net/projects/gnu-taler/"
 "webextensions/tr/>\n"
 "Language: tr\n"
@@ -34,9 +34,9 @@ msgid "Balance"
 msgstr "Bakiye"
 
 #: src/NavigationBar.tsx:73
-#, c-format, fuzzy
+#, c-format
 msgid "Backup"
-msgstr "Yedek"
+msgstr "Yedekle"
 
 #: src/NavigationBar.tsx:77
 #, c-format
@@ -71,22 +71,22 @@ msgstr "Geri ödeme sayfasını açın"
 #: src/wallet/AddNewActionView.tsx:20
 #, c-format
 msgid "Open tip page"
-msgstr ""
+msgstr "İkramiye sayfasını açın"
 
 #: src/wallet/AddNewActionView.tsx:22
 #, c-format
 msgid "Open withdraw page"
-msgstr ""
+msgstr "Para çekme sayfasını açın"
 
 #: src/wallet/AddNewActionView.tsx:51
 #, c-format
 msgid "Back"
-msgstr ""
+msgstr "Geri"
 
 #: src/popup/NoBalanceHelp.tsx:14
 #, c-format
 msgid "You have no balance to show."
-msgstr ""
+msgstr "Gösterecek bakiyeniz yok."
 
 #: src/popup/NoBalanceHelp.tsx:17
 #, c-format
@@ -94,36 +94,38 @@ msgid ""
 "To withdraw money you can start from your bank site or click the \"withdraw"
 "\" button to use a known exchange."
 msgstr ""
+"Para çekmek için banka sitenizden başlayabilir veya bilinen bir exchange'i "
+"kullanmak için \"para çek\" düğmesini tıklayabilirsiniz."
 
 #: src/popup/NoBalanceHelp.tsx:23
 #, c-format
 msgid "Withdraw"
-msgstr ""
+msgstr "Para çek"
 
 #: src/popup/BalancePage.tsx:52
 #, c-format
 msgid "Could not load balance page"
-msgstr ""
+msgstr "Bakiye sayfası yüklenemedi"
 
 #: src/popup/BalancePage.tsx:111
 #, c-format
 msgid "Deposit %1$s"
-msgstr ""
+msgstr "Depozito %1$s"
 
 #: src/popup/BalancePage.tsx:120
 #, c-format
 msgid "Enter URI"
-msgstr ""
+msgstr "URI'yi girin"
 
 #: src/components/Diagnostics.tsx:30
 #, c-format
 msgid "Diagnostics timed out. Could not talk to the wallet backend."
-msgstr ""
+msgstr "Tanılar zaman aşımına uğradı. Cüzdan arka ucuyla konuşulamadı."
 
 #: src/components/Diagnostics.tsx:51
 #, c-format
 msgid "Problems detected:"
-msgstr ""
+msgstr "Tespit edilen sorunlar:"
 
 #: src/components/Diagnostics.tsx:60
 #, c-format
@@ -131,6 +133,8 @@ msgid ""
 "Please check in your %1$s settings that you have IndexedDB enabled (check "
 "the preference name %2$s)."
 msgstr ""
+"Lütfen %1$s ayarlarınızda, IndexedDB'nin etkinleştirildiğinizi kontrol edin "
+"(%2$s tercih adını kontrol edin)."
 
 #: src/components/Diagnostics.tsx:69
 #, c-format
@@ -138,56 +142,58 @@ msgid ""
 "Your wallet database is outdated. Currently automatic migration is not "
 "supported. Please go %1$s to reset the wallet database."
 msgstr ""
+"Cüzdan veritabanınız eski. Şu anda otomatik aktarım desteklenmiyor. Cüzdan "
+"veritabanını sıfırlamak için lütfen %1$s gidin."
 
 #: src/components/Diagnostics.tsx:85
 #, c-format
 msgid "Running diagnostics"
-msgstr ""
+msgstr "Tanılamayı çalıştır"
 
 #: src/popup/DeveloperPage.tsx:154
 #, c-format
 msgid "Debug tools"
-msgstr ""
+msgstr "Hata ayıklama araçları"
 
 #: src/popup/DeveloperPage.tsx:157
 #, c-format
 msgid "reset"
-msgstr ""
+msgstr "sıfırla"
 
 #: src/popup/DeveloperPage.tsx:161
 #, c-format
 msgid "import database"
-msgstr ""
+msgstr "veritabanını içe aktar"
 
 #: src/popup/DeveloperPage.tsx:182
 #, c-format
 msgid "export database"
-msgstr ""
+msgstr "veritabanını dışa aktar"
 
 #: src/popup/DeveloperPage.tsx:186
 #, c-format
 msgid "Database exported at %1$s %2$s to download"
-msgstr ""
+msgstr "Veritabanı %1$s'de dışa aktarıldı-%2$s indirilecek"
 
 #: src/popup/DeveloperPage.tsx:209
 #, c-format
 msgid "Coins"
-msgstr ""
+msgstr "Madeni paralar"
 
 #: src/popup/DeveloperPage.tsx:236
 #, c-format
 msgid "Pending operations"
-msgstr ""
+msgstr "Bekleyen işlemler"
 
 #: src/popup/DeveloperPage.tsx:275
 #, c-format
 msgid "usable coins"
-msgstr ""
+msgstr "kullanılabilir madeni paralar"
 
 #: src/popup/DeveloperPage.tsx:284
 #, c-format
 msgid "id"
-msgstr ""
+msgstr "kimlik"
 
 #: src/popup/DeveloperPage.tsx:287
 #, c-format
@@ -197,27 +203,27 @@ msgstr ""
 #: src/popup/DeveloperPage.tsx:290
 #, c-format
 msgid "value"
-msgstr ""
+msgstr "değer"
 
 #: src/popup/DeveloperPage.tsx:293
 #, c-format
 msgid "status"
-msgstr ""
+msgstr "durum"
 
 #: src/popup/DeveloperPage.tsx:296
 #, c-format
 msgid "from refresh?"
-msgstr ""
+msgstr "yenilemeden mi?"
 
 #: src/popup/DeveloperPage.tsx:313
 #, c-format
 msgid "spent coins"
-msgstr ""
+msgstr "harcanan madeni paralar"
 
 #: src/popup/DeveloperPage.tsx:317
 #, c-format
 msgid "click to show"
-msgstr ""
+msgstr "göstermek için tıklayın"
 
 #: src/popup/DeveloperPage.tsx:377
 #, c-format
@@ -225,116 +231,118 @@ msgid ""
 "Do you want to IRREVOCABLY DESTROY everything inside your wallet and LOSE "
 "ALL YOUR COINS?"
 msgstr ""
+"Cüzdanınızdaki her şeyi GERİ ALINAMAZ BİÇİMDE İMHA ETMEK ve TÜM PARALARINIZI "
+"KAYBETMEK mi istiyorsunuz?"
 
 #: src/popup/TalerActionFound.tsx:56
 #, c-format
 msgid "Taler Action"
-msgstr ""
+msgstr "Taler Eylemi"
 
 #: src/popup/TalerActionFound.tsx:61
 #, c-format
 msgid "This page has pay action."
-msgstr ""
+msgstr "Bu sayfada ödeme eylemi var."
 
 #: src/popup/TalerActionFound.tsx:75
 #, c-format
 msgid "This page has a withdrawal action."
-msgstr ""
+msgstr "Bu sayfada para çekme eylemi var."
 
 #: src/popup/TalerActionFound.tsx:91
 #, c-format
 msgid "This page has a tip action."
-msgstr ""
+msgstr "Bu sayfada bir ikramiye eylemi var."
 
 #: src/popup/TalerActionFound.tsx:105
 #, c-format
 msgid "This page has a notify reserve action."
-msgstr ""
+msgstr "Bu sayfada bir rezervasyon bildir eylemi var."
 
 #: src/popup/TalerActionFound.tsx:114
 #, c-format
 msgid "Notify"
-msgstr ""
+msgstr "Bildirin"
 
 #: src/popup/TalerActionFound.tsx:121
 #, c-format
 msgid "This page has a refund action."
-msgstr ""
+msgstr "Bu sayfada bir geri ödeme eylemi var."
 
 #: src/popup/TalerActionFound.tsx:135
 #, c-format
 msgid "This page has a malformed taler uri."
-msgstr ""
+msgstr "Bu sayfada hatalı biçimlendirilmiş taler uri var."
 
 #: src/popup/TalerActionFound.tsx:147
 #, c-format
 msgid "Dismiss"
-msgstr ""
+msgstr "Reddet"
 
 #: src/wallet/BackupPage.tsx:75
 #, c-format
 msgid "Could not load backup providers"
-msgstr ""
+msgstr "Yedekleme sağlayıcıları yüklenemedi"
 
 #: src/wallet/BackupPage.tsx:129
 #, c-format
 msgid "No backup providers configured"
-msgstr ""
+msgstr "Yapılandırılmış yedekleme sağlayıcısı yok"
 
 #: src/wallet/BackupPage.tsx:132
 #, c-format
 msgid "Add provider"
-msgstr ""
+msgstr "Sağlayıcı ekle"
 
 #: src/wallet/BackupPage.tsx:142
 #, c-format
 msgid "Sync all backups"
-msgstr ""
+msgstr "Tüm yedeklemeleri senkronize et"
 
 #: src/wallet/BackupPage.tsx:144
 #, c-format
 msgid "Sync now"
-msgstr ""
+msgstr "Şimdi senkronize et"
 
 #: src/wallet/BackupPage.tsx:187
 #, c-format
 msgid "Last synced"
-msgstr ""
+msgstr "Son Senkronizasyon"
 
 #: src/wallet/BackupPage.tsx:192
 #, c-format
 msgid "Not synced"
-msgstr ""
+msgstr "Senkronize Edilmedi"
 
 #: src/wallet/BackupPage.tsx:211
 #, c-format
 msgid "Expires in"
-msgstr ""
+msgstr "İçinde sona eriyor"
 
 #: src/cta/TermsOfServiceSection.tsx:37
 #, c-format
 msgid "Exchange doesn't have terms of service"
-msgstr ""
+msgstr "Exchange'in hizmet şartları yok"
 
 #: src/cta/TermsOfServiceSection.tsx:60
 #, c-format
 msgid "Review exchange terms of service"
-msgstr ""
+msgstr "Exchange'in hizmet şartlarını inceleyin"
 
 #: src/cta/TermsOfServiceSection.tsx:69
 #, c-format
 msgid "Review new version of terms of service"
-msgstr ""
+msgstr "Hizmet şartlarının yeni sürümünü inceleyin"
 
 #: src/cta/TermsOfServiceSection.tsx:83
 #, c-format
 msgid "Show terms of service"
-msgstr ""
+msgstr "Hizmet şartlarını göster"
 
 #: src/cta/TermsOfServiceSection.tsx:91
 #, c-format
 msgid "I accept the exchange terms of service"
-msgstr ""
+msgstr "Hizmet şartlarını kabul ediyorum"
 
 #: src/cta/TermsOfServiceSection.tsx:110
 #, c-format
