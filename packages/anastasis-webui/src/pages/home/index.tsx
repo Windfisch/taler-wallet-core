@@ -100,24 +100,26 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
     return <p>Fatal: Reducer must be in context.</p>;
   }
   const doBack = async (): Promise<void> => {
-    history.back();
-
     if (props.onBack) {
       await props.onBack();
+    } else {
+      await reducer.back();
     }
   };
-  const doNext = async (): Promise<void> => {
-    try {
-      const nextId: number =
-        (history.state && typeof history.state.id === "number"
-          ? history.state.id
-          : 0) + 1;
+  const doNext = async (fromPopstate?: boolean): Promise<void> => {
+    if (!fromPopstate) {
+      try {
+        const nextId: number =
+          (history.state && typeof history.state.id === "number"
+            ? history.state.id
+            : 0) + 1;
 
-      currentHistoryId = nextId;
+        currentHistoryId = nextId;
 
-      history.pushState({ id: nextId }, "unused", `#${nextId}`);
-    } catch (e) {
-      console.log(e);
+        history.pushState({ id: nextId }, "unused", `#${nextId}`);
+      } catch (e) {
+        console.log(e);
+      }
     }
 
     if (props.onNext) {
@@ -136,9 +138,9 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
   const browserOnBackButton = useCallback(async (ev: PopStateEvent) => {
     //check if we are going back or forward
     if (!ev.state || ev.state.id === 0 || ev.state.id < currentHistoryId) {
-      await reducer.back();
+      await doBack();
     } else {
-      await reducer.transition("next", {});
+      await doNext(true);
     }
 
     // reducer
@@ -169,13 +171,13 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
                 justifyContent: "space-between",
               }}
             >
-              <button class="button" onClick={doBack}>
+              <button class="button" onClick={() => doBack()}>
                 Back
               </button>
               <AsyncButton
                 class="button is-info"
                 data-tooltip={props.hideNext}
-                onClick={doNext}
+                onClick={() => doNext()}
                 disabled={props.hideNext !== undefined}
               >
                 Next
