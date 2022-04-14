@@ -92,39 +92,39 @@ function ErrorBoundary(props: {
   return <div>{props.children}</div>;
 }
 
+let currentHistoryId = 0;
+
 export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
   const reducer = useAnastasisContext();
   if (!reducer) {
     return <p>Fatal: Reducer must be in context.</p>;
   }
-  const next = async (): Promise<void> => {
+  const doBack = async (): Promise<void> => {
+    history.back();
+
+    if (props.onBack) {
+      await props.onBack();
+    }
+  };
+  const doNext = async (): Promise<void> => {
+    try {
+      const nextId: number =
+        (history.state && typeof history.state.id === "number"
+          ? history.state.id
+          : 0) + 1;
+
+      currentHistoryId = nextId;
+
+      history.pushState({ id: nextId }, "unused", `#${nextId}`);
+    } catch (e) {
+      console.log(e);
+    }
+
     if (props.onNext) {
       await props.onNext();
     } else {
       await reducer.transition("next", {});
     }
-    reducer.currentReducerState?.reducer_type;
-
-    const stateName = !reducer.currentReducerState
-      ? "not-defined"
-      : reducer.currentReducerState.reducer_type === "backup"
-      ? `#backup-${reducer.currentReducerState.backup_state}`
-      : reducer.currentReducerState.reducer_type === "recovery"
-      ? `recovery-${reducer.currentReducerState.recovery_state}`
-      : reducer.currentReducerState.reducer_type === "error"
-      ? `error-${reducer.currentReducerState.code}`
-      : "unknown";
-
-    const id: number =
-      typeof history.state.id === "number" ? history.state.id : 1;
-
-    history.pushState(
-      {
-        id: id + 1,
-      },
-      "unused",
-      stateName,
-    );
   };
   const handleKeyPress = (
     e: h.JSX.TargetedKeyboardEvent<HTMLDivElement>,
@@ -133,9 +133,14 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
     // FIXME: By default, "next" action should be executed here
   };
 
-  const browserOnBackButton = useCallback((ev: PopStateEvent) => {
-    console.log("BACK BACK", JSON.stringify(ev.state));
-    reducer.back();
+  const browserOnBackButton = useCallback(async (ev: PopStateEvent) => {
+    //check if we are going back or forward
+    if (!ev.state || ev.state.id === 0 || ev.state.id < currentHistoryId) {
+      await reducer.back();
+    } else {
+      await reducer.transition("next", {});
+    }
+
     // reducer
     return false;
   }, []);
@@ -164,16 +169,13 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
                 justifyContent: "space-between",
               }}
             >
-              <button
-                class="button"
-                onClick={() => (props.onBack ?? reducer.back)()}
-              >
+              <button class="button" onClick={doBack}>
                 Back
               </button>
               <AsyncButton
                 class="button is-info"
                 data-tooltip={props.hideNext}
-                onClick={next}
+                onClick={doNext}
                 disabled={props.hideNext !== undefined}
               >
                 Next
