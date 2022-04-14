@@ -539,8 +539,11 @@ async function updateReserve(
     return { ready: true };
   }
 
+  const reserveUrl = new URL(`reserves/${reservePub}`, reserve.exchangeBaseUrl);
+  reserveUrl.searchParams.set("timeout_ms", "200");
+
   const resp = await ws.http.get(
-    new URL(`reserves/${reservePub}`, reserve.exchangeBaseUrl).href,
+    reserveUrl.href,
     {
       timeout: getReserveRequestTimeout(reserve),
     },
