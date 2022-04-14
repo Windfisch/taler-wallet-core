@@ -41,7 +41,6 @@ export interface CountryInfo {
   code: string;
   name: string;
   continent: string;
-  currency: string;
 }
 
 export interface Policy {
@@ -76,8 +75,6 @@ export interface ReducerStateBackup {
   reducer_type: "backup";
 
   backup_state: BackupStates;
-
-  currencies?: string[];
 
   continents?: ContinentInfo[];
 
@@ -201,7 +198,6 @@ export interface ReducerStateRecovery {
 
   selected_continent?: string;
   selected_country?: string;
-  currencies?: string[];
 
   required_attributes?: UserAttributeSpec[];
 
@@ -406,7 +402,6 @@ export const codecForActionArgSelectContinent = () =>
 
 export interface ActionArgsSelectCountry {
   country_code: string;
-  currencies: string[];
 }
 
 export interface ActionArgsSelectChallenge {
@@ -551,5 +546,4 @@ export const codecForActionArgsSelectChallenge = () =>
 export const codecForActionArgSelectCountry = () =>
   buildCodecForObject<ActionArgsSelectCountry>()
     .property("country_code", codecForString())
-    .property("currencies", codecForList(codecForString()))
     .build("ActionArgSelectCountry");

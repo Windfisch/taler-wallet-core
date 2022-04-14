@@ -1,7 +1,6 @@
 // This file is auto-generated, do not modify.
-// Generated from v0.2.0-4-g61ea83c on Tue, 05 Oct 2021 10:40:32 +0200
+// Generated from v0.2.0-151-g2ae958d on Thu, 14 Apr 2022 20:38:58 +0200
 // To re-generate, run contrib/gen-ts.sh from the main anastasis code base.
-// XXX: Modified for demo, allowing demo providers for EUR
 
 export const anastasisData = {
   providersList: {
@@ -9,44 +8,36 @@ export const anastasisData = {
     "SPDX-License-Identifier": "GPL3.0-or-later",
     anastasis_provider: [
       {
-        url: "https://anastasis.demo.taler.net/",
-        currency: "KUDOS",
+        url: "https://v1.anastasis.taler.net/",
+        name: "Bern University of Applied Sciences, Switzerland",
       },
       {
-        url: "https://kudos.demo.anastasis.lu/",
-        currency: "KUDOS",
+        url: "https://v1.anastasis.codeblau.de/",
+        name: "Codeblau GmbH, Germany",
       },
       {
-        url: "https://anastasis.demo.taler.net/",
-        currency: "EUR",
+        url: "https://v1.anastasis.openw3b.org/",
+        name: "Openw3b Foundation, India",
       },
       {
-        url: "https://kudos.demo.anastasis.lu/",
-        currency: "EUR",
-      },
-      {
-        url: "https://anastasis.demo.taler.net/",
-        currency: "CHF",
-      },
-      {
-        url: "https://kudos.demo.anastasis.lu/",
-        currency: "CHF",
+        url: "https://v1.anastasis.lu/",
+        name: "Anastasis SARL, Luxembourg",
       },
       {
         url: "http://localhost:8086/",
-        currency: "TESTKUDOS",
+        restricted: "xx",
       },
       {
         url: "http://localhost:8087/",
-        currency: "TESTKUDOS",
+        restricted: "xx",
       },
       {
         url: "http://localhost:8088/",
-        currency: "TESTKUDOS",
+        restricted: "xx",
       },
       {
         url: "http://localhost:8089/",
-        currency: "TESTKUDOS",
+        restricted: "xx",
       },
     ],
   },
@@ -62,7 +53,6 @@ export const anastasisData = {
           de_DE: "Albanien",
           en_UK: "Albania",
         },
-        currency: "ALL",
         call_code: "+355",
       },
       {
@@ -73,7 +63,6 @@ export const anastasisData = {
           de_DE: "Belgien",
           en_UK: "Belgium",
         },
-        currency: "EUR",
         call_code: "+32",
       },
       {
@@ -86,7 +75,6 @@ export const anastasisData = {
           fr_FR: "Suisse",
           en_UK: "Swiss",
         },
-        currency: "CHF",
         call_code: "+41",
       },
       {
@@ -96,7 +84,6 @@ export const anastasisData = {
         name_i18n: {
           en_UK: "Czech Republic",
         },
-        currency: "CZK",
         call_code: "+420",
       },
       {
@@ -110,7 +97,6 @@ export const anastasisData = {
           fr_FR: "Allemagne",
           en_UK: "Germany",
         },
-        currency: "EUR",
         call_code: "+49",
       },
       {
@@ -121,7 +107,6 @@ export const anastasisData = {
         name_i18n: {
           en_UK: "Denmark",
         },
-        currency: "DKK",
         call_code: "+45",
       },
       {
@@ -132,8 +117,17 @@ export const anastasisData = {
         name_i18n: {
           es_ES: "España",
         },
-        currency: "EUR",
         call_code: "+44",
+      },
+      {
+        code: "fr",
+        name: "France",
+        continent: "Europe",
+        name_i18n: {
+          de_DE: "Frankreich",
+          fr_FR: "La France",
+        },
+        call_code: "+33",
       },
       {
         code: "in",
@@ -146,7 +140,6 @@ export const anastasisData = {
           fr_FR: "l'Inde",
           en_UK: "India",
         },
-        currency: "INR",
         call_code: "+91",
       },
       {
@@ -157,7 +150,6 @@ export const anastasisData = {
           de_DE: "Italien",
           en_UK: "Italy",
         },
-        currency: "EUR",
         call_code: "+39",
       },
       {
@@ -170,17 +162,26 @@ export const anastasisData = {
           de_CH: "Japan",
           en_UK: "Japan",
         },
-        currency: "JPY",
         call_code: "+81",
       },
       {
-        code: "sl",
+        code: "nl",
+        name: "Netherlands",
+        continent: "Europe",
+        name_i18n: {
+          de_DE: "Niederlande",
+          nl_NL: "Nederland",
+          en_UK: "Netherlands",
+        },
+        call_code: "+31",
+      },
+      {
+        code: "sk",
         name: "Slovakia",
         continent: "Europe",
         name_i18n: {
           en_UK: "Slovakia",
         },
-        currency: "EUR",
         call_code: "+421",
       },
       {
@@ -194,36 +195,19 @@ export const anastasisData = {
           fr_FR: "États-Unis d'Amérique (USA)",
           en_UK: "United States of America (USA)",
         },
-        currency: "USD",
         call_code: "+1",
       },
       {
         code: "xx",
         name: "Testland",
-        continent: "Testcontinent",
-        continent_i18n: { de_DE: "Testkontinent" },
+        continent: "Demoworld",
         name_i18n: {
           de_DE: "Testlandt",
           de_CH: "Testlandi",
           fr_FR: "Testpais",
           en_UK: "Testland",
         },
-        currency: "TESTKUDOS",
         call_code: "+00",
-      },
-      {
-        code: "xy",
-        name: "Demoland",
-        continent: "Testcontinent",
-        continent_i18n: { de_DE: "Testkontinent" },
-        name_i18n: {
-          de_DE: "Demolandt",
-          de_CH: "Demolandi",
-          fr_FR: "Demopais",
-          en_UK: "Demoland",
-        },
-        currency: "KUDOS",
-        call_code: "+01",
       },
     ],
   },
@@ -337,9 +321,9 @@ export const anastasisData = {
           widget: "anastasis_gtk_ia_ahv",
           uuid: "1da87570-ba16-4f62-8a7e-cbda92f51591",
           "validation-regex":
-            "^(756).[0-9]{4}.[0-9]{4}.[0-9]{2}|(756)[0-9]{10}$",
+            "^(756)\\.[0-9]{4}\\.[0-9]{4}\\.[0-9]{2}|(756)[0-9]{10}$",
           "validation-logic": "CH_AHV_check",
-          autocomplete: "???.????.????.??"
+          autocomplete: "???.????.????.??",
         },
       ],
     },
@@ -404,19 +388,6 @@ export const anastasisData = {
         },
         {
           type: "string",
-          name: "tax_number",
-          label: "Taxpayer identification number",
-          label_i18n: {
-            de_DE: "Steuerliche Identifikationsnummer",
-            en: "German taxpayer identification number",
-          },
-          widget: "anastasis_gtk_ia_tax_de",
-          uuid: "dae48f85-e3ff-47a4-a4a3-ed981ed8c3c6",
-          "validation-regex": "^[0-9]{11}$",
-          "validation-logic": "DE_TIN_check",
-        },
-        {
-          type: "string",
           name: "social_security_number",
           label: "Social security number",
           label_i18n: {
@@ -428,6 +399,19 @@ export const anastasisData = {
           "validation-regex": "^[0-9]{8}[[:upper:]][0-9]{3}$",
           "validation-logic": "DE_SVN_check",
           optional: true,
+        },
+        {
+          type: "string",
+          name: "tax_number",
+          label: "Taxpayer identification number",
+          label_i18n: {
+            de_DE: "Steuerliche Identifikationsnummer",
+            en: "German taxpayer identification number",
+          },
+          widget: "anastasis_gtk_ia_tin_de",
+          uuid: "dae48f85-e3ff-47a4-a4a3-ed981ed8c3c6",
+          "validation-regex": "^[0-9]{11}$",
+          "validation-logic": "DE_TIN_check",
         },
       ],
     },
@@ -511,6 +495,46 @@ export const anastasisData = {
           widget: "anastasis_gtk_ia_es_ssn",
           uuid: "22396a19-f3bb-497e-b63a-961fd639140e",
           "validation-regex": "^[0-9]{11}$",
+        },
+      ],
+    },
+    fr: {
+      license: "GPLv3+",
+      "SPDX-License-Identifier": "GPL3.0-or-later",
+      required_attributes: [
+        {
+          type: "string",
+          name: "full_name",
+          label: "Full name",
+          widget: "anastasis_gtk_ia_full_name",
+          uuid: "9e8f463f-575f-42cb-85f3-759559997331",
+        },
+        {
+          type: "date",
+          name: "birthdate",
+          label: "Birthdate",
+          widget: "anastasis_gtk_ia_birthdate",
+          uuid: "83d655c7-bdb6-484d-904e-80c1058c8854",
+        },
+        {
+          type: "string",
+          name: "birthplace",
+          label: "Birthplace",
+          widget: "anastasis_gtk_ia_birthplace",
+          uuid: "4c822e8e-89c6-11eb-95c4-8b077ad8489f",
+        },
+        {
+          type: "string",
+          name: "social_security_number",
+          label: "Code Insee",
+          label_i18n: {
+            fr_FR: "Code Insee",
+            en: "INSEE code",
+          },
+          widget: "anastasis_gtk_ia_insee_fr",
+          uuid: "2f36a81c-3f6d-41f3-97ee-9c885bc41873",
+          "validation-regex": "^[0-9]{15}$",
+          "validation-logic": "FR_INSEE_check",
         },
       ],
     },
@@ -626,6 +650,46 @@ export const anastasisData = {
         },
       ],
     },
+    nl: {
+      license: "GPLv3+",
+      "SPDX-License-Identifier": "GPL3.0-or-later",
+      required_attributes: [
+        {
+          type: "string",
+          name: "full_name",
+          label: "Full name",
+          widget: "anastasis_gtk_ia_full_name",
+          uuid: "9e8f463f-575f-42cb-85f3-759559997331",
+        },
+        {
+          type: "date",
+          name: "birthdate",
+          label: "Birthdate",
+          widget: "anastasis_gtk_ia_birthdate",
+          uuid: "83d655c7-bdb6-484d-904e-80c1058c8854",
+        },
+        {
+          type: "string",
+          name: "birthplace",
+          label: "Birthplace",
+          widget: "anastasis_gtk_ia_birthplace",
+          uuid: "4c822e8e-89c6-11eb-95c4-8b077ad8489f",
+        },
+        {
+          type: "string",
+          name: "social_security_number",
+          label: "Citizen Service Number",
+          label_i18n: {
+            nl_NL: "Burgerservicenummer (BSN)",
+            en: "Citizen Service Number",
+          },
+          widget: "anastasis_gtk_ia_ssn_nl",
+          uuid: "b6bf1f14-1f85-4afb-af21-f54b88490bdc",
+          "validation-regex": "^[1-9][0-9]{8}$",
+          "validation-logic": "NL_BSN_check",
+        },
+      ],
+    },
     sk: {
       license: "GPLv3+",
       "SPDX-License-Identifier": "GPL3.0-or-later",
@@ -702,35 +766,7 @@ export const anastasisData = {
     xx: {
       license: "GPLv3+",
       "SPDX-License-Identifier": "GPL3.0-or-later",
-      required_attributes: [
-        {
-          type: "string",
-          name: "full_name",
-          label: "Full name",
-          widget: "anastasis_gtk_ia_full_name",
-          uuid: "9e8f463f-575f-42cb-85f3-759559997331",
-        },
-        {
-          type: "date",
-          name: "birthdate",
-          label: "Birthdate",
-          widget: "anastasis_gtk_ia_birthdate",
-          uuid: "83d655c7-bdb6-484d-904e-80c1058c8854",
-        },
-        {
-          type: "string",
-          name: "sq_number",
-          label: "Square number",
-          widget: "anastasis_gtk_xx_square",
-          uuid: "ed790bca-89bf-11eb-96f2-233996cf644e",
-          "validation-regex": "^[0-9]+$",
-          "validation-logic": "XX_SQUARE_check",
-        },
-      ],
-    },
-    xy: {
-      license: "GPLv3+",
-      "SPDX-License-Identifier": "GPL3.0-or-later",
+      restricted: "xx",
       required_attributes: [
         {
           type: "string",
@@ -754,6 +790,16 @@ export const anastasisData = {
           uuid: "39190a95-cacb-4412-8bae-1f7da3f980b4",
           "validation-regex": "^[0-9]+$",
           "validation-logic": "XY_PRIME_check",
+          optional: true,
+        },
+        {
+          type: "string",
+          name: "sq_number",
+          label: "Square number",
+          widget: "anastasis_gtk_xx_square",
+          uuid: "ed790bca-89bf-11eb-96f2-233996cf644e",
+          "validation-regex": "^[0-9]+$",
+          "validation-logic": "XX_SQUARE_check",
         },
       ],
     },

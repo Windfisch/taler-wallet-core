@@ -142,21 +142,11 @@ const logger = new Logger("anastasis-core:index.ts");
 
 const ANASTASIS_HTTP_HEADER_POLICY_META_DATA = "Anastasis-Policy-Meta-Data";
 
-function getContinents(
-  opts: { requireProvider?: boolean } = {},
-): ContinentInfo[] {
-  const currenciesWithProvider = new Set<string>();
-  anastasisData.providersList.anastasis_provider.forEach((x) => {
-    currenciesWithProvider.add(x.currency);
-  });
+function getContinents(): ContinentInfo[] {
   const continentSet = new Set<string>();
   const continents: ContinentInfo[] = [];
   for (const country of anastasisData.countriesList.countries) {
     if (continentSet.has(country.continent)) {
-      continue;
-    }
-    if (opts.requireProvider && !currenciesWithProvider.has(country.currency)) {
-      // Country's currency doesn't have any providers => skip
       continue;
     }
     continentSet.add(country.continent);
@@ -191,23 +181,14 @@ export class ReducerError extends Error {
  * Get countries for a continent, abort with ReducerError
  * exception when continent doesn't exist.
  */
-function getCountries(
-  continent: string,
-  opts: { requireProvider?: boolean } = {},
-): CountryInfo[] {
-  const currenciesWithProvider = new Set<string>();
-  anastasisData.providersList.anastasis_provider.forEach((x) => {
-    currenciesWithProvider.add(x.currency);
-  });
+function getCountries(continent: string): CountryInfo[] {
   const countries = anastasisData.countriesList.countries.filter(
-    (x) =>
-      x.continent === continent &&
-      (!opts.requireProvider || currenciesWithProvider.has(x.currency)),
+    (x) => x.continent === continent,
   );
   if (countries.length <= 0) {
     throw new ReducerError({
       code: TalerErrorCode.ANASTASIS_REDUCER_INPUT_INVALID,
-      hint: "continent not found",
+      hint: `continent ${continent} not found`,
     });
   }
   return countries;
@@ -217,9 +198,7 @@ export async function getBackupStartState(): Promise<ReducerStateBackup> {
   return {
     reducer_type: "backup",
     backup_state: BackupStates.ContinentSelecting,
-    continents: getContinents({
-      requireProvider: true,
-    }),
+    continents: getContinents(),
   };
 }
 
@@ -227,9 +206,7 @@ export async function getRecoveryStartState(): Promise<ReducerStateRecovery> {
   return {
     reducer_type: "recovery",
     recovery_state: RecoveryStates.ContinentSelecting,
-    continents: getContinents({
-      requireProvider: true,
-    }),
+    continents: getContinents(),
   };
 }
 
@@ -238,7 +215,6 @@ async function selectCountry(
   args: ActionArgsSelectCountry,
 ): Promise<Partial<ReducerStateBackup> & Partial<ReducerStateRecovery>> {
   const countryCode = args.country_code;
-  const currencies = args.currencies;
   const country = anastasisData.countriesList.countries.find(
     (x) => x.code === countryCode,
   );
@@ -258,7 +234,10 @@ async function selectCountry(
 
   const providers: { [x: string]: AuthenticationProviderStatus } = {};
   for (const prov of anastasisData.providersList.anastasis_provider) {
-    if (currencies.includes(prov.currency)) {
+    let shouldAdd =
+      country.code === prov.restricted ||
+      (country.code !== "xx" && !prov.restricted);
+    if (shouldAdd) {
       providers[prov.url] = {
         status: "not-contacted",
       };
@@ -270,7 +249,6 @@ async function selectCountry(
 
   return {
     selected_country: countryCode,
-    currencies,
     required_attributes: ra,
     authentication_providers: providers,
   };
@@ -1223,9 +1201,7 @@ async function backupSelectContinent(
   state: ReducerStateBackup,
   args: ActionArgsSelectContinent,
 ): Promise<ReducerStateBackup | ReducerStateError> {
-  const countries = getCountries(args.continent, {
-    requireProvider: true,
-  });
+  const countries = getCountries(args.continent);
   if (countries.length <= 0) {
     return {
       reducer_type: "error",
@@ -1245,9 +1221,7 @@ async function recoverySelectContinent(
   state: ReducerStateRecovery,
   args: ActionArgsSelectContinent,
 ): Promise<ReducerStateRecovery | ReducerStateError> {
-  const countries = getCountries(args.continent, {
-    requireProvider: true,
-  });
+  const countries = getCountries(args.continent);
   return {
     ...state,
     recovery_state: RecoveryStates.CountrySelecting,
@@ -1540,6 +1514,40 @@ async function nextFromChallengeSelecting(
   };
 }
 
+async function syncProviders(
+  state: ReducerStateRecovery,
+  args: void,
+): Promise<ReducerStateRecovery | ReducerStateError> {
+  const escrowMethods = state.verbatim_recovery_document?.escrow_methods ?? [];
+  if (escrowMethods.length === 0) {
+    return {
+      reducer_type: "error",
+      code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
+      hint: "Can't sync, no escrow methods in recovery doc.",
+    };
+  }
+  for (const x of escrowMethods) {
+    const pi = state.authentication_providers?.[x.url];
+    if (pi?.status === "ok") {
+      logger.info(`provider ${x.url} is synced`);
+      continue;
+    }
+    const newPi = await getProviderInfo(x.url);
+    return {
+      ...state,
+      authentication_providers: {
+        ...state.authentication_providers,
+        [x.url]: newPi,
+      },
+    };
+  }
+  return {
+    reducer_type: "error",
+    code: TalerErrorCode.ANASTASIS_REDUCER_PROVIDERS_ALREADY_SYNCED,
+    hint: "all providers are already synced",
+  };
+}
+
 async function enterSecretName(
   state: ReducerStateBackup,
   args: ActionArgsEnterSecretName,
@@ -1714,6 +1722,7 @@ const recoveryTransitions: Record<
     ),
     ...transition("poll", codecForAny(), pollChallenges),
     ...transition("next", codecForAny(), nextFromChallengeSelecting),
+    ...transition("sync_providers", codecForAny(), syncProviders),
   },
   [RecoveryStates.ChallengeSolving]: {
     ...transitionRecoveryJump("back", RecoveryStates.ChallengeSelecting),

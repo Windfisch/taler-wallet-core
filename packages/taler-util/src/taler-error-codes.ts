@@ -417,6 +417,13 @@ export enum TalerErrorCode {
   EXCHANGE_GENERIC_GLOBAL_FEES_MISSING = 1022,
 
   /**
+   * The exchange was not properly configured with wire fees.
+   * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_GENERIC_WIRE_FEES_MISSING = 1023,
+
+  /**
    * The exchange did not find information about the specified transaction in the database.
    * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
    * (A value of 0 indicates that the error is generated client-side).
@@ -1180,6 +1187,55 @@ export enum TalerErrorCode {
   EXCHANGE_CREATE_PURSE_NEGATIVE_VALUE_AFTER_FEE = 1860,
 
   /**
+   * The purse to be merged is not known.
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_MERGE_PURSE_NOT_FOUND = 1875,
+
+  /**
+   * The signature using the merge key is invalid.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_PURSE_MERGE_INVALID_MERGE_SIGNATURE = 1876,
+
+  /**
+   * The signature using the reserve key is invalid.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_PURSE_MERGE_INVALID_RESERVE_SIGNATURE = 1877,
+
+  /**
+   * The targeted purse is not yet full and thus cannot be merged. Retrying the request later may succeed.
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_PURSE_NOT_FULL = 1878,
+
+  /**
+   * The signature from the exchange over the confirmation is invalid.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_PURSE_MERGE_EXCHANGE_SIGNATURE_INVALID = 1879,
+
+  /**
+   * The exchange of the target account is not a partner of this exchange.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_MERGE_PURSE_PARTNER_UNKNOWN = 1880,
+
+  /**
+   * The amount in the purse is lower than the wad fee. So the request was accepted, but no transfer is expected to take place. FIXME-DOLD: good HTTP status. Suggestion: no error, make variant of 200 OK.
+   * Returned with an HTTP status code of #MHD_HTTP_ACCEPTED (202).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_PURSE_MERGE_WAD_FEE_EXCEEDS_PURSE_VALUE = 1881,
+
+  /**
    * The auditor signature over the denomination meta data is invalid.
    * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
    * (A value of 0 indicates that the error is generated client-side).
@@ -1234,6 +1290,41 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   EXCHANGE_KYC_CHECK_AUTHORIZATION_FAILED = 1930,
+
+  /**
+   * The exchange does not know a contract under the given contract public key.
+   * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_CONTRACTS_UNKNOWN = 1950,
+
+  /**
+   * The URL does not encode a valid exchange public key in its path.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_CONTRACTS_INVALID_CONTRACT_PUB = 1951,
+
+  /**
+   * The returned encrypted contract did not decrypt.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_CONTRACTS_DECRYPTION_FAILED = 1952,
+
+  /**
+   * The signature on the encrypted contract did not validate.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_CONTRACTS_SIGNATURE_INVALID = 1953,
+
+  /**
+   * The decrypted contract was malformed.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_CONTRACTS_DECODING_FAILED = 1954,
 
   /**
    * The backend could not find the merchant instance specified in the request.
@@ -2419,13 +2510,6 @@ export enum TalerErrorCode {
   ANASTASIS_TRUTH_CHALLENGE_UNKNOWN = 8112,
 
   /**
-   * A challenge is already active, the service is thus not issuing a new one.
-   * Returned with an HTTP status code of #MHD_HTTP_ALREADY_REPORTED (208).
-   * (A value of 0 indicates that the error is generated client-side).
-   */
-  ANASTASIS_TRUTH_CHALLENGE_ACTIVE = 8113,
-
-  /**
    * The backend failed to initiate the authorization process.
    * Returned with an HTTP status code of #MHD_HTTP_INTERNAL_SERVER_ERROR (500).
    * (A value of 0 indicates that the error is generated client-side).
@@ -2482,13 +2566,6 @@ export enum TalerErrorCode {
   ANASTASIS_TRUTH_RATE_LIMITED = 8121,
 
   /**
-   * The authentication process did not yet complete. The user should try again later.
-   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
-   * (A value of 0 indicates that the error is generated client-side).
-   */
-  ANASTASIS_TRUTH_AUTH_TIMEOUT = 8122,
-
-  /**
    * A request to issue a challenge is not valid for this authentication method.
    * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
@@ -2511,7 +2588,7 @@ export enum TalerErrorCode {
 
   /**
    * The provided phone number is not an acceptable number.
-   * Returned with an HTTP status code of #MHD_HTTP_EXPECTATION_FAILED (417).
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
    * (A value of 0 indicates that the error is generated client-side).
    */
   ANASTASIS_SMS_PHONE_INVALID = 8200,
@@ -2532,7 +2609,7 @@ export enum TalerErrorCode {
 
   /**
    * The provided email address is not an acceptable address.
-   * Returned with an HTTP status code of #MHD_HTTP_EXPECTATION_FAILED (417).
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
    * (A value of 0 indicates that the error is generated client-side).
    */
   ANASTASIS_EMAIL_INVALID = 8210,
@@ -2553,7 +2630,7 @@ export enum TalerErrorCode {
 
   /**
    * The provided postal address is not an acceptable address.
-   * Returned with an HTTP status code of #MHD_HTTP_EXPECTATION_FAILED (417).
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
    * (A value of 0 indicates that the error is generated client-side).
    */
   ANASTASIS_POST_INVALID = 8220,
@@ -2574,21 +2651,28 @@ export enum TalerErrorCode {
 
   /**
    * The provided IBAN address is not an acceptable IBAN.
-   * Returned with an HTTP status code of #MHD_HTTP_EXPECTATION_FAILED (417).
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
    * (A value of 0 indicates that the error is generated client-side).
    */
   ANASTASIS_IBAN_INVALID = 8230,
 
   /**
+   * The provider has not yet received the IBAN wire transfer authorizing the disclosure of the key share.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_IBAN_MISSING_TRANSFER = 8231,
+
+  /**
    * The backend did not find a TOTP key in the data provided.
-   * Returned with an HTTP status code of #MHD_HTTP_EXPECTATION_FAILED (417).
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
    * (A value of 0 indicates that the error is generated client-side).
    */
   ANASTASIS_TOTP_KEY_MISSING = 8240,
 
   /**
    * The key provided does not satisfy the format restrictions for an Anastasis TOTP key.
-   * Returned with an HTTP status code of #MHD_HTTP_EXPECTATION_FAILED (417).
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
    * (A value of 0 indicates that the error is generated client-side).
    */
   ANASTASIS_TOTP_KEY_INVALID = 8241,
@@ -2774,6 +2858,13 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   ANASTASIS_REDUCER_INTERNAL_ERROR = 8419,
+
+  /**
+   * The reducer already synchronized with all providers.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  ANASTASIS_REDUCER_PROVIDERS_ALREADY_SYNCED = 8420,
 
   /**
    * A generic error happened in the LibEuFin nexus.  See the enclose details JSON for more information.

@@ -3,6 +3,7 @@ import {
   BackupStates,
   RecoveryStates,
   ReducerState,
+  ReducerStateRecovery,
 } from "@gnu-taler/anastasis-core";
 import { FunctionalComponent, h, VNode } from "preact";
 import { AnastasisProvider } from "../context/anastasis";
@@ -222,7 +223,7 @@ export const reducerStatesExample = {
   challengeSolving: {
     ...base,
     recovery_state: RecoveryStates.ChallengeSolving,
-  } as ReducerState,
+  } as ReducerStateRecovery,
   challengePaying: {
     ...base,
     recovery_state: RecoveryStates.ChallengePaying,
