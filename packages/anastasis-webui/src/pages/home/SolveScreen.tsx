@@ -32,7 +32,7 @@ export function SolveOverviewFeedbackDisplay(props: {
           ]}
         />
       );
-    case ChallengeFeedbackStatus.AuthIban:
+    case ChallengeFeedbackStatus.IbanInstructions:
       return (
         <Notifications
           notifications={[

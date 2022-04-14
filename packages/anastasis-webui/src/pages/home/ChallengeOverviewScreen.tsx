@@ -16,7 +16,7 @@ function OverviewFeedbackDisplay(props: { feedback?: ChallengeFeedback }) {
   switch (feedback.state) {
     case ChallengeFeedbackStatus.Solved:
       return <div />;
-    case ChallengeFeedbackStatus.AuthIban:
+    case ChallengeFeedbackStatus.IbanInstructions:
       return null;
     case ChallengeFeedbackStatus.ServerFailure:
       return <div class="block has-text-danger">Server error.</div>;
@@ -173,7 +173,7 @@ export function ChallengeOverviewScreen(): VNode {
               case ChallengeFeedbackStatus.TruthUnknown:
               case ChallengeFeedbackStatus.RateLimitExceeded:
                 return <div />;
-              case ChallengeFeedbackStatus.AuthIban:
+              case ChallengeFeedbackStatus.IbanInstructions:
               case ChallengeFeedbackStatus.TalerPayment:
                 return (
                   <div>

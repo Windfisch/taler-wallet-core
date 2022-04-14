@@ -250,7 +250,7 @@ export const OnePolicyWithAllTheChallengesInDifferentState = createExample(
     challenge_feedback: {
       "uuid-1": { state: ChallengeFeedbackStatus.Solved.toString() },
       "uuid-3": {
-        state: ChallengeFeedbackStatus.AuthIban.toString(),
+        state: ChallengeFeedbackStatus.IbanInstructions.toString(),
         challenge_amount: "EUR:1",
         target_iban: "DE12345789000",
         target_business_name: "Data Loss Incorporated",

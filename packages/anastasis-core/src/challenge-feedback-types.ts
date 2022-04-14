@@ -28,7 +28,7 @@ export enum ChallengeFeedbackStatus {
   TalerPayment = "taler-payment",
   Unsupported = "unsupported",
   RateLimitExceeded = "rate-limit-exceeded",
-  AuthIban = "auth-iban",
+  IbanInstructions = "iban-instructions",
   IncorrectAnswer = "incorrect-answer",
 }
 
@@ -93,7 +93,7 @@ export interface ChallengeFeedbackRateLimitExceeded {
  * IBAN bank transfer.
  */
 export interface ChallengeFeedbackBankTransferRequired {
-  state: ChallengeFeedbackStatus.AuthIban;
+  state: ChallengeFeedbackStatus.IbanInstructions;
 
   /**
    * Amount that should be transfered for a successful authentication.

@@ -1,3 +1,22 @@
+/*
+ This file is part of GNU Anastasis
+ (C) 2021-2022 Anastasis SARL
+
+ GNU Anastasis is free software; you can redistribute it and/or modify it under the
+ terms of the GNU Affero General Public License as published by the Free Software
+ Foundation; either version 3, or (at your option) any later version.
+
+ GNU Anastasis is distributed in the hope that it will be useful, but WITHOUT ANY
+ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License along with
+ GNU Anastasis; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+ */
+
+/**
+ * Imports.
+ */
 import {
   AmountJson,
   AmountLike,
@@ -22,6 +41,7 @@ import {
   TalerSignaturePurpose,
   AbsoluteTime,
   URL,
+  j2s,
 } from "@gnu-taler/taler-util";
 import { anastasisData } from "./anastasis-data.js";
 import {
@@ -879,7 +899,7 @@ async function pollChallenges(
       );
       continue;
     }
-    if (feedback.state === ChallengeFeedbackStatus.AuthIban) {
+    if (feedback.state === ChallengeFeedbackStatus.IbanInstructions) {
       const s2 = await requestTruth(state, truth, {
         pin: feedback.answer_code,
       });
@@ -1080,7 +1100,7 @@ async function changeVersion(
 ): Promise<ReducerStateRecovery | ReducerStateError> {
   const st: ReducerStateRecovery = {
     ...state,
-    selected_version: args.selection,
+    selected_version: args,
   };
   return downloadPolicy(st);
 }
@@ -1147,9 +1167,10 @@ async function selectChallenge(
 
   if (resp.status === HttpStatusCode.Ok) {
     const respBodyJson = await resp.json();
+    logger.info(`validating ${j2s(respBodyJson)}`);
     const instr = codecForChallengeInstructionMessage().decode(respBodyJson);
     let feedback: ChallengeFeedback;
-    switch (instr.method) {
+    switch (instr.challenge_type) {
       case "FILE_WRITTEN": {
         feedback = {
           state: ChallengeFeedbackStatus.CodeInFile,
@@ -1160,12 +1181,12 @@ async function selectChallenge(
       }
       case "IBAN_WIRE": {
         feedback = {
-          state: ChallengeFeedbackStatus.AuthIban,
-          answer_code: instr.answer_code,
-          target_business_name: instr.business_name,
-          challenge_amount: instr.amount,
-          target_iban: instr.credit_iban,
-          wire_transfer_subject: instr.wire_transfer_subject,
+          state: ChallengeFeedbackStatus.IbanInstructions,
+          answer_code: instr.wire_details.answer_code,
+          target_business_name: instr.wire_details.business_name,
+          challenge_amount: instr.wire_details.challenge_amount,
+          target_iban: instr.wire_details.credit_iban,
+          wire_transfer_subject: instr.wire_details.wire_transfer_subject,
         };
         break;
       }

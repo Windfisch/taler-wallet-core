@@ -158,7 +158,7 @@ export const TruthUnknownFeedback = createExample(TestedComponent[type].solve, {
 } as ReducerState);
 
 const ibanFeedback: ChallengeFeedbackBankTransferRequired = {
-  state: ChallengeFeedbackStatus.AuthIban,
+  state: ChallengeFeedbackStatus.IbanInstructions,
   challenge_amount: "EUR:1",
   target_iban: "DE12345789000",
   target_business_name: "Data Loss Incorporated",

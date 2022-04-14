@@ -221,7 +221,7 @@ export interface ReducerStateRecovery {
   /**
    * Explicitly selected version by the user.
    */
-  selected_version?: AggregatedPolicyMetaInfo;
+  selected_version?: SelectedVersionInfo;
 
   challenge_feedback?: { [uuid: string]: ChallengeFeedback };
 
@@ -464,9 +464,15 @@ export interface ActionArgsUpdateExpiration {
   expiration: TalerProtocolTimestamp;
 }
 
-export interface ActionArgsChangeVersion {
-  selection: AggregatedPolicyMetaInfo;
+export interface SelectedVersionInfo {
+  attribute_mask: number;
+  providers: {
+    url: string;
+    version: number;
+  }[];
 }
+
+export type ActionArgsChangeVersion = SelectedVersionInfo;
 
 export interface ActionArgsUpdatePolicy {
   policy_index: number;
@@ -518,10 +524,8 @@ export interface DiscoveryResult {
   cursor?: DiscoveryCursor;
 }
 
-export const codecForActionArgsChangeVersion = () =>
-  buildCodecForObject<ActionArgsChangeVersion>()
-    .property("selection", codecForAny())
-    .build("ActionArgsChangeVersion");
+// FIXME: specify schema!
+export const codecForActionArgsChangeVersion = codecForAny;
 
 export const codecForPolicyMember = () =>
   buildCodecForObject<PolicyMember>()

@@ -20,6 +20,7 @@ import {
   buildCodecForUnion,
   Codec,
   codecForAmountString,
+  codecForAny,
   codecForConstString,
   codecForNumber,
   codecForString,
@@ -137,32 +138,34 @@ export type ChallengeInstructionMessage =
 
 export interface IbanChallengeInstructionMessage {
   // What kind of challenge is this?
-  method: "IBAN_WIRE";
+  challenge_type: "IBAN_WIRE";
 
-  // How much should be wired?
-  amount: AmountString;
+  wire_details: {
+    // How much should be wired?
+    challenge_amount: AmountString;
 
-  // What is the target IBAN?
-  credit_iban: string;
+    // What is the target IBAN?
+    credit_iban: string;
 
-  // What is the receiver name?
-  business_name: string;
+    // What is the receiver name?
+    business_name: string;
 
-  // What is the expected wire transfer subject?
-  wire_transfer_subject: string;
+    // What is the expected wire transfer subject?
+    wire_transfer_subject: string;
 
-  // What is the numeric code (also part of the
-  // wire transfer subject) to be hashed when
-  // solving the challenge?
-  answer_code: number;
+    // What is the numeric code (also part of the
+    // wire transfer subject) to be hashed when
+    // solving the challenge?
+    answer_code: number;
 
-  // Hint about the origin account that must be used.
-  debit_account_hint: string;
+    // Hint about the origin account that must be used.
+    debit_account_hint: string;
+  };
 }
 
 export interface PinChallengeInstructionMessage {
   // What kind of challenge is this?
-  method: "TAN_SENT";
+  challenge_type: "TAN_SENT";
 
   // Where was the PIN code sent? Note that this
   // address will most likely have been obscured
@@ -172,7 +175,7 @@ export interface PinChallengeInstructionMessage {
 
 export interface FileChallengeInstructionMessage {
   // What kind of challenge is this?
-  method: "FILE_WRITTEN";
+  challenge_type: "FILE_WRITTEN";
 
   // Name of the file where the PIN code was written.
   filename: string;
@@ -181,33 +184,28 @@ export interface FileChallengeInstructionMessage {
 export const codecForFileChallengeInstructionMessage =
   (): Codec<FileChallengeInstructionMessage> =>
     buildCodecForObject<FileChallengeInstructionMessage>()
-      .property("method", codecForConstString("FILE_WRITTEN"))
+      .property("challenge_type", codecForConstString("FILE_WRITTEN"))
       .property("filename", codecForString())
       .build("FileChallengeInstructionMessage");
 
 export const codecForPinChallengeInstructionMessage =
   (): Codec<PinChallengeInstructionMessage> =>
     buildCodecForObject<PinChallengeInstructionMessage>()
-      .property("method", codecForConstString("TAN_SENT"))
+      .property("challenge_type", codecForConstString("TAN_SENT"))
       .property("tan_address_hint", codecForString())
       .build("PinChallengeInstructionMessage");
 
 export const codecForIbanChallengeInstructionMessage =
   (): Codec<IbanChallengeInstructionMessage> =>
     buildCodecForObject<IbanChallengeInstructionMessage>()
-      .property("method", codecForConstString("IBAN_WIRE"))
-      .property("amount", codecForAmountString())
-      .property("business_name", codecForString())
-      .property("credit_iban", codecForString())
-      .property("wire_transfer_subject", codecForString())
-      .property("answer_code", codecForNumber())
-      .property("debit_account_hint", codecForString())
+      .property("challenge_type", codecForConstString("IBAN_WIRE"))
+      .property("wire_details", codecForAny())
       .build("IbanChallengeInstructionMessage");
 
 export const codecForChallengeInstructionMessage =
   (): Codec<ChallengeInstructionMessage> =>
     buildCodecForUnion<ChallengeInstructionMessage>()
-      .discriminateOn("method")
+      .discriminateOn("challenge_type")
       .alternative("FILE_WRITTEN", codecForFileChallengeInstructionMessage())
       .alternative("IBAN_WIRE", codecForIbanChallengeInstructionMessage())
       .alternative("TAN_SENT", codecForPinChallengeInstructionMessage())
