@@ -222,6 +222,7 @@ export const reducerStatesExample = {
   } as ReducerState,
   challengeSolving: {
     ...base,
+    reducer_type: "recovery",
     recovery_state: RecoveryStates.ChallengeSolving,
   } as ReducerStateRecovery,
   challengePaying: {

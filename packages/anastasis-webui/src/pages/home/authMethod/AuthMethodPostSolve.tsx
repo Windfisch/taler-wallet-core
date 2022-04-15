@@ -7,6 +7,7 @@ import { useState } from "preact/hooks";
 import { AsyncButton } from "../../../components/AsyncButton";
 import { TextInput } from "../../../components/fields/TextInput";
 import { useAnastasisContext } from "../../../context/anastasis";
+import { useTranslator } from "../../../i18n";
 import { AnastasisClientFrame } from "../index";
 import { SolveOverviewFeedbackDisplay } from "../SolveScreen";
 import { shouldHideConfirm } from "./helpers";
@@ -30,11 +31,12 @@ export function AuthMethodPostSolve({ id }: AuthMethodSolveProps): VNode {
       result += `-${unformatted.substring(8, 12)}`;
     }
     if (unformatted.length > 12) {
-      result += `-${unformatted.substring(12, 16)}`;
+      result += `-${unformatted.substring(12)}`;
     }
 
     _setAnswer(result);
   }
+  const i18n = useTranslator();
 
   const reducer = useAnastasisContext();
   if (!reducer) {
@@ -103,6 +105,11 @@ export function AuthMethodPostSolve({ id }: AuthMethodSolveProps): VNode {
     reducer?.back();
   }
 
+  const error =
+    answer.length > 21
+      ? i18n`The answer should not be greater than 21 characters.`
+      : undefined;
+
   return (
     <AnastasisClientFrame hideNav title="Postal Challenge">
       <SolveOverviewFeedbackDisplay feedback={feedback} />
@@ -112,6 +119,7 @@ export function AuthMethodPostSolve({ id }: AuthMethodSolveProps): VNode {
         label="Answer"
         grabFocus
         placeholder="A-12345-678-1234-5678"
+        error={error}
         bind={[answer, setAnswer]}
       />
 
@@ -126,7 +134,11 @@ export function AuthMethodPostSolve({ id }: AuthMethodSolveProps): VNode {
           Cancel
         </button>
         {!shouldHideConfirm(feedback) && (
-          <AsyncButton class="button is-info" onClick={onNext}>
+          <AsyncButton
+            class="button is-info"
+            onClick={onNext}
+            disabled={!!error}
+          >
             Confirm
           </AsyncButton>
         )}

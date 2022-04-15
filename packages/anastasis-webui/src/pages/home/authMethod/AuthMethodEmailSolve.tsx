@@ -17,14 +17,13 @@
 /**
  * Imports.
  */
-import {
-  ChallengeInfo,
-} from "@gnu-taler/anastasis-core";
+import { ChallengeInfo } from "@gnu-taler/anastasis-core";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { AsyncButton } from "../../../components/AsyncButton";
 import { TextInput } from "../../../components/fields/TextInput";
 import { useAnastasisContext } from "../../../context/anastasis";
+import { useTranslator } from "../../../i18n";
 import { AnastasisClientFrame } from "../index";
 import { SolveOverviewFeedbackDisplay } from "../SolveScreen";
 import { shouldHideConfirm } from "./helpers";
@@ -48,12 +47,13 @@ export function AuthMethodEmailSolve({ id }: AuthMethodSolveProps): VNode {
       result += `-${unformatted.substring(8, 12)}`;
     }
     if (unformatted.length > 12) {
-      result += `-${unformatted.substring(12, 16)}`;
+      result += `-${unformatted.substring(12)}`;
     }
 
     _setAnswer(result);
   }
   const [expanded, setExpanded] = useState(false);
+  const i18n = useTranslator();
 
   const reducer = useAnastasisContext();
   if (!reducer) {
@@ -66,7 +66,7 @@ export function AuthMethodEmailSolve({ id }: AuthMethodSolveProps): VNode {
   if (reducer.currentReducerState?.reducer_type !== "recovery") {
     return (
       <AnastasisClientFrame hideNav title="Recovery problem">
-        <div>invalid state</div>
+        <div>invalid state, no recovery state</div>
       </AnastasisClientFrame>
     );
   }
@@ -84,7 +84,7 @@ export function AuthMethodEmailSolve({ id }: AuthMethodSolveProps): VNode {
   if (!reducer.currentReducerState.selected_challenge_uuid) {
     return (
       <AnastasisClientFrame hideNav title="Recovery problem">
-        <div>invalid state</div>
+        <div>invalid state, no challenge id</div>
         <div
           style={{
             marginTop: "2em",
@@ -121,6 +121,11 @@ export function AuthMethodEmailSolve({ id }: AuthMethodSolveProps): VNode {
   function onCancel(): void {
     reducer?.back();
   }
+
+  const error =
+    answer.length > 21
+      ? i18n`The answer should not be greater than 21 characters.`
+      : undefined;
 
   return (
     <AnastasisClientFrame hideNav title="Email challenge">
@@ -160,6 +165,7 @@ export function AuthMethodEmailSolve({ id }: AuthMethodSolveProps): VNode {
         grabFocus
         onConfirm={onNext}
         bind={[answer, setAnswer]}
+        error={error}
         placeholder="A-12345-678-1234-5678"
       />
 
@@ -174,7 +180,11 @@ export function AuthMethodEmailSolve({ id }: AuthMethodSolveProps): VNode {
           Cancel
         </button>
         {!shouldHideConfirm(feedback) && (
-          <AsyncButton class="button is-info" onClick={onNext}>
+          <AsyncButton
+            class="button is-info"
+            onClick={onNext}
+            disabled={!!error}
+          >
             Confirm
           </AsyncButton>
         )}
