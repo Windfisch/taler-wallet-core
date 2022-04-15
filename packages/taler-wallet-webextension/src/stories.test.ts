@@ -21,6 +21,8 @@
 import * as popup from "./popup/index.stories.js";
 import * as wallet from "./wallet/index.stories.js";
 import * as mui from "./mui/index.stories.js";
+import * as cta from "./cta/index.stories.js";
+import * as components from "./components/index.stories.js";
 
 import { setupI18n } from "@gnu-taler/taler-util";
 import { renderNodeOrBrowser } from "./test-utils.js";
@@ -40,7 +42,7 @@ function testThisStory(st: any): any {
 }
 
 describe("render every storybook example", () => {
-  [popup, wallet, mui].forEach(function testAll(st: any) {
+  [popup, wallet, cta, mui, components].forEach(function testAll(st: any) {
     if (Array.isArray(st.default)) {
       st.default.forEach(testAll)
     } else {

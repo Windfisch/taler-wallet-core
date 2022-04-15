@@ -17,6 +17,10 @@ import { Fragment, VNode, h } from "preact";
 import { useState } from "preact/hooks";
 
 export function ExchangeXmlTos({ doc }: { doc: Document }): VNode {
+  if (typeof window === "undefined") {
+    // in nodejs env we don't have xml api
+    return <div />;
+  }
   const termsNode = doc.querySelector("[ids=terms-of-service]");
   if (!termsNode) {
     return (

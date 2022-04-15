@@ -60,11 +60,19 @@ export const ReviewingHTML = createExample(TestedComponent, {
 });
 
 function toBase64(str: string): string {
-  return btoa(
-    encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
+  const encoded = encodeURIComponent(str).replace(
+    /%([0-9A-F]{2})/g,
+    function (match, p1) {
       return String.fromCharCode(parseInt(p1, 16));
-    }),
+    },
   );
+  if (typeof btoa === "undefined") {
+    //nodejs
+    return Buffer.from(encoded).toString("base64");
+  } else {
+    //browser
+    return btoa(encoded);
+  }
 }
 
 export const ReviewingPDF = createExample(TestedComponent, {
