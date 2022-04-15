@@ -21,6 +21,7 @@ import { TalerErrorCode } from "@gnu-taler/taler-util";
 import {
   AggregatedPolicyMetaInfo,
   BackupStates,
+  completeProviderStatus,
   discoverPolicies,
   DiscoveryCursor,
   getBackupStartState,
@@ -206,6 +207,44 @@ export function useAnastasisReducer(): AnastasisReducerApi {
       console.log(e);
     }
     setAnastasisStateInternal(newState);
+
+    const tryUpdateProviders = () => {
+      const reducerState = newState.reducerState;
+      if (
+        reducerState?.reducer_type !== "backup" &&
+        reducerState?.reducer_type !== "recovery"
+      ) {
+        return;
+      }
+      const provMap = reducerState.authentication_providers;
+      if (!provMap) {
+        return;
+      }
+      const doUpdate = async () => {
+        const updates = await completeProviderStatus(provMap);
+        if (Object.keys(updates).length === 0) {
+          return;
+        }
+        console.log("got provider updates", updates);
+        const rs2 = reducerState;
+        if (rs2.reducer_type !== "backup" && rs2.reducer_type !== "recovery") {
+          return;
+        }
+        setAnastasisState({
+          ...anastasisState,
+          reducerState: {
+            ...rs2,
+            authentication_providers: {
+              ...rs2.authentication_providers,
+              ...updates,
+            },
+          },
+        });
+      };
+      doUpdate().catch((e) => console.log(e));
+    };
+
+    tryUpdateProviders();
   };
 
   async function doTransition(action: string, args: any): Promise<void> {

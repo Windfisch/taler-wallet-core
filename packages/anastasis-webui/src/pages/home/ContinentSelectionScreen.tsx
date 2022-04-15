@@ -37,7 +37,6 @@ export function ContinentSelectionScreen(): VNode {
     if (!theCountry) return;
     reducer.transition("select_country", {
       country_code: countryCode,
-      currencies: [theCountry.currency],
     });
   };
 

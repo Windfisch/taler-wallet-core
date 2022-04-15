@@ -61,7 +61,6 @@ import {
   getRetryDuration,
   resetRetryInfo,
   RetryInfo,
-  updateRetryInfoTimeout,
 } from "../util/retries.js";
 import {
   getExchangeDetails,

@@ -94,6 +94,7 @@ import {
   PolicyMetaInfo,
   ChallengeInfo,
   AggregatedPolicyMetaInfo,
+  AuthenticationProviderStatusMap,
 } from "./reducer-types.js";
 import fetchPonyfill from "fetch-ponyfill";
 import {
@@ -329,15 +330,9 @@ async function backupEnterUserAttributes(
   args: ActionArgsEnterUserAttributes,
 ): Promise<ReducerStateBackup> {
   const attributes = args.identity_attributes;
-  const providerUrls = Object.keys(state.authentication_providers ?? {});
-  const newProviders = state.authentication_providers ?? {};
-  for (const url of providerUrls) {
-    newProviders[url] = await getProviderInfo(url);
-  }
   const newState = {
     ...state,
     backup_state: BackupStates.AuthenticationsEditing,
-    authentication_providers: newProviders,
     identity_attributes: attributes,
   };
   return newState;
@@ -733,15 +728,23 @@ async function uploadSecret(
 async function downloadPolicy(
   state: ReducerStateRecovery,
 ): Promise<ReducerStateRecovery | ReducerStateError> {
+  logger.info("downloading policy");
   let foundRecoveryInfo: RecoveryInternalData | undefined = undefined;
   let recoveryDoc: RecoveryDocument | undefined = undefined;
   const userAttributes = state.identity_attributes!;
   if (!state.selected_version) {
     throw Error("invalid state");
   }
+  // FIXME: Do this concurrently/asynchronously so that one slow provider doens't block us.
   for (const prov of state.selected_version.providers) {
-    const pi = state.authentication_providers?.[prov.url];
+    let pi = state.authentication_providers?.[prov.url];
     if (!pi || pi.status !== "ok") {
+      // FIXME: this one blocks!
+      logger.info(`fetching provider info for ${prov.url}`);
+      pi = await getProviderInfo(prov.url);
+    }
+    logger.info(`new provider status is ${pi.status}`);
+    if (pi.status !== "ok") {
       continue;
     }
     const userId = await userIdentifierDerive(userAttributes, pi.provider_salt);
@@ -750,6 +753,9 @@ async function downloadPolicy(
     reqUrl.searchParams.set("version", `${prov.version}`);
     const resp = await fetch(reqUrl.href);
     if (resp.status !== 200) {
+      logger.info(
+        `Could not download policy from provider ${prov.url}, status ${resp.status}`,
+      );
       continue;
     }
     const body = await resp.arrayBuffer();
@@ -1058,16 +1064,10 @@ async function recoveryEnterUserAttributes(
   args: ActionArgsEnterUserAttributes,
 ): Promise<ReducerStateRecovery | ReducerStateError> {
   // FIXME: validate attributes
-  const providerUrls = Object.keys(state.authentication_providers ?? {});
-  const newProviders = state.authentication_providers ?? {};
-  for (const url of providerUrls) {
-    newProviders[url] = await getProviderInfo(url);
-  }
   const st: ReducerStateRecovery = {
     ...state,
     recovery_state: RecoveryStates.SecretSelecting,
     identity_attributes: args.identity_attributes,
-    authentication_providers: newProviders,
   };
   return st;
 }
@@ -1514,7 +1514,7 @@ async function nextFromChallengeSelecting(
   };
 }
 
-async function syncProviders(
+async function syncAllProvidersTransition(
   state: ReducerStateRecovery,
   args: void,
 ): Promise<ReducerStateRecovery | ReducerStateError> {
@@ -1722,7 +1722,7 @@ const recoveryTransitions: Record<
     ),
     ...transition("poll", codecForAny(), pollChallenges),
     ...transition("next", codecForAny(), nextFromChallengeSelecting),
-    ...transition("sync_providers", codecForAny(), syncProviders),
+    ...transition("sync_providers", codecForAny(), syncAllProvidersTransition),
   },
   [RecoveryStates.ChallengeSolving]: {
     ...transitionRecoveryJump("back", RecoveryStates.ChallengeSelecting),
@@ -1746,6 +1746,7 @@ export async function discoverPolicies(
 
   const providerUrls = Object.keys(state.authentication_providers || {});
   // FIXME: Do we need to re-contact providers here / check if they're disabled?
+  // FIXME: Do this concurrently and take the first.  Otherwise, one provider might block for a long time.
 
   for (const providerUrl of providerUrls) {
     const providerInfo = await getProviderInfo(providerUrl);
@@ -1838,4 +1839,44 @@ export async function reduceAction(
     }
     throw e;
   }
+}
+
+/**
+ * Update provider status of providers that we still need to contact.
+ *
+ * Returns updates as soon as new information about at least one provider
+ * is found.
+ *
+ * Returns an empty object if provider information is complete.
+ *
+ * FIXME: Also pass a cancelation token.
+ */
+export async function completeProviderStatus(
+  providerMap: AuthenticationProviderStatusMap,
+): Promise<AuthenticationProviderStatusMap> {
+  const updateTasks: Promise<[string, AuthenticationProviderStatus]>[] = [];
+  for (const [provUrl, pi] of Object.entries(providerMap)) {
+    switch (pi.status) {
+      case "ok":
+      case "error":
+      case "disabled":
+      default:
+        continue;
+      case "not-contacted":
+        updateTasks.push(
+          (async () => {
+            return [provUrl, await getProviderInfo(provUrl)];
+          })(),
+        );
+    }
+  }
+
+  if (updateTasks.length === 0) {
+    return {};
+  }
+
+  const [firstUrl, firstStatus] = await Promise.race(updateTasks);
+  return {
+    [firstUrl]: firstStatus,
+  };
 }

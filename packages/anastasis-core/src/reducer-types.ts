@@ -186,6 +186,10 @@ export interface RecoveryInformation {
   }[][];
 }
 
+export interface AuthenticationProviderStatusMap {
+  [url: string]: AuthenticationProviderStatus;
+}
+
 export interface ReducerStateRecovery {
   reducer_type: "recovery";
 
@@ -231,7 +235,7 @@ export interface ReducerStateRecovery {
     value: string;
   };
 
-  authentication_providers?: { [url: string]: AuthenticationProviderStatus };
+  authentication_providers?: AuthenticationProviderStatusMap;
 }
 
 /**
@@ -342,7 +346,7 @@ export interface ReducerStateBackupUserAttributesCollecting
   selected_country: string;
   currencies: string[];
   required_attributes: UserAttributeSpec[];
-  authentication_providers: { [url: string]: AuthenticationProviderStatus };
+  authentication_providers: AuthenticationProviderStatusMap;
 }
 
 export interface ActionArgsEnterUserAttributes {
