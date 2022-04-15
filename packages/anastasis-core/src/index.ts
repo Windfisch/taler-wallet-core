@@ -721,6 +721,65 @@ async function uploadSecret(
   };
 }
 
+interface PolicyDownloadResult {
+  recoveryDoc: RecoveryDocument;
+  recoveryData: RecoveryInternalData;
+}
+
+async function downloadPolicyFromProvider(
+  state: ReducerStateRecovery,
+  providerUrl: string,
+  version: number,
+): Promise<PolicyDownloadResult | undefined> {
+  logger.info(`trying to download policy from ${providerUrl}`);
+  const userAttributes = state.identity_attributes!;
+  let pi = state.authentication_providers?.[providerUrl];
+  if (!pi || pi.status !== "ok") {
+    // FIXME: this one blocks!
+    logger.info(`fetching provider info for ${providerUrl}`);
+    pi = await getProviderInfo(providerUrl);
+  }
+  logger.info(`new provider status is ${pi.status}`);
+  if (pi.status !== "ok") {
+    return undefined;
+  }
+  const userId = await userIdentifierDerive(userAttributes, pi.provider_salt);
+  const acctKeypair = accountKeypairDerive(userId);
+  const reqUrl = new URL(`policy/${acctKeypair.pub}`, providerUrl);
+  reqUrl.searchParams.set("version", `${version}`);
+  const resp = await fetch(reqUrl.href);
+  if (resp.status !== 200) {
+    logger.info(
+      `Could not download policy from provider ${providerUrl}, status ${resp.status}`,
+    );
+    return undefined;
+  }
+  const body = await resp.arrayBuffer();
+  const bodyDecrypted = await decryptRecoveryDocument(
+    userId,
+    encodeCrock(body),
+  );
+  const rd: RecoveryDocument = await uncompressRecoveryDoc(
+    decodeCrock(bodyDecrypted),
+  );
+  // FIXME: Not clear why we do this, since we always have an explicit version by now.
+  let policyVersion = 0;
+  try {
+    policyVersion = Number(resp.headers.get("Anastasis-Version") ?? "0");
+  } catch (e) {
+    logger.warn("Could not read policy version header");
+    policyVersion = version;
+  }
+  return {
+    recoveryDoc: rd,
+    recoveryData: {
+      provider_url: providerUrl,
+      secret_name: rd.secret_name ?? "<unknown>",
+      version: policyVersion,
+    },
+  };
+}
+
 /**
  * Download policy based on current user attributes and selected
  * version in the state.
@@ -729,56 +788,19 @@ async function downloadPolicy(
   state: ReducerStateRecovery,
 ): Promise<ReducerStateRecovery | ReducerStateError> {
   logger.info("downloading policy");
-  let foundRecoveryInfo: RecoveryInternalData | undefined = undefined;
-  let recoveryDoc: RecoveryDocument | undefined = undefined;
-  const userAttributes = state.identity_attributes!;
   if (!state.selected_version) {
     throw Error("invalid state");
   }
+  let policyDownloadResult: PolicyDownloadResult | undefined = undefined;
   // FIXME: Do this concurrently/asynchronously so that one slow provider doens't block us.
   for (const prov of state.selected_version.providers) {
-    let pi = state.authentication_providers?.[prov.url];
-    if (!pi || pi.status !== "ok") {
-      // FIXME: this one blocks!
-      logger.info(`fetching provider info for ${prov.url}`);
-      pi = await getProviderInfo(prov.url);
+    const res = await downloadPolicyFromProvider(state, prov.url, prov.version);
+    if (res) {
+      policyDownloadResult = res;
+      break;
     }
-    logger.info(`new provider status is ${pi.status}`);
-    if (pi.status !== "ok") {
-      continue;
-    }
-    const userId = await userIdentifierDerive(userAttributes, pi.provider_salt);
-    const acctKeypair = accountKeypairDerive(userId);
-    const reqUrl = new URL(`policy/${acctKeypair.pub}`, prov.url);
-    reqUrl.searchParams.set("version", `${prov.version}`);
-    const resp = await fetch(reqUrl.href);
-    if (resp.status !== 200) {
-      logger.info(
-        `Could not download policy from provider ${prov.url}, status ${resp.status}`,
-      );
-      continue;
-    }
-    const body = await resp.arrayBuffer();
-    const bodyDecrypted = await decryptRecoveryDocument(
-      userId,
-      encodeCrock(body),
-    );
-    const rd: RecoveryDocument = await uncompressRecoveryDoc(
-      decodeCrock(bodyDecrypted),
-    );
-    let policyVersion = 0;
-    try {
-      policyVersion = Number(resp.headers.get("Anastasis-Version") ?? "0");
-    } catch (e) {}
-    foundRecoveryInfo = {
-      provider_url: prov.url,
-      secret_name: rd.secret_name ?? "<unknown>",
-      version: policyVersion,
-    };
-    recoveryDoc = rd;
-    break;
   }
-  if (!foundRecoveryInfo || !recoveryDoc) {
+  if (!policyDownloadResult) {
     return {
       reducer_type: "error",
       code: TalerErrorCode.ANASTASIS_REDUCER_POLICY_LOOKUP_FAILED,
@@ -787,14 +809,10 @@ async function downloadPolicy(
   }
 
   const challenges: ChallengeInfo[] = [];
+  const recoveryDoc = policyDownloadResult.recoveryDoc;
 
   for (const x of recoveryDoc.escrow_methods) {
-    const pi = state.authentication_providers?.[x.url];
-    if (!pi || pi.status !== "ok") {
-      continue;
-    }
     challenges.push({
-      cost: pi.methods.find((m) => m.type === x.escrow_type)?.usage_fee!,
       instructions: x.instructions,
       type: x.escrow_type,
       uuid: x.uuid,
@@ -814,7 +832,7 @@ async function downloadPolicy(
   return {
     ...state,
     recovery_state: RecoveryStates.ChallengeSelecting,
-    recovery_document: foundRecoveryInfo,
+    recovery_document: policyDownloadResult.recoveryData,
     recovery_information: recoveryInfo,
     verbatim_recovery_document: recoveryDoc,
   };
@@ -1276,7 +1294,6 @@ function transitionRecoveryJump(
   };
 }
 
-//FIXME: doest the same that addProviderRecovery, but type are not generic enough
 async function addProviderBackup(
   state: ReducerStateBackup,
   args: ActionArgsAddProvider,
@@ -1291,7 +1308,6 @@ async function addProviderBackup(
   };
 }
 
-//FIXME: doest the same that deleteProviderRecovery, but type are not generic enough
 async function deleteProviderBackup(
   state: ReducerStateBackup,
   args: ActionArgsDeleteProvider,
@@ -1419,6 +1435,14 @@ async function nextFromAuthenticationsEditing(
     });
   }
   const pol = suggestPolicies(methods, providers);
+  if (pol.policies.length === 0) {
+    return {
+      reducer_type: "error",
+      code: TalerErrorCode.ANASTASIS_REDUCER_ACTION_INVALID,
+      detail:
+        "Unable to suggest any policies.  Check if providers are available and reachable.",
+    };
+  }
   return {
     ...state,
     backup_state: BackupStates.PoliciesReviewing,
@@ -1514,10 +1538,11 @@ async function nextFromChallengeSelecting(
   };
 }
 
-async function syncAllProvidersTransition(
+async function syncOneProviderRecoveryTransition(
   state: ReducerStateRecovery,
   args: void,
 ): Promise<ReducerStateRecovery | ReducerStateError> {
+  // FIXME: Should we not add this when we obtain the recovery document?
   const escrowMethods = state.verbatim_recovery_document?.escrow_methods ?? [];
   if (escrowMethods.length === 0) {
     return {
@@ -1538,6 +1563,56 @@ async function syncAllProvidersTransition(
       authentication_providers: {
         ...state.authentication_providers,
         [x.url]: newPi,
+      },
+    };
+  }
+
+  for (const [provUrl, pi] of Object.entries(
+    state.authentication_providers ?? {},
+  )) {
+    if (
+      pi.status === "ok" ||
+      pi.status === "disabled" ||
+      pi.status === "error"
+    ) {
+      continue;
+    }
+    const newPi = await getProviderInfo(provUrl);
+    return {
+      ...state,
+      authentication_providers: {
+        ...state.authentication_providers,
+        [provUrl]: newPi,
+      },
+    };
+  }
+  return {
+    reducer_type: "error",
+    code: TalerErrorCode.ANASTASIS_REDUCER_PROVIDERS_ALREADY_SYNCED,
+    hint: "all providers are already synced",
+  };
+}
+
+async function syncOneProviderBackupTransition(
+  state: ReducerStateBackup,
+  args: void,
+): Promise<ReducerStateBackup | ReducerStateError> {
+  for (const [provUrl, pi] of Object.entries(
+    state.authentication_providers ?? {},
+  )) {
+    if (
+      pi.status === "ok" ||
+      pi.status === "disabled" ||
+      pi.status === "error"
+    ) {
+      continue;
+    }
+    const newPi = await getProviderInfo(provUrl);
+    return {
+      ...state,
+      authentication_providers: {
+        ...state.authentication_providers,
+        [provUrl]: newPi,
       },
     };
   }
@@ -1630,6 +1705,11 @@ const backupTransitions: Record<
       codecForActionArgsEnterUserAttributes(),
       backupEnterUserAttributes,
     ),
+    ...transition(
+      "sync_providers",
+      codecForAny(),
+      syncOneProviderBackupTransition,
+    ),
   },
   [BackupStates.AuthenticationsEditing]: {
     ...transitionBackupJump("back", BackupStates.UserAttributesCollecting),
@@ -1637,6 +1717,11 @@ const backupTransitions: Record<
     ...transition("delete_authentication", codecForAny(), deleteAuthentication),
     ...transition("add_provider", codecForAny(), addProviderBackup),
     ...transition("delete_provider", codecForAny(), deleteProviderBackup),
+    ...transition(
+      "sync_providers",
+      codecForAny(),
+      syncOneProviderBackupTransition,
+    ),
     ...transition("next", codecForAny(), nextFromAuthenticationsEditing),
   },
   [BackupStates.PoliciesReviewing]: {
@@ -1722,7 +1807,11 @@ const recoveryTransitions: Record<
     ),
     ...transition("poll", codecForAny(), pollChallenges),
     ...transition("next", codecForAny(), nextFromChallengeSelecting),
-    ...transition("sync_providers", codecForAny(), syncAllProvidersTransition),
+    ...transition(
+      "sync_providers",
+      codecForAny(),
+      syncOneProviderRecoveryTransition,
+    ),
   },
   [RecoveryStates.ChallengeSolving]: {
     ...transitionRecoveryJump("back", RecoveryStates.ChallengeSelecting),

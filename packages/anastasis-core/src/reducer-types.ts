@@ -152,7 +152,6 @@ export interface AuthMethod {
 }
 
 export interface ChallengeInfo {
-  cost: string;
   instructions: string;
   type: string;
   uuid: string;
