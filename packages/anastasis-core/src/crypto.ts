@@ -32,6 +32,7 @@ import { argon2id } from "hash-wasm";
 export type Flavor<T, FlavorT extends string> = T & {
   _flavor?: `anastasis.${FlavorT}`;
 };
+
 export type FlavorP<T, FlavorT extends string, S extends number> = T & {
   _flavor?: `anastasis.${FlavorT}`;
   _size?: S;

@@ -2564,7 +2564,7 @@ function crypto_sign_keypair(
   return 0;
 }
 
-const L = new Float64Array([
+export const L = new Float64Array([
   0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde,
   0xf9, 0xde, 0x14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10,
 ]);
@@ -3044,4 +3044,86 @@ export function crypto_core_ed25519_scalar_sub(
   const o = new Uint8Array(32);
   modL(o, z);
   return o;
+}
+
+export function crypto_edx25519_private_key_create(): Uint8Array {
+  const seed = new Uint8Array(32);
+  randombytes(seed, 32);
+  return crypto_edx25519_private_key_create_from_seed(seed);
+}
+
+export function crypto_edx25519_private_key_create_from_seed(
+  seed: Uint8Array,
+): Uint8Array {
+  const pk = hash(seed);
+  pk[0] &= 248;
+  pk[31] &= 127;
+  pk[31] |= 64;
+  return pk;
+}
+
+export function crypto_edx25519_get_public(priv: Uint8Array): Uint8Array {
+  const pub = new Uint8Array(32);
+  if (0 != crypto_scalarmult_base_noclamp(pub.subarray(32), priv)) {
+    throw Error();
+  }
+  return pub;
+}
+
+export function crypto_edx25519_sign_detached(
+  m: Uint8Array,
+  skx: Uint8Array,
+  pkx: Uint8Array,
+): Uint8Array {
+  const n: number = m.length;
+  const d = new Uint8Array(64),
+    h = new Uint8Array(64),
+    r = new Uint8Array(64);
+  let i, j;
+  const x = new Float64Array(64);
+  const p = [gf(), gf(), gf(), gf()];
+
+  for (i = 0; i < 64; i++) d[i] = skx[i];
+
+  const sm = new Uint8Array(n + 64);
+
+  for (i = 0; i < n; i++) sm[64 + i] = m[i];
+  for (i = 0; i < 32; i++) sm[32 + i] = d[32 + i];
+
+  crypto_hash(r, sm.subarray(32), n + 32);
+  reduce(r);
+  scalarbase(p, r);
+  pack(sm, p);
+
+  for (i = 32; i < 64; i++) sm[i] = pkx[i - 32];
+  crypto_hash(h, sm, n + 64);
+  reduce(h);
+
+  for (i = 0; i < 64; i++) x[i] = 0;
+  for (i = 0; i < 32; i++) x[i] = r[i];
+  for (i = 0; i < 32; i++) {
+    for (j = 0; j < 32; j++) {
+      x[i + j] += h[i] * d[j];
+    }
+  }
+
+  modL(sm.subarray(32), x);
+  return sm.subarray(64);
+}
+
+export function crypto_edx25519_sign_detached_verify(
+  msg: Uint8Array,
+  sig: Uint8Array,
+  publicKey: Uint8Array,
+): boolean {
+  checkArrayTypes(msg, sig, publicKey);
+  if (sig.length !== crypto_sign_BYTES) throw new Error("bad signature size");
+  if (publicKey.length !== crypto_sign_PUBLICKEYBYTES)
+    throw new Error("bad public key size");
+  const sm = new Uint8Array(crypto_sign_BYTES + msg.length);
+  const m = new Uint8Array(crypto_sign_BYTES + msg.length);
+  let i;
+  for (i = 0; i < crypto_sign_BYTES; i++) sm[i] = sig[i];
+  for (i = 0; i < msg.length; i++) sm[i + crypto_sign_BYTES] = msg[i];
+  return crypto_sign_open(m, sm, sm.length, publicKey) >= 0;
 }

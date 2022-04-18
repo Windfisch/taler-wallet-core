@@ -23,30 +23,30 @@ export type PaytoUri =
   | PaytoUriTalerBank
   | PaytoUriBitcoin;
 
-interface PaytoUriGeneric {
+export interface PaytoUriGeneric {
   targetType: string;
   targetPath: string;
   params: { [name: string]: string };
 }
 
-interface PaytoUriUnknown extends PaytoUriGeneric {
+export interface PaytoUriUnknown extends PaytoUriGeneric {
   isKnown: false;
 }
 
-interface PaytoUriIBAN extends PaytoUriGeneric {
+export interface PaytoUriIBAN extends PaytoUriGeneric {
   isKnown: true;
   targetType: "iban";
   iban: string;
 }
 
-interface PaytoUriTalerBank extends PaytoUriGeneric {
+export interface PaytoUriTalerBank extends PaytoUriGeneric {
   isKnown: true;
   targetType: "x-taler-bank";
   host: string;
   account: string;
 }
 
-interface PaytoUriBitcoin extends PaytoUriGeneric {
+export interface PaytoUriBitcoin extends PaytoUriGeneric {
   isKnown: true;
   targetType: "bitcoin";
   generateSegwitAddress: (r: string) => { addr1: string; addr2: string };

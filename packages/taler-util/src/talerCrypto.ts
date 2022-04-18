@@ -583,6 +583,11 @@ export interface EcdheKeyPair {
   ecdhePriv: Uint8Array;
 }
 
+export interface Edx25519Keypair {
+  edxPub: string;
+  edxPriv: string;
+}
+
 export function createEddsaKeyPair(): EddsaKeyPair {
   const eddsaPriv = nacl.randomBytes(32);
   const eddsaPub = eddsaGetPublic(eddsaPriv);
@@ -786,4 +791,97 @@ export class SignaturePurposeBuilder {
 
 export function buildSigPS(purposeNum: number): SignaturePurposeBuilder {
   return new SignaturePurposeBuilder(purposeNum);
+}
+
+export type Flavor<T, FlavorT extends string> = T & {
+  _flavor?: `taler.${FlavorT}`;
+};
+
+export type FlavorP<T, FlavorT extends string, S extends number> = T & {
+  _flavor?: `taler.${FlavorT}`;
+  _size?: S;
+};
+
+export type OpaqueData = Flavor<string, "OpaqueData">;
+export type Edx25519PublicKey = FlavorP<string, "Edx25519PublicKey", 32>;
+export type Edx25519PrivateKey = FlavorP<string, "Edx25519PrivateKey", 64>;
+export type Edx25519Signature = FlavorP<string, "Edx25519Signature", 64>;
+
+export namespace Edx25519 {
+  const revL = [
+    0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2,
+    0xde, 0xf9, 0xde, 0x14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10,
+  ];
+
+  const L = bigint.fromArray(revL.reverse(), 256, false);
+
+  export async function keyCreateFromSeed(
+    seed: OpaqueData,
+  ): Promise<Edx25519PrivateKey> {
+    return encodeCrock(
+      nacl.crypto_edx25519_private_key_create_from_seed(decodeCrock(seed)),
+    );
+  }
+
+  export async function keyCreate(): Promise<Edx25519PrivateKey> {
+    return encodeCrock(nacl.crypto_edx25519_private_key_create());
+  }
+
+  export async function getPublic(
+    priv: Edx25519PrivateKey,
+  ): Promise<Edx25519PublicKey> {
+    return encodeCrock(nacl.crypto_edx25519_get_public(decodeCrock(priv)));
+  }
+
+  export function sign(
+    msg: OpaqueData,
+    key: Edx25519PrivateKey,
+  ): Promise<Edx25519Signature> {
+    throw Error("not implemented");
+  }
+
+  async function deriveFactor(
+    pub: Edx25519PublicKey,
+    seed: OpaqueData,
+  ): Promise<OpaqueData> {
+    const res = kdfKw({
+      outputLength: 64,
+      salt: stringToBytes("edx2559-derivation"),
+      ikm: decodeCrock(pub),
+      info: decodeCrock(seed),
+    });
+
+    return encodeCrock(res);
+  }
+
+  export async function privateKeyDerive(
+    priv: Edx25519PrivateKey,
+    seed: OpaqueData,
+  ): Promise<Edx25519PrivateKey> {
+    const pub = await getPublic(priv);
+    const privDec = decodeCrock(priv);
+    const privA = privDec.subarray(0, 32).reverse();
+    const a = bigint.fromArray(Array.from(privA), 256, false);
+
+    const factorBuf = await deriveFactor(pub, seed);
+
+    const factor = bigint.fromArray(Array.from(factorBuf), 256, false);
+
+    const aPrime = a.divide(8).multiply(factor).multiply(8);
+
+    const bPrime = nacl.hash(
+      typedArrayConcat([privDec.subarray(32, 64), decodeCrock(factorBuf)]),
+    );
+
+    Uint8Array.from(aPrime.toArray(256).value)
+
+    throw Error("not implemented");
+  }
+
+  export function publicKeyDerive(
+    priv: Edx25519PrivateKey,
+    seed: OpaqueData,
+  ): Promise<Edx25519PublicKey> {
+    throw Error("not implemented")
+  }
 }
