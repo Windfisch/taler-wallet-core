@@ -49,6 +49,7 @@ check:
 .PHONY: webextension
 webextension:
 	pnpm install --frozen-lockfile --filter @gnu-taler/taler-wallet-webextension...
+	pnpm run compile --filter @gnu-taler/taler-wallet-webextension...
 	cd ./packages/taler-wallet-webextension/ && ./pack.sh
 
 .PHONY: webextension-dev-view
