@@ -1036,7 +1036,7 @@ export async function getExchangeWithdrawalInfo(
   );
 
   let earliestDepositExpiration: TalerProtocolTimestamp | undefined;
-  for (let i = 1; i < selectedDenoms.selectedDenoms.length; i++) {
+  for (let i = 0; i < selectedDenoms.selectedDenoms.length; i++) {
     const ds = selectedDenoms.selectedDenoms[i];
     // FIXME: Do in one transaction!
     const denom = await ws.db
