@@ -1016,6 +1016,15 @@ export async function getExchangeWithdrawalInfo(
     instructedAmount,
     denoms,
   );
+
+  if (selectedDenoms.selectedDenoms.length === 0) {
+    throw Error(
+      `unable to withdraw from ${exchangeBaseUrl}, can't select denominations for instructed amount (${Amounts.stringify(
+        instructedAmount,
+      )}`,
+    );
+  }
+
   const exchangeWireAccounts: string[] = [];
   for (const account of exchangeDetails.wireInfo.accounts) {
     exchangeWireAccounts.push(account.payto_uri);

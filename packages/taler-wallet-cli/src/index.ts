@@ -45,6 +45,7 @@ import {
   rsaBlind,
   LogLevel,
   setGlobalLogLevelFromString,
+  parsePaytoUri,
 } from "@gnu-taler/taler-util";
 import {
   NodeHttpLib,
@@ -740,6 +741,18 @@ advancedCli
   .action((args) => {
     const enc = fs.readFileSync(0, "utf8");
     fs.writeFileSync(1, decodeCrock(enc.trim()));
+  });
+
+advancedCli
+  .subcommand("genSegwit", "gen-segwit")
+  .requiredArgument("paytoUri", clk.STRING)
+  .requiredArgument("reservePub", clk.STRING)
+  .action(async (args) => {
+    const p = parsePaytoUri(args.genSegwit.paytoUri);
+    if (p?.isKnown && p?.targetType === "bitcoin") {
+      p.generateSegwitAddress(args.genSegwit.reservePub);
+    }
+    console.log(p);
   });
 
 advancedCli
