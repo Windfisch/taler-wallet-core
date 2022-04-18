@@ -64,10 +64,10 @@ export function generateFakeSegwitAddress(
     addr[0] === "t" && addr[1] == "b"
       ? "tb"
       : addr[0] === "b" && addr[1] == "c" && addr[2] === "r" && addr[3] == "t"
-      ? "bcrt"
-      : addr[0] === "b" && addr[1] == "c"
-      ? "bc"
-      : undefined;
+        ? "bcrt"
+        : addr[0] === "b" && addr[1] == "c"
+          ? "bc"
+          : undefined;
   if (prefix === undefined) throw new Error("unknown bitcoin net");
 
   return {
@@ -77,6 +77,6 @@ export function generateFakeSegwitAddress(
 }
 
 // https://github.com/bitcoin/bitcoin/blob/master/src/policy/policy.cpp
-export function segwitMinAmount(): AmountJson {
-  return Amounts.parseOrThrow("BTC:0.00000294");
+export function segwitMinAmount(currency: string): AmountJson {
+  return Amounts.parseOrThrow(`${currency}:0.00000294`);
 }
