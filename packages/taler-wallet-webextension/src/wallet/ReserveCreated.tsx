@@ -1,10 +1,4 @@
-import {
-  AmountJson,
-  Amounts,
-  PaytoUri,
-  segwitMinAmount,
-  stringifyPaytoUri,
-} from "@gnu-taler/taler-util";
+import { AmountJson, PaytoUri, stringifyPaytoUri } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { Amount } from "../components/Amount.js";
 import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType.js";
@@ -42,61 +36,10 @@ export function ReserveCreated({
   }
   function TransferDetails(): VNode {
     if (!paytoURI) return <Fragment />;
-    if (paytoURI.isKnown && paytoURI.targetType === "bitcoin") {
-      const min = segwitMinAmount();
-      return (
-        <section>
-          <p>
-            <i18n.Translate>
-              Bitcoin exchange need a transaction with 3 output, one output is
-              the exchange account and the other two are segwit fake address for
-              metadata with an minimum amount. Reserve pub : {reservePub}
-            </i18n.Translate>
-          </p>
-          <p>
-            <i18n.Translate>
-              In bitcoincore wallet use &apos;Add Recipient&apos; button to add
-              two additional recipient and copy addresses and amounts
-            </i18n.Translate>
-            <ul>
-              <li>
-                {paytoURI.targetPath} {Amounts.stringifyValue(amount)} BTC
-              </li>
-              <li>
-                {paytoURI.addr1} {Amounts.stringifyValue(min)} BTC
-              </li>
-              <li>
-                {paytoURI.addr2} {Amounts.stringifyValue(min)} BTC
-              </li>
-            </ul>
-            <i18n.Translate>
-              In Electrum wallet paste the following three lines in &apos;Pay
-              to&apos; field :
-            </i18n.Translate>
-            <ul>
-              <li>
-                {paytoURI.targetPath},{Amounts.stringifyValue(amount)}
-              </li>
-              <li>
-                {paytoURI.addr1},{Amounts.stringifyValue(min)}
-              </li>
-              <li>
-                {paytoURI.addr2},{Amounts.stringifyValue(min)}
-              </li>
-            </ul>
-            <i18n.Translate>
-              Make sure the amount show{" "}
-              {Amounts.stringifyValue(Amounts.sum([amount, min, min]).amount)}{" "}
-              BTC, else you have to change the base unit to BTC
-            </i18n.Translate>
-          </p>
-        </section>
-      );
-    }
     return (
       <section>
         <BankDetailsByPaytoType
-          amount={<Amount value={amount} />}
+          amount={amount}
           exchangeBaseUrl={exchangeBaseUrl}
           payto={paytoURI}
           subject={reservePub}

@@ -224,7 +224,7 @@ export function TransactionView({
           WithdrawalType.ManualTransfer ? (
             <Fragment>
               <BankDetailsByPaytoType
-                amount={<Amount value={transaction.amountRaw} />}
+                amount={Amounts.parseOrThrow(transaction.amountRaw)}
                 exchangeBaseUrl={transaction.exchangeBaseUrl}
                 payto={parsePaytoUri(
                   transaction.withdrawalDetails.exchangePaytoUris[0],

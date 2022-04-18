@@ -14,18 +14,24 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { PaytoUri } from "@gnu-taler/taler-util";
+import {
+  AmountJson,
+  Amounts,
+  PaytoUri,
+  segwitMinAmount,
+} from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { useTranslationContext } from "../context/translation.js";
 import { CopiedIcon, CopyIcon } from "../svg/index.js";
+import { Amount } from "./Amount.js";
 import { ButtonBox, TooltipRight } from "./styled/index.js";
 
 export interface BankDetailsProps {
   payto: PaytoUri | undefined;
   exchangeBaseUrl: string;
   subject: string;
-  amount: string | VNode;
+  amount: AmountJson;
 }
 
 export function BankDetailsByPaytoType({
@@ -35,8 +41,65 @@ export function BankDetailsByPaytoType({
   amount,
 }: BankDetailsProps): VNode {
   const { i18n } = useTranslationContext();
+  if (!payto) return <Fragment />;
 
-  const firstPart = !payto ? undefined : !payto.isKnown ? (
+  if (payto.isKnown && payto.targetType === "bitcoin") {
+    const min = segwitMinAmount(amount.currency);
+    if (typeof window !== "undefined") {
+      //FIXME: generate (and possibly save in db?) in wallet-core
+      payto.generateSegwitAddress(subject);
+    }
+    return (
+      <section style={{ textAlign: "left" }}>
+        <p>
+          <i18n.Translate>
+            Bitcoin exchange need a transaction with 3 output, one output is the
+            exchange account and the other two are segwit fake address for
+            metadata with an minimum amount. Reserve pub : {subject}
+          </i18n.Translate>
+        </p>
+        <p>
+          <i18n.Translate>
+            In bitcoincore wallet use &apos;Add Recipient&apos; button to add
+            two additional recipient and copy addresses and amounts
+          </i18n.Translate>
+          <ul>
+            <li>
+              {payto.targetPath} {Amounts.stringifyValue(amount)} BTC
+            </li>
+            <li>
+              {payto.addr1} {Amounts.stringifyValue(min)} BTC
+            </li>
+            <li>
+              {payto.addr2} {Amounts.stringifyValue(min)} BTC
+            </li>
+          </ul>
+          <i18n.Translate>
+            In Electrum wallet paste the following three lines in &apos;Pay
+            to&apos; field :
+          </i18n.Translate>
+          <ul>
+            <li>
+              {payto.targetPath},{Amounts.stringifyValue(amount)}
+            </li>
+            <li>
+              {payto.addr1},{Amounts.stringifyValue(min)}
+            </li>
+            <li>
+              {payto.addr2},{Amounts.stringifyValue(min)}
+            </li>
+          </ul>
+          <i18n.Translate>
+            Make sure the amount show{" "}
+            {Amounts.stringifyValue(Amounts.sum([amount, min, min]).amount)}{" "}
+            BTC, else you have to change the base unit to BTC
+          </i18n.Translate>
+        </p>
+      </section>
+    );
+  }
+
+  const firstPart = !payto.isKnown ? (
     <Row
       name={<i18n.Translate>Account</i18n.Translate>}
       value={payto.targetPath}
@@ -66,7 +129,7 @@ export function BankDetailsByPaytoType({
         />
         <Row
           name={<i18n.Translate>Chosen amount</i18n.Translate>}
-          value={amount}
+          value={<Amount value={amount} />}
         />
         <Row
           name={<i18n.Translate>Subject</i18n.Translate>}
