@@ -38,6 +38,10 @@ function buf2hex(buffer: Uint8Array) {
     .join("");
 }
 
+const hext2buf = (hexString: string) =>
+  new Uint8Array(hexString.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
+
+
 export function generateFakeSegwitAddress(
   reservePub: string,
   addr: string,
@@ -55,10 +59,8 @@ export function generateFakeSegwitAddress(
   first_part.set(first_rnd, 0);
   first_part.set(pub.subarray(0, 16), 4);
   const second_part = new Uint8Array(first_rnd.length + pub.length / 2);
-  second_part.set(first_rnd, 0);
+  second_part.set(second_rnd, 0);
   second_part.set(pub.subarray(16), 4);
-
-  console.log(first_part.length, second_part.length);
 
   const prefix =
     addr[0] === "t" && addr[1] == "b"
