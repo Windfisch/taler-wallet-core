@@ -266,8 +266,6 @@ export function selectForcedWithdrawalDenominations(
   denoms: DenominationRecord[],
   forcedDenomSel: ForcedDenomSel,
 ): DenomSelectionState {
-  let remaining = Amounts.copy(amountAvailable);
-
   const selectedDenoms: {
     count: number;
     denomPubHash: string;
@@ -454,6 +452,7 @@ async function processPlanchetGenerate(
     value: denom.value,
     coinIndex: coinIdx,
     secretSeed: withdrawalGroup.secretSeed,
+    restrictAge: reserve.restrictAge,
   });
   const newPlanchet: PlanchetRecord = {
     blindingKey: r.blindingKey,
@@ -467,6 +466,7 @@ async function processPlanchetGenerate(
     withdrawalDone: false,
     withdrawSig: r.withdrawSig,
     withdrawalGroupId: withdrawalGroup.withdrawalGroupId,
+    ageCommitmentProof: r.ageCommitmentProof,
     lastError: undefined,
   };
   await ws.db
@@ -701,6 +701,7 @@ async function processPlanchetVerifyAndStoreCoin(
       withdrawalGroupId: withdrawalGroup.withdrawalGroupId,
     },
     suspended: false,
+    ageCommitmentProof: planchet.ageCommitmentProof,
   };
 
   const planchetCoinPub = planchet.coinPub;
@@ -1101,11 +1102,6 @@ export async function getExchangeWithdrawalInfo(
     }
   }
 
-  const withdrawFee = Amounts.sub(
-    selectedDenoms.totalWithdrawCost,
-    selectedDenoms.totalCoinValue,
-  ).amount;
-
   const ret: ExchangeWithdrawDetails = {
     earliestDepositExpiration,
     exchangeInfo: exchange,
@@ -1127,6 +1123,10 @@ export async function getExchangeWithdrawalInfo(
   return ret;
 }
 
+export interface GetWithdrawalDetailsForUriOpts {
+  restrictAge?: number;
+}
+
 /**
  * Get more information about a taler://withdraw URI.
  *
@@ -1137,6 +1137,7 @@ export async function getExchangeWithdrawalInfo(
 export async function getWithdrawalDetailsForUri(
   ws: InternalWalletState,
   talerWithdrawUri: string,
+  opts: GetWithdrawalDetailsForUriOpts = {},
 ): Promise<WithdrawUriInfoResponse> {
   logger.trace(`getting withdrawal details for URI ${talerWithdrawUri}`);
   const info = await getBankWithdrawalInfo(ws.http, talerWithdrawUri);

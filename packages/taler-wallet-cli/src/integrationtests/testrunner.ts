@@ -25,6 +25,7 @@ import {
   shouldLingerInTest,
   TestRunResult,
 } from "../harness/harness.js";
+import { runAgeRestrictionsTest } from "./test-age-restrictions.js";
 import { runBankApiTest } from "./test-bank-api";
 import { runClaimLoopTest } from "./test-claim-loop";
 import { runClauseSchnorrTest } from "./test-clause-schnorr.js";
@@ -103,6 +104,7 @@ interface TestMainFunction {
 }
 
 const allTests: TestMainFunction[] = [
+  runAgeRestrictionsTest,
   runBankApiTest,
   runClaimLoopTest,
   runClauseSchnorrTest,

@@ -28,6 +28,7 @@
  * Imports.
  */
 import {
+  AgeCommitmentProof,
   AmountJson,
   CoinEnvelope,
   DenominationPubKey,
@@ -55,6 +56,7 @@ export interface DeriveRefreshSessionRequest {
   meltCoinPub: string;
   meltCoinPriv: string;
   meltCoinDenomPubHash: string;
+  meltCoinAgeCommitmentProof?: AgeCommitmentProof;
   newCoinDenoms: RefreshNewDenomInfo[];
   feeRefresh: AmountJson;
 }

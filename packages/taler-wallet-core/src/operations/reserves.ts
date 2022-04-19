@@ -200,6 +200,7 @@ export async function createReserve(
     lastError: undefined,
     currency: req.amount.currency,
     operationStatus: OperationStatus.Pending,
+    restrictAge: req.restrictAge,
   };
 
   const exchangeInfo = await updateExchangeFromUrl(ws, req.exchange);
@@ -541,12 +542,9 @@ async function updateReserve(
   const reserveUrl = new URL(`reserves/${reservePub}`, reserve.exchangeBaseUrl);
   reserveUrl.searchParams.set("timeout_ms", "200");
 
-  const resp = await ws.http.get(
-    reserveUrl.href,
-    {
-      timeout: getReserveRequestTimeout(reserve),
-    },
-  );
+  const resp = await ws.http.get(reserveUrl.href, {
+    timeout: getReserveRequestTimeout(reserve),
+  });
 
   const result = await readSuccessResponseJsonOrErrorCode(
     resp,
@@ -632,17 +630,12 @@ async function updateReserve(
         amountReservePlus,
         amountReserveMinus,
       ).amount;
-      const denomSel = selectWithdrawalDenominations(
-        remainingAmount,
-        denoms,
-      );
+      const denomSel = selectWithdrawalDenominations(remainingAmount, denoms);
 
       logger.trace(
         `Remaining unclaimed amount in reseve is ${Amounts.stringify(
           remainingAmount,
-        )} and can be withdrawn with ${
-          denomSel.selectedDenoms.length
-        } coins`,
+        )} and can be withdrawn with ${denomSel.selectedDenoms.length} coins`,
       );
 
       if (denomSel.selectedDenoms.length === 0) {
@@ -759,6 +752,7 @@ export async function createTalerWithdrawReserve(
   selectedExchange: string,
   options: {
     forcedDenomSel?: ForcedDenomSel;
+    restrictAge?: number;
   } = {},
 ): Promise<AcceptWithdrawalResponse> {
   await updateExchangeFromUrl(ws, selectedExchange);
@@ -774,6 +768,7 @@ export async function createTalerWithdrawReserve(
     exchange: selectedExchange,
     senderWire: withdrawInfo.senderWire,
     exchangePaytoUri: exchangePaytoUri,
+    restrictAge: options.restrictAge,
   });
   // We do this here, as the reserve should be registered before we return,
   // so that we can redirect the user to the bank's status page.

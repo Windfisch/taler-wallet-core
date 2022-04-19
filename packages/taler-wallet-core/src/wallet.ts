@@ -843,6 +843,7 @@ async function dispatchRequestInternal(
         req.exchangeBaseUrl,
         {
           forcedDenomSel: req.forcedDenomSel,
+          restrictAge: req.restrictAge,
         },
       );
     }
@@ -1207,7 +1208,7 @@ class InternalWalletStateImpl implements InternalWalletState {
   ) {
     this.cryptoDispatcher = new CryptoDispatcher(cryptoWorkerFactory);
     this.cryptoApi = this.cryptoDispatcher.cryptoApi;
-    this.timerGroup = new TimerGroup(timer)
+    this.timerGroup = new TimerGroup(timer);
   }
 
   async getDenomInfo(

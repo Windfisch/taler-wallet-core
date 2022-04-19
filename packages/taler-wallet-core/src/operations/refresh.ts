@@ -15,6 +15,8 @@
  */
 
 import {
+  AgeCommitment,
+  AgeRestriction,
   CoinPublicKeyString,
   DenomKeyType,
   encodeCrock,
@@ -22,7 +24,9 @@ import {
   ExchangeProtocolVersion,
   ExchangeRefreshRevealRequest,
   getRandomBytes,
+  HashCodeString,
   HttpStatusCode,
+  j2s,
   TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
 import {
@@ -83,6 +87,7 @@ import { GetReadWriteAccess } from "../util/query.js";
 import { guardOperationException } from "./common.js";
 import { CryptoApiStoppedError } from "../crypto/workers/cryptoDispatcher.js";
 import { TalerCryptoInterface } from "../crypto/cryptoImplementation.js";
+import { TalerError } from "../errors.js";
 
 const logger = new Logger("refresh.ts");
 
@@ -380,6 +385,7 @@ async function refreshMelt(
     meltCoinPriv: oldCoin.coinPriv,
     meltCoinPub: oldCoin.coinPub,
     feeRefresh: oldDenom.feeRefresh,
+    meltCoinAgeCommitmentProof: oldCoin.ageCommitmentProof,
     newCoinDenoms,
     sessionSecretSeed: refreshSession.sessionSecretSeed,
   });
@@ -388,6 +394,14 @@ async function refreshMelt(
     `coins/${oldCoin.coinPub}/melt`,
     oldCoin.exchangeBaseUrl,
   );
+
+  let maybeAch: HashCodeString | undefined;
+  if (oldCoin.ageCommitmentProof) {
+    maybeAch = AgeRestriction.hashCommitment(
+      oldCoin.ageCommitmentProof.commitment,
+    );
+  }
+
   const meltReqBody: ExchangeMeltRequest = {
     coin_pub: oldCoin.coinPub,
     confirm_sig: derived.confirmSig,
@@ -395,6 +409,7 @@ async function refreshMelt(
     denom_sig: oldCoin.denomSig,
     rc: derived.hash,
     value_with_fee: Amounts.stringify(derived.meltValueWithFee),
+    age_commitment_hash: maybeAch,
   };
 
   const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], async () => {
@@ -475,6 +490,7 @@ export async function assembleRefreshRevealRequest(args: {
     denomPubHash: string;
     count: number;
   }[];
+  oldAgeCommitment?: AgeCommitment;
 }): Promise<ExchangeRefreshRevealRequest> {
   const {
     derived,
@@ -517,6 +533,7 @@ export async function assembleRefreshRevealRequest(args: {
     transfer_privs: privs,
     transfer_pub: derived.transferPubs[norevealIndex],
     link_sigs: linkSigs,
+    old_age_commitment: args.oldAgeCommitment?.publicKeys,
   };
   return req;
 }
@@ -622,6 +639,7 @@ async function refreshReveal(
     meltCoinPub: oldCoin.coinPub,
     feeRefresh: oldDenom.feeRefresh,
     newCoinDenoms,
+    meltCoinAgeCommitmentProof: oldCoin.ageCommitmentProof,
     sessionSecretSeed: refreshSession.sessionSecretSeed,
   });
 
@@ -637,6 +655,7 @@ async function refreshReveal(
     norevealIndex: norevealIndex,
     oldCoinPriv: oldCoin.coinPriv,
     oldCoinPub: oldCoin.coinPub,
+    oldAgeCommitment: oldCoin.ageCommitmentProof?.commitment,
   });
 
   const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], async () => {
@@ -822,6 +841,11 @@ async function processRefreshGroupImpl(
         logger.info(
           "crypto API stopped while processing refresh group, probably the wallet is currently shutting down.",
         );
+      } else if (x instanceof TalerError) {
+        logger.warn("process refresh session got exception (TalerError)");
+        logger.warn(`exc ${x}`);
+        logger.warn(`exc stack ${x.stack}`);
+        logger.warn(`error detail: ${j2s(x.errorDetail)}`);
       } else {
         logger.warn("process refresh session got exception");
         logger.warn(`exc ${x}`);

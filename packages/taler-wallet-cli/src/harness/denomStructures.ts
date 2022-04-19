@@ -24,6 +24,7 @@ export interface CoinCoinfigCommon {
   feeDeposit: string;
   feeRefresh: string;
   feeRefund: string;
+  ageRestricted?: boolean;
 }
 
 export interface CoinConfigRsa extends CoinCoinfigCommon {

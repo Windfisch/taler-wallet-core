@@ -26,6 +26,7 @@
  */
 import {
   AbsoluteTime,
+  AgeRestriction,
   AmountJson,
   Amounts,
   codecForContractTerms,
@@ -197,6 +198,14 @@ export interface CoinSelectionRequest {
   maxWireFee: AmountJson;
 
   maxDepositFee: AmountJson;
+
+  /**
+   * Minimum age requirement for the coin selection.
+   *
+   * When present, only select coins with either no age restriction
+   * or coins with an age commitment that matches the minimum age.
+   */
+  minimumAge?: number;
 }
 
 /**
@@ -651,6 +660,7 @@ export function extractContractData(
     merchant: parsedContractTerms.merchant,
     products: parsedContractTerms.products,
     summaryI18n: parsedContractTerms.summary_i18n,
+    minimumAge: parsedContractTerms.minimum_age,
   };
 }
 
@@ -824,6 +834,8 @@ async function processDownloadProposalImpl(
     contractTermsHash,
     proposalResp.sig,
   );
+
+  logger.trace(`extracted contract data: ${j2s(contractData)}`);
 
   await ws.db
     .mktx((x) => ({ proposals: x.proposals, purchases: x.purchases }))
@@ -1379,6 +1391,11 @@ export async function generateDepositPermissions(
     const { coin, denom } = coinWithDenom[i];
     let wireInfoHash: string;
     wireInfoHash = contractData.wireInfoHash;
+    logger.trace(
+      `signing deposit permission for coin with acp=${j2s(
+        coin.ageCommitmentProof,
+      )}`,
+    );
     const dp = await ws.cryptoApi.signDepositPermission({
       coinPriv: coin.coinPriv,
       coinPub: coin.coinPub,
@@ -1393,6 +1410,8 @@ export async function generateDepositPermissions(
       spendAmount: payCoinSel.coinContributions[i],
       timestamp: contractData.timestamp,
       wireInfoHash,
+      ageCommitmentProof: coin.ageCommitmentProof,
+      requiredMinimumAge: contractData.minimumAge,
     });
     depositPermissions.push(dp);
   }

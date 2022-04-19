@@ -47,6 +47,7 @@ import {
   codecForConstString,
   codecForAny,
   buildCodecForUnion,
+  codecForNumber,
 } from "./codec.js";
 import {
   AmountString,
@@ -61,6 +62,7 @@ import { OrderShortInfo, codecForOrderShortInfo } from "./transactionsTypes.js";
 import { BackupRecovery } from "./backupTypes.js";
 import { PaytoUri } from "./payto.js";
 import { TalerErrorCode } from "./taler-error-codes.js";
+import { AgeCommitmentProof } from "./talerCrypto.js";
 
 /**
  * Response for the create reserve request to the wallet.
@@ -218,6 +220,8 @@ export interface CreateReserveRequest {
    * from this reserve, only used for testing.
    */
   forcedDenomSel?: ForcedDenomSel;
+
+  restrictAge?: number;
 }
 
 export const codecForCreateReserveRequest = (): Codec<CreateReserveRequest> =>
@@ -489,6 +493,7 @@ export interface WithdrawalPlanchet {
   coinEv: CoinEnvelope;
   coinValue: AmountJson;
   coinEvHash: string;
+  ageCommitmentProof?: AgeCommitmentProof;
 }
 
 export interface PlanchetCreationRequest {
@@ -499,6 +504,7 @@ export interface PlanchetCreationRequest {
   denomPub: DenominationPubKey;
   reservePub: string;
   reservePriv: string;
+  restrictAge?: number;
 }
 
 /**
@@ -545,6 +551,10 @@ export interface DepositInfo {
   denomKeyType: DenomKeyType;
   denomPubHash: string;
   denomSig: UnblindedSignature;
+
+  requiredMinimumAge?: number;
+
+  ageCommitmentProof?: AgeCommitmentProof;
 }
 
 export interface ExchangesListRespose {
@@ -728,12 +738,14 @@ export const codecForAcceptManualWithdrawalRequet =
 export interface GetWithdrawalDetailsForAmountRequest {
   exchangeBaseUrl: string;
   amount: string;
+  restrictAge?: number;
 }
 
 export interface AcceptBankIntegratedWithdrawalRequest {
   talerWithdrawUri: string;
   exchangeBaseUrl: string;
   forcedDenomSel?: ForcedDenomSel;
+  restrictAge?: number;
 }
 
 export const codecForAcceptBankIntegratedWithdrawalRequest =
@@ -742,6 +754,7 @@ export const codecForAcceptBankIntegratedWithdrawalRequest =
       .property("exchangeBaseUrl", codecForString())
       .property("talerWithdrawUri", codecForString())
       .property("forcedDenomSel", codecForAny())
+      .property("restrictAge", codecOptional(codecForNumber()))
       .build("AcceptBankIntegratedWithdrawalRequest");
 
 export const codecForGetWithdrawalDetailsForAmountRequest =
@@ -774,11 +787,13 @@ export const codecForApplyRefundRequest = (): Codec<ApplyRefundRequest> =>
 
 export interface GetWithdrawalDetailsForUriRequest {
   talerWithdrawUri: string;
+  restrictAge?: number;
 }
 export const codecForGetWithdrawalDetailsForUri =
   (): Codec<GetWithdrawalDetailsForUriRequest> =>
     buildCodecForObject<GetWithdrawalDetailsForUriRequest>()
       .property("talerWithdrawUri", codecForString())
+      .property("restrictAge", codecOptional(codecForNumber()))
       .build("GetWithdrawalDetailsForUriRequest");
 
 export interface ListKnownBankAccountsRequest {

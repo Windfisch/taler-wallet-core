@@ -40,6 +40,7 @@ import {
   CoinEnvelope,
   TalerProtocolTimestamp,
   TalerProtocolDuration,
+  AgeCommitmentProof,
 } from "@gnu-taler/taler-util";
 import { RetryInfo } from "./util/retries.js";
 import { PayCoinSelection } from "./util/coinSelection.js";
@@ -188,6 +189,15 @@ export interface ReserveRecord {
    */
   bankInfo?: ReserveBankInfo;
 
+  /**
+   * Restrict withdrawals from this reserve to this age.
+   */
+  restrictAge?: number;
+
+  /**
+   * Pre-allocated ID of the withdrawal group for the first withdrawal
+   * on this reserve.
+   */
   initialWithdrawalGroupId: string;
 
   /**
@@ -600,6 +610,8 @@ export interface PlanchetRecord {
   coinEv: CoinEnvelope;
 
   coinEvHash: string;
+
+  ageCommitmentProof?: AgeCommitmentProof;
 }
 
 /**
@@ -724,6 +736,8 @@ export interface CoinRecord {
    * Used to prevent allocation of the same coin for two different payments.
    */
   allocation?: CoinAllocation;
+
+  ageCommitmentProof?: AgeCommitmentProof;
 }
 
 export interface CoinAllocation {
@@ -1148,6 +1162,7 @@ export interface WalletContractData {
   wireMethod: string;
   wireInfoHash: string;
   maxDepositFee: AmountJson;
+  minimumAge?: number;
 }
 
 export enum AbortStatus {

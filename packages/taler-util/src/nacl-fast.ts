@@ -1769,7 +1769,7 @@ function crypto_scalarmult_base(q: Uint8Array, n: Uint8Array): number {
   return crypto_scalarmult(q, n, _9);
 }
 
-function crypto_scalarmult_noclamp(
+export function crypto_scalarmult_noclamp(
   q: Uint8Array,
   n: Uint8Array,
   p: Uint8Array,
@@ -3033,6 +3033,18 @@ export function crypto_core_ed25519_scalar_add(
   return o;
 }
 
+/**
+ * Reduce a scalar "s" to "s mod L".  The input can be up to 64 bytes long.
+ */
+export function crypto_core_ed25519_scalar_reduce(x: Uint8Array): Uint8Array {
+  const len = x.length;
+  const z = new Float64Array(64);
+  for (let i = 0; i < len; i++) z[i] = x[i];
+  const o = new Uint8Array(32);
+  modL(o, z);
+  return o;
+}
+
 export function crypto_core_ed25519_scalar_sub(
   x: Uint8Array,
   y: Uint8Array,
@@ -3063,11 +3075,7 @@ export function crypto_edx25519_private_key_create_from_seed(
 }
 
 export function crypto_edx25519_get_public(priv: Uint8Array): Uint8Array {
-  const pub = new Uint8Array(32);
-  if (0 != crypto_scalarmult_base_noclamp(pub.subarray(32), priv)) {
-    throw Error();
-  }
-  return pub;
+  return crypto_scalarmult_ed25519_base_noclamp(priv.subarray(0, 32));
 }
 
 export function crypto_edx25519_sign_detached(
@@ -3076,19 +3084,16 @@ export function crypto_edx25519_sign_detached(
   pkx: Uint8Array,
 ): Uint8Array {
   const n: number = m.length;
-  const d = new Uint8Array(64),
-    h = new Uint8Array(64),
-    r = new Uint8Array(64);
+  const h = new Uint8Array(64);
+  const r = new Uint8Array(64);
   let i, j;
   const x = new Float64Array(64);
   const p = [gf(), gf(), gf(), gf()];
 
-  for (i = 0; i < 64; i++) d[i] = skx[i];
-
   const sm = new Uint8Array(n + 64);
 
   for (i = 0; i < n; i++) sm[64 + i] = m[i];
-  for (i = 0; i < 32; i++) sm[32 + i] = d[32 + i];
+  for (i = 0; i < 32; i++) sm[32 + i] = skx[32 + i];
 
   crypto_hash(r, sm.subarray(32), n + 32);
   reduce(r);
@@ -3103,12 +3108,12 @@ export function crypto_edx25519_sign_detached(
   for (i = 0; i < 32; i++) x[i] = r[i];
   for (i = 0; i < 32; i++) {
     for (j = 0; j < 32; j++) {
-      x[i + j] += h[i] * d[j];
+      x[i + j] += h[i] * skx[j];
     }
   }
 
   modL(sm.subarray(32), x);
-  return sm.subarray(64);
+  return sm.subarray(0, 64);
 }
 
 export function crypto_edx25519_sign_detached_verify(

@@ -321,9 +321,9 @@ export class CryptoDispatcher {
     return new Promise<T>((resolve, reject) => {
       let timedOut = false;
       const timeout = timer.after(5000, () => {
-        logger.warn("crypto RPC call timed out");
+        logger.warn(`crypto RPC call ('${operation}') timed out`);
         timedOut = true;
-        reject(new Error("crypto RPC call timed out"));
+        reject(new Error(`crypto RPC call ('${operation}') timed out`));
       });
       p.then((x) => {
         if (timedOut) {

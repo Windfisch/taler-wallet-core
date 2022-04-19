@@ -47,6 +47,7 @@ import {
 } from "./time.js";
 import { codecForAmountString } from "./amounts.js";
 import { strcmp } from "./helpers.js";
+import { Edx25519PublicKey } from "./talerCrypto.js";
 
 /**
  * Denomination as found in the /keys response from the exchange.
@@ -283,6 +284,10 @@ export interface CoinDepositPermission {
    * URL of the exchange this coin was withdrawn from.
    */
   exchange_url: string;
+
+  minimum_age_sig?: EddsaSignatureString;
+
+  age_commitment?: Edx25519PublicKey[];
 }
 
 /**
@@ -538,6 +543,8 @@ export interface ContractTerms {
    * Maximum wire fee that the merchant agrees to pay for.
    */
   max_wire_fee?: string;
+
+  minimum_age?: number;
 
   /**
    * Extra data, interpreted by the mechant only.
@@ -957,6 +964,7 @@ export interface ExchangeMeltRequest {
   denom_sig: UnblindedSignature;
   rc: string;
   value_with_fee: AmountString;
+  age_commitment_hash?: HashCodeString;
 }
 
 export interface ExchangeMeltResponse {
@@ -1122,7 +1130,7 @@ export type DenominationPubKey = RsaDenominationPubKey | CsDenominationPubKey;
 export interface RsaDenominationPubKey {
   readonly cipher: DenomKeyType.Rsa;
   readonly rsa_public_key: string;
-  readonly age_mask?: number;
+  readonly age_mask: number;
 }
 
 export interface CsDenominationPubKey {
@@ -1177,12 +1185,14 @@ export const codecForRsaDenominationPubKey = () =>
   buildCodecForObject<RsaDenominationPubKey>()
     .property("cipher", codecForConstString(DenomKeyType.Rsa))
     .property("rsa_public_key", codecForString())
+    .property("age_mask", codecForNumber())
     .build("DenominationPubKey");
 
 export const codecForCsDenominationPubKey = () =>
   buildCodecForObject<CsDenominationPubKey>()
     .property("cipher", codecForConstString(DenomKeyType.ClauseSchnorr))
     .property("cs_public_key", codecForString())
+    .property("age_mask", codecForNumber())
     .build("CsDenominationPubKey");
 
 export const codecForBankWithdrawalOperationPostResponse =
@@ -1312,6 +1322,7 @@ export const codecForContractTerms = (): Codec<ContractTerms> =>
     .property("exchanges", codecForList(codecForExchangeHandle()))
     .property("products", codecOptional(codecForList(codecForProduct())))
     .property("extra", codecForAny())
+    .property("minimum_age", codecOptional(codecForNumber()))
     .build("ContractTerms");
 
 export const codecForMerchantRefundPermission =
@@ -1717,6 +1728,13 @@ export interface ExchangeRefreshRevealRequest {
   transfer_pub: EddsaPublicKeyString;
 
   link_sigs: EddsaSignatureString[];
+
+  /**
+   * Iff the corresponding denomination has support for age restriction,
+   * the client MUST provide the original age commitment, i.e. the vector
+   * of public keys.
+   */
+  old_age_commitment?: Edx25519PublicKey[];
 }
 
 export interface DepositSuccess {

@@ -69,6 +69,10 @@ import {
   kdf,
   ecdheGetPublic,
   getRandomBytes,
+  AgeCommitmentProof,
+  AgeRestriction,
+  hashCoinPub,
+  HashCodeString,
 } from "@gnu-taler/taler-util";
 import bigint from "big-integer";
 import { DenominationRecord, TipCoinSource, WireFee } from "../db.js";
@@ -82,7 +86,7 @@ import {
   SignTrackTransactionRequest,
 } from "./cryptoTypes.js";
 
-//const logger = new Logger("cryptoImplementation.ts");
+const logger = new Logger("cryptoImplementation.ts");
 
 /**
  * Interface for (asynchronous) cryptographic operations that
@@ -547,12 +551,34 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
     const denomPub = req.denomPub;
     if (denomPub.cipher === DenomKeyType.Rsa) {
       const reservePub = decodeCrock(req.reservePub);
-      const denomPubRsa = decodeCrock(denomPub.rsa_public_key);
       const derivedPlanchet = await tci.setupWithdrawalPlanchet(tci, {
         coinNumber: req.coinIndex,
         secretSeed: req.secretSeed,
       });
-      const coinPubHash = hash(decodeCrock(derivedPlanchet.coinPub));
+
+      let maybeAcp: AgeCommitmentProof | undefined = undefined;
+      let maybeAgeCommitmentHash: string | undefined = undefined;
+      if (req.restrictAge) {
+        if (denomPub.age_mask === 0) {
+          throw Error(
+            "requested age restriction for a denomination that does not support age restriction",
+          );
+        }
+        logger.info("creating age-restricted planchet");
+        maybeAcp = await AgeRestriction.restrictionCommit(
+          denomPub.age_mask,
+          req.restrictAge,
+        );
+        maybeAgeCommitmentHash = AgeRestriction.hashCommitment(
+          maybeAcp.commitment,
+        );
+      }
+
+      const coinPubHash = hashCoinPub(
+        derivedPlanchet.coinPub,
+        maybeAgeCommitmentHash,
+      );
+
       const blindResp = await tci.rsaBlind(tci, {
         bks: derivedPlanchet.bks,
         hm: encodeCrock(coinPubHash),
@@ -589,6 +615,7 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
         reservePub: encodeCrock(reservePub),
         withdrawSig: sigResult.sig,
         coinEvHash: encodeCrock(evHash),
+        ageCommitmentProof: maybeAcp,
       };
       return planchet;
     } else {
@@ -880,7 +907,23 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
   ): Promise<CoinDepositPermission> {
     // FIXME: put extensions here if used
     const hExt = new Uint8Array(64);
-    const hAgeCommitment = new Uint8Array(32);
+    let hAgeCommitment: Uint8Array;
+    let maybeAgeCommitmentHash: string | undefined = undefined;
+    let minimumAgeSig: string | undefined = undefined;
+    if (depositInfo.ageCommitmentProof) {
+      const ach = AgeRestriction.hashCommitment(
+        depositInfo.ageCommitmentProof.commitment,
+      );
+      maybeAgeCommitmentHash = ach;
+      hAgeCommitment = decodeCrock(ach);
+      minimumAgeSig = AgeRestriction.commitmentAttest(
+        depositInfo.ageCommitmentProof,
+        depositInfo.requiredMinimumAge!,
+      );
+    } else {
+      // All zeros.
+      hAgeCommitment = new Uint8Array(32);
+    }
     let d: Uint8Array;
     if (depositInfo.denomKeyType === DenomKeyType.Rsa) {
       d = buildSigPS(TalerSignaturePurpose.WALLET_COIN_DEPOSIT)
@@ -914,6 +957,8 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
           cipher: DenomKeyType.Rsa,
           rsa_signature: depositInfo.denomSig.rsa_signature,
         },
+        age_commitment: depositInfo.ageCommitmentProof?.commitment.publicKeys,
+        minimum_age_sig: minimumAgeSig,
       };
       return s;
     } else {
@@ -999,10 +1044,19 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
             coinNumber: coinIndex,
             transferSecret: transferSecretRes.h,
           });
+          let newAc: AgeCommitmentProof | undefined = undefined;
+          let newAch: HashCodeString | undefined = undefined;
+          if (req.meltCoinAgeCommitmentProof) {
+            newAc = await AgeRestriction.commitmentDerive(
+              req.meltCoinAgeCommitmentProof,
+              transferSecretRes.h,
+            );
+            newAch = AgeRestriction.hashCommitment(newAc.commitment);
+          }
           coinPriv = decodeCrock(fresh.coinPriv);
           coinPub = decodeCrock(fresh.coinPub);
           blindingFactor = decodeCrock(fresh.bks);
-          const coinPubHash = hash(coinPub);
+          const coinPubHash = hashCoinPub(fresh.coinPub, newAch);
           if (denomSel.denomPub.cipher !== DenomKeyType.Rsa) {
             throw Error("unsupported cipher, can't create refresh session");
           }
@@ -1035,8 +1089,16 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
 
     const sessionHash = sessionHc.finish();
     let confirmData: Uint8Array;
-    // FIXME: fill in age commitment
-    const hAgeCommitment = new Uint8Array(32);
+    let hAgeCommitment: Uint8Array;
+    if (req.meltCoinAgeCommitmentProof) {
+      hAgeCommitment = decodeCrock(
+        AgeRestriction.hashCommitment(
+          req.meltCoinAgeCommitmentProof.commitment,
+        ),
+      );
+    } else {
+      hAgeCommitment = new Uint8Array(32);
+    }
     confirmData = buildSigPS(TalerSignaturePurpose.WALLET_COIN_MELT)
       .put(sessionHash)
       .put(decodeCrock(meltCoinDenomPubHash))

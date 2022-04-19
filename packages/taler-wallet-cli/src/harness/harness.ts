@@ -430,6 +430,9 @@ function setCoin(config: Configuration, c: CoinConfig) {
   config.setString(s, "fee_withdraw", c.feeWithdraw);
   config.setString(s, "fee_refresh", c.feeRefresh);
   config.setString(s, "fee_refund", c.feeRefund);
+  if (c.ageRestricted) {
+    config.setString(s, "age_restricted", "yes");
+  }
   if (c.cipher === "RSA") {
     config.setString(s, "rsa_keysize", `${c.rsaKeySize}`);
     config.setString(s, "cipher", "RSA");
@@ -1112,6 +1115,17 @@ export class ExchangeService implements ExchangeServiceInterface {
     config.write(this.configFilename);
   }
 
+  enableAgeRestrictions(maskStr: string) {
+    const config = Configuration.load(this.configFilename);
+    config.setString("exchange-extension-age_restriction", "enabled", "yes");
+    config.setString(
+      "exchange-extension-age_restriction",
+      "age_groups",
+      maskStr,
+    );
+    config.write(this.configFilename);
+  }
+
   get masterPub() {
     return encodeCrock(this.keyPair.eddsaPub);
   }
@@ -1645,8 +1659,14 @@ export class MerchantService implements MerchantServiceInterface {
     await exec(`taler-merchant-dbinit -c "${this.configFilename}"`);
 
     this.proc = this.globalState.spawnService(
-      "taler-merchant-httpd",
-      ["-LDEBUG", "-c", this.configFilename, ...this.timetravelArgArr],
+      "valgrind",
+      [
+        "taler-merchant-httpd",
+        "-LDEBUG",
+        "-c",
+        this.configFilename,
+        ...this.timetravelArgArr,
+      ],
       `merchant-${this.merchantConfig.name}`,
     );
   }
@@ -1848,6 +1868,9 @@ export async function runTestWithState(
     }
   } catch (e) {
     console.error("FATAL: test failed with exception", e);
+    if (e instanceof TalerError) {
+      console.error(`error detail: ${j2s(e.errorDetail)}`);
+    }
     status = "fail";
   } finally {
     await gc.shutdown();

@@ -33,6 +33,7 @@ import {
   ExchangeSignKeyJson,
   ExchangeWireJson,
   hashDenomPub,
+  j2s,
   LibtoolVersion,
   Logger,
   NotificationType,
@@ -445,6 +446,7 @@ async function downloadExchangeKeysInfo(
   );
 
   logger.info("received /keys response");
+  logger.info(`${j2s(exchangeKeysJsonUnchecked)}`);
 
   if (exchangeKeysJsonUnchecked.denoms.length === 0) {
     throw TalerError.fromDetail(

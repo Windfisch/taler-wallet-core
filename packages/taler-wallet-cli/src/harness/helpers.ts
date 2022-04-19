@@ -65,6 +65,13 @@ export interface SimpleTestEnvironment {
   wallet: WalletCli;
 }
 
+export interface EnvOptions {
+  /**
+   * If provided, enable age restrictions with the specified age mask string.
+   */
+  ageMaskSpec?: string;
+}
+
 /**
  * Run a test case with a simple TESTKUDOS Taler environment, consisting
  * of one exchange, one bank and one merchant.
@@ -72,6 +79,7 @@ export interface SimpleTestEnvironment {
 export async function createSimpleTestkudosEnvironment(
   t: GlobalTestState,
   coinConfig: CoinConfig[] = defaultCoinConfig.map((x) => x("TESTKUDOS")),
+  opts: EnvOptions = {},
 ): Promise<SimpleTestEnvironment> {
   const db = await setupDb(t);
 
@@ -108,7 +116,17 @@ export async function createSimpleTestkudosEnvironment(
 
   await bank.pingUntilAvailable();
 
-  exchange.addCoinConfigList(coinConfig);
+  const ageMaskSpec = opts.ageMaskSpec;
+
+  if (ageMaskSpec) {
+    exchange.enableAgeRestrictions(ageMaskSpec);
+    // Enable age restriction for all coins.
+    exchange.addCoinConfigList(
+      coinConfig.map((x) => ({ ...x, ageRestricted: true })),
+    );
+  } else {
+    exchange.addCoinConfigList(coinConfig);
+  }
 
   await exchange.start();
   await exchange.pingUntilAvailable();
@@ -259,6 +277,7 @@ export async function startWithdrawViaBank(
     bank: BankService;
     exchange: ExchangeServiceInterface;
     amount: AmountString;
+    restrictAge?: number;
   },
 ): Promise<void> {
   const { wallet, bank, exchange, amount } = p;
@@ -270,6 +289,7 @@ export async function startWithdrawViaBank(
 
   await wallet.client.call(WalletApiOperation.GetWithdrawalDetailsForUri, {
     talerWithdrawUri: wop.taler_withdraw_uri,
+    restrictAge: p.restrictAge,
   });
 
   await wallet.runPending();
@@ -279,6 +299,7 @@ export async function startWithdrawViaBank(
   await wallet.client.call(WalletApiOperation.AcceptBankIntegratedWithdrawal, {
     exchangeBaseUrl: exchange.baseUrl,
     talerWithdrawUri: wop.taler_withdraw_uri,
+    restrictAge: p.restrictAge,
   });
 
   // Confirm it
@@ -299,6 +320,7 @@ export async function withdrawViaBank(
     bank: BankService;
     exchange: ExchangeServiceInterface;
     amount: AmountString;
+    restrictAge?: number;
   },
 ): Promise<void> {
   const { wallet } = p;

@@ -27,6 +27,7 @@ import bigint from "big-integer";
 import {
   Base32String,
   CoinEnvelope,
+  CoinPublicKeyString,
   DenominationPubKey,
   DenomKeyType,
   HashCodeString,
@@ -643,6 +644,17 @@ export function hashCoinEvInner(
   }
 }
 
+export function hashCoinPub(
+  coinPub: CoinPublicKeyString,
+  ach?: HashCodeString,
+): Uint8Array {
+  if (!ach) {
+    return hash(decodeCrock(coinPub));
+  }
+
+  return hash(typedArrayConcat([decodeCrock(coinPub), decodeCrock(ach)]));
+}
+
 /**
  * Hash a denomination public key.
  */
@@ -652,6 +664,7 @@ export function hashDenomPub(pub: DenominationPubKey): Uint8Array {
     const hashInputBuf = new ArrayBuffer(pubBuf.length + 4 + 4);
     const uint8ArrayBuf = new Uint8Array(hashInputBuf);
     const dv = new DataView(hashInputBuf);
+    logger.info("age_mask", pub.age_mask);
     dv.setUint32(0, pub.age_mask ?? 0);
     dv.setUint32(4, DenomKeyType.toIntTag(pub.cipher));
     uint8ArrayBuf.set(pubBuf, 8);
@@ -705,6 +718,14 @@ export function bufferForUint32(n: number): Uint8Array {
   return buf;
 }
 
+export function bufferForUint8(n: number): Uint8Array {
+  const arrBuf = new ArrayBuffer(1);
+  const buf = new Uint8Array(arrBuf);
+  const dv = new DataView(arrBuf);
+  dv.setUint8(0, n);
+  return buf;
+}
+
 export function setupTipPlanchet(
   secretSeed: Uint8Array,
   coinNumber: number,
@@ -753,6 +774,7 @@ export enum TalerSignaturePurpose {
   WALLET_COIN_RECOUP = 1203,
   WALLET_COIN_LINK = 1204,
   WALLET_COIN_RECOUP_REFRESH = 1206,
+  WALLET_AGE_ATTESTATION = 1207,
   EXCHANGE_CONFIRM_RECOUP = 1039,
   EXCHANGE_CONFIRM_RECOUP_REFRESH = 1041,
   ANASTASIS_POLICY_UPLOAD = 1400,
@@ -807,6 +829,25 @@ export type Edx25519PublicKey = FlavorP<string, "Edx25519PublicKey", 32>;
 export type Edx25519PrivateKey = FlavorP<string, "Edx25519PrivateKey", 64>;
 export type Edx25519Signature = FlavorP<string, "Edx25519Signature", 64>;
 
+/**
+ * Convert a big integer to a fixed-size, little-endian array.
+ */
+export function bigintToNaclArr(
+  x: bigint.BigInteger,
+  size: number,
+): Uint8Array {
+  const byteArr = new Uint8Array(size);
+  const arr = x.toArray(256).value.reverse();
+  byteArr.set(arr, 0);
+  return byteArr;
+}
+
+export function bigintFromNaclArr(arr: Uint8Array): bigint.BigInteger {
+  let rev = new Uint8Array(arr);
+  rev = rev.reverse();
+  return bigint.fromArray(Array.from(rev), 256, false);
+}
+
 export namespace Edx25519 {
   const revL = [
     0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2,
@@ -846,9 +887,9 @@ export namespace Edx25519 {
   ): Promise<OpaqueData> {
     const res = kdfKw({
       outputLength: 64,
-      salt: stringToBytes("edx2559-derivation"),
+      salt: decodeCrock(seed),
       ikm: decodeCrock(pub),
-      info: decodeCrock(seed),
+      info: stringToBytes("edx2559-derivation"),
     });
 
     return encodeCrock(res);
@@ -860,28 +901,191 @@ export namespace Edx25519 {
   ): Promise<Edx25519PrivateKey> {
     const pub = await getPublic(priv);
     const privDec = decodeCrock(priv);
-    const privA = privDec.subarray(0, 32).reverse();
-    const a = bigint.fromArray(Array.from(privA), 256, false);
+    const a = bigintFromNaclArr(privDec.subarray(0, 32));
+    const factorEnc = await deriveFactor(pub, seed);
+    const factorModL = bigintFromNaclArr(decodeCrock(factorEnc)).mod(L);
 
-    const factorBuf = await deriveFactor(pub, seed);
+    const aPrime = a.divide(8).multiply(factorModL).mod(L).multiply(8).mod(L);
+    const bPrime = nacl
+      .hash(
+        typedArrayConcat([privDec.subarray(32, 64), decodeCrock(factorEnc)]),
+      )
+      .subarray(0, 32);
 
-    const factor = bigint.fromArray(Array.from(factorBuf), 256, false);
-
-    const aPrime = a.divide(8).multiply(factor).multiply(8);
-
-    const bPrime = nacl.hash(
-      typedArrayConcat([privDec.subarray(32, 64), decodeCrock(factorBuf)]),
+    const newPriv = encodeCrock(
+      typedArrayConcat([bigintToNaclArr(aPrime, 32), bPrime]),
     );
 
-    Uint8Array.from(aPrime.toArray(256).value)
+    return newPriv;
+  }
 
+  export async function publicKeyDerive(
+    pub: Edx25519PublicKey,
+    seed: OpaqueData,
+  ): Promise<Edx25519PublicKey> {
+    const factorEnc = await deriveFactor(pub, seed);
+    const factorReduced = nacl.crypto_core_ed25519_scalar_reduce(
+      decodeCrock(factorEnc),
+    );
+    const res = nacl.crypto_scalarmult_ed25519_noclamp(
+      factorReduced,
+      decodeCrock(pub),
+    );
+    return encodeCrock(res);
+  }
+}
+
+export interface AgeCommitment {
+  mask: number;
+
+  /**
+   * Public keys, one for each age group specified in the age mask.
+   */
+  publicKeys: Edx25519PublicKey[];
+}
+
+export interface AgeProof {
+  /**
+   * Private keys.  Typically smaller than the number of public keys,
+   * because we drop private keys from age groups that are restricted.
+   */
+  privateKeys: Edx25519PrivateKey[];
+}
+
+export interface AgeCommitmentProof {
+  commitment: AgeCommitment;
+  proof: AgeProof;
+}
+
+function invariant(cond: boolean): asserts cond {
+  if (!cond) {
+    throw Error("invariant failed");
+  }
+}
+
+export namespace AgeRestriction {
+  export function hashCommitment(ac: AgeCommitment): HashCodeString {
+    const hc = new nacl.HashState();
+    for (const pub of ac.publicKeys) {
+      hc.update(decodeCrock(pub));
+    }
+    return encodeCrock(hc.finish().subarray(0, 32));
+  }
+
+  export function countAgeGroups(mask: number): number {
+    let count = 0;
+    let m = mask;
+    while (m > 0) {
+      count += m & 1;
+      m = m >> 1;
+    }
+    return count;
+  }
+
+  export function getAgeGroupIndex(mask: number, age: number): number {
+    invariant((mask & 1) === 1);
+    let i = 0;
+    let m = mask;
+    let a = age;
+    while (m > 0) {
+      if (a <= 0) {
+        break;
+      }
+      m = m >> 1;
+      i += m & 1;
+      a--;
+    }
+    return i;
+  }
+
+  export function ageGroupSpecToMask(ageGroupSpec: string): number {
     throw Error("not implemented");
   }
 
-  export function publicKeyDerive(
-    priv: Edx25519PrivateKey,
-    seed: OpaqueData,
-  ): Promise<Edx25519PublicKey> {
-    throw Error("not implemented")
+  export async function restrictionCommit(
+    ageMask: number,
+    age: number,
+  ): Promise<AgeCommitmentProof> {
+    invariant((ageMask & 1) === 1);
+    const numPubs = countAgeGroups(ageMask) - 1;
+    const numPrivs = getAgeGroupIndex(ageMask, age);
+
+    const pubs: Edx25519PublicKey[] = [];
+    const privs: Edx25519PrivateKey[] = [];
+
+    for (let i = 0; i < numPubs; i++) {
+      const priv = await Edx25519.keyCreate();
+      const pub = await Edx25519.getPublic(priv);
+      pubs.push(pub);
+      if (i < numPrivs) {
+        privs.push(priv);
+      }
+    }
+
+    return {
+      commitment: {
+        mask: ageMask,
+        publicKeys: pubs,
+      },
+      proof: {
+        privateKeys: privs,
+      },
+    };
+  }
+
+  export async function commitmentDerive(
+    commitmentProof: AgeCommitmentProof,
+    salt: OpaqueData,
+  ): Promise<AgeCommitmentProof> {
+    const newPrivs: Edx25519PrivateKey[] = [];
+    const newPubs: Edx25519PublicKey[] = [];
+
+    for (const oldPub of commitmentProof.commitment.publicKeys) {
+      newPubs.push(await Edx25519.publicKeyDerive(oldPub, salt));
+    }
+
+    for (const oldPriv of commitmentProof.proof.privateKeys) {
+      newPrivs.push(await Edx25519.privateKeyDerive(oldPriv, salt));
+    }
+
+    return {
+      commitment: {
+        mask: commitmentProof.commitment.mask,
+        publicKeys: newPubs,
+      },
+      proof: {
+        privateKeys: newPrivs,
+      },
+    };
+  }
+
+  export function commitmentAttest(
+    commitmentProof: AgeCommitmentProof,
+    age: number,
+  ): Edx25519Signature {
+    const d = buildSigPS(TalerSignaturePurpose.WALLET_AGE_ATTESTATION)
+      .put(bufferForUint32(commitmentProof.commitment.mask))
+      .put(bufferForUint32(age))
+      .build();
+    const group = getAgeGroupIndex(commitmentProof.commitment.mask, age);
+    if (group === 0) {
+      // No attestation required.
+      return encodeCrock(new Uint8Array(64));
+    }
+    const priv = commitmentProof.proof.privateKeys[group - 1];
+    const pub = commitmentProof.commitment.publicKeys[group - 1];
+    const sig = nacl.crypto_edx25519_sign_detached(
+      d,
+      decodeCrock(priv),
+      decodeCrock(pub),
+    );
+    return encodeCrock(sig);
+  }
+
+  export function commitmentVerify(
+    commitmentProof: AgeCommitmentProof,
+    age: number,
+  ): Edx25519Signature {
+    throw Error("not implemented");
   }
 }
