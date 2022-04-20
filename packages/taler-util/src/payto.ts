@@ -49,27 +49,11 @@ export interface PaytoUriTalerBank extends PaytoUriGeneric {
 export interface PaytoUriBitcoin extends PaytoUriGeneric {
   isKnown: true;
   targetType: "bitcoin";
-  addr1: string;
-  addr2: string;
+  segwitAddrs: Array<string>;
 }
 
 const paytoPfx = "payto://";
 
-function buildSegwitGenerator(result: PaytoUriBitcoin, targetPath: string) {
-  //generate segwit address just once, save addr in payto object
-  //and use it as cache
-  return function generateSegwitAddress(reserve: string): {
-    addr1: string;
-    addr2: string;
-  } {
-    if (result.addr1 && result.addr2)
-      return { addr1: result.addr1, addr2: result.addr2 };
-    const { addr1, addr2 } = generateFakeSegwitAddress(reserve, targetPath);
-    result.addr1 = addr1;
-    result.addr2 = addr2;
-    return { addr1, addr2 };
-  };
-}
 /**
  * Add query parameters to a payto URI
  */
@@ -158,14 +142,14 @@ export function parsePaytoUri(s: string): PaytoUri | undefined {
   if (targetType === "bitcoin") {
     const msg = /\b([A-Z0-9]{52})\b/.exec(params["message"])
     const reserve = !msg ? params["subject"] : msg[0];
-    const { addr1, addr2 } = generateFakeSegwitAddress(reserve, targetPath);
+    const segwitAddrs = !reserve ? [] : generateFakeSegwitAddress(reserve, targetPath);
 
     const result: PaytoUriBitcoin = {
       isKnown: true,
       targetPath,
       targetType,
       params,
-      addr1, addr2
+      segwitAddrs
     };
 
     return result;
