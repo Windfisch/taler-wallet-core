@@ -49,9 +49,8 @@ export interface PaytoUriTalerBank extends PaytoUriGeneric {
 export interface PaytoUriBitcoin extends PaytoUriGeneric {
   isKnown: true;
   targetType: "bitcoin";
-  generateSegwitAddress: (r: string) => { addr1: string; addr2: string };
-  addr1?: string;
-  addr2?: string;
+  addr1: string;
+  addr2: string;
 }
 
 const paytoPfx = "payto://";
@@ -131,7 +130,7 @@ export function parsePaytoUri(s: string): PaytoUri | undefined {
   const searchParams = new URLSearchParams(search || "");
 
   searchParams.forEach((v, k) => {
-    params[v] = k;
+    params[k] = v;
   });
 
   if (targetType === "x-taler-bank") {
@@ -157,15 +156,18 @@ export function parsePaytoUri(s: string): PaytoUri | undefined {
     };
   }
   if (targetType === "bitcoin") {
+    const msg = /\b([A-Z0-9]{52})\b/.exec(params["message"])
+    const reserve = !msg ? params["subject"] : msg[0];
+    const { addr1, addr2 } = generateFakeSegwitAddress(reserve, targetPath);
+
     const result: PaytoUriBitcoin = {
       isKnown: true,
       targetPath,
       targetType,
       params,
-      generateSegwitAddress: (): any => null,
+      addr1, addr2
     };
 
-    result.generateSegwitAddress = buildSegwitGenerator(result, targetPath);
     return result;
   }
   return {

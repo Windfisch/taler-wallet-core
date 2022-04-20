@@ -66,9 +66,6 @@ export function ManualWithdrawPage({ currency, onCancel }: Props): VNode {
       );
       const payto = response.exchangePaytoUris[0];
       const paytoURI = parsePaytoUri(payto);
-      if (paytoURI && paytoURI.isKnown && paytoURI.targetType === "bitcoin") {
-        paytoURI.generateSegwitAddress(response.reservePub);
-      }
       setSuccess({ exchangeBaseUrl, response, amount, paytoURI, payto });
     } catch (e) {
       if (e instanceof Error) {

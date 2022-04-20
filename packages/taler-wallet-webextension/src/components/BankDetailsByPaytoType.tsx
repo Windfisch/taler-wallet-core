@@ -45,10 +45,6 @@ export function BankDetailsByPaytoType({
 
   if (payto.isKnown && payto.targetType === "bitcoin") {
     const min = segwitMinAmount(amount.currency);
-    if (typeof window !== "undefined") {
-      //FIXME: generate (and possibly save in db?) in wallet-core
-      payto.generateSegwitAddress(subject);
-    }
     return (
       <section style={{ textAlign: "left" }}>
         <p>

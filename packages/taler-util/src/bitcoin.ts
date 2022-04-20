@@ -23,7 +23,7 @@
  * Imports.
  */
 import { AmountJson, Amounts } from "./amounts.js";
-import { getRandomBytes, decodeCrock } from "./talerCrypto.js";
+import { decodeCrock } from "./talerCrypto.js";
 import * as segwit from "./segwit_addr.js";
 
 export interface SegwitAddrs {
@@ -44,13 +44,14 @@ const hext2buf = (hexString: string) =>
 
 export function generateFakeSegwitAddress(
   reservePub: string,
-  addr: string,
+  addr: string
 ): SegwitAddrs {
   const pub = decodeCrock(reservePub);
 
-  const first_rnd = getRandomBytes(4);
-  const second_rnd = new Uint8Array(first_rnd.length);
-  second_rnd.set(first_rnd);
+  const first_rnd = new Uint8Array(4);
+  first_rnd.set(pub.subarray(0, 4))
+  const second_rnd = new Uint8Array(4);
+  second_rnd.set(pub.subarray(0, 4));
 
   first_rnd[0] = first_rnd[0] & 0b0111_1111;
   second_rnd[0] = second_rnd[0] | 0b1000_0000;
@@ -58,6 +59,7 @@ export function generateFakeSegwitAddress(
   const first_part = new Uint8Array(first_rnd.length + pub.length / 2);
   first_part.set(first_rnd, 0);
   first_part.set(pub.subarray(0, 16), 4);
+
   const second_part = new Uint8Array(first_rnd.length + pub.length / 2);
   second_part.set(second_rnd, 0);
   second_part.set(pub.subarray(16), 4);
