@@ -63,12 +63,11 @@ export function BankDetailsByPaytoType({
             <li>
               {payto.targetPath} {Amounts.stringifyValue(amount)} BTC
             </li>
-            <li>
-              {payto.addr1} {Amounts.stringifyValue(min)} BTC
-            </li>
-            <li>
-              {payto.addr2} {Amounts.stringifyValue(min)} BTC
-            </li>
+            {payto.segwitAddrs.map((addr, i) => (
+              <li key={i}>
+                {addr} {Amounts.stringifyValue(min)} BTC
+              </li>
+            ))}
           </ul>
           <i18n.Translate>
             In Electrum wallet paste the following three lines in &apos;Pay
@@ -78,12 +77,11 @@ export function BankDetailsByPaytoType({
             <li>
               {payto.targetPath},{Amounts.stringifyValue(amount)}
             </li>
-            <li>
-              {payto.addr1},{Amounts.stringifyValue(min)}
-            </li>
-            <li>
-              {payto.addr2},{Amounts.stringifyValue(min)}
-            </li>
+            {payto.segwitAddrs.map((addr, i) => (
+              <li key={i}>
+                {addr} {Amounts.stringifyValue(min)} BTC
+              </li>
+            ))}
           </ul>
           <i18n.Translate>
             Make sure the amount show{" "}
