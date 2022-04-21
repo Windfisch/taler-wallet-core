@@ -26,7 +26,7 @@
 import {
   classifyTalerUri,
   CoreApiResponse,
-  CoreApiResponseSuccess, TalerErrorCode,
+  CoreApiResponseSuccess, Logger, TalerErrorCode,
   TalerUriType,
   WalletDiagnostics
 } from "@gnu-taler/taler-util";
@@ -65,6 +65,8 @@ let currentDatabase: DbAccess<typeof WalletStoresV1> | undefined;
 let outdatedDbVersion: number | undefined;
 
 const walletInit: OpenedPromise<void> = openPromise<void>();
+
+const logger = new Logger("wxBackend.ts");
 
 async function getDiagnostics(): Promise<WalletDiagnostics> {
   const manifestData = platform.getWalletVersion();
@@ -136,13 +138,13 @@ async function dispatch(
     }
     case "wxSetExtendedPermissions": {
       const newVal = req.payload.value;
-      console.log("new extended permissions value", newVal);
+      logger.trace("new extended permissions value", newVal);
       if (newVal) {
         platform.registerTalerHeaderListener(parseTalerUriAndRedirect);
         r = wrapResponse({ newValue: true });
       } else {
         const rem = await platform.getPermissionsApi().remove(getReadRequestPermissions());
-        console.log("permissions removed:", rem);
+        logger.trace("permissions removed:", rem);
         r = wrapResponse({ newVal: false });
       }
       break;
@@ -184,7 +186,7 @@ async function reinitWallet(): Promise<void> {
   try {
     currentDatabase = await openTalerDatabase(indexedDB as any, reinitWallet);
   } catch (e) {
-    console.error("could not open database", e);
+    logger.error("could not open database", e);
     walletInit.reject(e);
     return;
   }
@@ -202,12 +204,12 @@ async function reinitWallet(): Promise<void> {
     timer = new SetTimeoutTimerAPI();
   }
 
-  console.log("setting wallet");
+  logger.info("Setting up wallet");
   const wallet = await Wallet.create(currentDatabase, httpLib, timer, cryptoWorker);
   try {
     await wallet.handleCoreApiRequest("initWallet", "native-init", {});
   } catch (e) {
-    console.error("could not initialize wallet", e);
+    logger.error("could not initialize wallet", e);
     walletInit.reject(e);
     return;
   }
@@ -216,7 +218,7 @@ async function reinitWallet(): Promise<void> {
     platform.sendMessageToAllChannels(message)
   });
   wallet.runTaskLoop().catch((e) => {
-    console.log("error during wallet task loop", e);
+    logger.error("error during wallet task loop", e);
   });
   // Useful for debugging in the background page.
   if (typeof window !== "undefined") {
@@ -254,7 +256,7 @@ function parseTalerUriAndRedirect(tabId: number, talerUri: string): void {
       // handleNotifyReserve(w);
       break;
     default:
-      console.warn(
+      logger.warn(
         "Response with HTTP 402 has Taler header, but header value is not a taler:// URI.",
       );
       break;
@@ -268,6 +270,7 @@ function parseTalerUriAndRedirect(tabId: number, talerUri: string): void {
  * Sets up all event handlers and other machinery.
  */
 export async function wxMain(): Promise<void> {
+  logger.trace("starting")
   const afterWalletIsInitialized = reinitWallet();
 
   platform.registerReloadOnNewVersion();
@@ -285,14 +288,14 @@ export async function wxMain(): Promise<void> {
   try {
     platform.registerTalerHeaderListener(parseTalerUriAndRedirect);
   } catch (e) {
-    console.log(e);
+    logger.error("could not register header listener", e);
   }
 
   // On platforms that support it, also listen to external
   // modification of permissions.
   platform.getPermissionsApi().addPermissionsListener((perm, lastError) => {
     if (lastError) {
-      console.error(lastError);
+      logger.error(`there was a problem trying to get permission ${perm}`, lastError);
       return;
     }
     platform.registerTalerHeaderListener(parseTalerUriAndRedirect);
