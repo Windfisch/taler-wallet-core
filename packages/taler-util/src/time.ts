@@ -292,7 +292,7 @@ export function durationMin(d1: Duration, d2: Duration): Duration {
     return { d_ms: d2.d_ms };
   }
   if (d2.d_ms === "forever") {
-    return { d_ms: d2.d_ms };
+    return { d_ms: d1.d_ms };
   }
   return { d_ms: Math.min(d1.d_ms, d2.d_ms) };
 }
