@@ -119,7 +119,7 @@ export function useComponentState(
   const uriHookDep =
     !uriInfoHook || uriInfoHook.hasError || !uriInfoHook.response
       ? undefined
-      : uriInfoHook;
+      : uriInfoHook.response;
 
   const { amount, thisExchange, thisCurrencyExchanges } = useMemo(() => {
     if (!uriHookDep)
@@ -129,7 +129,7 @@ export function useComponentState(
         thisCurrencyExchanges: [],
       };
 
-    const { uriInfo, knownExchanges } = uriHookDep.response;
+    const { uriInfo, knownExchanges } = uriHookDep;
 
     const amount = uriInfo ? Amounts.parseOrThrow(uriInfo.amount) : undefined;
     const thisCurrencyExchanges =
@@ -324,9 +324,11 @@ export function useComponentState(
     withdrawalFee,
     chosenAmount: amount,
     doWithdrawal: {
-      onClick: doWithdrawAndCheckError,
+      onClick:
+        doingWithdraw || (mustAcceptFirst && !reviewed)
+          ? undefined
+          : doWithdrawAndCheckError,
       error: withdrawError,
-      disabled: doingWithdraw || (mustAcceptFirst && !reviewed),
     },
     tosProps: !termsState
       ? undefined
@@ -427,7 +429,7 @@ export function View({ state }: { state: Success }): VNode {
             (state.mustAcceptFirst && state.tosProps.reviewed)) && (
             <ButtonSuccess
               upperCased
-              disabled={state.doWithdrawal.disabled}
+              disabled={!state.doWithdrawal.onClick}
               onClick={state.doWithdrawal.onClick}
             >
               <i18n.Translate>Confirm withdrawal</i18n.Translate>
@@ -436,7 +438,7 @@ export function View({ state }: { state: Success }): VNode {
           {state.tosProps.terms.status === "notfound" && (
             <ButtonWarning
               upperCased
-              disabled={state.doWithdrawal.disabled}
+              disabled={!state.doWithdrawal.onClick}
               onClick={state.doWithdrawal.onClick}
             >
               <i18n.Translate>Withdraw anyway</i18n.Translate>

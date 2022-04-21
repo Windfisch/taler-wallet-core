@@ -149,7 +149,7 @@ describe("Withdraw CTA states", () => {
       expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"))
       expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"))
 
-      expect(state.doWithdrawal.disabled).false
+      expect(state.doWithdrawal.onClick).not.undefined
       expect(state.mustAcceptFirst).false
 
     }
@@ -213,7 +213,7 @@ describe("Withdraw CTA states", () => {
       expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"))
       expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"))
 
-      expect(state.doWithdrawal.disabled).true
+      expect(state.doWithdrawal.onClick).undefined
       expect(state.mustAcceptFirst).true
 
       // accept TOS
@@ -238,7 +238,7 @@ describe("Withdraw CTA states", () => {
       expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"))
       expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"))
 
-      expect(state.doWithdrawal.disabled).false
+      expect(state.doWithdrawal.onClick).not.undefined
       expect(state.mustAcceptFirst).true
 
     }

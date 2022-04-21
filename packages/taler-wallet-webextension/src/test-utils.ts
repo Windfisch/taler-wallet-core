@@ -64,7 +64,6 @@ export function renderNodeOrBrowser(Component: any, args: any): void {
 
 interface Mounted<T> {
   unmount: () => void;
-  getLastResult: () => T | null;
   getLastResultOrThrow: () => T;
   assertNoPendingUpdate: () => void;
   waitNextUpdate: (s?: string) => Promise<void>;
@@ -76,15 +75,23 @@ export function mountHook<T>(callback: () => T, Context?: ({ children }: { child
   // const result: { current: T | null } = {
   //   current: null
   // }
-  let lastResult: T | null = null;
+  let lastResult: T | Error | null = null;
 
   const listener: Array<() => void> = []
 
   // component that's going to hold the hook
   function Component(): VNode {
-    const hookResult = callback()
-    // save the hook result
-    lastResult = hookResult
+
+    try {
+      lastResult = callback()
+    } catch (e) {
+      if (e instanceof Error) {
+        lastResult = e
+      } else {
+        lastResult = new Error(`mounting the hook throw an exception: ${e}`)
+      }
+    }
+
     // notify to everyone waiting for an update and clean the queue
     listener.splice(0, listener.length).forEach(cb => cb())
     return create(Fragment, {})
@@ -123,7 +130,7 @@ export function mountHook<T>(callback: () => T, Context?: ({ children }: { child
     }
   }
 
-  function getLastResult(): T | null {
+  function getLastResult(): T | Error | null {
     const copy = lastResult
     lastResult = null
     return copy;
@@ -131,6 +138,7 @@ export function mountHook<T>(callback: () => T, Context?: ({ children }: { child
 
   function getLastResultOrThrow(): T {
     const r = getLastResult()
+    if (r instanceof Error) throw r;
     if (!r) throw Error('there was no last result')
     return r;
   }
@@ -143,14 +151,18 @@ export function mountHook<T>(callback: () => T, Context?: ({ children }: { child
 
       listener.push(() => {
         clearTimeout(tid)
-        rej(Error(`Expecting no pending result but the hook get updated. Check the dependencies of the hooks.`))
+        rej(Error(`Expecting no pending result but the hook got updated. 
+        If the update was not intended you need to check the hook dependencies 
+        (or dependencies of the internal state) but otherwise make 
+        sure to consume the result before ending the test.`))
       })
     })
 
     const r = getLastResult()
-    if (r) throw Error('There are still pending results. This may happen because the hook did a new update but the test didn\'t get the result using getLastResult');
+    if (r) throw Error(`There are still pending results.
+    This may happen because the hook did a new update but the test didn't consume the result using getLastResult`);
   }
   return {
-    unmount, getLastResult, getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate
+    unmount, getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate
   }
 }

@@ -19,9 +19,13 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { ContractTerms, PreparePayResultType } from "@gnu-taler/taler-util";
+import {
+  Amounts,
+  ContractTerms,
+  PreparePayResultType,
+} from "@gnu-taler/taler-util";
 import { createExample } from "../test-utils.js";
-import { PaymentRequestView as TestedComponent } from "./Pay.js";
+import { View as TestedComponent } from "./Pay.js";
 
 export default {
   title: "cta/pay",
@@ -30,175 +34,323 @@ export default {
 };
 
 export const NoBalance = createExample(TestedComponent, {
-  payStatus: {
-    status: PreparePayResultType.InsufficientBalance,
-    noncePriv: "",
-    proposalId: "proposal1234",
-    contractTerms: {
-      merchant: {
-        name: "someone",
+  state: {
+    status: "ready",
+    hook: undefined,
+    amount: Amounts.parseOrThrow("USD:10"),
+    balance: undefined,
+    payHandler: {
+      onClick: async () => {
+        null;
       },
-      summary: "some beers",
-      amount: "USD:10",
-    } as Partial<ContractTerms> as any,
-    amountRaw: "USD:10",
+    },
+    totalFees: Amounts.parseOrThrow("USD:0"),
+    payResult: undefined,
+    uri: "",
+    payStatus: {
+      status: PreparePayResultType.InsufficientBalance,
+      noncePriv: "",
+      proposalId: "proposal1234",
+      contractTerms: {
+        merchant: {
+          name: "someone",
+        },
+        summary: "some beers",
+        amount: "USD:10",
+      } as Partial<ContractTerms> as any,
+      amountRaw: "USD:10",
+    },
   },
+  goBack: () => null,
+  goToWalletManualWithdraw: () => null,
 });
 
 export const NoEnoughBalance = createExample(TestedComponent, {
-  payStatus: {
-    status: PreparePayResultType.InsufficientBalance,
-    noncePriv: "",
-    proposalId: "proposal1234",
-    contractTerms: {
-      merchant: {
-        name: "someone",
+  state: {
+    status: "ready",
+    hook: undefined,
+    amount: Amounts.parseOrThrow("USD:10"),
+    balance: {
+      currency: "USD",
+      fraction: 40000000,
+      value: 9,
+    },
+    payHandler: {
+      onClick: async () => {
+        null;
       },
-      summary: "some beers",
-      amount: "USD:10",
-    } as Partial<ContractTerms> as any,
-    amountRaw: "USD:10",
+    },
+    totalFees: Amounts.parseOrThrow("USD:0"),
+    payResult: undefined,
+    uri: "",
+    payStatus: {
+      status: PreparePayResultType.InsufficientBalance,
+      noncePriv: "",
+      proposalId: "proposal1234",
+      contractTerms: {
+        merchant: {
+          name: "someone",
+        },
+        summary: "some beers",
+        amount: "USD:10",
+      } as Partial<ContractTerms> as any,
+      amountRaw: "USD:10",
+    },
   },
-  balance: {
-    currency: "USD",
-    fraction: 40000000,
-    value: 9,
-  },
+  goBack: () => null,
+  goToWalletManualWithdraw: () => null,
 });
 
 export const PaymentPossible = createExample(TestedComponent, {
-  uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
-  payStatus: {
-    status: PreparePayResultType.PaymentPossible,
-    amountEffective: "USD:10",
-    amountRaw: "USD:10",
-    noncePriv: "",
-    contractTerms: {
-      nonce: "123213123",
-      merchant: {
-        name: "someone",
+  state: {
+    status: "ready",
+    hook: undefined,
+    amount: Amounts.parseOrThrow("USD:10"),
+    balance: {
+      currency: "USD",
+      fraction: 40000000,
+      value: 11,
+    },
+    payHandler: {
+      onClick: async () => {
+        null;
       },
-      amount: "USD:10",
-      summary: "some beers",
-    } as Partial<ContractTerms> as any,
-    contractTermsHash: "123456",
-    proposalId: "proposal1234",
+    },
+    totalFees: Amounts.parseOrThrow("USD:0"),
+    payResult: undefined,
+    uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
+    payStatus: {
+      status: PreparePayResultType.PaymentPossible,
+      amountEffective: "USD:10",
+      amountRaw: "USD:10",
+      noncePriv: "",
+      contractTerms: {
+        nonce: "123213123",
+        merchant: {
+          name: "someone",
+        },
+        amount: "USD:10",
+        summary: "some beers",
+      } as Partial<ContractTerms> as any,
+      contractTermsHash: "123456",
+      proposalId: "proposal1234",
+    },
   },
+  goBack: () => null,
+  goToWalletManualWithdraw: () => null,
 });
 
 export const PaymentPossibleWithFee = createExample(TestedComponent, {
-  uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
-  payStatus: {
-    status: PreparePayResultType.PaymentPossible,
-    amountEffective: "USD:10.20",
-    amountRaw: "USD:10",
-    noncePriv: "",
-    contractTerms: {
-      nonce: "123213123",
-      merchant: {
-        name: "someone",
+  state: {
+    status: "ready",
+    hook: undefined,
+    amount: Amounts.parseOrThrow("USD:10"),
+    balance: {
+      currency: "USD",
+      fraction: 40000000,
+      value: 11,
+    },
+    payHandler: {
+      onClick: async () => {
+        null;
       },
-      amount: "USD:10",
-      summary: "some beers",
-    } as Partial<ContractTerms> as any,
-    contractTermsHash: "123456",
-    proposalId: "proposal1234",
+    },
+    totalFees: Amounts.parseOrThrow("USD:0.20"),
+    payResult: undefined,
+    uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
+    payStatus: {
+      status: PreparePayResultType.PaymentPossible,
+      amountEffective: "USD:10.20",
+      amountRaw: "USD:10",
+      noncePriv: "",
+      contractTerms: {
+        nonce: "123213123",
+        merchant: {
+          name: "someone",
+        },
+        amount: "USD:10",
+        summary: "some beers",
+      } as Partial<ContractTerms> as any,
+      contractTermsHash: "123456",
+      proposalId: "proposal1234",
+    },
   },
+  goBack: () => null,
+  goToWalletManualWithdraw: () => null,
 });
 
 import beer from "../../static-dev/beer.png";
 
 export const TicketWithAProductList = createExample(TestedComponent, {
-  uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
-  payStatus: {
-    status: PreparePayResultType.PaymentPossible,
-    amountEffective: "USD:10",
-    amountRaw: "USD:10",
-    noncePriv: "",
-    contractTerms: {
-      nonce: "123213123",
-      merchant: {
-        name: "someone",
+  state: {
+    status: "ready",
+    hook: undefined,
+    amount: Amounts.parseOrThrow("USD:10"),
+    balance: {
+      currency: "USD",
+      fraction: 40000000,
+      value: 11,
+    },
+    payHandler: {
+      onClick: async () => {
+        null;
       },
-      amount: "USD:10",
-      products: [
-        {
-          description: "ten beers",
-          price: "USD:1",
-          quantity: 10,
-          image: beer,
+    },
+    totalFees: Amounts.parseOrThrow("USD:0.20"),
+    payResult: undefined,
+    uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
+    payStatus: {
+      status: PreparePayResultType.PaymentPossible,
+      amountEffective: "USD:10.20",
+      amountRaw: "USD:10",
+      noncePriv: "",
+      contractTerms: {
+        nonce: "123213123",
+        merchant: {
+          name: "someone",
         },
-        {
-          description: "beer without image",
-          price: "USD:1",
-          quantity: 10,
-        },
-        {
-          description: "one brown beer",
-          price: "USD:2",
-          quantity: 1,
-          image: beer,
-        },
-      ],
-      summary: "some beers",
-    } as Partial<ContractTerms> as any,
-    contractTermsHash: "123456",
-    proposalId: "proposal1234",
+        amount: "USD:10",
+        summary: "some beers",
+        products: [
+          {
+            description: "ten beers",
+            price: "USD:1",
+            quantity: 10,
+            image: beer,
+          },
+          {
+            description: "beer without image",
+            price: "USD:1",
+            quantity: 10,
+          },
+          {
+            description: "one brown beer",
+            price: "USD:2",
+            quantity: 1,
+            image: beer,
+          },
+        ],
+      } as Partial<ContractTerms> as any,
+      contractTermsHash: "123456",
+      proposalId: "proposal1234",
+    },
   },
+  goBack: () => null,
+  goToWalletManualWithdraw: () => null,
 });
 
 export const AlreadyConfirmedByOther = createExample(TestedComponent, {
-  payStatus: {
-    status: PreparePayResultType.AlreadyConfirmed,
-    amountEffective: "USD:10",
-    amountRaw: "USD:10",
-    contractTerms: {
-      merchant: {
-        name: "someone",
+  state: {
+    status: "ready",
+    hook: undefined,
+    amount: Amounts.parseOrThrow("USD:10"),
+    balance: {
+      currency: "USD",
+      fraction: 40000000,
+      value: 11,
+    },
+    payHandler: {
+      onClick: async () => {
+        null;
       },
-      summary: "some beers",
-      amount: "USD:10",
-    } as Partial<ContractTerms> as any,
-    contractTermsHash: "123456",
-    proposalId: "proposal1234",
-    paid: false,
+    },
+    totalFees: Amounts.parseOrThrow("USD:0.20"),
+    payResult: undefined,
+    uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
+    payStatus: {
+      status: PreparePayResultType.AlreadyConfirmed,
+      amountEffective: "USD:10",
+      amountRaw: "USD:10",
+      contractTerms: {
+        merchant: {
+          name: "someone",
+        },
+        summary: "some beers",
+        amount: "USD:10",
+      } as Partial<ContractTerms> as any,
+      contractTermsHash: "123456",
+      proposalId: "proposal1234",
+      paid: false,
+    },
   },
+  goBack: () => null,
+  goToWalletManualWithdraw: () => null,
 });
 
 export const AlreadyPaidWithoutFulfillment = createExample(TestedComponent, {
-  payStatus: {
-    status: PreparePayResultType.AlreadyConfirmed,
-    amountEffective: "USD:10",
-    amountRaw: "USD:10",
-    contractTerms: {
-      merchant: {
-        name: "someone",
+  state: {
+    status: "ready",
+    hook: undefined,
+    amount: Amounts.parseOrThrow("USD:10"),
+    balance: {
+      currency: "USD",
+      fraction: 40000000,
+      value: 11,
+    },
+    payHandler: {
+      onClick: async () => {
+        null;
       },
-      summary: "some beers",
-      amount: "USD:10",
-    } as Partial<ContractTerms> as any,
-    contractTermsHash: "123456",
-    proposalId: "proposal1234",
-    paid: true,
+    },
+    totalFees: Amounts.parseOrThrow("USD:0.20"),
+    payResult: undefined,
+    uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
+    payStatus: {
+      status: PreparePayResultType.AlreadyConfirmed,
+      amountEffective: "USD:10",
+      amountRaw: "USD:10",
+      contractTerms: {
+        merchant: {
+          name: "someone",
+        },
+        summary: "some beers",
+        amount: "USD:10",
+      } as Partial<ContractTerms> as any,
+      contractTermsHash: "123456",
+      proposalId: "proposal1234",
+      paid: true,
+    },
   },
+  goBack: () => null,
+  goToWalletManualWithdraw: () => null,
 });
 
 export const AlreadyPaidWithFulfillment = createExample(TestedComponent, {
-  payStatus: {
-    status: PreparePayResultType.AlreadyConfirmed,
-    amountEffective: "USD:10",
-    amountRaw: "USD:10",
-    contractTerms: {
-      merchant: {
-        name: "someone",
+  state: {
+    status: "ready",
+    hook: undefined,
+    amount: Amounts.parseOrThrow("USD:10"),
+    balance: {
+      currency: "USD",
+      fraction: 40000000,
+      value: 11,
+    },
+    payHandler: {
+      onClick: async () => {
+        null;
       },
-      fulfillment_message:
-        "congratulations! you are looking at the fulfillment message! ",
-      summary: "some beers",
-      amount: "USD:10",
-    } as Partial<ContractTerms> as any,
-    contractTermsHash: "123456",
-    proposalId: "proposal1234",
-    paid: true,
+    },
+    totalFees: Amounts.parseOrThrow("USD:0.20"),
+    payResult: undefined,
+    uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
+    payStatus: {
+      status: PreparePayResultType.AlreadyConfirmed,
+      amountEffective: "USD:10",
+      amountRaw: "USD:10",
+      contractTerms: {
+        merchant: {
+          name: "someone",
+        },
+        fulfillment_message:
+          "congratulations! you are looking at the fulfillment message! ",
+        summary: "some beers",
+        amount: "USD:10",
+      } as Partial<ContractTerms> as any,
+      contractTermsHash: "123456",
+      proposalId: "proposal1234",
+      paid: true,
+    },
   },
+  goBack: () => null,
+  goToWalletManualWithdraw: () => null,
 });

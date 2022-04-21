@@ -39,7 +39,12 @@ export interface HookOperationalError {
   details: TalerErrorDetail;
 }
 
+interface WithRetry {
+  retry: () => void;
+}
+
 export type HookResponse<T> = HookOk<T> | HookError | undefined;
+export type HookResponseWithRetry<T> = ((HookOk<T> | HookError) & WithRetry) | undefined;
 
 export function useAsyncAsHook<T>(
   fn: () => Promise<T | false>,
@@ -83,4 +88,46 @@ export function useAsyncAsHook<T>(
     }
   }, [args]);
   return result;
+}
+
+export function useAsyncAsHook2<T>(
+  fn: () => Promise<T | false>,
+  deps?: any[],
+): HookResponseWithRetry<T> {
+
+  const [result, setHookResponse] = useState<HookResponse<T>>(undefined);
+
+  const args = useMemo(() => ({
+    fn
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), deps || [])
+
+  async function doAsync(): Promise<void> {
+    try {
+      const response = await args.fn();
+      if (response === false) return;
+      setHookResponse({ hasError: false, response });
+    } catch (e) {
+      if (e instanceof TalerError) {
+        setHookResponse({
+          hasError: true,
+          operational: true,
+          details: e.errorDetail,
+        });
+      } else if (e instanceof Error) {
+        setHookResponse({
+          hasError: true,
+          operational: false,
+          message: e.message,
+        });
+      }
+    }
+  }
+
+  useEffect(() => {
+    doAsync();
+  }, [args]);
+
+  if (!result) return undefined;
+  return { ...result, retry: doAsync };
 }

@@ -62,8 +62,7 @@ export interface TextFieldHandler {
 }
 
 export interface ButtonHandler {
-  onClick: () => Promise<void>;
-  disabled?: boolean;
+  onClick?: () => Promise<void>;
   error?: TalerError;
 }
 
