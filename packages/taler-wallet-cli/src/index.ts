@@ -749,9 +749,6 @@ advancedCli
   .requiredArgument("reservePub", clk.STRING)
   .action(async (args) => {
     const p = parsePaytoUri(args.genSegwit.paytoUri);
-    if (p?.isKnown && p?.targetType === "bitcoin") {
-      p.generateSegwitAddress(args.genSegwit.reservePub);
-    }
     console.log(p);
   });
 
