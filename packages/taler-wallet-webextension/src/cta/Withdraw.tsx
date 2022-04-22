@@ -42,10 +42,7 @@ import {
 import { useTranslationContext } from "../context/translation.js";
 import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { buildTermsOfServiceState } from "../utils/index.js";
-import {
-  ButtonHandler,
-  SelectFieldHandler,
-} from "../wallet/CreateManualWithdraw.js";
+import { ButtonHandler, SelectFieldHandler } from "../mui/handlers.js";
 import * as wxApi from "../wxApi.js";
 import {
   Props as TermsOfServiceSectionProps,
@@ -258,7 +255,7 @@ export function useComponentState(
   }
 
   const exchangeHandler: SelectFieldHandler = {
-    onChange: setNextExchange,
+    onChange: async (e) => setNextExchange(e),
     value: nextExchange ?? thisExchange,
     list: exchanges,
     isDirty: nextExchange !== undefined,

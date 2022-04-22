@@ -65,39 +65,13 @@ import {
   useAsyncAsHook,
   useAsyncAsHook2,
 } from "../hooks/useAsyncAsHook.js";
-import { ButtonHandler } from "../wallet/CreateManualWithdraw.js";
+import { ButtonHandler } from "../mui/handlers.js";
 import * as wxApi from "../wxApi.js";
 
 interface Props {
   talerPayUri?: string;
   goToWalletManualWithdraw: (currency?: string) => void;
   goBack: () => void;
-}
-
-async function doPayment(
-  payStatus: PreparePayResult,
-  api: typeof wxApi,
-): Promise<ConfirmPayResultDone> {
-  if (payStatus.status !== "payment-possible") {
-    throw TalerError.fromUncheckedDetail({
-      code: TalerErrorCode.GENERIC_CLIENT_INTERNAL_ERROR,
-      hint: `payment is not possible: ${payStatus.status}`,
-    });
-  }
-  const proposalId = payStatus.proposalId;
-  const res = await api.confirmPay(proposalId, undefined);
-  if (res.type !== ConfirmPayResultType.Done) {
-    throw TalerError.fromUncheckedDetail({
-      code: TalerErrorCode.GENERIC_CLIENT_INTERNAL_ERROR,
-      hint: `could not confirm payment`,
-      payResult: res,
-    });
-  }
-  const fu = res.contractTerms.fulfillment_url;
-  if (fu) {
-    document.location.href = fu;
-  }
-  return res;
 }
 
 type State = Loading | Ready | Confirmed;

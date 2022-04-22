@@ -69,9 +69,12 @@ const SideBar = styled.div`
   & > {
     ol {
       padding: 4px;
-      div {
+      div:first-child {
         background-color: lightcoral;
         cursor: pointer;
+      }
+      div[data-hide="true"] {
+        display: none;
       }
       dd {
         margin-left: 1em;
@@ -192,12 +195,12 @@ function ExampleList({
   selected: ExampleItem | undefined;
   onSelectStory: (i: ExampleItem, id: string) => void;
 }): VNode {
-  const [open, setOpen] = useState(true);
+  const [isOpen, setOpen] = useState(selected && selected.group === name);
   return (
     <ol>
-      <div onClick={() => setOpen(!open)}>{name}</div>
-      {open &&
-        list.map((k) => (
+      <div onClick={() => setOpen(!isOpen)}>{name}</div>
+      <div data-hide={!isOpen}>
+        {list.map((k) => (
           <li key={k.name}>
             <dl>
               <dt>{k.name}</dt>
@@ -215,6 +218,7 @@ function ExampleList({
                       href={`#${eId}`}
                       onClick={(e) => {
                         e.preventDefault();
+                        location.hash = `#${eId}`;
                         onSelectStory(r, eId);
                       }}
                     >
@@ -226,6 +230,7 @@ function ExampleList({
             </dl>
           </li>
         ))}
+      </div>
     </ol>
   );
 }
@@ -335,6 +340,7 @@ function Application(): VNode {
 
   return (
     <Page>
+      <LiveReload />
       <SideBar>
         {allExamples.map((e) => (
           <ExampleList
@@ -381,4 +387,57 @@ function main(): void {
       document.body.innerText = `Fatal error: "${e.message}".  Please report this bug at https://bugs.gnunet.org/.`;
     }
   }
+}
+
+let liveReloadMounted = false;
+function LiveReload({ port = 8002 }: { port?: number }): VNode {
+  const [isReloading, setIsReloading] = useState(false);
+  useEffect(() => {
+    if (!liveReloadMounted) {
+      setupLiveReload(port, () => {
+        setIsReloading(true);
+        window.location.reload();
+      });
+      liveReloadMounted = true;
+    }
+  });
+
+  if (isReloading) {
+    return (
+      <div
+        style={{
+          position: "absolute",
+          width: "100%",
+          height: "100%",
+          backgroundColor: "rgba(0,0,0,0.5)",
+          color: "white",
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        <h1 style={{ margin: "auto" }}>reloading...</h1>
+      </div>
+    );
+  }
+  return <Fragment />;
+}
+
+function setupLiveReload(port: number, onReload: () => void): void {
+  const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+  const host = location.hostname;
+  const socketPath = `${protocol}//${host}:${port}/socket`;
+
+  const ws = new WebSocket(socketPath);
+  ws.onmessage = (message) => {
+    const event = JSON.parse(message.data);
+    if (event.type === "LOG") {
+      console.log(event.message);
+    }
+    if (event.type === "RELOAD") {
+      onReload();
+    }
+  };
+  ws.onerror = (error) => {
+    console.error(error);
+  };
 }

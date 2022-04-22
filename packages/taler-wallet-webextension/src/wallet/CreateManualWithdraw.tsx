@@ -37,6 +37,7 @@ import {
   SubTitle,
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
+import { SelectFieldHandler, TextFieldHandler } from "../mui/handlers.js";
 import { Pages } from "../NavigationBar.js";
 
 export interface Props {
@@ -53,25 +54,6 @@ export interface State {
   amount: TextFieldHandler;
   currency: SelectFieldHandler;
   exchange: SelectFieldHandler;
-}
-
-export interface TextFieldHandler {
-  onInput: (value: string) => void;
-  value: string;
-  error?: string;
-}
-
-export interface ButtonHandler {
-  onClick?: () => Promise<void>;
-  error?: TalerError;
-}
-
-export interface SelectFieldHandler {
-  onChange: (value: string) => void;
-  error?: string;
-  value: string;
-  isDirty?: boolean;
-  list: Record<string, string>;
 }
 
 export function useComponentState(
@@ -109,12 +91,12 @@ export function useComponentState(
   const [amount, setAmount] = useState(initialAmount || "");
   const parsedAmount = Amounts.parse(`${currency}:${amount}`);
 
-  function changeExchange(exchange: string): void {
+  async function changeExchange(exchange: string): Promise<void> {
     setExchange(exchange);
     setCurrency(exchangeUrlWithCurrency[exchange]);
   }
 
-  function changeCurrency(currency: string): void {
+  async function changeCurrency(currency: string): Promise<void> {
     setCurrency(currency);
     const found = Object.entries(exchangeUrlWithCurrency).find(
       (e) => e[1] === currency,
@@ -140,7 +122,7 @@ export function useComponentState(
     },
     amount: {
       value: amount,
-      onInput: (e: string) => setAmount(e),
+      onInput: async (e: string) => setAmount(e),
     },
     parsedAmount,
   };

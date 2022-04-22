@@ -20,10 +20,13 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { Balance, parsePaytoUri } from "@gnu-taler/taler-util";
+import { Amounts, Balance, parsePaytoUri } from "@gnu-taler/taler-util";
 import type { DepositGroupFees } from "@gnu-taler/taler-wallet-core/src/operations/deposits.js";
 import { createExample } from "../test-utils.js";
-import { View as TestedComponent } from "./DepositPage.js";
+import {
+  createLabelsForBankAccount,
+  View as TestedComponent,
+} from "./DepositPage.js";
 
 export default {
   title: "wallet/deposit",
@@ -41,23 +44,44 @@ async function alwaysReturnFeeToOne(): Promise<DepositGroupFees> {
 }
 
 export const WithEmptyAccountList = createExample(TestedComponent, {
-  accounts: [],
-  balances: [
-    {
-      available: "USD:10",
-    } as Balance,
-  ],
-  currency: "USD",
-  onCalculateFee: alwaysReturnFeeToOne,
+  state: {
+    status: "no-accounts",
+    cancelHandler: {},
+  },
+  // accounts: [],
+  // balances: [
+  //   {
+  //     available: "USD:10",
+  //   } as Balance,
+  // ],
+  // currency: "USD",
+  // onCalculateFee: alwaysReturnFeeToOne,
 });
 
+const ac = parsePaytoUri("payto://iban/ES8877998399652238")!;
+const accountMap = createLabelsForBankAccount([ac]);
+
 export const WithSomeBankAccounts = createExample(TestedComponent, {
-  accounts: [parsePaytoUri("payto://iban/ES8877998399652238")!],
-  balances: [
-    {
-      available: "USD:10",
-    } as Balance,
-  ],
-  currency: "USD",
-  onCalculateFee: alwaysReturnFeeToOne,
+  state: {
+    status: "ready",
+    account: {
+      list: accountMap,
+      value: accountMap[0],
+      onChange: async () => {
+        null;
+      },
+    },
+    currency: "USD",
+    amount: {
+      onInput: async () => {
+        null;
+      },
+      value: "10:USD",
+    },
+    cancelHandler: {},
+    depositHandler: {},
+    totalFee: Amounts.getZero("USD"),
+    totalToDeposit: Amounts.parseOrThrow("USD:10"),
+    // onCalculateFee: alwaysReturnFeeToOne,
+  },
 });

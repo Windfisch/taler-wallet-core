@@ -21,8 +21,9 @@
  */
 
 import { expect } from "chai";
+import { SelectFieldHandler, TextFieldHandler } from "../mui/handlers.js";
 import { mountHook } from "../test-utils.js";
-import { SelectFieldHandler, TextFieldHandler, useComponentState } from "./CreateManualWithdraw.js";
+import { useComponentState } from "./CreateManualWithdraw.js";
 
 
 const exchangeListWithARSandUSD = {

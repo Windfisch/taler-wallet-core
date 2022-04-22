@@ -66,7 +66,9 @@ export const TermsOfServiceNotYetLoaded = createExample(TestedComponent, {
     exchange: {
       list: exchangeList,
       value: "exchange.demo.taler.net",
-      onChange: () => null,
+      onChange: async () => {
+        null;
+      },
     },
     showExchangeSelection: false,
     mustAcceptFirst: false,
@@ -99,7 +101,9 @@ export const WithSomeFee = createExample(TestedComponent, {
     exchange: {
       list: exchangeList,
       value: "exchange.demo.taler.net",
-      onChange: () => null,
+      onChange: async () => {
+        null;
+      },
     },
     showExchangeSelection: false,
     mustAcceptFirst: false,
@@ -133,7 +137,9 @@ export const WithoutFee = createExample(TestedComponent, {
     exchange: {
       list: exchangeList,
       value: "exchange.demo.taler.net",
-      onChange: () => null,
+      onChange: async () => {
+        null;
+      },
     },
     showExchangeSelection: false,
     mustAcceptFirst: false,
@@ -167,7 +173,9 @@ export const EditExchangeUntouched = createExample(TestedComponent, {
     exchange: {
       list: exchangeList,
       value: "exchange.demo.taler.net",
-      onChange: () => null,
+      onChange: async () => {
+        null;
+      },
     },
     showExchangeSelection: true,
     mustAcceptFirst: false,
@@ -202,7 +210,9 @@ export const EditExchangeModified = createExample(TestedComponent, {
       list: exchangeList,
       isDirty: true,
       value: "exchange.test.taler.net",
-      onChange: () => null,
+      onChange: async () => {
+        null;
+      },
     },
     showExchangeSelection: true,
     mustAcceptFirst: false,

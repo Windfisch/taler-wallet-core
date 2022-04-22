@@ -15,16 +15,10 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
 */
 
-import {
-  AmountJson,
-  Amounts,
-  AmountString,
-  Balance,
-  PaytoUri,
-} from "@gnu-taler/taler-util";
+import { AmountJson, Amounts, PaytoUri } from "@gnu-taler/taler-util";
 import { DepositGroupFees } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import { Fragment, h, VNode } from "preact";
-import { useEffect, useState } from "preact/hooks";
+import { useState } from "preact/hooks";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import { SelectList } from "../components/SelectList.js";
@@ -38,12 +32,13 @@ import {
   WarningBox,
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
-import * as wxApi from "../wxApi.js";
+import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import {
+  ButtonHandler,
   SelectFieldHandler,
   TextFieldHandler,
-} from "./CreateManualWithdraw.js";
+} from "../mui/handlers.js";
+import * as wxApi from "../wxApi.js";
 
 interface Props {
   currency: string;
@@ -51,125 +46,153 @@ interface Props {
   onSuccess: (currency: string) => void;
 }
 export function DepositPage({ currency, onCancel, onSuccess }: Props): VNode {
-  const state = useAsyncAsHook(async () => {
-    const { balances } = await wxApi.getBalance();
-    const { accounts } = await wxApi.listKnownBankAccounts(currency);
-    return { accounts, balances };
-  });
+  const state = useComponentState(currency, onCancel, onSuccess, wxApi);
 
-  const { i18n } = useTranslationContext();
-
-  async function doSend(p: PaytoUri, a: AmountJson): Promise<void> {
-    const account = `payto://${p.targetType}/${p.targetPath}`;
-    const amount = Amounts.stringify(a);
-    await wxApi.createDepositGroup(account, amount);
-    onSuccess(currency);
-  }
-
-  async function getFeeForAmount(
-    p: PaytoUri,
-    a: AmountJson,
-  ): Promise<DepositGroupFees> {
-    const account = `payto://${p.targetType}/${p.targetPath}`;
-    const amount = Amounts.stringify(a);
-    return await wxApi.getFeeForDeposit(account, amount);
-  }
-
-  if (state === undefined) return <Loading />;
-
-  if (state.hasError) {
-    return (
-      <LoadingError
-        title={<i18n.Translate>Could not load deposit balance</i18n.Translate>}
-        error={state}
-      />
-    );
-  }
-
-  return (
-    <View
-      onCancel={() => onCancel(currency)}
-      currency={currency}
-      accounts={state.response.accounts}
-      balances={state.response.balances}
-      onSend={doSend}
-      onCalculateFee={getFeeForAmount}
-    />
-  );
+  return <View state={state} />;
 }
 
 interface ViewProps {
-  accounts: Array<PaytoUri>;
-  currency: string;
-  balances: Balance[];
-  onCancel: () => void;
-  onSend: (account: PaytoUri, amount: AmountJson) => Promise<void>;
-  onCalculateFee: (
-    account: PaytoUri,
-    amount: AmountJson,
-  ) => Promise<DepositGroupFees>;
+  state: State;
 }
 
-type State = NoBalanceState | NoAccountsState | DepositState;
+type State = Loading | NoBalanceState | NoAccountsState | DepositState;
+
+interface Loading {
+  status: "loading";
+  hook: HookError | undefined;
+}
 
 interface NoBalanceState {
   status: "no-balance";
 }
 interface NoAccountsState {
   status: "no-accounts";
+  cancelHandler: ButtonHandler;
 }
 interface DepositState {
-  status: "deposit";
+  status: "ready";
+  currency: string;
   amount: TextFieldHandler;
   account: SelectFieldHandler;
   totalFee: AmountJson;
   totalToDeposit: AmountJson;
-  unableToDeposit: boolean;
-  selectedAccount: PaytoUri;
-  parsedAmount: AmountJson | undefined;
+  // currentAccount: PaytoUri;
+  // parsedAmount: AmountJson | undefined;
+  cancelHandler: ButtonHandler;
+  depositHandler: ButtonHandler;
+}
+
+async function getFeeForAmount(
+  p: PaytoUri,
+  a: AmountJson,
+  api: typeof wxApi,
+): Promise<DepositGroupFees> {
+  const account = `payto://${p.targetType}/${p.targetPath}`;
+  const amount = Amounts.stringify(a);
+  return await api.getFeeForDeposit(account, amount);
 }
 
 export function useComponentState(
   currency: string,
-  accounts: PaytoUri[],
-  balances: Balance[],
-  onCalculateFee: (
-    account: PaytoUri,
-    amount: AmountJson,
-  ) => Promise<DepositGroupFees>,
+  onCancel: (currency: string) => void,
+  onSuccess: (currency: string) => void,
+  api: typeof wxApi,
 ): State {
-  const accountMap = createLabelsForBankAccount(accounts);
+  const hook = useAsyncAsHook(async () => {
+    const { balances } = await api.getBalance();
+    const { accounts } = await api.listKnownBankAccounts(currency);
+    const defaultSelectedAccount =
+      accounts.length > 0 ? accounts[0] : undefined;
+    return { accounts, balances, defaultSelectedAccount };
+  });
+
   const [accountIdx, setAccountIdx] = useState(0);
-  const [amount, setAmount] = useState<number | undefined>(undefined);
+  const [amount, setAmount] = useState<number>(0);
+
+  const [selectedAccount, setSelectedAccount] = useState<
+    PaytoUri | undefined
+  >();
+
+  const parsedAmount = Amounts.parse(`${currency}:${amount}`);
+
   const [fee, setFee] = useState<DepositGroupFees | undefined>(undefined);
-  function updateAmount(num: number | undefined): void {
-    setAmount(num);
-    setFee(undefined);
+
+  // const hookResponse = !hook || hook.hasError ? undefined : hook.response;
+
+  // useEffect(() => {}, [hookResponse]);
+
+  if (!hook || hook.hasError) {
+    return {
+      status: "loading",
+      hook,
+    };
   }
 
-  const selectedAmountSTR: AmountString = `${currency}:${amount}`;
-  const totalFee =
-    fee !== undefined
-      ? Amounts.sum([fee.wire, fee.coin, fee.refresh]).amount
-      : Amounts.getZero(currency);
-
-  const selectedAccount = accounts.length ? accounts[accountIdx] : undefined;
-
-  const parsedAmount =
-    amount === undefined ? undefined : Amounts.parse(selectedAmountSTR);
-
-  useEffect(() => {
-    if (selectedAccount === undefined || parsedAmount === undefined) return;
-    onCalculateFee(selectedAccount, parsedAmount).then((result) => {
-      setFee(result);
-    });
-  }, [amount, selectedAccount, parsedAmount, onCalculateFee]);
+  const { accounts, balances, defaultSelectedAccount } = hook.response;
+  const currentAccount = selectedAccount ?? defaultSelectedAccount;
 
   const bs = balances.filter((b) => b.available.startsWith(currency));
   const balance =
     bs.length > 0
       ? Amounts.parseOrThrow(bs[0].available)
       : Amounts.getZero(currency);
+
+  if (Amounts.isZero(balance)) {
+    return {
+      status: "no-balance",
+    };
+  }
+
+  if (!currentAccount) {
+    return {
+      status: "no-accounts",
+      cancelHandler: {
+        onClick: async () => {
+          onCancel(currency);
+        },
+      },
+    };
+  }
+  const accountMap = createLabelsForBankAccount(accounts);
+
+  async function updateAccount(accountStr: string): Promise<void> {
+    const idx = parseInt(accountStr, 10);
+    const newSelected = accounts.length > idx ? accounts[idx] : undefined;
+    if (accountIdx === idx || !newSelected) return;
+
+    if (!parsedAmount) {
+      setAccountIdx(idx);
+      setSelectedAccount(newSelected);
+    } else {
+      const result = await getFeeForAmount(newSelected, parsedAmount, api);
+      setAccountIdx(idx);
+      setSelectedAccount(newSelected);
+      setFee(result);
+    }
+  }
+
+  async function updateAmount(numStr: string): Promise<void> {
+    const num = parseFloat(numStr);
+    const newAmount = Number.isNaN(num) ? 0 : num;
+    if (amount === newAmount || !currentAccount) return;
+    const parsed = Amounts.parse(`${currency}:${newAmount}`);
+    if (!parsed) {
+      setAmount(newAmount);
+    } else {
+      const result = await getFeeForAmount(currentAccount, parsed, api);
+      setAmount(newAmount);
+      setFee(result);
+    }
+  }
+
+  const totalFee =
+    fee !== undefined
+      ? Amounts.sum([fee.wire, fee.coin, fee.refresh]).amount
+      : Amounts.getZero(currency);
+
+  const totalToDeposit = parsedAmount
+    ? Amounts.sub(parsedAmount, totalFee).amount
+    : Amounts.getZero(currency);
 
   const isDirty = amount !== 0;
   const amountError = !isDirty
@@ -180,65 +203,63 @@ export function useComponentState(
     ? `Too much, your current balance is ${Amounts.stringifyValue(balance)}`
     : undefined;
 
-  const totalToDeposit = parsedAmount
-    ? Amounts.sub(parsedAmount, totalFee).amount
-    : Amounts.getZero(currency);
-
   const unableToDeposit =
+    !parsedAmount ||
     Amounts.isZero(totalToDeposit) ||
     fee === undefined ||
     amountError !== undefined;
 
-  if (Amounts.isZero(balance)) {
-    return {
-      status: "no-balance",
-    };
-  }
+  async function doSend(): Promise<void> {
+    if (!currentAccount || !parsedAmount) return;
 
-  if (!accounts || !accounts.length || !selectedAccount) {
-    return {
-      status: "no-accounts",
-    };
+    const account = `payto://${currentAccount.targetType}/${currentAccount.targetPath}`;
+    const amount = Amounts.stringify(parsedAmount);
+    await api.createDepositGroup(account, amount);
+    onSuccess(currency);
   }
 
   return {
-    status: "deposit",
+    status: "ready",
+    currency,
     amount: {
       value: String(amount),
-      onInput: (e) => {
-        const num = parseFloat(e);
-        if (!Number.isNaN(num)) {
-          updateAmount(num);
-        } else {
-          updateAmount(undefined);
-          setFee(undefined);
-        }
-      },
+      onInput: updateAmount,
       error: amountError,
     },
     account: {
       list: accountMap,
       value: String(accountIdx),
-      onChange: (s) => setAccountIdx(parseInt(s, 10)),
+      onChange: updateAccount,
+    },
+    cancelHandler: {
+      onClick: async () => {
+        onCancel(currency);
+      },
+    },
+    depositHandler: {
+      onClick: unableToDeposit ? undefined : doSend,
     },
     totalFee,
     totalToDeposit,
-    unableToDeposit,
-    selectedAccount,
-    parsedAmount,
+    // currentAccount,
+    // parsedAmount,
   };
 }
 
-export function View({
-  onCancel,
-  currency,
-  accounts,
-  balances,
-  onSend,
-  onCalculateFee,
-}: ViewProps): VNode {
+export function View({ state }: ViewProps): VNode {
   const { i18n } = useTranslationContext();
-  const state = useComponentState(currency, accounts, balances, onCalculateFee);
+
+  if (state === undefined) return <Loading />;
+
+  if (state.status === "loading") {
+    if (!state.hook) return <Loading />;
+    return (
+      <LoadingError
+        title={<i18n.Translate>Could not load deposit balance</i18n.Translate>}
+        error={state.hook}
+      />
+    );
+  }
 
   if (state.status === "no-balance") {
     return (
@@ -258,7 +279,7 @@ export function View({
           </p>
         </WarningBox>
         <footer>
-          <Button onClick={onCancel}>
+          <Button onClick={state.cancelHandler.onClick}>
             <i18n.Translate>Cancel</i18n.Translate>
           </Button>
         </footer>
@@ -269,7 +290,7 @@ export function View({
   return (
     <Fragment>
       <SubTitle>
-        <i18n.Translate>Send {currency} to your account</i18n.Translate>
+        <i18n.Translate>Send {state.currency} to your account</i18n.Translate>
       </SubTitle>
       <section>
         <Input>
@@ -286,7 +307,7 @@ export function View({
             <i18n.Translate>Amount</i18n.Translate>
           </label>
           <div>
-            <span>{currency}</span>
+            <span>{state.currency}</span>
             <input
               type="number"
               value={state.amount.value}
@@ -302,7 +323,7 @@ export function View({
                 <i18n.Translate>Deposit fee</i18n.Translate>
               </label>
               <div>
-                <span>{currency}</span>
+                <span>{state.currency}</span>
                 <input
                   type="number"
                   disabled
@@ -316,7 +337,7 @@ export function View({
                 <i18n.Translate>Total deposit</i18n.Translate>
               </label>
               <div>
-                <span>{currency}</span>
+                <span>{state.currency}</span>
                 <input
                   type="number"
                   disabled
@@ -328,19 +349,18 @@ export function View({
         }
       </section>
       <footer>
-        <Button onClick={onCancel}>
+        <Button onClick={state.cancelHandler.onClick}>
           <i18n.Translate>Cancel</i18n.Translate>
         </Button>
-        {state.unableToDeposit ? (
+        {!state.depositHandler.onClick ? (
           <ButtonPrimary disabled>
             <i18n.Translate>Deposit</i18n.Translate>
           </ButtonPrimary>
         ) : (
-          <ButtonPrimary
-            onClick={() => onSend(state.selectedAccount, state.parsedAmount!)}
-          >
+          <ButtonPrimary onClick={state.depositHandler.onClick}>
             <i18n.Translate>
-              Deposit {Amounts.stringifyValue(state.totalToDeposit)} {currency}
+              Deposit {Amounts.stringifyValue(state.totalToDeposit)}{" "}
+              {state.currency}
             </i18n.Translate>
           </ButtonPrimary>
         )}
@@ -349,7 +369,9 @@ export function View({
   );
 }
 
-function createLabelsForBankAccount(knownBankAccounts: Array<PaytoUri>): {
+export function createLabelsForBankAccount(
+  knownBankAccounts: Array<PaytoUri>,
+): {
   [label: number]: string;
 } {
   if (!knownBankAccounts) return {};
