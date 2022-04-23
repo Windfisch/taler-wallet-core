@@ -84,6 +84,8 @@ export class ServiceWorkerHttpLib implements HttpRequestLibrary {
     });
   }
 
+  // FIXME: "Content-Type: application/json" goes here,
+  // after Sebastian suggestion.
   postJson(
     url: string,
     body: any,
@@ -91,6 +93,7 @@ export class ServiceWorkerHttpLib implements HttpRequestLibrary {
   ): Promise<HttpResponse> {
     return this.fetch(url, {
       method: "POST",
+      headers: {"Content-Type": "application/json"},
       body: JSON.stringify(body),
       ...opt,
     });

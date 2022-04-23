@@ -178,6 +178,7 @@ export class BrowserHttpLib implements HttpRequestLibrary {
   ): Promise<HttpResponse> {
     return this.fetch(url, {
       method: "POST",
+      headers: {"Content-Type": "application/json"},
       body: JSON.stringify(body),
       ...opt,
     });
