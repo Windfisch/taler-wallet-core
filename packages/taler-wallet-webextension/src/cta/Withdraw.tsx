@@ -40,11 +40,7 @@ import {
   WalletAction,
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
-import {
-  HookError,
-  useAsyncAsHook,
-  useAsyncAsHook2,
-} from "../hooks/useAsyncAsHook.js";
+import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { buildTermsOfServiceState } from "../utils/index.js";
 import { ButtonHandler, SelectFieldHandler } from "../mui/handlers.js";
 import * as wxApi from "../wxApi.js";
@@ -103,7 +99,7 @@ export function useComponentState(
   /**
    * Ask the wallet about the withdraw URI
    */
-  const uriInfoHook = useAsyncAsHook2(async () => {
+  const uriInfoHook = useAsyncAsHook(async () => {
     if (!talerWithdrawUri) throw Error("ERROR_NO-URI-FOR-WITHDRAWAL");
 
     const uriInfo = await api.getWithdrawalDetailsForUri({
@@ -151,7 +147,7 @@ export function useComponentState(
   /**
    * For the exchange selected, bring the status of the terms of service
    */
-  const terms = useAsyncAsHook2(async () => {
+  const terms = useAsyncAsHook(async () => {
     if (!thisExchange) return false;
 
     const exchangeTos = await api.getExchangeTos(thisExchange, ["text/xml"]);
@@ -165,7 +161,7 @@ export function useComponentState(
    * With the exchange and amount, ask the wallet the information
    * about the withdrawal
    */
-  const info = useAsyncAsHook2(async () => {
+  const info = useAsyncAsHook(async () => {
     if (!thisExchange || !amount) return false;
 
     const info = await api.getExchangeWithdrawalInfo({

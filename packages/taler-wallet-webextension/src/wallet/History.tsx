@@ -35,7 +35,7 @@ import {
 import { Time } from "../components/Time.js";
 import { TransactionItem } from "../components/TransactionItem.js";
 import { useTranslationContext } from "../context/translation.js";
-import { useAsyncAsHook2 } from "../hooks/useAsyncAsHook.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { NoBalanceHelp } from "../popup/NoBalanceHelp.js";
 import * as wxApi from "../wxApi.js";
 
@@ -50,7 +50,7 @@ export function HistoryPage({
   goToWalletDeposit,
 }: Props): VNode {
   const { i18n } = useTranslationContext();
-  const state = useAsyncAsHook2(async () => ({
+  const state = useAsyncAsHook(async () => ({
     b: await wxApi.getBalance(),
     tx: await wxApi.getTransactions(),
   }));

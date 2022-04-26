@@ -28,7 +28,7 @@ import { Diagnostics } from "../components/Diagnostics.js";
 import { NotifyUpdateFadeOut } from "../components/styled/index.js";
 import { Time } from "../components/Time.js";
 import { useTranslationContext } from "../context/translation.js";
-import { useAsyncAsHook2 } from "../hooks/useAsyncAsHook.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { useDiagnostics } from "../hooks/useDiagnostics.js";
 import * as wxApi from "../wxApi.js";
 
@@ -38,7 +38,7 @@ export function DeveloperPage(): VNode {
   const listenAllEvents = Array.from<NotificationType>({ length: 1 });
   listenAllEvents.includes = () => true; // includes every event
 
-  const response = useAsyncAsHook2(async () => {
+  const response = useAsyncAsHook(async () => {
     const op = await wxApi.getPendingOperations();
     const c = await wxApi.dumpCoins();
     const ex = await wxApi.listExchanges();

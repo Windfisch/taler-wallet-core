@@ -48,7 +48,7 @@ import {
 } from "../components/styled/index.js";
 import { Time } from "../components/Time.js";
 import { useTranslationContext } from "../context/translation.js";
-import { useAsyncAsHook2 } from "../hooks/useAsyncAsHook.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import * as wxApi from "../wxApi.js";
 
 interface Props {
@@ -69,7 +69,7 @@ async function getTransaction(tid: string): Promise<Transaction> {
 export function TransactionPage({ tid, goToWalletHistory }: Props): VNode {
   const { i18n } = useTranslationContext();
 
-  const state = useAsyncAsHook2(() => getTransaction(tid));
+  const state = useAsyncAsHook(() => getTransaction(tid));
 
   useEffect(() => {
     wxApi.onUpdateNotification([NotificationType.WithdrawGroupFinished], () => {

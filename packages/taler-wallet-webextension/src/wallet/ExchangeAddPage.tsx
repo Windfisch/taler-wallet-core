@@ -20,7 +20,7 @@ import {
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { useAsyncAsHook2 } from "../hooks/useAsyncAsHook.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { queryToSlashKeys } from "../utils/index.js";
 import * as wxApi from "../wxApi.js";
 import { ExchangeAddConfirmPage } from "./ExchangeAddConfirm.js";
@@ -36,7 +36,7 @@ export function ExchangeAddPage({ currency, onBack }: Props): VNode {
     { url: string; config: TalerConfigResponse } | undefined
   >(undefined);
 
-  const knownExchangesResponse = useAsyncAsHook2(wxApi.listExchanges);
+  const knownExchangesResponse = useAsyncAsHook(wxApi.listExchanges);
   const knownExchanges = !knownExchangesResponse
     ? []
     : knownExchangesResponse.hasError

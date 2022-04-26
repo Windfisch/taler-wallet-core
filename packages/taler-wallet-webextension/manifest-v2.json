@@ -7,7 +7,7 @@
   "version_name": "0.9.0-dev.9",
   "minimum_chrome_version": "51",
   "minimum_opera_version": "36",
-  "applications": {
+  "browser_specific_settings": {
     "gecko": {
       "id": "wallet@taler.net",
       "strict_min_version": "57.0"

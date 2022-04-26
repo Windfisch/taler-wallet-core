@@ -29,7 +29,6 @@ import {
   AmountJson,
   Amounts,
   ConfirmPayResult,
-  ConfirmPayResultDone,
   ConfirmPayResultType,
   ContractTerms,
   NotificationType,
@@ -60,11 +59,7 @@ import {
   WarningBox,
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
-import {
-  HookError,
-  useAsyncAsHook,
-  useAsyncAsHook2,
-} from "../hooks/useAsyncAsHook.js";
+import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { ButtonHandler } from "../mui/handlers.js";
 import * as wxApi from "../wxApi.js";
 
@@ -112,7 +107,7 @@ export function useComponentState(
   );
   const [payErrMsg, setPayErrMsg] = useState<TalerError | undefined>(undefined);
 
-  const hook = useAsyncAsHook2(async () => {
+  const hook = useAsyncAsHook(async () => {
     if (!talerPayUri) throw Error("ERROR_NO-URI-FOR-PAYMENT");
     const payStatus = await api.preparePay(talerPayUri);
     const balance = await api.getBalance();

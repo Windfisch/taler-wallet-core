@@ -32,7 +32,7 @@ import {
   WarningBox,
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
-import { HookError, useAsyncAsHook2 } from "../hooks/useAsyncAsHook.js";
+import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import {
   ButtonHandler,
   SelectFieldHandler,
@@ -98,7 +98,7 @@ export function useComponentState(
   onSuccess: (currency: string) => void,
   api: typeof wxApi,
 ): State {
-  const hook = useAsyncAsHook2(async () => {
+  const hook = useAsyncAsHook(async () => {
     const { balances } = await api.getBalance();
     const { accounts } = await api.listKnownBankAccounts(currency);
     const defaultSelectedAccount =

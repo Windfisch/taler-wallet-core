@@ -58,7 +58,10 @@ describe("Withdraw CTA states", () => {
       const { status, hook } = getLastResultOrThrow()
 
       expect(status).equals('loading-uri')
-      expect(hook).deep.equals({ "hasError": true, "operational": false, "message": "ERROR_NO-URI-FOR-WITHDRAWAL" });
+      if (!hook) expect.fail();
+      if (!hook.hasError) expect.fail();
+      if (hook.operational) expect.fail();
+      expect(hook.message).eq("ERROR_NO-URI-FOR-WITHDRAWAL");
     }
 
     await assertNoPendingUpdate()

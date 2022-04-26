@@ -29,7 +29,7 @@ import {
 } from "../components/styled/index.js";
 import { useDevContext } from "../context/devContext.js";
 import { useTranslationContext } from "../context/translation.js";
-import { useAsyncAsHook2 } from "../hooks/useAsyncAsHook.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { useBackupDeviceName } from "../hooks/useBackupDeviceName.js";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions.js";
 import { Pages } from "../NavigationBar.js";
@@ -41,7 +41,7 @@ export function SettingsPage(): VNode {
   const { devMode, toggleDevMode } = useDevContext();
   const { name, update } = useBackupDeviceName();
 
-  const exchangesHook = useAsyncAsHook2(wxApi.listExchanges);
+  const exchangesHook = useAsyncAsHook(wxApi.listExchanges);
 
   return (
     <SettingsView

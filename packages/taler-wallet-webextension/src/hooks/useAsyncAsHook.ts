@@ -48,50 +48,6 @@ export type HookResponseWithRetry<T> = ((HookOk<T> | HookError) & WithRetry) | u
 
 export function useAsyncAsHook<T>(
   fn: () => Promise<T | false>,
-  updateOnNotification?: Array<NotificationType>,
-  deps?: any[],
-): HookResponse<T> {
-
-  const args = useMemo(() => ({
-    fn, updateOnNotification
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), deps || [])
-  const [result, setHookResponse] = useState<HookResponse<T>>(undefined);
-
-  useEffect(() => {
-    async function doAsync(): Promise<void> {
-      try {
-        const response = await args.fn();
-        if (response === false) return;
-        setHookResponse({ hasError: false, response });
-      } catch (e) {
-        if (e instanceof TalerError) {
-          setHookResponse({
-            hasError: true,
-            operational: true,
-            details: e.errorDetail,
-          });
-        } else if (e instanceof Error) {
-          setHookResponse({
-            hasError: true,
-            operational: false,
-            message: e.message,
-          });
-        }
-      }
-    }
-    doAsync();
-    if (args.updateOnNotification && args.updateOnNotification.length > 0) {
-      return wxApi.onUpdateNotification(args.updateOnNotification, () => {
-        doAsync();
-      });
-    }
-  }, [args]);
-  return result;
-}
-
-export function useAsyncAsHook2<T>(
-  fn: () => Promise<T | false>,
   deps?: any[],
 ): HookResponseWithRetry<T> {
 

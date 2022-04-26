@@ -24,7 +24,7 @@ import { LoadingError } from "../components/LoadingError.js";
 import { MultiActionButton } from "../components/MultiActionButton.js";
 import { ButtonBoxPrimary, ButtonPrimary } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
-import { useAsyncAsHook2 } from "../hooks/useAsyncAsHook.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { AddNewActionView } from "../wallet/AddNewActionView.js";
 import * as wxApi from "../wxApi.js";
 import { NoBalanceHelp } from "./NoBalanceHelp.js";
@@ -41,7 +41,7 @@ export function BalancePage({
 }: Props): VNode {
   const { i18n } = useTranslationContext();
   const [addingAction, setAddingAction] = useState(false);
-  const state = useAsyncAsHook2(wxApi.getBalance);
+  const state = useAsyncAsHook(wxApi.getBalance);
 
   useEffect(() => {
     wxApi.onUpdateNotification([NotificationType.WithdrawGroupFinished], () => {

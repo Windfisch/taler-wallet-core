@@ -6,7 +6,7 @@ import {
 } from "@gnu-taler/taler-util";
 import { Fragment, h, JSX, VNode } from "preact";
 import { useEffect } from "preact/hooks";
-import { useAsyncAsHook, useAsyncAsHook2 } from "../hooks/useAsyncAsHook.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { Avatar } from "../mui/Avatar.js";
 import { Typography } from "../mui/Typography.js";
 import * as wxApi from "../wxApi.js";
@@ -18,7 +18,7 @@ interface Props extends JSX.HTMLAttributes {
 }
 
 export function PendingTransactions({ goToTransaction }: Props): VNode {
-  const state = useAsyncAsHook2(wxApi.getTransactions);
+  const state = useAsyncAsHook(wxApi.getTransactions);
 
   useEffect(() => {
     wxApi.onUpdateNotification([NotificationType.WithdrawGroupFinished], () => {
