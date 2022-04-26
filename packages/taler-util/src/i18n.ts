@@ -15,7 +15,7 @@ export function setupI18n(lang: string, strings: { [s: string]: any }): any {
 
   if (!strings[lang]) {
     strings[lang] = {}
-    logger.warn(`language ${lang} not found, defaulting to source strings`);
+    // logger.warn(`language ${lang} not found, defaulting to source strings`);
   }
   jed = new jedLib.Jed(strings[lang]);
 }
