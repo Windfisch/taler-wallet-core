@@ -17,6 +17,11 @@
     "32": "static/img/icon.png",
     "128": "static/img/logo.png"
   },
+  "commands": {
+    "_execute_browser_action": {
+      "suggested_key": "Alt+W"
+    }
+  },
   "permissions": [
     "unlimitedStorage",
     "activeTab"
@@ -30,7 +35,7 @@
     "default_icon": {
       "32": "static/img/icon.png"
     },
-    "default_title": "Taler",
+    "default_title": "GNU Taler Wallet",
     "default_popup": "static/popup.html"
   },
   "background": {

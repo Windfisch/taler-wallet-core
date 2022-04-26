@@ -38,6 +38,9 @@ import * as wallet from "./wallet/index.stories.js";
 import * as cta from "./cta/index.stories.js";
 import * as components from "./components/index.stories.js";
 import { strings } from "./i18n/strings.js";
+import { setupPlatform } from "./platform/api.js";
+import chromeAPI from "./platform/chrome.js";
+import firefoxAPI from "./platform/firefox.js";
 
 const url = new URL(window.location.href);
 const lang = url.searchParams.get("lang") || "en";
@@ -440,4 +443,16 @@ function setupLiveReload(port: number, onReload: () => void): void {
   ws.onerror = (error) => {
     console.error(error);
   };
+}
+
+const isFirefox = typeof (window as any)["InstallTrigger"] !== "undefined";
+
+//FIXME: create different entry point for any platform instead of
+//switching in runtime
+if (isFirefox) {
+  console.log("Wallet setup for Firefox API");
+  setupPlatform(firefoxAPI);
+} else {
+  console.log("Wallet setup for Chrome API");
+  setupPlatform(chromeAPI);
 }

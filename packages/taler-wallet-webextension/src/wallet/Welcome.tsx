@@ -27,6 +27,7 @@ import { SubTitle, Title } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useDiagnostics } from "../hooks/useDiagnostics.js";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions.js";
+import { platform } from "../platform/api.js";
 
 export function WelcomePage(): VNode {
   const [permissionsEnabled, togglePermissions] = useExtendedPermissions();
@@ -61,8 +62,33 @@ export function View({
       </Title>
       <div>
         <p>
-          <i18n.Translate>Thank you for installing the wallet.</i18n.Translate>
+          <i18n.Translate>
+            You can open the GNU Taler Wallet using the combination{" "}
+            <pre style="font-weight: bold; display: inline;">&lt;ALT+W&gt;</pre>
+            .
+          </i18n.Translate>
         </p>
+        {!platform.isFirefox() && (
+          <Fragment>
+            <p>
+              <i18n.Translate>
+                Also pinning the GNU Taler Wallet to your Chrome browser allows
+                you to quick access without keyboard:
+              </i18n.Translate>
+            </p>
+            <ol style={{ paddingLeft: 40 }}>
+              <li>
+                <i18n.Translate>Click the puzzle icon</i18n.Translate>
+              </li>
+              <li>
+                <i18n.Translate>Search for GNU Taler Wallet</i18n.Translate>
+              </li>
+              <li>
+                <i18n.Translate>Click the pin icon</i18n.Translate>
+              </li>
+            </ol>
+          </Fragment>
+        )}
         <SubTitle>
           <i18n.Translate>Permissions</i18n.Translate>
         </SubTitle>

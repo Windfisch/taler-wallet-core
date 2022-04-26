@@ -304,7 +304,7 @@ function registerOnInstalled(callback: () => void): void {
   // This needs to be outside of main, as Firefox won't fire the event if
   // the listener isn't created synchronously on loading the backend.
   chrome.runtime.onInstalled.addListener((details) => {
-    console.log("onInstalled with reason", details.reason);
+    console.log(`onInstalled with reason: "${details.reason}"`);
     if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
       callback()
     }
