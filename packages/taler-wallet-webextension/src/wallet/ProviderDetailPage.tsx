@@ -34,7 +34,7 @@ import {
 } from "../components/styled/index.js";
 import { Time } from "../components/Time.js";
 import { useTranslationContext } from "../context/translation.js";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { useAsyncAsHook2 } from "../hooks/useAsyncAsHook.js";
 import * as wxApi from "../wxApi.js";
 
 interface Props {
@@ -54,7 +54,7 @@ export function ProviderDetailPage({ pid: providerURL, onBack }: Props): VNode {
     return providers.length ? providers[0] : null;
   }
 
-  const state = useAsyncAsHook(getProviderInfo);
+  const state = useAsyncAsHook2(getProviderInfo);
 
   if (!state) {
     return <Loading />;

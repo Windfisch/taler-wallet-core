@@ -23,12 +23,12 @@ import {
 import { PendingTaskInfo } from "@gnu-taler/taler-wallet-core";
 import { format } from "date-fns";
 import { Fragment, h, VNode } from "preact";
-import { useRef, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { Diagnostics } from "../components/Diagnostics.js";
 import { NotifyUpdateFadeOut } from "../components/styled/index.js";
 import { Time } from "../components/Time.js";
 import { useTranslationContext } from "../context/translation.js";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { useAsyncAsHook2 } from "../hooks/useAsyncAsHook.js";
 import { useDiagnostics } from "../hooks/useDiagnostics.js";
 import * as wxApi from "../wxApi.js";
 
@@ -38,7 +38,7 @@ export function DeveloperPage(): VNode {
   const listenAllEvents = Array.from<NotificationType>({ length: 1 });
   listenAllEvents.includes = () => true; // includes every event
 
-  const response = useAsyncAsHook(async () => {
+  const response = useAsyncAsHook2(async () => {
     const op = await wxApi.getPendingOperations();
     const c = await wxApi.dumpCoins();
     const ex = await wxApi.listExchanges();
@@ -47,7 +47,13 @@ export function DeveloperPage(): VNode {
       coins: c.coins,
       exchanges: ex.exchanges,
     };
-  }, listenAllEvents);
+  });
+
+  useEffect(() => {
+    wxApi.onUpdateNotification(listenAllEvents, () => {
+      response?.retry();
+    });
+  });
 
   const nonResponse = { operations: [], coins: [], exchanges: [] };
   const { operations, coins, exchanges } =

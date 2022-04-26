@@ -24,9 +24,6 @@ function broadcast(file, event) {
     });
   }, devServerBroadcastDelay);
 }
-wss.addListener("connection", () => {
-  console.log("new client")
-})
 
 const watcher = chokidar
   .watch(toWatch, {
@@ -63,5 +60,8 @@ const server = await esbuild
     process.exit(1)
   });
 
-console.log("ready!", server.port);
+console.log(`Dev server is ready at http://localhost:${server.port}/.
+http://localhost:${server.port}/stories.html for the components stories.
+The server is running a using websocket at ${devServerPort} to notify code change and live reload.
+`);
 

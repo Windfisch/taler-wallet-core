@@ -29,7 +29,7 @@ import {
 } from "../components/styled/index.js";
 import { useDevContext } from "../context/devContext.js";
 import { useTranslationContext } from "../context/translation.js";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { useAsyncAsHook2 } from "../hooks/useAsyncAsHook.js";
 import { useBackupDeviceName } from "../hooks/useBackupDeviceName.js";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions.js";
 import { Pages } from "../NavigationBar.js";
@@ -40,13 +40,11 @@ export function SettingsPage(): VNode {
   const [permissionsEnabled, togglePermissions] = useExtendedPermissions();
   const { devMode, toggleDevMode } = useDevContext();
   const { name, update } = useBackupDeviceName();
-  // const [lang, changeLang] = useLang();
-  const exchangesHook = useAsyncAsHook(wxApi.listExchanges);
+
+  const exchangesHook = useAsyncAsHook2(wxApi.listExchanges);
 
   return (
     <SettingsView
-      // lang={lang}
-      // changeLang={changeLang}
       knownExchanges={
         !exchangesHook || exchangesHook.hasError
           ? []
@@ -63,8 +61,6 @@ export function SettingsPage(): VNode {
 }
 
 export interface ViewProps {
-  // lang: string;
-  // changeLang: (s: string) => void;
   deviceName: string;
   setDeviceName: (s: string) => Promise<void>;
   permissionsEnabled: boolean;

@@ -40,7 +40,11 @@ import {
   WalletAction,
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
-import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import {
+  HookError,
+  useAsyncAsHook,
+  useAsyncAsHook2,
+} from "../hooks/useAsyncAsHook.js";
 import { buildTermsOfServiceState } from "../utils/index.js";
 import { ButtonHandler, SelectFieldHandler } from "../mui/handlers.js";
 import * as wxApi from "../wxApi.js";
@@ -99,7 +103,7 @@ export function useComponentState(
   /**
    * Ask the wallet about the withdraw URI
    */
-  const uriInfoHook = useAsyncAsHook(async () => {
+  const uriInfoHook = useAsyncAsHook2(async () => {
     if (!talerWithdrawUri) throw Error("ERROR_NO-URI-FOR-WITHDRAWAL");
 
     const uriInfo = await api.getWithdrawalDetailsForUri({
@@ -147,44 +151,36 @@ export function useComponentState(
   /**
    * For the exchange selected, bring the status of the terms of service
    */
-  const terms = useAsyncAsHook(
-    async () => {
-      if (!thisExchange) return false;
+  const terms = useAsyncAsHook2(async () => {
+    if (!thisExchange) return false;
 
-      const exchangeTos = await api.getExchangeTos(thisExchange, ["text/xml"]);
+    const exchangeTos = await api.getExchangeTos(thisExchange, ["text/xml"]);
 
-      const state = buildTermsOfServiceState(exchangeTos);
+    const state = buildTermsOfServiceState(exchangeTos);
 
-      return { state };
-    },
-    [],
-    [thisExchange],
-  );
+    return { state };
+  }, [thisExchange]);
 
   /**
    * With the exchange and amount, ask the wallet the information
    * about the withdrawal
    */
-  const info = useAsyncAsHook(
-    async () => {
-      if (!thisExchange || !amount) return false;
+  const info = useAsyncAsHook2(async () => {
+    if (!thisExchange || !amount) return false;
 
-      const info = await api.getExchangeWithdrawalInfo({
-        exchangeBaseUrl: thisExchange,
-        amount,
-        tosAcceptedFormat: ["text/xml"],
-      });
+    const info = await api.getExchangeWithdrawalInfo({
+      exchangeBaseUrl: thisExchange,
+      amount,
+      tosAcceptedFormat: ["text/xml"],
+    });
 
-      const withdrawalFee = Amounts.sub(
-        Amounts.parseOrThrow(info.withdrawalAmountRaw),
-        Amounts.parseOrThrow(info.withdrawalAmountEffective),
-      ).amount;
+    const withdrawalFee = Amounts.sub(
+      Amounts.parseOrThrow(info.withdrawalAmountRaw),
+      Amounts.parseOrThrow(info.withdrawalAmountEffective),
+    ).amount;
 
-      return { info, withdrawalFee };
-    },
-    [],
-    [thisExchange, amount],
-  );
+    return { info, withdrawalFee };
+  }, [thisExchange, amount]);
 
   const [reviewing, setReviewing] = useState<boolean>(false);
   const [reviewed, setReviewed] = useState<boolean>(false);

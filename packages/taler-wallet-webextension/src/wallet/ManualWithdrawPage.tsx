@@ -23,11 +23,11 @@ import {
   PaytoUri,
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import { useTranslationContext } from "../context/translation.js";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { useAsyncAsHook, useAsyncAsHook2 } from "../hooks/useAsyncAsHook.js";
 import * as wxApi from "../wxApi.js";
 import { CreateManualWithdraw } from "./CreateManualWithdraw.js";
 import { ReserveCreated } from "./ReserveCreated.js";
@@ -50,9 +50,12 @@ export function ManualWithdrawPage({ currency, onCancel }: Props): VNode {
   >(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
 
-  const state = useAsyncAsHook(wxApi.listExchanges, [
-    NotificationType.ExchangeAdded,
-  ]);
+  const state = useAsyncAsHook2(wxApi.listExchanges);
+  useEffect(() => {
+    wxApi.onUpdateNotification([NotificationType.ExchangeAdded], () => {
+      state?.retry();
+    });
+  });
   const { i18n } = useTranslationContext();
 
   async function doCreate(

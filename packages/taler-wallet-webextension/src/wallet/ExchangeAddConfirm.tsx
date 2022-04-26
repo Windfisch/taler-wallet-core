@@ -8,7 +8,7 @@ import {
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
 import { TermsOfServiceSection } from "../cta/TermsOfServiceSection.js";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { useAsyncAsHook2 } from "../hooks/useAsyncAsHook.js";
 import { buildTermsOfServiceState, TermsState } from "../utils/index.js";
 import * as wxApi from "../wxApi.js";
 
@@ -23,7 +23,7 @@ export function ExchangeAddConfirmPage({
   onCancel,
   onConfirm,
 }: Props): VNode {
-  const detailsHook = useAsyncAsHook(async () => {
+  const detailsHook = useAsyncAsHook2(async () => {
     const tos = await wxApi.getExchangeTos(url, ["text/xml"]);
 
     const tosState = buildTermsOfServiceState(tos);

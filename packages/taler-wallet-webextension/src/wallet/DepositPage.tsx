@@ -32,7 +32,7 @@ import {
   WarningBox,
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
-import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { HookError, useAsyncAsHook2 } from "../hooks/useAsyncAsHook.js";
 import {
   ButtonHandler,
   SelectFieldHandler,
@@ -98,7 +98,7 @@ export function useComponentState(
   onSuccess: (currency: string) => void,
   api: typeof wxApi,
 ): State {
-  const hook = useAsyncAsHook(async () => {
+  const hook = useAsyncAsHook2(async () => {
     const { balances } = await api.getBalance();
     const { accounts } = await api.listKnownBankAccounts(currency);
     const defaultSelectedAccount =
@@ -116,10 +116,6 @@ export function useComponentState(
   const parsedAmount = Amounts.parse(`${currency}:${amount}`);
 
   const [fee, setFee] = useState<DepositGroupFees | undefined>(undefined);
-
-  // const hookResponse = !hook || hook.hasError ? undefined : hook.response;
-
-  // useEffect(() => {}, [hookResponse]);
 
   if (!hook || hook.hasError) {
     return {

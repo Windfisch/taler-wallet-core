@@ -181,7 +181,7 @@ export function useComponentState(
         if (typeof window !== "undefined") {
           document.location.href = fu;
         } else {
-          console.log(`should redirect to ${fu}`);
+          console.log(`should d to ${fu}`);
         }
       }
       setPayResult(res);

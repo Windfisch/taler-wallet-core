@@ -21,7 +21,7 @@ import {
   Transaction,
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import {
@@ -35,7 +35,7 @@ import {
 import { Time } from "../components/Time.js";
 import { TransactionItem } from "../components/TransactionItem.js";
 import { useTranslationContext } from "../context/translation.js";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { useAsyncAsHook2 } from "../hooks/useAsyncAsHook.js";
 import { NoBalanceHelp } from "../popup/NoBalanceHelp.js";
 import * as wxApi from "../wxApi.js";
 
@@ -50,13 +50,16 @@ export function HistoryPage({
   goToWalletDeposit,
 }: Props): VNode {
   const { i18n } = useTranslationContext();
-  const state = useAsyncAsHook(
-    async () => ({
-      b: await wxApi.getBalance(),
-      tx: await wxApi.getTransactions(),
-    }),
-    [NotificationType.WithdrawGroupFinished],
-  );
+  const state = useAsyncAsHook2(async () => ({
+    b: await wxApi.getBalance(),
+    tx: await wxApi.getTransactions(),
+  }));
+
+  useEffect(() => {
+    wxApi.onUpdateNotification([NotificationType.WithdrawGroupFinished], () => {
+      state?.retry();
+    });
+  });
 
   if (!state) {
     return <Loading />;

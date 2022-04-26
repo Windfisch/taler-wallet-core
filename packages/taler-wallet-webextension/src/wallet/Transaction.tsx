@@ -16,7 +16,6 @@
 
 import {
   AbsoluteTime,
-  AmountLike,
   Amounts,
   NotificationType,
   parsePaytoUri,
@@ -26,7 +25,7 @@ import {
 } from "@gnu-taler/taler-util";
 import { differenceInSeconds } from "date-fns";
 import { ComponentChildren, Fragment, h, VNode } from "preact";
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import emptyImg from "../../static/img/empty.png";
 import { Amount } from "../components/Amount.js";
 import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType.js";
@@ -49,28 +48,34 @@ import {
 } from "../components/styled/index.js";
 import { Time } from "../components/Time.js";
 import { useTranslationContext } from "../context/translation.js";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { useAsyncAsHook2 } from "../hooks/useAsyncAsHook.js";
 import * as wxApi from "../wxApi.js";
 
 interface Props {
   tid: string;
   goToWalletHistory: (currency?: string) => void;
 }
+
+async function getTransaction(tid: string): Promise<Transaction> {
+  const res = await wxApi.getTransactions();
+  const ts = res.transactions.filter((t) => t.transactionId === tid);
+  if (ts.length > 1) throw Error("more than one transaction with this id");
+  if (ts.length === 1) {
+    return ts[0];
+  }
+  throw Error("no transaction found");
+}
+
 export function TransactionPage({ tid, goToWalletHistory }: Props): VNode {
   const { i18n } = useTranslationContext();
-  async function getTransaction(): Promise<Transaction> {
-    const res = await wxApi.getTransactions();
-    const ts = res.transactions.filter((t) => t.transactionId === tid);
-    if (ts.length > 1) throw Error("more than one transaction with this id");
-    if (ts.length === 1) {
-      return ts[0];
-    }
-    throw Error("no transaction found");
-  }
 
-  const state = useAsyncAsHook(getTransaction, [
-    NotificationType.WithdrawGroupFinished,
-  ]);
+  const state = useAsyncAsHook2(() => getTransaction(tid));
+
+  useEffect(() => {
+    wxApi.onUpdateNotification([NotificationType.WithdrawGroupFinished], () => {
+      state?.retry();
+    });
+  });
 
   if (!state) {
     return <Loading />;

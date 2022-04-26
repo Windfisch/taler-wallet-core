@@ -12,6 +12,7 @@
     "test": "mocha --enable-source-maps 'dist/**/*.test.js'",
     "test:coverage": "nyc pnpm test",
     "compile": "tsc && ./build-fast-with-linaria.mjs",
+    "dev": "./dev.mjs",
     "compile:test": "rollup -c rollup.config.test.js -m",
     "prepare": "rollup -c -m",
     "pretty": "prettier --write src",

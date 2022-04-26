@@ -16,7 +16,7 @@
 
 import { Amounts, Balance, NotificationType } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { BalanceTable } from "../components/BalanceTable.js";
 import { JustInDevMode } from "../components/JustInDevMode.js";
 import { Loading } from "../components/Loading.js";
@@ -24,7 +24,7 @@ import { LoadingError } from "../components/LoadingError.js";
 import { MultiActionButton } from "../components/MultiActionButton.js";
 import { ButtonBoxPrimary, ButtonPrimary } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { useAsyncAsHook2 } from "../hooks/useAsyncAsHook.js";
 import { AddNewActionView } from "../wallet/AddNewActionView.js";
 import * as wxApi from "../wxApi.js";
 import { NoBalanceHelp } from "./NoBalanceHelp.js";
@@ -41,9 +41,14 @@ export function BalancePage({
 }: Props): VNode {
   const { i18n } = useTranslationContext();
   const [addingAction, setAddingAction] = useState(false);
-  const state = useAsyncAsHook(wxApi.getBalance, [
-    NotificationType.WithdrawGroupFinished,
-  ]);
+  const state = useAsyncAsHook2(wxApi.getBalance);
+
+  useEffect(() => {
+    wxApi.onUpdateNotification([NotificationType.WithdrawGroupFinished], () => {
+      state?.retry();
+    });
+  });
+
   const balances = !state || state.hasError ? [] : state.response.balances;
 
   if (!state) {

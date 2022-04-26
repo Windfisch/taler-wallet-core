@@ -41,7 +41,7 @@ import {
   SmallText,
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { useAsyncAsHook2 } from "../hooks/useAsyncAsHook.js";
 import { Pages } from "../NavigationBar.js";
 import * as wxApi from "../wxApi.js";
 
@@ -51,7 +51,7 @@ interface Props {
 
 export function BackupPage({ onAddProvider }: Props): VNode {
   const { i18n } = useTranslationContext();
-  const status = useAsyncAsHook(wxApi.getBackupInfo);
+  const status = useAsyncAsHook2(wxApi.getBackupInfo);
   if (!status) {
     return <Loading />;
   }
