@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=GNU Taler Wallet CLI URL Handler
+GenericName=Wallet
+Comment=Handle URL Scheme taler://
+Exec=bash -c "taler-wallet-cli handle-uri %u; read"
+Terminal=true
+Type=Application
+MimeType=x-scheme-handler/taler;x-scheme-handler/taler+http
+Icon=sublime-text-2
+Categories=TextEditor;Development;Utility;
+Name[en_US]=GNU Taler Wallet URL Handler
+

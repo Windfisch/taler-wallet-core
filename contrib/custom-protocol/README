@@ -1,0 +1,33 @@
+Custom protocol handler for taler:// URI
+
+In order to run the wallet when trying to open an html anchor to a ref starting with "taler://" you have to setup a custom protocol handler in your local setup.
+
+
+
+First add this content into file `.config/mimeapps.list` under section `[Default Applications]`
+
+```
+x-scheme-handler/taler=taler-wallet-cli.desktop
+x-scheme-handler/taler+http=taler-wallet-cli.desktop
+```
+
+then create a file named `taler-wallet-cli.desktop` in location `$HOME/.local/share/applications` with content
+
+```
+[Desktop Entry]
+Name=GNU Taler Wallet CLI URL Handler
+GenericName=Wallet
+Comment=Handle URL Scheme taler://
+Exec=bash -c "taler-wallet-cli handle-uri %u; read"
+Terminal=true
+Type=Application
+MimeType=x-scheme-handler/taler;x-scheme-handler/taler+http
+Name[en_US]=GNU Taler Wallet URL Handler
+```
+
+Done, you can test it using the next command:
+
+```
+$ xdg-open taler://withdraw/bank.demo.taler.net/api/793ee3e4-2915-47e8-9abe-bcc36c8e65cf
+```
+
