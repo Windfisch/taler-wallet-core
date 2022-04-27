@@ -43,7 +43,6 @@ import {
 import { SetTimeoutTimerAPI } from "@gnu-taler/taler-wallet-core";
 import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory.js";
 import { BrowserHttpLib } from "./browserHttpLib.js";
-import { getReadRequestPermissions } from "./permissions.js";
 import { MessageFromBackend, platform } from "./platform/api.js";
 import { SynchronousCryptoWorkerFactory } from "./serviceWorkerCryptoWorkerFactory.js";
 import { ServiceWorkerHttpLib } from "./serviceWorkerHttpLib.js";
@@ -131,19 +130,19 @@ async function dispatch(
       r = wrapResponse(await reinitWallet());
       break;
     }
-    case "wxGetExtendedPermissions": {
-      const res = await platform.getPermissionsApi().contains(getReadRequestPermissions());
+    case "containsHeaderListener": {
+      const res = await platform.containsTalerHeaderListener();
       r = wrapResponse({ newValue: res });
       break;
     }
-    case "wxSetExtendedPermissions": {
+    case "toggleHeaderListener": {
       const newVal = req.payload.value;
       logger.trace("new extended permissions value", newVal);
       if (newVal) {
         platform.registerTalerHeaderListener(parseTalerUriAndRedirect);
         r = wrapResponse({ newValue: true });
       } else {
-        const rem = await platform.getPermissionsApi().remove(getReadRequestPermissions());
+        const rem = await platform.getPermissionsApi().removeHostPermissions();
         logger.trace("permissions removed:", rem);
         r = wrapResponse({ newVal: false });
       }

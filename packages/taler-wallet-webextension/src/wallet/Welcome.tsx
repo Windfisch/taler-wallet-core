@@ -27,15 +27,15 @@ import { SubTitle, Title } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useDiagnostics } from "../hooks/useDiagnostics.js";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions.js";
+import { ToggleHandler } from "../mui/handlers.js";
 import { platform } from "../platform/api.js";
 
 export function WelcomePage(): VNode {
-  const [permissionsEnabled, togglePermissions] = useExtendedPermissions();
+  const permissionToggle = useExtendedPermissions();
   const [diagnostics, timedOut] = useDiagnostics();
   return (
     <View
-      permissionsEnabled={permissionsEnabled}
-      togglePermissions={togglePermissions}
+      permissionToggle={permissionToggle}
       diagnostics={diagnostics}
       timedOut={timedOut}
     />
@@ -43,14 +43,12 @@ export function WelcomePage(): VNode {
 }
 
 export interface ViewProps {
-  permissionsEnabled: boolean;
-  togglePermissions: () => void;
+  permissionToggle: ToggleHandler;
   diagnostics: WalletDiagnostics | undefined;
   timedOut: boolean;
 }
 export function View({
-  permissionsEnabled,
-  togglePermissions,
+  permissionToggle,
   diagnostics,
   timedOut,
 }: ViewProps): VNode {
@@ -105,8 +103,8 @@ export function View({
               requires more permissions from your browser.)
             </i18n.Translate>
           }
-          enabled={permissionsEnabled}
-          onToggle={togglePermissions}
+          enabled={permissionToggle.value!}
+          onToggle={permissionToggle.button.onClick!}
         />
         <SubTitle>
           <i18n.Translate>Next Steps</i18n.Translate>

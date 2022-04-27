@@ -15,7 +15,7 @@
  */
 
 import { CrossBrowserPermissionsApi, Permissions, PlatformAPI } from "./api.js";
-import chromePlatform, { contains as chromeContains, remove as chromeRemove, request as chromeRequest } from "./chrome.js";
+import chromePlatform, { containsHostPermissions as chromeContains, removeHostPermissions as chromeRemove, requestHostPermissions as chromeRequest } from "./chrome.js";
 
 const api: PlatformAPI = {
   ...chromePlatform,
@@ -40,9 +40,9 @@ function addPermissionsListener(callback: (p: Permissions) => void): void {
 function getPermissionsApi(): CrossBrowserPermissionsApi {
   return {
     addPermissionsListener,
-    contains: chromeContains,
-    request: chromeRequest,
-    remove: chromeRemove
+    containsHostPermissions: chromeContains,
+    requestHostPermissions: chromeRequest,
+    removeHostPermissions: chromeRemove
   }
 }
 

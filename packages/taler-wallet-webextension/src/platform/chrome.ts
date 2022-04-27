@@ -16,7 +16,6 @@
  */
 
 import { classifyTalerUri, CoreApiResponse, TalerUriType } from "@gnu-taler/taler-util";
-import { getReadRequestPermissions } from "../permissions.js";
 import { CrossBrowserPermissionsApi, MessageFromBackend, Permissions, PlatformAPI } from "./api.js";
 
 const api: PlatformAPI = {
@@ -37,7 +36,8 @@ const api: PlatformAPI = {
   registerTalerHeaderListener,
   sendMessageToAllChannels,
   sendMessageToWalletBackground,
-  useServiceWorkerAsBackgroundProcess
+  useServiceWorkerAsBackgroundProcess,
+  containsTalerHeaderListener,
 }
 
 export default api;
@@ -46,9 +46,15 @@ function isFirefox(): boolean {
   return false;
 }
 
-export function contains(p: Permissions): Promise<boolean> {
+const hostPermissions = {
+  permissions: ["webRequest"],
+  origins: ["http://*/*", "https://*/*"],
+}
+
+
+export function containsHostPermissions(): Promise<boolean> {
   return new Promise((res, rej) => {
-    chrome.permissions.contains(p, (resp) => {
+    chrome.permissions.contains(hostPermissions, (resp) => {
       const le = chrome.runtime.lastError?.message
       if (le) {
         rej(le)
@@ -58,9 +64,9 @@ export function contains(p: Permissions): Promise<boolean> {
   })
 }
 
-export async function request(p: Permissions): Promise<boolean> {
+export async function requestHostPermissions(): Promise<boolean> {
   return new Promise((res, rej) => {
-    chrome.permissions.request(p, (resp) => {
+    chrome.permissions.request(hostPermissions, (resp) => {
       const le = chrome.runtime.lastError?.message
       if (le) {
         rej(le)
@@ -70,9 +76,41 @@ export async function request(p: Permissions): Promise<boolean> {
   })
 }
 
-export async function remove(p: Permissions): Promise<boolean> {
+type HeaderListenerFunc = (details: chrome.webRequest.WebResponseHeadersDetails) => void
+let currentHeaderListener: HeaderListenerFunc | undefined = undefined;
+
+export function containsTalerHeaderListener(): boolean {
+  return currentHeaderListener !== undefined;
+}
+
+export async function removeHostPermissions(): Promise<boolean> {
+  //if there is a handler already, remove it
+  if (
+    "webRequest" in chrome &&
+    "onHeadersReceived" in chrome.webRequest &&
+    currentHeaderListener &&
+    chrome.webRequest.onHeadersReceived.hasListener(currentHeaderListener)
+  ) {
+    chrome.webRequest.onHeadersReceived.removeListener(currentHeaderListener);
+  }
+
+  currentHeaderListener = undefined;
+
+  //notify the browser about this change, this operation is expensive
+  if ("webRequest" in chrome) {
+    chrome.webRequest.handlerBehaviorChanged(() => {
+      if (chrome.runtime.lastError) {
+        console.error(JSON.stringify(chrome.runtime.lastError));
+      }
+    });
+  }
+
+  if (chrome.runtime && chrome.runtime.getManifest().manifest_version === 3) {
+    // Trying to remove host permissions with manifest >= v3 throws an error
+    return true;
+  }
   return new Promise((res, rej) => {
-    chrome.permissions.remove(p, (resp) => {
+    chrome.permissions.remove(hostPermissions, (resp) => {
       const le = chrome.runtime.lastError?.message
       if (le) {
         rej(le)
@@ -92,7 +130,7 @@ function addPermissionsListener(callback: (p: Permissions, lastError?: string) =
 
 function getPermissionsApi(): CrossBrowserPermissionsApi {
   return {
-    addPermissionsListener, contains, request, remove
+    addPermissionsListener, containsHostPermissions, requestHostPermissions, removeHostPermissions
   }
 }
 
@@ -245,7 +283,6 @@ function getWalletVersion(): WalletVersion {
   return manifestData;
 }
 
-
 function registerTalerHeaderListener(callback: (tabId: number, url: string) => void): void {
   console.log("setting up header listener");
 
@@ -271,15 +308,18 @@ function registerTalerHeaderListener(callback: (tabId: number, url: string) => v
     }
     return;
   }
+  const prevHeaderListener = currentHeaderListener;
+  currentHeaderListener = headerListener;
 
-  getPermissionsApi().contains(getReadRequestPermissions()).then(result => {
+  getPermissionsApi().containsHostPermissions().then(result => {
     //if there is a handler already, remove it
     if (
       "webRequest" in chrome &&
       "onHeadersReceived" in chrome.webRequest &&
-      chrome.webRequest.onHeadersReceived.hasListener(headerListener)
+      prevHeaderListener &&
+      chrome.webRequest.onHeadersReceived.hasListener(prevHeaderListener)
     ) {
-      chrome.webRequest.onHeadersReceived.removeListener(headerListener);
+      chrome.webRequest.onHeadersReceived.removeListener(prevHeaderListener);
     }
     //if the result was positive, add the headerListener
     if (result) {

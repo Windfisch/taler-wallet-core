@@ -345,17 +345,17 @@ export function getDiagnostics(): Promise<WalletDiagnostics> {
 /**
  * Get diagnostics information
  */
-export function setExtendedPermissions(
+export function toggleHeaderListener(
   value: boolean,
 ): Promise<ExtendedPermissionsResponse> {
-  return callBackend("wxSetExtendedPermissions", { value });
+  return callBackend("toggleHeaderListener", { value });
 }
 
 /**
  * Get diagnostics information
  */
-export function getExtendedPermissions(): Promise<ExtendedPermissionsResponse> {
-  return callBackend("wxGetExtendedPermissions", {});
+export function containsHeaderListener(): Promise<ExtendedPermissionsResponse> {
+  return callBackend("containsHeaderListener", {});
 }
 
 /**

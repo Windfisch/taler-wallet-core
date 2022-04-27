@@ -17,6 +17,7 @@
 import { ExchangeListItem } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { Checkbox } from "../components/Checkbox.js";
+import { ErrorTalerOperation } from "../components/ErrorTalerOperation.js";
 import { JustInDevMode } from "../components/JustInDevMode.js";
 import { SelectList } from "../components/SelectList.js";
 import {
@@ -32,12 +33,13 @@ import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { useBackupDeviceName } from "../hooks/useBackupDeviceName.js";
 import { useExtendedPermissions } from "../hooks/useExtendedPermissions.js";
+import { ToggleHandler } from "../mui/handlers.js";
 import { Pages } from "../NavigationBar.js";
 import { buildTermsOfServiceStatus } from "../utils/index.js";
 import * as wxApi from "../wxApi.js";
 
 export function SettingsPage(): VNode {
-  const [permissionsEnabled, togglePermissions] = useExtendedPermissions();
+  const permissionToggle = useExtendedPermissions();
   const { devMode, toggleDevMode } = useDevContext();
   const { name, update } = useBackupDeviceName();
 
@@ -52,8 +54,7 @@ export function SettingsPage(): VNode {
       }
       deviceName={name}
       setDeviceName={update}
-      permissionsEnabled={permissionsEnabled}
-      togglePermissions={togglePermissions}
+      permissionToggle={permissionToggle}
       developerMode={devMode}
       toggleDeveloperMode={toggleDevMode}
     />
@@ -63,8 +64,7 @@ export function SettingsPage(): VNode {
 export interface ViewProps {
   deviceName: string;
   setDeviceName: (s: string) => Promise<void>;
-  permissionsEnabled: boolean;
-  togglePermissions: () => void;
+  permissionToggle: ToggleHandler;
   developerMode: boolean;
   toggleDeveloperMode: () => void;
   knownExchanges: Array<ExchangeListItem>;
@@ -72,8 +72,7 @@ export interface ViewProps {
 
 export function SettingsView({
   knownExchanges,
-  permissionsEnabled,
-  togglePermissions,
+  permissionToggle,
   developerMode,
   toggleDeveloperMode,
 }: ViewProps): VNode {
@@ -82,6 +81,12 @@ export function SettingsView({
   return (
     <Fragment>
       <section>
+        {permissionToggle.button.error && (
+          <ErrorTalerOperation
+            title={<i18n.Translate>Could not toggle auto-open</i18n.Translate>}
+            error={permissionToggle.button.error.errorDetail}
+          />
+        )}
         <SubTitle>
           <i18n.Translate>Navigator</i18n.Translate>
         </SubTitle>
@@ -98,8 +103,8 @@ export function SettingsView({
               requires more permissions from your browser.
             </i18n.Translate>
           }
-          enabled={permissionsEnabled}
-          onToggle={togglePermissions}
+          enabled={permissionToggle.value!}
+          onToggle={permissionToggle.button.onClick!}
         />
 
         <SubTitle>

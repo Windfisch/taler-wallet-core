@@ -22,8 +22,9 @@ const frames = ["popup", "wallet"]
 const api: PlatformAPI = ({
   isFirefox: () => false,
   findTalerUriInActiveTab: async () => undefined,
+  containsTalerHeaderListener: () => { return true },
   getPermissionsApi: () => ({
-    addPermissionsListener: () => undefined, contains: async () => true, remove: async () => false, request: async () => false
+    addPermissionsListener: () => undefined, containsHostPermissions: async () => true, removeHostPermissions: async () => false, requestHostPermissions: async () => false
   }),
   getWalletVersion: () => ({
     version: 'none'

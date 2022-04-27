@@ -34,9 +34,9 @@ export interface Permissions {
  * Compatibility API that works on multiple browsers.
  */
 export interface CrossBrowserPermissionsApi {
-  contains(p: Permissions): Promise<boolean>;
-  request(p: Permissions): Promise<boolean>;
-  remove(p: Permissions): Promise<boolean>;
+  containsHostPermissions(): Promise<boolean>;
+  requestHostPermissions(): Promise<boolean>;
+  removeHostPermissions(): Promise<boolean>;
 
   addPermissionsListener(callback: (p: Permissions, lastError?: string) => void): void;
 
@@ -131,6 +131,10 @@ export interface PlatformAPI {
    * Backend API
    */
   registerTalerHeaderListener(onHeader: (tabId: number, url: string) => void): void;
+  /**
+   * Frontend API
+   */
+  containsTalerHeaderListener(): boolean;
   /**
    * Backend API
    */

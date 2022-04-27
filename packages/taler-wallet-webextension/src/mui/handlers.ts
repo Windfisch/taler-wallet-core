@@ -11,6 +11,11 @@ export interface ButtonHandler {
   error?: TalerError;
 }
 
+export interface ToggleHandler {
+  value?: boolean;
+  button: ButtonHandler;
+}
+
 export interface SelectFieldHandler {
   onChange: (value: string) => Promise<void>;
   error?: string;

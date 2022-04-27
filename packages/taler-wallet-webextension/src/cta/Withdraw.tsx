@@ -37,6 +37,7 @@ import {
   ButtonWarning,
   LinkSuccess,
   SubTitle,
+  SuccessBox,
   WalletAction,
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
@@ -53,7 +54,12 @@ interface Props {
   talerWithdrawUri?: string;
 }
 
-type State = LoadingUri | LoadingExchange | LoadingInfoError | Success;
+type State =
+  | LoadingUri
+  | LoadingExchange
+  | LoadingInfoError
+  | Success
+  | Completed;
 
 interface LoadingUri {
   status: "loading-uri";
@@ -67,6 +73,11 @@ interface LoadingInfoError {
   status: "loading-info";
   hook: HookError | undefined;
 }
+
+type Completed = {
+  status: "completed";
+  hook: undefined;
+};
 
 type Success = {
   status: "success";
@@ -185,6 +196,7 @@ export function useComponentState(
     undefined,
   );
   const [doingWithdraw, setDoingWithdraw] = useState<boolean>(false);
+  const [withdrawCompleted, setWithdrawCompleted] = useState<boolean>(false);
 
   const [showExchangeSelection, setShowExchangeSelection] = useState(false);
   const [nextExchange, setNextExchange] = useState<string | undefined>();
@@ -220,6 +232,7 @@ export function useComponentState(
       if (res.confirmTransferUrl) {
         document.location.href = res.confirmTransferUrl;
       }
+      setWithdrawCompleted(true);
     } catch (e) {
       if (e instanceof TalerError) {
         setWithdrawError(e);
@@ -242,6 +255,12 @@ export function useComponentState(
   if (!info.response) {
     return {
       status: "loading-info",
+      hook: undefined,
+    };
+  }
+  if (withdrawCompleted) {
+    return {
+      status: "completed",
       hook: undefined,
     };
   }
@@ -332,8 +351,64 @@ export function useComponentState(
   };
 }
 
-export function View({ state }: { state: Success }): VNode {
+export function View({ state }: { state: State }): VNode {
   const { i18n } = useTranslationContext();
+  if (state.status === "loading-uri") {
+    if (!state.hook) return <Loading />;
+
+    return (
+      <LoadingError
+        title={
+          <i18n.Translate>Could not get the info from the URI</i18n.Translate>
+        }
+        error={state.hook}
+      />
+    );
+  }
+  if (state.status === "loading-exchange") {
+    if (!state.hook) return <Loading />;
+
+    return (
+      <LoadingError
+        title={<i18n.Translate>Could not get exchange</i18n.Translate>}
+        error={state.hook}
+      />
+    );
+  }
+  if (state.status === "loading-info") {
+    if (!state.hook) return <Loading />;
+    return (
+      <LoadingError
+        title={
+          <i18n.Translate>Could not get info of withdrawal</i18n.Translate>
+        }
+        error={state.hook}
+      />
+    );
+  }
+
+  if (state.status === "completed") {
+    return (
+      <WalletAction>
+        <LogoHeader />
+        <SubTitle>
+          <i18n.Translate>Digital cash withdrawal</i18n.Translate>
+        </SubTitle>
+        <SuccessBox>
+          <h3>
+            <i18n.Translate>Withdrawal in process...</i18n.Translate>
+          </h3>
+          <p>
+            <i18n.Translate>
+              You can close the page now. Check your bank if the transaction
+              need a confirmation step to be completed
+            </i18n.Translate>
+          </p>
+        </SuccessBox>
+      </WalletAction>
+    );
+  }
+
   return (
     <WalletAction>
       <LogoHeader />
@@ -458,40 +533,6 @@ export function WithdrawPage({ talerWithdrawUri }: Props): VNode {
 
   if (!state) {
     return <Loading />;
-  }
-
-  if (state.status === "loading-uri") {
-    if (!state.hook) return <Loading />;
-
-    return (
-      <LoadingError
-        title={
-          <i18n.Translate>Could not get the info from the URI</i18n.Translate>
-        }
-        error={state.hook}
-      />
-    );
-  }
-  if (state.status === "loading-exchange") {
-    if (!state.hook) return <Loading />;
-
-    return (
-      <LoadingError
-        title={<i18n.Translate>Could not get exchange</i18n.Translate>}
-        error={state.hook}
-      />
-    );
-  }
-  if (state.status === "loading-info") {
-    if (!state.hook) return <Loading />;
-    return (
-      <LoadingError
-        title={
-          <i18n.Translate>Could not get info of withdrawal</i18n.Translate>
-        }
-        error={state.hook}
-      />
-    );
   }
 
   return <View state={state} />;

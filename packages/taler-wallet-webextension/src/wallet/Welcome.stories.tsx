@@ -28,7 +28,7 @@ export default {
 };
 
 export const Normal = createExample(TestedComponent, {
-  permissionsEnabled: true,
+  permissionToggle: { value: true, button: {} },
   diagnostics: {
     errors: [],
     walletManifestVersion: "1.0",
@@ -40,9 +40,9 @@ export const Normal = createExample(TestedComponent, {
 
 export const TimedoutDiagnostics = createExample(TestedComponent, {
   timedOut: true,
-  permissionsEnabled: false,
+  permissionToggle: { value: true, button: {} },
 });
 
 export const RunningDiagnostics = createExample(TestedComponent, {
-  permissionsEnabled: false,
+  permissionToggle: { value: true, button: {} },
 });

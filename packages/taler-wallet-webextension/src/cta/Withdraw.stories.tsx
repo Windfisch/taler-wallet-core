@@ -229,3 +229,10 @@ export const EditExchangeModified = createExample(TestedComponent, {
     tosProps: normalTosState,
   },
 });
+
+export const CompletedWithoutBankURL = createExample(TestedComponent, {
+  state: {
+    status: "completed",
+    hook: undefined,
+  },
+});

@@ -32,18 +32,19 @@ export default {
 
 export const AllOff = createExample(TestedComponent, {
   deviceName: "this-is-the-device-name",
+  permissionToggle: { value: false, button: {} },
   setDeviceName: () => Promise.resolve(),
 });
 
 export const OneChecked = createExample(TestedComponent, {
   deviceName: "this-is-the-device-name",
-  permissionsEnabled: true,
+  permissionToggle: { value: false, button: {} },
   setDeviceName: () => Promise.resolve(),
 });
 
 export const WithOneExchange = createExample(TestedComponent, {
   deviceName: "this-is-the-device-name",
-  permissionsEnabled: true,
+  permissionToggle: { value: false, button: {} },
   setDeviceName: () => Promise.resolve(),
   knownExchanges: [
     {
@@ -62,7 +63,7 @@ export const WithOneExchange = createExample(TestedComponent, {
 
 export const WithExchangeInDifferentState = createExample(TestedComponent, {
   deviceName: "this-is-the-device-name",
-  permissionsEnabled: true,
+  permissionToggle: { value: false, button: {} },
   setDeviceName: () => Promise.resolve(),
   knownExchanges: [
     {

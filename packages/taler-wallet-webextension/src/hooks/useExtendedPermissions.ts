@@ -17,23 +17,32 @@
 import { useState, useEffect } from "preact/hooks";
 import * as wxApi from "../wxApi.js";
 import { platform } from "../platform/api.js";
-import { getReadRequestPermissions } from "../permissions.js";
+import { ToggleHandler } from "../mui/handlers.js";
+import { TalerError } from "@gnu-taler/taler-wallet-core";
 
-export function useExtendedPermissions(): [boolean, () => Promise<void>] {
+export function useExtendedPermissions(): ToggleHandler {
   const [enabled, setEnabled] = useState(false);
-
+  const [error, setError] = useState<TalerError | undefined>();
   const toggle = async (): Promise<void> => {
-    return handleExtendedPerm(enabled, setEnabled)
+    return handleExtendedPerm(enabled, setEnabled).catch(e => {
+      setError(TalerError.fromException(e))
+    })
   };
 
   useEffect(() => {
     async function getExtendedPermValue(): Promise<void> {
-      const res = await wxApi.getExtendedPermissions();
+      const res = await wxApi.containsHeaderListener();
       setEnabled(res.newValue);
     }
     getExtendedPermValue();
   }, []);
-  return [enabled, toggle];
+  return {
+    value: enabled,
+    button: {
+      onClick: toggle,
+      error
+    }
+  };
 }
 
 async function handleExtendedPerm(isEnabled: boolean, onChange: (value: boolean) => void): Promise<void> {
@@ -42,18 +51,20 @@ async function handleExtendedPerm(isEnabled: boolean, onChange: (value: boolean)
     // as the result of an input event ...
     let granted: boolean;
     try {
-      granted = await platform.getPermissionsApi().request(getReadRequestPermissions());
+      granted = await platform.getPermissionsApi().requestHostPermissions();
     } catch (lastError) {
-      console.error("error requesting permissions");
-      console.error(lastError);
       onChange(false);
-      return
+      throw lastError;
     }
-    console.log("permissions granted:", granted);
-    const res = await wxApi.setExtendedPermissions(granted);
+    const res = await wxApi.toggleHeaderListener(granted);
     onChange(res.newValue);
   } else {
-    await wxApi.setExtendedPermissions(false).then(r => onChange(r.newValue));
+    try {
+      await wxApi.toggleHeaderListener(false).then(r => onChange(r.newValue));
+    } catch (e) {
+      console.log(e)
+    }
+
   }
   return
 }
