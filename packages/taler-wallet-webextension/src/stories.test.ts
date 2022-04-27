@@ -18,15 +18,18 @@
  *
  * @author Sebastian Javier Marchano (sebasjm)
  */
-import * as popup from "./popup/index.stories.js";
-import * as wallet from "./wallet/index.stories.js";
-import * as mui from "./mui/index.stories.js";
-import * as cta from "./cta/index.stories.js";
-import * as components from "./components/index.stories.js";
-
 import { setupI18n } from "@gnu-taler/taler-util";
+import * as components from "./components/index.stories.js";
+import * as cta from "./cta/index.stories.js";
+import * as mui from "./mui/index.stories.js";
+import { setupPlatform } from "./platform/api.js";
+import chromeAPI from "./platform/chrome.js";
+import * as popup from "./popup/index.stories.js";
 import { renderNodeOrBrowser } from "./test-utils.js";
+import * as wallet from "./wallet/index.stories.js";
+
 setupI18n("en", { en: {} });
+setupPlatform(chromeAPI);
 
 function testThisStory(st: any): any {
   describe(`render examples for ${(st as any).default.title}`, () => {

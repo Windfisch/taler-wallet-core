@@ -14,8 +14,15 @@
     }
   },
   "icons": {
-    "32": "static/img/icon.png",
-    "128": "static/img/logo.png"
+    "16": "static/img/taler-logo-16.png",
+    "19": "static/img/taler-logo-19.png",
+    "32": "static/img/taler-logo-32.png",
+    "38": "static/img/taler-logo-38.png",
+    "48": "static/img/taler-logo-48.png",
+    "64": "static/img/taler-logo-64.png",
+    "128": "static/img/taler-logo-128.png",
+    "256": "static/img/taler-logo-256.png",
+    "512": "static/img/taler-logo-512.png"
   },
   "commands": {
     "_execute_browser_action": {
@@ -33,7 +40,15 @@
   ],
   "browser_action": {
     "default_icon": {
-      "32": "static/img/icon.png"
+      "16": "static/img/taler-logo-16.png",
+      "19": "static/img/taler-logo-19.png",
+      "32": "static/img/taler-logo-32.png",
+      "38": "static/img/taler-logo-38.png",
+      "48": "static/img/taler-logo-48.png",
+      "64": "static/img/taler-logo-64.png",
+      "128": "static/img/taler-logo-128.png",
+      "256": "static/img/taler-logo-256.png",
+      "512": "static/img/taler-logo-512.png"
     },
     "default_title": "GNU Taler Wallet",
     "default_popup": "static/popup.html"
