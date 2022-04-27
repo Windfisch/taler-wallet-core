@@ -18,71 +18,53 @@
  * Imports.
  */
 import { Logger } from "@gnu-taler/taler-util";
-import { TimerAPI, TimerHandle } from "@gnu-taler/taler-wallet-core";
+import { timer, TimerAPI, TimerHandle } from "@gnu-taler/taler-wallet-core";
 
-
-const nullTimerHandle = {
-  clear() {
-    // do nothing
-    return;
-  },
-  unref() {
-    // do nothing
-    return;
-  },
-};
 
 const logger = new Logger("ServiceWorkerTimerGroup.ts");
+
 /**
  * Implementation of [[TimerAPI]] using alarm API
  */
 export class ServiceWorkerTimerAPI implements TimerAPI {
 
+
   /**
    * Call a function every time the delay given in milliseconds passes.
    */
-  every(delayMs: number, callback: () => void): TimerHandle {
+  every(delayMs: number, callback: VoidFunction): TimerHandle {
     const seconds = delayMs / 1000;
     const periodInMinutes = Math.round(seconds < 61 ? 1 : seconds / 60);
 
-    logger.trace(`creating a alarm every ${periodInMinutes} ${delayMs}`)
-    chrome.alarms.create("wallet-worker", { periodInMinutes })
-    chrome.alarms.onAlarm.addListener((a) => {
-      logger.trace(`alarm called, every: ${a.name}`)
-      callback()
-    })
+    logger.info(`creating a alarm every ${periodInMinutes} min, intended delay was ${delayMs}`)
+    // chrome.alarms.create("wallet-worker", { periodInMinutes })
+    // chrome.alarms.onAlarm.addListener((a) => {
+    //   logger.info(`alarm called, every: ${a.name}`)
+    //   callback()
+    // })
 
-    return new AlarmHandle();
+    const p = timer.every(delayMs, callback)
+    return p;
   }
 
   /**
    * Call a function after the delay given in milliseconds passes.
    */
-  after(delayMs: number, callback: () => void): TimerHandle {
+  after(delayMs: number, callback: VoidFunction): TimerHandle {
     const seconds = delayMs / 1000;
     const delayInMinutes = Math.round(seconds < 61 ? 1 : seconds / 60);
 
-    logger.trace(`creating a alarm after ${delayInMinutes} ${delayMs}`)
+    logger.info(`creating a alarm after ${delayInMinutes} min, intended delay was ${delayMs}`)
     chrome.alarms.create("wallet-worker", { delayInMinutes })
-    chrome.alarms.onAlarm.addListener((a) => {
-      logger.trace(`alarm called, after: ${a.name}`)
-      callback();
-    })
-    return new AlarmHandle();
-  }
+    // chrome.alarms.onAlarm.addListener((a) => {
+    //   logger.info(`alarm called, after: ${a.name}`)
+    //   callback();
+    // })
 
-}
 
-class AlarmHandle implements TimerHandle {
+    const p = timer.after(delayMs, callback);
 
-  clear(): void {
-    chrome.alarms.clear("wallet-worker", (result) => {
-      logger.info(`Alarm 'wallet-worker' was cleared: ${result}`)
-    })
-    return;
-  }
-  unref(): void {
-    return;
+    return p
   }
 
 }
