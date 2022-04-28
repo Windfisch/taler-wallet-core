@@ -326,7 +326,6 @@ function registerTalerHeaderListener(callback: (tabId: number, url: string) => v
     return;
   }
   const prevHeaderListener = currentHeaderListener;
-  currentHeaderListener = headerListener;
 
   getPermissionsApi().containsHostPermissions().then(result => {
     //if there is a handler already, remove it
@@ -338,11 +337,15 @@ function registerTalerHeaderListener(callback: (tabId: number, url: string) => v
     }
     //if the result was positive, add the headerListener
     if (result) {
-      chrome?.webRequest?.onHeadersReceived?.addListener(
-        headerListener,
-        { urls: ["<all_urls>"] },
-        ["responseHeaders"],
-      );
+      const listener: chrome.webRequest.WebResponseHeadersEvent | undefined = chrome?.webRequest?.onHeadersReceived;
+      if (listener) {
+        listener.addListener(
+          headerListener,
+          { urls: ["<all_urls>"] },
+          ["responseHeaders"],
+        );
+        currentHeaderListener = headerListener;
+      }
     }
     //notify the browser about this change, this operation is expensive
     chrome?.webRequest?.handlerBehaviorChanged(() => {
