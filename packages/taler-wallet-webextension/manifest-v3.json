@@ -25,7 +25,9 @@
   ],
   "commands": {
     "_execute_action": {
-      "suggested_key": "Alt+W"
+      "suggested_key": {
+        "default": "Alt+W"
+      }
     }
   },
   "optional_permissions": [

@@ -327,6 +327,27 @@ export interface RetryLoopOpts {
 }
 
 /**
+ * This iteration hint will keep incrementing while the taskLoop iteration.
+ * If the hint does not match the current iteration it means that another
+ * promises is also working or has done some work before.
+ */
+let iterationHint = 0
+function thereIsAnotherPromiseWorking(iteration: number): boolean {
+  if (iterationHint > iteration) {
+    logger.trace(`some other promise is or has done some progress`);
+    iterationHint = iteration;
+    //we know that another promise did some work but don't know if still active
+    //so we take ownership and do work
+  } else if (iterationHint < iteration) {
+    //another promise take ownership that means that our time has come to an end
+    return true
+  }
+  // increment the hint to match the next loop
+  iterationHint++
+  return false
+}
+
+/**
  * Main retry loop of the wallet.
  *
  * Looks up pending operations from the wallet, runs them, repeat.
@@ -336,6 +357,10 @@ async function runTaskLoop(
   opts: RetryLoopOpts = {},
 ): Promise<void> {
   for (let iteration = 0; !ws.stopped; iteration++) {
+    if (thereIsAnotherPromiseWorking(iteration)) {
+      logger.trace(`another promise is working, we just need one`);
+      return;
+    }
     const pending = await getPendingOperations(ws);
     logger.trace(`pending operations: ${j2s(pending)}`);
     let numGivingLiveness = 0;

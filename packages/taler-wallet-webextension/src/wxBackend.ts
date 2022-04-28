@@ -46,7 +46,6 @@ import { BrowserHttpLib } from "./browserHttpLib.js";
 import { MessageFromBackend, platform } from "./platform/api.js";
 import { SynchronousCryptoWorkerFactory } from "./serviceWorkerCryptoWorkerFactory.js";
 import { ServiceWorkerHttpLib } from "./serviceWorkerHttpLib.js";
-import { ServiceWorkerTimerAPI } from "./serviceWorkerTimerAPI.js";
 
 /**
  * Currently active wallet instance.  Might be unloaded and
@@ -196,7 +195,7 @@ async function reinitWallet(): Promise<void> {
   if (platform.useServiceWorkerAsBackgroundProcess()) {
     httpLib = new ServiceWorkerHttpLib();
     cryptoWorker = new SynchronousCryptoWorkerFactory();
-    timer = new ServiceWorkerTimerAPI();
+    timer = new SetTimeoutTimerAPI();
   } else {
     httpLib = new BrowserHttpLib();
     cryptoWorker = new BrowserCryptoWorkerFactory();
@@ -216,9 +215,12 @@ async function reinitWallet(): Promise<void> {
     const message: MessageFromBackend = { type: x.type };
     platform.sendMessageToAllChannels(message)
   });
-  wallet.runTaskLoop().catch((e) => {
-    logger.error("error during wallet task loop", e);
-  });
+
+  platform.keepAlive(() => {
+    wallet.runTaskLoop().catch((e) => {
+      logger.error("error during wallet task loop", e);
+    });
+  })
   // Useful for debugging in the background page.
   if (typeof window !== "undefined") {
     (window as any).talerWallet = wallet;

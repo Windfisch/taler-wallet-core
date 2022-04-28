@@ -21,6 +21,7 @@ const frames = ["popup", "wallet"]
 
 const api: PlatformAPI = ({
   isFirefox: () => false,
+  keepAlive: (cb: VoidFunction) => cb(),
   findTalerUriInActiveTab: async () => undefined,
   containsTalerHeaderListener: () => { return true },
   getPermissionsApi: () => ({

@@ -15,7 +15,7 @@
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { classifyTalerUri, CoreApiResponse, TalerUriType } from "@gnu-taler/taler-util";
+import { classifyTalerUri, CoreApiResponse, Logger, TalerUriType } from "@gnu-taler/taler-util";
 import { CrossBrowserPermissionsApi, MessageFromBackend, Permissions, PlatformAPI } from "./api.js";
 
 const api: PlatformAPI = {
@@ -38,9 +38,26 @@ const api: PlatformAPI = {
   sendMessageToWalletBackground,
   useServiceWorkerAsBackgroundProcess,
   containsTalerHeaderListener,
+  keepAlive,
 }
 
 export default api;
+
+const logger = new Logger("chrome.ts");
+
+function keepAlive(callback: any): void {
+  if (chrome.runtime && chrome.runtime.getManifest().manifest_version === 3) {
+    chrome.alarms.create("wallet-worker", { periodInMinutes: 1 })
+
+    chrome.alarms.onAlarm.addListener((a) => {
+      logger.trace(`kee p alive alarm: ${a.name}`)
+      callback()
+    })
+  } else {
+    callback();
+  }
+
+}
 
 function isFirefox(): boolean {
   return false;

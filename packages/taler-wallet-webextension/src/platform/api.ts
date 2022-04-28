@@ -57,6 +57,10 @@ export interface WalletVersion {
  */
 export interface PlatformAPI {
   /**
+   * Garantee that the 
+   */
+  keepAlive(cb: VoidFunction): void;
+  /**
    * FIXME: should not be needed
    * 
    * check if the platform is firefox
