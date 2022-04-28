@@ -51,11 +51,11 @@ function keepAlive(callback: any): void {
 
     chrome.alarms.onAlarm.addListener((a) => {
       logger.trace(`kee p alive alarm: ${a.name}`)
-      callback()
+      // callback()
     })
-  } else {
-    callback();
+    // } else {
   }
+  callback();
 
 }
 
@@ -331,29 +331,25 @@ function registerTalerHeaderListener(callback: (tabId: number, url: string) => v
   getPermissionsApi().containsHostPermissions().then(result => {
     //if there is a handler already, remove it
     if (
-      "webRequest" in chrome &&
-      "onHeadersReceived" in chrome.webRequest &&
       prevHeaderListener &&
-      chrome.webRequest.onHeadersReceived.hasListener(prevHeaderListener)
+      chrome?.webRequest?.onHeadersReceived?.hasListener(prevHeaderListener)
     ) {
       chrome.webRequest.onHeadersReceived.removeListener(prevHeaderListener);
     }
     //if the result was positive, add the headerListener
     if (result) {
-      chrome.webRequest.onHeadersReceived.addListener(
+      chrome?.webRequest?.onHeadersReceived?.addListener(
         headerListener,
         { urls: ["<all_urls>"] },
         ["responseHeaders"],
       );
     }
     //notify the browser about this change, this operation is expensive
-    if ("webRequest" in chrome) {
-      chrome.webRequest.handlerBehaviorChanged(() => {
-        if (chrome.runtime.lastError) {
-          console.error(JSON.stringify(chrome.runtime.lastError));
-        }
-      });
-    }
+    chrome?.webRequest?.handlerBehaviorChanged(() => {
+      if (chrome.runtime.lastError) {
+        console.error(JSON.stringify(chrome.runtime.lastError));
+      }
+    });
   });
 }
 
