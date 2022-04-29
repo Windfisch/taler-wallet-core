@@ -46,7 +46,7 @@ export default api;
 const logger = new Logger("chrome.ts");
 
 function keepAlive(callback: any): void {
-  if (chrome.runtime && chrome.runtime.getManifest().manifest_version === 3) {
+  if (extensionIsManifestV3()) {
     chrome.alarms.create("wallet-worker", { periodInMinutes: 1 })
 
     chrome.alarms.onAlarm.addListener((a) => {
@@ -122,7 +122,7 @@ export async function removeHostPermissions(): Promise<boolean> {
     });
   }
 
-  if (chrome.runtime && chrome.runtime.getManifest().manifest_version === 3) {
+  if (extensionIsManifestV3()) {
     // Trying to remove host permissions with manifest >= v3 throws an error
     return true;
   }
@@ -156,7 +156,7 @@ function getPermissionsApi(): CrossBrowserPermissionsApi {
  * @param callback function to be called
  */
 function notifyWhenAppIsReady(callback: () => void): void {
-  if (chrome.runtime && chrome.runtime.getManifest().manifest_version === 3) {
+  if (extensionIsManifestV3()) {
     callback()
   } else {
     window.addEventListener("load", callback);
@@ -356,19 +356,163 @@ function registerTalerHeaderListener(callback: (tabId: number, url: string) => v
   });
 }
 
+const alertIcons = {
+  "16": "/static/img/taler-alert-16.png",
+  "19": "/static/img/taler-alert-19.png",
+  "32": "/static/img/taler-alert-32.png",
+  "38": "/static/img/taler-alert-38.png",
+  "48": "/static/img/taler-alert-48.png",
+  "64": "/static/img/taler-alert-64.png",
+  "128": "/static/img/taler-alert-128.png",
+  "256": "/static/img/taler-alert-256.png",
+  "512": "/static/img/taler-alert-512.png"
+}
+const normalIcons = {
+  "16": "/static/img/taler-logo-16.png",
+  "19": "/static/img/taler-logo-19.png",
+  "32": "/static/img/taler-logo-32.png",
+  "38": "/static/img/taler-logo-38.png",
+  "48": "/static/img/taler-logo-48.png",
+  "64": "/static/img/taler-logo-64.png",
+  "128": "/static/img/taler-logo-128.png",
+  "256": "/static/img/taler-logo-256.png",
+  "512": "/static/img/taler-logo-512.png"
+}
+function setNormalIcon(): void {
+  if (extensionIsManifestV3()) {
+    chrome.action.setIcon({ path: normalIcons })
+  } else {
+    chrome.browserAction.setIcon({ path: normalIcons })
+  }
+}
+
+function setAlertedIcon(): void {
+  if (extensionIsManifestV3()) {
+    chrome.action.setIcon({ path: alertIcons })
+  } else {
+    chrome.browserAction.setIcon({ path: alertIcons })
+  }
+}
+
+
+interface OffscreenCanvasRenderingContext2D extends CanvasState, CanvasTransform, CanvasCompositing, CanvasImageSmoothing, CanvasFillStrokeStyles, CanvasShadowStyles, CanvasFilters, CanvasRect, CanvasDrawPath, CanvasUserInterface, CanvasText, CanvasDrawImage, CanvasImageData, CanvasPathDrawingStyles, CanvasTextDrawingStyles, CanvasPath {
+  readonly canvas: OffscreenCanvas;
+}
+declare const OffscreenCanvasRenderingContext2D: {
+  prototype: OffscreenCanvasRenderingContext2D;
+  new(): OffscreenCanvasRenderingContext2D;
+}
+
+interface OffscreenCanvas extends EventTarget {
+  width: number;
+  height: number;
+  getContext(contextId: "2d", contextAttributes?: CanvasRenderingContext2DSettings): OffscreenCanvasRenderingContext2D | null;
+}
+declare const OffscreenCanvas: {
+  prototype: OffscreenCanvas;
+  new(width: number, height: number): OffscreenCanvas;
+}
+
+function createCanvas(size: number): OffscreenCanvas {
+  if (extensionIsManifestV3()) {
+    return new OffscreenCanvas(size, size)
+  } else {
+    const c = document.createElement("canvas")
+    c.height = size;
+    c.width = size;
+    return c;
+  }
+}
+
+
+async function createImage(size: number, file: string): Promise<ImageData> {
+  const r = await fetch(file)
+  const b = await r.blob()
+  const image = await createImageBitmap(b)
+  const canvas = createCanvas(size);
+  const canvasContext = canvas.getContext('2d')!;
+  canvasContext.clearRect(0, 0, canvas.width, canvas.height);
+  canvasContext.drawImage(image, 0, 0, canvas.width, canvas.height);
+  const imageData = canvasContext.getImageData(0, 0, canvas.width, canvas.height);
+  return imageData;
+}
+
+async function registerIconChangeOnTalerContent(): Promise<void> {
+  const imgs = await Promise.all(Object.entries(alertIcons).map(([key, value]) => createImage(parseInt(key, 10), value)))
+  const imageData = imgs.reduce((prev, cur) => ({ ...prev, [cur.width]: cur }), {} as { [size: string]: ImageData })
+
+  if (chrome.declarativeContent) {
+    // using declarative content does not need host permission
+    // and is faster
+    const secureTalerUrlLookup = {
+      conditions: [
+        new chrome.declarativeContent.PageStateMatcher({
+          css: ["a[href^='taler://'"]
+        })
+      ],
+      actions: [new chrome.declarativeContent.SetIcon({ imageData })]
+    };
+    const inSecureTalerUrlLookup = {
+      conditions: [
+        new chrome.declarativeContent.PageStateMatcher({
+          css: ["a[href^='taler+http://'"]
+        })
+      ],
+      actions: [new chrome.declarativeContent.SetIcon({ imageData })]
+    };
+    chrome.declarativeContent.onPageChanged.removeRules(undefined, function () {
+      chrome.declarativeContent.onPageChanged.addRules([secureTalerUrlLookup, inSecureTalerUrlLookup]);
+    });
+    return;
+  }
+
+  //this browser doesn't have declarativeContent
+  //we need host_permission and we will check the content for changing the icon
+  chrome.tabs.onUpdated.addListener(async (tabId, info: chrome.tabs.TabChangeInfo) => {
+    if (tabId < 0) return;
+    logger.info("tab updated", tabId, info);
+    if (info.status !== "complete") return;
+    const uri = await findTalerUriInTab(tabId);
+    console.log("urio", uri)
+    if (uri) {
+      setAlertedIcon()
+    } else {
+      setNormalIcon()
+    }
+
+  });
+  chrome.tabs.onActivated.addListener(async ({ tabId }: chrome.tabs.TabActiveInfo) => {
+    if (tabId < 0) return;
+    logger.info("tab activated", tabId);
+    const uri = await findTalerUriInTab(tabId);
+    console.log("urio", uri)
+    if (uri) {
+      setAlertedIcon()
+    } else {
+      setNormalIcon()
+    }
+  })
+
+}
+
 function registerOnInstalled(callback: () => void): void {
   // This needs to be outside of main, as Firefox won't fire the event if
   // the listener isn't created synchronously on loading the backend.
-  chrome.runtime.onInstalled.addListener((details) => {
-    console.log(`onInstalled with reason: "${details.reason}"`);
+  chrome.runtime.onInstalled.addListener(async (details) => {
+    logger.info(`onInstalled with reason: "${details.reason}"`);
     if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
       callback()
     }
+    registerIconChangeOnTalerContent()
   });
 }
 
-function useServiceWorkerAsBackgroundProcess(): boolean {
+function extensionIsManifestV3(): boolean {
   return chrome.runtime.getManifest().manifest_version === 3
+}
+
+function useServiceWorkerAsBackgroundProcess(): boolean {
+  return extensionIsManifestV3()
 }
 
 function searchForTalerLinks(): string | undefined {
@@ -382,45 +526,59 @@ function searchForTalerLinks(): string | undefined {
 
 async function getCurrentTab(): Promise<chrome.tabs.Tab> {
   const queryOptions = { active: true, currentWindow: true };
-  const [tab] = await chrome.tabs.query(queryOptions);
-  return tab;
+  return new Promise<chrome.tabs.Tab>((resolve, reject) => {
+    chrome.tabs.query(queryOptions, (tabs) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError)
+        return;
+      }
+      resolve(tabs[0])
+    });
+  })
 }
 
+async function findTalerUriInTab(tabId: number): Promise<string | undefined> {
+  if (extensionIsManifestV3()) {
+    // manifest v3
+    try {
+      const res = await chrome.scripting.executeScript({
+        target: { tabId, allFrames: true },
+        func: searchForTalerLinks,
+        args: []
+      })
+      return res[0].result
+    } catch (e) {
+      return;
+    }
+  } else {
+    return new Promise((resolve, reject) => {
+      //manifest v2
+      chrome.tabs.executeScript(tabId,
+        {
+          code: `
+            (() => {
+              let x = document.querySelector("a[href^='taler://'") || document.querySelector("a[href^='taler+http://'");
+              return x ? x.href.toString() : null;
+            })();
+            `,
+          allFrames: false,
+        },
+        (result) => {
+          if (chrome.runtime.lastError) {
+            console.error(JSON.stringify(chrome.runtime.lastError));
+            resolve(undefined);
+            return;
+          }
+          resolve(result[0]);
+        },
+      );
+    });
+  }
+}
 
 async function findTalerUriInActiveTab(): Promise<string | undefined> {
-  if (chrome.runtime.getManifest().manifest_version === 3) {
-    // manifest v3
-    const tab = await getCurrentTab();
-    const res = await chrome.scripting.executeScript({
-      target: {
-        tabId: tab.id!,
-        allFrames: true,
-      } as any,
-      func: searchForTalerLinks,
-      args: []
-    })
-    return res[0].result
-  }
-  return new Promise((resolve, reject) => {
-    //manifest v2
-    chrome.tabs.executeScript(
-      {
-        code: `
-        (() => {
-          let x = document.querySelector("a[href^='taler://'") || document.querySelector("a[href^='taler+http://'");
-          return x ? x.href.toString() : null;
-        })();
-        `,
-        allFrames: false,
-      },
-      (result) => {
-        if (chrome.runtime.lastError) {
-          console.error(JSON.stringify(chrome.runtime.lastError));
-          resolve(undefined);
-          return;
-        }
-        resolve(result[0]);
-      },
-    );
-  });
+  const tab = await getCurrentTab();
+  if (!tab || tab.id === undefined) return;
+  return findTalerUriInTab(tab.id)
 }
+

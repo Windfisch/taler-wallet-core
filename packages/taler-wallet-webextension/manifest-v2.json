@@ -33,12 +33,12 @@
   },
   "permissions": [
     "unlimitedStorage",
+    "http://*/*",
+    "https://*/*",
     "activeTab"
   ],
   "optional_permissions": [
-    "webRequest",
-    "http://*/*",
-    "https://*/*"
+    "webRequest"
   ],
   "browser_action": {
     "default_icon": {

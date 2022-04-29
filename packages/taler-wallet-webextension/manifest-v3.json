@@ -21,6 +21,7 @@
     "unlimitedStorage",
     "activeTab",
     "scripting",
+    "declarativeContent",
     "alarms"
   ],
   "commands": {
