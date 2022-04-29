@@ -315,6 +315,7 @@ export async function getCandidatePayCoins(
             denomPub: denom.denomPub,
             feeDeposit: denom.feeDeposit,
             exchangeBaseUrl: denom.exchangeBaseUrl,
+            ageCommitmentProof: coin.ageCommitmentProof,
           });
         }
 
@@ -1120,6 +1121,7 @@ async function handleInsufficientFunds(
     wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
     wireFeeLimit: contractData.maxWireFee,
     prevPayCoins,
+    requiredMinimumAge: contractData.minimumAge,
   });
 
   if (!res) {
@@ -1236,6 +1238,7 @@ export async function checkPaymentByProposalId(
       wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
       wireFeeLimit: contractData.maxWireFee,
       prevPayCoins: [],
+      requiredMinimumAge: contractData.minimumAge,
     });
 
     if (!res) {
@@ -1488,6 +1491,7 @@ export async function confirmPay(
     wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
     wireFeeLimit: contractData.maxWireFee,
     prevPayCoins: [],
+    requiredMinimumAge: contractData.minimumAge,
   });
 
   logger.trace("coin selection result", res);

@@ -24,12 +24,12 @@
  * Imports.
  */
 import {
+  AgeCommitmentProof,
+  AgeRestriction,
   AmountJson,
   Amounts,
   DenominationPubKey,
-  DenomKeyType,
   Logger,
-  strcmp,
 } from "@gnu-taler/taler-util";
 
 const logger = new Logger("coinSelection.ts");
@@ -77,7 +77,7 @@ export interface AvailableCoinInfo {
 
   /**
    * Coin's denomination public key.
-   * 
+   *
    * FIXME: We should only need the denomPubHash here, if at all.
    */
   denomPub: DenominationPubKey;
@@ -94,6 +94,8 @@ export interface AvailableCoinInfo {
   feeDeposit: AmountJson;
 
   exchangeBaseUrl: string;
+
+  ageCommitmentProof?: AgeCommitmentProof;
 }
 
 export type PreviousPayCoins = {
@@ -115,6 +117,7 @@ export interface SelectPayCoinRequest {
   wireFeeLimit: AmountJson;
   wireFeeAmortization: number;
   prevPayCoins?: PreviousPayCoins;
+  requiredMinimumAge?: number;
 }
 
 interface CoinSelectionTally {
@@ -304,6 +307,21 @@ export function selectPayCoins(
     // by a fundamental, intentional limitation of the protocol.
     if (prevCoinPubs.has(aci.coinPub)) {
       continue;
+    }
+
+    if (req.requiredMinimumAge != null) {
+      const index = AgeRestriction.getAgeGroupIndex(
+        aci.denomPub.age_mask,
+        req.requiredMinimumAge,
+      );
+      if (!aci.ageCommitmentProof) {
+        // No age restriction, can't use for this payment
+        continue;
+      }
+      if (aci.ageCommitmentProof.proof.privateKeys.length < index) {
+        // Available age proofs to low, can't use for this payment
+        continue;
+      }
     }
 
     tally = tallyFees(
