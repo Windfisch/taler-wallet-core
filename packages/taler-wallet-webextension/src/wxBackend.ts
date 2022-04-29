@@ -33,6 +33,8 @@ import {
 import {
   DbAccess,
   deleteTalerDatabase,
+  exportDb,
+  importDb,
   makeErrorDetail,
   OpenedPromise,
   openPromise,
@@ -127,6 +129,18 @@ async function dispatch(
     case "reset-db": {
       await deleteTalerDatabase(indexedDB as any);
       r = wrapResponse(await reinitWallet());
+      break;
+    }
+    case "run-gc": {
+      logger.info("gc")
+      const dump = await exportDb(currentDatabase!.idbHandle());
+      await deleteTalerDatabase(indexedDB as any);
+      logger.info("cleaned")
+      await reinitWallet();
+      logger.info("init")
+      await importDb(currentDatabase!.idbHandle(), dump)
+      logger.info("imported")
+      r = wrapResponse({ result: true });
       break;
     }
     case "containsHeaderListener": {

@@ -36,7 +36,8 @@ export function DeveloperPage(): VNode {
   const [status, timedOut] = useDiagnostics();
 
   const listenAllEvents = Array.from<NotificationType>({ length: 1 });
-  listenAllEvents.includes = () => true; // includes every event
+  //FIXME: waiting for retry notification make a always increasing loop of notifications
+  listenAllEvents.includes = (e) => e !== "waiting-for-retry"; // includes every event
 
   const response = useAsyncAsHook(async () => {
     const op = await wxApi.getPendingOperations();
@@ -160,10 +161,21 @@ export function View({
         onClick={() =>
           confirmReset(
             i18n.str`Do you want to IRREVOCABLY DESTROY everything inside your wallet and LOSE ALL YOUR COINS?`,
+            wxApi.resetDb,
           )
         }
       >
         <i18n.Translate>reset</i18n.Translate>
+      </button>
+      <button
+        onClick={() =>
+          confirmReset(
+            i18n.str`TESTING: This may delete all your coin, proceed with caution`,
+            wxApi.runGarbageCollector,
+          )
+        }
+      >
+        <i18n.Translate>run gc</i18n.Translate>
       </button>
       <br />
       <button onClick={() => fileRef?.current?.click()}>
@@ -385,9 +397,10 @@ function toBase64(str: string): string {
 
 export async function confirmReset(
   confirmTheResetMessage: string,
+  cb: () => Promise<void>,
 ): Promise<void> {
   if (confirm(confirmTheResetMessage)) {
-    await wxApi.resetDb();
+    await cb();
     window.close();
   }
 }

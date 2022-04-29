@@ -1303,9 +1303,9 @@ export const WALLET_BACKUP_STATE_KEY = "walletBackupState";
  */
 export type ConfigRecord =
   | {
-      key: typeof WALLET_BACKUP_STATE_KEY;
-      value: WalletBackupConfState;
-    }
+    key: typeof WALLET_BACKUP_STATE_KEY;
+    value: WalletBackupConfState;
+  }
   | { key: "currencyDefaultsApplied"; value: boolean };
 
 export interface WalletBackupConfState {
@@ -1491,17 +1491,17 @@ export enum BackupProviderStateTag {
 
 export type BackupProviderState =
   | {
-      tag: BackupProviderStateTag.Provisional;
-    }
+    tag: BackupProviderStateTag.Provisional;
+  }
   | {
-      tag: BackupProviderStateTag.Ready;
-      nextBackupTimestamp: TalerProtocolTimestamp;
-    }
+    tag: BackupProviderStateTag.Ready;
+    nextBackupTimestamp: TalerProtocolTimestamp;
+  }
   | {
-      tag: BackupProviderStateTag.Retrying;
-      retryInfo: RetryInfo;
-      lastError?: TalerErrorDetail;
-    };
+    tag: BackupProviderStateTag.Retrying;
+    retryInfo: RetryInfo;
+    lastError?: TalerErrorDetail;
+  };
 
 export interface BackupProviderTerms {
   supportedProtocolVersion: string;
@@ -1895,7 +1895,6 @@ export function importDb(db: IDBDatabase, dump: DatabaseDump): Promise<any> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(Array.from(db.objectStoreNames), "readwrite");
     tx.addEventListener("complete", () => {
-      tx.commit();
       resolve(db);
     });
     for (let i = 0; i < db.objectStoreNames.length; i++) {
@@ -1908,5 +1907,6 @@ export function importDb(db: IDBDatabase, dump: DatabaseDump): Promise<any> {
         tx.objectStore(name).put(value);
       });
     }
+    tx.commit();
   });
 }

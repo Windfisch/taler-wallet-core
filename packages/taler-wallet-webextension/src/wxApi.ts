@@ -140,6 +140,14 @@ export function resetDb(): Promise<void> {
   return callBackend("reset-db", {});
 }
 
+/**
+ * Reset database
+ */
+export function runGarbageCollector(): Promise<void> {
+  return callBackend("run-gc", {});
+}
+
+
 export function getFeeForDeposit(
   depositPaytoUri: string,
   amount: AmountString,
