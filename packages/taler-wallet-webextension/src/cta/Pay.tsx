@@ -353,7 +353,7 @@ export function View({
   );
 }
 
-function ProductList({ products }: { products: Product[] }): VNode {
+export function ProductList({ products }: { products: Product[] }): VNode {
   const { i18n } = useTranslationContext();
   return (
     <Fragment>

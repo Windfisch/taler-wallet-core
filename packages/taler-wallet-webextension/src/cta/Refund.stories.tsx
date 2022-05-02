@@ -19,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { OrderShortInfo } from "@gnu-taler/taler-util";
+import { Amounts } from "@gnu-taler/taler-util";
 import { createExample } from "../test-utils.js";
 import { View as TestedComponent } from "./Refund.js";
 
@@ -30,46 +30,70 @@ export default {
 };
 
 export const Complete = createExample(TestedComponent, {
-  applyResult: {
-    amountEffectivePaid: "USD:10",
-    amountRefundGone: "USD:0",
-    amountRefundGranted: "USD:2",
-    contractTermsHash: "QWEASDZXC",
-    info: {
-      summary: "tasty cold beer",
-      contractTermsHash: "QWEASDZXC",
-    } as Partial<OrderShortInfo> as any,
-    pendingAtExchange: false,
-    proposalId: "proposal123",
-  },
-});
-
-export const Partial = createExample(TestedComponent, {
-  applyResult: {
-    amountEffectivePaid: "USD:10",
-    amountRefundGone: "USD:1",
-    amountRefundGranted: "USD:2",
-    contractTermsHash: "QWEASDZXC",
-    info: {
-      summary: "tasty cold beer",
-      contractTermsHash: "QWEASDZXC",
-    } as Partial<OrderShortInfo> as any,
-    pendingAtExchange: false,
-    proposalId: "proposal123",
+  state: {
+    status: "completed",
+    amount: Amounts.parseOrThrow("USD:1"),
+    hook: undefined,
+    merchantName: "the merchant",
+    products: undefined,
   },
 });
 
 export const InProgress = createExample(TestedComponent, {
-  applyResult: {
-    amountEffectivePaid: "USD:10",
-    amountRefundGone: "USD:1",
-    amountRefundGranted: "USD:2",
-    contractTermsHash: "QWEASDZXC",
-    info: {
-      summary: "tasty cold beer",
-      contractTermsHash: "QWEASDZXC",
-    } as Partial<OrderShortInfo> as any,
-    pendingAtExchange: true,
-    proposalId: "proposal123",
+  state: {
+    status: "in-progress",
+    hook: undefined,
+    amount: Amounts.parseOrThrow("USD:1"),
+    merchantName: "the merchant",
+    products: undefined,
+    progress: 0.5,
+  },
+});
+
+export const Ready = createExample(TestedComponent, {
+  state: {
+    status: "ready",
+    hook: undefined,
+    accept: {},
+    ignore: {},
+
+    amount: Amounts.parseOrThrow("USD:1"),
+    merchantName: "the merchant",
+    products: [],
+    orderId: "abcdef",
+  },
+});
+
+import beer from "../../static-dev/beer.png";
+
+export const WithAProductList = createExample(TestedComponent, {
+  state: {
+    status: "ready",
+    hook: undefined,
+    accept: {},
+    ignore: {},
+    amount: Amounts.parseOrThrow("USD:1"),
+    merchantName: "the merchant",
+    products: [
+      {
+        description: "beer",
+        image: beer,
+        quantity: 2,
+      },
+      {
+        description: "t-shirt",
+        price: "EUR:1",
+        quantity: 5,
+      },
+    ],
+    orderId: "abcdef",
+  },
+});
+
+export const Ignored = createExample(TestedComponent, {
+  state: {
+    status: "ignored",
+    hook: undefined,
+    merchantName: "the merchant",
   },
 });

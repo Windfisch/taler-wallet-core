@@ -24,35 +24,13 @@
  * Imports.
  */
 
-import {
-  AmountJson,
-  Amounts,
-  amountToPretty,
-  ConfirmPayResult,
-  ConfirmPayResultType,
-  ContractTerms,
-  NotificationType,
-  PreparePayResult,
-  PreparePayResultType,
-} from "@gnu-taler/taler-util";
-import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
-import { useEffect, useState } from "preact/hooks";
-import { ErrorTalerOperation } from "../components/ErrorTalerOperation.js";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import { LogoHeader } from "../components/LogoHeader.js";
-import { Part } from "../components/Part.js";
-import {
-  ErrorBox,
-  SubTitle,
-  SuccessBox,
-  WalletAction,
-  WarningBox,
-} from "../components/styled/index.js";
+import { SubTitle, WalletAction } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
-import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
-import * as wxApi from "../wxApi.js";
+import { HookError } from "../hooks/useAsyncAsHook.js";
 
 interface Props {
   talerDepositUri?: string;
@@ -102,7 +80,7 @@ export function View({ state }: ViewProps): VNode {
       <LogoHeader />
 
       <SubTitle>
-        <i18n.Translate>Digital cash deposit</i18n.Translate>
+        <i18n.Translate>Digital cash refund</i18n.Translate>
       </SubTitle>
     </WalletAction>
   );

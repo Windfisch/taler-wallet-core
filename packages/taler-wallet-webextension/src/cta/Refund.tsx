@@ -21,83 +21,282 @@
  */
 
 import {
-  amountFractionalBase,
   AmountJson,
   Amounts,
-  ApplyRefundResponse,
+  NotificationType,
+  Product,
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { SubTitle, Title } from "../components/styled/index.js";
+import { Amount } from "../components/Amount.js";
+import { Loading } from "../components/Loading.js";
+import { LoadingError } from "../components/LoadingError.js";
+import { LogoHeader } from "../components/LogoHeader.js";
+import { Part } from "../components/Part.js";
+import {
+  Button,
+  ButtonSuccess,
+  SubTitle,
+  WalletAction,
+} from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
+import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { ButtonHandler } from "../mui/handlers.js";
 import * as wxApi from "../wxApi.js";
+import { ProductList } from "./Pay.js";
 
 interface Props {
   talerRefundUri?: string;
 }
 export interface ViewProps {
-  applyResult: ApplyRefundResponse;
+  state: State;
 }
-export function View({ applyResult }: ViewProps): VNode {
+export function View({ state }: ViewProps): VNode {
   const { i18n } = useTranslationContext();
-  return (
-    <section class="main">
-      <Title>GNU Taler Wallet</Title>
-      <article class="fade">
+  if (state.status === "loading") {
+    if (!state.hook) {
+      return <Loading />;
+    }
+    return (
+      <LoadingError
+        title={<i18n.Translate>Could not load refund status</i18n.Translate>}
+        error={state.hook}
+      />
+    );
+  }
+
+  if (state.status === "ignored") {
+    return (
+      <WalletAction>
+        <LogoHeader />
+
         <SubTitle>
-          <i18n.Translate>Refund Status</i18n.Translate>
+          <i18n.Translate>Digital cash refund</i18n.Translate>
         </SubTitle>
+        <section>
+          <p>
+            <i18n.Translate>You&apos;ve ignored the tip.</i18n.Translate>
+          </p>
+        </section>
+      </WalletAction>
+    );
+  }
+
+  if (state.status === "in-progress") {
+    return (
+      <WalletAction>
+        <LogoHeader />
+
+        <SubTitle>
+          <i18n.Translate>Digital cash refund</i18n.Translate>
+        </SubTitle>
+        <section>
+          <p>
+            <i18n.Translate>The refund is in progress.</i18n.Translate>
+          </p>
+        </section>
+        <section>
+          <Part
+            big
+            title={<i18n.Translate>Total to refund</i18n.Translate>}
+            text={<Amount value={state.amount} />}
+            kind="negative"
+          />
+        </section>
+        {state.products && state.products.length ? (
+          <section>
+            <ProductList products={state.products} />
+          </section>
+        ) : undefined}
+        <section>
+          <ProgressBar value={state.progress} />
+        </section>
+      </WalletAction>
+    );
+  }
+
+  if (state.status === "completed") {
+    return (
+      <WalletAction>
+        <LogoHeader />
+
+        <SubTitle>
+          <i18n.Translate>Digital cash refund</i18n.Translate>
+        </SubTitle>
+        <section>
+          <p>
+            <i18n.Translate>this refund is already accepted.</i18n.Translate>
+          </p>
+        </section>
+      </WalletAction>
+    );
+  }
+
+  return (
+    <WalletAction>
+      <LogoHeader />
+
+      <SubTitle>
+        <i18n.Translate>Digital cash refund</i18n.Translate>
+      </SubTitle>
+      <section>
         <p>
           <i18n.Translate>
-            The product <em>{applyResult.info.summary}</em> has received a total
-            effective refund of{" "}
+            The merchant &quot;<b>{state.merchantName}</b>&quot; is offering you
+            a refund.
           </i18n.Translate>
-          <AmountView amount={applyResult.amountRefundGranted} />.
         </p>
-        {applyResult.pendingAtExchange ? (
-          <p>
-            <i18n.Translate>
-              Refund processing is still in progress.
-            </i18n.Translate>
-          </p>
-        ) : null}
-        {!Amounts.isZero(applyResult.amountRefundGone) ? (
-          <p>
-            <i18n.Translate>
-              The refund amount of{" "}
-              <AmountView amount={applyResult.amountRefundGone} /> could not be
-              applied.
-            </i18n.Translate>
-          </p>
-        ) : null}
-      </article>
-    </section>
+      </section>
+      <section>
+        <Part
+          big
+          title={<i18n.Translate>Total to refund</i18n.Translate>}
+          text={<Amount value={state.amount} />}
+          kind="negative"
+        />
+      </section>
+      {state.products && state.products.length ? (
+        <section>
+          <ProductList products={state.products} />
+        </section>
+      ) : undefined}
+      <section>
+        <ButtonSuccess onClick={state.accept.onClick}>
+          <i18n.Translate>Confirm refund</i18n.Translate>
+        </ButtonSuccess>
+        <Button onClick={state.ignore.onClick}>
+          <i18n.Translate>Ignore</i18n.Translate>
+        </Button>
+      </section>
+    </WalletAction>
   );
 }
-export function RefundPage({ talerRefundUri }: Props): VNode {
-  const [applyResult, setApplyResult] = useState<
-    ApplyRefundResponse | undefined
-  >(undefined);
-  const { i18n } = useTranslationContext();
-  const [errMsg, setErrMsg] = useState<string | undefined>(undefined);
+
+type State = Loading | Ready | Ignored | InProgress | Completed;
+
+interface Loading {
+  status: "loading";
+  hook: HookError | undefined;
+}
+interface Ready {
+  status: "ready";
+  hook: undefined;
+  merchantName: string;
+  products: Product[] | undefined;
+  amount: AmountJson;
+  accept: ButtonHandler;
+  ignore: ButtonHandler;
+  orderId: string;
+}
+interface Ignored {
+  status: "ignored";
+  hook: undefined;
+  merchantName: string;
+}
+interface InProgress {
+  status: "in-progress";
+  hook: undefined;
+  merchantName: string;
+  products: Product[] | undefined;
+  amount: AmountJson;
+  progress: number;
+}
+interface Completed {
+  status: "completed";
+  hook: undefined;
+  merchantName: string;
+  products: Product[] | undefined;
+  amount: AmountJson;
+}
+
+export function useComponentState(
+  talerRefundUri: string | undefined,
+  api: typeof wxApi,
+): State {
+  const [ignored, setIgnored] = useState(false);
+
+  const info = useAsyncAsHook(async () => {
+    if (!talerRefundUri) throw Error("ERROR_NO-URI-FOR-REFUND");
+    const refund = await api.prepareRefund({ talerRefundUri });
+    return { refund, uri: talerRefundUri };
+  });
 
   useEffect(() => {
-    if (!talerRefundUri) return;
-    const doFetch = async (): Promise<void> => {
-      try {
-        const result = await wxApi.applyRefund(talerRefundUri);
-        setApplyResult(result);
-      } catch (e) {
-        if (e instanceof Error) {
-          setErrMsg(e.message);
-          console.log("err message", e.message);
-        }
-      }
-    };
-    doFetch();
-  }, [talerRefundUri]);
+    api.onUpdateNotification([NotificationType.RefreshMelted], () => {
+      info?.retry();
+    });
+  });
 
-  console.log("rendering");
+  if (!info || info.hasError) {
+    return {
+      status: "loading",
+      hook: info,
+    };
+  }
+
+  const { refund, uri } = info.response;
+
+  const doAccept = async (): Promise<void> => {
+    await api.applyRefund(uri);
+    info.retry();
+  };
+
+  const doIgnore = async (): Promise<void> => {
+    setIgnored(true);
+  };
+
+  if (ignored) {
+    return {
+      status: "ignored",
+      hook: undefined,
+      merchantName: info.response.refund.info.merchant.name,
+    };
+  }
+
+  const pending = refund.total > refund.applied + refund.failed;
+  const completed = refund.total > 0 && refund.applied === refund.total;
+
+  if (pending) {
+    return {
+      status: "in-progress",
+      hook: undefined,
+      amount: Amounts.parseOrThrow(info.response.refund.amountEffectivePaid),
+      merchantName: info.response.refund.info.merchant.name,
+      products: info.response.refund.info.products,
+      progress: (refund.applied + refund.failed) / refund.total,
+    };
+  }
+
+  if (completed) {
+    return {
+      status: "completed",
+      hook: undefined,
+      amount: Amounts.parseOrThrow(info.response.refund.amountEffectivePaid),
+      merchantName: info.response.refund.info.merchant.name,
+      products: info.response.refund.info.products,
+    };
+  }
+
+  return {
+    status: "ready",
+    hook: undefined,
+    amount: Amounts.parseOrThrow(info.response.refund.amountEffectivePaid),
+    merchantName: info.response.refund.info.merchant.name,
+    products: info.response.refund.info.products,
+    orderId: info.response.refund.info.orderId,
+    accept: {
+      onClick: doAccept,
+    },
+    ignore: {
+      onClick: doIgnore,
+    },
+  };
+}
+
+export function RefundPage({ talerRefundUri }: Props): VNode {
+  const { i18n } = useTranslationContext();
+
+  const state = useComponentState(talerRefundUri, wxApi);
 
   if (!talerRefundUri) {
     return (
@@ -107,43 +306,26 @@ export function RefundPage({ talerRefundUri }: Props): VNode {
     );
   }
 
-  if (errMsg) {
-    return (
-      <span>
-        <i18n.Translate>Error: {errMsg}</i18n.Translate>
-      </span>
-    );
-  }
-
-  if (!applyResult) {
-    return (
-      <span>
-        <i18n.Translate>Updating refund status</i18n.Translate>
-      </span>
-    );
-  }
-
-  return <View applyResult={applyResult} />;
+  return <View state={state} />;
 }
 
-export function renderAmount(amount: AmountJson | string): VNode {
-  let a;
-  if (typeof amount === "string") {
-    a = Amounts.parse(amount);
-  } else {
-    a = amount;
-  }
-  if (!a) {
-    return <span>(invalid amount)</span>;
-  }
-  const x = a.value + a.fraction / amountFractionalBase;
+function ProgressBar({ value }: { value: number }): VNode {
   return (
-    <span>
-      {x}&nbsp;{a.currency}
-    </span>
+    <div
+      style={{
+        width: 400,
+        height: 20,
+        backgroundColor: "white",
+        border: "solid black 1px",
+      }}
+    >
+      <div
+        style={{
+          width: `${value * 100}%`,
+          height: "100%",
+          backgroundColor: "lightgreen",
+        }}
+      ></div>
+    </div>
   );
-}
-
-function AmountView({ amount }: { amount: AmountJson | string }): VNode {
-  return renderAmount(amount);
 }

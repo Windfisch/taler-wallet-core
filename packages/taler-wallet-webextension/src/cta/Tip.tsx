@@ -20,98 +20,210 @@
  * @author sebasjm
  */
 
-import {
-  amountFractionalBase,
-  AmountJson,
-  Amounts,
-  PrepareTipResult,
-} from "@gnu-taler/taler-util";
+import { AmountJson, Amounts, PrepareTipResult } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
+import { Amount } from "../components/Amount.js";
 import { Loading } from "../components/Loading.js";
-import { Title } from "../components/styled/index.js";
+import { LoadingError } from "../components/LoadingError.js";
+import { LogoHeader } from "../components/LogoHeader.js";
+import { Part } from "../components/Part.js";
+import {
+  Button,
+  ButtonSuccess,
+  SubTitle,
+  WalletAction,
+} from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
+import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { ButtonHandler } from "../mui/handlers.js";
 import * as wxApi from "../wxApi.js";
 
 interface Props {
   talerTipUri?: string;
 }
-export interface ViewProps {
-  prepareTipResult: PrepareTipResult;
-  onAccept: () => void;
-  onIgnore: () => void;
+
+type State = Loading | Ready | Accepted | Ignored;
+
+interface Loading {
+  status: "loading";
+  hook: HookError | undefined;
 }
-export function View({
-  prepareTipResult,
-  onAccept,
-  onIgnore,
-}: ViewProps): VNode {
+
+interface Ignored {
+  status: "ignored";
+  hook: undefined;
+}
+interface Accepted {
+  status: "accepted";
+  hook: undefined;
+  merchantBaseUrl: string;
+  amount: AmountJson;
+  exchangeBaseUrl: string;
+}
+interface Ready {
+  status: "ready";
+  hook: undefined;
+  merchantBaseUrl: string;
+  amount: AmountJson;
+  exchangeBaseUrl: string;
+  accept: ButtonHandler;
+  ignore: ButtonHandler;
+}
+
+export function useComponentState(
+  talerTipUri: string | undefined,
+  api: typeof wxApi,
+): State {
+  const [tipIgnored, setTipIgnored] = useState(false);
+
+  const tipInfo = useAsyncAsHook(async () => {
+    if (!talerTipUri) throw Error("ERROR_NO-URI-FOR-TIP");
+    const tip = await api.prepareTip({ talerTipUri });
+    return { tip };
+  });
+
+  if (!tipInfo || tipInfo.hasError) {
+    return {
+      status: "loading",
+      hook: tipInfo,
+    };
+  }
+
+  const { tip } = tipInfo.response;
+
+  const doAccept = async (): Promise<void> => {
+    await api.acceptTip({ walletTipId: tip.walletTipId });
+    tipInfo.retry();
+  };
+
+  const doIgnore = async (): Promise<void> => {
+    setTipIgnored(true);
+  };
+
+  if (tipIgnored) {
+    return {
+      status: "ignored",
+      hook: undefined,
+    };
+  }
+
+  if (tip.accepted) {
+    return {
+      status: "accepted",
+      hook: undefined,
+      merchantBaseUrl: tip.merchantBaseUrl,
+      exchangeBaseUrl: tip.exchangeBaseUrl,
+      amount: Amounts.parseOrThrow(tip.tipAmountEffective),
+    };
+  }
+
+  return {
+    status: "ready",
+    hook: undefined,
+    merchantBaseUrl: tip.merchantBaseUrl,
+    exchangeBaseUrl: tip.exchangeBaseUrl,
+    accept: {
+      onClick: doAccept,
+    },
+    ignore: {
+      onClick: doIgnore,
+    },
+    amount: Amounts.parseOrThrow(tip.tipAmountEffective),
+  };
+}
+
+export function View({ state }: { state: State }): VNode {
   const { i18n } = useTranslationContext();
+  if (state.status === "loading") {
+    if (!state.hook) {
+      return <Loading />;
+    }
+    return (
+      <LoadingError
+        title={<i18n.Translate>Could not load tip status</i18n.Translate>}
+        error={state.hook}
+      />
+    );
+  }
+
+  if (state.status === "ignored") {
+    return (
+      <WalletAction>
+        <LogoHeader />
+
+        <SubTitle>
+          <i18n.Translate>Digital cash tip</i18n.Translate>
+        </SubTitle>
+        <span>
+          <i18n.Translate>You&apos;ve ignored the tip.</i18n.Translate>
+        </span>
+      </WalletAction>
+    );
+  }
+
+  if (state.status === "accepted") {
+    return (
+      <WalletAction>
+        <LogoHeader />
+
+        <SubTitle>
+          <i18n.Translate>Digital cash tip</i18n.Translate>
+        </SubTitle>
+        <section>
+          <i18n.Translate>
+            Tip from <code>{state.merchantBaseUrl}</code> accepted. Check your
+            transactions list for more details.
+          </i18n.Translate>
+        </section>
+      </WalletAction>
+    );
+  }
+
   return (
-    <section class="main">
-      <Title>GNU Taler Wallet</Title>
-      <article class="fade">
-        {prepareTipResult.accepted ? (
-          <span>
-            <i18n.Translate>
-              Tip from <code>{prepareTipResult.merchantBaseUrl}</code> accepted.
-              Check your transactions list for more details.
-            </i18n.Translate>
-          </span>
-        ) : (
-          <div>
-            <p>
-              <i18n.Translate>
-                The merchant <code>{prepareTipResult.merchantBaseUrl}</code> is
-                offering you a tip of{" "}
-                <strong>
-                  <AmountView amount={prepareTipResult.tipAmountEffective} />
-                </strong>{" "}
-                via the exchange <code>{prepareTipResult.exchangeBaseUrl}</code>
-              </i18n.Translate>
-            </p>
-            <button onClick={onAccept}>
-              <i18n.Translate>Accept tip</i18n.Translate>
-            </button>
-            <button onClick={onIgnore}>
-              <i18n.Translate>Ignore</i18n.Translate>
-            </button>
-          </div>
-        )}
-      </article>
-    </section>
+    <WalletAction>
+      <LogoHeader />
+
+      <SubTitle>
+        <i18n.Translate>Digital cash tip</i18n.Translate>
+      </SubTitle>
+
+      <section>
+        <p>
+          <i18n.Translate>The merchant is offering you a tip</i18n.Translate>
+        </p>
+        <Part
+          title={<i18n.Translate>Amount</i18n.Translate>}
+          text={<Amount value={state.amount} />}
+          kind="positive"
+          big
+        />
+        <Part
+          title={<i18n.Translate>Merchant URL</i18n.Translate>}
+          text={state.merchantBaseUrl}
+          kind="neutral"
+        />
+        <Part
+          title={<i18n.Translate>Exchange</i18n.Translate>}
+          text={state.exchangeBaseUrl}
+          kind="neutral"
+        />
+      </section>
+      <section>
+        <ButtonSuccess onClick={state.accept.onClick}>
+          <i18n.Translate>Accept tip</i18n.Translate>
+        </ButtonSuccess>
+        <Button onClick={state.ignore.onClick}>
+          <i18n.Translate>Ignore</i18n.Translate>
+        </Button>
+      </section>
+    </WalletAction>
   );
 }
 
 export function TipPage({ talerTipUri }: Props): VNode {
   const { i18n } = useTranslationContext();
-  const [updateCounter, setUpdateCounter] = useState<number>(0);
-  const [prepareTipResult, setPrepareTipResult] = useState<
-    PrepareTipResult | undefined
-  >(undefined);
-
-  const [tipIgnored, setTipIgnored] = useState(false);
-
-  useEffect(() => {
-    if (!talerTipUri) return;
-    const doFetch = async (): Promise<void> => {
-      const p = await wxApi.prepareTip({ talerTipUri });
-      setPrepareTipResult(p);
-    };
-    doFetch();
-  }, [talerTipUri, updateCounter]);
-
-  const doAccept = async (): Promise<void> => {
-    if (!prepareTipResult) {
-      return;
-    }
-    await wxApi.acceptTip({ walletTipId: prepareTipResult?.walletTipId });
-    setUpdateCounter(updateCounter + 1);
-  };
-
-  const doIgnore = (): void => {
-    setTipIgnored(true);
-  };
+  const state = useComponentState(talerTipUri, wxApi);
 
   if (!talerTipUri) {
     return (
@@ -121,45 +233,5 @@ export function TipPage({ talerTipUri }: Props): VNode {
     );
   }
 
-  if (tipIgnored) {
-    return (
-      <span>
-        <i18n.Translate>You&apos;ve ignored the tip.</i18n.Translate>
-      </span>
-    );
-  }
-
-  if (!prepareTipResult) {
-    return <Loading />;
-  }
-
-  return (
-    <View
-      prepareTipResult={prepareTipResult}
-      onAccept={doAccept}
-      onIgnore={doIgnore}
-    />
-  );
-}
-
-function renderAmount(amount: AmountJson | string): VNode {
-  let a;
-  if (typeof amount === "string") {
-    a = Amounts.parse(amount);
-  } else {
-    a = amount;
-  }
-  if (!a) {
-    return <span>(invalid amount)</span>;
-  }
-  const x = a.value + a.fraction / amountFractionalBase;
-  return (
-    <span>
-      {x}&nbsp;{a.currency}
-    </span>
-  );
-}
-
-function AmountView({ amount }: { amount: AmountJson | string }): VNode {
-  return renderAmount(amount);
+  return <View state={state} />;
 }

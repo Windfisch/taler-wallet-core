@@ -515,13 +515,13 @@ export function TransactionView({
         <Part
           big
           title={<i18n.Translate>Total tip</i18n.Translate>}
-          text={<Amount value={transaction.amountEffective} />}
+          text={<Amount value={transaction.amountRaw} />}
           kind="positive"
         />
         <Part
           big
           title={<i18n.Translate>Received amount</i18n.Translate>}
-          text={<Amount value={transaction.amountRaw} />}
+          text={<Amount value={transaction.amountEffective} />}
           kind="neutral"
         />
         <Part

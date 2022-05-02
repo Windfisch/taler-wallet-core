@@ -32,7 +32,7 @@ type Subs = {
   [key in NotificationType]?: VoidFunction
 }
 
-class SubsHandler {
+export class SubsHandler {
   private subs: Subs = {};
 
   constructor() {

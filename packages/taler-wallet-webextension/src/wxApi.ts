@@ -44,6 +44,8 @@ import {
   KnownBankAccounts,
   NotificationType,
   PreparePayResult,
+  PrepareRefundRequest,
+  PrepareRefundResult,
   PrepareTipRequest,
   PrepareTipResult,
   RetryTransactionRequest,
@@ -404,6 +406,11 @@ export function getPendingOperations(): Promise<PendingOperationsResponse> {
 export function addExchange(req: AddExchangeRequest): Promise<void> {
   return callBackend("addExchange", req);
 }
+
+export function prepareRefund(req: PrepareRefundRequest): Promise<PrepareRefundResult> {
+  return callBackend("prepareRefund", req);
+}
+
 
 export function prepareTip(req: PrepareTipRequest): Promise<PrepareTipResult> {
   return callBackend("prepareTip", req);

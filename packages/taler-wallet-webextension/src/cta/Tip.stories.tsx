@@ -19,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { TalerProtocolTimestamp } from "@gnu-taler/taler-util";
+import { Amounts } from "@gnu-taler/taler-util";
 import { createExample } from "../test-utils.js";
 import { View as TestedComponent } from "./Tip.js";
 
@@ -30,25 +30,23 @@ export default {
 };
 
 export const Accepted = createExample(TestedComponent, {
-  prepareTipResult: {
-    accepted: true,
-    merchantBaseUrl: "",
+  state: {
+    status: "accepted",
+    hook: undefined,
+    amount: Amounts.parseOrThrow("EUR:1"),
     exchangeBaseUrl: "",
-    expirationTimestamp: TalerProtocolTimestamp.fromSeconds(1),
-    tipAmountEffective: "USD:10",
-    tipAmountRaw: "USD:5",
-    walletTipId: "id",
+    merchantBaseUrl: "",
   },
 });
 
-export const NotYetAccepted = createExample(TestedComponent, {
-  prepareTipResult: {
-    accepted: false,
+export const Ready = createExample(TestedComponent, {
+  state: {
+    status: "ready",
+    hook: undefined,
+    amount: Amounts.parseOrThrow("EUR:1"),
     merchantBaseUrl: "http://merchant.url/",
     exchangeBaseUrl: "http://exchange.url/",
-    expirationTimestamp: TalerProtocolTimestamp.fromSeconds(1),
-    tipAmountEffective: "USD:10",
-    tipAmountRaw: "USD:5",
-    walletTipId: "id",
+    accept: {},
+    ignore: {},
   },
 });
