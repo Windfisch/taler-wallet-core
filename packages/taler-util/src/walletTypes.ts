@@ -276,6 +276,18 @@ export class ReturnCoinsRequest {
   static checked: (obj: any) => ReturnCoinsRequest;
 }
 
+export interface PrepareRefundResult {
+  proposalId: string;
+
+  applied: number;
+  failed: number;
+  total: number;
+
+  amountEffectivePaid: AmountString;
+
+  info: OrderShortInfo;
+}
+
 export interface PrepareTipResult {
   /**
    * Unique ID for the tip assigned by the wallet.
@@ -1002,6 +1014,17 @@ export const codecForForceRefreshRequest = (): Codec<ForceRefreshRequest> =>
   buildCodecForObject<ForceRefreshRequest>()
     .property("coinPubList", codecForList(codecForString()))
     .build("ForceRefreshRequest");
+
+
+
+export interface PrepareRefundRequest {
+  talerRefundUri: string;
+}
+
+export const codecForPrepareRefundRequest = (): Codec<PrepareRefundRequest> =>
+  buildCodecForObject<PrepareRefundRequest>()
+    .property("talerRefundUri", codecForString())
+    .build("PrepareRefundRequest");
 
 export interface PrepareTipRequest {
   talerTipUri: string;

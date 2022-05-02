@@ -46,6 +46,8 @@ import {
   AbsoluteTime,
   TalerProtocolTimestamp,
   Duration,
+  PrepareRefundRequest,
+  PrepareRefundResult,
 } from "@gnu-taler/taler-util";
 import {
   AbortStatus,
@@ -69,6 +71,72 @@ import { guardOperationException } from "./common.js";
 
 const logger = new Logger("refund.ts");
 
+
+export async function prepareRefund(
+  ws: InternalWalletState,
+  talerRefundUri: string,
+): Promise<PrepareRefundResult> {
+  const parseResult = parseRefundUri(talerRefundUri);
+
+  logger.trace("preparing refund offer", parseResult);
+
+  if (!parseResult) {
+    throw Error("invalid refund URI");
+  }
+
+  const purchase = await ws.db
+    .mktx((x) => ({
+      purchases: x.purchases,
+    }))
+    .runReadOnly(async (tx) => {
+      return tx.purchases.indexes.byMerchantUrlAndOrderId.get([
+        parseResult.merchantBaseUrl,
+        parseResult.orderId,
+      ]);
+    });
+
+  if (!purchase) {
+    throw Error(
+      `no purchase for the taler://refund/ URI (${talerRefundUri}) was found`,
+    );
+  }
+
+  const proposalId = purchase.proposalId;
+  const rfs = Object.values(purchase.refunds)
+
+  let applied = 0;
+  let failed = 0;
+  const total = rfs.length;
+  rfs.forEach((refund) => {
+    if (refund.type === RefundState.Failed) {
+      failed = failed + 1;
+    }
+    if (refund.type === RefundState.Applied) {
+      applied = applied + 1;
+    }
+  });
+
+  const { contractData: c } = purchase.download
+
+  return {
+    proposalId,
+    amountEffectivePaid: Amounts.stringify(purchase.totalPayCost),
+    applied,
+    failed,
+    total,
+    info: {
+      contractTermsHash: c.contractTermsHash,
+      merchant: c.merchant,
+      orderId: c.orderId,
+      products: c.products,
+      summary: c.summary,
+      fulfillmentMessage: c.fulfillmentMessage,
+      summary_i18n: c.summaryI18n,
+      fulfillmentMessage_i18n:
+        c.fulfillmentMessageI18n,
+    },
+  }
+}
 /**
  * Retry querying and applying refunds for an order later.
  */

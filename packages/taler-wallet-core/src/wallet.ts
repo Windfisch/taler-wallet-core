@@ -23,9 +23,7 @@
  * Imports.
  */
 import {
-  AcceptManualWithdrawalResult,
-  AcceptWithdrawalResponse,
-  AmountJson,
+  AbsoluteTime, AcceptManualWithdrawalResult, AmountJson,
   Amounts,
   BalancesResponse,
   codecForAbortPayWithRefundRequest,
@@ -48,8 +46,7 @@ import {
   codecForImportDbRequest,
   codecForIntegrationTestArgs,
   codecForListKnownBankAccounts,
-  codecForPreparePayRequest,
-  codecForPrepareTipRequest,
+  codecForPreparePayRequest, codecForPrepareRefundRequest, codecForPrepareTipRequest,
   codecForRetryTransactionRequest,
   codecForSetCoinSuspendedRequest,
   codecForSetWalletDeviceIdRequest,
@@ -59,8 +56,7 @@ import {
   codecForWithdrawFakebankRequest,
   codecForWithdrawTestBalance,
   CoinDumpJson,
-  CoreApiResponse,
-  durationFromSpec,
+  CoreApiResponse, Duration, durationFromSpec,
   durationMin,
   ExchangeListItem,
   ExchangesListRespose,
@@ -73,14 +69,23 @@ import {
   parsePaytoUri,
   PaytoUri,
   RefreshReason,
-  TalerErrorCode,
-  AbsoluteTime,
-  URL,
-  WalletNotification,
-  Duration,
-  CancellationToken,
+  TalerErrorCode, URL,
+  WalletNotification
 } from "@gnu-taler/taler-util";
-import { timeStamp } from "console";
+import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
+import {
+  CryptoDispatcher,
+  CryptoWorkerFactory
+} from "./crypto/workers/cryptoDispatcher.js";
+import {
+  AuditorTrustRecord,
+  CoinSourceType,
+  exportDb,
+  importDb,
+  ReserveRecordStatus,
+  WalletStoresV1
+} from "./db.js";
+import { getErrorDetailFromException, TalerError } from "./errors.js";
 import {
   DenomInfo,
   ExchangeOperations,
@@ -89,21 +94,8 @@ import {
   MerchantOperations,
   NotificationListener,
   RecoupOperations,
-  ReserveOperations,
+  ReserveOperations
 } from "./internal-wallet-state.js";
-import {
-  CryptoDispatcher,
-  CryptoWorkerFactory,
-} from "./crypto/workers/cryptoDispatcher.js";
-import {
-  AuditorTrustRecord,
-  CoinSourceType,
-  exportDb,
-  importDb,
-  ReserveRecordStatus,
-  WalletStoresV1,
-} from "./db.js";
-import { getErrorDetailFromException, TalerError } from "./errors.js";
 import { exportBackup } from "./operations/backup/export.js";
 import {
   addBackupProvider,
@@ -115,7 +107,7 @@ import {
   loadBackupRecovery,
   processBackupForProvider,
   removeBackupProvider,
-  runBackupCycle,
+  runBackupCycle
 } from "./operations/backup/index.js";
 import { setWalletDeviceId } from "./operations/backup/state.js";
 import { getBalances } from "./operations/balance.js";
@@ -123,7 +115,7 @@ import {
   createDepositGroup,
   getFeeForDeposit,
   processDepositGroup,
-  trackDepositGroup,
+  trackDepositGroup
 } from "./operations/deposits.js";
 import {
   acceptExchangeTermsOfService,
@@ -132,69 +124,69 @@ import {
   getExchangeRequestTimeout,
   getExchangeTrust,
   updateExchangeFromUrl,
-  updateExchangeTermsOfService,
+  updateExchangeTermsOfService
 } from "./operations/exchanges.js";
 import { getMerchantInfo } from "./operations/merchants.js";
 import {
   confirmPay,
   preparePayForUri,
   processDownloadProposal,
-  processPurchasePay,
+  processPurchasePay
 } from "./operations/pay.js";
 import { getPendingOperations } from "./operations/pending.js";
 import { createRecoupGroup, processRecoupGroup } from "./operations/recoup.js";
 import {
   autoRefresh,
   createRefreshGroup,
-  processRefreshGroup,
+  processRefreshGroup
 } from "./operations/refresh.js";
 import {
   abortFailedPayWithRefund,
   applyRefund,
-  processPurchaseQueryRefund,
+  prepareRefund,
+  processPurchaseQueryRefund
 } from "./operations/refund.js";
 import {
   createReserve,
   createTalerWithdrawReserve,
   getFundingPaytoUris,
-  processReserve,
+  processReserve
 } from "./operations/reserves.js";
 import {
   runIntegrationTest,
   testPay,
-  withdrawTestBalance,
+  withdrawTestBalance
 } from "./operations/testing.js";
 import { acceptTip, prepareTip, processTip } from "./operations/tip.js";
 import {
   deleteTransaction,
   getTransactions,
-  retryTransaction,
+  retryTransaction
 } from "./operations/transactions.js";
 import {
   getExchangeWithdrawalInfo,
   getWithdrawalDetailsForUri,
-  processWithdrawGroup,
+  processWithdrawGroup
 } from "./operations/withdraw.js";
 import {
   PendingOperationsResponse,
   PendingTaskInfo,
-  PendingTaskType,
+  PendingTaskType
 } from "./pending-types.js";
 import { assertUnreachable } from "./util/assertUnreachable.js";
 import { AsyncOpMemoMap, AsyncOpMemoSingle } from "./util/asyncMemo.js";
 import {
   HttpRequestLibrary,
-  readSuccessResponseJsonOrThrow,
+  readSuccessResponseJsonOrThrow
 } from "./util/http.js";
 import {
   AsyncCondition,
   OpenedPromise,
-  openPromise,
+  openPromise
 } from "./util/promiseUtils.js";
 import { DbAccess, GetReadWriteAccess } from "./util/query.js";
 import { TimerAPI, TimerGroup } from "./util/timer.js";
 import { WalletCoreApiClient } from "./wallet-api-types.js";
-import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 
 const builtinAuditors: AuditorTrustRecord[] = [
   {
@@ -907,6 +899,10 @@ async function dispatchRequestInternal(
     case "prepareTip": {
       const req = codecForPrepareTipRequest().decode(payload);
       return await prepareTip(ws, req.talerTipUri);
+    }
+    case "prepareRefund": {
+      const req = codecForPrepareRefundRequest().decode(payload);
+      return await prepareRefund(ws, req.talerRefundUri);
     }
     case "acceptTip": {
       const req = codecForAcceptTipRequest().decode(payload);
