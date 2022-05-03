@@ -1070,6 +1070,23 @@ export const codecForGetFeeForDeposit = (): Codec<GetFeeForDepositRequest> =>
     .property("depositPaytoUri", codecForString())
     .build("GetFeeForDepositRequest");
 
+export interface PrepareDepositRequest {
+  depositPaytoUri: string;
+  amount: AmountString;
+
+}
+export const codecForPrepareDepositRequest =
+  (): Codec<PrepareDepositRequest> =>
+    buildCodecForObject<PrepareDepositRequest>()
+      .property("amount", codecForAmountString())
+      .property("depositPaytoUri", codecForString())
+      .build("PrepareDepositRequest");
+
+export interface PrepareDepositResponse {
+  totalDepositCost: AmountJson;
+  effectiveDepositAmount: AmountJson;
+}
+
 export const codecForCreateDepositGroupRequest =
   (): Codec<CreateDepositGroupRequest> =>
     buildCodecForObject<CreateDepositGroupRequest>()

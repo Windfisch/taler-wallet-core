@@ -38,6 +38,7 @@ import { PayPage } from "../cta/Pay.js";
 import { RefundPage } from "../cta/Refund.js";
 import { TipPage } from "../cta/Tip.js";
 import { WithdrawPage } from "../cta/Withdraw.js";
+import { DepositPage as DepositPageCTA } from "../cta/Deposit.js";
 import { Pages, WalletNavBar } from "../NavigationBar.js";
 import { DeveloperPage } from "./DeveloperPage.js";
 import { BackupPage } from "./BackupPage.js";
@@ -232,6 +233,7 @@ export function Application(): VNode {
               <Route path={Pages.cta_refund} component={RefundPage} />
               <Route path={Pages.cta_tips} component={TipPage} />
               <Route path={Pages.cta_withdraw} component={WithdrawPage} />
+              <Route path={Pages.cta_deposit} component={DepositPageCTA} />
 
               {/**
                * NOT FOUND

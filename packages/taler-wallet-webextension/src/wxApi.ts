@@ -43,6 +43,8 @@ import {
   GetWithdrawalDetailsForUriRequest,
   KnownBankAccounts,
   NotificationType,
+  PrepareDepositRequest,
+  PrepareDepositResponse,
   PreparePayResult,
   PrepareRefundRequest,
   PrepareRefundResult,
@@ -158,6 +160,16 @@ export function getFeeForDeposit(
     depositPaytoUri,
     amount,
   } as GetFeeForDepositRequest);
+}
+
+export function prepareDeposit(
+  depositPaytoUri: string,
+  amount: AmountString,
+): Promise<PrepareDepositResponse> {
+  return callBackend("prepareDeposit", {
+    depositPaytoUri,
+    amount,
+  } as PrepareDepositRequest);
 }
 
 export function createDepositGroup(

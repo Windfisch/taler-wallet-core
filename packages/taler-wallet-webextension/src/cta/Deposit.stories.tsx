@@ -19,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { ContractTerms, PreparePayResultType } from "@gnu-taler/taler-util";
+import { Amounts } from "@gnu-taler/taler-util";
 import { createExample } from "../test-utils.js";
 import { View as TestedComponent } from "./Deposit.js";
 
@@ -29,6 +29,13 @@ export default {
   argTypes: {},
 };
 
-export const Simple = createExample(TestedComponent, {
-  state: { status: "ready" },
+export const Ready = createExample(TestedComponent, {
+  state: {
+    status: "ready",
+    confirm: {},
+    cost: Amounts.parseOrThrow("EUR:1.2"),
+    effective: Amounts.parseOrThrow("EUR:1"),
+    fee: Amounts.parseOrThrow("EUR:0.2"),
+    hook: undefined,
+  },
 });

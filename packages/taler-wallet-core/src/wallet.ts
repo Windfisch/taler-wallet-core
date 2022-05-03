@@ -46,6 +46,7 @@ import {
   codecForImportDbRequest,
   codecForIntegrationTestArgs,
   codecForListKnownBankAccounts,
+  codecForPrepareDepositRequest,
   codecForPreparePayRequest, codecForPrepareRefundRequest, codecForPrepareTipRequest,
   codecForRetryTransactionRequest,
   codecForSetCoinSuspendedRequest,
@@ -114,6 +115,7 @@ import { getBalances } from "./operations/balance.js";
 import {
   createDepositGroup,
   getFeeForDeposit,
+  prepareDepositGroup,
   processDepositGroup,
   trackDepositGroup
 } from "./operations/deposits.js";
@@ -943,6 +945,10 @@ async function dispatchRequestInternal(
     case "getFeeForDeposit": {
       const req = codecForGetFeeForDeposit().decode(payload);
       return await getFeeForDeposit(ws, req);
+    }
+    case "prepareDeposit": {
+      const req = codecForPrepareDepositRequest().decode(payload);
+      return await prepareDepositGroup(ws, req);
     }
     case "createDepositGroup": {
       const req = codecForCreateDepositGroupRequest().decode(payload);

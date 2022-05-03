@@ -19,6 +19,7 @@ import {
   Amounts,
   NotificationType,
   parsePaytoUri,
+  parsePayUri,
   Transaction,
   TransactionType,
   WithdrawalType,
@@ -32,13 +33,14 @@ import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType.js"
 import { ErrorTalerOperation } from "../components/ErrorTalerOperation.js";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
-import { Part } from "../components/Part.js";
+import { Part, PartPayto } from "../components/Part.js";
 import {
   Button,
   ButtonDestructive,
   ButtonPrimary,
   CenteredDialog,
   InfoBox,
+  LargeText,
   ListOfProducts,
   Overlay,
   RowBorderGray,
@@ -428,6 +430,7 @@ export function TransactionView({
       Amounts.parseOrThrow(transaction.amountEffective),
       Amounts.parseOrThrow(transaction.amountRaw),
     ).amount;
+    const payto = parsePaytoUri(transaction.targetPaytoUri);
     return (
       <TransactionTemplate>
         <SubTitle>
@@ -456,6 +459,7 @@ export function TransactionView({
           text={<Amount value={fee} />}
           kind="negative"
         />
+        {payto && <PartPayto big payto={payto} kind="neutral" />}
       </TransactionTemplate>
     );
   }

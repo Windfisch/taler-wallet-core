@@ -35,6 +35,8 @@ import {
   Logger,
   NotificationType,
   parsePaytoUri,
+  PrepareDepositRequest,
+  PrepareDepositResponse,
   TalerErrorDetail,
   TalerProtocolTimestamp,
   TrackDepositGroupRequest,
@@ -367,6 +369,108 @@ export async function getFeeForDeposit(
   );
 }
 
+export async function prepareDepositGroup(
+  ws: InternalWalletState,
+  req: PrepareDepositRequest,
+): Promise<PrepareDepositResponse> {
+  const p = parsePaytoUri(req.depositPaytoUri);
+  if (!p) {
+    throw Error("invalid payto URI");
+  }
+  const amount = Amounts.parseOrThrow(req.amount);
+
+
+  const exchangeInfos: { url: string; master_pub: string }[] = [];
+
+  await ws.db
+    .mktx((x) => ({
+      exchanges: x.exchanges,
+      exchangeDetails: x.exchangeDetails,
+    }))
+    .runReadOnly(async (tx) => {
+      const allExchanges = await tx.exchanges.iter().toArray();
+      for (const e of allExchanges) {
+        const details = await getExchangeDetails(tx, e.baseUrl);
+        if (!details || amount.currency !== details.currency) {
+          continue;
+        }
+        exchangeInfos.push({
+          master_pub: details.masterPublicKey,
+          url: e.baseUrl,
+        });
+      }
+    });
+
+  const now = AbsoluteTime.now();
+  const nowRounded = AbsoluteTime.toTimestamp(now);
+  const contractTerms: ContractTerms = {
+    auditors: [],
+    exchanges: exchangeInfos,
+    amount: req.amount,
+    max_fee: Amounts.stringify(amount),
+    max_wire_fee: Amounts.stringify(amount),
+    wire_method: p.targetType,
+    timestamp: nowRounded,
+    merchant_base_url: "",
+    summary: "",
+    nonce: "",
+    wire_transfer_deadline: nowRounded,
+    order_id: "",
+    h_wire: "",
+    pay_deadline: AbsoluteTime.toTimestamp(
+      AbsoluteTime.addDuration(now, durationFromSpec({ hours: 1 })),
+    ),
+    merchant: {
+      name: "(wallet)",
+    },
+    merchant_pub: "",
+    refund_deadline: TalerProtocolTimestamp.zero(),
+  };
+
+  const { h: contractTermsHash } = await ws.cryptoApi.hashString({
+    str: canonicalJson(contractTerms),
+  });
+
+  const contractData = extractContractData(
+    contractTerms,
+    contractTermsHash,
+    "",
+  );
+
+  const candidates = await getCandidatePayCoins(ws, {
+    allowedAuditors: contractData.allowedAuditors,
+    allowedExchanges: contractData.allowedExchanges,
+    amount: contractData.amount,
+    maxDepositFee: contractData.maxDepositFee,
+    maxWireFee: contractData.maxWireFee,
+    timestamp: contractData.timestamp,
+    wireFeeAmortization: contractData.wireFeeAmortization,
+    wireMethod: contractData.wireMethod,
+  });
+
+  const payCoinSel = selectPayCoins({
+    candidates,
+    contractTermsAmount: contractData.amount,
+    depositFeeLimit: contractData.maxDepositFee,
+    wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
+    wireFeeLimit: contractData.maxWireFee,
+    prevPayCoins: [],
+  });
+
+  if (!payCoinSel) {
+    throw Error("insufficient funds");
+  }
+
+  const totalDepositCost = await getTotalPaymentCost(ws, payCoinSel);
+
+  const effectiveDepositAmount = await getEffectiveDepositAmount(
+    ws,
+    p.targetType,
+    payCoinSel,
+  );
+
+  return { totalDepositCost, effectiveDepositAmount }
+}
 export async function createDepositGroup(
   ws: InternalWalletState,
   req: CreateDepositGroupRequest,

@@ -63,6 +63,7 @@ export enum Pages {
   cta_refund = "/cta/refund",
   cta_tips = "/cta/tip",
   cta_withdraw = "/cta/withdraw",
+  cta_deposit = "/cta/deposit",
 }
 
 export function PopupNavBar({ path = "" }: { path?: string }): VNode {
