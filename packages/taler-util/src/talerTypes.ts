@@ -904,6 +904,10 @@ export class WithdrawResponse {
   ev_sig: BlindedDenominationSignature;
 }
 
+export class WithdrawBatchResponse {
+  ev_sigs: WithdrawResponse[];
+}
+
 /**
  * Easy to process format for the public data of coins
  * managed by the wallet.
@@ -1451,6 +1455,11 @@ export const codecForWithdrawResponse = (): Codec<WithdrawResponse> =>
   buildCodecForObject<WithdrawResponse>()
     .property("ev_sig", codecForBlindedDenominationSignature())
     .build("WithdrawResponse");
+
+export const codecForWithdrawBatchResponse = (): Codec<WithdrawBatchResponse> =>
+  buildCodecForObject<WithdrawBatchResponse>()
+    .property("ev_sigs", codecForList(codecForWithdrawResponse()))
+    .build("WithdrawBatchResponse");
 
 export const codecForMerchantPayResponse = (): Codec<MerchantPayResponse> =>
   buildCodecForObject<MerchantPayResponse>()

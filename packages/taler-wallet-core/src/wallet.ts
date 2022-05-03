@@ -1101,6 +1101,10 @@ export class Wallet {
     this.ws.insecureTrustExchange = true;
   }
 
+  setBatchWithdrawal(enable: boolean): void {
+    this.ws.batchWithdrawal = enable;
+  }
+
   static async create(
     db: DbAccess<typeof WalletStoresV1>,
     http: HttpRequestLibrary,
@@ -1157,6 +1161,8 @@ class InternalWalletStateImpl implements InternalWalletState {
   merchantInfoCache: Record<string, MerchantInfo> = {};
 
   insecureTrustExchange = false;
+
+  batchWithdrawal = false;
 
   readonly timerGroup: TimerGroup;
   latch = new AsyncCondition();

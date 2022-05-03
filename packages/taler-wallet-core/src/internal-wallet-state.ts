@@ -215,6 +215,8 @@ export interface InternalWalletState {
 
   insecureTrustExchange: boolean;
 
+  batchWithdrawal: boolean;
+
   /**
    * Asynchronous condition to interrupt the sleep of the
    * retry loop.

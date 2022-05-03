@@ -24,6 +24,7 @@ import {
   AmountString,
   BankWithdrawDetails,
   codecForTalerConfigResponse,
+  codecForWithdrawBatchResponse,
   codecForWithdrawOperationStatusResponse,
   codecForWithdrawResponse,
   DenomKeyType,
@@ -42,6 +43,7 @@ import {
   UnblindedSignature,
   URL,
   VersionMatchResult,
+  WithdrawBatchResponse,
   WithdrawResponse,
   WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
@@ -70,11 +72,7 @@ import {
   readSuccessResponseJsonOrThrow,
 } from "../util/http.js";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
-import {
-  resetRetryInfo,
-  RetryInfo,
-  updateRetryInfoTimeout,
-} from "../util/retries.js";
+import { resetRetryInfo, RetryInfo } from "../util/retries.js";
 import {
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
@@ -585,6 +583,108 @@ async function processPlanchetExchangeRequest(
   }
 }
 
+/**
+ * Send the withdrawal request for a generated planchet to the exchange.
+ *
+ * The verification of the response is done asynchronously to enable parallelism.
+ */
+async function processPlanchetExchangeBatchRequest(
+  ws: InternalWalletState,
+  withdrawalGroup: WithdrawalGroupRecord,
+): Promise<WithdrawBatchResponse | undefined> {
+  logger.info(
+    `processing planchet exchange batch request ${withdrawalGroup.withdrawalGroupId}`,
+  );
+  const numTotalCoins = withdrawalGroup.denomsSel.selectedDenoms
+    .map((x) => x.count)
+    .reduce((a, b) => a + b);
+  const d = await ws.db
+    .mktx((x) => ({
+      withdrawalGroups: x.withdrawalGroups,
+      planchets: x.planchets,
+      exchanges: x.exchanges,
+      denominations: x.denominations,
+    }))
+    .runReadOnly(async (tx) => {
+      const reqBody: { planchets: ExchangeWithdrawRequest[] } = {
+        planchets: [],
+      };
+      const exchange = await tx.exchanges.get(withdrawalGroup.exchangeBaseUrl);
+      if (!exchange) {
+        logger.error("db inconsistent: exchange for planchet not found");
+        return;
+      }
+
+      for (let coinIdx = 0; coinIdx < numTotalCoins; coinIdx++) {
+        let planchet = await tx.planchets.indexes.byGroupAndIndex.get([
+          withdrawalGroup.withdrawalGroupId,
+          coinIdx,
+        ]);
+        if (!planchet) {
+          return;
+        }
+        if (planchet.withdrawalDone) {
+          logger.warn("processPlanchet: planchet already withdrawn");
+          return;
+        }
+        const denom = await ws.getDenomInfo(
+          ws,
+          tx,
+          withdrawalGroup.exchangeBaseUrl,
+          planchet.denomPubHash,
+        );
+
+        if (!denom) {
+          logger.error("db inconsistent: denom for planchet not found");
+          return;
+        }
+
+        const planchetReq: ExchangeWithdrawRequest = {
+          denom_pub_hash: planchet.denomPubHash,
+          reserve_sig: planchet.withdrawSig,
+          coin_ev: planchet.coinEv,
+        };
+        reqBody.planchets.push(planchetReq);
+      }
+      return reqBody;
+    });
+
+  if (!d) {
+    return;
+  }
+
+  const reqUrl = new URL(
+    `reserves/${withdrawalGroup.reservePub}/batch-withdraw`,
+    withdrawalGroup.exchangeBaseUrl,
+  ).href;
+
+  try {
+    const resp = await ws.http.postJson(reqUrl, d);
+    const r = await readSuccessResponseJsonOrThrow(
+      resp,
+      codecForWithdrawBatchResponse(),
+    );
+    return r;
+  } catch (e) {
+    const errDetail = getErrorDetailFromException(e);
+    logger.trace("withdrawal batch request failed", e);
+    logger.trace(e);
+    await ws.db
+      .mktx((x) => ({ withdrawalGroups: x.withdrawalGroups }))
+      .runReadWrite(async (tx) => {
+        let wg = await tx.withdrawalGroups.get(
+          withdrawalGroup.withdrawalGroupId,
+        );
+        if (!wg) {
+          return;
+        }
+        wg.lastError = errDetail;
+        await tx.withdrawalGroups.put(wg);
+      });
+    return;
+  }
+}
+
 async function processPlanchetVerifyAndStoreCoin(
   ws: InternalWalletState,
   withdrawalGroup: WithdrawalGroupRecord,
@@ -931,18 +1031,35 @@ async function processWithdrawGroupImpl(
 
   work = [];
 
-  for (let coinIdx = 0; coinIdx < numTotalCoins; coinIdx++) {
-    const resp = await processPlanchetExchangeRequest(
-      ws,
-      withdrawalGroup,
-      coinIdx,
-    );
+  if (ws.batchWithdrawal) {
+    const resp = await processPlanchetExchangeBatchRequest(ws, withdrawalGroup);
     if (!resp) {
-      continue;
+      return;
     }
-    work.push(
-      processPlanchetVerifyAndStoreCoin(ws, withdrawalGroup, coinIdx, resp),
-    );
+    for (let coinIdx = 0; coinIdx < numTotalCoins; coinIdx++) {
+      work.push(
+        processPlanchetVerifyAndStoreCoin(
+          ws,
+          withdrawalGroup,
+          coinIdx,
+          resp.ev_sigs[coinIdx],
+        ),
+      );
+    }
+  } else {
+    for (let coinIdx = 0; coinIdx < numTotalCoins; coinIdx++) {
+      const resp = await processPlanchetExchangeRequest(
+        ws,
+        withdrawalGroup,
+        coinIdx,
+      );
+      if (!resp) {
+        continue;
+      }
+      work.push(
+        processPlanchetVerifyAndStoreCoin(ws, withdrawalGroup, coinIdx, resp),
+      );
+    }
   }
 
   await Promise.all(work);

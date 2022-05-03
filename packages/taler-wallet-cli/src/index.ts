@@ -195,6 +195,14 @@ export const walletCli = clk
 
 type WalletCliArgsType = clk.GetArgType<typeof walletCli>;
 
+function checkEnvFlag(name: string): boolean {
+  const val = process.env[name];
+  if (val == "1") {
+    return true;
+  }
+  return false;
+}
+
 async function withWallet<T>(
   walletCliArgs: WalletCliArgsType,
   f: (w: { client: WalletCoreApiClient; ws: Wallet }) => Promise<T>,
@@ -208,6 +216,11 @@ async function withWallet<T>(
     persistentStoragePath: dbPath,
     httpLib: myHttpLib,
   });
+
+  if (checkEnvFlag("TALER_WALLET_BATCH_WITHDRAWAL")) {
+    wallet.setBatchWithdrawal(true);
+  }
+
   applyVerbose(walletCliArgs.wallet.verbose);
   try {
     const w = {
