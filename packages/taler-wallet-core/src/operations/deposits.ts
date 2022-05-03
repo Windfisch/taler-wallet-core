@@ -337,7 +337,10 @@ export async function getFeeForDeposit(
 
   const csr: CoinSelectionRequest = {
     allowedAuditors: [],
-    allowedExchanges: [],
+    allowedExchanges: Object.values(exchangeInfos).map(v => ({
+      exchangeBaseUrl: v.url,
+      exchangePub: v.master_pub
+    })),
     amount: Amounts.parseOrThrow(req.amount),
     maxDepositFee: Amounts.parseOrThrow(req.amount),
     maxWireFee: Amounts.parseOrThrow(req.amount),
