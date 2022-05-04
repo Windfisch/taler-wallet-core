@@ -664,7 +664,6 @@ export function hashDenomPub(pub: DenominationPubKey): Uint8Array {
     const hashInputBuf = new ArrayBuffer(pubBuf.length + 4 + 4);
     const uint8ArrayBuf = new Uint8Array(hashInputBuf);
     const dv = new DataView(hashInputBuf);
-    logger.info("age_mask", pub.age_mask);
     dv.setUint32(0, pub.age_mask ?? 0);
     dv.setUint32(4, DenomKeyType.toIntTag(pub.cipher));
     uint8ArrayBuf.set(pubBuf, 8);
@@ -680,8 +679,7 @@ export function hashDenomPub(pub: DenominationPubKey): Uint8Array {
     return nacl.hash(uint8ArrayBuf);
   } else {
     throw Error(
-      `unsupported cipher (${
-        (pub as DenominationPubKey).cipher
+      `unsupported cipher (${(pub as DenominationPubKey).cipher
       }), unable to hash`,
     );
   }
@@ -785,7 +783,7 @@ export enum TalerSignaturePurpose {
 export class SignaturePurposeBuilder {
   private chunks: Uint8Array[] = [];
 
-  constructor(private purposeNum: number) {}
+  constructor(private purposeNum: number) { }
 
   put(bytes: Uint8Array): SignaturePurposeBuilder {
     this.chunks.push(Uint8Array.from(bytes));

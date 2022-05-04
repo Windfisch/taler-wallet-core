@@ -454,11 +454,14 @@ async function acceptManualWithdrawal(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
   amount: AmountJson,
+  restrictAge?: number,
+
 ): Promise<AcceptManualWithdrawalResult> {
   try {
     const resp = await createReserve(ws, {
       amount,
       exchange: exchangeBaseUrl,
+      restrictAge
     });
     const exchangePaytoUris = await ws.db
       .mktx((x) => ({
@@ -690,6 +693,7 @@ async function dumpCoins(ws: InternalWalletState): Promise<CoinDumpJson> {
           remaining_value: Amounts.stringify(c.currentAmount),
           withdrawal_reserve_pub: withdrawalReservePub,
           coin_suspended: c.suspended,
+          ageCommitmentProof: c.ageCommitmentProof,
         });
       }
     });
@@ -801,6 +805,7 @@ async function dispatchRequestInternal(
         ws,
         req.exchangeBaseUrl,
         Amounts.parseOrThrow(req.amount),
+        req.restrictAge
       );
       return res;
     }

@@ -775,6 +775,7 @@ advancedCli
   .requiredOption("amount", ["--amount"], clk.STRING, {
     help: "Amount to withdraw",
   })
+  .maybeOption("restrictAge", ["--restrict-age"], clk.INT)
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
       const exchangeBaseUrl = args.withdrawManually.exchange;
@@ -796,6 +797,7 @@ advancedCli
         {
           amount,
           exchangeBaseUrl,
+          restrictAge: parseInt(String(args.withdrawManually.restrictAge), 10),
         },
       );
       const reservePub = resp.reservePub;

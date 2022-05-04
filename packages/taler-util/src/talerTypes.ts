@@ -47,7 +47,7 @@ import {
 } from "./time.js";
 import { codecForAmountString } from "./amounts.js";
 import { strcmp } from "./helpers.js";
-import { Edx25519PublicKey } from "./talerCrypto.js";
+import { AgeCommitmentProof, Edx25519PublicKey } from "./talerCrypto.js";
 
 /**
  * Denomination as found in the /keys response from the exchange.
@@ -954,6 +954,11 @@ export interface CoinDumpJson {
      * Suspended coins are not considered for payments.
      */
     coin_suspended: boolean;
+
+    /**
+     * Information about the age restriction
+     */
+    ageCommitmentProof: AgeCommitmentProof | undefined;
   }>;
 }
 

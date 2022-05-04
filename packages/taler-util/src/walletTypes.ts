@@ -738,6 +738,7 @@ export const codecForGetExchangeTosRequest = (): Codec<GetExchangeTosRequest> =>
 export interface AcceptManualWithdrawalRequest {
   exchangeBaseUrl: string;
   amount: string;
+  restrictAge?: number,
 }
 
 export const codecForAcceptManualWithdrawalRequet =
@@ -745,6 +746,7 @@ export const codecForAcceptManualWithdrawalRequet =
     buildCodecForObject<AcceptManualWithdrawalRequest>()
       .property("exchangeBaseUrl", codecForString())
       .property("amount", codecForString())
+      .property("restrictAge", codecOptional(codecForNumber()))
       .build("AcceptManualWithdrawalRequest");
 
 export interface GetWithdrawalDetailsForAmountRequest {

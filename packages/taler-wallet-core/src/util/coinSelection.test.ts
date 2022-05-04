@@ -43,6 +43,20 @@ function fakeAci(current: string, feeDeposit: string): AvailableCoinInfo {
   };
 }
 
+function fakeAciWithAgeRestriction(current: string, feeDeposit: string): AvailableCoinInfo {
+  return {
+    availableAmount: a(current),
+    coinPub: "foobar",
+    denomPub: {
+      cipher: DenomKeyType.Rsa,
+      rsa_public_key: "foobar",
+      age_mask: 2446657,
+    },
+    feeDeposit: a(feeDeposit),
+    exchangeBaseUrl: "https://example.com/",
+  };
+}
+
 test("it should be able to pay if merchant takes the fees", (t) => {
   const acis: AvailableCoinInfo[] = [
     fakeAci("EUR:1.0", "EUR:0.1"),
@@ -256,6 +270,34 @@ test("coin selection 9", (t) => {
     depositFeeLimit: a("EUR:0.4"),
     wireFeeLimit: a("EUR:0"),
     wireFeeAmortization: 1,
+  });
+  if (!res) {
+    t.fail();
+    return;
+  }
+  t.true(res.coinContributions.length === 2);
+  t.true(
+    Amounts.cmp(Amounts.sum(res.coinContributions).amount, "EUR:1.2") === 0,
+  );
+  t.pass();
+});
+
+
+test("it should be able to use unrestricted coins for age restricted contract", (t) => {
+  const acis: AvailableCoinInfo[] = [
+    fakeAciWithAgeRestriction("EUR:1.0", "EUR:0.2"),
+    fakeAciWithAgeRestriction("EUR:0.2", "EUR:0.2"),
+  ];
+  const res = selectPayCoins({
+    candidates: {
+      candidateCoins: acis,
+      wireFeesPerExchange: {},
+    },
+    contractTermsAmount: a("EUR:1.2"),
+    depositFeeLimit: a("EUR:0.4"),
+    wireFeeLimit: a("EUR:0"),
+    wireFeeAmortization: 1,
+    requiredMinimumAge: 13
   });
   if (!res) {
     t.fail();
