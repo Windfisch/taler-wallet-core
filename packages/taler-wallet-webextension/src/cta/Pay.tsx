@@ -542,23 +542,22 @@ function ButtonsSection({
       );
     }
     if (payStatus.status === PreparePayResultType.InsufficientBalance) {
+      let BalanceMessage = "";
+      if (!state.balance) {
+        BalanceMessage = i18n.str`You have no balance for this currency. Withdraw digital cash first.`;
+      } else {
+        const balanceShouldBeEnough =
+          Amounts.cmp(state.balance, state.amount) !== -1;
+        if (balanceShouldBeEnough) {
+          BalanceMessage = i18n.str`Could not find enough coins to pay this order. Even if you have enough ${state.balance.currency} some restriction may apply.`;
+        } else {
+          BalanceMessage = i18n.str`Your current balance is not enough for this order.`;
+        }
+      }
       return (
         <Fragment>
           <section>
-            {state.balance ? (
-              <WarningBox>
-                <i18n.Translate>
-                  Your balance of {<Amount value={state.balance} />} is not
-                  enough to pay for this purchase
-                </i18n.Translate>
-              </WarningBox>
-            ) : (
-              <WarningBox>
-                <i18n.Translate>
-                  Your balance is not enough to pay for this purchase.
-                </i18n.Translate>
-              </WarningBox>
-            )}
+            <WarningBox>{BalanceMessage}</WarningBox>
           </section>
           <section>
             <ButtonSuccess

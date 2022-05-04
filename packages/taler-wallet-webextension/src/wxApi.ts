@@ -324,10 +324,12 @@ export function preparePay(talerPayUri: string): Promise<PreparePayResult> {
 export function acceptWithdrawal(
   talerWithdrawUri: string,
   selectedExchange: string,
+  restrictAge?: number,
 ): Promise<AcceptWithdrawalResponse> {
   return callBackend("acceptBankIntegratedWithdrawal", {
     talerWithdrawUri,
     exchangeBaseUrl: selectedExchange,
+    restrictAge
   });
 }
 
@@ -340,10 +342,12 @@ export function acceptWithdrawal(
 export function acceptManualWithdrawal(
   exchangeBaseUrl: string,
   amount: string,
+  restrictAge?: number,
 ): Promise<AcceptManualWithdrawalResult> {
   return callBackend("acceptManualWithdrawal", {
     amount,
     exchangeBaseUrl,
+    restrictAge
   });
 }
 

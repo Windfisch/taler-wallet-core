@@ -50,12 +50,24 @@ const normalTosState = {
   reviewing: false,
 };
 
+const ageRestrictionOptions: Record<string, string> = "6:12:18"
+  .split(":")
+  .reduce((p, c) => ({ ...p, [c]: `under ${c}` }), {});
+
+ageRestrictionOptions["0"] = "Not restricted";
+
+const ageRestrictionSelectField = {
+  list: ageRestrictionOptions,
+  value: "0",
+};
+
 export const TermsOfServiceNotYetLoaded = createExample(TestedComponent, {
   state: {
     hook: undefined,
     status: "success",
     cancelEditExchange: nullHandler,
     confirmEditExchange: nullHandler,
+    ageRestriction: ageRestrictionSelectField,
     chosenAmount: {
       currency: "USD",
       value: 2,
@@ -91,6 +103,7 @@ export const WithSomeFee = createExample(TestedComponent, {
     status: "success",
     cancelEditExchange: nullHandler,
     confirmEditExchange: nullHandler,
+    ageRestriction: ageRestrictionSelectField,
     chosenAmount: {
       currency: "USD",
       value: 2,
@@ -127,6 +140,7 @@ export const WithoutFee = createExample(TestedComponent, {
     status: "success",
     cancelEditExchange: nullHandler,
     confirmEditExchange: nullHandler,
+    ageRestriction: ageRestrictionSelectField,
     chosenAmount: {
       currency: "USD",
       value: 2,
@@ -163,6 +177,7 @@ export const EditExchangeUntouched = createExample(TestedComponent, {
     status: "success",
     cancelEditExchange: nullHandler,
     confirmEditExchange: nullHandler,
+    ageRestriction: ageRestrictionSelectField,
     chosenAmount: {
       currency: "USD",
       value: 2,
@@ -199,6 +214,7 @@ export const EditExchangeModified = createExample(TestedComponent, {
     status: "success",
     cancelEditExchange: nullHandler,
     confirmEditExchange: nullHandler,
+    ageRestriction: ageRestrictionSelectField,
     chosenAmount: {
       currency: "USD",
       value: 2,
@@ -234,5 +250,42 @@ export const CompletedWithoutBankURL = createExample(TestedComponent, {
   state: {
     status: "completed",
     hook: undefined,
+  },
+});
+
+export const WithAgeRestrictionSelected = createExample(TestedComponent, {
+  state: {
+    hook: undefined,
+    status: "success",
+    cancelEditExchange: nullHandler,
+    confirmEditExchange: nullHandler,
+    ageRestriction: ageRestrictionSelectField,
+    chosenAmount: {
+      currency: "USD",
+      value: 2,
+      fraction: 10000000,
+    },
+    doWithdrawal: nullHandler,
+    editExchange: nullHandler,
+    exchange: {
+      list: exchangeList,
+      value: "exchange.demo.taler.net",
+      onChange: async () => {
+        null;
+      },
+    },
+    showExchangeSelection: false,
+    mustAcceptFirst: false,
+    withdrawalFee: {
+      currency: "USD",
+      fraction: 0,
+      value: 0,
+    },
+    toBeReceived: {
+      currency: "USD",
+      fraction: 0,
+      value: 2,
+    },
+    tosProps: normalTosState,
   },
 });

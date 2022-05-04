@@ -35,6 +35,7 @@ import { SelectList } from "../components/SelectList.js";
 import {
   ButtonSuccess,
   ButtonWarning,
+  Input,
   LinkSuccess,
   SubTitle,
   SuccessBox,
@@ -43,12 +44,18 @@ import {
 import { useTranslationContext } from "../context/translation.js";
 import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { buildTermsOfServiceState } from "../utils/index.js";
-import { ButtonHandler, SelectFieldHandler } from "../mui/handlers.js";
+import {
+  ButtonHandler,
+  SelectFieldHandler,
+  ToggleHandler,
+} from "../mui/handlers.js";
 import * as wxApi from "../wxApi.js";
 import {
   Props as TermsOfServiceSectionProps,
   TermsOfServiceSection,
 } from "./TermsOfServiceSection.js";
+import { startOfWeekYear } from "date-fns/esm";
+import { Checkbox } from "../components/Checkbox.js";
 
 interface Props {
   talerWithdrawUri?: string;
@@ -97,6 +104,8 @@ type Success = {
   doWithdrawal: ButtonHandler;
   tosProps?: TermsOfServiceSectionProps;
   mustAcceptFirst: boolean;
+
+  ageRestriction: SelectFieldHandler;
 };
 
 export function useComponentState(
@@ -106,6 +115,7 @@ export function useComponentState(
   const [customExchange, setCustomExchange] = useState<string | undefined>(
     undefined,
   );
+  const [ageRestricted, setAgeRestricted] = useState(0);
 
   /**
    * Ask the wallet about the withdraw URI
@@ -228,6 +238,7 @@ export function useComponentState(
       const res = await api.acceptWithdrawal(
         talerWithdrawUri,
         selectedExchange,
+        !ageRestricted ? undefined : ageRestricted,
       );
       if (res.confirmTransferUrl) {
         document.location.href = res.confirmTransferUrl;
@@ -320,6 +331,14 @@ export function useComponentState(
     termsState !== undefined &&
     (termsState.status === "changed" || termsState.status === "new");
 
+  const ageRestrictionOptions: Record<string, string> | undefined = "6:12:18"
+    .split(":")
+    .reduce((p, c) => ({ ...p, [c]: `under ${c}` }), {});
+
+  if (ageRestrictionOptions) {
+    ageRestrictionOptions["0"] = "Not restricted";
+  }
+
   return {
     status: "success",
     hook: undefined,
@@ -331,6 +350,11 @@ export function useComponentState(
     toBeReceived,
     withdrawalFee,
     chosenAmount: amount,
+    ageRestriction: {
+      list: ageRestrictionOptions,
+      value: String(ageRestricted),
+      onChange: async (v) => setAgeRestricted(parseInt(v, 10)),
+    },
     doWithdrawal: {
       onClick:
         doingWithdraw || (mustAcceptFirst && !reviewed)
@@ -485,6 +509,18 @@ export function View({ state }: { state: State }): VNode {
             <i18n.Translate>Edit exchange</i18n.Translate>
           </LinkSuccess>
         )}
+      </section>
+      <section>
+        <Input>
+          <SelectList
+            label={<i18n.Translate>Age restriction</i18n.Translate>}
+            list={state.ageRestriction.list}
+            name="age"
+            maxWidth
+            value={state.ageRestriction.value}
+            onChange={state.ageRestriction.onChange}
+          />
+        </Input>
       </section>
       {state.tosProps && <TermsOfServiceSection {...state.tosProps} />}
       {state.tosProps ? (

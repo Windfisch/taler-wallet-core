@@ -101,6 +101,42 @@ export const NoEnoughBalance = createExample(TestedComponent, {
   goToWalletManualWithdraw: () => null,
 });
 
+export const EnoughBalanceButRestricted = createExample(TestedComponent, {
+  state: {
+    status: "ready",
+    hook: undefined,
+    amount: Amounts.parseOrThrow("USD:10"),
+    balance: {
+      currency: "USD",
+      fraction: 40000000,
+      value: 19,
+    },
+    payHandler: {
+      onClick: async () => {
+        null;
+      },
+    },
+    totalFees: Amounts.parseOrThrow("USD:0"),
+    payResult: undefined,
+    uri: "",
+    payStatus: {
+      status: PreparePayResultType.InsufficientBalance,
+      noncePriv: "",
+      proposalId: "proposal1234",
+      contractTerms: {
+        merchant: {
+          name: "someone",
+        },
+        summary: "some beers",
+        amount: "USD:10",
+      } as Partial<ContractTerms> as any,
+      amountRaw: "USD:10",
+    },
+  },
+  goBack: () => null,
+  goToWalletManualWithdraw: () => null,
+});
+
 export const PaymentPossible = createExample(TestedComponent, {
   state: {
     status: "ready",

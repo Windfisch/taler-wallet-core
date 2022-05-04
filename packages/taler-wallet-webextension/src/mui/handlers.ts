@@ -17,7 +17,7 @@ export interface ToggleHandler {
 }
 
 export interface SelectFieldHandler {
-  onChange: (value: string) => Promise<void>;
+  onChange?: (value: string) => Promise<void>;
   error?: string;
   value: string;
   isDirty?: boolean;

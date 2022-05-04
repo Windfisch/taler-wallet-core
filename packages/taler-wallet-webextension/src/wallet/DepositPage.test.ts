@@ -258,6 +258,7 @@ describe("DepositPage states", () => {
       expect(r.depositHandler.onClick).undefined;
       expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`))
 
+      if (r.account.onChange === undefined) expect.fail();
       r.account.onChange("1")
     }
 
@@ -290,6 +291,7 @@ describe("DepositPage states", () => {
       expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:7`))
       expect(r.depositHandler.onClick).undefined;
 
+      if (r.account.onChange === undefined) expect.fail();
       r.account.onChange("0")
     }
 

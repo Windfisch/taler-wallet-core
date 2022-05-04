@@ -20,7 +20,7 @@ import { NiceSelect } from "./styled/index.js";
 
 interface Props {
   value?: string;
-  onChange: (s: string) => void;
+  onChange?: (s: string) => void;
   label: VNode;
   list: {
     [label: string]: string;
@@ -28,6 +28,7 @@ interface Props {
   name: string;
   description?: string;
   canBeNull?: boolean;
+  maxWidth?: boolean;
 }
 
 export function SelectList({
@@ -36,6 +37,7 @@ export function SelectList({
   list,
   onChange,
   label,
+  maxWidth,
   description,
   canBeNull,
 }: Props): VNode {
@@ -53,8 +55,9 @@ export function SelectList({
         <select
           name={name}
           value={value}
+          style={maxWidth ? { width: "100%" } : undefined}
           onChange={(e) => {
-            onChange(e.currentTarget.value);
+            if (onChange) onChange(e.currentTarget.value);
           }}
         >
           {value === undefined ||

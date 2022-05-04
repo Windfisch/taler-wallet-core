@@ -81,6 +81,7 @@ export function DeveloperPage(): VNode {
 
 type CoinsInfo = CoinDumpJson["coins"];
 type CalculatedCoinfInfo = {
+  ageKeysCount: number | undefined;
   denom_value: number;
   remain_value: number;
   status: string;
@@ -132,11 +133,13 @@ export function View({
   const money_by_exchange = coins.reduce(
     (prev, cur) => {
       const denom = Amounts.parseOrThrow(cur.denom_value);
+      console.log(cur);
       if (!prev[cur.exchange_base_url]) {
         prev[cur.exchange_base_url] = [];
         currencies[cur.exchange_base_url] = denom.currency;
       }
       prev[cur.exchange_base_url].push({
+        ageKeysCount: cur.ageCommitmentProof?.proof.privateKeys.length,
         denom_value: parseFloat(Amounts.stringifyValue(denom)),
         remain_value: parseFloat(
           Amounts.stringifyValue(Amounts.parseOrThrow(cur.remaining_value)),
@@ -305,7 +308,7 @@ function ShowAllCoins({
       <p>
         <b>{ex}</b>: {total} {currencies[ex]}
       </p>
-      <p>
+      <p onClick={() => setCollapsedUnspent(true)}>
         <b>
           <i18n.Translate>usable coins</i18n.Translate>
         </b>
@@ -313,7 +316,7 @@ function ShowAllCoins({
       {collapsedUnspent ? (
         <div onClick={() => setCollapsedUnspent(false)}>click to show</div>
       ) : (
-        <table onClick={() => setCollapsedUnspent(true)}>
+        <table>
           <tr>
             <td>
               <i18n.Translate>id</i18n.Translate>
@@ -330,6 +333,9 @@ function ShowAllCoins({
             <td>
               <i18n.Translate>from refresh?</i18n.Translate>
             </td>
+            <td>
+              <i18n.Translate>age key count</i18n.Translate>
+            </td>
           </tr>
           {coins.usable.map((c, idx) => {
             return (
@@ -339,12 +345,13 @@ function ShowAllCoins({
                 <td>{c.remain_value}</td>
                 <td>{c.status}</td>
                 <td>{c.from_refresh ? "true" : "false"}</td>
+                <td>{String(c.ageKeysCount)}</td>
               </tr>
             );
           })}
         </table>
       )}
-      <p>
+      <p onClick={() => setCollapsedSpent(true)}>
         <i18n.Translate>spent coins</i18n.Translate>
       </p>
       {collapsedSpent ? (
@@ -352,7 +359,7 @@ function ShowAllCoins({
           <i18n.Translate>click to show</i18n.Translate>
         </div>
       ) : (
-        <table onClick={() => setCollapsedSpent(true)}>
+        <table>
           <tr>
             <td>
               <i18n.Translate>id</i18n.Translate>

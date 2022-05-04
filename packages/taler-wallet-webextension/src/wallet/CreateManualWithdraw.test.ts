@@ -87,7 +87,7 @@ describe("CreateManualWithdraw states", () => {
       const { exchange, currency } = getLastResultOrThrow()
 
       expect(exchange.value).equal("url2")
-
+      if (currency.onChange === undefined) expect.fail();
       currency.onChange("USD")
     }
 
@@ -111,6 +111,7 @@ describe("CreateManualWithdraw states", () => {
       expect(exchange.value).equal("url2")
       expect(currency.value).equal("ARS")
 
+      if (exchange.onChange === undefined) expect.fail();
       exchange.onChange("url1")
     }
 
@@ -205,6 +206,7 @@ async function defaultTestForInputSelect(awaiter: () => Promise<void>, getField:
       throw new Error('no enough values')
     }
     nextValue = keys[nextIdx]
+    if (field.onChange === undefined) expect.fail();
     field.onChange(nextValue)
   }
 
