@@ -88,6 +88,7 @@ export async function runBench1(configJson: any): Promise<void> {
       if (trustExchange) {
         wallet.setInsecureTrustExchange();
       }
+      wallet.setBatchWithdrawal(true);
       await wallet.client.call(WalletApiOperation.InitWallet, {});
     }
 
