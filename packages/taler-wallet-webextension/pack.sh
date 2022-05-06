@@ -32,8 +32,8 @@ zipfile="taler-wallet-webextension-${vers_manifest}.zip"
 
 TEMP_DIR=$(mktemp -d)
 jq '. | .name = "GNU Taler Wallet" ' manifest-v3.json > $TEMP_DIR/manifest.json
-cp -r dist static $TEMP_DIR
-(cd $TEMP_DIR && zip -q -r "$zipfile" dist static manifest.json)
+cp -r dist static service_worker.js $TEMP_DIR
+(cd $TEMP_DIR && zip -q -r "$zipfile" dist static manifest.json service_worker.js)
 mkdir -p extension/v3
 mv "$TEMP_DIR/$zipfile" ./extension/v3/
 rm -rf $TEMP_DIR

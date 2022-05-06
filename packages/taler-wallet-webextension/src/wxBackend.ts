@@ -121,69 +121,70 @@ async function dispatch(
     };
   };
 
-  switch (req.operation) {
-    case "wxGetDiagnostics": {
-      r = wrapResponse(await getDiagnostics());
-      break;
-    }
-    case "reset-db": {
-      await deleteTalerDatabase(indexedDB as any);
-      r = wrapResponse(await reinitWallet());
-      break;
-    }
-    case "run-gc": {
-      logger.info("gc")
-      const dump = await exportDb(currentDatabase!.idbHandle());
-      await deleteTalerDatabase(indexedDB as any);
-      logger.info("cleaned")
-      await reinitWallet();
-      logger.info("init")
-      await importDb(currentDatabase!.idbHandle(), dump)
-      logger.info("imported")
-      r = wrapResponse({ result: true });
-      break;
-    }
-    case "containsHeaderListener": {
-      const res = await platform.containsTalerHeaderListener();
-      r = wrapResponse({ newValue: res });
-      break;
-    }
-    case "toggleHeaderListener": {
-      const newVal = req.payload.value;
-      logger.trace("new extended permissions value", newVal);
-      if (newVal) {
-        platform.registerTalerHeaderListener(parseTalerUriAndRedirect);
-        r = wrapResponse({ newValue: true });
-      } else {
-        const rem = await platform.getPermissionsApi().removeHostPermissions();
-        logger.trace("permissions removed:", rem);
-        r = wrapResponse({ newVal: false });
-      }
-      break;
-    }
-    default: {
-      const w = currentWallet;
-      if (!w) {
-        r = {
-          type: "error",
-          id: req.id,
-          operation: req.operation,
-          error: makeErrorDetail(
-            TalerErrorCode.WALLET_CORE_NOT_AVAILABLE,
-            {},
-            "wallet core not available",
-          ),
-        };
+  try {
+    switch (req.operation) {
+      case "wxGetDiagnostics": {
+        r = wrapResponse(await getDiagnostics());
         break;
       }
-      r = await w.handleCoreApiRequest(req.operation, req.id, req.payload);
-      break;
+      case "reset-db": {
+        await deleteTalerDatabase(indexedDB as any);
+        r = wrapResponse(await reinitWallet());
+        break;
+      }
+      case "run-gc": {
+        logger.info("gc")
+        const dump = await exportDb(currentDatabase!.idbHandle());
+        await deleteTalerDatabase(indexedDB as any);
+        logger.info("cleaned")
+        await reinitWallet();
+        logger.info("init")
+        await importDb(currentDatabase!.idbHandle(), dump)
+        logger.info("imported")
+        r = wrapResponse({ result: true });
+        break;
+      }
+      case "containsHeaderListener": {
+        const res = await platform.containsTalerHeaderListener();
+        r = wrapResponse({ newValue: res });
+        break;
+      }
+      case "toggleHeaderListener": {
+        const newVal = req.payload.value;
+        logger.trace("new extended permissions value", newVal);
+        if (newVal) {
+          platform.registerTalerHeaderListener(parseTalerUriAndRedirect);
+          r = wrapResponse({ newValue: true });
+        } else {
+          const rem = await platform.getPermissionsApi().removeHostPermissions();
+          logger.trace("permissions removed:", rem);
+          r = wrapResponse({ newVal: false });
+        }
+        break;
+      }
+      default: {
+        const w = currentWallet;
+        if (!w) {
+          r = {
+            type: "error",
+            id: req.id,
+            operation: req.operation,
+            error: makeErrorDetail(
+              TalerErrorCode.WALLET_CORE_NOT_AVAILABLE,
+              {},
+              "wallet core not available",
+            ),
+          };
+          break;
+        }
+        r = await w.handleCoreApiRequest(req.operation, req.id, req.payload);
+        break;
+      }
     }
-  }
 
-  try {
     sendResponse(r);
   } catch (e) {
+    logger.error(`Error sending operation: ${req.operation}`, e)
     // might fail if tab disconnected
   }
 }
@@ -231,7 +232,7 @@ async function reinitWallet(): Promise<void> {
   });
 
   platform.keepAlive(() => {
-    wallet.runTaskLoop().catch((e) => {
+    return wallet.runTaskLoop().catch((e) => {
       logger.error("error during wallet task loop", e);
     });
   })

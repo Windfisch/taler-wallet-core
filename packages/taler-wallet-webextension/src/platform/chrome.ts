@@ -117,7 +117,7 @@ export async function removeHostPermissions(): Promise<boolean> {
   if ("webRequest" in chrome) {
     chrome.webRequest.handlerBehaviorChanged(() => {
       if (chrome.runtime.lastError) {
-        console.error(JSON.stringify(chrome.runtime.lastError));
+        logger.error(JSON.stringify(chrome.runtime.lastError));
       }
     });
   }
@@ -138,7 +138,6 @@ export async function removeHostPermissions(): Promise<boolean> {
 }
 
 function addPermissionsListener(callback: (p: Permissions, lastError?: string) => void): void {
-  console.log("addPermissionListener is not supported for Firefox");
   chrome.permissions.onAdded.addListener((perm: Permissions) => {
     const lastError = chrome.runtime.lastError?.message;
     callback(perm, lastError)
@@ -182,7 +181,7 @@ function openWalletURIFromPopup(talerUri: string): void {
       url = chrome.runtime.getURL(`static/wallet.html#/cta/refund?talerRefundUri=${talerUri}`);
       break;
     default:
-      console.warn(
+      logger.warn(
         "Response with HTTP 402 has Taler header, but header value is not a taler:// URI.",
       );
       return;
@@ -211,6 +210,7 @@ function openWalletPageFromPopup(page: string): void {
 
 async function sendMessageToWalletBackground(operation: string, payload: any): Promise<any> {
   return new Promise<any>((resolve, reject) => {
+    logger.trace("send operation to the wallet background", operation)
     chrome.runtime.sendMessage({ operation, payload, id: "(none)" }, (resp) => {
       if (chrome.runtime.lastError) {
         reject(chrome.runtime.lastError.message)
@@ -245,7 +245,7 @@ function sendMessageToAllChannels(message: MessageFromBackend): void {
     try {
       notif.postMessage(message);
     } catch (e) {
-      console.error(e);
+      logger.error("error posting a message", e);
     }
   }
 }
@@ -275,7 +275,7 @@ function registerReloadOnNewVersion(): void {
   // Explicitly unload the extension page as soon as an update is available,
   // so the update gets installed as soon as possible.
   chrome.runtime.onUpdateAvailable.addListener((details) => {
-    console.log("update available:", details);
+    logger.info("update available:", details);
     chrome.runtime.reload();
   });
 
@@ -286,7 +286,7 @@ function redirectTabToWalletPage(
   page: string,
 ): void {
   const url = chrome.runtime.getURL(`/static/wallet.html#${page}`);
-  console.log("redirecting tabId: ", tabId, " to: ", url);
+  logger.trace("redirecting tabId: ", tabId, " to: ", url);
   chrome.tabs.update(tabId, { url });
 }
 
@@ -301,13 +301,13 @@ function getWalletVersion(): WalletVersion {
 }
 
 function registerTalerHeaderListener(callback: (tabId: number, url: string) => void): void {
-  console.log("setting up header listener");
+  logger.trace("setting up header listener");
 
   function headerListener(
     details: chrome.webRequest.WebResponseHeadersDetails,
   ): void {
     if (chrome.runtime.lastError) {
-      console.error(JSON.stringify(chrome.runtime.lastError));
+      logger.error(JSON.stringify(chrome.runtime.lastError));
       return;
     }
     if (
@@ -350,7 +350,7 @@ function registerTalerHeaderListener(callback: (tabId: number, url: string) => v
     //notify the browser about this change, this operation is expensive
     chrome?.webRequest?.handlerBehaviorChanged(() => {
       if (chrome.runtime.lastError) {
-        console.error(JSON.stringify(chrome.runtime.lastError));
+        logger.error(JSON.stringify(chrome.runtime.lastError));
       }
     });
   });
@@ -473,7 +473,6 @@ async function registerIconChangeOnTalerContent(): Promise<void> {
     logger.info("tab updated", tabId, info);
     if (info.status !== "complete") return;
     const uri = await findTalerUriInTab(tabId);
-    console.log("urio", uri)
     if (uri) {
       setAlertedIcon()
     } else {
@@ -483,9 +482,7 @@ async function registerIconChangeOnTalerContent(): Promise<void> {
   });
   chrome.tabs.onActivated.addListener(async ({ tabId }: chrome.tabs.TabActiveInfo) => {
     if (tabId < 0) return;
-    logger.info("tab activated", tabId);
     const uri = await findTalerUriInTab(tabId);
-    console.log("urio", uri)
     if (uri) {
       setAlertedIcon()
     } else {
@@ -565,7 +562,7 @@ async function findTalerUriInTab(tabId: number): Promise<string | undefined> {
         },
         (result) => {
           if (chrome.runtime.lastError) {
-            console.error(JSON.stringify(chrome.runtime.lastError));
+            logger.error(JSON.stringify(chrome.runtime.lastError));
             resolve(undefined);
             return;
           }

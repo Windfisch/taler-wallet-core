@@ -445,8 +445,8 @@ async function downloadExchangeKeysInfo(
     codecForExchangeKeysJson(),
   );
 
-  logger.info("received /keys response");
-  logger.info(`${j2s(exchangeKeysJsonUnchecked)}`);
+  logger.trace("received /keys response");
+  logger.trace(`${j2s(exchangeKeysJsonUnchecked)}`);
 
   if (exchangeKeysJsonUnchecked.denoms.length === 0) {
     throw TalerError.fromDetail(
