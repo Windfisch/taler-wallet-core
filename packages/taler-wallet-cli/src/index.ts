@@ -65,6 +65,7 @@ import { runBench1 } from "./bench1.js";
 import { runEnv1 } from "./env1.js";
 import { GlobalTestState, runTestWithState } from "./harness/harness.js";
 import { runBench2 } from "./bench2.js";
+import { runBench3 } from "./bench3.js";
 import {
   TalerCryptoInterface,
   TalerCryptoInterfaceR,
@@ -691,6 +692,21 @@ advancedCli
       console.log("Could not parse config JSON");
     }
     await runBench2(config);
+  });
+
+advancedCli
+  .subcommand("bench3", "bench3", {
+    help: "Run the 'bench3' benchmark",
+  })
+  .requiredOption("configJson", ["--config-json"], clk.STRING)
+  .action(async (args) => {
+    let config: any;
+    try {
+      config = JSON.parse(args.bench3.configJson);
+    } catch (e) {
+      console.log("Could not parse config JSON");
+    }
+    await runBench3(config);
   });
 
 advancedCli

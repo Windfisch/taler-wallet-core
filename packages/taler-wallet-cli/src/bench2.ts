@@ -44,7 +44,7 @@ import {
  * set up its own services.
  */
 export async function runBench2(configJson: any): Promise<void> {
-  const logger = new Logger("Bench1");
+  const logger = new Logger("Bench2");
 
   // Validate the configuration file for this benchmark.
   const benchConf = codecForBench2Config().decode(configJson);
