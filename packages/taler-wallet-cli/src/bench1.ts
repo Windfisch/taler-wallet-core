@@ -64,6 +64,7 @@ export async function runBench1(configJson: any): Promise<void> {
   } else {
     logger.info("not trusting exchange (validating signatures)");
   }
+  const batchWithdrawal = !!process.env["TALER_WALLET_BATCH_WITHDRAWAL"];
 
   let wallet = {} as Wallet;
   let getDbStats: () => AccessStats;
@@ -88,7 +89,7 @@ export async function runBench1(configJson: any): Promise<void> {
       if (trustExchange) {
         wallet.setInsecureTrustExchange();
       }
-      wallet.setBatchWithdrawal(true);
+      wallet.setBatchWithdrawal(batchWithdrawal);
       await wallet.client.call(WalletApiOperation.InitWallet, {});
     }
 
