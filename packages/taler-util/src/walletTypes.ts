@@ -279,11 +279,11 @@ export class ReturnCoinsRequest {
 export interface PrepareRefundResult {
   proposalId: string;
 
-  applied: number;
-  failed: number;
-  total: number;
-
-  amountEffectivePaid: AmountString;
+  effectivePaid: AmountString;
+  gone: AmountString;
+  granted: AmountString;
+  pending: boolean;
+  awaiting: AmountString;
 
   info: OrderShortInfo;
 }

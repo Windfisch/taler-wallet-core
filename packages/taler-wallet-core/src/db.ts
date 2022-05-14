@@ -1289,6 +1289,12 @@ export interface PurchaseRecord {
   autoRefundDeadline: TalerProtocolTimestamp | undefined;
 
   /**
+   * How much merchant has refund to be taken but the wallet
+   * did not picked up yet
+   */
+  refundAwaiting: AmountJson | undefined;
+
+  /**
    * Is the payment frozen?  I.e. did we encounter
    * an error where it doesn't make sense to retry.
    */

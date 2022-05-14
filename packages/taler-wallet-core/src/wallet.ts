@@ -1235,10 +1235,10 @@ class InternalWalletStateImpl implements InternalWalletState {
     const key = `${exchangeBaseUrl}:${denomPubHash}`;
     const cached = this.denomCache[key];
     if (cached) {
-      logger.info("using cached denom");
+      logger.trace("using cached denom");
       return cached;
     }
-    logger.info("looking up denom denom");
+    logger.trace("looking up denom denom");
     const d = await tx.denominations.get([exchangeBaseUrl, denomPubHash]);
     if (d) {
       this.denomCache[key] = d;

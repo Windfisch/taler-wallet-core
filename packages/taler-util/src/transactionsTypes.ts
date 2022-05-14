@@ -228,6 +228,21 @@ export interface TransactionPayment extends TransactionCommon {
    * Amount that was paid, including deposit, wire and refresh fees.
    */
   amountEffective: AmountString;
+
+  /**
+   * Amount that has been refunded by the merchant
+   */
+  totalRefundRaw: AmountString;
+
+  /**
+   * Amount will be added to the wallet's balance after fees and refreshing
+   */
+  totalRefundEffective: AmountString;
+
+  /**
+   * Amount pending to be picked up
+   */
+  refundPending: AmountString | undefined;
 }
 
 export interface OrderShortInfo {
@@ -286,6 +301,11 @@ export interface TransactionRefund extends TransactionCommon {
 
   // Additional information about the refunded payment
   info: OrderShortInfo;
+
+  /**
+   * Amount pending to be picked up
+   */
+  refundPending: AmountString | undefined;
 
   // Amount that has been refunded by the merchant
   amountRaw: AmountString;

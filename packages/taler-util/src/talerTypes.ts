@@ -562,8 +562,8 @@ export interface MerchantAbortPayRefundDetails {
   refund_amount: string;
 
   /**
-   * Fee for the refund.
-   */
+  * Fee for the refund.
+  */
   refund_fee: string;
 
   /**
@@ -888,17 +888,17 @@ export type BlindedDenominationSignature =
   | RsaBlindedDenominationSignature
   | CSBlindedDenominationSignature;
 
-export const codecForBlindedDenominationSignature = () =>
-  buildCodecForUnion<BlindedDenominationSignature>()
-    .discriminateOn("cipher")
-    .alternative(DenomKeyType.Rsa, codecForRsaBlindedDenominationSignature())
-    .build("BlindedDenominationSignature");
-
 export const codecForRsaBlindedDenominationSignature = () =>
   buildCodecForObject<RsaBlindedDenominationSignature>()
     .property("cipher", codecForConstString(DenomKeyType.Rsa))
     .property("blinded_rsa_signature", codecForString())
     .build("RsaBlindedDenominationSignature");
+
+export const codecForBlindedDenominationSignature = () =>
+  buildCodecForUnion<BlindedDenominationSignature>()
+    .discriminateOn("cipher")
+    .alternative(DenomKeyType.Rsa, codecForRsaBlindedDenominationSignature())
+    .build("BlindedDenominationSignature");
 
 export class WithdrawResponse {
   ev_sig: BlindedDenominationSignature;
@@ -1024,15 +1024,17 @@ export interface ExchangeRevealResponse {
 }
 
 interface MerchantOrderStatusPaid {
-  /**
-   * Was the payment refunded (even partially, via refund or abort)?
-   */
+  // Was the payment refunded (even partially, via refund or abort)?
   refunded: boolean;
 
-  /**
-   * Amount that was refunded in total.
-   */
+  // Is any amount of the refund still waiting to be picked up (even partially)?
+  refund_pending: boolean;
+
+  // Amount that was refunded in total.
   refund_amount: AmountString;
+
+  // Amount that already taken by the wallet.
+  refund_taken: AmountString;
 }
 
 interface MerchantOrderRefundResponse {
@@ -1528,6 +1530,8 @@ export const codecForMerchantOrderStatusPaid =
   (): Codec<MerchantOrderStatusPaid> =>
     buildCodecForObject<MerchantOrderStatusPaid>()
       .property("refund_amount", codecForString())
+      .property("refund_taken", codecForString())
+      .property("refund_pending", codecForBoolean())
       .property("refunded", codecForBoolean())
       .build("MerchantOrderStatusPaid");
 

@@ -49,6 +49,16 @@ import { processWithdrawGroup } from "./withdraw.js";
 
 const logger = new Logger("taler-wallet-core:transactions.ts");
 
+export enum TombstoneTag {
+  DeleteWithdrawalGroup = "delete-withdrawal-group",
+  DeleteReserve = "delete-reserve",
+  DeletePayment = "delete-payment",
+  DeleteTip = "delete-tip",
+  DeleteRefreshGroup = "delete-refresh-group",
+  DeleteDepositGroup = "delete-deposit-group",
+  DeleteRefund = "delete-refund",
+}
+
 /**
  * Create an event ID from the type and the primary key for the event.
  */
@@ -286,25 +296,6 @@ export async function getTransactions(
             TransactionType.Payment,
             pr.proposalId,
           );
-          const err = pr.lastPayError ?? pr.lastRefundStatusError;
-          transactions.push({
-            type: TransactionType.Payment,
-            amountRaw: Amounts.stringify(contractData.amount),
-            amountEffective: Amounts.stringify(pr.totalPayCost),
-            status: pr.timestampFirstSuccessfulPay
-              ? PaymentStatus.Paid
-              : PaymentStatus.Accepted,
-            pending:
-              !pr.timestampFirstSuccessfulPay &&
-              pr.abortStatus === AbortStatus.None,
-            timestamp: pr.timestampAccept,
-            transactionId: paymentTransactionId,
-            proposalId: pr.proposalId,
-            info: info,
-            frozen: pr.payFrozen ?? false,
-            ...(err ? { error: err } : {}),
-          });
-
           const refundGroupKeys = new Set<string>();
 
           for (const rk of Object.keys(pr.refunds)) {
@@ -312,6 +303,9 @@ export async function getTransactions(
             const groupKey = `${refund.executionTime.t_s}`;
             refundGroupKeys.add(groupKey);
           }
+
+          let totalRefundRaw = Amounts.getZero(contractData.amount.currency);
+          let totalRefundEffective = Amounts.getZero(contractData.amount.currency);
 
           for (const groupKey of refundGroupKeys.values()) {
             const refundTombstoneId = makeEventId(
@@ -356,6 +350,10 @@ export async function getTransactions(
             if (!r0) {
               throw Error("invariant violated");
             }
+
+            totalRefundRaw = Amounts.add(totalRefundRaw, amountRaw).amount;
+            totalRefundEffective = Amounts.add(totalRefundEffective, amountEffective).amount;
+
             transactions.push({
               type: TransactionType.Refund,
               info,
@@ -364,10 +362,34 @@ export async function getTransactions(
               timestamp: r0.obtainedTime,
               amountEffective: Amounts.stringify(amountEffective),
               amountRaw: Amounts.stringify(amountRaw),
+              refundPending: pr.refundAwaiting === undefined ? undefined : Amounts.stringify(pr.refundAwaiting),
               pending: false,
               frozen: false,
             });
           }
+
+          const err = pr.lastPayError ?? pr.lastRefundStatusError;
+          transactions.push({
+            type: TransactionType.Payment,
+            amountRaw: Amounts.stringify(contractData.amount),
+            amountEffective: Amounts.stringify(pr.totalPayCost),
+            totalRefundRaw: Amounts.stringify(totalRefundRaw),
+            totalRefundEffective: Amounts.stringify(totalRefundEffective),
+            refundPending: pr.refundAwaiting === undefined ? undefined : Amounts.stringify(pr.refundAwaiting),
+            status: pr.timestampFirstSuccessfulPay
+              ? PaymentStatus.Paid
+              : PaymentStatus.Accepted,
+            pending:
+              !pr.timestampFirstSuccessfulPay &&
+              pr.abortStatus === AbortStatus.None,
+            timestamp: pr.timestampAccept,
+            transactionId: paymentTransactionId,
+            proposalId: pr.proposalId,
+            info: info,
+            frozen: pr.payFrozen ?? false,
+            ...(err ? { error: err } : {}),
+          });
+
         });
 
         tx.tips.iter().forEachAsync(async (tipRecord) => {
@@ -419,16 +441,6 @@ export async function getTransactions(
   return { transactions: [...txNotPending, ...txPending] };
 }
 
-export enum TombstoneTag {
-  DeleteWithdrawalGroup = "delete-withdrawal-group",
-  DeleteReserve = "delete-reserve",
-  DeletePayment = "delete-payment",
-  DeleteTip = "delete-tip",
-  DeleteRefreshGroup = "delete-refresh-group",
-  DeleteDepositGroup = "delete-deposit-group",
-  DeleteRefund = "delete-refund",
-}
-
 /**
  * Immediately retry the underlying operation
  * of a transaction.
@@ -442,28 +454,33 @@ export async function retryTransaction(
   const [type, ...rest] = transactionId.split(":");
 
   switch (type) {
-    case TransactionType.Deposit:
+    case TransactionType.Deposit: {
       const depositGroupId = rest[0];
       processDepositGroup(ws, depositGroupId, {
         forceNow: true,
       });
       break;
-    case TransactionType.Withdrawal:
+    }
+    case TransactionType.Withdrawal: {
       const withdrawalGroupId = rest[0];
       await processWithdrawGroup(ws, withdrawalGroupId, { forceNow: true });
       break;
-    case TransactionType.Payment:
+    }
+    case TransactionType.Payment: {
       const proposalId = rest[0];
       await processPurchasePay(ws, proposalId, { forceNow: true });
       break;
-    case TransactionType.Tip:
+    }
+    case TransactionType.Tip: {
       const walletTipId = rest[0];
       await processTip(ws, walletTipId, { forceNow: true });
       break;
-    case TransactionType.Refresh:
+    }
+    case TransactionType.Refresh: {
       const refreshGroupId = rest[0];
       await processRefreshGroup(ws, refreshGroupId, { forceNow: true });
       break;
+    }
     default:
       break;
   }

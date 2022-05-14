@@ -43,6 +43,8 @@ import {
   EddsaPublicKeyString,
   codecForAmountString,
   TalerProtocolDuration,
+  codecForTimestamp,
+  TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
 
 export interface PostOrderRequest {
@@ -78,6 +80,15 @@ export const codecForPostOrderResponse = (): Codec<PostOrderResponse> =>
   buildCodecForObject<PostOrderResponse>()
     .property("order_id", codecForString())
     .property("token", codecOptional(codecForString()))
+    .build("PostOrderResponse");
+
+
+export const codecForRefundDetails = (): Codec<RefundDetails> =>
+  buildCodecForObject<RefundDetails>()
+    .property("reason", codecForString())
+    .property("pending", codecForBoolean())
+    .property("amount", codecForString())
+    .property("timestamp", codecForTimestamp)
     .build("PostOrderResponse");
 
 export const codecForCheckPaymentPaidResponse =
@@ -200,7 +211,10 @@ export interface RefundDetails {
   reason: string;
 
   // when was the refund approved
-  timestamp: AbsoluteTime;
+  timestamp: TalerProtocolTimestamp;
+
+  // has not been taken yet
+  pending: boolean;
 
   // Total amount that was refunded (minus a refund fee).
   amount: AmountString;

@@ -34,7 +34,6 @@ import { LoadingError } from "../components/LoadingError.js";
 import { LogoHeader } from "../components/LogoHeader.js";
 import { Part } from "../components/Part.js";
 import {
-  Button,
   ButtonSuccess,
   SubTitle,
   WalletAction,
@@ -99,6 +98,12 @@ export function View({ state }: ViewProps): VNode {
           <Part
             big
             title={<i18n.Translate>Total to refund</i18n.Translate>}
+            text={<Amount value={state.awaitingAmount} />}
+            kind="negative"
+          />
+          <Part
+            big
+            title={<i18n.Translate>Refunded</i18n.Translate>}
             text={<Amount value={state.amount} />}
             kind="negative"
           />
@@ -108,9 +113,9 @@ export function View({ state }: ViewProps): VNode {
             <ProductList products={state.products} />
           </section>
         ) : undefined}
-        <section>
+        {/* <section>
           <ProgressBar value={state.progress} />
-        </section>
+        </section> */}
       </WalletAction>
     );
   }
@@ -127,6 +132,14 @@ export function View({ state }: ViewProps): VNode {
           <p>
             <i18n.Translate>this refund is already accepted.</i18n.Translate>
           </p>
+        </section>
+        <section>
+          <Part
+            big
+            title={<i18n.Translate>Total to refunded</i18n.Translate>}
+            text={<Amount value={state.granted} />}
+            kind="negative"
+          />
         </section>
       </WalletAction>
     );
@@ -150,9 +163,23 @@ export function View({ state }: ViewProps): VNode {
       <section>
         <Part
           big
-          title={<i18n.Translate>Total to refund</i18n.Translate>}
+          title={<i18n.Translate>Order amount</i18n.Translate>}
           text={<Amount value={state.amount} />}
-          kind="negative"
+          kind="neutral"
+        />
+        {Amounts.isNonZero(state.granted) && (
+          <Part
+            big
+            title={<i18n.Translate>Already refunded</i18n.Translate>}
+            text={<Amount value={state.granted} />}
+            kind="neutral"
+          />
+        )}
+        <Part
+          big
+          title={<i18n.Translate>Refund offered</i18n.Translate>}
+          text={<Amount value={state.awaitingAmount} />}
+          kind="positive"
         />
       </section>
       {state.products && state.products.length ? (
@@ -164,9 +191,6 @@ export function View({ state }: ViewProps): VNode {
         <ButtonSuccess onClick={state.accept.onClick}>
           <i18n.Translate>Confirm refund</i18n.Translate>
         </ButtonSuccess>
-        <Button onClick={state.ignore.onClick}>
-          <i18n.Translate>Ignore</i18n.Translate>
-        </Button>
       </section>
     </WalletAction>
   );
@@ -184,6 +208,8 @@ interface Ready {
   merchantName: string;
   products: Product[] | undefined;
   amount: AmountJson;
+  awaitingAmount: AmountJson;
+  granted: AmountJson;
   accept: ButtonHandler;
   ignore: ButtonHandler;
   orderId: string;
@@ -199,7 +225,8 @@ interface InProgress {
   merchantName: string;
   products: Product[] | undefined;
   amount: AmountJson;
-  progress: number;
+  awaitingAmount: AmountJson;
+  granted: AmountJson;
 }
 interface Completed {
   status: "completed";
@@ -207,6 +234,7 @@ interface Completed {
   merchantName: string;
   products: Product[] | undefined;
   amount: AmountJson;
+  granted: AmountJson;
 }
 
 export function useComponentState(
@@ -253,25 +281,27 @@ export function useComponentState(
     };
   }
 
-  const pending = refund.total > refund.applied + refund.failed;
-  const completed = refund.total > 0 && refund.applied === refund.total;
+  const awaitingAmount = Amounts.parseOrThrow(refund.awaiting);
 
-  if (pending) {
-    return {
-      status: "in-progress",
-      hook: undefined,
-      amount: Amounts.parseOrThrow(info.response.refund.amountEffectivePaid),
-      merchantName: info.response.refund.info.merchant.name,
-      products: info.response.refund.info.products,
-      progress: (refund.applied + refund.failed) / refund.total,
-    };
-  }
-
-  if (completed) {
+  if (Amounts.isZero(awaitingAmount)) {
     return {
       status: "completed",
       hook: undefined,
-      amount: Amounts.parseOrThrow(info.response.refund.amountEffectivePaid),
+      amount: Amounts.parseOrThrow(info.response.refund.effectivePaid),
+      granted: Amounts.parseOrThrow(info.response.refund.granted),
+      merchantName: info.response.refund.info.merchant.name,
+      products: info.response.refund.info.products,
+    };
+  }
+
+  if (refund.pending) {
+    return {
+      status: "in-progress",
+      hook: undefined,
+      awaitingAmount,
+      amount: Amounts.parseOrThrow(info.response.refund.effectivePaid),
+      granted: Amounts.parseOrThrow(info.response.refund.granted),
+
       merchantName: info.response.refund.info.merchant.name,
       products: info.response.refund.info.products,
     };
@@ -280,7 +310,9 @@ export function useComponentState(
   return {
     status: "ready",
     hook: undefined,
-    amount: Amounts.parseOrThrow(info.response.refund.amountEffectivePaid),
+    amount: Amounts.parseOrThrow(info.response.refund.effectivePaid),
+    granted: Amounts.parseOrThrow(info.response.refund.granted),
+    awaitingAmount,
     merchantName: info.response.refund.info.merchant.name,
     products: info.response.refund.info.products,
     orderId: info.response.refund.info.orderId,

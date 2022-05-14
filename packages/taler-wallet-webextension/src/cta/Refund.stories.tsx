@@ -33,6 +33,7 @@ export const Complete = createExample(TestedComponent, {
   state: {
     status: "completed",
     amount: Amounts.parseOrThrow("USD:1"),
+    granted: Amounts.parseOrThrow("USD:1"),
     hook: undefined,
     merchantName: "the merchant",
     products: undefined,
@@ -44,9 +45,10 @@ export const InProgress = createExample(TestedComponent, {
     status: "in-progress",
     hook: undefined,
     amount: Amounts.parseOrThrow("USD:1"),
+    awaitingAmount: Amounts.parseOrThrow("USD:1"),
+    granted: Amounts.parseOrThrow("USD:0"),
     merchantName: "the merchant",
     products: undefined,
-    progress: 0.5,
   },
 });
 
@@ -58,6 +60,8 @@ export const Ready = createExample(TestedComponent, {
     ignore: {},
 
     amount: Amounts.parseOrThrow("USD:1"),
+    awaitingAmount: Amounts.parseOrThrow("USD:1"),
+    granted: Amounts.parseOrThrow("USD:0"),
     merchantName: "the merchant",
     products: [],
     orderId: "abcdef",
@@ -73,6 +77,8 @@ export const WithAProductList = createExample(TestedComponent, {
     accept: {},
     ignore: {},
     amount: Amounts.parseOrThrow("USD:1"),
+    awaitingAmount: Amounts.parseOrThrow("USD:1"),
+    granted: Amounts.parseOrThrow("USD:0"),
     merchantName: "the merchant",
     products: [
       {

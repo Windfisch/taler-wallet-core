@@ -101,29 +101,19 @@ export async function prepareRefund(
     );
   }
 
+  const awaiting = await queryAndSaveAwaitingRefund(ws, purchase)
+  const summary = calculateRefundSummary(purchase)
   const proposalId = purchase.proposalId;
-  const rfs = Object.values(purchase.refunds)
-
-  let applied = 0;
-  let failed = 0;
-  const total = rfs.length;
-  rfs.forEach((refund) => {
-    if (refund.type === RefundState.Failed) {
-      failed = failed + 1;
-    }
-    if (refund.type === RefundState.Applied) {
-      applied = applied + 1;
-    }
-  });
 
   const { contractData: c } = purchase.download
 
   return {
     proposalId,
-    amountEffectivePaid: Amounts.stringify(purchase.totalPayCost),
-    applied,
-    failed,
-    total,
+    effectivePaid: Amounts.stringify(summary.amountEffectivePaid),
+    gone: Amounts.stringify(summary.amountRefundGone),
+    granted: Amounts.stringify(summary.amountRefundGranted),
+    pending: summary.pendingAtExchange,
+    awaiting: Amounts.stringify(awaiting),
     info: {
       contractTermsHash: c.contractTermsHash,
       merchant: c.merchant,
@@ -533,6 +523,44 @@ async function acceptRefunds(
   });
 }
 
+
+function calculateRefundSummary(p: PurchaseRecord): RefundSummary {
+  let amountRefundGranted = Amounts.getZero(
+    p.download.contractData.amount.currency,
+  );
+  let amountRefundGone = Amounts.getZero(
+    p.download.contractData.amount.currency,
+  );
+
+  let pendingAtExchange = false;
+
+  Object.keys(p.refunds).forEach((rk) => {
+    const refund = p.refunds[rk];
+    if (refund.type === RefundState.Pending) {
+      pendingAtExchange = true;
+    }
+    if (
+      refund.type === RefundState.Applied ||
+      refund.type === RefundState.Pending
+    ) {
+      amountRefundGranted = Amounts.add(
+        amountRefundGranted,
+        Amounts.sub(
+          refund.refundAmount,
+          refund.refundFee,
+          refund.totalRefreshCostBound,
+        ).amount,
+      ).amount;
+    } else {
+      amountRefundGone = Amounts.add(
+        amountRefundGone,
+        refund.refundAmount,
+      ).amount;
+    }
+  });
+  return { amountEffectivePaid: p.totalPayCost, amountRefundGone, amountRefundGranted, pendingAtExchange }
+}
+
 /**
  * Summary of the refund status of a purchase.
  */
@@ -618,49 +646,15 @@ export async function applyRefund(
     throw Error("purchase no longer exists");
   }
 
-  const p = purchase;
-
-  let amountRefundGranted = Amounts.getZero(
-    purchase.download.contractData.amount.currency,
-  );
-  let amountRefundGone = Amounts.getZero(
-    purchase.download.contractData.amount.currency,
-  );
-
-  let pendingAtExchange = false;
-
-  Object.keys(purchase.refunds).forEach((rk) => {
-    const refund = p.refunds[rk];
-    if (refund.type === RefundState.Pending) {
-      pendingAtExchange = true;
-    }
-    if (
-      refund.type === RefundState.Applied ||
-      refund.type === RefundState.Pending
-    ) {
-      amountRefundGranted = Amounts.add(
-        amountRefundGranted,
-        Amounts.sub(
-          refund.refundAmount,
-          refund.refundFee,
-          refund.totalRefreshCostBound,
-        ).amount,
-      ).amount;
-    } else {
-      amountRefundGone = Amounts.add(
-        amountRefundGone,
-        refund.refundAmount,
-      ).amount;
-    }
-  });
+  const summary = calculateRefundSummary(purchase)
 
   return {
     contractTermsHash: purchase.download.contractData.contractTermsHash,
     proposalId: purchase.proposalId,
-    amountEffectivePaid: Amounts.stringify(purchase.totalPayCost),
-    amountRefundGone: Amounts.stringify(amountRefundGone),
-    amountRefundGranted: Amounts.stringify(amountRefundGranted),
-    pendingAtExchange,
+    amountEffectivePaid: Amounts.stringify(summary.amountEffectivePaid),
+    amountRefundGone: Amounts.stringify(summary.amountRefundGone),
+    amountRefundGranted: Amounts.stringify(summary.amountRefundGranted),
+    pendingAtExchange: summary.pendingAtExchange,
     info: {
       contractTermsHash: purchase.download.contractData.contractTermsHash,
       merchant: purchase.download.contractData.merchant,
@@ -691,6 +685,59 @@ export async function processPurchaseQueryRefund(
   );
 }
 
+async function queryAndSaveAwaitingRefund(
+  ws: InternalWalletState,
+  purchase: PurchaseRecord,
+  waitForAutoRefund?: boolean): Promise<AmountJson> {
+  const requestUrl = new URL(
+    `orders/${purchase.download.contractData.orderId}`,
+    purchase.download.contractData.merchantBaseUrl,
+  );
+  requestUrl.searchParams.set(
+    "h_contract",
+    purchase.download.contractData.contractTermsHash,
+  );
+  // Long-poll for one second
+  if (waitForAutoRefund) {
+    requestUrl.searchParams.set("timeout_ms", "1000");
+    requestUrl.searchParams.set("await_refund_obtained", "yes");
+    logger.trace("making long-polling request for auto-refund");
+  }
+  const resp = await ws.http.get(requestUrl.href);
+  const orderStatus = await readSuccessResponseJsonOrThrow(
+    resp,
+    codecForMerchantOrderStatusPaid(),
+  );
+  if (!orderStatus.refunded) {
+    // Wait for retry ...
+    return Amounts.getZero(purchase.totalPayCost.currency);
+  }
+
+  const refundAwaiting = Amounts.sub(
+    Amounts.parseOrThrow(orderStatus.refund_amount),
+    Amounts.parseOrThrow(orderStatus.refund_taken)
+  ).amount
+
+  console.log("refund waiting found, ", refundAwaiting, orderStatus, purchase.refundAwaiting, purchase.refundAwaiting && Amounts.cmp(refundAwaiting, purchase.refundAwaiting))
+
+  if (purchase.refundAwaiting === undefined || Amounts.cmp(refundAwaiting, purchase.refundAwaiting) !== 0) {
+    await ws.db
+      .mktx((x) => ({ purchases: x.purchases }))
+      .runReadWrite(async (tx) => {
+        const p = await tx.purchases.get(purchase.proposalId);
+        if (!p) {
+          logger.warn("purchase does not exist anymore");
+          return;
+        }
+        p.refundAwaiting = refundAwaiting
+        await tx.purchases.put(p);
+      });
+  }
+
+  return refundAwaiting;
+}
+
+
 async function processPurchaseQueryRefundImpl(
   ws: InternalWalletState,
   proposalId: string,
@@ -719,33 +766,13 @@ async function processPurchaseQueryRefundImpl(
 
   if (purchase.timestampFirstSuccessfulPay) {
     if (
-      waitForAutoRefund &&
-      purchase.autoRefundDeadline &&
+      !purchase.autoRefundDeadline ||
       !AbsoluteTime.isExpired(
         AbsoluteTime.fromTimestamp(purchase.autoRefundDeadline),
       )
     ) {
-      const requestUrl = new URL(
-        `orders/${purchase.download.contractData.orderId}`,
-        purchase.download.contractData.merchantBaseUrl,
-      );
-      requestUrl.searchParams.set(
-        "h_contract",
-        purchase.download.contractData.contractTermsHash,
-      );
-      // Long-poll for one second
-      requestUrl.searchParams.set("timeout_ms", "1000");
-      requestUrl.searchParams.set("await_refund_obtained", "yes");
-      logger.trace("making long-polling request for auto-refund");
-      const resp = await ws.http.get(requestUrl.href);
-      const orderStatus = await readSuccessResponseJsonOrThrow(
-        resp,
-        codecForMerchantOrderStatusPaid(),
-      );
-      if (!orderStatus.refunded) {
-        // Wait for retry ...
-        return;
-      }
+      const awaitingAmount = await queryAndSaveAwaitingRefund(ws, purchase, waitForAutoRefund)
+      if (Amounts.isZero(awaitingAmount)) return;
     }
 
     const requestUrl = new URL(

@@ -345,7 +345,7 @@ export async function importBackup(
           }
           const denomPubHash =
             cryptoComp.rsaDenomPubToHash[
-              backupDenomination.denom_pub.rsa_public_key
+            backupDenomination.denom_pub.rsa_public_key
             ];
           checkLogicInvariant(!!denomPubHash);
           const existingDenom = await tx.denominations.get([
@@ -560,7 +560,7 @@ export async function importBackup(
             const amount = Amounts.parseOrThrow(parsedContractTerms.amount);
             const contractTermsHash =
               cryptoComp.proposalIdToContractTermsHash[
-                backupProposal.proposal_id
+              backupProposal.proposal_id
               ];
             let maxWireFee: AmountJson;
             if (parsedContractTerms.max_wire_fee) {
@@ -704,7 +704,7 @@ export async function importBackup(
           const amount = Amounts.parseOrThrow(parsedContractTerms.amount);
           const contractTermsHash =
             cryptoComp.proposalIdToContractTermsHash[
-              backupPurchase.proposal_id
+            backupPurchase.proposal_id
             ];
           let maxWireFee: AmountJson;
           if (parsedContractTerms.max_wire_fee) {
@@ -755,6 +755,7 @@ export async function importBackup(
             autoRefundDeadline: TalerProtocolTimestamp.never(),
             refundStatusRetryInfo: resetRetryInfo(),
             lastRefundStatusError: undefined,
+            refundAwaiting: undefined,
             timestampAccept: backupPurchase.timestamp_accept,
             timestampFirstSuccessfulPay:
               backupPurchase.timestamp_first_successful_pay,

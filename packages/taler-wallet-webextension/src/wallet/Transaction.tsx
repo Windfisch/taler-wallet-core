@@ -40,7 +40,6 @@ import {
   ButtonPrimary,
   CenteredDialog,
   InfoBox,
-  LargeText,
   ListOfProducts,
   Overlay,
   RowBorderGray,
@@ -51,6 +50,7 @@ import {
 import { Time } from "../components/Time.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { Pages } from "../NavigationBar.js";
 import * as wxApi from "../wxApi.js";
 
 interface Props {
@@ -344,6 +344,17 @@ export function TransactionView({
       Amounts.parseOrThrow(transaction.amountRaw),
     ).amount;
 
+    const refundFee = Amounts.sub(
+      Amounts.parseOrThrow(transaction.totalRefundRaw),
+      Amounts.parseOrThrow(transaction.totalRefundEffective),
+    ).amount;
+    const refunded = Amounts.isNonZero(
+      Amounts.parseOrThrow(transaction.totalRefundRaw),
+    );
+    const pendingRefund =
+      transaction.refundPending === undefined
+        ? undefined
+        : Amounts.parseOrThrow(transaction.refundPending);
     return (
       <TransactionTemplate>
         <SubTitle>
@@ -360,18 +371,54 @@ export function TransactionView({
           text={<Amount value={transaction.amountEffective} />}
           kind="negative"
         />
-        <Part
-          big
-          title={<i18n.Translate>Purchase amount</i18n.Translate>}
-          text={<Amount value={transaction.amountRaw} />}
-          kind="neutral"
-        />
-        <Part
-          big
-          title={<i18n.Translate>Fee</i18n.Translate>}
-          text={<Amount value={fee} />}
-          kind="negative"
-        />
+        {Amounts.isNonZero(fee) && (
+          <Fragment>
+            <Part
+              big
+              title={<i18n.Translate>Purchase amount</i18n.Translate>}
+              text={<Amount value={transaction.amountRaw} />}
+              kind="neutral"
+            />
+            <Part
+              title={<i18n.Translate>Purchase Fee</i18n.Translate>}
+              text={<Amount value={fee} />}
+              kind="negative"
+            />
+          </Fragment>
+        )}
+        {refunded && (
+          <Fragment>
+            <Part
+              big
+              title={<i18n.Translate>Total refunded</i18n.Translate>}
+              text={<Amount value={transaction.totalRefundEffective} />}
+              kind="positive"
+            />
+            {Amounts.isNonZero(refundFee) && (
+              <Fragment>
+                <Part
+                  big
+                  title={<i18n.Translate>Refund amount</i18n.Translate>}
+                  text={<Amount value={transaction.totalRefundRaw} />}
+                  kind="neutral"
+                />
+                <Part
+                  title={<i18n.Translate>Refund fee</i18n.Translate>}
+                  text={<Amount value={refundFee} />}
+                  kind="negative"
+                />
+              </Fragment>
+            )}
+          </Fragment>
+        )}
+        {pendingRefund !== undefined && Amounts.isNonZero(pendingRefund) && (
+          <Part
+            big
+            title={<i18n.Translate>Refund pending</i18n.Translate>}
+            text={<Amount value={pendingRefund} />}
+            kind="positive"
+          />
+        )}
         <Part
           title={<i18n.Translate>Merchant</i18n.Translate>}
           text={transaction.info.merchant.name}
@@ -447,18 +494,22 @@ export function TransactionView({
           text={<Amount value={transaction.amountEffective} />}
           kind="neutral"
         />
-        <Part
-          big
-          title={<i18n.Translate>Deposit amount</i18n.Translate>}
-          text={<Amount value={transaction.amountRaw} />}
-          kind="positive"
-        />
-        <Part
-          big
-          title={<i18n.Translate>Fee</i18n.Translate>}
-          text={<Amount value={fee} />}
-          kind="negative"
-        />
+        {Amounts.isNonZero(fee) && (
+          <Fragment>
+            <Part
+              big
+              title={<i18n.Translate>Deposit amount</i18n.Translate>}
+              text={<Amount value={transaction.amountRaw} />}
+              kind="positive"
+            />
+            <Part
+              big
+              title={<i18n.Translate>Fee</i18n.Translate>}
+              text={<Amount value={fee} />}
+              kind="negative"
+            />
+          </Fragment>
+        )}
         {payto && <PartPayto big payto={payto} kind="neutral" />}
       </TransactionTemplate>
     );
@@ -485,18 +536,22 @@ export function TransactionView({
           text={<Amount value={transaction.amountEffective} />}
           kind="negative"
         />
-        <Part
-          big
-          title={<i18n.Translate>Refresh amount</i18n.Translate>}
-          text={<Amount value={transaction.amountRaw} />}
-          kind="neutral"
-        />
-        <Part
-          big
-          title={<i18n.Translate>Fee</i18n.Translate>}
-          text={<Amount value={fee} />}
-          kind="negative"
-        />
+        {Amounts.isNonZero(fee) && (
+          <Fragment>
+            <Part
+              big
+              title={<i18n.Translate>Refresh amount</i18n.Translate>}
+              text={<Amount value={transaction.amountRaw} />}
+              kind="neutral"
+            />
+            <Part
+              big
+              title={<i18n.Translate>Fee</i18n.Translate>}
+              text={<Amount value={fee} />}
+              kind="negative"
+            />
+          </Fragment>
+        )}
       </TransactionTemplate>
     );
   }
@@ -522,18 +577,22 @@ export function TransactionView({
           text={<Amount value={transaction.amountRaw} />}
           kind="positive"
         />
-        <Part
-          big
-          title={<i18n.Translate>Received amount</i18n.Translate>}
-          text={<Amount value={transaction.amountEffective} />}
-          kind="neutral"
-        />
-        <Part
-          big
-          title={<i18n.Translate>Fee</i18n.Translate>}
-          text={<Amount value={fee} />}
-          kind="negative"
-        />
+        {Amounts.isNonZero(fee) && (
+          <Fragment>
+            <Part
+              big
+              title={<i18n.Translate>Received amount</i18n.Translate>}
+              text={<Amount value={transaction.amountEffective} />}
+              kind="neutral"
+            />
+            <Part
+              big
+              title={<i18n.Translate>Fee</i18n.Translate>}
+              text={<Amount value={fee} />}
+              kind="negative"
+            />
+          </Fragment>
+        )}
       </TransactionTemplate>
     );
   }
@@ -559,37 +618,42 @@ export function TransactionView({
           text={<Amount value={transaction.amountEffective} />}
           kind="positive"
         />
-        <Part
-          big
-          title={<i18n.Translate>Refund amount</i18n.Translate>}
-          text={<Amount value={transaction.amountRaw} />}
-          kind="neutral"
-        />
-        <Part
-          big
-          title={<i18n.Translate>Fee</i18n.Translate>}
-          text={<Amount value={fee} />}
-          kind="negative"
-        />
+        {Amounts.isNonZero(fee) && (
+          <Fragment>
+            <Part
+              big
+              title={<i18n.Translate>Refund amount</i18n.Translate>}
+              text={<Amount value={transaction.amountRaw} />}
+              kind="neutral"
+            />
+            <Part
+              big
+              title={<i18n.Translate>Fee</i18n.Translate>}
+              text={<Amount value={fee} />}
+              kind="negative"
+            />
+          </Fragment>
+        )}
         <Part
           title={<i18n.Translate>Merchant</i18n.Translate>}
           text={transaction.info.merchant.name}
           kind="neutral"
         />
+
         <Part
           title={<i18n.Translate>Purchase</i18n.Translate>}
           text={
-            transaction.info.fulfillmentUrl ? (
-              <a
-                href={transaction.info.fulfillmentUrl}
-                target="_bank"
-                rel="noreferrer"
-              >
-                {transaction.info.summary}
-              </a>
-            ) : (
-              transaction.info.summary
-            )
+            <a
+              href={Pages.balance_transaction.replace(
+                ":tid",
+                transaction.refundedTransactionId,
+              )}
+              // href={transaction.info.fulfillmentUrl}
+              // target="_bank"
+              // rel="noreferrer"
+            >
+              {transaction.info.summary}
+            </a>
           }
           kind="neutral"
         />

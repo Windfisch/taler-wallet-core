@@ -443,6 +443,7 @@ async function recordConfirmPay(
     refundQueryRequested: false,
     timestampFirstSuccessfulPay: undefined,
     autoRefundDeadline: undefined,
+    refundAwaiting: undefined,
     paymentSubmitPending: true,
     refunds: {},
     merchantPaySig: undefined,
@@ -987,18 +988,16 @@ async function storeFirstPaySuccess(
       purchase.lastSessionId = sessionId;
       purchase.payRetryInfo = resetRetryInfo();
       purchase.merchantPaySig = paySig;
-      if (isFirst) {
-        const protoAr = purchase.download.contractData.autoRefund;
-        if (protoAr) {
-          const ar = Duration.fromTalerProtocolDuration(protoAr);
-          logger.info("auto_refund present");
-          purchase.refundQueryRequested = true;
-          purchase.refundStatusRetryInfo = resetRetryInfo();
-          purchase.lastRefundStatusError = undefined;
-          purchase.autoRefundDeadline = AbsoluteTime.toTimestamp(
-            AbsoluteTime.addDuration(AbsoluteTime.now(), ar),
-          );
-        }
+      const protoAr = purchase.download.contractData.autoRefund;
+      if (protoAr) {
+        const ar = Duration.fromTalerProtocolDuration(protoAr);
+        logger.info("auto_refund present");
+        purchase.refundQueryRequested = true;
+        purchase.refundStatusRetryInfo = resetRetryInfo();
+        purchase.lastRefundStatusError = undefined;
+        purchase.autoRefundDeadline = AbsoluteTime.toTimestamp(
+          AbsoluteTime.addDuration(AbsoluteTime.now(), ar),
+        );
       }
       await tx.purchases.put(purchase);
     });

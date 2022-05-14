@@ -78,6 +78,9 @@ const exampleData = {
       summary: "the summary",
       fulfillmentMessage: "",
     },
+    refundPending: undefined,
+    totalRefundEffective: "USD:0",
+    totalRefundRaw: "USD:0",
     proposalId: "1EMJJH8EP1NX3XF7733NCYS2DBEJW4Q2KA5KEB37MCQJQ8Q5HMC0",
     status: PaymentStatus.Accepted,
   } as TransactionPayment,
@@ -112,6 +115,7 @@ const exampleData = {
       summary: "the summary",
       fulfillmentMessage: "",
     },
+    refundPending: undefined,
   } as TransactionRefund,
 };
 
