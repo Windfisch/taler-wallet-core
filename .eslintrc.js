@@ -1,7 +1,7 @@
 module.exports = {
   root: true,
   parser: "@typescript-eslint/parser",
-  plugins: ["import","@typescript-eslint",
+  plugins: ["import", "@typescript-eslint",
     "react",
     "react-hooks",
   ],
@@ -23,6 +23,7 @@ module.exports = {
     "prefer-const": ["warn", { destructuring: "all" }],
     "no-prototype-builtins": "off",
     "@typescript-eslint/camelcase": "off",
+    "@typescript-eslint/no-namespace": "off",
     "@typescript-eslint/ban-ts-ignore": "off",
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/ban-ts-comment": "off",
@@ -37,7 +38,7 @@ module.exports = {
     ],
     "import/extensions": ["error", "ignorePackages"],
     "react/no-unknown-property": 0,
-    "react/prop-types": 0, 
+    "react/prop-types": 0,
 
   },
 };
