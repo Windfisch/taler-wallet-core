@@ -1022,6 +1022,8 @@ export async function autoRefresh(
   exchangeBaseUrl: string,
 ): Promise<void> {
   logger.info(`doing auto-refresh check for '${exchangeBaseUrl}'`);
+
+  //updateExchangeFromUrl will also update retryInfo for this operation
   await updateExchangeFromUrl(ws, exchangeBaseUrl, {
     forceNow: true,
   });

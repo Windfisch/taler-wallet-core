@@ -556,6 +556,8 @@ async function updateExchangeFromUrlImpl(
 }> {
   const forceNow = options.forceNow ?? false;
   logger.info(`updating exchange info for ${baseUrl}, forced: ${forceNow}`);
+  await setupExchangeUpdateRetry(ws, baseUrl, { reset: forceNow });
+
   const now = AbsoluteTime.now();
   baseUrl = canonicalizeBaseUrl(baseUrl);
 
@@ -573,8 +575,6 @@ async function updateExchangeFromUrlImpl(
     logger.info("using existing exchange info");
     return { exchange, exchangeDetails };
   }
-
-  await setupExchangeUpdateRetry(ws, baseUrl, { reset: forceNow });
 
   logger.info("updating exchange /keys info");
 

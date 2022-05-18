@@ -205,23 +205,6 @@ export async function processTip(
   );
 }
 
-async function resetTipRetry(
-  ws: InternalWalletState,
-  tipId: string,
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({
-      tips: x.tips,
-    }))
-    .runReadWrite(async (tx) => {
-      const x = await tx.tips.get(tipId);
-      if (x) {
-        x.retryInfo = RetryInfo.reset();
-        await tx.tips.put(x);
-      }
-    });
-}
-
 async function processTipImpl(
   ws: InternalWalletState,
   walletTipId: string,
@@ -230,9 +213,8 @@ async function processTipImpl(
   } = {},
 ): Promise<void> {
   const forceNow = options.forceNow ?? false;
-  if (forceNow) {
-    await resetTipRetry(ws, walletTipId);
-  }
+  await setupTipRetry(ws, walletTipId, { reset: forceNow });
+
   const tipRecord = await ws.db
     .mktx((x) => ({
       tips: x.tips,

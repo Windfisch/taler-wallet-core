@@ -245,6 +245,7 @@ async function runBackupCycleForProvider(
   ws: InternalWalletState,
   args: BackupForProviderArgs,
 ): Promise<void> {
+
   const provider = await ws.db
     .mktx((x) => ({ backupProviders: x.backupProviders }))
     .runReadOnly(async (tx) => {

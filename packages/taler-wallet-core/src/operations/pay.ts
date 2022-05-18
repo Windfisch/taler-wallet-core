@@ -672,6 +672,8 @@ async function processDownloadProposalImpl(
   } = {},
 ): Promise<void> {
   const forceNow = options.forceNow ?? false;
+  await setupProposalRetry(ws, proposalId, { reset: forceNow });
+
   const proposal = await ws.db
     .mktx((x) => ({ proposals: x.proposals }))
     .runReadOnly(async (tx) => {
@@ -685,8 +687,6 @@ async function processDownloadProposalImpl(
   if (proposal.proposalStatus != ProposalStatus.Downloading) {
     return;
   }
-
-  await setupProposalRetry(ws, proposalId, { reset: forceNow });
 
   const orderClaimUrl = new URL(
     `orders/${proposal.orderId}/claim`,

@@ -149,6 +149,8 @@ async function processDepositGroupImpl(
   } = {},
 ): Promise<void> {
   const forceNow = options.forceNow ?? false;
+  await setupDepositGroupRetry(ws, depositGroupId, { resetRetry: forceNow });
+
   const depositGroup = await ws.db
     .mktx((x) => ({
       depositGroups: x.depositGroups,
@@ -164,8 +166,6 @@ async function processDepositGroupImpl(
     logger.trace(`deposit group ${depositGroupId} already finished`);
     return;
   }
-
-  await setupDepositGroupRetry(ws, depositGroupId, { resetRetry: forceNow });
 
   const contractData = extractContractData(
     depositGroup.contractTermsRaw,
