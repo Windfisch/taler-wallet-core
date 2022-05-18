@@ -18,51 +18,30 @@
  * Imports.
  */
 import {
-  PrepareTipResult,
-  parseTipUri,
-  codecForTipPickupGetResponse,
-  Amounts,
-  TalerErrorDetail,
-  NotificationType,
-  TipPlanchetDetail,
-  TalerErrorCode,
-  Logger,
-  URL,
-  DenomKeyType,
-  BlindedDenominationSignature,
-  codecForMerchantTipResponseV2,
-  TalerProtocolTimestamp,
+  Amounts, BlindedDenominationSignature,
+  codecForMerchantTipResponseV2, codecForTipPickupGetResponse, DenomKeyType, encodeCrock, getRandomBytes, j2s, Logger, NotificationType, parseTipUri, PrepareTipResult, TalerErrorCode, TalerErrorDetail, TalerProtocolTimestamp, TipPlanchetDetail, URL
 } from "@gnu-taler/taler-util";
 import { DerivedTipPlanchet } from "../crypto/cryptoTypes.js";
 import {
-  DenominationRecord,
   CoinRecord,
   CoinSourceType,
-  CoinStatus,
-  TipRecord,
+  CoinStatus, DenominationRecord, TipRecord
 } from "../db.js";
-import { j2s } from "@gnu-taler/taler-util";
-import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
-import {
-  resetRetryInfo,
-  RetryInfo,
-  updateRetryInfoTimeout,
-} from "../util/retries.js";
 import { makeErrorDetail } from "../errors.js";
-import { updateExchangeFromUrl } from "./exchanges.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import {
-  getExchangeWithdrawalInfo,
-  updateWithdrawalDenoms,
-  getCandidateWithdrawalDenoms,
-  selectWithdrawalDenominations,
-} from "./withdraw.js";
-import {
   getHttpResponseErrorDetails,
-  readSuccessResponseJsonOrThrow,
+  readSuccessResponseJsonOrThrow
 } from "../util/http.js";
-import { encodeCrock, getRandomBytes } from "@gnu-taler/taler-util";
+import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
+import {
+  RetryInfo
+} from "../util/retries.js";
 import { guardOperationException } from "./common.js";
+import { updateExchangeFromUrl } from "./exchanges.js";
+import {
+  getCandidateWithdrawalDenoms, getExchangeWithdrawalInfo, selectWithdrawalDenominations, updateWithdrawalDenoms
+} from "./withdraw.js";
 
 const logger = new Logger("operations/tip.ts");
 
@@ -130,7 +109,7 @@ export async function prepareTip(
       createdTimestamp: TalerProtocolTimestamp.now(),
       merchantTipId: res.merchantTipId,
       tipAmountEffective: selectedDenoms.totalCoinValue,
-      retryInfo: resetRetryInfo(),
+      retryInfo: RetryInfo.reset(),
       lastError: undefined,
       denomsSel: selectedDenoms,
       pickedUpTimestamp: undefined,
@@ -202,7 +181,7 @@ async function setupTipRetry(
         return;
       }
       if (options.reset) {
-        t.retryInfo = resetRetryInfo();
+        t.retryInfo = RetryInfo.reset();
       } else {
         t.retryInfo = RetryInfo.increment(t.retryInfo);
       }
@@ -237,7 +216,7 @@ async function resetTipRetry(
     .runReadWrite(async (tx) => {
       const x = await tx.tips.get(tipId);
       if (x) {
-        x.retryInfo = resetRetryInfo();
+        x.retryInfo = RetryInfo.reset();
         await tx.tips.put(x);
       }
     });
@@ -430,7 +409,7 @@ async function processTipImpl(
       }
       tr.pickedUpTimestamp = TalerProtocolTimestamp.now();
       tr.lastError = undefined;
-      tr.retryInfo = resetRetryInfo();
+      tr.retryInfo = RetryInfo.reset();
       await tx.tips.put(tr);
       for (const cr of newCoinRecords) {
         await tx.coins.put(cr);

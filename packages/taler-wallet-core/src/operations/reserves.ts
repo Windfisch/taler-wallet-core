@@ -58,8 +58,6 @@ import {
 } from "../util/http.js";
 import { GetReadOnlyAccess } from "../util/query.js";
 import {
-  getRetryDuration,
-  resetRetryInfo,
   RetryInfo,
 } from "../util/retries.js";
 import {
@@ -100,7 +98,7 @@ async function setupReserveRetry(
         return;
       }
       if (options.reset) {
-        r.retryInfo = resetRetryInfo();
+        r.retryInfo = RetryInfo.reset();
       } else {
         r.retryInfo = RetryInfo.increment(r.retryInfo);
       }
@@ -196,7 +194,7 @@ export async function createReserve(
     timestampReserveInfoPosted: undefined,
     bankInfo,
     reserveStatus,
-    retryInfo: resetRetryInfo(),
+    retryInfo: RetryInfo.reset(),
     lastError: undefined,
     currency: req.amount.currency,
     operationStatus: OperationStatus.Pending,
@@ -297,7 +295,7 @@ export async function forceQueryReserve(
         case ReserveRecordStatus.Dormant:
           reserve.reserveStatus = ReserveRecordStatus.QueryingStatus;
           reserve.operationStatus = OperationStatus.Pending;
-          reserve.retryInfo = resetRetryInfo();
+          reserve.retryInfo = RetryInfo.reset();
           break;
         default:
           break;
@@ -392,7 +390,7 @@ async function registerReserveWithBank(
       if (!r.bankInfo) {
         throw Error("invariant failed");
       }
-      r.retryInfo = resetRetryInfo();
+      r.retryInfo = RetryInfo.reset();
       await tx.reserves.put(r);
     });
   ws.notify({ type: NotificationType.ReserveRegisteredWithBank });
@@ -402,7 +400,7 @@ async function registerReserveWithBank(
 export function getReserveRequestTimeout(r: ReserveRecord): Duration {
   return durationMax(
     { d_ms: 60000 },
-    durationMin({ d_ms: 5000 }, getRetryDuration(r.retryInfo)),
+    durationMin({ d_ms: 5000 }, RetryInfo.getDuration(r.retryInfo)),
   );
 }
 
@@ -459,7 +457,7 @@ async function processReserveBankStatus(
         r.timestampBankConfirmed = now;
         r.reserveStatus = ReserveRecordStatus.BankAborted;
         r.operationStatus = OperationStatus.Finished;
-        r.retryInfo = resetRetryInfo();
+        r.retryInfo = RetryInfo.reset();
         await tx.reserves.put(r);
       });
     return;
@@ -496,7 +494,7 @@ async function processReserveBankStatus(
         r.timestampBankConfirmed = now;
         r.reserveStatus = ReserveRecordStatus.QueryingStatus;
         r.operationStatus = OperationStatus.Pending;
-        r.retryInfo = resetRetryInfo();
+        r.retryInfo = RetryInfo.reset();
       } else {
         switch (r.reserveStatus) {
           case ReserveRecordStatus.WaitConfirmBank:
@@ -555,7 +553,7 @@ async function updateReserve(
     if (
       resp.status === 404 &&
       result.talerErrorResponse.code ===
-        TalerErrorCode.EXCHANGE_RESERVES_STATUS_UNKNOWN
+      TalerErrorCode.EXCHANGE_RESERVES_STATUS_UNKNOWN
     ) {
       ws.notify({
         type: NotificationType.ReserveNotYetFound,
@@ -662,7 +660,7 @@ async function updateReserve(
         reservePub: reserve.reservePub,
         rawWithdrawalAmount: remainingAmount,
         timestampStart: AbsoluteTime.toTimestamp(AbsoluteTime.now()),
-        retryInfo: resetRetryInfo(),
+        retryInfo: RetryInfo.reset(),
         lastError: undefined,
         denomsSel: denomSel,
         secretSeed: encodeCrock(getRandomBytes(64)),
@@ -721,12 +719,13 @@ async function processReserveImpl(
     case ReserveRecordStatus.RegisteringBank:
       await processReserveBankStatus(ws, reservePub);
       return await processReserveImpl(ws, reservePub, { forceNow: true });
-    case ReserveRecordStatus.QueryingStatus:
+    case ReserveRecordStatus.QueryingStatus: {
       const res = await updateReserve(ws, reservePub);
       if (res.ready) {
         return await processReserveImpl(ws, reservePub, { forceNow: true });
       }
       break;
+    }
     case ReserveRecordStatus.Dormant:
       // nothing to do
       break;

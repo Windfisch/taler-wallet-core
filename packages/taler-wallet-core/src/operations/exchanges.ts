@@ -63,7 +63,7 @@ import {
   readSuccessResponseTextOrThrow,
 } from "../util/http.js";
 import { DbAccess, GetReadOnlyAccess } from "../util/query.js";
-import { resetRetryInfo, RetryInfo } from "../util/retries.js";
+import { RetryInfo } from "../util/retries.js";
 import {
   WALLET_CACHE_BREAKER_CLIENT_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
@@ -116,6 +116,9 @@ async function reportExchangeUpdateError(
       if (!exchange) {
         return;
       }
+      if (!exchange.retryInfo) {
+        logger.reportBreak();
+      }
       exchange.lastError = err;
       await tx.exchanges.put(exchange);
     });
@@ -137,7 +140,7 @@ async function setupExchangeUpdateRetry(
         return;
       }
       if (options.reset) {
-        exchange.retryInfo = resetRetryInfo();
+        exchange.retryInfo = RetryInfo.reset();
       } else {
         exchange.retryInfo = RetryInfo.increment(exchange.retryInfo);
       }
@@ -399,7 +402,7 @@ async function provideExchangeRecord(
         const r: ExchangeRecord = {
           permanent: true,
           baseUrl: baseUrl,
-          retryInfo: resetRetryInfo(),
+          retryInfo: RetryInfo.reset(),
           detailsPointer: undefined,
           lastUpdate: undefined,
           nextUpdate: AbsoluteTime.toTimestamp(now),

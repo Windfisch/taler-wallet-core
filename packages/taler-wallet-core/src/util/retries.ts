@@ -41,7 +41,7 @@ const defaultRetryPolicy: RetryPolicy = {
   maxTimeout: { d_ms: 6000 },
 };
 
-export function updateRetryInfoTimeout(
+function updateTimeout(
   r: RetryInfo,
   p: RetryPolicy = defaultRetryPolicy,
 ): void {
@@ -65,45 +65,46 @@ export function updateRetryInfoTimeout(
   r.nextRetry = { t_ms: t };
 }
 
-export function getRetryDuration(
-  r: RetryInfo | undefined,
-  p: RetryPolicy = defaultRetryPolicy,
-): Duration {
-  if (!r) {
-    // If we don't have any retry info, run immediately.
-    return { d_ms: 0 };
-  }
-  if (p.backoffDelta.d_ms === "forever") {
-    return { d_ms: "forever" };
-  }
-  const t = p.backoffDelta.d_ms * Math.pow(p.backoffBase, r.retryCounter);
-  return {
-    d_ms: p.maxTimeout.d_ms === "forever" ? t : Math.min(p.maxTimeout.d_ms, t),
-  };
-}
-
-export function resetRetryInfo(p: RetryPolicy = defaultRetryPolicy): RetryInfo {
-  const now = AbsoluteTime.now();
-  const info = {
-    firstTry: now,
-    nextRetry: now,
-    retryCounter: 0,
-  };
-  updateRetryInfoTimeout(info, p);
-  return info;
-}
-
 export namespace RetryInfo {
+
+  export function getDuration(
+    r: RetryInfo | undefined,
+    p: RetryPolicy = defaultRetryPolicy,
+  ): Duration {
+    if (!r) {
+      // If we don't have any retry info, run immediately.
+      return { d_ms: 0 };
+    }
+    if (p.backoffDelta.d_ms === "forever") {
+      return { d_ms: "forever" };
+    }
+    const t = p.backoffDelta.d_ms * Math.pow(p.backoffBase, r.retryCounter);
+    return {
+      d_ms: p.maxTimeout.d_ms === "forever" ? t : Math.min(p.maxTimeout.d_ms, t),
+    };
+  }
+
+  export function reset(p: RetryPolicy = defaultRetryPolicy): RetryInfo {
+    const now = AbsoluteTime.now();
+    const info = {
+      firstTry: now,
+      nextRetry: now,
+      retryCounter: 0,
+    };
+    updateTimeout(info, p);
+    return info;
+  }
+
   export function increment(
     r: RetryInfo | undefined,
     p: RetryPolicy = defaultRetryPolicy,
-  ) {
+  ): RetryInfo {
     if (!r) {
-      return resetRetryInfo(p);
+      return reset(p);
     }
     const r2 = { ...r };
     r2.retryCounter++;
-    updateRetryInfoTimeout(r2, p);
+    updateTimeout(r2, p);
     return r2;
   }
 }

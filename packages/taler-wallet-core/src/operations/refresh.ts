@@ -15,20 +15,28 @@
  */
 
 import {
-  AgeCommitment,
-  AgeRestriction,
-  CoinPublicKeyString,
-  DenomKeyType,
-  encodeCrock,
+  AbsoluteTime, AgeCommitment,
+  AgeRestriction, AmountJson, Amounts, amountToPretty, codecForExchangeMeltResponse,
+  codecForExchangeRevealResponse,
+  CoinPublicKey, CoinPublicKeyString,
+  DenomKeyType, Duration,
+  durationFromSpec,
+  durationMul, encodeCrock,
   ExchangeMeltRequest,
-  ExchangeProtocolVersion,
-  ExchangeRefreshRevealRequest,
-  getRandomBytes,
+  ExchangeProtocolVersion, ExchangeRefreshRevealRequest, fnutil, getRandomBytes,
   HashCodeString,
   HttpStatusCode,
-  j2s,
-  TalerProtocolTimestamp,
+  j2s, Logger, NotificationType,
+  RefreshGroupId,
+  RefreshReason,
+  TalerErrorDetail, TalerProtocolTimestamp, URL
 } from "@gnu-taler/taler-util";
+import { TalerCryptoInterface } from "../crypto/cryptoImplementation.js";
+import {
+  DerivedRefreshSession,
+  RefreshNewDenomInfo
+} from "../crypto/cryptoTypes.js";
+import { CryptoApiStoppedError } from "../crypto/workers/cryptoDispatcher.js";
 import {
   CoinRecord,
   CoinSourceType,
@@ -37,57 +45,29 @@ import {
   OperationStatus,
   RefreshCoinStatus,
   RefreshGroupRecord,
-  WalletStoresV1,
+  WalletStoresV1
 } from "../db.js";
-import {
-  codecForExchangeMeltResponse,
-  codecForExchangeRevealResponse,
-  CoinPublicKey,
-  fnutil,
-  NotificationType,
-  RefreshGroupId,
-  RefreshReason,
-  TalerErrorDetail,
-} from "@gnu-taler/taler-util";
-import { AmountJson, Amounts } from "@gnu-taler/taler-util";
-import { amountToPretty } from "@gnu-taler/taler-util";
-import {
-  readSuccessResponseJsonOrThrow,
-  readUnexpectedResponseDetails,
-} from "../util/http.js";
-import { checkDbInvariant } from "../util/invariants.js";
-import { Logger } from "@gnu-taler/taler-util";
-import {
-  resetRetryInfo,
-  RetryInfo,
-  updateRetryInfoTimeout,
-} from "../util/retries.js";
-import {
-  Duration,
-  durationFromSpec,
-  durationMul,
-  AbsoluteTime,
-  URL,
-} from "@gnu-taler/taler-util";
-import { updateExchangeFromUrl } from "./exchanges.js";
+import { TalerError } from "../errors.js";
 import {
   DenomInfo,
   EXCHANGE_COINS_LOCK,
-  InternalWalletState,
+  InternalWalletState
 } from "../internal-wallet-state.js";
 import {
-  isWithdrawableDenom,
-  selectWithdrawalDenominations,
-} from "./withdraw.js";
-import {
-  DerivedRefreshSession,
-  RefreshNewDenomInfo,
-} from "../crypto/cryptoTypes.js";
+  readSuccessResponseJsonOrThrow,
+  readUnexpectedResponseDetails
+} from "../util/http.js";
+import { checkDbInvariant } from "../util/invariants.js";
 import { GetReadWriteAccess } from "../util/query.js";
+import {
+  RetryInfo
+} from "../util/retries.js";
 import { guardOperationException } from "./common.js";
-import { CryptoApiStoppedError } from "../crypto/workers/cryptoDispatcher.js";
-import { TalerCryptoInterface } from "../crypto/cryptoImplementation.js";
-import { TalerError } from "../errors.js";
+import { updateExchangeFromUrl } from "./exchanges.js";
+import {
+  isWithdrawableDenom,
+  selectWithdrawalDenominations
+} from "./withdraw.js";
 
 const logger = new Logger("refresh.ts");
 
@@ -129,22 +109,22 @@ export function getTotalRefreshCost(
 }
 
 function updateGroupStatus(rg: RefreshGroupRecord): void {
-  let allDone = fnutil.all(
+  const allDone = fnutil.all(
     rg.statusPerCoin,
     (x) => x === RefreshCoinStatus.Finished || x === RefreshCoinStatus.Frozen,
   );
-  let anyFrozen = fnutil.any(
+  const anyFrozen = fnutil.any(
     rg.statusPerCoin,
     (x) => x === RefreshCoinStatus.Frozen,
   );
   if (allDone) {
     if (anyFrozen) {
       rg.frozen = true;
-      rg.retryInfo = resetRetryInfo();
+      rg.retryInfo = RetryInfo.reset();
     } else {
       rg.timestampFinished = AbsoluteTime.toTimestamp(AbsoluteTime.now());
       rg.operationStatus = OperationStatus.Finished;
-      rg.retryInfo = resetRetryInfo();
+      rg.retryInfo = RetryInfo.reset();
     }
   }
 }
@@ -753,7 +733,7 @@ async function setupRefreshRetry(
         return;
       }
       if (options.reset) {
-        r.retryInfo = resetRetryInfo();
+        r.retryInfo = RetryInfo.reset();
       } else {
         r.retryInfo = RetryInfo.increment(r.retryInfo);
       }
@@ -987,7 +967,7 @@ export async function createRefreshGroup(
     reason,
     refreshGroupId,
     refreshSessionPerCoin: oldCoinPubs.map(() => undefined),
-    retryInfo: resetRetryInfo(),
+    retryInfo: RetryInfo.reset(),
     inputPerCoin,
     estimatedOutputPerCoin,
     timestampCreated: TalerProtocolTimestamp.now(),

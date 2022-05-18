@@ -47,7 +47,7 @@ import { DepositGroupRecord, OperationStatus, WireFee } from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { PayCoinSelection, selectPayCoins } from "../util/coinSelection.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
-import { resetRetryInfo, RetryInfo } from "../util/retries.js";
+import { RetryInfo } from "../util/retries.js";
 import { guardOperationException } from "./common.js";
 import { getExchangeDetails } from "./exchanges.js";
 import {
@@ -85,7 +85,7 @@ async function setupDepositGroupRetry(
         return;
       }
       if (options.resetRetry) {
-        x.retryInfo = resetRetryInfo();
+        x.retryInfo = RetryInfo.reset();
       } else {
         x.retryInfo = RetryInfo.increment(x.retryInfo);
       }
@@ -599,7 +599,7 @@ export async function createDepositGroup(
       payto_uri: req.depositPaytoUri,
       salt: wireSalt,
     },
-    retryInfo: resetRetryInfo(),
+    retryInfo: RetryInfo.reset(),
     operationStatus: OperationStatus.Pending,
     lastError: undefined,
   };

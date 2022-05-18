@@ -120,7 +120,10 @@ export namespace BankApi {
       if (respJson.paytoUri) {
         paytoUri = respJson.paytoUri;
       }
-    } catch (e) {}
+    } catch (e) {
+      logger.error("error trying to parse json from response", e);
+      throw TalerError.fromException(e);
+    }
     return {
       password,
       username,

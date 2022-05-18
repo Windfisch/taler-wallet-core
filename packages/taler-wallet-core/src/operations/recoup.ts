@@ -26,38 +26,28 @@
  */
 import {
   Amounts,
-  codecForRecoupConfirmation,
-  j2s,
-  NotificationType,
+  codecForRecoupConfirmation, encodeCrock, getRandomBytes, j2s, Logger, NotificationType,
   RefreshReason,
   TalerErrorDetail,
-  TalerProtocolTimestamp,
+  TalerProtocolTimestamp, URL
 } from "@gnu-taler/taler-util";
-import { encodeCrock, getRandomBytes } from "@gnu-taler/taler-util";
 import {
   CoinRecord,
   CoinSourceType,
-  CoinStatus,
-  RecoupGroupRecord,
+  CoinStatus, OperationStatus, RecoupGroupRecord,
   RefreshCoinSource,
-  ReserveRecordStatus,
-  WithdrawCoinSource,
-  WalletStoresV1,
-  OperationStatus,
+  ReserveRecordStatus, WalletStoresV1, WithdrawCoinSource
 } from "../db.js";
-
+import { InternalWalletState } from "../internal-wallet-state.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
-import { Logger, URL } from "@gnu-taler/taler-util";
+import { GetReadWriteAccess } from "../util/query.js";
 import {
-  resetRetryInfo,
-  RetryInfo,
-  updateRetryInfoTimeout,
+  RetryInfo
 } from "../util/retries.js";
+import { guardOperationException } from "./common.js";
 import { createRefreshGroup, processRefreshGroup } from "./refresh.js";
 import { getReserveRequestTimeout, processReserve } from "./reserves.js";
-import { InternalWalletState } from "../internal-wallet-state.js";
-import { GetReadWriteAccess } from "../util/query.js";
-import { guardOperationException } from "./common.js";
+
 
 const logger = new Logger("operations/recoup.ts");
 
@@ -78,7 +68,7 @@ async function setupRecoupRetry(
         return;
       }
       if (options.reset) {
-        r.retryInfo = resetRetryInfo();
+        r.retryInfo = RetryInfo.reset();
       } else {
         r.retryInfo = RetryInfo.increment(r.retryInfo);
       }
@@ -139,7 +129,7 @@ async function putGroupAsFinished(
   if (allFinished) {
     logger.info("all recoups of recoup group are finished");
     recoupGroup.timestampFinished = TalerProtocolTimestamp.now();
-    recoupGroup.retryInfo = resetRetryInfo();
+    recoupGroup.retryInfo = RetryInfo.reset();
     recoupGroup.lastError = undefined;
     if (recoupGroup.scheduleRefreshCoins.length > 0) {
       const refreshGroupId = await createRefreshGroup(
@@ -278,7 +268,7 @@ async function recoupWithdrawCoin(
       const currency = updatedCoin.currentAmount.currency;
       updatedCoin.currentAmount = Amounts.getZero(currency);
       updatedReserve.reserveStatus = ReserveRecordStatus.QueryingStatus;
-      updatedReserve.retryInfo = resetRetryInfo();
+      updatedReserve.retryInfo = RetryInfo.reset();
       updatedReserve.operationStatus = OperationStatus.Pending;
       await tx.coins.put(updatedCoin);
       await tx.reserves.put(updatedReserve);
@@ -482,7 +472,7 @@ export async function createRecoupGroup(
     lastError: undefined,
     timestampFinished: undefined,
     timestampStarted: TalerProtocolTimestamp.now(),
-    retryInfo: resetRetryInfo(),
+    retryInfo: RetryInfo.reset(),
     recoupFinishedPerCoin: coinPubs.map(() => false),
     // Will be populated later
     oldAmountPerCoin: [],

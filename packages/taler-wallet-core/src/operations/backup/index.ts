@@ -25,10 +25,9 @@
  * Imports.
  */
 import {
-  AmountString,
+  AbsoluteTime, AmountString,
   BackupRecovery,
-  buildCodecForObject,
-  canonicalizeBaseUrl,
+  buildCodecForObject, bytesToString, canonicalizeBaseUrl,
   canonicalJson,
   Codec,
   codecForAmountString,
@@ -37,39 +36,22 @@ import {
   codecForNumber,
   codecForString,
   codecOptional,
-  ConfirmPayResultType,
-  DenomKeyType,
-  durationFromSpec,
-  hashDenomPub,
-  HttpStatusCode,
-  j2s,
-  Logger,
-  notEmpty,
-  PreparePayResultType,
-  RecoveryLoadRequest,
-  RecoveryMergeStrategy,
-  TalerErrorDetail,
-  AbsoluteTime,
-  URL,
-  WalletBackupContentV1,
-  TalerProtocolTimestamp,
-} from "@gnu-taler/taler-util";
-import { gunzipSync, gzipSync } from "fflate";
-import { InternalWalletState } from "../../internal-wallet-state.js";
-import { kdf } from "@gnu-taler/taler-util";
-import { secretbox, secretbox_open } from "@gnu-taler/taler-util";
-import {
-  bytesToString,
-  decodeCrock,
-  eddsaGetPublic,
+  ConfirmPayResultType, decodeCrock, DenomKeyType,
+  durationFromSpec, eddsaGetPublic,
   EddsaKeyPair,
   encodeCrock,
   getRandomBytes,
-  hash,
-  rsaBlind,
-  stringToBytes,
+  hash, hashDenomPub,
+  HttpStatusCode,
+  j2s, kdf, Logger,
+  notEmpty,
+  PreparePayResultType,
+  RecoveryLoadRequest,
+  RecoveryMergeStrategy, rsaBlind, secretbox, secretbox_open, stringToBytes, TalerErrorDetail, TalerProtocolTimestamp, URL,
+  WalletBackupContentV1
 } from "@gnu-taler/taler-util";
-import { CryptoDispatcher } from "../../crypto/workers/cryptoDispatcher.js";
+import { gunzipSync, gzipSync } from "fflate";
+import { TalerCryptoInterface } from "../../crypto/cryptoImplementation.js";
 import {
   BackupProviderRecord,
   BackupProviderState,
@@ -78,28 +60,28 @@ import {
   ConfigRecord,
   WalletBackupConfState,
   WalletStoresV1,
-  WALLET_BACKUP_STATE_KEY,
+  WALLET_BACKUP_STATE_KEY
 } from "../../db.js";
+import { InternalWalletState } from "../../internal-wallet-state.js";
 import {
   readSuccessResponseJsonOrThrow,
-  readTalerErrorResponse,
+  readTalerErrorResponse
 } from "../../util/http.js";
 import {
   checkDbInvariant,
-  checkLogicInvariant,
+  checkLogicInvariant
 } from "../../util/invariants.js";
 import { GetReadWriteAccess } from "../../util/query.js";
-import { resetRetryInfo, updateRetryInfoTimeout } from "../../util/retries.js";
+import { RetryInfo } from "../../util/retries.js";
+import { guardOperationException } from "../common.js";
 import {
   checkPaymentByProposalId,
   confirmPay,
-  preparePayForUri,
+  preparePayForUri
 } from "../pay.js";
 import { exportBackup } from "./export.js";
 import { BackupCryptoPrecomputedData, importBackup } from "./import.js";
 import { getWalletBackupState, provideBackupState } from "./state.js";
-import { guardOperationException } from "../common.js";
-import { TalerCryptoInterface } from "../../crypto/cryptoImplementation.js";
 
 const logger = new Logger("operations/backup.ts");
 
@@ -309,8 +291,8 @@ async function runBackupCycleForProvider(
       "if-none-match": newHash,
       ...(provider.lastBackupHash
         ? {
-            "if-match": provider.lastBackupHash,
-          }
+          "if-match": provider.lastBackupHash,
+        }
         : {}),
     },
   });
@@ -344,7 +326,7 @@ async function runBackupCycleForProvider(
     }
     const res = await preparePayForUri(ws, talerUri);
     let proposalId = res.proposalId;
-    let doPay: boolean = false;
+    let doPay = false;
     switch (res.status) {
       case PreparePayResultType.InsufficientBalance:
         // FIXME: record in provider state!
@@ -434,7 +416,7 @@ async function runBackupCycleForProvider(
         // FIXME:  Allocate error code for this situation?
         prov.state = {
           tag: BackupProviderStateTag.Retrying,
-          retryInfo: resetRetryInfo(),
+          retryInfo: RetryInfo.reset(),
         };
         await tx.backupProvider.put(prov);
       });
@@ -472,13 +454,12 @@ async function incrementBackupRetryInTx(
     return;
   }
   if (pr.state.tag === BackupProviderStateTag.Retrying) {
-    pr.state.retryInfo.retryCounter++;
     pr.state.lastError = err;
-    updateRetryInfoTimeout(pr.state.retryInfo);
+    pr.state.retryInfo = RetryInfo.increment(pr.state.retryInfo);
   } else if (pr.state.tag === BackupProviderStateTag.Ready) {
     pr.state = {
       tag: BackupProviderStateTag.Retrying,
-      retryInfo: resetRetryInfo(),
+      retryInfo: RetryInfo.reset(),
       lastError: err,
     };
   }
@@ -685,7 +666,9 @@ export async function addBackupProvider(
     });
 }
 
-export async function restoreFromRecoverySecret(): Promise<void> {}
+export async function restoreFromRecoverySecret(): Promise<void> {
+  return;
+}
 
 /**
  * Information about one provider.

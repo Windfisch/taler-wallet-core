@@ -72,7 +72,7 @@ import {
   readSuccessResponseJsonOrThrow,
 } from "../util/http.js";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
-import { resetRetryInfo, RetryInfo } from "../util/retries.js";
+import { RetryInfo } from "../util/retries.js";
 import {
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
@@ -215,7 +215,7 @@ export function selectWithdrawalDenominations(
   for (const d of denoms) {
     let count = 0;
     const cost = Amounts.add(d.value, d.feeWithdraw).amount;
-    for (;;) {
+    for (; ;) {
       if (Amounts.cmp(remaining, cost) < 0) {
         break;
       }
@@ -875,11 +875,10 @@ export async function updateWithdrawalDenoms(
         denom.verificationStatus === DenominationVerificationStatus.Unverified
       ) {
         logger.trace(
-          `Validating denomination (${current + 1}/${
-            denominations.length
+          `Validating denomination (${current + 1}/${denominations.length
           }) signature of ${denom.denomPubHash}`,
         );
-        let valid: boolean = false;
+        let valid = false;
         if (ws.insecureTrustExchange) {
           valid = true;
         } else {
@@ -932,7 +931,7 @@ async function setupWithdrawalRetry(
         return;
       }
       if (options.reset) {
-        wsr.retryInfo = resetRetryInfo();
+        wsr.retryInfo = RetryInfo.reset();
       } else {
         wsr.retryInfo = RetryInfo.increment(wsr.retryInfo);
       }
@@ -1097,7 +1096,7 @@ async function processWithdrawGroupImpl(
         wg.timestampFinish = TalerProtocolTimestamp.now();
         wg.operationStatus = OperationStatus.Finished;
         delete wg.lastError;
-        wg.retryInfo = resetRetryInfo();
+        wg.retryInfo = RetryInfo.reset();
       }
 
       await tx.withdrawalGroups.put(wg);
@@ -1203,7 +1202,7 @@ export async function getExchangeWithdrawalInfo(
     ) {
       console.warn(
         `wallet's support for exchange protocol version ${WALLET_EXCHANGE_PROTOCOL_VERSION} might be outdated ` +
-          `(exchange has ${exchangeDetails.protocolVersion}), checking for updates`,
+        `(exchange has ${exchangeDetails.protocolVersion}), checking for updates`,
       );
     }
   }

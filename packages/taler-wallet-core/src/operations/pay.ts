@@ -97,10 +97,7 @@ import {
 } from "../util/http.js";
 import { GetReadWriteAccess } from "../util/query.js";
 import {
-  getRetryDuration,
-  resetRetryInfo,
   RetryInfo,
-  updateRetryInfoTimeout,
 } from "../util/retries.js";
 import { getExchangeDetails } from "./exchanges.js";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
@@ -438,8 +435,8 @@ async function recordConfirmPay(
     proposalId: proposal.proposalId,
     lastPayError: undefined,
     lastRefundStatusError: undefined,
-    payRetryInfo: resetRetryInfo(),
-    refundStatusRetryInfo: resetRetryInfo(),
+    payRetryInfo: RetryInfo.reset(),
+    refundStatusRetryInfo: RetryInfo.reset(),
     refundQueryRequested: false,
     timestampFirstSuccessfulPay: undefined,
     autoRefundDeadline: undefined,
@@ -494,6 +491,7 @@ async function reportProposalError(
         logger.error(
           `Asked to report an error for a proposal (${proposalId}) that is not active (no retryInfo)`,
         );
+        logger.reportBreak();
         return;
       }
       pr.lastError = err;
@@ -517,7 +515,7 @@ async function setupProposalRetry(
         return;
       }
       if (options.reset) {
-        pr.retryInfo = resetRetryInfo();
+        pr.retryInfo = RetryInfo.reset();
       } else {
         pr.retryInfo = RetryInfo.increment(pr.retryInfo);
       }
@@ -541,7 +539,7 @@ async function setupPurchasePayRetry(
         return;
       }
       if (options.reset) {
-        p.payRetryInfo = resetRetryInfo();
+        p.payRetryInfo = RetryInfo.reset();
       } else {
         p.payRetryInfo = RetryInfo.increment(p.payRetryInfo);
       }
@@ -610,7 +608,7 @@ async function failProposalPermanently(
 function getProposalRequestTimeout(proposal: ProposalRecord): Duration {
   return durationMax(
     { d_ms: 60000 },
-    durationMin({ d_ms: 5000 }, getRetryDuration(proposal.retryInfo)),
+    durationMin({ d_ms: 5000 }, RetryInfo.getDuration(proposal.retryInfo)),
   );
 }
 
@@ -938,7 +936,7 @@ async function startDownloadProposal(
     proposalId: proposalId,
     proposalStatus: ProposalStatus.Downloading,
     repurchaseProposalId: undefined,
-    retryInfo: resetRetryInfo(),
+    retryInfo: RetryInfo.reset(),
     lastError: undefined,
     downloadSessionId: sessionId,
   };
@@ -986,14 +984,14 @@ async function storeFirstPaySuccess(
       purchase.paymentSubmitPending = false;
       purchase.lastPayError = undefined;
       purchase.lastSessionId = sessionId;
-      purchase.payRetryInfo = resetRetryInfo();
+      purchase.payRetryInfo = RetryInfo.reset();
       purchase.merchantPaySig = paySig;
       const protoAr = purchase.download.contractData.autoRefund;
       if (protoAr) {
         const ar = Duration.fromTalerProtocolDuration(protoAr);
         logger.info("auto_refund present");
         purchase.refundQueryRequested = true;
-        purchase.refundStatusRetryInfo = resetRetryInfo();
+        purchase.refundStatusRetryInfo = RetryInfo.reset();
         purchase.lastRefundStatusError = undefined;
         purchase.autoRefundDeadline = AbsoluteTime.toTimestamp(
           AbsoluteTime.addDuration(AbsoluteTime.now(), ar),
@@ -1023,7 +1021,7 @@ async function storePayReplaySuccess(
       }
       purchase.paymentSubmitPending = false;
       purchase.lastPayError = undefined;
-      purchase.payRetryInfo = resetRetryInfo();
+      purchase.payRetryInfo = RetryInfo.reset();
       purchase.lastSessionId = sessionId;
       await tx.purchases.put(purchase);
     });

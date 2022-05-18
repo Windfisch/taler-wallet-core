@@ -25,29 +25,18 @@
  */
 import {
   AbortingCoin,
-  AbortRequest,
-  AmountJson,
+  AbortRequest, AbsoluteTime, AmountJson,
   Amounts,
   ApplyRefundResponse,
   codecForAbortResponse,
-  codecForMerchantOrderRefundPickupResponse,
-  CoinPublicKey,
-  Logger,
+  codecForMerchantOrderRefundPickupResponse, codecForMerchantOrderStatusPaid, CoinPublicKey, Duration, Logger,
   MerchantCoinRefundFailureStatus,
   MerchantCoinRefundStatus,
   MerchantCoinRefundSuccessStatus,
   NotificationType,
-  parseRefundUri,
-  RefreshReason,
+  parseRefundUri, PrepareRefundResult, RefreshReason,
   TalerErrorCode,
-  TalerErrorDetail,
-  URL,
-  codecForMerchantOrderStatusPaid,
-  AbsoluteTime,
-  TalerProtocolTimestamp,
-  Duration,
-  PrepareRefundRequest,
-  PrepareRefundResult,
+  TalerErrorDetail, TalerProtocolTimestamp, URL
 } from "@gnu-taler/taler-util";
 import {
   AbortStatus,
@@ -55,19 +44,17 @@ import {
   PurchaseRecord,
   RefundReason,
   RefundState,
-  WalletStoresV1,
+  WalletStoresV1
 } from "../db.js";
+import { InternalWalletState } from "../internal-wallet-state.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { GetReadWriteAccess } from "../util/query.js";
 import {
-  resetRetryInfo,
-  RetryInfo,
-  updateRetryInfoTimeout,
+  RetryInfo
 } from "../util/retries.js";
-import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
-import { InternalWalletState } from "../internal-wallet-state.js";
 import { guardOperationException } from "./common.js";
+import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
 
 const logger = new Logger("refund.ts");
 
@@ -147,7 +134,7 @@ async function setupPurchaseQueryRefundRetry(
         return;
       }
       if (options.reset) {
-        pr.refundStatusRetryInfo = resetRetryInfo();
+        pr.refundStatusRetryInfo = RetryInfo.reset();
       } else {
         pr.refundStatusRetryInfo = RetryInfo.increment(
           pr.refundStatusRetryInfo,
@@ -500,7 +487,7 @@ async function acceptRefunds(
       if (queryDone) {
         p.timestampLastRefundStatus = now;
         p.lastRefundStatusError = undefined;
-        p.refundStatusRetryInfo = resetRetryInfo();
+        p.refundStatusRetryInfo = RetryInfo.reset();
         p.refundQueryRequested = false;
         if (p.abortStatus === AbortStatus.AbortRefund) {
           p.abortStatus = AbortStatus.AbortFinished;
@@ -509,8 +496,7 @@ async function acceptRefunds(
       } else {
         // No error, but we need to try again!
         p.timestampLastRefundStatus = now;
-        p.refundStatusRetryInfo.retryCounter++;
-        updateRetryInfoTimeout(p.refundStatusRetryInfo);
+        p.refundStatusRetryInfo = RetryInfo.increment(p.refundStatusRetryInfo)
         p.lastRefundStatusError = undefined;
         logger.trace("refund query not done");
       }
@@ -619,7 +605,7 @@ export async function applyRefund(
       }
       p.refundQueryRequested = true;
       p.lastRefundStatusError = undefined;
-      p.refundStatusRetryInfo = resetRetryInfo();
+      p.refundStatusRetryInfo = RetryInfo.reset();
       await tx.purchases.put(p);
       return true;
     });
@@ -892,7 +878,7 @@ export async function abortFailedPayWithRefund(
       purchase.paymentSubmitPending = false;
       purchase.abortStatus = AbortStatus.AbortRefund;
       purchase.lastPayError = undefined;
-      purchase.payRetryInfo = resetRetryInfo();
+      purchase.payRetryInfo = RetryInfo.reset();
       await tx.purchases.put(purchase);
     });
   processPurchaseQueryRefund(ws, proposalId, {

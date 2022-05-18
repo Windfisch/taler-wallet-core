@@ -335,6 +335,7 @@ async function runTaskLoop(
     let numGivingLiveness = 0;
     let numDue = 0;
     let minDue: AbsoluteTime = AbsoluteTime.never();
+
     for (const p of pending.pendingOperations) {
       minDue = AbsoluteTime.min(minDue, p.timestampDue);
       if (AbsoluteTime.isExpired(p.timestampDue)) {
@@ -683,9 +684,13 @@ async function dumpCoins(ws: InternalWalletState): Promise<CoinDumpJson> {
           c.exchangeBaseUrl,
           c.denomPubHash,
         );
+        if (!denomInfo) {
+          console.error("no denomination found for coin")
+          continue;
+        }
         coinsJson.coins.push({
           coin_pub: c.coinPub,
-          denom_pub: denomInfo?.denomPub!,
+          denom_pub: denomInfo.denomPub,
           denom_pub_hash: c.denomPubHash,
           denom_value: Amounts.stringify(denom.value),
           exchange_base_url: c.exchangeBaseUrl,
