@@ -1540,6 +1540,7 @@ async function processPurchasePayImpl(
   } = {},
 ): Promise<ConfirmPayResult> {
   const forceNow = options.forceNow ?? false;
+  await setupPurchasePayRetry(ws, proposalId, { reset: forceNow });
   const purchase = await ws.db
     .mktx((x) => ({ purchases: x.purchases }))
     .runReadOnly(async (tx) => {
@@ -1562,7 +1563,6 @@ async function processPurchasePayImpl(
       lastError: purchase.lastPayError,
     };
   }
-  await setupPurchasePayRetry(ws, proposalId, { reset: forceNow });
   logger.trace(`processing purchase pay ${proposalId}`);
 
   const sessionId = purchase.lastSessionId;
