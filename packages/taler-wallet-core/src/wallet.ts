@@ -348,9 +348,9 @@ async function runTaskLoop(
 
       if (maxRetries && p.retryInfo && p.retryInfo.retryCounter > maxRetries) {
         logger.warn(
-          `stopping, as ${maxRetries} retries are exceeded in an operation of type ${p.type}`,
+          `skipping, as ${maxRetries} retries are exceeded in an operation of type ${p.type}`,
         );
-        return;
+        continue;
       }
     }
 
