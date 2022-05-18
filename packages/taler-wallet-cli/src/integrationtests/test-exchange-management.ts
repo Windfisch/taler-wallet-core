@@ -39,13 +39,13 @@ import {
 import {
   FaultInjectedExchangeService,
   FaultInjectionResponseContext,
-} from "../harness/faultInjection";
-import { defaultCoinConfig } from "../harness/denomStructures";
+} from "../harness/faultInjection.js";
+import { defaultCoinConfig } from "../harness/denomStructures.js";
 
 /**
  * Test if the wallet handles outdated exchange versions correct.y
  */
-export async function runExchangeManagementTest(t: GlobalTestState) {
+export async function runExchangeManagementTest(t: GlobalTestState): Promise<void> {
   // Set up test environment
 
   const db = await setupDb(t);
@@ -197,7 +197,7 @@ export async function runExchangeManagementTest(t: GlobalTestState) {
   // in a format the wallet can understand.
   t.assertTrue(
     err1.errorDetail.innerError.code ===
-      TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
+    TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
   );
 
   exchangesList = await wallet.client.call(
@@ -241,7 +241,7 @@ export async function runExchangeManagementTest(t: GlobalTestState) {
 
   t.assertTrue(
     err2.errorDetail.innerError.code ===
-      TalerErrorCode.WALLET_EXCHANGE_PROTOCOL_VERSION_INCOMPATIBLE,
+    TalerErrorCode.WALLET_EXCHANGE_PROTOCOL_VERSION_INCOMPATIBLE,
   );
 
   exchangesList = await wallet.client.call(
