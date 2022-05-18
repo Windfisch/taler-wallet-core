@@ -337,14 +337,6 @@ async function runTaskLoop(
     let minDue: AbsoluteTime = AbsoluteTime.never();
 
     for (const p of pending.pendingOperations) {
-      minDue = AbsoluteTime.min(minDue, p.timestampDue);
-      if (AbsoluteTime.isExpired(p.timestampDue)) {
-        numDue++;
-      }
-      if (p.givesLifeness) {
-        numGivingLiveness++;
-      }
-
       const maxRetries = opts.maxRetries;
 
       if (maxRetries && p.retryInfo && p.retryInfo.retryCounter > maxRetries) {
@@ -353,6 +345,15 @@ async function runTaskLoop(
         );
         continue;
       }
+
+      minDue = AbsoluteTime.min(minDue, p.timestampDue);
+      if (AbsoluteTime.isExpired(p.timestampDue)) {
+        numDue++;
+      }
+      if (p.givesLifeness) {
+        numGivingLiveness++;
+      }
+
     }
 
     if (opts.stopWhenDone && numGivingLiveness === 0 && iteration !== 0) {
