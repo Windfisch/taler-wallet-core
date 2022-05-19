@@ -91,19 +91,24 @@ export namespace Duration {
     }
     return { d_ms: deadline.t_ms - now.t_ms };
   }
+
   export function toIntegerYears(d: Duration): number {
     if (typeof d.d_ms !== "number") {
       throw Error("infinite duration");
     }
     return Math.ceil(d.d_ms / 1000 / 60 / 60 / 24 / 365);
   }
+
   export const fromSpec = durationFromSpec;
+
   export function getForever(): Duration {
     return { d_ms: "forever" };
   }
+
   export function getZero(): Duration {
     return { d_ms: 0 };
   }
+
   export function fromTalerProtocolDuration(
     d: TalerProtocolDuration,
   ): Duration {
@@ -116,6 +121,7 @@ export namespace Duration {
       d_ms: d.d_us / 1000,
     };
   }
+
   export function toTalerProtocolDuration(d: Duration): TalerProtocolDuration {
     if (d.d_ms === "forever") {
       return {
@@ -125,6 +131,14 @@ export namespace Duration {
     return {
       d_us: d.d_ms * 1000,
     };
+  }
+
+  export function clamp(args: {
+    lower: Duration;
+    upper: Duration;
+    value: Duration;
+  }): Duration {
+    return durationMax(durationMin(args.value, args.upper), args.lower);
   }
 }
 

@@ -26,7 +26,6 @@
  */
 import {
   AbsoluteTime,
-  AgeRestriction,
   AmountJson,
   Amounts,
   codecForContractTerms,
@@ -606,10 +605,11 @@ async function failProposalPermanently(
 }
 
 function getProposalRequestTimeout(proposal: ProposalRecord): Duration {
-  return durationMax(
-    { d_ms: 60000 },
-    durationMin({ d_ms: 5000 }, RetryInfo.getDuration(proposal.retryInfo)),
-  );
+  return Duration.clamp({
+    lower: Duration.fromSpec({ seconds: 1}),
+    upper: Duration.fromSpec({seconds: 60}),
+    value: getRetryDuration(proposal.retryInfo),
+  });
 }
 
 function getPayRequestTimeout(purchase: PurchaseRecord): Duration {

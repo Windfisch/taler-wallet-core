@@ -1659,7 +1659,7 @@ export class MerchantService implements MerchantServiceInterface {
     await exec(`taler-merchant-dbinit -c "${this.configFilename}"`);
 
     this.proc = this.globalState.spawnService(
-      "valgrind",
+      "taler-merchant-httpd",
       [
         "taler-merchant-httpd",
         "-LDEBUG",
