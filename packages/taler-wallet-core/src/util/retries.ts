@@ -66,7 +66,6 @@ function updateTimeout(
 }
 
 export namespace RetryInfo {
-
   export function getDuration(
     r: RetryInfo | undefined,
     p: RetryPolicy = defaultRetryPolicy,
@@ -80,7 +79,8 @@ export namespace RetryInfo {
     }
     const t = p.backoffDelta.d_ms * Math.pow(p.backoffBase, r.retryCounter);
     return {
-      d_ms: p.maxTimeout.d_ms === "forever" ? t : Math.min(p.maxTimeout.d_ms, t),
+      d_ms:
+        p.maxTimeout.d_ms === "forever" ? t : Math.min(p.maxTimeout.d_ms, t),
     };
   }
 

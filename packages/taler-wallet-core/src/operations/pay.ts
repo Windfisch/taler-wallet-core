@@ -95,9 +95,7 @@ import {
   throwUnexpectedRequestError,
 } from "../util/http.js";
 import { GetReadWriteAccess } from "../util/query.js";
-import {
-  RetryInfo,
-} from "../util/retries.js";
+import { RetryInfo } from "../util/retries.js";
 import { getExchangeDetails } from "./exchanges.js";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
 import { guardOperationException } from "./common.js";
@@ -606,9 +604,9 @@ async function failProposalPermanently(
 
 function getProposalRequestTimeout(proposal: ProposalRecord): Duration {
   return Duration.clamp({
-    lower: Duration.fromSpec({ seconds: 1}),
-    upper: Duration.fromSpec({seconds: 60}),
-    value: getRetryDuration(proposal.retryInfo),
+    lower: Duration.fromSpec({ seconds: 1 }),
+    upper: Duration.fromSpec({ seconds: 60 }),
+    value: RetryInfo.getDuration(proposal.retryInfo),
   });
 }
 
