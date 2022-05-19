@@ -37,8 +37,8 @@ export interface RetryPolicy {
 
 const defaultRetryPolicy: RetryPolicy = {
   backoffBase: 1.5,
-  backoffDelta: { d_ms: 200 },
-  maxTimeout: { d_ms: 6000 },
+  backoffDelta: Duration.fromSpec({ seconds: 1 }),
+  maxTimeout: Duration.fromSpec({ minutes: 1 }),
 };
 
 function updateTimeout(
