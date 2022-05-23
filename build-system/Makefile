@@ -40,11 +40,31 @@ clean:
 submodules-update:
 	git submodule update --recursive --remote
 
+.PHONY: compile
+compile:
+	pnpm install -r --frozen-lockfile
+	pnpm run compile
+
 .PHONY: check
 check:
 	pnpm install -r --frozen-lockfile
 	pnpm run compile
 	pnpm run check
+
+.PHONY: anastasis-webui
+anastasis-webui:
+	pnpm install --frozen-lockfile --filter @gnu-taler/anastasis-webui...
+	pnpm run compile --filter @gnu-taler/anastasis-webui...
+
+.PHONY: anastasis-webui-dev
+anastasis-webui-dev:
+	pnpm install --frozen-lockfile --filter @gnu-taler/anastasis-webui...
+	pnpm run dev --filter @gnu-taler/anastasis-webui...
+
+.PHONY: anastasis-webui-storybook
+anastasis-webui-storybook:
+	pnpm install --frozen-lockfile --filter @gnu-taler/anastasis-webui...
+	pnpm run storybook --filter @gnu-taler/anastasis-webui...
 
 .PHONY: webextension
 webextension:
