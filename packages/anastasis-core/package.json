@@ -6,6 +6,7 @@
   "module": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "scripts": {
+    "prepare": "tsc && rollup -c",
     "compile": "tsc && rollup -c",
     "pretty": "prettier --write src",
     "test": "tsc && ava",
