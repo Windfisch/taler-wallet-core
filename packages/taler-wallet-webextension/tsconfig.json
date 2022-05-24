@@ -11,6 +11,8 @@
     "moduleResolution": "Node",
     "module": "ESNext",
     "target": "ES6",
+    "skipLibCheck": true,
+    "preserveSymlinks": true,
     "noImplicitAny": true,
     "outDir": "lib",
     "noEmitOnError": true,
