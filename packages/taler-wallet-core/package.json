@@ -12,7 +12,6 @@
   "author": "Florian Dold",
   "license": "GPL-3.0",
   "scripts": {
-    "prepare": "tsc && rollup -c",
     "compile": "tsc && rollup -c",
     "pretty": "prettier --write src",
     "test": "tsc && ava",
