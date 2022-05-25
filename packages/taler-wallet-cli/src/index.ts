@@ -46,6 +46,9 @@ import {
   LogLevel,
   setGlobalLogLevelFromString,
   parsePaytoUri,
+  AgeRestriction,
+  getRandomBytes,
+  encodeCrock,
 } from "@gnu-taler/taler-util";
 import {
   NodeHttpLib,
@@ -59,6 +62,7 @@ import {
   CryptoDispatcher,
   SynchronousCryptoWorkerFactory,
   nativeCrypto,
+  performanceNow,
 } from "@gnu-taler/taler-wallet-core";
 import { lintExchangeDeployment } from "./lint.js";
 import { runBench1 } from "./bench1.js";
@@ -1076,6 +1080,75 @@ deploymentConfigCli
 const testCli = walletCli.subcommand("testingArgs", "testing", {
   help: "Subcommands for testing.",
 });
+
+testCli
+  .subcommand("withdrawTestkudos", "withdraw-testkudos")
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      wallet.client.call(WalletApiOperation.WithdrawTestkudos, {});
+    });
+  });
+
+testCli
+  .subcommand("benchmarkAgeRestrictions", "benchmark-age-restrictions")
+  .action(async (args) => {
+    const numReps = 100;
+    let tCommit: bigint = BigInt(0);
+    let tAttest: bigint = BigInt(0);
+    let tVerify: bigint = BigInt(0);
+    let tDerive: bigint = BigInt(0);
+    let tCompare: bigint = BigInt(0);
+    let start: bigint;
+
+    console.log("starting benchmark");
+
+    for (let i = 0; i < numReps; i++) {
+      console.log(`doing iteration ${i}`);
+      start = process.hrtime.bigint();
+      const commitProof = await AgeRestriction.restrictionCommit(
+        0b1000001010101010101001,
+        21,
+      );
+      tCommit = tCommit + process.hrtime.bigint() - start;
+
+      start = process.hrtime.bigint();
+      const attest = AgeRestriction.commitmentAttest(commitProof, 18);
+      tAttest = tAttest + process.hrtime.bigint() - start;
+
+      start = process.hrtime.bigint();
+      const attestRes = AgeRestriction.commitmentVerify(
+        commitProof.commitment,
+        attest,
+        18,
+      );
+      tVerify = tVerify + process.hrtime.bigint() - start;
+      if (!attestRes) {
+        throw Error();
+      }
+
+      const salt = encodeCrock(getRandomBytes(32));
+      start = process.hrtime.bigint();
+      const deriv = await AgeRestriction.commitmentDerive(commitProof, salt);
+      tDerive = tDerive + process.hrtime.bigint() - start;
+
+      start = process.hrtime.bigint();
+      const res2 = await AgeRestriction.commitCompare(
+        deriv.commitment,
+        commitProof.commitment,
+        salt,
+      );
+      tCompare = tCompare + process.hrtime.bigint() - start;
+      if (!res2) {
+        throw Error();
+      }
+    }
+
+    console.log(`edx25519-commit (ns): ${tCommit / BigInt(numReps)}`);
+    console.log(`edx25519-attest (ns): ${tAttest / BigInt(numReps)}`);
+    console.log(`edx25519-verify (ns): ${tVerify / BigInt(numReps)}`);
+    console.log(`edx25519-derive (ns): ${tDerive / BigInt(numReps)}`);
+    console.log(`edx25519-compare (ns): ${tCompare / BigInt(numReps)}`);
+  });
 
 testCli.subcommand("logtest", "logtest").action(async (args) => {
   logger.trace("This is a trace message.");

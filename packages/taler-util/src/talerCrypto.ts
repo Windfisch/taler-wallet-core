@@ -679,7 +679,8 @@ export function hashDenomPub(pub: DenominationPubKey): Uint8Array {
     return nacl.hash(uint8ArrayBuf);
   } else {
     throw Error(
-      `unsupported cipher (${(pub as DenominationPubKey).cipher
+      `unsupported cipher (${
+        (pub as DenominationPubKey).cipher
       }), unable to hash`,
     );
   }
@@ -783,7 +784,7 @@ export enum TalerSignaturePurpose {
 export class SignaturePurposeBuilder {
   private chunks: Uint8Array[] = [];
 
-  constructor(private purposeNum: number) { }
+  constructor(private purposeNum: number) {}
 
   put(bytes: Uint8Array): SignaturePurposeBuilder {
     this.chunks.push(Uint8Array.from(bytes));
@@ -1031,6 +1032,27 @@ export namespace AgeRestriction {
     };
   }
 
+  /**
+   * Check that c1 = c2*salt
+   */
+  export async function commitCompare(
+    c1: AgeCommitment,
+    c2: AgeCommitment,
+    salt: OpaqueData,
+  ): Promise<boolean> {
+    if (c1.publicKeys.length != c2.publicKeys.length) {
+      return false;
+    }
+    for (let i = 0; i < c1.publicKeys.length; i++) {
+      const k1 = c1.publicKeys[i];
+      const k2 = await Edx25519.publicKeyDerive(c2.publicKeys[i], salt);
+      if (k1 != k2) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   export async function commitmentDerive(
     commitmentProof: AgeCommitmentProof,
     salt: OpaqueData,
@@ -1081,9 +1103,24 @@ export namespace AgeRestriction {
   }
 
   export function commitmentVerify(
-    commitmentProof: AgeCommitmentProof,
+    commitment: AgeCommitment,
+    sig: string,
     age: number,
-  ): Edx25519Signature {
-    throw Error("not implemented");
+  ): boolean {
+    const d = buildSigPS(TalerSignaturePurpose.WALLET_AGE_ATTESTATION)
+      .put(bufferForUint32(commitment.mask))
+      .put(bufferForUint32(age))
+      .build();
+    const group = getAgeGroupIndex(commitment.mask, age);
+    if (group === 0) {
+      // No attestation required.
+      return true;
+    }
+    const pub = commitment.publicKeys[group - 1];
+    return nacl.crypto_edx25519_sign_detached_verify(
+      d,
+      decodeCrock(sig),
+      decodeCrock(pub),
+    );
   }
 }
