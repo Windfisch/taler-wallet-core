@@ -1089,65 +1089,98 @@ testCli
     });
   });
 
+class PerfTimer {
+  tStarted: bigint | undefined;
+  tSum = BigInt(0);
+  tSumSq = BigInt(0);
+
+  start() {
+    this.tStarted = process.hrtime.bigint();
+  }
+
+  stop() {
+    const now = process.hrtime.bigint();
+    const s = this.tStarted;
+    if (s == null) {
+      throw Error();
+    }
+    this.tSum = this.tSum + (now - s);
+    this.tSumSq = this.tSumSq + (now - s) * (now - s);
+  }
+
+  mean(nRuns: number): number {
+    return Number(this.tSum / BigInt(nRuns));
+  }
+
+  stdev(nRuns: number) {
+    const m = this.tSum / BigInt(nRuns);
+    const x = (this.tSumSq / BigInt(nRuns)) - m * m;
+    return Math.floor(Math.sqrt(Number(x)));
+  }
+}
+
 testCli
   .subcommand("benchmarkAgeRestrictions", "benchmark-age-restrictions")
+  .requiredOption("reps", ["--reps"], clk.INT, {
+    default: 100,
+    help: "repetitions (default: 100)"
+  })
   .action(async (args) => {
-    const numReps = 100;
-    let tCommit: bigint = BigInt(0);
-    let tAttest: bigint = BigInt(0);
-    let tVerify: bigint = BigInt(0);
-    let tDerive: bigint = BigInt(0);
-    let tCompare: bigint = BigInt(0);
-    let start: bigint;
+    const numReps = args.benchmarkAgeRestrictions.reps ?? 100;
+    let tCommit = new PerfTimer();
+    let tAttest = new PerfTimer();
+    let tVerify = new PerfTimer();
+    let tDerive = new PerfTimer();
+    let tCompare = new PerfTimer();
 
     console.log("starting benchmark");
 
     for (let i = 0; i < numReps; i++) {
       console.log(`doing iteration ${i}`);
-      start = process.hrtime.bigint();
+      tCommit.start();
       const commitProof = await AgeRestriction.restrictionCommit(
         0b1000001010101010101001,
         21,
       );
-      tCommit = tCommit + process.hrtime.bigint() - start;
+      tCommit.stop();
 
-      start = process.hrtime.bigint();
+      tAttest.start();
       const attest = AgeRestriction.commitmentAttest(commitProof, 18);
-      tAttest = tAttest + process.hrtime.bigint() - start;
+      tAttest.stop();
 
-      start = process.hrtime.bigint();
+      tVerify.start();
       const attestRes = AgeRestriction.commitmentVerify(
         commitProof.commitment,
         attest,
         18,
       );
-      tVerify = tVerify + process.hrtime.bigint() - start;
+      tVerify.stop();
       if (!attestRes) {
         throw Error();
       }
 
       const salt = encodeCrock(getRandomBytes(32));
-      start = process.hrtime.bigint();
+      tDerive.start();
       const deriv = await AgeRestriction.commitmentDerive(commitProof, salt);
-      tDerive = tDerive + process.hrtime.bigint() - start;
+      tDerive.stop();
 
-      start = process.hrtime.bigint();
+      tCompare.start();
       const res2 = await AgeRestriction.commitCompare(
         deriv.commitment,
         commitProof.commitment,
         salt,
       );
-      tCompare = tCompare + process.hrtime.bigint() - start;
+      tCompare.stop();
       if (!res2) {
         throw Error();
       }
     }
 
-    console.log(`edx25519-commit (ns): ${tCommit / BigInt(numReps)}`);
-    console.log(`edx25519-attest (ns): ${tAttest / BigInt(numReps)}`);
-    console.log(`edx25519-verify (ns): ${tVerify / BigInt(numReps)}`);
-    console.log(`edx25519-derive (ns): ${tDerive / BigInt(numReps)}`);
-    console.log(`edx25519-compare (ns): ${tCompare / BigInt(numReps)}`);
+    console.log(`edx25519-commit (ns): ${tCommit.mean(numReps)} (stdev ${tCommit.stdev(numReps)})`);
+    console.log(`edx25519-attest (ns): ${tAttest.mean(numReps)} (stdev ${tAttest.stdev(numReps)})`);
+    console.log(`edx25519-verify (ns): ${tVerify.mean(numReps)} (stdev ${tVerify.stdev(numReps)})`);
+    console.log(`edx25519-derive (ns): ${tDerive.mean(numReps)} (stdev ${tDerive.stdev(numReps)})`);
+    console.log(`edx25519-compare (ns): ${tCompare.mean(numReps)} (stdev ${tCompare.stdev(numReps)})`);
   });
 
 testCli.subcommand("logtest", "logtest").action(async (args) => {
