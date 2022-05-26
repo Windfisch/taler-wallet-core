@@ -87,7 +87,7 @@ export const WalletBox = styled.div<{ noPadding?: boolean }>`
   justify-content: space-between;
   align-items: center;
   & > * {
-    width: 500px;
+    width: 600px;
   }
   & > section {
     padding: ${({ noPadding }) => (noPadding ? "0px" : "8px")};
@@ -660,6 +660,12 @@ export const WarningText = styled.div`
 export const SmallText = styled.div`
   font-size: small;
 `;
+
+export const SmallBoldText = styled.div`
+  font-size: small;
+  font-weight: bold;
+`;
+
 export const LargeText = styled.div`
   font-size: large;
 `;

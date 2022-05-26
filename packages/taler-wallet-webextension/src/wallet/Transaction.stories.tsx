@@ -30,6 +30,7 @@ import {
   TransactionTip,
   TransactionType,
   TransactionWithdrawal,
+  WithdrawalDetails,
   WithdrawalType,
 } from "@gnu-taler/taler-util";
 import { DevContextProviderForTesting } from "../context/devContext.js";
@@ -57,6 +58,8 @@ const commonTransaction = {
   transactionId: "12",
 } as TransactionCommon;
 
+import merchantIcon from "../../static-dev/merchant-icon-11.jpeg";
+
 const exampleData = {
   withdraw: {
     ...commonTransaction,
@@ -65,27 +68,34 @@ const exampleData = {
     withdrawalDetails: {
       confirmed: false,
       reservePub: "A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
-      exchangePaytoUris: ["payto://x-taler-bank/bank/account"],
+      exchangePaytoUris: ["payto://x-taler-bank/bank.demo.taler.net/Exchange"],
       type: WithdrawalType.ManualTransfer,
     },
   } as TransactionWithdrawal,
   payment: {
     ...commonTransaction,
-    amountEffective: "KUDOS:11",
+    amountEffective: "KUDOS:12",
     type: TransactionType.Payment,
     info: {
       contractTermsHash: "ASDZXCASD",
       merchant: {
         name: "the merchant",
+        logo: merchantIcon,
+        website: "https://www.themerchant.taler",
+        email: "contact@merchant.taler",
       },
       orderId: "2021.167-03NPY6MCYMVGT",
       products: [],
       summary: "Essay: Why the Devil's Advocate Doesn't Help Reach the Truth",
       fulfillmentMessage: "",
+      // delivery_date: { t_s: 1 },
+      // delivery_location: {
+      //   address_lines: [""],
+      // },
     },
     refundPending: undefined,
-    totalRefundEffective: "USD:0",
-    totalRefundRaw: "USD:0",
+    totalRefundEffective: "KUDOS:0",
+    totalRefundRaw: "KUDOS:0",
     proposalId: "1EMJJH8EP1NX3XF7733NCYS2DBEJW4Q2KA5KEB37MCQJQ8Q5HMC0",
     status: PaymentStatus.Accepted,
   } as TransactionPayment,
@@ -93,7 +103,7 @@ const exampleData = {
     ...commonTransaction,
     type: TransactionType.Deposit,
     depositGroupId: "#groupId",
-    targetPaytoUri: "payto://x-taler-bank/bank/account",
+    targetPaytoUri: "payto://x-taler-bank/bank.demo.taler.net/Exchange",
   } as TransactionDeposit,
   refresh: {
     ...commonTransaction,
@@ -117,7 +127,7 @@ const exampleData = {
       },
       orderId: "2021.167-03NPY6MCYMVGT",
       products: [],
-      summary: "the summary",
+      summary: "Essay: Why the Devil's Advocate Doesn't Help Reach the Truth",
       fulfillmentMessage: "",
     },
     refundPending: undefined,
@@ -143,20 +153,27 @@ export const Withdraw = createExample(TestedComponent, {
   transaction: exampleData.withdraw,
 });
 
-export const WithdrawOneMinuteAgo = createExample(TestedComponent, {
+export const WithdrawFiveMinutesAgo = createExample(TestedComponent, () => ({
   transaction: {
     ...exampleData.withdraw,
-    timestamp: TalerProtocolTimestamp.fromSeconds(new Date().getTime() - 60),
+    timestamp: TalerProtocolTimestamp.fromSeconds(
+      new Date().getTime() / 1000 - 60 * 5,
+    ),
   },
-});
+}));
 
-export const WithdrawOneMinuteAgoAndPending = createExample(TestedComponent, {
-  transaction: {
-    ...exampleData.withdraw,
-    timestamp: TalerProtocolTimestamp.fromSeconds(new Date().getTime() - 60),
-    pending: true,
-  },
-});
+export const WithdrawFiveMinutesAgoAndPending = createExample(
+  TestedComponent,
+  () => ({
+    transaction: {
+      ...exampleData.withdraw,
+      timestamp: TalerProtocolTimestamp.fromSeconds(
+        new Date().getTime() / 1000 - 60 * 5,
+      ),
+      pending: true,
+    },
+  }),
+);
 
 export const WithdrawError = createExample(TestedComponent, {
   transaction: {
@@ -177,17 +194,17 @@ export const WithdrawErrorInDevMode = createExampleInCustomContext(
   { value: true },
 );
 
-export const WithdrawPendingManual = createExample(TestedComponent, {
+export const WithdrawPendingManual = createExample(TestedComponent, () => ({
   transaction: {
     ...exampleData.withdraw,
     withdrawalDetails: {
       type: WithdrawalType.ManualTransfer,
       exchangePaytoUris: ["payto://iban/asdasdasd"],
       reservePub: "A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
-    },
+    } as WithdrawalDetails,
     pending: true,
   },
-});
+}));
 
 export const WithdrawPendingTalerBankUnconfirmed = createExample(
   TestedComponent,
@@ -231,10 +248,95 @@ export const PaymentError = createExample(TestedComponent, {
   },
 });
 
-export const PaymentWithoutFee = createExample(TestedComponent, {
+export const PaymentWithRefund = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.payment,
+    amountRaw: "KUDOS:12",
+    totalRefundEffective: "KUDOS:1",
+    totalRefundRaw: "KUDOS:1",
+  },
+});
+
+export const PaymentWithDeliveryDate = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.payment,
+    amountRaw: "KUDOS:12",
+    info: {
+      ...exampleData.payment.info,
+      delivery_date: {
+        t_s: new Date().getTime() / 1000,
+      },
+    },
+  },
+});
+
+export const PaymentWithDeliveryAddr = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.payment,
+    amountRaw: "KUDOS:12",
+    info: {
+      ...exampleData.payment.info,
+      delivery_location: {
+        country: "Argentina",
+        street: "Elm Street",
+        district: "CABA",
+        post_code: "1101",
+      },
+    },
+  },
+});
+
+export const PaymentWithDeliveryFull = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.payment,
+    amountRaw: "KUDOS:12",
+    info: {
+      ...exampleData.payment.info,
+      delivery_date: {
+        t_s: new Date().getTime() / 1000,
+      },
+      delivery_location: {
+        country: "Argentina",
+        street: "Elm Street",
+        district: "CABA",
+        post_code: "1101",
+      },
+    },
+  },
+});
+
+export const PaymentWithRefundPending = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.payment,
+    amountRaw: "KUDOS:12",
+    refundPending: "KUDOS:3",
+    totalRefundEffective: "KUDOS:1",
+    totalRefundRaw: "KUDOS:1",
+  },
+});
+
+export const PaymentWithFeeAndRefund = createExample(TestedComponent, {
   transaction: {
     ...exampleData.payment,
     amountRaw: "KUDOS:11",
+    totalRefundEffective: "KUDOS:1",
+    totalRefundRaw: "KUDOS:1",
+  },
+});
+
+export const PaymentWithFeeAndRefundFee = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.payment,
+    amountRaw: "KUDOS:11",
+    totalRefundEffective: "KUDOS:1",
+    totalRefundRaw: "KUDOS:2",
+  },
+});
+
+export const PaymentWithoutFee = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.payment,
+    amountRaw: "KUDOS:12",
   },
 });
 
@@ -249,7 +351,7 @@ export const PaymentWithProducts = createExample(TestedComponent, {
     ...exampleData.payment,
     info: {
       ...exampleData.payment.info,
-      summary: "this order has 5 products",
+      summary: "summary of 5 products",
       products: [
         {
           description: "t-shirt",
@@ -359,21 +461,4 @@ export const RefundError = createExample(TestedComponent, {
 
 export const RefundPending = createExample(TestedComponent, {
   transaction: { ...exampleData.refund, pending: true },
-});
-
-export const RefundWithProducts = createExample(TestedComponent, {
-  transaction: {
-    ...exampleData.refund,
-    info: {
-      ...exampleData.refund.info,
-      products: [
-        {
-          description: "t-shirt",
-        },
-        {
-          description: "beer",
-        },
-      ],
-    },
-  } as TransactionRefund,
 });

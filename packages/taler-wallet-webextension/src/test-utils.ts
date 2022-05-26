@@ -26,22 +26,27 @@ options.requestAnimationFrame = (fn: () => void) => {
 
 export function createExample<Props>(
   Component: FunctionalComponent<Props>,
-  props: Partial<Props>,
+  props: Partial<Props> | (() => Partial<Props>),
 ): ComponentChildren {
+  //FIXME: props are evaluated on build time
+  // in some cases we want to evaluated the props on render time so we can get some relative timestamp
+  // check how we can build evaluatedProps in render time 
+  const evaluatedProps = typeof props === "function" ? props() : props
   const Render = (args: any): VNode => create(Component, args);
-  Render.args = props;
+  Render.args = evaluatedProps;
   return Render;
 }
 
 export function createExampleWithCustomContext<Props, ContextProps>(
   Component: FunctionalComponent<Props>,
-  props: Partial<Props>,
+  props: Partial<Props> | (() => Partial<Props>),
   ContextProvider: FunctionalComponent<ContextProps>,
   contextProps: Partial<ContextProps>,
 ): ComponentChildren {
+  const evaluatedProps = typeof props === "function" ? props() : props
   const Render = (args: any): VNode => create(Component, args);
   const WithContext = (args: any): VNode => create(ContextProvider, { ...contextProps, children: [Render(args)] } as any);
-  WithContext.args = props
+  WithContext.args = evaluatedProps
   return WithContext
 }
 

@@ -44,7 +44,7 @@ export function BalanceTable({
                 width: "100%",
               }}
             >
-              {Amounts.stringifyValue(av)}
+              {Amounts.stringifyValue(av, 2)}
             </td>
           </tr>
         );

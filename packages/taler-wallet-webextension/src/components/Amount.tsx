@@ -6,7 +6,7 @@ export function Amount({ value }: { value: AmountJson | AmountString }): VNode {
   const amount = Amounts.stringifyValue(aj, 2);
   return (
     <Fragment>
-      {amount} {aj.currency}
+      {amount}&nbsp;{aj.currency}
     </Fragment>
   );
 }

@@ -16,14 +16,24 @@
 
 import {
   AbsoluteTime,
+  AmountJson,
   Amounts,
+  Location,
   NotificationType,
   parsePaytoUri,
   parsePayUri,
+  TalerProtocolTimestamp,
   Transaction,
+  TransactionDeposit,
+  TransactionPayment,
+  TransactionRefresh,
+  TransactionRefund,
+  TransactionTip,
   TransactionType,
+  TransactionWithdrawal,
   WithdrawalType,
 } from "@gnu-taler/taler-util";
+import { styled } from "@linaria/react";
 import { differenceInSeconds } from "date-fns";
 import { ComponentChildren, Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
@@ -33,15 +43,17 @@ import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType.js"
 import { ErrorTalerOperation } from "../components/ErrorTalerOperation.js";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
-import { Part, PartPayto } from "../components/Part.js";
+import { Kind, Part, PartCollapsible, PartPayto } from "../components/Part.js";
 import {
   Button,
+  ButtonBox,
   ButtonDestructive,
   ButtonPrimary,
   CenteredDialog,
   InfoBox,
   ListOfProducts,
   Overlay,
+  Row,
   RowBorderGray,
   SmallLightText,
   SubTitle,
@@ -119,6 +131,14 @@ export interface WalletTransactionProps {
   onBack: () => void;
 }
 
+const PurchaseDetailsTable = styled.table`
+  width: 100%;
+
+  & > tr > td:nth-child(2n) {
+    text-align: right;
+  }
+`;
+
 export function TransactionView({
   transaction,
   onDelete,
@@ -168,9 +188,7 @@ export function TransactionView({
             </WarningBox>
           )}
         </section>
-        <section>
-          <div style={{ textAlign: "center" }}>{children}</div>
-        </section>
+        <section>{children}</section>
         <footer>
           <div />
           <div>
@@ -189,10 +207,8 @@ export function TransactionView({
   }
 
   if (transaction.type === TransactionType.Withdrawal) {
-    const fee = Amounts.sub(
-      Amounts.parseOrThrow(transaction.amountRaw),
-      Amounts.parseOrThrow(transaction.amountEffective),
-    ).amount;
+    const total = Amounts.parseOrThrow(transaction.amountEffective);
+    const chosen = Amounts.parseOrThrow(transaction.amountRaw);
     return (
       <TransactionTemplate>
         {confirmBeforeForget ? (
@@ -219,205 +235,125 @@ export function TransactionView({
             </CenteredDialog>
           </Overlay>
         ) : undefined}
-        <SubTitle>
-          <i18n.Translate>Withdrawal</i18n.Translate>
-        </SubTitle>
-        <Time
-          timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)}
-          format="dd MMMM yyyy, HH:mm"
-        />
-        {transaction.pending ? (
-          transaction.withdrawalDetails.type ===
-          WithdrawalType.ManualTransfer ? (
-            <Fragment>
-              <BankDetailsByPaytoType
-                amount={Amounts.parseOrThrow(transaction.amountRaw)}
-                exchangeBaseUrl={transaction.exchangeBaseUrl}
-                payto={parsePaytoUri(
-                  transaction.withdrawalDetails.exchangePaytoUris[0],
-                )}
-                subject={transaction.withdrawalDetails.reservePub}
-              />
-              <p>
-                <WarningBox>
+        <Header
+          timestamp={transaction.timestamp}
+          type={i18n.str`Withdrawal`}
+          total={total}
+          kind="positive"
+        >
+          {transaction.exchangeBaseUrl}
+        </Header>
+
+        {!transaction.pending ? undefined : transaction.withdrawalDetails
+            .type === WithdrawalType.ManualTransfer ? (
+          <Fragment>
+            <BankDetailsByPaytoType
+              amount={chosen}
+              exchangeBaseUrl={transaction.exchangeBaseUrl}
+              payto={parsePaytoUri(
+                transaction.withdrawalDetails.exchangePaytoUris[0],
+              )}
+              subject={transaction.withdrawalDetails.reservePub}
+            />
+            <WarningBox>
+              <i18n.Translate>
+                Make sure to use the correct subject, otherwise the money will
+                not arrive in this wallet.
+              </i18n.Translate>
+            </WarningBox>
+          </Fragment>
+        ) : (
+          <Fragment>
+            {!transaction.withdrawalDetails.confirmed &&
+            transaction.withdrawalDetails.bankConfirmationUrl ? (
+              <InfoBox>
+                <div style={{ display: "block" }}>
                   <i18n.Translate>
-                    Make sure to use the correct subject, otherwise the money
-                    will not arrive in this wallet.
-                  </i18n.Translate>
-                </WarningBox>
-              </p>
-              <Part
-                big
-                title={<i18n.Translate>Total withdrawn</i18n.Translate>}
-                text={<Amount value={transaction.amountEffective} />}
-                kind="positive"
-              />
-              <Part
-                big
-                title={<i18n.Translate>Exchange fee</i18n.Translate>}
-                text={<Amount value={fee} />}
-                kind="negative"
-              />
-            </Fragment>
-          ) : (
-            <Fragment>
-              {!transaction.withdrawalDetails.confirmed &&
-              transaction.withdrawalDetails.bankConfirmationUrl ? (
-                <InfoBox>
-                  <i18n.Translate>
-                    The bank is waiting for confirmation. Go to the
+                    The bank did not yet confirmed the wire transfer. Go to the
+                    {` `}
                     <a
                       href={transaction.withdrawalDetails.bankConfirmationUrl}
                       target="_blank"
                       rel="noreferrer"
+                      style={{ display: "inline" }}
                     >
                       <i18n.Translate>bank site</i18n.Translate>
-                    </a>
+                    </a>{" "}
+                    and check there is no pending step.
                   </i18n.Translate>
-                </InfoBox>
-              ) : undefined}
-              {transaction.withdrawalDetails.confirmed && (
-                <InfoBox>
-                  <i18n.Translate>
-                    Waiting for the coins to arrive
-                  </i18n.Translate>
-                </InfoBox>
-              )}
-              <Part
-                big
-                title={<i18n.Translate>Total withdrawn</i18n.Translate>}
-                text={<Amount value={transaction.amountEffective} />}
-                kind="positive"
-              />
-              <Part
-                big
-                title={<i18n.Translate>Chosen amount</i18n.Translate>}
-                text={<Amount value={transaction.amountRaw} />}
-                kind="neutral"
-              />
-              <Part
-                big
-                title={<i18n.Translate>Exchange fee</i18n.Translate>}
-                text={<Amount value={fee} />}
-                kind="negative"
-              />
-            </Fragment>
-          )
-        ) : (
-          <Fragment>
-            <Part
-              big
-              title={<i18n.Translate>Total withdrawn</i18n.Translate>}
-              text={<Amount value={transaction.amountEffective} />}
-              kind="positive"
-            />
-            <Part
-              big
-              title={<i18n.Translate>Chosen amount</i18n.Translate>}
-              text={<Amount value={transaction.amountRaw} />}
-              kind="neutral"
-            />
-            <Part
-              big
-              title={<i18n.Translate>Exchange fee</i18n.Translate>}
-              text={<Amount value={fee} />}
-              kind="negative"
-            />
+                </div>
+              </InfoBox>
+            ) : undefined}
+            {transaction.withdrawalDetails.confirmed && (
+              <InfoBox>
+                <i18n.Translate>
+                  Bank has confirmed the wire transfer. Waiting for the exchange
+                  to send the coins
+                </i18n.Translate>
+              </InfoBox>
+            )}
           </Fragment>
         )}
         <Part
-          title={<i18n.Translate>Exchange</i18n.Translate>}
-          text={new URL(transaction.exchangeBaseUrl).hostname}
-          kind="neutral"
+          title={<i18n.Translate>Details</i18n.Translate>}
+          text={<WithdrawDetails transaction={transaction} />}
         />
       </TransactionTemplate>
     );
   }
 
-  const showLargePic = (): void => {
-    return;
-  };
-
   if (transaction.type === TransactionType.Payment) {
-    const fee = Amounts.sub(
-      Amounts.parseOrThrow(transaction.amountEffective),
-      Amounts.parseOrThrow(transaction.amountRaw),
-    ).amount;
-
-    const refundFee = Amounts.sub(
-      Amounts.parseOrThrow(transaction.totalRefundRaw),
-      Amounts.parseOrThrow(transaction.totalRefundEffective),
-    ).amount;
-    const refunded = Amounts.isNonZero(
-      Amounts.parseOrThrow(transaction.totalRefundRaw),
-    );
     const pendingRefund =
       transaction.refundPending === undefined
         ? undefined
         : Amounts.parseOrThrow(transaction.refundPending);
+
+    const total = Amounts.sub(
+      Amounts.parseOrThrow(transaction.amountEffective),
+      Amounts.parseOrThrow(transaction.totalRefundEffective),
+    ).amount;
+
     return (
       <TransactionTemplate>
-        <SubTitle>
-          <i18n.Translate>Payment</i18n.Translate>
-        </SubTitle>
-        <Time
-          timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)}
-          format="dd MMMM yyyy, HH:mm"
-        />
-        <br />
-        <Part
-          big
-          title={<i18n.Translate>Total paid</i18n.Translate>}
-          text={<Amount value={transaction.amountEffective} />}
+        <Header
+          timestamp={transaction.timestamp}
+          total={total}
+          type={i18n.str`Payment`}
           kind="negative"
-        />
-        {Amounts.isNonZero(fee) && (
-          <Fragment>
+        >
+          {transaction.info.fulfillmentUrl ? (
+            <a
+              href={transaction.info.fulfillmentUrl}
+              target="_bank"
+              rel="noreferrer"
+            >
+              {transaction.info.summary}
+            </a>
+          ) : (
+            transaction.info.summary
+          )}
+        </Header>
+        <br />
+        {pendingRefund !== undefined && Amounts.isNonZero(pendingRefund) && (
+          <InfoBox>
+            <i18n.Translate>
+              Merchant created a refund for this order but was not automatically
+              picked up.
+            </i18n.Translate>
             <Part
-              big
-              title={<i18n.Translate>Purchase amount</i18n.Translate>}
-              text={<Amount value={transaction.amountRaw} />}
-              kind="neutral"
-            />
-            <Part
-              title={<i18n.Translate>Purchase Fee</i18n.Translate>}
-              text={<Amount value={fee} />}
-              kind="negative"
-            />
-          </Fragment>
-        )}
-        {refunded && (
-          <Fragment>
-            <Part
-              big
-              title={<i18n.Translate>Total refunded</i18n.Translate>}
-              text={<Amount value={transaction.totalRefundEffective} />}
+              title={<i18n.Translate>Offer</i18n.Translate>}
+              text={<Amount value={pendingRefund} />}
               kind="positive"
             />
-            {Amounts.isNonZero(refundFee) && (
-              <Fragment>
-                <Part
-                  big
-                  title={<i18n.Translate>Refund amount</i18n.Translate>}
-                  text={<Amount value={transaction.totalRefundRaw} />}
-                  kind="neutral"
-                />
-                <Part
-                  title={<i18n.Translate>Refund fee</i18n.Translate>}
-                  text={<Amount value={refundFee} />}
-                  kind="negative"
-                />
-              </Fragment>
-            )}
-          </Fragment>
-        )}
-        {pendingRefund !== undefined && Amounts.isNonZero(pendingRefund) && (
-          <Part
-            big
-            title={<i18n.Translate>Refund pending</i18n.Translate>}
-            text={<Amount value={pendingRefund} />}
-            kind="positive"
-          />
+            <div>
+              <div />
+              <div>
+                <ButtonPrimary>
+                  <i18n.Translate>Accept</i18n.Translate>
+                </ButtonPrimary>
+              </div>
+            </div>
+          </InfoBox>
         )}
         <Part
           title={<i18n.Translate>Merchant</i18n.Translate>}
@@ -425,268 +361,630 @@ export function TransactionView({
           kind="neutral"
         />
         <Part
-          title={<i18n.Translate>Purchase</i18n.Translate>}
-          text={
-            transaction.info.fulfillmentUrl ? (
-              <a
-                href={transaction.info.fulfillmentUrl}
-                target="_bank"
-                rel="noreferrer"
-              >
-                {transaction.info.summary}
-              </a>
-            ) : (
-              transaction.info.summary
-            )
-          }
+          title={<i18n.Translate>Invoice ID</i18n.Translate>}
+          text={transaction.info.orderId}
           kind="neutral"
         />
         <Part
-          title={<i18n.Translate>Receipt</i18n.Translate>}
-          text={`#${transaction.info.orderId}`}
+          title={<i18n.Translate>Details</i18n.Translate>}
+          text={<PurchaseDetails transaction={transaction} />}
           kind="neutral"
         />
-
-        <div>
-          {transaction.info.products && transaction.info.products.length > 0 && (
-            <ListOfProducts>
-              {transaction.info.products.map((p, k) => (
-                <RowBorderGray key={k}>
-                  <a href="#" onClick={showLargePic}>
-                    <img src={p.image ? p.image : emptyImg} />
-                  </a>
-                  <div>
-                    {p.quantity && p.quantity > 0 && (
-                      <SmallLightText>
-                        x {p.quantity} {p.unit}
-                      </SmallLightText>
-                    )}
-                    <div>{p.description}</div>
-                  </div>
-                </RowBorderGray>
-              ))}
-            </ListOfProducts>
-          )}
-        </div>
       </TransactionTemplate>
     );
   }
 
   if (transaction.type === TransactionType.Deposit) {
-    const fee = Amounts.sub(
-      Amounts.parseOrThrow(transaction.amountEffective),
-      Amounts.parseOrThrow(transaction.amountRaw),
-    ).amount;
+    const total = Amounts.parseOrThrow(transaction.amountRaw);
     const payto = parsePaytoUri(transaction.targetPaytoUri);
     return (
       <TransactionTemplate>
-        <SubTitle>
-          <i18n.Translate>Deposit</i18n.Translate>
-        </SubTitle>
-        <Time
-          timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)}
-          format="dd MMMM yyyy, HH:mm"
-        />
-        <br />
+        <Header
+          timestamp={transaction.timestamp}
+          type={i18n.str`Deposit`}
+          total={total}
+          kind="negative"
+        >
+          {transaction.targetPaytoUri}
+        </Header>
+        {payto && <PartPayto big payto={payto} kind="neutral" />}
         <Part
-          big
-          title={<i18n.Translate>Total send</i18n.Translate>}
-          text={<Amount value={transaction.amountEffective} />}
+          title={<i18n.Translate>Details</i18n.Translate>}
+          text={<DepositDetails transaction={transaction} />}
           kind="neutral"
         />
-        {Amounts.isNonZero(fee) && (
-          <Fragment>
-            <Part
-              big
-              title={<i18n.Translate>Deposit amount</i18n.Translate>}
-              text={<Amount value={transaction.amountRaw} />}
-              kind="positive"
-            />
-            <Part
-              big
-              title={<i18n.Translate>Fee</i18n.Translate>}
-              text={<Amount value={fee} />}
-              kind="negative"
-            />
-          </Fragment>
-        )}
-        {payto && <PartPayto big payto={payto} kind="neutral" />}
       </TransactionTemplate>
     );
   }
 
   if (transaction.type === TransactionType.Refresh) {
-    const fee = Amounts.sub(
+    const total = Amounts.sub(
       Amounts.parseOrThrow(transaction.amountRaw),
       Amounts.parseOrThrow(transaction.amountEffective),
     ).amount;
+
     return (
       <TransactionTemplate>
-        <SubTitle>
-          <i18n.Translate>Refresh</i18n.Translate>
-        </SubTitle>
-        <Time
-          timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)}
-          format="dd MMMM yyyy, HH:mm"
-        />
-        <br />
-        <Part
-          big
-          title={<i18n.Translate>Total refresh</i18n.Translate>}
-          text={<Amount value={transaction.amountEffective} />}
+        <Header
+          timestamp={transaction.timestamp}
+          type={i18n.str`Refresh`}
+          total={total}
           kind="negative"
+        >
+          {transaction.exchangeBaseUrl}
+        </Header>
+        <Part
+          title={<i18n.Translate>Details</i18n.Translate>}
+          text={<RefreshDetails transaction={transaction} />}
         />
-        {Amounts.isNonZero(fee) && (
-          <Fragment>
-            <Part
-              big
-              title={<i18n.Translate>Refresh amount</i18n.Translate>}
-              text={<Amount value={transaction.amountRaw} />}
-              kind="neutral"
-            />
-            <Part
-              big
-              title={<i18n.Translate>Fee</i18n.Translate>}
-              text={<Amount value={fee} />}
-              kind="negative"
-            />
-          </Fragment>
-        )}
       </TransactionTemplate>
     );
   }
 
   if (transaction.type === TransactionType.Tip) {
-    const fee = Amounts.sub(
-      Amounts.parseOrThrow(transaction.amountRaw),
-      Amounts.parseOrThrow(transaction.amountEffective),
-    ).amount;
+    const total = Amounts.parseOrThrow(transaction.amountEffective);
+
     return (
       <TransactionTemplate>
-        <SubTitle>
-          <i18n.Translate>Tip</i18n.Translate>
-        </SubTitle>
-        <Time
-          timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)}
-          format="dd MMMM yyyy, HH:mm"
-        />
-        <br />
-        <Part
-          big
-          title={<i18n.Translate>Total tip</i18n.Translate>}
-          text={<Amount value={transaction.amountRaw} />}
+        <Header
+          timestamp={transaction.timestamp}
+          type={i18n.str`Tip`}
+          total={total}
           kind="positive"
+        >
+          {transaction.merchantBaseUrl}
+        </Header>
+        {/* <Part
+          title={<i18n.Translate>Merchant</i18n.Translate>}
+          text={transaction.info.merchant.name}
+          kind="neutral"
         />
-        {Amounts.isNonZero(fee) && (
-          <Fragment>
-            <Part
-              big
-              title={<i18n.Translate>Received amount</i18n.Translate>}
-              text={<Amount value={transaction.amountEffective} />}
-              kind="neutral"
-            />
-            <Part
-              big
-              title={<i18n.Translate>Fee</i18n.Translate>}
-              text={<Amount value={fee} />}
-              kind="negative"
-            />
-          </Fragment>
-        )}
+        <Part
+          title={<i18n.Translate>Invoice ID</i18n.Translate>}
+          text={transaction.info.orderId}
+          kind="neutral"
+        /> */}
+        <Part
+          title={<i18n.Translate>Details</i18n.Translate>}
+          text={<TipDetails transaction={transaction} />}
+        />
       </TransactionTemplate>
     );
   }
 
   if (transaction.type === TransactionType.Refund) {
-    const fee = Amounts.sub(
-      Amounts.parseOrThrow(transaction.amountRaw),
-      Amounts.parseOrThrow(transaction.amountEffective),
-    ).amount;
+    const total = Amounts.parseOrThrow(transaction.amountEffective);
     return (
       <TransactionTemplate>
-        <SubTitle>
-          <i18n.Translate>Refund</i18n.Translate>
-        </SubTitle>
-        <Time
-          timestamp={AbsoluteTime.fromTimestamp(transaction.timestamp)}
-          format="dd MMMM yyyy, HH:mm"
-        />
-        <br />
-        <Part
-          big
-          title={<i18n.Translate>Total refund</i18n.Translate>}
-          text={<Amount value={transaction.amountEffective} />}
+        <Header
+          timestamp={transaction.timestamp}
+          type={i18n.str`Refund`}
+          total={total}
           kind="positive"
-        />
-        {Amounts.isNonZero(fee) && (
-          <Fragment>
-            <Part
-              big
-              title={<i18n.Translate>Refund amount</i18n.Translate>}
-              text={<Amount value={transaction.amountRaw} />}
-              kind="neutral"
-            />
-            <Part
-              big
-              title={<i18n.Translate>Fee</i18n.Translate>}
-              text={<Amount value={fee} />}
-              kind="negative"
-            />
-          </Fragment>
-        )}
+        >
+          {transaction.info.summary}
+        </Header>
+
         <Part
           title={<i18n.Translate>Merchant</i18n.Translate>}
           text={transaction.info.merchant.name}
           kind="neutral"
         />
-
         <Part
-          title={<i18n.Translate>Purchase</i18n.Translate>}
+          title={<i18n.Translate>Original order ID</i18n.Translate>}
           text={
             <a
               href={Pages.balance_transaction.replace(
                 ":tid",
                 transaction.refundedTransactionId,
               )}
-              // href={transaction.info.fulfillmentUrl}
-              // target="_bank"
-              // rel="noreferrer"
             >
-              {transaction.info.summary}
+              {transaction.info.orderId}
             </a>
           }
           kind="neutral"
         />
         <Part
-          title={<i18n.Translate>Receipt</i18n.Translate>}
-          text={`#${transaction.info.orderId}`}
+          title={<i18n.Translate>Purchase summary</i18n.Translate>}
+          text={transaction.info.summary}
           kind="neutral"
         />
-
-        <div>
-          {transaction.info.products && transaction.info.products.length > 0 && (
-            <ListOfProducts>
-              {transaction.info.products.map((p, k) => (
-                <RowBorderGray key={k}>
-                  <a href="#" onClick={showLargePic}>
-                    <img src={p.image ? p.image : emptyImg} />
-                  </a>
-                  <div>
-                    {p.quantity && p.quantity > 0 && (
-                      <SmallLightText>
-                        x {p.quantity} {p.unit}
-                      </SmallLightText>
-                    )}
-                    <div>{p.description}</div>
-                  </div>
-                </RowBorderGray>
-              ))}
-            </ListOfProducts>
-          )}
-        </div>
+        <Part
+          title={<i18n.Translate>Details</i18n.Translate>}
+          text={<RefundDetails transaction={transaction} />}
+        />
       </TransactionTemplate>
     );
   }
 
   return <div />;
+}
+
+function DeliveryDetails({
+  date,
+  location,
+}: {
+  date: TalerProtocolTimestamp | undefined;
+  location: Location | undefined;
+}): VNode {
+  const { i18n } = useTranslationContext();
+  return (
+    <PurchaseDetailsTable>
+      {location && (
+        <Fragment>
+          {location.country && (
+            <tr>
+              <td>
+                <i18n.Translate>Country</i18n.Translate>
+              </td>
+              <td>{location.country}</td>
+            </tr>
+          )}
+          {location.address_lines && (
+            <tr>
+              <td>
+                <i18n.Translate>Address lines</i18n.Translate>
+              </td>
+              <td>{location.address_lines}</td>
+            </tr>
+          )}
+          {location.building_number && (
+            <tr>
+              <td>
+                <i18n.Translate>Building number</i18n.Translate>
+              </td>
+              <td>{location.building_number}</td>
+            </tr>
+          )}
+          {location.building_name && (
+            <tr>
+              <td>
+                <i18n.Translate>Building name</i18n.Translate>
+              </td>
+              <td>{location.building_name}</td>
+            </tr>
+          )}
+          {location.street && (
+            <tr>
+              <td>
+                <i18n.Translate>Street</i18n.Translate>
+              </td>
+              <td>{location.street}</td>
+            </tr>
+          )}
+          {location.post_code && (
+            <tr>
+              <td>
+                <i18n.Translate>Post code</i18n.Translate>
+              </td>
+              <td>{location.post_code}</td>
+            </tr>
+          )}
+          {location.town_location && (
+            <tr>
+              <td>
+                <i18n.Translate>Town location</i18n.Translate>
+              </td>
+              <td>{location.town_location}</td>
+            </tr>
+          )}
+          {location.town && (
+            <tr>
+              <td>
+                <i18n.Translate>Town</i18n.Translate>
+              </td>
+              <td>{location.town}</td>
+            </tr>
+          )}
+          {location.district && (
+            <tr>
+              <td>
+                <i18n.Translate>District</i18n.Translate>
+              </td>
+              <td>{location.district}</td>
+            </tr>
+          )}
+          {location.country_subdivision && (
+            <tr>
+              <td>
+                <i18n.Translate>Country subdivision</i18n.Translate>
+              </td>
+              <td>{location.country_subdivision}</td>
+            </tr>
+          )}
+        </Fragment>
+      )}
+
+      {!location || !date ? undefined : (
+        <tr>
+          <td colSpan={2}>
+            <hr />
+          </td>
+        </tr>
+      )}
+      {date && (
+        <Fragment>
+          <tr>
+            <td>Date</td>
+            <td>
+              <Time
+                timestamp={AbsoluteTime.fromTimestamp(date)}
+                format="dd MMMM yyyy, HH:mm"
+              />
+            </td>
+          </tr>
+        </Fragment>
+      )}
+    </PurchaseDetailsTable>
+  );
+}
+
+function PurchaseDetails({
+  transaction,
+}: {
+  transaction: TransactionPayment;
+}): VNode {
+  const { i18n } = useTranslationContext();
+
+  const partialFee = Amounts.sub(
+    Amounts.parseOrThrow(transaction.amountEffective),
+    Amounts.parseOrThrow(transaction.amountRaw),
+  ).amount;
+
+  const refundRaw = Amounts.parseOrThrow(transaction.totalRefundRaw);
+
+  const refundFee = Amounts.sub(
+    refundRaw,
+    Amounts.parseOrThrow(transaction.totalRefundEffective),
+  ).amount;
+
+  const fee = Amounts.sum([partialFee, refundFee]).amount;
+
+  const hasProducts =
+    transaction.info.products && transaction.info.products.length > 0;
+
+  const hasShipping =
+    transaction.info.delivery_date !== undefined ||
+    transaction.info.delivery_location !== undefined;
+
+  const showLargePic = (): void => {
+    return;
+  };
+
+  const total = Amounts.sub(
+    Amounts.parseOrThrow(transaction.amountEffective),
+    Amounts.parseOrThrow(transaction.totalRefundEffective),
+  ).amount;
+
+  return (
+    <PurchaseDetailsTable>
+      <tr>
+        <td>Price</td>
+        <td>
+          <Amount value={transaction.amountRaw} />
+        </td>
+      </tr>
+
+      {Amounts.isNonZero(refundRaw) && (
+        <tr>
+          <td>Refunded</td>
+          <td>
+            <Amount value={transaction.totalRefundEffective} />
+          </td>
+        </tr>
+      )}
+      {Amounts.isNonZero(fee) && (
+        <tr>
+          <td>Transaction fees</td>
+          <td>
+            <Amount value={fee} />
+          </td>
+        </tr>
+      )}
+      <tr>
+        <td colSpan={2}>
+          <hr />
+        </td>
+      </tr>
+      <tr>
+        <td>Total</td>
+        <td>
+          <Amount value={total} />
+        </td>
+      </tr>
+      {hasProducts && (
+        <tr>
+          <td colSpan={2}>
+            <PartCollapsible
+              big
+              title={<i18n.Translate>Products</i18n.Translate>}
+              text={
+                <ListOfProducts>
+                  {transaction.info.products?.map((p, k) => (
+                    <Row key={k}>
+                      <a href="#" onClick={showLargePic}>
+                        <img src={p.image ? p.image : emptyImg} />
+                      </a>
+                      <div>
+                        {p.quantity && p.quantity > 0 && (
+                          <SmallLightText>
+                            x {p.quantity} {p.unit}
+                          </SmallLightText>
+                        )}
+                        <div>{p.description}</div>
+                      </div>
+                    </Row>
+                  ))}
+                </ListOfProducts>
+              }
+            />
+          </td>
+        </tr>
+      )}
+      {hasShipping && (
+        <tr>
+          <td colSpan={2}>
+            <PartCollapsible
+              big
+              title={<i18n.Translate>Delivery</i18n.Translate>}
+              text={
+                <DeliveryDetails
+                  date={transaction.info.delivery_date}
+                  location={transaction.info.delivery_location}
+                />
+              }
+            />
+          </td>
+        </tr>
+      )}
+    </PurchaseDetailsTable>
+  );
+}
+
+function RefundDetails({
+  transaction,
+}: {
+  transaction: TransactionRefund;
+}): VNode {
+  const { i18n } = useTranslationContext();
+
+  const fee = Amounts.sub(
+    Amounts.parseOrThrow(transaction.amountRaw),
+    Amounts.parseOrThrow(transaction.amountEffective),
+  ).amount;
+
+  return (
+    <PurchaseDetailsTable>
+      <tr>
+        <td>Amount</td>
+        <td>
+          <Amount value={transaction.amountRaw} />
+        </td>
+      </tr>
+
+      {Amounts.isNonZero(fee) && (
+        <tr>
+          <td>Transaction fees</td>
+          <td>
+            <Amount value={fee} />
+          </td>
+        </tr>
+      )}
+      <tr>
+        <td colSpan={2}>
+          <hr />
+        </td>
+      </tr>
+      <tr>
+        <td>Total</td>
+        <td>
+          <Amount value={transaction.amountEffective} />
+        </td>
+      </tr>
+    </PurchaseDetailsTable>
+  );
+}
+
+function DepositDetails({
+  transaction,
+}: {
+  transaction: TransactionDeposit;
+}): VNode {
+  const { i18n } = useTranslationContext();
+
+  const fee = Amounts.sub(
+    Amounts.parseOrThrow(transaction.amountRaw),
+    Amounts.parseOrThrow(transaction.amountEffective),
+  ).amount;
+
+  return (
+    <PurchaseDetailsTable>
+      <tr>
+        <td>Amount</td>
+        <td>
+          <Amount value={transaction.amountRaw} />
+        </td>
+      </tr>
+
+      {Amounts.isNonZero(fee) && (
+        <tr>
+          <td>Transaction fees</td>
+          <td>
+            <Amount value={fee} />
+          </td>
+        </tr>
+      )}
+      <tr>
+        <td colSpan={2}>
+          <hr />
+        </td>
+      </tr>
+      <tr>
+        <td>Total transfer</td>
+        <td>
+          <Amount value={transaction.amountEffective} />
+        </td>
+      </tr>
+    </PurchaseDetailsTable>
+  );
+}
+function RefreshDetails({
+  transaction,
+}: {
+  transaction: TransactionRefresh;
+}): VNode {
+  const { i18n } = useTranslationContext();
+
+  const fee = Amounts.sub(
+    Amounts.parseOrThrow(transaction.amountRaw),
+    Amounts.parseOrThrow(transaction.amountEffective),
+  ).amount;
+
+  return (
+    <PurchaseDetailsTable>
+      <tr>
+        <td>Amount</td>
+        <td>
+          <Amount value={transaction.amountRaw} />
+        </td>
+      </tr>
+      <tr>
+        <td colSpan={2}>
+          <hr />
+        </td>
+      </tr>
+      <tr>
+        <td>Transaction fees</td>
+        <td>
+          <Amount value={fee} />
+        </td>
+      </tr>
+    </PurchaseDetailsTable>
+  );
+}
+
+function TipDetails({ transaction }: { transaction: TransactionTip }): VNode {
+  const { i18n } = useTranslationContext();
+
+  const fee = Amounts.sub(
+    Amounts.parseOrThrow(transaction.amountRaw),
+    Amounts.parseOrThrow(transaction.amountEffective),
+  ).amount;
+
+  return (
+    <PurchaseDetailsTable>
+      <tr>
+        <td>Amount</td>
+        <td>
+          <Amount value={transaction.amountRaw} />
+        </td>
+      </tr>
+
+      {Amounts.isNonZero(fee) && (
+        <tr>
+          <td>Transaction fees</td>
+          <td>
+            <Amount value={fee} />
+          </td>
+        </tr>
+      )}
+      <tr>
+        <td colSpan={2}>
+          <hr />
+        </td>
+      </tr>
+      <tr>
+        <td>Total</td>
+        <td>
+          <Amount value={transaction.amountEffective} />
+        </td>
+      </tr>
+    </PurchaseDetailsTable>
+  );
+}
+
+function WithdrawDetails({
+  transaction,
+}: {
+  transaction: TransactionWithdrawal;
+}): VNode {
+  const { i18n } = useTranslationContext();
+
+  const fee = Amounts.sub(
+    Amounts.parseOrThrow(transaction.amountRaw),
+    Amounts.parseOrThrow(transaction.amountEffective),
+  ).amount;
+
+  return (
+    <PurchaseDetailsTable>
+      <tr>
+        <td>Withdraw</td>
+        <td>
+          <Amount value={transaction.amountRaw} />
+        </td>
+      </tr>
+
+      {Amounts.isNonZero(fee) && (
+        <tr>
+          <td>Transaction fees</td>
+          <td>
+            <Amount value={fee} />
+          </td>
+        </tr>
+      )}
+      <tr>
+        <td colSpan={2}>
+          <hr />
+        </td>
+      </tr>
+      <tr>
+        <td>Total</td>
+        <td>
+          <Amount value={transaction.amountEffective} />
+        </td>
+      </tr>
+    </PurchaseDetailsTable>
+  );
+}
+
+function Header({
+  timestamp,
+  total,
+  children,
+  kind,
+  type,
+}: {
+  timestamp: TalerProtocolTimestamp;
+  total: AmountJson;
+  children: ComponentChildren;
+  kind: Kind;
+  type: string;
+}): VNode {
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        flexDirection: "row",
+      }}
+    >
+      <div>
+        <SubTitle>{children}</SubTitle>
+        <Time
+          timestamp={AbsoluteTime.fromTimestamp(timestamp)}
+          format="dd MMMM yyyy, HH:mm"
+        />
+      </div>
+      <div>
+        <SubTitle>
+          <Part
+            title={type}
+            text={<Amount value={total} />}
+            kind={kind}
+            showSign
+          />
+        </SubTitle>
+      </div>
+    </div>
+  );
 }

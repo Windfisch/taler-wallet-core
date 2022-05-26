@@ -330,9 +330,11 @@ function Application(): VNode {
       const hash = location.hash.substring(1);
       const found = document.getElementById(hash);
       if (found) {
-        found.scrollIntoView({
-          block: "center",
-        });
+        setTimeout(() => {
+          found.scrollIntoView({
+            block: "center",
+          });
+        }, 10);
       }
     }
   }, []);

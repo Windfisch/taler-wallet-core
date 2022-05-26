@@ -54,6 +54,7 @@ export const buildConfig = {
   loader: {
     '.svg': 'text',
     '.png': 'dataurl',
+    '.jpeg': 'dataurl',
   },
   target: [
     'es6'

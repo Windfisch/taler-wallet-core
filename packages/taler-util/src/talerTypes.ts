@@ -362,6 +362,9 @@ export interface MerchantInfo {
   name: string;
   jurisdiction?: Location;
   address?: Location;
+  logo?: string;
+  website?: string;
+  email?: string;
 }
 
 export interface Tax {

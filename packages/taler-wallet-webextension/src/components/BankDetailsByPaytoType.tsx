@@ -46,43 +46,47 @@ export function BankDetailsByPaytoType({
   if (payto.isKnown && payto.targetType === "bitcoin") {
     const min = segwitMinAmount(amount.currency);
     return (
-      <section style={{ textAlign: "left" }}>
+      <section
+        style={{
+          textAlign: "left",
+          border: "solid 1px black",
+          padding: 8,
+          borderRadius: 4,
+        }}
+      >
+        <p style={{ marginTop: 0 }}>Bitcoin transfer details</p>
         <p>
           <i18n.Translate>
-            Bitcoin exchange need a transaction with 3 output, one output is the
+            The exchange need a transaction with 3 output, one output is the
             exchange account and the other two are segwit fake address for
-            metadata with an minimum amount. Reserve pub : {subject}
+            metadata with an minimum amount.
           </i18n.Translate>
         </p>
+        <Row
+          literal
+          name={<i18n.Translate>Reserve</i18n.Translate>}
+          value={subject}
+        />
+
         <p>
           <i18n.Translate>
             In bitcoincore wallet use &apos;Add Recipient&apos; button to add
             two additional recipient and copy addresses and amounts
           </i18n.Translate>
-          <ul>
-            <li>
-              {payto.targetPath} {Amounts.stringifyValue(amount)} BTC
-            </li>
-            {payto.segwitAddrs.map((addr, i) => (
-              <li key={i}>
-                {addr} {Amounts.stringifyValue(min)} BTC
-              </li>
-            ))}
-          </ul>
-          <i18n.Translate>
-            In Electrum wallet paste the following three lines in &apos;Pay
-            to&apos; field :
-          </i18n.Translate>
-          <ul>
-            <li>
-              {payto.targetPath},{Amounts.stringifyValue(amount)}
-            </li>
-            {payto.segwitAddrs.map((addr, i) => (
-              <li key={i}>
-                {addr} {Amounts.stringifyValue(min)} BTC
-              </li>
-            ))}
-          </ul>
+        </p>
+        <table>
+          <tr>
+            <td>{payto.targetPath}</td>
+            <td>{Amounts.stringifyValue(amount)} BTC</td>
+          </tr>
+          {payto.segwitAddrs.map((addr, i) => (
+            <tr key={i}>
+              <td>{addr}</td>
+              <td>{Amounts.stringifyValue(min)} BTC</td>
+            </tr>
+          ))}
+        </table>
+        <p>
           <i18n.Translate>
             Make sure the amount show{" "}
             {Amounts.stringifyValue(Amounts.sum([amount, min, min]).amount)}{" "}
@@ -93,7 +97,7 @@ export function BankDetailsByPaytoType({
     );
   }
 
-  const firstPart = !payto.isKnown ? (
+  const accountPart = !payto.isKnown ? (
     <Row
       name={<i18n.Translate>Account</i18n.Translate>}
       value={payto.targetPath}
@@ -113,10 +117,17 @@ export function BankDetailsByPaytoType({
     <Row name={<i18n.Translate>IBAN</i18n.Translate>} value={payto.iban} />
   ) : undefined;
   return (
-    <div style={{ textAlign: "left" }}>
-      <p>Bank transfer details</p>
+    <div
+      style={{
+        textAlign: "left",
+        border: "solid 1px black",
+        padding: 8,
+        borderRadius: 4,
+      }}
+    >
+      <p style={{ marginTop: 0 }}>Bank transfer details</p>
       <table>
-        {firstPart}
+        {accountPart}
         <Row
           name={<i18n.Translate>Exchange</i18n.Translate>}
           value={exchangeBaseUrl}
@@ -176,7 +187,7 @@ function Row({
           </TooltipRight>
         )}
       </td>
-      <td>
+      <td style={{ paddingRight: 8 }}>
         <b>{name}</b>
       </td>
       {literal ? (

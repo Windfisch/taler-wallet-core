@@ -33,6 +33,7 @@ import {
   codecForInternationalizedString,
   codecForMerchantInfo,
   codecForProduct,
+  Location,
 } from "./talerTypes.js";
 import {
   Codec,
@@ -275,6 +276,17 @@ export interface OrderShortInfo {
    * List of products that are part of the order
    */
   products: Product[] | undefined;
+
+  /**
+   * Time indicating when the order should be delivered.
+   * May be overwritten by individual products.
+   */
+  delivery_date?: TalerProtocolTimestamp;
+
+  /**
+   * Delivery location for (all!) products.
+   */
+  delivery_location?: Location;
 
   /**
    * URL of the fulfillment, given by the merchant
