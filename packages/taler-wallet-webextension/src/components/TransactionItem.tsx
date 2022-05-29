@@ -207,7 +207,7 @@ function TransactionAmount(props: TransactionAmountProps): VNode {
     >
       <ExtraLargeText>
         {sign}
-        {Amounts.stringifyValue(props.amount)}
+        {Amounts.stringifyValue(props.amount, 2)}
       </ExtraLargeText>
       {props.pending && (
         <div>

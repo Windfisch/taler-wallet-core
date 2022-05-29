@@ -312,6 +312,15 @@ export function applyRefund(
 }
 
 /**
+ * Do refund for purchase.
+ */
+export function applyRefundFromPurchaseId(
+  purchaseId: string,
+): Promise<ApplyRefundResponse> {
+  return callBackend("applyRefundFromPurchaseId", { purchaseId });
+}
+
+/**
  * Get details about a pay operation.
  */
 export function preparePay(talerPayUri: string): Promise<PreparePayResult> {

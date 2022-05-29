@@ -799,6 +799,15 @@ export const codecForApplyRefundRequest = (): Codec<ApplyRefundRequest> =>
     .property("talerRefundUri", codecForString())
     .build("ApplyRefundRequest");
 
+export interface ApplyRefundFromPurchaseIdRequest {
+  purchaseId: string;
+}
+
+export const codecForApplyRefundFromPurchaseIdRequest = (): Codec<ApplyRefundFromPurchaseIdRequest> =>
+  buildCodecForObject<ApplyRefundFromPurchaseIdRequest>()
+    .property("purchaseId", codecForString())
+    .build("ApplyRefundFromPurchaseIdRequest");
+
 export interface GetWithdrawalDetailsForUriRequest {
   talerWithdrawUri: string;
   restrictAge?: number;

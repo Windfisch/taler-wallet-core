@@ -78,6 +78,7 @@ const exampleData = {
       summary: "the summary",
       fulfillmentMessage: "",
     },
+    refunds: [],
     refundPending: undefined,
     totalRefundEffective: "USD:0",
     totalRefundRaw: "USD:0",

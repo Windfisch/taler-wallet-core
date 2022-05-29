@@ -33,6 +33,7 @@ import {
   codecForAcceptTipRequest,
   codecForAddExchangeRequest,
   codecForAny,
+  codecForApplyRefundFromPurchaseIdRequest,
   codecForApplyRefundRequest,
   codecForConfirmPayRequest,
   codecForCreateDepositGroupRequest,
@@ -145,6 +146,7 @@ import {
 import {
   abortFailedPayWithRefund,
   applyRefund,
+  applyRefundFromPurchaseId,
   prepareRefund,
   processPurchaseQueryRefund
 } from "./operations/refund.js";
@@ -838,6 +840,10 @@ async function dispatchRequestInternal(
     case "applyRefund": {
       const req = codecForApplyRefundRequest().decode(payload);
       return await applyRefund(ws, req.talerRefundUri);
+    }
+    case "applyRefundFromPurchaseId": {
+      const req = codecForApplyRefundFromPurchaseIdRequest().decode(payload);
+      return await applyRefundFromPurchaseId(ws, req.purchaseId);
     }
     case "acceptBankIntegratedWithdrawal": {
       const req =

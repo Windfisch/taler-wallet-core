@@ -573,7 +573,7 @@ export async function applyRefund(
     throw Error("invalid refund URI");
   }
 
-  let purchase = await ws.db
+  const purchase = await ws.db
     .mktx((x) => ({
       purchases: x.purchases,
     }))
@@ -590,7 +590,15 @@ export async function applyRefund(
     );
   }
 
-  const proposalId = purchase.proposalId;
+  return applyRefundFromPurchaseId(ws, purchase.proposalId)
+}
+
+export async function applyRefundFromPurchaseId(
+  ws: InternalWalletState,
+  proposalId: string,
+): Promise<ApplyRefundResponse> {
+
+  logger.trace("applying refund for purchase", proposalId);
 
   logger.info("processing purchase for refund");
   const success = await ws.db
@@ -620,7 +628,7 @@ export async function applyRefund(
     });
   }
 
-  purchase = await ws.db
+  const purchase = await ws.db
     .mktx((x) => ({
       purchases: x.purchases,
     }))

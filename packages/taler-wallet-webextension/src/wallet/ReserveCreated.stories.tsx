@@ -45,7 +45,7 @@ export const TalerBank = createExample(TestedComponent, {
 export const IBAN = createExample(TestedComponent, {
   reservePub: "A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
   paytoURI: parsePaytoUri(
-    "payto://iban/ASDQWEASDZXCASDQWE?amount=COL%3A1&message=Taler+Withdrawal+A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
+    "payto://iban/ES8877998399652238?amount=COL%3A1&message=Taler+Withdrawal+A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
   ),
   amount: {
     currency: "USD",

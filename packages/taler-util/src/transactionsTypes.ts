@@ -244,6 +244,11 @@ export interface TransactionPayment extends TransactionCommon {
    * Amount pending to be picked up
    */
   refundPending: AmountString | undefined;
+
+  /**
+   * Reference to applied refunds
+   */
+  refunds: RefundInfoShort[];
 }
 
 export interface OrderShortInfo {
@@ -303,6 +308,13 @@ export interface OrderShortInfo {
    * Translations of fulfillmentMessage.
    */
   fulfillmentMessage_i18n?: InternationalizedString;
+}
+
+export interface RefundInfoShort {
+  transactionId: string,
+  timestamp: TalerProtocolTimestamp,
+  amountEffective: AmountString,
+  amountRaw: AmountString,
 }
 
 export interface TransactionRefund extends TransactionCommon {

@@ -24,6 +24,7 @@ import {
   Logger,
   OrderShortInfo,
   PaymentStatus,
+  RefundInfoShort,
   Transaction,
   TransactionsRequest,
   TransactionsResponse,
@@ -306,6 +307,7 @@ export async function getTransactions(
 
           let totalRefundRaw = Amounts.getZero(contractData.amount.currency);
           let totalRefundEffective = Amounts.getZero(contractData.amount.currency);
+          const refunds: RefundInfoShort[] = []
 
           for (const groupKey of refundGroupKeys.values()) {
             const refundTombstoneId = makeEventId(
@@ -345,6 +347,13 @@ export async function getTransactions(
                     refund.totalRefreshCostBound,
                   ).amount,
                 ).amount;
+
+                refunds.push({
+                  transactionId: refundTransactionId,
+                  timestamp: r0.obtainedTime,
+                  amountEffective: Amounts.stringify(amountEffective),
+                  amountRaw: Amounts.stringify(amountRaw),
+                })
               }
             }
             if (!r0) {
@@ -353,7 +362,6 @@ export async function getTransactions(
 
             totalRefundRaw = Amounts.add(totalRefundRaw, amountRaw).amount;
             totalRefundEffective = Amounts.add(totalRefundEffective, amountEffective).amount;
-
             transactions.push({
               type: TransactionType.Refund,
               info,
@@ -382,10 +390,11 @@ export async function getTransactions(
             pending:
               !pr.timestampFirstSuccessfulPay &&
               pr.abortStatus === AbortStatus.None,
+            refunds,
             timestamp: pr.timestampAccept,
             transactionId: paymentTransactionId,
             proposalId: pr.proposalId,
-            info: info,
+            info,
             frozen: pr.payFrozen ?? false,
             ...(err ? { error: err } : {}),
           });

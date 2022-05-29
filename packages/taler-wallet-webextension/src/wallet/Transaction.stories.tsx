@@ -93,6 +93,7 @@ const exampleData = {
       //   address_lines: [""],
       // },
     },
+    refunds: [],
     refundPending: undefined,
     totalRefundEffective: "KUDOS:0",
     totalRefundRaw: "KUDOS:0",
@@ -199,7 +200,7 @@ export const WithdrawPendingManual = createExample(TestedComponent, () => ({
     ...exampleData.withdraw,
     withdrawalDetails: {
       type: WithdrawalType.ManualTransfer,
-      exchangePaytoUris: ["payto://iban/asdasdasd"],
+      exchangePaytoUris: ["payto://iban/ES8877998399652238"],
       reservePub: "A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
     } as WithdrawalDetails,
     pending: true,
@@ -254,6 +255,14 @@ export const PaymentWithRefund = createExample(TestedComponent, {
     amountRaw: "KUDOS:12",
     totalRefundEffective: "KUDOS:1",
     totalRefundRaw: "KUDOS:1",
+    refunds: [
+      {
+        transactionId: "1123123",
+        amountRaw: "KUDOS:1",
+        amountEffective: "KUDOS:1",
+        timestamp: TalerProtocolTimestamp.fromSeconds(1546546544),
+      },
+    ],
   },
 });
 
@@ -409,6 +418,25 @@ export const PaymentWithLongSummary = createExample(TestedComponent, {
 
 export const Deposit = createExample(TestedComponent, {
   transaction: exampleData.deposit,
+});
+export const DepositTalerBank = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.deposit,
+    targetPaytoUri: "payto://x-taler-bank/bank.demo.taler.net/Exchange",
+  },
+});
+export const DepositBitcoin = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.deposit,
+    targetPaytoUri:
+      "payto://bitcoin/bcrt1q6ps8qs6v8tkqrnru4xqqqa6rfwcx5ufpdfqht4?amount=BTC:0.1&subject=0ZSX8SH0M30KHX8K3Y1DAMVGDQV82XEF9DG1HC4QMQ3QWYT4AF00",
+  },
+});
+export const DepositIBAN = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.deposit,
+    targetPaytoUri: "payto://iban/ES8877998399652238",
+  },
 });
 
 export const DepositError = createExample(TestedComponent, {

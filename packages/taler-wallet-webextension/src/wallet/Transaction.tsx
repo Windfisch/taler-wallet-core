@@ -22,6 +22,8 @@ import {
   NotificationType,
   parsePaytoUri,
   parsePayUri,
+  PaytoUri,
+  stringifyPaytoUri,
   TalerProtocolTimestamp,
   Transaction,
   TransactionDeposit,
@@ -50,6 +52,7 @@ import {
   ButtonDestructive,
   ButtonPrimary,
   CenteredDialog,
+  HistoryRow,
   InfoBox,
   ListOfProducts,
   Overlay,
@@ -83,7 +86,7 @@ async function getTransaction(tid: string): Promise<Transaction> {
 export function TransactionPage({ tid, goToWalletHistory }: Props): VNode {
   const { i18n } = useTranslationContext();
 
-  const state = useAsyncAsHook(() => getTransaction(tid));
+  const state = useAsyncAsHook(() => getTransaction(tid), [tid]);
 
   useEffect(() => {
     wxApi.onUpdateNotification([NotificationType.WithdrawGroupFinished], () => {
@@ -119,6 +122,7 @@ export function TransactionPage({ tid, goToWalletHistory }: Props): VNode {
       onRetry={() =>
         wxApi.retryTransaction(tid).then(() => goToWalletHistory(currency))
       }
+      onRefund={(id) => wxApi.applyRefundFromPurchaseId(id)}
       onBack={() => goToWalletHistory(currency)}
     />
   );
@@ -128,6 +132,7 @@ export interface WalletTransactionProps {
   transaction: Transaction;
   onDelete: () => void;
   onRetry: () => void;
+  onRefund: (id: string) => void;
   onBack: () => void;
 }
 
@@ -143,7 +148,7 @@ export function TransactionView({
   transaction,
   onDelete,
   onRetry,
-  onBack,
+  onRefund,
 }: WalletTransactionProps): VNode {
   const [confirmBeforeForget, setConfirmBeforeForget] = useState(false);
 
@@ -334,6 +339,40 @@ export function TransactionView({
           )}
         </Header>
         <br />
+        {transaction.refunds.length > 0 ? (
+          <Part
+            title={<i18n.Translate>Refunds</i18n.Translate>}
+            text={
+              <table>
+                {transaction.refunds.map((r, i) => {
+                  return (
+                    <tr key={i}>
+                      <td>
+                        {<Amount value={r.amountEffective} />}{" "}
+                        <a
+                          href={Pages.balance_transaction.replace(
+                            ":tid",
+                            r.transactionId,
+                          )}
+                        >
+                          was refunded
+                        </a>{" "}
+                        on{" "}
+                        {
+                          <Time
+                            timestamp={AbsoluteTime.fromTimestamp(r.timestamp)}
+                            format="dd MMMM yyyy"
+                          />
+                        }
+                      </td>
+                    </tr>
+                  );
+                })}
+              </table>
+            }
+            kind="neutral"
+          />
+        ) : undefined}
         {pendingRefund !== undefined && Amounts.isNonZero(pendingRefund) && (
           <InfoBox>
             <i18n.Translate>
@@ -348,7 +387,7 @@ export function TransactionView({
             <div>
               <div />
               <div>
-                <ButtonPrimary>
+                <ButtonPrimary onClick={() => onRefund(transaction.proposalId)}>
                   <i18n.Translate>Accept</i18n.Translate>
                 </ButtonPrimary>
               </div>
@@ -385,9 +424,9 @@ export function TransactionView({
           total={total}
           kind="negative"
         >
-          {transaction.targetPaytoUri}
+          {!payto ? transaction.targetPaytoUri : <NicePayto payto={payto} />}
         </Header>
-        {payto && <PartPayto big payto={payto} kind="neutral" />}
+        {payto && <PartPayto payto={payto} kind="neutral" />}
         <Part
           title={<i18n.Translate>Details</i18n.Translate>}
           text={<DepositDetails transaction={transaction} />}
@@ -669,7 +708,7 @@ function PurchaseDetails({
         <tr>
           <td>Refunded</td>
           <td>
-            <Amount value={transaction.totalRefundEffective} />
+            <Amount value={transaction.totalRefundRaw} />
           </td>
         </tr>
       )}
@@ -987,4 +1026,31 @@ function Header({
       </div>
     </div>
   );
+}
+
+function NicePayto({ payto }: { payto: PaytoUri }): VNode {
+  if (payto.isKnown) {
+    switch (payto.targetType) {
+      case "bitcoin": {
+        return <div>{payto.targetPath.substring(0, 20)}...</div>;
+      }
+      case "x-taler-bank": {
+        const url = new URL("/", `https://${payto.host}`);
+        return (
+          <Fragment>
+            <div>{payto.account}</div>
+            <SmallLightText>
+              <a href={url.href} target="_bank" rel="noreferrer">
+                {url.toString()}
+              </a>
+            </SmallLightText>
+          </Fragment>
+        );
+      }
+      case "iban": {
+        return <div>{payto.targetPath.substring(0, 20)}</div>;
+      }
+    }
+  }
+  return <Fragment>{stringifyPaytoUri(payto)}</Fragment>;
 }

@@ -193,7 +193,7 @@ export function HistoryView({
                   margin: 8,
                 }}
               >
-                {Amounts.stringifyValue(currencyAmount)}
+                {Amounts.stringifyValue(currencyAmount, 2)}
               </CenteredBoldText>
             )}
           </div>

@@ -92,6 +92,7 @@ const CollasibleBox = styled.div`
   }
 `;
 import arrowDown from "../svg/chevron-down.svg";
+import { useTranslationContext } from "../context/translation.js";
 
 export function PartCollapsible({ text, title, big, showSign }: Props): VNode {
   const Text = big ? ExtraLargeText : LargeText;
@@ -137,27 +138,37 @@ interface PropsPayto {
 }
 export function PartPayto({ payto, kind, big }: PropsPayto): VNode {
   const Text = big ? ExtraLargeText : LargeText;
-  let text: string | undefined = undefined;
+  let text: VNode | undefined = undefined;
   let title = "";
+  const { i18n } = useTranslationContext();
   if (payto.isKnown) {
     if (payto.targetType === "x-taler-bank") {
-      text = payto.account;
-      title = "Bank account";
+      text = <Fragment>{payto.account}</Fragment>;
+      title = i18n.str`Bank account`;
     } else if (payto.targetType === "bitcoin") {
-      text = payto.targetPath;
-      title = "Bitcoin addr";
+      text =
+        payto.segwitAddrs && payto.segwitAddrs.length > 0 ? (
+          <ul>
+            <li>{payto.targetPath}</li>
+            <li>{payto.segwitAddrs[0]}</li>
+            <li>{payto.segwitAddrs[1]}</li>
+          </ul>
+        ) : (
+          <Fragment>{payto.targetPath}</Fragment>
+        );
+      title = i18n.str`Bitcoin address`;
     } else if (payto.targetType === "iban") {
-      text = payto.targetPath;
-      title = "IBAN";
+      text = <Fragment>{payto.targetPath}</Fragment>;
+      title = i18n.str`IBAN`;
     }
   }
   if (!text) {
-    text = stringifyPaytoUri(payto);
+    text = <Fragment>{stringifyPaytoUri(payto)}</Fragment>;
     title = "Payto URI";
   }
   return (
     <div style={{ margin: "1em" }}>
-      <SmallLightText style={{ margin: ".5em" }}>{title}</SmallLightText>
+      <SmallBoldText>{title}</SmallBoldText>
       <Text
         style={{
           color:
