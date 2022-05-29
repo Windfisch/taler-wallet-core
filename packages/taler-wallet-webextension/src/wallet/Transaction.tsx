@@ -396,7 +396,45 @@ export function TransactionView({
         )}
         <Part
           title={<i18n.Translate>Merchant</i18n.Translate>}
-          text={transaction.info.merchant.name}
+          text={
+            <Fragment>
+              <div style={{ display: "flex", flexDirection: "row" }}>
+                {transaction.info.merchant.logo && (
+                  <div>
+                    <img
+                      src={transaction.info.merchant.logo}
+                      style={{ width: 64, height: 64, margin: 4 }}
+                    />
+                  </div>
+                )}
+                <div>
+                  <p>{transaction.info.merchant.name}</p>
+                  {transaction.info.merchant.website && (
+                    <a
+                      href={transaction.info.merchant.website}
+                      target="_blank"
+                      style={{ textDecorationColor: "gray" }}
+                      rel="noreferrer"
+                    >
+                      <SmallLightText>
+                        {transaction.info.merchant.website}
+                      </SmallLightText>
+                    </a>
+                  )}
+                  {transaction.info.merchant.email && (
+                    <a
+                      href={`mailto:${transaction.info.merchant.email}`}
+                      style={{ textDecorationColor: "gray" }}
+                    >
+                      <SmallLightText>
+                        {transaction.info.merchant.email}
+                      </SmallLightText>
+                    </a>
+                  )}
+                </div>
+              </div>
+            </Fragment>
+          }
           kind="neutral"
         />
         <Part

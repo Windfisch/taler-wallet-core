@@ -58,7 +58,7 @@ const commonTransaction = {
   transactionId: "12",
 } as TransactionCommon;
 
-import merchantIcon from "../../static-dev/merchant-icon-11.jpeg";
+import merchantIcon from "../../static-dev/merchant-icon.jpeg";
 
 const exampleData = {
   withdraw: {
