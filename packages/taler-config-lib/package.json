@@ -4,7 +4,7 @@
   "description": "GNU Taler Configuration engine.",
   "module": "./lib/index.node.js",
   "main": "./lib/index.node.js",
-  "type": "module",
+  "type": "commonjs",
   "types": "./lib/index.node.d.ts",
   "typesVersions": {
     "*": {
