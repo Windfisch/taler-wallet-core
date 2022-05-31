@@ -15,26 +15,41 @@
  */
 
 import {
-  AbsoluteTime, AgeCommitment,
-  AgeRestriction, AmountJson, Amounts, amountToPretty, codecForExchangeMeltResponse,
+  AbsoluteTime,
+  AgeCommitment,
+  AgeRestriction,
+  AmountJson,
+  Amounts,
+  amountToPretty,
+  codecForExchangeMeltResponse,
   codecForExchangeRevealResponse,
-  CoinPublicKey, CoinPublicKeyString,
-  DenomKeyType, Duration,
+  CoinPublicKey,
+  CoinPublicKeyString,
+  DenomKeyType,
+  Duration,
   durationFromSpec,
-  durationMul, encodeCrock,
+  durationMul,
+  encodeCrock,
   ExchangeMeltRequest,
-  ExchangeProtocolVersion, ExchangeRefreshRevealRequest, fnutil, getRandomBytes,
+  ExchangeProtocolVersion,
+  ExchangeRefreshRevealRequest,
+  fnutil,
+  getRandomBytes,
   HashCodeString,
   HttpStatusCode,
-  j2s, Logger, NotificationType,
+  j2s,
+  Logger,
+  NotificationType,
   RefreshGroupId,
   RefreshReason,
-  TalerErrorDetail, TalerProtocolTimestamp, URL
+  TalerErrorDetail,
+  TalerProtocolTimestamp,
+  URL,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "../crypto/cryptoImplementation.js";
 import {
   DerivedRefreshSession,
-  RefreshNewDenomInfo
+  RefreshNewDenomInfo,
 } from "../crypto/cryptoTypes.js";
 import { CryptoApiStoppedError } from "../crypto/workers/cryptoDispatcher.js";
 import {
@@ -45,28 +60,26 @@ import {
   OperationStatus,
   RefreshCoinStatus,
   RefreshGroupRecord,
-  WalletStoresV1
+  WalletStoresV1,
 } from "../db.js";
 import { TalerError } from "../errors.js";
 import {
   DenomInfo,
   EXCHANGE_COINS_LOCK,
-  InternalWalletState
+  InternalWalletState,
 } from "../internal-wallet-state.js";
 import {
   readSuccessResponseJsonOrThrow,
-  readUnexpectedResponseDetails
+  readUnexpectedResponseDetails,
 } from "../util/http.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { GetReadWriteAccess } from "../util/query.js";
-import {
-  RetryInfo
-} from "../util/retries.js";
+import { RetryInfo } from "../util/retries.js";
 import { guardOperationException } from "./common.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
 import {
   isWithdrawableDenom,
-  selectWithdrawalDenominations
+  selectWithdrawalDenominations,
 } from "./withdraw.js";
 
 const logger = new Logger("refresh.ts");
@@ -1023,10 +1036,12 @@ export async function autoRefresh(
 ): Promise<void> {
   logger.info(`doing auto-refresh check for '${exchangeBaseUrl}'`);
 
-  //updateExchangeFromUrl will also update retryInfo for this operation
+  // We must make sure that the exchange is up-to-date so that
+  // can refresh into new denominations.
   await updateExchangeFromUrl(ws, exchangeBaseUrl, {
     forceNow: true,
   });
+
   let minCheckThreshold = AbsoluteTime.addDuration(
     AbsoluteTime.now(),
     durationFromSpec({ days: 1 }),

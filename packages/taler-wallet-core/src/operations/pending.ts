@@ -57,14 +57,16 @@ async function gatherExchangePending(
       lastError: e.lastError,
     });
 
-    resp.pendingOperations.push({
-      type: PendingTaskType.ExchangeCheckRefresh,
-      timestampDue:
-        e.retryInfo?.nextRetry ??
-        AbsoluteTime.fromTimestamp(e.nextRefreshCheck),
-      givesLifeness: false,
-      exchangeBaseUrl: e.baseUrl,
-    });
+    // We only schedule a check for auto-refresh if the exchange update
+    // was successful.
+    if (!e.lastError) {
+      resp.pendingOperations.push({
+        type: PendingTaskType.ExchangeCheckRefresh,
+        timestampDue: AbsoluteTime.fromTimestamp(e.nextRefreshCheck),
+        givesLifeness: false,
+        exchangeBaseUrl: e.baseUrl,
+      });
+    }
   });
 }
 
