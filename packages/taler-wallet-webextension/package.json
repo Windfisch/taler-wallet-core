@@ -14,7 +14,6 @@
     "compile": "tsc && ./build-fast-with-linaria.mjs",
     "dev": "./dev.mjs",
     "compile:test": "rollup -c rollup.config.test.js -m",
-    "prepare": "rollup -c -m",
     "pretty": "prettier --write src",
     "i18n:extract": "pogen extract",
     "i18n:merge": "pogen merge",

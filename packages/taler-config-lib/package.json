@@ -21,7 +21,6 @@
   "scripts": {
     "prepare": "tsc",
     "compile": "tsc",
-    "test": "tsc && ava",
     "clean": "rimraf dist lib tsconfig.tsbuildinfo",
     "pretty": "prettier --write src"
   },
