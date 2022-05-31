@@ -94,6 +94,11 @@ export function makePendingOperationFailedError(
   });
 }
 
+export function summarizeTalerErrorDetail(ed: TalerErrorDetail): string {
+  const errName = TalerErrorCode[ed.code] ?? "<unknown>";
+  return `Error (${ed.code}/${errName})`;
+}
+
 export class TalerError<T = any> extends Error {
   errorDetail: TalerErrorDetail & T;
   private constructor(d: TalerErrorDetail & T) {
@@ -107,7 +112,14 @@ export class TalerError<T = any> extends Error {
     detail: ErrBody<C>,
     hint?: string,
   ): TalerError {
-    // FIXME: include default hint?
+    if (!hint) {
+      const errName = TalerErrorCode[code];
+      if (errName) {
+        hint = `Error (${errName})`;
+      } else {
+        hint = `Error (<unknown>)`;
+      }
+    }
     return new TalerError<unknown>({ code, hint, ...detail });
   }
 

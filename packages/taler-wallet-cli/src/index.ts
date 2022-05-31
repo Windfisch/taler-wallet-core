@@ -63,6 +63,7 @@ import {
   SynchronousCryptoWorkerFactory,
   nativeCrypto,
   performanceNow,
+  summarizeTalerErrorDetail,
 } from "@gnu-taler/taler-wallet-core";
 import { lintExchangeDeployment } from "./lint.js";
 import { runBench1 } from "./bench1.js";
@@ -237,11 +238,8 @@ async function withWallet<T>(
     return ret;
   } catch (e) {
     const ed = getErrorDetailFromException(e);
-    console.error("Operation failed: " + ed.message);
-    console.error(
-      "Error details:",
-      JSON.stringify(ed.operationError, undefined, 2),
-    );
+    console.error("Operation failed: " + summarizeTalerErrorDetail(ed));
+    console.error("Error details:", JSON.stringify(ed, undefined, 2));
     process.exit(1);
   } finally {
     logger.info("operation with wallet finished, stopping");
@@ -1085,7 +1083,7 @@ testCli
   .subcommand("withdrawTestkudos", "withdraw-testkudos")
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      wallet.client.call(WalletApiOperation.WithdrawTestkudos, {});
+      await wallet.client.call(WalletApiOperation.WithdrawTestkudos, {});
     });
   });
 
@@ -1114,7 +1112,7 @@ class PerfTimer {
 
   stdev(nRuns: number) {
     const m = this.tSum / BigInt(nRuns);
-    const x = (this.tSumSq / BigInt(nRuns)) - m * m;
+    const x = this.tSumSq / BigInt(nRuns) - m * m;
     return Math.floor(Math.sqrt(Number(x)));
   }
 }
@@ -1123,7 +1121,7 @@ testCli
   .subcommand("benchmarkAgeRestrictions", "benchmark-age-restrictions")
   .requiredOption("reps", ["--reps"], clk.INT, {
     default: 100,
-    help: "repetitions (default: 100)"
+    help: "repetitions (default: 100)",
   })
   .action(async (args) => {
     const numReps = args.benchmarkAgeRestrictions.reps ?? 100;
@@ -1176,11 +1174,31 @@ testCli
       }
     }
 
-    console.log(`edx25519-commit (ns): ${tCommit.mean(numReps)} (stdev ${tCommit.stdev(numReps)})`);
-    console.log(`edx25519-attest (ns): ${tAttest.mean(numReps)} (stdev ${tAttest.stdev(numReps)})`);
-    console.log(`edx25519-verify (ns): ${tVerify.mean(numReps)} (stdev ${tVerify.stdev(numReps)})`);
-    console.log(`edx25519-derive (ns): ${tDerive.mean(numReps)} (stdev ${tDerive.stdev(numReps)})`);
-    console.log(`edx25519-compare (ns): ${tCompare.mean(numReps)} (stdev ${tCompare.stdev(numReps)})`);
+    console.log(
+      `edx25519-commit (ns): ${tCommit.mean(numReps)} (stdev ${tCommit.stdev(
+        numReps,
+      )})`,
+    );
+    console.log(
+      `edx25519-attest (ns): ${tAttest.mean(numReps)} (stdev ${tAttest.stdev(
+        numReps,
+      )})`,
+    );
+    console.log(
+      `edx25519-verify (ns): ${tVerify.mean(numReps)} (stdev ${tVerify.stdev(
+        numReps,
+      )})`,
+    );
+    console.log(
+      `edx25519-derive (ns): ${tDerive.mean(numReps)} (stdev ${tDerive.stdev(
+        numReps,
+      )})`,
+    );
+    console.log(
+      `edx25519-compare (ns): ${tCompare.mean(numReps)} (stdev ${tCompare.stdev(
+        numReps,
+      )})`,
+    );
   });
 
 testCli.subcommand("logtest", "logtest").action(async (args) => {

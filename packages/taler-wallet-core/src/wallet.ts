@@ -296,7 +296,7 @@ export async function runPending(
     } catch (e) {
       if (e instanceof TalerError) {
         console.error(
-          "Operation failed:",
+          "Pending operation failed:",
           JSON.stringify(e.errorDetail, undefined, 2),
         );
       } else {
