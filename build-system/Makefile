@@ -51,6 +51,11 @@ check:
 	pnpm run compile
 	pnpm run check
 
+.PHONY: config-lib
+config-lib:
+	pnpm install --frozen-lockfile --filter @gnu-taler/taler-config-lib...
+	cd ./packages/taler-config-lib/ && pnpm link -g
+
 .PHONY: anastasis-webui
 anastasis-webui:
 	pnpm install --frozen-lockfile --filter @gnu-taler/anastasis-webui...
