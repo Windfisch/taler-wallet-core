@@ -28,7 +28,7 @@ import { ExchangeSetUrlPage } from "./ExchangeSetUrl.js";
 
 interface Props {
   currency?: string;
-  onBack: () => void;
+  onBack: () => Promise<void>;
 }
 
 export function ExchangeAddPage({ currency, onBack }: Props): VNode {

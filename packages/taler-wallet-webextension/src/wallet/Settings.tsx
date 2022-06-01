@@ -66,7 +66,7 @@ export interface ViewProps {
   setDeviceName: (s: string) => Promise<void>;
   permissionToggle: ToggleHandler;
   developerMode: boolean;
-  toggleDeveloperMode: () => void;
+  toggleDeveloperMode: () => Promise<void>;
   knownExchanges: Array<ExchangeListItem>;
 }
 

@@ -28,16 +28,17 @@ import {
   Title,
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
+import { Button } from "../mui/Button.js";
 
 export interface Props {
   url: string;
-  onDismiss: () => void;
+  onDismiss: () => Promise<void>;
 }
 
 export function TalerActionFound({ url, onDismiss }: Props): VNode {
   const uriType = classifyTalerUri(url);
   const { i18n } = useTranslationContext();
-  function redirectToWallet(): void {
+  async function redirectToWallet(): Promise<void> {
     platform.openWalletURIFromPopup(url);
   }
   return (
@@ -51,9 +52,13 @@ export function TalerActionFound({ url, onDismiss }: Props): VNode {
             <p>
               <i18n.Translate>This page has pay action.</i18n.Translate>
             </p>
-            <ButtonSuccess onClick={redirectToWallet}>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={redirectToWallet}
+            >
               <i18n.Translate>Open pay page</i18n.Translate>
-            </ButtonSuccess>
+            </Button>
           </div>
         )}
         {uriType === TalerUriType.TalerWithdraw && (
@@ -63,9 +68,13 @@ export function TalerActionFound({ url, onDismiss }: Props): VNode {
                 This page has a withdrawal action.
               </i18n.Translate>
             </p>
-            <ButtonSuccess onClick={redirectToWallet}>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={redirectToWallet}
+            >
               <i18n.Translate>Open withdraw page</i18n.Translate>
-            </ButtonSuccess>
+            </Button>
           </div>
         )}
         {uriType === TalerUriType.TalerTip && (
@@ -73,9 +82,13 @@ export function TalerActionFound({ url, onDismiss }: Props): VNode {
             <p>
               <i18n.Translate>This page has a tip action.</i18n.Translate>
             </p>
-            <ButtonSuccess onClick={redirectToWallet}>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={redirectToWallet}
+            >
               <i18n.Translate>Open tip page</i18n.Translate>
-            </ButtonSuccess>
+            </Button>
           </div>
         )}
         {uriType === TalerUriType.TalerNotifyReserve && (
@@ -85,9 +98,13 @@ export function TalerActionFound({ url, onDismiss }: Props): VNode {
                 This page has a notify reserve action.
               </i18n.Translate>
             </p>
-            <ButtonSuccess onClick={redirectToWallet}>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={redirectToWallet}
+            >
               <i18n.Translate>Notify</i18n.Translate>
-            </ButtonSuccess>
+            </Button>
           </div>
         )}
         {uriType === TalerUriType.TalerRefund && (
@@ -95,9 +112,13 @@ export function TalerActionFound({ url, onDismiss }: Props): VNode {
             <p>
               <i18n.Translate>This page has a refund action.</i18n.Translate>
             </p>
-            <ButtonSuccess onClick={redirectToWallet}>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={redirectToWallet}
+            >
               <i18n.Translate>Open refund page</i18n.Translate>
-            </ButtonSuccess>
+            </Button>
           </div>
         )}
         {uriType === TalerUriType.Unknown && (
@@ -113,10 +134,9 @@ export function TalerActionFound({ url, onDismiss }: Props): VNode {
       </section>
       <footer>
         <div />
-        <ButtonPrimary onClick={() => onDismiss()}>
-          {" "}
-          <i18n.Translate>Dismiss</i18n.Translate>{" "}
-        </ButtonPrimary>
+        <Button variant="contained" onClick={onDismiss}>
+          <i18n.Translate>Dismiss</i18n.Translate>
+        </Button>
       </footer>
     </Fragment>
   );

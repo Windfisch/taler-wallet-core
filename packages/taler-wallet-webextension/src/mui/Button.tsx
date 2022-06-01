@@ -1,7 +1,7 @@
 import { ComponentChildren, h, VNode, JSX } from "preact";
 import { css } from "@linaria/core";
 // eslint-disable-next-line import/extensions
-import { theme, ripple, Colors } from "./style";
+import { theme, ripple, Colors, rippleOutlined } from "./style";
 // eslint-disable-next-line import/extensions
 import { alpha } from "./colors/manipulation";
 
@@ -31,12 +31,13 @@ interface Props {
   disableFocusRipple?: boolean;
   endIcon?: string | VNode;
   fullWidth?: boolean;
+  style?: h.JSX.CSSProperties;
   href?: string;
   size?: "small" | "medium" | "large";
   startIcon?: VNode | string;
   variant?: "contained" | "outlined" | "text";
   color?: Colors;
-  onClick?: () => void;
+  onClick?: () => Promise<void>;
 }
 
 const button = css`
@@ -199,6 +200,7 @@ export function Button({
   fullWidth,
   variant = "text",
   size = "medium",
+  style: parentStyle,
   color = "primary",
   onClick,
 }: Props): VNode {
@@ -267,12 +269,15 @@ export function Button({
         colorVariant[variant],
         sizeVariant[variant][size],
       ].join(" ")}
+      containedRipple={variant === "contained"}
       onClick={onClick}
       style={{
+        ...parentStyle,
         "--color-main": theme.palette[color].main,
         "--color-contrastText": theme.palette[color].contrastText,
         "--color-main-alpha-half": alpha(theme.palette[color].main, 0.5),
         "--color-dark": theme.palette[color].dark,
+        "--color-light": theme.palette[color].light,
         "--color-main-alpha-opacity": alpha(
           theme.palette[color].main,
           theme.palette.action.hoverOpacity,
@@ -295,13 +300,15 @@ export function Button({
 
 interface BaseProps extends JSX.HTMLAttributes<HTMLButtonElement> {
   class: string;
-  onClick?: () => void;
+  onClick?: () => Promise<void>;
+  containedRipple?: boolean;
   children?: ComponentChildren;
 }
 
 function ButtonBase({
   class: _class,
   children,
+  containedRipple,
   onClick,
   dangerouslySetInnerHTML,
   ...rest
@@ -309,7 +316,11 @@ function ButtonBase({
   function doClick(): void {
     if (onClick) onClick();
   }
-  const classNames = [buttonBaseStyle, _class, ripple].join(" ");
+  const classNames = [
+    buttonBaseStyle,
+    _class,
+    containedRipple ? ripple : rippleOutlined,
+  ].join(" ");
   if (dangerouslySetInnerHTML) {
     return (
       <button
@@ -332,7 +343,7 @@ export function IconButton({
   onClick,
 }: {
   svg: any;
-  onClick?: () => void;
+  onClick?: () => Promise<void>;
 }): VNode {
   return (
     <ButtonBase

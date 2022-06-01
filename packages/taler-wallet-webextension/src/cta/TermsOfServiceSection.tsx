@@ -2,14 +2,13 @@ import { Fragment, h, VNode } from "preact";
 import { CheckboxOutlined } from "../components/CheckboxOutlined.js";
 import { ExchangeXmlTos } from "../components/ExchangeToS.js";
 import {
-  ButtonSuccess,
-  ButtonWarning,
   LinkSuccess,
   TermsOfService,
   WarningBox,
   WarningText,
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
+import { Button } from "../mui/Button.js";
 import { TermsState } from "../utils/index.js";
 
 export interface Props {
@@ -58,20 +57,28 @@ export function TermsOfServiceSection({
           )}
           {terms.status === "new" && (
             <section>
-              <ButtonSuccess upperCased onClick={() => onReview(true)}>
+              <Button
+                variant="contained"
+                color="success"
+                onClick={async () => onReview(true)}
+              >
                 <i18n.Translate>
                   Review exchange terms of service
                 </i18n.Translate>
-              </ButtonSuccess>
+              </Button>
             </section>
           )}
           {terms.status === "changed" && (
             <section>
-              <ButtonWarning upperCased onClick={() => onReview(true)}>
+              <Button
+                variant="contained"
+                color="success"
+                onClick={async () => onReview(true)}
+              >
                 <i18n.Translate>
                   Review new version of terms of service
                 </i18n.Translate>
-              </ButtonWarning>
+              </Button>
             </section>
           )}
         </Fragment>
@@ -95,7 +102,7 @@ export function TermsOfServiceSection({
                 I accept the exchange terms of service
               </i18n.Translate>
             }
-            onToggle={() => {
+            onToggle={async () => {
               onAccept(!reviewed);
               if (ableToReviewTermsOfService) onReview(false);
             }}
@@ -154,7 +161,7 @@ export function TermsOfServiceSection({
                 I accept the exchange terms of service
               </i18n.Translate>
             }
-            onToggle={() => {
+            onToggle={async () => {
               onAccept(!reviewed);
               if (ableToReviewTermsOfService) onReview(false);
             }}

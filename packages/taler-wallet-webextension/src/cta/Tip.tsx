@@ -210,9 +210,13 @@ export function View({ state }: { state: State }): VNode {
         />
       </section>
       <section>
-        <ButtonSuccess onClick={state.accept.onClick}>
+        <Button
+          variant="contained"
+          color="success"
+          onClick={state.accept.onClick}
+        >
           <i18n.Translate>Accept tip</i18n.Translate>
-        </ButtonSuccess>
+        </Button>
         <Button onClick={state.ignore.onClick}>
           <i18n.Translate>Ignore</i18n.Translate>
         </Button>

@@ -22,17 +22,17 @@ import { JustInDevMode } from "../components/JustInDevMode.js";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import { MultiActionButton } from "../components/MultiActionButton.js";
-import { ButtonBoxPrimary, ButtonPrimary } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { Button } from "../mui/Button.js";
 import { AddNewActionView } from "../wallet/AddNewActionView.js";
 import * as wxApi from "../wxApi.js";
 import { NoBalanceHelp } from "./NoBalanceHelp.js";
 
 export interface Props {
-  goToWalletDeposit: (currency: string) => void;
-  goToWalletHistory: (currency: string) => void;
-  goToWalletManualWithdraw: () => void;
+  goToWalletDeposit: (currency: string) => Promise<void>;
+  goToWalletHistory: (currency: string) => Promise<void>;
+  goToWalletManualWithdraw: () => Promise<void>;
 }
 export function BalancePage({
   goToWalletManualWithdraw,
@@ -65,7 +65,7 @@ export function BalancePage({
   }
 
   if (addingAction) {
-    return <AddNewActionView onCancel={() => setAddingAction(false)} />;
+    return <AddNewActionView onCancel={async () => setAddingAction(false)} />;
   }
 
   return (
@@ -74,16 +74,16 @@ export function BalancePage({
       goToWalletManualWithdraw={goToWalletManualWithdraw}
       goToWalletDeposit={goToWalletDeposit}
       goToWalletHistory={goToWalletHistory}
-      goToAddAction={() => setAddingAction(true)}
+      goToAddAction={async () => setAddingAction(true)}
     />
   );
 }
 export interface BalanceViewProps {
   balances: Balance[];
-  goToWalletManualWithdraw: () => void;
-  goToAddAction: () => void;
-  goToWalletDeposit: (currency: string) => void;
-  goToWalletHistory: (currency: string) => void;
+  goToWalletManualWithdraw: () => Promise<void>;
+  goToAddAction: () => Promise<void>;
+  goToWalletDeposit: (currency: string) => Promise<void>;
+  goToWalletHistory: (currency: string) => Promise<void>;
 }
 
 export function BalanceView({
@@ -113,22 +113,20 @@ export function BalanceView({
         />
       </section>
       <footer style={{ justifyContent: "space-between" }}>
-        <ButtonPrimary onClick={goToWalletManualWithdraw}>
+        <Button variant="contained" onClick={goToWalletManualWithdraw}>
           <i18n.Translate>Withdraw</i18n.Translate>
-        </ButtonPrimary>
+        </Button>
         {currencyWithNonZeroAmount.length > 0 && (
           <MultiActionButton
-            label={(s) => (
-              <i18n.Translate>Deposit {<span>{s}</span>}</i18n.Translate>
-            )}
+            label={(s) => <i18n.Translate>Deposit {s}</i18n.Translate>}
             actions={currencyWithNonZeroAmount}
             onClick={(c) => goToWalletDeposit(c)}
           />
         )}
         <JustInDevMode>
-          <ButtonBoxPrimary onClick={goToAddAction}>
+          <Button onClick={goToAddAction}>
             <i18n.Translate>Enter URI</i18n.Translate>
-          </ButtonBoxPrimary>
+          </Button>
         </JustInDevMode>
       </footer>
     </Fragment>

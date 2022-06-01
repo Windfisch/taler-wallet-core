@@ -44,13 +44,14 @@ import {
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
 import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { Button } from "../mui/Button.js";
 import { ButtonHandler } from "../mui/handlers.js";
 import * as wxApi from "../wxApi.js";
 
 interface Props {
   talerDepositUri?: string;
   amount: AmountString;
-  goBack: () => void;
+  goBack: () => Promise<void>;
 }
 
 type State = Loading | Ready | Completed;
@@ -206,11 +207,15 @@ export function View({ state }: ViewProps): VNode {
         />
       </section>
       <section>
-        <ButtonSuccess upperCased onClick={state.confirm.onClick}>
+        <Button
+          variant="contained"
+          color="success"
+          onClick={state.confirm.onClick}
+        >
           <i18n.Translate>
             Deposit {<Amount value={state.effective} />}
           </i18n.Translate>
-        </ButtonSuccess>
+        </Button>
       </section>
     </WalletAction>
   );

@@ -61,7 +61,7 @@ export function Application(): VNode {
           <IoCProviderForRuntime>
             <PendingTransactions
               goToTransaction={(txId: string) =>
-                route(Pages.balance_transaction.replace(":tid", txId))
+                redirectTo(Pages.balance_transaction.replace(":tid", txId))
               }
             />
             <Match>
@@ -74,15 +74,19 @@ export function Application(): VNode {
                   path={Pages.balance}
                   component={BalancePage}
                   goToWalletManualWithdraw={() =>
-                    route(
+                    redirectTo(
                       Pages.balance_manual_withdraw.replace(":currency?", ""),
                     )
                   }
                   goToWalletDeposit={(currency: string) =>
-                    route(Pages.balance_deposit.replace(":currency", currency))
+                    redirectTo(
+                      Pages.balance_deposit.replace(":currency", currency),
+                    )
                   }
                   goToWalletHistory={(currency: string) =>
-                    route(Pages.balance_history.replace(":currency?", currency))
+                    redirectTo(
+                      Pages.balance_history.replace(":currency?", currency),
+                    )
                   }
                 />
 
@@ -96,7 +100,7 @@ export function Application(): VNode {
                         url={decodeURIComponent(action)}
                         onDismiss={() => {
                           setDismissed(true);
-                          route(Pages.balance);
+                          return redirectTo(Pages.balance);
                         }}
                       />
                     );
@@ -106,16 +110,12 @@ export function Application(): VNode {
                 <Route
                   path={Pages.backup}
                   component={BackupPage}
-                  onAddProvider={() => {
-                    route(Pages.backup_provider_add);
-                  }}
+                  onAddProvider={() => redirectTo(Pages.backup_provider_add)}
                 />
                 <Route
                   path={Pages.backup_provider_detail}
                   component={ProviderDetailPage}
-                  onBack={() => {
-                    route(Pages.backup);
-                  }}
+                  onBack={() => redirectTo(Pages.backup)}
                 />
 
                 <Route
@@ -173,6 +173,10 @@ function RedirectToWalletPage(): VNode {
       </i18n.Translate>
     </span>
   );
+}
+
+async function redirectTo(location: string): Promise<void> {
+  route(location);
 }
 
 function Redirect({ to }: { to: string }): null {

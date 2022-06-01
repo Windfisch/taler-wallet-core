@@ -49,7 +49,7 @@ interface Props {
   title?: string;
   variant?: "filled" | "outlined" | "standard";
   role?: string;
-  onClose?: () => void;
+  onClose?: () => Promise<void>;
   // icon: VNode;
   severity?: "info" | "warning" | "success" | "error";
   children: ComponentChildren;

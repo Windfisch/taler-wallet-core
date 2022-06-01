@@ -1,21 +1,17 @@
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import {
-  Button,
-  ButtonSuccess,
-  ButtonWarning,
-  Title,
-} from "../components/styled/index.js";
+import { Title } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
 import { TermsOfServiceSection } from "../cta/TermsOfServiceSection.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { Button } from "../mui/Button.js";
 import { buildTermsOfServiceState, TermsState } from "../utils/index.js";
 import * as wxApi from "../wxApi.js";
 
 export interface Props {
   url: string;
-  onCancel: () => void;
-  onConfirm: () => void;
+  onCancel: () => Promise<void>;
+  onConfirm: () => Promise<void>;
 }
 
 export function ExchangeAddConfirmPage({
@@ -71,8 +67,8 @@ export interface ViewProps {
   url: string;
   terms: TermsState | undefined;
   onAccept: (b: boolean) => Promise<void>;
-  onCancel: () => void;
-  onConfirm: () => void;
+  onCancel: () => Promise<void>;
+  onConfirm: () => Promise<void>;
 }
 
 export function View({
@@ -114,30 +110,35 @@ export function View({
       )}
 
       <footer>
-        <Button onClick={onCancel}>
+        <Button variant="contained" color="secondary" onClick={onCancel}>
           <i18n.Translate>Cancel</i18n.Translate>
         </Button>
         {!terms && (
-          <Button disabled>
+          <Button variant="contained" disabled>
             <i18n.Translate>Loading terms..</i18n.Translate>
           </Button>
         )}
         {terms && (
           <Fragment>
             {needsReview && !reviewed && (
-              <ButtonSuccess disabled upperCased onClick={onConfirm}>
+              <Button
+                variant="contained"
+                color="success"
+                disabled
+                onClick={onConfirm}
+              >
                 <i18n.Translate>Add exchange</i18n.Translate>
-              </ButtonSuccess>
+              </Button>
             )}
             {(terms.status === "accepted" || (needsReview && reviewed)) && (
-              <ButtonSuccess upperCased onClick={onConfirm}>
+              <Button variant="contained" color="success" onClick={onConfirm}>
                 <i18n.Translate>Add exchange</i18n.Translate>
-              </ButtonSuccess>
+              </Button>
             )}
             {terms.status === "notfound" && (
-              <ButtonWarning upperCased onClick={onConfirm}>
+              <Button variant="contained" color="warning" onClick={onConfirm}>
                 <i18n.Translate>Add exchange anyway</i18n.Translate>
-              </ButtonWarning>
+              </Button>
             )}
           </Fragment>
         )}

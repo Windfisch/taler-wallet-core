@@ -26,7 +26,6 @@ import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import {
   ButtonBoxPrimary,
-  ButtonPrimary,
   CenteredBoldText,
   CenteredText,
   DateSeparator,
@@ -36,13 +35,14 @@ import { Time } from "../components/Time.js";
 import { TransactionItem } from "../components/TransactionItem.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { Button } from "../mui/Button.js";
 import { NoBalanceHelp } from "../popup/NoBalanceHelp.js";
 import * as wxApi from "../wxApi.js";
 
 interface Props {
   currency?: string;
-  goToWalletDeposit: (currency: string) => void;
-  goToWalletManualWithdraw: (currency?: string) => void;
+  goToWalletDeposit: (currency: string) => Promise<void>;
+  goToWalletManualWithdraw: (currency?: string) => Promise<void>;
 }
 export function HistoryPage({
   currency,
@@ -101,8 +101,8 @@ export function HistoryView({
   goToWalletManualWithdraw,
   goToWalletDeposit,
 }: {
-  goToWalletDeposit: (currency: string) => void;
-  goToWalletManualWithdraw: (currency?: string) => void;
+  goToWalletDeposit: (currency: string) => Promise<void>;
+  goToWalletManualWithdraw: (currency?: string) => Promise<void>;
   defaultCurrency?: string;
   transactions: Transaction[];
   balances: Balance[];
@@ -198,19 +198,22 @@ export function HistoryView({
             )}
           </div>
           <div>
-            <ButtonPrimary
-              style={{ marginLeft: 0, marginTop: 8 }}
+            <Button
+              variant="contained"
+              // style={{ marginLeft: 0, marginTop: 8 }}
               onClick={() => goToWalletManualWithdraw(selectedCurrency)}
             >
               <i18n.Translate>Withdraw</i18n.Translate>
-            </ButtonPrimary>
+            </Button>
             {currencyAmount && Amounts.isNonZero(currencyAmount) && (
-              <ButtonBoxPrimary
-                style={{ marginLeft: 0, marginTop: 8 }}
+              <Button
+                variant="outlined"
+                color="primary"
+                // style={{ marginLeft: 0, marginTop: 8 }}
                 onClick={() => goToWalletDeposit(selectedCurrency)}
               >
                 <i18n.Translate>Deposit</i18n.Translate>
-              </ButtonBoxPrimary>
+              </Button>
             )}
           </div>
         </div>

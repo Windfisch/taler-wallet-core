@@ -34,7 +34,7 @@ import { ReserveCreated } from "./ReserveCreated.js";
 
 interface Props {
   currency?: string;
-  onCancel: () => void;
+  onCancel: () => Promise<void>;
 }
 
 export function ManualWithdrawPage({ currency, onCancel }: Props): VNode {

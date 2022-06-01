@@ -1,16 +1,14 @@
+import { getUnpackedSettings } from "http2";
 import { h, VNode } from "preact";
-import arrowDown from "../svg/chevron-down.svg";
-import {
-  ButtonBoxPrimary,
-  ButtonPrimary,
-  ParagraphClickable,
-} from "./styled/index.js";
 import { useState } from "preact/hooks";
+import { Button } from "../mui/Button.js";
+import arrowDown from "../svg/chevron-down.svg";
+import { ParagraphClickable } from "./styled/index.js";
 
 export interface Props {
   label: (s: string) => VNode;
   actions: string[];
-  onClick: (s: string) => void;
+  onClick: (s: string) => Promise<void>;
 }
 
 /**
@@ -43,9 +41,9 @@ export function MultiActionButton({
 
   if (!canChange) {
     return (
-      <ButtonPrimary onClick={() => doClick(selected)}>
+      <Button variant="contained" onClick={() => doClick(selected)}>
         {label(selected)}
-      </ButtonPrimary>
+      </Button>
     );
   }
 
@@ -73,40 +71,44 @@ export function MultiActionButton({
           ))}
         </div>
       )}
-      <ButtonBoxPrimary
+      <Button
+        variant="contained"
         onClick={() => doClick(selected)}
         style={{
           borderTopRightRadius: 0,
           borderBottomRightRadius: 0,
           marginRight: 0,
-          maxWidth: 170,
+          // maxWidth: 170,
           overflowX: "hidden",
           textOverflow: "ellipsis",
         }}
       >
         {label(selected)}
-      </ButtonBoxPrimary>
+      </Button>
 
-      <ButtonPrimary
-        onClick={() => setOpened((s) => !s)}
+      <Button
+        variant="outlined"
+        onClick={async () => setOpened((s) => !s)}
         style={{
           marginLeft: 0,
           borderTopLeftRadius: 0,
           borderBottomLeftRadius: 0,
-          width: 36,
-          padding: 4,
-          height: 36,
-          fill: "white",
+          paddingLeft: 4,
+          paddingRight: 4,
+          minWidth: "unset",
         }}
       >
         <div
           style={{
             height: 24,
             width: 24,
+            marginLeft: 4,
+            marginRight: 4,
+            // fill: "white",
           }}
           dangerouslySetInnerHTML={{ __html: arrowDown }}
         />
-      </ButtonPrimary>
+      </Button>
     </div>
   );
 }

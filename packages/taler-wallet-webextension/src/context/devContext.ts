@@ -25,11 +25,11 @@ import { useLocalStorage } from "../hooks/useLocalStorage.js";
 
 interface Type {
   devMode: boolean;
-  toggleDevMode: () => void;
+  toggleDevMode: () => Promise<void>;
 }
 const Context = createContext<Type>({
   devMode: false,
-  toggleDevMode: () => null,
+  toggleDevMode: async () => { return; },
 });
 
 export const useDevContext = (): Type => useContext(Context);
@@ -44,8 +44,8 @@ export const DevContextProviderForTesting = ({
   return h(Context.Provider, {
     value: {
       devMode: value,
-      toggleDevMode: () => {
-        null;
+      toggleDevMode: async () => {
+        return;
       },
     },
     children,
@@ -55,7 +55,7 @@ export const DevContextProviderForTesting = ({
 export const DevContextProvider = ({ children }: { children: any }): VNode => {
   const [value, setter] = useLocalStorage("devMode");
   const devMode = value === "true";
-  const toggleDevMode = (): void => setter((v) => (!v ? "true" : undefined));
+  const toggleDevMode = async (): Promise<void> => setter((v) => (!v ? "true" : undefined));
   children =
     children.length === 1 && typeof children === "function"
       ? children({ devMode })

@@ -6,8 +6,6 @@ import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { ErrorMessage } from "../components/ErrorMessage.js";
 import {
-  Button,
-  ButtonPrimary,
   Input,
   LightText,
   SubTitle,
@@ -15,11 +13,12 @@ import {
   WarningBox,
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
+import { Button } from "../mui/Button.js";
 
 export interface Props {
   initialValue?: string;
   expectedCurrency?: string;
-  onCancel: () => void;
+  onCancel: () => Promise<void>;
   onVerify: (s: string) => Promise<TalerConfigResponse | undefined>;
   onConfirm: (url: string) => Promise<string | undefined>;
   withError?: string;
@@ -64,7 +63,7 @@ function useEndpointStatus<T>(
       }
     }, 500);
     setHandler(h);
-  }, [value, setHandler, handler, onVerify]);
+  }, [value, setHandler, onVerify]);
 
   return {
     error: dirty ? error : undefined,
@@ -172,10 +171,11 @@ export function ExchangeSetUrlPage({
         </p>
       </section>
       <footer>
-        <Button onClick={onCancel}>
+        <Button variant="contained" color="secondary" onClick={onCancel}>
           <i18n.Translate>Cancel</i18n.Translate>
         </Button>
-        <ButtonPrimary
+        <Button
+          variant="contained"
           disabled={
             !result ||
             !!error ||
@@ -189,7 +189,7 @@ export function ExchangeSetUrlPage({
           }}
         >
           <i18n.Translate>Next</i18n.Translate>
-        </ButtonPrimary>
+        </Button>
       </footer>
     </Fragment>
   );

@@ -94,7 +94,9 @@ export function Application(): VNode {
                     >
                       <PendingTransactions
                         goToTransaction={(txId: string) =>
-                          route(Pages.balance_transaction.replace(":tid", txId))
+                          redirectTo(
+                            Pages.balance_transaction.replace(":tid", txId),
+                          )
                         }
                       />
                     </div>
@@ -123,10 +125,12 @@ export function Application(): VNode {
                 path={Pages.balance_history}
                 component={HistoryPage}
                 goToWalletDeposit={(currency: string) =>
-                  route(Pages.balance_deposit.replace(":currency", currency))
+                  redirectTo(
+                    Pages.balance_deposit.replace(":currency", currency),
+                  )
                 }
                 goToWalletManualWithdraw={(currency?: string) =>
-                  route(
+                  redirectTo(
                     Pages.balance_manual_withdraw.replace(
                       ":currency?",
                       currency || "",
@@ -137,29 +141,31 @@ export function Application(): VNode {
               <Route
                 path={Pages.balance_transaction}
                 component={TransactionPage}
-                goToWalletHistory={(currency?: string) => {
-                  route(
+                goToWalletHistory={(currency?: string) =>
+                  redirectTo(
                     Pages.balance_history.replace(":currency?", currency || ""),
-                  );
-                }}
+                  )
+                }
               />
 
               <Route
                 path={Pages.balance_manual_withdraw}
                 component={ManualWithdrawPage}
-                onCancel={() => {
-                  route(Pages.balance);
-                }}
+                onCancel={() => redirectTo(Pages.balance)}
               />
 
               <Route
                 path={Pages.balance_deposit}
                 component={DepositPage}
                 onCancel={(currency: string) => {
-                  route(Pages.balance_history.replace(":currency?", currency));
+                  redirectTo(
+                    Pages.balance_history.replace(":currency?", currency),
+                  );
                 }}
                 onSuccess={(currency: string) => {
-                  route(Pages.balance_history.replace(":currency?", currency));
+                  redirectTo(
+                    Pages.balance_history.replace(":currency?", currency),
+                  );
                   setGlobalNotification(
                     <i18n.Translate>
                       All done, your transaction is in progress
@@ -178,23 +184,17 @@ export function Application(): VNode {
               <Route
                 path={Pages.backup}
                 component={BackupPage}
-                onAddProvider={() => {
-                  route(Pages.backup_provider_add);
-                }}
+                onAddProvider={() => redirectTo(Pages.backup_provider_add)}
               />
               <Route
                 path={Pages.backup_provider_detail}
                 component={ProviderDetailPage}
-                onBack={() => {
-                  route(Pages.backup);
-                }}
+                onBack={() => redirectTo(Pages.backup)}
               />
               <Route
                 path={Pages.backup_provider_add}
                 component={ProviderAddPage}
-                onBack={() => {
-                  route(Pages.backup);
-                }}
+                onBack={() => redirectTo(Pages.backup)}
               />
 
               {/**
@@ -203,9 +203,7 @@ export function Application(): VNode {
               <Route
                 path={Pages.settings_exchange_add}
                 component={ExchangeAddPage}
-                onBack={() => {
-                  route(Pages.balance);
-                }}
+                onBack={() => redirectTo(Pages.balance)}
               />
 
               {/**
@@ -221,14 +219,14 @@ export function Application(): VNode {
                 path={Pages.cta_pay}
                 component={PayPage}
                 goToWalletManualWithdraw={(currency?: string) =>
-                  route(
+                  redirectTo(
                     Pages.balance_manual_withdraw.replace(
                       ":currency?",
                       currency || "",
                     ),
                   )
                 }
-                goBack={() => route(Pages.balance)}
+                goBack={() => redirectTo(Pages.balance)}
               />
               <Route path={Pages.cta_refund} component={RefundPage} />
               <Route path={Pages.cta_tips} component={TipPage} />
@@ -258,9 +256,12 @@ export function Application(): VNode {
   );
 }
 
+async function redirectTo(location: string): Promise<void> {
+  route(location);
+}
+
 function Redirect({ to }: { to: string }): null {
   useEffect(() => {
-    console.log("got some wrong route", to);
     route(to, true);
   });
   return null;

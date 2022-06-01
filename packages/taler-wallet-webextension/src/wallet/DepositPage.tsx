@@ -23,8 +23,6 @@ import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import { SelectList } from "../components/SelectList.js";
 import {
-  Button,
-  ButtonPrimary,
   ErrorText,
   Input,
   InputWithLabel,
@@ -33,6 +31,7 @@ import {
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
 import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { Button } from "../mui/Button.js";
 import {
   ButtonHandler,
   SelectFieldHandler,
@@ -275,7 +274,11 @@ export function View({ state }: ViewProps): VNode {
           </p>
         </WarningBox>
         <footer>
-          <Button onClick={state.cancelHandler.onClick}>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={state.cancelHandler.onClick}
+          >
             <i18n.Translate>Cancel</i18n.Translate>
           </Button>
         </footer>
@@ -345,20 +348,24 @@ export function View({ state }: ViewProps): VNode {
         }
       </section>
       <footer>
-        <Button onClick={state.cancelHandler.onClick}>
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={state.cancelHandler.onClick}
+        >
           <i18n.Translate>Cancel</i18n.Translate>
         </Button>
         {!state.depositHandler.onClick ? (
-          <ButtonPrimary disabled>
+          <Button variant="contained" disabled>
             <i18n.Translate>Deposit</i18n.Translate>
-          </ButtonPrimary>
+          </Button>
         ) : (
-          <ButtonPrimary onClick={state.depositHandler.onClick}>
+          <Button variant="contained" onClick={state.depositHandler.onClick}>
             <i18n.Translate>
               Deposit {Amounts.stringifyValue(state.totalToDeposit)}{" "}
               {state.currency}
             </i18n.Translate>
-          </ButtonPrimary>
+          </Button>
         )}
       </footer>
     </Fragment>

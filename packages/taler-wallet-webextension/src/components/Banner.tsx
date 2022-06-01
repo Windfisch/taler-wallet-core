@@ -15,7 +15,7 @@ interface Props extends JSX.HTMLAttributes<HTMLDivElement> {
   }[];
   confirm?: {
     label: string;
-    action: () => void;
+    action: () => Promise<void>;
   };
 }
 

@@ -33,8 +33,6 @@ import { LogoHeader } from "../components/LogoHeader.js";
 import { Part } from "../components/Part.js";
 import { SelectList } from "../components/SelectList.js";
 import {
-  ButtonSuccess,
-  ButtonWarning,
   Input,
   LinkSuccess,
   SubTitle,
@@ -43,19 +41,14 @@ import {
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
 import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { Button } from "../mui/Button.js";
+import { ButtonHandler, SelectFieldHandler } from "../mui/handlers.js";
 import { buildTermsOfServiceState } from "../utils/index.js";
-import {
-  ButtonHandler,
-  SelectFieldHandler,
-  ToggleHandler,
-} from "../mui/handlers.js";
 import * as wxApi from "../wxApi.js";
 import {
   Props as TermsOfServiceSectionProps,
   TermsOfServiceSection,
 } from "./TermsOfServiceSection.js";
-import { startOfWeekYear } from "date-fns/esm";
-import { Checkbox } from "../components/Checkbox.js";
 
 interface Props {
   talerWithdrawUri?: string;
@@ -527,22 +520,24 @@ export function View({ state }: { state: State }): VNode {
         <section>
           {(state.tosProps.terms.status === "accepted" ||
             (state.mustAcceptFirst && state.tosProps.reviewed)) && (
-            <ButtonSuccess
-              upperCased
+            <Button
+              variant="contained"
+              color="success"
               disabled={!state.doWithdrawal.onClick}
               onClick={state.doWithdrawal.onClick}
             >
               <i18n.Translate>Confirm withdrawal</i18n.Translate>
-            </ButtonSuccess>
+            </Button>
           )}
           {state.tosProps.terms.status === "notfound" && (
-            <ButtonWarning
-              upperCased
+            <Button
+              variant="contained"
+              color="warning"
               disabled={!state.doWithdrawal.onClick}
               onClick={state.doWithdrawal.onClick}
             >
               <i18n.Translate>Withdraw anyway</i18n.Translate>
-            </ButtonWarning>
+            </Button>
           )}
         </section>
       ) : (

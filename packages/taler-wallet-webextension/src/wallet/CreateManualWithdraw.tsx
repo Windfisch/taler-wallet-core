@@ -21,14 +21,12 @@
  */
 
 import { AmountJson, Amounts } from "@gnu-taler/taler-util";
-import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { ErrorMessage } from "../components/ErrorMessage.js";
 import { SelectList } from "../components/SelectList.js";
 import {
   BoldLight,
-  ButtonPrimary,
   Centered,
   Input,
   InputWithLabel,
@@ -37,6 +35,7 @@ import {
   SubTitle,
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
+import { Button } from "../mui/Button.js";
 import { SelectFieldHandler, TextFieldHandler } from "../mui/handlers.js";
 import { Pages } from "../NavigationBar.js";
 
@@ -270,12 +269,13 @@ export function CreateManualWithdraw({
       </section>
       <footer>
         <div />
-        <ButtonPrimary
+        <Button
+          variant="contained"
           disabled={!state.parsedAmount || !state.exchange.value}
           onClick={() => onCreate(state.exchange.value, state.parsedAmount!)}
         >
           <i18n.Translate>Start withdrawal</i18n.Translate>
-        </ButtonPrimary>
+        </Button>
       </footer>
     </Fragment>
   );

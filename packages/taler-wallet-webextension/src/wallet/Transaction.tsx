@@ -21,7 +21,6 @@ import {
   Location,
   NotificationType,
   parsePaytoUri,
-  parsePayUri,
   PaytoUri,
   stringifyPaytoUri,
   TalerProtocolTimestamp,
@@ -47,17 +46,11 @@ import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import { Kind, Part, PartCollapsible, PartPayto } from "../components/Part.js";
 import {
-  Button,
-  ButtonBox,
-  ButtonDestructive,
-  ButtonPrimary,
   CenteredDialog,
-  HistoryRow,
   InfoBox,
   ListOfProducts,
   Overlay,
   Row,
-  RowBorderGray,
   SmallLightText,
   SubTitle,
   WarningBox,
@@ -65,12 +58,13 @@ import {
 import { Time } from "../components/Time.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { Button } from "../mui/Button.js";
 import { Pages } from "../NavigationBar.js";
 import * as wxApi from "../wxApi.js";
 
 interface Props {
   tid: string;
-  goToWalletHistory: (currency?: string) => void;
+  goToWalletHistory: (currency?: string) => Promise<void>;
 }
 
 async function getTransaction(tid: string): Promise<Transaction> {
@@ -122,7 +116,7 @@ export function TransactionPage({ tid, goToWalletHistory }: Props): VNode {
       onRetry={() =>
         wxApi.retryTransaction(tid).then(() => goToWalletHistory(currency))
       }
-      onRefund={(id) => wxApi.applyRefundFromPurchaseId(id)}
+      onRefund={(id) => wxApi.applyRefundFromPurchaseId(id).then()}
       onBack={() => goToWalletHistory(currency)}
     />
   );
@@ -130,10 +124,10 @@ export function TransactionPage({ tid, goToWalletHistory }: Props): VNode {
 
 export interface WalletTransactionProps {
   transaction: Transaction;
-  onDelete: () => void;
-  onRetry: () => void;
-  onRefund: (id: string) => void;
-  onBack: () => void;
+  onDelete: () => Promise<void>;
+  onRetry: () => Promise<void>;
+  onRefund: (id: string) => Promise<void>;
+  onBack: () => Promise<void>;
 }
 
 const PurchaseDetailsTable = styled.table`
@@ -152,7 +146,7 @@ export function TransactionView({
 }: WalletTransactionProps): VNode {
   const [confirmBeforeForget, setConfirmBeforeForget] = useState(false);
 
-  function doCheckBeforeForget(): void {
+  async function doCheckBeforeForget(): Promise<void> {
     if (
       transaction.pending &&
       transaction.type === TransactionType.Withdrawal
@@ -198,13 +192,17 @@ export function TransactionView({
           <div />
           <div>
             {showRetry ? (
-              <ButtonPrimary onClick={onRetry}>
+              <Button variant="contained" onClick={onRetry}>
                 <i18n.Translate>Retry</i18n.Translate>
-              </ButtonPrimary>
+              </Button>
             ) : null}
-            <ButtonDestructive onClick={doCheckBeforeForget}>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={doCheckBeforeForget}
+            >
               <i18n.Translate>Forget</i18n.Translate>
-            </ButtonDestructive>
+            </Button>
           </div>
         </footer>
       </Fragment>
@@ -229,13 +227,17 @@ export function TransactionView({
                 </i18n.Translate>
               </section>
               <footer>
-                <Button onClick={() => setConfirmBeforeForget(false)}>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={async () => setConfirmBeforeForget(false)}
+                >
                   <i18n.Translate>Cancel</i18n.Translate>
                 </Button>
 
-                <ButtonDestructive onClick={onDelete}>
+                <Button variant="contained" color="error" onClick={onDelete}>
                   <i18n.Translate>Confirm</i18n.Translate>
-                </ButtonDestructive>
+                </Button>
               </footer>
             </CenteredDialog>
           </Overlay>
@@ -387,9 +389,12 @@ export function TransactionView({
             <div>
               <div />
               <div>
-                <ButtonPrimary onClick={() => onRefund(transaction.proposalId)}>
+                <Button
+                  variant="contained"
+                  onClick={() => onRefund(transaction.proposalId)}
+                >
                   <i18n.Translate>Accept</i18n.Translate>
-                </ButtonPrimary>
+                </Button>
               </div>
             </div>
           </InfoBox>

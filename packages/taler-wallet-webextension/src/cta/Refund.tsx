@@ -40,6 +40,7 @@ import {
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
 import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { Button } from "../mui/Button.js";
 import { ButtonHandler } from "../mui/handlers.js";
 import * as wxApi from "../wxApi.js";
 import { ProductList } from "./Pay.js";
@@ -188,9 +189,9 @@ export function View({ state }: ViewProps): VNode {
         </section>
       ) : undefined}
       <section>
-        <ButtonSuccess onClick={state.accept.onClick}>
+        <Button variant="contained" onClick={state.accept.onClick}>
           <i18n.Translate>Confirm refund</i18n.Translate>
-        </ButtonSuccess>
+        </Button>
       </section>
     </WalletAction>
   );

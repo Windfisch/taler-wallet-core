@@ -25,21 +25,16 @@ import { Fragment, h, VNode } from "preact";
 import { ErrorMessage } from "../components/ErrorMessage.js";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
-import {
-  Button,
-  ButtonDestructive,
-  ButtonPrimary,
-  PaymentStatus,
-  SmallLightText,
-} from "../components/styled/index.js";
+import { PaymentStatus, SmallLightText } from "../components/styled/index.js";
 import { Time } from "../components/Time.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { Button } from "../mui/Button.js";
 import * as wxApi from "../wxApi.js";
 
 interface Props {
   pid: string;
-  onBack: () => void;
+  onBack: () => Promise<void>;
 }
 
 export function ProviderDetailPage({ pid: providerURL, onBack }: Props): VNode {
@@ -77,10 +72,10 @@ export function ProviderDetailPage({ pid: providerURL, onBack }: Props): VNode {
     <ProviderView
       url={providerURL}
       info={state.response}
-      onSync={async () => wxApi.syncOneProvider(providerURL)}
-      onDelete={async () => wxApi.removeProvider(providerURL).then(onBack)}
+      onSync={() => wxApi.syncOneProvider(providerURL)}
+      onDelete={() => wxApi.removeProvider(providerURL).then(onBack)}
       onBack={onBack}
-      onExtend={() => {
+      onExtend={async () => {
         null;
       }}
     />
@@ -90,10 +85,10 @@ export function ProviderDetailPage({ pid: providerURL, onBack }: Props): VNode {
 export interface ViewProps {
   url: string;
   info: ProviderInfo | null;
-  onDelete: () => void;
-  onSync: () => void;
-  onBack: () => void;
-  onExtend: () => void;
+  onDelete: () => Promise<void>;
+  onSync: () => Promise<void>;
+  onBack: () => Promise<void>;
+  onExtend: () => Promise<void>;
 }
 
 export function ProviderView({
@@ -116,7 +111,7 @@ export function ProviderView({
           </p>
         </section>
         <footer>
-          <Button onClick={onBack}>
+          <Button variant="contained" color="secondary" onClick={onBack}>
             <i18n.Translate>See providers</i18n.Translate>
           </Button>
           <div />
@@ -149,9 +144,9 @@ export function ProviderView({
           </b>{" "}
           <Time timestamp={lb} format="dd MMMM yyyy" />
         </p>
-        <ButtonPrimary onClick={onSync}>
+        <Button variant="contained" onClick={onSync}>
           <i18n.Translate>Back up</i18n.Translate>
-        </ButtonPrimary>
+        </Button>
         {info.terms && (
           <Fragment>
             <p>
@@ -164,9 +159,9 @@ export function ProviderView({
           </Fragment>
         )}
         <p>{descriptionByStatus(info.paymentStatus, i18n)}</p>
-        <ButtonPrimary disabled onClick={onExtend}>
+        <Button variant="contained" disabled onClick={onExtend}>
           <i18n.Translate>Extend</i18n.Translate>
-        </ButtonPrimary>
+        </Button>
 
         {info.paymentStatus.type === ProviderPaymentType.TermsChanged && (
           <div>
@@ -212,13 +207,13 @@ export function ProviderView({
         )}
       </section>
       <footer>
-        <Button onClick={onBack}>
+        <Button variant="contained" color="secondary" onClick={onBack}>
           <i18n.Translate>See providers</i18n.Translate>
         </Button>
         <div>
-          <ButtonDestructive onClick={onDelete}>
+          <Button variant="contained" color="error" onClick={onDelete}>
             <i18n.Translate>Remove provider</i18n.Translate>
-          </ButtonDestructive>
+          </Button>
         </div>
       </footer>
     </Fragment>

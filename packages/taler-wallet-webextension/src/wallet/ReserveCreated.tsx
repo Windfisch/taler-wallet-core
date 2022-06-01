@@ -4,18 +4,15 @@ import { Amount } from "../components/Amount.js";
 import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType.js";
 import { ErrorMessage } from "../components/ErrorMessage.js";
 import { QR } from "../components/QR.js";
-import {
-  ButtonDestructive,
-  Title,
-  WarningBox,
-} from "../components/styled/index.js";
+import { Title, WarningBox } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
+import { Button } from "../mui/Button.js";
 export interface Props {
   reservePub: string;
   paytoURI: PaytoUri | undefined;
   exchangeBaseUrl: string;
   amount: AmountJson;
-  onCancel: () => void;
+  onCancel: () => Promise<void>;
 }
 
 export function ReserveCreated({
@@ -82,9 +79,9 @@ export function ReserveCreated({
       </section>
       <footer>
         <div />
-        <ButtonDestructive onClick={onCancel}>
+        <Button variant="contained" color="error" onClick={onCancel}>
           <i18n.Translate>Cancel withdrawal</i18n.Translate>
-        </ButtonDestructive>
+        </Button>
       </footer>
     </Fragment>
   );

@@ -25,8 +25,6 @@ import { useEffect, useState } from "preact/hooks";
 import { Checkbox } from "../components/Checkbox.js";
 import { ErrorMessage } from "../components/ErrorMessage.js";
 import {
-  Button,
-  ButtonPrimary,
   Input,
   LightText,
   SmallLightText,
@@ -34,12 +32,13 @@ import {
   Title,
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
+import { Button } from "../mui/Button.js";
 import { queryToSlashConfig } from "../utils/index.js";
 import * as wxApi from "../wxApi.js";
 
 interface Props {
   currency: string;
-  onBack: () => void;
+  onBack: () => Promise<void>;
 }
 
 export function ProviderAddPage({ onBack }: Props): VNode {
@@ -67,11 +66,13 @@ export function ProviderAddPage({ onBack }: Props): VNode {
     <ConfirmProviderView
       provider={verifying.provider}
       url={verifying.url}
-      onCancel={() => {
+      onCancel={async () => {
         setVerifying(undefined);
       }}
       onConfirm={() => {
-        wxApi.addBackupProvider(verifying.url, verifying.name).then(onBack);
+        return wxApi
+          .addBackupProvider(verifying.url, verifying.name)
+          .then(onBack);
       }}
     />
   );
@@ -79,7 +80,7 @@ export function ProviderAddPage({ onBack }: Props): VNode {
 
 export interface SetUrlViewProps {
   initialValue?: string;
-  onCancel: () => void;
+  onCancel: () => Promise<void>;
   onVerify: (s: string) => Promise<BackupBackupProviderTerms | undefined>;
   onConfirm: (url: string, name: string) => Promise<string | undefined>;
   withError?: string;
@@ -161,10 +162,11 @@ export function SetUrlView({
         </p>
       </section>
       <footer>
-        <Button onClick={onCancel}>
+        <Button variant="contained" color="secondary" onClick={onCancel}>
           <i18n.Translate>Cancel</i18n.Translate>
         </Button>
-        <ButtonPrimary
+        <Button
+          variant="contained"
           disabled={!value && !urlError}
           onClick={() => {
             const url = canonicalizeBaseUrl(value);
@@ -174,7 +176,7 @@ export function SetUrlView({
           }}
         >
           <i18n.Translate>Next</i18n.Translate>
-        </ButtonPrimary>
+        </Button>
       </footer>
     </Fragment>
   );
@@ -183,8 +185,8 @@ export function SetUrlView({
 export interface ConfirmProviderViewProps {
   provider: BackupBackupProviderTerms;
   url: string;
-  onCancel: () => void;
-  onConfirm: () => void;
+  onCancel: () => Promise<void>;
+  onConfirm: () => Promise<void>;
 }
 export function ConfirmProviderView({
   url,
@@ -236,17 +238,17 @@ export function ConfirmProviderView({
         <Checkbox
           label={<i18n.Translate>Accept terms of service</i18n.Translate>}
           name="terms"
-          onToggle={() => setAccepted((old) => !old)}
+          onToggle={async () => setAccepted((old) => !old)}
           enabled={accepted}
         />
       </section>
       <footer>
-        <Button onClick={onCancel}>
+        <Button variant="contained" color="secondary" onClick={onCancel}>
           <i18n.Translate>Cancel</i18n.Translate>
         </Button>
-        <ButtonPrimary disabled={!accepted} onClick={onConfirm}>
+        <Button variant="contained" disabled={!accepted} onClick={onConfirm}>
           <i18n.Translate>Add provider</i18n.Translate>
-        </ButtonPrimary>
+        </Button>
       </footer>
     </Fragment>
   );

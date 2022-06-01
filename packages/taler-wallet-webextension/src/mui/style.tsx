@@ -46,13 +46,33 @@ export const theme = createTheme();
 export const ripple = css`
   background-position: center;
 
-  transition: background 0.5s;
-  &:hover {
-    background: #eeeeee radial-gradient(circle, transparent 1%, #eeeeee 1%)
+  transition: background 0.2s;
+
+  &:hover:enabled {
+    background: var(--color-main)
+      radial-gradient(circle, transparent 1%, var(--color-dark) 1%)
       center/15000%;
   }
-  &:active {
-    background-color: currentColor;
+  &:active:enabled {
+    background-color: var(--color-main);
+    background-size: 100%;
+    transition: background 0s;
+  }
+`;
+
+export const rippleOutlined = css`
+  background-position: center;
+
+  transition: background 0.2s;
+
+  &:hover:enabled {
+    background: var(--color-contrastText)
+      radial-gradient(circle, transparent 1%, var(--color-light) 1%)
+      center/15000%;
+  }
+
+  &:active:enabled {
+    background-color: var(--color-contrastText);
     background-size: 100%;
     transition: background 0s;
   }
@@ -680,15 +700,15 @@ function createTheme() {
   function getDefaultSecondary(mode = "light") {
     if (mode === "dark") {
       return {
-        main: purple[200],
-        light: purple[50],
-        dark: purple[400],
+        main: grey[200],
+        light: grey[50],
+        dark: grey[400],
       };
     }
     return {
-      main: purple[500],
-      light: purple[300],
-      dark: purple[700],
+      main: grey[300],
+      light: grey[100],
+      dark: grey[600],
     };
   }
 

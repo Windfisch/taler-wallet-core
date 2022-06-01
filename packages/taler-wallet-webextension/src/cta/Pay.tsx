@@ -60,13 +60,14 @@ import {
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
 import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { Button } from "../mui/Button.js";
 import { ButtonHandler } from "../mui/handlers.js";
 import * as wxApi from "../wxApi.js";
 
 interface Props {
   talerPayUri?: string;
-  goToWalletManualWithdraw: (currency?: string) => void;
-  goBack: () => void;
+  goToWalletManualWithdraw: (currency?: string) => Promise<void>;
+  goBack: () => Promise<void>;
 }
 
 type State = Loading | Ready | Confirmed;
@@ -265,8 +266,8 @@ export function View({
   goToWalletManualWithdraw,
 }: {
   state: Ready | Confirmed;
-  goToWalletManualWithdraw: (currency?: string) => void;
-  goBack: () => void;
+  goToWalletManualWithdraw: (currency?: string) => Promise<void>;
+  goBack: () => Promise<void>;
 }): VNode {
   const { i18n } = useTranslationContext();
   const contractTerms: ContractTerms = state.payStatus.contractTerms;
@@ -522,7 +523,7 @@ function ButtonsSection({
   goToWalletManualWithdraw,
 }: {
   state: Ready | Confirmed;
-  goToWalletManualWithdraw: (currency: string) => void;
+  goToWalletManualWithdraw: (currency: string) => Promise<void>;
 }): VNode {
   const { i18n } = useTranslationContext();
   if (state.status === "ready") {
@@ -531,11 +532,15 @@ function ButtonsSection({
       return (
         <Fragment>
           <section>
-            <ButtonSuccess upperCased onClick={state.payHandler.onClick}>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={state.payHandler.onClick}
+            >
               <i18n.Translate>
                 Pay {<Amount value={payStatus.amountEffective} />}
               </i18n.Translate>
-            </ButtonSuccess>
+            </Button>
           </section>
           <PayWithMobile state={state} />
         </Fragment>
@@ -560,12 +565,13 @@ function ButtonsSection({
             <WarningBox>{BalanceMessage}</WarningBox>
           </section>
           <section>
-            <ButtonSuccess
-              upperCased
+            <Button
+              variant="contained"
+              color="success"
               onClick={() => goToWalletManualWithdraw(state.amount.currency)}
             >
               <i18n.Translate>Withdraw digital cash</i18n.Translate>
-            </ButtonSuccess>
+            </Button>
           </section>
           <PayWithMobile state={state} />
         </Fragment>

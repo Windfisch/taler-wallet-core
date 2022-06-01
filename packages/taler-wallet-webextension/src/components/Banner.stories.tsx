@@ -77,8 +77,8 @@ export const BasicExample = (): VNode => (
         ]}
         confirm={{
           label: "turn on wifi",
-          action: () => {
-            return null;
+          action: async () => {
+            return;
           },
         }}
       />

@@ -33,6 +33,10 @@ export default {
   argTypes: {},
 };
 
+const noop = async (): Promise<void> => {
+  return;
+};
+
 export const NoBalance = createExample(TestedComponent, {
   state: {
     status: "ready",
@@ -61,8 +65,8 @@ export const NoBalance = createExample(TestedComponent, {
       amountRaw: "USD:10",
     },
   },
-  goBack: () => null,
-  goToWalletManualWithdraw: () => null,
+  goBack: noop,
+  goToWalletManualWithdraw: noop,
 });
 
 export const NoEnoughBalance = createExample(TestedComponent, {
@@ -97,8 +101,8 @@ export const NoEnoughBalance = createExample(TestedComponent, {
       amountRaw: "USD:10",
     },
   },
-  goBack: () => null,
-  goToWalletManualWithdraw: () => null,
+  goBack: noop,
+  goToWalletManualWithdraw: noop,
 });
 
 export const EnoughBalanceButRestricted = createExample(TestedComponent, {
@@ -133,8 +137,8 @@ export const EnoughBalanceButRestricted = createExample(TestedComponent, {
       amountRaw: "USD:10",
     },
   },
-  goBack: () => null,
-  goToWalletManualWithdraw: () => null,
+  goBack: noop,
+  goToWalletManualWithdraw: noop,
 });
 
 export const PaymentPossible = createExample(TestedComponent, {
@@ -172,8 +176,8 @@ export const PaymentPossible = createExample(TestedComponent, {
       proposalId: "proposal1234",
     },
   },
-  goBack: () => null,
-  goToWalletManualWithdraw: () => null,
+  goBack: noop,
+  goToWalletManualWithdraw: noop,
 });
 
 export const PaymentPossibleWithFee = createExample(TestedComponent, {
@@ -211,8 +215,8 @@ export const PaymentPossibleWithFee = createExample(TestedComponent, {
       proposalId: "proposal1234",
     },
   },
-  goBack: () => null,
-  goToWalletManualWithdraw: () => null,
+  goBack: noop,
+  goToWalletManualWithdraw: noop,
 });
 
 import beer from "../../static-dev/beer.png";
@@ -271,8 +275,8 @@ export const TicketWithAProductList = createExample(TestedComponent, {
       proposalId: "proposal1234",
     },
   },
-  goBack: () => null,
-  goToWalletManualWithdraw: () => null,
+  goBack: noop,
+  goToWalletManualWithdraw: noop,
 });
 
 export const AlreadyConfirmedByOther = createExample(TestedComponent, {
@@ -309,8 +313,8 @@ export const AlreadyConfirmedByOther = createExample(TestedComponent, {
       paid: false,
     },
   },
-  goBack: () => null,
-  goToWalletManualWithdraw: () => null,
+  goBack: noop,
+  goToWalletManualWithdraw: noop,
 });
 
 export const AlreadyPaidWithoutFulfillment = createExample(TestedComponent, {
@@ -347,8 +351,8 @@ export const AlreadyPaidWithoutFulfillment = createExample(TestedComponent, {
       paid: true,
     },
   },
-  goBack: () => null,
-  goToWalletManualWithdraw: () => null,
+  goBack: noop,
+  goToWalletManualWithdraw: noop,
 });
 
 export const AlreadyPaidWithFulfillment = createExample(TestedComponent, {
@@ -387,6 +391,6 @@ export const AlreadyPaidWithFulfillment = createExample(TestedComponent, {
       paid: true,
     },
   },
-  goBack: () => null,
-  goToWalletManualWithdraw: () => null,
+  goBack: noop,
+  goToWalletManualWithdraw: noop,
 });

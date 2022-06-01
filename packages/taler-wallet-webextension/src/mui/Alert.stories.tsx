@@ -68,18 +68,22 @@ export const WithTitle = (): VNode => (
   </Wrapper>
 );
 
+const showSomething = async function (): Promise<void> {
+  alert("closed");
+};
+
 export const WithAction = (): VNode => (
   <Wrapper>
-    <Alert title="Warning" severity="warning" onClose={() => alert("closed")}>
+    <Alert title="Warning" severity="warning" onClose={showSomething}>
       this is an warning
     </Alert>
-    <Alert title="Error" severity="error" onClose={() => alert("closed")}>
+    <Alert title="Error" severity="error" onClose={showSomething}>
       this is an error
     </Alert>
-    <Alert title="Success" severity="success" onClose={() => alert("closed")}>
+    <Alert title="Success" severity="success" onClose={showSomething}>
       this is an success
     </Alert>
-    <Alert title="Info" severity="info" onClose={() => alert("closed")}>
+    <Alert title="Info" severity="info" onClose={showSomething}>
       this is an info
     </Alert>
   </Wrapper>

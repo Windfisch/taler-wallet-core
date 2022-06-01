@@ -8,7 +8,7 @@ import { Typography } from "../mui/Typography.js";
 export function NoBalanceHelp({
   goToWalletManualWithdraw,
 }: {
-  goToWalletManualWithdraw: () => void;
+  goToWalletManualWithdraw: () => Promise<void>;
 }): VNode {
   return (
     <Paper

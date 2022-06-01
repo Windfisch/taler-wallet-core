@@ -18,7 +18,7 @@ import { h, VNode } from "preact";
 
 interface Props {
   enabled?: boolean;
-  onToggle?: () => void;
+  onToggle?: () => Promise<void>;
   label: VNode;
   name: string;
   description?: VNode;

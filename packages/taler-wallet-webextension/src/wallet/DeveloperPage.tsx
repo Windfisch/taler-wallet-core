@@ -30,6 +30,9 @@ import { Time } from "../components/Time.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { useDiagnostics } from "../hooks/useDiagnostics.js";
+import { Button } from "../mui/Button.js";
+import { Grid } from "../mui/Grid.js";
+import { Paper } from "../mui/Paper.js";
 import * as wxApi from "../wxApi.js";
 
 export function DeveloperPage(): VNode {
@@ -133,7 +136,6 @@ export function View({
   const money_by_exchange = coins.reduce(
     (prev, cur) => {
       const denom = Amounts.parseOrThrow(cur.denom_value);
-      console.log(cur);
       if (!prev[cur.exchange_base_url]) {
         prev[cur.exchange_base_url] = [];
         currencies[cur.exchange_base_url] = denom.currency;
@@ -154,57 +156,72 @@ export function View({
       [exchange_name: string]: CalculatedCoinfInfo[];
     },
   );
-
+  function Item({ children }: any) {
+    return <div>{children}</div>;
+  }
   return (
     <div>
       <p>
         <i18n.Translate>Debug tools</i18n.Translate>:
       </p>
-      <button
-        onClick={() =>
-          confirmReset(
-            i18n.str`Do you want to IRREVOCABLY DESTROY everything inside your wallet and LOSE ALL YOUR COINS?`,
-            wxApi.resetDb,
-          )
-        }
-      >
-        <i18n.Translate>reset</i18n.Translate>
-      </button>
-      <button
-        onClick={() =>
-          confirmReset(
-            i18n.str`TESTING: This may delete all your coin, proceed with caution`,
-            wxApi.runGarbageCollector,
-          )
-        }
-      >
-        <i18n.Translate>run gc</i18n.Translate>
-      </button>
-      <br />
-      <button onClick={() => fileRef?.current?.click()}>
-        <i18n.Translate>import database</i18n.Translate>
-      </button>
-      <input
-        ref={fileRef}
-        style={{ display: "none" }}
-        type="file"
-        onChange={async (e) => {
-          const f: FileList | null = e.currentTarget.files;
-          if (!f || f.length != 1) {
-            return Promise.reject();
-          }
-          const buf = await f[0].arrayBuffer();
-          const str = new Uint8Array(buf).reduce(
-            (data, byte) => data + String.fromCharCode(byte),
-            "",
-          );
-          return onImportDatabase(str);
-        }}
-      />
-      <br />
-      <button onClick={onExportDatabase}>
-        <i18n.Translate>export database</i18n.Translate>
-      </button>
+      <Grid container justifyContent="space-between" spacing={1}>
+        <Grid item>
+          <Button
+            variant="contained"
+            onClick={() =>
+              confirmReset(
+                i18n.str`Do you want to IRREVOCABLY DESTROY everything inside your wallet and LOSE ALL YOUR COINS?`,
+                wxApi.resetDb,
+              )
+            }
+          >
+            <i18n.Translate>reset</i18n.Translate>
+          </Button>
+        </Grid>
+        <Grid item>
+          <Button
+            variant="contained"
+            onClick={() =>
+              confirmReset(
+                i18n.str`TESTING: This may delete all your coin, proceed with caution`,
+                wxApi.runGarbageCollector,
+              )
+            }
+          >
+            <i18n.Translate>run gc</i18n.Translate>
+          </Button>
+        </Grid>
+        <Grid item>
+          <Button
+            variant="contained"
+            onClick={async () => fileRef?.current?.click()}
+          >
+            <i18n.Translate>import database</i18n.Translate>
+          </Button>
+        </Grid>
+        <Grid item>
+          <input
+            ref={fileRef}
+            style={{ display: "none" }}
+            type="file"
+            onChange={async (e) => {
+              const f: FileList | null = e.currentTarget.files;
+              if (!f || f.length != 1) {
+                return Promise.reject();
+              }
+              const buf = await f[0].arrayBuffer();
+              const str = new Uint8Array(buf).reduce(
+                (data, byte) => data + String.fromCharCode(byte),
+                "",
+              );
+              return onImportDatabase(str);
+            }}
+          />
+          <Button variant="contained" onClick={onExportDatabase}>
+            <i18n.Translate>export database</i18n.Translate>
+          </Button>
+        </Grid>
+      </Grid>
       {downloadedDatabase && (
         <div>
           <i18n.Translate>

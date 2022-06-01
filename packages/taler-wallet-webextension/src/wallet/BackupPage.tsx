@@ -31,8 +31,6 @@ import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import {
   BoldLight,
-  ButtonPrimary,
-  ButtonSuccess,
   Centered,
   CenteredBoldText,
   CenteredText,
@@ -42,11 +40,12 @@ import {
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { Button } from "../mui/Button.js";
 import { Pages } from "../NavigationBar.js";
 import * as wxApi from "../wxApi.js";
 
 interface Props {
-  onAddProvider: () => void;
+  onAddProvider: () => Promise<void>;
 }
 
 export function BackupPage({ onAddProvider }: Props): VNode {
@@ -87,7 +86,7 @@ export function BackupPage({ onAddProvider }: Props): VNode {
 
 export interface ViewProps {
   providers: ProviderInfo[];
-  onAddProvider: () => void;
+  onAddProvider: () => Promise<void>;
   onSyncAll: () => Promise<void>;
 }
 
@@ -121,9 +120,9 @@ export function BackupView({
             <BoldLight>
               <i18n.Translate>No backup providers configured</i18n.Translate>
             </BoldLight>
-            <ButtonSuccess onClick={onAddProvider}>
+            <Button variant="contained" color="success" onClick={onAddProvider}>
               <i18n.Translate>Add provider</i18n.Translate>
-            </ButtonSuccess>
+            </Button>
           </Centered>
         )}
       </section>
@@ -131,16 +130,16 @@ export function BackupView({
         <footer>
           <div />
           <div>
-            <ButtonPrimary onClick={onSyncAll}>
+            <Button variant="contained" onClick={onSyncAll}>
               {providers.length > 1 ? (
                 <i18n.Translate>Sync all backups</i18n.Translate>
               ) : (
                 <i18n.Translate>Sync now</i18n.Translate>
               )}
-            </ButtonPrimary>
-            <ButtonSuccess onClick={onAddProvider}>
+            </Button>
+            <Button variant="contained" color="success" onClick={onAddProvider}>
               <i18n.Translate>Add provider</i18n.Translate>
-            </ButtonSuccess>
+            </Button>
           </div>
         </footer>
       )}
