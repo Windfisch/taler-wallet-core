@@ -354,10 +354,6 @@ importers:
       '@linaria/core': 3.0.0-beta.4
       '@linaria/react': 3.0.0-beta.4
       '@linaria/webpack-loader': 3.0.0-beta.4
-      '@rollup/plugin-commonjs': ^21.0.1
-      '@rollup/plugin-json': ^4.1.0
-      '@rollup/plugin-node-resolve': ^13.1.3
-      '@rollup/plugin-replace': ^3.0.1
       '@testing-library/preact': ^2.0.1
       '@testing-library/preact-hooks': ^1.1.0
       '@types/chai': ^4.3.0
@@ -380,9 +376,6 @@ importers:
       preact-router: 3.2.1
       qrcode-generator: ^1.4.4
       rimraf: ^3.0.2
-      rollup: ^2.67.2
-      rollup-plugin-sourcemaps: ^0.6.3
-      rollup-plugin-terser: ^7.0.2
       tslib: ^2.3.1
       typescript: ^4.5.5
       ws: 7.4.5
@@ -406,10 +399,6 @@ importers:
       '@linaria/core': 3.0.0-beta.4
       '@linaria/react': 3.0.0-beta.4
       '@linaria/webpack-loader': 3.0.0-beta.4_@babel+core@7.13.16
-      '@rollup/plugin-commonjs': 21.0.1_rollup@2.67.2
-      '@rollup/plugin-json': 4.1.0_rollup@2.67.2
-      '@rollup/plugin-node-resolve': 13.1.3_rollup@2.67.2
-      '@rollup/plugin-replace': 3.0.1_rollup@2.67.2
       '@testing-library/preact': 2.0.1_preact@10.6.5
       '@testing-library/preact-hooks': 1.1.0_vfcmu6iy7nffpurikpgxo6gwxi
       '@types/chai': 4.3.0
@@ -427,9 +416,6 @@ importers:
       preact-cli: 3.3.5_mvcuzfcaha7xgb2vtvvy6e3v4a
       preact-render-to-string: 5.1.19_preact@10.6.5
       rimraf: 3.0.2
-      rollup: 2.67.2
-      rollup-plugin-sourcemaps: 0.6.3_vvcaq4nmsjqkxtxa2zxio5jusq
-      rollup-plugin-terser: 7.0.2_rollup@2.67.2
       typescript: 4.5.5
 
 packages:
@@ -16575,22 +16561,6 @@ packages:
         optional: true
     dependencies:
       '@rollup/pluginutils': 3.1.0_rollup@2.67.2
-      rollup: 2.67.2
-      source-map-resolve: 0.6.0
-    dev: true
-
-  /rollup-plugin-sourcemaps/0.6.3_vvcaq4nmsjqkxtxa2zxio5jusq:
-    resolution: {integrity: sha512-paFu+nT1xvuO1tPFYXGe+XnQvg4Hjqv/eIhG8i5EspfYYPBKL57X7iVbfv55aNVASg3dzWvES9dmWsL2KhfByw==}
-    engines: {node: '>=10.0.0'}
-    peerDependencies:
-      '@types/node': '>=10.0.0'
-      rollup: '>=0.31.2'
-    peerDependenciesMeta:
-      '@types/node':
-        optional: true
-    dependencies:
-      '@rollup/pluginutils': 3.1.0_rollup@2.67.2
-      '@types/node': 17.0.8
       rollup: 2.67.2
       source-map-resolve: 0.6.0
     dev: true
