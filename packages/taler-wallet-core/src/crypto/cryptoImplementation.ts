@@ -916,10 +916,12 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
       );
       maybeAgeCommitmentHash = ach;
       hAgeCommitment = decodeCrock(ach);
-      minimumAgeSig = AgeRestriction.commitmentAttest(
-        depositInfo.ageCommitmentProof,
-        depositInfo.requiredMinimumAge!,
-      );
+      if (depositInfo.requiredMinimumAge != null) {
+        minimumAgeSig = AgeRestriction.commitmentAttest(
+          depositInfo.ageCommitmentProof,
+          depositInfo.requiredMinimumAge,
+        );
+      }
     } else {
       // All zeros.
       hAgeCommitment = new Uint8Array(32);
