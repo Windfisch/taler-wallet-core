@@ -97,6 +97,19 @@ function shouldSkipSearch(
 }
 
 /**
+ * Fallback order of transactions that have the same timestamp.
+ */
+const txOrder: { [t in TransactionType]: number } = {
+  [TransactionType.Withdrawal]: 1,
+  [TransactionType.Tip]: 2,
+  [TransactionType.Payment]: 3,
+  [TransactionType.Refund]: 4,
+  [TransactionType.Deposit]: 5,
+  [TransactionType.Refresh]: 6,
+  [TransactionType.Tip]: 7,
+};
+
+/**
  * Retrieve the full event history for this wallet.
  */
 export async function getTransactions(
@@ -306,8 +319,10 @@ export async function getTransactions(
           }
 
           let totalRefundRaw = Amounts.getZero(contractData.amount.currency);
-          let totalRefundEffective = Amounts.getZero(contractData.amount.currency);
-          const refunds: RefundInfoShort[] = []
+          let totalRefundEffective = Amounts.getZero(
+            contractData.amount.currency,
+          );
+          const refunds: RefundInfoShort[] = [];
 
           for (const groupKey of refundGroupKeys.values()) {
             const refundTombstoneId = makeEventId(
@@ -353,7 +368,7 @@ export async function getTransactions(
                   timestamp: r0.obtainedTime,
                   amountEffective: Amounts.stringify(amountEffective),
                   amountRaw: Amounts.stringify(amountRaw),
-                })
+                });
               }
             }
             if (!r0) {
@@ -361,7 +376,10 @@ export async function getTransactions(
             }
 
             totalRefundRaw = Amounts.add(totalRefundRaw, amountRaw).amount;
-            totalRefundEffective = Amounts.add(totalRefundEffective, amountEffective).amount;
+            totalRefundEffective = Amounts.add(
+              totalRefundEffective,
+              amountEffective,
+            ).amount;
             transactions.push({
               type: TransactionType.Refund,
               info,
@@ -370,7 +388,10 @@ export async function getTransactions(
               timestamp: r0.obtainedTime,
               amountEffective: Amounts.stringify(amountEffective),
               amountRaw: Amounts.stringify(amountRaw),
-              refundPending: pr.refundAwaiting === undefined ? undefined : Amounts.stringify(pr.refundAwaiting),
+              refundPending:
+                pr.refundAwaiting === undefined
+                  ? undefined
+                  : Amounts.stringify(pr.refundAwaiting),
               pending: false,
               frozen: false,
             });
@@ -383,7 +404,10 @@ export async function getTransactions(
             amountEffective: Amounts.stringify(pr.totalPayCost),
             totalRefundRaw: Amounts.stringify(totalRefundRaw),
             totalRefundEffective: Amounts.stringify(totalRefundEffective),
-            refundPending: pr.refundAwaiting === undefined ? undefined : Amounts.stringify(pr.refundAwaiting),
+            refundPending:
+              pr.refundAwaiting === undefined
+                ? undefined
+                : Amounts.stringify(pr.refundAwaiting),
             status: pr.timestampFirstSuccessfulPay
               ? PaymentStatus.Paid
               : PaymentStatus.Accepted,
@@ -398,7 +422,6 @@ export async function getTransactions(
             frozen: pr.payFrozen ?? false,
             ...(err ? { error: err } : {}),
           });
-
         });
 
         tx.tips.iter().forEachAsync(async (tipRecord) => {
@@ -434,18 +457,19 @@ export async function getTransactions(
   const txPending = transactions.filter((x) => x.pending);
   const txNotPending = transactions.filter((x) => !x.pending);
 
-  txPending.sort((h1, h2) =>
-    AbsoluteTime.cmp(
+  const txCmp = (h1: Transaction, h2: Transaction) => {
+    const tsCmp = AbsoluteTime.cmp(
       AbsoluteTime.fromTimestamp(h1.timestamp),
       AbsoluteTime.fromTimestamp(h2.timestamp),
-    ),
-  );
-  txNotPending.sort((h1, h2) =>
-    AbsoluteTime.cmp(
-      AbsoluteTime.fromTimestamp(h1.timestamp),
-      AbsoluteTime.fromTimestamp(h2.timestamp),
-    ),
-  );
+    );
+    if (tsCmp === 0) {
+      return Math.sign(txOrder[h1.type] - txOrder[h2.type]);
+    }
+    return tsCmp;
+  };
+
+  txPending.sort(txCmp);
+  txNotPending.sort(txCmp);
 
   return { transactions: [...txNotPending, ...txPending] };
 }
