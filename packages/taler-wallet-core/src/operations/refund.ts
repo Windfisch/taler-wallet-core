@@ -722,15 +722,6 @@ async function queryAndSaveAwaitingRefund(
     Amounts.parseOrThrow(orderStatus.refund_taken),
   ).amount;
 
-  logger.info(
-    "refund waiting found, ",
-    refundAwaiting,
-    orderStatus,
-    purchase.refundAwaiting,
-    purchase.refundAwaiting &&
-      Amounts.cmp(refundAwaiting, purchase.refundAwaiting),
-  );
-
   if (
     purchase.refundAwaiting === undefined ||
     Amounts.cmp(refundAwaiting, purchase.refundAwaiting) !== 0
