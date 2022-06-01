@@ -121,8 +121,7 @@ export namespace BankApi {
         paytoUri = respJson.paytoUri;
       }
     } catch (e) {
-      logger.error("error trying to parse json from response", e);
-      throw TalerError.fromException(e);
+      // Do nothing
     }
     return {
       password,

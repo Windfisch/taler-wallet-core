@@ -856,6 +856,9 @@ class PybankService extends BankServiceBase implements BankServiceHandle {
   }
 }
 
+// Use libeufin bank instead of pybank.
+const useLibeufinBank = process.env.WALLET_HARNESS_WITH_EUFIN;
+
 /**
  * Return a euFin or a pyBank implementation of
  * the exported BankService class.  This allows
@@ -866,7 +869,7 @@ function getBankServiceImpl(): {
   prototype: typeof PybankService.prototype;
   create: typeof PybankService.create;
 } {
-  if (process.env.WALLET_HARNESS_WITH_EUFIN)
+  if (useLibeufinBank)
     return {
       prototype: EufinBankService.prototype,
       create: EufinBankService.create,
@@ -1003,7 +1006,7 @@ export class ExchangeService implements ExchangeServiceInterface {
   }
 
   async runWirewatchOnce() {
-    if (process.env.WALLET_HARNESS_WITH_EUFIN) {
+    if (useLibeufinBank) {
       // Not even 2 secods showed to be enough!
       await waitMs(4000);
     }
@@ -2016,7 +2019,7 @@ export function getRandomIban(salt: string | null = null): string {
 
 // Only used in one tipping test.
 export function getWireMethod(): string {
-  if (process.env.WALLET_HARNESS_WITH_EUFIN) return "iban";
+  if (useLibeufinBank) return "iban";
   return "x-taler-bank";
 }
 
@@ -2025,7 +2028,7 @@ export function getWireMethod(): string {
  * on whether the banking is served by euFin or Pybank.
  */
 export function getPayto(label: string): string {
-  if (process.env.WALLET_HARNESS_WITH_EUFIN)
+  if (useLibeufinBank)
     return `payto://iban/SANDBOXX/${getRandomIban(
       label,
     )}?receiver-name=${label}`;

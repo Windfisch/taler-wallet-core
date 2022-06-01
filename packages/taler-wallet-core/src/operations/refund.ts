@@ -25,18 +25,28 @@
  */
 import {
   AbortingCoin,
-  AbortRequest, AbsoluteTime, AmountJson,
+  AbortRequest,
+  AbsoluteTime,
+  AmountJson,
   Amounts,
   ApplyRefundResponse,
   codecForAbortResponse,
-  codecForMerchantOrderRefundPickupResponse, codecForMerchantOrderStatusPaid, CoinPublicKey, Duration, Logger,
+  codecForMerchantOrderRefundPickupResponse,
+  codecForMerchantOrderStatusPaid,
+  CoinPublicKey,
+  Duration,
+  Logger,
   MerchantCoinRefundFailureStatus,
   MerchantCoinRefundStatus,
   MerchantCoinRefundSuccessStatus,
   NotificationType,
-  parseRefundUri, PrepareRefundResult, RefreshReason,
+  parseRefundUri,
+  PrepareRefundResult,
+  RefreshReason,
   TalerErrorCode,
-  TalerErrorDetail, TalerProtocolTimestamp, URL
+  TalerErrorDetail,
+  TalerProtocolTimestamp,
+  URL,
 } from "@gnu-taler/taler-util";
 import {
   AbortStatus,
@@ -44,20 +54,17 @@ import {
   PurchaseRecord,
   RefundReason,
   RefundState,
-  WalletStoresV1
+  WalletStoresV1,
 } from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { GetReadWriteAccess } from "../util/query.js";
-import {
-  RetryInfo
-} from "../util/retries.js";
+import { RetryInfo } from "../util/retries.js";
 import { guardOperationException } from "./common.js";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
 
 const logger = new Logger("refund.ts");
-
 
 export async function prepareRefund(
   ws: InternalWalletState,
@@ -88,11 +95,11 @@ export async function prepareRefund(
     );
   }
 
-  const awaiting = await queryAndSaveAwaitingRefund(ws, purchase)
-  const summary = calculateRefundSummary(purchase)
+  const awaiting = await queryAndSaveAwaitingRefund(ws, purchase);
+  const summary = calculateRefundSummary(purchase);
   const proposalId = purchase.proposalId;
 
-  const { contractData: c } = purchase.download
+  const { contractData: c } = purchase.download;
 
   return {
     proposalId,
@@ -109,10 +116,9 @@ export async function prepareRefund(
       summary: c.summary,
       fulfillmentMessage: c.fulfillmentMessage,
       summary_i18n: c.summaryI18n,
-      fulfillmentMessage_i18n:
-        c.fulfillmentMessageI18n,
+      fulfillmentMessage_i18n: c.fulfillmentMessageI18n,
     },
-  }
+  };
 }
 /**
  * Retry querying and applying refunds for an order later.
@@ -496,7 +502,7 @@ async function acceptRefunds(
       } else {
         // No error, but we need to try again!
         p.timestampLastRefundStatus = now;
-        p.refundStatusRetryInfo = RetryInfo.increment(p.refundStatusRetryInfo)
+        p.refundStatusRetryInfo = RetryInfo.increment(p.refundStatusRetryInfo);
         p.lastRefundStatusError = undefined;
         logger.trace("refund query not done");
       }
@@ -508,7 +514,6 @@ async function acceptRefunds(
     type: NotificationType.RefundQueried,
   });
 }
-
 
 function calculateRefundSummary(p: PurchaseRecord): RefundSummary {
   let amountRefundGranted = Amounts.getZero(
@@ -544,7 +549,12 @@ function calculateRefundSummary(p: PurchaseRecord): RefundSummary {
       ).amount;
     }
   });
-  return { amountEffectivePaid: p.totalPayCost, amountRefundGone, amountRefundGranted, pendingAtExchange }
+  return {
+    amountEffectivePaid: p.totalPayCost,
+    amountRefundGone,
+    amountRefundGranted,
+    pendingAtExchange,
+  };
 }
 
 /**
@@ -590,14 +600,13 @@ export async function applyRefund(
     );
   }
 
-  return applyRefundFromPurchaseId(ws, purchase.proposalId)
+  return applyRefundFromPurchaseId(ws, purchase.proposalId);
 }
 
 export async function applyRefundFromPurchaseId(
   ws: InternalWalletState,
   proposalId: string,
 ): Promise<ApplyRefundResponse> {
-
   logger.trace("applying refund for purchase", proposalId);
 
   logger.info("processing purchase for refund");
@@ -640,7 +649,7 @@ export async function applyRefundFromPurchaseId(
     throw Error("purchase no longer exists");
   }
 
-  const summary = calculateRefundSummary(purchase)
+  const summary = calculateRefundSummary(purchase);
 
   return {
     contractTermsHash: purchase.download.contractData.contractTermsHash,
@@ -682,7 +691,8 @@ export async function processPurchaseQueryRefund(
 async function queryAndSaveAwaitingRefund(
   ws: InternalWalletState,
   purchase: PurchaseRecord,
-  waitForAutoRefund?: boolean): Promise<AmountJson> {
+  waitForAutoRefund?: boolean,
+): Promise<AmountJson> {
   const requestUrl = new URL(
     `orders/${purchase.download.contractData.orderId}`,
     purchase.download.contractData.merchantBaseUrl,
@@ -709,12 +719,22 @@ async function queryAndSaveAwaitingRefund(
 
   const refundAwaiting = Amounts.sub(
     Amounts.parseOrThrow(orderStatus.refund_amount),
-    Amounts.parseOrThrow(orderStatus.refund_taken)
-  ).amount
+    Amounts.parseOrThrow(orderStatus.refund_taken),
+  ).amount;
 
-  console.log("refund waiting found, ", refundAwaiting, orderStatus, purchase.refundAwaiting, purchase.refundAwaiting && Amounts.cmp(refundAwaiting, purchase.refundAwaiting))
+  logger.info(
+    "refund waiting found, ",
+    refundAwaiting,
+    orderStatus,
+    purchase.refundAwaiting,
+    purchase.refundAwaiting &&
+      Amounts.cmp(refundAwaiting, purchase.refundAwaiting),
+  );
 
-  if (purchase.refundAwaiting === undefined || Amounts.cmp(refundAwaiting, purchase.refundAwaiting) !== 0) {
+  if (
+    purchase.refundAwaiting === undefined ||
+    Amounts.cmp(refundAwaiting, purchase.refundAwaiting) !== 0
+  ) {
     await ws.db
       .mktx((x) => ({ purchases: x.purchases }))
       .runReadWrite(async (tx) => {
@@ -723,14 +743,13 @@ async function queryAndSaveAwaitingRefund(
           logger.warn("purchase does not exist anymore");
           return;
         }
-        p.refundAwaiting = refundAwaiting
+        p.refundAwaiting = refundAwaiting;
         await tx.purchases.put(p);
       });
   }
 
   return refundAwaiting;
 }
-
 
 async function processPurchaseQueryRefundImpl(
   ws: InternalWalletState,
@@ -765,7 +784,11 @@ async function processPurchaseQueryRefundImpl(
         AbsoluteTime.fromTimestamp(purchase.autoRefundDeadline),
       )
     ) {
-      const awaitingAmount = await queryAndSaveAwaitingRefund(ws, purchase, waitForAutoRefund)
+      const awaitingAmount = await queryAndSaveAwaitingRefund(
+        ws,
+        purchase,
+        waitForAutoRefund,
+      );
       if (Amounts.isZero(awaitingAmount)) return;
     }
 

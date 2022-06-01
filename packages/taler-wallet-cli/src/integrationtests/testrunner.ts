@@ -222,7 +222,7 @@ export async function runTests(spec: TestRunSpec) {
     path.join(os.tmpdir(), "taler-integrationtests-"),
   );
   updateCurrentSymlink(testRootDir);
-  console.log("testsuite root directory: ", testRootDir);
+  console.log(`testsuite root directory: ${testRootDir}`);
 
   const testResults: TestRunResult[] = [];
 
