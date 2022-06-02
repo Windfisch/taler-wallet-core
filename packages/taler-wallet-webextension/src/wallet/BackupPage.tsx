@@ -167,10 +167,9 @@ function BackupLayout(props: TransactionLayoutProps): VNode {
     <RowBorderGray>
       <div style={{ color: !props.active ? "grey" : undefined }}>
         <a
-          href={Pages.backup_provider_detail.replace(
-            ":pid",
-            encodeURIComponent(props.id),
-          )}
+          href={Pages.backupProviderDetail({
+            pid: encodeURIComponent(props.id),
+          })}
         >
           <span>{props.title}</span>
         </a>

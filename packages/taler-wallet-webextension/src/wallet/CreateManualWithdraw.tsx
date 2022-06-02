@@ -165,10 +165,7 @@ export function CreateManualWithdraw({
               </i18n.Translate>
             </BoldLight>
             <LinkPrimary
-              href={Pages.settings_exchange_add.replace(
-                ":currency?",
-                initialCurrency,
-              )}
+              href={Pages.settingsExchangeAdd({ currency: initialCurrency })}
               style={{ marginLeft: "auto" }}
             >
               <i18n.Translate>Add Exchange</i18n.Translate>
@@ -194,7 +191,7 @@ export function CreateManualWithdraw({
             <i18n.Translate>No exchange configured</i18n.Translate>
           </BoldLight>
           <LinkPrimary
-            href={Pages.settings_exchange_add.replace(":currency?", "")}
+            href={Pages.settingsExchangeAdd({})}
             style={{ marginLeft: "auto" }}
           >
             <i18n.Translate>Add Exchange</i18n.Translate>
@@ -242,7 +239,7 @@ export function CreateManualWithdraw({
           </Input>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <LinkPrimary
-              href={Pages.settings_exchange_add.replace(":currency?", "")}
+              href={Pages.settingsExchangeAdd({})}
               style={{ marginLeft: "auto" }}
             >
               <i18n.Translate>Add Exchange</i18n.Translate>

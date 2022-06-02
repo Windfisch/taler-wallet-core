@@ -93,10 +93,8 @@ export function Application(): VNode {
                       }}
                     >
                       <PendingTransactions
-                        goToTransaction={(txId: string) =>
-                          redirectTo(
-                            Pages.balance_transaction.replace(":tid", txId),
-                          )
+                        goToTransaction={(tid: string) =>
+                          redirectTo(Pages.balanceTransaction({ tid }))
                         }
                       />
                     </div>
@@ -122,50 +120,37 @@ export function Application(): VNode {
                */}
 
               <Route
-                path={Pages.balance_history}
+                path={Pages.balanceHistory.pattern}
                 component={HistoryPage}
                 goToWalletDeposit={(currency: string) =>
-                  redirectTo(
-                    Pages.balance_deposit.replace(":currency", currency),
-                  )
+                  redirectTo(Pages.balanceDeposit({ currency }))
                 }
                 goToWalletManualWithdraw={(currency?: string) =>
-                  redirectTo(
-                    Pages.balance_manual_withdraw.replace(
-                      ":currency?",
-                      currency || "",
-                    ),
-                  )
+                  redirectTo(Pages.balanceManualWithdraw({ currency }))
                 }
               />
               <Route
-                path={Pages.balance_transaction}
+                path={Pages.balanceTransaction.pattern}
                 component={TransactionPage}
                 goToWalletHistory={(currency?: string) =>
-                  redirectTo(
-                    Pages.balance_history.replace(":currency?", currency || ""),
-                  )
+                  redirectTo(Pages.balanceHistory({ currency }))
                 }
               />
 
               <Route
-                path={Pages.balance_manual_withdraw}
+                path={Pages.balanceManualWithdraw.pattern}
                 component={ManualWithdrawPage}
                 onCancel={() => redirectTo(Pages.balance)}
               />
 
               <Route
-                path={Pages.balance_deposit}
+                path={Pages.balanceDeposit.pattern}
                 component={DepositPage}
                 onCancel={(currency: string) => {
-                  redirectTo(
-                    Pages.balance_history.replace(":currency?", currency),
-                  );
+                  redirectTo(Pages.balanceHistory({ currency }));
                 }}
                 onSuccess={(currency: string) => {
-                  redirectTo(
-                    Pages.balance_history.replace(":currency?", currency),
-                  );
+                  redirectTo(Pages.balanceHistory({ currency }));
                   setGlobalNotification(
                     <i18n.Translate>
                       All done, your transaction is in progress
@@ -184,15 +169,15 @@ export function Application(): VNode {
               <Route
                 path={Pages.backup}
                 component={BackupPage}
-                onAddProvider={() => redirectTo(Pages.backup_provider_add)}
+                onAddProvider={() => redirectTo(Pages.backupProviderAdd)}
               />
               <Route
-                path={Pages.backup_provider_detail}
+                path={Pages.backupProviderDetail.pattern}
                 component={ProviderDetailPage}
                 onBack={() => redirectTo(Pages.backup)}
               />
               <Route
-                path={Pages.backup_provider_add}
+                path={Pages.backupProviderAdd}
                 component={ProviderAddPage}
                 onBack={() => redirectTo(Pages.backup)}
               />
@@ -201,7 +186,7 @@ export function Application(): VNode {
                * SETTINGS
                */}
               <Route
-                path={Pages.settings_exchange_add}
+                path={Pages.settingsExchangeAdd.pattern}
                 component={ExchangeAddPage}
                 onBack={() => redirectTo(Pages.balance)}
               />
@@ -216,22 +201,17 @@ export function Application(): VNode {
                * CALL TO ACTION
                */}
               <Route
-                path={Pages.cta_pay}
+                path={Pages.ctaPay}
                 component={PayPage}
                 goToWalletManualWithdraw={(currency?: string) =>
-                  redirectTo(
-                    Pages.balance_manual_withdraw.replace(
-                      ":currency?",
-                      currency || "",
-                    ),
-                  )
+                  redirectTo(Pages.balanceManualWithdraw({ currency }))
                 }
                 goBack={() => redirectTo(Pages.balance)}
               />
-              <Route path={Pages.cta_refund} component={RefundPage} />
-              <Route path={Pages.cta_tips} component={TipPage} />
-              <Route path={Pages.cta_withdraw} component={WithdrawPage} />
-              <Route path={Pages.cta_deposit} component={DepositPageCTA} />
+              <Route path={Pages.ctaRefund} component={RefundPage} />
+              <Route path={Pages.ctaTips} component={TipPage} />
+              <Route path={Pages.ctaWithdraw} component={WithdrawPage} />
+              <Route path={Pages.ctaDeposit} component={DepositPageCTA} />
 
               {/**
                * NOT FOUND
@@ -240,13 +220,13 @@ export function Application(): VNode {
               <Route
                 path={Pages.balance}
                 component={Redirect}
-                to={Pages.balance_history.replace(":currency?", "")}
+                to={Pages.balanceHistory({})}
               />
 
               <Route
                 default
                 component={Redirect}
-                to={Pages.balance_history.replace(":currency?", "")}
+                to={Pages.balanceHistory({})}
               />
             </Router>
           </WalletBox>
@@ -268,5 +248,7 @@ function Redirect({ to }: { to: string }): null {
 }
 
 function shouldShowPendingOperations(path: string): boolean {
+  // FIXME: replace includes with a match API like preact router does
+  // [Pages.balanceHistory, Pages.dev, Pages.settings, Pages.backup]
   return ["/balance/history/", "/dev", "/settings", "/backup"].includes(path);
 }

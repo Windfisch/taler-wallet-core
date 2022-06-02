@@ -178,9 +178,7 @@ export function SettingsView({
         )}
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <div />
-          <LinkPrimary
-            href={Pages.settings_exchange_add.replace(":currency?", "")}
-          >
+          <LinkPrimary href={Pages.settingsExchangeAdd({})}>
             <i18n.Translate>Add an exchange</i18n.Translate>
           </LinkPrimary>
         </div>

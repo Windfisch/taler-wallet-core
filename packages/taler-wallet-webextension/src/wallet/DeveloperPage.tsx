@@ -156,9 +156,6 @@ export function View({
       [exchange_name: string]: CalculatedCoinfInfo[];
     },
   );
-  function Item({ children }: any) {
-    return <div>{children}</div>;
-  }
   return (
     <div>
       <p>

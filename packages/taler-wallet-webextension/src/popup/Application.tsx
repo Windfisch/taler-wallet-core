@@ -45,8 +45,9 @@ function CheckTalerActionComponent(): VNode {
   const [talerActionUrl] = useTalerActionURL();
 
   useEffect(() => {
-    if (talerActionUrl)
-      route(Pages.cta.replace(":action", encodeURIComponent(talerActionUrl)));
+    if (talerActionUrl) {
+      route(Pages.cta({ action: encodeURIComponent(talerActionUrl) }));
+    }
   }, [talerActionUrl]);
 
   return <Fragment />;
@@ -60,8 +61,8 @@ export function Application(): VNode {
         {({ devMode }: { devMode: boolean }) => (
           <IoCProviderForRuntime>
             <PendingTransactions
-              goToTransaction={(txId: string) =>
-                redirectTo(Pages.balance_transaction.replace(":tid", txId))
+              goToTransaction={(tid: string) =>
+                redirectTo(Pages.balanceTransaction({ tid }))
               }
             />
             <Match>
@@ -74,24 +75,18 @@ export function Application(): VNode {
                   path={Pages.balance}
                   component={BalancePage}
                   goToWalletManualWithdraw={() =>
-                    redirectTo(
-                      Pages.balance_manual_withdraw.replace(":currency?", ""),
-                    )
+                    redirectTo(Pages.balanceManualWithdraw({}))
                   }
                   goToWalletDeposit={(currency: string) =>
-                    redirectTo(
-                      Pages.balance_deposit.replace(":currency", currency),
-                    )
+                    redirectTo(Pages.balanceDeposit({ currency }))
                   }
                   goToWalletHistory={(currency: string) =>
-                    redirectTo(
-                      Pages.balance_history.replace(":currency?", currency),
-                    )
+                    redirectTo(Pages.balanceHistory({ currency }))
                   }
                 />
 
                 <Route
-                  path={Pages.cta}
+                  path={Pages.cta.pattern}
                   component={function Action({ action }: { action: string }) {
                     const [, setDismissed] = useTalerActionURL();
 
@@ -110,37 +105,37 @@ export function Application(): VNode {
                 <Route
                   path={Pages.backup}
                   component={BackupPage}
-                  onAddProvider={() => redirectTo(Pages.backup_provider_add)}
+                  onAddProvider={() => redirectTo(Pages.backupProviderAdd)}
                 />
                 <Route
-                  path={Pages.backup_provider_detail}
+                  path={Pages.backupProviderDetail.pattern}
                   component={ProviderDetailPage}
                   onBack={() => redirectTo(Pages.backup)}
                 />
 
                 <Route
-                  path={Pages.balance_transaction}
+                  path={Pages.balanceTransaction.pattern}
                   component={RedirectToWalletPage}
                 />
                 <Route
-                  path={Pages.balance_manual_withdraw}
+                  path={Pages.balanceManualWithdraw.pattern}
                   component={RedirectToWalletPage}
                 />
                 <Route
-                  path={Pages.balance_deposit}
+                  path={Pages.balanceDeposit.pattern}
                   component={RedirectToWalletPage}
                 />
                 <Route
-                  path={Pages.balance_history}
+                  path={Pages.balanceHistory.pattern}
                   component={RedirectToWalletPage}
                 />
                 <Route
-                  path={Pages.backup_provider_add}
+                  path={Pages.backupProviderAdd}
                   component={RedirectToWalletPage}
                 />
                 <Route path={Pages.settings} component={RedirectToWalletPage} />
                 <Route
-                  path={Pages.settings_exchange_add}
+                  path={Pages.settingsExchangeAdd.pattern}
                   component={RedirectToWalletPage}
                 />
                 <Route path={Pages.dev} component={RedirectToWalletPage} />

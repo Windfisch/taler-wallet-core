@@ -14,7 +14,7 @@ import Banner from "./Banner.js";
 import { Time } from "./Time.js";
 
 interface Props extends JSX.HTMLAttributes {
-  goToTransaction: (id: string) => void;
+  goToTransaction: (id: string) => Promise<void>;
 }
 
 export function PendingTransactions({ goToTransaction }: Props): VNode {
@@ -46,7 +46,7 @@ export function PendingTransactionsView({
   transactions,
   goToTransaction,
 }: {
-  goToTransaction: (id: string) => void;
+  goToTransaction: (id: string) => Promise<void>;
   transactions: Transaction[];
 }): VNode {
   return (

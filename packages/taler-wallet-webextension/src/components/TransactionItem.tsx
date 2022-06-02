@@ -120,7 +120,7 @@ function TransactionLayout(props: TransactionLayoutProps): VNode {
   const { i18n } = useTranslationContext();
   return (
     <HistoryRow
-      href={Pages.balance_transaction.replace(":tid", props.id)}
+      href={Pages.balanceTransaction({ tid: props.id })}
       style={{
         backgroundColor: props.pending ? "lightcyan" : "inherit",
         alignItems: "center",

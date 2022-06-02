@@ -352,10 +352,9 @@ export function TransactionView({
                       <td>
                         {<Amount value={r.amountEffective} />}{" "}
                         <a
-                          href={Pages.balance_transaction.replace(
-                            ":tid",
-                            r.transactionId,
-                          )}
+                          href={Pages.balanceTransaction({
+                            tid: r.transactionId,
+                          })}
                         >
                           was refunded
                         </a>{" "}
@@ -556,10 +555,9 @@ export function TransactionView({
           title={<i18n.Translate>Original order ID</i18n.Translate>}
           text={
             <a
-              href={Pages.balance_transaction.replace(
-                ":tid",
-                transaction.refundedTransactionId,
-              )}
+              href={Pages.balanceTransaction({
+                tid: transaction.refundedTransactionId,
+              })}
             >
               {transaction.info.orderId}
             </a>

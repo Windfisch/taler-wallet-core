@@ -40,43 +40,94 @@ import settingsIcon from "./svg/settings_black_24dp.svg";
  * @author sebasjm
  */
 
-export enum Pages {
-  welcome = "/welcome",
+type PageLocation<DynamicPart extends object> = {
+  pattern: string;
+  (params: DynamicPart): string;
+};
 
-  balance = "/balance",
-  balance_history = "/balance/history/:currency?",
-  balance_manual_withdraw = "/balance/manual-withdraw/:currency?",
-  balance_deposit = "/balance/deposit/:currency",
-  balance_transaction = "/balance/transaction/:tid",
-
-  dev = "/dev",
-
-  backup = "/backup",
-  backup_provider_detail = "/backup/provider/:pid",
-  backup_provider_add = "/backup/provider/add",
-
-  settings = "/settings",
-  settings_exchange_add = "/settings/exchange/add/:currency?",
-
-  cta = "/cta/:action",
-  cta_pay = "/cta/pay",
-  cta_refund = "/cta/refund",
-  cta_tips = "/cta/tip",
-  cta_withdraw = "/cta/withdraw",
-  cta_deposit = "/cta/deposit",
+function replaceAll(
+  pattern: string,
+  vars: Record<string, string>,
+  values: Record<string, any>,
+): string {
+  let result = pattern;
+  for (const v in vars) {
+    result = result.replace(vars[v], values[v]);
+  }
+  return result;
 }
+
+function pageDefinition<T extends object>(pattern: string): PageLocation<T> {
+  const patternParams = pattern.match(/(:[\w?]*)/g);
+  if (!patternParams)
+    throw Error(
+      `page definition pattern ${pattern} doesn't have any parameter`,
+    );
+
+  const vars = patternParams.reduce((prev, cur) => {
+    const pName = cur.match(/(\w+)/g);
+
+    //skip things like :? in the path pattern
+    if (!pName || !pName[0]) return prev;
+    const name = pName[0];
+    return { ...prev, [name]: cur };
+  }, {} as Record<string, string>);
+
+  const f = (values: T): string => replaceAll(pattern, vars, values);
+  f.pattern = pattern;
+  return f;
+}
+
+export const Pages = {
+  welcome: "/welcome",
+  balance: "/balance",
+  balanceHistory: pageDefinition<{ currency?: string }>(
+    "/balance/history/:currency?",
+  ),
+  balanceManualWithdraw: pageDefinition<{ currency?: string }>(
+    "/balance/manual-withdraw/:currency?",
+  ),
+  balanceDeposit: pageDefinition<{ currency: string }>(
+    "/balance/deposit/:currency",
+  ),
+  balanceTransaction: pageDefinition<{ tid: string }>(
+    "/balance/transaction/:tid",
+  ),
+  dev: "/dev",
+
+  backup: "/backup",
+  backupProviderDetail: pageDefinition<{ pid: string }>(
+    "/backup/provider/:pid",
+  ),
+  backupProviderAdd: "/backup/provider/add",
+
+  settings: "/settings",
+  settingsExchangeAdd: pageDefinition<{ currency?: string }>(
+    "/settings/exchange/add/:currency?",
+  ),
+
+  cta: pageDefinition<{ action: string }>("/cta/:action"),
+  ctaPay: "/cta/pay",
+  ctaRefund: "/cta/refund",
+  ctaTips: "/cta/tip",
+  ctaWithdraw: "/cta/withdraw",
+  ctaDeposit: "/cta/deposit",
+};
 
 export function PopupNavBar({ path = "" }: { path?: string }): VNode {
   const { i18n } = useTranslationContext();
   return (
     <NavigationHeader>
-      <a href="/balance" class={path.startsWith("/balance") ? "active" : ""}>
+      <a
+        href={Pages.balance}
+        class={path.startsWith("/balance") ? "active" : ""}
+      >
         <i18n.Translate>Balance</i18n.Translate>
       </a>
-      <a href="/backup" class={path.startsWith("/backup") ? "active" : ""}>
+      <a href={Pages.backup} class={path.startsWith("/backup") ? "active" : ""}>
         <i18n.Translate>Backup</i18n.Translate>
       </a>
-      <a href="/settings">
+      <a href={Pages.settings}>
         <SvgIcon
           title={i18n.str`Settings`}
           dangerouslySetInnerHTML={{ __html: settingsIcon }}
@@ -92,21 +143,27 @@ export function WalletNavBar({ path = "" }: { path?: string }): VNode {
   return (
     <NavigationHeaderHolder>
       <NavigationHeader>
-        <a href="/balance" class={path.startsWith("/balance") ? "active" : ""}>
+        <a
+          href={Pages.balance}
+          class={path.startsWith("/balance") ? "active" : ""}
+        >
           <i18n.Translate>Balance</i18n.Translate>
         </a>
-        <a href="/backup" class={path.startsWith("/backup") ? "active" : ""}>
+        <a
+          href={Pages.backup}
+          class={path.startsWith("/backup") ? "active" : ""}
+        >
           <i18n.Translate>Backup</i18n.Translate>
         </a>
 
         <JustInDevMode>
-          <a href="/dev" class={path.startsWith("/dev") ? "active" : ""}>
+          <a href={Pages.dev} class={path.startsWith("/dev") ? "active" : ""}>
             <i18n.Translate>Dev</i18n.Translate>
           </a>
         </JustInDevMode>
 
         <a
-          href="/settings"
+          href={Pages.settings}
           class={path.startsWith("/settings") ? "active" : ""}
         >
           <i18n.Translate>Settings</i18n.Translate>
