@@ -247,8 +247,23 @@ function Redirect({ to }: { to: string }): null {
   return null;
 }
 
-function shouldShowPendingOperations(path: string): boolean {
-  // FIXME: replace includes with a match API like preact router does
-  // [Pages.balanceHistory, Pages.dev, Pages.settings, Pages.backup]
-  return ["/balance/history/", "/dev", "/settings", "/backup"].includes(path);
+function matchesRoute(url: string, route: string): boolean {
+  type MatcherFunc = (
+    url: string,
+    route: string,
+    opts: any,
+  ) => Record<string, string> | false;
+
+  const internalPreactMatcher: MatcherFunc = (Router as any).exec;
+  const result = internalPreactMatcher(url, route, {});
+  return !result ? false : true;
+}
+
+function shouldShowPendingOperations(url: string): boolean {
+  return [
+    Pages.balanceHistory.pattern,
+    Pages.dev,
+    Pages.settings,
+    Pages.backup,
+  ].some((p) => matchesRoute(url, p));
 }
