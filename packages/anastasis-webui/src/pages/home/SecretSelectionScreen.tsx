@@ -78,14 +78,12 @@ export function SecretSelectionScreen(): VNode {
       hideNext="Please select version to recover"
     >
       <p>Found versions:</p>
-      {policies.map((x) => (
+      {policies.map((version) => (
         <div>
-          {x.policy_hash} / {x.secret_name}
+          {version.policy_hash} / {version.secret_name}
           <button
             onClick={async () => {
-              await reducer.transition("select_version", {
-                selection: x,
-              });
+              await reducer.transition("select_version", version);
             }}
           >
             Recover
