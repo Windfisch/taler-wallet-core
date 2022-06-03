@@ -169,8 +169,8 @@ export class ReducerError extends Error {
   constructor(public errorJson: ErrorDetails) {
     super(
       errorJson.message ??
-        errorJson.hint ??
-        `${TalerErrorCode[errorJson.code]}`,
+      errorJson.hint ??
+      `${TalerErrorCode[errorJson.code]}`,
     );
 
     // Set the prototype explicitly.
@@ -301,6 +301,13 @@ async function getProviderInfo(
   }
   try {
     const jsonResp: EscrowConfigurationResponse = await resp.json();
+    if (!jsonResp.provider_salt) {
+      return {
+        status: "error",
+        code: TalerErrorCode.ANASTASIS_REDUCER_PROVIDER_CONFIG_FAILED,
+        hint: "provider did not have provider salt",
+      }
+    }
     return {
       status: "ok",
       http_status: 200,
@@ -552,8 +559,8 @@ async function uploadSecret(
         "content-type": "application/json",
         ...(paySecret
           ? {
-              "Anastasis-Payment-Identifier": paySecret,
-            }
+            "Anastasis-Payment-Identifier": paySecret,
+          }
           : {}),
       },
       body: JSON.stringify(tur),
@@ -644,8 +651,8 @@ async function uploadSecret(
         [ANASTASIS_HTTP_HEADER_POLICY_META_DATA]: metadataEnc,
         ...(paySecret
           ? {
-              "Anastasis-Payment-Identifier": paySecret,
-            }
+            "Anastasis-Payment-Identifier": paySecret,
+          }
           : {}),
       },
       body: decodeCrock(encRecoveryDoc),
@@ -656,12 +663,12 @@ async function uploadSecret(
       let policyExpiration: TalerProtocolTimestamp = { t_s: 0 };
       try {
         policyVersion = Number(resp.headers.get("Anastasis-Version") ?? "0");
-      } catch (e) {}
+      } catch (e) { }
       try {
         policyExpiration = {
           t_s: Number(resp.headers.get("Anastasis-Policy-Expiration") ?? "0"),
         };
-      } catch (e) {}
+      } catch (e) { }
       successDetails[prov.provider_url] = {
         policy_version: policyVersion,
         policy_expiration: policyExpiration,
