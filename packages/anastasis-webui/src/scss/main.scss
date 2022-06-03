@@ -44,12 +44,12 @@
 @import "custom-calendar";
 @import "loading";
 
-@import "fonts/nunito.css";
-@import "icons/materialdesignicons-4.9.95.min.css";
+@import "fonts/nunito";
+@import "icons/materialdesignicons-4.9.95.min";
 
 $tooltip-color: red;
 
-@import "../../node_modules/@creativebulma/bulma-tooltip/dist/bulma-tooltip.min.css";
+@import "node_modules/@creativebulma/bulma-tooltip/dist/bulma-tooltip";
 // @import "../../node_modules/bulma-timeline/dist/css/bulma-timeline.min.css";
 
 .notification {
