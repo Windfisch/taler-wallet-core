@@ -48,7 +48,6 @@ export const WithoutFeedback = createExample(
     recovery_information: {
       challenges: [
         {
-          cost: "USD:1",
           instructions: "does P equals NP?",
           type: "question",
           uuid: "uuid-1",
@@ -70,7 +69,6 @@ export const ServerFailureFeedback = createExample(
     recovery_information: {
       challenges: [
         {
-          cost: "USD:1",
           instructions: "does P equal NP?",
           type: "question",
           uuid: "ASDASDSAD!1",
@@ -96,7 +94,6 @@ export const MessageRateLimitExceededFeedback = createExample(
     recovery_information: {
       challenges: [
         {
-          cost: "USD:1",
           instructions: "does P equals NP?",
           type: "question",
           uuid: "ASDASDSAD!1",
@@ -118,7 +115,6 @@ export const UnsupportedFeedback = createExample(TestedComponent[type].solve, {
   recovery_information: {
     challenges: [
       {
-        cost: "USD:1",
         instructions: "does P equals NP?",
         type: "question",
         uuid: "ASDASDSAD!1",
@@ -141,7 +137,6 @@ export const TruthUnknownFeedback = createExample(TestedComponent[type].solve, {
   recovery_information: {
     challenges: [
       {
-        cost: "USD:1",
         instructions: "does P equals NP?",
         type: "question",
         uuid: "ASDASDSAD!1",
@@ -171,7 +166,6 @@ export const AuthIbanFeedback = createExample(TestedComponent[type].solve, {
   recovery_information: {
     challenges: [
       {
-        cost: "USD:1",
         instructions: "does P equals NP?",
         type: "question",
         uuid: "ASDASDSAD!1",
@@ -190,7 +184,6 @@ export const PaymentFeedback = createExample(TestedComponent[type].solve, {
   recovery_information: {
     challenges: [
       {
-        cost: "USD:1",
         instructions: "does P equals NP?",
         type: "question",
         uuid: "ASDASDSAD!1",

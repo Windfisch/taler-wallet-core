@@ -47,7 +47,6 @@ export const WithoutFeedback = createExample(
     recovery_information: {
       challenges: [
         {
-          cost: "USD:1",
           instructions: "SMS to +54 11 2233 4455",
           type: "question",
           uuid: "AHCC4ZJ3Z1AF8TWBKGVGEKCQ3R7HXHJ51MJ45NHNZMHYZTKJ9NW0",

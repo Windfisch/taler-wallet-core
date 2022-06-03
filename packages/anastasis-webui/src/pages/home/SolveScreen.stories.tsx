@@ -19,11 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import {
-  ChallengeFeedbackStatus,
-  RecoveryStates,
-  ReducerState,
-} from "@gnu-taler/anastasis-core";
+import { ReducerState } from "@gnu-taler/anastasis-core";
 import { createExample, reducerStatesExample } from "../../utils";
 import { SolveScreen as TestedComponent } from "./SolveScreen";
 
@@ -49,7 +45,6 @@ export const NotSupportedChallenge = createExample(TestedComponent, {
   recovery_information: {
     challenges: [
       {
-        cost: "USD:1",
         instructions: "does P equals NP?",
         type: "chall-type",
         uuid: "ASDASDSAD!1",
@@ -65,7 +60,6 @@ export const MismatchedChallengeId = createExample(TestedComponent, {
   recovery_information: {
     challenges: [
       {
-        cost: "USD:1",
         instructions: "does P equals NP?",
         type: "chall-type",
         uuid: "ASDASDSAD!1",

@@ -47,7 +47,6 @@ export const WithoutFeedback = createExample(
     recovery_information: {
       challenges: [
         {
-          cost: "USD:1",
           instructions: "Email to me@domain.com",
           type: "question",
           uuid: "uuid-1",
@@ -69,7 +68,6 @@ export const PaymentFeedback = createExample(
     recovery_information: {
       challenges: [
         {
-          cost: "USD:1",
           instructions: "Email to me@domain.com",
           type: "question",
           uuid: "uuid-1",

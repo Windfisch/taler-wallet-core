@@ -45,7 +45,6 @@ export const OneUnsolvedPolicy = createExample(TestedComponent, {
     policies: [[{ uuid: "1" }]],
     challenges: [
       {
-        cost: "USD:1",
         instructions: "just go for it",
         type: "question",
         uuid: "1",
@@ -60,19 +59,16 @@ export const SomePoliciesOneSolved = createExample(TestedComponent, {
     policies: [[{ uuid: "1" }, { uuid: "2" }], [{ uuid: "uuid-3" }]],
     challenges: [
       {
-        cost: "USD:1",
         instructions: "this question cost 1 USD",
         type: "question",
         uuid: "1",
       },
       {
-        cost: "USD:0",
         instructions: "answering this question is free",
         type: "question",
         uuid: "2",
       },
       {
-        cost: "USD:1",
         instructions: "this question is already answered",
         type: "question",
         uuid: "uuid-3",
@@ -92,7 +88,6 @@ export const OneBadConfiguredPolicy = createExample(TestedComponent, {
     policies: [[{ uuid: "1" }, { uuid: "2" }]],
     challenges: [
       {
-        cost: "USD:1",
         instructions: "this policy has a missing uuid (the other auth method)",
         type: "totp",
         uuid: "1",
@@ -118,51 +113,43 @@ export const OnePolicyWithAllTheChallenges = createExample(TestedComponent, {
     ],
     challenges: [
       {
-        cost: "USD:1",
         instructions: "Does P equals NP?",
         type: "question",
         uuid: "1",
       },
       {
-        cost: "USD:1",
         instructions: "SMS to 555-555",
         type: "sms",
         uuid: "2",
       },
       {
-        cost: "USD:1",
         instructions: "Email to qwe@asd.com",
         type: "email",
         uuid: "3",
       },
       {
-        cost: "USD:1",
         instructions: 'Enter 8 digits code for "Anastasis"',
         type: "totp",
         uuid: "4",
       },
       {
         //
-        cost: "USD:0",
         instructions: "Wire transfer from ASDXCVQWE123123 with holder Florian",
         type: "iban",
         uuid: "5",
       },
       {
-        cost: "USD:1",
         instructions: "Join a video call",
         type: "video", //Enter 8 digits code for "Anastasis"
         uuid: "7",
       },
       {},
       {
-        cost: "USD:1",
         instructions: "Letter to address in postal code DE123123",
         type: "post", //Enter 8 digits code for "Anastasis"
         uuid: "8",
       },
       {
-        cost: "USD:1",
         instructions: "instruction for an unknown type of challenge",
         type: "new-type-of-challenge",
         uuid: "6",
@@ -192,55 +179,46 @@ export const OnePolicyWithAllTheChallengesInDifferentState = createExample(
       ],
       challenges: [
         {
-          cost: "USD:1",
           instructions: 'in state "solved"',
           type: "question",
           uuid: "uuid-1",
         },
         {
-          cost: "USD:1",
           instructions: 'in state "message"',
           type: "question",
           uuid: "uuid-2",
         },
         {
-          cost: "USD:1",
           instructions: 'in state "auth iban"',
           type: "question",
           uuid: "uuid-3",
         },
         {
-          cost: "USD:1",
           instructions: 'in state "payment "',
           type: "question",
           uuid: "uuid-4",
         },
         {
-          cost: "USD:1",
           instructions: 'in state "rate limit"',
           type: "question",
           uuid: "uuid-5",
         },
         {
-          cost: "USD:1",
           instructions: 'in state "redirect"',
           type: "question",
           uuid: "uuid-6",
         },
         {
-          cost: "USD:1",
           instructions: 'in state "server failure"',
           type: "question",
           uuid: "uuid-7",
         },
         {
-          cost: "USD:1",
           instructions: 'in state "truth unknown"',
           type: "question",
           uuid: "uuid-8",
         },
         {
-          cost: "USD:1",
           instructions: 'in state "unsupported"',
           type: "question",
           uuid: "uuid-9",

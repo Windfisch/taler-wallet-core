@@ -47,7 +47,6 @@ export const WithoutFeedback = createExample(
     recovery_information: {
       challenges: [
         {
-          cost: "USD:1",
           instructions: "does P equals NP?",
           type: "question",
           uuid: "uuid-1",

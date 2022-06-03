@@ -66,14 +66,12 @@ export function ChallengeOverviewScreen(): VNode {
     [uuid: string]: {
       type: string;
       instructions: string;
-      cost: string;
       feedback: ChallengeFeedback | undefined;
     };
   } = {};
   for (const ch of knownChallengesArray) {
     knownChallengesMap[ch.uuid] = {
       type: ch.type,
-      cost: ch.cost,
       instructions: ch.instructions,
       feedback: challengeFeedback[ch.uuid],
     };
@@ -123,7 +121,6 @@ export function ChallengeOverviewScreen(): VNode {
       )}
       {policiesWithInfo.map((policy, policy_index) => {
         const tableBody = policy.challenges.map(({ info, uuid }) => {
-          const isFree = !info.cost || info.cost.endsWith(":0");
           const method = authMethods[info.type as KnownAuthMethods];
 
           if (!method) {
