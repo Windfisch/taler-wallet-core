@@ -1,9 +1,6 @@
 import { setupI18n } from "@gnu-taler/taler-util";
 import { h, render } from "preact";
 import App from "./components/app";
-//import "./scss/main.scss";
-
-export default App;
 
 function main(): void {
   try {
