@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2021 Taler Systems S.A.
+ (C) 2022 Taler Systems S.A.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -30,8 +30,7 @@ function getJsonIfOk(r: Response): Promise<any> {
   }
 
   throw new Error(
-    `Try another server: (${r.status}) ${
-      r.statusText || "internal server error"
+    `Try another server: (${r.status}) ${r.statusText || "internal server error"
     }`,
   );
 }
@@ -103,10 +102,10 @@ export function buildTermsOfServiceStatus(
   return !content
     ? "notfound"
     : !acceptedVersion
-    ? "new"
-    : acceptedVersion !== currentVersion
-    ? "changed"
-    : "accepted";
+      ? "new"
+      : acceptedVersion !== currentVersion
+        ? "changed"
+        : "accepted";
 }
 
 function parseTermsOfServiceContent(

@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2021 Taler Systems S.A.
+ (C) 2022 Taler Systems S.A.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -69,22 +69,22 @@ describe("Refund CTA states", () => {
       mountHook(() =>
         useComponentState("taler://refund/asdasdas", {
           prepareRefund: async () =>
-            ({
-              effectivePaid: "EUR:2",
-              awaiting: "EUR:2",
-              gone: "EUR:0",
-              granted: "EUR:0",
-              pending: false,
-              proposalId: "1",
-              info: {
-                contractTermsHash: "123",
-                merchant: {
-                  name: "the merchant name",
-                },
-                orderId: "orderId1",
-                summary: "the sumary",
+          ({
+            effectivePaid: "EUR:2",
+            awaiting: "EUR:2",
+            gone: "EUR:0",
+            granted: "EUR:0",
+            pending: false,
+            proposalId: "1",
+            info: {
+              contractTermsHash: "123",
+              merchant: {
+                name: "the merchant name",
               },
-            } as PrepareRefundResult as any),
+              orderId: "orderId1",
+              summary: "the sumary",
+            },
+          } as PrepareRefundResult as any),
           applyRefund: async () => ({}),
           onUpdateNotification: async () => ({}),
         } as any),
@@ -118,22 +118,22 @@ describe("Refund CTA states", () => {
       mountHook(() =>
         useComponentState("taler://refund/asdasdas", {
           prepareRefund: async () =>
-            ({
-              effectivePaid: "EUR:2",
-              awaiting: "EUR:2",
-              gone: "EUR:0",
-              granted: "EUR:0",
-              pending: false,
-              proposalId: "1",
-              info: {
-                contractTermsHash: "123",
-                merchant: {
-                  name: "the merchant name",
-                },
-                orderId: "orderId1",
-                summary: "the sumary",
+          ({
+            effectivePaid: "EUR:2",
+            awaiting: "EUR:2",
+            gone: "EUR:0",
+            granted: "EUR:0",
+            pending: false,
+            proposalId: "1",
+            info: {
+              contractTermsHash: "123",
+              merchant: {
+                name: "the merchant name",
               },
-            } as PrepareRefundResult as any),
+              orderId: "orderId1",
+              summary: "the sumary",
+            },
+          } as PrepareRefundResult as any),
           applyRefund: async () => ({}),
           onUpdateNotification: async () => ({}),
         } as any),
@@ -194,22 +194,22 @@ describe("Refund CTA states", () => {
       mountHook(() =>
         useComponentState("taler://refund/asdasdas", {
           prepareRefund: async () =>
-            ({
-              awaiting: Amounts.stringify(awaiting),
-              effectivePaid: "EUR:2",
-              gone: "EUR:0",
-              granted: Amounts.stringify(granted),
-              pending,
-              proposalId: "1",
-              info: {
-                contractTermsHash: "123",
-                merchant: {
-                  name: "the merchant name",
-                },
-                orderId: "orderId1",
-                summary: "the sumary",
+          ({
+            awaiting: Amounts.stringify(awaiting),
+            effectivePaid: "EUR:2",
+            gone: "EUR:0",
+            granted: Amounts.stringify(granted),
+            pending,
+            proposalId: "1",
+            info: {
+              contractTermsHash: "123",
+              merchant: {
+                name: "the merchant name",
               },
-            } as PrepareRefundResult as any),
+              orderId: "orderId1",
+              summary: "the sumary",
+            },
+          } as PrepareRefundResult as any),
           applyRefund: async () => ({}),
           onUpdateNotification: subscriptions.saveSubscription,
         } as any),

@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2021 Taler Systems S.A.
+ (C) 2022 Taler Systems S.A.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -101,14 +101,14 @@ describe("Pay CTA states", () => {
         useComponentState("taller://pay", {
           onUpdateNotification: nullFunction,
           preparePay: async () =>
-            ({
-              amountRaw: "USD:10",
-              status: PreparePayResultType.InsufficientBalance,
-            } as Partial<PreparePayResult>),
+          ({
+            amountRaw: "USD:10",
+            status: PreparePayResultType.InsufficientBalance,
+          } as Partial<PreparePayResult>),
           getBalance: async () =>
-            ({
-              balances: [],
-            } as Partial<BalancesResponse>),
+          ({
+            balances: [],
+          } as Partial<BalancesResponse>),
         } as Partial<typeof wxApi> as any),
       );
 
@@ -137,18 +137,18 @@ describe("Pay CTA states", () => {
         useComponentState("taller://pay", {
           onUpdateNotification: nullFunction,
           preparePay: async () =>
-            ({
-              amountRaw: "USD:10",
-              status: PreparePayResultType.InsufficientBalance,
-            } as Partial<PreparePayResult>),
+          ({
+            amountRaw: "USD:10",
+            status: PreparePayResultType.InsufficientBalance,
+          } as Partial<PreparePayResult>),
           getBalance: async () =>
-            ({
-              balances: [
-                {
-                  available: "USD:5",
-                },
-              ],
-            } as Partial<BalancesResponse>),
+          ({
+            balances: [
+              {
+                available: "USD:5",
+              },
+            ],
+          } as Partial<BalancesResponse>),
         } as Partial<typeof wxApi> as any),
       );
 
@@ -177,19 +177,19 @@ describe("Pay CTA states", () => {
         useComponentState("taller://pay", {
           onUpdateNotification: nullFunction,
           preparePay: async () =>
-            ({
-              amountRaw: "USD:10",
-              amountEffective: "USD:10",
-              status: PreparePayResultType.PaymentPossible,
-            } as Partial<PreparePayResult>),
+          ({
+            amountRaw: "USD:10",
+            amountEffective: "USD:10",
+            status: PreparePayResultType.PaymentPossible,
+          } as Partial<PreparePayResult>),
           getBalance: async () =>
-            ({
-              balances: [
-                {
-                  available: "USD:15",
-                },
-              ],
-            } as Partial<BalancesResponse>),
+          ({
+            balances: [
+              {
+                available: "USD:15",
+              },
+            ],
+          } as Partial<BalancesResponse>),
         } as Partial<typeof wxApi> as any),
       );
 
@@ -219,19 +219,19 @@ describe("Pay CTA states", () => {
         useComponentState("taller://pay", {
           onUpdateNotification: nullFunction,
           preparePay: async () =>
-            ({
-              amountRaw: "USD:9",
-              amountEffective: "USD:10",
-              status: PreparePayResultType.PaymentPossible,
-            } as Partial<PreparePayResult>),
+          ({
+            amountRaw: "USD:9",
+            amountEffective: "USD:10",
+            status: PreparePayResultType.PaymentPossible,
+          } as Partial<PreparePayResult>),
           getBalance: async () =>
-            ({
-              balances: [
-                {
-                  available: "USD:15",
-                },
-              ],
-            } as Partial<BalancesResponse>),
+          ({
+            balances: [
+              {
+                available: "USD:15",
+              },
+            ],
+          } as Partial<BalancesResponse>),
         } as Partial<typeof wxApi> as any),
       );
 
@@ -261,24 +261,24 @@ describe("Pay CTA states", () => {
         useComponentState("taller://pay", {
           onUpdateNotification: nullFunction,
           preparePay: async () =>
-            ({
-              amountRaw: "USD:9",
-              amountEffective: "USD:10",
-              status: PreparePayResultType.PaymentPossible,
-            } as Partial<PreparePayResult>),
+          ({
+            amountRaw: "USD:9",
+            amountEffective: "USD:10",
+            status: PreparePayResultType.PaymentPossible,
+          } as Partial<PreparePayResult>),
           getBalance: async () =>
-            ({
-              balances: [
-                {
-                  available: "USD:15",
-                },
-              ],
-            } as Partial<BalancesResponse>),
+          ({
+            balances: [
+              {
+                available: "USD:15",
+              },
+            ],
+          } as Partial<BalancesResponse>),
           confirmPay: async () =>
-            ({
-              type: ConfirmPayResultType.Done,
-              contractTerms: {},
-            } as Partial<ConfirmPayResult>),
+          ({
+            type: ConfirmPayResultType.Done,
+            contractTerms: {},
+          } as Partial<ConfirmPayResult>),
         } as Partial<typeof wxApi> as any),
       );
 
@@ -322,24 +322,24 @@ describe("Pay CTA states", () => {
         useComponentState("taller://pay", {
           onUpdateNotification: nullFunction,
           preparePay: async () =>
-            ({
-              amountRaw: "USD:9",
-              amountEffective: "USD:10",
-              status: PreparePayResultType.PaymentPossible,
-            } as Partial<PreparePayResult>),
+          ({
+            amountRaw: "USD:9",
+            amountEffective: "USD:10",
+            status: PreparePayResultType.PaymentPossible,
+          } as Partial<PreparePayResult>),
           getBalance: async () =>
-            ({
-              balances: [
-                {
-                  available: "USD:15",
-                },
-              ],
-            } as Partial<BalancesResponse>),
+          ({
+            balances: [
+              {
+                available: "USD:15",
+              },
+            ],
+          } as Partial<BalancesResponse>),
           confirmPay: async () =>
-            ({
-              type: ConfirmPayResultType.Pending,
-              lastError: { code: 1 },
-            } as Partial<ConfirmPayResult>),
+          ({
+            type: ConfirmPayResultType.Pending,
+            lastError: { code: 1 },
+          } as Partial<ConfirmPayResult>),
         } as Partial<typeof wxApi> as any),
       );
 
@@ -398,19 +398,19 @@ describe("Pay CTA states", () => {
         useComponentState("taller://pay", {
           onUpdateNotification: subscriptions.saveSubscription,
           preparePay: async () =>
-            ({
-              amountRaw: "USD:9",
-              amountEffective: "USD:10",
-              status: PreparePayResultType.PaymentPossible,
-            } as Partial<PreparePayResult>),
+          ({
+            amountRaw: "USD:9",
+            amountEffective: "USD:10",
+            status: PreparePayResultType.PaymentPossible,
+          } as Partial<PreparePayResult>),
           getBalance: async () =>
-            ({
-              balances: [
-                {
-                  available: Amounts.stringify(availableBalance),
-                },
-              ],
-            } as Partial<BalancesResponse>),
+          ({
+            balances: [
+              {
+                available: Amounts.stringify(availableBalance),
+              },
+            ],
+          } as Partial<BalancesResponse>),
         } as Partial<typeof wxApi> as any),
       );
 

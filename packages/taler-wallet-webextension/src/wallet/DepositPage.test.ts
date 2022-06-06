@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2021 Taler Systems S.A.
+ (C) 2022 Taler Systems S.A.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -62,9 +62,9 @@ describe("DepositPage states", () => {
       mountHook(() =>
         useComponentState(currency, nullFunction, nullFunction, {
           getBalance: async () =>
-            ({
-              balances: [{ available: `${currency}:0` }],
-            } as Partial<BalancesResponse>),
+          ({
+            balances: [{ available: `${currency}:0` }],
+          } as Partial<BalancesResponse>),
           listKnownBankAccounts: async () => ({ accounts: [] }),
         } as Partial<typeof wxApi> as any),
       );
@@ -89,9 +89,9 @@ describe("DepositPage states", () => {
       mountHook(() =>
         useComponentState(currency, nullFunction, nullFunction, {
           getBalance: async () =>
-            ({
-              balances: [{ available: `${currency}:1` }],
-            } as Partial<BalancesResponse>),
+          ({
+            balances: [{ available: `${currency}:1` }],
+          } as Partial<BalancesResponse>),
           listKnownBankAccounts: async () => ({ accounts: [] }),
         } as Partial<typeof wxApi> as any),
       );
@@ -121,9 +121,9 @@ describe("DepositPage states", () => {
       mountHook(() =>
         useComponentState(currency, nullFunction, nullFunction, {
           getBalance: async () =>
-            ({
-              balances: [{ available: `${currency}:1` }],
-            } as Partial<BalancesResponse>),
+          ({
+            balances: [{ available: `${currency}:1` }],
+          } as Partial<BalancesResponse>),
           listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
         } as Partial<typeof wxApi> as any),
       );
@@ -153,9 +153,9 @@ describe("DepositPage states", () => {
       mountHook(() =>
         useComponentState(currency, nullFunction, nullFunction, {
           getBalance: async () =>
-            ({
-              balances: [{ available: `${currency}:1` }],
-            } as Partial<BalancesResponse>),
+          ({
+            balances: [{ available: `${currency}:1` }],
+          } as Partial<BalancesResponse>),
           listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
           getFeeForDeposit: withoutFee,
         } as Partial<typeof wxApi> as any),
@@ -202,9 +202,9 @@ describe("DepositPage states", () => {
       mountHook(() =>
         useComponentState(currency, nullFunction, nullFunction, {
           getBalance: async () =>
-            ({
-              balances: [{ available: `${currency}:1` }],
-            } as Partial<BalancesResponse>),
+          ({
+            balances: [{ available: `${currency}:1` }],
+          } as Partial<BalancesResponse>),
           listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
           getFeeForDeposit: withSomeFee,
         } as Partial<typeof wxApi> as any),
@@ -252,9 +252,9 @@ describe("DepositPage states", () => {
       mountHook(() =>
         useComponentState(currency, nullFunction, nullFunction, {
           getBalance: async () =>
-            ({
-              balances: [{ available: `${currency}:1` }],
-            } as Partial<BalancesResponse>),
+          ({
+            balances: [{ available: `${currency}:1` }],
+          } as Partial<BalancesResponse>),
           listKnownBankAccounts: async () => ({
             accounts: [ibanPayto, talerBankPayto],
           }),
@@ -338,9 +338,9 @@ describe("DepositPage states", () => {
       mountHook(() =>
         useComponentState(currency, nullFunction, nullFunction, {
           getBalance: async () =>
-            ({
-              balances: [{ available: `${currency}:15` }],
-            } as Partial<BalancesResponse>),
+          ({
+            balances: [{ available: `${currency}:15` }],
+          } as Partial<BalancesResponse>),
           listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
           getFeeForDeposit: withSomeFee,
         } as Partial<typeof wxApi> as any),

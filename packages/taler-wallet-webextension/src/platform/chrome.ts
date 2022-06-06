@@ -1,18 +1,17 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /*
- This file is part of TALER
- (C) 2017 INRIA
+ This file is part of GNU Taler
+ (C) 2022 Taler Systems S.A.
 
- TALER is free software; you can redistribute it and/or modify it under the
+ GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
  Foundation; either version 3, or (at your option) any later version.
 
- TALER is distributed in the hope that it will be useful, but WITHOUT ANY
+ GNU Taler is distributed in the hope that it will be useful, but WITHOUT ANY
  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
  A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
  You should have received a copy of the GNU General Public License along with
- TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+ GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
 import {
@@ -421,26 +420,26 @@ function setAlertedIcon(): void {
 
 interface OffscreenCanvasRenderingContext2D
   extends CanvasState,
-    CanvasTransform,
-    CanvasCompositing,
-    CanvasImageSmoothing,
-    CanvasFillStrokeStyles,
-    CanvasShadowStyles,
-    CanvasFilters,
-    CanvasRect,
-    CanvasDrawPath,
-    CanvasUserInterface,
-    CanvasText,
-    CanvasDrawImage,
-    CanvasImageData,
-    CanvasPathDrawingStyles,
-    CanvasTextDrawingStyles,
-    CanvasPath {
+  CanvasTransform,
+  CanvasCompositing,
+  CanvasImageSmoothing,
+  CanvasFillStrokeStyles,
+  CanvasShadowStyles,
+  CanvasFilters,
+  CanvasRect,
+  CanvasDrawPath,
+  CanvasUserInterface,
+  CanvasText,
+  CanvasDrawImage,
+  CanvasImageData,
+  CanvasPathDrawingStyles,
+  CanvasTextDrawingStyles,
+  CanvasPath {
   readonly canvas: OffscreenCanvas;
 }
 declare const OffscreenCanvasRenderingContext2D: {
   prototype: OffscreenCanvasRenderingContext2D;
-  new (): OffscreenCanvasRenderingContext2D;
+  new(): OffscreenCanvasRenderingContext2D;
 };
 
 interface OffscreenCanvas extends EventTarget {
@@ -453,7 +452,7 @@ interface OffscreenCanvas extends EventTarget {
 }
 declare const OffscreenCanvas: {
   prototype: OffscreenCanvas;
-  new (width: number, height: number): OffscreenCanvas;
+  new(width: number, height: number): OffscreenCanvas;
 };
 
 function createCanvas(size: number): OffscreenCanvas {

@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2021 Taler Systems S.A.
+ (C) 2022 Taler Systems S.A.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -62,13 +62,13 @@ describe("Tip CTA states", () => {
       mountHook(() =>
         useComponentState("taler://tip/asd", {
           prepareTip: async () =>
-            ({
-              accepted: tipAccepted,
-              exchangeBaseUrl: "exchange url",
-              merchantBaseUrl: "merchant url",
-              tipAmountEffective: "EUR:1",
-              walletTipId: "tip_id",
-            } as PrepareTipResult as any),
+          ({
+            accepted: tipAccepted,
+            exchangeBaseUrl: "exchange url",
+            merchantBaseUrl: "merchant url",
+            tipAmountEffective: "EUR:1",
+            walletTipId: "tip_id",
+          } as PrepareTipResult as any),
           acceptTip: async () => {
             tipAccepted = true;
           },
@@ -114,12 +114,12 @@ describe("Tip CTA states", () => {
       mountHook(() =>
         useComponentState("taler://tip/asd", {
           prepareTip: async () =>
-            ({
-              exchangeBaseUrl: "exchange url",
-              merchantBaseUrl: "merchant url",
-              tipAmountEffective: "EUR:1",
-              walletTipId: "tip_id",
-            } as PrepareTipResult as any),
+          ({
+            exchangeBaseUrl: "exchange url",
+            merchantBaseUrl: "merchant url",
+            tipAmountEffective: "EUR:1",
+            walletTipId: "tip_id",
+          } as PrepareTipResult as any),
           acceptTip: async () => ({}),
         } as any),
       );
@@ -160,13 +160,13 @@ describe("Tip CTA states", () => {
       mountHook(() =>
         useComponentState("taler://tip/asd", {
           prepareTip: async () =>
-            ({
-              accepted: true,
-              exchangeBaseUrl: "exchange url",
-              merchantBaseUrl: "merchant url",
-              tipAmountEffective: "EUR:1",
-              walletTipId: "tip_id",
-            } as PrepareTipResult as any),
+          ({
+            accepted: true,
+            exchangeBaseUrl: "exchange url",
+            merchantBaseUrl: "merchant url",
+            tipAmountEffective: "EUR:1",
+            walletTipId: "tip_id",
+          } as PrepareTipResult as any),
           acceptTip: async () => ({}),
         } as any),
       );

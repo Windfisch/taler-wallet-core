@@ -1,7 +1,6 @@
-/* eslint-disable no-useless-escape */
 /*
  This file is part of GNU Taler
- (C) 2021 Taler Systems S.A.
+ (C) 2022 Taler Systems S.A.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -14,6 +13,7 @@
  You should have received a copy of the GNU General Public License along with
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
+/* eslint-disable no-useless-escape */
 
 /**
  *
@@ -40,7 +40,7 @@ Terms Of Service
 
 Last Updated: 12.4.2019
 
-Welcome! Taler Systems SA (“we,” “our,” or “us”) provides a payment
+Welcome! Taler Systems S.A. (“we,” “our,” or “us”) provides a payment
 service through our Internet presence (collectively the “Services”).
 Before using our Services, please read the Terms of Service (the
 “Terms” or the “Agreement”) carefully.
@@ -191,7 +191,7 @@ strong copyleft license, which means that any derivative works must be
 distributed under the same license terms as the original software. If
 you have any questions, you should review the GNU GPL’s full terms and
 conditions at https://www.gnu.org/licenses/gpl-3.0.en.html.  “Taler”
-itself is a trademark of Taler Systems SA. You are welcome to use the
+itself is a trademark of Taler Systems S.A.. You are welcome to use the
 name in relation to processing payments using the Taler protocol,
 assuming your use is compatible with an official release from the GNU
 Project that is not older than two years.
@@ -426,7 +426,7 @@ export const termsXml = `<?xml version="1.0" encoding="utf-8"?>
     <section ids="terms-of-service" names="terms\ of\ service">
         <title>Terms Of Service</title>
         <paragraph>Last Updated: 12.4.2019</paragraph>
-        <paragraph>Welcome! Taler Systems SA (“we,” “our,” or “us”) provides a payment service
+        <paragraph>Welcome! Taler Systems S.A. (“we,” “our,” or “us”) provides a payment service
             through our Internet presence (collectively the “Services”). Before using our
             Services, please read the Terms of Service (the “Terms” or the “Agreement”)
             carefully.</paragraph>
@@ -559,7 +559,7 @@ export const termsXml = `<?xml version="1.0" encoding="utf-8"?>
                 license terms as the original software. If you have any questions, you should
                 review the GNU GPL’s full terms and conditions at
                 <reference refuri="https://www.gnu.org/licenses/gpl-3.0.en.html">https://www.gnu.org/licenses/gpl-3.0.en.html</reference>.  “Taler” itself is a trademark
-                of Taler Systems SA. You are welcome to use the name in relation to processing
+                of Taler Systems S.A.. You are welcome to use the name in relation to processing
                 payments using the Taler protocol, assuming your use is compatible with an
                 official release from the GNU Project that is not older than two years.</paragraph>
         </section>

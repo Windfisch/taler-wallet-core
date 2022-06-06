@@ -13,24 +13,3 @@
  You should have received a copy of the GNU General Public License along with
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-
-/**
- * API to access the Taler crypto worker thread.
- * @author Florian Dold
- */
-
-import {
-  CryptoWorker,
-  CryptoWorkerFactory,
-  SynchronousCryptoWorker,
-} from "@gnu-taler/taler-wallet-core";
-
-export class SynchronousCryptoWorkerFactory implements CryptoWorkerFactory {
-  startWorker(): CryptoWorker {
-    return new SynchronousCryptoWorker();
-  }
-
-  getConcurrency(): number {
-    return 1;
-  }
-}
