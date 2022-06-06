@@ -4,26 +4,12 @@
   "version": "0.0.2",
   "license": "MIT",
   "scripts": {
-    "build": "preact build --no-sw --no-esm --no-inline-css",
-    "serve": "sirv build --port ${PORT:=8080} --cors --single",
-    "dev": "preact watch --port ${PORT:=8080} --no-sw --no-esm",
+    "compile": "tsc",
+    "dev": "./dev.mjs",
+    "prepare": "pnpm compile",
     "lint": "eslint 'src/**/*.{js,jsx,ts,tsx}'",
     "test": "echo no tests",
-    "build-storybook": "build-storybook",
-    "build-single": "preact build --no-sw --no-esm -c preact.single-config.js --dest single && sh remove-link-stylesheet.sh",
-    "serve-single": "sirv single --port ${PORT:=8080} --cors --single",
-    "pretty": "prettier --write src",
-    "storybook": "start-storybook -p 6006"
-  },
-  "eslintConfig": {
-    "parser": "@typescript-eslint/parser",
-    "extends": [
-      "preact",
-      "plugin:@typescript-eslint/recommended"
-    ],
-    "ignorePatterns": [
-      "build/"
-    ]
+    "pretty": "prettier --write src"
   },
   "dependencies": {
     "@gnu-taler/anastasis-core": "workspace:*",
@@ -41,27 +27,13 @@
   },
   "devDependencies": {
     "@creativebulma/bulma-tooltip": "^1.2.0",
-    "@storybook/addon-a11y": "^6.3.12",
-    "@storybook/addon-actions": "^6.3.12",
-    "@storybook/addon-essentials": "^6.3.12",
-    "@storybook/addon-links": "^6.3.12",
-    "@storybook/preact": "^6.3.12",
-    "@storybook/preset-scss": "^1.0.3",
-    "@types/enzyme": "^3.10.11",
-    "@typescript-eslint/eslint-plugin": "^5.3.0",
-    "@typescript-eslint/parser": "^5.3.0",
     "bulma": "^0.9.3",
     "bulma-checkbox": "^1.1.1",
     "bulma-radio": "^1.1.1",
-    "enzyme": "^3.11.0",
-    "enzyme-adapter-preact-pure": "^3.2.0",
-    "eslint": "^8.1.0",
-    "eslint-config-preact": "^1.2.0",
     "jssha": "^3.2.0",
     "preact-cli": "^3.3.1",
     "sass": "1.32.13",
     "sass-loader": "^10",
-    "sirv-cli": "^1.0.14",
     "typescript": "^4.5.4"
   }
 }

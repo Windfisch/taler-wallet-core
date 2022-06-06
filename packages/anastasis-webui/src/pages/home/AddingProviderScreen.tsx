@@ -59,48 +59,13 @@ export function AddingProviderScreen({ providerType, onCancel }: Props): VNode {
     ? authMethods[providerType].label
     : undefined;
 
-  //FIXME: move this timeout logic into a hook
-  const timeout = useRef<number | undefined>(undefined);
-  useEffect(() => {
-    if (timeout) window.clearTimeout(timeout.current);
-    timeout.current = window.setTimeout(async () => {
-      const url = providerURL.endsWith("/") ? providerURL : providerURL + "/";
-      if (!providerURL || authProviders.includes(url)) return;
-      try {
-        setTesting(true);
-        await testProvider(url, providerType);
-        // this is use as tested but everything when ok
-        // undefined will mean that the field is not dirty
-        setError("");
-      } catch (e) {
-        console.log("tuvieja", e);
-        if (e instanceof Error) setError(e.message);
-      }
-      setTesting(false);
-    }, 200);
-  }, [providerURL, reducer]);
-
-  if (!reducer) {
-    return <div>no reducer in context</div>;
-  }
-
-  if (
-    !reducer.currentReducerState ||
-    !("authentication_providers" in reducer.currentReducerState)
-  ) {
-    return <div>invalid state</div>;
-  }
-
-  async function addProvider(provider_url: string): Promise<void> {
-    await reducer?.transition("add_provider", { provider_url });
-    onCancel();
-  }
-  function deleteProvider(provider_url: string): void {
-    reducer?.transition("delete_provider", { provider_url });
-  }
-
   const allAuthProviders =
-    reducer.currentReducerState.authentication_providers || {};
+    !reducer ||
+    !reducer.currentReducerState ||
+    reducer.currentReducerState.reducer_type === "error" ||
+    !reducer.currentReducerState.authentication_providers
+      ? {}
+      : reducer.currentReducerState.authentication_providers;
   const authProviders = Object.keys(allAuthProviders).filter((provUrl) => {
     const p = allAuthProviders[provUrl];
     if (!providerLabel) {
@@ -113,6 +78,43 @@ export function AddingProviderScreen({ providerType, onCancel }: Props): VNode {
       );
     }
   });
+
+  //FIXME: move this timeout logic into a hook
+  const timeout = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    if (timeout) window.clearTimeout(timeout.current);
+    timeout.current = window.setTimeout(async () => {
+      const url = providerURL.endsWith("/") ? providerURL : providerURL + "/";
+      if (!providerURL || authProviders.includes(url)) return;
+      try {
+        setTesting(true);
+        await testProvider(url, providerType);
+        setError("");
+      } catch (e) {
+        if (e instanceof Error) setError(e.message);
+      }
+      setTesting(false);
+    }, 200);
+  }, [providerURL, reducer]);
+
+  async function addProvider(provider_url: string): Promise<void> {
+    await reducer?.transition("add_provider", { provider_url });
+    onCancel();
+  }
+  function deleteProvider(provider_url: string): void {
+    reducer?.transition("delete_provider", { provider_url });
+  }
+
+  if (!reducer) {
+    return <div>no reducer in context</div>;
+  }
+
+  if (
+    !reducer.currentReducerState ||
+    !("authentication_providers" in reducer.currentReducerState)
+  ) {
+    return <div>invalid state</div>;
+  }
 
   let errors = !providerURL ? "Add provider URL" : undefined;
   let url: string | undefined;
@@ -190,7 +192,9 @@ export function AddingProviderScreen({ providerType, onCancel }: Props): VNode {
 
         {authProviders.map((k) => {
           const p = allAuthProviders[k] as AuthenticationProviderStatusOk;
-          return <TableRow url={k} info={p} onDelete={deleteProvider} />;
+          return (
+            <TableRow key={k} url={k} info={p} onDelete={deleteProvider} />
+          );
         })}
       </div>
     </AnastasisClientFrame>

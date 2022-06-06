@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import {
-  AuthenticationProviderStatus,
   AuthenticationProviderStatusError,
   AuthenticationProviderStatusOk,
   BackupStates,
@@ -9,7 +7,11 @@ import {
   ReducerStateRecovery,
 } from "@gnu-taler/anastasis-core";
 import { FunctionalComponent, h, VNode } from "preact";
-import { AnastasisProvider } from "../context/anastasis";
+import { AnastasisProvider } from "../context/anastasis.js";
+
+const noop = async (): Promise<void> => {
+  return;
+};
 
 export function createExample<Props>(
   Component: FunctionalComponent<Props>,
@@ -21,39 +23,23 @@ export function createExample<Props>(
       <AnastasisProvider
         value={{
           currentReducerState,
-          discoverMore: async () => {},
-          discoverStart: async () => {},
+          discoverMore: noop,
+          discoverStart: noop,
           discoveryState: {
             state: "none",
           },
           currentError: undefined,
-          back: async () => {
-            null;
-          },
-          dismissError: async () => {
-            null;
-          },
-          reset: () => {
-            null;
-          },
-          runTransaction: async () => {
-            null;
-          },
-          startBackup: () => {
-            null;
-          },
-          startRecover: () => {
-            null;
-          },
-          transition: async () => {
-            null;
-          },
+          back: noop,
+          dismissError: noop,
+          reset: noop,
+          runTransaction: noop,
+          startBackup: noop,
+          startRecover: noop,
+          transition: noop,
           exportState: () => {
             return "{}";
           },
-          importState(s: string) {
-            /* do nothing */
-          },
+          importState: noop,
         }}
       >
         <Component {...args} />
