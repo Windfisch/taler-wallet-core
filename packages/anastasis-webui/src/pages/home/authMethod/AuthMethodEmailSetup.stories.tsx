@@ -19,8 +19,8 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { createExample, reducerStatesExample } from "../../../utils";
-import { authMethods as TestedComponent, KnownAuthMethods } from "./index";
+import { createExample, reducerStatesExample } from "../../../utils/index.js";
+import { authMethods as TestedComponent, KnownAuthMethods } from "./index.js";
 
 export default {
   title: "Pages/backup/AuthorizationMethod/AuthMethods/email",

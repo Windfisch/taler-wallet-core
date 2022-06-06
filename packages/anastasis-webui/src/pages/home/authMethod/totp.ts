@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import jssha from "jssha";
 
 const SEARCH_RANGE = 16;

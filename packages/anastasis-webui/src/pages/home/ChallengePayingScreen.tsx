@@ -1,6 +1,6 @@
 import { h, VNode } from "preact";
-import { useAnastasisContext } from "../../context/anastasis";
-import { AnastasisClientFrame } from "./index";
+import { useAnastasisContext } from "../../context/anastasis.js";
+import { AnastasisClientFrame } from "./index.js";
 
 export function ChallengePayingScreen(): VNode {
   const reducer = useAnastasisContext();

@@ -20,14 +20,14 @@
 import { ChallengeInfo } from "@gnu-taler/anastasis-core";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { AsyncButton } from "../../../components/AsyncButton";
-import { TextInput } from "../../../components/fields/TextInput";
-import { useAnastasisContext } from "../../../context/anastasis";
-import { useTranslator } from "../../../i18n";
-import { AnastasisClientFrame } from "../index";
-import { SolveOverviewFeedbackDisplay } from "../SolveScreen";
-import { shouldHideConfirm } from "./helpers";
-import { AuthMethodSolveProps } from "./index";
+import { AsyncButton } from "../../../components/AsyncButton.js";
+import { TextInput } from "../../../components/fields/TextInput.js";
+import { useAnastasisContext } from "../../../context/anastasis.js";
+import { useTranslator } from "../../../i18n/index.js";
+import { AnastasisClientFrame } from "../index.js";
+import { SolveOverviewFeedbackDisplay } from "../SolveScreen.js";
+import { shouldHideConfirm } from "./helpers.js";
+import { AuthMethodSolveProps } from "./index.js";
 
 export function AuthMethodEmailSolve({ id }: AuthMethodSolveProps): VNode {
   const [answer, _setAnswer] = useState("A-");
@@ -131,15 +131,16 @@ export function AuthMethodEmailSolve({ id }: AuthMethodSolveProps): VNode {
     <AnastasisClientFrame hideNav title="Email challenge">
       <SolveOverviewFeedbackDisplay feedback={feedback} />
       <p>
-        An email has been sent to "<b>{selectedChallenge.instructions}</b>". The
-        message has and identification code and recovery code that starts with "
-        <b>A-</b>". Wait the message to arrive and the enter the recovery code
-        below.
+        An email has been sent to &quot;<b>{selectedChallenge.instructions}</b>
+        &quot;. The message has and identification code and recovery code that
+        starts with &quot;
+        <b>A-</b>&quot;. Wait the message to arrive and the enter the recovery
+        code below.
       </p>
       {!expanded ? (
         <p>
-          The identification code in the email should start with "
-          {selectedUuid.substring(0, 10)}"
+          The identification code in the email should start with &quot;
+          {selectedUuid.substring(0, 10)}&quot;
           <span
             class="icon has-tooltip-top"
             data-tooltip="click to expand"
@@ -150,7 +151,7 @@ export function AuthMethodEmailSolve({ id }: AuthMethodSolveProps): VNode {
         </p>
       ) : (
         <p>
-          The identification code in the email is "{selectedUuid}"
+          The identification code in the email is &quot;{selectedUuid}&quot;
           <span
             class="icon has-tooltip-top"
             data-tooltip="click to show less code"

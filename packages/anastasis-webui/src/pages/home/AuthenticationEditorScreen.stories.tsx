@@ -20,8 +20,8 @@
  */
 
 import { ReducerState } from "@gnu-taler/anastasis-core";
-import { createExample, reducerStatesExample } from "../../utils";
-import { AuthenticationEditorScreen as TestedComponent } from "./AuthenticationEditorScreen";
+import { createExample, reducerStatesExample } from "../../utils/index.js";
+import { AuthenticationEditorScreen as TestedComponent } from "./AuthenticationEditorScreen.js";
 
 export default {
   title: "Pages/backup/AuthorizationMethod",

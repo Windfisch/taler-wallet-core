@@ -21,7 +21,7 @@
 import { h, VNode } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import emptyImage from "../../assets/empty.png";
-import { TextInputProps } from "./TextInput";
+import { TextInputProps } from "./TextInput.js";
 
 const MAX_IMAGE_UPLOAD_SIZE = 1024 * 1024;
 

@@ -20,8 +20,8 @@
  */
 
 import { ReducerState } from "@gnu-taler/anastasis-core";
-import { createExample, reducerStatesExample } from "../../utils";
-import { SecretEditorScreen as TestedComponent } from "./SecretEditorScreen";
+import { createExample, reducerStatesExample } from "../../utils/index.js";
+import { SecretEditorScreen as TestedComponent } from "./SecretEditorScreen.js";
 
 export default {
   title: "Pages/backup/SecretInput",

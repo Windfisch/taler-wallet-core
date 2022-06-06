@@ -1,10 +1,13 @@
 import { encodeCrock, stringToBytes } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { useAnastasisContext } from "../../context/anastasis";
-import { AnastasisClientFrame } from "./index";
-import { TextInput } from "../../components/fields/TextInput";
-import { FileInput, FileTypeContent } from "../../components/fields/FileInput";
+import {
+  FileInput,
+  FileTypeContent,
+} from "../../components/fields/FileInput.js";
+import { TextInput } from "../../components/fields/TextInput.js";
+import { useAnastasisContext } from "../../context/anastasis.js";
+import { AnastasisClientFrame } from "./index.js";
 
 export function SecretEditorScreen(): VNode {
   const reducer = useAnastasisContext();

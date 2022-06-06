@@ -3,10 +3,10 @@ import {
   ChallengeFeedbackStatus,
 } from "@gnu-taler/anastasis-core";
 import { h, VNode } from "preact";
-import { useAnastasisContext } from "../../context/anastasis";
-import { AnastasisClientFrame } from "./index";
-import { authMethods, KnownAuthMethods } from "./authMethod";
-import { AsyncButton } from "../../components/AsyncButton";
+import { AsyncButton } from "../../components/AsyncButton.js";
+import { useAnastasisContext } from "../../context/anastasis.js";
+import { authMethods, KnownAuthMethods } from "./authMethod/index.js";
+import { AnastasisClientFrame } from "./index.js";
 
 function OverviewFeedbackDisplay(props: { feedback?: ChallengeFeedback }) {
   const { feedback } = props;
@@ -29,15 +29,15 @@ function OverviewFeedbackDisplay(props: { feedback?: ChallengeFeedback }) {
     case ChallengeFeedbackStatus.Unsupported:
       return (
         <div class="block has-text-danger">
-          This client doesn't support solving this type of challenge. Use
+          This client doesn&apos;t support solving this type of challenge. Use
           another version or contact the provider.
         </div>
       );
     case ChallengeFeedbackStatus.TruthUnknown:
       return (
         <div class="block has-text-danger">
-          Provider doesn't recognize the challenge of the policy. Contact the
-          provider for further information.
+          Provider doesn&apos;t recognize the challenge of the policy. Contact
+          the provider for further information.
         </div>
       );
     default:
@@ -253,7 +253,7 @@ export function ChallengeOverviewScreen(): VNode {
               Policy #{policy_index + 1}: {policyName}
             </h3>
             {policy.challenges.length === 0 && (
-              <p>This policy doesn't have any challenges.</p>
+              <p>This policy doesn&apos;t have any challenges.</p>
             )}
             {policy.challenges.length === 1 && (
               <p>This policy has one challenge.</p>

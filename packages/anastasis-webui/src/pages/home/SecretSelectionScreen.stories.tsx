@@ -20,8 +20,8 @@
  */
 
 import { ReducerState } from "@gnu-taler/anastasis-core";
-import { createExample, reducerStatesExample } from "../../utils";
-import { SecretSelectionScreen as TestedComponent } from "./SecretSelectionScreen";
+import { createExample, reducerStatesExample } from "../../utils/index.js";
+import { SecretSelectionScreen as TestedComponent } from "./SecretSelectionScreen.js";
 
 export default {
   title: "Pages/recovery/SecretSelection",

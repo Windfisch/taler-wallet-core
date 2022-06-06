@@ -20,8 +20,8 @@
  */
 
 import { ReducerState } from "@gnu-taler/anastasis-core";
-import { createExample, reducerStatesExample } from "../../utils";
-import { AttributeEntryScreen as TestedComponent } from "./AttributeEntryScreen";
+import { createExample, reducerStatesExample } from "../../utils/index.js";
+import { AttributeEntryScreen as TestedComponent } from "./AttributeEntryScreen.js";
 
 export default {
   title: "Pages/PersonalInformation",

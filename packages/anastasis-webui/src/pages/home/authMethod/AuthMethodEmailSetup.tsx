@@ -1,12 +1,12 @@
 import { encodeCrock, stringToBytes } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { EmailInput } from "../../../components/fields/EmailInput";
-import { AnastasisClientFrame } from "../index";
-import { AuthMethodSetupProps } from "./index";
+import { EmailInput } from "../../../components/fields/EmailInput.js";
+import { AnastasisClientFrame } from "../index.js";
+import { AuthMethodSetupProps } from "./index.js";
 
 const EMAIL_PATTERN =
-  /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  /^(([^<>()[]\\.,;:\s@"]+(\.[^<>()[]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
 export function AuthMethodEmailSetup({
   cancel,

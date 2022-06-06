@@ -1,15 +1,14 @@
 import {
   AuthenticationProviderStatus,
   AuthenticationProviderStatusOk,
-  PolicyMetaInfo,
 } from "@gnu-taler/anastasis-core";
 import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { AsyncButton } from "../../components/AsyncButton";
-import { PhoneNumberInput } from "../../components/fields/NumberInput";
-import { useAnastasisContext } from "../../context/anastasis";
-import { AddingProviderScreen } from "./AddingProviderScreen";
-import { AnastasisClientFrame } from "./index";
+import { AsyncButton } from "../../components/AsyncButton.js";
+import { PhoneNumberInput } from "../../components/fields/NumberInput.js";
+import { useAnastasisContext } from "../../context/anastasis.js";
+import { AddingProviderScreen } from "./AddingProviderScreen.js";
+import { AnastasisClientFrame } from "./index.js";
 
 export function SecretSelectionScreen(): VNode {
   const [selectingVersion, setSelectingVersion] = useState<boolean>(false);
@@ -67,7 +66,7 @@ export function SecretSelectionScreen(): VNode {
       <ChooseAnotherProviderScreen
         providers={provs}
         selected=""
-        onChange={(newProv) => () => {}}
+        onChange={() => null}
       ></ChooseAnotherProviderScreen>
     );
   }
@@ -78,8 +77,8 @@ export function SecretSelectionScreen(): VNode {
       hideNext="Please select version to recover"
     >
       <p>Found versions:</p>
-      {policies.map((version) => (
-        <div>
+      {policies.map((version, i) => (
+        <div key={i}>
           {version.policy_hash} / {version.secret_name}
           <button
             onClick={async () => {
@@ -184,7 +183,7 @@ export function OldSecretSelectionScreen(): VNode {
             </div>
             <div class="buttons is-right">
               <button class="button" onClick={(e) => setSelectingVersion(true)}>
-                Change secret's version
+                Change secret&apos;s version
               </button>
             </div>
           </div>

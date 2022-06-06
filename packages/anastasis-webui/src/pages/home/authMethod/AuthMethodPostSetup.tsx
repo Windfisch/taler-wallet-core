@@ -5,9 +5,9 @@ import {
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { AnastasisClientFrame } from "..";
-import { TextInput } from "../../../components/fields/TextInput";
-import { AuthMethodSetupProps } from "./index";
+import { TextInput } from "../../../components/fields/TextInput.js";
+import { AnastasisClientFrame } from "../index.js";
+import { AuthMethodSetupProps } from "./index.js";
 
 export function AuthMethodPostSetup({
   addAuthMethod,

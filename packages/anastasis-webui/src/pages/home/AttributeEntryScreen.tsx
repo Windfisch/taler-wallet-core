@@ -2,12 +2,12 @@ import { UserAttributeSpec, validators } from "@gnu-taler/anastasis-core";
 import { isAfter, parse } from "date-fns";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { DateInput } from "../../components/fields/DateInput";
-import { PhoneNumberInput } from "../../components/fields/NumberInput";
-import { TextInput } from "../../components/fields/TextInput";
-import { useAnastasisContext } from "../../context/anastasis";
-import { ConfirmModal } from "./ConfirmModal";
-import { AnastasisClientFrame, withProcessLabel } from "./index";
+import { DateInput } from "../../components/fields/DateInput.js";
+import { PhoneNumberInput } from "../../components/fields/NumberInput.js";
+import { TextInput } from "../../components/fields/TextInput.js";
+import { useAnastasisContext } from "../../context/anastasis.js";
+import { ConfirmModal } from "./ConfirmModal.js";
+import { AnastasisClientFrame, withProcessLabel } from "./index.js";
 
 export function AttributeEntryScreen(): VNode {
   const reducer = useAnastasisContext();
@@ -177,7 +177,8 @@ function AttributeEntryField(props: AttributeEntryFieldProps): VNode {
       )}
       {props.spec.name === "full_name" && (
         <div>
-          If possible, use "LASTNAME, Firstname(s)" without abbreviations.
+          If possible, use &quot;LASTNAME, Firstname(s)&quot; without
+          abbreviations.
         </div>
       )}
       <div class="block">

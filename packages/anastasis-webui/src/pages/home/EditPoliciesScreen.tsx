@@ -1,10 +1,8 @@
-/* eslint-disable @typescript-eslint/camelcase */
-import { AuthMethod, Policy } from "@gnu-taler/anastasis-core";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { useAnastasisContext } from "../../context/anastasis";
-import { authMethods, KnownAuthMethods } from "./authMethod";
-import { AnastasisClientFrame } from "./index";
+import { useAnastasisContext } from "../../context/anastasis.js";
+import { authMethods, KnownAuthMethods } from "./authMethod/index.js";
+import { AnastasisClientFrame } from "./index.js";
 
 export interface ProviderInfo {
   url: string;

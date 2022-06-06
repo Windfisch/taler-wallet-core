@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 /*
  This file is part of GNU Taler
  (C) 2021 Taler Systems S.A.
@@ -21,8 +20,8 @@
  */
 
 import { ReducerState } from "@gnu-taler/anastasis-core";
-import { createExample, reducerStatesExample } from "../../utils";
-import { ContinentSelectionScreen as TestedComponent } from "./ContinentSelectionScreen";
+import { createExample, reducerStatesExample } from "../../utils/index.js";
+import { ContinentSelectionScreen as TestedComponent } from "./ContinentSelectionScreen.js";
 
 export default {
   title: "Pages/Location",

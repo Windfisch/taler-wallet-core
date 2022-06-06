@@ -19,10 +19,10 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { encodeCrock, stringToBytes } from "@gnu-taler/taler-util";
 import { ReducerState } from "@gnu-taler/anastasis-core";
-import { createExample, reducerStatesExample } from "../../utils";
-import { RecoveryFinishedScreen as TestedComponent } from "./RecoveryFinishedScreen";
+import { encodeCrock, stringToBytes } from "@gnu-taler/taler-util";
+import { createExample, reducerStatesExample } from "../../utils/index.js";
+import { RecoveryFinishedScreen as TestedComponent } from "./RecoveryFinishedScreen.js";
 
 export default {
   title: "Pages/recovery/Finished",

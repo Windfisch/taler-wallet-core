@@ -21,7 +21,7 @@
 
 import { createContext, h, VNode } from "preact";
 import { useContext } from "preact/hooks";
-import { AnastasisReducerApi } from "../hooks/use-anastasis-reducer";
+import { AnastasisReducerApi } from "../hooks/use-anastasis-reducer.js";
 
 const initial = undefined;
 

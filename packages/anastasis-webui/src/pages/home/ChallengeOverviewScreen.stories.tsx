@@ -24,8 +24,8 @@ import {
   RecoveryStates,
   ReducerState,
 } from "@gnu-taler/anastasis-core";
-import { createExample, reducerStatesExample } from "../../utils";
-import { ChallengeOverviewScreen as TestedComponent } from "./ChallengeOverviewScreen";
+import { createExample, reducerStatesExample } from "../../utils/index.js";
+import { ChallengeOverviewScreen as TestedComponent } from "./ChallengeOverviewScreen.js";
 
 export default {
   title: "Pages/recovery/SolveChallenge/Overview",

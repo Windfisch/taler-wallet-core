@@ -1,6 +1,6 @@
 import { setupI18n } from "@gnu-taler/taler-util";
 import { h, render } from "preact";
-import App from "./components/app";
+import App from "./components/app.js";
 
 function main(): void {
   try {

@@ -19,11 +19,10 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { Fragment, h, VNode } from "preact";
 import { BackupStates, RecoveryStates } from "@gnu-taler/anastasis-core";
-import { useAnastasisContext } from "../../context/anastasis";
-import { Translate } from "../../i18n";
-import { LangSelector } from "./LangSelector";
+import { Fragment, h, VNode } from "preact";
+import { useAnastasisContext } from "../../context/anastasis.js";
+import { Translate } from "../../i18n/index.js";
 
 interface Props {
   mobile?: boolean;

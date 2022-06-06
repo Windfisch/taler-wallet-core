@@ -1,8 +1,7 @@
 import { h, VNode } from "preact";
-import { FileInput } from "../../components/fields/FileInput";
-import { FileButton } from "../../components/FlieButton";
-import { useAnastasisContext } from "../../context/anastasis";
-import { AnastasisClientFrame } from "./index";
+import { FileButton } from "../../components/FlieButton.js";
+import { useAnastasisContext } from "../../context/anastasis.js";
+import { AnastasisClientFrame } from "./index.js";
 
 export function StartScreen(): VNode {
   const reducer = useAnastasisContext();

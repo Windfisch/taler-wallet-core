@@ -1,9 +1,9 @@
 import { encodeCrock, stringToBytes } from "@gnu-taler/taler-util";
-import { Fragment, h, VNode } from "preact";
+import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { AuthMethodSetupProps } from "./index";
-import { AnastasisClientFrame } from "../index";
-import { TextInput } from "../../../components/fields/TextInput";
+import { TextInput } from "../../../components/fields/TextInput.js";
+import { AnastasisClientFrame } from "../index.js";
+import { AuthMethodSetupProps } from "./index.js";
 
 export function AuthMethodQuestionSetup({
   cancel,

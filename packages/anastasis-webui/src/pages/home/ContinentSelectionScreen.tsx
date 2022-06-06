@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/camelcase */
-import { BackupStates, RecoveryStates } from "@gnu-taler/anastasis-core";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { useAnastasisContext } from "../../context/anastasis";
-import { AnastasisClientFrame, withProcessLabel } from "./index";
+import { useAnastasisContext } from "../../context/anastasis.js";
+import { AnastasisClientFrame, withProcessLabel } from "./index.js";
 
 export function ContinentSelectionScreen(): VNode {
   const reducer = useAnastasisContext();

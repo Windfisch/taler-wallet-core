@@ -19,8 +19,8 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { createExample, reducerStatesExample } from "../../utils";
-import { StartScreen as TestedComponent } from "./StartScreen";
+import { createExample, reducerStatesExample } from "../../utils/index.js";
+import { StartScreen as TestedComponent } from "./StartScreen.js";
 
 export default {
   title: "Pages/Start",

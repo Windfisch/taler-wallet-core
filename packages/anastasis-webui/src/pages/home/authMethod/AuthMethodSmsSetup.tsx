@@ -1,9 +1,9 @@
 import { encodeCrock, stringToBytes } from "@gnu-taler/taler-util";
-import { Fragment, h, VNode } from "preact";
+import { h, VNode } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
-import { AuthMethodSetupProps } from ".";
-import { PhoneNumberInput } from "../../../components/fields/NumberInput";
-import { AnastasisClientFrame } from "../index";
+import { PhoneNumberInput } from "../../../components/fields/NumberInput.js";
+import { AnastasisClientFrame } from "../index.js";
+import { AuthMethodSetupProps } from "./index.js";
 
 const REGEX_JUST_NUMBERS = /^\+[0-9 ]*$/;
 

@@ -1,15 +1,12 @@
-import {
-  ChallengeFeedbackStatus,
-  ChallengeInfo,
-} from "@gnu-taler/anastasis-core";
+import { ChallengeInfo } from "@gnu-taler/anastasis-core";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { AsyncButton } from "../../../components/AsyncButton";
-import { useAnastasisContext } from "../../../context/anastasis";
-import { AnastasisClientFrame } from "../index";
-import { SolveOverviewFeedbackDisplay } from "../SolveScreen";
-import { shouldHideConfirm } from "./helpers";
-import { AuthMethodSolveProps } from "./index";
+import { AsyncButton } from "../../../components/AsyncButton.js";
+import { useAnastasisContext } from "../../../context/anastasis.js";
+import { AnastasisClientFrame } from "../index.js";
+import { SolveOverviewFeedbackDisplay } from "../SolveScreen.js";
+import { shouldHideConfirm } from "./helpers.js";
+import { AuthMethodSolveProps } from "./index.js";
 
 export function AuthMethodIbanSolve({ id }: AuthMethodSolveProps): VNode {
   const [answer, setAnswer] = useState("");

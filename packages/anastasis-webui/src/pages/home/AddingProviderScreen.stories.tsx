@@ -20,8 +20,8 @@
  */
 
 import { ReducerState } from "@gnu-taler/anastasis-core";
-import { createExample, reducerStatesExample } from "../../utils";
-import { AddingProviderScreen as TestedComponent } from "./AddingProviderScreen";
+import { createExample, reducerStatesExample } from "../../utils/index.js";
+import { AddingProviderScreen as TestedComponent } from "./AddingProviderScreen.js";
 
 export default {
   title: "Pages/ManageProvider",

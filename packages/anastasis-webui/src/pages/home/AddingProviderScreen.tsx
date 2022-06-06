@@ -1,10 +1,10 @@
 import { AuthenticationProviderStatusOk } from "@gnu-taler/anastasis-core";
 import { h, VNode } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
-import { TextInput } from "../../components/fields/TextInput";
-import { useAnastasisContext } from "../../context/anastasis";
-import { authMethods, KnownAuthMethods } from "./authMethod";
-import { AnastasisClientFrame } from "./index";
+import { TextInput } from "../../components/fields/TextInput.js";
+import { useAnastasisContext } from "../../context/anastasis.js";
+import { authMethods, KnownAuthMethods } from "./authMethod/index.js";
+import { AnastasisClientFrame } from "./index.js";
 
 interface Props {
   providerType?: KnownAuthMethods;

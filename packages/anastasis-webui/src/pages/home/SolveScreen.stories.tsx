@@ -20,8 +20,8 @@
  */
 
 import { ReducerState } from "@gnu-taler/anastasis-core";
-import { createExample, reducerStatesExample } from "../../utils";
-import { SolveScreen as TestedComponent } from "./SolveScreen";
+import { createExample, reducerStatesExample } from "../../utils/index.js";
+import { SolveScreen as TestedComponent } from "./SolveScreen.js";
 
 export default {
   title: "Pages/recovery/SolveChallenge/Solve",

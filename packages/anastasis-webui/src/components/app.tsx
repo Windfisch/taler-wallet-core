@@ -1,6 +1,6 @@
 import { FunctionalComponent, h } from "preact";
-import { TranslationProvider } from "../context/translation";
-import AnastasisClient from "../pages/home";
+import { TranslationProvider } from "../context/translation.js";
+import AnastasisClient from "../pages/home/index.js";
 
 const App: FunctionalComponent = () => {
   return (

@@ -1,12 +1,12 @@
-import { h, VNode } from "preact";
-import { AnastasisClientFrame } from ".";
 import {
   ChallengeFeedback,
   ChallengeFeedbackStatus,
 } from "@gnu-taler/anastasis-core";
-import { Notifications } from "../../components/Notifications";
-import { useAnastasisContext } from "../../context/anastasis";
-import { authMethods, KnownAuthMethods } from "./authMethod";
+import { h, VNode } from "preact";
+import { Notifications } from "../../components/Notifications.js";
+import { useAnastasisContext } from "../../context/anastasis.js";
+import { authMethods, KnownAuthMethods } from "./authMethod/index.js";
+import { AnastasisClientFrame } from "./index.js";
 
 export function SolveOverviewFeedbackDisplay(props: {
   feedback?: ChallengeFeedback;

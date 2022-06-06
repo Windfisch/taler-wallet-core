@@ -1,11 +1,11 @@
-import { encodeCrock, stringToBytes } from "@gnu-taler/taler-util";
+import { encodeCrock } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useMemo, useState } from "preact/hooks";
-import { AuthMethodSetupProps } from "./index";
-import { AnastasisClientFrame } from "../index";
-import { TextInput } from "../../../components/fields/TextInput";
-import { QR } from "../../../components/QR";
-import { base32enc, computeTOTPandCheck } from "./totp";
+import { TextInput } from "../../../components/fields/TextInput.js";
+import { QR } from "../../../components/QR.js";
+import { AnastasisClientFrame } from "../index.js";
+import { AuthMethodSetupProps } from "./index.js";
+import { base32enc, computeTOTPandCheck } from "./totp.js";
 
 /**
  * This is hard-coded in the protocol for TOTP auth.
@@ -69,8 +69,8 @@ export function AuthMethodTotpSetup({
         bind={[test, setTest]}
       />
       <div>
-        We note that Google's implementation of TOTP is incomplete and will not
-        work. We recommend using FreeOTP+.
+        We note that Google&apos;s implementation of TOTP is incomplete and will
+        not work. We recommend using FreeOTP+.
       </div>
 
       {configured.length > 0 && (

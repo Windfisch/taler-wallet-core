@@ -1,10 +1,9 @@
-import { bytesToString, decodeCrock, encodeCrock } from "@gnu-taler/taler-util";
+import { bytesToString, decodeCrock } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { stringToBytes } from "qrcode-generator";
-import { QR } from "../../components/QR";
-import { useAnastasisContext } from "../../context/anastasis";
-import { AnastasisClientFrame } from "./index";
+import { QR } from "../../components/QR.js";
+import { useAnastasisContext } from "../../context/anastasis.js";
+import { AnastasisClientFrame } from "./index.js";
 
 export function RecoveryFinishedScreen(): VNode {
   const reducer = useAnastasisContext();

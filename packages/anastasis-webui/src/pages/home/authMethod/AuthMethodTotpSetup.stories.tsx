@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 /*
  This file is part of GNU Taler
  (C) 2021 Taler Systems S.A.
@@ -20,8 +19,8 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { createExample, reducerStatesExample } from "../../../utils";
-import { authMethods as TestedComponent, KnownAuthMethods } from "./index";
+import { createExample, reducerStatesExample } from "../../../utils/index.js";
+import { authMethods as TestedComponent, KnownAuthMethods } from "./index.js";
 
 export default {
   title: "Pages/backup/AuthorizationMethod/AuthMethods/TOTP",

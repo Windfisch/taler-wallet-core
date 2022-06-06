@@ -20,8 +20,8 @@
  */
 
 import { ReducerState } from "@gnu-taler/anastasis-core";
-import { createExample, reducerStatesExample } from "../../utils";
-import { BackupFinishedScreen as TestedComponent } from "./BackupFinishedScreen";
+import { createExample, reducerStatesExample } from "../../utils/index.js";
+import { BackupFinishedScreen as TestedComponent } from "./BackupFinishedScreen.js";
 
 export default {
   title: "Pages/backup/Finished",

@@ -19,34 +19,34 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import * as a1 from "./RecoveryFinishedScreen.stories.js";
-import * as a3 from "./ContinentSelectionScreen.stories.js";
-import * as a4 from "./ReviewPoliciesScreen.stories.js";
-import * as a5 from "./authMethod/AuthMethodSmsSolve.stories.js";
-import * as a6 from "./authMethod/AuthMethodSmsSetup.stories.js";
-import * as a7 from "./authMethod/AuthMethodPostSetup.stories.js";
-import * as a8 from "./authMethod/AuthMethodEmailSetup.stories.js";
-import * as a9 from "./authMethod/AuthMethodIbanSetup.stories.js";
-import * as a10 from "./authMethod/AuthMethodQuestionSolve.stories.js";
-import * as a11 from "./authMethod/AuthMethodIbanSolve.stories.js";
-import * as a12 from "./authMethod/AuthMethodTotpSolve.stories.js";
-import * as a13 from "./authMethod/AuthMethodPostSolve.stories.js";
-import * as a14 from "./authMethod/AuthMethodTotpSetup.stories.js";
-import * as a15 from "./authMethod/AuthMethodEmailSolve.stories.js";
-import * as a16 from "./authMethod/AuthMethodQuestionSetup.stories.js";
-import * as a17 from "./ChallengePayingScreen.stories.js";
-import * as a18 from "./AuthenticationEditorScreen.stories.js";
-import * as a19 from "./SecretSelectionScreen.stories.js";
-import * as a20 from "./PoliciesPayingScreen.stories.js";
-import * as a21 from "./BackupFinishedScreen.stories.js";
-import * as a22 from "./SecretEditorScreen.stories.js";
 import * as a23 from "./AddingProviderScreen.stories.js";
-import * as a24 from "./StartScreen.stories.js";
-import * as a25 from "./ChallengeOverviewScreen.stories.js";
-import * as a26 from "./TruthsPayingScreen.stories.js";
-import * as a27 from "./EditPoliciesScreen.stories.js";
 import * as a28 from "./AttributeEntryScreen.stories.js";
+import * as a18 from "./AuthenticationEditorScreen.stories.js";
+import * as a8 from "./authMethod/AuthMethodEmailSetup.stories.js";
+import * as a15 from "./authMethod/AuthMethodEmailSolve.stories.js";
+import * as a9 from "./authMethod/AuthMethodIbanSetup.stories.js";
+import * as a11 from "./authMethod/AuthMethodIbanSolve.stories.js";
+import * as a7 from "./authMethod/AuthMethodPostSetup.stories.js";
+import * as a13 from "./authMethod/AuthMethodPostSolve.stories.js";
+import * as a16 from "./authMethod/AuthMethodQuestionSetup.stories.js";
+import * as a10 from "./authMethod/AuthMethodQuestionSolve.stories.js";
+import * as a6 from "./authMethod/AuthMethodSmsSetup.stories.js";
+import * as a5 from "./authMethod/AuthMethodSmsSolve.stories.js";
+import * as a14 from "./authMethod/AuthMethodTotpSetup.stories.js";
+import * as a12 from "./authMethod/AuthMethodTotpSolve.stories.js";
+import * as a21 from "./BackupFinishedScreen.stories.js";
+import * as a25 from "./ChallengeOverviewScreen.stories.js";
+import * as a17 from "./ChallengePayingScreen.stories.js";
+import * as a3 from "./ContinentSelectionScreen.stories.js";
+import * as a27 from "./EditPoliciesScreen.stories.js";
+import * as a20 from "./PoliciesPayingScreen.stories.js";
+import * as a1 from "./RecoveryFinishedScreen.stories.js";
+import * as a4 from "./ReviewPoliciesScreen.stories.js";
+import * as a22 from "./SecretEditorScreen.stories.js";
+import * as a19 from "./SecretSelectionScreen.stories.js";
 import * as a29 from "./SolveScreen.stories.js";
+import * as a24 from "./StartScreen.stories.js";
+import * as a26 from "./TruthsPayingScreen.stories.js";
 
 export default [
   a1,

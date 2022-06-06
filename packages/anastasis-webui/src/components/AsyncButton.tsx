@@ -21,9 +21,7 @@
 
 import { ComponentChildren, h, VNode } from "preact";
 import { useLayoutEffect, useRef } from "preact/hooks";
-// import { LoadingModal } from "../modal";
-import { useAsync } from "../hooks/async";
-// import { Translate } from "../../i18n";
+import { useAsync } from "../hooks/async.js";
 
 type Props = {
   children: ComponentChildren;

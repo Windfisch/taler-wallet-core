@@ -20,8 +20,6 @@
  */
 
 import { h, VNode } from "preact";
-import logo from "../../assets/logo.jpeg";
-import { LangSelector } from "./LangSelector";
 
 interface Props {
   onMobileMenu: () => void;

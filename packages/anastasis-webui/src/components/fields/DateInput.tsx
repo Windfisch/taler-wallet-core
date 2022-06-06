@@ -1,7 +1,7 @@
 import { format, subYears } from "date-fns";
 import { h, VNode } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
-import { DatePicker } from "../picker/DatePicker";
+import { DatePicker } from "../picker/DatePicker.js";
 
 export interface DateInputProps {
   label: string;

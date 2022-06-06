@@ -20,8 +20,8 @@
  */
 
 import { ReducerState } from "@gnu-taler/anastasis-core";
-import { createExample, reducerStatesExample } from "../../utils";
-import { TruthsPayingScreen as TestedComponent } from "./TruthsPayingScreen";
+import { createExample, reducerStatesExample } from "../../utils/index.js";
+import { TruthsPayingScreen as TestedComponent } from "./TruthsPayingScreen.js";
 
 export default {
   title: "Pages/backup/__TruthsPaying",

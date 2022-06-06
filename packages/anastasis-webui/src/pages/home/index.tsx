@@ -7,31 +7,31 @@ import {
   VNode,
 } from "preact";
 import { useCallback, useEffect, useErrorBoundary } from "preact/hooks";
-import { AsyncButton } from "../../components/AsyncButton";
-import { Menu } from "../../components/menu";
-import { Notifications } from "../../components/Notifications";
+import { AsyncButton } from "../../components/AsyncButton.js";
+import { Menu } from "../../components/menu/index.js";
+import { Notifications } from "../../components/Notifications.js";
 import {
   AnastasisProvider,
   useAnastasisContext,
-} from "../../context/anastasis";
+} from "../../context/anastasis.js";
 import {
   AnastasisReducerApi,
   useAnastasisReducer,
-} from "../../hooks/use-anastasis-reducer";
-import { AttributeEntryScreen } from "./AttributeEntryScreen";
-import { AuthenticationEditorScreen } from "./AuthenticationEditorScreen";
-import { BackupFinishedScreen } from "./BackupFinishedScreen";
-import { ChallengeOverviewScreen } from "./ChallengeOverviewScreen";
-import { ChallengePayingScreen } from "./ChallengePayingScreen";
-import { ContinentSelectionScreen } from "./ContinentSelectionScreen";
-import { PoliciesPayingScreen } from "./PoliciesPayingScreen";
-import { RecoveryFinishedScreen } from "./RecoveryFinishedScreen";
-import { ReviewPoliciesScreen } from "./ReviewPoliciesScreen";
-import { SecretEditorScreen } from "./SecretEditorScreen";
-import { SecretSelectionScreen } from "./SecretSelectionScreen";
-import { SolveScreen } from "./SolveScreen";
-import { StartScreen } from "./StartScreen";
-import { TruthsPayingScreen } from "./TruthsPayingScreen";
+} from "../../hooks/use-anastasis-reducer.js";
+import { AttributeEntryScreen } from "./AttributeEntryScreen.js";
+import { AuthenticationEditorScreen } from "./AuthenticationEditorScreen.js";
+import { BackupFinishedScreen } from "./BackupFinishedScreen.js";
+import { ChallengeOverviewScreen } from "./ChallengeOverviewScreen.js";
+import { ChallengePayingScreen } from "./ChallengePayingScreen.js";
+import { ContinentSelectionScreen } from "./ContinentSelectionScreen.js";
+import { PoliciesPayingScreen } from "./PoliciesPayingScreen.js";
+import { RecoveryFinishedScreen } from "./RecoveryFinishedScreen.js";
+import { ReviewPoliciesScreen } from "./ReviewPoliciesScreen.js";
+import { SecretEditorScreen } from "./SecretEditorScreen.js";
+import { SecretSelectionScreen } from "./SecretSelectionScreen.js";
+import { SolveScreen } from "./SolveScreen.js";
+import { StartScreen } from "./StartScreen.js";
+import { TruthsPayingScreen } from "./TruthsPayingScreen.js";
 
 function isBackup(reducer: AnastasisReducerApi): boolean {
   return reducer.currentReducerState?.reducer_type === "backup";
@@ -96,13 +96,12 @@ let currentHistoryId = 0;
 
 export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
   const reducer = useAnastasisContext();
-  if (!reducer) {
-    return <p>Fatal: Reducer must be in context.</p>;
-  }
+
   const doBack = async (): Promise<void> => {
     if (props.onBack) {
       await props.onBack();
     } else {
+      if (!reducer) return;
       await reducer.back();
     }
   };
@@ -125,6 +124,7 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
     if (props.onNext) {
       await props.onNext();
     } else {
+      if (!reducer) return;
       await reducer.transition("next", {});
     }
   };
@@ -146,7 +146,6 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
     // reducer
     return false;
   }, []);
-
   useEffect(() => {
     window.addEventListener("popstate", browserOnBackButton);
 
@@ -154,6 +153,9 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
       window.removeEventListener("popstate", browserOnBackButton);
     };
   }, []);
+  if (!reducer) {
+    return <p>Fatal: Reducer must be in context.</p>;
+  }
 
   return (
     <Fragment>

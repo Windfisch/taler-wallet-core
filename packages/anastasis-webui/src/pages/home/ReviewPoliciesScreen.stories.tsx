@@ -20,8 +20,8 @@
  */
 
 import { ReducerState } from "@gnu-taler/anastasis-core";
-import { createExample, reducerStatesExample } from "../../utils";
-import { ReviewPoliciesScreen as TestedComponent } from "./ReviewPoliciesScreen";
+import { createExample, reducerStatesExample } from "../../utils/index.js";
+import { ReviewPoliciesScreen as TestedComponent } from "./ReviewPoliciesScreen.js";
 
 export default {
   title: "Pages/backup/ReviewPolicies",

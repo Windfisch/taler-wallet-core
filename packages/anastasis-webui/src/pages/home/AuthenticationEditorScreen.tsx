@@ -1,17 +1,17 @@
 import { AuthMethod, ReducerStateBackup } from "@gnu-taler/anastasis-core";
-import { ComponentChildren, Fragment, h, VNode } from "preact";
+import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { useAnastasisContext } from "../../context/anastasis";
-import { AddingProviderScreen } from "./AddingProviderScreen";
+import { useAnastasisContext } from "../../context/anastasis.js";
+import { AddingProviderScreen } from "./AddingProviderScreen.js";
 import {
   authMethods,
   AuthMethodSetupProps,
   AuthMethodWithRemove,
   isKnownAuthMethods,
   KnownAuthMethods,
-} from "./authMethod";
-import { ConfirmModal } from "./ConfirmModal";
-import { AnastasisClientFrame } from "./index";
+} from "./authMethod/index.js";
+import { ConfirmModal } from "./ConfirmModal.js";
+import { AnastasisClientFrame } from "./index.js";
 
 const getKeys = Object.keys as <T extends object>(obj: T) => Array<keyof T>;
 
@@ -226,7 +226,8 @@ export function AuthenticationEditorScreen(): VNode {
           </p>
           {authAvailableSet.size > 0 && (
             <p class="block">
-              We couldn't find provider for some of the authentication methods.
+              We couldn&apos;t find provider for some of the authentication
+              methods.
             </p>
           )}
         </div>
