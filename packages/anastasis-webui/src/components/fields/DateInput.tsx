@@ -46,11 +46,11 @@ export function DateInput(props: DateInputProps): VNode {
               class={showError ? "input is-danger" : "input"}
               value={value}
               onKeyPress={(e) => {
-                if (e.key === 'Enter' && props.onConfirm) {
-                  props.onConfirm()
+                if (e.key === "Enter" && props.onConfirm) {
+                  props.onConfirm();
                 }
               }}
-                  onInput={(e) => {
+              onInput={(e) => {
                 const text = e.currentTarget.value;
                 setDirty(true);
                 props.bind[1](text);

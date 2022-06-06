@@ -39,8 +39,8 @@ export function EmailInput(props: TextInputProps): VNode {
           type="email"
           class={showError ? "input is-danger" : "input"}
           onKeyPress={(e) => {
-            if (e.key === 'Enter' && props.onConfirm) {
-              props.onConfirm()
+            if (e.key === "Enter" && props.onConfirm) {
+              props.onConfirm();
             }
           }}
           onInput={(e) => {

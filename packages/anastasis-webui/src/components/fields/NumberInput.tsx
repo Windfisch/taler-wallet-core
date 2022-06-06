@@ -38,8 +38,8 @@ export function PhoneNumberInput(props: TextInputProps): VNode {
           placeholder={props.placeholder}
           class={showError ? "input is-danger" : "input"}
           onKeyPress={(e) => {
-            if (e.key === 'Enter' && props.onConfirm) {
-              props.onConfirm()
+            if (e.key === "Enter" && props.onConfirm) {
+              props.onConfirm();
             }
           }}
           onInput={(e) => {

@@ -229,12 +229,8 @@ export class DatePicker extends Component<Props, State> {
   }
 
   render() {
-    const {
-      currentDate,
-      displayedMonth,
-      displayedYear,
-      selectYearMode,
-    } = this.state;
+    const { currentDate, displayedMonth, displayedYear, selectYearMode } =
+      this.state;
 
     return (
       <div>

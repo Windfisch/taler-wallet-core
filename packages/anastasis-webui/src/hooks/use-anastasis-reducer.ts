@@ -323,7 +323,7 @@ export function useAnastasisReducer(): AnastasisReducerApi {
         },
       });
     },
-    async discoverMore(): Promise<void> { },
+    async discoverMore(): Promise<void> {},
     async startRecover() {
       let s: ReducerState;
       if (remoteReducer) {
@@ -403,7 +403,7 @@ export function useAnastasisReducer(): AnastasisReducerApi {
 }
 
 class ReducerTxImpl implements ReducerTransactionHandle {
-  constructor(public transactionState: ReducerState) { }
+  constructor(public transactionState: ReducerState) {}
   async transition(action: string, args: any): Promise<ReducerState> {
     let s: ReducerState;
     if (remoteReducer) {

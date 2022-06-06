@@ -56,9 +56,7 @@ export function FileInput(props: FileInputProps): VNode {
           <div class="icon is-small ">
             <i class="mdi mdi-folder" />
           </div>
-          <span>
-            {props.label}
-          </span>
+          <span>{props.label}</span>
         </a>
         {props.tooltip && (
           <span class="icon has-tooltip-right" data-tooltip={props.tooltip}>
@@ -77,7 +75,7 @@ export function FileInput(props: FileInputProps): VNode {
             if (!f || f.length != 1) {
               return props.onChange(undefined);
             }
-            console.log(f)
+            console.log(f);
             if (f[0].size > MAX_IMAGE_UPLOAD_SIZE) {
               setSizeError(true);
               return props.onChange(undefined);
@@ -90,7 +88,11 @@ export function FileInput(props: FileInputProps): VNode {
                   "",
                 ),
               );
-              return props.onChange({content: `data:${f[0].type};base64,${b64}`, name: f[0].name, type: f[0].type});
+              return props.onChange({
+                content: `data:${f[0].type};base64,${b64}`,
+                name: f[0].name,
+                type: f[0].type,
+              });
             });
           }}
         />
