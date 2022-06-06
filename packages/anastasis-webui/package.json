@@ -4,6 +4,7 @@
   "version": "0.0.2",
   "license": "MIT",
   "scripts": {
+    "build": "./clean_and_build.sh",
     "compile": "tsc",
     "dev": "./dev.mjs",
     "prepare": "pnpm compile",

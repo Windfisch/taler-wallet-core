@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 echo clean
 rm -rf dist
 mkdir -p dist/fonts
