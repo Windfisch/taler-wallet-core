@@ -21,17 +21,28 @@
     "preact-router": "^3.2.1",
     "qrcode-generator": "^1.4.4"
   },
+  "eslintConfig": {
+    "plugins": [
+      "header"
+    ],
+    "rules": {
+      "header/header": [
+        2,
+        "copyleft-header.js"
+      ]
+    }
+  },
   "devDependencies": {
     "@creativebulma/bulma-tooltip": "^1.2.0",
     "bulma": "^0.9.3",
     "bulma-checkbox": "^1.1.1",
     "bulma-radio": "^1.1.1",
     "chokidar": "^3.5.3",
+    "eslint-plugin-header": "^3.1.1",
     "jssha": "^3.2.0",
     "mocha": "^9.2.0",
     "sass": "1.32.13",
     "typescript": "^4.5.4",
     "ws": "7.4.5"
-
   }
 }
