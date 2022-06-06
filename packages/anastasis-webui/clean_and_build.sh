@@ -11,7 +11,7 @@ cp \
 echo css
 pnpm exec sass -I . ./src/scss/main.scss dist/main.css &
 echo js
-pnpm exec esbuild --log-level=error --bundle src/main.ts --outdir=dist --target=es6 --loader:.scss=text --loader:.svg=dataurl --format=iife --sourcemap --jsx-factory=h --jsx-fragment=Fragment --platform=browser &
+pnpm exec esbuild --log-level=error --bundle src/main.ts --outdir=dist --target=es6 --loader:.svg=dataurl --format=iife --sourcemap --jsx-factory=h --jsx-fragment=Fragment --platform=browser &
 wait -n
 wait -n
 

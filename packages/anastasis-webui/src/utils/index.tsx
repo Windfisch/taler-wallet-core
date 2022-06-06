@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import {
+  AuthenticationProviderStatus,
+  AuthenticationProviderStatusError,
+  AuthenticationProviderStatusOk,
   BackupStates,
   RecoveryStates,
   ReducerState,
@@ -115,6 +118,7 @@ const base = {
   ],
   authentication_providers: {
     "http://localhost:8086/": {
+      status: "ok",
       http_status: 200,
       annual_fee: "COL:0",
       business_name: "Anastasis Local",
@@ -134,11 +138,12 @@ const base = {
           usage_fee: "COL:0",
         },
       ],
-      salt: "WBMDD76BR1E90YQ5AHBMKPH7GW",
+      provider_salt: "WBMDD76BR1E90YQ5AHBMKPH7GW",
       storage_limit_in_megabytes: 16,
       truth_upload_fee: "COL:0",
-    },
+    } as AuthenticationProviderStatusOk,
     "https://kudos.demo.anastasis.lu/": {
+      status: "ok",
       http_status: 200,
       annual_fee: "COL:0",
       business_name: "Anastasis Kudo",
@@ -154,11 +159,12 @@ const base = {
           usage_fee: "COL:0",
         },
       ],
-      salt: "WBMDD76BR1E90YQ5AHBMKPH7GW",
+      provider_salt: "WBMDD76BR1E90YQ5AHBMKPH7GW",
       storage_limit_in_megabytes: 16,
       truth_upload_fee: "COL:0",
-    },
+    } as AuthenticationProviderStatusOk,
     "https://anastasis.demo.taler.net/": {
+      status: "ok",
       http_status: 200,
       annual_fee: "COL:0",
       business_name: "Anastasis Demo",
@@ -178,23 +184,23 @@ const base = {
           usage_fee: "COL:0",
         },
       ],
-      salt: "WBMDD76BR1E90YQ5AHBMKPH7GW",
+      provider_salt: "WBMDD76BR1E90YQ5AHBMKPH7GW",
       storage_limit_in_megabytes: 16,
       truth_upload_fee: "COL:0",
-    },
+    } as AuthenticationProviderStatusOk,
 
     "http://localhost:8087/": {
       code: 8414,
       hint: "request to provider failed",
-    },
+    } as AuthenticationProviderStatusError,
     "http://localhost:8088/": {
       code: 8414,
       hint: "request to provider failed",
-    },
+    } as AuthenticationProviderStatusError,
     "http://localhost:8089/": {
       code: 8414,
       hint: "request to provider failed",
-    },
+    } as AuthenticationProviderStatusError,
   },
 } as Partial<ReducerState>;
 
@@ -210,6 +216,7 @@ export const reducerStatesExample = {
   } as ReducerState,
   secretSelection: {
     ...base,
+    reducer_type: "recovery",
     recovery_state: RecoveryStates.SecretSelecting,
   } as ReducerState,
   recoveryFinished: {
@@ -260,6 +267,7 @@ export const reducerStatesExample = {
   authEditing: {
     ...base,
     backup_state: BackupStates.AuthenticationsEditing,
+    reducer_type: "backup",
   } as ReducerState,
   backupAttributeEditing: {
     ...base,

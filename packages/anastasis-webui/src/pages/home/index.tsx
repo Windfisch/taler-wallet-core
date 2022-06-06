@@ -157,7 +157,6 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
 
   return (
     <Fragment>
-      <Menu title="Anastasis" />
       <div class="home" onKeyPress={(e) => handleKeyPress(e)}>
         <h1 class="title">{props.title}</h1>
         <ErrorBanner />
@@ -195,6 +194,7 @@ const AnastasisClient: FunctionalComponent = () => {
   return (
     <AnastasisProvider value={reducer}>
       <ErrorBoundary reducer={reducer}>
+        <Menu title="Anastasis" />
         <AnastasisClientImpl />
       </ErrorBoundary>
     </AnastasisProvider>
