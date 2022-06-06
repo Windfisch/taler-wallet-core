@@ -82,7 +82,7 @@ export interface ReducerStateBackup {
 
   identity_attributes?: { [n: string]: string };
 
-  authentication_providers?: { [url: string]: AuthenticationProviderStatus };
+  authentication_providers?: AuthenticationProviderStatusMap;
 
   authentication_methods?: AuthMethod[];
 
