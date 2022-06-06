@@ -19,7 +19,12 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { AmountJson, Amounts, NotificationType, PrepareRefundResult } from "@gnu-taler/taler-util";
+import {
+  AmountJson,
+  Amounts,
+  NotificationType,
+  PrepareRefundResult,
+} from "@gnu-taler/taler-util";
 import { expect } from "chai";
 import { mountHook } from "../test-utils.js";
 import { SubsHandler } from "./Pay.test.js";
@@ -29,146 +34,151 @@ import { useComponentState } from "./Refund.jsx";
 
 describe("Refund CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(() =>
-      useComponentState(undefined, {
-        prepareRefund: async () => ({}),
-        applyRefund: async () => ({}),
-        onUpdateNotification: async () => ({})
-      } as any),
-    );
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+      mountHook(() =>
+        useComponentState(undefined, {
+          prepareRefund: async () => ({}),
+          applyRefund: async () => ({}),
+          onUpdateNotification: async () => ({}),
+        } as any),
+      );
 
     {
-      const { status, hook } = getLastResultOrThrow()
-      expect(status).equals('loading')
+      const { status, hook } = getLastResultOrThrow();
+      expect(status).equals("loading");
       expect(hook).undefined;
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const { status, hook } = getLastResultOrThrow()
+      const { status, hook } = getLastResultOrThrow();
 
-      expect(status).equals('loading')
+      expect(status).equals("loading");
       if (!hook) expect.fail();
       if (!hook.hasError) expect.fail();
       if (hook.operational) expect.fail();
       expect(hook.message).eq("ERROR_NO-URI-FOR-REFUND");
     }
 
-    await assertNoPendingUpdate()
+    await assertNoPendingUpdate();
   });
 
   it("should be ready after loading", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(() =>
-      useComponentState("taler://refund/asdasdas", {
-        prepareRefund: async () => ({
-          effectivePaid: 'EUR:2',
-          awaiting: 'EUR:2',
-          gone: 'EUR:0',
-          granted: 'EUR:0',
-          pending: false,
-          proposalId: '1',
-          info: {
-            contractTermsHash: '123',
-            merchant: {
-              name: 'the merchant name'
-            },
-            orderId: 'orderId1',
-            summary: 'the sumary'
-          }
-        } as PrepareRefundResult as any),
-        applyRefund: async () => ({}),
-        onUpdateNotification: async () => ({})
-      } as any),
-    );
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+      mountHook(() =>
+        useComponentState("taler://refund/asdasdas", {
+          prepareRefund: async () =>
+            ({
+              effectivePaid: "EUR:2",
+              awaiting: "EUR:2",
+              gone: "EUR:0",
+              granted: "EUR:0",
+              pending: false,
+              proposalId: "1",
+              info: {
+                contractTermsHash: "123",
+                merchant: {
+                  name: "the merchant name",
+                },
+                orderId: "orderId1",
+                summary: "the sumary",
+              },
+            } as PrepareRefundResult as any),
+          applyRefund: async () => ({}),
+          onUpdateNotification: async () => ({}),
+        } as any),
+      );
 
     {
-      const { status, hook } = getLastResultOrThrow()
-      expect(status).equals('loading')
+      const { status, hook } = getLastResultOrThrow();
+      expect(status).equals("loading");
       expect(hook).undefined;
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const state = getLastResultOrThrow()
+      const state = getLastResultOrThrow();
 
-      if (state.status !== 'ready') expect.fail();
+      if (state.status !== "ready") expect.fail();
       if (state.hook) expect.fail();
       expect(state.accept.onClick).not.undefined;
       expect(state.ignore.onClick).not.undefined;
-      expect(state.merchantName).eq('the merchant name');
-      expect(state.orderId).eq('orderId1');
+      expect(state.merchantName).eq("the merchant name");
+      expect(state.orderId).eq("orderId1");
       expect(state.products).undefined;
     }
 
-    await assertNoPendingUpdate()
+    await assertNoPendingUpdate();
   });
 
   it("should be ignored after clicking the ignore button", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(() =>
-      useComponentState("taler://refund/asdasdas", {
-        prepareRefund: async () => ({
-          effectivePaid: 'EUR:2',
-          awaiting: 'EUR:2',
-          gone: 'EUR:0',
-          granted: 'EUR:0',
-          pending: false,
-          proposalId: '1',
-          info: {
-            contractTermsHash: '123',
-            merchant: {
-              name: 'the merchant name'
-            },
-            orderId: 'orderId1',
-            summary: 'the sumary'
-          }
-        } as PrepareRefundResult as any),
-        applyRefund: async () => ({}),
-        onUpdateNotification: async () => ({})
-      } as any),
-    );
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+      mountHook(() =>
+        useComponentState("taler://refund/asdasdas", {
+          prepareRefund: async () =>
+            ({
+              effectivePaid: "EUR:2",
+              awaiting: "EUR:2",
+              gone: "EUR:0",
+              granted: "EUR:0",
+              pending: false,
+              proposalId: "1",
+              info: {
+                contractTermsHash: "123",
+                merchant: {
+                  name: "the merchant name",
+                },
+                orderId: "orderId1",
+                summary: "the sumary",
+              },
+            } as PrepareRefundResult as any),
+          applyRefund: async () => ({}),
+          onUpdateNotification: async () => ({}),
+        } as any),
+      );
 
     {
-      const { status, hook } = getLastResultOrThrow()
-      expect(status).equals('loading')
+      const { status, hook } = getLastResultOrThrow();
+      expect(status).equals("loading");
       expect(hook).undefined;
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const state = getLastResultOrThrow()
+      const state = getLastResultOrThrow();
 
-      if (state.status !== 'ready') expect.fail();
+      if (state.status !== "ready") expect.fail();
       if (state.hook) expect.fail();
       expect(state.accept.onClick).not.undefined;
-      expect(state.merchantName).eq('the merchant name');
-      expect(state.orderId).eq('orderId1');
+      expect(state.merchantName).eq("the merchant name");
+      expect(state.orderId).eq("orderId1");
       expect(state.products).undefined;
 
       if (state.ignore.onClick === undefined) expect.fail();
-      state.ignore.onClick()
+      state.ignore.onClick();
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const state = getLastResultOrThrow()
+      const state = getLastResultOrThrow();
 
-      if (state.status !== 'ignored') expect.fail();
+      if (state.status !== "ignored") expect.fail();
       if (state.hook) expect.fail();
-      expect(state.merchantName).eq('the merchant name');
+      expect(state.merchantName).eq("the merchant name");
     }
 
-    await assertNoPendingUpdate()
+    await assertNoPendingUpdate();
   });
 
   it("should be in progress when doing refresh", async () => {
-    let granted = Amounts.getZero('EUR')
-    const unit: AmountJson = { currency: 'EUR', value: 1, fraction: 0 }
-    const refunded: AmountJson = { currency: 'EUR', value: 2, fraction: 0 }
-    let awaiting: AmountJson = refunded
+    let granted = Amounts.getZero("EUR");
+    const unit: AmountJson = { currency: "EUR", value: 1, fraction: 0 };
+    const refunded: AmountJson = { currency: "EUR", value: 2, fraction: 0 };
+    let awaiting: AmountJson = refunded;
     let pending = true;
 
     const subscriptions = new SubsHandler();
@@ -177,80 +187,82 @@ describe("Refund CTA states", () => {
       granted = Amounts.add(granted, unit).amount;
       pending = granted.value < refunded.value;
       awaiting = Amounts.sub(refunded, granted).amount;
-      subscriptions.notifyEvent(NotificationType.RefreshMelted)
+      subscriptions.notifyEvent(NotificationType.RefreshMelted);
     }
 
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(() =>
-      useComponentState("taler://refund/asdasdas", {
-        prepareRefund: async () => ({
-          awaiting: Amounts.stringify(awaiting),
-          effectivePaid: 'EUR:2',
-          gone: 'EUR:0',
-          granted: Amounts.stringify(granted),
-          pending,
-          proposalId: '1',
-          info: {
-            contractTermsHash: '123',
-            merchant: {
-              name: 'the merchant name'
-            },
-            orderId: 'orderId1',
-            summary: 'the sumary'
-          }
-        } as PrepareRefundResult as any),
-        applyRefund: async () => ({}),
-        onUpdateNotification: subscriptions.saveSubscription,
-      } as any),
-    );
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+      mountHook(() =>
+        useComponentState("taler://refund/asdasdas", {
+          prepareRefund: async () =>
+            ({
+              awaiting: Amounts.stringify(awaiting),
+              effectivePaid: "EUR:2",
+              gone: "EUR:0",
+              granted: Amounts.stringify(granted),
+              pending,
+              proposalId: "1",
+              info: {
+                contractTermsHash: "123",
+                merchant: {
+                  name: "the merchant name",
+                },
+                orderId: "orderId1",
+                summary: "the sumary",
+              },
+            } as PrepareRefundResult as any),
+          applyRefund: async () => ({}),
+          onUpdateNotification: subscriptions.saveSubscription,
+        } as any),
+      );
 
     {
-      const { status, hook } = getLastResultOrThrow()
-      expect(status).equals('loading')
+      const { status, hook } = getLastResultOrThrow();
+      expect(status).equals("loading");
       expect(hook).undefined;
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const state = getLastResultOrThrow()
+      const state = getLastResultOrThrow();
 
-      if (state.status !== 'in-progress') expect.fail('1');
+      if (state.status !== "in-progress") expect.fail("1");
       if (state.hook) expect.fail();
-      expect(state.merchantName).eq('the merchant name');
+      expect(state.merchantName).eq("the merchant name");
       expect(state.products).undefined;
-      expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:2"))
+      expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:2"));
       // expect(state.progress).closeTo(1 / 3, 0.01)
 
-      notifyMelt()
+      notifyMelt();
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const state = getLastResultOrThrow()
+      const state = getLastResultOrThrow();
 
-      if (state.status !== 'in-progress') expect.fail('2');
+      if (state.status !== "in-progress") expect.fail("2");
       if (state.hook) expect.fail();
-      expect(state.merchantName).eq('the merchant name');
+      expect(state.merchantName).eq("the merchant name");
       expect(state.products).undefined;
-      expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:2"))
+      expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:2"));
       // expect(state.progress).closeTo(2 / 3, 0.01)
 
-      notifyMelt()
+      notifyMelt();
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const state = getLastResultOrThrow()
+      const state = getLastResultOrThrow();
 
-      if (state.status !== 'completed') expect.fail('3');
+      if (state.status !== "completed") expect.fail("3");
       if (state.hook) expect.fail();
-      expect(state.merchantName).eq('the merchant name');
+      expect(state.merchantName).eq("the merchant name");
       expect(state.products).undefined;
-      expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:2"))
+      expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:2"));
     }
 
-    await assertNoPendingUpdate()
+    await assertNoPendingUpdate();
   });
 });

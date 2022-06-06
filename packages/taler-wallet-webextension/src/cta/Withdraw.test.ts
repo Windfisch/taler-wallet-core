@@ -19,234 +19,249 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { Amounts, ExchangeListItem, GetExchangeTosResult } from "@gnu-taler/taler-util";
+import {
+  Amounts,
+  ExchangeListItem,
+  GetExchangeTosResult,
+} from "@gnu-taler/taler-util";
 import { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
 import { mountHook } from "../test-utils.js";
 import { useComponentState } from "./Withdraw.js";
 
-const exchanges: ExchangeListItem[] = [{
-  currency: 'ARS',
-  exchangeBaseUrl: 'http://exchange.demo.taler.net',
-  paytoUris: [],
-  tos: {
-    acceptedVersion: '',
-  }
-}]
+const exchanges: ExchangeListItem[] = [
+  {
+    currency: "ARS",
+    exchangeBaseUrl: "http://exchange.demo.taler.net",
+    paytoUris: [],
+    tos: {
+      acceptedVersion: "",
+    },
+  },
+];
 
 describe("Withdraw CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(() =>
-      useComponentState(undefined, {
-        listExchanges: async () => ({ exchanges }),
-        getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
-          amount: 'ARS:2',
-          possibleExchanges: exchanges,
-        })
-      } as any),
-    );
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+      mountHook(() =>
+        useComponentState(undefined, {
+          listExchanges: async () => ({ exchanges }),
+          getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
+            amount: "ARS:2",
+            possibleExchanges: exchanges,
+          }),
+        } as any),
+      );
 
     {
-      const { status, hook } = getLastResultOrThrow()
-      expect(status).equals('loading-uri')
+      const { status, hook } = getLastResultOrThrow();
+      expect(status).equals("loading-uri");
       expect(hook).undefined;
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const { status, hook } = getLastResultOrThrow()
+      const { status, hook } = getLastResultOrThrow();
 
-      expect(status).equals('loading-uri')
+      expect(status).equals("loading-uri");
       if (!hook) expect.fail();
       if (!hook.hasError) expect.fail();
       if (hook.operational) expect.fail();
       expect(hook.message).eq("ERROR_NO-URI-FOR-WITHDRAWAL");
     }
 
-    await assertNoPendingUpdate()
+    await assertNoPendingUpdate();
   });
 
   it("should tell the user that there is not known exchange", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(() =>
-      useComponentState('taler-withdraw://', {
-        listExchanges: async () => ({ exchanges }),
-        getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
-          amount: 'EUR:2',
-          possibleExchanges: [],
-        })
-      } as any),
-    );
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+      mountHook(() =>
+        useComponentState("taler-withdraw://", {
+          listExchanges: async () => ({ exchanges }),
+          getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
+            amount: "EUR:2",
+            possibleExchanges: [],
+          }),
+        } as any),
+      );
 
     {
-      const { status, hook } = getLastResultOrThrow()
-      expect(status).equals('loading-uri')
+      const { status, hook } = getLastResultOrThrow();
+      expect(status).equals("loading-uri");
       expect(hook).undefined;
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const { status, hook } = getLastResultOrThrow()
+      const { status, hook } = getLastResultOrThrow();
 
-      expect(status).equals('loading-exchange')
+      expect(status).equals("loading-exchange");
 
-      expect(hook).deep.equals({ "hasError": true, "operational": false, "message": "ERROR_NO-DEFAULT-EXCHANGE" });
+      expect(hook).deep.equals({
+        hasError: true,
+        operational: false,
+        message: "ERROR_NO-DEFAULT-EXCHANGE",
+      });
     }
 
-    await assertNoPendingUpdate()
+    await assertNoPendingUpdate();
   });
 
   it("should be able to withdraw if tos are ok", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(() =>
-      useComponentState('taler-withdraw://', {
-        listExchanges: async () => ({ exchanges }),
-        getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
-          amount: 'ARS:2',
-          possibleExchanges: exchanges,
-        }),
-        getExchangeWithdrawalInfo: async (): Promise<ExchangeWithdrawDetails> => ({
-          withdrawalAmountRaw: 'ARS:5',
-          withdrawalAmountEffective: 'ARS:5',
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+      mountHook(() =>
+        useComponentState("taler-withdraw://", {
+          listExchanges: async () => ({ exchanges }),
+          getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
+            amount: "ARS:2",
+            possibleExchanges: exchanges,
+          }),
+          getExchangeWithdrawalInfo:
+            async (): Promise<ExchangeWithdrawDetails> =>
+              ({
+                withdrawalAmountRaw: "ARS:5",
+                withdrawalAmountEffective: "ARS:5",
+              } as any),
+          getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
+            contentType: "text",
+            content: "just accept",
+            acceptedEtag: "v1",
+            currentEtag: "v1",
+          }),
         } as any),
-        getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
-          contentType: 'text',
-          content: 'just accept',
-          acceptedEtag: 'v1',
-          currentEtag: 'v1'
-        })
-      } as any),
-    );
+      );
 
     {
-      const { status, hook } = getLastResultOrThrow()
-      expect(status).equals('loading-uri')
+      const { status, hook } = getLastResultOrThrow();
+      expect(status).equals("loading-uri");
       expect(hook).undefined;
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const { status, hook } = getLastResultOrThrow()
+      const { status, hook } = getLastResultOrThrow();
 
-      expect(status).equals('loading-info')
+      expect(status).equals("loading-info");
 
       expect(hook).undefined;
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const state = getLastResultOrThrow()
-      expect(state.status).equals("success")
+      const state = getLastResultOrThrow();
+      expect(state.status).equals("success");
       if (state.status !== "success") return;
 
-      expect(state.exchange.isDirty).false
-      expect(state.exchange.value).equal("http://exchange.demo.taler.net")
+      expect(state.exchange.isDirty).false;
+      expect(state.exchange.value).equal("http://exchange.demo.taler.net");
       expect(state.exchange.list).deep.equal({
-        "http://exchange.demo.taler.net": "http://exchange.demo.taler.net"
-      })
-      expect(state.showExchangeSelection).false
+        "http://exchange.demo.taler.net": "http://exchange.demo.taler.net",
+      });
+      expect(state.showExchangeSelection).false;
 
-      expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"))
-      expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"))
-      expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"))
+      expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"));
+      expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"));
+      expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"));
 
-      expect(state.doWithdrawal.onClick).not.undefined
-      expect(state.mustAcceptFirst).false
-
+      expect(state.doWithdrawal.onClick).not.undefined;
+      expect(state.mustAcceptFirst).false;
     }
 
-    await assertNoPendingUpdate()
+    await assertNoPendingUpdate();
   });
 
   it("should be accept the tos before withdraw", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(() =>
-      useComponentState('taler-withdraw://', {
-        listExchanges: async () => ({ exchanges }),
-        getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
-          amount: 'ARS:2',
-          possibleExchanges: exchanges,
-        }),
-        getExchangeWithdrawalInfo: async (): Promise<ExchangeWithdrawDetails> => ({
-          withdrawalAmountRaw: 'ARS:5',
-          withdrawalAmountEffective: 'ARS:5',
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+      mountHook(() =>
+        useComponentState("taler-withdraw://", {
+          listExchanges: async () => ({ exchanges }),
+          getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
+            amount: "ARS:2",
+            possibleExchanges: exchanges,
+          }),
+          getExchangeWithdrawalInfo:
+            async (): Promise<ExchangeWithdrawDetails> =>
+              ({
+                withdrawalAmountRaw: "ARS:5",
+                withdrawalAmountEffective: "ARS:5",
+              } as any),
+          getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
+            contentType: "text",
+            content: "just accept",
+            acceptedEtag: "v1",
+            currentEtag: "v2",
+          }),
+          setExchangeTosAccepted: async () => ({}),
         } as any),
-        getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
-          contentType: 'text',
-          content: 'just accept',
-          acceptedEtag: 'v1',
-          currentEtag: 'v2'
-        }),
-        setExchangeTosAccepted: async () => ({})
-      } as any),
-    );
+      );
 
     {
-      const { status, hook } = getLastResultOrThrow()
-      expect(status).equals('loading-uri')
+      const { status, hook } = getLastResultOrThrow();
+      expect(status).equals("loading-uri");
       expect(hook).undefined;
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const { status, hook } = getLastResultOrThrow()
+      const { status, hook } = getLastResultOrThrow();
 
-      expect(status).equals('loading-info')
+      expect(status).equals("loading-info");
 
       expect(hook).undefined;
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const state = getLastResultOrThrow()
-      expect(state.status).equals("success")
+      const state = getLastResultOrThrow();
+      expect(state.status).equals("success");
       if (state.status !== "success") return;
 
-      expect(state.exchange.isDirty).false
-      expect(state.exchange.value).equal("http://exchange.demo.taler.net")
+      expect(state.exchange.isDirty).false;
+      expect(state.exchange.value).equal("http://exchange.demo.taler.net");
       expect(state.exchange.list).deep.equal({
-        "http://exchange.demo.taler.net": "http://exchange.demo.taler.net"
-      })
-      expect(state.showExchangeSelection).false
+        "http://exchange.demo.taler.net": "http://exchange.demo.taler.net",
+      });
+      expect(state.showExchangeSelection).false;
 
-      expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"))
-      expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"))
-      expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"))
+      expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"));
+      expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"));
+      expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"));
 
-      expect(state.doWithdrawal.onClick).undefined
-      expect(state.mustAcceptFirst).true
+      expect(state.doWithdrawal.onClick).undefined;
+      expect(state.mustAcceptFirst).true;
 
       // accept TOS
-      state.tosProps?.onAccept(true)
+      state.tosProps?.onAccept(true);
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const state = getLastResultOrThrow()
-      expect(state.status).equals("success")
+      const state = getLastResultOrThrow();
+      expect(state.status).equals("success");
       if (state.status !== "success") return;
 
-      expect(state.exchange.isDirty).false
-      expect(state.exchange.value).equal("http://exchange.demo.taler.net")
+      expect(state.exchange.isDirty).false;
+      expect(state.exchange.value).equal("http://exchange.demo.taler.net");
       expect(state.exchange.list).deep.equal({
-        "http://exchange.demo.taler.net": "http://exchange.demo.taler.net"
-      })
-      expect(state.showExchangeSelection).false
+        "http://exchange.demo.taler.net": "http://exchange.demo.taler.net",
+      });
+      expect(state.showExchangeSelection).false;
 
-      expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"))
-      expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"))
-      expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"))
+      expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"));
+      expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"));
+      expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"));
 
-      expect(state.doWithdrawal.onClick).not.undefined
-      expect(state.mustAcceptFirst).true
-
+      expect(state.doWithdrawal.onClick).not.undefined;
+      expect(state.mustAcceptFirst).true;
     }
 
-    await assertNoPendingUpdate()
+    await assertNoPendingUpdate();
   });
-
 });

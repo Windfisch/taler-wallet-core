@@ -14,48 +14,47 @@
  You should have received a copy of the GNU General Public License along with
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-import { useTalerActionURL } from "./useTalerActionURL.js"
+import { useTalerActionURL } from "./useTalerActionURL.js";
 import { mountHook } from "../test-utils.js";
 import { IoCProviderForTesting } from "../context/iocContext.js";
 import { h, VNode } from "preact";
 import { expect } from "chai";
 
-describe('useTalerActionURL hook', () => {
-
-  it('should be set url to undefined when dismiss', async () => {
-
+describe("useTalerActionURL hook", () => {
+  it("should be set url to undefined when dismiss", async () => {
     const ctx = ({ children }: { children: any }): VNode => {
       return h(IoCProviderForTesting, {
         value: {
           findTalerUriInActiveTab: async () => "asd",
-        }, children
-      })
-    }
+        },
+        children,
+      });
+    };
 
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(useTalerActionURL, ctx)
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+      mountHook(useTalerActionURL, ctx);
 
     {
-      const [url] = getLastResultOrThrow()
+      const [url] = getLastResultOrThrow();
       expect(url).undefined;
     }
 
-
-    await waitNextUpdate("waiting for useEffect")
+    await waitNextUpdate("waiting for useEffect");
 
     {
-      const [url, setDismissed] = getLastResultOrThrow()
+      const [url, setDismissed] = getLastResultOrThrow();
       expect(url).equals("asd");
-      setDismissed(true)
+      setDismissed(true);
     }
 
-    await waitNextUpdate("after dismiss")
+    await waitNextUpdate("after dismiss");
 
     {
-      const [url] = getLastResultOrThrow()
-      if (url !== undefined) throw Error('invalid')
+      const [url] = getLastResultOrThrow();
+      if (url !== undefined) throw Error("invalid");
       expect(url).undefined;
     }
 
-    await assertNoPendingUpdate()
-  })
-})
+    await assertNoPendingUpdate();
+  });
+});

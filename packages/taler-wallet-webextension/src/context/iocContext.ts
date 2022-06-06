@@ -32,18 +32,31 @@ const Context = createContext<Type>({
 
 /**
  * Inversion of control Context
- * 
- * This context act as a proxy between API that need to be replaced in 
+ *
+ * This context act as a proxy between API that need to be replaced in
  * different environments
- * 
- * @returns 
+ *
+ * @returns
  */
 export const useIocContext = (): Type => useContext(Context);
 
-export const IoCProviderForTesting = ({ value, children }: { value: Type, children: any }): VNode => {
+export const IoCProviderForTesting = ({
+  value,
+  children,
+}: {
+  value: Type;
+  children: any;
+}): VNode => {
   return h(Context.Provider, { value, children });
 };
 
-export const IoCProviderForRuntime = ({ children }: { children: any }): VNode => {
-  return h(Context.Provider, { value: { findTalerUriInActiveTab: platform.findTalerUriInActiveTab }, children });
+export const IoCProviderForRuntime = ({
+  children,
+}: {
+  children: any;
+}): VNode => {
+  return h(Context.Provider, {
+    value: { findTalerUriInActiveTab: platform.findTalerUriInActiveTab },
+    children,
+  });
 };

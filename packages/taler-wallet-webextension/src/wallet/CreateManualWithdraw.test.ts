@@ -25,15 +25,13 @@ import { SelectFieldHandler, TextFieldHandler } from "../mui/handlers.js";
 import { mountHook } from "../test-utils.js";
 import { useComponentState } from "./CreateManualWithdraw.js";
 
-
 const exchangeListWithARSandUSD = {
-  "url1": "USD",
-  "url2": "ARS",
-  "url3": "ARS",
+  url1: "USD",
+  url2: "ARS",
+  url3: "ARS",
 };
 
-const exchangeListEmpty = {
-};
+const exchangeListEmpty = {};
 
 describe("CreateManualWithdraw states", () => {
   it("should set noExchangeFound when exchange list is empty", () => {
@@ -41,9 +39,9 @@ describe("CreateManualWithdraw states", () => {
       useComponentState(exchangeListEmpty, undefined, undefined),
     );
 
-    const { noExchangeFound } = getLastResultOrThrow()
+    const { noExchangeFound } = getLastResultOrThrow();
 
-    expect(noExchangeFound).equal(true)
+    expect(noExchangeFound).equal(true);
   });
 
   it("should set noExchangeFound when exchange list doesn't include selected currency", () => {
@@ -51,20 +49,19 @@ describe("CreateManualWithdraw states", () => {
       useComponentState(exchangeListWithARSandUSD, undefined, "COL"),
     );
 
-    const { noExchangeFound } = getLastResultOrThrow()
+    const { noExchangeFound } = getLastResultOrThrow();
 
-    expect(noExchangeFound).equal(true)
+    expect(noExchangeFound).equal(true);
   });
-
 
   it("should select the first exchange from the list", () => {
     const { getLastResultOrThrow } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, undefined),
     );
 
-    const { exchange } = getLastResultOrThrow()
+    const { exchange } = getLastResultOrThrow();
 
-    expect(exchange.value).equal("url1")
+    expect(exchange.value).equal("url1");
   });
 
   it("should select the first exchange with the selected currency", () => {
@@ -72,9 +69,9 @@ describe("CreateManualWithdraw states", () => {
       useComponentState(exchangeListWithARSandUSD, undefined, "ARS"),
     );
 
-    const { exchange } = getLastResultOrThrow()
+    const { exchange } = getLastResultOrThrow();
 
-    expect(exchange.value).equal("url2")
+    expect(exchange.value).equal("url2");
   });
 
   it("should change the exchange when currency change", async () => {
@@ -82,22 +79,20 @@ describe("CreateManualWithdraw states", () => {
       useComponentState(exchangeListWithARSandUSD, undefined, "ARS"),
     );
 
-
     {
-      const { exchange, currency } = getLastResultOrThrow()
+      const { exchange, currency } = getLastResultOrThrow();
 
-      expect(exchange.value).equal("url2")
+      expect(exchange.value).equal("url2");
       if (currency.onChange === undefined) expect.fail();
-      currency.onChange("USD")
+      currency.onChange("USD");
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const { exchange } = getLastResultOrThrow()
-      expect(exchange.value).equal("url1")
+      const { exchange } = getLastResultOrThrow();
+      expect(exchange.value).equal("url1");
     }
-
   });
 
   it("should change the currency when exchange change", async () => {
@@ -106,22 +101,22 @@ describe("CreateManualWithdraw states", () => {
     );
 
     {
-      const { exchange, currency } = getLastResultOrThrow()
+      const { exchange, currency } = getLastResultOrThrow();
 
-      expect(exchange.value).equal("url2")
-      expect(currency.value).equal("ARS")
+      expect(exchange.value).equal("url2");
+      expect(currency.value).equal("ARS");
 
       if (exchange.onChange === undefined) expect.fail();
-      exchange.onChange("url1")
+      exchange.onChange("url1");
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const { exchange, currency } = getLastResultOrThrow()
+      const { exchange, currency } = getLastResultOrThrow();
 
-      expect(exchange.value).equal("url1")
-      expect(currency.value).equal("USD")
+      expect(exchange.value).equal("url1");
+      expect(currency.value).equal("USD");
     }
   });
 
@@ -131,21 +126,23 @@ describe("CreateManualWithdraw states", () => {
     );
 
     {
-      const { amount, parsedAmount } = getLastResultOrThrow()
+      const { amount, parsedAmount } = getLastResultOrThrow();
 
-      expect(parsedAmount).equal(undefined)
+      expect(parsedAmount).equal(undefined);
 
-      amount.onInput("12")
+      amount.onInput("12");
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const { parsedAmount } = getLastResultOrThrow()
+      const { parsedAmount } = getLastResultOrThrow();
 
       expect(parsedAmount).deep.equals({
-        value: 12, fraction: 0, currency: "ARS"
-      })
+        value: 12,
+        fraction: 0,
+        currency: "ARS",
+      });
     }
   });
 
@@ -154,67 +151,79 @@ describe("CreateManualWithdraw states", () => {
       useComponentState(exchangeListWithARSandUSD, undefined, "ARS"),
     );
 
-    await defaultTestForInputText(waitNextUpdate, () => getLastResultOrThrow().amount)
-  })
+    await defaultTestForInputText(
+      waitNextUpdate,
+      () => getLastResultOrThrow().amount,
+    );
+  });
 
   it("should have an exchange selector ", async () => {
     const { getLastResultOrThrow, waitNextUpdate } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, "ARS"),
     );
 
-    await defaultTestForInputSelect(waitNextUpdate, () => getLastResultOrThrow().exchange)
-  })
+    await defaultTestForInputSelect(
+      waitNextUpdate,
+      () => getLastResultOrThrow().exchange,
+    );
+  });
 
   it("should have a currency selector ", async () => {
     const { getLastResultOrThrow, waitNextUpdate } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, "ARS"),
     );
 
-    await defaultTestForInputSelect(waitNextUpdate, () => getLastResultOrThrow().currency)
-  })
-
+    await defaultTestForInputSelect(
+      waitNextUpdate,
+      () => getLastResultOrThrow().currency,
+    );
+  });
 });
 
-
-async function defaultTestForInputText(awaiter: () => Promise<void>, getField: () => TextFieldHandler): Promise<void> {
-  let nextValue = ''
+async function defaultTestForInputText(
+  awaiter: () => Promise<void>,
+  getField: () => TextFieldHandler,
+): Promise<void> {
+  let nextValue = "";
   {
-    const field = getField()
+    const field = getField();
     const initialValue = field.value;
-    nextValue = `${initialValue} something else`
-    field.onInput(nextValue)
+    nextValue = `${initialValue} something else`;
+    field.onInput(nextValue);
   }
 
-  await awaiter()
+  await awaiter();
 
   {
-    const field = getField()
-    expect(field.value).equal(nextValue)
+    const field = getField();
+    expect(field.value).equal(nextValue);
   }
 }
 
-
-async function defaultTestForInputSelect(awaiter: () => Promise<void>, getField: () => SelectFieldHandler): Promise<void> {
-  let nextValue = ''
+async function defaultTestForInputSelect(
+  awaiter: () => Promise<void>,
+  getField: () => SelectFieldHandler,
+): Promise<void> {
+  let nextValue = "";
 
   {
     const field = getField();
     const initialValue = field.value;
-    const keys = Object.keys(field.list)
-    const nextIdx = keys.indexOf(initialValue) + 1
+    const keys = Object.keys(field.list);
+    const nextIdx = keys.indexOf(initialValue) + 1;
     if (keys.length < nextIdx) {
-      throw new Error('no enough values')
+      throw new Error("no enough values");
     }
-    nextValue = keys[nextIdx]
+    nextValue = keys[nextIdx];
     if (field.onChange === undefined) expect.fail();
-    field.onChange(nextValue)
+    field.onChange(nextValue);
   }
 
-  await awaiter()
+  await awaiter();
 
   {
     const field = getField();
 
-    expect(field.value).equal(nextValue)
+    expect(field.value).equal(nextValue);
   }
 }

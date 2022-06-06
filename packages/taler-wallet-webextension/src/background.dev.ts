@@ -27,17 +27,17 @@ import { platform, setupPlatform } from "./platform/api.js";
 import devAPI from "./platform/dev.js";
 import { wxMain } from "./wxBackend.js";
 
-console.log("Wallet setup for Dev API")
-setupPlatform(devAPI)
+console.log("Wallet setup for Dev API");
+setupPlatform(devAPI);
 
 try {
   platform.registerOnInstalled(() => {
-    platform.openWalletPage("/welcome")
-  })
+    platform.openWalletPage("/welcome");
+  });
 } catch (e) {
   console.error(e);
 }
 
 platform.notifyWhenAppIsReady(() => {
   wxMain();
-})
+});

@@ -14,8 +14,11 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountJson, Amounts, GetExchangeTosResult } from "@gnu-taler/taler-util";
-
+import {
+  AmountJson,
+  Amounts,
+  GetExchangeTosResult,
+} from "@gnu-taler/taler-util";
 
 function getJsonIfOk(r: Response): Promise<any> {
   if (r.ok) {
@@ -27,15 +30,13 @@ function getJsonIfOk(r: Response): Promise<any> {
   }
 
   throw new Error(
-    `Try another server: (${r.status}) ${r.statusText || "internal server error"
+    `Try another server: (${r.status}) ${
+      r.statusText || "internal server error"
     }`,
   );
-
 }
 
-export async function queryToSlashConfig<T>(
-  url: string,
-): Promise<T> {
+export async function queryToSlashConfig<T>(url: string): Promise<T> {
   return fetch(new URL("config", url).href)
     .catch(() => {
       throw new Error(`Network error`);
@@ -46,25 +47,27 @@ export async function queryToSlashConfig<T>(
 function timeout<T>(ms: number, promise: Promise<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
-      reject(new Error(`Timeout: the query took longer than ${Math.floor(ms / 1000)} secs`))
-    }, ms)
+      reject(
+        new Error(
+          `Timeout: the query took longer than ${Math.floor(ms / 1000)} secs`,
+        ),
+      );
+    }, ms);
 
     promise
-      .then(value => {
-        clearTimeout(timer)
-        resolve(value)
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
       })
-      .catch(reason => {
-        clearTimeout(timer)
-        reject(reason)
-      })
-  })
+      .catch((reason) => {
+        clearTimeout(timer);
+        reject(reason);
+      });
+  });
 }
 
-export async function queryToSlashKeys<T>(
-  url: string,
-): Promise<T> {
-  const endpoint = new URL("keys", url)
+export async function queryToSlashKeys<T>(url: string): Promise<T> {
+  const endpoint = new URL("keys", url);
   endpoint.searchParams.set("cacheBreaker", new Date().getTime() + "");
 
   const query = fetch(endpoint.href)
@@ -73,29 +76,37 @@ export async function queryToSlashKeys<T>(
     })
     .then(getJsonIfOk);
 
-  return timeout(3000, query)
+  return timeout(3000, query);
 }
 
-export function buildTermsOfServiceState(tos: GetExchangeTosResult): TermsState {
-
+export function buildTermsOfServiceState(
+  tos: GetExchangeTosResult,
+): TermsState {
   const content: TermsDocument | undefined = parseTermsOfServiceContent(
     tos.contentType,
     tos.content,
   );
 
-  const status: TermsStatus = buildTermsOfServiceStatus(tos.content, tos.acceptedEtag, tos.currentEtag);
+  const status: TermsStatus = buildTermsOfServiceStatus(
+    tos.content,
+    tos.acceptedEtag,
+    tos.currentEtag,
+  );
 
-  return { content, status, version: tos.currentEtag }
-
+  return { content, status, version: tos.currentEtag };
 }
-export function buildTermsOfServiceStatus(content: string | undefined, acceptedVersion: string | undefined, currentVersion: string | undefined): TermsStatus {
+export function buildTermsOfServiceStatus(
+  content: string | undefined,
+  acceptedVersion: string | undefined,
+  currentVersion: string | undefined,
+): TermsStatus {
   return !content
     ? "notfound"
     : !acceptedVersion
-      ? "new"
-      : acceptedVersion !== currentVersion
-        ? "changed"
-        : "accepted";
+    ? "new"
+    : acceptedVersion !== currentVersion
+    ? "changed"
+    : "accepted";
 }
 
 function parseTermsOfServiceContent(

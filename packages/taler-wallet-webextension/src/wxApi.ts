@@ -151,7 +151,6 @@ export function runGarbageCollector(): Promise<void> {
   return callBackend("run-gc", {});
 }
 
-
 export function getFeeForDeposit(
   depositPaytoUri: string,
   amount: AmountString,
@@ -338,7 +337,7 @@ export function acceptWithdrawal(
   return callBackend("acceptBankIntegratedWithdrawal", {
     talerWithdrawUri,
     exchangeBaseUrl: selectedExchange,
-    restrictAge
+    restrictAge,
   });
 }
 
@@ -356,7 +355,7 @@ export function acceptManualWithdrawal(
   return callBackend("acceptManualWithdrawal", {
     amount,
     exchangeBaseUrl,
-    restrictAge
+    restrictAge,
   });
 }
 
@@ -432,10 +431,11 @@ export function addExchange(req: AddExchangeRequest): Promise<void> {
   return callBackend("addExchange", req);
 }
 
-export function prepareRefund(req: PrepareRefundRequest): Promise<PrepareRefundResult> {
+export function prepareRefund(
+  req: PrepareRefundRequest,
+): Promise<PrepareRefundResult> {
   return callBackend("prepareRefund", req);
 }
-
 
 export function prepareTip(req: PrepareTipRequest): Promise<PrepareTipResult> {
   return callBackend("prepareTip", req);

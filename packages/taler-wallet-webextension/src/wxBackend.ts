@@ -26,9 +26,11 @@
 import {
   classifyTalerUri,
   CoreApiResponse,
-  CoreApiResponseSuccess, Logger, TalerErrorCode,
+  CoreApiResponseSuccess,
+  Logger,
+  TalerErrorCode,
   TalerUriType,
-  WalletDiagnostics
+  WalletDiagnostics,
 } from "@gnu-taler/taler-util";
 import {
   DbAccess,
@@ -40,7 +42,7 @@ import {
   openPromise,
   openTalerDatabase,
   Wallet,
-  WalletStoresV1
+  WalletStoresV1,
 } from "@gnu-taler/taler-wallet-core";
 import { SetTimeoutTimerAPI } from "@gnu-taler/taler-wallet-core";
 import { BrowserCryptoWorkerFactory } from "./browserCryptoWorkerFactory.js";
@@ -133,14 +135,14 @@ async function dispatch(
         break;
       }
       case "run-gc": {
-        logger.info("gc")
+        logger.info("gc");
         const dump = await exportDb(currentDatabase!.idbHandle());
         await deleteTalerDatabase(indexedDB as any);
-        logger.info("cleaned")
+        logger.info("cleaned");
         await reinitWallet();
-        logger.info("init")
-        await importDb(currentDatabase!.idbHandle(), dump)
-        logger.info("imported")
+        logger.info("init");
+        await importDb(currentDatabase!.idbHandle(), dump);
+        logger.info("imported");
         r = wrapResponse({ result: true });
         break;
       }
@@ -156,7 +158,9 @@ async function dispatch(
           platform.registerTalerHeaderListener(parseTalerUriAndRedirect);
           r = wrapResponse({ newValue: true });
         } else {
-          const rem = await platform.getPermissionsApi().removeHostPermissions();
+          const rem = await platform
+            .getPermissionsApi()
+            .removeHostPermissions();
           logger.trace("permissions removed:", rem);
           r = wrapResponse({ newVal: false });
         }
@@ -184,7 +188,7 @@ async function dispatch(
 
     sendResponse(r);
   } catch (e) {
-    logger.error(`Error sending operation: ${req.operation}`, e)
+    logger.error(`Error sending operation: ${req.operation}`, e);
     // might fail if tab disconnected
   }
 }
@@ -218,7 +222,12 @@ async function reinitWallet(): Promise<void> {
   }
 
   logger.info("Setting up wallet");
-  const wallet = await Wallet.create(currentDatabase, httpLib, timer, cryptoWorker);
+  const wallet = await Wallet.create(
+    currentDatabase,
+    httpLib,
+    timer,
+    cryptoWorker,
+  );
   try {
     await wallet.handleCoreApiRequest("initWallet", "native-init", {});
   } catch (e) {
@@ -228,14 +237,14 @@ async function reinitWallet(): Promise<void> {
   }
   wallet.addNotificationListener((x) => {
     const message: MessageFromBackend = { type: x.type };
-    platform.sendMessageToAllChannels(message)
+    platform.sendMessageToAllChannels(message);
   });
 
   platform.keepAlive(() => {
     return wallet.runTaskLoop().catch((e) => {
       logger.error("error during wallet task loop", e);
     });
-  })
+  });
   // Useful for debugging in the background page.
   if (typeof window !== "undefined") {
     (window as any).talerWallet = wallet;
@@ -279,14 +288,13 @@ function parseTalerUriAndRedirect(tabId: number, talerUri: string): void {
   }
 }
 
-
 /**
  * Main function to run for the WebExtension backend.
  *
  * Sets up all event handlers and other machinery.
  */
 export async function wxMain(): Promise<void> {
-  logger.trace("starting")
+  logger.trace("starting");
   const afterWalletIsInitialized = reinitWallet();
 
   platform.registerReloadOnNewVersion();
@@ -297,9 +305,9 @@ export async function wxMain(): Promise<void> {
     afterWalletIsInitialized.then(() => {
       dispatch(message, sender, callback);
     });
-  })
+  });
 
-  platform.registerAllIncomingConnections()
+  platform.registerAllIncomingConnections();
 
   try {
     platform.registerTalerHeaderListener(parseTalerUriAndRedirect);
@@ -311,7 +319,10 @@ export async function wxMain(): Promise<void> {
   // modification of permissions.
   platform.getPermissionsApi().addPermissionsListener((perm, lastError) => {
     if (lastError) {
-      logger.error(`there was a problem trying to get permission ${perm}`, lastError);
+      logger.error(
+        `there was a problem trying to get permission ${perm}`,
+        lastError,
+      );
       return;
     }
     platform.registerTalerHeaderListener(parseTalerUriAndRedirect);

@@ -13,9 +13,7 @@
  You should have received a copy of the GNU General Public License along with
  TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-import {
-  NotificationType, TalerErrorDetail
-} from "@gnu-taler/taler-util";
+import { NotificationType, TalerErrorDetail } from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useMemo, useState } from "preact/hooks";
 import * as wxApi from "../wxApi.js";
@@ -44,19 +42,23 @@ interface WithRetry {
 }
 
 export type HookResponse<T> = HookOk<T> | HookError | undefined;
-export type HookResponseWithRetry<T> = ((HookOk<T> | HookError) & WithRetry) | undefined;
+export type HookResponseWithRetry<T> =
+  | ((HookOk<T> | HookError) & WithRetry)
+  | undefined;
 
 export function useAsyncAsHook<T>(
   fn: () => Promise<T | false>,
   deps?: any[],
 ): HookResponseWithRetry<T> {
-
   const [result, setHookResponse] = useState<HookResponse<T>>(undefined);
 
-  const args = useMemo(() => ({
-    fn
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), deps || [])
+  const args = useMemo(
+    () => ({
+      fn,
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }),
+    deps || [],
+  );
 
   async function doAsync(): Promise<void> {
     try {

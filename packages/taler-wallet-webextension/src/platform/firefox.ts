@@ -15,7 +15,11 @@
  */
 
 import { CrossBrowserPermissionsApi, Permissions, PlatformAPI } from "./api.js";
-import chromePlatform, { containsHostPermissions as chromeContains, removeHostPermissions as chromeRemove, requestHostPermissions as chromeRequest } from "./chrome.js";
+import chromePlatform, {
+  containsHostPermissions as chromeContains,
+  removeHostPermissions as chromeRemove,
+  requestHostPermissions as chromeRequest,
+} from "./chrome.js";
 
 const api: PlatformAPI = {
   ...chromePlatform,
@@ -23,18 +27,17 @@ const api: PlatformAPI = {
   getPermissionsApi,
   notifyWhenAppIsReady,
   redirectTabToWalletPage,
-  useServiceWorkerAsBackgroundProcess
+  useServiceWorkerAsBackgroundProcess,
 };
 
 export default api;
 
 function isFirefox(): boolean {
-  return true
+  return true;
 }
 
-
 function addPermissionsListener(callback: (p: Permissions) => void): void {
-  console.log("addPermissionListener is not supported for Firefox")
+  console.log("addPermissionListener is not supported for Firefox");
 }
 
 function getPermissionsApi(): CrossBrowserPermissionsApi {
@@ -42,33 +45,28 @@ function getPermissionsApi(): CrossBrowserPermissionsApi {
     addPermissionsListener,
     containsHostPermissions: chromeContains,
     requestHostPermissions: chromeRequest,
-    removeHostPermissions: chromeRemove
-  }
+    removeHostPermissions: chromeRemove,
+  };
 }
 
 /**
- * 
+ *
  * @param callback function to be called
  */
 function notifyWhenAppIsReady(callback: () => void): void {
   if (chrome.runtime && chrome.runtime.getManifest().manifest_version === 3) {
-    callback()
+    callback();
   } else {
     window.addEventListener("load", callback);
   }
 }
 
-
-function redirectTabToWalletPage(
-  tabId: number,
-  page: string,
-): void {
+function redirectTabToWalletPage(tabId: number, page: string): void {
   const url = chrome.runtime.getURL(`/static/wallet.html#${page}`);
   console.log("redirecting tabId: ", tabId, " to: ", url);
   chrome.tabs.update(tabId, { url, loadReplace: true } as any);
 }
 
-
 function useServiceWorkerAsBackgroundProcess(): false {
-  return false
+  return false;
 }

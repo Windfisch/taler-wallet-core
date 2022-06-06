@@ -26,58 +26,61 @@ import { useComponentState } from "./Deposit.jsx";
 
 describe("Deposit CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(() =>
-      useComponentState(undefined, undefined, {
-        prepareRefund: async () => ({}),
-        applyRefund: async () => ({}),
-        onUpdateNotification: async () => ({})
-      } as any),
-    );
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+      mountHook(() =>
+        useComponentState(undefined, undefined, {
+          prepareRefund: async () => ({}),
+          applyRefund: async () => ({}),
+          onUpdateNotification: async () => ({}),
+        } as any),
+      );
 
     {
-      const { status, hook } = getLastResultOrThrow()
-      expect(status).equals('loading')
+      const { status, hook } = getLastResultOrThrow();
+      expect(status).equals("loading");
       expect(hook).undefined;
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const { status, hook } = getLastResultOrThrow()
+      const { status, hook } = getLastResultOrThrow();
 
-      expect(status).equals('loading')
+      expect(status).equals("loading");
       if (!hook) expect.fail();
       if (!hook.hasError) expect.fail();
       if (hook.operational) expect.fail();
       expect(hook.message).eq("ERROR_NO-URI-FOR-DEPOSIT");
     }
 
-    await assertNoPendingUpdate()
+    await assertNoPendingUpdate();
   });
 
   it("should be ready after loading", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(() =>
-      useComponentState("payto://refund/asdasdas", "EUR:1", {
-        prepareDeposit: async () => ({
-          effectiveDepositAmount: Amounts.parseOrThrow("EUR:1"),
-          totalDepositCost: Amounts.parseOrThrow("EUR:1.2")
-        } as PrepareDepositResponse as any),
-        createDepositGroup: async () => ({}),
-      } as any),
-    );
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+      mountHook(() =>
+        useComponentState("payto://refund/asdasdas", "EUR:1", {
+          prepareDeposit: async () =>
+            ({
+              effectiveDepositAmount: Amounts.parseOrThrow("EUR:1"),
+              totalDepositCost: Amounts.parseOrThrow("EUR:1.2"),
+            } as PrepareDepositResponse as any),
+          createDepositGroup: async () => ({}),
+        } as any),
+      );
 
     {
-      const { status, hook } = getLastResultOrThrow()
-      expect(status).equals('loading')
+      const { status, hook } = getLastResultOrThrow();
+      expect(status).equals("loading");
       expect(hook).undefined;
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const state = getLastResultOrThrow()
+      const state = getLastResultOrThrow();
 
-      if (state.status !== 'ready') expect.fail();
+      if (state.status !== "ready") expect.fail();
       if (state.hook) expect.fail();
       expect(state.confirm.onClick).not.undefined;
       expect(state.cost).deep.eq(Amounts.parseOrThrow("EUR:1.2"));
@@ -85,8 +88,6 @@ describe("Deposit CTA states", () => {
       expect(state.effective).deep.eq(Amounts.parseOrThrow("EUR:1"));
     }
 
-    await assertNoPendingUpdate()
-
+    await assertNoPendingUpdate();
   });
-
 });

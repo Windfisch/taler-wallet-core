@@ -25,13 +25,13 @@ export function useLocalStorage(
   key: string,
   initialValue?: string,
 ): [string | undefined, StateUpdater<string | undefined>] {
-  const [storedValue, setStoredValue] = useState<string | undefined>(():
-    | string
-    | undefined => {
-    return typeof window !== "undefined"
-      ? window.localStorage.getItem(key) || initialValue
-      : initialValue;
-  });
+  const [storedValue, setStoredValue] = useState<string | undefined>(
+    (): string | undefined => {
+      return typeof window !== "undefined"
+        ? window.localStorage.getItem(key) || initialValue
+        : initialValue;
+    },
+  );
 
   const setValue = (
     value?: string | ((val?: string) => string | undefined),

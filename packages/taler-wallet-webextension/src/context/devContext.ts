@@ -29,7 +29,9 @@ interface Type {
 }
 const Context = createContext<Type>({
   devMode: false,
-  toggleDevMode: async () => { return; },
+  toggleDevMode: async () => {
+    return;
+  },
 });
 
 export const useDevContext = (): Type => useContext(Context);
@@ -55,7 +57,8 @@ export const DevContextProviderForTesting = ({
 export const DevContextProvider = ({ children }: { children: any }): VNode => {
   const [value, setter] = useLocalStorage("devMode");
   const devMode = value === "true";
-  const toggleDevMode = async (): Promise<void> => setter((v) => (!v ? "true" : undefined));
+  const toggleDevMode = async (): Promise<void> =>
+    setter((v) => (!v ? "true" : undefined));
   children =
     children.length === 1 && typeof children === "function"
       ? children({ devMode })

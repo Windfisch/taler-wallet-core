@@ -19,392 +19,412 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { Amounts, Balance, BalancesResponse, parsePaytoUri } from "@gnu-taler/taler-util";
+import {
+  Amounts,
+  Balance,
+  BalancesResponse,
+  parsePaytoUri,
+} from "@gnu-taler/taler-util";
 import { DepositGroupFees } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import { expect } from "chai";
 import { mountHook } from "../test-utils.js";
 import { useComponentState } from "./DepositPage.js";
 import * as wxApi from "../wxApi.js";
 
-
-const currency = "EUR"
+const currency = "EUR";
 const withoutFee = async (): Promise<DepositGroupFees> => ({
   coin: Amounts.parseOrThrow(`${currency}:0`),
   wire: Amounts.parseOrThrow(`${currency}:0`),
-  refresh: Amounts.parseOrThrow(`${currency}:0`)
-})
+  refresh: Amounts.parseOrThrow(`${currency}:0`),
+});
 
 const withSomeFee = async (): Promise<DepositGroupFees> => ({
   coin: Amounts.parseOrThrow(`${currency}:1`),
   wire: Amounts.parseOrThrow(`${currency}:1`),
-  refresh: Amounts.parseOrThrow(`${currency}:1`)
-})
+  refresh: Amounts.parseOrThrow(`${currency}:1`),
+});
 
-const freeJustForIBAN = async (account: string): Promise<DepositGroupFees> => /IBAN/i.test(account) ? withoutFee() : withSomeFee()
+const freeJustForIBAN = async (account: string): Promise<DepositGroupFees> =>
+  /IBAN/i.test(account) ? withoutFee() : withSomeFee();
 
-const someBalance = [{
-  available: 'EUR:10'
-} as Balance]
+const someBalance = [
+  {
+    available: "EUR:10",
+  } as Balance,
+];
 
 const nullFunction: any = () => null;
 type VoidFunction = () => void;
 
 describe("DepositPage states", () => {
   it("should have status 'no-balance' when balance is empty", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(() =>
-      useComponentState(currency, nullFunction, nullFunction, {
-        getBalance: async () => ({
-          balances: [{ available: `${currency}:0`, }]
-        } as Partial<BalancesResponse>),
-        listKnownBankAccounts: async () => ({ accounts: [] })
-      } as Partial<typeof wxApi> as any)
-    );
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+      mountHook(() =>
+        useComponentState(currency, nullFunction, nullFunction, {
+          getBalance: async () =>
+            ({
+              balances: [{ available: `${currency}:0` }],
+            } as Partial<BalancesResponse>),
+          listKnownBankAccounts: async () => ({ accounts: [] }),
+        } as Partial<typeof wxApi> as any),
+      );
 
     {
-      const { status } = getLastResultOrThrow()
-      expect(status).equal("loading")
+      const { status } = getLastResultOrThrow();
+      expect(status).equal("loading");
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const { status } = getLastResultOrThrow()
-      expect(status).equal("no-balance")
+      const { status } = getLastResultOrThrow();
+      expect(status).equal("no-balance");
     }
 
-    await assertNoPendingUpdate()
-
+    await assertNoPendingUpdate();
   });
 
   it("should have status 'no-accounts' when balance is not empty and accounts is empty", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(() =>
-      useComponentState(currency, nullFunction, nullFunction, {
-        getBalance: async () => ({
-          balances: [{ available: `${currency}:1`, }]
-        } as Partial<BalancesResponse>),
-        listKnownBankAccounts: async () => ({ accounts: [] })
-      } as Partial<typeof wxApi> as any)
-    );
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+      mountHook(() =>
+        useComponentState(currency, nullFunction, nullFunction, {
+          getBalance: async () =>
+            ({
+              balances: [{ available: `${currency}:1` }],
+            } as Partial<BalancesResponse>),
+          listKnownBankAccounts: async () => ({ accounts: [] }),
+        } as Partial<typeof wxApi> as any),
+      );
 
     {
-      const { status } = getLastResultOrThrow()
-      expect(status).equal("loading")
+      const { status } = getLastResultOrThrow();
+      expect(status).equal("loading");
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
     {
-      const r = getLastResultOrThrow()
+      const r = getLastResultOrThrow();
       if (r.status !== "no-accounts") expect.fail();
       expect(r.cancelHandler.onClick).not.undefined;
     }
 
-    await assertNoPendingUpdate()
-
+    await assertNoPendingUpdate();
   });
 
   const ibanPayto = parsePaytoUri("payto://iban/ES8877998399652238")!;
-  const talerBankPayto = parsePaytoUri("payto://x-taler-bank/ES8877998399652238")!;
+  const talerBankPayto = parsePaytoUri(
+    "payto://x-taler-bank/ES8877998399652238",
+  )!;
 
   it("should have status 'ready' but unable to deposit ", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(() =>
-      useComponentState(currency, nullFunction, nullFunction, {
-        getBalance: async () => ({
-          balances: [{ available: `${currency}:1`, }]
-        } as Partial<BalancesResponse>),
-        listKnownBankAccounts: async () => ({ accounts: [ibanPayto] })
-      } as Partial<typeof wxApi> as any)
-    );
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+      mountHook(() =>
+        useComponentState(currency, nullFunction, nullFunction, {
+          getBalance: async () =>
+            ({
+              balances: [{ available: `${currency}:1` }],
+            } as Partial<BalancesResponse>),
+          listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
+        } as Partial<typeof wxApi> as any),
+      );
 
     {
-      const { status } = getLastResultOrThrow()
-      expect(status).equal("loading")
+      const { status } = getLastResultOrThrow();
+      expect(status).equal("loading");
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const r = getLastResultOrThrow()
+      const r = getLastResultOrThrow();
       if (r.status !== "ready") expect.fail();
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
-      expect(r.account.value).eq("0")
-      expect(r.amount.value).eq("0")
+      expect(r.account.value).eq("0");
+      expect(r.amount.value).eq("0");
       expect(r.depositHandler.onClick).undefined;
     }
 
-    await assertNoPendingUpdate()
+    await assertNoPendingUpdate();
   });
 
   it("should not be able to deposit more than the balance ", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(() =>
-      useComponentState(currency, nullFunction, nullFunction, {
-        getBalance: async () => ({
-          balances: [{ available: `${currency}:1`, }]
-        } as Partial<BalancesResponse>),
-        listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
-        getFeeForDeposit: withoutFee
-      } as Partial<typeof wxApi> as any)
-    );
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+      mountHook(() =>
+        useComponentState(currency, nullFunction, nullFunction, {
+          getBalance: async () =>
+            ({
+              balances: [{ available: `${currency}:1` }],
+            } as Partial<BalancesResponse>),
+          listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
+          getFeeForDeposit: withoutFee,
+        } as Partial<typeof wxApi> as any),
+      );
 
     {
-      const { status } = getLastResultOrThrow()
-      expect(status).equal("loading")
+      const { status } = getLastResultOrThrow();
+      expect(status).equal("loading");
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const r = getLastResultOrThrow()
+      const r = getLastResultOrThrow();
       if (r.status !== "ready") expect.fail();
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
-      expect(r.account.value).eq("0")
-      expect(r.amount.value).eq("0")
+      expect(r.account.value).eq("0");
+      expect(r.amount.value).eq("0");
       expect(r.depositHandler.onClick).undefined;
-      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`))
+      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
 
-      r.amount.onInput("10")
+      r.amount.onInput("10");
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const r = getLastResultOrThrow()
+      const r = getLastResultOrThrow();
       if (r.status !== "ready") expect.fail();
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
-      expect(r.account.value).eq("0")
-      expect(r.amount.value).eq("10")
-      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`))
+      expect(r.account.value).eq("0");
+      expect(r.amount.value).eq("10");
+      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
       expect(r.depositHandler.onClick).undefined;
     }
 
-    await assertNoPendingUpdate()
+    await assertNoPendingUpdate();
   });
 
   it("should calculate the fee upon entering amount ", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(() =>
-      useComponentState(currency, nullFunction, nullFunction, {
-        getBalance: async () => ({
-          balances: [{ available: `${currency}:1`, }]
-        } as Partial<BalancesResponse>),
-        listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
-        getFeeForDeposit: withSomeFee
-      } as Partial<typeof wxApi> as any)
-    );
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+      mountHook(() =>
+        useComponentState(currency, nullFunction, nullFunction, {
+          getBalance: async () =>
+            ({
+              balances: [{ available: `${currency}:1` }],
+            } as Partial<BalancesResponse>),
+          listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
+          getFeeForDeposit: withSomeFee,
+        } as Partial<typeof wxApi> as any),
+      );
 
     {
-      const { status } = getLastResultOrThrow()
-      expect(status).equal("loading")
+      const { status } = getLastResultOrThrow();
+      expect(status).equal("loading");
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const r = getLastResultOrThrow()
+      const r = getLastResultOrThrow();
       if (r.status !== "ready") expect.fail();
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
-      expect(r.account.value).eq("0")
-      expect(r.amount.value).eq("0")
+      expect(r.account.value).eq("0");
+      expect(r.amount.value).eq("0");
       expect(r.depositHandler.onClick).undefined;
-      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`))
+      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
 
-      r.amount.onInput("10")
+      r.amount.onInput("10");
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const r = getLastResultOrThrow()
+      const r = getLastResultOrThrow();
       if (r.status !== "ready") expect.fail();
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
-      expect(r.account.value).eq("0")
-      expect(r.amount.value).eq("10")
-      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`))
-      expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:7`))
+      expect(r.account.value).eq("0");
+      expect(r.amount.value).eq("10");
+      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
+      expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:7`));
       expect(r.depositHandler.onClick).undefined;
     }
 
-    await assertNoPendingUpdate()
+    await assertNoPendingUpdate();
   });
 
   it("should calculate the fee upon selecting account ", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(() =>
-      useComponentState(currency, nullFunction, nullFunction, {
-        getBalance: async () => ({
-          balances: [{ available: `${currency}:1`, }]
-        } as Partial<BalancesResponse>),
-        listKnownBankAccounts: async () => ({ accounts: [ibanPayto, talerBankPayto] }),
-        getFeeForDeposit: freeJustForIBAN
-      } as Partial<typeof wxApi> as any)
-    );
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+      mountHook(() =>
+        useComponentState(currency, nullFunction, nullFunction, {
+          getBalance: async () =>
+            ({
+              balances: [{ available: `${currency}:1` }],
+            } as Partial<BalancesResponse>),
+          listKnownBankAccounts: async () => ({
+            accounts: [ibanPayto, talerBankPayto],
+          }),
+          getFeeForDeposit: freeJustForIBAN,
+        } as Partial<typeof wxApi> as any),
+      );
 
     {
-      const { status } = getLastResultOrThrow()
-      expect(status).equal("loading")
+      const { status } = getLastResultOrThrow();
+      expect(status).equal("loading");
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const r = getLastResultOrThrow()
+      const r = getLastResultOrThrow();
       if (r.status !== "ready") expect.fail();
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
-      expect(r.account.value).eq("0")
-      expect(r.amount.value).eq("0")
+      expect(r.account.value).eq("0");
+      expect(r.amount.value).eq("0");
       expect(r.depositHandler.onClick).undefined;
-      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`))
+      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
 
       if (r.account.onChange === undefined) expect.fail();
-      r.account.onChange("1")
+      r.account.onChange("1");
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const r = getLastResultOrThrow()
+      const r = getLastResultOrThrow();
       if (r.status !== "ready") expect.fail();
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
-      expect(r.account.value).eq("1")
-      expect(r.amount.value).eq("0")
-      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`))
-      expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:0`))
+      expect(r.account.value).eq("1");
+      expect(r.amount.value).eq("0");
+      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
+      expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
       expect(r.depositHandler.onClick).undefined;
 
-      r.amount.onInput("10")
+      r.amount.onInput("10");
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const r = getLastResultOrThrow()
+      const r = getLastResultOrThrow();
       if (r.status !== "ready") expect.fail();
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
-      expect(r.account.value).eq("1")
-      expect(r.amount.value).eq("10")
-      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`))
-      expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:7`))
+      expect(r.account.value).eq("1");
+      expect(r.amount.value).eq("10");
+      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
+      expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:7`));
       expect(r.depositHandler.onClick).undefined;
 
       if (r.account.onChange === undefined) expect.fail();
-      r.account.onChange("0")
+      r.account.onChange("0");
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const r = getLastResultOrThrow()
+      const r = getLastResultOrThrow();
       if (r.status !== "ready") expect.fail();
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
-      expect(r.account.value).eq("0")
-      expect(r.amount.value).eq("10")
-      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`))
-      expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:10`))
+      expect(r.account.value).eq("0");
+      expect(r.amount.value).eq("10");
+      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
+      expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:10`));
       expect(r.depositHandler.onClick).undefined;
-
     }
 
-    await assertNoPendingUpdate()
+    await assertNoPendingUpdate();
   });
-
 
   it("should be able to deposit if has the enough balance ", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } = mountHook(() =>
-      useComponentState(currency, nullFunction, nullFunction, {
-        getBalance: async () => ({
-          balances: [{ available: `${currency}:15`, }]
-        } as Partial<BalancesResponse>),
-        listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
-        getFeeForDeposit: withSomeFee
-      } as Partial<typeof wxApi> as any)
-    );
+    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+      mountHook(() =>
+        useComponentState(currency, nullFunction, nullFunction, {
+          getBalance: async () =>
+            ({
+              balances: [{ available: `${currency}:15` }],
+            } as Partial<BalancesResponse>),
+          listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
+          getFeeForDeposit: withSomeFee,
+        } as Partial<typeof wxApi> as any),
+      );
 
     {
-      const { status } = getLastResultOrThrow()
-      expect(status).equal("loading")
+      const { status } = getLastResultOrThrow();
+      expect(status).equal("loading");
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const r = getLastResultOrThrow()
+      const r = getLastResultOrThrow();
       if (r.status !== "ready") expect.fail();
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
-      expect(r.account.value).eq("0")
-      expect(r.amount.value).eq("0")
+      expect(r.account.value).eq("0");
+      expect(r.amount.value).eq("0");
       expect(r.depositHandler.onClick).undefined;
-      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`))
+      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
 
-      r.amount.onInput("10")
+      r.amount.onInput("10");
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const r = getLastResultOrThrow()
+      const r = getLastResultOrThrow();
       if (r.status !== "ready") expect.fail();
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
-      expect(r.account.value).eq("0")
-      expect(r.amount.value).eq("10")
-      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`))
-      expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:7`))
+      expect(r.account.value).eq("0");
+      expect(r.amount.value).eq("10");
+      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
+      expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:7`));
       expect(r.depositHandler.onClick).not.undefined;
 
-      r.amount.onInput("13")
+      r.amount.onInput("13");
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const r = getLastResultOrThrow()
+      const r = getLastResultOrThrow();
       if (r.status !== "ready") expect.fail();
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
-      expect(r.account.value).eq("0")
-      expect(r.amount.value).eq("13")
-      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`))
-      expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:10`))
+      expect(r.account.value).eq("0");
+      expect(r.amount.value).eq("13");
+      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
+      expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:10`));
       expect(r.depositHandler.onClick).not.undefined;
 
-      r.amount.onInput("15")
+      r.amount.onInput("15");
     }
 
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const r = getLastResultOrThrow()
+      const r = getLastResultOrThrow();
       if (r.status !== "ready") expect.fail();
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
-      expect(r.account.value).eq("0")
-      expect(r.amount.value).eq("15")
-      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`))
-      expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:12`))
+      expect(r.account.value).eq("0");
+      expect(r.amount.value).eq("15");
+      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
+      expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:12`));
       expect(r.depositHandler.onClick).not.undefined;
-      r.amount.onInput("17")
+      r.amount.onInput("17");
     }
-    await waitNextUpdate()
+    await waitNextUpdate();
 
     {
-      const r = getLastResultOrThrow()
+      const r = getLastResultOrThrow();
       if (r.status !== "ready") expect.fail();
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
-      expect(r.account.value).eq("0")
-      expect(r.amount.value).eq("17")
-      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`))
-      expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:14`))
+      expect(r.account.value).eq("0");
+      expect(r.amount.value).eq("17");
+      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
+      expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:14`));
       expect(r.depositHandler.onClick).undefined;
     }
-    await assertNoPendingUpdate()
+    await assertNoPendingUpdate();
   });
-
 });

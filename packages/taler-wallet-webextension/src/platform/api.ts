@@ -22,12 +22,11 @@ export interface Permissions {
    */
   permissions?: string[] | undefined;
   /**
-   * List of origin permissions. Anything listed here must be a subset of a 
-   * host that appears in the optional_permissions list in the manifest. 
-   * 
+   * List of origin permissions. Anything listed here must be a subset of a
+   * host that appears in the optional_permissions list in the manifest.
+   *
    */
   origins?: string[] | undefined;
-
 }
 
 /**
@@ -38,8 +37,9 @@ export interface CrossBrowserPermissionsApi {
   requestHostPermissions(): Promise<boolean>;
   removeHostPermissions(): Promise<boolean>;
 
-  addPermissionsListener(callback: (p: Permissions, lastError?: string) => void): void;
-
+  addPermissionsListener(
+    callback: (p: Permissions, lastError?: string) => void,
+  ): void;
 }
 
 export type MessageFromBackend = {
@@ -57,12 +57,12 @@ export interface WalletVersion {
  */
 export interface PlatformAPI {
   /**
-   * Garantee that the 
+   * Garantee that the
    */
   keepAlive(cb: VoidFunction): void;
   /**
    * FIXME: should not be needed
-   * 
+   *
    * check if the platform is firefox
    */
   isFirefox(): boolean;
@@ -74,46 +74,46 @@ export interface PlatformAPI {
 
   /**
    * Backend API
-   * 
+   *
    * Register a callback to be called when the wallet is ready to start
-   * @param callback 
+   * @param callback
    */
   notifyWhenAppIsReady(callback: () => void): void;
 
   /**
    * Popup API
-   * 
+   *
    * Used when an TalerURI is found and open up from the popup UI.
    * Closes the popup and open the URI into the wallet UI.
-   * 
-   * @param talerUri 
+   *
+   * @param talerUri
    */
   openWalletURIFromPopup(talerUri: string): void;
 
   /**
    * Backend API
-   * 
+   *
    * Open a page into the wallet UI
-   * @param page 
+   * @param page
    */
   openWalletPage(page: string): void;
 
   /**
    * Popup API
-   * 
+   *
    * Open a page into the wallet UI and closed the popup
-   * @param page 
+   * @param page
    */
   openWalletPageFromPopup(page: string): void;
 
   /**
    * Backend API
-   * 
+   *
    * When a tab has been detected to have a Taler action the background process
    * can use this function to redirect the tab to the wallet UI
-   *  
-   * @param tabId 
-   * @param page 
+   *
+   * @param tabId
+   * @param page
    */
   redirectTabToWalletPage(tabId: number, page: string): void;
 
@@ -121,7 +121,6 @@ export interface PlatformAPI {
    * Get the wallet version from manifest
    */
   getWalletVersion(): WalletVersion;
-
 
   /**
    * Backend API
@@ -134,7 +133,9 @@ export interface PlatformAPI {
   /**
    * Backend API
    */
-  registerTalerHeaderListener(onHeader: (tabId: number, url: string) => void): void;
+  registerTalerHeaderListener(
+    onHeader: (tabId: number, url: string) => void,
+  ): void;
   /**
    * Frontend API
    */
@@ -146,49 +147,60 @@ export interface PlatformAPI {
 
   /**
    * Backend API
-   * 
-   * Check if background process run as service worker. This is used from the 
+   *
+   * Check if background process run as service worker. This is used from the
    * wallet use different http api and crypto worker.
    */
   useServiceWorkerAsBackgroundProcess(): boolean;
 
   /**
    * Popup API
-   * 
+   *
    * Read the current tab html and try to find any Taler URI or QR code present.
-   * 
+   *
    * @return Taler URI if found
    */
   findTalerUriInActiveTab(): Promise<string | undefined>;
 
   /**
    * Used from the frontend to send commands to the wallet
-   * 
-   * @param operation 
-   * @param payload 
-   * 
+   *
+   * @param operation
+   * @param payload
+   *
    * @return response from the backend
    */
-  sendMessageToWalletBackground(operation: string, payload: any): Promise<CoreApiResponse>;
+  sendMessageToWalletBackground(
+    operation: string,
+    payload: any,
+  ): Promise<CoreApiResponse>;
 
   /**
    * Used from the frontend to receive notifications about new information
-   * @param listener 
-   * @return function to unsubscribe the listener 
+   * @param listener
+   * @return function to unsubscribe the listener
    */
-  listenToWalletBackground(listener: (message: MessageFromBackend) => void): () => void;
+  listenToWalletBackground(
+    listener: (message: MessageFromBackend) => void,
+  ): () => void;
 
   /**
    * Use by the wallet backend to receive operations from frontend (popup & wallet)
    * and send a response back.
-   * 
-   * @param onNewMessage 
+   *
+   * @param onNewMessage
    */
-  listenToAllChannels(onNewMessage: (message: any, sender: any, sendResponse: (r: CoreApiResponse) => void) => void): void;
+  listenToAllChannels(
+    onNewMessage: (
+      message: any,
+      sender: any,
+      sendResponse: (r: CoreApiResponse) => void,
+    ) => void,
+  ): void;
 
   /**
    * Used by the wallet backend to send notification about new information
-   * @param message 
+   * @param message
    */
   sendMessageToAllChannels(message: MessageFromBackend): void;
 }

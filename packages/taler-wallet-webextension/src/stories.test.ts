@@ -47,9 +47,9 @@ function testThisStory(st: any): any {
 describe("render every storybook example", () => {
   [popup, wallet, cta, mui, components].forEach(function testAll(st: any) {
     if (Array.isArray(st.default)) {
-      st.default.forEach(testAll)
+      st.default.forEach(testAll);
     } else {
-      testThisStory(st)
+      testThisStory(st);
     }
   });
 });

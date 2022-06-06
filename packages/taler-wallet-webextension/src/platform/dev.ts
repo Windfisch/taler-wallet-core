@@ -17,50 +17,55 @@
 import { CoreApiResponse } from "@gnu-taler/taler-util";
 import { MessageFromBackend, PlatformAPI } from "./api.js";
 
-const frames = ["popup", "wallet"]
+const frames = ["popup", "wallet"];
 
-const api: PlatformAPI = ({
+const api: PlatformAPI = {
   isFirefox: () => false,
   keepAlive: (cb: VoidFunction) => cb(),
   findTalerUriInActiveTab: async () => undefined,
-  containsTalerHeaderListener: () => { return true },
+  containsTalerHeaderListener: () => {
+    return true;
+  },
   getPermissionsApi: () => ({
-    addPermissionsListener: () => undefined, containsHostPermissions: async () => true, removeHostPermissions: async () => false, requestHostPermissions: async () => false
+    addPermissionsListener: () => undefined,
+    containsHostPermissions: async () => true,
+    removeHostPermissions: async () => false,
+    requestHostPermissions: async () => false,
   }),
   getWalletVersion: () => ({
-    version: 'none'
+    version: "none",
   }),
   notifyWhenAppIsReady: (fn: () => void) => {
-    let total = frames.length
+    let total = frames.length;
     function waitAndNotify(): void {
-      total--
+      total--;
       if (total < 1) {
-        console.log('done')
-        fn()
+        console.log("done");
+        fn();
       }
     }
-    frames.forEach(f => {
-      const theFrame = window.frames[f as any]
-      if (theFrame.location.href === 'about:blank') {
-        waitAndNotify()
+    frames.forEach((f) => {
+      const theFrame = window.frames[f as any];
+      if (theFrame.location.href === "about:blank") {
+        waitAndNotify();
       } else {
-        theFrame.addEventListener("load", waitAndNotify)
+        theFrame.addEventListener("load", waitAndNotify);
       }
-    })
+    });
   },
 
   openWalletPage: (page: string) => {
-    window.frames['wallet' as any].location = `/wallet.html#${page}`
+    window.frames["wallet" as any].location = `/wallet.html#${page}`;
   },
   openWalletPageFromPopup: (page: string) => {
-    window.parent.frames['wallet' as any].location = `/wallet.html#${page}`
-    window.location.href = "about:blank"
+    window.parent.frames["wallet" as any].location = `/wallet.html#${page}`;
+    window.location.href = "about:blank";
   },
   openWalletURIFromPopup: (page: string) => {
-    alert('openWalletURIFromPopup not implemented yet')
+    alert("openWalletURIFromPopup not implemented yet");
   },
   redirectTabToWalletPage: (tabId: number, page: string) => {
-    alert('redirectTabToWalletPage not implemented yet')
+    alert("redirectTabToWalletPage not implemented yet");
   },
 
   registerAllIncomingConnections: () => undefined,
@@ -70,91 +75,101 @@ const api: PlatformAPI = ({
 
   useServiceWorkerAsBackgroundProcess: () => false,
 
-  listenToAllChannels: (fn: (m: any, s: any, c: (r: CoreApiResponse) => void) => void) => {
-    window.addEventListener("message", (event: MessageEvent<IframeMessageType>) => {
-      if (event.data.type !== 'command') return
-      const sender = event.data.header.replyMe
-      fn(event.data.body, sender, (resp: CoreApiResponse) => {
-        if (event.source) {
-          const msg: IframeMessageResponse = {
-            type: "response",
-            header: { responseId: sender },
-            body: resp
+  listenToAllChannels: (
+    fn: (m: any, s: any, c: (r: CoreApiResponse) => void) => void,
+  ) => {
+    window.addEventListener(
+      "message",
+      (event: MessageEvent<IframeMessageType>) => {
+        if (event.data.type !== "command") return;
+        const sender = event.data.header.replyMe;
+        fn(event.data.body, sender, (resp: CoreApiResponse) => {
+          if (event.source) {
+            const msg: IframeMessageResponse = {
+              type: "response",
+              header: { responseId: sender },
+              body: resp,
+            };
+            window.parent.postMessage(msg);
           }
-          window.parent.postMessage(msg)
-        }
-      })
-    })
+        });
+      },
+    );
   },
   sendMessageToAllChannels: (message: MessageFromBackend) => {
-    Array.from(window.frames).forEach(w => {
+    Array.from(window.frames).forEach((w) => {
       try {
         w.postMessage({
-          header: {}, body: message
+          header: {},
+          body: message,
         });
       } catch (e) {
-        console.error(e)
+        console.error(e);
       }
-    })
+    });
   },
   listenToWalletBackground: (onNewMessage: (m: MessageFromBackend) => void) => {
     function listener(event: MessageEvent<IframeMessageType>): void {
-      if (event.data.type !== 'notification') return
-      onNewMessage(event.data.body)
+      if (event.data.type !== "notification") return;
+      onNewMessage(event.data.body);
     }
-    window.parent.addEventListener("message", listener)
+    window.parent.addEventListener("message", listener);
     return () => {
-      window.parent.removeEventListener("message", listener)
-    }
+      window.parent.removeEventListener("message", listener);
+    };
   },
   sendMessageToWalletBackground: async (operation: string, payload: any) => {
-    const replyMe = `reply-${Math.floor(Math.random() * 100000)}`
+    const replyMe = `reply-${Math.floor(Math.random() * 100000)}`;
     const message: IframeMessageCommand = {
-      type: 'command',
+      type: "command",
       header: { replyMe },
-      body: { operation, payload, id: "(none)" }
-    }
-    window.parent.postMessage(message)
+      body: { operation, payload, id: "(none)" },
+    };
+    window.parent.postMessage(message);
 
     return new Promise((res, rej) => {
       function listener(event: MessageEvent<IframeMessageType>): void {
-        if (event.data.type !== "response" || event.data.header.responseId !== replyMe) {
-          return
+        if (
+          event.data.type !== "response" ||
+          event.data.header.responseId !== replyMe
+        ) {
+          return;
         }
-        res(event.data.body)
-        window.parent.removeEventListener("message", listener)
+        res(event.data.body);
+        window.parent.removeEventListener("message", listener);
       }
-      window.parent.addEventListener("message", listener, {
-
-      })
-    })
-
+      window.parent.addEventListener("message", listener, {});
+    });
   },
-})
+};
 
-type IframeMessageType = IframeMessageNotification | IframeMessageResponse | IframeMessageCommand;
+type IframeMessageType =
+  | IframeMessageNotification
+  | IframeMessageResponse
+  | IframeMessageCommand;
 interface IframeMessageNotification {
   type: "notification";
-  header: Record<string, never>,
-  body: MessageFromBackend
+  header: Record<string, never>;
+  body: MessageFromBackend;
 }
 interface IframeMessageResponse {
   type: "response";
   header: {
     responseId: string;
-  },
-  body: CoreApiResponse
+  };
+  body: CoreApiResponse;
 }
 
 interface IframeMessageCommand {
   type: "command";
   header: {
     replyMe: string;
-  },
+  };
   body: {
-    operation: any, id: string, payload: any
-  }
+    operation: any;
+    id: string;
+    payload: any;
+  };
 }
 
 export default api;
-

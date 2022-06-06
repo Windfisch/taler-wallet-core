@@ -27,7 +27,7 @@ import { strings } from "../i18n/strings.js";
 
 interface Type {
   lang: string;
-  supportedLang: { [id in keyof typeof supportedLang]: string }
+  supportedLang: { [id in keyof typeof supportedLang]: string };
   changeLanguage: (l: string) => void;
   i18n: typeof i18n;
   isSaved: boolean;
@@ -46,7 +46,6 @@ const supportedLang = {
   tr: "Türk [tr]",
   navigator: "Defined by navigator",
 };
-
 
 const initial = {
   lang: "en",
@@ -84,7 +83,10 @@ export const TranslationProvider = ({
   } else {
     setupI18n(lang, strings);
   }
-  return h(Context.Provider, { value: { lang, changeLanguage, supportedLang, i18n, isSaved }, children });
+  return h(Context.Provider, {
+    value: { lang, changeLanguage, supportedLang, i18n, isSaved },
+    children,
+  });
 };
 
 export const useTranslationContext = (): Type => useContext(Context);

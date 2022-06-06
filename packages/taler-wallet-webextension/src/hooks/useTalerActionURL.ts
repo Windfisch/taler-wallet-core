@@ -25,7 +25,7 @@ export function useTalerActionURL(): [
     undefined,
   );
   const [dismissed, setDismissed] = useState(false);
-  const { findTalerUriInActiveTab } = useIocContext()
+  const { findTalerUriInActiveTab } = useIocContext();
 
   useEffect(() => {
     async function check(): Promise<void> {

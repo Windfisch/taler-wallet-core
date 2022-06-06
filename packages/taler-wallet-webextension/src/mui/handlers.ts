@@ -23,4 +23,3 @@ export interface SelectFieldHandler {
   isDirty?: boolean;
   list: Record<string, string>;
 }
-

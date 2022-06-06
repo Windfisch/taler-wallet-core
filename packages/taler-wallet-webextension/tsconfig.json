@@ -2,7 +2,7 @@
   "compilerOptions": {
     "composite": true,
     "lib": [
-      "es6",
+      "es2021",
       "DOM"
     ],
     "jsx": "react", /* Specify JSX code generation: 'preserve', 'react-native', or 'react'. */

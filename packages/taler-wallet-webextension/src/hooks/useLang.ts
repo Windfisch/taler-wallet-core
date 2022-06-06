@@ -17,12 +17,14 @@
 import { useNotNullLocalStorage } from "./useLocalStorage.js";
 
 function getBrowserLang(): string | undefined {
-  if (window.navigator.languages) return window.navigator.languages[0]
-  if (window.navigator.language) return window.navigator.language
+  if (window.navigator.languages) return window.navigator.languages[0];
+  if (window.navigator.language) return window.navigator.language;
   return undefined;
 }
 
-export function useLang(initial?: string): [string, (s: string) => void, boolean] {
+export function useLang(
+  initial?: string,
+): [string, (s: string) => void, boolean] {
   const defaultLang = (getBrowserLang() || initial || "en").substring(0, 2);
   return useNotNullLocalStorage("lang-preference", defaultLang);
 }

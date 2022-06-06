@@ -24,9 +24,9 @@ export function useExtendedPermissions(): ToggleHandler {
   const [enabled, setEnabled] = useState(false);
   const [error, setError] = useState<TalerError | undefined>();
   const toggle = async (): Promise<void> => {
-    return handleExtendedPerm(enabled, setEnabled).catch(e => {
-      setError(TalerError.fromException(e))
-    })
+    return handleExtendedPerm(enabled, setEnabled).catch((e) => {
+      setError(TalerError.fromException(e));
+    });
   };
 
   useEffect(() => {
@@ -40,12 +40,15 @@ export function useExtendedPermissions(): ToggleHandler {
     value: enabled,
     button: {
       onClick: toggle,
-      error
-    }
+      error,
+    },
   };
 }
 
-async function handleExtendedPerm(isEnabled: boolean, onChange: (value: boolean) => void): Promise<void> {
+async function handleExtendedPerm(
+  isEnabled: boolean,
+  onChange: (value: boolean) => void,
+): Promise<void> {
   if (!isEnabled) {
     // We set permissions here, since apparently FF wants this to be done
     // as the result of an input event ...
@@ -60,11 +63,10 @@ async function handleExtendedPerm(isEnabled: boolean, onChange: (value: boolean)
     onChange(res.newValue);
   } else {
     try {
-      await wxApi.toggleHeaderListener(false).then(r => onChange(r.newValue));
+      await wxApi.toggleHeaderListener(false).then((r) => onChange(r.newValue));
     } catch (e) {
-      console.log(e)
+      console.log(e);
     }
-
   }
-  return
+  return;
 }
