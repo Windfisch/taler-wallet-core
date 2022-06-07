@@ -52,6 +52,7 @@ export async function runBench1(configJson: any): Promise<void> {
   const numDeposits = b1conf.deposits ?? 5;
   const restartWallet = b1conf.restartAfter ?? 20;
 
+  const withdrawOnly = b1conf.withdrawOnly ?? false;
   const withdrawAmount = (numDeposits + 1) * 10;
 
   logger.info(
@@ -110,20 +111,22 @@ export async function runBench1(configJson: any): Promise<void> {
       `Finished withdrawal amount=${withdrawAmount} time=${Date.now() - start}`,
     );
 
-    for (let i = 0; i < numDeposits; i++) {
-      logger.trace(`Starting deposit amount=10`);
-      start = Date.now();
+    if (!withdrawOnly) {
+      for (let i = 0; i < numDeposits; i++) {
+        logger.trace(`Starting deposit amount=10`);
+        start = Date.now();
 
-      await wallet.client.call(WalletApiOperation.CreateDepositGroup, {
-        amount: b1conf.currency + ":10",
-        depositPaytoUri: b1conf.payto,
-      });
+        await wallet.client.call(WalletApiOperation.CreateDepositGroup, {
+          amount: b1conf.currency + ":10",
+          depositPaytoUri: b1conf.payto,
+        });
 
-      await wallet.runTaskLoop({
-        stopWhenDone: true,
-      });
+        await wallet.runTaskLoop({
+          stopWhenDone: true,
+        });
 
-      logger.info(`Finished deposit amount=10 time=${Date.now() - start}`);
+        logger.info(`Finished deposit amount=10 time=${Date.now() - start}`);
+      }
     }
   }
 
@@ -165,6 +168,8 @@ interface Bench1Config {
    * Defaults to 20.
    */
   restartAfter?: number;
+
+  withdrawOnly?: boolean;
 }
 
 /**
@@ -179,4 +184,5 @@ const codecForBench1Config = () =>
     .property("deposits", codecOptional(codecForNumber()))
     .property("currency", codecForString())
     .property("restartAfter", codecOptional(codecForNumber()))
+    .property("withdrawOnly", codecOptional(codecForBoolean())
     .build("Bench1Config");

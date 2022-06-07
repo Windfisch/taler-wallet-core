@@ -538,7 +538,7 @@ async function updateReserve(
   }
 
   const reserveUrl = new URL(`reserves/${reservePub}`, reserve.exchangeBaseUrl);
-  reserveUrl.searchParams.set("timeout_ms", "1000");
+  reserveUrl.searchParams.set("timeout_ms", "30000");
 
   const resp = await ws.http.get(reserveUrl.href, {
     timeout: getReserveRequestTimeout(reserve),
