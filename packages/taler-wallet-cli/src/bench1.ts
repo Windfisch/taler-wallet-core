@@ -21,6 +21,7 @@ import {
   buildCodecForObject,
   codecForNumber,
   codecForString,
+  codecForBoolean,
   codecOptional,
   j2s,
   Logger,
