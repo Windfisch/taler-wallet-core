@@ -184,5 +184,5 @@ const codecForBench1Config = () =>
     .property("deposits", codecOptional(codecForNumber()))
     .property("currency", codecForString())
     .property("restartAfter", codecOptional(codecForNumber()))
-    .property("withdrawOnly", codecOptional(codecForBoolean())
+    .property("withdrawOnly", codecOptional(codecForBoolean()))
     .build("Bench1Config");
