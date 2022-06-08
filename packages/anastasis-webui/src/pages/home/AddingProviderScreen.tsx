@@ -223,7 +223,7 @@ function TableRow({
   onDelete: (s: string) => void;
   url: string;
   info: AuthenticationProviderStatusOk;
-}) {
+}): VNode {
   const [status, setStatus] = useState("checking");
   useEffect(function () {
     testProvider(url.endsWith("/") ? url.substring(0, url.length - 1) : url)

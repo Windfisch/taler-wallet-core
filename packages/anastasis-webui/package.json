@@ -9,7 +9,7 @@
     "dev": "./dev.mjs",
     "prepare": "pnpm compile",
     "lint": "eslint 'src/**/*.{js,jsx,ts,tsx}'",
-    "test": "echo no tests",
+    "test": "mocha --enable-source-maps 'dist/**/*.test.js'",
     "pretty": "prettier --write src"
   },
   "dependencies": {
@@ -18,6 +18,7 @@
     "date-fns": "2.28.0",
     "jed": "1.1.1",
     "preact": "^10.5.15",
+    "preact-render-to-string": "^5.1.19",
     "preact-router": "^3.2.1",
     "qrcode-generator": "^1.4.4"
   },
@@ -34,6 +35,7 @@
   },
   "devDependencies": {
     "@creativebulma/bulma-tooltip": "^1.2.0",
+    "@types/mocha": "^9.0.0",
     "bulma": "^0.9.3",
     "bulma-checkbox": "^1.1.1",
     "bulma-radio": "^1.1.1",

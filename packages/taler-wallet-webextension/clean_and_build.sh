@@ -2,7 +2,7 @@
 
 set -e
 
-#rm -rf dist lib tsconfig.tsbuildinfo .linaria-cache
+rm -rf dist lib tsconfig.tsbuildinfo .linaria-cache
 
 echo typecheck and bundle...
 node build-fast-with-linaria.mjs &

@@ -10,16 +10,51 @@ cp \
 	src/scss/fonts/materialdesignicons-webfont-4.9.95.woff2 \
 	dist/fonts
 
-echo css
-pnpm exec sass -I . ./src/scss/main.scss dist/main.css &
-echo js
-pnpm exec esbuild --log-level=error --bundle src/main.ts --outdir=dist --target=es6 --loader:.svg=dataurl --format=iife --sourcemap --jsx-factory=h --jsx-fragment=Fragment --platform=browser &
+function build_css() {
+	pnpm exec sass -I . ./src/scss/main.scss dist/main.css
+}
+function build_js() {
+	pnpm exec esbuild --log-level=error --bundle $1 --outdir=dist --target=es6 --loader:.svg=dataurl --format=iife --sourcemap --jsx-factory=h --jsx-fragment=Fragment --platform=browser
+}
+
+function bundle() {
+	cat html/$1.html \
+	  | sed -e '/ANASTASIS_SCRIPT_CONTENT/ {' -e 'r dist/main.js' -e 'd' -e '}' \
+	  | sed -e '/ANASTASIS_STYLE_CONTENT/ {' -e 'r dist/main.css' -e 'd' -e '}' \
+	  >dist/$1.html
+}
+
+function cleanup {
+ trap - SIGHUP SIGINT SIGTERM SIGQUIT
+ echo -n "Cleaning up... "
+ kill -- -$$
+ exit 1
+}
+trap cleanup SIGHUP SIGINT SIGTERM SIGQUIT
+
+
+echo compile
+build_css &
+build_js src/main.ts &
+build_js src/main.test.ts &
 wait -n
 wait -n
+wait -n
+pnpm run --silent test -- -R dot
 
 echo html
-cat ui.html \
-	| sed -e '/ANASTASIS_SCRIPT_CONTENT/ {' -e 'r dist/main.js' -e 'd' -e '}' \
-	| sed -e '/ANASTASIS_STYLE_CONTENT/ {' -e 'r dist/main.css' -e 'd' -e '}' \
-	>dist/index.html
-echo done
+bundle ui
+bundle ui-dev
+
+
+if [ "WATCH" == "$1" ]; then
+
+  echo watch mode
+  inotifywait -e close_write -r src -q -m | while read line; do
+    DATE=$(date)
+    echo $DATE $line
+    build_js src/main.ts
+    bundle ui-dev
+    ./watch/send_reload.sh
+  done;
+fi

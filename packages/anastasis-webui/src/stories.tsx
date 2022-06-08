@@ -143,21 +143,24 @@ function ExampleList({
               {k.examples.map((r) => {
                 const e = encodeURIComponent;
                 const eId = `${e(r.group)}-${e(r.component)}-${e(r.name)}`;
+                function doSelection(e: any): void {
+                  e.preventDefault();
+                  location.hash = `#${eId}`;
+                  onSelectStory(r, eId);
+                }
                 const isSelected =
                   selected &&
                   selected.component === r.component &&
                   selected.group === r.group &&
                   selected.name === r.name;
                 return (
-                  <dd id={eId} key={r.name} data-selected={isSelected}>
-                    <a
-                      href={`#${eId}`}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        location.hash = `#${eId}`;
-                        onSelectStory(r, eId);
-                      }}
-                    >
+                  <dd
+                    id={eId}
+                    key={r.name}
+                    data-selected={isSelected}
+                    onClick={doSelection}
+                  >
+                    <a href={`#${eId}`} onClick={doSelection}>
                       {r.name}
                     </a>
                   </dd>

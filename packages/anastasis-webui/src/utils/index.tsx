@@ -209,10 +209,12 @@ export const reducerStatesExample = {
   initial: undefined,
   recoverySelectCountry: {
     ...base,
+    reducer_type: "recovery",
     recovery_state: RecoveryStates.CountrySelecting,
   } as ReducerState,
   recoverySelectContinent: {
     ...base,
+    reducer_type: "recovery",
     recovery_state: RecoveryStates.ContinentSelecting,
   } as ReducerState,
   secretSelection: {
@@ -222,10 +224,12 @@ export const reducerStatesExample = {
   } as ReducerState,
   recoveryFinished: {
     ...base,
+    reducer_type: "recovery",
     recovery_state: RecoveryStates.RecoveryFinished,
   } as ReducerState,
   challengeSelecting: {
     ...base,
+    reducer_type: "recovery",
     recovery_state: RecoveryStates.ChallengeSelecting,
   } as ReducerState,
   challengeSolving: {
@@ -235,34 +239,42 @@ export const reducerStatesExample = {
   } as ReducerStateRecovery,
   challengePaying: {
     ...base,
+    reducer_type: "recovery",
     recovery_state: RecoveryStates.ChallengePaying,
   } as ReducerState,
   recoveryAttributeEditing: {
     ...base,
+    reducer_type: "recovery",
     recovery_state: RecoveryStates.UserAttributesCollecting,
   } as ReducerState,
   backupSelectCountry: {
     ...base,
+    reducer_type: "backup",
     backup_state: BackupStates.CountrySelecting,
   } as ReducerState,
   backupSelectContinent: {
     ...base,
+    reducer_type: "backup",
     backup_state: BackupStates.ContinentSelecting,
   } as ReducerState,
   secretEdition: {
     ...base,
+    reducer_type: "backup",
     backup_state: BackupStates.SecretEditing,
   } as ReducerState,
   policyReview: {
     ...base,
+    reducer_type: "backup",
     backup_state: BackupStates.PoliciesReviewing,
   } as ReducerState,
   policyPay: {
     ...base,
+    reducer_type: "backup",
     backup_state: BackupStates.PoliciesPaying,
   } as ReducerState,
   backupFinished: {
     ...base,
+    reducer_type: "backup",
     backup_state: BackupStates.BackupFinished,
   } as ReducerState,
   authEditing: {
@@ -272,10 +284,12 @@ export const reducerStatesExample = {
   } as ReducerState,
   backupAttributeEditing: {
     ...base,
+    reducer_type: "backup",
     backup_state: BackupStates.UserAttributesCollecting,
   } as ReducerState,
   truthsPaying: {
     ...base,
+    reducer_type: "backup",
     backup_state: BackupStates.TruthsPaying,
   } as ReducerState,
 };

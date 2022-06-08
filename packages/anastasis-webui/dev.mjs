@@ -1,4 +1,19 @@
 #!/usr/bin/env node
+/*
+ This file is part of GNU Anastasis
+ (C) 2021-2022 Anastasis SARL
+
+ GNU Anastasis is free software; you can redistribute it and/or modify it under the
+ terms of the GNU Affero General Public License as published by the Free Software
+ Foundation; either version 3, or (at your option) any later version.
+
+ GNU Anastasis is distributed in the hope that it will be useful, but WITHOUT ANY
+ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License along with
+ GNU Anastasis; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+ */
 /* eslint-disable no-undef */
 import esbuild from 'esbuild'
 import fs from 'fs';
@@ -41,14 +56,17 @@ const watcher = chokidar
     broadcast(file, { type: "RELOAD" });
   });
 
-
-fs.writeFileSync("dist/stories.html", fs.readFileSync("stories.html"))
+/**
+ * Just bundling UI Stories.
+ * FIXME: add linaria CSS after implementing Material so CSS will be bundled
+ */
+fs.writeFileSync("dist/index.html", fs.readFileSync("html/stories.html"))
 fs.writeFileSync("dist/mocha.css", fs.readFileSync("node_modules/mocha/mocha.css"))
 fs.writeFileSync("dist/mocha.js", fs.readFileSync("node_modules/mocha/mocha.js"))
 fs.writeFileSync("dist/mocha.js.map", fs.readFileSync("node_modules/mocha/mocha.js.map"))
 
 export const buildConfig = {
-  entryPoints: ['src/stories.tsx'],
+  entryPoints: ['src/main.ts', 'src/stories.tsx'],
   bundle: true,
   outdir: 'dist',
   minify: false,
@@ -75,7 +93,6 @@ const server = await esbuild
   });
 
 console.log(`Dev server is ready at http://localhost:${server.port}/.
-http://localhost:${server.port}/stories.html for the components stories.
 The server is running a using websocket at ${devServerPort} to notify code change and live reload.
 `);
 

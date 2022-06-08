@@ -125,13 +125,6 @@ export function ContinentSelectionScreen(): VNode {
               </div>
             </div>
           </div>
-
-          {/* {theCountry && <div class="field">
-            <label class="label">Available currencies:</label>
-            <div class="control">
-              <input class="input is-small" type="text" readonly value={theCountry.currency} />
-            </div>
-          </div>} */}
         </div>
         <div class="column is-two-third">
           <p>
@@ -151,18 +144,11 @@ export function ContinentSelectionScreen(): VNode {
             }}
           >
             <p>
-              If you just want to try out Anastasis, we recomment that you
+              If you just want to try out Anastasis, we recommend that you
               choose <b>Testcontinent</b> with <b>Demoland</b>. For this special
               country, you will be asked for a simple number and not real,
               personal identifiable information.
             </p>
-            {/*             
-            <p>
-              Because of the diversity of personally identifying information in
-              different countries and cultures, we do not support all countries
-              yet. If you want to improve the supported countries,{" "}
-              <a href="mailto:contact@anastasis.lu">contact us</a>.
-            </p> */}
           </div>
         </div>
       </div>

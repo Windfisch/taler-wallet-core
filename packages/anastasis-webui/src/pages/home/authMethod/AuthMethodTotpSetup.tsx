@@ -36,6 +36,7 @@ export function AuthMethodTotpSetup({
   const [test, setTest] = useState("");
   const secretKey = useMemo(() => {
     const array = new Uint8Array(32);
+    if (typeof window === "undefined") return array;
     return window.crypto.getRandomValues(array);
   }, []);
 
