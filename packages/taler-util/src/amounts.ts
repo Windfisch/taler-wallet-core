@@ -444,4 +444,28 @@ export class Amounts {
 
     return s;
   }
+
+  /**
+   * Number of fractional digits needed to fully represent the amount
+   * @param a amount
+   * @returns 
+   */
+  static maxFractionalDigits(a: AmountJson): number {
+    if (a.fraction === 0) return 0;
+    if (a.fraction < 0) {
+      console.error("amount fraction can not be negative", a);
+      return 0;
+    }
+    let i = 0;
+    let check = true;
+    let rest = a.fraction;
+    while (rest > 0 && check) {
+      check = rest % 10 === 0;
+      rest = rest / 10;
+      i++;
+    }
+    return amountFractionalLength - i + 1;
+  }
+
 }
+

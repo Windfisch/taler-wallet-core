@@ -16,6 +16,7 @@
 
 import {
   AbsoluteTime,
+  amountFractionalLength,
   AmountJson,
   Amounts,
   Location,
@@ -749,7 +750,7 @@ function PurchaseDetails({
         <tr>
           <td>Refunded</td>
           <td>
-            <Amount value={transaction.totalRefundRaw} />
+            <Amount value={transaction.totalRefundRaw} negative />
           </td>
         </tr>
       )}
@@ -828,17 +829,20 @@ function RefundDetails({
 }): VNode {
   const { i18n } = useTranslationContext();
 
-  const fee = Amounts.sub(
-    Amounts.parseOrThrow(transaction.amountRaw),
-    Amounts.parseOrThrow(transaction.amountEffective),
-  ).amount;
+  const r = Amounts.parseOrThrow(transaction.amountRaw);
+  const e = Amounts.parseOrThrow(transaction.amountEffective);
+  const fee = Amounts.sub(r, e).amount;
+
+  const maxFrac = [r, e, fee]
+    .map((a) => Amounts.maxFractionalDigits(a))
+    .reduce((c, p) => Math.max(c, p), 0);
 
   return (
     <PurchaseDetailsTable>
       <tr>
         <td>Amount</td>
         <td>
-          <Amount value={transaction.amountRaw} />
+          <Amount value={transaction.amountRaw} maxFracSize={maxFrac} />
         </td>
       </tr>
 
@@ -846,7 +850,7 @@ function RefundDetails({
         <tr>
           <td>Transaction fees</td>
           <td>
-            <Amount value={fee} />
+            <Amount value={fee} negative maxFracSize={maxFrac} />
           </td>
         </tr>
       )}
@@ -858,7 +862,7 @@ function RefundDetails({
       <tr>
         <td>Total</td>
         <td>
-          <Amount value={transaction.amountEffective} />
+          <Amount value={transaction.amountEffective} maxFracSize={maxFrac} />
         </td>
       </tr>
     </PurchaseDetailsTable>
@@ -871,18 +875,20 @@ function DepositDetails({
   transaction: TransactionDeposit;
 }): VNode {
   const { i18n } = useTranslationContext();
+  const r = Amounts.parseOrThrow(transaction.amountRaw);
+  const e = Amounts.parseOrThrow(transaction.amountEffective);
+  const fee = Amounts.sub(r, e).amount;
 
-  const fee = Amounts.sub(
-    Amounts.parseOrThrow(transaction.amountRaw),
-    Amounts.parseOrThrow(transaction.amountEffective),
-  ).amount;
+  const maxFrac = [r, e, fee]
+    .map((a) => Amounts.maxFractionalDigits(a))
+    .reduce((c, p) => Math.max(c, p), 0);
 
   return (
     <PurchaseDetailsTable>
       <tr>
         <td>Amount</td>
         <td>
-          <Amount value={transaction.amountRaw} />
+          <Amount value={transaction.amountRaw} maxFracSize={maxFrac} />
         </td>
       </tr>
 
@@ -890,7 +896,7 @@ function DepositDetails({
         <tr>
           <td>Transaction fees</td>
           <td>
-            <Amount value={fee} />
+            <Amount value={fee} negative maxFracSize={maxFrac} />
           </td>
         </tr>
       )}
@@ -902,7 +908,7 @@ function DepositDetails({
       <tr>
         <td>Total transfer</td>
         <td>
-          <Amount value={transaction.amountEffective} />
+          <Amount value={transaction.amountEffective} maxFracSize={maxFrac} />
         </td>
       </tr>
     </PurchaseDetailsTable>
@@ -915,17 +921,26 @@ function RefreshDetails({
 }): VNode {
   const { i18n } = useTranslationContext();
 
-  const fee = Amounts.sub(
-    Amounts.parseOrThrow(transaction.amountRaw),
-    Amounts.parseOrThrow(transaction.amountEffective),
-  ).amount;
+  const r = Amounts.parseOrThrow(transaction.amountRaw);
+  const e = Amounts.parseOrThrow(transaction.amountEffective);
+  const fee = Amounts.sub(r, e).amount;
+
+  const maxFrac = [r, e, fee]
+    .map((a) => Amounts.maxFractionalDigits(a))
+    .reduce((c, p) => Math.max(c, p), 0);
 
   return (
     <PurchaseDetailsTable>
       <tr>
         <td>Amount</td>
         <td>
-          <Amount value={transaction.amountRaw} />
+          <Amount value={transaction.amountRaw} maxFracSize={maxFrac} />
+        </td>
+      </tr>
+      <tr>
+        <td>Transaction fees</td>
+        <td>
+          <Amount value={fee} negative maxFracSize={maxFrac} />
         </td>
       </tr>
       <tr>
@@ -934,9 +949,9 @@ function RefreshDetails({
         </td>
       </tr>
       <tr>
-        <td>Transaction fees</td>
+        <td>Total</td>
         <td>
-          <Amount value={fee} />
+          <Amount value={transaction.amountEffective} maxFracSize={maxFrac} />
         </td>
       </tr>
     </PurchaseDetailsTable>
@@ -946,17 +961,20 @@ function RefreshDetails({
 function TipDetails({ transaction }: { transaction: TransactionTip }): VNode {
   const { i18n } = useTranslationContext();
 
-  const fee = Amounts.sub(
-    Amounts.parseOrThrow(transaction.amountRaw),
-    Amounts.parseOrThrow(transaction.amountEffective),
-  ).amount;
+  const r = Amounts.parseOrThrow(transaction.amountRaw);
+  const e = Amounts.parseOrThrow(transaction.amountEffective);
+  const fee = Amounts.sub(r, e).amount;
+
+  const maxFrac = [r, e, fee]
+    .map((a) => Amounts.maxFractionalDigits(a))
+    .reduce((c, p) => Math.max(c, p), 0);
 
   return (
     <PurchaseDetailsTable>
       <tr>
         <td>Amount</td>
         <td>
-          <Amount value={transaction.amountRaw} />
+          <Amount value={transaction.amountRaw} maxFracSize={maxFrac} />
         </td>
       </tr>
 
@@ -964,7 +982,7 @@ function TipDetails({ transaction }: { transaction: TransactionTip }): VNode {
         <tr>
           <td>Transaction fees</td>
           <td>
-            <Amount value={fee} />
+            <Amount value={fee} negative maxFracSize={maxFrac} />
           </td>
         </tr>
       )}
@@ -976,7 +994,7 @@ function TipDetails({ transaction }: { transaction: TransactionTip }): VNode {
       <tr>
         <td>Total</td>
         <td>
-          <Amount value={transaction.amountEffective} />
+          <Amount value={transaction.amountEffective} maxFracSize={maxFrac} />
         </td>
       </tr>
     </PurchaseDetailsTable>
@@ -990,17 +1008,20 @@ function WithdrawDetails({
 }): VNode {
   const { i18n } = useTranslationContext();
 
-  const fee = Amounts.sub(
-    Amounts.parseOrThrow(transaction.amountRaw),
-    Amounts.parseOrThrow(transaction.amountEffective),
-  ).amount;
+  const r = Amounts.parseOrThrow(transaction.amountRaw);
+  const e = Amounts.parseOrThrow(transaction.amountEffective);
+  const fee = Amounts.sub(r, e).amount;
+
+  const maxFrac = [r, e, fee]
+    .map((a) => Amounts.maxFractionalDigits(a))
+    .reduce((c, p) => Math.max(c, p), 0);
 
   return (
     <PurchaseDetailsTable>
       <tr>
         <td>Withdraw</td>
         <td>
-          <Amount value={transaction.amountRaw} />
+          <Amount value={transaction.amountRaw} maxFracSize={maxFrac} />
         </td>
       </tr>
 
@@ -1008,7 +1029,7 @@ function WithdrawDetails({
         <tr>
           <td>Transaction fees</td>
           <td>
-            <Amount value={fee} />
+            <Amount value={fee} negative maxFracSize={maxFrac} />
           </td>
         </tr>
       )}
@@ -1020,7 +1041,7 @@ function WithdrawDetails({
       <tr>
         <td>Total</td>
         <td>
-          <Amount value={transaction.amountEffective} />
+          <Amount value={transaction.amountEffective} maxFracSize={maxFrac} />
         </td>
       </tr>
     </PurchaseDetailsTable>
@@ -1059,9 +1080,8 @@ function Header({
         <SubTitle>
           <Part
             title={type}
-            text={<Amount value={total} />}
+            text={<Amount value={total} negative={kind === "negative"} />}
             kind={kind}
-            showSign
           />
         </SubTitle>
       </div>

@@ -19,7 +19,8 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import * as a1 from "./Banner.stories.js";
+ import * as a1 from "./Banner.stories.js";
 import * as a2 from "./PendingTransactions.stories.js";
+import * as a3 from "./Amount.stories.js";
 
-export default [a1, a2];
+export default [a1, a2, a3];

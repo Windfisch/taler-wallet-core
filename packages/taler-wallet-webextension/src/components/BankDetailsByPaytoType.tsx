@@ -77,12 +77,16 @@ export function BankDetailsByPaytoType({
         <table>
           <tr>
             <td>{payto.targetPath}</td>
-            <td>{Amounts.stringifyValue(amount)} BTC</td>
+            <td>
+              <Amount value={amount} hideCurrency /> BTC
+            </td>
           </tr>
           {payto.segwitAddrs.map((addr, i) => (
             <tr key={i}>
               <td>{addr}</td>
-              <td>{Amounts.stringifyValue(min)} BTC</td>
+              <td>
+                <Amount value={min} hideCurrency /> BTC
+              </td>
             </tr>
           ))}
         </table>

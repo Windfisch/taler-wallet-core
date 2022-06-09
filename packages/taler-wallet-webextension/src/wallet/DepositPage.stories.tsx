@@ -78,7 +78,11 @@ export const WithSomeBankAccounts = createExample(TestedComponent, {
       value: "10:USD",
     },
     cancelHandler: {},
-    depositHandler: {},
+    depositHandler: {
+      onClick: async () => {
+        return;
+      },
+    },
     totalFee: Amounts.getZero("USD"),
     totalToDeposit: Amounts.parseOrThrow("USD:10"),
     // onCalculateFee: alwaysReturnFeeToOne,
