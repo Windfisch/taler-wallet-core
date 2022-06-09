@@ -91,20 +91,64 @@ export function SecretSelectionScreen(): VNode {
       title="Recovery: Select secret"
       hideNext="Please select version to recover"
     >
-      <p>Found versions:</p>
-      {policies.map((version, i) => (
-        <div key={i}>
-          {version.policy_hash} / {version.secret_name}
-          <button
-            onClick={async () => {
-              await reducer.transition("select_version", version);
-            }}
-          >
-            Recover
-          </button>
+      <div class="columns">
+        <div class="column">
+          <p class="block">Found versions:</p>
+          {policies.map((version, i) => (
+            <div key={i} class="box">
+              <div
+                class="block"
+                style={{ display: "flex", justifyContent: "space-between" }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <b>Name:</b>&nbsp;<span>{version.secret_name}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <b>Id:</b>&nbsp;
+                    <span
+                      class="icon has-tooltip-top"
+                      data-tooltip={version.policy_hash
+                        .match(/(.{22})/g)
+                        ?.join("\n")}
+                    >
+                      <i class="mdi mdi-information" />
+                    </span>
+                    <span>{version.policy_hash.substring(0, 22)}...</span>
+                  </div>
+                </div>
+
+                <div>
+                  <AsyncButton
+                    class="button"
+                    onClick={() =>
+                      reducer.transition("select_version", version)
+                    }
+                  >
+                    Recover
+                  </AsyncButton>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
-      <button>Load older versions</button>
+        <div class="column">
+          <p>
+            Secret found, you can select another version or continue to the
+            challenges solving
+          </p>
+          <p class="block">
+            <a onClick={() => setManageProvider(true)}>
+              Manage recovery providers
+            </a>
+          </p>
+        </div>
+      </div>
     </AnastasisClientFrame>
   );
 }

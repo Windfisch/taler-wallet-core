@@ -85,7 +85,6 @@ export function AuthMethodTotpSolve(props: AuthMethodSolveProps): VNode {
   const feedback = challengeFeedback[selectedUuid];
 
   async function onNext(): Promise<void> {
-    console.log(`sending TOTP code '${answerCode}'`);
     return reducer?.transition("solve_challenge", {
       answer: answerCode,
     });

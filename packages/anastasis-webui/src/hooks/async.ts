@@ -66,9 +66,7 @@ export function useAsync<T>(
     }, tooLong);
 
     try {
-      console.log("calling async", args);
       const result = await fn(...args);
-      console.log("async back", result);
       if (!isMounted()) {
         // Possibly calling fn(...) resulted in the component being unmounted.
         return;

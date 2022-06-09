@@ -45,7 +45,6 @@ export function FileButton(props: Props): VNode {
           if (!f || f.length != 1) {
             return props.onChange(undefined);
           }
-          console.log(f);
           if (f[0].size > MAX_IMAGE_UPLOAD_SIZE) {
             setSizeError(true);
             return props.onChange(undefined);

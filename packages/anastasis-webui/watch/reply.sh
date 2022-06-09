@@ -14,4 +14,5 @@ done
 
 cat watch/web_socket_server.reply | sed 's/$'"/`echo \\\r`/" | envsubst '$WS_ACCEPT'
 
-socat UNIX-RECV:./send_signal STDOUT
+tail -n 0 -F /tmp/send_signal 2> /dev/null
+

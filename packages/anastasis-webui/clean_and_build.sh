@@ -50,11 +50,14 @@ bundle ui-dev
 if [ "WATCH" == "$1" ]; then
 
   echo watch mode
+  echo Writting any file in the src directory will trigger a browser reload.
+  echo Be sure that the watcher server is running.
   inotifywait -e close_write -r src -q -m | while read line; do
-    DATE=$(date)
-    echo $DATE $line
+    echo $(date) $line
     build_js src/main.ts
     bundle ui-dev
-    ./watch/send_reload.sh
+    #CONTENT=$(echo 'alert("hola")' | base64)
+    ./watch/send.sh '{"type":"RELOAD"}'
+    #./watch/send.sh '{"type":"UPDATE","content":"'$CONTENT'"}'
   done;
 fi

@@ -13,7 +13,11 @@
  You should have received a copy of the GNU Affero General Public License along with
  GNU Anastasis; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-import { AuthenticationProviderStatusOk } from "@gnu-taler/anastasis-core";
+import {
+  AuthenticationProviderStatus,
+  AuthenticationProviderStatusError,
+  AuthenticationProviderStatusOk,
+} from "@gnu-taler/anastasis-core";
 import { h, VNode } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { TextInput } from "../../components/fields/TextInput.js";
@@ -38,7 +42,6 @@ async function testProvider(
         "This provider doesn't have authentication method. Check the provider URL",
       );
     }
-    console.log("expected", expectedMethodType);
     if (!expectedMethodType) {
       return;
     }
@@ -68,8 +71,10 @@ export function AddingProviderScreen({ providerType, onCancel }: Props): VNode {
   const reducer = useAnastasisContext();
 
   const [providerURL, setProviderURL] = useState("");
+
   const [error, setError] = useState<string | undefined>();
   const [testing, setTesting] = useState(false);
+
   const providerLabel = providerType
     ? authMethods[providerType].label
     : undefined;
@@ -81,19 +86,32 @@ export function AddingProviderScreen({ providerType, onCancel }: Props): VNode {
     !reducer.currentReducerState.authentication_providers
       ? {}
       : reducer.currentReducerState.authentication_providers;
-  const authProviders = Object.keys(allAuthProviders).filter((provUrl) => {
-    const p = allAuthProviders[provUrl];
-    if (!providerLabel) {
-      return p && "currency" in p;
-    } else {
-      return (
-        p &&
-        "currency" in p &&
-        p.methods.findIndex((m) => m.type === providerType) !== -1
-      );
-    }
-  });
 
+  const authProvidersByStatus = Object.keys(allAuthProviders).reduce(
+    (prev, url) => {
+      const p = allAuthProviders[url];
+      if (
+        providerLabel &&
+        p.status === "ok" &&
+        p.methods.findIndex((m) => m.type === providerType) !== -1
+      ) {
+        return prev;
+      }
+      const others = prev[p.status] ? prev[p.status] : [];
+      others.push({ ...p, url });
+      return {
+        ...prev,
+        [p.status]: others,
+      };
+    },
+    {} as Record<
+      AuthenticationProviderStatus["status"],
+      (AuthenticationProviderStatus & { url: string })[]
+    >,
+  );
+  const authProviders = authProvidersByStatus["ok"].map((p) => p.url);
+
+  console.log("rodos", allAuthProviders);
   //FIXME: move this timeout logic into a hook
   const timeout = useRef<number | undefined>(undefined);
   useEffect(() => {
@@ -211,6 +229,17 @@ export function AddingProviderScreen({ providerType, onCancel }: Props): VNode {
             <TableRow key={k} url={k} info={p} onDelete={deleteProvider} />
           );
         })}
+        {authProvidersByStatus["error"]?.map((k) => {
+          const p = k as AuthenticationProviderStatusError;
+          return (
+            <TableRowError
+              key={k}
+              url={k.url}
+              info={p}
+              onDelete={deleteProvider}
+            />
+          );
+        })}
       </div>
     </AnastasisClientFrame>
   );
@@ -254,6 +283,65 @@ function TableRow({
             <b>Maximum storage</b>
           </dt>
           <dd>{info.storage_limit_in_megabytes} Mb</dd>
+          <dt>
+            <b>Status</b>
+          </dt>
+          <dd>{status}</dd>
+        </dl>
+      </div>
+      <div
+        class="block"
+        style={{
+          marginTop: "auto",
+          marginBottom: "auto",
+          display: "flex",
+          justifyContent: "space-between",
+          flexDirection: "column",
+        }}
+      >
+        <button class="button is-danger" onClick={() => onDelete(url)}>
+          Remove
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TableRowError({
+  url,
+  info,
+  onDelete,
+}: {
+  onDelete: (s: string) => void;
+  url: string;
+  info: AuthenticationProviderStatusError;
+}): VNode {
+  const [status, setStatus] = useState("checking");
+  useEffect(function () {
+    testProvider(url.endsWith("/") ? url.substring(0, url.length - 1) : url)
+      .then(function () {
+        setStatus("responding");
+      })
+      .catch(function () {
+        setStatus("failed to contact");
+      });
+  });
+  return (
+    <div
+      class="box"
+      style={{ display: "flex", justifyContent: "space-between" }}
+    >
+      <div>
+        <div class="subtitle">{url}</div>
+        <dl>
+          <dt>
+            <b>Error</b>
+          </dt>
+          <dd>{info.hint}</dd>
+          <dt>
+            <b>Code</b>
+          </dt>
+          <dd>{info.code}</dd>
           <dt>
             <b>Status</b>
           </dt>

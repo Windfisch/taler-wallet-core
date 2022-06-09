@@ -177,7 +177,6 @@ function getStateFromStorage(): any {
     if (s === "undefined") {
       state = undefined;
     } else if (s) {
-      console.log("restoring state from", s);
       state = JSON.parse(s);
     }
   } catch (e) {
@@ -225,7 +224,6 @@ export function useAnastasisReducer(): AnastasisReducerApi {
         if (Object.keys(updates).length === 0) {
           return;
         }
-        console.log("got provider updates", updates);
         const rs2 = reducerState;
         if (rs2.reducer_type !== "backup" && rs2.reducer_type !== "recovery") {
           return;
@@ -248,19 +246,15 @@ export function useAnastasisReducer(): AnastasisReducerApi {
   };
 
   async function doTransition(action: string, args: any): Promise<void> {
-    console.log("reducing with", action, args);
     let s: ReducerState;
     if (remoteReducer) {
       s = await reduceStateRemote(anastasisState.reducerState, action, args);
     } else {
       s = await reduceAction(anastasisState.reducerState!, action, args);
     }
-    console.log("got response from reducer", s);
     if (s.reducer_type === "error") {
-      console.log("response is an error");
       setAnastasisState({ ...anastasisState, currentError: s });
     } else {
-      console.log("response is a new state");
       setAnastasisState({
         ...anastasisState,
         currentError: undefined,
@@ -387,7 +381,6 @@ export function useAnastasisReducer(): AnastasisReducerApi {
         console.log("exception during reducer transaction", e);
       }
       const s = txHandle.transactionState;
-      console.log("transaction finished, new state", s);
       if (s.reducer_type === "error") {
         setAnastasisState({
           ...anastasisState,
@@ -413,7 +406,6 @@ class ReducerTxImpl implements ReducerTransactionHandle {
     } else {
       s = await reduceAction(this.transactionState, action, args);
     }
-    console.log("making transition in transaction", action);
     this.transactionState = s;
     // Abort transaction as soon as we transition into an error state.
     if (this.transactionState.reducer_type === "error") {

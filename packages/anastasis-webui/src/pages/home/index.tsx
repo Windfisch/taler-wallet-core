@@ -146,7 +146,7 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
   const handleKeyPress = (
     e: h.JSX.TargetedKeyboardEvent<HTMLDivElement>,
   ): void => {
-    console.log("Got key press", e.key);
+    // console.log("Got key press", e.key);
     // FIXME: By default, "next" action should be executed here
   };
 
@@ -227,7 +227,6 @@ function AnastasisClientImpl(): VNode {
   if (!state) {
     return <StartScreen />;
   }
-  console.log("state", reducer.currentReducerState);
 
   if (
     (state.reducer_type === "backup" &&

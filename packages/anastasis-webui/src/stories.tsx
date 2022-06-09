@@ -381,4 +381,7 @@ function setupLiveReload(port: number, onReload: () => void): void {
   ws.onerror = (error) => {
     console.error(error);
   };
+  ws.onclose = (e) => {
+    console.log("disconnected", e);
+  };
 }
