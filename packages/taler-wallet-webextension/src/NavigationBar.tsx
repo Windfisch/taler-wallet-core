@@ -52,7 +52,7 @@ function replaceAll(
 ): string {
   let result = pattern;
   for (const v in vars) {
-    result = result.replace(vars[v], values[v]);
+    result = result.replace(vars[v], !values[v] ? "" : values[v]);
   }
   return result;
 }
