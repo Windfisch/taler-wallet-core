@@ -44,9 +44,12 @@ export function BalancePage({
   const state = useAsyncAsHook(wxApi.getBalance);
 
   useEffect(() => {
-    wxApi.onUpdateNotification([NotificationType.WithdrawGroupFinished], () => {
-      state?.retry();
-    });
+    return wxApi.onUpdateNotification(
+      [NotificationType.WithdrawGroupFinished],
+      () => {
+        state?.retry();
+      },
+    );
   });
 
   const balances = !state || state.hasError ? [] : state.response.balances;

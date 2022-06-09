@@ -52,7 +52,7 @@ export function ManualWithdrawPage({ currency, onCancel }: Props): VNode {
 
   const state = useAsyncAsHook(wxApi.listExchanges);
   useEffect(() => {
-    wxApi.onUpdateNotification([NotificationType.ExchangeAdded], () => {
+    return wxApi.onUpdateNotification([NotificationType.ExchangeAdded], () => {
       state?.retry();
     });
   });

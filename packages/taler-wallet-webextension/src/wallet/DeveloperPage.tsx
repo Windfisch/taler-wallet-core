@@ -54,7 +54,7 @@ export function DeveloperPage(): VNode {
   });
 
   useEffect(() => {
-    wxApi.onUpdateNotification(listenAllEvents, () => {
+    return wxApi.onUpdateNotification(listenAllEvents, () => {
       response?.retry();
     });
   });

@@ -36,9 +36,12 @@ export function PendingTransactions({ goToTransaction }: Props): VNode {
   const state = useAsyncAsHook(wxApi.getTransactions);
 
   useEffect(() => {
-    wxApi.onUpdateNotification([NotificationType.WithdrawGroupFinished], () => {
-      state?.retry();
-    });
+    return wxApi.onUpdateNotification(
+      [NotificationType.WithdrawGroupFinished],
+      () => {
+        state?.retry();
+      },
+    );
   });
 
   const transactions =

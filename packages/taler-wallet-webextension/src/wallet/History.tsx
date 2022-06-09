@@ -56,9 +56,12 @@ export function HistoryPage({
   }));
 
   useEffect(() => {
-    wxApi.onUpdateNotification([NotificationType.WithdrawGroupFinished], () => {
-      state?.retry();
-    });
+    return wxApi.onUpdateNotification(
+      [NotificationType.WithdrawGroupFinished],
+      () => {
+        state?.retry();
+      },
+    );
   });
 
   if (!state) {

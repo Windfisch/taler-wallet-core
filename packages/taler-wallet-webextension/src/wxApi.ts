@@ -42,6 +42,7 @@ import {
   GetFeeForDepositRequest,
   GetWithdrawalDetailsForUriRequest,
   KnownBankAccounts,
+  Logger,
   NotificationType,
   PrepareDepositRequest,
   PrepareDepositResponse,
@@ -76,6 +77,7 @@ import { platform, MessageFromBackend } from "./platform/api.js";
 export interface ExtendedPermissionsResponse {
   newValue: boolean;
 }
+const logger = new Logger("wxApi");
 
 /**
  * Response with information about available version upgrades.
@@ -106,7 +108,7 @@ async function callBackend(operation: string, payload: any): Promise<any> {
     console.log("Error calling backend");
     throw new Error(`Error contacting backend: ${e}`);
   }
-  console.log("got response", response);
+  logger.info("got response", response);
   if (response.type === "error") {
     throw TalerError.fromUncheckedDetail(response.error);
   }

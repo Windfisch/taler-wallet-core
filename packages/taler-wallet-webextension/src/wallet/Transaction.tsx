@@ -84,9 +84,12 @@ export function TransactionPage({ tid, goToWalletHistory }: Props): VNode {
   const state = useAsyncAsHook(() => getTransaction(tid), [tid]);
 
   useEffect(() => {
-    wxApi.onUpdateNotification([NotificationType.WithdrawGroupFinished], () => {
-      state?.retry();
-    });
+    return wxApi.onUpdateNotification(
+      [NotificationType.WithdrawGroupFinished],
+      () => {
+        state?.retry();
+      },
+    );
   });
 
   if (!state) {
