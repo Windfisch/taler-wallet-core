@@ -166,7 +166,7 @@ export async function getTransactions(
           if (r.bankInfo) {
             withdrawalDetails = {
               type: WithdrawalType.TalerBankIntegrationApi,
-              confirmed: true,
+              confirmed: r.timestampBankConfirmed ? true : false,
               reservePub: wsr.reservePub,
               bankConfirmationUrl: r.bankInfo.confirmUrl,
             };
