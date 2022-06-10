@@ -17,7 +17,12 @@
 /**
  * Imports.
  */
-import { Logger } from "@gnu-taler/taler-util";
+import {
+  ConfirmPayResultType,
+  Logger,
+  TestPayResult,
+  WithdrawTestBalanceRequest,
+} from "@gnu-taler/taler-util";
 import {
   HttpRequestLibrary,
   readSuccessResponseJsonOrThrow,
@@ -39,6 +44,7 @@ import { InternalWalletState } from "../internal-wallet-state.js";
 import { confirmPay, preparePayForUri } from "./pay.js";
 import { getBalances } from "./balance.js";
 import { applyRefund } from "./refund.js";
+import { checkLogicInvariant } from "../util/invariants.js";
 
 const logger = new Logger("operations/testing.ts");
 
@@ -82,10 +88,12 @@ function makeBasicAuthHeader(username: string, password: string): string {
 
 export async function withdrawTestBalance(
   ws: InternalWalletState,
-  amount = "TESTKUDOS:10",
-  bankBaseUrl = "https://bank.test.taler.net/",
-  exchangeBaseUrl = "https://exchange.test.taler.net/",
+  req: WithdrawTestBalanceRequest,
 ): Promise<void> {
+  const bankBaseUrl = req.bankBaseUrl;
+  const amount = req.amount;
+  const exchangeBaseUrl = req.exchangeBaseUrl;
+
   const bankUser = await registerRandomBankUser(ws.http, bankBaseUrl);
   logger.trace(`Registered bank user ${JSON.stringify(bankUser)}`);
 
@@ -100,6 +108,9 @@ export async function withdrawTestBalance(
     ws,
     wresp.taler_withdraw_uri,
     exchangeBaseUrl,
+    {
+      forcedDenomSel: req.forcedDenomSel,
+    },
   );
 
   await confirmBankWithdrawalUri(
@@ -140,7 +151,10 @@ export async function createDemoBankWithdrawalUri(
     },
     {
       headers: {
-        Authorization: makeBasicAuthHeader(bankUser.username, bankUser.password),
+        Authorization: makeBasicAuthHeader(
+          bankUser.username,
+          bankUser.password,
+        ),
       },
     },
   );
@@ -163,7 +177,10 @@ async function confirmBankWithdrawalUri(
     {},
     {
       headers: {
-        Authorization: makeBasicAuthHeader(bankUser.username, bankUser.password),
+        Authorization: makeBasicAuthHeader(
+          bankUser.username,
+          bankUser.password,
+        ),
       },
     },
   );
@@ -331,12 +348,11 @@ export async function runIntegrationTest(
   const currency = parsedSpendAmount.currency;
 
   logger.info("withdrawing test balance");
-  await withdrawTestBalance(
-    ws,
-    args.amountToWithdraw,
-    args.bankBaseUrl,
-    args.exchangeBaseUrl,
-  );
+  await withdrawTestBalance(ws, {
+    amount: args.amountToWithdraw,
+    bankBaseUrl: args.bankBaseUrl,
+    exchangeBaseUrl: args.exchangeBaseUrl,
+  });
   await ws.runUntilDone();
   logger.info("done withdrawing test balance");
 
@@ -360,12 +376,11 @@ export async function runIntegrationTest(
   const refundAmount = Amounts.parseOrThrow(`${currency}:6`);
   const spendAmountThree = Amounts.parseOrThrow(`${currency}:3`);
 
-  await withdrawTestBalance(
-    ws,
-    Amounts.stringify(withdrawAmountTwo),
-    args.bankBaseUrl,
-    args.exchangeBaseUrl,
-  );
+  await withdrawTestBalance(ws, {
+    amount: Amounts.stringify(withdrawAmountTwo),
+    bankBaseUrl: args.bankBaseUrl,
+    exchangeBaseUrl: args.exchangeBaseUrl,
+  });
 
   // Wait until the withdraw is done
   await ws.runUntilDone();
@@ -410,7 +425,10 @@ export async function runIntegrationTest(
   logger.trace("integration test: all done!");
 }
 
-export async function testPay(ws: InternalWalletState, args: TestPayArgs) {
+export async function testPay(
+  ws: InternalWalletState,
+  args: TestPayArgs,
+): Promise<TestPayResult> {
   logger.trace("creating order");
   const merchant = {
     authToken: args.merchantAuthToken,
@@ -429,12 +447,28 @@ export async function testPay(ws: InternalWalletState, args: TestPayArgs) {
   if (!talerPayUri) {
     console.error("fatal: no taler pay URI received from backend");
     process.exit(1);
-    return;
   }
   logger.trace("taler pay URI:", talerPayUri);
   const result = await preparePayForUri(ws, talerPayUri);
   if (result.status !== PreparePayResultType.PaymentPossible) {
     throw Error(`unexpected prepare pay status: ${result.status}`);
   }
-  await confirmPay(ws, result.proposalId, undefined);
+  const r = await confirmPay(
+    ws,
+    result.proposalId,
+    undefined,
+    args.forcedCoinSel,
+  );
+  if (r.type != ConfirmPayResultType.Done) {
+    throw Error("payment not done");
+  }
+  const purchase = await ws.db
+    .mktx((x) => ({ purchases: x.purchases }))
+    .runReadOnly(async (tx) => {
+      return tx.purchases.get(result.proposalId);
+    });
+  checkLogicInvariant(!!purchase);
+  return {
+    payCoinSelection: purchase.payCoinSelection,
+  };
 }

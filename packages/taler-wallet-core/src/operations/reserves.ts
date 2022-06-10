@@ -15,6 +15,7 @@
  */
 
 import {
+  AbsoluteTime,
   AcceptWithdrawalResponse,
   addPaytoQueryParams,
   Amounts,
@@ -28,6 +29,7 @@ import {
   durationMax,
   durationMin,
   encodeCrock,
+  ForcedDenomSel,
   getRandomBytes,
   j2s,
   Logger,
@@ -35,13 +37,10 @@ import {
   randomBytes,
   TalerErrorCode,
   TalerErrorDetail,
-  AbsoluteTime,
   URL,
-  AmountString,
-  ForcedDenomSel,
 } from "@gnu-taler/taler-util";
-import { InternalWalletState } from "../internal-wallet-state.js";
 import {
+  DenomSelectionState,
   OperationStatus,
   ReserveBankInfo,
   ReserveRecord,
@@ -50,6 +49,7 @@ import {
   WithdrawalGroupRecord,
 } from "../db.js";
 import { TalerError } from "../errors.js";
+import { InternalWalletState } from "../internal-wallet-state.js";
 import { assertUnreachable } from "../util/assertUnreachable.js";
 import {
   readSuccessResponseJsonOrErrorCode,
@@ -57,9 +57,8 @@ import {
   throwUnexpectedRequestError,
 } from "../util/http.js";
 import { GetReadOnlyAccess } from "../util/query.js";
-import {
-  RetryInfo,
-} from "../util/retries.js";
+import { RetryInfo } from "../util/retries.js";
+import { guardOperationException } from "./common.js";
 import {
   getExchangeDetails,
   getExchangePaytoUri,
@@ -70,10 +69,10 @@ import {
   getBankWithdrawalInfo,
   getCandidateWithdrawalDenoms,
   processWithdrawGroup,
+  selectForcedWithdrawalDenominations,
   selectWithdrawalDenominations,
   updateWithdrawalDenoms,
 } from "./withdraw.js";
-import { guardOperationException } from "./common.js";
 
 const logger = new Logger("taler-wallet-core:reserves.ts");
 
@@ -178,7 +177,18 @@ export async function createReserve(
 
   await updateWithdrawalDenoms(ws, canonExchange);
   const denoms = await getCandidateWithdrawalDenoms(ws, canonExchange);
-  const initialDenomSel = selectWithdrawalDenominations(req.amount, denoms);
+
+  let initialDenomSel: DenomSelectionState;
+  if (req.forcedDenomSel) {
+    logger.warn("using forced denom selection");
+    initialDenomSel = selectForcedWithdrawalDenominations(
+      req.amount,
+      denoms,
+      req.forcedDenomSel,
+    );
+  } else {
+    initialDenomSel = selectWithdrawalDenominations(req.amount, denoms);
+  }
 
   const reserveRecord: ReserveRecord = {
     instructedAmount: req.amount,
@@ -436,7 +446,7 @@ async function processReserveBankStatus(
   );
 
   if (status.aborted) {
-    logger.trace("bank aborted the withdrawal");
+    logger.info("bank aborted the withdrawal");
     await ws.db
       .mktx((x) => ({
         reserves: x.reserves,
@@ -463,12 +473,14 @@ async function processReserveBankStatus(
     return;
   }
 
-  if (status.selection_done) {
-    if (reserve.reserveStatus === ReserveRecordStatus.RegisteringBank) {
-      await registerReserveWithBank(ws, reservePub);
-      return await processReserveBankStatus(ws, reservePub);
-    }
-  } else {
+  // Bank still needs to know our reserve info
+  if (!status.selection_done) {
+    await registerReserveWithBank(ws, reservePub);
+    return await processReserveBankStatus(ws, reservePub);
+  }
+
+  // FIXME: Why do we do this?!
+  if (reserve.reserveStatus === ReserveRecordStatus.RegisteringBank) {
     await registerReserveWithBank(ws, reservePub);
     return await processReserveBankStatus(ws, reservePub);
   }
@@ -482,29 +494,26 @@ async function processReserveBankStatus(
       if (!r) {
         return;
       }
+      // Re-check reserve status within transaction
+      switch (r.reserveStatus) {
+        case ReserveRecordStatus.RegisteringBank:
+        case ReserveRecordStatus.WaitConfirmBank:
+          break;
+        default:
+          return;
+      }
       if (status.transfer_done) {
-        switch (r.reserveStatus) {
-          case ReserveRecordStatus.RegisteringBank:
-          case ReserveRecordStatus.WaitConfirmBank:
-            break;
-          default:
-            return;
-        }
         const now = AbsoluteTime.toTimestamp(AbsoluteTime.now());
         r.timestampBankConfirmed = now;
         r.reserveStatus = ReserveRecordStatus.QueryingStatus;
         r.operationStatus = OperationStatus.Pending;
         r.retryInfo = RetryInfo.reset();
       } else {
-        switch (r.reserveStatus) {
-          case ReserveRecordStatus.WaitConfirmBank:
-            break;
-          default:
-            return;
-        }
+        logger.info("Withdrawal operation not yet confirmed by bank");
         if (r.bankInfo) {
           r.bankInfo.confirmUrl = status.confirm_transfer_url;
         }
+        r.retryInfo = RetryInfo.increment(r.retryInfo);
       }
       await tx.reserves.put(r);
     });
@@ -540,6 +549,8 @@ async function updateReserve(
   const reserveUrl = new URL(`reserves/${reservePub}`, reserve.exchangeBaseUrl);
   reserveUrl.searchParams.set("timeout_ms", "30000");
 
+  logger.info(`querying reserve status via ${reserveUrl}`);
+
   const resp = await ws.http.get(reserveUrl.href, {
     timeout: getReserveRequestTimeout(reserve),
   });
@@ -553,7 +564,7 @@ async function updateReserve(
     if (
       resp.status === 404 &&
       result.talerErrorResponse.code ===
-      TalerErrorCode.EXCHANGE_RESERVES_STATUS_UNKNOWN
+        TalerErrorCode.EXCHANGE_RESERVES_STATUS_UNKNOWN
     ) {
       ws.notify({
         type: NotificationType.ReserveNotYetFound,
@@ -589,6 +600,7 @@ async function updateReserve(
       if (!newReserve) {
         return;
       }
+
       let amountReservePlus = reserveBalance;
       let amountReserveMinus = Amounts.getZero(currency);
 
@@ -628,30 +640,33 @@ async function updateReserve(
         amountReservePlus,
         amountReserveMinus,
       ).amount;
-      const denomSel = selectWithdrawalDenominations(remainingAmount, denoms);
-
-      logger.trace(
-        `Remaining unclaimed amount in reseve is ${Amounts.stringify(
-          remainingAmount,
-        )} and can be withdrawn with ${denomSel.selectedDenoms.length} coins`,
-      );
-
-      if (denomSel.selectedDenoms.length === 0) {
-        newReserve.reserveStatus = ReserveRecordStatus.Dormant;
-        newReserve.operationStatus = OperationStatus.Finished;
-        delete newReserve.lastError;
-        delete newReserve.retryInfo;
-        await tx.reserves.put(newReserve);
-        return;
-      }
 
       let withdrawalGroupId: string;
+      let denomSel: DenomSelectionState;
 
       if (!newReserve.initialWithdrawalStarted) {
         withdrawalGroupId = newReserve.initialWithdrawalGroupId;
         newReserve.initialWithdrawalStarted = true;
+        denomSel = newReserve.initialDenomSel;
       } else {
         withdrawalGroupId = encodeCrock(randomBytes(32));
+
+        denomSel = selectWithdrawalDenominations(remainingAmount, denoms);
+
+        logger.trace(
+          `Remaining unclaimed amount in reseve is ${Amounts.stringify(
+            remainingAmount,
+          )} and can be withdrawn with ${denomSel.selectedDenoms.length} coins`,
+        );
+  
+        if (denomSel.selectedDenoms.length === 0) {
+          newReserve.reserveStatus = ReserveRecordStatus.Dormant;
+          newReserve.operationStatus = OperationStatus.Finished;
+          delete newReserve.lastError;
+          delete newReserve.retryInfo;
+          await tx.reserves.put(newReserve);
+          return;
+        }
       }
 
       const withdrawalRecord: WithdrawalGroupRecord = {
@@ -768,6 +783,7 @@ export async function createTalerWithdrawReserve(
     senderWire: withdrawInfo.senderWire,
     exchangePaytoUri: exchangePaytoUri,
     restrictAge: options.restrictAge,
+    forcedDenomSel: options.forcedDenomSel,
   });
   // We do this here, as the reserve should be registered before we return,
   // so that we can redirect the user to the bank's status page.

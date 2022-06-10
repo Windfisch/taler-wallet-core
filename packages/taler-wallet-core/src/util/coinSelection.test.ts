@@ -31,6 +31,7 @@ function a(x: string): AmountJson {
 
 function fakeAci(current: string, feeDeposit: string): AvailableCoinInfo {
   return {
+    value: a(current),
     availableAmount: a(current),
     coinPub: "foobar",
     denomPub: {
@@ -45,6 +46,7 @@ function fakeAci(current: string, feeDeposit: string): AvailableCoinInfo {
 
 function fakeAciWithAgeRestriction(current: string, feeDeposit: string): AvailableCoinInfo {
   return {
+    value: a(current),
     availableAmount: a(current),
     coinPub: "foobar",
     denomPub: {

@@ -23,7 +23,9 @@
  * Imports.
  */
 import {
-  AbsoluteTime, AcceptManualWithdrawalResult, AmountJson,
+  AbsoluteTime,
+  AcceptManualWithdrawalResult,
+  AmountJson,
   Amounts,
   BalancesResponse,
   codecForAbortPayWithRefundRequest,
@@ -48,7 +50,9 @@ import {
   codecForIntegrationTestArgs,
   codecForListKnownBankAccounts,
   codecForPrepareDepositRequest,
-  codecForPreparePayRequest, codecForPrepareRefundRequest, codecForPrepareTipRequest,
+  codecForPreparePayRequest,
+  codecForPrepareRefundRequest,
+  codecForPrepareTipRequest,
   codecForRetryTransactionRequest,
   codecForSetCoinSuspendedRequest,
   codecForSetWalletDeviceIdRequest,
@@ -58,7 +62,9 @@ import {
   codecForWithdrawFakebankRequest,
   codecForWithdrawTestBalance,
   CoinDumpJson,
-  CoreApiResponse, Duration, durationFromSpec,
+  CoreApiResponse,
+  Duration,
+  durationFromSpec,
   durationMin,
   ExchangeListItem,
   ExchangesListRespose,
@@ -71,13 +77,14 @@ import {
   parsePaytoUri,
   PaytoUri,
   RefreshReason,
-  TalerErrorCode, URL,
-  WalletNotification
+  TalerErrorCode,
+  URL,
+  WalletNotification,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import {
   CryptoDispatcher,
-  CryptoWorkerFactory
+  CryptoWorkerFactory,
 } from "./crypto/workers/cryptoDispatcher.js";
 import {
   AuditorTrustRecord,
@@ -85,7 +92,7 @@ import {
   exportDb,
   importDb,
   ReserveRecordStatus,
-  WalletStoresV1
+  WalletStoresV1,
 } from "./db.js";
 import { getErrorDetailFromException, TalerError } from "./errors.js";
 import {
@@ -96,7 +103,7 @@ import {
   MerchantOperations,
   NotificationListener,
   RecoupOperations,
-  ReserveOperations
+  ReserveOperations,
 } from "./internal-wallet-state.js";
 import { exportBackup } from "./operations/backup/export.js";
 import {
@@ -109,7 +116,7 @@ import {
   loadBackupRecovery,
   processBackupForProvider,
   removeBackupProvider,
-  runBackupCycle
+  runBackupCycle,
 } from "./operations/backup/index.js";
 import { setWalletDeviceId } from "./operations/backup/state.js";
 import { getBalances } from "./operations/balance.js";
@@ -118,7 +125,7 @@ import {
   getFeeForDeposit,
   prepareDepositGroup,
   processDepositGroup,
-  trackDepositGroup
+  trackDepositGroup,
 } from "./operations/deposits.js";
 import {
   acceptExchangeTermsOfService,
@@ -127,66 +134,66 @@ import {
   getExchangeRequestTimeout,
   getExchangeTrust,
   updateExchangeFromUrl,
-  updateExchangeTermsOfService
+  updateExchangeTermsOfService,
 } from "./operations/exchanges.js";
 import { getMerchantInfo } from "./operations/merchants.js";
 import {
   confirmPay,
   preparePayForUri,
   processDownloadProposal,
-  processPurchasePay
+  processPurchasePay,
 } from "./operations/pay.js";
 import { getPendingOperations } from "./operations/pending.js";
 import { createRecoupGroup, processRecoupGroup } from "./operations/recoup.js";
 import {
   autoRefresh,
   createRefreshGroup,
-  processRefreshGroup
+  processRefreshGroup,
 } from "./operations/refresh.js";
 import {
   abortFailedPayWithRefund,
   applyRefund,
   applyRefundFromPurchaseId,
   prepareRefund,
-  processPurchaseQueryRefund
+  processPurchaseQueryRefund,
 } from "./operations/refund.js";
 import {
   createReserve,
   createTalerWithdrawReserve,
   getFundingPaytoUris,
-  processReserve
+  processReserve,
 } from "./operations/reserves.js";
 import {
   runIntegrationTest,
   testPay,
-  withdrawTestBalance
+  withdrawTestBalance,
 } from "./operations/testing.js";
 import { acceptTip, prepareTip, processTip } from "./operations/tip.js";
 import {
   deleteTransaction,
   getTransactions,
-  retryTransaction
+  retryTransaction,
 } from "./operations/transactions.js";
 import {
   getExchangeWithdrawalInfo,
   getWithdrawalDetailsForUri,
-  processWithdrawGroup
+  processWithdrawGroup,
 } from "./operations/withdraw.js";
 import {
   PendingOperationsResponse,
   PendingTaskInfo,
-  PendingTaskType
+  PendingTaskType,
 } from "./pending-types.js";
 import { assertUnreachable } from "./util/assertUnreachable.js";
 import { AsyncOpMemoMap, AsyncOpMemoSingle } from "./util/asyncMemo.js";
 import {
   HttpRequestLibrary,
-  readSuccessResponseJsonOrThrow
+  readSuccessResponseJsonOrThrow,
 } from "./util/http.js";
 import {
   AsyncCondition,
   OpenedPromise,
-  openPromise
+  openPromise,
 } from "./util/promiseUtils.js";
 import { DbAccess, GetReadWriteAccess } from "./util/query.js";
 import { TimerAPI, TimerGroup } from "./util/timer.js";
@@ -355,7 +362,6 @@ async function runTaskLoop(
       if (p.givesLifeness) {
         numGivingLiveness++;
       }
-
     }
 
     if (opts.stopWhenDone && numGivingLiveness === 0 && iteration !== 0) {
@@ -459,13 +465,12 @@ async function acceptManualWithdrawal(
   exchangeBaseUrl: string,
   amount: AmountJson,
   restrictAge?: number,
-
 ): Promise<AcceptManualWithdrawalResult> {
   try {
     const resp = await createReserve(ws, {
       amount,
       exchange: exchangeBaseUrl,
-      restrictAge
+      restrictAge,
     });
     const exchangePaytoUris = await ws.db
       .mktx((x) => ({
@@ -688,7 +693,7 @@ async function dumpCoins(ws: InternalWalletState): Promise<CoinDumpJson> {
           c.denomPubHash,
         );
         if (!denomInfo) {
-          console.error("no denomination found for coin")
+          console.error("no denomination found for coin");
           continue;
         }
         coinsJson.coins.push({
@@ -749,22 +754,16 @@ async function dispatchRequestInternal(
       return {};
     }
     case "withdrawTestkudos": {
-      await withdrawTestBalance(
-        ws,
-        "TESTKUDOS:10",
-        "https://bank.test.taler.net/",
-        "https://exchange.test.taler.net/",
-      );
+      await withdrawTestBalance(ws, {
+        amount: "TESTKUDOS:10",
+        bankBaseUrl: "https://bank.test.taler.net/",
+        exchangeBaseUrl: "https://exchange.test.taler.net/",
+      });
       return {};
     }
     case "withdrawTestBalance": {
       const req = codecForWithdrawTestBalance().decode(payload);
-      await withdrawTestBalance(
-        ws,
-        req.amount,
-        req.bankBaseUrl,
-        req.exchangeBaseUrl,
-      );
+      await withdrawTestBalance(ws, req);
       return {};
     }
     case "runIntegrationTest": {
@@ -774,8 +773,7 @@ async function dispatchRequestInternal(
     }
     case "testPay": {
       const req = codecForTestPayArgs().decode(payload);
-      await testPay(ws, req);
-      return {};
+      return await testPay(ws, req);
     }
     case "getTransactions": {
       const req = codecForTransactionsRequest().decode(payload);
@@ -813,7 +811,7 @@ async function dispatchRequestInternal(
         ws,
         req.exchangeBaseUrl,
         Amounts.parseOrThrow(req.amount),
-        req.restrictAge
+        req.restrictAge,
       );
       return res;
     }

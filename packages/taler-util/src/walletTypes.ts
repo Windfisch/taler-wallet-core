@@ -33,7 +33,6 @@ import {
   codecForAmountString,
 } from "./amounts.js";
 import {
-  AbsoluteTime,
   codecForTimestamp,
   TalerProtocolTimestamp,
 } from "./time.js";
@@ -231,6 +230,7 @@ export const codecForCreateReserveRequest = (): Codec<CreateReserveRequest> =>
     .property("exchangePaytoUri", codecForString())
     .property("senderWire", codecOptional(codecForString()))
     .property("bankWithdrawStatusUrl", codecOptional(codecForString()))
+    .property("forcedDenomSel", codecForAny())
     .build("CreateReserveRequest");
 
 /**
@@ -674,6 +674,7 @@ export interface TestPayArgs {
   merchantAuthToken?: string;
   amount: string;
   summary: string;
+  forcedCoinSel?: ForcedCoinSel;
 }
 
 export const codecForTestPayArgs = (): Codec<TestPayArgs> =>
@@ -682,6 +683,7 @@ export const codecForTestPayArgs = (): Codec<TestPayArgs> =>
     .property("merchantAuthToken", codecOptional(codecForString()))
     .property("amount", codecForString())
     .property("summary", codecForString())
+    .property("forcedCoinSel", codecForAny())
     .build("TestPayArgs");
 
 export interface IntegrationTestArgs {
@@ -738,7 +740,7 @@ export const codecForGetExchangeTosRequest = (): Codec<GetExchangeTosRequest> =>
 export interface AcceptManualWithdrawalRequest {
   exchangeBaseUrl: string;
   amount: string;
-  restrictAge?: number,
+  restrictAge?: number;
 }
 
 export const codecForAcceptManualWithdrawalRequet =
@@ -803,10 +805,11 @@ export interface ApplyRefundFromPurchaseIdRequest {
   purchaseId: string;
 }
 
-export const codecForApplyRefundFromPurchaseIdRequest = (): Codec<ApplyRefundFromPurchaseIdRequest> =>
-  buildCodecForObject<ApplyRefundFromPurchaseIdRequest>()
-    .property("purchaseId", codecForString())
-    .build("ApplyRefundFromPurchaseIdRequest");
+export const codecForApplyRefundFromPurchaseIdRequest =
+  (): Codec<ApplyRefundFromPurchaseIdRequest> =>
+    buildCodecForObject<ApplyRefundFromPurchaseIdRequest>()
+      .property("purchaseId", codecForString())
+      .build("ApplyRefundFromPurchaseIdRequest");
 
 export interface GetWithdrawalDetailsForUriRequest {
   talerWithdrawUri: string;
@@ -866,12 +869,14 @@ export const codecForPreparePayRequest = (): Codec<PreparePayRequest> =>
 export interface ConfirmPayRequest {
   proposalId: string;
   sessionId?: string;
+  forcedCoinSel?: ForcedCoinSel;
 }
 
 export const codecForConfirmPayRequest = (): Codec<ConfirmPayRequest> =>
   buildCodecForObject<ConfirmPayRequest>()
     .property("proposalId", codecForString())
     .property("sessionId", codecOptional(codecForString()))
+    .property("forcedCoinSel", codecForAny())
     .build("ConfirmPay");
 
 export type CoreApiResponse = CoreApiResponseSuccess | CoreApiResponseError;
@@ -903,6 +908,7 @@ export interface WithdrawTestBalanceRequest {
   amount: string;
   bankBaseUrl: string;
   exchangeBaseUrl: string;
+  forcedDenomSel?: ForcedDenomSel;
 }
 
 export const withdrawTestBalanceDefaults = {
@@ -976,6 +982,7 @@ export const codecForWithdrawTestBalance =
       .property("amount", codecForString())
       .property("bankBaseUrl", codecForString())
       .property("exchangeBaseUrl", codecForString())
+      .property("forcedDenomSel", codecForAny())
       .build("WithdrawTestBalanceRequest");
 
 export interface ApplyRefundResponse {
@@ -1025,8 +1032,6 @@ export const codecForForceRefreshRequest = (): Codec<ForceRefreshRequest> =>
   buildCodecForObject<ForceRefreshRequest>()
     .property("coinPubList", codecForList(codecForString()))
     .build("ForceRefreshRequest");
-
-
 
 export interface PrepareRefundRequest {
   talerRefundUri: string;
@@ -1084,14 +1089,12 @@ export const codecForGetFeeForDeposit = (): Codec<GetFeeForDepositRequest> =>
 export interface PrepareDepositRequest {
   depositPaytoUri: string;
   amount: AmountString;
-
 }
-export const codecForPrepareDepositRequest =
-  (): Codec<PrepareDepositRequest> =>
-    buildCodecForObject<PrepareDepositRequest>()
-      .property("amount", codecForAmountString())
-      .property("depositPaytoUri", codecForString())
-      .build("PrepareDepositRequest");
+export const codecForPrepareDepositRequest = (): Codec<PrepareDepositRequest> =>
+  buildCodecForObject<PrepareDepositRequest>()
+    .property("amount", codecForAmountString())
+    .property("depositPaytoUri", codecForString())
+    .build("PrepareDepositRequest");
 
 export interface PrepareDepositResponse {
   totalDepositCost: AmountJson;
@@ -1203,6 +1206,7 @@ export const codecForWithdrawFakebankRequest =
 export interface ImportDb {
   dump: any;
 }
+
 export const codecForImportDbRequest = (): Codec<ImportDb> =>
   buildCodecForObject<ImportDb>()
     .property("dump", codecForAny())
@@ -1213,4 +1217,50 @@ export interface ForcedDenomSel {
     value: AmountString;
     count: number;
   }[];
+}
+
+/**
+ * Forced coin selection for deposits/payments.
+ */
+export interface ForcedCoinSel {
+  coins: {
+    value: AmountString;
+    contribution: AmountString;
+  }[];
+}
+
+export interface TestPayResult {
+  payCoinSelection: PayCoinSelection,
+}
+
+
+/**
+ * Result of selecting coins, contains the exchange, and selected
+ * coins with their denomination.
+ */
+ export interface PayCoinSelection {
+  /**
+   * Amount requested by the merchant.
+   */
+  paymentAmount: AmountJson;
+
+  /**
+   * Public keys of the coins that were selected.
+   */
+  coinPubs: string[];
+
+  /**
+   * Amount that each coin contributes.
+   */
+  coinContributions: AmountJson[];
+
+  /**
+   * How much of the wire fees is the customer paying?
+   */
+  customerWireFees: AmountJson;
+
+  /**
+   * How much of the deposit fees is the customer paying?
+   */
+  customerDepositFees: AmountJson;
 }

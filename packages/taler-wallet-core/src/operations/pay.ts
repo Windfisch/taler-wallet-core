@@ -40,12 +40,14 @@ import {
   durationMin,
   durationMul,
   encodeCrock,
+  ForcedCoinSel,
   getRandomBytes,
   HttpStatusCode,
   j2s,
   Logger,
   NotificationType,
   parsePayUri,
+  PayCoinSelection,
   PreparePayResult,
   PreparePayResultType,
   RefreshReason,
@@ -81,8 +83,8 @@ import {
 import {
   AvailableCoinInfo,
   CoinCandidateSelection,
-  PayCoinSelection,
   PreviousPayCoins,
+  selectForcedPayCoins,
   selectPayCoins,
 } from "../util/coinSelection.js";
 import { ContractTermsUtil } from "../util/contractTerms.js";
@@ -305,6 +307,7 @@ export async function getCandidatePayCoins(
           }
           candidateCoins.push({
             availableAmount: coin.currentAmount,
+            value: denom.value,
             coinPub: coin.coinPub,
             denomPub: denom.denomPub,
             feeDeposit: denom.feeDeposit,
@@ -1423,6 +1426,7 @@ export async function confirmPay(
   ws: InternalWalletState,
   proposalId: string,
   sessionIdOverride?: string,
+  forcedCoinSel?: ForcedCoinSel,
 ): Promise<ConfirmPayResult> {
   logger.trace(
     `executing confirmPay with proposalId ${proposalId} and sessionIdOverride ${sessionIdOverride}`,
@@ -1479,15 +1483,28 @@ export async function confirmPay(
     wireMethod: contractData.wireMethod,
   });
 
-  const res = selectPayCoins({
-    candidates,
-    contractTermsAmount: contractData.amount,
-    depositFeeLimit: contractData.maxDepositFee,
-    wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
-    wireFeeLimit: contractData.maxWireFee,
-    prevPayCoins: [],
-    requiredMinimumAge: contractData.minimumAge,
-  });
+  let res: PayCoinSelection | undefined = undefined;
+
+  if (forcedCoinSel) {
+    res = selectForcedPayCoins(forcedCoinSel, {
+      candidates,
+      contractTermsAmount: contractData.amount,
+      depositFeeLimit: contractData.maxDepositFee,
+      wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
+      wireFeeLimit: contractData.maxWireFee,
+      requiredMinimumAge: contractData.minimumAge,
+    });
+  } else {
+    res = selectPayCoins({
+      candidates,
+      contractTermsAmount: contractData.amount,
+      depositFeeLimit: contractData.maxDepositFee,
+      wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
+      wireFeeLimit: contractData.maxWireFee,
+      prevPayCoins: [],
+      requiredMinimumAge: contractData.minimumAge,
+    });
+  }
 
   logger.trace("coin selection result", res);
 

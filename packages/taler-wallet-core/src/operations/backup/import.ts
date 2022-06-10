@@ -18,7 +18,7 @@ import {
   AmountJson,
   Amounts, BackupCoinSourceType, BackupDenomSel, BackupProposalStatus,
   BackupPurchase, BackupRefreshReason, BackupRefundState, codecForContractTerms,
-  DenomKeyType, j2s, Logger, RefreshReason, TalerProtocolTimestamp,
+  DenomKeyType, j2s, Logger, PayCoinSelection, RefreshReason, TalerProtocolTimestamp,
   WalletBackupContentV1
 } from "@gnu-taler/taler-util";
 import {
@@ -29,7 +29,6 @@ import {
   ReserveRecordStatus, WalletContractData, WalletRefundItem, WalletStoresV1, WireInfo
 } from "../../db.js";
 import { InternalWalletState } from "../../internal-wallet-state.js";
-import { PayCoinSelection } from "../../util/coinSelection.js";
 import {
   checkDbInvariant,
   checkLogicInvariant

@@ -29,41 +29,13 @@ import {
   AmountJson,
   Amounts,
   DenominationPubKey,
+  ForcedCoinSel,
   Logger,
+  PayCoinSelection,
 } from "@gnu-taler/taler-util";
+import { checkLogicInvariant } from "./invariants.js";
 
 const logger = new Logger("coinSelection.ts");
-
-/**
- * Result of selecting coins, contains the exchange, and selected
- * coins with their denomination.
- */
-export interface PayCoinSelection {
-  /**
-   * Amount requested by the merchant.
-   */
-  paymentAmount: AmountJson;
-
-  /**
-   * Public keys of the coins that were selected.
-   */
-  coinPubs: string[];
-
-  /**
-   * Amount that each coin contributes.
-   */
-  coinContributions: AmountJson[];
-
-  /**
-   * How much of the wire fees is the customer paying?
-   */
-  customerWireFees: AmountJson;
-
-  /**
-   * How much of the deposit fees is the customer paying?
-   */
-  customerDepositFees: AmountJson;
-}
 
 /**
  * Structure to describe a coin that is available to be
@@ -81,6 +53,11 @@ export interface AvailableCoinInfo {
    * FIXME: We should only need the denomPubHash here, if at all.
    */
   denomPub: DenominationPubKey;
+
+  /**
+   * Full value of the coin.
+   */
+  value: AmountJson;
 
   /**
    * Amount still remaining (typically the full amount,
@@ -336,6 +313,105 @@ export function selectPayCoins(
       Amounts.min(tally.amountPayRemaining, aci.availableAmount),
       aci.feeDeposit,
     );
+
+    tally.amountPayRemaining = Amounts.sub(
+      tally.amountPayRemaining,
+      coinSpend,
+    ).amount;
+    coinPubs.push(aci.coinPub);
+    coinContributions.push(coinSpend);
+  }
+
+  if (Amounts.isZero(tally.amountPayRemaining)) {
+    return {
+      paymentAmount: contractTermsAmount,
+      coinContributions,
+      coinPubs,
+      customerDepositFees: tally.customerDepositFees,
+      customerWireFees: tally.customerWireFees,
+    };
+  }
+  return undefined;
+}
+
+export function selectForcedPayCoins(
+  forcedCoinSel: ForcedCoinSel,
+  req: SelectPayCoinRequest,
+): PayCoinSelection | undefined {
+  const {
+    candidates,
+    contractTermsAmount,
+    depositFeeLimit,
+    wireFeeLimit,
+    wireFeeAmortization,
+  } = req;
+
+  if (candidates.candidateCoins.length === 0) {
+    return undefined;
+  }
+  const coinPubs: string[] = [];
+  const coinContributions: AmountJson[] = [];
+  const currency = contractTermsAmount.currency;
+
+  let tally: CoinSelectionTally = {
+    amountPayRemaining: contractTermsAmount,
+    amountWireFeeLimitRemaining: wireFeeLimit,
+    amountDepositFeeLimitRemaining: depositFeeLimit,
+    customerDepositFees: Amounts.getZero(currency),
+    customerWireFees: Amounts.getZero(currency),
+    wireFeeCoveredForExchange: new Set(),
+  };
+
+  // Not supported by forced coin selection
+  checkLogicInvariant(!req.prevPayCoins);
+
+  // Sort by available amount (descending),  deposit fee (ascending) and
+  // denomPub (ascending) if deposit fee is the same
+  // (to guarantee deterministic results)
+  const candidateCoins = [...candidates.candidateCoins].sort(
+    (o1, o2) =>
+      -Amounts.cmp(o1.availableAmount, o2.availableAmount) ||
+      Amounts.cmp(o1.feeDeposit, o2.feeDeposit) ||
+      DenominationPubKey.cmp(o1.denomPub, o2.denomPub),
+  );
+
+  // FIXME:  Here, we should select coins in a smarter way.
+  // Instead of always spending the next-largest coin,
+  // we should try to find the smallest coin that covers the
+  // amount.
+
+  // Set of spent coin indices from candidate coins
+  const spentSet: Set<number> = new Set();
+
+  for (const forcedCoin of forcedCoinSel.coins) {
+    let aci: AvailableCoinInfo | undefined = undefined;
+    for (let i = 0; i < candidateCoins.length; i++) {
+      if (spentSet.has(i)) {
+        continue;
+      }
+      if (
+        Amounts.cmp(forcedCoin.value, candidateCoins[i].availableAmount) != 0
+      ) {
+        continue;
+      }
+      spentSet.add(i);
+      aci = candidateCoins[i];
+      break;
+    }
+
+    if (!aci) {
+      throw Error("can't find coin for forced coin selection");
+    }
+
+    tally = tallyFees(
+      tally,
+      candidates.wireFeesPerExchange,
+      wireFeeAmortization,
+      aci.exchangeBaseUrl,
+      aci.feeDeposit,
+    );
+
+    let coinSpend = Amounts.parseOrThrow(forcedCoin.contribution);
 
     tally.amountPayRemaining = Amounts.sub(
       tally.amountPayRemaining,

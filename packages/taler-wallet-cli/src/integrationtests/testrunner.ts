@@ -34,6 +34,7 @@ import { runDepositTest } from "./test-deposit";
 import { runExchangeManagementTest } from "./test-exchange-management";
 import { runExchangeTimetravelTest } from "./test-exchange-timetravel.js";
 import { runFeeRegressionTest } from "./test-fee-regression";
+import { runForcedSelectionTest } from "./test-forced-selection.js";
 import { runLibeufinApiBankaccountTest } from "./test-libeufin-api-bankaccount";
 import { runLibeufinApiBankconnectionTest } from "./test-libeufin-api-bankconnection";
 import { runLibeufinApiFacadeTest } from "./test-libeufin-api-facade";
@@ -113,6 +114,7 @@ const allTests: TestMainFunction[] = [
   runExchangeManagementTest,
   runExchangeTimetravelTest,
   runFeeRegressionTest,
+  runForcedSelectionTest,
   runLibeufinBasicTest,
   runLibeufinKeyrotationTest,
   runLibeufinTutorialTest,

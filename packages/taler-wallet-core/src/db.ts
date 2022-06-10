@@ -41,9 +41,9 @@ import {
   TalerProtocolTimestamp,
   TalerProtocolDuration,
   AgeCommitmentProof,
+  PayCoinSelection,
 } from "@gnu-taler/taler-util";
 import { RetryInfo } from "./util/retries.js";
-import { PayCoinSelection } from "./util/coinSelection.js";
 import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
 
 /**

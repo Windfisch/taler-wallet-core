@@ -35,6 +35,7 @@ import {
   Logger,
   NotificationType,
   parsePaytoUri,
+  PayCoinSelection,
   PrepareDepositRequest,
   PrepareDepositResponse,
   TalerErrorDetail,
@@ -45,7 +46,7 @@ import {
 } from "@gnu-taler/taler-util";
 import { DepositGroupRecord, OperationStatus, WireFee } from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
-import { PayCoinSelection, selectPayCoins } from "../util/coinSelection.js";
+import { selectPayCoins } from "../util/coinSelection.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { RetryInfo } from "../util/retries.js";
 import { guardOperationException } from "./common.js";

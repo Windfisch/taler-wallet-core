@@ -37,7 +37,7 @@ export interface RetryPolicy {
 
 const defaultRetryPolicy: RetryPolicy = {
   backoffBase: 1.5,
-  backoffDelta: Duration.fromSpec({ seconds: 30 }),
+  backoffDelta: Duration.fromSpec({ seconds: 1 }),
   maxTimeout: Duration.fromSpec({ minutes: 2 }),
 };
 

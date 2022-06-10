@@ -57,6 +57,7 @@ import {
   SetCoinSuspendedRequest,
   SetWalletDeviceIdRequest,
   TestPayArgs,
+  TestPayResult,
   TrackDepositGroupRequest,
   TrackDepositGroupResponse,
   TransactionsRequest,
@@ -270,7 +271,7 @@ export type WalletOperations = {
   };
   [WalletApiOperation.TestPay]: {
     request: TestPayArgs;
-    response: {};
+    response: TestPayResult;
   };
   [WalletApiOperation.ExportDb]: {
     request: {};
@@ -279,12 +280,12 @@ export type WalletOperations = {
 };
 
 export type RequestType<
-  Op extends WalletApiOperation & keyof WalletOperations
-  > = WalletOperations[Op] extends { request: infer T } ? T : never;
+  Op extends WalletApiOperation & keyof WalletOperations,
+> = WalletOperations[Op] extends { request: infer T } ? T : never;
 
 export type ResponseType<
-  Op extends WalletApiOperation & keyof WalletOperations
-  > = WalletOperations[Op] extends { response: infer T } ? T : never;
+  Op extends WalletApiOperation & keyof WalletOperations,
+> = WalletOperations[Op] extends { response: infer T } ? T : never;
 
 export interface WalletCoreApiClient {
   call<Op extends WalletApiOperation & keyof WalletOperations>(
