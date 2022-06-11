@@ -19,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import * as a23 from "./AddingProviderScreen.stories.js";
+import * as a23 from "./AddingProviderScreen/stories.js";
 import * as a28 from "./AttributeEntryScreen.stories.js";
 import * as a18 from "./AuthenticationEditorScreen.stories.js";
 import * as a8 from "./authMethod/AuthMethodEmailSetup.stories.js";

@@ -168,9 +168,9 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
       window.removeEventListener("popstate", browserOnBackButton);
     };
   }, []);
-  if (!reducer) {
-    return <p>Fatal: Reducer must be in context.</p>;
-  }
+  // if (!reducer) {
+  //   return <p>Fatal: Reducer must be in context.</p>;
+  // }
 
   return (
     <Fragment>

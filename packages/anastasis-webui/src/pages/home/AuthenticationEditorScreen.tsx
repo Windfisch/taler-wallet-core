@@ -17,7 +17,7 @@ import { AuthMethod, ReducerStateBackup } from "@gnu-taler/anastasis-core";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useAnastasisContext } from "../../context/anastasis.js";
-import { AddingProviderScreen } from "./AddingProviderScreen.js";
+import AddingProviderScreen from "./AddingProviderScreen/index.js";
 import {
   authMethods,
   AuthMethodSetupProps,
@@ -84,7 +84,7 @@ export function AuthenticationEditorScreen(): VNode {
   if (manageProvider !== undefined) {
     return (
       <AddingProviderScreen
-        onCancel={() => setManageProvider(undefined)}
+        onCancel={async () => setManageProvider(undefined)}
         providerType={
           isKnownAuthMethods(manageProvider) ? manageProvider : undefined
         }

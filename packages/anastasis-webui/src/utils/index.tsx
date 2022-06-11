@@ -21,12 +21,25 @@ import {
   ReducerState,
   ReducerStateRecovery,
 } from "@gnu-taler/anastasis-core";
-import { FunctionalComponent, h, VNode } from "preact";
+import { ComponentChildren, FunctionalComponent, h, VNode } from "preact";
 import { AnastasisProvider } from "../context/anastasis.js";
 
 const noop = async (): Promise<void> => {
   return;
 };
+
+export function createExampleWithoutAnastasis<Props>(
+  Component: FunctionalComponent<Props>,
+  props: Partial<Props> | (() => Partial<Props>),
+): ComponentChildren {
+  //FIXME: props are evaluated on build time
+  // in some cases we want to evaluated the props on render time so we can get some relative timestamp
+  // check how we can build evaluatedProps in render time
+  const evaluatedProps = typeof props === "function" ? props() : props;
+  const Render = (args: any): VNode => h(Component, args);
+  Render.args = evaluatedProps;
+  return Render;
+}
 
 export function createExample<Props>(
   Component: FunctionalComponent<Props>,
@@ -293,3 +306,24 @@ export const reducerStatesExample = {
     backup_state: BackupStates.TruthsPaying,
   } as ReducerState,
 };
+
+export type StateFunc<S> = (p: S) => VNode;
+
+export type StateViewMap<StateType extends { status: string }> = {
+  [S in StateType as S["status"]]: StateFunc<S>;
+};
+
+export function compose<SType extends { status: string }, PType>(
+  name: string,
+  hook: (p: PType) => SType,
+  vs: StateViewMap<SType>,
+): (p: PType) => VNode {
+  const Component = (p: PType): VNode => {
+    const state = hook(p);
+    const s = state.status as unknown as SType["status"];
+    const c = vs[s] as unknown as StateFunc<SType>;
+    return c(state);
+  };
+  Component.name = `${name}`;
+  return Component;
+}

@@ -9,12 +9,14 @@
     "dev": "./dev.mjs",
     "prepare": "pnpm compile",
     "lint": "eslint 'src/**/*.{js,jsx,ts,tsx}'",
-    "test": "mocha --enable-source-maps 'dist/**/*.test.js'",
+    "test": "mocha --enable-source-maps 'dist/**/*test.js'",
     "pretty": "prettier --write src"
   },
   "dependencies": {
     "@gnu-taler/anastasis-core": "workspace:*",
     "@gnu-taler/taler-util": "workspace:*",
+    "@types/chai": "^4.3.0",
+    "chai": "^4.3.6",
     "date-fns": "2.28.0",
     "jed": "1.1.1",
     "preact": "^10.5.15",

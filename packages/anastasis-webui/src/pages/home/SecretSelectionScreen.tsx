@@ -22,7 +22,7 @@ import { useEffect, useState } from "preact/hooks";
 import { AsyncButton } from "../../components/AsyncButton.js";
 import { PhoneNumberInput } from "../../components/fields/NumberInput.js";
 import { useAnastasisContext } from "../../context/anastasis.js";
-import { AddingProviderScreen } from "./AddingProviderScreen.js";
+import AddingProviderScreen from "./AddingProviderScreen/index.js";
 import { AnastasisClientFrame } from "./index.js";
 
 export function SecretSelectionScreen(): VNode {
@@ -54,7 +54,9 @@ export function SecretSelectionScreen(): VNode {
   const recoveryDocument = reducer.currentReducerState.recovery_document;
 
   if (manageProvider) {
-    return <AddingProviderScreen onCancel={() => setManageProvider(false)} />;
+    return (
+      <AddingProviderScreen onCancel={async () => setManageProvider(false)} />
+    );
   }
 
   if (reducer.discoveryState.state === "none") {
@@ -220,7 +222,9 @@ export function OldSecretSelectionScreen(): VNode {
   }
 
   if (manageProvider) {
-    return <AddingProviderScreen onCancel={() => setManageProvider(false)} />;
+    return (
+      <AddingProviderScreen onCancel={async () => setManageProvider(false)} />
+    );
   }
 
   const providerInfo = provs[
