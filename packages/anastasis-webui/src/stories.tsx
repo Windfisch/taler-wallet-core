@@ -33,8 +33,13 @@ const Page = ({ children }: any) => <div class="page">{children}</div>;
 const SideBar = ({ children }: any) => <div class="sidebar">{children}</div>;
 const Content = ({ children }: any) => <div class="content">{children}</div>;
 
-function parseExampleImport(group: string, im: any): ComponentItem {
-  const component = im.default.title;
+function parseExampleImport(
+  group: string,
+  im: any,
+  name?: string,
+): ComponentItem {
+  console.log(im);
+  const component = name || im.default.title;
   const order: number = im.default.args?.order || 0;
   return {
     name: component,
@@ -57,12 +62,15 @@ function SortStories(a: any, b: any): number {
   return (a?.order ?? 0) - (b?.order ?? 0);
 }
 
-const allExamples = Object.entries({ pages }).map(([title, value]) => ({
-  title,
-  list: value.default
-    .map((s) => parseExampleImport(title, s))
-    .sort(SortStories),
-}));
+const allExamples = Object.entries({ pages }).map(([title, value]) => {
+  return {
+    title,
+    list: Object.entries(value)
+      .filter(([name]) => name != "default")
+      .map(([name, value]) => parseExampleImport(title, value, name))
+      .sort(SortStories),
+  };
+});
 
 interface ComponentItem {
   name: string;

@@ -24,7 +24,6 @@ import { createExample, reducerStatesExample } from "../../../utils/index.js";
 import { authMethods as TestedComponent, KnownAuthMethods } from "./index.js";
 
 export default {
-  title: "Pages/recovery/SolveChallenge/AuthMethods/totp",
   component: TestedComponent,
   args: {
     order: 5,

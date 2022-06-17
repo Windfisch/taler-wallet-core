@@ -24,7 +24,6 @@ import { useState } from "preact/hooks";
 import { DurationPicker as TestedComponent } from "./DurationPicker.js";
 
 export default {
-  title: "Components/Picker/Duration",
   component: TestedComponent,
   argTypes: {
     onCreate: { action: "onCreate" },

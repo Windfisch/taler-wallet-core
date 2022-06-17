@@ -24,7 +24,6 @@ import { createExample, reducerStatesExample } from "../../utils/index.js";
 import { BackupFinishedScreen as TestedComponent } from "./BackupFinishedScreen.js";
 
 export default {
-  title: "Pages/backup/Finished",
   component: TestedComponent,
   args: {
     order: 8,

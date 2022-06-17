@@ -28,7 +28,6 @@ import { createExample, reducerStatesExample } from "../../utils/index.js";
 import { ChallengeOverviewScreen as TestedComponent } from "./ChallengeOverviewScreen.js";
 
 export default {
-  title: "Pages/recovery/SolveChallenge/Overview",
   component: TestedComponent,
   args: {
     order: 5,

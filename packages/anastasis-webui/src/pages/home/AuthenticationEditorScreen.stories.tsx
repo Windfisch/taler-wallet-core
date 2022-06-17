@@ -24,7 +24,6 @@ import { createExample, reducerStatesExample } from "../../utils/index.js";
 import { AuthenticationEditorScreen as TestedComponent } from "./AuthenticationEditorScreen.js";
 
 export default {
-  title: "Pages/backup/AuthorizationMethod",
   component: TestedComponent,
   args: {
     order: 4,

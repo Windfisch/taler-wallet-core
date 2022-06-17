@@ -24,7 +24,6 @@ import { createExample, reducerStatesExample } from "../../utils/index.js";
 import { EditPoliciesScreen as TestedComponent } from "./EditPoliciesScreen.js";
 
 export default {
-  title: "Pages/backup/ReviewPolicies/EditPolicies",
   args: {
     order: 6,
   },

@@ -24,7 +24,6 @@ import { createExample, reducerStatesExample } from "../../utils/index.js";
 import { ContinentSelectionScreen as TestedComponent } from "./ContinentSelectionScreen.js";
 
 export default {
-  title: "Pages/Location",
   component: TestedComponent,
   args: {
     order: 2,

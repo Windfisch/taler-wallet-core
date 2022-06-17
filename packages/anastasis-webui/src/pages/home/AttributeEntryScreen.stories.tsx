@@ -24,7 +24,6 @@ import { createExample, reducerStatesExample } from "../../utils/index.js";
 import { AttributeEntryScreen as TestedComponent } from "./AttributeEntryScreen.js";
 
 export default {
-  title: "Pages/PersonalInformation",
   component: TestedComponent,
   args: {
     order: 3,

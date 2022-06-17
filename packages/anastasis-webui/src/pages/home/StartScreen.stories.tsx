@@ -23,7 +23,6 @@ import { createExample, reducerStatesExample } from "../../utils/index.js";
 import { StartScreen as TestedComponent } from "./StartScreen.js";
 
 export default {
-  title: "Pages/Start",
   component: TestedComponent,
   args: {
     order: 1,

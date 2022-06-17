@@ -24,7 +24,6 @@ import { createExample, reducerStatesExample } from "../../utils/index.js";
 import { SolveScreen as TestedComponent } from "./SolveScreen.js";
 
 export default {
-  title: "Pages/recovery/SolveChallenge/Solve",
   component: TestedComponent,
   args: {
     order: 6,

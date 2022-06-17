@@ -19,62 +19,32 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import * as a23 from "./AddingProviderScreen/stories.js";
-import * as a28 from "./AttributeEntryScreen.stories.js";
-import * as a18 from "./AuthenticationEditorScreen.stories.js";
-import * as a8 from "./authMethod/AuthMethodEmailSetup.stories.js";
-import * as a15 from "./authMethod/AuthMethodEmailSolve.stories.js";
-import * as a9 from "./authMethod/AuthMethodIbanSetup.stories.js";
-import * as a11 from "./authMethod/AuthMethodIbanSolve.stories.js";
-import * as a7 from "./authMethod/AuthMethodPostSetup.stories.js";
-import * as a13 from "./authMethod/AuthMethodPostSolve.stories.js";
-import * as a16 from "./authMethod/AuthMethodQuestionSetup.stories.js";
-import * as a10 from "./authMethod/AuthMethodQuestionSolve.stories.js";
-import * as a6 from "./authMethod/AuthMethodSmsSetup.stories.js";
-import * as a5 from "./authMethod/AuthMethodSmsSolve.stories.js";
-import * as a14 from "./authMethod/AuthMethodTotpSetup.stories.js";
-import * as a12 from "./authMethod/AuthMethodTotpSolve.stories.js";
-import * as a21 from "./BackupFinishedScreen.stories.js";
-import * as a25 from "./ChallengeOverviewScreen.stories.js";
-import * as a17 from "./ChallengePayingScreen.stories.js";
-import * as a3 from "./ContinentSelectionScreen.stories.js";
-import * as a27 from "./EditPoliciesScreen.stories.js";
-import * as a20 from "./PoliciesPayingScreen.stories.js";
-import * as a1 from "./RecoveryFinishedScreen.stories.js";
-import * as a4 from "./ReviewPoliciesScreen.stories.js";
-import * as a22 from "./SecretEditorScreen.stories.js";
-import * as a19 from "./SecretSelectionScreen.stories.js";
-import * as a29 from "./SolveScreen.stories.js";
-import * as a24 from "./StartScreen.stories.js";
-import * as a26 from "./TruthsPayingScreen.stories.js";
+export * as AddingProviderScreen from "./AddingProviderScreen/stories.js";
+export * as algo from "./AttributeEntryScreen.stories.js";
 
-export default [
-  a1,
-  a3,
-  a4,
-  a5,
-  a6,
-  a7,
-  a8,
-  a9,
-  a10,
-  a11,
-  a12,
-  a13,
-  a14,
-  a15,
-  a16,
-  a17,
-  a18,
-  a19,
-  a20,
-  a21,
-  a22,
-  a23,
-  a24,
-  a25,
-  a26,
-  a27,
-  a28,
-  a29,
-];
+export * as AuthenticationEditorScreen from "./AuthenticationEditorScreen.stories.js";
+export * as authMethod_AuthMethodEmailSetup from "./authMethod/AuthMethodEmailSetup.stories.js";
+export * as authMethod_AuthMethodEmailSolve from "./authMethod/AuthMethodEmailSolve.stories.js";
+export * as authMethod_AuthMethodIbanSetup from "./authMethod/AuthMethodIbanSetup.stories.js";
+export * as authMethod_AuthMethodIbanSolve from "./authMethod/AuthMethodIbanSolve.stories.js";
+export * as authMethod_AuthMethodPostSetup from "./authMethod/AuthMethodPostSetup.stories.js";
+export * as authMethod_AuthMethodPostSolve from "./authMethod/AuthMethodPostSolve.stories.js";
+export * as authMethod_AuthMethodQuestionSetup from "./authMethod/AuthMethodQuestionSetup.stories.js";
+export * as authMethod_AuthMethodQuestionSolve from "./authMethod/AuthMethodQuestionSolve.stories.js";
+export * as authMethod_AuthMethodSmsSetup from "./authMethod/AuthMethodSmsSetup.stories.js";
+export * as authMethod_AuthMethodSmsSolve from "./authMethod/AuthMethodSmsSolve.stories.js";
+export * as authMethod_AuthMethodTotpSetup from "./authMethod/AuthMethodTotpSetup.stories.js";
+export * as authMethod_AuthMethodTotpSolve from "./authMethod/AuthMethodTotpSolve.stories.js";
+export * as BackupFinishedScreen from "./BackupFinishedScreen.stories.js";
+export * as ChallengeOverviewScreen from "./ChallengeOverviewScreen.stories.js";
+export * as ChallengePayingScreen from "./ChallengePayingScreen.stories.js";
+export * as ContinentSelectionScreen from "./ContinentSelectionScreen.stories.js";
+export * as EditPoliciesScreen from "./EditPoliciesScreen.stories.js";
+export * as PoliciesPayingScreen from "./PoliciesPayingScreen.stories.js";
+export * as RecoveryFinishedScreen from "./RecoveryFinishedScreen.stories.js";
+export * as ReviewPoliciesScreen from "./ReviewPoliciesScreen.stories.js";
+export * as SecretEditorScreen from "./SecretEditorScreen.stories.js";
+export * as SecretSelectionScreen from "./SecretSelectionScreen.stories.js";
+export * as SolveScreen from "./SolveScreen.stories.js";
+export * as StartScreen from "./StartScreen.stories.js";
+export * as TruthsPayingScreen from "./TruthsPayingScreen.stories.js";

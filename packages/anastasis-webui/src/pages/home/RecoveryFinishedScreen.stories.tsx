@@ -25,7 +25,6 @@ import { createExample, reducerStatesExample } from "../../utils/index.js";
 import { RecoveryFinishedScreen as TestedComponent } from "./RecoveryFinishedScreen.js";
 
 export default {
-  title: "Pages/recovery/Finished",
   args: {
     order: 7,
   },

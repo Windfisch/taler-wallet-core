@@ -24,7 +24,6 @@ import { createExampleWithoutAnastasis } from "../../../utils/index.jsx";
 import { WithoutProviderType, WithProviderType } from "./views.jsx";
 
 export default {
-  title: "Pages/ManageProvider",
   args: {
     order: 1,
   },

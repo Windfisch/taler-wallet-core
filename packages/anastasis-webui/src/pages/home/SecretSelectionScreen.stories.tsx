@@ -24,7 +24,6 @@ import { createExample, reducerStatesExample } from "../../utils/index.js";
 import { SecretSelectionScreen as TestedComponent } from "./SecretSelectionScreen.js";
 
 export default {
-  title: "Pages/recovery/SecretSelection",
   component: TestedComponent,
   args: {
     order: 4,
