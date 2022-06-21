@@ -1,3 +1,9 @@
+taler-wallet-cli (0.8.99) unstable; urgency=low
+
+  * Preview for 0.9 wallet.
+
+ -- Christian Grothoff <grothoff@gnu.org>  Tue, 21 Jun 2022 12:47:15 -0300
+
 taler-wallet-cli (0.8.3) unstable; urgency=low
 
   * Official 0.8.3 release.
