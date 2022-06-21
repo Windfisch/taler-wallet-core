@@ -1309,9 +1309,9 @@ export const WALLET_BACKUP_STATE_KEY = "walletBackupState";
  */
 export type ConfigRecord =
   | {
-    key: typeof WALLET_BACKUP_STATE_KEY;
-    value: WalletBackupConfState;
-  }
+      key: typeof WALLET_BACKUP_STATE_KEY;
+      value: WalletBackupConfState;
+    }
   | { key: "currencyDefaultsApplied"; value: boolean };
 
 export interface WalletBackupConfState {
@@ -1497,17 +1497,17 @@ export enum BackupProviderStateTag {
 
 export type BackupProviderState =
   | {
-    tag: BackupProviderStateTag.Provisional;
-  }
+      tag: BackupProviderStateTag.Provisional;
+    }
   | {
-    tag: BackupProviderStateTag.Ready;
-    nextBackupTimestamp: TalerProtocolTimestamp;
-  }
+      tag: BackupProviderStateTag.Ready;
+      nextBackupTimestamp: TalerProtocolTimestamp;
+    }
   | {
-    tag: BackupProviderStateTag.Retrying;
-    retryInfo: RetryInfo;
-    lastError?: TalerErrorDetail;
-  };
+      tag: BackupProviderStateTag.Retrying;
+      retryInfo: RetryInfo;
+      lastError?: TalerErrorDetail;
+    };
 
 export interface BackupProviderTerms {
   supportedProtocolVersion: string;
@@ -1670,6 +1670,52 @@ export interface BalancePerCurrencyRecord {
 
   pendingOutgoing: AmountString;
 }
+
+/**
+ * Record for a push P2P payment that this wallet initiated.
+ */
+export interface PeerPushPaymentInitiationRecord {
+
+  /**
+   * What exchange are funds coming from?
+   */
+  exchangeBaseUrl: string;
+
+  amount: AmountString;
+
+  /**
+   * Purse public key.  Used as the primary key to look
+   * up this record.
+   */
+  pursePub: string;
+
+  /**
+   * Purse private key.
+   */
+  pursePriv: string;
+
+  /**
+   * Public key of the merge capability of the purse.
+   */
+  mergePub: string;
+
+  /**
+   * Private key of the merge capability of the purse.
+   */
+  mergePriv: string;
+
+  purseExpiration: TalerProtocolTimestamp;
+
+  /**
+   * Did we successfully create the purse with the exchange?
+   */
+  purseCreated: boolean;
+}
+
+/**
+ * Record for a push P2P payment that this wallet accepted.
+ */
+export interface PeerPushPaymentAcceptanceRecord {}
 
 export const WalletStoresV1 = {
   coins: describeStore(

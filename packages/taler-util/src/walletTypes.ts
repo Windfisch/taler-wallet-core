@@ -32,10 +32,7 @@ import {
   codecForAmountJson,
   codecForAmountString,
 } from "./amounts.js";
-import {
-  codecForTimestamp,
-  TalerProtocolTimestamp,
-} from "./time.js";
+import { codecForTimestamp, TalerProtocolTimestamp } from "./time.js";
 import {
   buildCodecForObject,
   codecForString,
@@ -1230,15 +1227,14 @@ export interface ForcedCoinSel {
 }
 
 export interface TestPayResult {
-  payCoinSelection: PayCoinSelection,
+  payCoinSelection: PayCoinSelection;
 }
-
 
 /**
  * Result of selecting coins, contains the exchange, and selected
  * coins with their denomination.
  */
- export interface PayCoinSelection {
+export interface PayCoinSelection {
   /**
    * Amount requested by the merchant.
    */
@@ -1264,3 +1260,18 @@ export interface TestPayResult {
    */
   customerDepositFees: AmountJson;
 }
+
+export interface InitiatePeerPushPaymentRequest {
+  amount: AmountString;
+}
+
+export interface InitiatePeerPushPaymentResponse {
+  pursePub: string;
+  mergePriv: string;
+}
+
+export const codecForInitiatePeerPushPaymentRequest =
+  (): Codec<InitiatePeerPushPaymentRequest> =>
+    buildCodecForObject<InitiatePeerPushPaymentRequest>()
+      .property("amount", codecForAmountString())
+      .build("InitiatePeerPushPaymentRequest");

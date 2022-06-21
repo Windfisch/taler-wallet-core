@@ -24,33 +24,44 @@
  * Imports.
  */
 
-// FIXME: Crypto should not use DB Types!
 import {
+  AgeCommitmentProof,
+  AgeRestriction,
   AmountJson,
   Amounts,
+  AmountString,
+  BlindedDenominationSignature,
+  bufferForUint32,
   buildSigPS,
   CoinDepositPermission,
   CoinEnvelope,
-  createEddsaKeyPair,
   createHashContext,
   decodeCrock,
   DenomKeyType,
   DepositInfo,
+  ecdheGetPublic,
   eddsaGetPublic,
+  EddsaPublicKeyString,
   eddsaSign,
   eddsaVerify,
   encodeCrock,
   ExchangeProtocolVersion,
+  getRandomBytes,
   hash,
+  HashCodeString,
   hashCoinEv,
   hashCoinEvInner,
+  hashCoinPub,
   hashDenomPub,
   hashTruncate32,
+  kdf,
+  kdfKw,
   keyExchangeEcdheEddsa,
   Logger,
   MakeSyncSignatureRequest,
   PlanchetCreationRequest,
-  WithdrawalPlanchet,
+  PlanchetUnblindInfo,
+  PurseDeposit,
   RecoupRefreshRequest,
   RecoupRequest,
   RefreshPlanchetInfo,
@@ -59,23 +70,14 @@ import {
   rsaVerify,
   setupTipPlanchet,
   stringToBytes,
-  TalerSignaturePurpose,
-  BlindedDenominationSignature,
-  UnblindedSignature,
-  PlanchetUnblindInfo,
   TalerProtocolTimestamp,
-  kdfKw,
-  bufferForUint32,
-  kdf,
-  ecdheGetPublic,
-  getRandomBytes,
-  AgeCommitmentProof,
-  AgeRestriction,
-  hashCoinPub,
-  HashCodeString,
+  TalerSignaturePurpose,
+  UnblindedSignature,
+  WithdrawalPlanchet,
 } from "@gnu-taler/taler-util";
 import bigint from "big-integer";
-import { DenominationRecord, TipCoinSource, WireFee } from "../db.js";
+// FIXME: Crypto should not use DB Types!
+import { DenominationRecord, WireFee } from "../db.js";
 import {
   CreateRecoupRefreshReqRequest,
   CreateRecoupReqRequest,
@@ -177,6 +179,12 @@ export interface TalerCryptoInterface {
   setupRefreshTransferPub(
     req: SetupRefreshTransferPubRequest,
   ): Promise<TransferPubResponse>;
+
+  signPurseCreation(req: SignPurseCreationRequest): Promise<EddsaSigningResult>;
+
+  signPurseDeposits(
+    req: SignPurseDepositsRequest,
+  ): Promise<SignPurseDepositsResponse>;
 }
 
 /**
@@ -308,6 +316,16 @@ export const nullCrypto: TalerCryptoInterface = {
   ): Promise<TransferPubResponse> {
     throw new Error("Function not implemented.");
   },
+  signPurseCreation: function (
+    req: SignPurseCreationRequest,
+  ): Promise<EddsaSigningResult> {
+    throw new Error("Function not implemented.");
+  },
+  signPurseDeposits: function (
+    req: SignPurseDepositsRequest,
+  ): Promise<SignPurseDepositsResponse> {
+    throw new Error("Function not implemented.");
+  },
 };
 
 export type WithArg<X> = X extends (req: infer T) => infer R
@@ -334,6 +352,31 @@ export interface SetupRefreshPlanchetRequest {
 export interface SetupWithdrawalPlanchetRequest {
   secretSeed: string;
   coinNumber: number;
+}
+
+export interface SignPurseCreationRequest {
+  pursePriv: string;
+  purseExpiration: TalerProtocolTimestamp;
+  purseAmount: AmountString;
+  hContractTerms: HashCodeString;
+  mergePub: EddsaPublicKeyString;
+  minAge: number;
+}
+
+export interface SignPurseDepositsRequest {
+  pursePub: string;
+  exchangeBaseUrl: string;
+  coins: {
+    coinPub: string;
+    coinPriv: string;
+    contribution: AmountString;
+    denomPubHash: string;
+    denomSig: UnblindedSignature;
+  }[];
+}
+
+export interface SignPurseDepositsResponse {
+  deposits: PurseDeposit[];
 }
 
 export interface RsaVerificationRequest {
@@ -1210,6 +1253,51 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
     return {
       transferPriv,
       transferPub: (await tci.ecdheGetPublic(tci, { priv: transferPriv })).pub,
+    };
+  },
+  async signPurseCreation(
+    tci: TalerCryptoInterfaceR,
+    req: SignPurseCreationRequest,
+  ): Promise<EddsaSigningResult> {
+    const sigBlob = buildSigPS(TalerSignaturePurpose.WALLET_PURSE_CREATE)
+      .put(timestampRoundedToBuffer(req.purseExpiration))
+      .put(amountToBuffer(Amounts.parseOrThrow(req.purseAmount)))
+      .put(decodeCrock(req.hContractTerms))
+      .put(decodeCrock(req.mergePub))
+      .put(bufferForUint32(req.minAge))
+      .build();
+    return await tci.eddsaSign(tci, {
+      msg: encodeCrock(sigBlob),
+      priv: req.pursePriv,
+    });
+  },
+  async signPurseDeposits(
+    tci: TalerCryptoInterfaceR,
+    req: SignPurseDepositsRequest,
+  ): Promise<SignPurseDepositsResponse> {
+    const hExchangeBaseUrl = hash(stringToBytes(req.exchangeBaseUrl + "\0"));
+    const deposits: PurseDeposit[] = [];
+    for (const c of req.coins) {
+      const sigBlob = buildSigPS(TalerSignaturePurpose.WALLET_PURSE_DEPOSIT)
+        .put(amountToBuffer(Amounts.parseOrThrow(c.contribution)))
+        .put(decodeCrock(req.pursePub))
+        .put(hExchangeBaseUrl)
+        .build();
+      const sigResp = await tci.eddsaSign(tci, {
+        msg: encodeCrock(sigBlob),
+        priv: c.coinPriv,
+      });
+      deposits.push({
+        amount: c.contribution,
+        coin_pub: c.coinPub,
+        coin_sig: sigResp.sig,
+        denom_pub_hash: c.denomPubHash,
+        ub_sig: c.denomSig,
+        h_age_commitment: undefined,
+      });
+    }
+    return {
+      deposits,
     };
   },
 };

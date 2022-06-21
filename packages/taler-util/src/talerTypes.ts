@@ -565,8 +565,8 @@ export interface MerchantAbortPayRefundDetails {
   refund_amount: string;
 
   /**
-  * Fee for the refund.
-  */
+   * Fee for the refund.
+   */
   refund_fee: string;
 
   /**
@@ -1794,3 +1794,41 @@ export const codecForDepositSuccess = (): Codec<DepositSuccess> =>
     .property("exchange_timestamp", codecForTimestamp)
     .property("transaction_base_url", codecOptional(codecForString()))
     .build("DepositSuccess");
+
+export interface PurseDeposit {
+  /**
+   * Amount to be deposited, can be a fraction of the
+   * coin's total value.
+   */
+  amount: AmountString;
+
+  /**
+   * Hash of denomination RSA key with which the coin is signed.
+   */
+  denom_pub_hash: HashCodeString;
+
+  /**
+   * Exchange's unblinded RSA signature of the coin.
+   */
+  ub_sig: UnblindedSignature;
+
+  /**
+   * Age commitment hash for the coin, if the denomination is age-restricted.
+   */
+  h_age_commitment?: HashCodeString;
+
+  // FIXME-Oec: proof of age is missing.
+
+  /**
+   * Signature over TALER_PurseDepositSignaturePS
+   * of purpose TALER_SIGNATURE_WALLET_PURSE_DEPOSIT
+   * made by the customer with the
+   * coin's private key.
+   */
+  coin_sig: EddsaSignatureString;
+
+  /**
+   * Public key of the coin being deposited into the purse.
+   */
+  coin_pub: EddsaPublicKeyString;
+}

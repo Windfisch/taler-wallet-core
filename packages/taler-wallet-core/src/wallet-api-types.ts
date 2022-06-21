@@ -46,6 +46,8 @@ import {
   GetExchangeTosResult,
   GetWithdrawalDetailsForAmountRequest,
   GetWithdrawalDetailsForUriRequest,
+  InitiatePeerPushPaymentRequest,
+  InitiatePeerPushPaymentResponse,
   IntegrationTestArgs,
   ManualWithdrawalDetails,
   PreparePayRequest,
@@ -118,6 +120,9 @@ export enum WalletApiOperation {
   ExportBackupPlain = "exportBackupPlain",
   WithdrawFakebank = "withdrawFakebank",
   ExportDb = "exportDb",
+  InitiatePeerPushPayment = "initiatePeerPushPayment",
+  CheckPeerPushPayment = "checkPeerPushPayment",
+  AcceptPeerPushPayment = "acceptPeerPushPayment",
 }
 
 export type WalletOperations = {
@@ -276,6 +281,10 @@ export type WalletOperations = {
   [WalletApiOperation.ExportDb]: {
     request: {};
     response: any;
+  };
+  [WalletApiOperation.InitiatePeerPushPayment]: {
+    request: InitiatePeerPushPaymentRequest;
+    response: InitiatePeerPushPaymentResponse;
   };
 };
 

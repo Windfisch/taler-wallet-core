@@ -47,6 +47,7 @@ import {
   codecForGetWithdrawalDetailsForAmountRequest,
   codecForGetWithdrawalDetailsForUri,
   codecForImportDbRequest,
+  codecForInitiatePeerPushPaymentRequest,
   codecForIntegrationTestArgs,
   codecForListKnownBankAccounts,
   codecForPrepareDepositRequest,
@@ -143,6 +144,7 @@ import {
   processDownloadProposal,
   processPurchasePay,
 } from "./operations/pay.js";
+import { initiatePeerToPeerPush } from "./operations/peer-to-peer.js";
 import { getPendingOperations } from "./operations/pending.js";
 import { createRecoupGroup, processRecoupGroup } from "./operations/recoup.js";
 import {
@@ -1048,6 +1050,10 @@ async function dispatchRequestInternal(
       const req = codecForImportDbRequest().decode(payload);
       await importDb(ws.db.idbHandle(), req.dump);
       return [];
+    }
+    case "initiatePeerPushPayment": {
+      const req = codecForInitiatePeerPushPaymentRequest().decode(payload);
+      return await initiatePeerToPeerPush(ws, req);
     }
   }
   throw TalerError.fromDetail(

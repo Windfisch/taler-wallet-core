@@ -1296,6 +1296,36 @@ export class ExchangeService implements ExchangeServiceInterface {
         );
       }
     }
+
+    await runCommand(
+      this.globalState,
+      "exchange-offline",
+      "taler-exchange-offline",
+      [
+        "-c",
+        this.configFilename,
+        "global-fee",
+        // year
+        "now",
+        // history fee
+        `${this.exchangeConfig.currency}:0.01`,
+        // kyc fee
+        `${this.exchangeConfig.currency}:0.01`,
+        // account fee
+        `${this.exchangeConfig.currency}:0.01`,
+        // purse fee
+        `${this.exchangeConfig.currency}:0.01`,
+        // purse timeout
+        "1h",
+        // kyc timeout
+        "1h",
+        // history expiration
+        "1year",
+        // free purses per account
+        "5",
+        "upload",
+      ],
+    );
   }
 
   async revokeDenomination(denomPubHash: string) {
