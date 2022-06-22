@@ -18,7 +18,6 @@ import { FormControl } from "./input/FormControl.js";
 import { FormHelperText } from "./input/FormHelperText.js";
 import { InputFilled } from "./input/InputFilled.js";
 import { InputLabel } from "./input/InputLabel.js";
-import { InputOutlined } from "./input/InputOutlined.js";
 import { InputStandard } from "./input/InputStandard.js";
 import { SelectFilled } from "./input/SelectFilled.js";
 import { SelectOutlined } from "./input/SelectOutlined.js";
@@ -57,13 +56,13 @@ export interface Props {
 const inputVariant = {
   standard: InputStandard,
   filled: InputFilled,
-  outlined: InputOutlined,
+  outlined: InputStandard,
 };
 
 const selectVariant = {
   standard: SelectStandard,
   filled: SelectFilled,
-  outlined: SelectOutlined,
+  outlined: SelectStandard,
 };
 
 export function TextField({

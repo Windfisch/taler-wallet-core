@@ -99,11 +99,14 @@ const filledRootStyle = css`
       background-color: ${backgroundColor};
     }
   }
-  [data-focused] {
+  &[data-focused] {
     background-color: ${backgroundColor};
   }
-  [data-disabled] {
+  &[data-disabled] {
     background-color: ${backgroundColorDisabled};
+  }
+  &[data-multiline] {
+    padding: 25px 12px 8px;
   }
 `;
 
@@ -159,12 +162,20 @@ const underlineStyle = css`
   }
 `;
 
-function Root({ fullWidth, disabled, focused, error, children }: any): VNode {
+function Root({
+  fullWidth,
+  disabled,
+  focused,
+  error,
+  children,
+  multiline,
+}: any): VNode {
   return (
     <InputBaseRoot
       disabled={disabled}
       focused={focused}
       fullWidth={fullWidth}
+      multiline={multiline}
       error={error}
       class={[filledRootStyle, underlineStyle].join(" ")}
     >

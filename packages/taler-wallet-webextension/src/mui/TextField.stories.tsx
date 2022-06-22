@@ -37,7 +37,7 @@ const Container = styled.div`
   }
 `;
 
-const BasicExample = (variant: Props["variant"]): VNode => {
+const Input = (variant: Props["variant"]): VNode => {
   const [value, onChange] = useState("");
   return (
     <Container>
@@ -80,9 +80,8 @@ const BasicExample = (variant: Props["variant"]): VNode => {
   );
 };
 
-export const Standard = (): VNode => BasicExample("standard");
-export const Filled = (): VNode => BasicExample("filled");
-export const Outlined = (): VNode => BasicExample("outlined");
+export const InputStandard = (): VNode => Input("standard");
+export const InputFilled = (): VNode => Input("filled");
 
 export const Color = (): VNode => {
   const [value, onChange] = useState("");
@@ -92,40 +91,53 @@ export const Color = (): VNode => {
         variant="standard"
         label="Outlined secondary"
         color="secondary"
+        {...{ value, onChange }}
       />
-      <TextField label="Filled success" variant="standard" color="success" />
-      <TextField label="Standard warning" variant="standard" color="warning" />
+      <TextField
+        label="Filled success"
+        variant="standard"
+        color="success"
+        {...{ value, onChange }}
+      />
+      <TextField
+        label="Standard warning"
+        variant="standard"
+        color="warning"
+        {...{ value, onChange }}
+      />
     </Container>
   );
 };
 
-export const Multiline = (): VNode => {
+const Multiline = (variant: Props["variant"]): VNode => {
   const [value, onChange] = useState("");
   return (
     <Container>
       <TextField
         {...{ value, onChange }}
         label="Multiline"
-        variant="standard"
+        variant={variant}
         multiline
       />
       <TextField
         {...{ value, onChange }}
         label="Max row 4"
-        variant="standard"
+        variant={variant}
         multiline
         maxRows={4}
       />
       <TextField
         {...{ value, onChange }}
         label="Row 10"
-        variant="standard"
+        variant={variant}
         multiline
         rows={10}
       />
     </Container>
   );
 };
+export const MultilineStandard = (): VNode => Multiline("standard");
+export const MultilineFilled = (): VNode => Multiline("filled");
 
 export const Select = (): VNode => {
   const [value, onChange] = useState("");

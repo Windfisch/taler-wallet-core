@@ -34,10 +34,6 @@ const rootStyle = css`
   cursor: text;
   display: inline-flex;
   align-items: center;
-
-  [data-multiline] {
-    padding: 4px 0 5px;
-  }
 `;
 const rootDisabledStyle = css`
   color: ${theme.palette.text.disabled};
@@ -64,6 +60,7 @@ export function InputBaseRoot({
     <div
       data-disabled={disabled}
       data-focused={focused}
+      data-multiline={multiline}
       data-error={error}
       class={[
         _class,
@@ -485,7 +482,7 @@ export function TextareaAutoSize({
         class={[
           componentStyle,
           componentMultilineStyle,
-          // _class,
+          _class,
           disabled && componentDisabledStyle,
           // size === "small" && componentSmallStyle,
           multiline && componentMultilineStyle,
@@ -503,7 +500,7 @@ export function TextareaAutoSize({
           overflow: state.overflow ? "hidden" : null,
           ...style,
         }}
-        // {...props}
+        {...props}
       />
 
       <textarea
