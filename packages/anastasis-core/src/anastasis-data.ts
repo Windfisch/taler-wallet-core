@@ -24,7 +24,7 @@ export const anastasisData = {
         name: "Anastasis SARL, Luxembourg",
       },
       {
-        url: "http://v1.anastasis.taler.net/",
+        url: "https://v1.anastasis.taler.net/",
         restricted: "xx",
       },
       {
