@@ -229,10 +229,7 @@ export interface ReducerStateRecovery {
    */
   recovered_key_shares?: { [truth_uuid: string]: KeyShare };
 
-  core_secret?: {
-    mime: string;
-    value: string;
-  };
+  core_secret?: CoreSecret;
 
   authentication_providers?: AuthenticationProviderStatusMap;
 }
@@ -390,6 +387,7 @@ export interface ActionArgsEnterSecret {
   secret: {
     value: string;
     mime?: string;
+    filename?: string;
   };
   expiration: TalerProtocolTimestamp;
 }

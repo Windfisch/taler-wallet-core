@@ -1521,6 +1521,7 @@ async function enterSecret(
     core_secret: {
       mime: args.secret.mime ?? "text/plain",
       value: args.secret.value,
+      filename: args.secret.filename,
     },
     // A new secret invalidates the existing recovery data.
     recovery_data: undefined,
