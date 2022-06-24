@@ -59,29 +59,18 @@ config-lib:
 .PHONY: anastasis-webui
 anastasis-webui:
 	pnpm install --frozen-lockfile --filter @gnu-taler/anastasis-webui...
-	pnpm run --filter @gnu-taler/anastasis-webui... compile
+	pnpm run --filter @gnu-taler/anastasis-webui... build
 
 .PHONY: anastasis-webui-dev
 anastasis-webui-dev:
 	pnpm install --frozen-lockfile --filter @gnu-taler/anastasis-webui...
 	pnpm run --filter @gnu-taler/anastasis-webui... dev
 
-.PHONY: anastasis-webui-storybook
-anastasis-webui-storybook:
-	pnpm install --frozen-lockfile --filter @gnu-taler/anastasis-webui...
-	pnpm run --filter @gnu-taler/anastasis-webui... storybook
-
 .PHONY: webextension
 webextension:
 	pnpm install --frozen-lockfile --filter @gnu-taler/taler-wallet-webextension...
 	pnpm run --filter @gnu-taler/taler-wallet-webextension... compile
 	cd ./packages/taler-wallet-webextension/ && ./pack.sh
-
-.PHONY: webextension-dev-view
-webextension-dev-view:
-	pnpm install -r --frozen-lockfile
-	pnpm run compile
-	pnpm run --filter @gnu-taler/taler-wallet-webextension storybook
 
 .PHONY: i18n
 i18n: compile
