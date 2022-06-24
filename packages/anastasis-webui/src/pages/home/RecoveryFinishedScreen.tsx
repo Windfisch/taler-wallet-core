@@ -56,9 +56,11 @@ export function RecoveryFinishedScreen(): VNode {
     );
   }
   const secret = bytesToString(decodeCrock(encodedSecret.value));
-  const contentURI = `data:${encodedSecret.mime},${secret}`;
-  // const fileName = encodedSecret['filename']
-  // data:plain/text;base64,asdasd
+  const plainText =
+    encodedSecret.value.length < 1000 && encodedSecret.mime === "text/plain";
+  const contentURI = !plainText
+    ? secret
+    : `data:${encodedSecret.mime},${secret}`;
   return (
     <AnastasisClientFrame title="Recovery Success" hideNav>
       <h2 class="subtitle">Your secret was recovered</h2>
@@ -68,25 +70,36 @@ export function RecoveryFinishedScreen(): VNode {
         </p>
       )}
       <div class="block buttons" disabled={copied}>
-        <button
-          class="button"
-          onClick={() => {
-            navigator.clipboard.writeText(secret);
-            setCopied(true);
-          }}
+        {plainText ? (
+          <button
+            class="button"
+            onClick={() => {
+              navigator.clipboard.writeText(secret);
+              setCopied(true);
+            }}
+          >
+            {!copied ? "Copy" : "Copied"}
+          </button>
+        ) : undefined}
+
+        <a
+          class="button is-info"
+          download={
+            encodedSecret.filename ? encodedSecret.filename : "secret.file"
+          }
+          href={contentURI}
         >
-          {!copied ? "Copy" : "Copied"}
-        </button>
-        <a class="button is-info" download="secret.txt" href={contentURI}>
           <div class="icon is-small ">
             <i class="mdi mdi-download" />
           </div>
-          <span>Save as</span>
+          <span>Download content</span>
         </a>
       </div>
-      <div class="block">
-        <QR text={secret} />
-      </div>
+      {plainText ? (
+        <div class="block">
+          <QR text={secret} />
+        </div>
+      ) : undefined}
     </AnastasisClientFrame>
   );
 }

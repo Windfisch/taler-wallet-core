@@ -135,7 +135,7 @@ export function ContinentSelectionScreen(): VNode {
             Choose the country that issued most of your long-term legal
             documents or personal identifiers.
           </p>
-          <div
+          {/* <div
             style={{
               border: "1px solid gray",
               borderRadius: "0.5em",
@@ -149,7 +149,7 @@ export function ContinentSelectionScreen(): VNode {
               country, you will be asked for a simple number and not real,
               personal identifiable information.
             </p>
-          </div>
+          </div> */}
         </div>
       </div>
     </AnastasisClientFrame>

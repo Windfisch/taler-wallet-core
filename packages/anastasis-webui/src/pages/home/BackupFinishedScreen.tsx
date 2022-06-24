@@ -49,7 +49,7 @@ export function BackupFinishedScreen(): VNode {
                   version {sd.policy_version}
                   {sd.policy_expiration.t_s !== "never"
                     ? ` expires at: ${format(
-                        new Date(sd.policy_expiration.t_s),
+                        new Date(sd.policy_expiration.t_s * 1000),
                         "dd-MM-yyyy",
                       )}`
                     : " without expiration date"}

@@ -52,7 +52,7 @@ export function SecretEditorScreen(): VNode {
   const secretNext = async (): Promise<void> => {
     const secret = secretFile
       ? {
-          value: encodeCrock(stringToBytes(secretValue)),
+          value: encodeCrock(stringToBytes(secretFile.content)),
           filename: secretFile.name,
           mime: secretFile.type,
         }
