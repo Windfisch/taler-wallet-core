@@ -94,6 +94,25 @@ export function AttributeEntryScreen(): VNode {
     });
   };
 
+  function saveAsPDF(): void {
+    const printWindow = window.open("", "", "height=400,width=800");
+    const divContents = document.getElementById("printThis");
+    const styleContents = document.getElementById("style-id");
+
+    if (!printWindow || !divContents || !styleContents) return;
+    printWindow.document.write(
+      "<html><head><title>Anastasis Recovery Document</title><style>",
+    );
+    printWindow.document.write(styleContents.innerHTML);
+    printWindow.document.write("</style></head><body>&nbsp;</body></html>");
+    printWindow.document.close();
+    printWindow.document.body.appendChild(divContents.cloneNode(true));
+    printWindow.addEventListener("load", () => {
+      printWindow.print();
+      printWindow.close();
+    });
+  }
+
   return (
     <AnastasisClientFrame
       title={withProcessLabel(reducer, "Who are you?")}
@@ -112,11 +131,16 @@ export function AttributeEntryScreen(): VNode {
           You personal information is used to define the location where your
           secret will be safely stored. If you forget what you have entered or
           if there is a misspell you will be unable to recover your secret.
+          <p>
+            <a onClick={saveAsPDF}>Save the personal information as PDF</a>
+          </p>
         </ConfirmModal>
-      ) : null}
+      ) : undefined}
 
       <div class="columns" style={{ maxWidth: "unset" }}>
-        <div class="column">{fieldList}</div>
+        <div class="column" id="printThis">
+          {fieldList}
+        </div>
         <div class="column">
           <p>This personal information will help to locate your secret.</p>
           <h1 class="title">This stays private</h1>

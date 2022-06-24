@@ -6,7 +6,7 @@
   "scripts": {
     "build": "./clean_and_build.sh",
     "compile": "tsc",
-    "dev": "./dev.mjs",
+    "dev": "./clean_and_build.sh WATCH",
     "prepare": "pnpm compile",
     "lint": "eslint 'src/**/*.{js,jsx,ts,tsx}'",
     "test": "mocha --enable-source-maps 'dist/**/*test.js'",
