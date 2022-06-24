@@ -13,8 +13,46 @@
  You should have received a copy of the GNU General Public License along with
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-import { h, VNode } from "preact";
+import { css } from "@linaria/core";
+import { h, VNode, Fragment } from "preact";
 
-export function SelectStandard(): VNode {
-  return <div />;
+const SelectSelect = css`
+  height: "auto";
+  min-height: "1.4374em";
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+`;
+
+const SelectIcon = css``;
+
+const SelectNativeInput = css`
+  bottom: 0px;
+  left: 0px;
+  position: "absolute";
+  opacity: 0px;
+  pointer-events: "none";
+  width: 100%;
+  box-sizing: border-box;
+`;
+
+export function SelectStandard({ value }: any): VNode {
+  return (
+    <Fragment>
+      <div class={SelectSelect} role="button">
+        {!value ? (
+          // notranslate needed while Google Translate will not fix zero-width space issue
+          <span className="notranslate">&#8203;</span>
+        ) : (
+          value
+        )}
+        <input
+          class={SelectNativeInput}
+          aria-hidden
+          tabIndex={-1}
+          value={Array.isArray(value) ? value.join(",") : value}
+        />
+      </div>
+    </Fragment>
+  );
 }

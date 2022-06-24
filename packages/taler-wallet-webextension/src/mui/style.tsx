@@ -63,6 +63,23 @@ export const ripple = css`
 
   transition: background 0.2s;
 
+  &:hover {
+    background: var(--color-main)
+      radial-gradient(circle, transparent 1%, var(--color-dark) 1%)
+      center/15000%;
+  }
+  &:active {
+    background-color: var(--color-main);
+    background-size: 100%;
+    transition: background 0s;
+  }
+`;
+
+export const rippleEnabled = css`
+  background-position: center;
+
+  transition: background 0.2s;
+
   &:hover:enabled {
     background: var(--color-main)
       radial-gradient(circle, transparent 1%, var(--color-dark) 1%)
@@ -75,7 +92,7 @@ export const ripple = css`
   }
 `;
 
-export const rippleOutlined = css`
+export const rippleEnabledOutlined = css`
   background-position: center;
 
   transition: background 0.2s;

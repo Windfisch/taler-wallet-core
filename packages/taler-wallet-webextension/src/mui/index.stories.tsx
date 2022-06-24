@@ -24,5 +24,6 @@ import * as a3 from "./Grid.stories.js";
 import * as a4 from "./Paper.stories.js";
 import * as a5 from "./TextField.stories.js";
 import * as a6 from "./Alert.stories.js";
+import * as a7 from "./Menu.stories.js";
 
-export default [a1, a3, a4, a5, a6];
+export default [a1, a3, a4, a5, a6, a7];

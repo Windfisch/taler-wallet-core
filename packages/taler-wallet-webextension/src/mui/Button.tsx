@@ -16,11 +16,11 @@
 import { ComponentChildren, h, VNode, JSX } from "preact";
 import { css } from "@linaria/core";
 // eslint-disable-next-line import/extensions
-import { theme, ripple, Colors, rippleOutlined } from "./style";
+import { theme, Colors, rippleEnabled, rippleEnabledOutlined } from "./style";
 // eslint-disable-next-line import/extensions
 import { alpha } from "./colors/manipulation";
 
-const buttonBaseStyle = css`
+export const buttonBaseStyle = css`
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -318,6 +318,7 @@ interface BaseProps extends JSX.HTMLAttributes<HTMLButtonElement> {
   onClick?: () => Promise<void>;
   containedRipple?: boolean;
   children?: ComponentChildren;
+  svg?: any;
 }
 
 function ButtonBase({
@@ -325,7 +326,7 @@ function ButtonBase({
   children,
   containedRipple,
   onClick,
-  dangerouslySetInnerHTML,
+  svg,
   ...rest
 }: BaseProps): VNode {
   function doClick(): void {
@@ -334,14 +335,14 @@ function ButtonBase({
   const classNames = [
     buttonBaseStyle,
     _class,
-    containedRipple ? ripple : rippleOutlined,
+    containedRipple ? rippleEnabled : rippleEnabledOutlined,
   ].join(" ");
-  if (dangerouslySetInnerHTML) {
+  if (svg) {
     return (
       <button
         onClick={doClick}
         class={classNames}
-        dangerouslySetInnerHTML={dangerouslySetInnerHTML}
+        dangerouslySetInnerHTML={{ __html: svg }}
         {...rest}
       />
     );
@@ -375,7 +376,7 @@ export function IconButton({
           fill: currentColor;
         `,
       ].join(" ")}
-      dangerouslySetInnerHTML={{ __html: svg }}
+      svg={svg}
     />
   );
 }
