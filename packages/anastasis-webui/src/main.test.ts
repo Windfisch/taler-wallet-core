@@ -24,8 +24,8 @@ import * as pages from "./pages/home/index.storiesNo.js";
 
 setupI18n("en", { en: {} });
 
-function testThisStory(st: any): any {
-  describe(`render examples for ${(st as any).default.title}`, () => {
+function testThisStory(key: string, st: any): any {
+  describe(`render examples for ${key}`, () => {
     Object.keys(st).forEach((k) => {
       const Component = (st as any)[k];
       if (k === "default" || !Component) return;
@@ -38,11 +38,12 @@ function testThisStory(st: any): any {
 }
 
 describe("render every storybook example", () => {
-  [pages].forEach(function testAll(st: any) {
+  Object.entries(pages).forEach(function testAll([key, value]) {
+    const st: any = value;
     if (Array.isArray(st.default)) {
       st.default.forEach(testAll);
     } else {
-      testThisStory(st);
+      testThisStory(key, st);
     }
   });
 });
