@@ -58,7 +58,7 @@ config-lib:
 
 .PHONY: anastasis-webui
 anastasis-webui:
-	pnpm install --frozen-lockfile --filter @gnu-taler/anastasis-webui...
+	pnpm install --frozen-lockfile --filter . --filter @gnu-taler/anastasis-webui...
 	pnpm run --filter @gnu-taler/anastasis-webui... build
 
 .PHONY: anastasis-webui-dev
