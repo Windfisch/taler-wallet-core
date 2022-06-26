@@ -94,7 +94,7 @@ export const buildConfig = {
   ],
 }
 
-await esbuild
+esbuild
   .build(buildConfig)
   .catch((e) => {
     console.log(e)
