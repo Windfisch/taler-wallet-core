@@ -52,7 +52,7 @@ bundle ui-dev
 if [ "WATCH" == "$1" ]; then
 
   echo watch mode
-  echo Writting any file in the src directory will trigger a browser reload.
+  echo Writing any file in the src directory will trigger a browser reload.
   echo Be sure that the watcher server is running.
   echo ./watch/serve.sh
   inotifywait -e close_write -r src -q -m | while read line; do

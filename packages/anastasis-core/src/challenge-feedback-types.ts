@@ -96,7 +96,7 @@ export interface ChallengeFeedbackBankTransferRequired {
   state: ChallengeFeedbackStatus.IbanInstructions;
 
   /**
-   * Amount that should be transfered for a successful authentication.
+   * Amount that should be transferred for a successful authentication.
    */
   challenge_amount: AmountString;
 

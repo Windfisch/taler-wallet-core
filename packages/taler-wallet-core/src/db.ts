@@ -1227,7 +1227,7 @@ export interface PurchaseRecord {
    * Timestamp of the first time that sending a payment to the merchant
    * for this purchase was successful.
    *
-   * FIXME: Does this need to be a timestamp, doensn't boolean suffice?
+   * FIXME: Does this need to be a timestamp, doesn't boolean suffice?
    */
   timestampFirstSuccessfulPay: TalerProtocolTimestamp | undefined;
 

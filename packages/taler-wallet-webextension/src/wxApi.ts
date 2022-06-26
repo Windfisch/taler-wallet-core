@@ -70,8 +70,8 @@ import { platform, MessageFromBackend } from "./platform/api.js";
 
 /**
  *
- * @autor Florian Dold
- * @autor sebasjm
+ * @author Florian Dold
+ * @author sebasjm
  */
 
 export interface ExtendedPermissionsResponse {

@@ -57,7 +57,7 @@ export function AuthMethodTotpSetup({
   const errors = !name
     ? "The TOTP name is missing"
     : !testCodeMatches
-    ? "The test code doesnt match"
+    ? "The test code doesn't match"
     : undefined;
   function goNextIfNoErrors(): void {
     if (!errors) addTotpAuth();

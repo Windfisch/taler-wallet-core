@@ -57,7 +57,7 @@ export interface WalletVersion {
  */
 export interface PlatformAPI {
   /**
-   * Garantee that the
+   * Guarantee that the service workers don't die
    */
   keepAlive(cb: VoidFunction): void;
   /**

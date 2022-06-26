@@ -560,7 +560,7 @@ export async function csUnblind(
  * @param hm message signed
  * @param csSig unblinded signature
  * @param csPub denomination publick key
- * @returns true if valid, false if unvalid
+ * @returns true if valid, false if invalid
  */
 export async function csVerify(
   hm: Uint8Array,
@@ -679,8 +679,7 @@ export function hashDenomPub(pub: DenominationPubKey): Uint8Array {
     return nacl.hash(uint8ArrayBuf);
   } else {
     throw Error(
-      `unsupported cipher (${
-        (pub as DenominationPubKey).cipher
+      `unsupported cipher (${(pub as DenominationPubKey).cipher
       }), unable to hash`,
     );
   }
@@ -784,7 +783,7 @@ export enum TalerSignaturePurpose {
 export class SignaturePurposeBuilder {
   private chunks: Uint8Array[] = [];
 
-  constructor(private purposeNum: number) {}
+  constructor(private purposeNum: number) { }
 
   put(bytes: Uint8Array): SignaturePurposeBuilder {
     this.chunks.push(Uint8Array.from(bytes));

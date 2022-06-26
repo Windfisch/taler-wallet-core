@@ -59,15 +59,15 @@ export type DefaultComparable =
   | undefined
   | (number | string)[]
   | {
-      valueOf: () =>
-        | number
-        | string
-        | Date
-        | boolean
-        | null
-        | undefined
-        | (number | string)[];
-    };
+    valueOf: () =>
+      | number
+      | string
+      | Date
+      | boolean
+      | null
+      | undefined
+      | (number | string)[];
+  };
 
 /**
  * Compares DefaultComparables to form a strict partial ordering.
@@ -534,7 +534,7 @@ export default class BTree<K = any, V = any>
         : leaf.indexOf(lowestKey, 0, this._compare) - 1;
 
     return iterator<[K, V]>(() => {
-      jump: for (;;) {
+      jump: for (; ;) {
         switch (state) {
           case 0:
             if (++i < leaf.keys.length)
@@ -550,7 +550,7 @@ export default class BTree<K = any, V = any>
             state = 2;
           case 2:
             // Advance to the next leaf node
-            for (var level = -1; ; ) {
+            for (var level = -1; ;) {
               if (++level >= nodequeue.length) {
                 state = 3;
                 continue jump;
@@ -606,7 +606,7 @@ export default class BTree<K = any, V = any>
     var state = reusedArray !== undefined ? 1 : 0;
 
     return iterator<[K, V]>(() => {
-      jump: for (;;) {
+      jump: for (; ;) {
         switch (state) {
           case 0:
             if (--i >= 0)
@@ -622,7 +622,7 @@ export default class BTree<K = any, V = any>
             state = 2;
           case 2:
             // Advance to the next leaf node
-            for (var level = -1; ; ) {
+            for (var level = -1; ;) {
               if (++level >= nodequeue.length) {
                 state = 3;
                 continue jump;
@@ -763,7 +763,7 @@ export default class BTree<K = any, V = any>
                 thisLeaf.values[thisLevelIndices[thisLevelIndices.length - 1]];
               const valOther =
                 otherLeaf.values[
-                  otherLevelIndices[otherLevelIndices.length - 1]
+                otherLevelIndices[otherLevelIndices.length - 1]
                 ];
               if (!Object.is(valThis, valOther)) {
                 const result = different(
@@ -782,7 +782,7 @@ export default class BTree<K = any, V = any>
             if (otherLeaf && onlyOther) {
               const otherVal =
                 otherLeaf.values[
-                  otherLevelIndices[otherLevelIndices.length - 1]
+                otherLevelIndices[otherLevelIndices.length - 1]
                 ];
               const result = onlyOther(otherCursor.currentKey, otherVal);
               if (result && result.break) return result.break;
@@ -1294,7 +1294,7 @@ export default class BTree<K = any, V = any>
   /**
    * Scans and potentially modifies values for a subsequence of keys.
    * Note: the callback `onFound` should ideally be a pure function.
-   *   Specfically, it must not insert items, call clone(), or change
+   *   Specifically, it must not insert items, call clone(), or change
    *   the collection except via return value; out-of-band editing may
    *   cause an exception or may cause incorrect data to be sent to
    *   the callback (duplicate or missed items). It must not cause a

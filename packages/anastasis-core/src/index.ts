@@ -799,7 +799,7 @@ async function downloadPolicy(
     throw Error("invalid state");
   }
   let policyDownloadResult: PolicyDownloadResult | undefined = undefined;
-  // FIXME: Do this concurrently/asynchronously so that one slow provider doens't block us.
+  // FIXME: Do this concurrently/asynchronously so that one slow provider doesn't block us.
   for (const prov of state.selected_version.providers) {
     const res = await downloadPolicyFromProvider(state, prov.url, prov.version);
     if (res) {
@@ -1946,7 +1946,7 @@ export async function reduceAction(
  *
  * Returns an empty object if provider information is complete.
  *
- * FIXME: Also pass a cancelation token.
+ * FIXME: Also pass a cancellation token.
  */
 export async function completeProviderStatus(
   providerMap: AuthenticationProviderStatusMap,
