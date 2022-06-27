@@ -61,10 +61,10 @@ anastasis-webui:
 	pnpm install --frozen-lockfile --filter . --filter @gnu-taler/anastasis-webui...
 	pnpm run --filter @gnu-taler/anastasis-webui... build
 
-.PHONY: anastasis-webui-dev
-anastasis-webui-dev:
-	pnpm install --frozen-lockfile --filter @gnu-taler/anastasis-webui...
-	pnpm run --filter @gnu-taler/anastasis-webui... dev
+.PHONY: anastasis-webui-dist
+anastasis-webui-dist: anastasis-webui
+	(cd packages/anastasis-webui/dist && zip -r - fonts ui.html) > anastasis-webui.zip
+
 
 .PHONY: webextension
 webextension:

@@ -28,6 +28,10 @@ interface Props {
   mobile?: boolean;
 }
 
+const VERSION: string = process.env.__VERSION__ || "dev";
+const GIT_HASH: string | undefined = process.env.__GIT_HASH__;
+const VERSION_WITH_HASH = GIT_HASH ? `${VERSION}-${GIT_HASH}` : VERSION;
+
 export function Sidebar({ mobile }: Props): VNode {
   // const config = useConfigContext();
   const config = { version: "none" };
@@ -57,7 +61,7 @@ export function Sidebar({ mobile }: Props): VNode {
             class="is-size-7 has-text-right"
             style={{ lineHeight: 0, marginTop: -10 }}
           >
-            Version {process.env.__VERSION__} ({config.version})
+            Version {VERSION_WITH_HASH}
           </div>
         </div>
       </div>

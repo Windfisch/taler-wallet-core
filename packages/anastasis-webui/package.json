@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "@gnu-taler/anastasis-webui",
-  "version": "0.0.2",
+  "version": "0.2.99",
   "license": "MIT",
   "scripts": {
     "build": "./clean_and_build.sh",

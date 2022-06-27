@@ -10,14 +10,17 @@ cp \
 	src/scss/fonts/materialdesignicons-webfont-4.9.95.woff2 \
 	dist/fonts
 
+VERSION=$(jq -r .version package.json)
+GIT_HASH=$(git rev-parse --short HEAD)
+
 function build_css() {
 	pnpm exec sass -I . ./src/scss/main.scss dist/main.css
 }
 function build_js() {
-	pnpm exec esbuild --log-level=error --bundle $1 --outdir=dist --target=es6 --loader:.svg=dataurl --format=iife --sourcemap --jsx-factory=h --jsx-fragment=Fragment --platform=browser
+	pnpm exec esbuild --log-level=error --define:process.env.__VERSION__=\"${VERSION}\" --define:process.env.__GIT_HASH__=\"${GIT_HASH}\"  --bundle $1 --outdir=dist --target=es6 --loader:.svg=dataurl --format=iife --sourcemap --jsx-factory=h --jsx-fragment=Fragment --platform=browser --minify
 }
 
-function bundle() {
+function bundle_html() {
 	cat html/$1.html \
 	  | sed -e '/ANASTASIS_SCRIPT_CONTENT/ {' -e 'r dist/main.js' -e 'd' -e '}' \
 	  | sed -e '/ANASTASIS_STYLE_CONTENT/ {' -e 'r dist/main.css' -e 'd' -e '}' \
@@ -27,12 +30,13 @@ function bundle() {
 function cleanup {
  trap - SIGHUP SIGINT SIGTERM SIGQUIT
  echo -n "Cleaning up... "
+ wait
  kill -- -$$
  exit 1
 }
 trap cleanup SIGHUP SIGINT SIGTERM SIGQUIT
 
-
+set -e
 echo compile
 build_css &
 build_js src/main.ts &
@@ -45,9 +49,8 @@ wait -n
 pnpm run --silent test -- -R dot
 
 echo html
-bundle ui
-bundle ui-dev
-
+bundle_html ui
+bundle_html ui-dev
 
 if [ "WATCH" == "$1" ]; then
 

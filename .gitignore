@@ -26,6 +26,7 @@ prebuilt/
 
 
 taler-wallet-*.tar.gz
+anastasis-webui.zip
 
 # debian packaging leftovers
 packages/taler-wallet-cli/debian/.debhelper
