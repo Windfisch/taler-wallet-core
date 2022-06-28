@@ -17,6 +17,9 @@ override_dh_auto_install:
 	dh_install $(cli_dir)/dist/taler-wallet-cli.js.map $(TALER_WALLET_HOME)/node_modules/taler-wallet-cli/dist
 	dh_link $(TALER_WALLET_HOME)/node_modules/taler-wallet-cli/bin/taler-wallet-cli /usr/bin/taler-wallet-cli
 
+override_dh_builddeb:
+    dh_builddeb -- -Zgzip
+
 binary:
 	dh $@
 binary-arch:
