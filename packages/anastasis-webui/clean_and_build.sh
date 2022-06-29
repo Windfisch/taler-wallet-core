@@ -20,7 +20,7 @@ function build_js() {
 	pnpm exec esbuild --log-level=error --define:process.env.__VERSION__=\"${VERSION}\" --define:process.env.__GIT_HASH__=\"${GIT_HASH}\"  --bundle $1 --outdir=dist --target=es6 --loader:.svg=dataurl --format=iife --sourcemap --jsx-factory=h --jsx-fragment=Fragment --platform=browser --minify
 }
 
-function bundle_html() {
+function build_html() {
 	cat html/$1.html \
 	  | sed -e '/ANASTASIS_SCRIPT_CONTENT/ {' -e 'r dist/main.js' -e 'd' -e '}' \
 	  | sed -e '/ANASTASIS_STYLE_CONTENT/ {' -e 'r dist/main.css' -e 'd' -e '}' \
@@ -49,8 +49,8 @@ wait -n
 pnpm run --silent test -- -R dot
 
 echo html
-bundle_html ui
-bundle_html ui-dev
+build_html ui
+build_html ui-dev
 
 if [ "WATCH" == "$1" ]; then
 
@@ -61,7 +61,7 @@ if [ "WATCH" == "$1" ]; then
   inotifywait -e close_write -r src -q -m | while read line; do
     echo $(date) $line
     build_js src/main.ts
-    bundle ui-dev
+    build_html ui-dev
     ./watch/send.sh '{"type":"RELOAD"}'
   done;
 fi
