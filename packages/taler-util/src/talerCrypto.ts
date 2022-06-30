@@ -887,7 +887,7 @@ export namespace Edx25519 {
       outputLength: 64,
       salt: decodeCrock(seed),
       ikm: decodeCrock(pub),
-      info: stringToBytes("edx2559-derivation"),
+      info: stringToBytes("edx25519-derivation"),
     });
 
     return encodeCrock(res);
