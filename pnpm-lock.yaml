@@ -169,6 +169,7 @@ importers:
       ava: ^4.0.1
       big-integer: ^1.6.51
       esbuild: ^0.14.21
+      fflate: ^0.7.3
       jed: ^1.1.1
       prettier: ^2.5.1
       rimraf: ^3.0.2
@@ -176,6 +177,7 @@ importers:
       typescript: ^4.5.5
     dependencies:
       big-integer: 1.6.51
+      fflate: 0.7.3
       jed: 1.1.1
       tslib: 2.3.1
     devDependencies:

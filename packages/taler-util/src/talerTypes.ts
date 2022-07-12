@@ -1832,3 +1832,45 @@ export interface PurseDeposit {
    */
   coin_pub: EddsaPublicKeyString;
 }
+
+export interface ExchangePurseMergeRequest {
+  // payto://-URI of the account the purse is to be merged into.
+  // Must be of the form: 'payto://taler/$EXCHANGE_URL/$RESERVE_PUB'.
+  payto_uri: string;
+
+  // EdDSA signature of the account/reserve affirming the merge
+  // over a TALER_AccountMergeSignaturePS.
+  // Must be of purpose TALER_SIGNATURE_ACCOUNT_MERGE
+  reserve_sig: EddsaSignatureString;
+
+  // EdDSA signature of the purse private key affirming the merge
+  // over a TALER_PurseMergeSignaturePS.
+  // Must be of purpose TALER_SIGNATURE_PURSE_MERGE.
+  merge_sig: EddsaSignatureString;
+
+  // Client-side timestamp of when the merge request was made.
+  merge_timestamp: TalerProtocolTimestamp;
+}
+
+export interface ExchangeGetContractResponse {
+  purse_pub: string;
+  econtract_sig: string;
+  econtract: string;
+}
+
+export const codecForExchangeGetContractResponse =
+  (): Codec<ExchangeGetContractResponse> =>
+    buildCodecForObject<ExchangeGetContractResponse>()
+      .property("purse_pub", codecForString())
+      .property("econtract_sig", codecForString())
+      .property("econtract", codecForString())
+      .build("ExchangeGetContractResponse");
+
+/**
+ * Contract terms between two wallets (as opposed to a merchant and wallet).
+ */
+export interface PeerContractTerms {
+  amount: AmountString;
+  summary: string;
+  purse_expiration: TalerProtocolTimestamp;
+}

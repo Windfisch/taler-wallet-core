@@ -25,7 +25,6 @@ import * as nacl from "./nacl-fast.js";
 import { kdf, kdfKw } from "./kdf.js";
 import bigint from "big-integer";
 import {
-  Base32String,
   CoinEnvelope,
   CoinPublicKeyString,
   DenominationPubKey,
@@ -33,8 +32,26 @@ import {
   HashCodeString,
 } from "./talerTypes.js";
 import { Logger } from "./logging.js";
+import { secretbox } from "./nacl-fast.js";
+import * as fflate from "fflate";
+import { canonicalJson } from "./helpers.js";
+
+export type Flavor<T, FlavorT extends string> = T & {
+  _flavor?: `taler.${FlavorT}`;
+};
+
+export type FlavorP<T, FlavorT extends string, S extends number> = T & {
+  _flavor?: `taler.${FlavorT}`;
+  _size?: S;
+};
 
 export function getRandomBytes(n: number): Uint8Array {
+  return nacl.randomBytes(n);
+}
+
+export function getRandomBytesF<T extends number, N extends string>(
+  n: T,
+): FlavorP<Uint8Array, N, T> {
   return nacl.randomBytes(n);
 }
 
@@ -157,8 +174,8 @@ export function keyExchangeEddsaEcdhe(
 }
 
 export function keyExchangeEcdheEddsa(
-  ecdhePriv: Uint8Array,
-  eddsaPub: Uint8Array,
+  ecdhePriv: Uint8Array & MaterialEcdhePriv,
+  eddsaPub: Uint8Array & MaterialEddsaPub,
 ): Uint8Array {
   const curve25519Pub = nacl.sign_ed25519_pk_to_curve25519(eddsaPub);
   const x = nacl.scalarMult(ecdhePriv, curve25519Pub);
@@ -679,7 +696,8 @@ export function hashDenomPub(pub: DenominationPubKey): Uint8Array {
     return nacl.hash(uint8ArrayBuf);
   } else {
     throw Error(
-      `unsupported cipher (${(pub as DenominationPubKey).cipher
+      `unsupported cipher (${
+        (pub as DenominationPubKey).cipher
       }), unable to hash`,
     );
   }
@@ -775,6 +793,9 @@ export enum TalerSignaturePurpose {
   WALLET_AGE_ATTESTATION = 1207,
   WALLET_PURSE_CREATE = 1210,
   WALLET_PURSE_DEPOSIT = 1211,
+  WALLET_PURSE_MERGE = 1213,
+  WALLET_ACCOUNT_MERGE = 1214,
+  WALLET_PURSE_ECONTRACT = 1216,
   EXCHANGE_CONFIRM_RECOUP = 1039,
   EXCHANGE_CONFIRM_RECOUP_REFRESH = 1041,
   ANASTASIS_POLICY_UPLOAD = 1400,
@@ -782,10 +803,26 @@ export enum TalerSignaturePurpose {
   SYNC_BACKUP_UPLOAD = 1450,
 }
 
+export const enum WalletAccountMergeFlags {
+  /**
+   * Not a legal mode!
+   */
+  None = 0,
+
+  /**
+   * We are merging a fully paid-up purse into a reserve.
+   */
+  MergeFullyPaidPurse = 1,
+
+  CreateFromPurseQuota = 2,
+
+  CreateWithPurseFee = 3,
+}
+
 export class SignaturePurposeBuilder {
   private chunks: Uint8Array[] = [];
 
-  constructor(private purposeNum: number) { }
+  constructor(private purposeNum: number) {}
 
   put(bytes: Uint8Array): SignaturePurposeBuilder {
     this.chunks.push(Uint8Array.from(bytes));
@@ -815,19 +852,10 @@ export function buildSigPS(purposeNum: number): SignaturePurposeBuilder {
   return new SignaturePurposeBuilder(purposeNum);
 }
 
-export type Flavor<T, FlavorT extends string> = T & {
-  _flavor?: `taler.${FlavorT}`;
-};
-
-export type FlavorP<T, FlavorT extends string, S extends number> = T & {
-  _flavor?: `taler.${FlavorT}`;
-  _size?: S;
-};
-
-export type OpaqueData = Flavor<string, "OpaqueData">;
-export type Edx25519PublicKey = FlavorP<string, "Edx25519PublicKey", 32>;
-export type Edx25519PrivateKey = FlavorP<string, "Edx25519PrivateKey", 64>;
-export type Edx25519Signature = FlavorP<string, "Edx25519Signature", 64>;
+export type OpaqueData = Flavor<Uint8Array, any>;
+export type Edx25519PublicKey = FlavorP<Uint8Array, "Edx25519PublicKey", 32>;
+export type Edx25519PrivateKey = FlavorP<Uint8Array, "Edx25519PrivateKey", 64>;
+export type Edx25519Signature = FlavorP<Uint8Array, "Edx25519Signature", 64>;
 
 /**
  * Convert a big integer to a fixed-size, little-endian array.
@@ -859,19 +887,17 @@ export namespace Edx25519 {
   export async function keyCreateFromSeed(
     seed: OpaqueData,
   ): Promise<Edx25519PrivateKey> {
-    return encodeCrock(
-      nacl.crypto_edx25519_private_key_create_from_seed(decodeCrock(seed)),
-    );
+    return nacl.crypto_edx25519_private_key_create_from_seed(seed);
   }
 
   export async function keyCreate(): Promise<Edx25519PrivateKey> {
-    return encodeCrock(nacl.crypto_edx25519_private_key_create());
+    return nacl.crypto_edx25519_private_key_create();
   }
 
   export async function getPublic(
     priv: Edx25519PrivateKey,
   ): Promise<Edx25519PublicKey> {
-    return encodeCrock(nacl.crypto_edx25519_get_public(decodeCrock(priv)));
+    return nacl.crypto_edx25519_get_public(priv);
   }
 
   export function sign(
@@ -887,12 +913,12 @@ export namespace Edx25519 {
   ): Promise<OpaqueData> {
     const res = kdfKw({
       outputLength: 64,
-      salt: decodeCrock(seed),
-      ikm: decodeCrock(pub),
-      info: stringToBytes("edx25519-derivation"),
+      salt: seed,
+      ikm: pub,
+      info: stringToBytes("edx2559-derivation"),
     });
 
-    return encodeCrock(res);
+    return res;
   }
 
   export async function privateKeyDerive(
@@ -900,21 +926,17 @@ export namespace Edx25519 {
     seed: OpaqueData,
   ): Promise<Edx25519PrivateKey> {
     const pub = await getPublic(priv);
-    const privDec = decodeCrock(priv);
+    const privDec = priv;
     const a = bigintFromNaclArr(privDec.subarray(0, 32));
     const factorEnc = await deriveFactor(pub, seed);
-    const factorModL = bigintFromNaclArr(decodeCrock(factorEnc)).mod(L);
+    const factorModL = bigintFromNaclArr(factorEnc).mod(L);
 
     const aPrime = a.divide(8).multiply(factorModL).mod(L).multiply(8).mod(L);
     const bPrime = nacl
-      .hash(
-        typedArrayConcat([privDec.subarray(32, 64), decodeCrock(factorEnc)]),
-      )
+      .hash(typedArrayConcat([privDec.subarray(32, 64), factorEnc]))
       .subarray(0, 32);
 
-    const newPriv = encodeCrock(
-      typedArrayConcat([bigintToNaclArr(aPrime, 32), bPrime]),
-    );
+    const newPriv = typedArrayConcat([bigintToNaclArr(aPrime, 32), bPrime]);
 
     return newPriv;
   }
@@ -924,14 +946,9 @@ export namespace Edx25519 {
     seed: OpaqueData,
   ): Promise<Edx25519PublicKey> {
     const factorEnc = await deriveFactor(pub, seed);
-    const factorReduced = nacl.crypto_core_ed25519_scalar_reduce(
-      decodeCrock(factorEnc),
-    );
-    const res = nacl.crypto_scalarmult_ed25519_noclamp(
-      factorReduced,
-      decodeCrock(pub),
-    );
-    return encodeCrock(res);
+    const factorReduced = nacl.crypto_core_ed25519_scalar_reduce(factorEnc);
+    const res = nacl.crypto_scalarmult_ed25519_noclamp(factorReduced, pub);
+    return res;
   }
 }
 
@@ -967,7 +984,7 @@ export namespace AgeRestriction {
   export function hashCommitment(ac: AgeCommitment): HashCodeString {
     const hc = new nacl.HashState();
     for (const pub of ac.publicKeys) {
-      hc.update(decodeCrock(pub));
+      hc.update(pub);
     }
     return encodeCrock(hc.finish().subarray(0, 32));
   }
@@ -1091,16 +1108,12 @@ export namespace AgeRestriction {
     const group = getAgeGroupIndex(commitmentProof.commitment.mask, age);
     if (group === 0) {
       // No attestation required.
-      return encodeCrock(new Uint8Array(64));
+      return new Uint8Array(64);
     }
     const priv = commitmentProof.proof.privateKeys[group - 1];
     const pub = commitmentProof.commitment.publicKeys[group - 1];
-    const sig = nacl.crypto_edx25519_sign_detached(
-      d,
-      decodeCrock(priv),
-      decodeCrock(pub),
-    );
-    return encodeCrock(sig);
+    const sig = nacl.crypto_edx25519_sign_detached(d, priv, pub);
+    return sig;
   }
 
   export function commitmentVerify(
@@ -1118,10 +1131,138 @@ export namespace AgeRestriction {
       return true;
     }
     const pub = commitment.publicKeys[group - 1];
-    return nacl.crypto_edx25519_sign_detached_verify(
-      d,
-      decodeCrock(sig),
-      decodeCrock(pub),
-    );
+    return nacl.crypto_edx25519_sign_detached_verify(d, decodeCrock(sig), pub);
   }
+}
+
+// FIXME: make it a branded type!
+type EncryptionNonce = FlavorP<Uint8Array, "EncryptionNonce", 24>;
+
+async function deriveKey(
+  keySeed: OpaqueData,
+  nonce: EncryptionNonce,
+  salt: string,
+): Promise<Uint8Array> {
+  return kdfKw({
+    outputLength: 32,
+    salt: nonce,
+    ikm: keySeed,
+    info: stringToBytes(salt),
+  });
+}
+
+async function encryptWithDerivedKey(
+  nonce: EncryptionNonce,
+  keySeed: OpaqueData,
+  plaintext: OpaqueData,
+  salt: string,
+): Promise<OpaqueData> {
+  const key = await deriveKey(keySeed, nonce, salt);
+  const cipherText = secretbox(plaintext, nonce, key);
+  return typedArrayConcat([nonce, cipherText]);
+}
+
+const nonceSize = 24;
+
+async function decryptWithDerivedKey(
+  ciphertext: OpaqueData,
+  keySeed: OpaqueData,
+  salt: string,
+): Promise<OpaqueData> {
+  const ctBuf = ciphertext;
+  const nonceBuf = ctBuf.slice(0, nonceSize);
+  const enc = ctBuf.slice(nonceSize);
+  const key = await deriveKey(keySeed, nonceBuf, salt);
+  const clearText = nacl.secretbox_open(enc, nonceBuf, key);
+  if (!clearText) {
+    throw Error("could not decrypt");
+  }
+  return clearText;
+}
+
+enum ContractFormatTag {
+  PaymentOffer = 0,
+  PaymentRequest = 1,
+}
+
+type MaterialEddsaPub = {
+  _materialType?: "eddsa-pub";
+  _size?: 32;
+};
+
+type MaterialEddsaPriv = {
+  _materialType?: "ecdhe-priv";
+  _size?: 32;
+};
+
+type MaterialEcdhePub = {
+  _materialType?: "ecdhe-pub";
+  _size?: 32;
+};
+
+type MaterialEcdhePriv = {
+  _materialType?: "ecdhe-priv";
+  _size?: 32;
+};
+
+type PursePublicKey = FlavorP<Uint8Array, "PursePublicKey", 32> &
+  MaterialEddsaPub;
+
+type ContractPrivateKey = FlavorP<Uint8Array, "ContractPrivateKey", 32> &
+  MaterialEcdhePriv;
+
+type MergePrivateKey = FlavorP<Uint8Array, "MergePrivateKey", 32> &
+  MaterialEddsaPriv;
+
+export function encryptContractForMerge(
+  pursePub: PursePublicKey,
+  contractPriv: ContractPrivateKey,
+  mergePriv: MergePrivateKey,
+  contractTerms: any,
+): Promise<OpaqueData> {
+  const contractTermsCanon = canonicalJson(contractTerms) + "\0";
+  const contractTermsBytes = stringToBytes(contractTermsCanon);
+  const contractTermsCompressed = fflate.zlibSync(contractTermsBytes);
+  const data = typedArrayConcat([
+    bufferForUint32(ContractFormatTag.PaymentOffer),
+    bufferForUint32(contractTermsBytes.length),
+    mergePriv,
+    contractTermsCompressed,
+  ]);
+  const key = keyExchangeEcdheEddsa(contractPriv, pursePub);
+  return encryptWithDerivedKey(
+    getRandomBytesF(24),
+    key,
+    data,
+    "p2p-merge-contract",
+  );
+}
+
+export interface DecryptForMergeResult {
+  contractTerms: any;
+  mergePriv: Uint8Array;
+}
+
+export async function decryptContractForMerge(
+  enc: OpaqueData,
+  pursePub: PursePublicKey,
+  contractPriv: ContractPrivateKey,
+): Promise<DecryptForMergeResult> {
+  const key = keyExchangeEcdheEddsa(contractPriv, pursePub);
+  const dec = await decryptWithDerivedKey(enc, key, "p2p-merge-contract");
+  const mergePriv = dec.slice(8, 8 + 32);
+  const contractTermsCompressed = dec.slice(8 + 32);
+  const contractTermsBuf = fflate.unzlibSync(contractTermsCompressed);
+  // Slice of the '\0' at the end and decode to a string
+  const contractTermsString = bytesToString(
+    contractTermsBuf.slice(0, contractTermsBuf.length - 1),
+  );
+  return {
+    mergePriv: mergePriv,
+    contractTerms: JSON.parse(contractTermsString),
+  };
+}
+
+export function encryptContractForDeposit() {
+  throw Error("not implemented");
 }

@@ -16,22 +16,46 @@
 
 import {
   AmountJson,
-  Amounts, BackupCoinSourceType, BackupDenomSel, BackupProposalStatus,
-  BackupPurchase, BackupRefreshReason, BackupRefundState, codecForContractTerms,
-  DenomKeyType, j2s, Logger, PayCoinSelection, RefreshReason, TalerProtocolTimestamp,
-  WalletBackupContentV1
+  Amounts,
+  BackupCoinSourceType,
+  BackupDenomSel,
+  BackupProposalStatus,
+  BackupPurchase,
+  BackupRefreshReason,
+  BackupRefundState,
+  codecForContractTerms,
+  DenomKeyType,
+  j2s,
+  Logger,
+  PayCoinSelection,
+  RefreshReason,
+  TalerProtocolTimestamp,
+  WalletBackupContentV1,
 } from "@gnu-taler/taler-util";
 import {
-  AbortStatus, CoinSource,
+  AbortStatus,
+  CoinSource,
   CoinSourceType,
-  CoinStatus, DenominationVerificationStatus, DenomSelectionState, OperationStatus, ProposalDownload,
-  ProposalStatus, RefreshCoinStatus, RefreshSessionRecord, RefundState, ReserveBankInfo,
-  ReserveRecordStatus, WalletContractData, WalletRefundItem, WalletStoresV1, WireInfo
+  CoinStatus,
+  DenominationVerificationStatus,
+  DenomSelectionState,
+  OperationStatus,
+  ProposalDownload,
+  ProposalStatus,
+  RefreshCoinStatus,
+  RefreshSessionRecord,
+  RefundState,
+  ReserveBankInfo,
+  ReserveRecordStatus,
+  WalletContractData,
+  WalletRefundItem,
+  WalletStoresV1,
+  WireInfo,
 } from "../../db.js";
 import { InternalWalletState } from "../../internal-wallet-state.js";
 import {
   checkDbInvariant,
-  checkLogicInvariant
+  checkLogicInvariant,
 } from "../../util/invariants.js";
 import { GetReadOnlyAccess, GetReadWriteAccess } from "../../util/query.js";
 import { RetryInfo } from "../../util/retries.js";
@@ -313,14 +337,12 @@ export async function importBackup(
         }
 
         for (const backupDenomination of backupExchangeDetails.denominations) {
-          if (
-            backupDenomination.denom_pub.cipher !== DenomKeyType.Rsa
-          ) {
+          if (backupDenomination.denom_pub.cipher !== DenomKeyType.Rsa) {
             throw Error("unsupported cipher");
           }
           const denomPubHash =
             cryptoComp.rsaDenomPubToHash[
-            backupDenomination.denom_pub.rsa_public_key
+              backupDenomination.denom_pub.rsa_public_key
             ];
           checkLogicInvariant(!!denomPubHash);
           const existingDenom = await tx.denominations.get([
@@ -535,7 +557,7 @@ export async function importBackup(
             const amount = Amounts.parseOrThrow(parsedContractTerms.amount);
             const contractTermsHash =
               cryptoComp.proposalIdToContractTermsHash[
-              backupProposal.proposal_id
+                backupProposal.proposal_id
               ];
             let maxWireFee: AmountJson;
             if (parsedContractTerms.max_wire_fee) {
@@ -679,7 +701,7 @@ export async function importBackup(
           const amount = Amounts.parseOrThrow(parsedContractTerms.amount);
           const contractTermsHash =
             cryptoComp.proposalIdToContractTermsHash[
-            backupPurchase.proposal_id
+              backupPurchase.proposal_id
             ];
           let maxWireFee: AmountJson;
           if (parsedContractTerms.max_wire_fee) {

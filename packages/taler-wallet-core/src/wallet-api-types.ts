@@ -27,6 +27,7 @@ import {
   AcceptExchangeTosRequest,
   AcceptManualWithdrawalRequest,
   AcceptManualWithdrawalResult,
+  AcceptPeerPushPaymentRequest,
   AcceptTipRequest,
   AcceptWithdrawalResponse,
   AddExchangeRequest,
@@ -34,6 +35,8 @@ import {
   ApplyRefundResponse,
   BackupRecovery,
   BalancesResponse,
+  CheckPeerPushPaymentRequest,
+  CheckPeerPushPaymentResponse,
   CoinDumpJson,
   ConfirmPayRequest,
   ConfirmPayResult,
@@ -285,6 +288,14 @@ export type WalletOperations = {
   [WalletApiOperation.InitiatePeerPushPayment]: {
     request: InitiatePeerPushPaymentRequest;
     response: InitiatePeerPushPaymentResponse;
+  };
+  [WalletApiOperation.CheckPeerPushPayment]: {
+    request: CheckPeerPushPaymentRequest;
+    response: CheckPeerPushPaymentResponse;
+  };
+  [WalletApiOperation.AcceptPeerPushPayment]: {
+    request: AcceptPeerPushPaymentRequest;
+    response: {};
   };
 };
 

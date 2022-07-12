@@ -374,7 +374,7 @@ test("taler age restriction crypto", async (t) => {
   const priv1 = await Edx25519.keyCreate();
   const pub1 = await Edx25519.getPublic(priv1);
 
-  const seed = encodeCrock(getRandomBytes(32));
+  const seed = getRandomBytes(32);
 
   const priv2 = await Edx25519.privateKeyDerive(priv1, seed);
   const pub2 = await Edx25519.publicKeyDerive(pub1, seed);
@@ -392,18 +392,18 @@ test("edx signing", async (t) => {
 
   const sig = nacl.crypto_edx25519_sign_detached(
     msg,
-    decodeCrock(priv1),
-    decodeCrock(pub1),
+    priv1,
+    pub1,
   );
 
   t.true(
-    nacl.crypto_edx25519_sign_detached_verify(msg, sig, decodeCrock(pub1)),
+    nacl.crypto_edx25519_sign_detached_verify(msg, sig, pub1),
   );
 
   sig[0]++;
 
   t.false(
-    nacl.crypto_edx25519_sign_detached_verify(msg, sig, decodeCrock(pub1)),
+    nacl.crypto_edx25519_sign_detached_verify(msg, sig, pub1),
   );
 });
 
@@ -421,13 +421,19 @@ test("edx test vector", async (t) => {
   };
 
   {
-    const pub1Prime = await Edx25519.getPublic(tv.priv1_edx);
-    t.is(pub1Prime, tv.pub1_edx);
+    const pub1Prime = await Edx25519.getPublic(decodeCrock(tv.priv1_edx));
+    t.is(pub1Prime, decodeCrock(tv.pub1_edx));
   }
 
-  const pub2Prime = await Edx25519.publicKeyDerive(tv.pub1_edx, tv.seed);
-  t.is(pub2Prime, tv.pub2_edx);
+  const pub2Prime = await Edx25519.publicKeyDerive(
+    decodeCrock(tv.pub1_edx),
+    decodeCrock(tv.seed),
+  );
+  t.is(pub2Prime, decodeCrock(tv.pub2_edx));
 
-  const priv2Prime = await Edx25519.privateKeyDerive(tv.priv1_edx, tv.seed);
-  t.is(priv2Prime, tv.priv2_edx);
+  const priv2Prime = await Edx25519.privateKeyDerive(
+    decodeCrock(tv.priv1_edx),
+    decodeCrock(tv.seed),
+  );
+  t.is(priv2Prime, decodeCrock(tv.priv2_edx));
 });

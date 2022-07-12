@@ -1263,15 +1263,50 @@ export interface PayCoinSelection {
 
 export interface InitiatePeerPushPaymentRequest {
   amount: AmountString;
+  partialContractTerms: any;
 }
 
 export interface InitiatePeerPushPaymentResponse {
+  exchangeBaseUrl: string;
   pursePub: string;
   mergePriv: string;
+  contractPriv: string;
 }
 
 export const codecForInitiatePeerPushPaymentRequest =
   (): Codec<InitiatePeerPushPaymentRequest> =>
     buildCodecForObject<InitiatePeerPushPaymentRequest>()
       .property("amount", codecForAmountString())
+      .property("partialContractTerms", codecForAny())
       .build("InitiatePeerPushPaymentRequest");
+
+export interface CheckPeerPushPaymentRequest {
+  exchangeBaseUrl: string;
+  pursePub: string;
+  contractPriv: string;
+}
+
+export interface CheckPeerPushPaymentResponse {
+  contractTerms: any;
+  amount: AmountString;
+}
+
+export const codecForCheckPeerPushPaymentRequest =
+  (): Codec<CheckPeerPushPaymentRequest> =>
+    buildCodecForObject<CheckPeerPushPaymentRequest>()
+      .property("pursePub", codecForString())
+      .property("contractPriv", codecForString())
+      .property("exchangeBaseUrl", codecForString())
+      .build("CheckPeerPushPaymentRequest");
+
+export interface AcceptPeerPushPaymentRequest {
+  exchangeBaseUrl: string;
+  pursePub: string;
+}
+
+export const codecForAcceptPeerPushPaymentRequest =
+  (): Codec<AcceptPeerPushPaymentRequest> =>
+    buildCodecForObject<AcceptPeerPushPaymentRequest>()
+      .property("pursePub", codecForString())
+      .property("exchangeBaseUrl", codecForString())
+      .build("AcceptPeerPushPaymentRequest");

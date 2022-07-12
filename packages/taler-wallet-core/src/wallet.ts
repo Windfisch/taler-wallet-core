@@ -32,11 +32,13 @@ import {
   codecForAcceptBankIntegratedWithdrawalRequest,
   codecForAcceptExchangeTosRequest,
   codecForAcceptManualWithdrawalRequet,
+  codecForAcceptPeerPushPaymentRequest,
   codecForAcceptTipRequest,
   codecForAddExchangeRequest,
   codecForAny,
   codecForApplyRefundFromPurchaseIdRequest,
   codecForApplyRefundRequest,
+  codecForCheckPeerPushPaymentRequest,
   codecForConfirmPayRequest,
   codecForCreateDepositGroupRequest,
   codecForDeleteTransactionRequest,
@@ -144,7 +146,11 @@ import {
   processDownloadProposal,
   processPurchasePay,
 } from "./operations/pay.js";
-import { initiatePeerToPeerPush } from "./operations/peer-to-peer.js";
+import {
+  acceptPeerPushPayment,
+  checkPeerPushPayment,
+  initiatePeerToPeerPush,
+} from "./operations/peer-to-peer.js";
 import { getPendingOperations } from "./operations/pending.js";
 import { createRecoupGroup, processRecoupGroup } from "./operations/recoup.js";
 import {
@@ -1054,6 +1060,15 @@ async function dispatchRequestInternal(
     case "initiatePeerPushPayment": {
       const req = codecForInitiatePeerPushPaymentRequest().decode(payload);
       return await initiatePeerToPeerPush(ws, req);
+    }
+    case "checkPeerPushPayment": {
+      const req = codecForCheckPeerPushPaymentRequest().decode(payload);
+      return await checkPeerPushPayment(ws, req);
+    }
+    case "acceptPeerPushPayment": {
+      const req = codecForAcceptPeerPushPaymentRequest().decode(payload);
+      await acceptPeerPushPayment(ws, req);
+      return {};
     }
   }
   throw TalerError.fromDetail(

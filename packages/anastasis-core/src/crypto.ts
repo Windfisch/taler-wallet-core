@@ -227,11 +227,11 @@ async function anastasisDecrypt(
   const nonceBuf = ctBuf.slice(0, nonceSize);
   const enc = ctBuf.slice(nonceSize);
   const key = await deriveKey(keySeed, encodeCrock(nonceBuf), salt);
-  const cipherText = secretbox_open(enc, nonceBuf, key);
-  if (!cipherText) {
+  const clearText = secretbox_open(enc, nonceBuf, key);
+  if (!clearText) {
     throw Error("could not decrypt");
   }
-  return encodeCrock(cipherText);
+  return encodeCrock(clearText);
 }
 
 export const asOpaque = (x: string): OpaqueData => x;

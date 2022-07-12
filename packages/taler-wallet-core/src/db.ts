@@ -42,6 +42,7 @@ import {
   TalerProtocolDuration,
   AgeCommitmentProof,
   PayCoinSelection,
+  PeerContractTerms,
 } from "@gnu-taler/taler-util";
 import { RetryInfo } from "./util/retries.js";
 import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
@@ -561,6 +562,12 @@ export interface ExchangeRecord {
    * Retry status for fetching updated information about the exchange.
    */
   retryInfo?: RetryInfo;
+
+  /**
+   * Public key of the reserve that we're currently using for
+   * receiving P2P payments.
+   */
+  currentMergeReservePub?: string;
 }
 
 /**
@@ -1675,7 +1682,6 @@ export interface BalancePerCurrencyRecord {
  * Record for a push P2P payment that this wallet initiated.
  */
 export interface PeerPushPaymentInitiationRecord {
-
   /**
    * What exchange are funds coming from?
    */
@@ -1704,18 +1710,40 @@ export interface PeerPushPaymentInitiationRecord {
    */
   mergePriv: string;
 
+  contractPriv: string;
+
+  contractPub: string;
+
   purseExpiration: TalerProtocolTimestamp;
 
   /**
    * Did we successfully create the purse with the exchange?
    */
   purseCreated: boolean;
+
+  timestampCreated: TalerProtocolTimestamp;
 }
 
 /**
- * Record for a push P2P payment that this wallet accepted.
+ * Record for a push P2P payment that this wallet was offered.
+ *
+ * Primary key: (exchangeBaseUrl, pursePub)
  */
-export interface PeerPushPaymentAcceptanceRecord {}
+export interface PeerPushPaymentIncomingRecord {
+  exchangeBaseUrl: string;
+
+  pursePub: string;
+
+  mergePriv: string;
+
+  contractPriv: string;
+
+  timestampAccepted: TalerProtocolTimestamp;
+
+  contractTerms: PeerContractTerms;
+
+  // FIXME: add status etc.
+}
 
 export const WalletStoresV1 = {
   coins: describeStore(
@@ -1890,6 +1918,12 @@ export const WalletStoresV1 = {
   balancesPerCurrency: describeStore(
     describeContents<BalancePerCurrencyRecord>("balancesPerCurrency", {
       keyPath: "currency",
+    }),
+    {},
+  ),
+  peerPushPaymentIncoming: describeStore(
+    describeContents<PeerPushPaymentIncomingRecord>("peerPushPaymentIncoming", {
+      keyPath: ["exchangeBaseUrl", "pursePub"],
     }),
     {},
   ),

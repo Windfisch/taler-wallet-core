@@ -35,6 +35,7 @@ import {
   ConfirmPayResult,
   ConfirmPayResultType,
   ContractTerms,
+  ContractTermsUtil,
   Duration,
   durationMax,
   durationMin,
@@ -87,7 +88,6 @@ import {
   selectForcedPayCoins,
   selectPayCoins,
 } from "../util/coinSelection.js";
-import { ContractTermsUtil } from "../util/contractTerms.js";
 import {
   getHttpResponseErrorDetails,
   readSuccessResponseJsonOrErrorCode,

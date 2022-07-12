@@ -1149,7 +1149,7 @@ testCli
       tVerify.start();
       const attestRes = AgeRestriction.commitmentVerify(
         commitProof.commitment,
-        attest,
+        encodeCrock(attest),
         18,
       );
       tVerify.stop();
@@ -1157,9 +1157,12 @@ testCli
         throw Error();
       }
 
-      const salt = encodeCrock(getRandomBytes(32));
+      const salt = getRandomBytes(32);
       tDerive.start();
-      const deriv = await AgeRestriction.commitmentDerive(commitProof, salt);
+      const deriv = await AgeRestriction.commitmentDerive(
+        commitProof,
+        salt,
+      );
       tDerive.stop();
 
       tCompare.start();

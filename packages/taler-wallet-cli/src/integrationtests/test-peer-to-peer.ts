@@ -44,10 +44,36 @@ export async function runPeerToPeerTest(t: GlobalTestState) {
     WalletApiOperation.InitiatePeerPushPayment,
     {
       amount: "TESTKUDOS:5",
+      partialContractTerms: {
+        summary: "Hello World",
+      },
     },
   );
 
   console.log(resp);
+
+  const checkResp = await wallet.client.call(
+    WalletApiOperation.CheckPeerPushPayment,
+    {
+      contractPriv: resp.contractPriv,
+      exchangeBaseUrl: resp.exchangeBaseUrl,
+      pursePub: resp.pursePub,
+    },
+  );
+
+  console.log(checkResp);
+
+  const acceptResp = await wallet.client.call(
+    WalletApiOperation.AcceptPeerPushPayment,
+    {
+      exchangeBaseUrl: resp.exchangeBaseUrl,
+      pursePub: resp.pursePub,
+    },
+  );
+
+  console.log(acceptResp);
+
+  await wallet.runUntilDone();
 }
 
 runPeerToPeerTest.suites = ["wallet"];

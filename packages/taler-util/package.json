@@ -38,6 +38,7 @@
   },
   "dependencies": {
     "big-integer": "^1.6.51",
+    "fflate": "^0.7.3",
     "jed": "^1.1.1",
     "tslib": "^2.3.1"
   },

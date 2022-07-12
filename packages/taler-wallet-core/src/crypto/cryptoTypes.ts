@@ -30,11 +30,16 @@
 import {
   AgeCommitmentProof,
   AmountJson,
+  AmountString,
   CoinEnvelope,
   DenominationPubKey,
+  EddsaPublicKeyString,
+  EddsaSignatureString,
   ExchangeProtocolVersion,
   RefreshPlanchetInfo,
+  TalerProtocolTimestamp,
   UnblindedSignature,
+  WalletAccountMergeFlags,
 } from "@gnu-taler/taler-util";
 
 export interface RefreshNewDenomInfo {
@@ -148,4 +153,80 @@ export interface CreateRecoupRefreshReqRequest {
   denomPub: DenominationPubKey;
   denomPubHash: string;
   denomSig: UnblindedSignature;
+}
+
+export interface EncryptedContract {
+  /**
+   * Encrypted contract.
+   */
+  econtract: string;
+
+  /**
+   * Signature over the (encrypted) contract.
+   */
+  econtract_sig: EddsaSignatureString;
+
+  /**
+   * Ephemeral public key for the DH operation to decrypt the encrypted contract.
+   */
+  contract_pub: EddsaPublicKeyString;
+}
+
+export interface EncryptContractRequest {
+  contractTerms: any;
+
+  pursePub: string;
+  pursePriv: string;
+
+  mergePriv: string;
+}
+
+export interface EncryptContractResponse {
+  econtract: EncryptedContract;
+
+  contractPriv: string;
+}
+
+export interface DecryptContractRequest {
+  ciphertext: string;
+  pursePub: string;
+  contractPriv: string;
+}
+
+export interface DecryptContractResponse {
+  contractTerms: any;
+  mergePriv: string;
+}
+
+export interface SignPurseMergeRequest {
+  mergeTimestamp: TalerProtocolTimestamp;
+
+  pursePub: string;
+
+  reservePayto: string;
+
+  reservePriv: string;
+
+  mergePriv: string;
+
+  purseExpiration: TalerProtocolTimestamp;
+
+  purseAmount: AmountString;
+  purseFee: AmountString;
+
+  contractTermsHash: string;
+
+  /**
+   * Flags.
+   */
+  flags: WalletAccountMergeFlags;
+}
+
+export interface SignPurseMergeResponse {
+  /**
+   * Signature made by the purse's merge private key.
+   */
+  mergeSig: string;
+  
+  accountSig: string;
 }
