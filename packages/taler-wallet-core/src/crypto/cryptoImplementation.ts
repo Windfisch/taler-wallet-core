@@ -1042,9 +1042,15 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
           cipher: DenomKeyType.Rsa,
           rsa_signature: depositInfo.denomSig.rsa_signature,
         },
-        age_commitment: depositInfo.ageCommitmentProof?.commitment.publicKeys,
-        minimum_age_sig: minimumAgeSig,
       };
+
+      if (depositInfo.requiredMinimumAge != null) {
+	      s.minimum_age_sig = minimumAgeSig;
+	      s.age_commitment = depositInfo.ageCommitmentProof?.commitment.publicKeys;
+      } else if (depositInfo.ageCommitmentProof) {
+	      s.h_age_commitment = hAgeCommitment;
+      }
+
       return s;
     } else {
       throw Error(
