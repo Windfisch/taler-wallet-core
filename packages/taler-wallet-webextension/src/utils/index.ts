@@ -19,6 +19,7 @@ import {
   Amounts,
   GetExchangeTosResult,
 } from "@gnu-taler/taler-util";
+import { VNode } from "preact";
 
 function getJsonIfOk(r: Response): Promise<any> {
   if (r.ok) {
@@ -189,4 +190,25 @@ export interface TermsDocumentJson {
 export interface TermsDocumentPdf {
   type: "pdf";
   location: URL;
+}
+
+export type StateFunc<S> = (p: S) => VNode;
+
+export type StateViewMap<StateType extends { status: string }> = {
+  [S in StateType as S["status"]]: StateFunc<S>;
+};
+
+export function compose<SType extends { status: string }, PType>(
+  name: string,
+  hook: (p: PType) => SType,
+  vs: StateViewMap<SType>,
+): (p: PType) => VNode {
+  const Component = (p: PType): VNode => {
+    const state = hook(p);
+    const s = state.status as unknown as SType["status"];
+    const c = vs[s] as unknown as StateFunc<SType>;
+    return c(state);
+  };
+  Component.name = `${name}`;
+  return Component;
 }

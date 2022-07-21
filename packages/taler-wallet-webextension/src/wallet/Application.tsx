@@ -37,7 +37,7 @@ import {
 import { PayPage } from "../cta/Pay.js";
 import { RefundPage } from "../cta/Refund.js";
 import { TipPage } from "../cta/Tip.js";
-import { WithdrawPage } from "../cta/Withdraw.js";
+import { WithdrawPage } from "../cta/Withdraw/index.js";
 import { DepositPage as DepositPageCTA } from "../cta/Deposit.js";
 import { Pages, WalletNavBar } from "../NavigationBar.js";
 import { DeveloperPage } from "./DeveloperPage.js";

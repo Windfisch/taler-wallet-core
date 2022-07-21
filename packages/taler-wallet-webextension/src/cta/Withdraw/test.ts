@@ -26,8 +26,8 @@ import {
 } from "@gnu-taler/taler-util";
 import { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
-import { mountHook } from "../test-utils.js";
-import { useComponentState } from "./Withdraw.js";
+import { mountHook } from "../../test-utils.js";
+import { useComponentState } from "./state.js";
 
 const exchanges: ExchangeListItem[] = [
   {
@@ -44,7 +44,7 @@ describe("Withdraw CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState(undefined, {
+        useComponentState({ talerWithdrawUri: undefined }, {
           listExchanges: async () => ({ exchanges }),
           getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
             amount: "ARS:2",
@@ -77,7 +77,7 @@ describe("Withdraw CTA states", () => {
   it("should tell the user that there is not known exchange", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState("taler-withdraw://", {
+        useComponentState({ talerWithdrawUri: "taler-withdraw://" }, {
           listExchanges: async () => ({ exchanges }),
           getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
             amount: "EUR:2",
@@ -112,7 +112,7 @@ describe("Withdraw CTA states", () => {
   it("should be able to withdraw if tos are ok", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState("taler-withdraw://", {
+        useComponentState({ talerWithdrawUri: "taler-withdraw://" }, {
           listExchanges: async () => ({ exchanges }),
           getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
             amount: "ARS:2",
@@ -177,7 +177,7 @@ describe("Withdraw CTA states", () => {
   it("should be accept the tos before withdraw", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState("taler-withdraw://", {
+        useComponentState({ talerWithdrawUri: "taler-withdraw://" }, {
           listExchanges: async () => ({ exchanges }),
           getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
             amount: "ARS:2",
