@@ -1048,7 +1048,7 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
 	      s.minimum_age_sig = minimumAgeSig;
 	      s.age_commitment = depositInfo.ageCommitmentProof?.commitment.publicKeys;
       } else if (depositInfo.ageCommitmentProof) {
-	      s.h_age_commitment = hAgeCommitment;
+	      (s as any).h_age_commitment = hAgeCommitment;
       }
 
       return s;
