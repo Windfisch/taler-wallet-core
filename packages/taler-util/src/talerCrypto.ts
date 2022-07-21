@@ -915,7 +915,7 @@ export namespace Edx25519 {
       outputLength: 64,
       salt: seed,
       ikm: pub,
-      info: stringToBytes("edx2559-derivation"),
+      info: stringToBytes("edx25519-derivation"),
     });
 
     return res;
