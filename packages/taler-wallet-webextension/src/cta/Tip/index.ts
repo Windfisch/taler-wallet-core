@@ -24,20 +24,21 @@ import {
   Props as TermsOfServiceSectionProps
 } from "../TermsOfServiceSection.js";
 import { useComponentState } from "./state.js";
-import { CompletedView, LoadingExchangeView, LoadingInfoView, LoadingUriView, SuccessView } from "./views.js";
+import { AcceptedView, IgnoredView, LoadingUriView, ReadyView } from "./views.js";
+
 
 
 export interface Props {
-  talerWithdrawUri: string | undefined;
+  talerTipUri?: string;
 }
 
 export type State =
   | State.Loading
   | State.LoadingUriError
-  | State.LoadingExchangeError
-  | State.LoadingInfoError
-  | State.Success
-  | State.Completed;
+  | State.Ignored
+  | State.Accepted
+  | State.Ready
+  | State.Ignored;
 
 export namespace State {
 
@@ -45,54 +46,39 @@ export namespace State {
     status: "loading";
     error: undefined;
   }
+
   export interface LoadingUriError {
     status: "loading-uri";
     error: HookError;
   }
-  export interface LoadingExchangeError {
-    status: "loading-exchange";
-    error: HookError;
-  }
-  export interface LoadingInfoError {
-    status: "loading-info";
-    error: HookError;
-  }
 
-  export type Completed = {
-    status: "completed";
+  export interface BaseInfo {
+    merchantBaseUrl: string;
+    amount: AmountJson;
+    exchangeBaseUrl: string;
     error: undefined;
-  };
+  }
 
-  export type Success = {
-    status: "success";
-    error: undefined;
+  export interface Ignored extends BaseInfo {
+    status: "ignored";
+  }
 
-    exchange: SelectFieldHandler;
-
-    editExchange: ButtonHandler;
-    cancelEditExchange: ButtonHandler;
-    confirmEditExchange: ButtonHandler;
-
-    showExchangeSelection: boolean;
-    chosenAmount: AmountJson;
-    withdrawalFee: AmountJson;
-    toBeReceived: AmountJson;
-
-    doWithdrawal: ButtonHandler;
-    tosProps?: TermsOfServiceSectionProps;
-    mustAcceptFirst: boolean;
-
-    ageRestriction: SelectFieldHandler;
-  };
+  export interface Accepted extends BaseInfo {
+    status: "accepted";
+  }
+  export interface Ready extends BaseInfo {
+    status: "ready";
+    accept: ButtonHandler;
+    ignore: ButtonHandler;
+  }
 }
 
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
   "loading-uri": LoadingUriView,
-  "loading-exchange": LoadingExchangeView,
-  "loading-info": LoadingInfoView,
-  completed: CompletedView,
-  success: SuccessView,
+  "accepted": AcceptedView,
+  "ignored": IgnoredView,
+  "ready": ReadyView,
 };
 
-export const WithdrawPage = compose("Withdraw", (p: Props) => useComponentState(p, wxApi), viewMapping)
+export const TipPage = compose("Tip", (p: Props) => useComponentState(p, wxApi), viewMapping)

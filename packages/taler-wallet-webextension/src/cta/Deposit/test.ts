@@ -19,16 +19,18 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { Amounts, PrepareDepositResponse } from "@gnu-taler/taler-util";
+import {
+  Amounts, PrepareDepositResponse
+} from "@gnu-taler/taler-util";
 import { expect } from "chai";
-import { mountHook } from "../test-utils.js";
-import { useComponentState } from "./Deposit.jsx";
+import { mountHook } from "../../test-utils.js";
+import { useComponentState } from "./state.js";
 
 describe("Deposit CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState(undefined, undefined, {
+        useComponentState({ talerDepositUri: undefined, amountStr: undefined }, {
           prepareRefund: async () => ({}),
           applyRefund: async () => ({}),
           onUpdateNotification: async () => ({}),
@@ -36,21 +38,21 @@ describe("Deposit CTA states", () => {
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status } = getLastResultOrThrow();
       expect(status).equals("loading");
-      expect(hook).undefined;
     }
 
     await waitNextUpdate();
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
 
-      expect(status).equals("loading");
-      if (!hook) expect.fail();
-      if (!hook.hasError) expect.fail();
-      if (hook.operational) expect.fail();
-      expect(hook.message).eq("ERROR_NO-URI-FOR-DEPOSIT");
+      expect(status).equals("loading-uri");
+
+      if (!error) expect.fail();
+      if (!error.hasError) expect.fail();
+      if (error.operational) expect.fail();
+      expect(error.message).eq("ERROR_NO-URI-FOR-DEPOSIT");
     }
 
     await assertNoPendingUpdate();
@@ -59,7 +61,7 @@ describe("Deposit CTA states", () => {
   it("should be ready after loading", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState("payto://refund/asdasdas", "EUR:1", {
+        useComponentState({ talerDepositUri: "payto://refund/asdasdas", amountStr: "EUR:1" }, {
           prepareDeposit: async () =>
           ({
             effectiveDepositAmount: Amounts.parseOrThrow("EUR:1"),
@@ -70,9 +72,8 @@ describe("Deposit CTA states", () => {
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status } = getLastResultOrThrow();
       expect(status).equals("loading");
-      expect(hook).undefined;
     }
 
     await waitNextUpdate();
@@ -81,7 +82,7 @@ describe("Deposit CTA states", () => {
       const state = getLastResultOrThrow();
 
       if (state.status !== "ready") expect.fail();
-      if (state.hook) expect.fail();
+      if (state.error) expect.fail();
       expect(state.confirm.onClick).not.undefined;
       expect(state.cost).deep.eq(Amounts.parseOrThrow("EUR:1.2"));
       expect(state.fee).deep.eq(Amounts.parseOrThrow("EUR:0.2"));

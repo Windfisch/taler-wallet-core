@@ -9,7 +9,7 @@
   "private": false,
   "scripts": {
     "clean": "rimraf dist lib tsconfig.tsbuildinfo",
-    "test": "pnpm compile && mocha --enable-source-maps 'dist/**/*.test.js'",
+    "test": "pnpm compile && mocha --enable-source-maps 'dist/**/*.test.js' 'dist/**/test.js'",
     "test:coverage": "nyc pnpm test",
     "compile": "tsc && ./build-fast-with-linaria.mjs",
     "prepare": "pnpm compile",

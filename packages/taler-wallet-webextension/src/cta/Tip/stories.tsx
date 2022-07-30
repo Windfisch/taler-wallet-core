@@ -20,22 +20,27 @@
  */
 
 import { Amounts } from "@gnu-taler/taler-util";
-import { createExample } from "../test-utils.js";
-import { View as TestedComponent } from "./Deposit.js";
+import { createExample } from "../../test-utils.js";
+import { AcceptedView, ReadyView } from "./views.js";
 
 export default {
-  title: "cta/deposit",
-  component: TestedComponent,
-  argTypes: {},
+  title: "cta/tip",
 };
 
-export const Ready = createExample(TestedComponent, {
-  state: {
-    status: "ready",
-    confirm: {},
-    cost: Amounts.parseOrThrow("EUR:1.2"),
-    effective: Amounts.parseOrThrow("EUR:1"),
-    fee: Amounts.parseOrThrow("EUR:0.2"),
-    hook: undefined,
-  },
+export const Accepted = createExample(AcceptedView, {
+  status: "accepted",
+  error: undefined,
+  amount: Amounts.parseOrThrow("EUR:1"),
+  exchangeBaseUrl: "",
+  merchantBaseUrl: "",
+});
+
+export const Ready = createExample(ReadyView, {
+  status: "ready",
+  error: undefined,
+  amount: Amounts.parseOrThrow("EUR:1"),
+  merchantBaseUrl: "http://merchant.url/",
+  exchangeBaseUrl: "http://exchange.url/",
+  accept: {},
+  ignore: {},
 });

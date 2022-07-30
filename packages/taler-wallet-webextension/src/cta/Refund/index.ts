@@ -14,29 +14,27 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountJson } from "@gnu-taler/taler-util";
+import { AmountJson, Product } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
-import { ButtonHandler, SelectFieldHandler } from "../../mui/handlers.js";
+import { ButtonHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import * as wxApi from "../../wxApi.js";
-import {
-  Props as TermsOfServiceSectionProps
-} from "../TermsOfServiceSection.js";
 import { useComponentState } from "./state.js";
-import { CompletedView, LoadingExchangeView, LoadingInfoView, LoadingUriView, SuccessView } from "./views.js";
+import { CompletedView, IgnoredView, InProgressView, LoadingUriView, ReadyView } from "./views.js";
+
 
 
 export interface Props {
-  talerWithdrawUri: string | undefined;
+  talerRefundUri?: string;
 }
 
 export type State =
   | State.Loading
   | State.LoadingUriError
-  | State.LoadingExchangeError
-  | State.LoadingInfoError
-  | State.Success
+  | State.Ready
+  | State.Ignored
+  | State.InProgress
   | State.Completed;
 
 export namespace State {
@@ -45,54 +43,52 @@ export namespace State {
     status: "loading";
     error: undefined;
   }
+
   export interface LoadingUriError {
     status: "loading-uri";
     error: HookError;
   }
-  export interface LoadingExchangeError {
-    status: "loading-exchange";
-    error: HookError;
-  }
-  export interface LoadingInfoError {
-    status: "loading-info";
-    error: HookError;
+
+  interface BaseInfo {
+    merchantName: string;
+    products: Product[] | undefined;
+    amount: AmountJson;
+    awaitingAmount: AmountJson;
+    granted: AmountJson;
   }
 
-  export type Completed = {
+  export interface Ready extends BaseInfo {
+    status: "ready";
+    error: undefined;
+
+    accept: ButtonHandler;
+    ignore: ButtonHandler;
+    orderId: string;
+  }
+
+  export interface Ignored extends BaseInfo {
+    status: "ignored";
+    error: undefined;
+  }
+  export interface InProgress extends BaseInfo {
+    status: "in-progress";
+    error: undefined;
+
+  }
+  export interface Completed extends BaseInfo {
     status: "completed";
     error: undefined;
-  };
+  }
 
-  export type Success = {
-    status: "success";
-    error: undefined;
-
-    exchange: SelectFieldHandler;
-
-    editExchange: ButtonHandler;
-    cancelEditExchange: ButtonHandler;
-    confirmEditExchange: ButtonHandler;
-
-    showExchangeSelection: boolean;
-    chosenAmount: AmountJson;
-    withdrawalFee: AmountJson;
-    toBeReceived: AmountJson;
-
-    doWithdrawal: ButtonHandler;
-    tosProps?: TermsOfServiceSectionProps;
-    mustAcceptFirst: boolean;
-
-    ageRestriction: SelectFieldHandler;
-  };
 }
 
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
   "loading-uri": LoadingUriView,
-  "loading-exchange": LoadingExchangeView,
-  "loading-info": LoadingInfoView,
+  "in-progress": InProgressView,
   completed: CompletedView,
-  success: SuccessView,
+  ignored: IgnoredView,
+  ready: ReadyView,
 };
 
-export const WithdrawPage = compose("Withdraw", (p: Props) => useComponentState(p, wxApi), viewMapping)
+export const RefundPage = compose("Refund", (p: Props) => useComponentState(p, wxApi), viewMapping)

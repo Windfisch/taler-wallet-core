@@ -54,21 +54,20 @@ describe("Withdraw CTA states", () => {
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
-      expect(status).equals("loading-uri");
-      expect(hook).undefined;
+      const { status } = getLastResultOrThrow();
+      expect(status).equals("loading");
     }
 
     await waitNextUpdate();
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
 
-      expect(status).equals("loading-uri");
-      if (!hook) expect.fail();
-      if (!hook.hasError) expect.fail();
-      if (hook.operational) expect.fail();
-      expect(hook.message).eq("ERROR_NO-URI-FOR-WITHDRAWAL");
+      if (status != "loading-uri") expect.fail();
+      if (!error) expect.fail();
+      if (!error.hasError) expect.fail();
+      if (error.operational) expect.fail();
+      expect(error.message).eq("ERROR_NO-URI-FOR-WITHDRAWAL");
     }
 
     await assertNoPendingUpdate();
@@ -87,19 +86,18 @@ describe("Withdraw CTA states", () => {
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
-      expect(status).equals("loading-uri");
-      expect(hook).undefined;
+      const { status } = getLastResultOrThrow();
+      expect(status).equals("loading");
     }
 
     await waitNextUpdate();
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
 
       expect(status).equals("loading-exchange");
 
-      expect(hook).deep.equals({
+      expect(error).deep.equals({
         hasError: true,
         operational: false,
         message: "ERROR_NO-DEFAULT-EXCHANGE",
@@ -134,19 +132,19 @@ describe("Withdraw CTA states", () => {
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
-      expect(status).equals("loading-uri");
-      expect(hook).undefined;
+      const { status, error } = getLastResultOrThrow();
+      expect(status).equals("loading");
+      expect(error).undefined;
     }
 
     await waitNextUpdate();
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
 
-      expect(status).equals("loading-info");
+      expect(status).equals("loading");
 
-      expect(hook).undefined;
+      expect(error).undefined;
     }
 
     await waitNextUpdate();
@@ -200,19 +198,19 @@ describe("Withdraw CTA states", () => {
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
-      expect(status).equals("loading-uri");
-      expect(hook).undefined;
+      const { status, error } = getLastResultOrThrow();
+      expect(status).equals("loading");
+      expect(error).undefined;
     }
 
     await waitNextUpdate();
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
 
-      expect(status).equals("loading-info");
+      expect(status).equals("loading");
 
-      expect(hook).undefined;
+      expect(error).undefined;
     }
 
     await waitNextUpdate();

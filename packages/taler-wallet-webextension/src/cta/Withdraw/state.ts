@@ -14,12 +14,6 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-/**
- * Page shown to the user to confirm creation
- * of a reserve, usually requested by the bank.
- *
- * @author sebasjm
- */
 
 import { Amounts } from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
@@ -133,17 +127,18 @@ export function useComponentState(
   const [showExchangeSelection, setShowExchangeSelection] = useState(false);
   const [nextExchange, setNextExchange] = useState<string | undefined>();
 
-  if (!uriInfoHook || uriInfoHook.hasError) {
+  if (!uriInfoHook) return { status: "loading", error: undefined }
+  if (uriInfoHook.hasError) {
     return {
       status: "loading-uri",
-      hook: uriInfoHook,
+      error: uriInfoHook,
     };
   }
 
   if (!thisExchange || !amount) {
     return {
       status: "loading-exchange",
-      hook: {
+      error: {
         hasError: true,
         operational: false,
         message: "ERROR_NO-DEFAULT-EXCHANGE",
@@ -179,23 +174,20 @@ export function useComponentState(
     {},
   );
 
-  if (!info || info.hasError) {
+  if (!info) {
+    return { status: "loading", error: undefined }
+  }
+  if (info.hasError) {
     return {
       status: "loading-info",
-      hook: info,
+      error: info,
     };
   }
   if (!info.response) {
-    return {
-      status: "loading-info",
-      hook: undefined,
-    };
+    return { status: "loading", error: undefined };
   }
   if (withdrawCompleted) {
-    return {
-      status: "completed",
-      hook: undefined,
-    };
+    return { status: "completed", error: undefined };
   }
 
   const exchangeHandler: SelectFieldHandler = {
@@ -263,7 +255,7 @@ export function useComponentState(
 
   return {
     status: "success",
-    hook: undefined,
+    error: undefined,
     exchange: exchangeHandler,
     editExchange,
     cancelEditExchange,

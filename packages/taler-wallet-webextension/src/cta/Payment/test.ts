@@ -30,9 +30,9 @@ import {
   PreparePayResultType,
 } from "@gnu-taler/taler-util";
 import { expect } from "chai";
-import { mountHook } from "../test-utils.js";
-import * as wxApi from "../wxApi.js";
-import { useComponentState } from "./Pay.jsx";
+import { mountHook } from "../../test-utils.js";
+import { useComponentState } from "./state.js";
+import * as wxApi from "../../wxApi.js";
 
 const nullFunction: any = () => null;
 type VoidFunction = () => void;
@@ -66,30 +66,30 @@ export class SubsHandler {
   }
 }
 
-describe("Pay CTA states", () => {
+describe("Payment CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState(undefined, {
+        useComponentState({ talerPayUri: undefined, goBack: nullFunction, goToWalletManualWithdraw: nullFunction }, {
           onUpdateNotification: nullFunction,
         } as Partial<typeof wxApi> as any),
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
       expect(status).equals("loading");
-      expect(hook).undefined;
+      expect(error).undefined;
     }
 
     await waitNextUpdate();
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
 
-      expect(status).equals("loading");
-      if (hook === undefined) expect.fail();
-      expect(hook.hasError).true;
-      expect(hook.operational).false;
+      expect(status).equals("loading-uri");
+      if (error === undefined) expect.fail();
+      expect(error.hasError).true;
+      expect(error.operational).false;
     }
 
     await assertNoPendingUpdate();
@@ -98,7 +98,7 @@ describe("Pay CTA states", () => {
   it("should response with no balance", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState("taller://pay", {
+        useComponentState({ talerPayUri: "taller://pay", goBack: nullFunction, goToWalletManualWithdraw: nullFunction }, {
           onUpdateNotification: nullFunction,
           preparePay: async () =>
           ({
@@ -113,19 +113,18 @@ describe("Pay CTA states", () => {
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
       expect(status).equals("loading");
-      expect(hook).undefined;
+      expect(error).undefined;
     }
 
     await waitNextUpdate();
 
     {
       const r = getLastResultOrThrow();
-      if (r.status !== "ready") expect.fail();
+      if (r.status !== "no-balance-for-currency") expect.fail();
       expect(r.balance).undefined;
       expect(r.amount).deep.equal(Amounts.parseOrThrow("USD:10"));
-      expect(r.payHandler.onClick).undefined;
     }
 
     await assertNoPendingUpdate();
@@ -134,7 +133,7 @@ describe("Pay CTA states", () => {
   it("should not be able to pay if there is no enough balance", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState("taller://pay", {
+        useComponentState({ talerPayUri: "taller://pay", goBack: nullFunction, goToWalletManualWithdraw: nullFunction }, {
           onUpdateNotification: nullFunction,
           preparePay: async () =>
           ({
@@ -153,19 +152,18 @@ describe("Pay CTA states", () => {
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
       expect(status).equals("loading");
-      expect(hook).undefined;
+      expect(error).undefined;
     }
 
     await waitNextUpdate();
 
     {
       const r = getLastResultOrThrow();
-      if (r.status !== "ready") expect.fail();
+      if (r.status !== "no-enough-balance") expect.fail();
       expect(r.balance).deep.equal(Amounts.parseOrThrow("USD:5"));
       expect(r.amount).deep.equal(Amounts.parseOrThrow("USD:10"));
-      expect(r.payHandler.onClick).undefined;
     }
 
     await assertNoPendingUpdate();
@@ -174,7 +172,7 @@ describe("Pay CTA states", () => {
   it("should be able to pay (without fee)", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState("taller://pay", {
+        useComponentState({ talerPayUri: "taller://pay", goBack: nullFunction, goToWalletManualWithdraw: nullFunction }, {
           onUpdateNotification: nullFunction,
           preparePay: async () =>
           ({
@@ -194,9 +192,9 @@ describe("Pay CTA states", () => {
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
       expect(status).equals("loading");
-      expect(hook).undefined;
+      expect(error).undefined;
     }
 
     await waitNextUpdate();
@@ -216,7 +214,7 @@ describe("Pay CTA states", () => {
   it("should be able to pay (with fee)", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState("taller://pay", {
+        useComponentState({ talerPayUri: "taller://pay", goBack: nullFunction, goToWalletManualWithdraw: nullFunction }, {
           onUpdateNotification: nullFunction,
           preparePay: async () =>
           ({
@@ -236,9 +234,9 @@ describe("Pay CTA states", () => {
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
       expect(status).equals("loading");
-      expect(hook).undefined;
+      expect(error).undefined;
     }
 
     await waitNextUpdate();
@@ -258,7 +256,7 @@ describe("Pay CTA states", () => {
   it("should get confirmation done after pay successfully", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState("taller://pay", {
+        useComponentState({ talerPayUri: "taller://pay", goBack: nullFunction, goToWalletManualWithdraw: nullFunction }, {
           onUpdateNotification: nullFunction,
           preparePay: async () =>
           ({
@@ -283,9 +281,9 @@ describe("Pay CTA states", () => {
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
       expect(status).equals("loading");
-      expect(hook).undefined;
+      expect(error).undefined;
     }
 
     await waitNextUpdate();
@@ -319,7 +317,7 @@ describe("Pay CTA states", () => {
   it("should not stay in ready state after pay with error", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState("taller://pay", {
+        useComponentState({ talerPayUri: "taller://pay", goBack: nullFunction, goToWalletManualWithdraw: nullFunction }, {
           onUpdateNotification: nullFunction,
           preparePay: async () =>
           ({
@@ -344,9 +342,9 @@ describe("Pay CTA states", () => {
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
       expect(status).equals("loading");
-      expect(hook).undefined;
+      expect(error).undefined;
     }
 
     await waitNextUpdate();
@@ -395,7 +393,7 @@ describe("Pay CTA states", () => {
 
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState("taller://pay", {
+        useComponentState({ talerPayUri: "taller://pay", goBack: nullFunction, goToWalletManualWithdraw: nullFunction }, {
           onUpdateNotification: subscriptions.saveSubscription,
           preparePay: async () =>
           ({
@@ -415,9 +413,9 @@ describe("Pay CTA states", () => {
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
       expect(status).equals("loading");
-      expect(hook).undefined;
+      expect(error).undefined;
     }
 
     await waitNextUpdate();

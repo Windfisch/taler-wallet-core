@@ -21,22 +21,19 @@
 
 import {
   AmountJson,
-  Amounts,
-  NotificationType,
-  PrepareRefundResult,
+  Amounts, NotificationType,
+  PrepareRefundResult
 } from "@gnu-taler/taler-util";
 import { expect } from "chai";
-import { mountHook } from "../test-utils.js";
-import { SubsHandler } from "./Pay.test.js";
-import { useComponentState } from "./Refund.jsx";
-
-// onUpdateNotification: subscriptions.saveSubscription,
+import { mountHook } from "../../test-utils.js";
+import { SubsHandler } from "../Payment/test.js";
+import { useComponentState } from "./state.js";
 
 describe("Refund CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState(undefined, {
+        useComponentState({ talerRefundUri: undefined }, {
           prepareRefund: async () => ({}),
           applyRefund: async () => ({}),
           onUpdateNotification: async () => ({}),
@@ -44,21 +41,21 @@ describe("Refund CTA states", () => {
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
       expect(status).equals("loading");
-      expect(hook).undefined;
+      expect(error).undefined;
     }
 
     await waitNextUpdate();
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
 
-      expect(status).equals("loading");
-      if (!hook) expect.fail();
-      if (!hook.hasError) expect.fail();
-      if (hook.operational) expect.fail();
-      expect(hook.message).eq("ERROR_NO-URI-FOR-REFUND");
+      expect(status).equals("loading-uri");
+      if (!error) expect.fail();
+      if (!error.hasError) expect.fail();
+      if (error.operational) expect.fail();
+      expect(error.message).eq("ERROR_NO-URI-FOR-REFUND");
     }
 
     await assertNoPendingUpdate();
@@ -67,7 +64,7 @@ describe("Refund CTA states", () => {
   it("should be ready after loading", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState("taler://refund/asdasdas", {
+        useComponentState({ talerRefundUri: "taler://refund/asdasdas" }, {
           prepareRefund: async () =>
           ({
             effectivePaid: "EUR:2",
@@ -91,9 +88,9 @@ describe("Refund CTA states", () => {
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
       expect(status).equals("loading");
-      expect(hook).undefined;
+      expect(error).undefined;
     }
 
     await waitNextUpdate();
@@ -102,7 +99,7 @@ describe("Refund CTA states", () => {
       const state = getLastResultOrThrow();
 
       if (state.status !== "ready") expect.fail();
-      if (state.hook) expect.fail();
+      if (state.error) expect.fail();
       expect(state.accept.onClick).not.undefined;
       expect(state.ignore.onClick).not.undefined;
       expect(state.merchantName).eq("the merchant name");
@@ -116,7 +113,7 @@ describe("Refund CTA states", () => {
   it("should be ignored after clicking the ignore button", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState("taler://refund/asdasdas", {
+        useComponentState({ talerRefundUri: "taler://refund/asdasdas" }, {
           prepareRefund: async () =>
           ({
             effectivePaid: "EUR:2",
@@ -140,9 +137,9 @@ describe("Refund CTA states", () => {
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
       expect(status).equals("loading");
-      expect(hook).undefined;
+      expect(error).undefined;
     }
 
     await waitNextUpdate();
@@ -151,7 +148,7 @@ describe("Refund CTA states", () => {
       const state = getLastResultOrThrow();
 
       if (state.status !== "ready") expect.fail();
-      if (state.hook) expect.fail();
+      if (state.error) expect.fail();
       expect(state.accept.onClick).not.undefined;
       expect(state.merchantName).eq("the merchant name");
       expect(state.orderId).eq("orderId1");
@@ -167,7 +164,7 @@ describe("Refund CTA states", () => {
       const state = getLastResultOrThrow();
 
       if (state.status !== "ignored") expect.fail();
-      if (state.hook) expect.fail();
+      if (state.error) expect.fail();
       expect(state.merchantName).eq("the merchant name");
     }
 
@@ -192,7 +189,7 @@ describe("Refund CTA states", () => {
 
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState("taler://refund/asdasdas", {
+        useComponentState({ talerRefundUri: "taler://refund/asdasdas" }, {
           prepareRefund: async () =>
           ({
             awaiting: Amounts.stringify(awaiting),
@@ -216,9 +213,9 @@ describe("Refund CTA states", () => {
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
       expect(status).equals("loading");
-      expect(hook).undefined;
+      expect(error).undefined;
     }
 
     await waitNextUpdate();
@@ -227,7 +224,7 @@ describe("Refund CTA states", () => {
       const state = getLastResultOrThrow();
 
       if (state.status !== "in-progress") expect.fail("1");
-      if (state.hook) expect.fail();
+      if (state.error) expect.fail();
       expect(state.merchantName).eq("the merchant name");
       expect(state.products).undefined;
       expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:2"));
@@ -242,7 +239,7 @@ describe("Refund CTA states", () => {
       const state = getLastResultOrThrow();
 
       if (state.status !== "in-progress") expect.fail("2");
-      if (state.hook) expect.fail();
+      if (state.error) expect.fail();
       expect(state.merchantName).eq("the merchant name");
       expect(state.products).undefined;
       expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:2"));
@@ -257,7 +254,7 @@ describe("Refund CTA states", () => {
       const state = getLastResultOrThrow();
 
       if (state.status !== "completed") expect.fail("3");
-      if (state.hook) expect.fail();
+      if (state.error) expect.fail();
       expect(state.merchantName).eq("the merchant name");
       expect(state.products).undefined;
       expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:2"));

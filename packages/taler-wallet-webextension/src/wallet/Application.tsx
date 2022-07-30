@@ -34,11 +34,11 @@ import {
   TranslationProvider,
   useTranslationContext,
 } from "../context/translation.js";
-import { PayPage } from "../cta/Pay.js";
-import { RefundPage } from "../cta/Refund.js";
-import { TipPage } from "../cta/Tip.js";
+import { PaymentPage } from "../cta/Payment/index.js";
+import { RefundPage } from "../cta/Refund/index.js";
+import { TipPage } from "../cta/Tip/index.js";
 import { WithdrawPage } from "../cta/Withdraw/index.js";
-import { DepositPage as DepositPageCTA } from "../cta/Deposit.js";
+import { DepositPage as DepositPageCTA } from "../cta/Deposit/index.js";
 import { Pages, WalletNavBar } from "../NavigationBar.js";
 import { DeveloperPage } from "./DeveloperPage.js";
 import { BackupPage } from "./BackupPage.js";
@@ -202,7 +202,7 @@ export function Application(): VNode {
                */}
               <Route
                 path={Pages.ctaPay}
-                component={PayPage}
+                component={PaymentPage}
                 goToWalletManualWithdraw={(currency?: string) =>
                   redirectTo(Pages.balanceManualWithdraw({ currency }))
                 }

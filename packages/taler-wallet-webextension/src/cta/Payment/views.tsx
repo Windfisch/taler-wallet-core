@@ -14,40 +14,22 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-/**
- * Page shown to the user to confirm entering
- * a contract.
- */
-
-/**
- * Imports.
- */
-
 import {
-  AmountJson,
   Amounts,
-  ConfirmPayResult,
   ConfirmPayResultType,
   ContractTerms,
-  NotificationType,
-  PreparePayResult,
   PreparePayResultType,
   Product,
-  TalerErrorCode,
 } from "@gnu-taler/taler-util";
-import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
-import { useEffect, useState } from "preact/hooks";
-import { Amount } from "../components/Amount.js";
-import { ErrorMessage } from "../components/ErrorMessage.js";
-import { ErrorTalerOperation } from "../components/ErrorTalerOperation.js";
-import { Loading } from "../components/Loading.js";
-import { LoadingError } from "../components/LoadingError.js";
-import { LogoHeader } from "../components/LogoHeader.js";
-import { Part } from "../components/Part.js";
-import { QR } from "../components/QR.js";
+import { useState } from "preact/hooks";
+import { Amount } from "../../components/Amount.js";
+import { ErrorTalerOperation } from "../../components/ErrorTalerOperation.js";
+import { LoadingError } from "../../components/LoadingError.js";
+import { LogoHeader } from "../../components/LogoHeader.js";
+import { Part } from "../../components/Part.js";
+import { QR } from "../../components/QR.js";
 import {
-  ButtonSuccess,
   Link,
   LinkSuccess,
   SmallLightText,
@@ -55,232 +37,31 @@ import {
   SuccessBox,
   WalletAction,
   WarningBox,
-} from "../components/styled/index.js";
-import { useTranslationContext } from "../context/translation.js";
-import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
-import { Button } from "../mui/Button.js";
-import { ButtonHandler } from "../mui/handlers.js";
-import * as wxApi from "../wxApi.js";
+} from "../../components/styled/index.js";
+import { useTranslationContext } from "../../context/translation.js";
+import { Button } from "../../mui/Button.js";
+import { State } from "./index.js";
 
-interface Props {
-  talerPayUri?: string;
-  goToWalletManualWithdraw: (currency?: string) => Promise<void>;
-  goBack: () => Promise<void>;
-}
-
-type State = Loading | Ready | Confirmed;
-interface Loading {
-  status: "loading";
-  hook: HookError | undefined;
-}
-interface Ready {
-  status: "ready";
-  hook: undefined;
-  uri: string;
-  amount: AmountJson;
-  totalFees: AmountJson;
-  payStatus: PreparePayResult;
-  balance: AmountJson | undefined;
-  payHandler: ButtonHandler;
-  payResult: undefined;
-}
-
-interface Confirmed {
-  status: "confirmed";
-  hook: undefined;
-  uri: string;
-  amount: AmountJson;
-  totalFees: AmountJson;
-  payStatus: PreparePayResult;
-  balance: AmountJson | undefined;
-  payResult: ConfirmPayResult;
-  payHandler: ButtonHandler;
-}
-
-export function useComponentState(
-  talerPayUri: string | undefined,
-  api: typeof wxApi,
-): State {
-  const [payResult, setPayResult] = useState<ConfirmPayResult | undefined>(
-    undefined,
-  );
-  const [payErrMsg, setPayErrMsg] = useState<TalerError | undefined>(undefined);
-
-  const hook = useAsyncAsHook(async () => {
-    if (!talerPayUri) throw Error("ERROR_NO-URI-FOR-PAYMENT");
-    const payStatus = await api.preparePay(talerPayUri);
-    const balance = await api.getBalance();
-    return { payStatus, balance, uri: talerPayUri };
-  });
-
-  useEffect(() => {
-    api.onUpdateNotification([NotificationType.CoinWithdrawn], () => {
-      hook?.retry();
-    });
-  });
-
-  const hookResponse = !hook || hook.hasError ? undefined : hook.response;
-
-  useEffect(() => {
-    if (!hookResponse) return;
-    const { payStatus } = hookResponse;
-    if (
-      payStatus &&
-      payStatus.status === PreparePayResultType.AlreadyConfirmed &&
-      payStatus.paid
-    ) {
-      const fu = payStatus.contractTerms.fulfillment_url;
-      if (fu) {
-        setTimeout(() => {
-          document.location.href = fu;
-        }, 3000);
-      }
-    }
-  }, [hookResponse]);
-
-  if (!hook || hook.hasError) {
-    return {
-      status: "loading",
-      hook,
-    };
-  }
-  const { payStatus } = hook.response;
-  const amount = Amounts.parseOrThrow(payStatus.amountRaw);
-
-  const foundBalance = hook.response.balance.balances.find(
-    (b) => Amounts.parseOrThrow(b.available).currency === amount.currency,
-  );
-  const foundAmount = foundBalance
-    ? Amounts.parseOrThrow(foundBalance.available)
-    : undefined;
-
-  async function doPayment(): Promise<void> {
-    try {
-      if (payStatus.status !== "payment-possible") {
-        throw TalerError.fromUncheckedDetail({
-          code: TalerErrorCode.GENERIC_CLIENT_INTERNAL_ERROR,
-          hint: `payment is not possible: ${payStatus.status}`,
-        });
-      }
-      const res = await api.confirmPay(payStatus.proposalId, undefined);
-      if (res.type !== ConfirmPayResultType.Done) {
-        throw TalerError.fromUncheckedDetail({
-          code: TalerErrorCode.GENERIC_CLIENT_INTERNAL_ERROR,
-          hint: `could not confirm payment`,
-          payResult: res,
-        });
-      }
-      const fu = res.contractTerms.fulfillment_url;
-      if (fu) {
-        if (typeof window !== "undefined") {
-          document.location.href = fu;
-        } else {
-          console.log(`should d to ${fu}`);
-        }
-      }
-      setPayResult(res);
-    } catch (e) {
-      if (e instanceof TalerError) {
-        setPayErrMsg(e);
-      }
-    }
-  }
-
-  const payDisabled =
-    payErrMsg ||
-    !foundAmount ||
-    payStatus.status === PreparePayResultType.InsufficientBalance;
-
-  const payHandler: ButtonHandler = {
-    onClick: payDisabled ? undefined : doPayment,
-    error: payErrMsg,
-  };
-
-  let totalFees = Amounts.getZero(amount.currency);
-  if (payStatus.status === PreparePayResultType.PaymentPossible) {
-    const amountEffective: AmountJson = Amounts.parseOrThrow(
-      payStatus.amountEffective,
-    );
-    totalFees = Amounts.sub(amountEffective, amount).amount;
-  }
-
-  if (!payResult) {
-    return {
-      status: "ready",
-      hook: undefined,
-      uri: hook.response.uri,
-      amount,
-      totalFees,
-      balance: foundAmount,
-      payHandler,
-      payStatus: hook.response.payStatus,
-      payResult,
-    };
-  }
-
-  return {
-    status: "confirmed",
-    hook: undefined,
-    uri: hook.response.uri,
-    amount,
-    totalFees,
-    balance: foundAmount,
-    payStatus: hook.response.payStatus,
-    payResult,
-    payHandler: {},
-  };
-}
-
-export function PayPage({
-  talerPayUri,
-  goToWalletManualWithdraw,
-  goBack,
-}: Props): VNode {
+export function LoadingUriView({ error }: State.LoadingUriError): VNode {
   const { i18n } = useTranslationContext();
 
-  const state = useComponentState(talerPayUri, wxApi);
-
-  if (state.status === "loading") {
-    if (!state.hook) return <Loading />;
-    return (
-      <LoadingError
-        title={<i18n.Translate>Could not load pay status</i18n.Translate>}
-        error={state.hook}
-      />
-    );
-  }
   return (
-    <View
-      state={state}
-      goBack={goBack}
-      goToWalletManualWithdraw={goToWalletManualWithdraw}
+    <LoadingError
+      title={<i18n.Translate>Could not load pay status</i18n.Translate>}
+      error={error}
     />
   );
 }
 
-export function View({
-  state,
-  goBack,
-  goToWalletManualWithdraw,
-}: {
-  state: Ready | Confirmed;
-  goToWalletManualWithdraw: (currency?: string) => Promise<void>;
-  goBack: () => Promise<void>;
-}): VNode {
+type SupportedStates =
+  | State.Ready
+  | State.Confirmed
+  | State.NoBalanceForCurrency
+  | State.NoEnoughBalance;
+
+export function BaseView(state: SupportedStates): VNode {
   const { i18n } = useTranslationContext();
   const contractTerms: ContractTerms = state.payStatus.contractTerms;
-
-  if (!contractTerms) {
-    return (
-      <ErrorMessage
-        title={
-          <i18n.Translate>
-            Could not load contract terms from merchant or wallet backend.
-          </i18n.Translate>
-        }
-      />
-    );
-  }
 
   return (
     <WalletAction>
@@ -341,10 +122,10 @@ export function View({
       </section>
       <ButtonsSection
         state={state}
-        goToWalletManualWithdraw={goToWalletManualWithdraw}
+        goToWalletManualWithdraw={state.goToWalletManualWithdraw}
       />
       <section>
-        <Link upperCased onClick={goBack}>
+        <Link upperCased onClick={state.goBack}>
           <i18n.Translate>Cancel</i18n.Translate>
         </Link>
       </section>
@@ -421,7 +202,7 @@ export function ProductList({ products }: { products: Product[] }): VNode {
   );
 }
 
-function ShowImportantMessage({ state }: { state: Ready | Confirmed }): VNode {
+function ShowImportantMessage({ state }: { state: SupportedStates }): VNode {
   const { i18n } = useTranslationContext();
   const { payStatus } = state;
   if (payStatus.status === PreparePayResultType.AlreadyConfirmed) {
@@ -483,7 +264,7 @@ function ShowImportantMessage({ state }: { state: Ready | Confirmed }): VNode {
   return <Fragment />;
 }
 
-function PayWithMobile({ state }: { state: Ready }): VNode {
+function PayWithMobile({ state }: { state: State.Ready }): VNode {
   const { i18n } = useTranslationContext();
 
   const [showQR, setShowQR] = useState<boolean>(false);
@@ -520,7 +301,7 @@ function ButtonsSection({
   state,
   goToWalletManualWithdraw,
 }: {
-  state: Ready | Confirmed;
+  state: SupportedStates;
   goToWalletManualWithdraw: (currency: string) => Promise<void>;
 }): VNode {
   const { i18n } = useTranslationContext();

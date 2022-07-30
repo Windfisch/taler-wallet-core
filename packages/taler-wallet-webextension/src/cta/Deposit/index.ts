@@ -14,29 +14,26 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountJson } from "@gnu-taler/taler-util";
+import { AmountJson, AmountString } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
-import { ButtonHandler, SelectFieldHandler } from "../../mui/handlers.js";
+import { ButtonHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import * as wxApi from "../../wxApi.js";
-import {
-  Props as TermsOfServiceSectionProps
-} from "../TermsOfServiceSection.js";
 import { useComponentState } from "./state.js";
-import { CompletedView, LoadingExchangeView, LoadingInfoView, LoadingUriView, SuccessView } from "./views.js";
+import { CompletedView, LoadingUriView, ReadyView } from "./views.js";
+
 
 
 export interface Props {
-  talerWithdrawUri: string | undefined;
+  talerDepositUri: string | undefined,
+  amountStr: AmountString | undefined,
 }
 
 export type State =
   | State.Loading
   | State.LoadingUriError
-  | State.LoadingExchangeError
-  | State.LoadingInfoError
-  | State.Success
+  | State.Ready
   | State.Completed;
 
 export namespace State {
@@ -49,50 +46,25 @@ export namespace State {
     status: "loading-uri";
     error: HookError;
   }
-  export interface LoadingExchangeError {
-    status: "loading-exchange";
-    error: HookError;
+  export interface Ready {
+    status: "ready";
+    error: undefined;
+    fee: AmountJson;
+    cost: AmountJson;
+    effective: AmountJson;
+    confirm: ButtonHandler;
   }
-  export interface LoadingInfoError {
-    status: "loading-info";
-    error: HookError;
-  }
-
-  export type Completed = {
+  export interface Completed {
     status: "completed";
     error: undefined;
-  };
-
-  export type Success = {
-    status: "success";
-    error: undefined;
-
-    exchange: SelectFieldHandler;
-
-    editExchange: ButtonHandler;
-    cancelEditExchange: ButtonHandler;
-    confirmEditExchange: ButtonHandler;
-
-    showExchangeSelection: boolean;
-    chosenAmount: AmountJson;
-    withdrawalFee: AmountJson;
-    toBeReceived: AmountJson;
-
-    doWithdrawal: ButtonHandler;
-    tosProps?: TermsOfServiceSectionProps;
-    mustAcceptFirst: boolean;
-
-    ageRestriction: SelectFieldHandler;
-  };
+  }
 }
 
 const viewMapping: StateViewMap<State> = {
-  loading: Loading,
+  "loading": Loading,
   "loading-uri": LoadingUriView,
-  "loading-exchange": LoadingExchangeView,
-  "loading-info": LoadingInfoView,
   completed: CompletedView,
-  success: SuccessView,
+  ready: ReadyView,
 };
 
-export const WithdrawPage = compose("Withdraw", (p: Props) => useComponentState(p, wxApi), viewMapping)
+export const DepositPage = compose("Deposit", (p: Props) => useComponentState(p, wxApi), viewMapping)

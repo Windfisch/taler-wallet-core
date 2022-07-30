@@ -19,37 +19,39 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { Amounts, PrepareTipResult } from "@gnu-taler/taler-util";
+import {
+  Amounts, PrepareTipResult
+} from "@gnu-taler/taler-util";
 import { expect } from "chai";
-import { mountHook } from "../test-utils.js";
-import { useComponentState } from "./Tip.jsx";
+import { mountHook } from "../../test-utils.js";
+import { useComponentState } from "./state.js";
 
 describe("Tip CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState(undefined, {
+        useComponentState({ talerTipUri: undefined }, {
           prepareTip: async () => ({}),
           acceptTip: async () => ({}),
         } as any),
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
       expect(status).equals("loading");
-      expect(hook).undefined;
+      expect(error).undefined;
     }
 
     await waitNextUpdate();
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
 
-      expect(status).equals("loading");
-      if (!hook) expect.fail();
-      if (!hook.hasError) expect.fail();
-      if (hook.operational) expect.fail();
-      expect(hook.message).eq("ERROR_NO-URI-FOR-TIP");
+      expect(status).equals("loading-uri");
+      if (!error) expect.fail();
+      if (!error.hasError) expect.fail();
+      if (error.operational) expect.fail();
+      expect(error.message).eq("ERROR_NO-URI-FOR-TIP");
     }
 
     await assertNoPendingUpdate();
@@ -60,7 +62,7 @@ describe("Tip CTA states", () => {
 
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState("taler://tip/asd", {
+        useComponentState({ talerTipUri: "taler://tip/asd" }, {
           prepareTip: async () =>
           ({
             accepted: tipAccepted,
@@ -76,9 +78,9 @@ describe("Tip CTA states", () => {
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
       expect(status).equals("loading");
-      expect(hook).undefined;
+      expect(error).undefined;
     }
 
     await waitNextUpdate();
@@ -87,7 +89,7 @@ describe("Tip CTA states", () => {
       const state = getLastResultOrThrow();
 
       if (state.status !== "ready") expect.fail();
-      if (state.hook) expect.fail();
+      if (state.error) expect.fail();
       expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:1"));
       expect(state.merchantBaseUrl).eq("merchant url");
       expect(state.exchangeBaseUrl).eq("exchange url");
@@ -101,7 +103,7 @@ describe("Tip CTA states", () => {
       const state = getLastResultOrThrow();
 
       if (state.status !== "accepted") expect.fail();
-      if (state.hook) expect.fail();
+      if (state.error) expect.fail();
       expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:1"));
       expect(state.merchantBaseUrl).eq("merchant url");
       expect(state.exchangeBaseUrl).eq("exchange url");
@@ -112,7 +114,7 @@ describe("Tip CTA states", () => {
   it("should be ignored after clicking the ignore button", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState("taler://tip/asd", {
+        useComponentState({ talerTipUri: "taler://tip/asd" }, {
           prepareTip: async () =>
           ({
             exchangeBaseUrl: "exchange url",
@@ -125,9 +127,9 @@ describe("Tip CTA states", () => {
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
       expect(status).equals("loading");
-      expect(hook).undefined;
+      expect(error).undefined;
     }
 
     await waitNextUpdate();
@@ -136,7 +138,7 @@ describe("Tip CTA states", () => {
       const state = getLastResultOrThrow();
 
       if (state.status !== "ready") expect.fail();
-      if (state.hook) expect.fail();
+      if (state.error) expect.fail();
       expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:1"));
       expect(state.merchantBaseUrl).eq("merchant url");
       expect(state.exchangeBaseUrl).eq("exchange url");
@@ -150,7 +152,7 @@ describe("Tip CTA states", () => {
       const state = getLastResultOrThrow();
 
       if (state.status !== "ignored") expect.fail();
-      if (state.hook) expect.fail();
+      if (state.error) expect.fail();
     }
     await assertNoPendingUpdate();
   });
@@ -158,7 +160,7 @@ describe("Tip CTA states", () => {
   it("should render accepted if the tip has been used previously", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState("taler://tip/asd", {
+        useComponentState({ talerTipUri: "taler://tip/asd" }, {
           prepareTip: async () =>
           ({
             accepted: true,
@@ -172,9 +174,9 @@ describe("Tip CTA states", () => {
       );
 
     {
-      const { status, hook } = getLastResultOrThrow();
+      const { status, error } = getLastResultOrThrow();
       expect(status).equals("loading");
-      expect(hook).undefined;
+      expect(error).undefined;
     }
 
     await waitNextUpdate();
@@ -183,7 +185,7 @@ describe("Tip CTA states", () => {
       const state = getLastResultOrThrow();
 
       if (state.status !== "accepted") expect.fail();
-      if (state.hook) expect.fail();
+      if (state.error) expect.fail();
       expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:1"));
       expect(state.merchantBaseUrl).eq("merchant url");
       expect(state.exchangeBaseUrl).eq("exchange url");

@@ -35,46 +35,39 @@ import { Amounts } from "@gnu-taler/taler-util";
 import { TermsOfServiceSection } from "../TermsOfServiceSection.js";
 import { Button } from "../../mui/Button.js";
 
-/**
- * Page shown to the user to confirm creation
- * of a reserve, usually requested by the bank.
- *
- * @author sebasjm
- */
-
-export function LoadingUriView(state: State.LoadingUri): VNode {
+export function LoadingUriView({ error }: State.LoadingUriError): VNode {
   const { i18n } = useTranslationContext();
-  if (!state.hook) return <Loading />;
 
   return (
     <LoadingError
       title={
         <i18n.Translate>Could not get the info from the URI</i18n.Translate>
       }
-      error={state.hook}
+      error={error}
     />
   );
 }
 
-export function LoadingExchangeView(state: State.LoadingExchange): VNode {
+export function LoadingExchangeView({
+  error,
+}: State.LoadingExchangeError): VNode {
   const { i18n } = useTranslationContext();
-  if (!state.hook) return <Loading />;
 
   return (
     <LoadingError
       title={<i18n.Translate>Could not get exchange</i18n.Translate>}
-      error={state.hook}
+      error={error}
     />
   );
 }
 
-export function LoadingInfoView(state: State.LoadingInfoError): VNode {
+export function LoadingInfoView({ error }: State.LoadingInfoError): VNode {
   const { i18n } = useTranslationContext();
-  if (!state.hook) return <Loading />;
+
   return (
     <LoadingError
       title={<i18n.Translate>Could not get info of withdrawal</i18n.Translate>}
-      error={state.hook}
+      error={error}
     />
   );
 }

@@ -61,7 +61,7 @@ const ageRestrictionSelectField = {
 };
 
 export const TermsOfServiceNotYetLoaded = createExample(SuccessView, {
-  hook: undefined,
+  error: undefined,
   status: "success",
   cancelEditExchange: nullHandler,
   confirmEditExchange: nullHandler,
@@ -95,7 +95,7 @@ export const TermsOfServiceNotYetLoaded = createExample(SuccessView, {
 });
 
 export const WithSomeFee = createExample(SuccessView, {
-  hook: undefined,
+  error: undefined,
   status: "success",
   cancelEditExchange: nullHandler,
   confirmEditExchange: nullHandler,
@@ -130,7 +130,7 @@ export const WithSomeFee = createExample(SuccessView, {
 });
 
 export const WithoutFee = createExample(SuccessView, {
-  hook: undefined,
+  error: undefined,
   status: "success",
   cancelEditExchange: nullHandler,
   confirmEditExchange: nullHandler,
@@ -165,7 +165,7 @@ export const WithoutFee = createExample(SuccessView, {
 });
 
 export const EditExchangeUntouched = createExample(SuccessView, {
-  hook: undefined,
+  error: undefined,
   status: "success",
   cancelEditExchange: nullHandler,
   confirmEditExchange: nullHandler,
@@ -200,7 +200,7 @@ export const EditExchangeUntouched = createExample(SuccessView, {
 });
 
 export const EditExchangeModified = createExample(SuccessView, {
-  hook: undefined,
+  error: undefined,
   status: "success",
   cancelEditExchange: nullHandler,
   confirmEditExchange: nullHandler,
@@ -237,11 +237,11 @@ export const EditExchangeModified = createExample(SuccessView, {
 
 export const CompletedWithoutBankURL = createExample(CompletedView, {
   status: "completed",
-  hook: undefined,
+  error: undefined,
 });
 
 export const WithAgeRestrictionSelected = createExample(SuccessView, {
-  hook: undefined,
+  error: undefined,
   status: "success",
   cancelEditExchange: nullHandler,
   confirmEditExchange: nullHandler,
