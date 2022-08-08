@@ -854,6 +854,15 @@ export const codecForAbortProposalRequest = (): Codec<AbortProposalRequest> =>
     .property("proposalId", codecForString())
     .build("AbortProposalRequest");
 
+interface GetContractTermsDetailsRequest {
+  proposalId: string;
+}
+
+export const codecForGetContractTermsDetails = (): Codec<GetContractTermsDetailsRequest> =>
+  buildCodecForObject<GetContractTermsDetailsRequest>()
+    .property("proposalId", codecForString())
+    .build("GetContractTermsDetails");
+
 export interface PreparePayRequest {
   talerPayUri: string;
 }

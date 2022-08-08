@@ -344,6 +344,11 @@ export interface TransactionTip extends TransactionCommon {
   // Raw amount of the tip, without extra fees that apply
   amountRaw: AmountString;
 
+  /**
+   * More information about the merchant
+   */
+  // merchant: MerchantInfo;
+
   // Amount will be (or was) added to the wallet's balance after fees and refreshing
   amountEffective: AmountString;
 
