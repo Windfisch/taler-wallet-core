@@ -17,13 +17,14 @@ import { css } from "@linaria/core";
 import { Fragment, h, VNode } from "preact";
 import { Alert } from "../mui/Alert.js";
 import { Button } from "../mui/Button.js";
+import { ButtonHandler } from "../mui/handlers.js";
 import { Paper } from "../mui/Paper.js";
 import { Typography } from "../mui/Typography.js";
 
 export function NoBalanceHelp({
   goToWalletManualWithdraw,
 }: {
-  goToWalletManualWithdraw: () => Promise<void>;
+  goToWalletManualWithdraw: ButtonHandler;
 }): VNode {
   return (
     <Paper
@@ -37,7 +38,7 @@ export function NoBalanceHelp({
           fullWidth
           color="warning"
           variant="outlined"
-          onClick={goToWalletManualWithdraw}
+          onClick={goToWalletManualWithdraw.onClick}
         >
           <Typography>Withdraw</Typography>
         </Button>

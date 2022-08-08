@@ -30,6 +30,7 @@ export default {
 
 export const EmptyBalance = createExample(TestedComponent, {
   balances: [],
+  goToWalletManualWithdraw: {},
 });
 
 export const SomeCoins = createExample(TestedComponent, {
@@ -42,6 +43,8 @@ export const SomeCoins = createExample(TestedComponent, {
       requiresUserInput: false,
     },
   ],
+  addAction: {},
+  goToWalletManualWithdraw: {},
 });
 
 export const SomeCoinsInTreeCurrencies = createExample(TestedComponent, {
@@ -68,6 +71,8 @@ export const SomeCoinsInTreeCurrencies = createExample(TestedComponent, {
       requiresUserInput: false,
     },
   ],
+  goToWalletManualWithdraw: {},
+  addAction: {},
 });
 
 export const NoCoinsInTreeCurrencies = createExample(TestedComponent, {
@@ -94,6 +99,8 @@ export const NoCoinsInTreeCurrencies = createExample(TestedComponent, {
       requiresUserInput: false,
     },
   ],
+  goToWalletManualWithdraw: {},
+  addAction: {},
 });
 
 export const SomeCoinsInFiveCurrencies = createExample(TestedComponent, {
@@ -148,4 +155,6 @@ export const SomeCoinsInFiveCurrencies = createExample(TestedComponent, {
       requiresUserInput: false,
     },
   ],
+  goToWalletManualWithdraw: {},
+  addAction: {},
 });

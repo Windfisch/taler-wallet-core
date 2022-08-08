@@ -40,8 +40,18 @@ export const WalletAction = styled.div`
   & h1:first-child {
     margin-top: 0;
   }
+  & > * {
+    width: 600px;
+  }
   section {
     margin-bottom: 2em;
+    table td {
+      padding: 5px 5px;
+    }
+    table tr {
+      border-bottom: 1px solid black;
+      border-top: 1px solid black;
+    }
     button {
       margin-right: 8px;
       margin-left: 8px;

@@ -21,11 +21,14 @@
 
 import {
   Amounts,
+  ConfirmPayResultType,
   ContractTerms,
   PreparePayResultType,
 } from "@gnu-taler/taler-util";
+import merchantIcon from "../../../static-dev/merchant-icon.jpeg";
 import { createExample } from "../../test-utils.js";
 import { BaseView } from "./views.js";
+import beer from "../../../static-dev/beer.png";
 
 export default {
   title: "cta/payment",
@@ -34,25 +37,22 @@ export default {
 };
 
 export const NoBalance = createExample(BaseView, {
-  status: "ready",
+  status: "no-balance-for-currency",
   error: undefined,
   amount: Amounts.parseOrThrow("USD:10"),
   balance: undefined,
-  payHandler: {
-    onClick: async () => {
-      null;
-    },
-  },
-  totalFees: Amounts.parseOrThrow("USD:0"),
 
   uri: "",
   payStatus: {
     status: PreparePayResultType.InsufficientBalance,
     noncePriv: "",
-    proposalId: "proposal1234",
+    proposalId: "96YY92RQZGF3V7TJSPN4SF9549QX7BRF88Q5PYFCSBNQ0YK4RPK0",
     contractTerms: {
       merchant: {
-        name: "someone",
+        name: "the merchant",
+        logo: merchantIcon,
+        website: "https://www.themerchant.taler",
+        email: "contact@merchant.taler",
       },
       summary: "some beers",
       amount: "USD:10",
@@ -62,7 +62,7 @@ export const NoBalance = createExample(BaseView, {
 });
 
 export const NoEnoughBalance = createExample(BaseView, {
-  status: "ready",
+  status: "no-enough-balance",
   error: undefined,
   amount: Amounts.parseOrThrow("USD:10"),
   balance: {
@@ -70,21 +70,18 @@ export const NoEnoughBalance = createExample(BaseView, {
     fraction: 40000000,
     value: 9,
   },
-  payHandler: {
-    onClick: async () => {
-      null;
-    },
-  },
-  totalFees: Amounts.parseOrThrow("USD:0"),
 
   uri: "",
   payStatus: {
     status: PreparePayResultType.InsufficientBalance,
     noncePriv: "",
-    proposalId: "proposal1234",
+    proposalId: "96YY92RQZGF3V7TJSPN4SF9549QX7BRF88Q5PYFCSBNQ0YK4RPK0",
     contractTerms: {
       merchant: {
-        name: "someone",
+        name: "the merchant",
+        logo: merchantIcon,
+        website: "https://www.themerchant.taler",
+        email: "contact@merchant.taler",
       },
       summary: "some beers",
       amount: "USD:10",
@@ -94,7 +91,7 @@ export const NoEnoughBalance = createExample(BaseView, {
 });
 
 export const EnoughBalanceButRestricted = createExample(BaseView, {
-  status: "ready",
+  status: "no-enough-balance",
   error: undefined,
   amount: Amounts.parseOrThrow("USD:10"),
   balance: {
@@ -102,21 +99,18 @@ export const EnoughBalanceButRestricted = createExample(BaseView, {
     fraction: 40000000,
     value: 19,
   },
-  payHandler: {
-    onClick: async () => {
-      null;
-    },
-  },
-  totalFees: Amounts.parseOrThrow("USD:0"),
 
   uri: "",
   payStatus: {
     status: PreparePayResultType.InsufficientBalance,
     noncePriv: "",
-    proposalId: "proposal1234",
+    proposalId: "96YY92RQZGF3V7TJSPN4SF9549QX7BRF88Q5PYFCSBNQ0YK4RPK0",
     contractTerms: {
       merchant: {
-        name: "someone",
+        name: "the merchant",
+        logo: merchantIcon,
+        website: "https://www.themerchant.taler",
+        email: "contact@merchant.taler",
       },
       summary: "some beers",
       amount: "USD:10",
@@ -139,7 +133,6 @@ export const PaymentPossible = createExample(BaseView, {
       null;
     },
   },
-  totalFees: Amounts.parseOrThrow("USD:0"),
 
   uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
   payStatus: {
@@ -150,13 +143,19 @@ export const PaymentPossible = createExample(BaseView, {
     contractTerms: {
       nonce: "123213123",
       merchant: {
-        name: "someone",
+        name: "the merchant",
+        logo: merchantIcon,
+        website: "https://www.themerchant.taler",
+        email: "contact@merchant.taler",
+      },
+      pay_deadline: {
+        t_s: new Date().getTime() / 1000 + 60 * 60 * 3,
       },
       amount: "USD:10",
       summary: "some beers",
     } as Partial<ContractTerms> as any,
     contractTermsHash: "123456",
-    proposalId: "proposal1234",
+    proposalId: "96YY92RQZGF3V7TJSPN4SF9549QX7BRF88Q5PYFCSBNQ0YK4RPK0",
   },
 });
 
@@ -174,7 +173,6 @@ export const PaymentPossibleWithFee = createExample(BaseView, {
       null;
     },
   },
-  totalFees: Amounts.parseOrThrow("USD:0.20"),
 
   uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
   payStatus: {
@@ -185,17 +183,18 @@ export const PaymentPossibleWithFee = createExample(BaseView, {
     contractTerms: {
       nonce: "123213123",
       merchant: {
-        name: "someone",
+        name: "the merchant",
+        logo: merchantIcon,
+        website: "https://www.themerchant.taler",
+        email: "contact@merchant.taler",
       },
       amount: "USD:10",
       summary: "some beers",
     } as Partial<ContractTerms> as any,
     contractTermsHash: "123456",
-    proposalId: "proposal1234",
+    proposalId: "96YY92RQZGF3V7TJSPN4SF9549QX7BRF88Q5PYFCSBNQ0YK4RPK0",
   },
 });
-
-import beer from "../../../static-dev/beer.png";
 
 export const TicketWithAProductList = createExample(BaseView, {
   status: "ready",
@@ -211,7 +210,6 @@ export const TicketWithAProductList = createExample(BaseView, {
       null;
     },
   },
-  totalFees: Amounts.parseOrThrow("USD:0.20"),
 
   uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
   payStatus: {
@@ -222,7 +220,10 @@ export const TicketWithAProductList = createExample(BaseView, {
     contractTerms: {
       nonce: "123213123",
       merchant: {
-        name: "someone",
+        name: "the merchant",
+        logo: merchantIcon,
+        website: "https://www.themerchant.taler",
+        email: "contact@merchant.taler",
       },
       amount: "USD:10",
       summary: "some beers",
@@ -247,11 +248,11 @@ export const TicketWithAProductList = createExample(BaseView, {
       ],
     } as Partial<ContractTerms> as any,
     contractTermsHash: "123456",
-    proposalId: "proposal1234",
+    proposalId: "96YY92RQZGF3V7TJSPN4SF9549QX7BRF88Q5PYFCSBNQ0YK4RPK0",
   },
 });
 
-export const AlreadyConfirmedByOther = createExample(BaseView, {
+export const TicketWithShipping = createExample(BaseView, {
   status: "ready",
   error: undefined,
   amount: Amounts.parseOrThrow("USD:10"),
@@ -265,7 +266,52 @@ export const AlreadyConfirmedByOther = createExample(BaseView, {
       null;
     },
   },
-  totalFees: Amounts.parseOrThrow("USD:0.20"),
+
+  uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
+  payStatus: {
+    status: PreparePayResultType.PaymentPossible,
+    amountEffective: "USD:10.20",
+    amountRaw: "USD:10",
+    noncePriv: "",
+    contractTerms: {
+      nonce: "123213123",
+      merchant: {
+        name: "the merchant",
+        logo: merchantIcon,
+        website: "https://www.themerchant.taler",
+        email: "contact@merchant.taler",
+      },
+      amount: "USD:10",
+      summary: "banana pi set",
+      products: [
+        {
+          description: "banana pi",
+          price: "USD:2",
+          quantity: 1,
+        },
+      ],
+      delivery_date: {
+        t_s: new Date().getTime() / 1000 + 30 * 24 * 60 * 60,
+      },
+      delivery_location: {
+        town: "Liverpool",
+        street: "Down st 1234",
+      },
+    } as Partial<ContractTerms> as any,
+    contractTermsHash: "123456",
+    proposalId: "96YY92RQZGF3V7TJSPN4SF9549QX7BRF88Q5PYFCSBNQ0YK4RPK0",
+  },
+});
+
+export const AlreadyConfirmedByOther = createExample(BaseView, {
+  status: "confirmed",
+  error: undefined,
+  amount: Amounts.parseOrThrow("USD:10"),
+  balance: {
+    currency: "USD",
+    fraction: 40000000,
+    value: 11,
+  },
 
   uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
   payStatus: {
@@ -274,19 +320,22 @@ export const AlreadyConfirmedByOther = createExample(BaseView, {
     amountRaw: "USD:10",
     contractTerms: {
       merchant: {
-        name: "someone",
+        name: "the merchant",
+        logo: merchantIcon,
+        website: "https://www.themerchant.taler",
+        email: "contact@merchant.taler",
       },
       summary: "some beers",
       amount: "USD:10",
     } as Partial<ContractTerms> as any,
     contractTermsHash: "123456",
-    proposalId: "proposal1234",
+    proposalId: "96YY92RQZGF3V7TJSPN4SF9549QX7BRF88Q5PYFCSBNQ0YK4RPK0",
     paid: false,
   },
 });
 
 export const AlreadyPaidWithoutFulfillment = createExample(BaseView, {
-  status: "ready",
+  status: "completed",
   error: undefined,
   amount: Amounts.parseOrThrow("USD:10"),
   balance: {
@@ -294,33 +343,34 @@ export const AlreadyPaidWithoutFulfillment = createExample(BaseView, {
     fraction: 40000000,
     value: 11,
   },
-  payHandler: {
-    onClick: async () => {
-      null;
-    },
-  },
-  totalFees: Amounts.parseOrThrow("USD:0.20"),
 
   uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
+  payResult: {
+    type: ConfirmPayResultType.Done,
+    contractTerms: {} as any,
+  },
   payStatus: {
     status: PreparePayResultType.AlreadyConfirmed,
     amountEffective: "USD:10",
     amountRaw: "USD:10",
     contractTerms: {
       merchant: {
-        name: "someone",
+        name: "the merchant",
+        logo: merchantIcon,
+        website: "https://www.themerchant.taler",
+        email: "contact@merchant.taler",
       },
       summary: "some beers",
       amount: "USD:10",
     } as Partial<ContractTerms> as any,
     contractTermsHash: "123456",
-    proposalId: "proposal1234",
+    proposalId: "96YY92RQZGF3V7TJSPN4SF9549QX7BRF88Q5PYFCSBNQ0YK4RPK0",
     paid: true,
   },
 });
 
 export const AlreadyPaidWithFulfillment = createExample(BaseView, {
-  status: "ready",
+  status: "completed",
   error: undefined,
   amount: Amounts.parseOrThrow("USD:10"),
   balance: {
@@ -328,29 +378,34 @@ export const AlreadyPaidWithFulfillment = createExample(BaseView, {
     fraction: 40000000,
     value: 11,
   },
-  payHandler: {
-    onClick: async () => {
-      null;
-    },
-  },
-  totalFees: Amounts.parseOrThrow("USD:0.20"),
 
   uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
+  payResult: {
+    type: ConfirmPayResultType.Done,
+    contractTerms: {
+      fulfillment_message: "thanks for buying!",
+      fulfillment_url: "https://demo.taler.net",
+    } as Partial<ContractTerms> as any,
+  },
   payStatus: {
     status: PreparePayResultType.AlreadyConfirmed,
     amountEffective: "USD:10",
     amountRaw: "USD:10",
     contractTerms: {
       merchant: {
-        name: "someone",
+        name: "the merchant",
+        logo: merchantIcon,
+        website: "https://www.themerchant.taler",
+        email: "contact@merchant.taler",
       },
+      fulfillment_url: "https://demo.taler.net",
       fulfillment_message:
         "congratulations! you are looking at the fulfillment message! ",
       summary: "some beers",
       amount: "USD:10",
     } as Partial<ContractTerms> as any,
     contractTermsHash: "123456",
-    proposalId: "proposal1234",
+    proposalId: "96YY92RQZGF3V7TJSPN4SF9549QX7BRF88Q5PYFCSBNQ0YK4RPK0",
     paid: true,
   },
 });

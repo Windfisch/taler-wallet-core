@@ -63,6 +63,7 @@ import {
   PendingOperationsResponse,
   RemoveBackupProviderRequest,
   TalerError,
+  WalletContractData,
 } from "@gnu-taler/taler-wallet-core";
 import type { DepositGroupFees } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import type { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core/src/operations/withdraw";
@@ -188,6 +189,11 @@ export function createDepositGroup(
  */
 export function getBalance(): Promise<BalancesResponse> {
   return callBackend("getBalances", {});
+}
+
+
+export function getContractTermsDetails(proposalId: string): Promise<WalletContractData> {
+  return callBackend("getContractTermsDetails", { proposalId });
 }
 
 /**

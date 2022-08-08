@@ -78,20 +78,9 @@ export function useComponentState(
     (b) => Amounts.parseOrThrow(b.available).currency === amount.currency,
   );
 
-
-  let totalFees = Amounts.getZero(amount.currency);
-  if (payStatus.status === PreparePayResultType.PaymentPossible) {
-    const amountEffective: AmountJson = Amounts.parseOrThrow(
-      payStatus.amountEffective,
-    );
-    totalFees = Amounts.sub(amountEffective, amount).amount;
-  }
-
   const baseResult = {
     uri: hook.response.uri,
     amount,
-    totalFees,
-    payStatus,
     error: undefined,
     goBack, goToWalletManualWithdraw
   }
@@ -100,11 +89,44 @@ export function useComponentState(
     return {
       status: "no-balance-for-currency",
       balance: undefined,
+      payStatus,
       ...baseResult,
     }
   }
 
   const foundAmount = Amounts.parseOrThrow(foundBalance.available);
+
+  if (payResult) {
+    return {
+      status: "completed",
+      balance: foundAmount,
+      payStatus,
+      payHandler: {
+        error: payErrMsg,
+      },
+      payResult,
+      ...baseResult,
+    };
+  }
+
+  if (payStatus.status === PreparePayResultType.InsufficientBalance) {
+    return {
+      status: 'no-enough-balance',
+      balance: foundAmount,
+      payStatus,
+      ...baseResult,
+    }
+  }
+
+  if (payStatus.status === PreparePayResultType.AlreadyConfirmed) {
+    return {
+      status: "confirmed",
+      balance: foundAmount,
+      payStatus,
+      ...baseResult,
+    };
+  }
+
 
   async function doPayment(): Promise<void> {
     try {
@@ -138,34 +160,19 @@ export function useComponentState(
     }
   }
 
-  if (payStatus.status === PreparePayResultType.InsufficientBalance) {
-    return {
-      status: 'no-enough-balance',
-      balance: foundAmount,
-      ...baseResult,
-    }
-  }
-
   const payHandler: ButtonHandler = {
     onClick: payErrMsg ? undefined : doPayment,
     error: payErrMsg,
   };
 
-  if (!payResult) {
-    return {
-      status: "ready",
-      payHandler,
-      ...baseResult,
-      balance: foundAmount
-    };
-  }
-
+  // (payStatus.status === PreparePayResultType.PaymentPossible)
   return {
-    status: "confirmed",
-    balance: foundAmount,
-    payResult,
-    payHandler: {},
+    status: "ready",
+    payHandler,
+    payStatus,
     ...baseResult,
+    balance: foundAmount
   };
+
 }
 

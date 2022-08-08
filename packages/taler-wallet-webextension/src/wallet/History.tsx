@@ -143,7 +143,11 @@ export function HistoryView({
 
   if (balances.length === 0 || !selectedCurrency) {
     return (
-      <NoBalanceHelp goToWalletManualWithdraw={goToWalletManualWithdraw} />
+      <NoBalanceHelp
+        goToWalletManualWithdraw={{
+          onClick: goToWalletManualWithdraw,
+        }}
+      />
     );
   }
   return (

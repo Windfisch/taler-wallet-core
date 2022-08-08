@@ -114,6 +114,12 @@ const exampleData = {
   tip: {
     ...commonTransaction,
     type: TransactionType.Tip,
+    // merchant: {
+    //   name: "the merchant",
+    //   logo: merchantIcon,
+    //   website: "https://www.themerchant.taler",
+    //   email: "contact@merchant.taler",
+    // },
     merchantBaseUrl: "http://merchant.taler",
   } as TransactionTip,
   refund: {
@@ -429,7 +435,7 @@ export const DepositBitcoin = createExample(TestedComponent, {
   transaction: {
     ...exampleData.deposit,
     amountRaw: "BITCOINBTC:0.0000011",
-    amountEffective: "BITCOINBTC:0.00000092",  
+    amountEffective: "BITCOINBTC:0.00000092",
     targetPaytoUri:
       "payto://bitcoin/bcrt1q6ps8qs6v8tkqrnru4xqqqa6rfwcx5ufpdfqht4?amount=BTC:0.1&subject=0ZSX8SH0M30KHX8K3Y1DAMVGDQV82XEF9DG1HC4QMQ3QWYT4AF00",
   },

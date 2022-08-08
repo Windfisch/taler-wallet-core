@@ -16,18 +16,18 @@
 
 import {
   AbsoluteTime,
-  amountFractionalLength,
   AmountJson,
   Amounts,
   Location,
+  MerchantInfo,
   NotificationType,
+  OrderShortInfo,
   parsePaytoUri,
   PaytoUri,
   stringifyPaytoUri,
   TalerProtocolTimestamp,
   Transaction,
   TransactionDeposit,
-  TransactionPayment,
   TransactionRefresh,
   TransactionRefund,
   TransactionTip,
@@ -46,6 +46,7 @@ import { ErrorTalerOperation } from "../components/ErrorTalerOperation.js";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import { Kind, Part, PartCollapsible, PartPayto } from "../components/Part.js";
+import { ShowFullContractTermPopup } from "../components/ShowFullContractTermPopup.js";
 import {
   CenteredDialog,
   InfoBox,
@@ -319,10 +320,15 @@ export function TransactionView({
         ? undefined
         : Amounts.parseOrThrow(transaction.refundPending);
 
-    const total = Amounts.sub(
-      Amounts.parseOrThrow(transaction.amountEffective),
-      Amounts.parseOrThrow(transaction.totalRefundEffective),
-    ).amount;
+    const price = {
+      raw: Amounts.parseOrThrow(transaction.amountRaw),
+      effective: Amounts.parseOrThrow(transaction.amountEffective),
+    };
+    const refund = {
+      raw: Amounts.parseOrThrow(transaction.totalRefundRaw),
+      effective: Amounts.parseOrThrow(transaction.totalRefundEffective),
+    };
+    const total = Amounts.sub(price.effective, refund.effective).amount;
 
     return (
       <TransactionTemplate>
@@ -404,45 +410,7 @@ export function TransactionView({
         )}
         <Part
           title={<i18n.Translate>Merchant</i18n.Translate>}
-          text={
-            <Fragment>
-              <div style={{ display: "flex", flexDirection: "row" }}>
-                {transaction.info.merchant.logo && (
-                  <div>
-                    <img
-                      src={transaction.info.merchant.logo}
-                      style={{ width: 64, height: 64, margin: 4 }}
-                    />
-                  </div>
-                )}
-                <div>
-                  <p>{transaction.info.merchant.name}</p>
-                  {transaction.info.merchant.website && (
-                    <a
-                      href={transaction.info.merchant.website}
-                      target="_blank"
-                      style={{ textDecorationColor: "gray" }}
-                      rel="noreferrer"
-                    >
-                      <SmallLightText>
-                        {transaction.info.merchant.website}
-                      </SmallLightText>
-                    </a>
-                  )}
-                  {transaction.info.merchant.email && (
-                    <a
-                      href={`mailto:${transaction.info.merchant.email}`}
-                      style={{ textDecorationColor: "gray" }}
-                    >
-                      <SmallLightText>
-                        {transaction.info.merchant.email}
-                      </SmallLightText>
-                    </a>
-                  )}
-                </div>
-              </div>
-            </Fragment>
-          }
+          text={<MerchantDetails merchant={transaction.info.merchant} />}
           kind="neutral"
         />
         <Part
@@ -452,7 +420,14 @@ export function TransactionView({
         />
         <Part
           title={<i18n.Translate>Details</i18n.Translate>}
-          text={<PurchaseDetails transaction={transaction} />}
+          text={
+            <PurchaseDetails
+              price={price}
+              refund={refund}
+              info={transaction.info}
+              proposalId={transaction.proposalId}
+            />
+          }
           kind="neutral"
         />
       </TransactionTemplate>
@@ -521,12 +496,7 @@ export function TransactionView({
         </Header>
         {/* <Part
           title={<i18n.Translate>Merchant</i18n.Translate>}
-          text={transaction.info.merchant.name}
-          kind="neutral"
-        />
-        <Part
-          title={<i18n.Translate>Invoice ID</i18n.Translate>}
-          text={transaction.info.orderId}
+          text={<MerchantDetails merchant={transaction.merchant} />}
           kind="neutral"
         /> */}
         <Part
@@ -582,6 +552,46 @@ export function TransactionView({
   }
 
   return <div />;
+}
+
+export function MerchantDetails({
+  merchant,
+}: {
+  merchant: MerchantInfo;
+}): VNode {
+  return (
+    <div style={{ display: "flex", flexDirection: "row" }}>
+      {merchant.logo && (
+        <div>
+          <img
+            src={merchant.logo}
+            style={{ width: 64, height: 64, margin: 4 }}
+          />
+        </div>
+      )}
+      <div>
+        <p style={{ marginTop: 0 }}>{merchant.name}</p>
+        {merchant.website && (
+          <a
+            href={merchant.website}
+            target="_blank"
+            style={{ textDecorationColor: "gray" }}
+            rel="noreferrer"
+          >
+            <SmallLightText>{merchant.website}</SmallLightText>
+          </a>
+        )}
+        {merchant.email && (
+          <a
+            href={`mailto:${merchant.email}`}
+            style={{ textDecorationColor: "gray" }}
+          >
+            <SmallLightText>{merchant.email}</SmallLightText>
+          </a>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function DeliveryDetails({
@@ -703,57 +713,58 @@ function DeliveryDetails({
   );
 }
 
-function PurchaseDetails({
-  transaction,
+export interface AmountWithFee {
+  effective: AmountJson;
+  raw: AmountJson;
+}
+export function PurchaseDetails({
+  price,
+  refund,
+  info,
+  proposalId,
 }: {
-  transaction: TransactionPayment;
+  price: AmountWithFee;
+  refund?: AmountWithFee;
+  info: OrderShortInfo;
+  proposalId: string;
 }): VNode {
   const { i18n } = useTranslationContext();
 
-  const partialFee = Amounts.sub(
-    Amounts.parseOrThrow(transaction.amountEffective),
-    Amounts.parseOrThrow(transaction.amountRaw),
-  ).amount;
+  const partialFee = Amounts.sub(price.effective, price.raw).amount;
 
-  const refundRaw = Amounts.parseOrThrow(transaction.totalRefundRaw);
-
-  const refundFee = Amounts.sub(
-    refundRaw,
-    Amounts.parseOrThrow(transaction.totalRefundEffective),
-  ).amount;
+  const refundFee = !refund
+    ? Amounts.getZero(price.effective.currency)
+    : Amounts.sub(refund.raw, refund.effective).amount;
 
   const fee = Amounts.sum([partialFee, refundFee]).amount;
 
-  const hasProducts =
-    transaction.info.products && transaction.info.products.length > 0;
+  const hasProducts = info.products && info.products.length > 0;
 
   const hasShipping =
-    transaction.info.delivery_date !== undefined ||
-    transaction.info.delivery_location !== undefined;
+    info.delivery_date !== undefined || info.delivery_location !== undefined;
 
   const showLargePic = (): void => {
     return;
   };
 
-  const total = Amounts.sub(
-    Amounts.parseOrThrow(transaction.amountEffective),
-    Amounts.parseOrThrow(transaction.totalRefundEffective),
-  ).amount;
+  const total = !refund
+    ? price.effective
+    : Amounts.sub(price.effective, refund.effective).amount;
 
   return (
     <PurchaseDetailsTable>
       <tr>
         <td>Price</td>
         <td>
-          <Amount value={transaction.amountRaw} />
+          <Amount value={price.raw} />
         </td>
       </tr>
 
-      {Amounts.isNonZero(refundRaw) && (
+      {refund && Amounts.isNonZero(refund.raw) && (
         <tr>
           <td>Refunded</td>
           <td>
-            <Amount value={transaction.totalRefundRaw} negative />
+            <Amount value={refund.raw} negative />
           </td>
         </tr>
       )}
@@ -784,7 +795,7 @@ function PurchaseDetails({
               title={<i18n.Translate>Products</i18n.Translate>}
               text={
                 <ListOfProducts>
-                  {transaction.info.products?.map((p, k) => (
+                  {info.products?.map((p, k) => (
                     <Row key={k}>
                       <a href="#" onClick={showLargePic}>
                         <img src={p.image ? p.image : emptyImg} />
@@ -813,14 +824,19 @@ function PurchaseDetails({
               title={<i18n.Translate>Delivery</i18n.Translate>}
               text={
                 <DeliveryDetails
-                  date={transaction.info.delivery_date}
-                  location={transaction.info.delivery_location}
+                  date={info.delivery_date}
+                  location={info.delivery_location}
                 />
               }
             />
           </td>
         </tr>
       )}
+      <tr>
+        <td>
+          <ShowFullContractTermPopup proposalId={proposalId} />
+        </td>
+      </tr>
     </PurchaseDetailsTable>
   );
 }

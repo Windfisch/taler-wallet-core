@@ -15,6 +15,7 @@
  */
 
 import {
+  AbsoluteTime,
   Amounts,
   ConfirmPayResultType,
   ContractTerms,
@@ -38,8 +39,10 @@ import {
   WalletAction,
   WarningBox,
 } from "../../components/styled/index.js";
+import { Time } from "../../components/Time.js";
 import { useTranslationContext } from "../../context/translation.js";
 import { Button } from "../../mui/Button.js";
+import { MerchantDetails, PurchaseDetails } from "../../wallet/Transaction.js";
 import { State } from "./index.js";
 
 export function LoadingUriView({ error }: State.LoadingUriError): VNode {
@@ -56,12 +59,22 @@ export function LoadingUriView({ error }: State.LoadingUriError): VNode {
 type SupportedStates =
   | State.Ready
   | State.Confirmed
+  | State.Completed
   | State.NoBalanceForCurrency
   | State.NoEnoughBalance;
 
 export function BaseView(state: SupportedStates): VNode {
   const { i18n } = useTranslationContext();
   const contractTerms: ContractTerms = state.payStatus.contractTerms;
+
+  const price = {
+    raw: state.amount,
+    effective:
+      "amountEffective" in state.payStatus
+        ? Amounts.parseOrThrow(state.payStatus.amountEffective)
+        : state.amount,
+  };
+  const totalFees = Amounts.sub(price.effective, price.raw).amount;
 
   return (
     <WalletAction>
@@ -73,9 +86,9 @@ export function BaseView(state: SupportedStates): VNode {
 
       <ShowImportantMessage state={state} />
 
-      <section>
-        {state.payStatus.status !== PreparePayResultType.InsufficientBalance &&
-          Amounts.isNonZero(state.totalFees) && (
+      <section style={{ textAlign: "left" }}>
+        {/* {state.payStatus.status !== PreparePayResultType.InsufficientBalance &&
+          Amounts.isNonZero(totalFees) && (
             <Part
               big
               title={<i18n.Translate>Total to pay</i18n.Translate>}
@@ -89,24 +102,43 @@ export function BaseView(state: SupportedStates): VNode {
           text={<Amount value={state.payStatus.amountRaw} />}
           kind="neutral"
         />
-        {Amounts.isNonZero(state.totalFees) && (
+        {Amounts.isNonZero(totalFees) && (
           <Fragment>
             <Part
               big
               title={<i18n.Translate>Fee</i18n.Translate>}
-              text={<Amount value={state.totalFees} />}
+              text={<Amount value={totalFees} />}
               kind="negative"
             />
           </Fragment>
-        )}
-        <Part
-          title={<i18n.Translate>Merchant</i18n.Translate>}
-          text={contractTerms.merchant.name}
-          kind="neutral"
-        />
+        )} */}
         <Part
           title={<i18n.Translate>Purchase</i18n.Translate>}
           text={contractTerms.summary}
+          kind="neutral"
+        />
+        <Part
+          title={<i18n.Translate>Merchant</i18n.Translate>}
+          text={<MerchantDetails merchant={contractTerms.merchant} />}
+          kind="neutral"
+        />
+        {/* <pre>{JSON.stringify(price)}</pre>
+        <hr />
+        <pre>{JSON.stringify(state.payStatus, undefined, 2)}</pre> */}
+        <Part
+          title={<i18n.Translate>Details</i18n.Translate>}
+          text={
+            <PurchaseDetails
+              price={price}
+              info={{
+                ...contractTerms,
+                orderId: contractTerms.order_id,
+                contractTermsHash: "",
+                products: contractTerms.products!,
+              }}
+              proposalId={state.payStatus.proposalId}
+            />
+          }
           kind="neutral"
         />
         {contractTerms.order_id && (
@@ -116,8 +148,19 @@ export function BaseView(state: SupportedStates): VNode {
             kind="neutral"
           />
         )}
-        {contractTerms.products && contractTerms.products.length > 0 && (
-          <ProductList products={contractTerms.products} />
+        {contractTerms.pay_deadline && (
+          <Part
+            title={<i18n.Translate>Valid until</i18n.Translate>}
+            text={
+              <Time
+                timestamp={AbsoluteTime.fromTimestamp(
+                  contractTerms.pay_deadline,
+                )}
+                format="dd MMMM yyyy, HH:mm"
+              />
+            }
+            kind="neutral"
+          />
         )}
       </section>
       <ButtonsSection
@@ -232,7 +275,7 @@ function ShowImportantMessage({ state }: { state: SupportedStates }): VNode {
     );
   }
 
-  if (state.status == "confirmed") {
+  if (state.status == "completed") {
     const { payResult, payHandler } = state;
     if (payHandler.error) {
       return <ErrorTalerOperation error={payHandler.error.errorDetail} />;
@@ -264,7 +307,7 @@ function ShowImportantMessage({ state }: { state: SupportedStates }): VNode {
   return <Fragment />;
 }
 
-function PayWithMobile({ state }: { state: State.Ready }): VNode {
+function PayWithMobile({ state }: { state: SupportedStates }): VNode {
   const { i18n } = useTranslationContext();
 
   const [showQR, setShowQR] = useState<boolean>(false);
@@ -286,7 +329,7 @@ function PayWithMobile({ state }: { state: State.Ready }): VNode {
         <div>
           <QR text={privateUri} />
           <i18n.Translate>
-            Scan the QR code or
+            Scan the QR code or &nbsp;
             <a href={privateUri}>
               <i18n.Translate>click here</i18n.Translate>
             </a>
@@ -306,61 +349,66 @@ function ButtonsSection({
 }): VNode {
   const { i18n } = useTranslationContext();
   if (state.status === "ready") {
-    const { payStatus } = state;
-    if (payStatus.status === PreparePayResultType.PaymentPossible) {
-      return (
-        <Fragment>
-          <section>
-            <Button
-              variant="contained"
-              color="success"
-              onClick={state.payHandler.onClick}
-            >
-              <i18n.Translate>
-                Pay {<Amount value={payStatus.amountEffective} />}
-              </i18n.Translate>
-            </Button>
-          </section>
-          <PayWithMobile state={state} />
-        </Fragment>
-      );
-    }
-    if (payStatus.status === PreparePayResultType.InsufficientBalance) {
-      let BalanceMessage = "";
-      if (!state.balance) {
-        BalanceMessage = i18n.str`You have no balance for this currency. Withdraw digital cash first.`;
+    return (
+      <Fragment>
+        <section>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={state.payHandler.onClick}
+          >
+            <i18n.Translate>
+              Pay &nbsp;
+              {<Amount value={state.payStatus.amountEffective} />}
+            </i18n.Translate>
+          </Button>
+        </section>
+        <PayWithMobile state={state} />
+      </Fragment>
+    );
+  }
+  if (
+    state.status === "no-enough-balance" ||
+    state.status === "no-balance-for-currency"
+  ) {
+    // if (state.payStatus.status === PreparePayResultType.InsufficientBalance) {
+    let BalanceMessage = "";
+    if (!state.balance) {
+      BalanceMessage = i18n.str`You have no balance for this currency. Withdraw digital cash first.`;
+    } else {
+      const balanceShouldBeEnough =
+        Amounts.cmp(state.balance, state.amount) !== -1;
+      if (balanceShouldBeEnough) {
+        BalanceMessage = i18n.str`Could not find enough coins to pay this order. Even if you have enough ${state.balance.currency} some restriction may apply.`;
       } else {
-        const balanceShouldBeEnough =
-          Amounts.cmp(state.balance, state.amount) !== -1;
-        if (balanceShouldBeEnough) {
-          BalanceMessage = i18n.str`Could not find enough coins to pay this order. Even if you have enough ${state.balance.currency} some restriction may apply.`;
-        } else {
-          BalanceMessage = i18n.str`Your current balance is not enough for this order.`;
-        }
+        BalanceMessage = i18n.str`Your current balance is not enough for this order.`;
       }
-      return (
-        <Fragment>
-          <section>
-            <WarningBox>{BalanceMessage}</WarningBox>
-          </section>
-          <section>
-            <Button
-              variant="contained"
-              color="success"
-              onClick={() => goToWalletManualWithdraw(state.amount.currency)}
-            >
-              <i18n.Translate>Withdraw digital cash</i18n.Translate>
-            </Button>
-          </section>
-          <PayWithMobile state={state} />
-        </Fragment>
-      );
     }
-    if (payStatus.status === PreparePayResultType.AlreadyConfirmed) {
+    return (
+      <Fragment>
+        <section>
+          <WarningBox>{BalanceMessage}</WarningBox>
+        </section>
+        <section>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={() => goToWalletManualWithdraw(state.amount.currency)}
+          >
+            <i18n.Translate>Withdraw digital cash</i18n.Translate>
+          </Button>
+        </section>
+        <PayWithMobile state={state} />
+      </Fragment>
+    );
+    // }
+  }
+  if (state.status === "confirmed") {
+    if (state.payStatus.status === PreparePayResultType.AlreadyConfirmed) {
       return (
         <Fragment>
           <section>
-            {payStatus.paid &&
+            {state.payStatus.paid &&
               state.payStatus.contractTerms.fulfillment_message && (
                 <Part
                   title={<i18n.Translate>Merchant message</i18n.Translate>}
@@ -369,13 +417,13 @@ function ButtonsSection({
                 />
               )}
           </section>
-          {!payStatus.paid && <PayWithMobile state={state} />}
+          {!state.payStatus.paid && <PayWithMobile state={state} />}
         </Fragment>
       );
     }
   }
 
-  if (state.status === "confirmed") {
+  if (state.status === "completed") {
     if (state.payResult.type === ConfirmPayResultType.Pending) {
       return (
         <section>

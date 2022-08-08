@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountJson, ConfirmPayResult, PreparePayResult } from "@gnu-taler/taler-util";
+import { AmountJson, ConfirmPayResult, PreparePayResult, PreparePayResultAlreadyConfirmed, PreparePayResultInsufficientBalance, PreparePayResultPaymentPossible } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { ButtonHandler } from "../../mui/handlers.js";
@@ -37,6 +37,7 @@ export type State =
   | State.Ready
   | State.NoEnoughBalance
   | State.NoBalanceForCurrency
+  | State.Completed
   | State.Confirmed;
 
 export namespace State {
@@ -52,8 +53,6 @@ export namespace State {
 
   interface BaseInfo {
     amount: AmountJson;
-    totalFees: AmountJson;
-    payStatus: PreparePayResult;
     uri: string;
     error: undefined;
     goToWalletManualWithdraw: (currency?: string) => Promise<void>;
@@ -61,20 +60,30 @@ export namespace State {
   }
   export interface NoBalanceForCurrency extends BaseInfo {
     status: "no-balance-for-currency"
+    payStatus: PreparePayResult;
     balance: undefined;
   }
   export interface NoEnoughBalance extends BaseInfo {
     status: "no-enough-balance"
+    payStatus: PreparePayResult;
     balance: AmountJson;
   }
   export interface Ready extends BaseInfo {
     status: "ready";
+    payStatus: PreparePayResultPaymentPossible;
     payHandler: ButtonHandler;
     balance: AmountJson;
   }
 
   export interface Confirmed extends BaseInfo {
     status: "confirmed";
+    payStatus: PreparePayResultAlreadyConfirmed;
+    balance: AmountJson;
+  }
+
+  export interface Completed extends BaseInfo {
+    status: "completed";
+    payStatus: PreparePayResult;
     payResult: ConfirmPayResult;
     payHandler: ButtonHandler;
     balance: AmountJson;
@@ -87,6 +96,7 @@ const viewMapping: StateViewMap<State> = {
   "no-balance-for-currency": BaseView,
   "no-enough-balance": BaseView,
   confirmed: BaseView,
+  completed: BaseView,
   ready: BaseView,
 };
 
