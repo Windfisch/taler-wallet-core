@@ -43,6 +43,7 @@ import {
   AgeCommitmentProof,
   PayCoinSelection,
   PeerContractTerms,
+  Location,
 } from "@gnu-taler/taler-util";
 import { RetryInfo } from "./util/retries.js";
 import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
@@ -1170,6 +1171,8 @@ export interface WalletContractData {
   wireInfoHash: string;
   maxDepositFee: AmountJson;
   minimumAge?: number;
+  deliveryDate: TalerProtocolTimestamp | undefined;
+  deliveryLocation: Location | undefined;
 }
 
 export enum AbortStatus {

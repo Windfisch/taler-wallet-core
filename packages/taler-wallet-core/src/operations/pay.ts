@@ -662,6 +662,8 @@ export function extractContractData(
     products: parsedContractTerms.products,
     summaryI18n: parsedContractTerms.summary_i18n,
     minimumAge: parsedContractTerms.minimum_age,
+    deliveryDate: parsedContractTerms.delivery_date,
+    deliveryLocation: parsedContractTerms.delivery_location,
   };
 }
 
@@ -1316,6 +1318,27 @@ export async function checkPaymentByProposalId(
       proposalId,
     };
   }
+}
+
+export async function getContractTermsDetails(
+  ws: InternalWalletState,
+  proposalId: string,
+): Promise<WalletContractData> {
+  const proposal = await ws.db
+    .mktx((x) => ({ proposals: x.proposals }))
+    .runReadOnly(async (tx) => {
+      return tx.proposals.get(proposalId);
+    });
+
+  if (!proposal) {
+    throw Error(`proposal with id ${proposalId} not found`);
+  }
+
+  if (!proposal.download || !proposal.download.contractData) {
+    throw Error("proposal is in invalid state");
+  }
+
+  return proposal.download.contractData
 }
 
 /**

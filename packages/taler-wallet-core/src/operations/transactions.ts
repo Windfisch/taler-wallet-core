@@ -448,6 +448,9 @@ export async function getTransactions(
               tipRecord.walletTipId,
             ),
             merchantBaseUrl: tipRecord.merchantBaseUrl,
+            // merchant: {
+            //   name: tipRecord.merchantBaseUrl,
+            // },
             error: tipRecord.lastError,
           });
         });

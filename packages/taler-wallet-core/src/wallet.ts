@@ -43,6 +43,7 @@ import {
   codecForCreateDepositGroupRequest,
   codecForDeleteTransactionRequest,
   codecForForceRefreshRequest,
+  codecForGetContractTermsDetails,
   codecForGetExchangeTosRequest,
   codecForGetExchangeWithdrawalInfo,
   codecForGetFeeForDeposit,
@@ -142,6 +143,7 @@ import {
 import { getMerchantInfo } from "./operations/merchants.js";
 import {
   confirmPay,
+  getContractTermsDetails,
   preparePayForUri,
   processDownloadProposal,
   processPurchasePay,
@@ -867,6 +869,10 @@ async function dispatchRequestInternal(
     case "getExchangeTos": {
       const req = codecForGetExchangeTosRequest().decode(payload);
       return getExchangeTos(ws, req.exchangeBaseUrl, req.acceptedFormat);
+    }
+    case "getContractTermsDetails": {
+      const req = codecForGetContractTermsDetails().decode(payload);
+      return getContractTermsDetails(ws, req.proposalId);
     }
     case "retryPendingNow": {
       await runPending(ws, true);

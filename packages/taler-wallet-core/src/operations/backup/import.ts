@@ -600,6 +600,8 @@ export async function importBackup(
                 merchant: parsedContractTerms.merchant,
                 products: parsedContractTerms.products,
                 summaryI18n: parsedContractTerms.summary_i18n,
+                deliveryDate: parsedContractTerms.delivery_date,
+                deliveryLocation: parsedContractTerms.delivery_location,
               },
               contractTermsRaw: backupProposal.contract_terms_raw,
             };
@@ -740,6 +742,8 @@ export async function importBackup(
               merchant: parsedContractTerms.merchant,
               products: parsedContractTerms.products,
               summaryI18n: parsedContractTerms.summary_i18n,
+              deliveryDate: parsedContractTerms.delivery_date,
+              deliveryLocation: parsedContractTerms.delivery_location,
             },
             contractTermsRaw: backupPurchase.contract_terms_raw,
           };
