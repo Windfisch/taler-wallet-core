@@ -28,15 +28,14 @@ interface Props {
   mobile?: boolean;
 }
 
-const VERSION: string = process.env.__VERSION__ || "dev";
-const GIT_HASH: string | undefined = process.env.__GIT_HASH__;
+// @ts-ignore
+const maybeEnv = process?.env || {};
+
+const VERSION: string = maybeEnv.__VERSION__ || "dev";
+const GIT_HASH: string | undefined = maybeEnv.__GIT_HASH__;
 const VERSION_WITH_HASH = GIT_HASH ? `${VERSION}-${GIT_HASH}` : VERSION;
 
 export function Sidebar({ mobile }: Props): VNode {
-  // const config = useConfigContext();
-  const config = { version: "none" };
-  // FIXME: add replacement for __VERSION__ with the current version
-  const process = { env: { __VERSION__: "0.0.0" } };
   const reducer = useAnastasisContext()!;
 
   function saveSession(): void {

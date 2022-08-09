@@ -92,6 +92,14 @@ export namespace Duration {
     return { d_ms: deadline.t_ms - now.t_ms };
   }
 
+  export function max(d1: Duration, d2: Duration): Duration {
+    return durationMax(d1, d2);
+  }
+
+  export function min(d1: Duration, d2: Duration): Duration {
+    return durationMin(d1, d2);
+  }
+
   export function toIntegerYears(d: Duration): number {
     if (typeof d.d_ms !== "number") {
       throw Error("infinite duration");

@@ -41,7 +41,6 @@ interface WalletBalance {
 export async function getBalancesInsideTransaction(
   ws: InternalWalletState,
   tx: GetReadOnlyAccess<{
-    reserves: typeof WalletStoresV1.reserves;
     coins: typeof WalletStoresV1.coins;
     refreshGroups: typeof WalletStoresV1.refreshGroups;
     withdrawalGroups: typeof WalletStoresV1.withdrawalGroups;
@@ -64,17 +63,6 @@ export async function getBalancesInsideTransaction(
     }
     return balanceStore[currency];
   };
-
-  // Initialize balance to zero, even if we didn't start withdrawing yet.
-  await tx.reserves.iter().forEach((r) => {
-    const b = initBalance(r.currency);
-    if (!r.initialWithdrawalStarted) {
-      b.pendingIncoming = Amounts.add(
-        b.pendingIncoming,
-        r.initialDenomSel.totalCoinValue,
-      ).amount;
-    }
-  });
 
   await tx.coins.iter().forEach((c) => {
     // Only count fresh coins, as dormant coins will
@@ -154,7 +142,6 @@ export async function getBalances(
     .mktx((x) => ({
       coins: x.coins,
       refreshGroups: x.refreshGroups,
-      reserves: x.reserves,
       purchases: x.purchases,
       withdrawalGroups: x.withdrawalGroups,
     }))

@@ -36,7 +36,7 @@ import {
   runCommand,
   setupDb,
   sh,
-  getRandomIban
+  getRandomIban,
 } from "../harness/harness.js";
 import {
   LibeufinSandboxApi,
@@ -53,13 +53,10 @@ import {
   CreateAnastasisFacadeRequest,
   PostNexusTaskRequest,
   PostNexusPermissionRequest,
-  CreateNexusUserRequest
+  CreateNexusUserRequest,
 } from "../harness/libeufin-apis.js";
 
-export {
-  LibeufinSandboxApi,
-  LibeufinNexusApi
-}
+export { LibeufinSandboxApi, LibeufinNexusApi };
 
 export interface LibeufinServices {
   libeufinSandbox: LibeufinSandboxService;
@@ -206,6 +203,16 @@ export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
   }
 
   async start(): Promise<void> {
+    await sh(
+      this.globalTestState,
+      "libeufin-sandbox-config",
+      "libeufin-sandbox config default",
+      {
+        ...process.env,
+        LIBEUFIN_SANDBOX_DB_CONNECTION: this.sandboxConfig.databaseJdbcUri,
+      },
+    );
+
     this.sandboxProc = this.globalTestState.spawnService(
       "libeufin-sandbox",
       ["serve", "--port", `${this.sandboxConfig.httpPort}`],
@@ -235,7 +242,8 @@ export class LibeufinSandboxService implements LibeufinSandboxServiceInterface {
     debit: string,
     credit: string,
     amount: string, // $currency:x.y
-    subject: string,): Promise<string> {
+    subject: string,
+  ): Promise<string> {
     const stdout = await sh(
       this.globalTestState,
       "libeufin-sandbox-maketransfer",
@@ -428,7 +436,7 @@ export class LibeufinCli {
       LIBEUFIN_SANDBOX_URL: this.cliDetails.sandboxUrl,
       LIBEUFIN_SANDBOX_USERNAME: "admin",
       LIBEUFIN_SANDBOX_PASSWORD: "secret",
-    }
+    };
   }
 
   async checkSandbox(): Promise<void> {
@@ -436,7 +444,7 @@ export class LibeufinCli {
       this.globalTestState,
       "libeufin-cli-checksandbox",
       "libeufin-cli sandbox check",
-      this.env()
+      this.env(),
     );
   }
 
@@ -445,7 +453,7 @@ export class LibeufinCli {
       this.globalTestState,
       "libeufin-cli-createebicshost",
       `libeufin-cli sandbox ebicshost create --host-id=${hostId}`,
-      this.env()
+      this.env(),
     );
     console.log(stdout);
   }
@@ -460,7 +468,7 @@ export class LibeufinCli {
         ` --host-id=${details.hostId}` +
         ` --partner-id=${details.partnerId}` +
         ` --user-id=${details.userId}`,
-      this.env()
+      this.env(),
     );
     console.log(stdout);
   }
@@ -480,7 +488,7 @@ export class LibeufinCli {
         ` --ebics-host-id=${sd.hostId}` +
         ` --ebics-partner-id=${sd.partnerId}` +
         ` --ebics-user-id=${sd.userId}`,
-      this.env()
+      this.env(),
     );
     console.log(stdout);
   }
@@ -490,7 +498,7 @@ export class LibeufinCli {
       this.globalTestState,
       "libeufin-cli-generatetransactions",
       `libeufin-cli sandbox bankaccount generate-transactions ${accountName}`,
-      this.env()
+      this.env(),
     );
     console.log(stdout);
   }
@@ -500,7 +508,7 @@ export class LibeufinCli {
       this.globalTestState,
       "libeufin-cli-showsandboxtransactions",
       `libeufin-cli sandbox bankaccount transactions ${accountName}`,
-      this.env()
+      this.env(),
     );
     console.log(stdout);
   }
@@ -834,9 +842,12 @@ export async function launchLibeufinServices(
             libeufinNexus,
             nb.twgHistoryPermission,
           );
-	  break;
+          break;
         case "anastasis":
-	  await LibeufinNexusApi.createAnastasisFacade(libeufinNexus, nb.anastasisReq);
+          await LibeufinNexusApi.createAnastasisFacade(
+            libeufinNexus,
+            nb.anastasisReq,
+          );
       }
     }
   }

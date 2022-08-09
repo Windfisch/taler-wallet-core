@@ -17,12 +17,7 @@
 /**
  * Imports.
  */
-import {
-  AbsoluteTime,
-  ContractTerms,
-  Duration,
-  durationFromSpec,
-} from "@gnu-taler/taler-util";
+import { AbsoluteTime, ContractTerms, Duration } from "@gnu-taler/taler-util";
 import {
   WalletApiOperation,
   HarnessExchangeBankAccount,
@@ -42,7 +37,7 @@ import {
   LibeufinNexusService,
   LibeufinSandboxApi,
   LibeufinSandboxService,
-} from "../harness/libeufin";
+} from "../harness/libeufin.js";
 
 const exchangeIban = "DE71500105179674997361";
 const customerIban = "DE84500105176881385584";

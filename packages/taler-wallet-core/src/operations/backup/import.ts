@@ -236,7 +236,6 @@ export async function importBackup(
       backupProviders: x.backupProviders,
       tips: x.tips,
       recoupGroups: x.recoupGroups,
-      reserves: x.reserves,
       withdrawalGroups: x.withdrawalGroups,
       tombstones: x.tombstones,
       depositGroups: x.depositGroups,
@@ -427,94 +426,98 @@ export async function importBackup(
           }
         }
 
-        for (const backupReserve of backupExchangeDetails.reserves) {
-          const reservePub =
-            cryptoComp.reservePrivToPub[backupReserve.reserve_priv];
-          const ts = makeEventId(TombstoneTag.DeleteReserve, reservePub);
-          if (tombstoneSet.has(ts)) {
-            continue;
-          }
-          checkLogicInvariant(!!reservePub);
-          const existingReserve = await tx.reserves.get(reservePub);
-          const instructedAmount = Amounts.parseOrThrow(
-            backupReserve.instructed_amount,
-          );
-          if (!existingReserve) {
-            let bankInfo: ReserveBankInfo | undefined;
-            if (backupReserve.bank_info) {
-              bankInfo = {
-                exchangePaytoUri: backupReserve.bank_info.exchange_payto_uri,
-                statusUrl: backupReserve.bank_info.status_url,
-                confirmUrl: backupReserve.bank_info.confirm_url,
-              };
-            }
-            await tx.reserves.put({
-              currency: instructedAmount.currency,
-              instructedAmount,
-              exchangeBaseUrl: backupExchangeDetails.base_url,
-              reservePub,
-              reservePriv: backupReserve.reserve_priv,
-              bankInfo,
-              timestampCreated: backupReserve.timestamp_created,
-              timestampBankConfirmed:
-                backupReserve.bank_info?.timestamp_bank_confirmed,
-              timestampReserveInfoPosted:
-                backupReserve.bank_info?.timestamp_reserve_info_posted,
-              senderWire: backupReserve.sender_wire,
-              retryInfo: RetryInfo.reset(),
-              lastError: undefined,
-              initialWithdrawalGroupId:
-                backupReserve.initial_withdrawal_group_id,
-              initialWithdrawalStarted:
-                backupReserve.withdrawal_groups.length > 0,
-              // FIXME!
-              reserveStatus: ReserveRecordStatus.QueryingStatus,
-              initialDenomSel: await getDenomSelStateFromBackup(
-                tx,
-                backupExchangeDetails.base_url,
-                backupReserve.initial_selected_denoms,
-              ),
-              // FIXME!
-              operationStatus: OperationStatus.Pending,
-            });
-          }
-          for (const backupWg of backupReserve.withdrawal_groups) {
-            const ts = makeEventId(
-              TombstoneTag.DeleteWithdrawalGroup,
-              backupWg.withdrawal_group_id,
-            );
-            if (tombstoneSet.has(ts)) {
-              continue;
-            }
-            const existingWg = await tx.withdrawalGroups.get(
-              backupWg.withdrawal_group_id,
-            );
-            if (!existingWg) {
-              await tx.withdrawalGroups.put({
-                denomsSel: await getDenomSelStateFromBackup(
-                  tx,
-                  backupExchangeDetails.base_url,
-                  backupWg.selected_denoms,
-                ),
-                exchangeBaseUrl: backupExchangeDetails.base_url,
-                lastError: undefined,
-                rawWithdrawalAmount: Amounts.parseOrThrow(
-                  backupWg.raw_withdrawal_amount,
-                ),
-                reservePub,
-                retryInfo: RetryInfo.reset(),
-                secretSeed: backupWg.secret_seed,
-                timestampStart: backupWg.timestamp_created,
-                timestampFinish: backupWg.timestamp_finish,
-                withdrawalGroupId: backupWg.withdrawal_group_id,
-                denomSelUid: backupWg.selected_denoms_id,
-                operationStatus: backupWg.timestamp_finish
-                  ? OperationStatus.Finished
-                  : OperationStatus.Pending,
-              });
-            }
-          }
-        }
+
+      // FIXME: import reserves with new schema
+
+        // for (const backupReserve of backupExchangeDetails.reserves) {
+        //   const reservePub =
+        //     cryptoComp.reservePrivToPub[backupReserve.reserve_priv];
+        //   const ts = makeEventId(TombstoneTag.DeleteReserve, reservePub);
+        //   if (tombstoneSet.has(ts)) {
+        //     continue;
+        //   }
+        //   checkLogicInvariant(!!reservePub);
+        //   const existingReserve = await tx.reserves.get(reservePub);
+        //   const instructedAmount = Amounts.parseOrThrow(
+        //     backupReserve.instructed_amount,
+        //   );
+        //   if (!existingReserve) {
+        //     let bankInfo: ReserveBankInfo | undefined;
+        //     if (backupReserve.bank_info) {
+        //       bankInfo = {
+        //         exchangePaytoUri: backupReserve.bank_info.exchange_payto_uri,
+        //         statusUrl: backupReserve.bank_info.status_url,
+        //         confirmUrl: backupReserve.bank_info.confirm_url,
+        //       };
+        //     }
+        //     await tx.reserves.put({
+        //       currency: instructedAmount.currency,
+        //       instructedAmount,
+        //       exchangeBaseUrl: backupExchangeDetails.base_url,
+        //       reservePub,
+        //       reservePriv: backupReserve.reserve_priv,
+        //       bankInfo,
+        //       timestampCreated: backupReserve.timestamp_created,
+        //       timestampBankConfirmed:
+        //         backupReserve.bank_info?.timestamp_bank_confirmed,
+        //       timestampReserveInfoPosted:
+        //         backupReserve.bank_info?.timestamp_reserve_info_posted,
+        //       senderWire: backupReserve.sender_wire,
+        //       retryInfo: RetryInfo.reset(),
+        //       lastError: undefined,
+        //       initialWithdrawalGroupId:
+        //         backupReserve.initial_withdrawal_group_id,
+        //       initialWithdrawalStarted:
+        //         backupReserve.withdrawal_groups.length > 0,
+        //       // FIXME!
+        //       reserveStatus: ReserveRecordStatus.QueryingStatus,
+        //       initialDenomSel: await getDenomSelStateFromBackup(
+        //         tx,
+        //         backupExchangeDetails.base_url,
+        //         backupReserve.initial_selected_denoms,
+        //       ),
+        //       // FIXME!
+        //       operationStatus: OperationStatus.Pending,
+        //     });
+        //   }
+        //   for (const backupWg of backupReserve.withdrawal_groups) {
+        //     const ts = makeEventId(
+        //       TombstoneTag.DeleteWithdrawalGroup,
+        //       backupWg.withdrawal_group_id,
+        //     );
+        //     if (tombstoneSet.has(ts)) {
+        //       continue;
+        //     }
+        //     const existingWg = await tx.withdrawalGroups.get(
+        //       backupWg.withdrawal_group_id,
+        //     );
+        //     if (!existingWg) {
+        //       await tx.withdrawalGroups.put({
+        //         denomsSel: await getDenomSelStateFromBackup(
+        //           tx,
+        //           backupExchangeDetails.base_url,
+        //           backupWg.selected_denoms,
+        //         ),
+        //         exchangeBaseUrl: backupExchangeDetails.base_url,
+        //         lastError: undefined,
+        //         rawWithdrawalAmount: Amounts.parseOrThrow(
+        //           backupWg.raw_withdrawal_amount,
+        //         ),
+        //         reservePub,
+        //         retryInfo: RetryInfo.reset(),
+        //         secretSeed: backupWg.secret_seed,
+        //         timestampStart: backupWg.timestamp_created,
+        //         timestampFinish: backupWg.timestamp_finish,
+        //         withdrawalGroupId: backupWg.withdrawal_group_id,
+        //         denomSelUid: backupWg.selected_denoms_id,
+        //         operationStatus: backupWg.timestamp_finish
+        //           ? OperationStatus.Finished
+        //           : OperationStatus.Pending,
+        //       });
+        //     }
+        //   }
+        // }
+
       }
 
       for (const backupProposal of backupBlob.proposals) {
@@ -920,10 +923,6 @@ export async function importBackup(
         } else if (type === TombstoneTag.DeleteRefund) {
           // Nothing required, will just prevent display
           // in the transactions list
-        } else if (type === TombstoneTag.DeleteReserve) {
-          // FIXME:  Once we also have account (=kyc) reserves,
-          // we need to check if the reserve is an account before deleting here
-          await tx.reserves.delete(rest[0]);
         } else if (type === TombstoneTag.DeleteTip) {
           await tx.tips.delete(rest[0]);
         } else if (type === TombstoneTag.DeleteWithdrawalGroup) {

@@ -107,7 +107,6 @@ import {
   MerchantOperations,
   NotificationListener,
   RecoupOperations,
-  ReserveOperations,
 } from "./internal-wallet-state.js";
 import { exportBackup } from "./operations/backup/export.js";
 import {
@@ -168,12 +167,6 @@ import {
   processPurchaseQueryRefund,
 } from "./operations/refund.js";
 import {
-  createReserve,
-  createTalerWithdrawReserve,
-  getFundingPaytoUris,
-  processReserve,
-} from "./operations/reserves.js";
-import {
   runIntegrationTest,
   testPay,
   withdrawTestBalance,
@@ -185,9 +178,12 @@ import {
   retryTransaction,
 } from "./operations/transactions.js";
 import {
+  acceptWithdrawalFromUri,
+  createManualWithdrawal,
   getExchangeWithdrawalInfo,
+  getFundingPaytoUrisTx,
   getWithdrawalDetailsForUri,
-  processWithdrawGroup,
+  processWithdrawalGroup as processWithdrawalGroup,
 } from "./operations/withdraw.js";
 import {
   PendingOperationsResponse,
@@ -258,11 +254,8 @@ async function processOnePendingOperation(
     case PendingTaskType.Refresh:
       await processRefreshGroup(ws, pending.refreshGroupId, { forceNow });
       break;
-    case PendingTaskType.Reserve:
-      await processReserve(ws, pending.reservePub, { forceNow });
-      break;
     case PendingTaskType.Withdraw:
-      await processWithdrawGroup(ws, pending.withdrawalGroupId, { forceNow });
+      await processWithdrawalGroup(ws, pending.withdrawalGroupId, { forceNow });
       break;
     case PendingTaskType.ProposalDownload:
       await processDownloadProposal(ws, pending.proposalId, { forceNow });
@@ -464,40 +457,6 @@ async function fillDefaults(ws: InternalWalletState): Promise<void> {
     });
 }
 
-/**
- * Create a reserve for a manual withdrawal.
- *
- * Adds the corresponding exchange as a trusted exchange if it is neither
- * audited nor trusted already.
- */
-async function acceptManualWithdrawal(
-  ws: InternalWalletState,
-  exchangeBaseUrl: string,
-  amount: AmountJson,
-  restrictAge?: number,
-): Promise<AcceptManualWithdrawalResult> {
-  try {
-    const resp = await createReserve(ws, {
-      amount,
-      exchange: exchangeBaseUrl,
-      restrictAge,
-    });
-    const exchangePaytoUris = await ws.db
-      .mktx((x) => ({
-        exchanges: x.exchanges,
-        exchangeDetails: x.exchangeDetails,
-        reserves: x.reserves,
-      }))
-      .runReadWrite((tx) => getFundingPaytoUris(tx, resp.reservePub));
-    return {
-      reservePub: resp.reservePub,
-      exchangePaytoUris,
-    };
-  } finally {
-    ws.latch.trigger();
-  }
-}
-
 async function getExchangeTos(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
@@ -552,6 +511,10 @@ async function getExchangeTos(
   };
 }
 
+/**
+ * List bank accounts known to the wallet from
+ * previous withdrawals.
+ */
 async function listKnownBankAccounts(
   ws: InternalWalletState,
   currency?: string,
@@ -559,12 +522,13 @@ async function listKnownBankAccounts(
   const accounts: PaytoUri[] = [];
   await ws.db
     .mktx((x) => ({
-      reserves: x.reserves,
+      withdrawalGroups: x.withdrawalGroups,
     }))
     .runReadOnly(async (tx) => {
-      const reservesRecords = await tx.reserves.iter().toArray();
-      for (const r of reservesRecords) {
-        if (currency && currency !== r.currency) {
+      const withdrawalGroups = await tx.withdrawalGroups.iter().toArray();
+      for (const r of withdrawalGroups) {
+        const amount = r.rawWithdrawalAmount;
+        if (currency && currency !== amount.currency) {
           continue;
         }
         const payto = r.senderWire ? parsePaytoUri(r.senderWire) : undefined;
@@ -612,31 +576,6 @@ async function getExchanges(
       }
     });
   return { exchanges };
-}
-
-/**
- * Inform the wallet that the status of a reserve has changed (e.g. due to a
- * confirmation from the bank.).
- */
-export async function handleNotifyReserve(
-  ws: InternalWalletState,
-): Promise<void> {
-  const reserves = await ws.db
-    .mktx((x) => ({
-      reserves: x.reserves,
-    }))
-    .runReadOnly(async (tx) => {
-      return tx.reserves.iter().toArray();
-    });
-  for (const r of reserves) {
-    if (r.reserveStatus === ReserveRecordStatus.WaitConfirmBank) {
-      try {
-        processReserve(ws, r.reservePub);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  }
 }
 
 async function setCoinSuspended(
@@ -817,12 +756,11 @@ async function dispatchRequestInternal(
     }
     case "acceptManualWithdrawal": {
       const req = codecForAcceptManualWithdrawalRequet().decode(payload);
-      const res = await acceptManualWithdrawal(
-        ws,
-        req.exchangeBaseUrl,
-        Amounts.parseOrThrow(req.amount),
-        req.restrictAge,
-      );
+      const res = await createManualWithdrawal(ws, {
+        amount: Amounts.parseOrThrow(req.amount),
+        exchangeBaseUrl: req.exchangeBaseUrl,
+        restrictAge: req.restrictAge,
+      });
       return res;
     }
     case "getWithdrawalDetailsForAmount": {
@@ -856,15 +794,12 @@ async function dispatchRequestInternal(
     case "acceptBankIntegratedWithdrawal": {
       const req =
         codecForAcceptBankIntegratedWithdrawalRequest().decode(payload);
-      return await createTalerWithdrawReserve(
-        ws,
-        req.talerWithdrawUri,
-        req.exchangeBaseUrl,
-        {
-          forcedDenomSel: req.forcedDenomSel,
-          restrictAge: req.restrictAge,
-        },
-      );
+      return await acceptWithdrawalFromUri(ws, {
+        selectedExchange: req.exchangeBaseUrl,
+        talerWithdrawUri: req.talerWithdrawUri,
+        forcedDenomSel: req.forcedDenomSel,
+        restrictAge: req.restrictAge,
+      });
     }
     case "getExchangeTos": {
       const req = codecForGetExchangeTosRequest().decode(payload);
@@ -1033,7 +968,10 @@ async function dispatchRequestInternal(
         req.exchange,
         amount,
       );
-      const wres = await acceptManualWithdrawal(ws, req.exchange, amount);
+      const wres = await createManualWithdrawal(ws, {
+        amount: amount,
+        exchangeBaseUrl: req.exchange,
+      });
       const paytoUri = details.paytoUris[0];
       const pt = parsePaytoUri(paytoUri);
       if (!pt) {
@@ -1227,10 +1165,6 @@ class InternalWalletStateImpl implements InternalWalletState {
 
   merchantOps: MerchantOperations = {
     getMerchantInfo,
-  };
-
-  reserveOps: ReserveOperations = {
-    processReserve,
   };
 
   // FIXME: Use an LRU cache here.

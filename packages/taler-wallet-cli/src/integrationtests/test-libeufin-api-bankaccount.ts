@@ -96,7 +96,7 @@ export async function runLibeufinApiBankaccountTest(t: GlobalTestState) {
       debtorName: "mock2",
       amount: "1",
       subject: "mock subject",
-    }
+    },
   );
   await LibeufinNexusApi.fetchTransactions(nexus, "local-mock");
   let transactions = await LibeufinNexusApi.getAccountTransactions(
@@ -106,4 +106,5 @@ export async function runLibeufinApiBankaccountTest(t: GlobalTestState) {
   let el = findNexusPayment("mock subject", transactions.data);
   t.assertTrue(el instanceof Object);
 }
+
 runLibeufinApiBankaccountTest.suites = ["libeufin"];

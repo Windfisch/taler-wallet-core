@@ -73,15 +73,6 @@ export interface MerchantOperations {
   ): Promise<MerchantInfo>;
 }
 
-export interface ReserveOperations {
-  processReserve(
-    ws: InternalWalletState,
-    reservePub: string,
-    options?: {
-      forceNow?: boolean;
-    },
-  ): Promise<void>;
-}
 
 /**
  * Interface for exchange-related operations.
@@ -234,7 +225,6 @@ export interface InternalWalletState {
   exchangeOps: ExchangeOperations;
   recoupOps: RecoupOperations;
   merchantOps: MerchantOperations;
-  reserveOps: ReserveOperations;
 
   getDenomInfo(
     ws: InternalWalletState,

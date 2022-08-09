@@ -18,7 +18,12 @@
  * Imports.
  */
 import test from "ava";
+import { initNodePrng } from "./prng-node.js";
 import { ContractTermsUtil } from "./contractTerms.js";
+
+// Since we import nacl-fast directly (and not via index.node.ts), we need to
+// init the PRNG manually.
+initNodePrng();
 
 test("contract terms canon hashing", (t) => {
   const cReq = {

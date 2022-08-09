@@ -53,7 +53,6 @@ export * from "./operations/exchanges.js";
 
 export * from "./bank-api-client.js";
 
-export * from "./operations/reserves.js";
 export * from "./operations/withdraw.js";
 export * from "./operations/refresh.js";
 

@@ -19,20 +19,29 @@
  */
 import {
   AbsoluteTime,
+  AcceptManualWithdrawalResult,
+  AcceptWithdrawalResponse,
+  addPaytoQueryParams,
   AmountJson,
+  AmountLike,
   Amounts,
   AmountString,
   BankWithdrawDetails,
+  canonicalizeBaseUrl,
+  codecForBankWithdrawalOperationPostResponse,
+  codecForReserveStatus,
   codecForTalerConfigResponse,
   codecForWithdrawBatchResponse,
   codecForWithdrawOperationStatusResponse,
   codecForWithdrawResponse,
   DenomKeyType,
   Duration,
-  durationFromSpec,
+  durationFromSpec, encodeCrock,
   ExchangeListItem,
   ExchangeWithdrawRequest,
   ForcedDenomSel,
+  getRandomBytes,
+  j2s,
   LibtoolVersion,
   Logger,
   NotificationType,
@@ -45,8 +54,9 @@ import {
   VersionMatchResult,
   WithdrawBatchResponse,
   WithdrawResponse,
-  WithdrawUriInfoResponse,
+  WithdrawUriInfoResponse
 } from "@gnu-taler/taler-util";
+import { EddsaKeypair } from "../crypto/cryptoImplementation.js";
 import {
   CoinRecord,
   CoinSourceType,
@@ -58,26 +68,42 @@ import {
   ExchangeRecord,
   OperationStatus,
   PlanchetRecord,
-  WithdrawalGroupRecord,
+  ReserveBankInfo,
+  ReserveRecordStatus,
+  WalletStoresV1,
+  WithdrawalGroupRecord
 } from "../db.js";
 import {
   getErrorDetailFromException,
   makeErrorDetail,
-  TalerError,
+  TalerError
 } from "../errors.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
+import { assertUnreachable } from "../util/assertUnreachable.js";
 import { walletCoreDebugFlags } from "../util/debugFlags.js";
 import {
   HttpRequestLibrary,
+  readSuccessResponseJsonOrErrorCode,
   readSuccessResponseJsonOrThrow,
+  throwUnexpectedRequestError
 } from "../util/http.js";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
+import {
+  DbAccess,
+  GetReadOnlyAccess
+} from "../util/query.js";
 import { RetryInfo } from "../util/retries.js";
 import {
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
-  WALLET_EXCHANGE_PROTOCOL_VERSION,
+  WALLET_EXCHANGE_PROTOCOL_VERSION
 } from "../versions.js";
 import { guardOperationException } from "./common.js";
+import {
+  getExchangeDetails,
+  getExchangePaytoUri,
+  getExchangeTrust,
+  updateExchangeFromUrl
+} from "./exchanges.js";
 
 /**
  * Logger for this file.
@@ -215,7 +241,7 @@ export function selectWithdrawalDenominations(
   for (const d of denoms) {
     let count = 0;
     const cost = Amounts.add(d.value, d.feeWithdraw).amount;
-    for (; ;) {
+    for (;;) {
       if (Amounts.cmp(remaining, cost) < 0) {
         break;
       }
@@ -410,47 +436,42 @@ async function processPlanchetGenerate(
     return;
   }
   let ci = 0;
-  let denomPubHash: string | undefined;
+  let maybeDenomPubHash: string | undefined;
   for (let di = 0; di < withdrawalGroup.denomsSel.selectedDenoms.length; di++) {
     const d = withdrawalGroup.denomsSel.selectedDenoms[di];
     if (coinIdx >= ci && coinIdx < ci + d.count) {
-      denomPubHash = d.denomPubHash;
+      maybeDenomPubHash = d.denomPubHash;
       break;
     }
     ci += d.count;
   }
-  if (!denomPubHash) {
+  if (!maybeDenomPubHash) {
     throw Error("invariant violated");
   }
+  const denomPubHash = maybeDenomPubHash;
 
-  const { denom, reserve } = await ws.db
+  const denom = await ws.db
     .mktx((x) => ({
-      reserves: x.reserves,
       denominations: x.denominations,
     }))
     .runReadOnly(async (tx) => {
-      const denom = await tx.denominations.get([
+      return ws.getDenomInfo(
+        ws,
+        tx,
         withdrawalGroup.exchangeBaseUrl,
-        denomPubHash!,
-      ]);
-      if (!denom) {
-        throw Error("invariant violated");
-      }
-      const reserve = await tx.reserves.get(withdrawalGroup.reservePub);
-      if (!reserve) {
-        throw Error("invariant violated");
-      }
-      return { denom, reserve };
+        denomPubHash,
+      );
     });
+  checkDbInvariant(!!denom);
   const r = await ws.cryptoApi.createPlanchet({
     denomPub: denom.denomPub,
     feeWithdraw: denom.feeWithdraw,
-    reservePriv: reserve.reservePriv,
-    reservePub: reserve.reservePub,
+    reservePriv: withdrawalGroup.reservePriv,
+    reservePub: withdrawalGroup.reservePub,
     value: denom.value,
     coinIndex: coinIdx,
     secretSeed: withdrawalGroup.secretSeed,
-    restrictAge: reserve.restrictAge,
+    restrictAge: withdrawalGroup.restrictAge,
   });
   const newPlanchet: PlanchetRecord = {
     blindingKey: r.blindingKey,
@@ -806,11 +827,13 @@ async function processPlanchetVerifyAndStoreCoin(
 
   const planchetCoinPub = planchet.coinPub;
 
+  // Check if this is the first time that the whole
+  // withdrawal succeeded.  If so, mark the withdrawal
+  // group as finished.
   const firstSuccess = await ws.db
     .mktx((x) => ({
       coins: x.coins,
       withdrawalGroups: x.withdrawalGroups,
-      reserves: x.reserves,
       planchets: x.planchets,
     }))
     .runReadWrite(async (tx) => {
@@ -875,7 +898,8 @@ export async function updateWithdrawalDenoms(
         denom.verificationStatus === DenominationVerificationStatus.Unverified
       ) {
         logger.trace(
-          `Validating denomination (${current + 1}/${denominations.length
+          `Validating denomination (${current + 1}/${
+            denominations.length
           }) signature of ${denom.denomPubHash}`,
         );
         let valid = false;
@@ -960,7 +984,80 @@ async function reportWithdrawalError(
   ws.notify({ type: NotificationType.WithdrawOperationError, error: err });
 }
 
-export async function processWithdrawGroup(
+/**
+ * Update the information about a reserve that is stored in the wallet
+ * by querying the reserve's exchange.
+ *
+ * If the reserve have funds that are not allocated in a withdrawal group yet
+ * and are big enough to withdraw with available denominations,
+ * create a new withdrawal group for the remaining amount.
+ */
+async function queryReserve(
+  ws: InternalWalletState,
+  withdrawalGroupId: string,
+): Promise<{ ready: boolean }> {
+  const withdrawalGroup = await getWithdrawalGroupRecordTx(ws.db, {
+    withdrawalGroupId,
+  });
+  checkDbInvariant(!!withdrawalGroup);
+  if (withdrawalGroup.reserveStatus !== ReserveRecordStatus.QueryingStatus) {
+    return { ready: true };
+  }
+  const reservePub = withdrawalGroup.reservePub;
+
+  const reserveUrl = new URL(
+    `reserves/${reservePub}`,
+    withdrawalGroup.exchangeBaseUrl,
+  );
+  reserveUrl.searchParams.set("timeout_ms", "30000");
+
+  logger.info(`querying reserve status via ${reserveUrl}`);
+
+  const resp = await ws.http.get(reserveUrl.href, {
+    timeout: getReserveRequestTimeout(withdrawalGroup),
+  });
+
+  const result = await readSuccessResponseJsonOrErrorCode(
+    resp,
+    codecForReserveStatus(),
+  );
+
+  if (result.isError) {
+    if (
+      resp.status === 404 &&
+      result.talerErrorResponse.code ===
+        TalerErrorCode.EXCHANGE_RESERVES_STATUS_UNKNOWN
+    ) {
+      ws.notify({
+        type: NotificationType.ReserveNotYetFound,
+        reservePub,
+      });
+      return { ready: false };
+    } else {
+      throwUnexpectedRequestError(resp, result.talerErrorResponse);
+    }
+  }
+
+  logger.trace(`got reserve status ${j2s(result.response)}`);
+
+  await ws.db
+    .mktx((x) => ({
+      withdrawalGroups: x.withdrawalGroups,
+    }))
+    .runReadWrite(async (tx) => {
+      const wg = await tx.withdrawalGroups.get(withdrawalGroupId);
+      if (!wg) {
+        logger.warn(`withdrawal group ${withdrawalGroupId} not found`);
+        return;
+      }
+      wg.reserveStatus = ReserveRecordStatus.Dormant;
+      await tx.withdrawalGroups.put(wg);
+    });
+
+  return { ready: true };
+}
+
+export async function processWithdrawalGroup(
   ws: InternalWalletState,
   withdrawalGroupId: string,
   options: {
@@ -990,24 +1087,42 @@ async function processWithdrawGroupImpl(
     .runReadOnly(async (tx) => {
       return tx.withdrawalGroups.get(withdrawalGroupId);
     });
+
   if (!withdrawalGroup) {
-    // Withdrawal group doesn't exist yet, but reserve might exist
-    // (and reference the yet to be created withdrawal group)
-    const reservePub = await ws.db
-      .mktx((x) => ({ reserves: x.reserves }))
-      .runReadOnly(async (tx) => {
-        const r = await tx.reserves.indexes.byInitialWithdrawalGroupId.get(
-          withdrawalGroupId,
-        );
-        return r?.reservePub;
+    throw Error(`withdrawal group ${withdrawalGroupId} not found`);
+  }
+
+  switch (withdrawalGroup.reserveStatus) {
+    case ReserveRecordStatus.RegisteringBank:
+      await processReserveBankStatus(ws, withdrawalGroupId);
+      return await processWithdrawGroupImpl(ws, withdrawalGroupId, {
+        forceNow: true,
       });
-    if (!reservePub) {
-      logger.warn(
-        "withdrawal group doesn't exist (and reserve doesn't exist either)",
-      );
+    case ReserveRecordStatus.QueryingStatus: {
+      const res = await queryReserve(ws, withdrawalGroupId);
+      if (res.ready) {
+        return await processWithdrawGroupImpl(ws, withdrawalGroupId, {
+          forceNow: true,
+        });
+      }
       return;
     }
-    return await ws.reserveOps.processReserve(ws, reservePub, { forceNow });
+    case ReserveRecordStatus.WaitConfirmBank:
+      await processReserveBankStatus(ws, withdrawalGroupId);
+      return;
+    case ReserveRecordStatus.BankAborted:
+      // FIXME
+      return;
+    case ReserveRecordStatus.Dormant:
+      // We can try to withdraw, nothing needs to be done with the reserve.
+      break;
+    default:
+      logger.warn(
+        "unknown reserve record status:",
+        withdrawalGroup.reserveStatus,
+      );
+      assertUnreachable(withdrawalGroup.reserveStatus);
+      break;
   }
 
   await ws.exchangeOps.updateExchangeFromUrl(
@@ -1071,7 +1186,6 @@ async function processWithdrawGroupImpl(
     .mktx((x) => ({
       coins: x.coins,
       withdrawalGroups: x.withdrawalGroups,
-      reserves: x.reserves,
       planchets: x.planchets,
     }))
     .runReadWrite(async (tx) => {
@@ -1200,9 +1314,9 @@ export async function getExchangeWithdrawalInfo(
       !versionMatch.compatible &&
       versionMatch.currentCmp === -1
     ) {
-      console.warn(
+      logger.warn(
         `wallet's support for exchange protocol version ${WALLET_EXCHANGE_PROTOCOL_VERSION} might be outdated ` +
-        `(exchange has ${exchangeDetails.protocolVersion}), checking for updates`,
+          `(exchange has ${exchangeDetails.protocolVersion}), checking for updates`,
       );
     }
   }
@@ -1306,5 +1420,458 @@ export async function getWithdrawalDetailsForUri(
     amount: Amounts.stringify(info.amount),
     defaultExchangeBaseUrl: info.suggestedExchange,
     possibleExchanges: exchanges,
+  };
+}
+
+export async function getFundingPaytoUrisTx(
+  ws: InternalWalletState,
+  withdrawalGroupId: string,
+): Promise<string[]> {
+  return await ws.db
+    .mktx((x) => ({
+      exchanges: x.exchanges,
+      exchangeDetails: x.exchangeDetails,
+      withdrawalGroups: x.withdrawalGroups,
+    }))
+    .runReadWrite((tx) => getFundingPaytoUris(tx, withdrawalGroupId));
+}
+
+/**
+ * Get payto URIs that can be used to fund a withdrawal operation.
+ */
+export async function getFundingPaytoUris(
+  tx: GetReadOnlyAccess<{
+    withdrawalGroups: typeof WalletStoresV1.withdrawalGroups;
+    exchanges: typeof WalletStoresV1.exchanges;
+    exchangeDetails: typeof WalletStoresV1.exchangeDetails;
+  }>,
+  withdrawalGroupId: string,
+): Promise<string[]> {
+  const withdrawalGroup = await tx.withdrawalGroups.get(withdrawalGroupId);
+  checkDbInvariant(!!withdrawalGroup);
+  const exchangeDetails = await getExchangeDetails(
+    tx,
+    withdrawalGroup.exchangeBaseUrl,
+  );
+  if (!exchangeDetails) {
+    logger.error(`exchange ${withdrawalGroup.exchangeBaseUrl} not found`);
+    return [];
+  }
+  const plainPaytoUris =
+    exchangeDetails.wireInfo?.accounts.map((x) => x.payto_uri) ?? [];
+  if (!plainPaytoUris) {
+    logger.error(
+      `exchange ${withdrawalGroup.exchangeBaseUrl} has no wire info`,
+    );
+    return [];
+  }
+  return plainPaytoUris.map((x) =>
+    addPaytoQueryParams(x, {
+      amount: Amounts.stringify(withdrawalGroup.instructedAmount),
+      message: `Taler Withdrawal ${withdrawalGroup.reservePub}`,
+    }),
+  );
+}
+
+async function getWithdrawalGroupRecordTx(
+  db: DbAccess<typeof WalletStoresV1>,
+  req: {
+    withdrawalGroupId: string;
+  },
+): Promise<WithdrawalGroupRecord | undefined> {
+  return await db
+    .mktx((x) => ({
+      withdrawalGroups: x.withdrawalGroups,
+    }))
+    .runReadOnly(async (tx) => {
+      return tx.withdrawalGroups.get(req.withdrawalGroupId);
+    });
+}
+
+export function getReserveRequestTimeout(r: WithdrawalGroupRecord): Duration {
+  return Duration.max(
+    { d_ms: 60000 },
+    Duration.min({ d_ms: 5000 }, RetryInfo.getDuration(r.retryInfo)),
+  );
+}
+
+async function registerReserveWithBank(
+  ws: InternalWalletState,
+  withdrawalGroupId: string,
+): Promise<void> {
+  const withdrawalGroup = await ws.db
+    .mktx((x) => ({
+      withdrawalGroups: x.withdrawalGroups,
+    }))
+    .runReadOnly(async (tx) => {
+      return await tx.withdrawalGroups.get(withdrawalGroupId);
+    });
+  switch (withdrawalGroup?.reserveStatus) {
+    case ReserveRecordStatus.WaitConfirmBank:
+    case ReserveRecordStatus.RegisteringBank:
+      break;
+    default:
+      return;
+  }
+  const bankInfo = withdrawalGroup.bankInfo;
+  if (!bankInfo) {
+    return;
+  }
+  const bankStatusUrl = bankInfo.statusUrl;
+  const httpResp = await ws.http.postJson(
+    bankStatusUrl,
+    {
+      reserve_pub: withdrawalGroup.reservePub,
+      selected_exchange: bankInfo.exchangePaytoUri,
+    },
+    {
+      timeout: getReserveRequestTimeout(withdrawalGroup),
+    },
+  );
+  await readSuccessResponseJsonOrThrow(
+    httpResp,
+    codecForBankWithdrawalOperationPostResponse(),
+  );
+  await ws.db
+    .mktx((x) => ({
+      withdrawalGroups: x.withdrawalGroups,
+    }))
+    .runReadWrite(async (tx) => {
+      const r = await tx.withdrawalGroups.get(withdrawalGroupId);
+      if (!r) {
+        return;
+      }
+      switch (r.reserveStatus) {
+        case ReserveRecordStatus.RegisteringBank:
+        case ReserveRecordStatus.WaitConfirmBank:
+          break;
+        default:
+          return;
+      }
+      if (!r.bankInfo) {
+        throw Error("invariant failed");
+      }
+      r.bankInfo.timestampReserveInfoPosted = AbsoluteTime.toTimestamp(
+        AbsoluteTime.now(),
+      );
+      r.reserveStatus = ReserveRecordStatus.WaitConfirmBank;
+      r.operationStatus = OperationStatus.Pending;
+      r.retryInfo = RetryInfo.reset();
+      await tx.withdrawalGroups.put(r);
+    });
+  ws.notify({ type: NotificationType.ReserveRegisteredWithBank });
+  return processReserveBankStatus(ws, withdrawalGroupId);
+}
+
+async function processReserveBankStatus(
+  ws: InternalWalletState,
+  withdrawalGroupId: string,
+): Promise<void> {
+  const withdrawalGroup = await getWithdrawalGroupRecordTx(ws.db, {
+    withdrawalGroupId,
+  });
+  switch (withdrawalGroup?.reserveStatus) {
+    case ReserveRecordStatus.WaitConfirmBank:
+    case ReserveRecordStatus.RegisteringBank:
+      break;
+    default:
+      return;
+  }
+  const bankStatusUrl = withdrawalGroup.bankInfo?.statusUrl;
+  if (!bankStatusUrl) {
+    return;
+  }
+
+  const statusResp = await ws.http.get(bankStatusUrl, {
+    timeout: getReserveRequestTimeout(withdrawalGroup),
+  });
+  const status = await readSuccessResponseJsonOrThrow(
+    statusResp,
+    codecForWithdrawOperationStatusResponse(),
+  );
+
+  if (status.aborted) {
+    logger.info("bank aborted the withdrawal");
+    await ws.db
+      .mktx((x) => ({
+        withdrawalGroups: x.withdrawalGroups,
+      }))
+      .runReadWrite(async (tx) => {
+        const r = await tx.withdrawalGroups.get(withdrawalGroupId);
+        if (!r) {
+          return;
+        }
+        switch (r.reserveStatus) {
+          case ReserveRecordStatus.RegisteringBank:
+          case ReserveRecordStatus.WaitConfirmBank:
+            break;
+          default:
+            return;
+        }
+        if (!r.bankInfo) {
+          throw Error("invariant failed");
+        }
+        const now = AbsoluteTime.toTimestamp(AbsoluteTime.now());
+        r.bankInfo.timestampBankConfirmed = now;
+        r.reserveStatus = ReserveRecordStatus.BankAborted;
+        r.operationStatus = OperationStatus.Finished;
+        r.retryInfo = RetryInfo.reset();
+        await tx.withdrawalGroups.put(r);
+      });
+    return;
+  }
+
+  // Bank still needs to know our reserve info
+  if (!status.selection_done) {
+    await registerReserveWithBank(ws, withdrawalGroupId);
+    return await processReserveBankStatus(ws, withdrawalGroupId);
+  }
+
+  // FIXME: Why do we do this?!
+  if (withdrawalGroup.reserveStatus === ReserveRecordStatus.RegisteringBank) {
+    await registerReserveWithBank(ws, withdrawalGroupId);
+    return await processReserveBankStatus(ws, withdrawalGroupId);
+  }
+
+  await ws.db
+    .mktx((x) => ({
+      withdrawalGroups: x.withdrawalGroups,
+    }))
+    .runReadWrite(async (tx) => {
+      const r = await tx.withdrawalGroups.get(withdrawalGroupId);
+      if (!r) {
+        return;
+      }
+      // Re-check reserve status within transaction
+      switch (r.reserveStatus) {
+        case ReserveRecordStatus.RegisteringBank:
+        case ReserveRecordStatus.WaitConfirmBank:
+          break;
+        default:
+          return;
+      }
+      if (status.transfer_done) {
+        logger.info("withdrawal: transfer confirmed by bank.");
+        const now = AbsoluteTime.toTimestamp(AbsoluteTime.now());
+        if (!r.bankInfo) {
+          throw Error("invariant failed");
+        }
+        r.bankInfo.timestampBankConfirmed = now;
+        r.reserveStatus = ReserveRecordStatus.QueryingStatus;
+        r.operationStatus = OperationStatus.Pending;
+        r.retryInfo = RetryInfo.reset();
+      } else {
+        logger.info("withdrawal: transfer not yet confirmed by bank");
+        if (r.bankInfo) {
+          r.bankInfo.confirmUrl = status.confirm_transfer_url;
+        }
+        r.retryInfo = RetryInfo.increment(r.retryInfo);
+      }
+      await tx.withdrawalGroups.put(r);
+    });
+}
+
+export async function internalCreateWithdrawalGroup(
+  ws: InternalWalletState,
+  args: {
+    reserveStatus: ReserveRecordStatus;
+    amount: AmountJson;
+    bankInfo?: ReserveBankInfo;
+    exchangeBaseUrl: string;
+    forcedDenomSel?: ForcedDenomSel;
+    reserveKeyPair?: EddsaKeypair;
+    restrictAge?: number;
+  },
+): Promise<WithdrawalGroupRecord> {
+  const reserveKeyPair =
+    args.reserveKeyPair ?? (await ws.cryptoApi.createEddsaKeypair({}));
+  const now = AbsoluteTime.toTimestamp(AbsoluteTime.now());
+  const secretSeed = encodeCrock(getRandomBytes(32));
+  const canonExchange = canonicalizeBaseUrl(args.exchangeBaseUrl);
+  const withdrawalGroupId = encodeCrock(getRandomBytes(32));
+  const amount = args.amount;
+
+  await updateWithdrawalDenoms(ws, canonExchange);
+  const denoms = await getCandidateWithdrawalDenoms(ws, canonExchange);
+
+  let initialDenomSel: DenomSelectionState;
+  const denomSelUid = encodeCrock(getRandomBytes(16));
+  if (args.forcedDenomSel) {
+    logger.warn("using forced denom selection");
+    initialDenomSel = selectForcedWithdrawalDenominations(
+      amount,
+      denoms,
+      args.forcedDenomSel,
+    );
+  } else {
+    initialDenomSel = selectWithdrawalDenominations(amount, denoms);
+  }
+
+  const withdrawalGroup: WithdrawalGroupRecord = {
+    denomSelUid,
+    denomsSel: initialDenomSel,
+    exchangeBaseUrl: canonExchange,
+    instructedAmount: amount,
+    timestampStart: now,
+    lastError: undefined,
+    operationStatus: OperationStatus.Pending,
+    rawWithdrawalAmount: initialDenomSel.totalWithdrawCost,
+    secretSeed,
+    reservePriv: reserveKeyPair.priv,
+    reservePub: reserveKeyPair.pub,
+    reserveStatus: args.reserveStatus,
+    retryInfo: RetryInfo.reset(),
+    withdrawalGroupId,
+    bankInfo: args.bankInfo,
+    restrictAge: args.restrictAge,
+    senderWire: undefined,
+    timestampFinish: undefined,
+  };
+
+  const exchangeInfo = await updateExchangeFromUrl(ws, canonExchange);
+  const exchangeDetails = exchangeInfo.exchangeDetails;
+  if (!exchangeDetails) {
+    logger.trace(exchangeDetails);
+    throw Error("exchange not updated");
+  }
+  const { isAudited, isTrusted } = await getExchangeTrust(
+    ws,
+    exchangeInfo.exchange,
+  );
+
+  await ws.db
+    .mktx((x) => ({
+      withdrawalGroups: x.withdrawalGroups,
+      exchanges: x.exchanges,
+      exchangeDetails: x.exchangeDetails,
+      exchangeTrust: x.exchangeTrust,
+    }))
+    .runReadWrite(async (tx) => {
+      await tx.withdrawalGroups.add(withdrawalGroup);
+
+      if (!isAudited && !isTrusted) {
+        await tx.exchangeTrust.put({
+          currency: amount.currency,
+          exchangeBaseUrl: canonExchange,
+          exchangeMasterPub: exchangeDetails.masterPublicKey,
+          uids: [encodeCrock(getRandomBytes(32))],
+        });
+      }
+    });
+
+  return withdrawalGroup;
+}
+
+export async function acceptWithdrawalFromUri(
+  ws: InternalWalletState,
+  req: {
+    talerWithdrawUri: string;
+    selectedExchange: string;
+    forcedDenomSel?: ForcedDenomSel;
+    restrictAge?: number;
+  },
+): Promise<AcceptWithdrawalResponse> {
+  await updateExchangeFromUrl(ws, req.selectedExchange);
+  const withdrawInfo = await getBankWithdrawalInfo(
+    ws.http,
+    req.talerWithdrawUri,
+  );
+  const exchangePaytoUri = await getExchangePaytoUri(
+    ws,
+    req.selectedExchange,
+    withdrawInfo.wireTypes,
+  );
+
+  const withdrawalGroup = await internalCreateWithdrawalGroup(ws, {
+    amount: withdrawInfo.amount,
+    exchangeBaseUrl: req.selectedExchange,
+    forcedDenomSel: req.forcedDenomSel,
+    reserveStatus: ReserveRecordStatus.RegisteringBank,
+    bankInfo: {
+      exchangePaytoUri,
+      statusUrl: withdrawInfo.extractedStatusUrl,
+      confirmUrl: withdrawInfo.confirmTransferUrl,
+    },
+  });
+
+  const withdrawalGroupId = withdrawalGroup.withdrawalGroupId;
+
+  // We do this here, as the reserve should be registered before we return,
+  // so that we can redirect the user to the bank's status page.
+  await processReserveBankStatus(ws, withdrawalGroupId);
+  const processedWithdrawalGroup = await getWithdrawalGroupRecordTx(ws.db, {
+    withdrawalGroupId,
+  });
+  if (
+    processedWithdrawalGroup?.reserveStatus === ReserveRecordStatus.BankAborted
+  ) {
+    throw TalerError.fromDetail(
+      TalerErrorCode.WALLET_WITHDRAWAL_OPERATION_ABORTED_BY_BANK,
+      {},
+    );
+  }
+
+  // Start withdrawal in the background.
+  await processWithdrawalGroup(ws, withdrawalGroupId, { forceNow: true }).catch(
+    (err) => {
+      logger.error("Processing withdrawal (after creation) failed:", err);
+    },
+  );
+
+  return {
+    reservePub: withdrawalGroup.reservePub,
+    confirmTransferUrl: withdrawInfo.confirmTransferUrl,
+  };
+}
+
+/**
+ * Create a manual withdrawal operation.
+ *
+ * Adds the corresponding exchange as a trusted exchange if it is neither
+ * audited nor trusted already.
+ *
+ * Asynchronously starts the withdrawal.
+ */
+export async function createManualWithdrawal(
+  ws: InternalWalletState,
+  req: {
+    exchangeBaseUrl: string;
+    amount: AmountLike;
+    restrictAge?: number;
+    forcedDenomSel?: ForcedDenomSel;
+  },
+): Promise<AcceptManualWithdrawalResult> {
+  const withdrawalGroup = await internalCreateWithdrawalGroup(ws, {
+    amount: Amounts.jsonifyAmount(req.amount),
+    exchangeBaseUrl: req.exchangeBaseUrl,
+    bankInfo: undefined,
+    forcedDenomSel: req.forcedDenomSel,
+    restrictAge: req.restrictAge,
+    reserveStatus: ReserveRecordStatus.QueryingStatus,
+  });
+
+  const withdrawalGroupId = withdrawalGroup.withdrawalGroupId;
+
+  const exchangePaytoUris = await ws.db
+    .mktx((x) => ({
+      withdrawalGroups: x.withdrawalGroups,
+      exchanges: x.exchanges,
+      exchangeDetails: x.exchangeDetails,
+      exchangeTrust: x.exchangeTrust,
+    }))
+    .runReadWrite(async (tx) => {
+      return await getFundingPaytoUris(tx, withdrawalGroup.withdrawalGroupId);
+    });
+
+  // Start withdrawal in the background.
+  await processWithdrawalGroup(ws, withdrawalGroupId, { forceNow: true }).catch(
+    (err) => {
+      logger.error("Processing withdrawal (after creation) failed:", err);
+    },
+  );
+
+  return {
+    reservePub: withdrawalGroup.reservePub,
+    exchangePaytoUris: exchangePaytoUris,
   };
 }

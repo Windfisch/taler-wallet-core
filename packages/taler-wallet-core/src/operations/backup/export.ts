@@ -88,7 +88,6 @@ export async function exportBackup(
       backupProviders: x.backupProviders,
       tips: x.tips,
       recoupGroups: x.recoupGroups,
-      reserves: x.reserves,
       withdrawalGroups: x.withdrawalGroups,
     }))
     .runReadWrite(async (tx) => {
@@ -126,29 +125,6 @@ export async function exportBackup(
           secret_seed: wg.secretSeed,
           selected_denoms_id: wg.denomSelUid,
         });
-      });
-
-      await tx.reserves.iter().forEach((reserve) => {
-        const backupReserve: BackupReserve = {
-          initial_selected_denoms: reserve.initialDenomSel.selectedDenoms.map(
-            (x) => ({
-              count: x.count,
-              denom_pub_hash: x.denomPubHash,
-            }),
-          ),
-          initial_withdrawal_group_id: reserve.initialWithdrawalGroupId,
-          instructed_amount: Amounts.stringify(reserve.instructedAmount),
-          reserve_priv: reserve.reservePriv,
-          timestamp_created: reserve.timestampCreated,
-          withdrawal_groups:
-            withdrawalGroupsByReserve[reserve.reservePub] ?? [],
-          // FIXME!
-          timestamp_last_activity: reserve.timestampCreated,
-        };
-        const backupReserves = (backupReservesByExchange[
-          reserve.exchangeBaseUrl
-        ] ??= []);
-        backupReserves.push(backupReserve);
       });
 
       await tx.tips.iter().forEach((tip) => {

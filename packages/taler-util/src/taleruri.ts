@@ -15,7 +15,7 @@
  */
 
 import { canonicalizeBaseUrl } from "./helpers.js";
-import { URLSearchParams } from "./url.js";
+import { URLSearchParams, URL } from "./url.js";
 
 export interface PayUriResult {
   merchantBaseUrl: string;
@@ -38,6 +38,11 @@ export interface RefundUriResult {
 export interface TipUriResult {
   merchantTipId: string;
   merchantBaseUrl: string;
+}
+
+export interface PayPushUriResult {
+  exchangeBaseUrl: string;
+  contractPriv: string;
 }
 
 /**
@@ -79,6 +84,7 @@ export enum TalerUriType {
   TalerTip = "taler-tip",
   TalerRefund = "taler-refund",
   TalerNotifyReserve = "taler-notify-reserve",
+  TalerPayPush = "pay-push",
   Unknown = "unknown",
 }
 
@@ -110,6 +116,12 @@ export function classifyTalerUri(s: string): TalerUriType {
   }
   if (sl.startsWith("taler+http://withdraw/")) {
     return TalerUriType.TalerWithdraw;
+  }
+  if (sl.startsWith("taler://pay-push/")) {
+    return TalerUriType.TalerPayPush;
+  }
+  if (sl.startsWith("taler+http://pay-push/")) {
+    return TalerUriType.TalerPayPush;
   }
   if (sl.startsWith("taler://notify-reserve/")) {
     return TalerUriType.TalerNotifyReserve;
@@ -176,6 +188,28 @@ export function parsePayUri(s: string): PayUriResult | undefined {
   };
 }
 
+export function parsePayPushUri(s: string): PayPushUriResult | undefined {
+  const pi = parseProtoInfo(s, "pay-push");
+  if (!pi) {
+    return undefined;
+  }
+  const c = pi?.rest.split("?");
+  const parts = c[0].split("/");
+  if (parts.length < 2) {
+    return undefined;
+  }
+  const host = parts[0].toLowerCase();
+  const contractPriv = parts[parts.length - 1];
+  const pathSegments = parts.slice(1, parts.length - 1);
+  const p = [host, ...pathSegments].join("/");
+  const exchangeBaseUrl = canonicalizeBaseUrl(`${pi.innerProto}://${p}/`);
+
+  return {
+    exchangeBaseUrl,
+    contractPriv,
+  };
+}
+
 /**
  * Parse a taler[+http]://tip URI.
  * Return undefined if not passed a valid URI.
@@ -227,4 +261,25 @@ export function parseRefundUri(s: string): RefundUriResult | undefined {
     merchantBaseUrl,
     orderId,
   };
+}
+
+export function constructPayPushUri(args: {
+  exchangeBaseUrl: string;
+  contractPriv: string;
+}): string {
+  const url = new URL(args.exchangeBaseUrl);
+  let proto: string;
+  if (url.protocol === "https:") {
+    proto = "taler";
+  } else if (url.protocol === "http:") {
+    proto = "taler+http";
+  } else {
+    throw Error(`Unsupported exchange URL protocol ${args.exchangeBaseUrl}`);
+  }
+  if (!url.pathname.endsWith("/")) {
+    throw Error(
+      `exchange base URL must end with a slash (got ${args.exchangeBaseUrl}instead)`,
+    );
+  }
+  return `${proto}://pay-push/${url.host}${url.pathname}${args.contractPriv}`;
 }

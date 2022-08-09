@@ -70,7 +70,7 @@ import {
   TipCreateConfirmation,
   TipCreateRequest,
   TippingReserveStatus,
-} from "./merchantApiTypes";
+} from "./merchantApiTypes.js";
 
 const exec = util.promisify(require("child_process").exec);
 
@@ -478,14 +478,14 @@ class BankServiceBase {
     protected globalTestState: GlobalTestState,
     protected bankConfig: BankConfig,
     protected configFile: string,
-  ) { }
+  ) {}
 }
 
 /**
  * Work in progress.  The key point is that both Sandbox and Nexus
  * will be configured and started by this class.
  */
-class EufinBankService extends BankServiceBase implements BankServiceHandle {
+class LibEuFinBankService extends BankServiceBase implements BankServiceHandle {
   sandboxProc: ProcessWrapper | undefined;
   nexusProc: ProcessWrapper | undefined;
 
@@ -494,8 +494,8 @@ class EufinBankService extends BankServiceBase implements BankServiceHandle {
   static async create(
     gc: GlobalTestState,
     bc: BankConfig,
-  ): Promise<EufinBankService> {
-    return new EufinBankService(gc, bc, "foo");
+  ): Promise<LibEuFinBankService> {
+    return new LibEuFinBankService(gc, bc, "foo");
   }
 
   get port() {
@@ -761,7 +761,10 @@ class EufinBankService extends BankServiceBase implements BankServiceHandle {
   }
 }
 
-class PybankService extends BankServiceBase implements BankServiceHandle {
+/**
+ * Implementation of the bank service using the "taler-fakebank-run" tool.
+ */
+class FakebankService extends BankServiceBase implements BankServiceHandle {
   proc: ProcessWrapper | undefined;
 
   http = new NodeHttpLib();
@@ -769,41 +772,23 @@ class PybankService extends BankServiceBase implements BankServiceHandle {
   static async create(
     gc: GlobalTestState,
     bc: BankConfig,
-  ): Promise<PybankService> {
+  ): Promise<FakebankService> {
     const config = new Configuration();
     setTalerPaths(config, gc.testDir + "/talerhome");
     config.setString("taler", "currency", bc.currency);
-    config.setString("bank", "database", bc.database);
     config.setString("bank", "http_port", `${bc.httpPort}`);
     config.setString("bank", "serve", "http");
     config.setString("bank", "max_debt_bank", `${bc.currency}:999999`);
     config.setString("bank", "max_debt", bc.maxDebt ?? `${bc.currency}:100`);
-    config.setString(
-      "bank",
-      "allow_registrations",
-      bc.allowRegistrations ? "yes" : "no",
-    );
     const cfgFilename = gc.testDir + "/bank.conf";
     config.write(cfgFilename);
 
-    await sh(
-      gc,
-      "taler-bank-manage_django",
-      `taler-bank-manage -c '${cfgFilename}' django migrate`,
-    );
-    await sh(
-      gc,
-      "taler-bank-manage_django",
-      `taler-bank-manage -c '${cfgFilename}' django provide_accounts`,
-    );
-
-    return new PybankService(gc, bc, cfgFilename);
+    return new FakebankService(gc, bc, cfgFilename);
   }
 
   setSuggestedExchange(e: ExchangeServiceInterface, exchangePayto: string) {
     const config = Configuration.load(this.configFile);
     config.setString("bank", "suggested_exchange", e.baseUrl);
-    config.setString("bank", "suggested_exchange_payto", exchangePayto);
     config.write(this.configFile);
   }
 
@@ -815,21 +800,6 @@ class PybankService extends BankServiceBase implements BankServiceHandle {
     accountName: string,
     password: string,
   ): Promise<HarnessExchangeBankAccount> {
-    await sh(
-      this.globalTestState,
-      "taler-bank-manage_django",
-      `taler-bank-manage -c '${this.configFile}' django add_bank_account ${accountName}`,
-    );
-    await sh(
-      this.globalTestState,
-      "taler-bank-manage_django",
-      `taler-bank-manage -c '${this.configFile}' django changepassword_unsafe ${accountName} ${password}`,
-    );
-    await sh(
-      this.globalTestState,
-      "taler-bank-manage_django",
-      `taler-bank-manage -c '${this.configFile}' django top_up ${accountName} ${this.bankConfig.currency}:100000`,
-    );
     return {
       accountName: accountName,
       accountPassword: password,
@@ -844,8 +814,8 @@ class PybankService extends BankServiceBase implements BankServiceHandle {
 
   async start(): Promise<void> {
     this.proc = this.globalTestState.spawnService(
-      "taler-bank-manage",
-      ["-c", this.configFile, "serve"],
+      "taler-fakebank-run",
+      ["-c", this.configFile],
       "bank",
     );
   }
@@ -857,7 +827,7 @@ class PybankService extends BankServiceBase implements BankServiceHandle {
 }
 
 // Use libeufin bank instead of pybank.
-const useLibeufinBank = process.env.WALLET_HARNESS_WITH_EUFIN;
+const useLibeufinBank = true;
 
 /**
  * Return a euFin or a pyBank implementation of
@@ -866,21 +836,21 @@ const useLibeufinBank = process.env.WALLET_HARNESS_WITH_EUFIN;
  * on a particular env variable.
  */
 function getBankServiceImpl(): {
-  prototype: typeof PybankService.prototype;
-  create: typeof PybankService.create;
+  prototype: typeof FakebankService.prototype;
+  create: typeof FakebankService.create;
 } {
   if (useLibeufinBank)
     return {
-      prototype: EufinBankService.prototype,
-      create: EufinBankService.create,
+      prototype: LibEuFinBankService.prototype,
+      create: LibEuFinBankService.create,
     };
   return {
-    prototype: PybankService.prototype,
-    create: PybankService.create,
+    prototype: FakebankService.prototype,
+    create: FakebankService.create,
   };
 }
 
-export type BankService = PybankService;
+export type BankService = FakebankService;
 export const BankService = getBankServiceImpl();
 
 export class FakeBankService {
@@ -923,7 +893,7 @@ export class FakeBankService {
     private globalTestState: GlobalTestState,
     private bankConfig: FakeBankConfig,
     private configFile: string,
-  ) { }
+  ) {}
 
   async start(): Promise<void> {
     this.proc = this.globalTestState.spawnService(
@@ -1189,7 +1159,7 @@ export class ExchangeService implements ExchangeServiceInterface {
     private exchangeConfig: ExchangeConfig,
     private configFilename: string,
     private keyPair: EddsaKeyPair,
-  ) { }
+  ) {}
 
   get name() {
     return this.exchangeConfig.name;
@@ -1442,7 +1412,7 @@ export class MerchantApiClient {
   constructor(
     private baseUrl: string,
     public readonly auth: MerchantAuthConfiguration,
-  ) { }
+  ) {}
 
   async changeAuth(auth: MerchantAuthConfiguration): Promise<void> {
     const url = new URL("private/auth", this.baseUrl);
@@ -1635,7 +1605,7 @@ export class MerchantService implements MerchantServiceInterface {
     private globalState: GlobalTestState,
     private merchantConfig: MerchantConfig,
     private configFilename: string,
-  ) { }
+  ) {}
 
   private currentTimetravel: Duration | undefined;
 
@@ -1947,8 +1917,10 @@ export class WalletCli {
         const resp = await sh(
           self.globalTestState,
           `wallet-${self.name}`,
-          `taler-wallet-cli ${self.timetravelArg ?? ""
-          } --no-throttle -LTRACE --wallet-db '${self.dbfile
+          `taler-wallet-cli ${
+            self.timetravelArg ?? ""
+          } --no-throttle -LTRACE --wallet-db '${
+            self.dbfile
           }' api '${op}' ${shellWrap(JSON.stringify(payload))}`,
         );
         console.log("--- wallet core response ---");

@@ -186,7 +186,7 @@ class UnionCodecBuilder<
           throw new DecodingError(
             `expected tag for ${objectDisplayName} at ${renderContext(
               c,
-            )}.${discriminator}`,
+            )}.${String(discriminator)}`,
           );
         }
         const alt = alternatives.get(d);
@@ -194,7 +194,7 @@ class UnionCodecBuilder<
           throw new DecodingError(
             `unknown tag for ${objectDisplayName} ${d} at ${renderContext(
               c,
-            )}.${discriminator}`,
+            )}.${String(discriminator)}`,
           );
         }
         const altDecoded = alt.codec.decode(x);

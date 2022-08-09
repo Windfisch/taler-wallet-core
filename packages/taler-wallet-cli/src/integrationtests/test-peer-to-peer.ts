@@ -22,7 +22,6 @@ import { GlobalTestState } from "../harness/harness.js";
 import {
   createSimpleTestkudosEnvironment,
   withdrawViaBank,
-  makeTestPayment,
 } from "../harness/helpers.js";
 
 /**
@@ -55,9 +54,7 @@ export async function runPeerToPeerTest(t: GlobalTestState) {
   const checkResp = await wallet.client.call(
     WalletApiOperation.CheckPeerPushPayment,
     {
-      contractPriv: resp.contractPriv,
-      exchangeBaseUrl: resp.exchangeBaseUrl,
-      pursePub: resp.pursePub,
+      talerUri: resp.talerUri,
     },
   );
 
@@ -66,8 +63,7 @@ export async function runPeerToPeerTest(t: GlobalTestState) {
   const acceptResp = await wallet.client.call(
     WalletApiOperation.AcceptPeerPushPayment,
     {
-      exchangeBaseUrl: resp.exchangeBaseUrl,
-      pursePub: resp.pursePub,
+      peerPushPaymentIncomingId: checkResp.peerPushPaymentIncomingId,
     },
   );
 

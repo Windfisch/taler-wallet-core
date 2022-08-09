@@ -39,12 +39,12 @@ import {
   URL,
   PreparePayResultType,
 } from "@gnu-taler/taler-util";
-import { createTalerWithdrawReserve } from "./reserves.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { confirmPay, preparePayForUri } from "./pay.js";
 import { getBalances } from "./balance.js";
 import { applyRefund } from "./refund.js";
 import { checkLogicInvariant } from "../util/invariants.js";
+import { acceptWithdrawalFromUri } from "./withdraw.js";
 
 const logger = new Logger("operations/testing.ts");
 
@@ -104,14 +104,11 @@ export async function withdrawTestBalance(
     amount,
   );
 
-  await createTalerWithdrawReserve(
-    ws,
-    wresp.taler_withdraw_uri,
-    exchangeBaseUrl,
-    {
-      forcedDenomSel: req.forcedDenomSel,
-    },
-  );
+  await acceptWithdrawalFromUri(ws, {
+    talerWithdrawUri: wresp.taler_withdraw_uri,
+    selectedExchange: exchangeBaseUrl,
+    forcedDenomSel: req.forcedDenomSel,
+  });
 
   await confirmBankWithdrawalUri(
     ws.http,

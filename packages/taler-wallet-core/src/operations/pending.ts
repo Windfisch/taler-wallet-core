@@ -70,44 +70,6 @@ async function gatherExchangePending(
   });
 }
 
-async function gatherReservePending(
-  tx: GetReadOnlyAccess<{ reserves: typeof WalletStoresV1.reserves }>,
-  now: AbsoluteTime,
-  resp: PendingOperationsResponse,
-): Promise<void> {
-  const reserves = await tx.reserves.indexes.byStatus.getAll(
-    OperationStatus.Pending,
-  );
-  for (const reserve of reserves) {
-    const reserveType = reserve.bankInfo
-      ? ReserveType.TalerBankWithdraw
-      : ReserveType.Manual;
-    switch (reserve.reserveStatus) {
-      case ReserveRecordStatus.Dormant:
-        // nothing to report as pending
-        break;
-      case ReserveRecordStatus.WaitConfirmBank:
-      case ReserveRecordStatus.QueryingStatus:
-      case ReserveRecordStatus.RegisteringBank: {
-        resp.pendingOperations.push({
-          type: PendingTaskType.Reserve,
-          givesLifeness: true,
-          timestampDue: reserve.retryInfo?.nextRetry ?? AbsoluteTime.now(),
-          stage: reserve.reserveStatus,
-          timestampCreated: reserve.timestampCreated,
-          reserveType,
-          reservePub: reserve.reservePub,
-          retryInfo: reserve.retryInfo,
-        });
-        break;
-      }
-      default:
-        // FIXME: report problem!
-        break;
-    }
-  }
-}
-
 async function gatherRefreshPending(
   tx: GetReadOnlyAccess<{ refreshGroups: typeof WalletStoresV1.refreshGroups }>,
   now: AbsoluteTime,
@@ -336,7 +298,6 @@ export async function getPendingOperations(
       backupProviders: x.backupProviders,
       exchanges: x.exchanges,
       exchangeDetails: x.exchangeDetails,
-      reserves: x.reserves,
       refreshGroups: x.refreshGroups,
       coins: x.coins,
       withdrawalGroups: x.withdrawalGroups,
@@ -352,7 +313,6 @@ export async function getPendingOperations(
         pendingOperations: [],
       };
       await gatherExchangePending(tx, now, resp);
-      await gatherReservePending(tx, now, resp);
       await gatherRefreshPending(tx, now, resp);
       await gatherWithdrawalPending(tx, now, resp);
       await gatherProposalPending(tx, now, resp);

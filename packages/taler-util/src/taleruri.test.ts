@@ -20,6 +20,8 @@ import {
   parseWithdrawUri,
   parseRefundUri,
   parseTipUri,
+  parsePayPushUri,
+  constructPayPushUri,
 } from "./taleruri.js";
 
 test("taler pay url parsing: wrong scheme", (t) => {
@@ -181,4 +183,45 @@ test("taler tip pickup uri with instance and prefix", (t) => {
   }
   t.is(r1.merchantBaseUrl, "https://merchant.example.com/my/pfx/tipm/");
   t.is(r1.merchantTipId, "tipid");
+});
+
+test("taler peer to peer push URI", (t) => {
+  const url1 = "taler://pay-push/exch.example.com/foo";
+  const r1 = parsePayPushUri(url1);
+  if (!r1) {
+    t.fail();
+    return;
+  }
+  t.is(r1.exchangeBaseUrl, "https://exch.example.com/");
+  t.is(r1.contractPriv, "foo");
+});
+
+test("taler peer to peer push URI (path)", (t) => {
+  const url1 = "taler://pay-push/exch.example.com:123/bla/foo";
+  const r1 = parsePayPushUri(url1);
+  if (!r1) {
+    t.fail();
+    return;
+  }
+  t.is(r1.exchangeBaseUrl, "https://exch.example.com:123/bla/");
+  t.is(r1.contractPriv, "foo");
+});
+
+test("taler peer to peer push URI (http)", (t) => {
+  const url1 = "taler+http://pay-push/exch.example.com:123/bla/foo";
+  const r1 = parsePayPushUri(url1);
+  if (!r1) {
+    t.fail();
+    return;
+  }
+  t.is(r1.exchangeBaseUrl, "http://exch.example.com:123/bla/");
+  t.is(r1.contractPriv, "foo");
+});
+
+test("taler peer to peer push URI (construction)", (t) => {
+  const url = constructPayPushUri({
+    exchangeBaseUrl: "https://foo.example.com/bla/",
+    contractPriv: "123",
+  });
+  t.deepEqual(url, "taler://pay-push/foo.example.com/bla/123");
 });

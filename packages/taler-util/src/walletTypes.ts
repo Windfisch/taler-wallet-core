@@ -858,10 +858,11 @@ interface GetContractTermsDetailsRequest {
   proposalId: string;
 }
 
-export const codecForGetContractTermsDetails = (): Codec<GetContractTermsDetailsRequest> =>
-  buildCodecForObject<GetContractTermsDetailsRequest>()
-    .property("proposalId", codecForString())
-    .build("GetContractTermsDetails");
+export const codecForGetContractTermsDetails =
+  (): Codec<GetContractTermsDetailsRequest> =>
+    buildCodecForObject<GetContractTermsDetailsRequest>()
+      .property("proposalId", codecForString())
+      .build("GetContractTermsDetails");
 
 export interface PreparePayRequest {
   talerPayUri: string;
@@ -1280,6 +1281,7 @@ export interface InitiatePeerPushPaymentResponse {
   pursePub: string;
   mergePriv: string;
   contractPriv: string;
+  talerUri: string;
 }
 
 export const codecForInitiatePeerPushPaymentRequest =
@@ -1290,32 +1292,30 @@ export const codecForInitiatePeerPushPaymentRequest =
       .build("InitiatePeerPushPaymentRequest");
 
 export interface CheckPeerPushPaymentRequest {
-  exchangeBaseUrl: string;
-  pursePub: string;
-  contractPriv: string;
+  talerUri: string;
 }
 
 export interface CheckPeerPushPaymentResponse {
   contractTerms: any;
   amount: AmountString;
+  peerPushPaymentIncomingId: string;
 }
 
 export const codecForCheckPeerPushPaymentRequest =
   (): Codec<CheckPeerPushPaymentRequest> =>
     buildCodecForObject<CheckPeerPushPaymentRequest>()
-      .property("pursePub", codecForString())
-      .property("contractPriv", codecForString())
-      .property("exchangeBaseUrl", codecForString())
+      .property("talerUri", codecForString())
       .build("CheckPeerPushPaymentRequest");
 
 export interface AcceptPeerPushPaymentRequest {
-  exchangeBaseUrl: string;
-  pursePub: string;
+  /**
+   * Transparent identifier of the incoming peer push payment.
+   */
+  peerPushPaymentIncomingId: string;
 }
 
 export const codecForAcceptPeerPushPaymentRequest =
   (): Codec<AcceptPeerPushPaymentRequest> =>
     buildCodecForObject<AcceptPeerPushPaymentRequest>()
-      .property("pursePub", codecForString())
-      .property("exchangeBaseUrl", codecForString())
+      .property("peerPushPaymentIncomingId", codecForString())
       .build("AcceptPeerPushPaymentRequest");

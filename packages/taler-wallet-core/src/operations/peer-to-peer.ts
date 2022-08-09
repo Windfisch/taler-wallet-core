@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2019 GNUnet e.V.
+ (C) 2022 GNUnet e.V.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -30,35 +30,35 @@ import {
   codecForAmountString,
   codecForAny,
   codecForExchangeGetContractResponse,
+  constructPayPushUri,
   ContractTermsUtil,
   decodeCrock,
   Duration,
   eddsaGetPublic,
   encodeCrock,
   ExchangePurseMergeRequest,
+  getRandomBytes,
   InitiatePeerPushPaymentRequest,
   InitiatePeerPushPaymentResponse,
   j2s,
   Logger,
+  parsePayPushUri,
   strcmp,
   TalerProtocolTimestamp,
   UnblindedSignature,
   WalletAccountMergeFlags,
 } from "@gnu-taler/taler-util";
-import { url } from "inspector";
 import {
   CoinStatus,
+  MergeReserveInfo,
   OperationStatus,
-  ReserveRecord,
   ReserveRecordStatus,
+  WithdrawalGroupRecord,
 } from "../db.js";
-import {
-  checkSuccessResponseOrThrow,
-  readSuccessResponseJsonOrThrow,
-  throwUnexpectedRequestError,
-} from "../util/http.js";
+import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { checkDbInvariant } from "../util/invariants.js";
+import { internalCreateWithdrawalGroup } from "./withdraw.js";
 
 const logger = new Logger("operations/peer-to-peer.ts");
 
@@ -265,6 +265,10 @@ export async function initiatePeerToPeerPush(
     mergePriv: mergePair.priv,
     pursePub: pursePair.pub,
     exchangeBaseUrl: coinSelRes.exchangeBaseUrl,
+    talerUri: constructPayPushUri({
+      exchangeBaseUrl: coinSelRes.exchangeBaseUrl,
+      contractPriv: econtractResp.contractPriv,
+    }),
   };
 }
 
@@ -281,26 +285,19 @@ export async function checkPeerPushPayment(
   ws: InternalWalletState,
   req: CheckPeerPushPaymentRequest,
 ): Promise<CheckPeerPushPaymentResponse> {
-  const getPurseUrl = new URL(
-    `purses/${req.pursePub}/deposit`,
-    req.exchangeBaseUrl,
-  );
+  // FIXME: Check if existing record exists!
 
-  const contractPub = encodeCrock(
-    eddsaGetPublic(decodeCrock(req.contractPriv)),
-  );
+  const uri = parsePayPushUri(req.talerUri);
 
-  const purseHttpResp = await ws.http.get(getPurseUrl.href);
+  if (!uri) {
+    throw Error("got invalid taler://pay-push URI");
+  }
 
-  const purseStatus = await readSuccessResponseJsonOrThrow(
-    purseHttpResp,
-    codecForExchangePurseStatus(),
-  );
+  const exchangeBaseUrl = uri.exchangeBaseUrl;
+  const contractPriv = uri.contractPriv;
+  const contractPub = encodeCrock(eddsaGetPublic(decodeCrock(contractPriv)));
 
-  const getContractUrl = new URL(
-    `contracts/${contractPub}`,
-    req.exchangeBaseUrl,
-  );
+  const getContractUrl = new URL(`contracts/${contractPub}`, exchangeBaseUrl);
 
   const contractHttpResp = await ws.http.get(getContractUrl.href);
 
@@ -309,11 +306,24 @@ export async function checkPeerPushPayment(
     codecForExchangeGetContractResponse(),
   );
 
+  const pursePub = contractResp.purse_pub;
+
   const dec = await ws.cryptoApi.decryptContractForMerge({
     ciphertext: contractResp.econtract,
-    contractPriv: req.contractPriv,
-    pursePub: req.pursePub,
+    contractPriv: contractPriv,
+    pursePub: pursePub,
   });
+
+  const getPurseUrl = new URL(`purses/${pursePub}/deposit`, exchangeBaseUrl);
+
+  const purseHttpResp = await ws.http.get(getPurseUrl.href);
+
+  const purseStatus = await readSuccessResponseJsonOrThrow(
+    purseHttpResp,
+    codecForExchangePurseStatus(),
+  );
+
+  const peerPushPaymentIncomingId = encodeCrock(getRandomBytes(32));
 
   await ws.db
     .mktx((x) => ({
@@ -321,10 +331,11 @@ export async function checkPeerPushPayment(
     }))
     .runReadWrite(async (tx) => {
       await tx.peerPushPaymentIncoming.add({
-        contractPriv: req.contractPriv,
-        exchangeBaseUrl: req.exchangeBaseUrl,
+        peerPushPaymentIncomingId,
+        contractPriv: contractPriv,
+        exchangeBaseUrl: exchangeBaseUrl,
         mergePriv: dec.mergePriv,
-        pursePub: req.pursePub,
+        pursePub: pursePub,
         timestampAccepted: TalerProtocolTimestamp.now(),
         contractTerms: dec.contractTerms,
       });
@@ -333,6 +344,7 @@ export async function checkPeerPushPayment(
   return {
     amount: purseStatus.balance,
     contractTerms: dec.contractTerms,
+    peerPushPaymentIncomingId,
   };
 }
 
@@ -343,9 +355,9 @@ export function talerPaytoFromExchangeReserve(
   const url = new URL(exchangeBaseUrl);
   let proto: string;
   if (url.protocol === "http:") {
-    proto = "taler+http";
+    proto = "taler-reserve-http";
   } else if (url.protocol === "https:") {
-    proto = "taler";
+    proto = "taler-reserve";
   } else {
     throw Error(`unsupported exchange base URL protocol (${url.protocol})`);
   }
@@ -365,69 +377,45 @@ export async function acceptPeerPushPayment(
   const peerInc = await ws.db
     .mktx((x) => ({ peerPushPaymentIncoming: x.peerPushPaymentIncoming }))
     .runReadOnly(async (tx) => {
-      return tx.peerPushPaymentIncoming.get([
-        req.exchangeBaseUrl,
-        req.pursePub,
-      ]);
+      return tx.peerPushPaymentIncoming.get(req.peerPushPaymentIncomingId);
     });
 
   if (!peerInc) {
-    throw Error("can't accept unknown incoming p2p push payment");
+    throw Error(
+      `can't accept unknown incoming p2p push payment (${req.peerPushPaymentIncomingId})`,
+    );
   }
 
   const amount = Amounts.parseOrThrow(peerInc.contractTerms.amount);
 
-  // We have to create the key pair outside of the transaction,
+  // We have to eagerly create the key pair outside of the transaction,
   // due to the async crypto API.
   const newReservePair = await ws.cryptoApi.createEddsaKeypair({});
 
-  const reserve: ReserveRecord | undefined = await ws.db
+  const mergeReserveInfo: MergeReserveInfo = await ws.db
     .mktx((x) => ({
       exchanges: x.exchanges,
-      reserves: x.reserves,
+      withdrawalGroups: x.withdrawalGroups,
     }))
     .runReadWrite(async (tx) => {
-      const ex = await tx.exchanges.get(req.exchangeBaseUrl);
+      const ex = await tx.exchanges.get(peerInc.exchangeBaseUrl);
       checkDbInvariant(!!ex);
-      if (ex.currentMergeReservePub) {
-        return await tx.reserves.get(ex.currentMergeReservePub);
+      if (ex.currentMergeReserveInfo) {
+        return ex.currentMergeReserveInfo;
       }
-      const rec: ReserveRecord = {
-        exchangeBaseUrl: req.exchangeBaseUrl,
-        // FIXME: field will be removed in the future, folded into withdrawal/p2p record.
-        reserveStatus: ReserveRecordStatus.Dormant,
-        timestampCreated: TalerProtocolTimestamp.now(),
-        instructedAmount: Amounts.getZero(amount.currency),
-        currency: amount.currency,
-        reservePub: newReservePair.pub,
+      await tx.exchanges.put(ex);
+      ex.currentMergeReserveInfo = {
         reservePriv: newReservePair.priv,
-        timestampBankConfirmed: undefined,
-        timestampReserveInfoPosted: undefined,
-        // FIXME!
-        initialDenomSel: undefined as any,
-        // FIXME!
-        initialWithdrawalGroupId: "",
-        initialWithdrawalStarted: false,
-        lastError: undefined,
-        operationStatus: OperationStatus.Pending,
-        retryInfo: undefined,
-        bankInfo: undefined,
-        restrictAge: undefined,
-        senderWire: undefined,
+        reservePub: newReservePair.pub,
       };
-      await tx.reserves.put(rec);
-      return rec;
+      return ex.currentMergeReserveInfo;
     });
-
-  if (!reserve) {
-    throw Error("can't create reserve");
-  }
 
   const mergeTimestamp = TalerProtocolTimestamp.now();
 
   const reservePayto = talerPaytoFromExchangeReserve(
-    reserve.exchangeBaseUrl,
-    reserve.reservePub,
+    peerInc.exchangeBaseUrl,
+    mergeReserveInfo.reservePub,
   );
 
   const sigRes = await ws.cryptoApi.signPurseMerge({
@@ -442,12 +430,12 @@ export async function acceptPeerPushPayment(
     purseFee: Amounts.stringify(Amounts.getZero(amount.currency)),
     pursePub: peerInc.pursePub,
     reservePayto,
-    reservePriv: reserve.reservePriv,
+    reservePriv: mergeReserveInfo.reservePriv,
   });
 
   const mergePurseUrl = new URL(
-    `purses/${req.pursePub}/merge`,
-    req.exchangeBaseUrl,
+    `purses/${peerInc.pursePub}/merge`,
+    peerInc.exchangeBaseUrl,
   );
 
   const mergeReq: ExchangePurseMergeRequest = {
@@ -459,6 +447,17 @@ export async function acceptPeerPushPayment(
 
   const mergeHttpReq = await ws.http.postJson(mergePurseUrl.href, mergeReq);
 
+  logger.info(`merge request: ${j2s(mergeReq)}`);
   const res = await readSuccessResponseJsonOrThrow(mergeHttpReq, codecForAny());
-  logger.info(`merge result: ${j2s(res)}`);
+  logger.info(`merge response: ${j2s(res)}`);
+
+  await internalCreateWithdrawalGroup(ws, {
+    amount,
+    exchangeBaseUrl: peerInc.exchangeBaseUrl,
+    reserveStatus: ReserveRecordStatus.QueryingStatus,
+    reserveKeyPair: {
+      priv: mergeReserveInfo.reservePriv,
+      pub: mergeReserveInfo.reservePub,
+    },
+  });
 }

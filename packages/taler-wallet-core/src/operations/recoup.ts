@@ -26,28 +26,35 @@
  */
 import {
   Amounts,
-  codecForRecoupConfirmation, encodeCrock, getRandomBytes, j2s, Logger, NotificationType,
+  codecForRecoupConfirmation,
+  encodeCrock,
+  getRandomBytes,
+  j2s,
+  Logger,
+  NotificationType,
   RefreshReason,
   TalerErrorDetail,
-  TalerProtocolTimestamp, URL
+  TalerProtocolTimestamp,
+  URL,
 } from "@gnu-taler/taler-util";
 import {
   CoinRecord,
   CoinSourceType,
-  CoinStatus, OperationStatus, RecoupGroupRecord,
+  CoinStatus,
+  OperationStatus,
+  RecoupGroupRecord,
   RefreshCoinSource,
-  ReserveRecordStatus, WalletStoresV1, WithdrawCoinSource
+  ReserveRecordStatus,
+  WalletStoresV1,
+  WithdrawCoinSource,
 } from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { GetReadWriteAccess } from "../util/query.js";
-import {
-  RetryInfo
-} from "../util/retries.js";
+import { RetryInfo } from "../util/retries.js";
 import { guardOperationException } from "./common.js";
 import { createRefreshGroup, processRefreshGroup } from "./refresh.js";
-import { getReserveRequestTimeout, processReserve } from "./reserves.js";
-
+import { internalCreateWithdrawalGroup } from "./withdraw.js";
 
 const logger = new Logger("operations/recoup.ts");
 
@@ -182,33 +189,23 @@ async function recoupWithdrawCoin(
   cs: WithdrawCoinSource,
 ): Promise<void> {
   const reservePub = cs.reservePub;
-  const d = await ws.db
+  const denomInfo = await ws.db
     .mktx((x) => ({
-      reserves: x.reserves,
       denominations: x.denominations,
     }))
     .runReadOnly(async (tx) => {
-      const reserve = await tx.reserves.get(reservePub);
-      if (!reserve) {
-        return;
-      }
       const denomInfo = await ws.getDenomInfo(
         ws,
         tx,
-        reserve.exchangeBaseUrl,
+        coin.exchangeBaseUrl,
         coin.denomPubHash,
       );
-      if (!denomInfo) {
-        return;
-      }
-      return { reserve, denomInfo };
+      return denomInfo;
     });
-  if (!d) {
+  if (!denomInfo) {
     // FIXME:  We should at least emit some pending operation / warning for this?
     return;
   }
-
-  const { reserve, denomInfo } = d;
 
   ws.notify({
     type: NotificationType.RecoupStarted,
@@ -224,9 +221,7 @@ async function recoupWithdrawCoin(
   });
   const reqUrl = new URL(`/coins/${coin.coinPub}/recoup`, coin.exchangeBaseUrl);
   logger.trace(`requesting recoup via ${reqUrl.href}`);
-  const resp = await ws.http.postJson(reqUrl.href, recoupRequest, {
-    timeout: getReserveRequestTimeout(reserve),
-  });
+  const resp = await ws.http.postJson(reqUrl.href, recoupRequest);
   const recoupConfirmation = await readSuccessResponseJsonOrThrow(
     resp,
     codecForRecoupConfirmation(),
@@ -244,7 +239,6 @@ async function recoupWithdrawCoin(
     .mktx((x) => ({
       coins: x.coins,
       denominations: x.denominations,
-      reserves: x.reserves,
       recoupGroups: x.recoupGroups,
       refreshGroups: x.refreshGroups,
     }))
@@ -260,18 +254,12 @@ async function recoupWithdrawCoin(
       if (!updatedCoin) {
         return;
       }
-      const updatedReserve = await tx.reserves.get(reserve.reservePub);
-      if (!updatedReserve) {
-        return;
-      }
       updatedCoin.status = CoinStatus.Dormant;
       const currency = updatedCoin.currentAmount.currency;
       updatedCoin.currentAmount = Amounts.getZero(currency);
-      updatedReserve.reserveStatus = ReserveRecordStatus.QueryingStatus;
-      updatedReserve.retryInfo = RetryInfo.reset();
-      updatedReserve.operationStatus = OperationStatus.Pending;
       await tx.coins.put(updatedCoin);
-      await tx.reserves.put(updatedReserve);
+      // FIXME: Actually withdraw here!
+      // await internalCreateWithdrawalGroup(ws, {...});
       await putGroupAsFinished(ws, tx, recoupGroup, coinIdx);
     });
 
@@ -341,7 +329,6 @@ async function recoupRefreshCoin(
     .mktx((x) => ({
       coins: x.coins,
       denominations: x.denominations,
-      reserves: x.reserves,
       recoupGroups: x.recoupGroups,
       refreshGroups: x.refreshGroups,
     }))
@@ -445,12 +432,6 @@ async function processRecoupGroupImpl(
     if (coin.coinSource.type === CoinSourceType.Withdraw) {
       reserveSet.add(coin.coinSource.reservePub);
     }
-  }
-
-  for (const r of reserveSet.values()) {
-    processReserve(ws, r, { forceNow: true }).catch((e) => {
-      logger.error(`processing reserve ${r} after recoup failed`);
-    });
   }
 }
 

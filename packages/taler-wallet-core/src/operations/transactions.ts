@@ -36,7 +36,6 @@ import { InternalWalletState } from "../internal-wallet-state.js";
 import {
   AbortStatus,
   RefundState,
-  ReserveRecord,
   ReserveRecordStatus,
   WalletRefundItem,
 } from "../db.js";
@@ -44,9 +43,8 @@ import { processDepositGroup } from "./deposits.js";
 import { getExchangeDetails } from "./exchanges.js";
 import { processPurchasePay } from "./pay.js";
 import { processRefreshGroup } from "./refresh.js";
-import { getFundingPaytoUris } from "./reserves.js";
 import { processTip } from "./tip.js";
-import { processWithdrawGroup } from "./withdraw.js";
+import { processWithdrawalGroup } from "./withdraw.js";
 
 const logger = new Logger("taler-wallet-core:transactions.ts");
 
@@ -127,7 +125,6 @@ export async function getTransactions(
       proposals: x.proposals,
       purchases: x.purchases,
       refreshGroups: x.refreshGroups,
-      reserves: x.reserves,
       tips: x.tips,
       withdrawalGroups: x.withdrawalGroups,
       planchets: x.planchets,
@@ -151,24 +148,13 @@ export async function getTransactions(
           if (shouldSkipSearch(transactionsRequest, [])) {
             return;
           }
-
-          const r = await tx.reserves.get(wsr.reservePub);
-          if (!r) {
-            return;
-          }
-          let amountRaw: AmountJson | undefined = undefined;
-          if (wsr.withdrawalGroupId === r.initialWithdrawalGroupId) {
-            amountRaw = r.instructedAmount;
-          } else {
-            amountRaw = wsr.denomsSel.totalWithdrawCost;
-          }
           let withdrawalDetails: WithdrawalDetails;
-          if (r.bankInfo) {
+          if (wsr.bankInfo) {
             withdrawalDetails = {
               type: WithdrawalType.TalerBankIntegrationApi,
-              confirmed: r.timestampBankConfirmed ? true : false,
+              confirmed: wsr.bankInfo.timestampBankConfirmed ? true : false,
               reservePub: wsr.reservePub,
-              bankConfirmationUrl: r.bankInfo.confirmUrl,
+              bankConfirmationUrl: wsr.bankInfo.confirmUrl,
             };
           } else {
             const exchangeDetails = await getExchangeDetails(
@@ -191,7 +177,7 @@ export async function getTransactions(
           transactions.push({
             type: TransactionType.Withdrawal,
             amountEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
-            amountRaw: Amounts.stringify(amountRaw),
+            amountRaw: Amounts.stringify(wsr.rawWithdrawalAmount),
             withdrawalDetails,
             exchangeBaseUrl: wsr.exchangeBaseUrl,
             pending: !wsr.timestampFinish,
@@ -202,56 +188,6 @@ export async function getTransactions(
             ),
             frozen: false,
             ...(wsr.lastError ? { error: wsr.lastError } : {}),
-          });
-        });
-
-        // Report pending withdrawals based on reserves that
-        // were created, but where the actual withdrawal group has
-        // not started yet.
-        tx.reserves.iter().forEachAsync(async (r) => {
-          if (shouldSkipCurrency(transactionsRequest, r.currency)) {
-            return;
-          }
-          if (shouldSkipSearch(transactionsRequest, [])) {
-            return;
-          }
-          if (r.initialWithdrawalStarted) {
-            return;
-          }
-          if (r.reserveStatus === ReserveRecordStatus.BankAborted) {
-            return;
-          }
-          let withdrawalDetails: WithdrawalDetails;
-          if (r.bankInfo) {
-            withdrawalDetails = {
-              type: WithdrawalType.TalerBankIntegrationApi,
-              confirmed: false,
-              reservePub: r.reservePub,
-              bankConfirmationUrl: r.bankInfo.confirmUrl,
-            };
-          } else {
-            withdrawalDetails = {
-              type: WithdrawalType.ManualTransfer,
-              reservePub: r.reservePub,
-              exchangePaytoUris: await getFundingPaytoUris(tx, r.reservePub),
-            };
-          }
-          transactions.push({
-            type: TransactionType.Withdrawal,
-            amountRaw: Amounts.stringify(r.instructedAmount),
-            amountEffective: Amounts.stringify(
-              r.initialDenomSel.totalCoinValue,
-            ),
-            exchangeBaseUrl: r.exchangeBaseUrl,
-            pending: true,
-            timestamp: r.timestampCreated,
-            withdrawalDetails: withdrawalDetails,
-            transactionId: makeEventId(
-              TransactionType.Withdrawal,
-              r.initialWithdrawalGroupId,
-            ),
-            frozen: false,
-            ...(r.lastError ? { error: r.lastError } : {}),
           });
         });
 
@@ -499,7 +435,7 @@ export async function retryTransaction(
     }
     case TransactionType.Withdrawal: {
       const withdrawalGroupId = rest[0];
-      await processWithdrawGroup(ws, withdrawalGroupId, { forceNow: true });
+      await processWithdrawalGroup(ws, withdrawalGroupId, { forceNow: true });
       break;
     }
     case TransactionType.Payment: {
@@ -536,7 +472,6 @@ export async function deleteTransaction(
     await ws.db
       .mktx((x) => ({
         withdrawalGroups: x.withdrawalGroups,
-        reserves: x.reserves,
         tombstones: x.tombstones,
       }))
       .runReadWrite(async (tx) => {
@@ -549,17 +484,6 @@ export async function deleteTransaction(
             id: TombstoneTag.DeleteWithdrawalGroup + ":" + withdrawalGroupId,
           });
           return;
-        }
-        const reserveRecord: ReserveRecord | undefined =
-          await tx.reserves.indexes.byInitialWithdrawalGroupId.get(
-            withdrawalGroupId,
-          );
-        if (reserveRecord && !reserveRecord.initialWithdrawalStarted) {
-          const reservePub = reserveRecord.reservePub;
-          await tx.reserves.delete(reservePub);
-          await tx.tombstones.put({
-            id: TombstoneTag.DeleteReserve + ":" + reservePub,
-          });
         }
       });
   } else if (type === TransactionType.Payment) {

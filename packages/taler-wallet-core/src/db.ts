@@ -127,36 +127,6 @@ export interface ReserveBankInfo {
    * Exchange payto URI that the bank will use to fund the reserve.
    */
   exchangePaytoUri: string;
-}
-
-/**
- * A reserve record as stored in the wallet's database.
- */
-export interface ReserveRecord {
-  /**
-   * The reserve public key.
-   */
-  reservePub: string;
-
-  /**
-   * The reserve private key.
-   */
-  reservePriv: string;
-
-  /**
-   * The exchange base URL for the reserve.
-   */
-  exchangeBaseUrl: string;
-
-  /**
-   * Currency of the reserve.
-   */
-  currency: string;
-
-  /**
-   * Time when the reserve was created.
-   */
-  timestampCreated: TalerProtocolTimestamp;
 
   /**
    * Time when the information about this reserve was posted to the bank.
@@ -165,83 +135,14 @@ export interface ReserveRecord {
    *
    * Set to undefined if that hasn't happened yet.
    */
-  timestampReserveInfoPosted: TalerProtocolTimestamp | undefined;
+  timestampReserveInfoPosted?: TalerProtocolTimestamp;
 
   /**
    * Time when the reserve was confirmed by the bank.
    *
    * Set to undefined if not confirmed yet.
    */
-  timestampBankConfirmed: TalerProtocolTimestamp | undefined;
-
-  /**
-   * Wire information (as payto URI) for the bank account that
-   * transferred funds for this reserve.
-   */
-  senderWire?: string;
-
-  /**
-   * Amount that was sent by the user to fund the reserve.
-   */
-  instructedAmount: AmountJson;
-
-  /**
-   * Extra state for when this is a withdrawal involving
-   * a Taler-integrated bank.
-   */
-  bankInfo?: ReserveBankInfo;
-
-  /**
-   * Restrict withdrawals from this reserve to this age.
-   */
-  restrictAge?: number;
-
-  /**
-   * Pre-allocated ID of the withdrawal group for the first withdrawal
-   * on this reserve.
-   */
-  initialWithdrawalGroupId: string;
-
-  /**
-   * Did we start the first withdrawal for this reserve?
-   *
-   * We only report a pending withdrawal for the reserve before
-   * the first withdrawal has started.
-   */
-  initialWithdrawalStarted: boolean;
-
-  /**
-   * Initial denomination selection, stored here so that
-   * we can show this information in the transactions/balances
-   * before we have a withdrawal group.
-   */
-  initialDenomSel: DenomSelectionState;
-
-  /**
-   * Current status of the reserve.
-   */
-  reserveStatus: ReserveRecordStatus;
-
-  /**
-   * Is there any work to be done for this reserve?
-   *
-   * Technically redundant, since the reserveStatus would indicate this.
-   * However, we use the operationStatus for DB indexing of pending operations.
-   */
-  operationStatus: OperationStatus;
-
-  /**
-   * Retry info, in case the reserve needs to be processed again
-   * later, either due to an error or because the wallet needs to
-   * wait for something.
-   */
-  retryInfo: RetryInfo | undefined;
-
-  /**
-   * Last error that happened in a reserve operation
-   * (either talking to the bank or the exchange).
-   */
-  lastError: TalerErrorDetail | undefined;
+  timestampBankConfirmed?: TalerProtocolTimestamp;
 }
 
 /**
@@ -514,6 +415,11 @@ export interface ExchangeDetailsPointer {
   updateClock: TalerProtocolTimestamp;
 }
 
+export interface MergeReserveInfo {
+  reservePub: string;
+  reservePriv: string;
+}
+
 /**
  * Exchange record as stored in the wallet's database.
  */
@@ -568,7 +474,7 @@ export interface ExchangeRecord {
    * Public key of the reserve that we're currently using for
    * receiving P2P payments.
    */
-  currentMergeReservePub?: string;
+  currentMergeReserveInfo?: MergeReserveInfo;
 }
 
 /**
@@ -1373,6 +1279,7 @@ export interface WithdrawalGroupRecord {
 
   /**
    * Secret seed used to derive planchets.
+   * Stored since planchets are created lazily.
    */
   secretSeed: string;
 
@@ -1380,6 +1287,11 @@ export interface WithdrawalGroupRecord {
    * Public key of the reserve that we're withdrawing from.
    */
   reservePub: string;
+
+  /**
+   * The reserve private key.
+   */
+  reservePriv: string;
 
   /**
    * The exchange base URL that we're withdrawing from.
@@ -1395,8 +1307,6 @@ export interface WithdrawalGroupRecord {
 
   /**
    * When was the withdrawal operation completed?
-   *
-   * FIXME: We should probably drop this and introduce an OperationStatus field.
    */
   timestampFinish?: TalerProtocolTimestamp;
 
@@ -1405,6 +1315,33 @@ export interface WithdrawalGroupRecord {
    * Used for indexing in the database.
    */
   operationStatus: OperationStatus;
+
+  /**
+   * Current status of the reserve.
+   */
+  reserveStatus: ReserveRecordStatus;
+
+  /**
+   * Amount that was sent by the user to fund the reserve.
+   */
+  instructedAmount: AmountJson;
+
+  /**
+   * Wire information (as payto URI) for the bank account that
+   * transferred funds for this reserve.
+   */
+  senderWire?: string;
+
+  /**
+   * Restrict withdrawals from this reserve to this age.
+   */
+  restrictAge?: number;
+
+  /**
+   * Extra state for when this is a withdrawal involving
+   * a Taler-integrated bank.
+   */
+  bankInfo?: ReserveBankInfo;
 
   /**
    * Amount including fees (i.e. the amount subtracted from the
@@ -1730,9 +1667,11 @@ export interface PeerPushPaymentInitiationRecord {
 /**
  * Record for a push P2P payment that this wallet was offered.
  *
- * Primary key: (exchangeBaseUrl, pursePub)
+ * Unique: (exchangeBaseUrl, pursePub)
  */
 export interface PeerPushPaymentIncomingRecord {
+  peerPushPaymentIncomingId: string;
+
   exchangeBaseUrl: string;
 
   pursePub: string;
@@ -1828,16 +1767,6 @@ export const WalletStoresV1 = {
     }),
     {},
   ),
-  reserves: describeStore(
-    describeContents<ReserveRecord>("reserves", { keyPath: "reservePub" }),
-    {
-      byInitialWithdrawalGroupId: describeIndex(
-        "byInitialWithdrawalGroupId",
-        "initialWithdrawalGroupId",
-      ),
-      byStatus: describeIndex("byStatus", "operationStatus"),
-    },
-  ),
   purchases: describeStore(
     describeContents<PurchaseRecord>("purchases", { keyPath: "proposalId" }),
     {
@@ -1926,9 +1855,14 @@ export const WalletStoresV1 = {
   ),
   peerPushPaymentIncoming: describeStore(
     describeContents<PeerPushPaymentIncomingRecord>("peerPushPaymentIncoming", {
-      keyPath: ["exchangeBaseUrl", "pursePub"],
+      keyPath: "peerPushPaymentIncomingId",
     }),
-    {},
+    {
+      byExchangeAndPurse: describeIndex("byExchangeAndPurse", [
+        "exchangeBaseUrl",
+        "pursePub",
+      ]),
+    },
   ),
 };
 

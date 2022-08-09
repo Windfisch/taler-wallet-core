@@ -40,7 +40,6 @@ export enum PendingTaskType {
   ProposalChoice = "proposal-choice",
   ProposalDownload = "proposal-download",
   Refresh = "refresh",
-  Reserve = "reserve",
   Recoup = "recoup",
   RefundQuery = "refund-query",
   TipPickup = "tip-pickup",
@@ -60,7 +59,6 @@ export type PendingTaskInfo = PendingTaskInfoCommon &
     | PendingProposalDownloadTask
     | PendingRefreshTask
     | PendingRefundQueryTask
-    | PendingReserveTask
     | PendingTipPickupTask
     | PendingWithdrawTask
     | PendingRecoupTask
@@ -101,22 +99,6 @@ export enum ReserveType {
    * Withdrawn from a bank that has "tight" Taler integration
    */
   TalerBankWithdraw = "taler-bank-withdraw",
-}
-
-/**
- * Status of processing a reserve.
- *
- * Does *not* include the withdrawal operation that might result
- * from this.
- */
-export interface PendingReserveTask {
-  type: PendingTaskType.Reserve;
-  retryInfo: RetryInfo | undefined;
-  stage: ReserveRecordStatus;
-  timestampCreated: TalerProtocolTimestamp;
-  reserveType: ReserveType;
-  reservePub: string;
-  bankWithdrawConfirmUrl?: string;
 }
 
 /**
