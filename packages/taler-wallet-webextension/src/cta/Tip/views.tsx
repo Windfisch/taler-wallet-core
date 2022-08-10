@@ -19,7 +19,7 @@ import { Amount } from "../../components/Amount.js";
 import { LoadingError } from "../../components/LoadingError.js";
 import { LogoHeader } from "../../components/LogoHeader.js";
 import { Part } from "../../components/Part.js";
-import { SubTitle, WalletAction } from "../../components/styled/index.js";
+import { Link, SubTitle, WalletAction } from "../../components/styled/index.js";
 import { useTranslationContext } from "../../context/translation.js";
 import { Button } from "../../mui/Button.js";
 import { State } from "./index.js";
@@ -69,7 +69,6 @@ export function ReadyView(state: State.Ready): VNode {
           title={<i18n.Translate>Amount</i18n.Translate>}
           text={<Amount value={state.amount} />}
           kind="positive"
-          big
         />
         <Part
           title={<i18n.Translate>Merchant URL</i18n.Translate>}
@@ -88,11 +87,15 @@ export function ReadyView(state: State.Ready): VNode {
           color="success"
           onClick={state.accept.onClick}
         >
-          <i18n.Translate>Accept tip</i18n.Translate>
+          <i18n.Translate>
+            Receive &nbsp; {<Amount value={state.amount} />}
+          </i18n.Translate>
         </Button>
-        <Button onClick={state.ignore.onClick}>
-          <i18n.Translate>Ignore</i18n.Translate>
-        </Button>
+      </section>
+      <section>
+        <Link upperCased onClick={state.cancel}>
+          <i18n.Translate>Cancel</i18n.Translate>
+        </Link>
       </section>
     </WalletAction>
   );

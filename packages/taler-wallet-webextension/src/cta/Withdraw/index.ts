@@ -29,6 +29,7 @@ import { CompletedView, LoadingExchangeView, LoadingInfoView, LoadingUriView, Su
 
 export interface Props {
   talerWithdrawUri: string | undefined;
+  cancel: () => Promise<void>;
 }
 
 export type State =
@@ -67,13 +68,8 @@ export namespace State {
     status: "success";
     error: undefined;
 
-    exchange: SelectFieldHandler;
+    exchangeUrl: string;
 
-    editExchange: ButtonHandler;
-    cancelEditExchange: ButtonHandler;
-    confirmEditExchange: ButtonHandler;
-
-    showExchangeSelection: boolean;
     chosenAmount: AmountJson;
     withdrawalFee: AmountJson;
     toBeReceived: AmountJson;
@@ -82,7 +78,9 @@ export namespace State {
     tosProps?: TermsOfServiceSectionProps;
     mustAcceptFirst: boolean;
 
-    ageRestriction: SelectFieldHandler;
+    ageRestriction?: SelectFieldHandler;
+
+    cancel: () => Promise<void>;
   };
 }
 

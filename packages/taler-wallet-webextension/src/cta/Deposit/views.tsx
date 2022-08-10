@@ -100,7 +100,7 @@ export function ReadyView(state: State.Ready): VNode {
           onClick={state.confirm.onClick}
         >
           <i18n.Translate>
-            Deposit {<Amount value={state.effective} />}
+            Send &nbsp; {<Amount value={state.cost} />}
           </i18n.Translate>
         </Button>
       </section>

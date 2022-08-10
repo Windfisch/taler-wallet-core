@@ -76,33 +76,34 @@ export function Application(): VNode {
         <IoCProviderForRuntime>
           {/* <Match/> won't work in the first render if <Router /> is not called first */}
           {/* https://github.com/preactjs/preact-router/issues/415 */}
-          <Router history={hash_history} />
-          <Match>
-            {({ path }: { path: string }) => {
-              if (path && path.startsWith("/cta")) return;
-              return (
-                <Fragment>
-                  <LogoHeader />
-                  <WalletNavBar path={path} />
-                  {shouldShowPendingOperations(path) && (
-                    <div
-                      style={{
-                        backgroundColor: "lightcyan",
-                        display: "flex",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <PendingTransactions
-                        goToTransaction={(tid: string) =>
-                          redirectTo(Pages.balanceTransaction({ tid }))
-                        }
-                      />
-                    </div>
-                  )}
-                </Fragment>
-              );
-            }}
-          </Match>
+          <Router history={hash_history}>
+            <Match default>
+              {({ path }: { path: string }) => {
+                if (path && path.startsWith("/cta")) return;
+                return (
+                  <Fragment>
+                    <LogoHeader />
+                    <WalletNavBar path={path} />
+                    {shouldShowPendingOperations(path) && (
+                      <div
+                        style={{
+                          backgroundColor: "lightcyan",
+                          display: "flex",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <PendingTransactions
+                          goToTransaction={(tid: string) =>
+                            redirectTo(Pages.balanceTransaction({ tid }))
+                          }
+                        />
+                      </div>
+                    )}
+                  </Fragment>
+                );
+              }}
+            </Match>
+          </Router>
           <WalletBox>
             {globalNotification && (
               <SuccessBox onClick={clearNotification}>
@@ -206,12 +207,28 @@ export function Application(): VNode {
                 goToWalletManualWithdraw={(currency?: string) =>
                   redirectTo(Pages.balanceManualWithdraw({ currency }))
                 }
-                goBack={() => redirectTo(Pages.balance)}
+                cancel={() => redirectTo(Pages.balance)}
               />
-              <Route path={Pages.ctaRefund} component={RefundPage} />
-              <Route path={Pages.ctaTips} component={TipPage} />
-              <Route path={Pages.ctaWithdraw} component={WithdrawPage} />
-              <Route path={Pages.ctaDeposit} component={DepositPageCTA} />
+              <Route
+                path={Pages.ctaRefund}
+                component={RefundPage}
+                cancel={() => redirectTo(Pages.balance)}
+              />
+              <Route
+                path={Pages.ctaTips}
+                component={TipPage}
+                cancel={() => redirectTo(Pages.balance)}
+              />
+              <Route
+                path={Pages.ctaWithdraw}
+                component={WithdrawPage}
+                cancel={() => redirectTo(Pages.balance)}
+              />
+              <Route
+                path={Pages.ctaDeposit}
+                component={DepositPageCTA}
+                cancel={() => redirectTo(Pages.balance)}
+              />
 
               {/**
                * NOT FOUND

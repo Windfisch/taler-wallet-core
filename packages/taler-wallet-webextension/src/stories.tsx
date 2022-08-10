@@ -206,7 +206,7 @@ function ExampleList({
         {list.map((k) => (
           <li key={k.name}>
             <dl>
-              <dt>{k.name}</dt>
+              <dt>{k.name.substring(k.name.indexOf("/") + 1)}</dt>
               {k.examples.map((r) => {
                 const e = encodeURIComponent;
                 const eId = `${e(r.group)}-${e(r.component)}-${e(r.name)}`;

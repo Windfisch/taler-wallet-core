@@ -28,6 +28,7 @@ import { CompletedView, LoadingUriView, ReadyView } from "./views.js";
 export interface Props {
   talerDepositUri: string | undefined,
   amountStr: AmountString | undefined,
+  cancel: () => Promise<void>;
 }
 
 export type State =
@@ -53,6 +54,7 @@ export namespace State {
     cost: AmountJson;
     effective: AmountJson;
     confirm: ButtonHandler;
+    cancel: () => Promise<void>;
   }
   export interface Completed {
     status: "completed";

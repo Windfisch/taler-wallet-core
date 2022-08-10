@@ -22,7 +22,7 @@ import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
-  { talerTipUri }: Props,
+  { talerTipUri, cancel }: Props,
   api: typeof wxApi,
 ): State {
   const [tipIgnored, setTipIgnored] = useState(false);
@@ -53,10 +53,6 @@ export function useComponentState(
     tipInfo.retry();
   };
 
-  const doIgnore = async (): Promise<void> => {
-    setTipIgnored(true);
-  };
-
   const baseInfo = {
     merchantBaseUrl: tip.merchantBaseUrl,
     exchangeBaseUrl: tip.exchangeBaseUrl,
@@ -84,9 +80,7 @@ export function useComponentState(
     accept: {
       onClick: doAccept,
     },
-    ignore: {
-      onClick: doIgnore,
-    },
+    cancel,
   };
 }
 

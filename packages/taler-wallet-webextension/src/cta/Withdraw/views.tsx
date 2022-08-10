@@ -15,25 +15,26 @@
  */
 
 import { Fragment, h, VNode } from "preact";
-import { State } from "./index.js";
-import { useTranslationContext } from "../../context/translation.js";
-import { Amount } from "../../components/Amount.js";
 import { ErrorTalerOperation } from "../../components/ErrorTalerOperation.js";
-import { Loading } from "../../components/Loading.js";
 import { LoadingError } from "../../components/LoadingError.js";
 import { LogoHeader } from "../../components/LogoHeader.js";
 import { Part } from "../../components/Part.js";
 import { SelectList } from "../../components/SelectList.js";
 import {
   Input,
-  LinkSuccess,
+  Link,
   SubTitle,
   SuccessBox,
+  SvgIcon,
   WalletAction,
 } from "../../components/styled/index.js";
-import { Amounts } from "@gnu-taler/taler-util";
-import { TermsOfServiceSection } from "../TermsOfServiceSection.js";
+import { useTranslationContext } from "../../context/translation.js";
 import { Button } from "../../mui/Button.js";
+import { ExchangeDetails, WithdrawDetails } from "../../wallet/Transaction.js";
+import { TermsOfServiceSection } from "../TermsOfServiceSection.js";
+import { State } from "./index.js";
+import editIcon from "../../svg/edit_24px.svg";
+import { Amount } from "../../components/Amount.js";
 
 export function LoadingUriView({ error }: State.LoadingUriError): VNode {
   const { i18n } = useTranslationContext();
@@ -115,76 +116,49 @@ export function SuccessView(state: State.Success): VNode {
         />
       )}
 
-      <section>
+      <section style={{ textAlign: "left" }}>
         <Part
-          title={<i18n.Translate>Total to withdraw</i18n.Translate>}
-          text={<Amount value={state.toBeReceived} />}
-          kind="positive"
-        />
-        {Amounts.isNonZero(state.withdrawalFee) && (
-          <Fragment>
-            <Part
-              title={<i18n.Translate>Chosen amount</i18n.Translate>}
-              text={<Amount value={state.chosenAmount} />}
-              kind="neutral"
-            />
-            <Part
-              title={<i18n.Translate>Exchange fee</i18n.Translate>}
-              text={<Amount value={state.withdrawalFee} />}
-              kind="negative"
-            />
-          </Fragment>
-        )}
-        <Part
-          title={<i18n.Translate>Exchange</i18n.Translate>}
-          text={state.exchange.value}
+          title={
+            <div
+              style={{
+                display: "flex",
+              }}
+            >
+              <i18n.Translate>Exchange</i18n.Translate>
+              <SvgIcon
+                title="Edit"
+                dangerouslySetInnerHTML={{ __html: editIcon }}
+                color="black"
+                onClick={() => console.log("ok")}
+              />
+            </div>
+          }
+          text={<ExchangeDetails exchange={state.exchangeUrl} />}
           kind="neutral"
           big
         />
-        {state.showExchangeSelection ? (
-          <Fragment>
-            <div>
-              <SelectList
-                label={<i18n.Translate>Known exchanges</i18n.Translate>}
-                list={state.exchange.list}
-                value={state.exchange.value}
-                name="switchingExchange"
-                onChange={state.exchange.onChange}
-              />
-            </div>
-            <LinkSuccess
-              upperCased
-              style={{ fontSize: "small" }}
-              onClick={state.confirmEditExchange.onClick}
-            >
-              {state.exchange.isDirty ? (
-                <i18n.Translate>Confirm exchange selection</i18n.Translate>
-              ) : (
-                <i18n.Translate>Cancel exchange selection</i18n.Translate>
-              )}
-            </LinkSuccess>
-          </Fragment>
-        ) : (
-          <LinkSuccess
-            style={{ fontSize: "small" }}
-            upperCased
-            onClick={state.editExchange.onClick}
-          >
-            <i18n.Translate>Edit exchange</i18n.Translate>
-          </LinkSuccess>
+        <Part
+          title={<i18n.Translate>Details</i18n.Translate>}
+          text={
+            <WithdrawDetails
+              amount={{
+                effective: state.toBeReceived,
+                raw: state.chosenAmount,
+              }}
+            />
+          }
+        />
+        {state.ageRestriction && (
+          <Input>
+            <SelectList
+              label={<i18n.Translate>Age restriction</i18n.Translate>}
+              list={state.ageRestriction.list}
+              name="age"
+              value={state.ageRestriction.value}
+              onChange={state.ageRestriction.onChange}
+            />
+          </Input>
         )}
-      </section>
-      <section>
-        <Input>
-          <SelectList
-            label={<i18n.Translate>Age restriction</i18n.Translate>}
-            list={state.ageRestriction.list}
-            name="age"
-            maxWidth
-            value={state.ageRestriction.value}
-            onChange={state.ageRestriction.onChange}
-          />
-        </Input>
       </section>
       {state.tosProps && <TermsOfServiceSection {...state.tosProps} />}
       {state.tosProps ? (
@@ -197,7 +171,9 @@ export function SuccessView(state: State.Success): VNode {
               disabled={!state.doWithdrawal.onClick}
               onClick={state.doWithdrawal.onClick}
             >
-              <i18n.Translate>Confirm withdrawal</i18n.Translate>
+              <i18n.Translate>
+                Receive &nbsp; <Amount value={state.toBeReceived} />
+              </i18n.Translate>
             </Button>
           )}
           {state.tosProps.terms.status === "notfound" && (
@@ -216,6 +192,11 @@ export function SuccessView(state: State.Success): VNode {
           <i18n.Translate>Loading terms of service...</i18n.Translate>
         </section>
       )}
+      <section>
+        <Link upperCased onClick={state.cancel}>
+          <i18n.Translate>Cancel</i18n.Translate>
+        </Link>
+      </section>
     </WalletAction>
   );
 }

@@ -17,20 +17,16 @@
 
 import { Amounts } from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
-import { useMemo, useState } from "preact/hooks";
+import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
-import { ButtonHandler, SelectFieldHandler } from "../../mui/handlers.js";
 import { buildTermsOfServiceState } from "../../utils/index.js";
 import * as wxApi from "../../wxApi.js";
-import { State, Props } from "./index.js";
+import { Props, State } from "./index.js";
 
 export function useComponentState(
-  { talerWithdrawUri }: Props,
+  { talerWithdrawUri, cancel }: Props,
   api: typeof wxApi,
 ): State {
-  const [customExchange, setCustomExchange] = useState<string | undefined>(
-    undefined,
-  );
   const [ageRestricted, setAgeRestricted] = useState(0);
 
   /**
@@ -42,9 +38,8 @@ export function useComponentState(
     const uriInfo = await api.getWithdrawalDetailsForUri({
       talerWithdrawUri,
     });
-    const { exchanges: knownExchanges } = await api.listExchanges();
-
-    return { uriInfo, knownExchanges };
+    const { amount, defaultExchangeBaseUrl } = uriInfo
+    return { amount, thisExchange: defaultExchangeBaseUrl };
   });
 
   /**
@@ -55,65 +50,55 @@ export function useComponentState(
       ? undefined
       : uriInfoHook.response;
 
-  const { amount, thisExchange, thisCurrencyExchanges } = useMemo(() => {
-    if (!uriHookDep)
-      return {
-        amount: undefined,
-        thisExchange: undefined,
-        thisCurrencyExchanges: [],
-      };
+  // const { amount, thisExchange } = useMemo(() => {
+  // if (!uriHookDep)
+  //   return {
+  //     amount: undefined,
+  //     thisExchange: undefined,
+  //     thisCurrencyExchanges: [],
+  //   };
 
-    const { uriInfo, knownExchanges } = uriHookDep;
+  // const { uriInfo } = uriHookDep;
 
-    const amount = uriInfo ? Amounts.parseOrThrow(uriInfo.amount) : undefined;
-    const thisCurrencyExchanges =
-      !amount || !knownExchanges
-        ? []
-        : knownExchanges.filter((ex) => ex.currency === amount.currency);
+  // const amount = uriHookDep ? Amounts.parseOrThrow(uriHookDep.amount) : undefined;
+  // const thisExchange = uriHookDep?.thisExchange;
 
-    const thisExchange: string | undefined =
-      customExchange ??
-      uriInfo?.defaultExchangeBaseUrl ??
-      (thisCurrencyExchanges && thisCurrencyExchanges[0]
-        ? thisCurrencyExchanges[0].exchangeBaseUrl
-        : undefined);
-
-    return { amount, thisExchange, thisCurrencyExchanges };
-  }, [uriHookDep, customExchange]);
+  // return { amount, thisExchange };
+  // }, [uriHookDep]);
 
   /**
    * For the exchange selected, bring the status of the terms of service
    */
   const terms = useAsyncAsHook(async () => {
-    if (!thisExchange) return false;
+    if (!uriHookDep?.thisExchange) return false;
 
-    const exchangeTos = await api.getExchangeTos(thisExchange, ["text/xml"]);
+    const exchangeTos = await api.getExchangeTos(uriHookDep.thisExchange, ["text/xml"]);
 
     const state = buildTermsOfServiceState(exchangeTos);
 
     return { state };
-  }, [thisExchange]);
+  }, [uriHookDep]);
 
   /**
    * With the exchange and amount, ask the wallet the information
    * about the withdrawal
    */
-  const info = useAsyncAsHook(async () => {
-    if (!thisExchange || !amount) return false;
+  const amountHook = useAsyncAsHook(async () => {
+    if (!uriHookDep?.thisExchange) return false;
 
     const info = await api.getExchangeWithdrawalInfo({
-      exchangeBaseUrl: thisExchange,
-      amount,
+      exchangeBaseUrl: uriHookDep?.thisExchange,
+      amount: Amounts.parseOrThrow(uriHookDep.amount),
       tosAcceptedFormat: ["text/xml"],
     });
 
-    const withdrawalFee = Amounts.sub(
-      Amounts.parseOrThrow(info.withdrawalAmountRaw),
-      Amounts.parseOrThrow(info.withdrawalAmountEffective),
-    ).amount;
+    const withdrawAmount = {
+      raw: Amounts.parseOrThrow(info.withdrawalAmountRaw),
+      effective: Amounts.parseOrThrow(info.withdrawalAmountEffective),
+    }
 
-    return { info, withdrawalFee };
-  }, [thisExchange, amount]);
+    return { amount: withdrawAmount };
+  }, [uriHookDep]);
 
   const [reviewing, setReviewing] = useState<boolean>(false);
   const [reviewed, setReviewed] = useState<boolean>(false);
@@ -124,9 +109,6 @@ export function useComponentState(
   const [doingWithdraw, setDoingWithdraw] = useState<boolean>(false);
   const [withdrawCompleted, setWithdrawCompleted] = useState<boolean>(false);
 
-  const [showExchangeSelection, setShowExchangeSelection] = useState(false);
-  const [nextExchange, setNextExchange] = useState<string | undefined>();
-
   if (!uriInfoHook) return { status: "loading", error: undefined }
   if (uriInfoHook.hasError) {
     return {
@@ -135,7 +117,10 @@ export function useComponentState(
     };
   }
 
-  if (!thisExchange || !amount) {
+  const { amount, thisExchange } = uriInfoHook.response
+  const chosenAmount = Amounts.parseOrThrow(amount);
+
+  if (!thisExchange) {
     return {
       status: "loading-exchange",
       error: {
@@ -146,15 +131,17 @@ export function useComponentState(
     };
   }
 
-  const selectedExchange = thisExchange;
+  // const selectedExchange = thisExchange;
 
   async function doWithdrawAndCheckError(): Promise<void> {
+    if (!thisExchange) return;
+
     try {
       setDoingWithdraw(true);
       if (!talerWithdrawUri) return;
       const res = await api.acceptWithdrawal(
         talerWithdrawUri,
-        selectedExchange,
+        thisExchange,
         !ageRestricted ? undefined : ageRestricted,
       );
       if (res.confirmTransferUrl) {
@@ -169,54 +156,27 @@ export function useComponentState(
     setDoingWithdraw(false);
   }
 
-  const exchanges = thisCurrencyExchanges.reduce(
-    (prev, ex) => ({ ...prev, [ex.exchangeBaseUrl]: ex.exchangeBaseUrl }),
-    {},
-  );
-
-  if (!info) {
+  if (!amountHook) {
     return { status: "loading", error: undefined }
   }
-  if (info.hasError) {
+  if (amountHook.hasError) {
     return {
       status: "loading-info",
-      error: info,
+      error: amountHook,
     };
   }
-  if (!info.response) {
+  if (!amountHook.response) {
     return { status: "loading", error: undefined };
   }
   if (withdrawCompleted) {
     return { status: "completed", error: undefined };
   }
 
-  const exchangeHandler: SelectFieldHandler = {
-    onChange: async (e) => setNextExchange(e),
-    value: nextExchange ?? thisExchange,
-    list: exchanges,
-    isDirty: nextExchange !== undefined,
-  };
-
-  const editExchange: ButtonHandler = {
-    onClick: async () => {
-      setShowExchangeSelection(true);
-    },
-  };
-  const cancelEditExchange: ButtonHandler = {
-    onClick: async () => {
-      setShowExchangeSelection(false);
-    },
-  };
-  const confirmEditExchange: ButtonHandler = {
-    onClick: async () => {
-      setCustomExchange(exchangeHandler.value);
-      setShowExchangeSelection(false);
-      setNextExchange(undefined);
-    },
-  };
-
-  const { withdrawalFee } = info.response;
-  const toBeReceived = Amounts.sub(amount, withdrawalFee).amount;
+  const withdrawalFee = Amounts.sub(
+    amountHook.response.amount.raw,
+    amountHook.response.amount.effective,
+  ).amount;
+  const toBeReceived = amountHook.response.amount.effective;
 
   const { state: termsState } = (!terms
     ? undefined
@@ -225,11 +185,11 @@ export function useComponentState(
       : terms.response) || { state: undefined };
 
   async function onAccept(accepted: boolean): Promise<void> {
-    if (!termsState) return;
+    if (!termsState || !thisExchange) return;
 
     try {
       await api.setExchangeTosAccepted(
-        selectedExchange,
+        thisExchange,
         accepted ? termsState.version : undefined,
       );
       setReviewed(accepted);
@@ -253,22 +213,22 @@ export function useComponentState(
     ageRestrictionOptions["0"] = "Not restricted";
   }
 
+  //TODO: calculate based on exchange info
+  const ageRestrictionEnabled = false;
+  const ageRestriction = ageRestrictionEnabled ? {
+    list: ageRestrictionOptions,
+    value: String(ageRestricted),
+    onChange: async (v: string) => setAgeRestricted(parseInt(v, 10)),
+  } : undefined;
+
   return {
     status: "success",
     error: undefined,
-    exchange: exchangeHandler,
-    editExchange,
-    cancelEditExchange,
-    confirmEditExchange,
-    showExchangeSelection,
+    exchangeUrl: thisExchange,
     toBeReceived,
     withdrawalFee,
-    chosenAmount: amount,
-    ageRestriction: {
-      list: ageRestrictionOptions,
-      value: String(ageRestricted),
-      onChange: async (v) => setAgeRestricted(parseInt(v, 10)),
-    },
+    chosenAmount,
+    ageRestriction,
     doWithdrawal: {
       onClick:
         doingWithdraw || (mustAcceptFirst && !reviewed)
@@ -286,6 +246,7 @@ export function useComponentState(
         terms: termsState,
       },
     mustAcceptFirst,
+    cancel,
   };
 }
 

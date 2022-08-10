@@ -24,7 +24,7 @@ import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
-  { talerPayUri, goBack, goToWalletManualWithdraw }: Props,
+  { talerPayUri, cancel, goToWalletManualWithdraw }: Props,
   api: typeof wxApi,
 ): State {
   const [payResult, setPayResult] = useState<ConfirmPayResult | undefined>(
@@ -82,7 +82,7 @@ export function useComponentState(
     uri: hook.response.uri,
     amount,
     error: undefined,
-    goBack, goToWalletManualWithdraw
+    cancel, goToWalletManualWithdraw
   }
 
   if (!foundBalance) {

@@ -28,7 +28,7 @@ import { LoadingUriView, BaseView } from "./views.js";
 export interface Props {
   talerPayUri?: string;
   goToWalletManualWithdraw: (currency?: string) => Promise<void>;
-  goBack: () => Promise<void>;
+  cancel: () => Promise<void>;
 }
 
 export type State =
@@ -56,7 +56,7 @@ export namespace State {
     uri: string;
     error: undefined;
     goToWalletManualWithdraw: (currency?: string) => Promise<void>;
-    goBack: () => Promise<void>;
+    cancel: () => Promise<void>;
   }
   export interface NoBalanceForCurrency extends BaseInfo {
     status: "no-balance-for-currency"

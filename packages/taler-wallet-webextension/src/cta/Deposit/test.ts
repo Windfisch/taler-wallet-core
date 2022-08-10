@@ -30,7 +30,7 @@ describe("Deposit CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerDepositUri: undefined, amountStr: undefined }, {
+        useComponentState({ talerDepositUri: undefined, amountStr: undefined, cancel: async () => { null } }, {
           prepareRefund: async () => ({}),
           applyRefund: async () => ({}),
           onUpdateNotification: async () => ({}),
@@ -61,7 +61,7 @@ describe("Deposit CTA states", () => {
   it("should be ready after loading", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerDepositUri: "payto://refund/asdasdas", amountStr: "EUR:1" }, {
+        useComponentState({ talerDepositUri: "payto://refund/asdasdas", amountStr: "EUR:1", cancel: async () => { null } }, {
           prepareDeposit: async () =>
           ({
             effectiveDepositAmount: Amounts.parseOrThrow("EUR:1"),

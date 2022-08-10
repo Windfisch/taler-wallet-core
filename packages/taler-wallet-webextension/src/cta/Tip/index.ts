@@ -30,6 +30,7 @@ import { AcceptedView, IgnoredView, LoadingUriView, ReadyView } from "./views.js
 
 export interface Props {
   talerTipUri?: string;
+  cancel: () => Promise<void>;
 }
 
 export type State =
@@ -69,7 +70,7 @@ export namespace State {
   export interface Ready extends BaseInfo {
     status: "ready";
     accept: ButtonHandler;
-    ignore: ButtonHandler;
+    cancel: () => Promise<void>;
   }
 }
 

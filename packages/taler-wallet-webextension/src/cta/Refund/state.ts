@@ -22,7 +22,7 @@ import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
-  { talerRefundUri }: Props,
+  { talerRefundUri, cancel }: Props,
   api: typeof wxApi,
 ): State {
   const [ignored, setIgnored] = useState(false);
@@ -100,5 +100,6 @@ export function useComponentState(
     ignore: {
       onClick: doIgnore,
     },
+    cancel,
   };
 }

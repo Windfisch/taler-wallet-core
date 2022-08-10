@@ -20,7 +20,7 @@ import { Amount } from "../../components/Amount.js";
 import { LoadingError } from "../../components/LoadingError.js";
 import { LogoHeader } from "../../components/LogoHeader.js";
 import { Part } from "../../components/Part.js";
-import { SubTitle, WalletAction } from "../../components/styled/index.js";
+import { Link, SubTitle, WalletAction } from "../../components/styled/index.js";
 import { useTranslationContext } from "../../context/translation.js";
 import { Button } from "../../mui/Button.js";
 import { ProductList } from "../Payment/views.js";
@@ -163,9 +163,20 @@ export function ReadyView(state: State.Ready): VNode {
         </section>
       ) : undefined}
       <section>
-        <Button variant="contained" onClick={state.accept.onClick}>
-          <i18n.Translate>Confirm refund</i18n.Translate>
+        <Button
+          variant="contained"
+          color="success"
+          onClick={state.accept.onClick}
+        >
+          <i18n.Translate>
+            Receive &nbsp; <Amount value={state.amount} />
+          </i18n.Translate>
         </Button>
+      </section>
+      <section>
+        <Link upperCased onClick={state.cancel}>
+          <i18n.Translate>Cancel</i18n.Translate>
+        </Link>
       </section>
     </WalletAction>
   );

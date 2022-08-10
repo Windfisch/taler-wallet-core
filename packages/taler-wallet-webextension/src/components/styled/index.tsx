@@ -837,7 +837,11 @@ export const NavigationHeader = styled.div`
   }
 `;
 
-export const SvgIcon = styled.div<{ color: string }>`
+export const SvgIcon = styled.div<{
+  title: string;
+  color: string;
+  onClick?: any;
+}>`
   & > svg {
     fill: ${({ color }) => color};
   }
@@ -846,6 +850,7 @@ export const SvgIcon = styled.div<{ color: string }>`
   margin-left: auto;
   margin-right: 8px;
   padding: 4px;
+  cursor: ${({ onClick }) => (onClick ? "pointer" : "inherit")};
 `;
 
 export const Icon = styled.div`

@@ -27,6 +27,7 @@ import { CompletedView, IgnoredView, InProgressView, LoadingUriView, ReadyView }
 
 export interface Props {
   talerRefundUri?: string;
+  cancel: () => Promise<void>;
 }
 
 export type State =
@@ -64,6 +65,7 @@ export namespace State {
     accept: ButtonHandler;
     ignore: ButtonHandler;
     orderId: string;
+    cancel: () => Promise<void>;
   }
 
   export interface Ignored extends BaseInfo {

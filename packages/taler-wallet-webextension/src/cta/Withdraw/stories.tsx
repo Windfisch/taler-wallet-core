@@ -63,24 +63,13 @@ const ageRestrictionSelectField = {
 export const TermsOfServiceNotYetLoaded = createExample(SuccessView, {
   error: undefined,
   status: "success",
-  cancelEditExchange: nullHandler,
-  confirmEditExchange: nullHandler,
-  ageRestriction: ageRestrictionSelectField,
   chosenAmount: {
     currency: "USD",
     value: 2,
     fraction: 10000000,
   },
   doWithdrawal: nullHandler,
-  editExchange: nullHandler,
-  exchange: {
-    list: exchangeList,
-    value: "exchange.demo.taler.net",
-    onChange: async () => {
-      null;
-    },
-  },
-  showExchangeSelection: false,
+  exchangeUrl: "https://exchange.demo.taler.net",
   mustAcceptFirst: false,
   withdrawalFee: {
     currency: "USD",
@@ -97,24 +86,13 @@ export const TermsOfServiceNotYetLoaded = createExample(SuccessView, {
 export const WithSomeFee = createExample(SuccessView, {
   error: undefined,
   status: "success",
-  cancelEditExchange: nullHandler,
-  confirmEditExchange: nullHandler,
-  ageRestriction: ageRestrictionSelectField,
   chosenAmount: {
     currency: "USD",
     value: 2,
     fraction: 10000000,
   },
   doWithdrawal: nullHandler,
-  editExchange: nullHandler,
-  exchange: {
-    list: exchangeList,
-    value: "exchange.demo.taler.net",
-    onChange: async () => {
-      null;
-    },
-  },
-  showExchangeSelection: false,
+  exchangeUrl: "https://exchange.demo.taler.net",
   mustAcceptFirst: false,
   withdrawalFee: {
     currency: "USD",
@@ -132,24 +110,13 @@ export const WithSomeFee = createExample(SuccessView, {
 export const WithoutFee = createExample(SuccessView, {
   error: undefined,
   status: "success",
-  cancelEditExchange: nullHandler,
-  confirmEditExchange: nullHandler,
-  ageRestriction: ageRestrictionSelectField,
   chosenAmount: {
     currency: "USD",
     value: 2,
-    fraction: 10000000,
+    fraction: 0,
   },
   doWithdrawal: nullHandler,
-  editExchange: nullHandler,
-  exchange: {
-    list: exchangeList,
-    value: "exchange.demo.taler.net",
-    onChange: async () => {
-      null;
-    },
-  },
-  showExchangeSelection: false,
+  exchangeUrl: "https://exchange.demo.taler.net",
   mustAcceptFirst: false,
   withdrawalFee: {
     currency: "USD",
@@ -167,24 +134,13 @@ export const WithoutFee = createExample(SuccessView, {
 export const EditExchangeUntouched = createExample(SuccessView, {
   error: undefined,
   status: "success",
-  cancelEditExchange: nullHandler,
-  confirmEditExchange: nullHandler,
-  ageRestriction: ageRestrictionSelectField,
   chosenAmount: {
     currency: "USD",
     value: 2,
     fraction: 10000000,
   },
   doWithdrawal: nullHandler,
-  editExchange: nullHandler,
-  exchange: {
-    list: exchangeList,
-    value: "exchange.demo.taler.net",
-    onChange: async () => {
-      null;
-    },
-  },
-  showExchangeSelection: true,
+  exchangeUrl: "https://exchange.demo.taler.net",
   mustAcceptFirst: false,
   withdrawalFee: {
     currency: "USD",
@@ -202,25 +158,13 @@ export const EditExchangeUntouched = createExample(SuccessView, {
 export const EditExchangeModified = createExample(SuccessView, {
   error: undefined,
   status: "success",
-  cancelEditExchange: nullHandler,
-  confirmEditExchange: nullHandler,
-  ageRestriction: ageRestrictionSelectField,
   chosenAmount: {
     currency: "USD",
     value: 2,
     fraction: 10000000,
   },
   doWithdrawal: nullHandler,
-  editExchange: nullHandler,
-  exchange: {
-    list: exchangeList,
-    isDirty: true,
-    value: "exchange.test.taler.net",
-    onChange: async () => {
-      null;
-    },
-  },
-  showExchangeSelection: true,
+  exchangeUrl: "https://exchange.demo.taler.net",
   mustAcceptFirst: false,
   withdrawalFee: {
     currency: "USD",
@@ -240,11 +184,9 @@ export const CompletedWithoutBankURL = createExample(CompletedView, {
   error: undefined,
 });
 
-export const WithAgeRestrictionSelected = createExample(SuccessView, {
+export const WithAgeRestriction = createExample(SuccessView, {
   error: undefined,
   status: "success",
-  cancelEditExchange: nullHandler,
-  confirmEditExchange: nullHandler,
   ageRestriction: ageRestrictionSelectField,
   chosenAmount: {
     currency: "USD",
@@ -252,15 +194,7 @@ export const WithAgeRestrictionSelected = createExample(SuccessView, {
     fraction: 10000000,
   },
   doWithdrawal: nullHandler,
-  editExchange: nullHandler,
-  exchange: {
-    list: exchangeList,
-    value: "exchange.demo.taler.net",
-    onChange: async () => {
-      null;
-    },
-  },
-  showExchangeSelection: false,
+  exchangeUrl: "https://exchange.demo.taler.net",
   mustAcceptFirst: false,
   withdrawalFee: {
     currency: "USD",

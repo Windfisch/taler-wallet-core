@@ -74,7 +74,7 @@ export function BaseView(state: SupportedStates): VNode {
         ? Amounts.parseOrThrow(state.payStatus.amountEffective)
         : state.amount,
   };
-  const totalFees = Amounts.sub(price.effective, price.raw).amount;
+  // const totalFees = Amounts.sub(price.effective, price.raw).amount;
 
   return (
     <WalletAction>
@@ -168,7 +168,7 @@ export function BaseView(state: SupportedStates): VNode {
         goToWalletManualWithdraw={state.goToWalletManualWithdraw}
       />
       <section>
-        <Link upperCased onClick={state.goBack}>
+        <Link upperCased onClick={state.cancel}>
           <i18n.Translate>Cancel</i18n.Translate>
         </Link>
       </section>
@@ -358,7 +358,7 @@ function ButtonsSection({
             onClick={state.payHandler.onClick}
           >
             <i18n.Translate>
-              Pay &nbsp;
+              Send &nbsp;
               {<Amount value={state.payStatus.amountEffective} />}
             </i18n.Translate>
           </Button>

@@ -33,7 +33,7 @@ describe("Refund CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerRefundUri: undefined }, {
+        useComponentState({ talerRefundUri: undefined, cancel: async () => { null } }, {
           prepareRefund: async () => ({}),
           applyRefund: async () => ({}),
           onUpdateNotification: async () => ({}),
@@ -64,7 +64,7 @@ describe("Refund CTA states", () => {
   it("should be ready after loading", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerRefundUri: "taler://refund/asdasdas" }, {
+        useComponentState({ talerRefundUri: "taler://refund/asdasdas", cancel: async () => { null } }, {
           prepareRefund: async () =>
           ({
             effectivePaid: "EUR:2",
@@ -113,7 +113,7 @@ describe("Refund CTA states", () => {
   it("should be ignored after clicking the ignore button", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerRefundUri: "taler://refund/asdasdas" }, {
+        useComponentState({ talerRefundUri: "taler://refund/asdasdas", cancel: async () => { null } }, {
           prepareRefund: async () =>
           ({
             effectivePaid: "EUR:2",
@@ -189,7 +189,7 @@ describe("Refund CTA states", () => {
 
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerRefundUri: "taler://refund/asdasdas" }, {
+        useComponentState({ talerRefundUri: "taler://refund/asdasdas", cancel: async () => { null } }, {
           prepareRefund: async () =>
           ({
             awaiting: Amounts.stringify(awaiting),

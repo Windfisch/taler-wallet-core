@@ -70,7 +70,7 @@ describe("Payment CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerPayUri: undefined, goBack: nullFunction, goToWalletManualWithdraw: nullFunction }, {
+        useComponentState({ talerPayUri: undefined, cancel: nullFunction, goToWalletManualWithdraw: nullFunction }, {
           onUpdateNotification: nullFunction,
         } as Partial<typeof wxApi> as any),
       );
@@ -98,7 +98,7 @@ describe("Payment CTA states", () => {
   it("should response with no balance", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerPayUri: "taller://pay", goBack: nullFunction, goToWalletManualWithdraw: nullFunction }, {
+        useComponentState({ talerPayUri: "taller://pay", cancel: nullFunction, goToWalletManualWithdraw: nullFunction }, {
           onUpdateNotification: nullFunction,
           preparePay: async () =>
           ({
@@ -133,7 +133,7 @@ describe("Payment CTA states", () => {
   it("should not be able to pay if there is no enough balance", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerPayUri: "taller://pay", goBack: nullFunction, goToWalletManualWithdraw: nullFunction }, {
+        useComponentState({ talerPayUri: "taller://pay", cancel: nullFunction, goToWalletManualWithdraw: nullFunction }, {
           onUpdateNotification: nullFunction,
           preparePay: async () =>
           ({
@@ -172,7 +172,7 @@ describe("Payment CTA states", () => {
   it("should be able to pay (without fee)", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerPayUri: "taller://pay", goBack: nullFunction, goToWalletManualWithdraw: nullFunction }, {
+        useComponentState({ talerPayUri: "taller://pay", cancel: nullFunction, goToWalletManualWithdraw: nullFunction }, {
           onUpdateNotification: nullFunction,
           preparePay: async () =>
           ({
@@ -214,7 +214,7 @@ describe("Payment CTA states", () => {
   it("should be able to pay (with fee)", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerPayUri: "taller://pay", goBack: nullFunction, goToWalletManualWithdraw: nullFunction }, {
+        useComponentState({ talerPayUri: "taller://pay", cancel: nullFunction, goToWalletManualWithdraw: nullFunction }, {
           onUpdateNotification: nullFunction,
           preparePay: async () =>
           ({
@@ -256,7 +256,7 @@ describe("Payment CTA states", () => {
   it("should get confirmation done after pay successfully", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerPayUri: "taller://pay", goBack: nullFunction, goToWalletManualWithdraw: nullFunction }, {
+        useComponentState({ talerPayUri: "taller://pay", cancel: nullFunction, goToWalletManualWithdraw: nullFunction }, {
           onUpdateNotification: nullFunction,
           preparePay: async () =>
           ({
@@ -317,7 +317,7 @@ describe("Payment CTA states", () => {
   it("should not stay in ready state after pay with error", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerPayUri: "taller://pay", goBack: nullFunction, goToWalletManualWithdraw: nullFunction }, {
+        useComponentState({ talerPayUri: "taller://pay", cancel: nullFunction, goToWalletManualWithdraw: nullFunction }, {
           onUpdateNotification: nullFunction,
           preparePay: async () =>
           ({
@@ -393,7 +393,7 @@ describe("Payment CTA states", () => {
 
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerPayUri: "taller://pay", goBack: nullFunction, goToWalletManualWithdraw: nullFunction }, {
+        useComponentState({ talerPayUri: "taller://pay", cancel: nullFunction, goToWalletManualWithdraw: nullFunction }, {
           onUpdateNotification: subscriptions.saveSubscription,
           preparePay: async () =>
           ({

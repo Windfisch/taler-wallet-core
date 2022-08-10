@@ -22,7 +22,7 @@ import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
-  { talerDepositUri, amountStr }: Props,
+  { talerDepositUri, amountStr, cancel }: Props,
   api: typeof wxApi,
 ): State {
   const [result, setResult] = useState<CreateDepositGroupResponse | undefined>(
@@ -72,5 +72,6 @@ export function useComponentState(
       .amount,
     cost: deposit.totalDepositCost,
     effective: deposit.effectiveDepositAmount,
+    cancel,
   };
 }

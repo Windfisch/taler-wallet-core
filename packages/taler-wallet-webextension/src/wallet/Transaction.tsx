@@ -32,7 +32,6 @@ import {
   TransactionRefund,
   TransactionTip,
   TransactionType,
-  TransactionWithdrawal,
   WithdrawalType,
 } from "@gnu-taler/taler-util";
 import { styled } from "@linaria/react";
@@ -308,7 +307,14 @@ export function TransactionView({
         )}
         <Part
           title={<i18n.Translate>Details</i18n.Translate>}
-          text={<WithdrawDetails transaction={transaction} />}
+          text={
+            <WithdrawDetails
+              amount={{
+                effective: Amounts.parseOrThrow(transaction.amountEffective),
+                raw: Amounts.parseOrThrow(transaction.amountRaw),
+              }}
+            />
+          }
         />
       </TransactionTemplate>
     );
@@ -713,10 +719,64 @@ function DeliveryDetails({
   );
 }
 
+export function ExchangeDetails({ exchange }: { exchange: string }): VNode {
+  return (
+    <div>
+      <p style={{ marginTop: 0 }}>
+        <a rel="noreferrer" target="_blank" href={exchange}>
+          {exchange}
+        </a>
+      </p>
+    </div>
+  );
+}
+
 export interface AmountWithFee {
   effective: AmountJson;
   raw: AmountJson;
 }
+
+export function WithdrawDetails({ amount }: { amount: AmountWithFee }): VNode {
+  const { i18n } = useTranslationContext();
+
+  const fee = Amounts.sub(amount.raw, amount.effective).amount;
+
+  const maxFrac = [amount.raw, amount.effective, fee]
+    .map((a) => Amounts.maxFractionalDigits(a))
+    .reduce((c, p) => Math.max(c, p), 0);
+
+  return (
+    <PurchaseDetailsTable>
+      <tr>
+        <td>Withdraw</td>
+        <td>
+          <Amount value={amount.raw} maxFracSize={maxFrac} />
+        </td>
+      </tr>
+
+      {Amounts.isNonZero(fee) && (
+        <tr>
+          <td>Transaction fees</td>
+          <td>
+            <Amount value={fee} negative maxFracSize={maxFrac} />
+          </td>
+        </tr>
+      )}
+      <tr>
+        <td colSpan={2}>
+          <hr />
+        </td>
+      </tr>
+      <tr>
+        <td>Total</td>
+        <td>
+          <Amount value={amount.effective} maxFracSize={maxFrac} />
+        </td>
+      </tr>
+    </PurchaseDetailsTable>
+  );
+}
+
 export function PurchaseDetails({
   price,
   refund,
@@ -992,53 +1052,6 @@ function TipDetails({ transaction }: { transaction: TransactionTip }): VNode {
     <PurchaseDetailsTable>
       <tr>
         <td>Amount</td>
-        <td>
-          <Amount value={transaction.amountRaw} maxFracSize={maxFrac} />
-        </td>
-      </tr>
-
-      {Amounts.isNonZero(fee) && (
-        <tr>
-          <td>Transaction fees</td>
-          <td>
-            <Amount value={fee} negative maxFracSize={maxFrac} />
-          </td>
-        </tr>
-      )}
-      <tr>
-        <td colSpan={2}>
-          <hr />
-        </td>
-      </tr>
-      <tr>
-        <td>Total</td>
-        <td>
-          <Amount value={transaction.amountEffective} maxFracSize={maxFrac} />
-        </td>
-      </tr>
-    </PurchaseDetailsTable>
-  );
-}
-
-function WithdrawDetails({
-  transaction,
-}: {
-  transaction: TransactionWithdrawal;
-}): VNode {
-  const { i18n } = useTranslationContext();
-
-  const r = Amounts.parseOrThrow(transaction.amountRaw);
-  const e = Amounts.parseOrThrow(transaction.amountEffective);
-  const fee = Amounts.sub(r, e).amount;
-
-  const maxFrac = [r, e, fee]
-    .map((a) => Amounts.maxFractionalDigits(a))
-    .reduce((c, p) => Math.max(c, p), 0);
-
-  return (
-    <PurchaseDetailsTable>
-      <tr>
-        <td>Withdraw</td>
         <td>
           <Amount value={transaction.amountRaw} maxFracSize={maxFrac} />
         </td>
