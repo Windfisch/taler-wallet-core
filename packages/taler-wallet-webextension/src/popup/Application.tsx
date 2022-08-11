@@ -133,6 +133,7 @@ export function Application(): VNode {
                   path={Pages.backupProviderAdd}
                   component={RedirectToWalletPage}
                 />
+                <Route path={Pages.qr} component={RedirectToWalletPage} />
                 <Route path={Pages.settings} component={RedirectToWalletPage} />
                 <Route
                   path={Pages.settingsExchangeAdd.pattern}

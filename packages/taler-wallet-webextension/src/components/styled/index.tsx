@@ -820,7 +820,8 @@ export const NavigationHeader = styled.div`
     width: 500px;
   }
 
-  & > a {
+  & > a,
+  & > div {
     color: #f8faf7;
     display: inline-block;
     width: 100%;
@@ -837,18 +838,20 @@ export const NavigationHeader = styled.div`
   }
 `;
 
-export const SvgIcon = styled.div<{
+interface SvgIconProps {
   title: string;
   color: string;
   onClick?: any;
-}>`
+}
+export const SvgIcon = styled.div<SvgIconProps>`
   & > svg {
     fill: ${({ color }) => color};
   }
   width: 24px;
   height: 24px;
-  margin-left: auto;
+  margin-left: 8px;
   margin-right: 8px;
+  display: inline;
   padding: 4px;
   cursor: ${({ onClick }) => (onClick ? "pointer" : "inherit")};
 `;
@@ -857,7 +860,7 @@ export const Icon = styled.div`
   background-color: gray;
   width: 24px;
   height: 24px;
-  margin-left: auto;
+  margin-left: 8px;
   margin-right: 8px;
   padding: 4px;
 `;

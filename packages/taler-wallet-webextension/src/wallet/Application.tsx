@@ -51,6 +51,8 @@ import { ProviderDetailPage } from "./ProviderDetailPage.js";
 import { SettingsPage } from "./Settings.js";
 import { TransactionPage } from "./Transaction.js";
 import { WelcomePage } from "./Welcome.js";
+import { QrReaderPage } from "./QrReader.js";
+import { platform } from "../platform/api.js";
 
 export function Application(): VNode {
   const [globalNotification, setGlobalNotification] = useState<
@@ -162,6 +164,14 @@ export function Application(): VNode {
               {/**
                * PENDING
                */}
+              <Route
+                path={Pages.qr}
+                component={QrReaderPage}
+                onDetected={(talerActionUrl: string) => {
+                  platform.openWalletURIFromPopup(talerActionUrl);
+                }}
+              />
+
               <Route path={Pages.settings} component={SettingsPage} />
 
               {/**

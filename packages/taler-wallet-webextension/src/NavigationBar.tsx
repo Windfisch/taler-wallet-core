@@ -33,6 +33,7 @@ import {
 } from "./components/styled/index.js";
 import { useTranslationContext } from "./context/translation.js";
 import settingsIcon from "./svg/settings_black_24dp.svg";
+import qrIcon from "./svg/qr_code_24px.svg";
 
 /**
  * List of pages used by the wallet
@@ -101,6 +102,7 @@ export const Pages = {
   ),
   backupProviderAdd: "/backup/provider/add",
 
+  qr: "/qr",
   settings: "/settings",
   settingsExchangeAdd: pageDefinition<{ currency?: string }>(
     "/settings/exchange/add/:currency?",
@@ -127,13 +129,22 @@ export function PopupNavBar({ path = "" }: { path?: string }): VNode {
       <a href={Pages.backup} class={path.startsWith("/backup") ? "active" : ""}>
         <i18n.Translate>Backup</i18n.Translate>
       </a>
-      <a href={Pages.settings}>
-        <SvgIcon
-          title={i18n.str`Settings`}
-          dangerouslySetInnerHTML={{ __html: settingsIcon }}
-          color="white"
-        />
-      </a>
+      <div style={{ display: "flex", paddingTop: 4, justifyContent: "right" }}>
+        <a href={Pages.qr}>
+          <SvgIcon
+            title={i18n.str`QR Reader`}
+            dangerouslySetInnerHTML={{ __html: qrIcon }}
+            color="white"
+          />
+        </a>
+        <a href={Pages.settings}>
+          <SvgIcon
+            title={i18n.str`Settings`}
+            dangerouslySetInnerHTML={{ __html: settingsIcon }}
+            color="white"
+          />
+        </a>
+      </div>
     </NavigationHeader>
   );
 }
@@ -162,12 +173,24 @@ export function WalletNavBar({ path = "" }: { path?: string }): VNode {
           </a>
         </JustInDevMode>
 
-        <a
-          href={Pages.settings}
-          class={path.startsWith("/settings") ? "active" : ""}
+        <div
+          style={{ display: "flex", paddingTop: 4, justifyContent: "right" }}
         >
-          <i18n.Translate>Settings</i18n.Translate>
-        </a>
+          <a href={Pages.qr}>
+            <SvgIcon
+              title={i18n.str`QR Reader`}
+              dangerouslySetInnerHTML={{ __html: qrIcon }}
+              color="white"
+            />
+          </a>
+          <a href={Pages.settings}>
+            <SvgIcon
+              title={i18n.str`Settings`}
+              dangerouslySetInnerHTML={{ __html: settingsIcon }}
+              color="white"
+            />
+          </a>
+        </div>
       </NavigationHeader>
     </NavigationHeaderHolder>
   );

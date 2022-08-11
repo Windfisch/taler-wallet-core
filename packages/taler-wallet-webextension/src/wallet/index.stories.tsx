@@ -34,6 +34,7 @@ import * as a13 from "./Transaction.stories.js";
 import * as a14 from "./Welcome.stories.js";
 import * as a15 from "./AddNewActionView.stories.js";
 import * as a16 from "./DeveloperPage.stories.js";
+import * as a17 from "./QrReader.stories.js";
 
 export default [
   a1,
@@ -51,4 +52,5 @@ export default [
   a14,
   a15,
   a16,
+  a17,
 ];
