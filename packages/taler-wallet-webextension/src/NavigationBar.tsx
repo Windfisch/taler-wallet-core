@@ -94,6 +94,12 @@ export const Pages = {
   balanceTransaction: pageDefinition<{ tid: string }>(
     "/balance/transaction/:tid",
   ),
+  sendCash: pageDefinition<{ currency?: string }>(
+    "/destination/send/:currency?",
+  ),
+  receiveCash: pageDefinition<{ currency?: string }>(
+    "/destination/get/:currency?",
+  ),
   dev: "/dev",
 
   backup: "/backup",

@@ -358,7 +358,7 @@ function ButtonsSection({
             onClick={state.payHandler.onClick}
           >
             <i18n.Translate>
-              Send &nbsp;
+              Pay &nbsp;
               {<Amount value={state.payStatus.amountEffective} />}
             </i18n.Translate>
           </Button>
@@ -395,7 +395,7 @@ function ButtonsSection({
             color="success"
             onClick={() => goToWalletManualWithdraw(state.amount.currency)}
           >
-            <i18n.Translate>Withdraw digital cash</i18n.Translate>
+            <i18n.Translate>Get digital cash</i18n.Translate>
           </Button>
         </section>
         <PayWithMobile state={state} />

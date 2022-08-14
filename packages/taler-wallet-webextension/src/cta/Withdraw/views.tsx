@@ -172,7 +172,7 @@ export function SuccessView(state: State.Success): VNode {
               onClick={state.doWithdrawal.onClick}
             >
               <i18n.Translate>
-                Receive &nbsp; <Amount value={state.toBeReceived} />
+                Withdraw &nbsp; <Amount value={state.toBeReceived} />
               </i18n.Translate>
             </Button>
           )}

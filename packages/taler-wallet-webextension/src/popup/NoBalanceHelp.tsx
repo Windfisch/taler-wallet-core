@@ -40,7 +40,7 @@ export function NoBalanceHelp({
           variant="outlined"
           onClick={goToWalletManualWithdraw.onClick}
         >
-          <Typography>Withdraw</Typography>
+          <Typography>Get digital cash</Typography>
         </Button>
       </Alert>
     </Paper>

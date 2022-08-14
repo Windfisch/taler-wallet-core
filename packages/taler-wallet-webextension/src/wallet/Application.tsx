@@ -53,6 +53,10 @@ import { TransactionPage } from "./Transaction.js";
 import { WelcomePage } from "./Welcome.js";
 import { QrReaderPage } from "./QrReader.js";
 import { platform } from "../platform/api.js";
+import {
+  DestinationSelectionGetCash,
+  DestinationSelectionSendCash,
+} from "./DestinationSelection.js";
 
 export function Application(): VNode {
   const [globalNotification, setGlobalNotification] = useState<
@@ -126,11 +130,19 @@ export function Application(): VNode {
                 path={Pages.balanceHistory.pattern}
                 component={HistoryPage}
                 goToWalletDeposit={(currency: string) =>
-                  redirectTo(Pages.balanceDeposit({ currency }))
+                  redirectTo(Pages.sendCash({ currency }))
                 }
                 goToWalletManualWithdraw={(currency?: string) =>
-                  redirectTo(Pages.balanceManualWithdraw({ currency }))
+                  redirectTo(Pages.receiveCash({ currency }))
                 }
+              />
+              <Route
+                path={Pages.sendCash.pattern}
+                component={DestinationSelectionSendCash}
+              />
+              <Route
+                path={Pages.receiveCash.pattern}
+                component={DestinationSelectionGetCash}
               />
               <Route
                 path={Pages.balanceTransaction.pattern}

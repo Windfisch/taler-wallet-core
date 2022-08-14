@@ -18,7 +18,6 @@ import { Amounts, Balance, NotificationType } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { BalanceTable } from "../components/BalanceTable.js";
-import { JustInDevMode } from "../components/JustInDevMode.js";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import { MultiActionButton } from "../components/MultiActionButton.js";
@@ -173,20 +172,15 @@ export function BalanceView(state: State.Balances): VNode {
           variant="contained"
           onClick={state.goToWalletManualWithdraw.onClick}
         >
-          <i18n.Translate>Withdraw</i18n.Translate>
+          <i18n.Translate>Get</i18n.Translate>
         </Button>
         {currencyWithNonZeroAmount.length > 0 && (
           <MultiActionButton
-            label={(s) => <i18n.Translate>Deposit {s}</i18n.Translate>}
+            label={(s) => <i18n.Translate>Send {s}</i18n.Translate>}
             actions={currencyWithNonZeroAmount}
             onClick={(c) => state.goToWalletDeposit(c)}
           />
         )}
-        <JustInDevMode>
-          <Button onClick={state.addAction.onClick}>
-            <i18n.Translate>Enter URI</i18n.Translate>
-          </Button>
-        </JustInDevMode>
       </footer>
     </Fragment>
   );

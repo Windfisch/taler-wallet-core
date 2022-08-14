@@ -169,7 +169,7 @@ export function ReadyView(state: State.Ready): VNode {
           onClick={state.accept.onClick}
         >
           <i18n.Translate>
-            Receive &nbsp; <Amount value={state.amount} />
+            Accept &nbsp; <Amount value={state.amount} />
           </i18n.Translate>
         </Button>
       </section>
