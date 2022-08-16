@@ -18,18 +18,29 @@ import { Amounts } from "@gnu-taler/taler-util";
 import { styled } from "@linaria/react";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
+import { ErrorMessage } from "../components/ErrorMessage.js";
+import { Loading } from "../components/Loading.js";
+import { LoadingError } from "../components/LoadingError.js";
+import { SelectList } from "../components/SelectList.js";
 import {
+  Input,
   InputWithLabel,
   LightText,
+  LinkPrimary,
+  SubTitle,
   SvgIcon,
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
+import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
+import { Alert } from "../mui/Alert.js";
 import { Button } from "../mui/Button.js";
 import { Grid } from "../mui/Grid.js";
 import { Paper } from "../mui/Paper.js";
 import { TextField } from "../mui/TextField.js";
+import { Pages } from "../NavigationBar.js";
 import arrowIcon from "../svg/chevron-down.svg";
 import bankIcon from "../svg/ri-bank-line.svg";
+import * as wxApi from "../wxApi.js";
 
 const Container = styled.div`
   display: flex;
@@ -152,6 +163,57 @@ const CircleDiv = styled.div`
   border: none;
 `;
 
+export function SelectCurrency({
+  onChange,
+}: {
+  onChange: (s: string) => void;
+}): VNode {
+  const { i18n } = useTranslationContext();
+
+  const hook = useAsyncAsHook(wxApi.listExchanges);
+
+  if (!hook) {
+    return <Loading />;
+  }
+  if (hook.hasError) {
+    return (
+      <LoadingError
+        error={hook}
+        title={<i18n.Translate>Could not load list of exchange</i18n.Translate>}
+      />
+    );
+  }
+  const list: Record<string, string> = {};
+  hook.response.exchanges.forEach((e) => (list[e.currency] = e.currency));
+  list[""] = "Select a currency";
+  return (
+    <Fragment>
+      <h1>
+        <i18n.Translate>Specify the amount and the origin</i18n.Translate>
+      </h1>
+
+      <Alert severity="warning">
+        Choose a currency to proceed or add more exchanges in the settings tab
+      </Alert>
+      <Input>
+        <SelectList
+          label={<i18n.Translate>Known currencies</i18n.Translate>}
+          list={list}
+          name="lang"
+          value={""}
+          onChange={(v) => onChange(v)}
+        />
+      </Input>
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <div />
+        <LinkPrimary href={Pages.settingsExchangeAdd({})}>
+          <i18n.Translate>Add an exchange</i18n.Translate>
+        </LinkPrimary>
+      </div>
+    </Fragment>
+  );
+}
+
 function RowExample({
   info,
   disabled,
@@ -194,9 +256,9 @@ export function DestinationSelectionGetCash({
     ? undefined
     : Amounts.parse(initialAmount);
   const parsedInitialAmountValue = !parsedInitialAmount
-    ? ""
+    ? "0"
     : Amounts.stringifyValue(parsedInitialAmount);
-  const currency = parsedInitialAmount?.currency;
+  const [currency, setCurrency] = useState(parsedInitialAmount?.currency);
 
   const [amount, setAmount] = useState(parsedInitialAmountValue);
   const { i18n } = useTranslationContext();
@@ -220,7 +282,11 @@ export function DestinationSelectionGetCash({
   ];
 
   if (!currency) {
-    return <div>currency not provided</div>;
+    return (
+      <div>
+        <SelectCurrency onChange={(c) => setCurrency(c)} />
+      </div>
+    );
   }
   const currencyAndAmount = `${currency}:${amount}`;
   const parsedAmount = Amounts.parse(currencyAndAmount);
@@ -231,20 +297,25 @@ export function DestinationSelectionGetCash({
       <h1>
         <i18n.Translate>Specify the amount and the origin</i18n.Translate>
       </h1>
-      <TextField
-        label="Amount"
-        type="number"
-        variant="filled"
-        error={invalid}
-        required
-        startAdornment={
-          <div style={{ padding: "25px 12px 8px 12px" }}>{currency}</div>
-        }
-        value={amount}
-        onChange={(e) => {
-          setAmount(e);
-        }}
-      />
+      <Grid container columns={2} justifyContent="space-between">
+        <TextField
+          label="Amount"
+          type="number"
+          variant="filled"
+          error={invalid}
+          required
+          startAdornment={
+            <div style={{ padding: "25px 12px 8px 12px" }}>{currency}</div>
+          }
+          value={amount}
+          onChange={(e) => {
+            setAmount(e);
+          }}
+        />
+        <Button onClick={async () => setCurrency(undefined)}>
+          Change currency
+        </Button>
+      </Grid>
 
       <Grid container spacing={1} columns={1}>
         {previous2.length > 0 ? (
@@ -350,20 +421,22 @@ export function DestinationSelectionSendCash({
         <i18n.Translate>Specify the amount and the destination</i18n.Translate>
       </h1>
 
-      <TextField
-        label="Amount"
-        type="number"
-        variant="filled"
-        required
-        error={invalid}
-        startAdornment={
-          <div style={{ padding: "25px 12px 8px 12px" }}>{currency}</div>
-        }
-        value={amount}
-        onChange={(e) => {
-          setAmount(e);
-        }}
-      />
+      <div>
+        <TextField
+          label="Amount"
+          type="number"
+          variant="filled"
+          required
+          error={invalid}
+          startAdornment={
+            <div style={{ padding: "25px 12px 8px 12px" }}>{currency}</div>
+          }
+          value={amount}
+          onChange={(e) => {
+            setAmount(e);
+          }}
+        />
+      </div>
 
       <Grid container spacing={1} columns={1}>
         {previous2.length > 0 ? (

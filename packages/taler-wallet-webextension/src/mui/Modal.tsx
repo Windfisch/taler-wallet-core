@@ -1,9 +1,25 @@
+/*
+ This file is part of GNU Taler
+ (C) 2022 Taler Systems S.A.
+
+ GNU Taler is free software; you can redistribute it and/or modify it under the
+ terms of the GNU General Public License as published by the Free Software
+ Foundation; either version 3, or (at your option) any later version.
+
+ GNU Taler is distributed in the hope that it will be useful, but WITHOUT ANY
+ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along with
+ GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 import { css } from "@linaria/core";
 import { h, JSX, VNode, ComponentChildren } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 // eslint-disable-next-line import/extensions
 import { alpha } from "./colors/manipulation";
-import { ModalManager } from "./ModalManager";
+import { ModalManager } from "./ModalManager.js";
 import { Portal } from "./Portal.js";
 // eslint-disable-next-line import/extensions
 import { theme } from "./style";
@@ -22,11 +38,15 @@ interface Props {
   children: ComponentChildren;
   open?: boolean;
   exited?: boolean;
-  container?: HTMLElement;
+  container?: VNode;
 }
 
 const defaultManager = new ModalManager();
 const manager = defaultManager;
+
+function getModal(): any {
+  return null; //TODO: fix
+}
 
 export function Modal({
   open,
@@ -52,18 +72,18 @@ export function Modal({
       return;
     }
 
-    if (open && isTopModal()) {
-      handleMounted();
-    } else {
-      ariaHidden(modalRef.current, true);
-    }
+    // if (open && isTopModal()) {
+    //   handleMounted();
+    // } else {
+    //   ariaHidden(modalRef.current, true);
+    // }
   });
 
   return (
     <Portal
       ref={handlePortalRef}
       container={container}
-      disablePortal={disablePortal}
+      // disablePortal={disablePortal}
     >
       <div
         class={[_class, baseStyle].join(" ")}
@@ -105,7 +125,7 @@ function getOffsetLeft(rect: any, horizontal: any): number {
   return offset;
 }
 
-function getTransformOriginValue(transformOrigin): string {
+function getTransformOriginValue(transformOrigin: any): string {
   return [transformOrigin.horizontal, transformOrigin.vertical]
     .map((n) => (typeof n === "number" ? `${n}px` : n))
     .join(" ");
