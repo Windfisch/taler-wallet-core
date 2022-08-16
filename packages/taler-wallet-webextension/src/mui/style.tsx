@@ -58,6 +58,16 @@ export interface Spacing {
 
 export const theme = createTheme();
 
+const zIndex = {
+  mobileStepper: 1000,
+  speedDial: 1050,
+  appBar: 1100,
+  drawer: 1200,
+  modal: 1300,
+  snackbar: 1400,
+  tooltip: 1500,
+};
+
 export const ripple = css`
   background-position: center;
 
@@ -859,5 +869,6 @@ function createTheme() {
     breakpoints,
     spacing,
     pxToRem,
+    zIndex,
   };
 }

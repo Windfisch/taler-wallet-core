@@ -223,6 +223,7 @@ function ExampleList({
                         e.preventDefault();
                         location.hash = `#${eId}`;
                         onSelectStory(r, eId);
+                        history.pushState({}, "", `#${eId}`);
                       }}
                     >
                       {r.name}

@@ -118,20 +118,20 @@ const Multiline = (variant: Props["variant"]): VNode => {
         label="Multiline"
         variant={variant}
         multiline
+        maxRows={4}
       />
       <TextField
         {...{ value, onChange }}
         label="Max row 4"
         variant={variant}
         multiline
-        maxRows={4}
+        rows={10}
       />
       <TextField
         {...{ value, onChange }}
         label="Row 10"
         variant={variant}
         multiline
-        rows={10}
       />
     </Container>
   );
@@ -145,19 +145,7 @@ export const Select = (): VNode => {
     <Container>
       <TextField
         {...{ value, onChange }}
-        label="Multiline"
-        variant="standard"
-        select
-      />
-      <TextField
-        {...{ value, onChange }}
-        label="Max row 4"
-        variant="standard"
-        select
-      />
-      <TextField
-        {...{ value, onChange }}
-        label="Row 10"
+        label="select"
         variant="standard"
         select
       />
