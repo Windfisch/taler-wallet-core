@@ -214,6 +214,8 @@ const builtinAuditors: AuditorTrustRecord[] = [
   },
 ];
 
+const builtinExchanges: string[] = ["https://exchange.demo.taler.net/"];
+
 const logger = new Logger("wallet.ts");
 
 async function getWithdrawalDetailsForAmount(
@@ -452,6 +454,9 @@ async function fillDefaults(ws: InternalWalletState): Promise<void> {
       if (!applied) {
         for (const c of builtinAuditors) {
           await tx.auditorTrustStore.put(c);
+        }
+        for (const url of builtinExchanges) {
+          await updateExchangeFromUrl(ws, url, { forceNow: true });
         }
       }
     });
