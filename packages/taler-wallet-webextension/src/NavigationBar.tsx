@@ -85,8 +85,8 @@ export const Pages = {
   balanceHistory: pageDefinition<{ currency?: string }>(
     "/balance/history/:currency?",
   ),
-  balanceManualWithdraw: pageDefinition<{ currency?: string }>(
-    "/balance/manual-withdraw/:currency?",
+  balanceManualWithdraw: pageDefinition<{ amount?: string }>(
+    "/balance/manual-withdraw/:amount?",
   ),
   balanceDeposit: pageDefinition<{ currency: string }>(
     "/balance/deposit/:currency",
@@ -94,12 +94,8 @@ export const Pages = {
   balanceTransaction: pageDefinition<{ tid: string }>(
     "/balance/transaction/:tid",
   ),
-  sendCash: pageDefinition<{ currency?: string }>(
-    "/destination/send/:currency?",
-  ),
-  receiveCash: pageDefinition<{ currency?: string }>(
-    "/destination/get/:currency?",
-  ),
+  sendCash: pageDefinition<{ amount?: string }>("/destination/send/:amount"),
+  receiveCash: pageDefinition<{ amount?: string }>("/destination/get/:amount?"),
   dev: "/dev",
 
   backup: "/backup",

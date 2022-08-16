@@ -57,6 +57,7 @@ import {
   DestinationSelectionGetCash,
   DestinationSelectionSendCash,
 } from "./DestinationSelection.js";
+import { Amounts } from "@gnu-taler/taler-util";
 
 export function Application(): VNode {
   const [globalNotification, setGlobalNotification] = useState<
@@ -130,10 +131,14 @@ export function Application(): VNode {
                 path={Pages.balanceHistory.pattern}
                 component={HistoryPage}
                 goToWalletDeposit={(currency: string) =>
-                  redirectTo(Pages.sendCash({ currency }))
+                  redirectTo(Pages.sendCash({ amount: `${currency}:0` }))
                 }
                 goToWalletManualWithdraw={(currency?: string) =>
-                  redirectTo(Pages.receiveCash({ currency }))
+                  redirectTo(
+                    Pages.receiveCash({
+                      amount: !currency ? undefined : `${currency}:0`,
+                    }),
+                  )
                 }
               />
               <Route
@@ -143,6 +148,9 @@ export function Application(): VNode {
               <Route
                 path={Pages.receiveCash.pattern}
                 component={DestinationSelectionGetCash}
+                goToWalletManualWithdraw={(amount?: string) =>
+                  redirectTo(Pages.balanceManualWithdraw({ amount }))
+                }
               />
               <Route
                 path={Pages.balanceTransaction.pattern}
@@ -226,8 +234,8 @@ export function Application(): VNode {
               <Route
                 path={Pages.ctaPay}
                 component={PaymentPage}
-                goToWalletManualWithdraw={(currency?: string) =>
-                  redirectTo(Pages.balanceManualWithdraw({ currency }))
+                goToWalletManualWithdraw={(amount?: string) =>
+                  redirectTo(Pages.balanceManualWithdraw({ amount }))
                 }
                 cancel={() => redirectTo(Pages.balance)}
               />

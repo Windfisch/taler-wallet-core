@@ -75,7 +75,7 @@ export function Application(): VNode {
                   path={Pages.balance}
                   component={BalancePage}
                   goToWalletManualWithdraw={() =>
-                    redirectTo(Pages.balanceManualWithdraw({}))
+                    redirectTo(Pages.receiveCash({}))
                   }
                   goToWalletDeposit={(currency: string) =>
                     redirectTo(Pages.balanceDeposit({ currency }))
@@ -131,6 +131,10 @@ export function Application(): VNode {
                 />
                 <Route
                   path={Pages.backupProviderAdd}
+                  component={RedirectToWalletPage}
+                />
+                <Route
+                  path={Pages.receiveCash.pattern}
                   component={RedirectToWalletPage}
                 />
                 <Route path={Pages.qr} component={RedirectToWalletPage} />

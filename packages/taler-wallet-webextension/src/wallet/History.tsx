@@ -210,7 +210,7 @@ export function HistoryView({
               // style={{ marginLeft: 0, marginTop: 8 }}
               onClick={() => goToWalletManualWithdraw(selectedCurrency)}
             >
-              <i18n.Translate>Get</i18n.Translate>
+              <i18n.Translate>Add</i18n.Translate>
             </Button>
             {currencyAmount && Amounts.isNonZero(currencyAmount) && (
               <Button

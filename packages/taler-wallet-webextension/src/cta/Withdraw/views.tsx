@@ -129,7 +129,6 @@ export function SuccessView(state: State.Success): VNode {
                 title="Edit"
                 dangerouslySetInnerHTML={{ __html: editIcon }}
                 color="black"
-                onClick={() => console.log("ok")}
               />
             </div>
           }

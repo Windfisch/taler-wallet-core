@@ -63,7 +63,6 @@ function notifyWhenAppIsReady(callback: () => void): void {
 
 function redirectTabToWalletPage(tabId: number, page: string): void {
   const url = chrome.runtime.getURL(`/static/wallet.html#${page}`);
-  console.log("redirecting tabId: ", tabId, " to: ", url);
   chrome.tabs.update(tabId, { url, loadReplace: true } as any);
 }
 

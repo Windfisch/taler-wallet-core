@@ -33,6 +33,10 @@ export default {
 const Stack = styled.div`
   display: flex;
   flex-direction: column;
+  & > button {
+    margin: 14px;
+  }
+  background-color: white;
 `;
 
 export const BasicExample = (): VNode => (

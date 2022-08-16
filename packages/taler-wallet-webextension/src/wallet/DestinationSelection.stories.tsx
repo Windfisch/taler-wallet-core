@@ -30,8 +30,8 @@ export default {
 };
 
 export const GetCash = createExample(DestinationSelectionGetCash, {
-  currency: "usd",
+  amount: "usd:0",
 });
 export const SendCash = createExample(DestinationSelectionSendCash, {
-  currency: "eur",
+  amount: "eur:1",
 });

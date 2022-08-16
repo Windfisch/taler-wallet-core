@@ -53,6 +53,8 @@ export function InputBaseRoot({
   multiline,
   focused,
   fullWidth,
+  startAdornment,
+  endAdornment,
   children,
 }: any): VNode {
   const fcs = useFormControl({});
@@ -61,6 +63,8 @@ export function InputBaseRoot({
       data-disabled={disabled}
       data-focused={focused}
       data-multiline={multiline}
+      data-hasStart={!!startAdornment}
+      data-hasEnd={!!endAdornment}
       data-error={error}
       class={[
         _class,
@@ -156,22 +160,28 @@ export function InputBaseComponent({
   multiline,
   type,
   class: _class,
+  startAdornment,
+  endAdornment,
   ...props
 }: any): VNode {
   return (
-    <input
-      disabled={disabled}
-      type={type}
-      class={[
-        componentStyle,
-        _class,
-        disabled && componentDisabledStyle,
-        size === "small" && componentSmallStyle,
-        // multiline && componentMultilineStyle,
-        type === "search" && searchStyle,
-      ].join(" ")}
-      {...props}
-    />
+    <Fragment>
+      {startAdornment}
+      <input
+        disabled={disabled}
+        type={type}
+        class={[
+          componentStyle,
+          _class,
+          disabled && componentDisabledStyle,
+          size === "small" && componentSmallStyle,
+          // multiline && componentMultilineStyle,
+          type === "search" && searchStyle,
+        ].join(" ")}
+        {...props}
+      />
+      {endAdornment}
+    </Fragment>
   );
 }
 
@@ -388,7 +398,6 @@ export function TextareaAutoSize({
       getStyleValue(computedStyle, "border-bottom-width") +
       getStyleValue(computedStyle, "border-top-width");
 
-    // console.log(boxSizing, padding, border);
     // The height of the inner content
     const innerHeight = inputShallow.scrollHeight;
 
@@ -412,7 +421,6 @@ export function TextareaAutoSize({
       outerHeight + (boxSizing === "border-box" ? padding + border : 0);
     const overflow = Math.abs(outerHeight - innerHeight) <= 1;
 
-    console.log("height", outerHeight, minRows, maxRows);
     setState((prevState) => {
       // Need a large enough difference to update the height.
       // This prevents infinite rendering loop.

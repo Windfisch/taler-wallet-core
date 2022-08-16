@@ -393,7 +393,9 @@ function ButtonsSection({
           <Button
             variant="contained"
             color="success"
-            onClick={() => goToWalletManualWithdraw(state.amount.currency)}
+            onClick={() =>
+              goToWalletManualWithdraw(Amounts.stringify(state.amount))
+            }
           >
             <i18n.Translate>Get digital cash</i18n.Translate>
           </Button>

@@ -33,11 +33,11 @@ import { CreateManualWithdraw } from "./CreateManualWithdraw.js";
 import { ReserveCreated } from "./ReserveCreated.js";
 
 interface Props {
-  currency?: string;
+  amount?: string;
   onCancel: () => Promise<void>;
 }
 
-export function ManualWithdrawPage({ currency, onCancel }: Props): VNode {
+export function ManualWithdrawPage({ amount, onCancel }: Props): VNode {
   const [success, setSuccess] = useState<
     | {
         response: AcceptManualWithdrawalResult;
@@ -117,12 +117,18 @@ export function ManualWithdrawPage({ currency, onCancel }: Props): VNode {
     {} as Record<string, string>,
   );
 
+  const parsedAmount = !amount ? undefined : Amounts.parse(amount);
+  const currency = parsedAmount?.currency;
+  const amountValue = !parsedAmount
+    ? undefined
+    : Amounts.stringifyValue(parsedAmount);
   return (
     <CreateManualWithdraw
       error={error}
       exchangeUrlWithCurrency={exchangeList}
       onCreate={doCreate}
       initialCurrency={currency}
+      initialAmount={amountValue}
     />
   );
 }

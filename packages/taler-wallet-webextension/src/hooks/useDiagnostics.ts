@@ -34,11 +34,9 @@ export function useDiagnostics(): [WalletDiagnostics | undefined, boolean] {
     }, 1000);
     const doFetch = async (): Promise<void> => {
       const d = await wxApi.getDiagnostics();
-      console.log("got diagnostics", d);
       gotDiagnostics = true;
       setDiagnostics(d);
     };
-    console.log("fetching diagnostics");
     doFetch();
   }, []);
   return [diagnostics, timedOut];

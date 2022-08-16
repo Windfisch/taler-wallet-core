@@ -842,10 +842,12 @@ interface SvgIconProps {
   title: string;
   color: string;
   onClick?: any;
+  transform?: string;
 }
 export const SvgIcon = styled.div<SvgIconProps>`
   & > svg {
     fill: ${({ color }) => color};
+    transform: ${({ transform }) => (transform ? transform : "")};
   }
   width: 24px;
   height: 24px;

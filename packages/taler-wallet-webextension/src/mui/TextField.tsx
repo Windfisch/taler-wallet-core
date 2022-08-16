@@ -43,6 +43,9 @@ export interface Props {
   placeholder?: string;
   required?: boolean;
 
+  startAdornment?: VNode;
+  endAdornment?: VNode;
+
   //FIXME: change to "grabFocus"
   // focused?: boolean;
   rows?: number;
@@ -75,7 +78,6 @@ export function TextField({
 }: Props): VNode {
   // htmlFor={id} id={inputLabelId}
   const Input = select ? selectVariant[variant] : inputVariant[variant];
-  // console.log("variant", Input);
   return (
     <FormControl {...props}>
       {label && <InputLabel>{label}</InputLabel>}

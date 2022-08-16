@@ -27,7 +27,6 @@ export interface Props {
   defaultValue?: string;
   disabled?: boolean;
   disableUnderline?: boolean;
-  endAdornment?: VNode;
   error?: boolean;
   fullWidth?: boolean;
   id?: string;
@@ -42,6 +41,7 @@ export interface Props {
   required?: boolean;
   rows?: number;
   startAdornment?: VNode;
+  endAdornment?: VNode;
   type?: string;
   value?: string;
 }
@@ -108,6 +108,9 @@ const filledRootStyle = css`
   &[data-multiline] {
     padding: 25px 12px 8px;
   }
+  /* &[data-hasStart] {
+    padding-left: 25px;
+  } */
 `;
 
 const underlineStyle = css`

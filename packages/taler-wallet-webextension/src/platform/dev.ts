@@ -40,7 +40,6 @@ const api: PlatformAPI = {
     function waitAndNotify(): void {
       total--;
       if (total < 1) {
-        console.log("done");
         fn();
       }
     }

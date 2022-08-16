@@ -172,7 +172,7 @@ export function BalanceView(state: State.Balances): VNode {
           variant="contained"
           onClick={state.goToWalletManualWithdraw.onClick}
         >
-          <i18n.Translate>Get</i18n.Translate>
+          <i18n.Translate>Add</i18n.Translate>
         </Button>
         {currencyWithNonZeroAmount.length > 0 && (
           <MultiActionButton
