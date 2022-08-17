@@ -103,6 +103,7 @@ export function QrReaderPage({ onDetected }: Props): VNode {
         Read QR from file
       </InputFile>
       <div ref={imageRef} /> */}
+      <h1>Scan a QR code or enter taler:// URI below</h1>
       <QrVideo ref={videoRef} />
       <TextField
         label="Taler URI"

@@ -55,6 +55,19 @@ export const IBAN = createExample(TestedComponent, {
   exchangeBaseUrl: "https://exchange.demo.taler.net",
 });
 
+export const WithReceiverName = createExample(TestedComponent, {
+  reservePub: "A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG",
+  paytoURI: parsePaytoUri(
+    "payto://iban/ES8877998399652238?amount=COL%3A1&message=Taler+Withdrawal+A05AJGMFNSK4Q62NXR2FKNDB1J4EXTYQTE7VA4M9GZQ4TR06YBNG&receiver=Sebastian",
+  ),
+  amount: {
+    currency: "USD",
+    value: 10,
+    fraction: 0,
+  },
+  exchangeBaseUrl: "https://exchange.demo.taler.net",
+});
+
 export const Bitcoin = createExample(TestedComponent, {
   reservePub: "0ZSX8SH0M30KHX8K3Y1DAMVGDQV82XEF9DG1HC4QMQ3QWYT4AF00",
   paytoURI: parsePaytoUri(

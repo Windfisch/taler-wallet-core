@@ -96,6 +96,8 @@ const term = 1000 * 60 * 60 * 24;
 function normalizeToDay(x: number): number {
   return Math.round(x / term) * term;
 }
+import DownloadIcon from "../svg/download_24px.svg";
+import UploadIcon from "../svg/upload_24px.svg";
 
 export function HistoryView({
   defaultCurrency,
@@ -206,17 +208,19 @@ export function HistoryView({
           </div>
           <div>
             <Button
+              tooltip="Transfer money to the wallet"
+              startIcon={DownloadIcon}
               variant="contained"
-              // style={{ marginLeft: 0, marginTop: 8 }}
               onClick={() => goToWalletManualWithdraw(selectedCurrency)}
             >
               <i18n.Translate>Add</i18n.Translate>
             </Button>
             {currencyAmount && Amounts.isNonZero(currencyAmount) && (
               <Button
+                tooltip="Transfer money from the wallet"
+                startIcon={UploadIcon}
                 variant="outlined"
                 color="primary"
-                // style={{ marginLeft: 0, marginTop: 8 }}
                 onClick={() => goToWalletDeposit(selectedCurrency)}
               >
                 <i18n.Translate>Send</i18n.Translate>

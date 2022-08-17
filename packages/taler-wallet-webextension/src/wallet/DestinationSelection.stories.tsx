@@ -23,6 +23,7 @@ import { createExample } from "../test-utils.js";
 import {
   DestinationSelectionGetCash,
   DestinationSelectionSendCash,
+  SelectCurrencyView,
 } from "./DestinationSelection.js";
 
 export default {
@@ -34,4 +35,10 @@ export const GetCash = createExample(DestinationSelectionGetCash, {
 });
 export const SendCash = createExample(DestinationSelectionSendCash, {
   amount: "eur:1",
+});
+export const SelectCurrency = createExample(SelectCurrencyView, {
+  list: {
+    "": "Select a currency",
+    USD: "USD",
+  },
 });

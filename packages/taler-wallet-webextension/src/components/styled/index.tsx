@@ -319,6 +319,19 @@ export const TooltipRight = styled(Tooltip)`
   }
 `;
 
+export const TooltipLeft = styled(Tooltip)`
+  ::before {
+    top: 0px;
+    right: 16px;
+    transform: rotate(90deg);
+  }
+  ::after {
+    top: -50%;
+    right: 28px;
+    margin-top: 6px;
+  }
+`;
+
 export const Overlay = styled.div`
   position: fixed;
   width: 100%;

@@ -21,11 +21,11 @@ import {
   segwitMinAmount,
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { useTranslationContext } from "../context/translation.js";
 import { CopiedIcon, CopyIcon } from "../svg/index.js";
 import { Amount } from "./Amount.js";
-import { ButtonBox, TooltipRight } from "./styled/index.js";
+import { ButtonBox, TooltipLeft, TooltipRight } from "./styled/index.js";
 
 export interface BankDetailsProps {
   payto: PaytoUri | undefined;
@@ -62,11 +62,6 @@ export function BankDetailsByPaytoType({
             metadata with an minimum amount.
           </i18n.Translate>
         </p>
-        <Row
-          literal
-          name={<i18n.Translate>Reserve</i18n.Translate>}
-          value={subject}
-        />
 
         <p>
           <i18n.Translate>
@@ -80,12 +75,26 @@ export function BankDetailsByPaytoType({
             <td>
               <Amount value={amount} hideCurrency /> BTC
             </td>
+            <td>
+              <CopyButton
+                getContent={() =>
+                  `${payto.targetPath} ${Amounts.stringifyValue(amount)} BTC`
+                }
+              />
+            </td>
           </tr>
           {payto.segwitAddrs.map((addr, i) => (
             <tr key={i}>
               <td>{addr}</td>
               <td>
                 <Amount value={min} hideCurrency /> BTC
+              </td>
+              <td>
+                <CopyButton
+                  getContent={() =>
+                    `${addr} ${Amounts.stringifyValue(min)} BTC`
+                  }
+                />
               </td>
             </tr>
           ))}
@@ -120,6 +129,8 @@ export function BankDetailsByPaytoType({
   ) : payto.targetType === "iban" ? (
     <Row name={<i18n.Translate>IBAN</i18n.Translate>} value={payto.iban} />
   ) : undefined;
+
+  const receiver = payto.params["receiver"] || undefined;
   return (
     <div
       style={{
@@ -133,11 +144,7 @@ export function BankDetailsByPaytoType({
       <table>
         {accountPart}
         <Row
-          name={<i18n.Translate>Exchange</i18n.Translate>}
-          value={exchangeBaseUrl}
-        />
-        <Row
-          name={<i18n.Translate>Chosen amount</i18n.Translate>}
+          name={<i18n.Translate>Amount</i18n.Translate>}
           value={<Amount value={amount} />}
         />
         <Row
@@ -145,8 +152,44 @@ export function BankDetailsByPaytoType({
           value={subject}
           literal
         />
+        {receiver ? (
+          <Row
+            name={<i18n.Translate>Receiver name</i18n.Translate>}
+            value={receiver}
+          />
+        ) : undefined}
       </table>
     </div>
+  );
+}
+
+function CopyButton({ getContent }: { getContent: () => string }): VNode {
+  const [copied, setCopied] = useState(false);
+  function copyText(): void {
+    navigator.clipboard.writeText(getContent() || "");
+    setCopied(true);
+  }
+  useEffect(() => {
+    if (copied) {
+      setTimeout(() => {
+        setCopied(false);
+      }, 1000);
+    }
+  }, [copied]);
+
+  if (!copied) {
+    return (
+      <ButtonBox onClick={copyText}>
+        <CopyIcon />
+      </ButtonBox>
+    );
+  }
+  return (
+    <TooltipLeft content="Copied">
+      <ButtonBox disabled>
+        <CopiedIcon />
+      </ButtonBox>
+    </TooltipLeft>
   );
 }
 
@@ -159,38 +202,15 @@ function Row({
   value: string | VNode;
   literal?: boolean;
 }): VNode {
-  const [copied, setCopied] = useState(false);
   const preRef = useRef<HTMLPreElement>(null);
   const tdRef = useRef<HTMLTableCellElement>(null);
-  function copyText(): void {
-    const content = literal
-      ? preRef.current?.textContent
-      : tdRef.current?.textContent;
-    navigator.clipboard.writeText(content || "");
-    setCopied(true);
+
+  function getContent(): string {
+    return preRef.current?.textContent || tdRef.current?.textContent || "";
   }
-  useEffect(() => {
-    if (copied) {
-      setTimeout(() => {
-        setCopied(false);
-      }, 1000);
-    }
-  }, [copied, preRef]);
+
   return (
     <tr>
-      <td>
-        {!copied ? (
-          <ButtonBox onClick={copyText}>
-            <CopyIcon />
-          </ButtonBox>
-        ) : (
-          <TooltipRight content="Copied">
-            <ButtonBox disabled>
-              <CopiedIcon />
-            </ButtonBox>
-          </TooltipRight>
-        )}
-      </td>
       <td style={{ paddingRight: 8 }}>
         <b>{name}</b>
       </td>
@@ -206,6 +226,9 @@ function Row({
       ) : (
         <td ref={tdRef}>{value}</td>
       )}
+      <td>
+        <CopyButton getContent={getContent} />
+      </td>
     </tr>
   );
 }

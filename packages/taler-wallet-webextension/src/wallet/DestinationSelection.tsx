@@ -186,24 +186,37 @@ export function SelectCurrency({
   const list: Record<string, string> = {};
   hook.response.exchanges.forEach((e) => (list[e.currency] = e.currency));
   list[""] = "Select a currency";
+  return <SelectCurrencyView onChange={onChange} list={list} />;
+}
+
+export function SelectCurrencyView({
+  onChange,
+  list,
+}: {
+  onChange: (s: string) => void;
+  list: Record<string, string>;
+}): VNode {
+  const { i18n } = useTranslationContext();
+
   return (
     <Fragment>
-      <h1>
-        <i18n.Translate>Specify the amount and the origin</i18n.Translate>
-      </h1>
+      <h2>
+        <i18n.Translate>
+          Choose a currency to proceed or add another exchange
+        </i18n.Translate>
+      </h2>
 
-      <Alert severity="warning">
-        Choose a currency to proceed or add more exchanges in the settings tab
-      </Alert>
-      <Input>
-        <SelectList
-          label={<i18n.Translate>Known currencies</i18n.Translate>}
-          list={list}
-          name="lang"
-          value={""}
-          onChange={(v) => onChange(v)}
-        />
-      </Input>
+      <p>
+        <Input>
+          <SelectList
+            label={<i18n.Translate>Known currencies</i18n.Translate>}
+            list={list}
+            name="lang"
+            value={""}
+            onChange={(v) => onChange(v)}
+          />
+        </Input>
+      </p>
       <div style={{ display: "flex", justifyContent: "space-between" }}>
         <div />
         <LinkPrimary href={Pages.settingsExchangeAdd({})}>
@@ -320,7 +333,7 @@ export function DestinationSelectionGetCash({
       <Grid container spacing={1} columns={1}>
         {previous2.length > 0 ? (
           <Fragment>
-            <p>Previous origins:</p>
+            <p>Use previous origins:</p>
             <Grid item xs={1}>
               <Paper style={{ padding: 8 }}>
                 <ContactTable>
@@ -337,9 +350,9 @@ export function DestinationSelectionGetCash({
           </Fragment>
         ) : undefined}
         <Grid item>
-          <p>Create new origin for the money</p>
+          <p>Or specify a new origin for the money</p>
         </Grid>
-        <Grid item container columns={3} spacing={1}>
+        <Grid item container columns={2} spacing={1}>
           <Grid item xs={1}>
             <Paper style={{ padding: 8 }}>
               <p>From my bank account</p>
@@ -355,22 +368,10 @@ export function DestinationSelectionGetCash({
           </Grid>
           <Grid item xs={1}>
             <Paper style={{ padding: 8 }}>
-              <p>From someone else</p>
-              <Button disabled>Request</Button>
-            </Paper>
-          </Grid>
-          <Grid item xs={1}>
-            <Paper style={{ padding: 8 }}>
-              <p>From a business or charity</p>
+              <p>From another wallet</p>
               <Button disabled>Invoice</Button>
             </Paper>
           </Grid>
-        </Grid>
-        <Grid item columns={1} spacing={1} xs={1}>
-          <Paper style={{ padding: 8 }}>
-            <p>From a exchange reserve or purse</p>
-            <Button disabled>Create</Button>
-          </Paper>
         </Grid>
       </Grid>
     </Container>
@@ -441,7 +442,7 @@ export function DestinationSelectionSendCash({
       <Grid container spacing={1} columns={1}>
         {previous2.length > 0 ? (
           <Fragment>
-            <p>Previous destinations:</p>
+            <p>Use previous destinations:</p>
             <Grid item xs={1}>
               <Paper style={{ padding: 8 }}>
                 <ContactTable>
@@ -458,9 +459,9 @@ export function DestinationSelectionSendCash({
           </Fragment>
         ) : undefined}
         <Grid item>
-          <p>Create a destination for the money</p>
+          <p>Or specify a new destination for the money</p>
         </Grid>
-        <Grid item container columns={3} spacing={1}>
+        <Grid item container columns={2} spacing={1}>
           <Grid item xs={1}>
             <Paper style={{ padding: 8 }}>
               <p>To my bank account</p>
@@ -469,22 +470,10 @@ export function DestinationSelectionSendCash({
           </Grid>
           <Grid item xs={1}>
             <Paper style={{ padding: 8 }}>
-              <p>To someone else</p>
+              <p>To another wallet</p>
               <Button disabled>Send</Button>
             </Paper>
           </Grid>
-          <Grid item xs={1}>
-            <Paper style={{ padding: 8 }}>
-              <p>To a business or charity</p>
-              <Button disabled>Pay</Button>
-            </Paper>
-          </Grid>
-        </Grid>
-        <Grid item columns={1} spacing={1} xs={1}>
-          <Paper style={{ padding: 8 }}>
-            <p>To an exchange reserve or purse</p>
-            <Button disabled>Create</Button>
-          </Paper>
         </Grid>
       </Grid>
     </Container>

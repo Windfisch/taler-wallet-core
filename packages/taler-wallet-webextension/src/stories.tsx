@@ -49,9 +49,6 @@ setupI18n(lang, strings);
 
 const Page = styled.div`
   * {
-    margin: 0px;
-    padding: 0px;
-    font-size: 100%;
     font-family: Arial, Helvetica, sans-serif;
   }
   p:not([class]) {
@@ -69,6 +66,12 @@ const SideBar = styled.div`
   overflow-y: visible;
   overflow-x: hidden;
   scroll-behavior: smooth;
+
+  * {
+    margin: 0px;
+    padding: 0px;
+  }
+
   & > {
     ol {
       padding: 4px;

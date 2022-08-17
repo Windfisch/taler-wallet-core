@@ -51,6 +51,7 @@ interface Props {
   size?: "small" | "medium" | "large";
   startIcon?: VNode | string;
   variant?: "contained" | "outlined" | "text";
+  tooltip?: string;
   color?: Colors;
   onClick?: () => Promise<void>;
 }
@@ -213,6 +214,7 @@ export function Button({
   startIcon: sip,
   endIcon: eip,
   fullWidth,
+  tooltip,
   variant = "text",
   size = "medium",
   style: parentStyle,
@@ -305,6 +307,7 @@ export function Button({
           ? theme.palette.grey.A100
           : theme.palette[color].dark,
       }}
+      title={tooltip}
     >
       {startIcon}
       {children}

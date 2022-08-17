@@ -21,22 +21,21 @@ import { ButtonHandler } from "../mui/handlers.js";
 import { Paper } from "../mui/Paper.js";
 import { Typography } from "../mui/Typography.js";
 
+const margin = css`
+  margin: 1em;
+`;
+
 export function NoBalanceHelp({
   goToWalletManualWithdraw,
 }: {
   goToWalletManualWithdraw: ButtonHandler;
 }): VNode {
   return (
-    <Paper
-      class={css`
-        margin: 1em;
-      `}
-    >
-      <Alert title="You have no balance." severity="warning">
-        <Typography>Withdraw some funds into your wallet.</Typography>
+    <Paper class={margin}>
+      <Alert title="Your wallet is empty." severity="info">
         <Button
           fullWidth
-          color="warning"
+          color="info"
           variant="outlined"
           onClick={goToWalletManualWithdraw.onClick}
         >
