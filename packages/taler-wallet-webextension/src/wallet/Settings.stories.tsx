@@ -57,7 +57,7 @@ export const WithOneExchange = createExample(TestedComponent, {
         contentType: "text/plain",
       },
       paytoUris: ["payto://x-taler-bank/bank.rpi.sebasjm.com/exchangeminator"],
-    },
+    } as any, //TODO: complete with auditors, wireInfo and denominations
   ],
 });
 
@@ -87,7 +87,7 @@ export const WithExchangeInDifferentState = createExample(TestedComponent, {
         contentType: "text/plain",
       },
       paytoUris: ["payto://x-taler-bank/bank.rpi.sebasjm.com/exchangeminator"],
-    },
+    } as any, //TODO: complete with auditors, wireInfo and denominations
     {
       currency: "USD",
       exchangeBaseUrl: "http://exchange3.taler",

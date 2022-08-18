@@ -37,6 +37,18 @@ const exchanges: ExchangeListItem[] = [
     tos: {
       acceptedVersion: "",
     },
+    auditors: [
+      {
+        auditor_pub: "pubpubpubpubpub",
+        auditor_url: "https://audotor.taler.net",
+        denomination_keys: [],
+      },
+    ],
+    denominations: [{} as any],
+    wireInfo: {
+      accounts: [],
+      feesForType: {},
+    },
   },
 ];
 

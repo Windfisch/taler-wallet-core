@@ -98,6 +98,7 @@ export const Pages = {
   receiveCash: pageDefinition<{ amount?: string }>("/destination/get/:amount?"),
   dev: "/dev",
 
+  exchanges: "/exchanges",
   backup: "/backup",
   backupProviderDetail: pageDefinition<{ pid: string }>(
     "/backup/provider/:pid",
