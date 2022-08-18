@@ -22,6 +22,7 @@ import { setupI18n } from "@gnu-taler/taler-util";
 import { styled } from "@linaria/react";
 import {
   ComponentChild,
+  ComponentChildren,
   Fragment,
   FunctionComponent,
   h,
@@ -242,33 +243,63 @@ function ExampleList({
   );
 }
 
+/**
+ * Prevents the UI from redirecting and inform the dev
+ * where the <a /> should have redirected
+ * @returns
+ */
+function PreventLinkNavigation({
+  children,
+}: {
+  children: ComponentChildren;
+}): VNode {
+  return (
+    <div
+      onClick={(e) => {
+        let t: any = e.target;
+        do {
+          if (t.localName === "a" && t.getAttribute("href")) {
+            alert(`should navigate to: ${t.attributes.href.value}`);
+            e.stopImmediatePropagation();
+            e.stopPropagation();
+            e.preventDefault();
+            return false;
+          }
+        } while ((t = t.parentNode));
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 function getWrapperForGroup(group: string): FunctionComponent {
   switch (group) {
     case "popup":
       return function PopupWrapper({ children }: any) {
         return (
-          <Fragment>
+          <PreventLinkNavigation>
             <PopupNavBar />
             <PopupBox>{children}</PopupBox>
-          </Fragment>
+          </PreventLinkNavigation>
         );
       };
     case "wallet":
       return function WalletWrapper({ children }: any) {
         return (
-          <Fragment>
+          <PreventLinkNavigation>
             <LogoHeader />
             <WalletNavBar />
             <WalletBox>{children}</WalletBox>
-          </Fragment>
+          </PreventLinkNavigation>
         );
       };
     case "cta":
       return function WalletWrapper({ children }: any) {
         return (
-          <Fragment>
+          <PreventLinkNavigation>
             <WalletBox>{children}</WalletBox>
-          </Fragment>
+          </PreventLinkNavigation>
         );
       };
     default:
