@@ -39,6 +39,33 @@ const Stack = styled.div`
   background-color: white;
 `;
 
+export const WithDelay = (): VNode => (
+  <Stack>
+    <Button
+      size="small"
+      variant="contained"
+      onClick={() =>
+        new Promise((resolve) => {
+          setTimeout(resolve, 2000);
+        })
+      }
+    >
+      Returns after 2 seconds
+    </Button>
+    <Button
+      size="small"
+      variant="contained"
+      onClick={() =>
+        new Promise((_, reject) => {
+          setTimeout(reject, 2000);
+        })
+      }
+    >
+      Fails after 2 seconds
+    </Button>
+  </Stack>
+);
+
 export const BasicExample = (): VNode => (
   <Fragment>
     <Stack>

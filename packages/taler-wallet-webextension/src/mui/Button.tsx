@@ -19,6 +19,7 @@ import { css } from "@linaria/core";
 import { theme, Colors, rippleEnabled, rippleEnabledOutlined } from "./style";
 // eslint-disable-next-line import/extensions
 import { alpha } from "./colors/manipulation";
+import { useState } from "preact/hooks";
 
 export const buttonBaseStyle = css`
   display: inline-flex;
@@ -219,7 +220,7 @@ export function Button({
   size = "medium",
   style: parentStyle,
   color = "primary",
-  onClick,
+  onClick: doClick,
 }: Props): VNode {
   const style = css`
     user-select: none;
@@ -275,9 +276,21 @@ export function Button({
       }}
     />
   );
+  const [running, setRunning] = useState(false);
+
+  async function onClick(): Promise<void> {
+    if (!doClick || disabled || running) return;
+    setRunning(true);
+    try {
+      await doClick();
+    } finally {
+      setRunning(false);
+    }
+  }
+
   return (
     <ButtonBase
-      disabled={disabled}
+      disabled={disabled || running}
       class={[
         theme.typography.button,
         theme.shape.roundBorder,
