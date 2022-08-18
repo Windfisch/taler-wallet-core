@@ -44,6 +44,9 @@ import {
   TalerProtocolDuration,
   TalerProtocolTimestamp,
   URL,
+  WireFee,
+  WireFeeMap,
+  WireInfo,
 } from "@gnu-taler/taler-util";
 import {
   DenominationRecord,
@@ -51,8 +54,6 @@ import {
   ExchangeDetailsRecord,
   ExchangeRecord,
   WalletStoresV1,
-  WireFee,
-  WireInfo,
 } from "../db.js";
 import { TalerError } from "../errors.js";
 import { InternalWalletState, TrustInfo } from "../internal-wallet-state.js";
@@ -276,7 +277,7 @@ async function validateWireInfo(
       throw Error("exchange acct signature invalid");
     }
   }
-  const feesForType: { [wireMethod: string]: WireFee[] } = {};
+  const feesForType: WireFeeMap = {};
   for (const wireMethod of Object.keys(wireInfo.fees)) {
     const feeList: WireFee[] = [];
     for (const x of wireInfo.fees[wireMethod]) {

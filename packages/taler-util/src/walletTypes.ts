@@ -44,14 +44,17 @@ import {
   codecForAny,
   buildCodecForUnion,
   codecForNumber,
+  codecForMap,
 } from "./codec.js";
 import {
   AmountString,
+  AuditorDenomSig,
   codecForContractTerms,
   CoinEnvelope,
   ContractTerms,
   DenominationPubKey,
   DenomKeyType,
+  ExchangeAuditor,
   UnblindedSignature,
 } from "./talerTypes.js";
 import { OrderShortInfo, codecForOrderShortInfo } from "./transactionsTypes.js";
@@ -580,12 +583,163 @@ export interface ExchangeTos {
   contentType?: string;
   content?: string;
 }
+
+/**
+ * Wire fee for one wire method
+ */
+export interface WireFee {
+  /**
+   * Fee for wire transfers.
+   */
+  wireFee: AmountJson;
+
+  /**
+   * Fees to close and refund a reserve.
+   */
+  closingFee: AmountJson;
+
+  /**
+   * Fees for inter-exchange transfers from P2P payments.
+   */
+  wadFee: AmountJson;
+
+  /**
+   * Start date of the fee.
+   */
+  startStamp: TalerProtocolTimestamp;
+
+  /**
+   * End date of the fee.
+   */
+  endStamp: TalerProtocolTimestamp;
+
+  /**
+   * Signature made by the exchange master key.
+   */
+  sig: string;
+}
+
+/**
+ * Information about one of the exchange's bank accounts.
+ */
+export interface ExchangeAccount {
+  payto_uri: string;
+  master_sig: string;
+}
+
+export type WireFeeMap = { [wireMethod: string]: WireFee[] }
+export interface WireInfo {
+  feesForType: WireFeeMap;
+  accounts: ExchangeAccount[];
+}
+
+const codecForExchangeAccount = (): Codec<ExchangeAccount> =>
+  buildCodecForObject<ExchangeAccount>()
+    .property("payto_uri", codecForString())
+    .property("master_sig", codecForString())
+    .build("codecForExchangeAccount");
+
+
+const codecForWireFee = (): Codec<WireFee> =>
+  buildCodecForObject<WireFee>()
+    .property("sig", codecForString())
+    .property("wireFee", codecForAmountJson())
+    .property("wadFee", codecForAmountJson())
+    .property("closingFee", codecForAmountJson())
+    .property("startStamp", codecForTimestamp)
+    .property("endStamp", codecForTimestamp)
+    .build("codecForWireFee");
+
+const codecForWireInfo = (): Codec<WireInfo> =>
+  buildCodecForObject<WireInfo>()
+    .property("feesForType", codecForMap(codecForList(codecForWireFee())))
+    .property("accounts", codecForList(codecForExchangeAccount()))
+    .build("codecForWireInfo");
+
+const codecForDenominationInfo = (): Codec<DenominationInfo> =>
+  buildCodecForObject<DenominationInfo>()
+    .property("denomPubHash", (codecForString()))
+    .property("value", (codecForAmountJson()))
+    .property("feeWithdraw", (codecForAmountJson()))
+    .property("feeDeposit", (codecForAmountJson()))
+    .property("feeRefresh", (codecForAmountJson()))
+    .property("feeRefund", (codecForAmountJson()))
+    .property("stampStart", (codecForTimestamp))
+    .property("stampExpireWithdraw", (codecForTimestamp))
+    .property("stampExpireLegal", (codecForTimestamp))
+    .property("stampExpireDeposit", (codecForTimestamp))
+    .build("codecForDenominationInfo");
+
+
+export interface DenominationInfo {
+  value: AmountJson;
+  denomPubHash: string;
+  /**
+   * Fee for withdrawing.
+   */
+  feeWithdraw: AmountJson;
+
+  /**
+   * Fee for depositing.
+   */
+  feeDeposit: AmountJson;
+
+  /**
+   * Fee for refreshing.
+   */
+  feeRefresh: AmountJson;
+
+  /**
+   * Fee for refunding.
+   */
+  feeRefund: AmountJson;
+
+  /**
+   * Validity start date of the denomination.
+   */
+  stampStart: TalerProtocolTimestamp;
+
+  /**
+   * Date after which the currency can't be withdrawn anymore.
+   */
+  stampExpireWithdraw: TalerProtocolTimestamp;
+
+  /**
+   * Date after the denomination officially doesn't exist anymore.
+   */
+  stampExpireLegal: TalerProtocolTimestamp;
+
+  /**
+   * Data after which coins of this denomination can't be deposited anymore.
+   */
+  stampExpireDeposit: TalerProtocolTimestamp;
+
+}
+
 export interface ExchangeListItem {
   exchangeBaseUrl: string;
   currency: string;
   paytoUris: string[];
   tos: ExchangeTos;
+  auditors: ExchangeAuditor[];
+  wireInfo: WireInfo;
+  denominations: DenominationInfo[];
 }
+
+
+const codecForAuditorDenomSig = (): Codec<AuditorDenomSig> =>
+  buildCodecForObject<AuditorDenomSig>()
+    .property("denom_pub_h", codecForString())
+    .property("auditor_sig", codecForString())
+    .build("AuditorDenomSig");
+
+const codecForExchangeAuditor = (): Codec<ExchangeAuditor> =>
+  buildCodecForObject<ExchangeAuditor>()
+    .property("auditor_pub", codecForString())
+    .property("auditor_url", codecForString())
+    .property("denomination_keys", codecForList(codecForAuditorDenomSig()))
+    .build("codecForExchangeAuditor");
+
 
 const codecForExchangeTos = (): Codec<ExchangeTos> =>
   buildCodecForObject<ExchangeTos>()
@@ -601,6 +755,9 @@ export const codecForExchangeListItem = (): Codec<ExchangeListItem> =>
     .property("exchangeBaseUrl", codecForString())
     .property("paytoUris", codecForList(codecForString()))
     .property("tos", codecForExchangeTos())
+    .property("auditors", codecForList(codecForExchangeAuditor()))
+    .property("wireInfo", codecForWireInfo())
+    .property("denominations", codecForList(codecForDenominationInfo()))
     .build("ExchangeListItem");
 
 export const codecForExchangesListResponse = (): Codec<ExchangesListRespose> =>

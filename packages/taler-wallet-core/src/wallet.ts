@@ -553,6 +553,7 @@ async function getExchanges(
     .mktx((x) => ({
       exchanges: x.exchanges,
       exchangeDetails: x.exchangeDetails,
+      denominations: x.denominations,
     }))
     .runReadOnly(async (tx) => {
       const exchangeRecords = await tx.exchanges.iter().toArray();
@@ -567,6 +568,13 @@ async function getExchanges(
           continue;
         }
 
+        const denominations = await tx.denominations.indexes
+          .byExchangeBaseUrl.iter(r.baseUrl).toArray();
+
+        if (!denominations) {
+          continue;
+        }
+
         exchanges.push({
           exchangeBaseUrl: r.baseUrl,
           currency,
@@ -577,6 +585,9 @@ async function getExchanges(
             content: exchangeDetails.termsOfServiceText,
           },
           paytoUris: exchangeDetails.wireInfo.accounts.map((x) => x.payto_uri),
+          auditors: exchangeDetails.auditors,
+          wireInfo: exchangeDetails.wireInfo,
+          denominations: denominations,
         });
       }
     });

@@ -76,11 +76,12 @@ import {
   TalerProtocolTimestamp,
   TalerSignaturePurpose,
   UnblindedSignature,
+  WireFee,
   WithdrawalPlanchet,
 } from "@gnu-taler/taler-util";
 import bigint from "big-integer";
 // FIXME: Crypto should not use DB Types!
-import { DenominationRecord, WireFee } from "../db.js";
+import { DenominationRecord } from "../db.js";
 import {
   CreateRecoupRefreshReqRequest,
   CreateRecoupReqRequest,
@@ -1045,10 +1046,10 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
       };
 
       if (depositInfo.requiredMinimumAge != null) {
-	      s.minimum_age_sig = minimumAgeSig;
-	      s.age_commitment = depositInfo.ageCommitmentProof?.commitment.publicKeys;
+        s.minimum_age_sig = minimumAgeSig;
+        s.age_commitment = depositInfo.ageCommitmentProof?.commitment.publicKeys;
       } else if (depositInfo.ageCommitmentProof) {
-	      (s as any).h_age_commitment = hAgeCommitment;
+        (s as any).h_age_commitment = hAgeCommitment;
       }
 
       return s;

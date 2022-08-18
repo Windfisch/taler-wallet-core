@@ -44,6 +44,7 @@ import {
   PayCoinSelection,
   PeerContractTerms,
   Location,
+  WireInfo,
 } from "@gnu-taler/taler-util";
 import { RetryInfo } from "./util/retries.js";
 import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
@@ -392,11 +393,6 @@ export interface ExchangeDetailsRecord {
   wireInfo: WireInfo;
 }
 
-export interface WireInfo {
-  feesForType: { [wireMethod: string]: WireFee[] };
-
-  accounts: ExchangeBankAccount[];
-}
 
 export interface ExchangeDetailsPointer {
   masterPublicKey: string;
@@ -926,41 +922,6 @@ export interface RefreshSessionRecord {
   norevealIndex?: number;
 }
 
-/**
- * Wire fee for one wire method as stored in the
- * wallet's database.
- */
-export interface WireFee {
-  /**
-   * Fee for wire transfers.
-   */
-  wireFee: AmountJson;
-
-  /**
-   * Fees to close and refund a reserve.
-   */
-  closingFee: AmountJson;
-
-  /**
-   * Fees for inter-exchange transfers from P2P payments.
-   */
-  wadFee: AmountJson;
-
-  /**
-   * Start date of the fee.
-   */
-  startStamp: TalerProtocolTimestamp;
-
-  /**
-   * End date of the fee.
-   */
-  endStamp: TalerProtocolTimestamp;
-
-  /**
-   * Signature made by the exchange master key.
-   */
-  sig: string;
-}
 
 export enum RefundState {
   Failed = "failed",
@@ -1225,9 +1186,9 @@ export const WALLET_BACKUP_STATE_KEY = "walletBackupState";
  */
 export type ConfigRecord =
   | {
-      key: typeof WALLET_BACKUP_STATE_KEY;
-      value: WalletBackupConfState;
-    }
+    key: typeof WALLET_BACKUP_STATE_KEY;
+    value: WalletBackupConfState;
+  }
   | { key: "currencyDefaultsApplied"; value: boolean };
 
 export interface WalletBackupConfState {
@@ -1444,17 +1405,17 @@ export enum BackupProviderStateTag {
 
 export type BackupProviderState =
   | {
-      tag: BackupProviderStateTag.Provisional;
-    }
+    tag: BackupProviderStateTag.Provisional;
+  }
   | {
-      tag: BackupProviderStateTag.Ready;
-      nextBackupTimestamp: TalerProtocolTimestamp;
-    }
+    tag: BackupProviderStateTag.Ready;
+    nextBackupTimestamp: TalerProtocolTimestamp;
+  }
   | {
-      tag: BackupProviderStateTag.Retrying;
-      retryInfo: RetryInfo;
-      lastError?: TalerErrorDetail;
-    };
+    tag: BackupProviderStateTag.Retrying;
+    retryInfo: RetryInfo;
+    lastError?: TalerErrorDetail;
+  };
 
 export interface BackupProviderTerms {
   supportedProtocolVersion: string;

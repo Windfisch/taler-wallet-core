@@ -44,7 +44,7 @@ import {
   TrackDepositGroupResponse,
   URL,
 } from "@gnu-taler/taler-util";
-import { DepositGroupRecord, OperationStatus, WireFee } from "../db.js";
+import { DepositGroupRecord, OperationStatus } from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { selectPayCoins } from "../util/coinSelection.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";

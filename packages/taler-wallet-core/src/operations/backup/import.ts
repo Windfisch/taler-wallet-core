@@ -31,6 +31,7 @@ import {
   RefreshReason,
   TalerProtocolTimestamp,
   WalletBackupContentV1,
+  WireInfo,
 } from "@gnu-taler/taler-util";
 import {
   AbortStatus,
@@ -50,7 +51,6 @@ import {
   WalletContractData,
   WalletRefundItem,
   WalletStoresV1,
-  WireInfo,
 } from "../../db.js";
 import { InternalWalletState } from "../../internal-wallet-state.js";
 import {
@@ -341,7 +341,7 @@ export async function importBackup(
           }
           const denomPubHash =
             cryptoComp.rsaDenomPubToHash[
-              backupDenomination.denom_pub.rsa_public_key
+            backupDenomination.denom_pub.rsa_public_key
             ];
           checkLogicInvariant(!!denomPubHash);
           const existingDenom = await tx.denominations.get([
@@ -427,7 +427,7 @@ export async function importBackup(
         }
 
 
-      // FIXME: import reserves with new schema
+        // FIXME: import reserves with new schema
 
         // for (const backupReserve of backupExchangeDetails.reserves) {
         //   const reservePub =
@@ -560,7 +560,7 @@ export async function importBackup(
             const amount = Amounts.parseOrThrow(parsedContractTerms.amount);
             const contractTermsHash =
               cryptoComp.proposalIdToContractTermsHash[
-                backupProposal.proposal_id
+              backupProposal.proposal_id
               ];
             let maxWireFee: AmountJson;
             if (parsedContractTerms.max_wire_fee) {
@@ -706,7 +706,7 @@ export async function importBackup(
           const amount = Amounts.parseOrThrow(parsedContractTerms.amount);
           const contractTermsHash =
             cryptoComp.proposalIdToContractTermsHash[
-              backupPurchase.proposal_id
+            backupPurchase.proposal_id
             ];
           let maxWireFee: AmountJson;
           if (parsedContractTerms.max_wire_fee) {
