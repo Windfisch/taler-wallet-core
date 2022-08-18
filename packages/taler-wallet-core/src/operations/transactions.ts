@@ -169,7 +169,7 @@ export async function getTransactions(
               type: WithdrawalType.ManualTransfer,
               reservePub: wsr.reservePub,
               exchangePaytoUris:
-                exchangeDetails.wireInfo?.accounts.map((x) => x.payto_uri) ??
+                exchangeDetails.wireInfo?.accounts.map((x) => `${x.payto_uri}?subject=${wsr.reservePub}`) ??
                 [],
             };
           }
