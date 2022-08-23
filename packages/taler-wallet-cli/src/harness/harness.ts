@@ -42,6 +42,8 @@ import {
   TalerProtocolDuration,
 } from "@gnu-taler/taler-util";
 import {
+  BankAccessApi,
+  BankApi,
   BankServiceHandle,
   HarnessExchangeBankAccount,
   NodeHttpLib,
@@ -522,7 +524,13 @@ class LibEuFinBankService extends BankServiceBase implements BankServiceHandle {
     return url.href;
   }
 
+  // FIXME: Duplicate?  Where is this needed?
   get baseUrlAccessApi(): string {
+    let url = new URL("access-api/", this.baseUrlDemobank);
+    return url.href;
+  }
+
+  get bankAccessApiBaseUrl(): string {
     let url = new URL("access-api/", this.baseUrlDemobank);
     return url.href;
   }
@@ -796,10 +804,19 @@ class FakebankService extends BankServiceBase implements BankServiceHandle {
     return `http://localhost:${this.bankConfig.httpPort}/`;
   }
 
+  get bankAccessApiBaseUrl(): string {
+    let url = new URL("taler-bank-access/", this.baseUrl);
+    return url.href;
+  }
+
   async createExchangeAccount(
     accountName: string,
     password: string,
   ): Promise<HarnessExchangeBankAccount> {
+    // FIXME: Is there a better place to do this initialization?
+    await this.start();
+    await this.pingUntilAvailable();
+    await BankApi.registerAccount(this, accountName, password);
     return {
       accountName: accountName,
       accountPassword: password,
@@ -813,6 +830,10 @@ class FakebankService extends BankServiceBase implements BankServiceHandle {
   }
 
   async start(): Promise<void> {
+    if (this.proc) {
+      console.log("fakebank already running, not starting again");
+      return;
+    }
     this.proc = this.globalTestState.spawnService(
       "taler-fakebank-run",
       ["-c", this.configFile],
@@ -821,13 +842,13 @@ class FakebankService extends BankServiceBase implements BankServiceHandle {
   }
 
   async pingUntilAvailable(): Promise<void> {
-    const url = `http://localhost:${this.bankConfig.httpPort}/config`;
+    const url = `http://localhost:${this.bankConfig.httpPort}/taler-bank-integration/config`;
     await pingProc(this.proc, url, "bank");
   }
 }
 
 // Use libeufin bank instead of pybank.
-const useLibeufinBank = true;
+const useLibeufinBank = false;
 
 /**
  * Return a euFin or a pyBank implementation of
@@ -2032,7 +2053,7 @@ export function getPayto(label: string): string {
     return `payto://iban/SANDBOXX/${getRandomIban(
       label,
     )}?receiver-name=${label}`;
-  return `payto://x-taler-bank/${label}`;
+  return `payto://x-taler-bank/localhost/${label}`;
 }
 
 function waitMs(ms: number): Promise<void> {

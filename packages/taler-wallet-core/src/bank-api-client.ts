@@ -56,6 +56,7 @@ export interface BankAccountBalanceResponse {
 
 export interface BankServiceHandle {
   readonly baseUrl: string;
+  readonly bankAccessApiBaseUrl: string;
   readonly http: HttpRequestLibrary;
 }
 
@@ -96,12 +97,13 @@ const codecForWithdrawalOperationInfo = (): Codec<WithdrawalOperationInfo> =>
     .build("WithdrawalOperationInfo");
 
 export namespace BankApi {
+  // FIXME: Move to BankAccessApi?!
   export async function registerAccount(
     bank: BankServiceHandle,
     username: string,
     password: string,
   ): Promise<BankUser> {
-    const url = new URL("testing/register", bank.baseUrl);
+    const url = new URL("testing/register", bank.bankAccessApiBaseUrl);
     const resp = await bank.http.postJson(url.href, { username, password });
     let paytoUri = `payto://x-taler-bank/localhost/${username}`;
     if (resp.status !== 200 && resp.status !== 202) {
@@ -130,6 +132,7 @@ export namespace BankApi {
     };
   }
 
+  // FIXME: Move to BankAccessApi?!
   export async function createRandomBankUser(
     bank: BankServiceHandle,
   ): Promise<BankUser> {
@@ -177,9 +180,10 @@ export namespace BankApi {
   ): Promise<void> {
     const url = new URL(
       `accounts/${bankUser.username}/withdrawals/${wopi.withdrawal_id}/confirm`,
-      bank.baseUrl,
+      bank.bankAccessApiBaseUrl,
     );
-    await bank.http.postJson(
+    logger.info(`confirming withdrawal operation via ${url.href}`);
+    const resp = await bank.http.postJson(
       url.href,
       {},
       {
@@ -191,6 +195,14 @@ export namespace BankApi {
         },
       },
     );
+
+    logger.info(`response status ${resp.status}`);
+    const respJson = await readSuccessResponseJsonOrThrow(
+      resp,
+      codecForAny(),
+    );
+
+    // FIXME: We don't check the status here!
   }
 
   export async function abortWithdrawalOperation(
@@ -222,7 +234,10 @@ export namespace BankAccessApi {
     bank: BankServiceHandle,
     bankUser: BankUser,
   ): Promise<BankAccountBalanceResponse> {
-    const url = new URL(`accounts/${bankUser.username}`, bank.baseUrl);
+    const url = new URL(
+      `accounts/${bankUser.username}`,
+      bank.bankAccessApiBaseUrl,
+    );
     const resp = await bank.http.get(url.href, {
       headers: {
         Authorization: makeBasicAuthHeader(
@@ -241,7 +256,7 @@ export namespace BankAccessApi {
   ): Promise<WithdrawalOperationInfo> {
     const url = new URL(
       `accounts/${bankUser.username}/withdrawals`,
-      bank.baseUrl,
+      bank.bankAccessApiBaseUrl,
     );
     const resp = await bank.http.postJson(
       url.href,

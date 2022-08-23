@@ -34,6 +34,7 @@ export async function runPaymentDemoTest(t: GlobalTestState) {
   // Withdraw digital cash into the wallet.
   let bankInterface: BankServiceHandle = {
     baseUrl: "https://bank.demo.taler.net/",
+    bankAccessApiBaseUrl: "https://bank.demo.taler.net/",
     http: new NodeHttpLib(),
   };
   let user = await BankApi.createRandomBankUser(bankInterface);
