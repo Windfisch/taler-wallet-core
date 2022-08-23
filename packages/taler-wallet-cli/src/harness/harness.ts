@@ -1284,7 +1284,7 @@ export class ExchangeService implements ExchangeServiceInterface {
         // account fee
         `${this.exchangeConfig.currency}:0.01`,
         // purse fee
-        `${this.exchangeConfig.currency}:0.01`,
+        `${this.exchangeConfig.currency}:0.00`,
         // purse timeout
         "1h",
         // kyc timeout

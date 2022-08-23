@@ -27,7 +27,7 @@ import {
 /**
  * Run test for basic, bank-integrated withdrawal and payment.
  */
-export async function runPeerToPeerTest(t: GlobalTestState) {
+export async function runPeerToPeerPushTest(t: GlobalTestState) {
   // Set up test environment
 
   const { wallet, bank, exchange, merchant } =
@@ -72,4 +72,4 @@ export async function runPeerToPeerTest(t: GlobalTestState) {
   await wallet.runUntilDone();
 }
 
-runPeerToPeerTest.suites = ["wallet"];
+runPeerToPeerPushTest.suites = ["wallet"];

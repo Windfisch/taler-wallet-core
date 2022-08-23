@@ -45,6 +45,11 @@ export interface PayPushUriResult {
   contractPriv: string;
 }
 
+export interface PayPullUriResult {
+  exchangeBaseUrl: string;
+  contractPriv: string;
+}
+
 /**
  * Parse a taler[+http]://withdraw URI.
  * Return undefined if not passed a valid URI.
@@ -84,9 +89,13 @@ export enum TalerUriType {
   TalerTip = "taler-tip",
   TalerRefund = "taler-refund",
   TalerNotifyReserve = "taler-notify-reserve",
-  TalerPayPush = "pay-push",
+  TalerPayPush = "taler-pay-push",
+  TalerPayPull = "taler-pay-pull",
   Unknown = "unknown",
 }
+
+const talerActionPayPull = "pay-pull";
+const talerActionPayPush = "pay-push";
 
 /**
  * Classify a taler:// URI.
@@ -117,11 +126,17 @@ export function classifyTalerUri(s: string): TalerUriType {
   if (sl.startsWith("taler+http://withdraw/")) {
     return TalerUriType.TalerWithdraw;
   }
-  if (sl.startsWith("taler://pay-push/")) {
+  if (sl.startsWith(`taler://${talerActionPayPush}/`)) {
     return TalerUriType.TalerPayPush;
   }
-  if (sl.startsWith("taler+http://pay-push/")) {
+  if (sl.startsWith(`taler+http://${talerActionPayPush}/`)) {
     return TalerUriType.TalerPayPush;
+  }
+  if (sl.startsWith(`taler://${talerActionPayPull}/`)) {
+    return TalerUriType.TalerPayPull;
+  }
+  if (sl.startsWith(`taler+http://${talerActionPayPull}/`)) {
+    return TalerUriType.TalerPayPull;
   }
   if (sl.startsWith("taler://notify-reserve/")) {
     return TalerUriType.TalerNotifyReserve;
@@ -189,7 +204,29 @@ export function parsePayUri(s: string): PayUriResult | undefined {
 }
 
 export function parsePayPushUri(s: string): PayPushUriResult | undefined {
-  const pi = parseProtoInfo(s, "pay-push");
+  const pi = parseProtoInfo(s, talerActionPayPush);
+  if (!pi) {
+    return undefined;
+  }
+  const c = pi?.rest.split("?");
+  const parts = c[0].split("/");
+  if (parts.length < 2) {
+    return undefined;
+  }
+  const host = parts[0].toLowerCase();
+  const contractPriv = parts[parts.length - 1];
+  const pathSegments = parts.slice(1, parts.length - 1);
+  const p = [host, ...pathSegments].join("/");
+  const exchangeBaseUrl = canonicalizeBaseUrl(`${pi.innerProto}://${p}/`);
+
+  return {
+    exchangeBaseUrl,
+    contractPriv,
+  };
+}
+
+export function parsePayPullUri(s: string): PayPullUriResult | undefined {
+  const pi = parseProtoInfo(s, talerActionPayPull);
   if (!pi) {
     return undefined;
   }
@@ -282,4 +319,25 @@ export function constructPayPushUri(args: {
     );
   }
   return `${proto}://pay-push/${url.host}${url.pathname}${args.contractPriv}`;
+}
+
+export function constructPayPullUri(args: {
+  exchangeBaseUrl: string;
+  contractPriv: string;
+}): string {
+  const url = new URL(args.exchangeBaseUrl);
+  let proto: string;
+  if (url.protocol === "https:") {
+    proto = "taler";
+  } else if (url.protocol === "http:") {
+    proto = "taler+http";
+  } else {
+    throw Error(`Unsupported exchange URL protocol ${args.exchangeBaseUrl}`);
+  }
+  if (!url.pathname.endsWith("/")) {
+    throw Error(
+      `exchange base URL must end with a slash (got ${args.exchangeBaseUrl}instead)`,
+    );
+  }
+  return `${proto}://pay-pull/${url.host}${url.pathname}${args.contractPriv}`;
 }

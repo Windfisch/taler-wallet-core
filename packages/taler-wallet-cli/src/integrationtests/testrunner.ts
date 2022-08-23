@@ -73,7 +73,8 @@ import { runPaymentDemoTest } from "./test-payment-on-demo";
 import { runPaymentTransientTest } from "./test-payment-transient";
 import { runPaymentZeroTest } from "./test-payment-zero.js";
 import { runPaywallFlowTest } from "./test-paywall-flow";
-import { runPeerToPeerTest } from "./test-peer-to-peer.js";
+import { runPeerToPeerPullTest } from "./test-peer-to-peer-pull.js";
+import { runPeerToPeerPushTest } from "./test-peer-to-peer-push.js";
 import { runRefundTest } from "./test-refund";
 import { runRefundAutoTest } from "./test-refund-auto";
 import { runRefundGoneTest } from "./test-refund-gone";
@@ -154,7 +155,8 @@ const allTests: TestMainFunction[] = [
   runPaymentZeroTest,
   runPayPaidTest,
   runPaywallFlowTest,
-  runPeerToPeerTest,
+  runPeerToPeerPushTest,
+  runPeerToPeerPullTest,
   runRefundAutoTest,
   runRefundGoneTest,
   runRefundIncrementalTest,

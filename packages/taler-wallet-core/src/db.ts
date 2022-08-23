@@ -393,7 +393,6 @@ export interface ExchangeDetailsRecord {
   wireInfo: WireInfo;
 }
 
-
 export interface ExchangeDetailsPointer {
   masterPublicKey: string;
 
@@ -922,7 +921,6 @@ export interface RefreshSessionRecord {
   norevealIndex?: number;
 }
 
-
 export enum RefundState {
   Failed = "failed",
   Applied = "applied",
@@ -1186,9 +1184,9 @@ export const WALLET_BACKUP_STATE_KEY = "walletBackupState";
  */
 export type ConfigRecord =
   | {
-    key: typeof WALLET_BACKUP_STATE_KEY;
-    value: WalletBackupConfState;
-  }
+      key: typeof WALLET_BACKUP_STATE_KEY;
+      value: WalletBackupConfState;
+    }
   | { key: "currencyDefaultsApplied"; value: boolean };
 
 export interface WalletBackupConfState {
@@ -1405,17 +1403,17 @@ export enum BackupProviderStateTag {
 
 export type BackupProviderState =
   | {
-    tag: BackupProviderStateTag.Provisional;
-  }
+      tag: BackupProviderStateTag.Provisional;
+    }
   | {
-    tag: BackupProviderStateTag.Ready;
-    nextBackupTimestamp: TalerProtocolTimestamp;
-  }
+      tag: BackupProviderStateTag.Ready;
+      nextBackupTimestamp: TalerProtocolTimestamp;
+    }
   | {
-    tag: BackupProviderStateTag.Retrying;
-    retryInfo: RetryInfo;
-    lastError?: TalerErrorDetail;
-  };
+      tag: BackupProviderStateTag.Retrying;
+      retryInfo: RetryInfo;
+      lastError?: TalerErrorDetail;
+    };
 
 export interface BackupProviderTerms {
   supportedProtocolVersion: string;
@@ -1625,6 +1623,36 @@ export interface PeerPushPaymentInitiationRecord {
   timestampCreated: TalerProtocolTimestamp;
 }
 
+export interface PeerPullPaymentInitiationRecord {
+  /**
+   * What exchange are we using for the payment request?
+   */
+  exchangeBaseUrl: string;
+
+  /**
+   * Amount requested.
+   */
+  amount: AmountString;
+
+  /**
+   * Purse public key.  Used as the primary key to look
+   * up this record.
+   */
+  pursePub: string;
+
+  /**
+   * Purse private key.
+   */
+  pursePriv: string;
+
+  /**
+   * Contract terms for the other party.
+   *
+   * FIXME: Nail down type!
+   */
+  contractTerms: any;
+}
+
 /**
  * Record for a push P2P payment that this wallet was offered.
  *
@@ -1824,6 +1852,15 @@ export const WalletStoresV1 = {
         "pursePub",
       ]),
     },
+  ),
+  peerPullPaymentInitiation: describeStore(
+    describeContents<PeerPullPaymentInitiationRecord>(
+      "peerPushPaymentInitiation",
+      {
+        keyPath: "pursePub",
+      },
+    ),
+    {},
   ),
 };
 

@@ -1214,6 +1214,9 @@ type ContractPrivateKey = FlavorP<Uint8Array, "ContractPrivateKey", 32> &
 type MergePrivateKey = FlavorP<Uint8Array, "MergePrivateKey", 32> &
   MaterialEddsaPriv;
 
+const mergeSalt = "p2p-merge-contract";
+const depositSalt = "p2p-deposit-contract";
+
 export function encryptContractForMerge(
   pursePub: PursePublicKey,
   contractPriv: ContractPrivateKey,
@@ -1230,17 +1233,33 @@ export function encryptContractForMerge(
     contractTermsCompressed,
   ]);
   const key = keyExchangeEcdheEddsa(contractPriv, pursePub);
-  return encryptWithDerivedKey(
-    getRandomBytesF(24),
-    key,
-    data,
-    "p2p-merge-contract",
-  );
+  return encryptWithDerivedKey(getRandomBytesF(24), key, data, mergeSalt);
+}
+
+export function encryptContractForDeposit(
+  pursePub: PursePublicKey,
+  contractPriv: ContractPrivateKey,
+  contractTerms: any,
+): Promise<OpaqueData> {
+  const contractTermsCanon = canonicalJson(contractTerms) + "\0";
+  const contractTermsBytes = stringToBytes(contractTermsCanon);
+  const contractTermsCompressed = fflate.zlibSync(contractTermsBytes);
+  const data = typedArrayConcat([
+    bufferForUint32(ContractFormatTag.PaymentRequest),
+    bufferForUint32(contractTermsBytes.length),
+    contractTermsCompressed,
+  ]);
+  const key = keyExchangeEcdheEddsa(contractPriv, pursePub);
+  return encryptWithDerivedKey(getRandomBytesF(24), key, data, depositSalt);
 }
 
 export interface DecryptForMergeResult {
   contractTerms: any;
   mergePriv: Uint8Array;
+}
+
+export interface DecryptForDepositResult {
+  contractTerms: any;
 }
 
 export async function decryptContractForMerge(
@@ -1249,7 +1268,7 @@ export async function decryptContractForMerge(
   contractPriv: ContractPrivateKey,
 ): Promise<DecryptForMergeResult> {
   const key = keyExchangeEcdheEddsa(contractPriv, pursePub);
-  const dec = await decryptWithDerivedKey(enc, key, "p2p-merge-contract");
+  const dec = await decryptWithDerivedKey(enc, key, mergeSalt);
   const mergePriv = dec.slice(8, 8 + 32);
   const contractTermsCompressed = dec.slice(8 + 32);
   const contractTermsBuf = fflate.unzlibSync(contractTermsCompressed);
@@ -1263,6 +1282,20 @@ export async function decryptContractForMerge(
   };
 }
 
-export function encryptContractForDeposit() {
-  throw Error("not implemented");
+export async function decryptContractForDeposit(
+  enc: OpaqueData,
+  pursePub: PursePublicKey,
+  contractPriv: ContractPrivateKey,
+): Promise<DecryptForDepositResult> {
+  const key = keyExchangeEcdheEddsa(contractPriv, pursePub);
+  const dec = await decryptWithDerivedKey(enc, key, depositSalt);
+  const contractTermsCompressed = dec.slice(8);
+  const contractTermsBuf = fflate.unzlibSync(contractTermsCompressed);
+  // Slice of the '\0' at the end and decode to a string
+  const contractTermsString = bytesToString(
+    contractTermsBuf.slice(0, contractTermsBuf.length - 1),
+  );
+  return {
+    contractTerms: JSON.parse(contractTermsString),
+  };
 }

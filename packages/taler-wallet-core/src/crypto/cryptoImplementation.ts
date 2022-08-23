@@ -33,11 +33,11 @@ import {
   BlindedDenominationSignature,
   bufferForUint32,
   buildSigPS,
-  bytesToString,
   CoinDepositPermission,
   CoinEnvelope,
   createHashContext,
   decodeCrock,
+  decryptContractForDeposit,
   decryptContractForMerge,
   DenomKeyType,
   DepositInfo,
@@ -47,6 +47,7 @@ import {
   eddsaSign,
   eddsaVerify,
   encodeCrock,
+  encryptContractForDeposit,
   encryptContractForMerge,
   ExchangeProtocolVersion,
   getRandomBytes,
@@ -85,17 +86,23 @@ import { DenominationRecord } from "../db.js";
 import {
   CreateRecoupRefreshReqRequest,
   CreateRecoupReqRequest,
+  DecryptContractForDepositRequest,
+  DecryptContractForDepositResponse,
   DecryptContractRequest,
   DecryptContractResponse,
   DerivedRefreshSession,
   DerivedTipPlanchet,
   DeriveRefreshSessionRequest,
   DeriveTipRequest,
+  EncryptContractForDepositRequest,
+  EncryptContractForDepositResponse,
   EncryptContractRequest,
   EncryptContractResponse,
   EncryptedContract,
   SignPurseMergeRequest,
   SignPurseMergeResponse,
+  SignReservePurseCreateRequest,
+  SignReservePurseCreateResponse,
   SignTrackTransactionRequest,
 } from "./cryptoTypes.js";
 
@@ -205,7 +212,19 @@ export interface TalerCryptoInterface {
     req: DecryptContractRequest,
   ): Promise<DecryptContractResponse>;
 
+  encryptContractForDeposit(
+    req: EncryptContractForDepositRequest,
+  ): Promise<EncryptContractForDepositResponse>;
+
+  decryptContractForDeposit(
+    req: DecryptContractForDepositRequest,
+  ): Promise<DecryptContractForDepositResponse>;
+
   signPurseMerge(req: SignPurseMergeRequest): Promise<SignPurseMergeResponse>;
+
+  signReservePurseCreate(
+    req: SignReservePurseCreateRequest,
+  ): Promise<SignReservePurseCreateResponse>;
 }
 
 /**
@@ -360,6 +379,21 @@ export const nullCrypto: TalerCryptoInterface = {
   signPurseMerge: function (
     req: SignPurseMergeRequest,
   ): Promise<SignPurseMergeResponse> {
+    throw new Error("Function not implemented.");
+  },
+  encryptContractForDeposit: function (
+    req: EncryptContractForDepositRequest,
+  ): Promise<EncryptContractForDepositResponse> {
+    throw new Error("Function not implemented.");
+  },
+  decryptContractForDeposit: function (
+    req: DecryptContractForDepositRequest,
+  ): Promise<DecryptContractForDepositResponse> {
+    throw new Error("Function not implemented.");
+  },
+  signReservePurseCreate: function (
+    req: SignReservePurseCreateRequest,
+  ): Promise<SignReservePurseCreateResponse> {
     throw new Error("Function not implemented.");
   },
 };
@@ -1047,7 +1081,8 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
 
       if (depositInfo.requiredMinimumAge != null) {
         s.minimum_age_sig = minimumAgeSig;
-        s.age_commitment = depositInfo.ageCommitmentProof?.commitment.publicKeys;
+        s.age_commitment =
+          depositInfo.ageCommitmentProof?.commitment.publicKeys;
       } else if (depositInfo.ageCommitmentProof) {
         (s as any).h_age_commitment = hAgeCommitment;
       }
@@ -1389,6 +1424,43 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
       mergePriv: encodeCrock(res.mergePriv),
     };
   },
+  async encryptContractForDeposit(
+    tci: TalerCryptoInterfaceR,
+    req: EncryptContractForDepositRequest,
+  ): Promise<EncryptContractForDepositResponse> {
+    const contractKeyPair = await this.createEddsaKeypair(tci, {});
+    const enc = await encryptContractForDeposit(
+      decodeCrock(req.pursePub),
+      decodeCrock(contractKeyPair.priv),
+      req.contractTerms,
+    );
+    const sigBlob = buildSigPS(TalerSignaturePurpose.WALLET_PURSE_ECONTRACT)
+      .put(hash(enc))
+      .put(decodeCrock(contractKeyPair.pub))
+      .build();
+    const sig = eddsaSign(sigBlob, decodeCrock(req.pursePriv));
+    return {
+      econtract: {
+        contract_pub: contractKeyPair.pub,
+        econtract: encodeCrock(enc),
+        econtract_sig: encodeCrock(sig),
+      },
+      contractPriv: contractKeyPair.priv,
+    };
+  },
+  async decryptContractForDeposit(
+    tci: TalerCryptoInterfaceR,
+    req: DecryptContractForDepositRequest,
+  ): Promise<DecryptContractForDepositResponse> {
+    const res = await decryptContractForDeposit(
+      decodeCrock(req.ciphertext),
+      decodeCrock(req.pursePub),
+      decodeCrock(req.contractPriv),
+    );
+    return {
+      contractTerms: res.contractTerms,
+    };
+  },
   async signPurseMerge(
     tci: TalerCryptoInterfaceR,
     req: SignPurseMergeRequest,
@@ -1429,6 +1501,70 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
     return {
       mergeSig: mergeSigResp.sig,
       accountSig: reserveSigResp.sig,
+    };
+  },
+  async signReservePurseCreate(
+    tci: TalerCryptoInterfaceR,
+    req: SignReservePurseCreateRequest,
+  ): Promise<SignReservePurseCreateResponse> {
+    const mergeSigBlob = buildSigPS(TalerSignaturePurpose.WALLET_PURSE_MERGE)
+      .put(timestampRoundedToBuffer(req.mergeTimestamp))
+      .put(decodeCrock(req.pursePub))
+      .put(hashTruncate32(stringToBytes(req.reservePayto + "\0")))
+      .build();
+    const mergeSigResp = await tci.eddsaSign(tci, {
+      msg: encodeCrock(mergeSigBlob),
+      priv: req.mergePriv,
+    });
+
+    logger.info(`payto URI: ${req.reservePayto}`);
+    logger.info(
+      `signing WALLET_PURSE_MERGE over ${encodeCrock(mergeSigBlob)}`,
+    );
+
+    const reserveSigBlob = buildSigPS(
+      TalerSignaturePurpose.WALLET_ACCOUNT_MERGE,
+    )
+      .put(timestampRoundedToBuffer(req.purseExpiration))
+      .put(amountToBuffer(Amounts.parseOrThrow(req.purseAmount)))
+      .put(amountToBuffer(Amounts.parseOrThrow(req.purseFee)))
+      .put(decodeCrock(req.contractTermsHash))
+      .put(decodeCrock(req.pursePub))
+      .put(timestampRoundedToBuffer(req.mergeTimestamp))
+      // FIXME: put in min_age
+      .put(bufferForUint32(0))
+      .put(bufferForUint32(req.flags))
+      .build();
+
+    logger.info(
+      `signing WALLET_ACCOUNT_MERGE over ${encodeCrock(reserveSigBlob)}`,
+    );
+
+    const reserveSigResp = await tci.eddsaSign(tci, {
+      msg: encodeCrock(reserveSigBlob),
+      priv: req.reservePriv,
+    });
+
+    const mergePub = encodeCrock(eddsaGetPublic(decodeCrock(req.mergePriv)));
+
+    const purseSigBlob = buildSigPS(TalerSignaturePurpose.WALLET_PURSE_CREATE)
+      .put(timestampRoundedToBuffer(req.purseExpiration))
+      .put(amountToBuffer(Amounts.parseOrThrow(req.purseAmount)))
+      .put(decodeCrock(req.contractTermsHash))
+      .put(decodeCrock(mergePub))
+      // FIXME: add age!
+      .put(bufferForUint32(0))
+      .build();
+
+    const purseSigResp = await tci.eddsaSign(tci, {
+      msg: encodeCrock(purseSigBlob),
+      priv: req.pursePriv,
+    });
+
+    return {
+      mergeSig: mergeSigResp.sig,
+      accountSig: reserveSigResp.sig,
+      purseSig: purseSigResp.sig,
     };
   },
 };

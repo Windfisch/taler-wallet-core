@@ -187,6 +187,19 @@ export interface EncryptContractResponse {
   contractPriv: string;
 }
 
+export interface EncryptContractForDepositRequest {
+  contractTerms: any;
+
+  pursePub: string;
+  pursePriv: string;
+}
+
+export interface EncryptContractForDepositResponse {
+  econtract: EncryptedContract;
+
+  contractPriv: string;
+}
+
 export interface DecryptContractRequest {
   ciphertext: string;
   pursePub: string;
@@ -196,6 +209,16 @@ export interface DecryptContractRequest {
 export interface DecryptContractResponse {
   contractTerms: any;
   mergePriv: string;
+}
+
+export interface DecryptContractForDepositRequest {
+  ciphertext: string;
+  pursePub: string;
+  contractPriv: string;
+}
+
+export interface DecryptContractForDepositResponse {
+  contractTerms: any;
 }
 
 export interface SignPurseMergeRequest {
@@ -227,6 +250,47 @@ export interface SignPurseMergeResponse {
    * Signature made by the purse's merge private key.
    */
   mergeSig: string;
-  
+
   accountSig: string;
+}
+
+export interface SignReservePurseCreateRequest {
+  mergeTimestamp: TalerProtocolTimestamp;
+
+  pursePub: string;
+
+  pursePriv: string;
+
+  reservePayto: string;
+
+  reservePriv: string;
+
+  mergePriv: string;
+
+  purseExpiration: TalerProtocolTimestamp;
+
+  purseAmount: AmountString;
+  purseFee: AmountString;
+
+  contractTermsHash: string;
+
+  /**
+   * Flags.
+   */
+  flags: WalletAccountMergeFlags;
+}
+
+/**
+ * Response with signatures needed for creation of a purse
+ * from a reserve for a PULL payment.
+ */
+export interface SignReservePurseCreateResponse {
+  /**
+   * Signature made by the purse's merge private key.
+   */
+  mergeSig: string;
+
+  accountSig: string;
+
+  purseSig: string;
 }

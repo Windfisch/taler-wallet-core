@@ -627,7 +627,7 @@ export interface ExchangeAccount {
   master_sig: string;
 }
 
-export type WireFeeMap = { [wireMethod: string]: WireFee[] }
+export type WireFeeMap = { [wireMethod: string]: WireFee[] };
 export interface WireInfo {
   feesForType: WireFeeMap;
   accounts: ExchangeAccount[];
@@ -638,7 +638,6 @@ const codecForExchangeAccount = (): Codec<ExchangeAccount> =>
     .property("payto_uri", codecForString())
     .property("master_sig", codecForString())
     .build("codecForExchangeAccount");
-
 
 const codecForWireFee = (): Codec<WireFee> =>
   buildCodecForObject<WireFee>()
@@ -658,18 +657,17 @@ const codecForWireInfo = (): Codec<WireInfo> =>
 
 const codecForDenominationInfo = (): Codec<DenominationInfo> =>
   buildCodecForObject<DenominationInfo>()
-    .property("denomPubHash", (codecForString()))
-    .property("value", (codecForAmountJson()))
-    .property("feeWithdraw", (codecForAmountJson()))
-    .property("feeDeposit", (codecForAmountJson()))
-    .property("feeRefresh", (codecForAmountJson()))
-    .property("feeRefund", (codecForAmountJson()))
-    .property("stampStart", (codecForTimestamp))
-    .property("stampExpireWithdraw", (codecForTimestamp))
-    .property("stampExpireLegal", (codecForTimestamp))
-    .property("stampExpireDeposit", (codecForTimestamp))
+    .property("denomPubHash", codecForString())
+    .property("value", codecForAmountJson())
+    .property("feeWithdraw", codecForAmountJson())
+    .property("feeDeposit", codecForAmountJson())
+    .property("feeRefresh", codecForAmountJson())
+    .property("feeRefund", codecForAmountJson())
+    .property("stampStart", codecForTimestamp)
+    .property("stampExpireWithdraw", codecForTimestamp)
+    .property("stampExpireLegal", codecForTimestamp)
+    .property("stampExpireDeposit", codecForTimestamp)
     .build("codecForDenominationInfo");
-
 
 export interface DenominationInfo {
   value: AmountJson;
@@ -713,7 +711,6 @@ export interface DenominationInfo {
    * Data after which coins of this denomination can't be deposited anymore.
    */
   stampExpireDeposit: TalerProtocolTimestamp;
-
 }
 
 export interface ExchangeListItem {
@@ -725,7 +722,6 @@ export interface ExchangeListItem {
   wireInfo: WireInfo;
   denominations: DenominationInfo[];
 }
-
 
 const codecForAuditorDenomSig = (): Codec<AuditorDenomSig> =>
   buildCodecForObject<AuditorDenomSig>()
@@ -739,7 +735,6 @@ const codecForExchangeAuditor = (): Codec<ExchangeAuditor> =>
     .property("auditor_url", codecForString())
     .property("denomination_keys", codecForList(codecForAuditorDenomSig()))
     .build("codecForExchangeAuditor");
-
 
 const codecForExchangeTos = (): Codec<ExchangeTos> =>
   buildCodecForObject<ExchangeTos>()
@@ -1452,10 +1447,20 @@ export interface CheckPeerPushPaymentRequest {
   talerUri: string;
 }
 
+export interface CheckPeerPullPaymentRequest {
+  talerUri: string;
+}
+
 export interface CheckPeerPushPaymentResponse {
   contractTerms: any;
   amount: AmountString;
   peerPushPaymentIncomingId: string;
+}
+
+export interface CheckPeerPullPaymentResponse {
+  contractTerms: any;
+  amount: AmountString;
+  peerPullPaymentIncomingId: string;
 }
 
 export const codecForCheckPeerPushPaymentRequest =
@@ -1463,6 +1468,12 @@ export const codecForCheckPeerPushPaymentRequest =
     buildCodecForObject<CheckPeerPushPaymentRequest>()
       .property("talerUri", codecForString())
       .build("CheckPeerPushPaymentRequest");
+
+export const codecForCheckPeerPullPaymentRequest =
+  (): Codec<CheckPeerPullPaymentRequest> =>
+    buildCodecForObject<CheckPeerPullPaymentRequest>()
+      .property("talerUri", codecForString())
+      .build("CheckPeerPullPaymentRequest");
 
 export interface AcceptPeerPushPaymentRequest {
   /**
@@ -1476,3 +1487,41 @@ export const codecForAcceptPeerPushPaymentRequest =
     buildCodecForObject<AcceptPeerPushPaymentRequest>()
       .property("peerPushPaymentIncomingId", codecForString())
       .build("AcceptPeerPushPaymentRequest");
+
+export interface AcceptPeerPullPaymentRequest {
+  /**
+   * Transparent identifier of the incoming peer pull payment.
+   */
+  peerPullPaymentIncomingId: string;
+}
+
+export const codecForAcceptPeerPullPaymentRequest =
+  (): Codec<AcceptPeerPullPaymentRequest> =>
+    buildCodecForObject<AcceptPeerPullPaymentRequest>()
+      .property("peerPullPaymentIncomingId", codecForString())
+      .build("AcceptPeerPllPaymentRequest");
+
+export interface InitiatePeerPullPaymentRequest {
+  /**
+   * FIXME: Make this optional?
+   */
+  exchangeBaseUrl: string;
+  amount: AmountString;
+  partialContractTerms: any;
+}
+
+export const codecForInitiatePeerPullPaymentRequest =
+  (): Codec<InitiatePeerPullPaymentRequest> =>
+    buildCodecForObject<InitiatePeerPullPaymentRequest>()
+      .property("partialContractTerms", codecForAny())
+      .property("amount", codecForAmountString())
+      .property("exchangeBaseUrl", codecForAmountString())
+      .build("InitiatePeerPullPaymentRequest");
+
+export interface InitiatePeerPullPaymentResponse {
+  /**
+   * Taler URI for the other party to make the payment
+   * that was requested.
+   */
+  talerUri: string;
+}

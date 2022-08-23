@@ -1874,3 +1874,74 @@ export interface PeerContractTerms {
   summary: string;
   purse_expiration: TalerProtocolTimestamp;
 }
+
+export interface EncryptedContract {
+  // Encrypted contract.
+  econtract: string;
+
+  // Signature over the (encrypted) contract.
+  econtract_sig: string;
+
+  // Ephemeral public key for the DH operation to decrypt the encrypted contract.
+  contract_pub: string;
+}
+
+/**
+ * Payload for /reserves/{reserve_pub}/purse
+ * endpoint of the exchange.
+ */
+export interface ExchangeReservePurseRequest {
+  /**
+   * Minimum amount that must be credited to the reserve, that is
+   * the total value of the purse minus the deposit fees.
+   * If the deposit fees are lower, the contribution to the
+   * reserve can be higher!
+   */
+  purse_value: AmountString;
+
+  // Minimum age required for all coins deposited into the purse.
+  min_age: number;
+
+  // Purse fee the reserve owner is willing to pay
+  // for the purse creation. Optional, if not present
+  // the purse is to be created from the purse quota
+  // of the reserve.
+  purse_fee: AmountString;
+
+  // Optional encrypted contract, in case the buyer is
+  // proposing the contract and thus establishing the
+  // purse with the payment.
+  econtract?: EncryptedContract;
+
+  // EdDSA public key used to approve merges of this purse.
+  merge_pub: EddsaPublicKeyString;
+
+  // EdDSA signature of the purse private key affirming the merge
+  // over a TALER_PurseMergeSignaturePS.
+  // Must be of purpose TALER_SIGNATURE_PURSE_MERGE.
+  merge_sig: EddsaSignatureString;
+
+  // EdDSA signature of the account/reserve affirming the merge.
+  // Must be of purpose TALER_SIGNATURE_WALLET_ACCOUNT_MERGE
+  reserve_sig: EddsaSignatureString;
+
+  // Purse public key.
+  purse_pub: EddsaPublicKeyString;
+
+  // EdDSA signature of the purse over
+  // TALER_PurseRequestSignaturePS of
+  // purpose TALER_SIGNATURE_PURSE_REQUEST
+  // confirming that the
+  // above details hold for this purse.
+  purse_sig: EddsaSignatureString;
+
+  // SHA-512 hash of the contact of the purse.
+  h_contract_terms: HashCodeString;
+
+  // Client-side timestamp of when the merge request was made.
+  merge_timestamp: TalerProtocolTimestamp;
+
+  // Indicative time by which the purse should expire
+  // if it has not been paid.
+  purse_expiration: TalerProtocolTimestamp;
+}

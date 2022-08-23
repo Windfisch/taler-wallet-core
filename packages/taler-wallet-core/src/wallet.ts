@@ -32,6 +32,7 @@ import {
   codecForAcceptBankIntegratedWithdrawalRequest,
   codecForAcceptExchangeTosRequest,
   codecForAcceptManualWithdrawalRequet,
+  codecForAcceptPeerPullPaymentRequest,
   codecForAcceptPeerPushPaymentRequest,
   codecForAcceptTipRequest,
   codecForAddExchangeRequest,
@@ -50,6 +51,7 @@ import {
   codecForGetWithdrawalDetailsForAmountRequest,
   codecForGetWithdrawalDetailsForUri,
   codecForImportDbRequest,
+  codecForInitiatePeerPullPaymentRequest,
   codecForInitiatePeerPushPaymentRequest,
   codecForIntegrationTestArgs,
   codecForListKnownBankAccounts,
@@ -150,6 +152,7 @@ import {
 import {
   acceptPeerPushPayment,
   checkPeerPushPayment,
+  initiatePeerRequestForPay,
   initiatePeerToPeerPush,
 } from "./operations/peer-to-peer.js";
 import { getPendingOperations } from "./operations/pending.js";
@@ -455,11 +458,20 @@ async function fillDefaults(ws: InternalWalletState): Promise<void> {
         for (const c of builtinAuditors) {
           await tx.auditorTrustStore.put(c);
         }
-        for (const url of builtinExchanges) {
-          await updateExchangeFromUrl(ws, url, { forceNow: true });
-        }
       }
+      // FIXME: make sure exchanges are added transactionally to
+      // DB in first-time default application
     });
+
+  for (const url of builtinExchanges) {
+    try {
+      await updateExchangeFromUrl(ws, url, { forceNow: true });
+    } catch (e) {
+      logger.warn(
+        `could not update builtin exchange ${url} during wallet initialization`,
+      );
+    }
+  }
 }
 
 async function getExchangeTos(
@@ -568,8 +580,9 @@ async function getExchanges(
           continue;
         }
 
-        const denominations = await tx.denominations.indexes
-          .byExchangeBaseUrl.iter(r.baseUrl).toArray();
+        const denominations = await tx.denominations.indexes.byExchangeBaseUrl
+          .iter(r.baseUrl)
+          .toArray();
 
         if (!denominations) {
           continue;
@@ -1029,6 +1042,10 @@ async function dispatchRequestInternal(
       const req = codecForAcceptPeerPushPaymentRequest().decode(payload);
       await acceptPeerPushPayment(ws, req);
       return {};
+    }
+    case "initiatePeerPullPayment": {
+      const req = codecForInitiatePeerPullPaymentRequest().decode(payload);
+      return await initiatePeerRequestForPay(ws, req);
     }
   }
   throw TalerError.fromDetail(
