@@ -197,6 +197,9 @@ export const walletCli = clk
   })
   .flag("verbose", ["-V", "--verbose"], {
     help: "Enable verbose output.",
+  })
+  .flag("skipDefaults", ["--skip-defaults"], {
+    help: "Skip configuring default exchanges.",
   });
 
 type WalletCliArgsType = clk.GetArgType<typeof walletCli>;
@@ -233,7 +236,9 @@ async function withWallet<T>(
       ws: wallet,
       client: wallet.client,
     };
-    await wallet.handleCoreApiRequest("initWallet", "native-init", {});
+    await wallet.handleCoreApiRequest("initWallet", "native-init", {
+      skipDefaults: walletCliArgs.wallet.skipDefaults,
+    });
     const ret = await f(w);
     return ret;
   } catch (e) {
@@ -1159,10 +1164,7 @@ testCli
 
       const salt = getRandomBytes(32);
       tDerive.start();
-      const deriv = await AgeRestriction.commitmentDerive(
-        commitProof,
-        salt,
-      );
+      const deriv = await AgeRestriction.commitmentDerive(commitProof, salt);
       tDerive.stop();
 
       tCompare.start();

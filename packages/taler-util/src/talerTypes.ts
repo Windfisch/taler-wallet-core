@@ -1945,3 +1945,8 @@ export interface ExchangeReservePurseRequest {
   // if it has not been paid.
   purse_expiration: TalerProtocolTimestamp;
 }
+
+export interface ExchangePurseDeposits {
+  // Array of coins to deposit into the purse.
+  deposits: PurseDeposit[];
+}

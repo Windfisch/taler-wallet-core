@@ -19,23 +19,30 @@
  */
 import {
   AbsoluteTime,
+  AcceptPeerPullPaymentRequest,
   AcceptPeerPushPaymentRequest,
   AmountJson,
+  AmountLike,
   Amounts,
   AmountString,
   buildCodecForObject,
+  CheckPeerPullPaymentRequest,
+  CheckPeerPullPaymentResponse,
   CheckPeerPushPaymentRequest,
   CheckPeerPushPaymentResponse,
   Codec,
   codecForAmountString,
   codecForAny,
   codecForExchangeGetContractResponse,
+  CoinPublicKey,
+  constructPayPullUri,
   constructPayPushUri,
   ContractTermsUtil,
   decodeCrock,
   Duration,
   eddsaGetPublic,
   encodeCrock,
+  ExchangePurseDeposits,
   ExchangePurseMergeRequest,
   ExchangeReservePurseRequest,
   getRandomBytes,
@@ -45,7 +52,9 @@ import {
   InitiatePeerPushPaymentResponse,
   j2s,
   Logger,
+  parsePayPullUri,
   parsePayPushUri,
+  RefreshReason,
   strcmp,
   TalerProtocolTimestamp,
   UnblindedSignature,
@@ -54,14 +63,15 @@ import {
 import {
   CoinStatus,
   MergeReserveInfo,
-  OperationStatus,
   ReserveRecordStatus,
-  WithdrawalGroupRecord,
+  WalletStoresV1,
 } from "../db.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { internalCreateWithdrawalGroup } from "./withdraw.js";
+import { GetReadOnlyAccess } from "../util/query.js";
+import { createRefreshGroup } from "./refresh.js";
 
 const logger = new Logger("operations/peer-to-peer.ts");
 
@@ -105,93 +115,125 @@ interface CoinInfo {
   denomSig: UnblindedSignature;
 }
 
+export async function selectPeerCoins(
+  ws: InternalWalletState,
+  tx: GetReadOnlyAccess<{
+    exchanges: typeof WalletStoresV1.exchanges;
+    denominations: typeof WalletStoresV1.denominations;
+    coins: typeof WalletStoresV1.coins;
+  }>,
+  instructedAmount: AmountJson,
+): Promise<PeerCoinSelection | undefined> {
+  const exchanges = await tx.exchanges.iter().toArray();
+  for (const exch of exchanges) {
+    if (exch.detailsPointer?.currency !== instructedAmount.currency) {
+      continue;
+    }
+    const coins = (
+      await tx.coins.indexes.byBaseUrl.getAll(exch.baseUrl)
+    ).filter((x) => x.status === CoinStatus.Fresh);
+    const coinInfos: CoinInfo[] = [];
+    for (const coin of coins) {
+      const denom = await ws.getDenomInfo(
+        ws,
+        tx,
+        coin.exchangeBaseUrl,
+        coin.denomPubHash,
+      );
+      if (!denom) {
+        throw Error("denom not found");
+      }
+      coinInfos.push({
+        coinPub: coin.coinPub,
+        feeDeposit: denom.feeDeposit,
+        value: denom.value,
+        denomPubHash: denom.denomPubHash,
+        coinPriv: coin.coinPriv,
+        denomSig: coin.denomSig,
+      });
+    }
+    if (coinInfos.length === 0) {
+      continue;
+    }
+    coinInfos.sort(
+      (o1, o2) =>
+        -Amounts.cmp(o1.value, o2.value) ||
+        strcmp(o1.denomPubHash, o2.denomPubHash),
+    );
+    let amountAcc = Amounts.getZero(instructedAmount.currency);
+    let depositFeesAcc = Amounts.getZero(instructedAmount.currency);
+    const resCoins: {
+      coinPub: string;
+      coinPriv: string;
+      contribution: AmountString;
+      denomPubHash: string;
+      denomSig: UnblindedSignature;
+    }[] = [];
+    for (const coin of coinInfos) {
+      if (Amounts.cmp(amountAcc, instructedAmount) >= 0) {
+        const res: PeerCoinSelection = {
+          exchangeBaseUrl: exch.baseUrl,
+          coins: resCoins,
+          depositFees: depositFeesAcc,
+        };
+        return res;
+      }
+      const gap = Amounts.add(
+        coin.feeDeposit,
+        Amounts.sub(instructedAmount, amountAcc).amount,
+      ).amount;
+      const contrib = Amounts.min(gap, coin.value);
+      amountAcc = Amounts.add(
+        amountAcc,
+        Amounts.sub(contrib, coin.feeDeposit).amount,
+      ).amount;
+      depositFeesAcc = Amounts.add(depositFeesAcc, coin.feeDeposit).amount;
+      resCoins.push({
+        coinPriv: coin.coinPriv,
+        coinPub: coin.coinPub,
+        contribution: Amounts.stringify(contrib),
+        denomPubHash: coin.denomPubHash,
+        denomSig: coin.denomSig,
+      });
+    }
+    continue;
+  }
+  return undefined;
+}
+
 export async function initiatePeerToPeerPush(
   ws: InternalWalletState,
   req: InitiatePeerPushPaymentRequest,
 ): Promise<InitiatePeerPushPaymentResponse> {
+  // FIXME: actually create a record for retries here!
   const instructedAmount = Amounts.parseOrThrow(req.amount);
   const coinSelRes: PeerCoinSelection | undefined = await ws.db
     .mktx((x) => ({
       exchanges: x.exchanges,
       coins: x.coins,
       denominations: x.denominations,
+      refreshGroups: x.refreshGroups,
     }))
-    .runReadOnly(async (tx) => {
-      const exchanges = await tx.exchanges.iter().toArray();
-      for (const exch of exchanges) {
-        if (exch.detailsPointer?.currency !== instructedAmount.currency) {
-          continue;
-        }
-        const coins = (
-          await tx.coins.indexes.byBaseUrl.getAll(exch.baseUrl)
-        ).filter((x) => x.status === CoinStatus.Fresh);
-        const coinInfos: CoinInfo[] = [];
-        for (const coin of coins) {
-          const denom = await ws.getDenomInfo(
-            ws,
-            tx,
-            coin.exchangeBaseUrl,
-            coin.denomPubHash,
-          );
-          if (!denom) {
-            throw Error("denom not found");
-          }
-          coinInfos.push({
-            coinPub: coin.coinPub,
-            feeDeposit: denom.feeDeposit,
-            value: denom.value,
-            denomPubHash: denom.denomPubHash,
-            coinPriv: coin.coinPriv,
-            denomSig: coin.denomSig,
-          });
-        }
-        if (coinInfos.length === 0) {
-          continue;
-        }
-        coinInfos.sort(
-          (o1, o2) =>
-            -Amounts.cmp(o1.value, o2.value) ||
-            strcmp(o1.denomPubHash, o2.denomPubHash),
-        );
-        let amountAcc = Amounts.getZero(instructedAmount.currency);
-        let depositFeesAcc = Amounts.getZero(instructedAmount.currency);
-        const resCoins: {
-          coinPub: string;
-          coinPriv: string;
-          contribution: AmountString;
-          denomPubHash: string;
-          denomSig: UnblindedSignature;
-        }[] = [];
-        for (const coin of coinInfos) {
-          if (Amounts.cmp(amountAcc, instructedAmount) >= 0) {
-            const res: PeerCoinSelection = {
-              exchangeBaseUrl: exch.baseUrl,
-              coins: resCoins,
-              depositFees: depositFeesAcc,
-            };
-            return res;
-          }
-          const gap = Amounts.add(
-            coin.feeDeposit,
-            Amounts.sub(instructedAmount, amountAcc).amount,
-          ).amount;
-          const contrib = Amounts.min(gap, coin.value);
-          amountAcc = Amounts.add(
-            amountAcc,
-            Amounts.sub(contrib, coin.feeDeposit).amount,
-          ).amount;
-          depositFeesAcc = Amounts.add(depositFeesAcc, coin.feeDeposit).amount;
-          resCoins.push({
-            coinPriv: coin.coinPriv,
-            coinPub: coin.coinPub,
-            contribution: Amounts.stringify(contrib),
-            denomPubHash: coin.denomPubHash,
-            denomSig: coin.denomSig,
-          });
-        }
-        continue;
+    .runReadWrite(async (tx) => {
+      const sel = await selectPeerCoins(ws, tx, instructedAmount);
+      if (!sel) {
+        return undefined;
       }
-      return undefined;
+
+      const pubs: CoinPublicKey[] = [];
+      for (const c of sel.coins) {
+        const coin = await tx.coins.get(c.coinPub);
+        checkDbInvariant(!!coin);
+        coin.currentAmount = Amounts.sub(
+          coin.currentAmount,
+          Amounts.parseOrThrow(c.contribution),
+        ).amount;
+        await tx.coins.put(coin);
+      }
+
+      await createRefreshGroup(ws, tx, pubs, RefreshReason.Pay);
+
+      return sel;
     });
   logger.info(`selected p2p coins: ${j2s(coinSelRes)}`);
 
@@ -339,7 +381,7 @@ export async function checkPeerPushPayment(
         exchangeBaseUrl: exchangeBaseUrl,
         mergePriv: dec.mergePriv,
         pursePub: pursePub,
-        timestampAccepted: TalerProtocolTimestamp.now(),
+        timestamp: TalerProtocolTimestamp.now(),
         contractTerms: dec.contractTerms,
       });
     });
@@ -478,6 +520,148 @@ export async function acceptPeerPushPayment(
   });
 }
 
+/**
+ * FIXME: Bad name!
+ */
+export async function acceptPeerPullPayment(
+  ws: InternalWalletState,
+  req: AcceptPeerPullPaymentRequest,
+) {
+  const peerPullInc = await ws.db
+    .mktx((x) => ({ peerPullPaymentIncoming: x.peerPullPaymentIncoming }))
+    .runReadOnly(async (tx) => {
+      return tx.peerPullPaymentIncoming.get(req.peerPullPaymentIncomingId);
+    });
+
+  if (!peerPullInc) {
+    throw Error(
+      `can't accept unknown incoming p2p pull payment (${req.peerPullPaymentIncomingId})`,
+    );
+  }
+
+  const instructedAmount = Amounts.parseOrThrow(
+    peerPullInc.contractTerms.amount,
+  );
+  const coinSelRes: PeerCoinSelection | undefined = await ws.db
+    .mktx((x) => ({
+      exchanges: x.exchanges,
+      coins: x.coins,
+      denominations: x.denominations,
+      refreshGroups: x.refreshGroups,
+    }))
+    .runReadWrite(async (tx) => {
+      const sel = await selectPeerCoins(ws, tx, instructedAmount);
+      if (!sel) {
+        return undefined;
+      }
+
+      const pubs: CoinPublicKey[] = [];
+      for (const c of sel.coins) {
+        const coin = await tx.coins.get(c.coinPub);
+        checkDbInvariant(!!coin);
+        coin.currentAmount = Amounts.sub(
+          coin.currentAmount,
+          Amounts.parseOrThrow(c.contribution),
+        ).amount;
+        await tx.coins.put(coin);
+      }
+
+      await createRefreshGroup(ws, tx, pubs, RefreshReason.Pay);
+
+      return sel;
+    });
+  logger.info(`selected p2p coins: ${j2s(coinSelRes)}`);
+
+  if (!coinSelRes) {
+    throw Error("insufficient balance");
+  }
+
+  const pursePub = peerPullInc.pursePub;
+
+  const depositSigsResp = await ws.cryptoApi.signPurseDeposits({
+    exchangeBaseUrl: coinSelRes.exchangeBaseUrl,
+    pursePub,
+    coins: coinSelRes.coins,
+  });
+
+  const purseDepositUrl = new URL(
+    `purses/${pursePub}/deposit`,
+    coinSelRes.exchangeBaseUrl,
+  );
+
+  const depositPayload: ExchangePurseDeposits = {
+    deposits: depositSigsResp.deposits,
+  };
+
+  const httpResp = await ws.http.postJson(purseDepositUrl.href, depositPayload);
+  const resp = await readSuccessResponseJsonOrThrow(httpResp, codecForAny());
+  logger.trace(`purse deposit response: ${j2s(resp)}`);
+}
+
+export async function checkPeerPullPayment(
+  ws: InternalWalletState,
+  req: CheckPeerPullPaymentRequest,
+): Promise<CheckPeerPullPaymentResponse> {
+  const uri = parsePayPullUri(req.talerUri);
+
+  if (!uri) {
+    throw Error("got invalid taler://pay-push URI");
+  }
+
+  const exchangeBaseUrl = uri.exchangeBaseUrl;
+  const contractPriv = uri.contractPriv;
+  const contractPub = encodeCrock(eddsaGetPublic(decodeCrock(contractPriv)));
+
+  const getContractUrl = new URL(`contracts/${contractPub}`, exchangeBaseUrl);
+
+  const contractHttpResp = await ws.http.get(getContractUrl.href);
+
+  const contractResp = await readSuccessResponseJsonOrThrow(
+    contractHttpResp,
+    codecForExchangeGetContractResponse(),
+  );
+
+  const pursePub = contractResp.purse_pub;
+
+  const dec = await ws.cryptoApi.decryptContractForDeposit({
+    ciphertext: contractResp.econtract,
+    contractPriv: contractPriv,
+    pursePub: pursePub,
+  });
+
+  const getPurseUrl = new URL(`purses/${pursePub}/merge`, exchangeBaseUrl);
+
+  const purseHttpResp = await ws.http.get(getPurseUrl.href);
+
+  const purseStatus = await readSuccessResponseJsonOrThrow(
+    purseHttpResp,
+    codecForExchangePurseStatus(),
+  );
+
+  const peerPullPaymentIncomingId = encodeCrock(getRandomBytes(32));
+
+  await ws.db
+    .mktx((x) => ({
+      peerPullPaymentIncoming: x.peerPullPaymentIncoming,
+    }))
+    .runReadWrite(async (tx) => {
+      await tx.peerPullPaymentIncoming.add({
+        peerPullPaymentIncomingId,
+        contractPriv: contractPriv,
+        exchangeBaseUrl: exchangeBaseUrl,
+        pursePub: pursePub,
+        timestamp: TalerProtocolTimestamp.now(),
+        contractTerms: dec.contractTerms,
+      });
+    });
+
+  return {
+    amount: purseStatus.balance,
+    contractTerms: dec.contractTerms,
+    peerPullPaymentIncomingId,
+  };
+}
+
 export async function initiatePeerRequestForPay(
   ws: InternalWalletState,
   req: InitiatePeerPullPaymentRequest,
@@ -580,10 +764,18 @@ export async function initiatePeerRequestForPay(
 
   logger.info(`reserve merge response: ${j2s(resp)}`);
 
-  // FIXME: Now create a withdrawal operation!
+  await internalCreateWithdrawalGroup(ws, {
+    amount: Amounts.parseOrThrow(req.amount),
+    exchangeBaseUrl: req.exchangeBaseUrl,
+    reserveStatus: ReserveRecordStatus.QueryingStatus,
+    reserveKeyPair: {
+      priv: mergeReserveInfo.reservePriv,
+      pub: mergeReserveInfo.reservePub,
+    },
+  });
 
   return {
-    talerUri: constructPayPushUri({
+    talerUri: constructPayPullUri({
       exchangeBaseUrl: req.exchangeBaseUrl,
       contractPriv: econtractResp.contractPriv,
     }),

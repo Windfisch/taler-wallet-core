@@ -68,7 +68,6 @@ function timeout<T>(ms: number, promise: Promise<T>): Promise<T> {
 
 export async function queryToSlashKeys<T>(url: string): Promise<T> {
   const endpoint = new URL("keys", url);
-  endpoint.searchParams.set("cacheBreaker", new Date().getTime() + "");
 
   const query = fetch(endpoint.href)
     .catch(() => {

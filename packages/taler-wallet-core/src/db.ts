@@ -1669,11 +1669,25 @@ export interface PeerPushPaymentIncomingRecord {
 
   contractPriv: string;
 
-  timestampAccepted: TalerProtocolTimestamp;
+  timestamp: TalerProtocolTimestamp;
 
   contractTerms: PeerContractTerms;
 
   // FIXME: add status etc.
+}
+
+export interface PeerPullPaymentIncomingRecord {
+  peerPullPaymentIncomingId: string;
+
+  pursePub: string;
+
+  exchangeBaseUrl: string;
+
+  contractTerms: PeerContractTerms;
+
+  timestamp: TalerProtocolTimestamp;
+
+  contractPriv: string;
 }
 
 export const WalletStoresV1 = {
@@ -1845,6 +1859,17 @@ export const WalletStoresV1 = {
   peerPushPaymentIncoming: describeStore(
     describeContents<PeerPushPaymentIncomingRecord>("peerPushPaymentIncoming", {
       keyPath: "peerPushPaymentIncomingId",
+    }),
+    {
+      byExchangeAndPurse: describeIndex("byExchangeAndPurse", [
+        "exchangeBaseUrl",
+        "pursePub",
+      ]),
+    },
+  ),
+  peerPullPaymentIncoming: describeStore(
+    describeContents<PeerPullPaymentIncomingRecord>("peerPullPaymentIncoming", {
+      keyPath: "peerPullPaymentIncomingId",
     }),
     {
       byExchangeAndPurse: describeIndex("byExchangeAndPurse", [

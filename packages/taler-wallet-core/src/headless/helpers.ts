@@ -132,6 +132,7 @@ export async function getDefaultNodeWallet2(
       });
       // Atomically move the temporary file onto the DB path.
       fs.renameSync(tmpPath, args.persistentStoragePath);
+      logger.trace("committing database done");
     };
   }
 
@@ -178,7 +179,7 @@ export async function getDefaultNodeWallet2(
     }
   }
 
-  const timer = new SetTimeoutTimerAPI()
+  const timer = new SetTimeoutTimerAPI();
 
   const w = await Wallet.create(myDb, myHttpLib, timer, workerFactory);
 

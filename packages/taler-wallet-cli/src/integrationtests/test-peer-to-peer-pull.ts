@@ -17,6 +17,7 @@
 /**
  * Imports.
  */
+import { j2s } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { GlobalTestState } from "../harness/harness.js";
 import {
@@ -57,12 +58,18 @@ export async function runPeerToPeerPullTest(t: GlobalTestState) {
     },
   );
 
+  console.log(`checkResp: ${j2s(checkResp)}`);
+
   const acceptResp = await wallet.client.call(
     WalletApiOperation.AcceptPeerPullPayment,
     {
       peerPullPaymentIncomingId: checkResp.peerPullPaymentIncomingId,
     },
   );
+
+  const txs = await wallet.client.call(WalletApiOperation.GetTransactions, {});
+
+  console.log(`transactions: ${j2s(txs)}`);
 
   await wallet.runUntilDone();
 }

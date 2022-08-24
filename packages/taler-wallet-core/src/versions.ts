@@ -34,12 +34,3 @@ export const WALLET_MERCHANT_PROTOCOL_VERSION = "2:0:1";
  * Uses libtool's current:revision:age versioning.
  */
 export const WALLET_BANK_INTEGRATION_PROTOCOL_VERSION = "0:0:0";
-
-/**
- * Cache breaker that is appended to queries such as /keys and /wire
- * to break through caching, if it has been accidentally/badly configured
- * by the exchange.
- *
- * This is only a temporary measure.
- */
-export const WALLET_CACHE_BREAKER_CLIENT_VERSION = "5";

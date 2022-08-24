@@ -1940,7 +1940,7 @@ export class WalletCli {
           `wallet-${self.name}`,
           `taler-wallet-cli ${
             self.timetravelArg ?? ""
-          } --no-throttle -LTRACE --wallet-db '${
+          } --no-throttle -LTRACE --skip-defaults --wallet-db '${
             self.dbfile
           }' api '${op}' ${shellWrap(JSON.stringify(payload))}`,
         );
@@ -1990,6 +1990,7 @@ export class WalletCli {
         "--no-throttle",
         ...this.timetravelArgArr,
         "-LTRACE",
+        "--skip-defaults",
         "--wallet-db",
         this.dbfile,
         "run-until-done",
@@ -2005,6 +2006,7 @@ export class WalletCli {
       "taler-wallet-cli",
       [
         "--no-throttle",
+        "--skip-defaults",
         "-LTRACE",
         ...this.timetravelArgArr,
         "--wallet-db",

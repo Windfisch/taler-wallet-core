@@ -39,6 +39,7 @@ import {
   codecForAny,
   codecForApplyRefundFromPurchaseIdRequest,
   codecForApplyRefundRequest,
+  codecForCheckPeerPullPaymentRequest,
   codecForCheckPeerPushPaymentRequest,
   codecForConfirmPayRequest,
   codecForCreateDepositGroupRequest,
@@ -150,7 +151,9 @@ import {
   processPurchasePay,
 } from "./operations/pay.js";
 import {
+  acceptPeerPullPayment,
   acceptPeerPushPayment,
+  checkPeerPullPayment,
   checkPeerPushPayment,
   initiatePeerRequestForPay,
   initiatePeerToPeerPush,
@@ -728,7 +731,12 @@ async function dispatchRequestInternal(
   switch (operation) {
     case "initWallet": {
       ws.initCalled = true;
-      await fillDefaults(ws);
+      if (typeof payload === "object" && (payload as any).skipDefaults) {
+        logger.info("skipping defaults");
+      } else {
+        logger.info("filling defaults");
+        await fillDefaults(ws);
+      }
       return {};
     }
     case "withdrawTestkudos": {
@@ -1047,6 +1055,15 @@ async function dispatchRequestInternal(
       const req = codecForInitiatePeerPullPaymentRequest().decode(payload);
       return await initiatePeerRequestForPay(ws, req);
     }
+    case "checkPeerPullPayment": {
+      const req = codecForCheckPeerPullPaymentRequest().decode(payload);
+      return await checkPeerPullPayment(ws, req);
+    }
+    case "acceptPeerPullPayment": {
+      const req = codecForAcceptPeerPullPaymentRequest().decode(payload);
+      await acceptPeerPullPayment(ws, req);
+      return {};
+    }
   }
   throw TalerError.fromDetail(
     TalerErrorCode.WALLET_CORE_API_OPERATION_UNKNOWN,
@@ -1239,10 +1256,8 @@ class InternalWalletStateImpl implements InternalWalletState {
     const key = `${exchangeBaseUrl}:${denomPubHash}`;
     const cached = this.denomCache[key];
     if (cached) {
-      logger.trace("using cached denom");
       return cached;
     }
-    logger.trace("looking up denom denom");
     const d = await tx.denominations.get([exchangeBaseUrl, denomPubHash]);
     if (d) {
       this.denomCache[key] = d;

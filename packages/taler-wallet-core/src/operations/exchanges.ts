@@ -65,10 +65,7 @@ import {
 } from "../util/http.js";
 import { DbAccess, GetReadOnlyAccess } from "../util/query.js";
 import { RetryInfo } from "../util/retries.js";
-import {
-  WALLET_CACHE_BREAKER_CLIENT_VERSION,
-  WALLET_EXCHANGE_PROTOCOL_VERSION,
-} from "../versions.js";
+import { WALLET_EXCHANGE_PROTOCOL_VERSION } from "../versions.js";
 import { guardOperationException } from "./common.js";
 
 const logger = new Logger("exchanges.ts");
@@ -169,7 +166,6 @@ export async function downloadExchangeWithTermsOfService(
   contentType: string,
 ): Promise<ExchangeTosDownloadResult> {
   const reqUrl = new URL("terms", exchangeBaseUrl);
-  reqUrl.searchParams.set("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION);
   const headers = {
     Accept: contentType,
   };
@@ -352,7 +348,6 @@ async function downloadExchangeWireInfo(
   timeout: Duration,
 ): Promise<ExchangeWireJson> {
   const reqUrl = new URL("wire", exchangeBaseUrl);
-  reqUrl.searchParams.set("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION);
 
   const resp = await http.get(reqUrl.href, {
     timeout,
@@ -439,7 +434,6 @@ async function downloadExchangeKeysInfo(
   timeout: Duration,
 ): Promise<ExchangeKeysDownloadResult> {
   const keysUrl = new URL("keys", baseUrl);
-  keysUrl.searchParams.set("cacheBreaker", WALLET_CACHE_BREAKER_CLIENT_VERSION);
 
   const resp = await http.get(keysUrl.href, {
     timeout,
@@ -448,9 +442,6 @@ async function downloadExchangeKeysInfo(
     resp,
     codecForExchangeKeysJson(),
   );
-
-  logger.trace("received /keys response");
-  logger.trace(`${j2s(exchangeKeysJsonUnchecked)}`);
 
   if (exchangeKeysJsonUnchecked.denoms.length === 0) {
     throw TalerError.fromDetail(
