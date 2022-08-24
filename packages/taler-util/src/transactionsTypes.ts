@@ -187,6 +187,9 @@ export interface TransactionWithdrawal extends TransactionCommon {
   withdrawalDetails: WithdrawalDetails;
 }
 
+/**
+ * Credit because we were paid for a P2P invoice we created.
+ */
 export interface TransactionPeerPullCredit extends TransactionCommon {
   type: TransactionType.PeerPullCredit;
 
@@ -204,8 +207,16 @@ export interface TransactionPeerPullCredit extends TransactionCommon {
    * Amount that actually was (or will be) added to the wallet's balance.
    */
   amountEffective: AmountString;
+
+  /**
+   * URI to send to the other party.
+   */
+  talerUri: string;
 }
 
+/**
+ * Debit because we paid someone's invoice.
+ */
 export interface TransactionPeerPullDebit extends TransactionCommon {
   type: TransactionType.PeerPullDebit;
 
@@ -219,6 +230,9 @@ export interface TransactionPeerPullDebit extends TransactionCommon {
   amountEffective: AmountString;
 }
 
+/**
+ * We sent money via a P2P payment.
+ */
 export interface TransactionPeerPushDebit extends TransactionCommon {
   type: TransactionType.PeerPushDebit;
 
@@ -236,8 +250,16 @@ export interface TransactionPeerPushDebit extends TransactionCommon {
    * Amount that actually was (or will be) added to the wallet's balance.
    */
   amountEffective: AmountString;
+
+  /**
+   * URI to accept the payment.
+   */
+  talerUri: string;
 }
 
+/**
+ * We received money via a P2P payment.
+ */
 export interface TransactionPeerPushCredit extends TransactionCommon {
   type: TransactionType.PeerPushCredit;
 

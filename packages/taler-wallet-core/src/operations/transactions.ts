@@ -21,6 +21,8 @@ import {
   AbsoluteTime,
   AmountJson,
   Amounts,
+  constructPayPullUri,
+  constructPayPushUri,
   Logger,
   OrderShortInfo,
   PaymentStatus,
@@ -156,6 +158,10 @@ export async function getTransactions(
           frozen: false,
           pending: !pi.purseCreated,
           timestamp: pi.timestampCreated,
+          talerUri: constructPayPushUri({
+            exchangeBaseUrl: pi.exchangeBaseUrl,
+            contractPriv: pi.contractPriv,
+          }),
           transactionId: makeEventId(
             TransactionType.PeerPushDebit,
             pi.pursePub,
@@ -203,7 +209,7 @@ export async function getTransactions(
           return;
         }
         let withdrawalDetails: WithdrawalDetails;
-        if (wsr.withdrawalType === WithdrawalRecordType.PeerPullCredit) {
+        if (wsr.wgInfo.withdrawalType === WithdrawalRecordType.PeerPullCredit) {
           transactions.push({
             type: TransactionType.PeerPullCredit,
             amountEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
@@ -211,6 +217,10 @@ export async function getTransactions(
             exchangeBaseUrl: wsr.exchangeBaseUrl,
             pending: !wsr.timestampFinish,
             timestamp: wsr.timestampStart,
+            talerUri: constructPayPullUri({
+              exchangeBaseUrl: wsr.exchangeBaseUrl,
+              contractPriv: wsr.wgInfo.contractPriv,
+            }),
             transactionId: makeEventId(
               TransactionType.PeerPullCredit,
               wsr.withdrawalGroupId,
@@ -219,7 +229,9 @@ export async function getTransactions(
             ...(wsr.lastError ? { error: wsr.lastError } : {}),
           });
           return;
-        } else if (wsr.withdrawalType === WithdrawalRecordType.PeerPushCredit) {
+        } else if (
+          wsr.wgInfo.withdrawalType === WithdrawalRecordType.PeerPushCredit
+        ) {
           transactions.push({
             type: TransactionType.PeerPushCredit,
             amountEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
@@ -235,12 +247,16 @@ export async function getTransactions(
             ...(wsr.lastError ? { error: wsr.lastError } : {}),
           });
           return;
-        } else if (wsr.bankInfo) {
+        } else if (
+          wsr.wgInfo.withdrawalType === WithdrawalRecordType.BankIntegrated
+        ) {
           withdrawalDetails = {
             type: WithdrawalType.TalerBankIntegrationApi,
-            confirmed: wsr.bankInfo.timestampBankConfirmed ? true : false,
+            confirmed: wsr.wgInfo.bankInfo.timestampBankConfirmed
+              ? true
+              : false,
             reservePub: wsr.reservePub,
-            bankConfirmationUrl: wsr.bankInfo.confirmUrl,
+            bankConfirmationUrl: wsr.wgInfo.bankInfo.confirmUrl,
           };
         } else {
           const exchangeDetails = await getExchangeDetails(

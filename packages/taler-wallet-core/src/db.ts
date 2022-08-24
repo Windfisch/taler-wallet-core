@@ -1226,6 +1226,39 @@ export const enum WithdrawalRecordType {
   PeerPushCredit = "peer-push-credit",
 }
 
+export interface WgInfoBankIntegrated {
+  withdrawalType: WithdrawalRecordType.BankIntegrated;
+  /**
+   * Extra state for when this is a withdrawal involving
+   * a Taler-integrated bank.
+   */
+  bankInfo: ReserveBankInfo;
+}
+
+export interface WgInfoBankManual {
+  withdrawalType: WithdrawalRecordType.BankManual;
+}
+
+export interface WgInfoBankPeerPull {
+  withdrawalType: WithdrawalRecordType.PeerPullCredit;
+
+  /**
+   * Needed to quickly construct the taler:// URI for the counterparty
+   * without a join.
+   */
+  contractPriv: string;
+}
+
+export interface WgInfoBankPeerPush {
+  withdrawalType: WithdrawalRecordType.PeerPushCredit;
+}
+
+export type WgInfo =
+  | WgInfoBankIntegrated
+  | WgInfoBankManual
+  | WgInfoBankPeerPull
+  | WgInfoBankPeerPush;
+
 /**
  * Group of withdrawal operations that need to be executed.
  * (Either for a normal withdrawal or from a tip.)
@@ -1239,7 +1272,7 @@ export interface WithdrawalGroupRecord {
    */
   withdrawalGroupId: string;
 
-  withdrawalType: WithdrawalRecordType;
+  wgInfo: WgInfo;
 
   /**
    * Secret seed used to derive planchets.
@@ -1300,12 +1333,6 @@ export interface WithdrawalGroupRecord {
    * Restrict withdrawals from this reserve to this age.
    */
   restrictAge?: number;
-
-  /**
-   * Extra state for when this is a withdrawal involving
-   * a Taler-integrated bank.
-   */
-  bankInfo?: ReserveBankInfo;
 
   /**
    * Amount including fees (i.e. the amount subtracted from the

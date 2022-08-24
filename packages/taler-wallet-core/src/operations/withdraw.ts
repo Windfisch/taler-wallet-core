@@ -73,6 +73,7 @@ import {
   ReserveBankInfo,
   ReserveRecordStatus,
   WalletStoresV1,
+  WgInfo,
   WithdrawalGroupRecord,
   WithdrawalRecordType,
 } from "../db.js";
@@ -1531,7 +1532,12 @@ async function registerReserveWithBank(
     default:
       return;
   }
-  const bankInfo = withdrawalGroup.bankInfo;
+  if (
+    withdrawalGroup.wgInfo.withdrawalType != WithdrawalRecordType.BankIntegrated
+  ) {
+    throw Error();
+  }
+  const bankInfo = withdrawalGroup.wgInfo.bankInfo;
   if (!bankInfo) {
     return;
   }
@@ -1566,10 +1572,10 @@ async function registerReserveWithBank(
         default:
           return;
       }
-      if (!r.bankInfo) {
+      if (r.wgInfo.withdrawalType !== WithdrawalRecordType.BankIntegrated) {
         throw Error("invariant failed");
       }
-      r.bankInfo.timestampReserveInfoPosted = AbsoluteTime.toTimestamp(
+      r.wgInfo.bankInfo.timestampReserveInfoPosted = AbsoluteTime.toTimestamp(
         AbsoluteTime.now(),
       );
       r.reserveStatus = ReserveRecordStatus.WaitConfirmBank;
@@ -1595,12 +1601,18 @@ async function processReserveBankStatus(
     default:
       return;
   }
-  if (!withdrawalGroup.bankInfo) {
+
+  if (
+    withdrawalGroup.wgInfo.withdrawalType != WithdrawalRecordType.BankIntegrated
+  ) {
+    throw Error();
+  }
+  const bankInfo = withdrawalGroup.wgInfo.bankInfo;
+  if (!bankInfo) {
     return;
   }
-  const bankStatusUrl = getBankStatusUrl(
-    withdrawalGroup.bankInfo.talerWithdrawUri,
-  );
+
+  const bankStatusUrl = getBankStatusUrl(bankInfo.talerWithdrawUri);
 
   const statusResp = await ws.http.get(bankStatusUrl, {
     timeout: getReserveRequestTimeout(withdrawalGroup),
@@ -1628,11 +1640,11 @@ async function processReserveBankStatus(
           default:
             return;
         }
-        if (!r.bankInfo) {
+        if (r.wgInfo.withdrawalType !== WithdrawalRecordType.BankIntegrated) {
           throw Error("invariant failed");
         }
         const now = AbsoluteTime.toTimestamp(AbsoluteTime.now());
-        r.bankInfo.timestampBankConfirmed = now;
+        r.wgInfo.bankInfo.timestampBankConfirmed = now;
         r.reserveStatus = ReserveRecordStatus.BankAborted;
         r.operationStatus = OperationStatus.Finished;
         r.retryInfo = RetryInfo.reset();
@@ -1670,21 +1682,19 @@ async function processReserveBankStatus(
         default:
           return;
       }
+      if (r.wgInfo.withdrawalType !== WithdrawalRecordType.BankIntegrated) {
+        throw Error("invariant failed");
+      }
       if (status.transfer_done) {
         logger.info("withdrawal: transfer confirmed by bank.");
         const now = AbsoluteTime.toTimestamp(AbsoluteTime.now());
-        if (!r.bankInfo) {
-          throw Error("invariant failed");
-        }
-        r.bankInfo.timestampBankConfirmed = now;
+        r.wgInfo.bankInfo.timestampBankConfirmed = now;
         r.reserveStatus = ReserveRecordStatus.QueryingStatus;
         r.operationStatus = OperationStatus.Pending;
         r.retryInfo = RetryInfo.reset();
       } else {
         logger.info("withdrawal: transfer not yet confirmed by bank");
-        if (r.bankInfo) {
-          r.bankInfo.confirmUrl = status.confirm_transfer_url;
-        }
+        r.wgInfo.bankInfo.confirmUrl = status.confirm_transfer_url;
         r.retryInfo = RetryInfo.increment(r.retryInfo);
       }
       await tx.withdrawalGroups.put(r);
@@ -1701,7 +1711,7 @@ export async function internalCreateWithdrawalGroup(
     forcedDenomSel?: ForcedDenomSel;
     reserveKeyPair?: EddsaKeypair;
     restrictAge?: number;
-    withdrawalType: WithdrawalRecordType;
+    wgInfo: WgInfo;
   },
 ): Promise<WithdrawalGroupRecord> {
   const reserveKeyPair =
@@ -1743,11 +1753,10 @@ export async function internalCreateWithdrawalGroup(
     reserveStatus: args.reserveStatus,
     retryInfo: RetryInfo.reset(),
     withdrawalGroupId,
-    bankInfo: args.bankInfo,
     restrictAge: args.restrictAge,
     senderWire: undefined,
     timestampFinish: undefined,
-    withdrawalType: args.withdrawalType,
+    wgInfo: args.wgInfo,
   };
 
   const exchangeInfo = await updateExchangeFromUrl(ws, canonExchange);
@@ -1802,9 +1811,16 @@ export async function acceptWithdrawalFromUri(
     });
 
   if (existingWithdrawalGroup) {
+    let url: string | undefined;
+    if (
+      existingWithdrawalGroup.wgInfo.withdrawalType ===
+      WithdrawalRecordType.BankIntegrated
+    ) {
+      url = existingWithdrawalGroup.wgInfo.bankInfo.confirmUrl;
+    }
     return {
       reservePub: existingWithdrawalGroup.reservePub,
-      confirmTransferUrl: existingWithdrawalGroup.bankInfo?.confirmUrl,
+      confirmTransferUrl: url,
     };
   }
 
@@ -1822,14 +1838,16 @@ export async function acceptWithdrawalFromUri(
   const withdrawalGroup = await internalCreateWithdrawalGroup(ws, {
     amount: withdrawInfo.amount,
     exchangeBaseUrl: req.selectedExchange,
-    withdrawalType: WithdrawalRecordType.BankIntegrated,
+    wgInfo: {
+      withdrawalType: WithdrawalRecordType.BankIntegrated,
+      bankInfo: {
+        exchangePaytoUri,
+        talerWithdrawUri: req.talerWithdrawUri,
+        confirmUrl: withdrawInfo.confirmTransferUrl,
+      },
+    },
     forcedDenomSel: req.forcedDenomSel,
     reserveStatus: ReserveRecordStatus.RegisteringBank,
-    bankInfo: {
-      exchangePaytoUri,
-      talerWithdrawUri: req.talerWithdrawUri,
-      confirmUrl: withdrawInfo.confirmTransferUrl,
-    },
   });
 
   const withdrawalGroupId = withdrawalGroup.withdrawalGroupId;
@@ -1881,7 +1899,9 @@ export async function createManualWithdrawal(
 ): Promise<AcceptManualWithdrawalResult> {
   const withdrawalGroup = await internalCreateWithdrawalGroup(ws, {
     amount: Amounts.jsonifyAmount(req.amount),
-    withdrawalType: WithdrawalRecordType.BankManual,
+    wgInfo: {
+      withdrawalType: WithdrawalRecordType.BankManual,
+    },
     exchangeBaseUrl: req.exchangeBaseUrl,
     bankInfo: undefined,
     forcedDenomSel: req.forcedDenomSel,

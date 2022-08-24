@@ -534,7 +534,9 @@ export async function acceptPeerPushPayment(
 
   await internalCreateWithdrawalGroup(ws, {
     amount,
-    withdrawalType: WithdrawalRecordType.PeerPushCredit,
+    wgInfo: {
+      withdrawalType: WithdrawalRecordType.PeerPushCredit,
+    },
     exchangeBaseUrl: peerInc.exchangeBaseUrl,
     reserveStatus: ReserveRecordStatus.QueryingStatus,
     reserveKeyPair: {
@@ -804,7 +806,10 @@ export async function initiatePeerRequestForPay(
 
   await internalCreateWithdrawalGroup(ws, {
     amount: Amounts.parseOrThrow(req.amount),
-    withdrawalType: WithdrawalRecordType.PeerPullCredit,
+    wgInfo: {
+      withdrawalType: WithdrawalRecordType.PeerPullCredit,
+      contractPriv: econtractResp.contractPriv,
+    },
     exchangeBaseUrl: req.exchangeBaseUrl,
     reserveStatus: ReserveRecordStatus.QueryingStatus,
     reserveKeyPair: {
