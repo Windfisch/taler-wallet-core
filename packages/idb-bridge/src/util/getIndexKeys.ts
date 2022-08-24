@@ -38,6 +38,9 @@ export function getIndexKeys(
     return keys;
   } else if (typeof keyPath === "string" || Array.isArray(keyPath)) {
     let key = extractKey(keyPath, value);
+    if (key == null) {
+      return [];
+    }
     return [valueToKey(key)];
   } else {
     throw Error(`unsupported key path: ${typeof keyPath}`);

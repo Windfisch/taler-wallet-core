@@ -72,6 +72,7 @@ import { checkDbInvariant } from "../util/invariants.js";
 import { internalCreateWithdrawalGroup } from "./withdraw.js";
 import { GetReadOnlyAccess } from "../util/query.js";
 import { createRefreshGroup } from "./refresh.js";
+import { updateExchangeFromUrl } from "./exchanges.js";
 
 const logger = new Logger("operations/peer-to-peer.ts");
 
@@ -339,6 +340,9 @@ export async function checkPeerPushPayment(
   }
 
   const exchangeBaseUrl = uri.exchangeBaseUrl;
+
+  await updateExchangeFromUrl(ws, exchangeBaseUrl);
+
   const contractPriv = uri.contractPriv;
   const contractPub = encodeCrock(eddsaGetPublic(decodeCrock(contractPriv)));
 
@@ -462,6 +466,8 @@ export async function acceptPeerPushPayment(
       `can't accept unknown incoming p2p push payment (${req.peerPushPaymentIncomingId})`,
     );
   }
+
+  await updateExchangeFromUrl(ws, peerInc.exchangeBaseUrl);
 
   const amount = Amounts.parseOrThrow(peerInc.contractTerms.amount);
 

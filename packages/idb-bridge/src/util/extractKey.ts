@@ -59,7 +59,7 @@ export const extractKey = (keyPath: IDBKeyPath | IDBKeyPath[], value: any) => {
       remainingKeyPath = null;
     }
 
-    if (!object.hasOwnProperty(identifier)) {
+    if (object == null || !object.hasOwnProperty(identifier)) {
       return;
     }
 

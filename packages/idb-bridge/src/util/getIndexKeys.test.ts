@@ -26,9 +26,7 @@ test("basics", (t) => {
 
   t.deepEqual(getIndexKeys([1, 2, 3], "", false), [[1, 2, 3]]);
 
-  t.throws(() => {
-    getIndexKeys({ foo: 42 }, "foo.bar", false);
-  });
+  t.deepEqual(getIndexKeys({ foo: 42 }, "foo.bar", false), []);
 
   t.deepEqual(getIndexKeys({ foo: 42 }, "foo", true), [42]);
   t.deepEqual(

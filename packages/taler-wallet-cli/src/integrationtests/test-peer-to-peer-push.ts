@@ -18,7 +18,7 @@
  * Imports.
  */
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { GlobalTestState } from "../harness/harness.js";
+import { GlobalTestState, WalletCli } from "../harness/harness.js";
 import {
   createSimpleTestkudosEnvironment,
   withdrawViaBank,
@@ -30,16 +30,23 @@ import {
 export async function runPeerToPeerPushTest(t: GlobalTestState) {
   // Set up test environment
 
-  const { wallet, bank, exchange, merchant } =
-    await createSimpleTestkudosEnvironment(t);
+  const { bank, exchange } = await createSimpleTestkudosEnvironment(t);
+
+  const wallet1 = new WalletCli(t, "w1");
+  const wallet2 = new WalletCli(t, "w2");
 
   // Withdraw digital cash into the wallet.
 
-  await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:20" });
+  await withdrawViaBank(t, {
+    wallet: wallet1,
+    bank,
+    exchange,
+    amount: "TESTKUDOS:20",
+  });
 
-  await wallet.runUntilDone();
+  await wallet1.runUntilDone();
 
-  const resp = await wallet.client.call(
+  const resp = await wallet1.client.call(
     WalletApiOperation.InitiatePeerPushPayment,
     {
       amount: "TESTKUDOS:5",
@@ -51,7 +58,7 @@ export async function runPeerToPeerPushTest(t: GlobalTestState) {
 
   console.log(resp);
 
-  const checkResp = await wallet.client.call(
+  const checkResp = await wallet2.client.call(
     WalletApiOperation.CheckPeerPushPayment,
     {
       talerUri: resp.talerUri,
@@ -60,7 +67,7 @@ export async function runPeerToPeerPushTest(t: GlobalTestState) {
 
   console.log(checkResp);
 
-  const acceptResp = await wallet.client.call(
+  const acceptResp = await wallet2.client.call(
     WalletApiOperation.AcceptPeerPushPayment,
     {
       peerPushPaymentIncomingId: checkResp.peerPushPaymentIncomingId,
@@ -69,7 +76,8 @@ export async function runPeerToPeerPushTest(t: GlobalTestState) {
 
   console.log(acceptResp);
 
-  await wallet.runUntilDone();
+  await wallet1.runUntilDone();
+  await wallet2.runUntilDone();
 }
 
 runPeerToPeerPushTest.suites = ["wallet"];
