@@ -1219,6 +1219,13 @@ export interface DenomSelectionState {
   }[];
 }
 
+export const enum WithdrawalRecordType {
+  BankManual = "bank-manual",
+  BankIntegrated = "bank-integrated",
+  PeerPullCredit = "peer-pull-credit",
+  PeerPushCredit = "peer-push-credit",
+}
+
 /**
  * Group of withdrawal operations that need to be executed.
  * (Either for a normal withdrawal or from a tip.)
@@ -1231,6 +1238,8 @@ export interface WithdrawalGroupRecord {
    * Unique identifier for the withdrawal group.
    */
   withdrawalGroupId: string;
+
+  withdrawalType: WithdrawalRecordType;
 
   /**
    * Secret seed used to derive planchets.
@@ -1607,8 +1616,6 @@ export interface PeerPushPaymentInitiationRecord {
 
   contractPriv: string;
 
-  contractPub: string;
-
   purseExpiration: TalerProtocolTimestamp;
 
   /**
@@ -1681,7 +1688,11 @@ export interface PeerPullPaymentIncomingRecord {
 
   contractTerms: PeerContractTerms;
 
-  timestamp: TalerProtocolTimestamp;
+  timestampCreated: TalerProtocolTimestamp;
+
+  paid: boolean;
+
+  accepted: boolean;
 
   contractPriv: string;
 }
@@ -1878,9 +1889,18 @@ export const WalletStoresV1 = {
       ]),
     },
   ),
-  peerPullPaymentInitiation: describeStore(
+  peerPullPaymentInitiations: describeStore(
     describeContents<PeerPullPaymentInitiationRecord>(
-      "peerPushPaymentInitiation",
+      "peerPullPaymentInitiations",
+      {
+        keyPath: "pursePub",
+      },
+    ),
+    {},
+  ),
+  peerPushPaymentInitiations: describeStore(
+    describeContents<PeerPushPaymentInitiationRecord>(
+      "peerPushPaymentInitiations",
       {
         keyPath: "pursePub",
       },

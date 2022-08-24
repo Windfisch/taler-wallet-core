@@ -102,7 +102,11 @@ export type Transaction =
   | TransactionRefund
   | TransactionTip
   | TransactionRefresh
-  | TransactionDeposit;
+  | TransactionDeposit
+  | TransactionPeerPullCredit
+  | TransactionPeerPullDebit
+  | TransactionPeerPushCredit
+  | TransactionPeerPushDebit;
 
 export enum TransactionType {
   Withdrawal = "withdrawal",
@@ -111,6 +115,10 @@ export enum TransactionType {
   Refresh = "refresh",
   Tip = "tip",
   Deposit = "deposit",
+  PeerPushDebit = "peer-push-debit",
+  PeerPushCredit = "peer-push-credit",
+  PeerPullDebit = "peer-pull-debit",
+  PeerPullCredit = "peer-pull-credit",
 }
 
 export enum WithdrawalType {
@@ -177,6 +185,76 @@ export interface TransactionWithdrawal extends TransactionCommon {
   amountEffective: AmountString;
 
   withdrawalDetails: WithdrawalDetails;
+}
+
+export interface TransactionPeerPullCredit extends TransactionCommon {
+  type: TransactionType.PeerPullCredit;
+
+  /**
+   * Exchange used.
+   */
+  exchangeBaseUrl: string;
+
+  /**
+   * Amount that got subtracted from the reserve balance.
+   */
+  amountRaw: AmountString;
+
+  /**
+   * Amount that actually was (or will be) added to the wallet's balance.
+   */
+  amountEffective: AmountString;
+}
+
+export interface TransactionPeerPullDebit extends TransactionCommon {
+  type: TransactionType.PeerPullDebit;
+
+  /**
+   * Exchange used.
+   */
+  exchangeBaseUrl: string;
+
+  amountRaw: AmountString;
+
+  amountEffective: AmountString;
+}
+
+export interface TransactionPeerPushDebit extends TransactionCommon {
+  type: TransactionType.PeerPushDebit;
+
+  /**
+   * Exchange used.
+   */
+  exchangeBaseUrl: string;
+
+  /**
+   * Amount that got subtracted from the reserve balance.
+   */
+  amountRaw: AmountString;
+
+  /**
+   * Amount that actually was (or will be) added to the wallet's balance.
+   */
+  amountEffective: AmountString;
+}
+
+export interface TransactionPeerPushCredit extends TransactionCommon {
+  type: TransactionType.PeerPushCredit;
+
+  /**
+   * Exchange used.
+   */
+  exchangeBaseUrl: string;
+
+  /**
+   * Amount that got subtracted from the reserve balance.
+   */
+  amountRaw: AmountString;
+
+  /**
+   * Amount that actually was (or will be) added to the wallet's balance.
+   */
+  amountEffective: AmountString;
 }
 
 export enum PaymentStatus {
@@ -311,10 +389,10 @@ export interface OrderShortInfo {
 }
 
 export interface RefundInfoShort {
-  transactionId: string,
-  timestamp: TalerProtocolTimestamp,
-  amountEffective: AmountString,
-  amountRaw: AmountString,
+  transactionId: string;
+  timestamp: TalerProtocolTimestamp;
+  amountEffective: AmountString;
+  amountRaw: AmountString;
 }
 
 export interface TransactionRefund extends TransactionCommon {

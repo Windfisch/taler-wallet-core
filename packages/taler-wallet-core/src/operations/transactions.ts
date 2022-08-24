@@ -38,6 +38,7 @@ import {
   RefundState,
   ReserveRecordStatus,
   WalletRefundItem,
+  WithdrawalRecordType,
 } from "../db.js";
 import { processDepositGroup } from "./deposits.js";
 import { getExchangeDetails } from "./exchanges.js";
@@ -101,10 +102,14 @@ const txOrder: { [t in TransactionType]: number } = {
   [TransactionType.Withdrawal]: 1,
   [TransactionType.Tip]: 2,
   [TransactionType.Payment]: 3,
-  [TransactionType.Refund]: 4,
-  [TransactionType.Deposit]: 5,
-  [TransactionType.Refresh]: 6,
-  [TransactionType.Tip]: 7,
+  [TransactionType.PeerPullCredit]: 4,
+  [TransactionType.PeerPullDebit]: 5,
+  [TransactionType.PeerPushCredit]: 6,
+  [TransactionType.PeerPushDebit]: 7,
+  [TransactionType.Refund]: 8,
+  [TransactionType.Deposit]: 9,
+  [TransactionType.Refresh]: 10,
+  [TransactionType.Tip]: 11,
 };
 
 /**
@@ -131,267 +136,348 @@ export async function getTransactions(
       recoupGroups: x.recoupGroups,
       depositGroups: x.depositGroups,
       tombstones: x.tombstones,
+      peerPushPaymentInitiations: x.peerPushPaymentInitiations,
+      peerPullPaymentIncoming: x.peerPullPaymentIncoming,
     }))
-    .runReadOnly(
-      // Report withdrawals that are currently in progress.
-      async (tx) => {
-        tx.withdrawalGroups.iter().forEachAsync(async (wsr) => {
-          if (
-            shouldSkipCurrency(
-              transactionsRequest,
-              wsr.rawWithdrawalAmount.currency,
-            )
-          ) {
-            return;
-          }
+    .runReadOnly(async (tx) => {
+      tx.peerPushPaymentInitiations.iter().forEachAsync(async (pi) => {
+        const amount = Amounts.parseOrThrow(pi.amount);
+        if (shouldSkipCurrency(transactionsRequest, amount.currency)) {
+          return;
+        }
+        if (shouldSkipSearch(transactionsRequest, [])) {
+          return;
+        }
+        transactions.push({
+          type: TransactionType.PeerPushDebit,
+          amountEffective: pi.amount,
+          amountRaw: pi.amount,
+          exchangeBaseUrl: pi.exchangeBaseUrl,
+          frozen: false,
+          pending: !pi.purseCreated,
+          timestamp: pi.timestampCreated,
+          transactionId: makeEventId(
+            TransactionType.PeerPushDebit,
+            pi.pursePub,
+          ),
+        });
+      });
 
-          if (shouldSkipSearch(transactionsRequest, [])) {
-            return;
-          }
-          let withdrawalDetails: WithdrawalDetails;
-          if (wsr.bankInfo) {
-            withdrawalDetails = {
-              type: WithdrawalType.TalerBankIntegrationApi,
-              confirmed: wsr.bankInfo.timestampBankConfirmed ? true : false,
-              reservePub: wsr.reservePub,
-              bankConfirmationUrl: wsr.bankInfo.confirmUrl,
-            };
-          } else {
-            const exchangeDetails = await getExchangeDetails(
-              tx,
-              wsr.exchangeBaseUrl,
-            );
-            if (!exchangeDetails) {
-              // FIXME: report somehow
-              return;
-            }
-            withdrawalDetails = {
-              type: WithdrawalType.ManualTransfer,
-              reservePub: wsr.reservePub,
-              exchangePaytoUris:
-                exchangeDetails.wireInfo?.accounts.map((x) => `${x.payto_uri}?subject=${wsr.reservePub}`) ??
-                [],
-            };
-          }
+      tx.peerPullPaymentIncoming.iter().forEachAsync(async (pi) => {
+        const amount = Amounts.parseOrThrow(pi.contractTerms.amount);
+        if (shouldSkipCurrency(transactionsRequest, amount.currency)) {
+          return;
+        }
+        if (shouldSkipSearch(transactionsRequest, [])) {
+          return;
+        }
+        if (!pi.accepted) {
+          return;
+        }
+        transactions.push({
+          type: TransactionType.PeerPullDebit,
+          amountEffective: Amounts.stringify(amount),
+          amountRaw: Amounts.stringify(amount),
+          exchangeBaseUrl: pi.exchangeBaseUrl,
+          frozen: false,
+          pending: false,
+          timestamp: pi.timestampCreated,
+          transactionId: makeEventId(
+            TransactionType.PeerPullDebit,
+            pi.pursePub,
+          ),
+        });
+      });
 
+      tx.withdrawalGroups.iter().forEachAsync(async (wsr) => {
+        if (
+          shouldSkipCurrency(
+            transactionsRequest,
+            wsr.rawWithdrawalAmount.currency,
+          )
+        ) {
+          return;
+        }
+
+        if (shouldSkipSearch(transactionsRequest, [])) {
+          return;
+        }
+        let withdrawalDetails: WithdrawalDetails;
+        if (wsr.withdrawalType === WithdrawalRecordType.PeerPullCredit) {
           transactions.push({
-            type: TransactionType.Withdrawal,
+            type: TransactionType.PeerPullCredit,
             amountEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
             amountRaw: Amounts.stringify(wsr.rawWithdrawalAmount),
-            withdrawalDetails,
             exchangeBaseUrl: wsr.exchangeBaseUrl,
             pending: !wsr.timestampFinish,
             timestamp: wsr.timestampStart,
             transactionId: makeEventId(
-              TransactionType.Withdrawal,
+              TransactionType.PeerPullCredit,
               wsr.withdrawalGroupId,
             ),
             frozen: false,
             ...(wsr.lastError ? { error: wsr.lastError } : {}),
           });
-        });
-
-        tx.depositGroups.iter().forEachAsync(async (dg) => {
-          const amount = Amounts.parseOrThrow(dg.contractTermsRaw.amount);
-          if (shouldSkipCurrency(transactionsRequest, amount.currency)) {
-            return;
-          }
-
+          return;
+        } else if (wsr.withdrawalType === WithdrawalRecordType.PeerPushCredit) {
           transactions.push({
-            type: TransactionType.Deposit,
-            amountRaw: Amounts.stringify(dg.effectiveDepositAmount),
-            amountEffective: Amounts.stringify(dg.totalPayCost),
-            pending: !dg.timestampFinished,
-            frozen: false,
-            timestamp: dg.timestampCreated,
-            targetPaytoUri: dg.wire.payto_uri,
+            type: TransactionType.PeerPushCredit,
+            amountEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
+            amountRaw: Amounts.stringify(wsr.rawWithdrawalAmount),
+            exchangeBaseUrl: wsr.exchangeBaseUrl,
+            pending: !wsr.timestampFinish,
+            timestamp: wsr.timestampStart,
             transactionId: makeEventId(
-              TransactionType.Deposit,
-              dg.depositGroupId,
+              TransactionType.PeerPushCredit,
+              wsr.withdrawalGroupId,
             ),
-            depositGroupId: dg.depositGroupId,
-            ...(dg.lastError ? { error: dg.lastError } : {}),
+            frozen: false,
+            ...(wsr.lastError ? { error: wsr.lastError } : {}),
           });
-        });
-
-        tx.purchases.iter().forEachAsync(async (pr) => {
-          if (
-            shouldSkipCurrency(
-              transactionsRequest,
-              pr.download.contractData.amount.currency,
-            )
-          ) {
-            return;
-          }
-          const contractData = pr.download.contractData;
-          if (shouldSkipSearch(transactionsRequest, [contractData.summary])) {
-            return;
-          }
-          const proposal = await tx.proposals.get(pr.proposalId);
-          if (!proposal) {
-            return;
-          }
-          const info: OrderShortInfo = {
-            merchant: contractData.merchant,
-            orderId: contractData.orderId,
-            products: contractData.products,
-            summary: contractData.summary,
-            summary_i18n: contractData.summaryI18n,
-            contractTermsHash: contractData.contractTermsHash,
+          return;
+        } else if (wsr.bankInfo) {
+          withdrawalDetails = {
+            type: WithdrawalType.TalerBankIntegrationApi,
+            confirmed: wsr.bankInfo.timestampBankConfirmed ? true : false,
+            reservePub: wsr.reservePub,
+            bankConfirmationUrl: wsr.bankInfo.confirmUrl,
           };
-          if (contractData.fulfillmentUrl !== "") {
-            info.fulfillmentUrl = contractData.fulfillmentUrl;
-          }
-          const paymentTransactionId = makeEventId(
-            TransactionType.Payment,
-            pr.proposalId,
+        } else {
+          const exchangeDetails = await getExchangeDetails(
+            tx,
+            wsr.exchangeBaseUrl,
           );
-          const refundGroupKeys = new Set<string>();
+          if (!exchangeDetails) {
+            // FIXME: report somehow
+            return;
+          }
+          withdrawalDetails = {
+            type: WithdrawalType.ManualTransfer,
+            reservePub: wsr.reservePub,
+            exchangePaytoUris:
+              exchangeDetails.wireInfo?.accounts.map(
+                (x) => `${x.payto_uri}?subject=${wsr.reservePub}`,
+              ) ?? [],
+          };
+        }
 
+        transactions.push({
+          type: TransactionType.Withdrawal,
+          amountEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
+          amountRaw: Amounts.stringify(wsr.rawWithdrawalAmount),
+          withdrawalDetails,
+          exchangeBaseUrl: wsr.exchangeBaseUrl,
+          pending: !wsr.timestampFinish,
+          timestamp: wsr.timestampStart,
+          transactionId: makeEventId(
+            TransactionType.Withdrawal,
+            wsr.withdrawalGroupId,
+          ),
+          frozen: false,
+          ...(wsr.lastError ? { error: wsr.lastError } : {}),
+        });
+      });
+
+      tx.depositGroups.iter().forEachAsync(async (dg) => {
+        const amount = Amounts.parseOrThrow(dg.contractTermsRaw.amount);
+        if (shouldSkipCurrency(transactionsRequest, amount.currency)) {
+          return;
+        }
+
+        transactions.push({
+          type: TransactionType.Deposit,
+          amountRaw: Amounts.stringify(dg.effectiveDepositAmount),
+          amountEffective: Amounts.stringify(dg.totalPayCost),
+          pending: !dg.timestampFinished,
+          frozen: false,
+          timestamp: dg.timestampCreated,
+          targetPaytoUri: dg.wire.payto_uri,
+          transactionId: makeEventId(
+            TransactionType.Deposit,
+            dg.depositGroupId,
+          ),
+          depositGroupId: dg.depositGroupId,
+          ...(dg.lastError ? { error: dg.lastError } : {}),
+        });
+      });
+
+      tx.purchases.iter().forEachAsync(async (pr) => {
+        if (
+          shouldSkipCurrency(
+            transactionsRequest,
+            pr.download.contractData.amount.currency,
+          )
+        ) {
+          return;
+        }
+        const contractData = pr.download.contractData;
+        if (shouldSkipSearch(transactionsRequest, [contractData.summary])) {
+          return;
+        }
+        const proposal = await tx.proposals.get(pr.proposalId);
+        if (!proposal) {
+          return;
+        }
+        const info: OrderShortInfo = {
+          merchant: contractData.merchant,
+          orderId: contractData.orderId,
+          products: contractData.products,
+          summary: contractData.summary,
+          summary_i18n: contractData.summaryI18n,
+          contractTermsHash: contractData.contractTermsHash,
+        };
+        if (contractData.fulfillmentUrl !== "") {
+          info.fulfillmentUrl = contractData.fulfillmentUrl;
+        }
+        const paymentTransactionId = makeEventId(
+          TransactionType.Payment,
+          pr.proposalId,
+        );
+        const refundGroupKeys = new Set<string>();
+
+        for (const rk of Object.keys(pr.refunds)) {
+          const refund = pr.refunds[rk];
+          const groupKey = `${refund.executionTime.t_s}`;
+          refundGroupKeys.add(groupKey);
+        }
+
+        let totalRefundRaw = Amounts.getZero(contractData.amount.currency);
+        let totalRefundEffective = Amounts.getZero(
+          contractData.amount.currency,
+        );
+        const refunds: RefundInfoShort[] = [];
+
+        for (const groupKey of refundGroupKeys.values()) {
+          const refundTombstoneId = makeEventId(
+            TombstoneTag.DeleteRefund,
+            pr.proposalId,
+            groupKey,
+          );
+          const tombstone = await tx.tombstones.get(refundTombstoneId);
+          if (tombstone) {
+            continue;
+          }
+          const refundTransactionId = makeEventId(
+            TransactionType.Refund,
+            pr.proposalId,
+            groupKey,
+          );
+          let r0: WalletRefundItem | undefined;
+          let amountRaw = Amounts.getZero(contractData.amount.currency);
+          let amountEffective = Amounts.getZero(contractData.amount.currency);
           for (const rk of Object.keys(pr.refunds)) {
             const refund = pr.refunds[rk];
-            const groupKey = `${refund.executionTime.t_s}`;
-            refundGroupKeys.add(groupKey);
-          }
-
-          let totalRefundRaw = Amounts.getZero(contractData.amount.currency);
-          let totalRefundEffective = Amounts.getZero(
-            contractData.amount.currency,
-          );
-          const refunds: RefundInfoShort[] = [];
-
-          for (const groupKey of refundGroupKeys.values()) {
-            const refundTombstoneId = makeEventId(
-              TombstoneTag.DeleteRefund,
-              pr.proposalId,
-              groupKey,
-            );
-            const tombstone = await tx.tombstones.get(refundTombstoneId);
-            if (tombstone) {
+            const myGroupKey = `${refund.executionTime.t_s}`;
+            if (myGroupKey !== groupKey) {
               continue;
             }
-            const refundTransactionId = makeEventId(
-              TransactionType.Refund,
-              pr.proposalId,
-              groupKey,
-            );
-            let r0: WalletRefundItem | undefined;
-            let amountRaw = Amounts.getZero(contractData.amount.currency);
-            let amountEffective = Amounts.getZero(contractData.amount.currency);
-            for (const rk of Object.keys(pr.refunds)) {
-              const refund = pr.refunds[rk];
-              const myGroupKey = `${refund.executionTime.t_s}`;
-              if (myGroupKey !== groupKey) {
-                continue;
-              }
-              if (!r0) {
-                r0 = refund;
-              }
-
-              if (refund.type === RefundState.Applied) {
-                amountRaw = Amounts.add(amountRaw, refund.refundAmount).amount;
-                amountEffective = Amounts.add(
-                  amountEffective,
-                  Amounts.sub(
-                    refund.refundAmount,
-                    refund.refundFee,
-                    refund.totalRefreshCostBound,
-                  ).amount,
-                ).amount;
-
-                refunds.push({
-                  transactionId: refundTransactionId,
-                  timestamp: r0.obtainedTime,
-                  amountEffective: Amounts.stringify(amountEffective),
-                  amountRaw: Amounts.stringify(amountRaw),
-                });
-              }
-            }
             if (!r0) {
-              throw Error("invariant violated");
+              r0 = refund;
             }
 
-            totalRefundRaw = Amounts.add(totalRefundRaw, amountRaw).amount;
-            totalRefundEffective = Amounts.add(
-              totalRefundEffective,
-              amountEffective,
-            ).amount;
-            transactions.push({
-              type: TransactionType.Refund,
-              info,
-              refundedTransactionId: paymentTransactionId,
-              transactionId: refundTransactionId,
-              timestamp: r0.obtainedTime,
-              amountEffective: Amounts.stringify(amountEffective),
-              amountRaw: Amounts.stringify(amountRaw),
-              refundPending:
-                pr.refundAwaiting === undefined
-                  ? undefined
-                  : Amounts.stringify(pr.refundAwaiting),
-              pending: false,
-              frozen: false,
-            });
+            if (refund.type === RefundState.Applied) {
+              amountRaw = Amounts.add(amountRaw, refund.refundAmount).amount;
+              amountEffective = Amounts.add(
+                amountEffective,
+                Amounts.sub(
+                  refund.refundAmount,
+                  refund.refundFee,
+                  refund.totalRefreshCostBound,
+                ).amount,
+              ).amount;
+
+              refunds.push({
+                transactionId: refundTransactionId,
+                timestamp: r0.obtainedTime,
+                amountEffective: Amounts.stringify(amountEffective),
+                amountRaw: Amounts.stringify(amountRaw),
+              });
+            }
+          }
+          if (!r0) {
+            throw Error("invariant violated");
           }
 
-          const err = pr.lastPayError ?? pr.lastRefundStatusError;
+          totalRefundRaw = Amounts.add(totalRefundRaw, amountRaw).amount;
+          totalRefundEffective = Amounts.add(
+            totalRefundEffective,
+            amountEffective,
+          ).amount;
           transactions.push({
-            type: TransactionType.Payment,
-            amountRaw: Amounts.stringify(contractData.amount),
-            amountEffective: Amounts.stringify(pr.totalPayCost),
-            totalRefundRaw: Amounts.stringify(totalRefundRaw),
-            totalRefundEffective: Amounts.stringify(totalRefundEffective),
+            type: TransactionType.Refund,
+            info,
+            refundedTransactionId: paymentTransactionId,
+            transactionId: refundTransactionId,
+            timestamp: r0.obtainedTime,
+            amountEffective: Amounts.stringify(amountEffective),
+            amountRaw: Amounts.stringify(amountRaw),
             refundPending:
               pr.refundAwaiting === undefined
                 ? undefined
                 : Amounts.stringify(pr.refundAwaiting),
-            status: pr.timestampFirstSuccessfulPay
-              ? PaymentStatus.Paid
-              : PaymentStatus.Accepted,
-            pending:
-              !pr.timestampFirstSuccessfulPay &&
-              pr.abortStatus === AbortStatus.None,
-            refunds,
-            timestamp: pr.timestampAccept,
-            transactionId: paymentTransactionId,
-            proposalId: pr.proposalId,
-            info,
-            frozen: pr.payFrozen ?? false,
-            ...(err ? { error: err } : {}),
-          });
-        });
-
-        tx.tips.iter().forEachAsync(async (tipRecord) => {
-          if (
-            shouldSkipCurrency(
-              transactionsRequest,
-              tipRecord.tipAmountRaw.currency,
-            )
-          ) {
-            return;
-          }
-          if (!tipRecord.acceptedTimestamp) {
-            return;
-          }
-          transactions.push({
-            type: TransactionType.Tip,
-            amountEffective: Amounts.stringify(tipRecord.tipAmountEffective),
-            amountRaw: Amounts.stringify(tipRecord.tipAmountRaw),
-            pending: !tipRecord.pickedUpTimestamp,
+            pending: false,
             frozen: false,
-            timestamp: tipRecord.acceptedTimestamp,
-            transactionId: makeEventId(
-              TransactionType.Tip,
-              tipRecord.walletTipId,
-            ),
-            merchantBaseUrl: tipRecord.merchantBaseUrl,
-            // merchant: {
-            //   name: tipRecord.merchantBaseUrl,
-            // },
-            error: tipRecord.lastError,
           });
+        }
+
+        const err = pr.lastPayError ?? pr.lastRefundStatusError;
+        transactions.push({
+          type: TransactionType.Payment,
+          amountRaw: Amounts.stringify(contractData.amount),
+          amountEffective: Amounts.stringify(pr.totalPayCost),
+          totalRefundRaw: Amounts.stringify(totalRefundRaw),
+          totalRefundEffective: Amounts.stringify(totalRefundEffective),
+          refundPending:
+            pr.refundAwaiting === undefined
+              ? undefined
+              : Amounts.stringify(pr.refundAwaiting),
+          status: pr.timestampFirstSuccessfulPay
+            ? PaymentStatus.Paid
+            : PaymentStatus.Accepted,
+          pending:
+            !pr.timestampFirstSuccessfulPay &&
+            pr.abortStatus === AbortStatus.None,
+          refunds,
+          timestamp: pr.timestampAccept,
+          transactionId: paymentTransactionId,
+          proposalId: pr.proposalId,
+          info,
+          frozen: pr.payFrozen ?? false,
+          ...(err ? { error: err } : {}),
         });
-      },
-    );
+      });
+
+      tx.tips.iter().forEachAsync(async (tipRecord) => {
+        if (
+          shouldSkipCurrency(
+            transactionsRequest,
+            tipRecord.tipAmountRaw.currency,
+          )
+        ) {
+          return;
+        }
+        if (!tipRecord.acceptedTimestamp) {
+          return;
+        }
+        transactions.push({
+          type: TransactionType.Tip,
+          amountEffective: Amounts.stringify(tipRecord.tipAmountEffective),
+          amountRaw: Amounts.stringify(tipRecord.tipAmountRaw),
+          pending: !tipRecord.pickedUpTimestamp,
+          frozen: false,
+          timestamp: tipRecord.acceptedTimestamp,
+          transactionId: makeEventId(
+            TransactionType.Tip,
+            tipRecord.walletTipId,
+          ),
+          merchantBaseUrl: tipRecord.merchantBaseUrl,
+          // merchant: {
+          //   name: tipRecord.merchantBaseUrl,
+          // },
+          error: tipRecord.lastError,
+        });
+      });
+    });
 
   const txPending = transactions.filter((x) => x.pending);
   const txNotPending = transactions.filter((x) => !x.pending);

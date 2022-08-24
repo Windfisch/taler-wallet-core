@@ -65,6 +65,7 @@ import {
   MergeReserveInfo,
   ReserveRecordStatus,
   WalletStoresV1,
+  WithdrawalRecordType,
 } from "../db.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
@@ -208,39 +209,6 @@ export async function initiatePeerToPeerPush(
 ): Promise<InitiatePeerPushPaymentResponse> {
   // FIXME: actually create a record for retries here!
   const instructedAmount = Amounts.parseOrThrow(req.amount);
-  const coinSelRes: PeerCoinSelection | undefined = await ws.db
-    .mktx((x) => ({
-      exchanges: x.exchanges,
-      coins: x.coins,
-      denominations: x.denominations,
-      refreshGroups: x.refreshGroups,
-    }))
-    .runReadWrite(async (tx) => {
-      const sel = await selectPeerCoins(ws, tx, instructedAmount);
-      if (!sel) {
-        return undefined;
-      }
-
-      const pubs: CoinPublicKey[] = [];
-      for (const c of sel.coins) {
-        const coin = await tx.coins.get(c.coinPub);
-        checkDbInvariant(!!coin);
-        coin.currentAmount = Amounts.sub(
-          coin.currentAmount,
-          Amounts.parseOrThrow(c.contribution),
-        ).amount;
-        await tx.coins.put(coin);
-      }
-
-      await createRefreshGroup(ws, tx, pubs, RefreshReason.Pay);
-
-      return sel;
-    });
-  logger.info(`selected p2p coins: ${j2s(coinSelRes)}`);
-
-  if (!coinSelRes) {
-    throw Error("insufficient balance");
-  }
 
   const pursePair = await ws.cryptoApi.createEddsaKeypair({});
   const mergePair = await ws.cryptoApi.createEddsaKeypair({});
@@ -259,6 +227,62 @@ export async function initiatePeerToPeerPush(
   };
 
   const hContractTerms = ContractTermsUtil.hashContractTerms(contractTerms);
+
+  const econtractResp = await ws.cryptoApi.encryptContractForMerge({
+    contractTerms,
+    mergePriv: mergePair.priv,
+    pursePriv: pursePair.priv,
+    pursePub: pursePair.pub,
+  });
+
+  const coinSelRes: PeerCoinSelection | undefined = await ws.db
+    .mktx((x) => ({
+      exchanges: x.exchanges,
+      coins: x.coins,
+      denominations: x.denominations,
+      refreshGroups: x.refreshGroups,
+      peerPushPaymentInitiations: x.peerPushPaymentInitiations,
+    }))
+    .runReadWrite(async (tx) => {
+      const sel = await selectPeerCoins(ws, tx, instructedAmount);
+      if (!sel) {
+        return undefined;
+      }
+
+      const pubs: CoinPublicKey[] = [];
+      for (const c of sel.coins) {
+        const coin = await tx.coins.get(c.coinPub);
+        checkDbInvariant(!!coin);
+        coin.currentAmount = Amounts.sub(
+          coin.currentAmount,
+          Amounts.parseOrThrow(c.contribution),
+        ).amount;
+        await tx.coins.put(coin);
+      }
+
+      await tx.peerPushPaymentInitiations.add({
+        amount: Amounts.stringify(instructedAmount),
+        contractPriv: econtractResp.contractPriv,
+        exchangeBaseUrl: sel.exchangeBaseUrl,
+        mergePriv: mergePair.priv,
+        mergePub: mergePair.pub,
+        // FIXME: only set this later!
+        purseCreated: true,
+        purseExpiration: purseExpiration,
+        pursePriv: pursePair.priv,
+        pursePub: pursePair.pub,
+        timestampCreated: TalerProtocolTimestamp.now(),
+      });
+
+      await createRefreshGroup(ws, tx, pubs, RefreshReason.Pay);
+
+      return sel;
+    });
+  logger.info(`selected p2p coins: ${j2s(coinSelRes)}`);
+
+  if (!coinSelRes) {
+    throw Error("insufficient balance");
+  }
 
   const purseSigResp = await ws.cryptoApi.signPurseCreation({
     hContractTerms,
@@ -279,13 +303,6 @@ export async function initiatePeerToPeerPush(
     `purses/${pursePair.pub}/create`,
     coinSelRes.exchangeBaseUrl,
   );
-
-  const econtractResp = await ws.cryptoApi.encryptContractForMerge({
-    contractTerms,
-    mergePriv: mergePair.priv,
-    pursePriv: pursePair.priv,
-    pursePub: pursePair.pub,
-  });
 
   const httpResp = await ws.http.postJson(createPurseUrl.href, {
     amount: Amounts.stringify(instructedAmount),
@@ -517,6 +534,7 @@ export async function acceptPeerPushPayment(
 
   await internalCreateWithdrawalGroup(ws, {
     amount,
+    withdrawalType: WithdrawalRecordType.PeerPushCredit,
     exchangeBaseUrl: peerInc.exchangeBaseUrl,
     reserveStatus: ReserveRecordStatus.QueryingStatus,
     reserveKeyPair: {
@@ -554,6 +572,7 @@ export async function acceptPeerPullPayment(
       coins: x.coins,
       denominations: x.denominations,
       refreshGroups: x.refreshGroups,
+      peerPullPaymentIncoming: x.peerPullPaymentIncoming,
     }))
     .runReadWrite(async (tx) => {
       const sel = await selectPeerCoins(ws, tx, instructedAmount);
@@ -573,6 +592,15 @@ export async function acceptPeerPullPayment(
       }
 
       await createRefreshGroup(ws, tx, pubs, RefreshReason.Pay);
+
+      const pi = await tx.peerPullPaymentIncoming.get(
+        req.peerPullPaymentIncomingId,
+      );
+      if (!pi) {
+        throw Error();
+      }
+      pi.accepted = true;
+      await tx.peerPullPaymentIncoming.put(pi);
 
       return sel;
     });
@@ -656,8 +684,10 @@ export async function checkPeerPullPayment(
         contractPriv: contractPriv,
         exchangeBaseUrl: exchangeBaseUrl,
         pursePub: pursePub,
-        timestamp: TalerProtocolTimestamp.now(),
+        timestampCreated: TalerProtocolTimestamp.now(),
         contractTerms: dec.contractTerms,
+        paid: false,
+        accepted: false,
       });
     });
 
@@ -672,6 +702,8 @@ export async function initiatePeerRequestForPay(
   ws: InternalWalletState,
   req: InitiatePeerPullPaymentRequest,
 ): Promise<InitiatePeerPullPaymentResponse> {
+  await updateExchangeFromUrl(ws, req.exchangeBaseUrl);
+
   const mergeReserveInfo = await getMergeReserveInfo(ws, {
     exchangeBaseUrl: req.exchangeBaseUrl,
   });
@@ -727,7 +759,7 @@ export async function initiatePeerRequestForPay(
 
   await ws.db
     .mktx((x) => ({
-      peerPullPaymentInitiation: x.peerPullPaymentInitiation,
+      peerPullPaymentInitiation: x.peerPullPaymentInitiations,
     }))
     .runReadWrite(async (tx) => {
       await tx.peerPullPaymentInitiation.put({
@@ -772,6 +804,7 @@ export async function initiatePeerRequestForPay(
 
   await internalCreateWithdrawalGroup(ws, {
     amount: Amounts.parseOrThrow(req.amount),
+    withdrawalType: WithdrawalRecordType.PeerPullCredit,
     exchangeBaseUrl: req.exchangeBaseUrl,
     reserveStatus: ReserveRecordStatus.QueryingStatus,
     reserveKeyPair: {

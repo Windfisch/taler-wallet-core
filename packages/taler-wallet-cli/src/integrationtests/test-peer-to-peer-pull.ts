@@ -19,7 +19,7 @@
  */
 import { j2s } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { GlobalTestState } from "../harness/harness.js";
+import { GlobalTestState, WalletCli } from "../harness/harness.js";
 import {
   createSimpleTestkudosEnvironment,
   withdrawViaBank,
@@ -31,16 +31,23 @@ import {
 export async function runPeerToPeerPullTest(t: GlobalTestState) {
   // Set up test environment
 
-  const { wallet, bank, exchange, merchant } =
-    await createSimpleTestkudosEnvironment(t);
+  const { bank, exchange, merchant } = await createSimpleTestkudosEnvironment(
+    t,
+  );
 
   // Withdraw digital cash into the wallet.
+  const wallet1 = new WalletCli(t, "w1");
+  const wallet2 = new WalletCli(t, "w2");
+  await withdrawViaBank(t, {
+    wallet: wallet2,
+    bank,
+    exchange,
+    amount: "TESTKUDOS:20",
+  });
 
-  await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:20" });
+  await wallet1.runUntilDone();
 
-  await wallet.runUntilDone();
-
-  const resp = await wallet.client.call(
+  const resp = await wallet1.client.call(
     WalletApiOperation.InitiatePeerPullPayment,
     {
       exchangeBaseUrl: exchange.baseUrl,
@@ -51,7 +58,7 @@ export async function runPeerToPeerPullTest(t: GlobalTestState) {
     },
   );
 
-  const checkResp = await wallet.client.call(
+  const checkResp = await wallet2.client.call(
     WalletApiOperation.CheckPeerPullPayment,
     {
       talerUri: resp.talerUri,
@@ -60,18 +67,27 @@ export async function runPeerToPeerPullTest(t: GlobalTestState) {
 
   console.log(`checkResp: ${j2s(checkResp)}`);
 
-  const acceptResp = await wallet.client.call(
+  const acceptResp = await wallet2.client.call(
     WalletApiOperation.AcceptPeerPullPayment,
     {
       peerPullPaymentIncomingId: checkResp.peerPullPaymentIncomingId,
     },
   );
 
-  const txs = await wallet.client.call(WalletApiOperation.GetTransactions, {});
+  await wallet1.runUntilDone();
+  await wallet2.runUntilDone();
 
-  console.log(`transactions: ${j2s(txs)}`);
+  const txn1 = await wallet1.client.call(
+    WalletApiOperation.GetTransactions,
+    {},
+  );
+  const txn2 = await wallet2.client.call(
+    WalletApiOperation.GetTransactions,
+    {},
+  );
 
-  await wallet.runUntilDone();
+  console.log(`txn1: ${j2s(txn1)}`);
+  console.log(`txn2: ${j2s(txn2)}`);
 }
 
 runPeerToPeerPullTest.suites = ["wallet"];

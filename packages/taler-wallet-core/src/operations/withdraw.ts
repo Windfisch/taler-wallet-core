@@ -74,6 +74,7 @@ import {
   ReserveRecordStatus,
   WalletStoresV1,
   WithdrawalGroupRecord,
+  WithdrawalRecordType,
 } from "../db.js";
 import {
   getErrorDetailFromException,
@@ -1700,6 +1701,7 @@ export async function internalCreateWithdrawalGroup(
     forcedDenomSel?: ForcedDenomSel;
     reserveKeyPair?: EddsaKeypair;
     restrictAge?: number;
+    withdrawalType: WithdrawalRecordType;
   },
 ): Promise<WithdrawalGroupRecord> {
   const reserveKeyPair =
@@ -1745,6 +1747,7 @@ export async function internalCreateWithdrawalGroup(
     restrictAge: args.restrictAge,
     senderWire: undefined,
     timestampFinish: undefined,
+    withdrawalType: args.withdrawalType,
   };
 
   const exchangeInfo = await updateExchangeFromUrl(ws, canonExchange);
@@ -1819,6 +1822,7 @@ export async function acceptWithdrawalFromUri(
   const withdrawalGroup = await internalCreateWithdrawalGroup(ws, {
     amount: withdrawInfo.amount,
     exchangeBaseUrl: req.selectedExchange,
+    withdrawalType: WithdrawalRecordType.BankIntegrated,
     forcedDenomSel: req.forcedDenomSel,
     reserveStatus: ReserveRecordStatus.RegisteringBank,
     bankInfo: {
@@ -1877,6 +1881,7 @@ export async function createManualWithdrawal(
 ): Promise<AcceptManualWithdrawalResult> {
   const withdrawalGroup = await internalCreateWithdrawalGroup(ws, {
     amount: Amounts.jsonifyAmount(req.amount),
+    withdrawalType: WithdrawalRecordType.BankManual,
     exchangeBaseUrl: req.exchangeBaseUrl,
     bankInfo: undefined,
     forcedDenomSel: req.forcedDenomSel,
