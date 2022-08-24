@@ -21,6 +21,8 @@
  * @author Florian Dold <dold@taler.net>
  */
 
+const logger = new Logger("harness.ts");
+
 /**
  * Imports
  */
@@ -37,6 +39,7 @@ import {
   encodeCrock,
   hash,
   j2s,
+  Logger,
   parsePaytoUri,
   stringToBytes,
   TalerProtocolDuration,
@@ -100,7 +103,7 @@ export async function sh(
   command: string,
   env: { [index: string]: string | undefined } = process.env,
 ): Promise<string> {
-  console.log("running command", command);
+  logger.info(`running command ${command}`);
   return new Promise((resolve, reject) => {
     const stdoutChunks: Buffer[] = [];
     const proc = spawn(command, {
@@ -121,7 +124,7 @@ export async function sh(
     });
     proc.stderr.pipe(stderrLog);
     proc.on("exit", (code, signal) => {
-      console.log(`child process exited (${code} / ${signal})`);
+      logger.info(`child process exited (${code} / ${signal})`);
       if (code != 0) {
         reject(Error(`Unexpected exit code ${code} for '${command}'`));
         return;
@@ -158,7 +161,7 @@ export async function runCommand(
   args: string[],
   env: { [index: string]: string | undefined } = process.env,
 ): Promise<string> {
-  console.log("running command", shellescape([command, ...args]));
+  logger.info(`running command ${shellescape([command, ...args])}`);
   return new Promise((resolve, reject) => {
     const stdoutChunks: Buffer[] = [];
     const proc = spawn(command, args, {
@@ -179,7 +182,7 @@ export async function runCommand(
     });
     proc.stderr.pipe(stderrLog);
     proc.on("exit", (code, signal) => {
-      console.log(`child process exited (${code} / ${signal})`);
+      logger.info(`child process exited (${code} / ${signal})`);
       if (code != 0) {
         reject(Error(`Unexpected exit code ${code} for '${command}'`));
         return;
@@ -310,19 +313,19 @@ export class GlobalTestState {
     logName: string,
     env: { [index: string]: string | undefined } = process.env,
   ): ProcessWrapper {
-    console.log(
+    logger.info(
       `spawning process (${logName}): ${shellescape([command, ...args])}`,
     );
     const proc = spawn(command, args, {
       stdio: ["inherit", "pipe", "pipe"],
       env: env,
     });
-    console.log(`spawned process (${logName}) with pid ${proc.pid}`);
+    logger.info(`spawned process (${logName}) with pid ${proc.pid}`);
     proc.on("error", (err) => {
-      console.log(`could not start process (${command})`, err);
+      logger.warn(`could not start process (${command})`, err);
     });
     proc.on("exit", (code, signal) => {
-      console.log(`process ${logName} exited ${j2s({ code, signal })}`);
+      logger.warn(`process ${logName} exited ${j2s({ code, signal })}`);
     });
     const stderrLogFileName = this.testDir + `/${logName}-stderr.log`;
     const stderrLog = fs.createWriteStream(stderrLogFileName, {
@@ -344,18 +347,18 @@ export class GlobalTestState {
       return;
     }
     if (shouldLingerInTest()) {
-      console.log("refusing to shut down, lingering was requested");
+      logger.info("refusing to shut down, lingering was requested");
       return;
     }
     this.inShutdown = true;
-    console.log("shutting down");
+    logger.info("shutting down");
     for (const s of this.servers) {
       s.close();
       s.removeAllListeners();
     }
     for (const p of this.procs) {
       if (p.proc.exitCode == null) {
-        console.log("killing process", p.proc.pid);
+        logger.info(`killing process ${p.proc.pid}`);
         p.proc.kill("SIGTERM");
         await p.wait();
       }
@@ -458,12 +461,12 @@ export async function pingProc(
   }
   while (true) {
     try {
-      console.log(`pinging ${serviceName} at ${url}`);
+      logger.info(`pinging ${serviceName} at ${url}`);
       const resp = await axios.get(url);
-      console.log(`service ${serviceName} available`);
+      logger.info(`service ${serviceName} available`);
       return;
     } catch (e: any) {
-      console.log(`service ${serviceName} not ready:`, e.toString());
+      logger.info(`service ${serviceName} not ready:`, e.toString());
       //console.log(e);
       await delayMs(1000);
     }
@@ -563,7 +566,7 @@ class LibEuFinBankService extends BankServiceBase implements BankServiceHandle {
     accountName: string,
     password: string,
   ): Promise<HarnessExchangeBankAccount> {
-    console.log("Create Exchange account(s)!");
+    logger.info("Create Exchange account(s)!");
     /**
      * Many test cases try to create a Exchange account before
      * starting the bank;  that's because the Pybank did it entirely
@@ -704,7 +707,7 @@ class LibEuFinBankService extends BankServiceBase implements BankServiceHandle {
 
     // Only go ahead if BOTH aren't running.
     if (this.sandboxProc || this.nexusProc) {
-      console.log("Nexus or Sandbox already running, not taking any action.");
+      logger.info("Nexus or Sandbox already running, not taking any action.");
       return;
     }
     await sh(
@@ -831,7 +834,7 @@ class FakebankService extends BankServiceBase implements BankServiceHandle {
 
   async start(): Promise<void> {
     if (this.proc) {
-      console.log("fakebank already running, not starting again");
+      logger.info("fakebank already running, not starting again");
       return;
     }
     this.proc = this.globalTestState.spawnService(
@@ -879,7 +882,7 @@ export class FakeBankService {
 
   static fromExistingConfig(gc: GlobalTestState): FakeBankService {
     const cfgFilename = gc.testDir + "/bank.conf";
-    console.log("reading fakebank config from", cfgFilename);
+    logger.info("reading fakebank config from", cfgFilename);
     const config = Configuration.load(cfgFilename);
     const bc: FakeBankConfig = {
       currency: config.getString("taler", "currency").required(),
@@ -1018,7 +1021,7 @@ export class ExchangeService implements ExchangeServiceInterface {
         [...this.timetravelArgArr, "-c", this.configFilename, "-t", "-y"],
       );
     } catch (e) {
-      console.log(
+      logger.info(
         "running aggregator with KYC off didn't work, might be old version, running again",
       );
       await runCommand(
@@ -1255,7 +1258,7 @@ export class ExchangeService implements ExchangeServiceInterface {
       }
     }
 
-    console.log("configuring bank accounts", accounts);
+    logger.info("configuring bank accounts", accounts);
 
     for (const acc of accounts) {
       await runCommand(
@@ -1750,7 +1753,7 @@ export class MerchantService implements MerchantServiceInterface {
     if (!this.proc) {
       throw Error("merchant must be running to add instance");
     }
-    console.log("adding instance");
+    logger.info("adding instance");
     const url = `http://localhost:${this.merchantConfig.httpPort}/management/instances`;
     const auth = instanceConfig.auth ?? { method: "external" };
 
@@ -1860,7 +1863,7 @@ export async function runTestWithState(
   let status: TestStatus;
 
   const handleSignal = (s: string) => {
-    console.warn(
+    logger.warn(
       `**** received fatal process event, terminating test ${testName}`,
     );
     gc.shutdownSync();
@@ -1873,7 +1876,7 @@ export async function runTestWithState(
   process.on("uncaughtException", handleSignal);
 
   try {
-    console.log("running test in directory", gc.testDir);
+    logger.info("running test in directory", gc.testDir);
     await Promise.race([testMain(gc), p.promise]);
     status = "pass";
     if (linger) {
@@ -1884,7 +1887,7 @@ export async function runTestWithState(
       });
       await new Promise<void>((resolve, reject) => {
         rl.question("Press enter to shut down test.", () => {
-          console.error("Requested shutdown");
+          logger.error("Requested shutdown");
           resolve();
         });
       });
@@ -1934,7 +1937,9 @@ export class WalletCli {
     const self = this;
     this._client = {
       async call(op: any, payload: any): Promise<any> {
-        console.log("calling wallet with timetravel arg", self.timetravelArg);
+        logger.info(
+          `calling wallet with timetravel arg ${j2s(self.timetravelArg)}`,
+        );
         const resp = await sh(
           self.globalTestState,
           `wallet-${self.name}`,
@@ -1944,9 +1949,9 @@ export class WalletCli {
             self.dbfile
           }' api '${op}' ${shellWrap(JSON.stringify(payload))}`,
         );
-        console.log("--- wallet core response ---");
-        console.log(resp);
-        console.log("--- end of response ---");
+        logger.info("--- wallet core response ---");
+        logger.info(resp);
+        logger.info("--- end of response ---");
         let ar: any;
         try {
           ar = JSON.parse(resp) as CoreApiResponse;
