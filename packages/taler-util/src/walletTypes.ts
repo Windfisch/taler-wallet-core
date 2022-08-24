@@ -452,7 +452,6 @@ export interface BankWithdrawDetails {
   suggestedExchange?: string;
   confirmTransferUrl?: string;
   wireTypes: string[];
-  extractedStatusUrl: string;
 }
 
 export interface AcceptWithdrawalResponse {

@@ -24,7 +24,6 @@
  */
 import {
   AbsoluteTime,
-  AcceptManualWithdrawalResult,
   AmountJson,
   Amounts,
   BalancesResponse,
@@ -98,7 +97,6 @@ import {
   CoinSourceType,
   exportDb,
   importDb,
-  ReserveRecordStatus,
   WalletStoresV1,
 } from "./db.js";
 import { getErrorDetailFromException, TalerError } from "./errors.js";
@@ -187,9 +185,8 @@ import {
   acceptWithdrawalFromUri,
   createManualWithdrawal,
   getExchangeWithdrawalInfo,
-  getFundingPaytoUrisTx,
   getWithdrawalDetailsForUri,
-  processWithdrawalGroup as processWithdrawalGroup,
+  processWithdrawalGroup,
 } from "./operations/withdraw.js";
 import {
   PendingOperationsResponse,

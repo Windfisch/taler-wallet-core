@@ -112,11 +112,7 @@ export enum ReserveRecordStatus {
  * with a bank-integrated withdrawal.
  */
 export interface ReserveBankInfo {
-  /**
-   * Status URL that the wallet will use to query the status
-   * of the Taler withdrawal operation on the bank's side.
-   */
-  statusUrl: string;
+  talerWithdrawUri: string;
 
   /**
    * URL that the user can be redirected to, and allows
@@ -1799,6 +1795,10 @@ export const WalletStoresV1 = {
     {
       byReservePub: describeIndex("byReservePub", "reservePub"),
       byStatus: describeIndex("byStatus", "operationStatus"),
+      byTalerWithdrawUri: describeIndex(
+        "byTalerWithdrawUri",
+        "bankInfo.talerWithdrawUri",
+      ),
     },
   ),
   planchets: describeStore(

@@ -36,7 +36,8 @@ import {
   codecForWithdrawResponse,
   DenomKeyType,
   Duration,
-  durationFromSpec, encodeCrock,
+  durationFromSpec,
+  encodeCrock,
   ExchangeListItem,
   ExchangeWithdrawRequest,
   ForcedDenomSel,
@@ -54,7 +55,8 @@ import {
   VersionMatchResult,
   WithdrawBatchResponse,
   WithdrawResponse,
-  WithdrawUriInfoResponse
+  WithdrawUriInfoResponse,
+  WithdrawUriResult,
 } from "@gnu-taler/taler-util";
 import { EddsaKeypair } from "../crypto/cryptoImplementation.js";
 import {
@@ -71,12 +73,12 @@ import {
   ReserveBankInfo,
   ReserveRecordStatus,
   WalletStoresV1,
-  WithdrawalGroupRecord
+  WithdrawalGroupRecord,
 } from "../db.js";
 import {
   getErrorDetailFromException,
   makeErrorDetail,
-  TalerError
+  TalerError,
 } from "../errors.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { assertUnreachable } from "../util/assertUnreachable.js";
@@ -85,24 +87,21 @@ import {
   HttpRequestLibrary,
   readSuccessResponseJsonOrErrorCode,
   readSuccessResponseJsonOrThrow,
-  throwUnexpectedRequestError
+  throwUnexpectedRequestError,
 } from "../util/http.js";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
-import {
-  DbAccess,
-  GetReadOnlyAccess
-} from "../util/query.js";
+import { DbAccess, GetReadOnlyAccess } from "../util/query.js";
 import { RetryInfo } from "../util/retries.js";
 import {
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
-  WALLET_EXCHANGE_PROTOCOL_VERSION
+  WALLET_EXCHANGE_PROTOCOL_VERSION,
 } from "../versions.js";
 import { guardOperationException } from "./common.js";
 import {
   getExchangeDetails,
   getExchangePaytoUri,
   getExchangeTrust,
-  updateExchangeFromUrl
+  updateExchangeFromUrl,
 } from "./exchanges.js";
 
 /**
@@ -241,7 +240,7 @@ export function selectWithdrawalDenominations(
   for (const d of denoms) {
     let count = 0;
     const cost = Amounts.add(d.value, d.feeWithdraw).amount;
-    for (; ;) {
+    for (;;) {
       if (Amounts.cmp(remaining, cost) < 0) {
         break;
       }
@@ -384,7 +383,6 @@ export async function getBankWithdrawalInfo(
   return {
     amount: Amounts.parseOrThrow(status.amount),
     confirmTransferUrl: status.confirm_transfer_url,
-    extractedStatusUrl: reqUrl.href,
     selectionDone: status.selection_done,
     senderWire: status.sender_wire,
     suggestedExchange: status.suggested_exchange,
@@ -898,7 +896,8 @@ export async function updateWithdrawalDenoms(
         denom.verificationStatus === DenominationVerificationStatus.Unverified
       ) {
         logger.trace(
-          `Validating denomination (${current + 1}/${denominations.length
+          `Validating denomination (${current + 1}/${
+            denominations.length
           }) signature of ${denom.denomPubHash}`,
         );
         let valid = false;
@@ -1025,7 +1024,7 @@ async function queryReserve(
     if (
       resp.status === 404 &&
       result.talerErrorResponse.code ===
-      TalerErrorCode.EXCHANGE_RESERVES_STATUS_UNKNOWN
+        TalerErrorCode.EXCHANGE_RESERVES_STATUS_UNKNOWN
     ) {
       ws.notify({
         type: NotificationType.ReserveNotYetFound,
@@ -1315,7 +1314,7 @@ export async function getExchangeWithdrawalInfo(
     ) {
       logger.warn(
         `wallet's support for exchange protocol version ${WALLET_EXCHANGE_PROTOCOL_VERSION} might be outdated ` +
-        `(exchange has ${exchangeDetails.protocolVersion}), checking for updates`,
+          `(exchange has ${exchangeDetails.protocolVersion}), checking for updates`,
       );
     }
   }
@@ -1400,11 +1399,10 @@ export async function getWithdrawalDetailsForUri(
       const exchangeRecords = await tx.exchanges.iter().toArray();
       for (const r of exchangeRecords) {
         const details = await ws.exchangeOps.getExchangeDetails(tx, r.baseUrl);
-        const denominations = await tx.denominations.indexes
-          .byExchangeBaseUrl.iter(r.baseUrl).toArray();
+        const denominations = await tx.denominations.indexes.byExchangeBaseUrl
+          .iter(r.baseUrl)
+          .toArray();
         if (details && denominations) {
-
-
           exchanges.push({
             exchangeBaseUrl: details.exchangeBaseUrl,
             currency: details.currency,
@@ -1417,7 +1415,7 @@ export async function getWithdrawalDetailsForUri(
             paytoUris: details.wireInfo.accounts.map((x) => x.payto_uri),
             auditors: details.auditors,
             wireInfo: details.wireInfo,
-            denominations: denominations
+            denominations: denominations,
           });
         }
       }
@@ -1502,6 +1500,18 @@ export function getReserveRequestTimeout(r: WithdrawalGroupRecord): Duration {
   );
 }
 
+export function getBankStatusUrl(talerWithdrawUri: string): string {
+  const uriResult = parseWithdrawUri(talerWithdrawUri);
+  if (!uriResult) {
+    throw Error(`can't parse withdrawal URL ${talerWithdrawUri}`);
+  }
+  const url = new URL(
+    `withdrawal-operation/${uriResult.withdrawalOperationId}`,
+    uriResult.bankIntegrationApiBaseUrl,
+  );
+  return url.href;
+}
+
 async function registerReserveWithBank(
   ws: InternalWalletState,
   withdrawalGroupId: string,
@@ -1524,7 +1534,7 @@ async function registerReserveWithBank(
   if (!bankInfo) {
     return;
   }
-  const bankStatusUrl = bankInfo.statusUrl;
+  const bankStatusUrl = getBankStatusUrl(bankInfo.talerWithdrawUri);
   const httpResp = await ws.http.postJson(
     bankStatusUrl,
     {
@@ -1584,10 +1594,12 @@ async function processReserveBankStatus(
     default:
       return;
   }
-  const bankStatusUrl = withdrawalGroup.bankInfo?.statusUrl;
-  if (!bankStatusUrl) {
+  if (!withdrawalGroup.bankInfo) {
     return;
   }
+  const bankStatusUrl = getBankStatusUrl(
+    withdrawalGroup.bankInfo.talerWithdrawUri,
+  );
 
   const statusResp = await ws.http.get(bankStatusUrl, {
     timeout: getReserveRequestTimeout(withdrawalGroup),
@@ -1778,6 +1790,21 @@ export async function acceptWithdrawalFromUri(
     restrictAge?: number;
   },
 ): Promise<AcceptWithdrawalResponse> {
+  const existingWithdrawalGroup = await ws.db
+    .mktx((x) => ({ withdrawalGroups: x.withdrawalGroups }))
+    .runReadOnly(async (tx) => {
+      return await tx.withdrawalGroups.indexes.byTalerWithdrawUri.get(
+        req.talerWithdrawUri,
+      );
+    });
+
+  if (existingWithdrawalGroup) {
+    return {
+      reservePub: existingWithdrawalGroup.reservePub,
+      confirmTransferUrl: existingWithdrawalGroup.bankInfo?.confirmUrl,
+    };
+  }
+
   await updateExchangeFromUrl(ws, req.selectedExchange);
   const withdrawInfo = await getBankWithdrawalInfo(
     ws.http,
@@ -1796,7 +1823,7 @@ export async function acceptWithdrawalFromUri(
     reserveStatus: ReserveRecordStatus.RegisteringBank,
     bankInfo: {
       exchangePaytoUri,
-      statusUrl: withdrawInfo.extractedStatusUrl,
+      talerWithdrawUri: req.talerWithdrawUri,
       confirmUrl: withdrawInfo.confirmTransferUrl,
     },
   });

@@ -46,6 +46,8 @@ import {
   parsePaytoUri,
   AbsoluteTime,
   UnblindedSignature,
+  BankWithdrawDetails,
+  parseWithdrawUri,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import { DenominationRecord } from "./db.js";
@@ -57,7 +59,12 @@ import {
   isWithdrawableDenom,
   readSuccessResponseJsonOrThrow,
 } from "./index.browser.js";
-import { BankAccessApi, BankApi, BankServiceHandle } from "./index.js";
+import {
+  BankAccessApi,
+  BankApi,
+  BankServiceHandle,
+  getBankStatusUrl,
+} from "./index.js";
 
 const logger = new Logger("dbless.ts");
 
@@ -119,7 +126,7 @@ export async function topupReserveWithDemobank(
     amount,
   );
   const bankInfo = await getBankWithdrawalInfo(http, wopi.taler_withdraw_uri);
-  const bankStatusUrl = bankInfo.extractedStatusUrl;
+  const bankStatusUrl = getBankStatusUrl(wopi.taler_withdraw_uri);
   if (!bankInfo.suggestedExchange) {
     throw Error("no suggested exchange");
   }

@@ -24,6 +24,7 @@ import {
   BankApi,
   BankAccessApi,
 } from "@gnu-taler/taler-wallet-core";
+import { j2s } from "@gnu-taler/taler-util";
 
 /**
  * Run test for basic, bank-integrated withdrawal.
@@ -62,6 +63,14 @@ export async function runWithdrawalBankIntegratedTest(t: GlobalTestState) {
       talerWithdrawUri: wop.taler_withdraw_uri,
     },
   );
+  // Do it twice to check idempotency
+  const r3 = await wallet.client.call(
+    WalletApiOperation.AcceptBankIntegratedWithdrawal,
+    {
+      exchangeBaseUrl: exchange.baseUrl,
+      talerWithdrawUri: wop.taler_withdraw_uri,
+    },
+  );
   await wallet.runPending();
 
   // Confirm it
@@ -75,7 +84,8 @@ export async function runWithdrawalBankIntegratedTest(t: GlobalTestState) {
   const balResp = await wallet.client.call(WalletApiOperation.GetBalances, {});
   t.assertAmountEquals("TESTKUDOS:9.72", balResp.balances[0].available);
 
-  await t.shutdown();
+  const txn = await wallet.client.call(WalletApiOperation.GetTransactions, {});
+  console.log(`transactions: ${j2s(txn)}`);
 }
 
 runWithdrawalBankIntegratedTest.suites = ["wallet"];
