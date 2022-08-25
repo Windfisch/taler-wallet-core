@@ -47,6 +47,7 @@ export async function runForcedSelectionTest(t: GlobalTestState) {
     exchangeBaseUrl: exchange.baseUrl,
     amount: "TESTKUDOS:10",
     bankBaseUrl: bank.baseUrl,
+    bankAccessApiBaseUrl: bank.bankAccessApiBaseUrl,
     forcedDenomSel: {
       denoms: [
         {

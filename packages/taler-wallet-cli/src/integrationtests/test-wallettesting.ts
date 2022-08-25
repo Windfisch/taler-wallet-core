@@ -121,6 +121,7 @@ export async function runWallettestingTest(t: GlobalTestState) {
     amountToSpend: "TESTKUDOS:5",
     amountToWithdraw: "TESTKUDOS:10",
     bankBaseUrl: bank.baseUrl,
+    bankAccessApiBaseUrl: bank.bankAccessApiBaseUrl,
     exchangeBaseUrl: exchange.baseUrl,
     merchantAuthToken: merchantAuthToken,
     merchantBaseUrl: merchant.makeInstanceBaseUrl(),
@@ -144,6 +145,7 @@ export async function runWallettestingTest(t: GlobalTestState) {
   await wallet.client.call(WalletApiOperation.WithdrawTestBalance, {
     amount: "TESTKUDOS:10",
     bankBaseUrl: bank.baseUrl,
+    bankAccessApiBaseUrl: bank.bankAccessApiBaseUrl,
     exchangeBaseUrl: exchange.baseUrl,
   });
 
@@ -169,6 +171,7 @@ export async function runWallettestingTest(t: GlobalTestState) {
   await wallet.client.call(WalletApiOperation.WithdrawTestBalance, {
     amount: "TESTKUDOS:10",
     bankBaseUrl: bank.baseUrl,
+    bankAccessApiBaseUrl: bank.bankAccessApiBaseUrl,
     exchangeBaseUrl: exchange.baseUrl,
   });
 

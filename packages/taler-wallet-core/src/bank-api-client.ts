@@ -197,10 +197,7 @@ export namespace BankApi {
     );
 
     logger.info(`response status ${resp.status}`);
-    const respJson = await readSuccessResponseJsonOrThrow(
-      resp,
-      codecForAny(),
-    );
+    const respJson = await readSuccessResponseJsonOrThrow(resp, codecForAny());
 
     // FIXME: We don't check the status here!
   }
@@ -214,7 +211,7 @@ export namespace BankApi {
       `accounts/${bankUser.username}/withdrawals/${wopi.withdrawal_id}/abort`,
       bank.baseUrl,
     );
-    await bank.http.postJson(
+    const resp = await bank.http.postJson(
       url.href,
       {},
       {
@@ -226,6 +223,7 @@ export namespace BankApi {
         },
       },
     );
+    await readSuccessResponseJsonOrThrow(resp, codecForAny());
   }
 }
 

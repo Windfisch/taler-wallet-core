@@ -348,6 +348,7 @@ export async function runIntegrationTest(
   await withdrawTestBalance(ws, {
     amount: args.amountToWithdraw,
     bankBaseUrl: args.bankBaseUrl,
+    bankAccessApiBaseUrl: args.bankAccessApiBaseUrl,
     exchangeBaseUrl: args.exchangeBaseUrl,
   });
   await ws.runUntilDone();
@@ -376,6 +377,7 @@ export async function runIntegrationTest(
   await withdrawTestBalance(ws, {
     amount: Amounts.stringify(withdrawAmountTwo),
     bankBaseUrl: args.bankBaseUrl,
+    bankAccessApiBaseUrl: args.bankBaseUrl,
     exchangeBaseUrl: args.exchangeBaseUrl,
   });
 

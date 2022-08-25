@@ -104,7 +104,7 @@ export async function runBankApiTest(t: GlobalTestState) {
   // Make sure that registering twice results in a 409 Conflict
   {
     const e = await t.assertThrowsTalerErrorAsync(async () => {
-      await BankApi.registerAccount(bank, "user1", "pw1");
+      await BankApi.registerAccount(bank, "user1", "pw2");
     });
     t.assertTrue(e.errorDetail.httpStatusCode === 409);
   }

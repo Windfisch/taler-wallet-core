@@ -740,6 +740,7 @@ async function dispatchRequestInternal(
       await withdrawTestBalance(ws, {
         amount: "TESTKUDOS:10",
         bankBaseUrl: "https://bank.test.taler.net/",
+        bankAccessApiBaseUrl: "https://bank.test.taler.net/",
         exchangeBaseUrl: "https://exchange.test.taler.net/",
       });
       return {};

@@ -382,6 +382,8 @@ export async function getBankWithdrawalInfo(
     codecForWithdrawOperationStatusResponse(),
   );
 
+  logger.info(`bank withdrawal operation status: ${j2s(status)}`);
+
   return {
     amount: Amounts.parseOrThrow(status.amount),
     confirmTransferUrl: status.confirm_transfer_url,

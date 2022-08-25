@@ -111,12 +111,13 @@ export async function topupReserveWithDemobank(
   http: HttpRequestLibrary,
   reservePub: string,
   bankBaseUrl: string,
+  bankAccessApiBaseUrl: string,
   exchangeInfo: ExchangeInfo,
   amount: AmountString,
 ) {
   const bankHandle: BankServiceHandle = {
     baseUrl: bankBaseUrl,
-    bankAccessApiBaseUrl: "??", // FIXME!
+    bankAccessApiBaseUrl: bankAccessApiBaseUrl,
     http,
   };
   const bankUser = await BankApi.createRandomBankUser(bankHandle);

@@ -57,6 +57,7 @@ export async function runWalletDblessTest(t: GlobalTestState) {
       http,
       reserveKeyPair.pub,
       bank.baseUrl,
+      bank.bankAccessApiBaseUrl,
       exchangeInfo,
       "TESTKUDOS:10",
     );

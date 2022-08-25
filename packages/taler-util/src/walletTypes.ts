@@ -837,6 +837,7 @@ export const codecForTestPayArgs = (): Codec<TestPayArgs> =>
 export interface IntegrationTestArgs {
   exchangeBaseUrl: string;
   bankBaseUrl: string;
+  bankAccessApiBaseUrl: string;
   merchantBaseUrl: string;
   merchantAuthToken?: string;
   amountToWithdraw: string;
@@ -851,6 +852,7 @@ export const codecForIntegrationTestArgs = (): Codec<IntegrationTestArgs> =>
     .property("merchantAuthToken", codecOptional(codecForString()))
     .property("amountToSpend", codecForAmountString())
     .property("amountToWithdraw", codecForAmountString())
+    .property("bankAccessApiBaseUrl", codecForAmountString())
     .build("IntegrationTestArgs");
 
 export interface AddExchangeRequest {
@@ -1065,6 +1067,10 @@ export interface CoreApiResponseError {
 export interface WithdrawTestBalanceRequest {
   amount: string;
   bankBaseUrl: string;
+  /**
+   * Bank access API base URL.  Defaults to the bankBaseUrl.
+   */
+  bankAccessApiBaseUrl: string;
   exchangeBaseUrl: string;
   forcedDenomSel?: ForcedDenomSel;
 }
@@ -1141,6 +1147,7 @@ export const codecForWithdrawTestBalance =
       .property("bankBaseUrl", codecForString())
       .property("exchangeBaseUrl", codecForString())
       .property("forcedDenomSel", codecForAny())
+      .property("bankAccessApiBaseUrl", codecForString())
       .build("WithdrawTestBalanceRequest");
 
 export interface ApplyRefundResponse {
