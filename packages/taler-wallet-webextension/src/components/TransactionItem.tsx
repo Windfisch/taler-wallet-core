@@ -113,6 +113,8 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           pending={tx.pending}
         />
       );
+    default:
+      throw Error("unsupported transaction type");
   }
 }
 
