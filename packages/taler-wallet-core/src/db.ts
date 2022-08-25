@@ -1835,7 +1835,7 @@ export const WalletStoresV1 = {
       byStatus: describeIndex("byStatus", "operationStatus"),
       byTalerWithdrawUri: describeIndex(
         "byTalerWithdrawUri",
-        "bankInfo.talerWithdrawUri",
+        "wgInfo.bankInfo.talerWithdrawUri",
       ),
     },
   ),

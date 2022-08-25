@@ -1542,16 +1542,14 @@ async function registerReserveWithBank(
     return;
   }
   const bankStatusUrl = getBankStatusUrl(bankInfo.talerWithdrawUri);
-  const httpResp = await ws.http.postJson(
-    bankStatusUrl,
-    {
-      reserve_pub: withdrawalGroup.reservePub,
-      selected_exchange: bankInfo.exchangePaytoUri,
-    },
-    {
-      timeout: getReserveRequestTimeout(withdrawalGroup),
-    },
-  );
+  const reqBody = {
+    reserve_pub: withdrawalGroup.reservePub,
+    selected_exchange: bankInfo.exchangePaytoUri,
+  };
+  logger.info(`registering reserve with bank: ${j2s(reqBody)}`);
+  const httpResp = await ws.http.postJson(bankStatusUrl, reqBody, {
+    timeout: getReserveRequestTimeout(withdrawalGroup),
+  });
   await readSuccessResponseJsonOrThrow(
     httpResp,
     codecForBankWithdrawalOperationPostResponse(),
