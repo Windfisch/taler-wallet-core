@@ -1135,6 +1135,22 @@ async function processWithdrawGroupImpl(
     withdrawalGroup.exchangeBaseUrl,
   );
 
+  if (withdrawalGroup.denomsSel.selectedDenoms.length === 0) {
+    await ws.db
+      .mktx((x) => ({ withdrawalGroups: x.withdrawalGroups }))
+      .runReadWrite(async (tx) => {
+        const wg = await tx.withdrawalGroups.get(withdrawalGroupId);
+        if (!wg) {
+          return;
+        }
+        wg.operationStatus = OperationStatus.Finished;
+        delete wg.lastError;
+        delete wg.retryInfo;
+        await tx.withdrawalGroups.put(wg);
+      });
+    return;
+  }
+
   const numTotalCoins = withdrawalGroup.denomsSel.selectedDenoms
     .map((x) => x.count)
     .reduce((a, b) => a + b);
@@ -1709,7 +1725,6 @@ export async function internalCreateWithdrawalGroup(
   args: {
     reserveStatus: ReserveRecordStatus;
     amount: AmountJson;
-    bankInfo?: ReserveBankInfo;
     exchangeBaseUrl: string;
     forcedDenomSel?: ForcedDenomSel;
     reserveKeyPair?: EddsaKeypair;
@@ -1776,12 +1791,17 @@ export async function internalCreateWithdrawalGroup(
   await ws.db
     .mktx((x) => ({
       withdrawalGroups: x.withdrawalGroups,
+      reserves: x.reserves,
       exchanges: x.exchanges,
       exchangeDetails: x.exchangeDetails,
       exchangeTrust: x.exchangeTrust,
     }))
     .runReadWrite(async (tx) => {
       await tx.withdrawalGroups.add(withdrawalGroup);
+      await tx.reserves.put({
+        reservePub: withdrawalGroup.reservePub,
+        reservePriv: withdrawalGroup.reservePriv,
+      });
 
       if (!isAudited && !isTrusted) {
         await tx.exchangeTrust.put({
@@ -1906,7 +1926,6 @@ export async function createManualWithdrawal(
       withdrawalType: WithdrawalRecordType.BankManual,
     },
     exchangeBaseUrl: req.exchangeBaseUrl,
-    bankInfo: undefined,
     forcedDenomSel: req.forcedDenomSel,
     restrictAge: req.restrictAge,
     reserveStatus: ReserveRecordStatus.QueryingStatus,

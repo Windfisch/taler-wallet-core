@@ -743,6 +743,7 @@ async function updateExchangeFromUrlImpl(
         recoupGroupId = await ws.recoupOps.createRecoupGroup(
           ws,
           tx,
+          exchange.baseUrl,
           newlyRevokedCoinPubs,
         );
       }

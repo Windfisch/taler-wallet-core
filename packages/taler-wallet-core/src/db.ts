@@ -1224,6 +1224,7 @@ export const enum WithdrawalRecordType {
   BankIntegrated = "bank-integrated",
   PeerPullCredit = "peer-pull-credit",
   PeerPushCredit = "peer-push-credit",
+  Recoup = "recoup",
 }
 
 export interface WgInfoBankIntegrated {
@@ -1253,11 +1254,16 @@ export interface WgInfoBankPeerPush {
   withdrawalType: WithdrawalRecordType.PeerPushCredit;
 }
 
+export interface WgInfoBankRecoup {
+  withdrawalType: WithdrawalRecordType.Recoup;
+}
+
 export type WgInfo =
   | WgInfoBankIntegrated
   | WgInfoBankManual
   | WgInfoBankPeerPull
-  | WgInfoBankPeerPush;
+  | WgInfoBankPeerPush
+  | WgInfoBankRecoup;
 
 /**
  * Group of withdrawal operations that need to be executed.
@@ -1287,6 +1293,8 @@ export interface WithdrawalGroupRecord {
 
   /**
    * The reserve private key.
+   *
+   * FIXME: Already in the reserves object store, redundant!
    */
   reservePriv: string;
 
@@ -1355,9 +1363,9 @@ export interface WithdrawalGroupRecord {
   denomSelUid: string;
 
   /**
-   * Retry info, always present even on completed operations so that indexing works.
+   * Retry info.
    */
-  retryInfo: RetryInfo;
+  retryInfo?: RetryInfo;
 
   lastError: TalerErrorDetail | undefined;
 }
@@ -1385,6 +1393,8 @@ export interface RecoupGroupRecord {
    * Unique identifier for the recoup group record.
    */
   recoupGroupId: string;
+
+  exchangeBaseUrl: string;
 
   timestampStarted: TalerProtocolTimestamp;
 
@@ -1724,6 +1734,13 @@ export interface PeerPullPaymentIncomingRecord {
   contractPriv: string;
 }
 
+// FIXME: give this some smaller "row ID" to
+// reference in other records?
+export interface ReserveRecord {
+  reservePub: string;
+  reservePriv: string;
+}
+
 export const WalletStoresV1 = {
   coins: describeStore(
     describeContents<CoinRecord>("coins", {
@@ -1734,6 +1751,12 @@ export const WalletStoresV1 = {
       byDenomPubHash: describeIndex("byDenomPubHash", "denomPubHash"),
       byCoinEvHash: describeIndex("byCoinEvHash", "coinEvHash"),
     },
+  ),
+  reserves: describeStore(
+    describeContents<ReserveRecord>("reserves", {
+      keyPath: "reservePub",
+    }),
+    {},
   ),
   config: describeStore(
     describeContents<ConfigRecord>("config", { keyPath: "key" }),

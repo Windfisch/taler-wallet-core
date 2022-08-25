@@ -73,7 +73,6 @@ export interface MerchantOperations {
   ): Promise<MerchantInfo>;
 }
 
-
 /**
  * Interface for exchange-related operations.
  */
@@ -113,6 +112,7 @@ export interface RecoupOperations {
       refreshGroups: typeof WalletStoresV1.refreshGroups;
       coins: typeof WalletStoresV1.coins;
     }>,
+    exchangeBaseUrl: string,
     coinPubs: string[],
   ): Promise<string>;
   processRecoupGroup(

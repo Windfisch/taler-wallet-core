@@ -182,7 +182,7 @@ export interface PendingRecoupTask {
 export interface PendingWithdrawTask {
   type: PendingTaskType.Withdraw;
   lastError: TalerErrorDetail | undefined;
-  retryInfo: RetryInfo;
+  retryInfo?: RetryInfo;
   withdrawalGroupId: string;
 }
 

@@ -126,7 +126,7 @@ async function gatherWithdrawalPending(
     resp.pendingOperations.push({
       type: PendingTaskType.Withdraw,
       givesLifeness: true,
-      timestampDue: wsr.retryInfo.nextRetry,
+      timestampDue: wsr.retryInfo?.nextRetry ?? AbsoluteTime.now(),
       withdrawalGroupId: wsr.withdrawalGroupId,
       lastError: wsr.lastError,
       retryInfo: wsr.retryInfo,

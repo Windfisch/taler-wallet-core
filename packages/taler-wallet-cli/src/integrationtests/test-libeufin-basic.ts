@@ -243,7 +243,7 @@ export async function runLibeufinBasicTest(t: GlobalTestState) {
     WalletApiOperation.AcceptManualWithdrawal,
     {
       exchangeBaseUrl: exchange.baseUrl,
-      amount: "EUR:10",
+      amount: "EUR:15",
     },
   );
 

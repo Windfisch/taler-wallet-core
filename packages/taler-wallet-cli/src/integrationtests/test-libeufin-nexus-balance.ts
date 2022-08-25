@@ -17,12 +17,11 @@
 /**
  * Imports.
  */
-import { GlobalTestState, delayMs } from "../harness/harness.js";
+import { GlobalTestState } from "../harness/harness.js";
 import {
   SandboxUserBundle,
   NexusUserBundle,
   launchLibeufinServices,
-  LibeufinSandboxApi,
   LibeufinNexusApi,
 } from "../harness/libeufin";
 
@@ -73,7 +72,7 @@ export async function runLibeufinNexusBalanceTest(t: GlobalTestState) {
     user02sandbox.ebicsBankAccount.label, // debit
     user01sandbox.ebicsBankAccount.label, // credit
     "EUR:10",
-    "first payment",
+    "second payment",
   );
 
   await LibeufinNexusApi.fetchTransactions(
@@ -82,13 +81,13 @@ export async function runLibeufinNexusBalanceTest(t: GlobalTestState) {
     "all", // range
     "report", // level
   );
-  
+
   // Check that user 01 has 20, via Nexus.
   let accountInfo = await LibeufinNexusApi.getBankAccount(
     libeufinServices.libeufinNexus,
-    user01nexus.localAccountName
+    user01nexus.localAccountName,
   );
-  t.assertTrue(accountInfo.data.lastSeenBalance == "EUR:20");
+  t.assertAmountEquals(accountInfo.data.lastSeenBalance, "EUR:20");
 
   // user 01 gives 30
   await libeufinServices.libeufinSandbox.makeTransaction(
@@ -107,8 +106,8 @@ export async function runLibeufinNexusBalanceTest(t: GlobalTestState) {
 
   let accountInfoDebit = await LibeufinNexusApi.getBankAccount(
     libeufinServices.libeufinNexus,
-    user01nexus.localAccountName
+    user01nexus.localAccountName,
   );
-  t.assertTrue(accountInfoDebit.data.lastSeenBalance == "-EUR:10");
+  t.assertDeepEqual(accountInfoDebit.data.lastSeenBalance, "-EUR:10");
 }
 runLibeufinNexusBalanceTest.suites = ["libeufin"];

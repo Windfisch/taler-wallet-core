@@ -36,16 +36,17 @@ import {
   TalerErrorDetail,
   TalerProtocolTimestamp,
   URL,
+  codecForReserveStatus,
 } from "@gnu-taler/taler-util";
 import {
   CoinRecord,
   CoinSourceType,
   CoinStatus,
-  OperationStatus,
   RecoupGroupRecord,
   RefreshCoinSource,
   ReserveRecordStatus,
   WalletStoresV1,
+  WithdrawalRecordType,
   WithdrawCoinSource,
 } from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
@@ -109,6 +110,10 @@ async function reportRecoupError(
   ws.notify({ type: NotificationType.RecoupOperationError, error: err });
 }
 
+/**
+ * Store a recoup group record in the database after marking
+ * a coin in the group as finished.
+ */
 async function putGroupAsFinished(
   ws: InternalWalletState,
   tx: GetReadWriteAccess<{
@@ -127,29 +132,6 @@ async function putGroupAsFinished(
     return;
   }
   recoupGroup.recoupFinishedPerCoin[coinIdx] = true;
-  let allFinished = true;
-  for (const b of recoupGroup.recoupFinishedPerCoin) {
-    if (!b) {
-      allFinished = false;
-    }
-  }
-  if (allFinished) {
-    logger.info("all recoups of recoup group are finished");
-    recoupGroup.timestampFinished = TalerProtocolTimestamp.now();
-    recoupGroup.retryInfo = RetryInfo.reset();
-    recoupGroup.lastError = undefined;
-    if (recoupGroup.scheduleRefreshCoins.length > 0) {
-      const refreshGroupId = await createRefreshGroup(
-        ws,
-        tx,
-        recoupGroup.scheduleRefreshCoins.map((x) => ({ coinPub: x })),
-        RefreshReason.Recoup,
-      );
-      processRefreshGroup(ws, refreshGroupId.refreshGroupId).catch((e) => {
-        logger.error(`error while refreshing after recoup ${e}`);
-      });
-    }
-  }
   await tx.recoupGroups.put(recoupGroup);
 }
 
@@ -258,8 +240,6 @@ async function recoupWithdrawCoin(
       const currency = updatedCoin.currentAmount.currency;
       updatedCoin.currentAmount = Amounts.getZero(currency);
       await tx.coins.put(updatedCoin);
-      // FIXME: Actually withdraw here!
-      // await internalCreateWithdrawalGroup(ws, {...});
       await putGroupAsFinished(ws, tx, recoupGroup, coinIdx);
     });
 
@@ -392,7 +372,7 @@ async function processRecoupGroupImpl(
 ): Promise<void> {
   const forceNow = options.forceNow ?? false;
   await setupRecoupRetry(ws, recoupGroupId, { reset: forceNow });
-  const recoupGroup = await ws.db
+  let recoupGroup = await ws.db
     .mktx((x) => ({
       recoupGroups: x.recoupGroups,
     }))
@@ -416,23 +396,105 @@ async function processRecoupGroupImpl(
   });
   await Promise.all(ps);
 
-  const reserveSet = new Set<string>();
-  for (let i = 0; i < recoupGroup.coinPubs.length; i++) {
-    const coinPub = recoupGroup.coinPubs[i];
-    const coin = await ws.db
-      .mktx((x) => ({
-        coins: x.coins,
-      }))
-      .runReadOnly(async (tx) => {
-        return tx.coins.get(coinPub);
-      });
-    if (!coin) {
-      throw Error(`Coin ${coinPub} not found, can't request recoup`);
-    }
-    if (coin.coinSource.type === CoinSourceType.Withdraw) {
-      reserveSet.add(coin.coinSource.reservePub);
+  recoupGroup = await ws.db
+    .mktx((x) => ({
+      recoupGroups: x.recoupGroups,
+    }))
+    .runReadOnly(async (tx) => {
+      return tx.recoupGroups.get(recoupGroupId);
+    });
+  if (!recoupGroup) {
+    return;
+  }
+
+  for (const b of recoupGroup.recoupFinishedPerCoin) {
+    if (!b) {
+      return;
     }
   }
+
+  logger.info("all recoups of recoup group are finished");
+
+  const reserveSet = new Set<string>();
+  const reservePrivMap: Record<string, string> = {};
+  for (let i = 0; i < recoupGroup.coinPubs.length; i++) {
+    const coinPub = recoupGroup.coinPubs[i];
+    await ws.db
+      .mktx((x) => ({
+        coins: x.coins,
+        reserves: x.reserves,
+      }))
+      .runReadOnly(async (tx) => {
+        const coin = await tx.coins.get(coinPub);
+        if (!coin) {
+          throw Error(`Coin ${coinPub} not found, can't request recoup`);
+        }
+        if (coin.coinSource.type === CoinSourceType.Withdraw) {
+          const reserve = await tx.reserves.get(coin.coinSource.reservePub);
+          if (!reserve) {
+            return;
+          }
+          reserveSet.add(coin.coinSource.reservePub);
+          reservePrivMap[coin.coinSource.reservePub] = reserve.reservePriv;
+        }
+      });
+  }
+
+  for (const reservePub of reserveSet) {
+    const reserveUrl = new URL(
+      `reserves/${reservePub}`,
+      recoupGroup.exchangeBaseUrl,
+    );
+    logger.info(`querying reserve status for recoup via ${reserveUrl}`);
+
+    const resp = await ws.http.get(reserveUrl.href);
+
+    const result = await readSuccessResponseJsonOrThrow(
+      resp,
+      codecForReserveStatus(),
+    );
+    await internalCreateWithdrawalGroup(ws, {
+      amount: Amounts.parseOrThrow(result.balance),
+      exchangeBaseUrl: recoupGroup.exchangeBaseUrl,
+      reserveStatus: ReserveRecordStatus.QueryingStatus,
+      reserveKeyPair: {
+        pub: reservePub,
+        priv: reservePrivMap[reservePub],
+      },
+      wgInfo: {
+        withdrawalType: WithdrawalRecordType.Recoup,
+      },
+    });
+  }
+
+  await ws.db
+    .mktx((x) => ({
+      recoupGroups: x.recoupGroups,
+      denominations: WalletStoresV1.denominations,
+      refreshGroups: WalletStoresV1.refreshGroups,
+      coins: WalletStoresV1.coins,
+    }))
+    .runReadWrite(async (tx) => {
+      const rg2 = await tx.recoupGroups.get(recoupGroupId);
+      if (!rg2) {
+        return;
+      }
+      rg2.timestampFinished = TalerProtocolTimestamp.now();
+      rg2.retryInfo = RetryInfo.reset();
+      rg2.lastError = undefined;
+      if (rg2.scheduleRefreshCoins.length > 0) {
+        const refreshGroupId = await createRefreshGroup(
+          ws,
+          tx,
+          rg2.scheduleRefreshCoins.map((x) => ({ coinPub: x })),
+          RefreshReason.Recoup,
+        );
+        processRefreshGroup(ws, refreshGroupId.refreshGroupId).catch((e) => {
+          logger.error(`error while refreshing after recoup ${e}`);
+        });
+      }
+      await tx.recoupGroups.put(rg2);
+    });
 }
 
 export async function createRecoupGroup(
@@ -443,12 +505,14 @@ export async function createRecoupGroup(
     refreshGroups: typeof WalletStoresV1.refreshGroups;
     coins: typeof WalletStoresV1.coins;
   }>,
+  exchangeBaseUrl: string,
   coinPubs: string[],
 ): Promise<string> {
   const recoupGroupId = encodeCrock(getRandomBytes(32));
 
   const recoupGroup: RecoupGroupRecord = {
     recoupGroupId,
+    exchangeBaseUrl: exchangeBaseUrl,
     coinPubs: coinPubs,
     lastError: undefined,
     timestampFinished: undefined,
