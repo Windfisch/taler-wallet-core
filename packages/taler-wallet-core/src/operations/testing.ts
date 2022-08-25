@@ -90,16 +90,21 @@ export async function withdrawTestBalance(
   ws: InternalWalletState,
   req: WithdrawTestBalanceRequest,
 ): Promise<void> {
-  const bankBaseUrl = req.bankBaseUrl;
   const amount = req.amount;
   const exchangeBaseUrl = req.exchangeBaseUrl;
 
-  const bankUser = await registerRandomBankUser(ws.http, bankBaseUrl);
+  logger.trace(
+    `Registered bank user, bank access base url ${req.bankAccessApiBaseUrl}`,
+  );
+  const bankUser = await registerRandomBankUser(
+    ws.http,
+    req.bankAccessApiBaseUrl,
+  );
   logger.trace(`Registered bank user ${JSON.stringify(bankUser)}`);
 
   const wresp = await createDemoBankWithdrawalUri(
     ws.http,
-    bankBaseUrl,
+    req.bankAccessApiBaseUrl,
     bankUser,
     amount,
   );
@@ -112,7 +117,7 @@ export async function withdrawTestBalance(
 
   await confirmBankWithdrawalUri(
     ws.http,
-    bankBaseUrl,
+    req.bankAccessApiBaseUrl,
     bankUser,
     wresp.withdrawal_id,
   );
@@ -133,13 +138,13 @@ function getMerchantAuthHeader(m: MerchantBackendInfo): Record<string, string> {
  */
 export async function createDemoBankWithdrawalUri(
   http: HttpRequestLibrary,
-  bankBaseUrl: string,
+  bankAccessApiBaseUrl: string,
   bankUser: BankUser,
   amount: AmountString,
 ): Promise<BankWithdrawalResponse> {
   const reqUrl = new URL(
     `accounts/${bankUser.username}/withdrawals`,
-    bankBaseUrl,
+    bankAccessApiBaseUrl,
   ).href;
   const resp = await http.postJson(
     reqUrl,
@@ -161,13 +166,13 @@ export async function createDemoBankWithdrawalUri(
 
 async function confirmBankWithdrawalUri(
   http: HttpRequestLibrary,
-  bankBaseUrl: string,
+  bankAccessApiBaseUrl: string,
   bankUser: BankUser,
   withdrawalId: string,
 ): Promise<void> {
   const reqUrl = new URL(
     `accounts/${bankUser.username}/withdrawals/${withdrawalId}/confirm`,
-    bankBaseUrl,
+    bankAccessApiBaseUrl,
   ).href;
   const resp = await http.postJson(
     reqUrl,
@@ -187,9 +192,9 @@ async function confirmBankWithdrawalUri(
 
 async function registerRandomBankUser(
   http: HttpRequestLibrary,
-  bankBaseUrl: string,
+  bankAccessApiBaseUrl: string,
 ): Promise<BankUser> {
-  const reqUrl = new URL("testing/register", bankBaseUrl).href;
+  const reqUrl = new URL("testing/register", bankAccessApiBaseUrl).href;
   const randId = makeId(8);
   const bankUser: BankUser = {
     // euFin doesn't allow resource names to have upper case letters.
@@ -377,7 +382,7 @@ export async function runIntegrationTest(
   await withdrawTestBalance(ws, {
     amount: Amounts.stringify(withdrawAmountTwo),
     bankBaseUrl: args.bankBaseUrl,
-    bankAccessApiBaseUrl: args.bankBaseUrl,
+    bankAccessApiBaseUrl: args.bankAccessApiBaseUrl,
     exchangeBaseUrl: args.exchangeBaseUrl,
   });
 

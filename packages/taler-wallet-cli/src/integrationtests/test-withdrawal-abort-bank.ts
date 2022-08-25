@@ -54,6 +54,7 @@ export async function runWithdrawalAbortBankTest(t: GlobalTestState) {
   // Abort it
 
   await BankApi.abortWithdrawalOperation(bank, user, wop);
+  //await BankApi.confirmWithdrawalOperation(bank, user, wop);
 
   // Withdraw
 

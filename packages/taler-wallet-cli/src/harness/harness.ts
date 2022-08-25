@@ -775,10 +775,20 @@ class LibEuFinBankService extends BankServiceBase implements BankServiceHandle {
 /**
  * Implementation of the bank service using the "taler-fakebank-run" tool.
  */
-class FakebankService extends BankServiceBase implements BankServiceHandle {
+export class FakebankService
+  extends BankServiceBase
+  implements BankServiceHandle
+{
   proc: ProcessWrapper | undefined;
 
   http = new NodeHttpLib();
+
+  // We store "created" accounts during setup and
+  // register them after startup.
+  private accounts: {
+    accountName: string;
+    accountPassword: string;
+  }[] = [];
 
   static async create(
     gc: GlobalTestState,
@@ -791,6 +801,7 @@ class FakebankService extends BankServiceBase implements BankServiceHandle {
     config.setString("bank", "serve", "http");
     config.setString("bank", "max_debt_bank", `${bc.currency}:999999`);
     config.setString("bank", "max_debt", bc.maxDebt ?? `${bc.currency}:100`);
+    config.setString("bank", "ram_limit", `${1024}`);
     const cfgFilename = gc.testDir + "/bank.conf";
     config.write(cfgFilename);
 
@@ -798,6 +809,9 @@ class FakebankService extends BankServiceBase implements BankServiceHandle {
   }
 
   setSuggestedExchange(e: ExchangeServiceInterface, exchangePayto: string) {
+    if (!!this.proc) {
+      throw Error("Can't set suggested exchange while bank is running.");
+    }
     const config = Configuration.load(this.configFile);
     config.setString("bank", "suggested_exchange", e.baseUrl);
     config.write(this.configFile);
@@ -816,10 +830,10 @@ class FakebankService extends BankServiceBase implements BankServiceHandle {
     accountName: string,
     password: string,
   ): Promise<HarnessExchangeBankAccount> {
-    // FIXME: Is there a better place to do this initialization?
-    await this.start();
-    await this.pingUntilAvailable();
-    await BankApi.registerAccount(this, accountName, password);
+    this.accounts.push({
+      accountName,
+      accountPassword: password,
+    });
     return {
       accountName: accountName,
       accountPassword: password,
@@ -833,15 +847,25 @@ class FakebankService extends BankServiceBase implements BankServiceHandle {
   }
 
   async start(): Promise<void> {
+    logger.info("starting fakebank");
     if (this.proc) {
       logger.info("fakebank already running, not starting again");
       return;
     }
     this.proc = this.globalTestState.spawnService(
       "taler-fakebank-run",
-      ["-c", this.configFile],
+      [
+        "-c",
+        this.configFile,
+        "--signup-bonus",
+        `${this.bankConfig.currency}:100`,
+      ],
       "bank",
     );
+    await this.pingUntilAvailable();
+    for (const acc of this.accounts) {
+      await BankApi.registerAccount(this, acc.accountName, acc.accountPassword);
+    }
   }
 
   async pingUntilAvailable(): Promise<void> {
@@ -853,86 +877,8 @@ class FakebankService extends BankServiceBase implements BankServiceHandle {
 // Use libeufin bank instead of pybank.
 const useLibeufinBank = false;
 
-/**
- * Return a euFin or a pyBank implementation of
- * the exported BankService class.  This allows
- * to "dynamically export" such class depending
- * on a particular env variable.
- */
-function getBankServiceImpl(): {
-  prototype: typeof FakebankService.prototype;
-  create: typeof FakebankService.create;
-} {
-  if (useLibeufinBank)
-    return {
-      prototype: LibEuFinBankService.prototype,
-      create: LibEuFinBankService.create,
-    };
-  return {
-    prototype: FakebankService.prototype,
-    create: FakebankService.create,
-  };
-}
-
-export type BankService = FakebankService;
-export const BankService = getBankServiceImpl();
-
-export class FakeBankService {
-  proc: ProcessWrapper | undefined;
-
-  static fromExistingConfig(gc: GlobalTestState): FakeBankService {
-    const cfgFilename = gc.testDir + "/bank.conf";
-    logger.info("reading fakebank config from", cfgFilename);
-    const config = Configuration.load(cfgFilename);
-    const bc: FakeBankConfig = {
-      currency: config.getString("taler", "currency").required(),
-      httpPort: config.getNumber("bank", "http_port").required(),
-    };
-    return new FakeBankService(gc, bc, cfgFilename);
-  }
-
-  static async create(
-    gc: GlobalTestState,
-    bc: FakeBankConfig,
-  ): Promise<FakeBankService> {
-    const config = new Configuration();
-    setTalerPaths(config, gc.testDir + "/talerhome");
-    config.setString("taler", "currency", bc.currency);
-    config.setString("bank", "http_port", `${bc.httpPort}`);
-    config.setString("bank", "ram_limit", `${1024}`);
-    const cfgFilename = gc.testDir + "/bank.conf";
-    config.write(cfgFilename);
-    return new FakeBankService(gc, bc, cfgFilename);
-  }
-
-  get baseUrl(): string {
-    return `http://localhost:${this.bankConfig.httpPort}/`;
-  }
-
-  get port() {
-    return this.bankConfig.httpPort;
-  }
-
-  private constructor(
-    private globalTestState: GlobalTestState,
-    private bankConfig: FakeBankConfig,
-    private configFile: string,
-  ) {}
-
-  async start(): Promise<void> {
-    this.proc = this.globalTestState.spawnService(
-      "taler-fakebank-run",
-      ["-c", this.configFile],
-      "fakebank",
-    );
-  }
-
-  async pingUntilAvailable(): Promise<void> {
-    // Fakebank doesn't have "/config", so we ping just "/".
-    const url = `http://localhost:${this.bankConfig.httpPort}/`;
-    await pingProc(this.proc, url, "bank");
-  }
-}
+export type BankService = BankServiceHandle;
+export const BankService = FakebankService;
 
 export interface ExchangeConfig {
   name: string;

@@ -22,7 +22,7 @@ import {
   WalletCli,
   setupDb,
   ExchangeService,
-  FakeBankService,
+  FakebankService,
 } from "../harness/harness.js";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { CoinConfig, defaultCoinConfig } from "../harness/denomStructures.js";
@@ -36,9 +36,12 @@ export async function runWithdrawalFakebankTest(t: GlobalTestState) {
 
   const db = await setupDb(t);
 
-  const bank = await FakeBankService.create(t, {
+  const bank = await FakebankService.create(t, {
     currency: "TESTKUDOS",
     httpPort: 8082,
+    allowRegistrations: true,
+    // Not used by fakebank
+    database: db.connStr,
   });
 
   const exchange = ExchangeService.create(t, {

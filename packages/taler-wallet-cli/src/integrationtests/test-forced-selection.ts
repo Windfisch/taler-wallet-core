@@ -17,17 +17,9 @@
 /**
  * Imports.
  */
-import {
-  ConfirmPayResultType,
-  j2s,
-  PreparePayResultType,
-} from "@gnu-taler/taler-util";
-import { Wallet, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import {
-  GlobalTestState,
-  MerchantPrivateApi,
-  WithAuthorization,
-} from "../harness/harness.js";
+import { j2s } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+import { GlobalTestState } from "../harness/harness.js";
 import { createSimpleTestkudosEnvironment } from "../harness/helpers.js";
 
 /**

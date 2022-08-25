@@ -22,8 +22,8 @@ import { CoinConfig, defaultCoinConfig } from "./harness/denomStructures.js";
 import {
   GlobalTestState,
   setupDb,
-  FakeBankService,
   ExchangeService,
+  FakebankService,
 } from "./harness/harness.js";
 
 /**
@@ -35,9 +35,11 @@ import {
 export async function runEnv1(t: GlobalTestState): Promise<void> {
   const db = await setupDb(t);
 
-  const bank = await FakeBankService.create(t, {
+  const bank = await FakebankService.create(t, {
     currency: "TESTKUDOS",
     httpPort: 8082,
+    allowRegistrations: true,
+    database: db.connStr,
   });
 
   const exchange = ExchangeService.create(t, {

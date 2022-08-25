@@ -43,10 +43,10 @@ export async function runBankApiTest(t: GlobalTestState) {
   const db = await setupDb(t);
 
   const bank = await BankService.create(t, {
-    allowRegistrations: true,
     currency: "TESTKUDOS",
-    database: db.connStr,
     httpPort: 8082,
+    database: db.connStr,
+    allowRegistrations: true,
   });
 
   const exchange = ExchangeService.create(t, {

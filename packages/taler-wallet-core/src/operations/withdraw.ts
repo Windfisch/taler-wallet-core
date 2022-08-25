@@ -376,6 +376,9 @@ export async function getBankWithdrawalInfo(
     `withdrawal-operation/${uriResult.withdrawalOperationId}`,
     uriResult.bankIntegrationApiBaseUrl,
   );
+
+  logger.info(`bank withdrawal status URL: ${reqUrl.href}}`);
+
   const resp = await http.get(reqUrl.href);
   const status = await readSuccessResponseJsonOrThrow(
     resp,

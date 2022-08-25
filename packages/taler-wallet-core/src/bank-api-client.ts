@@ -106,7 +106,7 @@ export namespace BankApi {
     const url = new URL("testing/register", bank.bankAccessApiBaseUrl);
     const resp = await bank.http.postJson(url.href, { username, password });
     let paytoUri = `payto://x-taler-bank/localhost/${username}`;
-    if (resp.status !== 200 && resp.status !== 202) {
+    if (resp.status !== 200 && resp.status !== 202 && resp.status !== 204) {
       logger.error(`${j2s(await resp.json())}`);
       throw TalerError.fromDetail(
         TalerErrorCode.GENERIC_UNEXPECTED_REQUEST_ERROR,
@@ -209,7 +209,7 @@ export namespace BankApi {
   ): Promise<void> {
     const url = new URL(
       `accounts/${bankUser.username}/withdrawals/${wopi.withdrawal_id}/abort`,
-      bank.baseUrl,
+      bank.bankAccessApiBaseUrl,
     );
     const resp = await bank.http.postJson(
       url.href,

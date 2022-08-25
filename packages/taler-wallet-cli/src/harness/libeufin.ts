@@ -691,8 +691,8 @@ export class LibeufinCli {
   ): Promise<void> {
     const stdout = await sh(
       this.globalTestState,
-      "libeufin-cli-submitpayment",
-      `libeufin-cli accounts submit-payment` +
+      "libeufin-cli-submitpayments",
+      `libeufin-cli accounts submit-payments` +
         ` --payment-uuid=${paymentUuid}` +
         ` ${details.nexusBankAccountName}`,
       {
