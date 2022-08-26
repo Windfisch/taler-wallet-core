@@ -38,7 +38,6 @@ function parseExampleImport(
   im: any,
   name?: string,
 ): ComponentItem {
-  console.log(im);
   const component = name || im.default.title;
   const order: number = im.default.args?.order || 0;
   return {
@@ -372,9 +371,8 @@ function LiveReload({ port = 8002 }: { port?: number }): VNode {
 }
 
 function setupLiveReload(port: number, onReload: () => void): void {
-  const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-  const host = location.hostname;
-  const socketPath = `${protocol}//${host}:${port}/socket`;
+  const socketPath = `ws://localhost:8003/socket`;
+  // const socketPath = `${protocol}//${host}:${port}/socket`;
 
   const ws = new WebSocket(socketPath);
   ws.onmessage = (message) => {

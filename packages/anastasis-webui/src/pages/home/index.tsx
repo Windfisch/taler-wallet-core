@@ -85,7 +85,7 @@ function ErrorBoundary(props: {
   children: ComponentChildren;
 }): VNode {
   const [error, resetError] = useErrorBoundary((error) =>
-    console.log("got error", error),
+    console.log("ErrorBoundary got error", error),
   );
   if (error) {
     return (
@@ -132,7 +132,7 @@ export function AnastasisClientFrame(props: AnastasisClientFrameProps): VNode {
 
         history.pushState({ id: nextId }, "unused", `#${nextId}`);
       } catch (e) {
-        console.log(e);
+        console.log("ERROR doNext ", e);
       }
     }
 

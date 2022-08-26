@@ -174,85 +174,88 @@ export const OnePolicyWithAllTheChallengesInDifferentState = createExample(
           { uuid: "uuid-7" },
           { uuid: "uuid-8" },
           { uuid: "uuid-9" },
+          { uuid: "uuid-10" },
         ],
       ],
       challenges: [
         {
-          instructions: 'in state "solved"',
+          instructions: 'this challenge is in state "solved"',
           type: "question",
           uuid: "uuid-1",
         },
         {
-          instructions: 'in state "message"',
+          instructions: 'this challenge is in state "code-in-file"',
           type: "question",
           uuid: "uuid-2",
         },
         {
-          instructions: 'in state "auth iban"',
+          instructions: 'this challenge is in state "code-sent"',
           type: "question",
           uuid: "uuid-3",
         },
         {
-          instructions: 'in state "payment "',
+          instructions: 'this challenge is in state "server-failure "',
           type: "question",
           uuid: "uuid-4",
         },
         {
-          instructions: 'in state "rate limit"',
+          instructions: 'this challenge is in state "truth-unknown"',
           type: "question",
           uuid: "uuid-5",
         },
         {
-          instructions: 'in state "redirect"',
+          instructions: 'this challenge is in state "taler-payment"',
           type: "question",
           uuid: "uuid-6",
         },
         {
-          instructions: 'in state "server failure"',
+          instructions: 'this challenge is in state "unsupported"',
           type: "question",
           uuid: "uuid-7",
         },
         {
-          instructions: 'in state "truth unknown"',
+          instructions: 'this challenge is in state "rate-limit-exceeded"',
           type: "question",
           uuid: "uuid-8",
         },
         {
-          instructions: 'in state "unsupported"',
+          instructions: 'this challenge is in state "iban-instructions"',
           type: "question",
           uuid: "uuid-9",
+        },
+        {
+          instructions: 'this challenge is in state "incorrect-answer"',
+          type: "question",
+          uuid: "uuid-10",
         },
       ],
     },
     challenge_feedback: {
       "uuid-1": { state: ChallengeFeedbackStatus.Solved.toString() },
-      "uuid-3": {
+      "uuid-2": { state: ChallengeFeedbackStatus.CodeInFile.toString() },
+      "uuid-3": { state: ChallengeFeedbackStatus.CodeSent.toString() },
+      "uuid-4": {
+        state: ChallengeFeedbackStatus.ServerFailure.toString(),
+        http_status: 500,
+        error_response: "some error message or error object",
+      },
+      "uuid-5": { state: ChallengeFeedbackStatus.TruthUnknown.toString() },
+      "uuid-6": {
+        state: ChallengeFeedbackStatus.TalerPayment.toString(),
+        taler_pay_uri: "taler://pay/...",
+        provider: "https://localhost:8080/",
+        payment_secret: "3P4561HAMHRRYEYD6CM6J7TS5VTD5SR2K2EXJDZEFSX92XKHR4KG",
+      },
+      "uuid-7": { state: ChallengeFeedbackStatus.Unsupported.toString() },
+      "uuid-8": { state: ChallengeFeedbackStatus.RateLimitExceeded.toString() },
+      "uuid-9": {
         state: ChallengeFeedbackStatus.IbanInstructions.toString(),
         challenge_amount: "EUR:1",
         target_iban: "DE12345789000",
         target_business_name: "Data Loss Incorporated",
         wire_transfer_subject: "Anastasis 987654321",
       },
-      "uuid-4": {
-        state: ChallengeFeedbackStatus.TalerPayment.toString(),
-        taler_pay_uri: "taler://pay/...",
-        provider: "https://localhost:8080/",
-        payment_secret: "3P4561HAMHRRYEYD6CM6J7TS5VTD5SR2K2EXJDZEFSX92XKHR4KG",
-      },
-      "uuid-5": {
-        state: ChallengeFeedbackStatus.RateLimitExceeded.toString(),
-        // "error_code": 8121
-      },
-      "uuid-7": {
-        state: ChallengeFeedbackStatus.ServerFailure.toString(),
-        http_status: 500,
-        error_response: "some error message or error object",
-      },
-      "uuid-8": {
-        state: ChallengeFeedbackStatus.TruthUnknown.toString(),
-        // "error_code": 8108
-      },
-      "uuid-9": { state: ChallengeFeedbackStatus.Unsupported.toString() },
+      "uuid-10": { state: ChallengeFeedbackStatus.IncorrectAnswer.toString() },
     },
   } as ReducerState,
 );

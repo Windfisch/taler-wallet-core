@@ -180,7 +180,7 @@ function getStateFromStorage(): any {
       state = JSON.parse(s);
     }
   } catch (e) {
-    console.log(e);
+    console.log("ERROR: getStateFromStorage ", e);
   }
   return state ?? undefined;
 }
@@ -203,7 +203,7 @@ export function useAnastasisReducer(): AnastasisReducerApi {
         JSON.stringify(newState.reducerState),
       );
     } catch (e) {
-      console.log(e);
+      console.log("ERROR setAnastasisState", e);
     }
     setAnastasisStateInternal(newState);
 
@@ -239,7 +239,7 @@ export function useAnastasisReducer(): AnastasisReducerApi {
           },
         });
       };
-      doUpdate().catch((e) => console.log(e));
+      doUpdate().catch((e) => console.log("ERROR doUpdate", e));
     };
 
     tryUpdateProviders();

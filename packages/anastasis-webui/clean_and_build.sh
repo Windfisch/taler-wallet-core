@@ -40,8 +40,10 @@ set -e
 echo compile
 build_css &
 build_js src/main.ts &
+build_js src/stories.tsx &
 build_js src/main.test.ts &
 for file in $(find src/ -name test.ts); do build_js $file; done &
+wait -n
 wait -n
 wait -n
 wait -n
@@ -51,6 +53,7 @@ pnpm run --silent test -- -R dot
 echo html
 build_html ui
 build_html ui-dev
+build_html stories
 
 if [ "WATCH" == "$1" ]; then
 
@@ -62,6 +65,8 @@ if [ "WATCH" == "$1" ]; then
     echo $(date) $line
     build_js src/main.ts
     build_html ui-dev
+		build_js src/stories.tsx
+		build_html stories
     ./watch/send.sh '{"type":"RELOAD"}'
   done;
 fi

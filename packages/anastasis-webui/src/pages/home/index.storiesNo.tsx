@@ -20,7 +20,7 @@
  */
 
 export * as AddingProviderScreen from "./AddingProviderScreen/stories.js";
-export * as algo from "./AttributeEntryScreen.stories.js";
+export * as AttributeEntryScreen from "./AttributeEntryScreen.stories.js";
 
 export * as AuthenticationEditorScreen from "./AuthenticationEditorScreen.stories.js";
 export * as authMethod_AuthMethodEmailSetup from "./authMethod/AuthMethodEmailSetup.stories.js";

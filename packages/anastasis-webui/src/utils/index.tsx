@@ -54,7 +54,7 @@ export function createExample<Props>(
           discoverMore: noop,
           discoverStart: noop,
           discoveryState: {
-            state: "none",
+            state: "finished",
           },
           currentError: undefined,
           back: noop,
@@ -204,14 +204,17 @@ const base = {
     } as AuthenticationProviderStatusOk,
 
     "http://localhost:8087/": {
+      status: "error",
       code: 8414,
       hint: "request to provider failed",
     } as AuthenticationProviderStatusError,
     "http://localhost:8088/": {
+      status: "error",
       code: 8414,
       hint: "request to provider failed",
     } as AuthenticationProviderStatusError,
     "http://localhost:8089/": {
+      status: "error",
       code: 8414,
       hint: "request to provider failed",
     } as AuthenticationProviderStatusError,

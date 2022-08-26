@@ -40,7 +40,14 @@ export function SolveOverviewFeedbackDisplay(props: {
               message: `Message from provider`,
               description: (
                 <span>
-                  To pay you can <a href={feedback.taler_pay_uri}>click here</a>
+                  To pay you can{" "}
+                  <a
+                    href={feedback.taler_pay_uri}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    click here
+                  </a>
                 </span>
               ),
             },
@@ -65,8 +72,12 @@ export function SolveOverviewFeedbackDisplay(props: {
           notifications={[
             {
               type: "ERROR",
-              message: `Server error: Code ${feedback.http_status}`,
-              description: feedback.error_response,
+              message: `Server error: response code ${feedback.http_status}`,
+              description: !feedback.error_response
+                ? undefined
+                : `More information: ${JSON.stringify(
+                    feedback.error_response,
+                  )}`,
             },
           ]}
         />
@@ -77,8 +88,7 @@ export function SolveOverviewFeedbackDisplay(props: {
           notifications={[
             {
               type: "ERROR",
-              message: `Message from provider`,
-              description: "There were to many failed attempts.",
+              message: "There were to many failed attempts.",
             },
           ]}
         />
@@ -107,11 +117,56 @@ export function SolveOverviewFeedbackDisplay(props: {
           ]}
         />
       );
-    default:
-      console.warn(
-        `unknown challenge feedback status ${JSON.stringify(feedback)}`,
+    case ChallengeFeedbackStatus.CodeInFile:
+      return (
+        <Notifications
+          notifications={[
+            {
+              type: "INFO",
+              message: `Required TAN can be found in file "${feedback.filename}"`,
+              description: feedback.display_hint
+                ? `HINT: ${feedback.display_hint}`
+                : undefined,
+            },
+          ]}
+        />
       );
-      return <div />;
+    case ChallengeFeedbackStatus.CodeSent:
+      return (
+        <Notifications
+          notifications={[
+            {
+              type: "INFO",
+              message: `Code sent to address "${feedback.address_hint}"`,
+              description: feedback.display_hint
+                ? `HINT: ${feedback.display_hint}`
+                : undefined,
+            },
+          ]}
+        />
+      );
+    case ChallengeFeedbackStatus.IncorrectAnswer:
+      return (
+        <Notifications
+          notifications={[
+            {
+              type: "ERROR",
+              message: `The answer is wrong.`,
+            },
+          ]}
+        />
+      );
+    case ChallengeFeedbackStatus.Solved:
+      return (
+        <Notifications
+          notifications={[
+            {
+              type: "SUCCESS",
+              message: `This challenge is solved`,
+            },
+          ]}
+        />
+      );
   }
 }
 

@@ -14,6 +14,7 @@
  GNU Anastasis; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 import {
+  AggregatedPolicyMetaInfo,
   AuthenticationProviderStatus,
   AuthenticationProviderStatusOk,
 } from "@gnu-taler/anastasis-core";
@@ -25,20 +26,16 @@ import { useAnastasisContext } from "../../context/anastasis.js";
 import AddingProviderScreen from "./AddingProviderScreen/index.js";
 import { AnastasisClientFrame } from "./index.js";
 
-export function SecretSelectionScreen(): VNode {
-  const [selectingVersion, setSelectingVersion] = useState<boolean>(false);
+export function SecretSelectionScreenFound({
+  policies,
+  onManageProvider,
+  onNext,
+}: {
+  policies: AggregatedPolicyMetaInfo[];
+  onManageProvider: () => void;
+  onNext: (version: AggregatedPolicyMetaInfo) => void;
+}): VNode {
   const reducer = useAnastasisContext();
-  const [manageProvider, setManageProvider] = useState(false);
-
-  useEffect(() => {
-    async function f() {
-      if (reducer) {
-        await reducer.discoverStart();
-      }
-    }
-    f().catch((e) => console.log(e));
-  }, []);
-
   if (!reducer) {
     return <div>no reducer in context</div>;
   }
@@ -49,45 +46,6 @@ export function SecretSelectionScreen(): VNode {
   ) {
     return <div>invalid state</div>;
   }
-
-  const provs = reducer.currentReducerState.authentication_providers ?? {};
-  const recoveryDocument = reducer.currentReducerState.recovery_document;
-
-  if (manageProvider) {
-    return (
-      <AddingProviderScreen onCancel={async () => setManageProvider(false)} />
-    );
-  }
-
-  if (reducer.discoveryState.state === "none") {
-    // Can this even happen?
-    return (
-      <AnastasisClientFrame title="Recovery: Select secret">
-        <div>waiting to start discovery</div>
-      </AnastasisClientFrame>
-    );
-  }
-
-  if (reducer.discoveryState.state === "active") {
-    return (
-      <AnastasisClientFrame title="Recovery: Select secret">
-        <div>loading secret versions</div>
-      </AnastasisClientFrame>
-    );
-  }
-
-  const policies = reducer.discoveryState.aggregatedPolicies ?? [];
-
-  if (policies.length === 0) {
-    return (
-      <ChooseAnotherProviderScreen
-        providers={provs}
-        selected=""
-        onChange={() => null}
-      ></ChooseAnotherProviderScreen>
-    );
-  }
-
   return (
     <AnastasisClientFrame
       title="Recovery: Select secret"
@@ -115,9 +73,7 @@ export function SecretSelectionScreen(): VNode {
                     <b>Id:</b>&nbsp;
                     <span
                       class="icon has-tooltip-top"
-                      data-tooltip={version.policy_hash
-                        .match(/(.{22})/g)
-                        ?.join("\n")}
+                      data-tooltip={version.policy_hash}
                     >
                       <i class="mdi mdi-information" />
                     </span>
@@ -128,9 +84,7 @@ export function SecretSelectionScreen(): VNode {
                 <div>
                   <AsyncButton
                     class="button"
-                    onClick={() =>
-                      reducer.transition("select_version", version)
-                    }
+                    onClick={async () => onNext(version)}
                   >
                     Recover
                   </AsyncButton>
@@ -145,9 +99,7 @@ export function SecretSelectionScreen(): VNode {
             challenges solving
           </p>
           <p class="block">
-            <a onClick={() => setManageProvider(true)}>
-              Manage recovery providers
-            </a>
+            <a onClick={onManageProvider}>Manage recovery providers</a>
           </p>
         </div>
       </div>
@@ -155,8 +107,7 @@ export function SecretSelectionScreen(): VNode {
   );
 }
 
-export function OldSecretSelectionScreen(): VNode {
-  const [selectingVersion, setSelectingVersion] = useState<boolean>(false);
+export function SecretSelectionScreen(): VNode {
   const reducer = useAnastasisContext();
   const [manageProvider, setManageProvider] = useState(false);
 
@@ -169,56 +120,15 @@ export function OldSecretSelectionScreen(): VNode {
     f().catch((e) => console.log(e));
   }, []);
 
-  const currentVersion =
-    (reducer?.currentReducerState &&
-      "recovery_document" in reducer.currentReducerState &&
-      reducer.currentReducerState.recovery_document?.version) ||
-    0;
-
   if (!reducer) {
     return <div>no reducer in context</div>;
   }
+
   if (
     !reducer.currentReducerState ||
     reducer.currentReducerState.reducer_type !== "recovery"
   ) {
     return <div>invalid state</div>;
-  }
-
-  async function doSelectVersion(p: string, n: number): Promise<void> {
-    if (!reducer) return Promise.resolve();
-    return reducer.runTransaction(async (tx) => {
-      await tx.transition("select_version", {
-        version: n,
-        provider_url: p,
-      });
-      setSelectingVersion(false);
-    });
-  }
-
-  const provs = reducer.currentReducerState.authentication_providers ?? {};
-  const recoveryDocument = reducer.currentReducerState.recovery_document;
-
-  if (!recoveryDocument) {
-    return (
-      <ChooseAnotherProviderScreen
-        providers={provs}
-        selected=""
-        onChange={(newProv) => doSelectVersion(newProv, 0)}
-      />
-    );
-  }
-
-  if (selectingVersion) {
-    return (
-      <SelectOtherVersionProviderScreen
-        providers={provs}
-        provider={recoveryDocument.provider_url}
-        version={recoveryDocument.version}
-        onCancel={() => setSelectingVersion(false)}
-        onConfirm={doSelectVersion}
-      />
-    );
   }
 
   if (manageProvider) {
@@ -227,55 +137,172 @@ export function OldSecretSelectionScreen(): VNode {
     );
   }
 
-  const providerInfo = provs[
-    recoveryDocument.provider_url
-  ] as AuthenticationProviderStatusOk;
+  if (
+    reducer.discoveryState.state === "none" ||
+    reducer.discoveryState.state === "active"
+  ) {
+    // Can this even happen?
+    return <SecretSelectionScreenWaiting />;
+  }
+
+  const policies = reducer.discoveryState.aggregatedPolicies ?? [];
+
+  if (policies.length === 0) {
+    return (
+      <AddingProviderScreen
+        onCancel={async () => setManageProvider(false)}
+        notifications={[
+          {
+            message: "Secret not found",
+            type: "ERROR",
+            description:
+              "With the information you provided we could not found secret in any of the providers. You can try adding more providers if you think the data is correct.",
+          },
+        ]}
+      />
+    );
+  }
 
   return (
-    <AnastasisClientFrame title="Recovery: Select secret">
-      <div class="columns">
-        <div class="column">
-          <div class="box" style={{ border: "2px solid green" }}>
-            <h1 class="subtitle">{providerInfo.business_name}</h1>
-            <div class="block">
-              {currentVersion === 0 ? (
-                <p>Set to recover the latest version</p>
-              ) : (
-                <p>Set to recover the version number {currentVersion}</p>
-              )}
-            </div>
-            <div class="buttons is-right">
-              <button class="button" onClick={(e) => setSelectingVersion(true)}>
-                Change secret&apos;s version
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="column">
-          <p>
-            Secret found, you can select another version or continue to the
-            challenges solving
-          </p>
-          <p class="block">
-            <a onClick={() => setManageProvider(true)}>
-              Manage recovery providers
-            </a>
-          </p>
-        </div>
-      </div>
-    </AnastasisClientFrame>
+    <SecretSelectionScreenFound
+      policies={policies}
+      onNext={(version) => reducer.transition("select_version", version)}
+      onManageProvider={async () => setManageProvider(false)}
+    />
   );
 }
 
+// export function OldSecretSelectionScreen(): VNode {
+//   const [selectingVersion, setSelectingVersion] = useState<boolean>(false);
+//   const reducer = useAnastasisContext();
+//   const [manageProvider, setManageProvider] = useState(false);
+
+//   useEffect(() => {
+//     async function f() {
+//       if (reducer) {
+//         await reducer.discoverStart();
+//       }
+//     }
+//     f().catch((e) => console.log(e));
+//   }, []);
+
+//   const currentVersion =
+//     (reducer?.currentReducerState &&
+//       "recovery_document" in reducer.currentReducerState &&
+//       reducer.currentReducerState.recovery_document?.version) ||
+//     0;
+
+//   if (!reducer) {
+//     return <div>no reducer in context</div>;
+//   }
+//   if (
+//     !reducer.currentReducerState ||
+//     reducer.currentReducerState.reducer_type !== "recovery"
+//   ) {
+//     return <div>invalid state</div>;
+//   }
+
+//   async function doSelectVersion(p: string, n: number): Promise<void> {
+//     if (!reducer) return Promise.resolve();
+//     return reducer.runTransaction(async (tx) => {
+//       await tx.transition("select_version", {
+//         version: n,
+//         provider_url: p,
+//       });
+//       setSelectingVersion(false);
+//     });
+//   }
+
+//   const provs = reducer.currentReducerState.authentication_providers ?? {};
+//   const recoveryDocument = reducer.currentReducerState.recovery_document;
+
+//   if (!recoveryDocument) {
+//     return (
+//       <ChooseAnotherProviderScreen
+//         providers={provs}
+//         selected=""
+//         onChange={(newProv) => doSelectVersion(newProv, 0)}
+//       />
+//     );
+//   }
+
+//   if (selectingVersion) {
+//     return (
+//       <SelectOtherVersionProviderScreen
+//         providers={provs}
+//         provider={recoveryDocument.provider_url}
+//         version={recoveryDocument.version}
+//         onCancel={() => setSelectingVersion(false)}
+//         onConfirm={doSelectVersion}
+//       />
+//     );
+//   }
+
+//   if (manageProvider) {
+//     return (
+//       <AddingProviderScreen onCancel={async () => setManageProvider(false)} />
+//     );
+//   }
+
+//   const providerInfo = provs[
+//     recoveryDocument.provider_url
+//   ] as AuthenticationProviderStatusOk;
+
+//   return (
+//     <AnastasisClientFrame title="Recovery: Select secret">
+//       <div class="columns">
+//         <div class="column">
+//           <div class="box" style={{ border: "2px solid green" }}>
+//             <h1 class="subtitle">{providerInfo.business_name}</h1>
+//             <div class="block">
+//               {currentVersion === 0 ? (
+//                 <p>Set to recover the latest version</p>
+//               ) : (
+//                 <p>Set to recover the version number {currentVersion}</p>
+//               )}
+//             </div>
+//             <div class="buttons is-right">
+//               <button class="button" onClick={(e) => setSelectingVersion(true)}>
+//                 Change secret&apos;s version
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+//         <div class="column">
+//           <p>
+//             Secret found, you can select another version or continue to the
+//             challenges solving
+//           </p>
+//           <p class="block">
+//             <a onClick={() => setManageProvider(true)}>
+//               Manage recovery providers
+//             </a>
+//           </p>
+//         </div>
+//       </div>
+//     </AnastasisClientFrame>
+//   );
+// }
+
 function ChooseAnotherProviderScreen({
-  providers,
-  selected,
   onChange,
 }: {
-  selected: string;
-  providers: { [url: string]: AuthenticationProviderStatus };
   onChange: (prov: string) => void;
 }): VNode {
+  const reducer = useAnastasisContext();
+
+  if (!reducer) {
+    return <div>no reducer in context</div>;
+  }
+
+  if (
+    !reducer.currentReducerState ||
+    reducer.currentReducerState.reducer_type !== "recovery"
+  ) {
+    return <div>invalid state</div>;
+  }
+  const providers = reducer.currentReducerState.authentication_providers ?? {};
+
   return (
     <AnastasisClientFrame
       hideNext="Recovery document not found"
@@ -286,13 +313,9 @@ function ChooseAnotherProviderScreen({
         <label class="label">Provider</label>
         <div class="control is-expanded has-icons-left">
           <div class="select is-fullwidth">
-            <select
-              onChange={(e) => onChange(e.currentTarget.value)}
-              value={selected}
-            >
+            <select onChange={(e) => onChange(e.currentTarget.value)} value="">
               <option key="none" disabled selected value="">
-                {" "}
-                Choose a provider{" "}
+                Choose a provider
               </option>
               {Object.keys(providers).map((url) => {
                 const p = providers[url];
@@ -416,6 +439,14 @@ function SelectOtherVersionProviderScreen({
           </div>
         </div>
       </div>
+    </AnastasisClientFrame>
+  );
+}
+
+function SecretSelectionScreenWaiting(): VNode {
+  return (
+    <AnastasisClientFrame title="Recovery: Select secret">
+      <div>loading secret versions</div>
     </AnastasisClientFrame>
   );
 }

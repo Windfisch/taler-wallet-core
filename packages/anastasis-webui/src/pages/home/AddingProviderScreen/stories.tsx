@@ -53,6 +53,7 @@ export const NewProvider = createExampleWithoutAnastasis(WithoutProviderType, {
     disabled: [],
     error: [],
   },
+  notifications: [],
 });
 
 export const NewProviderWithoutProviderList = createExampleWithoutAnastasis(
@@ -64,6 +65,7 @@ export const NewProviderWithoutProviderList = createExampleWithoutAnastasis(
       disabled: [],
       error: [],
     },
+    notifications: [],
   },
 );
 
@@ -75,6 +77,7 @@ export const NewSmsProvider = createExampleWithoutAnastasis(WithProviderType, {
     error: [],
   },
   providerLabel: "sms",
+  notifications: [],
 });
 
 export const NewIBANProvider = createExampleWithoutAnastasis(WithProviderType, {
@@ -85,4 +88,5 @@ export const NewIBANProvider = createExampleWithoutAnastasis(WithProviderType, {
     error: [],
   },
   providerLabel: "IBAN",
+  notifications: [],
 });

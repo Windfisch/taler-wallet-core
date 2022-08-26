@@ -28,11 +28,8 @@ interface Props {
   mobile?: boolean;
 }
 
-// @ts-ignore
-const maybeEnv = process?.env || {};
-
-const VERSION: string = maybeEnv.__VERSION__ || "dev";
-const GIT_HASH: string | undefined = maybeEnv.__GIT_HASH__;
+const VERSION = typeof __VERSION__ !== "undefined" ? __VERSION__ : "dev";
+const GIT_HASH = typeof __GIT_HASH__ !== "undefined" ? __GIT_HASH__ : undefined;
 const VERSION_WITH_HASH = GIT_HASH ? `${VERSION}-${GIT_HASH}` : VERSION;
 
 export function Sidebar({ mobile }: Props): VNode {

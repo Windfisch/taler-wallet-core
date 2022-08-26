@@ -16,6 +16,7 @@
 import { AuthenticationProviderStatus } from "@gnu-taler/anastasis-core";
 import InvalidState from "../../../components/InvalidState.js";
 import NoReducer from "../../../components/NoReducer.js";
+import { Notification } from "../../../components/Notifications.js";
 import { compose, StateViewMap } from "../../../utils/index.js";
 import useComponentState from "./state.js";
 import { WithoutProviderType, WithProviderType } from "./views.js";
@@ -44,6 +45,7 @@ interface CommonProps {
   setProviderURL: (url: string) => Promise<void>;
   providerURL: string;
   errors: string | undefined;
+  notifications: Notification[];
 }
 
 export interface WithType extends CommonProps {
@@ -90,7 +92,7 @@ export async function testProvider(
     }
     return;
   } catch (e) {
-    console.log("error", e);
+    console.log("ERROR testProvider", e);
     const error =
       e instanceof Error
         ? Error(

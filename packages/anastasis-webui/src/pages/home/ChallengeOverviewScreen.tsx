@@ -17,22 +17,25 @@ import {
   ChallengeFeedback,
   ChallengeFeedbackStatus,
 } from "@gnu-taler/anastasis-core";
-import { h, VNode } from "preact";
+import { Fragment, h, VNode } from "preact";
 import { AsyncButton } from "../../components/AsyncButton.js";
 import { useAnastasisContext } from "../../context/anastasis.js";
 import { authMethods, KnownAuthMethods } from "./authMethod/index.js";
 import { AnastasisClientFrame } from "./index.js";
 
-function OverviewFeedbackDisplay(props: { feedback?: ChallengeFeedback }) {
+function OverviewFeedbackDisplay(props: {
+  feedback?: ChallengeFeedback;
+}): VNode {
   const { feedback } = props;
   if (!feedback) {
-    return null;
+    return <Fragment />;
   }
+
   switch (feedback.state) {
     case ChallengeFeedbackStatus.Solved:
       return <div />;
     case ChallengeFeedbackStatus.IbanInstructions:
-      return null;
+      return <div class="block has-text-info">Payment required.</div>;
     case ChallengeFeedbackStatus.ServerFailure:
       return <div class="block has-text-danger">Server error.</div>;
     case ChallengeFeedbackStatus.RateLimitExceeded:
@@ -51,12 +54,20 @@ function OverviewFeedbackDisplay(props: { feedback?: ChallengeFeedback }) {
     case ChallengeFeedbackStatus.TruthUnknown:
       return (
         <div class="block has-text-danger">
-          Provider doesn&apos;t recognize the challenge of the policy. Contact
-          the provider for further information.
+          Provider doesn&apos;t recognize the type of challenge. Use another
+          version or contact the provider.
         </div>
       );
-    default:
-      return <div />;
+    case ChallengeFeedbackStatus.IncorrectAnswer:
+      return (
+        <div class="block has-text-danger">The answer was not correct.</div>
+      );
+    case ChallengeFeedbackStatus.CodeInFile:
+      return <div class="block has-text-info">code in file</div>;
+    case ChallengeFeedbackStatus.CodeSent:
+      return <div class="block has-text-info">Code sent</div>;
+    case ChallengeFeedbackStatus.TalerPayment:
+      return <div class="block has-text-info">Payment required</div>;
   }
 }
 

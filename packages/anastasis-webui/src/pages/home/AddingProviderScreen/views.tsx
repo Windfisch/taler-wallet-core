@@ -20,6 +20,7 @@ import {
 import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { TextInput } from "../../../components/fields/TextInput.js";
+import { Notifications } from "../../../components/Notifications.js";
 import { AnastasisClientFrame } from "../index.js";
 import { testProvider, WithoutType, WithType } from "./index.js";
 
@@ -31,6 +32,7 @@ export function WithProviderType(props: WithType): VNode {
       hideNext={props.errors}
     >
       <div>
+        <Notifications notifications={props.notifications} />
         <p>Add a provider url for a {props.providerLabel} service</p>
         <div class="container">
           <TextInput
@@ -108,10 +110,11 @@ export function WithoutProviderType(props: WithoutType): VNode {
   return (
     <AnastasisClientFrame
       hideNav
-      title="Backup: Manage providers2"
+      title="Backup: Manage providers"
       hideNext={props.errors}
     >
       <div>
+        <Notifications notifications={props.notifications} />
         <p>Add a provider url</p>
         <div class="container">
           <TextInput

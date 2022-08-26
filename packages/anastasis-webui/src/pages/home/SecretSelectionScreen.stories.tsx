@@ -21,29 +21,57 @@
 
 import { ReducerState } from "@gnu-taler/anastasis-core";
 import { createExample, reducerStatesExample } from "../../utils/index.js";
-import { SecretSelectionScreen as TestedComponent } from "./SecretSelectionScreen.js";
+import {
+  SecretSelectionScreen,
+  SecretSelectionScreenFound,
+} from "./SecretSelectionScreen.js";
 
 export default {
-  component: TestedComponent,
+  component: SecretSelectionScreen,
   args: {
     order: 4,
   },
-  argTypes: {
-    onUpdate: { action: "onUpdate" },
-    onBack: { action: "onBack" },
-  },
 };
 
-export const Example = createExample(TestedComponent, {
-  ...reducerStatesExample.secretSelection,
-  recovery_document: {
-    provider_url: "https://kudos.demo.anastasis.lu/",
-    secret_name: "secretName",
-    version: 1,
+export const Example = createExample(
+  SecretSelectionScreenFound,
+  {
+    ...reducerStatesExample.secretSelection,
+    recovery_document: {
+      provider_url: "https://kudos.demo.anastasis.lu/",
+      secret_name: "secretName",
+      version: 1,
+    },
+  } as ReducerState,
+  {
+    policies: [
+      {
+        secret_name: "The secret name 1",
+        attribute_mask: 1,
+        policy_hash: "abcdefghijklmnopqrstuvwxyz",
+        providers: [
+          {
+            url: "http://someurl",
+            version: 1,
+          },
+        ],
+      },
+      {
+        secret_name: "The secret name 2",
+        attribute_mask: 1,
+        policy_hash: "abcdefghijklmnopqrstuvwxyz",
+        providers: [
+          {
+            url: "http://someurl",
+            version: 1,
+          },
+        ],
+      },
+    ],
   },
-} as ReducerState);
+);
 
-export const NoRecoveryDocumentFound = createExample(TestedComponent, {
+export const NoRecoveryDocumentFound = createExample(SecretSelectionScreen, {
   ...reducerStatesExample.secretSelection,
   recovery_document: undefined,
 } as ReducerState);

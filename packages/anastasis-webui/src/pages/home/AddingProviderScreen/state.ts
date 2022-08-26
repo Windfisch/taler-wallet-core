@@ -14,6 +14,7 @@
  GNU Anastasis; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 import { useEffect, useRef, useState } from "preact/hooks";
+import { Notification } from "../../../components/Notifications.js";
 import { useAnastasisContext } from "../../../context/anastasis.js";
 import { authMethods, KnownAuthMethods } from "../authMethod/index.jsx";
 import { AuthProvByStatusMap, State, testProvider } from "./index.js";
@@ -21,9 +22,10 @@ import { AuthProvByStatusMap, State, testProvider } from "./index.js";
 interface Props {
   providerType?: KnownAuthMethods;
   onCancel: () => Promise<void>;
+  notifications?: Notification[];
 }
 
-export default function useComponentState({ providerType, onCancel }: Props): State {
+export default function useComponentState({ providerType, onCancel, notifications = [] }: Props): State {
   const reducer = useAnastasisContext();
 
   const [providerURL, setProviderURL] = useState("");
@@ -128,6 +130,7 @@ export default function useComponentState({ providerType, onCancel }: Props): St
     setProviderURL: async (s: string) => setProviderURL(s),
     errors,
     error,
+    notifications
   }
 
   if (!providerLabel) {

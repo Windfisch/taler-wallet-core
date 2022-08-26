@@ -20,7 +20,6 @@
  */
 
 import {
-  ChallengeFeedbackBankTransferRequired,
   ChallengeFeedbackStatus,
   ReducerState,
 } from "@gnu-taler/anastasis-core";
@@ -61,45 +60,111 @@ export const WithoutFeedback = createExample(
   },
 );
 
+const recovery_information = {
+  challenges: [
+    {
+      instructions: "does P equal NP?",
+      type: "question",
+      uuid: "ASDASDSAD!1",
+    },
+  ],
+  policies: [],
+};
+
+export const CodeInFileFeedback = createExample(TestedComponent[type].solve, {
+  ...reducerStatesExample.challengeSolving,
+  recovery_information,
+  selected_challenge_uuid: "ASDASDSAD!1",
+  challenge_feedback: {
+    "ASDASDSAD!1": {
+      state: ChallengeFeedbackStatus.CodeInFile,
+      filename: "asd",
+      display_hint: "hint",
+    },
+  },
+} as ReducerState);
+
+export const CodeSentFeedback = createExample(TestedComponent[type].solve, {
+  ...reducerStatesExample.challengeSolving,
+  recovery_information,
+  selected_challenge_uuid: "ASDASDSAD!1",
+  challenge_feedback: {
+    "ASDASDSAD!1": {
+      state: ChallengeFeedbackStatus.CodeSent,
+      address_hint: "asdasd",
+      display_hint: "qweqweqw",
+    },
+  },
+} as ReducerState);
+
+export const SolvedFeedback = createExample(TestedComponent[type].solve, {
+  ...reducerStatesExample.challengeSolving,
+  recovery_information,
+  selected_challenge_uuid: "ASDASDSAD!1",
+  challenge_feedback: {
+    "ASDASDSAD!1": {
+      state: ChallengeFeedbackStatus.Solved,
+    },
+  },
+} as ReducerState);
+
 export const ServerFailureFeedback = createExample(
   TestedComponent[type].solve,
   {
     ...reducerStatesExample.challengeSolving,
-    recovery_information: {
-      challenges: [
-        {
-          instructions: "does P equal NP?",
-          type: "question",
-          uuid: "ASDASDSAD!1",
-        },
-      ],
-      policies: [],
-    },
+    recovery_information,
     selected_challenge_uuid: "ASDASDSAD!1",
     challenge_feedback: {
       "ASDASDSAD!1": {
         state: ChallengeFeedbackStatus.ServerFailure,
         http_status: 500,
-        error_response: "Couldn't connect to mysql",
       },
     },
   } as ReducerState,
 );
 
-export const MessageRateLimitExceededFeedback = createExample(
+export const TruthUnknownFeedback = createExample(TestedComponent[type].solve, {
+  ...reducerStatesExample.challengeSolving,
+  recovery_information,
+  selected_challenge_uuid: "ASDASDSAD!1",
+  challenge_feedback: {
+    "ASDASDSAD!1": {
+      state: ChallengeFeedbackStatus.TruthUnknown,
+    },
+  },
+} as ReducerState);
+
+export const TalerPaymentFeedback = createExample(TestedComponent[type].solve, {
+  ...reducerStatesExample.challengeSolving,
+  recovery_information,
+  selected_challenge_uuid: "ASDASDSAD!1",
+  challenge_feedback: {
+    "ASDASDSAD!1": {
+      state: ChallengeFeedbackStatus.TalerPayment,
+      payment_secret: "secret",
+      provider: "asdasdas",
+      taler_pay_uri: "taler://pay/...",
+    },
+  },
+} as ReducerState);
+
+export const UnsupportedFeedback = createExample(TestedComponent[type].solve, {
+  ...reducerStatesExample.challengeSolving,
+  recovery_information,
+  selected_challenge_uuid: "ASDASDSAD!1",
+  challenge_feedback: {
+    "ASDASDSAD!1": {
+      state: ChallengeFeedbackStatus.Unsupported,
+      unsupported_method: "method",
+    },
+  },
+} as ReducerState);
+
+export const RateLimitExceededFeedback = createExample(
   TestedComponent[type].solve,
   {
     ...reducerStatesExample.challengeSolving,
-    recovery_information: {
-      challenges: [
-        {
-          instructions: "does P equals NP?",
-          type: "question",
-          uuid: "ASDASDSAD!1",
-        },
-      ],
-      policies: [],
-    },
+    recovery_information,
     selected_challenge_uuid: "ASDASDSAD!1",
     challenge_feedback: {
       "ASDASDSAD!1": {
@@ -109,94 +174,76 @@ export const MessageRateLimitExceededFeedback = createExample(
   } as ReducerState,
 );
 
-export const UnsupportedFeedback = createExample(TestedComponent[type].solve, {
-  ...reducerStatesExample.challengeSolving,
-  recovery_information: {
-    challenges: [
-      {
-        instructions: "does P equals NP?",
-        type: "question",
-        uuid: "ASDASDSAD!1",
+export const IbanInstructionsFeedback = createExample(
+  TestedComponent[type].solve,
+  {
+    ...reducerStatesExample.challengeSolving,
+    recovery_information,
+    selected_challenge_uuid: "ASDASDSAD!1",
+    challenge_feedback: {
+      "ASDASDSAD!1": {
+        state: ChallengeFeedbackStatus.IbanInstructions,
+        challenge_amount: "EUR:1",
+        target_iban: "DE12345789000",
+        target_business_name: "Data Loss Incorporated",
+        wire_transfer_subject: "Anastasis 987654321",
+        answer_code: 987654321,
       },
-    ],
-    policies: [],
-  },
-  selected_challenge_uuid: "ASDASDSAD!1",
-  challenge_feedback: {
-    "ASDASDSAD!1": {
-      state: ChallengeFeedbackStatus.Unsupported,
-      http_status: 500,
-      unsupported_method: "Question",
     },
-  },
-} as ReducerState);
+  } as ReducerState,
+);
 
-export const TruthUnknownFeedback = createExample(TestedComponent[type].solve, {
-  ...reducerStatesExample.challengeSolving,
-  recovery_information: {
-    challenges: [
-      {
-        instructions: "does P equals NP?",
-        type: "question",
-        uuid: "ASDASDSAD!1",
+export const IncorrectAnswerFeedback = createExample(
+  TestedComponent[type].solve,
+  {
+    ...reducerStatesExample.challengeSolving,
+    recovery_information,
+    selected_challenge_uuid: "ASDASDSAD!1",
+    challenge_feedback: {
+      "ASDASDSAD!1": {
+        state: ChallengeFeedbackStatus.IncorrectAnswer,
       },
-    ],
-    policies: [],
-  },
-  selected_challenge_uuid: "ASDASDSAD!1",
-  challenge_feedback: {
-    "ASDASDSAD!1": {
-      state: ChallengeFeedbackStatus.TruthUnknown,
     },
-  },
-} as ReducerState);
+  } as ReducerState,
+);
 
-const ibanFeedback: ChallengeFeedbackBankTransferRequired = {
-  state: ChallengeFeedbackStatus.IbanInstructions,
-  challenge_amount: "EUR:1",
-  target_iban: "DE12345789000",
-  target_business_name: "Data Loss Incorporated",
-  wire_transfer_subject: "Anastasis 987654321",
-  answer_code: 987654321,
-};
+// export const AuthIbanFeedback = createExample(TestedComponent[type].solve, {
+//   ...reducerStatesExample.challengeSolving,
+//   recovery_information: {
+//     challenges: [
+//       {
+//         instructions: "does P equals NP?",
+//         type: "question",
+//         uuid: "ASDASDSAD!1",
+//       },
+//     ],
+//     policies: [],
+//   },
+//   selected_challenge_uuid: "ASDASDSAD!1",
+//   challenge_feedback: {
+//     "ASDASDSAD!1": ibanFeedback,
+//   },
+// } as ReducerState);
 
-export const AuthIbanFeedback = createExample(TestedComponent[type].solve, {
-  ...reducerStatesExample.challengeSolving,
-  recovery_information: {
-    challenges: [
-      {
-        instructions: "does P equals NP?",
-        type: "question",
-        uuid: "ASDASDSAD!1",
-      },
-    ],
-    policies: [],
-  },
-  selected_challenge_uuid: "ASDASDSAD!1",
-  challenge_feedback: {
-    "ASDASDSAD!1": ibanFeedback,
-  },
-} as ReducerState);
-
-export const PaymentFeedback = createExample(TestedComponent[type].solve, {
-  ...reducerStatesExample.challengeSolving,
-  recovery_information: {
-    challenges: [
-      {
-        instructions: "does P equals NP?",
-        type: "question",
-        uuid: "ASDASDSAD!1",
-      },
-    ],
-    policies: [],
-  },
-  selected_challenge_uuid: "ASDASDSAD!1",
-  challenge_feedback: {
-    "ASDASDSAD!1": {
-      state: ChallengeFeedbackStatus.TalerPayment,
-      taler_pay_uri: "taler://pay/...",
-      provider: "https://localhost:8080/",
-      payment_secret: "3P4561HAMHRRYEYD6CM6J7TS5VTD5SR2K2EXJDZEFSX92XKHR4KG",
-    },
-  },
-} as ReducerState);
+// export const PaymentFeedback = createExample(TestedComponent[type].solve, {
+//   ...reducerStatesExample.challengeSolving,
+//   recovery_information: {
+//     challenges: [
+//       {
+//         instructions: "does P equals NP?",
+//         type: "question",
+//         uuid: "ASDASDSAD!1",
+//       },
+//     ],
+//     policies: [],
+//   },
+//   selected_challenge_uuid: "ASDASDSAD!1",
+//   challenge_feedback: {
+//     "ASDASDSAD!1": {
+//       state: ChallengeFeedbackStatus.TalerPayment,
+//       taler_pay_uri: "taler://pay/...",
+//       provider: "https://localhost:8080/",
+//       payment_secret: "3P4561HAMHRRYEYD6CM6J7TS5VTD5SR2K2EXJDZEFSX92XKHR4KG",
+//     },
+//   },
+// } as ReducerState);
