@@ -36,7 +36,7 @@ import * as a15 from "./AddNewActionView.stories.js";
 import * as a16 from "./DeveloperPage.stories.js";
 import * as a17 from "./QrReader.stories.js";
 import * as a18 from "./DestinationSelection.stories.js";
-import * as a19 from "./ExchangeSelection.stories.js";
+import * as a19 from "./ExchangeSelection/stories.js";
 
 export default [
   a1,

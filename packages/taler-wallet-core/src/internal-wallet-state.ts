@@ -36,6 +36,7 @@ import {
   DenominationPubKey,
   TalerProtocolTimestamp,
   CancellationToken,
+  DenominationInfo,
 } from "@gnu-taler/taler-util";
 import { CryptoDispatcher } from "./crypto/workers/cryptoDispatcher.js";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
@@ -124,63 +125,13 @@ export interface RecoupOperations {
   ): Promise<void>;
 }
 
-export interface DenomInfo {
-  /**
-   * Value of one coin of the denomination.
-   */
-  value: AmountJson;
-
+export type DenomInfo = DenominationInfo & {
   /**
    * The denomination public key.
    */
   denomPub: DenominationPubKey;
-
-  /**
-   * Hash of the denomination public key.
-   * Stored in the database for faster lookups.
-   */
-  denomPubHash: string;
-
-  /**
-   * Fee for withdrawing.
-   */
-  feeWithdraw: AmountJson;
-
-  /**
-   * Fee for depositing.
-   */
-  feeDeposit: AmountJson;
-
-  /**
-   * Fee for refreshing.
-   */
-  feeRefresh: AmountJson;
-
-  /**
-   * Fee for refunding.
-   */
-  feeRefund: AmountJson;
-
-  /**
-   * Validity start date of the denomination.
-   */
-  stampStart: TalerProtocolTimestamp;
-
-  /**
-   * Date after which the currency can't be withdrawn anymore.
-   */
-  stampExpireWithdraw: TalerProtocolTimestamp;
-
-  /**
-   * Date after the denomination officially doesn't exist anymore.
-   */
-  stampExpireLegal: TalerProtocolTimestamp;
-
-  /**
-   * Data after which coins of this denomination can't be deposited anymore.
-   */
-  stampExpireDeposit: TalerProtocolTimestamp;
 }
+
 
 export type NotificationListener = (n: WalletNotification) => void;
 

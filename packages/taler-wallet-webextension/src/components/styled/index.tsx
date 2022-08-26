@@ -97,7 +97,7 @@ export const WalletBox = styled.div<{ noPadding?: boolean }>`
   justify-content: space-between;
   align-items: center;
   & > * {
-    width: 600px;
+    width: 800px;
   }
   & > section {
     padding: ${({ noPadding }) => (noPadding ? "0px" : "8px")};
@@ -862,8 +862,8 @@ export const SvgIcon = styled.div<SvgIconProps>`
     fill: ${({ color }) => color};
     transform: ${({ transform }) => (transform ? transform : "")};
   }
-  width: 24px;
-  height: 24px;
+  /* width: 24px;
+  height: 24px; */
   margin-left: 8px;
   margin-right: 8px;
   display: inline;

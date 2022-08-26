@@ -19,6 +19,7 @@
     "strict": true,
     "incremental": true,
     "sourceMap": true,
+    "strictNullChecks": true,
     "esModuleInterop": true,
     "importHelpers": true,
     "rootDir": "./src",

@@ -669,8 +669,17 @@ const codecForDenominationInfo = (): Codec<DenominationInfo> =>
     .build("codecForDenominationInfo");
 
 export interface DenominationInfo {
+  /**
+   * Value of one coin of the denomination.
+   */
   value: AmountJson;
+
+  /**
+   * Hash of the denomination public key.
+   * Stored in the database for faster lookups.
+   */
   denomPubHash: string;
+
   /**
    * Fee for withdrawing.
    */

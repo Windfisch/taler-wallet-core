@@ -58,7 +58,7 @@ import {
   DestinationSelectionSendCash,
 } from "./DestinationSelection.js";
 import { Amounts } from "@gnu-taler/taler-util";
-import { ExchangeSelection } from "./ExchangeSelection.js";
+import { ExchangeSelectionPage } from "./ExchangeSelection/index.js";
 
 export function Application(): VNode {
   const [globalNotification, setGlobalNotification] = useState<
@@ -142,7 +142,7 @@ export function Application(): VNode {
                   )
                 }
               />
-              <Route path={Pages.exchanges} component={ExchangeSelection} />
+              <Route path={Pages.exchanges} component={ExchangeSelectionPage} />
               <Route
                 path={Pages.sendCash.pattern}
                 component={DestinationSelectionSendCash}
