@@ -176,7 +176,9 @@ export function CreateManualWithdraw({
     return (
       <section>
         <SubTitle>
-          <i18n.Translate>Manual Withdrawal</i18n.Translate>
+          <i18n.Translate>
+            Manual Withdrawal for {state.currency.value}
+          </i18n.Translate>
         </SubTitle>
         <LightText>
           <i18n.Translate>
@@ -212,7 +214,9 @@ export function CreateManualWithdraw({
           />
         )}
         <SubTitle>
-          <i18n.Translate>Manual Withdrawal</i18n.Translate>
+          <i18n.Translate>
+            Manual Withdrawal for {state.currency.value}
+          </i18n.Translate>
         </SubTitle>
         <LightText>
           <i18n.Translate>

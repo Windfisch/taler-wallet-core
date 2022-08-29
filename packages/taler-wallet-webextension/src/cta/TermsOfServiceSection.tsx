@@ -48,7 +48,9 @@ export function TermsOfServiceSection({
         return (
           <Fragment>
             {terms.status === "notfound" && (
-              <section>
+              <section
+                style={{ justifyContent: "space-around", display: "flex" }}
+              >
                 <WarningText>
                   <i18n.Translate>
                     Exchange doesn&apos;t have terms of service
@@ -62,7 +64,9 @@ export function TermsOfServiceSection({
       return (
         <Fragment>
           {terms.status === "notfound" && (
-            <section>
+            <section
+              style={{ justifyContent: "space-around", display: "flex" }}
+            >
               <WarningText>
                 <i18n.Translate>
                   Exchange doesn&apos;t have terms of service
@@ -71,7 +75,9 @@ export function TermsOfServiceSection({
             </section>
           )}
           {terms.status === "new" && (
-            <section>
+            <section
+              style={{ justifyContent: "space-around", display: "flex" }}
+            >
               <Button
                 variant="contained"
                 color="success"
@@ -84,7 +90,9 @@ export function TermsOfServiceSection({
             </section>
           )}
           {terms.status === "changed" && (
-            <section>
+            <section
+              style={{ justifyContent: "space-around", display: "flex" }}
+            >
               <Button
                 variant="contained"
                 color="success"
@@ -102,13 +110,13 @@ export function TermsOfServiceSection({
     return (
       <Fragment>
         {ableToReviewTermsOfService && (
-          <section>
+          <section style={{ justifyContent: "space-around", display: "flex" }}>
             <LinkSuccess upperCased onClick={() => onReview(true)}>
               <i18n.Translate>Show terms of service</i18n.Translate>
             </LinkSuccess>
           </section>
         )}
-        <section>
+        <section style={{ justifyContent: "space-around", display: "flex" }}>
           <CheckboxOutlined
             name="terms"
             enabled={reviewed}
@@ -129,7 +137,7 @@ export function TermsOfServiceSection({
   return (
     <Fragment>
       {terms.status !== "notfound" && !terms.content && (
-        <section>
+        <section style={{ justifyContent: "space-around", display: "flex" }}>
           <WarningBox>
             <i18n.Translate>
               The exchange reply with a empty terms of service
@@ -138,7 +146,7 @@ export function TermsOfServiceSection({
         </section>
       )}
       {terms.status !== "accepted" && terms.content && (
-        <section>
+        <section style={{ justifyContent: "space-around", display: "flex" }}>
           {terms.content.type === "xml" && (
             <TermsOfService>
               <ExchangeXmlTos doc={terms.content.document} />
@@ -160,14 +168,14 @@ export function TermsOfServiceSection({
         </section>
       )}
       {reviewed && ableToReviewTermsOfService && (
-        <section>
+        <section style={{ justifyContent: "space-around", display: "flex" }}>
           <LinkSuccess upperCased onClick={() => onReview(false)}>
             <i18n.Translate>Hide terms of service</i18n.Translate>
           </LinkSuccess>
         </section>
       )}
       {terms.status !== "notfound" && (
-        <section>
+        <section style={{ justifyContent: "space-around", display: "flex" }}>
           <CheckboxOutlined
             name="terms"
             enabled={reviewed}

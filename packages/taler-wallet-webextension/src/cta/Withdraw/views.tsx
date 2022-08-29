@@ -122,14 +122,17 @@ export function SuccessView(state: State.Success): VNode {
             <div
               style={{
                 display: "flex",
+                alignItems: "center",
               }}
             >
               <i18n.Translate>Exchange</i18n.Translate>
-              <SvgIcon
-                title="Edit"
-                dangerouslySetInnerHTML={{ __html: editIcon }}
-                color="black"
-              />
+              <Link>
+                <SvgIcon
+                  title="Edit"
+                  dangerouslySetInnerHTML={{ __html: editIcon }}
+                  color="black"
+                />
+              </Link>
             </div>
           }
           text={<ExchangeDetails exchange={state.exchangeUrl} />}

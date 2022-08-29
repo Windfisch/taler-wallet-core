@@ -118,7 +118,7 @@ export function Application(): VNode {
                   component={RedirectToWalletPage}
                 />
                 <Route
-                  path={Pages.balanceManualWithdraw.pattern}
+                  path={Pages.ctaWithdrawManual.pattern}
                   component={RedirectToWalletPage}
                 />
                 <Route

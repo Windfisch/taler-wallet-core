@@ -23,12 +23,17 @@ import * as wxApi from "../../wxApi.js";
 import {
   Props as TermsOfServiceSectionProps
 } from "../TermsOfServiceSection.js";
-import { useComponentState } from "./state.js";
+import { useComponentStateFromParams, useComponentStateFromURI } from "./state.js";
 import { CompletedView, LoadingExchangeView, LoadingInfoView, LoadingUriView, SuccessView } from "./views.js";
 
 
-export interface Props {
+export interface PropsFromURI {
   talerWithdrawUri: string | undefined;
+  cancel: () => Promise<void>;
+}
+
+export interface PropsFromParams {
+  amount: string;
   cancel: () => Promise<void>;
 }
 
@@ -93,4 +98,5 @@ const viewMapping: StateViewMap<State> = {
   success: SuccessView,
 };
 
-export const WithdrawPage = compose("Withdraw", (p: Props) => useComponentState(p, wxApi), viewMapping)
+export const WithdrawPageFromURI = compose("WithdrawPageFromURI", (p: PropsFromURI) => useComponentStateFromURI(p, wxApi), viewMapping)
+export const WithdrawPageFromParams = compose("WithdrawPageFromParams", (p: PropsFromParams) => useComponentStateFromParams(p, wxApi), viewMapping)

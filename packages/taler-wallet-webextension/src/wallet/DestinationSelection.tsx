@@ -18,21 +18,17 @@ import { Amounts } from "@gnu-taler/taler-util";
 import { styled } from "@linaria/react";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { ErrorMessage } from "../components/ErrorMessage.js";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import { SelectList } from "../components/SelectList.js";
 import {
   Input,
-  InputWithLabel,
   LightText,
   LinkPrimary,
-  SubTitle,
   SvgIcon,
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
-import { Alert } from "../mui/Alert.js";
 import { Button } from "../mui/Button.js";
 import { Grid } from "../mui/Grid.js";
 import { Paper } from "../mui/Paper.js";
@@ -54,6 +50,7 @@ interface Props {
   action: "send" | "get";
   amount?: string;
   goToWalletManualWithdraw: (amount: string) => void;
+  goToWalletWalletInvoice: (amount: string) => void;
 }
 
 type Contact = {
@@ -264,6 +261,7 @@ function RowExample({
 export function DestinationSelectionGetCash({
   amount: initialAmount,
   goToWalletManualWithdraw,
+  goToWalletWalletInvoice,
 }: Props): VNode {
   const parsedInitialAmount = !initialAmount
     ? undefined
@@ -293,6 +291,7 @@ export function DestinationSelectionGetCash({
       description: "account ending with 3454",
     },
   ];
+  const previous = previous1;
 
   if (!currency) {
     return (
@@ -331,13 +330,13 @@ export function DestinationSelectionGetCash({
       </Grid>
 
       <Grid container spacing={1} columns={1}>
-        {previous2.length > 0 ? (
+        {previous.length > 0 ? (
           <Fragment>
             <p>Use previous origins:</p>
             <Grid item xs={1}>
               <Paper style={{ padding: 8 }}>
                 <ContactTable>
-                  {previous2.map((info, i) => (
+                  {previous.map((info, i) => (
                     <tr key={i}>
                       <td>
                         <RowExample info={info} disabled={invalid} />
@@ -349,9 +348,15 @@ export function DestinationSelectionGetCash({
             </Grid>
           </Fragment>
         ) : undefined}
-        <Grid item>
-          <p>Or specify a new origin for the money</p>
-        </Grid>
+        {previous.length > 0 ? (
+          <Grid item>
+            <p>Or specify a new origin for the money</p>
+          </Grid>
+        ) : (
+          <Grid item>
+            <p>Specify a origin for the money</p>
+          </Grid>
+        )}
         <Grid item container columns={2} spacing={1}>
           <Grid item xs={1}>
             <Paper style={{ padding: 8 }}>
@@ -369,7 +374,12 @@ export function DestinationSelectionGetCash({
           <Grid item xs={1}>
             <Paper style={{ padding: 8 }}>
               <p>From another wallet</p>
-              <Button disabled>Invoice</Button>
+              <Button
+                disabled={invalid}
+                onClick={async () => goToWalletWalletInvoice(currencyAndAmount)}
+              >
+                Invoice
+              </Button>
             </Paper>
           </Grid>
         </Grid>
@@ -409,6 +419,7 @@ export function DestinationSelectionSendCash({
       description: "account ending with 3454",
     },
   ];
+  const previous = previous1;
 
   if (!currency) {
     return <div>currency not provided</div>;
@@ -440,13 +451,13 @@ export function DestinationSelectionSendCash({
       </div>
 
       <Grid container spacing={1} columns={1}>
-        {previous2.length > 0 ? (
+        {previous.length > 0 ? (
           <Fragment>
             <p>Use previous destinations:</p>
             <Grid item xs={1}>
               <Paper style={{ padding: 8 }}>
                 <ContactTable>
-                  {previous2.map((info, i) => (
+                  {previous.map((info, i) => (
                     <tr key={i}>
                       <td>
                         <RowExample info={info} disabled={invalid} />
@@ -458,9 +469,15 @@ export function DestinationSelectionSendCash({
             </Grid>
           </Fragment>
         ) : undefined}
-        <Grid item>
-          <p>Or specify a new destination for the money</p>
-        </Grid>
+        {previous.length > 0 ? (
+          <Grid item>
+            <p>Or specify a new destination for the money</p>
+          </Grid>
+        ) : (
+          <Grid item>
+            <p>Specify a destination for the money</p>
+          </Grid>
+        )}
         <Grid item container columns={2} spacing={1}>
           <Grid item xs={1}>
             <Paper style={{ padding: 8 }}>

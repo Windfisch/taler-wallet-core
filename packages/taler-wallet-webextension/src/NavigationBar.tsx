@@ -85,9 +85,6 @@ export const Pages = {
   balanceHistory: pageDefinition<{ currency?: string }>(
     "/balance/history/:currency?",
   ),
-  balanceManualWithdraw: pageDefinition<{ amount?: string }>(
-    "/balance/manual-withdraw/:amount?",
-  ),
   balanceDeposit: pageDefinition<{ currency: string }>(
     "/balance/deposit/:currency",
   ),
@@ -111,12 +108,18 @@ export const Pages = {
     "/settings/exchange/add/:currency?",
   ),
 
+  invoice: pageDefinition<{ amount?: string }>("/receive/invoice/:amount?"),
+
   cta: pageDefinition<{ action: string }>("/cta/:action"),
   ctaPay: "/cta/pay",
   ctaRefund: "/cta/refund",
   ctaTips: "/cta/tip",
   ctaWithdraw: "/cta/withdraw",
   ctaDeposit: "/cta/deposit",
+
+  ctaWithdrawManual: pageDefinition<{ amount?: string }>(
+    "/cta/manual-withdraw/:amount?",
+  ),
 };
 
 export function PopupNavBar({ path = "" }: { path?: string }): VNode {

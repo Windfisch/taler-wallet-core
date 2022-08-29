@@ -37,7 +37,10 @@ import {
 import { PaymentPage } from "../cta/Payment/index.js";
 import { RefundPage } from "../cta/Refund/index.js";
 import { TipPage } from "../cta/Tip/index.js";
-import { WithdrawPage } from "../cta/Withdraw/index.js";
+import {
+  WithdrawPageFromParams,
+  WithdrawPageFromURI,
+} from "../cta/Withdraw/index.js";
 import { DepositPage as DepositPageCTA } from "../cta/Deposit/index.js";
 import { Pages, WalletNavBar } from "../NavigationBar.js";
 import { DeveloperPage } from "./DeveloperPage.js";
@@ -151,7 +154,10 @@ export function Application(): VNode {
                 path={Pages.receiveCash.pattern}
                 component={DestinationSelectionGetCash}
                 goToWalletManualWithdraw={(amount?: string) =>
-                  redirectTo(Pages.balanceManualWithdraw({ amount }))
+                  redirectTo(Pages.ctaWithdrawManual({ amount }))
+                }
+                goToWalletWalletInvoice={(amount?: string) =>
+                  redirectTo(Pages.ctaWithdrawManual({ amount }))
                 }
               />
               <Route
@@ -160,12 +166,6 @@ export function Application(): VNode {
                 goToWalletHistory={(currency?: string) =>
                   redirectTo(Pages.balanceHistory({ currency }))
                 }
-              />
-
-              <Route
-                path={Pages.balanceManualWithdraw.pattern}
-                component={ManualWithdrawPage}
-                onCancel={() => redirectTo(Pages.balance)}
               />
 
               <Route
@@ -237,7 +237,7 @@ export function Application(): VNode {
                 path={Pages.ctaPay}
                 component={PaymentPage}
                 goToWalletManualWithdraw={(amount?: string) =>
-                  redirectTo(Pages.balanceManualWithdraw({ amount }))
+                  redirectTo(Pages.ctaWithdrawManual({ amount }))
                 }
                 cancel={() => redirectTo(Pages.balance)}
               />
@@ -253,7 +253,12 @@ export function Application(): VNode {
               />
               <Route
                 path={Pages.ctaWithdraw}
-                component={WithdrawPage}
+                component={WithdrawPageFromURI}
+                cancel={() => redirectTo(Pages.balance)}
+              />
+              <Route
+                path={Pages.ctaWithdrawManual.pattern}
+                component={WithdrawPageFromParams}
                 cancel={() => redirectTo(Pages.balance)}
               />
               <Route

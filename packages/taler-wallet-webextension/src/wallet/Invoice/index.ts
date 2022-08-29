@@ -14,29 +14,21 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AbsoluteTime, AmountJson, ExchangeListItem } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
-import { ButtonHandler, SelectFieldHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
+import { LoadingUriView, ReadyView } from "./views.js";
 import * as wxApi from "../../wxApi.js";
 import { useComponentState } from "./state.js";
-import { ComparingView, LoadingUriView, NoExchangesView, ReadyView } from "./views.js";
-
-
 
 export interface Props {
-  currency?: string;
-  onCancel: () => Promise<void>;
-  onSelection: (exchange: string) => Promise<void>;
+  p: string;
 }
 
 export type State =
   | State.Loading
   | State.LoadingUriError
-  | State.Ready
-  | State.Comparing
-  | State.NoExchanges;
+  | State.Ready;
 
 export namespace State {
 
@@ -51,55 +43,20 @@ export namespace State {
   }
 
   export interface BaseInfo {
-    exchanges: SelectFieldHandler;
-    selected: ExchangeListItem;
-    nextFeeUpdate: AbsoluteTime;
     error: undefined;
   }
-
-  export interface NoExchanges {
-    status: "no-exchanges";
-    error: undefined;
-  }
-
   export interface Ready extends BaseInfo {
     status: "ready";
-    timeline: OperationMap<FeeDescription[]>;
-    onClose: ButtonHandler;
-  }
-
-  export interface Comparing extends BaseInfo {
-    status: "comparing";
-    pairTimeline: OperationMap<FeeDescriptionPair[]>;
-    onReset: ButtonHandler;
-    onSelect: ButtonHandler;
+    error: undefined;
   }
 }
-
-export type Operation = "deposit" | "withdraw" | "refresh" | "refund";
-export type OperationMap<T> = { [op in Operation]: T };
-
 
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
   "loading-uri": LoadingUriView,
-  "comparing": ComparingView,
-  "no-exchanges": NoExchangesView,
   "ready": ReadyView,
 };
 
-export const ExchangeSelectionPage = compose("ExchangeSelectionPage", (p: Props) => useComponentState(p, wxApi), viewMapping)
 
-export interface FeeDescription {
-  value: AmountJson;
-  from: AbsoluteTime;
-  until: AbsoluteTime;
-  fee?: AmountJson;
-}
-export interface FeeDescriptionPair {
-  value: AmountJson;
-  from: AbsoluteTime;
-  until: AbsoluteTime;
-  left?: AmountJson;
-  right?: AmountJson;
-}
+export const InvoicePage = compose("InvoicePage", (p: Props) => useComponentState(p, wxApi), viewMapping)
+
