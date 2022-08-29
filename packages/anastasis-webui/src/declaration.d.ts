@@ -33,3 +33,5 @@ declare module "jed" {
   const x: any;
   export = x;
 }
+declare var __VERSION__ : string;
+declare var __GIT_HASH__ : string;
