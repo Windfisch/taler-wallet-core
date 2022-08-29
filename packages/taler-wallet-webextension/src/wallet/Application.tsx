@@ -48,7 +48,6 @@ import { BackupPage } from "./BackupPage.js";
 import { DepositPage } from "./DepositPage.js";
 import { ExchangeAddPage } from "./ExchangeAddPage.js";
 import { HistoryPage } from "./History.js";
-import { ManualWithdrawPage } from "./ManualWithdrawPage.js";
 import { ProviderAddPage } from "./ProviderAddPage.js";
 import { ProviderDetailPage } from "./ProviderDetailPage.js";
 import { SettingsPage } from "./Settings.js";
@@ -60,8 +59,9 @@ import {
   DestinationSelectionGetCash,
   DestinationSelectionSendCash,
 } from "./DestinationSelection.js";
-import { Amounts } from "@gnu-taler/taler-util";
 import { ExchangeSelectionPage } from "./ExchangeSelection/index.js";
+import { InvoicePage } from "./Invoice/index.js";
+import { SendPage } from "./Send/index.js";
 
 export function Application(): VNode {
   const [globalNotification, setGlobalNotification] = useState<
@@ -149,6 +149,12 @@ export function Application(): VNode {
               <Route
                 path={Pages.sendCash.pattern}
                 component={DestinationSelectionSendCash}
+                goToWalletBankDeposit={(amount: string) =>
+                  redirectTo(Pages.balanceDeposit({ amount }))
+                }
+                goToWalletWalletSend={(amount: string) =>
+                  redirectTo(Pages.send({ amount }))
+                }
               />
               <Route
                 path={Pages.receiveCash.pattern}
@@ -157,9 +163,12 @@ export function Application(): VNode {
                   redirectTo(Pages.ctaWithdrawManual({ amount }))
                 }
                 goToWalletWalletInvoice={(amount?: string) =>
-                  redirectTo(Pages.ctaWithdrawManual({ amount }))
+                  redirectTo(Pages.invoice({ amount }))
                 }
               />
+              <Route path={Pages.invoice.pattern} component={InvoicePage} />
+              <Route path={Pages.send.pattern} component={SendPage} />
+
               <Route
                 path={Pages.balanceTransaction.pattern}
                 component={TransactionPage}

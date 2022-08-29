@@ -536,7 +536,7 @@ async function listKnownBankAccounts(
   ws: InternalWalletState,
   currency?: string,
 ): Promise<KnownBankAccounts> {
-  const accounts: PaytoUri[] = [];
+  const accounts: { [account: string]: PaytoUri } = {};
   await ws.db
     .mktx((x) => ({
       withdrawalGroups: x.withdrawalGroups,
@@ -548,9 +548,11 @@ async function listKnownBankAccounts(
         if (currency && currency !== amount.currency) {
           continue;
         }
-        const payto = r.senderWire ? parsePaytoUri(r.senderWire) : undefined;
-        if (payto) {
-          accounts.push(payto);
+        if (r.senderWire) {
+          const payto = parsePaytoUri(r.senderWire);
+          if (payto) {
+            accounts[r.senderWire] = payto;
+          }
         }
       }
     });

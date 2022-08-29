@@ -573,7 +573,7 @@ export interface ExchangesListRespose {
 }
 
 export interface KnownBankAccounts {
-  accounts: PaytoUri[];
+  accounts: { [payto: string]: PaytoUri };
 }
 
 export interface ExchangeTos {

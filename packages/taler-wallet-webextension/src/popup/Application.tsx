@@ -78,7 +78,7 @@ export function Application(): VNode {
                     redirectTo(Pages.receiveCash({}))
                   }
                   goToWalletDeposit={(currency: string) =>
-                    redirectTo(Pages.balanceDeposit({ currency }))
+                    redirectTo(Pages.sendCash({ amount: `${currency}:0` }))
                   }
                   goToWalletHistory={(currency: string) =>
                     redirectTo(Pages.balanceHistory({ currency }))
@@ -135,6 +135,10 @@ export function Application(): VNode {
                 />
                 <Route
                   path={Pages.receiveCash.pattern}
+                  component={RedirectToWalletPage}
+                />
+                <Route
+                  path={Pages.sendCash.pattern}
                   component={RedirectToWalletPage}
                 />
                 <Route path={Pages.qr} component={RedirectToWalletPage} />

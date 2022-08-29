@@ -40,12 +40,12 @@ import {
 import * as wxApi from "../wxApi.js";
 
 interface Props {
-  currency: string;
+  amount: string;
   onCancel: (currency: string) => void;
   onSuccess: (currency: string) => void;
 }
-export function DepositPage({ currency, onCancel, onSuccess }: Props): VNode {
-  const state = useComponentState(currency, onCancel, onSuccess, wxApi);
+export function DepositPage({ amount, onCancel, onSuccess }: Props): VNode {
+  const state = useComponentState(amount, onCancel, onSuccess, wxApi);
 
   return <View state={state} />;
 }
@@ -92,21 +92,27 @@ async function getFeeForAmount(
 }
 
 export function useComponentState(
-  currency: string,
+  amountOrCurrency: string,
   onCancel: (currency: string) => void,
   onSuccess: (currency: string) => void,
   api: typeof wxApi,
 ): State {
+  const parsed = Amounts.parse(amountOrCurrency);
+  const currency = parsed !== undefined ? parsed.currency : amountOrCurrency;
+
   const hook = useAsyncAsHook(async () => {
     const { balances } = await api.getBalance();
-    const { accounts } = await api.listKnownBankAccounts(currency);
+    const { accounts: accountMap } = await api.listKnownBankAccounts(currency);
+    const accounts = Object.values(accountMap);
     const defaultSelectedAccount =
       accounts.length > 0 ? accounts[0] : undefined;
     return { accounts, balances, defaultSelectedAccount };
   });
 
+  const initialValue =
+    parsed !== undefined ? Amounts.stringifyValue(parsed) : "0";
   const [accountIdx, setAccountIdx] = useState(0);
-  const [amount, setAmount] = useState<number>(0);
+  const [amount, setAmount] = useState(initialValue);
 
   const [selectedAccount, setSelectedAccount] = useState<
     PaytoUri | undefined
@@ -167,15 +173,15 @@ export function useComponentState(
   }
 
   async function updateAmount(numStr: string): Promise<void> {
-    const num = parseFloat(numStr);
-    const newAmount = Number.isNaN(num) ? 0 : num;
-    if (amount === newAmount || !currentAccount) return;
-    const parsed = Amounts.parse(`${currency}:${newAmount}`);
+    // const num = parseFloat(numStr);
+    // const newAmount = Number.isNaN(num) ? 0 : num;
+    if (amount === numStr || !currentAccount) return;
+    const parsed = Amounts.parse(`${currency}:${numStr}`);
     if (!parsed) {
-      setAmount(newAmount);
+      setAmount(numStr);
     } else {
       const result = await getFeeForAmount(currentAccount, parsed, api);
-      setAmount(newAmount);
+      setAmount(numStr);
       setFee(result);
     }
   }
@@ -189,7 +195,7 @@ export function useComponentState(
     ? Amounts.sub(parsedAmount, totalFee).amount
     : Amounts.getZero(currency);
 
-  const isDirty = amount !== 0;
+  const isDirty = amount !== initialValue;
   const amountError = !isDirty
     ? undefined
     : !parsedAmount

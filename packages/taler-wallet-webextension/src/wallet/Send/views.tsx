@@ -17,7 +17,10 @@
 import { Amounts } from "@gnu-taler/taler-util";
 import { styled } from "@linaria/react";
 import { h, VNode } from "preact";
+import { useState } from "preact/hooks";
 import { LoadingError } from "../../components/LoadingError.js";
+import { SelectList } from "../../components/SelectList.js";
+import { Input } from "../../components/styled/index.js";
 import { useTranslationContext } from "../../context/translation.js";
 import { Button } from "../../mui/Button.js";
 import { TextField } from "../../mui/TextField.js";
@@ -36,12 +39,11 @@ export function LoadingUriView({ error }: State.LoadingUriError): VNode {
 
 const Container = styled.div``;
 
-export function ReadyView({ amount, subject }: State.Ready): VNode {
+export function ReadyView({ amount, exchange, subject }: State.Ready): VNode {
   const { i18n } = useTranslationContext();
-
   return (
     <Container>
-      <p>Creating an invoice of {Amounts.stringify(amount)}</p>
+      <p>Sending {Amounts.stringify(amount)}</p>
       <TextField
         label="Subject"
         variant="filled"

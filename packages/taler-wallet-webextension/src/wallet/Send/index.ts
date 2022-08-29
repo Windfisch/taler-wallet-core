@@ -21,7 +21,7 @@ import { LoadingUriView, ReadyView } from "./views.js";
 import * as wxApi from "../../wxApi.js";
 import { useComponentState } from "./state.js";
 import { AmountJson } from "@gnu-taler/taler-util";
-import { TextFieldHandler } from "../../mui/handlers.js";
+import { SelectFieldHandler, TextFieldHandler } from "../../mui/handlers.js";
 
 export interface Props {
   p: string;
@@ -50,7 +50,8 @@ export namespace State {
   export interface Ready extends BaseInfo {
     status: "ready";
     amount: AmountJson;
-    subject: TextFieldHandler;
+    exchange: SelectFieldHandler,
+    subject: TextFieldHandler,
     error: undefined;
   }
 }
@@ -62,5 +63,5 @@ const viewMapping: StateViewMap<State> = {
 };
 
 
-export const InvoicePage = compose("InvoicePage", (p: Props) => useComponentState(p, wxApi), viewMapping)
+export const SendPage = compose("SendPage", (p: Props) => useComponentState(p, wxApi), viewMapping)
 

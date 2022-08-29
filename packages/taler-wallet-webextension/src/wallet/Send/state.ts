@@ -16,6 +16,7 @@
 
 import { Amounts } from "@gnu-taler/taler-util";
 import { useState } from "preact/hooks";
+import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
@@ -25,8 +26,36 @@ export function useComponentState(
 ): State {
   const [subject, setSubject] = useState("");
   const amount = Amounts.parseOrThrow("ARS:0")
+
+  const hook = useAsyncAsHook(api.listExchanges);
+  const [exchangeIdx, setExchangeIdx] = useState("0")
+
+  if (!hook) {
+    return {
+      status: "loading",
+      error: undefined,
+    }
+  }
+  if (hook.hasError) {
+    return {
+      status: "loading-uri",
+      error: hook,
+    };
+  }
+
+  const exchanges = hook.response.exchanges;
+  const exchangeMap = exchanges.reduce((prev, cur, idx) => ({ ...prev, [cur.exchangeBaseUrl]: String(idx) }), {} as Record<string, string>)
+  const selected = exchanges[Number(exchangeIdx)];
+
   return {
     status: "ready",
+    exchange: {
+      list: exchangeMap,
+      value: exchangeIdx,
+      onChange: async (v) => {
+        setExchangeIdx(v)
+      }
+    },
     subject: {
       value: subject,
       onInput: async (e) => setSubject(e)

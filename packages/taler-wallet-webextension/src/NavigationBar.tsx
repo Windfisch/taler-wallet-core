@@ -85,8 +85,8 @@ export const Pages = {
   balanceHistory: pageDefinition<{ currency?: string }>(
     "/balance/history/:currency?",
   ),
-  balanceDeposit: pageDefinition<{ currency: string }>(
-    "/balance/deposit/:currency",
+  balanceDeposit: pageDefinition<{ amount: string }>(
+    "/balance/deposit/:amount",
   ),
   balanceTransaction: pageDefinition<{ tid: string }>(
     "/balance/transaction/:tid",
@@ -108,7 +108,8 @@ export const Pages = {
     "/settings/exchange/add/:currency?",
   ),
 
-  invoice: pageDefinition<{ amount?: string }>("/receive/invoice/:amount?"),
+  invoice: pageDefinition<{ amount?: string }>("/invoice/:amount?"),
+  send: pageDefinition<{ amount?: string }>("/send/:amount?"),
 
   cta: pageDefinition<{ action: string }>("/cta/:action"),
   ctaPay: "/cta/pay",

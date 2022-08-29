@@ -46,11 +46,15 @@ const Container = styled.div`
   }
 `;
 
-interface Props {
-  action: "send" | "get";
+interface PropsGet {
   amount?: string;
   goToWalletManualWithdraw: (amount: string) => void;
   goToWalletWalletInvoice: (amount: string) => void;
+}
+interface PropsSend {
+  amount?: string;
+  goToWalletBankDeposit: (amount: string) => void;
+  goToWalletWalletSend: (amount: string) => void;
 }
 
 type Contact = {
@@ -262,7 +266,7 @@ export function DestinationSelectionGetCash({
   amount: initialAmount,
   goToWalletManualWithdraw,
   goToWalletWalletInvoice,
-}: Props): VNode {
+}: PropsGet): VNode {
   const parsedInitialAmount = !initialAmount
     ? undefined
     : Amounts.parse(initialAmount);
@@ -390,7 +394,9 @@ export function DestinationSelectionGetCash({
 
 export function DestinationSelectionSendCash({
   amount: initialAmount,
-}: Props): VNode {
+  goToWalletBankDeposit,
+  goToWalletWalletSend,
+}: PropsSend): VNode {
   const parsedInitialAmount = !initialAmount
     ? undefined
     : Amounts.parse(initialAmount);
@@ -482,13 +488,23 @@ export function DestinationSelectionSendCash({
           <Grid item xs={1}>
             <Paper style={{ padding: 8 }}>
               <p>To my bank account</p>
-              <Button disabled={invalid}>Deposit</Button>
+              <Button
+                disabled={invalid}
+                onClick={async () => goToWalletBankDeposit(currencyAndAmount)}
+              >
+                Deposit
+              </Button>
             </Paper>
           </Grid>
           <Grid item xs={1}>
             <Paper style={{ padding: 8 }}>
               <p>To another wallet</p>
-              <Button disabled>Send</Button>
+              <Button
+                disabled={invalid}
+                onClick={async () => goToWalletWalletSend(currencyAndAmount)}
+              >
+                Send
+              </Button>
             </Paper>
           </Grid>
         </Grid>

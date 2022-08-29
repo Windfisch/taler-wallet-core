@@ -14,24 +14,18 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Amounts } from "@gnu-taler/taler-util";
-import { useState } from "preact/hooks";
-import * as wxApi from "../../wxApi.js";
-import { Props, State } from "./index.js";
+/**
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-export function useComponentState(
-  { p }: Props,
-  api: typeof wxApi,
-): State {
-  const [subject, setSubject] = useState("");
-  const amount = Amounts.parseOrThrow("ARS:0")
-  return {
-    status: "ready",
-    subject: {
-      value: subject,
-      onInput: async (e) => setSubject(e)
-    },
-    amount,
-    error: undefined,
-  }
-}
+import { expect } from "chai";
+
+describe("test description", () => {
+
+  it("should assert", () => {
+
+    expect([]).deep.equals([])
+  });
+})
+
