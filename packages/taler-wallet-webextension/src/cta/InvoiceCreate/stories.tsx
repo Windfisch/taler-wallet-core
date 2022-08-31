@@ -19,15 +19,39 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import * as a1 from "./Deposit/stories.jsx";
-import * as a3 from "./Payment/stories.jsx";
-import * as a4 from "./Refund/stories.jsx";
-import * as a5 from "./Tip/stories.jsx";
-import * as a6 from "./Withdraw/stories.jsx";
-import * as a7 from "./TermsOfServiceSection.stories.js";
-import * as a8 from "./InvoiceCreate/stories.js";
-import * as a9 from "./InvoicePay/stories.js";
-import * as a10 from "./TransferCreate/stories.js";
-import * as a11 from "./TransferPickup/stories.js";
+import { createExample } from "../../test-utils.js";
+import { ReadyView, ShowQrView } from "./views.js";
 
-export default [a1, a3, a4, a5, a6, a7, a8, a9, a10, a11];
+export default {
+  title: "wallet/invoice create",
+};
+
+export const ShowQr = createExample(ShowQrView, {
+  talerUri:
+    "taler://pay-pull/exchange.taler.ar/HS585JK0QCXHJ8Z8QWZA3EBAY5WY7XNC1RR2MHJXSH2Z4WP0YPJ0",
+  close: () => {
+    null;
+  },
+});
+
+export const Ready = createExample(ReadyView, {
+  chosenAmount: {
+    currency: "ARS",
+    value: 1,
+    fraction: 0,
+  },
+  toBeReceived: {
+    currency: "ARS",
+    value: 1,
+    fraction: 0,
+  },
+  exchangeUrl: "https://exchange.taler.ar",
+  subject: {
+    value: "some subject",
+    onInput: async () => {
+      null;
+    },
+  },
+  copyToClipboard: {},
+  showQr: {},
+});

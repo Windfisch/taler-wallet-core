@@ -181,10 +181,11 @@ function getContentForExample(item: ExampleItem | undefined): () => VNode {
     item.component,
     item.name,
   );
-  if (!example)
+  if (!example) {
     return function ExampleNotFoundMessage() {
       return <div>example not found</div>;
     };
+  }
   return () => example.render(example.render.args);
 }
 
@@ -314,7 +315,9 @@ function ErrorReport({
   children: ComponentChild;
   selected: ExampleItem | undefined;
 }): VNode {
-  const [error] = useErrorBoundary();
+  const [error, resetError] = useErrorBoundary();
+  //if there is an error, reset when unloading this component
+  useEffect(() => (error ? resetError : undefined));
   if (error) {
     return (
       <div>

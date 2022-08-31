@@ -108,16 +108,20 @@ export const Pages = {
     "/settings/exchange/add/:currency?",
   ),
 
-  invoice: pageDefinition<{ amount?: string }>("/invoice/:amount?"),
-  send: pageDefinition<{ amount?: string }>("/send/:amount?"),
-
   cta: pageDefinition<{ action: string }>("/cta/:action"),
   ctaPay: "/cta/pay",
   ctaRefund: "/cta/refund",
   ctaTips: "/cta/tip",
   ctaWithdraw: "/cta/withdraw",
   ctaDeposit: "/cta/deposit",
-
+  ctaInvoiceCreate: pageDefinition<{ amount?: string }>(
+    "/cta/invoice/create/:amount?",
+  ),
+  ctaTransferCreate: pageDefinition<{ amount?: string }>(
+    "/cta/transfer/create/:amount?",
+  ),
+  ctaInvoicePay: "/cta/invoice/pay",
+  ctaTransferPickup: "/cta/transfer/pickup",
   ctaWithdrawManual: pageDefinition<{ amount?: string }>(
     "/cta/manual-withdraw/:amount?",
   ),

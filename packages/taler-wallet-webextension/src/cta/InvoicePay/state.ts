@@ -14,21 +14,23 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Amounts } from "@gnu-taler/taler-util";
+import { Amounts, TalerErrorDetail } from "@gnu-taler/taler-util";
+import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
-  { p }: Props,
+  { talerPayPullUri }: Props,
   api: typeof wxApi,
 ): State {
-  const [subject, setSubject] = useState("");
-  const amount = Amounts.parseOrThrow("ARS:0")
-
-  const hook = useAsyncAsHook(api.listExchanges);
-  const [exchangeIdx, setExchangeIdx] = useState("0")
+  const hook = useAsyncAsHook(async () => {
+    return await api.checkPeerPullPayment({
+      talerUri: talerPayPullUri
+    })
+  }, [])
+  const [operationError, setOperationError] = useState<TalerErrorDetail | undefined>(undefined)
 
   if (!hook) {
     return {
@@ -43,24 +45,30 @@ export function useComponentState(
     };
   }
 
-  const exchanges = hook.response.exchanges;
-  const exchangeMap = exchanges.reduce((prev, cur, idx) => ({ ...prev, [cur.exchangeBaseUrl]: String(idx) }), {} as Record<string, string>)
-  const selected = exchanges[Number(exchangeIdx)];
+  const { amount, peerPullPaymentIncomingId } = hook.response
+
+  async function accept(): Promise<void> {
+    try {
+      const resp = await api.acceptPeerPullPayment({
+        peerPullPaymentIncomingId
+      })
+    } catch (e) {
+      if (e instanceof TalerError) {
+        setOperationError(e.errorDetail)
+      }
+      console.error(e)
+      throw Error("error trying to accept")
+    }
+  }
+
 
   return {
     status: "ready",
-    exchange: {
-      list: exchangeMap,
-      value: exchangeIdx,
-      onChange: async (v) => {
-        setExchangeIdx(v)
-      }
-    },
-    subject: {
-      value: subject,
-      onInput: async (e) => setSubject(e)
-    },
-    amount,
+    amount: Amounts.parseOrThrow(amount),
     error: undefined,
+    accept: {
+      onClick: accept
+    },
+    operationError
   }
 }

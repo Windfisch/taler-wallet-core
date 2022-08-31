@@ -113,8 +113,58 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           pending={tx.pending}
         />
       );
-    default:
-      throw Error("unsupported transaction type");
+    case TransactionType.PeerPullCredit:
+      return (
+        <TransactionLayout
+          id={tx.transactionId}
+          amount={tx.amountEffective}
+          debitCreditIndicator={"credit"}
+          title={"Invoice credit"}
+          timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
+          iconPath={"I"}
+          pending={tx.pending}
+        />
+      );
+    case TransactionType.PeerPullDebit:
+      return (
+        <TransactionLayout
+          id={tx.transactionId}
+          amount={tx.amountEffective}
+          debitCreditIndicator={"debit"}
+          title={"Invoice debit"}
+          timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
+          iconPath={"I"}
+          pending={tx.pending}
+        />
+      );
+    case TransactionType.PeerPushCredit:
+      return (
+        <TransactionLayout
+          id={tx.transactionId}
+          amount={tx.amountEffective}
+          debitCreditIndicator={"credit"}
+          title={"Transfer credit"}
+          timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
+          iconPath={"T"}
+          pending={tx.pending}
+        />
+      );
+    case TransactionType.PeerPushDebit:
+      return (
+        <TransactionLayout
+          id={tx.transactionId}
+          amount={tx.amountEffective}
+          debitCreditIndicator={"debit"}
+          title={"Transfer debit"}
+          timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
+          iconPath={"T"}
+          pending={tx.pending}
+        />
+      );
+    default: {
+      const pe: never = tx;
+      throw Error(`unsupported transaction type ${pe}`);
+    }
   }
 }
 

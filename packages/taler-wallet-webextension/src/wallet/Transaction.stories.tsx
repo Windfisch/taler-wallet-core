@@ -25,6 +25,10 @@ import {
   TransactionCommon,
   TransactionDeposit,
   TransactionPayment,
+  TransactionPeerPullCredit,
+  TransactionPeerPullDebit,
+  TransactionPeerPushCredit,
+  TransactionPeerPushDebit,
   TransactionRefresh,
   TransactionRefund,
   TransactionTip,
@@ -139,6 +143,30 @@ const exampleData = {
     },
     refundPending: undefined,
   } as TransactionRefund,
+  push_credit: {
+    ...commonTransaction,
+    type: TransactionType.PeerPushCredit,
+    exchangeBaseUrl: "https://exchange.taler.net",
+  } as TransactionPeerPushCredit,
+  push_debit: {
+    ...commonTransaction,
+    type: TransactionType.PeerPushDebit,
+    talerUri:
+      "taler://pay-push/exchange.taler.ar/HS585JK0QCXHJ8Z8QWZA3EBAY5WY7XNC1RR2MHJXSH2Z4WP0YPJ0",
+    exchangeBaseUrl: "https://exchange.taler.net",
+  } as TransactionPeerPushDebit,
+  pull_credit: {
+    ...commonTransaction,
+    type: TransactionType.PeerPullCredit,
+    talerUri:
+      "taler://pay-push/exchange.taler.ar/HS585JK0QCXHJ8Z8QWZA3EBAY5WY7XNC1RR2MHJXSH2Z4WP0YPJ0",
+    exchangeBaseUrl: "https://exchange.taler.net",
+  } as TransactionPeerPullCredit,
+  pull_debit: {
+    ...commonTransaction,
+    type: TransactionType.PeerPullDebit,
+    exchangeBaseUrl: "https://exchange.taler.net",
+  } as TransactionPeerPullDebit,
 };
 
 const transactionError = {
@@ -497,4 +525,20 @@ export const RefundError = createExample(TestedComponent, {
 
 export const RefundPending = createExample(TestedComponent, {
   transaction: { ...exampleData.refund, pending: true },
+});
+
+export const InvoiceCredit = createExample(TestedComponent, {
+  transaction: { ...exampleData.pull_credit },
+});
+
+export const InvoiceDebit = createExample(TestedComponent, {
+  transaction: { ...exampleData.pull_debit },
+});
+
+export const TransferCredit = createExample(TestedComponent, {
+  transaction: { ...exampleData.push_credit },
+});
+
+export const TransferDebit = createExample(TestedComponent, {
+  transaction: { ...exampleData.push_debit },
 });

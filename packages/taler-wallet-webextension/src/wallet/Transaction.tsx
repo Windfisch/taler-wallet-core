@@ -45,6 +45,7 @@ import { ErrorTalerOperation } from "../components/ErrorTalerOperation.js";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import { Kind, Part, PartCollapsible, PartPayto } from "../components/Part.js";
+import { QR } from "../components/QR.js";
 import { ShowFullContractTermPopup } from "../components/ShowFullContractTermPopup.js";
 import {
   CenteredDialog,
@@ -557,6 +558,172 @@ export function TransactionView({
     );
   }
 
+  function ShowQrWithCopy({ text }: { text: string }): VNode {
+    const [showing, setShowing] = useState(false);
+    async function copy(): Promise<void> {
+      navigator.clipboard.writeText(text);
+    }
+    async function toggle(): Promise<void> {
+      setShowing((s) => !s);
+    }
+    if (showing) {
+      return (
+        <div>
+          <QR text={text} />
+          <Button onClick={copy}>copy</Button>
+          <Button onClick={toggle}>hide qr</Button>
+        </div>
+      );
+    }
+    return (
+      <div>
+        <div>{text.substring(0, 64)}...</div>
+        <Button onClick={copy}>copy</Button>
+        <Button onClick={toggle}>show qr</Button>
+      </div>
+    );
+  }
+
+  if (transaction.type === TransactionType.PeerPullCredit) {
+    const total = Amounts.parseOrThrow(transaction.amountEffective);
+    return (
+      <TransactionTemplate>
+        <Header
+          timestamp={transaction.timestamp}
+          type={i18n.str`Credit`}
+          total={total}
+          kind="positive"
+        >
+          Invoice
+        </Header>
+
+        <Part
+          title={<i18n.Translate>Exchange</i18n.Translate>}
+          text={transaction.exchangeBaseUrl}
+          kind="neutral"
+        />
+        <Part
+          title={<i18n.Translate>URI</i18n.Translate>}
+          text={<ShowQrWithCopy text={transaction.talerUri} />}
+          kind="neutral"
+        />
+        <Part
+          title={<i18n.Translate>Details</i18n.Translate>}
+          text={
+            <InvoiceDetails
+              amount={{
+                effective: Amounts.parseOrThrow(transaction.amountEffective),
+                raw: Amounts.parseOrThrow(transaction.amountRaw),
+              }}
+            />
+          }
+        />
+      </TransactionTemplate>
+    );
+  }
+
+  if (transaction.type === TransactionType.PeerPullDebit) {
+    const total = Amounts.parseOrThrow(transaction.amountEffective);
+    return (
+      <TransactionTemplate>
+        <Header
+          timestamp={transaction.timestamp}
+          type={i18n.str`Debit`}
+          total={total}
+          kind="negative"
+        >
+          Invoice
+        </Header>
+
+        <Part
+          title={<i18n.Translate>Exchange</i18n.Translate>}
+          text={transaction.exchangeBaseUrl}
+          kind="neutral"
+        />
+        <Part
+          title={<i18n.Translate>Details</i18n.Translate>}
+          text={
+            <InvoiceDetails
+              amount={{
+                effective: Amounts.parseOrThrow(transaction.amountEffective),
+                raw: Amounts.parseOrThrow(transaction.amountRaw),
+              }}
+            />
+          }
+        />
+      </TransactionTemplate>
+    );
+  }
+  if (transaction.type === TransactionType.PeerPushDebit) {
+    const total = Amounts.parseOrThrow(transaction.amountEffective);
+    return (
+      <TransactionTemplate>
+        <Header
+          timestamp={transaction.timestamp}
+          type={i18n.str`Debit`}
+          total={total}
+          kind="negative"
+        >
+          Transfer
+        </Header>
+
+        <Part
+          title={<i18n.Translate>Exchange</i18n.Translate>}
+          text={transaction.exchangeBaseUrl}
+          kind="neutral"
+        />
+        <Part
+          title={<i18n.Translate>URI</i18n.Translate>}
+          text={<QR text={transaction.talerUri} />}
+          kind="neutral"
+        />
+        <Part
+          title={<i18n.Translate>Details</i18n.Translate>}
+          text={
+            <TransferDetails
+              amount={{
+                effective: Amounts.parseOrThrow(transaction.amountEffective),
+                raw: Amounts.parseOrThrow(transaction.amountRaw),
+              }}
+            />
+          }
+        />
+      </TransactionTemplate>
+    );
+  }
+
+  if (transaction.type === TransactionType.PeerPushCredit) {
+    const total = Amounts.parseOrThrow(transaction.amountEffective);
+    return (
+      <TransactionTemplate>
+        <Header
+          timestamp={transaction.timestamp}
+          type={i18n.str`Credit`}
+          total={total}
+          kind="positive"
+        >
+          Transfer
+        </Header>
+
+        <Part
+          title={<i18n.Translate>Exchange</i18n.Translate>}
+          text={transaction.exchangeBaseUrl}
+          kind="neutral"
+        />
+        <Part
+          title={<i18n.Translate>Details</i18n.Translate>}
+          text={
+            <TransferDetails
+              amount={{
+                effective: Amounts.parseOrThrow(transaction.amountEffective),
+                raw: Amounts.parseOrThrow(transaction.amountRaw),
+              }}
+            />
+          }
+        />
+      </TransactionTemplate>
+    );
+  }
   return <div />;
 }
 
@@ -734,6 +901,88 @@ export function ExchangeDetails({ exchange }: { exchange: string }): VNode {
 export interface AmountWithFee {
   effective: AmountJson;
   raw: AmountJson;
+}
+
+export function InvoiceDetails({ amount }: { amount: AmountWithFee }): VNode {
+  const { i18n } = useTranslationContext();
+
+  const fee = Amounts.sub(amount.raw, amount.effective).amount;
+
+  const maxFrac = [amount.raw, amount.effective, fee]
+    .map((a) => Amounts.maxFractionalDigits(a))
+    .reduce((c, p) => Math.max(c, p), 0);
+
+  return (
+    <PurchaseDetailsTable>
+      <tr>
+        <td>Invoice</td>
+        <td>
+          <Amount value={amount.raw} maxFracSize={maxFrac} />
+        </td>
+      </tr>
+
+      {Amounts.isNonZero(fee) && (
+        <tr>
+          <td>Transaction fees</td>
+          <td>
+            <Amount value={fee} negative maxFracSize={maxFrac} />
+          </td>
+        </tr>
+      )}
+      <tr>
+        <td colSpan={2}>
+          <hr />
+        </td>
+      </tr>
+      <tr>
+        <td>Total</td>
+        <td>
+          <Amount value={amount.effective} maxFracSize={maxFrac} />
+        </td>
+      </tr>
+    </PurchaseDetailsTable>
+  );
+}
+
+export function TransferDetails({ amount }: { amount: AmountWithFee }): VNode {
+  const { i18n } = useTranslationContext();
+
+  const fee = Amounts.sub(amount.raw, amount.effective).amount;
+
+  const maxFrac = [amount.raw, amount.effective, fee]
+    .map((a) => Amounts.maxFractionalDigits(a))
+    .reduce((c, p) => Math.max(c, p), 0);
+
+  return (
+    <PurchaseDetailsTable>
+      <tr>
+        <td>Transfer</td>
+        <td>
+          <Amount value={amount.raw} maxFracSize={maxFrac} />
+        </td>
+      </tr>
+
+      {Amounts.isNonZero(fee) && (
+        <tr>
+          <td>Transaction fees</td>
+          <td>
+            <Amount value={fee} negative maxFracSize={maxFrac} />
+          </td>
+        </tr>
+      )}
+      <tr>
+        <td colSpan={2}>
+          <hr />
+        </td>
+      </tr>
+      <tr>
+        <td>Total</td>
+        <td>
+          <Amount value={amount.effective} maxFracSize={maxFrac} />
+        </td>
+      </tr>
+    </PurchaseDetailsTable>
+  );
 }
 
 export function WithdrawDetails({ amount }: { amount: AmountWithFee }): VNode {

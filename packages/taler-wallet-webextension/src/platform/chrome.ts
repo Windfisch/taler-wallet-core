@@ -201,11 +201,33 @@ function openWalletURIFromPopup(talerUri: string): void {
         `static/wallet.html#/cta/refund?talerRefundUri=${talerUri}`,
       );
       break;
-    default:
+    case TalerUriType.TalerPayPull:
+      url = chrome.runtime.getURL(
+        `static/wallet.html#/cta/invoice/pay?talerPayPullUri=${talerUri}`,
+      );
+      break;
+    case TalerUriType.TalerPayPush:
+      url = chrome.runtime.getURL(
+        `static/wallet.html#/cta/transfer/pickup?talerPayPushUri=${talerUri}`,
+      );
+      break;
+    case TalerUriType.TalerNotifyReserve:
       logger.warn(
-        "Response with HTTP 402 has Taler header, but header value is not a taler:// URI.",
+        `Response with HTTP 402 the Taler header but it is deprecated ${talerUri}`,
+      );
+      break;
+    case TalerUriType.Unknown:
+      logger.warn(
+        `Response with HTTP 402 the Taler header but could not classify ${talerUri}`,
       );
       return;
+    default: {
+      const error: never = uriType;
+      logger.warn(
+        `Response with HTTP 402 the Taler header "${error}", but header value is not a taler:// URI.`,
+      );
+      return;
+    }
   }
 
   chrome.tabs.create({ active: true, url }, () => {

@@ -25,6 +25,10 @@ import {
   TransactionCommon,
   TransactionDeposit,
   TransactionPayment,
+  TransactionPeerPullCredit,
+  TransactionPeerPullDebit,
+  TransactionPeerPushCredit,
+  TransactionPeerPushDebit,
   TransactionRefresh,
   TransactionRefund,
   TransactionTip,
@@ -118,6 +122,31 @@ const exampleData = {
     },
     refundPending: undefined,
   } as TransactionRefund,
+  push_credit: {
+    ...commonTransaction(),
+    type: TransactionType.PeerPushCredit,
+
+    exchangeBaseUrl: "https://exchange.taler.net",
+  } as TransactionPeerPushCredit,
+  push_debit: {
+    ...commonTransaction(),
+    type: TransactionType.PeerPushDebit,
+    talerUri:
+      "taler://pay-push/exchange.taler.ar/HS585JK0QCXHJ8Z8QWZA3EBAY5WY7XNC1RR2MHJXSH2Z4WP0YPJ0",
+    exchangeBaseUrl: "https://exchange.taler.net",
+  } as TransactionPeerPushDebit,
+  pull_credit: {
+    ...commonTransaction(),
+    type: TransactionType.PeerPullCredit,
+    talerUri:
+      "taler://pay-push/exchange.taler.ar/HS585JK0QCXHJ8Z8QWZA3EBAY5WY7XNC1RR2MHJXSH2Z4WP0YPJ0",
+    exchangeBaseUrl: "https://exchange.taler.net",
+  } as TransactionPeerPullCredit,
+  pull_debit: {
+    ...commonTransaction(),
+    type: TransactionType.PeerPullDebit,
+    exchangeBaseUrl: "https://exchange.taler.net",
+  } as TransactionPeerPullDebit,
 };
 
 export const NoBalance = createExample(TestedComponent, {
@@ -327,3 +356,21 @@ export const FiveOfficialCurrenciesWithHighValue = createExample(
     ],
   },
 );
+
+export const PeerToPeer = createExample(TestedComponent, {
+  transactions: [
+    exampleData.pull_credit,
+    exampleData.pull_debit,
+    exampleData.push_credit,
+    exampleData.push_debit,
+  ],
+  balances: [
+    {
+      available: "USD:10",
+      pendingIncoming: "USD:0",
+      pendingOutgoing: "USD:0",
+      hasPendingTransactions: false,
+      requiresUserInput: false,
+    },
+  ],
+});

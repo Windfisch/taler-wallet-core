@@ -60,8 +60,10 @@ import {
   DestinationSelectionSendCash,
 } from "./DestinationSelection.js";
 import { ExchangeSelectionPage } from "./ExchangeSelection/index.js";
-import { InvoicePage } from "./Invoice/index.js";
-import { SendPage } from "./Send/index.js";
+import { TransferCreatePage } from "../cta/TransferCreate/index.js";
+import { InvoiceCreatePage } from "../cta/InvoiceCreate/index.js";
+import { TransferPickupPage } from "../cta/TransferPickup/index.js";
+import { InvoicePayPage } from "../cta/InvoicePay/index.js";
 
 export function Application(): VNode {
   const [globalNotification, setGlobalNotification] = useState<
@@ -153,7 +155,7 @@ export function Application(): VNode {
                   redirectTo(Pages.balanceDeposit({ amount }))
                 }
                 goToWalletWalletSend={(amount: string) =>
-                  redirectTo(Pages.send({ amount }))
+                  redirectTo(Pages.ctaTransferCreate({ amount }))
                 }
               />
               <Route
@@ -163,11 +165,9 @@ export function Application(): VNode {
                   redirectTo(Pages.ctaWithdrawManual({ amount }))
                 }
                 goToWalletWalletInvoice={(amount?: string) =>
-                  redirectTo(Pages.invoice({ amount }))
+                  redirectTo(Pages.ctaInvoiceCreate({ amount }))
                 }
               />
-              <Route path={Pages.invoice.pattern} component={InvoicePage} />
-              <Route path={Pages.send.pattern} component={SendPage} />
 
               <Route
                 path={Pages.balanceTransaction.pattern}
@@ -274,6 +274,20 @@ export function Application(): VNode {
                 path={Pages.ctaDeposit}
                 component={DepositPageCTA}
                 cancel={() => redirectTo(Pages.balance)}
+              />
+              <Route
+                path={Pages.ctaInvoiceCreate.pattern}
+                component={InvoiceCreatePage}
+              />
+              <Route
+                path={Pages.ctaTransferCreate.pattern}
+                component={TransferCreatePage}
+              />
+
+              <Route path={Pages.ctaInvoicePay} component={InvoicePayPage} />
+              <Route
+                path={Pages.ctaTransferPickup}
+                component={TransferPickupPage}
               />
 
               {/**

@@ -276,15 +276,35 @@ function parseTalerUriAndRedirect(tabId: number, talerUri: string): void {
         tabId,
         `/cta/refund?talerRefundUri=${talerUri}`,
       );
+    case TalerUriType.TalerPayPull:
+      return platform.redirectTabToWalletPage(
+        tabId,
+        `/cta/invoice/pay?talerPayPullUri=${talerUri}`,
+      );
+    case TalerUriType.TalerPayPush:
+      return platform.redirectTabToWalletPage(
+        tabId,
+        `/cta/transfer/pickup?talerPayPushUri=${talerUri}`,
+      );
     case TalerUriType.TalerNotifyReserve:
       // FIXME:  Is this still useful?
       // handleNotifyReserve(w);
-      break;
-    default:
       logger.warn(
-        "Response with HTTP 402 has Taler header, but header value is not a taler:// URI.",
+        `Response with HTTP 402 the Taler header but it is deprecated ${talerUri}`,
       );
       break;
+    case TalerUriType.Unknown:
+      logger.warn(
+        `Response with HTTP 402 the Taler header but could not classify ${talerUri}`,
+      );
+      return;
+    default: {
+      const error: never = uriType;
+      logger.warn(
+        `Response with HTTP 402 the Taler header "${error}", but header value is not a taler:// URI.`,
+      );
+      return;
+    }
   }
 }
 

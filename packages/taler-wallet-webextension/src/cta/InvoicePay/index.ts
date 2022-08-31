@@ -14,17 +14,17 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { AmountJson, TalerErrorDetail } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
+import { ButtonHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
-import { LoadingUriView, ReadyView } from "./views.js";
 import * as wxApi from "../../wxApi.js";
 import { useComponentState } from "./state.js";
-import { AmountJson } from "@gnu-taler/taler-util";
-import { SelectFieldHandler, TextFieldHandler } from "../../mui/handlers.js";
+import { LoadingUriView, ReadyView } from "./views.js";
 
 export interface Props {
-  p: string;
+  talerPayPullUri: string;
 }
 
 export type State =
@@ -49,10 +49,10 @@ export namespace State {
   }
   export interface Ready extends BaseInfo {
     status: "ready";
-    amount: AmountJson;
-    exchange: SelectFieldHandler,
-    subject: TextFieldHandler,
+    amount: AmountJson,
     error: undefined;
+    accept: ButtonHandler;
+    operationError?: TalerErrorDetail;
   }
 }
 
@@ -63,5 +63,5 @@ const viewMapping: StateViewMap<State> = {
 };
 
 
-export const SendPage = compose("SendPage", (p: Props) => useComponentState(p, wxApi), viewMapping)
+export const InvoicePayPage = compose("InvoicePayPage", (p: Props) => useComponentState(p, wxApi), viewMapping)
 

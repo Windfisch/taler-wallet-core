@@ -471,7 +471,7 @@ async function getMergeReserveInfo(
 export async function acceptPeerPushPayment(
   ws: InternalWalletState,
   req: AcceptPeerPushPaymentRequest,
-) {
+): Promise<void> {
   const peerInc = await ws.db
     .mktx((x) => ({ peerPushPaymentIncoming: x.peerPushPaymentIncoming }))
     .runReadOnly(async (tx) => {

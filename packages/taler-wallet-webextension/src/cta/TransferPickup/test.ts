@@ -19,11 +19,13 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { createExample } from "../../test-utils.js";
-import { ReadyView } from "./views.js";
+import { expect } from "chai";
 
-export default {
-  title: "wallet/invoice",
-};
+describe("test description", () => {
 
-export const Ready = createExample(ReadyView, {});
+  it("should assert", () => {
+
+    expect([]).deep.equals([])
+  });
+})
+

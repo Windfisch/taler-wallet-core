@@ -20,10 +20,37 @@
  */
 
 import { createExample } from "../../test-utils.js";
-import { ReadyView } from "./views.js";
+import { ReadyView, ShowQrView } from "./views.js";
 
 export default {
-  title: "wallet/invoice",
+  title: "wallet/transfer create",
 };
 
-export const Ready = createExample(ReadyView, {});
+export const ShowQr = createExample(ShowQrView, {
+  talerUri:
+    "taler://pay-push/exchange.taler.ar/HS585JK0QCXHJ8Z8QWZA3EBAY5WY7XNC1RR2MHJXSH2Z4WP0YPJ0",
+  close: () => {
+    null;
+  },
+});
+
+export const Ready = createExample(ReadyView, {
+  chosenAmount: {
+    currency: "ARS",
+    value: 1,
+    fraction: 0,
+  },
+  toBeReceived: {
+    currency: "ARS",
+    value: 1,
+    fraction: 0,
+  },
+  copyToClipboard: {},
+  showQr: {},
+  subject: {
+    value: "the subject",
+    onInput: async () => {
+      null;
+    },
+  },
+});

@@ -24,12 +24,18 @@
 import {
   AcceptExchangeTosRequest,
   AcceptManualWithdrawalResult,
+  AcceptPeerPullPaymentRequest,
+  AcceptPeerPushPaymentRequest,
   AcceptTipRequest,
   AcceptWithdrawalResponse,
   AddExchangeRequest,
   AmountString,
   ApplyRefundResponse,
   BalancesResponse,
+  CheckPeerPullPaymentRequest,
+  CheckPeerPullPaymentResponse,
+  CheckPeerPushPaymentRequest,
+  CheckPeerPushPaymentResponse,
   CoinDumpJson,
   ConfirmPayResult,
   CoreApiResponse,
@@ -41,6 +47,10 @@ import {
   GetExchangeWithdrawalInfo,
   GetFeeForDepositRequest,
   GetWithdrawalDetailsForUriRequest,
+  InitiatePeerPullPaymentRequest,
+  InitiatePeerPullPaymentResponse,
+  InitiatePeerPushPaymentRequest,
+  InitiatePeerPushPaymentResponse,
   KnownBankAccounts,
   Logger,
   NotificationType,
@@ -473,3 +483,24 @@ export function onUpdateNotification(
   };
   return platform.listenToWalletBackground(onNewMessage);
 }
+
+export function initiatePeerPushPayment(req: InitiatePeerPushPaymentRequest): Promise<InitiatePeerPushPaymentResponse> {
+  return callBackend("initiatePeerPushPayment", req);
+}
+export function checkPeerPushPayment(req: CheckPeerPushPaymentRequest): Promise<CheckPeerPushPaymentResponse> {
+  return callBackend("checkPeerPushPayment", req);
+}
+export function acceptPeerPushPayment(req: AcceptPeerPushPaymentRequest): Promise<void> {
+  return callBackend("acceptPeerPushPayment", req);
+}
+export function initiatePeerPullPayment(req: InitiatePeerPullPaymentRequest): Promise<InitiatePeerPullPaymentResponse> {
+  return callBackend("initiatePeerPullPayment", req);
+}
+export function checkPeerPullPayment(req: CheckPeerPullPaymentRequest): Promise<CheckPeerPullPaymentResponse> {
+  return callBackend("checkPeerPullPayment", req);
+}
+export function acceptPeerPullPayment(req: AcceptPeerPullPaymentRequest): Promise<void> {
+  return callBackend("acceptPeerPullPayment", req);
+}
+
+
