@@ -258,7 +258,7 @@ export function Application(): VNode {
               <Route
                 path={Pages.ctaTips}
                 component={TipPage}
-                cancel={() => redirectTo(Pages.balance)}
+                onCancel={() => redirectTo(Pages.balance)}
               />
               <Route
                 path={Pages.ctaWithdraw}
@@ -278,16 +278,22 @@ export function Application(): VNode {
               <Route
                 path={Pages.ctaInvoiceCreate.pattern}
                 component={InvoiceCreatePage}
+                onClose={() => redirectTo(Pages.balance)}
               />
               <Route
                 path={Pages.ctaTransferCreate.pattern}
                 component={TransferCreatePage}
+                onClose={() => redirectTo(Pages.balance)}
               />
-
-              <Route path={Pages.ctaInvoicePay} component={InvoicePayPage} />
+              <Route
+                path={Pages.ctaInvoicePay}
+                component={InvoicePayPage}
+                onClose={() => redirectTo(Pages.balance)}
+              />
               <Route
                 path={Pages.ctaTransferPickup}
                 component={TransferPickupPage}
+                onClose={() => redirectTo(Pages.balance)}
               />
 
               {/**

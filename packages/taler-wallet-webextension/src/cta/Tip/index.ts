@@ -30,7 +30,7 @@ import { AcceptedView, IgnoredView, LoadingUriView, ReadyView } from "./views.js
 
 export interface Props {
   talerTipUri?: string;
-  cancel: () => Promise<void>;
+  onCancel: () => Promise<void>;
 }
 
 export type State =
@@ -58,6 +58,7 @@ export namespace State {
     amount: AmountJson;
     exchangeBaseUrl: string;
     error: undefined;
+    cancel: ButtonHandler;
   }
 
   export interface Ignored extends BaseInfo {
@@ -70,7 +71,6 @@ export namespace State {
   export interface Ready extends BaseInfo {
     status: "ready";
     accept: ButtonHandler;
-    cancel: () => Promise<void>;
   }
 }
 

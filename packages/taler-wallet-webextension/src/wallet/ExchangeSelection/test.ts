@@ -692,8 +692,6 @@ describe("Denomination timeline pair creation", () => {
 
 
       const pairs = createDenominationPairTimeline(left, right)
-
-      console.log(JSON.stringify(pairs, undefined, 2))
     })
   })
 })

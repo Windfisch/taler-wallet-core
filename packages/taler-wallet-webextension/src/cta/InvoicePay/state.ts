@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Amounts, TalerErrorDetail } from "@gnu-taler/taler-util";
+import { AbsoluteTime, Amounts, TalerErrorDetail, TalerProtocolTimestamp } from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
@@ -22,7 +22,7 @@ import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
-  { talerPayPullUri }: Props,
+  { talerPayPullUri, onClose }: Props,
   api: typeof wxApi,
 ): State {
   const hook = useAsyncAsHook(async () => {
@@ -45,13 +45,18 @@ export function useComponentState(
     };
   }
 
-  const { amount, peerPullPaymentIncomingId } = hook.response
+  const { amount: purseAmount, contractTerms, peerPullPaymentIncomingId } = hook.response
+
+  const amount: string = contractTerms?.amount
+  const summary: string | undefined = contractTerms?.summary
+  const expiration: TalerProtocolTimestamp | undefined = contractTerms?.purse_expiration
 
   async function accept(): Promise<void> {
     try {
       const resp = await api.acceptPeerPullPayment({
         peerPullPaymentIncomingId
       })
+      await onClose()
     } catch (e) {
       if (e instanceof TalerError) {
         setOperationError(e.errorDetail)
@@ -68,6 +73,11 @@ export function useComponentState(
     error: undefined,
     accept: {
       onClick: accept
+    },
+    summary,
+    expiration: expiration ? AbsoluteTime.fromTimestamp(expiration) : undefined,
+    cancel: {
+      onClick: onClose
     },
     operationError
   }

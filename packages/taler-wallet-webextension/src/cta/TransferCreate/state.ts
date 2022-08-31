@@ -21,7 +21,7 @@ import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
-  { amount: amountStr }: Props,
+  { amount: amountStr, onClose }: Props,
   api: typeof wxApi,
 ): State {
   const amount = Amounts.parseOrThrow(amountStr)
@@ -30,13 +30,14 @@ export function useComponentState(
   const [talerUri, setTalerUri] = useState("")
   const [operationError, setOperationError] = useState<TalerErrorDetail | undefined>(undefined)
 
-
   if (talerUri) {
     return {
       status: "show-qr",
       talerUri,
       error: undefined,
-      close: () => { null },
+      cancel: {
+        onClick: onClose,
+      },
     }
   }
 
@@ -62,7 +63,11 @@ export function useComponentState(
   return {
     status: "ready",
     invalid: !subject || Amounts.isZero(amount),
+    cancel: {
+      onClick: onClose,
+    },
     subject: {
+      error: !subject ? "cant be empty" : undefined,
       value: subject,
       onInput: async (e) => setSubject(e)
     },

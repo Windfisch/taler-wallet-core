@@ -29,9 +29,7 @@ export default {
 export const ShowQr = createExample(ShowQrView, {
   talerUri:
     "taler://pay-push/exchange.taler.ar/HS585JK0QCXHJ8Z8QWZA3EBAY5WY7XNC1RR2MHJXSH2Z4WP0YPJ0",
-  close: () => {
-    null;
-  },
+  cancel: {},
 });
 
 export const Ready = createExample(ReadyView, {
@@ -40,6 +38,7 @@ export const Ready = createExample(ReadyView, {
     value: 1,
     fraction: 0,
   },
+  cancel: {},
   toBeReceived: {
     currency: "ARS",
     value: 1,

@@ -228,7 +228,6 @@ interface ListOfKnownCurrencies {
  */
 export function listKnownCurrencies(): Promise<ListOfKnownCurrencies> {
   return callBackend("listCurrencies", {}).then((result) => {
-    console.log("result list", result);
     const auditors = result.trustedAuditors.map(
       (a: Record<string, string>) => ({
         name: a.currency,

@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountJson, TalerErrorDetail } from "@gnu-taler/taler-util";
+import { AbsoluteTime, AmountJson, TalerErrorDetail } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { ButtonHandler } from "../../mui/handlers.js";
@@ -25,6 +25,7 @@ import { LoadingUriView, ReadyView } from "./views.js";
 
 export interface Props {
   talerPayPullUri: string;
+  onClose: () => Promise<void>;
 }
 
 export type State =
@@ -46,10 +47,13 @@ export namespace State {
 
   export interface BaseInfo {
     error: undefined;
+    cancel: ButtonHandler;
   }
   export interface Ready extends BaseInfo {
     status: "ready";
     amount: AmountJson,
+    summary: string | undefined,
+    expiration: AbsoluteTime | undefined,
     error: undefined;
     accept: ButtonHandler;
     operationError?: TalerErrorDetail;

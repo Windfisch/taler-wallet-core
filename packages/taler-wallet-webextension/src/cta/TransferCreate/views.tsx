@@ -15,6 +15,7 @@
  */
 
 import { h, VNode } from "preact";
+import { ErrorTalerOperation } from "../../components/ErrorTalerOperation.js";
 import { LoadingError } from "../../components/LoadingError.js";
 import { LogoHeader } from "../../components/LogoHeader.js";
 import { Part } from "../../components/Part.js";
@@ -38,7 +39,7 @@ export function LoadingUriView({ error }: State.LoadingUriError): VNode {
   );
 }
 
-export function ShowQrView({ talerUri, close }: State.ShowQr): VNode {
+export function ShowQrView({ talerUri, cancel }: State.ShowQr): VNode {
   const { i18n } = useTranslationContext();
   return (
     <WalletAction>
@@ -51,7 +52,7 @@ export function ShowQrView({ talerUri, close }: State.ShowQr): VNode {
         <QR text={talerUri} />
       </section>
       <section>
-        <Link upperCased onClick={close}>
+        <Link upperCased onClick={cancel.onClick}>
           <i18n.Translate>Close</i18n.Translate>
         </Link>
       </section>
@@ -64,7 +65,9 @@ export function ReadyView({
   toBeReceived,
   chosenAmount,
   showQr,
+  operationError,
   copyToClipboard,
+  cancel,
   invalid,
 }: State.Ready): VNode {
   const { i18n } = useTranslationContext();
@@ -74,6 +77,16 @@ export function ReadyView({
       <SubTitle>
         <i18n.Translate>Digital cash transfer</i18n.Translate>
       </SubTitle>
+      {operationError && (
+        <ErrorTalerOperation
+          title={
+            <i18n.Translate>
+              Could not finish the transfer creation
+            </i18n.Translate>
+          }
+          error={operationError}
+        />
+      )}
       <section style={{ textAlign: "left" }}>
         <TextField
           label="Subject"
@@ -111,6 +124,13 @@ export function ReadyView({
             </Button>
           </Grid>
         </Grid>
+      </section>
+      <section>
+        <section>
+          <Link upperCased onClick={cancel.onClick}>
+            <i18n.Translate>Cancel</i18n.Translate>
+          </Link>
+        </section>
       </section>
     </WalletAction>
   );

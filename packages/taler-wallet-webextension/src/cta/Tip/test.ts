@@ -30,7 +30,7 @@ describe("Tip CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerTipUri: undefined, cancel: async () => { null } }, {
+        useComponentState({ talerTipUri: undefined, onCancel: async () => { null } }, {
           prepareTip: async () => ({}),
           acceptTip: async () => ({}),
         } as any),
@@ -62,7 +62,7 @@ describe("Tip CTA states", () => {
 
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerTipUri: "taler://tip/asd", cancel: async () => { null } }, {
+        useComponentState({ talerTipUri: "taler://tip/asd", onCancel: async () => { null } }, {
           prepareTip: async () =>
           ({
             accepted: tipAccepted,
@@ -114,7 +114,7 @@ describe("Tip CTA states", () => {
   it("should be ignored after clicking the ignore button", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerTipUri: "taler://tip/asd", cancel: async () => { null } }, {
+        useComponentState({ talerTipUri: "taler://tip/asd", onCancel: async () => { null } }, {
           prepareTip: async () =>
           ({
             exchangeBaseUrl: "exchange url",
@@ -160,7 +160,7 @@ describe("Tip CTA states", () => {
   it("should render accepted if the tip has been used previously", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerTipUri: "taler://tip/asd", cancel: async () => { null } }, {
+        useComponentState({ talerTipUri: "taler://tip/asd", onCancel: async () => { null } }, {
           prepareTip: async () =>
           ({
             accepted: true,

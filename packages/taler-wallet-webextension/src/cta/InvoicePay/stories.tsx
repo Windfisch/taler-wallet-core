@@ -33,4 +33,5 @@ export const Ready = createExample(ReadyView, {
     fraction: 0,
   },
   accept: {},
+  cancel: {},
 });

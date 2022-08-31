@@ -25,6 +25,7 @@ import { ButtonHandler, SelectFieldHandler, TextFieldHandler } from "../../mui/h
 
 export interface Props {
   amount: string;
+  onClose: () => Promise<void>;
 }
 
 export type State =
@@ -47,11 +48,11 @@ export namespace State {
 
   export interface BaseInfo {
     error: undefined;
+    cancel: ButtonHandler;
   }
   export interface ShowQr extends BaseInfo {
     status: "show-qr";
     talerUri: string;
-    close: () => void;
   }
   export interface Ready extends BaseInfo {
     status: "ready";

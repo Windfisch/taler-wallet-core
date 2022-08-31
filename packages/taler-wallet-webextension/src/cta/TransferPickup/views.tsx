@@ -20,7 +20,8 @@ import { ErrorTalerOperation } from "../../components/ErrorTalerOperation.js";
 import { LoadingError } from "../../components/LoadingError.js";
 import { LogoHeader } from "../../components/LogoHeader.js";
 import { Part } from "../../components/Part.js";
-import { SubTitle, WalletAction } from "../../components/styled/index.js";
+import { Link, SubTitle, WalletAction } from "../../components/styled/index.js";
+import { Time } from "../../components/Time.js";
 import { useTranslationContext } from "../../context/translation.js";
 import { Button } from "../../mui/Button.js";
 import { State } from "./index.js";
@@ -38,7 +39,10 @@ export function LoadingUriView({ error }: State.LoadingUriError): VNode {
 
 export function ReadyView({
   accept,
+  summary,
+  expiration,
   amount,
+  cancel,
   operationError,
 }: State.Ready): VNode {
   const { i18n } = useTranslationContext();
@@ -60,14 +64,30 @@ export function ReadyView({
       )}
       <section style={{ textAlign: "left" }}>
         <Part
+          title={<i18n.Translate>Subject</i18n.Translate>}
+          text={<div>{summary}</div>}
+        />
+        <Part
           title={<i18n.Translate>Amount</i18n.Translate>}
           text={<Amount value={amount} />}
+        />
+        <Part
+          title={<i18n.Translate>Valid until</i18n.Translate>}
+          text={<Time timestamp={expiration} format="dd MMMM yyyy, HH:mm" />}
+          kind="neutral"
         />
       </section>
       <section>
         <Button variant="contained" color="success" onClick={accept.onClick}>
-          <i18n.Translate>Pickup</i18n.Translate>
+          <i18n.Translate>
+            Receive &nbsp; {<Amount value={amount} />}
+          </i18n.Translate>
         </Button>
+      </section>
+      <section>
+        <Link upperCased onClick={cancel.onClick}>
+          <i18n.Translate>Cancel</i18n.Translate>
+        </Link>
       </section>
     </WalletAction>
   );

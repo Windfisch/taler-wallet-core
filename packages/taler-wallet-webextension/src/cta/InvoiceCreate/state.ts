@@ -22,7 +22,7 @@ import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
-  { amount: amountStr }: Props,
+  { amount: amountStr, onClose }: Props,
   api: typeof wxApi,
 ): State {
   const amount = Amounts.parseOrThrow(amountStr)
@@ -53,7 +53,9 @@ export function useComponentState(
       status: "show-qr",
       talerUri,
       error: undefined,
-      close: () => { null },
+      cancel: {
+        onClick: onClose
+      }
       // chosenAmount: amount,
       // toBeReceived: amount,
     }
@@ -104,6 +106,9 @@ export function useComponentState(
         const uri = await accept();
         setTalerUri(uri)
       }
+    },
+    cancel: {
+      onClick: onClose
     },
     chosenAmount: amount,
     toBeReceived: amount,

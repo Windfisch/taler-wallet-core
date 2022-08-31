@@ -14,17 +14,18 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { AmountJson, TalerErrorDetail } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
+import { ButtonHandler, TextFieldHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
-import { LoadingUriView, ReadyView, ShowQrView } from "./views.js";
 import * as wxApi from "../../wxApi.js";
 import { useComponentState } from "./state.js";
-import { AmountJson, TalerErrorDetail } from "@gnu-taler/taler-util";
-import { ButtonHandler, SelectFieldHandler, TextFieldHandler } from "../../mui/handlers.js";
+import { LoadingUriView, ReadyView, ShowQrView } from "./views.js";
 
 export interface Props {
   amount: string;
+  onClose: () => Promise<void>;
 }
 
 export type State =
@@ -47,11 +48,11 @@ export namespace State {
 
   export interface BaseInfo {
     error: undefined;
+    cancel: ButtonHandler;
   }
   export interface ShowQr extends BaseInfo {
     status: "show-qr";
     talerUri: string;
-    close: () => void;
   }
   export interface Ready extends BaseInfo {
     status: "ready";

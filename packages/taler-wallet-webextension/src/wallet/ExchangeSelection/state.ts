@@ -317,7 +317,6 @@ export function createDenominationPairTimeline(left: FeeDescription[], right: Fe
 
     //now both lists are non empty and (starts,ends) at the same time
     while (li < left.length && ri < right.length && Amounts.cmp(left[li].value, right[ri].value) === 0) {
-      // console.log('start', li, ri, left[li], right[ri])
 
       if (AbsoluteTime.cmp(left[li].from, timeCut) !== 0 && AbsoluteTime.cmp(right[ri].from, timeCut) !== 0) {
         // timeCut comes from the latest "until" (expiration from the previous)
@@ -325,7 +324,6 @@ export function createDenominationPairTimeline(left: FeeDescription[], right: Fe
         // it should be the same as the "from" from one of the latest left or right
         // otherwise it means that there is missing a gap object in the middle
         // the list is not complete and the behavior is undefined
-        console.log(li, ri, timeCut)
         throw Error('one of the list is not completed: list[i].until !== list[i+1].from')
       }
 
