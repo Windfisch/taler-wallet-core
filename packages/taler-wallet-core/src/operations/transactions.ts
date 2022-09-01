@@ -59,6 +59,8 @@ export enum TombstoneTag {
   DeleteRefreshGroup = "delete-refresh-group",
   DeleteDepositGroup = "delete-deposit-group",
   DeleteRefund = "delete-refund",
+  DeletePeerPullDebit = "delete-peer-pull-debit",
+  DeletePeerPushDebit = "delete-peer-push-debit",
 }
 
 /**
@@ -144,6 +146,7 @@ export async function getTransactions(
     .runReadOnly(async (tx) => {
       tx.peerPushPaymentInitiations.iter().forEachAsync(async (pi) => {
         const amount = Amounts.parseOrThrow(pi.amount);
+
         if (shouldSkipCurrency(transactionsRequest, amount.currency)) {
           return;
         }
@@ -155,6 +158,11 @@ export async function getTransactions(
           amountEffective: pi.amount,
           amountRaw: pi.amount,
           exchangeBaseUrl: pi.exchangeBaseUrl,
+          info: {
+            expiration: pi.contractTerms.purse_expiration,
+            summary: pi.contractTerms.summary,
+            completed: Amounts.isZero(amount),
+          },
           frozen: false,
           pending: !pi.purseCreated,
           timestamp: pi.timestampCreated,
@@ -180,6 +188,7 @@ export async function getTransactions(
         if (!pi.accepted) {
           return;
         }
+
         transactions.push({
           type: TransactionType.PeerPullDebit,
           amountEffective: Amounts.stringify(amount),
@@ -187,10 +196,15 @@ export async function getTransactions(
           exchangeBaseUrl: pi.exchangeBaseUrl,
           frozen: false,
           pending: false,
+          info: {
+            expiration: pi.contractTerms.purse_expiration,
+            summary: pi.contractTerms.summary,
+            completed: pi.paid
+          },
           timestamp: pi.timestampCreated,
           transactionId: makeEventId(
             TransactionType.PeerPullDebit,
-            pi.pursePub,
+            pi.peerPullPaymentIncomingId,
           ),
         });
       });
@@ -217,6 +231,11 @@ export async function getTransactions(
             exchangeBaseUrl: wsr.exchangeBaseUrl,
             pending: !wsr.timestampFinish,
             timestamp: wsr.timestampStart,
+            info: {
+              expiration: wsr.wgInfo.contractTerms.purse_expiration,
+              summary: wsr.wgInfo.contractTerms.summary,
+              completed: !!wsr.timestampFinish
+            },
             talerUri: constructPayPullUri({
               exchangeBaseUrl: wsr.exchangeBaseUrl,
               contractPriv: wsr.wgInfo.contractPriv,
@@ -237,6 +256,11 @@ export async function getTransactions(
             amountEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
             amountRaw: Amounts.stringify(wsr.rawWithdrawalAmount),
             exchangeBaseUrl: wsr.exchangeBaseUrl,
+            info: {
+              expiration: wsr.wgInfo.contractTerms.purse_expiration,
+              summary: wsr.wgInfo.contractTerms.summary,
+              completed: !!wsr.timestampFinish,
+            },
             pending: !wsr.timestampFinish,
             timestamp: wsr.timestampStart,
             transactionId: makeEventId(
@@ -567,9 +591,9 @@ export async function deleteTransaction(
   ws: InternalWalletState,
   transactionId: string,
 ): Promise<void> {
-  const [type, ...rest] = transactionId.split(":");
-
-  if (type === TransactionType.Withdrawal) {
+  const [typeStr, ...rest] = transactionId.split(":");
+  const type = typeStr as TransactionType;
+  if (type === TransactionType.Withdrawal || type === TransactionType.PeerPullCredit || type === TransactionType.PeerPushCredit) {
     const withdrawalGroupId = rest[0];
     await ws.db
       .mktx((x) => ({
@@ -686,7 +710,46 @@ export async function deleteTransaction(
           });
         }
       });
+  } else if (type === TransactionType.PeerPullDebit) {
+    const peerPullPaymentIncomingId = rest[0];
+    await ws.db
+      .mktx((x) => ({
+        peerPullPaymentIncoming: x.peerPullPaymentIncoming,
+        tombstones: x.tombstones,
+      }))
+      .runReadWrite(async (tx) => {
+        const debit = await tx.peerPullPaymentIncoming.get(peerPullPaymentIncomingId);
+        if (debit) {
+          await tx.peerPullPaymentIncoming.delete(peerPullPaymentIncomingId);
+          await tx.tombstones.put({
+            id: makeEventId(
+              TombstoneTag.DeletePeerPullDebit,
+              peerPullPaymentIncomingId,
+            ),
+          });
+        }
+      });
+  } else if (type === TransactionType.PeerPushDebit) {
+    const pursePub = rest[0];
+    await ws.db
+      .mktx((x) => ({
+        peerPushPaymentInitiations: x.peerPushPaymentInitiations,
+        tombstones: x.tombstones,
+      }))
+      .runReadWrite(async (tx) => {
+        const debit = await tx.peerPushPaymentInitiations.get(pursePub);
+        if (debit) {
+          await tx.peerPushPaymentInitiations.delete(pursePub);
+          await tx.tombstones.put({
+            id: makeEventId(
+              TombstoneTag.DeletePeerPushDebit,
+              pursePub,
+            ),
+          });
+        }
+      });
   } else {
-    throw Error(`can't delete a '${type}' transaction`);
+    const unknownTxType: never = type;
+    throw Error(`can't delete a '${unknownTxType}' transaction`);
   }
 }

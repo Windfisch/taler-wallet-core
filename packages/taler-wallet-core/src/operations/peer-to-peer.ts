@@ -263,6 +263,7 @@ export async function initiatePeerToPeerPush(
       await tx.peerPushPaymentInitiations.add({
         amount: Amounts.stringify(instructedAmount),
         contractPriv: econtractResp.contractPriv,
+        contractTerms,
         exchangeBaseUrl: sel.exchangeBaseUrl,
         mergePriv: mergePair.priv,
         mergePub: mergePair.pub,
@@ -536,6 +537,7 @@ export async function acceptPeerPushPayment(
     amount,
     wgInfo: {
       withdrawalType: WithdrawalRecordType.PeerPushCredit,
+      contractTerms: peerInc.contractTerms,
     },
     exchangeBaseUrl: peerInc.exchangeBaseUrl,
     reserveStatus: ReserveRecordStatus.QueryingStatus,
@@ -552,7 +554,7 @@ export async function acceptPeerPushPayment(
 export async function acceptPeerPullPayment(
   ws: InternalWalletState,
   req: AcceptPeerPullPaymentRequest,
-) {
+): Promise<void> {
   const peerPullInc = await ws.db
     .mktx((x) => ({ peerPullPaymentIncoming: x.peerPullPaymentIncoming }))
     .runReadOnly(async (tx) => {
@@ -808,6 +810,7 @@ export async function initiatePeerRequestForPay(
     amount: Amounts.parseOrThrow(req.amount),
     wgInfo: {
       withdrawalType: WithdrawalRecordType.PeerPullCredit,
+      contractTerms,
       contractPriv: econtractResp.contractPriv,
     },
     exchangeBaseUrl: req.exchangeBaseUrl,

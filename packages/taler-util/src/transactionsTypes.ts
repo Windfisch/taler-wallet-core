@@ -187,12 +187,19 @@ export interface TransactionWithdrawal extends TransactionCommon {
   withdrawalDetails: WithdrawalDetails;
 }
 
+export interface PeerInfoShort {
+  expiration: TalerProtocolTimestamp | undefined;
+  summary: string | undefined;
+  completed: boolean;
+}
+
 /**
  * Credit because we were paid for a P2P invoice we created.
  */
 export interface TransactionPeerPullCredit extends TransactionCommon {
   type: TransactionType.PeerPullCredit;
 
+  info: PeerInfoShort;
   /**
    * Exchange used.
    */
@@ -220,6 +227,7 @@ export interface TransactionPeerPullCredit extends TransactionCommon {
 export interface TransactionPeerPullDebit extends TransactionCommon {
   type: TransactionType.PeerPullDebit;
 
+  info: PeerInfoShort;
   /**
    * Exchange used.
    */
@@ -236,6 +244,7 @@ export interface TransactionPeerPullDebit extends TransactionCommon {
 export interface TransactionPeerPushDebit extends TransactionCommon {
   type: TransactionType.PeerPushDebit;
 
+  info: PeerInfoShort;
   /**
    * Exchange used.
    */
@@ -263,6 +272,7 @@ export interface TransactionPeerPushDebit extends TransactionCommon {
 export interface TransactionPeerPushCredit extends TransactionCommon {
   type: TransactionType.PeerPushCredit;
 
+  info: PeerInfoShort;
   /**
    * Exchange used.
    */

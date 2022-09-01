@@ -1180,9 +1180,9 @@ export const WALLET_BACKUP_STATE_KEY = "walletBackupState";
  */
 export type ConfigRecord =
   | {
-      key: typeof WALLET_BACKUP_STATE_KEY;
-      value: WalletBackupConfState;
-    }
+    key: typeof WALLET_BACKUP_STATE_KEY;
+    value: WalletBackupConfState;
+  }
   | { key: "currencyDefaultsApplied"; value: boolean };
 
 export interface WalletBackupConfState {
@@ -1243,6 +1243,7 @@ export interface WgInfoBankManual {
 export interface WgInfoBankPeerPull {
   withdrawalType: WithdrawalRecordType.PeerPullCredit;
 
+  contractTerms: any;
   /**
    * Needed to quickly construct the taler:// URI for the counterparty
    * without a join.
@@ -1252,6 +1253,8 @@ export interface WgInfoBankPeerPull {
 
 export interface WgInfoBankPeerPush {
   withdrawalType: WithdrawalRecordType.PeerPushCredit;
+
+  contractTerms: any;
 }
 
 export interface WgInfoBankRecoup {
@@ -1445,17 +1448,17 @@ export enum BackupProviderStateTag {
 
 export type BackupProviderState =
   | {
-      tag: BackupProviderStateTag.Provisional;
-    }
+    tag: BackupProviderStateTag.Provisional;
+  }
   | {
-      tag: BackupProviderStateTag.Ready;
-      nextBackupTimestamp: TalerProtocolTimestamp;
-    }
+    tag: BackupProviderStateTag.Ready;
+    nextBackupTimestamp: TalerProtocolTimestamp;
+  }
   | {
-      tag: BackupProviderStateTag.Retrying;
-      retryInfo: RetryInfo;
-      lastError?: TalerErrorDetail;
-    };
+    tag: BackupProviderStateTag.Retrying;
+    retryInfo: RetryInfo;
+    lastError?: TalerErrorDetail;
+  };
 
 export interface BackupProviderTerms {
   supportedProtocolVersion: string;
@@ -1630,6 +1633,7 @@ export interface PeerPushPaymentInitiationRecord {
 
   amount: AmountString;
 
+  contractTerms: any;
   /**
    * Purse public key.  Used as the primary key to look
    * up this record.
