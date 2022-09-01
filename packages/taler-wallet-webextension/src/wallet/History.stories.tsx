@@ -125,7 +125,9 @@ const exampleData = {
   push_credit: {
     ...commonTransaction(),
     type: TransactionType.PeerPushCredit,
-
+    info: {
+      summary: "take this cash",
+    },
     exchangeBaseUrl: "https://exchange.taler.net",
   } as TransactionPeerPushCredit,
   push_debit: {
@@ -133,6 +135,9 @@ const exampleData = {
     type: TransactionType.PeerPushDebit,
     talerUri:
       "taler://pay-push/exchange.taler.ar/HS585JK0QCXHJ8Z8QWZA3EBAY5WY7XNC1RR2MHJXSH2Z4WP0YPJ0",
+    info: {
+      summary: "take this cash",
+    },
     exchangeBaseUrl: "https://exchange.taler.net",
   } as TransactionPeerPushDebit,
   pull_credit: {
@@ -140,12 +145,17 @@ const exampleData = {
     type: TransactionType.PeerPullCredit,
     talerUri:
       "taler://pay-push/exchange.taler.ar/HS585JK0QCXHJ8Z8QWZA3EBAY5WY7XNC1RR2MHJXSH2Z4WP0YPJ0",
+    info: {
+      summary: "pay me",
+    },
     exchangeBaseUrl: "https://exchange.taler.net",
   } as TransactionPeerPullCredit,
   pull_debit: {
     ...commonTransaction(),
     type: TransactionType.PeerPullDebit,
-
+    info: {
+      summary: "pay me",
+    },
     exchangeBaseUrl: "https://exchange.taler.net",
   } as TransactionPeerPullDebit,
 };

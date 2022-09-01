@@ -119,7 +119,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           id={tx.transactionId}
           amount={tx.amountEffective}
           debitCreditIndicator={"credit"}
-          title={"Invoice credit"}
+          title={tx.info.summary || "Invoice"}
           timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
           iconPath={"I"}
           pending={tx.pending}
@@ -131,7 +131,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           id={tx.transactionId}
           amount={tx.amountEffective}
           debitCreditIndicator={"debit"}
-          title={"Invoice debit"}
+          title={tx.info.summary || "Invoice"}
           timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
           iconPath={"I"}
           pending={tx.pending}
@@ -143,7 +143,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           id={tx.transactionId}
           amount={tx.amountEffective}
           debitCreditIndicator={"credit"}
-          title={"Transfer credit"}
+          title={tx.info.summary || "Transfer"}
           timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
           iconPath={"T"}
           pending={tx.pending}
@@ -155,7 +155,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           id={tx.transactionId}
           amount={tx.amountEffective}
           debitCreditIndicator={"debit"}
-          title={"Transfer debit"}
+          title={tx.info.summary || "Transfer"}
           timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
           iconPath={"T"}
           pending={tx.pending}
