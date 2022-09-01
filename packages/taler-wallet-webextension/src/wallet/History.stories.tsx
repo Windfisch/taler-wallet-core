@@ -51,9 +51,9 @@ const commonTransaction = (): TransactionCommon =>
     amountEffective: "USD:9",
     pending: false,
     timestamp: TalerProtocolTimestamp.fromSeconds(
-      new Date().getTime() - count++ * 60 * 60 * 7,
+      new Date().getTime() / 1000 - count++ * 60 * 60 * 7,
     ),
-    transactionId: "12",
+    transactionId: String(count),
   } as TransactionCommon);
 
 const exampleData = {
@@ -145,6 +145,7 @@ const exampleData = {
   pull_debit: {
     ...commonTransaction(),
     type: TransactionType.PeerPullDebit,
+
     exchangeBaseUrl: "https://exchange.taler.net",
   } as TransactionPeerPullDebit,
 };

@@ -115,6 +115,9 @@ export function TransactionPage({ tid, goToWalletHistory }: Props): VNode {
   return (
     <TransactionView
       transaction={state.response}
+      onSend={async () => {
+        null;
+      }}
       onDelete={() =>
         wxApi.deleteTransaction(tid).then(() => goToWalletHistory(currency))
       }
@@ -129,6 +132,7 @@ export function TransactionPage({ tid, goToWalletHistory }: Props): VNode {
 
 export interface WalletTransactionProps {
   transaction: Transaction;
+  onSend: () => Promise<void>;
   onDelete: () => Promise<void>;
   onRetry: () => Promise<void>;
   onRefund: (id: string) => Promise<void>;
@@ -147,6 +151,7 @@ export function TransactionView({
   transaction,
   onDelete,
   onRetry,
+  onSend,
   onRefund,
 }: WalletTransactionProps): VNode {
   const [confirmBeforeForget, setConfirmBeforeForget] = useState(false);
@@ -169,6 +174,10 @@ export function TransactionView({
   }: {
     children: ComponentChildren;
   }): VNode {
+    const showSend =
+      (transaction.type === TransactionType.PeerPullCredit ||
+        transaction.type === TransactionType.PeerPushDebit) &&
+      !transaction.info.completed;
     const showRetry =
       transaction.error !== undefined ||
       transaction.timestamp.t_s === "never" ||
@@ -194,7 +203,13 @@ export function TransactionView({
         </section>
         <section>{children}</section>
         <footer>
-          <div />
+          <div>
+            {showSend ? (
+              <Button variant="contained" onClick={onSend}>
+                <i18n.Translate>Send</i18n.Translate>
+              </Button>
+            ) : null}
+          </div>
           <div>
             {showRetry ? (
               <Button variant="contained" onClick={onRetry}>
@@ -597,16 +612,25 @@ export function TransactionView({
           Invoice
         </Header>
 
+        {transaction.info.summary ? (
+          <Part
+            title={<i18n.Translate>Subject</i18n.Translate>}
+            text={transaction.info.summary}
+            kind="neutral"
+          />
+        ) : undefined}
         <Part
           title={<i18n.Translate>Exchange</i18n.Translate>}
           text={transaction.exchangeBaseUrl}
           kind="neutral"
         />
-        <Part
-          title={<i18n.Translate>URI</i18n.Translate>}
-          text={<ShowQrWithCopy text={transaction.talerUri} />}
-          kind="neutral"
-        />
+        {!transaction.info.completed && (
+          <Part
+            title={<i18n.Translate>URI</i18n.Translate>}
+            text={<ShowQrWithCopy text={transaction.talerUri} />}
+            kind="neutral"
+          />
+        )}
         <Part
           title={<i18n.Translate>Details</i18n.Translate>}
           text={
@@ -635,6 +659,13 @@ export function TransactionView({
           Invoice
         </Header>
 
+        {transaction.info.summary ? (
+          <Part
+            title={<i18n.Translate>Subject</i18n.Translate>}
+            text={transaction.info.summary}
+            kind="neutral"
+          />
+        ) : undefined}
         <Part
           title={<i18n.Translate>Exchange</i18n.Translate>}
           text={transaction.exchangeBaseUrl}
@@ -667,16 +698,25 @@ export function TransactionView({
           Transfer
         </Header>
 
+        {transaction.info.summary ? (
+          <Part
+            title={<i18n.Translate>Subject</i18n.Translate>}
+            text={transaction.info.summary}
+            kind="neutral"
+          />
+        ) : undefined}
         <Part
           title={<i18n.Translate>Exchange</i18n.Translate>}
           text={transaction.exchangeBaseUrl}
           kind="neutral"
         />
-        <Part
-          title={<i18n.Translate>URI</i18n.Translate>}
-          text={<QR text={transaction.talerUri} />}
-          kind="neutral"
-        />
+        {!transaction.info.completed && (
+          <Part
+            title={<i18n.Translate>URI</i18n.Translate>}
+            text={<ShowQrWithCopy text={transaction.talerUri} />}
+            kind="neutral"
+          />
+        )}
         <Part
           title={<i18n.Translate>Details</i18n.Translate>}
           text={
@@ -705,6 +745,13 @@ export function TransactionView({
           Transfer
         </Header>
 
+        {transaction.info.summary ? (
+          <Part
+            title={<i18n.Translate>Subject</i18n.Translate>}
+            text={transaction.info.summary}
+            kind="neutral"
+          />
+        ) : undefined}
         <Part
           title={<i18n.Translate>Exchange</i18n.Translate>}
           text={transaction.exchangeBaseUrl}

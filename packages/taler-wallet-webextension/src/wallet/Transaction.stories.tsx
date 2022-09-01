@@ -20,6 +20,7 @@
  */
 
 import {
+  AbsoluteTime,
   PaymentStatus,
   TalerProtocolTimestamp,
   TransactionCommon,
@@ -146,6 +147,13 @@ const exampleData = {
   push_credit: {
     ...commonTransaction,
     type: TransactionType.PeerPushCredit,
+    info: {
+      expiration: {
+        t_s: new Date().getTime() / 1000 + 2 * 60 * 60,
+      },
+      summary: "take this money",
+      completed: true,
+    },
     exchangeBaseUrl: "https://exchange.taler.net",
   } as TransactionPeerPushCredit,
   push_debit: {
@@ -153,6 +161,13 @@ const exampleData = {
     type: TransactionType.PeerPushDebit,
     talerUri:
       "taler://pay-push/exchange.taler.ar/HS585JK0QCXHJ8Z8QWZA3EBAY5WY7XNC1RR2MHJXSH2Z4WP0YPJ0",
+    info: {
+      expiration: {
+        t_s: new Date().getTime() / 1000 + 2 * 60 * 60,
+      },
+      summary: "take this money",
+      completed: true,
+    },
     exchangeBaseUrl: "https://exchange.taler.net",
   } as TransactionPeerPushDebit,
   pull_credit: {
@@ -160,11 +175,25 @@ const exampleData = {
     type: TransactionType.PeerPullCredit,
     talerUri:
       "taler://pay-push/exchange.taler.ar/HS585JK0QCXHJ8Z8QWZA3EBAY5WY7XNC1RR2MHJXSH2Z4WP0YPJ0",
+    info: {
+      expiration: {
+        t_s: new Date().getTime() / 1000 + 2 * 60 * 60,
+      },
+      summary: "pay me, please?",
+      completed: true,
+    },
     exchangeBaseUrl: "https://exchange.taler.net",
   } as TransactionPeerPullCredit,
   pull_debit: {
     ...commonTransaction,
     type: TransactionType.PeerPullDebit,
+    info: {
+      expiration: {
+        t_s: new Date().getTime() / 1000 + 2 * 60 * 60,
+      },
+      summary: "pay me, please?",
+      completed: true,
+    },
     exchangeBaseUrl: "https://exchange.taler.net",
   } as TransactionPeerPullDebit,
 };
@@ -527,8 +556,15 @@ export const RefundPending = createExample(TestedComponent, {
   transaction: { ...exampleData.refund, pending: true },
 });
 
-export const InvoiceCredit = createExample(TestedComponent, {
+export const InvoiceCreditComplete = createExample(TestedComponent, {
   transaction: { ...exampleData.pull_credit },
+});
+
+export const InvoiceCreditIncomplete = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.pull_credit,
+    info: { ...exampleData.pull_credit.info, completed: false },
+  },
 });
 
 export const InvoiceDebit = createExample(TestedComponent, {
@@ -539,6 +575,15 @@ export const TransferCredit = createExample(TestedComponent, {
   transaction: { ...exampleData.push_credit },
 });
 
-export const TransferDebit = createExample(TestedComponent, {
+export const TransferDebitComplete = createExample(TestedComponent, {
   transaction: { ...exampleData.push_debit },
+});
+export const TransferDebitIncomplete = createExample(TestedComponent, {
+  transaction: {
+    ...exampleData.push_debit,
+    info: {
+      ...exampleData.push_debit.info,
+      completed: false,
+    },
+  },
 });
