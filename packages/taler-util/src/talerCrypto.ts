@@ -857,6 +857,13 @@ export type Edx25519PublicKey = FlavorP<Uint8Array, "Edx25519PublicKey", 32>;
 export type Edx25519PrivateKey = FlavorP<Uint8Array, "Edx25519PrivateKey", 64>;
 export type Edx25519Signature = FlavorP<Uint8Array, "Edx25519Signature", 64>;
 
+export type Edx25519PublicKeyEnc = FlavorP<string, "Edx25519PublicKeyEnc", 32>;
+export type Edx25519PrivateKeyEnc = FlavorP<
+  string,
+  "Edx25519PrivateKeyEnc",
+  64
+>;
+
 /**
  * Convert a big integer to a fixed-size, little-endian array.
  */
@@ -958,7 +965,7 @@ export interface AgeCommitment {
   /**
    * Public keys, one for each age group specified in the age mask.
    */
-  publicKeys: Edx25519PublicKey[];
+  publicKeys: Edx25519PublicKeyEnc[];
 }
 
 export interface AgeProof {
@@ -966,7 +973,7 @@ export interface AgeProof {
    * Private keys.  Typically smaller than the number of public keys,
    * because we drop private keys from age groups that are restricted.
    */
-  privateKeys: Edx25519PrivateKey[];
+  privateKeys: Edx25519PrivateKeyEnc[];
 }
 
 export interface AgeCommitmentProof {
@@ -984,7 +991,7 @@ export namespace AgeRestriction {
   export function hashCommitment(ac: AgeCommitment): HashCodeString {
     const hc = new nacl.HashState();
     for (const pub of ac.publicKeys) {
-      hc.update(pub);
+      hc.update(decodeCrock(pub));
     }
     return encodeCrock(hc.finish().subarray(0, 32));
   }
@@ -1042,10 +1049,10 @@ export namespace AgeRestriction {
     return {
       commitment: {
         mask: ageMask,
-        publicKeys: pubs,
+        publicKeys: pubs.map((x) => encodeCrock(x)),
       },
       proof: {
-        privateKeys: privs,
+        privateKeys: privs.map((x) => encodeCrock(x)),
       },
     };
   }
@@ -1062,8 +1069,11 @@ export namespace AgeRestriction {
       return false;
     }
     for (let i = 0; i < c1.publicKeys.length; i++) {
-      const k1 = c1.publicKeys[i];
-      const k2 = await Edx25519.publicKeyDerive(c2.publicKeys[i], salt);
+      const k1 = decodeCrock(c1.publicKeys[i]);
+      const k2 = await Edx25519.publicKeyDerive(
+        decodeCrock(c2.publicKeys[i]),
+        salt,
+      );
       if (k1 != k2) {
         return false;
       }
@@ -1079,20 +1089,22 @@ export namespace AgeRestriction {
     const newPubs: Edx25519PublicKey[] = [];
 
     for (const oldPub of commitmentProof.commitment.publicKeys) {
-      newPubs.push(await Edx25519.publicKeyDerive(oldPub, salt));
+      newPubs.push(await Edx25519.publicKeyDerive(decodeCrock(oldPub), salt));
     }
 
     for (const oldPriv of commitmentProof.proof.privateKeys) {
-      newPrivs.push(await Edx25519.privateKeyDerive(oldPriv, salt));
+      newPrivs.push(
+        await Edx25519.privateKeyDerive(decodeCrock(oldPriv), salt),
+      );
     }
 
     return {
       commitment: {
         mask: commitmentProof.commitment.mask,
-        publicKeys: newPubs,
+        publicKeys: newPubs.map((x) => encodeCrock(x)),
       },
       proof: {
-        privateKeys: newPrivs,
+        privateKeys: newPrivs.map((x) => encodeCrock(x)),
       },
     };
   }
@@ -1112,7 +1124,11 @@ export namespace AgeRestriction {
     }
     const priv = commitmentProof.proof.privateKeys[group - 1];
     const pub = commitmentProof.commitment.publicKeys[group - 1];
-    const sig = nacl.crypto_edx25519_sign_detached(d, priv, pub);
+    const sig = nacl.crypto_edx25519_sign_detached(
+      d,
+      decodeCrock(priv),
+      decodeCrock(pub),
+    );
     return sig;
   }
 
@@ -1131,7 +1147,11 @@ export namespace AgeRestriction {
       return true;
     }
     const pub = commitment.publicKeys[group - 1];
-    return nacl.crypto_edx25519_sign_detached_verify(d, decodeCrock(sig), pub);
+    return nacl.crypto_edx25519_sign_detached_verify(
+      d,
+      decodeCrock(sig),
+      decodeCrock(pub),
+    );
   }
 }
 

@@ -25,29 +25,29 @@
  * Imports.
  */
 
+import { codecForAmountString } from "./amounts.js";
 import {
   buildCodecForObject,
-  codecForString,
-  codecForList,
-  codecOptional,
-  codecForAny,
-  codecForNumber,
-  codecForBoolean,
-  codecForMap,
-  Codec,
-  codecForConstNumber,
   buildCodecForUnion,
+  Codec,
+  codecForAny,
+  codecForBoolean,
+  codecForConstNumber,
   codecForConstString,
+  codecForList,
+  codecForMap,
+  codecForNumber,
+  codecForString,
+  codecOptional,
 } from "./codec.js";
-import {
-  codecForTimestamp,
-  codecForDuration,
-  TalerProtocolTimestamp,
-  TalerProtocolDuration,
-} from "./time.js";
-import { codecForAmountString } from "./amounts.js";
 import { strcmp } from "./helpers.js";
-import { AgeCommitmentProof, Edx25519PublicKey } from "./talerCrypto.js";
+import { AgeCommitmentProof, Edx25519PublicKeyEnc } from "./talerCrypto.js";
+import {
+  codecForDuration,
+  codecForTimestamp,
+  TalerProtocolDuration,
+  TalerProtocolTimestamp,
+} from "./time.js";
 
 /**
  * Denomination as found in the /keys response from the exchange.
@@ -287,7 +287,7 @@ export interface CoinDepositPermission {
 
   minimum_age_sig?: EddsaSignatureString;
 
-  age_commitment?: Edx25519PublicKey[];
+  age_commitment?: Edx25519PublicKeyEnc[];
 }
 
 /**
@@ -1755,7 +1755,7 @@ export interface ExchangeRefreshRevealRequest {
    * the client MUST provide the original age commitment, i.e. the vector
    * of public keys.
    */
-  old_age_commitment?: Edx25519PublicKey[];
+  old_age_commitment?: Edx25519PublicKeyEnc[];
 }
 
 export interface DepositSuccess {

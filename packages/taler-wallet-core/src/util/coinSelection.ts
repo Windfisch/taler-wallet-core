@@ -291,11 +291,14 @@ export function selectPayCoins(
         aci.denomPub.age_mask,
         req.requiredMinimumAge,
       );
-      if (!aci.ageCommitmentProof) {
-        // No age restriction, can't use for this payment
-        continue;
-      }
-      if (aci.ageCommitmentProof.proof.privateKeys.length < index) {
+      // if (!aci.ageCommitmentProof) {
+      //   // No age restriction, can't use for this payment
+      //   continue;
+      // }
+      if (
+        aci.ageCommitmentProof &&
+        aci.ageCommitmentProof.proof.privateKeys.length < index
+      ) {
         // Available age proofs to low, can't use for this payment
         continue;
       }

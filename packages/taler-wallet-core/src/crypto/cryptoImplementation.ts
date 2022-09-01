@@ -1084,7 +1084,7 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
         s.age_commitment =
           depositInfo.ageCommitmentProof?.commitment.publicKeys;
       } else if (depositInfo.ageCommitmentProof) {
-        (s as any).h_age_commitment = hAgeCommitment;
+        (s as any).h_age_commitment = encodeCrock(hAgeCommitment);
       }
 
       return s;
@@ -1518,9 +1518,7 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
     });
 
     logger.info(`payto URI: ${req.reservePayto}`);
-    logger.info(
-      `signing WALLET_PURSE_MERGE over ${encodeCrock(mergeSigBlob)}`,
-    );
+    logger.info(`signing WALLET_PURSE_MERGE over ${encodeCrock(mergeSigBlob)}`);
 
     const reserveSigBlob = buildSigPS(
       TalerSignaturePurpose.WALLET_ACCOUNT_MERGE,
