@@ -50,14 +50,17 @@ export function useComponentState(
 
   if (talerUri) {
     return {
-      status: "show-qr",
+      status: "created",
       talerUri,
       error: undefined,
       cancel: {
         onClick: onClose
-      }
-      // chosenAmount: amount,
-      // toBeReceived: amount,
+      },
+      copyToClipboard: {
+        onClick: async () => {
+          navigator.clipboard.writeText(talerUri);
+        }
+      },
     }
   }
 
@@ -95,13 +98,7 @@ export function useComponentState(
     },
     invalid: !subject || Amounts.isZero(amount),
     exchangeUrl: selected.exchangeBaseUrl,
-    copyToClipboard: {
-      onClick: async () => {
-        const uri = await accept();
-        navigator.clipboard.writeText(uri || "");
-      }
-    },
-    showQr: {
+    create: {
       onClick: async () => {
         const uri = await accept();
         setTalerUri(uri)

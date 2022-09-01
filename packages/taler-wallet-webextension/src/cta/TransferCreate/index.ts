@@ -21,7 +21,7 @@ import { ButtonHandler, TextFieldHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import * as wxApi from "../../wxApi.js";
 import { useComponentState } from "./state.js";
-import { LoadingUriView, ReadyView, ShowQrView } from "./views.js";
+import { LoadingUriView, ReadyView, CreatedView } from "./views.js";
 
 export interface Props {
   amount: string;
@@ -31,7 +31,7 @@ export interface Props {
 export type State =
   | State.Loading
   | State.LoadingUriError
-  | State.ShowQr
+  | State.Created
   | State.Ready;
 
 export namespace State {
@@ -50,15 +50,15 @@ export namespace State {
     error: undefined;
     cancel: ButtonHandler;
   }
-  export interface ShowQr extends BaseInfo {
-    status: "show-qr";
+  export interface Created extends BaseInfo {
+    status: "created";
     talerUri: string;
+    copyToClipboard: ButtonHandler;
   }
   export interface Ready extends BaseInfo {
     status: "ready";
-    showQr: ButtonHandler;
     invalid: boolean;
-    copyToClipboard: ButtonHandler;
+    create: ButtonHandler;
     toBeReceived: AmountJson,
     chosenAmount: AmountJson,
     subject: TextFieldHandler,
@@ -70,7 +70,7 @@ export namespace State {
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
   "loading-uri": LoadingUriView,
-  "show-qr": ShowQrView,
+  "created": CreatedView,
   "ready": ReadyView,
 };
 

@@ -32,11 +32,16 @@ export function useComponentState(
 
   if (talerUri) {
     return {
-      status: "show-qr",
+      status: "created",
       talerUri,
       error: undefined,
       cancel: {
         onClick: onClose,
+      },
+      copyToClipboard: {
+        onClick: async () => {
+          navigator.clipboard.writeText(talerUri);
+        }
       },
     }
   }
@@ -71,13 +76,7 @@ export function useComponentState(
       value: subject,
       onInput: async (e) => setSubject(e)
     },
-    copyToClipboard: {
-      onClick: async () => {
-        const uri = await accept();
-        navigator.clipboard.writeText(uri || "");
-      }
-    },
-    showQr: {
+    create: {
       onClick: async () => {
         const uri = await accept();
         setTalerUri(uri)

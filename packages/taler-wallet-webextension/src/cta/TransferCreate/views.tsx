@@ -23,7 +23,6 @@ import { QR } from "../../components/QR.js";
 import { Link, SubTitle, WalletAction } from "../../components/styled/index.js";
 import { useTranslationContext } from "../../context/translation.js";
 import { Button } from "../../mui/Button.js";
-import { Grid } from "../../mui/Grid.js";
 import { TextField } from "../../mui/TextField.js";
 import { TransferDetails } from "../../wallet/Transaction.js";
 import { State } from "./index.js";
@@ -39,17 +38,25 @@ export function LoadingUriView({ error }: State.LoadingUriError): VNode {
   );
 }
 
-export function ShowQrView({ talerUri, cancel }: State.ShowQr): VNode {
+export function CreatedView({
+  talerUri,
+  copyToClipboard,
+  cancel,
+}: State.Created): VNode {
   const { i18n } = useTranslationContext();
   return (
     <WalletAction>
       <LogoHeader />
       <SubTitle>
-        <i18n.Translate>Digital invoice</i18n.Translate>
+        <i18n.Translate>Digital cash transfer</i18n.Translate>
       </SubTitle>
       <section>
-        <p>Scan this QR code with the wallet</p>
+        <p>Show this QR to receive the transfer</p>
         <QR text={talerUri} />
+      </section>
+      <section>
+        or
+        <Button onClick={copyToClipboard.onClick}>Copy the transfer URI</Button>
       </section>
       <section>
         <Link upperCased onClick={cancel.onClick}>
@@ -64,9 +71,8 @@ export function ReadyView({
   subject,
   toBeReceived,
   chosenAmount,
-  showQr,
+  create,
   operationError,
-  copyToClipboard,
   cancel,
   invalid,
 }: State.Ready): VNode {
@@ -111,19 +117,14 @@ export function ReadyView({
       </section>
       <section>
         <p>How do you want to transfer?</p>
-
-        <Grid item container columns={1} spacing={1}>
-          <Grid item xs={1}>
-            <Button disabled={invalid} onClick={copyToClipboard.onClick}>
-              Copy transfer URI to clipboard
-            </Button>
-          </Grid>
-          <Grid item xs={1}>
-            <Button disabled={invalid} onClick={showQr.onClick}>
-              Show QR
-            </Button>
-          </Grid>
-        </Grid>
+        <Button
+          disabled={invalid}
+          onClick={create.onClick}
+          variant="contained"
+          color="success"
+        >
+          Create
+        </Button>
       </section>
       <section>
         <section>

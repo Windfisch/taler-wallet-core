@@ -20,16 +20,17 @@
  */
 
 import { createExample } from "../../test-utils.js";
-import { ReadyView, ShowQrView } from "./views.js";
+import { ReadyView, CreatedView } from "./views.js";
 
 export default {
   title: "wallet/transfer create",
 };
 
-export const ShowQr = createExample(ShowQrView, {
+export const ShowQr = createExample(CreatedView, {
   talerUri:
     "taler://pay-push/exchange.taler.ar/HS585JK0QCXHJ8Z8QWZA3EBAY5WY7XNC1RR2MHJXSH2Z4WP0YPJ0",
   cancel: {},
+  copyToClipboard: {},
 });
 
 export const Ready = createExample(ReadyView, {
@@ -38,14 +39,13 @@ export const Ready = createExample(ReadyView, {
     value: 1,
     fraction: 0,
   },
+  create: {},
   cancel: {},
   toBeReceived: {
     currency: "ARS",
     value: 1,
     fraction: 0,
   },
-  copyToClipboard: {},
-  showQr: {},
   subject: {
     value: "the subject",
     onInput: async () => {

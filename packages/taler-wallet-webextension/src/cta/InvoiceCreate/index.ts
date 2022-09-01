@@ -17,11 +17,11 @@
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { compose, StateViewMap } from "../../utils/index.js";
-import { LoadingUriView, ReadyView, ShowQrView } from "./views.js";
+import { LoadingUriView, ReadyView, CreatedView } from "./views.js";
 import * as wxApi from "../../wxApi.js";
 import { useComponentState } from "./state.js";
 import { AmountJson, TalerErrorDetail } from "@gnu-taler/taler-util";
-import { ButtonHandler, SelectFieldHandler, TextFieldHandler } from "../../mui/handlers.js";
+import { ButtonHandler, TextFieldHandler } from "../../mui/handlers.js";
 
 export interface Props {
   amount: string;
@@ -31,7 +31,7 @@ export interface Props {
 export type State =
   | State.Loading
   | State.LoadingUriError
-  | State.ShowQr
+  | State.Created
   | State.Ready;
 
 export namespace State {
@@ -50,14 +50,14 @@ export namespace State {
     error: undefined;
     cancel: ButtonHandler;
   }
-  export interface ShowQr extends BaseInfo {
-    status: "show-qr";
+  export interface Created extends BaseInfo {
+    status: "created";
     talerUri: string;
+    copyToClipboard: ButtonHandler;
   }
   export interface Ready extends BaseInfo {
     status: "ready";
-    showQr: ButtonHandler;
-    copyToClipboard: ButtonHandler;
+    create: ButtonHandler;
     subject: TextFieldHandler;
     toBeReceived: AmountJson,
     chosenAmount: AmountJson,
@@ -71,7 +71,7 @@ export namespace State {
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
   "loading-uri": LoadingUriView,
-  "show-qr": ShowQrView,
+  "created": CreatedView,
   "ready": ReadyView,
 };
 

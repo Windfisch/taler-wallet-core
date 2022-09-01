@@ -45,17 +45,25 @@ export function LoadingUriView({ error }: State.LoadingUriError): VNode {
   );
 }
 
-export function ShowQrView({ talerUri, cancel }: State.ShowQr): VNode {
+export function CreatedView({
+  talerUri,
+  copyToClipboard,
+  cancel,
+}: State.Created): VNode {
   const { i18n } = useTranslationContext();
   return (
     <WalletAction>
       <LogoHeader />
       <SubTitle>
-        <i18n.Translate>Digital invoice</i18n.Translate>
+        <i18n.Translate>Digital cash invoice</i18n.Translate>
       </SubTitle>
       <section>
-        <p>Scan this QR code with the wallet</p>
+        <p>Show this QR to pay the invoice</p>
         <QR text={talerUri} />
+      </section>
+      <section>
+        or
+        <Button onClick={copyToClipboard.onClick}>Copy the invoice URI</Button>
       </section>
       <section>
         <Link upperCased onClick={cancel.onClick}>
@@ -70,10 +78,9 @@ export function ReadyView({
   invalid,
   exchangeUrl,
   subject,
-  showQr,
   cancel,
   operationError,
-  copyToClipboard,
+  create,
   toBeReceived,
   chosenAmount,
 }: State.Ready): VNode {
@@ -142,20 +149,14 @@ export function ReadyView({
         />
       </section>
       <section>
-        <p>How do you want to send the invoice?</p>
-
-        <Grid item container columns={1} spacing={1}>
-          <Grid item xs={1}>
-            <Button disabled={invalid} onClick={copyToClipboard.onClick}>
-              Copy request URI to clipboard
-            </Button>
-          </Grid>
-          <Grid item xs={1}>
-            <Button disabled={invalid} onClick={showQr.onClick}>
-              Show QR
-            </Button>
-          </Grid>
-        </Grid>
+        <Button
+          disabled={invalid}
+          onClick={create.onClick}
+          variant="contained"
+          color="success"
+        >
+          Create
+        </Button>
       </section>
       <section>
         <Link upperCased onClick={cancel.onClick}>
