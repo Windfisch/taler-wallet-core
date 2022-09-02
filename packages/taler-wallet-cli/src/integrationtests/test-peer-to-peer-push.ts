@@ -47,6 +47,20 @@ export async function runPeerToPeerPushTest(t: GlobalTestState) {
 
   await wallet1.runUntilDone();
 
+  {
+    const resp = await wallet1.client.call(
+      WalletApiOperation.InitiatePeerPushPayment,
+      {
+        amount: "TESTKUDOS:5",
+        partialContractTerms: {
+          summary: "Hello World",
+        },
+      },
+    );
+
+    console.log(resp);
+
+  }
   const resp = await wallet1.client.call(
     WalletApiOperation.InitiatePeerPushPayment,
     {
