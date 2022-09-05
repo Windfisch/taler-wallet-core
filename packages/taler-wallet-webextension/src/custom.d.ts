@@ -29,3 +29,5 @@ declare module "*.svg" {
   const content: any;
   export default content;
 }
+declare const __VERSION__: string;
+declare const __GIT_HASH__: string;

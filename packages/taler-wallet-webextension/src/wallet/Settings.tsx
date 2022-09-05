@@ -19,6 +19,7 @@ import { Fragment, h, VNode } from "preact";
 import { Checkbox } from "../components/Checkbox.js";
 import { ErrorTalerOperation } from "../components/ErrorTalerOperation.js";
 import { JustInDevMode } from "../components/JustInDevMode.js";
+import { Part } from "../components/Part.js";
 import { SelectList } from "../components/SelectList.js";
 import {
   DestructiveText,
@@ -69,6 +70,8 @@ export interface ViewProps {
   toggleDeveloperMode: () => Promise<void>;
   knownExchanges: Array<ExchangeListItem>;
 }
+const VERSION = typeof __VERSION__ !== "undefined" ? __VERSION__ : "dev";
+const GIT_HASH = typeof __GIT_HASH__ !== "undefined" ? __GIT_HASH__ : undefined;
 
 export function SettingsView({
   knownExchanges,
@@ -210,6 +213,19 @@ export function SettingsView({
             />
           </Input>
         </JustInDevMode>
+        <SubTitle>
+          <i18n.Translate>Version</i18n.Translate>
+        </SubTitle>
+        <Part
+          title={<i18n.Translate>Release</i18n.Translate>}
+          text={<span>{VERSION}</span>}
+        />
+        {GIT_HASH && (
+          <Part
+            title={<i18n.Translate>Hash</i18n.Translate>}
+            text={<span>{GIT_HASH}</span>}
+          />
+        )}
       </section>
     </Fragment>
   );

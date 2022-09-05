@@ -40,9 +40,10 @@ function getFilesInDirectory(startPath, regex) {
   return result
 }
 
-const allTestFiles = getFilesInDirectory(path.join(process.cwd(), 'src'), /.test.ts$/)
+const BASE = process.cwd()
+const allTestFiles = getFilesInDirectory(path.join(BASE, 'src'), /.test.ts$/)
 
-const preact = path.join(process.cwd(), "node_modules", "preact", "compat", "dist", "compat.module.js");
+const preact = path.join(BASE, "node_modules", "preact", "compat", "dist", "compat.module.js");
 const preactCompatPlugin = {
   name: "preact-compat",
   setup(build) {
@@ -60,6 +61,28 @@ const entryPoints = [
   'src/background.dev.ts',
   'src/browserWorkerEntry.ts'
 ]
+
+let GIT_ROOT = BASE
+while (!fs.existsSync(path.join(GIT_ROOT, '.git')) && GIT_ROOT !== '/') {
+  GIT_ROOT = path.join(GIT_ROOT, '../')
+}
+if (GIT_ROOT === '/') {
+  console.log("not found")
+  process.exit(1);
+}
+const GIT_HASH = GIT_ROOT === '/' ? undefined : git_hash()
+
+
+let _package = JSON.parse(fs.readFileSync(path.join(BASE, 'package.json')));
+
+function git_hash() {
+  const rev = fs.readFileSync(path.join(GIT_ROOT, '.git', 'HEAD')).toString().trim().split(/.*[: ]/).slice(-1)[0];
+  if (rev.indexOf('/') === -1) {
+    return rev;
+  } else {
+    return fs.readFileSync(path.join(GIT_ROOT, '.git', rev)).toString().trim();
+  }
+}
 
 export const buildConfig = {
   entryPoints: [...entryPoints, ...allTestFiles],
@@ -79,9 +102,10 @@ export const buildConfig = {
   sourcemap: true,
   jsxFactory: 'h',
   jsxFragment: 'Fragment',
-  // define: {
-  //   'process.env.NODE_ENV': '"development"',
-  // },
+  define: {
+    '__VERSION__': `"${_package.version}"`,
+    '__GIT_HASH__': `"${GIT_HASH}"`,
+  },
   plugins: [
     preactCompatPlugin,
     linaria.default({
