@@ -1813,11 +1813,14 @@ export interface PurseDeposit {
   ub_sig: UnblindedSignature;
 
   /**
-   * Age commitment hash for the coin, if the denomination is age-restricted.
+   * Age commitment for the coin, if the denomination is age-restricted.
    */
-  h_age_commitment?: HashCodeString;
+  age_commitment?: string[];
 
-  // FIXME-Oec: proof of age is missing.
+  /**
+   * Attestation for the minimum age, if the denomination is age-restricted.
+   */
+  attest?: string;
 
   /**
    * Signature over TALER_PurseDepositSignaturePS

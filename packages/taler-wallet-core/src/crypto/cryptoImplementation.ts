@@ -1362,12 +1362,15 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
     const hExchangeBaseUrl = hash(stringToBytes(req.exchangeBaseUrl + "\0"));
     const deposits: PurseDeposit[] = [];
     for (const c of req.coins) {
+      let haveAch: boolean;
       let maybeAch: Uint8Array;
       if (c.ageCommitmentProof) {
+        haveAch = true;
         maybeAch = decodeCrock(
           AgeRestriction.hashCommitment(c.ageCommitmentProof.commitment),
         );
       } else {
+        haveAch = false;
         maybeAch = new Uint8Array(32);
       }
       const sigBlob = buildSigPS(TalerSignaturePurpose.WALLET_PURSE_DEPOSIT)
@@ -1387,7 +1390,9 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
         coin_sig: sigResp.sig,
         denom_pub_hash: c.denomPubHash,
         ub_sig: c.denomSig,
-        h_age_commitment: undefined,
+        age_commitment: c.ageCommitmentProof
+          ? c.ageCommitmentProof.commitment.publicKeys
+          : undefined,
       });
     }
     return {
