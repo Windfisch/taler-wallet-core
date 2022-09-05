@@ -70,7 +70,7 @@ export function createExample<Props>(
           importState: noop,
         }}
       >
-        <Component {...args} />
+        <Component {...(args as any)} />
       </AnastasisProvider>
     );
   };

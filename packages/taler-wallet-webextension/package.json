@@ -23,7 +23,7 @@
   "dependencies": {
     "@gnu-taler/taler-util": "workspace:*",
     "@gnu-taler/taler-wallet-core": "workspace:*",
-    "date-fns": "^2.28.0",
+    "date-fns": "^2.29.2",
     "history": "4.10.1",
     "preact": "^10.6.5",
     "preact-router": "3.2.1",
@@ -71,7 +71,7 @@
     "preact-cli": "^3.3.5",
     "preact-render-to-string": "^5.1.19",
     "rimraf": "^3.0.2",
-    "typescript": "^4.5.5"
+    "typescript": "^4.8.2"
   },
   "nyc": {
     "include": [
