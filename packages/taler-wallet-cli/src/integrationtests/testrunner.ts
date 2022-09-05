@@ -61,7 +61,6 @@ import { runMerchantInstancesUrlsTest } from "./test-merchant-instances-urls.js"
 import { runMerchantLongpollingTest } from "./test-merchant-longpolling.js";
 import { runMerchantRefundApiTest } from "./test-merchant-refund-api.js";
 import { runMerchantSpecPublicOrdersTest } from "./test-merchant-spec-public-orders.js";
-import { runPayAbortTest } from "./test-pay-abort.js";
 import { runPayPaidTest } from "./test-pay-paid.js";
 import { runPaymentTest } from "./test-payment.js";
 import { runPaymentClaimTest } from "./test-payment-claim.js";
@@ -143,7 +142,6 @@ const allTests: TestMainFunction[] = [
   runMerchantLongpollingTest,
   runMerchantSpecPublicOrdersTest,
   runMerchantRefundApiTest,
-  runPayAbortTest,
   runPaymentClaimTest,
   runPaymentFaultTest,
   runPaymentForgettableTest,
