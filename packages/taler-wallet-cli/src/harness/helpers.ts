@@ -70,6 +70,8 @@ export interface EnvOptions {
    * If provided, enable age restrictions with the specified age mask string.
    */
   ageMaskSpec?: string;
+
+  mixedAgeRestriction?: boolean;
 }
 
 /**
@@ -124,6 +126,12 @@ export async function createSimpleTestkudosEnvironment(
     exchange.addCoinConfigList(
       coinConfig.map((x) => ({ ...x, ageRestricted: true })),
     );
+    // For mixed age restrictions, we also offer coins without age restrictions
+    if (opts.mixedAgeRestriction) {
+      exchange.addCoinConfigList(
+        coinConfig.map((x) => ({ ...x, ageRestricted: false })),
+      );
+    }
   } else {
     exchange.addCoinConfigList(coinConfig);
   }

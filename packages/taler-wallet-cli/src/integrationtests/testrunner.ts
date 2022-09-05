@@ -92,6 +92,7 @@ import { runWithdrawalFakebankTest } from "./test-withdrawal-fakebank.js";
 import { runTestWithdrawalManualTest } from "./test-withdrawal-manual.js";
 import { runAgeRestrictionsPeerTest } from "./test-age-restrictions-peer.js";
 import { runWalletBalanceTest } from "./test-wallet-balance.js";
+import { runAgeRestrictionsMixedMerchantTest } from "./test-age-restrictions-mixed-merchant.js";
 
 /**
  * Test runner.
@@ -110,6 +111,7 @@ interface TestMainFunction {
 const allTests: TestMainFunction[] = [
   runAgeRestrictionsMerchantTest,
   runAgeRestrictionsPeerTest,
+  runAgeRestrictionsMixedMerchantTest,
   runBankApiTest,
   runClaimLoopTest,
   runClauseSchnorrTest,
