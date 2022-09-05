@@ -30,7 +30,7 @@ export default {
   external: builtins,
   plugins: [
     replace({
-      __VERSION__: printedVersion,
+      __VERSION__: `"${printedVersion}"`,
     }),
 
     nodeResolve({

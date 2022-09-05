@@ -33,8 +33,11 @@ const nodeEntryPoint = {
 
     sourcemaps(),
     replace({
-      '__VERSION__': `"${pkg.version}"`,
-      '__GIT_HASH__': `"${GIT_HASH}"`,
+      values: {
+        '__VERSION__': `"${pkg.version}"`,
+        '__GIT_HASH__': `"${GIT_HASH}"`,
+      },
+      preventAssignment: false,
     }),
 
     commonjs({

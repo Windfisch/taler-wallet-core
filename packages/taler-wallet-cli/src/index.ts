@@ -160,8 +160,9 @@ function applyVerbose(verbose: boolean): void {
   // TODO
 }
 
+declare const __VERSION__: string;
 function printVersion(): void {
-  console.log("__VERSION__");
+  console.log(__VERSION__);
   process.exit(0);
 }
 
