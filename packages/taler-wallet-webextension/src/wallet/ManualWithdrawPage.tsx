@@ -50,7 +50,7 @@ export function ManualWithdrawPage({ amount, onCancel }: Props): VNode {
   >(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
 
-  const state = useAsyncAsHook(wxApi.listExchanges);
+  const state = useAsyncAsHook(wxApi.listExchangesDetailled);
   useEffect(() => {
     return wxApi.onUpdateNotification([NotificationType.ExchangeAdded], () => {
       state?.retry();

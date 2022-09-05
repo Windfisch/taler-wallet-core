@@ -67,6 +67,7 @@ import {
   WalletDiagnostics,
   WalletCoreVersion,
   WithdrawUriInfoResponse,
+  ExchangeDetailledListRespose,
 } from "@gnu-taler/taler-util";
 import {
   AddBackupProviderRequest,
@@ -78,7 +79,11 @@ import {
 } from "@gnu-taler/taler-wallet-core";
 import type { DepositGroupFees } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import type { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core/src/operations/withdraw";
-import { platform, MessageFromBackend, WalletWebExVersion } from "./platform/api.js";
+import {
+  platform,
+  MessageFromBackend,
+  WalletWebExVersion,
+} from "./platform/api.js";
 
 /**
  *
@@ -202,8 +207,9 @@ export function getBalance(): Promise<BalancesResponse> {
   return callBackend("getBalances", {});
 }
 
-
-export function getContractTermsDetails(proposalId: string): Promise<WalletContractData> {
+export function getContractTermsDetails(
+  proposalId: string,
+): Promise<WalletContractData> {
   return callBackend("getContractTermsDetails", { proposalId });
 }
 
@@ -250,9 +256,15 @@ export function listKnownCurrencies(): Promise<ListOfKnownCurrencies> {
 export function listExchanges(): Promise<ExchangesListRespose> {
   return callBackend("listExchanges", {});
 }
+
+export function listExchangesDetailled(): Promise<ExchangeDetailledListRespose> {
+  return callBackend("listExchangesDetailled", {});
+}
+
 export function getVersion(): Promise<WalletCoreVersion> {
   return callBackend("getVersion", {});
 }
+
 export function listKnownBankAccounts(
   currency?: string,
 ): Promise<KnownBankAccounts> {
@@ -487,23 +499,33 @@ export function onUpdateNotification(
   return platform.listenToWalletBackground(onNewMessage);
 }
 
-export function initiatePeerPushPayment(req: InitiatePeerPushPaymentRequest): Promise<InitiatePeerPushPaymentResponse> {
+export function initiatePeerPushPayment(
+  req: InitiatePeerPushPaymentRequest,
+): Promise<InitiatePeerPushPaymentResponse> {
   return callBackend("initiatePeerPushPayment", req);
 }
-export function checkPeerPushPayment(req: CheckPeerPushPaymentRequest): Promise<CheckPeerPushPaymentResponse> {
+export function checkPeerPushPayment(
+  req: CheckPeerPushPaymentRequest,
+): Promise<CheckPeerPushPaymentResponse> {
   return callBackend("checkPeerPushPayment", req);
 }
-export function acceptPeerPushPayment(req: AcceptPeerPushPaymentRequest): Promise<void> {
+export function acceptPeerPushPayment(
+  req: AcceptPeerPushPaymentRequest,
+): Promise<void> {
   return callBackend("acceptPeerPushPayment", req);
 }
-export function initiatePeerPullPayment(req: InitiatePeerPullPaymentRequest): Promise<InitiatePeerPullPaymentResponse> {
+export function initiatePeerPullPayment(
+  req: InitiatePeerPullPaymentRequest,
+): Promise<InitiatePeerPullPaymentResponse> {
   return callBackend("initiatePeerPullPayment", req);
 }
-export function checkPeerPullPayment(req: CheckPeerPullPaymentRequest): Promise<CheckPeerPullPaymentResponse> {
+export function checkPeerPullPayment(
+  req: CheckPeerPullPaymentRequest,
+): Promise<CheckPeerPullPaymentResponse> {
   return callBackend("checkPeerPullPayment", req);
 }
-export function acceptPeerPullPayment(req: AcceptPeerPullPaymentRequest): Promise<void> {
+export function acceptPeerPullPayment(
+  req: AcceptPeerPullPaymentRequest,
+): Promise<void> {
   return callBackend("acceptPeerPullPayment", req);
 }
-
-

@@ -1436,9 +1436,6 @@ export async function getWithdrawalDetailsForUri(
               content: details.termsOfServiceText,
             },
             paytoUris: details.wireInfo.accounts.map((x) => x.payto_uri),
-            auditors: details.auditors,
-            wireInfo: details.wireInfo,
-            denominations: denominations,
           });
         }
       }

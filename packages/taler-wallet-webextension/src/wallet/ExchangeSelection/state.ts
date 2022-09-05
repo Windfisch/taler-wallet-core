@@ -25,7 +25,7 @@ export function useComponentState(
   { onCancel, onSelection, currency }: Props,
   api: typeof wxApi,
 ): State {
-  const hook = useAsyncAsHook(api.listExchanges);
+  const hook = useAsyncAsHook(api.listExchangesDetailled);
 
   const initialValue = 0
   const [value, setValue] = useState(String(initialValue));

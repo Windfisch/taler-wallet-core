@@ -36,7 +36,7 @@ export function ExchangeAddPage({ currency, onBack }: Props): VNode {
     { url: string; config: TalerConfigResponse } | undefined
   >(undefined);
 
-  const knownExchangesResponse = useAsyncAsHook(wxApi.listExchanges);
+  const knownExchangesResponse = useAsyncAsHook(wxApi.listExchangesDetailled);
   const knownExchanges = !knownExchangesResponse
     ? []
     : knownExchangesResponse.hasError

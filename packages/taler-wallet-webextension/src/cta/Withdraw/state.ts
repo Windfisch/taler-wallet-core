@@ -30,7 +30,7 @@ export function useComponentStateFromParams(
 
   const [ageRestricted, setAgeRestricted] = useState(0);
 
-  const exchangeHook = useAsyncAsHook(api.listExchanges);
+  const exchangeHook = useAsyncAsHook(api.listExchangesDetailled);
 
   const exchangeHookDep =
     !exchangeHook || exchangeHook.hasError || !exchangeHook.response

@@ -49,7 +49,7 @@ export function SettingsPage(): VNode {
   const webex = platform.getWalletWebExVersion();
 
   const exchangesHook = useAsyncAsHook(async () => {
-    const list = await wxApi.listExchanges();
+    const list = await wxApi.listExchangesDetailled();
     const version = await wxApi.getVersion();
     return { exchanges: list.exchanges, version };
   });

@@ -571,6 +571,11 @@ export interface DepositInfo {
 export interface ExchangesListRespose {
   exchanges: ExchangeListItem[];
 }
+
+export interface ExchangeDetailledListRespose {
+  exchanges: ExchangeFullDetailsListItem[];
+}
+
 export interface WalletCoreVersion {
   hash: string | undefined;
   version: string;
@@ -578,6 +583,7 @@ export interface WalletCoreVersion {
   merchant: string;
   bank: string;
 }
+
 export interface KnownBankAccounts {
   accounts: { [payto: string]: PaytoUri };
 }
@@ -727,7 +733,7 @@ export interface DenominationInfo {
   stampExpireDeposit: TalerProtocolTimestamp;
 }
 
-export interface ExchangeListItem {
+export interface ExchangeFullDetailsListItem {
   exchangeBaseUrl: string;
   currency: string;
   paytoUris: string[];
@@ -735,6 +741,13 @@ export interface ExchangeListItem {
   auditors: ExchangeAuditor[];
   wireInfo: WireInfo;
   denominations: DenominationInfo[];
+}
+
+export interface ExchangeListItem {
+  exchangeBaseUrl: string;
+  currency: string;
+  paytoUris: string[];
+  tos: ExchangeTos;
 }
 
 const codecForAuditorDenomSig = (): Codec<AuditorDenomSig> =>
@@ -758,20 +771,29 @@ const codecForExchangeTos = (): Codec<ExchangeTos> =>
     .property("content", codecOptional(codecForString()))
     .build("ExchangeTos");
 
+export const codecForExchangeFullDetailsListItem =
+  (): Codec<ExchangeFullDetailsListItem> =>
+    buildCodecForObject<ExchangeFullDetailsListItem>()
+      .property("currency", codecForString())
+      .property("exchangeBaseUrl", codecForString())
+      .property("paytoUris", codecForList(codecForString()))
+      .property("tos", codecForExchangeTos())
+      .property("auditors", codecForList(codecForExchangeAuditor()))
+      .property("wireInfo", codecForWireInfo())
+      .property("denominations", codecForList(codecForDenominationInfo()))
+      .build("ExchangeListItem");
+
 export const codecForExchangeListItem = (): Codec<ExchangeListItem> =>
   buildCodecForObject<ExchangeListItem>()
     .property("currency", codecForString())
     .property("exchangeBaseUrl", codecForString())
     .property("paytoUris", codecForList(codecForString()))
     .property("tos", codecForExchangeTos())
-    .property("auditors", codecForList(codecForExchangeAuditor()))
-    .property("wireInfo", codecForWireInfo())
-    .property("denominations", codecForList(codecForDenominationInfo()))
     .build("ExchangeListItem");
 
 export const codecForExchangesListResponse = (): Codec<ExchangesListRespose> =>
   buildCodecForObject<ExchangesListRespose>()
-    .property("exchanges", codecForList(codecForExchangeListItem()))
+    .property("exchanges", codecForList(codecForExchangeFullDetailsListItem()))
     .build("ExchangesListRespose");
 
 export interface AcceptManualWithdrawalResult {

@@ -45,7 +45,7 @@ export function DeveloperPage(): VNode {
   const response = useAsyncAsHook(async () => {
     const op = await wxApi.getPendingOperations();
     const c = await wxApi.dumpCoins();
-    const ex = await wxApi.listExchanges();
+    const ex = await wxApi.listExchangesDetailled();
     return {
       operations: op.pendingOperations,
       coins: c.coins,

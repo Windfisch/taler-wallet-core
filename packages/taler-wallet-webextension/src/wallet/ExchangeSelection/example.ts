@@ -14,14 +14,17 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { ExchangeListItem } from "@gnu-taler/taler-util";
+import {
+  ExchangeFullDetailsListItem,
+  ExchangeListItem,
+} from "@gnu-taler/taler-util";
 
 /**
  *
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-export const bitcoinExchanges: ExchangeListItem[] = [
+export const bitcoinExchanges: ExchangeFullDetailsListItem[] = [
   {
     exchangeBaseUrl: "https://bitcoin1.ice.bfh.ch/",
     currency: "BITCOINBTC",
@@ -11778,7 +11781,7 @@ export const bitcoinExchanges: ExchangeListItem[] = [
   },
 ] as any;
 
-export const kudosExchanges: ExchangeListItem[] = [
+export const kudosExchanges: ExchangeFullDetailsListItem[] = [
   {
     exchangeBaseUrl: "https://exchange1.demo.taler.net/",
     currency: "KUDOS",

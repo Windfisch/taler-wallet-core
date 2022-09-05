@@ -171,7 +171,7 @@ export function SelectCurrency({
 }): VNode {
   const { i18n } = useTranslationContext();
 
-  const hook = useAsyncAsHook(wxApi.listExchanges);
+  const hook = useAsyncAsHook(wxApi.listExchangesDetailled);
 
   if (!hook) {
     return <Loading />;

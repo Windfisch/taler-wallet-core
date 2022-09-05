@@ -21,6 +21,7 @@
 
 import {
   Amounts,
+  ExchangeFullDetailsListItem,
   ExchangeListItem,
   GetExchangeTosResult,
 } from "@gnu-taler/taler-util";
@@ -29,7 +30,7 @@ import { expect } from "chai";
 import { mountHook } from "../../test-utils.js";
 import { useComponentStateFromURI } from "./state.js";
 
-const exchanges: ExchangeListItem[] = [
+const exchanges: ExchangeFullDetailsListItem[] = [
   {
     currency: "ARS",
     exchangeBaseUrl: "http://exchange.demo.taler.net",

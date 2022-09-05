@@ -72,7 +72,7 @@ import {
   Duration,
   durationFromSpec,
   durationMin,
-  ExchangeListItem,
+  ExchangeFullDetailsListItem,
   ExchangesListRespose,
   GetExchangeTosResult,
   j2s,
@@ -87,6 +87,7 @@ import {
   URL,
   WalletNotification,
   WalletCoreVersion,
+  ExchangeListItem,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import {
@@ -207,7 +208,11 @@ import {
 } from "./util/promiseUtils.js";
 import { DbAccess, GetReadWriteAccess } from "./util/query.js";
 import { TimerAPI, TimerGroup } from "./util/timer.js";
-import { WALLET_BANK_INTEGRATION_PROTOCOL_VERSION, WALLET_EXCHANGE_PROTOCOL_VERSION, WALLET_MERCHANT_PROTOCOL_VERSION } from "./versions.js";
+import {
+  WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
+  WALLET_EXCHANGE_PROTOCOL_VERSION,
+  WALLET_MERCHANT_PROTOCOL_VERSION,
+} from "./versions.js";
 import { WalletCoreApiClient } from "./wallet-api-types.js";
 
 const builtinAuditors: AuditorTrustRecord[] = [
@@ -602,6 +607,53 @@ async function getExchanges(
             content: exchangeDetails.termsOfServiceText,
           },
           paytoUris: exchangeDetails.wireInfo.accounts.map((x) => x.payto_uri),
+        });
+      }
+    });
+  return { exchanges };
+}
+
+async function getExchangesDetailled(
+  ws: InternalWalletState,
+): Promise<ExchangesListRespose> {
+  const exchanges: ExchangeFullDetailsListItem[] = [];
+  await ws.db
+    .mktx((x) => ({
+      exchanges: x.exchanges,
+      exchangeDetails: x.exchangeDetails,
+      denominations: x.denominations,
+    }))
+    .runReadOnly(async (tx) => {
+      const exchangeRecords = await tx.exchanges.iter().toArray();
+      for (const r of exchangeRecords) {
+        const dp = r.detailsPointer;
+        if (!dp) {
+          continue;
+        }
+        const { currency } = dp;
+        const exchangeDetails = await getExchangeDetails(tx, r.baseUrl);
+        if (!exchangeDetails) {
+          continue;
+        }
+
+        const denominations = await tx.denominations.indexes.byExchangeBaseUrl
+          .iter(r.baseUrl)
+          .toArray();
+
+        if (!denominations) {
+          continue;
+        }
+
+        exchanges.push({
+          exchangeBaseUrl: r.baseUrl,
+          currency,
+          tos: {
+            acceptedVersion: exchangeDetails.termsOfServiceAcceptedEtag,
+            currentVersion: exchangeDetails.termsOfServiceLastEtag,
+            contentType: exchangeDetails.termsOfServiceContentType,
+            content: exchangeDetails.termsOfServiceText,
+          },
+          paytoUris: exchangeDetails.wireInfo.accounts.map((x) => x.payto_uri),
           auditors: exchangeDetails.auditors,
           wireInfo: exchangeDetails.wireInfo,
           denominations: denominations,
@@ -782,6 +834,9 @@ async function dispatchRequestInternal(
     case "listExchanges": {
       return await getExchanges(ws);
     }
+    case "listExchangesDetailled": {
+      return await getExchangesDetailled(ws);
+    }
     case "listKnownBankAccounts": {
       const req = codecForListKnownBankAccounts().decode(payload);
       return await listKnownBankAccounts(ws, req.currency);
@@ -790,6 +845,7 @@ async function dispatchRequestInternal(
       const req = codecForGetWithdrawalDetailsForUri().decode(payload);
       return await getWithdrawalDetailsForUri(ws, req.talerWithdrawUri);
     }
+
     case "getExchangeWithdrawalInfo": {
       const req = codecForGetExchangeWithdrawalInfo().decode(payload);
       return await getExchangeWithdrawalInfo(
@@ -1078,7 +1134,7 @@ async function dispatchRequestInternal(
         exchange: WALLET_EXCHANGE_PROTOCOL_VERSION,
         merchant: WALLET_MERCHANT_PROTOCOL_VERSION,
         bank: WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
-      }
+      };
       return version;
     }
   }
