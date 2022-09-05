@@ -91,8 +91,17 @@ install the wallet first. Then use the test runner from the
 taler-integrationtests package:
 
 ```shell
-cd packages/taler-integrationtests/
-./testrunner '*'
+# List available tests
+taler-wallet-cli testing list-integrationtests
+
+# Run all tests
+taler-wallet-cli testing run-integrationtests 
+
+# Run all tests matching pattern
+taler-wallet-cli testing run-integrationtests $GLOB
+
+$ Run all tests from a suite
+taler-wallet-cli testing run-integrationtests --suites=wallet
 ```
 
 The test runner accepts a bash glob pattern as parameter. Individual tests can
@@ -102,8 +111,7 @@ To check coverage, use nyc from the root of the repository and make sure that th
 from the source tree is executed, and not the globally installed one:
 
 ```
-PATH="$PWD/packages/taler-wallet-cli/bin:$PATH" \
-  nyc ./packages/taler-integrationtests/testrunner '*'
+nyc ./packages/taler-wallet-cli/bin/taler-wallet-cli '*'
 ```
 
 ## Anastasis Web UI
