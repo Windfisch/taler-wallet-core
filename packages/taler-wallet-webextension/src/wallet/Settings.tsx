@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { ExchangeListItem } from "@gnu-taler/taler-util";
+import { ExchangeListItem, WalletCoreVersion } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { Checkbox } from "../components/Checkbox.js";
 import { ErrorTalerOperation } from "../components/ErrorTalerOperation.js";
@@ -38,26 +38,39 @@ import { ToggleHandler } from "../mui/handlers.js";
 import { Pages } from "../NavigationBar.js";
 import { buildTermsOfServiceStatus } from "../utils/index.js";
 import * as wxApi from "../wxApi.js";
+import { platform } from "../platform/api.js";
+
+const GIT_HASH = typeof __GIT_HASH__ !== "undefined" ? __GIT_HASH__ : undefined;
 
 export function SettingsPage(): VNode {
   const permissionToggle = useExtendedPermissions();
   const { devMode, toggleDevMode } = useDevContext();
   const { name, update } = useBackupDeviceName();
+  const webex = platform.getWalletWebExVersion();
 
-  const exchangesHook = useAsyncAsHook(wxApi.listExchanges);
+  const exchangesHook = useAsyncAsHook(async () => {
+    const list = await wxApi.listExchanges();
+    const version = await wxApi.getVersion();
+    return { exchanges: list.exchanges, version };
+  });
+  const { exchanges, version } =
+    !exchangesHook || exchangesHook.hasError
+      ? { exchanges: [], version: undefined }
+      : exchangesHook.response;
 
   return (
     <SettingsView
-      knownExchanges={
-        !exchangesHook || exchangesHook.hasError
-          ? []
-          : exchangesHook.response.exchanges
-      }
+      knownExchanges={exchanges}
       deviceName={name}
       setDeviceName={update}
       permissionToggle={permissionToggle}
       developerMode={devMode}
       toggleDeveloperMode={toggleDevMode}
+      webexVersion={{
+        version: webex.version,
+        hash: GIT_HASH,
+      }}
+      coreVersion={version}
     />
   );
 }
@@ -69,14 +82,19 @@ export interface ViewProps {
   developerMode: boolean;
   toggleDeveloperMode: () => Promise<void>;
   knownExchanges: Array<ExchangeListItem>;
+  coreVersion: WalletCoreVersion | undefined;
+  webexVersion: {
+    version: string;
+    hash: string | undefined;
+  };
 }
-const VERSION = typeof __VERSION__ !== "undefined" ? __VERSION__ : "dev";
-const GIT_HASH = typeof __GIT_HASH__ !== "undefined" ? __GIT_HASH__ : undefined;
 
 export function SettingsView({
   knownExchanges,
   permissionToggle,
   developerMode,
+  coreVersion,
+  webexVersion,
   toggleDeveloperMode,
 }: ViewProps): VNode {
   const { i18n, lang, supportedLang, changeLanguage } = useTranslationContext();
@@ -216,15 +234,41 @@ export function SettingsView({
         <SubTitle>
           <i18n.Translate>Version</i18n.Translate>
         </SubTitle>
-        <Part
-          title={<i18n.Translate>Release</i18n.Translate>}
-          text={<span>{VERSION}</span>}
-        />
-        {GIT_HASH && (
+        {coreVersion && (
           <Part
-            title={<i18n.Translate>Hash</i18n.Translate>}
-            text={<span>{GIT_HASH}</span>}
+            title={<i18n.Translate>Wallet Core</i18n.Translate>}
+            text={
+              <span>
+                {coreVersion.version}{" "}
+                <JustInDevMode>{coreVersion.hash}</JustInDevMode>
+              </span>
+            }
           />
+        )}
+        <Part
+          title={<i18n.Translate>Web Extension</i18n.Translate>}
+          text={
+            <span>
+              {webexVersion.version}{" "}
+              <JustInDevMode>{webexVersion.hash}</JustInDevMode>
+            </span>
+          }
+        />
+        {coreVersion && (
+          <JustInDevMode>
+            <Part
+              title={<i18n.Translate>Exchange compatibility</i18n.Translate>}
+              text={<span>{coreVersion.exchange}</span>}
+            />
+            <Part
+              title={<i18n.Translate>Merchant compatibility</i18n.Translate>}
+              text={<span>{coreVersion.merchant}</span>}
+            />
+            <Part
+              title={<i18n.Translate>Bank compatibility</i18n.Translate>}
+              text={<span>{coreVersion.bank}</span>}
+            />
+          </JustInDevMode>
         )}
       </section>
     </Fragment>

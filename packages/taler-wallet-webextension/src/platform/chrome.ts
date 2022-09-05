@@ -31,7 +31,7 @@ const api: PlatformAPI = {
   isFirefox,
   findTalerUriInActiveTab,
   getPermissionsApi,
-  getWalletVersion,
+  getWalletWebExVersion,
   listenToWalletBackground,
   notifyWhenAppIsReady,
   openWalletPage,
@@ -338,7 +338,7 @@ interface WalletVersion {
   version: string;
 }
 
-function getWalletVersion(): WalletVersion {
+function getWalletWebExVersion(): WalletVersion {
   const manifestData = chrome.runtime.getManifest();
   return manifestData;
 }

@@ -71,7 +71,7 @@ const walletInit: OpenedPromise<void> = openPromise<void>();
 const logger = new Logger("wxBackend.ts");
 
 async function getDiagnostics(): Promise<WalletDiagnostics> {
-  const manifestData = platform.getWalletVersion();
+  const manifestData = platform.getWalletWebExVersion();
   const errors: string[] = [];
   let firefoxIdbProblem = false;
   let dbOutdated = false;

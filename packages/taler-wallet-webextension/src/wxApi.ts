@@ -65,6 +65,7 @@ import {
   SetWalletDeviceIdRequest,
   TransactionsResponse,
   WalletDiagnostics,
+  WalletCoreVersion,
   WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
 import {
@@ -77,7 +78,7 @@ import {
 } from "@gnu-taler/taler-wallet-core";
 import type { DepositGroupFees } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import type { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core/src/operations/withdraw";
-import { platform, MessageFromBackend } from "./platform/api.js";
+import { platform, MessageFromBackend, WalletWebExVersion } from "./platform/api.js";
 
 /**
  *
@@ -248,6 +249,9 @@ export function listKnownCurrencies(): Promise<ListOfKnownCurrencies> {
 
 export function listExchanges(): Promise<ExchangesListRespose> {
   return callBackend("listExchanges", {});
+}
+export function getVersion(): Promise<WalletCoreVersion> {
+  return callBackend("getVersion", {});
 }
 export function listKnownBankAccounts(
   currency?: string,

@@ -30,16 +30,32 @@ export default {
   },
 };
 
+const version = {
+  coreVersion: {
+    exchange: "12:0:0",
+    merchant: "2:0:1",
+    bank: "0:0:0",
+    hash: "d439c3e1bc743f2aa47de4457953dba6ecb0e20f",
+    version: "0.9.0-dev.1",
+  },
+  webexVersion: {
+    version: "0.9.0.13",
+    hash: "d439c3e1bc743f2aa47de4457953dba6ecb0e20f",
+  },
+};
+
 export const AllOff = createExample(TestedComponent, {
   deviceName: "this-is-the-device-name",
   permissionToggle: { value: false, button: {} },
   setDeviceName: () => Promise.resolve(),
+  ...version,
 });
 
 export const OneChecked = createExample(TestedComponent, {
   deviceName: "this-is-the-device-name",
   permissionToggle: { value: false, button: {} },
   setDeviceName: () => Promise.resolve(),
+  ...version,
 });
 
 export const WithOneExchange = createExample(TestedComponent, {
@@ -59,6 +75,7 @@ export const WithOneExchange = createExample(TestedComponent, {
       paytoUris: ["payto://x-taler-bank/bank.rpi.sebasjm.com/exchangeminator"],
     } as any, //TODO: complete with auditors, wireInfo and denominations
   ],
+  ...version,
 });
 
 export const WithExchangeInDifferentState = createExample(TestedComponent, {
@@ -99,4 +116,5 @@ export const WithExchangeInDifferentState = createExample(TestedComponent, {
       paytoUris: ["payto://x-taler-bank/bank.rpi.sebasjm.com/exchangeminator"],
     },
   ],
+  ...version,
 });

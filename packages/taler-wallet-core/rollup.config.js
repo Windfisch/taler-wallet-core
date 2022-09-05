@@ -5,6 +5,17 @@ import json from "@rollup/plugin-json";
 import builtins from "builtin-modules";
 import pkg from "./package.json";
 import sourcemaps from "rollup-plugin-sourcemaps";
+import replace from '@rollup/plugin-replace';
+import path from "path"
+import fs from "fs"
+
+const BASE = process.cwd()
+
+let GIT_ROOT = BASE
+while (!fs.existsSync(path.join(GIT_ROOT, '.git')) && GIT_ROOT !== '/') {
+  GIT_ROOT = path.join(GIT_ROOT, '../')
+}
+const GIT_HASH = GIT_ROOT === '/' ? undefined : git_hash()
 
 const nodeEntryPoint = {
   input: "lib/index.node.js",
@@ -21,6 +32,10 @@ const nodeEntryPoint = {
     }),
 
     sourcemaps(),
+    replace({
+      '__VERSION__': `"${pkg.version}"`,
+      '__GIT_HASH__': `"${GIT_HASH}"`,
+    }),
 
     commonjs({
       include: [/node_modules/, /dist/],
@@ -61,3 +76,12 @@ const browserEntryPoint = {
 };
 
 export default [nodeEntryPoint, browserEntryPoint];
+
+function git_hash() {
+  const rev = fs.readFileSync(path.join(GIT_ROOT, '.git', 'HEAD')).toString().trim().split(/.*[: ]/).slice(-1)[0];
+  if (rev.indexOf('/') === -1) {
+    return rev;
+  } else {
+    return fs.readFileSync(path.join(GIT_ROOT, '.git', rev)).toString().trim();
+  }
+}

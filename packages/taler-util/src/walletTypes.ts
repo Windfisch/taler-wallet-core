@@ -571,7 +571,13 @@ export interface DepositInfo {
 export interface ExchangesListRespose {
   exchanges: ExchangeListItem[];
 }
-
+export interface WalletCoreVersion {
+  hash: string | undefined;
+  version: string;
+  exchange: string;
+  merchant: string;
+  bank: string;
+}
 export interface KnownBankAccounts {
   accounts: { [payto: string]: PaytoUri };
 }

@@ -86,6 +86,7 @@ import {
   TalerErrorCode,
   URL,
   WalletNotification,
+  WalletCoreVersion,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import {
@@ -206,6 +207,7 @@ import {
 } from "./util/promiseUtils.js";
 import { DbAccess, GetReadWriteAccess } from "./util/query.js";
 import { TimerAPI, TimerGroup } from "./util/timer.js";
+import { WALLET_BANK_INTEGRATION_PROTOCOL_VERSION, WALLET_EXCHANGE_PROTOCOL_VERSION, WALLET_MERCHANT_PROTOCOL_VERSION } from "./versions.js";
 import { WalletCoreApiClient } from "./wallet-api-types.js";
 
 const builtinAuditors: AuditorTrustRecord[] = [
@@ -714,6 +716,11 @@ export async function getClientFromWalletState(
   return client;
 }
 
+declare const __VERSION__: string;
+declare const __GIT_HASH__: string;
+
+const VERSION = typeof __VERSION__ !== "undefined" ? __VERSION__ : "dev";
+const GIT_HASH = typeof __GIT_HASH__ !== "undefined" ? __GIT_HASH__ : undefined;
 /**
  * Implementation of the "wallet-core" API.
  */
@@ -1063,6 +1070,16 @@ async function dispatchRequestInternal(
       const req = codecForAcceptPeerPullPaymentRequest().decode(payload);
       await acceptPeerPullPayment(ws, req);
       return {};
+    }
+    case "getVersion": {
+      const version: WalletCoreVersion = {
+        hash: GIT_HASH,
+        version: VERSION,
+        exchange: WALLET_EXCHANGE_PROTOCOL_VERSION,
+        merchant: WALLET_MERCHANT_PROTOCOL_VERSION,
+        bank: WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
+      }
+      return version;
     }
   }
   throw TalerError.fromDetail(

@@ -46,7 +46,7 @@ export type MessageFromBackend = {
   type: NotificationType;
 };
 
-export interface WalletVersion {
+export interface WalletWebExVersion {
   version_name?: string | undefined;
   version: string;
 }
@@ -120,7 +120,7 @@ export interface PlatformAPI {
   /**
    * Get the wallet version from manifest
    */
-  getWalletVersion(): WalletVersion;
+  getWalletWebExVersion(): WalletWebExVersion;
 
   /**
    * Backend API

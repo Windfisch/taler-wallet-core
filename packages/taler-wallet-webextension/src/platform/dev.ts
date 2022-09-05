@@ -32,7 +32,7 @@ const api: PlatformAPI = {
     removeHostPermissions: async () => false,
     requestHostPermissions: async () => false,
   }),
-  getWalletVersion: () => ({
+  getWalletWebExVersion: () => ({
     version: "none",
   }),
   notifyWhenAppIsReady: (fn: () => void) => {
