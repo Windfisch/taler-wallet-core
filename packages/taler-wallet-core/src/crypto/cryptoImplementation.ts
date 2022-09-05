@@ -442,6 +442,7 @@ export interface SignPurseDepositsRequest {
     contribution: AmountString;
     denomPubHash: string;
     denomSig: UnblindedSignature;
+    ageCommitmentProof: AgeCommitmentProof | undefined;
   }[];
 }
 
@@ -1361,11 +1362,18 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
     const hExchangeBaseUrl = hash(stringToBytes(req.exchangeBaseUrl + "\0"));
     const deposits: PurseDeposit[] = [];
     for (const c of req.coins) {
+      let maybeAch: Uint8Array;
+      if (c.ageCommitmentProof) {
+        maybeAch = decodeCrock(
+          AgeRestriction.hashCommitment(c.ageCommitmentProof.commitment),
+        );
+      } else {
+        maybeAch = new Uint8Array(32);
+      }
       const sigBlob = buildSigPS(TalerSignaturePurpose.WALLET_PURSE_DEPOSIT)
         .put(amountToBuffer(Amounts.parseOrThrow(c.contribution)))
         .put(decodeCrock(c.denomPubHash))
-        // FIXME: use h_age_commitment here
-        .put(new Uint8Array(32))
+        .put(maybeAch)
         .put(decodeCrock(req.pursePub))
         .put(hExchangeBaseUrl)
         .build();

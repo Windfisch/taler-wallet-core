@@ -21,6 +21,7 @@ import {
   AbsoluteTime,
   AcceptPeerPullPaymentRequest,
   AcceptPeerPushPaymentRequest,
+  AgeCommitmentProof,
   AmountJson,
   AmountLike,
   Amounts,
@@ -89,6 +90,7 @@ export interface PeerCoinSelection {
     contribution: AmountString;
     denomPubHash: string;
     denomSig: UnblindedSignature;
+    ageCommitmentProof: AgeCommitmentProof | undefined;
   }[];
 
   /**
@@ -115,6 +117,8 @@ interface CoinInfo {
   denomPubHash: string;
 
   denomSig: UnblindedSignature;
+
+  ageCommitmentProof: AgeCommitmentProof | undefined;
 }
 
 export async function selectPeerCoins(
@@ -152,6 +156,7 @@ export async function selectPeerCoins(
         denomPubHash: denom.denomPubHash,
         coinPriv: coin.coinPriv,
         denomSig: coin.denomSig,
+        ageCommitmentProof: coin.ageCommitmentProof,
       });
     }
     if (coinInfos.length === 0) {
@@ -170,6 +175,7 @@ export async function selectPeerCoins(
       contribution: AmountString;
       denomPubHash: string;
       denomSig: UnblindedSignature;
+      ageCommitmentProof: AgeCommitmentProof | undefined;
     }[] = [];
     for (const coin of coinInfos) {
       if (Amounts.cmp(amountAcc, instructedAmount) >= 0) {
@@ -196,6 +202,7 @@ export async function selectPeerCoins(
         contribution: Amounts.stringify(contrib),
         denomPubHash: coin.denomPubHash,
         denomSig: coin.denomSig,
+        ageCommitmentProof: coin.ageCommitmentProof,
       });
     }
     continue;
@@ -257,6 +264,7 @@ export async function initiatePeerToPeerPush(
           coin.currentAmount,
           Amounts.parseOrThrow(c.contribution),
         ).amount;
+        coin.status = CoinStatus.Dormant;
         await tx.coins.put(coin);
       }
 
@@ -279,7 +287,7 @@ export async function initiatePeerToPeerPush(
 
       return sel;
     });
-  logger.info(`selected p2p coins: ${j2s(coinSelRes)}`);
+  logger.info(`selected p2p coins (push): ${j2s(coinSelRes)}`);
 
   if (!coinSelRes) {
     throw Error("insufficient balance");
@@ -592,6 +600,7 @@ export async function acceptPeerPullPayment(
           coin.currentAmount,
           Amounts.parseOrThrow(c.contribution),
         ).amount;
+        coin.status = CoinStatus.Dormant;
         await tx.coins.put(coin);
       }
 
@@ -608,7 +617,7 @@ export async function acceptPeerPullPayment(
 
       return sel;
     });
-  logger.info(`selected p2p coins: ${j2s(coinSelRes)}`);
+  logger.info(`selected p2p coins (pull): ${j2s(coinSelRes)}`);
 
   if (!coinSelRes) {
     throw Error("insufficient balance");
