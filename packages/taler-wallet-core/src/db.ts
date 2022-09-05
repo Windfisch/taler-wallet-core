@@ -361,14 +361,14 @@ export interface ExchangeDetailsRecord {
    * Terms of service text or undefined if not downloaded yet.
    *
    * This is just used as a cache of the last downloaded ToS.
-   * 
+   *
    * FIXME:  Put in separate object store!
    */
   termsOfServiceText: string | undefined;
 
   /**
    * content-type of the last downloaded termsOfServiceText.
-   * 
+   *
    * * FIXME:  Put in separate object store!
    */
   termsOfServiceContentType: string | undefined;
@@ -453,17 +453,6 @@ export interface ExchangeRecord {
    * the refresh check has been done.
    */
   nextRefreshCheck: TalerProtocolTimestamp;
-
-  /**
-   * Last error (if any) for fetching updated information about the
-   * exchange.
-   */
-  lastError?: TalerErrorDetail;
-
-  /**
-   * Retry status for fetching updated information about the exchange.
-   */
-  retryInfo?: RetryInfo;
 
   /**
    * Public key of the reserve that we're currently using for
@@ -734,24 +723,12 @@ export interface ProposalRecord {
    * Session ID we got when downloading the contract.
    */
   downloadSessionId?: string;
-
-  /**
-   * Retry info, even present when the operation isn't active to allow indexing
-   * on the next retry timestamp.
-   *
-   * FIXME: Clarify what we even retry.
-   */
-  retryInfo?: RetryInfo;
-
-  lastError: TalerErrorDetail | undefined;
 }
 
 /**
  * Status of a tip we got from a merchant.
  */
 export interface TipRecord {
-  lastError: TalerErrorDetail | undefined;
-
   /**
    * Has the user accepted the tip?  Only after the tip has been accepted coins
    * withdrawn from the tip may be used.
@@ -810,12 +787,6 @@ export interface TipRecord {
    * from the merchant.
    */
   pickedUpTimestamp: TalerProtocolTimestamp | undefined;
-
-  /**
-   * Retry info, even present when the operation isn't active to allow indexing
-   * on the next retry timestamp.
-   */
-  retryInfo: RetryInfo;
 }
 
 export enum RefreshCoinStatus {
@@ -837,16 +808,7 @@ export enum OperationStatus {
 export interface RefreshGroupRecord {
   operationStatus: OperationStatus;
 
-  /**
-   * Retry info, even present when the operation isn't active to allow indexing
-   * on the next retry timestamp.
-   *
-   * FIXME: No, this can be optional, indexing is still possible
-   */
-  retryInfo: RetryInfo;
-
-  lastError: TalerErrorDetail | undefined;
-
+  // FIXME: Put this into a different object store?
   lastErrorPerCoin: { [coinIndex: number]: TalerErrorDetail };
 
   /**
@@ -1117,6 +1079,8 @@ export interface PurchaseRecord {
   /**
    * Pending refunds for the purchase.  A refund is pending
    * when the merchant reports a transient error from the exchange.
+   * 
+   * FIXME: Put this into a separate object store?
    */
   refunds: { [refundKey: string]: WalletRefundItem };
 
@@ -1132,6 +1096,7 @@ export interface PurchaseRecord {
   lastSessionId: string | undefined;
 
   /**
+   * Do we still need to post the deposit permissions to the merchant?
    * Set for the first payment, or on re-plays.
    */
   paymentSubmitPending: boolean;
@@ -1141,22 +1106,6 @@ export interface PurchaseRecord {
    * of the payment?
    */
   refundQueryRequested: boolean;
-
-  abortStatus: AbortStatus;
-
-  payRetryInfo?: RetryInfo;
-
-  lastPayError: TalerErrorDetail | undefined;
-
-  /**
-   * Retry information for querying the refund status with the merchant.
-   */
-  refundStatusRetryInfo: RetryInfo;
-
-  /**
-   * Last error (or undefined) for querying the refund status with the merchant.
-   */
-  lastRefundStatusError: TalerErrorDetail | undefined;
 
   /**
    * Continue querying the refund status until this deadline has expired.
@@ -1174,6 +1123,11 @@ export interface PurchaseRecord {
    * an error where it doesn't make sense to retry.
    */
   payFrozen?: boolean;
+
+  /**
+   * FIXME: How does this interact with payFrozen?
+   */
+  abortStatus: AbortStatus;
 }
 
 export const WALLET_BACKUP_STATE_KEY = "walletBackupState";
@@ -1184,9 +1138,9 @@ export const WALLET_BACKUP_STATE_KEY = "walletBackupState";
  */
 export type ConfigRecord =
   | {
-    key: typeof WALLET_BACKUP_STATE_KEY;
-    value: WalletBackupConfState;
-  }
+      key: typeof WALLET_BACKUP_STATE_KEY;
+      value: WalletBackupConfState;
+    }
   | { key: "currencyDefaultsApplied"; value: boolean };
 
 export interface WalletBackupConfState {
@@ -1368,13 +1322,6 @@ export interface WithdrawalGroupRecord {
    * FIXME: Should this not also include a timestamp for more logical merging?
    */
   denomSelUid: string;
-
-  /**
-   * Retry info.
-   */
-  retryInfo?: RetryInfo;
-
-  lastError: TalerErrorDetail | undefined;
 }
 
 export interface BankWithdrawUriRecord {
@@ -1432,16 +1379,6 @@ export interface RecoupGroupRecord {
    * after all individual recoups are done.
    */
   scheduleRefreshCoins: string[];
-
-  /**
-   * Retry info.
-   */
-  retryInfo: RetryInfo;
-
-  /**
-   * Last error that occurred, if any.
-   */
-  lastError: TalerErrorDetail | undefined;
 }
 
 export enum BackupProviderStateTag {
@@ -1452,17 +1389,15 @@ export enum BackupProviderStateTag {
 
 export type BackupProviderState =
   | {
-    tag: BackupProviderStateTag.Provisional;
-  }
+      tag: BackupProviderStateTag.Provisional;
+    }
   | {
-    tag: BackupProviderStateTag.Ready;
-    nextBackupTimestamp: TalerProtocolTimestamp;
-  }
+      tag: BackupProviderStateTag.Ready;
+      nextBackupTimestamp: TalerProtocolTimestamp;
+    }
   | {
-    tag: BackupProviderStateTag.Retrying;
-    retryInfo: RetryInfo;
-    lastError?: TalerErrorDetail;
-  };
+      tag: BackupProviderStateTag.Retrying;
+    };
 
 export interface BackupProviderTerms {
   supportedProtocolVersion: string;
@@ -1573,13 +1508,6 @@ export interface DepositGroupRecord {
   timestampFinished: TalerProtocolTimestamp | undefined;
 
   operationStatus: OperationStatus;
-
-  lastError: TalerErrorDetail | undefined;
-
-  /**
-   * Retry info.
-   */
-  retryInfo?: RetryInfo;
 }
 
 /**
@@ -1749,6 +1677,60 @@ export interface ReserveRecord {
   reservePriv: string;
 }
 
+export interface OperationRetryRecord {
+  /**
+   * Unique identifier for the operation.  Typically of
+   * the format `${opType}-${opUniqueKey}`
+   */
+  id: string;
+
+  lastError?: TalerErrorDetail;
+
+  retryInfo: RetryInfo;
+}
+
+export enum OperationAttemptResultType {
+  Finished = "finished",
+  Pending = "pending",
+  Error = "error",
+  Longpoll = "longpoll",
+}
+
+// FIXME: not part of DB!
+export type OperationAttemptResult<TSuccess = unknown, TPending = unknown> =
+  | OperationAttemptFinishedResult<TSuccess>
+  | OperationAttemptErrorResult
+  | OperationAttemptLongpollResult
+  | OperationAttemptPendingResult<TPending>;
+
+export namespace OperationAttemptResult {
+  export function finishedEmpty(): OperationAttemptResult<unknown, unknown> {
+    return {
+      type: OperationAttemptResultType.Finished,
+      result: undefined,
+    };
+  }
+}
+
+export interface OperationAttemptFinishedResult<T> {
+  type: OperationAttemptResultType.Finished;
+  result: T;
+}
+
+export interface OperationAttemptPendingResult<T> {
+  type: OperationAttemptResultType.Pending;
+  result: T;
+}
+
+export interface OperationAttemptErrorResult {
+  type: OperationAttemptResultType.Error;
+  errorDetail: TalerErrorDetail;
+}
+
+export interface OperationAttemptLongpollResult {
+  type: OperationAttemptResultType.Longpoll;
+}
+
 export const WalletStoresV1 = {
   coins: describeStore(
     describeContents<CoinRecord>("coins", {
@@ -1911,6 +1893,12 @@ export const WalletStoresV1 = {
   ),
   tombstones: describeStore(
     describeContents<TombstoneRecord>("tombstones", { keyPath: "id" }),
+    {},
+  ),
+  operationRetries: describeStore(
+    describeContents<OperationRetryRecord>("operationRetries", {
+      keyPath: "id",
+    }),
     {},
   ),
   ghostDepositGroups: describeStore(

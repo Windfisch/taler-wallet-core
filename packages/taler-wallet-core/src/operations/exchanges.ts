@@ -53,6 +53,8 @@ import {
   DenominationVerificationStatus,
   ExchangeDetailsRecord,
   ExchangeRecord,
+  OperationAttemptResult,
+  OperationAttemptResultType,
   WalletStoresV1,
 } from "../db.js";
 import { TalerError } from "../errors.js";
@@ -64,7 +66,7 @@ import {
   readSuccessResponseTextOrThrow,
 } from "../util/http.js";
 import { DbAccess, GetReadOnlyAccess } from "../util/query.js";
-import { RetryInfo } from "../util/retries.js";
+import { RetryInfo, runOperationHandlerForResult } from "../util/retries.js";
 import { WALLET_EXCHANGE_PROTOCOL_VERSION } from "../versions.js";
 import { guardOperationException } from "./common.js";
 
@@ -100,51 +102,6 @@ function denominationRecordFromKeys(
     listIssueDate,
   };
   return d;
-}
-
-async function reportExchangeUpdateError(
-  ws: InternalWalletState,
-  baseUrl: string,
-  err: TalerErrorDetail,
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({ exchanges: x.exchanges }))
-    .runReadWrite(async (tx) => {
-      const exchange = await tx.exchanges.get(baseUrl);
-      if (!exchange) {
-        return;
-      }
-      if (!exchange.retryInfo) {
-        logger.reportBreak();
-      }
-      exchange.lastError = err;
-      await tx.exchanges.put(exchange);
-    });
-  ws.notify({ type: NotificationType.ExchangeOperationError, error: err });
-}
-
-async function setupExchangeUpdateRetry(
-  ws: InternalWalletState,
-  baseUrl: string,
-  options: {
-    reset: boolean;
-  },
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({ exchanges: x.exchanges }))
-    .runReadWrite(async (tx) => {
-      const exchange = await tx.exchanges.get(baseUrl);
-      if (!exchange) {
-        return;
-      }
-      if (options.reset) {
-        exchange.retryInfo = RetryInfo.reset();
-      } else {
-        exchange.retryInfo = RetryInfo.increment(exchange.retryInfo);
-      }
-      delete exchange.lastError;
-      await tx.exchanges.put(exchange);
-    });
 }
 
 export function getExchangeRequestTimeout(): Duration {
@@ -360,25 +317,6 @@ async function downloadExchangeWireInfo(
   return wireInfo;
 }
 
-export async function updateExchangeFromUrl(
-  ws: InternalWalletState,
-  baseUrl: string,
-  options: {
-    forceNow?: boolean;
-    cancellationToken?: CancellationToken;
-  } = {},
-): Promise<{
-  exchange: ExchangeRecord;
-  exchangeDetails: ExchangeDetailsRecord;
-}> {
-  const onOpErr = (e: TalerErrorDetail): Promise<void> =>
-    reportExchangeUpdateError(ws, baseUrl, e);
-  return await guardOperationException(
-    () => updateExchangeFromUrlImpl(ws, baseUrl, options),
-    onOpErr,
-  );
-}
-
 async function provideExchangeRecord(
   ws: InternalWalletState,
   baseUrl: string,
@@ -398,7 +336,6 @@ async function provideExchangeRecord(
         const r: ExchangeRecord = {
           permanent: true,
           baseUrl: baseUrl,
-          retryInfo: RetryInfo.reset(),
           detailsPointer: undefined,
           lastUpdate: undefined,
           nextUpdate: AbsoluteTime.toTimestamp(now),
@@ -530,12 +467,7 @@ export async function downloadTosFromAcceptedFormat(
   );
 }
 
-/**
- * Update or add exchange DB entry by fetching the /keys and /wire information.
- * Optionally link the reserve entry to the new or existing
- * exchange entry in then DB.
- */
-async function updateExchangeFromUrlImpl(
+export async function updateExchangeFromUrl(
   ws: InternalWalletState,
   baseUrl: string,
   options: {
@@ -546,9 +478,31 @@ async function updateExchangeFromUrlImpl(
   exchange: ExchangeRecord;
   exchangeDetails: ExchangeDetailsRecord;
 }> {
+  return runOperationHandlerForResult(
+    await updateExchangeFromUrlHandler(ws, baseUrl, options),
+  );
+}
+
+/**
+ * Update or add exchange DB entry by fetching the /keys and /wire information.
+ * Optionally link the reserve entry to the new or existing
+ * exchange entry in then DB.
+ */
+export async function updateExchangeFromUrlHandler(
+  ws: InternalWalletState,
+  baseUrl: string,
+  options: {
+    forceNow?: boolean;
+    cancellationToken?: CancellationToken;
+  } = {},
+): Promise<
+  OperationAttemptResult<{
+    exchange: ExchangeRecord;
+    exchangeDetails: ExchangeDetailsRecord;
+  }>
+> {
   const forceNow = options.forceNow ?? false;
   logger.info(`updating exchange info for ${baseUrl}, forced: ${forceNow}`);
-  await setupExchangeUpdateRetry(ws, baseUrl, { reset: forceNow });
 
   const now = AbsoluteTime.now();
   baseUrl = canonicalizeBaseUrl(baseUrl);
@@ -565,7 +519,10 @@ async function updateExchangeFromUrlImpl(
     !AbsoluteTime.isExpired(AbsoluteTime.fromTimestamp(exchange.nextUpdate))
   ) {
     logger.info("using existing exchange info");
-    return { exchange, exchangeDetails };
+    return {
+      type: OperationAttemptResultType.Finished,
+      result: { exchange, exchangeDetails },
+    };
   }
 
   logger.info("updating exchange /keys info");
@@ -649,8 +606,6 @@ async function updateExchangeFromUrlImpl(
         termsOfServiceAcceptedTimestamp: TalerProtocolTimestamp.now(),
       };
       // FIXME: only update if pointer got updated
-      delete r.lastError;
-      delete r.retryInfo;
       r.lastUpdate = TalerProtocolTimestamp.now();
       r.nextUpdate = keysInfo.expiry;
       // New denominations might be available.
@@ -771,8 +726,11 @@ async function updateExchangeFromUrlImpl(
     type: NotificationType.ExchangeAdded,
   });
   return {
-    exchange: updated.exchange,
-    exchangeDetails: updated.exchangeDetails,
+    type: OperationAttemptResultType.Finished,
+    result: {
+      exchange: updated.exchange,
+      exchangeDetails: updated.exchangeDetails,
+    },
   };
 }
 

@@ -100,6 +100,10 @@ export namespace Duration {
     return durationMin(d1, d2);
   }
 
+  export function multiply(d1: Duration, n: number): Duration {
+    return durationMul(d1, n);
+  }
+
   export function toIntegerYears(d: Duration): number {
     if (typeof d.d_ms !== "number") {
       throw Error("infinite duration");
@@ -356,7 +360,6 @@ export const codecForAbsoluteTime: Codec<AbsoluteTime> = {
     throw Error(`expected timestamp at ${renderContext(c)}`);
   },
 };
-
 
 export const codecForTimestamp: Codec<TalerProtocolTimestamp> = {
   decode(x: any, c?: Context): TalerProtocolTimestamp {

@@ -44,7 +44,12 @@ import {
   TrackDepositGroupResponse,
   URL,
 } from "@gnu-taler/taler-util";
-import { DepositGroupRecord, OperationStatus } from "../db.js";
+import {
+  DepositGroupRecord,
+  OperationAttemptErrorResult,
+  OperationAttemptResult,
+  OperationStatus,
+} from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { selectPayCoins } from "../util/coinSelection.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
@@ -67,61 +72,8 @@ import { getTotalRefreshCost } from "./refresh.js";
 const logger = new Logger("deposits.ts");
 
 /**
- * Set up the retry timeout for a deposit group.
+ * @see {processDepositGroup}
  */
-async function setupDepositGroupRetry(
-  ws: InternalWalletState,
-  depositGroupId: string,
-  options: {
-    resetRetry: boolean;
-  },
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({
-      depositGroups: x.depositGroups,
-    }))
-    .runReadWrite(async (tx) => {
-      const x = await tx.depositGroups.get(depositGroupId);
-      if (!x) {
-        return;
-      }
-      if (options.resetRetry) {
-        x.retryInfo = RetryInfo.reset();
-      } else {
-        x.retryInfo = RetryInfo.increment(x.retryInfo);
-      }
-      delete x.lastError;
-      await tx.depositGroups.put(x);
-    });
-}
-
-/**
- * Report an error that occurred while processing the deposit group.
- */
-async function reportDepositGroupError(
-  ws: InternalWalletState,
-  depositGroupId: string,
-  err: TalerErrorDetail,
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({ depositGroups: x.depositGroups }))
-    .runReadWrite(async (tx) => {
-      const r = await tx.depositGroups.get(depositGroupId);
-      if (!r) {
-        return;
-      }
-      if (!r.retryInfo) {
-        logger.error(
-          `deposit group record (${depositGroupId}) reports error, but no retry active`,
-        );
-        return;
-      }
-      r.lastError = err;
-      await tx.depositGroups.put(r);
-    });
-  ws.notify({ type: NotificationType.DepositOperationError, error: err });
-}
-
 export async function processDepositGroup(
   ws: InternalWalletState,
   depositGroupId: string,
@@ -129,29 +81,7 @@ export async function processDepositGroup(
     forceNow?: boolean;
     cancellationToken?: CancellationToken;
   } = {},
-): Promise<void> {
-  const onOpErr = (err: TalerErrorDetail): Promise<void> =>
-    reportDepositGroupError(ws, depositGroupId, err);
-  return await guardOperationException(
-    async () => await processDepositGroupImpl(ws, depositGroupId, options),
-    onOpErr,
-  );
-}
-
-/**
- * @see {processDepositGroup}
- */
-async function processDepositGroupImpl(
-  ws: InternalWalletState,
-  depositGroupId: string,
-  options: {
-    forceNow?: boolean;
-    cancellationToken?: CancellationToken;
-  } = {},
-): Promise<void> {
-  const forceNow = options.forceNow ?? false;
-  await setupDepositGroupRetry(ws, depositGroupId, { resetRetry: forceNow });
-
+): Promise<OperationAttemptResult> {
   const depositGroup = await ws.db
     .mktx((x) => ({
       depositGroups: x.depositGroups,
@@ -161,11 +91,11 @@ async function processDepositGroupImpl(
     });
   if (!depositGroup) {
     logger.warn(`deposit group ${depositGroupId} not found`);
-    return;
+    return OperationAttemptResult.finishedEmpty();
   }
   if (depositGroup.timestampFinished) {
     logger.trace(`deposit group ${depositGroupId} already finished`);
-    return;
+    return OperationAttemptResult.finishedEmpty();
   }
 
   const contractData = extractContractData(
@@ -240,11 +170,10 @@ async function processDepositGroupImpl(
       if (allDeposited) {
         dg.timestampFinished = TalerProtocolTimestamp.now();
         dg.operationStatus = OperationStatus.Finished;
-        delete dg.lastError;
-        delete dg.retryInfo;
         await tx.depositGroups.put(dg);
       }
     });
+  return OperationAttemptResult.finishedEmpty();
 }
 
 export async function trackDepositGroup(
@@ -338,9 +267,9 @@ export async function getFeeForDeposit(
 
   const csr: CoinSelectionRequest = {
     allowedAuditors: [],
-    allowedExchanges: Object.values(exchangeInfos).map(v => ({
+    allowedExchanges: Object.values(exchangeInfos).map((v) => ({
       exchangeBaseUrl: v.url,
-      exchangePub: v.master_pub
+      exchangePub: v.master_pub,
     })),
     amount: Amounts.parseOrThrow(req.amount),
     maxDepositFee: Amounts.parseOrThrow(req.amount),
@@ -382,7 +311,6 @@ export async function prepareDepositGroup(
     throw Error("invalid payto URI");
   }
   const amount = Amounts.parseOrThrow(req.amount);
-
 
   const exchangeInfos: { url: string; master_pub: string }[] = [];
 
@@ -473,7 +401,7 @@ export async function prepareDepositGroup(
     payCoinSel,
   );
 
-  return { totalDepositCost, effectiveDepositAmount }
+  return { totalDepositCost, effectiveDepositAmount };
 }
 export async function createDepositGroup(
   ws: InternalWalletState,
@@ -600,9 +528,7 @@ export async function createDepositGroup(
       payto_uri: req.depositPaytoUri,
       salt: wireSalt,
     },
-    retryInfo: RetryInfo.reset(),
     operationStatus: OperationStatus.Pending,
-    lastError: undefined,
   };
 
   await ws.db

@@ -274,7 +274,6 @@ export async function importBackup(
             protocolVersionRange: backupExchange.protocol_version_range,
           },
           permanent: true,
-          retryInfo: RetryInfo.reset(),
           lastUpdate: undefined,
           nextUpdate: TalerProtocolTimestamp.now(),
           nextRefreshCheck: TalerProtocolTimestamp.now(),
@@ -341,7 +340,7 @@ export async function importBackup(
           }
           const denomPubHash =
             cryptoComp.rsaDenomPubToHash[
-            backupDenomination.denom_pub.rsa_public_key
+              backupDenomination.denom_pub.rsa_public_key
             ];
           checkLogicInvariant(!!denomPubHash);
           const existingDenom = await tx.denominations.get([
@@ -425,7 +424,6 @@ export async function importBackup(
             }
           }
         }
-
 
         // FIXME: import reserves with new schema
 
@@ -517,7 +515,6 @@ export async function importBackup(
         //     }
         //   }
         // }
-
       }
 
       for (const backupProposal of backupBlob.proposals) {
@@ -560,7 +557,7 @@ export async function importBackup(
             const amount = Amounts.parseOrThrow(parsedContractTerms.amount);
             const contractTermsHash =
               cryptoComp.proposalIdToContractTermsHash[
-              backupProposal.proposal_id
+                backupProposal.proposal_id
               ];
             let maxWireFee: AmountJson;
             if (parsedContractTerms.max_wire_fee) {
@@ -611,7 +608,6 @@ export async function importBackup(
           }
           await tx.proposals.put({
             claimToken: backupProposal.claim_token,
-            lastError: undefined,
             merchantBaseUrl: backupProposal.merchant_base_url,
             timestamp: backupProposal.timestamp,
             orderId: backupProposal.order_id,
@@ -620,7 +616,6 @@ export async function importBackup(
               cryptoComp.proposalNoncePrivToPub[backupProposal.nonce_priv],
             proposalId: backupProposal.proposal_id,
             repurchaseProposalId: backupProposal.repurchase_proposal_id,
-            retryInfo: RetryInfo.reset(),
             download,
             proposalStatus,
           });
@@ -706,7 +701,7 @@ export async function importBackup(
           const amount = Amounts.parseOrThrow(parsedContractTerms.amount);
           const contractTermsHash =
             cryptoComp.proposalIdToContractTermsHash[
-            backupPurchase.proposal_id
+              backupPurchase.proposal_id
             ];
           let maxWireFee: AmountJson;
           if (parsedContractTerms.max_wire_fee) {
@@ -755,10 +750,7 @@ export async function importBackup(
             noncePriv: backupPurchase.nonce_priv,
             noncePub:
               cryptoComp.proposalNoncePrivToPub[backupPurchase.nonce_priv],
-            lastPayError: undefined,
             autoRefundDeadline: TalerProtocolTimestamp.never(),
-            refundStatusRetryInfo: RetryInfo.reset(),
-            lastRefundStatusError: undefined,
             refundAwaiting: undefined,
             timestampAccept: backupPurchase.timestamp_accept,
             timestampFirstSuccessfulPay:
@@ -767,8 +759,6 @@ export async function importBackup(
             merchantPaySig: backupPurchase.merchant_pay_sig,
             lastSessionId: undefined,
             abortStatus,
-            // FIXME!
-            payRetryInfo: RetryInfo.reset(),
             download,
             paymentSubmitPending:
               !backupPurchase.timestamp_first_successful_pay,
@@ -851,7 +841,6 @@ export async function importBackup(
             timestampCreated: backupRefreshGroup.timestamp_created,
             refreshGroupId: backupRefreshGroup.refresh_group_id,
             reason,
-            lastError: undefined,
             lastErrorPerCoin: {},
             oldCoinPubs: backupRefreshGroup.old_coins.map((x) => x.coin_pub),
             statusPerCoin: backupRefreshGroup.old_coins.map((x) =>
@@ -869,7 +858,6 @@ export async function importBackup(
               Amounts.parseOrThrow(x.estimated_output_amount),
             ),
             refreshSessionPerCoin,
-            retryInfo: RetryInfo.reset(),
           });
         }
       }
@@ -891,11 +879,9 @@ export async function importBackup(
             createdTimestamp: backupTip.timestamp_created,
             denomsSel,
             exchangeBaseUrl: backupTip.exchange_base_url,
-            lastError: undefined,
             merchantBaseUrl: backupTip.exchange_base_url,
             merchantTipId: backupTip.merchant_tip_id,
             pickedUpTimestamp: backupTip.timestamp_finished,
-            retryInfo: RetryInfo.reset(),
             secretSeed: backupTip.secret_seed,
             tipAmountEffective: denomsSel.totalCoinValue,
             tipAmountRaw: Amounts.parseOrThrow(backupTip.tip_amount_raw),

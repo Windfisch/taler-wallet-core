@@ -21,7 +21,29 @@
 /**
  * Imports.
  */
-import { AbsoluteTime, Duration } from "@gnu-taler/taler-util";
+import {
+  AbsoluteTime,
+  Duration,
+  TalerErrorDetail,
+} from "@gnu-taler/taler-util";
+import {
+  BackupProviderRecord,
+  DepositGroupRecord,
+  ExchangeRecord,
+  OperationAttemptResult,
+  OperationAttemptResultType,
+  ProposalRecord,
+  PurchaseRecord,
+  RecoupGroupRecord,
+  RefreshGroupRecord,
+  TipRecord,
+  WalletStoresV1,
+  WithdrawalGroupRecord,
+} from "../db.js";
+import { TalerError } from "../errors.js";
+import { InternalWalletState } from "../internal-wallet-state.js";
+import { PendingTaskType } from "../pending-types.js";
+import { GetReadWriteAccess } from "./query.js";
 
 export interface RetryInfo {
   firstTry: AbsoluteTime;
@@ -106,5 +128,97 @@ export namespace RetryInfo {
     r2.retryCounter++;
     updateTimeout(r2, p);
     return r2;
+  }
+}
+
+export namespace RetryTags {
+  export function forWithdrawal(wg: WithdrawalGroupRecord): string {
+    return `${PendingTaskType.Withdraw}:${wg.withdrawalGroupId}`;
+  }
+  export function forExchangeUpdate(exch: ExchangeRecord): string {
+    return `${PendingTaskType.ExchangeUpdate}:${exch.baseUrl}`;
+  }
+  export function forExchangeCheckRefresh(exch: ExchangeRecord): string {
+    return `${PendingTaskType.ExchangeCheckRefresh}:${exch.baseUrl}`;
+  }
+  export function forProposalClaim(pr: ProposalRecord): string {
+    return `${PendingTaskType.ProposalDownload}:${pr.proposalId}`;
+  }
+  export function forTipPickup(tipRecord: TipRecord): string {
+    return `${PendingTaskType.TipPickup}:${tipRecord.walletTipId}`;
+  }
+  export function forRefresh(refreshGroupRecord: RefreshGroupRecord): string {
+    return `${PendingTaskType.TipPickup}:${refreshGroupRecord.refreshGroupId}`;
+  }
+  export function forPay(purchaseRecord: PurchaseRecord): string {
+    return `${PendingTaskType.Pay}:${purchaseRecord.proposalId}`;
+  }
+  export function forRefundQuery(purchaseRecord: PurchaseRecord): string {
+    return `${PendingTaskType.RefundQuery}:${purchaseRecord.proposalId}`;
+  }
+  export function forRecoup(recoupRecord: RecoupGroupRecord): string {
+    return `${PendingTaskType.Recoup}:${recoupRecord.recoupGroupId}`;
+  }
+  export function forDeposit(depositRecord: DepositGroupRecord): string {
+    return `${PendingTaskType.Deposit}:${depositRecord.depositGroupId}`;
+  }
+  export function forBackup(backupRecord: BackupProviderRecord): string {
+    return `${PendingTaskType.Backup}:${backupRecord.baseUrl}`;
+  }
+}
+
+export async function scheduleRetryInTx(
+  ws: InternalWalletState,
+  tx: GetReadWriteAccess<{
+    operationRetries: typeof WalletStoresV1.operationRetries;
+  }>,
+  opId: string,
+  errorDetail?: TalerErrorDetail,
+): Promise<void> {
+  let retryRecord = await tx.operationRetries.get(opId);
+  if (!retryRecord) {
+    retryRecord = {
+      id: opId,
+      retryInfo: RetryInfo.reset(),
+    };
+    if (errorDetail) {
+      retryRecord.lastError = errorDetail;
+    }
+  } else {
+    retryRecord.retryInfo = RetryInfo.increment(retryRecord.retryInfo);
+    if (errorDetail) {
+      retryRecord.lastError = errorDetail;
+    } else {
+      delete retryRecord.lastError;
+    }
+  }
+  await tx.operationRetries.put(retryRecord);
+}
+
+export async function scheduleRetry(
+  ws: InternalWalletState,
+  opId: string,
+  errorDetail?: TalerErrorDetail,
+): Promise<void> {
+  return await ws.db
+    .mktx((x) => ({ operationRetries: x.operationRetries }))
+    .runReadWrite(async (tx) => {
+      scheduleRetryInTx(ws, tx, opId, errorDetail);
+    });
+}
+
+/**
+ * Run an operation handler, expect a success result and extract the success value.
+ */
+export async function runOperationHandlerForResult<T>(
+  res: OperationAttemptResult<T>,
+): Promise<T> {
+  switch (res.type) {
+    case OperationAttemptResultType.Finished:
+      return res.result;
+    case OperationAttemptResultType.Error:
+      throw TalerError.fromUncheckedDetail(res.errorDetail);
+    default:
+      throw Error(`unexpected operation result (${res.type})`);
   }
 }

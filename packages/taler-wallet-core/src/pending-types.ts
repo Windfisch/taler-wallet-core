@@ -30,14 +30,12 @@ import {
   AbsoluteTime,
   TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
-import { ReserveRecordStatus } from "./db.js";
 import { RetryInfo } from "./util/retries.js";
 
 export enum PendingTaskType {
   ExchangeUpdate = "exchange-update",
   ExchangeCheckRefresh = "exchange-check-refresh",
   Pay = "pay",
-  ProposalChoice = "proposal-choice",
   ProposalDownload = "proposal-download",
   Refresh = "refresh",
   Recoup = "recoup",
@@ -109,7 +107,7 @@ export interface PendingRefreshTask {
   lastError?: TalerErrorDetail;
   refreshGroupId: string;
   finishedPerCoin: boolean[];
-  retryInfo: RetryInfo;
+  retryInfo?: RetryInfo;
 }
 
 /**
@@ -123,17 +121,6 @@ export interface PendingProposalDownloadTask {
   orderId: string;
   lastError?: TalerErrorDetail;
   retryInfo?: RetryInfo;
-}
-
-/**
- * User must choose whether to accept or reject the merchant's
- * proposed contract terms.
- */
-export interface PendingProposalChoiceOperation {
-  type: PendingTaskType.ProposalChoice;
-  merchantBaseUrl: string;
-  proposalTimestamp: AbsoluteTime;
-  proposalId: string;
 }
 
 /**
@@ -165,14 +152,14 @@ export interface PendingPayTask {
 export interface PendingRefundQueryTask {
   type: PendingTaskType.RefundQuery;
   proposalId: string;
-  retryInfo: RetryInfo;
+  retryInfo?: RetryInfo;
   lastError: TalerErrorDetail | undefined;
 }
 
 export interface PendingRecoupTask {
   type: PendingTaskType.Recoup;
   recoupGroupId: string;
-  retryInfo: RetryInfo;
+  retryInfo?: RetryInfo;
   lastError: TalerErrorDetail | undefined;
 }
 
@@ -204,6 +191,11 @@ export interface PendingTaskInfoCommon {
    * Type of the pending operation.
    */
   type: PendingTaskType;
+
+  /**
+   * Unique identifier for the pending task.
+   */
+  id: string;
 
   /**
    * Set to true if the operation indicates that something is really in progress,

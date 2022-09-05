@@ -51,6 +51,7 @@ import {
 import {
   AbortStatus,
   CoinStatus,
+  OperationAttemptResult,
   PurchaseRecord,
   RefundReason,
   RefundState,
@@ -60,8 +61,6 @@ import { InternalWalletState } from "../internal-wallet-state.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { GetReadWriteAccess } from "../util/query.js";
-import { RetryInfo } from "../util/retries.js";
-import { guardOperationException } from "./common.js";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
 
 const logger = new Logger("refund.ts");
@@ -119,68 +118,6 @@ export async function prepareRefund(
       fulfillmentMessage_i18n: c.fulfillmentMessageI18n,
     },
   };
-}
-/**
- * Retry querying and applying refunds for an order later.
- */
-async function setupPurchaseQueryRefundRetry(
-  ws: InternalWalletState,
-  proposalId: string,
-  options: {
-    reset: boolean;
-  },
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({
-      purchases: x.purchases,
-    }))
-    .runReadWrite(async (tx) => {
-      const pr = await tx.purchases.get(proposalId);
-      if (!pr) {
-        return;
-      }
-      if (options.reset) {
-        pr.refundStatusRetryInfo = RetryInfo.reset();
-      } else {
-        pr.refundStatusRetryInfo = RetryInfo.increment(
-          pr.refundStatusRetryInfo,
-        );
-      }
-      await tx.purchases.put(pr);
-    });
-}
-
-/**
- * Report an error that happending when querying for a purchase's refund.
- */
-async function reportPurchaseQueryRefundError(
-  ws: InternalWalletState,
-  proposalId: string,
-  err: TalerErrorDetail,
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({
-      purchases: x.purchases,
-    }))
-    .runReadWrite(async (tx) => {
-      const pr = await tx.purchases.get(proposalId);
-      if (!pr) {
-        return;
-      }
-      if (!pr.refundStatusRetryInfo) {
-        logger.error(
-          "reported error on an inactive purchase (no refund status retry info)",
-        );
-      }
-      pr.lastRefundStatusError = err;
-      await tx.purchases.put(pr);
-    });
-  if (err) {
-    ws.notify({
-      type: NotificationType.RefundStatusOperationError,
-      error: err,
-    });
-  }
 }
 
 function getRefundKey(d: MerchantCoinRefundStatus): string {
@@ -492,8 +429,6 @@ async function acceptRefunds(
 
       if (queryDone) {
         p.timestampLastRefundStatus = now;
-        p.lastRefundStatusError = undefined;
-        p.refundStatusRetryInfo = RetryInfo.reset();
         p.refundQueryRequested = false;
         if (p.abortStatus === AbortStatus.AbortRefund) {
           p.abortStatus = AbortStatus.AbortFinished;
@@ -502,8 +437,6 @@ async function acceptRefunds(
       } else {
         // No error, but we need to try again!
         p.timestampLastRefundStatus = now;
-        p.refundStatusRetryInfo = RetryInfo.increment(p.refundStatusRetryInfo);
-        p.lastRefundStatusError = undefined;
         logger.trace("refund query not done");
       }
 
@@ -621,8 +554,6 @@ export async function applyRefundFromPurchaseId(
         return false;
       }
       p.refundQueryRequested = true;
-      p.lastRefundStatusError = undefined;
-      p.refundStatusRetryInfo = RetryInfo.reset();
       await tx.purchases.put(p);
       return true;
     });
@@ -631,7 +562,7 @@ export async function applyRefundFromPurchaseId(
     ws.notify({
       type: NotificationType.RefundStarted,
     });
-    await processPurchaseQueryRefundImpl(ws, proposalId, {
+    await processPurchaseQueryRefund(ws, proposalId, {
       forceNow: true,
       waitForAutoRefund: false,
     });
@@ -670,22 +601,6 @@ export async function applyRefundFromPurchaseId(
         purchase.download.contractData.fulfillmentMessageI18n,
     },
   };
-}
-
-export async function processPurchaseQueryRefund(
-  ws: InternalWalletState,
-  proposalId: string,
-  options: {
-    forceNow?: boolean;
-    waitForAutoRefund?: boolean;
-  } = {},
-): Promise<void> {
-  const onOpErr = (e: TalerErrorDetail): Promise<void> =>
-    reportPurchaseQueryRefundError(ws, proposalId, e);
-  await guardOperationException(
-    () => processPurchaseQueryRefundImpl(ws, proposalId, options),
-    onOpErr,
-  );
 }
 
 async function queryAndSaveAwaitingRefund(
@@ -742,17 +657,15 @@ async function queryAndSaveAwaitingRefund(
   return refundAwaiting;
 }
 
-async function processPurchaseQueryRefundImpl(
+export async function processPurchaseQueryRefund(
   ws: InternalWalletState,
   proposalId: string,
   options: {
     forceNow?: boolean;
     waitForAutoRefund?: boolean;
   } = {},
-): Promise<void> {
-  const forceNow = options.forceNow ?? false;
+): Promise<OperationAttemptResult> {
   const waitForAutoRefund = options.waitForAutoRefund ?? false;
-  await setupPurchaseQueryRefundRetry(ws, proposalId, { reset: forceNow });
   const purchase = await ws.db
     .mktx((x) => ({
       purchases: x.purchases,
@@ -761,11 +674,11 @@ async function processPurchaseQueryRefundImpl(
       return tx.purchases.get(proposalId);
     });
   if (!purchase) {
-    return;
+    return OperationAttemptResult.finishedEmpty();
   }
 
   if (!purchase.refundQueryRequested) {
-    return;
+    return OperationAttemptResult.finishedEmpty();
   }
 
   if (purchase.timestampFirstSuccessfulPay) {
@@ -780,7 +693,9 @@ async function processPurchaseQueryRefundImpl(
         purchase,
         waitForAutoRefund,
       );
-      if (Amounts.isZero(awaitingAmount)) return;
+      if (Amounts.isZero(awaitingAmount)) {
+        return OperationAttemptResult.finishedEmpty();
+      }
     }
 
     const requestUrl = new URL(
@@ -873,6 +788,7 @@ async function processPurchaseQueryRefundImpl(
     }
     await acceptRefunds(ws, proposalId, refunds, RefundReason.AbortRefund);
   }
+  return OperationAttemptResult.finishedEmpty();
 }
 
 export async function abortFailedPayWithRefund(
@@ -899,8 +815,6 @@ export async function abortFailedPayWithRefund(
       purchase.refundQueryRequested = true;
       purchase.paymentSubmitPending = false;
       purchase.abortStatus = AbortStatus.AbortRefund;
-      purchase.lastPayError = undefined;
-      purchase.payRetryInfo = RetryInfo.reset();
       await tx.purchases.put(purchase);
     });
   processPurchaseQueryRefund(ws, proposalId, {

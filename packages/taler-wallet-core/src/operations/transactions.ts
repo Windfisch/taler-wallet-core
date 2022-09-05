@@ -38,7 +38,6 @@ import { InternalWalletState } from "../internal-wallet-state.js";
 import {
   AbortStatus,
   RefundState,
-  ReserveRecordStatus,
   WalletRefundItem,
   WithdrawalRecordType,
 } from "../db.js";
@@ -48,6 +47,7 @@ import { processPurchasePay } from "./pay.js";
 import { processRefreshGroup } from "./refresh.js";
 import { processTip } from "./tip.js";
 import { processWithdrawalGroup } from "./withdraw.js";
+import { RetryTags } from "../util/retries.js";
 
 const logger = new Logger("taler-wallet-core:transactions.ts");
 
@@ -142,6 +142,7 @@ export async function getTransactions(
       tombstones: x.tombstones,
       peerPushPaymentInitiations: x.peerPushPaymentInitiations,
       peerPullPaymentIncoming: x.peerPullPaymentIncoming,
+      operationRetries: x.operationRetries,
     }))
     .runReadOnly(async (tx) => {
       tx.peerPushPaymentInitiations.iter().forEachAsync(async (pi) => {
@@ -220,6 +221,10 @@ export async function getTransactions(
         if (shouldSkipSearch(transactionsRequest, [])) {
           return;
         }
+
+        const opId = RetryTags.forWithdrawal(wsr);
+        const ort = await tx.operationRetries.get(opId);
+
         let withdrawalDetails: WithdrawalDetails;
         if (wsr.wgInfo.withdrawalType === WithdrawalRecordType.PeerPullCredit) {
           transactions.push({
@@ -242,7 +247,7 @@ export async function getTransactions(
               wsr.withdrawalGroupId,
             ),
             frozen: false,
-            ...(wsr.lastError ? { error: wsr.lastError } : {}),
+            ...(ort?.lastError ? { error: ort.lastError } : {}),
           });
           return;
         } else if (
@@ -264,7 +269,7 @@ export async function getTransactions(
               wsr.withdrawalGroupId,
             ),
             frozen: false,
-            ...(wsr.lastError ? { error: wsr.lastError } : {}),
+            ...(ort?.lastError ? { error: ort.lastError } : {}),
           });
           return;
         } else if (
@@ -310,7 +315,7 @@ export async function getTransactions(
             wsr.withdrawalGroupId,
           ),
           frozen: false,
-          ...(wsr.lastError ? { error: wsr.lastError } : {}),
+          ...(ort?.lastError ? { error: ort.lastError } : {}),
         });
       });
 
@@ -319,7 +324,8 @@ export async function getTransactions(
         if (shouldSkipCurrency(transactionsRequest, amount.currency)) {
           return;
         }
-
+        const opId = RetryTags.forDeposit(dg);
+        const retryRecord = await tx.operationRetries.get(opId);
         transactions.push({
           type: TransactionType.Deposit,
           amountRaw: Amounts.stringify(dg.effectiveDepositAmount),
@@ -333,7 +339,7 @@ export async function getTransactions(
             dg.depositGroupId,
           ),
           depositGroupId: dg.depositGroupId,
-          ...(dg.lastError ? { error: dg.lastError } : {}),
+          ...(retryRecord?.lastError ? { error: retryRecord.lastError } : {}),
         });
       });
 
@@ -456,7 +462,15 @@ export async function getTransactions(
           });
         }
 
-        const err = pr.lastPayError ?? pr.lastRefundStatusError;
+        const payOpId = RetryTags.forPay(pr);
+        const refundQueryOpId = RetryTags.forRefundQuery(pr);
+        const payRetryRecord = await tx.operationRetries.get(payOpId);
+        const refundQueryRetryRecord = await tx.operationRetries.get(
+          refundQueryOpId,
+        );
+
+        const err =
+          refundQueryRetryRecord?.lastError ?? payRetryRecord?.lastError;
         transactions.push({
           type: TransactionType.Payment,
           amountRaw: Amounts.stringify(contractData.amount),
@@ -495,6 +509,8 @@ export async function getTransactions(
         if (!tipRecord.acceptedTimestamp) {
           return;
         }
+        const opId = RetryTags.forTipPickup(tipRecord);
+        const retryRecord = await tx.operationRetries.get(opId);
         transactions.push({
           type: TransactionType.Tip,
           amountEffective: Amounts.stringify(tipRecord.tipAmountEffective),
@@ -507,10 +523,7 @@ export async function getTransactions(
             tipRecord.walletTipId,
           ),
           merchantBaseUrl: tipRecord.merchantBaseUrl,
-          // merchant: {
-          //   name: tipRecord.merchantBaseUrl,
-          // },
-          error: tipRecord.lastError,
+          error: retryRecord?.lastError,
         });
       });
     });
@@ -589,7 +602,11 @@ export async function deleteTransaction(
 ): Promise<void> {
   const [typeStr, ...rest] = transactionId.split(":");
   const type = typeStr as TransactionType;
-  if (type === TransactionType.Withdrawal || type === TransactionType.PeerPullCredit || type === TransactionType.PeerPushCredit) {
+  if (
+    type === TransactionType.Withdrawal ||
+    type === TransactionType.PeerPullCredit ||
+    type === TransactionType.PeerPushCredit
+  ) {
     const withdrawalGroupId = rest[0];
     await ws.db
       .mktx((x) => ({
@@ -714,7 +731,9 @@ export async function deleteTransaction(
         tombstones: x.tombstones,
       }))
       .runReadWrite(async (tx) => {
-        const debit = await tx.peerPullPaymentIncoming.get(peerPullPaymentIncomingId);
+        const debit = await tx.peerPullPaymentIncoming.get(
+          peerPullPaymentIncomingId,
+        );
         if (debit) {
           await tx.peerPullPaymentIncoming.delete(peerPullPaymentIncomingId);
           await tx.tombstones.put({
@@ -737,10 +756,7 @@ export async function deleteTransaction(
         if (debit) {
           await tx.peerPushPaymentInitiations.delete(pursePub);
           await tx.tombstones.put({
-            id: makeEventId(
-              TombstoneTag.DeletePeerPushDebit,
-              pursePub,
-            ),
+            id: makeEventId(TombstoneTag.DeletePeerPushDebit, pursePub),
           });
         }
       });

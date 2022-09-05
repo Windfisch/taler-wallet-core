@@ -90,6 +90,7 @@ import {
   ExchangeListItem,
   OperationMap,
   FeeDescription,
+  TalerErrorDetail,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import {
@@ -101,9 +102,15 @@ import {
   CoinSourceType,
   exportDb,
   importDb,
+  OperationAttemptResult,
+  OperationAttemptResultType,
   WalletStoresV1,
 } from "./db.js";
-import { getErrorDetailFromException, TalerError } from "./errors.js";
+import {
+  getErrorDetailFromException,
+  makeErrorDetail,
+  TalerError,
+} from "./errors.js";
 import { createDenominationTimeline } from "./index.browser.js";
 import {
   DenomInfo,
@@ -143,6 +150,7 @@ import {
   getExchangeRequestTimeout,
   getExchangeTrust,
   updateExchangeFromUrl,
+  updateExchangeFromUrlHandler,
   updateExchangeTermsOfService,
 } from "./operations/exchanges.js";
 import { getMerchantInfo } from "./operations/merchants.js";
@@ -162,7 +170,11 @@ import {
   initiatePeerToPeerPush,
 } from "./operations/peer-to-peer.js";
 import { getPendingOperations } from "./operations/pending.js";
-import { createRecoupGroup, processRecoupGroup } from "./operations/recoup.js";
+import {
+  createRecoupGroup,
+  processRecoupGroup,
+  processRecoupGroupHandler,
+} from "./operations/recoup.js";
 import {
   autoRefresh,
   createRefreshGroup,
@@ -210,6 +222,7 @@ import {
   openPromise,
 } from "./util/promiseUtils.js";
 import { DbAccess, GetReadWriteAccess } from "./util/query.js";
+import { RetryInfo, runOperationHandlerForResult } from "./util/retries.js";
 import { TimerAPI, TimerGroup } from "./util/timer.js";
 import {
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
@@ -237,7 +250,12 @@ async function getWithdrawalDetailsForAmount(
   amount: AmountJson,
   restrictAge: number | undefined,
 ): Promise<ManualWithdrawalDetails> {
-  const wi = await getExchangeWithdrawalInfo(ws, exchangeBaseUrl, amount, restrictAge);
+  const wi = await getExchangeWithdrawalInfo(
+    ws,
+    exchangeBaseUrl,
+    amount,
+    restrictAge,
+  );
   const paytoUris = wi.exchangeDetails.wireInfo.accounts.map(
     (x) => x.payto_uri,
   );
@@ -253,7 +271,107 @@ async function getWithdrawalDetailsForAmount(
 }
 
 /**
+ * Call the right handler for a pending operation without doing
+ * any special error handling.
+ */
+async function callOperationHandler(
+  ws: InternalWalletState,
+  pending: PendingTaskInfo,
+  forceNow = false,
+): Promise<OperationAttemptResult<unknown, unknown>> {
+  switch (pending.type) {
+    case PendingTaskType.ExchangeUpdate:
+      return await updateExchangeFromUrlHandler(ws, pending.exchangeBaseUrl, {
+        forceNow,
+      });
+    case PendingTaskType.Refresh:
+      return await processRefreshGroup(ws, pending.refreshGroupId, {
+        forceNow,
+      });
+    case PendingTaskType.Withdraw:
+      await processWithdrawalGroup(ws, pending.withdrawalGroupId, { forceNow });
+      break;
+    case PendingTaskType.ProposalDownload:
+      return await processDownloadProposal(ws, pending.proposalId, {
+        forceNow,
+      });
+    case PendingTaskType.TipPickup:
+      return await processTip(ws, pending.tipId, { forceNow });
+    case PendingTaskType.Pay:
+      return await processPurchasePay(ws, pending.proposalId, { forceNow });
+    case PendingTaskType.RefundQuery:
+      return await processPurchaseQueryRefund(ws, pending.proposalId, {
+        forceNow,
+      });
+    case PendingTaskType.Recoup:
+      return await processRecoupGroupHandler(ws, pending.recoupGroupId, {
+        forceNow,
+      });
+    case PendingTaskType.ExchangeCheckRefresh:
+      return await autoRefresh(ws, pending.exchangeBaseUrl);
+    case PendingTaskType.Deposit: {
+      return await processDepositGroup(ws, pending.depositGroupId, {
+        forceNow,
+      });
+    }
+    case PendingTaskType.Backup:
+      return await processBackupForProvider(ws, pending.backupProviderBaseUrl);
+    default:
+      return assertUnreachable(pending);
+  }
+  throw Error("not reached");
+}
+
+export async function storeOperationError(
+  ws: InternalWalletState,
+  pendingTaskId: string,
+  e: TalerErrorDetail,
+): Promise<void> {
+  await ws.db
+    .mktx((x) => ({ operationRetries: x.operationRetries }))
+    .runReadWrite(async (tx) => {
+      const retryRecord = await tx.operationRetries.get(pendingTaskId);
+      if (!retryRecord) {
+        return;
+      }
+      retryRecord.lastError = e;
+      retryRecord.retryInfo = RetryInfo.increment(retryRecord.retryInfo);
+      await tx.operationRetries.put(retryRecord);
+    });
+}
+
+export async function storeOperationFinished(
+  ws: InternalWalletState,
+  pendingTaskId: string,
+): Promise<void> {
+  await ws.db
+    .mktx((x) => ({ operationRetries: x.operationRetries }))
+    .runReadWrite(async (tx) => {
+      await tx.operationRetries.delete(pendingTaskId);
+    });
+}
+
+export async function storeOperationPending(
+  ws: InternalWalletState,
+  pendingTaskId: string,
+): Promise<void> {
+  await ws.db
+    .mktx((x) => ({ operationRetries: x.operationRetries }))
+    .runReadWrite(async (tx) => {
+      const retryRecord = await tx.operationRetries.get(pendingTaskId);
+      if (!retryRecord) {
+        return;
+      }
+      delete retryRecord.lastError;
+      retryRecord.retryInfo = RetryInfo.increment(retryRecord.retryInfo);
+      await tx.operationRetries.put(retryRecord);
+    });
+}
+
+/**
  * Execute one operation based on the pending operation info record.
+ *
+ * Store success/failure result in the database.
  */
 async function processOnePendingOperation(
   ws: InternalWalletState,
@@ -261,47 +379,45 @@ async function processOnePendingOperation(
   forceNow = false,
 ): Promise<void> {
   logger.trace(`running pending ${JSON.stringify(pending, undefined, 2)}`);
-  switch (pending.type) {
-    case PendingTaskType.ExchangeUpdate:
-      await updateExchangeFromUrl(ws, pending.exchangeBaseUrl, {
-        forceNow,
-      });
-      break;
-    case PendingTaskType.Refresh:
-      await processRefreshGroup(ws, pending.refreshGroupId, { forceNow });
-      break;
-    case PendingTaskType.Withdraw:
-      await processWithdrawalGroup(ws, pending.withdrawalGroupId, { forceNow });
-      break;
-    case PendingTaskType.ProposalDownload:
-      await processDownloadProposal(ws, pending.proposalId, { forceNow });
-      break;
-    case PendingTaskType.TipPickup:
-      await processTip(ws, pending.tipId, { forceNow });
-      break;
-    case PendingTaskType.Pay:
-      await processPurchasePay(ws, pending.proposalId, { forceNow });
-      break;
-    case PendingTaskType.RefundQuery:
-      await processPurchaseQueryRefund(ws, pending.proposalId, { forceNow });
-      break;
-    case PendingTaskType.Recoup:
-      await processRecoupGroup(ws, pending.recoupGroupId, { forceNow });
-      break;
-    case PendingTaskType.ExchangeCheckRefresh:
-      await autoRefresh(ws, pending.exchangeBaseUrl);
-      break;
-    case PendingTaskType.Deposit: {
-      await processDepositGroup(ws, pending.depositGroupId, {
-        forceNow,
-      });
-      break;
+  let maybeError: TalerErrorDetail | undefined;
+  try {
+    const resp = await callOperationHandler(ws, pending, forceNow);
+    switch (resp.type) {
+      case OperationAttemptResultType.Error:
+        return await storeOperationError(ws, pending.id, resp.errorDetail);
+      case OperationAttemptResultType.Finished:
+        return await storeOperationFinished(ws, pending.id);
+      case OperationAttemptResultType.Pending:
+        return await storeOperationPending(ws, pending.id);
+      case OperationAttemptResultType.Longpoll:
+        break;
     }
-    case PendingTaskType.Backup:
-      await processBackupForProvider(ws, pending.backupProviderBaseUrl);
-      break;
-    default:
-      assertUnreachable(pending);
+  } catch (e: any) {
+    if (
+      e instanceof TalerError &&
+      e.hasErrorCode(TalerErrorCode.WALLET_PENDING_OPERATION_FAILED)
+    ) {
+      logger.warn("operation processed resulted in error");
+      logger.warn(`error was: ${j2s(e.errorDetail)}`);
+      maybeError = e.errorDetail;
+    } else {
+      // This is a bug, as we expect pending operations to always
+      // do their own error handling and only throw WALLET_PENDING_OPERATION_FAILED
+      // or return something.
+      logger.error("Uncaught exception", e);
+      ws.notify({
+        type: NotificationType.InternalError,
+        message: "uncaught exception",
+        exception: e,
+      });
+      maybeError = makeErrorDetail(
+        TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
+        {
+          stack: e.stack,
+        },
+        `unexpected exception (message: ${e.message})`,
+      );
+    }
   }
 }
 
@@ -317,18 +433,7 @@ export async function runPending(
     if (!forceNow && !AbsoluteTime.isExpired(p.timestampDue)) {
       continue;
     }
-    try {
-      await processOnePendingOperation(ws, p, forceNow);
-    } catch (e) {
-      if (e instanceof TalerError) {
-        console.error(
-          "Pending operation failed:",
-          JSON.stringify(e.errorDetail, undefined, 2),
-        );
-      } else {
-        console.error(e);
-      }
-    }
+    await processOnePendingOperation(ws, p, forceNow);
   }
 }
 
@@ -420,27 +525,7 @@ async function runTaskLoop(
         if (!AbsoluteTime.isExpired(p.timestampDue)) {
           continue;
         }
-        try {
-          await processOnePendingOperation(ws, p);
-        } catch (e) {
-          if (
-            e instanceof TalerError &&
-            e.hasErrorCode(TalerErrorCode.WALLET_PENDING_OPERATION_FAILED)
-          ) {
-            logger.warn("operation processed resulted in error");
-            logger.warn(`error was: ${j2s(e.errorDetail)}`);
-          } else {
-            // This is a bug, as we expect pending operations to always
-            // do their own error handling and only throw WALLET_PENDING_OPERATION_FAILED
-            // or return something.
-            logger.error("Uncaught exception", e);
-            ws.notify({
-              type: NotificationType.InternalError,
-              message: "uncaught exception",
-              exception: e,
-            });
-          }
-        }
+        await processOnePendingOperation(ws, p);
         ws.notify({
           type: NotificationType.PendingOperationProcessed,
         });
@@ -629,7 +714,7 @@ async function getExchangeDetailedInfo(
       denominations: x.denominations,
     }))
     .runReadOnly(async (tx) => {
-      const ex = await tx.exchanges.get(exchangeBaseurl)
+      const ex = await tx.exchanges.get(exchangeBaseurl);
       const dp = ex?.detailsPointer;
       if (!dp) {
         return;
@@ -663,11 +748,11 @@ async function getExchangeDetailedInfo(
           wireInfo: exchangeDetails.wireInfo,
         },
         denominations: denominations,
-      }
+      };
     });
 
   if (!exchange) {
-    throw Error(`exchange with base url "${exchangeBaseurl}" not found`)
+    throw Error(`exchange with base url "${exchangeBaseurl}" not found`);
   }
 
   const feesDescription: OperationMap<FeeDescription[]> = {
@@ -809,6 +894,7 @@ declare const __GIT_HASH__: string;
 
 const VERSION = typeof __VERSION__ !== "undefined" ? __VERSION__ : "dev";
 const GIT_HASH = typeof __GIT_HASH__ !== "undefined" ? __GIT_HASH__ : undefined;
+
 /**
  * Implementation of the "wallet-core" API.
  */
@@ -908,7 +994,7 @@ async function dispatchRequestInternal(
         ws,
         req.exchangeBaseUrl,
         Amounts.parseOrThrow(req.amount),
-        req.restrictAge
+        req.restrictAge,
       );
     }
     case "getBalances": {
@@ -1106,7 +1192,7 @@ async function dispatchRequestInternal(
         ws,
         req.exchange,
         amount,
-        undefined
+        undefined,
       );
       const wres = await createManualWithdrawal(ws, {
         amount: amount,

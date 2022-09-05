@@ -18,29 +18,45 @@
  * Imports.
  */
 import {
-  Amounts, BlindedDenominationSignature,
-  codecForMerchantTipResponseV2, codecForTipPickupGetResponse, DenomKeyType, encodeCrock, getRandomBytes, j2s, Logger, NotificationType, parseTipUri, PrepareTipResult, TalerErrorCode, TalerErrorDetail, TalerProtocolTimestamp, TipPlanchetDetail, URL
+  Amounts,
+  BlindedDenominationSignature,
+  codecForMerchantTipResponseV2,
+  codecForTipPickupGetResponse,
+  DenomKeyType,
+  encodeCrock,
+  getRandomBytes,
+  j2s,
+  Logger,
+  parseTipUri,
+  PrepareTipResult,
+  TalerErrorCode,
+  TalerProtocolTimestamp,
+  TipPlanchetDetail,
+  URL,
 } from "@gnu-taler/taler-util";
 import { DerivedTipPlanchet } from "../crypto/cryptoTypes.js";
 import {
   CoinRecord,
   CoinSourceType,
-  CoinStatus, DenominationRecord, TipRecord
+  CoinStatus,
+  DenominationRecord,
+  OperationAttemptResult,
+  OperationAttemptResultType,
+  TipRecord,
 } from "../db.js";
 import { makeErrorDetail } from "../errors.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import {
   getHttpResponseErrorDetails,
-  readSuccessResponseJsonOrThrow
+  readSuccessResponseJsonOrThrow,
 } from "../util/http.js";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
-import {
-  RetryInfo
-} from "../util/retries.js";
-import { guardOperationException } from "./common.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
 import {
-  getCandidateWithdrawalDenoms, getExchangeWithdrawalInfo, selectWithdrawalDenominations, updateWithdrawalDenoms
+  getCandidateWithdrawalDenoms,
+  getExchangeWithdrawalInfo,
+  selectWithdrawalDenominations,
+  updateWithdrawalDenoms,
 } from "./withdraw.js";
 
 const logger = new Logger("operations/tip.ts");
@@ -114,8 +130,6 @@ export async function prepareTip(
       createdTimestamp: TalerProtocolTimestamp.now(),
       merchantTipId: res.merchantTipId,
       tipAmountEffective: selectedDenoms.totalCoinValue,
-      retryInfo: RetryInfo.reset(),
-      lastError: undefined,
       denomsSel: selectedDenoms,
       pickedUpTimestamp: undefined,
       secretSeed,
@@ -144,82 +158,13 @@ export async function prepareTip(
   return tipStatus;
 }
 
-async function reportTipError(
-  ws: InternalWalletState,
-  walletTipId: string,
-  err: TalerErrorDetail,
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({
-      tips: x.tips,
-    }))
-    .runReadWrite(async (tx) => {
-      const t = await tx.tips.get(walletTipId);
-      if (!t) {
-        return;
-      }
-      if (!t.retryInfo) {
-        logger.reportBreak();
-      }
-      t.lastError = err;
-      await tx.tips.put(t);
-    });
-  if (err) {
-    ws.notify({ type: NotificationType.TipOperationError, error: err });
-  }
-}
-
-async function setupTipRetry(
-  ws: InternalWalletState,
-  walletTipId: string,
-  options: {
-    reset: boolean;
-  },
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({
-      tips: x.tips,
-    }))
-    .runReadWrite(async (tx) => {
-      const t = await tx.tips.get(walletTipId);
-      if (!t) {
-        return;
-      }
-      if (options.reset) {
-        t.retryInfo = RetryInfo.reset();
-      } else {
-        t.retryInfo = RetryInfo.increment(t.retryInfo);
-      }
-      delete t.lastError;
-      await tx.tips.put(t);
-    });
-}
-
 export async function processTip(
   ws: InternalWalletState,
-  tipId: string,
-  options: {
-    forceNow?: boolean;
-  } = {},
-): Promise<void> {
-  const onOpErr = (e: TalerErrorDetail): Promise<void> =>
-    reportTipError(ws, tipId, e);
-  await guardOperationException(
-    () => processTipImpl(ws, tipId, options),
-    onOpErr,
-  );
-}
-
-async function processTipImpl(
-  ws: InternalWalletState,
   walletTipId: string,
   options: {
     forceNow?: boolean;
   } = {},
-): Promise<void> {
-  const forceNow = options.forceNow ?? false;
-  await setupTipRetry(ws, walletTipId, { reset: forceNow });
-
+): Promise<OperationAttemptResult> {
   const tipRecord = await ws.db
     .mktx((x) => ({
       tips: x.tips,
@@ -228,12 +173,18 @@ async function processTipImpl(
       return tx.tips.get(walletTipId);
     });
   if (!tipRecord) {
-    return;
+    return {
+      type: OperationAttemptResultType.Finished,
+      result: undefined,
+    };
   }
 
   if (tipRecord.pickedUpTimestamp) {
     logger.warn("tip already picked up");
-    return;
+    return {
+      type: OperationAttemptResultType.Finished,
+      result: undefined,
+    };
   }
 
   const denomsForWithdraw = tipRecord.denomsSel;
@@ -284,22 +235,21 @@ async function processTipImpl(
 
   logger.trace(`got tip response, status ${merchantResp.status}`);
 
-  // Hide transient errors.
+  // FIXME: Why do we do this?
   if (
-    tipRecord.retryInfo.retryCounter < 5 &&
-    ((merchantResp.status >= 500 && merchantResp.status <= 599) ||
-      merchantResp.status === 424)
+    (merchantResp.status >= 500 && merchantResp.status <= 599) ||
+    merchantResp.status === 424
   ) {
     logger.trace(`got transient tip error`);
     // FIXME: wrap in another error code that indicates a transient error
-    const err = makeErrorDetail(
-      TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
-      getHttpResponseErrorDetails(merchantResp),
-      "tip pickup failed (transient)",
-    );
-    await reportTipError(ws, tipRecord.walletTipId, err);
-    // FIXME: Maybe we want to signal to the caller that the transient error happened?
-    return;
+    return {
+      type: OperationAttemptResultType.Error,
+      errorDetail: makeErrorDetail(
+        TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
+        getHttpResponseErrorDetails(merchantResp),
+        "tip pickup failed (transient)",
+      ),
+    };
   }
   let blindedSigs: BlindedDenominationSignature[] = [];
 
@@ -344,21 +294,14 @@ async function processTipImpl(
     });
 
     if (!isValid) {
-      await ws.db
-        .mktx((x) => ({ tips: x.tips }))
-        .runReadWrite(async (tx) => {
-          const tipRecord = await tx.tips.get(walletTipId);
-          if (!tipRecord) {
-            return;
-          }
-          tipRecord.lastError = makeErrorDetail(
-            TalerErrorCode.WALLET_TIPPING_COIN_SIGNATURE_INVALID,
-            {},
-            "invalid signature from the exchange (via merchant tip) after unblinding",
-          );
-          await tx.tips.put(tipRecord);
-        });
-      return;
+      return {
+        type: OperationAttemptResultType.Error,
+        errorDetail: makeErrorDetail(
+          TalerErrorCode.WALLET_TIPPING_COIN_SIGNATURE_INVALID,
+          {},
+          "invalid signature from the exchange (via merchant tip) after unblinding",
+        ),
+      };
     }
 
     newCoinRecords.push({
@@ -395,13 +338,16 @@ async function processTipImpl(
         return;
       }
       tr.pickedUpTimestamp = TalerProtocolTimestamp.now();
-      tr.lastError = undefined;
-      tr.retryInfo = RetryInfo.reset();
       await tx.tips.put(tr);
       for (const cr of newCoinRecords) {
         await tx.coins.put(cr);
       }
     });
+
+  return {
+    type: OperationAttemptResultType.Finished,
+    result: undefined,
+  };
 }
 
 export async function acceptTip(

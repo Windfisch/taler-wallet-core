@@ -152,6 +152,19 @@ class ResultStream<T> {
     return arr;
   }
 
+  async mapAsync<R>(f: (x: T) => Promise<R>): Promise<R[]> {
+    const arr: R[] = [];
+    while (true) {
+      const x = await this.next();
+      if (x.hasValue) {
+        arr.push(await f(x.value));
+      } else {
+        break;
+      }
+    }
+    return arr;
+  }
+
   async forEachAsync(f: (x: T) => Promise<void>): Promise<void> {
     while (true) {
       const x = await this.next();
@@ -572,6 +585,26 @@ function makeWriteContext(
   return ctx;
 }
 
+const storeList = [
+  { name: "foo" as const, value: 1 as const },
+  { name: "bar" as const, value: 2 as const },
+];
+// => { foo: { value: 1}, bar: {value: 2} }
+
+type StoreList = typeof storeList;
+
+type StoreNames = StoreList[number] extends { name: infer I } ? I : never;
+
+type H = StoreList[number] & { name: "foo"};
+
+type Cleanup<V> = V extends { name: infer N, value: infer X} ? {name: N, value: X} : never;
+
+type G = {
+  [X in StoreNames]: {
+    X: StoreList[number] & { name: X };
+  };
+};
+
 /**
  * Type-safe access to a database with a particular store map.
  *
@@ -582,6 +615,14 @@ export class DbAccess<StoreMap> {
 
   idbHandle(): IDBDatabase {
     return this.db;
+  }
+
+  mktx2<
+    StoreNames extends keyof StoreMap,
+    Stores extends StoreMap[StoreNames],
+    StoreList extends Stores[],
+  >(namePicker: (x: StoreMap) => StoreList): StoreList {
+    return namePicker(this.stores);
   }
 
   mktx<

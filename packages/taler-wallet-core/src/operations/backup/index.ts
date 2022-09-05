@@ -25,9 +25,12 @@
  * Imports.
  */
 import {
-  AbsoluteTime, AmountString,
+  AbsoluteTime,
+  AmountString,
   BackupRecovery,
-  buildCodecForObject, bytesToString, canonicalizeBaseUrl,
+  buildCodecForObject,
+  bytesToString,
+  canonicalizeBaseUrl,
   canonicalJson,
   Codec,
   codecForAmountString,
@@ -36,19 +39,32 @@ import {
   codecForNumber,
   codecForString,
   codecOptional,
-  ConfirmPayResultType, decodeCrock, DenomKeyType,
-  durationFromSpec, eddsaGetPublic,
+  ConfirmPayResultType,
+  decodeCrock,
+  DenomKeyType,
+  durationFromSpec,
+  eddsaGetPublic,
   EddsaKeyPair,
   encodeCrock,
   getRandomBytes,
-  hash, hashDenomPub,
+  hash,
+  hashDenomPub,
   HttpStatusCode,
-  j2s, kdf, Logger,
+  j2s,
+  kdf,
+  Logger,
   notEmpty,
   PreparePayResultType,
   RecoveryLoadRequest,
-  RecoveryMergeStrategy, rsaBlind, secretbox, secretbox_open, stringToBytes, TalerErrorDetail, TalerProtocolTimestamp, URL,
-  WalletBackupContentV1
+  RecoveryMergeStrategy,
+  rsaBlind,
+  secretbox,
+  secretbox_open,
+  stringToBytes,
+  TalerErrorDetail,
+  TalerProtocolTimestamp,
+  URL,
+  WalletBackupContentV1,
 } from "@gnu-taler/taler-util";
 import { gunzipSync, gzipSync } from "fflate";
 import { TalerCryptoInterface } from "../../crypto/cryptoImplementation.js";
@@ -58,26 +74,28 @@ import {
   BackupProviderStateTag,
   BackupProviderTerms,
   ConfigRecord,
+  OperationAttemptResult,
+  OperationAttemptResultType,
   WalletBackupConfState,
   WalletStoresV1,
-  WALLET_BACKUP_STATE_KEY
+  WALLET_BACKUP_STATE_KEY,
 } from "../../db.js";
 import { InternalWalletState } from "../../internal-wallet-state.js";
 import {
   readSuccessResponseJsonOrThrow,
-  readTalerErrorResponse
+  readTalerErrorResponse,
 } from "../../util/http.js";
 import {
   checkDbInvariant,
-  checkLogicInvariant
+  checkLogicInvariant,
 } from "../../util/invariants.js";
 import { GetReadWriteAccess } from "../../util/query.js";
-import { RetryInfo } from "../../util/retries.js";
+import { RetryInfo, RetryTags, scheduleRetryInTx } from "../../util/retries.js";
 import { guardOperationException } from "../common.js";
 import {
   checkPaymentByProposalId,
   confirmPay,
-  preparePayForUri
+  preparePayForUri,
 } from "../pay.js";
 import { exportBackup } from "./export.js";
 import { BackupCryptoPrecomputedData, importBackup } from "./import.js";
@@ -244,8 +262,7 @@ function getNextBackupTimestamp(): TalerProtocolTimestamp {
 async function runBackupCycleForProvider(
   ws: InternalWalletState,
   args: BackupForProviderArgs,
-): Promise<void> {
-
+): Promise<OperationAttemptResult> {
   const provider = await ws.db
     .mktx((x) => ({ backupProviders: x.backupProviders }))
     .runReadOnly(async (tx) => {
@@ -254,7 +271,10 @@ async function runBackupCycleForProvider(
 
   if (!provider) {
     logger.warn("provider disappeared");
-    return;
+    return {
+      type: OperationAttemptResultType.Finished,
+      result: undefined,
+    };
   }
 
   const backupJson = await exportBackup(ws);
@@ -292,8 +312,8 @@ async function runBackupCycleForProvider(
       "if-none-match": newHash,
       ...(provider.lastBackupHash
         ? {
-          "if-match": provider.lastBackupHash,
-        }
+            "if-match": provider.lastBackupHash,
+          }
         : {}),
     },
   });
@@ -315,7 +335,10 @@ async function runBackupCycleForProvider(
         };
         await tx.backupProvider.put(prov);
       });
-    return;
+    return {
+      type: OperationAttemptResultType.Finished,
+      result: undefined,
+    };
   }
 
   if (resp.status === HttpStatusCode.PaymentRequired) {
@@ -344,7 +367,10 @@ async function runBackupCycleForProvider(
     // FIXME: check if the provider is overcharging us!
 
     await ws.db
-      .mktx((x) => ({ backupProviders: x.backupProviders }))
+      .mktx((x) => ({
+        backupProviders: x.backupProviders,
+        operationRetries: x.operationRetries,
+      }))
       .runReadWrite(async (tx) => {
         const provRec = await tx.backupProviders.get(provider.baseUrl);
         checkDbInvariant(!!provRec);
@@ -354,11 +380,8 @@ async function runBackupCycleForProvider(
         provRec.currentPaymentProposalId = proposalId;
         // FIXME: allocate error code for this!
         await tx.backupProviders.put(provRec);
-        await incrementBackupRetryInTx(
-          tx,
-          args.backupProviderBaseUrl,
-          undefined,
-        );
+        const opId = RetryTags.forBackup(provRec);
+        await scheduleRetryInTx(ws, tx, opId);
       });
 
     if (doPay) {
@@ -371,12 +394,15 @@ async function runBackupCycleForProvider(
     }
 
     if (args.retryAfterPayment) {
-      await runBackupCycleForProvider(ws, {
+      return await runBackupCycleForProvider(ws, {
         ...args,
         retryAfterPayment: false,
       });
     }
-    return;
+    return {
+      type: OperationAttemptResultType.Pending,
+      result: undefined,
+    };
   }
 
   if (resp.status === HttpStatusCode.NoContent) {
@@ -395,7 +421,10 @@ async function runBackupCycleForProvider(
         };
         await tx.backupProviders.put(prov);
       });
-    return;
+    return {
+      type: OperationAttemptResultType.Finished,
+      result: undefined,
+    };
   }
 
   if (resp.status === HttpStatusCode.Conflict) {
@@ -406,7 +435,10 @@ async function runBackupCycleForProvider(
     const cryptoData = await computeBackupCryptoData(ws.cryptoApi, blob);
     await importBackup(ws, blob, cryptoData);
     await ws.db
-      .mktx((x) => ({ backupProvider: x.backupProviders }))
+      .mktx((x) => ({
+        backupProvider: x.backupProviders,
+        operationRetries: x.operationRetries,
+      }))
       .runReadWrite(async (tx) => {
         const prov = await tx.backupProvider.get(provider.baseUrl);
         if (!prov) {
@@ -414,20 +446,21 @@ async function runBackupCycleForProvider(
           return;
         }
         prov.lastBackupHash = encodeCrock(hash(backupEnc));
-        // FIXME:  Allocate error code for this situation?
+        // FIXME: Allocate error code for this situation?
+        // FIXME: Add operation retry record!
+        const opId = RetryTags.forBackup(prov);
+        await scheduleRetryInTx(ws, tx, opId);
         prov.state = {
           tag: BackupProviderStateTag.Retrying,
-          retryInfo: RetryInfo.reset(),
         };
         await tx.backupProvider.put(prov);
       });
     logger.info("processed existing backup");
     // Now upload our own, merged backup.
-    await runBackupCycleForProvider(ws, {
+    return await runBackupCycleForProvider(ws, {
       ...args,
       retryAfterPayment: false,
     });
-    return;
   }
 
   // Some other response that we did not expect!
@@ -436,53 +469,16 @@ async function runBackupCycleForProvider(
 
   const err = await readTalerErrorResponse(resp);
   logger.error(`got error response from backup provider: ${j2s(err)}`);
-  await ws.db
-    .mktx((x) => ({ backupProviders: x.backupProviders }))
-    .runReadWrite(async (tx) => {
-      incrementBackupRetryInTx(tx, args.backupProviderBaseUrl, err);
-    });
-}
-
-async function incrementBackupRetryInTx(
-  tx: GetReadWriteAccess<{
-    backupProviders: typeof WalletStoresV1.backupProviders;
-  }>,
-  backupProviderBaseUrl: string,
-  err: TalerErrorDetail | undefined,
-): Promise<void> {
-  const pr = await tx.backupProviders.get(backupProviderBaseUrl);
-  if (!pr) {
-    return;
-  }
-  if (pr.state.tag === BackupProviderStateTag.Retrying) {
-    pr.state.lastError = err;
-    pr.state.retryInfo = RetryInfo.increment(pr.state.retryInfo);
-  } else if (pr.state.tag === BackupProviderStateTag.Ready) {
-    pr.state = {
-      tag: BackupProviderStateTag.Retrying,
-      retryInfo: RetryInfo.reset(),
-      lastError: err,
-    };
-  }
-  await tx.backupProviders.put(pr);
-}
-
-async function incrementBackupRetry(
-  ws: InternalWalletState,
-  backupProviderBaseUrl: string,
-  err: TalerErrorDetail | undefined,
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({ backupProviders: x.backupProviders }))
-    .runReadWrite(async (tx) =>
-      incrementBackupRetryInTx(tx, backupProviderBaseUrl, err),
-    );
+  return {
+    type: OperationAttemptResultType.Error,
+    errorDetail: err,
+  };
 }
 
 export async function processBackupForProvider(
   ws: InternalWalletState,
   backupProviderBaseUrl: string,
-): Promise<void> {
+): Promise<OperationAttemptResult> {
   const provider = await ws.db
     .mktx((x) => ({ backupProviders: x.backupProviders }))
     .runReadOnly(async (tx) => {
@@ -492,17 +488,10 @@ export async function processBackupForProvider(
     throw Error("unknown backup provider");
   }
 
-  const onOpErr = (err: TalerErrorDetail): Promise<void> =>
-    incrementBackupRetry(ws, backupProviderBaseUrl, err);
-
-  const run = async () => {
-    await runBackupCycleForProvider(ws, {
-      backupProviderBaseUrl: provider.baseUrl,
-      retryAfterPayment: true,
-    });
-  };
-
-  await guardOperationException(run, onOpErr);
+  return await runBackupCycleForProvider(ws, {
+    backupProviderBaseUrl: provider.baseUrl,
+    retryAfterPayment: true,
+  });
 }
 
 export interface RemoveBackupProviderRequest {
@@ -818,24 +807,34 @@ export async function getBackupInfo(
 ): Promise<BackupInfo> {
   const backupConfig = await provideBackupState(ws);
   const providerRecords = await ws.db
-    .mktx((x) => ({ backupProviders: x.backupProviders }))
+    .mktx((x) => ({
+      backupProviders: x.backupProviders,
+      operationRetries: x.operationRetries,
+    }))
     .runReadOnly(async (tx) => {
-      return await tx.backupProviders.iter().toArray();
+      return await tx.backupProviders.iter().mapAsync(async (bp) => {
+        const opId = RetryTags.forBackup(bp);
+        const retryRecord = await tx.operationRetries.get(opId);
+        return {
+          provider: bp,
+          retryRecord,
+        };
+      });
     });
   const providers: ProviderInfo[] = [];
   for (const x of providerRecords) {
     providers.push({
-      active: x.state.tag !== BackupProviderStateTag.Provisional,
-      syncProviderBaseUrl: x.baseUrl,
-      lastSuccessfulBackupTimestamp: x.lastBackupCycleTimestamp,
-      paymentProposalIds: x.paymentProposalIds,
+      active: x.provider.state.tag !== BackupProviderStateTag.Provisional,
+      syncProviderBaseUrl: x.provider.baseUrl,
+      lastSuccessfulBackupTimestamp: x.provider.lastBackupCycleTimestamp,
+      paymentProposalIds: x.provider.paymentProposalIds,
       lastError:
-        x.state.tag === BackupProviderStateTag.Retrying
-          ? x.state.lastError
+        x.provider.state.tag === BackupProviderStateTag.Retrying
+          ? x.retryRecord?.lastError
           : undefined,
-      paymentStatus: await getProviderPaymentInfo(ws, x),
-      terms: x.terms,
-      name: x.name,
+      paymentStatus: await getProviderPaymentInfo(ws, x.provider),
+      terms: x.provider.terms,
+      name: x.provider.name,
     });
   }
   return {

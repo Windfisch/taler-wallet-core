@@ -57,6 +57,8 @@ import {
   CoinSourceType,
   CoinStatus,
   DenominationRecord,
+  OperationAttemptResult,
+  OperationAttemptResultType,
   OperationStatus,
   RefreshCoinStatus,
   RefreshGroupRecord,
@@ -74,7 +76,7 @@ import {
 } from "../util/http.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { GetReadWriteAccess } from "../util/query.js";
-import { RetryInfo } from "../util/retries.js";
+import { RetryInfo, runOperationHandlerForResult } from "../util/retries.js";
 import { guardOperationException } from "./common.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
 import {
@@ -133,11 +135,9 @@ function updateGroupStatus(rg: RefreshGroupRecord): void {
   if (allDone) {
     if (anyFrozen) {
       rg.frozen = true;
-      rg.retryInfo = RetryInfo.reset();
     } else {
       rg.timestampFinished = AbsoluteTime.toTimestamp(AbsoluteTime.now());
       rg.operationStatus = OperationStatus.Finished;
-      rg.retryInfo = RetryInfo.reset();
     }
   }
 }
@@ -730,89 +730,14 @@ async function refreshReveal(
   });
 }
 
-async function setupRefreshRetry(
-  ws: InternalWalletState,
-  refreshGroupId: string,
-  options: {
-    reset: boolean;
-  },
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({
-      refreshGroups: x.refreshGroups,
-    }))
-    .runReadWrite(async (tx) => {
-      const r = await tx.refreshGroups.get(refreshGroupId);
-      if (!r) {
-        return;
-      }
-      if (options.reset) {
-        r.retryInfo = RetryInfo.reset();
-      } else {
-        r.retryInfo = RetryInfo.increment(r.retryInfo);
-      }
-      delete r.lastError;
-      await tx.refreshGroups.put(r);
-    });
-}
-
-async function reportRefreshError(
-  ws: InternalWalletState,
-  refreshGroupId: string,
-  err: TalerErrorDetail | undefined,
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({
-      refreshGroups: x.refreshGroups,
-    }))
-    .runReadWrite(async (tx) => {
-      const r = await tx.refreshGroups.get(refreshGroupId);
-      if (!r) {
-        return;
-      }
-      if (!r.retryInfo) {
-        logger.error(
-          "reported error for inactive refresh group (no retry info)",
-        );
-      }
-      r.lastError = err;
-      await tx.refreshGroups.put(r);
-    });
-  if (err) {
-    ws.notify({ type: NotificationType.RefreshOperationError, error: err });
-  }
-}
-
-/**
- * Actually process a refresh group that has been created.
- */
 export async function processRefreshGroup(
   ws: InternalWalletState,
   refreshGroupId: string,
   options: {
     forceNow?: boolean;
   } = {},
-): Promise<void> {
-  await ws.memoProcessRefresh.memo(refreshGroupId, async () => {
-    const onOpErr = (e: TalerErrorDetail): Promise<void> =>
-      reportRefreshError(ws, refreshGroupId, e);
-    return await guardOperationException(
-      async () => await processRefreshGroupImpl(ws, refreshGroupId, options),
-      onOpErr,
-    );
-  });
-}
-
-async function processRefreshGroupImpl(
-  ws: InternalWalletState,
-  refreshGroupId: string,
-  options: {
-    forceNow?: boolean;
-  } = {},
-): Promise<void> {
-  const forceNow = options.forceNow ?? false;
+): Promise<OperationAttemptResult> {
   logger.info(`processing refresh group ${refreshGroupId}`);
-  await setupRefreshRetry(ws, refreshGroupId, { reset: forceNow });
 
   const refreshGroup = await ws.db
     .mktx((x) => ({
@@ -822,10 +747,16 @@ async function processRefreshGroupImpl(
       return tx.refreshGroups.get(refreshGroupId);
     });
   if (!refreshGroup) {
-    return;
+    return {
+      type: OperationAttemptResultType.Finished,
+      result: undefined,
+    };
   }
   if (refreshGroup.timestampFinished) {
-    return;
+    return {
+      type: OperationAttemptResultType.Finished,
+      result: undefined,
+    };
   }
   // Process refresh sessions of the group in parallel.
   logger.trace("processing refresh sessions for old coins");
@@ -855,6 +786,10 @@ async function processRefreshGroupImpl(
     logger.warn("process refresh sessions got exception");
     logger.warn(`exception: ${e}`);
   }
+  return {
+    type: OperationAttemptResultType.Finished,
+    result: undefined,
+  };
 }
 
 async function processRefreshSession(
@@ -975,13 +910,11 @@ export async function createRefreshGroup(
     operationStatus: OperationStatus.Pending,
     timestampFinished: undefined,
     statusPerCoin: oldCoinPubs.map(() => RefreshCoinStatus.Pending),
-    lastError: undefined,
     lastErrorPerCoin: {},
     oldCoinPubs: oldCoinPubs.map((x) => x.coinPub),
     reason,
     refreshGroupId,
     refreshSessionPerCoin: oldCoinPubs.map(() => undefined),
-    retryInfo: RetryInfo.reset(),
     inputPerCoin,
     estimatedOutputPerCoin,
     timestampCreated: TalerProtocolTimestamp.now(),
@@ -1034,7 +967,7 @@ function getAutoRefreshExecuteThreshold(d: DenominationRecord): AbsoluteTime {
 export async function autoRefresh(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
-): Promise<void> {
+): Promise<OperationAttemptResult> {
   logger.info(`doing auto-refresh check for '${exchangeBaseUrl}'`);
 
   // We must make sure that the exchange is up-to-date so that
@@ -1109,4 +1042,5 @@ export async function autoRefresh(
       exchange.nextRefreshCheck = AbsoluteTime.toTimestamp(minCheckThreshold);
       await tx.exchanges.put(exchange);
     });
+  return OperationAttemptResult.finishedEmpty();
 }

@@ -42,6 +42,8 @@ import {
   CoinRecord,
   CoinSourceType,
   CoinStatus,
+  OperationAttemptResult,
+  OperationAttemptResultType,
   RecoupGroupRecord,
   RefreshCoinSource,
   ReserveRecordStatus,
@@ -52,63 +54,12 @@ import {
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { GetReadWriteAccess } from "../util/query.js";
-import { RetryInfo } from "../util/retries.js";
+import { RetryInfo, runOperationHandlerForResult } from "../util/retries.js";
 import { guardOperationException } from "./common.js";
 import { createRefreshGroup, processRefreshGroup } from "./refresh.js";
 import { internalCreateWithdrawalGroup } from "./withdraw.js";
 
 const logger = new Logger("operations/recoup.ts");
-
-async function setupRecoupRetry(
-  ws: InternalWalletState,
-  recoupGroupId: string,
-  options: {
-    reset: boolean;
-  },
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({
-      recoupGroups: x.recoupGroups,
-    }))
-    .runReadWrite(async (tx) => {
-      const r = await tx.recoupGroups.get(recoupGroupId);
-      if (!r) {
-        return;
-      }
-      if (options.reset) {
-        r.retryInfo = RetryInfo.reset();
-      } else {
-        r.retryInfo = RetryInfo.increment(r.retryInfo);
-      }
-      delete r.lastError;
-      await tx.recoupGroups.put(r);
-    });
-}
-
-async function reportRecoupError(
-  ws: InternalWalletState,
-  recoupGroupId: string,
-  err: TalerErrorDetail,
-): Promise<void> {
-  await ws.db
-    .mktx((x) => ({
-      recoupGroups: x.recoupGroups,
-    }))
-    .runReadWrite(async (tx) => {
-      const r = await tx.recoupGroups.get(recoupGroupId);
-      if (!r) {
-        return;
-      }
-      if (!r.retryInfo) {
-        logger.error(
-          "reporting error for inactive recoup group (no retry info)",
-        );
-      }
-      r.lastError = err;
-      await tx.recoupGroups.put(r);
-    });
-  ws.notify({ type: NotificationType.RecoupOperationError, error: err });
-}
 
 /**
  * Store a recoup group record in the database after marking
@@ -353,25 +304,20 @@ export async function processRecoupGroup(
     forceNow?: boolean;
   } = {},
 ): Promise<void> {
-  await ws.memoProcessRecoup.memo(recoupGroupId, async () => {
-    const onOpErr = (e: TalerErrorDetail): Promise<void> =>
-      reportRecoupError(ws, recoupGroupId, e);
-    return await guardOperationException(
-      async () => await processRecoupGroupImpl(ws, recoupGroupId, options),
-      onOpErr,
-    );
-  });
+  await runOperationHandlerForResult(
+    await processRecoupGroupHandler(ws, recoupGroupId, options),
+  );
+  return;
 }
 
-async function processRecoupGroupImpl(
+export async function processRecoupGroupHandler(
   ws: InternalWalletState,
   recoupGroupId: string,
   options: {
     forceNow?: boolean;
   } = {},
-): Promise<void> {
+): Promise<OperationAttemptResult> {
   const forceNow = options.forceNow ?? false;
-  await setupRecoupRetry(ws, recoupGroupId, { reset: forceNow });
   let recoupGroup = await ws.db
     .mktx((x) => ({
       recoupGroups: x.recoupGroups,
@@ -380,11 +326,11 @@ async function processRecoupGroupImpl(
       return tx.recoupGroups.get(recoupGroupId);
     });
   if (!recoupGroup) {
-    return;
+    return OperationAttemptResult.finishedEmpty();
   }
   if (recoupGroup.timestampFinished) {
     logger.trace("recoup group finished");
-    return;
+    return OperationAttemptResult.finishedEmpty();
   }
   const ps = recoupGroup.coinPubs.map(async (x, i) => {
     try {
@@ -404,12 +350,12 @@ async function processRecoupGroupImpl(
       return tx.recoupGroups.get(recoupGroupId);
     });
   if (!recoupGroup) {
-    return;
+    return OperationAttemptResult.finishedEmpty();
   }
 
   for (const b of recoupGroup.recoupFinishedPerCoin) {
     if (!b) {
-      return;
+      return OperationAttemptResult.finishedEmpty();
     }
   }
 
@@ -480,8 +426,6 @@ async function processRecoupGroupImpl(
         return;
       }
       rg2.timestampFinished = TalerProtocolTimestamp.now();
-      rg2.retryInfo = RetryInfo.reset();
-      rg2.lastError = undefined;
       if (rg2.scheduleRefreshCoins.length > 0) {
         const refreshGroupId = await createRefreshGroup(
           ws,
@@ -495,6 +439,7 @@ async function processRecoupGroupImpl(
       }
       await tx.recoupGroups.put(rg2);
     });
+  return OperationAttemptResult.finishedEmpty();
 }
 
 export async function createRecoupGroup(
@@ -514,10 +459,8 @@ export async function createRecoupGroup(
     recoupGroupId,
     exchangeBaseUrl: exchangeBaseUrl,
     coinPubs: coinPubs,
-    lastError: undefined,
     timestampFinished: undefined,
     timestampStarted: TalerProtocolTimestamp.now(),
-    retryInfo: RetryInfo.reset(),
     recoupFinishedPerCoin: coinPubs.map(() => false),
     // Will be populated later
     oldAmountPerCoin: [],

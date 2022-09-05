@@ -32,7 +32,12 @@ import {
   codecForAmountJson,
   codecForAmountString,
 } from "./amounts.js";
-import { AbsoluteTime, codecForAbsoluteTime, codecForTimestamp, TalerProtocolTimestamp } from "./time.js";
+import {
+  AbsoluteTime,
+  codecForAbsoluteTime,
+  codecForTimestamp,
+  TalerProtocolTimestamp,
+} from "./time.js";
 import {
   buildCodecForObject,
   codecForString,
@@ -797,46 +802,43 @@ const codecForExchangeTos = (): Codec<ExchangeTos> =>
     .property("content", codecOptional(codecForString()))
     .build("ExchangeTos");
 
-export const codecForFeeDescriptionPair =
-  (): Codec<FeeDescriptionPair> =>
-    buildCodecForObject<FeeDescriptionPair>()
-      .property("value", codecForAmountJson())
-      .property("from", codecForAbsoluteTime)
-      .property("until", codecForAbsoluteTime)
-      .property("left", codecOptional(codecForAmountJson()))
-      .property("right", codecOptional(codecForAmountJson()))
-      .build("FeeDescriptionPair");
+export const codecForFeeDescriptionPair = (): Codec<FeeDescriptionPair> =>
+  buildCodecForObject<FeeDescriptionPair>()
+    .property("value", codecForAmountJson())
+    .property("from", codecForAbsoluteTime)
+    .property("until", codecForAbsoluteTime)
+    .property("left", codecOptional(codecForAmountJson()))
+    .property("right", codecOptional(codecForAmountJson()))
+    .build("FeeDescriptionPair");
 
-export const codecForFeeDescription =
-  (): Codec<FeeDescription> =>
-    buildCodecForObject<FeeDescription>()
-      .property("value", codecForAmountJson())
-      .property("from", codecForAbsoluteTime)
-      .property("until", codecForAbsoluteTime)
-      .property("fee", codecOptional(codecForAmountJson()))
-      .build("FeeDescription");
+export const codecForFeeDescription = (): Codec<FeeDescription> =>
+  buildCodecForObject<FeeDescription>()
+    .property("value", codecForAmountJson())
+    .property("from", codecForAbsoluteTime)
+    .property("until", codecForAbsoluteTime)
+    .property("fee", codecOptional(codecForAmountJson()))
+    .build("FeeDescription");
 
+export const codecForFeesByOperations = (): Codec<
+  OperationMap<FeeDescription[]>
+> =>
+  buildCodecForObject<OperationMap<FeeDescription[]>>()
+    .property("deposit", codecForList(codecForFeeDescription()))
+    .property("withdraw", codecForList(codecForFeeDescription()))
+    .property("refresh", codecForList(codecForFeeDescription()))
+    .property("refund", codecForList(codecForFeeDescription()))
+    .build("FeesByOperations");
 
-export const codecForFeesByOperations =
-  (): Codec<OperationMap<FeeDescription[]>> =>
-    buildCodecForObject<OperationMap<FeeDescription[]>>()
-      .property("deposit", codecForList(codecForFeeDescription()))
-      .property("withdraw", codecForList(codecForFeeDescription()))
-      .property("refresh", codecForList(codecForFeeDescription()))
-      .property("refund", codecForList(codecForFeeDescription()))
-      .build("FeesByOperations");
-
-export const codecForExchangeFullDetails =
-  (): Codec<ExchangeFullDetails> =>
-    buildCodecForObject<ExchangeFullDetails>()
-      .property("currency", codecForString())
-      .property("exchangeBaseUrl", codecForString())
-      .property("paytoUris", codecForList(codecForString()))
-      .property("tos", codecForExchangeTos())
-      .property("auditors", codecForList(codecForExchangeAuditor()))
-      .property("wireInfo", codecForWireInfo())
-      .property("feesDescription", codecForFeesByOperations())
-      .build("ExchangeFullDetails");
+export const codecForExchangeFullDetails = (): Codec<ExchangeFullDetails> =>
+  buildCodecForObject<ExchangeFullDetails>()
+    .property("currency", codecForString())
+    .property("exchangeBaseUrl", codecForString())
+    .property("paytoUris", codecForList(codecForString()))
+    .property("tos", codecForExchangeTos())
+    .property("auditors", codecForList(codecForExchangeAuditor()))
+    .property("wireInfo", codecForWireInfo())
+    .property("feesDescription", codecForFeesByOperations())
+    .build("ExchangeFullDetails");
 
 export const codecForExchangeListItem = (): Codec<ExchangeListItem> =>
   buildCodecForObject<ExchangeListItem>()
