@@ -124,7 +124,11 @@ export async function createSimpleTestkudosEnvironment(
     exchange.enableAgeRestrictions(ageMaskSpec);
     // Enable age restriction for all coins.
     exchange.addCoinConfigList(
-      coinConfig.map((x) => ({ ...x, ageRestricted: true })),
+      coinConfig.map((x) => ({
+        ...x,
+        name: `${x.name}-age`,
+        ageRestricted: true,
+      })),
     );
     // For mixed age restrictions, we also offer coins without age restrictions
     if (opts.mixedAgeRestriction) {
