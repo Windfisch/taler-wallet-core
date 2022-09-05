@@ -25,7 +25,7 @@ import {
   shouldLingerInTest,
   TestRunResult,
 } from "../harness/harness.js";
-import { runAgeRestrictionsTest } from "./test-age-restrictions.js";
+import { runAgeRestrictionsMerchantTest } from "./test-age-restrictions-merchant.js";
 import { runBankApiTest } from "./test-bank-api.js";
 import { runClaimLoopTest } from "./test-claim-loop.js";
 import { runClauseSchnorrTest } from "./test-clause-schnorr.js";
@@ -90,6 +90,7 @@ import { runWithdrawalAbortBankTest } from "./test-withdrawal-abort-bank.js";
 import { runWithdrawalBankIntegratedTest } from "./test-withdrawal-bank-integrated.js";
 import { runWithdrawalFakebankTest } from "./test-withdrawal-fakebank.js";
 import { runTestWithdrawalManualTest } from "./test-withdrawal-manual.js";
+import { runAgeRestrictionsPeerTest } from "./test-age-restrictions-peer.js";
 
 /**
  * Test runner.
@@ -106,7 +107,8 @@ interface TestMainFunction {
 }
 
 const allTests: TestMainFunction[] = [
-  runAgeRestrictionsTest,
+  runAgeRestrictionsMerchantTest,
+  runAgeRestrictionsPeerTest,
   runBankApiTest,
   runClaimLoopTest,
   runClauseSchnorrTest,

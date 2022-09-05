@@ -17,6 +17,7 @@
 /**
  * Imports.
  */
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { defaultCoinConfig } from "../harness/denomStructures.js";
 import { GlobalTestState, WalletCli } from "../harness/harness.js";
 import {
@@ -28,17 +29,21 @@ import {
 /**
  * Run test for basic, bank-integrated withdrawal and payment.
  */
-export async function runAgeRestrictionsTest(t: GlobalTestState) {
+export async function runAgeRestrictionsPeerTest(t: GlobalTestState) {
   // Set up test environment
 
-  const { wallet: walletOne, bank, exchange, merchant } =
-    await createSimpleTestkudosEnvironment(
-      t,
-      defaultCoinConfig.map((x) => x("TESTKUDOS")),
-      {
-        ageMaskSpec: "8:10:12:14:16:18:21",
-      },
-    );
+  const {
+    wallet: walletOne,
+    bank,
+    exchange,
+    merchant,
+  } = await createSimpleTestkudosEnvironment(
+    t,
+    defaultCoinConfig.map((x) => x("TESTKUDOS")),
+    {
+      ageMaskSpec: "8:10:12:14:16:18:21",
+    },
+  );
 
   const walletTwo = new WalletCli(t, "walletTwo");
   const walletThree = new WalletCli(t, "walletThree");
@@ -61,52 +66,15 @@ export async function runAgeRestrictionsTest(t: GlobalTestState) {
       minimum_age: 9,
     };
 
-    await makeTestPayment(t, { wallet, merchant, order });
-    await wallet.runUntilDone();
-  }
-
-  {
-    const wallet = walletTwo;
-
-    await withdrawViaBank(t, {
-      wallet,
-      bank,
-      exchange,
-      amount: "TESTKUDOS:20",
-      restrictAge: 13,
+    await wallet.client.call(WalletApiOperation.InitiatePeerPushPayment, {
+      amount: "TESTKUDOS:1",
+      partialContractTerms: {
+        summary: "Hello, World",
+      },
     });
 
-    const order = {
-      summary: "Buy me!",
-      amount: "TESTKUDOS:5",
-      fulfillment_url: "taler://fulfillment-success/thx",
-    };
-
-    await makeTestPayment(t, { wallet, merchant, order });
     await wallet.runUntilDone();
   }
-
-  {
-    const wallet = walletThree;
-
-    await withdrawViaBank(t, {
-      wallet,
-      bank,
-      exchange,
-      amount: "TESTKUDOS:20",
-    });
-
-    const order = {
-      summary: "Buy me!",
-      amount: "TESTKUDOS:5",
-      fulfillment_url: "taler://fulfillment-success/thx",
-      minimum_age: 9,
-    };
-
-    await makeTestPayment(t, { wallet, merchant, order });
-    await wallet.runUntilDone();
-  }
-
 }
 
-runAgeRestrictionsTest.suites = ["wallet"];
+runAgeRestrictionsPeerTest.suites = ["wallet"];
