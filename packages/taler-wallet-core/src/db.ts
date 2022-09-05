@@ -361,11 +361,15 @@ export interface ExchangeDetailsRecord {
    * Terms of service text or undefined if not downloaded yet.
    *
    * This is just used as a cache of the last downloaded ToS.
+   * 
+   * FIXME:  Put in separate object store!
    */
   termsOfServiceText: string | undefined;
 
   /**
    * content-type of the last downloaded termsOfServiceText.
+   * 
+   * * FIXME:  Put in separate object store!
    */
   termsOfServiceContentType: string | undefined;
 

@@ -47,6 +47,7 @@ import {
   j2s,
   Logger,
   NotificationType,
+  parsePaytoUri,
   parsePayUri,
   PayCoinSelection,
   PreparePayResult,
@@ -238,6 +239,20 @@ export async function getCandidatePayCoins(
         }
         const exchangeFees = exchangeDetails.wireInfo;
         if (!exchangeFees) {
+          continue;
+        }
+
+        const wireTypes = new Set<string>();
+        for (const acc of exchangeDetails.wireInfo.accounts) {
+          const p = parsePaytoUri(acc.payto_uri);
+          if (p) {
+            wireTypes.add(p.targetType);
+          }
+        }
+
+        if (!wireTypes.has(req.wireMethod)) {
+          // Exchange can't be used, because it doesn't support
+          // the wire type that the merchant requested.
           continue;
         }
 
@@ -1338,7 +1353,7 @@ export async function getContractTermsDetails(
     throw Error("proposal is in invalid state");
   }
 
-  return proposal.download.contractData
+  return proposal.download.contractData;
 }
 
 /**

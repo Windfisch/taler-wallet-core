@@ -91,6 +91,7 @@ import { runWithdrawalBankIntegratedTest } from "./test-withdrawal-bank-integrat
 import { runWithdrawalFakebankTest } from "./test-withdrawal-fakebank.js";
 import { runTestWithdrawalManualTest } from "./test-withdrawal-manual.js";
 import { runAgeRestrictionsPeerTest } from "./test-age-restrictions-peer.js";
+import { runWalletBalanceTest } from "./test-wallet-balance.js";
 
 /**
  * Test runner.
@@ -169,6 +170,7 @@ const allTests: TestMainFunction[] = [
   runTippingTest,
   runWalletBackupBasicTest,
   runWalletBackupDoublespendTest,
+  runWalletBalanceTest,
   runWallettestingTest,
   runWalletDblessTest,
   runWithdrawalAbortBankTest,
