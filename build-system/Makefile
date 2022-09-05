@@ -66,11 +66,21 @@ anastasis-webui-dist: anastasis-webui
 	(cd packages/anastasis-webui/dist && zip -r - fonts ui.html) > anastasis-webui.zip
 
 
+.PHONY: anastasis-webui-dev
+anastasis-webui-dev:
+	pnpm install --frozen-lockfile --filter @gnu-taler/anastasis-webui...
+	pnpm run --filter @gnu-taler/anastasis-webui... dev
+
 .PHONY: webextension
 webextension:
 	pnpm install --frozen-lockfile --filter @gnu-taler/taler-wallet-webextension...
 	pnpm run --filter @gnu-taler/taler-wallet-webextension... compile
 	cd ./packages/taler-wallet-webextension/ && ./pack.sh
+
+.PHONY: webextension-dev
+webextension-dev:
+	pnpm install --frozen-lockfile --filter @gnu-taler/taler-wallet-webextension...
+	pnpm run --filter @gnu-taler/taler-wallet-webextension... dev
 
 .PHONY: i18n
 i18n: compile
