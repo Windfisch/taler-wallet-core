@@ -41,6 +41,26 @@ This will create the zip file with the WebExtension in the directory
 packages/taler-wallet-webextension/extension/
 ```
 
+### Installing local WebExtension
+
+Firefox:
+ - Settings
+ - Add-ons
+ - Manage your extension -> Debug Add-ons
+ - Load temporary Add-on...
+ - Look for the zip file under './packages/taler-wallet-webextension/extension/' folder
+
+Chrome:
+ - Settings
+ - More tools
+ - Extensions
+ - Load unpacked
+ - Look for the folder under './packages/taler-wallet-webextension/extension/'
+
+You may need to use manifest v2 or v3 depending on the browser version:
+https://blog.mozilla.org/addons/2022/05/18/manifest-v3-in-firefox-recap-next-steps/
+https://developer.chrome.com/docs/extensions/mv3/mv2-sunset/
+
 ### Reviewing WebExtension UI examples
 
 The WebExtension can be tested using example stories.
