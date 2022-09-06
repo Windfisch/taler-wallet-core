@@ -82,10 +82,15 @@ export async function prepareTip(
 
     logger.trace("new tip, creating tip record");
     await updateExchangeFromUrl(ws, tipPickupStatus.exchange_url);
+
+    //FIXME: is this needed? withdrawDetails is not used
+    // * if the intention is to update the exchange information in the database 
+    //   maybe we can use another name. `get` seems like a pure-function
     const withdrawDetails = await getExchangeWithdrawalInfo(
       ws,
       tipPickupStatus.exchange_url,
       amount,
+      undefined
     );
 
     const walletTipId = encodeCrock(getRandomBytes(32));

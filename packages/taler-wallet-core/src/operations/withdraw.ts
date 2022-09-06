@@ -192,6 +192,13 @@ export interface ExchangeWithdrawDetails {
    * Amount that will actually be added to the wallet's balance.
    */
   withdrawalAmountEffective: AmountString;
+
+  /**
+   * If the exchange supports age-restricted coins it will return
+   * the array of ages.
+   * 
+   */
+  ageRestrictionOptions?: number[],
 }
 
 /**
@@ -242,7 +249,7 @@ export function selectWithdrawalDenominations(
   for (const d of denoms) {
     let count = 0;
     const cost = Amounts.add(d.value, d.feeWithdraw).amount;
-    for (;;) {
+    for (; ;) {
       if (Amounts.cmp(remaining, cost) < 0) {
         break;
       }
@@ -903,8 +910,7 @@ export async function updateWithdrawalDenoms(
         denom.verificationStatus === DenominationVerificationStatus.Unverified
       ) {
         logger.trace(
-          `Validating denomination (${current + 1}/${
-            denominations.length
+          `Validating denomination (${current + 1}/${denominations.length
           }) signature of ${denom.denomPubHash}`,
         );
         let valid = false;
@@ -1031,7 +1037,7 @@ async function queryReserve(
     if (
       resp.status === 404 &&
       result.talerErrorResponse.code ===
-        TalerErrorCode.EXCHANGE_RESERVES_STATUS_UNKNOWN
+      TalerErrorCode.EXCHANGE_RESERVES_STATUS_UNKNOWN
     ) {
       ws.notify({
         type: NotificationType.ReserveNotYetFound,
@@ -1255,10 +1261,13 @@ async function processWithdrawGroupImpl(
   }
 }
 
+const AGE_MASK_GROUPS = "8:10:12:14:16:18".split(":").map(n => parseInt(n, 10))
+
 export async function getExchangeWithdrawalInfo(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
   instructedAmount: AmountJson,
+  ageRestricted: number | undefined,
 ): Promise<ExchangeWithdrawDetails> {
   const { exchange, exchangeDetails } =
     await ws.exchangeOps.updateExchangeFromUrl(ws, exchangeBaseUrl);
@@ -1287,6 +1296,8 @@ export async function getExchangeWithdrawalInfo(
     exchange,
   );
 
+  let hasDenomWithAgeRestriction = false
+
   let earliestDepositExpiration: TalerProtocolTimestamp | undefined;
   for (let i = 0; i < selectedDenoms.selectedDenoms.length; i++) {
     const ds = selectedDenoms.selectedDenoms[i];
@@ -1310,6 +1321,7 @@ export async function getExchangeWithdrawalInfo(
     ) {
       earliestDepositExpiration = expireDeposit;
     }
+    hasDenomWithAgeRestriction = hasDenomWithAgeRestriction || denom.denomPub.age_mask > 0
   }
 
   checkLogicInvariant(!!earliestDepositExpiration);
@@ -1337,7 +1349,7 @@ export async function getExchangeWithdrawalInfo(
     ) {
       logger.warn(
         `wallet's support for exchange protocol version ${WALLET_EXCHANGE_PROTOCOL_VERSION} might be outdated ` +
-          `(exchange has ${exchangeDetails.protocolVersion}), checking for updates`,
+        `(exchange has ${exchangeDetails.protocolVersion}), checking for updates`,
       );
     }
   }
@@ -1370,6 +1382,9 @@ export async function getExchangeWithdrawalInfo(
     termsOfServiceAccepted: tosAccepted,
     withdrawalAmountEffective: Amounts.stringify(selectedDenoms.totalCoinValue),
     withdrawalAmountRaw: Amounts.stringify(instructedAmount),
+    // TODO: remove hardcoding, this should be calculated from the denominations info
+    // force enabled for testing
+    ageRestrictionOptions: hasDenomWithAgeRestriction ? AGE_MASK_GROUPS : undefined
   };
   return ret;
 }

@@ -42,7 +42,7 @@ import {
   CreateDepositGroupRequest,
   CreateDepositGroupResponse,
   DeleteTransactionRequest,
-  ExchangesListRespose,
+  ExchangesListResponse,
   GetExchangeTosResult,
   GetExchangeWithdrawalInfo,
   GetFeeForDepositRequest,
@@ -67,7 +67,7 @@ import {
   WalletDiagnostics,
   WalletCoreVersion,
   WithdrawUriInfoResponse,
-  ExchangeDetailledListRespose,
+  ExchangeFullDetails,
 } from "@gnu-taler/taler-util";
 import {
   AddBackupProviderRequest,
@@ -253,12 +253,14 @@ export function listKnownCurrencies(): Promise<ListOfKnownCurrencies> {
   });
 }
 
-export function listExchanges(): Promise<ExchangesListRespose> {
+export function listExchanges(): Promise<ExchangesListResponse> {
   return callBackend("listExchanges", {});
 }
 
-export function listExchangesDetailled(): Promise<ExchangeDetailledListRespose> {
-  return callBackend("listExchangesDetailled", {});
+export function getExchangeDetailedInfo(exchangeBaseUrl: string): Promise<ExchangeFullDetails> {
+  return callBackend("getExchangeDetailedInfo", {
+    exchangeBaseUrl
+  });
 }
 
 export function getVersion(): Promise<WalletCoreVersion> {

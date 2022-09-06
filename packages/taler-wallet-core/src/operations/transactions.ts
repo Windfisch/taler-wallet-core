@@ -161,7 +161,6 @@ export async function getTransactions(
           info: {
             expiration: pi.contractTerms.purse_expiration,
             summary: pi.contractTerms.summary,
-            completed: Amounts.isZero(amount),
           },
           frozen: false,
           pending: !pi.purseCreated,
@@ -199,7 +198,6 @@ export async function getTransactions(
           info: {
             expiration: pi.contractTerms.purse_expiration,
             summary: pi.contractTerms.summary,
-            completed: pi.paid
           },
           timestamp: pi.timestampCreated,
           transactionId: makeEventId(
@@ -234,7 +232,6 @@ export async function getTransactions(
             info: {
               expiration: wsr.wgInfo.contractTerms.purse_expiration,
               summary: wsr.wgInfo.contractTerms.summary,
-              completed: !!wsr.timestampFinish
             },
             talerUri: constructPayPullUri({
               exchangeBaseUrl: wsr.exchangeBaseUrl,
@@ -259,7 +256,6 @@ export async function getTransactions(
             info: {
               expiration: wsr.wgInfo.contractTerms.purse_expiration,
               summary: wsr.wgInfo.contractTerms.summary,
-              completed: !!wsr.timestampFinish,
             },
             pending: !wsr.timestampFinish,
             timestamp: wsr.timestampStart,

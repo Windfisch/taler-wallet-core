@@ -19,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { ExchangeFullDetailsListItem, ExchangeListItem } from "@gnu-taler/taler-util";
+import { ExchangeFullDetails, ExchangeListItem } from "@gnu-taler/taler-util";
 import { createExample } from "../../test-utils.js";
 import { bitcoinExchanges, kudosExchanges } from "./example.js";
 import { FeeDescription, FeeDescriptionPair, OperationMap } from "./index.js";
@@ -34,7 +34,7 @@ export default {
 };
 
 function timelineForExchange(
-  ex: ExchangeFullDetailsListItem,
+  ex: ExchangeFullDetails,
 ): OperationMap<FeeDescription[]> {
   return {
     deposit: createDenominationTimeline(
@@ -61,8 +61,8 @@ function timelineForExchange(
 }
 
 function timelinePairForExchange(
-  ex1: ExchangeFullDetailsListItem,
-  ex2: ExchangeFullDetailsListItem,
+  ex1: ExchangeFullDetails,
+  ex2: ExchangeFullDetails,
 ): OperationMap<FeeDescriptionPair[]> {
   const om1 = timelineForExchange(ex1);
   const om2 = timelineForExchange(ex2);

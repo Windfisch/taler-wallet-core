@@ -30,7 +30,7 @@ export function useComponentState(
   const [subject, setSubject] = useState("");
   const [talerUri, setTalerUri] = useState("")
 
-  const hook = useAsyncAsHook(api.listExchangesDetailled);
+  const hook = useAsyncAsHook(api.listExchanges);
   const [exchangeIdx, setExchangeIdx] = useState("0")
   const [operationError, setOperationError] = useState<TalerErrorDetail | undefined>(undefined)
 

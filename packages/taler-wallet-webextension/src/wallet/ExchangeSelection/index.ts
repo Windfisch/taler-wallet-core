@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AbsoluteTime, AmountJson, ExchangeFullDetailsListItem } from "@gnu-taler/taler-util";
+import { AbsoluteTime, AmountJson, ExchangeFullDetails } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { ButtonHandler, SelectFieldHandler } from "../../mui/handlers.js";
@@ -52,7 +52,7 @@ export namespace State {
 
   export interface BaseInfo {
     exchanges: SelectFieldHandler;
-    selected: ExchangeFullDetailsListItem;
+    selected: ExchangeFullDetails;
     nextFeeUpdate: AbsoluteTime;
     error: undefined;
   }

@@ -72,8 +72,8 @@ import {
   Duration,
   durationFromSpec,
   durationMin,
-  ExchangeFullDetailsListItem,
-  ExchangesListRespose,
+  ExchangeFullDetails,
+  ExchangesListResponse,
   GetExchangeTosResult,
   j2s,
   KnownBankAccounts,
@@ -232,8 +232,9 @@ async function getWithdrawalDetailsForAmount(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
   amount: AmountJson,
+  restrictAge: number | undefined,
 ): Promise<ManualWithdrawalDetails> {
-  const wi = await getExchangeWithdrawalInfo(ws, exchangeBaseUrl, amount);
+  const wi = await getExchangeWithdrawalInfo(ws, exchangeBaseUrl, amount, restrictAge);
   const paytoUris = wi.exchangeDetails.wireInfo.accounts.map(
     (x) => x.payto_uri,
   );
@@ -568,7 +569,7 @@ async function listKnownBankAccounts(
 
 async function getExchanges(
   ws: InternalWalletState,
-): Promise<ExchangesListRespose> {
+): Promise<ExchangesListResponse> {
   const exchanges: ExchangeListItem[] = [];
   await ws.db
     .mktx((x) => ({
@@ -613,54 +614,56 @@ async function getExchanges(
   return { exchanges };
 }
 
-async function getExchangesDetailled(
+async function getExchangeDetailedInfo(
   ws: InternalWalletState,
-): Promise<ExchangesListRespose> {
-  const exchanges: ExchangeFullDetailsListItem[] = [];
-  await ws.db
+  exchangeBaseurl: string,
+): Promise<ExchangeFullDetails> {
+  //TODO: should we use the forceUpdate parameter?
+  const exchange = await ws.db
     .mktx((x) => ({
       exchanges: x.exchanges,
       exchangeDetails: x.exchangeDetails,
       denominations: x.denominations,
     }))
     .runReadOnly(async (tx) => {
-      const exchangeRecords = await tx.exchanges.iter().toArray();
-      for (const r of exchangeRecords) {
-        const dp = r.detailsPointer;
-        if (!dp) {
-          continue;
-        }
-        const { currency } = dp;
-        const exchangeDetails = await getExchangeDetails(tx, r.baseUrl);
-        if (!exchangeDetails) {
-          continue;
-        }
+      const ex = await tx.exchanges.get(exchangeBaseurl)
+      const dp = ex?.detailsPointer;
+      if (!dp) {
+        return;
+      }
+      const { currency } = dp;
+      const exchangeDetails = await getExchangeDetails(tx, ex.baseUrl);
+      if (!exchangeDetails) {
+        return;
+      }
 
-        const denominations = await tx.denominations.indexes.byExchangeBaseUrl
-          .iter(r.baseUrl)
-          .toArray();
+      const denominations = await tx.denominations.indexes.byExchangeBaseUrl
+        .iter(ex.baseUrl)
+        .toArray();
 
-        if (!denominations) {
-          continue;
-        }
+      if (!denominations) {
+        return;
+      }
 
-        exchanges.push({
-          exchangeBaseUrl: r.baseUrl,
-          currency,
-          tos: {
-            acceptedVersion: exchangeDetails.termsOfServiceAcceptedEtag,
-            currentVersion: exchangeDetails.termsOfServiceLastEtag,
-            contentType: exchangeDetails.termsOfServiceContentType,
-            content: exchangeDetails.termsOfServiceText,
-          },
-          paytoUris: exchangeDetails.wireInfo.accounts.map((x) => x.payto_uri),
-          auditors: exchangeDetails.auditors,
-          wireInfo: exchangeDetails.wireInfo,
-          denominations: denominations,
-        });
+      return {
+        exchangeBaseUrl: ex.baseUrl,
+        currency,
+        tos: {
+          acceptedVersion: exchangeDetails.termsOfServiceAcceptedEtag,
+          currentVersion: exchangeDetails.termsOfServiceLastEtag,
+          contentType: exchangeDetails.termsOfServiceContentType,
+          content: exchangeDetails.termsOfServiceText,
+        },
+        paytoUris: exchangeDetails.wireInfo.accounts.map((x) => x.payto_uri),
+        auditors: exchangeDetails.auditors,
+        wireInfo: exchangeDetails.wireInfo,
+        denominations: denominations,
       }
     });
-  return { exchanges };
+  if (!exchange) {
+    throw Error(`exchange with base url "${exchangeBaseurl}" not found`)
+  }
+  return exchange;
 }
 
 async function setCoinSuspended(
@@ -834,8 +837,9 @@ async function dispatchRequestInternal(
     case "listExchanges": {
       return await getExchanges(ws);
     }
-    case "listExchangesDetailled": {
-      return await getExchangesDetailled(ws);
+    case "getExchangeDetailedInfo": {
+      const req = codecForAddExchangeRequest().decode(payload);
+      return await getExchangeDetailedInfo(ws, req.exchangeBaseUrl);
     }
     case "listKnownBankAccounts": {
       const req = codecForListKnownBankAccounts().decode(payload);
@@ -852,6 +856,7 @@ async function dispatchRequestInternal(
         ws,
         req.exchangeBaseUrl,
         req.amount,
+        req.ageRestricted,
       );
     }
     case "acceptManualWithdrawal": {
@@ -870,6 +875,7 @@ async function dispatchRequestInternal(
         ws,
         req.exchangeBaseUrl,
         Amounts.parseOrThrow(req.amount),
+        req.restrictAge
       );
     }
     case "getBalances": {
@@ -1067,6 +1073,7 @@ async function dispatchRequestInternal(
         ws,
         req.exchange,
         amount,
+        undefined
       );
       const wres = await createManualWithdrawal(ws, {
         amount: amount,

@@ -15,7 +15,7 @@
  */
 
 import {
-  ExchangeFullDetailsListItem,
+  ExchangeFullDetails,
   ExchangeListItem,
 } from "@gnu-taler/taler-util";
 
@@ -24,7 +24,7 @@ import {
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-export const bitcoinExchanges: ExchangeFullDetailsListItem[] = [
+export const bitcoinExchanges: ExchangeFullDetails[] = [
   {
     exchangeBaseUrl: "https://bitcoin1.ice.bfh.ch/",
     currency: "BITCOINBTC",
@@ -11781,7 +11781,7 @@ export const bitcoinExchanges: ExchangeFullDetailsListItem[] = [
   },
 ] as any;
 
-export const kudosExchanges: ExchangeFullDetailsListItem[] = [
+export const kudosExchanges: ExchangeFullDetails[] = [
   {
     exchangeBaseUrl: "https://exchange1.demo.taler.net/",
     currency: "KUDOS",

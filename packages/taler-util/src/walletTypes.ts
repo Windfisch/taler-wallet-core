@@ -568,12 +568,12 @@ export interface DepositInfo {
   ageCommitmentProof?: AgeCommitmentProof;
 }
 
-export interface ExchangesListRespose {
+export interface ExchangesListResponse {
   exchanges: ExchangeListItem[];
 }
 
-export interface ExchangeDetailledListRespose {
-  exchanges: ExchangeFullDetailsListItem[];
+export interface ExchangeDetailedResponse {
+  exchange: ExchangeFullDetails;
 }
 
 export interface WalletCoreVersion {
@@ -733,7 +733,7 @@ export interface DenominationInfo {
   stampExpireDeposit: TalerProtocolTimestamp;
 }
 
-export interface ExchangeFullDetailsListItem {
+export interface ExchangeFullDetails {
   exchangeBaseUrl: string;
   currency: string;
   paytoUris: string[];
@@ -771,9 +771,9 @@ const codecForExchangeTos = (): Codec<ExchangeTos> =>
     .property("content", codecOptional(codecForString()))
     .build("ExchangeTos");
 
-export const codecForExchangeFullDetailsListItem =
-  (): Codec<ExchangeFullDetailsListItem> =>
-    buildCodecForObject<ExchangeFullDetailsListItem>()
+export const codecForExchangeFullDetails =
+  (): Codec<ExchangeFullDetails> =>
+    buildCodecForObject<ExchangeFullDetails>()
       .property("currency", codecForString())
       .property("exchangeBaseUrl", codecForString())
       .property("paytoUris", codecForList(codecForString()))
@@ -791,10 +791,10 @@ export const codecForExchangeListItem = (): Codec<ExchangeListItem> =>
     .property("tos", codecForExchangeTos())
     .build("ExchangeListItem");
 
-export const codecForExchangesListResponse = (): Codec<ExchangesListRespose> =>
-  buildCodecForObject<ExchangesListRespose>()
-    .property("exchanges", codecForList(codecForExchangeFullDetailsListItem()))
-    .build("ExchangesListRespose");
+export const codecForExchangesListResponse = (): Codec<ExchangesListResponse> =>
+  buildCodecForObject<ExchangesListResponse>()
+    .property("exchanges", codecForList(codecForExchangeListItem()))
+    .build("ExchangesListResponse");
 
 export interface AcceptManualWithdrawalResult {
   /**
@@ -965,6 +965,7 @@ export const codecForGetWithdrawalDetailsForAmountRequest =
     buildCodecForObject<GetWithdrawalDetailsForAmountRequest>()
       .property("exchangeBaseUrl", codecForString())
       .property("amount", codecForString())
+      .property("restrictAge", codecOptional(codecForNumber()))
       .build("GetWithdrawalDetailsForAmountRequest");
 
 export interface AcceptExchangeTosRequest {
@@ -1022,6 +1023,7 @@ export interface GetExchangeWithdrawalInfo {
   exchangeBaseUrl: string;
   amount: AmountJson;
   tosAcceptedFormat?: string[];
+  ageRestricted?: number;
 }
 
 export const codecForGetExchangeWithdrawalInfo =

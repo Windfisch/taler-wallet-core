@@ -167,6 +167,8 @@ export function TransactionView({
     }
   }
 
+  const SHOWING_RETRY_THRESHOLD_SECS = 30;
+
   const { i18n } = useTranslationContext();
 
   function TransactionTemplate({
@@ -174,15 +176,16 @@ export function TransactionView({
   }: {
     children: ComponentChildren;
   }): VNode {
-    const showSend =
-      (transaction.type === TransactionType.PeerPullCredit ||
-        transaction.type === TransactionType.PeerPushDebit) &&
-      !transaction.info.completed;
+    const showSend = false;
+    // (transaction.type === TransactionType.PeerPullCredit ||
+    //   transaction.type === TransactionType.PeerPushDebit) &&
+    //   !transaction.info.completed;
     const showRetry =
       transaction.error !== undefined ||
       transaction.timestamp.t_s === "never" ||
       (transaction.pending &&
-        differenceInSeconds(new Date(), transaction.timestamp.t_s * 1000) > 10);
+        differenceInSeconds(new Date(), transaction.timestamp.t_s * 1000) >
+          SHOWING_RETRY_THRESHOLD_SECS);
 
     return (
       <Fragment>
@@ -624,7 +627,7 @@ export function TransactionView({
           text={transaction.exchangeBaseUrl}
           kind="neutral"
         />
-        {!transaction.info.completed && (
+        {transaction.pending && (
           <Part
             title={<i18n.Translate>URI</i18n.Translate>}
             text={<ShowQrWithCopy text={transaction.talerUri} />}
@@ -710,7 +713,7 @@ export function TransactionView({
           text={transaction.exchangeBaseUrl}
           kind="neutral"
         />
-        {!transaction.info.completed && (
+        {transaction.pending && (
           <Part
             title={<i18n.Translate>URI</i18n.Translate>}
             text={<ShowQrWithCopy text={transaction.talerUri} />}

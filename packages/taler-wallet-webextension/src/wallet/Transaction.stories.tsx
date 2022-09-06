@@ -563,7 +563,7 @@ export const InvoiceCreditComplete = createExample(TestedComponent, {
 export const InvoiceCreditIncomplete = createExample(TestedComponent, {
   transaction: {
     ...exampleData.pull_credit,
-    info: { ...exampleData.pull_credit.info, completed: false },
+    pending: true,
   },
 });
 
@@ -581,9 +581,6 @@ export const TransferDebitComplete = createExample(TestedComponent, {
 export const TransferDebitIncomplete = createExample(TestedComponent, {
   transaction: {
     ...exampleData.push_debit,
-    info: {
-      ...exampleData.push_debit.info,
-      completed: false,
-    },
+    pending: true,
   },
 });

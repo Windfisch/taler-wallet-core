@@ -25,10 +25,20 @@ export function useComponentState(
   { onCancel, onSelection, currency }: Props,
   api: typeof wxApi,
 ): State {
-  const hook = useAsyncAsHook(api.listExchangesDetailled);
-
   const initialValue = 0
   const [value, setValue] = useState(String(initialValue));
+
+  const hook = useAsyncAsHook(async () => {
+    const { exchanges } = await api.listExchanges()
+
+    const selectedIdx = parseInt(value, 10)
+    const selectedExchange = exchanges.length == 0 ? undefined : exchanges[selectedIdx]
+    const selected = !selectedExchange ? undefined : await api.getExchangeDetailedInfo(selectedExchange.exchangeBaseUrl)
+
+    const initialExchange = selectedIdx === initialValue ? undefined : exchanges[initialValue]
+    const original = !initialExchange ? undefined : await api.getExchangeDetailedInfo(initialExchange.exchangeBaseUrl)
+    return { exchanges, selected, original }
+  });
 
   if (!hook) {
     return {
@@ -43,17 +53,15 @@ export function useComponentState(
     };
   }
 
-  const exchanges = hook.response.exchanges;
+  const { exchanges, selected, original } = hook.response;
 
-  if (exchanges.length === 0) {
+  if (!selected) {
+    //!selected <=> exchanges.length === 0
     return {
       status: "no-exchanges",
       error: undefined
     }
   }
-
-  const original = exchanges[initialValue];
-  const selected = exchanges[Number(value)];
 
   let nextFeeUpdate = TalerProtocolTimestamp.never();
 
@@ -97,7 +105,8 @@ export function useComponentState(
 
   const exchangeMap = exchanges.reduce((prev, cur, idx) => ({ ...prev, [cur.exchangeBaseUrl]: String(idx) }), {} as Record<string, string>)
 
-  if (original === selected) {
+  if (!original) {
+    // !original <=> selected == original
     return {
       status: "ready",
       exchanges: {

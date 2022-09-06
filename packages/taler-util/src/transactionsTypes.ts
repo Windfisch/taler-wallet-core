@@ -190,7 +190,6 @@ export interface TransactionWithdrawal extends TransactionCommon {
 export interface PeerInfoShort {
   expiration: TalerProtocolTimestamp | undefined;
   summary: string | undefined;
-  completed: boolean;
 }
 
 /**

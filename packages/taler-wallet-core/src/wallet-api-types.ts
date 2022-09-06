@@ -46,7 +46,7 @@ import {
   CreateDepositGroupRequest,
   CreateDepositGroupResponse,
   DeleteTransactionRequest,
-  ExchangesListRespose,
+  ExchangesListResponse,
   ForceRefreshRequest,
   GetExchangeTosRequest,
   GetExchangeTosResult,
@@ -227,7 +227,7 @@ export type WalletOperations = {
   };
   [WalletApiOperation.ListExchanges]: {
     request: {};
-    response: ExchangesListRespose;
+    response: ExchangesListResponse;
   };
   [WalletApiOperation.AddExchange]: {
     request: AddExchangeRequest;

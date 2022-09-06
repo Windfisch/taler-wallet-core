@@ -30,7 +30,7 @@ export function useComponentStateFromParams(
 
   const [ageRestricted, setAgeRestricted] = useState(0);
 
-  const exchangeHook = useAsyncAsHook(api.listExchangesDetailled);
+  const exchangeHook = useAsyncAsHook(api.listExchanges);
 
   const exchangeHookDep =
     !exchangeHook || exchangeHook.hasError || !exchangeHook.response
@@ -65,6 +65,7 @@ export function useComponentStateFromParams(
       exchangeBaseUrl: exchange.exchangeBaseUrl,
       amount: chosenAmount,
       tosAcceptedFormat: ["text/xml"],
+      ageRestricted,
     });
 
     const withdrawAmount = {
@@ -72,7 +73,7 @@ export function useComponentStateFromParams(
       effective: Amounts.parseOrThrow(info.withdrawalAmountEffective),
     }
 
-    return { amount: withdrawAmount };
+    return { amount: withdrawAmount, ageRestrictionOptions: info.ageRestrictionOptions };
   }, [exchangeHookDep]);
 
   const [reviewing, setReviewing] = useState<boolean>(false);
@@ -172,16 +173,16 @@ export function useComponentStateFromParams(
     termsState !== undefined &&
     (termsState.status === "changed" || termsState.status === "new");
 
-  const ageRestrictionOptions: Record<string, string> | undefined = "6:12:18"
-    .split(":")
-    .reduce((p, c) => ({ ...p, [c]: `under ${c}` }), {});
+  const ageRestrictionOptions = amountHook.response.
+    ageRestrictionOptions?.
+    reduce((p, c) => ({ ...p, [c]: `under ${c}` }), {} as Record<string, string>)
 
-  if (ageRestrictionOptions) {
+  const ageRestrictionEnabled = ageRestrictionOptions !== undefined
+  if (ageRestrictionEnabled) {
     ageRestrictionOptions["0"] = "Not restricted";
   }
 
   //TODO: calculate based on exchange info
-  const ageRestrictionEnabled = false;
   const ageRestriction = ageRestrictionEnabled ? {
     list: ageRestrictionOptions,
     value: String(ageRestricted),
@@ -269,6 +270,7 @@ export function useComponentStateFromURI(
       exchangeBaseUrl: uriHookDep?.thisExchange,
       amount: Amounts.parseOrThrow(uriHookDep.amount),
       tosAcceptedFormat: ["text/xml"],
+      ageRestricted,
     });
 
     const withdrawAmount = {
@@ -276,7 +278,7 @@ export function useComponentStateFromURI(
       effective: Amounts.parseOrThrow(info.withdrawalAmountEffective),
     }
 
-    return { amount: withdrawAmount };
+    return { amount: withdrawAmount, ageRestrictionOptions: info.ageRestrictionOptions };
   }, [uriHookDep]);
 
   const [reviewing, setReviewing] = useState<boolean>(false);
@@ -385,16 +387,16 @@ export function useComponentStateFromURI(
     termsState !== undefined &&
     (termsState.status === "changed" || termsState.status === "new");
 
-  const ageRestrictionOptions: Record<string, string> | undefined = "6:12:18"
-    .split(":")
-    .reduce((p, c) => ({ ...p, [c]: `under ${c}` }), {});
+  const ageRestrictionOptions = amountHook.response.
+    ageRestrictionOptions?.
+    reduce((p, c) => ({ ...p, [c]: `under ${c}` }), {} as Record<string, string>)
 
-  if (ageRestrictionOptions) {
+  const ageRestrictionEnabled = ageRestrictionOptions !== undefined
+  if (ageRestrictionEnabled) {
     ageRestrictionOptions["0"] = "Not restricted";
   }
 
   //TODO: calculate based on exchange info
-  const ageRestrictionEnabled = false;
   const ageRestriction = ageRestrictionEnabled ? {
     list: ageRestrictionOptions,
     value: String(ageRestricted),
