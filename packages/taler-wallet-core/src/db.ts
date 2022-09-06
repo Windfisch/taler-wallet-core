@@ -55,7 +55,7 @@ import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
  * for all previous versions must be written, which should be
  * avoided.
  */
-export const TALER_DB_NAME = "taler-wallet-main-v4";
+export const TALER_DB_NAME = "taler-wallet-main-v5";
 
 /**
  * Name of the metadata database.  This database is used
