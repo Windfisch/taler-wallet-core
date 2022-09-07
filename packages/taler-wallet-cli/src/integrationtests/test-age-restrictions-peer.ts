@@ -17,7 +17,7 @@
 /**
  * Imports.
  */
-import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+import { getDefaultNodeWallet2, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { defaultCoinConfig } from "../harness/denomStructures.js";
 import { GlobalTestState, WalletCli } from "../harness/harness.js";
 import {
@@ -59,14 +59,7 @@ export async function runAgeRestrictionsPeerTest(t: GlobalTestState) {
       restrictAge: 13,
     });
 
-    const order = {
-      summary: "Buy me!",
-      amount: "TESTKUDOS:5",
-      fulfillment_url: "taler://fulfillment-success/thx",
-      minimum_age: 9,
-    };
-
-    await wallet.client.call(WalletApiOperation.InitiatePeerPushPayment, {
+    const initResp = await wallet.client.call(WalletApiOperation.InitiatePeerPushPayment, {
       amount: "TESTKUDOS:1",
       partialContractTerms: {
         summary: "Hello, World",
@@ -74,6 +67,16 @@ export async function runAgeRestrictionsPeerTest(t: GlobalTestState) {
     });
 
     await wallet.runUntilDone();
+
+    const checkResp = await walletTwo.client.call(WalletApiOperation.CheckPeerPushPayment, {
+      talerUri: initResp.talerUri,
+    });
+
+    await walletTwo.client.call(WalletApiOperation.AcceptPeerPushPayment, {
+      peerPushPaymentIncomingId: checkResp.peerPushPaymentIncomingId,
+    });
+
+    await walletTwo.runUntilDone();
   }
 }
 
