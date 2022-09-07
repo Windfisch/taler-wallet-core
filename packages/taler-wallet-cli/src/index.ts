@@ -49,6 +49,7 @@ import {
   AgeRestriction,
   getRandomBytes,
   encodeCrock,
+  j2s,
 } from "@gnu-taler/taler-util";
 import {
   NodeHttpLib,
@@ -378,6 +379,46 @@ walletCli
       await wallet.client.call(WalletApiOperation.DeleteTransaction, {
         transactionId: args.deleteTransaction.transactionId,
       });
+    });
+  });
+
+walletCli
+  .subcommand("withdraw", "withdraw", {
+    help: "Withdraw with a taler://withdraw/ URI",
+  })
+  .requiredArgument("uri", clk.STRING)
+  .maybeOption("restrictAge", ["--restrict-age"], clk.STRING)
+  .action(async (args) => {
+    const uri = args.withdraw.uri;
+    const restrictAge =
+      args.withdraw.restrictAge == null
+        ? undefined
+        : Number.parseInt(args.withdraw.restrictAge);
+    console.log(`age restriction requested (${restrictAge})`);
+    await withWallet(args, async (wallet) => {
+      const withdrawInfo = await wallet.client.call(
+        WalletApiOperation.GetWithdrawalDetailsForUri,
+        {
+          talerWithdrawUri: uri,
+          restrictAge,
+        },
+      );
+      console.log("withdrawInfo", withdrawInfo);
+      const selectedExchange = withdrawInfo.defaultExchangeBaseUrl;
+      if (!selectedExchange) {
+        console.error("no suggested exchange!");
+        process.exit(1);
+        return;
+      }
+      const res = await wallet.client.call(
+        WalletApiOperation.AcceptBankIntegratedWithdrawal,
+        {
+          exchangeBaseUrl: selectedExchange,
+          talerWithdrawUri: uri,
+          restrictAge,
+        },
+      );
+      console.log(j2s(res));
     });
   });
 
