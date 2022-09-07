@@ -1,0 +1,18 @@
+{
+  "name": "GNU Taler Wallet (git)",
+  "description": "Privacy preserving and transparent payments",
+  "author": "GNU Taler Developers",
+  "version": "0.9.0.18",
+  "version_name": "0.9.0-dev.18",
+  "icons": {
+    "16": "static/img/taler-logo-16.png",
+    "19": "static/img/taler-logo-19.png",
+    "32": "static/img/taler-logo-32.png",
+    "38": "static/img/taler-logo-38.png",
+    "48": "static/img/taler-logo-48.png",
+    "64": "static/img/taler-logo-64.png",
+    "128": "static/img/taler-logo-128.png",
+    "256": "static/img/taler-logo-256.png",
+    "512": "static/img/taler-logo-512.png"
+  }
+}

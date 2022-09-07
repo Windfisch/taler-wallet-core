@@ -11,12 +11,12 @@ fi
 
 [[ "$ENV" == "prod" || "$ENV" == "dev" ]] || { echo "first argument must be prod or dev"; exit 1; }
 
-vers_manifest=$(jq -r '.version' manifest-v2.json)
+vers_manifest=$(jq -r '.version' manifest-common.json)
 
 zipfile="taler-wallet-webextension-${vers_manifest}.zip"
 
 TEMP_DIR=$(mktemp -d)
-jq '. | .name = "GNU Taler Wallet" ' manifest-v2.json > $TEMP_DIR/manifest.json
+jq -s 'add | .name = "GNU Taler Wallet" ' manifest-common.json manifest-v2.json > $TEMP_DIR/manifest.json
 cp -r dist static $TEMP_DIR
 
 find $TEMP_DIR/dist \( -name "test.*" -o -name "*.test.*" -o -name "stories.*" -o -name "*.dev.*" \) -delete
@@ -35,12 +35,10 @@ mkdir -p extension/v2/unpacked
 echo "Packed webextension: extension/v2/$zipfile"
 cp -rf src extension/v2/unpacked
 
-vers_manifest=$(jq -r '.version' manifest-v3.json)
-
 zipfile="taler-wallet-webextension-${vers_manifest}.zip"
 
 TEMP_DIR=$(mktemp -d)
-jq '. | .name = "GNU Taler Wallet" ' manifest-v3.json > $TEMP_DIR/manifest.json
+jq -s 'add | .name = "GNU Taler Wallet" ' manifest-common.json manifest-v3.json > $TEMP_DIR/manifest.json
 cp -r dist static service_worker.js $TEMP_DIR
 
 find $TEMP_DIR/dist \( -name "test.*" -o -name "*.test.*" -o -name "stories.*" -o -name "*.dev.*" \) -delete
