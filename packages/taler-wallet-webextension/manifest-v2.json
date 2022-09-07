@@ -38,6 +38,8 @@
     "activeTab"
   ],
   "optional_permissions": [
+    "http://*/*",
+    "https://*/*",
     "webRequest"
   ],
   "browser_action": {
