@@ -15,4 +15,4 @@ pnpm test -- -R dot
 
 echo packing...
 rm -rf extension/
-./pack.sh
+./pack.sh dev

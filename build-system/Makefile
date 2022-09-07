@@ -75,7 +75,7 @@ anastasis-webui-dev:
 webextension:
 	pnpm install --frozen-lockfile --filter @gnu-taler/taler-wallet-webextension...
 	pnpm run --filter @gnu-taler/taler-wallet-webextension... compile
-	cd ./packages/taler-wallet-webextension/ && ./pack.sh
+	cd ./packages/taler-wallet-webextension/ && ./pack.sh prod
 
 .PHONY: webextension-dev
 webextension-dev:
