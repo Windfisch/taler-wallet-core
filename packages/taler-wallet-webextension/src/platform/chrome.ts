@@ -105,22 +105,30 @@ type HeaderListenerFunc = (
 ) => void;
 let currentHeaderListener: HeaderListenerFunc | undefined = undefined;
 
+type TabListenerFunc = (
+  tabId: number, info: chrome.tabs.TabChangeInfo,
+) => void;
+let currentTabListener: TabListenerFunc | undefined = undefined;
+
 export function containsTalerHeaderListener(): boolean {
-  return currentHeaderListener !== undefined;
+  return currentHeaderListener !== undefined || currentTabListener !== undefined;
 }
 
 export async function removeHostPermissions(): Promise<boolean> {
   //if there is a handler already, remove it
   if (
-    "webRequest" in chrome &&
-    "onHeadersReceived" in chrome.webRequest &&
     currentHeaderListener &&
-    chrome.webRequest.onHeadersReceived.hasListener(currentHeaderListener)
+    chrome?.webRequest?.onHeadersReceived?.hasListener(currentHeaderListener)
   ) {
     chrome.webRequest.onHeadersReceived.removeListener(currentHeaderListener);
   }
+  if (currentTabListener &&
+    chrome?.tabs?.onUpdated?.hasListener(currentTabListener)) {
+    chrome.tabs.onUpdated.removeListener(currentTabListener)
+  }
 
   currentHeaderListener = undefined;
+  currentTabListener = undefined;
 
   //notify the browser about this change, this operation is expensive
   if ("webRequest" in chrome) {
@@ -365,12 +373,26 @@ function registerTalerHeaderListener(
         .map((h) => h.value)
         .filter((value): value is string => !!value);
       if (values.length > 0) {
+        logger.info(`Found a Taler URI in a response header for the request ${details.url} from tab ${details.tabId}`)
         callback(details.tabId, values[0]);
       }
     }
     return;
   }
+
+  async function tabListener(tabId: number, info: chrome.tabs.TabChangeInfo): Promise<void> {
+    console.log("tab update", tabId, info)
+    if (tabId < 0) return;
+    if (info.status !== "complete") return;
+    const uri = await findTalerUriInTab(tabId);
+    console.log("uri", uri)
+    if (!uri) return;
+    logger.info(`Found a Taler URI in the tab ${tabId}`)
+    callback(tabId, uri)
+  }
+
   const prevHeaderListener = currentHeaderListener;
+  const prevTabListener = currentTabListener;
 
   getPermissionsApi()
     .containsHostPermissions()
@@ -382,17 +404,29 @@ function registerTalerHeaderListener(
       ) {
         chrome.webRequest.onHeadersReceived.removeListener(prevHeaderListener);
       }
+      if (prevTabListener && chrome?.tabs?.onUpdated?.hasListener(prevTabListener)) {
+        chrome.tabs.onUpdated.removeListener(prevTabListener)
+      }
+
       //if the result was positive, add the headerListener
       if (result) {
-        const listener: chrome.webRequest.WebResponseHeadersEvent | undefined =
+        const headersEvent: chrome.webRequest.WebResponseHeadersEvent | undefined =
           chrome?.webRequest?.onHeadersReceived;
-        if (listener) {
-          listener.addListener(headerListener, { urls: ["<all_urls>"] }, [
+        if (headersEvent) {
+          headersEvent.addListener(headerListener, { urls: ["<all_urls>"] }, [
             "responseHeaders",
           ]);
           currentHeaderListener = headerListener;
         }
+
+        const tabsEvent: chrome.tabs.TabUpdatedEvent | undefined =
+          chrome?.tabs?.onUpdated;
+        if (tabsEvent) {
+          tabsEvent.addListener(tabListener);
+          currentTabListener = tabListener;
+        }
       }
+
       //notify the browser about this change, this operation is expensive
       chrome?.webRequest?.handlerBehaviorChanged(() => {
         if (chrome.runtime.lastError) {
@@ -400,6 +434,7 @@ function registerTalerHeaderListener(
         }
       });
     });
+
 }
 
 const alertIcons = {
