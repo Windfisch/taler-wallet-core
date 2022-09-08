@@ -23,7 +23,6 @@
  */
 import {
   ProposalStatus,
-  ReserveRecordStatus,
   AbortStatus,
   WalletStoresV1,
   BackupProviderStateTag,
@@ -33,7 +32,6 @@ import {
 import {
   PendingOperationsResponse,
   PendingTaskType,
-  ReserveType,
 } from "../pending-types.js";
 import { AbsoluteTime } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../internal-wallet-state.js";

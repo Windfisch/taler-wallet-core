@@ -695,6 +695,7 @@ async function refreshReveal(
         },
         suspended: false,
         coinEvHash: pc.coinEvHash,
+        ageCommitmentProof: pc.ageCommitmentProof,
       };
 
       coins.push(coin);

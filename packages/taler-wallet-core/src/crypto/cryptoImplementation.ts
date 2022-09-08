@@ -1208,6 +1208,7 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
             coinPriv: encodeCrock(coinPriv),
             coinPub: encodeCrock(coinPub),
             coinEvHash: encodeCrock(coinEvHash),
+            ageCommitmentProof: newAc,
           };
           planchets.push(planchet);
           hashCoinEvInner(coinEv, sessionHc);

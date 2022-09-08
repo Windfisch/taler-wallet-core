@@ -1154,6 +1154,8 @@ export interface RefreshPlanchetInfo {
    * Blinding key used.
    */
   blindingKey: string;
+
+  ageCommitmentProof?: AgeCommitmentProof;
 }
 
 /**

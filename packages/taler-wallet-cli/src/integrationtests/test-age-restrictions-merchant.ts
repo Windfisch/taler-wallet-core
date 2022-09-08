@@ -44,6 +44,28 @@ export async function runAgeRestrictionsMerchantTest(t: GlobalTestState) {
   const walletThree = new WalletCli(t, "walletThree");
 
   {
+    const walletZero = new WalletCli(t, "walletZero");
+
+    await withdrawViaBank(t, {
+      wallet: walletZero,
+      bank,
+      exchange,
+      amount: "TESTKUDOS:20",
+      restrictAge: 13,
+    });
+
+    const order = {
+      summary: "Buy me!",
+      amount: "TESTKUDOS:5",
+      fulfillment_url: "taler://fulfillment-success/thx",
+      minimum_age: 9,
+    };
+
+    await makeTestPayment(t, { wallet: walletZero, merchant, order });
+    await walletZero.runUntilDone();
+  }
+
+  {
     const wallet = walletOne;
 
     await withdrawViaBank(t, {
