@@ -25,9 +25,11 @@ import { platform } from "../platform/api.js";
 
 interface Type {
   findTalerUriInActiveTab: () => Promise<string | undefined>;
+  findTalerUriInClipboard: () => Promise<string | undefined>;
 }
 const Context = createContext<Type>({
   findTalerUriInActiveTab: async () => undefined,
+  findTalerUriInClipboard: async () => undefined,
 });
 
 /**
@@ -56,7 +58,10 @@ export const IoCProviderForRuntime = ({
   children: any;
 }): VNode => {
   return h(Context.Provider, {
-    value: { findTalerUriInActiveTab: platform.findTalerUriInActiveTab },
+    value: {
+      findTalerUriInActiveTab: platform.findTalerUriInActiveTab,
+      findTalerUriInClipboard: platform.findTalerUriInClipboard,
+    },
     children,
   });
 };

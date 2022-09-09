@@ -23,6 +23,7 @@ const api: PlatformAPI = {
   isFirefox: () => false,
   keepAlive: (cb: VoidFunction) => cb(),
   findTalerUriInActiveTab: async () => undefined,
+  findTalerUriInClipboard: async () => undefined,
   containsTalerHeaderListener: () => {
     return true;
   },

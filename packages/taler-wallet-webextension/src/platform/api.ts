@@ -163,13 +163,22 @@ export interface PlatformAPI {
   findTalerUriInActiveTab(): Promise<string | undefined>;
 
   /**
-   * Used from the frontend to send commands to the wallet
+   * Popup API
    *
-   * @param operation
-   * @param payload
+   * Read the current tab html and try to find any Taler URI or QR code present.
    *
-   * @return response from the backend
+   * @return Taler URI if found
    */
+  findTalerUriInClipboard(): Promise<string | undefined>;
+
+  /**
+  * Used from the frontend to send commands to the wallet
+  *
+  * @param operation
+  * @param payload
+  *
+  * @return response from the backend
+  */
   sendMessageToWalletBackground(
     operation: string,
     payload: any,

@@ -23,6 +23,7 @@ import { SelectList } from "../../components/SelectList.js";
 import {
   Input,
   Link,
+  LinkSuccess,
   SubTitle,
   SuccessBox,
   SvgIcon,
@@ -35,6 +36,8 @@ import { TermsOfServiceSection } from "../TermsOfServiceSection.js";
 import { State } from "./index.js";
 import editIcon from "../../svg/edit_24px.svg";
 import { Amount } from "../../components/Amount.js";
+import { QR } from "../../components/QR.js";
+import { useState } from "preact/hooks";
 
 export function LoadingUriView({ error }: State.LoadingUriError): VNode {
   const { i18n } = useTranslationContext();
@@ -126,13 +129,13 @@ export function SuccessView(state: State.Success): VNode {
               }}
             >
               <i18n.Translate>Exchange</i18n.Translate>
-              <Link>
+              {/* <Link>
                 <SvgIcon
                   title="Edit"
                   dangerouslySetInnerHTML={{ __html: editIcon }}
                   color="black"
                 />
-              </Link>
+              </Link> */}
             </div>
           }
           text={<ExchangeDetails exchange={state.exchangeUrl} />}
@@ -164,31 +167,36 @@ export function SuccessView(state: State.Success): VNode {
       </section>
       {state.tosProps && <TermsOfServiceSection {...state.tosProps} />}
       {state.tosProps ? (
-        <section>
-          {(state.tosProps.terms.status === "accepted" ||
-            (state.mustAcceptFirst && state.tosProps.reviewed)) && (
-            <Button
-              variant="contained"
-              color="success"
-              disabled={!state.doWithdrawal.onClick}
-              onClick={state.doWithdrawal.onClick}
-            >
-              <i18n.Translate>
-                Withdraw &nbsp; <Amount value={state.toBeReceived} />
-              </i18n.Translate>
-            </Button>
-          )}
-          {state.tosProps.terms.status === "notfound" && (
-            <Button
-              variant="contained"
-              color="warning"
-              disabled={!state.doWithdrawal.onClick}
-              onClick={state.doWithdrawal.onClick}
-            >
-              <i18n.Translate>Withdraw anyway</i18n.Translate>
-            </Button>
-          )}
-        </section>
+        <Fragment>
+          <section>
+            {(state.tosProps.terms.status === "accepted" ||
+              (state.mustAcceptFirst && state.tosProps.reviewed)) && (
+              <Button
+                variant="contained"
+                color="success"
+                disabled={!state.doWithdrawal.onClick}
+                onClick={state.doWithdrawal.onClick}
+              >
+                <i18n.Translate>
+                  Withdraw &nbsp; <Amount value={state.toBeReceived} />
+                </i18n.Translate>
+              </Button>
+            )}
+            {state.tosProps.terms.status === "notfound" && (
+              <Button
+                variant="contained"
+                color="warning"
+                disabled={!state.doWithdrawal.onClick}
+                onClick={state.doWithdrawal.onClick}
+              >
+                <i18n.Translate>Withdraw anyway</i18n.Translate>
+              </Button>
+            )}
+          </section>
+          {state.talerWithdrawUri ? (
+            <WithdrawWithMobile talerWithdrawUri={state.talerWithdrawUri} />
+          ) : undefined}
+        </Fragment>
       ) : (
         <section>
           <i18n.Translate>Loading terms of service...</i18n.Translate>
@@ -200,5 +208,37 @@ export function SuccessView(state: State.Success): VNode {
         </Link>
       </section>
     </WalletAction>
+  );
+}
+
+function WithdrawWithMobile({
+  talerWithdrawUri,
+}: {
+  talerWithdrawUri: string;
+}): VNode {
+  const { i18n } = useTranslationContext();
+  const [showQR, setShowQR] = useState<boolean>(false);
+
+  return (
+    <section>
+      <LinkSuccess upperCased onClick={() => setShowQR((qr) => !qr)}>
+        {!showQR ? (
+          <i18n.Translate>Withdraw to a mobile phone</i18n.Translate>
+        ) : (
+          <i18n.Translate>Hide QR</i18n.Translate>
+        )}
+      </LinkSuccess>
+      {showQR && (
+        <div>
+          <QR text={talerWithdrawUri} />
+          <i18n.Translate>
+            Scan the QR code or &nbsp;
+            <a href={talerWithdrawUri}>
+              <i18n.Translate>click here</i18n.Translate>
+            </a>
+          </i18n.Translate>
+        </div>
+      )}
+    </section>
   );
 }

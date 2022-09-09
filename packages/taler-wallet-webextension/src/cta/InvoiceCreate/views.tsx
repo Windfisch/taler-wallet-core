@@ -122,13 +122,13 @@ export function ReadyView({
               }}
             >
               <i18n.Translate>Exchange</i18n.Translate>
-              <Link>
+              {/* <Link>
                 <SvgIcon
                   title="Edit"
                   dangerouslySetInnerHTML={{ __html: editIcon }}
                   color="black"
                 />
-              </Link>
+              </Link> */}
             </div>
           }
           text={<ExchangeDetails exchange={exchangeUrl} />}

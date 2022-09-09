@@ -410,6 +410,7 @@ export function useComponentStateFromURI(
     toBeReceived,
     withdrawalFee,
     chosenAmount,
+    talerWithdrawUri,
     ageRestriction,
     doWithdrawal: {
       onClick:

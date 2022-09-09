@@ -42,13 +42,15 @@ import { BalancePage } from "./BalancePage.js";
 import { TalerActionFound } from "./TalerActionFound.js";
 
 function CheckTalerActionComponent(): VNode {
-  const [talerActionUrl] = useTalerActionURL();
+  const [action] = useTalerActionURL();
+
+  const actionUri = action?.uri;
 
   useEffect(() => {
-    if (talerActionUrl) {
-      route(Pages.cta({ action: encodeURIComponent(talerActionUrl) }));
+    if (actionUri) {
+      route(Pages.cta({ action: encodeURIComponent(actionUri) }));
     }
-  }, [talerActionUrl]);
+  }, [actionUri]);
 
   return <Fragment />;
 }

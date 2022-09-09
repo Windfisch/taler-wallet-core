@@ -17,20 +17,39 @@
 import { useEffect, useState } from "preact/hooks";
 import { useIocContext } from "../context/iocContext.js";
 
+export interface UriLocation {
+  uri: string;
+  location: "clipboard" | "activeTab"
+}
+
 export function useTalerActionURL(): [
-  string | undefined,
+  UriLocation | undefined,
   (s: boolean) => void,
 ] {
-  const [talerActionUrl, setTalerActionUrl] = useState<string | undefined>(
+  const [talerActionUrl, setTalerActionUrl] = useState<UriLocation | undefined>(
     undefined,
   );
   const [dismissed, setDismissed] = useState(false);
-  const { findTalerUriInActiveTab } = useIocContext();
+  const { findTalerUriInActiveTab, findTalerUriInClipboard } = useIocContext();
 
   useEffect(() => {
     async function check(): Promise<void> {
-      const talerUri = await findTalerUriInActiveTab();
-      setTalerActionUrl(talerUri);
+      const clipUri = await findTalerUriInClipboard();
+      if (clipUri) {
+        setTalerActionUrl({
+          location: "clipboard",
+          uri: clipUri
+        });
+        return;
+      }
+      const tabUri = await findTalerUriInActiveTab();
+      if (tabUri) {
+        setTalerActionUrl({
+          location: "activeTab",
+          uri: tabUri
+        });
+        return;
+      }
     }
     check();
   });

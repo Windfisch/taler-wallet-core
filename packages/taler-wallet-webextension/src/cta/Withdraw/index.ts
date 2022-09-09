@@ -85,6 +85,7 @@ export namespace State {
 
     ageRestriction?: SelectFieldHandler;
 
+    talerWithdrawUri?: string;
     cancel: () => Promise<void>;
   };
 }

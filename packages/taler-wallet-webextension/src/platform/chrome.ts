@@ -30,6 +30,7 @@ import {
 const api: PlatformAPI = {
   isFirefox,
   findTalerUriInActiveTab,
+  findTalerUriInClipboard,
   getPermissionsApi,
   getWalletWebExVersion,
   listenToWalletBackground,
@@ -687,6 +688,11 @@ async function findTalerUriInTab(tabId: number): Promise<string | undefined> {
       );
     });
   }
+}
+
+async function findTalerUriInClipboard(): Promise<string | undefined> {
+  const textInClipboard = await window.navigator.clipboard.readText();
+  return textInClipboard.startsWith("taler://") || textInClipboard.startsWith("taler+http://") ? textInClipboard : undefined
 }
 
 async function findTalerUriInActiveTab(): Promise<string | undefined> {
