@@ -15,6 +15,7 @@
  */
 
 import { AmountJson, ConfirmPayResult, PreparePayResult, PreparePayResultAlreadyConfirmed, PreparePayResultInsufficientBalance, PreparePayResultPaymentPossible } from "@gnu-taler/taler-util";
+import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { ButtonHandler } from "../../mui/handlers.js";
@@ -85,7 +86,7 @@ export namespace State {
     status: "completed";
     payStatus: PreparePayResult;
     payResult: ConfirmPayResult;
-    payHandler: ButtonHandler;
+    paymentError?: TalerError;
     balance: AmountJson;
   }
 }

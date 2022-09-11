@@ -16,9 +16,12 @@
 
 import {
   AbsoluteTime,
+  AmountJson,
   Amounts,
   ConfirmPayResultType,
   ContractTerms,
+  PreparePayResult,
+  PreparePayResultPaymentPossible,
   PreparePayResultType,
   Product,
 } from "@gnu-taler/taler-util";
@@ -42,6 +45,7 @@ import {
 import { Time } from "../../components/Time.js";
 import { useTranslationContext } from "../../context/translation.js";
 import { Button } from "../../mui/Button.js";
+import { ButtonHandler } from "../../mui/handlers.js";
 import { MerchantDetails, PurchaseDetails } from "../../wallet/Transaction.js";
 import { State } from "./index.js";
 
@@ -164,7 +168,11 @@ export function BaseView(state: SupportedStates): VNode {
         )}
       </section>
       <ButtonsSection
-        state={state}
+        amount={state.amount}
+        balance={state.balance}
+        payStatus={state.payStatus}
+        uri={state.uri}
+        payHandler={state.status === "ready" ? state.payHandler : undefined}
         goToWalletManualWithdraw={state.goToWalletManualWithdraw}
       />
       <section>
@@ -276,9 +284,9 @@ function ShowImportantMessage({ state }: { state: SupportedStates }): VNode {
   }
 
   if (state.status == "completed") {
-    const { payResult, payHandler } = state;
-    if (payHandler.error) {
-      return <ErrorTalerOperation error={payHandler.error.errorDetail} />;
+    const { payResult, paymentError } = state;
+    if (paymentError) {
+      return <ErrorTalerOperation error={paymentError.errorDetail} />;
     }
     if (payResult.type === ConfirmPayResultType.Done) {
       return (
@@ -307,15 +315,11 @@ function ShowImportantMessage({ state }: { state: SupportedStates }): VNode {
   return <Fragment />;
 }
 
-function PayWithMobile({ state }: { state: SupportedStates }): VNode {
+export function PayWithMobile({ uri }: { uri: string }): VNode {
   const { i18n } = useTranslationContext();
 
   const [showQR, setShowQR] = useState<boolean>(false);
 
-  const privateUri =
-    state.payStatus.status !== PreparePayResultType.AlreadyConfirmed
-      ? `${state.uri}&n=${state.payStatus.noncePriv}`
-      : state.uri;
   return (
     <section>
       <LinkSuccess upperCased onClick={() => setShowQR((qr) => !qr)}>
@@ -327,10 +331,10 @@ function PayWithMobile({ state }: { state: SupportedStates }): VNode {
       </LinkSuccess>
       {showQR && (
         <div>
-          <QR text={privateUri} />
+          <QR text={uri} />
           <i18n.Translate>
             Scan the QR code or &nbsp;
-            <a href={privateUri}>
+            <a href={uri}>
               <i18n.Translate>click here</i18n.Translate>
             </a>
           </i18n.Translate>
@@ -340,50 +344,60 @@ function PayWithMobile({ state }: { state: SupportedStates }): VNode {
   );
 }
 
-function ButtonsSection({
-  state,
-  goToWalletManualWithdraw,
-}: {
-  state: SupportedStates;
+interface ButtonSectionProps {
+  payStatus: PreparePayResult;
+  payHandler: ButtonHandler | undefined;
+  balance: AmountJson | undefined;
+  uri: string;
+  amount: AmountJson;
   goToWalletManualWithdraw: (currency: string) => Promise<void>;
-}): VNode {
+}
+
+export function ButtonsSection({
+  payStatus,
+  uri,
+  payHandler,
+  balance,
+  amount,
+  goToWalletManualWithdraw,
+}: ButtonSectionProps): VNode {
   const { i18n } = useTranslationContext();
-  if (state.status === "ready") {
+  if (payStatus.status === PreparePayResultType.PaymentPossible) {
+    const privateUri = `${uri}&n=${payStatus.noncePriv}`;
+
     return (
       <Fragment>
         <section>
           <Button
             variant="contained"
             color="success"
-            onClick={state.payHandler.onClick}
+            onClick={payHandler?.onClick}
           >
             <i18n.Translate>
               Pay &nbsp;
-              {<Amount value={state.payStatus.amountEffective} />}
+              {<Amount value={amount} />}
             </i18n.Translate>
           </Button>
         </section>
-        <PayWithMobile state={state} />
+        <PayWithMobile uri={privateUri} />
       </Fragment>
     );
   }
-  if (
-    state.status === "no-enough-balance" ||
-    state.status === "no-balance-for-currency"
-  ) {
-    // if (state.payStatus.status === PreparePayResultType.InsufficientBalance) {
+
+  if (payStatus.status === PreparePayResultType.InsufficientBalance) {
     let BalanceMessage = "";
-    if (!state.balance) {
+    if (!balance) {
       BalanceMessage = i18n.str`You have no balance for this currency. Withdraw digital cash first.`;
     } else {
-      const balanceShouldBeEnough =
-        Amounts.cmp(state.balance, state.amount) !== -1;
+      const balanceShouldBeEnough = Amounts.cmp(balance, amount) !== -1;
       if (balanceShouldBeEnough) {
-        BalanceMessage = i18n.str`Could not find enough coins to pay this order. Even if you have enough ${state.balance.currency} some restriction may apply.`;
+        BalanceMessage = i18n.str`Could not find enough coins to pay. Even if you have enough ${balance.currency} some restriction may apply.`;
       } else {
-        BalanceMessage = i18n.str`Your current balance is not enough for this order.`;
+        BalanceMessage = i18n.str`Your current balance is not enough.`;
       }
     }
+    const uriPrivate = `${uri}&n=${payStatus.noncePriv}`;
+
     return (
       <Fragment>
         <section>
@@ -393,51 +407,45 @@ function ButtonsSection({
           <Button
             variant="contained"
             color="success"
-            onClick={() =>
-              goToWalletManualWithdraw(Amounts.stringify(state.amount))
-            }
+            onClick={() => goToWalletManualWithdraw(Amounts.stringify(amount))}
           >
             <i18n.Translate>Get digital cash</i18n.Translate>
           </Button>
         </section>
-        <PayWithMobile state={state} />
+        <PayWithMobile uri={uriPrivate} />
       </Fragment>
     );
-    // }
   }
-  if (state.status === "confirmed") {
-    if (state.payStatus.status === PreparePayResultType.AlreadyConfirmed) {
-      return (
-        <Fragment>
-          <section>
-            {state.payStatus.paid &&
-              state.payStatus.contractTerms.fulfillment_message && (
-                <Part
-                  title={<i18n.Translate>Merchant message</i18n.Translate>}
-                  text={state.payStatus.contractTerms.fulfillment_message}
-                  kind="neutral"
-                />
-              )}
-          </section>
-          {!state.payStatus.paid && <PayWithMobile state={state} />}
-        </Fragment>
-      );
-    }
+  if (payStatus.status === PreparePayResultType.AlreadyConfirmed) {
+    return (
+      <Fragment>
+        <section>
+          {payStatus.paid && payStatus.contractTerms.fulfillment_message && (
+            <Part
+              title={<i18n.Translate>Merchant message</i18n.Translate>}
+              text={payStatus.contractTerms.fulfillment_message}
+              kind="neutral"
+            />
+          )}
+        </section>
+        {!payStatus.paid && <PayWithMobile uri={uri} />}
+      </Fragment>
+    );
   }
 
-  if (state.status === "completed") {
-    if (state.payResult.type === ConfirmPayResultType.Pending) {
-      return (
-        <section>
-          <div>
-            <p>
-              <i18n.Translate>Processing</i18n.Translate>...
-            </p>
-          </div>
-        </section>
-      );
-    }
-  }
+  // if (state.status === "completed") {
+  //   if (state.payResult.type === ConfirmPayResultType.Pending) {
+  //     return (
+  //       <section>
+  //         <div>
+  //           <p>
+  //             <i18n.Translate>Processing</i18n.Translate>...
+  //           </p>
+  //         </div>
+  //       </section>
+  //     );
+  //   }
+  // }
 
   return <Fragment />;
 }

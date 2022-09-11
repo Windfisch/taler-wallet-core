@@ -101,9 +101,7 @@ export function useComponentState(
       status: "completed",
       balance: foundAmount,
       payStatus,
-      payHandler: {
-        error: payErrMsg,
-      },
+      paymentError: payErrMsg,
       payResult,
       ...baseResult,
     };

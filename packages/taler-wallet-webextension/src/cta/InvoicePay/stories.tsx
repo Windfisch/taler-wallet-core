@@ -19,6 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
+import { PreparePayResult, PreparePayResultType } from "@gnu-taler/taler-util";
 import { createExample } from "../../test-utils.js";
 import { ReadyView } from "./views.js";
 
@@ -32,6 +33,10 @@ export const Ready = createExample(ReadyView, {
     value: 1,
     fraction: 0,
   },
+  payStatus: {
+    status: PreparePayResultType.PaymentPossible,
+    amountEffective: "ARS:1",
+  } as PreparePayResult,
   accept: {},
   cancel: {},
 });

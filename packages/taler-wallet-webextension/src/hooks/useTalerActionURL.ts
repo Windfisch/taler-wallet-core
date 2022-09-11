@@ -52,7 +52,8 @@ export function useTalerActionURL(): [
       }
     }
     check();
-  });
+  }, [setTalerActionUrl]);
+
   const url = dismissed ? undefined : talerActionUrl;
   return [url, setDismissed];
 }

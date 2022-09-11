@@ -14,16 +14,23 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { h, VNode } from "preact";
+import { Amounts, PreparePayResultType } from "@gnu-taler/taler-util";
+import { Fragment, h, VNode } from "preact";
 import { Amount } from "../../components/Amount.js";
 import { ErrorTalerOperation } from "../../components/ErrorTalerOperation.js";
 import { LoadingError } from "../../components/LoadingError.js";
 import { LogoHeader } from "../../components/LogoHeader.js";
 import { Part } from "../../components/Part.js";
-import { Link, SubTitle, WalletAction } from "../../components/styled/index.js";
+import {
+  Link,
+  SubTitle,
+  WalletAction,
+  WarningBox,
+} from "../../components/styled/index.js";
 import { Time } from "../../components/Time.js";
 import { useTranslationContext } from "../../context/translation.js";
 import { Button } from "../../mui/Button.js";
+import { ButtonsSection, PayWithMobile } from "../Payment/views.js";
 import { State } from "./index.js";
 
 export function LoadingUriView({ error }: State.LoadingUriError): VNode {
@@ -37,16 +44,21 @@ export function LoadingUriView({ error }: State.LoadingUriError): VNode {
   );
 }
 
-export function ReadyView({
-  operationError,
-  cancel,
-  accept,
-  expiration,
-  summary,
-  amount,
-}: State.Ready): VNode {
+export function ReadyView(
+  state: State.Ready | State.NoBalanceForCurrency | State.NoEnoughBalance,
+): VNode {
   const { i18n } = useTranslationContext();
-
+  const {
+    operationError,
+    summary,
+    amount,
+    expiration,
+    uri,
+    status,
+    balance,
+    payStatus,
+    cancel,
+  } = state;
   return (
     <WalletAction>
       <LogoHeader />
@@ -78,13 +90,14 @@ export function ReadyView({
           kind="neutral"
         />
       </section>
-      <section>
-        <Button variant="contained" color="success" onClick={accept.onClick}>
-          <i18n.Translate>
-            Pay &nbsp; {<Amount value={amount} />}
-          </i18n.Translate>
-        </Button>
-      </section>
+      <ButtonsSection
+        amount={amount}
+        balance={balance}
+        payStatus={payStatus}
+        uri={uri}
+        payHandler={status === "ready" ? state.accept : undefined}
+        goToWalletManualWithdraw={state.goToWalletManualWithdraw}
+      />
       <section>
         <Link upperCased onClick={cancel.onClick}>
           <i18n.Translate>Cancel</i18n.Translate>

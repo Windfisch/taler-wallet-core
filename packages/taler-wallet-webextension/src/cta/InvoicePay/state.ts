@@ -14,22 +14,31 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AbsoluteTime, Amounts, TalerErrorDetail, TalerProtocolTimestamp } from "@gnu-taler/taler-util";
+import { AbsoluteTime, Amounts, NotificationType, PreparePayResult, PreparePayResultType, TalerErrorDetail, TalerProtocolTimestamp } from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
-  { talerPayPullUri, onClose }: Props,
+  { talerPayPullUri, onClose, goToWalletManualWithdraw }: Props,
   api: typeof wxApi,
 ): State {
   const hook = useAsyncAsHook(async () => {
-    return await api.checkPeerPullPayment({
+    const p2p = await api.checkPeerPullPayment({
       talerUri: talerPayPullUri
     })
-  }, [])
+    const balance = await api.getBalance();
+    return { p2p, balance }
+  })
+
+  useEffect(() => {
+    api.onUpdateNotification([NotificationType.CoinWithdrawn], () => {
+      hook?.retry();
+    });
+  });
+
   const [operationError, setOperationError] = useState<TalerErrorDetail | undefined>(undefined)
 
   if (!hook) {
@@ -45,11 +54,83 @@ export function useComponentState(
     };
   }
 
-  const { amount: purseAmount, contractTerms, peerPullPaymentIncomingId } = hook.response
+  // const { payStatus } = hook.response.p2p;
 
-  const amount: string = contractTerms?.amount
+  const { amount: purseAmount, contractTerms, peerPullPaymentIncomingId } = hook.response.p2p
+
+
+  const amountStr: string = contractTerms?.amount
+  const amount = Amounts.parseOrThrow(amountStr)
   const summary: string | undefined = contractTerms?.summary
   const expiration: TalerProtocolTimestamp | undefined = contractTerms?.purse_expiration
+
+  const foundBalance = hook.response.balance.balances.find(
+    (b) => Amounts.parseOrThrow(b.available).currency === amount.currency,
+  );
+
+  const paymentPossible: PreparePayResult = {
+    status: PreparePayResultType.PaymentPossible,
+    proposalId: "fakeID",
+    contractTerms: {
+    } as any,
+    contractTermsHash: "asd",
+    amountRaw: hook.response.p2p.amount,
+    amountEffective: hook.response.p2p.amount,
+    noncePriv: "",
+  } as PreparePayResult
+
+  const insufficientBalance: PreparePayResult = {
+    status: PreparePayResultType.InsufficientBalance,
+    proposalId: "fakeID",
+    contractTerms: {
+    } as any,
+    amountRaw: hook.response.p2p.amount,
+    noncePriv: "",
+  }
+
+
+  const baseResult = {
+    uri: talerPayPullUri,
+    cancel: {
+      onClick: onClose
+    },
+    amount,
+    goToWalletManualWithdraw,
+    summary,
+    expiration: expiration ? AbsoluteTime.fromTimestamp(expiration) : undefined,
+    operationError,
+  }
+
+  if (!foundBalance) {
+    return {
+      status: "no-balance-for-currency",
+      error: undefined,
+      balance: undefined,
+      ...baseResult,
+      payStatus: insufficientBalance,
+    }
+  }
+
+  const foundAmount = Amounts.parseOrThrow(foundBalance.available);
+
+  //FIXME: should use pay result type since it check for coins exceptions
+  if (Amounts.cmp(foundAmount, amount) < 0) { //payStatus.status === PreparePayResultType.InsufficientBalance) {
+    return {
+      status: 'no-enough-balance',
+      error: undefined,
+      balance: foundAmount,
+      ...baseResult,
+      payStatus: insufficientBalance,
+    }
+  }
+
+  // if (payStatus.status === PreparePayResultType.AlreadyConfirmed) {
+  //   return {
+  //     status: "confirmed",
+  //     balance: foundAmount,
+  //     ...baseResult,
+  //   };
+  // }
 
   async function accept(): Promise<void> {
     try {
@@ -69,16 +150,12 @@ export function useComponentState(
 
   return {
     status: "ready",
-    amount: Amounts.parseOrThrow(amount),
     error: undefined,
+    ...baseResult,
+    payStatus: paymentPossible,
+    balance: foundAmount,
     accept: {
       onClick: accept
     },
-    summary,
-    expiration: expiration ? AbsoluteTime.fromTimestamp(expiration) : undefined,
-    cancel: {
-      onClick: onClose
-    },
-    operationError
   }
 }
