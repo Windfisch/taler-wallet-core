@@ -167,14 +167,16 @@ export function BaseView(state: SupportedStates): VNode {
           />
         )}
       </section>
-      <ButtonsSection
-        amount={state.amount}
-        balance={state.balance}
-        payStatus={state.payStatus}
-        uri={state.uri}
-        payHandler={state.status === "ready" ? state.payHandler : undefined}
-        goToWalletManualWithdraw={state.goToWalletManualWithdraw}
-      />
+      {state.status !== "completed" ? (
+        <ButtonsSection
+          amount={state.amount}
+          balance={state.balance}
+          payStatus={state.payStatus}
+          uri={state.uri}
+          payHandler={state.status === "ready" ? state.payHandler : undefined}
+          goToWalletManualWithdraw={state.goToWalletManualWithdraw}
+        />
+      ) : undefined}
       <section>
         <Link upperCased onClick={state.cancel}>
           <i18n.Translate>Cancel</i18n.Translate>
@@ -433,19 +435,7 @@ export function ButtonsSection({
     );
   }
 
-  // if (state.status === "completed") {
-  //   if (state.payResult.type === ConfirmPayResultType.Pending) {
-  //     return (
-  //       <section>
-  //         <div>
-  //           <p>
-  //             <i18n.Translate>Processing</i18n.Translate>...
-  //           </p>
-  //         </div>
-  //       </section>
-  //     );
-  //   }
-  // }
+  const error: never = payStatus;
 
   return <Fragment />;
 }

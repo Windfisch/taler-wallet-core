@@ -288,6 +288,9 @@ export function Application(): VNode {
               <Route
                 path={Pages.ctaInvoicePay}
                 component={InvoicePayPage}
+                goToWalletManualWithdraw={(amount?: string) =>
+                  redirectTo(Pages.ctaWithdrawManual({ amount }))
+                }
                 onClose={() => redirectTo(Pages.balance)}
               />
               <Route
