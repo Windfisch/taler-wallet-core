@@ -874,7 +874,7 @@ export const codecForTestPayArgs = (): Codec<TestPayArgs> =>
 export interface IntegrationTestArgs {
   exchangeBaseUrl: string;
   bankBaseUrl: string;
-  bankAccessApiBaseUrl: string;
+  bankAccessApiBaseUrl?: string;
   merchantBaseUrl: string;
   merchantAuthToken?: string;
   amountToWithdraw: string;
@@ -889,7 +889,7 @@ export const codecForIntegrationTestArgs = (): Codec<IntegrationTestArgs> =>
     .property("merchantAuthToken", codecOptional(codecForString()))
     .property("amountToSpend", codecForAmountString())
     .property("amountToWithdraw", codecForAmountString())
-    .property("bankAccessApiBaseUrl", codecForAmountString())
+    .property("bankAccessApiBaseUrl", codecOptional(codecForAmountString()))
     .build("IntegrationTestArgs");
 
 export interface AddExchangeRequest {
