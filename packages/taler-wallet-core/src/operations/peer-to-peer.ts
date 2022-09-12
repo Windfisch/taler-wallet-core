@@ -214,7 +214,6 @@ export async function initiatePeerToPeerPush(
   ws: InternalWalletState,
   req: InitiatePeerPushPaymentRequest,
 ): Promise<InitiatePeerPushPaymentResponse> {
-  // FIXME: actually create a record for retries here!
   const instructedAmount = Amounts.parseOrThrow(req.amount);
 
   const pursePair = await ws.cryptoApi.createEddsaKeypair({});
@@ -265,6 +264,7 @@ export async function initiatePeerToPeerPush(
           Amounts.parseOrThrow(c.contribution),
         ).amount;
         coin.status = CoinStatus.Dormant;
+        pubs.push({ coinPub: coin.coinPub });
         await tx.coins.put(coin);
       }
 
@@ -283,7 +283,7 @@ export async function initiatePeerToPeerPush(
         timestampCreated: TalerProtocolTimestamp.now(),
       });
 
-      await createRefreshGroup(ws, tx, pubs, RefreshReason.Pay);
+      await createRefreshGroup(ws, tx, pubs, RefreshReason.PayPeerPush);
 
       return sel;
     });
@@ -601,10 +601,11 @@ export async function acceptPeerPullPayment(
           Amounts.parseOrThrow(c.contribution),
         ).amount;
         coin.status = CoinStatus.Dormant;
+        pubs.push({ coinPub: coin.coinPub });
         await tx.coins.put(coin);
       }
 
-      await createRefreshGroup(ws, tx, pubs, RefreshReason.Pay);
+      await createRefreshGroup(ws, tx, pubs, RefreshReason.PayPeerPull);
 
       const pi = await tx.peerPullPaymentIncoming.get(
         req.peerPullPaymentIncomingId,
@@ -711,6 +712,9 @@ export async function checkPeerPullPayment(
   };
 }
 
+/**
+ * Initiate a peer pull payment.
+ */
 export async function initiatePeerRequestForPay(
   ws: InternalWalletState,
   req: InitiatePeerPullPaymentRequest,

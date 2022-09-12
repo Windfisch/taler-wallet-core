@@ -409,7 +409,7 @@ export async function applyCoinSpend(
   const refreshCoinPubs = coinSelection.coinPubs.map((x) => ({
     coinPub: x,
   }));
-  await createRefreshGroup(ws, tx, refreshCoinPubs, RefreshReason.Pay);
+  await createRefreshGroup(ws, tx, refreshCoinPubs, RefreshReason.PayMerchant);
 }
 
 /**

@@ -810,7 +810,7 @@ export async function importBackup(
               reason = RefreshReason.Manual;
               break;
             case BackupRefreshReason.Pay:
-              reason = RefreshReason.Pay;
+              reason = RefreshReason.PayMerchant;
               break;
             case BackupRefreshReason.Recoup:
               reason = RefreshReason.Recoup;
