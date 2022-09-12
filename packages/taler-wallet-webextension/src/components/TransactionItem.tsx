@@ -202,7 +202,7 @@ function TransactionLayout(props: TransactionLayoutProps): VNode {
           </LightText>
         )}
         <SmallLightText style={{ marginTop: 5 }}>
-          <Time timestamp={props.timestamp} format="hh:mm" />
+          <Time timestamp={props.timestamp} format="HH:mm" />
         </SmallLightText>
       </Column>
       <TransactionAmount

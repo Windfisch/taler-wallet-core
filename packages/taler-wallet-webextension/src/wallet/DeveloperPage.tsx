@@ -288,7 +288,7 @@ export function View({
                     {o.type}{" "}
                     <Time
                       timestamp={o.timestampDue}
-                      format="yy/MM/dd hh:mm:ss"
+                      format="yy/MM/dd HH:mm:ss"
                     />
                   </dt>
                   <dd>
