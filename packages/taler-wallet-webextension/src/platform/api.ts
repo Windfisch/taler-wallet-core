@@ -37,6 +37,10 @@ export interface CrossBrowserPermissionsApi {
   requestHostPermissions(): Promise<boolean>;
   removeHostPermissions(): Promise<boolean>;
 
+  containsClipboardPermissions(): Promise<boolean>;
+  requestClipboardPermissions(): Promise<boolean>;
+  removeClipboardPermissions(): Promise<boolean>;
+
   addPermissionsListener(
     callback: (p: Permissions, lastError?: string) => void,
   ): void;

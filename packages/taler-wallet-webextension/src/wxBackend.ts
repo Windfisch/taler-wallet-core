@@ -330,10 +330,20 @@ export async function wxMain(): Promise<void> {
   platform.registerAllIncomingConnections();
 
   try {
-    platform.registerTalerHeaderListener(parseTalerUriAndRedirect);
+    platform.registerOnInstalled(() => {
+      platform.openWalletPage("/welcome");
+
+      //
+      try {
+        platform.registerTalerHeaderListener(parseTalerUriAndRedirect);
+      } catch (e) {
+        logger.error("could not register header listener", e);
+      }
+    });
   } catch (e) {
-    logger.error("could not register header listener", e);
+    console.error(e);
   }
+
 
   // On platforms that support it, also listen to external
   // modification of permissions.

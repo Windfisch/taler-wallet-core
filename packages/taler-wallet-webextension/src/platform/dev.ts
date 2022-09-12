@@ -32,6 +32,9 @@ const api: PlatformAPI = {
     containsHostPermissions: async () => true,
     removeHostPermissions: async () => false,
     requestHostPermissions: async () => false,
+    containsClipboardPermissions: async () => true,
+    removeClipboardPermissions: async () => false,
+    requestClipboardPermissions: async () => false,
   }),
   getWalletWebExVersion: () => ({
     version: "none",

@@ -27,7 +27,8 @@
     }
   },
   "optional_permissions": [
-    "webRequest"
+    "webRequest",
+    "clipboardRead"
   ],
   "host_permissions": [
     "http://*/*",

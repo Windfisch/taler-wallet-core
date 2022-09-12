@@ -20,21 +20,21 @@ import { platform } from "../platform/api.js";
 import { ToggleHandler } from "../mui/handlers.js";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 
-export function useExtendedPermissions(): ToggleHandler {
+export function useAutoOpenPermissions(): ToggleHandler {
   const [enabled, setEnabled] = useState(false);
   const [error, setError] = useState<TalerError | undefined>();
   const toggle = async (): Promise<void> => {
-    return handleExtendedPerm(enabled, setEnabled).catch((e) => {
+    return handleAutoOpenPerm(enabled, setEnabled).catch((e) => {
       setError(TalerError.fromException(e));
     });
   };
 
   useEffect(() => {
-    async function getExtendedPermValue(): Promise<void> {
+    async function getValue(): Promise<void> {
       const res = await wxApi.containsHeaderListener();
       setEnabled(res.newValue);
     }
-    getExtendedPermValue();
+    getValue();
   }, []);
   return {
     value: enabled,
@@ -45,7 +45,7 @@ export function useExtendedPermissions(): ToggleHandler {
   };
 }
 
-async function handleExtendedPerm(
+async function handleAutoOpenPerm(
   isEnabled: boolean,
   onChange: (value: boolean) => void,
 ): Promise<void> {

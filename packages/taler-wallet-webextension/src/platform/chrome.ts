@@ -77,6 +77,18 @@ const hostPermissions = {
   origins: ["http://*/*", "https://*/*"],
 };
 
+export function containsClipboardPermissions(): Promise<boolean> {
+  return new Promise((res, rej) => {
+    chrome.permissions.contains({ permissions: ["clipboardRead"] }, (resp) => {
+      const le = chrome.runtime.lastError?.message;
+      if (le) {
+        rej(le);
+      }
+      res(resp);
+    });
+  });
+}
+
 export function containsHostPermissions(): Promise<boolean> {
   return new Promise((res, rej) => {
     chrome.permissions.contains(hostPermissions, (resp) => {
@@ -86,6 +98,18 @@ export function containsHostPermissions(): Promise<boolean> {
       }
       res(resp);
     });
+  });
+}
+
+export async function requestClipboardPermissions(): Promise<boolean> {
+  return new Promise((res, rej) => {
+    chrome.permissions.request({ permissions: ["clipboardRead"] }, (resp) => {
+      const le = chrome.runtime.lastError?.message;
+      if (le) {
+        rej(le);
+      }
+      res(resp);
+    })
   });
 }
 
@@ -155,6 +179,18 @@ export async function removeHostPermissions(): Promise<boolean> {
   });
 }
 
+export function removeClipboardPermissions(): Promise<boolean> {
+  return new Promise((res, rej) => {
+    chrome.permissions.remove({ permissions: ["clipboardRead"] }, (resp) => {
+      const le = chrome.runtime.lastError?.message;
+      if (le) {
+        rej(le);
+      }
+      res(resp);
+    });
+  });
+}
+
 function addPermissionsListener(
   callback: (p: Permissions, lastError?: string) => void,
 ): void {
@@ -170,6 +206,9 @@ function getPermissionsApi(): CrossBrowserPermissionsApi {
     containsHostPermissions,
     requestHostPermissions,
     removeHostPermissions,
+    requestClipboardPermissions,
+    removeClipboardPermissions,
+    containsClipboardPermissions,
   };
 }
 
@@ -382,11 +421,9 @@ function registerTalerHeaderListener(
   }
 
   async function tabListener(tabId: number, info: chrome.tabs.TabChangeInfo): Promise<void> {
-    console.log("tab update", tabId, info)
     if (tabId < 0) return;
     if (info.status !== "complete") return;
     const uri = await findTalerUriInTab(tabId);
-    console.log("uri", uri)
     if (!uri) return;
     logger.info(`Found a Taler URI in the tab ${tabId}`)
     callback(tabId, uri)
@@ -585,7 +622,6 @@ async function registerIconChangeOnTalerContent(): Promise<void> {
   chrome.tabs.onUpdated.addListener(
     async (tabId, info: chrome.tabs.TabChangeInfo) => {
       if (tabId < 0) return;
-      logger.info("tab updated", tabId, info);
       if (info.status !== "complete") return;
       const uri = await findTalerUriInTab(tabId);
       if (uri) {
@@ -690,9 +726,22 @@ async function findTalerUriInTab(tabId: number): Promise<string | undefined> {
   }
 }
 
+async function timeout(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 async function findTalerUriInClipboard(): Promise<string | undefined> {
-  const textInClipboard = await window.navigator.clipboard.readText();
-  return textInClipboard.startsWith("taler://") || textInClipboard.startsWith("taler+http://") ? textInClipboard : undefined
+  try {
+    //It looks like clipboard promise does not return, so we need a timeout
+    const textInClipboard = await Promise.any([
+      timeout(100),
+      window.navigator.clipboard.readText()
+    ])
+    if (!textInClipboard) return;
+    return textInClipboard.startsWith("taler://") || textInClipboard.startsWith("taler+http://") ? textInClipboard : undefined
+  } catch (e) {
+    logger.error("could not read clipboard", e)
+    return undefined
+  }
 }
 
 async function findTalerUriInActiveTab(): Promise<string | undefined> {

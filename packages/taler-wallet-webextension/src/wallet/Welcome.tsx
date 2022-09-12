@@ -26,12 +26,12 @@ import { Checkbox } from "../components/Checkbox.js";
 import { SubTitle, Title } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useDiagnostics } from "../hooks/useDiagnostics.js";
-import { useExtendedPermissions } from "../hooks/useExtendedPermissions.js";
+import { useAutoOpenPermissions } from "../hooks/useAutoOpenPermissions.js";
 import { ToggleHandler } from "../mui/handlers.js";
 import { platform } from "../platform/api.js";
 
 export function WelcomePage(): VNode {
-  const permissionToggle = useExtendedPermissions();
+  const permissionToggle = useAutoOpenPermissions();
   const [diagnostics, timedOut] = useDiagnostics();
   return (
     <View

@@ -42,14 +42,6 @@ if (isFirefox) {
   setupPlatform(chromeAPI);
 }
 
-try {
-  platform.registerOnInstalled(() => {
-    platform.openWalletPage("/welcome");
-  });
-} catch (e) {
-  console.error(e);
-}
-
 // setGlobalLogLevelFromString("trace")
 platform.notifyWhenAppIsReady(() => {
   wxMain();

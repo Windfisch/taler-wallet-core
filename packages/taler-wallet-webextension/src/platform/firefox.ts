@@ -16,9 +16,12 @@
 
 import { CrossBrowserPermissionsApi, Permissions, PlatformAPI } from "./api.js";
 import chromePlatform, {
-  containsHostPermissions as chromeContains,
-  removeHostPermissions as chromeRemove,
-  requestHostPermissions as chromeRequest,
+  containsHostPermissions as chromeHostContains,
+  removeHostPermissions as chromeHostRemove,
+  requestHostPermissions as chromeHostRequest,
+  containsClipboardPermissions as chromeClipContains,
+  removeClipboardPermissions as chromeClipRemove,
+  requestClipboardPermissions as chromeClipRequest,
 } from "./chrome.js";
 
 const api: PlatformAPI = {
@@ -43,9 +46,12 @@ function addPermissionsListener(callback: (p: Permissions) => void): void {
 function getPermissionsApi(): CrossBrowserPermissionsApi {
   return {
     addPermissionsListener,
-    containsHostPermissions: chromeContains,
-    requestHostPermissions: chromeRequest,
-    removeHostPermissions: chromeRemove,
+    containsHostPermissions: chromeHostContains,
+    requestHostPermissions: chromeHostRequest,
+    removeHostPermissions: chromeHostRemove,
+    containsClipboardPermissions: chromeClipContains,
+    removeClipboardPermissions: chromeClipRemove,
+    requestClipboardPermissions: chromeClipRequest,
   };
 }
 

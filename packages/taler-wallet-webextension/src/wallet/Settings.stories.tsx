@@ -46,21 +46,24 @@ const version = {
 
 export const AllOff = createExample(TestedComponent, {
   deviceName: "this-is-the-device-name",
-  permissionToggle: { value: false, button: {} },
+  autoOpenToggle: { value: false, button: {} },
+  clipboardToggle: { value: false, button: {} },
   setDeviceName: () => Promise.resolve(),
   ...version,
 });
 
 export const OneChecked = createExample(TestedComponent, {
   deviceName: "this-is-the-device-name",
-  permissionToggle: { value: false, button: {} },
+  autoOpenToggle: { value: false, button: {} },
+  clipboardToggle: { value: false, button: {} },
   setDeviceName: () => Promise.resolve(),
   ...version,
 });
 
 export const WithOneExchange = createExample(TestedComponent, {
   deviceName: "this-is-the-device-name",
-  permissionToggle: { value: false, button: {} },
+  autoOpenToggle: { value: false, button: {} },
+  clipboardToggle: { value: false, button: {} },
   setDeviceName: () => Promise.resolve(),
   knownExchanges: [
     {
@@ -80,7 +83,8 @@ export const WithOneExchange = createExample(TestedComponent, {
 
 export const WithExchangeInDifferentState = createExample(TestedComponent, {
   deviceName: "this-is-the-device-name",
-  permissionToggle: { value: false, button: {} },
+  autoOpenToggle: { value: false, button: {} },
+  clipboardToggle: { value: false, button: {} },
   setDeviceName: () => Promise.resolve(),
   knownExchanges: [
     {

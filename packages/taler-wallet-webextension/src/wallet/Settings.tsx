@@ -33,17 +33,19 @@ import { useDevContext } from "../context/devContext.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { useBackupDeviceName } from "../hooks/useBackupDeviceName.js";
-import { useExtendedPermissions } from "../hooks/useExtendedPermissions.js";
+import { useAutoOpenPermissions } from "../hooks/useAutoOpenPermissions.js";
 import { ToggleHandler } from "../mui/handlers.js";
 import { Pages } from "../NavigationBar.js";
 import { buildTermsOfServiceStatus } from "../utils/index.js";
 import * as wxApi from "../wxApi.js";
 import { platform } from "../platform/api.js";
+import { useClipboardPermissions } from "../hooks/useClipboardPermissions.js";
 
 const GIT_HASH = typeof __GIT_HASH__ !== "undefined" ? __GIT_HASH__ : undefined;
 
 export function SettingsPage(): VNode {
-  const permissionToggle = useExtendedPermissions();
+  const autoOpenToggle = useAutoOpenPermissions();
+  const clipboardToggle = useClipboardPermissions();
   const { devMode, toggleDevMode } = useDevContext();
   const { name, update } = useBackupDeviceName();
   const webex = platform.getWalletWebExVersion();
@@ -63,7 +65,8 @@ export function SettingsPage(): VNode {
       knownExchanges={exchanges}
       deviceName={name}
       setDeviceName={update}
-      permissionToggle={permissionToggle}
+      autoOpenToggle={autoOpenToggle}
+      clipboardToggle={clipboardToggle}
       developerMode={devMode}
       toggleDeveloperMode={toggleDevMode}
       webexVersion={{
@@ -78,7 +81,8 @@ export function SettingsPage(): VNode {
 export interface ViewProps {
   deviceName: string;
   setDeviceName: (s: string) => Promise<void>;
-  permissionToggle: ToggleHandler;
+  autoOpenToggle: ToggleHandler;
+  clipboardToggle: ToggleHandler;
   developerMode: boolean;
   toggleDeveloperMode: () => Promise<void>;
   knownExchanges: Array<ExchangeListItem>;
@@ -91,7 +95,8 @@ export interface ViewProps {
 
 export function SettingsView({
   knownExchanges,
-  permissionToggle,
+  autoOpenToggle,
+  clipboardToggle,
   developerMode,
   coreVersion,
   webexVersion,
@@ -102,10 +107,16 @@ export function SettingsView({
   return (
     <Fragment>
       <section>
-        {permissionToggle.button.error && (
+        {autoOpenToggle.button.error && (
           <ErrorTalerOperation
             title={<i18n.Translate>Could not toggle auto-open</i18n.Translate>}
-            error={permissionToggle.button.error.errorDetail}
+            error={autoOpenToggle.button.error.errorDetail}
+          />
+        )}
+        {clipboardToggle.button.error && (
+          <ErrorTalerOperation
+            title={<i18n.Translate>Could not toggle clipboard</i18n.Translate>}
+            error={clipboardToggle.button.error.errorDetail}
           />
         )}
         <SubTitle>
@@ -117,15 +128,31 @@ export function SettingsView({
               Automatically open wallet based on page content
             </i18n.Translate>
           }
-          name="perm"
+          name="autoOpen"
           description={
             <i18n.Translate>
               Enabling this option below will make using the wallet faster, but
               requires more permissions from your browser.
             </i18n.Translate>
           }
-          enabled={permissionToggle.value!}
-          onToggle={permissionToggle.button.onClick!}
+          enabled={autoOpenToggle.value!}
+          onToggle={autoOpenToggle.button.onClick!}
+        />
+        <Checkbox
+          label={
+            <i18n.Translate>
+              Automatically check clipboard for Taler URI
+            </i18n.Translate>
+          }
+          name="clipboard"
+          description={
+            <i18n.Translate>
+              Enabling this option below will make using the wallet faster, but
+              requires more permissions from your browser.
+            </i18n.Translate>
+          }
+          enabled={clipboardToggle.value!}
+          onToggle={clipboardToggle.button.onClick!}
         />
 
         <SubTitle>

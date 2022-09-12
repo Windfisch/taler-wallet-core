@@ -24,7 +24,8 @@
   "optional_permissions": [
     "http://*/*",
     "https://*/*",
-    "webRequest"
+    "webRequest",
+    "clipboardRead"
   ],
   "browser_action": {
     "default_icon": {
