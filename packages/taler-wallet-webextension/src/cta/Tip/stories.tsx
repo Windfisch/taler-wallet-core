@@ -42,4 +42,5 @@ export const Ready = createExample(ReadyView, {
   merchantBaseUrl: "http://merchant.url/",
   exchangeBaseUrl: "http://exchange.url/",
   accept: {},
+  cancel: {},
 });

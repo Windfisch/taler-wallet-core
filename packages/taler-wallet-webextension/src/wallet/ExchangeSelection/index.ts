@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AbsoluteTime, AmountJson, ExchangeFullDetails } from "@gnu-taler/taler-util";
+import { FeeDescription, FeeDescriptionPair, AbsoluteTime, ExchangeFullDetails, OperationMap } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { ButtonHandler, SelectFieldHandler } from "../../mui/handlers.js";
@@ -53,7 +53,6 @@ export namespace State {
   export interface BaseInfo {
     exchanges: SelectFieldHandler;
     selected: ExchangeFullDetails;
-    nextFeeUpdate: AbsoluteTime;
     error: undefined;
   }
 
@@ -76,9 +75,6 @@ export namespace State {
   }
 }
 
-export type Operation = "deposit" | "withdraw" | "refresh" | "refund";
-export type OperationMap<T> = { [op in Operation]: T };
-
 
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
@@ -89,17 +85,3 @@ const viewMapping: StateViewMap<State> = {
 };
 
 export const ExchangeSelectionPage = compose("ExchangeSelectionPage", (p: Props) => useComponentState(p, wxApi), viewMapping)
-
-export interface FeeDescription {
-  value: AmountJson;
-  from: AbsoluteTime;
-  until: AbsoluteTime;
-  fee?: AmountJson;
-}
-export interface FeeDescriptionPair {
-  value: AmountJson;
-  from: AbsoluteTime;
-  until: AbsoluteTime;
-  left?: AmountJson;
-  right?: AmountJson;
-}

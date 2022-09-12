@@ -45,7 +45,12 @@ const exchanges: ExchangeFullDetails[] = [
         denomination_keys: [],
       },
     ],
-    denominations: [{} as any],
+    feesDescription: {
+      deposit: [],
+      refresh: [],
+      refund: [],
+      withdraw: [],
+    },
     wireInfo: {
       accounts: [],
       feesForType: {},

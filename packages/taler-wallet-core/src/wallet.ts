@@ -88,6 +88,8 @@ import {
   WalletNotification,
   WalletCoreVersion,
   ExchangeListItem,
+  OperationMap,
+  FeeDescription,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import {
@@ -102,6 +104,7 @@ import {
   WalletStoresV1,
 } from "./db.js";
 import { getErrorDetailFromException, TalerError } from "./errors.js";
+import { createDenominationTimeline } from "./index.browser.js";
 import {
   DenomInfo,
   ExchangeOperations,
@@ -646,24 +649,54 @@ async function getExchangeDetailedInfo(
       }
 
       return {
-        exchangeBaseUrl: ex.baseUrl,
-        currency,
-        tos: {
-          acceptedVersion: exchangeDetails.termsOfServiceAcceptedEtag,
-          currentVersion: exchangeDetails.termsOfServiceLastEtag,
-          contentType: exchangeDetails.termsOfServiceContentType,
-          content: exchangeDetails.termsOfServiceText,
+        info: {
+          exchangeBaseUrl: ex.baseUrl,
+          currency,
+          tos: {
+            acceptedVersion: exchangeDetails.termsOfServiceAcceptedEtag,
+            currentVersion: exchangeDetails.termsOfServiceLastEtag,
+            contentType: exchangeDetails.termsOfServiceContentType,
+            content: exchangeDetails.termsOfServiceText,
+          },
+          paytoUris: exchangeDetails.wireInfo.accounts.map((x) => x.payto_uri),
+          auditors: exchangeDetails.auditors,
+          wireInfo: exchangeDetails.wireInfo,
         },
-        paytoUris: exchangeDetails.wireInfo.accounts.map((x) => x.payto_uri),
-        auditors: exchangeDetails.auditors,
-        wireInfo: exchangeDetails.wireInfo,
         denominations: denominations,
       }
     });
+
   if (!exchange) {
     throw Error(`exchange with base url "${exchangeBaseurl}" not found`)
   }
-  return exchange;
+
+  const feesDescription: OperationMap<FeeDescription[]> = {
+    deposit: createDenominationTimeline(
+      exchange.denominations,
+      "stampExpireDeposit",
+      "feeDeposit",
+    ),
+    refresh: createDenominationTimeline(
+      exchange.denominations,
+      "stampExpireWithdraw",
+      "feeRefresh",
+    ),
+    refund: createDenominationTimeline(
+      exchange.denominations,
+      "stampExpireWithdraw",
+      "feeRefund",
+    ),
+    withdraw: createDenominationTimeline(
+      exchange.denominations,
+      "stampExpireWithdraw",
+      "feeWithdraw",
+    ),
+  };
+
+  return {
+    ...exchange.info,
+    feesDescription,
+  };
 }
 
 async function setCoinSuspended(

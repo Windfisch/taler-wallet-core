@@ -343,6 +343,21 @@ export function durationAdd(d1: Duration, d2: Duration): Duration {
   return { d_ms: d1.d_ms + d2.d_ms };
 }
 
+export const codecForAbsoluteTime: Codec<AbsoluteTime> = {
+  decode(x: any, c?: Context): AbsoluteTime {
+    const t_ms = x.t_ms;
+    if (typeof t_ms === "string") {
+      if (t_ms === "never") {
+        return { t_ms: "never" };
+      }
+    } else if (typeof t_ms === "number") {
+      return { t_ms };
+    }
+    throw Error(`expected timestamp at ${renderContext(c)}`);
+  },
+};
+
+
 export const codecForTimestamp: Codec<TalerProtocolTimestamp> = {
   decode(x: any, c?: Context): TalerProtocolTimestamp {
     // Compatibility, should be removed soon.

@@ -65,3 +65,4 @@ export {
 } from "./crypto/cryptoImplementation.js";
 
 export * from "./util/timer.js";
+export * from "./util/denominations.js";

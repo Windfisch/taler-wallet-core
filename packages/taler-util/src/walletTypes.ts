@@ -32,7 +32,7 @@ import {
   codecForAmountJson,
   codecForAmountString,
 } from "./amounts.js";
-import { codecForTimestamp, TalerProtocolTimestamp } from "./time.js";
+import { AbsoluteTime, codecForAbsoluteTime, codecForTimestamp, TalerProtocolTimestamp } from "./time.js";
 import {
   buildCodecForObject,
   codecForString,
@@ -733,6 +733,30 @@ export interface DenominationInfo {
   stampExpireDeposit: TalerProtocolTimestamp;
 }
 
+export type Operation = "deposit" | "withdraw" | "refresh" | "refund";
+export type OperationMap<T> = { [op in Operation]: T };
+
+export interface FeeDescription {
+  value: AmountJson;
+  from: AbsoluteTime;
+  until: AbsoluteTime;
+  fee?: AmountJson;
+}
+
+export interface FeeDescriptionPair {
+  value: AmountJson;
+  from: AbsoluteTime;
+  until: AbsoluteTime;
+  left?: AmountJson;
+  right?: AmountJson;
+}
+
+export interface TimePoint {
+  type: "start" | "end";
+  moment: AbsoluteTime;
+  denom: DenominationInfo;
+}
+
 export interface ExchangeFullDetails {
   exchangeBaseUrl: string;
   currency: string;
@@ -740,7 +764,7 @@ export interface ExchangeFullDetails {
   tos: ExchangeTos;
   auditors: ExchangeAuditor[];
   wireInfo: WireInfo;
-  denominations: DenominationInfo[];
+  feesDescription: OperationMap<FeeDescription[]>;
 }
 
 export interface ExchangeListItem {
@@ -771,6 +795,35 @@ const codecForExchangeTos = (): Codec<ExchangeTos> =>
     .property("content", codecOptional(codecForString()))
     .build("ExchangeTos");
 
+export const codecForFeeDescriptionPair =
+  (): Codec<FeeDescriptionPair> =>
+    buildCodecForObject<FeeDescriptionPair>()
+      .property("value", codecForAmountJson())
+      .property("from", codecForAbsoluteTime)
+      .property("until", codecForAbsoluteTime)
+      .property("left", codecOptional(codecForAmountJson()))
+      .property("right", codecOptional(codecForAmountJson()))
+      .build("FeeDescriptionPair");
+
+export const codecForFeeDescription =
+  (): Codec<FeeDescription> =>
+    buildCodecForObject<FeeDescription>()
+      .property("value", codecForAmountJson())
+      .property("from", codecForAbsoluteTime)
+      .property("until", codecForAbsoluteTime)
+      .property("fee", codecOptional(codecForAmountJson()))
+      .build("FeeDescription");
+
+
+export const codecForFeesByOperations =
+  (): Codec<OperationMap<FeeDescription[]>> =>
+    buildCodecForObject<OperationMap<FeeDescription[]>>()
+      .property("deposit", codecForList(codecForFeeDescription()))
+      .property("withdraw", codecForList(codecForFeeDescription()))
+      .property("refresh", codecForList(codecForFeeDescription()))
+      .property("refund", codecForList(codecForFeeDescription()))
+      .build("FeesByOperations");
+
 export const codecForExchangeFullDetails =
   (): Codec<ExchangeFullDetails> =>
     buildCodecForObject<ExchangeFullDetails>()
@@ -780,8 +833,8 @@ export const codecForExchangeFullDetails =
       .property("tos", codecForExchangeTos())
       .property("auditors", codecForList(codecForExchangeAuditor()))
       .property("wireInfo", codecForWireInfo())
-      .property("denominations", codecForList(codecForDenominationInfo()))
-      .build("ExchangeListItem");
+      .property("feesDescription", codecForFeesByOperations())
+      .build("ExchangeFullDetails");
 
 export const codecForExchangeListItem = (): Codec<ExchangeListItem> =>
   buildCodecForObject<ExchangeListItem>()

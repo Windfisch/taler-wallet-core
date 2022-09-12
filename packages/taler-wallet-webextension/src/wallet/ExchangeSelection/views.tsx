@@ -14,26 +14,23 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Fragment, h, VNode } from "preact";
-import { LoadingError } from "../../components/LoadingError.js";
-import { LogoHeader } from "../../components/LogoHeader.js";
 import {
-  Input,
-  LinkPrimary,
-  SubTitle,
-  SvgIcon,
-  WalletAction,
-} from "../../components/styled/index.js";
-import { useTranslationContext } from "../../context/translation.js";
-import { FeeDescription, FeeDescriptionPair, State } from "./index.js";
+  Amounts,
+  FeeDescription,
+  FeeDescriptionPair,
+} from "@gnu-taler/taler-util";
 import { styled } from "@linaria/react";
-import arrowDown from "../../svg/chevron-down.svg";
-import { Amount } from "../../components/Amount.js";
-import { Time } from "../../components/Time.js";
-import { AbsoluteTime, AmountJson, Amounts } from "@gnu-taler/taler-util";
-import { Button } from "../../mui/Button.js";
-import { SelectList } from "../../components/SelectList.js";
+import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
+import { Amount } from "../../components/Amount.js";
+import { LoadingError } from "../../components/LoadingError.js";
+import { SelectList } from "../../components/SelectList.js";
+import { Input, LinkPrimary, SvgIcon } from "../../components/styled/index.js";
+import { Time } from "../../components/Time.js";
+import { useTranslationContext } from "../../context/translation.js";
+import { Button } from "../../mui/Button.js";
+import arrowDown from "../../svg/chevron-down.svg";
+import { State } from "./index.js";
 
 const ButtonGroup = styled.div`
   & > button {
@@ -123,7 +120,6 @@ export function NoExchangesView(state: State.NoExchanges): VNode {
 export function ComparingView({
   exchanges,
   selected,
-  nextFeeUpdate,
   onReset,
   onSelect,
   pairTimeline,
@@ -184,12 +180,6 @@ export function ComparingView({
           <tr>
             <td>currency</td>
             <td>{selected.currency}</td>
-          </tr>
-          <tr>
-            <td>next fee update</td>
-            <td>
-              {<Time timestamp={nextFeeUpdate} format="dd MMMM yyyy, HH:mm" />}
-            </td>
           </tr>
         </table>
       </section>
@@ -305,7 +295,6 @@ export function ComparingView({
 export function ReadyView({
   exchanges,
   selected,
-  nextFeeUpdate,
   onClose,
   timeline,
 }: State.Ready): VNode {
@@ -361,12 +350,6 @@ export function ReadyView({
           <tr>
             <td>currency</td>
             <td>{selected.currency}</td>
-          </tr>
-          <tr>
-            <td>next fee update</td>
-            <td>
-              {<Time timestamp={nextFeeUpdate} format="dd MMMM yyyy, HH:mm" />}
-            </td>
           </tr>
         </table>
       </section>

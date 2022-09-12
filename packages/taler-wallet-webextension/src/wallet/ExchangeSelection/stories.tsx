@@ -19,60 +19,12 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { ExchangeFullDetails, ExchangeListItem } from "@gnu-taler/taler-util";
 import { createExample } from "../../test-utils.js";
-import { bitcoinExchanges, kudosExchanges } from "./example.js";
-import { FeeDescription, FeeDescriptionPair, OperationMap } from "./index.js";
-import {
-  createDenominationPairTimeline,
-  createDenominationTimeline,
-} from "./state.js";
-import { ReadyView, ComparingView } from "./views.js";
+import { ComparingView, ReadyView } from "./views.js";
 
 export default {
   title: "wallet/select exchange",
 };
-
-function timelineForExchange(
-  ex: ExchangeFullDetails,
-): OperationMap<FeeDescription[]> {
-  return {
-    deposit: createDenominationTimeline(
-      ex.denominations,
-      "stampExpireDeposit",
-      "feeDeposit",
-    ),
-    refresh: createDenominationTimeline(
-      ex.denominations,
-      "stampExpireWithdraw",
-      "feeRefresh",
-    ),
-    refund: createDenominationTimeline(
-      ex.denominations,
-      "stampExpireWithdraw",
-      "feeRefund",
-    ),
-    withdraw: createDenominationTimeline(
-      ex.denominations,
-      "stampExpireWithdraw",
-      "feeWithdraw",
-    ),
-  };
-}
-
-function timelinePairForExchange(
-  ex1: ExchangeFullDetails,
-  ex2: ExchangeFullDetails,
-): OperationMap<FeeDescriptionPair[]> {
-  const om1 = timelineForExchange(ex1);
-  const om2 = timelineForExchange(ex2);
-  return {
-    deposit: createDenominationPairTimeline(om1.deposit, om2.deposit),
-    refresh: createDenominationPairTimeline(om1.refresh, om2.refresh),
-    refund: createDenominationPairTimeline(om1.refund, om2.refund),
-    withdraw: createDenominationPairTimeline(om1.withdraw, om2.withdraw),
-  };
-}
 
 export const Bitcoin1 = createExample(ReadyView, {
   exchanges: {
@@ -84,10 +36,12 @@ export const Bitcoin1 = createExample(ReadyView, {
     auditors: [],
   } as any,
   onClose: {},
-  nextFeeUpdate: {
-    t_ms: 1,
+  timeline: {
+    deposit: [],
+    refresh: [],
+    refund: [],
+    withdraw: [],
   },
-  timeline: timelineForExchange(bitcoinExchanges[0]),
 });
 export const Bitcoin2 = createExample(ReadyView, {
   exchanges: {
@@ -99,10 +53,12 @@ export const Bitcoin2 = createExample(ReadyView, {
     auditors: [],
   } as any,
   onClose: {},
-  nextFeeUpdate: {
-    t_ms: 1,
+  timeline: {
+    deposit: [],
+    refresh: [],
+    refund: [],
+    withdraw: [],
   },
-  timeline: timelineForExchange(bitcoinExchanges[1]),
 });
 export const Kudos1 = createExample(ReadyView, {
   exchanges: {
@@ -114,10 +70,12 @@ export const Kudos1 = createExample(ReadyView, {
     auditors: [],
   } as any,
   onClose: {},
-  nextFeeUpdate: {
-    t_ms: 1,
+  timeline: {
+    deposit: [],
+    refresh: [],
+    refund: [],
+    withdraw: [],
   },
-  timeline: timelineForExchange(kudosExchanges[0]),
 });
 export const Kudos2 = createExample(ReadyView, {
   exchanges: {
@@ -129,10 +87,12 @@ export const Kudos2 = createExample(ReadyView, {
     auditors: [],
   } as any,
   onClose: {},
-  nextFeeUpdate: {
-    t_ms: 1,
+  timeline: {
+    deposit: [],
+    refresh: [],
+    refund: [],
+    withdraw: [],
   },
-  timeline: timelineForExchange(kudosExchanges[1]),
 });
 export const ComparingBitcoin = createExample(ComparingView, {
   exchanges: {
@@ -146,13 +106,12 @@ export const ComparingBitcoin = createExample(ComparingView, {
   onReset: {},
   onSelect: {},
   error: undefined,
-  nextFeeUpdate: {
-    t_ms: 1,
+  pairTimeline: {
+    deposit: [],
+    refresh: [],
+    refund: [],
+    withdraw: [],
   },
-  pairTimeline: timelinePairForExchange(
-    bitcoinExchanges[0],
-    bitcoinExchanges[1],
-  ),
 });
 export const ComparingKudos = createExample(ComparingView, {
   exchanges: {
@@ -166,8 +125,10 @@ export const ComparingKudos = createExample(ComparingView, {
   onReset: {},
   onSelect: {},
   error: undefined,
-  nextFeeUpdate: {
-    t_ms: 1,
+  pairTimeline: {
+    deposit: [],
+    refresh: [],
+    refund: [],
+    withdraw: [],
   },
-  pairTimeline: timelinePairForExchange(kudosExchanges[0], kudosExchanges[1]),
 });

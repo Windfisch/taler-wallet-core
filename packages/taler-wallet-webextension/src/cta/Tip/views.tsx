@@ -93,7 +93,7 @@ export function ReadyView(state: State.Ready): VNode {
         </Button>
       </section>
       <section>
-        <Link upperCased onClick={state.cancel}>
+        <Link upperCased onClick={state.cancel.onClick}>
           <i18n.Translate>Cancel</i18n.Translate>
         </Link>
       </section>
