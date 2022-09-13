@@ -1166,7 +1166,7 @@ export interface WithdrawTestBalanceRequest {
   /**
    * Bank access API base URL.  Defaults to the bankBaseUrl.
    */
-  bankAccessApiBaseUrl: string;
+  bankAccessApiBaseUrl?: string;
   exchangeBaseUrl: string;
   forcedDenomSel?: ForcedDenomSel;
 }
@@ -1245,7 +1245,7 @@ export const codecForWithdrawTestBalance =
       .property("bankBaseUrl", codecForString())
       .property("exchangeBaseUrl", codecForString())
       .property("forcedDenomSel", codecForAny())
-      .property("bankAccessApiBaseUrl", codecForString())
+      .property("bankAccessApiBaseUrl", codecOptional(codecForString()))
       .build("WithdrawTestBalanceRequest");
 
 export interface ApplyRefundResponse {

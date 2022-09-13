@@ -92,19 +92,17 @@ export async function withdrawTestBalance(
 ): Promise<void> {
   const amount = req.amount;
   const exchangeBaseUrl = req.exchangeBaseUrl;
+  const bankAccessApiBaseUrl = req.bankAccessApiBaseUrl ?? req.bankBaseUrl;
 
   logger.trace(
-    `Registered bank user, bank access base url ${req.bankAccessApiBaseUrl}`,
+    `Registered bank user, bank access base url ${bankAccessApiBaseUrl}`,
   );
-  const bankUser = await registerRandomBankUser(
-    ws.http,
-    req.bankAccessApiBaseUrl,
-  );
+  const bankUser = await registerRandomBankUser(ws.http, bankAccessApiBaseUrl);
   logger.trace(`Registered bank user ${JSON.stringify(bankUser)}`);
 
   const wresp = await createDemoBankWithdrawalUri(
     ws.http,
-    req.bankAccessApiBaseUrl,
+    bankAccessApiBaseUrl,
     bankUser,
     amount,
   );
@@ -117,7 +115,7 @@ export async function withdrawTestBalance(
 
   await confirmBankWithdrawalUri(
     ws.http,
-    req.bankAccessApiBaseUrl,
+    bankAccessApiBaseUrl,
     bankUser,
     wresp.withdrawal_id,
   );
