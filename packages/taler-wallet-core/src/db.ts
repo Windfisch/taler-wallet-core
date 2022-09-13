@@ -2024,11 +2024,11 @@ export interface DatabaseDump {
   version: string;
 }
 
-export function importDb(db: IDBDatabase, dump: DatabaseDump): Promise<any> {
+async function recoverFromDump(db: IDBDatabase, dump: DatabaseDump): Promise<void> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(Array.from(db.objectStoreNames), "readwrite");
     tx.addEventListener("complete", () => {
-      resolve(db);
+      resolve();
     });
     for (let i = 0; i < db.objectStoreNames.length; i++) {
       const name = db.objectStoreNames[i];
@@ -2041,5 +2041,51 @@ export function importDb(db: IDBDatabase, dump: DatabaseDump): Promise<any> {
       });
     }
     tx.commit();
-  });
+  })
+}
+
+export async function importDb(db: IDBDatabase, object: any): Promise<void> {
+  if ("name" in object && "stores" in object && "version" in object) {
+    // looks like a database dump
+    const dump = object as DatabaseDump
+    return recoverFromDump(db, dump);
+  }
+
+  if ("databases" in object && "$types" in object) {
+    // looks like a IDBDatabase
+    const someDatabase = object.databases;
+
+    if (TALER_META_DB_NAME in someDatabase) {
+      //looks like a taler database
+      const currentMainDbValue = someDatabase[TALER_META_DB_NAME].objectStores.metaConfig.records[0].value.value
+
+      if (currentMainDbValue !== TALER_DB_NAME) {
+        console.log("not the current database version")
+      }
+
+      const talerDb = someDatabase[currentMainDbValue];
+
+      const objectStoreNames = Object.keys(talerDb.objectStores);
+
+      const dump: DatabaseDump = {
+        name: talerDb.schema.databaseName,
+        version: talerDb.schema.databaseVersion,
+        stores: {},
+      }
+
+      for (let i = 0; i < objectStoreNames.length; i++) {
+        const name = objectStoreNames[i];
+        const storeDump = {} as { [s: string]: any };
+        dump.stores[name] = storeDump;
+        talerDb.objectStores[name].records.map((r: any) => {
+          const pkey = r.primaryKey
+          const key = typeof pkey === "string" ? pkey : pkey.join(",")
+          storeDump[key] = r.value;
+        })
+      }
+
+      return recoverFromDump(db, dump);
+    }
+  }
+  throw Error("could not import database");
 }

@@ -25,7 +25,6 @@ import { useEffect, useState } from "preact/hooks";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import {
-  ButtonBoxPrimary,
   CenteredBoldText,
   CenteredText,
   DateSeparator,
@@ -37,6 +36,8 @@ import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { Button } from "../mui/Button.js";
 import { NoBalanceHelp } from "../popup/NoBalanceHelp.js";
+import DownloadIcon from "../svg/download_24px.svg";
+import UploadIcon from "../svg/upload_24px.svg";
 import * as wxApi from "../wxApi.js";
 
 interface Props {
@@ -96,8 +97,6 @@ const term = 1000 * 60 * 60 * 24;
 function normalizeToDay(x: number): number {
   return Math.round(x / term) * term;
 }
-import DownloadIcon from "../svg/download_24px.svg";
-import UploadIcon from "../svg/upload_24px.svg";
 
 export function HistoryView({
   defaultCurrency,
