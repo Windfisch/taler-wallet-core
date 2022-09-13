@@ -201,8 +201,9 @@ export async function scheduleRetry(
   errorDetail?: TalerErrorDetail,
 ): Promise<void> {
   return await ws.db
-    .mktx((x) => ({ operationRetries: x.operationRetries }))
+    .mktx((x) => [x.operationRetries])
     .runReadWrite(async (tx) => {
+      tx.operationRetries
       scheduleRetryInTx(ws, tx, opId, errorDetail);
     });
 }

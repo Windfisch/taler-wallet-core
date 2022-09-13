@@ -29,9 +29,7 @@ export async function provideBackupState(
   ws: InternalWalletState,
 ): Promise<WalletBackupConfState> {
   const bs: ConfigRecord | undefined = await ws.db
-    .mktx((x) => ({
-      config: x.config,
-    }))
+    .mktx((stores) => [stores.config])
     .runReadOnly(async (tx) => {
       return await tx.config.get(WALLET_BACKUP_STATE_KEY);
     });
@@ -47,9 +45,7 @@ export async function provideBackupState(
   // and be based on hostname
   const deviceId = `wallet-core-${encodeCrock(d)}`;
   return await ws.db
-    .mktx((x) => ({
-      config: x.config,
-    }))
+    .mktx((x) => [x.config])
     .runReadWrite(async (tx) => {
       let backupStateEntry: ConfigRecord | undefined = await tx.config.get(
         WALLET_BACKUP_STATE_KEY,
@@ -87,9 +83,7 @@ export async function setWalletDeviceId(
 ): Promise<void> {
   await provideBackupState(ws);
   await ws.db
-    .mktx((x) => ({
-      config: x.config,
-    }))
+    .mktx((x) => [x.config])
     .runReadWrite(async (tx) => {
       let backupStateEntry: ConfigRecord | undefined = await tx.config.get(
         WALLET_BACKUP_STATE_KEY,

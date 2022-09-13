@@ -71,9 +71,7 @@ export async function prepareTip(
   }
 
   let tipRecord = await ws.db
-    .mktx((x) => ({
-      tips: x.tips,
-    }))
+    .mktx((x) => [x.tips])
     .runReadOnly(async (tx) => {
       return tx.tips.indexes.byMerchantTipIdAndBaseUrl.get([
         res.merchantTipId,
@@ -100,13 +98,13 @@ export async function prepareTip(
     await updateExchangeFromUrl(ws, tipPickupStatus.exchange_url);
 
     //FIXME: is this needed? withdrawDetails is not used
-    // * if the intention is to update the exchange information in the database 
+    // * if the intention is to update the exchange information in the database
     //   maybe we can use another name. `get` seems like a pure-function
     const withdrawDetails = await getExchangeWithdrawalInfo(
       ws,
       tipPickupStatus.exchange_url,
       amount,
-      undefined
+      undefined,
     );
 
     const walletTipId = encodeCrock(getRandomBytes(32));
@@ -136,9 +134,7 @@ export async function prepareTip(
       denomSelUid,
     };
     await ws.db
-      .mktx((x) => ({
-        tips: x.tips,
-      }))
+      .mktx((x) => [x.tips])
       .runReadWrite(async (tx) => {
         await tx.tips.put(newTipRecord);
       });
@@ -166,9 +162,7 @@ export async function processTip(
   } = {},
 ): Promise<OperationAttemptResult> {
   const tipRecord = await ws.db
-    .mktx((x) => ({
-      tips: x.tips,
-    }))
+    .mktx((x) => [x.tips])
     .runReadOnly(async (tx) => {
       return tx.tips.get(walletTipId);
     });
@@ -196,9 +190,7 @@ export async function processTip(
 
   for (const dh of denomsForWithdraw.selectedDenoms) {
     const denom = await ws.db
-      .mktx((x) => ({
-        denominations: x.denominations,
-      }))
+      .mktx((x) => [x.denominations])
       .runReadOnly(async (tx) => {
         return tx.denominations.get([
           tipRecord.exchangeBaseUrl,
@@ -324,11 +316,7 @@ export async function processTip(
   }
 
   await ws.db
-    .mktx((x) => ({
-      coins: x.coins,
-      tips: x.tips,
-      withdrawalGroups: x.withdrawalGroups,
-    }))
+    .mktx((x) => [x.coins, x.tips, x.withdrawalGroups])
     .runReadWrite(async (tx) => {
       const tr = await tx.tips.get(walletTipId);
       if (!tr) {
@@ -355,9 +343,7 @@ export async function acceptTip(
   tipId: string,
 ): Promise<void> {
   const found = await ws.db
-    .mktx((x) => ({
-      tips: x.tips,
-    }))
+    .mktx((x) => [x.tips])
     .runReadWrite(async (tx) => {
       const tipRecord = await tx.tips.get(tipId);
       if (!tipRecord) {

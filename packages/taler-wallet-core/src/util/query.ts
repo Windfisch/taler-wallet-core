@@ -36,6 +36,7 @@ import {
 } from "@gnu-taler/idb-bridge";
 import { Logger } from "@gnu-taler/taler-util";
 import { performanceNow } from "./timer.js";
+import { access } from "fs";
 
 const logger = new Logger("query.ts");
 
@@ -280,7 +281,6 @@ export interface IndexDescriptor {
 
 export interface StoreDescriptor<RecordType> {
   _dummy: undefined & RecordType;
-  name: string;
   keyPath?: IDBKeyPath | IDBKeyPath[];
   autoIncrement?: boolean;
 }
@@ -291,10 +291,9 @@ export interface StoreOptions {
 }
 
 export function describeContents<RecordType = never>(
-  name: string,
   options: StoreOptions,
 ): StoreDescriptor<RecordType> {
-  return { name, keyPath: options.keyPath, _dummy: undefined as any };
+  return { keyPath: options.keyPath, _dummy: undefined as any };
 }
 
 export function describeIndex(
@@ -345,9 +344,11 @@ export interface StoreReadWriteAccessor<RecordType, IndexMap> {
 }
 
 export interface StoreWithIndexes<
+  StoreName extends string,
   SD extends StoreDescriptor<unknown>,
   IndexMap,
 > {
+  storeName: StoreName;
   store: SD;
   indexMap: IndexMap;
 
@@ -362,11 +363,17 @@ export type GetRecordType<T> = T extends StoreDescriptor<infer X> ? X : unknown;
 
 const storeWithIndexesSymbol = Symbol("StoreWithIndexesMark");
 
-export function describeStore<SD extends StoreDescriptor<unknown>, IndexMap>(
+export function describeStore<
+  StoreName extends string,
+  SD extends StoreDescriptor<unknown>,
+  IndexMap,
+>(
+  name: StoreName,
   s: SD,
   m: IndexMap,
-): StoreWithIndexes<SD, IndexMap> {
+): StoreWithIndexes<StoreName, SD, IndexMap> {
   return {
+    storeName: name,
     store: s,
     indexMap: m,
     mark: storeWithIndexesSymbol,
@@ -375,6 +382,7 @@ export function describeStore<SD extends StoreDescriptor<unknown>, IndexMap>(
 
 export type GetReadOnlyAccess<BoundStores> = {
   [P in keyof BoundStores]: BoundStores[P] extends StoreWithIndexes<
+    infer SN,
     infer SD,
     infer IM
   >
@@ -384,6 +392,7 @@ export type GetReadOnlyAccess<BoundStores> = {
 
 export type GetReadWriteAccess<BoundStores> = {
   [P in keyof BoundStores]: BoundStores[P] extends StoreWithIndexes<
+    infer SN,
     infer SD,
     infer IM
   >
@@ -404,8 +413,12 @@ export interface TransactionContext<BoundStores> {
   runReadOnly<T>(f: ReadOnlyTransactionFunction<BoundStores, T>): Promise<T>;
 }
 
-type CheckDescriptor<T> = T extends StoreWithIndexes<infer SD, infer IM>
-  ? StoreWithIndexes<SD, IM>
+type CheckDescriptor<T> = T extends StoreWithIndexes<
+  infer SN,
+  infer SD,
+  infer IM
+>
+  ? StoreWithIndexes<SN, SD, IM>
   : unknown;
 
 type GetPickerType<F, SM> = F extends (x: SM) => infer Out
@@ -477,13 +490,13 @@ function runTx<Arg, Res>(
 
 function makeReadContext(
   tx: IDBTransaction,
-  storePick: { [n: string]: StoreWithIndexes<any, any> },
+  storePick: { [n: string]: StoreWithIndexes<any, any, any> },
 ): any {
   const ctx: { [s: string]: StoreReadOnlyAccessor<any, any> } = {};
   for (const storeAlias in storePick) {
     const indexes: { [s: string]: IndexReadOnlyAccessor<any> } = {};
     const swi = storePick[storeAlias];
-    const storeName = swi.store.name;
+    const storeName = swi.storeName;
     for (const indexAlias in storePick[storeAlias].indexMap) {
       const indexDescriptor: IndexDescriptor =
         storePick[storeAlias].indexMap[indexAlias];
@@ -526,13 +539,13 @@ function makeReadContext(
 
 function makeWriteContext(
   tx: IDBTransaction,
-  storePick: { [n: string]: StoreWithIndexes<any, any> },
+  storePick: { [n: string]: StoreWithIndexes<any, any, any> },
 ): any {
   const ctx: { [s: string]: StoreReadWriteAccessor<any, any> } = {};
   for (const storeAlias in storePick) {
     const indexes: { [s: string]: IndexReadWriteAccessor<any> } = {};
     const swi = storePick[storeAlias];
-    const storeName = swi.store.name;
+    const storeName = swi.storeName;
     for (const indexAlias in storePick[storeAlias].indexMap) {
       const indexDescriptor: IndexDescriptor =
         storePick[storeAlias].indexMap[indexAlias];
@@ -585,25 +598,11 @@ function makeWriteContext(
   return ctx;
 }
 
-const storeList = [
-  { name: "foo" as const, value: 1 as const },
-  { name: "bar" as const, value: 2 as const },
-];
-// => { foo: { value: 1}, bar: {value: 2} }
-
-type StoreList = typeof storeList;
-
-type StoreNames = StoreList[number] extends { name: infer I } ? I : never;
-
-type H = StoreList[number] & { name: "foo"};
-
-type Cleanup<V> = V extends { name: infer N, value: infer X} ? {name: N, value: X} : never;
-
-type G = {
-  [X in StoreNames]: {
-    X: StoreList[number] & { name: X };
-  };
-};
+type StoreNamesOf<X> = X extends { [x: number]: infer F }
+  ? F extends { storeName: infer I }
+    ? I
+    : never
+  : never;
 
 /**
  * Type-safe access to a database with a particular store map.
@@ -617,36 +616,41 @@ export class DbAccess<StoreMap> {
     return this.db;
   }
 
-  mktx2<
+  /**
+   * Run a transaction with selected object stores.
+   *
+   * The {@link namePicker} must be a function that selects a list of object
+   * stores from all available object stores.
+   */
+  mktx<
     StoreNames extends keyof StoreMap,
     Stores extends StoreMap[StoreNames],
     StoreList extends Stores[],
-  >(namePicker: (x: StoreMap) => StoreList): StoreList {
-    return namePicker(this.stores);
-  }
-
-  mktx<
-    PickerType extends (x: StoreMap) => unknown,
-    BoundStores extends GetPickerType<PickerType, StoreMap>,
-  >(f: PickerType): TransactionContext<BoundStores> {
-    const storePick = f(this.stores) as any;
+    BoundStores extends {
+      [X in StoreNamesOf<StoreList>]: StoreList[number] & { storeName: X };
+    },
+  >(namePicker: (x: StoreMap) => StoreList): TransactionContext<BoundStores> {
+    const storePick = namePicker(this.stores) as any;
     if (typeof storePick !== "object" || storePick === null) {
       throw Error();
     }
     const storeNames: string[] = [];
-    for (const storeAlias of Object.keys(storePick)) {
-      const swi = (storePick as any)[storeAlias] as StoreWithIndexes<any, any>;
+    const accessibleStores: { [x: string]: StoreWithIndexes<any, any, any> } =
+      {};
+    for (const swiPicked of storePick) {
+      const swi = swiPicked as StoreWithIndexes<any, any, any>;
       if (swi.mark !== storeWithIndexesSymbol) {
         throw Error("invalid store descriptor returned from selector function");
       }
-      storeNames.push(swi.store.name);
+      storeNames.push(swi.storeName);
+      accessibleStores[swi.storeName] = swi;
     }
 
     const runReadOnly = <T>(
       txf: ReadOnlyTransactionFunction<BoundStores, T>,
     ): Promise<T> => {
       const tx = this.db.transaction(storeNames, "readonly");
-      const readContext = makeReadContext(tx, storePick);
+      const readContext = makeReadContext(tx, accessibleStores);
       return runTx(tx, readContext, txf);
     };
 
@@ -654,7 +658,7 @@ export class DbAccess<StoreMap> {
       txf: ReadWriteTransactionFunction<BoundStores, T>,
     ): Promise<T> => {
       const tx = this.db.transaction(storeNames, "readwrite");
-      const writeContext = makeWriteContext(tx, storePick);
+      const writeContext = makeWriteContext(tx, accessibleStores);
       return runTx(tx, writeContext, txf);
     };
 

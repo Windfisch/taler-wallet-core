@@ -264,7 +264,7 @@ async function runBackupCycleForProvider(
   args: BackupForProviderArgs,
 ): Promise<OperationAttemptResult> {
   const provider = await ws.db
-    .mktx((x) => ({ backupProviders: x.backupProviders }))
+    .mktx((x) => [x.backupProviders])
     .runReadOnly(async (tx) => {
       return tx.backupProviders.get(args.backupProviderBaseUrl);
     });
@@ -322,9 +322,9 @@ async function runBackupCycleForProvider(
 
   if (resp.status === HttpStatusCode.NotModified) {
     await ws.db
-      .mktx((x) => ({ backupProvider: x.backupProviders }))
+      .mktx((x) => [x.backupProviders])
       .runReadWrite(async (tx) => {
-        const prov = await tx.backupProvider.get(provider.baseUrl);
+        const prov = await tx.backupProviders.get(provider.baseUrl);
         if (!prov) {
           return;
         }
@@ -333,7 +333,7 @@ async function runBackupCycleForProvider(
           tag: BackupProviderStateTag.Ready,
           nextBackupTimestamp: getNextBackupTimestamp(),
         };
-        await tx.backupProvider.put(prov);
+        await tx.backupProviders.put(prov);
       });
     return {
       type: OperationAttemptResultType.Finished,
@@ -367,10 +367,7 @@ async function runBackupCycleForProvider(
     // FIXME: check if the provider is overcharging us!
 
     await ws.db
-      .mktx((x) => ({
-        backupProviders: x.backupProviders,
-        operationRetries: x.operationRetries,
-      }))
+      .mktx((x) => [x.backupProviders, x.operationRetries])
       .runReadWrite(async (tx) => {
         const provRec = await tx.backupProviders.get(provider.baseUrl);
         checkDbInvariant(!!provRec);
@@ -407,7 +404,7 @@ async function runBackupCycleForProvider(
 
   if (resp.status === HttpStatusCode.NoContent) {
     await ws.db
-      .mktx((x) => ({ backupProviders: x.backupProviders }))
+      .mktx((x) => [x.backupProviders])
       .runReadWrite(async (tx) => {
         const prov = await tx.backupProviders.get(provider.baseUrl);
         if (!prov) {
@@ -435,12 +432,9 @@ async function runBackupCycleForProvider(
     const cryptoData = await computeBackupCryptoData(ws.cryptoApi, blob);
     await importBackup(ws, blob, cryptoData);
     await ws.db
-      .mktx((x) => ({
-        backupProvider: x.backupProviders,
-        operationRetries: x.operationRetries,
-      }))
+      .mktx((x) => [x.backupProviders, x.operationRetries])
       .runReadWrite(async (tx) => {
-        const prov = await tx.backupProvider.get(provider.baseUrl);
+        const prov = await tx.backupProviders.get(provider.baseUrl);
         if (!prov) {
           logger.warn("backup provider not found anymore");
           return;
@@ -453,7 +447,7 @@ async function runBackupCycleForProvider(
         prov.state = {
           tag: BackupProviderStateTag.Retrying,
         };
-        await tx.backupProvider.put(prov);
+        await tx.backupProviders.put(prov);
       });
     logger.info("processed existing backup");
     // Now upload our own, merged backup.
@@ -480,7 +474,7 @@ export async function processBackupForProvider(
   backupProviderBaseUrl: string,
 ): Promise<OperationAttemptResult> {
   const provider = await ws.db
-    .mktx((x) => ({ backupProviders: x.backupProviders }))
+    .mktx((x) => [x.backupProviders])
     .runReadOnly(async (tx) => {
       return await tx.backupProviders.get(backupProviderBaseUrl);
     });
@@ -509,7 +503,7 @@ export async function removeBackupProvider(
   req: RemoveBackupProviderRequest,
 ): Promise<void> {
   await ws.db
-    .mktx(({ backupProviders }) => ({ backupProviders }))
+    .mktx((x) => [x.backupProviders])
     .runReadWrite(async (tx) => {
       await tx.backupProviders.delete(req.provider);
     });
@@ -539,7 +533,7 @@ export async function runBackupCycle(
   req: RunBackupCycleRequest,
 ): Promise<void> {
   const providers = await ws.db
-    .mktx((x) => ({ backupProviders: x.backupProviders }))
+    .mktx((x) => [x.backupProviders])
     .runReadOnly(async (tx) => {
       if (req.providers) {
         const rs = await Promise.all(
@@ -605,7 +599,7 @@ export async function addBackupProvider(
   await provideBackupState(ws);
   const canonUrl = canonicalizeBaseUrl(req.backupProviderBaseUrl);
   await ws.db
-    .mktx((x) => ({ backupProviders: x.backupProviders }))
+    .mktx((x) => [x.backupProviders])
     .runReadWrite(async (tx) => {
       const oldProv = await tx.backupProviders.get(canonUrl);
       if (oldProv) {
@@ -628,7 +622,7 @@ export async function addBackupProvider(
     codecForSyncTermsOfServiceResponse(),
   );
   await ws.db
-    .mktx((x) => ({ backupProviders: x.backupProviders }))
+    .mktx((x) => [x.backupProviders])
     .runReadWrite(async (tx) => {
       let state: BackupProviderState;
       if (req.activate) {
@@ -807,10 +801,7 @@ export async function getBackupInfo(
 ): Promise<BackupInfo> {
   const backupConfig = await provideBackupState(ws);
   const providerRecords = await ws.db
-    .mktx((x) => ({
-      backupProviders: x.backupProviders,
-      operationRetries: x.operationRetries,
-    }))
+    .mktx((x) => [x.backupProviders, x.operationRetries])
     .runReadOnly(async (tx) => {
       return await tx.backupProviders.iter().mapAsync(async (bp) => {
         const opId = RetryTags.forBackup(bp);
@@ -853,7 +844,7 @@ export async function getBackupRecovery(
 ): Promise<BackupRecovery> {
   const bs = await provideBackupState(ws);
   const providers = await ws.db
-    .mktx((x) => ({ backupProviders: x.backupProviders }))
+    .mktx((x) => [x.backupProviders])
     .runReadOnly(async (tx) => {
       return await tx.backupProviders.iter().toArray();
     });
@@ -874,7 +865,7 @@ async function backupRecoveryTheirs(
   br: BackupRecovery,
 ) {
   await ws.db
-    .mktx((x) => ({ config: x.config, backupProviders: x.backupProviders }))
+    .mktx((x) => [x.config, x.backupProviders])
     .runReadWrite(async (tx) => {
       let backupStateEntry: ConfigRecord | undefined = await tx.config.get(
         WALLET_BACKUP_STATE_KEY,
@@ -924,7 +915,7 @@ export async function loadBackupRecovery(
 ): Promise<void> {
   const bs = await provideBackupState(ws);
   const providers = await ws.db
-    .mktx((x) => ({ backupProviders: x.backupProviders }))
+    .mktx((x) => [x.backupProviders])
     .runReadOnly(async (tx) => {
       return await tx.backupProviders.iter().toArray();
     });
@@ -954,7 +945,7 @@ export async function exportBackupEncrypted(
   await provideBackupState(ws);
   const blob = await exportBackup(ws);
   const bs = await ws.db
-    .mktx((x) => ({ config: x.config }))
+    .mktx((x) => [x.config])
     .runReadOnly(async (tx) => {
       return await getWalletBackupState(ws, tx);
     });

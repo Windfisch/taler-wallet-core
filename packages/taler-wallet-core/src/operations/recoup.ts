@@ -96,12 +96,12 @@ async function recoupTipCoin(
   // Thus we just put the coin to sleep.
   // FIXME: somehow report this to the user
   await ws.db
-    .mktx((x) => ({
-      recoupGroups: x.recoupGroups,
-      denominations: WalletStoresV1.denominations,
-      refreshGroups: WalletStoresV1.refreshGroups,
-      coins: WalletStoresV1.coins,
-    }))
+    .mktx((stores) => [
+      stores.recoupGroups,
+      stores.denominations,
+      stores.refreshGroups,
+      stores.coins,
+    ])
     .runReadWrite(async (tx) => {
       const recoupGroup = await tx.recoupGroups.get(recoupGroupId);
       if (!recoupGroup) {
@@ -123,9 +123,7 @@ async function recoupWithdrawCoin(
 ): Promise<void> {
   const reservePub = cs.reservePub;
   const denomInfo = await ws.db
-    .mktx((x) => ({
-      denominations: x.denominations,
-    }))
+    .mktx((x) => [x.denominations])
     .runReadOnly(async (tx) => {
       const denomInfo = await ws.getDenomInfo(
         ws,
@@ -169,12 +167,7 @@ async function recoupWithdrawCoin(
   // FIXME: verify that our expectations about the amount match
 
   await ws.db
-    .mktx((x) => ({
-      coins: x.coins,
-      denominations: x.denominations,
-      recoupGroups: x.recoupGroups,
-      refreshGroups: x.refreshGroups,
-    }))
+    .mktx((x) => [x.coins, x.denominations, x.recoupGroups, x.refreshGroups])
     .runReadWrite(async (tx) => {
       const recoupGroup = await tx.recoupGroups.get(recoupGroupId);
       if (!recoupGroup) {
@@ -207,10 +200,7 @@ async function recoupRefreshCoin(
   cs: RefreshCoinSource,
 ): Promise<void> {
   const d = await ws.db
-    .mktx((x) => ({
-      coins: x.coins,
-      denominations: x.denominations,
-    }))
+    .mktx((x) => [x.coins, x.denominations])
     .runReadOnly(async (tx) => {
       const denomInfo = await ws.getDenomInfo(
         ws,
@@ -257,12 +247,7 @@ async function recoupRefreshCoin(
   }
 
   await ws.db
-    .mktx((x) => ({
-      coins: x.coins,
-      denominations: x.denominations,
-      recoupGroups: x.recoupGroups,
-      refreshGroups: x.refreshGroups,
-    }))
+    .mktx((x) => [x.coins, x.denominations, x.recoupGroups, x.refreshGroups])
     .runReadWrite(async (tx) => {
       const recoupGroup = await tx.recoupGroups.get(recoupGroupId);
       if (!recoupGroup) {
@@ -319,9 +304,7 @@ export async function processRecoupGroupHandler(
 ): Promise<OperationAttemptResult> {
   const forceNow = options.forceNow ?? false;
   let recoupGroup = await ws.db
-    .mktx((x) => ({
-      recoupGroups: x.recoupGroups,
-    }))
+    .mktx((x) => [x.recoupGroups])
     .runReadOnly(async (tx) => {
       return tx.recoupGroups.get(recoupGroupId);
     });
@@ -343,9 +326,7 @@ export async function processRecoupGroupHandler(
   await Promise.all(ps);
 
   recoupGroup = await ws.db
-    .mktx((x) => ({
-      recoupGroups: x.recoupGroups,
-    }))
+    .mktx((x) => [x.recoupGroups])
     .runReadOnly(async (tx) => {
       return tx.recoupGroups.get(recoupGroupId);
     });
@@ -366,10 +347,7 @@ export async function processRecoupGroupHandler(
   for (let i = 0; i < recoupGroup.coinPubs.length; i++) {
     const coinPub = recoupGroup.coinPubs[i];
     await ws.db
-      .mktx((x) => ({
-        coins: x.coins,
-        reserves: x.reserves,
-      }))
+      .mktx((x) => [x.coins, x.reserves])
       .runReadOnly(async (tx) => {
         const coin = await tx.coins.get(coinPub);
         if (!coin) {
@@ -414,12 +392,7 @@ export async function processRecoupGroupHandler(
   }
 
   await ws.db
-    .mktx((x) => ({
-      recoupGroups: x.recoupGroups,
-      denominations: WalletStoresV1.denominations,
-      refreshGroups: WalletStoresV1.refreshGroups,
-      coins: WalletStoresV1.coins,
-    }))
+    .mktx((x) => [x.recoupGroups, x.denominations, x.refreshGroups, x.coins])
     .runReadWrite(async (tx) => {
       const rg2 = await tx.recoupGroups.get(recoupGroupId);
       if (!rg2) {
@@ -497,10 +470,7 @@ async function processRecoup(
   coinIdx: number,
 ): Promise<void> {
   const coin = await ws.db
-    .mktx((x) => ({
-      recoupGroups: x.recoupGroups,
-      coins: x.coins,
-    }))
+    .mktx((x) => [x.recoupGroups, x.coins])
     .runReadOnly(async (tx) => {
       const recoupGroup = await tx.recoupGroups.get(recoupGroupId);
       if (!recoupGroup) {

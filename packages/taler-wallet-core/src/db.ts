@@ -1079,7 +1079,7 @@ export interface PurchaseRecord {
   /**
    * Pending refunds for the purchase.  A refund is pending
    * when the merchant reports a transient error from the exchange.
-   * 
+   *
    * FIXME: Put this into a separate object store?
    */
   refunds: { [refundKey: string]: WalletRefundItem };
@@ -1733,7 +1733,8 @@ export interface OperationAttemptLongpollResult {
 
 export const WalletStoresV1 = {
   coins: describeStore(
-    describeContents<CoinRecord>("coins", {
+    "coins",
+    describeContents<CoinRecord>({
       keyPath: "coinPub",
     }),
     {
@@ -1743,17 +1744,20 @@ export const WalletStoresV1 = {
     },
   ),
   reserves: describeStore(
-    describeContents<ReserveRecord>("reserves", {
+    "reserves",
+    describeContents<ReserveRecord>({
       keyPath: "reservePub",
     }),
     {},
   ),
   config: describeStore(
-    describeContents<ConfigRecord>("config", { keyPath: "key" }),
+    "config",
+    describeContents<ConfigRecord>({ keyPath: "key" }),
     {},
   ),
   auditorTrust: describeStore(
-    describeContents<AuditorTrustRecord>("auditorTrust", {
+    "auditorTrust",
+    describeContents<AuditorTrustRecord>({
       keyPath: ["currency", "auditorBaseUrl"],
     }),
     {
@@ -1764,7 +1768,8 @@ export const WalletStoresV1 = {
     },
   ),
   exchangeTrust: describeStore(
-    describeContents<ExchangeTrustRecord>("exchangeTrust", {
+    "exchangeTrust",
+    describeContents<ExchangeTrustRecord>({
       keyPath: ["currency", "exchangeBaseUrl"],
     }),
     {
@@ -1775,7 +1780,8 @@ export const WalletStoresV1 = {
     },
   ),
   denominations: describeStore(
-    describeContents<DenominationRecord>("denominations", {
+    "denominations",
+    describeContents<DenominationRecord>({
       keyPath: ["exchangeBaseUrl", "denomPubHash"],
     }),
     {
@@ -1783,19 +1789,22 @@ export const WalletStoresV1 = {
     },
   ),
   exchanges: describeStore(
-    describeContents<ExchangeRecord>("exchanges", {
+    "exchanges",
+    describeContents<ExchangeRecord>({
       keyPath: "baseUrl",
     }),
     {},
   ),
   exchangeDetails: describeStore(
-    describeContents<ExchangeDetailsRecord>("exchangeDetails", {
+    "exchangeDetails",
+    describeContents<ExchangeDetailsRecord>({
       keyPath: ["exchangeBaseUrl", "currency", "masterPublicKey"],
     }),
     {},
   ),
   proposals: describeStore(
-    describeContents<ProposalRecord>("proposals", { keyPath: "proposalId" }),
+    "proposals",
+    describeContents<ProposalRecord>({ keyPath: "proposalId" }),
     {
       byUrlAndOrderId: describeIndex("byUrlAndOrderId", [
         "merchantBaseUrl",
@@ -1804,7 +1813,8 @@ export const WalletStoresV1 = {
     },
   ),
   refreshGroups: describeStore(
-    describeContents<RefreshGroupRecord>("refreshGroups", {
+    "refreshGroups",
+    describeContents<RefreshGroupRecord>({
       keyPath: "refreshGroupId",
     }),
     {
@@ -1812,13 +1822,15 @@ export const WalletStoresV1 = {
     },
   ),
   recoupGroups: describeStore(
-    describeContents<RecoupGroupRecord>("recoupGroups", {
+    "recoupGroups",
+    describeContents<RecoupGroupRecord>({
       keyPath: "recoupGroupId",
     }),
     {},
   ),
   purchases: describeStore(
-    describeContents<PurchaseRecord>("purchases", { keyPath: "proposalId" }),
+    "purchases",
+    describeContents<PurchaseRecord>({ keyPath: "proposalId" }),
     {
       byFulfillmentUrl: describeIndex(
         "byFulfillmentUrl",
@@ -1831,7 +1843,8 @@ export const WalletStoresV1 = {
     },
   ),
   tips: describeStore(
-    describeContents<TipRecord>("tips", { keyPath: "walletTipId" }),
+    "tips",
+    describeContents<TipRecord>({ keyPath: "walletTipId" }),
     {
       byMerchantTipIdAndBaseUrl: describeIndex("byMerchantTipIdAndBaseUrl", [
         "merchantTipId",
@@ -1840,7 +1853,8 @@ export const WalletStoresV1 = {
     },
   ),
   withdrawalGroups: describeStore(
-    describeContents<WithdrawalGroupRecord>("withdrawalGroups", {
+    "withdrawalGroups",
+    describeContents<WithdrawalGroupRecord>({
       keyPath: "withdrawalGroupId",
     }),
     {
@@ -1853,7 +1867,8 @@ export const WalletStoresV1 = {
     },
   ),
   planchets: describeStore(
-    describeContents<PlanchetRecord>("planchets", { keyPath: "coinPub" }),
+    "planchets",
+    describeContents<PlanchetRecord>({ keyPath: "coinPub" }),
     {
       byGroupAndIndex: describeIndex("byGroupAndIndex", [
         "withdrawalGroupId",
@@ -1864,13 +1879,15 @@ export const WalletStoresV1 = {
     },
   ),
   bankWithdrawUris: describeStore(
-    describeContents<BankWithdrawUriRecord>("bankWithdrawUris", {
+    "bankWithdrawUris",
+    describeContents<BankWithdrawUriRecord>({
       keyPath: "talerWithdrawUri",
     }),
     {},
   ),
   backupProviders: describeStore(
-    describeContents<BackupProviderRecord>("backupProviders", {
+    "backupProviders",
+    describeContents<BackupProviderRecord>({
       keyPath: "baseUrl",
     }),
     {
@@ -1884,7 +1901,8 @@ export const WalletStoresV1 = {
     },
   ),
   depositGroups: describeStore(
-    describeContents<DepositGroupRecord>("depositGroups", {
+    "depositGroups",
+    describeContents<DepositGroupRecord>({
       keyPath: "depositGroupId",
     }),
     {
@@ -1892,29 +1910,34 @@ export const WalletStoresV1 = {
     },
   ),
   tombstones: describeStore(
-    describeContents<TombstoneRecord>("tombstones", { keyPath: "id" }),
+    "tombstones",
+    describeContents<TombstoneRecord>({ keyPath: "id" }),
     {},
   ),
   operationRetries: describeStore(
-    describeContents<OperationRetryRecord>("operationRetries", {
+    "operationRetries",
+    describeContents<OperationRetryRecord>({
       keyPath: "id",
     }),
     {},
   ),
   ghostDepositGroups: describeStore(
-    describeContents<GhostDepositGroupRecord>("ghostDepositGroups", {
+    "ghostDepositGroups",
+    describeContents<GhostDepositGroupRecord>({
       keyPath: "contractTermsHash",
     }),
     {},
   ),
   balancesPerCurrency: describeStore(
-    describeContents<BalancePerCurrencyRecord>("balancesPerCurrency", {
+    "balancesPerCurrency",
+    describeContents<BalancePerCurrencyRecord>({
       keyPath: "currency",
     }),
     {},
   ),
   peerPushPaymentIncoming: describeStore(
-    describeContents<PeerPushPaymentIncomingRecord>("peerPushPaymentIncoming", {
+    "peerPushPaymentIncoming",
+    describeContents<PeerPushPaymentIncomingRecord>({
       keyPath: "peerPushPaymentIncomingId",
     }),
     {
@@ -1925,7 +1948,8 @@ export const WalletStoresV1 = {
     },
   ),
   peerPullPaymentIncoming: describeStore(
-    describeContents<PeerPullPaymentIncomingRecord>("peerPullPaymentIncoming", {
+    "peerPullPaymentIncoming",
+    describeContents<PeerPullPaymentIncomingRecord>({
       keyPath: "peerPullPaymentIncomingId",
     }),
     {
@@ -1936,21 +1960,17 @@ export const WalletStoresV1 = {
     },
   ),
   peerPullPaymentInitiations: describeStore(
-    describeContents<PeerPullPaymentInitiationRecord>(
-      "peerPullPaymentInitiations",
-      {
-        keyPath: "pursePub",
-      },
-    ),
+    "peerPullPaymentInitiations",
+    describeContents<PeerPullPaymentInitiationRecord>({
+      keyPath: "pursePub",
+    }),
     {},
   ),
   peerPushPaymentInitiations: describeStore(
-    describeContents<PeerPushPaymentInitiationRecord>(
-      "peerPushPaymentInitiations",
-      {
-        keyPath: "pursePub",
-      },
-    ),
+    "peerPushPaymentInitiations",
+    describeContents<PeerPushPaymentInitiationRecord>({
+      keyPath: "pursePub",
+    }),
     {},
   ),
 };
@@ -1962,7 +1982,8 @@ export interface MetaConfigRecord {
 
 export const walletMetadataStore = {
   metaConfig: describeStore(
-    describeContents<MetaConfigRecord>("metaConfig", { keyPath: "key" }),
+    "metaConfig",
+    describeContents<MetaConfigRecord>({ keyPath: "key" }),
     {},
   ),
 };

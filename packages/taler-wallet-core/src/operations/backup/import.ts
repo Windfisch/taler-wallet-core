@@ -224,22 +224,22 @@ export async function importBackup(
   logger.info(`importing backup ${j2s(backupBlobArg)}`);
 
   return ws.db
-    .mktx((x) => ({
-      config: x.config,
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-      coins: x.coins,
-      denominations: x.denominations,
-      purchases: x.purchases,
-      proposals: x.proposals,
-      refreshGroups: x.refreshGroups,
-      backupProviders: x.backupProviders,
-      tips: x.tips,
-      recoupGroups: x.recoupGroups,
-      withdrawalGroups: x.withdrawalGroups,
-      tombstones: x.tombstones,
-      depositGroups: x.depositGroups,
-    }))
+    .mktx((x) => [
+      x.config,
+      x.exchangeDetails,
+      x.exchanges,
+      x.coins,
+      x.denominations,
+      x.purchases,
+      x.proposals,
+      x.refreshGroups,
+      x.backupProviders,
+      x.tips,
+      x.recoupGroups,
+      x.withdrawalGroups,
+      x.tombstones,
+      x.depositGroups,
+    ])
     .runReadWrite(async (tx) => {
       // FIXME: validate schema!
       const backupBlob = backupBlobArg as WalletBackupContentV1;

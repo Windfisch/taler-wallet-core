@@ -161,10 +161,7 @@ export async function getExchangeDetails(
 }
 
 getExchangeDetails.makeContext = (db: DbAccess<typeof WalletStoresV1>) =>
-  db.mktx((x) => ({
-    exchanges: x.exchanges,
-    exchangeDetails: x.exchangeDetails,
-  }));
+  db.mktx((x) => [x.exchanges, x.exchangeDetails]);
 
 export async function updateExchangeTermsOfService(
   ws: InternalWalletState,
@@ -172,10 +169,7 @@ export async function updateExchangeTermsOfService(
   tos: ExchangeTosDownloadResult,
 ): Promise<void> {
   await ws.db
-    .mktx((x) => ({
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-    }))
+    .mktx((x) => [x.exchanges, x.exchangeDetails])
     .runReadWrite(async (tx) => {
       const d = await getExchangeDetails(tx, exchangeBaseUrl);
       if (d) {
@@ -193,10 +187,7 @@ export async function acceptExchangeTermsOfService(
   etag: string | undefined,
 ): Promise<void> {
   await ws.db
-    .mktx((x) => ({
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-    }))
+    .mktx((x) => [x.exchanges, x.exchangeDetails])
     .runReadWrite(async (tx) => {
       const d = await getExchangeDetails(tx, exchangeBaseUrl);
       if (d) {
@@ -326,10 +317,7 @@ async function provideExchangeRecord(
   exchangeDetails: ExchangeDetailsRecord | undefined;
 }> {
   return await ws.db
-    .mktx((x) => ({
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-    }))
+    .mktx((x) => [x.exchanges, x.exchangeDetails])
     .runReadWrite(async (tx) => {
       let exchange = await tx.exchanges.get(baseUrl);
       if (!exchange) {
@@ -569,14 +557,14 @@ export async function updateExchangeFromUrlHandler(
   logger.trace("updating exchange info in database");
 
   const updated = await ws.db
-    .mktx((x) => ({
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-      denominations: x.denominations,
-      coins: x.coins,
-      refreshGroups: x.refreshGroups,
-      recoupGroups: x.recoupGroups,
-    }))
+    .mktx((x) => [
+      x.exchanges,
+      x.exchangeDetails,
+      x.denominations,
+      x.coins,
+      x.refreshGroups,
+      x.recoupGroups,
+    ])
     .runReadWrite(async (tx) => {
       const r = await tx.exchanges.get(baseUrl);
       if (!r) {
@@ -770,12 +758,12 @@ export async function getExchangeTrust(
   let isAudited = false;
 
   return await ws.db
-    .mktx((x) => ({
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-      exchangesTrustStore: x.exchangeTrust,
-      auditorTrust: x.auditorTrust,
-    }))
+    .mktx((x) => [
+      x.exchanges,
+      x.exchangeDetails,
+      x.exchangeTrust,
+      x.auditorTrust,
+    ])
     .runReadOnly(async (tx) => {
       const exchangeDetails = await getExchangeDetails(
         tx,
@@ -786,7 +774,7 @@ export async function getExchangeTrust(
         throw Error(`exchange ${exchangeInfo.baseUrl} details not available`);
       }
       const exchangeTrustRecord =
-        await tx.exchangesTrustStore.indexes.byExchangeMasterPub.get(
+        await tx.exchangeTrust.indexes.byExchangeMasterPub.get(
           exchangeDetails.masterPublicKey,
         );
       if (

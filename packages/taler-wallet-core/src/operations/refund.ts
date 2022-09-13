@@ -78,9 +78,7 @@ export async function prepareRefund(
   }
 
   const purchase = await ws.db
-    .mktx((x) => ({
-      purchases: x.purchases,
-    }))
+    .mktx((x) => [x.purchases])
     .runReadOnly(async (tx) => {
       return tx.purchases.indexes.byMerchantUrlAndOrderId.get([
         parseResult.merchantBaseUrl,
@@ -335,12 +333,7 @@ async function acceptRefunds(
   const now = TalerProtocolTimestamp.now();
 
   await ws.db
-    .mktx((x) => ({
-      purchases: x.purchases,
-      coins: x.coins,
-      denominations: x.denominations,
-      refreshGroups: x.refreshGroups,
-    }))
+    .mktx((x) => [x.purchases, x.coins, x.denominations, x.refreshGroups])
     .runReadWrite(async (tx) => {
       const p = await tx.purchases.get(proposalId);
       if (!p) {
@@ -517,9 +510,7 @@ export async function applyRefund(
   }
 
   const purchase = await ws.db
-    .mktx((x) => ({
-      purchases: x.purchases,
-    }))
+    .mktx((x) => [x.purchases])
     .runReadOnly(async (tx) => {
       return tx.purchases.indexes.byMerchantUrlAndOrderId.get([
         parseResult.merchantBaseUrl,
@@ -544,9 +535,7 @@ export async function applyRefundFromPurchaseId(
 
   logger.info("processing purchase for refund");
   const success = await ws.db
-    .mktx((x) => ({
-      purchases: x.purchases,
-    }))
+    .mktx((x) => [x.purchases])
     .runReadWrite(async (tx) => {
       const p = await tx.purchases.get(proposalId);
       if (!p) {
@@ -569,9 +558,7 @@ export async function applyRefundFromPurchaseId(
   }
 
   const purchase = await ws.db
-    .mktx((x) => ({
-      purchases: x.purchases,
-    }))
+    .mktx((x) => [x.purchases])
     .runReadOnly(async (tx) => {
       return tx.purchases.get(proposalId);
     });
@@ -642,7 +629,7 @@ async function queryAndSaveAwaitingRefund(
     Amounts.cmp(refundAwaiting, purchase.refundAwaiting) !== 0
   ) {
     await ws.db
-      .mktx((x) => ({ purchases: x.purchases }))
+      .mktx((x) => [x.purchases])
       .runReadWrite(async (tx) => {
         const p = await tx.purchases.get(purchase.proposalId);
         if (!p) {
@@ -667,9 +654,7 @@ export async function processPurchaseQueryRefund(
 ): Promise<OperationAttemptResult> {
   const waitForAutoRefund = options.waitForAutoRefund ?? false;
   const purchase = await ws.db
-    .mktx((x) => ({
-      purchases: x.purchases,
-    }))
+    .mktx((x) => [x.purchases])
     .runReadOnly(async (tx) => {
       return tx.purchases.get(proposalId);
     });
@@ -729,9 +714,7 @@ export async function processPurchaseQueryRefund(
     const abortingCoins: AbortingCoin[] = [];
 
     await ws.db
-      .mktx((x) => ({
-        coins: x.coins,
-      }))
+      .mktx((x) => [x.coins])
       .runReadOnly(async (tx) => {
         for (let i = 0; i < purchase.payCoinSelection.coinPubs.length; i++) {
           const coinPub = purchase.payCoinSelection.coinPubs[i];
@@ -796,9 +779,7 @@ export async function abortFailedPayWithRefund(
   proposalId: string,
 ): Promise<void> {
   await ws.db
-    .mktx((x) => ({
-      purchases: x.purchases,
-    }))
+    .mktx((x) => [x.purchases])
     .runReadWrite(async (tx) => {
       const purchase = await tx.purchases.get(proposalId);
       if (!purchase) {

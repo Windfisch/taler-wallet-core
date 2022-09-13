@@ -76,20 +76,20 @@ export async function exportBackup(
 ): Promise<WalletBackupContentV1> {
   await provideBackupState(ws);
   return ws.db
-    .mktx((x) => ({
-      config: x.config,
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-      coins: x.coins,
-      denominations: x.denominations,
-      purchases: x.purchases,
-      proposals: x.proposals,
-      refreshGroups: x.refreshGroups,
-      backupProviders: x.backupProviders,
-      tips: x.tips,
-      recoupGroups: x.recoupGroups,
-      withdrawalGroups: x.withdrawalGroups,
-    }))
+    .mktx((x) => [
+      x.config,
+      x.exchanges,
+      x.exchangeDetails,
+      x.coins,
+      x.denominations,
+      x.purchases,
+      x.proposals,
+      x.refreshGroups,
+      x.backupProviders,
+      x.tips,
+      x.recoupGroups,
+      x.withdrawalGroups,
+    ])
     .runReadWrite(async (tx) => {
       const bs = await getWalletBackupState(ws, tx);
 

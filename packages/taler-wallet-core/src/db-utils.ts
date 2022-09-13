@@ -46,9 +46,13 @@ function upgradeFromStoreMap(
 ): void {
   if (oldVersion === 0) {
     for (const n in storeMap) {
-      const swi: StoreWithIndexes<StoreDescriptor<unknown>, any> = storeMap[n];
+      const swi: StoreWithIndexes<
+        any,
+        StoreDescriptor<unknown>,
+        any
+      > = storeMap[n];
       const storeDesc: StoreDescriptor<unknown> = swi.store;
-      const s = db.createObjectStore(storeDesc.name, {
+      const s = db.createObjectStore(swi.storeName, {
         autoIncrement: storeDesc.autoIncrement,
         keyPath: storeDesc.keyPath,
       });
@@ -117,9 +121,7 @@ export async function openTalerDatabase(
   const metaDb = new DbAccess(metaDbHandle, walletMetadataStore);
   let currentMainVersion: string | undefined;
   await metaDb
-    .mktx((x) => ({
-      metaConfig: x.metaConfig,
-    }))
+    .mktx((stores) => [stores.metaConfig])
     .runReadWrite(async (tx) => {
       const dbVersionRecord = await tx.metaConfig.get(CURRENT_DB_CONFIG_KEY);
       if (!dbVersionRecord) {
@@ -141,9 +143,7 @@ export async function openTalerDatabase(
         // We consider this a pre-release
         // development version, no migration is done.
         await metaDb
-          .mktx((x) => ({
-            metaConfig: x.metaConfig,
-          }))
+          .mktx((stores) => [stores.metaConfig])
           .runReadWrite(async (tx) => {
             await tx.metaConfig.put({
               key: CURRENT_DB_CONFIG_KEY,

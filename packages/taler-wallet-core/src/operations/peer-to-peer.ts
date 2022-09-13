@@ -242,13 +242,14 @@ export async function initiatePeerToPeerPush(
   });
 
   const coinSelRes: PeerCoinSelection | undefined = await ws.db
-    .mktx((x) => ({
-      exchanges: x.exchanges,
-      coins: x.coins,
-      denominations: x.denominations,
-      refreshGroups: x.refreshGroups,
-      peerPushPaymentInitiations: x.peerPushPaymentInitiations,
-    }))
+    .mktx((x) => [
+      x.exchanges,
+      x.coins,
+      x.denominations,
+      x.refreshGroups,
+      x.peerPullPaymentInitiations,
+      x.peerPushPaymentInitiations,
+    ])
     .runReadWrite(async (tx) => {
       const sel = await selectPeerCoins(ws, tx, instructedAmount);
       if (!sel) {
@@ -401,9 +402,7 @@ export async function checkPeerPushPayment(
   const peerPushPaymentIncomingId = encodeCrock(getRandomBytes(32));
 
   await ws.db
-    .mktx((x) => ({
-      peerPushPaymentIncoming: x.peerPushPaymentIncoming,
-    }))
+    .mktx((x) => [x.peerPushPaymentIncoming])
     .runReadWrite(async (tx) => {
       await tx.peerPushPaymentIncoming.add({
         peerPushPaymentIncomingId,
@@ -456,10 +455,7 @@ async function getMergeReserveInfo(
   const newReservePair = await ws.cryptoApi.createEddsaKeypair({});
 
   const mergeReserveInfo: MergeReserveInfo = await ws.db
-    .mktx((x) => ({
-      exchanges: x.exchanges,
-      withdrawalGroups: x.withdrawalGroups,
-    }))
+    .mktx((x) => [x.exchanges, x.withdrawalGroups])
     .runReadWrite(async (tx) => {
       const ex = await tx.exchanges.get(req.exchangeBaseUrl);
       checkDbInvariant(!!ex);
@@ -482,7 +478,7 @@ export async function acceptPeerPushPayment(
   req: AcceptPeerPushPaymentRequest,
 ): Promise<void> {
   const peerInc = await ws.db
-    .mktx((x) => ({ peerPushPaymentIncoming: x.peerPushPaymentIncoming }))
+    .mktx((x) => [x.peerPushPaymentIncoming])
     .runReadOnly(async (tx) => {
       return tx.peerPushPaymentIncoming.get(req.peerPushPaymentIncomingId);
     });
@@ -564,7 +560,7 @@ export async function acceptPeerPullPayment(
   req: AcceptPeerPullPaymentRequest,
 ): Promise<void> {
   const peerPullInc = await ws.db
-    .mktx((x) => ({ peerPullPaymentIncoming: x.peerPullPaymentIncoming }))
+    .mktx((x) => [x.peerPullPaymentIncoming])
     .runReadOnly(async (tx) => {
       return tx.peerPullPaymentIncoming.get(req.peerPullPaymentIncomingId);
     });
@@ -579,13 +575,13 @@ export async function acceptPeerPullPayment(
     peerPullInc.contractTerms.amount,
   );
   const coinSelRes: PeerCoinSelection | undefined = await ws.db
-    .mktx((x) => ({
-      exchanges: x.exchanges,
-      coins: x.coins,
-      denominations: x.denominations,
-      refreshGroups: x.refreshGroups,
-      peerPullPaymentIncoming: x.peerPullPaymentIncoming,
-    }))
+    .mktx((x) => [
+      x.exchanges,
+      x.coins,
+      x.denominations,
+      x.refreshGroups,
+      x.peerPullPaymentIncoming,
+    ])
     .runReadWrite(async (tx) => {
       const sel = await selectPeerCoins(ws, tx, instructedAmount);
       if (!sel) {
@@ -689,9 +685,7 @@ export async function checkPeerPullPayment(
   const peerPullPaymentIncomingId = encodeCrock(getRandomBytes(32));
 
   await ws.db
-    .mktx((x) => ({
-      peerPullPaymentIncoming: x.peerPullPaymentIncoming,
-    }))
+    .mktx((x) => [x.peerPullPaymentIncoming])
     .runReadWrite(async (tx) => {
       await tx.peerPullPaymentIncoming.add({
         peerPullPaymentIncomingId,
@@ -775,11 +769,9 @@ export async function initiatePeerRequestForPay(
   });
 
   await ws.db
-    .mktx((x) => ({
-      peerPullPaymentInitiation: x.peerPullPaymentInitiations,
-    }))
+    .mktx((x) => [x.peerPullPaymentInitiations])
     .runReadWrite(async (tx) => {
-      await tx.peerPullPaymentInitiation.put({
+      await tx.peerPullPaymentInitiations.put({
         amount: req.amount,
         contractTerms,
         exchangeBaseUrl: req.exchangeBaseUrl,

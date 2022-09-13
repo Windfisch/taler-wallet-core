@@ -120,7 +120,7 @@ export async function getTotalPaymentCost(
   pcs: PayCoinSelection,
 ): Promise<AmountJson> {
   return ws.db
-    .mktx((x) => ({ coins: x.coins, denominations: x.denominations }))
+    .mktx((x) => [x.coins, x.denominations])
     .runReadOnly(async (tx) => {
       const costs: AmountJson[] = [];
       for (let i = 0; i < pcs.coinPubs.length; i++) {
@@ -222,12 +222,7 @@ export async function getCandidatePayCoins(
   const wireFeesPerExchange: Record<string, AmountJson> = {};
 
   await ws.db
-    .mktx((x) => ({
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-      denominations: x.denominations,
-      coins: x.coins,
-    }))
+    .mktx((x) => [x.exchanges, x.exchangeDetails, x.denominations, x.coins])
     .runReadOnly(async (tx) => {
       const exchanges = await tx.exchanges.iter().toArray();
       for (const exchange of exchanges) {
@@ -459,13 +454,13 @@ async function recordConfirmPay(
   };
 
   await ws.db
-    .mktx((x) => ({
-      proposals: x.proposals,
-      purchases: x.purchases,
-      coins: x.coins,
-      refreshGroups: x.refreshGroups,
-      denominations: x.denominations,
-    }))
+    .mktx((x) => [
+      x.proposals,
+      x.purchases,
+      x.coins,
+      x.refreshGroups,
+      x.denominations,
+    ])
     .runReadWrite(async (tx) => {
       const p = await tx.proposals.get(proposal.proposalId);
       if (p) {
@@ -489,7 +484,7 @@ async function failProposalPermanently(
   err: TalerErrorDetail,
 ): Promise<void> {
   await ws.db
-    .mktx((x) => ({ proposals: x.proposals }))
+    .mktx((x) => [x.proposals])
     .runReadWrite(async (tx) => {
       const p = await tx.proposals.get(proposalId);
       if (!p) {
@@ -567,13 +562,10 @@ export async function processDownloadProposal(
   proposalId: string,
   options: {} = {},
 ): Promise<OperationAttemptResult> {
-
-  const res = ws.db.mktx2((x) => [x.auditorTrust, x.coins])
-
   const proposal = await ws.db
-    .mktx((x) => ({ proposals: x.proposals }))
+    .mktx((x) => [x.proposals])
     .runReadOnly(async (tx) => {
-      return tx.proposals.get(proposalId);
+      return await tx.proposals.get(proposalId);
     });
 
   if (!proposal) {
@@ -608,7 +600,7 @@ export async function processDownloadProposal(
 
   const opId = RetryTags.forProposalClaim(proposal);
   const retryRecord = await ws.db
-    .mktx((x) => ({ operationRetries: x.operationRetries }))
+    .mktx((x) => [x.operationRetries])
     .runReadOnly(async (tx) => {
       return tx.operationRetries.get(opId);
     });
@@ -748,7 +740,7 @@ export async function processDownloadProposal(
   logger.trace(`extracted contract data: ${j2s(contractData)}`);
 
   await ws.db
-    .mktx((x) => ({ proposals: x.proposals, purchases: x.purchases }))
+    .mktx((x) => [x.purchases, x.proposals])
     .runReadWrite(async (tx) => {
       const p = await tx.proposals.get(proposalId);
       if (!p) {
@@ -807,7 +799,7 @@ async function startDownloadProposal(
   noncePriv: string | undefined,
 ): Promise<string> {
   const oldProposal = await ws.db
-    .mktx((x) => ({ proposals: x.proposals }))
+    .mktx((x) => [x.proposals])
     .runReadOnly(async (tx) => {
       return tx.proposals.indexes.byUrlAndOrderId.get([
         merchantBaseUrl,
@@ -855,7 +847,7 @@ async function startDownloadProposal(
   };
 
   await ws.db
-    .mktx((x) => ({ proposals: x.proposals }))
+    .mktx((x) => [x.proposals])
     .runReadWrite(async (tx) => {
       const existingRecord = await tx.proposals.indexes.byUrlAndOrderId.get([
         merchantBaseUrl,
@@ -880,7 +872,7 @@ async function storeFirstPaySuccess(
 ): Promise<void> {
   const now = AbsoluteTime.toTimestamp(AbsoluteTime.now());
   await ws.db
-    .mktx((x) => ({ purchases: x.purchases }))
+    .mktx((x) => [x.purchases])
     .runReadWrite(async (tx) => {
       const purchase = await tx.purchases.get(proposalId);
 
@@ -916,7 +908,7 @@ async function storePayReplaySuccess(
   sessionId: string | undefined,
 ): Promise<void> {
   await ws.db
-    .mktx((x) => ({ purchases: x.purchases }))
+    .mktx((x) => [x.purchases])
     .runReadWrite(async (tx) => {
       const purchase = await tx.purchases.get(proposalId);
 
@@ -950,9 +942,9 @@ async function handleInsufficientFunds(
   logger.trace("handling insufficient funds, trying to re-select coins");
 
   const proposal = await ws.db
-    .mktx((x) => ({ purchaes: x.purchases }))
+    .mktx((x) => [x.purchases])
     .runReadOnly(async (tx) => {
-      return tx.purchaes.get(proposalId);
+      return tx.purchases.get(proposalId);
     });
   if (!proposal) {
     return;
@@ -990,7 +982,7 @@ async function handleInsufficientFunds(
   const prevPayCoins: PreviousPayCoins = [];
 
   await ws.db
-    .mktx((x) => ({ coins: x.coins, denominations: x.denominations }))
+    .mktx((x) => [x.coins, x.denominations])
     .runReadOnly(async (tx) => {
       for (let i = 0; i < proposal.payCoinSelection.coinPubs.length; i++) {
         const coinPub = proposal.payCoinSelection.coinPubs[i];
@@ -1036,12 +1028,7 @@ async function handleInsufficientFunds(
   logger.trace("re-selected coins");
 
   await ws.db
-    .mktx((x) => ({
-      purchases: x.purchases,
-      coins: x.coins,
-      denominations: x.denominations,
-      refreshGroups: x.refreshGroups,
-    }))
+    .mktx((x) => [x.purchases, x.coins, x.denominations, x.refreshGroups])
     .runReadWrite(async (tx) => {
       const p = await tx.purchases.get(proposalId);
       if (!p) {
@@ -1060,7 +1047,7 @@ async function unblockBackup(
   proposalId: string,
 ): Promise<void> {
   await ws.db
-    .mktx((x) => ({ backupProviders: x.backupProviders }))
+    .mktx((x) => [x.backupProviders])
     .runReadWrite(async (tx) => {
       await tx.backupProviders.indexes.byPaymentProposalId
         .iter(proposalId)
@@ -1081,7 +1068,7 @@ export async function checkPaymentByProposalId(
   sessionId?: string,
 ): Promise<PreparePayResult> {
   let proposal = await ws.db
-    .mktx((x) => ({ proposals: x.proposals }))
+    .mktx((x) => [x.proposals])
     .runReadOnly(async (tx) => {
       return tx.proposals.get(proposalId);
     });
@@ -1095,7 +1082,7 @@ export async function checkPaymentByProposalId(
     }
     logger.trace("using existing purchase for same product");
     proposal = await ws.db
-      .mktx((x) => ({ proposals: x.proposals }))
+      .mktx((x) => [x.proposals])
       .runReadOnly(async (tx) => {
         return tx.proposals.get(existingProposalId);
       });
@@ -1118,7 +1105,7 @@ export async function checkPaymentByProposalId(
 
   // First check if we already paid for it.
   const purchase = await ws.db
-    .mktx((x) => ({ purchases: x.purchases }))
+    .mktx((x) => [x.purchases])
     .runReadOnly(async (tx) => {
       return tx.purchases.get(proposalId);
     });
@@ -1176,7 +1163,7 @@ export async function checkPaymentByProposalId(
       "automatically re-submitting payment with different session ID",
     );
     await ws.db
-      .mktx((x) => ({ purchases: x.purchases }))
+      .mktx((x) => [x.purchases])
       .runReadWrite(async (tx) => {
         const p = await tx.purchases.get(proposalId);
         if (!p) {
@@ -1230,7 +1217,7 @@ export async function getContractTermsDetails(
   proposalId: string,
 ): Promise<WalletContractData> {
   const proposal = await ws.db
-    .mktx((x) => ({ proposals: x.proposals }))
+    .mktx((x) => [x.proposals])
     .runReadOnly(async (tx) => {
       return tx.proposals.get(proposalId);
     });
@@ -1296,7 +1283,7 @@ export async function generateDepositPermissions(
     denom: DenominationRecord;
   }> = [];
   await ws.db
-    .mktx((x) => ({ coins: x.coins, denominations: x.denominations }))
+    .mktx((x) => [x.coins, x.denominations])
     .runReadOnly(async (tx) => {
       for (let i = 0; i < payCoinSel.coinPubs.length; i++) {
         const coin = await tx.coins.get(payCoinSel.coinPubs[i]);
@@ -1359,7 +1346,7 @@ export async function runPayForConfirmPay(
   switch (res.type) {
     case OperationAttemptResultType.Finished: {
       const purchase = await ws.db
-        .mktx((x) => ({ purchases: x.purchases }))
+        .mktx((x) => [x.purchases])
         .runReadOnly(async (tx) => {
           return tx.purchases.get(proposalId);
         });
@@ -1399,7 +1386,7 @@ export async function confirmPay(
     `executing confirmPay with proposalId ${proposalId} and sessionIdOverride ${sessionIdOverride}`,
   );
   const proposal = await ws.db
-    .mktx((x) => ({ proposals: x.proposals }))
+    .mktx((x) => [x.proposals])
     .runReadOnly(async (tx) => {
       return tx.proposals.get(proposalId);
     });
@@ -1414,7 +1401,7 @@ export async function confirmPay(
   }
 
   const existingPurchase = await ws.db
-    .mktx((x) => ({ purchases: x.purchases }))
+    .mktx((x) => [x.purchases])
     .runReadWrite(async (tx) => {
       const purchase = await tx.purchases.get(proposalId);
       if (
@@ -1508,7 +1495,7 @@ export async function processPurchasePay(
   } = {},
 ): Promise<OperationAttemptResult> {
   const purchase = await ws.db
-    .mktx((x) => ({ purchases: x.purchases }))
+    .mktx((x) => [x.purchases])
     .runReadOnly(async (tx) => {
       return tx.purchases.get(proposalId);
     });
@@ -1568,20 +1555,12 @@ export async function processPurchasePay(
     );
 
     logger.trace(`got resp ${JSON.stringify(resp)}`);
-
-    const payOpId = RetryTags.forPay(purchase);
-    const payRetryRecord = await ws.db
-      .mktx((x) => ({ operationRetries: x.operationRetries }))
-      .runReadOnly(async (tx) => {
-        return await tx.operationRetries.get(payOpId);
-      });
-
     if (resp.status === HttpStatusCode.BadRequest) {
       const errDetails = await readUnexpectedResponseDetails(resp);
       logger.warn("unexpected 400 response for /pay");
       logger.warn(j2s(errDetails));
       await ws.db
-        .mktx((x) => ({ purchases: x.purchases }))
+        .mktx((x) => [x.purchases])
         .runReadWrite(async (tx) => {
           const purch = await tx.purchases.get(proposalId);
           if (!purch) {
@@ -1683,7 +1662,7 @@ export async function refuseProposal(
   proposalId: string,
 ): Promise<void> {
   const success = await ws.db
-    .mktx((x) => ({ proposals: x.proposals }))
+    .mktx((x) => [x.proposals])
     .runReadWrite(async (tx) => {
       const proposal = await tx.proposals.get(proposalId);
       if (!proposal) {

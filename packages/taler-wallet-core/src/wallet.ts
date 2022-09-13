@@ -328,7 +328,7 @@ export async function storeOperationError(
   e: TalerErrorDetail,
 ): Promise<void> {
   await ws.db
-    .mktx((x) => ({ operationRetries: x.operationRetries }))
+    .mktx((x) => [x.operationRetries])
     .runReadWrite(async (tx) => {
       const retryRecord = await tx.operationRetries.get(pendingTaskId);
       if (!retryRecord) {
@@ -345,7 +345,7 @@ export async function storeOperationFinished(
   pendingTaskId: string,
 ): Promise<void> {
   await ws.db
-    .mktx((x) => ({ operationRetries: x.operationRetries }))
+    .mktx((x) => [x.operationRetries])
     .runReadWrite(async (tx) => {
       await tx.operationRetries.delete(pendingTaskId);
     });
@@ -356,7 +356,7 @@ export async function storeOperationPending(
   pendingTaskId: string,
 ): Promise<void> {
   await ws.db
-    .mktx((x) => ({ operationRetries: x.operationRetries }))
+    .mktx((x) => [x.operationRetries])
     .runReadWrite(async (tx) => {
       const retryRecord = await tx.operationRetries.get(pendingTaskId);
       if (!retryRecord) {
@@ -542,7 +542,7 @@ async function runTaskLoop(
  */
 async function fillDefaults(ws: InternalWalletState): Promise<void> {
   await ws.db
-    .mktx((x) => ({ config: x.config, auditorTrustStore: x.auditorTrust }))
+    .mktx((x) => [x.config, x.auditorTrust])
     .runReadWrite(async (tx) => {
       let applied = false;
       await tx.config.iter().forEach((x) => {
@@ -552,7 +552,7 @@ async function fillDefaults(ws: InternalWalletState): Promise<void> {
       });
       if (!applied) {
         for (const c of builtinAuditors) {
-          await tx.auditorTrustStore.put(c);
+          await tx.auditorTrust.put(c);
         }
       }
       // FIXME: make sure exchanges are added transactionally to
@@ -634,9 +634,7 @@ async function listKnownBankAccounts(
 ): Promise<KnownBankAccounts> {
   const accounts: { [account: string]: PaytoUri } = {};
   await ws.db
-    .mktx((x) => ({
-      withdrawalGroups: x.withdrawalGroups,
-    }))
+    .mktx((x) => [x.withdrawalGroups])
     .runReadOnly(async (tx) => {
       const withdrawalGroups = await tx.withdrawalGroups.iter().toArray();
       for (const r of withdrawalGroups) {
@@ -660,11 +658,7 @@ async function getExchanges(
 ): Promise<ExchangesListResponse> {
   const exchanges: ExchangeListItem[] = [];
   await ws.db
-    .mktx((x) => ({
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-      denominations: x.denominations,
-    }))
+    .mktx((x) => [x.exchanges, x.exchangeDetails, x.denominations])
     .runReadOnly(async (tx) => {
       const exchangeRecords = await tx.exchanges.iter().toArray();
       for (const r of exchangeRecords) {
@@ -708,11 +702,7 @@ async function getExchangeDetailedInfo(
 ): Promise<ExchangeFullDetails> {
   //TODO: should we use the forceUpdate parameter?
   const exchange = await ws.db
-    .mktx((x) => ({
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-      denominations: x.denominations,
-    }))
+    .mktx((x) => [x.exchanges, x.exchangeDetails, x.denominations])
     .runReadOnly(async (tx) => {
       const ex = await tx.exchanges.get(exchangeBaseurl);
       const dp = ex?.detailsPointer;
@@ -790,9 +780,7 @@ async function setCoinSuspended(
   suspended: boolean,
 ): Promise<void> {
   await ws.db
-    .mktx((x) => ({
-      coins: x.coins,
-    }))
+    .mktx((x) => [x.coins])
     .runReadWrite(async (tx) => {
       const c = await tx.coins.get(coinPub);
       if (!c) {
@@ -811,11 +799,7 @@ async function dumpCoins(ws: InternalWalletState): Promise<CoinDumpJson> {
   const coinsJson: CoinDumpJson = { coins: [] };
   logger.info("dumping coins");
   await ws.db
-    .mktx((x) => ({
-      coins: x.coins,
-      denominations: x.denominations,
-      withdrawalGroups: x.withdrawalGroups,
-    }))
+    .mktx((x) => [x.coins, x.denominations, x.withdrawalGroups])
     .runReadOnly(async (tx) => {
       const coins = await tx.coins.iter().toArray();
       for (const c of coins) {
@@ -1065,11 +1049,7 @@ async function dispatchRequestInternal(
       const req = codecForForceRefreshRequest().decode(payload);
       const coinPubs = req.coinPubList.map((x) => ({ coinPub: x }));
       const refreshGroupId = await ws.db
-        .mktx((x) => ({
-          refreshGroups: x.refreshGroups,
-          denominations: x.denominations,
-          coins: x.coins,
-        }))
+        .mktx((x) => [x.refreshGroups, x.denominations, x.coins])
         .runReadWrite(async (tx) => {
           return await createRefreshGroup(
             ws,
@@ -1164,10 +1144,7 @@ async function dispatchRequestInternal(
     }
     case "listCurrencies": {
       return await ws.db
-        .mktx((x) => ({
-          auditorTrust: x.auditorTrust,
-          exchangeTrust: x.exchangeTrust,
-        }))
+        .mktx((x) => [x.auditorTrust, x.exchangeTrust])
         .runReadOnly(async (tx) => {
           const trustedAuditors = await tx.auditorTrust.iter().toArray();
           const trustedExchanges = await tx.exchangeTrust.iter().toArray();

@@ -155,10 +155,7 @@ async function refreshCreateSession(
   );
 
   const d = await ws.db
-    .mktx((x) => ({
-      refreshGroups: x.refreshGroups,
-      coins: x.coins,
-    }))
+    .mktx((x) => [x.refreshGroups, x.coins])
     .runReadWrite(async (tx) => {
       const refreshGroup = await tx.refreshGroups.get(refreshGroupId);
       if (!refreshGroup) {
@@ -197,9 +194,7 @@ async function refreshCreateSession(
   // to update and filter withdrawable denoms.
 
   const { availableAmount, availableDenoms } = await ws.db
-    .mktx((x) => ({
-      denominations: x.denominations,
-    }))
+    .mktx((x) => [x.denominations])
     .runReadOnly(async (tx) => {
       const oldDenom = await ws.getDenomInfo(
         ws,
@@ -237,10 +232,7 @@ async function refreshCreateSession(
       )} too small`,
     );
     await ws.db
-      .mktx((x) => ({
-        coins: x.coins,
-        refreshGroups: x.refreshGroups,
-      }))
+      .mktx((x) => [x.coins, x.refreshGroups])
       .runReadWrite(async (tx) => {
         const rg = await tx.refreshGroups.get(refreshGroupId);
         if (!rg) {
@@ -259,10 +251,7 @@ async function refreshCreateSession(
 
   // Store refresh session for this coin in the database.
   await ws.db
-    .mktx((x) => ({
-      refreshGroups: x.refreshGroups,
-      coins: x.coins,
-    }))
+    .mktx((x) => [x.refreshGroups, x.coins])
     .runReadWrite(async (tx) => {
       const rg = await tx.refreshGroups.get(refreshGroupId);
       if (!rg) {
@@ -300,11 +289,7 @@ async function refreshMelt(
   coinIndex: number,
 ): Promise<void> {
   const d = await ws.db
-    .mktx((x) => ({
-      refreshGroups: x.refreshGroups,
-      coins: x.coins,
-      denominations: x.denominations,
-    }))
+    .mktx((x) => [x.refreshGroups, x.coins, x.denominations])
     .runReadWrite(async (tx) => {
       const refreshGroup = await tx.refreshGroups.get(refreshGroupId);
       if (!refreshGroup) {
@@ -414,9 +399,7 @@ async function refreshMelt(
   if (resp.status === HttpStatusCode.NotFound) {
     const errDetails = await readUnexpectedResponseDetails(resp);
     await ws.db
-      .mktx((x) => ({
-        refreshGroups: x.refreshGroups,
-      }))
+      .mktx((x) => [x.refreshGroups])
       .runReadWrite(async (tx) => {
         const rg = await tx.refreshGroups.get(refreshGroupId);
         if (!rg) {
@@ -446,9 +429,7 @@ async function refreshMelt(
   refreshSession.norevealIndex = norevealIndex;
 
   await ws.db
-    .mktx((x) => ({
-      refreshGroups: x.refreshGroups,
-    }))
+    .mktx((x) => [x.refreshGroups])
     .runReadWrite(async (tx) => {
       const rg = await tx.refreshGroups.get(refreshGroupId);
       if (!rg) {
@@ -538,11 +519,7 @@ async function refreshReveal(
 ): Promise<void> {
   logger.info("doing refresh reveal");
   const d = await ws.db
-    .mktx((x) => ({
-      refreshGroups: x.refreshGroups,
-      coins: x.coins,
-      denominations: x.denominations,
-    }))
+    .mktx((x) => [x.refreshGroups, x.coins, x.denominations])
     .runReadOnly(async (tx) => {
       const refreshGroup = await tx.refreshGroups.get(refreshGroupId);
       if (!refreshGroup) {
@@ -703,10 +680,7 @@ async function refreshReveal(
   }
 
   await ws.db
-    .mktx((x) => ({
-      coins: x.coins,
-      refreshGroups: x.refreshGroups,
-    }))
+    .mktx((x) => [x.coins, x.refreshGroups])
     .runReadWrite(async (tx) => {
       const rg = await tx.refreshGroups.get(refreshGroupId);
       if (!rg) {
@@ -740,12 +714,8 @@ export async function processRefreshGroup(
   logger.info(`processing refresh group ${refreshGroupId}`);
 
   const refreshGroup = await ws.db
-    .mktx((x) => ({
-      refreshGroups: x.refreshGroups,
-    }))
-    .runReadOnly(async (tx) => {
-      return tx.refreshGroups.get(refreshGroupId);
-    });
+    .mktx((x) => [x.refreshGroups])
+    .runReadOnly(async (tx) => tx.refreshGroups.get(refreshGroupId));
   if (!refreshGroup) {
     return {
       type: OperationAttemptResultType.Finished,
@@ -801,7 +771,7 @@ async function processRefreshSession(
     `processing refresh session for coin ${coinIndex} of group ${refreshGroupId}`,
   );
   let refreshGroup = await ws.db
-    .mktx((x) => ({ refreshGroups: x.refreshGroups }))
+    .mktx((x) => [x.refreshGroups])
     .runReadOnly(async (tx) => {
       return tx.refreshGroups.get(refreshGroupId);
     });
@@ -814,7 +784,7 @@ async function processRefreshSession(
   if (!refreshGroup.refreshSessionPerCoin[coinIndex]) {
     await refreshCreateSession(ws, refreshGroupId, coinIndex);
     refreshGroup = await ws.db
-      .mktx((x) => ({ refreshGroups: x.refreshGroups }))
+      .mktx((x) => [x.refreshGroups])
       .runReadOnly(async (tx) => {
         return tx.refreshGroups.get(refreshGroupId);
       });
@@ -981,12 +951,7 @@ export async function autoRefresh(
     durationFromSpec({ days: 1 }),
   );
   await ws.db
-    .mktx((x) => ({
-      coins: x.coins,
-      denominations: x.denominations,
-      refreshGroups: x.refreshGroups,
-      exchanges: x.exchanges,
-    }))
+    .mktx((x) => [x.coins, x.denominations, x.refreshGroups, x.exchanges])
     .runReadWrite(async (tx) => {
       const exchange = await tx.exchanges.get(exchangeBaseUrl);
       if (!exchange) {

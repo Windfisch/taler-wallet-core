@@ -357,21 +357,21 @@ export async function getPendingOperations(
 ): Promise<PendingOperationsResponse> {
   const now = AbsoluteTime.now();
   return await ws.db
-    .mktx((x) => ({
-      backupProviders: x.backupProviders,
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-      refreshGroups: x.refreshGroups,
-      coins: x.coins,
-      withdrawalGroups: x.withdrawalGroups,
-      proposals: x.proposals,
-      tips: x.tips,
-      purchases: x.purchases,
-      planchets: x.planchets,
-      depositGroups: x.depositGroups,
-      recoupGroups: x.recoupGroups,
-      operationRetries: x.operationRetries,
-    }))
+    .mktx((x) => [
+      x.backupProviders,
+      x.exchanges,
+      x.exchangeDetails,
+      x.refreshGroups,
+      x.coins,
+      x.withdrawalGroups,
+      x.proposals,
+      x.tips,
+      x.purchases,
+      x.planchets,
+      x.depositGroups,
+      x.recoupGroups,
+      x.operationRetries,
+    ])
     .runReadWrite(async (tx) => {
       const resp: PendingOperationsResponse = {
         pendingOperations: [],

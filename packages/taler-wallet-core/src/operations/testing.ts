@@ -467,7 +467,7 @@ export async function testPay(
     throw Error("payment not done");
   }
   const purchase = await ws.db
-    .mktx((x) => ({ purchases: x.purchases }))
+    .mktx((x) => [x.purchases])
     .runReadOnly(async (tx) => {
       return tx.purchases.get(result.proposalId);
     });

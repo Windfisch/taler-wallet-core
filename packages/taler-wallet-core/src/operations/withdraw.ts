@@ -195,9 +195,9 @@ export interface ExchangeWithdrawDetails {
   /**
    * If the exchange supports age-restricted coins it will return
    * the array of ages.
-   * 
+   *
    */
-  ageRestrictionOptions?: number[],
+  ageRestrictionOptions?: number[];
 }
 
 /**
@@ -248,7 +248,7 @@ export function selectWithdrawalDenominations(
   for (const d of denoms) {
     let count = 0;
     const cost = Amounts.add(d.value, d.feeWithdraw).amount;
-    for (; ;) {
+    for (;;) {
       if (Amounts.cmp(remaining, cost) < 0) {
         break;
       }
@@ -412,7 +412,7 @@ export async function getCandidateWithdrawalDenoms(
   exchangeBaseUrl: string,
 ): Promise<DenominationRecord[]> {
   return await ws.db
-    .mktx((x) => ({ denominations: x.denominations }))
+    .mktx((x) => [x.denominations])
     .runReadOnly(async (tx) => {
       const allDenoms = await tx.denominations.indexes.byExchangeBaseUrl.getAll(
         exchangeBaseUrl,
@@ -434,9 +434,7 @@ async function processPlanchetGenerate(
   coinIdx: number,
 ): Promise<void> {
   let planchet = await ws.db
-    .mktx((x) => ({
-      planchets: x.planchets,
-    }))
+    .mktx((x) => [x.planchets])
     .runReadOnly(async (tx) => {
       return tx.planchets.indexes.byGroupAndIndex.get([
         withdrawalGroup.withdrawalGroupId,
@@ -462,9 +460,7 @@ async function processPlanchetGenerate(
   const denomPubHash = maybeDenomPubHash;
 
   const denom = await ws.db
-    .mktx((x) => ({
-      denominations: x.denominations,
-    }))
+    .mktx((x) => [x.denominations])
     .runReadOnly(async (tx) => {
       return ws.getDenomInfo(
         ws,
@@ -500,7 +496,7 @@ async function processPlanchetGenerate(
     lastError: undefined,
   };
   await ws.db
-    .mktx((x) => ({ planchets: x.planchets }))
+    .mktx((x) => [x.planchets])
     .runReadWrite(async (tx) => {
       const p = await tx.planchets.indexes.byGroupAndIndex.get([
         withdrawalGroup.withdrawalGroupId,
@@ -529,12 +525,12 @@ async function processPlanchetExchangeRequest(
     `processing planchet exchange request ${withdrawalGroup.withdrawalGroupId}/${coinIdx}`,
   );
   const d = await ws.db
-    .mktx((x) => ({
-      withdrawalGroups: x.withdrawalGroups,
-      planchets: x.planchets,
-      exchanges: x.exchanges,
-      denominations: x.denominations,
-    }))
+    .mktx((x) => [
+      x.withdrawalGroups,
+      x.planchets,
+      x.exchanges,
+      x.denominations,
+    ])
     .runReadOnly(async (tx) => {
       let planchet = await tx.planchets.indexes.byGroupAndIndex.get([
         withdrawalGroup.withdrawalGroupId,
@@ -599,7 +595,7 @@ async function processPlanchetExchangeRequest(
     logger.trace("withdrawal request failed", e);
     logger.trace(e);
     await ws.db
-      .mktx((x) => ({ planchets: x.planchets }))
+      .mktx((x) => [x.planchets])
       .runReadWrite(async (tx) => {
         let planchet = await tx.planchets.indexes.byGroupAndIndex.get([
           withdrawalGroup.withdrawalGroupId,
@@ -631,12 +627,12 @@ async function processPlanchetExchangeBatchRequest(
     .map((x) => x.count)
     .reduce((a, b) => a + b);
   const d = await ws.db
-    .mktx((x) => ({
-      withdrawalGroups: x.withdrawalGroups,
-      planchets: x.planchets,
-      exchanges: x.exchanges,
-      denominations: x.denominations,
-    }))
+    .mktx((x) => [
+      x.withdrawalGroups,
+      x.planchets,
+      x.exchanges,
+      x.denominations,
+    ])
     .runReadOnly(async (tx) => {
       const reqBody: { planchets: ExchangeWithdrawRequest[] } = {
         planchets: [],
@@ -705,11 +701,7 @@ async function processPlanchetVerifyAndStoreCoin(
   resp: WithdrawResponse,
 ): Promise<void> {
   const d = await ws.db
-    .mktx((x) => ({
-      withdrawalGroups: x.withdrawalGroups,
-      planchets: x.planchets,
-      denominations: x.denominations,
-    }))
+    .mktx((x) => [x.withdrawalGroups, x.planchets, x.denominations])
     .runReadOnly(async (tx) => {
       let planchet = await tx.planchets.indexes.byGroupAndIndex.get([
         withdrawalGroup.withdrawalGroupId,
@@ -768,7 +760,7 @@ async function processPlanchetVerifyAndStoreCoin(
 
   if (!isValid) {
     await ws.db
-      .mktx((x) => ({ planchets: x.planchets }))
+      .mktx((x) => [x.planchets])
       .runReadWrite(async (tx) => {
         let planchet = await tx.planchets.indexes.byGroupAndIndex.get([
           withdrawalGroup.withdrawalGroupId,
@@ -823,11 +815,7 @@ async function processPlanchetVerifyAndStoreCoin(
   // withdrawal succeeded.  If so, mark the withdrawal
   // group as finished.
   const firstSuccess = await ws.db
-    .mktx((x) => ({
-      coins: x.coins,
-      withdrawalGroups: x.withdrawalGroups,
-      planchets: x.planchets,
-    }))
+    .mktx((x) => [x.coins, x.withdrawalGroups, x.planchets])
     .runReadWrite(async (tx) => {
       const p = await tx.planchets.get(planchetCoinPub);
       if (!p || p.withdrawalDone) {
@@ -858,10 +846,7 @@ export async function updateWithdrawalDenoms(
     `updating denominations used for withdrawal for ${exchangeBaseUrl}`,
   );
   const exchangeDetails = await ws.db
-    .mktx((x) => ({
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-    }))
+    .mktx((x) => [x.exchanges, x.exchangeDetails])
     .runReadOnly(async (tx) => {
       return ws.exchangeOps.getExchangeDetails(tx, exchangeBaseUrl);
     });
@@ -890,7 +875,8 @@ export async function updateWithdrawalDenoms(
         denom.verificationStatus === DenominationVerificationStatus.Unverified
       ) {
         logger.trace(
-          `Validating denomination (${current + 1}/${denominations.length
+          `Validating denomination (${current + 1}/${
+            denominations.length
           }) signature of ${denom.denomPubHash}`,
         );
         let valid = false;
@@ -919,7 +905,7 @@ export async function updateWithdrawalDenoms(
     if (updatedDenominations.length > 0) {
       logger.trace("writing denomination batch to db");
       await ws.db
-        .mktx((x) => ({ denominations: x.denominations }))
+        .mktx((x) => [x.denominations])
         .runReadWrite(async (tx) => {
           for (let i = 0; i < updatedDenominations.length; i++) {
             const denom = updatedDenominations[i];
@@ -973,7 +959,7 @@ async function queryReserve(
     if (
       resp.status === 404 &&
       result.talerErrorResponse.code ===
-      TalerErrorCode.EXCHANGE_RESERVES_STATUS_UNKNOWN
+        TalerErrorCode.EXCHANGE_RESERVES_STATUS_UNKNOWN
     ) {
       ws.notify({
         type: NotificationType.ReserveNotYetFound,
@@ -988,9 +974,7 @@ async function queryReserve(
   logger.trace(`got reserve status ${j2s(result.response)}`);
 
   await ws.db
-    .mktx((x) => ({
-      withdrawalGroups: x.withdrawalGroups,
-    }))
+    .mktx((x) => [x.withdrawalGroups])
     .runReadWrite(async (tx) => {
       const wg = await tx.withdrawalGroups.get(withdrawalGroupId);
       if (!wg) {
@@ -1011,7 +995,7 @@ export async function processWithdrawalGroup(
 ): Promise<OperationAttemptResult> {
   logger.trace("processing withdrawal group", withdrawalGroupId);
   const withdrawalGroup = await ws.db
-    .mktx((x) => ({ withdrawalGroups: x.withdrawalGroups }))
+    .mktx((x) => [x.withdrawalGroups])
     .runReadOnly(async (tx) => {
       return tx.withdrawalGroups.get(withdrawalGroupId);
     });
@@ -1080,7 +1064,7 @@ export async function processWithdrawalGroup(
 
   if (withdrawalGroup.denomsSel.selectedDenoms.length === 0) {
     await ws.db
-      .mktx((x) => ({ withdrawalGroups: x.withdrawalGroups }))
+      .mktx((x) => [x.withdrawalGroups])
       .runReadWrite(async (tx) => {
         const wg = await tx.withdrawalGroups.get(withdrawalGroupId);
         if (!wg) {
@@ -1148,11 +1132,7 @@ export async function processWithdrawalGroup(
   let errorsPerCoin: Record<number, TalerErrorDetail> = {};
 
   await ws.db
-    .mktx((x) => ({
-      coins: x.coins,
-      withdrawalGroups: x.withdrawalGroups,
-      planchets: x.planchets,
-    }))
+    .mktx((x) => [x.coins, x.withdrawalGroups, x.planchets])
     .runReadWrite(async (tx) => {
       const wg = await tx.withdrawalGroups.get(withdrawalGroupId);
       if (!wg) {
@@ -1202,7 +1182,9 @@ export async function processWithdrawalGroup(
   };
 }
 
-const AGE_MASK_GROUPS = "8:10:12:14:16:18".split(":").map(n => parseInt(n, 10))
+const AGE_MASK_GROUPS = "8:10:12:14:16:18"
+  .split(":")
+  .map((n) => parseInt(n, 10));
 
 export async function getExchangeWithdrawalInfo(
   ws: InternalWalletState,
@@ -1237,14 +1219,14 @@ export async function getExchangeWithdrawalInfo(
     exchange,
   );
 
-  let hasDenomWithAgeRestriction = false
+  let hasDenomWithAgeRestriction = false;
 
   let earliestDepositExpiration: TalerProtocolTimestamp | undefined;
   for (let i = 0; i < selectedDenoms.selectedDenoms.length; i++) {
     const ds = selectedDenoms.selectedDenoms[i];
     // FIXME: Do in one transaction!
     const denom = await ws.db
-      .mktx((x) => ({ denominations: x.denominations }))
+      .mktx((x) => [x.denominations])
       .runReadOnly(async (tx) => {
         return ws.getDenomInfo(ws, tx, exchangeBaseUrl, ds.denomPubHash);
       });
@@ -1262,13 +1244,14 @@ export async function getExchangeWithdrawalInfo(
     ) {
       earliestDepositExpiration = expireDeposit;
     }
-    hasDenomWithAgeRestriction = hasDenomWithAgeRestriction || denom.denomPub.age_mask > 0
+    hasDenomWithAgeRestriction =
+      hasDenomWithAgeRestriction || denom.denomPub.age_mask > 0;
   }
 
   checkLogicInvariant(!!earliestDepositExpiration);
 
   const possibleDenoms = await ws.db
-    .mktx((x) => ({ denominations: x.denominations }))
+    .mktx((x) => [x.denominations])
     .runReadOnly(async (tx) => {
       const ds = await tx.denominations.indexes.byExchangeBaseUrl.getAll(
         exchangeBaseUrl,
@@ -1290,7 +1273,7 @@ export async function getExchangeWithdrawalInfo(
     ) {
       logger.warn(
         `wallet's support for exchange protocol version ${WALLET_EXCHANGE_PROTOCOL_VERSION} might be outdated ` +
-        `(exchange has ${exchangeDetails.protocolVersion}), checking for updates`,
+          `(exchange has ${exchangeDetails.protocolVersion}), checking for updates`,
       );
     }
   }
@@ -1325,7 +1308,9 @@ export async function getExchangeWithdrawalInfo(
     withdrawalAmountRaw: Amounts.stringify(instructedAmount),
     // TODO: remove hardcoding, this should be calculated from the denominations info
     // force enabled for testing
-    ageRestrictionOptions: hasDenomWithAgeRestriction ? AGE_MASK_GROUPS : undefined
+    ageRestrictionOptions: hasDenomWithAgeRestriction
+      ? AGE_MASK_GROUPS
+      : undefined,
   };
   return ret;
 }
@@ -1369,11 +1354,7 @@ export async function getWithdrawalDetailsForUri(
   const exchanges: ExchangeListItem[] = [];
 
   await ws.db
-    .mktx((x) => ({
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-      denominations: x.denominations,
-    }))
+    .mktx((x) => [x.exchanges, x.exchangeDetails, x.denominations])
     .runReadOnly(async (tx) => {
       const exchangeRecords = await tx.exchanges.iter().toArray();
       for (const r of exchangeRecords) {
@@ -1409,11 +1390,7 @@ export async function getFundingPaytoUrisTx(
   withdrawalGroupId: string,
 ): Promise<string[]> {
   return await ws.db
-    .mktx((x) => ({
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-      withdrawalGroups: x.withdrawalGroups,
-    }))
+    .mktx((x) => [x.exchanges, x.exchangeDetails, x.withdrawalGroups])
     .runReadWrite((tx) => getFundingPaytoUris(tx, withdrawalGroupId));
 }
 
@@ -1461,9 +1438,7 @@ async function getWithdrawalGroupRecordTx(
   },
 ): Promise<WithdrawalGroupRecord | undefined> {
   return await db
-    .mktx((x) => ({
-      withdrawalGroups: x.withdrawalGroups,
-    }))
+    .mktx((x) => [x.withdrawalGroups])
     .runReadOnly(async (tx) => {
       return tx.withdrawalGroups.get(req.withdrawalGroupId);
     });
@@ -1490,9 +1465,7 @@ async function registerReserveWithBank(
   withdrawalGroupId: string,
 ): Promise<void> {
   const withdrawalGroup = await ws.db
-    .mktx((x) => ({
-      withdrawalGroups: x.withdrawalGroups,
-    }))
+    .mktx((x) => [x.withdrawalGroups])
     .runReadOnly(async (tx) => {
       return await tx.withdrawalGroups.get(withdrawalGroupId);
     });
@@ -1526,9 +1499,7 @@ async function registerReserveWithBank(
     codecForBankWithdrawalOperationPostResponse(),
   );
   await ws.db
-    .mktx((x) => ({
-      withdrawalGroups: x.withdrawalGroups,
-    }))
+    .mktx((x) => [x.withdrawalGroups])
     .runReadWrite(async (tx) => {
       const r = await tx.withdrawalGroups.get(withdrawalGroupId);
       if (!r) {
@@ -1606,9 +1577,7 @@ async function processReserveBankStatus(
   if (status.aborted) {
     logger.info("bank aborted the withdrawal");
     await ws.db
-      .mktx((x) => ({
-        withdrawalGroups: x.withdrawalGroups,
-      }))
+      .mktx((x) => [x.withdrawalGroups])
       .runReadWrite(async (tx) => {
         const r = await tx.withdrawalGroups.get(withdrawalGroupId);
         if (!r) {
@@ -1648,9 +1617,7 @@ async function processReserveBankStatus(
   }
 
   await ws.db
-    .mktx((x) => ({
-      withdrawalGroups: x.withdrawalGroups,
-    }))
+    .mktx((x) => [x.withdrawalGroups])
     .runReadWrite(async (tx) => {
       const r = await tx.withdrawalGroups.get(withdrawalGroupId);
       if (!r) {
@@ -1753,13 +1720,13 @@ export async function internalCreateWithdrawalGroup(
   );
 
   await ws.db
-    .mktx((x) => ({
-      withdrawalGroups: x.withdrawalGroups,
-      reserves: x.reserves,
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-      exchangeTrust: x.exchangeTrust,
-    }))
+    .mktx((x) => [
+      x.withdrawalGroups,
+      x.reserves,
+      x.exchanges,
+      x.exchangeDetails,
+      x.exchangeTrust,
+    ])
     .runReadWrite(async (tx) => {
       await tx.withdrawalGroups.add(withdrawalGroup);
       await tx.reserves.put({
@@ -1790,7 +1757,7 @@ export async function acceptWithdrawalFromUri(
   },
 ): Promise<AcceptWithdrawalResponse> {
   const existingWithdrawalGroup = await ws.db
-    .mktx((x) => ({ withdrawalGroups: x.withdrawalGroups }))
+    .mktx((x) => [x.withdrawalGroups])
     .runReadOnly(async (tx) => {
       return await tx.withdrawalGroups.indexes.byTalerWithdrawUri.get(
         req.talerWithdrawUri,
@@ -1899,12 +1866,12 @@ export async function createManualWithdrawal(
   const withdrawalGroupId = withdrawalGroup.withdrawalGroupId;
 
   const exchangePaytoUris = await ws.db
-    .mktx((x) => ({
-      withdrawalGroups: x.withdrawalGroups,
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-      exchangeTrust: x.exchangeTrust,
-    }))
+    .mktx((x) => [
+      x.withdrawalGroups,
+      x.exchanges,
+      x.exchangeDetails,
+      x.exchangeTrust,
+    ])
     .runReadWrite(async (tx) => {
       return await getFundingPaytoUris(tx, withdrawalGroup.withdrawalGroupId);
     });

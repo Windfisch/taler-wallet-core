@@ -126,24 +126,24 @@ export async function getTransactions(
   const transactions: Transaction[] = [];
 
   await ws.db
-    .mktx((x) => ({
-      coins: x.coins,
-      denominations: x.denominations,
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-      proposals: x.proposals,
-      purchases: x.purchases,
-      refreshGroups: x.refreshGroups,
-      tips: x.tips,
-      withdrawalGroups: x.withdrawalGroups,
-      planchets: x.planchets,
-      recoupGroups: x.recoupGroups,
-      depositGroups: x.depositGroups,
-      tombstones: x.tombstones,
-      peerPushPaymentInitiations: x.peerPushPaymentInitiations,
-      peerPullPaymentIncoming: x.peerPullPaymentIncoming,
-      operationRetries: x.operationRetries,
-    }))
+    .mktx((x) => [
+      x.coins,
+      x.denominations,
+      x.depositGroups,
+      x.exchangeDetails,
+      x.exchanges,
+      x.operationRetries,
+      x.peerPullPaymentIncoming,
+      x.peerPushPaymentInitiations,
+      x.planchets,
+      x.proposals,
+      x.purchases,
+      x.recoupGroups,
+      x.recoupGroups,
+      x.tips,
+      x.tombstones,
+      x.withdrawalGroups,
+    ])
     .runReadOnly(async (tx) => {
       tx.peerPushPaymentInitiations.iter().forEachAsync(async (pi) => {
         const amount = Amounts.parseOrThrow(pi.amount);
@@ -609,10 +609,7 @@ export async function deleteTransaction(
   ) {
     const withdrawalGroupId = rest[0];
     await ws.db
-      .mktx((x) => ({
-        withdrawalGroups: x.withdrawalGroups,
-        tombstones: x.tombstones,
-      }))
+      .mktx((x) => [x.withdrawalGroups, x.tombstones])
       .runReadWrite(async (tx) => {
         const withdrawalGroupRecord = await tx.withdrawalGroups.get(
           withdrawalGroupId,
@@ -628,11 +625,7 @@ export async function deleteTransaction(
   } else if (type === TransactionType.Payment) {
     const proposalId = rest[0];
     await ws.db
-      .mktx((x) => ({
-        proposals: x.proposals,
-        purchases: x.purchases,
-        tombstones: x.tombstones,
-      }))
+      .mktx((x) => [x.proposals, x.purchases, x.tombstones])
       .runReadWrite(async (tx) => {
         let found = false;
         const proposal = await tx.proposals.get(proposalId);
@@ -654,10 +647,7 @@ export async function deleteTransaction(
   } else if (type === TransactionType.Refresh) {
     const refreshGroupId = rest[0];
     await ws.db
-      .mktx((x) => ({
-        refreshGroups: x.refreshGroups,
-        tombstones: x.tombstones,
-      }))
+      .mktx((x) => [x.refreshGroups, x.tombstones])
       .runReadWrite(async (tx) => {
         const rg = await tx.refreshGroups.get(refreshGroupId);
         if (rg) {
@@ -670,10 +660,7 @@ export async function deleteTransaction(
   } else if (type === TransactionType.Tip) {
     const tipId = rest[0];
     await ws.db
-      .mktx((x) => ({
-        tips: x.tips,
-        tombstones: x.tombstones,
-      }))
+      .mktx((x) => [x.tips, x.tombstones])
       .runReadWrite(async (tx) => {
         const tipRecord = await tx.tips.get(tipId);
         if (tipRecord) {
@@ -686,10 +673,7 @@ export async function deleteTransaction(
   } else if (type === TransactionType.Deposit) {
     const depositGroupId = rest[0];
     await ws.db
-      .mktx((x) => ({
-        depositGroups: x.depositGroups,
-        tombstones: x.tombstones,
-      }))
+      .mktx((x) => [x.depositGroups, x.tombstones])
       .runReadWrite(async (tx) => {
         const tipRecord = await tx.depositGroups.get(depositGroupId);
         if (tipRecord) {
@@ -704,11 +688,7 @@ export async function deleteTransaction(
     const executionTimeStr = rest[1];
 
     await ws.db
-      .mktx((x) => ({
-        proposals: x.proposals,
-        purchases: x.purchases,
-        tombstones: x.tombstones,
-      }))
+      .mktx((x) => [x.proposals, x.purchases, x.tombstones])
       .runReadWrite(async (tx) => {
         const purchase = await tx.purchases.get(proposalId);
         if (purchase) {
@@ -726,10 +706,7 @@ export async function deleteTransaction(
   } else if (type === TransactionType.PeerPullDebit) {
     const peerPullPaymentIncomingId = rest[0];
     await ws.db
-      .mktx((x) => ({
-        peerPullPaymentIncoming: x.peerPullPaymentIncoming,
-        tombstones: x.tombstones,
-      }))
+      .mktx((x) => [x.peerPullPaymentIncoming, x.tombstones])
       .runReadWrite(async (tx) => {
         const debit = await tx.peerPullPaymentIncoming.get(
           peerPullPaymentIncomingId,
@@ -747,10 +724,7 @@ export async function deleteTransaction(
   } else if (type === TransactionType.PeerPushDebit) {
     const pursePub = rest[0];
     await ws.db
-      .mktx((x) => ({
-        peerPushPaymentInitiations: x.peerPushPaymentInitiations,
-        tombstones: x.tombstones,
-      }))
+      .mktx((x) => [x.peerPushPaymentInitiations, x.tombstones])
       .runReadWrite(async (tx) => {
         const debit = await tx.peerPushPaymentInitiations.get(pursePub);
         if (debit) {

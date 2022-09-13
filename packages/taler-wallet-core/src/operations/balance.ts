@@ -139,12 +139,7 @@ export async function getBalances(
   logger.trace("starting to compute balance");
 
   const wbal = await ws.db
-    .mktx((x) => ({
-      coins: x.coins,
-      refreshGroups: x.refreshGroups,
-      purchases: x.purchases,
-      withdrawalGroups: x.withdrawalGroups,
-    }))
+    .mktx((x) => [x.coins, x.refreshGroups, x.purchases, x.withdrawalGroups])
     .runReadOnly(async (tx) => {
       return getBalancesInsideTransaction(ws, tx);
     });

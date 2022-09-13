@@ -83,9 +83,7 @@ export async function processDepositGroup(
   } = {},
 ): Promise<OperationAttemptResult> {
   const depositGroup = await ws.db
-    .mktx((x) => ({
-      depositGroups: x.depositGroups,
-    }))
+    .mktx((x) => [x.depositGroups])
     .runReadOnly(async (tx) => {
       return tx.depositGroups.get(depositGroupId);
     });
@@ -141,7 +139,7 @@ export async function processDepositGroup(
     });
     await readSuccessResponseJsonOrThrow(httpResp, codecForDepositSuccess());
     await ws.db
-      .mktx((x) => ({ depositGroups: x.depositGroups }))
+      .mktx((x) => [x.depositGroups])
       .runReadWrite(async (tx) => {
         const dg = await tx.depositGroups.get(depositGroupId);
         if (!dg) {
@@ -153,9 +151,7 @@ export async function processDepositGroup(
   }
 
   await ws.db
-    .mktx((x) => ({
-      depositGroups: x.depositGroups,
-    }))
+    .mktx((x) => [x.depositGroups])
     .runReadWrite(async (tx) => {
       const dg = await tx.depositGroups.get(depositGroupId);
       if (!dg) {
@@ -185,9 +181,7 @@ export async function trackDepositGroup(
     body: any;
   }[] = [];
   const depositGroup = await ws.db
-    .mktx((x) => ({
-      depositGroups: x.depositGroups,
-    }))
+    .mktx((x) => [x.depositGroups])
     .runReadOnly(async (tx) => {
       return tx.depositGroups.get(req.depositGroupId);
     });
@@ -247,10 +241,7 @@ export async function getFeeForDeposit(
   const exchangeInfos: { url: string; master_pub: string }[] = [];
 
   await ws.db
-    .mktx((x) => ({
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-    }))
+    .mktx((x) => [x.exchanges, x.exchangeDetails])
     .runReadOnly(async (tx) => {
       const allExchanges = await tx.exchanges.iter().toArray();
       for (const e of allExchanges) {
@@ -315,10 +306,7 @@ export async function prepareDepositGroup(
   const exchangeInfos: { url: string; master_pub: string }[] = [];
 
   await ws.db
-    .mktx((x) => ({
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-    }))
+    .mktx((x) => [x.exchanges, x.exchangeDetails])
     .runReadOnly(async (tx) => {
       const allExchanges = await tx.exchanges.iter().toArray();
       for (const e of allExchanges) {
@@ -417,10 +405,7 @@ export async function createDepositGroup(
   const exchangeInfos: { url: string; master_pub: string }[] = [];
 
   await ws.db
-    .mktx((x) => ({
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-    }))
+    .mktx((x) => [x.exchanges, x.exchangeDetails])
     .runReadOnly(async (tx) => {
       const allExchanges = await tx.exchanges.iter().toArray();
       for (const e of allExchanges) {
@@ -532,12 +517,13 @@ export async function createDepositGroup(
   };
 
   await ws.db
-    .mktx((x) => ({
-      depositGroups: x.depositGroups,
-      coins: x.coins,
-      refreshGroups: x.refreshGroups,
-      denominations: x.denominations,
-    }))
+    .mktx((x) => [
+      x.depositGroups,
+      x.coins,
+      x.recoupGroups,
+      x.denominations,
+      x.refreshGroups,
+    ])
     .runReadWrite(async (tx) => {
       await applyCoinSpend(
         ws,
@@ -565,12 +551,7 @@ export async function getEffectiveDepositAmount(
   const exchangeSet: Set<string> = new Set();
 
   await ws.db
-    .mktx((x) => ({
-      coins: x.coins,
-      denominations: x.denominations,
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-    }))
+    .mktx((x) => [x.coins, x.denominations, x.exchanges, x.exchangeDetails])
     .runReadOnly(async (tx) => {
       for (let i = 0; i < pcs.coinPubs.length; i++) {
         const coin = await tx.coins.get(pcs.coinPubs[i]);
@@ -637,12 +618,7 @@ export async function getTotalFeesForDepositAmount(
   const exchangeSet: Set<string> = new Set();
 
   await ws.db
-    .mktx((x) => ({
-      coins: x.coins,
-      denominations: x.denominations,
-      exchanges: x.exchanges,
-      exchangeDetails: x.exchangeDetails,
-    }))
+    .mktx((x) => [x.coins, x.denominations, x.exchanges, x.exchangeDetails])
     .runReadOnly(async (tx) => {
       for (let i = 0; i < pcs.coinPubs.length; i++) {
         const coin = await tx.coins.get(pcs.coinPubs[i]);
