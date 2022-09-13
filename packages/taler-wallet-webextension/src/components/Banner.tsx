@@ -22,7 +22,7 @@ import { Grid } from "../mui/Grid.js";
 import { Paper } from "../mui/Paper.js";
 
 interface Props extends JSX.HTMLAttributes<HTMLDivElement> {
-  title?: string;
+  titleHead?: VNode;
   elements: {
     icon?: VNode;
     description: VNode;
@@ -34,15 +34,18 @@ interface Props extends JSX.HTMLAttributes<HTMLDivElement> {
   };
 }
 
-export function Banner({ title, elements, confirm, ...rest }: Props): VNode {
+export function Banner({
+  titleHead,
+  elements,
+  confirm,
+  ...rest
+}: Props): VNode {
   return (
     <Fragment>
       <Paper elevation={0} {...rest}>
-        {title && (
+        {titleHead && (
           <Grid container>
-            <Grid item>
-              <Typography>{title}</Typography>
-            </Grid>
+            <Grid item>{titleHead}</Grid>
           </Grid>
         )}
         <Grid container columns={1}>

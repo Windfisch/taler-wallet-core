@@ -58,12 +58,16 @@ export function CreatedView({
         <i18n.Translate>Digital cash invoice</i18n.Translate>
       </SubTitle>
       <section>
-        <p>Show this QR to pay the invoice</p>
+        <p>
+          <i18n.Translate>Show this QR to pay the invoice</i18n.Translate>
+        </p>
         <QR text={talerUri} />
       </section>
       <section>
         or
-        <Button onClick={copyToClipboard.onClick}>Copy the invoice URI</Button>
+        <Button onClick={copyToClipboard.onClick}>
+          <i18n.Translate>Copy the invoice URI</i18n.Translate>
+        </Button>
       </section>
       <section>
         <Link upperCased onClick={cancel.onClick}>
@@ -155,7 +159,7 @@ export function ReadyView({
           variant="contained"
           color="success"
         >
-          Create
+          <i18n.Translate>Create</i18n.Translate>
         </Button>
       </section>
       <section>

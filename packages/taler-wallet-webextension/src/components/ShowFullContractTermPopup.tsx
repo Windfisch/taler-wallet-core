@@ -172,39 +172,54 @@ export function HiddenView({ showHandler }: States.Hidden): VNode {
 
 export function ShowView({ contractTerms, hideHandler }: States.Show): VNode {
   const createdAt = AbsoluteTime.fromTimestamp(contractTerms.timestamp);
+  const { i18n } = useTranslationContext();
 
   return (
     <Modal title="Full detail" onClose={hideHandler}>
       <div style={{ overflowY: "auto", height: "95%", padding: 5 }}>
         <ContractTermsTable>
           <tr>
-            <td>Order Id</td>
+            <td>
+              <i18n.Translate>Order Id</i18n.Translate>
+            </td>
             <td>{contractTerms.orderId}</td>
           </tr>
           <tr>
-            <td>Summary</td>
+            <td>
+              <i18n.Translate>Summary</i18n.Translate>
+            </td>
             <td>{contractTerms.summary}</td>
           </tr>
           <tr>
-            <td>Amount</td>
+            <td>
+              <i18n.Translate>Amount</i18n.Translate>
+            </td>
             <td>
               <Amount value={contractTerms.amount} />
             </td>
           </tr>
           <tr>
-            <td>Merchant name</td>
+            <td>
+              <i18n.Translate>Merchant name</i18n.Translate>
+            </td>
             <td>{contractTerms.merchant.name}</td>
           </tr>
           <tr>
-            <td>Merchant jurisdiction</td>
+            <td>
+              <i18n.Translate>Merchant jurisdiction</i18n.Translate>
+            </td>
             <td>{locationAsText(contractTerms.merchant.jurisdiction)}</td>
           </tr>
           <tr>
-            <td>Merchant address</td>
+            <td>
+              <i18n.Translate>Merchant address</i18n.Translate>
+            </td>
             <td>{locationAsText(contractTerms.merchant.address)}</td>
           </tr>
           <tr>
-            <td>Merchant logo</td>
+            <td>
+              <i18n.Translate>Merchant logo</i18n.Translate>
+            </td>
             <td>
               <div>
                 <img
@@ -215,15 +230,21 @@ export function ShowView({ contractTerms, hideHandler }: States.Show): VNode {
             </td>
           </tr>
           <tr>
-            <td>Merchant website</td>
+            <td>
+              <i18n.Translate>Merchant website</i18n.Translate>
+            </td>
             <td>{contractTerms.merchant.website}</td>
           </tr>
           <tr>
-            <td>Merchant email</td>
+            <td>
+              <i18n.Translate>Merchant email</i18n.Translate>
+            </td>
             <td>{contractTerms.merchant.email}</td>
           </tr>
           <tr>
-            <td>Merchant public key</td>
+            <td>
+              <i18n.Translate>Merchant public key</i18n.Translate>
+            </td>
             <td>
               <span title={contractTerms.merchantPub}>
                 {contractTerms.merchantPub.substring(0, 6)}...
@@ -231,7 +252,9 @@ export function ShowView({ contractTerms, hideHandler }: States.Show): VNode {
             </td>
           </tr>
           <tr>
-            <td>Delivery date</td>
+            <td>
+              <i18n.Translate>Delivery date</i18n.Translate>
+            </td>
             <td>
               {contractTerms.deliveryDate && (
                 <Time
@@ -244,11 +267,15 @@ export function ShowView({ contractTerms, hideHandler }: States.Show): VNode {
             </td>
           </tr>
           <tr>
-            <td>Delivery location</td>
+            <td>
+              <i18n.Translate>Delivery location</i18n.Translate>
+            </td>
             <td>{locationAsText(contractTerms.deliveryLocation)}</td>
           </tr>
           <tr>
-            <td>Products</td>
+            <td>
+              <i18n.Translate>Products</i18n.Translate>
+            </td>
             <td>
               {!contractTerms.products || contractTerms.products.length === 0
                 ? "none"
@@ -258,7 +285,9 @@ export function ShowView({ contractTerms, hideHandler }: States.Show): VNode {
             </td>
           </tr>
           <tr>
-            <td>Created at</td>
+            <td>
+              <i18n.Translate>Created at</i18n.Translate>
+            </td>
             <td>
               {contractTerms.timestamp && (
                 <Time
@@ -271,7 +300,9 @@ export function ShowView({ contractTerms, hideHandler }: States.Show): VNode {
             </td>
           </tr>
           <tr>
-            <td>Refund deadline</td>
+            <td>
+              <i18n.Translate>Refund deadline</i18n.Translate>
+            </td>
             <td>
               {
                 <Time
@@ -284,7 +315,9 @@ export function ShowView({ contractTerms, hideHandler }: States.Show): VNode {
             </td>
           </tr>
           <tr>
-            <td>Auto refund</td>
+            <td>
+              <i18n.Translate>Auto refund</i18n.Translate>
+            </td>
             <td>
               {
                 <Time
@@ -302,7 +335,9 @@ export function ShowView({ contractTerms, hideHandler }: States.Show): VNode {
             </td>
           </tr>
           <tr>
-            <td>Pay deadline</td>
+            <td>
+              <i18n.Translate>Pay deadline</i18n.Translate>
+            </td>
             <td>
               {
                 <Time
@@ -315,11 +350,15 @@ export function ShowView({ contractTerms, hideHandler }: States.Show): VNode {
             </td>
           </tr>
           <tr>
-            <td>Fulfillment URL</td>
+            <td>
+              <i18n.Translate>Fulfillment URL</i18n.Translate>
+            </td>
             <td>{contractTerms.fulfillmentUrl}</td>
           </tr>
           <tr>
-            <td>Fulfillment message</td>
+            <td>
+              <i18n.Translate>Fulfillment message</i18n.Translate>
+            </td>
             <td>{contractTerms.fulfillmentMessage}</td>
           </tr>
           {/* <tr>
@@ -327,19 +366,25 @@ export function ShowView({ contractTerms, hideHandler }: States.Show): VNode {
           <td>{contractTerms.public_reorder_url}</td>
         </tr> */}
           <tr>
-            <td>Max deposit fee</td>
+            <td>
+              <i18n.Translate>Max deposit fee</i18n.Translate>
+            </td>
             <td>
               <Amount value={contractTerms.maxDepositFee} />
             </td>
           </tr>
           <tr>
-            <td>Max fee</td>
+            <td>
+              <i18n.Translate>Max fee</i18n.Translate>
+            </td>
             <td>
               <Amount value={contractTerms.maxWireFee} />
             </td>
           </tr>
           <tr>
-            <td>Minimum age</td>
+            <td>
+              <i18n.Translate>Minimum age</i18n.Translate>
+            </td>
             <td>{contractTerms.minimumAge}</td>
           </tr>
           {/* <tr>
@@ -349,11 +394,15 @@ export function ShowView({ contractTerms, hideHandler }: States.Show): VNode {
           </td>
         </tr> */}
           <tr>
-            <td>Wire fee amortization</td>
+            <td>
+              <i18n.Translate>Wire fee amortization</i18n.Translate>
+            </td>
             <td>{contractTerms.wireFeeAmortization}</td>
           </tr>
           <tr>
-            <td>Auditors</td>
+            <td>
+              <i18n.Translate>Auditors</i18n.Translate>
+            </td>
             <td>
               {(contractTerms.allowedAuditors || []).map((e) => (
                 <Fragment key={e.auditorPub}>
@@ -366,7 +415,9 @@ export function ShowView({ contractTerms, hideHandler }: States.Show): VNode {
             </td>
           </tr>
           <tr>
-            <td>Exchanges</td>
+            <td>
+              <i18n.Translate>Exchanges</i18n.Translate>
+            </td>
             <td>
               {(contractTerms.allowedExchanges || []).map((e) => (
                 <Fragment key={e.exchangePub}>

@@ -18,7 +18,6 @@ import { AmountJson, Amounts, PaytoUri } from "@gnu-taler/taler-util";
 import { DepositGroupFees } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { Amount } from "../components/Amount.js";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import { SelectList } from "../components/SelectList.js";

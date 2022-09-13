@@ -15,11 +15,11 @@
  */
 import { css } from "@linaria/core";
 import { Fragment, h, VNode } from "preact";
+import { useTranslationContext } from "../context/translation.js";
 import { Alert } from "../mui/Alert.js";
 import { Button } from "../mui/Button.js";
 import { ButtonHandler } from "../mui/handlers.js";
 import { Paper } from "../mui/Paper.js";
-import { Typography } from "../mui/Typography.js";
 
 const margin = css`
   margin: 1em;
@@ -30,6 +30,7 @@ export function NoBalanceHelp({
 }: {
   goToWalletManualWithdraw: ButtonHandler;
 }): VNode {
+  const { i18n } = useTranslationContext();
   return (
     <Paper class={margin}>
       <Alert title="Your wallet is empty." severity="info">
@@ -39,7 +40,7 @@ export function NoBalanceHelp({
           variant="outlined"
           onClick={goToWalletManualWithdraw.onClick}
         >
-          <Typography>Get digital cash</Typography>
+          <i18n.Translate>Get digital cash</i18n.Translate>
         </Button>
       </Alert>
     </Paper>

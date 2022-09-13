@@ -329,14 +329,16 @@ export function DestinationSelectionGetCash({
           }}
         />
         <Button onClick={async () => setCurrency(undefined)}>
-          Change currency
+          <i18n.Translate>Change currency</i18n.Translate>
         </Button>
       </Grid>
 
       <Grid container spacing={1} columns={1}>
         {previous.length > 0 ? (
           <Fragment>
-            <p>Use previous origins:</p>
+            <p>
+              <i18n.Translate>Use previous origins:</i18n.Translate>
+            </p>
             <Grid item xs={1}>
               <Paper style={{ padding: 8 }}>
                 <ContactTable>
@@ -354,35 +356,45 @@ export function DestinationSelectionGetCash({
         ) : undefined}
         {previous.length > 0 ? (
           <Grid item>
-            <p>Or specify a new origin for the money</p>
+            <p>
+              <i18n.Translate>
+                Or specify the origin of the money
+              </i18n.Translate>
+            </p>
           </Grid>
         ) : (
           <Grid item>
-            <p>Specify a origin for the money</p>
+            <p>
+              <i18n.Translate>Specify the origin of the money</i18n.Translate>
+            </p>
           </Grid>
         )}
         <Grid item container columns={2} spacing={1}>
           <Grid item xs={1}>
             <Paper style={{ padding: 8 }}>
-              <p>From my bank account</p>
+              <p>
+                <i18n.Translate>From my bank account</i18n.Translate>
+              </p>
               <Button
                 disabled={invalid}
                 onClick={async () =>
                   goToWalletManualWithdraw(currencyAndAmount)
                 }
               >
-                Withdraw
+                <i18n.Translate>Withdraw</i18n.Translate>
               </Button>
             </Paper>
           </Grid>
           <Grid item xs={1}>
             <Paper style={{ padding: 8 }}>
-              <p>From another wallet</p>
+              <p>
+                <i18n.Translate>From another wallet</i18n.Translate>
+              </p>
               <Button
                 disabled={invalid}
                 onClick={async () => goToWalletWalletInvoice(currencyAndAmount)}
               >
-                Invoice
+                <i18n.Translate>Invoice</i18n.Translate>
               </Button>
             </Paper>
           </Grid>
@@ -428,7 +440,11 @@ export function DestinationSelectionSendCash({
   const previous = previous1;
 
   if (!currency) {
-    return <div>currency not provided</div>;
+    return (
+      <div>
+        <i18n.Translate>currency not provided</i18n.Translate>
+      </div>
+    );
   }
   const currencyAndAmount = `${currency}:${amount}`;
   const parsedAmount = Amounts.parse(currencyAndAmount);
@@ -459,7 +475,9 @@ export function DestinationSelectionSendCash({
       <Grid container spacing={1} columns={1}>
         {previous.length > 0 ? (
           <Fragment>
-            <p>Use previous destinations:</p>
+            <p>
+              <i18n.Translate>Use previous destinations:</i18n.Translate>
+            </p>
             <Grid item xs={1}>
               <Paper style={{ padding: 8 }}>
                 <ContactTable>
@@ -477,33 +495,45 @@ export function DestinationSelectionSendCash({
         ) : undefined}
         {previous.length > 0 ? (
           <Grid item>
-            <p>Or specify a new destination for the money</p>
+            <p>
+              <i18n.Translate>
+                Or specify the destination of the money
+              </i18n.Translate>
+            </p>
           </Grid>
         ) : (
           <Grid item>
-            <p>Specify a destination for the money</p>
+            <p>
+              <i18n.Translate>
+                Specify the destination of the money
+              </i18n.Translate>
+            </p>
           </Grid>
         )}
         <Grid item container columns={2} spacing={1}>
           <Grid item xs={1}>
             <Paper style={{ padding: 8 }}>
-              <p>To my bank account</p>
+              <p>
+                <i18n.Translate>To my bank account</i18n.Translate>
+              </p>
               <Button
                 disabled={invalid}
                 onClick={async () => goToWalletBankDeposit(currencyAndAmount)}
               >
-                Deposit
+                <i18n.Translate>Deposit</i18n.Translate>
               </Button>
             </Paper>
           </Grid>
           <Grid item xs={1}>
             <Paper style={{ padding: 8 }}>
-              <p>To another wallet</p>
+              <p>
+                <i18n.Translate>To another wallet</i18n.Translate>
+              </p>
               <Button
                 disabled={invalid}
                 onClick={async () => goToWalletWalletSend(currencyAndAmount)}
               >
-                Send
+                <i18n.Translate>Send</i18n.Translate>
               </Button>
             </Paper>
           </Grid>

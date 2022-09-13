@@ -231,7 +231,9 @@ export function HistoryView({
       </section>
       {datesWithTransaction.length === 0 ? (
         <section>
-          <i18n.Translate>There is no history for this currency</i18n.Translate>
+          <i18n.Translate>
+            Your transaction history is empty for this currency.
+          </i18n.Translate>
         </section>
       ) : (
         <section>

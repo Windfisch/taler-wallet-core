@@ -385,21 +385,25 @@ export function TransactionView({
                   return (
                     <tr key={i}>
                       <td>
-                        {<Amount value={r.amountEffective} />}{" "}
-                        <a
-                          href={Pages.balanceTransaction({
-                            tid: r.transactionId,
-                          })}
-                        >
-                          was refunded
-                        </a>{" "}
-                        on{" "}
-                        {
-                          <Time
-                            timestamp={AbsoluteTime.fromTimestamp(r.timestamp)}
-                            format="dd MMMM yyyy"
-                          />
-                        }
+                        <i18n.Translate>
+                          {<Amount value={r.amountEffective} />}{" "}
+                          <a
+                            href={Pages.balanceTransaction({
+                              tid: r.transactionId,
+                            })}
+                          >
+                            was refunded
+                          </a>{" "}
+                          on{" "}
+                          {
+                            <Time
+                              timestamp={AbsoluteTime.fromTimestamp(
+                                r.timestamp,
+                              )}
+                              format="dd MMMM yyyy"
+                            />
+                          }
+                        </i18n.Translate>
                       </td>
                     </tr>
                   );
@@ -588,16 +592,24 @@ export function TransactionView({
       return (
         <div>
           <QR text={text} />
-          <Button onClick={copy}>copy</Button>
-          <Button onClick={toggle}>hide qr</Button>
+          <Button onClick={copy}>
+            <i18n.Translate>copy</i18n.Translate>
+          </Button>
+          <Button onClick={toggle}>
+            <i18n.Translate>hide qr</i18n.Translate>
+          </Button>
         </div>
       );
     }
     return (
       <div>
         <div>{text.substring(0, 64)}...</div>
-        <Button onClick={copy}>copy</Button>
-        <Button onClick={toggle}>show qr</Button>
+        <Button onClick={copy}>
+          <i18n.Translate>copy</i18n.Translate>
+        </Button>
+        <Button onClick={toggle}>
+          <i18n.Translate>show qr</i18n.Translate>
+        </Button>
       </div>
     );
   }
@@ -612,7 +624,7 @@ export function TransactionView({
           total={total}
           kind="positive"
         >
-          Invoice
+          <i18n.Translate>Invoice</i18n.Translate>
         </Header>
 
         {transaction.info.summary ? (
@@ -659,7 +671,7 @@ export function TransactionView({
           total={total}
           kind="negative"
         >
-          Invoice
+          <i18n.Translate>Invoice</i18n.Translate>
         </Header>
 
         {transaction.info.summary ? (
@@ -698,7 +710,7 @@ export function TransactionView({
           total={total}
           kind="negative"
         >
-          Transfer
+          <i18n.Translate>Transfer</i18n.Translate>
         </Header>
 
         {transaction.info.summary ? (
@@ -745,7 +757,7 @@ export function TransactionView({
           total={total}
           kind="positive"
         >
-          Transfer
+          <i18n.Translate>Transfer</i18n.Translate>
         </Header>
 
         {transaction.info.summary ? (
@@ -922,7 +934,9 @@ function DeliveryDetails({
       {date && (
         <Fragment>
           <tr>
-            <td>Date</td>
+            <td>
+              <i18n.Translate>Date</i18n.Translate>
+            </td>
             <td>
               <Time
                 timestamp={AbsoluteTime.fromTimestamp(date)}
@@ -965,7 +979,9 @@ export function InvoiceDetails({ amount }: { amount: AmountWithFee }): VNode {
   return (
     <PurchaseDetailsTable>
       <tr>
-        <td>Invoice</td>
+        <td>
+          <i18n.Translate>Invoice</i18n.Translate>
+        </td>
         <td>
           <Amount value={amount.raw} maxFracSize={maxFrac} />
         </td>
@@ -973,7 +989,9 @@ export function InvoiceDetails({ amount }: { amount: AmountWithFee }): VNode {
 
       {Amounts.isNonZero(fee) && (
         <tr>
-          <td>Transaction fees</td>
+          <td>
+            <i18n.Translate>Transaction fees</i18n.Translate>
+          </td>
           <td>
             <Amount value={fee} negative maxFracSize={maxFrac} />
           </td>
@@ -985,7 +1003,9 @@ export function InvoiceDetails({ amount }: { amount: AmountWithFee }): VNode {
         </td>
       </tr>
       <tr>
-        <td>Total</td>
+        <td>
+          <i18n.Translate>Total</i18n.Translate>
+        </td>
         <td>
           <Amount value={amount.effective} maxFracSize={maxFrac} />
         </td>
@@ -1006,7 +1026,9 @@ export function TransferDetails({ amount }: { amount: AmountWithFee }): VNode {
   return (
     <PurchaseDetailsTable>
       <tr>
-        <td>Transfer</td>
+        <td>
+          <i18n.Translate>Transfer</i18n.Translate>
+        </td>
         <td>
           <Amount value={amount.raw} maxFracSize={maxFrac} />
         </td>
@@ -1014,7 +1036,9 @@ export function TransferDetails({ amount }: { amount: AmountWithFee }): VNode {
 
       {Amounts.isNonZero(fee) && (
         <tr>
-          <td>Transaction fees</td>
+          <td>
+            <i18n.Translate>Transaction fees</i18n.Translate>
+          </td>
           <td>
             <Amount value={fee} negative maxFracSize={maxFrac} />
           </td>
@@ -1026,7 +1050,9 @@ export function TransferDetails({ amount }: { amount: AmountWithFee }): VNode {
         </td>
       </tr>
       <tr>
-        <td>Total</td>
+        <td>
+          <i18n.Translate>Total</i18n.Translate>
+        </td>
         <td>
           <Amount value={amount.effective} maxFracSize={maxFrac} />
         </td>
@@ -1047,7 +1073,9 @@ export function WithdrawDetails({ amount }: { amount: AmountWithFee }): VNode {
   return (
     <PurchaseDetailsTable>
       <tr>
-        <td>Withdraw</td>
+        <td>
+          <i18n.Translate>Withdraw</i18n.Translate>
+        </td>
         <td>
           <Amount value={amount.raw} maxFracSize={maxFrac} />
         </td>
@@ -1055,7 +1083,9 @@ export function WithdrawDetails({ amount }: { amount: AmountWithFee }): VNode {
 
       {Amounts.isNonZero(fee) && (
         <tr>
-          <td>Transaction fees</td>
+          <td>
+            <i18n.Translate>Transaction fees</i18n.Translate>
+          </td>
           <td>
             <Amount value={fee} negative maxFracSize={maxFrac} />
           </td>
@@ -1067,7 +1097,9 @@ export function WithdrawDetails({ amount }: { amount: AmountWithFee }): VNode {
         </td>
       </tr>
       <tr>
-        <td>Total</td>
+        <td>
+          <i18n.Translate>Total</i18n.Translate>
+        </td>
         <td>
           <Amount value={amount.effective} maxFracSize={maxFrac} />
         </td>
@@ -1113,7 +1145,9 @@ export function PurchaseDetails({
   return (
     <PurchaseDetailsTable>
       <tr>
-        <td>Price</td>
+        <td>
+          <i18n.Translate>Price</i18n.Translate>
+        </td>
         <td>
           <Amount value={price.raw} />
         </td>
@@ -1121,7 +1155,9 @@ export function PurchaseDetails({
 
       {refund && Amounts.isNonZero(refund.raw) && (
         <tr>
-          <td>Refunded</td>
+          <td>
+            <i18n.Translate>Refunded</i18n.Translate>
+          </td>
           <td>
             <Amount value={refund.raw} negative />
           </td>
@@ -1129,7 +1165,9 @@ export function PurchaseDetails({
       )}
       {Amounts.isNonZero(fee) && (
         <tr>
-          <td>Transaction fees</td>
+          <td>
+            <i18n.Translate>Transaction fees</i18n.Translate>
+          </td>
           <td>
             <Amount value={fee} />
           </td>
@@ -1141,7 +1179,9 @@ export function PurchaseDetails({
         </td>
       </tr>
       <tr>
-        <td>Total</td>
+        <td>
+          <i18n.Translate>Total</i18n.Translate>
+        </td>
         <td>
           <Amount value={total} />
         </td>
@@ -1218,7 +1258,9 @@ function RefundDetails({
   return (
     <PurchaseDetailsTable>
       <tr>
-        <td>Amount</td>
+        <td>
+          <i18n.Translate>Amount</i18n.Translate>
+        </td>
         <td>
           <Amount value={transaction.amountRaw} maxFracSize={maxFrac} />
         </td>
@@ -1226,7 +1268,9 @@ function RefundDetails({
 
       {Amounts.isNonZero(fee) && (
         <tr>
-          <td>Transaction fees</td>
+          <td>
+            <i18n.Translate>Transaction fees</i18n.Translate>
+          </td>
           <td>
             <Amount value={fee} negative maxFracSize={maxFrac} />
           </td>
@@ -1238,7 +1282,9 @@ function RefundDetails({
         </td>
       </tr>
       <tr>
-        <td>Total</td>
+        <td>
+          <i18n.Translate>Total</i18n.Translate>
+        </td>
         <td>
           <Amount value={transaction.amountEffective} maxFracSize={maxFrac} />
         </td>
@@ -1264,7 +1310,9 @@ function DepositDetails({
   return (
     <PurchaseDetailsTable>
       <tr>
-        <td>Amount</td>
+        <td>
+          <i18n.Translate>Amount</i18n.Translate>
+        </td>
         <td>
           <Amount value={transaction.amountRaw} maxFracSize={maxFrac} />
         </td>
@@ -1272,7 +1320,9 @@ function DepositDetails({
 
       {Amounts.isNonZero(fee) && (
         <tr>
-          <td>Transaction fees</td>
+          <td>
+            <i18n.Translate>Transaction fees</i18n.Translate>
+          </td>
           <td>
             <Amount value={fee} negative maxFracSize={maxFrac} />
           </td>
@@ -1284,7 +1334,9 @@ function DepositDetails({
         </td>
       </tr>
       <tr>
-        <td>Total transfer</td>
+        <td>
+          <i18n.Translate>Total transfer</i18n.Translate>
+        </td>
         <td>
           <Amount value={transaction.amountEffective} maxFracSize={maxFrac} />
         </td>
@@ -1310,13 +1362,17 @@ function RefreshDetails({
   return (
     <PurchaseDetailsTable>
       <tr>
-        <td>Amount</td>
+        <td>
+          <i18n.Translate>Amount</i18n.Translate>
+        </td>
         <td>
           <Amount value={transaction.amountRaw} maxFracSize={maxFrac} />
         </td>
       </tr>
       <tr>
-        <td>Transaction fees</td>
+        <td>
+          <i18n.Translate>Transaction fees</i18n.Translate>
+        </td>
         <td>
           <Amount value={fee} negative maxFracSize={maxFrac} />
         </td>
@@ -1327,7 +1383,9 @@ function RefreshDetails({
         </td>
       </tr>
       <tr>
-        <td>Total</td>
+        <td>
+          <i18n.Translate>Total</i18n.Translate>
+        </td>
         <td>
           <Amount value={transaction.amountEffective} maxFracSize={maxFrac} />
         </td>
@@ -1350,7 +1408,9 @@ function TipDetails({ transaction }: { transaction: TransactionTip }): VNode {
   return (
     <PurchaseDetailsTable>
       <tr>
-        <td>Amount</td>
+        <td>
+          <i18n.Translate>Amount</i18n.Translate>
+        </td>
         <td>
           <Amount value={transaction.amountRaw} maxFracSize={maxFrac} />
         </td>
@@ -1358,7 +1418,9 @@ function TipDetails({ transaction }: { transaction: TransactionTip }): VNode {
 
       {Amounts.isNonZero(fee) && (
         <tr>
-          <td>Transaction fees</td>
+          <td>
+            <i18n.Translate>Transaction fees</i18n.Translate>
+          </td>
           <td>
             <Amount value={fee} negative maxFracSize={maxFrac} />
           </td>
@@ -1370,7 +1432,9 @@ function TipDetails({ transaction }: { transaction: TransactionTip }): VNode {
         </td>
       </tr>
       <tr>
-        <td>Total</td>
+        <td>
+          <i18n.Translate>Total</i18n.Translate>
+        </td>
         <td>
           <Amount value={transaction.amountEffective} maxFracSize={maxFrac} />
         </td>

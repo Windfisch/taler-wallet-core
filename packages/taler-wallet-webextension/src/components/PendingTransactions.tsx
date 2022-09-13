@@ -21,6 +21,7 @@ import {
 } from "@gnu-taler/taler-util";
 import { Fragment, h, JSX, VNode } from "preact";
 import { useEffect } from "preact/hooks";
+import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { Avatar } from "../mui/Avatar.js";
 import { Typography } from "../mui/Typography.js";
@@ -67,9 +68,10 @@ export function PendingTransactionsView({
   goToTransaction: (id: string) => Promise<void>;
   transactions: Transaction[];
 }): VNode {
+  const { i18n } = useTranslationContext();
   return (
     <Banner
-      title="PENDING OPERATIONS"
+      titleHead={<i18n.Translate>PENDING OPERATIONS</i18n.Translate>}
       style={{
         backgroundColor: "lightcyan",
         maxHeight: 150,

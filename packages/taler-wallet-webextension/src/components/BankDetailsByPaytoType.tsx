@@ -54,7 +54,9 @@ export function BankDetailsByPaytoType({
           borderRadius: 4,
         }}
       >
-        <p style={{ marginTop: 0 }}>Bitcoin transfer details</p>
+        <p style={{ marginTop: 0 }}>
+          <i18n.Translate>Bitcoin transfer details</i18n.Translate>
+        </p>
         <p>
           <i18n.Translate>
             The exchange need a transaction with 3 output, one output is the
@@ -140,7 +142,9 @@ export function BankDetailsByPaytoType({
         borderRadius: 4,
       }}
     >
-      <p style={{ marginTop: 0 }}>Bank transfer details</p>
+      <p style={{ marginTop: 0 }}>
+        <i18n.Translate>Bank transfer details</i18n.Translate>
+      </p>
       <table>
         {accountPart}
         <Row

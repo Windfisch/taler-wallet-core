@@ -19,6 +19,7 @@ import { styled } from "@linaria/react";
 import { Fragment, h, VNode } from "preact";
 import { Ref, useEffect, useRef, useState } from "preact/hooks";
 import QrScanner from "qr-scanner";
+import { useTranslationContext } from "../context/translation.js";
 import { Alert } from "../mui/Alert.js";
 import { Button } from "../mui/Button.js";
 import { TextField } from "../mui/TextField.js";
@@ -49,6 +50,7 @@ export function QrReaderPage({ onDetected }: Props): VNode {
   const qrScanner = useRef<QrScanner | null>(null);
   const [value, onChange] = useState("");
   const [active, setActive] = useState(false);
+  const { i18n } = useTranslationContext();
 
   function start(): void {
     qrScanner.current!.start();
@@ -96,14 +98,17 @@ export function QrReaderPage({ onDetected }: Props): VNode {
   }, []);
 
   const isValid = check(value);
-
   return (
     <Container>
       {/* <InputFile onChange={(f) => scanImage(imageRef, f)}>
         Read QR from file
       </InputFile>
       <div ref={imageRef} /> */}
-      <h1>Scan a QR code or enter taler:// URI below</h1>
+      <h1>
+        <i18n.Translate>
+          Scan a QR code or enter taler:// URI below
+        </i18n.Translate>
+      </h1>
       <QrVideo ref={videoRef} />
       <TextField
         label="Taler URI"
@@ -114,16 +119,18 @@ export function QrReaderPage({ onDetected }: Props): VNode {
       />
       {isValid && (
         <Button variant="contained" onClick={async () => onDetected(value)}>
-          Open
+          <i18n.Translate>Open/</i18n.Translate>
         </Button>
       )}
       {!active && !isValid && (
         <Fragment>
           <Alert severity="error">
-            URI is not valid. Taler URI should start with `taler://`
+            <i18n.Translate>
+              URI is not valid. Taler URI should start with `taler://`
+            </i18n.Translate>
           </Alert>
           <Button variant="contained" onClick={async () => start()}>
-            Try another
+            <i18n.Translate>Try another</i18n.Translate>
           </Button>
         </Fragment>
       )}

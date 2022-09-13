@@ -231,13 +231,15 @@ export function SettingsView({
           </LinkPrimary>
         </div>
 
-        <SubTitle>Troubleshooting</SubTitle>
+        <SubTitle>
+          <i18n.Translate>Troubleshooting</i18n.Translate>
+        </SubTitle>
         <Checkbox
           label={<i18n.Translate>Developer mode</i18n.Translate>}
           name="devMode"
           description={
             <i18n.Translate>
-              (More options and information useful for debugging)
+              More options and information useful for debugging
             </i18n.Translate>
           }
           enabled={developerMode}

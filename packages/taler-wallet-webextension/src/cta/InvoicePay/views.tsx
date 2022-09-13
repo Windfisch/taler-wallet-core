@@ -14,23 +14,16 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Amounts, PreparePayResultType } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { Amount } from "../../components/Amount.js";
 import { ErrorTalerOperation } from "../../components/ErrorTalerOperation.js";
 import { LoadingError } from "../../components/LoadingError.js";
 import { LogoHeader } from "../../components/LogoHeader.js";
 import { Part } from "../../components/Part.js";
-import {
-  Link,
-  SubTitle,
-  WalletAction,
-  WarningBox,
-} from "../../components/styled/index.js";
+import { Link, SubTitle, WalletAction } from "../../components/styled/index.js";
 import { Time } from "../../components/Time.js";
 import { useTranslationContext } from "../../context/translation.js";
-import { Button } from "../../mui/Button.js";
-import { ButtonsSection, PayWithMobile } from "../Payment/views.js";
+import { ButtonsSection } from "../Payment/views.js";
 import { State } from "./index.js";
 
 export function LoadingUriView({ error }: State.LoadingUriError): VNode {

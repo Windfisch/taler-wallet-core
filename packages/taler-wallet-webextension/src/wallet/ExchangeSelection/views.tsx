@@ -114,7 +114,11 @@ export function LoadingUriView({ error }: State.LoadingUriError): VNode {
 
 export function NoExchangesView(state: State.NoExchanges): VNode {
   const { i18n } = useTranslationContext();
-  return <div>no exchanges</div>;
+  return (
+    <div>
+      <i18n.Translate>no exchanges</i18n.Translate>
+    </div>
+  );
 }
 
 export function ComparingView({
@@ -157,19 +161,23 @@ export function ComparingView({
           </p>
           <ButtonGroup>
             <Button variant="outlined" onClick={onReset.onClick}>
-              Reset
+              <i18n.Translate>Reset</i18n.Translate>
             </Button>
             <Button variant="contained" onClick={onSelect.onClick}>
-              Use this exchange
+              <i18n.Translate>Use this exchange</i18n.Translate>
             </Button>
           </ButtonGroup>
         </div>
       </section>
       <section>
         <dl>
-          <dt>Auditors</dt>
+          <dt>
+            <i18n.Translate>Auditors</i18n.Translate>
+          </dt>
           {selected.auditors.length === 0 ? (
-            <dd style={{ color: "red" }}>Doesn&apos;t have auditors</dd>
+            <dd style={{ color: "red" }}>
+              <i18n.Translate>Doesn&apos;t have auditors</i18n.Translate>
+            </dd>
           ) : (
             selected.auditors.map((a) => {
               <dd>{a.auditor_url}</dd>;
@@ -178,63 +186,99 @@ export function ComparingView({
         </dl>
         <table>
           <tr>
-            <td>currency</td>
+            <td>
+              <i18n.Translate>currency</i18n.Translate>
+            </td>
             <td>{selected.currency}</td>
           </tr>
         </table>
       </section>
       <section>
-        <h2>Operations</h2>
-        <p>Deposits</p>
+        <h2>
+          <i18n.Translate>Operations</i18n.Translate>
+        </h2>
+        <p>
+          <i18n.Translate>Deposits</i18n.Translate>
+        </p>
         <FeeDescriptionTable>
           <thead>
             <tr>
               <th>&nbsp;</th>
-              <th>Denomination</th>
-              <th class="fee">Fee</th>
-              <th>Until</th>
+              <th>
+                <i18n.Translate>Denomination</i18n.Translate>
+              </th>
+              <th class="fee">
+                <i18n.Translate>Fee</i18n.Translate>
+              </th>
+              <th>
+                <i18n.Translate>Until</i18n.Translate>
+              </th>
             </tr>
           </thead>
           <tbody>
             <RenderFeePairByValue list={pairTimeline.deposit} />
           </tbody>
         </FeeDescriptionTable>
-        <p>Withdrawals</p>
+        <p>
+          <i18n.Translate>Withdrawals</i18n.Translate>
+        </p>
         <FeeDescriptionTable>
           <thead>
             <tr>
               <th>&nbsp;</th>
-              <th>Denomination</th>
-              <th class="fee">Fee</th>
-              <th>Until</th>
+              <th>
+                <i18n.Translate>Denomination</i18n.Translate>
+              </th>
+              <th class="fee">
+                <i18n.Translate>Fee</i18n.Translate>
+              </th>
+              <th>
+                <i18n.Translate>Until</i18n.Translate>
+              </th>
             </tr>
           </thead>
           <tbody>
             <RenderFeePairByValue list={pairTimeline.withdraw} />
           </tbody>
         </FeeDescriptionTable>
-        <p>Refunds</p>
+        <p>
+          <i18n.Translate>Refunds</i18n.Translate>
+        </p>
         <FeeDescriptionTable>
           <thead>
             <tr>
               <th>&nbsp;</th>
-              <th>Denomination</th>
-              <th class="fee">Fee</th>
-              <th>Until</th>
+              <th>
+                <i18n.Translate>Denomination</i18n.Translate>
+              </th>
+              <th class="fee">
+                <i18n.Translate>Fee</i18n.Translate>
+              </th>
+              <th>
+                <i18n.Translate>Until</i18n.Translate>
+              </th>
             </tr>
           </thead>
           <tbody>
             <RenderFeePairByValue list={pairTimeline.refund} />
           </tbody>
         </FeeDescriptionTable>{" "}
-        <p>Refresh</p>
+        <p>
+          <i18n.Translate>Refresh</i18n.Translate>
+        </p>
         <FeeDescriptionTable>
           <thead>
             <tr>
               <th>&nbsp;</th>
-              <th>Denomination</th>
-              <th class="fee">Fee</th>
-              <th>Until</th>
+              <th>
+                <i18n.Translate>Denomination</i18n.Translate>
+              </th>
+              <th class="fee">
+                <i18n.Translate>Fee</i18n.Translate>
+              </th>
+              <th>
+                <i18n.Translate>Until</i18n.Translate>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -246,8 +290,12 @@ export function ComparingView({
         <table>
           <thead>
             <tr>
-              <td>Wallet operations</td>
-              <td>Fee</td>
+              <td>
+                <i18n.Translate>Wallet operations</i18n.Translate>
+              </td>
+              <td>
+                <i18n.Translate>Fee</i18n.Translate>
+              </td>
             </tr>
           </thead>
           <tbody>
@@ -331,7 +379,7 @@ export function ReadyView({
             </Input>
           </p>
           <Button variant="outlined" onClick={onClose.onClick}>
-            Close
+            <i18n.Translate>Close</i18n.Translate>
           </Button>
         </div>
       </section>
@@ -339,7 +387,9 @@ export function ReadyView({
         <dl>
           <dt>Auditors</dt>
           {selected.auditors.length === 0 ? (
-            <dd style={{ color: "red" }}>Doesn&apos;t have auditors</dd>
+            <dd style={{ color: "red" }}>
+              <i18n.Translate>Doesn&apos;t have auditors</i18n.Translate>
+            </dd>
           ) : (
             selected.auditors.map((a) => {
               <dd>{a.auditor_url}</dd>;
@@ -348,63 +398,99 @@ export function ReadyView({
         </dl>
         <table>
           <tr>
-            <td>currency</td>
+            <td>
+              <i18n.Translate>currency</i18n.Translate>
+            </td>
             <td>{selected.currency}</td>
           </tr>
         </table>
       </section>
       <section>
-        <h2>Operations</h2>
-        <p>Deposits</p>
+        <h2>
+          <i18n.Translate>Operations</i18n.Translate>
+        </h2>
+        <p>
+          <i18n.Translate>Deposits</i18n.Translate>
+        </p>
         <FeeDescriptionTable>
           <thead>
             <tr>
               <th>&nbsp;</th>
-              <th>Denomination</th>
-              <th class="fee">Fee</th>
-              <th>Until</th>
+              <th>
+                <i18n.Translate>Denomination</i18n.Translate>
+              </th>
+              <th class="fee">
+                <i18n.Translate>Fee</i18n.Translate>
+              </th>
+              <th>
+                <i18n.Translate>Until</i18n.Translate>
+              </th>
             </tr>
           </thead>
           <tbody>
             <RenderFeeDescriptionByValue first={timeline.deposit} />
           </tbody>
         </FeeDescriptionTable>
-        <p>Withdrawals</p>
+        <p>
+          <i18n.Translate>Withdrawals</i18n.Translate>
+        </p>
         <FeeDescriptionTable>
           <thead>
             <tr>
               <th>&nbsp;</th>
-              <th>Denomination</th>
-              <th class="fee">Fee</th>
-              <th>Until</th>
+              <th>
+                <i18n.Translate>Denomination</i18n.Translate>
+              </th>
+              <th class="fee">
+                <i18n.Translate>Fee</i18n.Translate>
+              </th>
+              <th>
+                <i18n.Translate>Until</i18n.Translate>
+              </th>
             </tr>
           </thead>
           <tbody>
             <RenderFeeDescriptionByValue first={timeline.withdraw} />
           </tbody>
         </FeeDescriptionTable>
-        <p>Refunds</p>
+        <p>
+          <i18n.Translate>Refunds</i18n.Translate>
+        </p>
         <FeeDescriptionTable>
           <thead>
             <tr>
               <th>&nbsp;</th>
-              <th>Denomination</th>
-              <th class="fee">Fee</th>
-              <th>Until</th>
+              <th>
+                <i18n.Translate>Denomination</i18n.Translate>
+              </th>
+              <th class="fee">
+                <i18n.Translate>Fee</i18n.Translate>
+              </th>
+              <th>
+                <i18n.Translate>Until</i18n.Translate>
+              </th>
             </tr>
           </thead>
           <tbody>
             <RenderFeeDescriptionByValue first={timeline.refund} />
           </tbody>
         </FeeDescriptionTable>{" "}
-        <p>Refresh</p>
+        <p>
+          <i18n.Translate>Refresh</i18n.Translate>
+        </p>
         <FeeDescriptionTable>
           <thead>
             <tr>
               <th>&nbsp;</th>
-              <th>Denomination</th>
-              <th class="fee">Fee</th>
-              <th>Until</th>
+              <th>
+                <i18n.Translate>Denomination</i18n.Translate>
+              </th>
+              <th class="fee">
+                <i18n.Translate>Fee</i18n.Translate>
+              </th>
+              <th>
+                <i18n.Translate>Until</i18n.Translate>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -416,8 +502,12 @@ export function ReadyView({
         <table>
           <thead>
             <tr>
-              <td>Wallet operations</td>
-              <td>Fee</td>
+              <td>
+                <i18n.Translate>Wallet operations</i18n.Translate>
+              </td>
+              <td>
+                <i18n.Translate>Fee</i18n.Translate>
+              </td>
             </tr>
           </thead>
           <tbody>
