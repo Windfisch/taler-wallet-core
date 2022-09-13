@@ -289,8 +289,9 @@ async function callOperationHandler(
         forceNow,
       });
     case PendingTaskType.Withdraw:
-      await processWithdrawalGroup(ws, pending.withdrawalGroupId, { forceNow });
-      break;
+      return await processWithdrawalGroup(ws, pending.withdrawalGroupId, {
+        forceNow,
+      });
     case PendingTaskType.ProposalDownload:
       return await processDownloadProposal(ws, pending.proposalId, {
         forceNow,
@@ -319,7 +320,7 @@ async function callOperationHandler(
     default:
       return assertUnreachable(pending);
   }
-  throw Error("not reached");
+  throw Error(`not reached ${pending.type}`);
 }
 
 export async function storeOperationError(
@@ -330,12 +331,17 @@ export async function storeOperationError(
   await ws.db
     .mktx((x) => [x.operationRetries])
     .runReadWrite(async (tx) => {
-      const retryRecord = await tx.operationRetries.get(pendingTaskId);
+      let retryRecord = await tx.operationRetries.get(pendingTaskId);
       if (!retryRecord) {
-        return;
+        retryRecord = {
+          id: pendingTaskId,
+          lastError: e,
+          retryInfo: RetryInfo.reset(),
+        };
+      } else {
+        retryRecord.lastError = e;
+        retryRecord.retryInfo = RetryInfo.increment(retryRecord.retryInfo);
       }
-      retryRecord.lastError = e;
-      retryRecord.retryInfo = RetryInfo.increment(retryRecord.retryInfo);
       await tx.operationRetries.put(retryRecord);
     });
 }
@@ -358,12 +364,16 @@ export async function storeOperationPending(
   await ws.db
     .mktx((x) => [x.operationRetries])
     .runReadWrite(async (tx) => {
-      const retryRecord = await tx.operationRetries.get(pendingTaskId);
+      let retryRecord = await tx.operationRetries.get(pendingTaskId);
       if (!retryRecord) {
-        return;
+        retryRecord = {
+          id: pendingTaskId,
+          retryInfo: RetryInfo.reset(),
+        };
+      } else {
+        delete retryRecord.lastError;
+        retryRecord.retryInfo = RetryInfo.increment(retryRecord.retryInfo);
       }
-      delete retryRecord.lastError;
-      retryRecord.retryInfo = RetryInfo.increment(retryRecord.retryInfo);
       await tx.operationRetries.put(retryRecord);
     });
 }
@@ -392,24 +402,18 @@ async function processOnePendingOperation(
       case OperationAttemptResultType.Longpoll:
         break;
     }
-  } catch (e: any) {
-    if (
-      e instanceof TalerError &&
-      e.hasErrorCode(TalerErrorCode.WALLET_PENDING_OPERATION_FAILED)
-    ) {
+  } catch (e) {
+    if (e instanceof TalerError) {
       logger.warn("operation processed resulted in error");
       logger.warn(`error was: ${j2s(e.errorDetail)}`);
       maybeError = e.errorDetail;
-    } else {
+      return await storeOperationError(ws, pending.id, maybeError!);
+    } else if (e instanceof Error) {
       // This is a bug, as we expect pending operations to always
       // do their own error handling and only throw WALLET_PENDING_OPERATION_FAILED
       // or return something.
-      logger.error("Uncaught exception", e);
-      ws.notify({
-        type: NotificationType.InternalError,
-        message: "uncaught exception",
-        exception: e,
-      });
+      logger.error(`Uncaught exception: ${e.message}`);
+      logger.error(`Stack: ${e.stack}`);
       maybeError = makeErrorDetail(
         TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
         {
@@ -417,6 +421,15 @@ async function processOnePendingOperation(
         },
         `unexpected exception (message: ${e.message})`,
       );
+      return await storeOperationError(ws, pending.id, maybeError);
+    } else {
+      logger.error("Uncaught exception, value is not even an error.");
+      maybeError = makeErrorDetail(
+        TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
+        {},
+        `unexpected exception (not even an error)`,
+      );
+      return await storeOperationError(ws, pending.id, maybeError);
     }
   }
 }

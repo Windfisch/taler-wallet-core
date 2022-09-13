@@ -189,17 +189,10 @@ export async function runExchangeManagementTest(
     });
   });
 
-  // Updating the exchange from the base URL is technically a pending operation
-  // and it will be retried later.
-  t.assertTrue(
-    err1.hasErrorCode(TalerErrorCode.WALLET_PENDING_OPERATION_FAILED),
-  );
-
   // Response is malformed, since it didn't even contain a version code
   // in a format the wallet can understand.
   t.assertTrue(
-    err1.errorDetail.innerError.code ===
-      TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
+    err1.errorDetail.code === TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
   );
 
   exchangesList = await wallet.client.call(
@@ -238,12 +231,9 @@ export async function runExchangeManagementTest(
   });
 
   t.assertTrue(
-    err2.hasErrorCode(TalerErrorCode.WALLET_PENDING_OPERATION_FAILED),
-  );
-
-  t.assertTrue(
-    err2.errorDetail.innerError.code ===
+    err2.hasErrorCode(
       TalerErrorCode.WALLET_EXCHANGE_PROTOCOL_VERSION_INCOMPATIBLE,
+    ),
   );
 
   exchangesList = await wallet.client.call(

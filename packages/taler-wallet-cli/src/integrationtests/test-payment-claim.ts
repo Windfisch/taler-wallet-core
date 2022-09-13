@@ -102,14 +102,7 @@ export async function runPaymentClaimTest(t: GlobalTestState) {
     });
   });
 
-  t.assertTrue(
-    err.hasErrorCode(TalerErrorCode.WALLET_PENDING_OPERATION_FAILED),
-  );
-
-  t.assertTrue(
-    err.errorDetail.innerError.code ===
-      TalerErrorCode.WALLET_ORDER_ALREADY_CLAIMED,
-  );
+  t.assertTrue(err.hasErrorCode(TalerErrorCode.WALLET_ORDER_ALREADY_CLAIMED));
 
   await t.shutdown();
 }

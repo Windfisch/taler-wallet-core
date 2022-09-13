@@ -226,6 +226,9 @@ async function withWallet<T>(
   const wallet = await getDefaultNodeWallet({
     persistentStoragePath: dbPath,
     httpLib: myHttpLib,
+    notifyHandler: (n) => {
+      logger.info(`wallet notification: ${j2s(n)}`);
+    },
   });
 
   if (checkEnvFlag("TALER_WALLET_BATCH_WITHDRAWAL")) {

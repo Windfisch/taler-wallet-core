@@ -102,7 +102,7 @@ export function summarizeTalerErrorDetail(ed: TalerErrorDetail): string {
 export class TalerError<T = any> extends Error {
   errorDetail: TalerErrorDetail & T;
   private constructor(d: TalerErrorDetail & T) {
-    super();
+    super(d.hint ?? `Error (code ${d.code})`);
     this.errorDetail = d;
     Object.setPrototypeOf(this, TalerError.prototype);
   }
