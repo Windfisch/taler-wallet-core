@@ -529,6 +529,7 @@ export interface PlanchetCreationRequest {
 export enum RefreshReason {
   Manual = "manual",
   PayMerchant = "pay-merchant",
+  PayDeposit = "pay-deposit",
   PayPeerPush = "pay-peer-push",
   PayPeerPull = "pay-peer-pull",
   Refund = "refund",

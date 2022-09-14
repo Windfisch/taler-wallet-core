@@ -51,6 +51,7 @@ import {
   readSuccessResponseJsonOrThrow,
 } from "../util/http.js";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
+import { makeCoinAvailable } from "../wallet.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
 import {
   getCandidateWithdrawalDenoms,
@@ -310,13 +311,12 @@ export async function processTip(
       denomSig: { cipher: DenomKeyType.Rsa, rsa_signature: denomSigRsa.sig },
       exchangeBaseUrl: tipRecord.exchangeBaseUrl,
       status: CoinStatus.Fresh,
-      suspended: false,
       coinEvHash: planchet.coinEvHash,
     });
   }
 
   await ws.db
-    .mktx((x) => [x.coins, x.tips, x.withdrawalGroups])
+    .mktx((x) => [x.coins, x.denominations, x.tips])
     .runReadWrite(async (tx) => {
       const tr = await tx.tips.get(walletTipId);
       if (!tr) {
@@ -328,7 +328,7 @@ export async function processTip(
       tr.pickedUpTimestamp = TalerProtocolTimestamp.now();
       await tx.tips.put(tr);
       for (const cr of newCoinRecords) {
-        await tx.coins.put(cr);
+        await makeCoinAvailable(ws, tx, cr);
       }
     });
 

@@ -75,6 +75,8 @@ import { internalCreateWithdrawalGroup } from "./withdraw.js";
 import { GetReadOnlyAccess } from "../util/query.js";
 import { createRefreshGroup } from "./refresh.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
+import { spendCoins } from "../wallet.js";
+import { RetryTags } from "../util/retries.js";
 
 const logger = new Logger("operations/peer-to-peer.ts");
 
@@ -256,18 +258,14 @@ export async function initiatePeerToPeerPush(
         return undefined;
       }
 
-      const pubs: CoinPublicKey[] = [];
-      for (const c of sel.coins) {
-        const coin = await tx.coins.get(c.coinPub);
-        checkDbInvariant(!!coin);
-        coin.currentAmount = Amounts.sub(
-          coin.currentAmount,
-          Amounts.parseOrThrow(c.contribution),
-        ).amount;
-        coin.status = CoinStatus.Dormant;
-        pubs.push({ coinPub: coin.coinPub });
-        await tx.coins.put(coin);
-      }
+      await spendCoins(ws, tx, {
+        allocationId: `peer-push:${pursePair.pub}`,
+        coinPubs: sel.coins.map((x) => x.coinPub),
+        contributions: sel.coins.map((x) =>
+          Amounts.parseOrThrow(x.contribution),
+        ),
+        refreshReason: RefreshReason.PayPeerPush,
+      });
 
       await tx.peerPushPaymentInitiations.add({
         amount: Amounts.stringify(instructedAmount),
@@ -283,8 +281,6 @@ export async function initiatePeerToPeerPush(
         pursePub: pursePair.pub,
         timestampCreated: TalerProtocolTimestamp.now(),
       });
-
-      await createRefreshGroup(ws, tx, pubs, RefreshReason.PayPeerPush);
 
       return sel;
     });
@@ -588,20 +584,14 @@ export async function acceptPeerPullPayment(
         return undefined;
       }
 
-      const pubs: CoinPublicKey[] = [];
-      for (const c of sel.coins) {
-        const coin = await tx.coins.get(c.coinPub);
-        checkDbInvariant(!!coin);
-        coin.currentAmount = Amounts.sub(
-          coin.currentAmount,
-          Amounts.parseOrThrow(c.contribution),
-        ).amount;
-        coin.status = CoinStatus.Dormant;
-        pubs.push({ coinPub: coin.coinPub });
-        await tx.coins.put(coin);
-      }
-
-      await createRefreshGroup(ws, tx, pubs, RefreshReason.PayPeerPull);
+      await spendCoins(ws, tx, {
+        allocationId: `peer-pull:${req.peerPullPaymentIncomingId}`,
+        coinPubs: sel.coins.map((x) => x.coinPub),
+        contributions: sel.coins.map((x) =>
+          Amounts.parseOrThrow(x.contribution),
+        ),
+        refreshReason: RefreshReason.PayPeerPull,
+      });
 
       const pi = await tx.peerPullPaymentIncoming.get(
         req.peerPullPaymentIncomingId,

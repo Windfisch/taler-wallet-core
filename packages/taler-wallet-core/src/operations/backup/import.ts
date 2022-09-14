@@ -413,7 +413,6 @@ export async function importBackup(
                 currentAmount: Amounts.parseOrThrow(backupCoin.current_amount),
                 denomSig: backupCoin.denom_sig,
                 coinPub: compCoin.coinPub,
-                suspended: false,
                 exchangeBaseUrl: backupExchangeDetails.base_url,
                 denomPubHash,
                 status: backupCoin.fresh

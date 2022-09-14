@@ -445,14 +445,15 @@ function runTx<Arg, Res>(
       if (!gotFunResult) {
         const msg =
           "BUG: transaction closed before transaction function returned";
-        console.error(msg);
+        logger.error(msg);
+        logger.error(`${stack.stack}`);
         reject(Error(msg));
       }
       resolve(funResult);
     };
     tx.onerror = () => {
       logger.error("error in transaction");
-      logger.error(`${stack}`);
+      logger.error(`${stack.stack}`);
     };
     tx.onabort = () => {
       let msg: string;

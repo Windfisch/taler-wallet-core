@@ -99,7 +99,9 @@ import {
 } from "./crypto/workers/cryptoDispatcher.js";
 import {
   AuditorTrustRecord,
+  CoinRecord,
   CoinSourceType,
+  CoinStatus,
   exportDb,
   importDb,
   OperationAttemptResult,
@@ -216,6 +218,7 @@ import {
   HttpRequestLibrary,
   readSuccessResponseJsonOrThrow,
 } from "./util/http.js";
+import { checkDbInvariant } from "./util/invariants.js";
 import {
   AsyncCondition,
   OpenedPromise,
@@ -787,21 +790,135 @@ async function getExchangeDetailedInfo(
   };
 }
 
+export async function makeCoinAvailable(
+  ws: InternalWalletState,
+  tx: GetReadWriteAccess<{
+    coins: typeof WalletStoresV1.coins;
+    denominations: typeof WalletStoresV1.denominations;
+  }>,
+  coinRecord: CoinRecord,
+): Promise<void> {
+  const denom = await tx.denominations.get([
+    coinRecord.exchangeBaseUrl,
+    coinRecord.denomPubHash,
+  ]);
+  checkDbInvariant(!!denom);
+  if (!denom.freshCoinCount) {
+    denom.freshCoinCount = 0;
+  }
+  denom.freshCoinCount++;
+  await tx.coins.put(coinRecord);
+  await tx.denominations.put(denom);
+}
+
+export interface CoinsSpendInfo {
+  coinPubs: string[];
+  contributions: AmountJson[];
+  refreshReason: RefreshReason;
+  /**
+   * Identifier for what the coin has been spent for.
+   */
+  allocationId: string;
+}
+
+export async function spendCoins(
+  ws: InternalWalletState,
+  tx: GetReadWriteAccess<{
+    coins: typeof WalletStoresV1.coins;
+    refreshGroups: typeof WalletStoresV1.refreshGroups;
+    denominations: typeof WalletStoresV1.denominations;
+  }>,
+  csi: CoinsSpendInfo,
+): Promise<void> {
+  for (let i = 0; i < csi.coinPubs.length; i++) {
+    const coin = await tx.coins.get(csi.coinPubs[i]);
+    if (!coin) {
+      throw Error("coin allocated for payment doesn't exist anymore");
+    }
+    const denom = await tx.denominations.get([
+      coin.exchangeBaseUrl,
+      coin.denomPubHash,
+    ]);
+    checkDbInvariant(!!denom);
+    const contrib = csi.contributions[i];
+    if (coin.status !== CoinStatus.Fresh) {
+      const alloc = coin.allocation;
+      if (!alloc) {
+        continue;
+      }
+      if (alloc.id !== csi.allocationId) {
+        // FIXME: assign error code
+        throw Error("conflicting coin allocation (id)");
+      }
+      if (0 !== Amounts.cmp(alloc.amount, contrib)) {
+        // FIXME: assign error code
+        throw Error("conflicting coin allocation (contrib)");
+      }
+      continue;
+    }
+    coin.status = CoinStatus.Dormant;
+    coin.allocation = {
+      id: csi.allocationId,
+      amount: Amounts.stringify(contrib),
+    };
+    const remaining = Amounts.sub(coin.currentAmount, contrib);
+    if (remaining.saturated) {
+      throw Error("not enough remaining balance on coin for payment");
+    }
+    coin.currentAmount = remaining.amount;
+    checkDbInvariant(!!denom);
+    if (denom.freshCoinCount == null || denom.freshCoinCount === 0) {
+      throw Error(`invalid coin count ${denom.freshCoinCount} in DB`);
+    }
+    denom.freshCoinCount--;
+    await tx.coins.put(coin);
+    await tx.denominations.put(denom);
+  }
+  const refreshCoinPubs = csi.coinPubs.map((x) => ({
+    coinPub: x,
+  }));
+  await createRefreshGroup(ws, tx, refreshCoinPubs, RefreshReason.PayMerchant);
+}
+
 async function setCoinSuspended(
   ws: InternalWalletState,
   coinPub: string,
   suspended: boolean,
 ): Promise<void> {
   await ws.db
-    .mktx((x) => [x.coins])
+    .mktx((x) => [x.coins, x.denominations])
     .runReadWrite(async (tx) => {
       const c = await tx.coins.get(coinPub);
       if (!c) {
         logger.warn(`coin ${coinPub} not found, won't suspend`);
         return;
       }
-      c.suspended = suspended;
+      const denom = await tx.denominations.get([
+        c.exchangeBaseUrl,
+        c.denomPubHash,
+      ]);
+      checkDbInvariant(!!denom);
+      if (suspended) {
+        if (c.status !== CoinStatus.Fresh) {
+          return;
+        }
+        if (denom.freshCoinCount == null || denom.freshCoinCount === 0) {
+          throw Error(`invalid coin count ${denom.freshCoinCount} in DB`);
+        }
+        denom.freshCoinCount--;
+        c.status = CoinStatus.FreshSuspended;
+      } else {
+        if (c.status == CoinStatus.Dormant) {
+          return;
+        }
+        if (denom.freshCoinCount == null) {
+          denom.freshCoinCount = 0;
+        }
+        denom.freshCoinCount++;
+        c.status = CoinStatus.Fresh;
+      }
       await tx.coins.put(c);
+      await tx.denominations.put(denom);
     });
 }
 
@@ -857,7 +974,7 @@ async function dumpCoins(ws: InternalWalletState): Promise<CoinDumpJson> {
           refresh_parent_coin_pub: refreshParentCoinPub,
           remaining_value: Amounts.stringify(c.currentAmount),
           withdrawal_reserve_pub: withdrawalReservePub,
-          coin_suspended: c.suspended,
+          coin_suspended: c.status === CoinStatus.FreshSuspended,
           ageCommitmentProof: c.ageCommitmentProof,
         });
       }

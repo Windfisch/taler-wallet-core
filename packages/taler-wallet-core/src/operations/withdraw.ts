@@ -93,11 +93,11 @@ import {
 } from "../util/http.js";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
 import { DbAccess, GetReadOnlyAccess } from "../util/query.js";
-import { RetryInfo } from "../util/retries.js";
 import {
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
 } from "../versions.js";
+import { makeCoinAvailable } from "../wallet.js";
 import {
   getExchangeDetails,
   getExchangePaytoUri,
@@ -805,7 +805,6 @@ async function processPlanchetVerifyAndStoreCoin(
       reservePub: planchet.reservePub,
       withdrawalGroupId: withdrawalGroup.withdrawalGroupId,
     },
-    suspended: false,
     ageCommitmentProof: planchet.ageCommitmentProof,
   };
 
@@ -815,7 +814,7 @@ async function processPlanchetVerifyAndStoreCoin(
   // withdrawal succeeded.  If so, mark the withdrawal
   // group as finished.
   const firstSuccess = await ws.db
-    .mktx((x) => [x.coins, x.withdrawalGroups, x.planchets])
+    .mktx((x) => [x.coins, x.denominations, x.withdrawalGroups, x.planchets])
     .runReadWrite(async (tx) => {
       const p = await tx.planchets.get(planchetCoinPub);
       if (!p || p.withdrawalDone) {
@@ -823,7 +822,7 @@ async function processPlanchetVerifyAndStoreCoin(
       }
       p.withdrawalDone = true;
       await tx.planchets.put(p);
-      await tx.coins.add(coin);
+      await makeCoinAvailable(ws, tx, coin);
       return true;
     });
 

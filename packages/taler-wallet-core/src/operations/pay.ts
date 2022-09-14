@@ -100,6 +100,7 @@ import {
 } from "../util/http.js";
 import { GetReadWriteAccess } from "../util/query.js";
 import { RetryInfo, RetryTags, scheduleRetry } from "../util/retries.js";
+import { spendCoins } from "../wallet.js";
 import { getExchangeDetails } from "./exchanges.js";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
 
@@ -156,9 +157,6 @@ export async function getTotalPaymentCost(
 }
 
 function isSpendableCoin(coin: CoinRecord, denom: DenominationRecord): boolean {
-  if (coin.suspended) {
-    return false;
-  }
   if (denom.isRevoked) {
     return false;
   }
@@ -348,65 +346,6 @@ export async function getCandidatePayCoins(
 }
 
 /**
- * Apply a coin selection to the database.  Marks coins as spent
- * and creates a refresh session for the remaining amount.
- *
- * FIXME:  This does not deal well with conflicting spends!
- * When two payments are made in parallel, the same coin can be selected
- * for two payments.
- * However, this is a situation that can also happen via sync.
- */
-export async function applyCoinSpend(
-  ws: InternalWalletState,
-  tx: GetReadWriteAccess<{
-    coins: typeof WalletStoresV1.coins;
-    refreshGroups: typeof WalletStoresV1.refreshGroups;
-    denominations: typeof WalletStoresV1.denominations;
-  }>,
-  coinSelection: PayCoinSelection,
-  allocationId: string,
-): Promise<void> {
-  logger.info(`applying coin spend ${j2s(coinSelection)}`);
-  for (let i = 0; i < coinSelection.coinPubs.length; i++) {
-    const coin = await tx.coins.get(coinSelection.coinPubs[i]);
-    if (!coin) {
-      throw Error("coin allocated for payment doesn't exist anymore");
-    }
-    const contrib = coinSelection.coinContributions[i];
-    if (coin.status !== CoinStatus.Fresh) {
-      const alloc = coin.allocation;
-      if (!alloc) {
-        continue;
-      }
-      if (alloc.id !== allocationId) {
-        // FIXME: assign error code
-        throw Error("conflicting coin allocation (id)");
-      }
-      if (0 !== Amounts.cmp(alloc.amount, contrib)) {
-        // FIXME: assign error code
-        throw Error("conflicting coin allocation (contrib)");
-      }
-      continue;
-    }
-    coin.status = CoinStatus.Dormant;
-    coin.allocation = {
-      id: allocationId,
-      amount: Amounts.stringify(contrib),
-    };
-    const remaining = Amounts.sub(coin.currentAmount, contrib);
-    if (remaining.saturated) {
-      throw Error("not enough remaining balance on coin for payment");
-    }
-    coin.currentAmount = remaining.amount;
-    await tx.coins.put(coin);
-  }
-  const refreshCoinPubs = coinSelection.coinPubs.map((x) => ({
-    coinPub: x,
-  }));
-  await createRefreshGroup(ws, tx, refreshCoinPubs, RefreshReason.PayMerchant);
-}
-
-/**
  * Record all information that is necessary to
  * pay for a proposal in the wallet's database.
  */
@@ -468,7 +407,12 @@ async function recordConfirmPay(
         await tx.proposals.put(p);
       }
       await tx.purchases.put(t);
-      await applyCoinSpend(ws, tx, coinSelection, `proposal:${t.proposalId}`);
+      await spendCoins(ws, tx, {
+        allocationId: `proposal:${t.proposalId}`,
+        coinPubs: coinSelection.coinPubs,
+        contributions: coinSelection.coinContributions,
+        refreshReason: RefreshReason.PayMerchant,
+      });
     });
 
   ws.notify({
@@ -1038,7 +982,12 @@ async function handleInsufficientFunds(
       p.payCoinSelectionUid = encodeCrock(getRandomBytes(32));
       p.coinDepositPermissions = undefined;
       await tx.purchases.put(p);
-      await applyCoinSpend(ws, tx, res, `proposal:${p.proposalId}`);
+      await spendCoins(ws, tx, {
+        allocationId: `proposal:${p.proposalId}`,
+        coinPubs: p.payCoinSelection.coinPubs,
+        contributions: p.payCoinSelection.coinContributions,
+        refreshReason: RefreshReason.PayMerchant,
+      });
     });
 }
 

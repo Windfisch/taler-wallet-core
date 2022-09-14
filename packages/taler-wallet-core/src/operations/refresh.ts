@@ -77,6 +77,7 @@ import {
 import { checkDbInvariant } from "../util/invariants.js";
 import { GetReadWriteAccess } from "../util/query.js";
 import { RetryInfo, runOperationHandlerForResult } from "../util/retries.js";
+import { makeCoinAvailable } from "../wallet.js";
 import { guardOperationException } from "./common.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
 import {
@@ -670,7 +671,6 @@ async function refreshReveal(
           type: CoinSourceType.Refresh,
           oldCoinPub: refreshGroup.oldCoinPubs[coinIndex],
         },
-        suspended: false,
         coinEvHash: pc.coinEvHash,
         ageCommitmentProof: pc.ageCommitmentProof,
       };
@@ -680,7 +680,7 @@ async function refreshReveal(
   }
 
   await ws.db
-    .mktx((x) => [x.coins, x.refreshGroups])
+    .mktx((x) => [x.coins, x.denominations, x.refreshGroups])
     .runReadWrite(async (tx) => {
       const rg = await tx.refreshGroups.get(refreshGroupId);
       if (!rg) {
@@ -694,7 +694,7 @@ async function refreshReveal(
       rg.statusPerCoin[coinIndex] = RefreshCoinStatus.Finished;
       updateGroupStatus(rg);
       for (const coin of coins) {
-        await tx.coins.put(coin);
+        await makeCoinAvailable(ws, tx, coin);
       }
       await tx.refreshGroups.put(rg);
     });
@@ -865,10 +865,22 @@ export async function createRefreshGroup(
       !!denom,
       "denomination for existing coin must be in database",
     );
+    if (coin.status !== CoinStatus.Dormant) {
+      coin.status = CoinStatus.Dormant;
+      const denom = await tx.denominations.get([
+        coin.exchangeBaseUrl,
+        coin.denomPubHash,
+      ]);
+      checkDbInvariant(!!denom);
+      checkDbInvariant(
+        denom.freshCoinCount != null && denom.freshCoinCount > 0,
+      );
+      denom.freshCoinCount--;
+      await tx.denominations.put(denom);
+    }
     const refreshAmount = coin.currentAmount;
     inputPerCoin.push(refreshAmount);
     coin.currentAmount = Amounts.getZero(refreshAmount.currency);
-    coin.status = CoinStatus.Dormant;
     await tx.coins.put(coin);
     const denoms = await getDenoms(coin.exchangeBaseUrl);
     const cost = getTotalRefreshCost(denoms, denom, refreshAmount);
@@ -963,9 +975,6 @@ export async function autoRefresh(
       const refreshCoins: CoinPublicKey[] = [];
       for (const coin of coins) {
         if (coin.status !== CoinStatus.Fresh) {
-          continue;
-        }
-        if (coin.suspended) {
           continue;
         }
         const denom = await tx.denominations.get([

@@ -33,12 +33,11 @@ import {
   getRandomBytes,
   hashWire,
   Logger,
-  NotificationType,
   parsePaytoUri,
   PayCoinSelection,
   PrepareDepositRequest,
   PrepareDepositResponse,
-  TalerErrorDetail,
+  RefreshReason,
   TalerProtocolTimestamp,
   TrackDepositGroupRequest,
   TrackDepositGroupResponse,
@@ -46,18 +45,15 @@ import {
 } from "@gnu-taler/taler-util";
 import {
   DepositGroupRecord,
-  OperationAttemptErrorResult,
   OperationAttemptResult,
   OperationStatus,
 } from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { selectPayCoins } from "../util/coinSelection.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
-import { RetryInfo } from "../util/retries.js";
-import { guardOperationException } from "./common.js";
+import { spendCoins } from "../wallet.js";
 import { getExchangeDetails } from "./exchanges.js";
 import {
-  applyCoinSpend,
   CoinSelectionRequest,
   extractContractData,
   generateDepositPermissions,
@@ -525,12 +521,12 @@ export async function createDepositGroup(
       x.refreshGroups,
     ])
     .runReadWrite(async (tx) => {
-      await applyCoinSpend(
-        ws,
-        tx,
-        payCoinSel,
-        `deposit-group:${depositGroup.depositGroupId}`,
-      );
+      await spendCoins(ws, tx, {
+        allocationId: `deposit-group:${depositGroup.depositGroupId}`,
+        coinPubs: payCoinSel.coinPubs,
+        contributions: payCoinSel.coinContributions,
+        refreshReason: RefreshReason.PayDeposit,
+      });
       await tx.depositGroups.put(depositGroup);
     });
 

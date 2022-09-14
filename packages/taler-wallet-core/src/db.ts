@@ -314,6 +314,11 @@ export interface DenominationRecord {
    * that includes this denomination.
    */
   listIssueDate: TalerProtocolTimestamp;
+
+  /**
+   * Number of fresh coins of this denomination that are available.
+   */
+  freshCoinCount?: number;
 }
 
 /**
@@ -520,6 +525,13 @@ export enum CoinStatus {
    * Withdrawn and never shown to anybody.
    */
   Fresh = "fresh",
+
+  /**
+   * Fresh, but currently marked as "suspended", thus won't be used
+   * for spending.  Used for testing.
+   */
+  FreshSuspended = "fresh-suspended",
+
   /**
    * A coin that has been spent and refreshed.
    */
@@ -604,11 +616,6 @@ export interface CoinRecord {
    * coin.
    */
   exchangeBaseUrl: string;
-
-  /**
-   * The coin is currently suspended, and will not be used for payments.
-   */
-  suspended: boolean;
 
   /**
    * Blinding key used when withdrawing the coin.
