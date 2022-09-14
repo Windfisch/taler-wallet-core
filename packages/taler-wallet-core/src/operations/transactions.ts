@@ -19,35 +19,33 @@
  */
 import {
   AbsoluteTime,
-  AmountJson,
-  Amounts,
+  addPaytoQueryParams, Amounts,
   constructPayPullUri,
   constructPayPushUri,
   Logger,
-  OrderShortInfo,
-  PaymentStatus,
+  OrderShortInfo, PaymentStatus,
   RefundInfoShort,
   Transaction,
   TransactionsRequest,
   TransactionsResponse,
   TransactionType,
   WithdrawalDetails,
-  WithdrawalType,
+  WithdrawalType
 } from "@gnu-taler/taler-util";
-import { InternalWalletState } from "../internal-wallet-state.js";
 import {
   AbortStatus,
   RefundState,
   WalletRefundItem,
-  WithdrawalRecordType,
+  WithdrawalRecordType
 } from "../db.js";
+import { InternalWalletState } from "../internal-wallet-state.js";
+import { RetryTags } from "../util/retries.js";
 import { processDepositGroup } from "./deposits.js";
 import { getExchangeDetails } from "./exchanges.js";
 import { processPurchasePay } from "./pay.js";
 import { processRefreshGroup } from "./refresh.js";
 import { processTip } from "./tip.js";
 import { processWithdrawalGroup } from "./withdraw.js";
-import { RetryTags } from "../util/retries.js";
 
 const logger = new Logger("taler-wallet-core:transactions.ts");
 
@@ -297,7 +295,7 @@ export async function getTransactions(
             reservePub: wsr.reservePub,
             exchangePaytoUris:
               exchangeDetails.wireInfo?.accounts.map(
-                (x) => `${x.payto_uri}?subject=${wsr.reservePub}`,
+                (x) => addPaytoQueryParams(x.payto_uri, { subject: wsr.reservePub }),
               ) ?? [],
           };
         }
