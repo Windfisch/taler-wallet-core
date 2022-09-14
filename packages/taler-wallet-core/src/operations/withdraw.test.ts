@@ -38,25 +38,27 @@ test("withdrawal selection bug repro", (t) => {
         "Q21FQSSG4FXNT96Z14CHXM8N1RZAG9GPHAV8PRWS0PZAAVWH7PBW6R97M2CH19KKP65NNSWXY7B6S53PT3CBM342E357ZXDDJ8RDVW8",
       exchangeBaseUrl: "https://exchange.demo.taler.net/",
       exchangeMasterPub: "",
-      feeDeposit: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
-      },
-      feeRefresh: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
-      },
-      feeRefund: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
-      },
-      feeWithdraw: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
+      fees: {
+        feeDeposit: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+        feeRefresh: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+        feeRefund: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+        feeWithdraw: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
       },
       isOffered: true,
       isRevoked: false,
@@ -75,11 +77,9 @@ test("withdrawal selection bug repro", (t) => {
         t_s: 1585229388,
       },
       verificationStatus: DenominationVerificationStatus.Unverified,
-      value: {
-        currency: "KUDOS",
-        fraction: 0,
-        value: 1000,
-      },
+      currency: "KUDOS",
+      amountFrac: 0,
+      amountVal: 1000,
       listIssueDate: { t_s: 0 },
     },
     {
@@ -94,25 +94,27 @@ test("withdrawal selection bug repro", (t) => {
         "447WA23SCBATMABHA0793F92MYTBYVPYMMQHCPKMKVY5P7RZRFMQ6VRW0Y8HRA7177GTBT0TBT08R21DZD129AJ995H9G09XBFE55G8",
       exchangeBaseUrl: "https://exchange.demo.taler.net/",
       exchangeMasterPub: "",
-      feeDeposit: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
-      },
-      feeRefresh: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
-      },
-      feeRefund: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
-      },
-      feeWithdraw: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
+      fees: {
+        feeDeposit: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+        feeRefresh: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+        feeRefund: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+        feeWithdraw: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
       },
       isOffered: true,
       isRevoked: false,
@@ -131,11 +133,9 @@ test("withdrawal selection bug repro", (t) => {
         t_s: 1585229388,
       },
       verificationStatus: DenominationVerificationStatus.Unverified,
-      value: {
-        currency: "KUDOS",
-        fraction: 0,
-        value: 10,
-      },
+      amountFrac: 0,
+      amountVal: 10,
+      currency: "KUDOS",
       listIssueDate: { t_s: 0 },
     },
     {
@@ -149,25 +149,27 @@ test("withdrawal selection bug repro", (t) => {
         "JS61DTKAFM0BX8Q4XV3ZSKB921SM8QK745Z2AFXTKFMBHHFNBD8TQ5ETJHFNDGBGX22FFN2A2ERNYG1SGSDQWNQHQQ2B14DBVJYJG8R",
       exchangeBaseUrl: "https://exchange.demo.taler.net/",
       exchangeMasterPub: "",
-      feeDeposit: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
-      },
-      feeRefresh: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
-      },
-      feeRefund: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
-      },
-      feeWithdraw: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
+      fees: {
+        feeDeposit: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+        feeRefresh: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+        feeRefund: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+        feeWithdraw: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
       },
       isOffered: true,
       isRevoked: false,
@@ -186,11 +188,9 @@ test("withdrawal selection bug repro", (t) => {
         t_s: 1585229388,
       },
       verificationStatus: DenominationVerificationStatus.Unverified,
-      value: {
-        currency: "KUDOS",
-        fraction: 0,
-        value: 5,
-      },
+      amountFrac: 0,
+      amountVal: 5,
+      currency: "KUDOS",
       listIssueDate: { t_s: 0 },
     },
     {
@@ -205,25 +205,27 @@ test("withdrawal selection bug repro", (t) => {
         "8T51NEY81VMPQ180EQ5WR0YH7GMNNT90W55Q0514KZM18AZT71FHJGJHQXGK0WTA7ACN1X2SD0S53XPBQ1A9KH960R48VCVVM6E3TH8",
       exchangeBaseUrl: "https://exchange.demo.taler.net/",
       exchangeMasterPub: "",
-      feeDeposit: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
-      },
-      feeRefresh: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
-      },
-      feeRefund: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
-      },
-      feeWithdraw: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
+      fees: {
+        feeDeposit: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+        feeRefresh: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+        feeRefund: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+        feeWithdraw: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
       },
       isOffered: true,
       isRevoked: false,
@@ -242,11 +244,9 @@ test("withdrawal selection bug repro", (t) => {
         t_s: 1585229388,
       },
       verificationStatus: DenominationVerificationStatus.Unverified,
-      value: {
-        currency: "KUDOS",
-        fraction: 0,
-        value: 1,
-      },
+      amountFrac: 0,
+      amountVal: 1,
+      currency: "KUDOS",
       listIssueDate: { t_s: 0 },
     },
     {
@@ -260,25 +260,27 @@ test("withdrawal selection bug repro", (t) => {
         "A41HW0Q2H9PCNMEWW0C0N45QAYVXZ8SBVRRAHE4W6X24SV1TH38ANTWDT80JXEBW9Z8PVPGT9GFV2EYZWJ5JW5W1N34NFNKHQSZ1PFR",
       exchangeBaseUrl: "https://exchange.demo.taler.net/",
       exchangeMasterPub: "",
-      feeDeposit: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
-      },
-      feeRefresh: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
-      },
-      feeRefund: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
-      },
-      feeWithdraw: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
+      fees: {
+        feeDeposit: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+        feeRefresh: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+        feeRefund: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+        feeWithdraw: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
       },
       isOffered: true,
       isRevoked: false,
@@ -297,11 +299,9 @@ test("withdrawal selection bug repro", (t) => {
         t_s: 1585229388,
       },
       verificationStatus: DenominationVerificationStatus.Unverified,
-      value: {
-        currency: "KUDOS",
-        fraction: 10000000,
-        value: 0,
-      },
+      amountFrac: 10000000,
+      amountVal: 0,
+      currency: "KUDOS",
       listIssueDate: { t_s: 0 },
     },
     {
@@ -315,25 +315,27 @@ test("withdrawal selection bug repro", (t) => {
         "F5NGBX33DTV4595XZZVK0S2MA1VMXFEJQERE5EBP5DS4QQ9EFRANN7YHWC1TKSHT2K6CQWDBRES8D3DWR0KZF5RET40B4AZXZ0RW1ZG",
       exchangeBaseUrl: "https://exchange.demo.taler.net/",
       exchangeMasterPub: "",
-      feeDeposit: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
-      },
-      feeRefresh: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
-      },
-      feeRefund: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
-      },
-      feeWithdraw: {
-        currency: "KUDOS",
-        fraction: 1000000,
-        value: 0,
+      fees: {
+        feeDeposit: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+        feeRefresh: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+        feeRefund: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+        feeWithdraw: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
       },
       isOffered: true,
       isRevoked: false,
@@ -352,11 +354,9 @@ test("withdrawal selection bug repro", (t) => {
         t_s: 1585229388,
       },
       verificationStatus: DenominationVerificationStatus.Unverified,
-      value: {
-        currency: "KUDOS",
-        fraction: 0,
-        value: 2,
-      },
+      amountFrac: 0,
+      amountVal: 2,
+      currency: "KUDOS",
       listIssueDate: { t_s: 0 },
     },
   ];

@@ -44,6 +44,7 @@ import {
   URL,
 } from "@gnu-taler/taler-util";
 import {
+  DenominationRecord,
   DepositGroupRecord,
   OperationAttemptResult,
   OperationStatus,
@@ -636,7 +637,10 @@ export async function getTotalFeesForDepositAmount(
         const allDenoms = await tx.denominations.indexes.byExchangeBaseUrl
           .iter(coin.exchangeBaseUrl)
           .filter((x) =>
-            Amounts.isSameCurrency(x.value, pcs.coinContributions[i]),
+            Amounts.isSameCurrency(
+              DenominationRecord.getValue(x),
+              pcs.coinContributions[i],
+            ),
           );
         const amountLeft = Amounts.sub(
           denom.value,

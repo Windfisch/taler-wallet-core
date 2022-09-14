@@ -102,6 +102,7 @@ import {
   CoinRecord,
   CoinSourceType,
   CoinStatus,
+  DenominationRecord,
   exportDb,
   importDb,
   OperationAttemptResult,
@@ -731,13 +732,28 @@ async function getExchangeDetailedInfo(
         return;
       }
 
-      const denominations = await tx.denominations.indexes.byExchangeBaseUrl
-        .iter(ex.baseUrl)
-        .toArray();
+      const denominationRecords =
+        await tx.denominations.indexes.byExchangeBaseUrl
+          .iter(ex.baseUrl)
+          .toArray();
 
-      if (!denominations) {
+      if (!denominationRecords) {
         return;
       }
+
+      const denominations: DenomInfo[] = denominationRecords.map((x) => ({
+        denomPub: x.denomPub,
+        denomPubHash: x.denomPubHash,
+        feeDeposit: x.fees.feeDeposit,
+        feeRefresh: x.fees.feeRefresh,
+        feeRefund: x.fees.feeRefund,
+        feeWithdraw: x.fees.feeWithdraw,
+        stampExpireDeposit: x.stampExpireDeposit,
+        stampExpireLegal: x.stampExpireLegal,
+        stampExpireWithdraw: x.stampExpireWithdraw,
+        stampStart: x.stampStart,
+        value: DenominationRecord.getValue(x),
+      }));
 
       return {
         info: {
@@ -753,7 +769,7 @@ async function getExchangeDetailedInfo(
           auditors: exchangeDetails.auditors,
           wireInfo: exchangeDetails.wireInfo,
         },
-        denominations: denominations,
+        denominations,
       };
     });
 
@@ -969,7 +985,11 @@ async function dumpCoins(ws: InternalWalletState): Promise<CoinDumpJson> {
           coin_pub: c.coinPub,
           denom_pub: denomInfo.denomPub,
           denom_pub_hash: c.denomPubHash,
-          denom_value: Amounts.stringify(denom.value),
+          denom_value: Amounts.stringify({
+            value: denom.amountVal,
+            currency: denom.currency,
+            fraction: denom.amountFrac,
+          }),
           exchange_base_url: c.exchangeBaseUrl,
           refresh_parent_coin_pub: refreshParentCoinPub,
           remaining_value: Amounts.stringify(c.currentAmount),
@@ -1566,9 +1586,22 @@ class InternalWalletStateImpl implements InternalWalletState {
     }
     const d = await tx.denominations.get([exchangeBaseUrl, denomPubHash]);
     if (d) {
-      this.denomCache[key] = d;
+      const denomInfo = {
+        denomPub: d.denomPub,
+        denomPubHash: d.denomPubHash,
+        feeDeposit: d.fees.feeDeposit,
+        feeRefresh: d.fees.feeRefresh,
+        feeRefund: d.fees.feeRefund,
+        feeWithdraw: d.fees.feeWithdraw,
+        stampExpireDeposit: d.stampExpireDeposit,
+        stampExpireLegal: d.stampExpireLegal,
+        stampExpireWithdraw: d.stampExpireWithdraw,
+        stampStart: d.stampStart,
+        value: DenominationRecord.getValue(d),
+      };
+      return denomInfo;
     }
-    return d;
+    return undefined;
   }
 
   notify(n: WalletNotification): void {

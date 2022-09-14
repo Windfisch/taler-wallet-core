@@ -243,11 +243,19 @@ export function selectWithdrawalDenominations(
   let totalWithdrawCost = Amounts.getZero(amountAvailable.currency);
 
   denoms = denoms.filter(isWithdrawableDenom);
-  denoms.sort((d1, d2) => Amounts.cmp(d2.value, d1.value));
+  denoms.sort((d1, d2) =>
+    Amounts.cmp(
+      DenominationRecord.getValue(d2),
+      DenominationRecord.getValue(d1),
+    ),
+  );
 
   for (const d of denoms) {
     let count = 0;
-    const cost = Amounts.add(d.value, d.feeWithdraw).amount;
+    const cost = Amounts.add(
+      DenominationRecord.getValue(d),
+      d.fees.feeWithdraw,
+    ).amount;
     for (;;) {
       if (Amounts.cmp(remaining, cost) < 0) {
         break;
@@ -258,7 +266,7 @@ export function selectWithdrawalDenominations(
     if (count > 0) {
       totalCoinValue = Amounts.add(
         totalCoinValue,
-        Amounts.mult(d.value, count).amount,
+        Amounts.mult(DenominationRecord.getValue(d), count).amount,
       ).amount;
       totalWithdrawCost = Amounts.add(
         totalWithdrawCost,
@@ -306,22 +314,30 @@ export function selectForcedWithdrawalDenominations(
   let totalWithdrawCost = Amounts.getZero(amountAvailable.currency);
 
   denoms = denoms.filter(isWithdrawableDenom);
-  denoms.sort((d1, d2) => Amounts.cmp(d2.value, d1.value));
+  denoms.sort((d1, d2) =>
+    Amounts.cmp(
+      DenominationRecord.getValue(d2),
+      DenominationRecord.getValue(d1),
+    ),
+  );
 
   for (const fds of forcedDenomSel.denoms) {
     const count = fds.count;
     const denom = denoms.find((x) => {
-      return Amounts.cmp(x.value, fds.value) == 0;
+      return Amounts.cmp(DenominationRecord.getValue(x), fds.value) == 0;
     });
     if (!denom) {
       throw Error(
         `unable to find denom for forced selection (value ${fds.value})`,
       );
     }
-    const cost = Amounts.add(denom.value, denom.feeWithdraw).amount;
+    const cost = Amounts.add(
+      DenominationRecord.getValue(denom),
+      denom.fees.feeWithdraw,
+    ).amount;
     totalCoinValue = Amounts.add(
       totalCoinValue,
-      Amounts.mult(denom.value, count).amount,
+      Amounts.mult(DenominationRecord.getValue(denom), count).amount,
     ).amount;
     totalWithdrawCost = Amounts.add(
       totalWithdrawCost,

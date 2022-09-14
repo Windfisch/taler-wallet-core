@@ -38,6 +38,7 @@ import {
   CoinSource,
   CoinSourceType,
   CoinStatus,
+  DenominationRecord,
   DenominationVerificationStatus,
   DenomSelectionState,
   OperationStatus,
@@ -108,7 +109,10 @@ async function recoverPayCoinSelection(
       coinRecord.denomPubHash,
     ]);
     checkBackupInvariant(!!denom);
-    totalDepositFees = Amounts.add(totalDepositFees, denom.feeDeposit).amount;
+    totalDepositFees = Amounts.add(
+      totalDepositFees,
+      denom.fees.feeDeposit,
+    ).amount;
 
     if (!coveredExchanges.has(coinRecord.exchangeBaseUrl)) {
       const exchangeDetails = await getExchangeDetails(
@@ -175,16 +179,19 @@ async function getDenomSelStateFromBackup(
     denomPubHash: string;
     count: number;
   }[] = [];
-  let totalCoinValue = Amounts.getZero(d0.value.currency);
-  let totalWithdrawCost = Amounts.getZero(d0.value.currency);
+  let totalCoinValue = Amounts.getZero(d0.currency);
+  let totalWithdrawCost = Amounts.getZero(d0.currency);
   for (const s of sel) {
     const d = await tx.denominations.get([exchangeBaseUrl, s.denom_pub_hash]);
     checkBackupInvariant(!!d);
-    totalCoinValue = Amounts.add(totalCoinValue, d.value).amount;
+    totalCoinValue = Amounts.add(
+      totalCoinValue,
+      DenominationRecord.getValue(d),
+    ).amount;
     totalWithdrawCost = Amounts.add(
       totalWithdrawCost,
-      d.value,
-      d.feeWithdraw,
+      DenominationRecord.getValue(d),
+      d.fees.feeWithdraw,
     ).amount;
   }
   return {
@@ -352,17 +359,25 @@ export async function importBackup(
               `importing backup denomination: ${j2s(backupDenomination)}`,
             );
 
+            const value = Amounts.parseOrThrow(backupDenomination.value);
+
             await tx.denominations.put({
               denomPub: backupDenomination.denom_pub,
               denomPubHash: denomPubHash,
               exchangeBaseUrl: backupExchangeDetails.base_url,
               exchangeMasterPub: backupExchangeDetails.master_public_key,
-              feeDeposit: Amounts.parseOrThrow(backupDenomination.fee_deposit),
-              feeRefresh: Amounts.parseOrThrow(backupDenomination.fee_refresh),
-              feeRefund: Amounts.parseOrThrow(backupDenomination.fee_refund),
-              feeWithdraw: Amounts.parseOrThrow(
-                backupDenomination.fee_withdraw,
-              ),
+              fees: {
+                feeDeposit: Amounts.parseOrThrow(
+                  backupDenomination.fee_deposit,
+                ),
+                feeRefresh: Amounts.parseOrThrow(
+                  backupDenomination.fee_refresh,
+                ),
+                feeRefund: Amounts.parseOrThrow(backupDenomination.fee_refund),
+                feeWithdraw: Amounts.parseOrThrow(
+                  backupDenomination.fee_withdraw,
+                ),
+              },
               isOffered: backupDenomination.is_offered,
               isRevoked: backupDenomination.is_revoked,
               masterSig: backupDenomination.master_sig,
@@ -371,7 +386,9 @@ export async function importBackup(
               stampExpireWithdraw: backupDenomination.stamp_expire_withdraw,
               stampStart: backupDenomination.stamp_start,
               verificationStatus: DenominationVerificationStatus.VerifiedGood,
-              value: Amounts.parseOrThrow(backupDenomination.value),
+              currency: value.currency,
+              amountFrac: value.fraction,
+              amountVal: value.value,
               listIssueDate: backupDenomination.list_issue_date,
             });
           }
@@ -648,7 +665,7 @@ export async function importBackup(
               executionTime: backupRefund.execution_time,
               obtainedTime: backupRefund.obtained_time,
               refundAmount: Amounts.parseOrThrow(backupRefund.refund_amount),
-              refundFee: denom.feeRefund,
+              refundFee: denom.fees.feeRefund,
               rtransactionId: backupRefund.rtransaction_id,
               totalRefreshCostBound: Amounts.parseOrThrow(
                 backupRefund.total_refresh_cost_bound,

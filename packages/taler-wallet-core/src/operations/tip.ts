@@ -306,7 +306,7 @@ export async function processTip(
         coinIndex: i,
         walletTipId: walletTipId,
       },
-      currentAmount: denom.value,
+      currentAmount: DenominationRecord.getValue(denom),
       denomPubHash: denom.denomPubHash,
       denomSig: { cipher: DenomKeyType.Rsa, rsa_signature: denomSigRsa.sig },
       exchangeBaseUrl: tipRecord.exchangeBaseUrl,

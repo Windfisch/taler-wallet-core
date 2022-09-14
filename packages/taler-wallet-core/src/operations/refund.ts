@@ -51,6 +51,7 @@ import {
 import {
   AbortStatus,
   CoinStatus,
+  DenominationRecord,
   OperationAttemptResult,
   PurchaseRecord,
   RefundReason,
@@ -148,7 +149,7 @@ async function applySuccessfulRefund(
   }
   refreshCoinsMap[coin.coinPub] = { coinPub: coin.coinPub };
   const refundAmount = Amounts.parseOrThrow(r.refund_amount);
-  const refundFee = denom.feeRefund;
+  const refundFee = denom.fees.feeRefund;
   coin.status = CoinStatus.Dormant;
   coin.currentAmount = Amounts.add(coin.currentAmount, refundAmount).amount;
   coin.currentAmount = Amounts.sub(coin.currentAmount, refundFee).amount;
@@ -162,12 +163,12 @@ async function applySuccessfulRefund(
   const amountLeft = Amounts.sub(
     Amounts.add(coin.currentAmount, Amounts.parseOrThrow(r.refund_amount))
       .amount,
-    denom.feeRefund,
+    denom.fees.feeRefund,
   ).amount;
 
   const totalRefreshCostBound = getTotalRefreshCost(
     allDenoms,
-    denom,
+    DenominationRecord.toDenomInfo(denom),
     amountLeft,
   );
 
@@ -176,7 +177,7 @@ async function applySuccessfulRefund(
     obtainedTime: AbsoluteTime.toTimestamp(AbsoluteTime.now()),
     executionTime: r.execution_time,
     refundAmount: Amounts.parseOrThrow(r.refund_amount),
-    refundFee: denom.feeRefund,
+    refundFee: denom.fees.feeRefund,
     totalRefreshCostBound,
     coinPub: r.coin_pub,
     rtransactionId: r.rtransaction_id,
@@ -214,12 +215,12 @@ async function storePendingRefund(
   const amountLeft = Amounts.sub(
     Amounts.add(coin.currentAmount, Amounts.parseOrThrow(r.refund_amount))
       .amount,
-    denom.feeRefund,
+    denom.fees.feeRefund,
   ).amount;
 
   const totalRefreshCostBound = getTotalRefreshCost(
     allDenoms,
-    denom,
+    DenominationRecord.toDenomInfo(denom),
     amountLeft,
   );
 
@@ -228,7 +229,7 @@ async function storePendingRefund(
     obtainedTime: AbsoluteTime.toTimestamp(AbsoluteTime.now()),
     executionTime: r.execution_time,
     refundAmount: Amounts.parseOrThrow(r.refund_amount),
-    refundFee: denom.feeRefund,
+    refundFee: denom.fees.feeRefund,
     totalRefreshCostBound,
     coinPub: r.coin_pub,
     rtransactionId: r.rtransaction_id,
@@ -267,12 +268,12 @@ async function storeFailedRefund(
   const amountLeft = Amounts.sub(
     Amounts.add(coin.currentAmount, Amounts.parseOrThrow(r.refund_amount))
       .amount,
-    denom.feeRefund,
+    denom.fees.feeRefund,
   ).amount;
 
   const totalRefreshCostBound = getTotalRefreshCost(
     allDenoms,
-    denom,
+    DenominationRecord.toDenomInfo(denom),
     amountLeft,
   );
 
@@ -281,7 +282,7 @@ async function storeFailedRefund(
     obtainedTime: TalerProtocolTimestamp.now(),
     executionTime: r.execution_time,
     refundAmount: Amounts.parseOrThrow(r.refund_amount),
-    refundFee: denom.feeRefund,
+    refundFee: denom.fees.feeRefund,
     totalRefreshCostBound,
     coinPub: r.coin_pub,
     rtransactionId: r.rtransaction_id,
@@ -314,7 +315,7 @@ async function storeFailedRefund(
         coin.currentAmount = Amounts.add(coin.currentAmount, contrib).amount;
         coin.currentAmount = Amounts.sub(
           coin.currentAmount,
-          denom.feeRefund,
+          denom.fees.feeRefund,
         ).amount;
       }
       refreshCoinsMap[coin.coinPub] = { coinPub: coin.coinPub };

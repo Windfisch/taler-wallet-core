@@ -141,13 +141,20 @@ export async function getTotalPaymentCost(
         const allDenoms = await tx.denominations.indexes.byExchangeBaseUrl
           .iter(coin.exchangeBaseUrl)
           .filter((x) =>
-            Amounts.isSameCurrency(x.value, pcs.coinContributions[i]),
+            Amounts.isSameCurrency(
+              DenominationRecord.getValue(x),
+              pcs.coinContributions[i],
+            ),
           );
         const amountLeft = Amounts.sub(
-          denom.value,
+          DenominationRecord.getValue(denom),
           pcs.coinContributions[i],
         ).amount;
-        const refreshCost = getTotalRefreshCost(allDenoms, denom, amountLeft);
+        const refreshCost = getTotalRefreshCost(
+          allDenoms,
+          DenominationRecord.toDenomInfo(denom),
+          amountLeft,
+        );
         costs.push(pcs.coinContributions[i]);
         costs.push(refreshCost);
       }
@@ -303,7 +310,7 @@ export async function getCandidatePayCoins(
           if (!denom) {
             throw Error("db inconsistent");
           }
-          if (denom.value.currency !== currency) {
+          if (denom.currency !== currency) {
             logger.warn(
               `same pubkey for different currencies at exchange ${exchange.baseUrl}`,
             );
@@ -314,10 +321,10 @@ export async function getCandidatePayCoins(
           }
           candidateCoins.push({
             availableAmount: coin.currentAmount,
-            value: denom.value,
+            value: DenominationRecord.getValue(denom),
             coinPub: coin.coinPub,
             denomPub: denom.denomPub,
-            feeDeposit: denom.feeDeposit,
+            feeDeposit: denom.fees.feeDeposit,
             exchangeBaseUrl: denom.exchangeBaseUrl,
             ageCommitmentProof: coin.ageCommitmentProof,
           });
@@ -949,7 +956,7 @@ async function handleInsufficientFunds(
           coinPub,
           contribution: contrib,
           exchangeBaseUrl: coin.exchangeBaseUrl,
-          feeDeposit: denom.feeDeposit,
+          feeDeposit: denom.fees.feeDeposit,
         });
       }
     });
@@ -1269,7 +1276,7 @@ export async function generateDepositPermissions(
       denomKeyType: denom.denomPub.cipher,
       denomSig: coin.denomSig,
       exchangeBaseUrl: coin.exchangeBaseUrl,
-      feeDeposit: denom.feeDeposit,
+      feeDeposit: denom.fees.feeDeposit,
       merchantPub: contractData.merchantPub,
       refundDeadline: contractData.refundDeadline,
       spendAmount: payCoinSel.coinContributions[i],

@@ -81,15 +81,18 @@ function denominationRecordFromKeys(
   let denomPub: DenominationPubKey;
   denomPub = denomIn.denom_pub;
   const denomPubHash = encodeCrock(hashDenomPub(denomPub));
+  const value = Amounts.parseOrThrow(denomIn.value);
   const d: DenominationRecord = {
     denomPub,
     denomPubHash,
     exchangeBaseUrl,
     exchangeMasterPub,
-    feeDeposit: Amounts.parseOrThrow(denomIn.fee_deposit),
-    feeRefresh: Amounts.parseOrThrow(denomIn.fee_refresh),
-    feeRefund: Amounts.parseOrThrow(denomIn.fee_refund),
-    feeWithdraw: Amounts.parseOrThrow(denomIn.fee_withdraw),
+    fees: {
+      feeDeposit: Amounts.parseOrThrow(denomIn.fee_deposit),
+      feeRefresh: Amounts.parseOrThrow(denomIn.fee_refresh),
+      feeRefund: Amounts.parseOrThrow(denomIn.fee_refund),
+      feeWithdraw: Amounts.parseOrThrow(denomIn.fee_withdraw),
+    },
     isOffered: true,
     isRevoked: false,
     masterSig: denomIn.master_sig,
@@ -98,7 +101,9 @@ function denominationRecordFromKeys(
     stampExpireWithdraw: denomIn.stamp_expire_withdraw,
     stampStart: denomIn.stamp_start,
     verificationStatus: DenominationVerificationStatus.Unverified,
-    value: Amounts.parseOrThrow(denomIn.value),
+    amountFrac: value.fraction,
+    amountVal: value.value,
+    currency: value.currency,
     listIssueDate,
   };
   return d;

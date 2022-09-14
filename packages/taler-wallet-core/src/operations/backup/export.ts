@@ -62,6 +62,7 @@ import {
   AbortStatus,
   CoinSourceType,
   CoinStatus,
+  DenominationRecord,
   ProposalStatus,
   RefreshCoinStatus,
   RefundState,
@@ -221,10 +222,10 @@ export async function exportBackup(
         backupDenoms.push({
           coins: backupCoinsByDenom[denom.denomPubHash] ?? [],
           denom_pub: denom.denomPub,
-          fee_deposit: Amounts.stringify(denom.feeDeposit),
-          fee_refresh: Amounts.stringify(denom.feeRefresh),
-          fee_refund: Amounts.stringify(denom.feeRefund),
-          fee_withdraw: Amounts.stringify(denom.feeWithdraw),
+          fee_deposit: Amounts.stringify(denom.fees.feeDeposit),
+          fee_refresh: Amounts.stringify(denom.fees.feeRefresh),
+          fee_refund: Amounts.stringify(denom.fees.feeRefund),
+          fee_withdraw: Amounts.stringify(denom.fees.feeWithdraw),
           is_offered: denom.isOffered,
           is_revoked: denom.isRevoked,
           master_sig: denom.masterSig,
@@ -232,7 +233,7 @@ export async function exportBackup(
           stamp_expire_legal: denom.stampExpireLegal,
           stamp_expire_withdraw: denom.stampExpireWithdraw,
           stamp_start: denom.stampStart,
-          value: Amounts.stringify(denom.value),
+          value: Amounts.stringify(DenominationRecord.getValue(denom)),
           list_issue_date: denom.listIssueDate,
         });
       });

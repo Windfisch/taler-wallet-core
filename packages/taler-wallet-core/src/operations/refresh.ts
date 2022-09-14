@@ -112,7 +112,11 @@ export function getTotalRefreshCost(
   const resultingAmount = Amounts.add(
     Amounts.getZero(withdrawAmount.currency),
     ...withdrawDenoms.selectedDenoms.map(
-      (d) => Amounts.mult(denomMap[d.denomPubHash].value, d.count).amount,
+      (d) =>
+        Amounts.mult(
+          DenominationRecord.getValue(denomMap[d.denomPubHash]),
+          d.count,
+        ).amount,
     ),
   ).amount;
   const totalCost = Amounts.sub(amountLeft, resultingAmount).amount;

@@ -892,17 +892,22 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
     req: DenominationValidationRequest,
   ): Promise<ValidationResult> {
     const { masterPub, denom } = req;
+    const value: AmountJson = {
+      currency: denom.currency,
+      fraction: denom.amountFrac,
+      value: denom.amountVal,
+    };
     const p = buildSigPS(TalerSignaturePurpose.MASTER_DENOMINATION_KEY_VALIDITY)
       .put(decodeCrock(masterPub))
       .put(timestampRoundedToBuffer(denom.stampStart))
       .put(timestampRoundedToBuffer(denom.stampExpireWithdraw))
       .put(timestampRoundedToBuffer(denom.stampExpireDeposit))
       .put(timestampRoundedToBuffer(denom.stampExpireLegal))
-      .put(amountToBuffer(denom.value))
-      .put(amountToBuffer(denom.feeWithdraw))
-      .put(amountToBuffer(denom.feeDeposit))
-      .put(amountToBuffer(denom.feeRefresh))
-      .put(amountToBuffer(denom.feeRefund))
+      .put(amountToBuffer(value))
+      .put(amountToBuffer(denom.fees.feeWithdraw))
+      .put(amountToBuffer(denom.fees.feeDeposit))
+      .put(amountToBuffer(denom.fees.feeRefresh))
+      .put(amountToBuffer(denom.fees.feeRefund))
       .put(decodeCrock(denom.denomPubHash))
       .build();
     const sig = decodeCrock(denom.masterSig);

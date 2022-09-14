@@ -48,6 +48,7 @@ import {
   UnblindedSignature,
   BankWithdrawDetails,
   parseWithdrawUri,
+  AmountJson,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import { DenominationRecord } from "./db.js";
@@ -158,11 +159,15 @@ export async function withdrawCoin(args: {
   const planchet = await cryptoApi.createPlanchet({
     coinIndex: 0,
     denomPub: denom.denomPub,
-    feeWithdraw: denom.feeWithdraw,
+    feeWithdraw: denom.fees.feeWithdraw,
     reservePriv: reserveKeyPair.reservePriv,
     reservePub: reserveKeyPair.reservePub,
     secretSeed: encodeCrock(getRandomBytes(32)),
-    value: denom.value,
+    value: {
+      currency: denom.currency,
+      fraction: denom.amountFrac,
+      value: denom.amountVal,
+    },
   });
 
   const reqBody: ExchangeWithdrawRequest = {
@@ -192,8 +197,8 @@ export async function withdrawCoin(args: {
     denomSig: ubSig,
     denomPub: denom.denomPub,
     denomPubHash: denom.denomPubHash,
-    feeDeposit: Amounts.stringify(denom.feeDeposit),
-    feeRefresh: Amounts.stringify(denom.feeRefresh),
+    feeDeposit: Amounts.stringify(denom.fees.feeDeposit),
+    feeRefresh: Amounts.stringify(denom.fees.feeRefresh),
     exchangeBaseUrl: args.exchangeBaseUrl,
   };
 }
@@ -203,7 +208,12 @@ export function findDenomOrThrow(
   amount: AmountString,
 ): DenominationRecord {
   for (const d of exchangeInfo.keys.currentDenominations) {
-    if (Amounts.cmp(d.value, amount) === 0 && isWithdrawableDenom(d)) {
+    const value: AmountJson = {
+      currency: d.currency,
+      fraction: d.amountFrac,
+      value: d.amountVal,
+    };
+    if (Amounts.cmp(value, amount) === 0 && isWithdrawableDenom(d)) {
       return d;
     }
   }
@@ -281,8 +291,12 @@ export async function refreshCoin(req: {
       count: 1,
       denomPub: x.denomPub,
       denomPubHash: x.denomPubHash,
-      feeWithdraw: x.feeWithdraw,
-      value: x.value,
+      feeWithdraw: x.fees.feeWithdraw,
+      value: {
+        currency: x.currency,
+        fraction: x.amountFrac,
+        value: x.amountVal,
+      },
     })),
   });
 

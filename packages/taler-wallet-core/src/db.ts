@@ -29,7 +29,6 @@ import {
   CoinDepositPermission,
   ContractTerms,
   DenominationPubKey,
-  Duration,
   ExchangeSignKeyJson,
   InternationalizedString,
   MerchantInfo,
@@ -48,6 +47,7 @@ import {
 } from "@gnu-taler/taler-util";
 import { RetryInfo } from "./util/retries.js";
 import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
+import { DenomInfo } from "./internal-wallet-state.js";
 
 /**
  * Name of the Taler database.  This is effectively the major
@@ -213,26 +213,7 @@ export enum DenominationVerificationStatus {
   VerifiedBad = "verified-bad",
 }
 
-/**
- * Denomination record as stored in the wallet's database.
- */
-export interface DenominationRecord {
-  /**
-   * Value of one coin of the denomination.
-   */
-  value: AmountJson;
-
-  /**
-   * The denomination public key.
-   */
-  denomPub: DenominationPubKey;
-
-  /**
-   * Hash of the denomination public key.
-   * Stored in the database for faster lookups.
-   */
-  denomPubHash: string;
-
+export interface DenomFees {
   /**
    * Fee for withdrawing.
    */
@@ -252,6 +233,30 @@ export interface DenominationRecord {
    * Fee for refunding.
    */
   feeRefund: AmountJson;
+}
+
+/**
+ * Denomination record as stored in the wallet's database.
+ */
+export interface DenominationRecord {
+  currency: string;
+
+  amountVal: number;
+
+  amountFrac: number;
+
+  /**
+   * The denomination public key.
+   */
+  denomPub: DenominationPubKey;
+
+  /**
+   * Hash of the denomination public key.
+   * Stored in the database for faster lookups.
+   */
+  denomPubHash: string;
+
+  fees: DenomFees;
 
   /**
    * Validity start date of the denomination.
@@ -319,6 +324,32 @@ export interface DenominationRecord {
    * Number of fresh coins of this denomination that are available.
    */
   freshCoinCount?: number;
+}
+
+export namespace DenominationRecord {
+  export function getValue(d: DenominationRecord): AmountJson {
+    return {
+      currency: d.currency,
+      fraction: d.amountFrac,
+      value: d.amountVal,
+    };
+  }
+
+  export function toDenomInfo(d: DenominationRecord): DenomInfo {
+    return {
+      denomPub: d.denomPub,
+      denomPubHash: d.denomPubHash,
+      feeDeposit: d.fees.feeDeposit,
+      feeRefresh: d.fees.feeRefresh,
+      feeRefund: d.fees.feeRefund,
+      feeWithdraw: d.fees.feeWithdraw,
+      stampExpireDeposit: d.stampExpireDeposit,
+      stampExpireLegal: d.stampExpireLegal,
+      stampExpireWithdraw: d.stampExpireWithdraw,
+      stampStart: d.stampStart,
+      value: DenominationRecord.getValue(d),
+    };
+  }
 }
 
 /**
@@ -2031,7 +2062,10 @@ export interface DatabaseDump {
   version: string;
 }
 
-async function recoverFromDump(db: IDBDatabase, dump: DatabaseDump): Promise<void> {
+async function recoverFromDump(
+  db: IDBDatabase,
+  dump: DatabaseDump,
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(Array.from(db.objectStoreNames), "readwrite");
     tx.addEventListener("complete", () => {
@@ -2048,13 +2082,13 @@ async function recoverFromDump(db: IDBDatabase, dump: DatabaseDump): Promise<voi
       });
     }
     tx.commit();
-  })
+  });
 }
 
 export async function importDb(db: IDBDatabase, object: any): Promise<void> {
   if ("name" in object && "stores" in object && "version" in object) {
     // looks like a database dump
-    const dump = object as DatabaseDump
+    const dump = object as DatabaseDump;
     return recoverFromDump(db, dump);
   }
 
@@ -2064,10 +2098,12 @@ export async function importDb(db: IDBDatabase, object: any): Promise<void> {
 
     if (TALER_META_DB_NAME in someDatabase) {
       //looks like a taler database
-      const currentMainDbValue = someDatabase[TALER_META_DB_NAME].objectStores.metaConfig.records[0].value.value
+      const currentMainDbValue =
+        someDatabase[TALER_META_DB_NAME].objectStores.metaConfig.records[0]
+          .value.value;
 
       if (currentMainDbValue !== TALER_DB_NAME) {
-        console.log("not the current database version")
+        console.log("not the current database version");
       }
 
       const talerDb = someDatabase[currentMainDbValue];
@@ -2078,17 +2114,17 @@ export async function importDb(db: IDBDatabase, object: any): Promise<void> {
         name: talerDb.schema.databaseName,
         version: talerDb.schema.databaseVersion,
         stores: {},
-      }
+      };
 
       for (let i = 0; i < objectStoreNames.length; i++) {
         const name = objectStoreNames[i];
         const storeDump = {} as { [s: string]: any };
         dump.stores[name] = storeDump;
         talerDb.objectStores[name].records.map((r: any) => {
-          const pkey = r.primaryKey
-          const key = typeof pkey === "string" ? pkey : pkey.join(",")
+          const pkey = r.primaryKey;
+          const key = typeof pkey === "string" ? pkey : pkey.join(",");
           storeDump[key] = r.value;
-        })
+        });
       }
 
       return recoverFromDump(db, dump);
