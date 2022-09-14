@@ -62,7 +62,7 @@ const Page = styled.div`
 `;
 
 const SideBar = styled.div`
-  min-width: 200px;
+  min-width: var(--with-size);
   height: calc(100vh - 20px);
   overflow-y: visible;
   overflow-x: hidden;
@@ -105,6 +105,35 @@ const SideBar = styled.div`
     }
   }
 `;
+
+const ResizeHandleDiv = styled.div`
+  width: 10px;
+  background: #ddd;
+  cursor: ew-resize;
+`;
+
+function ResizeHandle({ onUpdate }: { onUpdate: (x: number) => void }): VNode {
+  const [start, setStart] = useState<number | undefined>(undefined);
+  return (
+    <ResizeHandleDiv
+      onMouseDown={(e: any) => {
+        setStart(e.pageX);
+        console.log("active", e.pageX);
+        return false;
+      }}
+      onMouseMove={(e: any) => {
+        if (start !== undefined) {
+          onUpdate(e.pageX - start);
+        }
+        return false;
+      }}
+      onMouseUp={() => {
+        setStart(undefined);
+        return false;
+      }}
+    />
+  );
+}
 
 const Content = styled.div`
   width: 100%;
@@ -380,11 +409,12 @@ function Application(): VNode {
   const ExampleContent = getContentForExample(selected);
 
   const GroupWrapper = getWrapperForGroup(selected?.group || "default");
+  const [sidebarWidth, setSidebarWidth] = useState(200);
 
   return (
     <Page>
       <LiveReload />
-      <SideBar>
+      <SideBar style={{ "--with-size": `${sidebarWidth}px` }}>
         {allExamples.map((e) => (
           <ExampleList
             key={e.title}
@@ -401,6 +431,11 @@ function Application(): VNode {
         ))}
         <hr />
       </SideBar>
+      <ResizeHandle
+        onUpdate={(x) => {
+          setSidebarWidth((s) => s + x);
+        }}
+      />
       <Content>
         <ErrorReport selected={selected}>
           <GroupWrapper>

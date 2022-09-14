@@ -143,7 +143,7 @@ export function PopupNavBar({ path = "" }: { path?: string }): VNode {
       <div style={{ display: "flex", paddingTop: 4, justifyContent: "right" }}>
         <a href={Pages.qr}>
           <SvgIcon
-            title={i18n.str`QR Reader`}
+            title={i18n.str`QR Reader and Taler URI`}
             dangerouslySetInnerHTML={{ __html: qrIcon }}
             color="white"
           />
@@ -189,7 +189,7 @@ export function WalletNavBar({ path = "" }: { path?: string }): VNode {
         >
           <a href={Pages.qr}>
             <SvgIcon
-              title={i18n.str`QR Reader`}
+              title={i18n.str`QR Reader and Taler URI`}
               dangerouslySetInnerHTML={{ __html: qrIcon }}
               color="white"
             />
