@@ -743,19 +743,9 @@ async function getExchangeDetailedInfo(
         return;
       }
 
-      const denominations: DenomInfo[] = denominationRecords.map((x) => ({
-        denomPub: x.denomPub,
-        denomPubHash: x.denomPubHash,
-        feeDeposit: x.fees.feeDeposit,
-        feeRefresh: x.fees.feeRefresh,
-        feeRefund: x.fees.feeRefund,
-        feeWithdraw: x.fees.feeWithdraw,
-        stampExpireDeposit: x.stampExpireDeposit,
-        stampExpireLegal: x.stampExpireLegal,
-        stampExpireWithdraw: x.stampExpireWithdraw,
-        stampStart: x.stampStart,
-        value: DenominationRecord.getValue(x),
-      }));
+      const denominations: DenomInfo[] = denominationRecords.map((x) =>
+        DenominationRecord.toDenomInfo(x),
+      );
 
       return {
         info: {
@@ -1591,20 +1581,7 @@ class InternalWalletStateImpl implements InternalWalletState {
     }
     const d = await tx.denominations.get([exchangeBaseUrl, denomPubHash]);
     if (d) {
-      const denomInfo = {
-        denomPub: d.denomPub,
-        denomPubHash: d.denomPubHash,
-        feeDeposit: d.fees.feeDeposit,
-        feeRefresh: d.fees.feeRefresh,
-        feeRefund: d.fees.feeRefund,
-        feeWithdraw: d.fees.feeWithdraw,
-        stampExpireDeposit: d.stampExpireDeposit,
-        stampExpireLegal: d.stampExpireLegal,
-        stampExpireWithdraw: d.stampExpireWithdraw,
-        stampStart: d.stampStart,
-        value: DenominationRecord.getValue(d),
-      };
-      return denomInfo;
+      return DenominationRecord.toDenomInfo(d);
     }
     return undefined;
   }

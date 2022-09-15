@@ -348,6 +348,7 @@ export namespace DenominationRecord {
       stampExpireWithdraw: d.stampExpireWithdraw,
       stampStart: d.stampStart,
       value: DenominationRecord.getValue(d),
+      exchangeBaseUrl: d.exchangeBaseUrl,
     };
   }
 }
@@ -1778,6 +1779,10 @@ export const WalletStoresV1 = {
     {
       byBaseUrl: describeIndex("byBaseUrl", "exchangeBaseUrl"),
       byDenomPubHash: describeIndex("byDenomPubHash", "denomPubHash"),
+      byDenomPubHashAndStatus: describeIndex("byDenomPubHashAndStatus", [
+        "denomPubHash",
+        "status",
+      ]),
       byCoinEvHash: describeIndex("byCoinEvHash", "coinEvHash"),
     },
   ),

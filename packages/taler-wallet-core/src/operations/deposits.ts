@@ -51,7 +51,7 @@ import {
   OperationStatus,
 } from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
-import { selectPayCoins } from "../util/coinSelection.js";
+import { selectPayCoinsLegacy } from "../util/coinSelection.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { spendCoins } from "../wallet.js";
 import { getExchangeDetails } from "./exchanges.js";
@@ -271,7 +271,7 @@ export async function getFeeForDeposit(
 
   const candidates = await getCandidatePayCoins(ws, csr);
 
-  const payCoinSel = selectPayCoins({
+  const payCoinSel = selectPayCoinsLegacy({
     candidates,
     contractTermsAmount: csr.amount,
     depositFeeLimit: csr.maxDepositFee,
@@ -367,7 +367,7 @@ export async function prepareDepositGroup(
     wireMethod: contractData.wireMethod,
   });
 
-  const payCoinSel = selectPayCoins({
+  const payCoinSel = selectPayCoinsLegacy({
     candidates,
     contractTermsAmount: contractData.amount,
     depositFeeLimit: contractData.maxDepositFee,
@@ -470,7 +470,7 @@ export async function createDepositGroup(
     wireMethod: contractData.wireMethod,
   });
 
-  const payCoinSel = selectPayCoins({
+  const payCoinSel = selectPayCoinsLegacy({
     candidates,
     contractTermsAmount: contractData.amount,
     depositFeeLimit: contractData.maxDepositFee,

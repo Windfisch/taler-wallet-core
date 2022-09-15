@@ -19,7 +19,7 @@
  */
 import test from "ava";
 import { AmountJson, Amounts, DenomKeyType } from "@gnu-taler/taler-util";
-import { AvailableCoinInfo, selectPayCoins } from "./coinSelection.js";
+import { AvailableCoinInfo, selectPayCoinsLegacy } from "./coinSelection.js";
 
 function a(x: string): AmountJson {
   const amt = Amounts.parse(x);
@@ -66,7 +66,7 @@ test("it should be able to pay if merchant takes the fees", (t) => {
   ];
   acis.forEach((x, i) => (x.coinPub = String(i)));
 
-  const res = selectPayCoins({
+  const res = selectPayCoinsLegacy({
     candidates: {
       candidateCoins: acis,
       wireFeesPerExchange: {},
@@ -94,7 +94,7 @@ test("it should take the last two coins if it pays less fees", (t) => {
   ];
   acis.forEach((x, i) => (x.coinPub = String(i)));
 
-  const res = selectPayCoins({
+  const res = selectPayCoinsLegacy({
     candidates: {
       candidateCoins: acis,
       wireFeesPerExchange: {},
@@ -122,7 +122,7 @@ test("it should take the last coins if the merchant doest not take all the fee",
   ];
   acis.forEach((x, i) => (x.coinPub = String(i)));
 
-  const res = selectPayCoins({
+  const res = selectPayCoinsLegacy({
     candidates: {
       candidateCoins: acis,
       wireFeesPerExchange: {},
@@ -148,7 +148,7 @@ test("it should use 3 coins to cover fees and payment", (t) => {
     fakeAci("EUR:1.0", "EUR:0.5"), //contributed value .5
   ];
 
-  const res = selectPayCoins({
+  const res = selectPayCoinsLegacy({
     candidates: {
       candidateCoins: acis,
       wireFeesPerExchange: {},
@@ -174,7 +174,7 @@ test("it should return undefined if there is not enough coins", (t) => {
     fakeAci("EUR:1.0", "EUR:0.5"),
   ];
 
-  const res = selectPayCoins({
+  const res = selectPayCoinsLegacy({
     candidates: {
       candidateCoins: acis,
       wireFeesPerExchange: {},
@@ -194,7 +194,7 @@ test("it should return undefined if there is not enough coins (taking into accou
     fakeAci("EUR:1.0", "EUR:0.5"),
     fakeAci("EUR:1.0", "EUR:0.5"),
   ];
-  const res = selectPayCoins({
+  const res = selectPayCoinsLegacy({
     candidates: {
       candidateCoins: acis,
       wireFeesPerExchange: {},
@@ -213,7 +213,7 @@ test("it should not count into customer fee if merchant can afford it", (t) => {
     fakeAci("EUR:1.0", "EUR:0.1"),
     fakeAci("EUR:1.0", "EUR:0.1"),
   ];
-  const res = selectPayCoins({
+  const res = selectPayCoinsLegacy({
     candidates: {
       candidateCoins: acis,
       wireFeesPerExchange: {},
@@ -240,7 +240,7 @@ test("it should use the coins that spent less relative fee", (t) => {
   ];
   acis.forEach((x, i) => (x.coinPub = String(i)));
 
-  const res = selectPayCoins({
+  const res = selectPayCoinsLegacy({
     candidates: {
       candidateCoins: acis,
       wireFeesPerExchange: {},
@@ -263,7 +263,7 @@ test("coin selection 9", (t) => {
     fakeAci("EUR:1.0", "EUR:0.2"),
     fakeAci("EUR:0.2", "EUR:0.2"),
   ];
-  const res = selectPayCoins({
+  const res = selectPayCoinsLegacy({
     candidates: {
       candidateCoins: acis,
       wireFeesPerExchange: {},
@@ -290,7 +290,7 @@ test("it should be able to use unrestricted coins for age restricted contract", 
     fakeAciWithAgeRestriction("EUR:1.0", "EUR:0.2"),
     fakeAciWithAgeRestriction("EUR:0.2", "EUR:0.2"),
   ];
-  const res = selectPayCoins({
+  const res = selectPayCoinsLegacy({
     candidates: {
       candidateCoins: acis,
       wireFeesPerExchange: {},

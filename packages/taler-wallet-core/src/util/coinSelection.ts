@@ -97,7 +97,7 @@ export interface SelectPayCoinRequest {
   requiredMinimumAge?: number;
 }
 
-interface CoinSelectionTally {
+export interface CoinSelectionTally {
   /**
    * Amount that still needs to be paid.
    * May increase during the computation when fees need to be covered.
@@ -125,7 +125,7 @@ interface CoinSelectionTally {
 /**
  * Account for the fees of spending a coin.
  */
-function tallyFees(
+export function tallyFees(
   tally: CoinSelectionTally,
   wireFeesPerExchange: Record<string, AmountJson>,
   wireFeeAmortization: number,
@@ -204,7 +204,7 @@ function tallyFees(
  *
  * This function is only exported for the sake of unit tests.
  */
-export function selectPayCoins(
+export function selectPayCoinsLegacy(
   req: SelectPayCoinRequest,
 ): PayCoinSelection | undefined {
   const {

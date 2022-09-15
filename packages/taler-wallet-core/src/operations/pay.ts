@@ -26,6 +26,7 @@
  */
 import {
   AbsoluteTime,
+  AgeRestriction,
   AmountJson,
   Amounts,
   codecForContractTerms,
@@ -36,6 +37,8 @@ import {
   ConfirmPayResultType,
   ContractTerms,
   ContractTermsUtil,
+  DenominationInfo,
+  DenominationPubKey,
   Duration,
   encodeCrock,
   ForcedCoinSel,
@@ -50,6 +53,7 @@ import {
   PreparePayResult,
   PreparePayResultType,
   RefreshReason,
+  strcmp,
   TalerErrorCode,
   TalerErrorDetail,
   TalerProtocolTimestamp,
@@ -86,9 +90,11 @@ import { assertUnreachable } from "../util/assertUnreachable.js";
 import {
   AvailableCoinInfo,
   CoinCandidateSelection,
+  CoinSelectionTally,
   PreviousPayCoins,
   selectForcedPayCoins,
-  selectPayCoins,
+  selectPayCoinsLegacy,
+  tallyFees,
 } from "../util/coinSelection.js";
 import {
   getHttpResponseErrorDetails,
@@ -962,7 +968,7 @@ async function handleInsufficientFunds(
       }
     });
 
-  const res = selectPayCoins({
+  const res = selectPayCoinsLegacy({
     candidates,
     contractTermsAmount: contractData.amount,
     depositFeeLimit: contractData.maxDepositFee,
@@ -1017,6 +1023,205 @@ async function unblockBackup(
           }
         });
     });
+}
+
+export interface SelectPayCoinRequestNg {
+  exchanges: string[];
+  auditors: string[];
+  wireMethod: string;
+  contractTermsAmount: AmountJson;
+  depositFeeLimit: AmountJson;
+  wireFeeLimit: AmountJson;
+  wireFeeAmortization: number;
+  prevPayCoins?: PreviousPayCoins;
+  requiredMinimumAge?: number;
+}
+
+export type AvailableDenom = DenominationInfo & {
+  numAvailable: number;
+};
+
+/**
+ * Given a list of candidate coins, select coins to spend under the merchant's
+ * constraints.
+ *
+ * The prevPayCoins can be specified to "repair" a coin selection
+ * by adding additional coins, after a broken (e.g. double-spent) coin
+ * has been removed from the selection.
+ *
+ * This function is only exported for the sake of unit tests.
+ */
+export async function selectPayCoinsNew(
+  ws: InternalWalletState,
+  req: SelectPayCoinRequestNg,
+): Promise<PayCoinSelection | undefined> {
+  const {
+    contractTermsAmount,
+    depositFeeLimit,
+    wireFeeLimit,
+    wireFeeAmortization,
+  } = req;
+
+  const [candidateDenoms, wireFeesPerExchange] = await ws.db
+    .mktx((x) => [x.exchanges, x.exchangeDetails, x.denominations])
+    .runReadOnly(async (tx) => {
+      const denoms: AvailableDenom[] = [];
+      const exchanges = await tx.exchanges.iter().toArray();
+      const wfPerExchange: Record<string, AmountJson> = {};
+      for (const exchange of exchanges) {
+        const exchangeDetails = await getExchangeDetails(tx, exchange.baseUrl);
+        if (exchangeDetails?.currency !== contractTermsAmount.currency) {
+          continue;
+        }
+        let accepted = false;
+        if (req.exchanges.includes(exchange.baseUrl)) {
+          accepted = true;
+        } else {
+          for (const auditor of exchangeDetails.auditors) {
+            if (req.auditors.includes(auditor.auditor_url)) {
+              accepted = true;
+            }
+          }
+        }
+        if (!accepted) {
+          continue;
+        }
+        // FIXME: Do this query more efficiently via indexing
+        const exchangeDenoms = await tx.denominations.indexes.byExchangeBaseUrl
+          .iter(exchangeDetails.exchangeBaseUrl)
+          .filter((x) => x.freshCoinCount != null && x.freshCoinCount > 0);
+        // FIXME: Should we exclude denominations that are
+        // not spendable anymore?
+        for (const denom of exchangeDenoms) {
+          denoms.push({
+            ...DenominationRecord.toDenomInfo(denom),
+            numAvailable: denom.freshCoinCount ?? 0,
+          });
+        }
+      }
+      return [denoms, wfPerExchange];
+    });
+
+  const coinPubs: string[] = [];
+  const coinContributions: AmountJson[] = [];
+  const currency = contractTermsAmount.currency;
+
+  let tally: CoinSelectionTally = {
+    amountPayRemaining: contractTermsAmount,
+    amountWireFeeLimitRemaining: wireFeeLimit,
+    amountDepositFeeLimitRemaining: depositFeeLimit,
+    customerDepositFees: Amounts.getZero(currency),
+    customerWireFees: Amounts.getZero(currency),
+    wireFeeCoveredForExchange: new Set(),
+  };
+
+  const prevPayCoins = req.prevPayCoins ?? [];
+
+  // Look at existing pay coin selection and tally up
+  for (const prev of prevPayCoins) {
+    tally = tallyFees(
+      tally,
+      wireFeesPerExchange,
+      wireFeeAmortization,
+      prev.exchangeBaseUrl,
+      prev.feeDeposit,
+    );
+    tally.amountPayRemaining = Amounts.sub(
+      tally.amountPayRemaining,
+      prev.contribution,
+    ).amount;
+
+    coinPubs.push(prev.coinPub);
+    coinContributions.push(prev.contribution);
+  }
+
+  // Sort by available amount (descending),  deposit fee (ascending) and
+  // denomPub (ascending) if deposit fee is the same
+  // (to guarantee deterministic results)
+  candidateDenoms.sort(
+    (o1, o2) =>
+      -Amounts.cmp(o1.value, o2.value) ||
+      Amounts.cmp(o1.feeDeposit, o2.feeDeposit) ||
+      strcmp(o1.denomPubHash, o2.denomPubHash),
+  );
+
+  // FIXME:  Here, we should select coins in a smarter way.
+  // Instead of always spending the next-largest coin,
+  // we should try to find the smallest coin that covers the
+  // amount.
+
+  const selectedDenom: {
+    [dph: string]: AmountJson[];
+  } = {};
+
+  for (const aci of candidateDenoms) {
+    const contributions: AmountJson[] = [];
+    for (let i = 0; i < aci.numAvailable; i++) {
+      // Don't use this coin if depositing it is more expensive than
+      // the amount it would give the merchant.
+      if (Amounts.cmp(aci.feeDeposit, aci.value) > 0) {
+        continue;
+      }
+
+      if (Amounts.isZero(tally.amountPayRemaining)) {
+        // We have spent enough!
+        break;
+      }
+
+      tally = tallyFees(
+        tally,
+        wireFeesPerExchange,
+        wireFeeAmortization,
+        aci.exchangeBaseUrl,
+        aci.feeDeposit,
+      );
+
+      let coinSpend = Amounts.max(
+        Amounts.min(tally.amountPayRemaining, aci.value),
+        aci.feeDeposit,
+      );
+
+      tally.amountPayRemaining = Amounts.sub(
+        tally.amountPayRemaining,
+        coinSpend,
+      ).amount;
+      contributions.push(coinSpend);
+    }
+
+    if (contributions.length) {
+      selectedDenom[aci.denomPubHash] = contributions;
+    }
+
+    if (Amounts.isZero(tally.amountPayRemaining)) {
+      await ws.db
+        .mktx((x) => [x.coins, x.denominations])
+        .runReadOnly(async (tx) => {
+          for (const dph of Object.keys(selectedDenom)) {
+            const contributions = selectedDenom[dph];
+            const coins = await tx.coins.indexes.byDenomPubHashAndStatus.getAll(
+              [dph, CoinStatus.Fresh],
+              contributions.length,
+            );
+            if (coins.length != contributions.length) {
+              throw Error(
+                `coin selection failed (not available anymore, got only ${coins.length}/${contributions.length})`,
+              );
+            }
+            coinPubs.push(...coins.map((x) => x.coinPub));
+            coinContributions.push(...contributions);
+          }
+        });
+
+      return {
+        paymentAmount: contractTermsAmount,
+        coinContributions,
+        coinPubs,
+        customerDepositFees: tally.customerDepositFees,
+        customerWireFees: tally.customerWireFees,
+      };
+    }
+  }
+  return undefined;
 }
 
 export async function checkPaymentByProposalId(
@@ -1079,7 +1284,7 @@ export async function checkPaymentByProposalId(
       wireFeeAmortization: contractData.wireFeeAmortization,
       wireMethod: contractData.wireMethod,
     });
-    const res = selectPayCoins({
+    const res = selectPayCoinsLegacy({
       candidates,
       contractTermsAmount: contractData.amount,
       depositFeeLimit: contractData.maxDepositFee,
@@ -1408,7 +1613,7 @@ export async function confirmPay(
       requiredMinimumAge: contractData.minimumAge,
     });
   } else {
-    res = selectPayCoins({
+    res = selectPayCoinsLegacy({
       candidates,
       contractTermsAmount: contractData.amount,
       depositFeeLimit: contractData.maxDepositFee,

@@ -694,6 +694,7 @@ const codecForDenominationInfo = (): Codec<DenominationInfo> =>
     .property("stampExpireWithdraw", codecForTimestamp)
     .property("stampExpireLegal", codecForTimestamp)
     .property("stampExpireDeposit", codecForTimestamp)
+    .property("exchangeBaseUrl", codecForString())
     .build("codecForDenominationInfo");
 
 export interface DenominationInfo {
@@ -747,6 +748,8 @@ export interface DenominationInfo {
    * Data after which coins of this denomination can't be deposited anymore.
    */
   stampExpireDeposit: TalerProtocolTimestamp;
+
+  exchangeBaseUrl: string;
 }
 
 export type Operation = "deposit" | "withdraw" | "refresh" | "refund";
