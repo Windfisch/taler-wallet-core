@@ -38,7 +38,6 @@ import {
   ContractTerms,
   ContractTermsUtil,
   DenominationInfo,
-  DenominationPubKey,
   Duration,
   encodeCrock,
   ForcedCoinSel,
@@ -93,7 +92,6 @@ import {
   CoinSelectionTally,
   PreviousPayCoins,
   selectForcedPayCoins,
-  selectPayCoinsLegacy,
   tallyFees,
 } from "../util/coinSelection.js";
 import {
@@ -104,6 +102,7 @@ import {
   readUnexpectedResponseDetails,
   throwUnexpectedRequestError,
 } from "../util/http.js";
+import { checkLogicInvariant } from "../util/invariants.js";
 import { GetReadWriteAccess } from "../util/query.js";
 import { RetryInfo, RetryTags, scheduleRetry } from "../util/retries.js";
 import { spendCoins } from "../wallet.js";
@@ -926,17 +925,6 @@ async function handleInsufficientFunds(
 
   const { contractData } = proposal.download;
 
-  const candidates = await getCandidatePayCoins(ws, {
-    allowedAuditors: contractData.allowedAuditors,
-    allowedExchanges: contractData.allowedExchanges,
-    amount: contractData.amount,
-    maxDepositFee: contractData.maxDepositFee,
-    maxWireFee: contractData.maxWireFee,
-    timestamp: contractData.timestamp,
-    wireFeeAmortization: contractData.wireFeeAmortization,
-    wireMethod: contractData.wireMethod,
-  });
-
   const prevPayCoins: PreviousPayCoins = [];
 
   await ws.db
@@ -968,8 +956,10 @@ async function handleInsufficientFunds(
       }
     });
 
-  const res = selectPayCoinsLegacy({
-    candidates,
+  const res = await selectPayCoinsNew(ws, {
+    auditors: contractData.allowedAuditors,
+    exchanges: contractData.allowedExchanges,
+    wireMethod: contractData.wireMethod,
     contractTermsAmount: contractData.amount,
     depositFeeLimit: contractData.maxDepositFee,
     wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
@@ -1026,8 +1016,8 @@ async function unblockBackup(
 }
 
 export interface SelectPayCoinRequestNg {
-  exchanges: string[];
-  auditors: string[];
+  exchanges: AllowedExchangeInfo[];
+  auditors: AllowedAuditorInfo[];
   wireMethod: string;
   contractTermsAmount: AmountJson;
   depositFeeLimit: AmountJson;
@@ -1035,34 +1025,18 @@ export interface SelectPayCoinRequestNg {
   wireFeeAmortization: number;
   prevPayCoins?: PreviousPayCoins;
   requiredMinimumAge?: number;
+  forcedSelection?: ForcedCoinSel;
 }
 
 export type AvailableDenom = DenominationInfo & {
   numAvailable: number;
 };
 
-/**
- * Given a list of candidate coins, select coins to spend under the merchant's
- * constraints.
- *
- * The prevPayCoins can be specified to "repair" a coin selection
- * by adding additional coins, after a broken (e.g. double-spent) coin
- * has been removed from the selection.
- *
- * This function is only exported for the sake of unit tests.
- */
-export async function selectPayCoinsNew(
+async function selectCandidates(
   ws: InternalWalletState,
   req: SelectPayCoinRequestNg,
-): Promise<PayCoinSelection | undefined> {
-  const {
-    contractTermsAmount,
-    depositFeeLimit,
-    wireFeeLimit,
-    wireFeeAmortization,
-  } = req;
-
-  const [candidateDenoms, wireFeesPerExchange] = await ws.db
+): Promise<[AvailableDenom[], Record<string, AmountJson>]> {
+  return await ws.db
     .mktx((x) => [x.exchanges, x.exchangeDetails, x.denominations])
     .runReadOnly(async (tx) => {
       const denoms: AvailableDenom[] = [];
@@ -1070,16 +1044,21 @@ export async function selectPayCoinsNew(
       const wfPerExchange: Record<string, AmountJson> = {};
       for (const exchange of exchanges) {
         const exchangeDetails = await getExchangeDetails(tx, exchange.baseUrl);
-        if (exchangeDetails?.currency !== contractTermsAmount.currency) {
+        if (exchangeDetails?.currency !== req.contractTermsAmount.currency) {
           continue;
         }
         let accepted = false;
-        if (req.exchanges.includes(exchange.baseUrl)) {
-          accepted = true;
-        } else {
-          for (const auditor of exchangeDetails.auditors) {
-            if (req.auditors.includes(auditor.auditor_url)) {
+        for (const allowedExchange of req.exchanges) {
+          if (allowedExchange.exchangePub === exchangeDetails.masterPublicKey) {
+            accepted = true;
+            break;
+          }
+        }
+        for (const allowedAuditor of req.auditors) {
+          for (const providedAuditor of exchangeDetails.auditors) {
+            if (allowedAuditor.auditorPub === providedAuditor.auditor_pub) {
               accepted = true;
+              break;
             }
           }
         }
@@ -1090,6 +1069,7 @@ export async function selectPayCoinsNew(
         const exchangeDenoms = await tx.denominations.indexes.byExchangeBaseUrl
           .iter(exchangeDetails.exchangeBaseUrl)
           .filter((x) => x.freshCoinCount != null && x.freshCoinCount > 0);
+        // FIXME: Check that the individual denomination is audited!
         // FIXME: Should we exclude denominations that are
         // not spendable anymore?
         for (const denom of exchangeDenoms) {
@@ -1099,61 +1079,38 @@ export async function selectPayCoinsNew(
           });
         }
       }
+      // Sort by available amount (descending),  deposit fee (ascending) and
+      // denomPub (ascending) if deposit fee is the same
+      // (to guarantee deterministic results)
+      denoms.sort(
+        (o1, o2) =>
+          -Amounts.cmp(o1.value, o2.value) ||
+          Amounts.cmp(o1.feeDeposit, o2.feeDeposit) ||
+          strcmp(o1.denomPubHash, o2.denomPubHash),
+      );
       return [denoms, wfPerExchange];
     });
+}
 
-  const coinPubs: string[] = [];
-  const coinContributions: AmountJson[] = [];
-  const currency = contractTermsAmount.currency;
+/**
+ * Selection result.
+ */
+interface SelResult {
+  /**
+   * Map from denomination public key hashes
+   * to an array of contributions.
+   */
+  [dph: string]: AmountJson[];
+}
 
-  let tally: CoinSelectionTally = {
-    amountPayRemaining: contractTermsAmount,
-    amountWireFeeLimitRemaining: wireFeeLimit,
-    amountDepositFeeLimitRemaining: depositFeeLimit,
-    customerDepositFees: Amounts.getZero(currency),
-    customerWireFees: Amounts.getZero(currency),
-    wireFeeCoveredForExchange: new Set(),
-  };
-
-  const prevPayCoins = req.prevPayCoins ?? [];
-
-  // Look at existing pay coin selection and tally up
-  for (const prev of prevPayCoins) {
-    tally = tallyFees(
-      tally,
-      wireFeesPerExchange,
-      wireFeeAmortization,
-      prev.exchangeBaseUrl,
-      prev.feeDeposit,
-    );
-    tally.amountPayRemaining = Amounts.sub(
-      tally.amountPayRemaining,
-      prev.contribution,
-    ).amount;
-
-    coinPubs.push(prev.coinPub);
-    coinContributions.push(prev.contribution);
-  }
-
-  // Sort by available amount (descending),  deposit fee (ascending) and
-  // denomPub (ascending) if deposit fee is the same
-  // (to guarantee deterministic results)
-  candidateDenoms.sort(
-    (o1, o2) =>
-      -Amounts.cmp(o1.value, o2.value) ||
-      Amounts.cmp(o1.feeDeposit, o2.feeDeposit) ||
-      strcmp(o1.denomPubHash, o2.denomPubHash),
-  );
-
-  // FIXME:  Here, we should select coins in a smarter way.
-  // Instead of always spending the next-largest coin,
-  // we should try to find the smallest coin that covers the
-  // amount.
-
-  const selectedDenom: {
-    [dph: string]: AmountJson[];
-  } = {};
-
+export function selectGreedy(
+  req: SelectPayCoinRequestNg,
+  candidateDenoms: AvailableDenom[],
+  wireFeesPerExchange: Record<string, AmountJson>,
+  tally: CoinSelectionTally,
+): SelResult | undefined {
+  const { wireFeeAmortization } = req;
+  const selectedDenom: SelResult = {};
   for (const aci of candidateDenoms) {
     const contributions: AmountJson[] = [];
     for (let i = 0; i < aci.numAvailable; i++) {
@@ -1193,35 +1150,151 @@ export async function selectPayCoinsNew(
     }
 
     if (Amounts.isZero(tally.amountPayRemaining)) {
-      await ws.db
-        .mktx((x) => [x.coins, x.denominations])
-        .runReadOnly(async (tx) => {
-          for (const dph of Object.keys(selectedDenom)) {
-            const contributions = selectedDenom[dph];
-            const coins = await tx.coins.indexes.byDenomPubHashAndStatus.getAll(
-              [dph, CoinStatus.Fresh],
-              contributions.length,
-            );
-            if (coins.length != contributions.length) {
-              throw Error(
-                `coin selection failed (not available anymore, got only ${coins.length}/${contributions.length})`,
-              );
-            }
-            coinPubs.push(...coins.map((x) => x.coinPub));
-            coinContributions.push(...contributions);
-          }
-        });
-
-      return {
-        paymentAmount: contractTermsAmount,
-        coinContributions,
-        coinPubs,
-        customerDepositFees: tally.customerDepositFees,
-        customerWireFees: tally.customerWireFees,
-      };
+      return selectedDenom;
     }
   }
   return undefined;
+}
+
+export function selectForced(
+  req: SelectPayCoinRequestNg,
+  candidateDenoms: AvailableDenom[],
+): SelResult | undefined {
+  const selectedDenom: SelResult = {};
+
+  const forcedSelection = req.forcedSelection;
+  checkLogicInvariant(!!forcedSelection);
+
+  for (const forcedCoin of forcedSelection.coins) {
+    let found = false;
+    for (const aci of candidateDenoms) {
+      if (aci.numAvailable <= 0) {
+        continue;
+      }
+      if (Amounts.cmp(aci.value, forcedCoin.value) === 0) {
+        aci.numAvailable--;
+        const contributions = selectedDenom[aci.denomPubHash] ?? [];
+        contributions.push(Amounts.parseOrThrow(forcedCoin.value));
+        selectedDenom[aci.denomPubHash] = contributions;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      throw Error("can't find coin for forced coin selection");
+    }
+  }
+
+  return selectedDenom;
+}
+
+/**
+ * Given a list of candidate coins, select coins to spend under the merchant's
+ * constraints.
+ *
+ * The prevPayCoins can be specified to "repair" a coin selection
+ * by adding additional coins, after a broken (e.g. double-spent) coin
+ * has been removed from the selection.
+ *
+ * This function is only exported for the sake of unit tests.
+ */
+export async function selectPayCoinsNew(
+  ws: InternalWalletState,
+  req: SelectPayCoinRequestNg,
+): Promise<PayCoinSelection | undefined> {
+  const {
+    contractTermsAmount,
+    depositFeeLimit,
+    wireFeeLimit,
+    wireFeeAmortization,
+  } = req;
+
+  const [candidateDenoms, wireFeesPerExchange] = await selectCandidates(
+    ws,
+    req,
+  );
+
+  const coinPubs: string[] = [];
+  const coinContributions: AmountJson[] = [];
+  const currency = contractTermsAmount.currency;
+
+  let tally: CoinSelectionTally = {
+    amountPayRemaining: contractTermsAmount,
+    amountWireFeeLimitRemaining: wireFeeLimit,
+    amountDepositFeeLimitRemaining: depositFeeLimit,
+    customerDepositFees: Amounts.getZero(currency),
+    customerWireFees: Amounts.getZero(currency),
+    wireFeeCoveredForExchange: new Set(),
+  };
+
+  const prevPayCoins = req.prevPayCoins ?? [];
+
+  // Look at existing pay coin selection and tally up
+  for (const prev of prevPayCoins) {
+    tally = tallyFees(
+      tally,
+      wireFeesPerExchange,
+      wireFeeAmortization,
+      prev.exchangeBaseUrl,
+      prev.feeDeposit,
+    );
+    tally.amountPayRemaining = Amounts.sub(
+      tally.amountPayRemaining,
+      prev.contribution,
+    ).amount;
+
+    coinPubs.push(prev.coinPub);
+    coinContributions.push(prev.contribution);
+  }
+
+  let selectedDenom: SelResult | undefined;
+  if (req.forcedSelection) {
+    selectedDenom = selectForced(req, candidateDenoms);
+  } else {
+    // FIXME:  Here, we should select coins in a smarter way.
+    // Instead of always spending the next-largest coin,
+    // we should try to find the smallest coin that covers the
+    // amount.
+    selectedDenom = selectGreedy(
+      req,
+      candidateDenoms,
+      wireFeesPerExchange,
+      tally,
+    );
+  }
+
+  if (!selectedDenom) {
+    return undefined;
+  }
+
+  const finalSel = selectedDenom;
+
+  await ws.db
+    .mktx((x) => [x.coins, x.denominations])
+    .runReadOnly(async (tx) => {
+      for (const dph of Object.keys(finalSel)) {
+        const contributions = finalSel[dph];
+        const coins = await tx.coins.indexes.byDenomPubHashAndStatus.getAll(
+          [dph, CoinStatus.Fresh],
+          contributions.length,
+        );
+        if (coins.length != contributions.length) {
+          throw Error(
+            `coin selection failed (not available anymore, got only ${coins.length}/${contributions.length})`,
+          );
+        }
+        coinPubs.push(...coins.map((x) => x.coinPub));
+        coinContributions.push(...contributions);
+      }
+    });
+
+  return {
+    paymentAmount: contractTermsAmount,
+    coinContributions,
+    coinPubs,
+    customerDepositFees: tally.customerDepositFees,
+    customerWireFees: tally.customerWireFees,
+  };
 }
 
 export async function checkPaymentByProposalId(
@@ -1274,24 +1347,16 @@ export async function checkPaymentByProposalId(
 
   if (!purchase) {
     // If not already paid, check if we could pay for it.
-    const candidates = await getCandidatePayCoins(ws, {
-      allowedAuditors: contractData.allowedAuditors,
-      allowedExchanges: contractData.allowedExchanges,
-      amount: contractData.amount,
-      maxDepositFee: contractData.maxDepositFee,
-      maxWireFee: contractData.maxWireFee,
-      timestamp: contractData.timestamp,
-      wireFeeAmortization: contractData.wireFeeAmortization,
-      wireMethod: contractData.wireMethod,
-    });
-    const res = selectPayCoinsLegacy({
-      candidates,
+    const res = await selectPayCoinsNew(ws, {
+      auditors: contractData.allowedAuditors,
+      exchanges: contractData.allowedExchanges,
       contractTermsAmount: contractData.amount,
       depositFeeLimit: contractData.maxDepositFee,
       wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
       wireFeeLimit: contractData.maxWireFee,
       prevPayCoins: [],
       requiredMinimumAge: contractData.minimumAge,
+      wireMethod: contractData.wireMethod,
     });
 
     if (!res) {
@@ -1590,39 +1655,20 @@ export async function confirmPay(
 
   const contractData = d.contractData;
 
-  const candidates = await getCandidatePayCoins(ws, {
-    allowedAuditors: contractData.allowedAuditors,
-    allowedExchanges: contractData.allowedExchanges,
-    amount: contractData.amount,
-    maxDepositFee: contractData.maxDepositFee,
-    maxWireFee: contractData.maxWireFee,
-    timestamp: contractData.timestamp,
-    wireFeeAmortization: contractData.wireFeeAmortization,
-    wireMethod: contractData.wireMethod,
-  });
-
   let res: PayCoinSelection | undefined = undefined;
 
-  if (forcedCoinSel) {
-    res = selectForcedPayCoins(forcedCoinSel, {
-      candidates,
-      contractTermsAmount: contractData.amount,
-      depositFeeLimit: contractData.maxDepositFee,
-      wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
-      wireFeeLimit: contractData.maxWireFee,
-      requiredMinimumAge: contractData.minimumAge,
-    });
-  } else {
-    res = selectPayCoinsLegacy({
-      candidates,
-      contractTermsAmount: contractData.amount,
-      depositFeeLimit: contractData.maxDepositFee,
-      wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
-      wireFeeLimit: contractData.maxWireFee,
-      prevPayCoins: [],
-      requiredMinimumAge: contractData.minimumAge,
-    });
-  }
+  res = await selectPayCoinsNew(ws, {
+    auditors: contractData.allowedAuditors,
+    exchanges: contractData.allowedExchanges,
+    wireMethod: contractData.wireMethod,
+    contractTermsAmount: contractData.amount,
+    depositFeeLimit: contractData.maxDepositFee,
+    wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
+    wireFeeLimit: contractData.maxWireFee,
+    prevPayCoins: [],
+    requiredMinimumAge: contractData.minimumAge,
+    forcedSelection: forcedCoinSel,
+  });
 
   logger.trace("coin selection result", res);
 
