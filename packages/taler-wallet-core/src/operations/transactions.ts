@@ -19,11 +19,14 @@
  */
 import {
   AbsoluteTime,
-  addPaytoQueryParams, AmountJson, Amounts,
+  addPaytoQueryParams,
+  AmountJson,
+  Amounts,
   constructPayPullUri,
   constructPayPushUri,
   Logger,
-  OrderShortInfo, PaymentStatus,
+  OrderShortInfo,
+  PaymentStatus,
   RefundInfoShort,
   TalerProtocolTimestamp,
   Transaction,
@@ -33,7 +36,7 @@ import {
   TransactionsResponse,
   TransactionType,
   WithdrawalDetails,
-  WithdrawalType
+  WithdrawalType,
 } from "@gnu-taler/taler-util";
 import {
   AbortStatus,
@@ -47,7 +50,7 @@ import {
   TipRecord,
   WalletRefundItem,
   WithdrawalGroupRecord,
-  WithdrawalRecordType
+  WithdrawalRecordType,
 } from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { RetryTags } from "../util/retries.js";
@@ -140,55 +143,92 @@ export async function getTransactionById(
   ) {
     const withdrawalGroupId = rest[0];
     return await ws.db
-      .mktx((x) => [x.withdrawalGroups, x.exchangeDetails, x.exchanges, x.operationRetries])
+      .mktx((x) => [
+        x.withdrawalGroups,
+        x.exchangeDetails,
+        x.exchanges,
+        x.operationRetries,
+      ])
       .runReadWrite(async (tx) => {
         const withdrawalGroupRecord = await tx.withdrawalGroups.get(
           withdrawalGroupId,
         );
 
-        if (!withdrawalGroupRecord) throw Error("not found")
+        if (!withdrawalGroupRecord) throw Error("not found");
 
         const opId = RetryTags.forWithdrawal(withdrawalGroupRecord);
         const ort = await tx.operationRetries.get(opId);
 
-        if (withdrawalGroupRecord.wgInfo.withdrawalType === WithdrawalRecordType.BankIntegrated) {
-          return buildTransactionForBankIntegratedWithdraw(withdrawalGroupRecord, ort);
+        if (
+          withdrawalGroupRecord.wgInfo.withdrawalType ===
+          WithdrawalRecordType.BankIntegrated
+        ) {
+          return buildTransactionForBankIntegratedWithdraw(
+            withdrawalGroupRecord,
+            ort,
+          );
         }
-        if (withdrawalGroupRecord.wgInfo.withdrawalType === WithdrawalRecordType.PeerPullCredit) {
-          return buildTransactionForPullPaymentCredit(withdrawalGroupRecord, ort);
+        if (
+          withdrawalGroupRecord.wgInfo.withdrawalType ===
+          WithdrawalRecordType.PeerPullCredit
+        ) {
+          return buildTransactionForPullPaymentCredit(
+            withdrawalGroupRecord,
+            ort,
+          );
         }
-        if (withdrawalGroupRecord.wgInfo.withdrawalType === WithdrawalRecordType.PeerPushCredit) {
-          return buildTransactionForPushPaymentCredit(withdrawalGroupRecord, ort);
+        if (
+          withdrawalGroupRecord.wgInfo.withdrawalType ===
+          WithdrawalRecordType.PeerPushCredit
+        ) {
+          return buildTransactionForPushPaymentCredit(
+            withdrawalGroupRecord,
+            ort,
+          );
         }
-        const exchangeDetails = await getExchangeDetails(tx, withdrawalGroupRecord.exchangeBaseUrl,);
-        if (!exchangeDetails) throw Error('not exchange details')
+        const exchangeDetails = await getExchangeDetails(
+          tx,
+          withdrawalGroupRecord.exchangeBaseUrl,
+        );
+        if (!exchangeDetails) throw Error("not exchange details");
 
-        return buildTransactionForManualWithdraw(withdrawalGroupRecord, exchangeDetails, ort);
-
+        return buildTransactionForManualWithdraw(
+          withdrawalGroupRecord,
+          exchangeDetails,
+          ort,
+        );
       });
-
   } else if (type === TransactionType.Payment) {
     const proposalId = rest[0];
     return await ws.db
       .mktx((x) => [x.purchases, x.tombstones, x.operationRetries])
       .runReadWrite(async (tx) => {
         const purchase = await tx.purchases.get(proposalId);
-        if (!purchase) throw Error("not found")
+        if (!purchase) throw Error("not found");
 
-        const filteredRefunds = await Promise.all(Object.values(purchase.refunds).map(async r => {
-          const t = await tx.tombstones.get(makeEventId(
-            TombstoneTag.DeleteRefund,
-            purchase.proposalId,
-            `${r.executionTime.t_s}`,
-          ))
-          if (!t) return r
-          return undefined
-        }));
+        const filteredRefunds = await Promise.all(
+          Object.values(purchase.refunds).map(async (r) => {
+            const t = await tx.tombstones.get(
+              makeEventId(
+                TombstoneTag.DeleteRefund,
+                purchase.proposalId,
+                `${r.executionTime.t_s}`,
+              ),
+            );
+            if (!t) return r;
+            return undefined;
+          }),
+        );
 
-        const cleanRefunds = filteredRefunds.filter((x): x is WalletRefundItem => !!x);
+        const cleanRefunds = filteredRefunds.filter(
+          (x): x is WalletRefundItem => !!x,
+        );
 
         const contractData = purchase.download.contractData;
-        const refunds = mergeRefundByExecutionTime(cleanRefunds, Amounts.getZero(contractData.amount.currency));
+        const refunds = mergeRefundByExecutionTime(
+          cleanRefunds,
+          Amounts.getZero(contractData.amount.currency),
+        );
 
         const payOpId = RetryTags.forPay(purchase);
         const refundQueryOpId = RetryTags.forRefundQuery(purchase);
@@ -197,24 +237,28 @@ export async function getTransactionById(
           refundQueryOpId,
         );
 
-        const err = payRetryRecord !== undefined ? payRetryRecord : refundQueryRetryRecord
+        const err =
+          payRetryRecord !== undefined
+            ? payRetryRecord
+            : refundQueryRetryRecord;
 
         return buildTransactionForPurchase(purchase, refunds, err);
       });
   } else if (type === TransactionType.Refresh) {
     const refreshGroupId = rest[0];
     throw Error(`no tx for refresh`);
-
   } else if (type === TransactionType.Tip) {
     const tipId = rest[0];
     return await ws.db
       .mktx((x) => [x.tips, x.operationRetries])
       .runReadWrite(async (tx) => {
         const tipRecord = await tx.tips.get(tipId);
-        if (!tipRecord) throw Error("not found")
+        if (!tipRecord) throw Error("not found");
 
-        const retries = await tx.operationRetries.get(RetryTags.forTipPickup(tipRecord));
-        return buildTransactionForTip(tipRecord, retries)
+        const retries = await tx.operationRetries.get(
+          RetryTags.forTipPickup(tipRecord),
+        );
+        return buildTransactionForTip(tipRecord, retries);
       });
   } else if (type === TransactionType.Deposit) {
     const depositGroupId = rest[0];
@@ -222,10 +266,12 @@ export async function getTransactionById(
       .mktx((x) => [x.depositGroups, x.operationRetries])
       .runReadWrite(async (tx) => {
         const depositRecord = await tx.depositGroups.get(depositGroupId);
-        if (!depositRecord) throw Error("not found")
+        if (!depositRecord) throw Error("not found");
 
-        const retries = await tx.operationRetries.get(RetryTags.forDeposit(depositRecord));
-        return buildTransactionForDeposit(depositRecord, retries)
+        const retries = await tx.operationRetries.get(
+          RetryTags.forDeposit(depositRecord),
+        );
+        return buildTransactionForDeposit(depositRecord, retries);
       });
   } else if (type === TransactionType.Refund) {
     const proposalId = rest[0];
@@ -235,27 +281,38 @@ export async function getTransactionById(
       .mktx((x) => [x.operationRetries, x.purchases, x.tombstones])
       .runReadWrite(async (tx) => {
         const purchase = await tx.purchases.get(proposalId);
-        if (!purchase) throw Error("not found")
+        if (!purchase) throw Error("not found");
 
-        const theRefund = Object.values(purchase.refunds).find(r => `${r.executionTime.t_s}` === executionTimeStr)
-        if (!theRefund) throw Error("not found")
+        const theRefund = Object.values(purchase.refunds).find(
+          (r) => `${r.executionTime.t_s}` === executionTimeStr,
+        );
+        if (!theRefund) throw Error("not found");
 
-        const t = await tx.tombstones.get(makeEventId(
-          TombstoneTag.DeleteRefund,
-          purchase.proposalId,
-          executionTimeStr,
-        ))
-        if (t) throw Error("deleted")
+        const t = await tx.tombstones.get(
+          makeEventId(
+            TombstoneTag.DeleteRefund,
+            purchase.proposalId,
+            executionTimeStr,
+          ),
+        );
+        if (t) throw Error("deleted");
 
         const contractData = purchase.download.contractData;
-        const refunds = mergeRefundByExecutionTime([theRefund], Amounts.getZero(contractData.amount.currency))
+        const refunds = mergeRefundByExecutionTime(
+          [theRefund],
+          Amounts.getZero(contractData.amount.currency),
+        );
 
         const refundQueryOpId = RetryTags.forRefundQuery(purchase);
         const refundQueryRetryRecord = await tx.operationRetries.get(
           refundQueryOpId,
         );
 
-        return buildTransactionForRefund(purchase, refunds[0], refundQueryRetryRecord);
+        return buildTransactionForRefund(
+          purchase,
+          refunds[0],
+          refundQueryRetryRecord,
+        );
       });
   } else if (type === TransactionType.PeerPullDebit) {
     const peerPullPaymentIncomingId = rest[0];
@@ -266,7 +323,7 @@ export async function getTransactionById(
           peerPullPaymentIncomingId,
         );
         if (!debit) throw Error("not found");
-        return buildTransactionForPullPaymentDebit(debit)
+        return buildTransactionForPullPaymentDebit(debit);
       });
   } else if (type === TransactionType.PeerPushDebit) {
     const pursePub = rest[0];
@@ -275,7 +332,7 @@ export async function getTransactionById(
       .runReadWrite(async (tx) => {
         const debit = await tx.peerPushPaymentInitiations.get(pursePub);
         if (!debit) throw Error("not found");
-        return buildTransactionForPushPaymentDebit(debit)
+        return buildTransactionForPushPaymentDebit(debit);
       });
   } else {
     const unknownTxType: never = type;
@@ -283,8 +340,10 @@ export async function getTransactionById(
   }
 }
 
-
-function buildTransactionForPushPaymentDebit(pi: PeerPushPaymentInitiationRecord, ort?: OperationRetryRecord): Transaction {
+function buildTransactionForPushPaymentDebit(
+  pi: PeerPushPaymentInitiationRecord,
+  ort?: OperationRetryRecord,
+): Transaction {
   return {
     type: TransactionType.PeerPushDebit,
     amountEffective: pi.amount,
@@ -301,15 +360,15 @@ function buildTransactionForPushPaymentDebit(pi: PeerPushPaymentInitiationRecord
       exchangeBaseUrl: pi.exchangeBaseUrl,
       contractPriv: pi.contractPriv,
     }),
-    transactionId: makeEventId(
-      TransactionType.PeerPushDebit,
-      pi.pursePub,
-    ),
+    transactionId: makeEventId(TransactionType.PeerPushDebit, pi.pursePub),
     ...(ort?.lastError ? { error: ort.lastError } : {}),
   };
 }
 
-function buildTransactionForPullPaymentDebit(pi: PeerPullPaymentIncomingRecord, ort?: OperationRetryRecord): Transaction {
+function buildTransactionForPullPaymentDebit(
+  pi: PeerPullPaymentIncomingRecord,
+  ort?: OperationRetryRecord,
+): Transaction {
   return {
     type: TransactionType.PeerPullDebit,
     amountEffective: Amounts.stringify(pi.contractTerms.amount),
@@ -327,11 +386,15 @@ function buildTransactionForPullPaymentDebit(pi: PeerPullPaymentIncomingRecord, 
       pi.peerPullPaymentIncomingId,
     ),
     ...(ort?.lastError ? { error: ort.lastError } : {}),
-  }
+  };
 }
 
-function buildTransactionForPullPaymentCredit(wsr: WithdrawalGroupRecord, ort?: OperationRetryRecord): Transaction {
-  if (wsr.wgInfo.withdrawalType !== WithdrawalRecordType.PeerPullCredit) throw Error("")
+function buildTransactionForPullPaymentCredit(
+  wsr: WithdrawalGroupRecord,
+  ort?: OperationRetryRecord,
+): Transaction {
+  if (wsr.wgInfo.withdrawalType !== WithdrawalRecordType.PeerPullCredit)
+    throw Error("");
   return {
     type: TransactionType.PeerPullCredit,
     amountEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
@@ -353,11 +416,15 @@ function buildTransactionForPullPaymentCredit(wsr: WithdrawalGroupRecord, ort?: 
     ),
     frozen: false,
     ...(ort?.lastError ? { error: ort.lastError } : {}),
-  }
+  };
 }
 
-function buildTransactionForPushPaymentCredit(wsr: WithdrawalGroupRecord, ort?: OperationRetryRecord): Transaction {
-  if (wsr.wgInfo.withdrawalType !== WithdrawalRecordType.PeerPushCredit) throw Error("")
+function buildTransactionForPushPaymentCredit(
+  wsr: WithdrawalGroupRecord,
+  ort?: OperationRetryRecord,
+): Transaction {
+  if (wsr.wgInfo.withdrawalType !== WithdrawalRecordType.PeerPushCredit)
+    throw Error("");
   return {
     type: TransactionType.PeerPushCredit,
     amountEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
@@ -375,11 +442,15 @@ function buildTransactionForPushPaymentCredit(wsr: WithdrawalGroupRecord, ort?: 
     ),
     frozen: false,
     ...(ort?.lastError ? { error: ort.lastError } : {}),
-  }
+  };
 }
 
-function buildTransactionForBankIntegratedWithdraw(wsr: WithdrawalGroupRecord, ort?: OperationRetryRecord): Transaction {
-  if (wsr.wgInfo.withdrawalType !== WithdrawalRecordType.BankIntegrated) throw Error("")
+function buildTransactionForBankIntegratedWithdraw(
+  wsr: WithdrawalGroupRecord,
+  ort?: OperationRetryRecord,
+): Transaction {
+  if (wsr.wgInfo.withdrawalType !== WithdrawalRecordType.BankIntegrated)
+    throw Error("");
 
   return {
     type: TransactionType.Withdrawal,
@@ -387,9 +458,7 @@ function buildTransactionForBankIntegratedWithdraw(wsr: WithdrawalGroupRecord, o
     amountRaw: Amounts.stringify(wsr.rawWithdrawalAmount),
     withdrawalDetails: {
       type: WithdrawalType.TalerBankIntegrationApi,
-      confirmed: wsr.wgInfo.bankInfo.timestampBankConfirmed
-        ? true
-        : false,
+      confirmed: wsr.wgInfo.bankInfo.timestampBankConfirmed ? true : false,
       reservePub: wsr.reservePub,
       bankConfirmationUrl: wsr.wgInfo.bankInfo.confirmUrl,
     },
@@ -402,11 +471,16 @@ function buildTransactionForBankIntegratedWithdraw(wsr: WithdrawalGroupRecord, o
     ),
     frozen: false,
     ...(ort?.lastError ? { error: ort.lastError } : {}),
-  }
+  };
 }
 
-function buildTransactionForManualWithdraw(wsr: WithdrawalGroupRecord, exchangeDetails: ExchangeDetailsRecord, ort?: OperationRetryRecord): Transaction {
-  if (wsr.wgInfo.withdrawalType !== WithdrawalRecordType.BankManual) throw Error("")
+function buildTransactionForManualWithdraw(
+  wsr: WithdrawalGroupRecord,
+  exchangeDetails: ExchangeDetailsRecord,
+  ort?: OperationRetryRecord,
+): Transaction {
+  if (wsr.wgInfo.withdrawalType !== WithdrawalRecordType.BankManual)
+    throw Error("");
 
   return {
     type: TransactionType.Withdrawal,
@@ -416,8 +490,8 @@ function buildTransactionForManualWithdraw(wsr: WithdrawalGroupRecord, exchangeD
       type: WithdrawalType.ManualTransfer,
       reservePub: wsr.reservePub,
       exchangePaytoUris:
-        exchangeDetails.wireInfo?.accounts.map(
-          (x) => addPaytoQueryParams(x.payto_uri, { subject: wsr.reservePub }),
+        exchangeDetails.wireInfo?.accounts.map((x) =>
+          addPaytoQueryParams(x.payto_uri, { subject: wsr.reservePub }),
         ) ?? [],
     },
     exchangeBaseUrl: wsr.exchangeBaseUrl,
@@ -429,10 +503,13 @@ function buildTransactionForManualWithdraw(wsr: WithdrawalGroupRecord, exchangeD
     ),
     frozen: false,
     ...(ort?.lastError ? { error: ort.lastError } : {}),
-  }
+  };
 }
 
-function buildTransactionForDeposit(dg: DepositGroupRecord, ort?: OperationRetryRecord): Transaction {
+function buildTransactionForDeposit(
+  dg: DepositGroupRecord,
+  ort?: OperationRetryRecord,
+): Transaction {
   return {
     type: TransactionType.Deposit,
     amountRaw: Amounts.stringify(dg.effectiveDepositAmount),
@@ -441,17 +518,17 @@ function buildTransactionForDeposit(dg: DepositGroupRecord, ort?: OperationRetry
     frozen: false,
     timestamp: dg.timestampCreated,
     targetPaytoUri: dg.wire.payto_uri,
-    transactionId: makeEventId(
-      TransactionType.Deposit,
-      dg.depositGroupId,
-    ),
+    transactionId: makeEventId(TransactionType.Deposit, dg.depositGroupId),
     depositGroupId: dg.depositGroupId,
     ...(ort?.lastError ? { error: ort.lastError } : {}),
-  }
+  };
 }
 
-function buildTransactionForTip(tipRecord: TipRecord, ort?: OperationRetryRecord): Transaction {
-  if (!tipRecord.acceptedTimestamp) throw Error("")
+function buildTransactionForTip(
+  tipRecord: TipRecord,
+  ort?: OperationRetryRecord,
+): Transaction {
+  if (!tipRecord.acceptedTimestamp) throw Error("");
 
   return {
     type: TransactionType.Tip,
@@ -460,18 +537,15 @@ function buildTransactionForTip(tipRecord: TipRecord, ort?: OperationRetryRecord
     pending: !tipRecord.pickedUpTimestamp,
     frozen: false,
     timestamp: tipRecord.acceptedTimestamp,
-    transactionId: makeEventId(
-      TransactionType.Tip,
-      tipRecord.walletTipId,
-    ),
+    transactionId: makeEventId(TransactionType.Tip, tipRecord.walletTipId),
     merchantBaseUrl: tipRecord.merchantBaseUrl,
     ...(ort?.lastError ? { error: ort.lastError } : {}),
-  }
+  };
 }
 
 /**
  * For a set of refund with the same executionTime.
- * 
+ *
  */
 interface MergedRefundInfo {
   executionTime: TalerProtocolTimestamp;
@@ -480,40 +554,56 @@ interface MergedRefundInfo {
   firstTimestamp: TalerProtocolTimestamp;
 }
 
-function mergeRefundByExecutionTime(rs: WalletRefundItem[], zero: AmountJson): MergedRefundInfo[] {
+function mergeRefundByExecutionTime(
+  rs: WalletRefundItem[],
+  zero: AmountJson,
+): MergedRefundInfo[] {
   const refundByExecTime = rs.reduce((prev, refund) => {
     const key = `${refund.executionTime.t_s}`;
 
     //refunds counts if applied
-    const effective = refund.type === RefundState.Applied ? Amounts.sub(
-      refund.refundAmount,
-      refund.refundFee,
-      refund.totalRefreshCostBound,
-    ).amount : zero
-    const raw = refund.type === RefundState.Applied ? refund.refundAmount : zero
+    const effective =
+      refund.type === RefundState.Applied
+        ? Amounts.sub(
+            refund.refundAmount,
+            refund.refundFee,
+            refund.totalRefreshCostBound,
+          ).amount
+        : zero;
+    const raw =
+      refund.type === RefundState.Applied ? refund.refundAmount : zero;
 
-    const v = prev.get(key)
+    const v = prev.get(key);
     if (!v) {
       prev.set(key, {
         executionTime: refund.executionTime,
         amountAppliedEffective: effective,
         amountAppliedRaw: raw,
-        firstTimestamp: refund.obtainedTime
-      })
+        firstTimestamp: refund.obtainedTime,
+      });
     } else {
       //v.executionTime is the same
-      v.amountAppliedEffective = Amounts.add(v.amountAppliedEffective, effective).amount;
-      v.amountAppliedRaw = Amounts.add(v.amountAppliedRaw).amount
-      v.firstTimestamp = TalerProtocolTimestamp.min(v.firstTimestamp, refund.obtainedTime);
+      v.amountAppliedEffective = Amounts.add(
+        v.amountAppliedEffective,
+        effective,
+      ).amount;
+      v.amountAppliedRaw = Amounts.add(v.amountAppliedRaw).amount;
+      v.firstTimestamp = TalerProtocolTimestamp.min(
+        v.firstTimestamp,
+        refund.obtainedTime,
+      );
     }
-    return prev
-  }, {} as Map<string, MergedRefundInfo>);
+    return prev;
+  }, new Map<string, MergedRefundInfo>());
 
   return Array.from(refundByExecTime.values());
 }
 
-function buildTransactionForRefund(purchaseRecord: PurchaseRecord, refundInfo: MergedRefundInfo, ort?: OperationRetryRecord): Transaction {
-
+function buildTransactionForRefund(
+  purchaseRecord: PurchaseRecord,
+  refundInfo: MergedRefundInfo,
+  ort?: OperationRetryRecord,
+): Transaction {
   const contractData = purchaseRecord.download.contractData;
 
   const info: OrderShortInfo = {
@@ -550,13 +640,16 @@ function buildTransactionForRefund(purchaseRecord: PurchaseRecord, refundInfo: M
     pending: false,
     frozen: false,
     ...(ort?.lastError ? { error: ort.lastError } : {}),
-  }
+  };
 }
 
-function buildTransactionForPurchase(purchaseRecord: PurchaseRecord, refundsInfo: MergedRefundInfo[], ort?: OperationRetryRecord): Transaction {
-
+function buildTransactionForPurchase(
+  purchaseRecord: PurchaseRecord,
+  refundsInfo: MergedRefundInfo[],
+  ort?: OperationRetryRecord,
+): Transaction {
   const contractData = purchaseRecord.download.contractData;
-  const zero = Amounts.getZero(contractData.amount.currency)
+  const zero = Amounts.getZero(contractData.amount.currency);
 
   const info: OrderShortInfo = {
     merchant: contractData.merchant,
@@ -571,25 +664,30 @@ function buildTransactionForPurchase(purchaseRecord: PurchaseRecord, refundsInfo
     info.fulfillmentUrl = contractData.fulfillmentUrl;
   }
 
-  const totalRefund = refundsInfo.reduce((prev, cur) => {
-    return {
-      raw: Amounts.add(prev.raw, cur.amountAppliedRaw).amount,
-      effective: Amounts.add(prev.effective, cur.amountAppliedEffective).amount,
-    }
-  }, {
-    raw: zero, effective: zero
-  } as { raw: AmountJson, effective: AmountJson })
+  const totalRefund = refundsInfo.reduce(
+    (prev, cur) => {
+      return {
+        raw: Amounts.add(prev.raw, cur.amountAppliedRaw).amount,
+        effective: Amounts.add(prev.effective, cur.amountAppliedEffective)
+          .amount,
+      };
+    },
+    {
+      raw: zero,
+      effective: zero,
+    } as { raw: AmountJson; effective: AmountJson },
+  );
 
-  const refunds: RefundInfoShort[] = refundsInfo.map(r => ({
+  const refunds: RefundInfoShort[] = refundsInfo.map((r) => ({
     amountEffective: Amounts.stringify(r.amountAppliedEffective),
     amountRaw: Amounts.stringify(r.amountAppliedRaw),
     timestamp: r.executionTime,
     transactionId: makeEventId(
       TransactionType.Refund,
       purchaseRecord.proposalId,
-      `${r.executionTime.t_s}`
+      `${r.executionTime.t_s}`,
     ),
-  }))
+  }));
 
   return {
     type: TransactionType.Payment,
@@ -617,7 +715,7 @@ function buildTransactionForPurchase(purchaseRecord: PurchaseRecord, refundsInfo
     info,
     frozen: purchaseRecord.payFrozen ?? false,
     ...(ort?.lastError ? { error: ort.lastError } : {}),
-  }
+  };
 }
 
 /**
@@ -703,7 +801,9 @@ export async function getTransactions(
         } else if (
           wsr.wgInfo.withdrawalType === WithdrawalRecordType.BankIntegrated
         ) {
-          transactions.push(buildTransactionForBankIntegratedWithdraw(wsr, ort));
+          transactions.push(
+            buildTransactionForBankIntegratedWithdraw(wsr, ort),
+          );
         } else {
           const exchangeDetails = await getExchangeDetails(
             tx,
@@ -714,7 +814,9 @@ export async function getTransactions(
             return;
           }
 
-          transactions.push(buildTransactionForManualWithdraw(wsr, exchangeDetails, ort));
+          transactions.push(
+            buildTransactionForManualWithdraw(wsr, exchangeDetails, ort),
+          );
         }
       });
 
@@ -747,19 +849,28 @@ export async function getTransactions(
           return;
         }
 
-        const filteredRefunds = await Promise.all(Object.values(pr.refunds).map(async r => {
-          const t = await tx.tombstones.get(makeEventId(
-            TombstoneTag.DeleteRefund,
-            pr.proposalId,
-            `${r.executionTime.t_s}`,
-          ))
-          if (!t) return r
-          return undefined
-        }));
+        const filteredRefunds = await Promise.all(
+          Object.values(pr.refunds).map(async (r) => {
+            const t = await tx.tombstones.get(
+              makeEventId(
+                TombstoneTag.DeleteRefund,
+                pr.proposalId,
+                `${r.executionTime.t_s}`,
+              ),
+            );
+            if (!t) return r;
+            return undefined;
+          }),
+        );
 
-        const cleanRefunds = filteredRefunds.filter((x): x is WalletRefundItem => !!x);
+        const cleanRefunds = filteredRefunds.filter(
+          (x): x is WalletRefundItem => !!x,
+        );
 
-        const refunds = mergeRefundByExecutionTime(cleanRefunds, Amounts.getZero(contractData.amount.currency));
+        const refunds = mergeRefundByExecutionTime(
+          cleanRefunds,
+          Amounts.getZero(contractData.amount.currency),
+        );
 
         refunds.forEach(async (refundInfo) => {
           const refundQueryOpId = RetryTags.forRefundQuery(pr);
@@ -768,9 +879,9 @@ export async function getTransactions(
           );
 
           transactions.push(
-            buildTransactionForRefund(pr, refundInfo, refundQueryRetryRecord)
-          )
-        })
+            buildTransactionForRefund(pr, refundInfo, refundQueryRetryRecord),
+          );
+        });
 
         const payOpId = RetryTags.forPay(pr);
         const refundQueryOpId = RetryTags.forRefundQuery(pr);
@@ -779,7 +890,10 @@ export async function getTransactions(
           refundQueryOpId,
         );
 
-        const err = payRetryRecord !== undefined ? payRetryRecord : refundQueryRetryRecord
+        const err =
+          payRetryRecord !== undefined
+            ? payRetryRecord
+            : refundQueryRetryRecord;
 
         transactions.push(buildTransactionForPurchase(pr, refunds, err));
       });
