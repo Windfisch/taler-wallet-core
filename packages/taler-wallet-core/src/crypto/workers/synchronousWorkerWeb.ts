@@ -20,8 +20,6 @@ import {
   TalerCryptoInterfaceR,
 } from "../cryptoImplementation.js";
 
-
-
 const logger = new Logger("synchronousWorker.ts");
 
 /**

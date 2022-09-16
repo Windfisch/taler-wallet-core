@@ -243,7 +243,7 @@ export async function scheduleRetry(
   return await ws.db
     .mktx((x) => [x.operationRetries])
     .runReadWrite(async (tx) => {
-      tx.operationRetries
+      tx.operationRetries;
       scheduleRetryInTx(ws, tx, opId, errorDetail);
     });
 }

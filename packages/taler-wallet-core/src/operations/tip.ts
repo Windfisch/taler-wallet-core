@@ -52,7 +52,10 @@ import {
   readSuccessResponseJsonOrThrow,
 } from "../util/http.js";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
-import { OperationAttemptResult, OperationAttemptResultType } from "../util/retries.js";
+import {
+  OperationAttemptResult,
+  OperationAttemptResultType,
+} from "../util/retries.js";
 import { makeCoinAvailable } from "../wallet.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
 import { makeEventId } from "./transactions.js";
@@ -362,9 +365,6 @@ export async function acceptTip(
     await processTip(ws, tipId);
   }
   return {
-    transactionId: makeEventId(
-      TransactionType.Tip,
-      tipId
-    )
-  }
+    transactionId: makeEventId(TransactionType.Tip, tipId),
+  };
 }

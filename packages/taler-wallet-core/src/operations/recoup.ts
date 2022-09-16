@@ -52,7 +52,11 @@ import {
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { GetReadWriteAccess } from "../util/query.js";
-import { OperationAttemptResult, RetryInfo, runOperationHandlerForResult } from "../util/retries.js";
+import {
+  OperationAttemptResult,
+  RetryInfo,
+  runOperationHandlerForResult,
+} from "../util/retries.js";
 import { guardOperationException } from "./common.js";
 import { createRefreshGroup, processRefreshGroup } from "./refresh.js";
 import { internalCreateWithdrawalGroup } from "./withdraw.js";

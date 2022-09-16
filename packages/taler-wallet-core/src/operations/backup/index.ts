@@ -86,7 +86,12 @@ import {
   checkDbInvariant,
   checkLogicInvariant,
 } from "../../util/invariants.js";
-import { OperationAttemptResult, OperationAttemptResultType, RetryTags, scheduleRetryInTx } from "../../util/retries.js";
+import {
+  OperationAttemptResult,
+  OperationAttemptResultType,
+  RetryTags,
+  scheduleRetryInTx,
+} from "../../util/retries.js";
 import {
   checkPaymentByProposalId,
   confirmPay,

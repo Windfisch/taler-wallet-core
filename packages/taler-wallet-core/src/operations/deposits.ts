@@ -505,7 +505,7 @@ export async function createDepositGroup(
 
   return {
     depositGroupId: depositGroupId,
-    transactionId: makeEventId(TransactionType.Deposit, depositGroupId)
+    transactionId: makeEventId(TransactionType.Deposit, depositGroupId),
   };
 }
 

@@ -42,7 +42,7 @@ export interface TimerHandle {
 }
 
 class IntervalHandle {
-  constructor(public h: any) { }
+  constructor(public h: any) {}
 
   clear(): void {
     clearInterval(this.h);
@@ -60,7 +60,7 @@ class IntervalHandle {
 }
 
 class TimeoutHandle {
-  constructor(public h: any) { }
+  constructor(public h: any) {}
 
   clear(): void {
     clearTimeout(this.h);
@@ -130,8 +130,6 @@ export class SetTimeoutTimerAPI implements TimerAPI {
   after(delayMs: number, callback: () => void): TimerHandle {
     return new TimeoutHandle(setTimeout(callback, delayMs));
   }
-
-
 }
 
 export const timer = new SetTimeoutTimerAPI();
@@ -146,7 +144,7 @@ export class TimerGroup {
 
   private idGen = 1;
 
-  constructor(public readonly timerApi: TimerAPI) { }
+  constructor(public readonly timerApi: TimerAPI) {}
 
   stopCurrentAndFutureTimers(): void {
     this.stopped = true;

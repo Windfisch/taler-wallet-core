@@ -14,7 +14,16 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AbsoluteTime, AmountJson, Amounts, DenominationInfo, FeeDescription, FeeDescriptionPair, TalerProtocolTimestamp, TimePoint } from "@gnu-taler/taler-util";
+import {
+  AbsoluteTime,
+  AmountJson,
+  Amounts,
+  DenominationInfo,
+  FeeDescription,
+  FeeDescriptionPair,
+  TalerProtocolTimestamp,
+  TimePoint,
+} from "@gnu-taler/taler-util";
 
 /**
  * Given a list of denominations with the same value and same period of time:
@@ -52,14 +61,17 @@ type PropsWithReturnType<T extends object, F> = Exclude<
  * Takes two list and create one with one timeline.
  * For any element in the position "p" on the left or right "list", then
  * list[p].until should be equal to list[p+1].from
- * 
+ *
  * @see {createDenominationTimeline}
- * 
+ *
  * @param left list denominations @type {FeeDescription}
  * @param right list denominations @type {FeeDescription}
  * @returns list of pairs for the same time
  */
-export function createDenominationPairTimeline(left: FeeDescription[], right: FeeDescription[]): FeeDescriptionPair[] {
+export function createDenominationPairTimeline(
+  left: FeeDescription[],
+  right: FeeDescription[],
+): FeeDescriptionPair[] {
   //both list empty, discarded
   if (left.length === 0 && right.length === 0) return [];
 
@@ -69,31 +81,41 @@ export function createDenominationPairTimeline(left: FeeDescription[], right: Fe
   let ri = 0;
 
   while (li < left.length && ri < right.length) {
-    const currentValue = Amounts.cmp(left[li].value, right[ri].value) < 0 ? left[li].value : right[ri].value;
+    const currentValue =
+      Amounts.cmp(left[li].value, right[ri].value) < 0
+        ? left[li].value
+        : right[ri].value;
 
-    let ll = 0 //left length (until next value)
-    while (li + ll < left.length && Amounts.cmp(left[li + ll].value, currentValue) === 0) {
-      ll++
+    let ll = 0; //left length (until next value)
+    while (
+      li + ll < left.length &&
+      Amounts.cmp(left[li + ll].value, currentValue) === 0
+    ) {
+      ll++;
     }
-    let rl = 0 //right length (until next value)
-    while (ri + rl < right.length && Amounts.cmp(right[ri + rl].value, currentValue) === 0) {
-      rl++
+    let rl = 0; //right length (until next value)
+    while (
+      ri + rl < right.length &&
+      Amounts.cmp(right[ri + rl].value, currentValue) === 0
+    ) {
+      rl++;
     }
-    const leftIsEmpty = ll === 0
-    const rightIsEmpty = rl === 0
+    const leftIsEmpty = ll === 0;
+    const rightIsEmpty = rl === 0;
     //check which start after, add gap so both list starts at the same time
     // one list may be empty
-    const leftStarts: AbsoluteTime =
-      leftIsEmpty ? { t_ms: "never" } : left[li].from;
-    const rightStarts: AbsoluteTime =
-      rightIsEmpty ? { t_ms: "never" } : right[ri].from;
+    const leftStarts: AbsoluteTime = leftIsEmpty
+      ? { t_ms: "never" }
+      : left[li].from;
+    const rightStarts: AbsoluteTime = rightIsEmpty
+      ? { t_ms: "never" }
+      : right[ri].from;
 
     //first time cut is the smallest time
     let timeCut: AbsoluteTime = leftStarts;
 
     if (AbsoluteTime.cmp(leftStarts, rightStarts) < 0) {
-      const ends =
-        rightIsEmpty ? left[li + ll - 1].until : right[0].from;
+      const ends = rightIsEmpty ? left[li + ll - 1].until : right[0].from;
 
       right.splice(ri, 0, {
         from: leftStarts,
@@ -102,11 +124,10 @@ export function createDenominationPairTimeline(left: FeeDescription[], right: Fe
       });
       rl++;
 
-      timeCut = leftStarts
+      timeCut = leftStarts;
     }
     if (AbsoluteTime.cmp(leftStarts, rightStarts) > 0) {
-      const ends =
-        leftIsEmpty ? right[ri + rl - 1].until : left[0].from;
+      const ends = leftIsEmpty ? right[ri + rl - 1].until : left[0].from;
 
       left.splice(li, 0, {
         from: rightStarts,
@@ -115,7 +136,7 @@ export function createDenominationPairTimeline(left: FeeDescription[], right: Fe
       });
       ll++;
 
-      timeCut = rightStarts
+      timeCut = rightStarts;
     }
 
     //check which ends sooner, add gap so both list ends at the same time
@@ -130,7 +151,6 @@ export function createDenominationPairTimeline(left: FeeDescription[], right: Fe
         value: left[0].value,
       });
       rl++;
-
     }
     if (AbsoluteTime.cmp(leftEnds, rightEnds) < 0) {
       left.splice(li + ll, 0, {
@@ -142,15 +162,23 @@ export function createDenominationPairTimeline(left: FeeDescription[], right: Fe
     }
 
     //now both lists are non empty and (starts,ends) at the same time
-    while (li < left.length && ri < right.length && Amounts.cmp(left[li].value, right[ri].value) === 0) {
-
-      if (AbsoluteTime.cmp(left[li].from, timeCut) !== 0 && AbsoluteTime.cmp(right[ri].from, timeCut) !== 0) {
+    while (
+      li < left.length &&
+      ri < right.length &&
+      Amounts.cmp(left[li].value, right[ri].value) === 0
+    ) {
+      if (
+        AbsoluteTime.cmp(left[li].from, timeCut) !== 0 &&
+        AbsoluteTime.cmp(right[ri].from, timeCut) !== 0
+      ) {
         // timeCut comes from the latest "until" (expiration from the previous)
         // and this value comes from the latest left or right
         // it should be the same as the "from" from one of the latest left or right
         // otherwise it means that there is missing a gap object in the middle
         // the list is not complete and the behavior is undefined
-        throw Error('one of the list is not completed: list[i].until !== list[i+1].from')
+        throw Error(
+          "one of the list is not completed: list[i].until !== list[i+1].from",
+        );
       }
 
       pairList.push({
@@ -172,21 +200,26 @@ export function createDenominationPairTimeline(left: FeeDescription[], right: Fe
         timeCut = right[ri].until;
         ri++;
       }
-      pairList[pairList.length - 1].until = timeCut
+      pairList[pairList.length - 1].until = timeCut;
 
-      if (li < left.length && Amounts.cmp(left[li].value, pairList[pairList.length - 1].value) !== 0) {
+      if (
+        li < left.length &&
+        Amounts.cmp(left[li].value, pairList[pairList.length - 1].value) !== 0
+      ) {
         //value changed, should break
         //this if will catch when both (left and right) change at the same time
         //if just one side changed it will catch in the while condition
         break;
       }
-
     }
-
   }
   //one of the list left or right can still have elements
   if (li < left.length) {
-    let timeCut = pairList.length > 0 && Amounts.cmp(pairList[pairList.length - 1].value, left[li].value) === 0 ? pairList[pairList.length - 1].until : left[li].from;
+    let timeCut =
+      pairList.length > 0 &&
+      Amounts.cmp(pairList[pairList.length - 1].value, left[li].value) === 0
+        ? pairList[pairList.length - 1].until
+        : left[li].from;
     while (li < left.length) {
       pairList.push({
         left: left[li].fee,
@@ -194,13 +227,17 @@ export function createDenominationPairTimeline(left: FeeDescription[], right: Fe
         from: timeCut,
         until: left[li].until,
         value: left[li].value,
-      })
-      timeCut = left[li].until
+      });
+      timeCut = left[li].until;
       li++;
     }
   }
   if (ri < right.length) {
-    let timeCut = pairList.length > 0 && Amounts.cmp(pairList[pairList.length - 1].value, right[ri].value) === 0 ? pairList[pairList.length - 1].until : right[ri].from;
+    let timeCut =
+      pairList.length > 0 &&
+      Amounts.cmp(pairList[pairList.length - 1].value, right[ri].value) === 0
+        ? pairList[pairList.length - 1].until
+        : right[ri].from;
     while (ri < right.length) {
       pairList.push({
         right: right[ri].fee,
@@ -208,12 +245,12 @@ export function createDenominationPairTimeline(left: FeeDescription[], right: Fe
         from: timeCut,
         until: right[ri].until,
         value: right[ri].value,
-      })
-      timeCut = right[ri].until
+      });
+      timeCut = right[ri].until;
       ri++;
     }
   }
-  return pairList
+  return pairList;
 }
 
 /**
