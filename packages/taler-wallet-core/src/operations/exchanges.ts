@@ -53,8 +53,6 @@ import {
   DenominationVerificationStatus,
   ExchangeDetailsRecord,
   ExchangeRecord,
-  OperationAttemptResult,
-  OperationAttemptResultType,
   WalletStoresV1,
 } from "../db.js";
 import { TalerError } from "../errors.js";
@@ -66,7 +64,7 @@ import {
   readSuccessResponseTextOrThrow,
 } from "../util/http.js";
 import { DbAccess, GetReadOnlyAccess } from "../util/query.js";
-import { RetryInfo, runOperationHandlerForResult } from "../util/retries.js";
+import { OperationAttemptResult, OperationAttemptResultType, RetryInfo, runOperationHandlerForResult } from "../util/retries.js";
 import { WALLET_EXCHANGE_PROTOCOL_VERSION } from "../versions.js";
 import { guardOperationException } from "./common.js";
 

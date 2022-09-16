@@ -125,14 +125,6 @@ export interface RecoupOperations {
   ): Promise<void>;
 }
 
-export type DenomInfo = DenominationInfo & {
-  /**
-   * The denomination public key.
-   */
-  denomPub: DenominationPubKey;
-}
-
-
 export type NotificationListener = (n: WalletNotification) => void;
 
 /**
@@ -184,7 +176,7 @@ export interface InternalWalletState {
     }>,
     exchangeBaseUrl: string,
     denomPubHash: string,
-  ): Promise<DenomInfo | undefined>;
+  ): Promise<DenominationInfo | undefined>;
 
   db: DbAccess<typeof WalletStoresV1>;
   http: HttpRequestLibrary;

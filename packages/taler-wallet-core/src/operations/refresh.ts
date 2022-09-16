@@ -25,6 +25,7 @@ import {
   codecForExchangeRevealResponse,
   CoinPublicKey,
   CoinPublicKeyString,
+  DenominationInfo,
   DenomKeyType,
   Duration,
   durationFromSpec,
@@ -42,7 +43,6 @@ import {
   NotificationType,
   RefreshGroupId,
   RefreshReason,
-  TalerErrorDetail,
   TalerProtocolTimestamp,
   URL,
 } from "@gnu-taler/taler-util";
@@ -64,7 +64,6 @@ import {
 } from "../db.js";
 import { TalerError } from "../errors.js";
 import {
-  DenomInfo,
   EXCHANGE_COINS_LOCK,
   InternalWalletState,
 } from "../internal-wallet-state.js";
@@ -74,9 +73,11 @@ import {
 } from "../util/http.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { GetReadWriteAccess } from "../util/query.js";
-import { OperationAttemptResult, OperationAttemptResultType, RetryInfo, runOperationHandlerForResult } from "../util/retries.js";
-import { makeCoinAvailable, Wallet } from "../wallet.js";
-import { guardOperationException } from "./common.js";
+import {
+  OperationAttemptResult,
+  OperationAttemptResultType,
+} from "../util/retries.js";
+import { makeCoinAvailable } from "../wallet.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
 import {
   isWithdrawableDenom,
@@ -98,7 +99,7 @@ const logger = new Logger("refresh.ts");
  */
 export function getTotalRefreshCost(
   denoms: DenominationRecord[],
-  refreshedDenom: DenomInfo,
+  refreshedDenom: DenominationInfo,
   amountLeft: AmountJson,
 ): AmountJson {
   const withdrawAmount = Amounts.sub(

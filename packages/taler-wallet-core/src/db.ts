@@ -44,10 +44,10 @@ import {
   PeerContractTerms,
   Location,
   WireInfo,
+  DenominationInfo,
 } from "@gnu-taler/taler-util";
 import { RetryInfo, RetryTags } from "./util/retries.js";
 import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
-import { DenomInfo } from "./internal-wallet-state.js";
 
 /**
  * Name of the Taler database.  This is effectively the major
@@ -330,7 +330,7 @@ export namespace DenominationRecord {
     };
   }
 
-  export function toDenomInfo(d: DenominationRecord): DenomInfo {
+  export function toDenomInfo(d: DenominationRecord): DenominationInfo {
     return {
       denomPub: d.denomPub,
       denomPubHash: d.denomPubHash,
@@ -1719,7 +1719,7 @@ export interface OperationRetryRecord {
   /**
    * Unique identifier for the operation.  Typically of
    * the format `${opType}-${opUniqueKey}`
-   * 
+   *
    * @see {@link RetryTags}
    */
   id: string;

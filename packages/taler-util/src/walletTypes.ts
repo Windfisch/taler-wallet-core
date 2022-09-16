@@ -682,21 +682,6 @@ const codecForWireInfo = (): Codec<WireInfo> =>
     .property("accounts", codecForList(codecForExchangeAccount()))
     .build("codecForWireInfo");
 
-const codecForDenominationInfo = (): Codec<DenominationInfo> =>
-  buildCodecForObject<DenominationInfo>()
-    .property("denomPubHash", codecForString())
-    .property("value", codecForAmountJson())
-    .property("feeWithdraw", codecForAmountJson())
-    .property("feeDeposit", codecForAmountJson())
-    .property("feeRefresh", codecForAmountJson())
-    .property("feeRefund", codecForAmountJson())
-    .property("stampStart", codecForTimestamp)
-    .property("stampExpireWithdraw", codecForTimestamp)
-    .property("stampExpireLegal", codecForTimestamp)
-    .property("stampExpireDeposit", codecForTimestamp)
-    .property("exchangeBaseUrl", codecForString())
-    .build("codecForDenominationInfo");
-
 export interface DenominationInfo {
   /**
    * Value of one coin of the denomination.
@@ -708,6 +693,8 @@ export interface DenominationInfo {
    * Stored in the database for faster lookups.
    */
   denomPubHash: string;
+
+  denomPub: DenominationPubKey;
 
   /**
    * Fee for withdrawing.

@@ -92,6 +92,7 @@ import {
   FeeDescription,
   TalerErrorDetail,
   codecForTransactionByIdRequest,
+  DenominationInfo,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import {
@@ -115,7 +116,6 @@ import {
 } from "./errors.js";
 import { createDenominationTimeline } from "./index.browser.js";
 import {
-  DenomInfo,
   ExchangeOperations,
   InternalWalletState,
   MerchantInfo,
@@ -746,7 +746,7 @@ async function getExchangeDetailedInfo(
         return;
       }
 
-      const denominations: DenomInfo[] = denominationRecords.map((x) =>
+      const denominations: DenominationInfo[] = denominationRecords.map((x) =>
         DenominationRecord.toDenomInfo(x),
       );
 
@@ -1572,7 +1572,7 @@ class InternalWalletStateImpl implements InternalWalletState {
   };
 
   // FIXME: Use an LRU cache here.
-  private denomCache: Record<string, DenomInfo> = {};
+  private denomCache: Record<string, DenominationInfo> = {};
 
   /**
    * Promises that are waiting for a particular resource.
@@ -1606,7 +1606,7 @@ class InternalWalletStateImpl implements InternalWalletState {
     }>,
     exchangeBaseUrl: string,
     denomPubHash: string,
-  ): Promise<DenomInfo | undefined> {
+  ): Promise<DenominationInfo | undefined> {
     const key = `${exchangeBaseUrl}:${denomPubHash}`;
     const cached = this.denomCache[key];
     if (cached) {
