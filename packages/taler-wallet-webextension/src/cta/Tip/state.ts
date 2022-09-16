@@ -52,7 +52,7 @@ export function useComponentState(
 
     //FIX: this may not be seen since we are moving to the success also
     tipInfo.retry();
-    onSuccess(res.transactionId)
+    onSuccess(res.transactionId);
   };
 
   const baseInfo = {

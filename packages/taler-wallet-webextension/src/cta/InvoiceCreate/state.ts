@@ -87,7 +87,7 @@ export function useComponentState(
     invalid: !subject || Amounts.isZero(amount),
     exchangeUrl: selected.exchangeBaseUrl,
     create: {
-      onClick: accept
+      onClick: accept,
     },
     cancel: {
       onClick: onClose,

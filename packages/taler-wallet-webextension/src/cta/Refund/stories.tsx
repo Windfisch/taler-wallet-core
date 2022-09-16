@@ -22,11 +22,7 @@
 import { Amounts } from "@gnu-taler/taler-util";
 import beer from "../../../static-dev/beer.png";
 import { createExample } from "../../test-utils.js";
-import {
-  IgnoredView,
-  InProgressView,
-  ReadyView,
-} from "./views.js";
+import { IgnoredView, InProgressView, ReadyView } from "./views.js";
 export default {
   title: "cta/refund",
 };

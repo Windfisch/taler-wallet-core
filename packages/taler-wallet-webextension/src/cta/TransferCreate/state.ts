@@ -31,7 +31,6 @@ export function useComponentState(
     TalerErrorDetail | undefined
   >(undefined);
 
-
   async function accept(): Promise<void> {
     try {
       const resp = await api.initiatePeerPushPayment({
@@ -61,7 +60,7 @@ export function useComponentState(
       onInput: async (e) => setSubject(e),
     },
     create: {
-      onClick: accept
+      onClick: accept,
     },
     chosenAmount: amount,
     toBeReceived: amount,

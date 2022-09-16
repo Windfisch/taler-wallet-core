@@ -40,7 +40,9 @@ describe("Refund CTA states", () => {
             cancel: async () => {
               null;
             },
-            onSuccess: async () => { null; },
+            onSuccess: async () => {
+              null;
+            },
           },
           {
             prepareRefund: async () => ({}),
@@ -80,26 +82,28 @@ describe("Refund CTA states", () => {
             cancel: async () => {
               null;
             },
-            onSuccess: async () => { null; },
+            onSuccess: async () => {
+              null;
+            },
           },
           {
             prepareRefund: async () =>
-            ({
-              effectivePaid: "EUR:2",
-              awaiting: "EUR:2",
-              gone: "EUR:0",
-              granted: "EUR:0",
-              pending: false,
-              proposalId: "1",
-              info: {
-                contractTermsHash: "123",
-                merchant: {
-                  name: "the merchant name",
+              ({
+                effectivePaid: "EUR:2",
+                awaiting: "EUR:2",
+                gone: "EUR:0",
+                granted: "EUR:0",
+                pending: false,
+                proposalId: "1",
+                info: {
+                  contractTermsHash: "123",
+                  merchant: {
+                    name: "the merchant name",
+                  },
+                  orderId: "orderId1",
+                  summary: "the summary",
                 },
-                orderId: "orderId1",
-                summary: "the summary",
-              },
-            } as PrepareRefundResult as any),
+              } as PrepareRefundResult as any),
             applyRefund: async () => ({}),
             onUpdateNotification: async () => ({}),
           } as any,
@@ -138,26 +142,28 @@ describe("Refund CTA states", () => {
             cancel: async () => {
               null;
             },
-            onSuccess: async () => { null; },
+            onSuccess: async () => {
+              null;
+            },
           },
           {
             prepareRefund: async () =>
-            ({
-              effectivePaid: "EUR:2",
-              awaiting: "EUR:2",
-              gone: "EUR:0",
-              granted: "EUR:0",
-              pending: false,
-              proposalId: "1",
-              info: {
-                contractTermsHash: "123",
-                merchant: {
-                  name: "the merchant name",
+              ({
+                effectivePaid: "EUR:2",
+                awaiting: "EUR:2",
+                gone: "EUR:0",
+                granted: "EUR:0",
+                pending: false,
+                proposalId: "1",
+                info: {
+                  contractTermsHash: "123",
+                  merchant: {
+                    name: "the merchant name",
+                  },
+                  orderId: "orderId1",
+                  summary: "the summary",
                 },
-                orderId: "orderId1",
-                summary: "the summary",
-              },
-            } as PrepareRefundResult as any),
+              } as PrepareRefundResult as any),
             applyRefund: async () => ({}),
             onUpdateNotification: async () => ({}),
           } as any,
@@ -223,27 +229,28 @@ describe("Refund CTA states", () => {
             cancel: async () => {
               null;
             },
-            onSuccess: async () => { null; },
-
+            onSuccess: async () => {
+              null;
+            },
           },
           {
             prepareRefund: async () =>
-            ({
-              awaiting: Amounts.stringify(awaiting),
-              effectivePaid: "EUR:2",
-              gone: "EUR:0",
-              granted: Amounts.stringify(granted),
-              pending,
-              proposalId: "1",
-              info: {
-                contractTermsHash: "123",
-                merchant: {
-                  name: "the merchant name",
+              ({
+                awaiting: Amounts.stringify(awaiting),
+                effectivePaid: "EUR:2",
+                gone: "EUR:0",
+                granted: Amounts.stringify(granted),
+                pending,
+                proposalId: "1",
+                info: {
+                  contractTermsHash: "123",
+                  merchant: {
+                    name: "the merchant name",
+                  },
+                  orderId: "orderId1",
+                  summary: "the summary",
                 },
-                orderId: "orderId1",
-                summary: "the summary",
-              },
-            } as PrepareRefundResult as any),
+              } as PrepareRefundResult as any),
             applyRefund: async () => ({}),
             onUpdateNotification: subscriptions.saveSubscription,
           } as any,

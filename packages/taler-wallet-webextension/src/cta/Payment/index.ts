@@ -85,7 +85,6 @@ export namespace State {
     payStatus: PreparePayResultAlreadyConfirmed;
     balance: AmountJson;
   }
-
 }
 
 const viewMapping: StateViewMap<State> = {

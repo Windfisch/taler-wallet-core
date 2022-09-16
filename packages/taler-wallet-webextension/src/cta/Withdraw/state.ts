@@ -40,8 +40,8 @@ export function useComponentStateFromParams(
   // get the first exchange with the currency as the default one
   const exchange = exchangeHookDep
     ? exchangeHookDep.exchanges.find(
-      (e) => e.currency === chosenAmount.currency,
-    )
+        (e) => e.currency === chosenAmount.currency,
+      )
     : undefined;
   /**
    * For the exchange selected, bring the status of the terms of service
@@ -152,8 +152,8 @@ export function useComponentStateFromParams(
   const { state: termsState } = (!terms
     ? undefined
     : terms.hasError
-      ? undefined
-      : terms.response) || { state: undefined };
+    ? undefined
+    : terms.response) || { state: undefined };
 
   async function onAccept(accepted: boolean): Promise<void> {
     if (!termsState || !exchange) return;
@@ -190,10 +190,10 @@ export function useComponentStateFromParams(
   //TODO: calculate based on exchange info
   const ageRestriction = ageRestrictionEnabled
     ? {
-      list: ageRestrictionOptions,
-      value: String(ageRestricted),
-      onChange: async (v: string) => setAgeRestricted(parseInt(v, 10)),
-    }
+        list: ageRestrictionOptions,
+        value: String(ageRestricted),
+        onChange: async (v: string) => setAgeRestricted(parseInt(v, 10)),
+      }
     : undefined;
 
   return {
@@ -214,12 +214,12 @@ export function useComponentStateFromParams(
     tosProps: !termsState
       ? undefined
       : {
-        onAccept,
-        onReview: setReviewing,
-        reviewed: reviewed,
-        reviewing: reviewing,
-        terms: termsState,
-      },
+          onAccept,
+          onReview: setReviewing,
+          reviewed: reviewed,
+          reviewing: reviewing,
+          terms: termsState,
+        },
     mustAcceptFirst,
     cancel,
   };
@@ -339,9 +339,8 @@ export function useComponentStateFromURI(
       if (res.confirmTransferUrl) {
         document.location.href = res.confirmTransferUrl;
       } else {
-        onSuccess(res.transactionId)
+        onSuccess(res.transactionId);
       }
-
     } catch (e) {
       if (e instanceof TalerError) {
         setWithdrawError(e);
@@ -372,8 +371,8 @@ export function useComponentStateFromURI(
   const { state: termsState } = (!terms
     ? undefined
     : terms.hasError
-      ? undefined
-      : terms.response) || { state: undefined };
+    ? undefined
+    : terms.response) || { state: undefined };
 
   async function onAccept(accepted: boolean): Promise<void> {
     if (!termsState || !thisExchange) return;
@@ -410,10 +409,10 @@ export function useComponentStateFromURI(
   //TODO: calculate based on exchange info
   const ageRestriction = ageRestrictionEnabled
     ? {
-      list: ageRestrictionOptions,
-      value: String(ageRestricted),
-      onChange: async (v: string) => setAgeRestricted(parseInt(v, 10)),
-    }
+        list: ageRestrictionOptions,
+        value: String(ageRestricted),
+        onChange: async (v: string) => setAgeRestricted(parseInt(v, 10)),
+      }
     : undefined;
 
   return {
@@ -435,12 +434,12 @@ export function useComponentStateFromURI(
     tosProps: !termsState
       ? undefined
       : {
-        onAccept,
-        onReview: setReviewing,
-        reviewed: reviewed,
-        reviewing: reviewing,
-        terms: termsState,
-      },
+          onAccept,
+          onReview: setReviewing,
+          reviewed: reviewed,
+          reviewing: reviewing,
+          terms: termsState,
+        },
     mustAcceptFirst,
     cancel,
   };

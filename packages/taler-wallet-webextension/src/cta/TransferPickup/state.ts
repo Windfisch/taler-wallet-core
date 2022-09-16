@@ -68,7 +68,7 @@ export function useComponentState(
       const resp = await api.acceptPeerPushPayment({
         peerPushPaymentIncomingId,
       });
-      onSuccess(resp.transactionId)
+      onSuccess(resp.transactionId);
     } catch (e) {
       if (e instanceof TalerError) {
         setOperationError(e.errorDetail);

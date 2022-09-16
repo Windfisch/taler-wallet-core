@@ -34,7 +34,9 @@ describe("Tip CTA states", () => {
             onCancel: async () => {
               null;
             },
-            onSuccess: async () => { null; },
+            onSuccess: async () => {
+              null;
+            },
           },
           {
             prepareTip: async () => ({}),
@@ -75,17 +77,19 @@ describe("Tip CTA states", () => {
             onCancel: async () => {
               null;
             },
-            onSuccess: async () => { null; },
+            onSuccess: async () => {
+              null;
+            },
           },
           {
             prepareTip: async () =>
-            ({
-              accepted: tipAccepted,
-              exchangeBaseUrl: "exchange url",
-              merchantBaseUrl: "merchant url",
-              tipAmountEffective: "EUR:1",
-              walletTipId: "tip_id",
-            } as PrepareTipResult as any),
+              ({
+                accepted: tipAccepted,
+                exchangeBaseUrl: "exchange url",
+                merchantBaseUrl: "merchant url",
+                tipAmountEffective: "EUR:1",
+                walletTipId: "tip_id",
+              } as PrepareTipResult as any),
             acceptTip: async () => {
               tipAccepted = true;
             },
@@ -136,16 +140,18 @@ describe("Tip CTA states", () => {
             onCancel: async () => {
               null;
             },
-            onSuccess: async () => { null; },
+            onSuccess: async () => {
+              null;
+            },
           },
           {
             prepareTip: async () =>
-            ({
-              exchangeBaseUrl: "exchange url",
-              merchantBaseUrl: "merchant url",
-              tipAmountEffective: "EUR:1",
-              walletTipId: "tip_id",
-            } as PrepareTipResult as any),
+              ({
+                exchangeBaseUrl: "exchange url",
+                merchantBaseUrl: "merchant url",
+                tipAmountEffective: "EUR:1",
+                walletTipId: "tip_id",
+              } as PrepareTipResult as any),
             acceptTip: async () => ({}),
           } as any,
         ),
@@ -191,17 +197,19 @@ describe("Tip CTA states", () => {
             onCancel: async () => {
               null;
             },
-            onSuccess: async () => { null; },
+            onSuccess: async () => {
+              null;
+            },
           },
           {
             prepareTip: async () =>
-            ({
-              accepted: true,
-              exchangeBaseUrl: "exchange url",
-              merchantBaseUrl: "merchant url",
-              tipAmountEffective: "EUR:1",
-              walletTipId: "tip_id",
-            } as PrepareTipResult as any),
+              ({
+                accepted: true,
+                exchangeBaseUrl: "exchange url",
+                merchantBaseUrl: "merchant url",
+                tipAmountEffective: "EUR:1",
+                walletTipId: "tip_id",
+              } as PrepareTipResult as any),
             acceptTip: async () => ({}),
           } as any,
         ),

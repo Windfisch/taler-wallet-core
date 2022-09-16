@@ -68,7 +68,9 @@ describe("Withdraw CTA states", () => {
             cancel: async () => {
               null;
             },
-            onSuccess: async () => { null },
+            onSuccess: async () => {
+              null;
+            },
           },
           {
             listExchanges: async () => ({ exchanges }),
@@ -109,7 +111,9 @@ describe("Withdraw CTA states", () => {
             cancel: async () => {
               null;
             },
-            onSuccess: async () => { null },
+            onSuccess: async () => {
+              null;
+            },
           },
           {
             listExchanges: async () => ({ exchanges }),
@@ -152,7 +156,9 @@ describe("Withdraw CTA states", () => {
             cancel: async () => {
               null;
             },
-            onSuccess: async () => { null },
+            onSuccess: async () => {
+              null;
+            },
           },
           {
             listExchanges: async () => ({ exchanges }),
@@ -163,10 +169,10 @@ describe("Withdraw CTA states", () => {
             }),
             getExchangeWithdrawalInfo:
               async (): Promise<ExchangeWithdrawDetails> =>
-              ({
-                withdrawalAmountRaw: "ARS:2",
-                withdrawalAmountEffective: "ARS:2",
-              } as any),
+                ({
+                  withdrawalAmountRaw: "ARS:2",
+                  withdrawalAmountEffective: "ARS:2",
+                } as any),
             getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
               contentType: "text",
               content: "just accept",
@@ -227,7 +233,9 @@ describe("Withdraw CTA states", () => {
             cancel: async () => {
               null;
             },
-            onSuccess: async () => { null },
+            onSuccess: async () => {
+              null;
+            },
           },
           {
             listExchanges: async () => ({ exchanges }),
@@ -238,10 +246,10 @@ describe("Withdraw CTA states", () => {
             }),
             getExchangeWithdrawalInfo:
               async (): Promise<ExchangeWithdrawDetails> =>
-              ({
-                withdrawalAmountRaw: "ARS:2",
-                withdrawalAmountEffective: "ARS:2",
-              } as any),
+                ({
+                  withdrawalAmountRaw: "ARS:2",
+                  withdrawalAmountEffective: "ARS:2",
+                } as any),
             getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
               contentType: "text",
               content: "just accept",

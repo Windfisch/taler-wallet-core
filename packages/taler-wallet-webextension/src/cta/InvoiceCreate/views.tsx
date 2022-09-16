@@ -45,7 +45,6 @@ export function LoadingUriView({ error }: State.LoadingUriError): VNode {
   );
 }
 
-
 export function ReadyView({
   invalid,
   exchangeUrl,

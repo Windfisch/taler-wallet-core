@@ -634,7 +634,7 @@ export function TransactionView({
           text={transaction.exchangeBaseUrl}
           kind="neutral"
         />
-        {transaction.pending && ( /** pending is not-pay */
+        {transaction.pending /** pending is not-pay */ && (
           <Part
             title={<i18n.Translate>URI</i18n.Translate>}
             text={<ShowQrWithCopy text={transaction.talerUri} />}
@@ -720,13 +720,13 @@ export function TransactionView({
           text={transaction.exchangeBaseUrl}
           kind="neutral"
         />
-            {/* {transaction.pending && ( //pending is not-received 
+        {/* {transaction.pending && ( //pending is not-received 
             )} */}
-          <Part
-            title={<i18n.Translate>URI</i18n.Translate>}
-            text={<ShowQrWithCopy text={transaction.talerUri} />}
-            kind="neutral"
-            />
+        <Part
+          title={<i18n.Translate>URI</i18n.Translate>}
+          text={<ShowQrWithCopy text={transaction.talerUri} />}
+          kind="neutral"
+        />
         <Part
           title={<i18n.Translate>Details</i18n.Translate>}
           text={

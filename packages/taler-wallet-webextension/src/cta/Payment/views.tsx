@@ -166,14 +166,14 @@ export function BaseView(state: SupportedStates): VNode {
           />
         )}
       </section>
-        <ButtonsSection
-          amount={state.amount}
-          balance={state.balance}
-          payStatus={state.payStatus}
-          uri={state.uri}
-          payHandler={state.status === "ready" ? state.payHandler : undefined}
-          goToWalletManualWithdraw={state.goToWalletManualWithdraw}
-        />
+      <ButtonsSection
+        amount={state.amount}
+        balance={state.balance}
+        payStatus={state.payStatus}
+        uri={state.uri}
+        payHandler={state.status === "ready" ? state.payHandler : undefined}
+        goToWalletManualWithdraw={state.goToWalletManualWithdraw}
+      />
       <section>
         <Link upperCased onClick={state.cancel}>
           <i18n.Translate>Cancel</i18n.Translate>

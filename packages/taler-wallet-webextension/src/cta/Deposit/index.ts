@@ -30,10 +30,7 @@ export interface Props {
   onSuccess: (tx: string) => Promise<void>;
 }
 
-export type State =
-  | State.Loading
-  | State.LoadingUriError
-  | State.Ready;
+export type State = State.Loading | State.LoadingUriError | State.Ready;
 
 export namespace State {
   export interface Loading {

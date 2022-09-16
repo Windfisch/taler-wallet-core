@@ -333,5 +333,3 @@ export const AlreadyConfirmedByOther = createExample(BaseView, {
     paid: false,
   },
 });
-
-

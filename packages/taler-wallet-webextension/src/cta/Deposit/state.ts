@@ -24,7 +24,6 @@ export function useComponentState(
   { talerDepositUri, amountStr, cancel, onSuccess }: Props,
   api: typeof wxApi,
 ): State {
-
   const info = useAsyncAsHook(async () => {
     if (!talerDepositUri) throw Error("ERROR_NO-URI-FOR-DEPOSIT");
     if (!amountStr) throw Error("ERROR_NO-AMOUNT-FOR-DEPOSIT");
