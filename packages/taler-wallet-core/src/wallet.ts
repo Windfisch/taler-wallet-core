@@ -1462,7 +1462,7 @@ export async function handleCoreApiRequest(
  */
 export class Wallet {
   private ws: InternalWalletState;
-  private _client: WalletCoreApiClient;
+  private _client: WalletCoreApiClient | undefined;
 
   private constructor(
     db: DbAccess<typeof WalletStoresV1>,
@@ -1474,6 +1474,9 @@ export class Wallet {
   }
 
   get client(): WalletCoreApiClient {
+    if (!this._client) {
+      throw Error();
+    }
     return this._client;
   }
 
