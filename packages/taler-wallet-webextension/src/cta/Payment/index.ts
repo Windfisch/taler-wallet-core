@@ -35,6 +35,7 @@ export interface Props {
   talerPayUri?: string;
   goToWalletManualWithdraw: (amount?: string) => Promise<void>;
   cancel: () => Promise<void>;
+  onSuccess: (tx: string) => Promise<void>;
 }
 
 export type State =
@@ -43,7 +44,6 @@ export type State =
   | State.Ready
   | State.NoEnoughBalance
   | State.NoBalanceForCurrency
-  | State.Completed
   | State.Confirmed;
 
 export namespace State {
@@ -86,13 +86,6 @@ export namespace State {
     balance: AmountJson;
   }
 
-  export interface Completed extends BaseInfo {
-    status: "completed";
-    payStatus: PreparePayResult;
-    payResult: ConfirmPayResult;
-    paymentError?: TalerError;
-    balance: AmountJson;
-  }
 }
 
 const viewMapping: StateViewMap<State> = {
@@ -101,7 +94,6 @@ const viewMapping: StateViewMap<State> = {
   "no-balance-for-currency": BaseView,
   "no-enough-balance": BaseView,
   confirmed: BaseView,
-  completed: BaseView,
   ready: BaseView,
 };
 

@@ -21,7 +21,7 @@ import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
-  { talerRefundUri, cancel }: Props,
+  { talerRefundUri, cancel, onSuccess }: Props,
   api: typeof wxApi,
 ): State {
   const [ignored, setIgnored] = useState(false);
@@ -51,8 +51,9 @@ export function useComponentState(
   const { refund, uri } = info.response;
 
   const doAccept = async (): Promise<void> => {
-    await api.applyRefund(uri);
-    info.retry();
+    const res = await api.applyRefund(uri);
+
+    onSuccess(res.transactionId);
   };
 
   const doIgnore = async (): Promise<void> => {
@@ -71,13 +72,6 @@ export function useComponentState(
   if (ignored) {
     return {
       status: "ignored",
-      ...baseInfo,
-    };
-  }
-
-  if (Amounts.isZero(baseInfo.awaitingAmount)) {
-    return {
-      status: "completed",
       ...baseInfo,
     };
   }

@@ -21,12 +21,9 @@ import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
-  { talerDepositUri, amountStr, cancel }: Props,
+  { talerDepositUri, amountStr, cancel, onSuccess }: Props,
   api: typeof wxApi,
 ): State {
-  const [result, setResult] = useState<CreateDepositGroupResponse | undefined>(
-    undefined,
-  );
 
   const info = useAsyncAsHook(async () => {
     if (!talerDepositUri) throw Error("ERROR_NO-URI-FOR-DEPOSIT");
@@ -51,14 +48,7 @@ export function useComponentState(
   const { deposit, uri, amount } = info.response;
   async function doDeposit(): Promise<void> {
     const resp = await api.createDepositGroup(uri, Amounts.stringify(amount));
-    setResult(resp);
-  }
-
-  if (result !== undefined) {
-    return {
-      status: "completed",
-      error: undefined,
-    };
+    onSuccess(resp.transactionId);
   }
 
   return {

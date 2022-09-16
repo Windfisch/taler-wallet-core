@@ -31,12 +31,9 @@ import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
-  { talerPayUri, cancel, goToWalletManualWithdraw }: Props,
+  { talerPayUri, cancel, goToWalletManualWithdraw, onSuccess }: Props,
   api: typeof wxApi,
 ): State {
-  const [payResult, setPayResult] = useState<ConfirmPayResult | undefined>(
-    undefined,
-  );
   const [payErrMsg, setPayErrMsg] = useState<TalerError | undefined>(undefined);
 
   const hook = useAsyncAsHook(async () => {
@@ -104,17 +101,6 @@ export function useComponentState(
 
   const foundAmount = Amounts.parseOrThrow(foundBalance.available);
 
-  if (payResult) {
-    return {
-      status: "completed",
-      balance: foundAmount,
-      payStatus,
-      paymentError: payErrMsg,
-      payResult,
-      ...baseResult,
-    };
-  }
-
   if (payStatus.status === PreparePayResultType.InsufficientBalance) {
     return {
       status: "no-enough-balance",
@@ -157,7 +143,7 @@ export function useComponentState(
           console.log(`should d to ${fu}`);
         }
       }
-      setPayResult(res);
+      onSuccess(res.transactionId);
     } catch (e) {
       if (e instanceof TalerError) {
         setPayErrMsg(e);

@@ -63,7 +63,6 @@ export function LoadingUriView({ error }: State.LoadingUriError): VNode {
 type SupportedStates =
   | State.Ready
   | State.Confirmed
-  | State.Completed
   | State.NoBalanceForCurrency
   | State.NoEnoughBalance;
 
@@ -167,7 +166,6 @@ export function BaseView(state: SupportedStates): VNode {
           />
         )}
       </section>
-      {state.status !== "completed" ? (
         <ButtonsSection
           amount={state.amount}
           balance={state.balance}
@@ -176,7 +174,6 @@ export function BaseView(state: SupportedStates): VNode {
           payHandler={state.status === "ready" ? state.payHandler : undefined}
           goToWalletManualWithdraw={state.goToWalletManualWithdraw}
         />
-      ) : undefined}
       <section>
         <Link upperCased onClick={state.cancel}>
           <i18n.Translate>Cancel</i18n.Translate>
@@ -285,35 +282,6 @@ function ShowImportantMessage({ state }: { state: SupportedStates }): VNode {
     );
   }
 
-  if (state.status == "completed") {
-    const { payResult, paymentError } = state;
-    if (paymentError) {
-      return <ErrorTalerOperation error={paymentError.errorDetail} />;
-    }
-    if (payResult.type === ConfirmPayResultType.Done) {
-      return (
-        <SuccessBox>
-          <h3>
-            <i18n.Translate>Payment complete</i18n.Translate>
-          </h3>
-          <p>
-            {!payResult.contractTerms.fulfillment_message ? (
-              payResult.contractTerms.fulfillment_url ? (
-                <i18n.Translate>
-                  You are going to be redirected to $
-                  {payResult.contractTerms.fulfillment_url}
-                </i18n.Translate>
-              ) : (
-                <i18n.Translate>You can close this page.</i18n.Translate>
-              )
-            ) : (
-              payResult.contractTerms.fulfillment_message
-            )}
-          </p>
-        </SuccessBox>
-      );
-    }
-  }
   return <Fragment />;
 }
 

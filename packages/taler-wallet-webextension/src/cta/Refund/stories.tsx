@@ -23,7 +23,6 @@ import { Amounts } from "@gnu-taler/taler-util";
 import beer from "../../../static-dev/beer.png";
 import { createExample } from "../../test-utils.js";
 import {
-  CompletedView,
   IgnoredView,
   InProgressView,
   ReadyView,
@@ -31,15 +30,6 @@ import {
 export default {
   title: "cta/refund",
 };
-
-export const Complete = createExample(CompletedView, {
-  status: "completed",
-  amount: Amounts.parseOrThrow("USD:1"),
-  granted: Amounts.parseOrThrow("USD:1"),
-  error: undefined,
-  merchantName: "the merchant",
-  products: undefined,
-});
 
 export const InProgress = createExample(InProgressView, {
   status: "in-progress",

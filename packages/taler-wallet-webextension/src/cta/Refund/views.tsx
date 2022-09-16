@@ -92,32 +92,6 @@ export function InProgressView(state: State.InProgress): VNode {
     </WalletAction>
   );
 }
-export function CompletedView(state: State.Completed): VNode {
-  const { i18n } = useTranslationContext();
-
-  return (
-    <WalletAction>
-      <LogoHeader />
-
-      <SubTitle>
-        <i18n.Translate>Digital cash refund</i18n.Translate>
-      </SubTitle>
-      <section>
-        <p>
-          <i18n.Translate>this refund is already accepted.</i18n.Translate>
-        </p>
-      </section>
-      <section>
-        <Part
-          big
-          title={<i18n.Translate>Total to refunded</i18n.Translate>}
-          text={<Amount value={state.granted} />}
-          kind="negative"
-        />
-      </section>
-    </WalletAction>
-  );
-}
 export function ReadyView(state: State.Ready): VNode {
   const { i18n } = useTranslationContext();
   return (

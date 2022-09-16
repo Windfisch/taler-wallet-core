@@ -21,19 +21,19 @@ import { ButtonHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import * as wxApi from "../../wxApi.js";
 import { useComponentState } from "./state.js";
-import { CompletedView, LoadingUriView, ReadyView } from "./views.js";
+import { LoadingUriView, ReadyView } from "./views.js";
 
 export interface Props {
   talerDepositUri: string | undefined;
   amountStr: AmountString | undefined;
   cancel: () => Promise<void>;
+  onSuccess: (tx: string) => Promise<void>;
 }
 
 export type State =
   | State.Loading
   | State.LoadingUriError
-  | State.Ready
-  | State.Completed;
+  | State.Ready;
 
 export namespace State {
   export interface Loading {
@@ -62,7 +62,6 @@ export namespace State {
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
   "loading-uri": LoadingUriView,
-  completed: CompletedView,
   ready: ReadyView,
 };
 

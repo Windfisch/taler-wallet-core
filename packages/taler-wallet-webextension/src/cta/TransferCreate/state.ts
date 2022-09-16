@@ -21,34 +21,18 @@ import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
-  { amount: amountStr, onClose }: Props,
+  { amount: amountStr, onClose, onSuccess }: Props,
   api: typeof wxApi,
 ): State {
   const amount = Amounts.parseOrThrow(amountStr);
 
   const [subject, setSubject] = useState("");
-  const [talerUri, setTalerUri] = useState("");
   const [operationError, setOperationError] = useState<
     TalerErrorDetail | undefined
   >(undefined);
 
-  if (talerUri) {
-    return {
-      status: "created",
-      talerUri,
-      error: undefined,
-      cancel: {
-        onClick: onClose,
-      },
-      copyToClipboard: {
-        onClick: async () => {
-          navigator.clipboard.writeText(talerUri);
-        },
-      },
-    };
-  }
 
-  async function accept(): Promise<string> {
+  async function accept(): Promise<void> {
     try {
       const resp = await api.initiatePeerPushPayment({
         amount: Amounts.stringify(amount),
@@ -56,7 +40,7 @@ export function useComponentState(
           summary: subject,
         },
       });
-      return resp.talerUri;
+      onSuccess(resp.transactionId);
     } catch (e) {
       if (e instanceof TalerError) {
         setOperationError(e.errorDetail);
@@ -77,10 +61,7 @@ export function useComponentState(
       onInput: async (e) => setSubject(e),
     },
     create: {
-      onClick: async () => {
-        const uri = await accept();
-        setTalerUri(uri);
-      },
+      onClick: accept
     },
     chosenAmount: amount,
     toBeReceived: amount,

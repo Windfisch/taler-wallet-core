@@ -21,7 +21,7 @@
 
 import { createExample } from "../../test-utils.js";
 import { TermsState } from "../../utils/index.js";
-import { CompletedView, SuccessView } from "./views.js";
+import { SuccessView } from "./views.js";
 
 export default {
   title: "cta/withdraw",
@@ -177,11 +177,6 @@ export const EditExchangeModified = createExample(SuccessView, {
     value: 2,
   },
   tosProps: normalTosState,
-});
-
-export const CompletedWithoutBankURL = createExample(CompletedView, {
-  status: "completed",
-  error: undefined,
 });
 
 export const WithAgeRestriction = createExample(SuccessView, {

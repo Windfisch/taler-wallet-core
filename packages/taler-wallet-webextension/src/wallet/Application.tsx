@@ -249,41 +249,49 @@ export function Application(): VNode {
                   redirectTo(Pages.ctaWithdrawManual({ amount }))
                 }
                 cancel={() => redirectTo(Pages.balance)}
+                onSuccess={(tid:string) => redirectTo(Pages.balanceTransaction({ tid }))}
               />
               <Route
                 path={Pages.ctaRefund}
                 component={RefundPage}
                 cancel={() => redirectTo(Pages.balance)}
+                onSuccess={(tid:string) => redirectTo(Pages.balanceTransaction({ tid }))}
               />
               <Route
                 path={Pages.ctaTips}
                 component={TipPage}
                 onCancel={() => redirectTo(Pages.balance)}
+                onSuccess={(tid:string) => redirectTo(Pages.balanceTransaction({ tid }))}
               />
               <Route
                 path={Pages.ctaWithdraw}
                 component={WithdrawPageFromURI}
                 cancel={() => redirectTo(Pages.balance)}
+                onSuccess={(tid:string) => redirectTo(Pages.balanceTransaction({ tid }))}
               />
               <Route
                 path={Pages.ctaWithdrawManual.pattern}
                 component={WithdrawPageFromParams}
                 cancel={() => redirectTo(Pages.balance)}
+                onSuccess={(tid:string) => redirectTo(Pages.balanceTransaction({ tid }))}
               />
               <Route
                 path={Pages.ctaDeposit}
                 component={DepositPageCTA}
                 cancel={() => redirectTo(Pages.balance)}
+                onSuccess={(tid:string) => redirectTo(Pages.balanceTransaction({ tid }))}
               />
               <Route
                 path={Pages.ctaInvoiceCreate.pattern}
                 component={InvoiceCreatePage}
                 onClose={() => redirectTo(Pages.balance)}
+                onSuccess={(tid:string) => redirectTo(Pages.balanceTransaction({ tid }))}
               />
               <Route
                 path={Pages.ctaTransferCreate.pattern}
                 component={TransferCreatePage}
                 onClose={() => redirectTo(Pages.balance)}
+                onSuccess={(tid:string) => redirectTo(Pages.balanceTransaction({ tid }))}
               />
               <Route
                 path={Pages.ctaInvoicePay}
@@ -292,11 +300,13 @@ export function Application(): VNode {
                   redirectTo(Pages.ctaWithdrawManual({ amount }))
                 }
                 onClose={() => redirectTo(Pages.balance)}
+                onSuccess={(tid:string) => redirectTo(Pages.balanceTransaction({ tid }))}
               />
               <Route
                 path={Pages.ctaTransferPickup}
                 component={TransferPickupPage}
                 onClose={() => redirectTo(Pages.balance)}
+                onSuccess={(tid:string) => redirectTo(Pages.balanceTransaction({ tid }))}
               />
 
               {/**

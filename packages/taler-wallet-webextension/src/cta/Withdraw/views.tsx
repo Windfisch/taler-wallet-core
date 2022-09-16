@@ -76,29 +76,6 @@ export function LoadingInfoView({ error }: State.LoadingInfoError): VNode {
   );
 }
 
-export function CompletedView(state: State.Completed): VNode {
-  const { i18n } = useTranslationContext();
-  return (
-    <WalletAction>
-      <LogoHeader />
-      <SubTitle>
-        <i18n.Translate>Digital cash withdrawal</i18n.Translate>
-      </SubTitle>
-      <SuccessBox>
-        <h3>
-          <i18n.Translate>Withdrawal in process...</i18n.Translate>
-        </h3>
-        <p>
-          <i18n.Translate>
-            You can close the page now. Check your bank if the transaction need
-            a confirmation step to be completed
-          </i18n.Translate>
-        </p>
-      </SuccessBox>
-    </WalletAction>
-  );
-}
-
 export function SuccessView(state: State.Success): VNode {
   const { i18n } = useTranslationContext();
   return (

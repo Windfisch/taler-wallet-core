@@ -27,7 +27,7 @@ import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
-  { talerPayPushUri, onClose }: Props,
+  { talerPayPushUri, onClose, onSuccess }: Props,
   api: typeof wxApi,
 ): State {
   const hook = useAsyncAsHook(async () => {
@@ -68,7 +68,7 @@ export function useComponentState(
       const resp = await api.acceptPeerPushPayment({
         peerPushPaymentIncomingId,
       });
-      await onClose();
+      onSuccess(resp.transactionId)
     } catch (e) {
       if (e instanceof TalerError) {
         setOperationError(e.errorDetail);

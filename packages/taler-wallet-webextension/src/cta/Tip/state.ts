@@ -21,7 +21,7 @@ import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
-  { talerTipUri, onCancel }: Props,
+  { talerTipUri, onCancel, onSuccess }: Props,
   api: typeof wxApi,
 ): State {
   const [tipIgnored, setTipIgnored] = useState(false);
@@ -48,8 +48,11 @@ export function useComponentState(
   const { tip } = tipInfo.response;
 
   const doAccept = async (): Promise<void> => {
-    await api.acceptTip({ walletTipId: tip.walletTipId });
+    const res = await api.acceptTip({ walletTipId: tip.walletTipId });
+
+    //FIX: this may not be seen since we are moving to the success also
     tipInfo.retry();
+    onSuccess(res.transactionId)
   };
 
   const baseInfo = {

@@ -22,7 +22,6 @@ import { compose, StateViewMap } from "../../utils/index.js";
 import * as wxApi from "../../wxApi.js";
 import { useComponentState } from "./state.js";
 import {
-  CompletedView,
   IgnoredView,
   InProgressView,
   LoadingUriView,
@@ -32,6 +31,7 @@ import {
 export interface Props {
   talerRefundUri?: string;
   cancel: () => Promise<void>;
+  onSuccess: (tx: string) => Promise<void>;
 }
 
 export type State =
@@ -39,8 +39,7 @@ export type State =
   | State.LoadingUriError
   | State.Ready
   | State.Ignored
-  | State.InProgress
-  | State.Completed;
+  | State.InProgress;
 
 export namespace State {
   export interface Loading {
@@ -79,17 +78,12 @@ export namespace State {
     status: "in-progress";
     error: undefined;
   }
-  export interface Completed extends BaseInfo {
-    status: "completed";
-    error: undefined;
-  }
 }
 
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
   "loading-uri": LoadingUriView,
   "in-progress": InProgressView,
-  completed: CompletedView,
   ignored: IgnoredView,
   ready: ReadyView,
 };

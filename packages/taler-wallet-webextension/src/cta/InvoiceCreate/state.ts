@@ -22,13 +22,12 @@ import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
-  { amount: amountStr, onClose }: Props,
+  { amount: amountStr, onClose, onSuccess }: Props,
   api: typeof wxApi,
 ): State {
   const amount = Amounts.parseOrThrow(amountStr);
 
   const [subject, setSubject] = useState("");
-  const [talerUri, setTalerUri] = useState("");
 
   const hook = useAsyncAsHook(api.listExchanges);
   const [exchangeIdx, setExchangeIdx] = useState("0");
@@ -49,22 +48,6 @@ export function useComponentState(
     };
   }
 
-  if (talerUri) {
-    return {
-      status: "created",
-      talerUri,
-      error: undefined,
-      cancel: {
-        onClick: onClose,
-      },
-      copyToClipboard: {
-        onClick: async () => {
-          navigator.clipboard.writeText(talerUri);
-        },
-      },
-    };
-  }
-
   const exchanges = hook.response.exchanges.filter(
     (e) => e.currency === amount.currency,
   );
@@ -74,7 +57,7 @@ export function useComponentState(
   );
   const selected = exchanges[Number(exchangeIdx)];
 
-  async function accept(): Promise<string> {
+  async function accept(): Promise<void> {
     try {
       const resp = await api.initiatePeerPullPayment({
         amount: Amounts.stringify(amount),
@@ -83,7 +66,8 @@ export function useComponentState(
           summary: subject,
         },
       });
-      return resp.talerUri;
+
+      onSuccess(resp.transactionId);
     } catch (e) {
       if (e instanceof TalerError) {
         setOperationError(e.errorDetail);
@@ -103,10 +87,7 @@ export function useComponentState(
     invalid: !subject || Amounts.isZero(amount),
     exchangeUrl: selected.exchangeBaseUrl,
     create: {
-      onClick: async () => {
-        const uri = await accept();
-        setTalerUri(uri);
-      },
+      onClick: accept
     },
     cancel: {
       onClick: onClose,

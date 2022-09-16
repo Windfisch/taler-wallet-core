@@ -45,38 +45,6 @@ export function LoadingUriView({ error }: State.LoadingUriError): VNode {
   );
 }
 
-export function CreatedView({
-  talerUri,
-  copyToClipboard,
-  cancel,
-}: State.Created): VNode {
-  const { i18n } = useTranslationContext();
-  return (
-    <WalletAction>
-      <LogoHeader />
-      <SubTitle>
-        <i18n.Translate>Digital cash invoice</i18n.Translate>
-      </SubTitle>
-      <section>
-        <p>
-          <i18n.Translate>Show this QR to pay the invoice</i18n.Translate>
-        </p>
-        <QR text={talerUri} />
-      </section>
-      <section>
-        or
-        <Button onClick={copyToClipboard.onClick}>
-          <i18n.Translate>Copy the invoice URI</i18n.Translate>
-        </Button>
-      </section>
-      <section>
-        <Link upperCased onClick={cancel.onClick}>
-          <i18n.Translate>Close</i18n.Translate>
-        </Link>
-      </section>
-    </WalletAction>
-  );
-}
 
 export function ReadyView({
   invalid,

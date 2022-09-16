@@ -35,6 +35,7 @@ describe("Deposit CTA states", () => {
             cancel: async () => {
               null;
             },
+            onSuccess: async () => { null; },
           },
           {
             prepareRefund: async () => ({}),
@@ -75,13 +76,14 @@ describe("Deposit CTA states", () => {
             cancel: async () => {
               null;
             },
+            onSuccess: async () => { null; },
           },
           {
             prepareDeposit: async () =>
-              ({
-                effectiveDepositAmount: Amounts.parseOrThrow("EUR:1"),
-                totalDepositCost: Amounts.parseOrThrow("EUR:1.2"),
-              } as PrepareDepositResponse as any),
+            ({
+              effectiveDepositAmount: Amounts.parseOrThrow("EUR:1"),
+              totalDepositCost: Amounts.parseOrThrow("EUR:1.2"),
+            } as PrepareDepositResponse as any),
             createDepositGroup: async () => ({}),
           } as any,
         ),

@@ -32,6 +32,7 @@ export interface Props {
   talerPayPullUri: string;
   onClose: () => Promise<void>;
   goToWalletManualWithdraw: (amount?: string) => Promise<void>;
+  onSuccess: (tx: string) => Promise<void>;
 }
 
 export type State =

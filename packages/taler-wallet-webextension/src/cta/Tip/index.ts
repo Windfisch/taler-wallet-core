@@ -32,6 +32,7 @@ import {
 export interface Props {
   talerTipUri?: string;
   onCancel: () => Promise<void>;
+  onSuccess: (tx: string) => Promise<void>;
 }
 
 export type State =

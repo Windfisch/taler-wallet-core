@@ -26,7 +26,6 @@ import {
   useComponentStateFromURI,
 } from "./state.js";
 import {
-  CompletedView,
   LoadingExchangeView,
   LoadingInfoView,
   LoadingUriView,
@@ -36,11 +35,13 @@ import {
 export interface PropsFromURI {
   talerWithdrawUri: string | undefined;
   cancel: () => Promise<void>;
+  onSuccess: (txid: string) => Promise<void>;
 }
 
 export interface PropsFromParams {
   amount: string;
   cancel: () => Promise<void>;
+  onSuccess: (txid: string) => Promise<void>;
 }
 
 export type State =
@@ -48,8 +49,7 @@ export type State =
   | State.LoadingUriError
   | State.LoadingExchangeError
   | State.LoadingInfoError
-  | State.Success
-  | State.Completed;
+  | State.Success;
 
 export namespace State {
   export interface Loading {
@@ -68,11 +68,6 @@ export namespace State {
     status: "loading-info";
     error: HookError;
   }
-
-  export type Completed = {
-    status: "completed";
-    error: undefined;
-  };
 
   export type Success = {
     status: "success";
@@ -100,7 +95,6 @@ const viewMapping: StateViewMap<State> = {
   "loading-uri": LoadingUriView,
   "loading-exchange": LoadingExchangeView,
   "loading-info": LoadingInfoView,
-  completed: CompletedView,
   success: SuccessView,
 };
 

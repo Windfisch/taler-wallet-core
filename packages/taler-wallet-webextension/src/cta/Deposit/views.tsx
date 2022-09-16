@@ -40,24 +40,6 @@ export function LoadingUriView({ error }: State.LoadingUriError): VNode {
     />
   );
 }
-export function CompletedView(state: State.Completed): VNode {
-  const { i18n } = useTranslationContext();
-
-  return (
-    <WalletAction>
-      <LogoHeader />
-
-      <SubTitle>
-        <i18n.Translate>Digital cash deposit</i18n.Translate>
-      </SubTitle>
-      <section>
-        <p>
-          <i18n.Translate>deposit completed</i18n.Translate>
-        </p>
-      </section>
-    </WalletAction>
-  );
-}
 
 export function ReadyView(state: State.Ready): VNode {
   const { i18n } = useTranslationContext();

@@ -30,6 +30,7 @@ import { LoadingUriView, ReadyView } from "./views.js";
 export interface Props {
   talerPayPushUri: string;
   onClose: () => Promise<void>;
+  onSuccess: (tx: string) => Promise<void>;
 }
 
 export type State = State.Loading | State.LoadingUriError | State.Ready;
