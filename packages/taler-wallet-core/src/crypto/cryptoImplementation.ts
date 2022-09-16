@@ -675,13 +675,8 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
 
       let maybeAcp: AgeCommitmentProof | undefined = undefined;
       let maybeAgeCommitmentHash: string | undefined = undefined;
-      if (req.restrictAge || denomPub.age_mask) {
-        if (req.restrictAge && denomPub.age_mask === 0) {
-          throw Error(
-            "requested age restriction for a denomination that does not support age restriction",
-          );
-        }
-        const age = req.restrictAge || 32;
+      if (denomPub.age_mask) {
+        const age = req.restrictAge || AgeRestriction.AGE_UNRESTRICTED;
         logger.info(`creating age-restricted planchet (age ${age})`);
         maybeAcp = await AgeRestriction.restrictionCommit(
           denomPub.age_mask,
