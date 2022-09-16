@@ -20,11 +20,11 @@
 import {
   AbsoluteTime,
   AcceptPeerPullPaymentRequest,
+  AcceptPeerPullPaymentResponse,
   AcceptPeerPushPaymentRequest,
+  AcceptPeerPushPaymentResponse,
   AgeCommitmentProof,
-  AmountJson,
-  AmountLike,
-  Amounts,
+  AmountJson, Amounts,
   AmountString,
   buildCodecForObject,
   CheckPeerPullPaymentRequest,
@@ -34,9 +34,7 @@ import {
   Codec,
   codecForAmountString,
   codecForAny,
-  codecForExchangeGetContractResponse,
-  CoinPublicKey,
-  constructPayPullUri,
+  codecForExchangeGetContractResponse, constructPayPullUri,
   constructPayPushUri,
   ContractTermsUtil,
   decodeCrock,
@@ -58,25 +56,25 @@ import {
   RefreshReason,
   strcmp,
   TalerProtocolTimestamp,
+  TransactionType,
   UnblindedSignature,
-  WalletAccountMergeFlags,
+  WalletAccountMergeFlags
 } from "@gnu-taler/taler-util";
 import {
   CoinStatus,
   MergeReserveInfo,
   ReserveRecordStatus,
   WalletStoresV1,
-  WithdrawalRecordType,
+  WithdrawalRecordType
 } from "../db.js";
-import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
+import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { checkDbInvariant } from "../util/invariants.js";
-import { internalCreateWithdrawalGroup } from "./withdraw.js";
 import { GetReadOnlyAccess } from "../util/query.js";
-import { createRefreshGroup } from "./refresh.js";
-import { updateExchangeFromUrl } from "./exchanges.js";
 import { spendCoins } from "../wallet.js";
-import { RetryTags } from "../util/retries.js";
+import { updateExchangeFromUrl } from "./exchanges.js";
+import { makeEventId } from "./transactions.js";
+import { internalCreateWithdrawalGroup } from "./withdraw.js";
 
 const logger = new Logger("operations/peer-to-peer.ts");
 
@@ -338,6 +336,7 @@ export async function initiatePeerToPeerPush(
       exchangeBaseUrl: coinSelRes.exchangeBaseUrl,
       contractPriv: econtractResp.contractPriv,
     }),
+    transactionId: makeEventId(TransactionType.PeerPushDebit, pursePair.pub)
   };
 }
 
@@ -472,7 +471,7 @@ async function getMergeReserveInfo(
 export async function acceptPeerPushPayment(
   ws: InternalWalletState,
   req: AcceptPeerPushPaymentRequest,
-): Promise<void> {
+): Promise<AcceptPeerPushPaymentResponse> {
   const peerInc = await ws.db
     .mktx((x) => [x.peerPushPaymentIncoming])
     .runReadOnly(async (tx) => {
@@ -533,7 +532,7 @@ export async function acceptPeerPushPayment(
   const res = await readSuccessResponseJsonOrThrow(mergeHttpReq, codecForAny());
   logger.info(`merge response: ${j2s(res)}`);
 
-  await internalCreateWithdrawalGroup(ws, {
+  const wg = await internalCreateWithdrawalGroup(ws, {
     amount,
     wgInfo: {
       withdrawalType: WithdrawalRecordType.PeerPushCredit,
@@ -546,6 +545,13 @@ export async function acceptPeerPushPayment(
       pub: mergeReserveInfo.reservePub,
     },
   });
+
+  return {
+    transactionId: makeEventId(
+      TransactionType.PeerPushCredit,
+      wg.withdrawalGroupId
+    )
+  }
 }
 
 /**
@@ -554,7 +560,7 @@ export async function acceptPeerPushPayment(
 export async function acceptPeerPullPayment(
   ws: InternalWalletState,
   req: AcceptPeerPullPaymentRequest,
-): Promise<void> {
+): Promise<AcceptPeerPullPaymentResponse> {
   const peerPullInc = await ws.db
     .mktx((x) => [x.peerPullPaymentIncoming])
     .runReadOnly(async (tx) => {
@@ -630,6 +636,13 @@ export async function acceptPeerPullPayment(
   const httpResp = await ws.http.postJson(purseDepositUrl.href, depositPayload);
   const resp = await readSuccessResponseJsonOrThrow(httpResp, codecForAny());
   logger.trace(`purse deposit response: ${j2s(resp)}`);
+
+  return {
+    transactionId: makeEventId(
+      TransactionType.PeerPullDebit,
+      req.peerPullPaymentIncomingId,
+    )
+  }
 }
 
 export async function checkPeerPullPayment(
@@ -801,7 +814,7 @@ export async function initiatePeerRequestForPay(
 
   logger.info(`reserve merge response: ${j2s(resp)}`);
 
-  await internalCreateWithdrawalGroup(ws, {
+  const wg = await internalCreateWithdrawalGroup(ws, {
     amount: Amounts.parseOrThrow(req.amount),
     wgInfo: {
       withdrawalType: WithdrawalRecordType.PeerPullCredit,
@@ -821,5 +834,9 @@ export async function initiatePeerRequestForPay(
       exchangeBaseUrl: req.exchangeBaseUrl,
       contractPriv: econtractResp.contractPriv,
     }),
+    transactionId: makeEventId(
+      TransactionType.PeerPullCredit,
+      wg.withdrawalGroupId
+    )
   };
 }

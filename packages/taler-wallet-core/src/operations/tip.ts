@@ -18,6 +18,7 @@
  * Imports.
  */
 import {
+  AcceptTipResponse,
   Amounts,
   BlindedDenominationSignature,
   codecForMerchantTipResponseV2,
@@ -32,6 +33,7 @@ import {
   TalerErrorCode,
   TalerProtocolTimestamp,
   TipPlanchetDetail,
+  TransactionType,
   URL,
 } from "@gnu-taler/taler-util";
 import { DerivedTipPlanchet } from "../crypto/cryptoTypes.js";
@@ -53,6 +55,7 @@ import {
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
 import { makeCoinAvailable } from "../wallet.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
+import { makeEventId } from "./transactions.js";
 import {
   getCandidateWithdrawalDenoms,
   getExchangeWithdrawalInfo,
@@ -341,7 +344,7 @@ export async function processTip(
 export async function acceptTip(
   ws: InternalWalletState,
   tipId: string,
-): Promise<void> {
+): Promise<AcceptTipResponse> {
   const found = await ws.db
     .mktx((x) => [x.tips])
     .runReadWrite(async (tx) => {
@@ -356,5 +359,11 @@ export async function acceptTip(
     });
   if (found) {
     await processTip(ws, tipId);
+  }
+  return {
+    transactionId: makeEventId(
+      TransactionType.Tip,
+      tipId
+    )
   }
 }

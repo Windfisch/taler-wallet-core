@@ -138,11 +138,12 @@ export enum ConfirmPayResultType {
 export interface ConfirmPayResultDone {
   type: ConfirmPayResultType.Done;
   contractTerms: ContractTerms;
+  transactionId: string;
 }
 
 export interface ConfirmPayResultPending {
   type: ConfirmPayResultType.Pending;
-
+  transactionId: string;
   lastError: TalerErrorDetail | undefined;
 }
 
@@ -152,12 +153,14 @@ export const codecForConfirmPayResultPending =
   (): Codec<ConfirmPayResultPending> =>
     buildCodecForObject<ConfirmPayResultPending>()
       .property("lastError", codecForAny())
+      .property("transactionId", codecForString())
       .property("type", codecForConstString(ConfirmPayResultType.Pending))
       .build("ConfirmPayResultPending");
 
 export const codecForConfirmPayResultDone = (): Codec<ConfirmPayResultDone> =>
   buildCodecForObject<ConfirmPayResultDone>()
     .property("type", codecForConstString(ConfirmPayResultType.Done))
+    .property("transactionId", codecForString())
     .property("contractTerms", codecForContractTerms())
     .build("ConfirmPayResultDone");
 
@@ -334,6 +337,10 @@ export interface PrepareTipResult {
   expirationTimestamp: TalerProtocolTimestamp;
 }
 
+export interface AcceptTipResponse {
+  transactionId: string;
+}
+
 export const codecForPrepareTipResult = (): Codec<PrepareTipResult> =>
   buildCodecForObject<PrepareTipResult>()
     .property("accepted", codecForBoolean())
@@ -462,6 +469,7 @@ export interface BankWithdrawDetails {
 export interface AcceptWithdrawalResponse {
   reservePub: string;
   confirmTransferUrl?: string;
+  transactionId: string;
 }
 
 /**
@@ -864,6 +872,8 @@ export interface AcceptManualWithdrawalResult {
    * Public key of the newly created reserve.
    */
   reservePub: string;
+
+  transactionId: string;
 }
 
 export interface ManualWithdrawalDetails {
@@ -1252,6 +1262,8 @@ export const codecForWithdrawTestBalance =
 export interface ApplyRefundResponse {
   contractTermsHash: string;
 
+  transactionId: string;
+
   proposalId: string;
 
   amountEffectivePaid: AmountString;
@@ -1273,6 +1285,7 @@ export const codecForApplyRefundResponse = (): Codec<ApplyRefundResponse> =>
     .property("contractTermsHash", codecForString())
     .property("pendingAtExchange", codecForBoolean())
     .property("proposalId", codecForString())
+    .property("transactionId", codecForString())
     .property("info", codecForOrderShortInfo())
     .build("ApplyRefundResponse");
 
@@ -1374,6 +1387,7 @@ export const codecForCreateDepositGroupRequest =
 
 export interface CreateDepositGroupResponse {
   depositGroupId: string;
+  transactionId: string;
 }
 
 export interface TrackDepositGroupRequest {
@@ -1539,6 +1553,7 @@ export interface InitiatePeerPushPaymentResponse {
   mergePriv: string;
   contractPriv: string;
   talerUri: string;
+  transactionId: string;
 }
 
 export const codecForInitiatePeerPushPaymentRequest =
@@ -1586,6 +1601,13 @@ export interface AcceptPeerPushPaymentRequest {
    */
   peerPushPaymentIncomingId: string;
 }
+export interface AcceptPeerPushPaymentResponse {
+  transactionId: string;
+}
+
+export interface AcceptPeerPullPaymentResponse {
+  transactionId: string;
+}
 
 export const codecForAcceptPeerPushPaymentRequest =
   (): Codec<AcceptPeerPushPaymentRequest> =>
@@ -1629,4 +1651,6 @@ export interface InitiatePeerPullPaymentResponse {
    * that was requested.
    */
   talerUri: string;
+
+  transactionId: string;
 }

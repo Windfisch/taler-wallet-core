@@ -91,6 +91,7 @@ import {
   OperationMap,
   FeeDescription,
   TalerErrorDetail,
+  codecForTransactionByIdRequest,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import {
@@ -198,6 +199,7 @@ import {
 import { acceptTip, prepareTip, processTip } from "./operations/tip.js";
 import {
   deleteTransaction,
+  getTransactionById,
   getTransactions,
   retryTransaction,
 } from "./operations/transactions.js";
@@ -1080,6 +1082,10 @@ async function dispatchRequestInternal(
       const req = codecForTransactionsRequest().decode(payload);
       return await getTransactions(ws, req);
     }
+    case "getTransactionById": {
+      const req = codecForTransactionByIdRequest().decode(payload);
+      return await getTransactionById(ws, req)
+    }
     case "addExchange": {
       const req = codecForAddExchangeRequest().decode(payload);
       await updateExchangeFromUrl(ws, req.exchangeBaseUrl, {
@@ -1227,8 +1233,7 @@ async function dispatchRequestInternal(
     }
     case "acceptTip": {
       const req = codecForAcceptTipRequest().decode(payload);
-      await acceptTip(ws, req.walletTipId);
-      return {};
+      return await acceptTip(ws, req.walletTipId);
     }
     case "exportBackupPlain": {
       return exportBackup(ws);

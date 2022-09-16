@@ -103,6 +103,7 @@ import { RetryInfo, RetryTags, scheduleRetry } from "../util/retries.js";
 import { spendCoins } from "../wallet.js";
 import { getExchangeDetails } from "./exchanges.js";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
+import { makeEventId } from "./transactions.js";
 
 /**
  * Logger.
@@ -511,7 +512,7 @@ export function extractContractData(
 export async function processDownloadProposal(
   ws: InternalWalletState,
   proposalId: string,
-  options: {} = {},
+  options: object = {},
 ): Promise<OperationAttemptResult> {
   const proposal = await ws.db
     .mktx((x) => [x.proposals])
@@ -1312,6 +1313,7 @@ export async function runPayForConfirmPay(
       return {
         type: ConfirmPayResultType.Done,
         contractTerms: purchase.download.contractTermsRaw,
+        transactionId: makeEventId(TransactionType.Payment, proposalId)
       };
     }
     case OperationAttemptResultType.Error:
@@ -1320,6 +1322,7 @@ export async function runPayForConfirmPay(
     case OperationAttemptResultType.Pending:
       return {
         type: ConfirmPayResultType.Pending,
+        transactionId: makeEventId(TransactionType.Payment, proposalId),
         lastError: undefined,
       };
     case OperationAttemptResultType.Longpoll:

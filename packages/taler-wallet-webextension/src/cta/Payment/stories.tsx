@@ -348,6 +348,7 @@ export const AlreadyPaidWithoutFulfillment = createExample(BaseView, {
   payResult: {
     type: ConfirmPayResultType.Done,
     contractTerms: {} as any,
+    transactionId: "",
   },
   payStatus: {
     status: PreparePayResultType.AlreadyConfirmed,
@@ -386,6 +387,7 @@ export const AlreadyPaidWithFulfillment = createExample(BaseView, {
       fulfillment_message: "thanks for buying!",
       fulfillment_url: "https://demo.taler.net",
     } as Partial<ContractTerms> as any,
+    transactionId: "",
   },
   payStatus: {
     status: PreparePayResultType.AlreadyConfirmed,

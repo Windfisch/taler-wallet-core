@@ -68,6 +68,10 @@ import {
   WalletCoreVersion,
   WithdrawUriInfoResponse,
   ExchangeFullDetails,
+  Transaction,
+  AcceptTipResponse,
+  AcceptPeerPullPaymentResponse,
+  AcceptPeerPushPaymentResponse,
 } from "@gnu-taler/taler-util";
 import {
   AddBackupProviderRequest,
@@ -476,7 +480,7 @@ export function prepareTip(req: PrepareTipRequest): Promise<PrepareTipResult> {
   return callBackend("prepareTip", req);
 }
 
-export function acceptTip(req: AcceptTipRequest): Promise<void> {
+export function acceptTip(req: AcceptTipRequest): Promise<AcceptTipResponse> {
   return callBackend("acceptTip", req);
 }
 
@@ -513,7 +517,7 @@ export function checkPeerPushPayment(
 }
 export function acceptPeerPushPayment(
   req: AcceptPeerPushPaymentRequest,
-): Promise<void> {
+): Promise<AcceptPeerPushPaymentResponse> {
   return callBackend("acceptPeerPushPayment", req);
 }
 export function initiatePeerPullPayment(
@@ -528,6 +532,12 @@ export function checkPeerPullPayment(
 }
 export function acceptPeerPullPayment(
   req: AcceptPeerPullPaymentRequest,
-): Promise<void> {
+): Promise<AcceptPeerPullPaymentResponse> {
   return callBackend("acceptPeerPullPayment", req);
+}
+
+export function getTransactionById(tid: string): Promise<Transaction> {
+  return callBackend("getTransactionById", {
+    transactionId: tid
+  })
 }

@@ -70,13 +70,8 @@ interface Props {
 }
 
 async function getTransaction(tid: string): Promise<Transaction> {
-  const res = await wxApi.getTransactions();
-  const ts = res.transactions.filter((t) => t.transactionId === tid);
-  if (ts.length > 1) throw Error("more than one transaction with this id");
-  if (ts.length === 1) {
-    return ts[0];
-  }
-  throw Error("no transaction found");
+  const res = await wxApi.getTransactionById(tid);
+  return res;
 }
 
 export function TransactionPage({ tid, goToWalletHistory }: Props): VNode {

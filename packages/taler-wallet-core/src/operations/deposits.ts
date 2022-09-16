@@ -41,6 +41,7 @@ import {
   TalerProtocolTimestamp,
   TrackDepositGroupRequest,
   TrackDepositGroupResponse,
+  TransactionType,
   URL,
 } from "@gnu-taler/taler-util";
 import {
@@ -62,6 +63,7 @@ import {
   getTotalPaymentCost,
 } from "./pay.js";
 import { getTotalRefreshCost } from "./refresh.js";
+import { makeEventId } from "./transactions.js";
 
 /**
  * Logger.
@@ -531,7 +533,10 @@ export async function createDepositGroup(
       await tx.depositGroups.put(depositGroup);
     });
 
-  return { depositGroupId };
+  return {
+    depositGroupId: depositGroupId,
+    transactionId: makeEventId(TransactionType.Deposit, depositGroupId)
+  };
 }
 
 /**

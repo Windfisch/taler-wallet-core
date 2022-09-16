@@ -505,6 +505,15 @@ export interface TransactionDeposit extends TransactionCommon {
   amountEffective: AmountString;
 }
 
+export interface TransactionByIdRequest {
+  transactionId: string;
+}
+
+export const codecForTransactionByIdRequest = (): Codec<TransactionByIdRequest> =>
+  buildCodecForObject<TransactionByIdRequest>()
+    .property("transactionId", codecForString())
+    .build("TransactionByIdRequest");
+
 export const codecForTransactionsRequest = (): Codec<TransactionsRequest> =>
   buildCodecForObject<TransactionsRequest>()
     .property("currency", codecOptional(codecForString()))

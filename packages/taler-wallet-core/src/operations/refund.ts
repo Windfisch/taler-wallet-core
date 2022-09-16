@@ -46,6 +46,7 @@ import {
   TalerErrorCode,
   TalerErrorDetail,
   TalerProtocolTimestamp,
+  TransactionType,
   URL,
 } from "@gnu-taler/taler-util";
 import {
@@ -63,6 +64,7 @@ import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { GetReadWriteAccess } from "../util/query.js";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
+import { makeEventId } from "./transactions.js";
 
 const logger = new Logger("refund.ts");
 
@@ -573,6 +575,7 @@ export async function applyRefundFromPurchaseId(
   return {
     contractTermsHash: purchase.download.contractData.contractTermsHash,
     proposalId: purchase.proposalId,
+    transactionId: makeEventId(TransactionType.Payment, proposalId), //FIXME: can we have the tx id of the refund
     amountEffectivePaid: Amounts.stringify(summary.amountEffectivePaid),
     amountRefundGone: Amounts.stringify(summary.amountRefundGone),
     amountRefundGranted: Amounts.stringify(summary.amountRefundGranted),

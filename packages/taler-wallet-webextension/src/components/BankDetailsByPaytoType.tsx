@@ -73,10 +73,17 @@ export function BankDetailsByPaytoType({
         </p>
         <table>
           <tr>
-            <td>{payto.targetPath}</td>
             <td>
-              <Amount value={amount} hideCurrency /> BTC
+              <div>
+                {payto.targetPath} <Amount value={amount} hideCurrency /> BTC
+              </div>
+              {payto.segwitAddrs.map((addr, i) => (
+                <div key={i}>
+                  {addr} <Amount value={min} hideCurrency /> BTC
+                </div>
+              ))}
             </td>
+            <td></td>
             <td>
               <CopyButton
                 getContent={() =>
@@ -85,21 +92,6 @@ export function BankDetailsByPaytoType({
               />
             </td>
           </tr>
-          {payto.segwitAddrs.map((addr, i) => (
-            <tr key={i}>
-              <td>{addr}</td>
-              <td>
-                <Amount value={min} hideCurrency /> BTC
-              </td>
-              <td>
-                <CopyButton
-                  getContent={() =>
-                    `${addr} ${Amounts.stringifyValue(min)} BTC`
-                  }
-                />
-              </td>
-            </tr>
-          ))}
         </table>
         <p>
           <i18n.Translate>
