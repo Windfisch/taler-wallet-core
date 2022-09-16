@@ -1226,6 +1226,7 @@ export interface RefreshPlanchetInfo {
    */
   blindingKey: string;
 
+  maxAge: number;
   ageCommitmentProof?: AgeCommitmentProof;
 }
 

@@ -988,6 +988,11 @@ function invariant(cond: boolean): asserts cond {
 }
 
 export namespace AgeRestriction {
+  /**
+   * Smallest age value that the protocol considers "unrestricted".
+   */
+  export const AGE_UNRESTRICTED = 32;
+
   export function hashCommitment(ac: AgeCommitment): HashCodeString {
     const hc = new nacl.HashState();
     for (const pub of ac.publicKeys) {

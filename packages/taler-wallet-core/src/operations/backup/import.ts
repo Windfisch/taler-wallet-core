@@ -15,6 +15,7 @@
  */
 
 import {
+  AgeRestriction,
   AmountJson,
   Amounts,
   BackupCoinSourceType,
@@ -436,6 +437,8 @@ export async function importBackup(
                   ? CoinStatus.Fresh
                   : CoinStatus.Dormant,
                 coinSource,
+                // FIXME!
+                maxAge: AgeRestriction.AGE_UNRESTRICTED,
               });
             }
           }

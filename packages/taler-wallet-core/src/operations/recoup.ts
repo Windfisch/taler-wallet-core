@@ -392,7 +392,13 @@ export async function processRecoupGroupHandler(
   }
 
   await ws.db
-    .mktx((x) => [x.recoupGroups, x.denominations, x.refreshGroups, x.coins])
+    .mktx((x) => [
+      x.recoupGroups,
+      x.coinAvailability,
+      x.denominations,
+      x.refreshGroups,
+      x.coins,
+    ])
     .runReadWrite(async (tx) => {
       const rg2 = await tx.recoupGroups.get(recoupGroupId);
       if (!rg2) {

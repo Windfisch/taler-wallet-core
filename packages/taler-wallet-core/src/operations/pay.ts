@@ -24,6 +24,7 @@
 /**
  * Imports.
  */
+import { BridgeIDBKeyRange, GlobalIDB } from "@gnu-taler/idb-bridge";
 import {
   AbsoluteTime,
   AgeRestriction,
@@ -102,7 +103,7 @@ import {
   readUnexpectedResponseDetails,
   throwUnexpectedRequestError,
 } from "../util/http.js";
-import { checkLogicInvariant } from "../util/invariants.js";
+import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
 import { GetReadWriteAccess } from "../util/query.js";
 import { RetryInfo, RetryTags, scheduleRetry } from "../util/retries.js";
 import { spendCoins } from "../wallet.js";
@@ -216,149 +217,6 @@ export interface CoinSelectionRequest {
 }
 
 /**
- * Get candidate coins.  From these candidate coins,
- * the actual contributions will be computed later.
- *
- * The resulting candidate coin list is sorted deterministically.
- *
- * TODO: Exclude more coins:
- * - when we already have a coin with more remaining amount than
- *   the payment amount, coins with even higher amounts can be skipped.
- */
-export async function getCandidatePayCoins(
-  ws: InternalWalletState,
-  req: CoinSelectionRequest,
-): Promise<CoinCandidateSelection> {
-  const candidateCoins: AvailableCoinInfo[] = [];
-  const wireFeesPerExchange: Record<string, AmountJson> = {};
-
-  await ws.db
-    .mktx((x) => [x.exchanges, x.exchangeDetails, x.denominations, x.coins])
-    .runReadOnly(async (tx) => {
-      const exchanges = await tx.exchanges.iter().toArray();
-      for (const exchange of exchanges) {
-        let isOkay = false;
-        const exchangeDetails = await getExchangeDetails(tx, exchange.baseUrl);
-        if (!exchangeDetails) {
-          continue;
-        }
-        const exchangeFees = exchangeDetails.wireInfo;
-        if (!exchangeFees) {
-          continue;
-        }
-
-        const wireTypes = new Set<string>();
-        for (const acc of exchangeDetails.wireInfo.accounts) {
-          const p = parsePaytoUri(acc.payto_uri);
-          if (p) {
-            wireTypes.add(p.targetType);
-          }
-        }
-
-        if (!wireTypes.has(req.wireMethod)) {
-          // Exchange can't be used, because it doesn't support
-          // the wire type that the merchant requested.
-          continue;
-        }
-
-        // is the exchange explicitly allowed?
-        for (const allowedExchange of req.allowedExchanges) {
-          if (allowedExchange.exchangePub === exchangeDetails.masterPublicKey) {
-            isOkay = true;
-            break;
-          }
-        }
-
-        // is the exchange allowed because of one of its auditors?
-        if (!isOkay) {
-          for (const allowedAuditor of req.allowedAuditors) {
-            for (const auditor of exchangeDetails.auditors) {
-              if (auditor.auditor_pub === allowedAuditor.auditorPub) {
-                isOkay = true;
-                break;
-              }
-            }
-            if (isOkay) {
-              break;
-            }
-          }
-        }
-
-        if (!isOkay) {
-          continue;
-        }
-
-        const coins = await tx.coins.indexes.byBaseUrl
-          .iter(exchange.baseUrl)
-          .toArray();
-
-        if (!coins || coins.length === 0) {
-          continue;
-        }
-
-        // Denomination of the first coin, we assume that all other
-        // coins have the same currency
-        const firstDenom = await ws.getDenomInfo(
-          ws,
-          tx,
-          exchange.baseUrl,
-          coins[0].denomPubHash,
-        );
-        if (!firstDenom) {
-          throw Error("db inconsistent");
-        }
-        const currency = firstDenom.value.currency;
-        for (const coin of coins) {
-          const denom = await tx.denominations.get([
-            exchange.baseUrl,
-            coin.denomPubHash,
-          ]);
-          if (!denom) {
-            throw Error("db inconsistent");
-          }
-          if (denom.currency !== currency) {
-            logger.warn(
-              `same pubkey for different currencies at exchange ${exchange.baseUrl}`,
-            );
-            continue;
-          }
-          if (!isSpendableCoin(coin, denom)) {
-            continue;
-          }
-          candidateCoins.push({
-            availableAmount: coin.currentAmount,
-            value: DenominationRecord.getValue(denom),
-            coinPub: coin.coinPub,
-            denomPub: denom.denomPub,
-            feeDeposit: denom.fees.feeDeposit,
-            exchangeBaseUrl: denom.exchangeBaseUrl,
-            ageCommitmentProof: coin.ageCommitmentProof,
-          });
-        }
-
-        let wireFee: AmountJson | undefined;
-        for (const fee of exchangeFees.feesForType[req.wireMethod] || []) {
-          if (
-            fee.startStamp <= req.timestamp &&
-            fee.endStamp >= req.timestamp
-          ) {
-            wireFee = fee.wireFee;
-            break;
-          }
-        }
-        if (wireFee) {
-          wireFeesPerExchange[exchange.baseUrl] = wireFee;
-        }
-      }
-    });
-
-  return {
-    candidateCoins,
-    wireFeesPerExchange,
-  };
-}
-
-/**
  * Record all information that is necessary to
  * pay for a proposal in the wallet's database.
  */
@@ -412,6 +270,7 @@ async function recordConfirmPay(
       x.coins,
       x.refreshGroups,
       x.denominations,
+      x.coinAvailability,
     ])
     .runReadWrite(async (tx) => {
       const p = await tx.proposals.get(proposal.proposalId);
@@ -976,7 +835,13 @@ async function handleInsufficientFunds(
   logger.trace("re-selected coins");
 
   await ws.db
-    .mktx((x) => [x.purchases, x.coins, x.denominations, x.refreshGroups])
+    .mktx((x) => [
+      x.purchases,
+      x.coins,
+      x.coinAvailability,
+      x.denominations,
+      x.refreshGroups,
+    ])
     .runReadWrite(async (tx) => {
       const p = await tx.purchases.get(proposalId);
       if (!p) {
@@ -1029,6 +894,7 @@ export interface SelectPayCoinRequestNg {
 }
 
 export type AvailableDenom = DenominationInfo & {
+  maxAge: number;
   numAvailable: number;
 };
 
@@ -1037,7 +903,12 @@ async function selectCandidates(
   req: SelectPayCoinRequestNg,
 ): Promise<[AvailableDenom[], Record<string, AmountJson>]> {
   return await ws.db
-    .mktx((x) => [x.exchanges, x.exchangeDetails, x.denominations])
+    .mktx((x) => [
+      x.exchanges,
+      x.exchangeDetails,
+      x.denominations,
+      x.coinAvailability,
+    ])
     .runReadOnly(async (tx) => {
       const denoms: AvailableDenom[] = [];
       const exchanges = await tx.exchanges.iter().toArray();
@@ -1065,17 +936,35 @@ async function selectCandidates(
         if (!accepted) {
           continue;
         }
-        // FIXME: Do this query more efficiently via indexing
-        const exchangeDenoms = await tx.denominations.indexes.byExchangeBaseUrl
-          .iter(exchangeDetails.exchangeBaseUrl)
-          .filter((x) => x.freshCoinCount != null && x.freshCoinCount > 0);
+        let ageLower = 0;
+        let ageUpper = Number.MAX_SAFE_INTEGER;
+        if (req.requiredMinimumAge) {
+          ageLower = req.requiredMinimumAge;
+        }
+        const myExchangeDenoms =
+          await tx.coinAvailability.indexes.byExchangeAgeAvailability.getAll(
+            GlobalIDB.KeyRange.bound(
+              [exchangeDetails.exchangeBaseUrl, ageLower, 1],
+              [
+                exchangeDetails.exchangeBaseUrl,
+                ageUpper,
+                Number.MAX_SAFE_INTEGER,
+              ],
+            ),
+          );
         // FIXME: Check that the individual denomination is audited!
         // FIXME: Should we exclude denominations that are
         // not spendable anymore?
-        for (const denom of exchangeDenoms) {
+        for (const denomAvail of myExchangeDenoms) {
+          const denom = await tx.denominations.get([
+            denomAvail.exchangeBaseUrl,
+            denomAvail.denomPubHash,
+          ]);
+          checkDbInvariant(!!denom);
           denoms.push({
             ...DenominationRecord.toDenomInfo(denom),
-            numAvailable: denom.freshCoinCount ?? 0,
+            numAvailable: denomAvail.freshCoinCount ?? 0,
+            maxAge: denomAvail.maxAge,
           });
         }
       }
@@ -1092,15 +981,28 @@ async function selectCandidates(
     });
 }
 
+function makeAvailabilityKey(
+  exchangeBaseUrl: string,
+  denomPubHash: string,
+  maxAge: number,
+): string {
+  return `${denomPubHash};${maxAge};${exchangeBaseUrl}`;
+}
+
 /**
  * Selection result.
  */
 interface SelResult {
   /**
-   * Map from denomination public key hashes
+   * Map from an availability key
    * to an array of contributions.
    */
-  [dph: string]: AmountJson[];
+  [avKey: string]: {
+    exchangeBaseUrl: string;
+    denomPubHash: string;
+    maxAge: number;
+    contributions: AmountJson[];
+  };
 }
 
 export function selectGreedy(
@@ -1146,7 +1048,22 @@ export function selectGreedy(
     }
 
     if (contributions.length) {
-      selectedDenom[aci.denomPubHash] = contributions;
+      const avKey = makeAvailabilityKey(
+        aci.exchangeBaseUrl,
+        aci.denomPubHash,
+        aci.maxAge,
+      );
+      let sd = selectedDenom[avKey];
+      if (!sd) {
+        sd = {
+          contributions: [],
+          denomPubHash: aci.denomPubHash,
+          exchangeBaseUrl: aci.exchangeBaseUrl,
+          maxAge: aci.maxAge,
+        };
+      }
+      sd.contributions.push(...contributions);
+      selectedDenom[avKey] = sd;
     }
 
     if (Amounts.isZero(tally.amountPayRemaining)) {
@@ -1173,9 +1090,22 @@ export function selectForced(
       }
       if (Amounts.cmp(aci.value, forcedCoin.value) === 0) {
         aci.numAvailable--;
-        const contributions = selectedDenom[aci.denomPubHash] ?? [];
-        contributions.push(Amounts.parseOrThrow(forcedCoin.value));
-        selectedDenom[aci.denomPubHash] = contributions;
+        const avKey = makeAvailabilityKey(
+          aci.exchangeBaseUrl,
+          aci.denomPubHash,
+          aci.maxAge,
+        );
+        let sd = selectedDenom[avKey];
+        if (!sd) {
+          sd = {
+            contributions: [],
+            denomPubHash: aci.denomPubHash,
+            exchangeBaseUrl: aci.exchangeBaseUrl,
+            maxAge: aci.maxAge,
+          };
+        }
+        sd.contributions.push(Amounts.parseOrThrow(forcedCoin.value));
+        selectedDenom[avKey] = sd;
         found = true;
         break;
       }
@@ -1273,18 +1203,27 @@ export async function selectPayCoinsNew(
     .mktx((x) => [x.coins, x.denominations])
     .runReadOnly(async (tx) => {
       for (const dph of Object.keys(finalSel)) {
-        const contributions = finalSel[dph];
-        const coins = await tx.coins.indexes.byDenomPubHashAndStatus.getAll(
-          [dph, CoinStatus.Fresh],
-          contributions.length,
-        );
-        if (coins.length != contributions.length) {
+        const selInfo = finalSel[dph];
+        const numRequested = selInfo.contributions.length;
+        const query = [
+          selInfo.exchangeBaseUrl,
+          selInfo.denomPubHash,
+          selInfo.maxAge,
+          CoinStatus.Fresh,
+        ];
+        logger.info(`query: ${j2s(query)}`);
+        const coins =
+          await tx.coins.indexes.byExchangeDenomPubHashAndAgeAndStatus.getAll(
+            query,
+            numRequested,
+          );
+        if (coins.length != numRequested) {
           throw Error(
-            `coin selection failed (not available anymore, got only ${coins.length}/${contributions.length})`,
+            `coin selection failed (not available anymore, got only ${coins.length}/${numRequested})`,
           );
         }
         coinPubs.push(...coins.map((x) => x.coinPub));
-        coinContributions.push(...contributions);
+        coinContributions.push(...selInfo.contributions);
       }
     });
 
@@ -1535,7 +1474,7 @@ export async function generateDepositPermissions(
     let wireInfoHash: string;
     wireInfoHash = contractData.wireInfoHash;
     logger.trace(
-      `signing deposit permission for coin with acp=${j2s(
+      `signing deposit permission for coin with ageRestriction=${j2s(
         coin.ageCommitmentProof,
       )}`,
     );

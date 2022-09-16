@@ -51,16 +51,14 @@ import {
   OperationStatus,
 } from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
-import { selectPayCoinsLegacy } from "../util/coinSelection.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { spendCoins } from "../wallet.js";
 import { getExchangeDetails } from "./exchanges.js";
 import {
-  CoinSelectionRequest,
   extractContractData,
   generateDepositPermissions,
-  getCandidatePayCoins,
   getTotalPaymentCost,
+  selectPayCoinsNew,
 } from "./pay.js";
 import { getTotalRefreshCost } from "./refresh.js";
 import { makeEventId } from "./transactions.js";
@@ -255,28 +253,17 @@ export async function getFeeForDeposit(
       }
     });
 
-  const csr: CoinSelectionRequest = {
-    allowedAuditors: [],
-    allowedExchanges: Object.values(exchangeInfos).map((v) => ({
+  const payCoinSel = await selectPayCoinsNew(ws, {
+    auditors: [],
+    exchanges: Object.values(exchangeInfos).map((v) => ({
       exchangeBaseUrl: v.url,
       exchangePub: v.master_pub,
     })),
-    amount: Amounts.parseOrThrow(req.amount),
-    maxDepositFee: Amounts.parseOrThrow(req.amount),
-    maxWireFee: Amounts.parseOrThrow(req.amount),
-    timestamp: TalerProtocolTimestamp.now(),
-    wireFeeAmortization: 1,
     wireMethod: p.targetType,
-  };
-
-  const candidates = await getCandidatePayCoins(ws, csr);
-
-  const payCoinSel = selectPayCoinsLegacy({
-    candidates,
-    contractTermsAmount: csr.amount,
-    depositFeeLimit: csr.maxDepositFee,
-    wireFeeAmortization: csr.wireFeeAmortization,
-    wireFeeLimit: csr.maxWireFee,
+    contractTermsAmount: Amounts.parseOrThrow(req.amount),
+    depositFeeLimit: Amounts.parseOrThrow(req.amount),
+    wireFeeAmortization: 1,
+    wireFeeLimit: Amounts.parseOrThrow(req.amount),
     prevPayCoins: [],
   });
 
@@ -356,19 +343,10 @@ export async function prepareDepositGroup(
     "",
   );
 
-  const candidates = await getCandidatePayCoins(ws, {
-    allowedAuditors: contractData.allowedAuditors,
-    allowedExchanges: contractData.allowedExchanges,
-    amount: contractData.amount,
-    maxDepositFee: contractData.maxDepositFee,
-    maxWireFee: contractData.maxWireFee,
-    timestamp: contractData.timestamp,
-    wireFeeAmortization: contractData.wireFeeAmortization,
+  const payCoinSel = await selectPayCoinsNew(ws, {
+    auditors: contractData.allowedAuditors,
+    exchanges: contractData.allowedExchanges,
     wireMethod: contractData.wireMethod,
-  });
-
-  const payCoinSel = selectPayCoinsLegacy({
-    candidates,
     contractTermsAmount: contractData.amount,
     depositFeeLimit: contractData.maxDepositFee,
     wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
@@ -459,19 +437,10 @@ export async function createDepositGroup(
     "",
   );
 
-  const candidates = await getCandidatePayCoins(ws, {
-    allowedAuditors: contractData.allowedAuditors,
-    allowedExchanges: contractData.allowedExchanges,
-    amount: contractData.amount,
-    maxDepositFee: contractData.maxDepositFee,
-    maxWireFee: contractData.maxWireFee,
-    timestamp: contractData.timestamp,
-    wireFeeAmortization: contractData.wireFeeAmortization,
+  const payCoinSel = await selectPayCoinsNew(ws, {
+    auditors: contractData.allowedAuditors,
+    exchanges: contractData.allowedExchanges,
     wireMethod: contractData.wireMethod,
-  });
-
-  const payCoinSel = selectPayCoinsLegacy({
-    candidates,
     contractTermsAmount: contractData.amount,
     depositFeeLimit: contractData.maxDepositFee,
     wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
@@ -522,6 +491,7 @@ export async function createDepositGroup(
       x.recoupGroups,
       x.denominations,
       x.refreshGroups,
+      x.coinAvailability,
     ])
     .runReadWrite(async (tx) => {
       await spendCoins(ws, tx, {

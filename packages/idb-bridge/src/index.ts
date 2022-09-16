@@ -20,7 +20,7 @@ import {
   ObjectStoreRecord,
   MemoryBackendDump,
 } from "./MemoryBackend";
-import { Event } from "./idbtypes";
+import { Event, IDBKeyRange } from "./idbtypes";
 import {
   BridgeIDBCursor,
   BridgeIDBDatabase,
@@ -88,6 +88,17 @@ export type { AccessStats } from "./MemoryBackend";
   // @ts-ignore: polyfill magic
   delete Object.prototype.__magic__;
 })();
+
+/**
+ * Global indexeddb objects, either from the native or bridge-idb
+ * implementation, depending on what is availabe in
+ * the global environment.
+ */
+export const GlobalIDB: {
+  KeyRange: typeof BridgeIDBKeyRange;
+} = {
+  KeyRange: (globalThis as any).IDBKeyRange ?? BridgeIDBKeyRange,
+};
 
 /**
  * Populate the global name space such that the given IndexedDB factory is made

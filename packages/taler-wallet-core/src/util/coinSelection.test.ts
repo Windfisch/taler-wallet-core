@@ -18,7 +18,12 @@
  * Imports.
  */
 import test from "ava";
-import { AmountJson, Amounts, DenomKeyType } from "@gnu-taler/taler-util";
+import {
+  AgeRestriction,
+  AmountJson,
+  Amounts,
+  DenomKeyType,
+} from "@gnu-taler/taler-util";
 import { AvailableCoinInfo, selectPayCoinsLegacy } from "./coinSelection.js";
 
 function a(x: string): AmountJson {
@@ -41,10 +46,14 @@ function fakeAci(current: string, feeDeposit: string): AvailableCoinInfo {
     },
     feeDeposit: a(feeDeposit),
     exchangeBaseUrl: "https://example.com/",
+    maxAge: AgeRestriction.AGE_UNRESTRICTED,
   };
 }
 
-function fakeAciWithAgeRestriction(current: string, feeDeposit: string): AvailableCoinInfo {
+function fakeAciWithAgeRestriction(
+  current: string,
+  feeDeposit: string,
+): AvailableCoinInfo {
   return {
     value: a(current),
     availableAmount: a(current),
@@ -56,6 +65,7 @@ function fakeAciWithAgeRestriction(current: string, feeDeposit: string): Availab
     },
     feeDeposit: a(feeDeposit),
     exchangeBaseUrl: "https://example.com/",
+    maxAge: AgeRestriction.AGE_UNRESTRICTED,
   };
 }
 
@@ -284,7 +294,6 @@ test("coin selection 9", (t) => {
   t.pass();
 });
 
-
 test("it should be able to use unrestricted coins for age restricted contract", (t) => {
   const acis: AvailableCoinInfo[] = [
     fakeAciWithAgeRestriction("EUR:1.0", "EUR:0.2"),
@@ -299,7 +308,7 @@ test("it should be able to use unrestricted coins for age restricted contract", 
     depositFeeLimit: a("EUR:0.4"),
     wireFeeLimit: a("EUR:0"),
     wireFeeAmortization: 1,
-    requiredMinimumAge: 13
+    requiredMinimumAge: 13,
   });
   if (!res) {
     t.fail();

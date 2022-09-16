@@ -22,6 +22,7 @@ import {
   AcceptManualWithdrawalResult,
   AcceptWithdrawalResponse,
   addPaytoQueryParams,
+  AgeRestriction,
   AmountJson,
   AmountLike,
   Amounts,
@@ -510,6 +511,7 @@ async function processPlanchetGenerate(
     withdrawalDone: false,
     withdrawSig: r.withdrawSig,
     withdrawalGroupId: withdrawalGroup.withdrawalGroupId,
+    maxAge: withdrawalGroup.restrictAge ?? AgeRestriction.AGE_UNRESTRICTED,
     ageCommitmentProof: r.ageCommitmentProof,
     lastError: undefined,
   };
@@ -823,6 +825,7 @@ async function processPlanchetVerifyAndStoreCoin(
       reservePub: planchet.reservePub,
       withdrawalGroupId: withdrawalGroup.withdrawalGroupId,
     },
+    maxAge: planchet.maxAge,
     ageCommitmentProof: planchet.ageCommitmentProof,
   };
 
@@ -832,7 +835,13 @@ async function processPlanchetVerifyAndStoreCoin(
   // withdrawal succeeded.  If so, mark the withdrawal
   // group as finished.
   const firstSuccess = await ws.db
-    .mktx((x) => [x.coins, x.denominations, x.withdrawalGroups, x.planchets])
+    .mktx((x) => [
+      x.coins,
+      x.denominations,
+      x.coinAvailability,
+      x.withdrawalGroups,
+      x.planchets,
+    ])
     .runReadWrite(async (tx) => {
       const p = await tx.planchets.get(planchetCoinPub);
       if (!p || p.withdrawalDone) {

@@ -118,7 +118,8 @@ interface CoinInfo {
 
   denomSig: UnblindedSignature;
 
-  ageCommitmentProof: AgeCommitmentProof | undefined;
+  maxAge: number;
+  ageCommitmentProof?: AgeCommitmentProof;
 }
 
 export async function selectPeerCoins(
@@ -156,6 +157,7 @@ export async function selectPeerCoins(
         denomPubHash: denom.denomPubHash,
         coinPriv: coin.coinPriv,
         denomSig: coin.denomSig,
+        maxAge: coin.maxAge,
         ageCommitmentProof: coin.ageCommitmentProof,
       });
     }
@@ -245,6 +247,7 @@ export async function initiatePeerToPeerPush(
     .mktx((x) => [
       x.exchanges,
       x.coins,
+      x.coinAvailability,
       x.denominations,
       x.refreshGroups,
       x.peerPullPaymentInitiations,
@@ -583,6 +586,7 @@ export async function acceptPeerPullPayment(
       x.denominations,
       x.refreshGroups,
       x.peerPullPaymentIncoming,
+      x.coinAvailability,
     ])
     .runReadWrite(async (tx) => {
       const sel = await selectPeerCoins(ws, tx, instructedAmount);

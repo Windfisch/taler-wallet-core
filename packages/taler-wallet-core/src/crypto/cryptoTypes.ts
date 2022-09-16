@@ -61,6 +61,7 @@ export interface DeriveRefreshSessionRequest {
   meltCoinPub: string;
   meltCoinPriv: string;
   meltCoinDenomPubHash: string;
+  meltCoinMaxAge: number;
   meltCoinAgeCommitmentProof?: AgeCommitmentProof;
   newCoinDenoms: RefreshNewDenomInfo[];
   feeRefresh: AmountJson;

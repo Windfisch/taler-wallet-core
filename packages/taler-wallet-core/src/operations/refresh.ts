@@ -77,7 +77,7 @@ import {
 import { checkDbInvariant } from "../util/invariants.js";
 import { GetReadWriteAccess } from "../util/query.js";
 import { RetryInfo, runOperationHandlerForResult } from "../util/retries.js";
-import { makeCoinAvailable } from "../wallet.js";
+import { makeCoinAvailable, Wallet } from "../wallet.js";
 import { guardOperationException } from "./common.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
 import {
@@ -368,6 +368,7 @@ async function refreshMelt(
     meltCoinPriv: oldCoin.coinPriv,
     meltCoinPub: oldCoin.coinPub,
     feeRefresh: oldDenom.feeRefresh,
+    meltCoinMaxAge: oldCoin.maxAge,
     meltCoinAgeCommitmentProof: oldCoin.ageCommitmentProof,
     newCoinDenoms,
     sessionSecretSeed: refreshSession.sessionSecretSeed,
@@ -614,6 +615,7 @@ async function refreshReveal(
     meltCoinPub: oldCoin.coinPub,
     feeRefresh: oldDenom.feeRefresh,
     newCoinDenoms,
+    meltCoinMaxAge: oldCoin.maxAge,
     meltCoinAgeCommitmentProof: oldCoin.ageCommitmentProof,
     sessionSecretSeed: refreshSession.sessionSecretSeed,
   });
@@ -676,6 +678,7 @@ async function refreshReveal(
           oldCoinPub: refreshGroup.oldCoinPubs[coinIndex],
         },
         coinEvHash: pc.coinEvHash,
+        maxAge: pc.maxAge,
         ageCommitmentProof: pc.ageCommitmentProof,
       };
 
@@ -684,7 +687,12 @@ async function refreshReveal(
   }
 
   await ws.db
-    .mktx((x) => [x.coins, x.denominations, x.refreshGroups])
+    .mktx((x) => [
+      x.coins,
+      x.denominations,
+      x.coinAvailability,
+      x.refreshGroups,
+    ])
     .runReadWrite(async (tx) => {
       const rg = await tx.refreshGroups.get(refreshGroupId);
       if (!rg) {
@@ -830,6 +838,7 @@ export async function createRefreshGroup(
     denominations: typeof WalletStoresV1.denominations;
     coins: typeof WalletStoresV1.coins;
     refreshGroups: typeof WalletStoresV1.refreshGroups;
+    coinAvailability: typeof WalletStoresV1.coinAvailability;
   }>,
   oldCoinPubs: CoinPublicKey[],
   reason: RefreshReason,
@@ -871,16 +880,15 @@ export async function createRefreshGroup(
     );
     if (coin.status !== CoinStatus.Dormant) {
       coin.status = CoinStatus.Dormant;
-      const denom = await tx.denominations.get([
+      const coinAv = await tx.coinAvailability.get([
         coin.exchangeBaseUrl,
         coin.denomPubHash,
+        coin.maxAge,
       ]);
-      checkDbInvariant(!!denom);
-      checkDbInvariant(
-        denom.freshCoinCount != null && denom.freshCoinCount > 0,
-      );
-      denom.freshCoinCount--;
-      await tx.denominations.put(denom);
+      checkDbInvariant(!!coinAv);
+      checkDbInvariant(coinAv.freshCoinCount > 0);
+      coinAv.freshCoinCount--;
+      await tx.coinAvailability.put(coinAv);
     }
     const refreshAmount = coin.currentAmount;
     inputPerCoin.push(refreshAmount);
@@ -967,7 +975,13 @@ export async function autoRefresh(
     durationFromSpec({ days: 1 }),
   );
   await ws.db
-    .mktx((x) => [x.coins, x.denominations, x.refreshGroups, x.exchanges])
+    .mktx((x) => [
+      x.coins,
+      x.denominations,
+      x.coinAvailability,
+      x.refreshGroups,
+      x.exchanges,
+    ])
     .runReadWrite(async (tx) => {
       const exchange = await tx.exchanges.get(exchangeBaseUrl);
       if (!exchange) {

@@ -49,6 +49,7 @@ import {
   BankWithdrawDetails,
   parseWithdrawUri,
   AmountJson,
+  AgeRestriction,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import { DenominationRecord } from "./db.js";
@@ -86,6 +87,7 @@ export interface CoinInfo {
   denomPubHash: string;
   feeDeposit: string;
   feeRefresh: string;
+  maxAge: number;
 }
 
 /**
@@ -200,6 +202,7 @@ export async function withdrawCoin(args: {
     feeDeposit: Amounts.stringify(denom.fees.feeDeposit),
     feeRefresh: Amounts.stringify(denom.fees.feeRefresh),
     exchangeBaseUrl: args.exchangeBaseUrl,
+    maxAge: AgeRestriction.AGE_UNRESTRICTED,
   };
 }
 
@@ -298,6 +301,7 @@ export async function refreshCoin(req: {
         value: x.amountVal,
       },
     })),
+    meltCoinMaxAge: oldCoin.maxAge,
   });
 
   const meltReqBody: ExchangeMeltRequest = {

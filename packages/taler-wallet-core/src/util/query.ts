@@ -33,6 +33,7 @@ import {
   IDBVersionChangeEvent,
   IDBCursor,
   IDBKeyPath,
+  IDBKeyRange,
 } from "@gnu-taler/idb-bridge";
 import { Logger } from "@gnu-taler/taler-util";
 import { performanceNow } from "./timer.js";
@@ -309,9 +310,12 @@ export function describeIndex(
 }
 
 interface IndexReadOnlyAccessor<RecordType> {
-  iter(query?: IDBValidKey): ResultStream<RecordType>;
+  iter(query?: IDBKeyRange | IDBValidKey): ResultStream<RecordType>;
   get(query: IDBValidKey): Promise<RecordType | undefined>;
-  getAll(query: IDBValidKey, count?: number): Promise<RecordType[]>;
+  getAll(
+    query: IDBKeyRange | IDBValidKey,
+    count?: number,
+  ): Promise<RecordType[]>;
 }
 
 type GetIndexReadOnlyAccess<RecordType, IndexMap> = {
@@ -319,9 +323,12 @@ type GetIndexReadOnlyAccess<RecordType, IndexMap> = {
 };
 
 interface IndexReadWriteAccessor<RecordType> {
-  iter(query: IDBValidKey): ResultStream<RecordType>;
+  iter(query: IDBKeyRange | IDBValidKey): ResultStream<RecordType>;
   get(query: IDBValidKey): Promise<RecordType | undefined>;
-  getAll(query: IDBValidKey, count?: number): Promise<RecordType[]>;
+  getAll(
+    query: IDBKeyRange | IDBValidKey,
+    count?: number,
+  ): Promise<RecordType[]>;
 }
 
 type GetIndexReadWriteAccess<RecordType, IndexMap> = {

@@ -72,6 +72,7 @@ export interface AvailableCoinInfo {
 
   exchangeBaseUrl: string;
 
+  maxAge: number;
   ageCommitmentProof?: AgeCommitmentProof;
 }
 

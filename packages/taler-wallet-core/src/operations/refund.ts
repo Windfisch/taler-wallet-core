@@ -336,7 +336,13 @@ async function acceptRefunds(
   const now = TalerProtocolTimestamp.now();
 
   await ws.db
-    .mktx((x) => [x.purchases, x.coins, x.denominations, x.refreshGroups])
+    .mktx((x) => [
+      x.purchases,
+      x.coins,
+      x.coinAvailability,
+      x.denominations,
+      x.refreshGroups,
+    ])
     .runReadWrite(async (tx) => {
       const p = await tx.purchases.get(proposalId);
       if (!p) {

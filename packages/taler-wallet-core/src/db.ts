@@ -319,11 +319,6 @@ export interface DenominationRecord {
    * that includes this denomination.
    */
   listIssueDate: TalerProtocolTimestamp;
-
-  /**
-   * Number of fresh coins of this denomination that are available.
-   */
-  freshCoinCount?: number;
 }
 
 export namespace DenominationRecord {
@@ -546,6 +541,8 @@ export interface PlanchetRecord {
 
   coinEvHash: string;
 
+  maxAge: number;
+
   ageCommitmentProof?: AgeCommitmentProof;
 }
 
@@ -673,6 +670,8 @@ export interface CoinRecord {
    * Used to prevent allocation of the same coin for two different payments.
    */
   allocation?: CoinAllocation;
+
+  maxAge: number;
 
   ageCommitmentProof?: AgeCommitmentProof;
 }
@@ -1770,7 +1769,45 @@ export interface OperationAttemptLongpollResult {
   type: OperationAttemptResultType.Longpoll;
 }
 
+/**
+ * Availability of coins of a given denomination (and age restriction!).
+ *
+ * We can't store this information with the denomination record, as one denomination
+ * can be withdrawn with multiple age restrictions.
+ */
+export interface CoinAvailabilityRecord {
+  currency: string;
+  amountVal: number;
+  amountFrac: number;
+  denomPubHash: string;
+  exchangeBaseUrl: string;
+
+  /**
+   * Age restriction on the coin, or 0 for no age restriction (or
+   * denomination without age restriction support).
+   */
+  maxAge: number;
+
+  /**
+   * Number of fresh coins of this denomination that are available.
+   */
+  freshCoinCount: number;
+}
+
 export const WalletStoresV1 = {
+  coinAvailability: describeStore(
+    "coinAvailability",
+    describeContents<CoinAvailabilityRecord>({
+      keyPath: ["exchangeBaseUrl", "denomPubHash", "maxAge"],
+    }),
+    {
+      byExchangeAgeAvailability: describeIndex("byExchangeAgeAvailability", [
+        "exchangeBaseUrl",
+        "maxAge",
+        "freshCoinCount",
+      ]),
+    },
+  ),
   coins: describeStore(
     "coins",
     describeContents<CoinRecord>({
@@ -1779,10 +1816,10 @@ export const WalletStoresV1 = {
     {
       byBaseUrl: describeIndex("byBaseUrl", "exchangeBaseUrl"),
       byDenomPubHash: describeIndex("byDenomPubHash", "denomPubHash"),
-      byDenomPubHashAndStatus: describeIndex("byDenomPubHashAndStatus", [
-        "denomPubHash",
-        "status",
-      ]),
+      byExchangeDenomPubHashAndAgeAndStatus: describeIndex(
+        "byExchangeDenomPubHashAndAgeAndStatus",
+        ["exchangeBaseUrl", "denomPubHash", "maxAge", "status"],
+      ),
       byCoinEvHash: describeIndex("byCoinEvHash", "coinEvHash"),
     },
   ),

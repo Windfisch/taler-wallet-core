@@ -18,6 +18,7 @@
  * Imports.
  */
 import {
+  AgeRestriction,
   AcceptTipResponse,
   Amounts,
   BlindedDenominationSignature,
@@ -315,11 +316,12 @@ export async function processTip(
       exchangeBaseUrl: tipRecord.exchangeBaseUrl,
       status: CoinStatus.Fresh,
       coinEvHash: planchet.coinEvHash,
+      maxAge: AgeRestriction.AGE_UNRESTRICTED,
     });
   }
 
   await ws.db
-    .mktx((x) => [x.coins, x.denominations, x.tips])
+    .mktx((x) => [x.coins, x.coinAvailability, x.denominations, x.tips])
     .runReadWrite(async (tx) => {
       const tr = await tx.tips.get(walletTipId);
       if (!tr) {
