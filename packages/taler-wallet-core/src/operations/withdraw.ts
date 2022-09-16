@@ -69,8 +69,6 @@ import {
   DenomSelectionState,
   ExchangeDetailsRecord,
   ExchangeRecord,
-  OperationAttemptResult,
-  OperationAttemptResultType,
   OperationStatus,
   PlanchetRecord,
   ReserveRecordStatus,
@@ -95,6 +93,7 @@ import {
 } from "../util/http.js";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
 import { DbAccess, GetReadOnlyAccess } from "../util/query.js";
+import { OperationAttemptResult, OperationAttemptResultType } from "../util/retries.js";
 import {
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,

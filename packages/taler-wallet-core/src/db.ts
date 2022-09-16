@@ -45,7 +45,7 @@ import {
   Location,
   WireInfo,
 } from "@gnu-taler/taler-util";
-import { RetryInfo } from "./util/retries.js";
+import { RetryInfo, RetryTags } from "./util/retries.js";
 import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
 import { DenomInfo } from "./internal-wallet-state.js";
 
@@ -1719,54 +1719,14 @@ export interface OperationRetryRecord {
   /**
    * Unique identifier for the operation.  Typically of
    * the format `${opType}-${opUniqueKey}`
+   * 
+   * @see {@link RetryTags}
    */
   id: string;
 
   lastError?: TalerErrorDetail;
 
   retryInfo: RetryInfo;
-}
-
-export enum OperationAttemptResultType {
-  Finished = "finished",
-  Pending = "pending",
-  Error = "error",
-  Longpoll = "longpoll",
-}
-
-// FIXME: not part of DB!
-export type OperationAttemptResult<TSuccess = unknown, TPending = unknown> =
-  | OperationAttemptFinishedResult<TSuccess>
-  | OperationAttemptErrorResult
-  | OperationAttemptLongpollResult
-  | OperationAttemptPendingResult<TPending>;
-
-export namespace OperationAttemptResult {
-  export function finishedEmpty(): OperationAttemptResult<unknown, unknown> {
-    return {
-      type: OperationAttemptResultType.Finished,
-      result: undefined,
-    };
-  }
-}
-
-export interface OperationAttemptFinishedResult<T> {
-  type: OperationAttemptResultType.Finished;
-  result: T;
-}
-
-export interface OperationAttemptPendingResult<T> {
-  type: OperationAttemptResultType.Pending;
-  result: T;
-}
-
-export interface OperationAttemptErrorResult {
-  type: OperationAttemptResultType.Error;
-  errorDetail: TalerErrorDetail;
-}
-
-export interface OperationAttemptLongpollResult {
-  type: OperationAttemptResultType.Longpoll;
 }
 
 /**

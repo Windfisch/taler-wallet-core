@@ -47,11 +47,11 @@ import {
 import {
   DenominationRecord,
   DepositGroupRecord,
-  OperationAttemptResult,
   OperationStatus,
 } from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
+import { OperationAttemptResult } from "../util/retries.js";
 import { spendCoins } from "../wallet.js";
 import { getExchangeDetails } from "./exchanges.js";
 import {

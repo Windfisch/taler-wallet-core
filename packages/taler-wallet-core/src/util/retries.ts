@@ -30,8 +30,6 @@ import {
   BackupProviderRecord,
   DepositGroupRecord,
   ExchangeRecord,
-  OperationAttemptResult,
-  OperationAttemptResultType,
   ProposalRecord,
   PurchaseRecord,
   RecoupGroupRecord,
@@ -44,6 +42,48 @@ import { TalerError } from "../errors.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { PendingTaskType } from "../pending-types.js";
 import { GetReadWriteAccess } from "./query.js";
+
+export enum OperationAttemptResultType {
+  Finished = "finished",
+  Pending = "pending",
+  Error = "error",
+  Longpoll = "longpoll",
+}
+
+// FIXME: not part of DB!
+export type OperationAttemptResult<TSuccess = unknown, TPending = unknown> =
+  | OperationAttemptFinishedResult<TSuccess>
+  | OperationAttemptErrorResult
+  | OperationAttemptLongpollResult
+  | OperationAttemptPendingResult<TPending>;
+
+export namespace OperationAttemptResult {
+  export function finishedEmpty(): OperationAttemptResult<unknown, unknown> {
+    return {
+      type: OperationAttemptResultType.Finished,
+      result: undefined,
+    };
+  }
+}
+
+export interface OperationAttemptFinishedResult<T> {
+  type: OperationAttemptResultType.Finished;
+  result: T;
+}
+
+export interface OperationAttemptPendingResult<T> {
+  type: OperationAttemptResultType.Pending;
+  result: T;
+}
+
+export interface OperationAttemptErrorResult {
+  type: OperationAttemptResultType.Error;
+  errorDetail: TalerErrorDetail;
+}
+
+export interface OperationAttemptLongpollResult {
+  type: OperationAttemptResultType.Longpoll;
+}
 
 export interface RetryInfo {
   firstTry: AbsoluteTime;

@@ -44,7 +44,6 @@ import {
   PrepareRefundResult,
   RefreshReason,
   TalerErrorCode,
-  TalerErrorDetail,
   TalerProtocolTimestamp,
   TransactionType,
   URL,
@@ -53,7 +52,6 @@ import {
   AbortStatus,
   CoinStatus,
   DenominationRecord,
-  OperationAttemptResult,
   PurchaseRecord,
   RefundReason,
   RefundState,
@@ -63,6 +61,7 @@ import { InternalWalletState } from "../internal-wallet-state.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { GetReadWriteAccess } from "../util/query.js";
+import { OperationAttemptResult } from "../util/retries.js";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
 import { makeEventId } from "./transactions.js";
 

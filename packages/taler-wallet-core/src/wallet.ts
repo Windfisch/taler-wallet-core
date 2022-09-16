@@ -106,8 +106,6 @@ import {
   DenominationRecord,
   exportDb,
   importDb,
-  OperationAttemptResult,
-  OperationAttemptResultType,
   WalletStoresV1,
 } from "./db.js";
 import {
@@ -228,7 +226,12 @@ import {
   openPromise,
 } from "./util/promiseUtils.js";
 import { DbAccess, GetReadWriteAccess } from "./util/query.js";
-import { RetryInfo, runOperationHandlerForResult } from "./util/retries.js";
+import {
+  OperationAttemptResult,
+  OperationAttemptResultType,
+  RetryInfo,
+  runOperationHandlerForResult,
+} from "./util/retries.js";
 import { TimerAPI, TimerGroup } from "./util/timer.js";
 import {
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
@@ -284,7 +287,7 @@ async function callOperationHandler(
   ws: InternalWalletState,
   pending: PendingTaskInfo,
   forceNow = false,
-): Promise<OperationAttemptResult<unknown, unknown>> {
+): Promise<OperationAttemptResult> {
   switch (pending.type) {
     case PendingTaskType.ExchangeUpdate:
       return await updateExchangeFromUrlHandler(ws, pending.exchangeBaseUrl, {
@@ -1099,7 +1102,7 @@ async function dispatchRequestInternal(
     }
     case "getTransactionById": {
       const req = codecForTransactionByIdRequest().decode(payload);
-      return await getTransactionById(ws, req)
+      return await getTransactionById(ws, req);
     }
     case "addExchange": {
       const req = codecForAddExchangeRequest().decode(payload);

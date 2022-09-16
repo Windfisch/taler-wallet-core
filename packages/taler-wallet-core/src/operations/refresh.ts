@@ -57,8 +57,6 @@ import {
   CoinSourceType,
   CoinStatus,
   DenominationRecord,
-  OperationAttemptResult,
-  OperationAttemptResultType,
   OperationStatus,
   RefreshCoinStatus,
   RefreshGroupRecord,
@@ -76,7 +74,7 @@ import {
 } from "../util/http.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { GetReadWriteAccess } from "../util/query.js";
-import { RetryInfo, runOperationHandlerForResult } from "../util/retries.js";
+import { OperationAttemptResult, OperationAttemptResultType, RetryInfo, runOperationHandlerForResult } from "../util/retries.js";
 import { makeCoinAvailable, Wallet } from "../wallet.js";
 import { guardOperationException } from "./common.js";
 import { updateExchangeFromUrl } from "./exchanges.js";

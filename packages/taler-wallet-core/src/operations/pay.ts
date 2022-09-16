@@ -68,8 +68,6 @@ import {
   CoinRecord,
   CoinStatus,
   DenominationRecord,
-  OperationAttemptResult,
-  OperationAttemptResultType,
   ProposalRecord,
   ProposalStatus,
   PurchaseRecord,
@@ -99,7 +97,7 @@ import {
   throwUnexpectedRequestError,
 } from "../util/http.js";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
-import { RetryInfo, RetryTags, scheduleRetry } from "../util/retries.js";
+import { OperationAttemptResult, OperationAttemptResultType, RetryInfo, RetryTags, scheduleRetry } from "../util/retries.js";
 import { spendCoins } from "../wallet.js";
 import { getExchangeDetails } from "./exchanges.js";
 import { getTotalRefreshCost } from "./refresh.js";

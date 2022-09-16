@@ -74,10 +74,7 @@ import {
   BackupProviderStateTag,
   BackupProviderTerms,
   ConfigRecord,
-  OperationAttemptResult,
-  OperationAttemptResultType,
   WalletBackupConfState,
-  WalletStoresV1,
   WALLET_BACKUP_STATE_KEY,
 } from "../../db.js";
 import { InternalWalletState } from "../../internal-wallet-state.js";
@@ -89,9 +86,7 @@ import {
   checkDbInvariant,
   checkLogicInvariant,
 } from "../../util/invariants.js";
-import { GetReadWriteAccess } from "../../util/query.js";
-import { RetryInfo, RetryTags, scheduleRetryInTx } from "../../util/retries.js";
-import { guardOperationException } from "../common.js";
+import { OperationAttemptResult, OperationAttemptResultType, RetryTags, scheduleRetryInTx } from "../../util/retries.js";
 import {
   checkPaymentByProposalId,
   confirmPay,
