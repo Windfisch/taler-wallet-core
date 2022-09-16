@@ -24,7 +24,8 @@ import {
   AcceptPeerPushPaymentRequest,
   AcceptPeerPushPaymentResponse,
   AgeCommitmentProof,
-  AmountJson, Amounts,
+  AmountJson,
+  Amounts,
   AmountString,
   buildCodecForObject,
   CheckPeerPullPaymentRequest,
@@ -34,7 +35,8 @@ import {
   Codec,
   codecForAmountString,
   codecForAny,
-  codecForExchangeGetContractResponse, constructPayPullUri,
+  codecForExchangeGetContractResponse,
+  constructPayPullUri,
   constructPayPushUri,
   ContractTermsUtil,
   decodeCrock,
@@ -58,14 +60,14 @@ import {
   TalerProtocolTimestamp,
   TransactionType,
   UnblindedSignature,
-  WalletAccountMergeFlags
+  WalletAccountMergeFlags,
 } from "@gnu-taler/taler-util";
 import {
   CoinStatus,
   MergeReserveInfo,
   ReserveRecordStatus,
   WalletStoresV1,
-  WithdrawalRecordType
+  WithdrawalRecordType,
 } from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
@@ -339,7 +341,7 @@ export async function initiatePeerToPeerPush(
       exchangeBaseUrl: coinSelRes.exchangeBaseUrl,
       contractPriv: econtractResp.contractPriv,
     }),
-    transactionId: makeEventId(TransactionType.PeerPushDebit, pursePair.pub)
+    transactionId: makeEventId(TransactionType.PeerPushDebit, pursePair.pub),
   };
 }
 
@@ -552,9 +554,9 @@ export async function acceptPeerPushPayment(
   return {
     transactionId: makeEventId(
       TransactionType.PeerPushCredit,
-      wg.withdrawalGroupId
-    )
-  }
+      wg.withdrawalGroupId,
+    ),
+  };
 }
 
 /**
@@ -645,8 +647,8 @@ export async function acceptPeerPullPayment(
     transactionId: makeEventId(
       TransactionType.PeerPullDebit,
       req.peerPullPaymentIncomingId,
-    )
-  }
+    ),
+  };
 }
 
 export async function checkPeerPullPayment(
@@ -840,7 +842,7 @@ export async function initiatePeerRequestForPay(
     }),
     transactionId: makeEventId(
       TransactionType.PeerPullCredit,
-      wg.withdrawalGroupId
-    )
+      wg.withdrawalGroupId,
+    ),
   };
 }

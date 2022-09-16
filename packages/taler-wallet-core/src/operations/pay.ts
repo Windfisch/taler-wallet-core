@@ -24,7 +24,7 @@
 /**
  * Imports.
  */
-import { BridgeIDBKeyRange, GlobalIDB } from "@gnu-taler/idb-bridge";
+import { GlobalIDB } from "@gnu-taler/idb-bridge";
 import {
   AbsoluteTime,
   AgeRestriction,
@@ -47,7 +47,6 @@ import {
   j2s,
   Logger,
   NotificationType,
-  parsePaytoUri,
   parsePayUri,
   PayCoinSelection,
   PreparePayResult,
@@ -75,7 +74,6 @@ import {
   ProposalStatus,
   PurchaseRecord,
   WalletContractData,
-  WalletStoresV1,
 } from "../db.js";
 import {
   makeErrorDetail,
@@ -88,11 +86,8 @@ import {
 } from "../internal-wallet-state.js";
 import { assertUnreachable } from "../util/assertUnreachable.js";
 import {
-  AvailableCoinInfo,
-  CoinCandidateSelection,
   CoinSelectionTally,
   PreviousPayCoins,
-  selectForcedPayCoins,
   tallyFees,
 } from "../util/coinSelection.js";
 import {
@@ -104,11 +99,10 @@ import {
   throwUnexpectedRequestError,
 } from "../util/http.js";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
-import { GetReadWriteAccess } from "../util/query.js";
 import { RetryInfo, RetryTags, scheduleRetry } from "../util/retries.js";
 import { spendCoins } from "../wallet.js";
 import { getExchangeDetails } from "./exchanges.js";
-import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
+import { getTotalRefreshCost } from "./refresh.js";
 import { makeEventId } from "./transactions.js";
 
 /**
@@ -168,24 +162,6 @@ export async function getTotalPaymentCost(
       const zero = Amounts.getZero(pcs.paymentAmount.currency);
       return Amounts.sum([zero, ...costs]).amount;
     });
-}
-
-function isSpendableCoin(coin: CoinRecord, denom: DenominationRecord): boolean {
-  if (denom.isRevoked) {
-    return false;
-  }
-  if (!denom.isOffered) {
-    return false;
-  }
-  if (coin.status !== CoinStatus.Fresh) {
-    return false;
-  }
-  if (
-    AbsoluteTime.isExpired(AbsoluteTime.fromTimestamp(denom.stampExpireDeposit))
-  ) {
-    return false;
-  }
-  return true;
 }
 
 export interface CoinSelectionRequest {
@@ -898,7 +874,7 @@ export type AvailableDenom = DenominationInfo & {
   numAvailable: number;
 };
 
-async function selectCandidates(
+export async function selectCandidates(
   ws: InternalWalletState,
   req: SelectPayCoinRequestNg,
 ): Promise<[AvailableDenom[], Record<string, AmountJson>]> {
@@ -937,7 +913,7 @@ async function selectCandidates(
           continue;
         }
         let ageLower = 0;
-        let ageUpper = Number.MAX_SAFE_INTEGER;
+        let ageUpper = AgeRestriction.AGE_UNRESTRICTED;
         if (req.requiredMinimumAge) {
           ageLower = req.requiredMinimumAge;
         }
@@ -1522,7 +1498,7 @@ export async function runPayForConfirmPay(
       return {
         type: ConfirmPayResultType.Done,
         contractTerms: purchase.download.contractTermsRaw,
-        transactionId: makeEventId(TransactionType.Payment, proposalId)
+        transactionId: makeEventId(TransactionType.Payment, proposalId),
       };
     }
     case OperationAttemptResultType.Error:
