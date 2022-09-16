@@ -20,13 +20,14 @@ import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { ButtonHandler, SelectFieldHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import * as wxApi from "../../wxApi.js";
-import {
-  Props as TermsOfServiceSectionProps
-} from "../TermsOfServiceSection.js";
+import { Props as TermsOfServiceSectionProps } from "../TermsOfServiceSection.js";
 import { useComponentState } from "./state.js";
-import { AcceptedView, IgnoredView, LoadingUriView, ReadyView } from "./views.js";
-
-
+import {
+  AcceptedView,
+  IgnoredView,
+  LoadingUriView,
+  ReadyView,
+} from "./views.js";
 
 export interface Props {
   talerTipUri?: string;
@@ -42,7 +43,6 @@ export type State =
   | State.Ignored;
 
 export namespace State {
-
   export interface Loading {
     status: "loading";
     error: undefined;
@@ -77,9 +77,13 @@ export namespace State {
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
   "loading-uri": LoadingUriView,
-  "accepted": AcceptedView,
-  "ignored": IgnoredView,
-  "ready": ReadyView,
+  accepted: AcceptedView,
+  ignored: IgnoredView,
+  ready: ReadyView,
 };
 
-export const TipPage = compose("Tip", (p: Props) => useComponentState(p, wxApi), viewMapping)
+export const TipPage = compose(
+  "Tip",
+  (p: Props) => useComponentState(p, wxApi),
+  viewMapping,
+);

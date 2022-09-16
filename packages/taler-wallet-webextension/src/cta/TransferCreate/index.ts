@@ -35,7 +35,6 @@ export type State =
   | State.Ready;
 
 export namespace State {
-
   export interface Loading {
     status: "loading";
     error: undefined;
@@ -59,9 +58,9 @@ export namespace State {
     status: "ready";
     invalid: boolean;
     create: ButtonHandler;
-    toBeReceived: AmountJson,
-    chosenAmount: AmountJson,
-    subject: TextFieldHandler,
+    toBeReceived: AmountJson;
+    chosenAmount: AmountJson;
+    subject: TextFieldHandler;
     error: undefined;
     operationError?: TalerErrorDetail;
   }
@@ -70,10 +69,12 @@ export namespace State {
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
   "loading-uri": LoadingUriView,
-  "created": CreatedView,
-  "ready": ReadyView,
+  created: CreatedView,
+  ready: ReadyView,
 };
 
-
-export const TransferCreatePage = compose("TransferCreatePage", (p: Props) => useComponentState(p, wxApi), viewMapping)
-
+export const TransferCreatePage = compose(
+  "TransferCreatePage",
+  (p: Props) => useComponentState(p, wxApi),
+  viewMapping,
+);

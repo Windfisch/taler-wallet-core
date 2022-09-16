@@ -14,7 +14,6 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 import { Amounts } from "@gnu-taler/taler-util";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
@@ -37,7 +36,7 @@ export function useComponentState(
     return {
       status: "loading",
       error: undefined,
-    }
+    };
   }
   if (tipInfo.hasError) {
     return {
@@ -59,9 +58,9 @@ export function useComponentState(
     amount: Amounts.parseOrThrow(tip.tipAmountEffective),
     error: undefined,
     cancel: {
-      onClick: onCancel
-    }
-  }
+      onClick: onCancel,
+    },
+  };
 
   if (tipIgnored) {
     return {
@@ -85,4 +84,3 @@ export function useComponentState(
     },
   };
 }
-

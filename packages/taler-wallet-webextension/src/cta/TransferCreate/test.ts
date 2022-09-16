@@ -22,10 +22,7 @@
 import { expect } from "chai";
 
 describe("test description", () => {
-
   it("should assert", () => {
-
-    expect([]).deep.equals([])
+    expect([]).deep.equals([]);
   });
-})
-
+});

@@ -25,21 +25,22 @@ export function useComponentState(
   { amount: amountStr, onClose }: Props,
   api: typeof wxApi,
 ): State {
-  const amount = Amounts.parseOrThrow(amountStr)
+  const amount = Amounts.parseOrThrow(amountStr);
 
   const [subject, setSubject] = useState("");
-  const [talerUri, setTalerUri] = useState("")
+  const [talerUri, setTalerUri] = useState("");
 
   const hook = useAsyncAsHook(api.listExchanges);
-  const [exchangeIdx, setExchangeIdx] = useState("0")
-  const [operationError, setOperationError] = useState<TalerErrorDetail | undefined>(undefined)
-
+  const [exchangeIdx, setExchangeIdx] = useState("0");
+  const [operationError, setOperationError] = useState<
+    TalerErrorDetail | undefined
+  >(undefined);
 
   if (!hook) {
     return {
       status: "loading",
       error: undefined,
-    }
+    };
   }
   if (hook.hasError) {
     return {
@@ -54,62 +55,65 @@ export function useComponentState(
       talerUri,
       error: undefined,
       cancel: {
-        onClick: onClose
+        onClick: onClose,
       },
       copyToClipboard: {
         onClick: async () => {
           navigator.clipboard.writeText(talerUri);
-        }
+        },
       },
-    }
+    };
   }
 
-  const exchanges = hook.response.exchanges.filter(e => e.currency === amount.currency);
-  const exchangeMap = exchanges.reduce((prev, cur, idx) => ({ ...prev, [String(idx)]: cur.exchangeBaseUrl }), {} as Record<string, string>)
+  const exchanges = hook.response.exchanges.filter(
+    (e) => e.currency === amount.currency,
+  );
+  const exchangeMap = exchanges.reduce(
+    (prev, cur, idx) => ({ ...prev, [String(idx)]: cur.exchangeBaseUrl }),
+    {} as Record<string, string>,
+  );
   const selected = exchanges[Number(exchangeIdx)];
 
   async function accept(): Promise<string> {
     try {
-
       const resp = await api.initiatePeerPullPayment({
         amount: Amounts.stringify(amount),
         exchangeBaseUrl: selected.exchangeBaseUrl,
         partialContractTerms: {
-          summary: subject
-        }
-      })
-      return resp.talerUri
+          summary: subject,
+        },
+      });
+      return resp.talerUri;
     } catch (e) {
       if (e instanceof TalerError) {
-        setOperationError(e.errorDetail)
+        setOperationError(e.errorDetail);
       }
-      console.error(e)
-      throw Error("error trying to accept")
+      console.error(e);
+      throw Error("error trying to accept");
     }
   }
-
 
   return {
     status: "ready",
     subject: {
       error: !subject ? "cant be empty" : undefined,
       value: subject,
-      onInput: async (e) => setSubject(e)
+      onInput: async (e) => setSubject(e),
     },
     invalid: !subject || Amounts.isZero(amount),
     exchangeUrl: selected.exchangeBaseUrl,
     create: {
       onClick: async () => {
         const uri = await accept();
-        setTalerUri(uri)
-      }
+        setTalerUri(uri);
+      },
     },
     cancel: {
-      onClick: onClose
+      onClick: onClose,
     },
     chosenAmount: amount,
     toBeReceived: amount,
     error: undefined,
-    operationError
-  }
+    operationError,
+  };
 }

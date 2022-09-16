@@ -14,7 +14,6 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 import { Amounts, NotificationType } from "@gnu-taler/taler-util";
 import { useEffect, useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
@@ -40,7 +39,7 @@ export function useComponentState(
   });
 
   if (!info) {
-    return { status: "loading", error: undefined }
+    return { status: "loading", error: undefined };
   }
   if (info.hasError) {
     return {
@@ -67,7 +66,7 @@ export function useComponentState(
     products: info.response.refund.info.products,
     awaitingAmount: Amounts.parseOrThrow(refund.awaiting),
     error: undefined,
-  }
+  };
 
   if (ignored) {
     return {

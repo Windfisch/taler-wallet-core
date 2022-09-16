@@ -14,7 +14,15 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AbsoluteTime, Amounts, NotificationType, PreparePayResult, PreparePayResultType, TalerErrorDetail, TalerProtocolTimestamp } from "@gnu-taler/taler-util";
+import {
+  AbsoluteTime,
+  Amounts,
+  NotificationType,
+  PreparePayResult,
+  PreparePayResultType,
+  TalerErrorDetail,
+  TalerProtocolTimestamp,
+} from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
@@ -27,11 +35,11 @@ export function useComponentState(
 ): State {
   const hook = useAsyncAsHook(async () => {
     const p2p = await api.checkPeerPullPayment({
-      talerUri: talerPayPullUri
-    })
+      talerUri: talerPayPullUri,
+    });
     const balance = await api.getBalance();
-    return { p2p, balance }
-  })
+    return { p2p, balance };
+  });
 
   useEffect(() => {
     api.onUpdateNotification([NotificationType.CoinWithdrawn], () => {
@@ -39,13 +47,15 @@ export function useComponentState(
     });
   });
 
-  const [operationError, setOperationError] = useState<TalerErrorDetail | undefined>(undefined)
+  const [operationError, setOperationError] = useState<
+    TalerErrorDetail | undefined
+  >(undefined);
 
   if (!hook) {
     return {
       status: "loading",
       error: undefined,
-    }
+    };
   }
   if (hook.hasError) {
     return {
@@ -56,13 +66,17 @@ export function useComponentState(
 
   // const { payStatus } = hook.response.p2p;
 
-  const { amount: purseAmount, contractTerms, peerPullPaymentIncomingId } = hook.response.p2p
+  const {
+    amount: purseAmount,
+    contractTerms,
+    peerPullPaymentIncomingId,
+  } = hook.response.p2p;
 
-
-  const amountStr: string = contractTerms?.amount
-  const amount = Amounts.parseOrThrow(amountStr)
-  const summary: string | undefined = contractTerms?.summary
-  const expiration: TalerProtocolTimestamp | undefined = contractTerms?.purse_expiration
+  const amountStr: string = contractTerms?.amount;
+  const amount = Amounts.parseOrThrow(amountStr);
+  const summary: string | undefined = contractTerms?.summary;
+  const expiration: TalerProtocolTimestamp | undefined =
+    contractTerms?.purse_expiration;
 
   const foundBalance = hook.response.balance.balances.find(
     (b) => Amounts.parseOrThrow(b.available).currency === amount.currency,
@@ -71,35 +85,32 @@ export function useComponentState(
   const paymentPossible: PreparePayResult = {
     status: PreparePayResultType.PaymentPossible,
     proposalId: "fakeID",
-    contractTerms: {
-    } as any,
+    contractTerms: {} as any,
     contractTermsHash: "asd",
     amountRaw: hook.response.p2p.amount,
     amountEffective: hook.response.p2p.amount,
     noncePriv: "",
-  } as PreparePayResult
+  } as PreparePayResult;
 
   const insufficientBalance: PreparePayResult = {
     status: PreparePayResultType.InsufficientBalance,
     proposalId: "fakeID",
-    contractTerms: {
-    } as any,
+    contractTerms: {} as any,
     amountRaw: hook.response.p2p.amount,
     noncePriv: "",
-  }
-
+  };
 
   const baseResult = {
     uri: talerPayPullUri,
     cancel: {
-      onClick: onClose
+      onClick: onClose,
     },
     amount,
     goToWalletManualWithdraw,
     summary,
     expiration: expiration ? AbsoluteTime.fromTimestamp(expiration) : undefined,
     operationError,
-  }
+  };
 
   if (!foundBalance) {
     return {
@@ -108,20 +119,21 @@ export function useComponentState(
       balance: undefined,
       ...baseResult,
       payStatus: insufficientBalance,
-    }
+    };
   }
 
   const foundAmount = Amounts.parseOrThrow(foundBalance.available);
 
   //FIXME: should use pay result type since it check for coins exceptions
-  if (Amounts.cmp(foundAmount, amount) < 0) { //payStatus.status === PreparePayResultType.InsufficientBalance) {
+  if (Amounts.cmp(foundAmount, amount) < 0) {
+    //payStatus.status === PreparePayResultType.InsufficientBalance) {
     return {
-      status: 'no-enough-balance',
+      status: "no-enough-balance",
       error: undefined,
       balance: foundAmount,
       ...baseResult,
       payStatus: insufficientBalance,
-    }
+    };
   }
 
   // if (payStatus.status === PreparePayResultType.AlreadyConfirmed) {
@@ -135,18 +147,17 @@ export function useComponentState(
   async function accept(): Promise<void> {
     try {
       const resp = await api.acceptPeerPullPayment({
-        peerPullPaymentIncomingId
-      })
-      await onClose()
+        peerPullPaymentIncomingId,
+      });
+      await onClose();
     } catch (e) {
       if (e instanceof TalerError) {
-        setOperationError(e.errorDetail)
+        setOperationError(e.errorDetail);
       }
-      console.error(e)
-      throw Error("error trying to accept")
+      console.error(e);
+      throw Error("error trying to accept");
     }
   }
-
 
   return {
     status: "ready",
@@ -155,7 +166,7 @@ export function useComponentState(
     payStatus: paymentPossible,
     balance: foundAmount,
     accept: {
-      onClick: accept
+      onClick: accept,
     },
-  }
+  };
 }

@@ -261,9 +261,11 @@ export function listExchanges(): Promise<ExchangesListResponse> {
   return callBackend("listExchanges", {});
 }
 
-export function getExchangeDetailedInfo(exchangeBaseUrl: string): Promise<ExchangeFullDetails> {
+export function getExchangeDetailedInfo(
+  exchangeBaseUrl: string,
+): Promise<ExchangeFullDetails> {
   return callBackend("getExchangeDetailedInfo", {
-    exchangeBaseUrl
+    exchangeBaseUrl,
   });
 }
 
@@ -538,6 +540,6 @@ export function acceptPeerPullPayment(
 
 export function getTransactionById(tid: string): Promise<Transaction> {
   return callBackend("getTransactionById", {
-    transactionId: tid
-  })
+    transactionId: tid,
+  });
 }

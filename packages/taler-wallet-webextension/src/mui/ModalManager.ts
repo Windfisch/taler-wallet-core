@@ -119,8 +119,9 @@ function handleContainer(containerInfo: Container, props: ManagedModalProps) {
         el: container,
       });
       // Use computed style, here to get the real padding to add our scrollbar width.
-      container.style.paddingRight = `${getPaddingRight(container) + scrollbarSize
-        }px`;
+      container.style.paddingRight = `${
+        getPaddingRight(container) + scrollbarSize
+      }px`;
 
       // .mui-fixed is a global helper.
       const fixedElements =
@@ -131,8 +132,9 @@ function handleContainer(containerInfo: Container, props: ManagedModalProps) {
           property: "padding-right",
           el: element,
         });
-        element.style.paddingRight = `${getPaddingRight(element) + scrollbarSize
-          }px`;
+        element.style.paddingRight = `${
+          getPaddingRight(element) + scrollbarSize
+        }px`;
       });
     }
 
@@ -142,7 +144,7 @@ function handleContainer(containerInfo: Container, props: ManagedModalProps) {
     const containerWindow = ownerWindow(container);
     const scrollContainer =
       parent?.nodeName === "HTML" &&
-        containerWindow.getComputedStyle(parent).overflowY === "scroll"
+      containerWindow.getComputedStyle(parent).overflowY === "scroll"
         ? parent
         : container;
 

@@ -14,16 +14,25 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { FeeDescription, FeeDescriptionPair, AbsoluteTime, ExchangeFullDetails, OperationMap } from "@gnu-taler/taler-util";
+import {
+  FeeDescription,
+  FeeDescriptionPair,
+  AbsoluteTime,
+  ExchangeFullDetails,
+  OperationMap,
+} from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { ButtonHandler, SelectFieldHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import * as wxApi from "../../wxApi.js";
 import { useComponentState } from "./state.js";
-import { ComparingView, LoadingUriView, NoExchangesView, ReadyView } from "./views.js";
-
-
+import {
+  ComparingView,
+  LoadingUriView,
+  NoExchangesView,
+  ReadyView,
+} from "./views.js";
 
 export interface Props {
   currency?: string;
@@ -39,7 +48,6 @@ export type State =
   | State.NoExchanges;
 
 export namespace State {
-
   export interface Loading {
     status: "loading";
     error: undefined;
@@ -75,13 +83,16 @@ export namespace State {
   }
 }
 
-
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
   "loading-uri": LoadingUriView,
-  "comparing": ComparingView,
+  comparing: ComparingView,
   "no-exchanges": NoExchangesView,
-  "ready": ReadyView,
+  ready: ReadyView,
 };
 
-export const ExchangeSelectionPage = compose("ExchangeSelectionPage", (p: Props) => useComponentState(p, wxApi), viewMapping)
+export const ExchangeSelectionPage = compose(
+  "ExchangeSelectionPage",
+  (p: Props) => useComponentState(p, wxApi),
+  viewMapping,
+);

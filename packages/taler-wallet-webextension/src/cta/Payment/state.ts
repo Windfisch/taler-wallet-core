@@ -14,8 +14,15 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
-import { AmountJson, Amounts, ConfirmPayResult, ConfirmPayResultType, NotificationType, PreparePayResultType, TalerErrorCode } from "@gnu-taler/taler-util";
+import {
+  AmountJson,
+  Amounts,
+  ConfirmPayResult,
+  ConfirmPayResultType,
+  NotificationType,
+  PreparePayResultType,
+  TalerErrorCode,
+} from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
@@ -82,8 +89,9 @@ export function useComponentState(
     uri: hook.response.uri,
     amount,
     error: undefined,
-    cancel, goToWalletManualWithdraw
-  }
+    cancel,
+    goToWalletManualWithdraw,
+  };
 
   if (!foundBalance) {
     return {
@@ -91,7 +99,7 @@ export function useComponentState(
       balance: undefined,
       payStatus,
       ...baseResult,
-    }
+    };
   }
 
   const foundAmount = Amounts.parseOrThrow(foundBalance.available);
@@ -109,11 +117,11 @@ export function useComponentState(
 
   if (payStatus.status === PreparePayResultType.InsufficientBalance) {
     return {
-      status: 'no-enough-balance',
+      status: "no-enough-balance",
       balance: foundAmount,
       payStatus,
       ...baseResult,
-    }
+    };
   }
 
   if (payStatus.status === PreparePayResultType.AlreadyConfirmed) {
@@ -124,7 +132,6 @@ export function useComponentState(
       ...baseResult,
     };
   }
-
 
   async function doPayment(): Promise<void> {
     try {
@@ -169,8 +176,6 @@ export function useComponentState(
     payHandler,
     payStatus,
     ...baseResult,
-    balance: foundAmount
+    balance: foundAmount,
   };
-
 }
-

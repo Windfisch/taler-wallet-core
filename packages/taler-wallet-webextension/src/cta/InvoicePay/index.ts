@@ -14,7 +14,12 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AbsoluteTime, AmountJson, PreparePayResult, TalerErrorDetail } from "@gnu-taler/taler-util";
+import {
+  AbsoluteTime,
+  AmountJson,
+  PreparePayResult,
+  TalerErrorDetail,
+} from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { ButtonHandler } from "../../mui/handlers.js";
@@ -37,7 +42,6 @@ export type State =
   | State.Ready;
 
 export namespace State {
-
   export interface Loading {
     status: "loading";
     error: undefined;
@@ -52,20 +56,20 @@ export namespace State {
     error: undefined;
     uri: string;
     cancel: ButtonHandler;
-    amount: AmountJson,
+    amount: AmountJson;
     goToWalletManualWithdraw: (currency: string) => Promise<void>;
-    summary: string | undefined,
-    expiration: AbsoluteTime | undefined,
+    summary: string | undefined;
+    expiration: AbsoluteTime | undefined;
     operationError?: TalerErrorDetail;
     payStatus: PreparePayResult;
   }
 
   export interface NoBalanceForCurrency extends BaseInfo {
-    status: "no-balance-for-currency"
+    status: "no-balance-for-currency";
     balance: undefined;
   }
   export interface NoEnoughBalance extends BaseInfo {
-    status: "no-enough-balance"
+    status: "no-enough-balance";
     balance: AmountJson;
   }
 
@@ -82,9 +86,11 @@ const viewMapping: StateViewMap<State> = {
   "loading-uri": LoadingUriView,
   "no-balance-for-currency": ReadyView,
   "no-enough-balance": ReadyView,
-  "ready": ReadyView,
+  ready: ReadyView,
 };
 
-
-export const InvoicePayPage = compose("InvoicePayPage", (p: Props) => useComponentState(p, wxApi), viewMapping)
-
+export const InvoicePayPage = compose(
+  "InvoicePayPage",
+  (p: Props) => useComponentState(p, wxApi),
+  viewMapping,
+);

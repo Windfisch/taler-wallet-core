@@ -14,7 +14,6 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 import { FeeDescription, OperationMap } from "@gnu-taler/taler-util";
 import { createDenominationPairTimeline } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
@@ -26,26 +25,32 @@ export function useComponentState(
   { onCancel, onSelection, currency }: Props,
   api: typeof wxApi,
 ): State {
-  const initialValue = 0
+  const initialValue = 0;
   const [value, setValue] = useState(String(initialValue));
 
   const hook = useAsyncAsHook(async () => {
-    const { exchanges } = await api.listExchanges()
+    const { exchanges } = await api.listExchanges();
 
-    const selectedIdx = parseInt(value, 10)
-    const selectedExchange = exchanges.length == 0 ? undefined : exchanges[selectedIdx]
-    const selected = !selectedExchange ? undefined : await api.getExchangeDetailedInfo(selectedExchange.exchangeBaseUrl)
+    const selectedIdx = parseInt(value, 10);
+    const selectedExchange =
+      exchanges.length == 0 ? undefined : exchanges[selectedIdx];
+    const selected = !selectedExchange
+      ? undefined
+      : await api.getExchangeDetailedInfo(selectedExchange.exchangeBaseUrl);
 
-    const initialExchange = selectedIdx === initialValue ? undefined : exchanges[initialValue]
-    const original = !initialExchange ? undefined : await api.getExchangeDetailedInfo(initialExchange.exchangeBaseUrl)
-    return { exchanges, selected, original }
+    const initialExchange =
+      selectedIdx === initialValue ? undefined : exchanges[initialValue];
+    const original = !initialExchange
+      ? undefined
+      : await api.getExchangeDetailedInfo(initialExchange.exchangeBaseUrl);
+    return { exchanges, selected, original };
   });
 
   if (!hook) {
     return {
       status: "loading",
       error: undefined,
-    }
+    };
   }
   if (hook.hasError) {
     return {
@@ -60,11 +65,14 @@ export function useComponentState(
     //!selected <=> exchanges.length === 0
     return {
       status: "no-exchanges",
-      error: undefined
-    }
+      error: undefined,
+    };
   }
 
-  const exchangeMap = exchanges.reduce((prev, cur, idx) => ({ ...prev, [cur.exchangeBaseUrl]: String(idx) }), {} as Record<string, string>)
+  const exchangeMap = exchanges.reduce(
+    (prev, cur, idx) => ({ ...prev, [cur.exchangeBaseUrl]: String(idx) }),
+    {} as Record<string, string>,
+  );
 
   if (!original) {
     // !original <=> selected == original
@@ -74,24 +82,36 @@ export function useComponentState(
         list: exchangeMap,
         value: value,
         onChange: async (v) => {
-          setValue(v)
-        }
+          setValue(v);
+        },
       },
       error: undefined,
       onClose: {
-        onClick: onCancel
+        onClick: onCancel,
       },
       selected,
-      timeline: selected.feesDescription
-    }
+      timeline: selected.feesDescription,
+    };
   }
 
   const pairTimeline: OperationMap<FeeDescription[]> = {
-    deposit: createDenominationPairTimeline(selected.feesDescription.deposit, original.feesDescription.deposit),
-    refresh: createDenominationPairTimeline(selected.feesDescription.refresh, original.feesDescription.refresh),
-    refund: createDenominationPairTimeline(selected.feesDescription.refund, original.feesDescription.refund),
-    withdraw: createDenominationPairTimeline(selected.feesDescription.withdraw, original.feesDescription.withdraw),
-  }
+    deposit: createDenominationPairTimeline(
+      selected.feesDescription.deposit,
+      original.feesDescription.deposit,
+    ),
+    refresh: createDenominationPairTimeline(
+      selected.feesDescription.refresh,
+      original.feesDescription.refresh,
+    ),
+    refund: createDenominationPairTimeline(
+      selected.feesDescription.refund,
+      original.feesDescription.refund,
+    ),
+    withdraw: createDenominationPairTimeline(
+      selected.feesDescription.withdraw,
+      original.feesDescription.withdraw,
+    ),
+  };
 
   return {
     status: "comparing",
@@ -99,23 +119,21 @@ export function useComponentState(
       list: exchangeMap,
       value: value,
       onChange: async (v) => {
-        setValue(v)
-      }
+        setValue(v);
+      },
     },
     error: undefined,
     onReset: {
       onClick: async () => {
-        setValue(String(initialValue))
-      }
+        setValue(String(initialValue));
+      },
     },
     onSelect: {
       onClick: async () => {
-        onSelection(selected.exchangeBaseUrl)
-      }
+        onSelection(selected.exchangeBaseUrl);
+      },
     },
     selected,
     pairTimeline,
-  }
-
+  };
 }
-

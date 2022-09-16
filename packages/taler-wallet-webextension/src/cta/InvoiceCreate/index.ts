@@ -35,7 +35,6 @@ export type State =
   | State.Ready;
 
 export namespace State {
-
   export interface Loading {
     status: "loading";
     error: undefined;
@@ -59,8 +58,8 @@ export namespace State {
     status: "ready";
     create: ButtonHandler;
     subject: TextFieldHandler;
-    toBeReceived: AmountJson,
-    chosenAmount: AmountJson,
+    toBeReceived: AmountJson;
+    chosenAmount: AmountJson;
     exchangeUrl: string;
     invalid: boolean;
     error: undefined;
@@ -71,10 +70,12 @@ export namespace State {
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
   "loading-uri": LoadingUriView,
-  "created": CreatedView,
-  "ready": ReadyView,
+  created: CreatedView,
+  ready: ReadyView,
 };
 
-
-export const InvoiceCreatePage = compose("InvoiceCreatePage", (p: Props) => useComponentState(p, wxApi), viewMapping)
-
+export const InvoiceCreatePage = compose(
+  "InvoiceCreatePage",
+  (p: Props) => useComponentState(p, wxApi),
+  viewMapping,
+);

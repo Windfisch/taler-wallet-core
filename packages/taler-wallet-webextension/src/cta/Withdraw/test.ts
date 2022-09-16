@@ -62,13 +62,21 @@ describe("Withdraw CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentStateFromURI({ talerWithdrawUri: undefined, cancel: async () => { null } }, {
-          listExchanges: async () => ({ exchanges }),
-          getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
-            amount: "ARS:2",
-            possibleExchanges: exchanges,
-          }),
-        } as any),
+        useComponentStateFromURI(
+          {
+            talerWithdrawUri: undefined,
+            cancel: async () => {
+              null;
+            },
+          },
+          {
+            listExchanges: async () => ({ exchanges }),
+            getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
+              amount: "ARS:2",
+              possibleExchanges: exchanges,
+            }),
+          } as any,
+        ),
       );
 
     {
@@ -94,13 +102,21 @@ describe("Withdraw CTA states", () => {
   it("should tell the user that there is not known exchange", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentStateFromURI({ talerWithdrawUri: "taler-withdraw://", cancel: async () => { null } }, {
-          listExchanges: async () => ({ exchanges }),
-          getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
-            amount: "EUR:2",
-            possibleExchanges: [],
-          }),
-        } as any),
+        useComponentStateFromURI(
+          {
+            talerWithdrawUri: "taler-withdraw://",
+            cancel: async () => {
+              null;
+            },
+          },
+          {
+            listExchanges: async () => ({ exchanges }),
+            getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
+              amount: "EUR:2",
+              possibleExchanges: [],
+            }),
+          } as any,
+        ),
       );
 
     {
@@ -128,26 +144,34 @@ describe("Withdraw CTA states", () => {
   it("should be able to withdraw if tos are ok", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentStateFromURI({ talerWithdrawUri: "taler-withdraw://", cancel: async () => { null } }, {
-          listExchanges: async () => ({ exchanges }),
-          getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
-            amount: "ARS:2",
-            possibleExchanges: exchanges,
-            defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl
-          }),
-          getExchangeWithdrawalInfo:
-            async (): Promise<ExchangeWithdrawDetails> =>
-            ({
-              withdrawalAmountRaw: "ARS:2",
-              withdrawalAmountEffective: "ARS:2",
-            } as any),
-          getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
-            contentType: "text",
-            content: "just accept",
-            acceptedEtag: "v1",
-            currentEtag: "v1",
-          }),
-        } as any),
+        useComponentStateFromURI(
+          {
+            talerWithdrawUri: "taler-withdraw://",
+            cancel: async () => {
+              null;
+            },
+          },
+          {
+            listExchanges: async () => ({ exchanges }),
+            getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
+              amount: "ARS:2",
+              possibleExchanges: exchanges,
+              defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl,
+            }),
+            getExchangeWithdrawalInfo:
+              async (): Promise<ExchangeWithdrawDetails> =>
+                ({
+                  withdrawalAmountRaw: "ARS:2",
+                  withdrawalAmountEffective: "ARS:2",
+                } as any),
+            getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
+              contentType: "text",
+              content: "just accept",
+              acceptedEtag: "v1",
+              currentEtag: "v1",
+            }),
+          } as any,
+        ),
       );
 
     {
@@ -194,27 +218,35 @@ describe("Withdraw CTA states", () => {
   it("should be accept the tos before withdraw", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentStateFromURI({ talerWithdrawUri: "taler-withdraw://", cancel: async () => { null } }, {
-          listExchanges: async () => ({ exchanges }),
-          getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
-            amount: "ARS:2",
-            possibleExchanges: exchanges,
-            defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl
-          }),
-          getExchangeWithdrawalInfo:
-            async (): Promise<ExchangeWithdrawDetails> =>
-            ({
-              withdrawalAmountRaw: "ARS:2",
-              withdrawalAmountEffective: "ARS:2",
-            } as any),
-          getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
-            contentType: "text",
-            content: "just accept",
-            acceptedEtag: "v1",
-            currentEtag: "v2",
-          }),
-          setExchangeTosAccepted: async () => ({}),
-        } as any),
+        useComponentStateFromURI(
+          {
+            talerWithdrawUri: "taler-withdraw://",
+            cancel: async () => {
+              null;
+            },
+          },
+          {
+            listExchanges: async () => ({ exchanges }),
+            getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
+              amount: "ARS:2",
+              possibleExchanges: exchanges,
+              defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl,
+            }),
+            getExchangeWithdrawalInfo:
+              async (): Promise<ExchangeWithdrawDetails> =>
+                ({
+                  withdrawalAmountRaw: "ARS:2",
+                  withdrawalAmountEffective: "ARS:2",
+                } as any),
+            getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
+              contentType: "text",
+              content: "just accept",
+              acceptedEtag: "v1",
+              currentEtag: "v2",
+            }),
+            setExchangeTosAccepted: async () => ({}),
+          } as any,
+        ),
       );
 
     {

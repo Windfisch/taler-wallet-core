@@ -23,11 +23,9 @@ import * as wxApi from "../../wxApi.js";
 import { useComponentState } from "./state.js";
 import { CompletedView, LoadingUriView, ReadyView } from "./views.js";
 
-
-
 export interface Props {
-  talerDepositUri: string | undefined,
-  amountStr: AmountString | undefined,
+  talerDepositUri: string | undefined;
+  amountStr: AmountString | undefined;
   cancel: () => Promise<void>;
 }
 
@@ -38,7 +36,6 @@ export type State =
   | State.Completed;
 
 export namespace State {
-
   export interface Loading {
     status: "loading";
     error: undefined;
@@ -63,10 +60,14 @@ export namespace State {
 }
 
 const viewMapping: StateViewMap<State> = {
-  "loading": Loading,
+  loading: Loading,
   "loading-uri": LoadingUriView,
   completed: CompletedView,
   ready: ReadyView,
 };
 
-export const DepositPage = compose("Deposit", (p: Props) => useComponentState(p, wxApi), viewMapping)
+export const DepositPage = compose(
+  "Deposit",
+  (p: Props) => useComponentState(p, wxApi),
+  viewMapping,
+);

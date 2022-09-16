@@ -62,9 +62,9 @@ describe("DepositPage states", () => {
       mountHook(() =>
         useComponentState(currency, nullFunction, nullFunction, {
           getBalance: async () =>
-          ({
-            balances: [{ available: `${currency}:0` }],
-          } as Partial<BalancesResponse>),
+            ({
+              balances: [{ available: `${currency}:0` }],
+            } as Partial<BalancesResponse>),
           listKnownBankAccounts: async () => ({ accounts: {} }),
         } as Partial<typeof wxApi> as any),
       );
@@ -89,9 +89,9 @@ describe("DepositPage states", () => {
       mountHook(() =>
         useComponentState(currency, nullFunction, nullFunction, {
           getBalance: async () =>
-          ({
-            balances: [{ available: `${currency}:1` }],
-          } as Partial<BalancesResponse>),
+            ({
+              balances: [{ available: `${currency}:1` }],
+            } as Partial<BalancesResponse>),
           listKnownBankAccounts: async () => ({ accounts: {} }),
         } as Partial<typeof wxApi> as any),
       );
@@ -111,19 +111,21 @@ describe("DepositPage states", () => {
     await assertNoPendingUpdate();
   });
 
-  const ibanPayto_str = "payto://iban/ES8877998399652238"
+  const ibanPayto_str = "payto://iban/ES8877998399652238";
   const ibanPayto = { ibanPayto_str: parsePaytoUri(ibanPayto_str)! };
-  const talerBankPayto_str = "payto://x-taler-bank/ES8877998399652238"
-  const talerBankPayto = { talerBankPayto_str: parsePaytoUri(talerBankPayto_str)! };
+  const talerBankPayto_str = "payto://x-taler-bank/ES8877998399652238";
+  const talerBankPayto = {
+    talerBankPayto_str: parsePaytoUri(talerBankPayto_str)!,
+  };
 
   it("should have status 'ready' but unable to deposit ", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
         useComponentState(currency, nullFunction, nullFunction, {
           getBalance: async () =>
-          ({
-            balances: [{ available: `${currency}:1` }],
-          } as Partial<BalancesResponse>),
+            ({
+              balances: [{ available: `${currency}:1` }],
+            } as Partial<BalancesResponse>),
           listKnownBankAccounts: async () => ({ accounts: ibanPayto }),
         } as Partial<typeof wxApi> as any),
       );
@@ -153,9 +155,9 @@ describe("DepositPage states", () => {
       mountHook(() =>
         useComponentState(currency, nullFunction, nullFunction, {
           getBalance: async () =>
-          ({
-            balances: [{ available: `${currency}:1` }],
-          } as Partial<BalancesResponse>),
+            ({
+              balances: [{ available: `${currency}:1` }],
+            } as Partial<BalancesResponse>),
           listKnownBankAccounts: async () => ({ accounts: ibanPayto }),
           getFeeForDeposit: withoutFee,
         } as Partial<typeof wxApi> as any),
@@ -202,9 +204,9 @@ describe("DepositPage states", () => {
       mountHook(() =>
         useComponentState(currency, nullFunction, nullFunction, {
           getBalance: async () =>
-          ({
-            balances: [{ available: `${currency}:1` }],
-          } as Partial<BalancesResponse>),
+            ({
+              balances: [{ available: `${currency}:1` }],
+            } as Partial<BalancesResponse>),
           listKnownBankAccounts: async () => ({ accounts: ibanPayto }),
           getFeeForDeposit: withSomeFee,
         } as Partial<typeof wxApi> as any),
@@ -252,9 +254,9 @@ describe("DepositPage states", () => {
       mountHook(() =>
         useComponentState(currency, nullFunction, nullFunction, {
           getBalance: async () =>
-          ({
-            balances: [{ available: `${currency}:1` }],
-          } as Partial<BalancesResponse>),
+            ({
+              balances: [{ available: `${currency}:1` }],
+            } as Partial<BalancesResponse>),
           listKnownBankAccounts: async () => ({
             accounts: { ...ibanPayto, ...talerBankPayto },
           }),
@@ -338,9 +340,9 @@ describe("DepositPage states", () => {
       mountHook(() =>
         useComponentState(currency, nullFunction, nullFunction, {
           getBalance: async () =>
-          ({
-            balances: [{ available: `${currency}:15` }],
-          } as Partial<BalancesResponse>),
+            ({
+              balances: [{ available: `${currency}:15` }],
+            } as Partial<BalancesResponse>),
           listKnownBankAccounts: async () => ({ accounts: ibanPayto }),
           getFeeForDeposit: withSomeFee,
         } as Partial<typeof wxApi> as any),

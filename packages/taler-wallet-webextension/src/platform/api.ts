@@ -176,13 +176,13 @@ export interface PlatformAPI {
   findTalerUriInClipboard(): Promise<string | undefined>;
 
   /**
-  * Used from the frontend to send commands to the wallet
-  *
-  * @param operation
-  * @param payload
-  *
-  * @return response from the backend
-  */
+   * Used from the frontend to send commands to the wallet
+   *
+   * @param operation
+   * @param payload
+   *
+   * @return response from the backend
+   */
   sendMessageToWalletBackground(
     operation: string,
     payload: any,

@@ -21,8 +21,9 @@
 
 import {
   AmountJson,
-  Amounts, NotificationType,
-  PrepareRefundResult
+  Amounts,
+  NotificationType,
+  PrepareRefundResult,
 } from "@gnu-taler/taler-util";
 import { expect } from "chai";
 import { mountHook } from "../../test-utils.js";
@@ -33,11 +34,19 @@ describe("Refund CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerRefundUri: undefined, cancel: async () => { null } }, {
-          prepareRefund: async () => ({}),
-          applyRefund: async () => ({}),
-          onUpdateNotification: async () => ({}),
-        } as any),
+        useComponentState(
+          {
+            talerRefundUri: undefined,
+            cancel: async () => {
+              null;
+            },
+          },
+          {
+            prepareRefund: async () => ({}),
+            applyRefund: async () => ({}),
+            onUpdateNotification: async () => ({}),
+          } as any,
+        ),
       );
 
     {
@@ -64,27 +73,35 @@ describe("Refund CTA states", () => {
   it("should be ready after loading", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerRefundUri: "taler://refund/asdasdas", cancel: async () => { null } }, {
-          prepareRefund: async () =>
-          ({
-            effectivePaid: "EUR:2",
-            awaiting: "EUR:2",
-            gone: "EUR:0",
-            granted: "EUR:0",
-            pending: false,
-            proposalId: "1",
-            info: {
-              contractTermsHash: "123",
-              merchant: {
-                name: "the merchant name",
-              },
-              orderId: "orderId1",
-              summary: "the summary",
+        useComponentState(
+          {
+            talerRefundUri: "taler://refund/asdasdas",
+            cancel: async () => {
+              null;
             },
-          } as PrepareRefundResult as any),
-          applyRefund: async () => ({}),
-          onUpdateNotification: async () => ({}),
-        } as any),
+          },
+          {
+            prepareRefund: async () =>
+              ({
+                effectivePaid: "EUR:2",
+                awaiting: "EUR:2",
+                gone: "EUR:0",
+                granted: "EUR:0",
+                pending: false,
+                proposalId: "1",
+                info: {
+                  contractTermsHash: "123",
+                  merchant: {
+                    name: "the merchant name",
+                  },
+                  orderId: "orderId1",
+                  summary: "the summary",
+                },
+              } as PrepareRefundResult as any),
+            applyRefund: async () => ({}),
+            onUpdateNotification: async () => ({}),
+          } as any,
+        ),
       );
 
     {
@@ -113,27 +130,35 @@ describe("Refund CTA states", () => {
   it("should be ignored after clicking the ignore button", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerRefundUri: "taler://refund/asdasdas", cancel: async () => { null } }, {
-          prepareRefund: async () =>
-          ({
-            effectivePaid: "EUR:2",
-            awaiting: "EUR:2",
-            gone: "EUR:0",
-            granted: "EUR:0",
-            pending: false,
-            proposalId: "1",
-            info: {
-              contractTermsHash: "123",
-              merchant: {
-                name: "the merchant name",
-              },
-              orderId: "orderId1",
-              summary: "the summary",
+        useComponentState(
+          {
+            talerRefundUri: "taler://refund/asdasdas",
+            cancel: async () => {
+              null;
             },
-          } as PrepareRefundResult as any),
-          applyRefund: async () => ({}),
-          onUpdateNotification: async () => ({}),
-        } as any),
+          },
+          {
+            prepareRefund: async () =>
+              ({
+                effectivePaid: "EUR:2",
+                awaiting: "EUR:2",
+                gone: "EUR:0",
+                granted: "EUR:0",
+                pending: false,
+                proposalId: "1",
+                info: {
+                  contractTermsHash: "123",
+                  merchant: {
+                    name: "the merchant name",
+                  },
+                  orderId: "orderId1",
+                  summary: "the summary",
+                },
+              } as PrepareRefundResult as any),
+            applyRefund: async () => ({}),
+            onUpdateNotification: async () => ({}),
+          } as any,
+        ),
       );
 
     {
@@ -189,27 +214,35 @@ describe("Refund CTA states", () => {
 
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerRefundUri: "taler://refund/asdasdas", cancel: async () => { null } }, {
-          prepareRefund: async () =>
-          ({
-            awaiting: Amounts.stringify(awaiting),
-            effectivePaid: "EUR:2",
-            gone: "EUR:0",
-            granted: Amounts.stringify(granted),
-            pending,
-            proposalId: "1",
-            info: {
-              contractTermsHash: "123",
-              merchant: {
-                name: "the merchant name",
-              },
-              orderId: "orderId1",
-              summary: "the summary",
+        useComponentState(
+          {
+            talerRefundUri: "taler://refund/asdasdas",
+            cancel: async () => {
+              null;
             },
-          } as PrepareRefundResult as any),
-          applyRefund: async () => ({}),
-          onUpdateNotification: subscriptions.saveSubscription,
-        } as any),
+          },
+          {
+            prepareRefund: async () =>
+              ({
+                awaiting: Amounts.stringify(awaiting),
+                effectivePaid: "EUR:2",
+                gone: "EUR:0",
+                granted: Amounts.stringify(granted),
+                pending,
+                proposalId: "1",
+                info: {
+                  contractTermsHash: "123",
+                  merchant: {
+                    name: "the merchant name",
+                  },
+                  orderId: "orderId1",
+                  summary: "the summary",
+                },
+              } as PrepareRefundResult as any),
+            applyRefund: async () => ({}),
+            onUpdateNotification: subscriptions.saveSubscription,
+          } as any,
+        ),
       );
 
     {

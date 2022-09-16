@@ -17,12 +17,9 @@
 import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
-export function useComponentState(
-  { p }: Props,
-  api: typeof wxApi,
-): State {
+export function useComponentState({ p }: Props, api: typeof wxApi): State {
   return {
     status: "ready",
     error: undefined,
-  }
+  };
 }

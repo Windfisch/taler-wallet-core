@@ -31,7 +31,8 @@ function getJsonIfOk(r: Response): Promise<any> {
   }
 
   throw new Error(
-    `Try another server: (${r.status}) ${r.statusText || "internal server error"
+    `Try another server: (${r.status}) ${
+      r.statusText || "internal server error"
     }`,
   );
 }
@@ -102,10 +103,10 @@ export function buildTermsOfServiceStatus(
   return !content
     ? "notfound"
     : !acceptedVersion
-      ? "new"
-      : acceptedVersion !== currentVersion
-        ? "changed"
-        : "accepted";
+    ? "new"
+    : acceptedVersion !== currentVersion
+    ? "changed"
+    : "accepted";
 }
 
 function parseTermsOfServiceContent(

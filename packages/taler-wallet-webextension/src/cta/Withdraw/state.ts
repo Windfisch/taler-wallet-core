@@ -14,7 +14,6 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 import { Amounts, parsePaytoUri } from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
@@ -27,7 +26,6 @@ export function useComponentStateFromParams(
   { amount, cancel }: PropsFromParams,
   api: typeof wxApi,
 ): State {
-
   const [ageRestricted, setAgeRestricted] = useState(0);
 
   const exchangeHook = useAsyncAsHook(api.listExchanges);
@@ -40,14 +38,20 @@ export function useComponentStateFromParams(
   const chosenAmount = Amounts.parseOrThrow(amount);
 
   // get the first exchange with the currency as the default one
-  const exchange = exchangeHookDep ? exchangeHookDep.exchanges.find(e => e.currency === chosenAmount.currency) : undefined
+  const exchange = exchangeHookDep
+    ? exchangeHookDep.exchanges.find(
+        (e) => e.currency === chosenAmount.currency,
+      )
+    : undefined;
   /**
    * For the exchange selected, bring the status of the terms of service
    */
   const terms = useAsyncAsHook(async () => {
-    if (!exchange) return undefined
+    if (!exchange) return undefined;
 
-    const exchangeTos = await api.getExchangeTos(exchange.exchangeBaseUrl, ["text/xml"]);
+    const exchangeTos = await api.getExchangeTos(exchange.exchangeBaseUrl, [
+      "text/xml",
+    ]);
 
     const state = buildTermsOfServiceState(exchangeTos);
 
@@ -59,7 +63,7 @@ export function useComponentStateFromParams(
    * about the withdrawal
    */
   const amountHook = useAsyncAsHook(async () => {
-    if (!exchange) return undefined
+    if (!exchange) return undefined;
 
     const info = await api.getExchangeWithdrawalInfo({
       exchangeBaseUrl: exchange.exchangeBaseUrl,
@@ -71,9 +75,12 @@ export function useComponentStateFromParams(
     const withdrawAmount = {
       raw: Amounts.parseOrThrow(info.withdrawalAmountRaw),
       effective: Amounts.parseOrThrow(info.withdrawalAmountEffective),
-    }
+    };
 
-    return { amount: withdrawAmount, ageRestrictionOptions: info.ageRestrictionOptions };
+    return {
+      amount: withdrawAmount,
+      ageRestrictionOptions: info.ageRestrictionOptions,
+    };
   }, [exchangeHookDep]);
 
   const [reviewing, setReviewing] = useState<boolean>(false);
@@ -85,7 +92,7 @@ export function useComponentStateFromParams(
   const [doingWithdraw, setDoingWithdraw] = useState<boolean>(false);
   const [withdrawCompleted, setWithdrawCompleted] = useState<boolean>(false);
 
-  if (!exchangeHook) return { status: "loading", error: undefined }
+  if (!exchangeHook) return { status: "loading", error: undefined };
   if (exchangeHook.hasError) {
     return {
       status: "loading-uri",
@@ -125,7 +132,7 @@ export function useComponentStateFromParams(
   }
 
   if (!amountHook) {
-    return { status: "loading", error: undefined }
+    return { status: "loading", error: undefined };
   }
   if (amountHook.hasError) {
     return {
@@ -149,8 +156,8 @@ export function useComponentStateFromParams(
   const { state: termsState } = (!terms
     ? undefined
     : terms.hasError
-      ? undefined
-      : terms.response) || { state: undefined };
+    ? undefined
+    : terms.response) || { state: undefined };
 
   async function onAccept(accepted: boolean): Promise<void> {
     if (!termsState || !exchange) return;
@@ -173,21 +180,25 @@ export function useComponentStateFromParams(
     termsState !== undefined &&
     (termsState.status === "changed" || termsState.status === "new");
 
-  const ageRestrictionOptions = amountHook.response.
-    ageRestrictionOptions?.
-    reduce((p, c) => ({ ...p, [c]: `under ${c}` }), {} as Record<string, string>)
+  const ageRestrictionOptions =
+    amountHook.response.ageRestrictionOptions?.reduce(
+      (p, c) => ({ ...p, [c]: `under ${c}` }),
+      {} as Record<string, string>,
+    );
 
-  const ageRestrictionEnabled = ageRestrictionOptions !== undefined
+  const ageRestrictionEnabled = ageRestrictionOptions !== undefined;
   if (ageRestrictionEnabled) {
     ageRestrictionOptions["0"] = "Not restricted";
   }
 
   //TODO: calculate based on exchange info
-  const ageRestriction = ageRestrictionEnabled ? {
-    list: ageRestrictionOptions,
-    value: String(ageRestricted),
-    onChange: async (v: string) => setAgeRestricted(parseInt(v, 10)),
-  } : undefined;
+  const ageRestriction = ageRestrictionEnabled
+    ? {
+        list: ageRestrictionOptions,
+        value: String(ageRestricted),
+        onChange: async (v: string) => setAgeRestricted(parseInt(v, 10)),
+      }
+    : undefined;
 
   return {
     status: "success",
@@ -207,12 +218,12 @@ export function useComponentStateFromParams(
     tosProps: !termsState
       ? undefined
       : {
-        onAccept,
-        onReview: setReviewing,
-        reviewed: reviewed,
-        reviewing: reviewing,
-        terms: termsState,
-      },
+          onAccept,
+          onReview: setReviewing,
+          reviewed: reviewed,
+          reviewing: reviewing,
+          terms: termsState,
+        },
     mustAcceptFirst,
     cancel,
   };
@@ -233,7 +244,7 @@ export function useComponentStateFromURI(
     const uriInfo = await api.getWithdrawalDetailsForUri({
       talerWithdrawUri,
     });
-    const { amount, defaultExchangeBaseUrl } = uriInfo
+    const { amount, defaultExchangeBaseUrl } = uriInfo;
     return { amount, thisExchange: defaultExchangeBaseUrl };
   });
 
@@ -245,14 +256,15 @@ export function useComponentStateFromURI(
       ? undefined
       : uriInfoHook.response;
 
-
   /**
    * For the exchange selected, bring the status of the terms of service
    */
   const terms = useAsyncAsHook(async () => {
     if (!uriHookDep?.thisExchange) return false;
 
-    const exchangeTos = await api.getExchangeTos(uriHookDep.thisExchange, ["text/xml"]);
+    const exchangeTos = await api.getExchangeTos(uriHookDep.thisExchange, [
+      "text/xml",
+    ]);
 
     const state = buildTermsOfServiceState(exchangeTos);
 
@@ -276,9 +288,12 @@ export function useComponentStateFromURI(
     const withdrawAmount = {
       raw: Amounts.parseOrThrow(info.withdrawalAmountRaw),
       effective: Amounts.parseOrThrow(info.withdrawalAmountEffective),
-    }
+    };
 
-    return { amount: withdrawAmount, ageRestrictionOptions: info.ageRestrictionOptions };
+    return {
+      amount: withdrawAmount,
+      ageRestrictionOptions: info.ageRestrictionOptions,
+    };
   }, [uriHookDep]);
 
   const [reviewing, setReviewing] = useState<boolean>(false);
@@ -290,7 +305,7 @@ export function useComponentStateFromURI(
   const [doingWithdraw, setDoingWithdraw] = useState<boolean>(false);
   const [withdrawCompleted, setWithdrawCompleted] = useState<boolean>(false);
 
-  if (!uriInfoHook) return { status: "loading", error: undefined }
+  if (!uriInfoHook) return { status: "loading", error: undefined };
   if (uriInfoHook.hasError) {
     return {
       status: "loading-uri",
@@ -298,7 +313,7 @@ export function useComponentStateFromURI(
     };
   }
 
-  const { amount, thisExchange } = uriInfoHook.response
+  const { amount, thisExchange } = uriInfoHook.response;
 
   const chosenAmount = Amounts.parseOrThrow(amount);
 
@@ -339,7 +354,7 @@ export function useComponentStateFromURI(
   }
 
   if (!amountHook) {
-    return { status: "loading", error: undefined }
+    return { status: "loading", error: undefined };
   }
   if (amountHook.hasError) {
     return {
@@ -363,8 +378,8 @@ export function useComponentStateFromURI(
   const { state: termsState } = (!terms
     ? undefined
     : terms.hasError
-      ? undefined
-      : terms.response) || { state: undefined };
+    ? undefined
+    : terms.response) || { state: undefined };
 
   async function onAccept(accepted: boolean): Promise<void> {
     if (!termsState || !thisExchange) return;
@@ -387,21 +402,25 @@ export function useComponentStateFromURI(
     termsState !== undefined &&
     (termsState.status === "changed" || termsState.status === "new");
 
-  const ageRestrictionOptions = amountHook.response.
-    ageRestrictionOptions?.
-    reduce((p, c) => ({ ...p, [c]: `under ${c}` }), {} as Record<string, string>)
+  const ageRestrictionOptions =
+    amountHook.response.ageRestrictionOptions?.reduce(
+      (p, c) => ({ ...p, [c]: `under ${c}` }),
+      {} as Record<string, string>,
+    );
 
-  const ageRestrictionEnabled = ageRestrictionOptions !== undefined
+  const ageRestrictionEnabled = ageRestrictionOptions !== undefined;
   if (ageRestrictionEnabled) {
     ageRestrictionOptions["0"] = "Not restricted";
   }
 
   //TODO: calculate based on exchange info
-  const ageRestriction = ageRestrictionEnabled ? {
-    list: ageRestrictionOptions,
-    value: String(ageRestricted),
-    onChange: async (v: string) => setAgeRestricted(parseInt(v, 10)),
-  } : undefined;
+  const ageRestriction = ageRestrictionEnabled
+    ? {
+        list: ageRestrictionOptions,
+        value: String(ageRestricted),
+        onChange: async (v: string) => setAgeRestricted(parseInt(v, 10)),
+      }
+    : undefined;
 
   return {
     status: "success",
@@ -422,14 +441,13 @@ export function useComponentStateFromURI(
     tosProps: !termsState
       ? undefined
       : {
-        onAccept,
-        onReview: setReviewing,
-        reviewed: reviewed,
-        reviewing: reviewing,
-        terms: termsState,
-      },
+          onAccept,
+          onReview: setReviewing,
+          reviewed: reviewed,
+          reviewing: reviewing,
+          terms: termsState,
+        },
     mustAcceptFirst,
     cancel,
   };
 }
-

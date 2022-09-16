@@ -19,7 +19,7 @@ import { useIocContext } from "../context/iocContext.js";
 
 export interface UriLocation {
   uri: string;
-  location: "clipboard" | "activeTab"
+  location: "clipboard" | "activeTab";
 }
 
 export function useTalerActionURL(): [
@@ -37,7 +37,7 @@ export function useTalerActionURL(): [
       if (clipUri) {
         setTalerActionUrl({
           location: "clipboard",
-          uri: clipUri
+          uri: clipUri,
         });
         return;
       }
@@ -45,7 +45,7 @@ export function useTalerActionURL(): [
       if (tabUri) {
         setTalerActionUrl({
           location: "activeTab",
-          uri: tabUri
+          uri: tabUri,
         });
         return;
       }

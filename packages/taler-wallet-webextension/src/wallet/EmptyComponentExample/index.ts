@@ -25,13 +25,9 @@ export interface Props {
   p: string;
 }
 
-export type State =
-  | State.Loading
-  | State.LoadingUriError
-  | State.Ready;
+export type State = State.Loading | State.LoadingUriError | State.Ready;
 
 export namespace State {
-
   export interface Loading {
     status: "loading";
     error: undefined;
@@ -54,10 +50,11 @@ export namespace State {
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
   "loading-uri": LoadingUriView,
-  "ready": ReadyView,
+  ready: ReadyView,
 };
 
-
-export const ComponentName = compose("ComponentName", (p: Props) => useComponentState(p, wxApi), viewMapping)
-
-
+export const ComponentName = compose(
+  "ComponentName",
+  (p: Props) => useComponentState(p, wxApi),
+  viewMapping,
+);

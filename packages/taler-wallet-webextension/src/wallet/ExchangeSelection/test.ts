@@ -19,8 +19,5 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import {
-  AbsoluteTime,
-  Amounts, DenominationInfo
-} from "@gnu-taler/taler-util";
+import { AbsoluteTime, Amounts, DenominationInfo } from "@gnu-taler/taler-util";
 import { expect } from "chai";

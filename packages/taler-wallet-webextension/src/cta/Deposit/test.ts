@@ -19,9 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import {
-  Amounts, PrepareDepositResponse
-} from "@gnu-taler/taler-util";
+import { Amounts, PrepareDepositResponse } from "@gnu-taler/taler-util";
 import { expect } from "chai";
 import { mountHook } from "../../test-utils.js";
 import { useComponentState } from "./state.js";
@@ -30,11 +28,20 @@ describe("Deposit CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerDepositUri: undefined, amountStr: undefined, cancel: async () => { null } }, {
-          prepareRefund: async () => ({}),
-          applyRefund: async () => ({}),
-          onUpdateNotification: async () => ({}),
-        } as any),
+        useComponentState(
+          {
+            talerDepositUri: undefined,
+            amountStr: undefined,
+            cancel: async () => {
+              null;
+            },
+          },
+          {
+            prepareRefund: async () => ({}),
+            applyRefund: async () => ({}),
+            onUpdateNotification: async () => ({}),
+          } as any,
+        ),
       );
 
     {
@@ -61,14 +68,23 @@ describe("Deposit CTA states", () => {
   it("should be ready after loading", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerDepositUri: "payto://refund/asdasdas", amountStr: "EUR:1", cancel: async () => { null } }, {
-          prepareDeposit: async () =>
-          ({
-            effectiveDepositAmount: Amounts.parseOrThrow("EUR:1"),
-            totalDepositCost: Amounts.parseOrThrow("EUR:1.2"),
-          } as PrepareDepositResponse as any),
-          createDepositGroup: async () => ({}),
-        } as any),
+        useComponentState(
+          {
+            talerDepositUri: "payto://refund/asdasdas",
+            amountStr: "EUR:1",
+            cancel: async () => {
+              null;
+            },
+          },
+          {
+            prepareDeposit: async () =>
+              ({
+                effectiveDepositAmount: Amounts.parseOrThrow("EUR:1"),
+                totalDepositCost: Amounts.parseOrThrow("EUR:1.2"),
+              } as PrepareDepositResponse as any),
+            createDepositGroup: async () => ({}),
+          } as any,
+        ),
       );
 
     {

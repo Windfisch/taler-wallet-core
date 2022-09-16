@@ -24,11 +24,13 @@ export function useComponentState(
   { amount: amountStr, onClose }: Props,
   api: typeof wxApi,
 ): State {
-  const amount = Amounts.parseOrThrow(amountStr)
+  const amount = Amounts.parseOrThrow(amountStr);
 
   const [subject, setSubject] = useState("");
-  const [talerUri, setTalerUri] = useState("")
-  const [operationError, setOperationError] = useState<TalerErrorDetail | undefined>(undefined)
+  const [talerUri, setTalerUri] = useState("");
+  const [operationError, setOperationError] = useState<
+    TalerErrorDetail | undefined
+  >(undefined);
 
   if (talerUri) {
     return {
@@ -41,28 +43,26 @@ export function useComponentState(
       copyToClipboard: {
         onClick: async () => {
           navigator.clipboard.writeText(talerUri);
-        }
+        },
       },
-    }
+    };
   }
-
 
   async function accept(): Promise<string> {
     try {
-
       const resp = await api.initiatePeerPushPayment({
         amount: Amounts.stringify(amount),
         partialContractTerms: {
-          summary: subject
-        }
-      })
-      return resp.talerUri
+          summary: subject,
+        },
+      });
+      return resp.talerUri;
     } catch (e) {
       if (e instanceof TalerError) {
-        setOperationError(e.errorDetail)
+        setOperationError(e.errorDetail);
       }
-      console.error(e)
-      throw Error("error trying to accept")
+      console.error(e);
+      throw Error("error trying to accept");
     }
   }
   return {
@@ -74,17 +74,17 @@ export function useComponentState(
     subject: {
       error: !subject ? "cant be empty" : undefined,
       value: subject,
-      onInput: async (e) => setSubject(e)
+      onInput: async (e) => setSubject(e),
     },
     create: {
       onClick: async () => {
         const uri = await accept();
-        setTalerUri(uri)
-      }
+        setTalerUri(uri);
+      },
     },
     chosenAmount: amount,
     toBeReceived: amount,
     error: undefined,
-    operationError
-  }
+    operationError,
+  };
 }

@@ -70,9 +70,16 @@ describe("Payment CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerPayUri: undefined, cancel: nullFunction, goToWalletManualWithdraw: nullFunction }, {
-          onUpdateNotification: nullFunction,
-        } as Partial<typeof wxApi> as any),
+        useComponentState(
+          {
+            talerPayUri: undefined,
+            cancel: nullFunction,
+            goToWalletManualWithdraw: nullFunction,
+          },
+          {
+            onUpdateNotification: nullFunction,
+          } as Partial<typeof wxApi> as any,
+        ),
       );
 
     {
@@ -98,18 +105,25 @@ describe("Payment CTA states", () => {
   it("should response with no balance", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerPayUri: "taller://pay", cancel: nullFunction, goToWalletManualWithdraw: nullFunction }, {
-          onUpdateNotification: nullFunction,
-          preparePay: async () =>
-          ({
-            amountRaw: "USD:10",
-            status: PreparePayResultType.InsufficientBalance,
-          } as Partial<PreparePayResult>),
-          getBalance: async () =>
-          ({
-            balances: [],
-          } as Partial<BalancesResponse>),
-        } as Partial<typeof wxApi> as any),
+        useComponentState(
+          {
+            talerPayUri: "taller://pay",
+            cancel: nullFunction,
+            goToWalletManualWithdraw: nullFunction,
+          },
+          {
+            onUpdateNotification: nullFunction,
+            preparePay: async () =>
+              ({
+                amountRaw: "USD:10",
+                status: PreparePayResultType.InsufficientBalance,
+              } as Partial<PreparePayResult>),
+            getBalance: async () =>
+              ({
+                balances: [],
+              } as Partial<BalancesResponse>),
+          } as Partial<typeof wxApi> as any,
+        ),
       );
 
     {
@@ -133,22 +147,29 @@ describe("Payment CTA states", () => {
   it("should not be able to pay if there is no enough balance", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerPayUri: "taller://pay", cancel: nullFunction, goToWalletManualWithdraw: nullFunction }, {
-          onUpdateNotification: nullFunction,
-          preparePay: async () =>
-          ({
-            amountRaw: "USD:10",
-            status: PreparePayResultType.InsufficientBalance,
-          } as Partial<PreparePayResult>),
-          getBalance: async () =>
-          ({
-            balances: [
-              {
-                available: "USD:5",
-              },
-            ],
-          } as Partial<BalancesResponse>),
-        } as Partial<typeof wxApi> as any),
+        useComponentState(
+          {
+            talerPayUri: "taller://pay",
+            cancel: nullFunction,
+            goToWalletManualWithdraw: nullFunction,
+          },
+          {
+            onUpdateNotification: nullFunction,
+            preparePay: async () =>
+              ({
+                amountRaw: "USD:10",
+                status: PreparePayResultType.InsufficientBalance,
+              } as Partial<PreparePayResult>),
+            getBalance: async () =>
+              ({
+                balances: [
+                  {
+                    available: "USD:5",
+                  },
+                ],
+              } as Partial<BalancesResponse>),
+          } as Partial<typeof wxApi> as any,
+        ),
       );
 
     {
@@ -172,23 +193,30 @@ describe("Payment CTA states", () => {
   it("should be able to pay (without fee)", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerPayUri: "taller://pay", cancel: nullFunction, goToWalletManualWithdraw: nullFunction }, {
-          onUpdateNotification: nullFunction,
-          preparePay: async () =>
-          ({
-            amountRaw: "USD:10",
-            amountEffective: "USD:10",
-            status: PreparePayResultType.PaymentPossible,
-          } as Partial<PreparePayResult>),
-          getBalance: async () =>
-          ({
-            balances: [
-              {
-                available: "USD:15",
-              },
-            ],
-          } as Partial<BalancesResponse>),
-        } as Partial<typeof wxApi> as any),
+        useComponentState(
+          {
+            talerPayUri: "taller://pay",
+            cancel: nullFunction,
+            goToWalletManualWithdraw: nullFunction,
+          },
+          {
+            onUpdateNotification: nullFunction,
+            preparePay: async () =>
+              ({
+                amountRaw: "USD:10",
+                amountEffective: "USD:10",
+                status: PreparePayResultType.PaymentPossible,
+              } as Partial<PreparePayResult>),
+            getBalance: async () =>
+              ({
+                balances: [
+                  {
+                    available: "USD:15",
+                  },
+                ],
+              } as Partial<BalancesResponse>),
+          } as Partial<typeof wxApi> as any,
+        ),
       );
 
     {
@@ -214,23 +242,30 @@ describe("Payment CTA states", () => {
   it("should be able to pay (with fee)", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerPayUri: "taller://pay", cancel: nullFunction, goToWalletManualWithdraw: nullFunction }, {
-          onUpdateNotification: nullFunction,
-          preparePay: async () =>
-          ({
-            amountRaw: "USD:9",
-            amountEffective: "USD:10",
-            status: PreparePayResultType.PaymentPossible,
-          } as Partial<PreparePayResult>),
-          getBalance: async () =>
-          ({
-            balances: [
-              {
-                available: "USD:15",
-              },
-            ],
-          } as Partial<BalancesResponse>),
-        } as Partial<typeof wxApi> as any),
+        useComponentState(
+          {
+            talerPayUri: "taller://pay",
+            cancel: nullFunction,
+            goToWalletManualWithdraw: nullFunction,
+          },
+          {
+            onUpdateNotification: nullFunction,
+            preparePay: async () =>
+              ({
+                amountRaw: "USD:9",
+                amountEffective: "USD:10",
+                status: PreparePayResultType.PaymentPossible,
+              } as Partial<PreparePayResult>),
+            getBalance: async () =>
+              ({
+                balances: [
+                  {
+                    available: "USD:15",
+                  },
+                ],
+              } as Partial<BalancesResponse>),
+          } as Partial<typeof wxApi> as any,
+        ),
       );
 
     {
@@ -256,28 +291,35 @@ describe("Payment CTA states", () => {
   it("should get confirmation done after pay successfully", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerPayUri: "taller://pay", cancel: nullFunction, goToWalletManualWithdraw: nullFunction }, {
-          onUpdateNotification: nullFunction,
-          preparePay: async () =>
-          ({
-            amountRaw: "USD:9",
-            amountEffective: "USD:10",
-            status: PreparePayResultType.PaymentPossible,
-          } as Partial<PreparePayResult>),
-          getBalance: async () =>
-          ({
-            balances: [
-              {
-                available: "USD:15",
-              },
-            ],
-          } as Partial<BalancesResponse>),
-          confirmPay: async () =>
-          ({
-            type: ConfirmPayResultType.Done,
-            contractTerms: {},
-          } as Partial<ConfirmPayResult>),
-        } as Partial<typeof wxApi> as any),
+        useComponentState(
+          {
+            talerPayUri: "taller://pay",
+            cancel: nullFunction,
+            goToWalletManualWithdraw: nullFunction,
+          },
+          {
+            onUpdateNotification: nullFunction,
+            preparePay: async () =>
+              ({
+                amountRaw: "USD:9",
+                amountEffective: "USD:10",
+                status: PreparePayResultType.PaymentPossible,
+              } as Partial<PreparePayResult>),
+            getBalance: async () =>
+              ({
+                balances: [
+                  {
+                    available: "USD:15",
+                  },
+                ],
+              } as Partial<BalancesResponse>),
+            confirmPay: async () =>
+              ({
+                type: ConfirmPayResultType.Done,
+                contractTerms: {},
+              } as Partial<ConfirmPayResult>),
+          } as Partial<typeof wxApi> as any,
+        ),
       );
 
     {
@@ -317,28 +359,35 @@ describe("Payment CTA states", () => {
   it("should not stay in ready state after pay with error", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerPayUri: "taller://pay", cancel: nullFunction, goToWalletManualWithdraw: nullFunction }, {
-          onUpdateNotification: nullFunction,
-          preparePay: async () =>
-          ({
-            amountRaw: "USD:9",
-            amountEffective: "USD:10",
-            status: PreparePayResultType.PaymentPossible,
-          } as Partial<PreparePayResult>),
-          getBalance: async () =>
-          ({
-            balances: [
-              {
-                available: "USD:15",
-              },
-            ],
-          } as Partial<BalancesResponse>),
-          confirmPay: async () =>
-          ({
-            type: ConfirmPayResultType.Pending,
-            lastError: { code: 1 },
-          } as Partial<ConfirmPayResult>),
-        } as Partial<typeof wxApi> as any),
+        useComponentState(
+          {
+            talerPayUri: "taller://pay",
+            cancel: nullFunction,
+            goToWalletManualWithdraw: nullFunction,
+          },
+          {
+            onUpdateNotification: nullFunction,
+            preparePay: async () =>
+              ({
+                amountRaw: "USD:9",
+                amountEffective: "USD:10",
+                status: PreparePayResultType.PaymentPossible,
+              } as Partial<PreparePayResult>),
+            getBalance: async () =>
+              ({
+                balances: [
+                  {
+                    available: "USD:15",
+                  },
+                ],
+              } as Partial<BalancesResponse>),
+            confirmPay: async () =>
+              ({
+                type: ConfirmPayResultType.Pending,
+                lastError: { code: 1 },
+              } as Partial<ConfirmPayResult>),
+          } as Partial<typeof wxApi> as any,
+        ),
       );
 
     {
@@ -393,23 +442,30 @@ describe("Payment CTA states", () => {
 
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerPayUri: "taller://pay", cancel: nullFunction, goToWalletManualWithdraw: nullFunction }, {
-          onUpdateNotification: subscriptions.saveSubscription,
-          preparePay: async () =>
-          ({
-            amountRaw: "USD:9",
-            amountEffective: "USD:10",
-            status: PreparePayResultType.PaymentPossible,
-          } as Partial<PreparePayResult>),
-          getBalance: async () =>
-          ({
-            balances: [
-              {
-                available: Amounts.stringify(availableBalance),
-              },
-            ],
-          } as Partial<BalancesResponse>),
-        } as Partial<typeof wxApi> as any),
+        useComponentState(
+          {
+            talerPayUri: "taller://pay",
+            cancel: nullFunction,
+            goToWalletManualWithdraw: nullFunction,
+          },
+          {
+            onUpdateNotification: subscriptions.saveSubscription,
+            preparePay: async () =>
+              ({
+                amountRaw: "USD:9",
+                amountEffective: "USD:10",
+                status: PreparePayResultType.PaymentPossible,
+              } as Partial<PreparePayResult>),
+            getBalance: async () =>
+              ({
+                balances: [
+                  {
+                    available: Amounts.stringify(availableBalance),
+                  },
+                ],
+              } as Partial<BalancesResponse>),
+          } as Partial<typeof wxApi> as any,
+        ),
       );
 
     {

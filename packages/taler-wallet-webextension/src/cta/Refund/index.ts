@@ -21,9 +21,13 @@ import { ButtonHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import * as wxApi from "../../wxApi.js";
 import { useComponentState } from "./state.js";
-import { CompletedView, IgnoredView, InProgressView, LoadingUriView, ReadyView } from "./views.js";
-
-
+import {
+  CompletedView,
+  IgnoredView,
+  InProgressView,
+  LoadingUriView,
+  ReadyView,
+} from "./views.js";
 
 export interface Props {
   talerRefundUri?: string;
@@ -39,7 +43,6 @@ export type State =
   | State.Completed;
 
 export namespace State {
-
   export interface Loading {
     status: "loading";
     error: undefined;
@@ -75,13 +78,11 @@ export namespace State {
   export interface InProgress extends BaseInfo {
     status: "in-progress";
     error: undefined;
-
   }
   export interface Completed extends BaseInfo {
     status: "completed";
     error: undefined;
   }
-
 }
 
 const viewMapping: StateViewMap<State> = {
@@ -93,4 +94,8 @@ const viewMapping: StateViewMap<State> = {
   ready: ReadyView,
 };
 
-export const RefundPage = compose("Refund", (p: Props) => useComponentState(p, wxApi), viewMapping)
+export const RefundPage = compose(
+  "Refund",
+  (p: Props) => useComponentState(p, wxApi),
+  viewMapping,
+);

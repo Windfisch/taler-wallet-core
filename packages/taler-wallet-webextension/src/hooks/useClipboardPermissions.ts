@@ -55,7 +55,9 @@ async function handleClipboardPerm(
     // as the result of an input event ...
     let granted: boolean;
     try {
-      granted = await platform.getPermissionsApi().requestClipboardPermissions();
+      granted = await platform
+        .getPermissionsApi()
+        .requestClipboardPermissions();
     } catch (lastError) {
       onChange(false);
       throw lastError;

@@ -20,12 +20,18 @@ import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { ButtonHandler, SelectFieldHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import * as wxApi from "../../wxApi.js";
+import { Props as TermsOfServiceSectionProps } from "../TermsOfServiceSection.js";
 import {
-  Props as TermsOfServiceSectionProps
-} from "../TermsOfServiceSection.js";
-import { useComponentStateFromParams, useComponentStateFromURI } from "./state.js";
-import { CompletedView, LoadingExchangeView, LoadingInfoView, LoadingUriView, SuccessView } from "./views.js";
-
+  useComponentStateFromParams,
+  useComponentStateFromURI,
+} from "./state.js";
+import {
+  CompletedView,
+  LoadingExchangeView,
+  LoadingInfoView,
+  LoadingUriView,
+  SuccessView,
+} from "./views.js";
 
 export interface PropsFromURI {
   talerWithdrawUri: string | undefined;
@@ -46,7 +52,6 @@ export type State =
   | State.Completed;
 
 export namespace State {
-
   export interface Loading {
     status: "loading";
     error: undefined;
@@ -99,5 +104,13 @@ const viewMapping: StateViewMap<State> = {
   success: SuccessView,
 };
 
-export const WithdrawPageFromURI = compose("WithdrawPageFromURI", (p: PropsFromURI) => useComponentStateFromURI(p, wxApi), viewMapping)
-export const WithdrawPageFromParams = compose("WithdrawPageFromParams", (p: PropsFromParams) => useComponentStateFromParams(p, wxApi), viewMapping)
+export const WithdrawPageFromURI = compose(
+  "WithdrawPageFromURI",
+  (p: PropsFromURI) => useComponentStateFromURI(p, wxApi),
+  viewMapping,
+);
+export const WithdrawPageFromParams = compose(
+  "WithdrawPageFromParams",
+  (p: PropsFromParams) => useComponentStateFromParams(p, wxApi),
+  viewMapping,
+);

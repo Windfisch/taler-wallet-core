@@ -109,7 +109,7 @@ export async function requestClipboardPermissions(): Promise<boolean> {
         rej(le);
       }
       res(resp);
-    })
+    });
   });
 }
 
@@ -130,13 +130,13 @@ type HeaderListenerFunc = (
 ) => void;
 let currentHeaderListener: HeaderListenerFunc | undefined = undefined;
 
-type TabListenerFunc = (
-  tabId: number, info: chrome.tabs.TabChangeInfo,
-) => void;
+type TabListenerFunc = (tabId: number, info: chrome.tabs.TabChangeInfo) => void;
 let currentTabListener: TabListenerFunc | undefined = undefined;
 
 export function containsTalerHeaderListener(): boolean {
-  return currentHeaderListener !== undefined || currentTabListener !== undefined;
+  return (
+    currentHeaderListener !== undefined || currentTabListener !== undefined
+  );
 }
 
 export async function removeHostPermissions(): Promise<boolean> {
@@ -147,9 +147,11 @@ export async function removeHostPermissions(): Promise<boolean> {
   ) {
     chrome.webRequest.onHeadersReceived.removeListener(currentHeaderListener);
   }
-  if (currentTabListener &&
-    chrome?.tabs?.onUpdated?.hasListener(currentTabListener)) {
-    chrome.tabs.onUpdated.removeListener(currentTabListener)
+  if (
+    currentTabListener &&
+    chrome?.tabs?.onUpdated?.hasListener(currentTabListener)
+  ) {
+    chrome.tabs.onUpdated.removeListener(currentTabListener);
   }
 
   currentHeaderListener = undefined;
@@ -413,20 +415,25 @@ function registerTalerHeaderListener(
         .map((h) => h.value)
         .filter((value): value is string => !!value);
       if (values.length > 0) {
-        logger.info(`Found a Taler URI in a response header for the request ${details.url} from tab ${details.tabId}`)
+        logger.info(
+          `Found a Taler URI in a response header for the request ${details.url} from tab ${details.tabId}`,
+        );
         callback(details.tabId, values[0]);
       }
     }
     return;
   }
 
-  async function tabListener(tabId: number, info: chrome.tabs.TabChangeInfo): Promise<void> {
+  async function tabListener(
+    tabId: number,
+    info: chrome.tabs.TabChangeInfo,
+  ): Promise<void> {
     if (tabId < 0) return;
     if (info.status !== "complete") return;
     const uri = await findTalerUriInTab(tabId);
     if (!uri) return;
-    logger.info(`Found a Taler URI in the tab ${tabId}`)
-    callback(tabId, uri)
+    logger.info(`Found a Taler URI in the tab ${tabId}`);
+    callback(tabId, uri);
   }
 
   const prevHeaderListener = currentHeaderListener;
@@ -442,14 +449,18 @@ function registerTalerHeaderListener(
       ) {
         chrome.webRequest.onHeadersReceived.removeListener(prevHeaderListener);
       }
-      if (prevTabListener && chrome?.tabs?.onUpdated?.hasListener(prevTabListener)) {
-        chrome.tabs.onUpdated.removeListener(prevTabListener)
+      if (
+        prevTabListener &&
+        chrome?.tabs?.onUpdated?.hasListener(prevTabListener)
+      ) {
+        chrome.tabs.onUpdated.removeListener(prevTabListener);
       }
 
       //if the result was positive, add the headerListener
       if (result) {
-        const headersEvent: chrome.webRequest.WebResponseHeadersEvent | undefined =
-          chrome?.webRequest?.onHeadersReceived;
+        const headersEvent:
+          | chrome.webRequest.WebResponseHeadersEvent
+          | undefined = chrome?.webRequest?.onHeadersReceived;
         if (headersEvent) {
           headersEvent.addListener(headerListener, { urls: ["<all_urls>"] }, [
             "responseHeaders",
@@ -472,7 +483,6 @@ function registerTalerHeaderListener(
         }
       });
     });
-
 }
 
 const alertIcons = {
@@ -515,26 +525,26 @@ function setAlertedIcon(): void {
 
 interface OffscreenCanvasRenderingContext2D
   extends CanvasState,
-  CanvasTransform,
-  CanvasCompositing,
-  CanvasImageSmoothing,
-  CanvasFillStrokeStyles,
-  CanvasShadowStyles,
-  CanvasFilters,
-  CanvasRect,
-  CanvasDrawPath,
-  CanvasUserInterface,
-  CanvasText,
-  CanvasDrawImage,
-  CanvasImageData,
-  CanvasPathDrawingStyles,
-  CanvasTextDrawingStyles,
-  CanvasPath {
+    CanvasTransform,
+    CanvasCompositing,
+    CanvasImageSmoothing,
+    CanvasFillStrokeStyles,
+    CanvasShadowStyles,
+    CanvasFilters,
+    CanvasRect,
+    CanvasDrawPath,
+    CanvasUserInterface,
+    CanvasText,
+    CanvasDrawImage,
+    CanvasImageData,
+    CanvasPathDrawingStyles,
+    CanvasTextDrawingStyles,
+    CanvasPath {
   readonly canvas: OffscreenCanvas;
 }
 declare const OffscreenCanvasRenderingContext2D: {
   prototype: OffscreenCanvasRenderingContext2D;
-  new(): OffscreenCanvasRenderingContext2D;
+  new (): OffscreenCanvasRenderingContext2D;
 };
 
 interface OffscreenCanvas extends EventTarget {
@@ -547,7 +557,7 @@ interface OffscreenCanvas extends EventTarget {
 }
 declare const OffscreenCanvas: {
   prototype: OffscreenCanvas;
-  new(width: number, height: number): OffscreenCanvas;
+  new (width: number, height: number): OffscreenCanvas;
 };
 
 function createCanvas(size: number): OffscreenCanvas {
@@ -727,20 +737,23 @@ async function findTalerUriInTab(tabId: number): Promise<string | undefined> {
 }
 
 async function timeout(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 async function findTalerUriInClipboard(): Promise<string | undefined> {
   try {
     //It looks like clipboard promise does not return, so we need a timeout
     const textInClipboard = await Promise.any([
       timeout(100),
-      window.navigator.clipboard.readText()
-    ])
+      window.navigator.clipboard.readText(),
+    ]);
     if (!textInClipboard) return;
-    return textInClipboard.startsWith("taler://") || textInClipboard.startsWith("taler+http://") ? textInClipboard : undefined
+    return textInClipboard.startsWith("taler://") ||
+      textInClipboard.startsWith("taler+http://")
+      ? textInClipboard
+      : undefined;
   } catch (e) {
-    logger.error("could not read clipboard", e)
-    return undefined
+    logger.error("could not read clipboard", e);
+    return undefined;
   }
 }
 

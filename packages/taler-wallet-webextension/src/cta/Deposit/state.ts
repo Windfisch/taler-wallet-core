@@ -14,7 +14,6 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 import { Amounts, CreateDepositGroupResponse } from "@gnu-taler/taler-util";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
@@ -41,7 +40,7 @@ export function useComponentState(
     return { deposit, uri: talerDepositUri, amount };
   });
 
-  if (!info) return { status: "loading", error: undefined }
+  if (!info) return { status: "loading", error: undefined };
   if (info.hasError) {
     return {
       status: "loading-uri",

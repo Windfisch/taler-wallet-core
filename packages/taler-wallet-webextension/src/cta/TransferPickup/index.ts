@@ -14,7 +14,11 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AbsoluteTime, AmountJson, TalerErrorDetail } from "@gnu-taler/taler-util";
+import {
+  AbsoluteTime,
+  AmountJson,
+  TalerErrorDetail,
+} from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { ButtonHandler } from "../../mui/handlers.js";
@@ -28,13 +32,9 @@ export interface Props {
   onClose: () => Promise<void>;
 }
 
-export type State =
-  | State.Loading
-  | State.LoadingUriError
-  | State.Ready;
+export type State = State.Loading | State.LoadingUriError | State.Ready;
 
 export namespace State {
-
   export interface Loading {
     status: "loading";
     error: undefined;
@@ -51,7 +51,7 @@ export namespace State {
   }
   export interface Ready extends BaseInfo {
     status: "ready";
-    amount: AmountJson,
+    amount: AmountJson;
     summary: string | undefined;
     expiration: AbsoluteTime | undefined;
     error: undefined;
@@ -63,9 +63,11 @@ export namespace State {
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
   "loading-uri": LoadingUriView,
-  "ready": ReadyView,
+  ready: ReadyView,
 };
 
-
-export const TransferPickupPage = compose("TransferPickupPage", (p: Props) => useComponentState(p, wxApi), viewMapping)
-
+export const TransferPickupPage = compose(
+  "TransferPickupPage",
+  (p: Props) => useComponentState(p, wxApi),
+  viewMapping,
+);

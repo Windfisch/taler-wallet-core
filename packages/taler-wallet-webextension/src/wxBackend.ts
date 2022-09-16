@@ -344,7 +344,6 @@ export async function wxMain(): Promise<void> {
     console.error(e);
   }
 
-
   // On platforms that support it, also listen to external
   // modification of permissions.
   platform.getPermissionsApi().addPermissionsListener((perm, lastError) => {

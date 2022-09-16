@@ -14,7 +14,12 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AbsoluteTime, Amounts, TalerErrorDetail, TalerProtocolTimestamp } from "@gnu-taler/taler-util";
+import {
+  AbsoluteTime,
+  Amounts,
+  TalerErrorDetail,
+  TalerProtocolTimestamp,
+} from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
@@ -28,15 +33,17 @@ export function useComponentState(
   const hook = useAsyncAsHook(async () => {
     return await api.checkPeerPushPayment({
       talerUri: talerPayPushUri,
-    })
-  }, [])
-  const [operationError, setOperationError] = useState<TalerErrorDetail | undefined>(undefined)
+    });
+  }, []);
+  const [operationError, setOperationError] = useState<
+    TalerErrorDetail | undefined
+  >(undefined);
 
   if (!hook) {
     return {
       status: "loading",
       error: undefined,
-    }
+    };
   }
   if (hook.hasError) {
     return {
@@ -45,24 +52,29 @@ export function useComponentState(
     };
   }
 
-  const { amount: purseAmount, contractTerms, peerPushPaymentIncomingId } = hook.response
+  const {
+    amount: purseAmount,
+    contractTerms,
+    peerPushPaymentIncomingId,
+  } = hook.response;
 
-  const amount: string = contractTerms?.amount
-  const summary: string | undefined = contractTerms?.summary
-  const expiration: TalerProtocolTimestamp | undefined = contractTerms?.purse_expiration
+  const amount: string = contractTerms?.amount;
+  const summary: string | undefined = contractTerms?.summary;
+  const expiration: TalerProtocolTimestamp | undefined =
+    contractTerms?.purse_expiration;
 
   async function accept(): Promise<void> {
     try {
       const resp = await api.acceptPeerPushPayment({
-        peerPushPaymentIncomingId
-      })
-      await onClose()
+        peerPushPaymentIncomingId,
+      });
+      await onClose();
     } catch (e) {
       if (e instanceof TalerError) {
-        setOperationError(e.errorDetail)
+        setOperationError(e.errorDetail);
       }
-      console.error(e)
-      throw Error("error trying to accept")
+      console.error(e);
+      throw Error("error trying to accept");
     }
   }
   return {
@@ -70,13 +82,13 @@ export function useComponentState(
     amount: Amounts.parseOrThrow(amount),
     error: undefined,
     accept: {
-      onClick: accept
+      onClick: accept,
     },
     summary,
     expiration: expiration ? AbsoluteTime.fromTimestamp(expiration) : undefined,
     cancel: {
-      onClick: onClose
+      onClick: onClose,
     },
-    operationError
-  }
+    operationError,
+  };
 }

@@ -19,9 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import {
-  Amounts, PrepareTipResult
-} from "@gnu-taler/taler-util";
+import { Amounts, PrepareTipResult } from "@gnu-taler/taler-util";
 import { expect } from "chai";
 import { mountHook } from "../../test-utils.js";
 import { useComponentState } from "./state.js";
@@ -30,10 +28,18 @@ describe("Tip CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerTipUri: undefined, onCancel: async () => { null } }, {
-          prepareTip: async () => ({}),
-          acceptTip: async () => ({}),
-        } as any),
+        useComponentState(
+          {
+            talerTipUri: undefined,
+            onCancel: async () => {
+              null;
+            },
+          },
+          {
+            prepareTip: async () => ({}),
+            acceptTip: async () => ({}),
+          } as any,
+        ),
       );
 
     {
@@ -62,19 +68,27 @@ describe("Tip CTA states", () => {
 
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerTipUri: "taler://tip/asd", onCancel: async () => { null } }, {
-          prepareTip: async () =>
-          ({
-            accepted: tipAccepted,
-            exchangeBaseUrl: "exchange url",
-            merchantBaseUrl: "merchant url",
-            tipAmountEffective: "EUR:1",
-            walletTipId: "tip_id",
-          } as PrepareTipResult as any),
-          acceptTip: async () => {
-            tipAccepted = true;
+        useComponentState(
+          {
+            talerTipUri: "taler://tip/asd",
+            onCancel: async () => {
+              null;
+            },
           },
-        } as any),
+          {
+            prepareTip: async () =>
+              ({
+                accepted: tipAccepted,
+                exchangeBaseUrl: "exchange url",
+                merchantBaseUrl: "merchant url",
+                tipAmountEffective: "EUR:1",
+                walletTipId: "tip_id",
+              } as PrepareTipResult as any),
+            acceptTip: async () => {
+              tipAccepted = true;
+            },
+          } as any,
+        ),
       );
 
     {
@@ -114,16 +128,24 @@ describe("Tip CTA states", () => {
   it("should be ignored after clicking the ignore button", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerTipUri: "taler://tip/asd", onCancel: async () => { null } }, {
-          prepareTip: async () =>
-          ({
-            exchangeBaseUrl: "exchange url",
-            merchantBaseUrl: "merchant url",
-            tipAmountEffective: "EUR:1",
-            walletTipId: "tip_id",
-          } as PrepareTipResult as any),
-          acceptTip: async () => ({}),
-        } as any),
+        useComponentState(
+          {
+            talerTipUri: "taler://tip/asd",
+            onCancel: async () => {
+              null;
+            },
+          },
+          {
+            prepareTip: async () =>
+              ({
+                exchangeBaseUrl: "exchange url",
+                merchantBaseUrl: "merchant url",
+                tipAmountEffective: "EUR:1",
+                walletTipId: "tip_id",
+              } as PrepareTipResult as any),
+            acceptTip: async () => ({}),
+          } as any,
+        ),
       );
 
     {
@@ -160,17 +182,25 @@ describe("Tip CTA states", () => {
   it("should render accepted if the tip has been used previously", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ talerTipUri: "taler://tip/asd", onCancel: async () => { null } }, {
-          prepareTip: async () =>
-          ({
-            accepted: true,
-            exchangeBaseUrl: "exchange url",
-            merchantBaseUrl: "merchant url",
-            tipAmountEffective: "EUR:1",
-            walletTipId: "tip_id",
-          } as PrepareTipResult as any),
-          acceptTip: async () => ({}),
-        } as any),
+        useComponentState(
+          {
+            talerTipUri: "taler://tip/asd",
+            onCancel: async () => {
+              null;
+            },
+          },
+          {
+            prepareTip: async () =>
+              ({
+                accepted: true,
+                exchangeBaseUrl: "exchange url",
+                merchantBaseUrl: "merchant url",
+                tipAmountEffective: "EUR:1",
+                walletTipId: "tip_id",
+              } as PrepareTipResult as any),
+            acceptTip: async () => ({}),
+          } as any,
+        ),
       );
 
     {

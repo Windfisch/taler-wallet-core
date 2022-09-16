@@ -20,7 +20,6 @@ import { h, VNode } from "preact";
 import { expect } from "chai";
 
 describe("useTalerActionURL hook", () => {
-
   it("should be set url to undefined when dismiss", async () => {
     const ctx = ({ children }: { children: any }): VNode => {
       return h(IoCProviderForTesting, {
@@ -46,7 +45,7 @@ describe("useTalerActionURL hook", () => {
       const [url, setDismissed] = getLastResultOrThrow();
       expect(url).deep.equals({
         location: "clipboard",
-        uri: "qwe"
+        uri: "qwe",
       });
       setDismissed(true);
     }
