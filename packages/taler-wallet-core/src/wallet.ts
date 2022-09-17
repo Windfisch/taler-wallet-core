@@ -1392,8 +1392,7 @@ async function dispatchRequestInternal(
     }
     case "acceptPeerPushPayment": {
       const req = codecForAcceptPeerPushPaymentRequest().decode(payload);
-      await acceptPeerPushPayment(ws, req);
-      return {};
+      return await acceptPeerPushPayment(ws, req);
     }
     case "initiatePeerPullPayment": {
       const req = codecForInitiatePeerPullPaymentRequest().decode(payload);
@@ -1405,8 +1404,7 @@ async function dispatchRequestInternal(
     }
     case "acceptPeerPullPayment": {
       const req = codecForAcceptPeerPullPaymentRequest().decode(payload);
-      await acceptPeerPullPayment(ws, req);
-      return {};
+      return await acceptPeerPullPayment(ws, req);
     }
     case "getVersion": {
       const version: WalletCoreVersion = {

@@ -119,7 +119,7 @@ export function QrReaderPage({ onDetected }: Props): VNode {
       />
       {isValid && (
         <Button variant="contained" onClick={async () => onDetected(value)}>
-          <i18n.Translate>Open/</i18n.Translate>
+          <i18n.Translate>Open</i18n.Translate>
         </Button>
       )}
       {!active && !isValid && (
