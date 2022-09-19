@@ -810,6 +810,10 @@ export async function makeCoinAvailable(
   }>,
   coinRecord: CoinRecord,
 ): Promise<void> {
+  const existingCoin = await tx.coins.get(coinRecord.coinPub);
+  if (existingCoin) {
+    return;
+  }
   const denom = await tx.denominations.get([
     coinRecord.exchangeBaseUrl,
     coinRecord.denomPubHash,

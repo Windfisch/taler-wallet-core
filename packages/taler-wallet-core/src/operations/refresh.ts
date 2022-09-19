@@ -522,7 +522,9 @@ async function refreshReveal(
   refreshGroupId: string,
   coinIndex: number,
 ): Promise<void> {
-  logger.info("doing refresh reveal");
+  logger.info(
+    `doing refresh reveal for ${refreshGroupId} (old coin ${coinIndex})`,
+  );
   const d = await ws.db
     .mktx((x) => [x.refreshGroups, x.coins, x.denominations])
     .runReadOnly(async (tx) => {
