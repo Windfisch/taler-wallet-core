@@ -17,65 +17,60 @@
 /**
  * Imports.
  */
-import os from "os";
-import fs from "fs";
-import path from "path";
 import { deepStrictEqual } from "assert";
+import fs from "fs";
+import os from "os";
+import path from "path";
 // Polyfill for encoding which isn't present globally in older nodejs versions
-import { TextEncoder, TextDecoder } from "util";
+import {
+  addPaytoQueryParams,
+  AgeRestriction,
+  Amounts,
+  classifyTalerUri,
+  clk,
+  codecForList,
+  codecForString,
+  Configuration,
+  decodeCrock,
+  encodeCrock,
+  getRandomBytes,
+  j2s,
+  Logger,
+  parsePaytoUri,
+  PreparePayResultType,
+  RecoveryMergeStrategy,
+  rsaBlind,
+  setDangerousTimetravel,
+  setGlobalLogLevelFromString,
+  TalerUriType,
+} from "@gnu-taler/taler-util";
+import {
+  CryptoDispatcher,
+  getDefaultNodeWallet,
+  getErrorDetailFromException,
+  nativeCrypto,
+  NodeHttpLib,
+  NodeThreadCryptoWorkerFactory,
+  summarizeTalerErrorDetail,
+  SynchronousCryptoWorkerFactory,
+  Wallet,
+  WalletApiOperation,
+  WalletCoreApiClient,
+  walletCoreDebugFlags,
+} from "@gnu-taler/taler-wallet-core";
+import type { TalerCryptoInterface } from "@gnu-taler/taler-wallet-core/src/crypto/cryptoImplementation";
+import { TextDecoder, TextEncoder } from "util";
+import { runBench1 } from "./bench1.js";
+import { runBench2 } from "./bench2.js";
+import { runBench3 } from "./bench3.js";
+import { runEnv1 } from "./env1.js";
+import { GlobalTestState, runTestWithState } from "./harness/harness.js";
+import { getTestInfo, runTests } from "./integrationtests/testrunner.js";
+import { lintExchangeDeployment } from "./lint.js";
 // @ts-ignore
 global.TextEncoder = TextEncoder;
 // @ts-ignore
 global.TextDecoder = TextDecoder;
-import * as clk from "./clk.js";
-import { getTestInfo, runTests } from "./integrationtests/testrunner.js";
-import {
-  PreparePayResultType,
-  setDangerousTimetravel,
-  classifyTalerUri,
-  TalerUriType,
-  RecoveryMergeStrategy,
-  Amounts,
-  addPaytoQueryParams,
-  codecForList,
-  codecForString,
-  Logger,
-  Configuration,
-  decodeCrock,
-  rsaBlind,
-  LogLevel,
-  setGlobalLogLevelFromString,
-  parsePaytoUri,
-  AgeRestriction,
-  getRandomBytes,
-  encodeCrock,
-  j2s,
-} from "@gnu-taler/taler-util";
-import {
-  NodeHttpLib,
-  getDefaultNodeWallet,
-  NodeThreadCryptoWorkerFactory,
-  walletCoreDebugFlags,
-  WalletApiOperation,
-  WalletCoreApiClient,
-  Wallet,
-  getErrorDetailFromException,
-  CryptoDispatcher,
-  SynchronousCryptoWorkerFactory,
-  nativeCrypto,
-  performanceNow,
-  summarizeTalerErrorDetail,
-} from "@gnu-taler/taler-wallet-core";
-import { lintExchangeDeployment } from "./lint.js";
-import { runBench1 } from "./bench1.js";
-import { runEnv1 } from "./env1.js";
-import { GlobalTestState, runTestWithState } from "./harness/harness.js";
-import { runBench2 } from "./bench2.js";
-import { runBench3 } from "./bench3.js";
-import {
-  TalerCryptoInterface,
-  TalerCryptoInterfaceR,
-} from "@gnu-taler/taler-wallet-core/src/crypto/cryptoImplementation";
 
 // This module also serves as the entry point for the crypto
 // thread worker, and thus must expose these two handlers.
@@ -390,13 +385,10 @@ walletCli
     help: "Withdraw with a taler://withdraw/ URI",
   })
   .requiredArgument("uri", clk.STRING)
-  .maybeOption("restrictAge", ["--restrict-age"], clk.STRING)
+  .maybeOption("restrictAge", ["--restrict-age"], clk.INT)
   .action(async (args) => {
     const uri = args.withdraw.uri;
-    const restrictAge =
-      args.withdraw.restrictAge == null
-        ? undefined
-        : Number.parseInt(args.withdraw.restrictAge);
+    const restrictAge = args.withdraw.restrictAge;
     console.log(`age restriction requested (${restrictAge})`);
     await withWallet(args, async (wallet) => {
       const withdrawInfo = await wallet.client.call(

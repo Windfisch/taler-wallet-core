@@ -20,6 +20,7 @@
 import process from "process";
 import path from "path";
 import readline from "readline";
+import { devNull } from "os";
 
 export namespace clk {
   class Converter<T> {}
@@ -329,6 +330,20 @@ export namespace clk {
       const myArgs: any = (parsedArgs[this.argKey] = {});
       const foundOptions: { [name: string]: boolean } = {};
       const currentName = this.name ?? progname;
+      const storeOption = (def: OptionDef, value: string) => {
+        foundOptions[def.name] = true;
+        if (def.conv === INT) {
+          myArgs[def.name] = Number.parseInt(value);
+        } else if (def.conv == null || def.conv === STRING) {
+          myArgs[def.name] = value;
+        } else {
+          throw Error("unknown converter");
+        }
+      };
+      const storeFlag = (def: OptionDef, value: boolean) => {
+        foundOptions[def.name] = true;
+        myArgs[def.name] = value;
+      };
       for (i = 0; i < unparsedArgs.length; i++) {
         const argVal = unparsedArgs[i];
         if (argsTerminated == false) {
@@ -353,8 +368,7 @@ export namespace clk {
                 process.exit(-1);
                 throw Error("not reached");
               }
-              foundOptions[d.name] = true;
-              myArgs[d.name] = true;
+              storeFlag(d, true);
             } else {
               if (r.value === undefined) {
                 if (i === unparsedArgs.length - 1) {
@@ -362,12 +376,11 @@ export namespace clk {
                   process.exit(-1);
                   throw Error("not reached");
                 }
-                myArgs[d.name] = unparsedArgs[i + 1];
+                storeOption(d, unparsedArgs[i + 1]);
                 i++;
               } else {
-                myArgs[d.name] = r.value;
+                storeOption(d, r.value);
               }
-              foundOptions[d.name] = true;
             }
             continue;
           }
@@ -381,8 +394,7 @@ export namespace clk {
                 process.exit(-1);
               }
               if (opt.isFlag) {
-                myArgs[opt.name] = true;
-                foundOptions[opt.name] = true;
+                storeFlag(opt, true);
               } else {
                 if (si == optShort.length - 1) {
                   if (i === unparsedArgs.length - 1) {
@@ -390,13 +402,12 @@ export namespace clk {
                     process.exit(-1);
                     throw Error("not reached");
                   } else {
-                    myArgs[opt.name] = unparsedArgs[i + 1];
+                    storeOption(opt, unparsedArgs[i + 1]);
                     i++;
                   }
                 } else {
-                  myArgs[opt.name] = optShort.substring(si + 1);
+                  storeOption(opt, optShort.substring(si + 1));
                 }
-                foundOptions[opt.name] = true;
                 break;
               }
             }
@@ -508,16 +519,21 @@ export namespace clk {
       });
     }
 
-    run(): void {
-      const args = process.argv;
-      if (args.length < 2) {
+    run(cmdlineArgs?: string[]): void {
+      let args: string[];
+      if (cmdlineArgs) {
+        args = cmdlineArgs;
+      } else {
+        args = process.argv.slice(1);
+      }
+      if (args.length < 1) {
         console.error(
           "Error while parsing command line arguments: not enough arguments",
         );
         process.exit(-1);
       }
-      const progname = path.basename(args[1]);
-      const rest = args.slice(2);
+      const progname = path.basename(args[0]);
+      const rest = args.slice(1);
 
       this.mainCommand.run(progname, [], rest, {});
     }
