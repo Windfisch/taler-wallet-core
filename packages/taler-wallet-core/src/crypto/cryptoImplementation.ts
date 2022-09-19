@@ -743,9 +743,16 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
     if (req.denomPub.cipher !== DenomKeyType.Rsa) {
       throw Error(`unsupported cipher (${req.denomPub.cipher})`);
     }
-    const fc = setupTipPlanchet(decodeCrock(req.secretSeed), req.planchetIndex);
+    const fc = await setupTipPlanchet(
+      decodeCrock(req.secretSeed),
+      req.denomPub,
+      req.planchetIndex,
+    );
+    const maybeAch = fc.ageCommitmentProof
+      ? AgeRestriction.hashCommitment(fc.ageCommitmentProof.commitment)
+      : undefined;
     const denomPub = decodeCrock(req.denomPub.rsa_public_key);
-    const coinPubHash = hash(fc.coinPub);
+    const coinPubHash = hashCoinPub(encodeCrock(fc.coinPub), maybeAch);
     const blindResp = await tci.rsaBlind(tci, {
       bks: encodeCrock(fc.bks),
       hm: encodeCrock(coinPubHash),
@@ -763,6 +770,7 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
       ),
       coinPriv: encodeCrock(fc.coinPriv),
       coinPub: encodeCrock(fc.coinPub),
+      ageCommitmentProof: fc.ageCommitmentProof,
     };
     return tipPlanchet;
   },

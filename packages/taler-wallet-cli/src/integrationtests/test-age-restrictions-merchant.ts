@@ -17,8 +17,14 @@
 /**
  * Imports.
  */
+import { BankApi, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { defaultCoinConfig } from "../harness/denomStructures.js";
-import { GlobalTestState, WalletCli } from "../harness/harness.js";
+import {
+  getWireMethodForTest,
+  GlobalTestState,
+  MerchantPrivateApi,
+  WalletCli,
+} from "../harness/harness.js";
 import {
   createSimpleTestkudosEnvironment,
   withdrawViaBank,
@@ -31,14 +37,19 @@ import {
 export async function runAgeRestrictionsMerchantTest(t: GlobalTestState) {
   // Set up test environment
 
-  const { wallet: walletOne, bank, exchange, merchant } =
-    await createSimpleTestkudosEnvironment(
-      t,
-      defaultCoinConfig.map((x) => x("TESTKUDOS")),
-      {
-        ageMaskSpec: "8:10:12:14:16:18:21",
-      },
-    );
+  const {
+    wallet: walletOne,
+    bank,
+    exchange,
+    merchant,
+    exchangeBankAccount,
+  } = await createSimpleTestkudosEnvironment(
+    t,
+    defaultCoinConfig.map((x) => x("TESTKUDOS")),
+    {
+      ageMaskSpec: "8:10:12:14:16:18:21",
+    },
+  );
 
   const walletTwo = new WalletCli(t, "walletTwo");
   const walletThree = new WalletCli(t, "walletThree");
@@ -129,6 +140,62 @@ export async function runAgeRestrictionsMerchantTest(t: GlobalTestState) {
     await wallet.runUntilDone();
   }
 
+  // Pay with coin from tipping
+  {
+    const mbu = await BankApi.createRandomBankUser(bank);
+    const tipReserveResp = await MerchantPrivateApi.createTippingReserve(
+      merchant,
+      "default",
+      {
+        exchange_url: exchange.baseUrl,
+        initial_balance: "TESTKUDOS:10",
+        wire_method: getWireMethodForTest(),
+      },
+    );
+
+    t.assertDeepEqual(
+      tipReserveResp.payto_uri,
+      exchangeBankAccount.accountPaytoUri,
+    );
+
+    await BankApi.adminAddIncoming(bank, {
+      amount: "TESTKUDOS:10",
+      debitAccountPayto: mbu.accountPaytoUri,
+      exchangeBankAccount,
+      reservePub: tipReserveResp.reserve_pub,
+    });
+
+    await exchange.runWirewatchOnce();
+
+    const tip = await MerchantPrivateApi.giveTip(merchant, "default", {
+      amount: "TESTKUDOS:5",
+      justification: "why not?",
+      next_url: "https://example.com/after-tip",
+    });
+
+    const walletTipping = new WalletCli(t, "age-tipping");
+
+    const ptr = await walletTipping.client.call(WalletApiOperation.PrepareTip, {
+      talerTipUri: tip.taler_tip_uri,
+    });
+
+    await walletTipping.client.call(WalletApiOperation.AcceptTip, {
+      walletTipId: ptr.walletTipId,
+    });
+
+    await walletTipping.runUntilDone();
+
+    const order = {
+      summary: "Buy me!",
+      amount: "TESTKUDOS:4",
+      fulfillment_url: "taler://fulfillment-success/thx",
+      minimum_age: 9,
+    };
+
+    await makeTestPayment(t, { wallet: walletTipping, merchant, order });
+    await walletTipping.runUntilDone();
+  }
 }
 
 runAgeRestrictionsMerchantTest.suites = ["wallet"];
+runAgeRestrictionsMerchantTest.timeoutMs = 120 * 1000;

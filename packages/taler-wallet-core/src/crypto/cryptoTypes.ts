@@ -122,6 +122,7 @@ export interface DerivedTipPlanchet {
   coinEvHash: string;
   coinPriv: string;
   coinPub: string;
+  ageCommitmentProof: AgeCommitmentProof | undefined;
 }
 
 export interface SignTrackTransactionRequest {

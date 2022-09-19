@@ -724,6 +724,8 @@ export interface FreshCoin {
   coinPub: Uint8Array;
   coinPriv: Uint8Array;
   bks: Uint8Array;
+  maxAge: number;
+  ageCommitmentProof: AgeCommitmentProof | undefined;
 }
 
 export function bufferForUint32(n: number): Uint8Array {
@@ -742,10 +744,11 @@ export function bufferForUint8(n: number): Uint8Array {
   return buf;
 }
 
-export function setupTipPlanchet(
+export async function setupTipPlanchet(
   secretSeed: Uint8Array,
+  denomPub: DenominationPubKey,
   coinNumber: number,
-): FreshCoin {
+): Promise<FreshCoin> {
   const info = stringToBytes("taler-tip-coin-derivation");
   const saltArrBuf = new ArrayBuffer(4);
   const salt = new Uint8Array(saltArrBuf);
@@ -754,10 +757,20 @@ export function setupTipPlanchet(
   const out = kdf(64, secretSeed, salt, info);
   const coinPriv = out.slice(0, 32);
   const bks = out.slice(32, 64);
+  let maybeAcp: AgeCommitmentProof | undefined;
+  if (denomPub.age_mask != 0) {
+    maybeAcp = await AgeRestriction.restrictionCommitSeeded(
+      denomPub.age_mask,
+      AgeRestriction.AGE_UNRESTRICTED,
+      secretSeed,
+    );
+  }
   return {
     bks,
     coinPriv,
     coinPub: eddsaGetPublic(coinPriv),
+    maxAge: AgeRestriction.AGE_UNRESTRICTED,
+    ageCommitmentProof: maybeAcp,
   };
 }
 /**
@@ -1044,6 +1057,44 @@ export namespace AgeRestriction {
 
     for (let i = 0; i < numPubs; i++) {
       const priv = await Edx25519.keyCreate();
+      const pub = await Edx25519.getPublic(priv);
+      pubs.push(pub);
+      if (i < numPrivs) {
+        privs.push(priv);
+      }
+    }
+
+    return {
+      commitment: {
+        mask: ageMask,
+        publicKeys: pubs.map((x) => encodeCrock(x)),
+      },
+      proof: {
+        privateKeys: privs.map((x) => encodeCrock(x)),
+      },
+    };
+  }
+
+  export async function restrictionCommitSeeded(
+    ageMask: number,
+    age: number,
+    seed: Uint8Array,
+  ): Promise<AgeCommitmentProof> {
+    invariant((ageMask & 1) === 1);
+    const numPubs = countAgeGroups(ageMask) - 1;
+    const numPrivs = getAgeGroupIndex(ageMask, age);
+
+    const pubs: Edx25519PublicKey[] = [];
+    const privs: Edx25519PrivateKey[] = [];
+
+    for (let i = 0; i < numPubs; i++) {
+      const privSeed = await kdfKw({
+        outputLength: 32,
+        ikm: seed,
+        info: stringToBytes("age-restriction-commit"),
+        salt: bufferForUint32(i),
+      });
+      const priv = await Edx25519.keyCreateFromSeed(privSeed);
       const pub = await Edx25519.getPublic(priv);
       pubs.push(pub);
       if (i < numPrivs) {

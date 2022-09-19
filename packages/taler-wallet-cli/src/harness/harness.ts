@@ -1991,8 +1991,7 @@ export function getRandomIban(salt: string | null = null): string {
   return `DE${check_digits}${bban}`;
 }
 
-// Only used in one tipping test.
-export function getWireMethod(): string {
+export function getWireMethodForTest(): string {
   if (useLibeufinBank) return "iban";
   return "x-taler-bank";
 }
