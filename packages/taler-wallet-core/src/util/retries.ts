@@ -205,6 +205,9 @@ export namespace RetryTags {
   export function forBackup(backupRecord: BackupProviderRecord): string {
     return `${PendingTaskType.Backup}:${backupRecord.baseUrl}`;
   }
+  export function byPaymentProposalId(proposalId: string): string {
+    return `${PendingTaskType.Pay}:${proposalId}`;
+  }
 }
 
 export async function scheduleRetryInTx(

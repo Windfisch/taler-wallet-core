@@ -83,6 +83,7 @@ import {
   EXCHANGE_COINS_LOCK,
   InternalWalletState,
 } from "../internal-wallet-state.js";
+import { PendingTaskType } from "../pending-types.js";
 import { assertUnreachable } from "../util/assertUnreachable.js";
 import {
   CoinSelectionTally,
@@ -105,7 +106,11 @@ import {
   RetryTags,
   scheduleRetry,
 } from "../util/retries.js";
-import { spendCoins } from "../wallet.js";
+import {
+  spendCoins,
+  storeOperationError,
+  storeOperationPending,
+} from "../wallet.js";
 import { getExchangeDetails } from "./exchanges.js";
 import { getTotalRefreshCost } from "./refresh.js";
 import { makeEventId } from "./transactions.js";
@@ -1519,10 +1524,43 @@ export async function runPayForConfirmPay(
         transactionId: makeEventId(TransactionType.Payment, proposalId),
       };
     }
-    case OperationAttemptResultType.Error:
-      // FIXME: allocate error code!
-      throw Error("payment failed");
+    case OperationAttemptResultType.Error: {
+      // We hide transient errors from the caller.
+      const opRetry = await ws.db
+        .mktx((x) => [x.operationRetries])
+        .runReadOnly(async (tx) =>
+          tx.operationRetries.get(RetryTags.byPaymentProposalId(proposalId)),
+        );
+      const maxRetry = 3;
+      const numRetry = opRetry?.retryInfo.retryCounter ?? 0;
+      if (
+        res.errorDetail.code ===
+          TalerErrorCode.WALLET_PAY_MERCHANT_SERVER_ERROR &&
+        numRetry < maxRetry
+      ) {
+        // Pretend the operation is pending instead of reporting
+        // an error, but only up to maxRetry attempts.
+        await storeOperationPending(
+          ws,
+          RetryTags.byPaymentProposalId(proposalId),
+        );
+        return {
+          type: ConfirmPayResultType.Pending,
+          lastError: opRetry?.lastError,
+          transactionId: makeEventId(TransactionType.Payment, proposalId),
+        };
+      } else {
+        // FIXME: allocate error code!
+        await storeOperationError(
+          ws,
+          RetryTags.byPaymentProposalId(proposalId),
+          res.errorDetail,
+        );
+        throw Error("payment failed");
+      }
+    }
     case OperationAttemptResultType.Pending:
+      await storeOperationPending(ws, `${PendingTaskType.Pay}:${proposalId}`);
       return {
         type: ConfirmPayResultType.Pending,
         transactionId: makeEventId(TransactionType.Payment, proposalId),
@@ -1536,7 +1574,7 @@ export async function runPayForConfirmPay(
 }
 
 /**
- * Add a contract to the wallet and sign coins, and send them.
+ * Confirm payment for a proposal previously claimed by the wallet.
  */
 export async function confirmPay(
   ws: InternalWalletState,
@@ -1698,6 +1736,20 @@ export async function processPurchasePay(
     );
 
     logger.trace(`got resp ${JSON.stringify(resp)}`);
+
+    if (resp.status >= 500 && resp.status <= 599) {
+      const errDetails = await readUnexpectedResponseDetails(resp);
+      return {
+        type: OperationAttemptResultType.Error,
+        errorDetail: makeErrorDetail(
+          TalerErrorCode.WALLET_PAY_MERCHANT_SERVER_ERROR,
+          {
+            requestError: errDetails,
+          },
+        ),
+      };
+    }
+
     if (resp.status === HttpStatusCode.BadRequest) {
       const errDetails = await readUnexpectedResponseDetails(resp);
       logger.warn("unexpected 400 response for /pay");

@@ -70,6 +70,9 @@ export interface DetailsMap {
   [TalerErrorCode.WALLET_WITHDRAWAL_GROUP_INCOMPLETE]: {};
   [TalerErrorCode.WALLET_CORE_NOT_AVAILABLE]: {};
   [TalerErrorCode.GENERIC_UNEXPECTED_REQUEST_ERROR]: {};
+  [TalerErrorCode.WALLET_PAY_MERCHANT_SERVER_ERROR]: {
+    requestError: TalerErrorDetail;
+  };
 }
 
 type ErrBody<Y> = Y extends keyof DetailsMap ? DetailsMap[Y] : never;
@@ -79,7 +82,9 @@ export function makeErrorDetail<C extends TalerErrorCode>(
   detail: ErrBody<C>,
   hint?: string,
 ): TalerErrorDetail {
-  // FIXME: include default hint?
+  if (!hint && !(detail as any).hint) {
+    hint = getDefaultHint(code);
+  }
   return { code, hint, ...detail };
 }
 
@@ -99,6 +104,15 @@ export function summarizeTalerErrorDetail(ed: TalerErrorDetail): string {
   return `Error (${ed.code}/${errName})`;
 }
 
+function getDefaultHint(code: number): string {
+  const errName = TalerErrorCode[code];
+  if (errName) {
+    return `Error (${errName})`;
+  } else {
+    return `Error (<unknown>)`;
+  }
+}
+
 export class TalerError<T = any> extends Error {
   errorDetail: TalerErrorDetail & T;
   private constructor(d: TalerErrorDetail & T) {
@@ -113,12 +127,7 @@ export class TalerError<T = any> extends Error {
     hint?: string,
   ): TalerError {
     if (!hint) {
-      const errName = TalerErrorCode[code];
-      if (errName) {
-        hint = `Error (${errName})`;
-      } else {
-        hint = `Error (<unknown>)`;
-      }
+      hint = getDefaultHint(code);
     }
     return new TalerError<unknown>({ code, hint, ...detail });
   }
