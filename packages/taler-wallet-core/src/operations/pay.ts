@@ -47,6 +47,7 @@ import {
   j2s,
   Logger,
   NotificationType,
+  parsePaytoUri,
   parsePayUri,
   PayCoinSelection,
   PreparePayResult,
@@ -898,6 +899,19 @@ export async function selectCandidates(
         if (exchangeDetails?.currency !== req.contractTermsAmount.currency) {
           continue;
         }
+        let wireMethodSupported = false;
+        for (const acc of exchangeDetails.wireInfo.accounts) {
+          const pp = parsePaytoUri(acc.payto_uri);
+          checkLogicInvariant(!!pp);
+          if (pp.targetType === req.wireMethod) {
+            wireMethodSupported = true;
+            break;
+          }
+        }
+        if (!wireMethodSupported) {
+          break;
+        }
+        exchangeDetails.wireInfo.accounts;
         let accepted = false;
         for (const allowedExchange of req.exchanges) {
           if (allowedExchange.exchangePub === exchangeDetails.masterPublicKey) {

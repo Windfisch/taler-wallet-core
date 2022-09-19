@@ -21,10 +21,8 @@ import { Duration, PreparePayResultType } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { CoinConfig, defaultCoinConfig } from "../harness/denomStructures.js";
 import {
-  BankService,
   ExchangeService,
   FakebankService,
-  getPayto,
   getRandomIban,
   GlobalTestState,
   MerchantPrivateApi,
@@ -32,11 +30,7 @@ import {
   setupDb,
   WalletCli,
 } from "../harness/harness.js";
-import {
-  createSimpleTestkudosEnvironment,
-  withdrawViaBank,
-  makeTestPayment,
-} from "../harness/helpers.js";
+import { withdrawViaBank } from "../harness/helpers.js";
 
 /**
  * Test for wallet balance error messages / different types of insufficient balance.
