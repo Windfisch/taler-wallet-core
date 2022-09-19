@@ -960,7 +960,7 @@ export async function selectCandidates(
             denomAvail.denomPubHash,
           ]);
           checkDbInvariant(!!denom);
-          if (!denom.isOffered) {
+          if (denom.isRevoked || !denom.isOffered) {
             continue;
           }
           // FIXME: validation status and isOffered!

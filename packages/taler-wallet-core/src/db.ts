@@ -293,6 +293,8 @@ export interface DenominationRecord {
    * Was this denomination still offered by the exchange the last time
    * we checked?
    * Only false when the exchange redacts a previously published denomination.
+   * 
+   * FIXME: Consider rolling this and isRevoked into some bitfield?
    */
   isOffered: boolean;
 
