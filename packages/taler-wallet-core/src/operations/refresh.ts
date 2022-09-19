@@ -67,6 +67,7 @@ import {
   EXCHANGE_COINS_LOCK,
   InternalWalletState,
 } from "../internal-wallet-state.js";
+import { assertUnreachable } from "../util/assertUnreachable.js";
 import {
   readSuccessResponseJsonOrThrow,
   readUnexpectedResponseDetails,
@@ -879,17 +880,30 @@ export async function createRefreshGroup(
       !!denom,
       "denomination for existing coin must be in database",
     );
-    if (coin.status !== CoinStatus.Dormant) {
-      coin.status = CoinStatus.Dormant;
-      const coinAv = await tx.coinAvailability.get([
-        coin.exchangeBaseUrl,
-        coin.denomPubHash,
-        coin.maxAge,
-      ]);
-      checkDbInvariant(!!coinAv);
-      checkDbInvariant(coinAv.freshCoinCount > 0);
-      coinAv.freshCoinCount--;
-      await tx.coinAvailability.put(coinAv);
+    switch (coin.status) {
+      case CoinStatus.Dormant:
+        break;
+      case CoinStatus.Fresh: {
+        coin.status = CoinStatus.Dormant;
+        const coinAv = await tx.coinAvailability.get([
+          coin.exchangeBaseUrl,
+          coin.denomPubHash,
+          coin.maxAge,
+        ]);
+        checkDbInvariant(!!coinAv);
+        checkDbInvariant(coinAv.freshCoinCount > 0);
+        coinAv.freshCoinCount--;
+        await tx.coinAvailability.put(coinAv);
+        break;
+      }
+      case CoinStatus.FreshSuspended: {
+        // For suspended coins, we don't have to adjust coin
+        // availability, as they are not counted as available.
+        coin.status = CoinStatus.Dormant;
+        break;
+      }
+      default:
+        assertUnreachable(coin.status);
     }
     const refreshAmount = coin.currentAmount;
     inputPerCoin.push(refreshAmount);

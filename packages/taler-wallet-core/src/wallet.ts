@@ -937,10 +937,7 @@ async function setCoinSuspended(
         if (c.status !== CoinStatus.Fresh) {
           return;
         }
-        if (
-          coinAvailability.freshCoinCount == null ||
-          coinAvailability.freshCoinCount === 0
-        ) {
+        if (coinAvailability.freshCoinCount === 0) {
           throw Error(
             `invalid coin count ${coinAvailability.freshCoinCount} in DB`,
           );
@@ -950,9 +947,6 @@ async function setCoinSuspended(
       } else {
         if (c.status == CoinStatus.Dormant) {
           return;
-        }
-        if (coinAvailability.freshCoinCount == null) {
-          coinAvailability.freshCoinCount = 0;
         }
         coinAvailability.freshCoinCount++;
         c.status = CoinStatus.Fresh;
