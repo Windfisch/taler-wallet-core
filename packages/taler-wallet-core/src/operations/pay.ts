@@ -963,7 +963,6 @@ export async function selectCandidates(
           if (denom.isRevoked || !denom.isOffered) {
             continue;
           }
-          // FIXME: validation status and isOffered!
           denoms.push({
             ...DenominationRecord.toDenomInfo(denom),
             numAvailable: denomAvail.freshCoinCount ?? 0,
