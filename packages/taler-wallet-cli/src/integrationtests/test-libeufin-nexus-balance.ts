@@ -110,4 +110,6 @@ export async function runLibeufinNexusBalanceTest(t: GlobalTestState) {
   );
   t.assertDeepEqual(accountInfoDebit.data.lastSeenBalance, "-EUR:10");
 }
+
 runLibeufinNexusBalanceTest.suites = ["libeufin"];
+runLibeufinNexusBalanceTest.excludeByDefault = true;

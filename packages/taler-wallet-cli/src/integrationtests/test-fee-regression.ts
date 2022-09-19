@@ -25,7 +25,7 @@ import {
   MerchantService,
   setupDb,
   WalletCli,
-  getPayto
+  getPayto,
 } from "../harness/harness.js";
 import {
   withdrawViaBank,
@@ -165,12 +165,8 @@ export async function createMyTestkudosEnvironment(
 export async function runFeeRegressionTest(t: GlobalTestState) {
   // Set up test environment
 
-  const {
-    wallet,
-    bank,
-    exchange,
-    merchant,
-  } = await createMyTestkudosEnvironment(t);
+  const { wallet, bank, exchange, merchant } =
+    await createMyTestkudosEnvironment(t);
 
   // Withdraw digital cash into the wallet.
 
@@ -200,3 +196,5 @@ export async function runFeeRegressionTest(t: GlobalTestState) {
   t.assertAmountEquals(txs.transactions[1].amountEffective, "TESTKUDOS:1.30");
   console.log(txs);
 }
+
+runFeeRegressionTest.suites = ["wallet"];
