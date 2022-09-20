@@ -87,10 +87,14 @@ export interface TransactionCommon {
    */
   frozen: boolean;
 
-  // Raw amount of the transaction (exclusive of fees or other extra costs)
+  /**
+   * Raw amount of the transaction (exclusive of fees or other extra costs).
+   */
   amountRaw: AmountString;
 
-  // Amount added or removed from the wallet's balance (including all fees and other costs)
+  /**
+   * Amount added or removed from the wallet's balance (including all fees and other costs).
+   */
   amountEffective: AmountString;
 
   error?: TalerErrorDetail;
@@ -509,10 +513,11 @@ export interface TransactionByIdRequest {
   transactionId: string;
 }
 
-export const codecForTransactionByIdRequest = (): Codec<TransactionByIdRequest> =>
-  buildCodecForObject<TransactionByIdRequest>()
-    .property("transactionId", codecForString())
-    .build("TransactionByIdRequest");
+export const codecForTransactionByIdRequest =
+  (): Codec<TransactionByIdRequest> =>
+    buildCodecForObject<TransactionByIdRequest>()
+      .property("transactionId", codecForString())
+      .build("TransactionByIdRequest");
 
 export const codecForTransactionsRequest = (): Codec<TransactionsRequest> =>
   buildCodecForObject<TransactionsRequest>()

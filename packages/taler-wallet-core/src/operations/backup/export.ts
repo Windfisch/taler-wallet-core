@@ -25,6 +25,7 @@
  * Imports.
  */
 import {
+  AbsoluteTime,
   Amounts,
   BackupBackupProvider,
   BackupBackupProviderTerms,
@@ -35,6 +36,7 @@ import {
   BackupExchange,
   BackupExchangeDetails,
   BackupExchangeWireFee,
+  BackupOperationStatus,
   BackupProposal,
   BackupProposalStatus,
   BackupPurchase,
@@ -44,30 +46,35 @@ import {
   BackupRefreshSession,
   BackupRefundItem,
   BackupRefundState,
-  BackupReserve,
   BackupTip,
+  BackupWgInfo,
+  BackupWgType,
   BackupWithdrawalGroup,
+  BACKUP_VERSION_MAJOR,
+  BACKUP_VERSION_MINOR,
   canonicalizeBaseUrl,
   canonicalJson,
-  Logger,
-  WalletBackupContentV1,
-  hash,
   encodeCrock,
   getRandomBytes,
+  hash,
+  Logger,
   stringToBytes,
-  AbsoluteTime,
+  WalletBackupContentV1,
 } from "@gnu-taler/taler-util";
-import { InternalWalletState } from "../../internal-wallet-state.js";
 import {
   AbortStatus,
   CoinSourceType,
   CoinStatus,
   DenominationRecord,
+  OperationStatus,
   ProposalStatus,
   RefreshCoinStatus,
   RefundState,
   WALLET_BACKUP_STATE_KEY,
+  WithdrawalRecordType,
 } from "../../db.js";
+import { InternalWalletState } from "../../internal-wallet-state.js";
+import { assertUnreachable } from "../../util/assertUnreachable.js";
 import { getWalletBackupState, provideBackupState } from "./state.js";
 
 const logger = new Logger("backup/export.ts");
@@ -100,31 +107,75 @@ export async function exportBackup(
       const backupDenominationsByExchange: {
         [url: string]: BackupDenomination[];
       } = {};
-      const backupReservesByExchange: { [url: string]: BackupReserve[] } = {};
       const backupPurchases: BackupPurchase[] = [];
       const backupProposals: BackupProposal[] = [];
       const backupRefreshGroups: BackupRefreshGroup[] = [];
       const backupBackupProviders: BackupBackupProvider[] = [];
       const backupTips: BackupTip[] = [];
       const backupRecoupGroups: BackupRecoupGroup[] = [];
-      const withdrawalGroupsByReserve: {
-        [reservePub: string]: BackupWithdrawalGroup[];
-      } = {};
+      const backupWithdrawalGroups: BackupWithdrawalGroup[] = [];
 
       await tx.withdrawalGroups.iter().forEachAsync(async (wg) => {
-        const withdrawalGroups = (withdrawalGroupsByReserve[wg.reservePub] ??=
-          []);
-        withdrawalGroups.push({
+        let info: BackupWgInfo;
+        switch (wg.wgInfo.withdrawalType) {
+          case WithdrawalRecordType.BankIntegrated:
+            info = {
+              type: BackupWgType.BankIntegrated,
+              exchange_payto_uri: wg.wgInfo.bankInfo.exchangePaytoUri,
+              taler_withdraw_uri: wg.wgInfo.bankInfo.talerWithdrawUri,
+              confirm_url: wg.wgInfo.bankInfo.confirmUrl,
+              timestamp_bank_confirmed:
+                wg.wgInfo.bankInfo.timestampBankConfirmed,
+              timestamp_reserve_info_posted:
+                wg.wgInfo.bankInfo.timestampReserveInfoPosted,
+            };
+            break;
+          case WithdrawalRecordType.BankManual:
+            info = {
+              type: BackupWgType.BankManual,
+            };
+            break;
+          case WithdrawalRecordType.PeerPullCredit:
+            info = {
+              type: BackupWgType.PeerPullCredit,
+              contract_priv: wg.wgInfo.contractPriv,
+              contract_terms: wg.wgInfo.contractTerms,
+            };
+            break;
+          case WithdrawalRecordType.PeerPushCredit:
+            info = {
+              type: BackupWgType.PeerPushCredit,
+              contract_terms: wg.wgInfo.contractTerms,
+            };
+            break;
+          case WithdrawalRecordType.Recoup:
+            info = {
+              type: BackupWgType.Recoup,
+            };
+            break;
+          default:
+            assertUnreachable(wg.wgInfo);
+        }
+        backupWithdrawalGroups.push({
           raw_withdrawal_amount: Amounts.stringify(wg.rawWithdrawalAmount),
-          selected_denoms: wg.denomsSel.selectedDenoms.map((x) => ({
-            count: x.count,
-            denom_pub_hash: x.denomPubHash,
-          })),
+          info,
           timestamp_created: wg.timestampStart,
           timestamp_finish: wg.timestampFinish,
           withdrawal_group_id: wg.withdrawalGroupId,
           secret_seed: wg.secretSeed,
-          selected_denoms_id: wg.denomSelUid,
+          exchange_base_url: wg.exchangeBaseUrl,
+          instructed_amount: Amounts.stringify(wg.instructedAmount),
+          reserve_priv: wg.reservePriv,
+          restrict_age: wg.restrictAge,
+          operation_status:
+            wg.operationStatus == OperationStatus.Finished
+              ? BackupOperationStatus.Finished
+              : BackupOperationStatus.Pending,
+          selected_denoms_uid: wg.denomSelUid,
+          selected_denoms: wg.denomsSel.selectedDenoms.map((x) => ({
+            count: x.count,
+            denom_pub_hash: x.denomPubHash,
+          })),
         });
       });
 
@@ -299,7 +350,6 @@ export async function exportBackup(
           tos_accepted_timestamp: ex.termsOfServiceAcceptedTimestamp,
           denominations:
             backupDenominationsByExchange[ex.exchangeBaseUrl] ?? [],
-          reserves: backupReservesByExchange[ex.exchangeBaseUrl] ?? [],
         });
       });
 
@@ -439,7 +489,8 @@ export async function exportBackup(
 
       const backupBlob: WalletBackupContentV1 = {
         schema_id: "gnu-taler-wallet-backup-content",
-        schema_version: 1,
+        schema_version: BACKUP_VERSION_MAJOR,
+        minor_version: BACKUP_VERSION_MINOR,
         exchanges: backupExchanges,
         exchange_details: backupExchangeDetails,
         wallet_root_pub: bs.walletRootPub,
@@ -456,6 +507,8 @@ export async function exportBackup(
         intern_table: {},
         error_reports: [],
         tombstones: [],
+        // FIXME!
+        withdrawal_groups: backupWithdrawalGroups,
       };
 
       // If the backup changed, we change our nonce and timestamp.

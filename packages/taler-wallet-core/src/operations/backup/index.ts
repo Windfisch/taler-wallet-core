@@ -187,11 +187,11 @@ async function computeBackupCryptoData(
       cryptoData.rsaDenomPubToHash[backupDenom.denom_pub.rsa_public_key] =
         encodeCrock(hashDenomPub(backupDenom.denom_pub));
     }
-    for (const backupReserve of backupExchangeDetails.reserves) {
-      cryptoData.reservePrivToPub[backupReserve.reserve_priv] = encodeCrock(
-        eddsaGetPublic(decodeCrock(backupReserve.reserve_priv)),
-      );
-    }
+  }
+  for (const backupWg of backupContent.withdrawal_groups) {
+    cryptoData.reservePrivToPub[backupWg.reserve_priv] = encodeCrock(
+      eddsaGetPublic(decodeCrock(backupWg.reserve_priv)),
+    );
   }
   for (const prop of backupContent.proposals) {
     const { h: contractTermsHash } = await cryptoApi.hashString({

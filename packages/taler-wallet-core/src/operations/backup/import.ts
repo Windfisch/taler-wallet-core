@@ -24,6 +24,7 @@ import {
   BackupPurchase,
   BackupRefreshReason,
   BackupRefundState,
+  BackupWgType,
   codecForContractTerms,
   DenomKeyType,
   j2s,
@@ -53,8 +54,11 @@ import {
   WalletContractData,
   WalletRefundItem,
   WalletStoresV1,
+  WgInfo,
+  WithdrawalRecordType,
 } from "../../db.js";
 import { InternalWalletState } from "../../internal-wallet-state.js";
+import { assertUnreachable } from "../../util/assertUnreachable.js";
 import {
   checkDbInvariant,
   checkLogicInvariant,
@@ -442,6 +446,91 @@ export async function importBackup(
               });
             }
           }
+        }
+
+        for (const backupWg of backupBlob.withdrawal_groups) {
+          const reservePub = cryptoComp.reservePrivToPub[backupWg.reserve_priv];
+          checkLogicInvariant(!!reservePub);
+          const ts = makeEventId(TombstoneTag.DeleteReserve, reservePub);
+          if (tombstoneSet.has(ts)) {
+            continue;
+          }
+          const existingWg = await tx.withdrawalGroups.get(
+            backupWg.withdrawal_group_id,
+          );
+          if (existingWg) {
+            continue;
+          }
+          let wgInfo: WgInfo;
+          switch (backupWg.info.type) {
+            case BackupWgType.BankIntegrated:
+              wgInfo = {
+                withdrawalType: WithdrawalRecordType.BankIntegrated,
+                bankInfo: {
+                  exchangePaytoUri: backupWg.info.exchange_payto_uri,
+                  talerWithdrawUri: backupWg.info.taler_withdraw_uri,
+                  confirmUrl: backupWg.info.confirm_url,
+                  timestampBankConfirmed:
+                    backupWg.info.timestamp_bank_confirmed,
+                  timestampReserveInfoPosted:
+                    backupWg.info.timestamp_reserve_info_posted,
+                },
+              };
+              break;
+            case BackupWgType.BankManual:
+              wgInfo = {
+                withdrawalType: WithdrawalRecordType.BankManual,
+              };
+              break;
+            case BackupWgType.PeerPullCredit:
+              wgInfo = {
+                withdrawalType: WithdrawalRecordType.PeerPullCredit,
+                contractTerms: backupWg.info.contract_terms,
+                contractPriv: backupWg.info.contract_priv,
+              };
+              break;
+            case BackupWgType.PeerPushCredit:
+              wgInfo = {
+                withdrawalType: WithdrawalRecordType.PeerPushCredit,
+                contractTerms: backupWg.info.contract_terms,
+              };
+              break;
+            case BackupWgType.Recoup:
+              wgInfo = {
+                withdrawalType: WithdrawalRecordType.Recoup,
+              };
+              break;
+            default:
+              assertUnreachable(backupWg.info);
+          }
+          await tx.withdrawalGroups.put({
+            withdrawalGroupId: backupWg.withdrawal_group_id,
+            exchangeBaseUrl: backupWg.exchange_base_url,
+            instructedAmount: Amounts.parseOrThrow(backupWg.instructed_amount),
+            secretSeed: backupWg.secret_seed,
+            operationStatus: backupWg.timestamp_finish
+              ? OperationStatus.Finished
+              : OperationStatus.Pending,
+            denomsSel: await getDenomSelStateFromBackup(
+              tx,
+              backupWg.exchange_base_url,
+              backupWg.selected_denoms,
+            ),
+            denomSelUid: backupWg.selected_denoms_uid,
+            rawWithdrawalAmount: Amounts.parseOrThrow(
+              backupWg.raw_withdrawal_amount,
+            ),
+            reservePriv: backupWg.reserve_priv,
+            reservePub,
+            reserveStatus: backupWg.timestamp_finish
+              ? ReserveRecordStatus.Dormant
+              : ReserveRecordStatus.QueryingStatus, // FIXME!
+            timestampStart: backupWg.timestamp_created,
+            wgInfo,
+            restrictAge: backupWg.restrict_age,
+            senderWire: undefined, // FIXME!
+            timestampFinish: backupWg.timestamp_finish,
+          });
         }
 
         // FIXME: import reserves with new schema

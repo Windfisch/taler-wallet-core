@@ -19,7 +19,11 @@
  */
 import { PreparePayResultType } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { GlobalTestState, WalletCli, MerchantPrivateApi } from "../harness/harness.js";
+import {
+  GlobalTestState,
+  WalletCli,
+  MerchantPrivateApi,
+} from "../harness/harness.js";
 import {
   createSimpleTestkudosEnvironment,
   makeTestPayment,
@@ -33,13 +37,8 @@ import { SyncService } from "../harness/sync";
 export async function runWalletBackupDoublespendTest(t: GlobalTestState) {
   // Set up test environment
 
-  const {
-    commonDb,
-    merchant,
-    wallet,
-    bank,
-    exchange,
-  } = await createSimpleTestkudosEnvironment(t);
+  const { commonDb, merchant, wallet, bank, exchange } =
+    await createSimpleTestkudosEnvironment(t);
 
   const sync = await SyncService.create(t, {
     currency: "TESTKUDOS",
@@ -139,8 +138,9 @@ export async function runWalletBackupDoublespendTest(t: GlobalTestState) {
       },
     );
 
-    t.assertTrue(
-      preparePayResult.status === PreparePayResultType.PaymentPossible,
+    t.assertDeepEqual(
+      preparePayResult.status,
+      PreparePayResultType.PaymentPossible,
     );
 
     const res = await wallet2.client.call(WalletApiOperation.ConfirmPay, {

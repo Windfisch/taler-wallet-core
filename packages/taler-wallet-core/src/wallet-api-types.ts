@@ -134,6 +134,8 @@ export enum WalletApiOperation {
   InitiatePeerPullPayment = "initiatePeerPullPayment",
   CheckPeerPullPayment = "checkPeerPullPayment",
   AcceptPeerPullPayment = "acceptPeerPullPayment",
+  ClearDb = "clearDb",
+  Recycle = "recycle",
 }
 
 export type WalletOperations = {
@@ -315,6 +317,14 @@ export type WalletOperations = {
   };
   [WalletApiOperation.AcceptPeerPullPayment]: {
     request: AcceptPeerPullPaymentRequest;
+    response: {};
+  };
+  [WalletApiOperation.ClearDb]: {
+    request: {};
+    response: {};
+  };
+  [WalletApiOperation.Recycle]: {
+    request: {};
     response: {};
   };
 };

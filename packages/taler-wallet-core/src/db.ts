@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2021 Taler Systems S.A.
+ (C) 2021-2022 Taler Systems S.A.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -50,6 +50,24 @@ import { RetryInfo, RetryTags } from "./util/retries.js";
 import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
 
 /**
+ * This file contains the database schema of the Taler wallet together
+ * with some helper functions.
+ *
+ * Some design considerations:
+ * - By convention, each object store must have a corresponding "<Name>Record"
+ *   interface defined for it.
+ * - For records that represent operations, there should be exactly
+ *   one top-level enum field that indicates the status of the operation.
+ *   This field should be present even if redundant, because the field
+ *   will have an index.
+ * - Amounts are stored as strings, except when they are needed for
+ *   indexing.
+ * - Optional fields should be avoided, use "T | undefined" instead.
+ *
+ * @author Florian Dold <dold@taler.net>
+ */
+
+/**
  * Name of the Taler database.  This is effectively the major
  * version of the DB schema. Whenever it changes, custom import logic
  * for all previous versions must be written, which should be
@@ -76,6 +94,9 @@ export const CURRENT_DB_CONFIG_KEY = "currentMainDbName";
  */
 export const WALLET_DB_MINOR_VERSION = 1;
 
+/**
+ * Status of a withdrawal.
+ */
 export enum ReserveRecordStatus {
   /**
    * Reserve must be registered with the bank.
@@ -293,7 +314,7 @@ export interface DenominationRecord {
    * Was this denomination still offered by the exchange the last time
    * we checked?
    * Only false when the exchange redacts a previously published denomination.
-   * 
+   *
    * FIXME: Consider rolling this and isRevoked into some bitfield?
    */
   isOffered: boolean;
@@ -520,6 +541,9 @@ export interface PlanchetRecord {
    */
   coinIdx: number;
 
+  /**
+   * FIXME: make this an enum!
+   */
   withdrawalDone: boolean;
 
   lastError: TalerErrorDetail | undefined;
@@ -639,6 +663,9 @@ export interface CoinRecord {
 
   /**
    * Amount that's left on the coin.
+   *
+   * FIXME: This is pretty redundant with "allocation" and "status".
+   * Do we really need this?
    */
   currentAmount: AmountJson;
 
@@ -716,6 +743,9 @@ export interface ProposalDownload {
    */
   contractTermsRaw: any;
 
+  /**
+   * Extracted / parsed data from the contract terms.
+   */
   contractData: WalletContractData;
 }
 
@@ -780,6 +810,9 @@ export interface TipRecord {
    */
   tipAmountRaw: AmountJson;
 
+  /**
+   * Effect on the balance (including fees etc).
+   */
   tipAmountEffective: AmountJson;
 
   /**
@@ -800,6 +833,9 @@ export interface TipRecord {
   /**
    * Denomination selection made by the wallet for picking up
    * this tip.
+   *
+   * FIXME: Put this into some DenomSelectionCacheRecord instead of
+   * storing it here!
    */
   denomsSel: DenomSelectionState;
 
@@ -889,6 +925,8 @@ export interface RefreshGroupRecord {
 
   /**
    * No coins are pending, but at least one is frozen.
+   *
+   * FIXME: What does this mean?
    */
   frozen?: boolean;
 }
@@ -1319,11 +1357,15 @@ export interface WithdrawalGroupRecord {
   /**
    * Operation status of the withdrawal group.
    * Used for indexing in the database.
+   *
+   * FIXME: Redundant with reserveStatus
    */
   operationStatus: OperationStatus;
 
   /**
    * Current status of the reserve.
+   *
+   * FIXME: Wrong name!
    */
   reserveStatus: ReserveRecordStatus;
 
@@ -1756,6 +1798,10 @@ export interface CoinAvailabilityRecord {
   freshCoinCount: number;
 }
 
+/**
+ * Schema definition for the IndexedDB
+ * wallet database.
+ */
 export const WalletStoresV1 = {
   coinAvailability: describeStore(
     "coinAvailability",

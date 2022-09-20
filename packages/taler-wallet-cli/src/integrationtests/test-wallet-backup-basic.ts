@@ -17,9 +17,13 @@
 /**
  * Imports.
  */
+import { j2s } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { GlobalTestState, WalletCli } from "../harness/harness.js";
-import { createSimpleTestkudosEnvironment, withdrawViaBank } from "../harness/helpers.js";
+import {
+  createSimpleTestkudosEnvironment,
+  withdrawViaBank,
+} from "../harness/helpers.js";
 import { SyncService } from "../harness/sync";
 
 /**
@@ -28,13 +32,8 @@ import { SyncService } from "../harness/sync";
 export async function runWalletBackupBasicTest(t: GlobalTestState) {
   // Set up test environment
 
-  const {
-    commonDb,
-    merchant,
-    wallet,
-    bank,
-    exchange,
-  } = await createSimpleTestkudosEnvironment(t);
+  const { commonDb, merchant, wallet, bank, exchange } =
+    await createSimpleTestkudosEnvironment(t);
 
   const sync = await SyncService.create(t, {
     currency: "TESTKUDOS",
@@ -106,6 +105,9 @@ export async function runWalletBackupBasicTest(t: GlobalTestState) {
     {},
   );
 
+  const txs = await wallet.client.call(WalletApiOperation.GetTransactions, {});
+  console.log(`backed up transactions ${j2s(txs)}`);
+
   const wallet2 = new WalletCli(t, "wallet2");
 
   // Check that the second wallet is a fresh wallet.
@@ -129,6 +131,11 @@ export async function runWalletBackupBasicTest(t: GlobalTestState) {
 
   // Now do some basic checks that the restored wallet is still functional
   {
+    const txs = await wallet2.client.call(
+      WalletApiOperation.GetTransactions,
+      {},
+    );
+    console.log(`restored transactions ${j2s(txs)}`);
     const bal1 = await wallet2.client.call(WalletApiOperation.GetBalances, {});
 
     t.assertAmountEquals(bal1.balances[0].available, "TESTKUDOS:14.1");
@@ -140,7 +147,15 @@ export async function runWalletBackupBasicTest(t: GlobalTestState) {
       amount: "TESTKUDOS:10",
     });
 
+    await exchange.runWirewatchOnce();
+
     await wallet2.runUntilDone();
+
+    const txs2 = await wallet2.client.call(
+      WalletApiOperation.GetTransactions,
+      {},
+    );
+    console.log(`tx after withdraw after restore ${j2s(txs2)}`);
 
     const bal2 = await wallet2.client.call(WalletApiOperation.GetBalances, {});
 

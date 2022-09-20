@@ -47,6 +47,15 @@
  * 3. Derived information is never backed up (hashed values, public keys
  *    when we know the private key).
  *
+ * Problems:
+ *
+ * Withdrawal group fork/merging loses money:
+ * - Before the withdrawal happens, wallet forks into two backups.
+ * - Both wallets need to re-denominate the withdrawal (unlikely but possible).
+ * - Because the backup doesn't store planchets where a withdrawal was attempted,
+ *   after merging some money will be list.
+ * - Fix: backup withdrawal objects also store planchets where withdrawal has been attempted
+ *
  * @author Florian Dold <dold@taler.net>
  */
 
@@ -55,6 +64,23 @@
  */
 import { DenominationPubKey, UnblindedSignature } from "./talerTypes.js";
 import { TalerProtocolDuration, TalerProtocolTimestamp } from "./time.js";
+
+export const BACKUP_TAG = "gnu-taler-wallet-backup-content" as const;
+/**
+ * Major version.  Each increment means a backwards-incompatible change.
+ * Typically this means that a custom converter needs to be written.
+ */
+export const BACKUP_VERSION_MAJOR = 1 as const;
+
+/**
+ * Minor version.  Each increment means that information is added to the backup
+ * in a backwards-compatible way.
+ *
+ * Wallets can always import a smaller minor version than their own backup code version.
+ * When importing a bigger version, data loss is possible and the user should be urged to
+ * upgrade their wallet first.
+ */
+export const BACKUP_VERSION_MINOR = 1 as const;
 
 /**
  * Type alias for strings that are to be treated like amounts.
@@ -93,12 +119,14 @@ export interface WalletBackupContentV1 {
   /**
    * Magic constant to identify that this is a backup content JSON.
    */
-  schema_id: "gnu-taler-wallet-backup-content";
+  schema_id: typeof BACKUP_TAG;
 
   /**
    * Version of the schema.
    */
-  schema_version: 1;
+  schema_version: typeof BACKUP_VERSION_MAJOR;
+
+  minor_version: number;
 
   /**
    * Root public key of the wallet.  This field is present as
@@ -130,6 +158,13 @@ export interface WalletBackupContentV1 {
   exchanges: BackupExchange[];
 
   exchange_details: BackupExchangeDetails[];
+
+  /**
+   * Withdrawal groups.
+   *
+   * Sorted by the withdrawal group ID.
+   */
+  withdrawal_groups: BackupWithdrawalGroup[];
 
   /**
    * Grouped refresh sessions.
@@ -206,6 +241,118 @@ export interface WalletBackupContentV1 {
    * Deletion tombstones.  Lexically sorted.
    */
   tombstones: Tombstone[];
+}
+
+export enum BackupOperationStatus {
+  Cancelled = "cancelled",
+  Finished = "finished",
+  Pending = "pending",
+}
+
+export enum BackupWgType {
+  BankManual = "bank-manual",
+  BankIntegrated = "bank-integrated",
+  PeerPullCredit = "peer-pull-credit",
+  PeerPushCredit = "peer-push-credit",
+  Recoup = "recoup",
+}
+
+export type BackupWgInfo =
+  | {
+      type: BackupWgType.BankManual;
+    }
+  | {
+      type: BackupWgType.BankIntegrated;
+      taler_withdraw_uri: string;
+
+      /**
+       * URL that the user can be redirected to, and allows
+       * them to confirm (or abort) the bank-integrated withdrawal.
+       */
+      confirm_url?: string;
+
+      /**
+       * Exchange payto URI that the bank will use to fund the reserve.
+       */
+      exchange_payto_uri: string;
+
+      /**
+       * Time when the information about this reserve was posted to the bank.
+       *
+       * Only applies if bankWithdrawStatusUrl is defined.
+       *
+       * Set to undefined if that hasn't happened yet.
+       */
+      timestamp_reserve_info_posted?: TalerProtocolTimestamp;
+
+      /**
+       * Time when the reserve was confirmed by the bank.
+       *
+       * Set to undefined if not confirmed yet.
+       */
+      timestamp_bank_confirmed?: TalerProtocolTimestamp;
+    }
+  | {
+      type: BackupWgType.PeerPullCredit;
+      contract_terms: any;
+      contract_priv: string;
+    }
+  | {
+      type: BackupWgType.PeerPushCredit;
+      contract_terms: any;
+    }
+  | {
+      type: BackupWgType.Recoup;
+    };
+
+/**
+ * FIXME: Open questions:
+ * - Do we have to store the denomination selection?  Why?
+ *   (If deterministic, amount shouldn't change. Not storing it is simpler.)
+ */
+export interface BackupWithdrawalGroup {
+  withdrawal_group_id: string;
+
+  /**
+   * Detailled info based on the type of withdrawal group.
+   */
+  info: BackupWgInfo;
+
+  secret_seed: string;
+
+  reserve_priv: string;
+
+  exchange_base_url: string;
+
+  timestamp_created: TalerProtocolTimestamp;
+
+  timestamp_finish?: TalerProtocolTimestamp;
+
+  operation_status: BackupOperationStatus;
+
+  instructed_amount: BackupAmountString;
+
+  /**
+   * Amount including fees (i.e. the amount subtracted from the
+   * reserve to withdraw all coins in this withdrawal session).
+   *
+   * Note that this *includes* the amount remaining in the reserve
+   * that is too small to be withdrawn, and thus can't be derived
+   * from selectedDenoms.
+   */
+  raw_withdrawal_amount: BackupAmountString;
+
+  /**
+   * Restrict withdrawals from this reserve to this age.
+   */
+  restrict_age?: number;
+
+  /**
+   * Multiset of denominations selected for withdrawal.
+   */
+  selected_denoms: BackupDenomSel;
+
+  selected_denoms_uid: OperationUid;
 }
 
 /**
@@ -619,46 +766,6 @@ export interface BackupRefreshGroup {
   finish_is_failure?: boolean;
 }
 
-/**
- * Backup information for a withdrawal group.
- *
- * Always part of a BackupReserve.
- */
-export interface BackupWithdrawalGroup {
-  withdrawal_group_id: string;
-
-  /**
-   * Secret seed to derive the planchets.
-   */
-  secret_seed: string;
-
-  /**
-   * When was the withdrawal operation started started?
-   * Timestamp in milliseconds.
-   */
-  timestamp_created: TalerProtocolTimestamp;
-
-  timestamp_finish?: TalerProtocolTimestamp;
-  finish_is_failure?: boolean;
-
-  /**
-   * Amount including fees (i.e. the amount subtracted from the
-   * reserve to withdraw all coins in this withdrawal session).
-   *
-   * Note that this *includes* the amount remaining in the reserve
-   * that is too small to be withdrawn, and thus can't be derived
-   * from selectedDenoms.
-   */
-  raw_withdrawal_amount: BackupAmountString;
-
-  /**
-   * Multiset of denominations selected for withdrawal.
-   */
-  selected_denoms: BackupDenomSel;
-
-  selected_denoms_id: OperationUid;
-}
-
 export enum BackupRefundState {
   Failed = "failed",
   Applied = "applied",
@@ -914,101 +1021,6 @@ export type BackupDenomSel = {
   count: number;
 }[];
 
-export interface BackupReserve {
-  /**
-   * The reserve private key.
-   */
-  reserve_priv: string;
-
-  /**
-   * Time when the reserve was created.
-   */
-  timestamp_created: TalerProtocolTimestamp;
-
-  /**
-   * Timestamp of the last observed activity.
-   *
-   * Used to compute when to give up querying the exchange.
-   */
-  timestamp_last_activity: TalerProtocolTimestamp;
-
-  /**
-   * Timestamp of when the reserve closed.
-   *
-   * Note that the last activity can be after the closing time
-   * due to recouping.
-   */
-  timestamp_closed?: TalerProtocolTimestamp;
-
-  /**
-   * Wire information (as payto URI) for the bank account that
-   * transferred funds for this reserve.
-   */
-  sender_wire?: string;
-
-  /**
-   * Amount that was sent by the user to fund the reserve.
-   */
-  instructed_amount: BackupAmountString;
-
-  /**
-   * Extra state for when this is a withdrawal involving
-   * a Taler-integrated bank.
-   */
-  bank_info?: {
-    /**
-     * Status URL that the wallet will use to query the status
-     * of the Taler withdrawal operation on the bank's side.
-     */
-    status_url: string;
-
-    /**
-     * URL that the user should be instructed to navigate to
-     * in order to confirm the transfer (or show instructions/help
-     * on how to do that at a PoS terminal).
-     */
-    confirm_url?: string;
-
-    /**
-     * Exchange payto URI that the bank will use to fund the reserve.
-     */
-    exchange_payto_uri: string;
-
-    /**
-     * Time when the information about this reserve was posted to the bank.
-     */
-    timestamp_reserve_info_posted: TalerProtocolTimestamp | undefined;
-
-    /**
-     * Time when the reserve was confirmed by the bank.
-     *
-     * Set to undefined if not confirmed yet.
-     */
-    timestamp_bank_confirmed: TalerProtocolTimestamp | undefined;
-  };
-
-  /**
-   * Pre-allocated withdrawal group ID that will be
-   * used for the first withdrawal.
-   *
-   * (Already created so it can be referenced in the transactions list
-   * before it really exists, as there'll be an entry for the withdrawal
-   * even before the withdrawal group really has been created).
-   */
-  initial_withdrawal_group_id: string;
-
-  /**
-   * Denominations selected for the initial withdrawal.
-   * Stored here to show costs before withdrawal has begun.
-   */
-  initial_selected_denoms: BackupDenomSel;
-
-  /**
-   * Groups of withdrawal operations for this reserve.  Typically just one.
-   */
-  withdrawal_groups: BackupWithdrawalGroup[];
-}
-
 /**
  * Wire fee for one wire payment target type as stored in the
  * wallet's database.
@@ -1147,11 +1159,6 @@ export interface BackupExchangeDetails {
    * Denominations offered by the exchange.
    */
   denominations: BackupDenomination[];
-
-  /**
-   * Reserves at the exchange.
-   */
-  reserves: BackupReserve[];
 
   /**
    * Last observed protocol version.

@@ -72,6 +72,33 @@ function upgradeFromStoreMap(
   throw Error("upgrade not supported");
 }
 
+function promiseFromTransaction(transaction: IDBTransaction): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    transaction.oncomplete = () => {
+      resolve();
+    };
+    transaction.onerror = () => {
+      reject();
+    };
+  });
+}
+
+/**
+ * Purge all data in the given database.
+ */
+export function clearDatabase(db: IDBDatabase): Promise<void> {
+  // db.objectStoreNames is a DOMStringList, so we need to convert
+  let stores: string[] = [];
+  for (let i = 0; i < db.objectStoreNames.length; i++) {
+    stores.push(db.objectStoreNames[i]);
+  }
+  const tx = db.transaction(stores, "readwrite");
+  for (const store of stores) {
+    tx.objectStore(store).clear();
+  }
+  return promiseFromTransaction(tx);
+}
+
 function onTalerDbUpgradeNeeded(
   db: IDBDatabase,
   oldVersion: number,

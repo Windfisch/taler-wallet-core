@@ -96,12 +96,13 @@ import { DbAccess, GetReadOnlyAccess } from "../util/query.js";
 import {
   OperationAttemptResult,
   OperationAttemptResultType,
+  RetryTags,
 } from "../util/retries.js";
 import {
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
 } from "../versions.js";
-import { makeCoinAvailable } from "../wallet.js";
+import { makeCoinAvailable, storeOperationPending } from "../wallet.js";
 import {
   getExchangeDetails,
   getExchangePaytoUri,
@@ -1099,6 +1100,7 @@ export async function processWithdrawalGroup(
   );
 
   if (withdrawalGroup.denomsSel.selectedDenoms.length === 0) {
+    logger.warn("Finishing empty withdrawal group (no denoms)");
     await ws.db
       .mktx((x) => [x.withdrawalGroups])
       .runReadWrite(async (tx) => {
@@ -1107,6 +1109,7 @@ export async function processWithdrawalGroup(
           return;
         }
         wg.operationStatus = OperationStatus.Finished;
+        wg.timestampFinish = TalerProtocolTimestamp.now();
         await tx.withdrawalGroups.put(wg);
       });
     return {
@@ -1185,7 +1188,7 @@ export async function processWithdrawalGroup(
             errorsPerCoin[x.coinIdx] = x.lastError;
           }
         });
-      logger.trace(`now withdrawn ${numFinished} of ${numTotalCoins} coins`);
+      logger.info(`now withdrawn ${numFinished} of ${numTotalCoins} coins`);
       if (wg.timestampFinish === undefined && numFinished === numTotalCoins) {
         finishedForFirstTime = true;
         wg.timestampFinish = TalerProtocolTimestamp.now();

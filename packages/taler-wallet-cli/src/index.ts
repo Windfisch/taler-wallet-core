@@ -887,6 +887,26 @@ currenciesCli
   });
 
 advancedCli
+  .subcommand("clearDatabase", "clear-database", {
+    help: "Clear the database, irrevocable deleting all data in the wallet.",
+  })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      await wallet.client.call(WalletApiOperation.ClearDb, {});
+    });
+  });
+
+advancedCli
+  .subcommand("recycle", "recycle", {
+    help: "Export, clear and re-import the database via the backup mechamism.",
+  })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      await wallet.client.call(WalletApiOperation.Recycle, {});
+    });
+  });
+
+advancedCli
   .subcommand("payPrepare", "pay-prepare", {
     help: "Claim an order but don't pay yet.",
   })

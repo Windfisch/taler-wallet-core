@@ -99,6 +99,7 @@ import {
   CryptoDispatcher,
   CryptoWorkerFactory,
 } from "./crypto/workers/cryptoDispatcher.js";
+import { clearDatabase } from "./db-utils.js";
 import {
   AuditorTrustRecord,
   CoinRecord,
@@ -114,7 +115,6 @@ import {
   makeErrorDetail,
   TalerError,
 } from "./errors.js";
-import { createDenominationTimeline } from "./index.browser.js";
 import {
   ExchangeOperations,
   InternalWalletState,
@@ -131,6 +131,7 @@ import {
   codecForRunBackupCycle,
   getBackupInfo,
   getBackupRecovery,
+  importBackupPlain,
   loadBackupRecovery,
   processBackupForProvider,
   removeBackupProvider,
@@ -215,6 +216,7 @@ import {
 } from "./pending-types.js";
 import { assertUnreachable } from "./util/assertUnreachable.js";
 import { AsyncOpMemoMap, AsyncOpMemoSingle } from "./util/asyncMemo.js";
+import { createDenominationTimeline } from "./util/denominations.js";
 import {
   HttpRequestLibrary,
   readSuccessResponseJsonOrThrow,
@@ -1060,8 +1062,11 @@ async function dispatchRequestInternal(
       `wallet must be initialized before running operation ${operation}`,
     );
   }
+  // FIXME: Can we make this more type-safe by using the request/response type
+  // definitions we already have?
   switch (operation) {
     case "initWallet": {
+      logger.info("initializing wallet");
       ws.initCalled = true;
       if (typeof payload === "object" && (payload as any).skipDefaults) {
         logger.info("skipping defaults");
@@ -1369,6 +1374,15 @@ async function dispatchRequestInternal(
       );
       const fbResp = await readSuccessResponseJsonOrThrow(fbReq, codecForAny());
       logger.info(`started fakebank withdrawal: ${j2s(fbResp)}`);
+      return {};
+    }
+    case "clearDb":
+      await clearDatabase(ws.db.idbHandle());
+      return {};
+    case "recycle": {
+      const backup = await exportBackup(ws);
+      await clearDatabase(ws.db.idbHandle());
+      await importBackupPlain(ws, backup);
       return {};
     }
     case "exportDb": {

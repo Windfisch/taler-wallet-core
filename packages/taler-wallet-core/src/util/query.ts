@@ -409,10 +409,12 @@ export type GetReadWriteAccess<BoundStores> = {
 
 type ReadOnlyTransactionFunction<BoundStores, T> = (
   t: GetReadOnlyAccess<BoundStores>,
+  rawTx: IDBTransaction,
 ) => Promise<T>;
 
 type ReadWriteTransactionFunction<BoundStores, T> = (
   t: GetReadWriteAccess<BoundStores>,
+  rawTx: IDBTransaction,
 ) => Promise<T>;
 
 export interface TransactionContext<BoundStores> {
@@ -420,22 +422,10 @@ export interface TransactionContext<BoundStores> {
   runReadOnly<T>(f: ReadOnlyTransactionFunction<BoundStores, T>): Promise<T>;
 }
 
-type CheckDescriptor<T> = T extends StoreWithIndexes<
-  infer SN,
-  infer SD,
-  infer IM
->
-  ? StoreWithIndexes<SN, SD, IM>
-  : unknown;
-
-type GetPickerType<F, SM> = F extends (x: SM) => infer Out
-  ? { [P in keyof Out]: CheckDescriptor<Out[P]> }
-  : unknown;
-
 function runTx<Arg, Res>(
   tx: IDBTransaction,
   arg: Arg,
-  f: (t: Arg) => Promise<Res>,
+  f: (t: Arg, t2: IDBTransaction) => Promise<Res>,
 ): Promise<Res> {
   const stack = Error("Failed transaction was started here.");
   return new Promise((resolve, reject) => {
@@ -474,7 +464,7 @@ function runTx<Arg, Res>(
       logger.error(msg);
       reject(new TransactionAbortedError(msg));
     };
-    const resP = Promise.resolve().then(() => f(arg));
+    const resP = Promise.resolve().then(() => f(arg, tx));
     resP
       .then((result) => {
         gotFunResult = true;
@@ -625,6 +615,46 @@ export class DbAccess<StoreMap> {
   }
 
   /**
+   * Run a transaction with all object stores.
+   */
+  mktxAll(): TransactionContext<StoreMap> {
+    const storeNames: string[] = [];
+    const accessibleStores: { [x: string]: StoreWithIndexes<any, any, any> } =
+      {};
+
+    for (let i = 0; i < this.db.objectStoreNames.length; i++) {
+      const sn = this.db.objectStoreNames[i];
+      const swi = (this.stores as any)[sn] as StoreWithIndexes<any, any, any>;
+      if (!swi) {
+        throw Error(`store metadata not available (${sn})`);
+      }
+      storeNames.push(sn);
+      accessibleStores[sn] = swi;
+    }
+
+    const runReadOnly = <T>(
+      txf: ReadOnlyTransactionFunction<StoreMap, T>,
+    ): Promise<T> => {
+      const tx = this.db.transaction(storeNames, "readonly");
+      const readContext = makeReadContext(tx, accessibleStores);
+      return runTx(tx, readContext, txf);
+    };
+
+    const runReadWrite = <T>(
+      txf: ReadWriteTransactionFunction<StoreMap, T>,
+    ): Promise<T> => {
+      const tx = this.db.transaction(storeNames, "readwrite");
+      const writeContext = makeWriteContext(tx, accessibleStores);
+      return runTx(tx, writeContext, txf);
+    };
+
+    return {
+      runReadOnly,
+      runReadWrite,
+    };
+  }
+
+  /**
    * Run a transaction with selected object stores.
    *
    * The {@link namePicker} must be a function that selects a list of object
@@ -638,13 +668,14 @@ export class DbAccess<StoreMap> {
       [X in StoreNamesOf<StoreList>]: StoreList[number] & { storeName: X };
     },
   >(namePicker: (x: StoreMap) => StoreList): TransactionContext<BoundStores> {
+    const storeNames: string[] = [];
+    const accessibleStores: { [x: string]: StoreWithIndexes<any, any, any> } =
+      {};
+
     const storePick = namePicker(this.stores) as any;
     if (typeof storePick !== "object" || storePick === null) {
       throw Error();
     }
-    const storeNames: string[] = [];
-    const accessibleStores: { [x: string]: StoreWithIndexes<any, any, any> } =
-      {};
     for (const swiPicked of storePick) {
       const swi = swiPicked as StoreWithIndexes<any, any, any>;
       if (swi.mark !== storeWithIndexesSymbol) {
