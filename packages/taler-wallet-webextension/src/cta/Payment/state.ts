@@ -128,6 +128,7 @@ export function useComponentState(
         });
       }
       const res = await api.confirmPay(payStatus.proposalId, undefined);
+      // handle confirm pay
       if (res.type !== ConfirmPayResultType.Done) {
         throw TalerError.fromUncheckedDetail({
           code: TalerErrorCode.GENERIC_CLIENT_INTERNAL_ERROR,

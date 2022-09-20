@@ -29,6 +29,7 @@ import { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
 import { mountHook } from "../../test-utils.js";
 import { useComponentStateFromURI } from "./state.js";
+import * as wxApi from "../../wxApi.js";
 
 const exchanges: ExchangeFullDetails[] = [
   {
@@ -92,7 +93,7 @@ describe("Withdraw CTA states", () => {
     {
       const { status, error } = getLastResultOrThrow();
 
-      if (status != "loading-uri") expect.fail();
+      if (status != "loading-error") expect.fail();
       if (!error) expect.fail();
       if (!error.hasError) expect.fail();
       if (error.operational) expect.fail();
@@ -127,7 +128,7 @@ describe("Withdraw CTA states", () => {
 
     {
       const { status } = getLastResultOrThrow();
-      expect(status).equals("loading");
+      expect(status).equals("loading", "1");
     }
 
     await waitNextUpdate();
@@ -135,13 +136,9 @@ describe("Withdraw CTA states", () => {
     {
       const { status, error } = getLastResultOrThrow();
 
-      expect(status).equals("loading-exchange");
+      expect(status).equals("no-exchange", "3");
 
-      expect(error).deep.equals({
-        hasError: true,
-        operational: false,
-        message: "ERROR_NO-DEFAULT-EXCHANGE",
-      });
+      expect(error).undefined;
     }
 
     await assertNoPendingUpdate();
@@ -169,10 +166,10 @@ describe("Withdraw CTA states", () => {
             }),
             getExchangeWithdrawalInfo:
               async (): Promise<ExchangeWithdrawDetails> =>
-                ({
-                  withdrawalAmountRaw: "ARS:2",
-                  withdrawalAmountEffective: "ARS:2",
-                } as any),
+              ({
+                withdrawalAmountRaw: "ARS:2",
+                withdrawalAmountEffective: "ARS:2",
+              } as any),
             getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
               contentType: "text",
               content: "just accept",
@@ -246,10 +243,10 @@ describe("Withdraw CTA states", () => {
             }),
             getExchangeWithdrawalInfo:
               async (): Promise<ExchangeWithdrawDetails> =>
-                ({
-                  withdrawalAmountRaw: "ARS:2",
-                  withdrawalAmountEffective: "ARS:2",
-                } as any),
+              ({
+                withdrawalAmountRaw: "ARS:2",
+                withdrawalAmountEffective: "ARS:2",
+              } as any),
             getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
               contentType: "text",
               content: "just accept",

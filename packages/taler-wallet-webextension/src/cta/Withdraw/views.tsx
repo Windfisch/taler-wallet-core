@@ -38,6 +38,7 @@ import editIcon from "../../svg/edit_24px.svg";
 import { Amount } from "../../components/Amount.js";
 import { QR } from "../../components/QR.js";
 import { useState } from "preact/hooks";
+import { ErrorMessage } from "../../components/ErrorMessage.js";
 
 export function LoadingUriView({ error }: State.LoadingUriError): VNode {
   const { i18n } = useTranslationContext();
@@ -52,15 +53,12 @@ export function LoadingUriView({ error }: State.LoadingUriError): VNode {
   );
 }
 
-export function LoadingExchangeView({
-  error,
-}: State.LoadingExchangeError): VNode {
+export function LoadingExchangeView(p: State.LoadingExchangeError): VNode {
   const { i18n } = useTranslationContext();
 
   return (
-    <LoadingError
-      title={<i18n.Translate>Could not get exchange</i18n.Translate>}
-      error={error}
+    <ErrorMessage 
+      title={<i18n.Translate>Could not get a default exchange, please check configuration</i18n.Translate>}
     />
   );
 }
@@ -106,13 +104,13 @@ export function SuccessView(state: State.Success): VNode {
               }}
             >
               <i18n.Translate>Exchange</i18n.Translate>
-              {/* <Link>
+              <Button onClick={state.doSelectExchange.onClick} variant="text">
                 <SvgIcon
                   title="Edit"
                   dangerouslySetInnerHTML={{ __html: editIcon }}
                   color="black"
                 />
-              </Link> */}
+              </Button>
             </div>
           }
           text={<ExchangeDetails exchange={state.exchangeUrl} />}

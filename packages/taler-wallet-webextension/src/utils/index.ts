@@ -19,7 +19,7 @@ import {
   Amounts,
   GetExchangeTosResult,
 } from "@gnu-taler/taler-util";
-import { VNode } from "preact";
+import { VNode, createElement } from "preact";
 
 function getJsonIfOk(r: Response): Promise<any> {
   if (r.ok) {
@@ -31,8 +31,7 @@ function getJsonIfOk(r: Response): Promise<any> {
   }
 
   throw new Error(
-    `Try another server: (${r.status}) ${
-      r.statusText || "internal server error"
+    `Try another server: (${r.status}) ${r.statusText || "internal server error"
     }`,
   );
 }
@@ -103,10 +102,10 @@ export function buildTermsOfServiceStatus(
   return !content
     ? "notfound"
     : !acceptedVersion
-    ? "new"
-    : acceptedVersion !== currentVersion
-    ? "changed"
-    : "accepted";
+      ? "new"
+      : acceptedVersion !== currentVersion
+        ? "changed"
+        : "accepted";
 }
 
 function parseTermsOfServiceContent(
@@ -198,17 +197,35 @@ export type StateViewMap<StateType extends { status: string }> = {
   [S in StateType as S["status"]]: StateFunc<S>;
 };
 
+type RecursiveState<S extends object> = S | (() => RecursiveState<S>)
+
 export function compose<SType extends { status: string }, PType>(
   name: string,
-  hook: (p: PType) => SType,
-  vs: StateViewMap<SType>,
+  hook: (p: PType) => RecursiveState<SType>,
+  viewMap: StateViewMap<SType>,
 ): (p: PType) => VNode {
-  const Component = (p: PType): VNode => {
-    const state = hook(p);
-    const s = state.status as unknown as SType["status"];
-    const c = vs[s] as unknown as StateFunc<SType>;
-    return c(state);
+
+  function withHook(stateHook: () => RecursiveState<SType>): () => VNode {
+
+    function TheComponent(): VNode {
+      const state = stateHook();
+
+      if (typeof state === "function") {
+        const subComponent = withHook(state)
+        return createElement(subComponent, {});
+      }
+
+      const statusName = state.status as unknown as SType["status"];
+      const viewComponent = viewMap[statusName] as unknown as StateFunc<SType>;
+      return createElement(viewComponent, state);
+    }
+    TheComponent.name = `${name}`;
+
+    return TheComponent;
+  }
+
+  return (p: PType) => {
+    const h = withHook(() => hook(p))
+    return h()
   };
-  Component.name = `${name}`;
-  return Component;
 }

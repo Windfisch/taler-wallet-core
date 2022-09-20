@@ -20,6 +20,7 @@ import {
   AbsoluteTime,
   ExchangeFullDetails,
   OperationMap,
+  ExchangeListItem,
 } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
@@ -29,13 +30,14 @@ import * as wxApi from "../../wxApi.js";
 import { useComponentState } from "./state.js";
 import {
   ComparingView,
-  LoadingUriView,
+  ErrorLoadingView,
   NoExchangesView,
   ReadyView,
 } from "./views.js";
 
 export interface Props {
-  currency?: string;
+  list: ExchangeListItem[],
+  currentExchange: string,
   onCancel: () => Promise<void>;
   onSelection: (exchange: string) => Promise<void>;
 }
@@ -54,7 +56,7 @@ export namespace State {
   }
 
   export interface LoadingUriError {
-    status: "loading-uri";
+    status: "error-loading";
     error: HookError;
   }
 
@@ -85,7 +87,7 @@ export namespace State {
 
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
-  "loading-uri": LoadingUriView,
+  "error-loading": ErrorLoadingView,
   comparing: ComparingView,
   "no-exchanges": NoExchangesView,
   ready: ReadyView,

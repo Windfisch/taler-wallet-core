@@ -82,31 +82,38 @@ export function renderNodeOrBrowser(Component: any, args: any): void {
     document.body.removeChild(div);
   }
 }
+type RecursiveState<S> = S | (() => RecursiveState<S>)
 
 interface Mounted<T> {
   unmount: () => void;
-  getLastResultOrThrow: () => T;
+  getLastResultOrThrow: () => Exclude<T, VoidFunction>;
   assertNoPendingUpdate: () => void;
   waitNextUpdate: (s?: string) => Promise<void>;
 }
 
 const isNode = typeof window === "undefined";
 
-export function mountHook<T>(
-  callback: () => T,
+export function mountHook<T extends object>(
+  callback: () => RecursiveState<T>,
   Context?: ({ children }: { children: any }) => VNode,
 ): Mounted<T> {
   // const result: { current: T | null } = {
   //   current: null
   // }
-  let lastResult: T | Error | null = null;
+  let lastResult: Exclude<T, VoidFunction> | Error | null = null;
 
   const listener: Array<() => void> = [];
 
   // component that's going to hold the hook
   function Component(): VNode {
     try {
-      lastResult = callback();
+      let componentOrResult = callback()
+      while (typeof componentOrResult === "function") {
+        componentOrResult = componentOrResult();
+      }
+      //typecheck fails here
+      const l: Exclude<T, () => void> = componentOrResult as any
+      lastResult = l;
     } catch (e) {
       if (e instanceof Error) {
         lastResult = e;
@@ -157,13 +164,13 @@ export function mountHook<T>(
     }
   }
 
-  function getLastResult(): T | Error | null {
-    const copy = lastResult;
+  function getLastResult(): Exclude<T | Error | null, VoidFunction> {
+    const copy: Exclude<T | Error | null, VoidFunction> = lastResult;
     lastResult = null;
     return copy;
   }
 
-  function getLastResultOrThrow(): T {
+  function getLastResultOrThrow(): Exclude<T, VoidFunction> {
     const r = getLastResult();
     if (r instanceof Error) throw r;
     if (!r) throw Error("there was no last result");

@@ -38,6 +38,9 @@ export const Ready = createExample(ReadyView, {
     value: 1,
     fraction: 0,
   },
+  doSelectExchange: {
+
+  },
   exchangeUrl: "https://exchange.taler.ar",
   subject: {
     value: "some subject",

@@ -48,6 +48,7 @@ export namespace State {
   }
   export interface Ready extends BaseInfo {
     status: "ready";
+    doSelectExchange: ButtonHandler;
     create: ButtonHandler;
     subject: TextFieldHandler;
     toBeReceived: AmountJson;

@@ -76,6 +76,8 @@ export const TermsOfServiceNotYetLoaded = createExample(SuccessView, {
     fraction: 10000000,
     value: 1,
   },
+  doSelectExchange: {
+  },
   toBeReceived: {
     currency: "USD",
     fraction: 0,
@@ -104,6 +106,8 @@ export const WithSomeFee = createExample(SuccessView, {
     fraction: 0,
     value: 1,
   },
+  doSelectExchange: {
+  },
   tosProps: normalTosState,
 });
 
@@ -122,6 +126,8 @@ export const WithoutFee = createExample(SuccessView, {
     currency: "USD",
     fraction: 0,
     value: 0,
+  },
+  doSelectExchange: {
   },
   toBeReceived: {
     currency: "USD",
@@ -147,6 +153,8 @@ export const EditExchangeUntouched = createExample(SuccessView, {
     fraction: 0,
     value: 0,
   },
+  doSelectExchange: {
+  },
   toBeReceived: {
     currency: "USD",
     fraction: 0,
@@ -171,6 +179,8 @@ export const EditExchangeModified = createExample(SuccessView, {
     fraction: 0,
     value: 0,
   },
+  doSelectExchange: {
+  },
   toBeReceived: {
     currency: "USD",
     fraction: 0,
@@ -187,6 +197,8 @@ export const WithAgeRestriction = createExample(SuccessView, {
     currency: "USD",
     value: 2,
     fraction: 10000000,
+  },
+  doSelectExchange: {
   },
   doWithdrawal: nullHandler,
   exchangeUrl: "https://exchange.demo.taler.net",

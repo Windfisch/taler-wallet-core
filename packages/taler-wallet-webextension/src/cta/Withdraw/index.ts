@@ -26,11 +26,16 @@ import {
   useComponentStateFromURI,
 } from "./state.js";
 import {
+  State as SelectExchangeState
+} from "../../hooks/useSelectedExchange.js";
+
+import {
   LoadingExchangeView,
   LoadingInfoView,
   LoadingUriView,
   SuccessView,
 } from "./views.js";
+import { ExchangeSelectionPage } from "../../wallet/ExchangeSelection/index.js";
 
 export interface PropsFromURI {
   talerWithdrawUri: string | undefined;
@@ -49,6 +54,7 @@ export type State =
   | State.LoadingUriError
   | State.LoadingExchangeError
   | State.LoadingInfoError
+  | SelectExchangeState.Selecting
   | State.Success;
 
 export namespace State {
@@ -57,12 +63,12 @@ export namespace State {
     error: undefined;
   }
   export interface LoadingUriError {
-    status: "loading-uri";
+    status: "loading-error";
     error: HookError;
   }
   export interface LoadingExchangeError {
-    status: "loading-exchange";
-    error: HookError;
+    status: "no-exchange";
+    error: undefined,
   }
   export interface LoadingInfoError {
     status: "loading-info";
@@ -80,6 +86,7 @@ export namespace State {
     toBeReceived: AmountJson;
 
     doWithdrawal: ButtonHandler;
+    doSelectExchange: ButtonHandler;
     tosProps?: TermsOfServiceSectionProps;
     mustAcceptFirst: boolean;
 
@@ -92,9 +99,10 @@ export namespace State {
 
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
-  "loading-uri": LoadingUriView,
-  "loading-exchange": LoadingExchangeView,
+  "loading-error": LoadingUriView,
+  "no-exchange": LoadingExchangeView,
   "loading-info": LoadingInfoView,
+  "selecting-exchange": ExchangeSelectionPage,
   success: SuccessView,
 };
 

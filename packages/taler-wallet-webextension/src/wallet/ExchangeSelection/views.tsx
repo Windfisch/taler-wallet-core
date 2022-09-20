@@ -101,7 +101,7 @@ const Container = styled.div`
   }
 `;
 
-export function LoadingUriView({ error }: State.LoadingUriError): VNode {
+export function ErrorLoadingView({ error }: State.LoadingUriError): VNode {
   const { i18n } = useTranslationContext();
 
   return (

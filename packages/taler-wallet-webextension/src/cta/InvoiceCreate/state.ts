@@ -84,6 +84,9 @@ export function useComponentState(
       value: subject,
       onInput: async (e) => setSubject(e),
     },
+    doSelectExchange: {
+      //FIX
+    },
     invalid: !subject || Amounts.isZero(amount),
     exchangeUrl: selected.exchangeBaseUrl,
     create: {

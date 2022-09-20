@@ -22,14 +22,17 @@ import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
-  { onCancel, onSelection, currency }: Props,
+  { onCancel, onSelection, list: exchanges, currentExchange }: Props,
   api: typeof wxApi,
 ): State {
-  const initialValue = 0;
+  const initialValue = exchanges.findIndex(e => e.exchangeBaseUrl === currentExchange);
+  if (initialValue === -1) {
+    throw Error(`wrong usage of ExchangeSelection component, currentExchange '${currentExchange}' is not in the list of exchanges`)
+  }
   const [value, setValue] = useState(String(initialValue));
 
   const hook = useAsyncAsHook(async () => {
-    const { exchanges } = await api.listExchanges();
+    // const { exchanges } = await api.listExchanges();
 
     const selectedIdx = parseInt(value, 10);
     const selectedExchange =
@@ -54,12 +57,12 @@ export function useComponentState(
   }
   if (hook.hasError) {
     return {
-      status: "loading-uri",
+      status: "error-loading",
       error: hook,
     };
   }
 
-  const { exchanges, selected, original } = hook.response;
+  const { selected, original } = hook.response;
 
   if (!selected) {
     //!selected <=> exchanges.length === 0

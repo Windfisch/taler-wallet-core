@@ -54,6 +54,7 @@ export function ReadyView({
   create,
   toBeReceived,
   chosenAmount,
+  doSelectExchange,
 }: State.Ready): VNode {
   const { i18n } = useTranslationContext();
 
@@ -93,13 +94,13 @@ export function ReadyView({
               }}
             >
               <i18n.Translate>Exchange</i18n.Translate>
-              {/* <Link>
+              <Button onClick={doSelectExchange.onClick} variant="text">
                 <SvgIcon
                   title="Edit"
                   dangerouslySetInnerHTML={{ __html: editIcon }}
                   color="black"
                 />
-              </Link> */}
+              </Button>
             </div>
           }
           text={<ExchangeDetails exchange={exchangeUrl} />}

@@ -14,223 +14,58 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Amounts, parsePaytoUri } from "@gnu-taler/taler-util";
+/* eslint-disable react-hooks/rules-of-hooks */
+import { AmountJson, Amounts, ExchangeListItem, parsePaytoUri } from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
+import { Amount } from "../../components/Amount.js";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
+import { useSelectedExchange } from "../../hooks/useSelectedExchange.js";
 import { buildTermsOfServiceState } from "../../utils/index.js";
 import * as wxApi from "../../wxApi.js";
 import { PropsFromURI, PropsFromParams, State } from "./index.js";
 
+type RecursiveState<S extends object> = S | (() => RecursiveState<S>)
+
 export function useComponentStateFromParams(
   { amount, cancel, onSuccess }: PropsFromParams,
   api: typeof wxApi,
-): State {
-  const [ageRestricted, setAgeRestricted] = useState(0);
+): RecursiveState<State> {
+  const uriInfoHook = useAsyncAsHook(async () => {
+    const exchanges = await api.listExchanges();
+    return { amount: Amounts.parseOrThrow(amount), exchanges };
+  });
 
-  const exchangeHook = useAsyncAsHook(api.listExchanges);
+  console.log("uri info", uriInfoHook)
 
-  const exchangeHookDep =
-    !exchangeHook || exchangeHook.hasError || !exchangeHook.response
-      ? undefined
-      : exchangeHook.response;
+  if (!uriInfoHook) return { status: "loading", error: undefined };
 
-  const chosenAmount = Amounts.parseOrThrow(amount);
-
-  // get the first exchange with the currency as the default one
-  const exchange = exchangeHookDep
-    ? exchangeHookDep.exchanges.find(
-        (e) => e.currency === chosenAmount.currency,
-      )
-    : undefined;
-  /**
-   * For the exchange selected, bring the status of the terms of service
-   */
-  const terms = useAsyncAsHook(async () => {
-    if (!exchange) return undefined;
-
-    const exchangeTos = await api.getExchangeTos(exchange.exchangeBaseUrl, [
-      "text/xml",
-    ]);
-
-    const state = buildTermsOfServiceState(exchangeTos);
-
-    return { state };
-  }, [exchangeHookDep]);
-
-  /**
-   * With the exchange and amount, ask the wallet the information
-   * about the withdrawal
-   */
-  const amountHook = useAsyncAsHook(async () => {
-    if (!exchange) return undefined;
-
-    const info = await api.getExchangeWithdrawalInfo({
-      exchangeBaseUrl: exchange.exchangeBaseUrl,
-      amount: chosenAmount,
-      tosAcceptedFormat: ["text/xml"],
-      ageRestricted,
-    });
-
-    const withdrawAmount = {
-      raw: Amounts.parseOrThrow(info.withdrawalAmountRaw),
-      effective: Amounts.parseOrThrow(info.withdrawalAmountEffective),
-    };
-
+  if (uriInfoHook.hasError) {
     return {
-      amount: withdrawAmount,
-      ageRestrictionOptions: info.ageRestrictionOptions,
+      status: "loading-error",
+      error: uriInfoHook,
     };
-  }, [exchangeHookDep]);
+  }
 
-  const [reviewing, setReviewing] = useState<boolean>(false);
-  const [reviewed, setReviewed] = useState<boolean>(false);
+  const chosenAmount = uriInfoHook.response.amount;
+  const exchangeList = uriInfoHook.response.exchanges.exchanges
 
-  const [withdrawError, setWithdrawError] = useState<TalerError | undefined>(
-    undefined,
-  );
-  const [doingWithdraw, setDoingWithdraw] = useState<boolean>(false);
-
-  if (!exchangeHook) return { status: "loading", error: undefined };
-  if (exchangeHook.hasError) {
+  async function doManualWithdraw(exchange: string, ageRestricted: number | undefined): Promise<{ transactionId: string, confirmTransferUrl: string | undefined }> {
+    const res = await api.acceptManualWithdrawal(exchange, Amounts.stringify(chosenAmount), ageRestricted);
     return {
-      status: "loading-uri",
-      error: exchangeHook,
+      confirmTransferUrl: undefined,
+      transactionId: res.transactionId
     };
   }
 
-  if (!exchange) {
-    return {
-      status: "loading-exchange",
-      error: {
-        hasError: true,
-        operational: false,
-        message: "ERROR_NO-DEFAULT-EXCHANGE",
-      },
-    };
-  }
+  return () => exchangeSelectionState(doManualWithdraw, cancel, onSuccess, undefined, chosenAmount, exchangeList, undefined, api)
 
-  async function doWithdrawAndCheckError(): Promise<void> {
-    if (!exchange) return;
-
-    try {
-      setDoingWithdraw(true);
-
-      const response = await wxApi.acceptManualWithdrawal(
-        exchange.exchangeBaseUrl,
-        Amounts.stringify(amount),
-      );
-
-      onSuccess(response.transactionId);
-    } catch (e) {
-      if (e instanceof TalerError) {
-        setWithdrawError(e);
-      }
-    }
-    setDoingWithdraw(false);
-  }
-
-  if (!amountHook) {
-    return { status: "loading", error: undefined };
-  }
-  if (amountHook.hasError) {
-    return {
-      status: "loading-info",
-      error: amountHook,
-    };
-  }
-  if (!amountHook.response) {
-    return { status: "loading", error: undefined };
-  }
-
-  const withdrawalFee = Amounts.sub(
-    amountHook.response.amount.raw,
-    amountHook.response.amount.effective,
-  ).amount;
-  const toBeReceived = amountHook.response.amount.effective;
-
-  const { state: termsState } = (!terms
-    ? undefined
-    : terms.hasError
-    ? undefined
-    : terms.response) || { state: undefined };
-
-  async function onAccept(accepted: boolean): Promise<void> {
-    if (!termsState || !exchange) return;
-
-    try {
-      await api.setExchangeTosAccepted(
-        exchange.exchangeBaseUrl,
-        accepted ? termsState.version : undefined,
-      );
-      setReviewed(accepted);
-    } catch (e) {
-      if (e instanceof Error) {
-        //FIXME: uncomment this and display error
-        // setErrorAccepting(e.message);
-      }
-    }
-  }
-
-  const mustAcceptFirst =
-    termsState !== undefined &&
-    (termsState.status === "changed" || termsState.status === "new");
-
-  const ageRestrictionOptions =
-    amountHook.response.ageRestrictionOptions?.reduce(
-      (p, c) => ({ ...p, [c]: `under ${c}` }),
-      {} as Record<string, string>,
-    );
-
-  const ageRestrictionEnabled = ageRestrictionOptions !== undefined;
-  if (ageRestrictionEnabled) {
-    ageRestrictionOptions["0"] = "Not restricted";
-  }
-
-  //TODO: calculate based on exchange info
-  const ageRestriction = ageRestrictionEnabled
-    ? {
-        list: ageRestrictionOptions,
-        value: String(ageRestricted),
-        onChange: async (v: string) => setAgeRestricted(parseInt(v, 10)),
-      }
-    : undefined;
-
-  return {
-    status: "success",
-    error: undefined,
-    exchangeUrl: exchange.exchangeBaseUrl,
-    toBeReceived,
-    withdrawalFee,
-    chosenAmount,
-    ageRestriction,
-    doWithdrawal: {
-      onClick:
-        doingWithdraw || (mustAcceptFirst && !reviewed)
-          ? undefined
-          : doWithdrawAndCheckError,
-      error: withdrawError,
-    },
-    tosProps: !termsState
-      ? undefined
-      : {
-          onAccept,
-          onReview: setReviewing,
-          reviewed: reviewed,
-          reviewing: reviewing,
-          terms: termsState,
-        },
-    mustAcceptFirst,
-    cancel,
-  };
 }
 
 export function useComponentStateFromURI(
   { talerWithdrawUri, cancel, onSuccess }: PropsFromURI,
   api: typeof wxApi,
-): State {
-  const [ageRestricted, setAgeRestricted] = useState(0);
-
+): RecursiveState<State> {
   /**
    * Ask the wallet about the withdraw URI
    */
@@ -240,207 +75,219 @@ export function useComponentStateFromURI(
     const uriInfo = await api.getWithdrawalDetailsForUri({
       talerWithdrawUri,
     });
+    const exchanges = await api.listExchanges();
     const { amount, defaultExchangeBaseUrl } = uriInfo;
-    return { amount, thisExchange: defaultExchangeBaseUrl };
+    return { talerWithdrawUri, amount: Amounts.parseOrThrow(amount), thisExchange: defaultExchangeBaseUrl, exchanges };
   });
 
-  /**
-   * Get the amount and select one exchange
-   */
-  const uriHookDep =
-    !uriInfoHook || uriInfoHook.hasError || !uriInfoHook.response
-      ? undefined
-      : uriInfoHook.response;
-
-  /**
-   * For the exchange selected, bring the status of the terms of service
-   */
-  const terms = useAsyncAsHook(async () => {
-    if (!uriHookDep?.thisExchange) return false;
-
-    const exchangeTos = await api.getExchangeTos(uriHookDep.thisExchange, [
-      "text/xml",
-    ]);
-
-    const state = buildTermsOfServiceState(exchangeTos);
-
-    return { state };
-  }, [uriHookDep]);
-
-  /**
-   * With the exchange and amount, ask the wallet the information
-   * about the withdrawal
-   */
-  const amountHook = useAsyncAsHook(async () => {
-    if (!uriHookDep?.thisExchange) return false;
-
-    const info = await api.getExchangeWithdrawalInfo({
-      exchangeBaseUrl: uriHookDep?.thisExchange,
-      amount: Amounts.parseOrThrow(uriHookDep.amount),
-      tosAcceptedFormat: ["text/xml"],
-      ageRestricted,
-    });
-
-    const withdrawAmount = {
-      raw: Amounts.parseOrThrow(info.withdrawalAmountRaw),
-      effective: Amounts.parseOrThrow(info.withdrawalAmountEffective),
-    };
-
-    return {
-      amount: withdrawAmount,
-      ageRestrictionOptions: info.ageRestrictionOptions,
-    };
-  }, [uriHookDep]);
-
-  const [reviewing, setReviewing] = useState<boolean>(false);
-  const [reviewed, setReviewed] = useState<boolean>(false);
-
-  const [withdrawError, setWithdrawError] = useState<TalerError | undefined>(
-    undefined,
-  );
-  const [doingWithdraw, setDoingWithdraw] = useState<boolean>(false);
-
+  console.log("uri info", uriInfoHook)
   if (!uriInfoHook) return { status: "loading", error: undefined };
+
   if (uriInfoHook.hasError) {
     return {
-      status: "loading-uri",
+      status: "loading-error",
       error: uriInfoHook,
     };
   }
 
-  const { amount, thisExchange } = uriInfoHook.response;
+  const uri = uriInfoHook.response.talerWithdrawUri;
+  const chosenAmount = uriInfoHook.response.amount;
+  const defaultExchange = uriInfoHook.response.thisExchange;
+  const exchangeList = uriInfoHook.response.exchanges.exchanges
 
-  const chosenAmount = Amounts.parseOrThrow(amount);
-
-  if (!thisExchange) {
+  async function doManagedWithdraw(exchange: string, ageRestricted: number | undefined): Promise<{ transactionId: string, confirmTransferUrl: string | undefined }> {
+    const res = await api.acceptWithdrawal(uri, exchange, ageRestricted,);
     return {
-      status: "loading-exchange",
-      error: {
-        hasError: true,
-        operational: false,
-        message: "ERROR_NO-DEFAULT-EXCHANGE",
-      },
+      confirmTransferUrl: res.confirmTransferUrl,
+      transactionId: res.transactionId
     };
   }
 
-  // const selectedExchange = thisExchange;
+  return () => exchangeSelectionState(doManagedWithdraw, cancel, onSuccess, uri, chosenAmount, exchangeList, defaultExchange, api)
 
-  async function doWithdrawAndCheckError(): Promise<void> {
-    if (!thisExchange) return;
+}
 
-    try {
-      setDoingWithdraw(true);
-      if (!talerWithdrawUri) return;
-      const res = await api.acceptWithdrawal(
-        talerWithdrawUri,
-        thisExchange,
-        !ageRestricted ? undefined : ageRestricted,
-      );
-      if (res.confirmTransferUrl) {
-        document.location.href = res.confirmTransferUrl;
-      } else {
-        onSuccess(res.transactionId);
-      }
-    } catch (e) {
-      if (e instanceof TalerError) {
-        setWithdrawError(e);
-      }
-    }
-    setDoingWithdraw(false);
-  }
+type ManualOrManagedWithdrawFunction = (exchange: string, ageRestricted: number | undefined) => Promise<{ transactionId: string, confirmTransferUrl: string | undefined }>
 
-  if (!amountHook) {
-    return { status: "loading", error: undefined };
-  }
-  if (amountHook.hasError) {
+function exchangeSelectionState(doWithdraw: ManualOrManagedWithdrawFunction, cancel: () => Promise<void>, onSuccess: (txid: string) => Promise<void>, talerWithdrawUri: string | undefined, chosenAmount: AmountJson, exchangeList: ExchangeListItem[], defaultExchange: string | undefined, api: typeof wxApi,): RecursiveState<State> {
+
+  //FIXME: use substates here
+  const selectedExchange = useSelectedExchange({ currency: chosenAmount.currency, defaultExchange, list: exchangeList })
+
+  if (selectedExchange.status === 'no-exchange') {
     return {
-      status: "loading-info",
-      error: amountHook,
-    };
-  }
-  if (!amountHook.response) {
-    return { status: "loading", error: undefined };
-  }
-
-  const withdrawalFee = Amounts.sub(
-    amountHook.response.amount.raw,
-    amountHook.response.amount.effective,
-  ).amount;
-  const toBeReceived = amountHook.response.amount.effective;
-
-  const { state: termsState } = (!terms
-    ? undefined
-    : terms.hasError
-    ? undefined
-    : terms.response) || { state: undefined };
-
-  async function onAccept(accepted: boolean): Promise<void> {
-    if (!termsState || !thisExchange) return;
-
-    try {
-      await api.setExchangeTosAccepted(
-        thisExchange,
-        accepted ? termsState.version : undefined,
-      );
-      setReviewed(accepted);
-    } catch (e) {
-      if (e instanceof Error) {
-        //FIXME: uncomment this and display error
-        // setErrorAccepting(e.message);
-      }
+      status: "no-exchange",
+      error: undefined,
     }
   }
 
-  const mustAcceptFirst =
-    termsState !== undefined &&
-    (termsState.status === "changed" || termsState.status === "new");
+  if (selectedExchange.status === 'selecting-exchange') {
+    return selectedExchange
+  }
+  console.log("exchange selected", selectedExchange.selected)
 
-  const ageRestrictionOptions =
-    amountHook.response.ageRestrictionOptions?.reduce(
-      (p, c) => ({ ...p, [c]: `under ${c}` }),
-      {} as Record<string, string>,
+  return () => {
+
+    const [ageRestricted, setAgeRestricted] = useState(0);
+    const currentExchange = selectedExchange.selected
+    /**
+     * For the exchange selected, bring the status of the terms of service
+     */
+    const terms = useAsyncAsHook(async () => {
+      const exchangeTos = await api.getExchangeTos(currentExchange.exchangeBaseUrl, [
+        "text/xml",
+      ]);
+
+      const state = buildTermsOfServiceState(exchangeTos);
+
+      return { state };
+    }, []);
+    console.log("terms", terms)
+    /**
+     * With the exchange and amount, ask the wallet the information
+     * about the withdrawal
+     */
+    const amountHook = useAsyncAsHook(async () => {
+
+      const info = await api.getExchangeWithdrawalInfo({
+        exchangeBaseUrl: currentExchange.exchangeBaseUrl,
+        amount: chosenAmount,
+        tosAcceptedFormat: ["text/xml"],
+        ageRestricted,
+      });
+
+      const withdrawAmount = {
+        raw: Amounts.parseOrThrow(info.withdrawalAmountRaw),
+        effective: Amounts.parseOrThrow(info.withdrawalAmountEffective),
+      };
+
+      return {
+        amount: withdrawAmount,
+        ageRestrictionOptions: info.ageRestrictionOptions,
+      };
+    }, []);
+
+    const [reviewing, setReviewing] = useState<boolean>(false);
+    const [reviewed, setReviewed] = useState<boolean>(false);
+
+    const [withdrawError, setWithdrawError] = useState<TalerError | undefined>(
+      undefined,
     );
+    const [doingWithdraw, setDoingWithdraw] = useState<boolean>(false);
 
-  const ageRestrictionEnabled = ageRestrictionOptions !== undefined;
-  if (ageRestrictionEnabled) {
-    ageRestrictionOptions["0"] = "Not restricted";
-  }
 
-  //TODO: calculate based on exchange info
-  const ageRestriction = ageRestrictionEnabled
-    ? {
+    async function doWithdrawAndCheckError(): Promise<void> {
+
+      try {
+        setDoingWithdraw(true);
+        const res = await doWithdraw(currentExchange.exchangeBaseUrl, !ageRestricted ? undefined : ageRestricted)
+        if (res.confirmTransferUrl) {
+          document.location.href = res.confirmTransferUrl;
+        } else {
+          onSuccess(res.transactionId);
+        }
+      } catch (e) {
+        if (e instanceof TalerError) {
+          setWithdrawError(e);
+        }
+      }
+      setDoingWithdraw(false);
+    }
+
+    if (!amountHook) {
+      return { status: "loading", error: undefined };
+    }
+    if (amountHook.hasError) {
+      return {
+        status: "loading-info",
+        error: amountHook,
+      };
+    }
+    if (!amountHook.response) {
+      return { status: "loading", error: undefined };
+    }
+
+    const withdrawalFee = Amounts.sub(
+      amountHook.response.amount.raw,
+      amountHook.response.amount.effective,
+    ).amount;
+    const toBeReceived = amountHook.response.amount.effective;
+
+    const { state: termsState } = (!terms
+      ? undefined
+      : terms.hasError
+        ? undefined
+        : terms.response) || { state: undefined };
+
+    async function onAccept(accepted: boolean): Promise<void> {
+      if (!termsState) return;
+
+      try {
+        await api.setExchangeTosAccepted(
+          currentExchange.exchangeBaseUrl,
+          accepted ? termsState.version : undefined,
+        );
+        setReviewed(accepted);
+      } catch (e) {
+        if (e instanceof Error) {
+          //FIXME: uncomment this and display error
+          // setErrorAccepting(e.message);
+        }
+      }
+    }
+
+    const mustAcceptFirst =
+      termsState !== undefined &&
+      (termsState.status === "changed" || termsState.status === "new");
+
+    const ageRestrictionOptions =
+      amountHook.response.ageRestrictionOptions?.reduce(
+        (p, c) => ({ ...p, [c]: `under ${c}` }),
+        {} as Record<string, string>,
+      );
+
+    const ageRestrictionEnabled = ageRestrictionOptions !== undefined;
+    if (ageRestrictionEnabled) {
+      ageRestrictionOptions["0"] = "Not restricted";
+    }
+
+    //TODO: calculate based on exchange info
+    const ageRestriction = ageRestrictionEnabled
+      ? {
         list: ageRestrictionOptions,
         value: String(ageRestricted),
         onChange: async (v: string) => setAgeRestricted(parseInt(v, 10)),
       }
-    : undefined;
+      : undefined;
 
-  return {
-    status: "success",
-    error: undefined,
-    exchangeUrl: thisExchange,
-    toBeReceived,
-    withdrawalFee,
-    chosenAmount,
-    talerWithdrawUri,
-    ageRestriction,
-    doWithdrawal: {
-      onClick:
-        doingWithdraw || (mustAcceptFirst && !reviewed)
-          ? undefined
-          : doWithdrawAndCheckError,
-      error: withdrawError,
-    },
-    tosProps: !termsState
-      ? undefined
-      : {
+    return {
+      status: "success",
+      error: undefined,
+      doSelectExchange: selectedExchange.doSelect,
+      exchangeUrl: currentExchange.exchangeBaseUrl,
+      toBeReceived,
+      withdrawalFee,
+      chosenAmount,
+      talerWithdrawUri,
+      ageRestriction,
+      doWithdrawal: {
+        onClick:
+          doingWithdraw || (mustAcceptFirst && !reviewed)
+            ? undefined
+            : doWithdrawAndCheckError,
+        error: withdrawError,
+      },
+      tosProps: !termsState
+        ? undefined
+        : {
           onAccept,
           onReview: setReviewing,
           reviewed: reviewed,
           reviewing: reviewing,
           terms: termsState,
         },
-    mustAcceptFirst,
-    cancel,
-  };
+      mustAcceptFirst,
+      cancel,
+    };
+  }
 }
