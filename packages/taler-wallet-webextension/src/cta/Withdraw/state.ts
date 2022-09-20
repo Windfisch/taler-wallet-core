@@ -36,8 +36,6 @@ export function useComponentStateFromParams(
     return { amount: Amounts.parseOrThrow(amount), exchanges };
   });
 
-  console.log("uri info", uriInfoHook)
-
   if (!uriInfoHook) return { status: "loading", error: undefined };
 
   if (uriInfoHook.hasError) {
@@ -80,7 +78,6 @@ export function useComponentStateFromURI(
     return { talerWithdrawUri, amount: Amounts.parseOrThrow(amount), thisExchange: defaultExchangeBaseUrl, exchanges };
   });
 
-  console.log("uri info", uriInfoHook)
   if (!uriInfoHook) return { status: "loading", error: undefined };
 
   if (uriInfoHook.hasError) {
@@ -111,20 +108,11 @@ type ManualOrManagedWithdrawFunction = (exchange: string, ageRestricted: number 
 
 function exchangeSelectionState(doWithdraw: ManualOrManagedWithdrawFunction, cancel: () => Promise<void>, onSuccess: (txid: string) => Promise<void>, talerWithdrawUri: string | undefined, chosenAmount: AmountJson, exchangeList: ExchangeListItem[], defaultExchange: string | undefined, api: typeof wxApi,): RecursiveState<State> {
 
-  //FIXME: use substates here
   const selectedExchange = useSelectedExchange({ currency: chosenAmount.currency, defaultExchange, list: exchangeList })
 
-  if (selectedExchange.status === 'no-exchange') {
-    return {
-      status: "no-exchange",
-      error: undefined,
-    }
-  }
-
-  if (selectedExchange.status === 'selecting-exchange') {
+  if (selectedExchange.status !== 'ready') {
     return selectedExchange
   }
-  console.log("exchange selected", selectedExchange.selected)
 
   return () => {
 
@@ -142,7 +130,7 @@ function exchangeSelectionState(doWithdraw: ManualOrManagedWithdrawFunction, can
 
       return { state };
     }, []);
-    console.log("terms", terms)
+
     /**
      * With the exchange and amount, ask the wallet the information
      * about the withdrawal

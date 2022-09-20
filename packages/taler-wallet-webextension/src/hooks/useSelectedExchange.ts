@@ -24,6 +24,7 @@ export namespace State {
   export interface NoExchange {
     status: "no-exchange"
     error: undefined;
+    currency: string | undefined;
   }
   export interface Ready {
     status: "ready",
@@ -59,25 +60,27 @@ export function useSelectedExchange({ currency, defaultExchange, list }: Props):
     return {
       status: "no-exchange",
       error: undefined,
+      currency: undefined,
     }
   }
 
-  const firstByCurrency = list.find((e) => e.currency === currency)
-  if (!firstByCurrency) {
+  const listCurrency = list.filter((e) => e.currency === currency)
+  if (!listCurrency.length) {
     // there should be at least one exchange for this currency
     return {
       status: "no-exchange",
       error: undefined,
+      currency,
     }
   }
 
 
   if (isSelecting) {
-    const currentExchange = selectedExchange ?? defaultExchange ?? firstByCurrency.exchangeBaseUrl;
+    const currentExchange = selectedExchange ?? defaultExchange ?? listCurrency[0].exchangeBaseUrl;
     return {
       status: "selecting-exchange",
       error: undefined,
-      list,
+      list: listCurrency,
       currency,
       currentExchange: currentExchange,
       onSelection: async (exchangeBaseUrl: string) => {
@@ -120,6 +123,6 @@ export function useSelectedExchange({ currency, defaultExchange, list }: Props):
     doSelect: {
       onClick: async () => setIsSelecting(true)
     },
-    selected: firstByCurrency
+    selected: listCurrency[0]
   }
 }

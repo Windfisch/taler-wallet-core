@@ -53,16 +53,6 @@ export function LoadingUriView({ error }: State.LoadingUriError): VNode {
   );
 }
 
-export function LoadingExchangeView(p: State.LoadingExchangeError): VNode {
-  const { i18n } = useTranslationContext();
-
-  return (
-    <ErrorMessage 
-      title={<i18n.Translate>Could not get a default exchange, please check configuration</i18n.Translate>}
-    />
-  );
-}
-
 export function LoadingInfoView({ error }: State.LoadingInfoError): VNode {
   const { i18n } = useTranslationContext();
 

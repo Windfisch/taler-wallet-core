@@ -47,7 +47,7 @@ export function useComponentState(
       ? undefined
       : await api.getExchangeDetailedInfo(initialExchange.exchangeBaseUrl);
     return { exchanges, selected, original };
-  });
+  }, [value]);
 
   if (!hook) {
     return {
@@ -67,13 +67,14 @@ export function useComponentState(
   if (!selected) {
     //!selected <=> exchanges.length === 0
     return {
-      status: "no-exchanges",
+      status: "no-exchange",
       error: undefined,
+      currency: undefined,
     };
   }
 
   const exchangeMap = exchanges.reduce(
-    (prev, cur, idx) => ({ ...prev, [cur.exchangeBaseUrl]: String(idx) }),
+    (prev, cur, idx) => ({ ...prev, [String(idx)]: cur.exchangeBaseUrl }),
     {} as Record<string, string>,
   );
 

@@ -14,14 +14,19 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { AmountJson, TalerErrorDetail } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
+import {
+  State as SelectExchangeState
+} from "../../hooks/useSelectedExchange.js";
+import { ButtonHandler, TextFieldHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
-import { LoadingUriView, ReadyView } from "./views.js";
+import { ExchangeSelectionPage } from "../../wallet/ExchangeSelection/index.js";
+import { NoExchangesView } from "../../wallet/ExchangeSelection/views.js";
 import * as wxApi from "../../wxApi.js";
 import { useComponentState } from "./state.js";
-import { AmountJson, TalerErrorDetail } from "@gnu-taler/taler-util";
-import { ButtonHandler, TextFieldHandler } from "../../mui/handlers.js";
+import { LoadingUriView, ReadyView } from "./views.js";
 
 export interface Props {
   amount: string;
@@ -29,7 +34,12 @@ export interface Props {
   onSuccess: (tx: string) => Promise<void>;
 }
 
-export type State = State.Loading | State.LoadingUriError | State.Ready;
+export type State = State.Loading
+  | State.LoadingUriError
+  | State.Ready
+  | SelectExchangeState.Selecting
+  | SelectExchangeState.NoExchange
+  ;
 
 export namespace State {
   export interface Loading {
@@ -63,6 +73,8 @@ export namespace State {
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
   "loading-uri": LoadingUriView,
+  "no-exchange": NoExchangesView,
+  "selecting-exchange": ExchangeSelectionPage,
   ready: ReadyView,
 };
 

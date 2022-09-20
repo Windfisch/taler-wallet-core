@@ -14,26 +14,24 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+/* eslint-disable react-hooks/rules-of-hooks */
 import { Amounts, TalerErrorDetail } from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
+import { useSelectedExchange } from "../../hooks/useSelectedExchange.js";
 import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
+
+type RecursiveState<S extends object> = S | (() => RecursiveState<S>)
 
 export function useComponentState(
   { amount: amountStr, onClose, onSuccess }: Props,
   api: typeof wxApi,
-): State {
+): RecursiveState<State> {
   const amount = Amounts.parseOrThrow(amountStr);
 
-  const [subject, setSubject] = useState("");
-
   const hook = useAsyncAsHook(api.listExchanges);
-  const [exchangeIdx, setExchangeIdx] = useState("0");
-  const [operationError, setOperationError] = useState<
-    TalerErrorDetail | undefined
-  >(undefined);
 
   if (!hook) {
     return {
@@ -48,56 +46,68 @@ export function useComponentState(
     };
   }
 
-  const exchanges = hook.response.exchanges.filter(
-    (e) => e.currency === amount.currency,
-  );
-  const exchangeMap = exchanges.reduce(
-    (prev, cur, idx) => ({ ...prev, [String(idx)]: cur.exchangeBaseUrl }),
-    {} as Record<string, string>,
-  );
-  const selected = exchanges[Number(exchangeIdx)];
+  const exchangeList = hook.response.exchanges
 
-  async function accept(): Promise<void> {
-    try {
-      const resp = await api.initiatePeerPullPayment({
-        amount: Amounts.stringify(amount),
-        exchangeBaseUrl: selected.exchangeBaseUrl,
-        partialContractTerms: {
-          summary: subject,
-        },
-      });
+  return () => {
+    const [subject, setSubject] = useState("");
 
-      onSuccess(resp.transactionId);
-    } catch (e) {
-      if (e instanceof TalerError) {
-        setOperationError(e.errorDetail);
-      }
-      console.error(e);
-      throw Error("error trying to accept");
+    const [operationError, setOperationError] = useState<
+      TalerErrorDetail | undefined
+    >(undefined);
+
+
+    const selectedExchange = useSelectedExchange({ currency: amount.currency, defaultExchange: undefined, list: exchangeList })
+
+    if (selectedExchange.status !== 'ready') {
+      return selectedExchange
     }
+
+    const exchange = selectedExchange.selected
+
+    async function accept(): Promise<void> {
+      try {
+        const resp = await api.initiatePeerPullPayment({
+          amount: Amounts.stringify(amount),
+          exchangeBaseUrl: exchange.exchangeBaseUrl,
+          partialContractTerms: {
+            summary: subject,
+          },
+        });
+
+        onSuccess(resp.transactionId);
+      } catch (e) {
+        if (e instanceof TalerError) {
+          setOperationError(e.errorDetail);
+        }
+        console.error(e);
+        throw Error("error trying to accept");
+      }
+    }
+
+    return {
+      status: "ready",
+      subject: {
+        error: !subject ? "cant be empty" : undefined,
+        value: subject,
+        onInput: async (e) => setSubject(e),
+      },
+      doSelectExchange: selectedExchange.doSelect,
+      invalid: !subject || Amounts.isZero(amount),
+      exchangeUrl: exchange.exchangeBaseUrl,
+      create: {
+        onClick: accept,
+      },
+      cancel: {
+        onClick: onClose,
+      },
+      chosenAmount: amount,
+      toBeReceived: amount,
+      error: undefined,
+      operationError,
+    };
   }
 
-  return {
-    status: "ready",
-    subject: {
-      error: !subject ? "cant be empty" : undefined,
-      value: subject,
-      onInput: async (e) => setSubject(e),
-    },
-    doSelectExchange: {
-      //FIX
-    },
-    invalid: !subject || Amounts.isZero(amount),
-    exchangeUrl: selected.exchangeBaseUrl,
-    create: {
-      onClick: accept,
-    },
-    cancel: {
-      onClick: onClose,
-    },
-    chosenAmount: amount,
-    toBeReceived: amount,
-    error: undefined,
-    operationError,
-  };
+
+
+
 }

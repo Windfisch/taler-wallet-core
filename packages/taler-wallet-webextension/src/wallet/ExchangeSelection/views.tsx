@@ -31,6 +31,9 @@ import { useTranslationContext } from "../../context/translation.js";
 import { Button } from "../../mui/Button.js";
 import arrowDown from "../../svg/chevron-down.svg";
 import { State } from "./index.js";
+import {
+  State as SelectExchangeState
+} from "../../hooks/useSelectedExchange.js";
 
 const ButtonGroup = styled.div`
   & > button {
@@ -112,11 +115,20 @@ export function ErrorLoadingView({ error }: State.LoadingUriError): VNode {
   );
 }
 
-export function NoExchangesView(state: State.NoExchanges): VNode {
+
+
+export function NoExchangesView({currency}: SelectExchangeState.NoExchange): VNode {
   const { i18n } = useTranslationContext();
+  if (!currency) {
+    return (
+      <div>
+        <i18n.Translate>could not find any exchange</i18n.Translate>
+      </div>
+    );  
+  }
   return (
     <div>
-      <i18n.Translate>no exchanges</i18n.Translate>
+      <i18n.Translate>could not find any exchange for the currency {currency}</i18n.Translate>
     </div>
   );
 }

@@ -17,25 +17,25 @@
 import { AmountJson } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
+import {
+  State as SelectExchangeState
+} from "../../hooks/useSelectedExchange.js";
 import { ButtonHandler, SelectFieldHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import * as wxApi from "../../wxApi.js";
 import { Props as TermsOfServiceSectionProps } from "../TermsOfServiceSection.js";
 import {
   useComponentStateFromParams,
-  useComponentStateFromURI,
+  useComponentStateFromURI
 } from "./state.js";
-import {
-  State as SelectExchangeState
-} from "../../hooks/useSelectedExchange.js";
 
+import { ExchangeSelectionPage } from "../../wallet/ExchangeSelection/index.js";
 import {
-  LoadingExchangeView,
   LoadingInfoView,
   LoadingUriView,
-  SuccessView,
+  SuccessView
 } from "./views.js";
-import { ExchangeSelectionPage } from "../../wallet/ExchangeSelection/index.js";
+import { NoExchangesView } from "../../wallet/ExchangeSelection/views.js";
 
 export interface PropsFromURI {
   talerWithdrawUri: string | undefined;
@@ -52,8 +52,8 @@ export interface PropsFromParams {
 export type State =
   | State.Loading
   | State.LoadingUriError
-  | State.LoadingExchangeError
   | State.LoadingInfoError
+  | SelectExchangeState.NoExchange
   | SelectExchangeState.Selecting
   | State.Success;
 
@@ -65,10 +65,6 @@ export namespace State {
   export interface LoadingUriError {
     status: "loading-error";
     error: HookError;
-  }
-  export interface LoadingExchangeError {
-    status: "no-exchange";
-    error: undefined,
   }
   export interface LoadingInfoError {
     status: "loading-info";
@@ -100,8 +96,8 @@ export namespace State {
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
   "loading-error": LoadingUriView,
-  "no-exchange": LoadingExchangeView,
   "loading-info": LoadingInfoView,
+  "no-exchange": NoExchangesView,
   "selecting-exchange": ExchangeSelectionPage,
   success: SuccessView,
 };

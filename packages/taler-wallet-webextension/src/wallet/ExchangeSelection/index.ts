@@ -41,13 +41,16 @@ export interface Props {
   onCancel: () => Promise<void>;
   onSelection: (exchange: string) => Promise<void>;
 }
+import {
+  State as SelectExchangeState
+} from "../../hooks/useSelectedExchange.js";
 
 export type State =
   | State.Loading
   | State.LoadingUriError
   | State.Ready
   | State.Comparing
-  | State.NoExchanges;
+  | SelectExchangeState.NoExchange;
 
 export namespace State {
   export interface Loading {
@@ -63,11 +66,6 @@ export namespace State {
   export interface BaseInfo {
     exchanges: SelectFieldHandler;
     selected: ExchangeFullDetails;
-    error: undefined;
-  }
-
-  export interface NoExchanges {
-    status: "no-exchanges";
     error: undefined;
   }
 
@@ -89,7 +87,7 @@ const viewMapping: StateViewMap<State> = {
   loading: Loading,
   "error-loading": ErrorLoadingView,
   comparing: ComparingView,
-  "no-exchanges": NoExchangesView,
+  "no-exchange": NoExchangesView,
   ready: ReadyView,
 };
 
