@@ -81,6 +81,10 @@ export {
 
 const logger = new Logger("taler-wallet-cli.ts");
 
+const EXIT_EXCEPTION = 4;
+const EXIT_API_ERROR = 5;
+const EXIT_RETRIES_EXCEEDED = 6;
+
 process.on("unhandledRejection", (error: any) => {
   logger.error("unhandledRejection", error.message);
   logger.error("stack", error.stack);
@@ -272,6 +276,9 @@ walletCli
   .subcommand("api", "api", { help: "Call the wallet-core API directly." })
   .requiredArgument("operation", clk.STRING)
   .requiredArgument("request", clk.STRING)
+  .flag("expectSuccess", ["--expect-success"], {
+    help: "Exit with non-zero status code when request fails instead of returning error JSON.",
+  })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
       let requestJson;
@@ -289,8 +296,14 @@ walletCli
           requestJson,
         );
         console.log(JSON.stringify(resp, undefined, 2));
+        if (resp.type === "error") {
+          if (args.api.expectSuccess) {
+            process.exit(EXIT_API_ERROR);
+          }
+        }
       } catch (e) {
         logger.error(`Got exception while handling API request ${e}`);
+        process.exit(EXIT_EXCEPTION);
       }
     });
     logger.info("finished handling API request");
@@ -357,11 +370,14 @@ walletCli
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
       logger.info("running until pending operations are finished");
-      await wallet.ws.runTaskLoop({
+      const resp = await wallet.ws.runTaskLoop({
         maxRetries: args.finishPendingOpt.maxRetries,
         stopWhenDone: true,
       });
       wallet.ws.stop();
+      if (resp.retriesExceeded) {
+        process.exit(EXIT_RETRIES_EXCEEDED);
+      }
     });
   });
 

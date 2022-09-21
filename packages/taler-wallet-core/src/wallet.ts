@@ -477,6 +477,13 @@ export interface RetryLoopOpts {
   stopWhenDone?: boolean;
 }
 
+export interface TaskLoopResult {
+  /**
+   * Was the maximum number of retries exceeded in a task?
+   */
+  retriesExceeded: boolean;
+}
+
 /**
  * Main retry loop of the wallet.
  *
@@ -485,7 +492,8 @@ export interface RetryLoopOpts {
 async function runTaskLoop(
   ws: InternalWalletState,
   opts: RetryLoopOpts = {},
-): Promise<void> {
+): Promise<TaskLoopResult> {
+  let retriesExceeded = false;
   for (let iteration = 0; !ws.stopped; iteration++) {
     const pending = await getPendingOperations(ws);
     logger.trace(`pending operations: ${j2s(pending)}`);
@@ -497,6 +505,7 @@ async function runTaskLoop(
       const maxRetries = opts.maxRetries;
 
       if (maxRetries && p.retryInfo && p.retryInfo.retryCounter > maxRetries) {
+        retriesExceeded = true;
         logger.warn(
           `skipping, as ${maxRetries} retries are exceeded in an operation of type ${p.type}`,
         );
@@ -514,7 +523,9 @@ async function runTaskLoop(
 
     if (opts.stopWhenDone && numGivingLiveness === 0 && iteration !== 0) {
       logger.warn(`stopping, as no pending operations have lifeness`);
-      return;
+      return {
+        retriesExceeded,
+      };
     }
 
     // Make sure that we run tasks that don't give lifeness at least
@@ -557,6 +568,9 @@ async function runTaskLoop(
     }
   }
   logger.trace("exiting wallet retry loop");
+  return {
+    retriesExceeded,
+  };
 }
 
 /**
@@ -1526,7 +1540,7 @@ export class Wallet {
     return runPending(this.ws, forceNow);
   }
 
-  runTaskLoop(opts?: RetryLoopOpts): Promise<void> {
+  runTaskLoop(opts?: RetryLoopOpts): Promise<TaskLoopResult> {
     return runTaskLoop(this.ws, opts);
   }
 
