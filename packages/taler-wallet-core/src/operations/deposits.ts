@@ -27,6 +27,7 @@ import {
   ContractTerms,
   CreateDepositGroupRequest,
   CreateDepositGroupResponse,
+  DepositGroupFees,
   durationFromSpec,
   encodeCrock,
   GetFeeForDepositRequest,
@@ -566,12 +567,6 @@ export async function getEffectiveDepositAmount(
       }
     });
   return Amounts.sub(Amounts.sum(amt).amount, Amounts.sum(fees).amount).amount;
-}
-
-export interface DepositGroupFees {
-  coin: AmountJson;
-  wire: AmountJson;
-  refresh: AmountJson;
 }
 
 /**

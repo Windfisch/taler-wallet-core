@@ -1343,6 +1343,11 @@ export interface GetFeeForDepositRequest {
   amount: AmountString;
 }
 
+export interface DepositGroupFees {
+  coin: AmountJson;
+  wire: AmountJson;
+  refresh: AmountJson;
+}
 export interface CreateDepositGroupRequest {
   depositPaytoUri: string;
   amount: AmountString;
