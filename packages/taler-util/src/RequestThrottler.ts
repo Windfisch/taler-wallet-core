@@ -21,7 +21,6 @@ import { AbsoluteTime } from "./time.js";
  * Implementation of token bucket throttling.
  */
 
-
 const logger = new Logger("RequestThrottler.ts");
 
 /**

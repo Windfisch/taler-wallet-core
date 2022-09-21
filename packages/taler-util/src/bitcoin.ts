@@ -26,7 +26,6 @@ import { AmountJson, Amounts } from "./amounts.js";
 import { decodeCrock } from "./talerCrypto.js";
 import * as segwit from "./segwit_addr.js";
 
-
 function buf2hex(buffer: Uint8Array) {
   // buffer is an ArrayBuffer
   return [...new Uint8Array(buffer)]
@@ -35,24 +34,23 @@ function buf2hex(buffer: Uint8Array) {
 }
 
 const hext2buf = (hexString: string) =>
-  new Uint8Array(hexString.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
-
+  new Uint8Array(hexString.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)));
 
 export function generateFakeSegwitAddress(
   reservePub: string | undefined,
-  addr: string
+  addr: string,
 ): string[] {
-  if (!reservePub) return []
+  if (!reservePub) return [];
   let pub;
   try {
     pub = decodeCrock(reservePub);
   } catch {
     // pub = new Uint8Array(0)
   }
-  if (!pub || pub.length !== 32) return []
+  if (!pub || pub.length !== 32) return [];
 
   const first_rnd = new Uint8Array(4);
-  first_rnd.set(pub.subarray(0, 4))
+  first_rnd.set(pub.subarray(0, 4));
   const second_rnd = new Uint8Array(4);
   second_rnd.set(pub.subarray(0, 4));
 
@@ -71,16 +69,16 @@ export function generateFakeSegwitAddress(
     addr[0] === "t" && addr[1] == "b"
       ? "tb"
       : addr[0] === "b" && addr[1] == "c" && addr[2] === "r" && addr[3] == "t"
-        ? "bcrt"
-        : addr[0] === "b" && addr[1] == "c"
-          ? "bc"
-          : undefined;
+      ? "bcrt"
+      : addr[0] === "b" && addr[1] == "c"
+      ? "bc"
+      : undefined;
   if (prefix === undefined) throw new Error("unknown bitcoin net");
 
   const addr1 = segwit.default.encode(prefix, 0, first_part);
   const addr2 = segwit.default.encode(prefix, 0, second_part);
 
-  return [addr1, addr2]
+  return [addr1, addr2];
 }
 
 // https://github.com/bitcoin/bitcoin/blob/master/src/policy/policy.cpp

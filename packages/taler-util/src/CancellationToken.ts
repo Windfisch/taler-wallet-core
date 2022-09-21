@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-const NOOP = () => { };
+const NOOP = () => {};
 
 /**
  * A token that can be passed around to inform consumers of the token that a
@@ -136,7 +136,7 @@ class CancellationToken {
      * Whether the token can be cancelled.
      */
     private _canBeCancelled: boolean,
-  ) { }
+  ) {}
 
   /**
    * Create a {CancellationTokenSource}.

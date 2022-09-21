@@ -27,11 +27,7 @@ import {
 
 const logger = new Logger("contractTerms.ts");
 
-
-
-
 export namespace ContractTermsUtil {
-
   export function forgetAllImpl(
     anyJson: any,
     path: string[],
@@ -75,7 +71,6 @@ export namespace ContractTermsUtil {
     }
     return dup;
   }
-
 
   export type PathPredicate = (path: string[]) => boolean;
 

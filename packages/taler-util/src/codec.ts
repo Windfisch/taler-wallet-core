@@ -134,7 +134,7 @@ class UnionCodecBuilder<
   TargetType,
   TagPropertyLabel extends keyof TargetType,
   CommonBaseType,
-  PartialTargetType
+  PartialTargetType,
 > {
   private alternatives = new Map<any, Alternative>();
 

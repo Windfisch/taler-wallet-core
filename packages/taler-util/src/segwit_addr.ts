@@ -18,21 +18,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-import bech32 from "./bech32.js"
+import bech32 from "./bech32.js";
 
 export default {
   encode: encode,
-  decode: decode
+  decode: decode,
 };
 
-function convertbits(data: any, frombits: number, tobits: number, pad: boolean): any[] {
+function convertbits(
+  data: any,
+  frombits: number,
+  tobits: number,
+  pad: boolean,
+): any[] {
   var acc = 0;
   var bits = 0;
   var ret = [];
   var maxv = (1 << tobits) - 1;
   for (var p = 0; p < data.length; ++p) {
     var value = data[p];
-    if (value < 0 || (value >> frombits) !== 0) {
+    if (value < 0 || value >> frombits !== 0) {
       return []; //check this, was returning null
     }
     acc = (acc << frombits) | value;
@@ -46,7 +51,7 @@ function convertbits(data: any, frombits: number, tobits: number, pad: boolean):
     if (bits > 0) {
       ret.push((acc << (tobits - bits)) & maxv);
     }
-  } else if (bits >= frombits || ((acc << (tobits - bits)) & maxv)) {
+  } else if (bits >= frombits || (acc << (tobits - bits)) & maxv) {
     return []; //check this, was returning null
   }
   return ret;
@@ -59,7 +64,12 @@ function decode(hrp: any, addr: string) {
     dec = bech32.decode(addr, bech32.encodings.BECH32M);
     bech32m = true;
   }
-  if (dec === null || dec.hrp !== hrp || dec.data.length < 1 || dec.data[0] > 16) {
+  if (
+    dec === null ||
+    dec.hrp !== hrp ||
+    dec.data.length < 1 ||
+    dec.data[0] > 16
+  ) {
     return null;
   }
   var res = convertbits(dec.data.slice(1), 5, 8, false);
@@ -83,8 +93,12 @@ function encode(hrp: any, version: number, program: any): string {
   if (version > 0) {
     enc = bech32.encodings.BECH32M;
   }
-  var ret = bech32.encode(hrp, [version].concat(convertbits(program, 8, 5, true)), enc);
-  if (decode(hrp, ret/*, enc*/) === null) {
+  var ret = bech32.encode(
+    hrp,
+    [version].concat(convertbits(program, 8, 5, true)),
+    enc,
+  );
+  if (decode(hrp, ret /*, enc*/) === null) {
     return ""; //check this was returning null
   }
   return ret;

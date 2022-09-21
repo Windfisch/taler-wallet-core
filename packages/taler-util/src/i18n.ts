@@ -14,7 +14,7 @@ export function setupI18n(lang: string, strings: { [s: string]: any }): any {
   lang = lang.replace("_", "-");
 
   if (!strings[lang]) {
-    strings[lang] = {}
+    strings[lang] = {};
     // logger.warn(`language ${lang} not found, defaulting to source strings`);
   }
   jed = new jedLib.Jed(strings[lang]);
@@ -45,7 +45,10 @@ function toI18nString(stringSeq: ReadonlyArray<string>): string {
 /**
  * Internationalize a string template with arbitrary serialized values.
  */
-export function singular(stringSeq: TemplateStringsArray, ...values: any[]): string {
+export function singular(
+  stringSeq: TemplateStringsArray,
+  ...values: any[]
+): string {
   const s = toI18nString(stringSeq);
   const tr = jed
     .translate(s)
@@ -70,13 +73,19 @@ export function translate(
 /**
  * Internationalize a string template without serializing
  */
-export function Translate({ children, debug, }: { children: any, debug?: boolean }): any {
+export function Translate({
+  children,
+  debug,
+}: {
+  children: any;
+  debug?: boolean;
+}): any {
   const c = [].concat(children);
   const s = stringifyArray(c);
   if (!s) return [];
   const translation: string = jed.ngettext(s, s, 1);
   if (debug) {
-    console.log("looking for ", s, "got", translation)
+    console.log("looking for ", s, "got", translation);
   }
   return replacePlaceholderWithValues(translation, c);
 }
@@ -148,4 +157,3 @@ export const i18n = {
   Translate,
   translate,
 };
-

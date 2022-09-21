@@ -56,7 +56,10 @@ export namespace TalerProtocolTimestamp {
       t_s: s,
     };
   }
-  export function min(t1: TalerProtocolTimestamp, t2: TalerProtocolTimestamp): TalerProtocolTimestamp {
+  export function min(
+    t1: TalerProtocolTimestamp,
+    t2: TalerProtocolTimestamp,
+  ): TalerProtocolTimestamp {
     if (t1.t_s === "never") {
       return { t_s: t2.t_s };
     }
@@ -65,7 +68,6 @@ export namespace TalerProtocolTimestamp {
     }
     return { t_s: Math.min(t1.t_s, t2.t_s) };
   }
-
 }
 
 export interface Duration {

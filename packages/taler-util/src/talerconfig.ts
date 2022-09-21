@@ -296,7 +296,7 @@ function normalizeInlineFilename(parentFile: string, f: string): string {
 
 /**
  * Crude implementation of the which(1) shell command.
- * 
+ *
  * Tries to locate the location of an executable based on the
  * "PATH" environment variable.
  */

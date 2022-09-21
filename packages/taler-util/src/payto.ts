@@ -140,16 +140,18 @@ export function parsePaytoUri(s: string): PaytoUri | undefined {
     };
   }
   if (targetType === "bitcoin") {
-    const msg = /\b([A-Z0-9]{52})\b/.exec(params["message"])
+    const msg = /\b([A-Z0-9]{52})\b/.exec(params["message"]);
     const reserve = !msg ? params["subject"] : msg[0];
-    const segwitAddrs = !reserve ? [] : generateFakeSegwitAddress(reserve, targetPath);
+    const segwitAddrs = !reserve
+      ? []
+      : generateFakeSegwitAddress(reserve, targetPath);
 
     const result: PaytoUriBitcoin = {
       isKnown: true,
       targetPath,
       targetType,
       params,
-      segwitAddrs
+      segwitAddrs,
     };
 
     return result;

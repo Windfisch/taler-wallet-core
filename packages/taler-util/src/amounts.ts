@@ -448,7 +448,7 @@ export class Amounts {
   /**
    * Number of fractional digits needed to fully represent the amount
    * @param a amount
-   * @returns 
+   * @returns
    */
   static maxFractionalDigits(a: AmountJson): number {
     if (a.fraction === 0) return 0;
@@ -466,6 +466,4 @@ export class Amounts {
     }
     return amountFractionalLength - i + 1;
   }
-
 }
-
