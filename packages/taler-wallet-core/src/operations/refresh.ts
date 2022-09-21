@@ -682,6 +682,7 @@ async function refreshReveal(
         coinEvHash: pc.coinEvHash,
         maxAge: pc.maxAge,
         ageCommitmentProof: pc.ageCommitmentProof,
+        allocation: undefined,
       };
 
       coins.push(coin);

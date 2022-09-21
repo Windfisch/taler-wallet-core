@@ -834,6 +834,7 @@ async function processPlanchetVerifyAndStoreCoin(
     },
     maxAge: planchet.maxAge,
     ageCommitmentProof: planchet.ageCommitmentProof,
+    allocation: undefined,
   };
 
   const planchetCoinPub = planchet.coinPub;
@@ -1832,6 +1833,8 @@ export async function acceptWithdrawalFromUri(
         exchangePaytoUri,
         talerWithdrawUri: req.talerWithdrawUri,
         confirmUrl: withdrawInfo.confirmTransferUrl,
+        timestampBankConfirmed: undefined,
+        timestampReserveInfoPosted: undefined,
       },
     },
     restrictAge: req.restrictAge,

@@ -320,6 +320,7 @@ export async function processTip(
       coinEvHash: planchet.coinEvHash,
       maxAge: AgeRestriction.AGE_UNRESTRICTED,
       ageCommitmentProof: planchet.ageCommitmentProof,
+      allocation: undefined,
     });
   }
 

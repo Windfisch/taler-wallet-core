@@ -285,6 +285,10 @@ export async function importCoin(
       coinSource,
       // FIXME!
       maxAge: AgeRestriction.AGE_UNRESTRICTED,
+      // FIXME!
+      ageCommitmentProof: undefined,
+      // FIXME!
+      allocation: undefined,
     };
     if (coinRecord.status === CoinStatus.Fresh) {
       await makeCoinAvailable(ws, tx, coinRecord);
@@ -655,6 +659,8 @@ export async function importBackup(
             repurchaseProposalId: backupProposal.repurchase_proposal_id,
             download,
             proposalStatus,
+            // FIXME!
+            downloadSessionId: undefined,
           });
         }
       }

@@ -28,8 +28,6 @@ import {
   BackupProviderStateTag,
   RefreshCoinStatus,
   OperationStatus,
-  WithdrawalGroupRecord,
-  WithdrawalGroupStatus,
   OperationStatusRange,
 } from "../db.js";
 import {

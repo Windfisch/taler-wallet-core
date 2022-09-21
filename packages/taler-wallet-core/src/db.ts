@@ -65,6 +65,8 @@ import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
  * - Every record that has a corresponding transaction item must have
  *   an index for a mandatory timestamp field.
  * - Optional fields should be avoided, use "T | undefined" instead.
+ * - Do all records have some obvious, indexed field that can
+ *   be used for range queries?
  *
  * @author Florian Dold <dold@taler.net>
  */
@@ -99,8 +101,8 @@ export const WALLET_DB_MINOR_VERSION = 1;
 export namespace OperationStatusRange {
   export const ACTIVE_START = 10;
   export const ACTIVE_END = 29;
-  export const DORMANT_START = 40;
-  export const DORMANT_END = 59;
+  export const DORMANT_START = 50;
+  export const DORMANT_END = 69;
 }
 
 /**
@@ -148,7 +150,7 @@ export interface ReserveBankInfo {
    * URL that the user can be redirected to, and allows
    * them to confirm (or abort) the bank-integrated withdrawal.
    */
-  confirmUrl?: string;
+  confirmUrl: string | undefined;
 
   /**
    * Exchange payto URI that the bank will use to fund the reserve.
@@ -162,14 +164,14 @@ export interface ReserveBankInfo {
    *
    * Set to undefined if that hasn't happened yet.
    */
-  timestampReserveInfoPosted?: TalerProtocolTimestamp;
+  timestampReserveInfoPosted: TalerProtocolTimestamp | undefined;
 
   /**
    * Time when the reserve was confirmed by the bank.
    *
    * Set to undefined if not confirmed yet.
    */
-  timestampBankConfirmed?: TalerProtocolTimestamp;
+  timestampBankConfirmed: TalerProtocolTimestamp | undefined;
 }
 
 /**
@@ -195,6 +197,8 @@ export interface AuditorTrustRecord {
   /**
    * UIDs for the operation of adding this auditor
    * as a trusted auditor.
+   *
+   * (Used for backup/sync merging and tombstones.)
    */
   uids: string[];
 }
@@ -232,15 +236,17 @@ export enum DenominationVerificationStatus {
   /**
    * Verification was delayed.
    */
-  Unverified = "unverified",
+  Unverified = OperationStatusRange.ACTIVE_START,
+
   /**
    * Verified as valid.
    */
-  VerifiedGood = "verified-good",
+  VerifiedGood = OperationStatusRange.DORMANT_START,
+
   /**
    * Verified as invalid.
    */
-  VerifiedBad = "verified-bad",
+  VerifiedBad = OperationStatusRange.DORMANT_START + 1,
 }
 
 export interface DenomFees {
@@ -705,13 +711,16 @@ export interface CoinRecord {
 
   /**
    * Information about what the coin has been allocated for.
-   * Used to prevent allocation of the same coin for two different payments.
+   *
+   * Used for:
+   * - Diagnostics
+   * - Idempotency of applying a coin selection (e.g. after re-selection)
    */
-  allocation?: CoinAllocation;
+  allocation: CoinAllocation | undefined;
 
   maxAge: number;
 
-  ageCommitmentProof?: AgeCommitmentProof;
+  ageCommitmentProof: AgeCommitmentProof | undefined;
 }
 
 export interface CoinAllocation {
@@ -801,7 +810,7 @@ export interface ProposalRecord {
   /**
    * Session ID we got when downloading the contract.
    */
-  downloadSessionId?: string;
+  downloadSessionId: string | undefined;
 }
 
 /**
@@ -875,19 +884,19 @@ export interface TipRecord {
 }
 
 export enum RefreshCoinStatus {
-  Pending = "pending",
-  Finished = "finished",
+  Pending = OperationStatusRange.ACTIVE_START,
+  Finished = OperationStatusRange.DORMANT_START,
 
   /**
    * The refresh for this coin has been frozen, because of a permanent error.
    * More info in lastErrorPerCoin.
    */
-  Frozen = "frozen",
+  Frozen = OperationStatusRange.DORMANT_START + 1,
 }
 
 export enum OperationStatus {
-  Finished = "finished",
-  Pending = "pending",
+  Finished = OperationStatusRange.DORMANT_START,
+  Pending = OperationStatusRange.ACTIVE_START,
 }
 
 export interface RefreshGroupRecord {
