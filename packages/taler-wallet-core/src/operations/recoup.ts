@@ -356,7 +356,9 @@ export async function processRecoupGroupHandler(
           throw Error(`Coin ${coinPub} not found, can't request recoup`);
         }
         if (coin.coinSource.type === CoinSourceType.Withdraw) {
-          const reserve = await tx.reserves.get(coin.coinSource.reservePub);
+          const reserve = await tx.reserves.indexes.byReservePub.get(
+            coin.coinSource.reservePub,
+          );
           if (!reserve) {
             return;
           }

@@ -61,6 +61,13 @@ export interface IndexOptions {
    * undefined if added in the first version.
    */
   versionAdded?: number;
+
+  /**
+   * Does this index enforce unique keys?
+   *
+   * Defaults to false.
+   */
+  unique?: boolean;
 }
 
 function requestToPromise(req: IDBRequest): Promise<any> {
@@ -276,6 +283,7 @@ export interface IndexDescriptor {
   name: string;
   keyPath: IDBKeyPath | IDBKeyPath[];
   multiEntry?: boolean;
+  unique?: boolean;
 }
 
 export interface StoreDescriptor<RecordType> {
@@ -292,7 +300,11 @@ export interface StoreOptions {
 export function describeContents<RecordType = never>(
   options: StoreOptions,
 ): StoreDescriptor<RecordType> {
-  return { keyPath: options.keyPath, _dummy: undefined as any };
+  return {
+    keyPath: options.keyPath,
+    _dummy: undefined as any,
+    autoIncrement: options.autoIncrement,
+  };
 }
 
 export function describeIndex(
@@ -304,6 +316,7 @@ export function describeIndex(
     keyPath,
     name,
     multiEntry: options.multiEntry,
+    unique: options.unique,
   };
 }
 
@@ -339,11 +352,18 @@ export interface StoreReadOnlyAccessor<RecordType, IndexMap> {
   indexes: GetIndexReadOnlyAccess<RecordType, IndexMap>;
 }
 
+export interface InsertResponse {
+  /**
+   * Key of the newly inserted (via put/add) record.
+   */
+  key: IDBValidKey;
+}
+
 export interface StoreReadWriteAccessor<RecordType, IndexMap> {
   get(key: IDBValidKey): Promise<RecordType | undefined>;
   iter(query?: IDBValidKey): ResultStream<RecordType>;
-  put(r: RecordType): Promise<void>;
-  add(r: RecordType): Promise<void>;
+  put(r: RecordType): Promise<InsertResponse>;
+  add(r: RecordType): Promise<InsertResponse>;
   delete(key: IDBValidKey): Promise<void>;
   indexes: GetIndexReadWriteAccess<RecordType, IndexMap>;
 }
@@ -577,13 +597,19 @@ function makeWriteContext(
         const req = tx.objectStore(storeName).openCursor(query);
         return new ResultStream<any>(req);
       },
-      add(r) {
+      async add(r) {
         const req = tx.objectStore(storeName).add(r);
-        return requestToPromise(req);
+        const key = await requestToPromise(req);
+        return {
+          key: key,
+        };
       },
-      put(r) {
+      async put(r) {
         const req = tx.objectStore(storeName).put(r);
-        return requestToPromise(req);
+        const key = await requestToPromise(req);
+        return {
+          key: key,
+        };
       },
       delete(k) {
         const req = tx.objectStore(storeName).delete(k);

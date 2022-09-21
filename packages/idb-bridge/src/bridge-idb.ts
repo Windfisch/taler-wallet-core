@@ -57,16 +57,17 @@ import {
   TransactionInactiveError,
   VersionError,
 } from "./util/errors.js";
-import { FakeDOMStringList, fakeDOMStringList } from "./util/fakeDOMStringList.js";
+import {
+  FakeDOMStringList,
+  fakeDOMStringList,
+} from "./util/fakeDOMStringList.js";
 import FakeEvent from "./util/FakeEvent.js";
 import FakeEventTarget from "./util/FakeEventTarget.js";
 import { makeStoreKeyValue } from "./util/makeStoreKeyValue.js";
 import { normalizeKeyPath } from "./util/normalizeKeyPath.js";
 import { openPromise } from "./util/openPromise.js";
 import queueTask from "./util/queueTask.js";
-import {
-  checkStructuredCloneOrThrow,
-} from "./util/structuredClone.js";
+import { checkStructuredCloneOrThrow } from "./util/structuredClone.js";
 import { validateKeyPath } from "./util/validateKeyPath.js";
 import { valueToKey } from "./util/valueToKey.js";
 
@@ -933,9 +934,8 @@ export class BridgeIDBFactory {
         );
 
         // We need to expose the new version number to the upgrade transaction.
-        db._schema = this.backend.getCurrentTransactionSchema(
-          backendTransaction,
-        );
+        db._schema =
+          this.backend.getCurrentTransactionSchema(backendTransaction);
 
         const transaction = db._internalTransaction(
           [],
@@ -1110,9 +1110,8 @@ export class BridgeIDBIndex implements IDBIndex {
 
     this._backend.renameIndex(btx, this._objectStore.name, oldName, newName);
 
-    this._objectStore._transaction._db._schema = this._backend.getCurrentTransactionSchema(
-      btx,
-    );
+    this._objectStore._transaction._db._schema =
+      this._backend.getCurrentTransactionSchema(btx);
 
     this._objectStore._indexesCache.delete(oldName);
     this._objectStore._indexesCache.set(newName, this);
@@ -1629,9 +1628,8 @@ export class BridgeIDBObjectStore implements IDBObjectStore {
     }
 
     this._backend.renameObjectStore(btx, oldName, newName);
-    this._transaction._db._schema = this._backend.getCurrentTransactionSchema(
-      btx,
-    );
+    this._transaction._db._schema =
+      this._backend.getCurrentTransactionSchema(btx);
 
     // We don't modify scope, as the scope of the transaction
     // doesn't matter if we're in an upgrade transaction.
@@ -2235,11 +2233,8 @@ export class BridgeIDBRequest extends FakeEventTarget implements IDBRequest {
     }
     return this._source;
   }
-  _source:
-    | BridgeIDBCursor
-    | BridgeIDBIndex
-    | BridgeIDBObjectStore
-    | null = null;
+  _source: BridgeIDBCursor | BridgeIDBIndex | BridgeIDBObjectStore | null =
+    null;
   transaction: BridgeIDBTransaction | null = null;
   readyState: "done" | "pending" = "pending";
   onsuccess: EventListener | null = null;
@@ -2302,7 +2297,8 @@ export class BridgeIDBRequest extends FakeEventTarget implements IDBRequest {
 /** @public */
 export class BridgeIDBOpenDBRequest
   extends BridgeIDBRequest
-  implements IDBOpenDBRequest {
+  implements IDBOpenDBRequest
+{
   public onupgradeneeded: EventListener | null = null;
   public onblocked: EventListener | null = null;
 
@@ -2350,7 +2346,8 @@ function waitMacroQueue(): Promise<void> {
 /** @public */
 export class BridgeIDBTransaction
   extends FakeEventTarget
-  implements IDBTransaction {
+  implements IDBTransaction
+{
   _committed: boolean = false;
   /**
    * A transaction is active as long as new operations can be

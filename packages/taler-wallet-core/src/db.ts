@@ -527,6 +527,8 @@ export interface ExchangeRecord {
   /**
    * Public key of the reserve that we're currently using for
    * receiving P2P payments.
+   *
+   * FIXME: Make this a rowId of reserves!
    */
   currentMergeReserveInfo?: MergeReserveInfo;
 }
@@ -569,6 +571,8 @@ export interface PlanchetRecord {
    *
    * Can be the empty string (non-null/undefined for DB indexing)
    * if this is a tipping reserve.
+   *
+   * FIXME: Where is this used?
    */
   reservePub: string;
 
@@ -763,6 +767,8 @@ export interface ProposalDownload {
 
   /**
    * Extracted / parsed data from the contract terms.
+   *
+   * FIXME: Do we need to store *all* that data in duplicate?
    */
   contractData: WalletContractData;
 }
@@ -1762,9 +1768,14 @@ export interface PeerPullPaymentIncomingRecord {
   contractPriv: string;
 }
 
-// FIXME: give this some smaller "row ID" to
-// reference in other records?
+/**
+ * Store for extra information about a reserve.
+ *
+ * Mostly used to store the private key for a reserve and to allow
+ * other records to reference the reserve key pair via a small row ID.
+ */
 export interface ReserveRecord {
+  rowId?: number;
   reservePub: string;
   reservePriv: string;
 }
@@ -1844,9 +1855,12 @@ export const WalletStoresV1 = {
   reserves: describeStore(
     "reserves",
     describeContents<ReserveRecord>({
-      keyPath: "reservePub",
+      keyPath: "rowId",
+      autoIncrement: true,
     }),
-    {},
+    {
+      byReservePub: describeIndex("byReservePub", "reservePub", {}),
+    },
   ),
   config: describeStore(
     "config",
@@ -1956,7 +1970,6 @@ export const WalletStoresV1 = {
       keyPath: "withdrawalGroupId",
     }),
     {
-      byReservePub: describeIndex("byReservePub", "reservePub"),
       byStatus: describeIndex("byStatus", "status"),
       byTalerWithdrawUri: describeIndex(
         "byTalerWithdrawUri",

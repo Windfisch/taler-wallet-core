@@ -60,6 +60,7 @@ function upgradeFromStoreMap(
         const indexDesc: IndexDescriptor = swi.indexMap[indexName];
         s.createIndex(indexDesc.name, indexDesc.keyPath, {
           multiEntry: indexDesc.multiEntry,
+          unique: indexDesc.unique,
         });
       }
     }
