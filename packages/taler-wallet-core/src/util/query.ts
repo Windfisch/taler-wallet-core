@@ -36,8 +36,6 @@ import {
   IDBKeyRange,
 } from "@gnu-taler/idb-bridge";
 import { Logger } from "@gnu-taler/taler-util";
-import { performanceNow } from "./timer.js";
-import { access } from "fs";
 
 const logger = new Logger("query.ts");
 

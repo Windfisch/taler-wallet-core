@@ -52,7 +52,7 @@ import {
   RefreshSessionRecord,
   RefundState,
   ReserveBankInfo,
-  ReserveRecordStatus,
+  WithdrawalGroupStatus,
   WalletContractData,
   WalletRefundItem,
   WalletStoresV1,
@@ -531,9 +531,6 @@ export async function importBackup(
             exchangeBaseUrl: backupWg.exchange_base_url,
             instructedAmount: Amounts.parseOrThrow(backupWg.instructed_amount),
             secretSeed: backupWg.secret_seed,
-            operationStatus: backupWg.timestamp_finish
-              ? OperationStatus.Finished
-              : OperationStatus.Pending,
             denomsSel: await getDenomSelStateFromBackup(
               tx,
               backupWg.exchange_base_url,
@@ -545,9 +542,9 @@ export async function importBackup(
             ),
             reservePriv: backupWg.reserve_priv,
             reservePub,
-            reserveStatus: backupWg.timestamp_finish
-              ? ReserveRecordStatus.Dormant
-              : ReserveRecordStatus.QueryingStatus, // FIXME!
+            status: backupWg.timestamp_finish
+              ? WithdrawalGroupStatus.Finished
+              : WithdrawalGroupStatus.QueryingStatus, // FIXME!
             timestampStart: backupWg.timestamp_created,
             wgInfo,
             restrictAge: backupWg.restrict_age,

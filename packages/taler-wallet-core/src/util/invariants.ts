@@ -14,6 +14,13 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+export class InvariantViolatedError extends Error {
+  constructor(message?: string) {
+    super(message);
+    Object.setPrototypeOf(this, InvariantViolatedError.prototype);
+  }
+}
+
 /**
  * Helpers for invariants.
  */

@@ -71,6 +71,7 @@ import {
   RefreshCoinStatus,
   RefundState,
   WALLET_BACKUP_STATE_KEY,
+  WithdrawalGroupStatus,
   WithdrawalRecordType,
 } from "../../db.js";
 import { InternalWalletState } from "../../internal-wallet-state.js";
@@ -167,8 +168,9 @@ export async function exportBackup(
           instructed_amount: Amounts.stringify(wg.instructedAmount),
           reserve_priv: wg.reservePriv,
           restrict_age: wg.restrictAge,
+          // FIXME: proper status conversion!
           operation_status:
-            wg.operationStatus == OperationStatus.Finished
+            wg.status == WithdrawalGroupStatus.Finished
               ? BackupOperationStatus.Finished
               : BackupOperationStatus.Pending,
           selected_denoms_uid: wg.denomSelUid,

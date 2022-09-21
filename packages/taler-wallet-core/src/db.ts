@@ -62,6 +62,8 @@ import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
  *   will have an index.
  * - Amounts are stored as strings, except when they are needed for
  *   indexing.
+ * - Every record that has a corresponding transaction item must have
+ *   an index for a mandatory timestamp field.
  * - Optional fields should be avoided, use "T | undefined" instead.
  *
  * @author Florian Dold <dold@taler.net>
@@ -94,38 +96,45 @@ export const CURRENT_DB_CONFIG_KEY = "currentMainDbName";
  */
 export const WALLET_DB_MINOR_VERSION = 1;
 
+export namespace OperationStatusRange {
+  export const ACTIVE_START = 10;
+  export const ACTIVE_END = 29;
+  export const DORMANT_START = 40;
+  export const DORMANT_END = 59;
+}
+
 /**
  * Status of a withdrawal.
  */
-export enum ReserveRecordStatus {
+export enum WithdrawalGroupStatus {
   /**
    * Reserve must be registered with the bank.
    */
-  RegisteringBank = "registering-bank",
+  RegisteringBank = OperationStatusRange.ACTIVE_START,
 
   /**
    * We've registered reserve's information with the bank
    * and are now waiting for the user to confirm the withdraw
    * with the bank (typically 2nd factor auth).
    */
-  WaitConfirmBank = "wait-confirm-bank",
+  WaitConfirmBank = OperationStatusRange.ACTIVE_START + 1,
 
   /**
    * Querying reserve status with the exchange.
    */
-  QueryingStatus = "querying-status",
+  QueryingStatus = OperationStatusRange.ACTIVE_START + 2,
 
   /**
    * The corresponding withdraw record has been created.
    * No further processing is done, unless explicitly requested
    * by the user.
    */
-  Dormant = "dormant",
+  Finished = OperationStatusRange.DORMANT_START,
 
   /**
    * The bank aborted the withdrawal.
    */
-  BankAborted = "bank-aborted",
+  BankAborted = OperationStatusRange.DORMANT_START + 1,
 }
 
 /**
@@ -1355,19 +1364,11 @@ export interface WithdrawalGroupRecord {
   timestampFinish?: TalerProtocolTimestamp;
 
   /**
-   * Operation status of the withdrawal group.
-   * Used for indexing in the database.
-   *
-   * FIXME: Redundant with reserveStatus
-   */
-  operationStatus: OperationStatus;
-
-  /**
    * Current status of the reserve.
    *
    * FIXME: Wrong name!
    */
-  reserveStatus: ReserveRecordStatus;
+  status: WithdrawalGroupStatus;
 
   /**
    * Amount that was sent by the user to fund the reserve.
@@ -1947,7 +1948,7 @@ export const WalletStoresV1 = {
     }),
     {
       byReservePub: describeIndex("byReservePub", "reservePub"),
-      byStatus: describeIndex("byStatus", "operationStatus"),
+      byStatus: describeIndex("byStatus", "status"),
       byTalerWithdrawUri: describeIndex(
         "byTalerWithdrawUri",
         "wgInfo.bankInfo.talerWithdrawUri",

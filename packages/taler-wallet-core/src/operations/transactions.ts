@@ -31,11 +31,9 @@ import {
   TalerProtocolTimestamp,
   Transaction,
   TransactionByIdRequest,
-  TransactionRefund,
   TransactionsRequest,
   TransactionsResponse,
   TransactionType,
-  WithdrawalDetails,
   WithdrawalType,
 } from "@gnu-taler/taler-util";
 import {

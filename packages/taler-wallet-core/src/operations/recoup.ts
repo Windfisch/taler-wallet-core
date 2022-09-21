@@ -44,7 +44,7 @@ import {
   CoinStatus,
   RecoupGroupRecord,
   RefreshCoinSource,
-  ReserveRecordStatus,
+  WithdrawalGroupStatus,
   WalletStoresV1,
   WithdrawalRecordType,
   WithdrawCoinSource,
@@ -382,7 +382,7 @@ export async function processRecoupGroupHandler(
     await internalCreateWithdrawalGroup(ws, {
       amount: Amounts.parseOrThrow(result.balance),
       exchangeBaseUrl: recoupGroup.exchangeBaseUrl,
-      reserveStatus: ReserveRecordStatus.QueryingStatus,
+      reserveStatus: WithdrawalGroupStatus.QueryingStatus,
       reserveKeyPair: {
         pub: reservePub,
         priv: reservePrivMap[reservePub],

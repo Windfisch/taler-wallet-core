@@ -65,7 +65,7 @@ import {
 import {
   CoinStatus,
   MergeReserveInfo,
-  ReserveRecordStatus,
+  WithdrawalGroupStatus,
   WalletStoresV1,
   WithdrawalRecordType,
 } from "../db.js";
@@ -544,7 +544,7 @@ export async function acceptPeerPushPayment(
       contractTerms: peerInc.contractTerms,
     },
     exchangeBaseUrl: peerInc.exchangeBaseUrl,
-    reserveStatus: ReserveRecordStatus.QueryingStatus,
+    reserveStatus: WithdrawalGroupStatus.QueryingStatus,
     reserveKeyPair: {
       priv: mergeReserveInfo.reservePriv,
       pub: mergeReserveInfo.reservePub,
@@ -828,7 +828,7 @@ export async function initiatePeerRequestForPay(
       contractPriv: econtractResp.contractPriv,
     },
     exchangeBaseUrl: req.exchangeBaseUrl,
-    reserveStatus: ReserveRecordStatus.QueryingStatus,
+    reserveStatus: WithdrawalGroupStatus.QueryingStatus,
     reserveKeyPair: {
       priv: mergeReserveInfo.reservePriv,
       pub: mergeReserveInfo.reservePub,

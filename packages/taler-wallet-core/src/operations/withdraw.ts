@@ -71,7 +71,7 @@ import {
   ExchangeRecord,
   OperationStatus,
   PlanchetRecord,
-  ReserveRecordStatus,
+  WithdrawalGroupStatus,
   WalletStoresV1,
   WgInfo,
   WithdrawalGroupRecord,
@@ -91,7 +91,11 @@ import {
   readSuccessResponseJsonOrThrow,
   throwUnexpectedRequestError,
 } from "../util/http.js";
-import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
+import {
+  checkDbInvariant,
+  checkLogicInvariant,
+  InvariantViolatedError,
+} from "../util/invariants.js";
 import { DbAccess, GetReadOnlyAccess } from "../util/query.js";
 import {
   OperationAttemptResult,
@@ -962,7 +966,7 @@ async function queryReserve(
     withdrawalGroupId,
   });
   checkDbInvariant(!!withdrawalGroup);
-  if (withdrawalGroup.reserveStatus !== ReserveRecordStatus.QueryingStatus) {
+  if (withdrawalGroup.status !== WithdrawalGroupStatus.QueryingStatus) {
     return { ready: true };
   }
   const reservePub = withdrawalGroup.reservePub;
@@ -1010,7 +1014,7 @@ async function queryReserve(
         logger.warn(`withdrawal group ${withdrawalGroupId} not found`);
         return;
       }
-      wg.reserveStatus = ReserveRecordStatus.Dormant;
+      wg.status = WithdrawalGroupStatus.Finished;
       await tx.withdrawalGroups.put(wg);
     });
 
@@ -1039,13 +1043,13 @@ export async function processWithdrawalGroup(
     throw Error(`withdrawal group ${withdrawalGroupId} not found`);
   }
 
-  switch (withdrawalGroup.reserveStatus) {
-    case ReserveRecordStatus.RegisteringBank:
+  switch (withdrawalGroup.status) {
+    case WithdrawalGroupStatus.RegisteringBank:
       await processReserveBankStatus(ws, withdrawalGroupId);
       return await processWithdrawalGroup(ws, withdrawalGroupId, {
         forceNow: true,
       });
-    case ReserveRecordStatus.QueryingStatus: {
+    case WithdrawalGroupStatus.QueryingStatus: {
       const res = await queryReserve(ws, withdrawalGroupId);
       if (res.ready) {
         return await processWithdrawalGroup(ws, withdrawalGroupId, {
@@ -1057,7 +1061,7 @@ export async function processWithdrawalGroup(
         result: undefined,
       };
     }
-    case ReserveRecordStatus.WaitConfirmBank: {
+    case WithdrawalGroupStatus.WaitConfirmBank: {
       const res = await processReserveBankStatus(ws, withdrawalGroupId);
       switch (res.status) {
         case BankStatusResultCode.Aborted:
@@ -1075,23 +1079,20 @@ export async function processWithdrawalGroup(
       }
       break;
     }
-    case ReserveRecordStatus.BankAborted: {
+    case WithdrawalGroupStatus.BankAborted: {
       // FIXME
       return {
         type: OperationAttemptResultType.Pending,
         result: undefined,
       };
     }
-    case ReserveRecordStatus.Dormant:
+    case WithdrawalGroupStatus.Finished:
       // We can try to withdraw, nothing needs to be done with the reserve.
       break;
     default:
-      logger.warn(
-        "unknown reserve record status:",
-        withdrawalGroup.reserveStatus,
+      throw new InvariantViolatedError(
+        `unknown reserve record status: ${withdrawalGroup.status}`,
       );
-      assertUnreachable(withdrawalGroup.reserveStatus);
-      break;
   }
 
   await ws.exchangeOps.updateExchangeFromUrl(
@@ -1108,7 +1109,7 @@ export async function processWithdrawalGroup(
         if (!wg) {
           return;
         }
-        wg.operationStatus = OperationStatus.Finished;
+        wg.status = WithdrawalGroupStatus.Finished;
         wg.timestampFinish = TalerProtocolTimestamp.now();
         await tx.withdrawalGroups.put(wg);
       });
@@ -1192,7 +1193,7 @@ export async function processWithdrawalGroup(
       if (wg.timestampFinish === undefined && numFinished === numTotalCoins) {
         finishedForFirstTime = true;
         wg.timestampFinish = TalerProtocolTimestamp.now();
-        wg.operationStatus = OperationStatus.Finished;
+        wg.status = WithdrawalGroupStatus.Finished;
       }
 
       await tx.withdrawalGroups.put(wg);
@@ -1508,9 +1509,9 @@ async function registerReserveWithBank(
     .runReadOnly(async (tx) => {
       return await tx.withdrawalGroups.get(withdrawalGroupId);
     });
-  switch (withdrawalGroup?.reserveStatus) {
-    case ReserveRecordStatus.WaitConfirmBank:
-    case ReserveRecordStatus.RegisteringBank:
+  switch (withdrawalGroup?.status) {
+    case WithdrawalGroupStatus.WaitConfirmBank:
+    case WithdrawalGroupStatus.RegisteringBank:
       break;
     default:
       return;
@@ -1544,9 +1545,9 @@ async function registerReserveWithBank(
       if (!r) {
         return;
       }
-      switch (r.reserveStatus) {
-        case ReserveRecordStatus.RegisteringBank:
-        case ReserveRecordStatus.WaitConfirmBank:
+      switch (r.status) {
+        case WithdrawalGroupStatus.RegisteringBank:
+        case WithdrawalGroupStatus.WaitConfirmBank:
           break;
         default:
           return;
@@ -1557,8 +1558,7 @@ async function registerReserveWithBank(
       r.wgInfo.bankInfo.timestampReserveInfoPosted = AbsoluteTime.toTimestamp(
         AbsoluteTime.now(),
       );
-      r.reserveStatus = ReserveRecordStatus.WaitConfirmBank;
-      r.operationStatus = OperationStatus.Pending;
+      r.status = WithdrawalGroupStatus.WaitConfirmBank;
       await tx.withdrawalGroups.put(r);
     });
   ws.notify({ type: NotificationType.ReserveRegisteredWithBank });
@@ -1575,9 +1575,9 @@ async function processReserveBankStatus(
   const withdrawalGroup = await getWithdrawalGroupRecordTx(ws.db, {
     withdrawalGroupId,
   });
-  switch (withdrawalGroup?.reserveStatus) {
-    case ReserveRecordStatus.WaitConfirmBank:
-    case ReserveRecordStatus.RegisteringBank:
+  switch (withdrawalGroup?.status) {
+    case WithdrawalGroupStatus.WaitConfirmBank:
+    case WithdrawalGroupStatus.RegisteringBank:
       break;
     default:
       return {
@@ -1616,9 +1616,9 @@ async function processReserveBankStatus(
         if (!r) {
           return;
         }
-        switch (r.reserveStatus) {
-          case ReserveRecordStatus.RegisteringBank:
-          case ReserveRecordStatus.WaitConfirmBank:
+        switch (r.status) {
+          case WithdrawalGroupStatus.RegisteringBank:
+          case WithdrawalGroupStatus.WaitConfirmBank:
             break;
           default:
             return;
@@ -1628,8 +1628,7 @@ async function processReserveBankStatus(
         }
         const now = AbsoluteTime.toTimestamp(AbsoluteTime.now());
         r.wgInfo.bankInfo.timestampBankConfirmed = now;
-        r.reserveStatus = ReserveRecordStatus.BankAborted;
-        r.operationStatus = OperationStatus.Finished;
+        r.status = WithdrawalGroupStatus.BankAborted;
         await tx.withdrawalGroups.put(r);
       });
     return {
@@ -1644,7 +1643,7 @@ async function processReserveBankStatus(
   }
 
   // FIXME: Why do we do this?!
-  if (withdrawalGroup.reserveStatus === ReserveRecordStatus.RegisteringBank) {
+  if (withdrawalGroup.status === WithdrawalGroupStatus.RegisteringBank) {
     await registerReserveWithBank(ws, withdrawalGroupId);
     return await processReserveBankStatus(ws, withdrawalGroupId);
   }
@@ -1657,9 +1656,9 @@ async function processReserveBankStatus(
         return;
       }
       // Re-check reserve status within transaction
-      switch (r.reserveStatus) {
-        case ReserveRecordStatus.RegisteringBank:
-        case ReserveRecordStatus.WaitConfirmBank:
+      switch (r.status) {
+        case WithdrawalGroupStatus.RegisteringBank:
+        case WithdrawalGroupStatus.WaitConfirmBank:
           break;
         default:
           return;
@@ -1671,8 +1670,7 @@ async function processReserveBankStatus(
         logger.info("withdrawal: transfer confirmed by bank.");
         const now = AbsoluteTime.toTimestamp(AbsoluteTime.now());
         r.wgInfo.bankInfo.timestampBankConfirmed = now;
-        r.reserveStatus = ReserveRecordStatus.QueryingStatus;
-        r.operationStatus = OperationStatus.Pending;
+        r.status = WithdrawalGroupStatus.QueryingStatus;
       } else {
         logger.info("withdrawal: transfer not yet confirmed by bank");
         r.wgInfo.bankInfo.confirmUrl = status.confirm_transfer_url;
@@ -1689,7 +1687,7 @@ async function processReserveBankStatus(
 export async function internalCreateWithdrawalGroup(
   ws: InternalWalletState,
   args: {
-    reserveStatus: ReserveRecordStatus;
+    reserveStatus: WithdrawalGroupStatus;
     amount: AmountJson;
     exchangeBaseUrl: string;
     forcedDenomSel?: ForcedDenomSel;
@@ -1728,12 +1726,11 @@ export async function internalCreateWithdrawalGroup(
     exchangeBaseUrl: canonExchange,
     instructedAmount: amount,
     timestampStart: now,
-    operationStatus: OperationStatus.Pending,
     rawWithdrawalAmount: initialDenomSel.totalWithdrawCost,
     secretSeed,
     reservePriv: reserveKeyPair.priv,
     reservePub: reserveKeyPair.pub,
-    reserveStatus: args.reserveStatus,
+    status: args.reserveStatus,
     withdrawalGroupId,
     restrictAge: args.restrictAge,
     senderWire: undefined,
@@ -1839,7 +1836,7 @@ export async function acceptWithdrawalFromUri(
     },
     restrictAge: req.restrictAge,
     forcedDenomSel: req.forcedDenomSel,
-    reserveStatus: ReserveRecordStatus.RegisteringBank,
+    reserveStatus: WithdrawalGroupStatus.RegisteringBank,
   });
 
   const withdrawalGroupId = withdrawalGroup.withdrawalGroupId;
@@ -1850,9 +1847,7 @@ export async function acceptWithdrawalFromUri(
   const processedWithdrawalGroup = await getWithdrawalGroupRecordTx(ws.db, {
     withdrawalGroupId,
   });
-  if (
-    processedWithdrawalGroup?.reserveStatus === ReserveRecordStatus.BankAborted
-  ) {
+  if (processedWithdrawalGroup?.status === WithdrawalGroupStatus.BankAborted) {
     throw TalerError.fromDetail(
       TalerErrorCode.WALLET_WITHDRAWAL_OPERATION_ABORTED_BY_BANK,
       {},
@@ -1898,7 +1893,7 @@ export async function createManualWithdrawal(
     exchangeBaseUrl: req.exchangeBaseUrl,
     forcedDenomSel: req.forcedDenomSel,
     restrictAge: req.restrictAge,
-    reserveStatus: ReserveRecordStatus.QueryingStatus,
+    reserveStatus: WithdrawalGroupStatus.QueryingStatus,
   });
 
   const withdrawalGroupId = withdrawalGroup.withdrawalGroupId;

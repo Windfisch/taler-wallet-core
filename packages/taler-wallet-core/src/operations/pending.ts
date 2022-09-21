@@ -28,6 +28,9 @@ import {
   BackupProviderStateTag,
   RefreshCoinStatus,
   OperationStatus,
+  WithdrawalGroupRecord,
+  WithdrawalGroupStatus,
+  OperationStatusRange,
 } from "../db.js";
 import {
   PendingOperationsResponse,
@@ -38,6 +41,7 @@ import { InternalWalletState } from "../internal-wallet-state.js";
 import { GetReadOnlyAccess } from "../util/query.js";
 import { RetryTags } from "../util/retries.js";
 import { Wallet } from "../wallet.js";
+import { GlobalIDB } from "@gnu-taler/idb-bridge";
 
 async function gatherExchangePending(
   tx: GetReadOnlyAccess<{
@@ -120,7 +124,10 @@ async function gatherWithdrawalPending(
   resp: PendingOperationsResponse,
 ): Promise<void> {
   const wsrs = await tx.withdrawalGroups.indexes.byStatus.getAll(
-    OperationStatus.Pending,
+    GlobalIDB.KeyRange.bound(
+      OperationStatusRange.ACTIVE_START,
+      OperationStatusRange.ACTIVE_END,
+    ),
   );
   for (const wsr of wsrs) {
     if (wsr.timestampFinish) {
