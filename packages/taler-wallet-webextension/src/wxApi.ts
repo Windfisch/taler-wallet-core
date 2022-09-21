@@ -72,22 +72,18 @@ import {
   AcceptTipResponse,
   AcceptPeerPullPaymentResponse,
   AcceptPeerPushPaymentResponse,
+  DepositGroupFees,
 } from "@gnu-taler/taler-util";
 import {
   AddBackupProviderRequest,
   BackupInfo,
+  ExchangeWithdrawDetails,
   PendingOperationsResponse,
   RemoveBackupProviderRequest,
   TalerError,
   WalletContractData,
 } from "@gnu-taler/taler-wallet-core";
-import type { DepositGroupFees } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
-import type { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core/src/operations/withdraw";
-import {
-  platform,
-  MessageFromBackend,
-  WalletWebExVersion,
-} from "./platform/api.js";
+import { platform, MessageFromBackend } from "./platform/api.js";
 
 /**
  *

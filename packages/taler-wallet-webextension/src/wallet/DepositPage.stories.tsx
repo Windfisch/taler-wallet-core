@@ -19,8 +19,11 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { Amounts, Balance, parsePaytoUri } from "@gnu-taler/taler-util";
-import type { DepositGroupFees } from "@gnu-taler/taler-wallet-core/src/operations/deposits.js";
+import {
+  Amounts,
+  DepositGroupFees,
+  parsePaytoUri,
+} from "@gnu-taler/taler-util";
 import { createExample } from "../test-utils.js";
 import {
   createLabelsForBankAccount,

@@ -14,8 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountJson, Amounts, PaytoUri } from "@gnu-taler/taler-util";
-import { DepositGroupFees } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
+import { AmountJson, Amounts, DepositGroupFees, PaytoUri } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { Loading } from "../components/Loading.js";

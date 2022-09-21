@@ -23,9 +23,9 @@ import {
   Amounts,
   Balance,
   BalancesResponse,
+  DepositGroupFees,
   parsePaytoUri,
 } from "@gnu-taler/taler-util";
-import { DepositGroupFees } from "@gnu-taler/taler-wallet-core/src/operations/deposits";
 import { expect } from "chai";
 import { mountHook } from "../test-utils.js";
 import { useComponentState } from "./DepositPage.js";
