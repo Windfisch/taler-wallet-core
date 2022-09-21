@@ -18,6 +18,7 @@ import {
   AgeRestriction,
   AmountJson,
   Amounts,
+  BackupCoin,
   BackupCoinSourceType,
   BackupDenomSel,
   BackupProposalStatus,
@@ -37,6 +38,7 @@ import {
 } from "@gnu-taler/taler-util";
 import {
   AbortStatus,
+  CoinRecord,
   CoinSource,
   CoinSourceType,
   CoinStatus,
@@ -65,6 +67,7 @@ import {
 } from "../../util/invariants.js";
 import { GetReadOnlyAccess, GetReadWriteAccess } from "../../util/query.js";
 import { RetryInfo } from "../../util/retries.js";
+import { makeCoinAvailable } from "../../wallet.js";
 import { getExchangeDetails } from "../exchanges.js";
 import { makeEventId, TombstoneTag } from "../transactions.js";
 import { provideBackupState } from "./state.js";
@@ -226,6 +229,71 @@ export interface BackupCryptoPrecomputedData {
   reservePrivToPub: Record<string, string>;
 }
 
+export async function importCoin(
+  ws: InternalWalletState,
+  tx: GetReadWriteAccess<{
+    coins: typeof WalletStoresV1.coins;
+    coinAvailability: typeof WalletStoresV1.coinAvailability;
+    denominations: typeof WalletStoresV1.denominations;
+  }>,
+  cryptoComp: BackupCryptoPrecomputedData,
+  args: {
+    backupCoin: BackupCoin;
+    exchangeBaseUrl: string;
+    denomPubHash: string;
+  },
+): Promise<void> {
+  const { backupCoin, exchangeBaseUrl, denomPubHash } = args;
+  const compCoin = cryptoComp.coinPrivToCompletedCoin[backupCoin.coin_priv];
+  checkLogicInvariant(!!compCoin);
+  const existingCoin = await tx.coins.get(compCoin.coinPub);
+  if (!existingCoin) {
+    let coinSource: CoinSource;
+    switch (backupCoin.coin_source.type) {
+      case BackupCoinSourceType.Refresh:
+        coinSource = {
+          type: CoinSourceType.Refresh,
+          oldCoinPub: backupCoin.coin_source.old_coin_pub,
+        };
+        break;
+      case BackupCoinSourceType.Tip:
+        coinSource = {
+          type: CoinSourceType.Tip,
+          coinIndex: backupCoin.coin_source.coin_index,
+          walletTipId: backupCoin.coin_source.wallet_tip_id,
+        };
+        break;
+      case BackupCoinSourceType.Withdraw:
+        coinSource = {
+          type: CoinSourceType.Withdraw,
+          coinIndex: backupCoin.coin_source.coin_index,
+          reservePub: backupCoin.coin_source.reserve_pub,
+          withdrawalGroupId: backupCoin.coin_source.withdrawal_group_id,
+        };
+        break;
+    }
+    const coinRecord: CoinRecord = {
+      blindingKey: backupCoin.blinding_key,
+      coinEvHash: compCoin.coinEvHash,
+      coinPriv: backupCoin.coin_priv,
+      currentAmount: Amounts.parseOrThrow(backupCoin.current_amount),
+      denomSig: backupCoin.denom_sig,
+      coinPub: compCoin.coinPub,
+      exchangeBaseUrl,
+      denomPubHash,
+      status: backupCoin.fresh ? CoinStatus.Fresh : CoinStatus.Dormant,
+      coinSource,
+      // FIXME!
+      maxAge: AgeRestriction.AGE_UNRESTRICTED,
+    };
+    if (coinRecord.status === CoinStatus.Fresh) {
+      await makeCoinAvailable(ws, tx, coinRecord);
+    } else {
+      await tx.coins.put(coinRecord);
+    }
+  }
+}
+
 export async function importBackup(
   ws: InternalWalletState,
   backupBlobArg: any,
@@ -241,6 +309,7 @@ export async function importBackup(
       x.exchangeDetails,
       x.exchanges,
       x.coins,
+      x.coinAvailability,
       x.denominations,
       x.purchases,
       x.proposals,
@@ -360,10 +429,6 @@ export async function importBackup(
             denomPubHash,
           ]);
           if (!existingDenom) {
-            logger.info(
-              `importing backup denomination: ${j2s(backupDenomination)}`,
-            );
-
             const value = Amounts.parseOrThrow(backupDenomination.value);
 
             await tx.denominations.put({
@@ -398,53 +463,11 @@ export async function importBackup(
             });
           }
           for (const backupCoin of backupDenomination.coins) {
-            const compCoin =
-              cryptoComp.coinPrivToCompletedCoin[backupCoin.coin_priv];
-            checkLogicInvariant(!!compCoin);
-            const existingCoin = await tx.coins.get(compCoin.coinPub);
-            if (!existingCoin) {
-              let coinSource: CoinSource;
-              switch (backupCoin.coin_source.type) {
-                case BackupCoinSourceType.Refresh:
-                  coinSource = {
-                    type: CoinSourceType.Refresh,
-                    oldCoinPub: backupCoin.coin_source.old_coin_pub,
-                  };
-                  break;
-                case BackupCoinSourceType.Tip:
-                  coinSource = {
-                    type: CoinSourceType.Tip,
-                    coinIndex: backupCoin.coin_source.coin_index,
-                    walletTipId: backupCoin.coin_source.wallet_tip_id,
-                  };
-                  break;
-                case BackupCoinSourceType.Withdraw:
-                  coinSource = {
-                    type: CoinSourceType.Withdraw,
-                    coinIndex: backupCoin.coin_source.coin_index,
-                    reservePub: backupCoin.coin_source.reserve_pub,
-                    withdrawalGroupId:
-                      backupCoin.coin_source.withdrawal_group_id,
-                  };
-                  break;
-              }
-              await tx.coins.put({
-                blindingKey: backupCoin.blinding_key,
-                coinEvHash: compCoin.coinEvHash,
-                coinPriv: backupCoin.coin_priv,
-                currentAmount: Amounts.parseOrThrow(backupCoin.current_amount),
-                denomSig: backupCoin.denom_sig,
-                coinPub: compCoin.coinPub,
-                exchangeBaseUrl: backupExchangeDetails.base_url,
-                denomPubHash,
-                status: backupCoin.fresh
-                  ? CoinStatus.Fresh
-                  : CoinStatus.Dormant,
-                coinSource,
-                // FIXME!
-                maxAge: AgeRestriction.AGE_UNRESTRICTED,
-              });
-            }
+            await importCoin(ws, tx, cryptoComp, {
+              backupCoin,
+              denomPubHash,
+              exchangeBaseUrl: backupExchangeDetails.base_url,
+            });
           }
         }
 
@@ -532,97 +555,6 @@ export async function importBackup(
             timestampFinish: backupWg.timestamp_finish,
           });
         }
-
-        // FIXME: import reserves with new schema
-
-        // for (const backupReserve of backupExchangeDetails.reserves) {
-        //   const reservePub =
-        //     cryptoComp.reservePrivToPub[backupReserve.reserve_priv];
-        //   const ts = makeEventId(TombstoneTag.DeleteReserve, reservePub);
-        //   if (tombstoneSet.has(ts)) {
-        //     continue;
-        //   }
-        //   checkLogicInvariant(!!reservePub);
-        //   const existingReserve = await tx.reserves.get(reservePub);
-        //   const instructedAmount = Amounts.parseOrThrow(
-        //     backupReserve.instructed_amount,
-        //   );
-        //   if (!existingReserve) {
-        //     let bankInfo: ReserveBankInfo | undefined;
-        //     if (backupReserve.bank_info) {
-        //       bankInfo = {
-        //         exchangePaytoUri: backupReserve.bank_info.exchange_payto_uri,
-        //         statusUrl: backupReserve.bank_info.status_url,
-        //         confirmUrl: backupReserve.bank_info.confirm_url,
-        //       };
-        //     }
-        //     await tx.reserves.put({
-        //       currency: instructedAmount.currency,
-        //       instructedAmount,
-        //       exchangeBaseUrl: backupExchangeDetails.base_url,
-        //       reservePub,
-        //       reservePriv: backupReserve.reserve_priv,
-        //       bankInfo,
-        //       timestampCreated: backupReserve.timestamp_created,
-        //       timestampBankConfirmed:
-        //         backupReserve.bank_info?.timestamp_bank_confirmed,
-        //       timestampReserveInfoPosted:
-        //         backupReserve.bank_info?.timestamp_reserve_info_posted,
-        //       senderWire: backupReserve.sender_wire,
-        //       retryInfo: RetryInfo.reset(),
-        //       lastError: undefined,
-        //       initialWithdrawalGroupId:
-        //         backupReserve.initial_withdrawal_group_id,
-        //       initialWithdrawalStarted:
-        //         backupReserve.withdrawal_groups.length > 0,
-        //       // FIXME!
-        //       reserveStatus: ReserveRecordStatus.QueryingStatus,
-        //       initialDenomSel: await getDenomSelStateFromBackup(
-        //         tx,
-        //         backupExchangeDetails.base_url,
-        //         backupReserve.initial_selected_denoms,
-        //       ),
-        //       // FIXME!
-        //       operationStatus: OperationStatus.Pending,
-        //     });
-        //   }
-        //   for (const backupWg of backupReserve.withdrawal_groups) {
-        //     const ts = makeEventId(
-        //       TombstoneTag.DeleteWithdrawalGroup,
-        //       backupWg.withdrawal_group_id,
-        //     );
-        //     if (tombstoneSet.has(ts)) {
-        //       continue;
-        //     }
-        //     const existingWg = await tx.withdrawalGroups.get(
-        //       backupWg.withdrawal_group_id,
-        //     );
-        //     if (!existingWg) {
-        //       await tx.withdrawalGroups.put({
-        //         denomsSel: await getDenomSelStateFromBackup(
-        //           tx,
-        //           backupExchangeDetails.base_url,
-        //           backupWg.selected_denoms,
-        //         ),
-        //         exchangeBaseUrl: backupExchangeDetails.base_url,
-        //         lastError: undefined,
-        //         rawWithdrawalAmount: Amounts.parseOrThrow(
-        //           backupWg.raw_withdrawal_amount,
-        //         ),
-        //         reservePub,
-        //         retryInfo: RetryInfo.reset(),
-        //         secretSeed: backupWg.secret_seed,
-        //         timestampStart: backupWg.timestamp_created,
-        //         timestampFinish: backupWg.timestamp_finish,
-        //         withdrawalGroupId: backupWg.withdrawal_group_id,
-        //         denomSelUid: backupWg.selected_denoms_id,
-        //         operationStatus: backupWg.timestamp_finish
-        //           ? OperationStatus.Finished
-        //           : OperationStatus.Pending,
-        //       });
-        //     }
-        //   }
-        // }
       }
 
       for (const backupProposal of backupBlob.proposals) {

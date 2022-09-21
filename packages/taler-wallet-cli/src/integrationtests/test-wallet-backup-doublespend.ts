@@ -31,9 +31,6 @@ import {
 } from "../harness/helpers.js";
 import { SyncService } from "../harness/sync";
 
-/**
- * Run test for basic, bank-integrated withdrawal.
- */
 export async function runWalletBackupDoublespendTest(t: GlobalTestState) {
   // Set up test environment
 
@@ -130,6 +127,13 @@ export async function runWalletBackupDoublespendTest(t: GlobalTestState) {
     t.assertTrue(orderStatus.order_status === "unpaid");
 
     // Make wallet pay for the order
+
+    {
+      console.log(
+        "wallet2 balance before preparePay:",
+        await wallet2.client.call(WalletApiOperation.GetBalances, {}),
+      );
+    }
 
     const preparePayResult = await wallet2.client.call(
       WalletApiOperation.PreparePayForUri,

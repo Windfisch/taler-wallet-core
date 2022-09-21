@@ -482,6 +482,8 @@ export async function processBackupForProvider(
     throw Error("unknown backup provider");
   }
 
+  logger.info(`running backup for provider ${backupProviderBaseUrl}`);
+
   return await runBackupCycleForProvider(ws, {
     backupProviderBaseUrl: provider.baseUrl,
     retryAfterPayment: true,

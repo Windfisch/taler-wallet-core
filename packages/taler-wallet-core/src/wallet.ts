@@ -221,7 +221,7 @@ import {
   HttpRequestLibrary,
   readSuccessResponseJsonOrThrow,
 } from "./util/http.js";
-import { checkDbInvariant } from "./util/invariants.js";
+import { checkDbInvariant, checkLogicInvariant } from "./util/invariants.js";
 import {
   AsyncCondition,
   OpenedPromise,
@@ -812,6 +812,7 @@ export async function makeCoinAvailable(
   }>,
   coinRecord: CoinRecord,
 ): Promise<void> {
+  checkLogicInvariant(coinRecord.status === CoinStatus.Fresh);
   const existingCoin = await tx.coins.get(coinRecord.coinPub);
   if (existingCoin) {
     return;

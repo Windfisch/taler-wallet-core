@@ -78,6 +78,7 @@ import {
   makeErrorDetail,
   makePendingOperationFailedError,
   TalerError,
+  TalerProtocolViolationError,
 } from "../errors.js";
 import {
   EXCHANGE_COINS_LOCK,
@@ -752,7 +753,7 @@ async function handleInsufficientFunds(
     return;
   }
 
-  const brokenCoinPub = (err as any).coin_pub;
+  logger.trace(`got error details: ${j2s(err)}`);
 
   const exchangeReply = (err as any).exchange_reply;
   if (
@@ -766,7 +767,12 @@ async function handleInsufficientFunds(
     throw Error(`unable to handle /pay error response (${exchangeReply.code})`);
   }
 
-  logger.trace(`got error details: ${j2s(err)}`);
+  const brokenCoinPub = (exchangeReply as any).coin_pub;
+  logger.trace(`excluded broken coin pub=${brokenCoinPub}`);
+
+  if (!brokenCoinPub) {
+    throw new TalerProtocolViolationError();
+  }
 
   const { contractData } = proposal.download;
 
@@ -1146,6 +1152,8 @@ export async function selectPayCoinsNew(
     req,
   );
 
+  // logger.trace(`candidate denoms: ${j2s(candidateDenoms)}`);
+
   const coinPubs: string[] = [];
   const coinContributions: AmountJson[] = [];
   const currency = contractTermsAmount.currency;
@@ -1200,6 +1208,9 @@ export async function selectPayCoinsNew(
   }
 
   const finalSel = selectedDenom;
+
+  logger.trace(`coin selection request ${j2s(req)}`);
+  logger.trace(`selected coins (via denoms) for payment: ${j2s(finalSel)}`);
 
   await ws.db
     .mktx((x) => [x.coins, x.denominations])
@@ -1301,7 +1312,7 @@ export async function checkPaymentByProposalId(
     });
 
     if (!res) {
-      logger.info("not confirming payment, insufficient coins");
+      logger.info("not allowing payment, insufficient coins");
       return {
         status: PreparePayResultType.InsufficientBalance,
         contractTerms: d.contractTermsRaw,

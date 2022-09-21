@@ -113,6 +113,19 @@ function getDefaultHint(code: number): string {
   }
 }
 
+export class TalerProtocolViolationError<T = any> extends Error {
+  constructor(hint?: string) {
+    let msg: string;
+    if (hint) {
+      msg = `Taler protocol violation error (${hint})`;
+    } else {
+      msg = `Taler protocol violation error`;
+    }
+    super(msg);
+    Object.setPrototypeOf(this, TalerProtocolViolationError.prototype);
+  }
+}
+
 export class TalerError<T = any> extends Error {
   errorDetail: TalerErrorDetail & T;
   private constructor(d: TalerErrorDetail & T) {
