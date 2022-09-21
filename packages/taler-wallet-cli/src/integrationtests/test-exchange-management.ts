@@ -274,4 +274,4 @@ export async function runExchangeManagementTest(
   t.assertTrue(wd.possibleExchanges.length === 0);
 }
 
-runExchangeManagementTest.suites = ["exchange"];
+runExchangeManagementTest.suites = ["wallet", "exchange"];
