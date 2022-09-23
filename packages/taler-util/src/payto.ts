@@ -63,7 +63,11 @@ export function addPaytoQueryParams(
 ): string {
   const [acct, search] = s.slice(paytoPfx.length).split("?");
   const searchParams = new URLSearchParams(search || "");
-  for (const k of Object.keys(params)) {
+  const keys = Object.keys(params)
+  if (keys.length === 0) {
+    return paytoPfx + acct
+  }
+  for (const k of keys) {
     searchParams.set(k, params[k]);
   }
   return paytoPfx + acct + "?" + searchParams.toString();
@@ -76,9 +80,10 @@ export function addPaytoQueryParams(
  * @returns
  */
 export function stringifyPaytoUri(p: PaytoUri): string {
-  const url = `${paytoPfx}${p.targetType}//${p.targetPath}`;
-  if (p.params) {
-    const search = Object.entries(p.params)
+  const url = `${paytoPfx}${p.targetType}/${p.targetPath}`;
+  const paramList = !p.params ? [] : Object.entries(p.params);
+  if (paramList.length > 0) {
+    const search = paramList
       .map(([key, value]) => `${key}=${value}`)
       .join("&");
     return `${url}?${search}`;
