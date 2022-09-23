@@ -64,38 +64,37 @@ import {
   codecForSetWalletDeviceIdRequest,
   codecForTestPayArgs,
   codecForTrackDepositGroupRequest,
+  codecForTransactionByIdRequest,
   codecForTransactionsRequest,
   codecForWithdrawFakebankRequest,
   codecForWithdrawTestBalance,
   CoinDumpJson,
   CoreApiResponse,
+  DenominationInfo,
   Duration,
   durationFromSpec,
   durationMin,
   ExchangeFullDetails,
+  ExchangeListItem,
   ExchangesListResponse,
+  FeeDescription,
   GetExchangeTosResult,
   j2s,
   KnownBankAccounts,
   Logger,
   ManualWithdrawalDetails,
   NotificationType,
+  OperationMap,
   parsePaytoUri,
-  PaytoUri,
   RefreshReason,
   TalerErrorCode,
-  URL,
-  WalletNotification,
-  WalletCoreVersion,
-  ExchangeListItem,
-  OperationMap,
-  FeeDescription,
   TalerErrorDetail,
-  codecForTransactionByIdRequest,
-  DenominationInfo,
   KnownBankAccountsInfo,
   codecForAddKnownBankAccounts,
   codecForForgetKnownBankAccounts,
+  URL,
+  WalletCoreVersion,
+  WalletNotification,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import {
@@ -119,6 +118,7 @@ import {
   TalerError,
 } from "./errors.js";
 import {
+  ActiveLongpollInfo,
   ExchangeOperations,
   InternalWalletState,
   MerchantInfo,
@@ -235,7 +235,6 @@ import {
   OperationAttemptResult,
   OperationAttemptResultType,
   RetryInfo,
-  runOperationHandlerForResult,
 } from "./util/retries.js";
 import { TimerAPI, TimerGroup } from "./util/timer.js";
 import {
@@ -392,27 +391,21 @@ export async function storeOperationPending(
     });
 }
 
-/**
- * Execute one operation based on the pending operation info record.
- *
- * Store success/failure result in the database.
- */
-async function processOnePendingOperation(
+export async function runOperationWithErrorReporting(
   ws: InternalWalletState,
-  pending: PendingTaskInfo,
-  forceNow = false,
+  opId: string,
+  f: () => Promise<OperationAttemptResult>,
 ): Promise<void> {
-  logger.trace(`running pending ${JSON.stringify(pending, undefined, 2)}`);
   let maybeError: TalerErrorDetail | undefined;
   try {
-    const resp = await callOperationHandler(ws, pending, forceNow);
+    const resp = await f();
     switch (resp.type) {
       case OperationAttemptResultType.Error:
-        return await storeOperationError(ws, pending.id, resp.errorDetail);
+        return await storeOperationError(ws, opId, resp.errorDetail);
       case OperationAttemptResultType.Finished:
-        return await storeOperationFinished(ws, pending.id);
+        return await storeOperationFinished(ws, opId);
       case OperationAttemptResultType.Pending:
-        return await storeOperationPending(ws, pending.id);
+        return await storeOperationPending(ws, opId);
       case OperationAttemptResultType.Longpoll:
         break;
     }
@@ -421,7 +414,7 @@ async function processOnePendingOperation(
       logger.warn("operation processed resulted in error");
       logger.warn(`error was: ${j2s(e.errorDetail)}`);
       maybeError = e.errorDetail;
-      return await storeOperationError(ws, pending.id, maybeError!);
+      return await storeOperationError(ws, opId, maybeError!);
     } else if (e instanceof Error) {
       // This is a bug, as we expect pending operations to always
       // do their own error handling and only throw WALLET_PENDING_OPERATION_FAILED
@@ -435,7 +428,7 @@ async function processOnePendingOperation(
         },
         `unexpected exception (message: ${e.message})`,
       );
-      return await storeOperationError(ws, pending.id, maybeError);
+      return await storeOperationError(ws, opId, maybeError);
     } else {
       logger.error("Uncaught exception, value is not even an error.");
       maybeError = makeErrorDetail(
@@ -443,7 +436,7 @@ async function processOnePendingOperation(
         {},
         `unexpected exception (not even an error)`,
       );
-      return await storeOperationError(ws, pending.id, maybeError);
+      return await storeOperationError(ws, opId, maybeError);
     }
   }
 }
@@ -460,7 +453,10 @@ export async function runPending(
     if (!forceNow && !AbsoluteTime.isExpired(p.timestampDue)) {
       continue;
     }
-    await processOnePendingOperation(ws, p, forceNow);
+    await runOperationWithErrorReporting(ws, p.id, async () => {
+      logger.trace(`running pending ${JSON.stringify(p, undefined, 2)}`);
+      return await callOperationHandler(ws, p, forceNow);
+    });
   }
 }
 
@@ -563,7 +559,10 @@ async function runTaskLoop(
         if (!AbsoluteTime.isExpired(p.timestampDue)) {
           continue;
         }
-        await processOnePendingOperation(ws, p);
+        await runOperationWithErrorReporting(ws, p.id, async () => {
+          logger.trace(`running pending ${JSON.stringify(p, undefined, 2)}`);
+          return await callOperationHandler(ws, p);
+        });
         ws.notify({
           type: NotificationType.PendingOperationProcessed,
         });
@@ -1613,13 +1612,10 @@ export class Wallet {
  * This ties together all the operation implementations.
  */
 class InternalWalletStateImpl implements InternalWalletState {
-  memoProcessReserve: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
-  memoMakePlanchet: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
-  memoGetPending: AsyncOpMemoSingle<PendingOperationsResponse> =
-    new AsyncOpMemoSingle();
-  memoGetBalance: AsyncOpMemoSingle<BalancesResponse> = new AsyncOpMemoSingle();
-  memoProcessRefresh: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
-  memoProcessRecoup: AsyncOpMemoMap<void> = new AsyncOpMemoMap();
+  /**
+   * @see {@link InternalWalletState.activeLongpoll}
+   */
+  activeLongpoll: ActiveLongpollInfo = {};
 
   cryptoApi: TalerCryptoInterface;
   cryptoDispatcher: CryptoDispatcher;
@@ -1719,9 +1715,14 @@ class InternalWalletStateImpl implements InternalWalletState {
    * Stop ongoing processing.
    */
   stop(): void {
+    logger.info("stopping (at internal wallet state)");
     this.stopped = true;
     this.timerGroup.stopCurrentAndFutureTimers();
     this.cryptoDispatcher.stop();
+    for (const key of Object.keys(this.activeLongpoll)) {
+      logger.info(`cancelling active longpoll ${key}`);
+      this.activeLongpoll[key].cancel();
+    }
   }
 
   async runUntilDone(

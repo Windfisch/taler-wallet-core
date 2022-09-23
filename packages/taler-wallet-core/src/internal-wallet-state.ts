@@ -127,6 +127,12 @@ export interface RecoupOperations {
 
 export type NotificationListener = (n: WalletNotification) => void;
 
+export interface ActiveLongpollInfo {
+  [opId: string]: {
+    cancel: () => void;
+  };
+}
+
 /**
  * Internal, shard wallet state that is used by the implementation
  * of wallet operations.
@@ -135,12 +141,10 @@ export type NotificationListener = (n: WalletNotification) => void;
  * as it's an opaque implementation detail.
  */
 export interface InternalWalletState {
-  memoProcessReserve: AsyncOpMemoMap<void>;
-  memoMakePlanchet: AsyncOpMemoMap<void>;
-  memoGetPending: AsyncOpMemoSingle<PendingOperationsResponse>;
-  memoGetBalance: AsyncOpMemoSingle<BalancesResponse>;
-  memoProcessRefresh: AsyncOpMemoMap<void>;
-  memoProcessRecoup: AsyncOpMemoMap<void>;
+  /**
+   * Active longpoll operations.
+   */
+  activeLongpoll: ActiveLongpollInfo;
 
   cryptoApi: TalerCryptoInterface;
 

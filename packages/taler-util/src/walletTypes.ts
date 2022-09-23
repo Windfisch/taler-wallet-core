@@ -1378,6 +1378,7 @@ export interface DepositGroupFees {
   wire: AmountJson;
   refresh: AmountJson;
 }
+
 export interface CreateDepositGroupRequest {
   depositPaytoUri: string;
   amount: AmountString;

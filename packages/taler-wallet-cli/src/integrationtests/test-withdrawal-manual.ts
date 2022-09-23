@@ -20,6 +20,11 @@
 import { GlobalTestState } from "../harness/harness.js";
 import { createSimpleTestkudosEnvironment } from "../harness/helpers.js";
 import { WalletApiOperation, BankApi } from "@gnu-taler/taler-wallet-core";
+import {
+  AbsoluteTime,
+  Duration,
+  TalerProtocolTimestamp,
+} from "@gnu-taler/taler-util";
 
 /**
  * Run test for basic, bank-integrated withdrawal.
@@ -38,6 +43,9 @@ export async function runTestWithdrawalManualTest(t: GlobalTestState) {
     exchangeBaseUrl: exchange.baseUrl,
   });
 
+  const tStart = AbsoluteTime.now();
+
+  // We expect this to return immediately.
   const wres = await wallet.client.call(
     WalletApiOperation.AcceptManualWithdrawal,
     {
@@ -46,9 +54,14 @@ export async function runTestWithdrawalManualTest(t: GlobalTestState) {
     },
   );
 
+  // Check that the request did not go into long-polling.
+  const duration = AbsoluteTime.difference(tStart, AbsoluteTime.now());
+  if (duration.d_ms > 5 * 1000) {
+    throw Error("withdrawal took too long (longpolling issue)");
+  }
+
   const reservePub: string = wres.reservePub;
 
-  // Bug.
   await BankApi.adminAddIncoming(bank, {
     exchangeBankAccount,
     amount: "TESTKUDOS:10",

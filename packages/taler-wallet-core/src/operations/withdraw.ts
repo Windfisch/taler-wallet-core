@@ -28,6 +28,7 @@ import {
   Amounts,
   AmountString,
   BankWithdrawDetails,
+  CancellationToken,
   canonicalizeBaseUrl,
   codecForBankWithdrawalOperationPostResponse,
   codecForReserveStatus,
@@ -106,7 +107,12 @@ import {
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
 } from "../versions.js";
-import { makeCoinAvailable, storeOperationPending } from "../wallet.js";
+import {
+  makeCoinAvailable,
+  runOperationWithErrorReporting,
+  storeOperationError,
+  storeOperationPending,
+} from "../wallet.js";
 import {
   getExchangeDetails,
   getExchangePaytoUri,
@@ -962,6 +968,7 @@ export async function updateWithdrawalDenoms(
 async function queryReserve(
   ws: InternalWalletState,
   withdrawalGroupId: string,
+  cancellationToken: CancellationToken,
 ): Promise<{ ready: boolean }> {
   const withdrawalGroup = await getWithdrawalGroupRecordTx(ws.db, {
     withdrawalGroupId,
@@ -982,6 +989,7 @@ async function queryReserve(
 
   const resp = await ws.http.get(reserveUrl.href, {
     timeout: getReserveRequestTimeout(withdrawalGroup),
+    cancellationToken,
   });
 
   const result = await readSuccessResponseJsonOrErrorCode(
@@ -1044,6 +1052,16 @@ export async function processWithdrawalGroup(
     throw Error(`withdrawal group ${withdrawalGroupId} not found`);
   }
 
+  const retryTag = RetryTags.forWithdrawal(withdrawalGroup);
+
+  // We're already running!
+  if (ws.activeLongpoll[retryTag]) {
+    logger.info("withdrawal group already in long-polling, returning!");
+    return {
+      type: OperationAttemptResultType.Longpoll,
+    };
+  }
+
   switch (withdrawalGroup.status) {
     case WithdrawalGroupStatus.RegisteringBank:
       await processReserveBankStatus(ws, withdrawalGroupId);
@@ -1051,15 +1069,45 @@ export async function processWithdrawalGroup(
         forceNow: true,
       });
     case WithdrawalGroupStatus.QueryingStatus: {
-      const res = await queryReserve(ws, withdrawalGroupId);
-      if (res.ready) {
-        return await processWithdrawalGroup(ws, withdrawalGroupId, {
-          forceNow: true,
-        });
-      }
+      const doQueryAsync = async () => {
+        if (ws.stopped) {
+          logger.info("not long-polling reserve, wallet already stopped");
+          await storeOperationPending(ws, retryTag);
+          return;
+        }
+        const cts = CancellationToken.create();
+        let res: { ready: boolean } | undefined = undefined;
+        try {
+          ws.activeLongpoll[retryTag] = {
+            cancel: () => {
+              logger.info("cancel of reserve longpoll requested");
+              cts.cancel();
+            },
+          };
+          res = await queryReserve(ws, withdrawalGroupId, cts.token);
+        } catch (e) {
+          await storeOperationError(
+            ws,
+            retryTag,
+            getErrorDetailFromException(e),
+          );
+          return;
+        }
+        delete ws.activeLongpoll[retryTag];
+        logger.info(
+          `active longpoll keys (2) ${Object.keys(ws.activeLongpoll)}`,
+        );
+        if (!res.ready) {
+          await storeOperationPending(ws, retryTag);
+        }
+        ws.latch.trigger();
+      };
+      doQueryAsync();
+      logger.info(
+        "returning early from withdrawal for long-polling in background",
+      );
       return {
-        type: OperationAttemptResultType.Pending,
-        result: undefined,
+        type: OperationAttemptResultType.Longpoll,
       };
     }
     case WithdrawalGroupStatus.WaitConfirmBank: {
@@ -1912,10 +1960,16 @@ export async function createManualWithdrawal(
       return await getFundingPaytoUris(tx, withdrawalGroup.withdrawalGroupId);
     });
 
-  // Start withdrawal in the background.
-  await processWithdrawalGroup(ws, withdrawalGroupId, { forceNow: true }).catch(
-    (err) => {
-      logger.error("Processing withdrawal (after creation) failed:", err);
+  // Start withdrawal in the background (do not await!)
+  // FIXME: We could also interrupt the task look if it is waiting and
+  // rely on retry handling to re-process the withdrawal group.
+  runOperationWithErrorReporting(
+    ws,
+    RetryTags.forWithdrawal(withdrawalGroup),
+    async () => {
+      return await processWithdrawalGroup(ws, withdrawalGroupId, {
+        forceNow: true,
+      });
     },
   );
 
