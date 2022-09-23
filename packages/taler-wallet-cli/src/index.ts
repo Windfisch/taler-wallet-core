@@ -367,6 +367,7 @@ walletCli
     help: "Run until no more work is left.",
   })
   .maybeOption("maxRetries", ["--max-retries"], clk.INT)
+  .flag("failOnMaxRetries", ["--fail-on-max-retries"])
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
       logger.info("running until pending operations are finished");
@@ -375,7 +376,7 @@ walletCli
         stopWhenDone: true,
       });
       wallet.ws.stop();
-      if (resp.retriesExceeded) {
+      if (resp.retriesExceeded && args.finishPendingOpt.failOnMaxRetries) {
         process.exit(EXIT_RETRIES_EXCEEDED);
       }
     });
