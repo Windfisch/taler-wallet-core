@@ -600,8 +600,15 @@ export interface WalletCoreVersion {
   bank: string;
 }
 
+export interface KnownBankAccountsInfo {
+  uri: PaytoUri;
+  kyc_completed: boolean;
+  currency: string;
+  alias: string,
+}
+
 export interface KnownBankAccounts {
-  accounts: { [payto: string]: PaytoUri };
+  accounts: KnownBankAccountsInfo[];
 }
 
 export interface ExchangeTos {
@@ -1076,6 +1083,29 @@ export const codecForListKnownBankAccounts =
     buildCodecForObject<ListKnownBankAccountsRequest>()
       .property("currency", codecOptional(codecForString()))
       .build("ListKnownBankAccountsRequest");
+
+export interface AddKnownBankAccountsRequest {
+  payto: string;
+  alias: string;
+  currency: string;
+}
+export const codecForAddKnownBankAccounts =
+  (): Codec<AddKnownBankAccountsRequest> =>
+    buildCodecForObject<AddKnownBankAccountsRequest>()
+      .property("payto", (codecForString()))
+      .property("alias", (codecForString()))
+      .property("currency", (codecForString()))
+      .build("AddKnownBankAccountsRequest");
+
+export interface ForgetKnownBankAccountsRequest {
+  payto: string;
+}
+
+export const codecForForgetKnownBankAccounts =
+  (): Codec<ForgetKnownBankAccountsRequest> =>
+    buildCodecForObject<ForgetKnownBankAccountsRequest>()
+      .property("payto", (codecForString()))
+      .build("ForgetKnownBankAccountsRequest");
 
 export interface GetExchangeWithdrawalInfo {
   exchangeBaseUrl: string;

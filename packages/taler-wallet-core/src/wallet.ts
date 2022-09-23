@@ -93,6 +93,9 @@ import {
   TalerErrorDetail,
   codecForTransactionByIdRequest,
   DenominationInfo,
+  KnownBankAccountsInfo,
+  codecForAddKnownBankAccounts,
+  codecForForgetKnownBankAccounts,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import {
@@ -670,25 +673,66 @@ async function listKnownBankAccounts(
   ws: InternalWalletState,
   currency?: string,
 ): Promise<KnownBankAccounts> {
-  const accounts: { [account: string]: PaytoUri } = {};
+  const accounts: KnownBankAccountsInfo[] = [];
   await ws.db
-    .mktx((x) => [x.withdrawalGroups])
+    .mktx((x) => [x.bankAccounts])
     .runReadOnly(async (tx) => {
-      const withdrawalGroups = await tx.withdrawalGroups.iter().toArray();
-      for (const r of withdrawalGroups) {
-        const amount = r.rawWithdrawalAmount;
-        if (currency && currency !== amount.currency) {
+      const knownAccounts = await tx.bankAccounts.iter().toArray();
+      for (const r of knownAccounts) {
+        if (currency && currency !== r.currency) {
           continue;
         }
-        if (r.senderWire) {
-          const payto = parsePaytoUri(r.senderWire);
-          if (payto) {
-            accounts[r.senderWire] = payto;
-          }
+        const payto = parsePaytoUri(r.uri);
+        if (payto) {
+          accounts.push({
+            uri: payto,
+            alias: r.alias,
+            kyc_completed: r.kyc_completed,
+            currency: r.currency,
+          });
         }
       }
     });
   return { accounts };
+}
+
+/**
+ */
+async function addKnownBankAccounts(
+  ws: InternalWalletState,
+  payto: string,
+  alias: string,
+  currency: string,
+): Promise<void> {
+  await ws.db
+    .mktx((x) => [x.bankAccounts])
+    .runReadWrite(async (tx) => {
+      tx.bankAccounts.put({
+        uri: payto,
+        alias: alias,
+        currency: currency,
+        kyc_completed: false,
+      });
+    });
+  return;
+}
+
+/**
+ */
+async function forgetKnownBankAccounts(
+  ws: InternalWalletState,
+  payto: string,
+): Promise<void> {
+  await ws.db
+    .mktx((x) => [x.bankAccounts])
+    .runReadWrite(async (tx) => {
+      const account = await tx.bankAccounts.get(payto);
+      if (!account) {
+        throw Error(`account not found: ${payto}`);
+      }
+      tx.bankAccounts.delete(account.uri);
+    });
+  return;
 }
 
 async function getExchanges(
@@ -1139,6 +1183,16 @@ async function dispatchRequestInternal(
     case "listKnownBankAccounts": {
       const req = codecForListKnownBankAccounts().decode(payload);
       return await listKnownBankAccounts(ws, req.currency);
+    }
+    case "addKnownBankAccounts": {
+      const req = codecForAddKnownBankAccounts().decode(payload);
+      await addKnownBankAccounts(ws, req.payto, req.alias, req.currency);
+      return {};
+    }
+    case "forgetKnownBankAccounts": {
+      const req = codecForForgetKnownBankAccounts().decode(payload);
+      await forgetKnownBankAccounts(ws, req.payto);
+      return {};
     }
     case "getWithdrawalDetailsForUri": {
       const req = codecForGetWithdrawalDetailsForUri().decode(payload);

@@ -2084,7 +2084,24 @@ export const WalletStoresV1 = {
     }),
     {},
   ),
+  bankAccounts: describeStore(
+    "bankAccounts",
+    describeContents<BankAccountsRecord>({
+      keyPath: "uri",
+    }),
+    {},
+  ),
 };
+
+/**
+ * User accounts
+ */
+export interface BankAccountsRecord {
+  uri: string;
+  currency: string;
+  kyc_completed: boolean;
+  alias: string;
+}
 
 export interface MetaConfigRecord {
   key: string;
