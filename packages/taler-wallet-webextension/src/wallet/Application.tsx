@@ -45,7 +45,7 @@ import { DepositPage as DepositPageCTA } from "../cta/Deposit/index.js";
 import { Pages, WalletNavBar } from "../NavigationBar.js";
 import { DeveloperPage } from "./DeveloperPage.js";
 import { BackupPage } from "./BackupPage.js";
-import { DepositPage } from "./DepositPage.js";
+import { DepositPage } from "./DepositPage/index.js";
 import { ExchangeAddPage } from "./ExchangeAddPage.js";
 import { HistoryPage } from "./History.js";
 import { ProviderAddPage } from "./ProviderAddPage.js";

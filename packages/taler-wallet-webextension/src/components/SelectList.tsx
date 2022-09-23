@@ -65,8 +65,6 @@ export function SelectList({
               <option selected disabled>
                 <i18n.Translate>Select one option</i18n.Translate>
               </option>
-              // ) : (
-              //   <option selected>{list[value]}</option>
             ))}
           {Object.keys(list)
             // .filter((l) => l !== value)

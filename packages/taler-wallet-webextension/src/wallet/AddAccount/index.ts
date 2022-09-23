@@ -20,9 +20,12 @@ import { compose, StateViewMap } from "../../utils/index.js";
 import { LoadingUriView, ReadyView } from "./views.js";
 import * as wxApi from "../../wxApi.js";
 import { useComponentState } from "./state.js";
+import { ButtonHandler, SelectFieldHandler, TextFieldHandler } from "../../mui/handlers.js";
 
 export interface Props {
-  p: string;
+  currency: string;
+  onAccountAdded: (uri: string) => void;
+  onCancel: () => void;
 }
 
 export type State = State.Loading | State.LoadingUriError | State.Ready;
@@ -44,6 +47,12 @@ export namespace State {
   export interface Ready extends BaseInfo {
     status: "ready";
     error: undefined;
+    currency: string;
+    accountType: SelectFieldHandler;
+    uri: TextFieldHandler;
+    alias: TextFieldHandler;
+    onAccountAdded: ButtonHandler;
+    onCancel: ButtonHandler;
   }
 }
 
@@ -53,8 +62,8 @@ const viewMapping: StateViewMap<State> = {
   ready: ReadyView,
 };
 
-export const ComponentName = compose(
-  "ComponentName",
+export const AddAccountPage = compose(
+  "AddAccount",
   (p: Props) => useComponentState(p, wxApi),
   viewMapping,
 );

@@ -24,12 +24,8 @@
 import {
   AcceptExchangeTosRequest,
   AcceptManualWithdrawalResult,
-  AcceptPeerPullPaymentRequest,
-  AcceptPeerPushPaymentRequest,
-  AcceptTipRequest,
-  AcceptWithdrawalResponse,
-  AddExchangeRequest,
-  AmountString,
+  AcceptPeerPullPaymentRequest, AcceptPeerPullPaymentResponse, AcceptPeerPushPaymentRequest, AcceptPeerPushPaymentResponse, AcceptTipRequest, AcceptTipResponse, AcceptWithdrawalResponse,
+  AddExchangeRequest, AddKnownBankAccountsRequest, AmountString,
   ApplyRefundResponse,
   BalancesResponse,
   CheckPeerPullPaymentRequest,
@@ -41,9 +37,7 @@ import {
   CoreApiResponse,
   CreateDepositGroupRequest,
   CreateDepositGroupResponse,
-  DeleteTransactionRequest,
-  ExchangesListResponse,
-  GetExchangeTosResult,
+  DeleteTransactionRequest, DepositGroupFees, ExchangeFullDetails, ExchangesListResponse, ForgetKnownBankAccountsRequest, GetExchangeTosResult,
   GetExchangeWithdrawalInfo,
   GetFeeForDepositRequest,
   GetWithdrawalDetailsForUriRequest,
@@ -53,8 +47,7 @@ import {
   InitiatePeerPushPaymentResponse,
   KnownBankAccounts,
   Logger,
-  NotificationType,
-  PrepareDepositRequest,
+  NotificationType, PaytoUri, PrepareDepositRequest,
   PrepareDepositResponse,
   PreparePayResult,
   PrepareRefundRequest,
@@ -62,17 +55,9 @@ import {
   PrepareTipRequest,
   PrepareTipResult,
   RetryTransactionRequest,
-  SetWalletDeviceIdRequest,
-  TransactionsResponse,
-  WalletDiagnostics,
-  WalletCoreVersion,
-  WithdrawUriInfoResponse,
-  ExchangeFullDetails,
-  Transaction,
-  AcceptTipResponse,
-  AcceptPeerPullPaymentResponse,
-  AcceptPeerPushPaymentResponse,
-  DepositGroupFees,
+  SetWalletDeviceIdRequest, stringifyPaytoUri, Transaction,
+  TransactionsResponse, WalletCoreVersion,
+  WalletDiagnostics, WithdrawUriInfoResponse
 } from "@gnu-taler/taler-util";
 import {
   AddBackupProviderRequest,
@@ -81,9 +66,9 @@ import {
   PendingOperationsResponse,
   RemoveBackupProviderRequest,
   TalerError,
-  WalletContractData,
+  WalletContractData
 } from "@gnu-taler/taler-wallet-core";
-import { platform, MessageFromBackend } from "./platform/api.js";
+import { MessageFromBackend, platform } from "./platform/api.js";
 
 /**
  *
@@ -273,6 +258,23 @@ export function listKnownBankAccounts(
   currency?: string,
 ): Promise<KnownBankAccounts> {
   return callBackend("listKnownBankAccounts", { currency });
+}
+
+export function addKnownBankAccounts(
+  payto: PaytoUri,
+  currency: string,
+  alias: string,
+): Promise<void> {
+  return callBackend("addKnownBankAccounts", {
+    payto: stringifyPaytoUri(payto),
+    currency,
+    alias
+  } as AddKnownBankAccountsRequest);
+}
+export function forgetKnownBankAccounts(
+  payto: string,
+): Promise<void> {
+  return callBackend("forgetKnownBankAccounts", { payto } as ForgetKnownBankAccountsRequest);
 }
 
 /**
