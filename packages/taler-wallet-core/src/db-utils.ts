@@ -70,7 +70,31 @@ function upgradeFromStoreMap(
     return;
   }
   logger.info(`upgrading database from ${oldVersion} to ${newVersion}`);
-  throw Error("upgrade not supported");
+  for (const n in storeMap) {
+    const swi: StoreWithIndexes<any, StoreDescriptor<unknown>, any> = storeMap[
+      n
+    ];
+    const storeDesc: StoreDescriptor<unknown> = swi.store;
+    const storeAddedVersion = storeDesc.versionAdded ?? 0;
+    if (storeAddedVersion <= oldVersion) {
+      continue;
+    }
+    const s = db.createObjectStore(swi.storeName, {
+      autoIncrement: storeDesc.autoIncrement,
+      keyPath: storeDesc.keyPath,
+    });
+    for (const indexName in swi.indexMap as any) {
+      const indexDesc: IndexDescriptor = swi.indexMap[indexName];
+      const indexAddedVersion = indexDesc.versionAdded ?? 0;
+      if (indexAddedVersion <= oldVersion) {
+        continue;
+      }
+      s.createIndex(indexDesc.name, indexDesc.keyPath, {
+        multiEntry: indexDesc.multiEntry,
+        unique: indexDesc.unique,
+      });
+    }
+  }
 }
 
 function promiseFromTransaction(transaction: IDBTransaction): Promise<void> {

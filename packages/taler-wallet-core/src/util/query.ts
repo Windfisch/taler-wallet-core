@@ -284,17 +284,29 @@ export interface IndexDescriptor {
   keyPath: IDBKeyPath | IDBKeyPath[];
   multiEntry?: boolean;
   unique?: boolean;
+  versionAdded?: number;
 }
 
 export interface StoreDescriptor<RecordType> {
   _dummy: undefined & RecordType;
   keyPath?: IDBKeyPath | IDBKeyPath[];
   autoIncrement?: boolean;
+  /**
+   * Database version that this store was added in, or
+   * undefined if added in the first version.
+   */
+  versionAdded?: number;
 }
 
 export interface StoreOptions {
   keyPath?: IDBKeyPath | IDBKeyPath[];
   autoIncrement?: boolean;
+
+  /**
+   * Database version that this store was added in, or
+   * undefined if added in the first version.
+   */
+  versionAdded?: number;
 }
 
 export function describeContents<RecordType = never>(
@@ -304,6 +316,7 @@ export function describeContents<RecordType = never>(
     keyPath: options.keyPath,
     _dummy: undefined as any,
     autoIncrement: options.autoIncrement,
+    versionAdded: options.versionAdded,
   };
 }
 
@@ -317,6 +330,7 @@ export function describeIndex(
     name,
     multiEntry: options.multiEntry,
     unique: options.unique,
+    versionAdded: options.versionAdded,
   };
 }
 

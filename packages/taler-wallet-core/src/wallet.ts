@@ -686,7 +686,7 @@ async function listKnownBankAccounts(
           accounts.push({
             uri: payto,
             alias: r.alias,
-            kyc_completed: r.kyc_completed,
+            kyc_completed: r.kycCompleted,
             currency: r.currency,
           });
         }
@@ -710,7 +710,7 @@ async function addKnownBankAccounts(
         uri: payto,
         alias: alias,
         currency: currency,
-        kyc_completed: false,
+        kycCompleted: false,
       });
     });
   return;

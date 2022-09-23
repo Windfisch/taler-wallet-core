@@ -96,7 +96,7 @@ export const CURRENT_DB_CONFIG_KEY = "currentMainDbName";
  * backwards-compatible way or object stores and indices
  * are added.
  */
-export const WALLET_DB_MINOR_VERSION = 1;
+export const WALLET_DB_MINOR_VERSION = 2;
 
 export namespace OperationStatusRange {
   export const ACTIVE_START = 10;
@@ -2088,6 +2088,7 @@ export const WalletStoresV1 = {
     "bankAccounts",
     describeContents<BankAccountsRecord>({
       keyPath: "uri",
+      versionAdded: 2,
     }),
     {},
   ),
@@ -2099,7 +2100,7 @@ export const WalletStoresV1 = {
 export interface BankAccountsRecord {
   uri: string;
   currency: string;
-  kyc_completed: boolean;
+  kycCompleted: boolean;
   alias: string;
 }
 
