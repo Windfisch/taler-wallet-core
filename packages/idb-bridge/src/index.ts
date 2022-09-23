@@ -91,7 +91,7 @@ export type { AccessStats } from "./MemoryBackend";
 
 /**
  * Global indexeddb objects, either from the native or bridge-idb
- * implementation, depending on what is availabe in
+ * implementation, depending on what is available in
  * the global environment.
  */
 export const GlobalIDB: {

@@ -915,7 +915,7 @@ advancedCli
 
 advancedCli
   .subcommand("recycle", "recycle", {
-    help: "Export, clear and re-import the database via the backup mechamism.",
+    help: "Export, clear and re-import the database via the backup mechanism.",
   })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {

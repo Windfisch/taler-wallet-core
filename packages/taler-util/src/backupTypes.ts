@@ -314,7 +314,7 @@ export interface BackupWithdrawalGroup {
   withdrawal_group_id: string;
 
   /**
-   * Detailled info based on the type of withdrawal group.
+   * Detailed info based on the type of withdrawal group.
    */
   info: BackupWgInfo;
 
