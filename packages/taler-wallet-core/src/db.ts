@@ -127,6 +127,11 @@ export enum WithdrawalGroupStatus {
   QueryingStatus = OperationStatusRange.ACTIVE_START + 2,
 
   /**
+   * Ready for withdrawal.
+   */
+  Ready = OperationStatusRange.ACTIVE_START + 3,
+
+  /**
    * The corresponding withdraw record has been created.
    * No further processing is done, unless explicitly requested
    * by the user.

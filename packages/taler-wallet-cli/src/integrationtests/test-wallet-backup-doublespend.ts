@@ -59,6 +59,8 @@ export async function runWalletBackupDoublespendTest(t: GlobalTestState) {
 
   await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:10" });
 
+  await wallet.runUntilDone();
+
   await wallet.client.call(WalletApiOperation.RunBackupCycle, {});
   await wallet.runUntilDone();
   await wallet.client.call(WalletApiOperation.RunBackupCycle, {});

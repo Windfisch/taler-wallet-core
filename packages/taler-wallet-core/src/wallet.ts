@@ -492,6 +492,7 @@ async function runTaskLoop(
   ws: InternalWalletState,
   opts: RetryLoopOpts = {},
 ): Promise<TaskLoopResult> {
+  logger.info(`running task loop opts=${j2s(opts)}`);
   let retriesExceeded = false;
   for (let iteration = 0; !ws.stopped; iteration++) {
     const pending = await getPendingOperations(ws);

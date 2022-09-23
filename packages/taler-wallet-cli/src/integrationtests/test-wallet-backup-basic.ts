@@ -84,6 +84,8 @@ export async function runWalletBackupBasicTest(t: GlobalTestState) {
 
   await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:10" });
 
+  await wallet.runUntilDone();
+
   await wallet.client.call(WalletApiOperation.RunBackupCycle, {});
 
   {

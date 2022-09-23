@@ -1023,7 +1023,7 @@ async function queryReserve(
         logger.warn(`withdrawal group ${withdrawalGroupId} not found`);
         return;
       }
-      wg.status = WithdrawalGroupStatus.Finished;
+      wg.status = WithdrawalGroupStatus.Ready;
       await tx.withdrawalGroups.put(wg);
     });
 
@@ -1137,6 +1137,9 @@ export async function processWithdrawalGroup(
     }
     case WithdrawalGroupStatus.Finished:
       // We can try to withdraw, nothing needs to be done with the reserve.
+      break;
+    case WithdrawalGroupStatus.Ready:
+      // Continue with the actual withdrawal!
       break;
     default:
       throw new InvariantViolatedError(
