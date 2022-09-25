@@ -50,14 +50,14 @@ export function StartScreen(): VNode {
               <span>Recover a secret</span>
             </button>
 
-            <FileButton
+            {/* <FileButton
               label="Restore a session"
               onChange={(content) => {
                 if (content?.type === "application/json") {
                   reducer.importState(content.content);
                 }
               }}
-            />
+            /> */}
 
             {/* <button class="button">
               <div class="icon"><i class="mdi mdi-file" /></div>

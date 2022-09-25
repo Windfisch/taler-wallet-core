@@ -177,7 +177,7 @@ export function Sidebar({ mobile }: Props): VNode {
                 <span class="menu-item-label"><Translate>Truth Paying</Translate></span>
               </div>
             </li> */}
-              <li>
+              {/* <li>
                 <div class="buttons ml-4">
                   <button
                     class="button is-primary is-right"
@@ -186,7 +186,7 @@ export function Sidebar({ mobile }: Props): VNode {
                     Save backup session
                   </button>
                 </div>
-              </li>
+              </li> */}
             </Fragment>
           ) : (
             reducer.currentReducerState?.reducer_type === "recovery" && (
@@ -265,7 +265,7 @@ export function Sidebar({ mobile }: Props): VNode {
                     </span>
                   </div>
                 </li>
-                <li>
+                {/* <li>
                   <div class="buttons ml-4">
                     <button
                       class="button is-primary is-right"
@@ -274,7 +274,7 @@ export function Sidebar({ mobile }: Props): VNode {
                       Save recovery session
                     </button>
                   </div>
-                </li>
+                </li> */}
               </Fragment>
             )
           )}
@@ -285,7 +285,7 @@ export function Sidebar({ mobile }: Props): VNode {
                   class="button is-danger is-right"
                   onClick={() => reducer.reset()}
                 >
-                  Reset session
+                  Start again
                 </button>
               </div>
             </li>
