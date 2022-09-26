@@ -22,6 +22,7 @@ import { CryptoWorker } from "./cryptoWorkerInterface.js";
 import os from "os";
 import { Logger } from "@gnu-taler/taler-util";
 import { nativeCryptoR } from "../cryptoImplementation.js";
+import { getErrorDetailFromException } from "../../errors.js";
 
 const logger = new Logger("nodeThreadWorker.ts");
 
@@ -69,58 +70,72 @@ const workerCode = `
  * a message.
  */
 export function handleWorkerMessage(msg: any): void {
-  const req = msg.req;
-  if (typeof req !== "object") {
-    console.error("request must be an object");
-    return;
-  }
-  const id = msg.id;
-  if (typeof id !== "number") {
-    console.error("RPC id must be number");
-    return;
-  }
-  const operation = msg.operation;
-  if (typeof operation !== "string") {
-    console.error("RPC operation must be string");
-    return;
-  }
-
   const handleRequest = async (): Promise<void> => {
+    const req = msg.req;
+    if (typeof req !== "object") {
+      logger.error("request must be an object");
+      return;
+    }
+    const id = msg.id;
+    if (typeof id !== "number") {
+      logger.error("RPC id must be number");
+      return;
+    }
+    const operation = msg.operation;
+    if (typeof operation !== "string") {
+      logger.error("RPC operation must be string");
+      return;
+    }
     const impl = nativeCryptoR;
 
     if (!(operation in impl)) {
-      console.error(`crypto operation '${operation}' not found`);
+      logger.error(`crypto operation '${operation}' not found`);
       return;
     }
 
+    let responseMsg: any;
+
     try {
       const result = await (impl as any)[operation](impl, req);
+      responseMsg = { data: { type: "success", result, id } };
+    } catch (e: any) {
+      logger.error(`error during operation: ${e.stack ?? e.toString()}`);
+      responseMsg = {
+        data: {
+          type: "error",
+          error: getErrorDetailFromException(e),
+          id,
+        },
+      };
+    }
+
+    try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const _r = "require";
       const worker_threads: typeof import("worker_threads") =
         module[_r]("worker_threads");
       // const worker_threads = require("worker_threads");
-
       const p = worker_threads.parentPort;
-      worker_threads.parentPort?.postMessage;
       if (p) {
-        p.postMessage({ data: { result, id } });
+        p.postMessage(responseMsg);
       } else {
-        console.error("parent port not available (not running in thread?");
+        logger.error("parent port not available (not running in thread?");
       }
-    } catch (e) {
-      console.error("error during operation", e);
+    } catch (e: any) {
+      logger.error(
+        `error sending back operation result: ${e.stack ?? e.toString()}`,
+      );
       return;
     }
   };
 
   handleRequest().catch((e) => {
-    console.error("error in node worker", e);
+    logger.error("error in node worker", e);
   });
 }
 
 export function handleWorkerError(e: Error): void {
-  console.log("got error from worker", e);
+  logger.error(`got error from worker: ${e.stack ?? e.toString()}`);
 }
 
 export class NodeThreadCryptoWorkerFactory implements CryptoWorkerFactory {
@@ -161,7 +176,7 @@ class NodeThreadCryptoWorker implements CryptoWorker {
 
     this.nodeWorker = new worker_threads.Worker(workerCode, { eval: true });
     this.nodeWorker.on("error", (err: Error) => {
-      console.error("error in node worker:", err);
+      logger.error("error in node worker:", err);
       if (this.onerror) {
         this.onerror(err);
       }

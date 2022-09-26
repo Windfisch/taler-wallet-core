@@ -15,6 +15,7 @@
  */
 
 import { Logger } from "@gnu-taler/taler-util";
+import { getErrorDetailFromException } from "../../errors.js";
 import {
   nativeCryptoR,
   TalerCryptoInterfaceR,
@@ -139,7 +140,7 @@ export class SynchronousCryptoWorker {
 
   private dispatchMessage(msg: any): void {
     if (this.onmessage) {
-      this.onmessage({ data: msg });
+      this.onmessage(msg);
     }
   }
 
@@ -151,20 +152,27 @@ export class SynchronousCryptoWorker {
     const impl = this.cryptoImplR;
 
     if (!(operation in impl)) {
-      console.error(`crypto operation '${operation}' not found`);
+      logger.error(`crypto operation '${operation}' not found`);
       return;
     }
 
-    let result: any;
+    let responseMsg: any;
     try {
-      result = await (impl as any)[operation](impl, req);
+      const result = await (impl as any)[operation](impl, req);
+      responseMsg = { data: { type: "success", result, id } };
     } catch (e: any) {
-      logger.error(`error during operation '${operation}': ${e}`);
-      return;
+      logger.error(`error during operation: ${e.stack ?? e.toString()}`);
+      responseMsg = {
+        data: {
+          type: "error",
+          id,
+          error: getErrorDetailFromException(e),
+        },
+      };
     }
 
     try {
-      setTimeout(() => this.dispatchMessage({ result, id }), 0);
+      setTimeout(() => this.dispatchMessage(responseMsg), 0);
     } catch (e) {
       logger.error("got error during dispatch", e);
     }
@@ -176,22 +184,22 @@ export class SynchronousCryptoWorker {
   postMessage(msg: any): void {
     const req = msg.req;
     if (typeof req !== "object") {
-      console.error("request must be an object");
+      logger.error("request must be an object");
       return;
     }
     const id = msg.id;
     if (typeof id !== "number") {
-      console.error("RPC id must be number");
+      logger.error("RPC id must be number");
       return;
     }
     const operation = msg.operation;
     if (typeof operation !== "string") {
-      console.error("RPC operation must be string");
+      logger.error("RPC operation must be string");
       return;
     }
 
     this.handleRequest(operation, id, req).catch((e) => {
-      console.error("Error while handling crypto request:", e);
+      logger.error("Error while handling crypto request:", e);
     });
   }
 
