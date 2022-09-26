@@ -15,10 +15,10 @@ export const anastasisData = {
         url: "https://v1.anastasis.codeblau.de/",
         name: "Codeblau GmbH, Germany",
       },
-      {
-        url: "https://v1.anastasis.openw3b.org/",
-        name: "Openw3b Foundation, India",
-      },
+      // {
+      //   url: "https://v1.anastasis.openw3b.org/",
+      //   name: "Openw3b Foundation, India",
+      // },
       {
         url: "https://v1.anastasis.lu/",
         name: "Anastasis SARL, Luxembourg",
@@ -31,22 +31,22 @@ export const anastasisData = {
         url: "https://v1.anastasis.lu/",
         restricted: "xx",
       },
-      {
-        url: "http://localhost:8086/",
-        restricted: "xx",
-      },
-      {
-        url: "http://localhost:8087/",
-        restricted: "xx",
-      },
-      {
-        url: "http://localhost:8088/",
-        restricted: "xx",
-      },
-      {
-        url: "http://localhost:8089/",
-        restricted: "xx",
-      },
+      // {
+      //   url: "http://localhost:8086/",
+      //   restricted: "xx",
+      // },
+      // {
+      //   url: "http://localhost:8087/",
+      //   restricted: "xx",
+      // },
+      // {
+      //   url: "http://localhost:8088/",
+      //   restricted: "xx",
+      // },
+      // {
+      //   url: "http://localhost:8089/",
+      //   restricted: "xx",
+      // },
     ],
   },
   countriesList: {
@@ -205,18 +205,18 @@ export const anastasisData = {
         },
         call_code: "+1",
       },
-      {
-        code: "xx",
-        name: "Testland",
-        continent: "Demoworld",
-        name_i18n: {
-          de_DE: "Testlandt",
-          de_CH: "Testlandi",
-          fr_FR: "Testpais",
-          en_UK: "Testland",
-        },
-        call_code: "+00",
-      },
+      // {
+      //   code: "xx",
+      //   name: "Testland",
+      //   continent: "Demoworld",
+      //   name_i18n: {
+      //     de_DE: "Testlandt",
+      //     de_CH: "Testlandi",
+      //     fr_FR: "Testpais",
+      //     en_UK: "Testland",
+      //   },
+      //   call_code: "+00",
+      // },
     ].sort((a, b) => a.name > b.name ? 1 : (a.name < b.name ? -1 : 0)),
   },
   countryDetails: {
