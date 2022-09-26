@@ -141,7 +141,7 @@ export function BankDetailsByPaytoType({
         {accountPart}
         <Row
           name={<i18n.Translate>Amount</i18n.Translate>}
-          value={<Amount value={amount} />}
+          value={<Amount value={amount} hideCurrency />}
         />
         <Row
           name={<i18n.Translate>Subject</i18n.Translate>}
