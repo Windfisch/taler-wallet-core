@@ -177,16 +177,19 @@ export function Sidebar({ mobile }: Props): VNode {
                 <span class="menu-item-label"><Translate>Truth Paying</Translate></span>
               </div>
             </li> */}
-              {/* <li>
-                <div class="buttons ml-4">
-                  <button
-                    class="button is-primary is-right"
-                    onClick={saveSession}
-                  >
-                    Save backup session
-                  </button>
-                </div>
-              </li> */}
+              {reducer.currentReducerState.backup_state !==
+                BackupStates.BackupFinished && (
+                <li>
+                  <div class="buttons ml-4">
+                    <button
+                      class="button is-primary is-right"
+                      onClick={saveSession}
+                    >
+                      Save backup session
+                    </button>
+                  </div>
+                </li>
+              )}
             </Fragment>
           ) : (
             reducer.currentReducerState?.reducer_type === "recovery" && (
@@ -265,16 +268,19 @@ export function Sidebar({ mobile }: Props): VNode {
                     </span>
                   </div>
                 </li>
-                {/* <li>
-                  <div class="buttons ml-4">
-                    <button
-                      class="button is-primary is-right"
-                      onClick={saveSession}
-                    >
-                      Save recovery session
-                    </button>
-                  </div>
-                </li> */}
+                {reducer.currentReducerState.recovery_state !==
+                  RecoveryStates.RecoveryFinished && (
+                  <li>
+                    <div class="buttons ml-4">
+                      <button
+                        class="button is-primary is-right"
+                        onClick={saveSession}
+                      >
+                        Save recovery session
+                      </button>
+                    </div>
+                  </li>
+                )}
               </Fragment>
             )
           )}
