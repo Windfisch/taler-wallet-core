@@ -407,7 +407,7 @@ export async function runOperationWithErrorReporting(
       case OperationAttemptResultType.Pending:
         return await storeOperationPending(ws, opId);
       case OperationAttemptResultType.Longpoll:
-        return await storeOperationPending(ws, opId);
+        break;
     }
   } catch (e) {
     if (e instanceof TalerError) {
