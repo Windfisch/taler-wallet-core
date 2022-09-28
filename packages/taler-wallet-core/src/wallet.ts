@@ -513,7 +513,7 @@ async function runTaskLoop(
       }
 
       minDue = AbsoluteTime.min(minDue, p.timestampDue);
-      if (AbsoluteTime.isExpired(p.timestampDue)) {
+      if (AbsoluteTime.isExpired(p.timestampDue) && !ws.activeLongpoll[p.id]) {
         numDue++;
       }
       if (p.givesLifeness) {
