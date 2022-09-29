@@ -45,6 +45,11 @@ export function BankDetailsByPaytoType({
 
   if (payto.isKnown && payto.targetType === "bitcoin") {
     const min = segwitMinAmount(amount.currency);
+    const addrs = payto.segwitAddrs.map(
+      (a) => `${a} ${Amounts.stringifyValue(min)}`,
+    );
+    addrs.unshift(`${payto.targetPath} ${Amounts.stringifyValue(amount)}`);
+    const copyContent = addrs.join("\n");
     return (
       <section
         style={{
@@ -85,11 +90,7 @@ export function BankDetailsByPaytoType({
             </td>
             <td></td>
             <td>
-              <CopyButton
-                getContent={() =>
-                  `${payto.targetPath} ${Amounts.stringifyValue(amount)} BTC`
-                }
-              />
+              <CopyButton getContent={() => copyContent} />
             </td>
           </tr>
         </table>

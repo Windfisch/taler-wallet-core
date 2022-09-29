@@ -116,8 +116,10 @@ export function TransactionPage({ tid, goToWalletHistory }: Props): VNode {
       onDelete={() =>
         wxApi.deleteTransaction(tid).then(() => goToWalletHistory(currency))
       }
-      onRetry={() =>
-        wxApi.retryTransaction(tid).then(() => goToWalletHistory(currency))
+      onRetry={async () =>
+        await wxApi
+          .retryTransaction(tid)
+          .then(() => goToWalletHistory(currency))
       }
       onRefund={(id) => wxApi.applyRefundFromPurchaseId(id).then()}
       onBack={() => goToWalletHistory(currency)}
