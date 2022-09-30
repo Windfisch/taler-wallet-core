@@ -22,7 +22,7 @@
 /**
  * Imports.
  */
-import { Logger, TalerErrorCode } from "@gnu-taler/taler-util";
+import { j2s, Logger, TalerErrorCode } from "@gnu-taler/taler-util";
 import { TalerError } from "../../errors.js";
 import { openPromise } from "../../util/promiseUtils.js";
 import { timer, performanceNow, TimerHandle } from "../../util/timer.js";
@@ -265,6 +265,7 @@ export class CryptoDispatcher {
           }),
         );
       } else {
+        logger.warn(`bad message: ${j2s(msg)}`);
         currentWorkItem.reject(new Error("bad message from crypto worker"));
       }
     }

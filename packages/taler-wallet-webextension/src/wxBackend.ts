@@ -217,7 +217,7 @@ async function reinitWallet(): Promise<void> {
     timer = new SetTimeoutTimerAPI();
   } else {
     httpLib = new BrowserHttpLib();
-    cryptoWorker = new BrowserCryptoWorkerFactory();
+    cryptoWorker = new SynchronousCryptoWorkerFactory();
     timer = new SetTimeoutTimerAPI();
   }
 

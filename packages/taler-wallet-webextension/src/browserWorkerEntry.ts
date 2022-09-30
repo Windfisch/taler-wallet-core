@@ -22,8 +22,11 @@
  * Imports.
  */
 
-import { Logger } from "@gnu-taler/taler-util";
-import { nativeCrypto } from "@gnu-taler/taler-wallet-core";
+import { j2s, Logger } from "@gnu-taler/taler-util";
+import {
+  getErrorDetailFromException,
+  nativeCrypto,
+} from "@gnu-taler/taler-wallet-core";
 
 const logger = new Logger("browserWorkerEntry.ts");
 
@@ -41,13 +44,22 @@ async function handleRequest(
     return;
   }
 
+  logger.info(`browser worker crypto request: ${j2s(req)}`);
+
+  let responseMsg: any;
   try {
-    const result = await (impl as any)[operation](req);
-    worker.postMessage({ result, id });
-  } catch (e) {
-    logger.error("error during operation", e);
-    return;
+    const result = await (impl as any)[operation](impl, req);
+    responseMsg = { type: "success", result, id };
+  } catch (e: any) {
+    logger.error(`error during operation: ${e.stack ?? e.toString()}`);
+    responseMsg = {
+      type: "error",
+      id,
+      error: getErrorDetailFromException(e),
+    };
   }
+
+  worker.postMessage(responseMsg);
 }
 
 worker.onmessage = (msg: MessageEvent) => {
