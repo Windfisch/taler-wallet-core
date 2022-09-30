@@ -1731,9 +1731,15 @@ async function processReserveBankStatus(
       await tx.withdrawalGroups.put(r);
     });
 
-  return {
-    status: BankStatusResultCode.Done,
-  };
+  if (status.transfer_done) {
+    return {
+      status: BankStatusResultCode.Done,
+    };
+  } else {
+    return {
+      status: BankStatusResultCode.Waiting,
+    };
+  }
 }
 
 export async function internalCreateWithdrawalGroup(
