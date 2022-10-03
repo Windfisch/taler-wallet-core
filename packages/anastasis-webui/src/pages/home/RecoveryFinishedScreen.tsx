@@ -95,11 +95,30 @@ export function RecoveryFinishedScreen(): VNode {
           <span>Download content</span>
         </a>
       </div>
+
       {plainText ? (
         <div class="block">
           <QR text={secret} />
         </div>
       ) : undefined}
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        <p>
+          <div class="buttons ml-4">
+            <button
+              class="button is-primary is-right"
+              onClick={() => reducer.reset()}
+            >
+              Start again
+            </button>
+          </div>
+        </p>
+      </div>
     </AnastasisClientFrame>
   );
 }

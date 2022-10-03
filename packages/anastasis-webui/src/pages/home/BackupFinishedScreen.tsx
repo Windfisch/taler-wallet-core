@@ -57,6 +57,23 @@ export function BackupFinishedScreen(): VNode {
               </div>
             );
           })}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+            }}
+          >
+            <p>
+              <div class="buttons ml-4">
+                <button
+                  class="button is-primary is-right"
+                  onClick={() => reducer.reset()}
+                >
+                  Start again
+                </button>
+              </div>
+            </p>
+          </div>
         </div>
       )}
     </AnastasisClientFrame>

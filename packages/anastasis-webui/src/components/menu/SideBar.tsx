@@ -190,6 +190,19 @@ export function Sidebar({ mobile }: Props): VNode {
                   </div>
                 </li>
               )}
+              {reducer.currentReducerState.backup_state !==
+                BackupStates.BackupFinished && (
+                <li>
+                  <div class="buttons ml-4">
+                    <button
+                      class="button is-danger is-right"
+                      onClick={() => reducer.reset()}
+                    >
+                      Reset session
+                    </button>
+                  </div>
+                </li>
+              )}
             </Fragment>
           ) : (
             reducer.currentReducerState?.reducer_type === "recovery" && (
@@ -281,21 +294,25 @@ export function Sidebar({ mobile }: Props): VNode {
                     </div>
                   </li>
                 )}
+                {reducer.currentReducerState.recovery_state ===
+                RecoveryStates.RecoveryFinished ? (
+                  <Fragment />
+                ) : (
+                  <li>
+                    <div class="buttons ml-4">
+                      <button
+                        class="button is-danger is-right"
+                        onClick={() => reducer.reset()}
+                      >
+                        Reset session
+                      </button>
+                    </div>
+                  </li>
+                )}
               </Fragment>
             )
           )}
-          {reducer.currentReducerState && (
-            <li>
-              <div class="buttons ml-4">
-                <button
-                  class="button is-danger is-right"
-                  onClick={() => reducer.reset()}
-                >
-                  Start again
-                </button>
-              </div>
-            </li>
-          )}
+
           {/* <li>
               <div class="buttons ml-4">
                 <button class="button is-info is-right" >Manage providers</button>
