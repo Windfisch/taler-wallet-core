@@ -159,6 +159,7 @@ export type InitWalletOp = {
  * Get current wallet balance.
  */
 export type GetBalancesOp = {
+  op: WalletApiOperation.GetBalances;
   request: {};
   response: BalancesResponse;
 };
@@ -169,6 +170,7 @@ export type GetBalancesOp = {
  * Get transactions.
  */
 export type GetTransactionsOp = {
+  op: WalletApiOperation.GetTransactions;
   request: TransactionsRequest;
   response: TransactionsResponse;
 };
@@ -177,6 +179,7 @@ export type GetTransactionsOp = {
  * Delete a transaction locally in the wallet.
  */
 export type DeleteTransactionOp = {
+  op: WalletApiOperation.DeleteTransaction;
   request: DeleteTransactionRequest;
   response: {};
 };
@@ -185,6 +188,7 @@ export type DeleteTransactionOp = {
  * Immediately retry a transaction.
  */
 export type RetryTransactionOp = {
+  op: WalletApiOperation.RetryTransaction;
   request: RetryTransactionRequest;
   response: {};
 };
@@ -195,6 +199,7 @@ export type RetryTransactionOp = {
  * Get details for withdrawing a particular amount (manual withdrawal).
  */
 export type GetWithdrawalDetailsForAmountOp = {
+  op: WalletApiOperation.GetWithdrawalDetailsForAmount;
   request: GetWithdrawalDetailsForAmountRequest;
   response: ManualWithdrawalDetails;
 };
@@ -203,6 +208,7 @@ export type GetWithdrawalDetailsForAmountOp = {
  * Get details for withdrawing via a particular taler:// URI.
  */
 export type GetWithdrawalDetailsForUriOp = {
+  op: WalletApiOperation.GetWithdrawalDetailsForUri;
   request: GetWithdrawalDetailsForUriRequest;
   response: WithdrawUriInfoResponse;
 };
@@ -211,6 +217,7 @@ export type GetWithdrawalDetailsForUriOp = {
  * Accept a bank-integrated withdrawal.
  */
 export type AcceptBankIntegratedWithdrawalOp = {
+  op: WalletApiOperation.AcceptBankIntegratedWithdrawal;
   request: AcceptBankIntegratedWithdrawalRequest;
   response: AcceptWithdrawalResponse;
 };
@@ -219,6 +226,7 @@ export type AcceptBankIntegratedWithdrawalOp = {
  * Create a manual withdrawal.
  */
 export type AcceptManualWithdrawalOp = {
+  op: WalletApiOperation.AcceptManualWithdrawal;
   request: AcceptManualWithdrawalRequest;
   response: AcceptManualWithdrawalResult;
 };
@@ -248,6 +256,7 @@ export type ConfirmPayOp = {
  * Abort a pending payment with a refund.
  */
 export type AbortPayWithRefundOp = {
+  op: WalletApiOperation.AbortFailedPayWithRefund;
   request: AbortPayWithRefundRequest;
   response: {};
 };
@@ -256,6 +265,7 @@ export type AbortPayWithRefundOp = {
  * Check for a refund based on a taler://refund URI.
  */
 export type ApplyRefundOp = {
+  op: WalletApiOperation.ApplyRefund;
   request: ApplyRefundRequest;
   response: ApplyRefundResponse;
 };
@@ -266,6 +276,7 @@ export type ApplyRefundOp = {
  * Query and store information about a tip.
  */
 export type PrepareTipOp = {
+  op: WalletApiOperation.PrepareTip;
   request: PrepareTipRequest;
   response: PrepareTipResult;
 };
@@ -274,6 +285,7 @@ export type PrepareTipOp = {
  * Accept a tip.
  */
 export type AcceptTipOp = {
+  op: WalletApiOperation.AcceptTip;
   request: AcceptTipRequest;
   response: {};
 };
@@ -284,6 +296,7 @@ export type AcceptTipOp = {
  * List exchanges known to the wallet.
  */
 export type ListExchangesOp = {
+  op: WalletApiOperation.ListExchanges;
   request: {};
   response: ExchangesListResponse;
 };
@@ -292,6 +305,7 @@ export type ListExchangesOp = {
  * Add / force-update an exchange.
  */
 export type AddExchangeOp = {
+  op: WalletApiOperation.AddExchange;
   request: AddExchangeRequest;
   response: {};
 };
@@ -300,6 +314,7 @@ export type AddExchangeOp = {
  * Accept a particular version of the exchange terms of service.
  */
 export type SetExchangeTosAcceptedOp = {
+  op: WalletApiOperation.SetExchangeTosAccepted;
   request: AcceptExchangeTosRequest;
   response: {};
 };
@@ -308,6 +323,7 @@ export type SetExchangeTosAcceptedOp = {
  * Get the current terms of a service of an exchange.
  */
 export type GetExchangeTosOp = {
+  op: WalletApiOperation.GetExchangeTos;
   request: GetExchangeTosRequest;
   response: GetExchangeTosResult;
 };
@@ -316,6 +332,7 @@ export type GetExchangeTosOp = {
  * List currencies known to the wallet.
  */
 export type ListCurrenciesOp = {
+  op: WalletApiOperation.ListCurrencies;
   request: {};
   response: WalletCurrencyInfo;
 };
@@ -324,11 +341,12 @@ export type ListCurrenciesOp = {
 
 /**
  * Create a new deposit group.
- * 
+ *
  * Deposit groups are used to deposit multiple coins to a bank
  * account, usually the wallet user's own bank account.
  */
 export type CreateDepositGroupOp = {
+  op: WalletApiOperation.CreateDepositGroup;
   request: CreateDepositGroupRequest;
   response: CreateDepositGroupResponse;
 };
@@ -337,6 +355,7 @@ export type CreateDepositGroupOp = {
  * Track the status of a deposit group by querying the exchange.
  */
 export type TrackDepositGroupOp = {
+  op: WalletApiOperation.TrackDepositGroup;
   request: TrackDepositGroupRequest;
   response: TrackDepositGroupResponse;
 };
@@ -347,6 +366,7 @@ export type TrackDepositGroupOp = {
  * Export the recovery information for the wallet.
  */
 export type ExportBackupRecoveryOp = {
+  op: WalletApiOperation.ExportBackupRecovery;
   request: {};
   response: BackupRecovery;
 };
@@ -355,6 +375,7 @@ export type ExportBackupRecoveryOp = {
  * Import recovery information into the wallet.
  */
 export type ImportBackupRecoveryOp = {
+  op: WalletApiOperation.ImportBackupRecovery;
   request: RecoveryLoadRequest;
   response: {};
 };
@@ -363,6 +384,7 @@ export type ImportBackupRecoveryOp = {
  * Manually make and upload a backup.
  */
 export type RunBackupCycleOp = {
+  op: WalletApiOperation.RunBackupCycle;
   request: {};
   response: {};
 };
@@ -371,6 +393,7 @@ export type RunBackupCycleOp = {
  * Add a new backup provider.
  */
 export type AddBackupProviderOp = {
+  op: WalletApiOperation.AddBackupProvider;
   request: AddBackupProviderRequest;
   response: {};
 };
@@ -379,6 +402,7 @@ export type AddBackupProviderOp = {
  * Get some useful stats about the backup state.
  */
 export type GetBackupInfoOp = {
+  op: WalletApiOperation.GetBackupInfo;
   request: {};
   response: BackupInfo;
 };
@@ -389,6 +413,7 @@ export type GetBackupInfoOp = {
  * the backup of another wallet.
  */
 export type SetWalletDeviceIdOp = {
+  op: WalletApiOperation.SetWalletDeviceId;
   request: SetWalletDeviceIdRequest;
   response: {};
 };
@@ -397,6 +422,7 @@ export type SetWalletDeviceIdOp = {
  * Export a backup JSON, mostly useful for testing.
  */
 export type ExportBackupPlainOp = {
+  op: WalletApiOperation.ExportBackupPlain;
   request: {};
   response: WalletBackupContentV1;
 };
@@ -407,6 +433,7 @@ export type ExportBackupPlainOp = {
  * Initiate an outgoing peer push payment.
  */
 export type InitiatePeerPushPaymentOp = {
+  op: WalletApiOperation.InitiatePeerPushPayment;
   request: InitiatePeerPushPaymentRequest;
   response: InitiatePeerPushPaymentResponse;
 };
@@ -415,6 +442,7 @@ export type InitiatePeerPushPaymentOp = {
  * Check an incoming peer push payment.
  */
 export type CheckPeerPushPaymentOp = {
+  op: WalletApiOperation.CheckPeerPushPayment;
   request: CheckPeerPushPaymentRequest;
   response: CheckPeerPushPaymentResponse;
 };
@@ -423,6 +451,7 @@ export type CheckPeerPushPaymentOp = {
  * Accept an incoming peer push payment.
  */
 export type AcceptPeerPushPaymentOp = {
+  op: WalletApiOperation.AcceptPeerPushPayment;
   request: AcceptPeerPushPaymentRequest;
   response: {};
 };
@@ -431,6 +460,7 @@ export type AcceptPeerPushPaymentOp = {
  * Initiate an outgoing peer pull payment.
  */
 export type InitiatePeerPullPaymentOp = {
+  op: WalletApiOperation.InitiatePeerPullPayment;
   request: InitiatePeerPullPaymentRequest;
   response: InitiatePeerPullPaymentResponse;
 };
@@ -439,6 +469,7 @@ export type InitiatePeerPullPaymentOp = {
  * Prepare for an incoming peer pull payment.
  */
 export type CheckPeerPullPaymentOp = {
+  op: WalletApiOperation.CheckPeerPullPayment;
   request: CheckPeerPullPaymentRequest;
   response: CheckPeerPullPaymentResponse;
 };
@@ -447,6 +478,7 @@ export type CheckPeerPullPaymentOp = {
  * Accept an incoming peer pull payment.
  */
 export type AcceptPeerPullPaymentOp = {
+  op: WalletApiOperation.AcceptPeerPullPayment;
   request: AcceptPeerPullPaymentRequest;
   response: {};
 };
@@ -457,6 +489,7 @@ export type AcceptPeerPullPaymentOp = {
  * Exoport the wallet database's contents to JSON.
  */
 export type ExportDbOp = {
+  op: WalletApiOperation.ExportDb;
   request: {};
   response: any;
 };
@@ -465,6 +498,7 @@ export type ExportDbOp = {
  * Dangerously clear the whole wallet database.
  */
 export type ClearDbOp = {
+  op: WalletApiOperation.ClearDb;
   request: {};
   response: {};
 };
@@ -473,6 +507,7 @@ export type ClearDbOp = {
  * Export a backup, clear the database and re-import it.
  */
 export type RecycleOp = {
+  op: WalletApiOperation.Recycle;
   request: {};
   response: {};
 };
@@ -484,6 +519,7 @@ export type RecycleOp = {
  * of the exchange and merchant.
  */
 export type RunIntegrationTestOp = {
+  op: WalletApiOperation.RunIntegrationTest;
   request: IntegrationTestArgs;
   response: {};
 };
@@ -493,6 +529,7 @@ export type RunIntegrationTestOp = {
  * and merchant.
  */
 export type WithdrawTestBalanceOp = {
+  op: WalletApiOperation.WithdrawTestBalance;
   request: WithdrawTestBalanceRequest;
   response: {};
 };
@@ -511,6 +548,7 @@ export type WithdrawTestkudosOp = {
  * the exchange and merchant.
  */
 export type TestPayOp = {
+  op: WalletApiOperation.TestPay;
   request: TestPayArgs;
   response: TestPayResult;
 };
@@ -530,6 +568,7 @@ export type WithdrawFakebankOp = {
  * Get wallet-internal pending tasks.
  */
 export type GetPendingTasksOp = {
+  op: WalletApiOperation.GetPendingOperations;
   request: {};
   response: PendingTasksResponse;
 };
@@ -538,6 +577,7 @@ export type GetPendingTasksOp = {
  * Dump all coins of the wallet in a simple JSON format.
  */
 export type DumpCoinsOp = {
+  op: WalletApiOperation.DumpCoins;
   request: {};
   response: CoinDumpJson;
 };
@@ -547,6 +587,7 @@ export type DumpCoinsOp = {
  * Suspended coins won't be used for payments.
  */
 export type SetCoinSuspendedOp = {
+  op: WalletApiOperation.SetCoinSuspended;
   request: SetCoinSuspendedRequest;
   response: {};
 };
@@ -556,6 +597,7 @@ export type SetCoinSuspendedOp = {
  * be necessary.
  */
 export type ForceRefreshOp = {
+  op: WalletApiOperation.ForceRefresh;
   request: ForceRefreshRequest;
   response: {};
 };
