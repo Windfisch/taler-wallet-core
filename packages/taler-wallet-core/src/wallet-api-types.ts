@@ -16,6 +16,8 @@
 
 /**
  * Type declarations for the high-level interface to wallet-core.
+ *
+ * Documentation is auto-generated from this file.
  */
 
 /**
@@ -82,7 +84,7 @@ import {
   AddBackupProviderRequest,
   BackupInfo,
 } from "./operations/backup/index.js";
-import { PendingOperationsResponse } from "./pending-types.js";
+import { PendingOperationsResponse as PendingTasksResponse } from "./pending-types.js";
 
 export enum WalletApiOperation {
   InitWallet = "initWallet",
@@ -138,10 +140,12 @@ export enum WalletApiOperation {
   Recycle = "recycle",
 }
 
+// group: Initialization
+
 /**
  * Initialize wallet-core.
  *
- * Must be the first message sent before any other operations.
+ * Must be the request before any other operations.
  */
 export type InitWalletOp = {
   op: WalletApiOperation.InitWallet;
@@ -149,237 +153,410 @@ export type InitWalletOp = {
   response: {};
 };
 
-export type WithdrawFakebankOp = {
-  op: WalletApiOperation.WithdrawFakebank;
-  request: WithdrawFakebankRequest;
+// group: Basic Wallet Information
+
+/**
+ * Get current wallet balance.
+ */
+export type GetBalancesOp = {
+  request: {};
+  response: BalancesResponse;
+};
+
+// group: Managing Transactions
+
+/**
+ * Get transactions.
+ */
+export type GetTransactionsOp = {
+  request: TransactionsRequest;
+  response: TransactionsResponse;
+};
+
+/**
+ * Delete a transaction locally in the wallet.
+ */
+export type DeleteTransactionOp = {
+  request: DeleteTransactionRequest;
   response: {};
 };
 
+/**
+ * Immediately retry a transaction.
+ */
+export type RetryTransactionOp = {
+  request: RetryTransactionRequest;
+  response: {};
+};
+
+// group: Withdrawals
+
+/**
+ * Get details for withdrawing a particular amount (manual withdrawal).
+ */
+export type GetWithdrawalDetailsForAmountOp = {
+  request: GetWithdrawalDetailsForAmountRequest;
+  response: ManualWithdrawalDetails;
+};
+
+/**
+ * Get details for withdrawing via a particular taler:// URI.
+ */
+export type GetWithdrawalDetailsForUriOp = {
+  request: GetWithdrawalDetailsForUriRequest;
+  response: WithdrawUriInfoResponse;
+};
+
+/**
+ * Accept a bank-integrated withdrawal.
+ */
+export type AcceptBankIntegratedWithdrawalOp = {
+  request: AcceptBankIntegratedWithdrawalRequest;
+  response: AcceptWithdrawalResponse;
+};
+
+/**
+ * Create a manual withdrawal.
+ */
+export type AcceptManualWithdrawalOp = {
+  request: AcceptManualWithdrawalRequest;
+  response: AcceptManualWithdrawalResult;
+};
+
+// group: Merchant Payments
+
+/**
+ * Prepare to make a payment
+ */
 export type PreparePayForUriOp = {
   op: WalletApiOperation.PreparePayForUri;
   request: PreparePayRequest;
   response: PreparePayResult;
 };
 
-export type WithdrawTestkudosOp = {
-  op: WalletApiOperation.WithdrawTestkudos;
-  request: {};
-  response: {};
-};
-
+/**
+ * Confirm a payment that was previously prepared with
+ * {@link PreparePayForUriOp}
+ */
 export type ConfirmPayOp = {
   op: WalletApiOperation.ConfirmPay;
   request: ConfirmPayRequest;
   response: ConfirmPayResult;
 };
 
+/**
+ * Abort a pending payment with a refund.
+ */
 export type AbortPayWithRefundOp = {
   request: AbortPayWithRefundRequest;
   response: {};
 };
 
-export type GetBalancesOp = {
-  request: {};
-  response: BalancesResponse;
-};
-
-export type GetTransactionsOp = {
-  request: TransactionsRequest;
-  response: TransactionsResponse;
-};
-
-export type GetPendingOperationsOp = {
-  request: {};
-  response: PendingOperationsResponse;
-};
-
-export type DumpCoinsOp = {
-  request: {};
-  response: CoinDumpJson;
-};
-
-export type SetCoinSuspendedOp = {
-  request: SetCoinSuspendedRequest;
-  response: {};
-};
-
-export type ForceRefreshOp = {
-  request: ForceRefreshRequest;
-  response: {};
-};
-
-export type DeleteTransactionOp = {
-  request: DeleteTransactionRequest;
-  response: {};
-};
-
-export type RetryTransactionOp = {
-  request: RetryTransactionRequest;
-  response: {};
-};
-
-export type PrepareTipOp = {
-  request: PrepareTipRequest;
-  response: PrepareTipResult;
-};
-
-export type AcceptTipOp = {
-  request: AcceptTipRequest;
-  response: {};
-};
-
+/**
+ * Check for a refund based on a taler://refund URI.
+ */
 export type ApplyRefundOp = {
   request: ApplyRefundRequest;
   response: ApplyRefundResponse;
 };
 
-export type ListCurrenciesOp = {
-  request: {};
-  response: WalletCurrencyInfo;
+// group: Tipping
+
+/**
+ * Query and store information about a tip.
+ */
+export type PrepareTipOp = {
+  request: PrepareTipRequest;
+  response: PrepareTipResult;
 };
 
-export type GetWithdrawalDetailsForAmountOp = {
-  request: GetWithdrawalDetailsForAmountRequest;
-  response: ManualWithdrawalDetails;
+/**
+ * Accept a tip.
+ */
+export type AcceptTipOp = {
+  request: AcceptTipRequest;
+  response: {};
 };
 
-export type GetWithdrawalDetailsForUriOp = {
-  request: GetWithdrawalDetailsForUriRequest;
-  response: WithdrawUriInfoResponse;
-};
+// group: Exchange Management
 
-export type AcceptBankIntegratedWithdrawalOp = {
-  request: AcceptBankIntegratedWithdrawalRequest;
-  response: AcceptWithdrawalResponse;
-};
-
-export type AcceptManualWithdrawalOp = {
-  request: AcceptManualWithdrawalRequest;
-  response: AcceptManualWithdrawalResult;
-};
-
+/**
+ * List exchanges known to the wallet.
+ */
 export type ListExchangesOp = {
   request: {};
   response: ExchangesListResponse;
 };
 
+/**
+ * Add / force-update an exchange.
+ */
 export type AddExchangeOp = {
   request: AddExchangeRequest;
   response: {};
 };
 
+/**
+ * Accept a particular version of the exchange terms of service.
+ */
 export type SetExchangeTosAcceptedOp = {
   request: AcceptExchangeTosRequest;
   response: {};
 };
 
+/**
+ * Get the current terms of a service of an exchange.
+ */
 export type GetExchangeTosOp = {
   request: GetExchangeTosRequest;
   response: GetExchangeTosResult;
 };
 
-export type TrackDepositGroupOp = {
-  request: TrackDepositGroupRequest;
-  response: TrackDepositGroupResponse;
+/**
+ * List currencies known to the wallet.
+ */
+export type ListCurrenciesOp = {
+  request: {};
+  response: WalletCurrencyInfo;
 };
 
+// group: Deposits
+
+/**
+ * Create a new deposit group.
+ * 
+ * Deposit groups are used to deposit multiple coins to a bank
+ * account, usually the wallet user's own bank account.
+ */
 export type CreateDepositGroupOp = {
   request: CreateDepositGroupRequest;
   response: CreateDepositGroupResponse;
 };
 
-export type SetWalletDeviceIdOp = {
-  request: SetWalletDeviceIdRequest;
-  response: {};
+/**
+ * Track the status of a deposit group by querying the exchange.
+ */
+export type TrackDepositGroupOp = {
+  request: TrackDepositGroupRequest;
+  response: TrackDepositGroupResponse;
 };
 
-export type ExportBackupPlainOp = {
-  request: {};
-  response: WalletBackupContentV1;
-};
+// group: Backups
 
+/**
+ * Export the recovery information for the wallet.
+ */
 export type ExportBackupRecoveryOp = {
   request: {};
   response: BackupRecovery;
 };
 
+/**
+ * Import recovery information into the wallet.
+ */
 export type ImportBackupRecoveryOp = {
   request: RecoveryLoadRequest;
   response: {};
 };
 
+/**
+ * Manually make and upload a backup.
+ */
 export type RunBackupCycleOp = {
   request: {};
   response: {};
 };
 
+/**
+ * Add a new backup provider.
+ */
 export type AddBackupProviderOp = {
   request: AddBackupProviderRequest;
   response: {};
 };
 
+/**
+ * Get some useful stats about the backup state.
+ */
 export type GetBackupInfoOp = {
   request: {};
   response: BackupInfo;
 };
 
-export type RunIntegrationTestOp = {
-  request: IntegrationTestArgs;
+/**
+ * Set the internal device ID of the wallet, used to
+ * identify whether a different/new wallet is accessing
+ * the backup of another wallet.
+ */
+export type SetWalletDeviceIdOp = {
+  request: SetWalletDeviceIdRequest;
   response: {};
 };
 
-export type WithdrawTestBalanceOp = {
-  request: WithdrawTestBalanceRequest;
-  response: {};
-};
-
-export type TestPayOp = {
-  request: TestPayArgs;
-  response: TestPayResult;
-};
-
-export type ExportDbOp = {
+/**
+ * Export a backup JSON, mostly useful for testing.
+ */
+export type ExportBackupPlainOp = {
   request: {};
-  response: any;
+  response: WalletBackupContentV1;
 };
 
+// group: Peer Payments
+
+/**
+ * Initiate an outgoing peer push payment.
+ */
 export type InitiatePeerPushPaymentOp = {
   request: InitiatePeerPushPaymentRequest;
   response: InitiatePeerPushPaymentResponse;
 };
 
+/**
+ * Check an incoming peer push payment.
+ */
 export type CheckPeerPushPaymentOp = {
   request: CheckPeerPushPaymentRequest;
   response: CheckPeerPushPaymentResponse;
 };
 
+/**
+ * Accept an incoming peer push payment.
+ */
 export type AcceptPeerPushPaymentOp = {
   request: AcceptPeerPushPaymentRequest;
   response: {};
 };
 
+/**
+ * Initiate an outgoing peer pull payment.
+ */
 export type InitiatePeerPullPaymentOp = {
   request: InitiatePeerPullPaymentRequest;
   response: InitiatePeerPullPaymentResponse;
 };
 
+/**
+ * Prepare for an incoming peer pull payment.
+ */
 export type CheckPeerPullPaymentOp = {
   request: CheckPeerPullPaymentRequest;
   response: CheckPeerPullPaymentResponse;
 };
 
+/**
+ * Accept an incoming peer pull payment.
+ */
 export type AcceptPeerPullPaymentOp = {
   request: AcceptPeerPullPaymentRequest;
   response: {};
 };
 
+// group: Database Management
+
+/**
+ * Exoport the wallet database's contents to JSON.
+ */
+export type ExportDbOp = {
+  request: {};
+  response: any;
+};
+
+/**
+ * Dangerously clear the whole wallet database.
+ */
 export type ClearDbOp = {
   request: {};
   response: {};
 };
 
+/**
+ * Export a backup, clear the database and re-import it.
+ */
 export type RecycleOp = {
   request: {};
+  response: {};
+};
+
+// group: Testing and Debugging
+
+/**
+ * Run a simple integration test on a test deployment
+ * of the exchange and merchant.
+ */
+export type RunIntegrationTestOp = {
+  request: IntegrationTestArgs;
+  response: {};
+};
+
+/**
+ * Make withdrawal on a test deployment of the exchange
+ * and merchant.
+ */
+export type WithdrawTestBalanceOp = {
+  request: WithdrawTestBalanceRequest;
+  response: {};
+};
+
+/**
+ * Make a withdrawal of testkudos on test.taler.net.
+ */
+export type WithdrawTestkudosOp = {
+  op: WalletApiOperation.WithdrawTestkudos;
+  request: {};
+  response: {};
+};
+
+/**
+ * Make a test payment using a test deployment of
+ * the exchange and merchant.
+ */
+export type TestPayOp = {
+  request: TestPayArgs;
+  response: TestPayResult;
+};
+
+/**
+ * Make a withdrawal from a fakebank, i.e.
+ * a bank where test users can be registered freely
+ * and testing APIs are available.
+ */
+export type WithdrawFakebankOp = {
+  op: WalletApiOperation.WithdrawFakebank;
+  request: WithdrawFakebankRequest;
+  response: {};
+};
+
+/**
+ * Get wallet-internal pending tasks.
+ */
+export type GetPendingTasksOp = {
+  request: {};
+  response: PendingTasksResponse;
+};
+
+/**
+ * Dump all coins of the wallet in a simple JSON format.
+ */
+export type DumpCoinsOp = {
+  request: {};
+  response: CoinDumpJson;
+};
+
+/**
+ * Set a coin as (un-)suspended.
+ * Suspended coins won't be used for payments.
+ */
+export type SetCoinSuspendedOp = {
+  request: SetCoinSuspendedRequest;
+  response: {};
+};
+
+/**
+ * Force a refresh on coins where it would not
+ * be necessary.
+ */
+export type ForceRefreshOp = {
+  request: ForceRefreshRequest;
   response: {};
 };
 
@@ -392,7 +569,7 @@ export type WalletOperations = {
   [WalletApiOperation.AbortFailedPayWithRefund]: AbortPayWithRefundOp;
   [WalletApiOperation.GetBalances]: GetBalancesOp;
   [WalletApiOperation.GetTransactions]: GetTransactionsOp;
-  [WalletApiOperation.GetPendingOperations]: GetPendingOperationsOp;
+  [WalletApiOperation.GetPendingOperations]: GetPendingTasksOp;
   [WalletApiOperation.DumpCoins]: DumpCoinsOp;
   [WalletApiOperation.SetCoinSuspended]: SetCoinSuspendedOp;
   [WalletApiOperation.ForceRefresh]: ForceRefreshOp;
