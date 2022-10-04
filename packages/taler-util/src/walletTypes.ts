@@ -423,11 +423,17 @@ export const codecForPreparePayResult = (): Codec<PreparePayResult> =>
     )
     .build("PreparePayResult");
 
+/**
+ * Result of a prepare pay operation.
+ */
 export type PreparePayResult =
   | PreparePayResultInsufficientBalance
   | PreparePayResultAlreadyConfirmed
   | PreparePayResultPaymentPossible;
 
+/**
+ * Payment is possible.
+ */
 export interface PreparePayResultPaymentPossible {
   status: PreparePayResultType.PaymentPossible;
   proposalId: string;
@@ -604,7 +610,7 @@ export interface KnownBankAccountsInfo {
   uri: PaytoUri;
   kyc_completed: boolean;
   currency: string;
-  alias: string,
+  alias: string;
 }
 
 export interface KnownBankAccounts {
@@ -1092,9 +1098,9 @@ export interface AddKnownBankAccountsRequest {
 export const codecForAddKnownBankAccounts =
   (): Codec<AddKnownBankAccountsRequest> =>
     buildCodecForObject<AddKnownBankAccountsRequest>()
-      .property("payto", (codecForString()))
-      .property("alias", (codecForString()))
-      .property("currency", (codecForString()))
+      .property("payto", codecForString())
+      .property("alias", codecForString())
+      .property("currency", codecForString())
       .build("AddKnownBankAccountsRequest");
 
 export interface ForgetKnownBankAccountsRequest {
@@ -1104,7 +1110,7 @@ export interface ForgetKnownBankAccountsRequest {
 export const codecForForgetKnownBankAccounts =
   (): Codec<ForgetKnownBankAccountsRequest> =>
     buildCodecForObject<ForgetKnownBankAccountsRequest>()
-      .property("payto", (codecForString()))
+      .property("payto", codecForString())
       .build("ForgetKnownBankAccountsRequest");
 
 export interface GetExchangeWithdrawalInfo {
