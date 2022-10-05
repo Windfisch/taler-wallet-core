@@ -24,6 +24,9 @@ import { OpenedPromise, openPromise } from "../../util/promiseUtils.js";
 
 const logger = new Logger("synchronousWorkerFactory.ts");
 
+/**
+ * Client for the crypto helper process (taler-crypto-worker from exchange.git).
+ */
 export class CryptoRpcClient {
   proc: child_process.ChildProcessByStdio<
     internal.Writable,

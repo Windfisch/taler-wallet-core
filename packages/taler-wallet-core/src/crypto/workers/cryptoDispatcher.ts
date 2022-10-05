@@ -29,7 +29,7 @@ import { timer, performanceNow, TimerHandle } from "../../util/timer.js";
 import { nullCrypto, TalerCryptoInterface } from "../cryptoImplementation.js";
 import { CryptoWorker } from "./cryptoWorkerInterface.js";
 
-const logger = new Logger("cryptoApi.ts");
+const logger = new Logger("cryptoDispatcher.ts");
 
 /**
  * State of a crypto worker.
@@ -238,7 +238,7 @@ export class CryptoDispatcher {
   }
 
   handleWorkerMessage(ws: WorkerInfo, msg: any): void {
-    const id = msg.data.id;
+    const id = msg.id;
     if (typeof id !== "number") {
       logger.error("rpc id must be number");
       return;
@@ -256,12 +256,12 @@ export class CryptoDispatcher {
     if (currentWorkItem.state === WorkItemState.Running) {
       this.numBusy--;
       currentWorkItem.state = WorkItemState.Finished;
-      if (msg.data.type === "success") {
-        currentWorkItem.resolve(msg.data.result);
-      } else if (msg.data.type === "error") {
+      if (msg.type === "success") {
+        currentWorkItem.resolve(msg.result);
+      } else if (msg.type === "error") {
         currentWorkItem.reject(
           TalerError.fromDetail(TalerErrorCode.WALLET_CRYPTO_WORKER_ERROR, {
-            innerError: msg.data.error,
+            innerError: msg.error,
           }),
         );
       } else {

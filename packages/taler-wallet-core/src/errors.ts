@@ -76,6 +76,9 @@ export interface DetailsMap {
   [TalerErrorCode.WALLET_CRYPTO_WORKER_ERROR]: {
     innerError: TalerErrorDetail;
   };
+  [TalerErrorCode.WALLET_CRYPTO_WORKER_BAD_REQUEST]: {
+    detail: string;
+  };
 }
 
 type ErrBody<Y> = Y extends keyof DetailsMap ? DetailsMap[Y] : never;

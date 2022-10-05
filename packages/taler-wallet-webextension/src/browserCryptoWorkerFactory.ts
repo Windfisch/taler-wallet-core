@@ -28,6 +28,8 @@ export class BrowserCryptoWorkerFactory implements CryptoWorkerFactory {
   startWorker(): CryptoWorker {
     const workerCtor = Worker;
     const workerPath = "/dist/browserWorkerEntry.js";
+    // FIXME: This is not really the same interface as the crypto worker!
+    // We need to wrap it.
     return new workerCtor(workerPath) as CryptoWorker;
   }
 

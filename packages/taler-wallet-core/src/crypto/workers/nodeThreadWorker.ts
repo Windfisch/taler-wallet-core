@@ -17,12 +17,12 @@
 /**
  * Imports
  */
+import { Logger } from "@gnu-taler/taler-util";
+import os from "os";
+import { nativeCryptoR } from "../cryptoImplementation.js";
 import { CryptoWorkerFactory } from "./cryptoDispatcher.js";
 import { CryptoWorker } from "./cryptoWorkerInterface.js";
-import os from "os";
-import { Logger } from "@gnu-taler/taler-util";
-import { nativeCryptoR } from "../cryptoImplementation.js";
-import { getErrorDetailFromException } from "../../errors.js";
+import { processRequestWithImpl } from "./worker-common.js";
 
 const logger = new Logger("nodeThreadWorker.ts");
 
@@ -71,44 +71,7 @@ const workerCode = `
  */
 export function handleWorkerMessage(msg: any): void {
   const handleRequest = async (): Promise<void> => {
-    const req = msg.req;
-    if (typeof req !== "object") {
-      logger.error("request must be an object");
-      return;
-    }
-    const id = msg.id;
-    if (typeof id !== "number") {
-      logger.error("RPC id must be number");
-      return;
-    }
-    const operation = msg.operation;
-    if (typeof operation !== "string") {
-      logger.error("RPC operation must be string");
-      return;
-    }
-    const impl = nativeCryptoR;
-
-    if (!(operation in impl)) {
-      logger.error(`crypto operation '${operation}' not found`);
-      return;
-    }
-
-    let responseMsg: any;
-
-    try {
-      const result = await (impl as any)[operation](impl, req);
-      responseMsg = { data: { type: "success", result, id } };
-    } catch (e: any) {
-      logger.error(`error during operation: ${e.stack ?? e.toString()}`);
-      responseMsg = {
-        data: {
-          type: "error",
-          error: getErrorDetailFromException(e),
-          id,
-        },
-      };
-    }
-
+    const responseMsg = await processRequestWithImpl(msg, nativeCryptoR);
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const _r = "require";
@@ -122,16 +85,12 @@ export function handleWorkerMessage(msg: any): void {
         logger.error("parent port not available (not running in thread?");
       }
     } catch (e: any) {
-      logger.error(
-        `error sending back operation result: ${e.stack ?? e.toString()}`,
-      );
+      logger.error(`error in node worker: ${e.stack ?? e.toString()}`);
       return;
     }
   };
 
-  handleRequest().catch((e) => {
-    logger.error("error in node worker", e);
-  });
+  handleRequest();
 }
 
 export function handleWorkerError(e: Error): void {

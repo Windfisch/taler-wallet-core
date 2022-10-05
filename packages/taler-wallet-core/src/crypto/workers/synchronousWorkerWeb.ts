@@ -14,19 +14,26 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+/**
+ * Imports.
+ */
 import { Logger } from "@gnu-taler/taler-util";
-import { getErrorDetailFromException } from "../../errors.js";
 import {
   nativeCryptoR,
   TalerCryptoInterfaceR,
 } from "../cryptoImplementation.js";
+import { CryptoWorker } from "./cryptoWorkerInterface.js";
+import {
+  processRequestWithImpl,
+} from "./worker-common.js";
 
 const logger = new Logger("synchronousWorker.ts");
 
 /**
- * Worker implementation that uses node subprocesses.
+ * Worker implementation that synchronously executes cryptographic
+ * operations.
  */
-export class SynchronousCryptoWorker {
+export class SynchronousCryptoWorker implements CryptoWorker {
   /**
    * Function to be called when we receive a message from the worker thread.
    */
@@ -65,61 +72,22 @@ export class SynchronousCryptoWorker {
     }
   }
 
-  private async handleRequest(
-    operation: string,
-    id: number,
-    req: unknown,
-  ): Promise<void> {
-    const impl = this.cryptoImplR;
-
-    if (!(operation in impl)) {
-      logger.error(`crypto operation '${operation}' not found`);
-      return;
-    }
-
-    let responseMsg: any;
-    try {
-      const result = await (impl as any)[operation](impl, req);
-      responseMsg = { data: { type: "success", result, id } };
-    } catch (e: any) {
-      logger.error(`error during operation: ${e.stack ?? e.toString()}`);
-      responseMsg = {
-        data: {
-          type: "error",
-          id,
-          error: getErrorDetailFromException(e),
-        },
-      };
-    }
-
-    try {
-      setTimeout(() => this.dispatchMessage(responseMsg), 0);
-    } catch (e) {
-      logger.error("got error during dispatch", e);
-    }
-  }
-
   /**
    * Send a message to the worker thread.
    */
   postMessage(msg: any): void {
-    const req = msg.req;
-    if (typeof req !== "object") {
-      logger.error("request must be an object");
-      return;
-    }
-    const id = msg.id;
-    if (typeof id !== "number") {
-      logger.error("RPC id must be number");
-      return;
-    }
-    const operation = msg.operation;
-    if (typeof operation !== "string") {
-      logger.error("RPC operation must be string");
-      return;
-    }
-
-    this.handleRequest(operation, id, req).catch((e) => {
+    const handleRequest = async () => {
+      const responseMsg = await processRequestWithImpl(
+        msg,
+        this.cryptoImplR,
+      );
+      try {
+        setTimeout(() => this.dispatchMessage(responseMsg), 0);
+      } catch (e) {
+        logger.error("got error during dispatch", e);
+      }
+    };
+    handleRequest().catch((e) => {
       logger.error("Error while handling crypto request:", e);
     });
   }

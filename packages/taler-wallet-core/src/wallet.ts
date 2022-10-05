@@ -1445,6 +1445,9 @@ async function dispatchRequestInternal(
       logger.info(`started fakebank withdrawal: ${j2s(fbResp)}`);
       return {};
     }
+    case "testCrypto": {
+      return await ws.cryptoApi.hashString({ str: "hello world" });
+    }
     case "clearDb":
       await clearDatabase(ws.db.idbHandle());
       return {};

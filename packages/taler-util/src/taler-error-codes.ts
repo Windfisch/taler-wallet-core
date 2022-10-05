@@ -153,6 +153,14 @@ export enum TalerErrorCode {
 
 
   /**
+   * The reserve public key given as part of a /reserves/ endpoint was malformed.
+   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  GENERIC_RESERVE_PUB_MALFORMED = 27,
+
+
+  /**
    * The currencies involved in the operation do not match.
    * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
    * (A value of 0 indicates that the error is generated client-side).
@@ -454,14 +462,6 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   EXCHANGE_GENERIC_NEW_DENOMS_ARRAY_SIZE_EXCESSIVE = 1018,
-
-
-  /**
-   * The reserve public key was malformed.
-   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
-   * (A value of 0 indicates that the error is generated client-side).
-   */
-  EXCHANGE_GENERIC_RESERVE_PUB_MALFORMED = 1019,
 
 
   /**
@@ -1289,6 +1289,38 @@ export enum TalerErrorCode {
 
 
   /**
+   * The signature by the reserve affirming the open operation is invalid.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_RESERVES_OPEN_BAD_SIGNATURE = 1785,
+
+
+  /**
+   * The signature by the reserve affirming the close operation is invalid.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_RESERVES_CLOSE_BAD_SIGNATURE = 1786,
+
+
+  /**
+   * The signature by the reserve affirming the attestion request is invalid.
+   * Returned with an HTTP status code of #MHD_HTTP_FORBIDDEN (403).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_RESERVES_ATTEST_BAD_SIGNATURE = 1787,
+
+
+  /**
+   * The exchange does not know an origin account to which the remaining reserve balance could be wired to, and the wallet failed to provide one.
+   * Returned with an HTTP status code of #MHD_HTTP_CONFLICT (409).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  EXCHANGE_RESERVES_CLOSE_NO_TARGET_ACCOUNT = 1788,
+
+
+  /**
    * The auditor that was supposed to be disabled is unknown to this exchange.
    * Returned with an HTTP status code of #MHD_HTTP_NOT_FOUND (404).
    * (A value of 0 indicates that the error is generated client-side).
@@ -1766,14 +1798,6 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   MERCHANT_GENERIC_HOLE_IN_WIRE_FEE_STRUCTURE = 2001,
-
-
-  /**
-   * The reserve key of given to a /reserves/ handler was malformed.
-   * Returned with an HTTP status code of #MHD_HTTP_BAD_REQUEST (400).
-   * (A value of 0 indicates that the error is generated client-side).
-   */
-  MERCHANT_GENERIC_RESERVE_PUB_MALFORMED = 2002,
 
 
   /**
@@ -3062,6 +3086,14 @@ export enum TalerErrorCode {
    * (A value of 0 indicates that the error is generated client-side).
    */
   WALLET_CRYPTO_WORKER_ERROR = 7023,
+
+
+  /**
+   * The crypto worker received a bad request.
+   * Returned with an HTTP status code of #MHD_HTTP_UNINITIALIZED (0).
+   * (A value of 0 indicates that the error is generated client-side).
+   */
+  WALLET_CRYPTO_WORKER_BAD_REQUEST = 7024,
 
 
   /**
