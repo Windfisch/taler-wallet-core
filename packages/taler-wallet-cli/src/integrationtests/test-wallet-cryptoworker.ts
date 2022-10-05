@@ -43,13 +43,13 @@ export async function runWalletCryptoWorkerTest(t: GlobalTestState) {
     cryptoWorkerType: "sync",
   });
 
-  await wallet1.client.call(WalletApiOperation.CryptoTest, {});
+  await wallet1.client.call(WalletApiOperation.TestCrypto, {});
 
   const wallet2 = new WalletCli(t, "w2", {
     cryptoWorkerType: "node-worker-thread",
   });
 
-  await wallet2.client.call(WalletApiOperation.CryptoTest, {});
+  await wallet2.client.call(WalletApiOperation.TestCrypto, {});
 }
 
 runWalletCryptoWorkerTest.suites = ["wallet"];

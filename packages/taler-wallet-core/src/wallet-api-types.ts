@@ -92,7 +92,7 @@ export enum WalletApiOperation {
   WithdrawTestBalance = "withdrawTestBalance",
   PreparePayForUri = "preparePayForUri",
   RunIntegrationTest = "runIntegrationTest",
-  CryptoTest = "cryptoTest",
+  TestCrypto = "testCrypto",
   TestPay = "testPay",
   AddExchange = "addExchange",
   GetTransactions = "getTransactions",
@@ -528,8 +528,8 @@ export type RunIntegrationTestOp = {
 /**
  * Test crypto worker.
  */
-export type CryptoTestOp = {
-  op: WalletApiOperation.CryptoTest;
+export type TestCryptoOp = {
+  op: WalletApiOperation.TestCrypto;
   request: {};
   response: any;
 };
@@ -649,7 +649,7 @@ export type WalletOperations = {
   [WalletApiOperation.AddBackupProvider]: AddBackupProviderOp;
   [WalletApiOperation.GetBackupInfo]: GetBackupInfoOp;
   [WalletApiOperation.RunIntegrationTest]: RunIntegrationTestOp;
-  [WalletApiOperation.CryptoTest]: CryptoTestOp;
+  [WalletApiOperation.TestCrypto]: TestCryptoOp;
   [WalletApiOperation.WithdrawTestBalance]: WithdrawTestBalanceOp;
   [WalletApiOperation.TestPay]: TestPayOp;
   [WalletApiOperation.ExportDb]: ExportDbOp;

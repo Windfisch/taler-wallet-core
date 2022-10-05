@@ -182,7 +182,7 @@ export const walletCli = clk
     },
   })
   .maybeOption("cryptoWorker", ["--crypto-worker"], clk.STRING, {
-    help: "Override crypto worker implementation type."
+    help: "Override crypto worker implementation type.",
   })
   .maybeOption("log", ["-L", "--log"], clk.STRING, {
     help: "configure log level (NONE, ..., TRACE)",
@@ -728,6 +728,14 @@ depositCli
 const advancedCli = walletCli.subcommand("advancedArgs", "advanced", {
   help: "Subcommands for advanced operations (only use if you know what you're doing!).",
 });
+
+advancedCli
+  .subcommand("init", "init", {
+    help: "Initialize the wallet (with DB) and exit."
+  })
+  .action(async (args) => {
+    await withWallet(args, async () => {});
+  });
 
 advancedCli
   .subcommand("bench1", "bench1", {

@@ -37,6 +37,7 @@ export async function processRequestWithImpl(
   reqMsg: CryptoWorkerRequestMessage,
   impl: TalerCryptoInterfaceR,
 ): Promise<CryptoWorkerResponseMessage> {
+  logger.info(`processing crypto request ${j2s(reqMsg)}`);
   if (typeof reqMsg !== "object") {
     logger.error("request must be an object");
     return {
@@ -85,7 +86,7 @@ export async function processRequestWithImpl(
   let responseMsg: CryptoWorkerResponseMessage;
 
   try {
-    const result = await (impl as any)[operation](impl, reqMsg);
+    const result = await (impl as any)[operation](impl, reqMsg.req);
     responseMsg = { type: "success", result, id };
   } catch (e: any) {
     logger.error(`error during operation: ${e.stack ?? e.toString()}`);
