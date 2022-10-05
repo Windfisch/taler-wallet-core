@@ -510,7 +510,7 @@ export interface ExchangeRecord {
   permanent: boolean;
 
   /**
-   * Last time when the exchange was updated.
+   * Last time when the exchange was updated (both /keys and /wire).
    */
   lastUpdate: TalerProtocolTimestamp | undefined;
 
@@ -520,6 +520,10 @@ export interface ExchangeRecord {
    * (This field must always be present, so we can index on the timestamp.)
    */
   nextUpdate: TalerProtocolTimestamp;
+
+  lastKeysEtag: string | undefined;
+
+  lastWireEtag: string | undefined;
 
   /**
    * Next time that we should check if coins need to be refreshed.

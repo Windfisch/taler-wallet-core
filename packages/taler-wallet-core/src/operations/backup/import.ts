@@ -362,6 +362,8 @@ export async function importBackup(
           lastUpdate: undefined,
           nextUpdate: TalerProtocolTimestamp.now(),
           nextRefreshCheck: TalerProtocolTimestamp.now(),
+          lastKeysEtag: undefined,
+          lastWireEtag: undefined,
         });
       }
 

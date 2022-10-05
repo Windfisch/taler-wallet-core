@@ -1071,7 +1071,7 @@ export async function processWithdrawalGroup(
     case WithdrawalGroupStatus.QueryingStatus: {
       const doQueryAsync = async () => {
         if (ws.stopped) {
-          logger.info("not long-polling reserve, wallet already stopped");
+          logger.trace("not long-polling reserve, wallet already stopped");
           await storeOperationPending(ws, retryTag);
           return;
         }
@@ -1080,7 +1080,7 @@ export async function processWithdrawalGroup(
         try {
           ws.activeLongpoll[retryTag] = {
             cancel: () => {
-              logger.info("cancel of reserve longpoll requested");
+              logger.trace("cancel of reserve longpoll requested");
               cts.cancel();
             },
           };
@@ -1094,16 +1094,13 @@ export async function processWithdrawalGroup(
           return;
         }
         delete ws.activeLongpoll[retryTag];
-        logger.info(
-          `active longpoll keys (2) ${Object.keys(ws.activeLongpoll)}`,
-        );
         if (!res.ready) {
           await storeOperationPending(ws, retryTag);
         }
         ws.latch.trigger();
       };
       doQueryAsync();
-      logger.info(
+      logger.trace(
         "returning early from withdrawal for long-polling in background",
       );
       return {
@@ -1918,12 +1915,12 @@ export async function acceptWithdrawalFromUri(
     );
   }
 
-  // Start withdrawal in the background.
-  await processWithdrawalGroup(ws, withdrawalGroupId, { forceNow: true }).catch(
-    (err) => {
-      logger.error("Processing withdrawal (after creation) failed:", err);
-    },
-  );
+  // Start withdrawal in the background
+  processWithdrawalGroup(ws, withdrawalGroupId, {
+    forceNow: true,
+  }).catch((err) => {
+    logger.error("Processing withdrawal (after creation) failed:", err);
+  });
 
   return {
     reservePub: withdrawalGroup.reservePub,

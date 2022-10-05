@@ -63,7 +63,11 @@ import {
   readSuccessResponseJsonOrThrow,
   readSuccessResponseTextOrThrow,
 } from "../util/http.js";
-import { DbAccess, GetReadOnlyAccess } from "../util/query.js";
+import {
+  DbAccess,
+  GetReadOnlyAccess,
+  GetReadWriteAccess,
+} from "../util/query.js";
 import {
   OperationAttemptResult,
   OperationAttemptResultType,
@@ -316,33 +320,35 @@ async function downloadExchangeWireInfo(
   return wireInfo;
 }
 
-async function provideExchangeRecord(
+export async function provideExchangeRecordInTx(
   ws: InternalWalletState,
+  tx: GetReadWriteAccess<{
+    exchanges: typeof WalletStoresV1.exchanges;
+    exchangeDetails: typeof WalletStoresV1.exchangeDetails;
+  }>,
   baseUrl: string,
   now: AbsoluteTime,
 ): Promise<{
   exchange: ExchangeRecord;
   exchangeDetails: ExchangeDetailsRecord | undefined;
 }> {
-  return await ws.db
-    .mktx((x) => [x.exchanges, x.exchangeDetails])
-    .runReadWrite(async (tx) => {
-      let exchange = await tx.exchanges.get(baseUrl);
-      if (!exchange) {
-        const r: ExchangeRecord = {
-          permanent: true,
-          baseUrl: baseUrl,
-          detailsPointer: undefined,
-          lastUpdate: undefined,
-          nextUpdate: AbsoluteTime.toTimestamp(now),
-          nextRefreshCheck: AbsoluteTime.toTimestamp(now),
-        };
-        await tx.exchanges.put(r);
-        exchange = r;
-      }
-      const exchangeDetails = await getExchangeDetails(tx, baseUrl);
-      return { exchange, exchangeDetails };
-    });
+  let exchange = await tx.exchanges.get(baseUrl);
+  if (!exchange) {
+    const r: ExchangeRecord = {
+      permanent: true,
+      baseUrl: baseUrl,
+      detailsPointer: undefined,
+      lastUpdate: undefined,
+      nextUpdate: AbsoluteTime.toTimestamp(now),
+      nextRefreshCheck: AbsoluteTime.toTimestamp(now),
+      lastKeysEtag: undefined,
+      lastWireEtag: undefined,
+    };
+    await tx.exchanges.put(r);
+    exchange = r;
+  }
+  const exchangeDetails = await getExchangeDetails(tx, baseUrl);
+  return { exchange, exchangeDetails };
 }
 
 interface ExchangeKeysDownloadResult {
@@ -499,15 +505,16 @@ export async function updateExchangeFromUrlHandler(
 > {
   const forceNow = options.forceNow ?? false;
   logger.info(`updating exchange info for ${baseUrl}, forced: ${forceNow}`);
+  console.trace("here");
 
   const now = AbsoluteTime.now();
   baseUrl = canonicalizeBaseUrl(baseUrl);
 
-  const { exchange, exchangeDetails } = await provideExchangeRecord(
-    ws,
-    baseUrl,
-    now,
-  );
+  const { exchange, exchangeDetails } = await ws.db
+    .mktx((x) => [x.exchanges, x.exchangeDetails])
+    .runReadWrite(async (tx) => {
+      return provideExchangeRecordInTx(ws, tx, baseUrl, now);
+    });
 
   if (
     !forceNow &&

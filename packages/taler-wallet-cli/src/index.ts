@@ -255,9 +255,9 @@ async function withWallet<T>(
     console.error("Error details:", JSON.stringify(ed, undefined, 2));
     process.exit(1);
   } finally {
-    logger.info("operation with wallet finished, stopping");
+    logger.trace("operation with wallet finished, stopping");
     wallet.stop();
-    logger.info("stopped wallet");
+    logger.trace("stopped wallet");
   }
 }
 
@@ -495,6 +495,7 @@ walletCli
                 talerWithdrawUri: uri,
               },
             );
+            console.log("accept withdrawal response", res);
           }
           break;
         default:
@@ -731,7 +732,7 @@ const advancedCli = walletCli.subcommand("advancedArgs", "advanced", {
 
 advancedCli
   .subcommand("init", "init", {
-    help: "Initialize the wallet (with DB) and exit."
+    help: "Initialize the wallet (with DB) and exit.",
   })
   .action(async (args) => {
     await withWallet(args, async () => {});

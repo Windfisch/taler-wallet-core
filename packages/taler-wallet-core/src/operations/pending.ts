@@ -50,6 +50,7 @@ async function gatherExchangePending(
   now: AbsoluteTime,
   resp: PendingOperationsResponse,
 ): Promise<void> {
+  // FIXME: We should do a range query here based on the update time.
   await tx.exchanges.iter().forEachAsync(async (exch) => {
     const opTag = RetryTags.forExchangeUpdate(exch);
     let opr = await tx.operationRetries.get(opTag);

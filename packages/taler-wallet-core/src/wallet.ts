@@ -155,6 +155,7 @@ import {
   getExchangeDetails,
   getExchangeRequestTimeout,
   getExchangeTrust,
+  provideExchangeRecordInTx,
   updateExchangeFromUrl,
   updateExchangeFromUrlHandler,
   updateExchangeTermsOfService,
@@ -583,32 +584,26 @@ async function runTaskLoop(
  */
 async function fillDefaults(ws: InternalWalletState): Promise<void> {
   await ws.db
-    .mktx((x) => [x.config, x.auditorTrust])
+    .mktx((x) => [x.config, x.auditorTrust, x.exchanges, x.exchangeDetails])
     .runReadWrite(async (tx) => {
-      let applied = false;
-      await tx.config.iter().forEach((x) => {
-        if (x.key == "currencyDefaultsApplied" && x.value == true) {
-          applied = true;
-        }
-      });
-      if (!applied) {
-        for (const c of builtinAuditors) {
-          await tx.auditorTrust.put(c);
-        }
+      const appliedRec = await tx.config.get("currencyDefaultsApplied");
+      let alreadyApplied = appliedRec ? !!appliedRec.value : false;
+      if (alreadyApplied) {
+        logger.info("defaults already applied");
+        return;
       }
-      // FIXME: make sure exchanges are added transactionally to
-      // DB in first-time default application
+      for (const c of builtinAuditors) {
+        await tx.auditorTrust.put(c);
+      }
+      for (const baseUrl of builtinExchanges) {
+        const now = AbsoluteTime.now();
+        provideExchangeRecordInTx(ws, tx, baseUrl, now);
+      }
+      await tx.config.put({
+        key: "currencyDefaultsApplied",
+        value: true,
+      });
     });
-
-  for (const url of builtinExchanges) {
-    try {
-      await updateExchangeFromUrl(ws, url, { forceNow: true });
-    } catch (e) {
-      logger.warn(
-        `could not update builtin exchange ${url} during wallet initialization`,
-      );
-    }
-  }
 }
 
 async function getExchangeTos(
@@ -1719,12 +1714,12 @@ class InternalWalletStateImpl implements InternalWalletState {
    * Stop ongoing processing.
    */
   stop(): void {
-    logger.info("stopping (at internal wallet state)");
+    logger.trace("stopping (at internal wallet state)");
     this.stopped = true;
     this.timerGroup.stopCurrentAndFutureTimers();
     this.cryptoDispatcher.stop();
     for (const key of Object.keys(this.activeLongpoll)) {
-      logger.info(`cancelling active longpoll ${key}`);
+      logger.trace(`cancelling active longpoll ${key}`);
       this.activeLongpoll[key].cancel();
     }
   }

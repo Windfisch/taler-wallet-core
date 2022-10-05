@@ -37,7 +37,6 @@ export async function processRequestWithImpl(
   reqMsg: CryptoWorkerRequestMessage,
   impl: TalerCryptoInterfaceR,
 ): Promise<CryptoWorkerResponseMessage> {
-  logger.info(`processing crypto request ${j2s(reqMsg)}`);
   if (typeof reqMsg !== "object") {
     logger.error("request must be an object");
     return {
