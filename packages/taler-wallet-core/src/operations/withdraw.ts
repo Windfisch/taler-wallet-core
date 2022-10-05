@@ -1844,6 +1844,10 @@ export async function acceptWithdrawalFromUri(
     restrictAge?: number;
   },
 ): Promise<AcceptWithdrawalResponse> {
+  const selectedExchange = canonicalizeBaseUrl(req.selectedExchange);
+  logger.info(
+    `accepting withdrawal via ${req.talerWithdrawUri}, canonicalized selected exchange ${selectedExchange}`,
+  );
   const existingWithdrawalGroup = await ws.db
     .mktx((x) => [x.withdrawalGroups])
     .runReadOnly(async (tx) => {
@@ -1870,14 +1874,14 @@ export async function acceptWithdrawalFromUri(
     };
   }
 
-  await updateExchangeFromUrl(ws, req.selectedExchange);
+  await updateExchangeFromUrl(ws, selectedExchange);
   const withdrawInfo = await getBankWithdrawalInfo(
     ws.http,
     req.talerWithdrawUri,
   );
   const exchangePaytoUri = await getExchangePaytoUri(
     ws,
-    req.selectedExchange,
+    selectedExchange,
     withdrawInfo.wireTypes,
   );
 
