@@ -61,6 +61,8 @@ export interface DefaultNodeWalletArgs {
    * of the default one.
    */
   httpLib?: HttpRequestLibrary;
+
+  cryptoWorkerType?: "sync" | "node-worker-thread";
 }
 
 /**
@@ -160,10 +162,11 @@ export async function getDefaultNodeWallet2(
   const myDb = await openTalerDatabase(myIdbFactory, myVersionChange);
 
   let workerFactory;
-  if (process.env["TALER_WALLET_SYNC_CRYPTO"]) {
+  const cryptoWorkerType = args.cryptoWorkerType ?? "node-worker-thread";
+  if (cryptoWorkerType === "sync") {
     logger.info("using synchronous crypto worker");
     workerFactory = new SynchronousCryptoWorkerFactory();
-  } else {
+  } else if (cryptoWorkerType === "node-worker-thread") {
     try {
       // Try if we have worker threads available, fails in older node versions.
       const _r = "require";
@@ -177,6 +180,8 @@ export async function getDefaultNodeWallet2(
       );
       workerFactory = new SynchronousCryptoWorkerFactory();
     }
+  } else {
+    throw Error(`unsupported crypto worker type '${cryptoWorkerType}'`);
   }
 
   const timer = new SetTimeoutTimerAPI();

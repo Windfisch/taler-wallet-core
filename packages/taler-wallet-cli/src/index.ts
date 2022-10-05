@@ -181,6 +181,9 @@ export const walletCli = clk
       setDangerousTimetravel(x / 1000);
     },
   })
+  .maybeOption("cryptoWorker", ["--crypto-worker"], clk.STRING, {
+    help: "Override crypto worker implementation type."
+  })
   .maybeOption("log", ["-L", "--log"], clk.STRING, {
     help: "configure log level (NONE, ..., TRACE)",
     onPresentHandler: (x) => {
@@ -228,6 +231,7 @@ async function withWallet<T>(
     notifyHandler: (n) => {
       logger.info(`wallet notification: ${j2s(n)}`);
     },
+    cryptoWorkerType: walletCliArgs.wallet.cryptoWorker as any,
   });
 
   if (checkEnvFlag("TALER_WALLET_BATCH_WITHDRAWAL")) {

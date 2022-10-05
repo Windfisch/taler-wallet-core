@@ -15,7 +15,8 @@
  */
 
 /**
- * API to access the Taler crypto worker thread.
+ * API to access the Taler crypto worker.
+ *
  * @author Florian Dold
  */
 
@@ -76,6 +77,10 @@ interface WorkItem {
  */
 const NUM_PRIO = 5;
 
+/**
+ * A crypto worker factory is responsible for creating new
+ * crypto workers on-demand.
+ */
 export interface CryptoWorkerFactory {
   /**
    * Start a new worker.

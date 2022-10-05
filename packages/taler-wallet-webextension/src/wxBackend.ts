@@ -219,6 +219,7 @@ async function reinitWallet(): Promise<void> {
     httpLib = new BrowserHttpLib();
     // We could (should?) use the BrowserCryptoWorkerFactory here,
     // but right now we don't, to have less platform differences.
+    // cryptoWorker = new BrowserCryptoWorkerFactory();
     cryptoWorker = new SynchronousCryptoWorkerFactory();
     timer = new SetTimeoutTimerAPI();
   }

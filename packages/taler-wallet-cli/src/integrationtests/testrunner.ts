@@ -93,6 +93,7 @@ import { runTestWithdrawalManualTest } from "./test-withdrawal-manual.js";
 import { runAgeRestrictionsPeerTest } from "./test-age-restrictions-peer.js";
 import { runWalletBalanceTest } from "./test-wallet-balance.js";
 import { runAgeRestrictionsMixedMerchantTest } from "./test-age-restrictions-mixed-merchant.js";
+import { runWalletCryptoWorkerTest } from "./test-wallet-cryptoworker.js";
 
 /**
  * Test runner.
@@ -115,6 +116,7 @@ const allTests: TestMainFunction[] = [
   runBankApiTest,
   runClaimLoopTest,
   runClauseSchnorrTest,
+  runWalletCryptoWorkerTest,
   runDepositTest,
   runDenomUnofferedTest,
   runExchangeManagementTest,

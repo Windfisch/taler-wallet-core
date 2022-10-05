@@ -1860,6 +1860,10 @@ function shellWrap(s: string) {
   return "'" + s.replace("\\", "\\\\").replace("'", "\\'") + "'";
 }
 
+export interface WalletCliOpts {
+  cryptoWorkerType?: "sync" | "node-worker-thread";
+}
+
 export class WalletCli {
   private currentTimetravel: Duration | undefined;
   private _client: WalletCoreApiClient;
@@ -1879,6 +1883,7 @@ export class WalletCli {
   constructor(
     private globalTestState: GlobalTestState,
     private name: string = "default",
+    cliOpts: WalletCliOpts = {},
   ) {
     const self = this;
     this._client = {
@@ -1886,12 +1891,15 @@ export class WalletCli {
         logger.info(
           `calling wallet with timetravel arg ${j2s(self.timetravelArg)}`,
         );
+        const cryptoWorkerArg = cliOpts.cryptoWorkerType
+          ? `--crypto-worker=${cliOpts.cryptoWorkerType}`
+          : "";
         const resp = await sh(
           self.globalTestState,
           `wallet-${self.name}`,
           `taler-wallet-cli ${
             self.timetravelArg ?? ""
-          } --no-throttle -LTRACE --skip-defaults --wallet-db '${
+          } ${cryptoWorkerArg} --no-throttle -LTRACE --skip-defaults --wallet-db '${
             self.dbfile
           }' api '${op}' ${shellWrap(JSON.stringify(payload))}`,
         );
