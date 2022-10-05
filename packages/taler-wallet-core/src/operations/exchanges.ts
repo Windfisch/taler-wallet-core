@@ -730,6 +730,12 @@ export async function updateExchangeFromUrlHandler(
   };
 }
 
+/**
+ * Find a payto:// URI of the exchange that is of one
+ * of the given target types.
+ *
+ * Throws if no matching account was found.
+ */
 export async function getExchangePaytoUri(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
@@ -752,7 +758,11 @@ export async function getExchangePaytoUri(
       return account.payto_uri;
     }
   }
-  throw Error("no matching exchange account found");
+  throw Error(
+    `no matching account found at exchange ${exchangeBaseUrl} for wire types ${j2s(
+      supportedTargetTypes,
+    )}`,
+  );
 }
 
 /**
