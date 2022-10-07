@@ -26,7 +26,6 @@
  */
 import {
   TalerErrorDetail,
-  BalancesResponse,
   AbsoluteTime,
   TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
@@ -202,6 +201,16 @@ export interface PendingTaskInfoCommon {
    * as opposed to some regular scheduled operation that can be tried later.
    */
   givesLifeness: boolean;
+
+  /**
+   * Operation is active and waiting for a longpoll result.
+   */
+  isLongpolling: boolean;
+
+  /**
+   * Operation is waiting to be executed.
+   */
+  isDue: boolean;
 
   /**
    * Timestamp when the pending operation should be executed next.

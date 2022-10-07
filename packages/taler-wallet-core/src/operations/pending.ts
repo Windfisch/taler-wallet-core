@@ -41,7 +41,28 @@ import { RetryTags } from "../util/retries.js";
 import { Wallet } from "../wallet.js";
 import { GlobalIDB } from "@gnu-taler/idb-bridge";
 
+function getPendingCommon(
+  ws: InternalWalletState,
+  opTag: string,
+  timestampDue: AbsoluteTime,
+): {
+  id: string;
+  isDue: boolean;
+  timestampDue: AbsoluteTime;
+  isLongpolling: boolean;
+} {
+  const isDue =
+    AbsoluteTime.isExpired(timestampDue) && !ws.activeLongpoll[opTag];
+  return {
+    id: opTag,
+    isDue,
+    timestampDue,
+    isLongpolling: !!ws.activeLongpoll[opTag],
+  };
+}
+
 async function gatherExchangePending(
+  ws: InternalWalletState,
   tx: GetReadOnlyAccess<{
     exchanges: typeof WalletStoresV1.exchanges;
     exchangeDetails: typeof WalletStoresV1.exchangeDetails;
@@ -54,12 +75,12 @@ async function gatherExchangePending(
   await tx.exchanges.iter().forEachAsync(async (exch) => {
     const opTag = RetryTags.forExchangeUpdate(exch);
     let opr = await tx.operationRetries.get(opTag);
+    const timestampDue =
+      opr?.retryInfo.nextRetry ?? AbsoluteTime.fromTimestamp(exch.nextUpdate);
     resp.pendingOperations.push({
       type: PendingTaskType.ExchangeUpdate,
-      id: opTag,
+      ...getPendingCommon(ws, opTag, timestampDue),
       givesLifeness: false,
-      timestampDue:
-        opr?.retryInfo.nextRetry ?? AbsoluteTime.fromTimestamp(exch.nextUpdate),
       exchangeBaseUrl: exch.baseUrl,
       lastError: opr?.lastError,
     });
@@ -69,7 +90,7 @@ async function gatherExchangePending(
     if (!opr?.lastError) {
       resp.pendingOperations.push({
         type: PendingTaskType.ExchangeCheckRefresh,
-        id: RetryTags.forExchangeCheckRefresh(exch),
+        ...getPendingCommon(ws, opTag, timestampDue),
         timestampDue: AbsoluteTime.fromTimestamp(exch.nextRefreshCheck),
         givesLifeness: false,
         exchangeBaseUrl: exch.baseUrl,
@@ -79,6 +100,7 @@ async function gatherExchangePending(
 }
 
 async function gatherRefreshPending(
+  ws: InternalWalletState,
   tx: GetReadOnlyAccess<{
     refreshGroups: typeof WalletStoresV1.refreshGroups;
     operationRetries: typeof WalletStoresV1.operationRetries;
@@ -99,11 +121,12 @@ async function gatherRefreshPending(
     const opId = RetryTags.forRefresh(r);
     const retryRecord = await tx.operationRetries.get(opId);
 
+    const timestampDue = retryRecord?.retryInfo.nextRetry ?? AbsoluteTime.now();
+
     resp.pendingOperations.push({
       type: PendingTaskType.Refresh,
-      id: opId,
+      ...getPendingCommon(ws, opId, timestampDue),
       givesLifeness: true,
-      timestampDue: retryRecord?.retryInfo.nextRetry ?? AbsoluteTime.now(),
       refreshGroupId: r.refreshGroupId,
       finishedPerCoin: r.statusPerCoin.map(
         (x) => x === RefreshCoinStatus.Finished,
@@ -114,6 +137,7 @@ async function gatherRefreshPending(
 }
 
 async function gatherWithdrawalPending(
+  ws: InternalWalletState,
   tx: GetReadOnlyAccess<{
     withdrawalGroups: typeof WalletStoresV1.withdrawalGroups;
     planchets: typeof WalletStoresV1.planchets;
@@ -147,9 +171,12 @@ async function gatherWithdrawalPending(
     }
     resp.pendingOperations.push({
       type: PendingTaskType.Withdraw,
-      id: opTag,
+      ...getPendingCommon(
+        ws,
+        opTag,
+        opr.retryInfo?.nextRetry ?? AbsoluteTime.now(),
+      ),
       givesLifeness: true,
-      timestampDue: opr.retryInfo?.nextRetry ?? AbsoluteTime.now(),
       withdrawalGroupId: wsr.withdrawalGroupId,
       lastError: opr.lastError,
       retryInfo: opr.retryInfo,
@@ -158,6 +185,7 @@ async function gatherWithdrawalPending(
 }
 
 async function gatherProposalPending(
+  ws: InternalWalletState,
   tx: GetReadOnlyAccess<{
     proposals: typeof WalletStoresV1.proposals;
     operationRetries: typeof WalletStoresV1.operationRetries;
@@ -175,9 +203,8 @@ async function gatherProposalPending(
         retryRecord?.retryInfo?.nextRetry ?? AbsoluteTime.now();
       resp.pendingOperations.push({
         type: PendingTaskType.ProposalDownload,
-        id: opId,
+        ...getPendingCommon(ws, opId, timestampDue),
         givesLifeness: true,
-        timestampDue,
         merchantBaseUrl: proposal.merchantBaseUrl,
         orderId: proposal.orderId,
         proposalId: proposal.proposalId,
@@ -190,6 +217,7 @@ async function gatherProposalPending(
 }
 
 async function gatherDepositPending(
+  ws: InternalWalletState,
   tx: GetReadOnlyAccess<{
     depositGroups: typeof WalletStoresV1.depositGroups;
     operationRetries: typeof WalletStoresV1.operationRetries;
@@ -209,9 +237,8 @@ async function gatherDepositPending(
     const timestampDue = retryRecord?.retryInfo.nextRetry ?? AbsoluteTime.now();
     resp.pendingOperations.push({
       type: PendingTaskType.Deposit,
-      id: opId,
+      ...getPendingCommon(ws, opId, timestampDue),
       givesLifeness: true,
-      timestampDue,
       depositGroupId: dg.depositGroupId,
       lastError: retryRecord?.lastError,
       retryInfo: retryRecord?.retryInfo,
@@ -220,6 +247,7 @@ async function gatherDepositPending(
 }
 
 async function gatherTipPending(
+  ws: InternalWalletState,
   tx: GetReadOnlyAccess<{
     tips: typeof WalletStoresV1.tips;
     operationRetries: typeof WalletStoresV1.operationRetries;
@@ -234,10 +262,11 @@ async function gatherTipPending(
     }
     const opId = RetryTags.forTipPickup(tip);
     const retryRecord = await tx.operationRetries.get(opId);
+    const timestampDue = retryRecord?.retryInfo.nextRetry ?? AbsoluteTime.now();
     if (tip.acceptedTimestamp) {
       resp.pendingOperations.push({
         type: PendingTaskType.TipPickup,
-        id: opId,
+        ...getPendingCommon(ws, opId, timestampDue),
         givesLifeness: true,
         timestampDue: retryRecord?.retryInfo.nextRetry ?? AbsoluteTime.now(),
         merchantBaseUrl: tip.merchantBaseUrl,
@@ -249,6 +278,7 @@ async function gatherTipPending(
 }
 
 async function gatherPurchasePending(
+  ws: InternalWalletState,
   tx: GetReadOnlyAccess<{
     purchases: typeof WalletStoresV1.purchases;
     operationRetries: typeof WalletStoresV1.operationRetries;
@@ -270,9 +300,8 @@ async function gatherPurchasePending(
         payRetryRecord?.retryInfo.nextRetry ?? AbsoluteTime.now();
       resp.pendingOperations.push({
         type: PendingTaskType.Pay,
-        id: payOpId,
+        ...getPendingCommon(ws, payOpId, timestampDue),
         givesLifeness: true,
-        timestampDue,
         isReplay: false,
         proposalId: pr.proposalId,
         retryInfo: payRetryRecord?.retryInfo,
@@ -284,12 +313,12 @@ async function gatherPurchasePending(
       const refundQueryRetryRecord = await tx.operationRetries.get(
         refundQueryOpId,
       );
+      const timestampDue =
+        refundQueryRetryRecord?.retryInfo.nextRetry ?? AbsoluteTime.now();
       resp.pendingOperations.push({
         type: PendingTaskType.RefundQuery,
-        id: refundQueryOpId,
+        ...getPendingCommon(ws, refundQueryOpId, timestampDue),
         givesLifeness: true,
-        timestampDue:
-          refundQueryRetryRecord?.retryInfo.nextRetry ?? AbsoluteTime.now(),
         proposalId: pr.proposalId,
         retryInfo: refundQueryRetryRecord?.retryInfo,
         lastError: refundQueryRetryRecord?.lastError,
@@ -299,6 +328,7 @@ async function gatherPurchasePending(
 }
 
 async function gatherRecoupPending(
+  ws: InternalWalletState,
   tx: GetReadOnlyAccess<{
     recoupGroups: typeof WalletStoresV1.recoupGroups;
     operationRetries: typeof WalletStoresV1.operationRetries;
@@ -312,11 +342,11 @@ async function gatherRecoupPending(
     }
     const opId = RetryTags.forRecoup(rg);
     const retryRecord = await tx.operationRetries.get(opId);
+    const timestampDue = retryRecord?.retryInfo.nextRetry ?? AbsoluteTime.now();
     resp.pendingOperations.push({
       type: PendingTaskType.Recoup,
-      id: opId,
+      ...getPendingCommon(ws, opId, timestampDue),
       givesLifeness: true,
-      timestampDue: retryRecord?.retryInfo.nextRetry ?? AbsoluteTime.now(),
       recoupGroupId: rg.recoupGroupId,
       retryInfo: retryRecord?.retryInfo,
       lastError: retryRecord?.lastError,
@@ -325,6 +355,7 @@ async function gatherRecoupPending(
 }
 
 async function gatherBackupPending(
+  ws: InternalWalletState,
   tx: GetReadOnlyAccess<{
     backupProviders: typeof WalletStoresV1.backupProviders;
     operationRetries: typeof WalletStoresV1.operationRetries;
@@ -336,20 +367,23 @@ async function gatherBackupPending(
     const opId = RetryTags.forBackup(bp);
     const retryRecord = await tx.operationRetries.get(opId);
     if (bp.state.tag === BackupProviderStateTag.Ready) {
+      const timestampDue = AbsoluteTime.fromTimestamp(
+        bp.state.nextBackupTimestamp,
+      );
       resp.pendingOperations.push({
         type: PendingTaskType.Backup,
-        id: opId,
+        ...getPendingCommon(ws, opId, timestampDue),
         givesLifeness: false,
-        timestampDue: AbsoluteTime.fromTimestamp(bp.state.nextBackupTimestamp),
         backupProviderBaseUrl: bp.baseUrl,
         lastError: undefined,
       });
     } else if (bp.state.tag === BackupProviderStateTag.Retrying) {
+      const timestampDue =
+        retryRecord?.retryInfo?.nextRetry ?? AbsoluteTime.now();
       resp.pendingOperations.push({
         type: PendingTaskType.Backup,
-        id: opId,
+        ...getPendingCommon(ws, opId, timestampDue),
         givesLifeness: false,
-        timestampDue: retryRecord?.retryInfo?.nextRetry ?? AbsoluteTime.now(),
         backupProviderBaseUrl: bp.baseUrl,
         retryInfo: retryRecord?.retryInfo,
         lastError: retryRecord?.lastError,
@@ -382,15 +416,15 @@ export async function getPendingOperations(
       const resp: PendingOperationsResponse = {
         pendingOperations: [],
       };
-      await gatherExchangePending(tx, now, resp);
-      await gatherRefreshPending(tx, now, resp);
-      await gatherWithdrawalPending(tx, now, resp);
-      await gatherProposalPending(tx, now, resp);
-      await gatherDepositPending(tx, now, resp);
-      await gatherTipPending(tx, now, resp);
-      await gatherPurchasePending(tx, now, resp);
-      await gatherRecoupPending(tx, now, resp);
-      await gatherBackupPending(tx, now, resp);
+      await gatherExchangePending(ws, tx, now, resp);
+      await gatherRefreshPending(ws, tx, now, resp);
+      await gatherWithdrawalPending(ws, tx, now, resp);
+      await gatherProposalPending(ws, tx, now, resp);
+      await gatherDepositPending(ws, tx, now, resp);
+      await gatherTipPending(ws, tx, now, resp);
+      await gatherPurchasePending(ws, tx, now, resp);
+      await gatherRecoupPending(ws, tx, now, resp);
+      await gatherBackupPending(ws, tx, now, resp);
       return resp;
     });
 }

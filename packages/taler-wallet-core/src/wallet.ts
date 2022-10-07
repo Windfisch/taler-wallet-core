@@ -512,14 +512,14 @@ async function runTaskLoop(
         );
         continue;
       }
-
-      minDue = AbsoluteTime.min(minDue, p.timestampDue);
-      if (AbsoluteTime.isExpired(p.timestampDue) && !ws.activeLongpoll[p.id]) {
-        numDue++;
-      }
       if (p.givesLifeness) {
         numGivingLiveness++;
       }
+      if (!p.isDue) {
+        continue;
+      }
+      minDue = AbsoluteTime.min(minDue, p.timestampDue);
+      numDue++;
     }
 
     if (opts.stopWhenDone && numGivingLiveness === 0 && iteration !== 0) {
