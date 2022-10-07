@@ -19,7 +19,6 @@
  */
 import {
   AbsoluteTime,
-  addPaytoQueryParams,
   AmountJson,
   Amounts,
   constructPayPullUri,
@@ -56,7 +55,6 @@ import { processDepositGroup } from "./deposits.js";
 import { getExchangeDetails } from "./exchanges.js";
 import { processPurchasePay } from "./pay.js";
 import { processRefreshGroup } from "./refresh.js";
-import { applyRefundFromPurchaseId } from "./refund.js";
 import { processTip } from "./tip.js";
 import {
   augmentPaytoUrisForWithdrawal,
