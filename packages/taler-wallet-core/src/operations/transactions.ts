@@ -58,7 +58,10 @@ import { processPurchasePay } from "./pay.js";
 import { processRefreshGroup } from "./refresh.js";
 import { applyRefundFromPurchaseId } from "./refund.js";
 import { processTip } from "./tip.js";
-import { processWithdrawalGroup } from "./withdraw.js";
+import {
+  augmentPaytoUrisForWithdrawal,
+  processWithdrawalGroup,
+} from "./withdraw.js";
 
 const logger = new Logger("taler-wallet-core:transactions.ts");
 
@@ -473,31 +476,39 @@ function buildTransactionForBankIntegratedWithdraw(
 }
 
 function buildTransactionForManualWithdraw(
-  wsr: WithdrawalGroupRecord,
+  withdrawalGroup: WithdrawalGroupRecord,
   exchangeDetails: ExchangeDetailsRecord,
   ort?: OperationRetryRecord,
 ): Transaction {
-  if (wsr.wgInfo.withdrawalType !== WithdrawalRecordType.BankManual)
+  if (withdrawalGroup.wgInfo.withdrawalType !== WithdrawalRecordType.BankManual)
     throw Error("");
+
+  const plainPaytoUris =
+    exchangeDetails.wireInfo?.accounts.map((x) => x.payto_uri) ?? [];
+
+  const exchangePaytoUris = augmentPaytoUrisForWithdrawal(
+    plainPaytoUris,
+    withdrawalGroup.reservePub,
+    withdrawalGroup.instructedAmount,
+  );
 
   return {
     type: TransactionType.Withdrawal,
-    amountEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
-    amountRaw: Amounts.stringify(wsr.rawWithdrawalAmount),
+    amountEffective: Amounts.stringify(
+      withdrawalGroup.denomsSel.totalCoinValue,
+    ),
+    amountRaw: Amounts.stringify(withdrawalGroup.rawWithdrawalAmount),
     withdrawalDetails: {
       type: WithdrawalType.ManualTransfer,
-      reservePub: wsr.reservePub,
-      exchangePaytoUris:
-        exchangeDetails.wireInfo?.accounts.map((x) =>
-          addPaytoQueryParams(x.payto_uri, { subject: wsr.reservePub }),
-        ) ?? [],
+      reservePub: withdrawalGroup.reservePub,
+      exchangePaytoUris,
     },
-    exchangeBaseUrl: wsr.exchangeBaseUrl,
-    pending: !wsr.timestampFinish,
-    timestamp: wsr.timestampStart,
+    exchangeBaseUrl: withdrawalGroup.exchangeBaseUrl,
+    pending: !withdrawalGroup.timestampFinish,
+    timestamp: withdrawalGroup.timestampStart,
     transactionId: makeEventId(
       TransactionType.Withdrawal,
-      wsr.withdrawalGroupId,
+      withdrawalGroup.withdrawalGroupId,
     ),
     frozen: false,
     ...(ort?.lastError ? { error: ort.lastError } : {}),

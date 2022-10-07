@@ -1483,6 +1483,19 @@ export async function getFundingPaytoUrisTx(
     .runReadWrite((tx) => getFundingPaytoUris(tx, withdrawalGroupId));
 }
 
+export function augmentPaytoUrisForWithdrawal(
+  plainPaytoUris: string[],
+  reservePub: string,
+  instructedAmount: AmountJson,
+): string[] {
+  return plainPaytoUris.map((x) =>
+    addPaytoQueryParams(x, {
+      amount: Amounts.stringify(instructedAmount),
+      message: `Taler Withdrawal ${reservePub}`,
+    }),
+  );
+}
+
 /**
  * Get payto URIs that can be used to fund a withdrawal operation.
  */
@@ -1512,11 +1525,10 @@ export async function getFundingPaytoUris(
     );
     return [];
   }
-  return plainPaytoUris.map((x) =>
-    addPaytoQueryParams(x, {
-      amount: Amounts.stringify(withdrawalGroup.instructedAmount),
-      message: `Taler Withdrawal ${withdrawalGroup.reservePub}`,
-    }),
+  return augmentPaytoUrisForWithdrawal(
+    plainPaytoUris,
+    withdrawalGroup.reservePub,
+    withdrawalGroup.instructedAmount,
   );
 }
 
