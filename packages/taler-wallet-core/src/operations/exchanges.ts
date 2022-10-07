@@ -505,7 +505,6 @@ export async function updateExchangeFromUrlHandler(
 > {
   const forceNow = options.forceNow ?? false;
   logger.info(`updating exchange info for ${baseUrl}, forced: ${forceNow}`);
-  console.trace("here");
 
   const now = AbsoluteTime.now();
   baseUrl = canonicalizeBaseUrl(baseUrl);

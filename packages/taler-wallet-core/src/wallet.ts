@@ -589,9 +589,10 @@ async function fillDefaults(ws: InternalWalletState): Promise<void> {
       const appliedRec = await tx.config.get("currencyDefaultsApplied");
       let alreadyApplied = appliedRec ? !!appliedRec.value : false;
       if (alreadyApplied) {
-        logger.info("defaults already applied");
+        logger.trace("defaults already applied");
         return;
       }
+      logger.info("importing default exchanges and auditors");
       for (const c of builtinAuditors) {
         await tx.auditorTrust.put(c);
       }
@@ -1120,12 +1121,12 @@ async function dispatchRequestInternal(
   // definitions we already have?
   switch (operation) {
     case "initWallet": {
-      logger.info("initializing wallet");
+      logger.trace("initializing wallet");
       ws.initCalled = true;
       if (typeof payload === "object" && (payload as any).skipDefaults) {
-        logger.info("skipping defaults");
+        logger.trace("skipping defaults");
       } else {
-        logger.info("filling defaults");
+        logger.trace("filling defaults");
         await fillDefaults(ws);
       }
       return {};

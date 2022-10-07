@@ -1412,7 +1412,7 @@ testCli
     } else if (args.cryptoworker.impl === "none") {
       cryptoApi = nativeCrypto;
     } else {
-      throw Error("invalid impl");
+      throw Error(`invalid crypto worker type ${args.cryptoworker.impl}`);
     }
 
     const input = "foo";
