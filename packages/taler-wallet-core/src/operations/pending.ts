@@ -22,7 +22,7 @@
  * Imports.
  */
 import {
-  ProposalStatus,
+  PurchaseStatus,
   WalletStoresV1,
   BackupProviderStateTag,
   RefreshCoinStatus,
@@ -252,7 +252,6 @@ async function gatherPurchasePending(
   now: AbsoluteTime,
   resp: PendingOperationsResponse,
 ): Promise<void> {
-  // FIXME: Only iter purchases with some "active" flag!
   const keyRange = GlobalIDB.KeyRange.bound(
     OperationStatusRange.ACTIVE_START,
     OperationStatusRange.ACTIVE_END,
@@ -268,7 +267,7 @@ async function gatherPurchasePending(
         type: PendingTaskType.Purchase,
         ...getPendingCommon(ws, opId, timestampDue),
         givesLifeness: true,
-        statusStr: ProposalStatus[pr.status],
+        statusStr: PurchaseStatus[pr.purchaseStatus],
         proposalId: pr.proposalId,
         retryInfo: retryRecord?.retryInfo,
         lastError: retryRecord?.lastError,

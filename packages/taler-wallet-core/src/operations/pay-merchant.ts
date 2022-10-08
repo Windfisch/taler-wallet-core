@@ -81,7 +81,7 @@ import {
   CoinStatus,
   DenominationRecord,
   ProposalDownload,
-  ProposalStatus,
+  PurchaseStatus,
   PurchaseRecord,
   RefundReason,
   RefundState,
@@ -230,7 +230,7 @@ async function failProposalPermanently(
       if (!p) {
         return;
       }
-      p.status = ProposalStatus.ProposalDownloadFailed;
+      p.purchaseStatus = PurchaseStatus.ProposalDownloadFailed;
       await tx.purchases.put(p);
     });
 }
@@ -329,7 +329,7 @@ export async function processDownloadProposal(
     };
   }
 
-  if (proposal.status != ProposalStatus.DownloadingProposal) {
+  if (proposal.purchaseStatus != PurchaseStatus.DownloadingProposal) {
     return {
       type: OperationAttemptResultType.Finished,
       result: undefined,
@@ -500,7 +500,7 @@ export async function processDownloadProposal(
       if (!p) {
         return;
       }
-      if (p.status !== ProposalStatus.DownloadingProposal) {
+      if (p.purchaseStatus !== PurchaseStatus.DownloadingProposal) {
         return;
       }
       p.download = {
@@ -516,13 +516,13 @@ export async function processDownloadProposal(
           await tx.purchases.indexes.byFulfillmentUrl.get(fulfillmentUrl);
         if (differentPurchase) {
           logger.warn("repurchase detected");
-          p.status = ProposalStatus.RepurchaseDetected;
+          p.purchaseStatus = PurchaseStatus.RepurchaseDetected;
           p.repurchaseProposalId = differentPurchase.proposalId;
           await tx.purchases.put(p);
           return;
         }
       }
-      p.status = ProposalStatus.Proposed;
+      p.purchaseStatus = PurchaseStatus.Proposed;
       await tx.purchases.put(p);
     });
 
@@ -595,7 +595,7 @@ async function startDownloadProposal(
     merchantBaseUrl,
     orderId,
     proposalId: proposalId,
-    status: ProposalStatus.DownloadingProposal,
+    purchaseStatus: PurchaseStatus.DownloadingProposal,
     repurchaseProposalId: undefined,
     downloadSessionId: sessionId,
     autoRefundDeadline: undefined,
@@ -649,8 +649,8 @@ async function storeFirstPaySuccess(
         logger.warn("payment success already stored");
         return;
       }
-      if (purchase.status === ProposalStatus.Paying) {
-        purchase.status = ProposalStatus.Paid;
+      if (purchase.purchaseStatus === PurchaseStatus.Paying) {
+        purchase.purchaseStatus = PurchaseStatus.Paid;
       }
       purchase.timestampFirstSuccessfulPay = now;
       purchase.lastSessionId = sessionId;
@@ -659,7 +659,7 @@ async function storeFirstPaySuccess(
       if (protoAr) {
         const ar = Duration.fromTalerProtocolDuration(protoAr);
         logger.info("auto_refund present");
-        purchase.status = ProposalStatus.QueryingAutoRefund;
+        purchase.purchaseStatus = PurchaseStatus.QueryingAutoRefund;
         purchase.autoRefundDeadline = AbsoluteTime.toTimestamp(
           AbsoluteTime.addDuration(AbsoluteTime.now(), ar),
         );
@@ -686,8 +686,8 @@ async function storePayReplaySuccess(
       if (isFirst) {
         throw Error("invalid payment state");
       }
-      if (purchase.status === ProposalStatus.Paying) {
-        purchase.status = ProposalStatus.Paid;
+      if (purchase.purchaseStatus === PurchaseStatus.Paying) {
+        purchase.purchaseStatus = PurchaseStatus.Paid;
       }
       purchase.lastSessionId = sessionId;
       await tx.purchases.put(purchase);
@@ -1239,7 +1239,7 @@ export async function checkPaymentByProposalId(
   if (!proposal) {
     throw Error(`could not get proposal ${proposalId}`);
   }
-  if (proposal.status === ProposalStatus.RepurchaseDetected) {
+  if (proposal.purchaseStatus === PurchaseStatus.RepurchaseDetected) {
     const existingProposalId = proposal.repurchaseProposalId;
     if (!existingProposalId) {
       throw Error("invalid proposal state");
@@ -1274,7 +1274,7 @@ export async function checkPaymentByProposalId(
       return tx.purchases.get(proposalId);
     });
 
-  if (!purchase || purchase.status === ProposalStatus.Proposed) {
+  if (!purchase || purchase.purchaseStatus === PurchaseStatus.Proposed) {
     // If not already paid, check if we could pay for it.
     const res = await selectPayCoinsNew(ws, {
       auditors: contractData.allowedAuditors,
@@ -1315,7 +1315,7 @@ export async function checkPaymentByProposalId(
   }
 
   if (
-    purchase.status === ProposalStatus.Paid &&
+    purchase.purchaseStatus === PurchaseStatus.Paid &&
     purchase.lastSessionId !== sessionId
   ) {
     logger.trace(
@@ -1330,7 +1330,7 @@ export async function checkPaymentByProposalId(
           return;
         }
         p.lastSessionId = sessionId;
-        p.status = ProposalStatus.PayingReplay;
+        p.purchaseStatus = PurchaseStatus.PayingReplay;
         await tx.purchases.put(p);
       });
     const r = await processPurchasePay(ws, proposalId, { forceNow: true });
@@ -1361,9 +1361,9 @@ export async function checkPaymentByProposalId(
     };
   } else {
     const paid =
-      purchase.status === ProposalStatus.Paid ||
-      purchase.status === ProposalStatus.QueryingRefund ||
-      purchase.status === ProposalStatus.QueryingAutoRefund;
+      purchase.purchaseStatus === PurchaseStatus.Paid ||
+      purchase.purchaseStatus === PurchaseStatus.QueryingRefund ||
+      purchase.purchaseStatus === PurchaseStatus.QueryingAutoRefund;
     const download = await expectProposalDownload(purchase);
     return {
       status: PreparePayResultType.AlreadyConfirmed,
@@ -1615,6 +1615,9 @@ export async function confirmPay(
       ) {
         logger.trace(`changing session ID to ${sessionIdOverride}`);
         purchase.lastSessionId = sessionIdOverride;
+        if (purchase.purchaseStatus === PurchaseStatus.Paid) {
+          purchase.purchaseStatus = PurchaseStatus.PayingReplay;
+        }
         await tx.purchases.put(purchase);
       }
       return purchase;
@@ -1688,8 +1691,8 @@ export async function confirmPay(
       if (!p) {
         return;
       }
-      switch (p.status) {
-        case ProposalStatus.Proposed:
+      switch (p.purchaseStatus) {
+        case PurchaseStatus.Proposed:
           p.payInfo = {
             payCoinSelection: coinSelection,
             payCoinSelectionUid: encodeCrock(getRandomBytes(16)),
@@ -1698,7 +1701,7 @@ export async function confirmPay(
           };
           p.lastSessionId = sessionId;
           p.timestampAccept = TalerProtocolTimestamp.now();
-          p.status = ProposalStatus.Paying;
+          p.purchaseStatus = PurchaseStatus.Paying;
           await tx.purchases.put(p);
           await spendCoins(ws, tx, {
             allocationId: `proposal:${p.proposalId}`,
@@ -1707,8 +1710,8 @@ export async function confirmPay(
             refreshReason: RefreshReason.PayMerchant,
           });
           break;
-        case ProposalStatus.Paid:
-        case ProposalStatus.Paying:
+        case PurchaseStatus.Paid:
+        case PurchaseStatus.Paying:
         default:
           break;
       }
@@ -1746,26 +1749,26 @@ export async function processPurchase(
     };
   }
 
-  switch (purchase.status) {
-    case ProposalStatus.DownloadingProposal:
+  switch (purchase.purchaseStatus) {
+    case PurchaseStatus.DownloadingProposal:
       return processDownloadProposal(ws, proposalId, options);
-    case ProposalStatus.Paying:
-    case ProposalStatus.PayingReplay:
+    case PurchaseStatus.Paying:
+    case PurchaseStatus.PayingReplay:
       return processPurchasePay(ws, proposalId, options);
-    case ProposalStatus.QueryingAutoRefund:
-    case ProposalStatus.QueryingAutoRefund:
-    case ProposalStatus.AbortingWithRefund:
+    case PurchaseStatus.QueryingRefund:
+    case PurchaseStatus.QueryingAutoRefund:
+    case PurchaseStatus.AbortingWithRefund:
       return processPurchaseQueryRefund(ws, proposalId, options);
-    case ProposalStatus.ProposalDownloadFailed:
-    case ProposalStatus.Paid:
-    case ProposalStatus.AbortingWithRefund:
-    case ProposalStatus.RepurchaseDetected:
+    case PurchaseStatus.ProposalDownloadFailed:
+    case PurchaseStatus.Paid:
+    case PurchaseStatus.AbortingWithRefund:
+    case PurchaseStatus.RepurchaseDetected:
       return {
         type: OperationAttemptResultType.Finished,
         result: undefined,
       };
     default:
-      throw Error(`unexpected purchase status (${purchase.status})`);
+      throw Error(`unexpected purchase status (${purchase.purchaseStatus})`);
   }
 }
 
@@ -1792,9 +1795,9 @@ export async function processPurchasePay(
       },
     };
   }
-  switch (purchase.status) {
-    case ProposalStatus.Paying:
-    case ProposalStatus.PayingReplay:
+  switch (purchase.purchaseStatus) {
+    case PurchaseStatus.Paying:
+    case PurchaseStatus.PayingReplay:
       break;
     default:
       return OperationAttemptResult.finishedEmpty();
@@ -1870,7 +1873,7 @@ export async function processPurchasePay(
             return;
           }
           // FIXME: Should be some "PayPermanentlyFailed" and error info should be stored
-          purch.status = ProposalStatus.PaymentAbortFinished;
+          purch.purchaseStatus = PurchaseStatus.PaymentAbortFinished;
           await tx.purchases.put(purch);
         });
       throw makePendingOperationFailedError(
@@ -1975,10 +1978,10 @@ export async function refuseProposal(
         logger.trace(`proposal ${proposalId} not found, won't refuse proposal`);
         return false;
       }
-      if (proposal.status !== ProposalStatus.Proposed) {
+      if (proposal.purchaseStatus !== PurchaseStatus.Proposed) {
         return false;
       }
-      proposal.status = ProposalStatus.ProposalRefused;
+      proposal.purchaseStatus = PurchaseStatus.ProposalRefused;
       await tx.purchases.put(proposal);
       return true;
     });
@@ -2211,7 +2214,7 @@ async function storeFailedRefund(
     rtransactionId: r.rtransaction_id,
   };
 
-  if (p.status === ProposalStatus.AbortingWithRefund) {
+  if (p.purchaseStatus === PurchaseStatus.AbortingWithRefund) {
     // Refund failed because the merchant didn't even try to deposit
     // the coin yet, so we try to refresh.
     if (r.exchange_code === TalerErrorCode.EXCHANGE_REFUND_DEPOSIT_NOT_FOUND) {
@@ -2346,9 +2349,9 @@ async function acceptRefunds(
 
       if (queryDone) {
         p.timestampLastRefundStatus = now;
-        if (p.status === ProposalStatus.AbortingWithRefund) {
-          p.status = ProposalStatus.PaymentAbortFinished;
-        } else if (p.status === ProposalStatus.QueryingAutoRefund) {
+        if (p.purchaseStatus === PurchaseStatus.AbortingWithRefund) {
+          p.purchaseStatus = PurchaseStatus.PaymentAbortFinished;
+        } else if (p.purchaseStatus === PurchaseStatus.QueryingAutoRefund) {
           const autoRefundDeadline = p.autoRefundDeadline;
           checkDbInvariant(!!autoRefundDeadline);
           if (
@@ -2356,10 +2359,10 @@ async function acceptRefunds(
               AbsoluteTime.fromTimestamp(autoRefundDeadline),
             )
           ) {
-            p.status = ProposalStatus.Paid;
+            p.purchaseStatus = PurchaseStatus.Paid;
           }
-        } else if (p.status === ProposalStatus.QueryingRefund) {
-          p.status = ProposalStatus.Paid;
+        } else if (p.purchaseStatus === PurchaseStatus.QueryingRefund) {
+          p.purchaseStatus = PurchaseStatus.Paid;
         }
         logger.trace("refund query done");
       } else {
@@ -2483,8 +2486,8 @@ export async function applyRefundFromPurchaseId(
         logger.error("no purchase found for refund URL");
         return false;
       }
-      if (p.status === ProposalStatus.Paid) {
-        p.status = ProposalStatus.QueryingRefund;
+      if (p.purchaseStatus === PurchaseStatus.Paid) {
+        p.purchaseStatus = PurchaseStatus.QueryingRefund;
       }
       await tx.purchases.put(p);
       return true;
@@ -2610,9 +2613,9 @@ export async function processPurchaseQueryRefund(
 
   if (
     !(
-      purchase.status === ProposalStatus.QueryingAutoRefund ||
-      purchase.status === ProposalStatus.QueryingRefund ||
-      purchase.status === ProposalStatus.AbortingWithRefund
+      purchase.purchaseStatus === PurchaseStatus.QueryingAutoRefund ||
+      purchase.purchaseStatus === PurchaseStatus.QueryingRefund ||
+      purchase.purchaseStatus === PurchaseStatus.AbortingWithRefund
     )
   ) {
     return OperationAttemptResult.finishedEmpty();
@@ -2659,7 +2662,7 @@ export async function processPurchaseQueryRefund(
       refundResponse.refunds,
       RefundReason.NormalRefund,
     );
-  } else if (purchase.status === ProposalStatus.AbortingWithRefund) {
+  } else if (purchase.purchaseStatus === PurchaseStatus.AbortingWithRefund) {
     const requestUrl = new URL(
       `orders/${download.contractData.orderId}/abort`,
       download.contractData.merchantBaseUrl,
@@ -2745,8 +2748,8 @@ export async function abortFailedPayWithRefund(
         logger.warn(`tried to abort successful payment`);
         return;
       }
-      if (purchase.status === ProposalStatus.Paying) {
-        purchase.status = ProposalStatus.AbortingWithRefund;
+      if (purchase.purchaseStatus === PurchaseStatus.Paying) {
+        purchase.purchaseStatus = PurchaseStatus.AbortingWithRefund;
       }
       await tx.purchases.put(purchase);
     });

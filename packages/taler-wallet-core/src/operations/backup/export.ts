@@ -65,7 +65,7 @@ import {
   CoinSourceType,
   CoinStatus,
   DenominationRecord,
-  ProposalStatus,
+  PurchaseStatus,
   RefreshCoinStatus,
   RefundState,
   WALLET_BACKUP_STATE_KEY,
@@ -382,21 +382,21 @@ export async function exportBackup(
         }
 
         let propStatus: BackupProposalStatus;
-        switch (purch.status) {
-          case ProposalStatus.Paid:
+        switch (purch.purchaseStatus) {
+          case PurchaseStatus.Paid:
             propStatus = BackupProposalStatus.Paid;
             return;
-          case ProposalStatus.DownloadingProposal:
-          case ProposalStatus.Proposed:
+          case PurchaseStatus.DownloadingProposal:
+          case PurchaseStatus.Proposed:
             propStatus = BackupProposalStatus.Proposed;
             break;
-          case ProposalStatus.ProposalDownloadFailed:
+          case PurchaseStatus.ProposalDownloadFailed:
             propStatus = BackupProposalStatus.PermanentlyFailed;
             break;
-          case ProposalStatus.ProposalRefused:
+          case PurchaseStatus.ProposalRefused:
             propStatus = BackupProposalStatus.Refused;
             break;
-          case ProposalStatus.RepurchaseDetected:
+          case PurchaseStatus.RepurchaseDetected:
             propStatus = BackupProposalStatus.Repurchase;
             break;
           default:

@@ -1026,7 +1026,7 @@ export interface WalletContractData {
   deliveryLocation: Location | undefined;
 }
 
-export enum ProposalStatus {
+export enum PurchaseStatus {
   /**
    * Not downloaded yet.
    */
@@ -1150,7 +1150,7 @@ export interface PurchaseRecord {
    */
   repurchaseProposalId: string | undefined;
 
-  status: ProposalStatus;
+  purchaseStatus: PurchaseStatus;
 
   /**
    * Private key for the nonce.
@@ -1934,7 +1934,7 @@ export const WalletStoresV1 = {
     "purchases",
     describeContents<PurchaseRecord>({ keyPath: "proposalId" }),
     {
-      byStatus: describeIndex("byStatus", "operationStatus"),
+      byStatus: describeIndex("byStatus", "purchaseStatus"),
       byFulfillmentUrl: describeIndex(
         "byFulfillmentUrl",
         "download.contractData.fulfillmentUrl",

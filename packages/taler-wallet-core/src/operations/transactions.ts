@@ -41,7 +41,7 @@ import {
   OperationRetryRecord,
   PeerPullPaymentIncomingRecord,
   PeerPushPaymentInitiationRecord,
-  ProposalStatus,
+  PurchaseStatus,
   PurchaseRecord,
   RefundState,
   TipRecord,
@@ -679,7 +679,7 @@ async function buildTransactionForPurchase(
     status: purchaseRecord.timestampFirstSuccessfulPay
       ? PaymentStatus.Paid
       : PaymentStatus.Accepted,
-    pending: purchaseRecord.status === ProposalStatus.Paying,
+    pending: purchaseRecord.purchaseStatus === PurchaseStatus.Paying,
     refunds,
     timestamp,
     transactionId: makeEventId(
@@ -689,7 +689,7 @@ async function buildTransactionForPurchase(
     proposalId: purchaseRecord.proposalId,
     info,
     frozen:
-      purchaseRecord.status === ProposalStatus.PaymentAbortFinished ?? false,
+      purchaseRecord.purchaseStatus === PurchaseStatus.PaymentAbortFinished ?? false,
     ...(ort?.lastError ? { error: ort.lastError } : {}),
   };
 }

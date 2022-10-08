@@ -46,7 +46,7 @@ import {
   DenomSelectionState,
   OperationStatus,
   ProposalDownload,
-  ProposalStatus,
+  PurchaseStatus,
   PurchasePayInfo,
   RefreshCoinStatus,
   RefreshSessionRecord,
@@ -564,10 +564,10 @@ export async function importBackup(
         const existingPurchase = await tx.purchases.get(
           backupPurchase.proposal_id,
         );
-        let proposalStatus: ProposalStatus;
+        let proposalStatus: PurchaseStatus;
         switch (backupPurchase.proposal_status) {
           case BackupProposalStatus.Paid:
-            proposalStatus = ProposalStatus.Paid;
+            proposalStatus = PurchaseStatus.Paid;
             break;
           default:
             throw Error();
@@ -703,7 +703,7 @@ export async function importBackup(
             payInfo,
             refundAmountAwaiting: undefined,
             repurchaseProposalId: backupPurchase.repurchase_proposal_id,
-            status: proposalStatus,
+            purchaseStatus: proposalStatus,
             timestamp: backupPurchase.timestamp_proposed,
           });
         }
