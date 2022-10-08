@@ -43,7 +43,7 @@ import {
   codecForList,
   codecForAny,
 } from "./codec.js";
-import { TalerErrorDetail } from "./walletTypes.js";
+import { RefreshReason, TalerErrorDetail } from "./walletTypes.js";
 
 export interface TransactionsRequest {
   /**
@@ -468,19 +468,35 @@ export interface TransactionTip extends TransactionCommon {
   merchantBaseUrl: string;
 }
 
-// A transaction shown for refreshes that are not associated to other transactions
-// such as a refresh necessary before coin expiration.
-// It should only be returned by the API if the effective amount is different from zero.
+/**
+ * A transaction shown for refreshes.
+ * Only shown for (1) refreshes not associated with other transactions
+ * and (2) refreshes in an error state.
+ */
 export interface TransactionRefresh extends TransactionCommon {
   type: TransactionType.Refresh;
 
-  // Exchange that the coins are refreshed with
+  /**
+   * Exchange that the coins are refreshed with
+   */
   exchangeBaseUrl: string;
 
-  // Raw amount that is refreshed
+  refreshReason: RefreshReason;
+
+  /**
+   * Transaction ID that caused this refresh.
+   */
+  originatingTransactionId?: string;
+
+  /**
+   * Always zero for refreshes
+   */
   amountRaw: AmountString;
 
-  // Amount that will be paid as fees for the refresh
+  /**
+   * Fees, i.e. the effective, negative effect of the refresh
+   * on the balance.
+   */
   amountEffective: AmountString;
 }
 

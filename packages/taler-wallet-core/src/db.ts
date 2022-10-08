@@ -1382,8 +1382,6 @@ export interface WithdrawalGroupRecord {
 
   /**
    * Current status of the reserve.
-   *
-   * FIXME: Wrong name!
    */
   status: WithdrawalGroupStatus;
 
