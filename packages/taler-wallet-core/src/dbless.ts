@@ -26,6 +26,9 @@
  * Imports.
  */
 import {
+  AbsoluteTime,
+  AgeRestriction,
+  AmountJson,
   Amounts,
   AmountString,
   codecForAny,
@@ -35,7 +38,6 @@ import {
   codecForExchangeRevealResponse,
   codecForWithdrawResponse,
   DenominationPubKey,
-  eddsaGetPublic,
   encodeCrock,
   ExchangeMeltRequest,
   ExchangeProtocolVersion,
@@ -44,29 +46,15 @@ import {
   hashWire,
   Logger,
   parsePaytoUri,
-  AbsoluteTime,
   UnblindedSignature,
-  BankWithdrawDetails,
-  parseWithdrawUri,
-  AmountJson,
-  AgeRestriction,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import { DenominationRecord } from "./db.js";
-import {
-  assembleRefreshRevealRequest,
-  ExchangeInfo,
-  getBankWithdrawalInfo,
-  HttpRequestLibrary,
-  isWithdrawableDenom,
-  readSuccessResponseJsonOrThrow,
-} from "./index.browser.js";
-import {
-  BankAccessApi,
-  BankApi,
-  BankServiceHandle,
-  getBankStatusUrl,
-} from "./index.js";
+import { BankAccessApi, BankApi, BankServiceHandle } from "./bank-api-client.js";
+import { HttpRequestLibrary, readSuccessResponseJsonOrThrow } from "./util/http.js";
+import { getBankStatusUrl, getBankWithdrawalInfo, isWithdrawableDenom } from "./operations/withdraw.js";
+import { ExchangeInfo } from "./operations/exchanges.js";
+import { assembleRefreshRevealRequest } from "./operations/refresh.js";
 
 const logger = new Logger("dbless.ts");
 

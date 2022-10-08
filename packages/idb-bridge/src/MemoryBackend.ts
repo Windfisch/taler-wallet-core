@@ -378,9 +378,9 @@ export class MemoryBackend implements Backend {
     }
   }
 
-  private makeObjectStoreMap(
-    database: Database,
-  ): { [currentName: string]: ObjectStoreMapEntry } {
+  private makeObjectStoreMap(database: Database): {
+    [currentName: string]: ObjectStoreMapEntry;
+  } {
     let map: { [currentName: string]: ObjectStoreMapEntry } = {};
     for (let objectStoreName in database.committedObjectStores) {
       const store = database.committedObjectStores[objectStoreName];
@@ -1088,9 +1088,8 @@ export class MemoryBackend implements Backend {
       if (!existingIndexRecord) {
         throw Error("db inconsistent: expected index entry missing");
       }
-      const newPrimaryKeys = existingIndexRecord.primaryKeys.without(
-        primaryKey,
-      );
+      const newPrimaryKeys =
+        existingIndexRecord.primaryKeys.without(primaryKey);
       if (newPrimaryKeys.size === 0) {
         index.modifiedData = indexData.without(indexKey);
       } else {
@@ -1357,7 +1356,20 @@ export class MemoryBackend implements Backend {
 
       // Remove old index entry first!
       if (oldStoreRecord) {
-        this.deleteFromIndex(index, key, oldStoreRecord.value, indexProperties);
+        try {
+          this.deleteFromIndex(
+            index,
+            key,
+            oldStoreRecord.value,
+            indexProperties,
+          );
+        } catch (e) {
+          if (e instanceof DataError) {
+            // Do nothing
+          } else {
+            throw e;
+          }
+        }
       }
       try {
         this.insertIntoIndex(index, key, value, indexProperties);

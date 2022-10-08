@@ -25,7 +25,7 @@ import {
   LibtoolVersion,
 } from "@gnu-taler/taler-util";
 import { InternalWalletState, MerchantInfo } from "../internal-wallet-state.js";
-import { readSuccessResponseJsonOrThrow } from "../index.js";
+import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 
 const logger = new Logger("taler-wallet-core:merchants.ts");
 
@@ -40,7 +40,7 @@ export async function getMerchantInfo(
     return existingInfo;
   }
 
-  const configUrl = new URL("config", canonBaseUrl);
+const configUrl = new URL("config", canonBaseUrl);
   const resp = await ws.http.get(configUrl.href);
 
   const configResp = await readSuccessResponseJsonOrThrow(

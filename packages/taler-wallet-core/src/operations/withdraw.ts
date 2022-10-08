@@ -70,12 +70,11 @@ import {
   DenomSelectionState,
   ExchangeDetailsRecord,
   ExchangeRecord,
-  OperationStatus,
   PlanchetRecord,
-  WithdrawalGroupStatus,
   WalletStoresV1,
   WgInfo,
   WithdrawalGroupRecord,
+  WithdrawalGroupStatus,
   WithdrawalRecordType,
 } from "../db.js";
 import {
@@ -84,7 +83,10 @@ import {
   TalerError,
 } from "../errors.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
-import { assertUnreachable } from "../util/assertUnreachable.js";
+import {
+  makeCoinAvailable,
+  runOperationWithErrorReporting,
+} from "../operations/common.js";
 import { walletCoreDebugFlags } from "../util/debugFlags.js";
 import {
   HttpRequestLibrary,
@@ -108,18 +110,16 @@ import {
   WALLET_EXCHANGE_PROTOCOL_VERSION,
 } from "../versions.js";
 import {
-  makeCoinAvailable,
-  runOperationWithErrorReporting,
+  makeEventId,
   storeOperationError,
   storeOperationPending,
-} from "../wallet.js";
+} from "./common.js";
 import {
   getExchangeDetails,
   getExchangePaytoUri,
   getExchangeTrust,
   updateExchangeFromUrl,
 } from "./exchanges.js";
-import { makeEventId } from "./transactions.js";
 
 /**
  * Logger for this file.

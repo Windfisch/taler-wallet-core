@@ -40,9 +40,8 @@ import {
   PreparePayResultType,
 } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../internal-wallet-state.js";
-import { confirmPay, preparePayForUri } from "./pay.js";
+import { applyRefund, confirmPay, preparePayForUri } from "./pay-merchant.js";
 import { getBalances } from "./balance.js";
-import { applyRefund } from "./refund.js";
 import { checkLogicInvariant } from "../util/invariants.js";
 import { acceptWithdrawalFromUri } from "./withdraw.js";
 
@@ -471,6 +470,6 @@ export async function testPay(
     });
   checkLogicInvariant(!!purchase);
   return {
-    payCoinSelection: purchase.payCoinSelection,
+    payCoinSelection: purchase.payInfo?.payCoinSelection!,
   };
 }

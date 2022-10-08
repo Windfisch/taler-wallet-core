@@ -96,7 +96,7 @@ import {
   checkPaymentByProposalId,
   confirmPay,
   preparePayForUri,
-} from "../pay.js";
+} from "../pay-merchant.js";
 import { exportBackup } from "./export.js";
 import { BackupCryptoPrecomputedData, importBackup } from "./import.js";
 import { getWalletBackupState, provideBackupState } from "./state.js";
@@ -192,15 +192,6 @@ async function computeBackupCryptoData(
     cryptoData.reservePrivToPub[backupWg.reserve_priv] = encodeCrock(
       eddsaGetPublic(decodeCrock(backupWg.reserve_priv)),
     );
-  }
-  for (const prop of backupContent.proposals) {
-    const { h: contractTermsHash } = await cryptoApi.hashString({
-      str: canonicalJson(prop.contract_terms_raw),
-    });
-    const noncePub = encodeCrock(eddsaGetPublic(decodeCrock(prop.nonce_priv)));
-    cryptoData.proposalNoncePrivToPub[prop.nonce_priv] = noncePub;
-    cryptoData.proposalIdToContractTermsHash[prop.proposal_id] =
-      contractTermsHash;
   }
   for (const purch of backupContent.purchases) {
     const { h: contractTermsHash } = await cryptoApi.hashString({

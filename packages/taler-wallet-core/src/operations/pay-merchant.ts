@@ -26,14 +26,21 @@
  */
 import { GlobalIDB } from "@gnu-taler/idb-bridge";
 import {
+  AbortingCoin,
+  AbortRequest,
   AbsoluteTime,
   AgeRestriction,
   AmountJson,
   Amounts,
+  ApplyRefundResponse,
+  codecForAbortResponse,
   codecForContractTerms,
+  codecForMerchantOrderRefundPickupResponse,
+  codecForMerchantOrderStatusPaid,
   codecForMerchantPayResponse,
   codecForProposal,
   CoinDepositPermission,
+  CoinPublicKey,
   ConfirmPayResult,
   ConfirmPayResultType,
   ContractTerms,
@@ -46,12 +53,17 @@ import {
   HttpStatusCode,
   j2s,
   Logger,
+  MerchantCoinRefundFailureStatus,
+  MerchantCoinRefundStatus,
+  MerchantCoinRefundSuccessStatus,
   NotificationType,
   parsePaytoUri,
   parsePayUri,
+  parseRefundUri,
   PayCoinSelection,
   PreparePayResult,
   PreparePayResultType,
+  PrepareRefundResult,
   RefreshReason,
   strcmp,
   TalerErrorCode,
@@ -62,17 +74,19 @@ import {
 } from "@gnu-taler/taler-util";
 import { EddsaKeypair } from "../crypto/cryptoImplementation.js";
 import {
-  AbortStatus,
   AllowedAuditorInfo,
   AllowedExchangeInfo,
   BackupProviderStateTag,
   CoinRecord,
   CoinStatus,
   DenominationRecord,
-  ProposalRecord,
+  ProposalDownload,
   ProposalStatus,
   PurchaseRecord,
+  RefundReason,
+  RefundState,
   WalletContractData,
+  WalletStoresV1,
 } from "../db.js";
 import {
   makeErrorDetail,
@@ -80,6 +94,7 @@ import {
   TalerError,
   TalerProtocolViolationError,
 } from "../errors.js";
+import { GetReadWriteAccess } from "../index.browser.js";
 import {
   EXCHANGE_COINS_LOCK,
   InternalWalletState,
@@ -109,12 +124,12 @@ import {
 } from "../util/retries.js";
 import {
   spendCoins,
-  storeOperationError,
   storeOperationPending,
-} from "../wallet.js";
+  storeOperationError,
+  makeEventId,
+} from "./common.js";
 import { getExchangeDetails } from "./exchanges.js";
-import { getTotalRefreshCost } from "./refresh.js";
-import { makeEventId } from "./transactions.js";
+import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
 
 /**
  * Logger.
@@ -203,98 +218,20 @@ export interface CoinSelectionRequest {
   minimumAge?: number;
 }
 
-/**
- * Record all information that is necessary to
- * pay for a proposal in the wallet's database.
- */
-async function recordConfirmPay(
-  ws: InternalWalletState,
-  proposal: ProposalRecord,
-  coinSelection: PayCoinSelection,
-  coinDepositPermissions: CoinDepositPermission[],
-  sessionIdOverride: string | undefined,
-): Promise<PurchaseRecord> {
-  const d = proposal.download;
-  if (!d) {
-    throw Error("proposal is in invalid state");
-  }
-  let sessionId;
-  if (sessionIdOverride) {
-    sessionId = sessionIdOverride;
-  } else {
-    sessionId = proposal.downloadSessionId;
-  }
-  logger.trace(
-    `recording payment on ${proposal.orderId} with session ID ${sessionId}`,
-  );
-  const payCostInfo = await getTotalPaymentCost(ws, coinSelection);
-  const t: PurchaseRecord = {
-    abortStatus: AbortStatus.None,
-    download: d,
-    lastSessionId: sessionId,
-    payCoinSelection: coinSelection,
-    payCoinSelectionUid: encodeCrock(getRandomBytes(32)),
-    totalPayCost: payCostInfo,
-    coinDepositPermissions,
-    timestampAccept: AbsoluteTime.toTimestamp(AbsoluteTime.now()),
-    timestampLastRefundStatus: undefined,
-    proposalId: proposal.proposalId,
-    refundQueryRequested: false,
-    timestampFirstSuccessfulPay: undefined,
-    autoRefundDeadline: undefined,
-    refundAwaiting: undefined,
-    paymentSubmitPending: true,
-    refunds: {},
-    merchantPaySig: undefined,
-    noncePriv: proposal.noncePriv,
-    noncePub: proposal.noncePub,
-  };
-
-  await ws.db
-    .mktx((x) => [
-      x.proposals,
-      x.purchases,
-      x.coins,
-      x.refreshGroups,
-      x.denominations,
-      x.coinAvailability,
-    ])
-    .runReadWrite(async (tx) => {
-      const p = await tx.proposals.get(proposal.proposalId);
-      if (p) {
-        p.proposalStatus = ProposalStatus.Accepted;
-        await tx.proposals.put(p);
-      }
-      await tx.purchases.put(t);
-      await spendCoins(ws, tx, {
-        allocationId: `proposal:${t.proposalId}`,
-        coinPubs: coinSelection.coinPubs,
-        contributions: coinSelection.coinContributions,
-        refreshReason: RefreshReason.PayMerchant,
-      });
-    });
-
-  ws.notify({
-    type: NotificationType.ProposalAccepted,
-    proposalId: proposal.proposalId,
-  });
-  return t;
-}
-
 async function failProposalPermanently(
   ws: InternalWalletState,
   proposalId: string,
   err: TalerErrorDetail,
 ): Promise<void> {
   await ws.db
-    .mktx((x) => [x.proposals])
+    .mktx((x) => [x.purchases])
     .runReadWrite(async (tx) => {
-      const p = await tx.proposals.get(proposalId);
+      const p = await tx.purchases.get(proposalId);
       if (!p) {
         return;
       }
-      p.proposalStatus = ProposalStatus.PermanentlyFailed;
-      await tx.proposals.put(p);
+      p.status = ProposalStatus.ProposalDownloadFailed;
+      await tx.purchases.put(p);
     });
 }
 
@@ -309,8 +246,22 @@ function getProposalRequestTimeout(retryInfo?: RetryInfo): Duration {
 function getPayRequestTimeout(purchase: PurchaseRecord): Duration {
   return Duration.multiply(
     { d_ms: 15000 },
-    1 + purchase.payCoinSelection.coinPubs.length / 5,
+    1 + (purchase.payInfo?.payCoinSelection.coinPubs.length ?? 0) / 5,
   );
+}
+
+/**
+ * Return the proposal download data for a purchase, throw if not available.
+ *
+ * (Async since in the future this will query the DB.)
+ */
+export async function expectProposalDownload(
+  p: PurchaseRecord,
+): Promise<ProposalDownload> {
+  if (!p.download) {
+    throw Error("expected proposal to be downloaded");
+  }
+  return p.download;
 }
 
 export function extractContractData(
@@ -366,9 +317,9 @@ export async function processDownloadProposal(
   options: object = {},
 ): Promise<OperationAttemptResult> {
   const proposal = await ws.db
-    .mktx((x) => [x.proposals])
+    .mktx((x) => [x.purchases])
     .runReadOnly(async (tx) => {
-      return await tx.proposals.get(proposalId);
+      return await tx.purchases.get(proposalId);
     });
 
   if (!proposal) {
@@ -378,7 +329,7 @@ export async function processDownloadProposal(
     };
   }
 
-  if (proposal.proposalStatus != ProposalStatus.Downloading) {
+  if (proposal.status != ProposalStatus.DownloadingProposal) {
     return {
       type: OperationAttemptResultType.Finished,
       result: undefined,
@@ -401,7 +352,7 @@ export async function processDownloadProposal(
     requestBody.token = proposal.claimToken;
   }
 
-  const opId = RetryTags.forProposalClaim(proposal);
+  const opId = RetryTags.forPay(proposal);
   const retryRecord = await ws.db
     .mktx((x) => [x.operationRetries])
     .runReadOnly(async (tx) => {
@@ -543,13 +494,13 @@ export async function processDownloadProposal(
   logger.trace(`extracted contract data: ${j2s(contractData)}`);
 
   await ws.db
-    .mktx((x) => [x.purchases, x.proposals])
+    .mktx((x) => [x.purchases])
     .runReadWrite(async (tx) => {
-      const p = await tx.proposals.get(proposalId);
+      const p = await tx.purchases.get(proposalId);
       if (!p) {
         return;
       }
-      if (p.proposalStatus !== ProposalStatus.Downloading) {
+      if (p.status !== ProposalStatus.DownloadingProposal) {
         return;
       }
       p.download = {
@@ -565,14 +516,14 @@ export async function processDownloadProposal(
           await tx.purchases.indexes.byFulfillmentUrl.get(fulfillmentUrl);
         if (differentPurchase) {
           logger.warn("repurchase detected");
-          p.proposalStatus = ProposalStatus.Repurchase;
+          p.status = ProposalStatus.RepurchaseDetected;
           p.repurchaseProposalId = differentPurchase.proposalId;
-          await tx.proposals.put(p);
+          await tx.purchases.put(p);
           return;
         }
       }
-      p.proposalStatus = ProposalStatus.Proposed;
-      await tx.proposals.put(p);
+      p.status = ProposalStatus.Proposed;
+      await tx.purchases.put(p);
     });
 
   ws.notify({
@@ -602,9 +553,9 @@ async function startDownloadProposal(
   noncePriv: string | undefined,
 ): Promise<string> {
   const oldProposal = await ws.db
-    .mktx((x) => [x.proposals])
+    .mktx((x) => [x.purchases])
     .runReadOnly(async (tx) => {
-      return tx.proposals.indexes.byUrlAndOrderId.get([
+      return tx.purchases.indexes.byUrlAndOrderId.get([
         merchantBaseUrl,
         orderId,
       ]);
@@ -635,7 +586,7 @@ async function startDownloadProposal(
   const { priv, pub } = noncePair;
   const proposalId = encodeCrock(getRandomBytes(32));
 
-  const proposalRecord: ProposalRecord = {
+  const proposalRecord: PurchaseRecord = {
     download: undefined,
     noncePriv: priv,
     noncePub: pub,
@@ -644,15 +595,25 @@ async function startDownloadProposal(
     merchantBaseUrl,
     orderId,
     proposalId: proposalId,
-    proposalStatus: ProposalStatus.Downloading,
+    status: ProposalStatus.DownloadingProposal,
     repurchaseProposalId: undefined,
     downloadSessionId: sessionId,
+    autoRefundDeadline: undefined,
+    lastSessionId: undefined,
+    merchantPaySig: undefined,
+    payInfo: undefined,
+    refundAmountAwaiting: undefined,
+    refunds: {},
+    timestampAccept: undefined,
+    timestampFirstSuccessfulPay: undefined,
+    timestampLastRefundStatus: undefined,
+    pendingRemovedCoinPubs: undefined,
   };
 
   await ws.db
-    .mktx((x) => [x.proposals])
+    .mktx((x) => [x.purchases])
     .runReadWrite(async (tx) => {
-      const existingRecord = await tx.proposals.indexes.byUrlAndOrderId.get([
+      const existingRecord = await tx.purchases.indexes.byUrlAndOrderId.get([
         merchantBaseUrl,
         orderId,
       ]);
@@ -660,7 +621,7 @@ async function startDownloadProposal(
         // Created concurrently
         return;
       }
-      await tx.proposals.put(proposalRecord);
+      await tx.purchases.put(proposalRecord);
     });
 
   await processDownloadProposal(ws, proposalId);
@@ -688,15 +649,17 @@ async function storeFirstPaySuccess(
         logger.warn("payment success already stored");
         return;
       }
+      if (purchase.status === ProposalStatus.Paying) {
+        purchase.status = ProposalStatus.Paid;
+      }
       purchase.timestampFirstSuccessfulPay = now;
-      purchase.paymentSubmitPending = false;
       purchase.lastSessionId = sessionId;
       purchase.merchantPaySig = paySig;
-      const protoAr = purchase.download.contractData.autoRefund;
+      const protoAr = purchase.download!.contractData.autoRefund;
       if (protoAr) {
         const ar = Duration.fromTalerProtocolDuration(protoAr);
         logger.info("auto_refund present");
-        purchase.refundQueryRequested = true;
+        purchase.status = ProposalStatus.QueryingAutoRefund;
         purchase.autoRefundDeadline = AbsoluteTime.toTimestamp(
           AbsoluteTime.addDuration(AbsoluteTime.now(), ar),
         );
@@ -723,7 +686,9 @@ async function storePayReplaySuccess(
       if (isFirst) {
         throw Error("invalid payment state");
       }
-      purchase.paymentSubmitPending = false;
+      if (purchase.status === ProposalStatus.Paying) {
+        purchase.status = ProposalStatus.Paid;
+      }
       purchase.lastSessionId = sessionId;
       await tx.purchases.put(purchase);
     });
@@ -774,19 +739,26 @@ async function handleInsufficientFunds(
     throw new TalerProtocolViolationError();
   }
 
-  const { contractData } = proposal.download;
+  const { contractData } = proposal.download!;
 
   const prevPayCoins: PreviousPayCoins = [];
+
+  const payInfo = proposal.payInfo;
+  if (!payInfo) {
+    return;
+  }
+
+  const payCoinSelection = payInfo.payCoinSelection;
 
   await ws.db
     .mktx((x) => [x.coins, x.denominations])
     .runReadOnly(async (tx) => {
-      for (let i = 0; i < proposal.payCoinSelection.coinPubs.length; i++) {
-        const coinPub = proposal.payCoinSelection.coinPubs[i];
+      for (let i = 0; i < payCoinSelection.coinPubs.length; i++) {
+        const coinPub = payCoinSelection.coinPubs[i];
         if (coinPub === brokenCoinPub) {
           continue;
         }
-        const contrib = proposal.payCoinSelection.coinContributions[i];
+        const contrib = payCoinSelection.coinContributions[i];
         const coin = await tx.coins.get(coinPub);
         if (!coin) {
           continue;
@@ -839,14 +811,19 @@ async function handleInsufficientFunds(
       if (!p) {
         return;
       }
-      p.payCoinSelection = res;
-      p.payCoinSelectionUid = encodeCrock(getRandomBytes(32));
-      p.coinDepositPermissions = undefined;
+      const payInfo = p.payInfo;
+      if (!payInfo) {
+        return;
+      }
+      payInfo.payCoinSelection = res;
+      payInfo.payCoinSelection = res;
+      payInfo.payCoinSelectionUid = encodeCrock(getRandomBytes(32));
+      payInfo.coinDepositPermissions = undefined;
       await tx.purchases.put(p);
       await spendCoins(ws, tx, {
         allocationId: `proposal:${p.proposalId}`,
-        coinPubs: p.payCoinSelection.coinPubs,
-        contributions: p.payCoinSelection.coinContributions,
+        coinPubs: payInfo.payCoinSelection.coinPubs,
+        contributions: payInfo.payCoinSelection.coinContributions,
         refreshReason: RefreshReason.PayMerchant,
       });
     });
@@ -1255,23 +1232,23 @@ export async function checkPaymentByProposalId(
   sessionId?: string,
 ): Promise<PreparePayResult> {
   let proposal = await ws.db
-    .mktx((x) => [x.proposals])
+    .mktx((x) => [x.purchases])
     .runReadOnly(async (tx) => {
-      return tx.proposals.get(proposalId);
+      return tx.purchases.get(proposalId);
     });
   if (!proposal) {
     throw Error(`could not get proposal ${proposalId}`);
   }
-  if (proposal.proposalStatus === ProposalStatus.Repurchase) {
+  if (proposal.status === ProposalStatus.RepurchaseDetected) {
     const existingProposalId = proposal.repurchaseProposalId;
     if (!existingProposalId) {
       throw Error("invalid proposal state");
     }
     logger.trace("using existing purchase for same product");
     proposal = await ws.db
-      .mktx((x) => [x.proposals])
+      .mktx((x) => [x.purchases])
       .runReadOnly(async (tx) => {
-        return tx.proposals.get(existingProposalId);
+        return tx.purchases.get(existingProposalId);
       });
     if (!proposal) {
       throw Error("existing proposal is in wrong state");
@@ -1297,7 +1274,7 @@ export async function checkPaymentByProposalId(
       return tx.purchases.get(proposalId);
     });
 
-  if (!purchase) {
+  if (!purchase || purchase.status === ProposalStatus.Proposed) {
     // If not already paid, check if we could pay for it.
     const res = await selectPayCoinsNew(ws, {
       auditors: contractData.allowedAuditors,
@@ -1337,10 +1314,14 @@ export async function checkPaymentByProposalId(
     };
   }
 
-  if (purchase.lastSessionId !== sessionId) {
+  if (
+    purchase.status === ProposalStatus.Paid &&
+    purchase.lastSessionId !== sessionId
+  ) {
     logger.trace(
       "automatically re-submitting payment with different session ID",
     );
+    logger.trace(`last: ${purchase.lastSessionId}, current: ${sessionId}`);
     await ws.db
       .mktx((x) => [x.purchases])
       .runReadWrite(async (tx) => {
@@ -1349,7 +1330,7 @@ export async function checkPaymentByProposalId(
           return;
         }
         p.lastSessionId = sessionId;
-        p.paymentSubmitPending = true;
+        p.status = ProposalStatus.PayingReplay;
         await tx.purchases.put(p);
       });
     const r = await processPurchasePay(ws, proposalId, { forceNow: true });
@@ -1357,35 +1338,41 @@ export async function checkPaymentByProposalId(
       // FIXME: This does not surface the original error
       throw Error("submitting pay failed");
     }
+    const download = await expectProposalDownload(purchase);
     return {
       status: PreparePayResultType.AlreadyConfirmed,
-      contractTerms: purchase.download.contractTermsRaw,
-      contractTermsHash: purchase.download.contractData.contractTermsHash,
+      contractTerms: download.contractTermsRaw,
+      contractTermsHash: download.contractData.contractTermsHash,
       paid: true,
-      amountRaw: Amounts.stringify(purchase.download.contractData.amount),
-      amountEffective: Amounts.stringify(purchase.totalPayCost),
+      amountRaw: Amounts.stringify(download.contractData.amount),
+      amountEffective: Amounts.stringify(purchase.payInfo?.totalPayCost!),
       proposalId,
     };
   } else if (!purchase.timestampFirstSuccessfulPay) {
+    const download = await expectProposalDownload(purchase);
     return {
       status: PreparePayResultType.AlreadyConfirmed,
-      contractTerms: purchase.download.contractTermsRaw,
-      contractTermsHash: purchase.download.contractData.contractTermsHash,
+      contractTerms: download.contractTermsRaw,
+      contractTermsHash: download.contractData.contractTermsHash,
       paid: false,
-      amountRaw: Amounts.stringify(purchase.download.contractData.amount),
-      amountEffective: Amounts.stringify(purchase.totalPayCost),
+      amountRaw: Amounts.stringify(download.contractData.amount),
+      amountEffective: Amounts.stringify(purchase.payInfo?.totalPayCost!),
       proposalId,
     };
   } else {
-    const paid = !purchase.paymentSubmitPending;
+    const paid =
+      purchase.status === ProposalStatus.Paid ||
+      purchase.status === ProposalStatus.QueryingRefund ||
+      purchase.status === ProposalStatus.QueryingAutoRefund;
+    const download = await expectProposalDownload(purchase);
     return {
       status: PreparePayResultType.AlreadyConfirmed,
-      contractTerms: purchase.download.contractTermsRaw,
-      contractTermsHash: purchase.download.contractData.contractTermsHash,
+      contractTerms: download.contractTermsRaw,
+      contractTermsHash: download.contractData.contractTermsHash,
       paid,
-      amountRaw: Amounts.stringify(purchase.download.contractData.amount),
-      amountEffective: Amounts.stringify(purchase.totalPayCost),
-      ...(paid ? { nextUrl: purchase.download.contractData.orderId } : {}),
+      amountRaw: Amounts.stringify(download.contractData.amount),
+      amountEffective: Amounts.stringify(purchase.payInfo?.totalPayCost!),
+      ...(paid ? { nextUrl: download.contractData.orderId } : {}),
       proposalId,
     };
   }
@@ -1396,9 +1383,9 @@ export async function getContractTermsDetails(
   proposalId: string,
 ): Promise<WalletContractData> {
   const proposal = await ws.db
-    .mktx((x) => [x.proposals])
+    .mktx((x) => [x.purchases])
     .runReadOnly(async (tx) => {
-      return tx.proposals.get(proposalId);
+      return tx.purchases.get(proposalId);
     });
 
   if (!proposal) {
@@ -1574,7 +1561,10 @@ export async function runPayForConfirmPay(
       }
     }
     case OperationAttemptResultType.Pending:
-      await storeOperationPending(ws, `${PendingTaskType.Pay}:${proposalId}`);
+      await storeOperationPending(
+        ws,
+        `${PendingTaskType.Purchase}:${proposalId}`,
+      );
       return {
         type: ConfirmPayResultType.Pending,
         transactionId: makeEventId(TransactionType.Payment, proposalId),
@@ -1600,9 +1590,9 @@ export async function confirmPay(
     `executing confirmPay with proposalId ${proposalId} and sessionIdOverride ${sessionIdOverride}`,
   );
   const proposal = await ws.db
-    .mktx((x) => [x.proposals])
+    .mktx((x) => [x.purchases])
     .runReadOnly(async (tx) => {
-      return tx.proposals.get(proposalId);
+      return tx.purchases.get(proposalId);
     });
 
   if (!proposal) {
@@ -1625,13 +1615,12 @@ export async function confirmPay(
       ) {
         logger.trace(`changing session ID to ${sessionIdOverride}`);
         purchase.lastSessionId = sessionIdOverride;
-        purchase.paymentSubmitPending = true;
         await tx.purchases.put(purchase);
       }
       return purchase;
     });
 
-  if (existingPurchase) {
+  if (existingPurchase && existingPurchase.payInfo) {
     logger.trace("confirmPay: submitting payment for existing purchase");
     return runPayForConfirmPay(ws, proposalId);
   }
@@ -1640,9 +1629,9 @@ export async function confirmPay(
 
   const contractData = d.contractData;
 
-  let res: PayCoinSelection | undefined = undefined;
+  let maybeCoinSelection: PayCoinSelection | undefined = undefined;
 
-  res = await selectPayCoinsNew(ws, {
+  maybeCoinSelection = await selectPayCoinsNew(ws, {
     auditors: contractData.allowedAuditors,
     exchanges: contractData.allowedExchanges,
     wireMethod: contractData.wireMethod,
@@ -1655,9 +1644,9 @@ export async function confirmPay(
     forcedSelection: forcedCoinSel,
   });
 
-  logger.trace("coin selection result", res);
+  logger.trace("coin selection result", maybeCoinSelection);
 
-  if (!res) {
+  if (!maybeCoinSelection) {
     // Should not happen, since checkPay should be called first
     // FIXME: Actually, this should be handled gracefully,
     // and the status should be stored in the DB.
@@ -1665,21 +1654,119 @@ export async function confirmPay(
     throw Error("insufficient balance");
   }
 
+  const coinSelection = maybeCoinSelection;
+
   const depositPermissions = await generateDepositPermissions(
     ws,
-    res,
+    coinSelection,
     d.contractData,
   );
 
-  await recordConfirmPay(
-    ws,
-    proposal,
-    res,
-    depositPermissions,
-    sessionIdOverride,
+  const payCostInfo = await getTotalPaymentCost(ws, coinSelection);
+
+  let sessionId: string | undefined;
+  if (sessionIdOverride) {
+    sessionId = sessionIdOverride;
+  } else {
+    sessionId = proposal.downloadSessionId;
+  }
+
+  logger.trace(
+    `recording payment on ${proposal.orderId} with session ID ${sessionId}`,
   );
 
+  await ws.db
+    .mktx((x) => [
+      x.purchases,
+      x.coins,
+      x.refreshGroups,
+      x.denominations,
+      x.coinAvailability,
+    ])
+    .runReadWrite(async (tx) => {
+      const p = await tx.purchases.get(proposal.proposalId);
+      if (!p) {
+        return;
+      }
+      switch (p.status) {
+        case ProposalStatus.Proposed:
+          p.payInfo = {
+            payCoinSelection: coinSelection,
+            payCoinSelectionUid: encodeCrock(getRandomBytes(16)),
+            totalPayCost: payCostInfo,
+            coinDepositPermissions: depositPermissions,
+          };
+          p.lastSessionId = sessionId;
+          p.timestampAccept = TalerProtocolTimestamp.now();
+          p.status = ProposalStatus.Paying;
+          await tx.purchases.put(p);
+          await spendCoins(ws, tx, {
+            allocationId: `proposal:${p.proposalId}`,
+            coinPubs: coinSelection.coinPubs,
+            contributions: coinSelection.coinContributions,
+            refreshReason: RefreshReason.PayMerchant,
+          });
+          break;
+        case ProposalStatus.Paid:
+        case ProposalStatus.Paying:
+        default:
+          break;
+      }
+    });
+
+  ws.notify({
+    type: NotificationType.ProposalAccepted,
+    proposalId: proposal.proposalId,
+  });
+
   return runPayForConfirmPay(ws, proposalId);
+}
+
+export async function processPurchase(
+  ws: InternalWalletState,
+  proposalId: string,
+  options: {
+    forceNow?: boolean;
+  } = {},
+): Promise<OperationAttemptResult> {
+  const purchase = await ws.db
+    .mktx((x) => [x.purchases])
+    .runReadOnly(async (tx) => {
+      return tx.purchases.get(proposalId);
+    });
+  if (!purchase) {
+    return {
+      type: OperationAttemptResultType.Error,
+      errorDetail: {
+        // FIXME: allocate more specific error code
+        code: TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
+        hint: `trying to pay for purchase that is not in the database`,
+        proposalId: proposalId,
+      },
+    };
+  }
+
+  switch (purchase.status) {
+    case ProposalStatus.DownloadingProposal:
+      return processDownloadProposal(ws, proposalId, options);
+    case ProposalStatus.Paying:
+    case ProposalStatus.PayingReplay:
+      return processPurchasePay(ws, proposalId, options);
+    case ProposalStatus.QueryingAutoRefund:
+    case ProposalStatus.QueryingAutoRefund:
+    case ProposalStatus.AbortingWithRefund:
+      return processPurchaseQueryRefund(ws, proposalId, options);
+    case ProposalStatus.ProposalDownloadFailed:
+    case ProposalStatus.Paid:
+    case ProposalStatus.AbortingWithRefund:
+    case ProposalStatus.RepurchaseDetected:
+      return {
+        type: OperationAttemptResultType.Finished,
+        result: undefined,
+      };
+    default:
+      throw Error(`unexpected purchase status (${purchase.status})`);
+  }
 }
 
 export async function processPurchasePay(
@@ -1705,31 +1792,38 @@ export async function processPurchasePay(
       },
     };
   }
-  if (!purchase.paymentSubmitPending) {
-    OperationAttemptResult.finishedEmpty();
+  switch (purchase.status) {
+    case ProposalStatus.Paying:
+    case ProposalStatus.PayingReplay:
+      break;
+    default:
+      return OperationAttemptResult.finishedEmpty();
   }
   logger.trace(`processing purchase pay ${proposalId}`);
 
   const sessionId = purchase.lastSessionId;
 
-  logger.trace("paying with session ID", sessionId);
+  logger.trace(`paying with session ID ${sessionId}`);
+  const payInfo = purchase.payInfo;
+  checkDbInvariant(!!payInfo, "payInfo");
 
+  const download = await expectProposalDownload(purchase);
   if (!purchase.merchantPaySig) {
     const payUrl = new URL(
-      `orders/${purchase.download.contractData.orderId}/pay`,
-      purchase.download.contractData.merchantBaseUrl,
+      `orders/${download.contractData.orderId}/pay`,
+      download.contractData.merchantBaseUrl,
     ).href;
 
     let depositPermissions: CoinDepositPermission[];
 
-    if (purchase.coinDepositPermissions) {
-      depositPermissions = purchase.coinDepositPermissions;
+    if (purchase.payInfo?.coinDepositPermissions) {
+      depositPermissions = purchase.payInfo.coinDepositPermissions;
     } else {
       // FIXME: also cache!
       depositPermissions = await generateDepositPermissions(
         ws,
-        purchase.payCoinSelection,
-        purchase.download.contractData,
+        payInfo.payCoinSelection,
+        download.contractData,
       );
     }
 
@@ -1775,7 +1869,8 @@ export async function processPurchasePay(
           if (!purch) {
             return;
           }
-          purch.payFrozen = true;
+          // FIXME: Should be some "PayPermanentlyFailed" and error info should be stored
+          purch.status = ProposalStatus.PaymentAbortFinished;
           await tx.purchases.put(purch);
         });
       throw makePendingOperationFailedError(
@@ -1819,9 +1914,9 @@ export async function processPurchasePay(
 
     logger.trace("got success from pay URL", merchantResp);
 
-    const merchantPub = purchase.download.contractData.merchantPub;
+    const merchantPub = download.contractData.merchantPub;
     const { valid } = await ws.cryptoApi.isValidPaymentSignature({
-      contractHash: purchase.download.contractData.contractTermsHash,
+      contractHash: download.contractData.contractTermsHash,
       merchantPub,
       sig: merchantResp.sig,
     });
@@ -1836,17 +1931,19 @@ export async function processPurchasePay(
     await unblockBackup(ws, proposalId);
   } else {
     const payAgainUrl = new URL(
-      `orders/${purchase.download.contractData.orderId}/paid`,
-      purchase.download.contractData.merchantBaseUrl,
+      `orders/${download.contractData.orderId}/paid`,
+      download.contractData.merchantBaseUrl,
     ).href;
     const reqBody = {
       sig: purchase.merchantPaySig,
-      h_contract: purchase.download.contractData.contractTermsHash,
+      h_contract: download.contractData.contractTermsHash,
       session_id: sessionId ?? "",
     };
+    logger.trace(`/paid request body: ${j2s(reqBody)}`);
     const resp = await ws.runSequentialized([EXCHANGE_COINS_LOCK], () =>
       ws.http.postJson(payAgainUrl, reqBody),
     );
+    logger.trace(`/paid response status: ${resp.status}`);
     if (resp.status !== 204) {
       throw TalerError.fromDetail(
         TalerErrorCode.WALLET_UNEXPECTED_REQUEST_ERROR,
@@ -1871,18 +1968,18 @@ export async function refuseProposal(
   proposalId: string,
 ): Promise<void> {
   const success = await ws.db
-    .mktx((x) => [x.proposals])
+    .mktx((x) => [x.purchases])
     .runReadWrite(async (tx) => {
-      const proposal = await tx.proposals.get(proposalId);
+      const proposal = await tx.purchases.get(proposalId);
       if (!proposal) {
         logger.trace(`proposal ${proposalId} not found, won't refuse proposal`);
         return false;
       }
-      if (proposal.proposalStatus !== ProposalStatus.Proposed) {
+      if (proposal.status !== ProposalStatus.Proposed) {
         return false;
       }
-      proposal.proposalStatus = ProposalStatus.Refused;
-      await tx.proposals.put(proposal);
+      proposal.status = ProposalStatus.ProposalRefused;
+      await tx.purchases.put(proposal);
       return true;
     });
   if (success) {
@@ -1890,4 +1987,772 @@ export async function refuseProposal(
       type: NotificationType.ProposalRefused,
     });
   }
+}
+
+export async function prepareRefund(
+  ws: InternalWalletState,
+  talerRefundUri: string,
+): Promise<PrepareRefundResult> {
+  const parseResult = parseRefundUri(talerRefundUri);
+
+  logger.trace("preparing refund offer", parseResult);
+
+  if (!parseResult) {
+    throw Error("invalid refund URI");
+  }
+
+  const purchase = await ws.db
+    .mktx((x) => [x.purchases])
+    .runReadOnly(async (tx) => {
+      return tx.purchases.indexes.byMerchantUrlAndOrderId.get([
+        parseResult.merchantBaseUrl,
+        parseResult.orderId,
+      ]);
+    });
+
+  if (!purchase) {
+    throw Error(
+      `no purchase for the taler://refund/ URI (${talerRefundUri}) was found`,
+    );
+  }
+
+  const awaiting = await queryAndSaveAwaitingRefund(ws, purchase);
+  const summary = await calculateRefundSummary(purchase);
+  const proposalId = purchase.proposalId;
+
+  const { contractData: c } = await expectProposalDownload(purchase);
+
+  return {
+    proposalId,
+    effectivePaid: Amounts.stringify(summary.amountEffectivePaid),
+    gone: Amounts.stringify(summary.amountRefundGone),
+    granted: Amounts.stringify(summary.amountRefundGranted),
+    pending: summary.pendingAtExchange,
+    awaiting: Amounts.stringify(awaiting),
+    info: {
+      contractTermsHash: c.contractTermsHash,
+      merchant: c.merchant,
+      orderId: c.orderId,
+      products: c.products,
+      summary: c.summary,
+      fulfillmentMessage: c.fulfillmentMessage,
+      summary_i18n: c.summaryI18n,
+      fulfillmentMessage_i18n: c.fulfillmentMessageI18n,
+    },
+  };
+}
+
+function getRefundKey(d: MerchantCoinRefundStatus): string {
+  return `${d.coin_pub}-${d.rtransaction_id}`;
+}
+
+async function applySuccessfulRefund(
+  tx: GetReadWriteAccess<{
+    coins: typeof WalletStoresV1.coins;
+    denominations: typeof WalletStoresV1.denominations;
+  }>,
+  p: PurchaseRecord,
+  refreshCoinsMap: Record<string, { coinPub: string }>,
+  r: MerchantCoinRefundSuccessStatus,
+): Promise<void> {
+  // FIXME: check signature before storing it as valid!
+
+  const refundKey = getRefundKey(r);
+  const coin = await tx.coins.get(r.coin_pub);
+  if (!coin) {
+    logger.warn("coin not found, can't apply refund");
+    return;
+  }
+  const denom = await tx.denominations.get([
+    coin.exchangeBaseUrl,
+    coin.denomPubHash,
+  ]);
+  if (!denom) {
+    throw Error("inconsistent database");
+  }
+  refreshCoinsMap[coin.coinPub] = { coinPub: coin.coinPub };
+  const refundAmount = Amounts.parseOrThrow(r.refund_amount);
+  const refundFee = denom.fees.feeRefund;
+  coin.status = CoinStatus.Dormant;
+  coin.currentAmount = Amounts.add(coin.currentAmount, refundAmount).amount;
+  coin.currentAmount = Amounts.sub(coin.currentAmount, refundFee).amount;
+  logger.trace(`coin amount after is ${Amounts.stringify(coin.currentAmount)}`);
+  await tx.coins.put(coin);
+
+  const allDenoms = await tx.denominations.indexes.byExchangeBaseUrl
+    .iter(coin.exchangeBaseUrl)
+    .toArray();
+
+  const amountLeft = Amounts.sub(
+    Amounts.add(coin.currentAmount, Amounts.parseOrThrow(r.refund_amount))
+      .amount,
+    denom.fees.feeRefund,
+  ).amount;
+
+  const totalRefreshCostBound = getTotalRefreshCost(
+    allDenoms,
+    DenominationRecord.toDenomInfo(denom),
+    amountLeft,
+  );
+
+  p.refunds[refundKey] = {
+    type: RefundState.Applied,
+    obtainedTime: AbsoluteTime.toTimestamp(AbsoluteTime.now()),
+    executionTime: r.execution_time,
+    refundAmount: Amounts.parseOrThrow(r.refund_amount),
+    refundFee: denom.fees.feeRefund,
+    totalRefreshCostBound,
+    coinPub: r.coin_pub,
+    rtransactionId: r.rtransaction_id,
+  };
+}
+
+async function storePendingRefund(
+  tx: GetReadWriteAccess<{
+    denominations: typeof WalletStoresV1.denominations;
+    coins: typeof WalletStoresV1.coins;
+  }>,
+  p: PurchaseRecord,
+  r: MerchantCoinRefundFailureStatus,
+): Promise<void> {
+  const refundKey = getRefundKey(r);
+
+  const coin = await tx.coins.get(r.coin_pub);
+  if (!coin) {
+    logger.warn("coin not found, can't apply refund");
+    return;
+  }
+  const denom = await tx.denominations.get([
+    coin.exchangeBaseUrl,
+    coin.denomPubHash,
+  ]);
+
+  if (!denom) {
+    throw Error("inconsistent database");
+  }
+
+  const allDenoms = await tx.denominations.indexes.byExchangeBaseUrl
+    .iter(coin.exchangeBaseUrl)
+    .toArray();
+
+  const amountLeft = Amounts.sub(
+    Amounts.add(coin.currentAmount, Amounts.parseOrThrow(r.refund_amount))
+      .amount,
+    denom.fees.feeRefund,
+  ).amount;
+
+  const totalRefreshCostBound = getTotalRefreshCost(
+    allDenoms,
+    DenominationRecord.toDenomInfo(denom),
+    amountLeft,
+  );
+
+  p.refunds[refundKey] = {
+    type: RefundState.Pending,
+    obtainedTime: AbsoluteTime.toTimestamp(AbsoluteTime.now()),
+    executionTime: r.execution_time,
+    refundAmount: Amounts.parseOrThrow(r.refund_amount),
+    refundFee: denom.fees.feeRefund,
+    totalRefreshCostBound,
+    coinPub: r.coin_pub,
+    rtransactionId: r.rtransaction_id,
+  };
+}
+
+async function storeFailedRefund(
+  tx: GetReadWriteAccess<{
+    coins: typeof WalletStoresV1.coins;
+    denominations: typeof WalletStoresV1.denominations;
+  }>,
+  p: PurchaseRecord,
+  refreshCoinsMap: Record<string, { coinPub: string }>,
+  r: MerchantCoinRefundFailureStatus,
+): Promise<void> {
+  const refundKey = getRefundKey(r);
+
+  const coin = await tx.coins.get(r.coin_pub);
+  if (!coin) {
+    logger.warn("coin not found, can't apply refund");
+    return;
+  }
+  const denom = await tx.denominations.get([
+    coin.exchangeBaseUrl,
+    coin.denomPubHash,
+  ]);
+
+  if (!denom) {
+    throw Error("inconsistent database");
+  }
+
+  const allDenoms = await tx.denominations.indexes.byExchangeBaseUrl
+    .iter(coin.exchangeBaseUrl)
+    .toArray();
+
+  const amountLeft = Amounts.sub(
+    Amounts.add(coin.currentAmount, Amounts.parseOrThrow(r.refund_amount))
+      .amount,
+    denom.fees.feeRefund,
+  ).amount;
+
+  const totalRefreshCostBound = getTotalRefreshCost(
+    allDenoms,
+    DenominationRecord.toDenomInfo(denom),
+    amountLeft,
+  );
+
+  p.refunds[refundKey] = {
+    type: RefundState.Failed,
+    obtainedTime: TalerProtocolTimestamp.now(),
+    executionTime: r.execution_time,
+    refundAmount: Amounts.parseOrThrow(r.refund_amount),
+    refundFee: denom.fees.feeRefund,
+    totalRefreshCostBound,
+    coinPub: r.coin_pub,
+    rtransactionId: r.rtransaction_id,
+  };
+
+  if (p.status === ProposalStatus.AbortingWithRefund) {
+    // Refund failed because the merchant didn't even try to deposit
+    // the coin yet, so we try to refresh.
+    if (r.exchange_code === TalerErrorCode.EXCHANGE_REFUND_DEPOSIT_NOT_FOUND) {
+      const coin = await tx.coins.get(r.coin_pub);
+      if (!coin) {
+        logger.warn("coin not found, can't apply refund");
+        return;
+      }
+      const denom = await tx.denominations.get([
+        coin.exchangeBaseUrl,
+        coin.denomPubHash,
+      ]);
+      if (!denom) {
+        logger.warn("denomination for coin missing");
+        return;
+      }
+      const payCoinSelection = p.payInfo?.payCoinSelection;
+      if (!payCoinSelection) {
+        logger.warn("no pay coin selection, can't apply refund");
+        return;
+      }
+      let contrib: AmountJson | undefined;
+      for (let i = 0; i < payCoinSelection.coinPubs.length; i++) {
+        if (payCoinSelection.coinPubs[i] === r.coin_pub) {
+          contrib = payCoinSelection.coinContributions[i];
+        }
+      }
+      if (contrib) {
+        coin.currentAmount = Amounts.add(coin.currentAmount, contrib).amount;
+        coin.currentAmount = Amounts.sub(
+          coin.currentAmount,
+          denom.fees.feeRefund,
+        ).amount;
+      }
+      refreshCoinsMap[coin.coinPub] = { coinPub: coin.coinPub };
+      await tx.coins.put(coin);
+    }
+  }
+}
+
+async function acceptRefunds(
+  ws: InternalWalletState,
+  proposalId: string,
+  refunds: MerchantCoinRefundStatus[],
+  reason: RefundReason,
+): Promise<void> {
+  logger.trace("handling refunds", refunds);
+  const now = TalerProtocolTimestamp.now();
+
+  await ws.db
+    .mktx((x) => [
+      x.purchases,
+      x.coins,
+      x.coinAvailability,
+      x.denominations,
+      x.refreshGroups,
+    ])
+    .runReadWrite(async (tx) => {
+      const p = await tx.purchases.get(proposalId);
+      if (!p) {
+        logger.error("purchase not found, not adding refunds");
+        return;
+      }
+
+      const refreshCoinsMap: Record<string, CoinPublicKey> = {};
+
+      for (const refundStatus of refunds) {
+        const refundKey = getRefundKey(refundStatus);
+        const existingRefundInfo = p.refunds[refundKey];
+
+        const isPermanentFailure =
+          refundStatus.type === "failure" &&
+          refundStatus.exchange_status >= 400 &&
+          refundStatus.exchange_status < 500;
+
+        // Already failed.
+        if (existingRefundInfo?.type === RefundState.Failed) {
+          continue;
+        }
+
+        // Already applied.
+        if (existingRefundInfo?.type === RefundState.Applied) {
+          continue;
+        }
+
+        // Still pending.
+        if (
+          refundStatus.type === "failure" &&
+          !isPermanentFailure &&
+          existingRefundInfo?.type === RefundState.Pending
+        ) {
+          continue;
+        }
+
+        // Invariant: (!existingRefundInfo) || (existingRefundInfo === Pending)
+
+        if (refundStatus.type === "success") {
+          await applySuccessfulRefund(tx, p, refreshCoinsMap, refundStatus);
+        } else if (isPermanentFailure) {
+          await storeFailedRefund(tx, p, refreshCoinsMap, refundStatus);
+        } else {
+          await storePendingRefund(tx, p, refundStatus);
+        }
+      }
+
+      const refreshCoinsPubs = Object.values(refreshCoinsMap);
+      if (refreshCoinsPubs.length > 0) {
+        await createRefreshGroup(
+          ws,
+          tx,
+          refreshCoinsPubs,
+          RefreshReason.Refund,
+        );
+      }
+
+      // Are we done with querying yet, or do we need to do another round
+      // after a retry delay?
+      let queryDone = true;
+
+      let numPendingRefunds = 0;
+      for (const ri of Object.values(p.refunds)) {
+        switch (ri.type) {
+          case RefundState.Pending:
+            numPendingRefunds++;
+            break;
+        }
+      }
+
+      if (numPendingRefunds > 0) {
+        queryDone = false;
+      }
+
+      if (queryDone) {
+        p.timestampLastRefundStatus = now;
+        if (p.status === ProposalStatus.AbortingWithRefund) {
+          p.status = ProposalStatus.PaymentAbortFinished;
+        } else if (p.status === ProposalStatus.QueryingAutoRefund) {
+          const autoRefundDeadline = p.autoRefundDeadline;
+          checkDbInvariant(!!autoRefundDeadline);
+          if (
+            AbsoluteTime.isExpired(
+              AbsoluteTime.fromTimestamp(autoRefundDeadline),
+            )
+          ) {
+            p.status = ProposalStatus.Paid;
+          }
+        } else if (p.status === ProposalStatus.QueryingRefund) {
+          p.status = ProposalStatus.Paid;
+        }
+        logger.trace("refund query done");
+      } else {
+        // No error, but we need to try again!
+        p.timestampLastRefundStatus = now;
+        logger.trace("refund query not done");
+      }
+
+      await tx.purchases.put(p);
+    });
+
+  ws.notify({
+    type: NotificationType.RefundQueried,
+  });
+}
+
+async function calculateRefundSummary(
+  p: PurchaseRecord,
+): Promise<RefundSummary> {
+  const download = await expectProposalDownload(p);
+  let amountRefundGranted = Amounts.getZero(
+    download.contractData.amount.currency,
+  );
+  let amountRefundGone = Amounts.getZero(download.contractData.amount.currency);
+
+  let pendingAtExchange = false;
+
+  const payInfo = p.payInfo;
+  if (!payInfo) {
+    throw Error("can't calculate refund summary without payInfo");
+  }
+
+  Object.keys(p.refunds).forEach((rk) => {
+    const refund = p.refunds[rk];
+    if (refund.type === RefundState.Pending) {
+      pendingAtExchange = true;
+    }
+    if (
+      refund.type === RefundState.Applied ||
+      refund.type === RefundState.Pending
+    ) {
+      amountRefundGranted = Amounts.add(
+        amountRefundGranted,
+        Amounts.sub(
+          refund.refundAmount,
+          refund.refundFee,
+          refund.totalRefreshCostBound,
+        ).amount,
+      ).amount;
+    } else {
+      amountRefundGone = Amounts.add(
+        amountRefundGone,
+        refund.refundAmount,
+      ).amount;
+    }
+  });
+  return {
+    amountEffectivePaid: payInfo.totalPayCost,
+    amountRefundGone,
+    amountRefundGranted,
+    pendingAtExchange,
+  };
+}
+
+/**
+ * Summary of the refund status of a purchase.
+ */
+export interface RefundSummary {
+  pendingAtExchange: boolean;
+  amountEffectivePaid: AmountJson;
+  amountRefundGranted: AmountJson;
+  amountRefundGone: AmountJson;
+}
+
+/**
+ * Accept a refund, return the contract hash for the contract
+ * that was involved in the refund.
+ */
+export async function applyRefund(
+  ws: InternalWalletState,
+  talerRefundUri: string,
+): Promise<ApplyRefundResponse> {
+  const parseResult = parseRefundUri(talerRefundUri);
+
+  logger.trace("applying refund", parseResult);
+
+  if (!parseResult) {
+    throw Error("invalid refund URI");
+  }
+
+  const purchase = await ws.db
+    .mktx((x) => [x.purchases])
+    .runReadOnly(async (tx) => {
+      return tx.purchases.indexes.byMerchantUrlAndOrderId.get([
+        parseResult.merchantBaseUrl,
+        parseResult.orderId,
+      ]);
+    });
+
+  if (!purchase) {
+    throw Error(
+      `no purchase for the taler://refund/ URI (${talerRefundUri}) was found`,
+    );
+  }
+
+  return applyRefundFromPurchaseId(ws, purchase.proposalId);
+}
+
+export async function applyRefundFromPurchaseId(
+  ws: InternalWalletState,
+  proposalId: string,
+): Promise<ApplyRefundResponse> {
+  logger.trace("applying refund for purchase", proposalId);
+
+  logger.info("processing purchase for refund");
+  const success = await ws.db
+    .mktx((x) => [x.purchases])
+    .runReadWrite(async (tx) => {
+      const p = await tx.purchases.get(proposalId);
+      if (!p) {
+        logger.error("no purchase found for refund URL");
+        return false;
+      }
+      if (p.status === ProposalStatus.Paid) {
+        p.status = ProposalStatus.QueryingRefund;
+      }
+      await tx.purchases.put(p);
+      return true;
+    });
+
+  if (success) {
+    ws.notify({
+      type: NotificationType.RefundStarted,
+    });
+    await processPurchaseQueryRefund(ws, proposalId, {
+      forceNow: true,
+      waitForAutoRefund: false,
+    });
+  }
+
+  const purchase = await ws.db
+    .mktx((x) => [x.purchases])
+    .runReadOnly(async (tx) => {
+      return tx.purchases.get(proposalId);
+    });
+
+  if (!purchase) {
+    throw Error("purchase no longer exists");
+  }
+
+  const summary = await calculateRefundSummary(purchase);
+  const download = await expectProposalDownload(purchase);
+
+  return {
+    contractTermsHash: download.contractData.contractTermsHash,
+    proposalId: purchase.proposalId,
+    transactionId: makeEventId(TransactionType.Payment, proposalId), //FIXME: can we have the tx id of the refund
+    amountEffectivePaid: Amounts.stringify(summary.amountEffectivePaid),
+    amountRefundGone: Amounts.stringify(summary.amountRefundGone),
+    amountRefundGranted: Amounts.stringify(summary.amountRefundGranted),
+    pendingAtExchange: summary.pendingAtExchange,
+    info: {
+      contractTermsHash: download.contractData.contractTermsHash,
+      merchant: download.contractData.merchant,
+      orderId: download.contractData.orderId,
+      products: download.contractData.products,
+      summary: download.contractData.summary,
+      fulfillmentMessage: download.contractData.fulfillmentMessage,
+      summary_i18n: download.contractData.summaryI18n,
+      fulfillmentMessage_i18n: download.contractData.fulfillmentMessageI18n,
+    },
+  };
+}
+
+async function queryAndSaveAwaitingRefund(
+  ws: InternalWalletState,
+  purchase: PurchaseRecord,
+  waitForAutoRefund?: boolean,
+): Promise<AmountJson> {
+  const download = await expectProposalDownload(purchase);
+  const requestUrl = new URL(
+    `orders/${download.contractData.orderId}`,
+    download.contractData.merchantBaseUrl,
+  );
+  requestUrl.searchParams.set(
+    "h_contract",
+    download.contractData.contractTermsHash,
+  );
+  // Long-poll for one second
+  if (waitForAutoRefund) {
+    requestUrl.searchParams.set("timeout_ms", "1000");
+    requestUrl.searchParams.set("await_refund_obtained", "yes");
+    logger.trace("making long-polling request for auto-refund");
+  }
+  const resp = await ws.http.get(requestUrl.href);
+  const orderStatus = await readSuccessResponseJsonOrThrow(
+    resp,
+    codecForMerchantOrderStatusPaid(),
+  );
+  if (!orderStatus.refunded) {
+    // Wait for retry ...
+    return Amounts.getZero(download.contractData.amount.currency);
+  }
+
+  const refundAwaiting = Amounts.sub(
+    Amounts.parseOrThrow(orderStatus.refund_amount),
+    Amounts.parseOrThrow(orderStatus.refund_taken),
+  ).amount;
+
+  if (
+    purchase.refundAmountAwaiting === undefined ||
+    Amounts.cmp(refundAwaiting, purchase.refundAmountAwaiting) !== 0
+  ) {
+    await ws.db
+      .mktx((x) => [x.purchases])
+      .runReadWrite(async (tx) => {
+        const p = await tx.purchases.get(purchase.proposalId);
+        if (!p) {
+          logger.warn("purchase does not exist anymore");
+          return;
+        }
+        p.refundAmountAwaiting = refundAwaiting;
+        await tx.purchases.put(p);
+      });
+  }
+
+  return refundAwaiting;
+}
+
+export async function processPurchaseQueryRefund(
+  ws: InternalWalletState,
+  proposalId: string,
+  options: {
+    forceNow?: boolean;
+    waitForAutoRefund?: boolean;
+  } = {},
+): Promise<OperationAttemptResult> {
+  logger.trace(`processing refund query for proposal ${proposalId}`);
+  const waitForAutoRefund = options.waitForAutoRefund ?? false;
+  const purchase = await ws.db
+    .mktx((x) => [x.purchases])
+    .runReadOnly(async (tx) => {
+      return tx.purchases.get(proposalId);
+    });
+  if (!purchase) {
+    return OperationAttemptResult.finishedEmpty();
+  }
+
+  if (
+    !(
+      purchase.status === ProposalStatus.QueryingAutoRefund ||
+      purchase.status === ProposalStatus.QueryingRefund ||
+      purchase.status === ProposalStatus.AbortingWithRefund
+    )
+  ) {
+    return OperationAttemptResult.finishedEmpty();
+  }
+
+  const download = await expectProposalDownload(purchase);
+
+  if (purchase.timestampFirstSuccessfulPay) {
+    if (
+      !purchase.autoRefundDeadline ||
+      !AbsoluteTime.isExpired(
+        AbsoluteTime.fromTimestamp(purchase.autoRefundDeadline),
+      )
+    ) {
+      const awaitingAmount = await queryAndSaveAwaitingRefund(
+        ws,
+        purchase,
+        waitForAutoRefund,
+      );
+      if (Amounts.isZero(awaitingAmount)) {
+        return OperationAttemptResult.finishedEmpty();
+      }
+    }
+
+    const requestUrl = new URL(
+      `orders/${download.contractData.orderId}/refund`,
+      download.contractData.merchantBaseUrl,
+    );
+
+    logger.trace(`making refund request to ${requestUrl.href}`);
+
+    const request = await ws.http.postJson(requestUrl.href, {
+      h_contract: download.contractData.contractTermsHash,
+    });
+
+    const refundResponse = await readSuccessResponseJsonOrThrow(
+      request,
+      codecForMerchantOrderRefundPickupResponse(),
+    );
+
+    await acceptRefunds(
+      ws,
+      proposalId,
+      refundResponse.refunds,
+      RefundReason.NormalRefund,
+    );
+  } else if (purchase.status === ProposalStatus.AbortingWithRefund) {
+    const requestUrl = new URL(
+      `orders/${download.contractData.orderId}/abort`,
+      download.contractData.merchantBaseUrl,
+    );
+
+    const abortingCoins: AbortingCoin[] = [];
+
+    const payCoinSelection = purchase.payInfo?.payCoinSelection;
+    if (!payCoinSelection) {
+      throw Error("can't abort, no coins selected");
+    }
+
+    await ws.db
+      .mktx((x) => [x.coins])
+      .runReadOnly(async (tx) => {
+        for (let i = 0; i < payCoinSelection.coinPubs.length; i++) {
+          const coinPub = payCoinSelection.coinPubs[i];
+          const coin = await tx.coins.get(coinPub);
+          checkDbInvariant(!!coin, "expected coin to be present");
+          abortingCoins.push({
+            coin_pub: coinPub,
+            contribution: Amounts.stringify(
+              payCoinSelection.coinContributions[i],
+            ),
+            exchange_url: coin.exchangeBaseUrl,
+          });
+        }
+      });
+
+    const abortReq: AbortRequest = {
+      h_contract: download.contractData.contractTermsHash,
+      coins: abortingCoins,
+    };
+
+    logger.trace(`making order abort request to ${requestUrl.href}`);
+
+    const request = await ws.http.postJson(requestUrl.href, abortReq);
+    const abortResp = await readSuccessResponseJsonOrThrow(
+      request,
+      codecForAbortResponse(),
+    );
+
+    const refunds: MerchantCoinRefundStatus[] = [];
+
+    if (abortResp.refunds.length != abortingCoins.length) {
+      // FIXME: define error code!
+      throw Error("invalid order abort response");
+    }
+
+    for (let i = 0; i < abortResp.refunds.length; i++) {
+      const r = abortResp.refunds[i];
+      refunds.push({
+        ...r,
+        coin_pub: payCoinSelection.coinPubs[i],
+        refund_amount: Amounts.stringify(payCoinSelection.coinContributions[i]),
+        rtransaction_id: 0,
+        execution_time: AbsoluteTime.toTimestamp(
+          AbsoluteTime.addDuration(
+            AbsoluteTime.fromTimestamp(download.contractData.timestamp),
+            Duration.fromSpec({ seconds: 1 }),
+          ),
+        ),
+      });
+    }
+    await acceptRefunds(ws, proposalId, refunds, RefundReason.AbortRefund);
+  }
+  return OperationAttemptResult.finishedEmpty();
+}
+
+export async function abortFailedPayWithRefund(
+  ws: InternalWalletState,
+  proposalId: string,
+): Promise<void> {
+  await ws.db
+    .mktx((x) => [x.purchases])
+    .runReadWrite(async (tx) => {
+      const purchase = await tx.purchases.get(proposalId);
+      if (!purchase) {
+        throw Error("purchase not found");
+      }
+      if (purchase.timestampFirstSuccessfulPay) {
+        // No point in aborting it.  We don't even report an error.
+        logger.warn(`tried to abort successful payment`);
+        return;
+      }
+      if (purchase.status === ProposalStatus.Paying) {
+        purchase.status = ProposalStatus.AbortingWithRefund;
+      }
+      await tx.purchases.put(purchase);
+    });
+  processPurchaseQueryRefund(ws, proposalId, {
+    forceNow: true,
+  }).catch((e) => {
+    logger.trace(`error during refund processing after abort pay: ${e}`);
+  });
 }

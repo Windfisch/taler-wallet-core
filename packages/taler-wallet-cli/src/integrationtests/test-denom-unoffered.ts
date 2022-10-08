@@ -17,13 +17,8 @@
 /**
  * Imports.
  */
-import {
-  PreparePayResultType,
-  TalerErrorCode,
-  TalerErrorDetail,
-} from "@gnu-taler/taler-util";
+import { PreparePayResultType, TalerErrorCode } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { makeEventId } from "@gnu-taler/taler-wallet-core";
 import { GlobalTestState, MerchantPrivateApi } from "../harness/harness.js";
 import {
   createSimpleTestkudosEnvironment,

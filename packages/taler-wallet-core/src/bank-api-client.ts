@@ -34,11 +34,7 @@ import {
   TalerErrorCode,
 } from "@gnu-taler/taler-util";
 import { TalerError } from "./errors.js";
-import {
-  HttpRequestLibrary,
-  readSuccessResponseJsonOrErrorCode,
-  readSuccessResponseJsonOrThrow,
-} from "./index.browser.js";
+import { HttpRequestLibrary, readSuccessResponseJsonOrThrow } from "./util/http.js";
 
 const logger = new Logger("bank-api-client.ts");
 

@@ -34,11 +34,9 @@ import { RetryInfo } from "./util/retries.js";
 export enum PendingTaskType {
   ExchangeUpdate = "exchange-update",
   ExchangeCheckRefresh = "exchange-check-refresh",
-  Pay = "pay",
-  ProposalDownload = "proposal-download",
+  Purchase = "purchase",
   Refresh = "refresh",
   Recoup = "recoup",
-  RefundQuery = "refund-query",
   TipPickup = "tip-pickup",
   Withdraw = "withdraw",
   Deposit = "deposit",
@@ -52,10 +50,8 @@ export type PendingTaskInfo = PendingTaskInfoCommon &
   (
     | PendingExchangeUpdateTask
     | PendingExchangeCheckRefreshTask
-    | PendingPayTask
-    | PendingProposalDownloadTask
+    | PendingPurchaseTask
     | PendingRefreshTask
-    | PendingRefundQueryTask
     | PendingTipPickupTask
     | PendingWithdrawTask
     | PendingRecoupTask
@@ -110,19 +106,6 @@ export interface PendingRefreshTask {
 }
 
 /**
- * Status of downloading signed contract terms from a merchant.
- */
-export interface PendingProposalDownloadTask {
-  type: PendingTaskType.ProposalDownload;
-  merchantBaseUrl: string;
-  proposalTimestamp: TalerProtocolTimestamp;
-  proposalId: string;
-  orderId: string;
-  lastError?: TalerErrorDetail;
-  retryInfo?: RetryInfo;
-}
-
-/**
  * The wallet is picking up a tip that the user has accepted.
  */
 export interface PendingTipPickupTask {
@@ -133,25 +116,16 @@ export interface PendingTipPickupTask {
 }
 
 /**
- * The wallet is signing coins and then sending them to
- * the merchant.
+ * A purchase needs to be processed (i.e. for download / payment / refund).
  */
-export interface PendingPayTask {
-  type: PendingTaskType.Pay;
-  proposalId: string;
-  isReplay: boolean;
-  retryInfo?: RetryInfo;
-  lastError: TalerErrorDetail | undefined;
-}
-
-/**
- * The wallet is querying the merchant about whether any refund
- * permissions are available for a purchase.
- */
-export interface PendingRefundQueryTask {
-  type: PendingTaskType.RefundQuery;
+export interface PendingPurchaseTask {
+  type: PendingTaskType.Purchase;
   proposalId: string;
   retryInfo?: RetryInfo;
+  /**
+   * Status of the payment as string, used only for debugging.
+   */
+  statusStr: string;
   lastError: TalerErrorDetail | undefined;
 }
 

@@ -37,7 +37,7 @@ import {
   BackupExchangeDetails,
   BackupExchangeWireFee,
   BackupOperationStatus,
-  BackupProposal,
+  BackupPayInfo,
   BackupProposalStatus,
   BackupPurchase,
   BackupRecoupGroup,
@@ -62,11 +62,9 @@ import {
   WalletBackupContentV1,
 } from "@gnu-taler/taler-util";
 import {
-  AbortStatus,
   CoinSourceType,
   CoinStatus,
   DenominationRecord,
-  OperationStatus,
   ProposalStatus,
   RefreshCoinStatus,
   RefundState,
@@ -92,7 +90,6 @@ export async function exportBackup(
       x.coins,
       x.denominations,
       x.purchases,
-      x.proposals,
       x.refreshGroups,
       x.backupProviders,
       x.tips,
@@ -109,7 +106,6 @@ export async function exportBackup(
         [url: string]: BackupDenomination[];
       } = {};
       const backupPurchases: BackupPurchase[] = [];
-      const backupProposals: BackupProposal[] = [];
       const backupRefreshGroups: BackupRefreshGroup[] = [];
       const backupBackupProviders: BackupBackupProvider[] = [];
       const backupTips: BackupTip[] = [];
@@ -385,65 +381,61 @@ export async function exportBackup(
           }
         }
 
-        backupPurchases.push({
-          contract_terms_raw: purch.download.contractTermsRaw,
-          auto_refund_deadline: purch.autoRefundDeadline,
-          merchant_pay_sig: purch.merchantPaySig,
-          pay_coins: purch.payCoinSelection.coinPubs.map((x, i) => ({
-            coin_pub: x,
-            contribution: Amounts.stringify(
-              purch.payCoinSelection.coinContributions[i],
-            ),
-          })),
-          proposal_id: purch.proposalId,
-          refunds,
-          timestamp_accept: purch.timestampAccept,
-          timestamp_first_successful_pay: purch.timestampFirstSuccessfulPay,
-          abort_status:
-            purch.abortStatus === AbortStatus.None
-              ? undefined
-              : purch.abortStatus,
-          nonce_priv: purch.noncePriv,
-          merchant_sig: purch.download.contractData.merchantSig,
-          total_pay_cost: Amounts.stringify(purch.totalPayCost),
-          pay_coins_uid: purch.payCoinSelectionUid,
-        });
-      });
-
-      await tx.proposals.iter().forEach((prop) => {
-        if (purchaseProposalIdSet.has(prop.proposalId)) {
-          return;
-        }
         let propStatus: BackupProposalStatus;
-        switch (prop.proposalStatus) {
-          case ProposalStatus.Accepted:
+        switch (purch.status) {
+          case ProposalStatus.Paid:
+            propStatus = BackupProposalStatus.Paid;
             return;
-          case ProposalStatus.Downloading:
+          case ProposalStatus.DownloadingProposal:
           case ProposalStatus.Proposed:
             propStatus = BackupProposalStatus.Proposed;
             break;
-          case ProposalStatus.PermanentlyFailed:
+          case ProposalStatus.ProposalDownloadFailed:
             propStatus = BackupProposalStatus.PermanentlyFailed;
             break;
-          case ProposalStatus.Refused:
+          case ProposalStatus.ProposalRefused:
             propStatus = BackupProposalStatus.Refused;
             break;
-          case ProposalStatus.Repurchase:
+          case ProposalStatus.RepurchaseDetected:
             propStatus = BackupProposalStatus.Repurchase;
             break;
+          default:
+            throw Error();
         }
-        backupProposals.push({
-          claim_token: prop.claimToken,
-          nonce_priv: prop.noncePriv,
-          proposal_id: prop.noncePriv,
+
+        const payInfo = purch.payInfo;
+        let backupPayInfo: BackupPayInfo | undefined = undefined;
+        if (payInfo) {
+          backupPayInfo = {
+            pay_coins: payInfo.payCoinSelection.coinPubs.map((x, i) => ({
+              coin_pub: x,
+              contribution: Amounts.stringify(
+                payInfo.payCoinSelection.coinContributions[i],
+              ),
+            })),
+            total_pay_cost: Amounts.stringify(payInfo.totalPayCost),
+            pay_coins_uid: payInfo.payCoinSelectionUid,
+          };
+        }
+
+        backupPurchases.push({
+          contract_terms_raw: purch.download?.contractTermsRaw,
+          auto_refund_deadline: purch.autoRefundDeadline,
+          merchant_pay_sig: purch.merchantPaySig,
+          pay_info: backupPayInfo,
+          proposal_id: purch.proposalId,
+          refunds,
+          timestamp_accepted: purch.timestampAccept,
+          timestamp_first_successful_pay: purch.timestampFirstSuccessfulPay,
+          nonce_priv: purch.noncePriv,
+          merchant_sig: purch.download?.contractData.merchantSig,
+          claim_token: purch.claimToken,
+          merchant_base_url: purch.merchantBaseUrl,
+          order_id: purch.orderId,
           proposal_status: propStatus,
-          repurchase_proposal_id: prop.repurchaseProposalId,
-          timestamp: prop.timestamp,
-          contract_terms_raw: prop.download?.contractTermsRaw,
-          download_session_id: prop.downloadSessionId,
-          merchant_base_url: prop.merchantBaseUrl,
-          order_id: prop.orderId,
-          merchant_sig: prop.download?.contractData.merchantSig,
+          repurchase_proposal_id: purch.repurchaseProposalId,
+          download_session_id: purch.downloadSessionId,
+          timestamp_proposed: purch.timestamp,
         });
       });
 
@@ -498,7 +490,6 @@ export async function exportBackup(
         wallet_root_pub: bs.walletRootPub,
         backup_providers: backupBackupProviders,
         current_device_id: bs.deviceId,
-        proposals: backupProposals,
         purchases: backupPurchases,
         recoup_groups: backupRecoupGroups,
         refresh_groups: backupRefreshGroups,

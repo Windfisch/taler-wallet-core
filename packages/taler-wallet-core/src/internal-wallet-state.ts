@@ -37,6 +37,9 @@ import {
   TalerProtocolTimestamp,
   CancellationToken,
   DenominationInfo,
+  RefreshGroupId,
+  CoinPublicKey,
+  RefreshReason,
 } from "@gnu-taler/taler-util";
 import { CryptoDispatcher } from "./crypto/workers/cryptoDispatcher.js";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
@@ -72,6 +75,20 @@ export interface MerchantOperations {
     ws: InternalWalletState,
     merchantBaseUrl: string,
   ): Promise<MerchantInfo>;
+}
+
+export interface RefreshOperations {
+  createRefreshGroup(
+    ws: InternalWalletState,
+    tx: GetReadWriteAccess<{
+      denominations: typeof WalletStoresV1.denominations;
+      coins: typeof WalletStoresV1.coins;
+      refreshGroups: typeof WalletStoresV1.refreshGroups;
+      coinAvailability: typeof WalletStoresV1.coinAvailability;
+    }>,
+    oldCoinPubs: CoinPublicKey[],
+    reason: RefreshReason,
+  ): Promise<RefreshGroupId>;
 }
 
 /**
@@ -172,6 +189,7 @@ export interface InternalWalletState {
   exchangeOps: ExchangeOperations;
   recoupOps: RecoupOperations;
   merchantOps: MerchantOperations;
+  refreshOps: RefreshOperations;
 
   getDenomInfo(
     ws: InternalWalletState,

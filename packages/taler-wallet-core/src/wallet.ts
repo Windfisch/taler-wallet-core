@@ -26,7 +26,6 @@ import {
   AbsoluteTime,
   AmountJson,
   Amounts,
-  BalancesResponse,
   codecForAbortPayWithRefundRequest,
   codecForAcceptBankIntegratedWithdrawalRequest,
   codecForAcceptExchangeTosRequest,
@@ -35,6 +34,7 @@ import {
   codecForAcceptPeerPushPaymentRequest,
   codecForAcceptTipRequest,
   codecForAddExchangeRequest,
+  codecForAddKnownBankAccounts,
   codecForAny,
   codecForApplyRefundFromPurchaseIdRequest,
   codecForApplyRefundRequest,
@@ -44,6 +44,7 @@ import {
   codecForCreateDepositGroupRequest,
   codecForDeleteTransactionRequest,
   codecForForceRefreshRequest,
+  codecForForgetKnownBankAccounts,
   codecForGetContractTermsDetails,
   codecForGetExchangeTosRequest,
   codecForGetExchangeWithdrawalInfo,
@@ -81,6 +82,7 @@ import {
   GetExchangeTosResult,
   j2s,
   KnownBankAccounts,
+  KnownBankAccountsInfo,
   Logger,
   ManualWithdrawalDetails,
   NotificationType,
@@ -89,9 +91,6 @@ import {
   RefreshReason,
   TalerErrorCode,
   TalerErrorDetail,
-  KnownBankAccountsInfo,
-  codecForAddKnownBankAccounts,
-  codecForForgetKnownBankAccounts,
   URL,
   WalletCoreVersion,
   WalletNotification,
@@ -125,6 +124,7 @@ import {
   MerchantOperations,
   NotificationListener,
   RecoupOperations,
+  RefreshOperations,
 } from "./internal-wallet-state.js";
 import { exportBackup } from "./operations/backup/export.js";
 import {
@@ -142,6 +142,11 @@ import {
 } from "./operations/backup/index.js";
 import { setWalletDeviceId } from "./operations/backup/state.js";
 import { getBalances } from "./operations/balance.js";
+import {
+  runOperationWithErrorReporting,
+  storeOperationError,
+  storeOperationPending,
+} from "./operations/common.js";
 import {
   createDepositGroup,
   getFeeForDeposit,
@@ -162,12 +167,15 @@ import {
 } from "./operations/exchanges.js";
 import { getMerchantInfo } from "./operations/merchants.js";
 import {
+  abortFailedPayWithRefund,
+  applyRefund,
+  applyRefundFromPurchaseId,
   confirmPay,
   getContractTermsDetails,
   preparePayForUri,
-  processDownloadProposal,
-  processPurchasePay,
-} from "./operations/pay.js";
+  prepareRefund,
+  processPurchase,
+} from "./operations/pay-merchant.js";
 import {
   acceptPeerPullPayment,
   acceptPeerPushPayment,
@@ -175,7 +183,7 @@ import {
   checkPeerPushPayment,
   initiatePeerRequestForPay,
   initiatePeerToPeerPush,
-} from "./operations/peer-to-peer.js";
+} from "./operations/pay-peer.js";
 import { getPendingOperations } from "./operations/pending.js";
 import {
   createRecoupGroup,
@@ -187,13 +195,6 @@ import {
   createRefreshGroup,
   processRefreshGroup,
 } from "./operations/refresh.js";
-import {
-  abortFailedPayWithRefund,
-  applyRefund,
-  applyRefundFromPurchaseId,
-  prepareRefund,
-  processPurchaseQueryRefund,
-} from "./operations/refund.js";
 import {
   runIntegrationTest,
   testPay,
@@ -213,13 +214,8 @@ import {
   getWithdrawalDetailsForUri,
   processWithdrawalGroup,
 } from "./operations/withdraw.js";
-import {
-  PendingOperationsResponse,
-  PendingTaskInfo,
-  PendingTaskType,
-} from "./pending-types.js";
+import { PendingTaskInfo, PendingTaskType } from "./pending-types.js";
 import { assertUnreachable } from "./util/assertUnreachable.js";
-import { AsyncOpMemoMap, AsyncOpMemoSingle } from "./util/asyncMemo.js";
 import { createDenominationTimeline } from "./util/denominations.js";
 import {
   HttpRequestLibrary,
@@ -306,18 +302,10 @@ async function callOperationHandler(
       return await processWithdrawalGroup(ws, pending.withdrawalGroupId, {
         forceNow,
       });
-    case PendingTaskType.ProposalDownload:
-      return await processDownloadProposal(ws, pending.proposalId, {
-        forceNow,
-      });
     case PendingTaskType.TipPickup:
       return await processTip(ws, pending.tipId, { forceNow });
-    case PendingTaskType.Pay:
-      return await processPurchasePay(ws, pending.proposalId, { forceNow });
-    case PendingTaskType.RefundQuery:
-      return await processPurchaseQueryRefund(ws, pending.proposalId, {
-        forceNow,
-      });
+    case PendingTaskType.Purchase:
+      return await processPurchase(ws, pending.proposalId, { forceNow });
     case PendingTaskType.Recoup:
       return await processRecoupGroupHandler(ws, pending.recoupGroupId, {
         forceNow,
@@ -335,111 +323,6 @@ async function callOperationHandler(
       return assertUnreachable(pending);
   }
   throw Error(`not reached ${pending.type}`);
-}
-
-export async function storeOperationError(
-  ws: InternalWalletState,
-  pendingTaskId: string,
-  e: TalerErrorDetail,
-): Promise<void> {
-  await ws.db
-    .mktx((x) => [x.operationRetries])
-    .runReadWrite(async (tx) => {
-      let retryRecord = await tx.operationRetries.get(pendingTaskId);
-      if (!retryRecord) {
-        retryRecord = {
-          id: pendingTaskId,
-          lastError: e,
-          retryInfo: RetryInfo.reset(),
-        };
-      } else {
-        retryRecord.lastError = e;
-        retryRecord.retryInfo = RetryInfo.increment(retryRecord.retryInfo);
-      }
-      await tx.operationRetries.put(retryRecord);
-    });
-}
-
-export async function storeOperationFinished(
-  ws: InternalWalletState,
-  pendingTaskId: string,
-): Promise<void> {
-  await ws.db
-    .mktx((x) => [x.operationRetries])
-    .runReadWrite(async (tx) => {
-      await tx.operationRetries.delete(pendingTaskId);
-    });
-}
-
-export async function storeOperationPending(
-  ws: InternalWalletState,
-  pendingTaskId: string,
-): Promise<void> {
-  await ws.db
-    .mktx((x) => [x.operationRetries])
-    .runReadWrite(async (tx) => {
-      let retryRecord = await tx.operationRetries.get(pendingTaskId);
-      if (!retryRecord) {
-        retryRecord = {
-          id: pendingTaskId,
-          retryInfo: RetryInfo.reset(),
-        };
-      } else {
-        delete retryRecord.lastError;
-        retryRecord.retryInfo = RetryInfo.increment(retryRecord.retryInfo);
-      }
-      await tx.operationRetries.put(retryRecord);
-    });
-}
-
-export async function runOperationWithErrorReporting(
-  ws: InternalWalletState,
-  opId: string,
-  f: () => Promise<OperationAttemptResult>,
-): Promise<void> {
-  let maybeError: TalerErrorDetail | undefined;
-  try {
-    const resp = await f();
-    switch (resp.type) {
-      case OperationAttemptResultType.Error:
-        return await storeOperationError(ws, opId, resp.errorDetail);
-      case OperationAttemptResultType.Finished:
-        return await storeOperationFinished(ws, opId);
-      case OperationAttemptResultType.Pending:
-        return await storeOperationPending(ws, opId);
-      case OperationAttemptResultType.Longpoll:
-        break;
-    }
-  } catch (e) {
-    if (e instanceof TalerError) {
-      logger.warn("operation processed resulted in error");
-      logger.warn(`error was: ${j2s(e.errorDetail)}`);
-      maybeError = e.errorDetail;
-      return await storeOperationError(ws, opId, maybeError!);
-    } else if (e instanceof Error) {
-      // This is a bug, as we expect pending operations to always
-      // do their own error handling and only throw WALLET_PENDING_OPERATION_FAILED
-      // or return something.
-      logger.error(`Uncaught exception: ${e.message}`);
-      logger.error(`Stack: ${e.stack}`);
-      maybeError = makeErrorDetail(
-        TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
-        {
-          stack: e.stack,
-        },
-        `unexpected exception (message: ${e.message})`,
-      );
-      return await storeOperationError(ws, opId, maybeError);
-    } else {
-      logger.error("Uncaught exception, value is not even an error.");
-      maybeError = makeErrorDetail(
-        TalerErrorCode.WALLET_UNEXPECTED_EXCEPTION,
-        {},
-        `unexpected exception (not even an error)`,
-      );
-      return await storeOperationError(ws, opId, maybeError);
-    }
-  }
 }
 
 /**
@@ -855,120 +738,6 @@ async function getExchangeDetailedInfo(
     ...exchange.info,
     feesDescription,
   };
-}
-
-export async function makeCoinAvailable(
-  ws: InternalWalletState,
-  tx: GetReadWriteAccess<{
-    coins: typeof WalletStoresV1.coins;
-    coinAvailability: typeof WalletStoresV1.coinAvailability;
-    denominations: typeof WalletStoresV1.denominations;
-  }>,
-  coinRecord: CoinRecord,
-): Promise<void> {
-  checkLogicInvariant(coinRecord.status === CoinStatus.Fresh);
-  const existingCoin = await tx.coins.get(coinRecord.coinPub);
-  if (existingCoin) {
-    return;
-  }
-  const denom = await tx.denominations.get([
-    coinRecord.exchangeBaseUrl,
-    coinRecord.denomPubHash,
-  ]);
-  checkDbInvariant(!!denom);
-  const ageRestriction = coinRecord.maxAge;
-  let car = await tx.coinAvailability.get([
-    coinRecord.exchangeBaseUrl,
-    coinRecord.denomPubHash,
-    ageRestriction,
-  ]);
-  if (!car) {
-    car = {
-      maxAge: ageRestriction,
-      amountFrac: denom.amountFrac,
-      amountVal: denom.amountVal,
-      currency: denom.currency,
-      denomPubHash: denom.denomPubHash,
-      exchangeBaseUrl: denom.exchangeBaseUrl,
-      freshCoinCount: 0,
-    };
-  }
-  car.freshCoinCount++;
-  await tx.coins.put(coinRecord);
-  await tx.coinAvailability.put(car);
-}
-
-export interface CoinsSpendInfo {
-  coinPubs: string[];
-  contributions: AmountJson[];
-  refreshReason: RefreshReason;
-  /**
-   * Identifier for what the coin has been spent for.
-   */
-  allocationId: string;
-}
-
-export async function spendCoins(
-  ws: InternalWalletState,
-  tx: GetReadWriteAccess<{
-    coins: typeof WalletStoresV1.coins;
-    coinAvailability: typeof WalletStoresV1.coinAvailability;
-    refreshGroups: typeof WalletStoresV1.refreshGroups;
-    denominations: typeof WalletStoresV1.denominations;
-  }>,
-  csi: CoinsSpendInfo,
-): Promise<void> {
-  for (let i = 0; i < csi.coinPubs.length; i++) {
-    const coin = await tx.coins.get(csi.coinPubs[i]);
-    if (!coin) {
-      throw Error("coin allocated for payment doesn't exist anymore");
-    }
-    const coinAvailability = await tx.coinAvailability.get([
-      coin.exchangeBaseUrl,
-      coin.denomPubHash,
-      coin.maxAge,
-    ]);
-    checkDbInvariant(!!coinAvailability);
-    const contrib = csi.contributions[i];
-    if (coin.status !== CoinStatus.Fresh) {
-      const alloc = coin.allocation;
-      if (!alloc) {
-        continue;
-      }
-      if (alloc.id !== csi.allocationId) {
-        // FIXME: assign error code
-        throw Error("conflicting coin allocation (id)");
-      }
-      if (0 !== Amounts.cmp(alloc.amount, contrib)) {
-        // FIXME: assign error code
-        throw Error("conflicting coin allocation (contrib)");
-      }
-      continue;
-    }
-    coin.status = CoinStatus.Dormant;
-    coin.allocation = {
-      id: csi.allocationId,
-      amount: Amounts.stringify(contrib),
-    };
-    const remaining = Amounts.sub(coin.currentAmount, contrib);
-    if (remaining.saturated) {
-      throw Error("not enough remaining balance on coin for payment");
-    }
-    coin.currentAmount = remaining.amount;
-    checkDbInvariant(!!coinAvailability);
-    if (coinAvailability.freshCoinCount === 0) {
-      throw Error(
-        `invalid coin count ${coinAvailability.freshCoinCount} in DB`,
-      );
-    }
-    coinAvailability.freshCoinCount--;
-    await tx.coins.put(coin);
-    await tx.coinAvailability.put(coinAvailability);
-  }
-  const refreshCoinPubs = csi.coinPubs.map((x) => ({
-    coinPub: x,
-  }));
-  await createRefreshGroup(ws, tx, refreshCoinPubs, RefreshReason.PayMerchant);
 }
 
 async function setCoinSuspended(
@@ -1647,6 +1416,10 @@ class InternalWalletStateImpl implements InternalWalletState {
 
   merchantOps: MerchantOperations = {
     getMerchantInfo,
+  };
+
+  refreshOps: RefreshOperations = {
+    createRefreshGroup,
   };
 
   // FIXME: Use an LRU cache here.

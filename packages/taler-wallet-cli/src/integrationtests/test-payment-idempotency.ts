@@ -18,7 +18,10 @@
  * Imports.
  */
 import { GlobalTestState, MerchantPrivateApi } from "../harness/harness.js";
-import { createSimpleTestkudosEnvironment, withdrawViaBank } from "../harness/helpers.js";
+import {
+  createSimpleTestkudosEnvironment,
+  withdrawViaBank,
+} from "../harness/helpers.js";
 import { PreparePayResultType } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
@@ -29,12 +32,8 @@ import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 export async function runPaymentIdempotencyTest(t: GlobalTestState) {
   // Set up test environment
 
-  const {
-    wallet,
-    bank,
-    exchange,
-    merchant,
-  } = await createSimpleTestkudosEnvironment(t);
+  const { wallet, bank, exchange, merchant } =
+    await createSimpleTestkudosEnvironment(t);
 
   // Withdraw digital cash into the wallet.
 
@@ -83,10 +82,16 @@ export async function runPaymentIdempotencyTest(t: GlobalTestState) {
 
   const proposalId = preparePayResult.proposalId;
 
-  await wallet.client.call(WalletApiOperation.ConfirmPay, {
-    // FIXME: should be validated, don't cast!
-    proposalId: proposalId,
-  });
+  const confirmPayResult = await wallet.client.call(
+    WalletApiOperation.ConfirmPay,
+    {
+      proposalId: proposalId,
+    },
+  );
+
+  console.log("confirm pay result", confirmPayResult);
+
+  await wallet.runUntilDone();
 
   // Check if payment was successful.
 
@@ -102,6 +107,8 @@ export async function runPaymentIdempotencyTest(t: GlobalTestState) {
       talerPayUri,
     },
   );
+
+  console.log("result after:", preparePayResultAfter);
 
   t.assertTrue(
     preparePayResultAfter.status === PreparePayResultType.AlreadyConfirmed,

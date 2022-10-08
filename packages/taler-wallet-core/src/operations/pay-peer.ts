@@ -73,9 +73,8 @@ import { InternalWalletState } from "../internal-wallet-state.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { GetReadOnlyAccess } from "../util/query.js";
-import { spendCoins } from "../wallet.js";
+import { spendCoins, makeEventId } from "../operations/common.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
-import { makeEventId } from "./transactions.js";
 import { internalCreateWithdrawalGroup } from "./withdraw.js";
 
 const logger = new Logger("operations/peer-to-peer.ts");

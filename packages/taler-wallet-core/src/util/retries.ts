@@ -30,7 +30,6 @@ import {
   BackupProviderRecord,
   DepositGroupRecord,
   ExchangeRecord,
-  ProposalRecord,
   PurchaseRecord,
   RecoupGroupRecord,
   RefreshGroupRecord,
@@ -181,9 +180,6 @@ export namespace RetryTags {
   export function forExchangeCheckRefresh(exch: ExchangeRecord): string {
     return `${PendingTaskType.ExchangeCheckRefresh}:${exch.baseUrl}`;
   }
-  export function forProposalClaim(pr: ProposalRecord): string {
-    return `${PendingTaskType.ProposalDownload}:${pr.proposalId}`;
-  }
   export function forTipPickup(tipRecord: TipRecord): string {
     return `${PendingTaskType.TipPickup}:${tipRecord.walletTipId}`;
   }
@@ -191,10 +187,7 @@ export namespace RetryTags {
     return `${PendingTaskType.TipPickup}:${refreshGroupRecord.refreshGroupId}`;
   }
   export function forPay(purchaseRecord: PurchaseRecord): string {
-    return `${PendingTaskType.Pay}:${purchaseRecord.proposalId}`;
-  }
-  export function forRefundQuery(purchaseRecord: PurchaseRecord): string {
-    return `${PendingTaskType.RefundQuery}:${purchaseRecord.proposalId}`;
+    return `${PendingTaskType.Purchase}:${purchaseRecord.proposalId}`;
   }
   export function forRecoup(recoupRecord: RecoupGroupRecord): string {
     return `${PendingTaskType.Recoup}:${recoupRecord.recoupGroupId}`;
@@ -206,7 +199,7 @@ export namespace RetryTags {
     return `${PendingTaskType.Backup}:${backupRecord.baseUrl}`;
   }
   export function byPaymentProposalId(proposalId: string): string {
-    return `${PendingTaskType.Pay}:${proposalId}`;
+    return `${PendingTaskType.Purchase}:${proposalId}`;
   }
 }
 

@@ -18,8 +18,8 @@
  * Imports.
  */
 import {
-  AgeRestriction,
   AcceptTipResponse,
+  AgeRestriction,
   Amounts,
   BlindedDenominationSignature,
   codecForMerchantTipResponseV2,
@@ -56,9 +56,8 @@ import {
   OperationAttemptResult,
   OperationAttemptResultType,
 } from "../util/retries.js";
-import { makeCoinAvailable } from "../wallet.js";
+import { makeCoinAvailable, makeEventId } from "./common.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
-import { makeEventId } from "./transactions.js";
 import {
   getCandidateWithdrawalDenoms,
   getExchangeWithdrawalInfo,

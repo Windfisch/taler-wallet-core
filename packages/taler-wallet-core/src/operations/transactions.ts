@@ -36,12 +36,12 @@ import {
   WithdrawalType,
 } from "@gnu-taler/taler-util";
 import {
-  AbortStatus,
   DepositGroupRecord,
   ExchangeDetailsRecord,
   OperationRetryRecord,
   PeerPullPaymentIncomingRecord,
   PeerPushPaymentInitiationRecord,
+  ProposalStatus,
   PurchaseRecord,
   RefundState,
   TipRecord,
@@ -50,10 +50,12 @@ import {
   WithdrawalRecordType,
 } from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
+import { checkDbInvariant } from "../util/invariants.js";
 import { RetryTags } from "../util/retries.js";
+import { makeEventId, TombstoneTag } from "./common.js";
 import { processDepositGroup } from "./deposits.js";
 import { getExchangeDetails } from "./exchanges.js";
-import { processPurchasePay } from "./pay.js";
+import { expectProposalDownload, processPurchasePay } from "./pay-merchant.js";
 import { processRefreshGroup } from "./refresh.js";
 import { processTip } from "./tip.js";
 import {
@@ -62,28 +64,6 @@ import {
 } from "./withdraw.js";
 
 const logger = new Logger("taler-wallet-core:transactions.ts");
-
-export enum TombstoneTag {
-  DeleteWithdrawalGroup = "delete-withdrawal-group",
-  DeleteReserve = "delete-reserve",
-  DeletePayment = "delete-payment",
-  DeleteTip = "delete-tip",
-  DeleteRefreshGroup = "delete-refresh-group",
-  DeleteDepositGroup = "delete-deposit-group",
-  DeleteRefund = "delete-refund",
-  DeletePeerPullDebit = "delete-peer-pull-debit",
-  DeletePeerPushDebit = "delete-peer-push-debit",
-}
-
-/**
- * Create an event ID from the type and the primary key for the event.
- */
-export function makeEventId(
-  type: TransactionType | TombstoneTag,
-  ...args: string[]
-): string {
-  return type + ":" + args.map((x) => encodeURIComponent(x)).join(":");
-}
 
 function shouldSkipCurrency(
   transactionsRequest: TransactionsRequest | undefined,
@@ -219,29 +199,22 @@ export async function getTransactionById(
           }),
         );
 
+        const download = await expectProposalDownload(purchase);
+
         const cleanRefunds = filteredRefunds.filter(
           (x): x is WalletRefundItem => !!x,
         );
 
-        const contractData = purchase.download.contractData;
+        const contractData = download.contractData;
         const refunds = mergeRefundByExecutionTime(
           cleanRefunds,
           Amounts.getZero(contractData.amount.currency),
         );
 
         const payOpId = RetryTags.forPay(purchase);
-        const refundQueryOpId = RetryTags.forRefundQuery(purchase);
         const payRetryRecord = await tx.operationRetries.get(payOpId);
-        const refundQueryRetryRecord = await tx.operationRetries.get(
-          refundQueryOpId,
-        );
 
-        const err =
-          payRetryRecord !== undefined
-            ? payRetryRecord
-            : refundQueryRetryRecord;
-
-        return buildTransactionForPurchase(purchase, refunds, err);
+        return buildTransactionForPurchase(purchase, refunds, payRetryRecord);
       });
   } else if (type === TransactionType.Refresh) {
     const refreshGroupId = rest[0];
@@ -295,23 +268,14 @@ export async function getTransactionById(
           ),
         );
         if (t) throw Error("deleted");
-
-        const contractData = purchase.download.contractData;
+        const download = await expectProposalDownload(purchase);
+        const contractData = download.contractData;
         const refunds = mergeRefundByExecutionTime(
           [theRefund],
           Amounts.getZero(contractData.amount.currency),
         );
 
-        const refundQueryOpId = RetryTags.forRefundQuery(purchase);
-        const refundQueryRetryRecord = await tx.operationRetries.get(
-          refundQueryOpId,
-        );
-
-        return buildTransactionForRefund(
-          purchase,
-          refunds[0],
-          refundQueryRetryRecord,
-        );
+        return buildTransactionForRefund(purchase, refunds[0], undefined);
       });
   } else if (type === TransactionType.PeerPullDebit) {
     const peerPullPaymentIncomingId = rest[0];
@@ -606,12 +570,13 @@ function mergeRefundByExecutionTime(
   return Array.from(refundByExecTime.values());
 }
 
-function buildTransactionForRefund(
+async function buildTransactionForRefund(
   purchaseRecord: PurchaseRecord,
   refundInfo: MergedRefundInfo,
   ort?: OperationRetryRecord,
-): Transaction {
-  const contractData = purchaseRecord.download.contractData;
+): Promise<Transaction> {
+  const download = await expectProposalDownload(purchaseRecord);
+  const contractData = download.contractData;
 
   const info: OrderShortInfo = {
     merchant: contractData.merchant,
@@ -641,21 +606,22 @@ function buildTransactionForRefund(
     amountEffective: Amounts.stringify(refundInfo.amountAppliedEffective),
     amountRaw: Amounts.stringify(refundInfo.amountAppliedRaw),
     refundPending:
-      purchaseRecord.refundAwaiting === undefined
+      purchaseRecord.refundAmountAwaiting === undefined
         ? undefined
-        : Amounts.stringify(purchaseRecord.refundAwaiting),
+        : Amounts.stringify(purchaseRecord.refundAmountAwaiting),
     pending: false,
     frozen: false,
     ...(ort?.lastError ? { error: ort.lastError } : {}),
   };
 }
 
-function buildTransactionForPurchase(
+async function buildTransactionForPurchase(
   purchaseRecord: PurchaseRecord,
   refundsInfo: MergedRefundInfo[],
   ort?: OperationRetryRecord,
-): Transaction {
-  const contractData = purchaseRecord.download.contractData;
+): Promise<Transaction> {
+  const download = await expectProposalDownload(purchaseRecord);
+  const contractData = download.contractData;
   const zero = Amounts.getZero(contractData.amount.currency);
 
   const info: OrderShortInfo = {
@@ -696,31 +662,34 @@ function buildTransactionForPurchase(
     ),
   }));
 
+  const timestamp = purchaseRecord.timestampAccept;
+  checkDbInvariant(!!timestamp);
+  checkDbInvariant(!!purchaseRecord.payInfo);
+
   return {
     type: TransactionType.Payment,
     amountRaw: Amounts.stringify(contractData.amount),
-    amountEffective: Amounts.stringify(purchaseRecord.totalPayCost),
+    amountEffective: Amounts.stringify(purchaseRecord.payInfo.totalPayCost),
     totalRefundRaw: Amounts.stringify(totalRefund.raw),
     totalRefundEffective: Amounts.stringify(totalRefund.effective),
     refundPending:
-      purchaseRecord.refundAwaiting === undefined
+      purchaseRecord.refundAmountAwaiting === undefined
         ? undefined
-        : Amounts.stringify(purchaseRecord.refundAwaiting),
+        : Amounts.stringify(purchaseRecord.refundAmountAwaiting),
     status: purchaseRecord.timestampFirstSuccessfulPay
       ? PaymentStatus.Paid
       : PaymentStatus.Accepted,
-    pending:
-      !purchaseRecord.timestampFirstSuccessfulPay &&
-      purchaseRecord.abortStatus === AbortStatus.None,
+    pending: purchaseRecord.status === ProposalStatus.Paying,
     refunds,
-    timestamp: purchaseRecord.timestampAccept,
+    timestamp,
     transactionId: makeEventId(
       TransactionType.Payment,
       purchaseRecord.proposalId,
     ),
     proposalId: purchaseRecord.proposalId,
     info,
-    frozen: purchaseRecord.payFrozen ?? false,
+    frozen:
+      purchaseRecord.status === ProposalStatus.PaymentAbortFinished ?? false,
     ...(ort?.lastError ? { error: ort.lastError } : {}),
   };
 }
@@ -745,7 +714,6 @@ export async function getTransactions(
       x.peerPullPaymentIncoming,
       x.peerPushPaymentInitiations,
       x.planchets,
-      x.proposals,
       x.purchases,
       x.recoupGroups,
       x.tips,
@@ -838,30 +806,33 @@ export async function getTransactions(
         transactions.push(buildTransactionForDeposit(dg, retryRecord));
       });
 
-      tx.purchases.iter().forEachAsync(async (pr) => {
+      tx.purchases.iter().forEachAsync(async (purchase) => {
+        const download = purchase.download;
+        if (!download) {
+          return;
+        }
+        if (!purchase.payInfo) {
+          return;
+        }
         if (
           shouldSkipCurrency(
             transactionsRequest,
-            pr.download.contractData.amount.currency,
+            download.contractData.amount.currency,
           )
         ) {
           return;
         }
-        const contractData = pr.download.contractData;
+        const contractData = download.contractData;
         if (shouldSkipSearch(transactionsRequest, [contractData.summary])) {
-          return;
-        }
-        const proposal = await tx.proposals.get(pr.proposalId);
-        if (!proposal) {
           return;
         }
 
         const filteredRefunds = await Promise.all(
-          Object.values(pr.refunds).map(async (r) => {
+          Object.values(purchase.refunds).map(async (r) => {
             const t = await tx.tombstones.get(
               makeEventId(
                 TombstoneTag.DeleteRefund,
-                pr.proposalId,
+                purchase.proposalId,
                 `${r.executionTime.t_s}`,
               ),
             );
@@ -880,29 +851,16 @@ export async function getTransactions(
         );
 
         refunds.forEach(async (refundInfo) => {
-          const refundQueryOpId = RetryTags.forRefundQuery(pr);
-          const refundQueryRetryRecord = await tx.operationRetries.get(
-            refundQueryOpId,
-          );
-
           transactions.push(
-            buildTransactionForRefund(pr, refundInfo, refundQueryRetryRecord),
+            await buildTransactionForRefund(purchase, refundInfo, undefined),
           );
         });
 
-        const payOpId = RetryTags.forPay(pr);
-        const refundQueryOpId = RetryTags.forRefundQuery(pr);
+        const payOpId = RetryTags.forPay(purchase);
         const payRetryRecord = await tx.operationRetries.get(payOpId);
-        const refundQueryRetryRecord = await tx.operationRetries.get(
-          refundQueryOpId,
+        transactions.push(
+          await buildTransactionForPurchase(purchase, refunds, payRetryRecord),
         );
-
-        const err =
-          payRetryRecord !== undefined
-            ? payRetryRecord
-            : refundQueryRetryRecord;
-
-        transactions.push(buildTransactionForPurchase(pr, refunds, err));
       });
 
       tx.tips.iter().forEachAsync(async (tipRecord) => {
@@ -1020,14 +978,9 @@ export async function deleteTransaction(
   } else if (type === TransactionType.Payment) {
     const proposalId = rest[0];
     await ws.db
-      .mktx((x) => [x.proposals, x.purchases, x.tombstones])
+      .mktx((x) => [x.purchases, x.tombstones])
       .runReadWrite(async (tx) => {
         let found = false;
-        const proposal = await tx.proposals.get(proposalId);
-        if (proposal) {
-          found = true;
-          await tx.proposals.delete(proposalId);
-        }
         const purchase = await tx.purchases.get(proposalId);
         if (purchase) {
           found = true;
@@ -1083,7 +1036,7 @@ export async function deleteTransaction(
     const executionTimeStr = rest[1];
 
     await ws.db
-      .mktx((x) => [x.proposals, x.purchases, x.tombstones])
+      .mktx((x) => [x.purchases, x.tombstones])
       .runReadWrite(async (tx) => {
         const purchase = await tx.purchases.get(proposalId);
         if (purchase) {

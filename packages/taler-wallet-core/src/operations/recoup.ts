@@ -27,16 +27,15 @@
 import {
   Amounts,
   codecForRecoupConfirmation,
+  codecForReserveStatus,
   encodeCrock,
   getRandomBytes,
   j2s,
   Logger,
   NotificationType,
   RefreshReason,
-  TalerErrorDetail,
   TalerProtocolTimestamp,
   URL,
-  codecForReserveStatus,
 } from "@gnu-taler/taler-util";
 import {
   CoinRecord,
@@ -44,8 +43,8 @@ import {
   CoinStatus,
   RecoupGroupRecord,
   RefreshCoinSource,
-  WithdrawalGroupStatus,
   WalletStoresV1,
+  WithdrawalGroupStatus,
   WithdrawalRecordType,
   WithdrawCoinSource,
 } from "../db.js";
@@ -54,10 +53,8 @@ import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { GetReadWriteAccess } from "../util/query.js";
 import {
   OperationAttemptResult,
-  RetryInfo,
   runOperationHandlerForResult,
 } from "../util/retries.js";
-import { guardOperationException } from "./common.js";
 import { createRefreshGroup, processRefreshGroup } from "./refresh.js";
 import { internalCreateWithdrawalGroup } from "./withdraw.js";
 

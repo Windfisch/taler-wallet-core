@@ -21,8 +21,8 @@ import {
   BackupCoin,
   BackupCoinSourceType,
   BackupDenomSel,
+  BackupPayInfo,
   BackupProposalStatus,
-  BackupPurchase,
   BackupRefreshReason,
   BackupRefundState,
   BackupWgType,
@@ -37,7 +37,6 @@ import {
   WireInfo,
 } from "@gnu-taler/taler-util";
 import {
-  AbortStatus,
   CoinRecord,
   CoinSource,
   CoinSourceType,
@@ -48,28 +47,23 @@ import {
   OperationStatus,
   ProposalDownload,
   ProposalStatus,
+  PurchasePayInfo,
   RefreshCoinStatus,
   RefreshSessionRecord,
   RefundState,
-  ReserveBankInfo,
-  WithdrawalGroupStatus,
   WalletContractData,
   WalletRefundItem,
   WalletStoresV1,
   WgInfo,
+  WithdrawalGroupStatus,
   WithdrawalRecordType,
 } from "../../db.js";
 import { InternalWalletState } from "../../internal-wallet-state.js";
 import { assertUnreachable } from "../../util/assertUnreachable.js";
-import {
-  checkDbInvariant,
-  checkLogicInvariant,
-} from "../../util/invariants.js";
+import { checkLogicInvariant } from "../../util/invariants.js";
 import { GetReadOnlyAccess, GetReadWriteAccess } from "../../util/query.js";
-import { RetryInfo } from "../../util/retries.js";
-import { makeCoinAvailable } from "../../wallet.js";
+import { makeCoinAvailable, makeEventId, TombstoneTag } from "../common.js";
 import { getExchangeDetails } from "../exchanges.js";
-import { makeEventId, TombstoneTag } from "../transactions.js";
 import { provideBackupState } from "./state.js";
 
 const logger = new Logger("operations/backup/import.ts");
@@ -95,10 +89,10 @@ async function recoverPayCoinSelection(
     denominations: typeof WalletStoresV1.denominations;
   }>,
   contractData: WalletContractData,
-  backupPurchase: BackupPurchase,
+  payInfo: BackupPayInfo,
 ): Promise<PayCoinSelection> {
-  const coinPubs: string[] = backupPurchase.pay_coins.map((x) => x.coin_pub);
-  const coinContributions: AmountJson[] = backupPurchase.pay_coins.map((x) =>
+  const coinPubs: string[] = payInfo.pay_coins.map((x) => x.coin_pub);
+  const coinContributions: AmountJson[] = payInfo.pay_coins.map((x) =>
     Amounts.parseOrThrow(x.contribution),
   );
 
@@ -316,7 +310,6 @@ export async function importBackup(
       x.coinAvailability,
       x.denominations,
       x.purchases,
-      x.proposals,
       x.refreshGroups,
       x.backupProviders,
       x.tips,
@@ -560,113 +553,6 @@ export async function importBackup(
         }
       }
 
-      for (const backupProposal of backupBlob.proposals) {
-        const ts = makeEventId(
-          TombstoneTag.DeletePayment,
-          backupProposal.proposal_id,
-        );
-        if (tombstoneSet.has(ts)) {
-          continue;
-        }
-        const existingProposal = await tx.proposals.get(
-          backupProposal.proposal_id,
-        );
-        if (!existingProposal) {
-          let download: ProposalDownload | undefined;
-          let proposalStatus: ProposalStatus;
-          switch (backupProposal.proposal_status) {
-            case BackupProposalStatus.Proposed:
-              if (backupProposal.contract_terms_raw) {
-                proposalStatus = ProposalStatus.Proposed;
-              } else {
-                proposalStatus = ProposalStatus.Downloading;
-              }
-              break;
-            case BackupProposalStatus.Refused:
-              proposalStatus = ProposalStatus.Refused;
-              break;
-            case BackupProposalStatus.Repurchase:
-              proposalStatus = ProposalStatus.Repurchase;
-              break;
-            case BackupProposalStatus.PermanentlyFailed:
-              proposalStatus = ProposalStatus.PermanentlyFailed;
-              break;
-          }
-          if (backupProposal.contract_terms_raw) {
-            checkDbInvariant(!!backupProposal.merchant_sig);
-            const parsedContractTerms = codecForContractTerms().decode(
-              backupProposal.contract_terms_raw,
-            );
-            const amount = Amounts.parseOrThrow(parsedContractTerms.amount);
-            const contractTermsHash =
-              cryptoComp.proposalIdToContractTermsHash[
-                backupProposal.proposal_id
-              ];
-            let maxWireFee: AmountJson;
-            if (parsedContractTerms.max_wire_fee) {
-              maxWireFee = Amounts.parseOrThrow(
-                parsedContractTerms.max_wire_fee,
-              );
-            } else {
-              maxWireFee = Amounts.getZero(amount.currency);
-            }
-            download = {
-              contractData: {
-                amount,
-                contractTermsHash: contractTermsHash,
-                fulfillmentUrl: parsedContractTerms.fulfillment_url ?? "",
-                merchantBaseUrl: parsedContractTerms.merchant_base_url,
-                merchantPub: parsedContractTerms.merchant_pub,
-                merchantSig: backupProposal.merchant_sig,
-                orderId: parsedContractTerms.order_id,
-                summary: parsedContractTerms.summary,
-                autoRefund: parsedContractTerms.auto_refund,
-                maxWireFee,
-                payDeadline: parsedContractTerms.pay_deadline,
-                refundDeadline: parsedContractTerms.refund_deadline,
-                wireFeeAmortization:
-                  parsedContractTerms.wire_fee_amortization || 1,
-                allowedAuditors: parsedContractTerms.auditors.map((x) => ({
-                  auditorBaseUrl: x.url,
-                  auditorPub: x.auditor_pub,
-                })),
-                allowedExchanges: parsedContractTerms.exchanges.map((x) => ({
-                  exchangeBaseUrl: x.url,
-                  exchangePub: x.master_pub,
-                })),
-                timestamp: parsedContractTerms.timestamp,
-                wireMethod: parsedContractTerms.wire_method,
-                wireInfoHash: parsedContractTerms.h_wire,
-                maxDepositFee: Amounts.parseOrThrow(
-                  parsedContractTerms.max_fee,
-                ),
-                merchant: parsedContractTerms.merchant,
-                products: parsedContractTerms.products,
-                summaryI18n: parsedContractTerms.summary_i18n,
-                deliveryDate: parsedContractTerms.delivery_date,
-                deliveryLocation: parsedContractTerms.delivery_location,
-              },
-              contractTermsRaw: backupProposal.contract_terms_raw,
-            };
-          }
-          await tx.proposals.put({
-            claimToken: backupProposal.claim_token,
-            merchantBaseUrl: backupProposal.merchant_base_url,
-            timestamp: backupProposal.timestamp,
-            orderId: backupProposal.order_id,
-            noncePriv: backupProposal.nonce_priv,
-            noncePub:
-              cryptoComp.proposalNoncePrivToPub[backupProposal.nonce_priv],
-            proposalId: backupProposal.proposal_id,
-            repurchaseProposalId: backupProposal.repurchase_proposal_id,
-            download,
-            proposalStatus,
-            // FIXME!
-            downloadSessionId: undefined,
-          });
-        }
-      }
-
       for (const backupPurchase of backupBlob.purchases) {
         const ts = makeEventId(
           TombstoneTag.DeletePayment,
@@ -678,6 +564,14 @@ export async function importBackup(
         const existingPurchase = await tx.purchases.get(
           backupPurchase.proposal_id,
         );
+        let proposalStatus: ProposalStatus;
+        switch (backupPurchase.proposal_status) {
+          case BackupProposalStatus.Paid:
+            proposalStatus = ProposalStatus.Paid;
+            break;
+          default:
+            throw Error();
+        }
         if (!existingPurchase) {
           const refunds: { [refundKey: string]: WalletRefundItem } = {};
           for (const backupRefund of backupPurchase.refunds) {
@@ -721,25 +615,6 @@ export async function importBackup(
                 break;
             }
           }
-          let abortStatus: AbortStatus;
-          switch (backupPurchase.abort_status) {
-            case "abort-finished":
-              abortStatus = AbortStatus.AbortFinished;
-              break;
-            case "abort-refund":
-              abortStatus = AbortStatus.AbortRefund;
-              break;
-            case undefined:
-              abortStatus = AbortStatus.None;
-              break;
-            default:
-              logger.warn(
-                `got backup purchase abort_status ${j2s(
-                  backupPurchase.abort_status,
-                )}`,
-              );
-              throw Error("not reachable");
-          }
           const parsedContractTerms = codecForContractTerms().decode(
             backupPurchase.contract_terms_raw,
           );
@@ -761,7 +636,7 @@ export async function importBackup(
               fulfillmentUrl: parsedContractTerms.fulfillment_url ?? "",
               merchantBaseUrl: parsedContractTerms.merchant_base_url,
               merchantPub: parsedContractTerms.merchant_pub,
-              merchantSig: backupPurchase.merchant_sig,
+              merchantSig: backupPurchase.merchant_sig!,
               orderId: parsedContractTerms.order_id,
               summary: parsedContractTerms.summary,
               autoRefund: parsedContractTerms.auto_refund,
@@ -790,33 +665,46 @@ export async function importBackup(
             },
             contractTermsRaw: backupPurchase.contract_terms_raw,
           };
+
+          let payInfo: PurchasePayInfo | undefined = undefined;
+          if (backupPurchase.pay_info) {
+            payInfo = {
+              coinDepositPermissions: undefined,
+              payCoinSelection: await recoverPayCoinSelection(
+                tx,
+                download.contractData,
+                backupPurchase.pay_info,
+              ),
+              payCoinSelectionUid: backupPurchase.pay_info.pay_coins_uid,
+              totalPayCost: Amounts.parseOrThrow(
+                backupPurchase.pay_info.total_pay_cost,
+              ),
+            };
+          }
+
           await tx.purchases.put({
             proposalId: backupPurchase.proposal_id,
             noncePriv: backupPurchase.nonce_priv,
             noncePub:
               cryptoComp.proposalNoncePrivToPub[backupPurchase.nonce_priv],
             autoRefundDeadline: TalerProtocolTimestamp.never(),
-            refundAwaiting: undefined,
-            timestampAccept: backupPurchase.timestamp_accept,
+            timestampAccept: backupPurchase.timestamp_accepted,
             timestampFirstSuccessfulPay:
               backupPurchase.timestamp_first_successful_pay,
             timestampLastRefundStatus: undefined,
             merchantPaySig: backupPurchase.merchant_pay_sig,
             lastSessionId: undefined,
-            abortStatus,
             download,
-            paymentSubmitPending:
-              !backupPurchase.timestamp_first_successful_pay,
-            refundQueryRequested: false,
-            payCoinSelection: await recoverPayCoinSelection(
-              tx,
-              download.contractData,
-              backupPurchase,
-            ),
-            coinDepositPermissions: undefined,
-            totalPayCost: Amounts.parseOrThrow(backupPurchase.total_pay_cost),
             refunds,
-            payCoinSelectionUid: backupPurchase.pay_coins_uid,
+            claimToken: backupPurchase.claim_token,
+            downloadSessionId: backupPurchase.download_session_id,
+            merchantBaseUrl: backupPurchase.merchant_base_url,
+            orderId: backupPurchase.order_id,
+            payInfo,
+            refundAmountAwaiting: undefined,
+            repurchaseProposalId: backupPurchase.repurchase_proposal_id,
+            status: proposalStatus,
+            timestamp: backupPurchase.timestamp_proposed,
           });
         }
       }
@@ -948,7 +836,6 @@ export async function importBackup(
           await tx.depositGroups.delete(rest[0]);
         } else if (type === TombstoneTag.DeletePayment) {
           await tx.purchases.delete(rest[0]);
-          await tx.proposals.delete(rest[0]);
         } else if (type === TombstoneTag.DeleteRefreshGroup) {
           await tx.refreshGroups.delete(rest[0]);
         } else if (type === TombstoneTag.DeleteRefund) {

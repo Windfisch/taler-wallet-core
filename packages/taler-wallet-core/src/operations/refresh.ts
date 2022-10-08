@@ -78,7 +78,7 @@ import {
   OperationAttemptResult,
   OperationAttemptResultType,
 } from "../util/retries.js";
-import { makeCoinAvailable } from "../wallet.js";
+import { makeCoinAvailable } from "./common.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
 import {
   isWithdrawableDenom,

@@ -98,11 +98,11 @@ export const CURRENT_DB_CONFIG_KEY = "currentMainDbName";
  */
 export const WALLET_DB_MINOR_VERSION = 2;
 
-export namespace OperationStatusRange {
-  export const ACTIVE_START = 10;
-  export const ACTIVE_END = 29;
-  export const DORMANT_START = 50;
-  export const DORMANT_END = 69;
+export enum OperationStatusRange {
+  ACTIVE_START = 10,
+  ACTIVE_END = 29,
+  DORMANT_START = 50,
+  DORMANT_END = 69,
 }
 
 /**
@@ -741,93 +741,6 @@ export interface CoinAllocation {
   amount: AmountString;
 }
 
-export enum ProposalStatus {
-  /**
-   * Not downloaded yet.
-   */
-  Downloading = "downloading",
-  /**
-   * Proposal downloaded, but the user needs to accept/reject it.
-   */
-  Proposed = "proposed",
-  /**
-   * The user has accepted the proposal.
-   */
-  Accepted = "accepted",
-  /**
-   * The user has rejected the proposal.
-   */
-  Refused = "refused",
-  /**
-   * Downloading or processing the proposal has failed permanently.
-   */
-  PermanentlyFailed = "permanently-failed",
-  /**
-   * Downloaded proposal was detected as a re-purchase.
-   */
-  Repurchase = "repurchase",
-}
-
-export interface ProposalDownload {
-  /**
-   * The contract that was offered by the merchant.
-   */
-  contractTermsRaw: any;
-
-  /**
-   * Extracted / parsed data from the contract terms.
-   *
-   * FIXME: Do we need to store *all* that data in duplicate?
-   */
-  contractData: WalletContractData;
-}
-
-/**
- * Record for a downloaded order, stored in the wallet's database.
- */
-export interface ProposalRecord {
-  orderId: string;
-
-  merchantBaseUrl: string;
-
-  /**
-   * Downloaded data from the merchant.
-   */
-  download: ProposalDownload | undefined;
-
-  /**
-   * Unique ID when the order is stored in the wallet DB.
-   */
-  proposalId: string;
-
-  /**
-   * Timestamp (in ms) of when the record
-   * was created.
-   */
-  timestamp: TalerProtocolTimestamp;
-
-  /**
-   * Private key for the nonce.
-   */
-  noncePriv: string;
-
-  /**
-   * Public key for the nonce.
-   */
-  noncePub: string;
-
-  claimToken: string | undefined;
-
-  proposalStatus: ProposalStatus;
-
-  repurchaseProposalId: string | undefined;
-
-  /**
-   * Session ID we got when downloading the contract.
-   */
-  downloadSessionId: string | undefined;
-}
-
 /**
  * Status of a tip we got from a merchant.
  */
@@ -1113,22 +1026,131 @@ export interface WalletContractData {
   deliveryLocation: Location | undefined;
 }
 
-export enum AbortStatus {
-  None = "none",
-  AbortRefund = "abort-refund",
-  AbortFinished = "abort-finished",
+export enum ProposalStatus {
+  /**
+   * Not downloaded yet.
+   */
+  DownloadingProposal = OperationStatusRange.ACTIVE_START,
+
+  /**
+   * The user has accepted the proposal.
+   */
+  Paying = OperationStatusRange.ACTIVE_START + 1,
+
+  AbortingWithRefund = OperationStatusRange.ACTIVE_START + 2,
+
+  /**
+   * Paying a second time, likely with different session ID
+   */
+  PayingReplay = OperationStatusRange.ACTIVE_START + 3,
+
+  /**
+   * Query for refunds (until query succeeds).
+   */
+  QueryingRefund = OperationStatusRange.ACTIVE_START + 4,
+
+  /**
+   * Query for refund (until auto-refund deadline is reached).
+   */
+  QueryingAutoRefund = OperationStatusRange.ACTIVE_START + 5,
+
+  /**
+   * Proposal downloaded, but the user needs to accept/reject it.
+   */
+  Proposed = OperationStatusRange.DORMANT_START,
+
+  /**
+   * The user has rejected the proposal.
+   */
+  ProposalRefused = OperationStatusRange.DORMANT_START + 1,
+
+  /**
+   * Downloading or processing the proposal has failed permanently.
+   */
+  ProposalDownloadFailed = OperationStatusRange.DORMANT_START + 2,
+
+  /**
+   * Downloaded proposal was detected as a re-purchase.
+   */
+  RepurchaseDetected = OperationStatusRange.DORMANT_START + 3,
+
+  /**
+   * The payment has been aborted.
+   */
+  PaymentAbortFinished = OperationStatusRange.DORMANT_START + 4,
+
+  /**
+   * Payment was successful.
+   */
+  Paid = OperationStatusRange.DORMANT_START + 5,
+}
+
+export interface ProposalDownload {
+  /**
+   * The contract that was offered by the merchant.
+   */
+  contractTermsRaw: any;
+
+  /**
+   * Extracted / parsed data from the contract terms.
+   *
+   * FIXME: Do we need to store *all* that data in duplicate?
+   */
+  contractData: WalletContractData;
+}
+
+export interface PurchasePayInfo {
+  payCoinSelection: PayCoinSelection;
+  totalPayCost: AmountJson;
+  payCoinSelectionUid: string;
+
+  /**
+   * Deposit permissions, available once the user has accepted the payment.
+   *
+   * This value is cached and derived from payCoinSelection.
+   *
+   * FIXME: Should probably be cached somewhere else, maybe not even in DB!
+   */
+  coinDepositPermissions: CoinDepositPermission[] | undefined;
 }
 
 /**
  * Record that stores status information about one purchase, starting from when
  * the customer accepts a proposal.  Includes refund status if applicable.
+ *
+ * FIXME: Should have a single "status" field.
  */
 export interface PurchaseRecord {
   /**
    * Proposal ID for this purchase.  Uniquely identifies the
    * purchase and the proposal.
+   * Assigned by the wallet.
    */
   proposalId: string;
+
+  /**
+   * Order ID, assigned by the merchant.
+   */
+  orderId: string;
+
+  merchantBaseUrl: string;
+
+  /**
+   * Claim token used when downloading the contract terms.
+   */
+  claimToken: string | undefined;
+
+  /**
+   * Session ID we got when downloading the contract.
+   */
+  downloadSessionId: string | undefined;
+
+  /**
+   * If this purchase is a repurchase, this field identifies the original purchase.
+   */
+  repurchaseProposalId: string | undefined;
+
+  status: ProposalStatus;
 
   /**
    * Private key for the nonce.
@@ -1146,18 +1168,9 @@ export interface PurchaseRecord {
    * FIXME:  Move this into another object store,
    * to improve read/write perf on purchases.
    */
-  download: ProposalDownload;
+  download: ProposalDownload | undefined;
 
-  /**
-   * Deposit permissions, available once the user has accepted the payment.
-   *
-   * This value is cached and derived from payCoinSelection.
-   */
-  coinDepositPermissions: CoinDepositPermission[] | undefined;
-
-  payCoinSelection: PayCoinSelection;
-
-  payCoinSelectionUid: string;
+  payInfo: PurchasePayInfo | undefined;
 
   /**
    * Pending removals from pay coin selection.
@@ -1168,8 +1181,6 @@ export interface PurchaseRecord {
    * there is not enough balance (e.g. when waiting for a refresh).
    */
   pendingRemovedCoinPubs?: string[];
-
-  totalPayCost: AmountJson;
 
   /**
    * Timestamp of the first time that sending a payment to the merchant
@@ -1182,10 +1193,15 @@ export interface PurchaseRecord {
   merchantPaySig: string | undefined;
 
   /**
+   * When was the purchase record created?
+   */
+  timestamp: TalerProtocolTimestamp;
+
+  /**
    * When was the purchase made?
    * Refers to the time that the user accepted.
    */
-  timestampAccept: TalerProtocolTimestamp;
+  timestampAccept: TalerProtocolTimestamp | undefined;
 
   /**
    * Pending refunds for the purchase.  A refund is pending
@@ -1207,18 +1223,6 @@ export interface PurchaseRecord {
   lastSessionId: string | undefined;
 
   /**
-   * Do we still need to post the deposit permissions to the merchant?
-   * Set for the first payment, or on re-plays.
-   */
-  paymentSubmitPending: boolean;
-
-  /**
-   * Do we need to query the merchant for the refund status
-   * of the payment?
-   */
-  refundQueryRequested: boolean;
-
-  /**
    * Continue querying the refund status until this deadline has expired.
    */
   autoRefundDeadline: TalerProtocolTimestamp | undefined;
@@ -1227,18 +1231,7 @@ export interface PurchaseRecord {
    * How much merchant has refund to be taken but the wallet
    * did not picked up yet
    */
-  refundAwaiting: AmountJson | undefined;
-
-  /**
-   * Is the payment frozen?  I.e. did we encounter
-   * an error where it doesn't make sense to retry.
-   */
-  payFrozen?: boolean;
-
-  /**
-   * FIXME: How does this interact with payFrozen?
-   */
-  abortStatus: AbortStatus;
+  refundAmountAwaiting: AmountJson | undefined;
 }
 
 export const WALLET_BACKUP_STATE_KEY = "walletBackupState";
@@ -1923,16 +1916,6 @@ export const WalletStoresV1 = {
     }),
     {},
   ),
-  proposals: describeStore(
-    "proposals",
-    describeContents<ProposalRecord>({ keyPath: "proposalId" }),
-    {
-      byUrlAndOrderId: describeIndex("byUrlAndOrderId", [
-        "merchantBaseUrl",
-        "orderId",
-      ]),
-    },
-  ),
   refreshGroups: describeStore(
     "refreshGroups",
     describeContents<RefreshGroupRecord>({
@@ -1953,13 +1936,19 @@ export const WalletStoresV1 = {
     "purchases",
     describeContents<PurchaseRecord>({ keyPath: "proposalId" }),
     {
+      byStatus: describeIndex("byStatus", "operationStatus"),
       byFulfillmentUrl: describeIndex(
         "byFulfillmentUrl",
         "download.contractData.fulfillmentUrl",
       ),
+      // FIXME: Deduplicate!
       byMerchantUrlAndOrderId: describeIndex("byMerchantUrlAndOrderId", [
         "download.contractData.merchantBaseUrl",
         "download.contractData.orderId",
+      ]),
+      byUrlAndOrderId: describeIndex("byUrlAndOrderId", [
+        "merchantBaseUrl",
+        "orderId",
       ]),
     },
   ),

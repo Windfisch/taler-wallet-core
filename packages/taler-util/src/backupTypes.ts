@@ -181,15 +181,6 @@ export interface WalletBackupContentV1 {
   tips: BackupTip[];
 
   /**
-   * Proposals from merchants.  The proposal may
-   * be deleted as soon as it has been accepted (and thus
-   * turned into a purchase).
-   *
-   * Sorted by the proposal ID.
-   */
-  proposals: BackupProposal[];
-
-  /**
    * Accepted purchases.
    *
    * Sorted by the proposal ID.
@@ -838,29 +829,10 @@ export type BackupRefundItem =
   | BackupRefundPendingItem
   | BackupRefundAppliedItem;
 
-export interface BackupPurchase {
-  /**
-   * Proposal ID for this purchase.  Uniquely identifies the
-   * purchase and the proposal.
-   */
-  proposal_id: string;
-
-  /**
-   * Contract terms we got from the merchant.
-   */
-  contract_terms_raw: RawContractTerms;
-
-  /**
-   * Signature on the contract terms.
-   */
-  merchant_sig: string;
-
-  /**
-   * Private key for the nonce.  Might eventually be used
-   * to prove ownership of the contract.
-   */
-  nonce_priv: string;
-
+/**
+ * Data we store when the payment was accepted.
+ */
+export interface BackupPayInfo {
   pay_coins: {
     /**
      * Public keys of the coins that were selected.
@@ -890,6 +862,63 @@ export interface BackupPurchase {
    * We might show adjustments to this later, but currently we don't do so.
    */
   total_pay_cost: BackupAmountString;
+}
+
+export interface BackupPurchase {
+  /**
+   * Proposal ID for this purchase.  Uniquely identifies the
+   * purchase and the proposal.
+   */
+  proposal_id: string;
+
+  /**
+   * Status of the proposal.
+   */
+  proposal_status: BackupProposalStatus;
+
+  /**
+   * Proposal that this one got "redirected" to as part of
+   * the repurchase detection.
+   */
+  repurchase_proposal_id: string | undefined;
+
+  /**
+   * Session ID we got when downloading the contract.
+   */
+  download_session_id?: string;
+
+  /**
+   * Merchant-assigned order ID of the proposal.
+   */
+  order_id: string;
+
+  /**
+   * Base URL of the merchant that proposed the purchase.
+   */
+  merchant_base_url: string;
+
+  /**
+   * Claim token initially given by the merchant.
+   */
+  claim_token: string | undefined;
+
+  /**
+   * Contract terms we got from the merchant.
+   */
+  contract_terms_raw?: RawContractTerms;
+
+  /**
+   * Signature on the contract terms.
+   */
+  merchant_sig?: string;
+
+  /**
+   * Private key for the nonce.  Might eventually be used
+   * to prove ownership of the contract.
+   */
+  nonce_priv: string;
+
+  pay_info: BackupPayInfo | undefined;
 
   /**
    * Timestamp of the first time that sending a payment to the merchant
@@ -902,22 +931,19 @@ export interface BackupPurchase {
    */
   merchant_pay_sig: string | undefined;
 
+  timestamp_proposed: TalerProtocolTimestamp;
+
   /**
    * When was the purchase made?
    * Refers to the time that the user accepted.
    */
-  timestamp_accept: TalerProtocolTimestamp;
+  timestamp_accepted: TalerProtocolTimestamp | undefined;
 
   /**
    * Pending refunds for the purchase.  A refund is pending
    * when the merchant reports a transient error from the exchange.
    */
   refunds: BackupRefundItem[];
-
-  /**
-   * Abort status of the payment.
-   */
-  abort_status?: "abort-refund" | "abort-finished";
 
   /**
    * Continue querying the refund status until this deadline has expired.
@@ -1218,70 +1244,8 @@ export enum BackupProposalStatus {
    * Downloaded proposal was detected as a re-purchase.
    */
   Repurchase = "repurchase",
-}
 
-/**
- * Proposal by a merchant.
- */
-export interface BackupProposal {
-  /**
-   * Base URL of the merchant that proposed the purchase.
-   */
-  merchant_base_url: string;
-
-  /**
-   * Downloaded data from the merchant.
-   */
-  contract_terms_raw?: RawContractTerms;
-
-  /**
-   * Signature on the contract terms.
-   *
-   * Must be present if contract_terms_raw is present.
-   */
-  merchant_sig?: string;
-
-  /**
-   * Unique ID when the order is stored in the wallet DB.
-   */
-  proposal_id: string;
-
-  /**
-   * Merchant-assigned order ID of the proposal.
-   */
-  order_id: string;
-
-  /**
-   * Timestamp of when the record
-   * was created.
-   */
-  timestamp: TalerProtocolTimestamp;
-
-  /**
-   * Private key for the nonce.
-   */
-  nonce_priv: string;
-
-  /**
-   * Claim token initially given by the merchant.
-   */
-  claim_token: string | undefined;
-
-  /**
-   * Status of the proposal.
-   */
-  proposal_status: BackupProposalStatus;
-
-  /**
-   * Proposal that this one got "redirected" to as part of
-   * the repurchase detection.
-   */
-  repurchase_proposal_id: string | undefined;
-
-  /**
-   * Session ID we got when downloading the contract.
-   */
-  download_session_id?: string;
+  Paid = "paid",
 }
 
 export interface BackupRecovery {

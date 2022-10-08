@@ -53,16 +53,15 @@ import {
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { OperationAttemptResult } from "../util/retries.js";
-import { spendCoins } from "../wallet.js";
+import { makeEventId, spendCoins } from "./common.js";
 import { getExchangeDetails } from "./exchanges.js";
 import {
   extractContractData,
   generateDepositPermissions,
   getTotalPaymentCost,
   selectPayCoinsNew,
-} from "./pay.js";
+} from "./pay-merchant.js";
 import { getTotalRefreshCost } from "./refresh.js";
-import { makeEventId } from "./transactions.js";
 
 /**
  * Logger.

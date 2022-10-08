@@ -23,7 +23,6 @@
  */
 import {
   ProposalStatus,
-  AbortStatus,
   WalletStoresV1,
   BackupProviderStateTag,
   RefreshCoinStatus,
@@ -38,7 +37,6 @@ import { AbsoluteTime } from "@gnu-taler/taler-util";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { GetReadOnlyAccess } from "../util/query.js";
 import { RetryTags } from "../util/retries.js";
-import { Wallet } from "../wallet.js";
 import { GlobalIDB } from "@gnu-taler/idb-bridge";
 
 function getPendingCommon(
@@ -184,38 +182,6 @@ async function gatherWithdrawalPending(
   }
 }
 
-async function gatherProposalPending(
-  ws: InternalWalletState,
-  tx: GetReadOnlyAccess<{
-    proposals: typeof WalletStoresV1.proposals;
-    operationRetries: typeof WalletStoresV1.operationRetries;
-  }>,
-  now: AbsoluteTime,
-  resp: PendingOperationsResponse,
-): Promise<void> {
-  await tx.proposals.iter().forEachAsync(async (proposal) => {
-    if (proposal.proposalStatus == ProposalStatus.Proposed) {
-      // Nothing to do, user needs to choose.
-    } else if (proposal.proposalStatus == ProposalStatus.Downloading) {
-      const opId = RetryTags.forProposalClaim(proposal);
-      const retryRecord = await tx.operationRetries.get(opId);
-      const timestampDue =
-        retryRecord?.retryInfo?.nextRetry ?? AbsoluteTime.now();
-      resp.pendingOperations.push({
-        type: PendingTaskType.ProposalDownload,
-        ...getPendingCommon(ws, opId, timestampDue),
-        givesLifeness: true,
-        merchantBaseUrl: proposal.merchantBaseUrl,
-        orderId: proposal.orderId,
-        proposalId: proposal.proposalId,
-        proposalTimestamp: proposal.timestamp,
-        lastError: retryRecord?.lastError,
-        retryInfo: retryRecord?.retryInfo,
-      });
-    }
-  });
-}
-
 async function gatherDepositPending(
   ws: InternalWalletState,
   tx: GetReadOnlyAccess<{
@@ -287,44 +253,27 @@ async function gatherPurchasePending(
   resp: PendingOperationsResponse,
 ): Promise<void> {
   // FIXME: Only iter purchases with some "active" flag!
-  await tx.purchases.iter().forEachAsync(async (pr) => {
-    if (
-      pr.paymentSubmitPending &&
-      pr.abortStatus === AbortStatus.None &&
-      !pr.payFrozen
-    ) {
-      const payOpId = RetryTags.forPay(pr);
-      const payRetryRecord = await tx.operationRetries.get(payOpId);
-
+  const keyRange = GlobalIDB.KeyRange.bound(
+    OperationStatusRange.ACTIVE_START,
+    OperationStatusRange.ACTIVE_END,
+  );
+  await tx.purchases.indexes.byStatus
+    .iter(keyRange)
+    .forEachAsync(async (pr) => {
+      const opId = RetryTags.forPay(pr);
+      const retryRecord = await tx.operationRetries.get(opId);
       const timestampDue =
-        payRetryRecord?.retryInfo.nextRetry ?? AbsoluteTime.now();
+        retryRecord?.retryInfo.nextRetry ?? AbsoluteTime.now();
       resp.pendingOperations.push({
-        type: PendingTaskType.Pay,
-        ...getPendingCommon(ws, payOpId, timestampDue),
+        type: PendingTaskType.Purchase,
+        ...getPendingCommon(ws, opId, timestampDue),
         givesLifeness: true,
-        isReplay: false,
+        statusStr: ProposalStatus[pr.status],
         proposalId: pr.proposalId,
-        retryInfo: payRetryRecord?.retryInfo,
-        lastError: payRetryRecord?.lastError,
+        retryInfo: retryRecord?.retryInfo,
+        lastError: retryRecord?.lastError,
       });
-    }
-    if (pr.refundQueryRequested) {
-      const refundQueryOpId = RetryTags.forRefundQuery(pr);
-      const refundQueryRetryRecord = await tx.operationRetries.get(
-        refundQueryOpId,
-      );
-      const timestampDue =
-        refundQueryRetryRecord?.retryInfo.nextRetry ?? AbsoluteTime.now();
-      resp.pendingOperations.push({
-        type: PendingTaskType.RefundQuery,
-        ...getPendingCommon(ws, refundQueryOpId, timestampDue),
-        givesLifeness: true,
-        proposalId: pr.proposalId,
-        retryInfo: refundQueryRetryRecord?.retryInfo,
-        lastError: refundQueryRetryRecord?.lastError,
-      });
-    }
-  });
+    });
 }
 
 async function gatherRecoupPending(
@@ -404,7 +353,6 @@ export async function getPendingOperations(
       x.refreshGroups,
       x.coins,
       x.withdrawalGroups,
-      x.proposals,
       x.tips,
       x.purchases,
       x.planchets,
@@ -419,7 +367,6 @@ export async function getPendingOperations(
       await gatherExchangePending(ws, tx, now, resp);
       await gatherRefreshPending(ws, tx, now, resp);
       await gatherWithdrawalPending(ws, tx, now, resp);
-      await gatherProposalPending(ws, tx, now, resp);
       await gatherDepositPending(ws, tx, now, resp);
       await gatherTipPending(ws, tx, now, resp);
       await gatherPurchasePending(ws, tx, now, resp);

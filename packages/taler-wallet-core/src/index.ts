@@ -47,7 +47,6 @@ export * from "./wallet-api-types.js";
 export * from "./wallet.js";
 
 export * from "./operations/backup/index.js";
-export { makeEventId } from "./operations/transactions.js";
 
 export * from "./operations/exchanges.js";
 
