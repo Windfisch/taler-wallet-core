@@ -909,6 +909,8 @@ export interface BackupPurchase {
 
   /**
    * Signature on the contract terms.
+   * 
+   * FIXME: Better name needed.
    */
   merchant_sig?: string;
 

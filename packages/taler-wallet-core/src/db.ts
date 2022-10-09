@@ -1085,18 +1085,16 @@ export enum PurchaseStatus {
   Paid = OperationStatusRange.DORMANT_START + 5,
 }
 
+/**
+ * Partial information about the downloaded proposal.
+ * Only contains data that is relevant for indexing on the
+ * "purchases" object stores.
+ */
 export interface ProposalDownload {
-  /**
-   * The contract that was offered by the merchant.
-   */
-  contractTermsRaw: any;
-
-  /**
-   * Extracted / parsed data from the contract terms.
-   *
-   * FIXME: Do we need to store *all* that data in duplicate?
-   */
-  contractData: WalletContractData;
+  contractTermsHash: string;
+  fulfillmentUrl?: string;
+  currency: string;
+  contractTermsMerchantSig: string;
 }
 
 export interface PurchasePayInfo {
@@ -1723,6 +1721,7 @@ export interface PeerPullPaymentInitiationRecord {
    * Contract terms for the other party.
    *
    * FIXME: Nail down type!
+   * FIXME: Put in contractTerms store
    */
   contractTerms: any;
 }
@@ -1817,6 +1816,18 @@ export interface CoinAvailabilityRecord {
    * Number of fresh coins of this denomination that are available.
    */
   freshCoinCount: number;
+}
+
+export interface ContractTermsRecord {
+  /**
+   * Contract terms hash.
+   */
+  h: string;
+
+  /**
+   * Contract terms JSON.
+   */
+  contractTermsRaw: any;
 }
 
 /**
@@ -1937,13 +1948,8 @@ export const WalletStoresV1 = {
       byStatus: describeIndex("byStatus", "purchaseStatus"),
       byFulfillmentUrl: describeIndex(
         "byFulfillmentUrl",
-        "download.contractData.fulfillmentUrl",
+        "download.fulfillmentUrl",
       ),
-      // FIXME: Deduplicate!
-      byMerchantUrlAndOrderId: describeIndex("byMerchantUrlAndOrderId", [
-        "download.contractData.merchantBaseUrl",
-        "download.contractData.orderId",
-      ]),
       byUrlAndOrderId: describeIndex("byUrlAndOrderId", [
         "merchantBaseUrl",
         "orderId",
@@ -2085,6 +2091,13 @@ export const WalletStoresV1 = {
     describeContents<BankAccountsRecord>({
       keyPath: "uri",
       versionAdded: 2,
+    }),
+    {},
+  ),
+  contractTerms: describeStore(
+    "contractTerms",
+    describeContents<ContractTermsRecord>({
+      keyPath: "h",
     }),
     {},
   ),

@@ -64,6 +64,7 @@ import { checkLogicInvariant } from "../../util/invariants.js";
 import { GetReadOnlyAccess, GetReadWriteAccess } from "../../util/query.js";
 import { makeCoinAvailable, makeEventId, TombstoneTag } from "../common.js";
 import { getExchangeDetails } from "../exchanges.js";
+import { extractContractData } from "../pay-merchant.js";
 import { provideBackupState } from "./state.js";
 
 const logger = new Logger("operations/backup/import.ts");
@@ -630,41 +631,17 @@ export async function importBackup(
             maxWireFee = Amounts.getZero(amount.currency);
           }
           const download: ProposalDownload = {
-            contractData: {
-              amount,
-              contractTermsHash: contractTermsHash,
-              fulfillmentUrl: parsedContractTerms.fulfillment_url ?? "",
-              merchantBaseUrl: parsedContractTerms.merchant_base_url,
-              merchantPub: parsedContractTerms.merchant_pub,
-              merchantSig: backupPurchase.merchant_sig!,
-              orderId: parsedContractTerms.order_id,
-              summary: parsedContractTerms.summary,
-              autoRefund: parsedContractTerms.auto_refund,
-              maxWireFee,
-              payDeadline: parsedContractTerms.pay_deadline,
-              refundDeadline: parsedContractTerms.refund_deadline,
-              wireFeeAmortization:
-                parsedContractTerms.wire_fee_amortization || 1,
-              allowedAuditors: parsedContractTerms.auditors.map((x) => ({
-                auditorBaseUrl: x.url,
-                auditorPub: x.auditor_pub,
-              })),
-              allowedExchanges: parsedContractTerms.exchanges.map((x) => ({
-                exchangeBaseUrl: x.url,
-                exchangePub: x.master_pub,
-              })),
-              timestamp: parsedContractTerms.timestamp,
-              wireMethod: parsedContractTerms.wire_method,
-              wireInfoHash: parsedContractTerms.h_wire,
-              maxDepositFee: Amounts.parseOrThrow(parsedContractTerms.max_fee),
-              merchant: parsedContractTerms.merchant,
-              products: parsedContractTerms.products,
-              summaryI18n: parsedContractTerms.summary_i18n,
-              deliveryDate: parsedContractTerms.delivery_date,
-              deliveryLocation: parsedContractTerms.delivery_location,
-            },
-            contractTermsRaw: backupPurchase.contract_terms_raw,
+            contractTermsHash,
+            contractTermsMerchantSig: backupPurchase.merchant_sig!,
+            currency: amount.currency,
+            fulfillmentUrl: backupPurchase.contract_terms_raw.fulfillment_url,
           };
+
+          const contractData = extractContractData(
+            backupPurchase.contract_terms_raw,
+            contractTermsHash,
+            download.contractTermsMerchantSig,
+          );
 
           let payInfo: PurchasePayInfo | undefined = undefined;
           if (backupPurchase.pay_info) {
@@ -672,7 +649,7 @@ export async function importBackup(
               coinDepositPermissions: undefined,
               payCoinSelection: await recoverPayCoinSelection(
                 tx,
-                download.contractData,
+                contractData,
                 backupPurchase.pay_info,
               ),
               payCoinSelectionUid: backupPurchase.pay_info.pay_coins_uid,

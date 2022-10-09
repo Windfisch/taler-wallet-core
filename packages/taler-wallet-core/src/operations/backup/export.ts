@@ -88,6 +88,7 @@ export async function exportBackup(
       x.exchanges,
       x.exchangeDetails,
       x.coins,
+      x.contractTerms,
       x.denominations,
       x.purchases,
       x.refreshGroups,
@@ -353,7 +354,7 @@ export async function exportBackup(
 
       const purchaseProposalIdSet = new Set<string>();
 
-      await tx.purchases.iter().forEach((purch) => {
+      await tx.purchases.iter().forEachAsync(async (purch) => {
         const refunds: BackupRefundItem[] = [];
         purchaseProposalIdSet.add(purch.proposalId);
         for (const refundKey of Object.keys(purch.refunds)) {
@@ -418,8 +419,18 @@ export async function exportBackup(
           };
         }
 
+        let contractTermsRaw = undefined;
+        if (purch.download) {
+          const contractTermsRecord = await tx.contractTerms.get(
+            purch.download.contractTermsHash,
+          );
+          if (contractTermsRecord) {
+            contractTermsRaw = contractTermsRecord.contractTermsRaw;
+          }
+        }
+
         backupPurchases.push({
-          contract_terms_raw: purch.download?.contractTermsRaw,
+          contract_terms_raw: contractTermsRaw,
           auto_refund_deadline: purch.autoRefundDeadline,
           merchant_pay_sig: purch.merchantPaySig,
           pay_info: backupPayInfo,
@@ -428,7 +439,7 @@ export async function exportBackup(
           timestamp_accepted: purch.timestampAccept,
           timestamp_first_successful_pay: purch.timestampFirstSuccessfulPay,
           nonce_priv: purch.noncePriv,
-          merchant_sig: purch.download?.contractData.merchantSig,
+          merchant_sig: purch.download?.contractTermsMerchantSig,
           claim_token: purch.claimToken,
           merchant_base_url: purch.merchantBaseUrl,
           order_id: purch.orderId,

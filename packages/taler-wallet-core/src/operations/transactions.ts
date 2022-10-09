@@ -48,6 +48,7 @@ import {
   WalletRefundItem,
   WithdrawalGroupRecord,
   WithdrawalRecordType,
+  WalletContractData,
 } from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { checkDbInvariant } from "../util/invariants.js";
@@ -55,7 +56,11 @@ import { RetryTags } from "../util/retries.js";
 import { makeEventId, TombstoneTag } from "./common.js";
 import { processDepositGroup } from "./deposits.js";
 import { getExchangeDetails } from "./exchanges.js";
-import { expectProposalDownload, processPurchasePay } from "./pay-merchant.js";
+import {
+  expectProposalDownload,
+  extractContractData,
+  processPurchasePay,
+} from "./pay-merchant.js";
 import { processRefreshGroup } from "./refresh.js";
 import { processTip } from "./tip.js";
 import {
@@ -199,7 +204,7 @@ export async function getTransactionById(
           }),
         );
 
-        const download = await expectProposalDownload(purchase);
+        const download = await expectProposalDownload(ws, purchase);
 
         const cleanRefunds = filteredRefunds.filter(
           (x): x is WalletRefundItem => !!x,
@@ -214,7 +219,12 @@ export async function getTransactionById(
         const payOpId = RetryTags.forPay(purchase);
         const payRetryRecord = await tx.operationRetries.get(payOpId);
 
-        return buildTransactionForPurchase(purchase, refunds, payRetryRecord);
+        return buildTransactionForPurchase(
+          purchase,
+          contractData,
+          refunds,
+          payRetryRecord,
+        );
       });
   } else if (type === TransactionType.Refresh) {
     const refreshGroupId = rest[0];
@@ -268,14 +278,19 @@ export async function getTransactionById(
           ),
         );
         if (t) throw Error("deleted");
-        const download = await expectProposalDownload(purchase);
+        const download = await expectProposalDownload(ws, purchase);
         const contractData = download.contractData;
         const refunds = mergeRefundByExecutionTime(
           [theRefund],
           Amounts.getZero(contractData.amount.currency),
         );
 
-        return buildTransactionForRefund(purchase, refunds[0], undefined);
+        return buildTransactionForRefund(
+          purchase,
+          contractData,
+          refunds[0],
+          undefined,
+        );
       });
   } else if (type === TransactionType.PeerPullDebit) {
     const peerPullPaymentIncomingId = rest[0];
@@ -572,12 +587,10 @@ function mergeRefundByExecutionTime(
 
 async function buildTransactionForRefund(
   purchaseRecord: PurchaseRecord,
+  contractData: WalletContractData,
   refundInfo: MergedRefundInfo,
   ort?: OperationRetryRecord,
 ): Promise<Transaction> {
-  const download = await expectProposalDownload(purchaseRecord);
-  const contractData = download.contractData;
-
   const info: OrderShortInfo = {
     merchant: contractData.merchant,
     orderId: contractData.orderId,
@@ -617,11 +630,10 @@ async function buildTransactionForRefund(
 
 async function buildTransactionForPurchase(
   purchaseRecord: PurchaseRecord,
+  contractData: WalletContractData,
   refundsInfo: MergedRefundInfo[],
   ort?: OperationRetryRecord,
 ): Promise<Transaction> {
-  const download = await expectProposalDownload(purchaseRecord);
-  const contractData = download.contractData;
   const zero = Amounts.getZero(contractData.amount.currency);
 
   const info: OrderShortInfo = {
@@ -689,7 +701,8 @@ async function buildTransactionForPurchase(
     proposalId: purchaseRecord.proposalId,
     info,
     frozen:
-      purchaseRecord.purchaseStatus === PurchaseStatus.PaymentAbortFinished ?? false,
+      purchaseRecord.purchaseStatus === PurchaseStatus.PaymentAbortFinished ??
+      false,
     ...(ort?.lastError ? { error: ort.lastError } : {}),
   };
 }
@@ -715,6 +728,7 @@ export async function getTransactions(
       x.peerPushPaymentInitiations,
       x.planchets,
       x.purchases,
+      x.contractTerms,
       x.recoupGroups,
       x.tips,
       x.tombstones,
@@ -814,18 +828,28 @@ export async function getTransactions(
         if (!purchase.payInfo) {
           return;
         }
+        if (shouldSkipCurrency(transactionsRequest, download.currency)) {
+          return;
+        }
+        const contractTermsRecord = await tx.contractTerms.get(
+          download.contractTermsHash,
+        );
+        if (!contractTermsRecord) {
+          return;
+        }
         if (
-          shouldSkipCurrency(
-            transactionsRequest,
-            download.contractData.amount.currency,
-          )
+          shouldSkipSearch(transactionsRequest, [
+            contractTermsRecord?.contractTermsRaw?.summary || "",
+          ])
         ) {
           return;
         }
-        const contractData = download.contractData;
-        if (shouldSkipSearch(transactionsRequest, [contractData.summary])) {
-          return;
-        }
+
+        const contractData = extractContractData(
+          contractTermsRecord?.contractTermsRaw,
+          download.contractTermsHash,
+          download.contractTermsMerchantSig,
+        );
 
         const filteredRefunds = await Promise.all(
           Object.values(purchase.refunds).map(async (r) => {
@@ -847,19 +871,29 @@ export async function getTransactions(
 
         const refunds = mergeRefundByExecutionTime(
           cleanRefunds,
-          Amounts.getZero(contractData.amount.currency),
+          Amounts.getZero(download.currency),
         );
 
         refunds.forEach(async (refundInfo) => {
           transactions.push(
-            await buildTransactionForRefund(purchase, refundInfo, undefined),
+            await buildTransactionForRefund(
+              purchase,
+              contractData,
+              refundInfo,
+              undefined,
+            ),
           );
         });
 
         const payOpId = RetryTags.forPay(purchase);
         const payRetryRecord = await tx.operationRetries.get(payOpId);
         transactions.push(
-          await buildTransactionForPurchase(purchase, refunds, payRetryRecord),
+          await buildTransactionForPurchase(
+            purchase,
+            contractData,
+            refunds,
+            payRetryRecord,
+          ),
         );
       });
 

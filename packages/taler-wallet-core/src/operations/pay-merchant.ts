@@ -115,6 +115,7 @@ import {
   throwUnexpectedRequestError,
 } from "../util/http.js";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
+import { GetReadOnlyAccess } from "../util/query.js";
 import {
   OperationAttemptResult,
   OperationAttemptResultType,
@@ -256,12 +257,34 @@ function getPayRequestTimeout(purchase: PurchaseRecord): Duration {
  * (Async since in the future this will query the DB.)
  */
 export async function expectProposalDownload(
+  ws: InternalWalletState,
   p: PurchaseRecord,
-): Promise<ProposalDownload> {
+): Promise<{
+  contractData: WalletContractData;
+  contractTermsRaw: any;
+}> {
   if (!p.download) {
     throw Error("expected proposal to be downloaded");
   }
-  return p.download;
+  const download = p.download;
+  return await ws.db
+    .mktx((x) => [x.contractTerms])
+    .runReadOnly(async (tx) => {
+      const contractTerms = await tx.contractTerms.get(
+        download.contractTermsHash,
+      );
+      if (!contractTerms) {
+        throw Error("contract terms not found");
+      }
+      return {
+        contractData: extractContractData(
+          contractTerms.contractTermsRaw,
+          download.contractTermsHash,
+          download.contractTermsMerchantSig,
+        ),
+        contractTermsRaw: contractTerms.contractTermsRaw,
+      };
+    });
 }
 
 export function extractContractData(
@@ -494,7 +517,7 @@ export async function processDownloadProposal(
   logger.trace(`extracted contract data: ${j2s(contractData)}`);
 
   await ws.db
-    .mktx((x) => [x.purchases])
+    .mktx((x) => [x.purchases, x.contractTerms])
     .runReadWrite(async (tx) => {
       const p = await tx.purchases.get(proposalId);
       if (!p) {
@@ -504,9 +527,15 @@ export async function processDownloadProposal(
         return;
       }
       p.download = {
-        contractData,
-        contractTermsRaw: proposalResp.contract_terms,
+        contractTermsHash,
+        contractTermsMerchantSig: contractData.merchantSig,
+        currency: contractData.amount.currency,
+        fulfillmentUrl: contractData.fulfillmentUrl,
       };
+      await tx.contractTerms.put({
+        h: contractTermsHash,
+        contractTermsRaw: proposalResp.contract_terms,
+      });
       if (
         fulfillmentUrl &&
         (fulfillmentUrl.startsWith("http://") ||
@@ -636,7 +665,7 @@ async function storeFirstPaySuccess(
 ): Promise<void> {
   const now = AbsoluteTime.toTimestamp(AbsoluteTime.now());
   await ws.db
-    .mktx((x) => [x.purchases])
+    .mktx((x) => [x.purchases, x.contractTerms])
     .runReadWrite(async (tx) => {
       const purchase = await tx.purchases.get(proposalId);
 
@@ -655,7 +684,18 @@ async function storeFirstPaySuccess(
       purchase.timestampFirstSuccessfulPay = now;
       purchase.lastSessionId = sessionId;
       purchase.merchantPaySig = paySig;
-      const protoAr = purchase.download!.contractData.autoRefund;
+      const dl = purchase.download;
+      checkDbInvariant(!!dl);
+      const contractTermsRecord = await tx.contractTerms.get(
+        dl.contractTermsHash,
+      );
+      checkDbInvariant(!!contractTermsRecord);
+      const contractData = extractContractData(
+        contractTermsRecord.contractTermsRaw,
+        dl.contractTermsHash,
+        dl.contractTermsMerchantSig,
+      );
+      const protoAr = contractData.autoRefund;
       if (protoAr) {
         const ar = Duration.fromTalerProtocolDuration(protoAr);
         logger.info("auto_refund present");
@@ -739,7 +779,7 @@ async function handleInsufficientFunds(
     throw new TalerProtocolViolationError();
   }
 
-  const { contractData } = proposal.download!;
+  const { contractData } = await expectProposalDownload(ws, proposal);
 
   const prevPayCoins: PreviousPayCoins = [];
 
@@ -1254,11 +1294,7 @@ export async function checkPaymentByProposalId(
       throw Error("existing proposal is in wrong state");
     }
   }
-  const d = proposal.download;
-  if (!d) {
-    logger.error("bad proposal", proposal);
-    throw Error("proposal is in invalid state");
-  }
+  const d = await expectProposalDownload(ws, proposal);
   const contractData = d.contractData;
   const merchantSig = d.contractData.merchantSig;
   if (!merchantSig) {
@@ -1338,7 +1374,7 @@ export async function checkPaymentByProposalId(
       // FIXME: This does not surface the original error
       throw Error("submitting pay failed");
     }
-    const download = await expectProposalDownload(purchase);
+    const download = await expectProposalDownload(ws, purchase);
     return {
       status: PreparePayResultType.AlreadyConfirmed,
       contractTerms: download.contractTermsRaw,
@@ -1349,7 +1385,7 @@ export async function checkPaymentByProposalId(
       proposalId,
     };
   } else if (!purchase.timestampFirstSuccessfulPay) {
-    const download = await expectProposalDownload(purchase);
+    const download = await expectProposalDownload(ws, purchase);
     return {
       status: PreparePayResultType.AlreadyConfirmed,
       contractTerms: download.contractTermsRaw,
@@ -1364,7 +1400,7 @@ export async function checkPaymentByProposalId(
       purchase.purchaseStatus === PurchaseStatus.Paid ||
       purchase.purchaseStatus === PurchaseStatus.QueryingRefund ||
       purchase.purchaseStatus === PurchaseStatus.QueryingAutoRefund;
-    const download = await expectProposalDownload(purchase);
+    const download = await expectProposalDownload(ws, purchase);
     return {
       status: PreparePayResultType.AlreadyConfirmed,
       contractTerms: download.contractTermsRaw,
@@ -1392,11 +1428,9 @@ export async function getContractTermsDetails(
     throw Error(`proposal with id ${proposalId} not found`);
   }
 
-  if (!proposal.download || !proposal.download.contractData) {
-    throw Error("proposal is in invalid state");
-  }
+  const d = await expectProposalDownload(ws, proposal);
 
-  return proposal.download.contractData;
+  return d.contractData;
 }
 
 /**
@@ -1516,12 +1550,13 @@ export async function runPayForConfirmPay(
         .runReadOnly(async (tx) => {
           return tx.purchases.get(proposalId);
         });
-      if (!purchase?.download) {
+      if (!purchase) {
         throw Error("purchase record not available anymore");
       }
+      const d = await expectProposalDownload(ws, purchase);
       return {
         type: ConfirmPayResultType.Done,
-        contractTerms: purchase.download.contractTermsRaw,
+        contractTerms: d.contractTermsRaw,
         transactionId: makeEventId(TransactionType.Payment, proposalId),
       };
     }
@@ -1599,7 +1634,7 @@ export async function confirmPay(
     throw Error(`proposal with id ${proposalId} not found`);
   }
 
-  const d = proposal.download;
+  const d = await expectProposalDownload(ws, proposal);
   if (!d) {
     throw Error("proposal is in invalid state");
   }
@@ -1810,7 +1845,7 @@ export async function processPurchasePay(
   const payInfo = purchase.payInfo;
   checkDbInvariant(!!payInfo, "payInfo");
 
-  const download = await expectProposalDownload(purchase);
+  const download = await expectProposalDownload(ws, purchase);
   if (!purchase.merchantPaySig) {
     const payUrl = new URL(
       `orders/${download.contractData.orderId}/pay`,
@@ -2007,7 +2042,7 @@ export async function prepareRefund(
   const purchase = await ws.db
     .mktx((x) => [x.purchases])
     .runReadOnly(async (tx) => {
-      return tx.purchases.indexes.byMerchantUrlAndOrderId.get([
+      return tx.purchases.indexes.byUrlAndOrderId.get([
         parseResult.merchantBaseUrl,
         parseResult.orderId,
       ]);
@@ -2020,10 +2055,10 @@ export async function prepareRefund(
   }
 
   const awaiting = await queryAndSaveAwaitingRefund(ws, purchase);
-  const summary = await calculateRefundSummary(purchase);
+  const summary = await calculateRefundSummary(ws, purchase);
   const proposalId = purchase.proposalId;
 
-  const { contractData: c } = await expectProposalDownload(purchase);
+  const { contractData: c } = await expectProposalDownload(ws, purchase);
 
   return {
     proposalId,
@@ -2380,9 +2415,10 @@ async function acceptRefunds(
 }
 
 async function calculateRefundSummary(
+  ws: InternalWalletState,
   p: PurchaseRecord,
 ): Promise<RefundSummary> {
-  const download = await expectProposalDownload(p);
+  const download = await expectProposalDownload(ws, p);
   let amountRefundGranted = Amounts.getZero(
     download.contractData.amount.currency,
   );
@@ -2456,7 +2492,7 @@ export async function applyRefund(
   const purchase = await ws.db
     .mktx((x) => [x.purchases])
     .runReadOnly(async (tx) => {
-      return tx.purchases.indexes.byMerchantUrlAndOrderId.get([
+      return tx.purchases.indexes.byUrlAndOrderId.get([
         parseResult.merchantBaseUrl,
         parseResult.orderId,
       ]);
@@ -2513,8 +2549,8 @@ export async function applyRefundFromPurchaseId(
     throw Error("purchase no longer exists");
   }
 
-  const summary = await calculateRefundSummary(purchase);
-  const download = await expectProposalDownload(purchase);
+  const summary = await calculateRefundSummary(ws, purchase);
+  const download = await expectProposalDownload(ws, purchase);
 
   return {
     contractTermsHash: download.contractData.contractTermsHash,
@@ -2542,7 +2578,7 @@ async function queryAndSaveAwaitingRefund(
   purchase: PurchaseRecord,
   waitForAutoRefund?: boolean,
 ): Promise<AmountJson> {
-  const download = await expectProposalDownload(purchase);
+  const download = await expectProposalDownload(ws, purchase);
   const requestUrl = new URL(
     `orders/${download.contractData.orderId}`,
     download.contractData.merchantBaseUrl,
@@ -2621,7 +2657,7 @@ export async function processPurchaseQueryRefund(
     return OperationAttemptResult.finishedEmpty();
   }
 
-  const download = await expectProposalDownload(purchase);
+  const download = await expectProposalDownload(ws, purchase);
 
   if (purchase.timestampFirstSuccessfulPay) {
     if (
