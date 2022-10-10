@@ -44,6 +44,8 @@ export const AllOff = createExample(TestedComponent, {
         t_ms: 123123213,
       },
       retryInfo: undefined,
+      isDue: false,
+      isLongpolling: false,
     },
   ],
   coins: [],
