@@ -28,8 +28,8 @@ const logger = new Logger("synchronousWorker.ts");
 /**
  * Worker implementation that uses node subprocesses.
  *
- * The node cryto worker can also use IPC to offload cryptographic
- * operations to a helper process (ususally written in C / part of taler-exchange).
+ * The node crypto worker can also use IPC to offload cryptographic
+ * operations to a helper process (usually written in C / part of taler-exchange).
  */
 export class SynchronousCryptoWorker implements CryptoWorker {
   /**
