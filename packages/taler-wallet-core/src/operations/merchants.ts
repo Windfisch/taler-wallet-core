@@ -40,7 +40,7 @@ export async function getMerchantInfo(
     return existingInfo;
   }
 
-const configUrl = new URL("config", canonBaseUrl);
+  const configUrl = new URL("config", canonBaseUrl);
   const resp = await ws.http.get(configUrl.href);
 
   const configResp = await readSuccessResponseJsonOrThrow(

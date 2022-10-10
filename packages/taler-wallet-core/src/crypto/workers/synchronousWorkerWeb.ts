@@ -23,9 +23,7 @@ import {
   TalerCryptoInterfaceR,
 } from "../cryptoImplementation.js";
 import { CryptoWorker } from "./cryptoWorkerInterface.js";
-import {
-  processRequestWithImpl,
-} from "./worker-common.js";
+import { processRequestWithImpl } from "./worker-common.js";
 
 const logger = new Logger("synchronousWorker.ts");
 
@@ -77,10 +75,7 @@ export class SynchronousCryptoWorker implements CryptoWorker {
    */
   postMessage(msg: any): void {
     const handleRequest = async () => {
-      const responseMsg = await processRequestWithImpl(
-        msg,
-        this.cryptoImplR,
-      );
+      const responseMsg = await processRequestWithImpl(msg, this.cryptoImplR);
       try {
         setTimeout(() => this.dispatchMessage(responseMsg), 0);
       } catch (e) {

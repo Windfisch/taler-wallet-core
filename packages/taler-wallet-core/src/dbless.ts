@@ -50,9 +50,20 @@ import {
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import { DenominationRecord } from "./db.js";
-import { BankAccessApi, BankApi, BankServiceHandle } from "./bank-api-client.js";
-import { HttpRequestLibrary, readSuccessResponseJsonOrThrow } from "./util/http.js";
-import { getBankStatusUrl, getBankWithdrawalInfo, isWithdrawableDenom } from "./operations/withdraw.js";
+import {
+  BankAccessApi,
+  BankApi,
+  BankServiceHandle,
+} from "./bank-api-client.js";
+import {
+  HttpRequestLibrary,
+  readSuccessResponseJsonOrThrow,
+} from "./util/http.js";
+import {
+  getBankStatusUrl,
+  getBankWithdrawalInfo,
+  isWithdrawableDenom,
+} from "./operations/withdraw.js";
 import { ExchangeInfo } from "./operations/exchanges.js";
 import { assembleRefreshRevealRequest } from "./operations/refresh.js";
 

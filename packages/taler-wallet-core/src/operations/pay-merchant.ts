@@ -1796,7 +1796,6 @@ export async function processPurchase(
       return processPurchaseQueryRefund(ws, proposalId, options);
     case PurchaseStatus.ProposalDownloadFailed:
     case PurchaseStatus.Paid:
-    case PurchaseStatus.AbortingWithRefund:
     case PurchaseStatus.RepurchaseDetected:
       return {
         type: OperationAttemptResultType.Finished,
