@@ -64,11 +64,11 @@ import {
 import {
   CoinSourceType,
   CoinStatus,
+  ConfigRecordKey,
   DenominationRecord,
   PurchaseStatus,
   RefreshCoinStatus,
   RefundState,
-  WALLET_BACKUP_STATE_KEY,
   WithdrawalGroupStatus,
   WithdrawalRecordType,
 } from "../../db.js";
@@ -547,7 +547,7 @@ export async function exportBackup(
           )} and nonce to ${bs.lastBackupNonce}`,
         );
         await tx.config.put({
-          key: WALLET_BACKUP_STATE_KEY,
+          key: ConfigRecordKey.WalletBackupState,
           value: bs,
         });
       } else {

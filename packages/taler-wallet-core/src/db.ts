@@ -1240,7 +1240,11 @@ export interface PurchaseRecord {
   refundAmountAwaiting: AmountJson | undefined;
 }
 
-export const WALLET_BACKUP_STATE_KEY = "walletBackupState";
+export enum ConfigRecordKey {
+  WalletBackupState = "walletBackupState",
+  CurrencyDefaultsApplied = "currencyDefaultsApplied",
+  DevMode = "devMode",
+}
 
 /**
  * Configuration key/value entries to configure
@@ -1248,10 +1252,11 @@ export const WALLET_BACKUP_STATE_KEY = "walletBackupState";
  */
 export type ConfigRecord =
   | {
-      key: typeof WALLET_BACKUP_STATE_KEY;
+      key: ConfigRecordKey.WalletBackupState;
       value: WalletBackupConfState;
     }
-  | { key: "currencyDefaultsApplied"; value: boolean };
+  | { key: ConfigRecordKey.CurrencyDefaultsApplied; value: boolean }
+  | { key: ConfigRecordKey.DevMode; value: boolean };
 
 export interface WalletBackupConfState {
   deviceId: string;

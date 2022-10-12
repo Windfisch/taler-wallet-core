@@ -105,12 +105,13 @@ import {
   AuditorTrustRecord,
   CoinSourceType,
   CoinStatus,
+  ConfigRecordKey,
   DenominationRecord,
   exportDb,
   importDb,
   WalletStoresV1,
 } from "./db.js";
-import { applyDevExperiment } from "./dev-experiments.js";
+import { applyDevExperiment, maybeInitDevMode } from "./dev-experiments.js";
 import { getErrorDetailFromException, TalerError } from "./errors.js";
 import {
   ActiveLongpollInfo,
@@ -476,7 +477,7 @@ async function fillDefaults(ws: InternalWalletState): Promise<void> {
         provideExchangeRecordInTx(ws, tx, baseUrl, now);
       }
       await tx.config.put({
-        key: "currencyDefaultsApplied",
+        key: ConfigRecordKey.CurrencyDefaultsApplied,
         value: true,
       });
     });
@@ -970,6 +971,7 @@ async function dispatchRequestInternal(
         logger.trace("filling defaults");
         await fillDefaults(ws);
       }
+      await maybeInitDevMode(ws);
       return {};
     }
     case "withdrawTestkudos": {
@@ -1339,6 +1341,7 @@ async function dispatchRequestInternal(
         exchange: WALLET_EXCHANGE_PROTOCOL_VERSION,
         merchant: WALLET_MERCHANT_PROTOCOL_VERSION,
         bank: WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
+        devMode: ws.devModeActive,
       };
       return version;
     }
@@ -1479,6 +1482,8 @@ class InternalWalletStateImpl implements InternalWalletState {
   listeners: NotificationListener[] = [];
 
   initCalled = false;
+
+  devModeActive = false;
 
   exchangeOps: ExchangeOperations = {
     getExchangeDetails,

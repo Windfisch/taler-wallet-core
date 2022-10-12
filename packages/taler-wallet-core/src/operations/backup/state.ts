@@ -17,9 +17,9 @@
 import { encodeCrock, getRandomBytes } from "@gnu-taler/taler-util";
 import {
   ConfigRecord,
+  ConfigRecordKey,
   WalletBackupConfState,
   WalletStoresV1,
-  WALLET_BACKUP_STATE_KEY,
 } from "../../db.js";
 import { checkDbInvariant } from "../../util/invariants.js";
 import { GetReadOnlyAccess } from "../../util/query.js";
@@ -31,10 +31,10 @@ export async function provideBackupState(
   const bs: ConfigRecord | undefined = await ws.db
     .mktx((stores) => [stores.config])
     .runReadOnly(async (tx) => {
-      return await tx.config.get(WALLET_BACKUP_STATE_KEY);
+      return await tx.config.get(ConfigRecordKey.WalletBackupState);
     });
   if (bs) {
-    checkDbInvariant(bs.key === WALLET_BACKUP_STATE_KEY);
+    checkDbInvariant(bs.key === ConfigRecordKey.WalletBackupState);
     return bs.value;
   }
   // We need to generate the key outside of the transaction
@@ -48,11 +48,11 @@ export async function provideBackupState(
     .mktx((x) => [x.config])
     .runReadWrite(async (tx) => {
       let backupStateEntry: ConfigRecord | undefined = await tx.config.get(
-        WALLET_BACKUP_STATE_KEY,
+        ConfigRecordKey.WalletBackupState,
       );
       if (!backupStateEntry) {
         backupStateEntry = {
-          key: WALLET_BACKUP_STATE_KEY,
+          key: ConfigRecordKey.WalletBackupState,
           value: {
             deviceId,
             walletRootPub: k.pub,
@@ -62,7 +62,7 @@ export async function provideBackupState(
         };
         await tx.config.put(backupStateEntry);
       }
-      checkDbInvariant(backupStateEntry.key === WALLET_BACKUP_STATE_KEY);
+      checkDbInvariant(backupStateEntry.key === ConfigRecordKey.WalletBackupState);
       return backupStateEntry.value;
     });
 }
@@ -71,9 +71,9 @@ export async function getWalletBackupState(
   ws: InternalWalletState,
   tx: GetReadOnlyAccess<{ config: typeof WalletStoresV1.config }>,
 ): Promise<WalletBackupConfState> {
-  const bs = await tx.config.get(WALLET_BACKUP_STATE_KEY);
+  const bs = await tx.config.get(ConfigRecordKey.WalletBackupState);
   checkDbInvariant(!!bs, "wallet backup state should be in DB");
-  checkDbInvariant(bs.key === WALLET_BACKUP_STATE_KEY);
+  checkDbInvariant(bs.key === ConfigRecordKey.WalletBackupState);
   return bs.value;
 }
 
@@ -86,11 +86,11 @@ export async function setWalletDeviceId(
     .mktx((x) => [x.config])
     .runReadWrite(async (tx) => {
       let backupStateEntry: ConfigRecord | undefined = await tx.config.get(
-        WALLET_BACKUP_STATE_KEY,
+        ConfigRecordKey.WalletBackupState,
       );
       if (
         !backupStateEntry ||
-        backupStateEntry.key !== WALLET_BACKUP_STATE_KEY
+        backupStateEntry.key !== ConfigRecordKey.WalletBackupState
       ) {
         return;
       }

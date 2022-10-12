@@ -191,6 +191,8 @@ export interface InternalWalletState {
   merchantOps: MerchantOperations;
   refreshOps: RefreshOperations;
 
+  devModeActive: boolean;
+
   getDenomInfo(
     ws: InternalWalletState,
     tx: GetReadOnlyAccess<{

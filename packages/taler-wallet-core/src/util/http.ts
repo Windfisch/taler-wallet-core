@@ -111,11 +111,15 @@ export class Headers {
 export interface HttpRequestLibrary {
   /**
    * Make an HTTP GET request.
+   *
+   * FIXME: Get rid of this, we want the API surface to be minimal.
    */
   get(url: string, opt?: HttpRequestOptions): Promise<HttpResponse>;
 
   /**
    * Make an HTTP POST request with a JSON body.
+   *
+   * FIXME: Get rid of this, we want the API surface to be minimal.
    */
   postJson(
     url: string,

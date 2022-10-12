@@ -605,6 +605,7 @@ export interface WalletCoreVersion {
   exchange: string;
   merchant: string;
   bank: string;
+  devMode?: boolean;
 }
 
 export interface KnownBankAccountsInfo {

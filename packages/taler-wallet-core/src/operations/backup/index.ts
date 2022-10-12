@@ -74,8 +74,8 @@ import {
   BackupProviderStateTag,
   BackupProviderTerms,
   ConfigRecord,
+  ConfigRecordKey,
   WalletBackupConfState,
-  WALLET_BACKUP_STATE_KEY,
 } from "../../db.js";
 import { InternalWalletState } from "../../internal-wallet-state.js";
 import {
@@ -861,10 +861,12 @@ async function backupRecoveryTheirs(
     .mktx((x) => [x.config, x.backupProviders])
     .runReadWrite(async (tx) => {
       let backupStateEntry: ConfigRecord | undefined = await tx.config.get(
-        WALLET_BACKUP_STATE_KEY,
+        ConfigRecordKey.WalletBackupState,
       );
       checkDbInvariant(!!backupStateEntry);
-      checkDbInvariant(backupStateEntry.key === WALLET_BACKUP_STATE_KEY);
+      checkDbInvariant(
+        backupStateEntry.key === ConfigRecordKey.WalletBackupState,
+      );
       backupStateEntry.value.lastBackupNonce = undefined;
       backupStateEntry.value.lastBackupTimestamp = undefined;
       backupStateEntry.value.lastBackupCheckTimestamp = undefined;
