@@ -43,6 +43,7 @@ import {
   setDangerousTimetravel,
   setGlobalLogLevelFromString,
   TalerUriType,
+  parseDevExperimentUri,
 } from "@gnu-taler/taler-util";
 import {
   CryptoDispatcher,
@@ -67,6 +68,7 @@ import { runEnv1 } from "./env1.js";
 import { GlobalTestState, runTestWithState } from "./harness/harness.js";
 import { getTestInfo, runTests } from "./integrationtests/testrunner.js";
 import { lintExchangeDeployment } from "./lint.js";
+import { checkLogicInvariant } from "@gnu-taler/taler-wallet-core/src/util/invariants.js";
 // @ts-ignore
 global.TextEncoder = TextEncoder;
 // @ts-ignore
@@ -498,6 +500,12 @@ walletCli
             console.log("accept withdrawal response", res);
           }
           break;
+        case TalerUriType.TalerDevExperiment: {
+          await wallet.client.call(WalletApiOperation.ApplyDevExperiment, {
+            devExperimentUri: uri,
+          });
+          break;
+        }
         default:
           console.log(`URI type (${uriType}) not handled`);
           break;

@@ -80,6 +80,7 @@ import {
   WithdrawTestBalanceRequest,
   WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
+import { ApplyDevExperimentRequest } from "@gnu-taler/taler-util";
 import {
   AddBackupProviderRequest,
   BackupInfo,
@@ -139,6 +140,7 @@ export enum WalletApiOperation {
   AcceptPeerPullPayment = "acceptPeerPullPayment",
   ClearDb = "clearDb",
   Recycle = "recycle",
+  ApplyDevExperiment = "applyDevExperiment",
 }
 
 // group: Initialization
@@ -487,7 +489,7 @@ export type AcceptPeerPullPaymentOp = {
 // group: Database Management
 
 /**
- * Exoport the wallet database's contents to JSON.
+ * Export the wallet database's contents to JSON.
  */
 export type ExportDbOp = {
   op: WalletApiOperation.ExportDb;
@@ -514,6 +516,18 @@ export type RecycleOp = {
 };
 
 // group: Testing and Debugging
+
+/**
+ * Apply a developer experiment to the current wallet state.
+ *
+ * This allows UI developers / testers to play around without
+ * an elaborate test environment.
+ */
+export type ApplyDevExperimentOp = {
+  op: WalletApiOperation.ApplyDevExperiment;
+  request: ApplyDevExperimentRequest;
+  response: {};
+};
 
 /**
  * Run a simple integration test on a test deployment
@@ -661,6 +675,7 @@ export type WalletOperations = {
   [WalletApiOperation.AcceptPeerPullPayment]: AcceptPeerPullPaymentOp;
   [WalletApiOperation.ClearDb]: ClearDbOp;
   [WalletApiOperation.Recycle]: RecycleOp;
+  [WalletApiOperation.ApplyDevExperiment]: ApplyDevExperimentOp;
 };
 
 export type RequestType<

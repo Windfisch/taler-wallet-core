@@ -21,7 +21,6 @@
   // Defines whether an open brace is put onto a new line for control blocks or not
   "typescript.format.placeOpenBraceOnNewLineForControlBlocks": false,
   "typescript.preferences.autoImportFileExcludePatterns": [
-    "index.js",
     "index.*.js",
     "index.ts",
     "index.*.ts"

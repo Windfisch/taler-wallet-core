@@ -50,6 +50,10 @@ export interface PayPullUriResult {
   contractPriv: string;
 }
 
+export interface DevExperimentUri {
+  devExperimentId: string;
+}
+
 /**
  * Parse a taler[+http]://withdraw URI.
  * Return undefined if not passed a valid URI.
@@ -91,6 +95,7 @@ export enum TalerUriType {
   TalerNotifyReserve = "taler-notify-reserve",
   TalerPayPush = "taler-pay-push",
   TalerPayPull = "taler-pay-pull",
+  TalerDevExperiment = "taler-dev-experiment",
   Unknown = "unknown",
 }
 
@@ -140,6 +145,9 @@ export function classifyTalerUri(s: string): TalerUriType {
   }
   if (sl.startsWith("taler://notify-reserve/")) {
     return TalerUriType.TalerNotifyReserve;
+  }
+  if (sl.startsWith("taler://dev-experiment/")) {
+    return TalerUriType.TalerDevExperiment;
   }
   return TalerUriType.Unknown;
 }
@@ -297,6 +305,19 @@ export function parseRefundUri(s: string): RefundUriResult | undefined {
   return {
     merchantBaseUrl,
     orderId,
+  };
+}
+
+export function parseDevExperimentUri(s: string): DevExperimentUri | undefined {
+  const pi = parseProtoInfo(s, "dev-experiment");
+  const c = pi?.rest.split("?");
+  if (!c) {
+    return undefined;
+  }
+  // const q = new URLSearchParams(c[1] ?? "");
+  const parts = c[0].split("/");
+  return {
+    devExperimentId: parts[0],
   };
 }
 

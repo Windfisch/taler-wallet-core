@@ -90,6 +90,7 @@ import {
   parsePaytoUri,
   RefreshReason,
   TalerErrorCode,
+  codecForApplyDevExperiment,
   URL,
   WalletCoreVersion,
   WalletNotification,
@@ -109,6 +110,7 @@ import {
   importDb,
   WalletStoresV1,
 } from "./db.js";
+import { applyDevExperiment } from "./dev-experiments.js";
 import { getErrorDetailFromException, TalerError } from "./errors.js";
 import {
   ActiveLongpollInfo,
@@ -1324,6 +1326,11 @@ async function dispatchRequestInternal(
     case "acceptPeerPullPayment": {
       const req = codecForAcceptPeerPullPaymentRequest().decode(payload);
       return await acceptPeerPullPayment(ws, req);
+    }
+    case "applyDevExperiment": {
+      const req = codecForApplyDevExperiment().decode(payload);
+      await applyDevExperiment(ws, req.devExperimentUri);
+      return {};
     }
     case "getVersion": {
       const version: WalletCoreVersion = {

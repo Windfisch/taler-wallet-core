@@ -1683,6 +1683,16 @@ export interface AcceptPeerPullPaymentRequest {
   peerPullPaymentIncomingId: string;
 }
 
+export interface ApplyDevExperimentRequest {
+  devExperimentUri: string;
+}
+
+export const codecForApplyDevExperiment =
+  (): Codec<ApplyDevExperimentRequest> =>
+    buildCodecForObject<ApplyDevExperimentRequest>()
+      .property("devExperimentUri", codecForString())
+      .build("ApplyDevExperimentRequest");
+
 export const codecForAcceptPeerPullPaymentRequest =
   (): Codec<AcceptPeerPullPaymentRequest> =>
     buildCodecForObject<AcceptPeerPullPaymentRequest>()
