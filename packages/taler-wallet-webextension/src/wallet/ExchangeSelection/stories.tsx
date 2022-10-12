@@ -28,71 +28,72 @@ export default {
 
 export const Bitcoin1 = createExample(ReadyView, {
   exchanges: {
-    list: { "http://exchange": "http://exchange" },
-    value: "http://exchange",
+    list: { "0": "https://exchange.taler.ar" },
+    value: "0",
   },
   selected: {
     currency: "BITCOINBTC",
     auditors: [],
+    exchangeBaseUrl: "https://exchange.taler.ar",
+    denomFees: timelineExample(),
+    transferFees: {},
+    globalFees: [],
   } as any,
   onClose: {},
-  timeline: {
-    deposit: [],
-    refresh: [],
-    refund: [],
-    withdraw: [],
-  },
 });
 export const Bitcoin2 = createExample(ReadyView, {
   exchanges: {
-    list: { "http://exchange": "http://exchange" },
-    value: "http://exchange",
+    list: {
+      "https://exchange.taler.ar": "https://exchange.taler.ar",
+      "https://exchange-btc.taler.ar": "https://exchange-btc.taler.ar",
+    },
+    value: "https://exchange.taler.ar",
   },
   selected: {
     currency: "BITCOINBTC",
     auditors: [],
+    exchangeBaseUrl: "https://exchange.taler.ar",
+    denomFees: timelineExample(),
+    transferFees: {},
+    globalFees: [],
   } as any,
   onClose: {},
-  timeline: {
-    deposit: [],
-    refresh: [],
-    refund: [],
-    withdraw: [],
-  },
 });
+
 export const Kudos1 = createExample(ReadyView, {
   exchanges: {
-    list: { "http://exchange": "http://exchange" },
-    value: "http://exchange",
+    list: {
+      "https://exchange-kudos.taler.ar": "https://exchange-kudos.taler.ar",
+    },
+    value: "https://exchange-kudos.taler.ar",
   },
   selected: {
     currency: "BITCOINBTC",
     auditors: [],
+    exchangeBaseUrl: "https://exchange.taler.ar",
+    denomFees: timelineExample(),
+    transferFees: {},
+    globalFees: [],
   } as any,
   onClose: {},
-  timeline: {
-    deposit: [],
-    refresh: [],
-    refund: [],
-    withdraw: [],
-  },
 });
 export const Kudos2 = createExample(ReadyView, {
   exchanges: {
-    list: { "http://exchange": "http://exchange" },
-    value: "http://exchange",
+    list: {
+      "https://exchange-kudos.taler.ar": "https://exchange-kudos.taler.ar",
+      "https://exchange-kudos2.taler.ar": "https://exchange-kudos2.taler.ar",
+    },
+    value: "https://exchange-kudos.taler.ar",
   },
   selected: {
     currency: "BITCOINBTC",
     auditors: [],
+    exchangeBaseUrl: "https://exchange.taler.ar",
+    denomFees: timelineExample(),
+    transferFees: {},
+    globalFees: [],
   } as any,
   onClose: {},
-  timeline: {
-    deposit: [],
-    refresh: [],
-    refund: [],
-    withdraw: [],
-  },
 });
 export const ComparingBitcoin = createExample(ComparingView, {
   exchanges: {
@@ -102,6 +103,9 @@ export const ComparingBitcoin = createExample(ComparingView, {
   selected: {
     currency: "BITCOINBTC",
     auditors: [],
+    exchangeBaseUrl: "https://exchange.taler.ar",
+    transferFees: {},
+    globalFees: [],
   } as any,
   onReset: {},
   onSelect: {},
@@ -121,6 +125,9 @@ export const ComparingKudos = createExample(ComparingView, {
   selected: {
     currency: "KUDOS",
     auditors: [],
+    exchangeBaseUrl: "https://exchange.taler.ar",
+    transferFees: {},
+    globalFees: [],
   } as any,
   onReset: {},
   onSelect: {},
@@ -132,3 +139,400 @@ export const ComparingKudos = createExample(ComparingView, {
     withdraw: [],
   },
 });
+
+function timelineExample() {
+  return {
+    deposit: [
+      {
+        group: "0.1",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1916386904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+      {
+        group: "1",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1916386904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+      {
+        group: "10",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1916386904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+      {
+        group: "1000",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1916386904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+      {
+        group: "2",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1916386904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+      {
+        group: "5",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1916386904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+    ],
+    refresh: [
+      {
+        group: "0.1",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1758706904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+      {
+        group: "1",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1758706904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+      {
+        group: "10",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1758706904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+      {
+        group: "1000",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1758706904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+      {
+        group: "2",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1758706904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+      {
+        group: "5",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1758706904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+    ],
+    refund: [
+      {
+        group: "0.1",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1758706904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+      {
+        group: "1",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1758706904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+      {
+        group: "10",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1758706904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+      {
+        group: "1000",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1758706904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+      {
+        group: "2",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1758706904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+      {
+        group: "5",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1758706904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+    ],
+    withdraw: [
+      {
+        group: "0.1",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1758706904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+      {
+        group: "1",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1758706904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+      {
+        group: "10",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1758706904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+      {
+        group: "1000",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1758706904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+      {
+        group: "2",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1758706904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+      {
+        group: "5",
+        from: {
+          t_ms: 1664098904000,
+        },
+        until: {
+          t_ms: 1758706904000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+    ],
+    wad: [
+      {
+        group: "iban",
+        from: {
+          t_ms: 1640995200000,
+        },
+        until: {
+          t_ms: 1798761600000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+    ],
+    wire: [
+      {
+        group: "iban",
+        from: {
+          t_ms: 1640995200000,
+        },
+        until: {
+          t_ms: 1798761600000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+    ],
+    closing: [
+      {
+        group: "iban",
+        from: {
+          t_ms: 1640995200000,
+        },
+        until: {
+          t_ms: 1798761600000,
+        },
+        fee: {
+          currency: "KUDOS",
+          fraction: 1000000,
+          value: 0,
+        },
+      },
+    ],
+  };
+}

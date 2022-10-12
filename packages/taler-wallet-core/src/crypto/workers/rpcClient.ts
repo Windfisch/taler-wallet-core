@@ -53,7 +53,6 @@ export class CryptoRpcClient {
     this.proc.unref();
 
     this.proc.stdout.on("data", (x) => {
-      // console.log("got chunk", x.toString("utf-8"));
       if (x instanceof Buffer) {
         const nlIndex = x.indexOf("\n");
         if (nlIndex >= 0) {

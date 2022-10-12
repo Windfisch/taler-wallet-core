@@ -405,7 +405,20 @@ export async function importBackup(
             masterPublicKey: backupExchangeDetails.master_public_key,
             protocolVersion: backupExchangeDetails.protocol_version,
             reserveClosingDelay: backupExchangeDetails.reserve_closing_delay,
-            globalFees: backupExchangeDetails.global_fees,
+            globalFees: backupExchangeDetails.global_fees.map((x) => ({
+              accountFee: Amounts.parseOrThrow(x.accountFee),
+              historyFee: Amounts.parseOrThrow(x.historyFee),
+              kycFee: Amounts.parseOrThrow(x.kycFee),
+              purseFee: Amounts.parseOrThrow(x.purseFee),
+              kycTimeout: x.kycTimeout,
+              endDate: x.endDate,
+              historyTimeout: x.historyTimeout,
+              signature: x.signature,
+              purseLimit: x.purseLimit,
+              purseTimeout: x.purseTimeout,
+              startDate: x.startDate,
+            })),
+
             signingKeys: backupExchangeDetails.signing_keys.map((x) => ({
               key: x.key,
               master_sig: x.master_sig,

@@ -30,6 +30,7 @@ import {
   encodeCrock,
   ExchangeAuditor,
   ExchangeDenomination,
+  ExchangeGlobalFees,
   ExchangeSignKeyJson,
   ExchangeWireJson,
   GlobalFees,
@@ -274,7 +275,8 @@ async function validateGlobalFees(
   ws: InternalWalletState,
   fees: GlobalFees[],
   masterPub: string,
-): Promise<GlobalFees[]> {
+): Promise<ExchangeGlobalFees[]> {
+  const egf: ExchangeGlobalFees[] = [];
   for (const gf of fees) {
     logger.trace("validating exchange global fees");
     let isValid = false;
@@ -291,9 +293,22 @@ async function validateGlobalFees(
     if (!isValid) {
       throw Error("exchange global fees signature invalid: " + gf.master_sig);
     }
+    egf.push({
+      accountFee: Amounts.parseOrThrow(gf.account_fee),
+      historyFee: Amounts.parseOrThrow(gf.history_fee),
+      purseFee: Amounts.parseOrThrow(gf.purse_fee),
+      kycFee: Amounts.parseOrThrow(gf.kyc_fee),
+      startDate: gf.start_date,
+      endDate: gf.end_date,
+      signature: gf.master_sig,
+      historyTimeout: gf.history_expiration,
+      kycTimeout: gf.account_kyc_timeout,
+      purseLimit: gf.purse_account_limit,
+      purseTimeout: gf.purse_timeout,
+    });
   }
 
-  return fees;
+  return egf;
 }
 
 export interface ExchangeInfo {

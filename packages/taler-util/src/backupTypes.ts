@@ -1091,17 +1091,21 @@ export interface BackupExchangeWireFee {
  *
  */
 export interface BackupExchangeGlobalFees {
-  start_date: TalerProtocolTimestamp;
-  end_date: TalerProtocolTimestamp;
-  kyc_fee: BackupAmountString;
-  history_fee: BackupAmountString;
-  account_fee: BackupAmountString;
-  purse_fee: BackupAmountString;
-  history_expiration: TalerProtocolDuration;
-  account_kyc_timeout: TalerProtocolDuration;
-  purse_account_limit: number;
-  purse_timeout: TalerProtocolDuration;
-  master_sig: string;
+  startDate: TalerProtocolTimestamp;
+  endDate: TalerProtocolTimestamp;
+
+  kycFee: BackupAmountString;
+  historyFee: BackupAmountString;
+  accountFee: BackupAmountString;
+  purseFee: BackupAmountString;
+
+  historyTimeout: TalerProtocolDuration;
+  kycTimeout: TalerProtocolDuration;
+  purseTimeout: TalerProtocolDuration;
+
+  purseLimit: number;
+
+  signature: string;
 }
 /**
  * Structure of one exchange signing key in the /keys response.

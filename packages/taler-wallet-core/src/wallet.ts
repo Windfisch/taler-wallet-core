@@ -72,6 +72,7 @@ import {
   CoinDumpJson,
   CoreApiResponse,
   DenominationInfo,
+  DenomOperationMap,
   Duration,
   durationFromSpec,
   durationMin,
@@ -86,11 +87,9 @@ import {
   Logger,
   ManualWithdrawalDetails,
   NotificationType,
-  OperationMap,
   parsePaytoUri,
   RefreshReason,
   TalerErrorCode,
-  TalerErrorDetail,
   URL,
   WalletCoreVersion,
   WalletNotification,
@@ -103,7 +102,6 @@ import {
 import { clearDatabase } from "./db-utils.js";
 import {
   AuditorTrustRecord,
-  CoinRecord,
   CoinSourceType,
   CoinStatus,
   DenominationRecord,
@@ -111,11 +109,7 @@ import {
   importDb,
   WalletStoresV1,
 } from "./db.js";
-import {
-  getErrorDetailFromException,
-  makeErrorDetail,
-  TalerError,
-} from "./errors.js";
+import { getErrorDetailFromException, TalerError } from "./errors.js";
 import {
   ActiveLongpollInfo,
   ExchangeOperations,
@@ -142,11 +136,7 @@ import {
 } from "./operations/backup/index.js";
 import { setWalletDeviceId } from "./operations/backup/state.js";
 import { getBalances } from "./operations/balance.js";
-import {
-  runOperationWithErrorReporting,
-  storeOperationError,
-  storeOperationPending,
-} from "./operations/common.js";
+import { runOperationWithErrorReporting } from "./operations/common.js";
 import {
   createDepositGroup,
   getFeeForDeposit,
@@ -216,23 +206,23 @@ import {
 } from "./operations/withdraw.js";
 import { PendingTaskInfo, PendingTaskType } from "./pending-types.js";
 import { assertUnreachable } from "./util/assertUnreachable.js";
-import { createDenominationTimeline } from "./util/denominations.js";
+import {
+  createTimeline,
+  selectBestForOverlappingDenominations,
+  selectMinimumFee,
+} from "./util/denominations.js";
 import {
   HttpRequestLibrary,
   readSuccessResponseJsonOrThrow,
 } from "./util/http.js";
-import { checkDbInvariant, checkLogicInvariant } from "./util/invariants.js";
+import { checkDbInvariant } from "./util/invariants.js";
 import {
   AsyncCondition,
   OpenedPromise,
   openPromise,
 } from "./util/promiseUtils.js";
 import { DbAccess, GetReadWriteAccess } from "./util/query.js";
-import {
-  OperationAttemptResult,
-  OperationAttemptResultType,
-  RetryInfo,
-} from "./util/retries.js";
+import { OperationAttemptResult } from "./util/retries.js";
 import { TimerAPI, TimerGroup } from "./util/timer.js";
 import {
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
@@ -702,6 +692,7 @@ async function getExchangeDetailedInfo(
           paytoUris: exchangeDetails.wireInfo.accounts.map((x) => x.payto_uri),
           auditors: exchangeDetails.auditors,
           wireInfo: exchangeDetails.wireInfo,
+          globalFees: exchangeDetails.globalFees,
         },
         denominations,
       };
@@ -711,32 +702,111 @@ async function getExchangeDetailedInfo(
     throw Error(`exchange with base url "${exchangeBaseurl}" not found`);
   }
 
-  const feesDescription: OperationMap<FeeDescription[]> = {
-    deposit: createDenominationTimeline(
-      exchange.denominations,
+  const denoms = exchange.denominations.map((d) => ({
+    ...d,
+    group: Amounts.stringifyValue(d.value),
+  }));
+  const denomFees: DenomOperationMap<FeeDescription[]> = {
+    deposit: createTimeline(
+      denoms,
+      "denomPubHash",
+      "stampStart",
       "stampExpireDeposit",
       "feeDeposit",
+      "group",
+      selectBestForOverlappingDenominations,
     ),
-    refresh: createDenominationTimeline(
-      exchange.denominations,
+    refresh: createTimeline(
+      denoms,
+      "denomPubHash",
+      "stampStart",
       "stampExpireWithdraw",
       "feeRefresh",
+      "group",
+      selectBestForOverlappingDenominations,
     ),
-    refund: createDenominationTimeline(
-      exchange.denominations,
+    refund: createTimeline(
+      denoms,
+      "denomPubHash",
+      "stampStart",
       "stampExpireWithdraw",
       "feeRefund",
+      "group",
+      selectBestForOverlappingDenominations,
     ),
-    withdraw: createDenominationTimeline(
-      exchange.denominations,
+    withdraw: createTimeline(
+      denoms,
+      "denomPubHash",
+      "stampStart",
       "stampExpireWithdraw",
       "feeWithdraw",
+      "group",
+      selectBestForOverlappingDenominations,
     ),
   };
 
+  const transferFees = Object.entries(
+    exchange.info.wireInfo.feesForType,
+  ).reduce((prev, [wireType, infoForType]) => {
+    const feesByGroup = [
+      ...infoForType.map((w) => ({
+        ...w,
+        fee: w.closingFee,
+        group: "closing",
+      })),
+      ...infoForType.map((w) => ({ ...w, fee: w.wadFee, group: "wad" })),
+      ...infoForType.map((w) => ({ ...w, fee: w.wireFee, group: "wire" })),
+    ];
+    prev[wireType] = createTimeline(
+      feesByGroup,
+      "sig",
+      "startStamp",
+      "endStamp",
+      "fee",
+      "group",
+      selectMinimumFee,
+    );
+    return prev;
+  }, {} as Record<string, FeeDescription[]>);
+
+  const globalFeesByGroup = [
+    ...exchange.info.globalFees.map((w) => ({
+      ...w,
+      fee: w.accountFee,
+      group: "account",
+    })),
+    ...exchange.info.globalFees.map((w) => ({
+      ...w,
+      fee: w.historyFee,
+      group: "history",
+    })),
+    ...exchange.info.globalFees.map((w) => ({
+      ...w,
+      fee: w.kycFee,
+      group: "kyc",
+    })),
+    ...exchange.info.globalFees.map((w) => ({
+      ...w,
+      fee: w.purseFee,
+      group: "purse",
+    })),
+  ];
+
+  const globalFees = createTimeline(
+    globalFeesByGroup,
+    "signature",
+    "startDate",
+    "endDate",
+    "fee",
+    "group",
+    selectMinimumFee,
+  );
+
   return {
     ...exchange.info,
-    feesDescription,
+    denomFees,
+    transferFees,
+    globalFees,
   };
 }
 

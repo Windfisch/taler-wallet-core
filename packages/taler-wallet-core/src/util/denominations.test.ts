@@ -28,8 +28,9 @@ import {
 } from "@gnu-taler/taler-util";
 // import { expect } from "chai";
 import {
-  createDenominationPairTimeline,
-  createDenominationTimeline,
+  createPairTimeline,
+  createTimeline,
+  selectBestForOverlappingDenominations,
 } from "./denominations.js";
 import test, { ExecutionContext } from "ava";
 
@@ -42,8 +43,14 @@ const VALUES = Array.from({ length: 10 }).map((undef, t) =>
 const TIMESTAMPS = Array.from({ length: 20 }).map((undef, t_s) => ({ t_s }));
 const ABS_TIME = TIMESTAMPS.map((m) => AbsoluteTime.fromTimestamp(m));
 
-function normalize(list: DenominationInfo[]): DenominationInfo[] {
-  return list.map((e, idx) => ({ ...e, denomPubHash: `id${idx}` }));
+function normalize(
+  list: DenominationInfo[],
+): (DenominationInfo & { group: string })[] {
+  return list.map((e, idx) => ({
+    ...e,
+    denomPubHash: `id${idx}`,
+    group: Amounts.stringifyValue(e.value),
+  }));
 }
 
 //Avoiding to make an error-prone/time-consuming refactor
@@ -61,7 +68,7 @@ function expect(t: ExecutionContext, thing: any): any {
 //   describe("single value example", (t) => {
 
 test("should have one row with start and exp", (t) => {
-  const timeline = createDenominationTimeline(
+  const timeline = createTimeline(
     normalize([
       {
         value: VALUES[1],
@@ -70,13 +77,17 @@ test("should have one row with start and exp", (t) => {
         feeDeposit: VALUES[1],
       } as Partial<DenominationInfo> as DenominationInfo,
     ]),
+    "denomPubHash",
+    "stampStart",
     "stampExpireDeposit",
     "feeDeposit",
+    "group",
+    selectBestForOverlappingDenominations,
   );
 
   expect(t, timeline).deep.equal([
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[1],
       until: ABS_TIME[2],
       fee: VALUES[1],
@@ -85,7 +96,7 @@ test("should have one row with start and exp", (t) => {
 });
 
 test("should have two rows with the second denom in the middle if second is better", (t) => {
-  const timeline = createDenominationTimeline(
+  const timeline = createTimeline(
     normalize([
       {
         value: VALUES[1],
@@ -100,19 +111,23 @@ test("should have two rows with the second denom in the middle if second is bett
         feeDeposit: VALUES[2],
       } as Partial<DenominationInfo> as DenominationInfo,
     ]),
+    "denomPubHash",
+    "stampStart",
     "stampExpireDeposit",
     "feeDeposit",
+    "group",
+    selectBestForOverlappingDenominations,
   );
 
   expect(t, timeline).deep.equal([
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[1],
       until: ABS_TIME[3],
       fee: VALUES[1],
     },
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[3],
       until: ABS_TIME[4],
       fee: VALUES[2],
@@ -121,7 +136,7 @@ test("should have two rows with the second denom in the middle if second is bett
 });
 
 test("should have two rows with the first denom in the middle if second is worse", (t) => {
-  const timeline = createDenominationTimeline(
+  const timeline = createTimeline(
     normalize([
       {
         value: VALUES[1],
@@ -136,19 +151,23 @@ test("should have two rows with the first denom in the middle if second is worse
         feeDeposit: VALUES[1],
       } as Partial<DenominationInfo> as DenominationInfo,
     ]),
+    "denomPubHash",
+    "stampStart",
     "stampExpireDeposit",
     "feeDeposit",
+    "group",
+    selectBestForOverlappingDenominations,
   );
 
   expect(t, timeline).deep.equal([
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[1],
       until: ABS_TIME[2],
       fee: VALUES[2],
     },
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[2],
       until: ABS_TIME[4],
       fee: VALUES[1],
@@ -157,7 +176,7 @@ test("should have two rows with the first denom in the middle if second is worse
 });
 
 test("should add a gap when there no fee", (t) => {
-  const timeline = createDenominationTimeline(
+  const timeline = createTimeline(
     normalize([
       {
         value: VALUES[1],
@@ -172,24 +191,28 @@ test("should add a gap when there no fee", (t) => {
         feeDeposit: VALUES[1],
       } as Partial<DenominationInfo> as DenominationInfo,
     ]),
+    "denomPubHash",
+    "stampStart",
     "stampExpireDeposit",
     "feeDeposit",
+    "group",
+    selectBestForOverlappingDenominations,
   );
 
   expect(t, timeline).deep.equal([
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[1],
       until: ABS_TIME[2],
       fee: VALUES[2],
     },
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[2],
       until: ABS_TIME[3],
     },
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[3],
       until: ABS_TIME[4],
       fee: VALUES[1],
@@ -198,7 +221,7 @@ test("should add a gap when there no fee", (t) => {
 });
 
 test("should have three rows when first denom is between second and second is worse", (t) => {
-  const timeline = createDenominationTimeline(
+  const timeline = createTimeline(
     normalize([
       {
         value: VALUES[1],
@@ -213,24 +236,28 @@ test("should have three rows when first denom is between second and second is wo
         feeDeposit: VALUES[2],
       } as Partial<DenominationInfo> as DenominationInfo,
     ]),
+    "denomPubHash",
+    "stampStart",
     "stampExpireDeposit",
     "feeDeposit",
+    "group",
+    selectBestForOverlappingDenominations,
   );
   expect(t, timeline).deep.equal([
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[1],
       until: ABS_TIME[2],
       fee: VALUES[2],
     },
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[2],
       until: ABS_TIME[3],
       fee: VALUES[1],
     },
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[3],
       until: ABS_TIME[4],
       fee: VALUES[2],
@@ -239,7 +266,7 @@ test("should have three rows when first denom is between second and second is wo
 });
 
 test("should have one row when first denom is between second and second is better", (t) => {
-  const timeline = createDenominationTimeline(
+  const timeline = createTimeline(
     normalize([
       {
         value: VALUES[1],
@@ -254,13 +281,17 @@ test("should have one row when first denom is between second and second is bette
         feeDeposit: VALUES[1],
       } as Partial<DenominationInfo> as DenominationInfo,
     ]),
+    "denomPubHash",
+    "stampStart",
     "stampExpireDeposit",
     "feeDeposit",
+    "group",
+    selectBestForOverlappingDenominations,
   );
 
   expect(t, timeline).deep.equal([
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[1],
       until: ABS_TIME[4],
       fee: VALUES[1],
@@ -269,7 +300,7 @@ test("should have one row when first denom is between second and second is bette
 });
 
 test("should only add the best1", (t) => {
-  const timeline = createDenominationTimeline(
+  const timeline = createTimeline(
     normalize([
       {
         value: VALUES[1],
@@ -290,19 +321,23 @@ test("should only add the best1", (t) => {
         feeDeposit: VALUES[2],
       } as Partial<DenominationInfo> as DenominationInfo,
     ]),
+    "denomPubHash",
+    "stampStart",
     "stampExpireDeposit",
     "feeDeposit",
+    "group",
+    selectBestForOverlappingDenominations,
   );
 
   expect(t, timeline).deep.equal([
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[1],
       until: ABS_TIME[2],
       fee: VALUES[2],
     },
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[2],
       until: ABS_TIME[4],
       fee: VALUES[1],
@@ -311,7 +346,7 @@ test("should only add the best1", (t) => {
 });
 
 test("should only add the best2", (t) => {
-  const timeline = createDenominationTimeline(
+  const timeline = createTimeline(
     normalize([
       {
         value: VALUES[1],
@@ -338,25 +373,29 @@ test("should only add the best2", (t) => {
         feeDeposit: VALUES[3],
       } as Partial<DenominationInfo> as DenominationInfo,
     ]),
+    "denomPubHash",
+    "stampStart",
     "stampExpireDeposit",
     "feeDeposit",
+    "group",
+    selectBestForOverlappingDenominations,
   );
 
   expect(t, timeline).deep.equal([
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[1],
       until: ABS_TIME[2],
       fee: VALUES[2],
     },
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[2],
       until: ABS_TIME[5],
       fee: VALUES[1],
     },
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[5],
       until: ABS_TIME[6],
       fee: VALUES[3],
@@ -365,7 +404,7 @@ test("should only add the best2", (t) => {
 });
 
 test("should only add the best3", (t) => {
-  const timeline = createDenominationTimeline(
+  const timeline = createTimeline(
     normalize([
       {
         value: VALUES[1],
@@ -386,13 +425,17 @@ test("should only add the best3", (t) => {
         feeDeposit: VALUES[2],
       } as Partial<DenominationInfo> as DenominationInfo,
     ]),
+    "denomPubHash",
+    "stampStart",
     "stampExpireDeposit",
     "feeDeposit",
+    "group",
+    selectBestForOverlappingDenominations,
   );
 
   expect(t, timeline).deep.equal([
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[2],
       until: ABS_TIME[5],
       fee: VALUES[1],
@@ -406,7 +449,7 @@ test("should only add the best3", (t) => {
 //TODO: test the same start but different value
 
 test("should not merge when there is different value", (t) => {
-  const timeline = createDenominationTimeline(
+  const timeline = createTimeline(
     normalize([
       {
         value: VALUES[1],
@@ -421,19 +464,23 @@ test("should not merge when there is different value", (t) => {
         feeDeposit: VALUES[2],
       } as Partial<DenominationInfo> as DenominationInfo,
     ]),
+    "denomPubHash",
+    "stampStart",
     "stampExpireDeposit",
     "feeDeposit",
+    "group",
+    selectBestForOverlappingDenominations,
   );
 
   expect(t, timeline).deep.equal([
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[1],
       until: ABS_TIME[3],
       fee: VALUES[1],
     },
     {
-      value: VALUES[2],
+      group: Amounts.stringifyValue(VALUES[2]),
       from: ABS_TIME[2],
       until: ABS_TIME[4],
       fee: VALUES[2],
@@ -442,7 +489,7 @@ test("should not merge when there is different value", (t) => {
 });
 
 test("should not merge when there is different value (with duplicates)", (t) => {
-  const timeline = createDenominationTimeline(
+  const timeline = createTimeline(
     normalize([
       {
         value: VALUES[1],
@@ -469,19 +516,23 @@ test("should not merge when there is different value (with duplicates)", (t) => 
         feeDeposit: VALUES[2],
       } as Partial<DenominationInfo> as DenominationInfo,
     ]),
+    "denomPubHash",
+    "stampStart",
     "stampExpireDeposit",
     "feeDeposit",
+    "group",
+    selectBestForOverlappingDenominations,
   );
 
   expect(t, timeline).deep.equal([
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[1],
       until: ABS_TIME[3],
       fee: VALUES[1],
     },
     {
-      value: VALUES[2],
+      group: Amounts.stringifyValue(VALUES[2]),
       from: ABS_TIME[2],
       until: ABS_TIME[4],
       fee: VALUES[2],
@@ -519,7 +570,7 @@ test("should return empty", (t) => {
   const left = [] as FeeDescription[];
   const right = [] as FeeDescription[];
 
-  const pairs = createDenominationPairTimeline(left, right);
+  const pairs = createPairTimeline(left, right);
 
   expect(t, pairs).deep.equals([]);
 });
@@ -527,7 +578,7 @@ test("should return empty", (t) => {
 test("should return first element", (t) => {
   const left = [
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[1],
       until: ABS_TIME[3],
       fee: VALUES[1],
@@ -537,24 +588,24 @@ test("should return first element", (t) => {
   const right = [] as FeeDescription[];
 
   {
-    const pairs = createDenominationPairTimeline(left, right);
+    const pairs = createPairTimeline(left, right);
     expect(t, pairs).deep.equals([
       {
         from: ABS_TIME[1],
         until: ABS_TIME[3],
-        value: VALUES[1],
+        group: Amounts.stringifyValue(VALUES[1]),
         left: VALUES[1],
         right: undefined,
       },
     ] as FeeDescriptionPair[]);
   }
   {
-    const pairs = createDenominationPairTimeline(right, left);
+    const pairs = createPairTimeline(right, left);
     expect(t, pairs).deep.equals([
       {
         from: ABS_TIME[1],
         until: ABS_TIME[3],
-        value: VALUES[1],
+        group: Amounts.stringifyValue(VALUES[1]),
         right: VALUES[1],
         left: undefined,
       },
@@ -565,7 +616,7 @@ test("should return first element", (t) => {
 test("should add both to the same row", (t) => {
   const left = [
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[1],
       until: ABS_TIME[3],
       fee: VALUES[1],
@@ -574,7 +625,7 @@ test("should add both to the same row", (t) => {
 
   const right = [
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[1],
       until: ABS_TIME[3],
       fee: VALUES[2],
@@ -582,24 +633,24 @@ test("should add both to the same row", (t) => {
   ] as FeeDescription[];
 
   {
-    const pairs = createDenominationPairTimeline(left, right);
+    const pairs = createPairTimeline(left, right);
     expect(t, pairs).deep.equals([
       {
         from: ABS_TIME[1],
         until: ABS_TIME[3],
-        value: VALUES[1],
+        group: Amounts.stringifyValue(VALUES[1]),
         left: VALUES[1],
         right: VALUES[2],
       },
     ] as FeeDescriptionPair[]);
   }
   {
-    const pairs = createDenominationPairTimeline(right, left);
+    const pairs = createPairTimeline(right, left);
     expect(t, pairs).deep.equals([
       {
         from: ABS_TIME[1],
         until: ABS_TIME[3],
-        value: VALUES[1],
+        group: Amounts.stringifyValue(VALUES[1]),
         left: VALUES[2],
         right: VALUES[1],
       },
@@ -610,7 +661,7 @@ test("should add both to the same row", (t) => {
 test("should repeat the first and change the second", (t) => {
   const left = [
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[1],
       until: ABS_TIME[5],
       fee: VALUES[1],
@@ -619,18 +670,18 @@ test("should repeat the first and change the second", (t) => {
 
   const right = [
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[1],
       until: ABS_TIME[2],
       fee: VALUES[2],
     },
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[2],
       until: ABS_TIME[3],
     },
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[3],
       until: ABS_TIME[4],
       fee: VALUES[3],
@@ -638,33 +689,33 @@ test("should repeat the first and change the second", (t) => {
   ] as FeeDescription[];
 
   {
-    const pairs = createDenominationPairTimeline(left, right);
+    const pairs = createPairTimeline(left, right);
     expect(t, pairs).deep.equals([
       {
         from: ABS_TIME[1],
         until: ABS_TIME[2],
-        value: VALUES[1],
+        group: Amounts.stringifyValue(VALUES[1]),
         left: VALUES[1],
         right: VALUES[2],
       },
       {
         from: ABS_TIME[2],
         until: ABS_TIME[3],
-        value: VALUES[1],
+        group: Amounts.stringifyValue(VALUES[1]),
         left: VALUES[1],
         right: undefined,
       },
       {
         from: ABS_TIME[3],
         until: ABS_TIME[4],
-        value: VALUES[1],
+        group: Amounts.stringifyValue(VALUES[1]),
         left: VALUES[1],
         right: VALUES[3],
       },
       {
         from: ABS_TIME[4],
         until: ABS_TIME[5],
-        value: VALUES[1],
+        group: Amounts.stringifyValue(VALUES[1]),
         left: VALUES[1],
         right: undefined,
       },
@@ -679,7 +730,7 @@ test("should repeat the first and change the second", (t) => {
 test("should separate denominations of different value", (t) => {
   const left = [
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[1],
       until: ABS_TIME[3],
       fee: VALUES[1],
@@ -688,7 +739,7 @@ test("should separate denominations of different value", (t) => {
 
   const right = [
     {
-      value: VALUES[2],
+      group: Amounts.stringifyValue(VALUES[2]),
       from: ABS_TIME[1],
       until: ABS_TIME[3],
       fee: VALUES[2],
@@ -696,38 +747,38 @@ test("should separate denominations of different value", (t) => {
   ] as FeeDescription[];
 
   {
-    const pairs = createDenominationPairTimeline(left, right);
+    const pairs = createPairTimeline(left, right);
     expect(t, pairs).deep.equals([
       {
         from: ABS_TIME[1],
         until: ABS_TIME[3],
-        value: VALUES[1],
+        group: Amounts.stringifyValue(VALUES[1]),
         left: VALUES[1],
         right: undefined,
       },
       {
         from: ABS_TIME[1],
         until: ABS_TIME[3],
-        value: VALUES[2],
+        group: Amounts.stringifyValue(VALUES[2]),
         left: undefined,
         right: VALUES[2],
       },
     ] as FeeDescriptionPair[]);
   }
   {
-    const pairs = createDenominationPairTimeline(right, left);
+    const pairs = createPairTimeline(right, left);
     expect(t, pairs).deep.equals([
       {
         from: ABS_TIME[1],
         until: ABS_TIME[3],
-        value: VALUES[1],
+        group: Amounts.stringifyValue(VALUES[1]),
         left: undefined,
         right: VALUES[1],
       },
       {
         from: ABS_TIME[1],
         until: ABS_TIME[3],
-        value: VALUES[2],
+        group: Amounts.stringifyValue(VALUES[2]),
         left: VALUES[2],
         right: undefined,
       },
@@ -738,13 +789,13 @@ test("should separate denominations of different value", (t) => {
 test("should separate denominations of different value2", (t) => {
   const left = [
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[1],
       until: ABS_TIME[2],
       fee: VALUES[1],
     },
     {
-      value: VALUES[1],
+      group: Amounts.stringifyValue(VALUES[1]),
       from: ABS_TIME[2],
       until: ABS_TIME[4],
       fee: VALUES[2],
@@ -753,7 +804,7 @@ test("should separate denominations of different value2", (t) => {
 
   const right = [
     {
-      value: VALUES[2],
+      group: Amounts.stringifyValue(VALUES[2]),
       from: ABS_TIME[1],
       until: ABS_TIME[3],
       fee: VALUES[2],
@@ -761,26 +812,26 @@ test("should separate denominations of different value2", (t) => {
   ] as FeeDescription[];
 
   {
-    const pairs = createDenominationPairTimeline(left, right);
+    const pairs = createPairTimeline(left, right);
     expect(t, pairs).deep.equals([
       {
         from: ABS_TIME[1],
         until: ABS_TIME[2],
-        value: VALUES[1],
+        group: Amounts.stringifyValue(VALUES[1]),
         left: VALUES[1],
         right: undefined,
       },
       {
         from: ABS_TIME[2],
         until: ABS_TIME[4],
-        value: VALUES[1],
+        group: Amounts.stringifyValue(VALUES[1]),
         left: VALUES[2],
         right: undefined,
       },
       {
         from: ABS_TIME[1],
         until: ABS_TIME[3],
-        value: VALUES[2],
+        group: Amounts.stringifyValue(VALUES[2]),
         left: undefined,
         right: VALUES[2],
       },

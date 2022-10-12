@@ -36,6 +36,7 @@ import {
   AbsoluteTime,
   codecForAbsoluteTime,
   codecForTimestamp,
+  TalerProtocolDuration,
   TalerProtocolTimestamp,
 } from "./time.js";
 import {
@@ -673,6 +674,23 @@ export interface WireInfo {
   accounts: ExchangeAccount[];
 }
 
+export interface ExchangeGlobalFees {
+  startDate: TalerProtocolTimestamp;
+  endDate: TalerProtocolTimestamp;
+
+  kycFee: AmountJson;
+  historyFee: AmountJson;
+  accountFee: AmountJson;
+  purseFee: AmountJson;
+
+  historyTimeout: TalerProtocolDuration;
+  kycTimeout: TalerProtocolDuration;
+  purseTimeout: TalerProtocolDuration;
+
+  purseLimit: number;
+
+  signature: string;
+}
 const codecForExchangeAccount = (): Codec<ExchangeAccount> =>
   buildCodecForObject<ExchangeAccount>()
     .property("payto_uri", codecForString())
@@ -752,28 +770,31 @@ export interface DenominationInfo {
   exchangeBaseUrl: string;
 }
 
-export type Operation = "deposit" | "withdraw" | "refresh" | "refund";
-export type OperationMap<T> = { [op in Operation]: T };
+export type DenomOperation = "deposit" | "withdraw" | "refresh" | "refund";
+export type DenomOperationMap<T> = { [op in DenomOperation]: T };
 
 export interface FeeDescription {
-  value: AmountJson;
+  group: string;
   from: AbsoluteTime;
   until: AbsoluteTime;
   fee?: AmountJson;
 }
 
 export interface FeeDescriptionPair {
-  value: AmountJson;
+  group: string;
   from: AbsoluteTime;
   until: AbsoluteTime;
   left?: AmountJson;
   right?: AmountJson;
 }
 
-export interface TimePoint {
+export interface TimePoint<T> {
+  id: string;
+  group: string;
+  fee: AmountJson;
   type: "start" | "end";
   moment: AbsoluteTime;
-  denom: DenominationInfo;
+  denom: T;
 }
 
 export interface ExchangeFullDetails {
@@ -783,7 +804,9 @@ export interface ExchangeFullDetails {
   tos: ExchangeTos;
   auditors: ExchangeAuditor[];
   wireInfo: WireInfo;
-  feesDescription: OperationMap<FeeDescription[]>;
+  denomFees: DenomOperationMap<FeeDescription[]>;
+  transferFees: Record<string, FeeDescription[]>;
+  globalFees: FeeDescription[];
 }
 
 export interface ExchangeListItem {
@@ -816,7 +839,7 @@ const codecForExchangeTos = (): Codec<ExchangeTos> =>
 
 export const codecForFeeDescriptionPair = (): Codec<FeeDescriptionPair> =>
   buildCodecForObject<FeeDescriptionPair>()
-    .property("value", codecForAmountJson())
+    .property("group", codecForString())
     .property("from", codecForAbsoluteTime)
     .property("until", codecForAbsoluteTime)
     .property("left", codecOptional(codecForAmountJson()))
@@ -825,21 +848,21 @@ export const codecForFeeDescriptionPair = (): Codec<FeeDescriptionPair> =>
 
 export const codecForFeeDescription = (): Codec<FeeDescription> =>
   buildCodecForObject<FeeDescription>()
-    .property("value", codecForAmountJson())
+    .property("group", codecForString())
     .property("from", codecForAbsoluteTime)
     .property("until", codecForAbsoluteTime)
     .property("fee", codecOptional(codecForAmountJson()))
     .build("FeeDescription");
 
 export const codecForFeesByOperations = (): Codec<
-  OperationMap<FeeDescription[]>
+  DenomOperationMap<FeeDescription[]>
 > =>
-  buildCodecForObject<OperationMap<FeeDescription[]>>()
+  buildCodecForObject<DenomOperationMap<FeeDescription[]>>()
     .property("deposit", codecForList(codecForFeeDescription()))
     .property("withdraw", codecForList(codecForFeeDescription()))
     .property("refresh", codecForList(codecForFeeDescription()))
     .property("refund", codecForList(codecForFeeDescription()))
-    .build("FeesByOperations");
+    .build("DenomOperationMap");
 
 export const codecForExchangeFullDetails = (): Codec<ExchangeFullDetails> =>
   buildCodecForObject<ExchangeFullDetails>()
@@ -849,7 +872,12 @@ export const codecForExchangeFullDetails = (): Codec<ExchangeFullDetails> =>
     .property("tos", codecForExchangeTos())
     .property("auditors", codecForList(codecForExchangeAuditor()))
     .property("wireInfo", codecForWireInfo())
-    .property("feesDescription", codecForFeesByOperations())
+    .property("denomFees", codecForFeesByOperations())
+    .property(
+      "transferFees",
+      codecForMap(codecForList(codecForFeeDescription())),
+    )
+    .property("globalFees", codecForList(codecForFeeDescription()))
     .build("ExchangeFullDetails");
 
 export const codecForExchangeListItem = (): Codec<ExchangeListItem> =>

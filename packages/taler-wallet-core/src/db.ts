@@ -46,6 +46,7 @@ import {
   WireInfo,
   DenominationInfo,
   GlobalFees,
+  ExchangeGlobalFees,
 } from "@gnu-taler/taler-util";
 import { RetryInfo, RetryTags } from "./util/retries.js";
 import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
@@ -428,7 +429,7 @@ export interface ExchangeDetailsRecord {
   /**
    * Fees for exchange services
    */
-  globalFees: GlobalFees[];
+  globalFees: ExchangeGlobalFees[];
   /**
    * Signing keys we got from the exchange, can also contain
    * older signing keys that are not returned by /keys anymore.

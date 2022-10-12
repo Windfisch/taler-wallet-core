@@ -15,15 +15,15 @@
  */
 
 import {
-  FeeDescription,
-  FeeDescriptionPair,
-  AbsoluteTime,
+  DenomOperationMap,
   ExchangeFullDetails,
-  OperationMap,
-  ExchangeListItem,
+  ExchangeListItem, FeeDescriptionPair
 } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
+import {
+  State as SelectExchangeState
+} from "../../hooks/useSelectedExchange.js";
 import { ButtonHandler, SelectFieldHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import * as wxApi from "../../wxApi.js";
@@ -32,7 +32,7 @@ import {
   ComparingView,
   ErrorLoadingView,
   NoExchangesView,
-  ReadyView,
+  ReadyView
 } from "./views.js";
 
 export interface Props {
@@ -41,9 +41,6 @@ export interface Props {
   onCancel: () => Promise<void>;
   onSelection: (exchange: string) => Promise<void>;
 }
-import {
-  State as SelectExchangeState
-} from "../../hooks/useSelectedExchange.js";
 
 export type State =
   | State.Loading
@@ -71,13 +68,12 @@ export namespace State {
 
   export interface Ready extends BaseInfo {
     status: "ready";
-    timeline: OperationMap<FeeDescription[]>;
     onClose: ButtonHandler;
   }
 
   export interface Comparing extends BaseInfo {
     status: "comparing";
-    pairTimeline: OperationMap<FeeDescriptionPair[]>;
+    pairTimeline: DenomOperationMap<FeeDescriptionPair[]>;
     onReset: ButtonHandler;
     onSelect: ButtonHandler;
   }

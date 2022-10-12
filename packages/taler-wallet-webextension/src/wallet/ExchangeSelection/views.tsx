@@ -31,9 +31,7 @@ import { useTranslationContext } from "../../context/translation.js";
 import { Button } from "../../mui/Button.js";
 import arrowDown from "../../svg/chevron-down.svg";
 import { State } from "./index.js";
-import {
-  State as SelectExchangeState
-} from "../../hooks/useSelectedExchange.js";
+import { State as SelectExchangeState } from "../../hooks/useSelectedExchange.js";
 
 const ButtonGroup = styled.div`
   & > button {
@@ -59,7 +57,7 @@ const FeeDescriptionTable = styled.table`
   }
   td.value {
     text-align: right;
-    width: 1%;
+    width: 15%;
     white-space: nowrap;
   }
   td.icon {
@@ -109,26 +107,28 @@ export function ErrorLoadingView({ error }: State.LoadingUriError): VNode {
 
   return (
     <LoadingError
-      title={<i18n.Translate>Could not load tip status</i18n.Translate>}
+      title={<i18n.Translate>Could not load exchange fees</i18n.Translate>}
       error={error}
     />
   );
 }
 
-
-
-export function NoExchangesView({currency}: SelectExchangeState.NoExchange): VNode {
+export function NoExchangesView({
+  currency,
+}: SelectExchangeState.NoExchange): VNode {
   const { i18n } = useTranslationContext();
   if (!currency) {
     return (
       <div>
         <i18n.Translate>could not find any exchange</i18n.Translate>
       </div>
-    );  
+    );
   }
   return (
     <div>
-      <i18n.Translate>could not find any exchange for the currency {currency}</i18n.Translate>
+      <i18n.Translate>
+        could not find any exchange for the currency {currency}
+      </i18n.Translate>
     </div>
   );
 }
@@ -356,7 +356,6 @@ export function ReadyView({
   exchanges,
   selected,
   onClose,
-  timeline,
 }: State.Ready): VNode {
   const { i18n } = useTranslationContext();
 
@@ -365,7 +364,10 @@ export function ReadyView({
       <h2>
         <i18n.Translate>Service fee description</i18n.Translate>
       </h2>
-
+      <p>
+        All fee indicated below are in the same and only currency the exchange
+        works.
+      </p>
       <section>
         <div
           style={{
@@ -375,21 +377,27 @@ export function ReadyView({
             justifyContent: "space-between",
           }}
         >
-          <p>
-            <Input>
-              <SelectList
-                label={
-                  <i18n.Translate>
-                    Select {selected.currency} exchange
-                  </i18n.Translate>
-                }
-                list={exchanges.list}
-                name="lang"
-                value={exchanges.value}
-                onChange={exchanges.onChange}
-              />
-            </Input>
-          </p>
+          {Object.keys(exchanges.list).length === 1 ? (
+            <Fragment>
+              <p>Exchange: {selected.exchangeBaseUrl}</p>
+            </Fragment>
+          ) : (
+            <p>
+              <Input>
+                <SelectList
+                  label={
+                    <i18n.Translate>
+                      Select {selected.currency} exchange
+                    </i18n.Translate>
+                  }
+                  list={exchanges.list}
+                  name="lang"
+                  value={exchanges.value}
+                  onChange={exchanges.onChange}
+                />
+              </Input>
+            </p>
+          )}
           <Button variant="outlined" onClick={onClose.onClick}>
             <i18n.Translate>Close</i18n.Translate>
           </Button>
@@ -411,16 +419,25 @@ export function ReadyView({
         <table>
           <tr>
             <td>
-              <i18n.Translate>currency</i18n.Translate>
+              <i18n.Translate>Currency</i18n.Translate>
             </td>
-            <td>{selected.currency}</td>
+            <td>
+              <b>{selected.currency}</b>
+            </td>
           </tr>
         </table>
       </section>
       <section>
         <h2>
-          <i18n.Translate>Operations</i18n.Translate>
+          <i18n.Translate>Coin operations</i18n.Translate>
         </h2>
+        <p>
+          <i18n.Translate>
+            Every operation in this section may be different by denomination
+            value and is valid for a period of time. The exchange will charge
+            the indicated amount every time a coin is used in such operation.
+          </i18n.Translate>
+        </p>
         <p>
           <i18n.Translate>Deposits</i18n.Translate>
         </p>
@@ -440,7 +457,10 @@ export function ReadyView({
             </tr>
           </thead>
           <tbody>
-            <RenderFeeDescriptionByValue first={timeline.deposit} />
+            <RenderFeeDescriptionByValue
+              list={selected.denomFees.deposit}
+              sorting={(a, b) => Number(a) - Number(b)}
+            />
           </tbody>
         </FeeDescriptionTable>
         <p>
@@ -462,7 +482,10 @@ export function ReadyView({
             </tr>
           </thead>
           <tbody>
-            <RenderFeeDescriptionByValue first={timeline.withdraw} />
+            <RenderFeeDescriptionByValue
+              list={selected.denomFees.withdraw}
+              sorting={(a, b) => Number(a) - Number(b)}
+            />
           </tbody>
         </FeeDescriptionTable>
         <p>
@@ -484,7 +507,10 @@ export function ReadyView({
             </tr>
           </thead>
           <tbody>
-            <RenderFeeDescriptionByValue first={timeline.refund} />
+            <RenderFeeDescriptionByValue
+              list={selected.denomFees.refund}
+              sorting={(a, b) => Number(a) - Number(b)}
+            />
           </tbody>
         </FeeDescriptionTable>{" "}
         <p>
@@ -506,53 +532,81 @@ export function ReadyView({
             </tr>
           </thead>
           <tbody>
-            <RenderFeeDescriptionByValue first={timeline.refresh} />
+            <RenderFeeDescriptionByValue
+              list={selected.denomFees.refresh}
+              sorting={(a, b) => Number(a) - Number(b)}
+            />
           </tbody>
-        </FeeDescriptionTable>{" "}
+        </FeeDescriptionTable>
       </section>
       <section>
-        <table>
+        <h2>
+          <i18n.Translate>Transfer operations</i18n.Translate>
+        </h2>
+        <p>
+          <i18n.Translate>
+            Every operation in this section may be different by transfer type
+            and is valid for a period of time. The exchange will charge the
+            indicated amount every time a transfer is made.
+          </i18n.Translate>
+        </p>
+        {Object.entries(selected.transferFees).map(([type, fees], idx) => {
+          return (
+            <Fragment key={idx}>
+              <p>{type}</p>
+              <FeeDescriptionTable>
+                <thead>
+                  <tr>
+                    <th>&nbsp;</th>
+                    <th>
+                      <i18n.Translate>Operation</i18n.Translate>
+                    </th>
+                    <th class="fee">
+                      <i18n.Translate>Fee</i18n.Translate>
+                    </th>
+                    <th>
+                      <i18n.Translate>Until</i18n.Translate>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <RenderFeeDescriptionByValue list={fees} />
+                </tbody>
+              </FeeDescriptionTable>
+            </Fragment>
+          );
+        })}
+      </section>
+      <section>
+        <h2>
+          <i18n.Translate>Wallet operations</i18n.Translate>
+        </h2>
+        <p>
+          <i18n.Translate>
+            Every operation in this section may be different by transfer type
+            and is valid for a period of time. The exchange will charge the
+            indicated amount every time a transfer is made.
+          </i18n.Translate>
+        </p>
+        <FeeDescriptionTable>
           <thead>
             <tr>
-              <td>
-                <i18n.Translate>Wallet operations</i18n.Translate>
-              </td>
-              <td>
+              <th>&nbsp;</th>
+              <th>
+                <i18n.Translate>Feature</i18n.Translate>
+              </th>
+              <th class="fee">
                 <i18n.Translate>Fee</i18n.Translate>
-              </td>
+              </th>
+              <th>
+                <i18n.Translate>Until</i18n.Translate>
+              </th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>history(i) </td>
-              <td>0.1</td>
-            </tr>
-            <tr>
-              <td>kyc (i) </td>
-              <td>0.1</td>
-            </tr>
-            <tr>
-              <td>account (i) </td>
-              <td>0.1</td>
-            </tr>
-            <tr>
-              <td>purse (i) </td>
-              <td>0.1</td>
-            </tr>
-            <tr>
-              <td>wire SEPA (i) </td>
-              <td>0.1</td>
-            </tr>
-            <tr>
-              <td>closing SEPA(i) </td>
-              <td>0.1</td>
-            </tr>
-            <tr>
-              <td>wad SEPA (i) </td>
-              <td>0.1</td>
-            </tr>
+            <RenderFeeDescriptionByValue list={selected.globalFees} />
           </tbody>
-        </table>
+        </FeeDescriptionTable>
       </section>
       <section>
         <ButtonGroup>
@@ -579,7 +633,7 @@ function FeeDescriptionRowsGroup({
           <tr
             key={idx}
             class="value"
-            data-hasMore={!hasMoreInfo}
+            data-hasMore={hasMoreInfo}
             data-main={main}
             data-hidden={!main && !expanded}
             onClick={() => setExpand((p) => !p)}
@@ -594,9 +648,7 @@ function FeeDescriptionRowsGroup({
                 />
               ) : undefined}
             </td>
-            <td class="value">
-              {main ? <Amount value={info.value} hideCurrency /> : ""}
-            </td>
+            <td class="value">{main ? info.group : ""}</td>
             {info.fee ? (
               <td class="fee">{<Amount value={info.fee} hideCurrency />}</td>
             ) : undefined}
@@ -621,7 +673,7 @@ function FeePairRowsGroup({ infos }: { infos: FeeDescriptionPair[] }): VNode {
           <tr
             key={idx}
             class="value"
-            data-hasMore={!hasMoreInfo}
+            data-hasMore={hasMoreInfo}
             data-main={main}
             data-hidden={!main && !expanded}
             onClick={() => setExpand((p) => !p)}
@@ -636,9 +688,7 @@ function FeePairRowsGroup({ infos }: { infos: FeeDescriptionPair[] }): VNode {
                 />
               ) : undefined}
             </td>
-            <td class="value">
-              {main ? <Amount value={info.value} hideCurrency /> : ""}
-            </td>
+            <td class="value">{main ? info.group : ""}</td>
             {info.left ? (
               <td class="fee">{<Amount value={info.left} hideCurrency />}</td>
             ) : (
@@ -673,7 +723,7 @@ function RenderFeePairByValue({ list }: { list: FeeDescriptionPair[] }): VNode {
             const next = idx >= list.length - 1 ? undefined : list[idx + 1];
 
             const nextIsMoreInfo =
-              next !== undefined && Amounts.cmp(next.value, info.value) === 0;
+              next !== undefined && next.group === info.group;
 
             prev.rows.push(info);
 
@@ -681,7 +731,7 @@ function RenderFeePairByValue({ list }: { list: FeeDescriptionPair[] }): VNode {
               return prev;
             }
 
-            prev.rows = [];
+            // prev.rows = [];
             prev.views.push(<FeePairRowsGroup infos={prev.rows} />);
             return prev;
           },
@@ -701,36 +751,21 @@ function RenderFeePairByValue({ list }: { list: FeeDescriptionPair[] }): VNode {
  * @returns
  */
 function RenderFeeDescriptionByValue({
-  first,
+  list,
+  sorting,
 }: {
-  first: FeeDescription[];
+  list: FeeDescription[];
+  sorting?: (a: string, b: string) => number;
 }): VNode {
-  return (
-    <Fragment>
-      {
-        first.reduce(
-          (prev, info, idx) => {
-            const next = idx >= first.length - 1 ? undefined : first[idx + 1];
-
-            const nextIsMoreInfo =
-              next !== undefined && Amounts.cmp(next.value, info.value) === 0;
-
-            prev.rows.push(info);
-
-            if (nextIsMoreInfo) {
-              return prev;
-            }
-
-            prev.rows = [];
-            prev.views.push(<FeeDescriptionRowsGroup infos={prev.rows} />);
-            return prev;
-          },
-          { rows: [], views: [] } as {
-            rows: FeeDescription[];
-            views: h.JSX.Element[];
-          },
-        ).views
-      }
-    </Fragment>
-  );
+  const grouped = list.reduce((prev, cur) => {
+    if (!prev[cur.group]) {
+      prev[cur.group] = [];
+    }
+    prev[cur.group].push(cur);
+    return prev;
+  }, {} as Record<string, FeeDescription[]>);
+  const p = Object.keys(grouped)
+    .sort(sorting)
+    .map((i, idx) => <FeeDescriptionRowsGroup key={idx} infos={grouped[i]} />);
+  return <Fragment>{p}</Fragment>;
 }

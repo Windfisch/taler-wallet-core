@@ -14,8 +14,8 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { FeeDescription, OperationMap } from "@gnu-taler/taler-util";
-import { createDenominationPairTimeline } from "@gnu-taler/taler-wallet-core";
+import { DenomOperationMap, FeeDescription } from "@gnu-taler/taler-util";
+import { createPairTimeline } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import * as wxApi from "../../wxApi.js";
@@ -94,27 +94,26 @@ export function useComponentState(
         onClick: onCancel,
       },
       selected,
-      timeline: selected.feesDescription,
     };
   }
 
-  const pairTimeline: OperationMap<FeeDescription[]> = {
-    deposit: createDenominationPairTimeline(
-      selected.feesDescription.deposit,
-      original.feesDescription.deposit,
+  const pairTimeline: DenomOperationMap<FeeDescription[]> = {
+    deposit: createPairTimeline(
+      selected.denomFees.deposit,
+      original.denomFees.deposit,
     ),
-    refresh: createDenominationPairTimeline(
-      selected.feesDescription.refresh,
-      original.feesDescription.refresh,
+    refresh: createPairTimeline(
+      selected.denomFees.refresh,
+      original.denomFees.refresh,
     ),
-    refund: createDenominationPairTimeline(
-      selected.feesDescription.refund,
-      original.feesDescription.refund,
+    refund: createPairTimeline(
+      selected.denomFees.refund,
+      original.denomFees.refund,
     ),
-    withdraw: createDenominationPairTimeline(
-      selected.feesDescription.withdraw,
-      original.feesDescription.withdraw,
-    ),
+    withdraw: createPairTimeline(
+      selected.denomFees.withdraw,
+      original.denomFees.withdraw,
+    )
   };
 
   return {
