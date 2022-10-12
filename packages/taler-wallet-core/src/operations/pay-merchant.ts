@@ -1797,12 +1797,16 @@ export async function processPurchase(
     case PurchaseStatus.ProposalDownloadFailed:
     case PurchaseStatus.Paid:
     case PurchaseStatus.RepurchaseDetected:
+    case PurchaseStatus.Proposed:
+    case PurchaseStatus.ProposalRefused:
+    case PurchaseStatus.PaymentAbortFinished:
       return {
         type: OperationAttemptResultType.Finished,
         result: undefined,
       };
     default:
-      throw Error(`unexpected purchase status (${purchase.purchaseStatus})`);
+      assertUnreachable(purchase.purchaseStatus);
+    // throw Error(`unexpected purchase status (${purchase.purchaseStatus})`);
   }
 }
 

@@ -103,6 +103,8 @@ export const WALLET_DB_MINOR_VERSION = 2;
 export enum OperationStatusRange {
   ACTIVE_START = 10,
   ACTIVE_END = 29,
+  USER_ATTENTION_START = 30,
+  USER_ATTENTION_END = 49,
   DORMANT_START = 50,
   DORMANT_END = 69,
 }
@@ -114,36 +116,36 @@ export enum WithdrawalGroupStatus {
   /**
    * Reserve must be registered with the bank.
    */
-  RegisteringBank = OperationStatusRange.ACTIVE_START,
+  RegisteringBank = 10,
 
   /**
    * We've registered reserve's information with the bank
    * and are now waiting for the user to confirm the withdraw
    * with the bank (typically 2nd factor auth).
    */
-  WaitConfirmBank = OperationStatusRange.ACTIVE_START + 1,
+  WaitConfirmBank = 11,
 
   /**
    * Querying reserve status with the exchange.
    */
-  QueryingStatus = OperationStatusRange.ACTIVE_START + 2,
+  QueryingStatus = 12,
 
   /**
    * Ready for withdrawal.
    */
-  Ready = OperationStatusRange.ACTIVE_START + 3,
+  Ready = 13,
 
   /**
    * The corresponding withdraw record has been created.
    * No further processing is done, unless explicitly requested
    * by the user.
    */
-  Finished = OperationStatusRange.DORMANT_START,
+  Finished = 50,
 
   /**
    * The bank aborted the withdrawal.
    */
-  BankAborted = OperationStatusRange.DORMANT_START + 1,
+  BankAborted = 51,
 }
 
 /**
@@ -1036,59 +1038,59 @@ export enum PurchaseStatus {
   /**
    * Not downloaded yet.
    */
-  DownloadingProposal = OperationStatusRange.ACTIVE_START,
+  DownloadingProposal = 10,
 
   /**
    * The user has accepted the proposal.
    */
-  Paying = OperationStatusRange.ACTIVE_START + 1,
+  Paying = 11,
 
-  AbortingWithRefund = OperationStatusRange.ACTIVE_START + 2,
+  AbortingWithRefund = 12,
 
   /**
    * Paying a second time, likely with different session ID
    */
-  PayingReplay = OperationStatusRange.ACTIVE_START + 3,
+  PayingReplay = 13,
 
   /**
    * Query for refunds (until query succeeds).
    */
-  QueryingRefund = OperationStatusRange.ACTIVE_START + 4,
+  QueryingRefund = 14,
 
   /**
    * Query for refund (until auto-refund deadline is reached).
    */
-  QueryingAutoRefund = OperationStatusRange.ACTIVE_START + 5,
+  QueryingAutoRefund = 15,
 
   /**
    * Proposal downloaded, but the user needs to accept/reject it.
    */
-  Proposed = OperationStatusRange.DORMANT_START,
+  Proposed = 30,
 
   /**
    * The user has rejected the proposal.
    */
-  ProposalRefused = OperationStatusRange.DORMANT_START + 1,
+  ProposalRefused = 50,
 
   /**
    * Downloading or processing the proposal has failed permanently.
    */
-  ProposalDownloadFailed = OperationStatusRange.DORMANT_START + 2,
+  ProposalDownloadFailed = 51,
 
   /**
    * Downloaded proposal was detected as a re-purchase.
    */
-  RepurchaseDetected = OperationStatusRange.DORMANT_START + 3,
+  RepurchaseDetected = 52,
 
   /**
    * The payment has been aborted.
    */
-  PaymentAbortFinished = OperationStatusRange.DORMANT_START + 4,
+  PaymentAbortFinished = 53,
 
   /**
    * Payment was successful.
    */
-  Paid = OperationStatusRange.DORMANT_START + 5,
+  Paid = 54,
 }
 
 /**
