@@ -32,6 +32,7 @@ import {
   ExchangeDenomination,
   ExchangeSignKeyJson,
   ExchangeWireJson,
+  GlobalFees,
   hashDenomPub,
   j2s,
   LibtoolVersion,
@@ -269,6 +270,32 @@ async function validateWireInfo(
   };
 }
 
+async function validateGlobalFees(
+  ws: InternalWalletState,
+  fees: GlobalFees[],
+  masterPub: string,
+): Promise<GlobalFees[]> {
+  for (const gf of fees) {
+    logger.trace("validating exchange global fees");
+    let isValid = false;
+    if (ws.insecureTrustExchange) {
+      isValid = true;
+    } else {
+      const { valid: v } = await ws.cryptoApi.isValidGlobalFees({
+        masterPub,
+        gf,
+      });
+      isValid = v;
+    }
+
+    if (!isValid) {
+      throw Error("exchange global fees signature invalid: " + gf.master_sig);
+    }
+  }
+
+  return fees;
+}
+
 export interface ExchangeInfo {
   wire: ExchangeWireJson;
   keys: ExchangeKeysDownloadResult;
@@ -359,6 +386,7 @@ interface ExchangeKeysDownloadResult {
   expiry: TalerProtocolTimestamp;
   recoup: Recoup[];
   listIssueDate: TalerProtocolTimestamp;
+  globalFees: GlobalFees[];
 }
 
 /**
@@ -432,6 +460,7 @@ async function downloadExchangeKeysInfo(
     ),
     recoup: exchangeKeysJsonUnchecked.recoup ?? [],
     listIssueDate: exchangeKeysJsonUnchecked.list_issue_date,
+    globalFees: exchangeKeysJsonUnchecked.global_fees,
   };
 }
 
@@ -552,6 +581,12 @@ export async function updateExchangeFromUrlHandler(
     keysInfo.masterPublicKey,
   );
 
+  const globalFees = await validateGlobalFees(
+    ws,
+    keysInfo.globalFees,
+    keysInfo.masterPublicKey,
+  );
+
   logger.info("finished validating exchange /wire info");
 
   const tosDownload = await downloadTosFromAcceptedFormat(
@@ -594,6 +629,7 @@ export async function updateExchangeFromUrlHandler(
         protocolVersion: keysInfo.protocolVersion,
         signingKeys: keysInfo.signingKeys,
         reserveClosingDelay: keysInfo.reserveClosingDelay,
+        globalFees,
         exchangeBaseUrl: r.baseUrl,
         wireInfo,
         termsOfServiceText: tosDownload.tosText,

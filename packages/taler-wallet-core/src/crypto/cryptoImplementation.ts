@@ -51,6 +51,7 @@ import {
   encryptContractForMerge,
   ExchangeProtocolVersion,
   getRandomBytes,
+  GlobalFees,
   hash,
   HashCodeString,
   hashCoinEv,
@@ -74,6 +75,7 @@ import {
   rsaVerify,
   setupTipPlanchet,
   stringToBytes,
+  TalerProtocolDuration,
   TalerProtocolTimestamp,
   TalerSignaturePurpose,
   UnblindedSignature,
@@ -142,6 +144,10 @@ export interface TalerCryptoInterface {
 
   isValidWireFee(req: WireFeeValidationRequest): Promise<ValidationResult>;
 
+  isValidGlobalFees(
+    req: GlobalFeesValidationRequest,
+  ): Promise<ValidationResult>;
+
   isValidDenom(req: DenominationValidationRequest): Promise<ValidationResult>;
 
   isValidWireAccount(
@@ -152,7 +158,7 @@ export interface TalerCryptoInterface {
     req: ContractTermsValidationRequest,
   ): Promise<ValidationResult>;
 
-  createEddsaKeypair(req: {}): Promise<EddsaKeypair>;
+  createEddsaKeypair(req: unknown): Promise<EddsaKeypair>;
 
   eddsaGetPublic(req: EddsaGetPublicRequest): Promise<EddsaGetPublicResponse>;
 
@@ -283,12 +289,17 @@ export const nullCrypto: TalerCryptoInterface = {
   ): Promise<ValidationResult> {
     throw new Error("Function not implemented.");
   },
+  isValidGlobalFees: function (
+    req: GlobalFeesValidationRequest,
+  ): Promise<ValidationResult> {
+    throw new Error("Function not implemented.");
+  },
   isValidContractTermsSignature: function (
     req: ContractTermsValidationRequest,
   ): Promise<ValidationResult> {
     throw new Error("Function not implemented.");
   },
-  createEddsaKeypair: function (req: {}): Promise<EddsaKeypair> {
+  createEddsaKeypair: function (req: unknown): Promise<EddsaKeypair> {
     throw new Error("Function not implemented.");
   },
   eddsaGetPublic: function (req: EddsaGetPublicRequest): Promise<EddsaKeypair> {
@@ -481,6 +492,11 @@ export interface HashStringResult {
 export interface WireFeeValidationRequest {
   type: string;
   wf: WireFee;
+  masterPub: string;
+}
+
+export interface GlobalFeesValidationRequest {
+  gf: GlobalFees;
   masterPub: string;
 }
 
@@ -887,6 +903,30 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
     return { valid: eddsaVerify(p, sig, pub) };
   },
 
+  /**
+   * Check if a global fee is correctly signed.
+   */
+  async isValidGlobalFees(
+    tci: TalerCryptoInterfaceR,
+    req: GlobalFeesValidationRequest,
+  ): Promise<ValidationResult> {
+    const { gf, masterPub } = req;
+    const p = buildSigPS(TalerSignaturePurpose.GLOBAL_FEES)
+      .put(timestampRoundedToBuffer(gf.start_date))
+      .put(timestampRoundedToBuffer(gf.end_date))
+      .put(durationRoundedToBuffer(gf.purse_timeout))
+      .put(durationRoundedToBuffer(gf.account_kyc_timeout))
+      .put(durationRoundedToBuffer(gf.history_expiration))
+      .put(amountToBuffer(Amounts.parseOrThrow(gf.history_fee)))
+      .put(amountToBuffer(Amounts.parseOrThrow(gf.kyc_fee)))
+      .put(amountToBuffer(Amounts.parseOrThrow(gf.account_fee)))
+      .put(amountToBuffer(Amounts.parseOrThrow(gf.purse_fee)))
+      .put(bufferForUint32(gf.purse_account_limit))
+      .build();
+    const sig = decodeCrock(gf.master_sig);
+    const pub = decodeCrock(masterPub);
+    return { valid: eddsaVerify(p, sig, pub) };
+  },
   /**
    * Check if the signature of a denomination is valid.
    */
@@ -1621,6 +1661,24 @@ function timestampRoundedToBuffer(ts: TalerProtocolTimestamp): Uint8Array {
   } else {
     const s =
       ts.t_s === "never" ? bigint.zero : bigint(ts.t_s).multiply(1000 * 1000);
+    const arr = s.toArray(2 ** 8).value;
+    let offset = 8 - arr.length;
+    for (let i = 0; i < arr.length; i++) {
+      v.setUint8(offset++, arr[i]);
+    }
+  }
+  return new Uint8Array(b);
+}
+
+function durationRoundedToBuffer(ts: TalerProtocolDuration): Uint8Array {
+  const b = new ArrayBuffer(8);
+  const v = new DataView(b);
+  // The buffer we sign over represents the timestamp in microseconds.
+  if (typeof v.setBigUint64 !== "undefined") {
+    const s = BigInt(ts.d_us);
+    v.setBigUint64(0, s);
+  } else {
+    const s = ts.d_us === "forever" ? bigint.zero : bigint(ts.d_us);
     const arr = s.toArray(2 ** 8).value;
     let offset = 8 - arr.length;
     for (let i = 0; i < arr.length; i++) {

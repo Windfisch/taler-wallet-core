@@ -345,6 +345,7 @@ export async function exportBackup(
             stamp_expire: x.stamp_expire,
             stamp_start: x.stamp_start,
           })),
+          global_fees: ex.globalFees,
           tos_accepted_etag: ex.termsOfServiceAcceptedEtag,
           tos_accepted_timestamp: ex.termsOfServiceAcceptedTimestamp,
           denominations:

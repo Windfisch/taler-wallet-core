@@ -405,6 +405,7 @@ export async function importBackup(
             masterPublicKey: backupExchangeDetails.master_public_key,
             protocolVersion: backupExchangeDetails.protocol_version,
             reserveClosingDelay: backupExchangeDetails.reserve_closing_delay,
+            globalFees: backupExchangeDetails.global_fees,
             signingKeys: backupExchangeDetails.signing_keys.map((x) => ({
               key: x.key,
               master_sig: x.master_sig,

@@ -43,6 +43,7 @@ import {
 import { strcmp } from "./helpers.js";
 import { AgeCommitmentProof, Edx25519PublicKeyEnc } from "./talerCrypto.js";
 import {
+  codecForAbsoluteTime,
   codecForDuration,
   codecForTimestamp,
   TalerProtocolDuration,
@@ -757,8 +758,64 @@ export class ExchangeKeysJson {
   version: string;
 
   reserve_closing_delay: TalerProtocolDuration;
+
+  global_fees: GlobalFees[];
 }
 
+export interface GlobalFees {
+  // What date (inclusive) does these fees go into effect?
+  start_date: TalerProtocolTimestamp;
+
+  // What date (exclusive) does this fees stop going into effect?
+  end_date: TalerProtocolTimestamp;
+
+  // KYC fee, charged when a user wants to create an account.
+  // The first year of the account_annual_fee after the KYC is
+  // always included.
+  kyc_fee: AmountString;
+
+  // Account history fee, charged when a user wants to
+  // obtain a reserve/account history.
+  history_fee: AmountString;
+
+  // Annual fee charged for having an open account at the
+  // exchange.  Charged to the account.  If the account
+  // balance is insufficient to cover this fee, the account
+  // is automatically deleted/closed. (Note that the exchange
+  // will keep the account history around for longer for
+  // regulatory reasons.)
+  account_fee: AmountString;
+
+  // Purse fee, charged only if a purse is abandoned
+  // and was not covered by the account limit.
+  purse_fee: AmountString;
+
+  // How long will the exchange preserve the account history?
+  // After an account was deleted/closed, the exchange will
+  // retain the account history for legal reasons until this time.
+  history_expiration: TalerProtocolDuration;
+
+  // How long does the exchange promise to keep funds
+  // an account for which the KYC has never happened
+  // after a purse was merged into an account? Basically,
+  // after this time funds in an account without KYC are
+  // forfeit.
+  account_kyc_timeout: TalerProtocolDuration;
+
+  // Non-negative number of concurrent purses that any
+  // account holder is allowed to create without having
+  // to pay the purse_fee.
+  purse_account_limit: number;
+
+  // How long does an exchange keep a purse around after a purse
+  // has expired (or been successfully merged)?  A 'GET' request
+  // for a purse will succeed until the purse expiration time
+  // plus this value.
+  purse_timeout: TalerProtocolDuration;
+
+  // Signature of TALER_GlobalFeesPS.
+  master_sig: string;
+}
 /**
  * Wire fees as announced by the exchange.
  */
@@ -1188,13 +1245,6 @@ export namespace DenominationPubKey {
   }
 }
 
-export const codecForDenominationPubKey = () =>
-  buildCodecForUnion<DenominationPubKey>()
-    .discriminateOn("cipher")
-    .alternative(DenomKeyType.Rsa, codecForRsaDenominationPubKey())
-    .alternative(DenomKeyType.ClauseSchnorr, codecForCsDenominationPubKey())
-    .build("DenominationPubKey");
-
 export const codecForRsaDenominationPubKey = () =>
   buildCodecForObject<RsaDenominationPubKey>()
     .property("cipher", codecForConstString(DenomKeyType.Rsa))
@@ -1208,6 +1258,13 @@ export const codecForCsDenominationPubKey = () =>
     .property("cs_public_key", codecForString())
     .property("age_mask", codecForNumber())
     .build("CsDenominationPubKey");
+
+export const codecForDenominationPubKey = () =>
+  buildCodecForUnion<DenominationPubKey>()
+    .discriminateOn("cipher")
+    .alternative(DenomKeyType.Rsa, codecForRsaDenominationPubKey())
+    .alternative(DenomKeyType.ClauseSchnorr, codecForCsDenominationPubKey())
+    .build("DenominationPubKey");
 
 export const codecForBankWithdrawalOperationPostResponse =
   (): Codec<BankWithdrawalOperationPostResponse> =>
@@ -1385,6 +1442,21 @@ export const codecForExchangeSigningKey = (): Codec<ExchangeSignKeyJson> =>
     .property("stamp_expire", codecForTimestamp)
     .build("ExchangeSignKeyJson");
 
+export const codecForGlobalFees = (): Codec<GlobalFees> =>
+  buildCodecForObject<GlobalFees>()
+    .property("start_date", codecForTimestamp)
+    .property("end_date", codecForTimestamp)
+    .property("kyc_fee", codecForAmountString())
+    .property("history_fee", codecForAmountString())
+    .property("account_fee", codecForAmountString())
+    .property("purse_fee", codecForAmountString())
+    .property("history_expiration", codecForDuration)
+    .property("account_kyc_timeout", codecForDuration)
+    .property("purse_account_limit", codecForNumber())
+    .property("purse_timeout", codecForDuration)
+    .property("master_sig", codecForString())
+    .build("GlobalFees");
+
 export const codecForExchangeKeysJson = (): Codec<ExchangeKeysJson> =>
   buildCodecForObject<ExchangeKeysJson>()
     .property("denoms", codecForList(codecForDenomination()))
@@ -1395,6 +1467,7 @@ export const codecForExchangeKeysJson = (): Codec<ExchangeKeysJson> =>
     .property("signkeys", codecForList(codecForExchangeSigningKey()))
     .property("version", codecForString())
     .property("reserve_closing_delay", codecForDuration)
+    .property("global_fees", codecForList(codecForGlobalFees()))
     .build("ExchangeKeysJson");
 
 export const codecForWireFeesJson = (): Codec<WireFeesJson> =>
@@ -1583,6 +1656,32 @@ export interface AbortResponse {
   refunds: MerchantAbortPayRefundStatus[];
 }
 
+export const codecForMerchantAbortPayRefundSuccessStatus =
+  (): Codec<MerchantAbortPayRefundSuccessStatus> =>
+    buildCodecForObject<MerchantAbortPayRefundSuccessStatus>()
+      .property("exchange_pub", codecForString())
+      .property("exchange_sig", codecForString())
+      .property("exchange_status", codecForConstNumber(200))
+      .property("type", codecForConstString("success"))
+      .build("MerchantAbortPayRefundSuccessStatus");
+
+export const codecForMerchantAbortPayRefundFailureStatus =
+  (): Codec<MerchantAbortPayRefundFailureStatus> =>
+    buildCodecForObject<MerchantAbortPayRefundFailureStatus>()
+      .property("exchange_code", codecForNumber())
+      .property("exchange_reply", codecForAny())
+      .property("exchange_status", codecForNumber())
+      .property("type", codecForConstString("failure"))
+      .build("MerchantAbortPayRefundFailureStatus");
+
+export const codecForMerchantAbortPayRefundStatus =
+  (): Codec<MerchantAbortPayRefundStatus> =>
+    buildCodecForUnion<MerchantAbortPayRefundStatus>()
+      .discriminateOn("type")
+      .alternative("success", codecForMerchantAbortPayRefundSuccessStatus())
+      .alternative("failure", codecForMerchantAbortPayRefundFailureStatus())
+      .build("MerchantAbortPayRefundStatus");
+
 export const codecForAbortResponse = (): Codec<AbortResponse> =>
   buildCodecForObject<AbortResponse>()
     .property("refunds", codecForList(codecForMerchantAbortPayRefundStatus()))
@@ -1628,32 +1727,6 @@ export interface MerchantAbortPayRefundSuccessStatus {
   // which signing key was used.
   exchange_pub: string;
 }
-
-export const codecForMerchantAbortPayRefundSuccessStatus =
-  (): Codec<MerchantAbortPayRefundSuccessStatus> =>
-    buildCodecForObject<MerchantAbortPayRefundSuccessStatus>()
-      .property("exchange_pub", codecForString())
-      .property("exchange_sig", codecForString())
-      .property("exchange_status", codecForConstNumber(200))
-      .property("type", codecForConstString("success"))
-      .build("MerchantAbortPayRefundSuccessStatus");
-
-export const codecForMerchantAbortPayRefundFailureStatus =
-  (): Codec<MerchantAbortPayRefundFailureStatus> =>
-    buildCodecForObject<MerchantAbortPayRefundFailureStatus>()
-      .property("exchange_code", codecForNumber())
-      .property("exchange_reply", codecForAny())
-      .property("exchange_status", codecForNumber())
-      .property("type", codecForConstString("failure"))
-      .build("MerchantAbortPayRefundFailureStatus");
-
-export const codecForMerchantAbortPayRefundStatus =
-  (): Codec<MerchantAbortPayRefundStatus> =>
-    buildCodecForUnion<MerchantAbortPayRefundStatus>()
-      .discriminateOn("type")
-      .alternative("success", codecForMerchantAbortPayRefundSuccessStatus())
-      .alternative("failure", codecForMerchantAbortPayRefundFailureStatus())
-      .build("MerchantAbortPayRefundStatus");
 
 export interface TalerConfigResponse {
   name: string;

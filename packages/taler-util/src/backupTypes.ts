@@ -909,7 +909,7 @@ export interface BackupPurchase {
 
   /**
    * Signature on the contract terms.
-   * 
+   *
    * FIXME: Better name needed.
    */
   merchant_sig?: string;
@@ -1087,6 +1087,23 @@ export interface BackupExchangeWireFee {
 }
 
 /**
+ * Global fee as stored in the wallet's database.
+ *
+ */
+export interface BackupExchangeGlobalFees {
+  start_date: TalerProtocolTimestamp;
+  end_date: TalerProtocolTimestamp;
+  kyc_fee: BackupAmountString;
+  history_fee: BackupAmountString;
+  account_fee: BackupAmountString;
+  purse_fee: BackupAmountString;
+  history_expiration: TalerProtocolDuration;
+  account_kyc_timeout: TalerProtocolDuration;
+  purse_account_limit: number;
+  purse_timeout: TalerProtocolDuration;
+  master_sig: string;
+}
+/**
  * Structure of one exchange signing key in the /keys response.
  */
 export class BackupExchangeSignKey {
@@ -1205,6 +1222,8 @@ export interface BackupExchangeDetails {
   signing_keys: BackupExchangeSignKey[];
 
   wire_fees: BackupExchangeWireFee[];
+
+  global_fees: BackupExchangeGlobalFees[];
 
   /**
    * Bank accounts offered by the exchange;
