@@ -271,6 +271,9 @@ function openWalletURIFromPopup(talerUri: string): void {
         `Response with HTTP 402 the Taler header but could not classify ${talerUri}`,
       );
       return;
+    case TalerUriType.TalerDevExperiment:
+      logger.warn(`taler://dev-experiment URIs are not allowed in headers`);
+      return;
     default: {
       const error: never = uriType;
       logger.warn(

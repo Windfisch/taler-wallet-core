@@ -301,6 +301,10 @@ function parseTalerUriAndRedirect(tabId: number, talerUri: string): void {
         `Response with HTTP 402 the Taler header but could not classify ${talerUri}`,
       );
       return;
+    case TalerUriType.TalerDevExperiment:
+      // FIXME: Implement!
+      logger.warn("not implemented");
+      return;
     default: {
       const error: never = uriType;
       logger.warn(
