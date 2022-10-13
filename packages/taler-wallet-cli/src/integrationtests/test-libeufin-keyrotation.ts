@@ -24,7 +24,7 @@ import {
   launchLibeufinServices,
   LibeufinSandboxApi,
   LibeufinNexusApi,
-} from "../harness/libeufin";
+} from "../harness/libeufin.js";
 
 /**
  * Run basic test with LibEuFin.

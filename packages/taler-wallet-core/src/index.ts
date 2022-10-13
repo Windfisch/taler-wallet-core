@@ -61,6 +61,7 @@ export {
   nativeCryptoR,
   nativeCrypto,
   nullCrypto,
+  TalerCryptoInterface,
 } from "./crypto/cryptoImplementation.js";
 
 export * from "./util/timer.js";

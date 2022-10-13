@@ -28,8 +28,9 @@ import {
   ConfirmPayResultType,
   URL,
 } from "@gnu-taler/taler-util";
-import axios from "axios";
-import { FaultInjectionRequestContext } from "../harness/faultInjection";
+import axiosImp from "axios";
+const axios = axiosImp.default;
+import { FaultInjectionRequestContext } from "../harness/faultInjection.js";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**
@@ -43,12 +44,8 @@ import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 export async function runPayPaidTest(t: GlobalTestState) {
   // Set up test environment
 
-  const {
-    wallet,
-    bank,
-    faultyExchange,
-    faultyMerchant,
-  } = await createFaultInjectedMerchantTestkudosEnvironment(t);
+  const { wallet, bank, faultyExchange, faultyMerchant } =
+    await createFaultInjectedMerchantTestkudosEnvironment(t);
 
   // Withdraw digital cash into the wallet.
 

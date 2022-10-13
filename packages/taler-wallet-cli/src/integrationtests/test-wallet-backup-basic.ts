@@ -24,7 +24,7 @@ import {
   createSimpleTestkudosEnvironment,
   withdrawViaBank,
 } from "../harness/helpers.js";
-import { SyncService } from "../harness/sync";
+import { SyncService } from "../harness/sync.js";
 
 /**
  * Run test for basic, bank-integrated withdrawal.

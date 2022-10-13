@@ -17,15 +17,14 @@
 /**
  * Imports.
  */
-import { GlobalTestState, setupDb } from "../harness/harness.js";
+import { GlobalTestState } from "../harness/harness.js";
 import {
-  SandboxUserBundle,
-  NexusUserBundle,
   launchLibeufinServices,
-  LibeufinSandboxApi,
   LibeufinNexusApi,
   LibeufinNexusService,
-} from "../harness/libeufin";
+  NexusUserBundle,
+  SandboxUserBundle,
+} from "../harness/libeufin.js";
 
 /**
  * Test Nexus scheduling API.  It creates a task, check whether it shows

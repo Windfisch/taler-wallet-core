@@ -27,7 +27,7 @@ import {
   getPayto,
 } from "../harness/harness.js";
 import { createEddsaKeyPair, encodeCrock } from "@gnu-taler/taler-util";
-import { defaultCoinConfig } from "../harness/denomStructures";
+import { defaultCoinConfig } from "../harness/denomStructures.js";
 import {
   BankApi,
   BankAccessApi,

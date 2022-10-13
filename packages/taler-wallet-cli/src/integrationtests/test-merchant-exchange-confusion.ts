@@ -18,34 +18,33 @@
  * Imports.
  */
 import {
+  codecForMerchantOrderStatusUnpaid,
+  ConfirmPayResultType,
+  PreparePayResultType,
+} from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+import axiosImp from "axios";
+const axios = axiosImp.default;
+import { URL } from "url";
+import { defaultCoinConfig } from "../harness/denomStructures.js";
+import {
+  FaultInjectedExchangeService,
+  FaultInjectedMerchantService,
+} from "../harness/faultInjection.js";
+import {
   BankService,
   ExchangeService,
+  getPayto,
   GlobalTestState,
   MerchantPrivateApi,
   MerchantService,
   setupDb,
   WalletCli,
-  getPayto
 } from "../harness/harness.js";
 import {
-  withdrawViaBank,
-  createFaultInjectedMerchantTestkudosEnvironment,
   FaultyMerchantTestEnvironment,
+  withdrawViaBank,
 } from "../harness/helpers.js";
-import {
-  PreparePayResultType,
-  codecForMerchantOrderStatusUnpaid,
-  ConfirmPayResultType,
-} from "@gnu-taler/taler-util";
-import axios from "axios";
-import {
-  FaultInjectedExchangeService,
-  FaultInjectedMerchantService,
-  FaultInjectionRequestContext,
-} from "../harness/faultInjection";
-import { defaultCoinConfig } from "../harness/denomStructures";
-import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { URL } from "url";
 
 /**
  * Run a test case with a simple TESTKUDOS Taler environment, consisting
@@ -115,7 +114,7 @@ export async function createConfusedMerchantTestkudosEnvironment(
   await merchant.addInstance({
     id: "minst1",
     name: "minst1",
-    paytoUris: [getPayto("minst1")]
+    paytoUris: [getPayto("minst1")],
   });
 
   console.log("setup done!");
@@ -141,12 +140,8 @@ export async function createConfusedMerchantTestkudosEnvironment(
 export async function runMerchantExchangeConfusionTest(t: GlobalTestState) {
   // Set up test environment
 
-  const {
-    wallet,
-    bank,
-    faultyExchange,
-    faultyMerchant,
-  } = await createConfusedMerchantTestkudosEnvironment(t);
+  const { wallet, bank, faultyExchange, faultyMerchant } =
+    await createConfusedMerchantTestkudosEnvironment(t);
 
   // Withdraw digital cash into the wallet.
 
@@ -214,7 +209,10 @@ export async function runMerchantExchangeConfusionTest(t: GlobalTestState) {
   const proposalId = preparePayResp.proposalId;
 
   const orderUrlWithHash = new URL(publicOrderStatusUrl);
-  orderUrlWithHash.searchParams.set("h_contract", preparePayResp.contractTermsHash);
+  orderUrlWithHash.searchParams.set(
+    "h_contract",
+    preparePayResp.contractTermsHash,
+  );
 
   console.log("requesting", orderUrlWithHash.href);
 

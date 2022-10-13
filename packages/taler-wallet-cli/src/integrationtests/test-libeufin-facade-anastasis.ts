@@ -24,7 +24,7 @@ import {
   launchLibeufinServices,
   LibeufinNexusApi,
   LibeufinSandboxApi,
-} from "../harness/libeufin";
+} from "../harness/libeufin.js";
 
 /**
  * Testing the Anastasis API, offered by the Anastasis facade.

@@ -27,7 +27,7 @@ import {
   PendingOperationsResponse,
   WalletApiOperation,
 } from "@gnu-taler/taler-wallet-core";
-import { makeNoFeeCoinConfig } from "../harness/denomStructures";
+import { makeNoFeeCoinConfig } from "../harness/denomStructures.js";
 import {
   BankService,
   ExchangeService,

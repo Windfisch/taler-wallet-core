@@ -18,7 +18,7 @@
  * Imports.
  */
 import { GlobalTestState } from "../harness/harness.js";
-import { LibeufinNexusApi, LibeufinNexusService } from "../harness/libeufin";
+import { LibeufinNexusApi, LibeufinNexusService } from "../harness/libeufin.js";
 
 /**
  * Run basic test with LibEuFin.

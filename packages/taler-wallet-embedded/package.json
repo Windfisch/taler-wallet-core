@@ -12,6 +12,7 @@
   "main": "dist/taler-wallet-embedded.js",
   "author": "Florian Dold",
   "license": "GPL-3.0",
+  "type": "module",
   "scripts": {
     "compile": "tsc && rollup -c",
     "pretty": "prettier --write src",

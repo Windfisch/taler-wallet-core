@@ -1,4 +1,3 @@
-
 /**
  * This file defines most of the API calls offered
  * by Nexus and Sandbox.  They don't have state,
@@ -6,8 +5,8 @@
  * the services get actually started and managed.
  */
 
-
-import axios from "axios";
+import axiosImp from "axios";
+const axios = axiosImp.default;
 import { URL } from "@gnu-taler/taler-util";
 
 export interface LibeufinSandboxServiceInterface {
@@ -80,7 +79,6 @@ export interface PostNexusPermissionRequest {
   };
 }
 
-
 export interface CreateAnastasisFacadeRequest {
   name: string;
   connectionName: string;
@@ -135,7 +133,6 @@ export interface SimulateIncomingTransactionRequest {
   amount: string;
 }
 
-
 export interface CreateEbicsBankAccountRequest {
   subscriber: {
     hostID: string;
@@ -171,7 +168,6 @@ function getRandomString(): string {
 }
 
 export namespace LibeufinSandboxApi {
-
   /**
    * Return balance and payto-address of 'accountLabel'.
    * Note: the demobank serving the request is hard-coded
@@ -182,14 +178,17 @@ export namespace LibeufinSandboxApi {
     username: string,
     password: string,
     libeufinSandboxService: LibeufinSandboxServiceInterface,
-    accountLabel: string
+    accountLabel: string,
   ) {
-    let url = new URL(`accounts/${accountLabel}`,libeufinSandboxService.baseUrl); 
+    let url = new URL(
+      `accounts/${accountLabel}`,
+      libeufinSandboxService.baseUrl,
+    );
     return await axios.get(url.href, {
       auth: {
         username: username,
-        password: password 
-      }
+        password: password,
+      },
     });
   }
 
@@ -199,10 +198,10 @@ export namespace LibeufinSandboxApi {
     password: string,
     libeufinSandboxService: LibeufinSandboxServiceInterface,
   ) {
-    let url = new URL("testing/register", libeufinSandboxService.baseUrl); 
+    let url = new URL("testing/register", libeufinSandboxService.baseUrl);
     await axios.post(url.href, {
       username: username,
-      password: password 
+      password: password,
     });
   }
 
@@ -215,17 +214,21 @@ export namespace LibeufinSandboxApi {
   ) {
     // baseUrl should already be pointed to one demobank.
     let url = new URL("ebics/subscribers", libeufinSandboxService.baseUrl);
-    await axios.post(url.href, {
-      userID: req.userID,
-      hostID: req.hostID,
-      partnerID: req.partnerID,
-      demobankAccountLabel: demobankAccountLabel,
-    }, {
-      auth: {
-        username: "admin",
-        password: "secret",
+    await axios.post(
+      url.href,
+      {
+        userID: req.userID,
+        hostID: req.hostID,
+        partnerID: req.partnerID,
+        demobankAccountLabel: demobankAccountLabel,
       },
-    });
+      {
+        auth: {
+          username: "admin",
+          password: "secret",
+        },
+      },
+    );
   }
 
   export async function rotateKeys(
@@ -234,12 +237,16 @@ export namespace LibeufinSandboxApi {
   ) {
     const baseUrl = libeufinSandboxService.baseUrl;
     let url = new URL(`admin/ebics/hosts/${hostID}/rotate-keys`, baseUrl);
-    await axios.post(url.href, {}, {
-      auth: {
-        username: "admin",
-        password: "secret",
+    await axios.post(
+      url.href,
+      {},
+      {
+        auth: {
+          username: "admin",
+          password: "secret",
+        },
       },
-    });
+    );
   }
   export async function createEbicsHost(
     libeufinSandboxService: LibeufinSandboxServiceInterface,
@@ -247,16 +254,19 @@ export namespace LibeufinSandboxApi {
   ) {
     const baseUrl = libeufinSandboxService.baseUrl;
     let url = new URL("admin/ebics/hosts", baseUrl);
-    await axios.post(url.href, {
-      hostID,
-      ebicsVersion: "2.5",
-    },
-    {
-      auth: {
-        username: "admin",
-        password: "secret",
+    await axios.post(
+      url.href,
+      {
+        hostID,
+        ebicsVersion: "2.5",
       },
-    });
+      {
+        auth: {
+          username: "admin",
+          password: "secret",
+        },
+      },
+    );
   }
 
   export async function createBankAccount(
@@ -347,16 +357,19 @@ export namespace LibeufinSandboxApi {
   ): Promise<any> {
     const baseUrl = libeufinSandboxService.baseUrl;
     let url = new URL("admin/payments/camt", baseUrl);
-    return await axios.post(url.href, {
-      bankaccount: accountLabel,
-      type: 53, 
-    },
-    {
-      auth: {
-        username: "admin",
-        password: "secret",
+    return await axios.post(
+      url.href,
+      {
+        bankaccount: accountLabel,
+        type: 53,
       },
-    });
+      {
+        auth: {
+          username: "admin",
+          password: "secret",
+        },
+      },
+    );
   }
 
   export async function getAccountInfoWithBalance(
@@ -364,10 +377,7 @@ export namespace LibeufinSandboxApi {
     accountLabel: string,
   ): Promise<any> {
     const baseUrl = libeufinSandboxService.baseUrl;
-    let url = new URL(
-      `admin/bank-accounts/${accountLabel}`,
-      baseUrl,
-    );
+    let url = new URL(`admin/bank-accounts/${accountLabel}`, baseUrl);
     return await axios.get(url.href, {
       auth: {
         username: "admin",
@@ -439,21 +449,14 @@ export namespace LibeufinNexusApi {
     accountName: string,
   ): Promise<any> {
     const baseUrl = libeufinNexusService.baseUrl;
-    let url = new URL(
-      `bank-accounts/${accountName}`,
-      baseUrl,
-    );
-    return await axios.get(
-      url.href,
-      {
-        auth: {
-          username: "admin",
-          password: "test",
-        },
+    let url = new URL(`bank-accounts/${accountName}`, baseUrl);
+    return await axios.get(url.href, {
+      auth: {
+        username: "admin",
+        password: "test",
       },
-    );
+    });
   }
-
 
   export async function submitInitiatedPayment(
     libeufinNexusService: LibeufinNexusServiceInterface,
@@ -582,7 +585,8 @@ export namespace LibeufinNexusApi {
     password: string = "test",
   ): Promise<any> {
     let url = new URL("history/incoming", anastasisBaseUrl);
-    let response = await axios.get(url.href, { params: params,
+    let response = await axios.get(url.href, {
+      params: params,
       auth: {
         username: username,
         password: password,
@@ -854,4 +858,3 @@ export namespace LibeufinNexusApi {
     );
   }
 }
-

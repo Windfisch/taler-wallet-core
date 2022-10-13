@@ -28,7 +28,7 @@ import {
   getPayto
 } from "../harness/harness.js";
 import { withdrawViaBank } from "../harness/helpers.js";
-import { coin_ct10, coin_u1 } from "../harness/denomStructures";
+import { coin_ct10, coin_u1 } from "../harness/denomStructures.js";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 async function setupTest(

@@ -6,7 +6,7 @@
     "declarationMap": false,
     "target": "ES2017",
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "Node16",
     "sourceMap": true,
     "lib": ["es6"],
     "types": ["node"],

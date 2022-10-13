@@ -23,7 +23,7 @@ import {
   NexusUserBundle,
   launchLibeufinServices,
   LibeufinNexusApi,
-} from "../harness/libeufin";
+} from "../harness/libeufin.js";
 
 /**
  * This test checks how the C52 and C53 coordinate.  It'll test

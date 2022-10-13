@@ -55,7 +55,7 @@ import {
   WalletCoreApiClient,
 } from "@gnu-taler/taler-wallet-core";
 import { deepStrictEqual } from "assert";
-import axios, { AxiosError } from "axios";
+import axiosImp, { AxiosError } from "axios";
 import { ChildProcess, spawn } from "child_process";
 import * as fs from "fs";
 import * as http from "http";
@@ -78,6 +78,8 @@ import {
 } from "./merchantApiTypes.js";
 
 const exec = util.promisify(require("child_process").exec);
+
+const axios = axiosImp.default;
 
 export async function delayMs(ms: number): Promise<void> {
   return new Promise((resolve, reject) => {

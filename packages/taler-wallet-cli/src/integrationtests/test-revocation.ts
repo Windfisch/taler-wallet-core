@@ -18,7 +18,7 @@
  * Imports.
  */
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import { CoinConfig } from "../harness/denomStructures";
+import { CoinConfig } from "../harness/denomStructures.js";
 import {
   GlobalTestState,
   ExchangeService,

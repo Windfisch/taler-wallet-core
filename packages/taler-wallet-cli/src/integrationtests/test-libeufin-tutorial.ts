@@ -22,7 +22,7 @@ import {
   LibeufinNexusService,
   LibeufinSandboxService,
   LibeufinCli,
-} from "../harness/libeufin";
+} from "../harness/libeufin.js";
 
 /**
  * Run basic test with LibEuFin.

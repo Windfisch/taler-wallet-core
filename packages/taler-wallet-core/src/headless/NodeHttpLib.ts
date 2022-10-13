@@ -27,7 +27,7 @@ import {
   HttpResponse,
 } from "../util/http.js";
 import { RequestThrottler } from "@gnu-taler/taler-util";
-import Axios, { AxiosResponse } from "axios";
+import axios, { AxiosResponse } from "axios";
 import { TalerError } from "../errors.js";
 import { Logger, bytesToString } from "@gnu-taler/taler-util";
 import { TalerErrorCode, URL } from "@gnu-taler/taler-util";
@@ -75,7 +75,7 @@ export class NodeHttpLib implements HttpRequestLibrary {
     // FIXME: Use AbortController / etc. to handle cancellation
     let resp: AxiosResponse;
     try {
-      let respPromise = Axios({
+      let respPromise = axios.default({
         method,
         url: url,
         responseType: "arraybuffer",

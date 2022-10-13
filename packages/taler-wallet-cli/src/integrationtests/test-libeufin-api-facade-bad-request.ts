@@ -17,18 +17,18 @@
 /**
  * Imports.
  */
-import axios from "axios";
 import { URL } from "@gnu-taler/taler-util";
+import axiosImp from "axios";
 import { GlobalTestState } from "../harness/harness.js";
 import {
-  SandboxUserBundle,
-  NexusUserBundle,
   launchLibeufinServices,
-  LibeufinNexusApi,
-} from "../harness/libeufin";
+  NexusUserBundle,
+  SandboxUserBundle,
+} from "../harness/libeufin.js";
+
+const axios = axiosImp.default;
 
 export async function runLibeufinApiFacadeBadRequestTest(t: GlobalTestState) {
-
   /**
    * User saltetd "01"
    */
@@ -37,7 +37,7 @@ export async function runLibeufinApiFacadeBadRequestTest(t: GlobalTestState) {
     "http://localhost:5010/ebicsweb",
   );
   const user01sandbox = new SandboxUserBundle("01");
-  
+
   /**
    * Launch Sandbox and Nexus.
    */

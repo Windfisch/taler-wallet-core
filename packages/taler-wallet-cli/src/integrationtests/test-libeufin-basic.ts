@@ -22,7 +22,7 @@ import {
   WalletApiOperation,
   HarnessExchangeBankAccount,
 } from "@gnu-taler/taler-wallet-core";
-import { CoinConfig, defaultCoinConfig } from "../harness/denomStructures";
+import { CoinConfig, defaultCoinConfig } from "../harness/denomStructures.js";
 import {
   DbInfo,
   ExchangeService,

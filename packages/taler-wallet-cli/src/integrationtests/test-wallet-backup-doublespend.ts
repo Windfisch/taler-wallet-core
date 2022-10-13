@@ -29,7 +29,7 @@ import {
   makeTestPayment,
   withdrawViaBank,
 } from "../harness/helpers.js";
-import { SyncService } from "../harness/sync";
+import { SyncService } from "../harness/sync.js";
 
 export async function runWalletBackupDoublespendTest(t: GlobalTestState) {
   // Set up test environment

@@ -23,7 +23,7 @@ import {
   LibeufinNexusApi,
   LibeufinNexusService,
   LibeufinSandboxService,
-} from "../harness/libeufin";
+} from "../harness/libeufin.js";
 
 /**
  * Testing how Nexus reacts when the Sandbox is unreachable.

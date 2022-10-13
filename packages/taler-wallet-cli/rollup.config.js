@@ -31,6 +31,7 @@ export default {
   plugins: [
     replace({
       __VERSION__: `"${printedVersion}"`,
+      preventAssignment: true,
     }),
 
     nodeResolve({

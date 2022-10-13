@@ -22,11 +22,9 @@ import {
   withdrawViaBank,
   createFaultInjectedMerchantTestkudosEnvironment,
 } from "../harness/helpers.js";
-import axios from "axios";
 import {
-  FaultInjectionRequestContext,
   FaultInjectionResponseContext,
-} from "../harness/faultInjection";
+} from "../harness/faultInjection.js";
 import {
   codecForMerchantOrderStatusUnpaid,
   ConfirmPayResultType,
@@ -36,6 +34,8 @@ import {
   URL,
 } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+import axiosImp from "axios";
+const axios = axiosImp.default;
 
 /**
  * Run test for a payment where the merchant has a transient

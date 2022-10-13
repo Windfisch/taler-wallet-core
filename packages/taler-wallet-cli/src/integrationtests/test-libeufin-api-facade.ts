@@ -23,7 +23,7 @@ import {
   NexusUserBundle,
   launchLibeufinServices,
   LibeufinNexusApi,
-} from "../harness/libeufin";
+} from "../harness/libeufin.js";
 
 /**
  * Run basic test with LibEuFin.

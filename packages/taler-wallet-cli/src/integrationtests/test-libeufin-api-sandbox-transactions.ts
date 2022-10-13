@@ -19,16 +19,13 @@
  */
 import { GlobalTestState } from "../harness/harness.js";
 import {
-  NexusUserBundle,
-  LibeufinNexusApi,
-  LibeufinNexusService,
-  LibeufinSandboxService,
   LibeufinSandboxApi,
-  findNexusPayment,
-} from "../harness/libeufin";
+  LibeufinSandboxService,
+} from "../harness/libeufin.js";
 
-export async function runLibeufinApiSandboxTransactionsTest(t: GlobalTestState) {
-
+export async function runLibeufinApiSandboxTransactionsTest(
+  t: GlobalTestState,
+) {
   const sandbox = await LibeufinSandboxService.create(t, {
     httpPort: 5012,
     databaseJdbcUri: `jdbc:sqlite:${t.testDir}/libeufin-sandbox.sqlite3`,
@@ -42,30 +39,31 @@ export async function runLibeufinApiSandboxTransactionsTest(t: GlobalTestState) 
     label: "mock-account",
   });
   await LibeufinSandboxApi.simulateIncomingTransaction(
-    sandbox, 
+    sandbox,
     "mock-account",
     {
-    
       debtorIban: "DE84500105176881385584",
       debtorBic: "BELADEBEXXX",
       debtorName: "mock2",
       subject: "mock subject",
-      amount: "1" // EUR is default.
-    }
-  )
+      amount: "1", // EUR is default.
+    },
+  );
   await LibeufinSandboxApi.simulateIncomingTransaction(
-    sandbox, 
+    sandbox,
     "mock-account",
     {
-    
       debtorIban: "DE84500105176881385584",
       debtorBic: "BELADEBEXXX",
       debtorName: "mock2",
       subject: "mock subject 2",
-      amount: "1.1" // EUR is default.
-    }
-  )
-  let ret = await LibeufinSandboxApi.getAccountInfoWithBalance(sandbox, "mock-account");
+      amount: "1.1", // EUR is default.
+    },
+  );
+  let ret = await LibeufinSandboxApi.getAccountInfoWithBalance(
+    sandbox,
+    "mock-account",
+  );
   t.assertAmountEquals(ret.data.balance, "EUR:2.1");
 }
 runLibeufinApiSandboxTransactionsTest.suites = ["libeufin"];

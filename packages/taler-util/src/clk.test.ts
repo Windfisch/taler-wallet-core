@@ -20,13 +20,6 @@
 
 import test from "ava";
 import { clk } from "./clk.js";
-import {
-  Codec,
-  buildCodecForObject,
-  codecForConstString,
-  codecForString,
-  buildCodecForUnion,
-} from "./codec.js";
 
 test("bla", (t) => {
   const prog = clk.program("foo", {

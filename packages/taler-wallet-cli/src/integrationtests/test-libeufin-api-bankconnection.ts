@@ -18,14 +18,7 @@
  * Imports.
  */
 import { GlobalTestState } from "../harness/harness.js";
-import {
-  NexusUserBundle,
-  LibeufinNexusApi,
-  LibeufinNexusService,
-  LibeufinSandboxService,
-  LibeufinSandboxApi,
-  findNexusPayment,
-} from "../harness/libeufin";
+import { LibeufinNexusApi, LibeufinNexusService } from "../harness/libeufin.js";
 
 /**
  * Run basic test with LibEuFin.

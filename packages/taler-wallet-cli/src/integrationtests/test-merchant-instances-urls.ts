@@ -18,7 +18,8 @@
  * Imports.
  */
 import { Duration } from "@gnu-taler/taler-util";
-import axios from "axios";
+import axiosImp from "axios";
+const axios = axiosImp.default;
 import {
   ExchangeService,
   GlobalTestState,

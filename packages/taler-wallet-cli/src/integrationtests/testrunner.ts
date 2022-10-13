@@ -56,7 +56,7 @@ import { runLibeufinSandboxWireTransferCliTest } from "./test-libeufin-sandbox-w
 import { runLibeufinTutorialTest } from "./test-libeufin-tutorial.js";
 import { runMerchantExchangeConfusionTest } from "./test-merchant-exchange-confusion.js";
 import { runMerchantInstancesTest } from "./test-merchant-instances.js";
-import { runMerchantInstancesDeleteTest } from "./test-merchant-instances-delete";
+import { runMerchantInstancesDeleteTest } from "./test-merchant-instances-delete.js";
 import { runMerchantInstancesUrlsTest } from "./test-merchant-instances-urls.js";
 import { runMerchantLongpollingTest } from "./test-merchant-longpolling.js";
 import { runMerchantRefundApiTest } from "./test-merchant-refund-api.js";

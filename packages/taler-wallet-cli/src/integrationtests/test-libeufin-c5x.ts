@@ -17,14 +17,13 @@
 /**
  * Imports.
  */
-import { GlobalTestState, delayMs } from "../harness/harness.js";
+import { GlobalTestState } from "../harness/harness.js";
 import {
-  SandboxUserBundle,
-  NexusUserBundle,
   launchLibeufinServices,
-  LibeufinSandboxApi,
   LibeufinNexusApi,
-} from "../harness/libeufin";
+  NexusUserBundle,
+  SandboxUserBundle,
+} from "../harness/libeufin.js";
 
 /**
  * This test checks how the C52 and C53 coordinate.  It'll test
@@ -81,7 +80,7 @@ export async function runLibeufinC5xTest(t: GlobalTestState) {
     user01nexus.localAccountName,
   );
   t.assertTrue(nexusTxs.data["transactions"].length == 0);
-  
+
   // Addressing one payment to user 01
   await libeufinServices.libeufinSandbox.makeTransaction(
     user02sandbox.ebicsBankAccount.label, // debit

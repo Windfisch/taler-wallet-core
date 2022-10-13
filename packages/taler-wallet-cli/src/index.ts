@@ -59,7 +59,7 @@ import {
   WalletCoreApiClient,
   walletCoreDebugFlags,
 } from "@gnu-taler/taler-wallet-core";
-import type { TalerCryptoInterface } from "@gnu-taler/taler-wallet-core/src/crypto/cryptoImplementation";
+import type { TalerCryptoInterface } from "@gnu-taler/taler-wallet-core";
 import { TextDecoder, TextEncoder } from "util";
 import { runBench1 } from "./bench1.js";
 import { runBench2 } from "./bench2.js";
@@ -68,7 +68,6 @@ import { runEnv1 } from "./env1.js";
 import { GlobalTestState, runTestWithState } from "./harness/harness.js";
 import { getTestInfo, runTests } from "./integrationtests/testrunner.js";
 import { lintExchangeDeployment } from "./lint.js";
-import { checkLogicInvariant } from "@gnu-taler/taler-wallet-core/src/util/invariants.js";
 // @ts-ignore
 global.TextEncoder = TextEncoder;
 // @ts-ignore

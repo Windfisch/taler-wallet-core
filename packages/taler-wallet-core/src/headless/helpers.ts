@@ -29,7 +29,7 @@ import {
   MemoryBackend,
   shimIndexedDB,
 } from "@gnu-taler/idb-bridge";
-import { AccessStats } from "@gnu-taler/idb-bridge/src/MemoryBackend";
+import { AccessStats } from "@gnu-taler/idb-bridge";
 import { Logger, WalletNotification } from "@gnu-taler/taler-util";
 import * as fs from "fs";
 import { NodeThreadCryptoWorkerFactory } from "../crypto/workers/nodeThreadWorker.js";

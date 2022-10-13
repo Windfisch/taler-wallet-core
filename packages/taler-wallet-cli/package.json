@@ -15,6 +15,7 @@
   "bin": {
     "taler-wallet-cli": "./bin/taler-wallet-cli"
   },
+  "type": "module",
   "scripts": {
     "prepare": "tsc && rollup -c",
     "compile": "tsc && rollup -c",

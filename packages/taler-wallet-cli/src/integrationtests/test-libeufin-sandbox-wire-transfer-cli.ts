@@ -19,16 +19,13 @@
  */
 import { GlobalTestState } from "../harness/harness.js";
 import {
-  NexusUserBundle,
-  LibeufinNexusApi,
-  LibeufinNexusService,
-  LibeufinSandboxService,
   LibeufinSandboxApi,
-  findNexusPayment,
-} from "../harness/libeufin";
+  LibeufinSandboxService,
+} from "../harness/libeufin.js";
 
-export async function runLibeufinSandboxWireTransferCliTest(t: GlobalTestState) {
-
+export async function runLibeufinSandboxWireTransferCliTest(
+  t: GlobalTestState,
+) {
   const sandbox = await LibeufinSandboxService.create(t, {
     httpPort: 5012,
     databaseJdbcUri: `jdbc:sqlite:${t.testDir}/libeufin-sandbox.sqlite3`,
@@ -49,22 +46,40 @@ export async function runLibeufinSandboxWireTransferCliTest(t: GlobalTestState) 
     label: "mock-account-2",
   });
   await sandbox.makeTransaction(
-    "mock-account", "mock-account-2", "EUR:1", "one!"
+    "mock-account",
+    "mock-account-2",
+    "EUR:1",
+    "one!",
   );
   await sandbox.makeTransaction(
-    "mock-account", "mock-account-2", "EUR:1", "two!"
+    "mock-account",
+    "mock-account-2",
+    "EUR:1",
+    "two!",
   );
   await sandbox.makeTransaction(
-    "mock-account", "mock-account-2", "EUR:1", "three!"
+    "mock-account",
+    "mock-account-2",
+    "EUR:1",
+    "three!",
   );
   await sandbox.makeTransaction(
-    "mock-account-2", "mock-account", "EUR:1", "Give one back."
+    "mock-account-2",
+    "mock-account",
+    "EUR:1",
+    "Give one back.",
   );
   await sandbox.makeTransaction(
-    "mock-account-2", "mock-account", "EUR:0.11", "Give fraction back."
+    "mock-account-2",
+    "mock-account",
+    "EUR:0.11",
+    "Give fraction back.",
   );
-  let ret = await LibeufinSandboxApi.getAccountInfoWithBalance(sandbox, "mock-account-2");
-  console.log(ret.data.balance)
-  t.assertTrue(ret.data.balance == "EUR:1.89")
+  let ret = await LibeufinSandboxApi.getAccountInfoWithBalance(
+    sandbox,
+    "mock-account-2",
+  );
+  console.log(ret.data.balance);
+  t.assertTrue(ret.data.balance == "EUR:1.89");
 }
 runLibeufinSandboxWireTransferCliTest.suites = ["libeufin"];

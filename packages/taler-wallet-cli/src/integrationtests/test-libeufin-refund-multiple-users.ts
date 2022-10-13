@@ -24,7 +24,7 @@ import {
   launchLibeufinServices,
   LibeufinSandboxApi,
   LibeufinNexusApi,
-} from "../harness/libeufin";
+} from "../harness/libeufin.js";
 
 /**
  * User 01 expects a refund from user 02, and expectedly user 03

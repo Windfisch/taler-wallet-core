@@ -35,9 +35,9 @@ import {
   FaultInjectedExchangeService,
   FaultInjectionRequestContext,
   FaultInjectionResponseContext,
-} from "../harness/faultInjection";
+} from "../harness/faultInjection.js";
 import { CoreApiResponse } from "@gnu-taler/taler-util";
-import { defaultCoinConfig } from "../harness/denomStructures";
+import { defaultCoinConfig } from "../harness/denomStructures.js";
 import {
   WalletApiOperation,
   BankApi,

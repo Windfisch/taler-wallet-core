@@ -12,8 +12,8 @@
   "author": "Florian Dold",
   "license": "GPL-3.0",
   "scripts": {
-    "prepare": "tsc && rollup -c",
-    "compile": "tsc && rollup -c",
+    "prepare": "tsc",
+    "compile": "tsc",
     "pretty": "prettier --write src",
     "test": "tsc && ava",
     "coverage": "tsc && c8 --src src --all ava",
@@ -29,14 +29,15 @@
     "src/",
     "lib/"
   ],
-  "main": "./dist/taler-wallet-core.js",
-  "browser": {
-    "./dist/taler-wallet-core.js": "./dist/taler-wallet-core.browser.js",
-    "./lib/index.node.js": "./lib/index.browser.js"
-  },
-  "module": "./lib/index.node.js",
   "type": "module",
   "types": "./lib/index.node.d.ts",
+  "exports": {
+    ".": {
+      "browser": "./lib/index.browser.js",
+      "node": "./lib/index.node.js",
+      "default": "./lib/index.js"
+    }
+  },
   "devDependencies": {
     "@ava/typescript": "^3.0.1",
     "@gnu-taler/pogen": "workspace:*",
@@ -54,8 +55,6 @@
     "po2json": "^0.4.5",
     "prettier": "^2.5.1",
     "rimraf": "^3.0.2",
-    "rollup": "^2.79.0",
-    "rollup-plugin-sourcemaps": "^0.6.3",
     "source-map-resolve": "^0.6.0",
     "typedoc": "^0.23.16",
     "typescript": "^4.8.4"

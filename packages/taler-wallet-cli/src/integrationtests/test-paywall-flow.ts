@@ -18,14 +18,18 @@
  * Imports.
  */
 import { GlobalTestState, MerchantPrivateApi } from "../harness/harness.js";
-import { createSimpleTestkudosEnvironment, withdrawViaBank } from "../harness/helpers.js";
+import {
+  createSimpleTestkudosEnvironment,
+  withdrawViaBank,
+} from "../harness/helpers.js";
 import {
   PreparePayResultType,
   codecForMerchantOrderStatusUnpaid,
   ConfirmPayResultType,
   URL,
 } from "@gnu-taler/taler-util";
-import axios from "axios";
+import axiosImp from "axios";
+const axios = axiosImp.default;
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
 /**
@@ -34,12 +38,8 @@ import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 export async function runPaywallFlowTest(t: GlobalTestState) {
   // Set up test environment
 
-  const {
-    wallet,
-    bank,
-    exchange,
-    merchant,
-  } = await createSimpleTestkudosEnvironment(t);
+  const { wallet, bank, exchange, merchant } =
+    await createSimpleTestkudosEnvironment(t);
 
   // Withdraw digital cash into the wallet.
 
