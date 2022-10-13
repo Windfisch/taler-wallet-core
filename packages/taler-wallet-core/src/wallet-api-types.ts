@@ -67,6 +67,7 @@ import {
   RecoveryLoadRequest,
   RetryTransactionRequest,
   SetCoinSuspendedRequest,
+  SetDevModeRequest,
   SetWalletDeviceIdRequest,
   TestPayArgs,
   TestPayResult,
@@ -140,6 +141,7 @@ export enum WalletApiOperation {
   AcceptPeerPullPayment = "acceptPeerPullPayment",
   ClearDb = "clearDb",
   Recycle = "recycle",
+  SetDevMode = "setDevMode",
   ApplyDevExperiment = "applyDevExperiment",
 }
 
@@ -529,6 +531,12 @@ export type ApplyDevExperimentOp = {
   response: {};
 };
 
+export type SetDevModeOp = {
+  op: WalletApiOperation.SetDevMode;
+  request: SetDevModeRequest;
+  response: {};
+};
+
 /**
  * Run a simple integration test on a test deployment
  * of the exchange and merchant.
@@ -676,6 +684,7 @@ export type WalletOperations = {
   [WalletApiOperation.ClearDb]: ClearDbOp;
   [WalletApiOperation.Recycle]: RecycleOp;
   [WalletApiOperation.ApplyDevExperiment]: ApplyDevExperimentOp;
+  [WalletApiOperation.SetDevMode]: SetDevModeOp;
 };
 
 export type RequestType<

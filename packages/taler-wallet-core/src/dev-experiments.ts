@@ -36,6 +36,35 @@ import {
 
 const logger = new Logger("dev-experiments.ts");
 
+export async function setDevMode(
+  ws: InternalWalletState,
+  enabled: boolean,
+): Promise<void> {
+  if (enabled) {
+    logger.info("enabling devmode");
+    await ws.db
+      .mktx((x) => [x.config])
+      .runReadWrite(async (tx) => {
+        tx.config.put({
+          key: ConfigRecordKey.DevMode,
+          value: true,
+        });
+      });
+    await maybeInitDevMode(ws);
+  } else {
+    logger.info("disabling devmode");
+    await ws.db
+      .mktx((x) => [x.config])
+      .runReadWrite(async (tx) => {
+        tx.config.put({
+          key: ConfigRecordKey.DevMode,
+          value: false,
+        });
+      });
+    await leaveDevMode(ws);
+  }
+}
+
 /**
  * Apply a dev experiment to the wallet database / state.
  */
@@ -47,32 +76,6 @@ export async function applyDevExperiment(
   const parsedUri = parseDevExperimentUri(uri);
   if (!parsedUri) {
     logger.info("unable to parse dev experiment URI");
-    return;
-  }
-  if (parsedUri.devExperimentId == "enable-devmode") {
-    logger.info("enabling devmode");
-    await ws.db
-      .mktx((x) => [x.config])
-      .runReadWrite(async (tx) => {
-        tx.config.put({
-          key: ConfigRecordKey.DevMode,
-          value: true,
-        });
-      });
-    await maybeInitDevMode(ws);
-    return;
-  }
-  if (parsedUri.devExperimentId === "disable-devmode") {
-    logger.info("disabling devmode");
-    await ws.db
-      .mktx((x) => [x.config])
-      .runReadWrite(async (tx) => {
-        tx.config.put({
-          key: ConfigRecordKey.DevMode,
-          value: false,
-        });
-      });
-    await leaveDevMode(ws);
     return;
   }
   if (!ws.devModeActive) {

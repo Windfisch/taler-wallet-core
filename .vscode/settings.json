@@ -20,11 +20,6 @@
   "typescript.format.placeOpenBraceOnNewLineForFunctions": false,
   // Defines whether an open brace is put onto a new line for control blocks or not
   "typescript.format.placeOpenBraceOnNewLineForControlBlocks": false,
-  "typescript.preferences.autoImportFileExcludePatterns": [
-    "index.*.js",
-    "index.ts",
-    "index.*.ts"
-  ],
   // Files hidden in the explorer
   "files.exclude": {
     // include the defaults from VS Code

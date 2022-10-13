@@ -1018,6 +1018,30 @@ advancedCli
     });
   });
 
+advancedCli
+  .subcommand("enableDevMode", "enable-dev-mode", {
+    help: "Enable developer mode (dangerous!)",
+  })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      await wallet.client.call(WalletApiOperation.SetDevMode, {
+        devModeEnabled: true,
+      });
+    });
+  });
+
+advancedCli
+  .subcommand("disableDevMode", "disable-dev-mode", {
+    help: "Disable developer mode",
+  })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      await wallet.client.call(WalletApiOperation.SetDevMode, {
+        devModeEnabled: false,
+      });
+    });
+  });
+
 const coinPubListCodec = codecForList(codecForString());
 
 advancedCli

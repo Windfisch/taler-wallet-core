@@ -92,29 +92,21 @@ importers:
 
   packages/idb-bridge:
     specifiers:
-      '@rollup/plugin-commonjs': ^22.0.2
-      '@rollup/plugin-json': ^4.1.0
-      '@rollup/plugin-node-resolve': ^13.3.0
       '@types/node': ^18.8.5
       ava: ^4.3.3
       esm: ^3.2.25
       prettier: ^2.5.1
       rimraf: ^3.0.2
-      rollup: ^2.79.0
       tslib: ^2.4.0
       typescript: ^4.8.4
     dependencies:
       tslib: 2.4.0
     devDependencies:
-      '@rollup/plugin-commonjs': 22.0.2_rollup@2.79.0
-      '@rollup/plugin-json': 4.1.0_rollup@2.79.0
-      '@rollup/plugin-node-resolve': 13.3.0_rollup@2.79.0
       '@types/node': 18.8.5
       ava: 4.3.3
       esm: 3.2.25
       prettier: 2.5.1
       rimraf: 3.0.2
-      rollup: 2.79.0
       typescript: 4.8.4
 
   packages/pogen:
@@ -128,29 +120,6 @@ importers:
       glob: 7.2.0
     devDependencies:
       po2json: 0.4.5
-      typescript: 4.8.4
-
-  packages/taler-config-lib:
-    specifiers:
-      '@types/node': ^18.8.5
-      ava: ^4.3.3
-      big-integer: ^1.6.51
-      esbuild: ^0.14.21
-      jed: ^1.1.1
-      prettier: ^2.5.1
-      rimraf: ^3.0.2
-      tslib: ^2.4.0
-      typescript: ^4.8.4
-    dependencies:
-      big-integer: 1.6.51
-      jed: 1.1.1
-      tslib: 2.4.0
-    devDependencies:
-      '@types/node': 18.8.5
-      ava: 4.3.3
-      esbuild: 0.14.21
-      prettier: 2.5.1
-      rimraf: 3.0.2
       typescript: 4.8.4
 
   packages/taler-util:
@@ -241,8 +210,6 @@ importers:
       po2json: ^0.4.5
       prettier: ^2.5.1
       rimraf: ^3.0.2
-      rollup: ^2.79.0
-      rollup-plugin-sourcemaps: ^0.6.3
       source-map-resolve: ^0.6.0
       source-map-support: ^0.5.21
       tslib: ^2.4.0
@@ -274,8 +241,6 @@ importers:
       po2json: 0.4.5
       prettier: 2.5.1
       rimraf: 3.0.2
-      rollup: 2.79.0
-      rollup-plugin-sourcemaps: 0.6.3_n3h7ooyjwm4phuvjpg4pqirc4i
       source-map-resolve: 0.6.0
       typedoc: 0.23.16_typescript@4.8.4
       typescript: 4.8.4

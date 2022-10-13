@@ -1684,6 +1684,15 @@ export interface AcceptPeerPullPaymentRequest {
   peerPullPaymentIncomingId: string;
 }
 
+export interface SetDevModeRequest {
+  devModeEnabled: boolean;
+}
+
+export const codecForSetDevModeRequest = (): Codec<SetDevModeRequest> =>
+  buildCodecForObject<SetDevModeRequest>()
+    .property("devModeEnabled", codecForBoolean())
+    .build("SetDevModeRequest");
+
 export interface ApplyDevExperimentRequest {
   devExperimentUri: string;
 }

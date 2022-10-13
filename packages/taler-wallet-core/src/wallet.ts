@@ -94,6 +94,7 @@ import {
   URL,
   WalletCoreVersion,
   WalletNotification,
+  codecForSetDevModeRequest,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import {
@@ -111,7 +112,7 @@ import {
   importDb,
   WalletStoresV1,
 } from "./db.js";
-import { applyDevExperiment, maybeInitDevMode } from "./dev-experiments.js";
+import { applyDevExperiment, maybeInitDevMode, setDevMode } from "./dev-experiments.js";
 import { getErrorDetailFromException, TalerError } from "./errors.js";
 import {
   ActiveLongpollInfo,
@@ -1332,6 +1333,11 @@ async function dispatchRequestInternal(
     case "applyDevExperiment": {
       const req = codecForApplyDevExperiment().decode(payload);
       await applyDevExperiment(ws, req.devExperimentUri);
+      return {};
+    }
+    case "setDevMode": {
+      const req = codecForSetDevModeRequest().decode(payload);
+      await setDevMode(ws, req.devModeEnabled);
       return {};
     }
     case "getVersion": {
