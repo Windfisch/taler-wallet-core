@@ -2,25 +2,18 @@
   "name": "@gnu-taler/taler-util",
   "version": "0.9.0-dev.1",
   "description": "Generic helper functionality for GNU Taler",
-  "module": "./lib/index.node.js",
-  "main": "./lib/index.node.js",
-  "browser": {
-    "./lib/index.node.js": "./lib/index.browser.js"
-  },
   "type": "module",
   "types": "./lib/index.node.d.ts",
-  "typesVersions": {
-    "*": {
-      "lib/index.node.d.ts": [
-        "lib/index.node.d.ts"
-      ],
-      "src/*": [],
-      "*": []
-    }
-  },
   "author": "Florian Dold",
   "license": "AGPL-3.0-or-later",
   "private": false,
+  "exports": {
+    ".": {
+      "node": "./lib/index.node.js",
+      "browser": "./lib/index.browser.js",
+      "default": "./lib/index.js"
+    }
+  },
   "scripts": {
     "prepare": "tsc",
     "compile": "tsc",
@@ -38,7 +31,7 @@
   },
   "dependencies": {
     "big-integer": "^1.6.51",
-    "fflate": "^0.7.3",
+    "fflate": "^0.7.4",
     "jed": "^1.1.1",
     "tslib": "^2.4.0"
   },

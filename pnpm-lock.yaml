@@ -19,35 +19,25 @@ importers:
   packages/anastasis-core:
     specifiers:
       '@gnu-taler/taler-util': workspace:*
-      '@rollup/plugin-commonjs': ^22.0.2
-      '@rollup/plugin-json': ^4.1.0
-      '@rollup/plugin-node-resolve': ^13.3.0
       ava: ^4.3.3
       fetch-ponyfill: ^7.1.0
-      fflate: ^0.7.3
+      fflate: ^0.7.4
       hash-wasm: ^4.9.0
       node-fetch: ^3.2.0
       rimraf: ^3.0.2
-      rollup: ^2.79.0
-      rollup-plugin-sourcemaps: ^0.6.3
       source-map-support: ^0.5.21
       tslib: ^2.4.0
       typescript: ^4.8.4
     dependencies:
       '@gnu-taler/taler-util': link:../taler-util
       fetch-ponyfill: 7.1.0
-      fflate: 0.7.3
+      fflate: 0.7.4
       hash-wasm: 4.9.0
       node-fetch: 3.2.0
       tslib: 2.4.0
     devDependencies:
-      '@rollup/plugin-commonjs': 22.0.2_rollup@2.79.0
-      '@rollup/plugin-json': 4.1.0_rollup@2.79.0
-      '@rollup/plugin-node-resolve': 13.3.0_rollup@2.79.0
       ava: 4.3.3
       rimraf: 3.0.2
-      rollup: 2.79.0
-      rollup-plugin-sourcemaps: 0.6.3_rollup@2.79.0
       source-map-support: 0.5.21
       typescript: 4.8.4
 
@@ -169,7 +159,7 @@ importers:
       ava: ^4.3.3
       big-integer: ^1.6.51
       esbuild: ^0.14.21
-      fflate: ^0.7.3
+      fflate: ^0.7.4
       jed: ^1.1.1
       prettier: ^2.5.1
       rimraf: ^3.0.2
@@ -177,7 +167,7 @@ importers:
       typescript: ^4.8.4
     dependencies:
       big-integer: 1.6.51
-      fflate: 0.7.3
+      fflate: 0.7.4
       jed: 1.1.1
       tslib: 2.4.0
     devDependencies:
@@ -246,7 +236,7 @@ importers:
       eslint-plugin-jsx-a11y: ^6.5.1
       eslint-plugin-react: ^7.28.0
       eslint-plugin-react-hooks: ^4.3.0
-      fflate: ^0.7.3
+      fflate: ^0.7.4
       jed: ^1.1.1
       po2json: ^0.4.5
       prettier: ^2.5.1
@@ -264,7 +254,7 @@ importers:
       '@types/node': 18.8.5
       axios: 0.27.2
       big-integer: 1.6.51
-      fflate: 0.7.3
+      fflate: 0.7.4
       source-map-support: 0.5.21
       tslib: 2.4.0
     devDependencies:
@@ -689,7 +679,7 @@ packages:
       '@babel/traverse': 7.17.0
       debug: 4.3.3
       lodash.debounce: 4.0.8
-      resolve: 1.22.0
+      resolve: 1.22.1
       semver: 6.3.0
     transitivePeerDependencies:
       - supports-color
@@ -7472,8 +7462,8 @@ packages:
       - encoding
     dev: false
 
-  /fflate/0.7.3:
-    resolution: {integrity: sha512-0Zz1jOzJWERhyhsimS54VTqOteCNwRtIlh8isdL0AXLo0g7xNTfTL7oWrkmCnPhZGocKIkWHBistBrrpoNH3aw==}
+  /fflate/0.7.4:
+    resolution: {integrity: sha512-5u2V/CDW15QM1XbbgS+0DfPxVB+jUKhWEKuuFuHncbk3tEEqzmoXL+2KyOFuKGqOnmdIy0/davWF1CkuwtibCw==}
     dev: false
 
   /figgy-pudding/3.5.2:
@@ -7804,7 +7794,7 @@ packages:
   /fs-write-stream-atomic/1.0.10:
     resolution: {integrity: sha1-tH31NJPvkR33VzHnCp3tAYnbQMk=}
     dependencies:
-      graceful-fs: 4.2.9
+      graceful-fs: 4.2.10
       iferr: 0.1.5
       imurmurhash: 0.1.4
       readable-stream: 2.3.7
@@ -9151,7 +9141,7 @@ packages:
   /jsonfile/4.0.0:
     resolution: {integrity: sha1-h3Gq4HmbZAdrdmQPygWPnBDjPss=}
     optionalDependencies:
-      graceful-fs: 4.2.9
+      graceful-fs: 4.2.10
     dev: true
 
   /jsonfile/6.1.0:
@@ -9159,7 +9149,7 @@ packages:
     dependencies:
       universalify: 2.0.0
     optionalDependencies:
-      graceful-fs: 4.2.9
+      graceful-fs: 4.2.10
     dev: true
 
   /jsonpointer/5.0.0:
@@ -11793,7 +11783,7 @@ packages:
     resolution: {integrity: sha512-1JU/8q+VgFZyxwrJ+SVIOsh+KywWGpds3NTqikiKpDMZWScmAYyKIgqkO+ARvNWJfXeXR1zxz7aHF4u4CyH6vQ==}
     engines: {node: '>=0.10'}
     dependencies:
-      graceful-fs: 4.2.9
+      graceful-fs: 4.2.10
       micromatch: 3.1.10
       readable-stream: 2.3.7
     transitivePeerDependencies:
@@ -12130,21 +12120,6 @@ packages:
     dependencies:
       '@rollup/pluginutils': 3.1.0_rollup@2.79.0
       '@types/node': 18.8.5
-      rollup: 2.79.0
-      source-map-resolve: 0.6.0
-    dev: true
-
-  /rollup-plugin-sourcemaps/0.6.3_rollup@2.79.0:
-    resolution: {integrity: sha512-paFu+nT1xvuO1tPFYXGe+XnQvg4Hjqv/eIhG8i5EspfYYPBKL57X7iVbfv55aNVASg3dzWvES9dmWsL2KhfByw==}
-    engines: {node: '>=10.0.0'}
-    peerDependencies:
-      '@types/node': '>=10.0.0'
-      rollup: '>=0.31.2'
-    peerDependenciesMeta:
-      '@types/node':
-        optional: true
-    dependencies:
-      '@rollup/pluginutils': 3.1.0_rollup@2.79.0
       rollup: 2.79.0
       source-map-resolve: 0.6.0
     dev: true
