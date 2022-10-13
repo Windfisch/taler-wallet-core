@@ -12,10 +12,10 @@
   },
   "devDependencies": {
     "po2json": "^0.4.5",
-    "typescript": "^4.8.2"
+    "typescript": "^4.8.4"
   },
   "dependencies": {
-    "@types/node": "^17.0.17",
+    "@types/node": "^18.8.5",
     "glob": "^7.2.0"
   }
 }

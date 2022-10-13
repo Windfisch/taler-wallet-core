@@ -52,7 +52,12 @@ interface URLSearchParams {
 
 export interface URLSearchParamsCtor {
   new (
-    init?: string[][] | Record<string, string> | string | URLSearchParams,
+    init?:
+      | URLSearchParams
+      | string
+      | Record<string, string | ReadonlyArray<string>>
+      | Iterable<[string, string]>
+      | ReadonlyArray<[string, string]>,
   ): URLSearchParams;
 }
 

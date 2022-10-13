@@ -1,26 +1,17 @@
 import {
-  DatabaseTransaction,
-  RecordGetResponse,
-  RecordGetRequest,
-  Schema,
   Backend,
+  DatabaseConnection,
+  DatabaseTransaction,
+  IndexProperties,
+  ObjectStoreProperties,
+  RecordGetRequest,
+  RecordGetResponse,
   RecordStoreRequest,
   RecordStoreResponse,
-  DatabaseConnection,
-  ObjectStoreProperties,
-  StoreLevel,
   ResultLevel,
-  IndexProperties,
-} from "./backend-interface";
-import { Listener } from "./util/FakeEventTarget";
-import {
-  DatabaseDump,
-  ObjectStoreDump,
-  IndexRecord,
-  ObjectStoreRecord,
-  MemoryBackendDump,
-} from "./MemoryBackend";
-import { Event, IDBKeyRange } from "./idbtypes";
+  Schema,
+  StoreLevel,
+} from "./backend-interface.js";
 import {
   BridgeIDBCursor,
   BridgeIDBDatabase,
@@ -34,8 +25,21 @@ import {
   BridgeIDBVersionChangeEvent,
   DatabaseList,
   RequestObj,
-} from "./bridge-idb";
+} from "./bridge-idb.js";
+import { Event } from "./idbtypes.js";
+import {
+  DatabaseDump,
+  IndexRecord,
+  MemoryBackendDump,
+  ObjectStoreDump,
+  ObjectStoreRecord,
+} from "./MemoryBackend.js";
+import { Listener } from "./util/FakeEventTarget.js";
 
+export * from "./idbtypes.js";
+export { MemoryBackend } from "./MemoryBackend.js";
+export type { AccessStats } from "./MemoryBackend.js";
+export * from "./util/structuredClone.js";
 export {
   BridgeIDBCursor,
   BridgeIDBDatabase,
@@ -70,9 +74,6 @@ export type {
   Event,
   Listener,
 };
-
-export { MemoryBackend } from "./MemoryBackend";
-export type { AccessStats } from "./MemoryBackend";
 
 // globalThis polyfill, see https://mathiasbynens.be/notes/globalthis
 (function () {
@@ -123,7 +124,3 @@ export function shimIndexedDB(factory: BridgeIDBFactory): void {
   g.IDBTransaction = BridgeIDBTransaction;
   g.IDBVersionChangeEvent = BridgeIDBVersionChangeEvent;
 }
-
-export * from "./idbtypes";
-
-export * from "./util/structuredClone";

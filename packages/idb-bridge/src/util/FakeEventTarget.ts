@@ -21,7 +21,7 @@ import {
   Event,
   EventListenerOrEventListenerObject,
   EventListener,
-} from "../idbtypes";
+} from "../idbtypes.js";
 
 type EventTypeProp =
   | "onabort"

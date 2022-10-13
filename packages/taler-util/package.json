@@ -29,18 +29,18 @@
     "pretty": "prettier --write src"
   },
   "devDependencies": {
-    "@types/node": "^17.0.17",
-    "ava": "^4.0.1",
+    "@types/node": "^18.8.5",
+    "ava": "^4.3.3",
     "esbuild": "^0.14.21",
     "prettier": "^2.5.1",
     "rimraf": "^3.0.2",
-    "typescript": "^4.8.2"
+    "typescript": "^4.8.4"
   },
   "dependencies": {
     "big-integer": "^1.6.51",
     "fflate": "^0.7.3",
     "jed": "^1.1.1",
-    "tslib": "^2.3.1"
+    "tslib": "^2.4.0"
   },
   "ava": {
     "files": [

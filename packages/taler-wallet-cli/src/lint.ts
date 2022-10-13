@@ -495,7 +495,7 @@ export async function lintExchangeDeployment(
   verbose: boolean,
   cont: boolean,
 ): Promise<void> {
-  if (process.getuid() != 0) {
+  if (process.getuid!() != 0) {
     console.log(
       "warning: the exchange deployment linter is designed to be run as root",
     );

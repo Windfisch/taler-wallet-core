@@ -1,22 +1,22 @@
 // B+ tree by David Piepgrass. License: MIT
-import { ISortedMap, ISortedMapF } from "./interfaces";
+import { ISortedMap, ISortedMapF } from "./interfaces.js";
 
 export type {
-  ISetSource,
-  ISetSink,
-  ISet,
-  ISetF,
-  ISortedSetSource,
-  ISortedSet,
-  ISortedSetF,
-  IMapSource,
-  IMapSink,
   IMap,
   IMapF,
-  ISortedMapSource,
+  IMapSink,
+  IMapSource,
+  ISet,
+  ISetF,
+  ISetSink,
+  ISetSource,
   ISortedMap,
   ISortedMapF,
-} from "./interfaces";
+  ISortedMapSource,
+  ISortedSet,
+  ISortedSetF,
+  ISortedSetSource,
+} from "./interfaces.js";
 
 export type EditRangeResult<V, R = number> = {
   value?: V;
@@ -59,15 +59,15 @@ export type DefaultComparable =
   | undefined
   | (number | string)[]
   | {
-    valueOf: () =>
-      | number
-      | string
-      | Date
-      | boolean
-      | null
-      | undefined
-      | (number | string)[];
-  };
+      valueOf: () =>
+        | number
+        | string
+        | Date
+        | boolean
+        | null
+        | undefined
+        | (number | string)[];
+    };
 
 /**
  * Compares DefaultComparables to form a strict partial ordering.
@@ -216,7 +216,8 @@ export function simpleComparator(a: any, b: any): number {
  * @author David Piepgrass
  */
 export default class BTree<K = any, V = any>
-  implements ISortedMapF<K, V>, ISortedMap<K, V> {
+  implements ISortedMapF<K, V>, ISortedMap<K, V>
+{
   private _root: BNode<K, V> = EmptyLeaf as BNode<K, V>;
   _size: number = 0;
   _maxNodeSize: number;
@@ -242,7 +243,7 @@ export default class BTree<K = any, V = any>
   ) {
     this._maxNodeSize = maxNodeSize! >= 4 ? Math.min(maxNodeSize!, 256) : 32;
     this._compare =
-      compare || ((defaultComparator as any) as (a: K, b: K) => number);
+      compare || (defaultComparator as any as (a: K, b: K) => number);
     if (entries) this.setPairs(entries);
   }
 
@@ -463,7 +464,7 @@ export default class BTree<K = any, V = any>
     nu.editAll((k, v, i) => {
       return (tmp.value = callback(v, k, i)), tmp as any;
     });
-    return (nu as any) as BTree<K, R>;
+    return nu as any as BTree<K, R>;
   }
 
   /** Performs a reduce operation like the `reduce` method of `Array`.
@@ -534,7 +535,7 @@ export default class BTree<K = any, V = any>
         : leaf.indexOf(lowestKey, 0, this._compare) - 1;
 
     return iterator<[K, V]>(() => {
-      jump: for (; ;) {
+      jump: for (;;) {
         switch (state) {
           case 0:
             if (++i < leaf.keys.length)
@@ -550,7 +551,7 @@ export default class BTree<K = any, V = any>
             state = 2;
           case 2:
             // Advance to the next leaf node
-            for (var level = -1; ;) {
+            for (var level = -1; ; ) {
               if (++level >= nodequeue.length) {
                 state = 3;
                 continue jump;
@@ -558,9 +559,9 @@ export default class BTree<K = any, V = any>
               if (++nodeindex[level] < nodequeue[level].length) break;
             }
             for (; level > 0; level--) {
-              nodequeue[level - 1] = (nodequeue[level][
-                nodeindex[level]
-              ] as BNodeInternal<K, V>).children;
+              nodequeue[level - 1] = (
+                nodequeue[level][nodeindex[level]] as BNodeInternal<K, V>
+              ).children;
               nodeindex[level - 1] = 0;
             }
             leaf = nodequeue[0][nodeindex[0]];
@@ -606,7 +607,7 @@ export default class BTree<K = any, V = any>
     var state = reusedArray !== undefined ? 1 : 0;
 
     return iterator<[K, V]>(() => {
-      jump: for (; ;) {
+      jump: for (;;) {
         switch (state) {
           case 0:
             if (--i >= 0)
@@ -622,7 +623,7 @@ export default class BTree<K = any, V = any>
             state = 2;
           case 2:
             // Advance to the next leaf node
-            for (var level = -1; ;) {
+            for (var level = -1; ; ) {
               if (++level >= nodequeue.length) {
                 state = 3;
                 continue jump;
@@ -630,9 +631,9 @@ export default class BTree<K = any, V = any>
               if (--nodeindex[level] >= 0) break;
             }
             for (; level > 0; level--) {
-              nodequeue[level - 1] = (nodequeue[level][
-                nodeindex[level]
-              ] as BNodeInternal<K, V>).children;
+              nodequeue[level - 1] = (
+                nodequeue[level][nodeindex[level]] as BNodeInternal<K, V>
+              ).children;
               nodeindex[level - 1] = nodequeue[level - 1].length - 1;
             }
             leaf = nodequeue[0][nodeindex[0]];
@@ -763,7 +764,7 @@ export default class BTree<K = any, V = any>
                 thisLeaf.values[thisLevelIndices[thisLevelIndices.length - 1]];
               const valOther =
                 otherLeaf.values[
-                otherLevelIndices[otherLevelIndices.length - 1]
+                  otherLevelIndices[otherLevelIndices.length - 1]
                 ];
               if (!Object.is(valThis, valOther)) {
                 const result = different(
@@ -782,7 +783,7 @@ export default class BTree<K = any, V = any>
             if (otherLeaf && onlyOther) {
               const otherVal =
                 otherLeaf.values[
-                otherLevelIndices[otherLevelIndices.length - 1]
+                  otherLevelIndices[otherLevelIndices.length - 1]
                 ];
               const result = onlyOther(otherCursor.currentKey, otherVal);
               if (result && result.break) return result.break;
@@ -918,9 +919,10 @@ export default class BTree<K = any, V = any>
                 levelIndexWalkBack + 1,
               );
             // Move to new internal node
-            cursor.currentKey = internalSpine[levelIndexWalkBack][
-              --levelIndices[levelIndexWalkBack]
-            ].maxKey();
+            cursor.currentKey =
+              internalSpine[levelIndexWalkBack][
+                --levelIndices[levelIndexWalkBack]
+              ].maxKey();
             return true;
           }
           levelIndexWalkBack--;
@@ -930,7 +932,7 @@ export default class BTree<K = any, V = any>
       } else {
         // Move to new leaf value
         const valueIndex = --levelIndices[levelsLength - 1];
-        cursor.currentKey = ((leaf as unknown) as BNode<K, V>).keys[valueIndex];
+        cursor.currentKey = (leaf as unknown as BNode<K, V>).keys[valueIndex];
         return true;
       }
     } else {
@@ -1119,7 +1121,7 @@ export default class BTree<K = any, V = any>
    * avoid creating a new array on every iteration.
    */
   nextHigherPair(key: K | undefined, reusedArray?: [K, V]): [K, V] | undefined {
-    reusedArray = reusedArray || (([] as unknown) as [K, V]);
+    reusedArray = reusedArray || ([] as unknown as [K, V]);
     if (key === undefined) {
       return this._root.minPair(reusedArray);
     }
@@ -1146,7 +1148,7 @@ export default class BTree<K = any, V = any>
    *        avoid creating a new array each time you call this method.
    */
   nextLowerPair(key: K | undefined, reusedArray?: [K, V]): [K, V] | undefined {
-    reusedArray = reusedArray || (([] as unknown) as [K, V]);
+    reusedArray = reusedArray || ([] as unknown as [K, V]);
     if (key === undefined) {
       return this._root.maxPair(reusedArray);
     }
@@ -1178,7 +1180,7 @@ export default class BTree<K = any, V = any>
       key,
       this._compare,
       true,
-      reusedArray || (([] as unknown) as [K, V]),
+      reusedArray || ([] as unknown as [K, V]),
     );
   }
 
@@ -1194,7 +1196,7 @@ export default class BTree<K = any, V = any>
       key,
       this._compare,
       true,
-      reusedArray || (([] as unknown) as [K, V]),
+      reusedArray || ([] as unknown as [K, V]),
     );
   }
 
@@ -1345,7 +1347,7 @@ export default class BTree<K = any, V = any>
         this._root = root =
           root.keys.length === 0
             ? EmptyLeaf
-            : ((root as any) as BNodeInternal<K, V>).children[0];
+            : (root as any as BNodeInternal<K, V>).children[0];
     }
   }
 
@@ -1390,7 +1392,7 @@ export default class BTree<K = any, V = any>
       height++;
       node = node.isLeaf
         ? undefined
-        : ((node as unknown) as BNodeInternal<K, V>).children[0];
+        : (node as unknown as BNodeInternal<K, V>).children[0];
     }
     return height;
   }
@@ -1405,9 +1407,12 @@ export default class BTree<K = any, V = any>
     var t = this as any;
     // Note: all other mutators ultimately call set() or editRange()
     //       so we don't need to override those others.
-    t.clear = t.set = t.editRange = function () {
-      throw new Error("Attempted to modify a frozen BTree");
-    };
+    t.clear =
+      t.set =
+      t.editRange =
+        function () {
+          throw new Error("Attempted to modify a frozen BTree");
+        };
   }
 
   /** Ensures mutations are allowed, reversing the effect of freeze(). */
@@ -2191,7 +2196,7 @@ class BNodeInternal<K, V> extends BNode<K, V> {
     this.keys.push.apply(this.keys, rhs.keys);
     this.children.push.apply(
       this.children,
-      ((rhs as any) as BNodeInternal<K, V>).children,
+      (rhs as any as BNodeInternal<K, V>).children,
     );
     // If our children are themselves almost empty due to a mass-delete,
     // they may need to be merged too (but only the oldLength-1 and its
