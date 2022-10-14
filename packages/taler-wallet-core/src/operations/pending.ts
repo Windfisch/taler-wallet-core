@@ -106,14 +106,15 @@ async function gatherRefreshPending(
   now: AbsoluteTime,
   resp: PendingOperationsResponse,
 ): Promise<void> {
+  const keyRange = GlobalIDB.KeyRange.bound(
+    OperationStatusRange.ACTIVE_START,
+    OperationStatusRange.ACTIVE_END,
+  );
   const refreshGroups = await tx.refreshGroups.indexes.byStatus.getAll(
-    OperationStatus.Pending,
+    keyRange,
   );
   for (const r of refreshGroups) {
     if (r.timestampFinished) {
-      return;
-    }
-    if (r.frozen) {
       return;
     }
     const opId = RetryTags.forRefresh(r);

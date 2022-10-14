@@ -70,6 +70,7 @@ import {
   DenominationRecord,
   DenominationVerificationStatus,
   PlanchetRecord,
+  PlanchetStatus,
   WalletStoresV1,
   WgInfo,
   WithdrawalGroupRecord,
@@ -430,7 +431,7 @@ async function processPlanchetGenerate(
     coinPub: r.coinPub,
     denomPubHash: r.denomPubHash,
     reservePub: r.reservePub,
-    withdrawalDone: false,
+    planchetStatus: PlanchetStatus.Pending,
     withdrawSig: r.withdrawSig,
     withdrawalGroupId: withdrawalGroup.withdrawalGroupId,
     maxAge: withdrawalGroup.restrictAge ?? AgeRestriction.AGE_UNRESTRICTED,
@@ -481,7 +482,7 @@ async function processPlanchetExchangeRequest(
       if (!planchet) {
         return;
       }
-      if (planchet.withdrawalDone) {
+      if (planchet.planchetStatus === PlanchetStatus.WithdrawalDone) {
         logger.warn("processPlanchet: planchet already withdrawn");
         return;
       }
@@ -593,7 +594,7 @@ async function processPlanchetExchangeBatchRequest(
         if (!planchet) {
           return;
         }
-        if (planchet.withdrawalDone) {
+        if (planchet.planchetStatus === PlanchetStatus.WithdrawalDone) {
           logger.warn("processPlanchet: planchet already withdrawn");
           return;
         }
@@ -652,7 +653,7 @@ async function processPlanchetVerifyAndStoreCoin(
       if (!planchet) {
         return;
       }
-      if (planchet.withdrawalDone) {
+      if (planchet.planchetStatus === PlanchetStatus.WithdrawalDone) {
         logger.warn("processPlanchet: planchet already withdrawn");
         return;
       }
@@ -767,10 +768,10 @@ async function processPlanchetVerifyAndStoreCoin(
     ])
     .runReadWrite(async (tx) => {
       const p = await tx.planchets.get(planchetCoinPub);
-      if (!p || p.withdrawalDone) {
+      if (!p || p.planchetStatus === PlanchetStatus.WithdrawalDone) {
         return false;
       }
-      p.withdrawalDone = true;
+      p.planchetStatus = PlanchetStatus.WithdrawalDone;
       await tx.planchets.put(p);
       await makeCoinAvailable(ws, tx, coin);
       return true;
@@ -1140,7 +1141,7 @@ export async function processWithdrawalGroup(
       await tx.planchets.indexes.byGroup
         .iter(withdrawalGroupId)
         .forEach((x) => {
-          if (x.withdrawalDone) {
+          if (x.planchetStatus === PlanchetStatus.WithdrawalDone) {
             numFinished++;
           }
           if (x.lastError) {
@@ -1258,10 +1259,10 @@ export async function getExchangeWithdrawalInfo(
     });
 
   let versionMatch;
-  if (exchangeDetails.protocolVersion) {
+  if (exchangeDetails.protocolVersionRange) {
     versionMatch = LibtoolVersion.compare(
       WALLET_EXCHANGE_PROTOCOL_VERSION,
-      exchangeDetails.protocolVersion,
+      exchangeDetails.protocolVersionRange,
     );
 
     if (
@@ -1271,7 +1272,7 @@ export async function getExchangeWithdrawalInfo(
     ) {
       logger.warn(
         `wallet's support for exchange protocol version ${WALLET_EXCHANGE_PROTOCOL_VERSION} might be outdated ` +
-          `(exchange has ${exchangeDetails.protocolVersion}), checking for updates`,
+          `(exchange has ${exchangeDetails.protocolVersionRange}), checking for updates`,
       );
     }
   }
@@ -1296,7 +1297,7 @@ export async function getExchangeWithdrawalInfo(
     earliestDepositExpiration,
     exchangePaytoUris: paytoUris,
     exchangeWireAccounts,
-    exchangeVersion: exchangeDetails.protocolVersion || "unknown",
+    exchangeVersion: exchangeDetails.protocolVersionRange || "unknown",
     isAudited,
     isTrusted,
     numOfferedDenoms: possibleDenoms.length,

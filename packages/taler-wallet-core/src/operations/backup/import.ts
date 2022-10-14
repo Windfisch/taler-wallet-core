@@ -57,6 +57,7 @@ import {
   WgInfo,
   WithdrawalGroupStatus,
   WithdrawalRecordType,
+  RefreshOperationStatus,
 } from "../../db.js";
 import { InternalWalletState } from "../../internal-wallet-state.js";
 import { assertUnreachable } from "../../util/assertUnreachable.js";
@@ -403,7 +404,7 @@ export async function importBackup(
               denomination_keys: x.denomination_keys,
             })),
             masterPublicKey: backupExchangeDetails.master_public_key,
-            protocolVersion: backupExchangeDetails.protocol_version,
+            protocolVersionRange: backupExchangeDetails.protocol_version,
             reserveClosingDelay: backupExchangeDetails.reserve_closing_delay,
             globalFees: backupExchangeDetails.global_fees.map((x) => ({
               accountFee: Amounts.parseOrThrow(x.accountFee),
@@ -773,8 +774,8 @@ export async function importBackup(
                 : RefreshCoinStatus.Pending,
             ),
             operationStatus: backupRefreshGroup.timestamp_finish
-              ? OperationStatus.Finished
-              : OperationStatus.Pending,
+              ? RefreshOperationStatus.Finished
+              : RefreshOperationStatus.Pending,
             inputPerCoin: backupRefreshGroup.old_coins.map((x) =>
               Amounts.parseOrThrow(x.input_amount),
             ),

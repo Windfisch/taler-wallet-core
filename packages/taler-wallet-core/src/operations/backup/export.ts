@@ -336,7 +336,7 @@ export async function exportBackup(
           })),
           master_public_key: ex.masterPublicKey,
           currency: ex.currency,
-          protocol_version: ex.protocolVersion,
+          protocol_version: ex.protocolVersionRange,
           wire_fees: wireFees,
           signing_keys: ex.signingKeys.map((x) => ({
             key: x.key,

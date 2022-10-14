@@ -641,7 +641,7 @@ export async function updateExchangeFromUrlHandler(
         auditors: keysInfo.auditors,
         currency: keysInfo.currency,
         masterPublicKey: keysInfo.masterPublicKey,
-        protocolVersion: keysInfo.protocolVersion,
+        protocolVersionRange: keysInfo.protocolVersion,
         signingKeys: keysInfo.signingKeys,
         reserveClosingDelay: keysInfo.reserveClosingDelay,
         globalFees,

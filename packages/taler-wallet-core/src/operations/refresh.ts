@@ -60,6 +60,7 @@ import {
   OperationStatus,
   RefreshCoinStatus,
   RefreshGroupRecord,
+  RefreshOperationStatus,
   WalletStoresV1,
 } from "../db.js";
 import { TalerError } from "../errors.js";
@@ -139,10 +140,11 @@ function updateGroupStatus(rg: RefreshGroupRecord): void {
   );
   if (allDone) {
     if (anyFrozen) {
-      rg.frozen = true;
+      rg.timestampFinished = AbsoluteTime.toTimestamp(AbsoluteTime.now());
+      rg.operationStatus = RefreshOperationStatus.FinishedWithError;
     } else {
       rg.timestampFinished = AbsoluteTime.toTimestamp(AbsoluteTime.now());
-      rg.operationStatus = OperationStatus.Finished;
+      rg.operationStatus = RefreshOperationStatus.Finished;
     }
   }
 }
@@ -917,7 +919,7 @@ export async function createRefreshGroup(
   }
 
   const refreshGroup: RefreshGroupRecord = {
-    operationStatus: OperationStatus.Pending,
+    operationStatus: RefreshOperationStatus.Pending,
     timestampFinished: undefined,
     statusPerCoin: oldCoinPubs.map(() => RefreshCoinStatus.Pending),
     lastErrorPerCoin: {},
@@ -933,7 +935,7 @@ export async function createRefreshGroup(
   if (oldCoinPubs.length == 0) {
     logger.warn("created refresh group with zero coins");
     refreshGroup.timestampFinished = TalerProtocolTimestamp.now();
-    refreshGroup.operationStatus = OperationStatus.Finished;
+    refreshGroup.operationStatus = RefreshOperationStatus.Finished;
   }
 
   await tx.refreshGroups.put(refreshGroup);

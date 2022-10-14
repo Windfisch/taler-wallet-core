@@ -671,6 +671,7 @@ export interface ExchangeAccount {
 }
 
 export type WireFeeMap = { [wireMethod: string]: WireFee[] };
+
 export interface WireInfo {
   feesForType: WireFeeMap;
   accounts: ExchangeAccount[];
@@ -942,7 +943,7 @@ export interface ManualWithdrawalDetails {
 /**
  * Selected denominations withn some extra info.
  */
- export interface DenomSelectionState {
+export interface DenomSelectionState {
   totalCoinValue: AmountJson;
   totalWithdrawCost: AmountJson;
   selectedDenoms: {
@@ -956,7 +957,7 @@ export interface ManualWithdrawalDetails {
  *
  * Sent to the wallet frontend to be rendered and shown to the user.
  */
- export interface ExchangeWithdrawalDetails {
+export interface ExchangeWithdrawalDetails {
   exchangePaytoUris: string[];
 
   /**

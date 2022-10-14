@@ -101,11 +101,21 @@ export const CURRENT_DB_CONFIG_KEY = "currentMainDbName";
  */
 export const WALLET_DB_MINOR_VERSION = 2;
 
+/**
+ * Ranges for operation status fields.
+ *
+ * All individual enums should make sure that the values they
+ * defined are in the right range.
+ */
 export enum OperationStatusRange {
+  // Operations that need to be actively processed.
   ACTIVE_START = 10,
   ACTIVE_END = 29,
+  // Operations that need user input, but nothing can be done
+  // automatically.
   USER_ATTENTION_START = 30,
   USER_ATTENTION_END = 49,
+  // Operations that don't need any attention or processing.
   DORMANT_START = 50,
   DORMANT_END = 69,
 }
@@ -150,7 +160,7 @@ export enum WithdrawalGroupStatus {
 }
 
 /**
- * Extra info about a reserve that is used
+ * Extra info about a withdrawal that is used
  * with a bank-integrated withdrawal.
  */
 export interface ReserveBankInfo {
@@ -397,13 +407,9 @@ export namespace DenominationRecord {
 }
 
 /**
- * Information about one of the exchange's bank accounts.
+ * Exchange details for a particular
+ * (exchangeBaseUrl, masterPublicKey, currency) tuple.
  */
-export interface ExchangeBankAccount {
-  payto_uri: string;
-  master_sig: string;
-}
-
 export interface ExchangeDetailsRecord {
   /**
    * Master public key of the exchange.
@@ -425,7 +431,7 @@ export interface ExchangeDetailsRecord {
   /**
    * Last observed protocol version.
    */
-  protocolVersion: string;
+  protocolVersionRange: string;
 
   reserveClosingDelay: TalerProtocolDuration;
 
@@ -513,6 +519,10 @@ export interface ExchangeRecord {
 
   /**
    * Pointer to the current exchange details.
+   *
+   * Should usually not change.  Only changes when the
+   * exchange advertises a different master public key and/or
+   * currency.
    */
   detailsPointer: ExchangeDetailsPointer | undefined;
 
@@ -554,6 +564,11 @@ export interface ExchangeRecord {
   currentMergeReserveInfo?: MergeReserveInfo;
 }
 
+export enum PlanchetStatus {
+  Pending = 10 /* ACTIVE_START */,
+  WithdrawalDone = 50 /* DORMANT_START */,
+}
+
 /**
  * A coin that isn't yet signed by an exchange.
  */
@@ -579,10 +594,7 @@ export interface PlanchetRecord {
    */
   coinIdx: number;
 
-  /**
-   * FIXME: make this an enum!
-   */
-  withdrawalDone: boolean;
+  planchetStatus: PlanchetStatus;
 
   lastError: TalerErrorDetail | undefined;
 
@@ -743,12 +755,21 @@ export interface CoinRecord {
    */
   allocation: CoinAllocation | undefined;
 
+  /**
+   * Maximum age of purchases that can be made with this coin.
+   *
+   * FIXME: Not used for indexing, isn't it redundant?
+   */
   maxAge: number;
 
   ageCommitmentProof: AgeCommitmentProof | undefined;
 }
 
+/**
+ * Coin allocation, i.e. what a coin has been used for.
+ */
 export interface CoinAllocation {
+  // FIXME: Specify format!
   id: string;
   amount: AmountString;
 }
@@ -839,8 +860,14 @@ export enum OperationStatus {
   Pending = OperationStatusRange.ACTIVE_START,
 }
 
+export enum RefreshOperationStatus {
+  Pending = 10 /* ACTIVE_START */,
+  Finished = 50 /* DORMANT_START */,
+  FinishedWithError = 51 /* DORMANT_START + 1 */,
+}
+
 export interface RefreshGroupRecord {
-  operationStatus: OperationStatus;
+  operationStatus: RefreshOperationStatus;
 
   // FIXME: Put this into a different object store?
   lastErrorPerCoin: { [coinIndex: number]: TalerErrorDetail };
@@ -880,13 +907,6 @@ export interface RefreshGroupRecord {
    * Timestamp when the refresh session finished.
    */
   timestampFinished: TalerProtocolTimestamp | undefined;
-
-  /**
-   * No coins are pending, but at least one is frozen.
-   *
-   * FIXME: What does this mean?
-   */
-  frozen?: boolean;
 }
 
 /**
@@ -1128,7 +1148,8 @@ export interface PurchasePayInfo {
  * Record that stores status information about one purchase, starting from when
  * the customer accepts a proposal.  Includes refund status if applicable.
  *
- * FIXME: Should have a single "status" field.
+ * Key: {@link proposalId}
+ * Operation status: {@link purchaseStatus}
  */
 export interface PurchaseRecord {
   /**
