@@ -68,6 +68,7 @@ import { BackupRecovery } from "./backupTypes.js";
 import { PaytoUri } from "./payto.js";
 import { TalerErrorCode } from "./taler-error-codes.js";
 import { AgeCommitmentProof } from "./talerCrypto.js";
+import { VersionMatchResult } from "./libtool-version.js";
 
 /**
  * Response for the create reserve request to the wallet.
@@ -692,6 +693,7 @@ export interface ExchangeGlobalFees {
 
   signature: string;
 }
+
 const codecForExchangeAccount = (): Codec<ExchangeAccount> =>
   buildCodecForObject<ExchangeAccount>()
     .property("payto_uri", codecForString())
@@ -929,6 +931,110 @@ export interface ManualWithdrawalDetails {
    * Ways to pay the exchange.
    */
   paytoUris: string[];
+
+  /**
+   * If the exchange supports age-restricted coins it will return
+   * the array of ages.
+   */
+  ageRestrictionOptions?: number[];
+}
+
+/**
+ * Selected denominations withn some extra info.
+ */
+ export interface DenomSelectionState {
+  totalCoinValue: AmountJson;
+  totalWithdrawCost: AmountJson;
+  selectedDenoms: {
+    denomPubHash: string;
+    count: number;
+  }[];
+}
+
+/**
+ * Information about what will happen doing a withdrawal.
+ *
+ * Sent to the wallet frontend to be rendered and shown to the user.
+ */
+ export interface ExchangeWithdrawalDetails {
+  exchangePaytoUris: string[];
+
+  /**
+   * Filtered wire info to send to the bank.
+   */
+  exchangeWireAccounts: string[];
+
+  /**
+   * Selected denominations for withdraw.
+   */
+  selectedDenoms: DenomSelectionState;
+
+  /**
+   * Does the wallet know about an auditor for
+   * the exchange that the reserve.
+   */
+  isAudited: boolean;
+
+  /**
+   * Did the user already accept the current terms of service for the exchange?
+   */
+  termsOfServiceAccepted: boolean;
+
+  /**
+   * The exchange is trusted directly.
+   */
+  isTrusted: boolean;
+
+  /**
+   * The earliest deposit expiration of the selected coins.
+   */
+  earliestDepositExpiration: TalerProtocolTimestamp;
+
+  /**
+   * Number of currently offered denominations.
+   */
+  numOfferedDenoms: number;
+
+  /**
+   * Public keys of trusted auditors for the currency we're withdrawing.
+   */
+  trustedAuditorPubs: string[];
+
+  /**
+   * Result of checking the wallet's version
+   * against the exchange's version.
+   *
+   * Older exchanges don't return version information.
+   */
+  versionMatch: VersionMatchResult | undefined;
+
+  /**
+   * Libtool-style version string for the exchange or "unknown"
+   * for older exchanges.
+   */
+  exchangeVersion: string;
+
+  /**
+   * Libtool-style version string for the wallet.
+   */
+  walletVersion: string;
+
+  /**
+   * Amount that will be subtracted from the reserve's balance.
+   */
+  withdrawalAmountRaw: AmountString;
+
+  /**
+   * Amount that will actually be added to the wallet's balance.
+   */
+  withdrawalAmountEffective: AmountString;
+
+  /**
+   * If the exchange supports age-restricted coins it will return
+   * the array of ages.
+   *
+   */
+  ageRestrictionOptions?: number[];
 }
 
 export interface GetExchangeTosResult {
@@ -1141,24 +1247,6 @@ export const codecForForgetKnownBankAccounts =
     buildCodecForObject<ForgetKnownBankAccountsRequest>()
       .property("payto", codecForString())
       .build("ForgetKnownBankAccountsRequest");
-
-export interface GetExchangeWithdrawalInfo {
-  exchangeBaseUrl: string;
-  amount: AmountJson;
-  tosAcceptedFormat?: string[];
-  ageRestricted?: number;
-}
-
-export const codecForGetExchangeWithdrawalInfo =
-  (): Codec<GetExchangeWithdrawalInfo> =>
-    buildCodecForObject<GetExchangeWithdrawalInfo>()
-      .property("exchangeBaseUrl", codecForString())
-      .property("amount", codecForAmountJson())
-      .property(
-        "tosAcceptedFormat",
-        codecOptional(codecForList(codecForString())),
-      )
-      .build("GetExchangeWithdrawalInfo");
 
 export interface AbortProposalRequest {
   proposalId: string;

@@ -22,14 +22,11 @@
 import {
   Amounts,
   ExchangeFullDetails,
-  ExchangeListItem,
   GetExchangeTosResult,
 } from "@gnu-taler/taler-util";
-import { ExchangeWithdrawDetails } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
 import { mountHook } from "../../test-utils.js";
 import { useComponentStateFromURI } from "./state.js";
-import * as wxApi from "../../wxApi.js";
 
 const exchanges: ExchangeFullDetails[] = [
   {
@@ -162,20 +159,11 @@ describe("Withdraw CTA states", () => {
           },
           {
             listExchanges: async () => ({ exchanges }),
-            getWithdrawalDetailsForUri: async ({
-              talerWithdrawUri,
-            }: any): Promise<ExchangeWithdrawDetails> =>
-              ({
-                amount: "ARS:2",
-                possibleExchanges: exchanges,
-                defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl,
-              } as Partial<ExchangeWithdrawDetails> as ExchangeWithdrawDetails),
-            getExchangeWithdrawalInfo:
-              async (): Promise<ExchangeWithdrawDetails> =>
-                ({
-                  withdrawalAmountRaw: "ARS:2",
-                  withdrawalAmountEffective: "ARS:2",
-                } as any),
+            getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
+              amount: "ARS:2",
+              possibleExchanges: exchanges,
+              defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl,
+            }),
             getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
               contentType: "text",
               content: "just accept",
@@ -255,19 +243,12 @@ describe("Withdraw CTA states", () => {
             },
           },
           {
-            listExchanges: async () => listExchangesResponse,
-            getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) =>
-              ({
-                amount: "ARS:2",
-                possibleExchanges: exchanges,
-                defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl,
-              } as Partial<ExchangeWithdrawDetails> as ExchangeWithdrawDetails),
-            getExchangeWithdrawalInfo:
-              async (): Promise<ExchangeWithdrawDetails> =>
-                ({
-                  withdrawalAmountRaw: "ARS:2",
-                  withdrawalAmountEffective: "ARS:2",
-                } as any),
+            listExchanges: async () => ({ exchanges }),
+            getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
+              amount: "ARS:2",
+              possibleExchanges: exchanges,
+              defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl,
+            }),
             getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
               contentType: "text",
               content: "just accept",

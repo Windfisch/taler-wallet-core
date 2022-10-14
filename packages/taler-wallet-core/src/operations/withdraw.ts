@@ -37,10 +37,12 @@ import {
   codecForWithdrawOperationStatusResponse,
   codecForWithdrawResponse,
   DenomKeyType,
+  DenomSelectionState,
   Duration,
   durationFromSpec,
   encodeCrock,
   ExchangeListItem,
+  ExchangeWithdrawalDetails,
   ExchangeWithdrawRequest,
   ForcedDenomSel,
   getRandomBytes,
@@ -67,9 +69,6 @@ import {
   CoinStatus,
   DenominationRecord,
   DenominationVerificationStatus,
-  DenomSelectionState,
-  ExchangeDetailsRecord,
-  ExchangeRecord,
   PlanchetRecord,
   WalletStoresV1,
   WgInfo,
@@ -125,96 +124,6 @@ import {
  * Logger for this file.
  */
 const logger = new Logger("operations/withdraw.ts");
-
-/**
- * Information about what will happen when creating a reserve.
- *
- * Sent to the wallet frontend to be rendered and shown to the user.
- */
-export interface ExchangeWithdrawDetails {
-  /**
-   * Exchange that the reserve will be created at.
-   *
-   * FIXME: Should be its own record.
-   */
-  exchangeInfo: ExchangeRecord;
-
-  exchangeDetails: ExchangeDetailsRecord;
-
-  /**
-   * Filtered wire info to send to the bank.
-   */
-  exchangeWireAccounts: string[];
-
-  /**
-   * Selected denominations for withdraw.
-   */
-  selectedDenoms: DenomSelectionState;
-
-  /**
-   * Does the wallet know about an auditor for
-   * the exchange that the reserve.
-   */
-  isAudited: boolean;
-
-  /**
-   * Did the user already accept the current terms of service for the exchange?
-   */
-  termsOfServiceAccepted: boolean;
-
-  /**
-   * The exchange is trusted directly.
-   */
-  isTrusted: boolean;
-
-  /**
-   * The earliest deposit expiration of the selected coins.
-   */
-  earliestDepositExpiration: TalerProtocolTimestamp;
-
-  /**
-   * Number of currently offered denominations.
-   */
-  numOfferedDenoms: number;
-
-  /**
-   * Public keys of trusted auditors for the currency we're withdrawing.
-   */
-  trustedAuditorPubs: string[];
-
-  /**
-   * Result of checking the wallet's version
-   * against the exchange's version.
-   *
-   * Older exchanges don't return version information.
-   */
-  versionMatch: VersionMatchResult | undefined;
-
-  /**
-   * Libtool-style version string for the exchange or "unknown"
-   * for older exchanges.
-   */
-  exchangeVersion: string;
-
-  /**
-   * Libtool-style version string for the wallet.
-   */
-  walletVersion: string;
-
-  withdrawalAmountRaw: AmountString;
-
-  /**
-   * Amount that will actually be added to the wallet's balance.
-   */
-  withdrawalAmountEffective: AmountString;
-
-  /**
-   * If the exchange supports age-restricted coins it will return
-   * the array of ages.
-   *
-   */
-  ageRestrictionOptions?: number[];
-}
 
 /**
  * Check if a denom is withdrawable based on the expiration time,
@@ -1280,7 +1189,7 @@ export async function getExchangeWithdrawalInfo(
   exchangeBaseUrl: string,
   instructedAmount: AmountJson,
   ageRestricted: number | undefined,
-): Promise<ExchangeWithdrawDetails> {
+): Promise<ExchangeWithdrawalDetails> {
   const { exchange, exchangeDetails } =
     await ws.exchangeOps.updateExchangeFromUrl(ws, exchangeBaseUrl);
   await updateWithdrawalDenoms(ws, exchangeBaseUrl);
@@ -1378,10 +1287,14 @@ export async function getExchangeWithdrawalInfo(
     }
   }
 
-  const ret: ExchangeWithdrawDetails = {
+  const paytoUris = exchangeDetails.wireInfo.accounts.map((x) => x.payto_uri);
+  if (!paytoUris) {
+    throw Error("exchange is in invalid state");
+  }
+
+  const ret: ExchangeWithdrawalDetails = {
     earliestDepositExpiration,
-    exchangeInfo: exchange,
-    exchangeDetails,
+    exchangePaytoUris: paytoUris,
     exchangeWireAccounts,
     exchangeVersion: exchangeDetails.protocolVersion || "unknown",
     isAudited,

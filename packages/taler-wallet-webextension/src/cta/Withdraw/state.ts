@@ -182,16 +182,15 @@ function exchangeSelectionState(
      * about the withdrawal
      */
     const amountHook = useAsyncAsHook(async () => {
-      const info = await api.getExchangeWithdrawalInfo({
+      const info = await api.getWithdrawalDetailsForAmount({
         exchangeBaseUrl: currentExchange.exchangeBaseUrl,
-        amount: chosenAmount,
-        tosAcceptedFormat: ["text/xml"],
-        ageRestricted,
+        amount: Amounts.stringify(chosenAmount),
+        restrictAge: ageRestricted,
       });
 
       const withdrawAmount = {
-        raw: Amounts.parseOrThrow(info.withdrawalAmountRaw),
-        effective: Amounts.parseOrThrow(info.withdrawalAmountEffective),
+        raw: Amounts.parseOrThrow(info.amountRaw),
+        effective: Amounts.parseOrThrow(info.amountEffective),
       };
 
       return {

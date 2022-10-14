@@ -47,6 +47,7 @@ import {
   DenominationInfo,
   GlobalFees,
   ExchangeGlobalFees,
+  DenomSelectionState,
 } from "@gnu-taler/taler-util";
 import { RetryInfo, RetryTags } from "./util/retries.js";
 import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
@@ -430,8 +431,11 @@ export interface ExchangeDetailsRecord {
 
   /**
    * Fees for exchange services
+   *
+   * FIXME: Put in separate object store!
    */
   globalFees: ExchangeGlobalFees[];
+
   /**
    * Signing keys we got from the exchange, can also contain
    * older signing keys that are not returned by /keys anymore.
@@ -1278,18 +1282,6 @@ export interface WalletBackupConfState {
    */
   lastBackupCheckTimestamp?: TalerProtocolTimestamp;
   lastBackupNonce?: string;
-}
-
-/**
- * Selected denominations withn some extra info.
- */
-export interface DenomSelectionState {
-  totalCoinValue: AmountJson;
-  totalWithdrawCost: AmountJson;
-  selectedDenoms: {
-    denomPubHash: string;
-    count: number;
-  }[];
 }
 
 export const enum WithdrawalRecordType {

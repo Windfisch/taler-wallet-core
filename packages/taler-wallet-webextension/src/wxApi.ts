@@ -51,8 +51,8 @@ import {
   ExchangesListResponse,
   ForgetKnownBankAccountsRequest,
   GetExchangeTosResult,
-  GetExchangeWithdrawalInfo,
   GetFeeForDepositRequest,
+  GetWithdrawalDetailsForAmountRequest,
   GetWithdrawalDetailsForUriRequest,
   InitiatePeerPullPaymentRequest,
   InitiatePeerPullPaymentResponse,
@@ -60,6 +60,7 @@ import {
   InitiatePeerPushPaymentResponse,
   KnownBankAccounts,
   Logger,
+  ManualWithdrawalDetails,
   NotificationType,
   PaytoUri,
   PrepareDepositRequest,
@@ -81,7 +82,6 @@ import {
 import {
   AddBackupProviderRequest,
   BackupInfo,
-  ExchangeWithdrawDetails,
   PendingOperationsResponse,
   RemoveBackupProviderRequest,
   TalerError,
@@ -459,14 +459,12 @@ export function getWithdrawalDetailsForUri(
   return callBackend("getWithdrawalDetailsForUri", req);
 }
 
-/**
- * Get diagnostics information
- */
-export function getExchangeWithdrawalInfo(
-  req: GetExchangeWithdrawalInfo,
-): Promise<ExchangeWithdrawDetails> {
-  return callBackend("getExchangeWithdrawalInfo", req);
+export function getWithdrawalDetailsForAmount(
+  req: GetWithdrawalDetailsForAmountRequest,
+): Promise<ManualWithdrawalDetails> {
+  return callBackend("getWithdrawalDetailsForAmount", req);
 }
+
 export function getExchangeTos(
   exchangeBaseUrl: string,
   acceptedFormat: string[],

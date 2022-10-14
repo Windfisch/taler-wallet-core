@@ -47,7 +47,6 @@ import {
   codecForForgetKnownBankAccounts,
   codecForGetContractTermsDetails,
   codecForGetExchangeTosRequest,
-  codecForGetExchangeWithdrawalInfo,
   codecForGetFeeForDeposit,
   codecForGetWithdrawalDetailsForAmountRequest,
   codecForGetWithdrawalDetailsForUri,
@@ -112,7 +111,11 @@ import {
   importDb,
   WalletStoresV1,
 } from "./db.js";
-import { applyDevExperiment, maybeInitDevMode, setDevMode } from "./dev-experiments.js";
+import {
+  applyDevExperiment,
+  maybeInitDevMode,
+  setDevMode,
+} from "./dev-experiments.js";
 import { getErrorDetailFromException, TalerError } from "./errors.js";
 import {
   ActiveLongpollInfo,
@@ -247,32 +250,6 @@ const builtinAuditors: AuditorTrustRecord[] = [
 const builtinExchanges: string[] = ["https://exchange.demo.taler.net/"];
 
 const logger = new Logger("wallet.ts");
-
-async function getWithdrawalDetailsForAmount(
-  ws: InternalWalletState,
-  exchangeBaseUrl: string,
-  amount: AmountJson,
-  restrictAge: number | undefined,
-): Promise<ManualWithdrawalDetails> {
-  const wi = await getExchangeWithdrawalInfo(
-    ws,
-    exchangeBaseUrl,
-    amount,
-    restrictAge,
-  );
-  const paytoUris = wi.exchangeDetails.wireInfo.accounts.map(
-    (x) => x.payto_uri,
-  );
-  if (!paytoUris) {
-    throw Error("exchange is in invalid state");
-  }
-  return {
-    amountRaw: Amounts.stringify(amount),
-    amountEffective: Amounts.stringify(wi.selectedDenoms.totalCoinValue),
-    paytoUris,
-    tosAccepted: wi.termsOfServiceAccepted,
-  };
-}
 
 /**
  * Call the right handler for a pending operation without doing
@@ -1038,16 +1015,6 @@ async function dispatchRequestInternal(
       const req = codecForGetWithdrawalDetailsForUri().decode(payload);
       return await getWithdrawalDetailsForUri(ws, req.talerWithdrawUri);
     }
-
-    case "getExchangeWithdrawalInfo": {
-      const req = codecForGetExchangeWithdrawalInfo().decode(payload);
-      return await getExchangeWithdrawalInfo(
-        ws,
-        req.exchangeBaseUrl,
-        req.amount,
-        req.ageRestricted,
-      );
-    }
     case "acceptManualWithdrawal": {
       const req = codecForAcceptManualWithdrawalRequet().decode(payload);
       const res = await createManualWithdrawal(ws, {
@@ -1060,12 +1027,18 @@ async function dispatchRequestInternal(
     case "getWithdrawalDetailsForAmount": {
       const req =
         codecForGetWithdrawalDetailsForAmountRequest().decode(payload);
-      return await getWithdrawalDetailsForAmount(
+      const wi = await getExchangeWithdrawalInfo(
         ws,
         req.exchangeBaseUrl,
         Amounts.parseOrThrow(req.amount),
         req.restrictAge,
       );
+      return {
+        amountRaw: req.amount,
+        amountEffective: Amounts.stringify(wi.selectedDenoms.totalCoinValue),
+        paytoUris: wi.exchangePaytoUris,
+        tosAccepted: wi.termsOfServiceAccepted,
+      };
     }
     case "getBalances": {
       return await getBalances(ws);
@@ -1255,7 +1228,7 @@ async function dispatchRequestInternal(
     case "withdrawFakebank": {
       const req = codecForWithdrawFakebankRequest().decode(payload);
       const amount = Amounts.parseOrThrow(req.amount);
-      const details = await getWithdrawalDetailsForAmount(
+      const details = await getExchangeWithdrawalInfo(
         ws,
         req.exchange,
         amount,
@@ -1265,7 +1238,7 @@ async function dispatchRequestInternal(
         amount: amount,
         exchangeBaseUrl: req.exchange,
       });
-      const paytoUri = details.paytoUris[0];
+      const paytoUri = details.exchangePaytoUris[0];
       const pt = parsePaytoUri(paytoUri);
       if (!pt) {
         throw Error("failed to parse payto URI");
