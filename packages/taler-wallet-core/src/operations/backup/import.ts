@@ -351,7 +351,6 @@ export async function importBackup(
             currency: backupExchange.currency,
             masterPublicKey: backupExchange.master_public_key,
             updateClock: backupExchange.update_clock,
-            protocolVersionRange: backupExchange.protocol_version_range,
           },
           permanent: true,
           lastUpdate: undefined,
@@ -388,14 +387,18 @@ export async function importBackup(
               wadFee: Amounts.parseOrThrow(fee.wad_fee),
             });
           }
+          let tosAccepted = undefined;
+          if (
+            backupExchangeDetails.tos_accepted_etag &&
+            backupExchangeDetails.tos_accepted_timestamp
+          ) {
+            tosAccepted = {
+              etag: backupExchangeDetails.tos_accepted_etag,
+              timestamp: backupExchangeDetails.tos_accepted_timestamp,
+            };
+          }
           await tx.exchangeDetails.put({
             exchangeBaseUrl: backupExchangeDetails.base_url,
-            termsOfServiceAcceptedEtag: backupExchangeDetails.tos_accepted_etag,
-            termsOfServiceText: undefined,
-            termsOfServiceLastEtag: undefined,
-            termsOfServiceContentType: undefined,
-            termsOfServiceAcceptedTimestamp:
-              backupExchangeDetails.tos_accepted_timestamp,
             wireInfo,
             currency: backupExchangeDetails.currency,
             auditors: backupExchangeDetails.auditors.map((x) => ({
@@ -406,6 +409,8 @@ export async function importBackup(
             masterPublicKey: backupExchangeDetails.master_public_key,
             protocolVersionRange: backupExchangeDetails.protocol_version,
             reserveClosingDelay: backupExchangeDetails.reserve_closing_delay,
+            tosCurrentEtag: backupExchangeDetails.tos_accepted_etag || "",
+            tosAccepted,
             globalFees: backupExchangeDetails.global_fees.map((x) => ({
               accountFee: Amounts.parseOrThrow(x.accountFee),
               historyFee: Amounts.parseOrThrow(x.historyFee),
@@ -419,7 +424,6 @@ export async function importBackup(
               purseTimeout: x.purseTimeout,
               startDate: x.startDate,
             })),
-
             signingKeys: backupExchangeDetails.signing_keys.map((x) => ({
               key: x.key,
               master_sig: x.master_sig,

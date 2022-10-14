@@ -174,24 +174,40 @@ export async function getExchangeDetails(
 getExchangeDetails.makeContext = (db: DbAccess<typeof WalletStoresV1>) =>
   db.mktx((x) => [x.exchanges, x.exchangeDetails]);
 
+/**
+ * Update the database based on the download of the terms of service.
+ */
 export async function updateExchangeTermsOfService(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
   tos: ExchangeTosDownloadResult,
 ): Promise<void> {
   await ws.db
-    .mktx((x) => [x.exchanges, x.exchangeDetails])
+    .mktx((x) => [x.exchanges, x.exchangeTos, x.exchangeDetails])
     .runReadWrite(async (tx) => {
       const d = await getExchangeDetails(tx, exchangeBaseUrl);
+      let tosRecord = await tx.exchangeTos.get([exchangeBaseUrl, tos.tosEtag]);
+      if (!tosRecord) {
+        tosRecord = {
+          etag: tos.tosEtag,
+          exchangeBaseUrl,
+          termsOfServiceContentType: tos.tosContentType,
+          termsOfServiceText: tos.tosText,
+        };
+        await tx.exchangeTos.put(tosRecord);
+      }
       if (d) {
-        d.termsOfServiceText = tos.tosText;
-        d.termsOfServiceContentType = tos.tosContentType;
-        d.termsOfServiceLastEtag = tos.tosEtag;
+        d.tosCurrentEtag = tos.tosEtag;
         await tx.exchangeDetails.put(d);
       }
     });
 }
 
+/**
+ * Mark a ToS version as accepted by the user.
+ * 
+ * @param etag version of the ToS to accept, or current ToS version of not given
+ */
 export async function acceptExchangeTermsOfService(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
@@ -202,7 +218,10 @@ export async function acceptExchangeTermsOfService(
     .runReadWrite(async (tx) => {
       const d = await getExchangeDetails(tx, exchangeBaseUrl);
       if (d) {
-        d.termsOfServiceAcceptedEtag = etag;
+        d.tosAccepted = {
+          etag: etag || d.tosCurrentEtag,
+          timestamp: TalerProtocolTimestamp.now(),
+        };
         await tx.exchangeDetails.put(d);
       }
     });
@@ -611,7 +630,8 @@ export async function updateExchangeFromUrlHandler(
     ["text/plain"],
   );
   const tosHasBeenAccepted =
-    exchangeDetails?.termsOfServiceAcceptedEtag === tosDownload.tosEtag;
+    exchangeDetails?.tosAccepted &&
+    exchangeDetails.tosAccepted.etag === tosDownload.tosEtag;
 
   let recoupGroupId: string | undefined;
 
@@ -647,13 +667,13 @@ export async function updateExchangeFromUrlHandler(
         globalFees,
         exchangeBaseUrl: r.baseUrl,
         wireInfo,
-        termsOfServiceText: tosDownload.tosText,
-        termsOfServiceAcceptedEtag: tosHasBeenAccepted
-          ? tosDownload.tosEtag
+        tosCurrentEtag: tosDownload.tosContentType,
+        tosAccepted: tosHasBeenAccepted
+          ? {
+              etag: tosDownload.tosEtag,
+              timestamp: TalerProtocolTimestamp.now(),
+            }
           : undefined,
-        termsOfServiceContentType: tosDownload.tosContentType,
-        termsOfServiceLastEtag: tosDownload.tosEtag,
-        termsOfServiceAcceptedTimestamp: TalerProtocolTimestamp.now(),
       };
       // FIXME: only update if pointer got updated
       r.lastUpdate = TalerProtocolTimestamp.now();
@@ -665,7 +685,6 @@ export async function updateExchangeFromUrlHandler(
         masterPublicKey: details.masterPublicKey,
         // FIXME: only change if pointer really changed
         updateClock: TalerProtocolTimestamp.now(),
-        protocolVersionRange: keysInfo.protocolVersion,
       };
       await tx.exchanges.put(r);
       await tx.exchangeDetails.put(details);

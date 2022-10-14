@@ -298,7 +298,6 @@ export async function exportBackup(
           currency: dp.currency,
           master_public_key: dp.masterPublicKey,
           update_clock: dp.updateClock,
-          protocol_version_range: dp.protocolVersionRange,
         });
       });
 
@@ -358,8 +357,8 @@ export async function exportBackup(
             purseTimeout: x.purseTimeout,
             startDate: x.startDate,
           })),
-          tos_accepted_etag: ex.termsOfServiceAcceptedEtag,
-          tos_accepted_timestamp: ex.termsOfServiceAcceptedTimestamp,
+          tos_accepted_etag: ex.tosAccepted?.etag,
+          tos_accepted_timestamp: ex.tosAccepted?.timestamp,
           denominations:
             backupDenominationsByExchange[ex.exchangeBaseUrl] ?? [],
         });

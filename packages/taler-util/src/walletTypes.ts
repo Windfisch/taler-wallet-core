@@ -620,7 +620,7 @@ export interface KnownBankAccounts {
   accounts: KnownBankAccountsInfo[];
 }
 
-export interface ExchangeTos {
+export interface ExchangeTosStatusDetails {
   acceptedVersion?: string;
   currentVersion?: string;
   contentType?: string;
@@ -805,7 +805,7 @@ export interface ExchangeFullDetails {
   exchangeBaseUrl: string;
   currency: string;
   paytoUris: string[];
-  tos: ExchangeTos;
+  tos: ExchangeTosStatusDetails;
   auditors: ExchangeAuditor[];
   wireInfo: WireInfo;
   denomFees: DenomOperationMap<FeeDescription[]>;
@@ -817,7 +817,7 @@ export interface ExchangeListItem {
   exchangeBaseUrl: string;
   currency: string;
   paytoUris: string[];
-  tos: ExchangeTos;
+  tos: ExchangeTosStatusDetails;
 }
 
 const codecForAuditorDenomSig = (): Codec<AuditorDenomSig> =>
@@ -833,8 +833,8 @@ const codecForExchangeAuditor = (): Codec<ExchangeAuditor> =>
     .property("denomination_keys", codecForList(codecForAuditorDenomSig()))
     .build("codecForExchangeAuditor");
 
-const codecForExchangeTos = (): Codec<ExchangeTos> =>
-  buildCodecForObject<ExchangeTos>()
+const codecForExchangeTos = (): Codec<ExchangeTosStatusDetails> =>
+  buildCodecForObject<ExchangeTosStatusDetails>()
     .property("acceptedVersion", codecOptional(codecForString()))
     .property("currentVersion", codecOptional(codecForString()))
     .property("contentType", codecOptional(codecForString()))

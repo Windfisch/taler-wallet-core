@@ -69,6 +69,7 @@ import {
   CoinStatus,
   DenominationRecord,
   DenominationVerificationStatus,
+  ExchangeTosRecord,
   PlanchetRecord,
   PlanchetStatus,
   WalletStoresV1,
@@ -1278,12 +1279,8 @@ export async function getExchangeWithdrawalInfo(
   }
 
   let tosAccepted = false;
-
-  if (exchangeDetails.termsOfServiceLastEtag) {
-    if (
-      exchangeDetails.termsOfServiceAcceptedEtag ===
-      exchangeDetails.termsOfServiceLastEtag
-    ) {
+  if (exchangeDetails.tosAccepted?.timestamp) {
+    if (exchangeDetails.tosAccepted.etag === exchangeDetails.tosCurrentEtag) {
       tosAccepted = true;
     }
   }
@@ -1357,7 +1354,12 @@ export async function getWithdrawalDetailsForUri(
   const exchanges: ExchangeListItem[] = [];
 
   await ws.db
-    .mktx((x) => [x.exchanges, x.exchangeDetails, x.denominations])
+    .mktx((x) => [
+      x.exchanges,
+      x.exchangeDetails,
+      x.exchangeTos,
+      x.denominations,
+    ])
     .runReadOnly(async (tx) => {
       const exchangeRecords = await tx.exchanges.iter().toArray();
       for (const r of exchangeRecords) {
@@ -1366,14 +1368,19 @@ export async function getWithdrawalDetailsForUri(
           .iter(r.baseUrl)
           .toArray();
         if (details && denominations) {
+          const tosRecord = await tx.exchangeTos.get([
+            details.exchangeBaseUrl,
+            details.tosCurrentEtag,
+          ]);
           exchanges.push({
             exchangeBaseUrl: details.exchangeBaseUrl,
             currency: details.currency,
+            // FIXME: We probably don't want to include the full ToS here!
             tos: {
-              acceptedVersion: details.termsOfServiceAcceptedEtag,
-              currentVersion: details.termsOfServiceLastEtag,
-              contentType: details.termsOfServiceContentType,
-              content: details.termsOfServiceText,
+              acceptedVersion: details.tosAccepted?.etag,
+              currentVersion: details.tosCurrentEtag,
+              contentType: tosRecord?.termsOfServiceContentType ?? "",
+              content: tosRecord?.termsOfServiceText ?? "",
             },
             paytoUris: details.wireInfo.accounts.map((x) => x.payto_uri),
           });

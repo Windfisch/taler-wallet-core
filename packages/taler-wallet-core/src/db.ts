@@ -80,7 +80,7 @@ import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
  * for all previous versions must be written, which should be
  * avoided.
  */
-export const TALER_DB_NAME = "taler-wallet-main-v6";
+export const TALER_DB_NAME = "taler-wallet-main-v7";
 
 /**
  * Name of the metadata database.  This database is used
@@ -99,7 +99,7 @@ export const CURRENT_DB_CONFIG_KEY = "currentMainDbName";
  * backwards-compatible way or object stores and indices
  * are added.
  */
-export const WALLET_DB_MINOR_VERSION = 2;
+export const WALLET_DB_MINOR_VERSION = 1;
 
 /**
  * Ranges for operation status fields.
@@ -451,50 +451,46 @@ export interface ExchangeDetailsRecord {
   signingKeys: ExchangeSignKeyJson[];
 
   /**
+   * Etag of the current ToS of the exchange.
+   */
+  tosCurrentEtag: string;
+
+  /**
+   * Information about ToS acceptance from the user.
+   */
+  tosAccepted:
+    | {
+        etag: string;
+        timestamp: TalerProtocolTimestamp;
+      }
+    | undefined;
+
+  wireInfo: WireInfo;
+}
+
+export interface ExchangeTosRecord {
+  exchangeBaseUrl: string;
+
+  etag: string;
+
+  /**
    * Terms of service text or undefined if not downloaded yet.
    *
    * This is just used as a cache of the last downloaded ToS.
    *
-   * FIXME:  Put in separate object store!
    */
   termsOfServiceText: string | undefined;
 
   /**
-   * content-type of the last downloaded termsOfServiceText.
-   *
-   * * FIXME:  Put in separate object store!
+   * Content-type of the last downloaded termsOfServiceText.
    */
   termsOfServiceContentType: string | undefined;
-
-  /**
-   * ETag for last terms of service download.
-   */
-  termsOfServiceLastEtag: string | undefined;
-
-  /**
-   * ETag for last terms of service accepted.
-   */
-  termsOfServiceAcceptedEtag: string | undefined;
-
-  /**
-   * Timestamp when the ToS was accepted.
-   *
-   * Used during backup merging.
-   */
-  termsOfServiceAcceptedTimestamp: TalerProtocolTimestamp | undefined;
-
-  wireInfo: WireInfo;
 }
 
 export interface ExchangeDetailsPointer {
   masterPublicKey: string;
 
   currency: string;
-
-  /**
-   * Last observed protocol version range offered by the exchange.
-   */
-  protocolVersionRange: string;
 
   /**
    * Timestamp when the (masterPublicKey, currency) pointer
@@ -1899,6 +1895,14 @@ export const WalletStoresV1 = {
       byReservePub: describeIndex("byReservePub", "reservePub", {}),
     },
   ),
+  exchangeTos: describeStore(
+    "exchangeTos",
+    describeContents<ExchangeTosRecord>({
+      keyPath: ["exchangeBaseUrl", "etag"],
+      autoIncrement: true,
+    }),
+    {},
+  ),
   config: describeStore(
     "config",
     describeContents<ConfigRecord>({ keyPath: "key" }),
@@ -2116,7 +2120,6 @@ export const WalletStoresV1 = {
     "bankAccounts",
     describeContents<BankAccountsRecord>({
       keyPath: "uri",
-      versionAdded: 2,
     }),
     {},
   ),

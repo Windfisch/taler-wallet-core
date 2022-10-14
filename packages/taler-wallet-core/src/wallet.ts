@@ -94,6 +94,7 @@ import {
   WalletCoreVersion,
   WalletNotification,
   codecForSetDevModeRequest,
+  ExchangeTosStatusDetails,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import {
@@ -107,6 +108,8 @@ import {
   CoinStatus,
   ConfigRecordKey,
   DenominationRecord,
+  ExchangeDetailsRecord,
+  ExchangeTosRecord,
   exportDb,
   importDb,
   WalletStoresV1,
@@ -228,7 +231,11 @@ import {
   OpenedPromise,
   openPromise,
 } from "./util/promiseUtils.js";
-import { DbAccess, GetReadWriteAccess } from "./util/query.js";
+import {
+  DbAccess,
+  GetReadOnlyAccess,
+  GetReadWriteAccess,
+} from "./util/query.js";
 import { OperationAttemptResult } from "./util/retries.js";
 import { TimerAPI, TimerGroup } from "./util/timer.js";
 import {
@@ -461,6 +468,10 @@ async function fillDefaults(ws: InternalWalletState): Promise<void> {
     });
 }
 
+/**
+ * Get the exchange ToS in the requested format.
+ * Try to download in the accepted format not cached.
+ */
 async function getExchangeTos(
   ws: InternalWalletState,
   exchangeBaseUrl: string,
@@ -468,9 +479,14 @@ async function getExchangeTos(
 ): Promise<GetExchangeTosResult> {
   // FIXME: download ToS in acceptable format if passed!
   const { exchangeDetails } = await updateExchangeFromUrl(ws, exchangeBaseUrl);
-  const content = exchangeDetails.termsOfServiceText;
-  const currentEtag = exchangeDetails.termsOfServiceLastEtag;
-  const contentType = exchangeDetails.termsOfServiceContentType;
+  const tosDetails = await ws.db
+    .mktx((x) => [x.exchangeTos])
+    .runReadOnly(async (tx) => {
+      return await getExchangeTosStatusDetails(tx, exchangeDetails);
+    });
+  const content = tosDetails.content;
+  const currentEtag = tosDetails.currentVersion;
+  const contentType = tosDetails.contentType;
   if (
     content === undefined ||
     currentEtag === undefined ||
@@ -483,7 +499,7 @@ async function getExchangeTos(
     acceptedFormat.findIndex((f) => f === contentType) !== -1
   ) {
     return {
-      acceptedEtag: exchangeDetails.termsOfServiceAcceptedEtag,
+      acceptedEtag: exchangeDetails.tosAccepted?.etag,
       currentEtag,
       content,
       contentType,
@@ -499,16 +515,17 @@ async function getExchangeTos(
 
   if (tosDownload.tosContentType === contentType) {
     return {
-      acceptedEtag: exchangeDetails.termsOfServiceAcceptedEtag,
+      acceptedEtag: exchangeDetails.tosAccepted?.etag,
       currentEtag,
       content,
       contentType,
     };
   }
+
   await updateExchangeTermsOfService(ws, exchangeBaseUrl, tosDownload);
 
   return {
-    acceptedEtag: exchangeDetails.termsOfServiceAcceptedEtag,
+    acceptedEtag: exchangeDetails.tosAccepted?.etag,
     currentEtag: tosDownload.tosEtag,
     content: tosDownload.tosText,
     contentType: tosDownload.tosContentType,
@@ -585,12 +602,43 @@ async function forgetKnownBankAccounts(
   return;
 }
 
+async function getExchangeTosStatusDetails(
+  tx: GetReadOnlyAccess<{ exchangeTos: typeof WalletStoresV1.exchangeTos }>,
+  exchangeDetails: ExchangeDetailsRecord,
+): Promise<ExchangeTosStatusDetails> {
+  let exchangeTos = await tx.exchangeTos.get([
+    exchangeDetails.exchangeBaseUrl,
+    exchangeDetails.tosCurrentEtag,
+  ]);
+
+  if (!exchangeTos) {
+    exchangeTos = {
+      etag: "not-available",
+      termsOfServiceContentType: "text/plain",
+      termsOfServiceText: "terms of service unavailable",
+      exchangeBaseUrl: exchangeDetails.exchangeBaseUrl,
+    };
+  }
+
+  return {
+    acceptedVersion: exchangeDetails.tosAccepted?.etag,
+    content: exchangeTos.termsOfServiceContentType,
+    contentType: exchangeTos.termsOfServiceContentType,
+    currentVersion: exchangeTos.etag,
+  };
+}
+
 async function getExchanges(
   ws: InternalWalletState,
 ): Promise<ExchangesListResponse> {
   const exchanges: ExchangeListItem[] = [];
   await ws.db
-    .mktx((x) => [x.exchanges, x.exchangeDetails, x.denominations])
+    .mktx((x) => [
+      x.exchanges,
+      x.exchangeDetails,
+      x.exchangeTos,
+      x.denominations,
+    ])
     .runReadOnly(async (tx) => {
       const exchangeRecords = await tx.exchanges.iter().toArray();
       for (const r of exchangeRecords) {
@@ -612,15 +660,12 @@ async function getExchanges(
           continue;
         }
 
+        const tos = await getExchangeTosStatusDetails(tx, exchangeDetails);
+
         exchanges.push({
           exchangeBaseUrl: r.baseUrl,
           currency,
-          tos: {
-            acceptedVersion: exchangeDetails.termsOfServiceAcceptedEtag,
-            currentVersion: exchangeDetails.termsOfServiceLastEtag,
-            contentType: exchangeDetails.termsOfServiceContentType,
-            content: exchangeDetails.termsOfServiceText,
-          },
+          tos,
           paytoUris: exchangeDetails.wireInfo.accounts.map((x) => x.payto_uri),
         });
       }
@@ -634,7 +679,12 @@ async function getExchangeDetailedInfo(
 ): Promise<ExchangeFullDetails> {
   //TODO: should we use the forceUpdate parameter?
   const exchange = await ws.db
-    .mktx((x) => [x.exchanges, x.exchangeDetails, x.denominations])
+    .mktx((x) => [
+      x.exchanges,
+      x.exchangeTos,
+      x.exchangeDetails,
+      x.denominations,
+    ])
     .runReadOnly(async (tx) => {
       const ex = await tx.exchanges.get(exchangeBaseurl);
       const dp = ex?.detailsPointer;
@@ -656,6 +706,8 @@ async function getExchangeDetailedInfo(
         return;
       }
 
+      const tos = await getExchangeTosStatusDetails(tx, exchangeDetails);
+
       const denominations: DenominationInfo[] = denominationRecords.map((x) =>
         DenominationRecord.toDenomInfo(x),
       );
@@ -664,12 +716,7 @@ async function getExchangeDetailedInfo(
         info: {
           exchangeBaseUrl: ex.baseUrl,
           currency,
-          tos: {
-            acceptedVersion: exchangeDetails.termsOfServiceAcceptedEtag,
-            currentVersion: exchangeDetails.termsOfServiceLastEtag,
-            contentType: exchangeDetails.termsOfServiceContentType,
-            content: exchangeDetails.termsOfServiceText,
-          },
+          tos,
           paytoUris: exchangeDetails.wireInfo.accounts.map((x) => x.payto_uri),
           auditors: exchangeDetails.auditors,
           wireInfo: exchangeDetails.wireInfo,
