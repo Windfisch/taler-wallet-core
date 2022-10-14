@@ -25,6 +25,7 @@ import {
   RefreshReason,
   TalerErrorCode,
   TalerErrorDetail,
+  TombstoneIdStr,
   TransactionIdStr,
   TransactionType,
 } from "@gnu-taler/taler-util";
@@ -280,9 +281,19 @@ export enum TombstoneTag {
 /**
  * Create an event ID from the type and the primary key for the event.
  */
-export function makeEventId(
-  type: TransactionType | TombstoneTag,
+export function makeTransactionId(
+  type: TransactionType,
   ...args: string[]
-): string {
-  return type + ":" + args.map((x) => encodeURIComponent(x)).join(":");
+): TransactionIdStr {
+  return `txn:${type}:${args.map((x) => encodeURIComponent(x)).join(":")}`;
+}
+
+/**
+ * Create an event ID from the type and the primary key for the event.
+ */
+export function makeTombstoneId(
+  type: TombstoneTag,
+  ...args: string[]
+): TombstoneIdStr {
+  return `tmb:${type}:${args.map((x) => encodeURIComponent(x)).join(":")}`;
 }

@@ -73,7 +73,7 @@ import { InternalWalletState } from "../internal-wallet-state.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { GetReadOnlyAccess } from "../util/query.js";
-import { spendCoins, makeEventId } from "../operations/common.js";
+import { spendCoins, makeTransactionId } from "../operations/common.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
 import { internalCreateWithdrawalGroup } from "./withdraw.js";
 
@@ -261,7 +261,7 @@ export async function initiatePeerToPeerPush(
       }
 
       await spendCoins(ws, tx, {
-        allocationId: `peer-push:${pursePair.pub}`,
+        allocationId: `txn:peer-push-debit:${pursePair.pub}`,
         coinPubs: sel.coins.map((x) => x.coinPub),
         contributions: sel.coins.map((x) =>
           Amounts.parseOrThrow(x.contribution),
@@ -340,7 +340,7 @@ export async function initiatePeerToPeerPush(
       exchangeBaseUrl: coinSelRes.exchangeBaseUrl,
       contractPriv: econtractResp.contractPriv,
     }),
-    transactionId: makeEventId(TransactionType.PeerPushDebit, pursePair.pub),
+    transactionId: makeTransactionId(TransactionType.PeerPushDebit, pursePair.pub),
   };
 }
 
@@ -551,7 +551,7 @@ export async function acceptPeerPushPayment(
   });
 
   return {
-    transactionId: makeEventId(
+    transactionId: makeTransactionId(
       TransactionType.PeerPushCredit,
       wg.withdrawalGroupId,
     ),
@@ -596,7 +596,7 @@ export async function acceptPeerPullPayment(
       }
 
       await spendCoins(ws, tx, {
-        allocationId: `peer-pull:${req.peerPullPaymentIncomingId}`,
+        allocationId: `txn:peer-pull-debit:${req.peerPullPaymentIncomingId}`,
         coinPubs: sel.coins.map((x) => x.coinPub),
         contributions: sel.coins.map((x) =>
           Amounts.parseOrThrow(x.contribution),
@@ -643,7 +643,7 @@ export async function acceptPeerPullPayment(
   logger.trace(`purse deposit response: ${j2s(resp)}`);
 
   return {
-    transactionId: makeEventId(
+    transactionId: makeTransactionId(
       TransactionType.PeerPullDebit,
       req.peerPullPaymentIncomingId,
     ),
@@ -839,7 +839,7 @@ export async function initiatePeerRequestForPay(
       exchangeBaseUrl: req.exchangeBaseUrl,
       contractPriv: econtractResp.contractPriv,
     }),
-    transactionId: makeEventId(
+    transactionId: makeTransactionId(
       TransactionType.PeerPullCredit,
       wg.withdrawalGroupId,
     ),

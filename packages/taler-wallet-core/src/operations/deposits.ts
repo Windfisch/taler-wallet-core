@@ -53,7 +53,7 @@ import {
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { OperationAttemptResult } from "../util/retries.js";
-import { makeEventId, spendCoins } from "./common.js";
+import { makeTransactionId, spendCoins } from "./common.js";
 import { getExchangeDetails } from "./exchanges.js";
 import {
   extractContractData,
@@ -495,7 +495,7 @@ export async function createDepositGroup(
     ])
     .runReadWrite(async (tx) => {
       await spendCoins(ws, tx, {
-        allocationId: `deposit-group:${depositGroup.depositGroupId}`,
+        allocationId: `txn:deposit:${depositGroup.depositGroupId}`,
         coinPubs: payCoinSel.coinPubs,
         contributions: payCoinSel.coinContributions,
         refreshReason: RefreshReason.PayDeposit,
@@ -505,7 +505,7 @@ export async function createDepositGroup(
 
   return {
     depositGroupId: depositGroupId,
-    transactionId: makeEventId(TransactionType.Deposit, depositGroupId),
+    transactionId: makeTransactionId(TransactionType.Deposit, depositGroupId),
   };
 }
 

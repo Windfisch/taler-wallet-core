@@ -53,7 +53,7 @@ import {
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { RetryTags } from "../util/retries.js";
-import { makeEventId, TombstoneTag } from "./common.js";
+import { makeTombstoneId, makeTransactionId, TombstoneTag } from "./common.js";
 import { processDepositGroup } from "./deposits.js";
 import { getExchangeDetails } from "./exchanges.js";
 import {
@@ -193,7 +193,7 @@ export async function getTransactionById(
         const filteredRefunds = await Promise.all(
           Object.values(purchase.refunds).map(async (r) => {
             const t = await tx.tombstones.get(
-              makeEventId(
+              makeTombstoneId(
                 TombstoneTag.DeleteRefund,
                 purchase.proposalId,
                 `${r.executionTime.t_s}`,
@@ -271,7 +271,7 @@ export async function getTransactionById(
         if (!theRefund) throw Error("not found");
 
         const t = await tx.tombstones.get(
-          makeEventId(
+          makeTombstoneId(
             TombstoneTag.DeleteRefund,
             purchase.proposalId,
             executionTimeStr,
@@ -338,7 +338,10 @@ function buildTransactionForPushPaymentDebit(
       exchangeBaseUrl: pi.exchangeBaseUrl,
       contractPriv: pi.contractPriv,
     }),
-    transactionId: makeEventId(TransactionType.PeerPushDebit, pi.pursePub),
+    transactionId: makeTransactionId(
+      TransactionType.PeerPushDebit,
+      pi.pursePub,
+    ),
     ...(ort?.lastError ? { error: ort.lastError } : {}),
   };
 }
@@ -359,7 +362,7 @@ function buildTransactionForPullPaymentDebit(
       summary: pi.contractTerms.summary,
     },
     timestamp: pi.timestampCreated,
-    transactionId: makeEventId(
+    transactionId: makeTransactionId(
       TransactionType.PeerPullDebit,
       pi.peerPullPaymentIncomingId,
     ),
@@ -388,7 +391,7 @@ function buildTransactionForPullPaymentCredit(
       exchangeBaseUrl: wsr.exchangeBaseUrl,
       contractPriv: wsr.wgInfo.contractPriv,
     }),
-    transactionId: makeEventId(
+    transactionId: makeTransactionId(
       TransactionType.PeerPullCredit,
       wsr.withdrawalGroupId,
     ),
@@ -414,7 +417,7 @@ function buildTransactionForPushPaymentCredit(
     },
     pending: !wsr.timestampFinish,
     timestamp: wsr.timestampStart,
-    transactionId: makeEventId(
+    transactionId: makeTransactionId(
       TransactionType.PeerPushCredit,
       wsr.withdrawalGroupId,
     ),
@@ -443,7 +446,7 @@ function buildTransactionForBankIntegratedWithdraw(
     exchangeBaseUrl: wsr.exchangeBaseUrl,
     pending: !wsr.timestampFinish,
     timestamp: wsr.timestampStart,
-    transactionId: makeEventId(
+    transactionId: makeTransactionId(
       TransactionType.Withdrawal,
       wsr.withdrawalGroupId,
     ),
@@ -483,7 +486,7 @@ function buildTransactionForManualWithdraw(
     exchangeBaseUrl: withdrawalGroup.exchangeBaseUrl,
     pending: !withdrawalGroup.timestampFinish,
     timestamp: withdrawalGroup.timestampStart,
-    transactionId: makeEventId(
+    transactionId: makeTransactionId(
       TransactionType.Withdrawal,
       withdrawalGroup.withdrawalGroupId,
     ),
@@ -504,7 +507,10 @@ function buildTransactionForDeposit(
     frozen: false,
     timestamp: dg.timestampCreated,
     targetPaytoUri: dg.wire.payto_uri,
-    transactionId: makeEventId(TransactionType.Deposit, dg.depositGroupId),
+    transactionId: makeTransactionId(
+      TransactionType.Deposit,
+      dg.depositGroupId,
+    ),
     depositGroupId: dg.depositGroupId,
     ...(ort?.lastError ? { error: ort.lastError } : {}),
   };
@@ -523,7 +529,10 @@ function buildTransactionForTip(
     pending: !tipRecord.pickedUpTimestamp,
     frozen: false,
     timestamp: tipRecord.acceptedTimestamp,
-    transactionId: makeEventId(TransactionType.Tip, tipRecord.walletTipId),
+    transactionId: makeTransactionId(
+      TransactionType.Tip,
+      tipRecord.walletTipId,
+    ),
     merchantBaseUrl: tipRecord.merchantBaseUrl,
     ...(ort?.lastError ? { error: ort.lastError } : {}),
   };
@@ -606,11 +615,11 @@ async function buildTransactionForRefund(
   return {
     type: TransactionType.Refund,
     info,
-    refundedTransactionId: makeEventId(
+    refundedTransactionId: makeTransactionId(
       TransactionType.Payment,
       purchaseRecord.proposalId,
     ),
-    transactionId: makeEventId(
+    transactionId: makeTransactionId(
       TransactionType.Refund,
       purchaseRecord.proposalId,
       `${refundInfo.executionTime.t_s}`,
@@ -667,7 +676,7 @@ async function buildTransactionForPurchase(
     amountEffective: Amounts.stringify(r.amountAppliedEffective),
     amountRaw: Amounts.stringify(r.amountAppliedRaw),
     timestamp: r.executionTime,
-    transactionId: makeEventId(
+    transactionId: makeTransactionId(
       TransactionType.Refund,
       purchaseRecord.proposalId,
       `${r.executionTime.t_s}`,
@@ -694,7 +703,7 @@ async function buildTransactionForPurchase(
     pending: purchaseRecord.purchaseStatus === PurchaseStatus.Paying,
     refunds,
     timestamp,
-    transactionId: makeEventId(
+    transactionId: makeTransactionId(
       TransactionType.Payment,
       purchaseRecord.proposalId,
     ),
@@ -854,7 +863,7 @@ export async function getTransactions(
         const filteredRefunds = await Promise.all(
           Object.values(purchase.refunds).map(async (r) => {
             const t = await tx.tombstones.get(
-              makeEventId(
+              makeTombstoneId(
                 TombstoneTag.DeleteRefund,
                 purchase.proposalId,
                 `${r.executionTime.t_s}`,
@@ -1077,7 +1086,7 @@ export async function deleteTransaction(
           // This should just influence the history view,
           // but won't delete any actual refund information.
           await tx.tombstones.put({
-            id: makeEventId(
+            id: makeTombstoneId(
               TombstoneTag.DeleteRefund,
               proposalId,
               executionTimeStr,
@@ -1096,7 +1105,7 @@ export async function deleteTransaction(
         if (debit) {
           await tx.peerPullPaymentIncoming.delete(peerPullPaymentIncomingId);
           await tx.tombstones.put({
-            id: makeEventId(
+            id: makeTombstoneId(
               TombstoneTag.DeletePeerPullDebit,
               peerPullPaymentIncomingId,
             ),
@@ -1112,7 +1121,7 @@ export async function deleteTransaction(
         if (debit) {
           await tx.peerPushPaymentInitiations.delete(pursePub);
           await tx.tombstones.put({
-            id: makeEventId(TombstoneTag.DeletePeerPushDebit, pursePub),
+            id: makeTombstoneId(TombstoneTag.DeletePeerPushDebit, pursePub),
           });
         }
       });

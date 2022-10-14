@@ -122,7 +122,7 @@ import {
   scheduleRetry,
 } from "../util/retries.js";
 import {
-  makeEventId,
+  makeTransactionId,
   spendCoins,
   storeOperationError,
   storeOperationPending,
@@ -858,7 +858,7 @@ async function handleInsufficientFunds(
       payInfo.payCoinSelectionUid = encodeCrock(getRandomBytes(32));
       await tx.purchases.put(p);
       await spendCoins(ws, tx, {
-        allocationId: `tx:proposal:${p.proposalId}`,
+        allocationId: `txn:proposal:${p.proposalId}`,
         coinPubs: payInfo.payCoinSelection.coinPubs,
         contributions: payInfo.payCoinSelection.coinContributions,
         refreshReason: RefreshReason.PayMerchant,
@@ -1554,7 +1554,7 @@ export async function runPayForConfirmPay(
       return {
         type: ConfirmPayResultType.Done,
         contractTerms: d.contractTermsRaw,
-        transactionId: makeEventId(TransactionType.Payment, proposalId),
+        transactionId: makeTransactionId(TransactionType.Payment, proposalId),
       };
     }
     case OperationAttemptResultType.Error: {
@@ -1580,7 +1580,7 @@ export async function runPayForConfirmPay(
         return {
           type: ConfirmPayResultType.Pending,
           lastError: opRetry?.lastError,
-          transactionId: makeEventId(TransactionType.Payment, proposalId),
+          transactionId: makeTransactionId(TransactionType.Payment, proposalId),
         };
       } else {
         // FIXME: allocate error code!
@@ -1599,7 +1599,7 @@ export async function runPayForConfirmPay(
       );
       return {
         type: ConfirmPayResultType.Pending,
-        transactionId: makeEventId(TransactionType.Payment, proposalId),
+        transactionId: makeTransactionId(TransactionType.Payment, proposalId),
         lastError: undefined,
       };
     case OperationAttemptResultType.Longpoll:
@@ -1735,7 +1735,7 @@ export async function confirmPay(
           p.purchaseStatus = PurchaseStatus.Paying;
           await tx.purchases.put(p);
           await spendCoins(ws, tx, {
-            allocationId: `tx:proposal:${p.proposalId}`,
+            allocationId: `txn:proposal:${p.proposalId}`,
             coinPubs: coinSelection.coinPubs,
             contributions: coinSelection.coinContributions,
             refreshReason: RefreshReason.PayMerchant,
@@ -2549,7 +2549,7 @@ export async function applyRefundFromPurchaseId(
   return {
     contractTermsHash: download.contractData.contractTermsHash,
     proposalId: purchase.proposalId,
-    transactionId: makeEventId(TransactionType.Payment, proposalId), //FIXME: can we have the tx id of the refund
+    transactionId: makeTransactionId(TransactionType.Payment, proposalId), //FIXME: can we have the tx id of the refund
     amountEffectivePaid: Amounts.stringify(summary.amountEffectivePaid),
     amountRefundGone: Amounts.stringify(summary.amountRefundGone),
     amountRefundGranted: Amounts.stringify(summary.amountRefundGranted),

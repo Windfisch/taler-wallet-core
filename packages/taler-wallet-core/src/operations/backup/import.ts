@@ -63,7 +63,7 @@ import { InternalWalletState } from "../../internal-wallet-state.js";
 import { assertUnreachable } from "../../util/assertUnreachable.js";
 import { checkLogicInvariant } from "../../util/invariants.js";
 import { GetReadOnlyAccess, GetReadWriteAccess } from "../../util/query.js";
-import { makeCoinAvailable, makeEventId, TombstoneTag } from "../common.js";
+import { makeCoinAvailable, makeTombstoneId, makeTransactionId, TombstoneTag } from "../common.js";
 import { getExchangeDetails } from "../exchanges.js";
 import { extractContractData } from "../pay-merchant.js";
 import { provideBackupState } from "./state.js";
@@ -493,7 +493,7 @@ export async function importBackup(
         for (const backupWg of backupBlob.withdrawal_groups) {
           const reservePub = cryptoComp.reservePrivToPub[backupWg.reserve_priv];
           checkLogicInvariant(!!reservePub);
-          const ts = makeEventId(TombstoneTag.DeleteReserve, reservePub);
+          const ts = makeTombstoneId(TombstoneTag.DeleteReserve, reservePub);
           if (tombstoneSet.has(ts)) {
             continue;
           }
@@ -574,7 +574,7 @@ export async function importBackup(
       }
 
       for (const backupPurchase of backupBlob.purchases) {
-        const ts = makeEventId(
+        const ts = makeTombstoneId(
           TombstoneTag.DeletePayment,
           backupPurchase.proposal_id,
         );
@@ -705,7 +705,7 @@ export async function importBackup(
       }
 
       for (const backupRefreshGroup of backupBlob.refresh_groups) {
-        const ts = makeEventId(
+        const ts = makeTombstoneId(
           TombstoneTag.DeleteRefreshGroup,
           backupRefreshGroup.refresh_group_id,
         );
@@ -791,7 +791,7 @@ export async function importBackup(
       }
 
       for (const backupTip of backupBlob.tips) {
-        const ts = makeEventId(TombstoneTag.DeleteTip, backupTip.wallet_tip_id);
+        const ts = makeTombstoneId(TombstoneTag.DeleteTip, backupTip.wallet_tip_id);
         if (tombstoneSet.has(ts)) {
           continue;
         }

@@ -111,7 +111,7 @@ import {
   WALLET_EXCHANGE_PROTOCOL_VERSION,
 } from "../versions.js";
 import {
-  makeEventId,
+  makeTransactionId,
   storeOperationError,
   storeOperationPending,
 } from "./common.js";
@@ -1797,7 +1797,7 @@ export async function acceptWithdrawalFromUri(
     return {
       reservePub: existingWithdrawalGroup.reservePub,
       confirmTransferUrl: url,
-      transactionId: makeEventId(
+      transactionId: makeTransactionId(
         TransactionType.Withdrawal,
         existingWithdrawalGroup.withdrawalGroupId,
       ),
@@ -1858,7 +1858,7 @@ export async function acceptWithdrawalFromUri(
   return {
     reservePub: withdrawalGroup.reservePub,
     confirmTransferUrl: withdrawInfo.confirmTransferUrl,
-    transactionId: makeEventId(TransactionType.Withdrawal, withdrawalGroupId),
+    transactionId: makeTransactionId(TransactionType.Withdrawal, withdrawalGroupId),
   };
 }
 
@@ -1919,6 +1919,6 @@ export async function createManualWithdrawal(
   return {
     reservePub: withdrawalGroup.reservePub,
     exchangePaytoUris: exchangePaytoUris,
-    transactionId: makeEventId(TransactionType.Withdrawal, withdrawalGroupId),
+    transactionId: makeTransactionId(TransactionType.Withdrawal, withdrawalGroupId),
   };
 }

@@ -73,12 +73,14 @@ import { VersionMatchResult } from "./libtool-version.js";
 /**
  * Identifier for a transaction in the wallet.
  */
-export type TransactionIdStr = `tx:${string}:${string}`;
+export type TransactionIdStr = `txn:${string}:${string}`;
 
 /**
  * Identifier for a pending task in the wallet.
  */
-export type PendingIdStr = `pd:${string}:string`;
+export type PendingIdStr = `pnd:${string}:${string}`;
+
+export type TombstoneIdStr = `tmb:${string}:${string}`;
 
 /**
  * Response for the create reserve request to the wallet.

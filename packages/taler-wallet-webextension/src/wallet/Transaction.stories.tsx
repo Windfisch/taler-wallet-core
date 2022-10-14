@@ -60,7 +60,9 @@ const commonTransaction = {
   amountEffective: "KUDOS:9.2",
   pending: false,
   timestamp: TalerProtocolTimestamp.now(),
-  transactionId: "12",
+  transactionId: "txn:deposit:12",
+  frozen: false,
+  type: TransactionType.Deposit,
 } as TransactionCommon;
 
 import merchantIcon from "../../static-dev/merchant-icon.jpeg";
