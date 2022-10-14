@@ -588,17 +588,6 @@ export interface PlanchetRecord {
 
   lastError: TalerErrorDetail | undefined;
 
-  /**
-   * Public key of the reserve that this planchet
-   * is being withdrawn from.
-   *
-   * Can be the empty string (non-null/undefined for DB indexing)
-   * if this is a tipping reserve.
-   *
-   * FIXME: Where is this used?
-   */
-  reservePub: string;
-
   denomPubHash: string;
 
   blindingKey: string;

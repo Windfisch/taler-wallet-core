@@ -431,7 +431,6 @@ async function processPlanchetGenerate(
     coinPriv: r.coinPriv,
     coinPub: r.coinPub,
     denomPubHash: r.denomPubHash,
-    reservePub: r.reservePub,
     planchetStatus: PlanchetStatus.Pending,
     withdrawSig: r.withdrawSig,
     withdrawalGroupId: withdrawalGroup.withdrawalGroupId,
@@ -515,7 +514,7 @@ async function processPlanchetExchangeRequest(
         coin_ev: planchet.coinEv,
       };
       const reqUrl = new URL(
-        `reserves/${planchet.reservePub}/withdraw`,
+        `reserves/${withdrawalGroup.reservePub}/withdraw`,
         exchange.baseUrl,
       ).href;
 
@@ -746,7 +745,7 @@ async function processPlanchetVerifyAndStoreCoin(
     coinSource: {
       type: CoinSourceType.Withdraw,
       coinIndex: coinIdx,
-      reservePub: planchet.reservePub,
+      reservePub: withdrawalGroup.reservePub,
       withdrawalGroupId: withdrawalGroup.withdrawalGroupId,
     },
     maxAge: planchet.maxAge,
@@ -1858,7 +1857,10 @@ export async function acceptWithdrawalFromUri(
   return {
     reservePub: withdrawalGroup.reservePub,
     confirmTransferUrl: withdrawInfo.confirmTransferUrl,
-    transactionId: makeTransactionId(TransactionType.Withdrawal, withdrawalGroupId),
+    transactionId: makeTransactionId(
+      TransactionType.Withdrawal,
+      withdrawalGroupId,
+    ),
   };
 }
 
@@ -1919,6 +1921,9 @@ export async function createManualWithdrawal(
   return {
     reservePub: withdrawalGroup.reservePub,
     exchangePaytoUris: exchangePaytoUris,
-    transactionId: makeTransactionId(TransactionType.Withdrawal, withdrawalGroupId),
+    transactionId: makeTransactionId(
+      TransactionType.Withdrawal,
+      withdrawalGroupId,
+    ),
   };
 }
