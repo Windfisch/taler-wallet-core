@@ -36,7 +36,7 @@ import { useBackupDeviceName } from "../hooks/useBackupDeviceName.js";
 import { useAutoOpenPermissions } from "../hooks/useAutoOpenPermissions.js";
 import { ToggleHandler } from "../mui/handlers.js";
 import { Pages } from "../NavigationBar.js";
-import { buildTermsOfServiceStatus } from "../utils/index.js";
+import { buildTermsOfServiceStatus } from "../cta/TermsOfService/utils.js";
 import * as wxApi from "../wxApi.js";
 import { platform } from "../platform/api.js";
 import { useClipboardPermissions } from "../hooks/useClipboardPermissions.js";

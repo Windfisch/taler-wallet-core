@@ -14,27 +14,20 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountJson } from "@gnu-taler/taler-util";
+import { AmountJson, ExchangeListItem } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
-import {
-  State as SelectExchangeState
-} from "../../hooks/useSelectedExchange.js";
+import { State as SelectExchangeState } from "../../hooks/useSelectedExchange.js";
 import { ButtonHandler, SelectFieldHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import * as wxApi from "../../wxApi.js";
-import { Props as TermsOfServiceSectionProps } from "../TermsOfServiceSection.js";
 import {
   useComponentStateFromParams,
-  useComponentStateFromURI
+  useComponentStateFromURI,
 } from "./state.js";
 
 import { ExchangeSelectionPage } from "../../wallet/ExchangeSelection/index.js";
-import {
-  LoadingInfoView,
-  LoadingUriView,
-  SuccessView
-} from "./views.js";
+import { LoadingInfoView, LoadingUriView, SuccessView } from "./views.js";
 import { NoExchangesView } from "../../wallet/ExchangeSelection/views.js";
 
 export interface PropsFromURI {
@@ -75,7 +68,7 @@ export namespace State {
     status: "success";
     error: undefined;
 
-    exchangeUrl: string;
+    currentExchange: ExchangeListItem;
 
     chosenAmount: AmountJson;
     withdrawalFee: AmountJson;
@@ -83,13 +76,12 @@ export namespace State {
 
     doWithdrawal: ButtonHandler;
     doSelectExchange: ButtonHandler;
-    tosProps?: TermsOfServiceSectionProps;
-    mustAcceptFirst: boolean;
 
     ageRestriction?: SelectFieldHandler;
 
     talerWithdrawUri?: string;
     cancel: () => Promise<void>;
+    onTosUpdate: () => void;
   };
 }
 

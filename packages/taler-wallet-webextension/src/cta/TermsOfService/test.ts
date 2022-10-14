@@ -19,32 +19,10 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { createExample } from "../../test-utils.js";
-import { ReadyView } from "./views.js";
+import { expect } from "chai";
 
-export default {
-  title: "wallet/invoice create",
-};
-
-export const Ready = createExample(ReadyView, {
-  chosenAmount: {
-    currency: "ARS",
-    value: 1,
-    fraction: 0,
-  },
-  cancel: {},
-  toBeReceived: {
-    currency: "ARS",
-    value: 1,
-    fraction: 0,
-  },
-  doSelectExchange: {},
-  exchangeUrl: "https://exchange.taler.ar",
-  subject: {
-    value: "some subject",
-    onInput: async () => {
-      null;
-    },
-  },
-  create: {},
+describe("test description", () => {
+  it("should assert", () => {
+    expect([]).deep.equals([]);
+  });
 });

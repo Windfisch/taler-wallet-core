@@ -14,33 +14,35 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountJson } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
-import { ButtonHandler } from "../../mui/handlers.js";
+import { ToggleHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import * as wxApi from "../../wxApi.js";
 import { useComponentState } from "./state.js";
+import { TermsState } from "./utils.js";
 import {
-  AcceptedView,
-  IgnoredView,
+  ErrorAcceptingView,
   LoadingUriView,
-  ReadyView,
+  ShowButtonsAcceptedTosView,
+  ShowButtonsNonAcceptedTosView,
+  ShowTosContentView,
 } from "./views.js";
 
 export interface Props {
-  talerTipUri?: string;
-  onCancel: () => Promise<void>;
-  onSuccess: (tx: string) => Promise<void>;
+  exchangeUrl: string;
+  onChange: (v: boolean) => void;
+  readOnly?: boolean;
 }
 
 export type State =
   | State.Loading
   | State.LoadingUriError
-  | State.Ignored
-  | State.Accepted
-  | State.Ready
-  | State.Ignored;
+  | State.ErrorAccepting
+  | State.ShowContent
+  | State.ShowButtonsAccepted
+  | State.ShowButtonsNotAccepted
+  | State.ShowContent;
 
 export namespace State {
   export interface Loading {
@@ -49,41 +51,46 @@ export namespace State {
   }
 
   export interface LoadingUriError {
-    status: "loading-uri";
+    status: "loading-error";
+    error: HookError;
+  }
+
+  export interface ErrorAccepting {
+    status: "error-accepting";
     error: HookError;
   }
 
   export interface BaseInfo {
-    merchantBaseUrl: string;
-    amount: AmountJson;
-    exchangeBaseUrl: string;
     error: undefined;
-    cancel: ButtonHandler;
+    termsAccepted: ToggleHandler;
+    showingTermsOfService: ToggleHandler;
+    terms: TermsState;
   }
-
-  export interface Ignored extends BaseInfo {
-    status: "ignored";
+  export interface ShowContent extends BaseInfo {
+    status: "show-content";
+    error: undefined;
   }
-
-  export interface Accepted extends BaseInfo {
-    status: "accepted";
+  export interface ShowButtonsAccepted extends BaseInfo {
+    status: "show-buttons-accepted";
+    error: undefined;
   }
-  export interface Ready extends BaseInfo {
-    status: "ready";
-    accept: ButtonHandler;
+  export interface ShowButtonsNotAccepted extends BaseInfo {
+    status: "show-buttons-not-accepted";
+    error: undefined;
   }
 }
 
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
-  "loading-uri": LoadingUriView,
-  accepted: AcceptedView,
-  ignored: IgnoredView,
-  ready: ReadyView,
+  "loading-error": LoadingUriView,
+  "show-content": ShowTosContentView,
+  "show-buttons-accepted": ShowButtonsAcceptedTosView,
+  "show-buttons-not-accepted": ShowButtonsNonAcceptedTosView,
+  "error-accepting": ErrorAcceptingView,
 };
 
-export const TipPage = compose(
-  "Tip",
+export const TermsOfService = compose(
+  "TermsOfService",
   (p: Props) => useComponentState(p, wxApi),
   viewMapping,
 );

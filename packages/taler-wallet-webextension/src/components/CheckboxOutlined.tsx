@@ -18,8 +18,8 @@ import { Outlined, StyledCheckboxLabel } from "./styled/index.js";
 import { h, VNode } from "preact";
 
 interface Props {
-  enabled: boolean;
-  onToggle: () => Promise<void>;
+  enabled?: boolean;
+  onToggle?: () => Promise<void>;
   label: VNode;
   name: string;
 }

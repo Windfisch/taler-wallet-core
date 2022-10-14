@@ -14,12 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import {
-  AmountJson,
-  Amounts,
-  GetExchangeTosResult,
-} from "@gnu-taler/taler-util";
-import { VNode, createElement } from "preact";
+import { createElement, VNode } from "preact";
 
 function getJsonIfOk(r: Response): Promise<any> {
   if (r.ok) {
@@ -31,7 +26,8 @@ function getJsonIfOk(r: Response): Promise<any> {
   }
 
   throw new Error(
-    `Try another server: (${r.status}) ${r.statusText || "internal server error"
+    `Try another server: (${r.status}) ${
+      r.statusText || "internal server error"
     }`,
   );
 }
@@ -78,140 +74,25 @@ export async function queryToSlashKeys<T>(url: string): Promise<T> {
   return timeout(3000, query);
 }
 
-export function buildTermsOfServiceState(
-  tos: GetExchangeTosResult,
-): TermsState {
-  const content: TermsDocument | undefined = parseTermsOfServiceContent(
-    tos.contentType,
-    tos.content,
-  );
-
-  const status: TermsStatus = buildTermsOfServiceStatus(
-    tos.content,
-    tos.acceptedEtag,
-    tos.currentEtag,
-  );
-
-  return { content, status, version: tos.currentEtag };
-}
-export function buildTermsOfServiceStatus(
-  content: string | undefined,
-  acceptedVersion: string | undefined,
-  currentVersion: string | undefined,
-): TermsStatus {
-  return !content
-    ? "notfound"
-    : !acceptedVersion
-      ? "new"
-      : acceptedVersion !== currentVersion
-        ? "changed"
-        : "accepted";
-}
-
-function parseTermsOfServiceContent(
-  type: string,
-  text: string,
-): TermsDocument | undefined {
-  if (type === "text/xml") {
-    try {
-      const document = new DOMParser().parseFromString(text, "text/xml");
-      return { type: "xml", document };
-    } catch (e) {
-      console.log(e);
-    }
-  } else if (type === "text/html") {
-    try {
-      const href = new URL(text);
-      return { type: "html", href };
-    } catch (e) {
-      console.log(e);
-    }
-  } else if (type === "text/json") {
-    try {
-      const data = JSON.parse(text);
-      return { type: "json", data };
-    } catch (e) {
-      console.log(e);
-    }
-  } else if (type === "text/pdf") {
-    try {
-      const location = new URL(text);
-      return { type: "pdf", location };
-    } catch (e) {
-      console.log(e);
-    }
-  } else if (type === "text/plain") {
-    try {
-      const content = text;
-      return { type: "plain", content };
-    } catch (e) {
-      console.log(e);
-    }
-  }
-  return undefined;
-}
-
-export type TermsState = {
-  content: TermsDocument | undefined;
-  status: TermsStatus;
-  version: string;
-};
-
-type TermsStatus = "new" | "accepted" | "changed" | "notfound";
-
-type TermsDocument =
-  | TermsDocumentXml
-  | TermsDocumentHtml
-  | TermsDocumentPlain
-  | TermsDocumentJson
-  | TermsDocumentPdf;
-
-export interface TermsDocumentXml {
-  type: "xml";
-  document: Document;
-}
-
-export interface TermsDocumentHtml {
-  type: "html";
-  href: URL;
-}
-
-export interface TermsDocumentPlain {
-  type: "plain";
-  content: string;
-}
-
-export interface TermsDocumentJson {
-  type: "json";
-  data: any;
-}
-
-export interface TermsDocumentPdf {
-  type: "pdf";
-  location: URL;
-}
-
 export type StateFunc<S> = (p: S) => VNode;
 
 export type StateViewMap<StateType extends { status: string }> = {
   [S in StateType as S["status"]]: StateFunc<S>;
 };
 
-type RecursiveState<S extends object> = S | (() => RecursiveState<S>)
+type RecursiveState<S extends object> = S | (() => RecursiveState<S>);
 
 export function compose<SType extends { status: string }, PType>(
   name: string,
   hook: (p: PType) => RecursiveState<SType>,
   viewMap: StateViewMap<SType>,
 ): (p: PType) => VNode {
-
   function withHook(stateHook: () => RecursiveState<SType>): () => VNode {
-
     function TheComponent(): VNode {
       const state = stateHook();
 
       if (typeof state === "function") {
-        const subComponent = withHook(state)
+        const subComponent = withHook(state);
         return createElement(subComponent, {});
       }
 
@@ -225,7 +106,7 @@ export function compose<SType extends { status: string }, PType>(
   }
 
   return (p: PType) => {
-    const h = withHook(() => hook(p))
-    return h()
+    const h = withHook(() => hook(p));
+    return h();
   };
 }

@@ -22,21 +22,21 @@ type State = State.Ready | State.NoExchange | State.Selecting;
 
 export namespace State {
   export interface NoExchange {
-    status: "no-exchange"
+    status: "no-exchange";
     error: undefined;
     currency: string | undefined;
   }
   export interface Ready {
-    status: "ready",
-    doSelect: ButtonHandler,
+    status: "ready";
+    doSelect: ButtonHandler;
     selected: ExchangeListItem;
   }
   export interface Selecting {
-    status: "selecting-exchange",
-    error: undefined,
+    status: "selecting-exchange";
+    error: undefined;
     onSelection: (url: string) => Promise<void>;
     onCancel: () => Promise<void>;
-    list: ExchangeListItem[],
+    list: ExchangeListItem[];
     currency: string;
     currentExchange: string;
   }
@@ -45,38 +45,42 @@ export namespace State {
 interface Props {
   currency: string;
   //there is a preference for the default at the initial state
-  defaultExchange?: string,
+  defaultExchange?: string;
   //list of exchanges
-  list: ExchangeListItem[],
+  list: ExchangeListItem[];
 }
 
-
-
-export function useSelectedExchange({ currency, defaultExchange, list }: Props): State {
+export function useSelectedExchange({
+  currency,
+  defaultExchange,
+  list,
+}: Props): State {
   const [isSelecting, setIsSelecting] = useState(false);
-  const [selectedExchange, setSelectedExchange] = useState<string | undefined>(undefined);
+  const [selectedExchange, setSelectedExchange] = useState<string | undefined>(
+    undefined,
+  );
 
   if (!list.length) {
     return {
       status: "no-exchange",
       error: undefined,
       currency: undefined,
-    }
+    };
   }
 
-  const listCurrency = list.filter((e) => e.currency === currency)
+  const listCurrency = list.filter((e) => e.currency === currency);
   if (!listCurrency.length) {
     // there should be at least one exchange for this currency
     return {
       status: "no-exchange",
       error: undefined,
       currency,
-    }
+    };
   }
 
-
   if (isSelecting) {
-    const currentExchange = selectedExchange ?? defaultExchange ?? listCurrency[0].exchangeBaseUrl;
+    const currentExchange =
+      selectedExchange ?? defaultExchange ?? listCurrency[0].exchangeBaseUrl;
     return {
       status: "selecting-exchange",
       error: undefined,
@@ -85,44 +89,46 @@ export function useSelectedExchange({ currency, defaultExchange, list }: Props):
       currentExchange: currentExchange,
       onSelection: async (exchangeBaseUrl: string) => {
         setIsSelecting(false);
-        setSelectedExchange(exchangeBaseUrl)
+        setSelectedExchange(exchangeBaseUrl);
       },
       onCancel: async () => {
         setIsSelecting(false);
-      }
-    }
+      },
+    };
   }
 
   {
-    const found = !selectedExchange ? undefined : list.find(
-      (e) => e.exchangeBaseUrl === selectedExchange,
-    )
-    if (found) return {
-      status: "ready",
-      doSelect: {
-        onClick: async () => setIsSelecting(true)
-      },
-      selected: found
-    };
+    const found = !selectedExchange
+      ? undefined
+      : list.find((e) => e.exchangeBaseUrl === selectedExchange);
+    if (found)
+      return {
+        status: "ready",
+        doSelect: {
+          onClick: async () => setIsSelecting(true),
+        },
+        selected: found,
+      };
   }
   {
-    const found = !defaultExchange ? undefined : list.find(
-      (e) => e.exchangeBaseUrl === defaultExchange,
-    )
-    if (found) return {
-      status: "ready",
-      doSelect: {
-        onClick: async () => setIsSelecting(true)
-      },
-      selected: found
-    };
+    const found = !defaultExchange
+      ? undefined
+      : list.find((e) => e.exchangeBaseUrl === defaultExchange);
+    if (found)
+      return {
+        status: "ready",
+        doSelect: {
+          onClick: async () => setIsSelecting(true),
+        },
+        selected: found,
+      };
   }
 
   return {
     status: "ready",
     doSelect: {
-      onClick: async () => setIsSelecting(true)
+      onClick: async () => setIsSelecting(true),
     },
-    selected: listCurrency[0]
-  }
+    selected: listCurrency[0],
+  };
 }

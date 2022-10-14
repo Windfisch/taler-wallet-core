@@ -17,9 +17,7 @@
 import { AmountJson, TalerErrorDetail } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
-import {
-  State as SelectExchangeState
-} from "../../hooks/useSelectedExchange.js";
+import { State as SelectExchangeState } from "../../hooks/useSelectedExchange.js";
 import { ButtonHandler, TextFieldHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import { ExchangeSelectionPage } from "../../wallet/ExchangeSelection/index.js";
@@ -34,12 +32,12 @@ export interface Props {
   onSuccess: (tx: string) => Promise<void>;
 }
 
-export type State = State.Loading
+export type State =
+  | State.Loading
   | State.LoadingUriError
   | State.Ready
   | SelectExchangeState.Selecting
-  | SelectExchangeState.NoExchange
-  ;
+  | SelectExchangeState.NoExchange;
 
 export namespace State {
   export interface Loading {

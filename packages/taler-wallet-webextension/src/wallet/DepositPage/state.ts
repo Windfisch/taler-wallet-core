@@ -14,13 +14,24 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountJson, Amounts, DepositGroupFees, KnownBankAccountsInfo, parsePaytoUri, PaytoUri, stringifyPaytoUri } from "@gnu-taler/taler-util";
+import {
+  AmountJson,
+  Amounts,
+  DepositGroupFees,
+  KnownBankAccountsInfo,
+  parsePaytoUri,
+  PaytoUri,
+  stringifyPaytoUri,
+} from "@gnu-taler/taler-util";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
-export function useComponentState({ amount: amountStr, currency: currencyStr, onCancel, onSuccess }: Props, api: typeof wxApi): State {
+export function useComponentState(
+  { amount: amountStr, currency: currencyStr, onCancel, onSuccess }: Props,
+  api: typeof wxApi,
+): State {
   const parsed = amountStr === undefined ? undefined : Amounts.parse(amountStr);
   const currency = parsed !== undefined ? parsed.currency : currencyStr;
 
@@ -46,8 +57,8 @@ export function useComponentState({ amount: amountStr, currency: currencyStr, on
   if (!currency) {
     return {
       status: "amount-or-currency-error",
-      error: undefined
-    }
+      error: undefined,
+    };
   }
 
   if (!hook) {
@@ -60,7 +71,7 @@ export function useComponentState({ amount: amountStr, currency: currencyStr, on
     return {
       status: "loading-error",
       error: hook,
-    }
+    };
   }
   const { accounts, balances } = hook.response;
 
@@ -74,13 +85,12 @@ export function useComponentState({ amount: amountStr, currency: currencyStr, on
       onAccountAdded: (p: string) => {
         updateAccountFromList(p);
         setAddingAccount(false);
-        hook.retry()
+        hook.retry();
       },
       onCancel: () => {
         setAddingAccount(false);
-      }
-      ,
-    }
+      },
+    };
   }
 
   const bs = balances.filter((b) => b.available.startsWith(currency));
@@ -103,13 +113,15 @@ export function useComponentState({ amount: amountStr, currency: currencyStr, on
       error: undefined,
       currency,
       onAddAccount: {
-        onClick: async () => { setAddingAccount(true) }
+        onClick: async () => {
+          setAddingAccount(true);
+        },
       },
-    }
+    };
   }
 
   const accountMap = createLabelsForBankAccount(accounts);
-  accountMap[""] = "Select one account..."
+  accountMap[""] = "Select one account...";
 
   async function updateAccountFromList(accountStr: string): Promise<void> {
     // const newSelected = !accountMap[accountStr] ? undefined : accountMap[accountStr];
@@ -144,18 +156,19 @@ export function useComponentState({ amount: amountStr, currency: currencyStr, on
       ? Amounts.sum([fee.wire, fee.coin, fee.refresh]).amount
       : Amounts.getZero(currency);
 
-  const totalToDeposit = parsedAmount && fee !== undefined
-    ? Amounts.sub(parsedAmount, totalFee).amount
-    : Amounts.getZero(currency);
+  const totalToDeposit =
+    parsedAmount && fee !== undefined
+      ? Amounts.sub(parsedAmount, totalFee).amount
+      : Amounts.getZero(currency);
 
   const isDirty = amount !== initialValue;
   const amountError = !isDirty
     ? undefined
     : !parsedAmount
-      ? "Invalid amount"
-      : Amounts.cmp(balance, parsedAmount) === -1
-        ? `Too much, your current balance is ${Amounts.stringifyValue(balance)}`
-        : undefined;
+    ? "Invalid amount"
+    : Amounts.cmp(balance, parsedAmount) === -1
+    ? `Too much, your current balance is ${Amounts.stringifyValue(balance)}`
+    : undefined;
 
   const unableToDeposit =
     !parsedAmount ||
@@ -181,10 +194,11 @@ export function useComponentState({ amount: amountStr, currency: currencyStr, on
       value: String(amount),
       onInput: updateAmount,
       error: amountError,
-
     },
     onAddAccount: {
-      onClick: async () => { setAddingAccount(true) }
+      onClick: async () => {
+        setAddingAccount(true);
+      },
     },
     account: {
       list: accountMap,
@@ -219,22 +233,26 @@ async function getFeeForAmount(
 
 export function labelForAccountType(id: string) {
   switch (id) {
-    case "": return "Choose one";
-    case "x-taler-bank": return "Taler Bank";
-    case "bitcoin": return "Bitcoin";
-    case "iban": return "IBAN";
-    default: return id;
+    case "":
+      return "Choose one";
+    case "x-taler-bank":
+      return "Taler Bank";
+    case "bitcoin":
+      return "Bitcoin";
+    case "iban":
+      return "IBAN";
+    default:
+      return id;
   }
 }
 
 export function createLabelsForBankAccount(
   knownBankAccounts: Array<KnownBankAccountsInfo>,
 ): { [value: string]: string } {
-  const initialList: Record<string, string> = {
-  }
+  const initialList: Record<string, string> = {};
   if (!knownBankAccounts.length) return initialList;
   return knownBankAccounts.reduce((prev, cur, i) => {
-    prev[stringifyPaytoUri(cur.uri)] = cur.alias
+    prev[stringifyPaytoUri(cur.uri)] = cur.alias;
     return prev;
   }, initialList);
 }

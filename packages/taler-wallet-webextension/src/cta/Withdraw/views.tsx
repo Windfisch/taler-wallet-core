@@ -15,30 +15,28 @@
  */
 
 import { Fragment, h, VNode } from "preact";
+import { useState } from "preact/hooks";
+import { Amount } from "../../components/Amount.js";
 import { ErrorTalerOperation } from "../../components/ErrorTalerOperation.js";
 import { LoadingError } from "../../components/LoadingError.js";
 import { LogoHeader } from "../../components/LogoHeader.js";
 import { Part } from "../../components/Part.js";
+import { QR } from "../../components/QR.js";
 import { SelectList } from "../../components/SelectList.js";
 import {
   Input,
   Link,
   LinkSuccess,
   SubTitle,
-  SuccessBox,
   SvgIcon,
   WalletAction,
 } from "../../components/styled/index.js";
 import { useTranslationContext } from "../../context/translation.js";
 import { Button } from "../../mui/Button.js";
-import { ExchangeDetails, WithdrawDetails } from "../../wallet/Transaction.js";
-import { TermsOfServiceSection } from "../TermsOfServiceSection.js";
-import { State } from "./index.js";
 import editIcon from "../../svg/edit_24px.svg";
-import { Amount } from "../../components/Amount.js";
-import { QR } from "../../components/QR.js";
-import { useState } from "preact/hooks";
-import { ErrorMessage } from "../../components/ErrorMessage.js";
+import { ExchangeDetails, WithdrawDetails } from "../../wallet/Transaction.js";
+import { TermsOfService } from "../TermsOfService/index.js";
+import { State } from "./index.js";
 
 export function LoadingUriView({ error }: State.LoadingUriError): VNode {
   const { i18n } = useTranslationContext();
@@ -66,6 +64,9 @@ export function LoadingInfoView({ error }: State.LoadingInfoError): VNode {
 
 export function SuccessView(state: State.Success): VNode {
   const { i18n } = useTranslationContext();
+  const currentTosVersionIsAccepted =
+    state.currentExchange.tos.acceptedVersion ===
+    state.currentExchange.tos.currentVersion;
   return (
     <WalletAction>
       <LogoHeader />
@@ -103,7 +104,9 @@ export function SuccessView(state: State.Success): VNode {
               </Button>
             </div>
           }
-          text={<ExchangeDetails exchange={state.exchangeUrl} />}
+          text={
+            <ExchangeDetails exchange={state.currentExchange.exchangeBaseUrl} />
+          }
           kind="neutral"
           big
         />
@@ -130,43 +133,29 @@ export function SuccessView(state: State.Success): VNode {
           </Input>
         )}
       </section>
-      {state.tosProps && <TermsOfServiceSection {...state.tosProps} />}
-      {state.tosProps ? (
-        <Fragment>
-          <section>
-            {(state.tosProps.terms.status === "accepted" ||
-              (state.mustAcceptFirst && state.tosProps.reviewed)) && (
-              <Button
-                variant="contained"
-                color="success"
-                disabled={!state.doWithdrawal.onClick}
-                onClick={state.doWithdrawal.onClick}
-              >
-                <i18n.Translate>
-                  Withdraw &nbsp; <Amount value={state.toBeReceived} />
-                </i18n.Translate>
-              </Button>
-            )}
-            {state.tosProps.terms.status === "notfound" && (
-              <Button
-                variant="contained"
-                color="warning"
-                disabled={!state.doWithdrawal.onClick}
-                onClick={state.doWithdrawal.onClick}
-              >
-                <i18n.Translate>Withdraw anyway</i18n.Translate>
-              </Button>
-            )}
-          </section>
-          {state.talerWithdrawUri ? (
-            <WithdrawWithMobile talerWithdrawUri={state.talerWithdrawUri} />
-          ) : undefined}
-        </Fragment>
-      ) : (
-        <section>
-          <i18n.Translate>Loading terms of service...</i18n.Translate>
-        </section>
-      )}
+
+      <section>
+        {currentTosVersionIsAccepted ? (
+          <Button
+            variant="contained"
+            color="success"
+            disabled={!state.doWithdrawal.onClick}
+            onClick={state.doWithdrawal.onClick}
+          >
+            <i18n.Translate>
+              Withdraw &nbsp; <Amount value={state.toBeReceived} />
+            </i18n.Translate>
+          </Button>
+        ) : (
+          <TermsOfService
+            exchangeUrl={state.currentExchange.exchangeBaseUrl}
+            onChange={state.onTosUpdate}
+          />
+        )}
+      </section>
+      {state.talerWithdrawUri ? (
+        <WithdrawWithMobile talerWithdrawUri={state.talerWithdrawUri} />
+      ) : undefined}
       <section>
         <Link upperCased onClick={state.cancel}>
           <i18n.Translate>Cancel</i18n.Translate>

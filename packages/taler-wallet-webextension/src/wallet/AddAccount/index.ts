@@ -20,7 +20,11 @@ import { compose, StateViewMap } from "../../utils/index.js";
 import { LoadingUriView, ReadyView } from "./views.js";
 import * as wxApi from "../../wxApi.js";
 import { useComponentState } from "./state.js";
-import { ButtonHandler, SelectFieldHandler, TextFieldHandler } from "../../mui/handlers.js";
+import {
+  ButtonHandler,
+  SelectFieldHandler,
+  TextFieldHandler,
+} from "../../mui/handlers.js";
 
 export interface Props {
   currency: string;

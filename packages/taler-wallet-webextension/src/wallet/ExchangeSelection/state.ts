@@ -25,9 +25,13 @@ export function useComponentState(
   { onCancel, onSelection, list: exchanges, currentExchange }: Props,
   api: typeof wxApi,
 ): State {
-  const initialValue = exchanges.findIndex(e => e.exchangeBaseUrl === currentExchange);
+  const initialValue = exchanges.findIndex(
+    (e) => e.exchangeBaseUrl === currentExchange,
+  );
   if (initialValue === -1) {
-    throw Error(`wrong usage of ExchangeSelection component, currentExchange '${currentExchange}' is not in the list of exchanges`)
+    throw Error(
+      `wrong usage of ExchangeSelection component, currentExchange '${currentExchange}' is not in the list of exchanges`,
+    );
   }
   const [value, setValue] = useState(String(initialValue));
 
@@ -113,7 +117,7 @@ export function useComponentState(
     withdraw: createPairTimeline(
       selected.denomFees.withdraw,
       original.denomFees.withdraw,
-    )
+    ),
   };
 
   return {

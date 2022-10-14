@@ -37,7 +37,8 @@ const exchanges: ExchangeFullDetails[] = [
     exchangeBaseUrl: "http://exchange.demo.taler.net",
     paytoUris: [],
     tos: {
-      acceptedVersion: "",
+      acceptedVersion: "v1",
+      currentVersion: "v1",
     },
     auditors: [
       {
@@ -58,7 +59,7 @@ const exchanges: ExchangeFullDetails[] = [
       accounts: [],
       feesForType: {},
     },
-  },
+  } as Partial<ExchangeFullDetails> as ExchangeFullDetails,
 ];
 
 describe("Withdraw CTA states", () => {
@@ -161,17 +162,20 @@ describe("Withdraw CTA states", () => {
           },
           {
             listExchanges: async () => ({ exchanges }),
-            getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
-              amount: "ARS:2",
-              possibleExchanges: exchanges,
-              defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl,
-            }),
+            getWithdrawalDetailsForUri: async ({
+              talerWithdrawUri,
+            }: any): Promise<ExchangeWithdrawDetails> =>
+              ({
+                amount: "ARS:2",
+                possibleExchanges: exchanges,
+                defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl,
+              } as Partial<ExchangeWithdrawDetails> as ExchangeWithdrawDetails),
             getExchangeWithdrawalInfo:
               async (): Promise<ExchangeWithdrawDetails> =>
-              ({
-                withdrawalAmountRaw: "ARS:2",
-                withdrawalAmountEffective: "ARS:2",
-              } as any),
+                ({
+                  withdrawalAmountRaw: "ARS:2",
+                  withdrawalAmountEffective: "ARS:2",
+                } as any),
             getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
               contentType: "text",
               content: "just accept",
@@ -205,25 +209,39 @@ describe("Withdraw CTA states", () => {
       expect(state.status).equals("success");
       if (state.status !== "success") return;
 
-      // expect(state.exchange.isDirty).false;
-      // expect(state.exchange.value).equal("http://exchange.demo.taler.net");
-      // expect(state.exchange.list).deep.equal({
-      //   "http://exchange.demo.taler.net": "http://exchange.demo.taler.net",
-      // });
-      // expect(state.showExchangeSelection).false;
-
       expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"));
       expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"));
       expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"));
 
       expect(state.doWithdrawal.onClick).not.undefined;
-      expect(state.mustAcceptFirst).false;
     }
 
     await assertNoPendingUpdate();
   });
 
   it("should be accept the tos before withdraw", async () => {
+    const listExchangesResponse = {
+      exchanges: exchanges.map((e) => ({
+        ...e,
+        tos: {
+          ...e.tos,
+          acceptedVersion: undefined,
+        },
+      })) as ExchangeFullDetails[],
+    };
+
+    function updateAcceptedVersionToCurrentVersion(): void {
+      listExchangesResponse.exchanges = listExchangesResponse.exchanges.map(
+        (e) => ({
+          ...e,
+          tos: {
+            ...e.tos,
+            acceptedVersion: e.tos.currentVersion,
+          },
+        }),
+      );
+    }
+
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
         useComponentStateFromURI(
@@ -237,18 +255,19 @@ describe("Withdraw CTA states", () => {
             },
           },
           {
-            listExchanges: async () => ({ exchanges }),
-            getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
-              amount: "ARS:2",
-              possibleExchanges: exchanges,
-              defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl,
-            }),
+            listExchanges: async () => listExchangesResponse,
+            getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) =>
+              ({
+                amount: "ARS:2",
+                possibleExchanges: exchanges,
+                defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl,
+              } as Partial<ExchangeWithdrawDetails> as ExchangeWithdrawDetails),
             getExchangeWithdrawalInfo:
               async (): Promise<ExchangeWithdrawDetails> =>
-              ({
-                withdrawalAmountRaw: "ARS:2",
-                withdrawalAmountEffective: "ARS:2",
-              } as any),
+                ({
+                  withdrawalAmountRaw: "ARS:2",
+                  withdrawalAmountEffective: "ARS:2",
+                } as any),
             getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
               contentType: "text",
               content: "just accept",
@@ -283,22 +302,14 @@ describe("Withdraw CTA states", () => {
       expect(state.status).equals("success");
       if (state.status !== "success") return;
 
-      // expect(state.exchange.isDirty).false;
-      // expect(state.exchange.value).equal("http://exchange.demo.taler.net");
-      // expect(state.exchange.list).deep.equal({
-      //   "http://exchange.demo.taler.net": "http://exchange.demo.taler.net",
-      // });
-      // expect(state.showExchangeSelection).false;
-
       expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"));
       expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"));
       expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"));
 
       expect(state.doWithdrawal.onClick).undefined;
-      expect(state.mustAcceptFirst).true;
 
-      // accept TOS
-      state.tosProps?.onAccept(true);
+      updateAcceptedVersionToCurrentVersion();
+      state.onTosUpdate();
     }
 
     await waitNextUpdate();
@@ -308,19 +319,11 @@ describe("Withdraw CTA states", () => {
       expect(state.status).equals("success");
       if (state.status !== "success") return;
 
-      // expect(state.exchange.isDirty).false;
-      // expect(state.exchange.value).equal("http://exchange.demo.taler.net");
-      // expect(state.exchange.list).deep.equal({
-      //   "http://exchange.demo.taler.net": "http://exchange.demo.taler.net",
-      // });
-      // expect(state.showExchangeSelection).false;
-
       expect(state.toBeReceived).deep.equal(Amounts.parseOrThrow("ARS:2"));
       expect(state.withdrawalFee).deep.equal(Amounts.parseOrThrow("ARS:0"));
       expect(state.chosenAmount).deep.equal(Amounts.parseOrThrow("ARS:2"));
 
       expect(state.doWithdrawal.onClick).not.undefined;
-      expect(state.mustAcceptFirst).true;
     }
 
     await assertNoPendingUpdate();

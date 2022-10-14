@@ -19,8 +19,9 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
+import { ExchangeListItem } from "@gnu-taler/taler-util";
 import { createExample } from "../../test-utils.js";
-import { TermsState } from "../../utils/index.js";
+// import { TermsState } from "../../utils/index.js";
 import { SuccessView } from "./views.js";
 
 export default {
@@ -38,16 +39,16 @@ const nullHandler = {
   },
 };
 
-const normalTosState = {
-  terms: {
-    status: "accepted",
-    version: "",
-  } as TermsState,
-  onAccept: () => null,
-  onReview: () => null,
-  reviewed: false,
-  reviewing: false,
-};
+// const normalTosState = {
+//   terms: {
+//     status: "accepted",
+//     version: "",
+//   } as TermsState,
+//   onAccept: () => null,
+//   onReview: () => null,
+//   reviewed: false,
+//   reviewing: false,
+// };
 
 const ageRestrictionOptions: Record<string, string> = "6:12:18"
   .split(":")
@@ -69,15 +70,16 @@ export const TermsOfServiceNotYetLoaded = createExample(SuccessView, {
     fraction: 10000000,
   },
   doWithdrawal: nullHandler,
-  exchangeUrl: "https://exchange.demo.taler.net",
-  mustAcceptFirst: false,
+  currentExchange: {
+    exchangeBaseUrl: "https://exchange.demo.taler.net",
+    tos: {},
+  } as Partial<ExchangeListItem> as any,
   withdrawalFee: {
     currency: "USD",
     fraction: 10000000,
     value: 1,
   },
-  doSelectExchange: {
-  },
+  doSelectExchange: {},
   toBeReceived: {
     currency: "USD",
     fraction: 0,
@@ -94,8 +96,10 @@ export const WithSomeFee = createExample(SuccessView, {
     fraction: 10000000,
   },
   doWithdrawal: nullHandler,
-  exchangeUrl: "https://exchange.demo.taler.net",
-  mustAcceptFirst: false,
+  currentExchange: {
+    exchangeBaseUrl: "https://exchange.demo.taler.net",
+    tos: {},
+  } as Partial<ExchangeListItem> as any,
   withdrawalFee: {
     currency: "USD",
     fraction: 10000000,
@@ -106,9 +110,7 @@ export const WithSomeFee = createExample(SuccessView, {
     fraction: 0,
     value: 1,
   },
-  doSelectExchange: {
-  },
-  tosProps: normalTosState,
+  doSelectExchange: {},
 });
 
 export const WithoutFee = createExample(SuccessView, {
@@ -120,21 +122,21 @@ export const WithoutFee = createExample(SuccessView, {
     fraction: 0,
   },
   doWithdrawal: nullHandler,
-  exchangeUrl: "https://exchange.demo.taler.net",
-  mustAcceptFirst: false,
+  currentExchange: {
+    exchangeBaseUrl: "https://exchange.demo.taler.net",
+    tos: {},
+  } as Partial<ExchangeListItem> as any,
   withdrawalFee: {
     currency: "USD",
     fraction: 0,
     value: 0,
   },
-  doSelectExchange: {
-  },
+  doSelectExchange: {},
   toBeReceived: {
     currency: "USD",
     fraction: 0,
     value: 2,
   },
-  tosProps: normalTosState,
 });
 
 export const EditExchangeUntouched = createExample(SuccessView, {
@@ -146,21 +148,21 @@ export const EditExchangeUntouched = createExample(SuccessView, {
     fraction: 10000000,
   },
   doWithdrawal: nullHandler,
-  exchangeUrl: "https://exchange.demo.taler.net",
-  mustAcceptFirst: false,
+  currentExchange: {
+    exchangeBaseUrl: "https://exchange.demo.taler.net",
+    tos: {},
+  } as Partial<ExchangeListItem> as any,
   withdrawalFee: {
     currency: "USD",
     fraction: 0,
     value: 0,
   },
-  doSelectExchange: {
-  },
+  doSelectExchange: {},
   toBeReceived: {
     currency: "USD",
     fraction: 0,
     value: 2,
   },
-  tosProps: normalTosState,
 });
 
 export const EditExchangeModified = createExample(SuccessView, {
@@ -172,21 +174,21 @@ export const EditExchangeModified = createExample(SuccessView, {
     fraction: 10000000,
   },
   doWithdrawal: nullHandler,
-  exchangeUrl: "https://exchange.demo.taler.net",
-  mustAcceptFirst: false,
+  currentExchange: {
+    exchangeBaseUrl: "https://exchange.demo.taler.net",
+    tos: {},
+  } as Partial<ExchangeListItem> as any,
   withdrawalFee: {
     currency: "USD",
     fraction: 0,
     value: 0,
   },
-  doSelectExchange: {
-  },
+  doSelectExchange: {},
   toBeReceived: {
     currency: "USD",
     fraction: 0,
     value: 2,
   },
-  tosProps: normalTosState,
 });
 
 export const WithAgeRestriction = createExample(SuccessView, {
@@ -198,11 +200,12 @@ export const WithAgeRestriction = createExample(SuccessView, {
     value: 2,
     fraction: 10000000,
   },
-  doSelectExchange: {
-  },
+  doSelectExchange: {},
   doWithdrawal: nullHandler,
-  exchangeUrl: "https://exchange.demo.taler.net",
-  mustAcceptFirst: false,
+  currentExchange: {
+    exchangeBaseUrl: "https://exchange.demo.taler.net",
+    tos: {},
+  } as Partial<ExchangeListItem> as any,
   withdrawalFee: {
     currency: "USD",
     fraction: 0,
@@ -213,5 +216,4 @@ export const WithAgeRestriction = createExample(SuccessView, {
     fraction: 0,
     value: 2,
   },
-  tosProps: normalTosState,
 });

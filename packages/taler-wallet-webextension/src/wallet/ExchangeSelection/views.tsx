@@ -14,26 +14,32 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import {
-  Amounts,
-  FeeDescription,
-  FeeDescriptionPair,
-} from "@gnu-taler/taler-util";
+import { FeeDescription, FeeDescriptionPair } from "@gnu-taler/taler-util";
 import { styled } from "@linaria/react";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { Amount } from "../../components/Amount.js";
 import { LoadingError } from "../../components/LoadingError.js";
 import { SelectList } from "../../components/SelectList.js";
-import { Input, LinkPrimary, SvgIcon } from "../../components/styled/index.js";
+import { Input, SvgIcon } from "../../components/styled/index.js";
 import { Time } from "../../components/Time.js";
 import { useTranslationContext } from "../../context/translation.js";
+import { State as SelectExchangeState } from "../../hooks/useSelectedExchange.js";
 import { Button } from "../../mui/Button.js";
 import arrowDown from "../../svg/chevron-down.svg";
 import { State } from "./index.js";
-import { State as SelectExchangeState } from "../../hooks/useSelectedExchange.js";
 
 const ButtonGroup = styled.div`
+  & > button {
+    margin-left: 8px;
+    margin-right: 8px;
+  }
+`;
+const ButtonGroupFooter = styled.div`
+  & {
+    display: flex;
+    justify-content: space-between;
+  }
   & > button {
     margin-left: 8px;
     margin-right: 8px;
@@ -343,10 +349,10 @@ export function ComparingView({
         </table>
       </section>
       <section>
-        <ButtonGroup>
-          <LinkPrimary>Privacy policy</LinkPrimary>
-          <LinkPrimary>Terms of service</LinkPrimary>
-        </ButtonGroup>
+        <ButtonGroupFooter>
+          <Button variant="outlined">Privacy policy</Button>
+          <Button variant="outlined">Terms of service</Button>
+        </ButtonGroupFooter>
       </section>
     </Container>
   );
@@ -609,10 +615,10 @@ export function ReadyView({
         </FeeDescriptionTable>
       </section>
       <section>
-        <ButtonGroup>
-          <LinkPrimary>Privacy policy</LinkPrimary>
-          <LinkPrimary>Terms of service</LinkPrimary>
-        </ButtonGroup>
+        <ButtonGroupFooter>
+          <Button variant="outlined">Privacy policy</Button>
+          <Button variant="outlined">Terms of service</Button>
+        </ButtonGroupFooter>
       </section>
     </Container>
   );

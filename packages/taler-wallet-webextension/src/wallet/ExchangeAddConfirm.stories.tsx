@@ -19,20 +19,8 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { termsXml } from "../cta/termsExample.js";
 import { createExample } from "../test-utils.js";
-import { View as TestedComponent } from "./ExchangeAddConfirm.js";
-
-function parseFromString(s: string): Document {
-  if (typeof window === "undefined") {
-    return {
-      querySelector: () => ({
-        children: [],
-      }),
-    } as any;
-  }
-  return new window.DOMParser().parseFromString(s, "text/xml");
-}
+import { ExchangeAddConfirmPage as TestedComponent } from "./ExchangeAddConfirm.js";
 
 export default {
   title: "wallet/exchange add/confirm",
@@ -46,33 +34,12 @@ export default {
 
 export const TermsNotFound = createExample(TestedComponent, {
   url: "https://exchange.demo.taler.net/",
-  terms: {
-    status: "notfound",
-    version: "1",
-    content: undefined,
-  },
-  onAccept: async () => undefined,
 });
 
 export const NewTerms = createExample(TestedComponent, {
   url: "https://exchange.demo.taler.net/",
-  terms: {
-    status: "new",
-    version: "1",
-    content: undefined,
-  },
-  onAccept: async () => undefined,
 });
 
 export const TermsChanged = createExample(TestedComponent, {
   url: "https://exchange.demo.taler.net/",
-  terms: {
-    status: "changed",
-    version: "1",
-    content: {
-      type: "xml",
-      document: parseFromString(termsXml),
-    },
-  },
-  onAccept: async () => undefined,
 });

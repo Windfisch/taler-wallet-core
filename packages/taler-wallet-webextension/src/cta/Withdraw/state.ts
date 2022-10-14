@@ -15,17 +15,15 @@
  */
 
 /* eslint-disable react-hooks/rules-of-hooks */
-import { AmountJson, Amounts, ExchangeListItem, parsePaytoUri } from "@gnu-taler/taler-util";
+import { AmountJson, Amounts, ExchangeListItem } from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
-import { Amount } from "../../components/Amount.js";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { useSelectedExchange } from "../../hooks/useSelectedExchange.js";
-import { buildTermsOfServiceState } from "../../utils/index.js";
 import * as wxApi from "../../wxApi.js";
-import { PropsFromURI, PropsFromParams, State } from "./index.js";
+import { PropsFromParams, PropsFromURI, State } from "./index.js";
 
-type RecursiveState<S extends object> = S | (() => RecursiveState<S>)
+type RecursiveState<S extends object> = S | (() => RecursiveState<S>);
 
 export function useComponentStateFromParams(
   { amount, cancel, onSuccess }: PropsFromParams,
@@ -46,18 +44,38 @@ export function useComponentStateFromParams(
   }
 
   const chosenAmount = uriInfoHook.response.amount;
-  const exchangeList = uriInfoHook.response.exchanges.exchanges
+  const exchangeList = uriInfoHook.response.exchanges.exchanges;
 
-  async function doManualWithdraw(exchange: string, ageRestricted: number | undefined): Promise<{ transactionId: string, confirmTransferUrl: string | undefined }> {
-    const res = await api.acceptManualWithdrawal(exchange, Amounts.stringify(chosenAmount), ageRestricted);
+  async function doManualWithdraw(
+    exchange: string,
+    ageRestricted: number | undefined,
+  ): Promise<{
+    transactionId: string;
+    confirmTransferUrl: string | undefined;
+  }> {
+    const res = await api.acceptManualWithdrawal(
+      exchange,
+      Amounts.stringify(chosenAmount),
+      ageRestricted,
+    );
     return {
       confirmTransferUrl: undefined,
-      transactionId: res.transactionId
+      transactionId: res.transactionId,
     };
   }
 
-  return () => exchangeSelectionState(doManualWithdraw, cancel, onSuccess, undefined, chosenAmount, exchangeList, undefined, api)
-
+  return () =>
+    exchangeSelectionState(
+      uriInfoHook.retry,
+      doManualWithdraw,
+      cancel,
+      onSuccess,
+      undefined,
+      chosenAmount,
+      exchangeList,
+      undefined,
+      api,
+    );
 }
 
 export function useComponentStateFromURI(
@@ -75,7 +93,12 @@ export function useComponentStateFromURI(
     });
     const exchanges = await api.listExchanges();
     const { amount, defaultExchangeBaseUrl } = uriInfo;
-    return { talerWithdrawUri, amount: Amounts.parseOrThrow(amount), thisExchange: defaultExchangeBaseUrl, exchanges };
+    return {
+      talerWithdrawUri,
+      amount: Amounts.parseOrThrow(amount),
+      thisExchange: defaultExchangeBaseUrl,
+      exchanges,
+    };
   });
 
   if (!uriInfoHook) return { status: "loading", error: undefined };
@@ -90,53 +113,75 @@ export function useComponentStateFromURI(
   const uri = uriInfoHook.response.talerWithdrawUri;
   const chosenAmount = uriInfoHook.response.amount;
   const defaultExchange = uriInfoHook.response.thisExchange;
-  const exchangeList = uriInfoHook.response.exchanges.exchanges
+  const exchangeList = uriInfoHook.response.exchanges.exchanges;
 
-  async function doManagedWithdraw(exchange: string, ageRestricted: number | undefined): Promise<{ transactionId: string, confirmTransferUrl: string | undefined }> {
-    const res = await api.acceptWithdrawal(uri, exchange, ageRestricted,);
+  async function doManagedWithdraw(
+    exchange: string,
+    ageRestricted: number | undefined,
+  ): Promise<{
+    transactionId: string;
+    confirmTransferUrl: string | undefined;
+  }> {
+    const res = await api.acceptWithdrawal(uri, exchange, ageRestricted);
     return {
       confirmTransferUrl: res.confirmTransferUrl,
-      transactionId: res.transactionId
+      transactionId: res.transactionId,
     };
   }
 
-  return () => exchangeSelectionState(doManagedWithdraw, cancel, onSuccess, uri, chosenAmount, exchangeList, defaultExchange, api)
-
+  return () =>
+    exchangeSelectionState(
+      uriInfoHook.retry,
+      doManagedWithdraw,
+      cancel,
+      onSuccess,
+      uri,
+      chosenAmount,
+      exchangeList,
+      defaultExchange,
+      api,
+    );
 }
 
-type ManualOrManagedWithdrawFunction = (exchange: string, ageRestricted: number | undefined) => Promise<{ transactionId: string, confirmTransferUrl: string | undefined }>
+type ManualOrManagedWithdrawFunction = (
+  exchange: string,
+  ageRestricted: number | undefined,
+) => Promise<{ transactionId: string; confirmTransferUrl: string | undefined }>;
 
-function exchangeSelectionState(doWithdraw: ManualOrManagedWithdrawFunction, cancel: () => Promise<void>, onSuccess: (txid: string) => Promise<void>, talerWithdrawUri: string | undefined, chosenAmount: AmountJson, exchangeList: ExchangeListItem[], defaultExchange: string | undefined, api: typeof wxApi,): RecursiveState<State> {
+function exchangeSelectionState(
+  onTosUpdate: () => void,
+  doWithdraw: ManualOrManagedWithdrawFunction,
+  cancel: () => Promise<void>,
+  onSuccess: (txid: string) => Promise<void>,
+  talerWithdrawUri: string | undefined,
+  chosenAmount: AmountJson,
+  exchangeList: ExchangeListItem[],
+  defaultExchange: string | undefined,
+  api: typeof wxApi,
+): RecursiveState<State> {
+  const selectedExchange = useSelectedExchange({
+    currency: chosenAmount.currency,
+    defaultExchange,
+    list: exchangeList,
+  });
 
-  const selectedExchange = useSelectedExchange({ currency: chosenAmount.currency, defaultExchange, list: exchangeList })
-
-  if (selectedExchange.status !== 'ready') {
-    return selectedExchange
+  if (selectedExchange.status !== "ready") {
+    return selectedExchange;
   }
 
   return () => {
-
     const [ageRestricted, setAgeRestricted] = useState(0);
-    const currentExchange = selectedExchange.selected
-    /**
-     * For the exchange selected, bring the status of the terms of service
-     */
-    const terms = useAsyncAsHook(async () => {
-      const exchangeTos = await api.getExchangeTos(currentExchange.exchangeBaseUrl, [
-        "text/xml",
-      ]);
-
-      const state = buildTermsOfServiceState(exchangeTos);
-
-      return { state };
-    }, []);
+    const currentExchange = selectedExchange.selected;
+    const tosNeedToBeAccepted =
+      !currentExchange.tos.acceptedVersion ||
+      currentExchange.tos.currentVersion !==
+        currentExchange.tos.acceptedVersion;
 
     /**
      * With the exchange and amount, ask the wallet the information
      * about the withdrawal
      */
     const amountHook = useAsyncAsHook(async () => {
-
       const info = await api.getExchangeWithdrawalInfo({
         exchangeBaseUrl: currentExchange.exchangeBaseUrl,
         amount: chosenAmount,
@@ -155,20 +200,18 @@ function exchangeSelectionState(doWithdraw: ManualOrManagedWithdrawFunction, can
       };
     }, []);
 
-    const [reviewing, setReviewing] = useState<boolean>(false);
-    const [reviewed, setReviewed] = useState<boolean>(false);
-
     const [withdrawError, setWithdrawError] = useState<TalerError | undefined>(
       undefined,
     );
     const [doingWithdraw, setDoingWithdraw] = useState<boolean>(false);
 
-
     async function doWithdrawAndCheckError(): Promise<void> {
-
       try {
         setDoingWithdraw(true);
-        const res = await doWithdraw(currentExchange.exchangeBaseUrl, !ageRestricted ? undefined : ageRestricted)
+        const res = await doWithdraw(
+          currentExchange.exchangeBaseUrl,
+          !ageRestricted ? undefined : ageRestricted,
+        );
         if (res.confirmTransferUrl) {
           document.location.href = res.confirmTransferUrl;
         } else {
@@ -201,33 +244,6 @@ function exchangeSelectionState(doWithdraw: ManualOrManagedWithdrawFunction, can
     ).amount;
     const toBeReceived = amountHook.response.amount.effective;
 
-    const { state: termsState } = (!terms
-      ? undefined
-      : terms.hasError
-        ? undefined
-        : terms.response) || { state: undefined };
-
-    async function onAccept(accepted: boolean): Promise<void> {
-      if (!termsState) return;
-
-      try {
-        await api.setExchangeTosAccepted(
-          currentExchange.exchangeBaseUrl,
-          accepted ? termsState.version : undefined,
-        );
-        setReviewed(accepted);
-      } catch (e) {
-        if (e instanceof Error) {
-          //FIXME: uncomment this and display error
-          // setErrorAccepting(e.message);
-        }
-      }
-    }
-
-    const mustAcceptFirst =
-      termsState !== undefined &&
-      (termsState.status === "changed" || termsState.status === "new");
-
     const ageRestrictionOptions =
       amountHook.response.ageRestrictionOptions?.reduce(
         (p, c) => ({ ...p, [c]: `under ${c}` }),
@@ -242,17 +258,17 @@ function exchangeSelectionState(doWithdraw: ManualOrManagedWithdrawFunction, can
     //TODO: calculate based on exchange info
     const ageRestriction = ageRestrictionEnabled
       ? {
-        list: ageRestrictionOptions,
-        value: String(ageRestricted),
-        onChange: async (v: string) => setAgeRestricted(parseInt(v, 10)),
-      }
+          list: ageRestrictionOptions,
+          value: String(ageRestricted),
+          onChange: async (v: string) => setAgeRestricted(parseInt(v, 10)),
+        }
       : undefined;
 
     return {
       status: "success",
       error: undefined,
       doSelectExchange: selectedExchange.doSelect,
-      exchangeUrl: currentExchange.exchangeBaseUrl,
+      currentExchange,
       toBeReceived,
       withdrawalFee,
       chosenAmount,
@@ -260,22 +276,13 @@ function exchangeSelectionState(doWithdraw: ManualOrManagedWithdrawFunction, can
       ageRestriction,
       doWithdrawal: {
         onClick:
-          doingWithdraw || (mustAcceptFirst && !reviewed)
+          doingWithdraw || tosNeedToBeAccepted
             ? undefined
             : doWithdrawAndCheckError,
         error: withdrawError,
       },
-      tosProps: !termsState
-        ? undefined
-        : {
-          onAccept,
-          onReview: setReviewing,
-          reviewed: reviewed,
-          reviewing: reviewing,
-          terms: termsState,
-        },
-      mustAcceptFirst,
+      onTosUpdate,
       cancel,
     };
-  }
+  };
 }

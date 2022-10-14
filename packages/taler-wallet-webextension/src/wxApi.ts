@@ -24,8 +24,16 @@
 import {
   AcceptExchangeTosRequest,
   AcceptManualWithdrawalResult,
-  AcceptPeerPullPaymentRequest, AcceptPeerPullPaymentResponse, AcceptPeerPushPaymentRequest, AcceptPeerPushPaymentResponse, AcceptTipRequest, AcceptTipResponse, AcceptWithdrawalResponse,
-  AddExchangeRequest, AddKnownBankAccountsRequest, AmountString,
+  AcceptPeerPullPaymentRequest,
+  AcceptPeerPullPaymentResponse,
+  AcceptPeerPushPaymentRequest,
+  AcceptPeerPushPaymentResponse,
+  AcceptTipRequest,
+  AcceptTipResponse,
+  AcceptWithdrawalResponse,
+  AddExchangeRequest,
+  AddKnownBankAccountsRequest,
+  AmountString,
   ApplyRefundResponse,
   BalancesResponse,
   CheckPeerPullPaymentRequest,
@@ -37,7 +45,12 @@ import {
   CoreApiResponse,
   CreateDepositGroupRequest,
   CreateDepositGroupResponse,
-  DeleteTransactionRequest, DepositGroupFees, ExchangeFullDetails, ExchangesListResponse, ForgetKnownBankAccountsRequest, GetExchangeTosResult,
+  DeleteTransactionRequest,
+  DepositGroupFees,
+  ExchangeFullDetails,
+  ExchangesListResponse,
+  ForgetKnownBankAccountsRequest,
+  GetExchangeTosResult,
   GetExchangeWithdrawalInfo,
   GetFeeForDepositRequest,
   GetWithdrawalDetailsForUriRequest,
@@ -47,7 +60,9 @@ import {
   InitiatePeerPushPaymentResponse,
   KnownBankAccounts,
   Logger,
-  NotificationType, PaytoUri, PrepareDepositRequest,
+  NotificationType,
+  PaytoUri,
+  PrepareDepositRequest,
   PrepareDepositResponse,
   PreparePayResult,
   PrepareRefundRequest,
@@ -55,9 +70,13 @@ import {
   PrepareTipRequest,
   PrepareTipResult,
   RetryTransactionRequest,
-  SetWalletDeviceIdRequest, stringifyPaytoUri, Transaction,
-  TransactionsResponse, WalletCoreVersion,
-  WalletDiagnostics, WithdrawUriInfoResponse
+  SetWalletDeviceIdRequest,
+  stringifyPaytoUri,
+  Transaction,
+  TransactionsResponse,
+  WalletCoreVersion,
+  WalletDiagnostics,
+  WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
 import {
   AddBackupProviderRequest,
@@ -66,7 +85,7 @@ import {
   PendingOperationsResponse,
   RemoveBackupProviderRequest,
   TalerError,
-  WalletContractData
+  WalletContractData,
 } from "@gnu-taler/taler-wallet-core";
 import { MessageFromBackend, platform } from "./platform/api.js";
 
@@ -268,13 +287,13 @@ export function addKnownBankAccounts(
   return callBackend("addKnownBankAccounts", {
     payto: stringifyPaytoUri(payto),
     currency,
-    alias
+    alias,
   } as AddKnownBankAccountsRequest);
 }
-export function forgetKnownBankAccounts(
-  payto: string,
-): Promise<void> {
-  return callBackend("forgetKnownBankAccounts", { payto } as ForgetKnownBankAccountsRequest);
+export function forgetKnownBankAccounts(payto: string): Promise<void> {
+  return callBackend("forgetKnownBankAccounts", {
+    payto,
+  } as ForgetKnownBankAccountsRequest);
 }
 
 /**

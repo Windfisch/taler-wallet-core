@@ -19,7 +19,14 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { Amounts, Balance, BalancesResponse, DepositGroupFees, parsePaytoUri, stringifyPaytoUri } from "@gnu-taler/taler-util";
+import {
+  Amounts,
+  Balance,
+  BalancesResponse,
+  DepositGroupFees,
+  parsePaytoUri,
+  stringifyPaytoUri,
+} from "@gnu-taler/taler-util";
 import { expect } from "chai";
 import { mountHook } from "../../test-utils.js";
 
@@ -52,17 +59,19 @@ const nullFunction: any = () => null;
 type VoidFunction = () => void;
 
 describe("DepositPage states", () => {
-
   it("should have status 'no-enough-balance' when balance is empty", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ currency, onCancel: nullFunction, onSuccess: nullFunction }, {
-          getBalance: async () =>
-          ({
-            balances: [{ available: `${currency}:0` }],
-          } as Partial<BalancesResponse>),
-          listKnownBankAccounts: async () => ({ accounts: {} }),
-        } as Partial<typeof wxApi> as any),
+        useComponentState(
+          { currency, onCancel: nullFunction, onSuccess: nullFunction },
+          {
+            getBalance: async () =>
+              ({
+                balances: [{ available: `${currency}:0` }],
+              } as Partial<BalancesResponse>),
+            listKnownBankAccounts: async () => ({ accounts: {} }),
+          } as Partial<typeof wxApi> as any,
+        ),
       );
 
     {
@@ -111,25 +120,28 @@ describe("DepositPage states", () => {
     uri: parsePaytoUri("payto://iban/ES8877998399652238")!,
     kyc_completed: false,
     currency: "EUR",
-    alias: "my iban account"
+    alias: "my iban account",
   };
   const talerBankPayto = {
     uri: parsePaytoUri("payto://x-taler-bank/ES8877998399652238")!,
     kyc_completed: false,
     currency: "EUR",
-    alias: "my taler account"
+    alias: "my taler account",
   };
 
   it("should have status 'ready' but unable to deposit ", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ currency, onCancel: nullFunction, onSuccess: nullFunction }, {
-          getBalance: async () =>
-          ({
-            balances: [{ available: `${currency}:1` }],
-          } as Partial<BalancesResponse>),
-          listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
-        } as Partial<typeof wxApi> as any),
+        useComponentState(
+          { currency, onCancel: nullFunction, onSuccess: nullFunction },
+          {
+            getBalance: async () =>
+              ({
+                balances: [{ available: `${currency}:1` }],
+              } as Partial<BalancesResponse>),
+            listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
+          } as Partial<typeof wxApi> as any,
+        ),
       );
 
     {
@@ -155,14 +167,17 @@ describe("DepositPage states", () => {
   it.skip("should not be able to deposit more than the balance ", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ currency, onCancel: nullFunction, onSuccess: nullFunction }, {
-          getBalance: async () =>
-          ({
-            balances: [{ available: `${currency}:1` }],
-          } as Partial<BalancesResponse>),
-          listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
-          getFeeForDeposit: withoutFee,
-        } as Partial<typeof wxApi> as any),
+        useComponentState(
+          { currency, onCancel: nullFunction, onSuccess: nullFunction },
+          {
+            getBalance: async () =>
+              ({
+                balances: [{ available: `${currency}:1` }],
+              } as Partial<BalancesResponse>),
+            listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
+            getFeeForDeposit: withoutFee,
+          } as Partial<typeof wxApi> as any,
+        ),
       );
 
     {
@@ -217,14 +232,17 @@ describe("DepositPage states", () => {
   it.skip("should calculate the fee upon entering amount ", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ currency, onCancel: nullFunction, onSuccess: nullFunction }, {
-          getBalance: async () =>
-          ({
-            balances: [{ available: `${currency}:1` }],
-          } as Partial<BalancesResponse>),
-          listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
-          getFeeForDeposit: withSomeFee,
-        } as Partial<typeof wxApi> as any),
+        useComponentState(
+          { currency, onCancel: nullFunction, onSuccess: nullFunction },
+          {
+            getBalance: async () =>
+              ({
+                balances: [{ available: `${currency}:1` }],
+              } as Partial<BalancesResponse>),
+            listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
+            getFeeForDeposit: withSomeFee,
+          } as Partial<typeof wxApi> as any,
+        ),
       );
 
     {
@@ -281,16 +299,19 @@ describe("DepositPage states", () => {
   it("should calculate the fee upon selecting account ", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ currency, onCancel: nullFunction, onSuccess: nullFunction }, {
-          getBalance: async () =>
-          ({
-            balances: [{ available: `${currency}:1` }],
-          } as Partial<BalancesResponse>),
-          listKnownBankAccounts: async () => ({
-            accounts: [ibanPayto, talerBankPayto],
-          }),
-          getFeeForDeposit: freeJustForIBAN,
-        } as Partial<typeof wxApi> as any),
+        useComponentState(
+          { currency, onCancel: nullFunction, onSuccess: nullFunction },
+          {
+            getBalance: async () =>
+              ({
+                balances: [{ available: `${currency}:1` }],
+              } as Partial<BalancesResponse>),
+            listKnownBankAccounts: async () => ({
+              accounts: [ibanPayto, talerBankPayto],
+            }),
+            getFeeForDeposit: freeJustForIBAN,
+          } as Partial<typeof wxApi> as any,
+        ),
       );
 
     {
@@ -327,7 +348,6 @@ describe("DepositPage states", () => {
       expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
       expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
       expect(r.depositHandler.onClick).undefined;
-
     }
 
     await waitNextUpdate("");
@@ -358,7 +378,6 @@ describe("DepositPage states", () => {
       expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
       expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:7`));
       expect(r.depositHandler.onClick).undefined;
-
     }
 
     await waitNextUpdate("");
@@ -373,7 +392,6 @@ describe("DepositPage states", () => {
       expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
       expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:7`));
       expect(r.depositHandler.onClick).undefined;
-
 
       if (r.account.onChange === undefined) expect.fail();
       r.account.onChange(stringifyPaytoUri(talerBankPayto.uri));
@@ -391,7 +409,6 @@ describe("DepositPage states", () => {
       expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
       expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:7`));
       expect(r.depositHandler.onClick).undefined;
-
     }
 
     await waitNextUpdate("");
@@ -414,14 +431,17 @@ describe("DepositPage states", () => {
   it.skip("should be able to deposit if has the enough balance ", async () => {
     const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState({ currency, onCancel: nullFunction, onSuccess: nullFunction }, {
-          getBalance: async () =>
-          ({
-            balances: [{ available: `${currency}:15` }],
-          } as Partial<BalancesResponse>),
-          listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
-          getFeeForDeposit: withSomeFee,
-        } as Partial<typeof wxApi> as any),
+        useComponentState(
+          { currency, onCancel: nullFunction, onSuccess: nullFunction },
+          {
+            getBalance: async () =>
+              ({
+                balances: [{ available: `${currency}:15` }],
+              } as Partial<BalancesResponse>),
+            listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
+            getFeeForDeposit: withSomeFee,
+          } as Partial<typeof wxApi> as any,
+        ),
       );
 
     {
@@ -456,7 +476,6 @@ describe("DepositPage states", () => {
       expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
       expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:10`));
       expect(r.depositHandler.onClick).undefined;
-
     }
 
     await waitNextUpdate();

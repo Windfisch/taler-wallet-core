@@ -17,11 +17,22 @@
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { compose, StateViewMap } from "../../utils/index.js";
-import { AmountOrCurrencyErrorView, LoadingErrorView, NoAccountToDepositView, NoEnoughBalanceView, ReadyView } from "./views.js";
+import {
+  AmountOrCurrencyErrorView,
+  LoadingErrorView,
+  NoAccountToDepositView,
+  NoEnoughBalanceView,
+  ReadyView,
+} from "./views.js";
 import * as wxApi from "../../wxApi.js";
 import { useComponentState } from "./state.js";
 import { AmountJson, PaytoUri } from "@gnu-taler/taler-util";
-import { ButtonHandler, SelectFieldHandler, TextFieldHandler, ToggleHandler } from "../../mui/handlers.js";
+import {
+  ButtonHandler,
+  SelectFieldHandler,
+  TextFieldHandler,
+  ToggleHandler,
+} from "../../mui/handlers.js";
 import { AddAccountPage } from "../AddAccount/index.js";
 
 export interface Props {
@@ -31,7 +42,8 @@ export interface Props {
   onSuccess: (currency: string) => void;
 }
 
-export type State = State.Loading
+export type State =
+  | State.Loading
   | State.LoadingUriError
   | State.AmountOrCurrencyError
   | State.NoEnoughBalance

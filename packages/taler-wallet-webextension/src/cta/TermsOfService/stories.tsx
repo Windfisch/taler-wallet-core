@@ -20,31 +20,10 @@
  */
 
 import { createExample } from "../../test-utils.js";
-import { ReadyView } from "./views.js";
+// import { ReadyView } from "./views.js";
 
 export default {
-  title: "wallet/invoice create",
+  title: "TermsOfService",
 };
 
-export const Ready = createExample(ReadyView, {
-  chosenAmount: {
-    currency: "ARS",
-    value: 1,
-    fraction: 0,
-  },
-  cancel: {},
-  toBeReceived: {
-    currency: "ARS",
-    value: 1,
-    fraction: 0,
-  },
-  doSelectExchange: {},
-  exchangeUrl: "https://exchange.taler.ar",
-  subject: {
-    value: "some subject",
-    onInput: async () => {
-      null;
-    },
-  },
-  create: {},
-});
+// export const Ready = createExample(ReadyView, {});

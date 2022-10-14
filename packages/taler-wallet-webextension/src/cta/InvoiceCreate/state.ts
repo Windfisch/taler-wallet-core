@@ -23,7 +23,7 @@ import { useSelectedExchange } from "../../hooks/useSelectedExchange.js";
 import * as wxApi from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
-type RecursiveState<S extends object> = S | (() => RecursiveState<S>)
+type RecursiveState<S extends object> = S | (() => RecursiveState<S>);
 
 export function useComponentState(
   { amount: amountStr, onClose, onSuccess }: Props,
@@ -46,7 +46,7 @@ export function useComponentState(
     };
   }
 
-  const exchangeList = hook.response.exchanges
+  const exchangeList = hook.response.exchanges;
 
   return () => {
     const [subject, setSubject] = useState("");
@@ -55,14 +55,17 @@ export function useComponentState(
       TalerErrorDetail | undefined
     >(undefined);
 
+    const selectedExchange = useSelectedExchange({
+      currency: amount.currency,
+      defaultExchange: undefined,
+      list: exchangeList,
+    });
 
-    const selectedExchange = useSelectedExchange({ currency: amount.currency, defaultExchange: undefined, list: exchangeList })
-
-    if (selectedExchange.status !== 'ready') {
-      return selectedExchange
+    if (selectedExchange.status !== "ready") {
+      return selectedExchange;
     }
 
-    const exchange = selectedExchange.selected
+    const exchange = selectedExchange.selected;
 
     async function accept(): Promise<void> {
       try {
@@ -105,9 +108,5 @@ export function useComponentState(
       error: undefined,
       operationError,
     };
-  }
-
-
-
-
+  };
 }

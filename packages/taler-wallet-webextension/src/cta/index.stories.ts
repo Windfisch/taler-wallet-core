@@ -24,7 +24,7 @@ import * as a3 from "./Payment/stories.jsx";
 import * as a4 from "./Refund/stories.jsx";
 import * as a5 from "./Tip/stories.jsx";
 import * as a6 from "./Withdraw/stories.jsx";
-import * as a7 from "./TermsOfServiceSection.stories.js";
+import * as a7 from "./TermsOfService/stories.js";
 import * as a8 from "./InvoiceCreate/stories.js";
 import * as a9 from "./InvoicePay/stories.js";
 import * as a10 from "./TransferCreate/stories.js";

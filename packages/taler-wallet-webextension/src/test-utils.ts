@@ -82,7 +82,7 @@ export function renderNodeOrBrowser(Component: any, args: any): void {
     document.body.removeChild(div);
   }
 }
-type RecursiveState<S> = S | (() => RecursiveState<S>)
+type RecursiveState<S> = S | (() => RecursiveState<S>);
 
 interface Mounted<T> {
   unmount: () => void;
@@ -107,12 +107,12 @@ export function mountHook<T extends object>(
   // component that's going to hold the hook
   function Component(): VNode {
     try {
-      let componentOrResult = callback()
+      let componentOrResult = callback();
       while (typeof componentOrResult === "function") {
         componentOrResult = componentOrResult();
       }
       //typecheck fails here
-      const l: Exclude<T, () => void> = componentOrResult as any
+      const l: Exclude<T, () => void> = componentOrResult as any;
       lastResult = l;
     } catch (e) {
       if (e instanceof Error) {
