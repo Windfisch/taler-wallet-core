@@ -27,7 +27,7 @@ import {
   codecForList,
   Codec,
 } from "./codec.js";
-import { AmountString } from "./talerTypes.js";
+import { AmountString } from "./taler-types.js";
 import {
   ReserveTransaction,
   codecForReserveTransaction,

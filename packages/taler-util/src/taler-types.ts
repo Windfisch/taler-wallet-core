@@ -41,7 +41,7 @@ import {
   codecOptional,
 } from "./codec.js";
 import { strcmp } from "./helpers.js";
-import { AgeCommitmentProof, Edx25519PublicKeyEnc } from "./talerCrypto.js";
+import { AgeCommitmentProof, Edx25519PublicKeyEnc } from "./taler-crypto.js";
 import {
   codecForAbsoluteTime,
   codecForDuration,

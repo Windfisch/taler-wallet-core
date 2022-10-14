@@ -30,7 +30,7 @@ import {
   DenominationPubKey,
   DenomKeyType,
   HashCodeString,
-} from "./talerTypes.js";
+} from "./taler-types.js";
 import { Logger } from "./logging.js";
 import { secretbox } from "./nacl-fast.js";
 import * as fflate from "fflate";

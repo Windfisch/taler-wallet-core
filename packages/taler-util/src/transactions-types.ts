@@ -34,7 +34,7 @@ import {
   codecForMerchantInfo,
   codecForProduct,
   Location,
-} from "./talerTypes.js";
+} from "./taler-types.js";
 import {
   Codec,
   buildCodecForObject,
@@ -43,7 +43,11 @@ import {
   codecForList,
   codecForAny,
 } from "./codec.js";
-import { RefreshReason, TalerErrorDetail } from "./walletTypes.js";
+import {
+  RefreshReason,
+  TalerErrorDetail,
+  TransactionIdStr,
+} from "./wallet-types.js";
 
 export interface TransactionsRequest {
   /**
@@ -68,7 +72,7 @@ export interface TransactionsResponse {
 export interface TransactionCommon {
   // opaque unique ID for the transaction, used as a starting point for paginating queries
   // and for invoking actions on the transaction (e.g. deleting/hiding it from the history)
-  transactionId: string;
+  transactionId: TransactionIdStr;
 
   // the type of the transaction; different types might provide additional information
   type: TransactionType;

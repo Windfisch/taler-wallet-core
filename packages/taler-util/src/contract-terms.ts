@@ -23,7 +23,7 @@ import {
   getRandomBytes,
   hash,
   stringToBytes,
-} from "./talerCrypto.js";
+} from "./taler-crypto.js";
 
 const logger = new Logger("contractTerms.ts");
 

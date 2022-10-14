@@ -62,7 +62,7 @@
 /**
  * Imports.
  */
-import { DenominationPubKey, UnblindedSignature } from "./talerTypes.js";
+import { DenominationPubKey, UnblindedSignature } from "./taler-types.js";
 import { TalerProtocolDuration, TalerProtocolTimestamp } from "./time.js";
 
 export const BACKUP_TAG = "gnu-taler-wallet-backup-content" as const;

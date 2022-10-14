@@ -25,6 +25,7 @@ import {
   RefreshReason,
   TalerErrorCode,
   TalerErrorDetail,
+  TransactionIdStr,
   TransactionType,
 } from "@gnu-taler/taler-util";
 import { WalletStoresV1, CoinStatus, CoinRecord } from "../db.js";
@@ -37,7 +38,6 @@ import {
   OperationAttemptResultType,
   RetryInfo,
 } from "../util/retries.js";
-import { createRefreshGroup } from "./refresh.js";
 
 const logger = new Logger("operations/common.ts");
 
@@ -48,7 +48,7 @@ export interface CoinsSpendInfo {
   /**
    * Identifier for what the coin has been spent for.
    */
-  allocationId: string;
+  allocationId: TransactionIdStr;
 }
 
 export async function makeCoinAvailable(

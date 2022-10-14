@@ -22,7 +22,7 @@
 /**
  * Imports.
  */
-import { TalerErrorDetail } from "./walletTypes.js";
+import { TalerErrorDetail } from "./wallet-types.js";
 
 export enum NotificationType {
   CoinWithdrawn = "coin-withdrawn",

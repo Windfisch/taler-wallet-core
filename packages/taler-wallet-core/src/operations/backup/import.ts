@@ -45,7 +45,7 @@ import {
   DenominationRecord,
   DenominationVerificationStatus,
   OperationStatus,
-  ProposalDownload,
+  ProposalDownloadInfo,
   PurchaseStatus,
   PurchasePayInfo,
   RefreshCoinStatus,
@@ -649,7 +649,7 @@ export async function importBackup(
           } else {
             maxWireFee = Amounts.getZero(amount.currency);
           }
-          const download: ProposalDownload = {
+          const download: ProposalDownloadInfo = {
             contractTermsHash,
             contractTermsMerchantSig: backupPurchase.merchant_sig!,
             currency: amount.currency,
@@ -665,7 +665,6 @@ export async function importBackup(
           let payInfo: PurchasePayInfo | undefined = undefined;
           if (backupPurchase.pay_info) {
             payInfo = {
-              coinDepositPermissions: undefined,
               payCoinSelection: await recoverPayCoinSelection(
                 tx,
                 contractData,

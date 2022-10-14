@@ -48,6 +48,7 @@ import {
   GlobalFees,
   ExchangeGlobalFees,
   DenomSelectionState,
+  TransactionIdStr,
 } from "@gnu-taler/taler-util";
 import { RetryInfo, RetryTags } from "./util/retries.js";
 import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
@@ -765,8 +766,10 @@ export interface CoinRecord {
  * Coin allocation, i.e. what a coin has been used for.
  */
 export interface CoinAllocation {
-  // FIXME: Specify format!
-  id: string;
+  /**
+   * ID of the allocation, should be the ID of the transaction that
+   */
+  id: TransactionIdStr;
   amount: AmountString;
 }
 
@@ -1065,6 +1068,9 @@ export enum PurchaseStatus {
    */
   Paying = 11,
 
+  /**
+   * Currently in the process of aborting with a refund.
+   */
   AbortingWithRefund = 12,
 
   /**
@@ -1118,7 +1124,7 @@ export enum PurchaseStatus {
  * Only contains data that is relevant for indexing on the
  * "purchases" object stores.
  */
-export interface ProposalDownload {
+export interface ProposalDownloadInfo {
   contractTermsHash: string;
   fulfillmentUrl?: string;
   currency: string;
@@ -1129,15 +1135,6 @@ export interface PurchasePayInfo {
   payCoinSelection: PayCoinSelection;
   totalPayCost: AmountJson;
   payCoinSelectionUid: string;
-
-  /**
-   * Deposit permissions, available once the user has accepted the payment.
-   *
-   * This value is cached and derived from payCoinSelection.
-   *
-   * FIXME: Should probably be cached somewhere else, maybe not even in DB!
-   */
-  coinDepositPermissions: CoinDepositPermission[] | undefined;
 }
 
 /**
@@ -1191,11 +1188,8 @@ export interface PurchaseRecord {
 
   /**
    * Downloaded and parsed proposal data.
-   *
-   * FIXME:  Move this into another object store,
-   * to improve read/write perf on purchases.
    */
-  download: ProposalDownload | undefined;
+  download: ProposalDownloadInfo | undefined;
 
   payInfo: PurchasePayInfo | undefined;
 

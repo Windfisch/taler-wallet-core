@@ -19,7 +19,7 @@
  */
 import test from "ava";
 import { initNodePrng } from "./prng-node.js";
-import { ContractTermsUtil } from "./contractTerms.js";
+import { ContractTermsUtil } from "./contract-terms.js";
 
 // Since we import nacl-fast directly (and not via index.node.ts), we need to
 // init the PRNG manually.

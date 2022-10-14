@@ -37,7 +37,7 @@ import {
   EddsaSignatureString,
   EddsaPublicKeyString,
   CoinPublicKeyString,
-} from "./talerTypes.js";
+} from "./taler-types.js";
 import {
   AbsoluteTime,
   codecForTimestamp,

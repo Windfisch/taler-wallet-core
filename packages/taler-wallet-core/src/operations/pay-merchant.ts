@@ -80,9 +80,8 @@ import {
   CoinRecord,
   CoinStatus,
   DenominationRecord,
-  ProposalDownload,
-  PurchaseStatus,
   PurchaseRecord,
+  PurchaseStatus,
   RefundReason,
   RefundState,
   WalletContractData,
@@ -115,7 +114,6 @@ import {
   throwUnexpectedRequestError,
 } from "../util/http.js";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
-import { GetReadOnlyAccess } from "../util/query.js";
 import {
   OperationAttemptResult,
   OperationAttemptResultType,
@@ -124,10 +122,10 @@ import {
   scheduleRetry,
 } from "../util/retries.js";
 import {
-  spendCoins,
-  storeOperationPending,
-  storeOperationError,
   makeEventId,
+  spendCoins,
+  storeOperationError,
+  storeOperationPending,
 } from "./common.js";
 import { getExchangeDetails } from "./exchanges.js";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
@@ -858,10 +856,9 @@ async function handleInsufficientFunds(
       payInfo.payCoinSelection = res;
       payInfo.payCoinSelection = res;
       payInfo.payCoinSelectionUid = encodeCrock(getRandomBytes(32));
-      payInfo.coinDepositPermissions = undefined;
       await tx.purchases.put(p);
       await spendCoins(ws, tx, {
-        allocationId: `proposal:${p.proposalId}`,
+        allocationId: `tx:proposal:${p.proposalId}`,
         coinPubs: payInfo.payCoinSelection.coinPubs,
         contributions: payInfo.payCoinSelection.coinContributions,
         refreshReason: RefreshReason.PayMerchant,
@@ -1732,14 +1729,13 @@ export async function confirmPay(
             payCoinSelection: coinSelection,
             payCoinSelectionUid: encodeCrock(getRandomBytes(16)),
             totalPayCost: payCostInfo,
-            coinDepositPermissions: depositPermissions,
           };
           p.lastSessionId = sessionId;
           p.timestampAccept = TalerProtocolTimestamp.now();
           p.purchaseStatus = PurchaseStatus.Paying;
           await tx.purchases.put(p);
           await spendCoins(ws, tx, {
-            allocationId: `proposal:${p.proposalId}`,
+            allocationId: `tx:proposal:${p.proposalId}`,
             coinPubs: coinSelection.coinPubs,
             contributions: coinSelection.coinContributions,
             refreshReason: RefreshReason.PayMerchant,
@@ -1856,17 +1852,12 @@ export async function processPurchasePay(
     ).href;
 
     let depositPermissions: CoinDepositPermission[];
-
-    if (purchase.payInfo?.coinDepositPermissions) {
-      depositPermissions = purchase.payInfo.coinDepositPermissions;
-    } else {
-      // FIXME: also cache!
-      depositPermissions = await generateDepositPermissions(
-        ws,
-        payInfo.payCoinSelection,
-        download.contractData,
-      );
-    }
+    // FIXME: Cache!
+    depositPermissions = await generateDepositPermissions(
+      ws,
+      payInfo.payCoinSelection,
+      download.contractData,
+    );
 
     const reqBody = {
       coins: depositPermissions,

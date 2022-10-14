@@ -38,7 +38,7 @@ import {
   getRandomBytes,
   bigintToNaclArr,
   bigintFromNaclArr,
-} from "./talerCrypto.js";
+} from "./taler-crypto.js";
 import { sha512, kdf } from "./kdf.js";
 import * as nacl from "./nacl-fast.js";
 import { initNodePrng } from "./prng-node.js";

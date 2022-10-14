@@ -23,7 +23,7 @@
  * Imports.
  */
 import { AmountJson, Amounts } from "./amounts.js";
-import { decodeCrock } from "./talerCrypto.js";
+import { decodeCrock } from "./taler-crypto.js";
 import * as segwit from "./segwit_addr.js";
 
 function buf2hex(buffer: Uint8Array) {

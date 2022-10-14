@@ -62,13 +62,23 @@ import {
   DenomKeyType,
   ExchangeAuditor,
   UnblindedSignature,
-} from "./talerTypes.js";
-import { OrderShortInfo, codecForOrderShortInfo } from "./transactionsTypes.js";
-import { BackupRecovery } from "./backupTypes.js";
+} from "./taler-types.js";
+import { OrderShortInfo, codecForOrderShortInfo } from "./transactions-types.js";
+import { BackupRecovery } from "./backup-types.js";
 import { PaytoUri } from "./payto.js";
 import { TalerErrorCode } from "./taler-error-codes.js";
-import { AgeCommitmentProof } from "./talerCrypto.js";
+import { AgeCommitmentProof } from "./taler-crypto.js";
 import { VersionMatchResult } from "./libtool-version.js";
+
+/**
+ * Identifier for a transaction in the wallet.
+ */
+export type TransactionIdStr = `tx:${string}:${string}`;
+
+/**
+ * Identifier for a pending task in the wallet.
+ */
+export type PendingIdStr = `pd:${string}:string`;
 
 /**
  * Response for the create reserve request to the wallet.
