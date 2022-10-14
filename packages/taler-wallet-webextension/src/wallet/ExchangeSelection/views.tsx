@@ -22,6 +22,7 @@ import { Amount } from "../../components/Amount.js";
 import { LoadingError } from "../../components/LoadingError.js";
 import { SelectList } from "../../components/SelectList.js";
 import { Input, SvgIcon } from "../../components/styled/index.js";
+import { TermsOfService } from "../../components/TermsOfService/index.js";
 import { Time } from "../../components/Time.js";
 import { useTranslationContext } from "../../context/translation.js";
 import { State as SelectExchangeState } from "../../hooks/useSelectedExchange.js";
@@ -119,6 +120,36 @@ export function ErrorLoadingView({ error }: State.LoadingUriError): VNode {
   );
 }
 
+export function PrivacyContentView({
+  exchangeUrl,
+  onClose,
+}: State.ShowingPrivacy): VNode {
+  const { i18n } = useTranslationContext();
+  return (
+    <div>
+      <Button variant="outlined" onClick={onClose.onClick}>
+        <i18n.Translate>Close</i18n.Translate>
+      </Button>
+      <div>show privacy terms for {exchangeUrl}</div>
+    </div>
+  );
+}
+
+export function TosContentView({
+  exchangeUrl,
+  onClose,
+}: State.ShowingTos): VNode {
+  const { i18n } = useTranslationContext();
+  return (
+    <div>
+      <Button variant="outlined" onClick={onClose.onClick}>
+        <i18n.Translate>Close</i18n.Translate>
+      </Button>
+      <TermsOfService exchangeUrl={exchangeUrl} />
+    </div>
+  );
+}
+
 export function NoExchangesView({
   currency,
 }: SelectExchangeState.NoExchange): VNode {
@@ -145,6 +176,8 @@ export function ComparingView({
   onReset,
   onSelect,
   pairTimeline,
+  onShowPrivacy,
+  onShowTerms,
 }: State.Comparing): VNode {
   const { i18n } = useTranslationContext();
   return (
@@ -305,53 +338,13 @@ export function ComparingView({
         </FeeDescriptionTable>{" "}
       </section>
       <section>
-        <table>
-          <thead>
-            <tr>
-              <td>
-                <i18n.Translate>Wallet operations</i18n.Translate>
-              </td>
-              <td>
-                <i18n.Translate>Fee</i18n.Translate>
-              </td>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>history(i) </td>
-              <td>0.1</td>
-            </tr>
-            <tr>
-              <td>kyc (i) </td>
-              <td>0.1</td>
-            </tr>
-            <tr>
-              <td>account (i) </td>
-              <td>0.1</td>
-            </tr>
-            <tr>
-              <td>purse (i) </td>
-              <td>0.1</td>
-            </tr>
-            <tr>
-              <td>wire SEPA (i) </td>
-              <td>0.1</td>
-            </tr>
-            <tr>
-              <td>closing SEPA(i) </td>
-              <td>0.1</td>
-            </tr>
-            <tr>
-              <td>wad SEPA (i) </td>
-              <td>0.1</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-      <section>
         <ButtonGroupFooter>
-          <Button variant="outlined">Privacy policy</Button>
-          <Button variant="outlined">Terms of service</Button>
+          <Button onClick={onShowPrivacy.onClick} variant="outlined">
+            Privacy policy
+          </Button>
+          <Button onClick={onShowTerms.onClick} variant="outlined">
+            Terms of service
+          </Button>
         </ButtonGroupFooter>
       </section>
     </Container>
@@ -362,6 +355,8 @@ export function ReadyView({
   exchanges,
   selected,
   onClose,
+  onShowPrivacy,
+  onShowTerms,
 }: State.Ready): VNode {
   const { i18n } = useTranslationContext();
 
@@ -616,8 +611,12 @@ export function ReadyView({
       </section>
       <section>
         <ButtonGroupFooter>
-          <Button variant="outlined">Privacy policy</Button>
-          <Button variant="outlined">Terms of service</Button>
+          <Button onClick={onShowPrivacy.onClick} variant="outlined">
+            Privacy policy
+          </Button>
+          <Button onClick={onShowTerms.onClick} variant="outlined">
+            Terms of service
+          </Button>
         </ButtonGroupFooter>
       </section>
     </Container>

@@ -21,6 +21,7 @@ import {
   FeeDescriptionPair,
 } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
+import { TermsState } from "../../components/TermsOfService/utils.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { State as SelectExchangeState } from "../../hooks/useSelectedExchange.js";
 import { ButtonHandler, SelectFieldHandler } from "../../mui/handlers.js";
@@ -31,7 +32,9 @@ import {
   ComparingView,
   ErrorLoadingView,
   NoExchangesView,
+  PrivacyContentView,
   ReadyView,
+  TosContentView,
 } from "./views.js";
 
 export interface Props {
@@ -46,6 +49,8 @@ export type State =
   | State.LoadingUriError
   | State.Ready
   | State.Comparing
+  | State.ShowingTos
+  | State.ShowingPrivacy
   | SelectExchangeState.NoExchange;
 
 export namespace State {
@@ -63,6 +68,8 @@ export namespace State {
     exchanges: SelectFieldHandler;
     selected: ExchangeFullDetails;
     error: undefined;
+    onShowTerms: ButtonHandler;
+    onShowPrivacy: ButtonHandler;
   }
 
   export interface Ready extends BaseInfo {
@@ -76,6 +83,16 @@ export namespace State {
     onReset: ButtonHandler;
     onSelect: ButtonHandler;
   }
+  export interface ShowingTos {
+    status: "showing-tos";
+    exchangeUrl: string;
+    onClose: ButtonHandler;
+  }
+  export interface ShowingPrivacy {
+    status: "showing-privacy";
+    exchangeUrl: string;
+    onClose: ButtonHandler;
+  }
 }
 
 const viewMapping: StateViewMap<State> = {
@@ -83,6 +100,8 @@ const viewMapping: StateViewMap<State> = {
   "error-loading": ErrorLoadingView,
   comparing: ComparingView,
   "no-exchange": NoExchangesView,
+  "showing-tos": TosContentView,
+  "showing-privacy": PrivacyContentView,
   ready: ReadyView,
 };
 

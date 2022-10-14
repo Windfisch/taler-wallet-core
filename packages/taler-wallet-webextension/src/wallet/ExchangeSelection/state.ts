@@ -50,8 +50,14 @@ export function useComponentState(
     const original = !initialExchange
       ? undefined
       : await api.getExchangeDetailedInfo(initialExchange.exchangeBaseUrl);
+
     return { exchanges, selected, original };
   }, [value]);
+
+  const [showingTos, setShowingTos] = useState<string | undefined>(undefined);
+  const [showingPrivacy, setShowingPrivacy] = useState<string | undefined>(
+    undefined,
+  );
 
   if (!hook) {
     return {
@@ -82,6 +88,27 @@ export function useComponentState(
     {} as Record<string, string>,
   );
 
+  if (showingPrivacy) {
+    return {
+      status: "showing-privacy",
+      error: undefined,
+      onClose: {
+        onClick: async () => setShowingPrivacy(undefined),
+      },
+      exchangeUrl: showingPrivacy,
+    };
+  }
+  if (showingTos) {
+    return {
+      status: "showing-tos",
+      error: undefined,
+      onClose: {
+        onClick: async () => setShowingTos(undefined),
+      },
+      exchangeUrl: showingTos,
+    };
+  }
+
   if (!original) {
     // !original <=> selected == original
     return {
@@ -98,6 +125,16 @@ export function useComponentState(
         onClick: onCancel,
       },
       selected,
+      onShowPrivacy: {
+        onClick: async () => {
+          setShowingPrivacy(selected.exchangeBaseUrl);
+        },
+      },
+      onShowTerms: {
+        onClick: async () => {
+          setShowingTos(selected.exchangeBaseUrl);
+        },
+      },
     };
   }
 
@@ -138,6 +175,16 @@ export function useComponentState(
     onSelect: {
       onClick: async () => {
         onSelection(selected.exchangeBaseUrl);
+      },
+    },
+    onShowPrivacy: {
+      onClick: async () => {
+        setShowingPrivacy(selected.exchangeBaseUrl);
+      },
+    },
+    onShowTerms: {
+      onClick: async () => {
+        setShowingTos(selected.exchangeBaseUrl);
       },
     },
     selected,

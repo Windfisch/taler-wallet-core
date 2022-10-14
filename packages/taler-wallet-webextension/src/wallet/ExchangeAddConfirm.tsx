@@ -16,11 +16,9 @@
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { Title } from "../components/styled/index.js";
+import { TermsOfService } from "../components/TermsOfService/index.js";
 import { useTranslationContext } from "../context/translation.js";
-import { TermsOfService } from "../cta/TermsOfService/index.js";
-import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { Button } from "../mui/Button.js";
-import * as wxApi from "../wxApi.js";
 
 export interface Props {
   url: string;

@@ -300,20 +300,29 @@ function openWalletPageFromPopup(page: string): void {
   });
 }
 
+let i = 0;
+
 async function sendMessageToWalletBackground(
   operation: string,
   payload: any,
 ): Promise<any> {
   return new Promise<any>((resolve, reject) => {
     logger.trace("send operation to the wallet background", operation);
-    chrome.runtime.sendMessage({ operation, payload, id: "(none)" }, (resp) => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError.message);
-      }
-      resolve(resp);
-      // return true to keep the channel open
-      return true;
-    });
+    chrome.runtime.sendMessage(
+      { operation, payload, id: `id_${i++ % 1000}` },
+      (backgroundResponse) => {
+        console.log("BUG: got response from background", backgroundResponse);
+
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError.message);
+        }
+        // const apiResponse = JSON.parse(resp)
+        resolve(backgroundResponse);
+
+        // return true to keep the channel open
+        return true;
+      },
+    );
   });
 }
 
@@ -364,7 +373,10 @@ function listenToAllChannels(
   ) => void,
 ): void {
   chrome.runtime.onMessage.addListener((m, s, c) => {
-    cb(m, s, c);
+    cb(m, s, (apiResponse) => {
+      console.log("BUG: sending response to client", apiResponse);
+      c(apiResponse);
+    });
 
     // keep the connection open
     return true;

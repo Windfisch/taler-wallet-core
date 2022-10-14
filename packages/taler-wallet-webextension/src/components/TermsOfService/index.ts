@@ -31,15 +31,13 @@ import {
 
 export interface Props {
   exchangeUrl: string;
-  onChange: (v: boolean) => void;
-  readOnly?: boolean;
+  onChange?: (v: boolean) => void;
 }
 
 export type State =
   | State.Loading
   | State.LoadingUriError
   | State.ErrorAccepting
-  | State.ShowContent
   | State.ShowButtonsAccepted
   | State.ShowButtonsNotAccepted
   | State.ShowContent;
@@ -62,21 +60,21 @@ export namespace State {
 
   export interface BaseInfo {
     error: undefined;
-    termsAccepted: ToggleHandler;
-    showingTermsOfService: ToggleHandler;
     terms: TermsState;
   }
   export interface ShowContent extends BaseInfo {
     status: "show-content";
-    error: undefined;
+    termsAccepted?: ToggleHandler;
+    showingTermsOfService?: ToggleHandler;
   }
   export interface ShowButtonsAccepted extends BaseInfo {
     status: "show-buttons-accepted";
-    error: undefined;
+    termsAccepted: ToggleHandler;
+    showingTermsOfService: ToggleHandler;
   }
   export interface ShowButtonsNotAccepted extends BaseInfo {
     status: "show-buttons-not-accepted";
-    error: undefined;
+    showingTermsOfService: ToggleHandler;
   }
 }
 

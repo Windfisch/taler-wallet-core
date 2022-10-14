@@ -182,6 +182,7 @@ async function dispatch(
           break;
         }
         r = await w.handleCoreApiRequest(req.operation, req.id, req.payload);
+        console.log("response received from wallet", r);
         break;
       }
     }
@@ -330,7 +331,9 @@ export async function wxMain(): Promise<void> {
   // script on the page
   platform.listenToAllChannels((message, sender, callback) => {
     afterWalletIsInitialized.then(() => {
-      dispatch(message, sender, callback);
+      dispatch(message, sender, (response: CoreApiResponse) => {
+        callback(response);
+      });
     });
   });
 

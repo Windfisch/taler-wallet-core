@@ -35,7 +35,7 @@ import { useTranslationContext } from "../../context/translation.js";
 import { Button } from "../../mui/Button.js";
 import editIcon from "../../svg/edit_24px.svg";
 import { ExchangeDetails, WithdrawDetails } from "../../wallet/Transaction.js";
-import { TermsOfService } from "../TermsOfService/index.js";
+import { TermsOfService } from "../../components/TermsOfService/index.js";
 import { State } from "./index.js";
 
 export function LoadingUriView({ error }: State.LoadingUriError): VNode {

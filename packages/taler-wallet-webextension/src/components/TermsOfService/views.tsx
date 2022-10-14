@@ -17,7 +17,7 @@
 import { Fragment, h, VNode } from "preact";
 import { LoadingError } from "../../components/LoadingError.js";
 import { useTranslationContext } from "../../context/translation.js";
-import { TermsState } from "./utils.js";
+import { TermsDocument, TermsState } from "./utils.js";
 import { State } from "./index.js";
 import { CheckboxOutlined } from "../../components/CheckboxOutlined.js";
 import {
@@ -90,7 +90,6 @@ export function ShowButtonsAcceptedTosView({
 }
 
 export function ShowButtonsNonAcceptedTosView({
-  termsAccepted,
   showingTermsOfService,
   terms,
 }: State.ShowButtonsNotAccepted): VNode {
@@ -160,7 +159,7 @@ export function ShowTosContentView({
 }: State.ShowContent): VNode {
   const { i18n } = useTranslationContext();
   const ableToReviewTermsOfService =
-    showingTermsOfService.button.onClick !== undefined;
+    showingTermsOfService?.button.onClick !== undefined;
 
   return (
     <Fragment>
@@ -195,7 +194,7 @@ export function ShowTosContentView({
           )}
         </section>
       )}
-      {termsAccepted && ableToReviewTermsOfService && (
+      {showingTermsOfService && ableToReviewTermsOfService && (
         <section style={{ justifyContent: "space-around", display: "flex" }}>
           <LinkSuccess
             upperCased
@@ -205,7 +204,7 @@ export function ShowTosContentView({
           </LinkSuccess>
         </section>
       )}
-      {terms.status !== "notfound" && (
+      {termsAccepted && terms.status !== "notfound" && (
         <section style={{ justifyContent: "space-around", display: "flex" }}>
           <CheckboxOutlined
             name="terms"

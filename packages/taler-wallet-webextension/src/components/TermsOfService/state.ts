@@ -21,11 +21,11 @@ import { Props, State } from "./index.js";
 import { buildTermsOfServiceState } from "./utils.js";
 
 export function useComponentState(
-  { exchangeUrl, readOnly, onChange }: Props,
+  { exchangeUrl, onChange }: Props,
   api: typeof wxApi,
 ): State {
-  const [showContent, setShowContent] = useState<boolean>(false);
-  // const [accepted, setAccepted] = useState<boolean>(false);
+  const readOnly = !onChange;
+  const [showContent, setShowContent] = useState<boolean>(readOnly);
   const [errorAccepting, setErrorAccepting] = useState<Error | undefined>(
     undefined,
   );
@@ -78,7 +78,7 @@ export function useComponentState(
         await api.setExchangeTosAccepted(exchangeUrl, undefined);
       }
       // setAccepted(accepted);
-      onChange(accepted); //external update
+      if (!readOnly) onChange(accepted); //external update
     } catch (e) {
       if (e instanceof Error) {
         //FIXME: uncomment this and display error
@@ -90,16 +90,14 @@ export function useComponentState(
 
   const accepted = state.status === "accepted";
 
-  const base: State.BaseInfo = {
+  const base = {
     error: undefined,
     showingTermsOfService: {
       value: showContent,
       button: {
-        onClick: readOnly
-          ? undefined
-          : async () => {
-              setShowContent(!showContent);
-            },
+        onClick: async () => {
+          setShowContent(!showContent);
+        },
       },
     },
     terms: state,
@@ -118,7 +116,10 @@ export function useComponentState(
   if (showContent) {
     return {
       status: "show-content",
-      ...base,
+      error: undefined,
+      terms: state,
+      showingTermsOfService: readOnly ? undefined : base.showingTermsOfService,
+      termsAccepted: readOnly ? undefined : base.termsAccepted,
     };
   }
   //showing buttons

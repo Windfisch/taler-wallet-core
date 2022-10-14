@@ -39,6 +39,8 @@ export const Bitcoin1 = createExample(ReadyView, {
     transferFees: {},
     globalFees: [],
   } as any,
+  onShowPrivacy: {},
+  onShowTerms: {},
   onClose: {},
 });
 export const Bitcoin2 = createExample(ReadyView, {
@@ -57,6 +59,8 @@ export const Bitcoin2 = createExample(ReadyView, {
     transferFees: {},
     globalFees: [],
   } as any,
+  onShowPrivacy: {},
+  onShowTerms: {},
   onClose: {},
 });
 
@@ -75,6 +79,8 @@ export const Kudos1 = createExample(ReadyView, {
     transferFees: {},
     globalFees: [],
   } as any,
+  onShowPrivacy: {},
+  onShowTerms: {},
   onClose: {},
 });
 export const Kudos2 = createExample(ReadyView, {
@@ -93,6 +99,8 @@ export const Kudos2 = createExample(ReadyView, {
     transferFees: {},
     globalFees: [],
   } as any,
+  onShowPrivacy: {},
+  onShowTerms: {},
   onClose: {},
 });
 export const ComparingBitcoin = createExample(ComparingView, {
@@ -108,6 +116,8 @@ export const ComparingBitcoin = createExample(ComparingView, {
     globalFees: [],
   } as any,
   onReset: {},
+  onShowPrivacy: {},
+  onShowTerms: {},
   onSelect: {},
   error: undefined,
   pairTimeline: {
@@ -130,6 +140,8 @@ export const ComparingKudos = createExample(ComparingView, {
     globalFees: [],
   } as any,
   onReset: {},
+  onShowPrivacy: {},
+  onShowTerms: {},
   onSelect: {},
   error: undefined,
   pairTimeline: {

@@ -97,7 +97,7 @@ export type TermsState = {
 
 type TermsStatus = "new" | "accepted" | "changed" | "notfound";
 
-type TermsDocument =
+export type TermsDocument =
   | TermsDocumentXml
   | TermsDocumentHtml
   | TermsDocumentPlain
