@@ -500,11 +500,6 @@ export interface ExchangeDetailsPointer {
   updateClock: TalerProtocolTimestamp;
 }
 
-export interface MergeReserveInfo {
-  reservePub: string;
-  reservePriv: string;
-}
-
 /**
  * Exchange record as stored in the wallet's database.
  */
@@ -555,10 +550,8 @@ export interface ExchangeRecord {
   /**
    * Public key of the reserve that we're currently using for
    * receiving P2P payments.
-   *
-   * FIXME: Make this a rowId of reserves!
    */
-  currentMergeReserveInfo?: MergeReserveInfo;
+  currentMergeReserveRowId?: number;
 }
 
 export enum PlanchetStatus {

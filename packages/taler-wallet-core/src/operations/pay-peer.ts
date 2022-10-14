@@ -64,10 +64,10 @@ import {
 } from "@gnu-taler/taler-util";
 import {
   CoinStatus,
-  MergeReserveInfo,
   WithdrawalGroupStatus,
   WalletStoresV1,
   WithdrawalRecordType,
+  ReserveRecord,
 } from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
@@ -340,7 +340,10 @@ export async function initiatePeerToPeerPush(
       exchangeBaseUrl: coinSelRes.exchangeBaseUrl,
       contractPriv: econtractResp.contractPriv,
     }),
-    transactionId: makeTransactionId(TransactionType.PeerPushDebit, pursePair.pub),
+    transactionId: makeTransactionId(
+      TransactionType.PeerPushDebit,
+      pursePair.pub,
+    ),
   };
 }
 
@@ -448,28 +451,34 @@ async function getMergeReserveInfo(
   req: {
     exchangeBaseUrl: string;
   },
-): Promise<MergeReserveInfo> {
+): Promise<ReserveRecord> {
   // We have to eagerly create the key pair outside of the transaction,
   // due to the async crypto API.
   const newReservePair = await ws.cryptoApi.createEddsaKeypair({});
 
-  const mergeReserveInfo: MergeReserveInfo = await ws.db
-    .mktx((x) => [x.exchanges, x.withdrawalGroups])
+  const mergeReserveRecord: ReserveRecord = await ws.db
+    .mktx((x) => [x.exchanges, x.reserves, x.withdrawalGroups])
     .runReadWrite(async (tx) => {
       const ex = await tx.exchanges.get(req.exchangeBaseUrl);
       checkDbInvariant(!!ex);
-      if (ex.currentMergeReserveInfo) {
-        return ex.currentMergeReserveInfo;
+      if (ex.currentMergeReserveRowId != null) {
+        const reserve = await tx.reserves.get(ex.currentMergeReserveRowId);
+        checkDbInvariant(!!reserve);
+        return reserve;
       }
-      await tx.exchanges.put(ex);
-      ex.currentMergeReserveInfo = {
+      const reserve: ReserveRecord = {
         reservePriv: newReservePair.priv,
         reservePub: newReservePair.pub,
       };
-      return ex.currentMergeReserveInfo;
+      const insertResp = await tx.reserves.put(reserve);
+      checkDbInvariant(typeof insertResp.key === "number");
+      reserve.rowId = insertResp.key;
+      ex.currentMergeReserveRowId = reserve.rowId;
+      await tx.exchanges.put(ex);
+      return reserve;
     });
 
-  return mergeReserveInfo;
+  return mergeReserveRecord;
 }
 
 export async function acceptPeerPushPayment(
