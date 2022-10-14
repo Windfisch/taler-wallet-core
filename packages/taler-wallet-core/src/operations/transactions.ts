@@ -954,7 +954,11 @@ export async function retryTransaction(
 ): Promise<void> {
   logger.info(`retrying transaction ${transactionId}`);
 
-  const [type, ...rest] = transactionId.split(":");
+  const [tmbPrefix, type, ...rest] = transactionId.split(":");
+
+  if (tmbPrefix !== "tmb") {
+    throw Error("invalid tombstone, expected 'tmb' prefix");
+  }
 
   switch (type) {
     case TransactionType.Deposit: {
@@ -996,7 +1000,10 @@ export async function deleteTransaction(
   ws: InternalWalletState,
   transactionId: string,
 ): Promise<void> {
-  const [typeStr, ...rest] = transactionId.split(":");
+  const [txnPrefix, typeStr, ...rest] = transactionId.split(":");
+  if (txnPrefix !== "txn") {
+    throw Error("invalid transaction ID, expected 'txn' prefix");
+  }
   const type = typeStr as TransactionType;
   if (
     type === TransactionType.Withdrawal ||
