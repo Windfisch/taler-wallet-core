@@ -900,11 +900,18 @@ export interface ExchangeFullDetails {
   globalFees: FeeDescription[];
 }
 
+export enum ExchangeTosStatus {
+  New = "new",
+  Accepted = "accepted",
+  Changed = "changed",
+  NotFound = "not-found",
+}
+
 export interface ExchangeListItem {
   exchangeBaseUrl: string;
   currency: string;
   paytoUris: string[];
-  tos: ExchangeTosStatusDetails;
+  tosStatus: ExchangeTosStatus;
 }
 
 const codecForAuditorDenomSig = (): Codec<AuditorDenomSig> =>
@@ -976,7 +983,7 @@ export const codecForExchangeListItem = (): Codec<ExchangeListItem> =>
     .property("currency", codecForString())
     .property("exchangeBaseUrl", codecForString())
     .property("paytoUris", codecForList(codecForString()))
-    .property("tos", codecForExchangeTos())
+    .property("tosStatus", codecForAny())
     .build("ExchangeListItem");
 
 export const codecForExchangesListResponse = (): Codec<ExchangesListResponse> =>
@@ -1146,6 +1153,8 @@ export interface GetExchangeTosResult {
    * Accepted content type
    */
   contentType: string;
+
+  tosStatus: ExchangeTosStatus;
 }
 
 export interface TestPayArgs {

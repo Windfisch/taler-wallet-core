@@ -37,6 +37,7 @@ import editIcon from "../../svg/edit_24px.svg";
 import { ExchangeDetails, WithdrawDetails } from "../../wallet/Transaction.js";
 import { TermsOfService } from "../../components/TermsOfService/index.js";
 import { State } from "./index.js";
+import { ExchangeTosStatus } from "@gnu-taler/taler-util";
 
 export function LoadingUriView({ error }: State.LoadingUriError): VNode {
   const { i18n } = useTranslationContext();
@@ -65,8 +66,7 @@ export function LoadingInfoView({ error }: State.LoadingInfoError): VNode {
 export function SuccessView(state: State.Success): VNode {
   const { i18n } = useTranslationContext();
   const currentTosVersionIsAccepted =
-    state.currentExchange.tos.acceptedVersion ===
-    state.currentExchange.tos.currentVersion;
+    state.currentExchange.tosStatus === ExchangeTosStatus.Accepted;
   return (
     <WalletAction>
       <LogoHeader />

@@ -146,7 +146,7 @@ import {
 } from "./operations/backup/index.js";
 import { setWalletDeviceId } from "./operations/backup/state.js";
 import { getBalances } from "./operations/balance.js";
-import { runOperationWithErrorReporting } from "./operations/common.js";
+import { getExchangeTosStatus, runOperationWithErrorReporting } from "./operations/common.js";
 import {
   createDepositGroup,
   getFeeForDeposit,
@@ -503,6 +503,7 @@ async function getExchangeTos(
       currentEtag,
       content,
       contentType,
+      tosStatus: getExchangeTosStatus(exchangeDetails),
     };
   }
 
@@ -519,6 +520,7 @@ async function getExchangeTos(
       currentEtag,
       content,
       contentType,
+      tosStatus: getExchangeTosStatus(exchangeDetails),
     };
   }
 
@@ -529,6 +531,7 @@ async function getExchangeTos(
     currentEtag: tosDownload.tosEtag,
     content: tosDownload.tosText,
     contentType: tosDownload.tosContentType,
+    tosStatus: getExchangeTosStatus(exchangeDetails),
   };
 }
 
@@ -665,7 +668,7 @@ async function getExchanges(
         exchanges.push({
           exchangeBaseUrl: r.baseUrl,
           currency,
-          tos,
+          tosStatus: getExchangeTosStatus(exchangeDetails),
           paytoUris: exchangeDetails.wireInfo.accounts.map((x) => x.payto_uri),
         });
       }

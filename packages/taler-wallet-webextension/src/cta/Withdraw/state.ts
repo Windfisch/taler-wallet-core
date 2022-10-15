@@ -15,7 +15,12 @@
  */
 
 /* eslint-disable react-hooks/rules-of-hooks */
-import { AmountJson, Amounts, ExchangeListItem } from "@gnu-taler/taler-util";
+import {
+  AmountJson,
+  Amounts,
+  ExchangeListItem,
+  ExchangeTosStatus,
+} from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
@@ -173,10 +178,8 @@ function exchangeSelectionState(
     const [ageRestricted, setAgeRestricted] = useState(0);
     const currentExchange = selectedExchange.selected;
     const tosNeedToBeAccepted =
-      !currentExchange.tos.acceptedVersion ||
-      currentExchange.tos.currentVersion !==
-        currentExchange.tos.acceptedVersion;
-
+      currentExchange.tosStatus == ExchangeTosStatus.New ||
+      currentExchange.tosStatus == ExchangeTosStatus.Changed;
     /**
      * With the exchange and amount, ask the wallet the information
      * about the withdrawal

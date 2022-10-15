@@ -22,6 +22,7 @@
 import {
   Amounts,
   ExchangeFullDetails,
+  ExchangeTosStatus,
   GetExchangeTosResult,
 } from "@gnu-taler/taler-util";
 import { expect } from "chai";
@@ -169,6 +170,7 @@ describe("Withdraw CTA states", () => {
               content: "just accept",
               acceptedEtag: "v1",
               currentEtag: "v1",
+              tosStatus: ExchangeTosStatus.Accepted,
             }),
           } as any,
         ),
@@ -254,6 +256,7 @@ describe("Withdraw CTA states", () => {
               content: "just accept",
               acceptedEtag: "v1",
               currentEtag: "v2",
+              tosStatus: ExchangeTosStatus.Changed,
             }),
             setExchangeTosAccepted: async () => ({}),
           } as any,

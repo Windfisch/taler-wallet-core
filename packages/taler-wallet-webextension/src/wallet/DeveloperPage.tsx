@@ -17,6 +17,7 @@
 import {
   Amounts,
   CoinDumpJson,
+  CoinStatus,
   ExchangeListItem,
   NotificationType,
 } from "@gnu-taler/taler-util";
@@ -86,7 +87,7 @@ type CoinsInfo = CoinDumpJson["coins"];
 type CalculatedCoinfInfo = {
   ageKeysCount: number | undefined;
   denom_value: number;
-  remain_value: number;
+  //remain_value: number;
   status: string;
   from_refresh: boolean;
   id: string;
@@ -143,10 +144,10 @@ export function View({
       prev[cur.exchange_base_url].push({
         ageKeysCount: cur.ageCommitmentProof?.proof.privateKeys.length,
         denom_value: parseFloat(Amounts.stringifyValue(denom)),
-        remain_value: parseFloat(
-          Amounts.stringifyValue(Amounts.parseOrThrow(cur.remaining_value)),
-        ),
-        status: cur.coin_suspended ? "suspended" : "ok",
+        // remain_value: parseFloat(
+        //   Amounts.stringifyValue(Amounts.parseOrThrow(cur.remaining_value)),
+        // ),
+        status: cur.coin_status,
         from_refresh: cur.refresh_parent_coin_pub !== undefined,
         id: cur.coin_pub,
       });
@@ -254,8 +255,8 @@ export function View({
 
         const coins = allcoins.reduce(
           (prev, cur) => {
-            if (cur.remain_value > 0) prev.usable.push(cur);
-            if (cur.remain_value === 0) prev.spent.push(cur);
+            if (cur.status === CoinStatus.Fresh) prev.usable.push(cur);
+            if (cur.status === CoinStatus.Dormant) prev.spent.push(cur);
             return prev;
           },
           {
@@ -356,7 +357,6 @@ function ShowAllCoins({
               <tr key={idx}>
                 <td>{c.id.substring(0, 5)}</td>
                 <td>{c.denom_value}</td>
-                <td>{c.remain_value}</td>
                 <td>{c.status}</td>
                 <td>{c.from_refresh ? "true" : "false"}</td>
                 <td>{String(c.ageKeysCount)}</td>
@@ -396,7 +396,6 @@ function ShowAllCoins({
               <tr key={idx}>
                 <td>{c.id.substring(0, 5)}</td>
                 <td>{c.denom_value}</td>
-                <td>{c.remain_value}</td>
                 <td>{c.status}</td>
                 <td>{c.from_refresh ? "true" : "false"}</td>
               </tr>

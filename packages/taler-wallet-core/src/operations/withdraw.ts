@@ -83,6 +83,7 @@ import {
 } from "../errors.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import {
+  getExchangeTosStatus,
   makeCoinAvailable,
   runOperationWithErrorReporting,
 } from "../operations/common.js";
@@ -1359,26 +1360,20 @@ export async function getWithdrawalDetailsForUri(
     .runReadOnly(async (tx) => {
       const exchangeRecords = await tx.exchanges.iter().toArray();
       for (const r of exchangeRecords) {
-        const details = await ws.exchangeOps.getExchangeDetails(tx, r.baseUrl);
+        const exchangeDetails = await ws.exchangeOps.getExchangeDetails(tx, r.baseUrl);
         const denominations = await tx.denominations.indexes.byExchangeBaseUrl
           .iter(r.baseUrl)
           .toArray();
-        if (details && denominations) {
+        if (exchangeDetails && denominations) {
           const tosRecord = await tx.exchangeTos.get([
-            details.exchangeBaseUrl,
-            details.tosCurrentEtag,
+            exchangeDetails.exchangeBaseUrl,
+            exchangeDetails.tosCurrentEtag,
           ]);
           exchanges.push({
-            exchangeBaseUrl: details.exchangeBaseUrl,
-            currency: details.currency,
-            // FIXME: We probably don't want to include the full ToS here!
-            tos: {
-              acceptedVersion: details.tosAccepted?.etag,
-              currentVersion: details.tosCurrentEtag,
-              contentType: tosRecord?.termsOfServiceContentType ?? "",
-              content: tosRecord?.termsOfServiceText ?? "",
-            },
-            paytoUris: details.wireInfo.accounts.map((x) => x.payto_uri),
+            exchangeBaseUrl: exchangeDetails.exchangeBaseUrl,
+            currency: exchangeDetails.currency,
+            paytoUris: exchangeDetails.wireInfo.accounts.map((x) => x.payto_uri),
+            tosStatus: getExchangeTosStatus(exchangeDetails),
           });
         }
       }

@@ -14,7 +14,11 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { ExchangeListItem, WalletCoreVersion } from "@gnu-taler/taler-util";
+import {
+  ExchangeListItem,
+  ExchangeTosStatus,
+  WalletCoreVersion,
+} from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { Checkbox } from "../components/Checkbox.js";
 import { ErrorTalerOperation } from "../components/ErrorTalerOperation.js";
@@ -36,7 +40,6 @@ import { useBackupDeviceName } from "../hooks/useBackupDeviceName.js";
 import { useAutoOpenPermissions } from "../hooks/useAutoOpenPermissions.js";
 import { ToggleHandler } from "../mui/handlers.js";
 import { Pages } from "../NavigationBar.js";
-import { buildTermsOfServiceStatus } from "../components/TermsOfService/utils.js";
 import * as wxApi from "../wxApi.js";
 import { platform } from "../platform/api.js";
 import { useClipboardPermissions } from "../hooks/useClipboardPermissions.js";
@@ -181,26 +184,21 @@ export function SettingsView({
               <tbody>
                 {knownExchanges.map((e, idx) => {
                   function Status(): VNode {
-                    const status = buildTermsOfServiceStatus(
-                      e.tos.content,
-                      e.tos.acceptedVersion,
-                      e.tos.currentVersion,
-                    );
-                    switch (status) {
-                      case "accepted":
+                    switch (e.tosStatus) {
+                      case ExchangeTosStatus.Accepted:
                         return (
                           <SuccessText>
                             <i18n.Translate>ok</i18n.Translate>
                           </SuccessText>
                         );
-                      case "changed":
+                      case ExchangeTosStatus.Changed:
                         return (
                           <WarningText>
                             <i18n.Translate>changed</i18n.Translate>
                           </WarningText>
                         );
-                      case "new":
-                      case "notfound":
+                      case ExchangeTosStatus.New:
+                      case ExchangeTosStatus.NotFound:
                         return (
                           <DestructiveText>
                             <i18n.Translate>not accepted</i18n.Translate>

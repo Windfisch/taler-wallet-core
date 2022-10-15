@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { GetExchangeTosResult } from "@gnu-taler/taler-util";
+import { ExchangeTosStatus, GetExchangeTosResult } from "@gnu-taler/taler-util";
 
 export function buildTermsOfServiceState(
   tos: GetExchangeTosResult,
@@ -24,26 +24,7 @@ export function buildTermsOfServiceState(
     tos.content,
   );
 
-  const status: TermsStatus = buildTermsOfServiceStatus(
-    tos.content,
-    tos.acceptedEtag,
-    tos.currentEtag,
-  );
-
-  return { content, status, version: tos.currentEtag };
-}
-export function buildTermsOfServiceStatus(
-  content: string | undefined,
-  acceptedVersion: string | undefined,
-  currentVersion: string | undefined,
-): TermsStatus {
-  return !content
-    ? "notfound"
-    : !acceptedVersion
-    ? "new"
-    : acceptedVersion !== currentVersion
-    ? "changed"
-    : "accepted";
+  return { content, status: tos.tosStatus, version: tos.currentEtag };
 }
 
 function parseTermsOfServiceContent(
@@ -91,11 +72,9 @@ function parseTermsOfServiceContent(
 
 export type TermsState = {
   content: TermsDocument | undefined;
-  status: TermsStatus;
+  status: ExchangeTosStatus;
   version: string;
 };
-
-type TermsStatus = "new" | "accepted" | "changed" | "notfound";
 
 export type TermsDocument =
   | TermsDocumentXml

@@ -22,6 +22,7 @@ import {
   Amounts,
   CoinRefreshRequest,
   CoinStatus,
+  ExchangeTosStatus,
   j2s,
   Logger,
   RefreshReason,
@@ -31,7 +32,7 @@ import {
   TransactionIdStr,
   TransactionType,
 } from "@gnu-taler/taler-util";
-import { WalletStoresV1, CoinRecord } from "../db.js";
+import { WalletStoresV1, CoinRecord, ExchangeDetailsRecord } from "../db.js";
 import { makeErrorDetail, TalerError } from "../errors.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
@@ -306,4 +307,16 @@ export function makeTombstoneId(
   ...args: string[]
 ): TombstoneIdStr {
   return `tmb:${type}:${args.map((x) => encodeURIComponent(x)).join(":")}`;
+}
+
+export function getExchangeTosStatus(
+  exchangeDetails: ExchangeDetailsRecord,
+): ExchangeTosStatus {
+  if (!exchangeDetails.tosAccepted) {
+    return ExchangeTosStatus.New;
+  }
+  if (exchangeDetails.tosAccepted?.etag == exchangeDetails.tosCurrentEtag) {
+    return ExchangeTosStatus.Accepted;
+  }
+  return ExchangeTosStatus.Changed;
 }

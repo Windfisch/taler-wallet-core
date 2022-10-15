@@ -29,6 +29,7 @@ import {
 import { ExchangeXmlTos } from "../../components/ExchangeToS.js";
 import { ToggleHandler } from "../../mui/handlers.js";
 import { Button } from "../../mui/Button.js";
+import { ExchangeTosStatus } from "@gnu-taler/taler-util";
 
 export function LoadingUriView({ error }: State.LoadingUriError): VNode {
   const { i18n } = useTranslationContext();
@@ -100,7 +101,7 @@ export function ShowButtonsNonAcceptedTosView({
   if (!ableToReviewTermsOfService) {
     return (
       <Fragment>
-        {terms.status === "notfound" && (
+        {terms.status === ExchangeTosStatus.NotFound && (
           <section style={{ justifyContent: "space-around", display: "flex" }}>
             <WarningText>
               <i18n.Translate>
@@ -115,7 +116,7 @@ export function ShowButtonsNonAcceptedTosView({
 
   return (
     <Fragment>
-      {terms.status === "notfound" && (
+      {terms.status === ExchangeTosStatus.NotFound && (
         <section style={{ justifyContent: "space-around", display: "flex" }}>
           <WarningText>
             <i18n.Translate>
@@ -163,7 +164,7 @@ export function ShowTosContentView({
 
   return (
     <Fragment>
-      {terms.status !== "notfound" && !terms.content && (
+      {terms.status !== ExchangeTosStatus.NotFound && !terms.content && (
         <section style={{ justifyContent: "space-around", display: "flex" }}>
           <WarningBox>
             <i18n.Translate>
@@ -204,7 +205,7 @@ export function ShowTosContentView({
           </LinkSuccess>
         </section>
       )}
-      {termsAccepted && terms.status !== "notfound" && (
+      {termsAccepted && terms.status !== ExchangeTosStatus.NotFound && (
         <section style={{ justifyContent: "space-around", display: "flex" }}>
           <CheckboxOutlined
             name="terms"
