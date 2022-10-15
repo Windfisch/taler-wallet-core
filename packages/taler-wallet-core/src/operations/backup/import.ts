@@ -62,7 +62,12 @@ import { InternalWalletState } from "../../internal-wallet-state.js";
 import { assertUnreachable } from "../../util/assertUnreachable.js";
 import { checkLogicInvariant } from "../../util/invariants.js";
 import { GetReadOnlyAccess, GetReadWriteAccess } from "../../util/query.js";
-import { makeCoinAvailable, makeTombstoneId, makeTransactionId, TombstoneTag } from "../common.js";
+import {
+  makeCoinAvailable,
+  makeTombstoneId,
+  makeTransactionId,
+  TombstoneTag,
+} from "../common.js";
 import { getExchangeDetails } from "../exchanges.js";
 import { extractContractData } from "../pay-merchant.js";
 import { provideBackupState } from "./state.js";
@@ -360,11 +365,12 @@ export async function importBackup(
       }
 
       for (const backupExchangeDetails of backupBlob.exchange_details) {
-        const existingExchangeDetails = await tx.exchangeDetails.get([
-          backupExchangeDetails.base_url,
-          backupExchangeDetails.currency,
-          backupExchangeDetails.master_public_key,
-        ]);
+        const existingExchangeDetails =
+          await tx.exchangeDetails.indexes.byPointer.get([
+            backupExchangeDetails.base_url,
+            backupExchangeDetails.currency,
+            backupExchangeDetails.master_public_key,
+          ]);
 
         if (!existingExchangeDetails) {
           const wireInfo: WireInfo = {
@@ -421,13 +427,6 @@ export async function importBackup(
               purseLimit: x.purseLimit,
               purseTimeout: x.purseTimeout,
               startDate: x.startDate,
-            })),
-            signingKeys: backupExchangeDetails.signing_keys.map((x) => ({
-              key: x.key,
-              master_sig: x.master_sig,
-              stamp_end: x.stamp_end,
-              stamp_expire: x.stamp_expire,
-              stamp_start: x.stamp_start,
             })),
           });
         }
@@ -789,7 +788,10 @@ export async function importBackup(
       }
 
       for (const backupTip of backupBlob.tips) {
-        const ts = makeTombstoneId(TombstoneTag.DeleteTip, backupTip.wallet_tip_id);
+        const ts = makeTombstoneId(
+          TombstoneTag.DeleteTip,
+          backupTip.wallet_tip_id,
+        );
         if (tombstoneSet.has(ts)) {
           continue;
         }

@@ -494,6 +494,7 @@ function runTx<Arg, Res>(
         msg = "Transaction aborted (no DB error)";
       }
       logger.error(msg);
+      logger.error(`${stack.stack}`);
       reject(new TransactionAbortedError(msg));
     };
     const resP = Promise.resolve().then(() => f(arg, tx));

@@ -35,6 +35,7 @@ import {
   BackupDenomination,
   BackupExchange,
   BackupExchangeDetails,
+  BackupExchangeSignKey,
   BackupExchangeWireFee,
   BackupOperationStatus,
   BackupPayInfo,
@@ -74,6 +75,7 @@ import {
 } from "../../db.js";
 import { InternalWalletState } from "../../internal-wallet-state.js";
 import { assertUnreachable } from "../../util/assertUnreachable.js";
+import { checkDbInvariant } from "../../util/invariants.js";
 import { getWalletBackupState, provideBackupState } from "./state.js";
 
 const logger = new Logger("backup/export.ts");
@@ -87,6 +89,7 @@ export async function exportBackup(
       x.config,
       x.exchanges,
       x.exchangeDetails,
+      x.exchangeSignkeys,
       x.coins,
       x.contractTerms,
       x.denominations,
@@ -324,6 +327,18 @@ export async function exportBackup(
             });
           }
         });
+        checkDbInvariant(ex.rowId != null);
+        const exchangeSk =
+          await tx.exchangeSignKeys.indexes.byExchangeDetailsRowId.getAll(
+            ex.rowId,
+          );
+        let signingKeys: BackupExchangeSignKey[] = exchangeSk.map((x) => ({
+          key: x.signkeyPub,
+          master_sig: x.masterSig,
+          stamp_end: x.stampEnd,
+          stamp_expire: x.stampExpire,
+          stamp_start: x.stampStart,
+        }));
 
         backupExchangeDetails.push({
           base_url: ex.exchangeBaseUrl,
@@ -341,13 +356,7 @@ export async function exportBackup(
           currency: ex.currency,
           protocol_version: ex.protocolVersionRange,
           wire_fees: wireFees,
-          signing_keys: ex.signingKeys.map((x) => ({
-            key: x.key,
-            master_sig: x.master_sig,
-            stamp_end: x.stamp_end,
-            stamp_expire: x.stamp_expire,
-            stamp_start: x.stamp_start,
-          })),
+          signing_keys: signingKeys,
           global_fees: ex.globalFees.map((x) => ({
             accountFee: Amounts.stringify(x.accountFee),
             historyFee: Amounts.stringify(x.historyFee),

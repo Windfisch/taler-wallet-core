@@ -26,6 +26,7 @@ import {
 import {
   IDBCursorDirection,
   IDBCursorWithValue,
+  IDBDatabase,
   IDBKeyRange,
   IDBValidKey,
 } from "./idbtypes.js";
@@ -433,6 +434,45 @@ test("update with non-existent index values", async (t) => {
     }
     const res = await promiseFromRequest(store.get(0));
     t.is(res.z, undefined);
+    await promiseFromTransaction(tx);
+  }
+
+  t.pass();
+});
+
+test("delete from unique index", async (t) => {
+  const backend = new MemoryBackend();
+  backend.enableTracing = true;
+  const idb = new BridgeIDBFactory(backend);
+  const request = idb.open("mydb");
+  request.onupgradeneeded = () => {
+    const db = request.result as IDBDatabase;
+    const store = db.createObjectStore("bla", { keyPath: "x" });
+    store.createIndex("by_yz", ["y", "z"], {
+      unique: true,
+    });
+  };
+
+  const db: BridgeIDBDatabase = await promiseFromRequest(request);
+
+  t.is(db.name, "mydb");
+
+  {
+    const tx = db.transaction("bla", "readwrite");
+    const store = tx.objectStore("bla");
+    store.put({ x: 0, y: "a", z: 42 });
+    const index = store.index("by_yz");
+    const indRes = await promiseFromRequest(index.get(["a", 42]));
+    t.is(indRes.x, 0);
+    const res = await promiseFromRequest(store.get(0));
+    t.is(res.z, 42);
+    await promiseFromTransaction(tx);
+  }
+
+  {
+    const tx = db.transaction("bla", "readwrite");
+    const store = tx.objectStore("bla");
+    store.put({ x: 0, y: "a", z: 42, extra: 123 });
     await promiseFromTransaction(tx);
   }
 

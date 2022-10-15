@@ -64,6 +64,7 @@ import {
   readSuccessResponseJsonOrThrow,
   readSuccessResponseTextOrThrow,
 } from "../util/http.js";
+import { checkDbInvariant } from "../util/invariants.js";
 import {
   DbAccess,
   GetReadOnlyAccess,
@@ -168,7 +169,11 @@ export async function getExchangeDetails(
     return;
   }
   const { currency, masterPublicKey } = dp;
-  return await tx.exchangeDetails.get([r.baseUrl, currency, masterPublicKey]);
+  return await tx.exchangeDetails.indexes.byPointer.get([
+    r.baseUrl,
+    currency,
+    masterPublicKey,
+  ]);
 }
 
 getExchangeDetails.makeContext = (db: DbAccess<typeof WalletStoresV1>) =>
@@ -205,7 +210,7 @@ export async function updateExchangeTermsOfService(
 
 /**
  * Mark a ToS version as accepted by the user.
- * 
+ *
  * @param etag version of the ToS to accept, or current ToS version of not given
  */
 export async function acceptExchangeTermsOfService(
@@ -568,10 +573,14 @@ export async function updateExchangeFromUrlHandler(
 
   const now = AbsoluteTime.now();
   baseUrl = canonicalizeBaseUrl(baseUrl);
-
+  let isNewExchange = true;
   const { exchange, exchangeDetails } = await ws.db
     .mktx((x) => [x.exchanges, x.exchangeDetails])
     .runReadWrite(async (tx) => {
+      let oldExch = await tx.exchanges.get(baseUrl);
+      if (oldExch) {
+        isNewExchange = false;
+      }
       return provideExchangeRecordInTx(ws, tx, baseUrl, now);
     });
 
@@ -637,10 +646,13 @@ export async function updateExchangeFromUrlHandler(
 
   logger.trace("updating exchange info in database");
 
+  let detailsPointerChanged = false;
+
   const updated = await ws.db
     .mktx((x) => [
       x.exchanges,
       x.exchangeDetails,
+      x.exchangeSignkeys,
       x.denominations,
       x.coins,
       x.refreshGroups,
@@ -652,42 +664,63 @@ export async function updateExchangeFromUrlHandler(
         logger.warn(`exchange ${baseUrl} no longer present`);
         return;
       }
-      let details = await getExchangeDetails(tx, r.baseUrl);
-      if (details) {
+      let existingDetails = await getExchangeDetails(tx, r.baseUrl);
+      let acceptedTosEtag = undefined;
+      if (!existingDetails) {
+        detailsPointerChanged = true;
+      }
+      if (existingDetails) {
+        acceptedTosEtag = existingDetails.tosAccepted?.etag;
+        if (existingDetails.masterPublicKey !== keysInfo.masterPublicKey) {
+          detailsPointerChanged = true;
+        }
+        if (existingDetails.currency !== keysInfo.currency) {
+          detailsPointerChanged = true;
+        }
         // FIXME: We need to do some consistency checks!
       }
-      // FIXME: validate signing keys and merge with old set
-      details = {
+      let existingTosAccepted = existingDetails?.tosAccepted;
+      const newDetails = {
+        rowId: existingDetails?.rowId,
         auditors: keysInfo.auditors,
         currency: keysInfo.currency,
         masterPublicKey: keysInfo.masterPublicKey,
         protocolVersionRange: keysInfo.protocolVersion,
-        signingKeys: keysInfo.signingKeys,
         reserveClosingDelay: keysInfo.reserveClosingDelay,
         globalFees,
         exchangeBaseUrl: r.baseUrl,
         wireInfo,
-        tosCurrentEtag: tosDownload.tosContentType,
-        tosAccepted: tosHasBeenAccepted
-          ? {
-              etag: tosDownload.tosEtag,
-              timestamp: TalerProtocolTimestamp.now(),
-            }
-          : undefined,
+        tosCurrentEtag: tosDownload.tosEtag,
+        tosAccepted: existingTosAccepted,
       };
-      // FIXME: only update if pointer got updated
       r.lastUpdate = TalerProtocolTimestamp.now();
       r.nextUpdate = keysInfo.expiry;
       // New denominations might be available.
       r.nextRefreshCheck = TalerProtocolTimestamp.now();
-      r.detailsPointer = {
-        currency: details.currency,
-        masterPublicKey: details.masterPublicKey,
-        // FIXME: only change if pointer really changed
-        updateClock: TalerProtocolTimestamp.now(),
-      };
+      if (detailsPointerChanged) {
+        r.detailsPointer = {
+          currency: newDetails.currency,
+          masterPublicKey: newDetails.masterPublicKey,
+          updateClock: TalerProtocolTimestamp.now(),
+        };
+      }
       await tx.exchanges.put(r);
-      await tx.exchangeDetails.put(details);
+      logger.info(`existing details ${j2s(existingDetails)}`);
+      logger.info(`inserting new details ${j2s(newDetails)}`);
+      const drRowId = await tx.exchangeDetails.put(newDetails);
+      checkDbInvariant(typeof drRowId.key === "number");
+
+      for (const sk of keysInfo.signingKeys) {
+        // FIXME: validate signing keys before inserting them
+        await tx.exchangeSignKeys.put({
+          exchangeDetailsRowId: drRowId.key,
+          masterSig: sk.master_sig,
+          signkeyPub: sk.key,
+          stampEnd: sk.stamp_end,
+          stampExpire: sk.stamp_expire,
+          stampStart: sk.stamp_start,
+        });
+      }
 
       logger.info("updating denominations in database");
       const currentDenomSet = new Set<string>(
@@ -773,7 +806,7 @@ export async function updateExchangeFromUrlHandler(
       }
       return {
         exchange: r,
-        exchangeDetails: details,
+        exchangeDetails: newDetails,
       };
     });
 
@@ -791,9 +824,12 @@ export async function updateExchangeFromUrlHandler(
 
   logger.trace("done updating exchange info in database");
 
-  ws.notify({
-    type: NotificationType.ExchangeAdded,
-  });
+  if (isNewExchange) {
+    ws.notify({
+      type: NotificationType.ExchangeAdded,
+    });
+  }
+
   return {
     type: OperationAttemptResultType.Finished,
     result: {

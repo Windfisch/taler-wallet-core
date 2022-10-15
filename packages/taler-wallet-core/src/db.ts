@@ -51,6 +51,8 @@ import {
   TransactionIdStr,
   CoinRefreshRequest,
   CoinStatus,
+  EddsaPublicKeyString,
+  EddsaSignatureString,
 } from "@gnu-taler/taler-util";
 import { RetryInfo, RetryTags } from "./util/retries.js";
 import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
@@ -409,11 +411,26 @@ export namespace DenominationRecord {
   }
 }
 
+export interface ExchangeSignkeysRecord {
+  stampStart: TalerProtocolTimestamp;
+  stampExpire: TalerProtocolTimestamp;
+  stampEnd: TalerProtocolTimestamp;
+  signkeyPub: EddsaPublicKeyString;
+  masterSig: EddsaSignatureString;
+
+  /**
+   * Exchange details that thiis signkeys record belongs to.
+   */
+  exchangeDetailsRowId: number;
+}
+
 /**
  * Exchange details for a particular
  * (exchangeBaseUrl, masterPublicKey, currency) tuple.
  */
 export interface ExchangeDetailsRecord {
+  rowId?: number;
+
   /**
    * Master public key of the exchange.
    */
@@ -444,14 +461,6 @@ export interface ExchangeDetailsRecord {
    * FIXME: Put in separate object store!
    */
   globalFees: ExchangeGlobalFees[];
-
-  /**
-   * Signing keys we got from the exchange, can also contain
-   * older signing keys that are not returned by /keys anymore.
-   *
-   * FIXME:  Should this be put into a separate object store?
-   */
-  signingKeys: ExchangeSignKeyJson[];
 
   /**
    * Etag of the current ToS of the exchange.
@@ -1892,9 +1901,29 @@ export const WalletStoresV1 = {
   exchangeDetails: describeStore(
     "exchangeDetails",
     describeContents<ExchangeDetailsRecord>({
-      keyPath: ["exchangeBaseUrl", "currency", "masterPublicKey"],
+      keyPath: "rowId",
+      autoIncrement: true,
     }),
-    {},
+    {
+      byPointer: describeIndex(
+        "byDetailsPointer",
+        ["exchangeBaseUrl", "currency", "masterPublicKey"],
+        {
+          unique: true,
+        },
+      ),
+    },
+  ),
+  exchangeSignkeys: describeStore(
+    "exchangeSignKeys",
+    describeContents<ExchangeSignkeysRecord>({
+      keyPath: ["exchangeDetailsRowId", "signkeyPub"],
+    }),
+    {
+      byExchangeDetailsRowId: describeIndex("byExchangeDetailsRowId", [
+        "exchangeDetailsRowId",
+      ]),
+    },
   ),
   refreshGroups: describeStore(
     "refreshGroups",
