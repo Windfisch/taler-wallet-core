@@ -540,7 +540,6 @@ function buildTransactionForTip(
 
 /**
  * For a set of refund with the same executionTime.
- *
  */
 interface MergedRefundInfo {
   executionTime: TalerProtocolTimestamp;
@@ -556,7 +555,7 @@ function mergeRefundByExecutionTime(
   const refundByExecTime = rs.reduce((prev, refund) => {
     const key = `${refund.executionTime.t_s}`;
 
-    //refunds counts if applied
+    // refunds count if applied
     const effective =
       refund.type === RefundState.Applied
         ? Amounts.sub(
@@ -582,7 +581,10 @@ function mergeRefundByExecutionTime(
         v.amountAppliedEffective,
         effective,
       ).amount;
-      v.amountAppliedRaw = Amounts.add(v.amountAppliedRaw).amount;
+      v.amountAppliedRaw = Amounts.add(
+        v.amountAppliedRaw,
+        refund.refundAmount,
+      ).amount;
       v.firstTimestamp = TalerProtocolTimestamp.min(
         v.firstTimestamp,
         refund.obtainedTime,

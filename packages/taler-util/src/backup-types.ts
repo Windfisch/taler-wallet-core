@@ -475,6 +475,7 @@ export interface BackupRecoupGroup {
 
   timestamp_finish?: TalerProtocolTimestamp;
   finish_clock?: TalerProtocolTimestamp;
+  // FIXME: Use some enum here!
   finish_is_failure?: boolean;
 
   /**
@@ -483,7 +484,6 @@ export interface BackupRecoupGroup {
   coins: {
     coin_pub: string;
     recoup_finished: boolean;
-    old_amount: BackupAmountString;
   }[];
 }
 
@@ -582,9 +582,14 @@ export interface BackupCoin {
   denom_sig: UnblindedSignature;
 
   /**
-   * Amount that's left on the coin.
+   * Information about where and how the coin was spent.
    */
-  current_amount: BackupAmountString;
+  spend_allocation:
+    | {
+        id: string;
+        amount: BackupAmountString;
+      }
+    | undefined;
 
   /**
    * Blinding key used when withdrawing the coin.

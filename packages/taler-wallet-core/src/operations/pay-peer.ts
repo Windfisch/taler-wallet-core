@@ -36,6 +36,7 @@ import {
   codecForAmountString,
   codecForAny,
   codecForExchangeGetContractResponse,
+  CoinStatus,
   constructPayPullUri,
   constructPayPushUri,
   ContractTermsUtil,
@@ -63,17 +64,16 @@ import {
   WalletAccountMergeFlags,
 } from "@gnu-taler/taler-util";
 import {
-  CoinStatus,
-  WithdrawalGroupStatus,
-  WalletStoresV1,
-  WithdrawalRecordType,
   ReserveRecord,
+  WalletStoresV1,
+  WithdrawalGroupStatus,
+  WithdrawalRecordType,
 } from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
+import { makeTransactionId, spendCoins } from "../operations/common.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { GetReadOnlyAccess } from "../util/query.js";
-import { spendCoins, makeTransactionId } from "../operations/common.js";
 import { updateExchangeFromUrl } from "./exchanges.js";
 import { internalCreateWithdrawalGroup } from "./withdraw.js";
 

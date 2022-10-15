@@ -40,7 +40,8 @@ import {
   codecForMerchantPayResponse,
   codecForProposal,
   CoinDepositPermission,
-  CoinPublicKey,
+  CoinRefreshRequest,
+  CoinStatus,
   ConfirmPayResult,
   ConfirmPayResultType,
   ContractTerms,
@@ -78,7 +79,6 @@ import {
   AllowedExchangeInfo,
   BackupProviderStateTag,
   CoinRecord,
-  CoinStatus,
   DenominationRecord,
   PurchaseRecord,
   PurchaseStatus,
@@ -2084,7 +2084,7 @@ async function applySuccessfulRefund(
     denominations: typeof WalletStoresV1.denominations;
   }>,
   p: PurchaseRecord,
-  refreshCoinsMap: Record<string, { coinPub: string }>,
+  refreshCoinsMap: Record<string, CoinRefreshRequest>,
   r: MerchantCoinRefundSuccessStatus,
 ): Promise<void> {
   // FIXME: check signature before storing it as valid!
@@ -2102,30 +2102,22 @@ async function applySuccessfulRefund(
   if (!denom) {
     throw Error("inconsistent database");
   }
-  refreshCoinsMap[coin.coinPub] = { coinPub: coin.coinPub };
   const refundAmount = Amounts.parseOrThrow(r.refund_amount);
   const refundFee = denom.fees.feeRefund;
+  const amountLeft = Amounts.sub(refundAmount, refundFee).amount;
   coin.status = CoinStatus.Dormant;
-  coin.currentAmount = Amounts.add(coin.currentAmount, refundAmount).amount;
-  coin.currentAmount = Amounts.sub(coin.currentAmount, refundFee).amount;
-  logger.trace(`coin amount after is ${Amounts.stringify(coin.currentAmount)}`);
   await tx.coins.put(coin);
 
   const allDenoms = await tx.denominations.indexes.byExchangeBaseUrl
     .iter(coin.exchangeBaseUrl)
     .toArray();
-
-  const amountLeft = Amounts.sub(
-    Amounts.add(coin.currentAmount, Amounts.parseOrThrow(r.refund_amount))
-      .amount,
-    denom.fees.feeRefund,
-  ).amount;
-
   const totalRefreshCostBound = getTotalRefreshCost(
     allDenoms,
     DenominationRecord.toDenomInfo(denom),
     amountLeft,
   );
+
+  refreshCoinsMap[coin.coinPub] = { coinPub: coin.coinPub, amount: amountLeft };
 
   p.refunds[refundKey] = {
     type: RefundState.Applied,
@@ -2167,9 +2159,9 @@ async function storePendingRefund(
     .iter(coin.exchangeBaseUrl)
     .toArray();
 
+  // Refunded amount after fees.
   const amountLeft = Amounts.sub(
-    Amounts.add(coin.currentAmount, Amounts.parseOrThrow(r.refund_amount))
-      .amount,
+    Amounts.parseOrThrow(r.refund_amount),
     denom.fees.feeRefund,
   ).amount;
 
@@ -2197,7 +2189,7 @@ async function storeFailedRefund(
     denominations: typeof WalletStoresV1.denominations;
   }>,
   p: PurchaseRecord,
-  refreshCoinsMap: Record<string, { coinPub: string }>,
+  refreshCoinsMap: Record<string, CoinRefreshRequest>,
   r: MerchantCoinRefundFailureStatus,
 ): Promise<void> {
   const refundKey = getRefundKey(r);
@@ -2221,8 +2213,7 @@ async function storeFailedRefund(
     .toArray();
 
   const amountLeft = Amounts.sub(
-    Amounts.add(coin.currentAmount, Amounts.parseOrThrow(r.refund_amount))
-      .amount,
+    Amounts.parseOrThrow(r.refund_amount),
     denom.fees.feeRefund,
   ).amount;
 
@@ -2246,6 +2237,7 @@ async function storeFailedRefund(
   if (p.purchaseStatus === PurchaseStatus.AbortingWithRefund) {
     // Refund failed because the merchant didn't even try to deposit
     // the coin yet, so we try to refresh.
+    // FIXME: Is this case tested?!
     if (r.exchange_code === TalerErrorCode.EXCHANGE_REFUND_DEPOSIT_NOT_FOUND) {
       const coin = await tx.coins.get(r.coin_pub);
       if (!coin) {
@@ -2271,14 +2263,11 @@ async function storeFailedRefund(
           contrib = payCoinSelection.coinContributions[i];
         }
       }
-      if (contrib) {
-        coin.currentAmount = Amounts.add(coin.currentAmount, contrib).amount;
-        coin.currentAmount = Amounts.sub(
-          coin.currentAmount,
-          denom.fees.feeRefund,
-        ).amount;
-      }
-      refreshCoinsMap[coin.coinPub] = { coinPub: coin.coinPub };
+      // FIXME: Is this case tested?!
+      refreshCoinsMap[coin.coinPub] = {
+        coinPub: coin.coinPub,
+        amount: amountLeft,
+      };
       await tx.coins.put(coin);
     }
   }
@@ -2308,7 +2297,7 @@ async function acceptRefunds(
         return;
       }
 
-      const refreshCoinsMap: Record<string, CoinPublicKey> = {};
+      const refreshCoinsMap: Record<string, CoinRefreshRequest> = {};
 
       for (const refundStatus of refunds) {
         const refundKey = getRefundKey(refundStatus);
@@ -2350,6 +2339,7 @@ async function acceptRefunds(
       }
 
       const refreshCoinsPubs = Object.values(refreshCoinsMap);
+      logger.info(`refreshCoinMap ${j2s(refreshCoinsMap)}`);
       if (refreshCoinsPubs.length > 0) {
         await createRefreshGroup(
           ws,

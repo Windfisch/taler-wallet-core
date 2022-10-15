@@ -23,8 +23,9 @@ import {
   amountToPretty,
   codecForExchangeMeltResponse,
   codecForExchangeRevealResponse,
-  CoinPublicKey,
   CoinPublicKeyString,
+  CoinRefreshRequest,
+  CoinStatus,
   DenominationInfo,
   DenomKeyType,
   Duration,
@@ -55,9 +56,7 @@ import { CryptoApiStoppedError } from "../crypto/workers/cryptoDispatcher.js";
 import {
   CoinRecord,
   CoinSourceType,
-  CoinStatus,
   DenominationRecord,
-  OperationStatus,
   RefreshCoinStatus,
   RefreshGroupRecord,
   RefreshOperationStatus,
@@ -672,7 +671,6 @@ async function refreshReveal(
         blindingKey: pc.blindingKey,
         coinPriv: pc.coinPriv,
         coinPub: pc.coinPub,
-        currentAmount: ncd.value,
         denomPubHash: ncd.denomPubHash,
         denomSig,
         exchangeBaseUrl: oldCoin.exchangeBaseUrl,
@@ -684,7 +682,7 @@ async function refreshReveal(
         coinEvHash: pc.coinEvHash,
         maxAge: pc.maxAge,
         ageCommitmentProof: pc.ageCommitmentProof,
-        allocation: undefined,
+        spendAllocation: undefined,
       };
 
       coins.push(coin);
@@ -845,7 +843,7 @@ export async function createRefreshGroup(
     refreshGroups: typeof WalletStoresV1.refreshGroups;
     coinAvailability: typeof WalletStoresV1.coinAvailability;
   }>,
-  oldCoinPubs: CoinPublicKey[],
+  oldCoinPubs: CoinRefreshRequest[],
   reason: RefreshReason,
 ): Promise<RefreshGroupId> {
   const refreshGroupId = encodeCrock(getRandomBytes(32));
@@ -908,9 +906,8 @@ export async function createRefreshGroup(
       default:
         assertUnreachable(coin.status);
     }
-    const refreshAmount = coin.currentAmount;
+    const refreshAmount = ocp.amount;
     inputPerCoin.push(refreshAmount);
-    coin.currentAmount = Amounts.getZero(refreshAmount.currency);
     await tx.coins.put(coin);
     const denoms = await getDenoms(coin.exchangeBaseUrl);
     const cost = getTotalRefreshCost(denoms, denom, refreshAmount);
@@ -1008,7 +1005,7 @@ export async function autoRefresh(
       const coins = await tx.coins.indexes.byBaseUrl
         .iter(exchangeBaseUrl)
         .toArray();
-      const refreshCoins: CoinPublicKey[] = [];
+      const refreshCoins: CoinRefreshRequest[] = [];
       for (const coin of coins) {
         if (coin.status !== CoinStatus.Fresh) {
           continue;
@@ -1023,7 +1020,14 @@ export async function autoRefresh(
         }
         const executeThreshold = getAutoRefreshExecuteThreshold(denom);
         if (AbsoluteTime.isExpired(executeThreshold)) {
-          refreshCoins.push(coin);
+          refreshCoins.push({
+            coinPub: coin.coinPub,
+            amount: {
+              value: denom.amountVal,
+              fraction: denom.amountFrac,
+              currency: denom.currency,
+            },
+          });
         } else {
           const checkThreshold = getAutoRefreshCheckThreshold(denom);
           minCheckThreshold = AbsoluteTime.min(

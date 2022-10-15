@@ -20,6 +20,8 @@
 import {
   AmountJson,
   Amounts,
+  CoinRefreshRequest,
+  CoinStatus,
   j2s,
   Logger,
   RefreshReason,
@@ -29,7 +31,7 @@ import {
   TransactionIdStr,
   TransactionType,
 } from "@gnu-taler/taler-util";
-import { WalletStoresV1, CoinStatus, CoinRecord } from "../db.js";
+import { WalletStoresV1, CoinRecord } from "../db.js";
 import { makeErrorDetail, TalerError } from "../errors.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
@@ -103,11 +105,19 @@ export async function spendCoins(
   }>,
   csi: CoinsSpendInfo,
 ): Promise<void> {
+  let refreshCoinPubs: CoinRefreshRequest[] = [];
   for (let i = 0; i < csi.coinPubs.length; i++) {
     const coin = await tx.coins.get(csi.coinPubs[i]);
     if (!coin) {
       throw Error("coin allocated for payment doesn't exist anymore");
     }
+    const denom = await ws.getDenomInfo(
+      ws,
+      tx,
+      coin.exchangeBaseUrl,
+      coin.denomPubHash,
+    );
+    checkDbInvariant(!!denom);
     const coinAvailability = await tx.coinAvailability.get([
       coin.exchangeBaseUrl,
       coin.denomPubHash,
@@ -116,7 +126,7 @@ export async function spendCoins(
     checkDbInvariant(!!coinAvailability);
     const contrib = csi.contributions[i];
     if (coin.status !== CoinStatus.Fresh) {
-      const alloc = coin.allocation;
+      const alloc = coin.spendAllocation;
       if (!alloc) {
         continue;
       }
@@ -131,15 +141,18 @@ export async function spendCoins(
       continue;
     }
     coin.status = CoinStatus.Dormant;
-    coin.allocation = {
+    coin.spendAllocation = {
       id: csi.allocationId,
       amount: Amounts.stringify(contrib),
     };
-    const remaining = Amounts.sub(coin.currentAmount, contrib);
+    const remaining = Amounts.sub(denom.value, contrib);
     if (remaining.saturated) {
       throw Error("not enough remaining balance on coin for payment");
     }
-    coin.currentAmount = remaining.amount;
+    refreshCoinPubs.push({
+      amount: remaining.amount,
+      coinPub: coin.coinPub,
+    });
     checkDbInvariant(!!coinAvailability);
     if (coinAvailability.freshCoinCount === 0) {
       throw Error(
@@ -150,9 +163,6 @@ export async function spendCoins(
     await tx.coins.put(coin);
     await tx.coinAvailability.put(coinAvailability);
   }
-  const refreshCoinPubs = csi.coinPubs.map((x) => ({
-    coinPub: x,
-  }));
   await ws.refreshOps.createRefreshGroup(
     ws,
     tx,

@@ -22,7 +22,7 @@
 /**
  * Imports.
  */
-import { Amounts } from "@gnu-taler/taler-util";
+import { Amounts, CoinStatus } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { CoinConfig, defaultCoinConfig } from "../harness/denomStructures.js";
 import {
@@ -32,7 +32,7 @@ import {
   MerchantService,
   setupDb,
   WalletCli,
-  getPayto
+  getPayto,
 } from "../harness/harness.js";
 import { SimpleTestEnvironment } from "../harness/helpers.js";
 
@@ -184,7 +184,10 @@ export async function runWallettestingTest(t: GlobalTestState) {
   let susp: string | undefined;
   {
     for (const c of coinDump.coins) {
-      if (0 === Amounts.cmp(c.remaining_value, "TESTKUDOS:8")) {
+      if (
+        c.coin_status === CoinStatus.Fresh &&
+        0 === Amounts.cmp(c.denom_value, "TESTKUDOS:8")
+      ) {
         susp = c.coin_pub;
       }
     }

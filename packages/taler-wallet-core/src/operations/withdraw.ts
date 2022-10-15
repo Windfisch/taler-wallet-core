@@ -36,6 +36,7 @@ import {
   codecForWithdrawBatchResponse,
   codecForWithdrawOperationStatusResponse,
   codecForWithdrawResponse,
+  CoinStatus,
   DenomKeyType,
   DenomSelectionState,
   Duration,
@@ -57,7 +58,6 @@ import {
   TransactionType,
   UnblindedSignature,
   URL,
-  VersionMatchResult,
   WithdrawBatchResponse,
   WithdrawResponse,
   WithdrawUriInfoResponse,
@@ -66,10 +66,8 @@ import { EddsaKeypair } from "../crypto/cryptoImplementation.js";
 import {
   CoinRecord,
   CoinSourceType,
-  CoinStatus,
   DenominationRecord,
   DenominationVerificationStatus,
-  ExchangeTosRecord,
   PlanchetRecord,
   PlanchetStatus,
   WalletStoresV1,
@@ -736,7 +734,6 @@ async function processPlanchetVerifyAndStoreCoin(
     blindingKey: planchet.blindingKey,
     coinPriv: planchet.coinPriv,
     coinPub: planchet.coinPub,
-    currentAmount: denomInfo.value,
     denomPubHash: planchet.denomPubHash,
     denomSig,
     coinEvHash: planchet.coinEvHash,
@@ -750,7 +747,7 @@ async function processPlanchetVerifyAndStoreCoin(
     },
     maxAge: planchet.maxAge,
     ageCommitmentProof: planchet.ageCommitmentProof,
-    allocation: undefined,
+    spendAllocation: undefined,
   };
 
   const planchetCoinPub = planchet.coinPub;

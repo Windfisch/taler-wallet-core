@@ -95,6 +95,8 @@ import {
   WalletNotification,
   codecForSetDevModeRequest,
   ExchangeTosStatusDetails,
+  CoinRefreshRequest,
+  CoinStatus,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import {
@@ -105,11 +107,9 @@ import { clearDatabase } from "./db-utils.js";
 import {
   AuditorTrustRecord,
   CoinSourceType,
-  CoinStatus,
   ConfigRecordKey,
   DenominationRecord,
   ExchangeDetailsRecord,
-  ExchangeTosRecord,
   exportDb,
   importDb,
   WalletStoresV1,
@@ -934,10 +934,15 @@ async function dumpCoins(ws: InternalWalletState): Promise<CoinDumpJson> {
           }),
           exchange_base_url: c.exchangeBaseUrl,
           refresh_parent_coin_pub: refreshParentCoinPub,
-          remaining_value: Amounts.stringify(c.currentAmount),
           withdrawal_reserve_pub: withdrawalReservePub,
-          coin_suspended: c.status === CoinStatus.FreshSuspended,
+          coin_status: c.status,
           ageCommitmentProof: c.ageCommitmentProof,
+          spend_allocation: c.spendAllocation
+            ? {
+                amount: c.spendAllocation.amount,
+                id: c.spendAllocation.id,
+              }
+            : undefined,
         });
       }
     });
@@ -1153,7 +1158,6 @@ async function dispatchRequestInternal(
     }
     case "forceRefresh": {
       const req = codecForForceRefreshRequest().decode(payload);
-      const coinPubs = req.coinPubList.map((x) => ({ coinPub: x }));
       const refreshGroupId = await ws.db
         .mktx((x) => [
           x.refreshGroups,
@@ -1162,6 +1166,24 @@ async function dispatchRequestInternal(
           x.coins,
         ])
         .runReadWrite(async (tx) => {
+          let coinPubs: CoinRefreshRequest[] = [];
+          for (const c of req.coinPubList) {
+            const coin = await tx.coins.get(c);
+            if (!coin) {
+              throw Error(`coin (pubkey ${c}) not found`);
+            }
+            const denom = await ws.getDenomInfo(
+              ws,
+              tx,
+              coin.exchangeBaseUrl,
+              coin.denomPubHash,
+            );
+            checkDbInvariant(!!denom);
+            coinPubs.push({
+              coinPub: c,
+              amount: denom?.value,
+            });
+          }
           return await createRefreshGroup(
             ws,
             tx,

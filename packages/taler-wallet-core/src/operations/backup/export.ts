@@ -54,6 +54,7 @@ import {
   BACKUP_VERSION_MINOR,
   canonicalizeBaseUrl,
   canonicalJson,
+  CoinStatus,
   encodeCrock,
   getRandomBytes,
   hash,
@@ -63,7 +64,6 @@ import {
 } from "@gnu-taler/taler-util";
 import {
   CoinSourceType,
-  CoinStatus,
   ConfigRecordKey,
   DenominationRecord,
   PurchaseStatus,
@@ -206,7 +206,6 @@ export async function exportBackup(
           coins: recoupGroup.coinPubs.map((x, i) => ({
             coin_pub: x,
             recoup_finished: recoupGroup.recoupFinishedPerCoin[i],
-            old_amount: Amounts.stringify(recoupGroup.oldAmountPerCoin[i]),
           })),
         });
       });
@@ -259,8 +258,13 @@ export async function exportBackup(
           blinding_key: coin.blindingKey,
           coin_priv: coin.coinPriv,
           coin_source: bcs,
-          current_amount: Amounts.stringify(coin.currentAmount),
           fresh: coin.status === CoinStatus.Fresh,
+          spend_allocation: coin.spendAllocation
+            ? {
+                amount: coin.spendAllocation.amount,
+                id: coin.spendAllocation.id,
+              }
+            : undefined,
           denom_sig: coin.denomSig,
         });
       });

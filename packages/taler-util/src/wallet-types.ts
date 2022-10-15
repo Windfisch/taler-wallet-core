@@ -63,7 +63,10 @@ import {
   ExchangeAuditor,
   UnblindedSignature,
 } from "./taler-types.js";
-import { OrderShortInfo, codecForOrderShortInfo } from "./transactions-types.js";
+import {
+  OrderShortInfo,
+  codecForOrderShortInfo,
+} from "./transactions-types.js";
 import { BackupRecovery } from "./backup-types.js";
 import { PaytoUri } from "./payto.js";
 import { TalerErrorCode } from "./taler-error-codes.js";
@@ -139,6 +142,77 @@ export function mkAmount(
   currency: string,
 ): AmountJson {
   return { value, fraction, currency };
+}
+
+/**
+ * Status of a coin.
+ */
+export enum CoinStatus {
+  /**
+   * Withdrawn and never shown to anybody.
+   */
+  Fresh = "fresh",
+
+  /**
+   * Fresh, but currently marked as "suspended", thus won't be used
+   * for spending.  Used for testing.
+   */
+  FreshSuspended = "fresh-suspended",
+
+  /**
+   * A coin that has been spent and refreshed.
+   */
+  Dormant = "dormant",
+}
+
+/**
+ * Easy to process format for the public data of coins
+ * managed by the wallet.
+ */
+export interface CoinDumpJson {
+  coins: Array<{
+    /**
+     * The coin's denomination's public key.
+     */
+    denom_pub: DenominationPubKey;
+    /**
+     * Hash of denom_pub.
+     */
+    denom_pub_hash: string;
+    /**
+     * Value of the denomination (without any fees).
+     */
+    denom_value: string;
+    /**
+     * Public key of the coin.
+     */
+    coin_pub: string;
+    /**
+     * Base URL of the exchange for the coin.
+     */
+    exchange_base_url: string;
+    /**
+     * Public key of the parent coin.
+     * Only present if this coin was obtained via refreshing.
+     */
+    refresh_parent_coin_pub: string | undefined;
+    /**
+     * Public key of the reserve for this coin.
+     * Only present if this coin was obtained via refreshing.
+     */
+    withdrawal_reserve_pub: string | undefined;
+    coin_status: CoinStatus;
+    spend_allocation:
+      | {
+          id: string;
+          amount: string;
+        }
+      | undefined;
+    /**
+     * Information about the age restriction
+     */
+    ageCommitmentProof: AgeCommitmentProof | undefined;
+  }>;
 }
 
 export enum ConfirmPayResultType {
@@ -568,10 +642,11 @@ export enum RefreshReason {
 }
 
 /**
- * Wrapper for coin public keys.
+ * Request to refresh a single coin.
  */
-export interface CoinPublicKey {
+export interface CoinRefreshRequest {
   readonly coinPub: string;
+  readonly amount: AmountJson;
 }
 
 /**

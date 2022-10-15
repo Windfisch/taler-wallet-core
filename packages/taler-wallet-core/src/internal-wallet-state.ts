@@ -38,7 +38,7 @@ import {
   CancellationToken,
   DenominationInfo,
   RefreshGroupId,
-  CoinPublicKey,
+  CoinRefreshRequest,
   RefreshReason,
 } from "@gnu-taler/taler-util";
 import { CryptoDispatcher } from "./crypto/workers/cryptoDispatcher.js";
@@ -86,7 +86,7 @@ export interface RefreshOperations {
       refreshGroups: typeof WalletStoresV1.refreshGroups;
       coinAvailability: typeof WalletStoresV1.coinAvailability;
     }>,
-    oldCoinPubs: CoinPublicKey[],
+    oldCoinPubs: CoinRefreshRequest[],
     reason: RefreshReason,
   ): Promise<RefreshGroupId>;
 }

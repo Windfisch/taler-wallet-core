@@ -28,6 +28,7 @@ import {
   Amounts,
   codecForRecoupConfirmation,
   codecForReserveStatus,
+  CoinStatus,
   encodeCrock,
   getRandomBytes,
   j2s,
@@ -40,7 +41,6 @@ import {
 import {
   CoinRecord,
   CoinSourceType,
-  CoinStatus,
   RecoupGroupRecord,
   RefreshCoinSource,
   WalletStoresV1,
@@ -50,6 +50,7 @@ import {
 } from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { readSuccessResponseJsonOrThrow } from "../util/http.js";
+import { checkDbInvariant } from "../util/invariants.js";
 import { GetReadWriteAccess } from "../util/query.js";
 import {
   OperationAttemptResult,
@@ -180,8 +181,6 @@ async function recoupWithdrawCoin(
         return;
       }
       updatedCoin.status = CoinStatus.Dormant;
-      const currency = updatedCoin.currentAmount.currency;
-      updatedCoin.currentAmount = Amounts.getZero(currency);
       await tx.coins.put(updatedCoin);
       await putGroupAsFinished(ws, tx, recoupGroup, coinIdx);
     });
@@ -265,16 +264,25 @@ async function recoupRefreshCoin(
         logger.warn("refresh old coin for recoup not found");
         return;
       }
-      revokedCoin.status = CoinStatus.Dormant;
-      oldCoin.currentAmount = Amounts.add(
-        oldCoin.currentAmount,
-        recoupGroup.oldAmountPerCoin[coinIdx],
-      ).amount;
-      logger.trace(
-        "recoup: setting old coin amount to",
-        Amounts.stringify(oldCoin.currentAmount),
+      const oldCoinDenom = await ws.getDenomInfo(
+        ws,
+        tx,
+        oldCoin.exchangeBaseUrl,
+        oldCoin.denomPubHash,
       );
-      recoupGroup.scheduleRefreshCoins.push(oldCoin.coinPub);
+      const revokedCoinDenom = await ws.getDenomInfo(
+        ws,
+        tx,
+        revokedCoin.exchangeBaseUrl,
+        revokedCoin.denomPubHash,
+      );
+      checkDbInvariant(!!oldCoinDenom);
+      checkDbInvariant(!!revokedCoinDenom);
+      revokedCoin.status = CoinStatus.Dormant;
+      recoupGroup.scheduleRefreshCoins.push({
+        coinPub: oldCoin.coinPub,
+        amount: Amounts.sub(oldCoinDenom.value, revokedCoinDenom.value).amount,
+      });
       await tx.coins.put(revokedCoin);
       await tx.coins.put(oldCoin);
       await putGroupAsFinished(ws, tx, recoupGroup, coinIdx);
@@ -410,7 +418,7 @@ export async function processRecoupGroupHandler(
         const refreshGroupId = await createRefreshGroup(
           ws,
           tx,
-          rg2.scheduleRefreshCoins.map((x) => ({ coinPub: x })),
+          rg2.scheduleRefreshCoins,
           RefreshReason.Recoup,
         );
         processRefreshGroup(ws, refreshGroupId.refreshGroupId).catch((e) => {
@@ -442,8 +450,6 @@ export async function createRecoupGroup(
     timestampFinished: undefined,
     timestampStarted: TalerProtocolTimestamp.now(),
     recoupFinishedPerCoin: coinPubs.map(() => false),
-    // Will be populated later
-    oldAmountPerCoin: [],
     scheduleRefreshCoins: [],
   };
 
@@ -454,12 +460,6 @@ export async function createRecoupGroup(
       await putGroupAsFinished(ws, tx, recoupGroup, coinIdx);
       continue;
     }
-    if (Amounts.isZero(coin.currentAmount)) {
-      await putGroupAsFinished(ws, tx, recoupGroup, coinIdx);
-      continue;
-    }
-    recoupGroup.oldAmountPerCoin[coinIdx] = coin.currentAmount;
-    coin.currentAmount = Amounts.getZero(coin.currentAmount.currency);
     await tx.coins.put(coin);
   }
 

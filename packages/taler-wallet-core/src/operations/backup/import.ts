@@ -27,6 +27,7 @@ import {
   BackupRefundState,
   BackupWgType,
   codecForContractTerms,
+  CoinStatus,
   DenomKeyType,
   DenomSelectionState,
   j2s,
@@ -41,10 +42,8 @@ import {
   CoinRecord,
   CoinSource,
   CoinSourceType,
-  CoinStatus,
   DenominationRecord,
   DenominationVerificationStatus,
-  OperationStatus,
   ProposalDownloadInfo,
   PurchaseStatus,
   PurchasePayInfo,
@@ -272,7 +271,6 @@ export async function importCoin(
       blindingKey: backupCoin.blinding_key,
       coinEvHash: compCoin.coinEvHash,
       coinPriv: backupCoin.coin_priv,
-      currentAmount: Amounts.parseOrThrow(backupCoin.current_amount),
       denomSig: backupCoin.denom_sig,
       coinPub: compCoin.coinPub,
       exchangeBaseUrl,
@@ -284,7 +282,7 @@ export async function importCoin(
       // FIXME!
       ageCommitmentProof: undefined,
       // FIXME!
-      allocation: undefined,
+      spendAllocation: undefined,
     };
     if (coinRecord.status === CoinStatus.Fresh) {
       await makeCoinAvailable(ws, tx, coinRecord);

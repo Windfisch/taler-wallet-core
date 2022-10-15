@@ -1105,9 +1105,7 @@ advancedCli
         console.log(`coin ${coin.coin_pub}`);
         console.log(` exchange ${coin.exchange_base_url}`);
         console.log(` denomPubHash ${coin.denom_pub_hash}`);
-        console.log(
-          ` remaining amount ${Amounts.stringify(coin.remaining_value)}`,
-        );
+        console.log(` status ${coin.coin_status}`);
       }
     });
   });

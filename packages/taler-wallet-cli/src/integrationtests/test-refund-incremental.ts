@@ -193,7 +193,7 @@ export async function runRefundIncrementalTest(t: GlobalTestState) {
         .map((x) => x.amountEffective),
     ).amount;
 
-    t.assertAmountEquals("TESTKUDOS:8.33", effective);
+    t.assertAmountEquals("TESTKUDOS:8.59", effective);
   }
 
   await t.shutdown();

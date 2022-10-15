@@ -24,6 +24,7 @@ import {
   BlindedDenominationSignature,
   codecForMerchantTipResponseV2,
   codecForTipPickupGetResponse,
+  CoinStatus,
   DenomKeyType,
   encodeCrock,
   getRandomBytes,
@@ -41,7 +42,6 @@ import { DerivedTipPlanchet } from "../crypto/cryptoTypes.js";
 import {
   CoinRecord,
   CoinSourceType,
-  CoinStatus,
   DenominationRecord,
   TipRecord,
 } from "../db.js";
@@ -311,7 +311,6 @@ export async function processTip(
         coinIndex: i,
         walletTipId: walletTipId,
       },
-      currentAmount: DenominationRecord.getValue(denom),
       denomPubHash: denom.denomPubHash,
       denomSig: { cipher: DenomKeyType.Rsa, rsa_signature: denomSigRsa.sig },
       exchangeBaseUrl: tipRecord.exchangeBaseUrl,
@@ -319,7 +318,7 @@ export async function processTip(
       coinEvHash: planchet.coinEvHash,
       maxAge: AgeRestriction.AGE_UNRESTRICTED,
       ageCommitmentProof: planchet.ageCommitmentProof,
-      allocation: undefined,
+      spendAllocation: undefined,
     });
   }
 

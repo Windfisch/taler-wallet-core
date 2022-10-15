@@ -23,7 +23,7 @@ import {
   Amounts,
   Logger,
 } from "@gnu-taler/taler-util";
-import { CoinStatus, WalletStoresV1 } from "../db.js";
+import { WalletStoresV1 } from "../db.js";
 import { GetReadOnlyAccess } from "../util/query.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 
@@ -42,6 +42,7 @@ export async function getBalancesInsideTransaction(
   ws: InternalWalletState,
   tx: GetReadOnlyAccess<{
     coins: typeof WalletStoresV1.coins;
+    coinAvailability: typeof WalletStoresV1.coinAvailability;
     refreshGroups: typeof WalletStoresV1.refreshGroups;
     withdrawalGroups: typeof WalletStoresV1.withdrawalGroups;
   }>,
@@ -64,12 +65,14 @@ export async function getBalancesInsideTransaction(
     return balanceStore[currency];
   };
 
-  await tx.coins.iter().forEach((c) => {
-    // Only count fresh coins, as dormant coins will
-    // already be in a refresh session.
-    if (c.status === CoinStatus.Fresh) {
-      const b = initBalance(c.currentAmount.currency);
-      b.available = Amounts.add(b.available, c.currentAmount).amount;
+  await tx.coinAvailability.iter().forEach((ca) => {
+    const b = initBalance(ca.currency);
+    for (let i = 0; i < ca.freshCoinCount; i++) {
+      b.available = Amounts.add(b.available, {
+        currency: ca.currency,
+        fraction: ca.amountFrac,
+        value: ca.amountVal,
+      }).amount;
     }
   });
 
@@ -139,7 +142,13 @@ export async function getBalances(
   logger.trace("starting to compute balance");
 
   const wbal = await ws.db
-    .mktx((x) => [x.coins, x.refreshGroups, x.purchases, x.withdrawalGroups])
+    .mktx((x) => [
+      x.coins,
+      x.coinAvailability,
+      x.refreshGroups,
+      x.purchases,
+      x.withdrawalGroups,
+    ])
     .runReadOnly(async (tx) => {
       return getBalancesInsideTransaction(ws, tx);
     });

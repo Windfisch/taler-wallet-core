@@ -49,6 +49,8 @@ import {
   ExchangeGlobalFees,
   DenomSelectionState,
   TransactionIdStr,
+  CoinRefreshRequest,
+  CoinStatus,
 } from "@gnu-taler/taler-util";
 import { RetryInfo, RetryTags } from "./util/retries.js";
 import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
@@ -603,27 +605,6 @@ export interface PlanchetRecord {
   ageCommitmentProof?: AgeCommitmentProof;
 }
 
-/**
- * Status of a coin.
- */
-export enum CoinStatus {
-  /**
-   * Withdrawn and never shown to anybody.
-   */
-  Fresh = "fresh",
-
-  /**
-   * Fresh, but currently marked as "suspended", thus won't be used
-   * for spending.  Used for testing.
-   */
-  FreshSuspended = "fresh-suspended",
-
-  /**
-   * A coin that has been spent and refreshed.
-   */
-  Dormant = "dormant",
-}
-
 export enum CoinSourceType {
   Withdraw = "withdraw",
   Refresh = "refresh",
@@ -693,14 +674,6 @@ export interface CoinRecord {
   denomSig: UnblindedSignature;
 
   /**
-   * Amount that's left on the coin.
-   *
-   * FIXME: This is pretty redundant with "allocation" and "status".
-   * Do we really need this?
-   */
-  currentAmount: AmountJson;
-
-  /**
    * Base URL that identifies the exchange from which we got the
    * coin.
    */
@@ -732,7 +705,7 @@ export interface CoinRecord {
    * - Diagnostics
    * - Idempotency of applying a coin selection (e.g. after re-selection)
    */
-  allocation: CoinAllocation | undefined;
+  spendAllocation: CoinAllocation | undefined;
 
   /**
    * Maximum age of purchases that can be made with this coin.
@@ -1462,17 +1435,10 @@ export interface RecoupGroupRecord {
   recoupFinishedPerCoin: boolean[];
 
   /**
-   * We store old amount (i.e. before recoup) of recouped coins here,
-   * as the balance of a recouped coin is set to zero when the
-   * recoup group is created.
-   */
-  oldAmountPerCoin: AmountJson[];
-
-  /**
    * Public keys of coins that should be scheduled for refreshing
    * after all individual recoups are done.
    */
-  scheduleRefreshCoins: string[];
+  scheduleRefreshCoins: CoinRefreshRequest[];
 }
 
 export enum BackupProviderStateTag {
@@ -1875,7 +1841,6 @@ export const WalletStoresV1 = {
     "exchangeTos",
     describeContents<ExchangeTosRecord>({
       keyPath: ["exchangeBaseUrl", "etag"],
-      autoIncrement: true,
     }),
     {},
   ),
