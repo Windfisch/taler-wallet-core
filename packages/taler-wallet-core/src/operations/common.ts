@@ -22,6 +22,8 @@ import {
   Amounts,
   CoinRefreshRequest,
   CoinStatus,
+  ExchangeEntryStatus,
+  ExchangeListItem,
   ExchangeTosStatus,
   j2s,
   Logger,
@@ -32,7 +34,12 @@ import {
   TransactionIdStr,
   TransactionType,
 } from "@gnu-taler/taler-util";
-import { WalletStoresV1, CoinRecord, ExchangeDetailsRecord } from "../db.js";
+import {
+  WalletStoresV1,
+  CoinRecord,
+  ExchangeDetailsRecord,
+  ExchangeRecord,
+} from "../db.js";
 import { makeErrorDetail, TalerError } from "../errors.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { checkDbInvariant, checkLogicInvariant } from "../util/invariants.js";
@@ -319,4 +326,30 @@ export function getExchangeTosStatus(
     return ExchangeTosStatus.Accepted;
   }
   return ExchangeTosStatus.Changed;
+}
+
+export function makeExchangeListItem(
+  r: ExchangeRecord,
+  exchangeDetails: ExchangeDetailsRecord | undefined,
+): ExchangeListItem {
+  if (!exchangeDetails) {
+    return {
+      exchangeBaseUrl: r.baseUrl,
+      currency: undefined,
+      tosStatus: ExchangeTosStatus.Unknown,
+      paytoUris: [],
+      exchangeStatus: ExchangeEntryStatus.Unknown,
+      permanent: r.permanent,
+    };
+  }
+  let exchangeStatus;
+  exchangeStatus = ExchangeEntryStatus.Ok;
+  return {
+    exchangeBaseUrl: r.baseUrl,
+    currency: exchangeDetails.currency,
+    tosStatus: getExchangeTosStatus(exchangeDetails),
+    paytoUris: exchangeDetails.wireInfo.accounts.map((x) => x.payto_uri),
+    exchangeStatus,
+    permanent: r.permanent,
+  };
 }

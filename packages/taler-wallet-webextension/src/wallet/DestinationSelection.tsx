@@ -185,7 +185,11 @@ export function SelectCurrency({
     );
   }
   const list: Record<string, string> = {};
-  hook.response.exchanges.forEach((e) => (list[e.currency] = e.currency));
+  hook.response.exchanges.forEach((e) => {
+    if (e.currency) {
+      list[e.currency] = e.currency;
+    }
+  });
   list[""] = "Select a currency";
   return <SelectCurrencyView onChange={onChange} list={list} />;
 }

@@ -905,13 +905,27 @@ export enum ExchangeTosStatus {
   Accepted = "accepted",
   Changed = "changed",
   NotFound = "not-found",
+  Unknown = "unknown",
 }
 
+export enum ExchangeEntryStatus {
+  Unknown = "unknown",
+  Outdated = "outdated",
+  Ok = "ok",
+}
+
+// FIXME: This should probably include some error status.
 export interface ExchangeListItem {
   exchangeBaseUrl: string;
-  currency: string;
+  currency: string | undefined;
   paytoUris: string[];
   tosStatus: ExchangeTosStatus;
+  exchangeStatus: ExchangeEntryStatus;
+  /**
+   * Permanently added to the wallet, as opposed to just
+   * temporarily queried.
+   */
+  permanent: boolean;
 }
 
 const codecForAuditorDenomSig = (): Codec<AuditorDenomSig> =>
@@ -984,6 +998,8 @@ export const codecForExchangeListItem = (): Codec<ExchangeListItem> =>
     .property("exchangeBaseUrl", codecForString())
     .property("paytoUris", codecForList(codecForString()))
     .property("tosStatus", codecForAny())
+    .property("exchangeStatus", codecForAny())
+    .property("permanent", codecForBoolean())
     .build("ExchangeListItem");
 
 export const codecForExchangesListResponse = (): Codec<ExchangesListResponse> =>

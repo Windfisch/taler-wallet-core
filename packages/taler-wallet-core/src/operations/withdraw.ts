@@ -85,6 +85,7 @@ import { InternalWalletState } from "../internal-wallet-state.js";
 import {
   getExchangeTosStatus,
   makeCoinAvailable,
+  makeExchangeListItem,
   runOperationWithErrorReporting,
 } from "../operations/common.js";
 import { walletCoreDebugFlags } from "../util/debugFlags.js";
@@ -1367,18 +1368,7 @@ export async function getWithdrawalDetailsForUri(
           .iter(r.baseUrl)
           .toArray();
         if (exchangeDetails && denominations) {
-          const tosRecord = await tx.exchangeTos.get([
-            exchangeDetails.exchangeBaseUrl,
-            exchangeDetails.tosCurrentEtag,
-          ]);
-          exchanges.push({
-            exchangeBaseUrl: exchangeDetails.exchangeBaseUrl,
-            currency: exchangeDetails.currency,
-            paytoUris: exchangeDetails.wireInfo.accounts.map(
-              (x) => x.payto_uri,
-            ),
-            tosStatus: getExchangeTosStatus(exchangeDetails),
-          });
+          exchanges.push(makeExchangeListItem(r, exchangeDetails));
         }
       }
     });

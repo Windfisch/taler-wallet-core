@@ -705,8 +705,6 @@ export async function updateExchangeFromUrlHandler(
         };
       }
       await tx.exchanges.put(r);
-      logger.info(`existing details ${j2s(existingDetails)}`);
-      logger.info(`inserting new details ${j2s(newDetails)}`);
       const drRowId = await tx.exchangeDetails.put(newDetails);
       checkDbInvariant(typeof drRowId.key === "number");
 

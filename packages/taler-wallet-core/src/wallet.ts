@@ -97,6 +97,8 @@ import {
   ExchangeTosStatusDetails,
   CoinRefreshRequest,
   CoinStatus,
+  ExchangeEntryStatus,
+  ExchangeTosStatus,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import {
@@ -146,7 +148,11 @@ import {
 } from "./operations/backup/index.js";
 import { setWalletDeviceId } from "./operations/backup/state.js";
 import { getBalances } from "./operations/balance.js";
-import { getExchangeTosStatus, runOperationWithErrorReporting } from "./operations/common.js";
+import {
+  getExchangeTosStatus,
+  makeExchangeListItem,
+  runOperationWithErrorReporting,
+} from "./operations/common.js";
 import {
   createDepositGroup,
   getFeeForDeposit,
@@ -645,32 +651,8 @@ async function getExchanges(
     .runReadOnly(async (tx) => {
       const exchangeRecords = await tx.exchanges.iter().toArray();
       for (const r of exchangeRecords) {
-        const dp = r.detailsPointer;
-        if (!dp) {
-          continue;
-        }
-        const { currency } = dp;
         const exchangeDetails = await getExchangeDetails(tx, r.baseUrl);
-        if (!exchangeDetails) {
-          continue;
-        }
-
-        const denominations = await tx.denominations.indexes.byExchangeBaseUrl
-          .iter(r.baseUrl)
-          .toArray();
-
-        if (!denominations) {
-          continue;
-        }
-
-        const tos = await getExchangeTosStatusDetails(tx, exchangeDetails);
-
-        exchanges.push({
-          exchangeBaseUrl: r.baseUrl,
-          currency,
-          tosStatus: getExchangeTosStatus(exchangeDetails),
-          paytoUris: exchangeDetails.wireInfo.accounts.map((x) => x.payto_uri),
-        });
+        exchanges.push(makeExchangeListItem(r, exchangeDetails));
       }
     });
   return { exchanges };

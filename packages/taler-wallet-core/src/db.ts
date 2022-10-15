@@ -17,45 +17,42 @@
 /**
  * Imports.
  */
+import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
 import {
-  describeStore,
-  describeContents,
-  describeIndex,
-} from "./util/query.js";
-import {
+  AgeCommitmentProof,
   AmountJson,
   AmountString,
-  ExchangeAuditor,
-  CoinDepositPermission,
+  CoinEnvelope,
+  CoinRefreshRequest,
+  CoinStatus,
   ContractTerms,
+  DenominationInfo,
   DenominationPubKey,
-  ExchangeSignKeyJson,
+  DenomSelectionState,
+  EddsaPublicKeyString,
+  EddsaSignatureString,
+  ExchangeAuditor,
+  ExchangeGlobalFees,
   InternationalizedString,
+  Location,
   MerchantInfo,
+  PayCoinSelection,
+  PeerContractTerms,
   Product,
   RefreshReason,
   TalerErrorDetail,
-  UnblindedSignature,
-  CoinEnvelope,
-  TalerProtocolTimestamp,
   TalerProtocolDuration,
-  AgeCommitmentProof,
-  PayCoinSelection,
-  PeerContractTerms,
-  Location,
-  WireInfo,
-  DenominationInfo,
-  GlobalFees,
-  ExchangeGlobalFees,
-  DenomSelectionState,
+  TalerProtocolTimestamp,
   TransactionIdStr,
-  CoinRefreshRequest,
-  CoinStatus,
-  EddsaPublicKeyString,
-  EddsaSignatureString,
+  UnblindedSignature,
+  WireInfo,
 } from "@gnu-taler/taler-util";
+import {
+  describeContents,
+  describeIndex,
+  describeStore,
+} from "./util/query.js";
 import { RetryInfo, RetryTags } from "./util/retries.js";
-import { Event, IDBDatabase } from "@gnu-taler/idb-bridge";
 
 /**
  * This file contains the database schema of the Taler wallet together
@@ -354,8 +351,6 @@ export interface DenominationRecord {
    * Was this denomination still offered by the exchange the last time
    * we checked?
    * Only false when the exchange redacts a previously published denomination.
-   *
-   * FIXME: Consider rolling this and isRevoked into some bitfield?
    */
   isOffered: boolean;
 
@@ -526,6 +521,8 @@ export interface ExchangeRecord {
    * Should usually not change.  Only changes when the
    * exchange advertises a different master public key and/or
    * currency.
+   * 
+   * FIXME: Use a rowId here?
    */
   detailsPointer: ExchangeDetailsPointer | undefined;
 
@@ -1168,8 +1165,6 @@ export interface PurchaseRecord {
   /**
    * Timestamp of the first time that sending a payment to the merchant
    * for this purchase was successful.
-   *
-   * FIXME: Does this need to be a timestamp, doesn't boolean suffice?
    */
   timestampFirstSuccessfulPay: TalerProtocolTimestamp | undefined;
 
@@ -1369,6 +1364,8 @@ export interface WithdrawalGroupRecord {
   /**
    * Wire information (as payto URI) for the bank account that
    * transferred funds for this reserve.
+   * 
+   * FIXME: Doesn't this belong to the bankAccounts object store?
    */
   senderWire?: string;
 
@@ -1604,7 +1601,7 @@ export interface GhostDepositGroupRecord {
 
 export interface TombstoneRecord {
   /**
-   * Tombstone ID, with the syntax "<type>:<key>".
+   * Tombstone ID, with the syntax "tmb:<type>:<key>".
    */
   id: string;
 }

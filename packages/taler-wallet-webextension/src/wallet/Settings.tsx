@@ -204,6 +204,14 @@ export function SettingsView({
                             <i18n.Translate>not accepted</i18n.Translate>
                           </DestructiveText>
                         );
+                      case ExchangeTosStatus.Unknown:
+                        return (
+                          <DestructiveText>
+                            <i18n.Translate>
+                              unknown (exchange status should be updated)
+                            </i18n.Translate>
+                          </DestructiveText>
+                        );
                     }
                   }
                   return (

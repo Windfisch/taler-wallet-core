@@ -48,6 +48,7 @@ import {
   CreateDepositGroupRequest,
   CreateDepositGroupResponse,
   DeleteTransactionRequest,
+  ExchangeDetailedResponse,
   ExchangesListResponse,
   ForceRefreshRequest,
   GetExchangeTosRequest,
@@ -109,6 +110,7 @@ export enum WalletApiOperation {
   ApplyRefund = "applyRefund",
   AcceptBankIntegratedWithdrawal = "acceptBankIntegratedWithdrawal",
   GetExchangeTos = "getExchangeTos",
+  GetExchangeDetailedInfo = "getExchangeDetailedInfo",
   RetryPendingNow = "retryPendingNow",
   AbortFailedPayWithRefund = "abortFailedPayWithRefund",
   ConfirmPay = "confirmPay",
@@ -331,6 +333,15 @@ export type GetExchangeTosOp = {
   op: WalletApiOperation.GetExchangeTos;
   request: GetExchangeTosRequest;
   response: GetExchangeTosResult;
+};
+
+/**
+ * Get the current terms of a service of an exchange.
+ */
+export type GetExchangeDetailedInfoOp = {
+  op: WalletApiOperation.GetExchangeDetailedInfo;
+  request: AddExchangeRequest;
+  response: ExchangeDetailedResponse;
 };
 
 /**
@@ -661,6 +672,7 @@ export type WalletOperations = {
   [WalletApiOperation.AddExchange]: AddExchangeOp;
   [WalletApiOperation.SetExchangeTosAccepted]: SetExchangeTosAcceptedOp;
   [WalletApiOperation.GetExchangeTos]: GetExchangeTosOp;
+  [WalletApiOperation.GetExchangeDetailedInfo]: GetExchangeDetailedInfoOp;
   [WalletApiOperation.TrackDepositGroup]: TrackDepositGroupOp;
   [WalletApiOperation.CreateDepositGroup]: CreateDepositGroupOp;
   [WalletApiOperation.SetWalletDeviceId]: SetWalletDeviceIdOp;

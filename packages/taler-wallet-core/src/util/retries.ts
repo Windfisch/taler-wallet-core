@@ -49,7 +49,6 @@ export enum OperationAttemptResultType {
   Longpoll = "longpoll",
 }
 
-// FIXME: not part of DB!
 export type OperationAttemptResult<TSuccess = unknown, TPending = unknown> =
   | OperationAttemptFinishedResult<TSuccess>
   | OperationAttemptErrorResult

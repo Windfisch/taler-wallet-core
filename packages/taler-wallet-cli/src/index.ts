@@ -550,6 +550,25 @@ exchangesCli
   });
 
 exchangesCli
+  .subcommand("exchangesShowCmd", "show", {
+    help: "Show exchange details",
+  })
+  .requiredArgument("url", clk.STRING, {
+    help: "Base URL of the exchange.",
+  })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      const resp = await wallet.client.call(
+        WalletApiOperation.GetExchangeDetailedInfo,
+        {
+          exchangeBaseUrl: args.exchangesShowCmd.url,
+        },
+      );
+      console.log(JSON.stringify(resp, undefined, 2));
+    });
+  });
+
+exchangesCli
   .subcommand("exchangesAddCmd", "add", {
     help: "Add an exchange by base URL.",
   })

@@ -112,7 +112,7 @@ export function ManualWithdrawPage({ amount, onCancel }: Props): VNode {
   const exchangeList = state.response.exchanges.reduce(
     (p, c) => ({
       ...p,
-      [c.exchangeBaseUrl]: c.currency,
+      [c.exchangeBaseUrl]: c.currency || "??",
     }),
     {} as Record<string, string>,
   );
