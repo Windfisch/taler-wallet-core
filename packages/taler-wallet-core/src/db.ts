@@ -609,8 +609,6 @@ export interface PlanchetRecord {
 
   coinEvHash: string;
 
-  maxAge: number;
-
   ageCommitmentProof?: AgeCommitmentProof;
 }
 
@@ -719,7 +717,7 @@ export interface CoinRecord {
   /**
    * Maximum age of purchases that can be made with this coin.
    *
-   * FIXME: Not used for indexing, isn't it redundant?
+   * (Used for indexing, redundant with {@link ageCommitmentProof}).
    */
   maxAge: number;
 

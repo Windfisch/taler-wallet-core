@@ -433,7 +433,6 @@ async function processPlanchetGenerate(
     planchetStatus: PlanchetStatus.Pending,
     withdrawSig: r.withdrawSig,
     withdrawalGroupId: withdrawalGroup.withdrawalGroupId,
-    maxAge: withdrawalGroup.restrictAge ?? AgeRestriction.AGE_UNRESTRICTED,
     ageCommitmentProof: r.ageCommitmentProof,
     lastError: undefined,
   };
@@ -746,7 +745,7 @@ async function processPlanchetVerifyAndStoreCoin(
       reservePub: withdrawalGroup.reservePub,
       withdrawalGroupId: withdrawalGroup.withdrawalGroupId,
     },
-    maxAge: planchet.maxAge,
+    maxAge: withdrawalGroup.restrictAge ?? AgeRestriction.AGE_UNRESTRICTED,
     ageCommitmentProof: planchet.ageCommitmentProof,
     spendAllocation: undefined,
   };
@@ -1360,7 +1359,10 @@ export async function getWithdrawalDetailsForUri(
     .runReadOnly(async (tx) => {
       const exchangeRecords = await tx.exchanges.iter().toArray();
       for (const r of exchangeRecords) {
-        const exchangeDetails = await ws.exchangeOps.getExchangeDetails(tx, r.baseUrl);
+        const exchangeDetails = await ws.exchangeOps.getExchangeDetails(
+          tx,
+          r.baseUrl,
+        );
         const denominations = await tx.denominations.indexes.byExchangeBaseUrl
           .iter(r.baseUrl)
           .toArray();
@@ -1372,7 +1374,9 @@ export async function getWithdrawalDetailsForUri(
           exchanges.push({
             exchangeBaseUrl: exchangeDetails.exchangeBaseUrl,
             currency: exchangeDetails.currency,
-            paytoUris: exchangeDetails.wireInfo.accounts.map((x) => x.payto_uri),
+            paytoUris: exchangeDetails.wireInfo.accounts.map(
+              (x) => x.payto_uri,
+            ),
             tosStatus: getExchangeTosStatus(exchangeDetails),
           });
         }
