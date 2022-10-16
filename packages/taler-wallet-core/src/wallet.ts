@@ -24,7 +24,6 @@
  */
 import {
   AbsoluteTime,
-  AmountJson,
   Amounts,
   codecForAbortPayWithRefundRequest,
   codecForAcceptBankIntegratedWithdrawalRequest,
@@ -36,6 +35,7 @@ import {
   codecForAddExchangeRequest,
   codecForAddKnownBankAccounts,
   codecForAny,
+  codecForApplyDevExperiment,
   codecForApplyRefundFromPurchaseIdRequest,
   codecForApplyRefundRequest,
   codecForCheckPeerPullPaymentRequest,
@@ -61,6 +61,7 @@ import {
   codecForPrepareTipRequest,
   codecForRetryTransactionRequest,
   codecForSetCoinSuspendedRequest,
+  codecForSetDevModeRequest,
   codecForSetWalletDeviceIdRequest,
   codecForTestPayArgs,
   codecForTrackDepositGroupRequest,
@@ -69,6 +70,8 @@ import {
   codecForWithdrawFakebankRequest,
   codecForWithdrawTestBalance,
   CoinDumpJson,
+  CoinRefreshRequest,
+  CoinStatus,
   CoreApiResponse,
   DenominationInfo,
   DenomOperationMap,
@@ -78,27 +81,20 @@ import {
   ExchangeFullDetails,
   ExchangeListItem,
   ExchangesListResponse,
+  ExchangeTosStatusDetails,
   FeeDescription,
   GetExchangeTosResult,
   j2s,
   KnownBankAccounts,
   KnownBankAccountsInfo,
   Logger,
-  ManualWithdrawalDetails,
   NotificationType,
   parsePaytoUri,
   RefreshReason,
   TalerErrorCode,
-  codecForApplyDevExperiment,
   URL,
   WalletCoreVersion,
   WalletNotification,
-  codecForSetDevModeRequest,
-  ExchangeTosStatusDetails,
-  CoinRefreshRequest,
-  CoinStatus,
-  ExchangeEntryStatus,
-  ExchangeTosStatus,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import {
@@ -249,7 +245,11 @@ import {
   WALLET_EXCHANGE_PROTOCOL_VERSION,
   WALLET_MERCHANT_PROTOCOL_VERSION,
 } from "./versions.js";
-import { WalletCoreApiClient } from "./wallet-api-types.js";
+import {
+  WalletApiOperation,
+  WalletCoreApiClient,
+  WalletCoreResponseType,
+} from "./wallet-api-types.js";
 
 const builtinAuditors: AuditorTrustRecord[] = [
   {
@@ -964,12 +964,12 @@ const GIT_HASH = typeof __GIT_HASH__ !== "undefined" ? __GIT_HASH__ : undefined;
 /**
  * Implementation of the "wallet-core" API.
  */
-async function dispatchRequestInternal(
+async function dispatchRequestInternal<Op extends WalletApiOperation>(
   ws: InternalWalletState,
-  operation: string,
+  operation: WalletApiOperation,
   payload: unknown,
-): Promise<Record<string, any>> {
-  if (!ws.initCalled && operation !== "initWallet") {
+): Promise<WalletCoreResponseType<typeof operation>> {
+  if (!ws.initCalled && operation !== WalletApiOperation.InitWallet) {
     throw Error(
       `wallet must be initialized before running operation ${operation}`,
     );
@@ -977,7 +977,8 @@ async function dispatchRequestInternal(
   // FIXME: Can we make this more type-safe by using the request/response type
   // definitions we already have?
   switch (operation) {
-    case "initWallet": {
+    case WalletApiOperation.InitWallet: {
+      console.log(operation);
       logger.trace("initializing wallet");
       ws.initCalled = true;
       if (typeof payload === "object" && (payload as any).skipDefaults) {
@@ -989,7 +990,7 @@ async function dispatchRequestInternal(
       await maybeInitDevMode(ws);
       return {};
     }
-    case "withdrawTestkudos": {
+    case WalletApiOperation.WithdrawTestkudos: {
       await withdrawTestBalance(ws, {
         amount: "TESTKUDOS:10",
         bankBaseUrl: "https://bank.test.taler.net/",
@@ -998,61 +999,61 @@ async function dispatchRequestInternal(
       });
       return {};
     }
-    case "withdrawTestBalance": {
+    case WalletApiOperation.WithdrawTestBalance: {
       const req = codecForWithdrawTestBalance().decode(payload);
       await withdrawTestBalance(ws, req);
       return {};
     }
-    case "runIntegrationTest": {
+    case WalletApiOperation.RunIntegrationTest: {
       const req = codecForIntegrationTestArgs().decode(payload);
       await runIntegrationTest(ws, req);
       return {};
     }
-    case "testPay": {
+    case WalletApiOperation.TestPay: {
       const req = codecForTestPayArgs().decode(payload);
       return await testPay(ws, req);
     }
-    case "getTransactions": {
+    case WalletApiOperation.GetTransactions: {
       const req = codecForTransactionsRequest().decode(payload);
       return await getTransactions(ws, req);
     }
-    case "getTransactionById": {
+    case WalletApiOperation.GetTransactionById: {
       const req = codecForTransactionByIdRequest().decode(payload);
       return await getTransactionById(ws, req);
     }
-    case "addExchange": {
+    case WalletApiOperation.AddExchange: {
       const req = codecForAddExchangeRequest().decode(payload);
       await updateExchangeFromUrl(ws, req.exchangeBaseUrl, {
         forceNow: req.forceUpdate,
       });
       return {};
     }
-    case "listExchanges": {
+    case WalletApiOperation.ListExchanges: {
       return await getExchanges(ws);
     }
-    case "getExchangeDetailedInfo": {
+    case WalletApiOperation.GetExchangeDetailedInfo: {
       const req = codecForAddExchangeRequest().decode(payload);
       return await getExchangeDetailedInfo(ws, req.exchangeBaseUrl);
     }
-    case "listKnownBankAccounts": {
+    case WalletApiOperation.ListKnownBankAccounts: {
       const req = codecForListKnownBankAccounts().decode(payload);
       return await listKnownBankAccounts(ws, req.currency);
     }
-    case "addKnownBankAccounts": {
+    case WalletApiOperation.AddKnownBankAccounts: {
       const req = codecForAddKnownBankAccounts().decode(payload);
       await addKnownBankAccounts(ws, req.payto, req.alias, req.currency);
       return {};
     }
-    case "forgetKnownBankAccounts": {
+    case WalletApiOperation.ForgetKnownBankAccounts: {
       const req = codecForForgetKnownBankAccounts().decode(payload);
       await forgetKnownBankAccounts(ws, req.payto);
       return {};
     }
-    case "getWithdrawalDetailsForUri": {
+    case WalletApiOperation.GetWithdrawalDetailsForUri: {
       const req = codecForGetWithdrawalDetailsForUri().decode(payload);
       return await getWithdrawalDetailsForUri(ws, req.talerWithdrawUri);
     }
-    case "acceptManualWithdrawal": {
+    case WalletApiOperation.AcceptManualWithdrawal: {
       const req = codecForAcceptManualWithdrawalRequet().decode(payload);
       const res = await createManualWithdrawal(ws, {
         amount: Amounts.parseOrThrow(req.amount),
@@ -1061,7 +1062,7 @@ async function dispatchRequestInternal(
       });
       return res;
     }
-    case "getWithdrawalDetailsForAmount": {
+    case WalletApiOperation.GetWithdrawalDetailsForAmount: {
       const req =
         codecForGetWithdrawalDetailsForAmountRequest().decode(payload);
       const wi = await getExchangeWithdrawalInfo(
@@ -1077,26 +1078,26 @@ async function dispatchRequestInternal(
         tosAccepted: wi.termsOfServiceAccepted,
       };
     }
-    case "getBalances": {
+    case WalletApiOperation.GetBalances: {
       return await getBalances(ws);
     }
-    case "getPendingOperations": {
+    case WalletApiOperation.GetPendingOperations: {
       return await getPendingOperations(ws);
     }
-    case "setExchangeTosAccepted": {
+    case WalletApiOperation.SetExchangeTosAccepted: {
       const req = codecForAcceptExchangeTosRequest().decode(payload);
       await acceptExchangeTermsOfService(ws, req.exchangeBaseUrl, req.etag);
       return {};
     }
-    case "applyRefund": {
+    case WalletApiOperation.ApplyRefund: {
       const req = codecForApplyRefundRequest().decode(payload);
       return await applyRefund(ws, req.talerRefundUri);
     }
-    case "applyRefundFromPurchaseId": {
+    case WalletApiOperation.ApplyRefundFromPurchaseId: {
       const req = codecForApplyRefundFromPurchaseIdRequest().decode(payload);
       return await applyRefundFromPurchaseId(ws, req.purchaseId);
     }
-    case "acceptBankIntegratedWithdrawal": {
+    case WalletApiOperation.AcceptBankIntegratedWithdrawal: {
       const req =
         codecForAcceptBankIntegratedWithdrawalRequest().decode(payload);
       return await acceptWithdrawalFromUri(ws, {
@@ -1106,42 +1107,41 @@ async function dispatchRequestInternal(
         restrictAge: req.restrictAge,
       });
     }
-    case "getExchangeTos": {
+    case WalletApiOperation.GetExchangeTos: {
       const req = codecForGetExchangeTosRequest().decode(payload);
       return getExchangeTos(ws, req.exchangeBaseUrl, req.acceptedFormat);
     }
-    case "getContractTermsDetails": {
+    case WalletApiOperation.GetContractTermsDetails: {
       const req = codecForGetContractTermsDetails().decode(payload);
       return getContractTermsDetails(ws, req.proposalId);
     }
-    case "retryPendingNow": {
+    case WalletApiOperation.RetryPendingNow: {
       await runPending(ws, true);
       return {};
     }
     // FIXME: Deprecate one of the aliases!
-    case "preparePayForUri":
-    case "preparePay": {
+    case WalletApiOperation.PreparePayForUri: {
       const req = codecForPreparePayRequest().decode(payload);
       return await preparePayForUri(ws, req.talerPayUri);
     }
-    case "confirmPay": {
+    case WalletApiOperation.ConfirmPay: {
       const req = codecForConfirmPayRequest().decode(payload);
       return await confirmPay(ws, req.proposalId, req.sessionId);
     }
-    case "abortFailedPayWithRefund": {
+    case WalletApiOperation.AbortFailedPayWithRefund: {
       const req = codecForAbortPayWithRefundRequest().decode(payload);
       await abortFailedPayWithRefund(ws, req.proposalId);
       return {};
     }
-    case "dumpCoins": {
+    case WalletApiOperation.DumpCoins: {
       return await dumpCoins(ws);
     }
-    case "setCoinSuspended": {
+    case WalletApiOperation.SetCoinSuspended: {
       const req = codecForSetCoinSuspendedRequest().decode(payload);
       await setCoinSuspended(ws, req.coinPub, req.suspended);
       return {};
     }
-    case "forceRefresh": {
+    case WalletApiOperation.ForceRefresh: {
       const req = codecForForceRefreshRequest().decode(payload);
       const refreshGroupId = await ws.db
         .mktx((x) => [
@@ -1185,81 +1185,81 @@ async function dispatchRequestInternal(
         refreshGroupId,
       };
     }
-    case "prepareTip": {
+    case WalletApiOperation.PrepareTip: {
       const req = codecForPrepareTipRequest().decode(payload);
       return await prepareTip(ws, req.talerTipUri);
     }
-    case "prepareRefund": {
+    case WalletApiOperation.PrepareRefund: {
       const req = codecForPrepareRefundRequest().decode(payload);
       return await prepareRefund(ws, req.talerRefundUri);
     }
-    case "acceptTip": {
+    case WalletApiOperation.AcceptTip: {
       const req = codecForAcceptTipRequest().decode(payload);
       return await acceptTip(ws, req.walletTipId);
     }
-    case "exportBackupPlain": {
+    case WalletApiOperation.ExportBackupPlain: {
       return exportBackup(ws);
     }
-    case "addBackupProvider": {
+    case WalletApiOperation.AddBackupProvider: {
       const req = codecForAddBackupProviderRequest().decode(payload);
       await addBackupProvider(ws, req);
       return {};
     }
-    case "runBackupCycle": {
+    case WalletApiOperation.RunBackupCycle: {
       const req = codecForRunBackupCycle().decode(payload);
       await runBackupCycle(ws, req);
       return {};
     }
-    case "removeBackupProvider": {
+    case WalletApiOperation.RemoveBackupProvider: {
       const req = codecForRemoveBackupProvider().decode(payload);
       await removeBackupProvider(ws, req);
       return {};
     }
-    case "exportBackupRecovery": {
+    case WalletApiOperation.ExportBackupRecovery: {
       const resp = await getBackupRecovery(ws);
       return resp;
     }
-    case "importBackupRecovery": {
+    case WalletApiOperation.ImportBackupRecovery: {
       const req = codecForAny().decode(payload);
       await loadBackupRecovery(ws, req);
       return {};
     }
-    case "getBackupInfo": {
+    case WalletApiOperation.GetBackupInfo: {
       const resp = await getBackupInfo(ws);
       return resp;
     }
-    case "getFeeForDeposit": {
+    case WalletApiOperation.GetFeeForDeposit: {
       const req = codecForGetFeeForDeposit().decode(payload);
       return await getFeeForDeposit(ws, req);
     }
-    case "prepareDeposit": {
+    case WalletApiOperation.PrepareDeposit: {
       const req = codecForPrepareDepositRequest().decode(payload);
       return await prepareDepositGroup(ws, req);
     }
-    case "createDepositGroup": {
+    case WalletApiOperation.CreateDepositGroup: {
       const req = codecForCreateDepositGroupRequest().decode(payload);
       return await createDepositGroup(ws, req);
     }
-    case "trackDepositGroup": {
+    case WalletApiOperation.TrackDepositGroup: {
       const req = codecForTrackDepositGroupRequest().decode(payload);
       return trackDepositGroup(ws, req);
     }
-    case "deleteTransaction": {
+    case WalletApiOperation.DeleteTransaction: {
       const req = codecForDeleteTransactionRequest().decode(payload);
       await deleteTransaction(ws, req.transactionId);
       return {};
     }
-    case "retryTransaction": {
+    case WalletApiOperation.RetryTransaction: {
       const req = codecForRetryTransactionRequest().decode(payload);
       await retryTransaction(ws, req.transactionId);
       return {};
     }
-    case "setWalletDeviceId": {
+    case WalletApiOperation.SetWalletDeviceId: {
       const req = codecForSetWalletDeviceIdRequest().decode(payload);
       await setWalletDeviceId(ws, req.walletDeviceId);
       return {};
     }
-    case "listCurrencies": {
+    case WalletApiOperation.ListCurrencies: {
       return await ws.db
         .mktx((x) => [x.auditorTrust, x.exchangeTrust])
         .runReadOnly(async (tx) => {
@@ -1279,7 +1279,7 @@ async function dispatchRequestInternal(
           };
         });
     }
-    case "withdrawFakebank": {
+    case WalletApiOperation.WithdrawFakebank: {
       const req = codecForWithdrawFakebankRequest().decode(payload);
       const amount = Amounts.parseOrThrow(req.amount);
       const details = await getExchangeWithdrawalInfo(
@@ -1312,62 +1312,62 @@ async function dispatchRequestInternal(
       logger.info(`started fakebank withdrawal: ${j2s(fbResp)}`);
       return {};
     }
-    case "testCrypto": {
+    case WalletApiOperation.TestCrypto: {
       return await ws.cryptoApi.hashString({ str: "hello world" });
     }
-    case "clearDb":
+    case WalletApiOperation.ClearDb:
       await clearDatabase(ws.db.idbHandle());
       return {};
-    case "recycle": {
+    case WalletApiOperation.Recycle: {
       const backup = await exportBackup(ws);
       await clearDatabase(ws.db.idbHandle());
       await importBackupPlain(ws, backup);
       return {};
     }
-    case "exportDb": {
+    case WalletApiOperation.ExportDb: {
       const dbDump = await exportDb(ws.db.idbHandle());
       return dbDump;
     }
-    case "importDb": {
+    case WalletApiOperation.ImportDb: {
       const req = codecForImportDbRequest().decode(payload);
       await importDb(ws.db.idbHandle(), req.dump);
       return [];
     }
-    case "initiatePeerPushPayment": {
+    case WalletApiOperation.InitiatePeerPushPayment: {
       const req = codecForInitiatePeerPushPaymentRequest().decode(payload);
       return await initiatePeerToPeerPush(ws, req);
     }
-    case "checkPeerPushPayment": {
+    case WalletApiOperation.CheckPeerPushPayment: {
       const req = codecForCheckPeerPushPaymentRequest().decode(payload);
       return await checkPeerPushPayment(ws, req);
     }
-    case "acceptPeerPushPayment": {
+    case WalletApiOperation.AcceptPeerPushPayment: {
       const req = codecForAcceptPeerPushPaymentRequest().decode(payload);
       return await acceptPeerPushPayment(ws, req);
     }
-    case "initiatePeerPullPayment": {
+    case WalletApiOperation.InitiatePeerPullPayment: {
       const req = codecForInitiatePeerPullPaymentRequest().decode(payload);
       return await initiatePeerRequestForPay(ws, req);
     }
-    case "checkPeerPullPayment": {
+    case WalletApiOperation.CheckPeerPullPayment: {
       const req = codecForCheckPeerPullPaymentRequest().decode(payload);
       return await checkPeerPullPayment(ws, req);
     }
-    case "acceptPeerPullPayment": {
+    case WalletApiOperation.AcceptPeerPullPayment: {
       const req = codecForAcceptPeerPullPaymentRequest().decode(payload);
       return await acceptPeerPullPayment(ws, req);
     }
-    case "applyDevExperiment": {
+    case WalletApiOperation.ApplyDevExperiment: {
       const req = codecForApplyDevExperiment().decode(payload);
       await applyDevExperiment(ws, req.devExperimentUri);
       return {};
     }
-    case "setDevMode": {
+    case WalletApiOperation.SetDevMode: {
       const req = codecForSetDevModeRequest().decode(payload);
       await setDevMode(ws, req.devModeEnabled);
       return {};
     }
-    case "getVersion": {
+    case WalletApiOperation.GetVersion: {
       const version: WalletCoreVersion = {
         hash: GIT_HASH,
         version: VERSION,
@@ -1398,7 +1398,7 @@ export async function handleCoreApiRequest(
   payload: unknown,
 ): Promise<CoreApiResponse> {
   try {
-    const result = await dispatchRequestInternal(ws, operation, payload);
+    const result = await dispatchRequestInternal(ws, operation as any, payload);
     return {
       type: "response",
       operation,

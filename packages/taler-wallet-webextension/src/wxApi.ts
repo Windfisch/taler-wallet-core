@@ -410,7 +410,7 @@ export function applyRefundFromPurchaseId(
  * Get details about a pay operation.
  */
 export function preparePay(talerPayUri: string): Promise<PreparePayResult> {
-  return callBackend("preparePay", { talerPayUri });
+  return callBackend("preparePayForUri", { talerPayUri });
 }
 
 /**

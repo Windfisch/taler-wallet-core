@@ -34,6 +34,8 @@ import {
   AcceptTipRequest,
   AcceptWithdrawalResponse,
   AddExchangeRequest,
+  AddKnownBankAccountsRequest,
+  ApplyRefundFromPurchaseIdRequest,
   ApplyRefundRequest,
   ApplyRefundResponse,
   BackupRecovery,
@@ -48,11 +50,15 @@ import {
   CreateDepositGroupRequest,
   CreateDepositGroupResponse,
   DeleteTransactionRequest,
+  DepositGroupFees,
   ExchangeDetailedResponse,
   ExchangesListResponse,
   ForceRefreshRequest,
+  ForgetKnownBankAccountsRequest,
+  GetContractTermsDetailsRequest,
   GetExchangeTosRequest,
   GetExchangeTosResult,
+  GetFeeForDepositRequest,
   GetWithdrawalDetailsForAmountRequest,
   GetWithdrawalDetailsForUriRequest,
   InitiatePeerPullPaymentRequest,
@@ -60,9 +66,15 @@ import {
   InitiatePeerPushPaymentRequest,
   InitiatePeerPushPaymentResponse,
   IntegrationTestArgs,
+  KnownBankAccounts,
+  ListKnownBankAccountsRequest,
   ManualWithdrawalDetails,
+  PrepareDepositRequest,
+  PrepareDepositResponse,
   PreparePayRequest,
   PreparePayResult,
+  PrepareRefundRequest,
+  PrepareRefundResult,
   PrepareTipRequest,
   PrepareTipResult,
   RecoveryLoadRequest,
@@ -74,6 +86,8 @@ import {
   TestPayResult,
   TrackDepositGroupRequest,
   TrackDepositGroupResponse,
+  Transaction,
+  TransactionByIdRequest,
   TransactionsRequest,
   TransactionsResponse,
   WalletBackupContentV1,
@@ -83,9 +97,11 @@ import {
   WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
 import { ApplyDevExperimentRequest } from "@gnu-taler/taler-util";
+import { WalletContractData } from "./db.js";
 import {
   AddBackupProviderRequest,
   BackupInfo,
+  RemoveBackupProviderRequest,
 } from "./operations/backup/index.js";
 import { PendingOperationsResponse as PendingTasksResponse } from "./pending-types.js";
 
@@ -94,13 +110,17 @@ export enum WalletApiOperation {
   WithdrawTestkudos = "withdrawTestkudos",
   WithdrawTestBalance = "withdrawTestBalance",
   PreparePayForUri = "preparePayForUri",
+  GetContractTermsDetails = "getContractTermsDetails",
   RunIntegrationTest = "runIntegrationTest",
   TestCrypto = "testCrypto",
   TestPay = "testPay",
   AddExchange = "addExchange",
   GetTransactions = "getTransactions",
+  GetTransactionById = "getTransactionById",
   ListExchanges = "listExchanges",
   ListKnownBankAccounts = "listKnownBankAccounts",
+  AddKnownBankAccounts = "addKnownBankAccounts",
+  ForgetKnownBankAccounts = "forgetKnownBankAccounts",
   GetWithdrawalDetailsForUri = "getWithdrawalDetailsForUri",
   GetWithdrawalDetailsForAmount = "getWithdrawalDetailsForAmount",
   AcceptManualWithdrawal = "acceptManualWithdrawal",
@@ -108,6 +128,8 @@ export enum WalletApiOperation {
   GetPendingOperations = "getPendingOperations",
   SetExchangeTosAccepted = "setExchangeTosAccepted",
   ApplyRefund = "applyRefund",
+  ApplyRefundFromPurchaseId = "applyRefundFromPurchaseId",
+  PrepareRefund = "prepareRefund",
   AcceptBankIntegratedWithdrawal = "acceptBankIntegratedWithdrawal",
   GetExchangeTos = "getExchangeTos",
   GetExchangeDetailedInfo = "getExchangeDetailedInfo",
@@ -121,20 +143,23 @@ export enum WalletApiOperation {
   AcceptTip = "acceptTip",
   ExportBackup = "exportBackup",
   AddBackupProvider = "addBackupProvider",
+  RemoveBackupProvider = "removeBackupProvider",
   RunBackupCycle = "runBackupCycle",
   ExportBackupRecovery = "exportBackupRecovery",
   ImportBackupRecovery = "importBackupRecovery",
   GetBackupInfo = "getBackupInfo",
   TrackDepositGroup = "trackDepositGroup",
+  GetFeeForDeposit = "getFeeForDeposit",
+  PrepareDeposit = "prepareDeposit",
   GetVersion = "getVersion",
   DeleteTransaction = "deleteTransaction",
   RetryTransaction = "retryTransaction",
-  GetCoins = "getCoins",
   ListCurrencies = "listCurrencies",
   CreateDepositGroup = "createDepositGroup",
   SetWalletDeviceId = "setWalletDeviceId",
   ExportBackupPlain = "exportBackupPlain",
   WithdrawFakebank = "withdrawFakebank",
+  ImportDb = "importDb",
   ExportDb = "exportDb",
   InitiatePeerPushPayment = "initiatePeerPushPayment",
   CheckPeerPushPayment = "checkPeerPushPayment",
@@ -187,6 +212,18 @@ export type GetTransactionsOp = {
   op: WalletApiOperation.GetTransactions;
   request: TransactionsRequest;
   response: TransactionsResponse;
+};
+
+export type GetTransactionByIdOp = {
+  op: WalletApiOperation.GetTransactionById;
+  request: TransactionByIdRequest;
+  response: Transaction;
+};
+
+export type RetryPendingNowOp = {
+  op: WalletApiOperation.RetryPendingNow;
+  request: {};
+  response: {};
 };
 
 /**
@@ -256,6 +293,12 @@ export type PreparePayForUriOp = {
   response: PreparePayResult;
 };
 
+export type GetContractTermsDetailsOp = {
+  op: WalletApiOperation.GetContractTermsDetails;
+  request: GetContractTermsDetailsRequest;
+  response: WalletContractData;
+};
+
 /**
  * Confirm a payment that was previously prepared with
  * {@link PreparePayForUriOp}
@@ -282,6 +325,18 @@ export type ApplyRefundOp = {
   op: WalletApiOperation.ApplyRefund;
   request: ApplyRefundRequest;
   response: ApplyRefundResponse;
+};
+
+export type ApplyRefundFromPurchaseIdOp = {
+  op: WalletApiOperation.ApplyRefundFromPurchaseId;
+  request: ApplyRefundFromPurchaseIdRequest;
+  response: ApplyRefundResponse;
+};
+
+export type PrepareRefundOp = {
+  op: WalletApiOperation.PrepareRefund;
+  request: PrepareRefundRequest;
+  response: PrepareRefundResult;
 };
 
 // group: Tipping
@@ -321,6 +376,24 @@ export type ListExchangesOp = {
 export type AddExchangeOp = {
   op: WalletApiOperation.AddExchange;
   request: AddExchangeRequest;
+  response: {};
+};
+
+export type ListKnownBankAccountsOp = {
+  op: WalletApiOperation.ListKnownBankAccounts;
+  request: ListKnownBankAccountsRequest;
+  response: KnownBankAccounts;
+};
+
+export type AddKnownBankAccountsOp = {
+  op: WalletApiOperation.AddKnownBankAccounts;
+  request: AddKnownBankAccountsRequest;
+  response: {};
+};
+
+export type ForgetKnownBankAccountsOp = {
+  op: WalletApiOperation.ForgetKnownBankAccounts;
+  request: ForgetKnownBankAccountsRequest;
   response: {};
 };
 
@@ -383,6 +456,18 @@ export type TrackDepositGroupOp = {
   response: TrackDepositGroupResponse;
 };
 
+export type GetFeeForDepositOp = {
+  op: WalletApiOperation.GetFeeForDeposit;
+  request: GetFeeForDepositRequest;
+  response: DepositGroupFees;
+};
+
+export type PrepareDepositOp = {
+  op: WalletApiOperation.PrepareDeposit;
+  request: PrepareDepositRequest;
+  response: PrepareDepositResponse;
+};
+
 // group: Backups
 
 /**
@@ -412,12 +497,24 @@ export type RunBackupCycleOp = {
   response: {};
 };
 
+export type ExportBackupOp = {
+  op: WalletApiOperation.ExportBackup;
+  request: {};
+  response: {};
+};
+
 /**
  * Add a new backup provider.
  */
 export type AddBackupProviderOp = {
   op: WalletApiOperation.AddBackupProvider;
   request: AddBackupProviderRequest;
+  response: {};
+};
+
+export type RemoveBackupProviderOp = {
+  op: WalletApiOperation.RemoveBackupProvider;
+  request: RemoveBackupProviderRequest;
   response: {};
 };
 
@@ -514,6 +611,12 @@ export type AcceptPeerPullPaymentOp = {
 export type ExportDbOp = {
   op: WalletApiOperation.ExportDb;
   request: {};
+  response: any;
+};
+
+export type ImportDbOp = {
+  op: WalletApiOperation.ImportDb;
+  request: any;
   response: any;
 };
 
@@ -657,11 +760,14 @@ export type WalletOperations = {
   [WalletApiOperation.GetVersion]: GetVersionOp;
   [WalletApiOperation.WithdrawFakebank]: WithdrawFakebankOp;
   [WalletApiOperation.PreparePayForUri]: PreparePayForUriOp;
+  [WalletApiOperation.GetContractTermsDetails]: GetContractTermsDetailsOp;
   [WalletApiOperation.WithdrawTestkudos]: WithdrawTestkudosOp;
   [WalletApiOperation.ConfirmPay]: ConfirmPayOp;
   [WalletApiOperation.AbortFailedPayWithRefund]: AbortPayWithRefundOp;
   [WalletApiOperation.GetBalances]: GetBalancesOp;
   [WalletApiOperation.GetTransactions]: GetTransactionsOp;
+  [WalletApiOperation.GetTransactionById]: GetTransactionByIdOp;
+  [WalletApiOperation.RetryPendingNow]: RetryPendingNowOp;
   [WalletApiOperation.GetPendingOperations]: GetPendingTasksOp;
   [WalletApiOperation.DumpCoins]: DumpCoinsOp;
   [WalletApiOperation.SetCoinSuspended]: SetCoinSuspendedOp;
@@ -671,6 +777,8 @@ export type WalletOperations = {
   [WalletApiOperation.PrepareTip]: PrepareTipOp;
   [WalletApiOperation.AcceptTip]: AcceptTipOp;
   [WalletApiOperation.ApplyRefund]: ApplyRefundOp;
+  [WalletApiOperation.ApplyRefundFromPurchaseId]: ApplyRefundFromPurchaseIdOp;
+  [WalletApiOperation.PrepareRefund]: PrepareRefundOp;
   [WalletApiOperation.ListCurrencies]: ListCurrenciesOp;
   [WalletApiOperation.GetWithdrawalDetailsForAmount]: GetWithdrawalDetailsForAmountOp;
   [WalletApiOperation.GetWithdrawalDetailsForUri]: GetWithdrawalDetailsForUriOp;
@@ -678,23 +786,31 @@ export type WalletOperations = {
   [WalletApiOperation.AcceptManualWithdrawal]: AcceptManualWithdrawalOp;
   [WalletApiOperation.ListExchanges]: ListExchangesOp;
   [WalletApiOperation.AddExchange]: AddExchangeOp;
+  [WalletApiOperation.ListKnownBankAccounts]: ListKnownBankAccountsOp;
+  [WalletApiOperation.AddKnownBankAccounts]: AddKnownBankAccountsOp;
+  [WalletApiOperation.ForgetKnownBankAccounts]: ForgetKnownBankAccountsOp;
   [WalletApiOperation.SetExchangeTosAccepted]: SetExchangeTosAcceptedOp;
   [WalletApiOperation.GetExchangeTos]: GetExchangeTosOp;
   [WalletApiOperation.GetExchangeDetailedInfo]: GetExchangeDetailedInfoOp;
   [WalletApiOperation.TrackDepositGroup]: TrackDepositGroupOp;
+  [WalletApiOperation.GetFeeForDeposit]: GetFeeForDepositOp;
+  [WalletApiOperation.PrepareDeposit]: PrepareDepositOp;
   [WalletApiOperation.CreateDepositGroup]: CreateDepositGroupOp;
   [WalletApiOperation.SetWalletDeviceId]: SetWalletDeviceIdOp;
   [WalletApiOperation.ExportBackupPlain]: ExportBackupPlainOp;
   [WalletApiOperation.ExportBackupRecovery]: ExportBackupRecoveryOp;
   [WalletApiOperation.ImportBackupRecovery]: ImportBackupRecoveryOp;
   [WalletApiOperation.RunBackupCycle]: RunBackupCycleOp;
+  [WalletApiOperation.ExportBackup]: ExportBackupOp;
   [WalletApiOperation.AddBackupProvider]: AddBackupProviderOp;
+  [WalletApiOperation.RemoveBackupProvider]: RemoveBackupProviderOp;
   [WalletApiOperation.GetBackupInfo]: GetBackupInfoOp;
   [WalletApiOperation.RunIntegrationTest]: RunIntegrationTestOp;
   [WalletApiOperation.TestCrypto]: TestCryptoOp;
   [WalletApiOperation.WithdrawTestBalance]: WithdrawTestBalanceOp;
   [WalletApiOperation.TestPay]: TestPayOp;
   [WalletApiOperation.ExportDb]: ExportDbOp;
+  [WalletApiOperation.ImportDb]: ImportDbOp;
   [WalletApiOperation.InitiatePeerPushPayment]: InitiatePeerPushPaymentOp;
   [WalletApiOperation.CheckPeerPushPayment]: CheckPeerPushPaymentOp;
   [WalletApiOperation.AcceptPeerPushPayment]: AcceptPeerPushPaymentOp;
@@ -718,7 +834,7 @@ export type WalletCoreResponseType<
 export type WalletCoreOpKeys = WalletApiOperation & keyof WalletOperations;
 
 export interface WalletCoreApiClient {
-  call<Op extends WalletCoreOpKeys>(
+  call<Op extends keyof WalletOperations>(
     operation: Op,
     payload: WalletCoreRequestType<Op>,
   ): Promise<WalletCoreResponseType<Op>>;

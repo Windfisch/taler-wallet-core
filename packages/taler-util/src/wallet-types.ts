@@ -1372,7 +1372,7 @@ export const codecForAbortProposalRequest = (): Codec<AbortProposalRequest> =>
     .property("proposalId", codecForString())
     .build("AbortProposalRequest");
 
-interface GetContractTermsDetailsRequest {
+export interface GetContractTermsDetailsRequest {
   proposalId: string;
 }
 
