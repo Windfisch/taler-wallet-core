@@ -85,7 +85,12 @@ import {
   PendingOperationsResponse,
   RemoveBackupProviderRequest,
   TalerError,
+  WalletApiOperation,
   WalletContractData,
+  WalletCoreApiClient,
+  WalletCoreOpKeys,
+  WalletCoreRequestType,
+  WalletCoreResponseType,
 } from "@gnu-taler/taler-wallet-core";
 import { MessageFromBackend, platform } from "./platform/api.js";
 
@@ -121,6 +126,9 @@ export interface UpgradeResponse {
   oldDbVersion: string;
 }
 
+/**
+ * @deprecated Use {@link WxWalletCoreApiClient} instead.
+ */
 async function callBackend(operation: string, payload: any): Promise<any> {
   let response: CoreApiResponse;
   try {
@@ -136,12 +144,30 @@ async function callBackend(operation: string, payload: any): Promise<any> {
   return response.result;
 }
 
-/**
- * Start refreshing a coin.
- */
-export function refresh(coinPub: string): Promise<void> {
-  return callBackend("refresh-coin", { coinPub });
+export class WxWalletCoreApiClient implements WalletCoreApiClient {
+  async call<Op extends WalletCoreOpKeys>(
+    operation: Op,
+    payload: WalletCoreRequestType<Op>,
+  ): Promise<WalletCoreResponseType<Op>> {
+    let response: CoreApiResponse;
+    try {
+      response = await platform.sendMessageToWalletBackground(
+        operation,
+        payload,
+      );
+    } catch (e) {
+      console.log("Error calling backend");
+      throw new Error(`Error contacting backend: ${e}`);
+    }
+    logger.info("got response", response);
+    if (response.type === "error") {
+      throw TalerError.fromUncheckedDetail(response.error);
+    }
+    return response.result as any;
+  }
 }
+
+const wxClient = new WxWalletCoreApiClient();
 
 /**
  * Pay for a proposal.
@@ -150,7 +176,10 @@ export function confirmPay(
   proposalId: string,
   sessionId: string | undefined,
 ): Promise<ConfirmPayResult> {
-  return callBackend("confirmPay", { proposalId, sessionId });
+  return wxClient.call(WalletApiOperation.ConfirmPay, {
+    proposalId,
+    sessionId,
+  });
 }
 
 /**

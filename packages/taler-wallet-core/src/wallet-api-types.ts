@@ -707,17 +707,19 @@ export type WalletOperations = {
   [WalletApiOperation.SetDevMode]: SetDevModeOp;
 };
 
-export type RequestType<
+export type WalletCoreRequestType<
   Op extends WalletApiOperation & keyof WalletOperations,
 > = WalletOperations[Op] extends { request: infer T } ? T : never;
 
-export type ResponseType<
+export type WalletCoreResponseType<
   Op extends WalletApiOperation & keyof WalletOperations,
 > = WalletOperations[Op] extends { response: infer T } ? T : never;
 
+export type WalletCoreOpKeys = WalletApiOperation & keyof WalletOperations;
+
 export interface WalletCoreApiClient {
-  call<Op extends WalletApiOperation & keyof WalletOperations>(
+  call<Op extends WalletCoreOpKeys>(
     operation: Op,
-    payload: RequestType<Op>,
-  ): Promise<ResponseType<Op>>;
+    payload: WalletCoreRequestType<Op>,
+  ): Promise<WalletCoreResponseType<Op>>;
 }
