@@ -1322,6 +1322,7 @@ export interface GetWithdrawalDetailsForUriRequest {
   talerWithdrawUri: string;
   restrictAge?: number;
 }
+
 export const codecForGetWithdrawalDetailsForUri =
   (): Codec<GetWithdrawalDetailsForUriRequest> =>
     buildCodecForObject<GetWithdrawalDetailsForUriRequest>()
@@ -1332,6 +1333,7 @@ export const codecForGetWithdrawalDetailsForUri =
 export interface ListKnownBankAccountsRequest {
   currency?: string;
 }
+
 export const codecForListKnownBankAccounts =
   (): Codec<ListKnownBankAccountsRequest> =>
     buildCodecForObject<ListKnownBankAccountsRequest>()

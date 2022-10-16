@@ -126,6 +126,7 @@ export enum WalletApiOperation {
   ImportBackupRecovery = "importBackupRecovery",
   GetBackupInfo = "getBackupInfo",
   TrackDepositGroup = "trackDepositGroup",
+  GetVersion = "getVersion",
   DeleteTransaction = "deleteTransaction",
   RetryTransaction = "retryTransaction",
   GetCoins = "getCoins",
@@ -156,6 +157,12 @@ export enum WalletApiOperation {
  */
 export type InitWalletOp = {
   op: WalletApiOperation.InitWallet;
+  request: {};
+  response: {};
+};
+
+export type GetVersionOp = {
+  op: WalletApiOperation.GetVersion;
   request: {};
   response: {};
 };
@@ -647,6 +654,7 @@ export type ForceRefreshOp = {
 
 export type WalletOperations = {
   [WalletApiOperation.InitWallet]: InitWalletOp;
+  [WalletApiOperation.GetVersion]: GetVersionOp;
   [WalletApiOperation.WithdrawFakebank]: WithdrawFakebankOp;
   [WalletApiOperation.PreparePayForUri]: PreparePayForUriOp;
   [WalletApiOperation.WithdrawTestkudos]: WithdrawTestkudosOp;

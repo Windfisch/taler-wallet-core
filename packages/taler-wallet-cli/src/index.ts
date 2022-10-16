@@ -348,6 +348,20 @@ transactionsCli
     });
   });
 
+walletCli
+  .subcommand("version", "version", {
+    help: "Show version details.",
+  })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      const versionInfo = await wallet.client.call(
+        WalletApiOperation.GetVersion,
+        {},
+      );
+      console.log(j2s(versionInfo));
+    });
+  });
+
 transactionsCli
   .subcommand("retryTransaction", "retry", {
     help: "Retry a transaction.",
@@ -381,15 +395,17 @@ walletCli
     });
   });
 
-walletCli
-  .subcommand("withdraw", "withdraw", {
-    help: "Withdraw with a taler://withdraw/ URI",
-  })
+const withdrawCli = walletCli.subcommand("withdraw", "withdraw", {
+  help: "Withdraw with a taler://withdraw/ URI",
+});
+
+withdrawCli
+  .subcommand("withdrawCheckUri", "check-uri")
   .requiredArgument("uri", clk.STRING)
   .maybeOption("restrictAge", ["--restrict-age"], clk.INT)
   .action(async (args) => {
-    const uri = args.withdraw.uri;
-    const restrictAge = args.withdraw.restrictAge;
+    const uri = args.withdrawCheckUri.uri;
+    const restrictAge = args.withdrawCheckUri.restrictAge;
     console.log(`age restriction requested (${restrictAge})`);
     await withWallet(args, async (wallet) => {
       const withdrawInfo = await wallet.client.call(
@@ -400,16 +416,44 @@ walletCli
         },
       );
       console.log("withdrawInfo", withdrawInfo);
-      const selectedExchange = withdrawInfo.defaultExchangeBaseUrl;
-      if (!selectedExchange) {
-        console.error("no suggested exchange!");
-        process.exit(1);
-        return;
-      }
+    });
+  });
+
+withdrawCli
+  .subcommand("withdrawCheckAmount", "check-amount")
+  .requiredArgument("exchange", clk.STRING)
+  .requiredArgument("amount", clk.STRING)
+  .maybeOption("restrictAge", ["--restrict-age"], clk.INT)
+  .action(async (args) => {
+    const restrictAge = args.withdrawCheckAmount.restrictAge;
+    console.log(`age restriction requested (${restrictAge})`);
+    await withWallet(args, async (wallet) => {
+      const withdrawInfo = await wallet.client.call(
+        WalletApiOperation.GetWithdrawalDetailsForAmount,
+        {
+          amount: args.withdrawCheckAmount.amount,
+          exchangeBaseUrl: args.withdrawCheckAmount.exchange,
+          restrictAge,
+        },
+      );
+      console.log("withdrawInfo", withdrawInfo);
+    });
+  });
+
+withdrawCli
+  .subcommand("withdrawAcceptUri", "accept-uri")
+  .requiredArgument("uri", clk.STRING)
+  .requiredOption("exchange", ["--exchange"], clk.STRING)
+  .maybeOption("restrictAge", ["--restrict-age"], clk.INT)
+  .action(async (args) => {
+    const uri = args.withdrawAcceptUri.uri;
+    const restrictAge = args.withdrawAcceptUri.restrictAge;
+    console.log(`age restriction requested (${restrictAge})`);
+    await withWallet(args, async (wallet) => {
       const res = await wallet.client.call(
         WalletApiOperation.AcceptBankIntegratedWithdrawal,
         {
-          exchangeBaseUrl: selectedExchange,
+          exchangeBaseUrl: args.withdrawAcceptUri.exchange,
           talerWithdrawUri: uri,
           restrictAge,
         },
@@ -489,6 +533,51 @@ walletCli
           break;
       }
       return;
+    });
+  });
+
+withdrawCli
+  .subcommand("withdrawManually", "manual", {
+    help: "Withdraw manually from an exchange.",
+  })
+  .requiredOption("exchange", ["--exchange"], clk.STRING, {
+    help: "Base URL of the exchange.",
+  })
+  .requiredOption("amount", ["--amount"], clk.STRING, {
+    help: "Amount to withdraw",
+  })
+  .maybeOption("restrictAge", ["--restrict-age"], clk.INT)
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      const exchangeBaseUrl = args.withdrawManually.exchange;
+      const amount = args.withdrawManually.amount;
+      const d = await wallet.client.call(
+        WalletApiOperation.GetWithdrawalDetailsForAmount,
+        {
+          amount: args.withdrawManually.amount,
+          exchangeBaseUrl: exchangeBaseUrl,
+        },
+      );
+      const acct = d.paytoUris[0];
+      if (!acct) {
+        console.log("exchange has no accounts");
+        return;
+      }
+      const resp = await wallet.client.call(
+        WalletApiOperation.AcceptManualWithdrawal,
+        {
+          amount,
+          exchangeBaseUrl,
+          restrictAge: parseInt(String(args.withdrawManually.restrictAge), 10),
+        },
+      );
+      const reservePub = resp.reservePub;
+      const completePaytoUri = addPaytoQueryParams(acct, {
+        amount: args.withdrawManually.amount,
+        message: `Taler top-up ${reservePub}`,
+      });
+      console.log("Created reserve", reservePub);
+      console.log("Payto URI", completePaytoUri);
     });
   });
 
@@ -856,25 +945,6 @@ advancedCli
   });
 
 advancedCli
-  .subcommand("manualWithdrawalDetails", "manual-withdrawal-details", {
-    help: "Query withdrawal fees.",
-  })
-  .requiredArgument("exchange", clk.STRING)
-  .requiredArgument("amount", clk.STRING)
-  .action(async (args) => {
-    await withWallet(args, async (wallet) => {
-      const details = await wallet.client.call(
-        WalletApiOperation.GetWithdrawalDetailsForAmount,
-        {
-          amount: args.manualWithdrawalDetails.amount,
-          exchangeBaseUrl: args.manualWithdrawalDetails.exchange,
-        },
-      );
-      console.log(JSON.stringify(details, undefined, 2));
-    });
-  });
-
-advancedCli
   .subcommand("decode", "decode", {
     help: "Decode base32-crockford.",
   })
@@ -890,51 +960,6 @@ advancedCli
   .action(async (args) => {
     const p = parsePaytoUri(args.genSegwit.paytoUri);
     console.log(p);
-  });
-
-advancedCli
-  .subcommand("withdrawManually", "withdraw-manually", {
-    help: "Withdraw manually from an exchange.",
-  })
-  .requiredOption("exchange", ["--exchange"], clk.STRING, {
-    help: "Base URL of the exchange.",
-  })
-  .requiredOption("amount", ["--amount"], clk.STRING, {
-    help: "Amount to withdraw",
-  })
-  .maybeOption("restrictAge", ["--restrict-age"], clk.INT)
-  .action(async (args) => {
-    await withWallet(args, async (wallet) => {
-      const exchangeBaseUrl = args.withdrawManually.exchange;
-      const amount = args.withdrawManually.amount;
-      const d = await wallet.client.call(
-        WalletApiOperation.GetWithdrawalDetailsForAmount,
-        {
-          amount: args.withdrawManually.amount,
-          exchangeBaseUrl: exchangeBaseUrl,
-        },
-      );
-      const acct = d.paytoUris[0];
-      if (!acct) {
-        console.log("exchange has no accounts");
-        return;
-      }
-      const resp = await wallet.client.call(
-        WalletApiOperation.AcceptManualWithdrawal,
-        {
-          amount,
-          exchangeBaseUrl,
-          restrictAge: parseInt(String(args.withdrawManually.restrictAge), 10),
-        },
-      );
-      const reservePub = resp.reservePub;
-      const completePaytoUri = addPaytoQueryParams(acct, {
-        amount: args.withdrawManually.amount,
-        message: `Taler top-up ${reservePub}`,
-      });
-      console.log("Created reserve", reservePub);
-      console.log("Payto URI", completePaytoUri);
-    });
   });
 
 const currenciesCli = walletCli.subcommand("currencies", "currencies", {
