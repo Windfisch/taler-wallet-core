@@ -134,6 +134,7 @@ export async function downloadExchangeWithTermsOfService(
   timeout: Duration,
   contentType: string,
 ): Promise<ExchangeTosDownloadResult> {
+  logger.info(`downloading exchange tos (type ${contentType})`);
   const reqUrl = new URL("terms", exchangeBaseUrl);
   const headers = {
     Accept: contentType,
@@ -524,7 +525,9 @@ export async function downloadTosFromAcceptedFormat(
         break;
       }
     }
-  if (tosFound !== undefined) return tosFound;
+  if (tosFound !== undefined) {
+    return tosFound;
+  }
   // If none of the specified format was found try text/plain
   return await downloadExchangeWithTermsOfService(
     baseUrl,
@@ -557,7 +560,7 @@ export async function updateExchangeFromUrl(
  */
 export async function updateExchangeFromUrlHandler(
   ws: InternalWalletState,
-  baseUrl: string,
+  exchangeBaseUrl: string,
   options: {
     forceNow?: boolean;
     cancellationToken?: CancellationToken;
@@ -569,19 +572,21 @@ export async function updateExchangeFromUrlHandler(
   }>
 > {
   const forceNow = options.forceNow ?? false;
-  logger.info(`updating exchange info for ${baseUrl}, forced: ${forceNow}`);
+  logger.info(
+    `updating exchange info for ${exchangeBaseUrl}, forced: ${forceNow}`,
+  );
 
   const now = AbsoluteTime.now();
-  baseUrl = canonicalizeBaseUrl(baseUrl);
+  exchangeBaseUrl = canonicalizeBaseUrl(exchangeBaseUrl);
   let isNewExchange = true;
   const { exchange, exchangeDetails } = await ws.db
     .mktx((x) => [x.exchanges, x.exchangeDetails])
     .runReadWrite(async (tx) => {
-      let oldExch = await tx.exchanges.get(baseUrl);
+      let oldExch = await tx.exchanges.get(exchangeBaseUrl);
       if (oldExch) {
         isNewExchange = false;
       }
-      return provideExchangeRecordInTx(ws, tx, baseUrl, now);
+      return provideExchangeRecordInTx(ws, tx, exchangeBaseUrl, now);
     });
 
   if (
@@ -600,11 +605,15 @@ export async function updateExchangeFromUrlHandler(
 
   const timeout = getExchangeRequestTimeout();
 
-  const keysInfo = await downloadExchangeKeysInfo(baseUrl, ws.http, timeout);
+  const keysInfo = await downloadExchangeKeysInfo(
+    exchangeBaseUrl,
+    ws.http,
+    timeout,
+  );
 
   logger.info("updating exchange /wire info");
   const wireInfoDownload = await downloadExchangeWireInfo(
-    baseUrl,
+    exchangeBaseUrl,
     ws.http,
     timeout,
   );
@@ -632,15 +641,15 @@ export async function updateExchangeFromUrlHandler(
 
   logger.info("finished validating exchange /wire info");
 
+  // We download the text/plain version here,
+  // because that one needs to exist, and we
+  // will get the current etag from the response.
   const tosDownload = await downloadTosFromAcceptedFormat(
     ws,
-    baseUrl,
+    exchangeBaseUrl,
     timeout,
     ["text/plain"],
   );
-  const tosHasBeenAccepted =
-    exchangeDetails?.tosAccepted &&
-    exchangeDetails.tosAccepted.etag === tosDownload.tosEtag;
 
   let recoupGroupId: string | undefined;
 
@@ -651,6 +660,7 @@ export async function updateExchangeFromUrlHandler(
   const updated = await ws.db
     .mktx((x) => [
       x.exchanges,
+      x.exchangeTos,
       x.exchangeDetails,
       x.exchangeSignkeys,
       x.denominations,
@@ -659,13 +669,13 @@ export async function updateExchangeFromUrlHandler(
       x.recoupGroups,
     ])
     .runReadWrite(async (tx) => {
-      const r = await tx.exchanges.get(baseUrl);
+      const r = await tx.exchanges.get(exchangeBaseUrl);
       if (!r) {
-        logger.warn(`exchange ${baseUrl} no longer present`);
+        logger.warn(`exchange ${exchangeBaseUrl} no longer present`);
         return;
       }
       let existingDetails = await getExchangeDetails(tx, r.baseUrl);
-      let acceptedTosEtag = undefined;
+      let acceptedTosEtag: string | undefined = undefined;
       if (!existingDetails) {
         detailsPointerChanged = true;
       }
@@ -708,6 +718,21 @@ export async function updateExchangeFromUrlHandler(
       const drRowId = await tx.exchangeDetails.put(newDetails);
       checkDbInvariant(typeof drRowId.key === "number");
 
+      let tosRecord = await tx.exchangeTos.get([
+        exchangeBaseUrl,
+        tosDownload.tosEtag,
+      ]);
+
+      if (!tosRecord || tosRecord.etag !== existingTosAccepted?.etag) {
+        tosRecord = {
+          etag: tosDownload.tosEtag,
+          exchangeBaseUrl,
+          termsOfServiceContentType: tosDownload.tosContentType,
+          termsOfServiceText: tosDownload.tosText,
+        };
+        await tx.exchangeTos.put(tosRecord);
+      }
+
       for (const sk of keysInfo.signingKeys) {
         // FIXME: validate signing keys before inserting them
         await tx.exchangeSignKeys.put({
@@ -726,7 +751,7 @@ export async function updateExchangeFromUrlHandler(
       );
       for (const currentDenom of keysInfo.currentDenominations) {
         const oldDenom = await tx.denominations.get([
-          baseUrl,
+          exchangeBaseUrl,
           currentDenom.denomPubHash,
         ]);
         if (oldDenom) {
@@ -802,6 +827,7 @@ export async function updateExchangeFromUrlHandler(
           newlyRevokedCoinPubs,
         );
       }
+
       return {
         exchange: r,
         exchangeDetails: newDetails,

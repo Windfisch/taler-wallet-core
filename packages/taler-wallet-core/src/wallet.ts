@@ -631,7 +631,7 @@ async function getExchangeTosStatusDetails(
 
   return {
     acceptedVersion: exchangeDetails.tosAccepted?.etag,
-    content: exchangeTos.termsOfServiceContentType,
+    content: exchangeTos.termsOfServiceText,
     contentType: exchangeTos.termsOfServiceContentType,
     currentVersion: exchangeTos.etag,
   };

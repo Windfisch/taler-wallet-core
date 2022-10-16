@@ -314,48 +314,42 @@ walletCli
     logger.info("finished handling API request");
   });
 
-walletCli
-  .subcommand("", "pending", { help: "Show pending operations." })
-  .action(async (args) => {
-    await withWallet(args, async (wallet) => {
-      const pending = await wallet.client.call(
-        WalletApiOperation.GetPendingOperations,
-        {},
-      );
-      console.log(JSON.stringify(pending, undefined, 2));
-    });
-  });
-
-walletCli
-  .subcommand("transactions", "transactions", { help: "Show transactions." })
+const transactionsCli = walletCli
+  .subcommand("transactions", "transactions", { help: "Manage transactions." })
   .maybeOption("currency", ["--currency"], clk.STRING)
-  .maybeOption("search", ["--search"], clk.STRING)
-  .action(async (args) => {
-    await withWallet(args, async (wallet) => {
-      const pending = await wallet.client.call(
-        WalletApiOperation.GetTransactions,
-        {
-          currency: args.transactions.currency,
-          search: args.transactions.search,
-        },
-      );
-      console.log(JSON.stringify(pending, undefined, 2));
-    });
-  });
+  .maybeOption("search", ["--search"], clk.STRING);
 
-walletCli
-  .subcommand("runPendingOpt", "run-pending", {
-    help: "Run pending operations.",
+// Default action
+transactionsCli.action(async (args) => {
+  await withWallet(args, async (wallet) => {
+    const pending = await wallet.client.call(
+      WalletApiOperation.GetTransactions,
+      {
+        currency: args.transactions.currency,
+        search: args.transactions.search,
+      },
+    );
+    console.log(JSON.stringify(pending, undefined, 2));
+  });
+});
+
+transactionsCli
+  .subcommand("deleteTransaction", "delete", {
+    help: "Permanently delete a transaction from the transaction list.",
   })
-  .flag("forceNow", ["-f", "--force-now"])
+  .requiredArgument("transactionId", clk.STRING, {
+    help: "Identifier of the transaction to delete",
+  })
   .action(async (args) => {
     await withWallet(args, async (wallet) => {
-      await wallet.ws.runPending(args.runPendingOpt.forceNow);
+      await wallet.client.call(WalletApiOperation.DeleteTransaction, {
+        transactionId: args.deleteTransaction.transactionId,
+      });
     });
   });
 
-walletCli
-  .subcommand("retryTransaction", "retry-transaction", {
+transactionsCli
+  .subcommand("retryTransaction", "retry", {
     help: "Retry a transaction.",
   })
   .requiredArgument("transactionId", clk.STRING)
@@ -384,21 +378,6 @@ walletCli
       if (resp.retriesExceeded && args.finishPendingOpt.failOnMaxRetries) {
         process.exit(EXIT_RETRIES_EXCEEDED);
       }
-    });
-  });
-
-walletCli
-  .subcommand("deleteTransaction", "delete-transaction", {
-    help: "Permanently delete a transaction from the transaction list.",
-  })
-  .requiredArgument("transactionId", clk.STRING, {
-    help: "Identifier of the transaction to delete",
-  })
-  .action(async (args) => {
-    await withWallet(args, async (wallet) => {
-      await wallet.client.call(WalletApiOperation.DeleteTransaction, {
-        transactionId: args.deleteTransaction.transactionId,
-      });
     });
   });
 
@@ -604,17 +583,26 @@ exchangesCli
 
 exchangesCli
   .subcommand("exchangesTosCmd", "tos", {
-    help: "Show terms of service.",
+    help: "Show/request terms of service.",
   })
   .requiredArgument("url", clk.STRING, {
     help: "Base URL of the exchange.",
   })
+  .maybeOption("contentTypes", ["--content-type"], clk.STRING)
   .action(async (args) => {
+    let acceptedFormat: string[] | undefined = undefined;
+    if (args.exchangesTosCmd.contentTypes) {
+      const split = args.exchangesTosCmd.contentTypes
+        .split(",")
+        .map((x) => x.trim());
+      acceptedFormat = split;
+    }
     await withWallet(args, async (wallet) => {
       const tosResult = await wallet.client.call(
         WalletApiOperation.GetExchangeTos,
         {
           exchangeBaseUrl: args.exchangesTosCmd.url,
+          acceptedFormat,
         },
       );
       console.log(JSON.stringify(tosResult, undefined, 2));
@@ -762,6 +750,29 @@ advancedCli
   })
   .action(async (args) => {
     await withWallet(args, async () => {});
+  });
+
+advancedCli
+  .subcommand("runPendingOpt", "run-pending", {
+    help: "Run pending operations.",
+  })
+  .flag("forceNow", ["-f", "--force-now"])
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      await wallet.ws.runPending(args.runPendingOpt.forceNow);
+    });
+  });
+
+advancedCli
+  .subcommand("", "pending", { help: "Show pending operations." })
+  .action(async (args) => {
+    await withWallet(args, async (wallet) => {
+      const pending = await wallet.client.call(
+        WalletApiOperation.GetPendingOperations,
+        {},
+      );
+      console.log(JSON.stringify(pending, undefined, 2));
+    });
   });
 
 advancedCli

@@ -521,7 +521,7 @@ export interface ExchangeRecord {
    * Should usually not change.  Only changes when the
    * exchange advertises a different master public key and/or
    * currency.
-   * 
+   *
    * FIXME: Use a rowId here?
    */
   detailsPointer: ExchangeDetailsPointer | undefined;
@@ -1364,7 +1364,7 @@ export interface WithdrawalGroupRecord {
   /**
    * Wire information (as payto URI) for the bank account that
    * transferred funds for this reserve.
-   * 
+   *
    * FIXME: Doesn't this belong to the bankAccounts object store?
    */
   senderWire?: string;
