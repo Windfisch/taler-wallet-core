@@ -932,6 +932,7 @@ async function queryReserve(
         return;
       }
       wg.status = WithdrawalGroupStatus.Ready;
+      wg.reserveBalanceAmount = Amounts.parse(result.response.balance);
       await tx.withdrawalGroups.put(wg);
     });
 
@@ -1700,6 +1701,7 @@ export async function internalCreateWithdrawalGroup(
     instructedAmount: amount,
     timestampStart: now,
     rawWithdrawalAmount: initialDenomSel.totalWithdrawCost,
+    effectiveWithdrawalAmount: initialDenomSel.totalCoinValue,
     secretSeed,
     reservePriv: reserveKeyPair.priv,
     reservePub: reserveKeyPair.pub,

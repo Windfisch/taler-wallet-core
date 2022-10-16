@@ -166,6 +166,9 @@ export async function exportBackup(
           secret_seed: wg.secretSeed,
           exchange_base_url: wg.exchangeBaseUrl,
           instructed_amount: Amounts.stringify(wg.instructedAmount),
+          effective_withdrawal_amount: Amounts.stringify(
+            wg.effectiveWithdrawalAmount,
+          ),
           reserve_priv: wg.reservePriv,
           restrict_age: wg.restrictAge,
           // FIXME: proper status conversion!

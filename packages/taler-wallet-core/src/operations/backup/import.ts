@@ -556,6 +556,9 @@ export async function importBackup(
             rawWithdrawalAmount: Amounts.parseOrThrow(
               backupWg.raw_withdrawal_amount,
             ),
+            effectiveWithdrawalAmount: Amounts.parseOrThrow(
+              backupWg.effective_withdrawal_amount,
+            ),
             reservePriv: backupWg.reserve_priv,
             reservePub,
             status: backupWg.timestamp_finish

@@ -1357,11 +1357,6 @@ export interface WithdrawalGroupRecord {
   status: WithdrawalGroupStatus;
 
   /**
-   * Amount that was sent by the user to fund the reserve.
-   */
-  instructedAmount: AmountJson;
-
-  /**
    * Wire information (as payto URI) for the bank account that
    * transferred funds for this reserve.
    *
@@ -1375,10 +1370,34 @@ export interface WithdrawalGroupRecord {
   restrictAge?: number;
 
   /**
+   * Amount that was sent by the user to fund the reserve.
+   */
+  instructedAmount: AmountJson;
+
+  /**
+   * Amount that was observed when querying the reserve that
+   * we are withdrawing from.
+   *
+   * Useful for diagnostics.
+   */
+  reserveBalanceAmount?: AmountJson;
+
+  /**
    * Amount including fees (i.e. the amount subtracted from the
    * reserve to withdraw all coins in this withdrawal session).
+   *
+   * (Initial amount confirmed by the user, might differ with denomSel
+   * on reselection.)
    */
   rawWithdrawalAmount: AmountJson;
+
+  /**
+   * Amount that will be added to the balance when the withdrawal succeeds.
+   *
+   * (Initial amount confirmed by the user, might differ with denomSel
+   * on reselection.)
+   */
+  effectiveWithdrawalAmount: AmountJson;
 
   /**
    * Denominations selected for withdrawal.

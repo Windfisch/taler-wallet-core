@@ -379,7 +379,7 @@ function buildTransactionForPullPaymentCredit(
   return {
     type: TransactionType.PeerPullCredit,
     amountEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
-    amountRaw: Amounts.stringify(wsr.rawWithdrawalAmount),
+    amountRaw: Amounts.stringify(wsr.instructedAmount),
     exchangeBaseUrl: wsr.exchangeBaseUrl,
     pending: !wsr.timestampFinish,
     timestamp: wsr.timestampStart,
@@ -409,7 +409,7 @@ function buildTransactionForPushPaymentCredit(
   return {
     type: TransactionType.PeerPushCredit,
     amountEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
-    amountRaw: Amounts.stringify(wsr.rawWithdrawalAmount),
+    amountRaw: Amounts.stringify(wsr.instructedAmount),
     exchangeBaseUrl: wsr.exchangeBaseUrl,
     info: {
       expiration: wsr.wgInfo.contractTerms.purse_expiration,
@@ -436,7 +436,7 @@ function buildTransactionForBankIntegratedWithdraw(
   return {
     type: TransactionType.Withdrawal,
     amountEffective: Amounts.stringify(wsr.denomsSel.totalCoinValue),
-    amountRaw: Amounts.stringify(wsr.rawWithdrawalAmount),
+    amountRaw: Amounts.stringify(wsr.instructedAmount),
     withdrawalDetails: {
       type: WithdrawalType.TalerBankIntegrationApi,
       confirmed: wsr.wgInfo.bankInfo.timestampBankConfirmed ? true : false,
@@ -477,7 +477,7 @@ function buildTransactionForManualWithdraw(
     amountEffective: Amounts.stringify(
       withdrawalGroup.denomsSel.totalCoinValue,
     ),
-    amountRaw: Amounts.stringify(withdrawalGroup.rawWithdrawalAmount),
+    amountRaw: Amounts.stringify(withdrawalGroup.instructedAmount),
     withdrawalDetails: {
       type: WithdrawalType.ManualTransfer,
       reservePub: withdrawalGroup.reservePub,

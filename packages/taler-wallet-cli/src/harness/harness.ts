@@ -1972,6 +1972,7 @@ export class WalletCli {
         ...this.timetravelArgArr,
         "--wallet-db",
         this.dbfile,
+        "advanced",
         "run-pending",
       ],
     );

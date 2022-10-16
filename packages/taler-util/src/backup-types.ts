@@ -333,6 +333,8 @@ export interface BackupWithdrawalGroup {
    */
   raw_withdrawal_amount: BackupAmountString;
 
+  effective_withdrawal_amount: BackupAmountString;
+
   /**
    * Restrict withdrawals from this reserve to this age.
    */
