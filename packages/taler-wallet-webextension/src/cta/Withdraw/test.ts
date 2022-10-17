@@ -21,23 +21,26 @@
 
 import {
   Amounts,
+  ExchangeEntryStatus,
   ExchangeFullDetails,
+  ExchangeListItem,
+  ExchangesListResponse,
   ExchangeTosStatus,
   GetExchangeTosResult,
+  ManualWithdrawalDetails,
 } from "@gnu-taler/taler-util";
 import { expect } from "chai";
 import { mountHook } from "../../test-utils.js";
 import { useComponentStateFromURI } from "./state.js";
 
-const exchanges: ExchangeFullDetails[] = [
+const exchanges: ExchangeListItem[] = [
   {
     currency: "ARS",
     exchangeBaseUrl: "http://exchange.demo.taler.net",
     paytoUris: [],
-    tos: {
-      acceptedVersion: "v1",
-      currentVersion: "v1",
-    },
+    tosStatus: ExchangeTosStatus.Accepted,
+    exchangeStatus: ExchangeEntryStatus.Ok,
+    permanent: true,
     auditors: [
       {
         auditor_pub: "pubpubpubpubpub",
@@ -57,7 +60,7 @@ const exchanges: ExchangeFullDetails[] = [
       accounts: [],
       feesForType: {},
     },
-  } as Partial<ExchangeFullDetails> as ExchangeFullDetails,
+  } as Partial<ExchangeListItem> as ExchangeListItem,
 ];
 
 describe("Withdraw CTA states", () => {
@@ -76,7 +79,9 @@ describe("Withdraw CTA states", () => {
           },
           {
             listExchanges: async () => ({ exchanges }),
-            getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
+            getWithdrawalDetailsForAmount: async ({
+              talerWithdrawUri,
+            }: any) => ({
               amount: "ARS:2",
               possibleExchanges: exchanges,
             }),
@@ -94,7 +99,7 @@ describe("Withdraw CTA states", () => {
     {
       const { status, error } = getLastResultOrThrow();
 
-      if (status != "loading-error") expect.fail();
+      if (status != "uri-error") expect.fail();
       if (!error) expect.fail();
       if (!error.hasError) expect.fail();
       if (error.operational) expect.fail();
@@ -165,6 +170,12 @@ describe("Withdraw CTA states", () => {
               possibleExchanges: exchanges,
               defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl,
             }),
+            getWithdrawalDetailsForAmount:
+              async (): Promise<ManualWithdrawalDetails> =>
+                ({
+                  amountRaw: "ARS:2",
+                  amountEffective: "ARS:2",
+                } as any),
             getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
               contentType: "text",
               content: "just accept",
@@ -210,24 +221,18 @@ describe("Withdraw CTA states", () => {
   });
 
   it("should be accept the tos before withdraw", async () => {
-    const listExchangesResponse = {
+    const listExchangesResponse: ExchangesListResponse = {
       exchanges: exchanges.map((e) => ({
         ...e,
-        tos: {
-          ...e.tos,
-          acceptedVersion: undefined,
-        },
-      })) as ExchangeFullDetails[],
+        tosStatus: ExchangeTosStatus.New,
+      })),
     };
 
     function updateAcceptedVersionToCurrentVersion(): void {
       listExchangesResponse.exchanges = listExchangesResponse.exchanges.map(
         (e) => ({
           ...e,
-          tos: {
-            ...e.tos,
-            acceptedVersion: e.tos.currentVersion,
-          },
+          tosStatus: ExchangeTosStatus.Accepted,
         }),
       );
     }
@@ -245,12 +250,18 @@ describe("Withdraw CTA states", () => {
             },
           },
           {
-            listExchanges: async () => ({ exchanges }),
+            listExchanges: async () => listExchangesResponse,
             getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
               amount: "ARS:2",
               possibleExchanges: exchanges,
               defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl,
             }),
+            getWithdrawalDetailsForAmount:
+              async (): Promise<ManualWithdrawalDetails> =>
+                ({
+                  amountRaw: "ARS:2",
+                  amountEffective: "ARS:2",
+                } as any),
             getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
               contentType: "text",
               content: "just accept",

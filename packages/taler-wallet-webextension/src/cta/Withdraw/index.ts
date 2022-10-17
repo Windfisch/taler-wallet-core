@@ -56,11 +56,11 @@ export namespace State {
     error: undefined;
   }
   export interface LoadingUriError {
-    status: "loading-error";
+    status: "uri-error";
     error: HookError;
   }
   export interface LoadingInfoError {
-    status: "loading-info";
+    status: "amount-error";
     error: HookError;
   }
 
@@ -87,8 +87,8 @@ export namespace State {
 
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
-  "loading-error": LoadingUriView,
-  "loading-info": LoadingInfoView,
+  "uri-error": LoadingUriView,
+  "amount-error": LoadingInfoView,
   "no-exchange": NoExchangesView,
   "selecting-exchange": ExchangeSelectionPage,
   success: SuccessView,

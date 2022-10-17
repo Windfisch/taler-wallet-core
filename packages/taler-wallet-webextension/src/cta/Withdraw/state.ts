@@ -43,7 +43,7 @@ export function useComponentStateFromParams(
 
   if (uriInfoHook.hasError) {
     return {
-      status: "loading-error",
+      status: "uri-error",
       error: uriInfoHook,
     };
   }
@@ -110,7 +110,7 @@ export function useComponentStateFromURI(
 
   if (uriInfoHook.hasError) {
     return {
-      status: "loading-error",
+      status: "uri-error",
       error: uriInfoHook,
     };
   }
@@ -180,6 +180,7 @@ function exchangeSelectionState(
     const tosNeedToBeAccepted =
       currentExchange.tosStatus == ExchangeTosStatus.New ||
       currentExchange.tosStatus == ExchangeTosStatus.Changed;
+
     /**
      * With the exchange and amount, ask the wallet the information
      * about the withdrawal
@@ -232,7 +233,7 @@ function exchangeSelectionState(
     }
     if (amountHook.hasError) {
       return {
-        status: "loading-info",
+        status: "amount-error",
         error: amountHook,
       };
     }
