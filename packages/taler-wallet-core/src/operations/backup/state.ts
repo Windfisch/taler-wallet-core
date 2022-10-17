@@ -62,7 +62,9 @@ export async function provideBackupState(
         };
         await tx.config.put(backupStateEntry);
       }
-      checkDbInvariant(backupStateEntry.key === ConfigRecordKey.WalletBackupState);
+      checkDbInvariant(
+        backupStateEntry.key === ConfigRecordKey.WalletBackupState,
+      );
       return backupStateEntry.value;
     });
 }

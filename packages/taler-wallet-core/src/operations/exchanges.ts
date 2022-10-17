@@ -674,13 +674,11 @@ export async function updateExchangeFromUrlHandler(
         logger.warn(`exchange ${exchangeBaseUrl} no longer present`);
         return;
       }
-      let existingDetails = await getExchangeDetails(tx, r.baseUrl);
-      let acceptedTosEtag: string | undefined = undefined;
+      const existingDetails = await getExchangeDetails(tx, r.baseUrl);
       if (!existingDetails) {
         detailsPointerChanged = true;
       }
       if (existingDetails) {
-        acceptedTosEtag = existingDetails.tosAccepted?.etag;
         if (existingDetails.masterPublicKey !== keysInfo.masterPublicKey) {
           detailsPointerChanged = true;
         }
@@ -689,9 +687,8 @@ export async function updateExchangeFromUrlHandler(
         }
         // FIXME: We need to do some consistency checks!
       }
-      let existingTosAccepted = existingDetails?.tosAccepted;
-      const newDetails = {
-        rowId: existingDetails?.rowId,
+      const existingTosAccepted = existingDetails?.tosAccepted;
+      const newDetails: ExchangeDetailsRecord = {
         auditors: keysInfo.auditors,
         currency: keysInfo.currency,
         masterPublicKey: keysInfo.masterPublicKey,
@@ -703,6 +700,9 @@ export async function updateExchangeFromUrlHandler(
         tosCurrentEtag: tosDownload.tosEtag,
         tosAccepted: existingTosAccepted,
       };
+      if (existingDetails?.rowId) {
+        newDetails.rowId = existingDetails.rowId;
+      }
       r.lastUpdate = TalerProtocolTimestamp.now();
       r.nextUpdate = keysInfo.expiry;
       // New denominations might be available.
