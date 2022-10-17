@@ -56,7 +56,7 @@ import { RetryTags } from "../util/retries.js";
 import {
   makeTombstoneId,
   makeTransactionId,
-  parseTransactionId,
+  parseId,
   TombstoneTag,
 } from "./common.js";
 import { processDepositGroup } from "./deposits.js";
@@ -122,7 +122,7 @@ export async function getTransactionById(
   ws: InternalWalletState,
   req: TransactionByIdRequest,
 ): Promise<Transaction> {
-  const { type, args: rest } = parseTransactionId(req.transactionId);
+  const { type, args: rest } = parseId("txn", req.transactionId);
   if (
     type === TransactionType.Withdrawal ||
     type === TransactionType.PeerPullCredit ||
@@ -959,11 +959,7 @@ export async function retryTransaction(
 ): Promise<void> {
   logger.info(`retrying transaction ${transactionId}`);
 
-  const [tmbPrefix, type, ...rest] = transactionId.split(":");
-
-  if (tmbPrefix !== "tmb") {
-    throw Error("invalid tombstone, expected 'tmb' prefix");
-  }
+  const { type, args: rest } = parseId("any", transactionId);
 
   switch (type) {
     case TransactionType.Deposit: {
@@ -1005,11 +1001,8 @@ export async function deleteTransaction(
   ws: InternalWalletState,
   transactionId: string,
 ): Promise<void> {
-  const [txnPrefix, typeStr, ...rest] = transactionId.split(":");
-  if (txnPrefix !== "txn") {
-    throw Error("invalid transaction ID, expected 'txn' prefix");
-  }
-  const type = typeStr as TransactionType;
+  const { type, args: rest } = parseId("txn", transactionId);
+
   if (
     type === TransactionType.Withdrawal ||
     type === TransactionType.PeerPullCredit ||

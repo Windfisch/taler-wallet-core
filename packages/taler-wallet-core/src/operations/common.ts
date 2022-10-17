@@ -306,23 +306,26 @@ export function makeTransactionId(
   return `txn:${type}:${args.map((x) => encodeURIComponent(x)).join(":")}`;
 }
 
-export function parseTransactionId(txId: string): {
+export function parseId(
+  idType: "txn" | "tmb" | "any",
+  txId: string,
+): {
   type: TransactionType;
   args: string[];
 } {
   const txnParts = txId.split(":");
   if (txnParts.length < 3) {
-    throw Error("transactionId should have al least 3 parts separated by ':'");
+    throw Error("id should have al least 3 parts separated by ':'");
   }
-  const [txn, typeStr, ...args] = txnParts;
+  const [prefix, typeStr, ...args] = txnParts;
   const type = typeStr as TransactionType;
 
-  if (txn !== "txn") {
-    throw Error("transactionId should start with txn");
+  if (idType != "any" && prefix !== idType) {
+    throw Error(`id should start with ${idType}`);
   }
 
   if (args.length === 0) {
-    throw Error("transactionId should have one or more arguments");
+    throw Error("id should have one or more arguments");
   }
 
   return { type, args };
