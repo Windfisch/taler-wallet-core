@@ -306,6 +306,28 @@ export function makeTransactionId(
   return `txn:${type}:${args.map((x) => encodeURIComponent(x)).join(":")}`;
 }
 
+export function parseTransactionId(txId: string): {
+  type: TransactionType;
+  args: string[];
+} {
+  const txnParts = txId.split(":");
+  if (txnParts.length < 3) {
+    throw Error("transactionId should have al least 3 parts separated by ':'");
+  }
+  const [txn, typeStr, ...args] = txnParts;
+  const type = typeStr as TransactionType;
+
+  if (txn !== "txn") {
+    throw Error("transactionId should start with txn");
+  }
+
+  if (args.length === 0) {
+    throw Error("transactionId should have one or more arguments");
+  }
+
+  return { type, args };
+}
+
 /**
  * Create an event ID from the type and the primary key for the event.
  */

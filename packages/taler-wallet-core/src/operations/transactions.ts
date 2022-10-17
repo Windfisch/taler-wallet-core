@@ -53,7 +53,12 @@ import {
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { RetryTags } from "../util/retries.js";
-import { makeTombstoneId, makeTransactionId, TombstoneTag } from "./common.js";
+import {
+  makeTombstoneId,
+  makeTransactionId,
+  parseTransactionId,
+  TombstoneTag,
+} from "./common.js";
 import { processDepositGroup } from "./deposits.js";
 import { getExchangeDetails } from "./exchanges.js";
 import {
@@ -117,9 +122,7 @@ export async function getTransactionById(
   ws: InternalWalletState,
   req: TransactionByIdRequest,
 ): Promise<Transaction> {
-  const [typeStr, ...rest] = req.transactionId.split(":");
-  const type = typeStr as TransactionType;
-
+  const { type, args: rest } = parseTransactionId(req.transactionId);
   if (
     type === TransactionType.Withdrawal ||
     type === TransactionType.PeerPullCredit ||
