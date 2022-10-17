@@ -32,6 +32,10 @@ export const Ready = createExample(ReadyView, {
     value: 1,
     fraction: 0,
   },
+  summary: "some subject",
+  expiration: {
+    t_ms: new Date().getTime() + 1000 * 60 * 60,
+  },
   accept: {},
   cancel: {},
 });

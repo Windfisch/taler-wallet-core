@@ -87,9 +87,6 @@ export function ReadyView({
         />
       </section>
       <section>
-        <p>
-          <i18n.Translate>How do you want to transfer?</i18n.Translate>
-        </p>
         <Button
           disabled={invalid}
           onClick={create.onClick}
