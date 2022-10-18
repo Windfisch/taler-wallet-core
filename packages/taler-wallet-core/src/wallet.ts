@@ -978,7 +978,6 @@ async function dispatchRequestInternal<Op extends WalletApiOperation>(
   // definitions we already have?
   switch (operation) {
     case WalletApiOperation.InitWallet: {
-      console.log(operation);
       logger.trace("initializing wallet");
       ws.initCalled = true;
       if (typeof payload === "object" && (payload as any).skipDefaults) {
