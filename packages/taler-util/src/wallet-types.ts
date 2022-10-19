@@ -115,6 +115,10 @@ export interface Balance {
   requiresUserInput: boolean;
 }
 
+export interface InitResponse {
+  versionInfo: WalletCoreVersion;
+}
+
 export interface BalancesResponse {
   balances: Balance[];
 }

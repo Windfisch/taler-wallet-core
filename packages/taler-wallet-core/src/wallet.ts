@@ -996,7 +996,9 @@ async function dispatchRequestInternal<Op extends WalletApiOperation>(
         bankAccessApiBaseUrl: "https://bank.test.taler.net/",
         exchangeBaseUrl: "https://exchange.test.taler.net/",
       });
-      return {};
+      return {
+        versionInfo: getVersion(ws),
+      };
     }
     case WalletApiOperation.WithdrawTestBalance: {
       const req = codecForWithdrawTestBalance().decode(payload);
@@ -1367,15 +1369,7 @@ async function dispatchRequestInternal<Op extends WalletApiOperation>(
       return {};
     }
     case WalletApiOperation.GetVersion: {
-      const version: WalletCoreVersion = {
-        hash: GIT_HASH,
-        version: VERSION,
-        exchange: WALLET_EXCHANGE_PROTOCOL_VERSION,
-        merchant: WALLET_MERCHANT_PROTOCOL_VERSION,
-        bank: WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
-        devMode: ws.devModeActive,
-      };
-      return version;
+      return getVersion(ws);
     }
   }
   throw TalerError.fromDetail(
@@ -1385,6 +1379,18 @@ async function dispatchRequestInternal<Op extends WalletApiOperation>(
     },
     "unknown operation",
   );
+}
+
+export function getVersion(ws: InternalWalletState): WalletCoreVersion {
+  const version: WalletCoreVersion = {
+    hash: GIT_HASH,
+    version: VERSION,
+    exchange: WALLET_EXCHANGE_PROTOCOL_VERSION,
+    merchant: WALLET_MERCHANT_PROTOCOL_VERSION,
+    bank: WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
+    devMode: ws.devModeActive,
+  };
+  return version;
 }
 
 /**

@@ -65,6 +65,7 @@ import {
   InitiatePeerPullPaymentResponse,
   InitiatePeerPushPaymentRequest,
   InitiatePeerPushPaymentResponse,
+  InitResponse,
   IntegrationTestArgs,
   KnownBankAccounts,
   ListKnownBankAccountsRequest,
@@ -91,6 +92,7 @@ import {
   TransactionsRequest,
   TransactionsResponse,
   WalletBackupContentV1,
+  WalletCoreVersion,
   WalletCurrencyInfo,
   WithdrawFakebankRequest,
   WithdrawTestBalanceRequest,
@@ -183,13 +185,13 @@ export enum WalletApiOperation {
 export type InitWalletOp = {
   op: WalletApiOperation.InitWallet;
   request: {};
-  response: {};
+  response: InitResponse;
 };
 
 export type GetVersionOp = {
   op: WalletApiOperation.GetVersion;
   request: {};
-  response: {};
+  response: WalletCoreVersion;
 };
 
 // group: Basic Wallet Information
