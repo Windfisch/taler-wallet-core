@@ -18,31 +18,30 @@
  * Imports.
  */
 import {
-  getDefaultNodeWallet,
   DefaultNodeWalletArgs,
-  NodeHttpLib,
+  getDefaultNodeWallet,
+  getErrorDetailFromException,
   handleWorkerError,
   handleWorkerMessage,
-  HttpRequestLibrary,
-  OpenedPromise,
-  HttpResponse,
-  HttpRequestOptions,
-  openPromise,
   Headers,
+  HttpRequestLibrary,
+  HttpRequestOptions,
+  HttpResponse,
+  NodeHttpLib,
+  OpenedPromise,
+  openPromise,
+  Wallet,
   WALLET_EXCHANGE_PROTOCOL_VERSION,
   WALLET_MERCHANT_PROTOCOL_VERSION,
-  Wallet,
-  getErrorDetailFromException,
 } from "@gnu-taler/taler-wallet-core";
 
-import fs from "fs";
 import {
   CoreApiEnvelope,
   CoreApiResponse,
   CoreApiResponseSuccess,
   WalletNotification,
-  TalerErrorCode,
 } from "@gnu-taler/taler-util";
+import fs from "fs";
 
 export { handleWorkerError, handleWorkerMessage };
 
@@ -175,10 +174,17 @@ class NativeWalletMessageHandler {
       };
     };
 
+    let initResponse: any = {};
+
     const reinit = async () => {
       const w = await getDefaultNodeWallet(this.walletArgs);
       this.maybeWallet = w;
-      await w.handleCoreApiRequest("initWallet", "native-init", {});
+      const resp = await w.handleCoreApiRequest(
+        "initWallet",
+        "native-init",
+        {},
+      );
+      initResponse = resp.type == "response" ? resp.result : resp.error;
       w.runTaskLoop().catch((e) => {
         console.error("Error during wallet retry loop", e);
       });
@@ -193,13 +199,17 @@ class NativeWalletMessageHandler {
           },
           persistentStoragePath: args.persistentStoragePath,
           httpLib: this.httpLib,
+          cryptoWorkerType: args.cryptoWorkerType,
         };
         await reinit();
         return wrapResponse({
+          // FIXME: Only for Android compatibility, should be removed
+          // once changed on Android.
           supported_protocol_versions: {
             exchange: WALLET_EXCHANGE_PROTOCOL_VERSION,
             merchant: WALLET_MERCHANT_PROTOCOL_VERSION,
           },
+          ...initResponse,
         });
       }
       case "startTunnel": {

@@ -174,6 +174,7 @@ export async function getDefaultNodeWallet2(
       const worker_threads = module[_r]("worker_threads");
       // require("worker_threads");
       workerFactory = new NodeThreadCryptoWorkerFactory();
+      logger.info("using node thread crypto worker");
     } catch (e) {
       logger.warn(
         "worker threads not available, falling back to synchronous workers",
