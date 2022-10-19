@@ -82,7 +82,7 @@ import { RetryInfo, RetryTags } from "./util/retries.js";
  * for all previous versions must be written, which should be
  * avoided.
  */
-export const TALER_DB_NAME = "taler-wallet-main-v7";
+export const TALER_DB_NAME = "taler-wallet-main-v8";
 
 /**
  * Name of the metadata database.  This database is used

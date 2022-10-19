@@ -194,6 +194,7 @@ export async function openTalerDatabase(
       case "taler-wallet-main-v4": // temporary, we might migrate v4 later
       case "taler-wallet-main-v5":
       case "taler-wallet-main-v6":
+      case "taler-wallet-main-v7":
         // We consider this a pre-release
         // development version, no migration is done.
         await metaDb
