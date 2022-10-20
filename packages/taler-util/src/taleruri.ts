@@ -14,7 +14,9 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { BackupRecovery } from "./backup-types.js";
 import { canonicalizeBaseUrl } from "./helpers.js";
+import { initNodePrng } from "./prng-node.js";
 import { URLSearchParams, URL } from "./url.js";
 
 export interface PayUriResult {
@@ -95,6 +97,7 @@ export enum TalerUriType {
   TalerNotifyReserve = "taler-notify-reserve",
   TalerPayPush = "taler-pay-push",
   TalerPayPull = "taler-pay-pull",
+  TalerRecovery = "taler-recovery",
   TalerDevExperiment = "taler-dev-experiment",
   Unknown = "unknown",
 }
@@ -107,6 +110,12 @@ const talerActionPayPush = "pay-push";
  */
 export function classifyTalerUri(s: string): TalerUriType {
   const sl = s.toLowerCase();
+  if (sl.startsWith("taler://recovery/")) {
+    return TalerUriType.TalerRecovery;
+  }
+  if (sl.startsWith("taler+http://recovery/")) {
+    return TalerUriType.TalerRecovery;
+  }
   if (sl.startsWith("taler://pay/")) {
     return TalerUriType.TalerPay;
   }
@@ -362,3 +371,40 @@ export function constructPayPullUri(args: {
   }
   return `${proto}://pay-pull/${url.host}${url.pathname}${args.contractPriv}`;
 }
+
+export function constructRecoveryUri(args: BackupRecovery): string {
+  const key = args.walletRootPriv
+  const urls = args.providers.map(p => `p=${canonicalizeBaseUrl(p.url)}`).join("&")
+
+  return `taler://recovery/${key}?${urls}`
+}
+export function parseRecoveryUri(uri: string): BackupRecovery | undefined {
+  const pi = parseProtoInfo(uri, "recovery");
+  if (!pi) {
+    return undefined;
+  }
+  const idx = pi.rest.indexOf("?");
+  if (idx === -1) {
+    return undefined
+  }
+  const path = pi.rest.slice(0, idx)
+  const params = pi.rest.slice(idx + 1)
+  if (!path || !params) {
+    return undefined;
+  }
+  const parts = path.split("/");
+  const walletRootPriv = parts[0];
+  if (!walletRootPriv) return undefined
+  const providers = new Array<{ url: string }>();
+  const args = params.split("&")
+  for (const param in args) {
+    const eq = args[param].indexOf("=")
+    if (eq === -1) return undefined;
+    const name = args[param].slice(0, eq)
+    const value = args[param].slice(eq + 1)
+    if (name !== "p" || !value) return undefined;
+    providers.push({ url: value })
+  }
+  return { walletRootPriv, providers }
+}
+
