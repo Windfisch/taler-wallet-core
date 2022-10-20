@@ -236,6 +236,11 @@ function openWalletURIFromPopup(talerUri: string): void {
         `static/wallet.html#/cta/withdraw?talerWithdrawUri=${talerUri}`,
       );
       break;
+    case TalerUriType.TalerRecovery:
+      url = chrome.runtime.getURL(
+        `static/wallet.html#/cta/recovery?talerRecoveryUri=${talerUri}`,
+      );
+      break;
     case TalerUriType.TalerPay:
       url = chrome.runtime.getURL(
         `static/wallet.html#/cta/pay?talerPayUri=${talerUri}`,

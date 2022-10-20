@@ -21,7 +21,10 @@
 
 import { ProviderPaymentType } from "@gnu-taler/taler-wallet-core";
 import { addDays } from "date-fns";
-import { BackupView as TestedComponent } from "./BackupPage.js";
+import {
+  BackupView as TestedComponent,
+  ShowRecoveryInfo,
+} from "./BackupPage.js";
 import { createExample } from "../test-utils.js";
 import { TalerProtocolTimestamp } from "@gnu-taler/taler-util";
 
@@ -193,4 +196,8 @@ export const OneProvider = createExample(TestedComponent, {
 
 export const Empty = createExample(TestedComponent, {
   providers: [],
+});
+
+export const Recovery = createExample(ShowRecoveryInfo, {
+  info: "taler://recovery/ASLDKJASLKDJASD",
 });

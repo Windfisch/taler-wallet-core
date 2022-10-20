@@ -64,6 +64,7 @@ import { TransferCreatePage } from "../cta/TransferCreate/index.js";
 import { InvoiceCreatePage } from "../cta/InvoiceCreate/index.js";
 import { TransferPickupPage } from "../cta/TransferPickup/index.js";
 import { InvoicePayPage } from "../cta/InvoicePay/index.js";
+import { RecoveryPage } from "../cta/Recovery/index.js";
 
 export function Application(): VNode {
   const [globalNotification, setGlobalNotification] = useState<
@@ -327,6 +328,12 @@ export function Application(): VNode {
                 onSuccess={(tid: string) =>
                   redirectTo(Pages.balanceTransaction({ tid }))
                 }
+              />
+              <Route
+                path={Pages.ctaRecovery}
+                component={RecoveryPage}
+                onCancel={() => redirectTo(Pages.balance)}
+                onSuccess={() => redirectTo(Pages.backup)}
               />
 
               {/**

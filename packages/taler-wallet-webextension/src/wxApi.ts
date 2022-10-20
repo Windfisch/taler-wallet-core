@@ -167,7 +167,7 @@ export class WxWalletCoreApiClient implements WalletCoreApiClient {
   }
 }
 
-const wxClient = new WxWalletCoreApiClient();
+export const wxClient = new WxWalletCoreApiClient();
 
 /**
  * Pay for a proposal.

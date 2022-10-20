@@ -110,6 +110,7 @@ export const Pages = {
 
   cta: pageDefinition<{ action: string }>("/cta/:action"),
   ctaPay: "/cta/pay",
+  ctaRecovery: "/cta/recovery",
   ctaRefund: "/cta/refund",
   ctaTips: "/cta/tip",
   ctaWithdraw: "/cta/withdraw",

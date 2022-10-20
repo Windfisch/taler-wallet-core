@@ -19,6 +19,7 @@ import {
   BackupBackupProviderTerms,
   canonicalizeBaseUrl,
 } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { Checkbox } from "../components/Checkbox.js";
@@ -34,6 +35,7 @@ import { useTranslationContext } from "../context/translation.js";
 import { Button } from "../mui/Button.js";
 import { queryToSlashConfig } from "../utils/index.js";
 import * as wxApi from "../wxApi.js";
+import { wxClient } from "../wxApi.js";
 
 interface Props {
   currency: string;
@@ -69,8 +71,12 @@ export function ProviderAddPage({ onBack }: Props): VNode {
         setVerifying(undefined);
       }}
       onConfirm={() => {
-        return wxApi
-          .addBackupProvider(verifying.url, verifying.name)
+        return wxClient
+          .call(WalletApiOperation.AddBackupProvider, {
+            backupProviderBaseUrl: verifying.url,
+            name: verifying.name,
+            activate: true,
+          })
           .then(onBack);
       }}
     />

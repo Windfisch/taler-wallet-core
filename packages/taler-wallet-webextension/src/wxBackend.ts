@@ -290,6 +290,11 @@ function parseTalerUriAndRedirect(tabId: number, talerUri: string): void {
         tabId,
         `/cta/transfer/pickup?talerPayPushUri=${talerUri}`,
       );
+    case TalerUriType.TalerRecovery:
+      return platform.redirectTabToWalletPage(
+        tabId,
+        `/cta/transfer/recovery?talerBackupUri=${talerUri}`,
+      );
     case TalerUriType.TalerNotifyReserve:
       // FIXME:  Is this still useful?
       // handleNotifyReserve(w);

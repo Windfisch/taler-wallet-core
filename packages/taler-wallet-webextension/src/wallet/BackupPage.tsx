@@ -14,12 +14,17 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AbsoluteTime } from "@gnu-taler/taler-util";
+import {
+  AbsoluteTime,
+  BackupRecovery,
+  constructRecoveryUri,
+} from "@gnu-taler/taler-util";
 import {
   ProviderInfo,
   ProviderPaymentPaid,
   ProviderPaymentStatus,
   ProviderPaymentType,
+  WalletApiOperation,
 } from "@gnu-taler/taler-wallet-core";
 import {
   differenceInMonths,
@@ -37,20 +42,78 @@ import {
   RowBorderGray,
   SmallLightText,
   SmallText,
+  WarningBox,
 } from "../components/styled/index.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { Button } from "../mui/Button.js";
 import { Pages } from "../NavigationBar.js";
 import * as wxApi from "../wxApi.js";
+import { wxClient } from "../wxApi.js";
+import { useEffect, useState } from "preact/hooks";
+import { QR } from "../components/QR.js";
 
 interface Props {
   onAddProvider: () => Promise<void>;
 }
 
+export function ShowRecoveryInfo({
+  info,
+  onClose,
+}: {
+  info: string;
+  onClose: () => Promise<void>;
+}): VNode {
+  const [display, setDisplay] = useState(false);
+  const [copied, setCopied] = useState(false);
+  async function copyText(): Promise<void> {
+    navigator.clipboard.writeText(info);
+    setCopied(true);
+  }
+  useEffect(() => {
+    if (copied) {
+      setTimeout(() => {
+        setCopied(false);
+      }, 1000);
+    }
+  }, [copied]);
+  return (
+    <Fragment>
+      <h2>Wallet Recovery</h2>
+      <WarningBox>Do not share this QR or URI with anyone</WarningBox>
+      <section>
+        <p>
+          The qr code can be scanned by another wallet to keep synchronized with
+          this wallet.
+        </p>
+        <Button variant="contained" onClick={async () => setDisplay((d) => !d)}>
+          {display ? "Hide" : "Show"} QR code
+        </Button>
+        {display && <QR text={JSON.stringify(info)} />}
+      </section>
+
+      <section>
+        <p>You can also use the string version</p>
+        <Button variant="contained" disabled={copied} onClick={copyText}>
+          Copy recovery URI
+        </Button>
+      </section>
+      <footer>
+        <div></div>
+        <div>
+          <Button variant="contained" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+      </footer>
+    </Fragment>
+  );
+}
+
 export function BackupPage({ onAddProvider }: Props): VNode {
   const { i18n } = useTranslationContext();
   const status = useAsyncAsHook(wxApi.getBackupInfo);
+  const [recoveryInfo, setRecoveryInfo] = useState<string>("");
   if (!status) {
     return <Loading />;
   }
@@ -61,6 +124,12 @@ export function BackupPage({ onAddProvider }: Props): VNode {
         error={status}
       />
     );
+  }
+
+  async function getRecoveryInfo(): Promise<void> {
+    const r = await wxClient.call(WalletApiOperation.ExportBackupRecovery, {});
+    const str = constructRecoveryUri(r);
+    setRecoveryInfo(str);
   }
 
   const providers = status.response.providers.sort((a, b) => {
@@ -75,11 +144,21 @@ export function BackupPage({ onAddProvider }: Props): VNode {
     );
   });
 
+  if (recoveryInfo) {
+    return (
+      <ShowRecoveryInfo
+        info={recoveryInfo}
+        onClose={async () => setRecoveryInfo("")}
+      />
+    );
+  }
+
   return (
     <BackupView
       providers={providers}
       onAddProvider={onAddProvider}
       onSyncAll={wxApi.syncAllProviders}
+      onShowInfo={getRecoveryInfo}
     />
   );
 }
@@ -88,12 +167,14 @@ export interface ViewProps {
   providers: ProviderInfo[];
   onAddProvider: () => Promise<void>;
   onSyncAll: () => Promise<void>;
+  onShowInfo: () => Promise<void>;
 }
 
 export function BackupView({
   providers,
   onAddProvider,
   onSyncAll,
+  onShowInfo,
 }: ViewProps): VNode {
   const { i18n } = useTranslationContext();
   return (
@@ -128,7 +209,11 @@ export function BackupView({
       </section>
       {!!providers.length && (
         <footer>
-          <div />
+          <div>
+            <Button variant="contained" onClick={onShowInfo}>
+              Show recovery
+            </Button>
+          </div>
           <div>
             <Button variant="contained" onClick={onSyncAll}>
               {providers.length > 1 ? (
