@@ -736,7 +736,10 @@ async function storePayReplaySuccess(
       if (isFirst) {
         throw Error("invalid payment state");
       }
-      if (purchase.purchaseStatus === PurchaseStatus.Paying) {
+      if (
+        purchase.purchaseStatus === PurchaseStatus.Paying ||
+        purchase.purchaseStatus === PurchaseStatus.PayingReplay
+      ) {
         purchase.purchaseStatus = PurchaseStatus.Paid;
       }
       purchase.lastSessionId = sessionId;
