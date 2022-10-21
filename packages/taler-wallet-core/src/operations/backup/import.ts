@@ -175,20 +175,16 @@ async function recoverPayCoinSelection(
 
 async function getDenomSelStateFromBackup(
   tx: GetReadOnlyAccess<{ denominations: typeof WalletStoresV1.denominations }>,
+  currency: string,
   exchangeBaseUrl: string,
   sel: BackupDenomSel,
 ): Promise<DenomSelectionState> {
-  const d0 = await tx.denominations.get([
-    exchangeBaseUrl,
-    sel[0].denom_pub_hash,
-  ]);
-  checkBackupInvariant(!!d0);
   const selectedDenoms: {
     denomPubHash: string;
     count: number;
   }[] = [];
-  let totalCoinValue = Amounts.getZero(d0.currency);
-  let totalWithdrawCost = Amounts.getZero(d0.currency);
+  let totalCoinValue = Amounts.getZero(currency);
+  let totalWithdrawCost = Amounts.getZero(currency);
   for (const s of sel) {
     const d = await tx.denominations.get([exchangeBaseUrl, s.denom_pub_hash]);
     checkBackupInvariant(!!d);
@@ -486,91 +482,94 @@ export async function importBackup(
             });
           }
         }
+      }
 
-        for (const backupWg of backupBlob.withdrawal_groups) {
-          const reservePub = cryptoComp.reservePrivToPub[backupWg.reserve_priv];
-          checkLogicInvariant(!!reservePub);
-          const ts = makeTombstoneId(TombstoneTag.DeleteReserve, reservePub);
-          if (tombstoneSet.has(ts)) {
-            continue;
-          }
-          const existingWg = await tx.withdrawalGroups.get(
-            backupWg.withdrawal_group_id,
-          );
-          if (existingWg) {
-            continue;
-          }
-          let wgInfo: WgInfo;
-          switch (backupWg.info.type) {
-            case BackupWgType.BankIntegrated:
-              wgInfo = {
-                withdrawalType: WithdrawalRecordType.BankIntegrated,
-                bankInfo: {
-                  exchangePaytoUri: backupWg.info.exchange_payto_uri,
-                  talerWithdrawUri: backupWg.info.taler_withdraw_uri,
-                  confirmUrl: backupWg.info.confirm_url,
-                  timestampBankConfirmed:
-                    backupWg.info.timestamp_bank_confirmed,
-                  timestampReserveInfoPosted:
-                    backupWg.info.timestamp_reserve_info_posted,
-                },
-              };
-              break;
-            case BackupWgType.BankManual:
-              wgInfo = {
-                withdrawalType: WithdrawalRecordType.BankManual,
-              };
-              break;
-            case BackupWgType.PeerPullCredit:
-              wgInfo = {
-                withdrawalType: WithdrawalRecordType.PeerPullCredit,
-                contractTerms: backupWg.info.contract_terms,
-                contractPriv: backupWg.info.contract_priv,
-              };
-              break;
-            case BackupWgType.PeerPushCredit:
-              wgInfo = {
-                withdrawalType: WithdrawalRecordType.PeerPushCredit,
-                contractTerms: backupWg.info.contract_terms,
-              };
-              break;
-            case BackupWgType.Recoup:
-              wgInfo = {
-                withdrawalType: WithdrawalRecordType.Recoup,
-              };
-              break;
-            default:
-              assertUnreachable(backupWg.info);
-          }
-          await tx.withdrawalGroups.put({
-            withdrawalGroupId: backupWg.withdrawal_group_id,
-            exchangeBaseUrl: backupWg.exchange_base_url,
-            instructedAmount: Amounts.parseOrThrow(backupWg.instructed_amount),
-            secretSeed: backupWg.secret_seed,
-            denomsSel: await getDenomSelStateFromBackup(
-              tx,
-              backupWg.exchange_base_url,
-              backupWg.selected_denoms,
-            ),
-            denomSelUid: backupWg.selected_denoms_uid,
-            rawWithdrawalAmount: Amounts.parseOrThrow(
-              backupWg.raw_withdrawal_amount,
-            ),
-            effectiveWithdrawalAmount: Amounts.parseOrThrow(
-              backupWg.effective_withdrawal_amount,
-            ),
-            reservePriv: backupWg.reserve_priv,
-            reservePub,
-            status: backupWg.timestamp_finish
-              ? WithdrawalGroupStatus.Finished
-              : WithdrawalGroupStatus.QueryingStatus, // FIXME!
-            timestampStart: backupWg.timestamp_created,
-            wgInfo,
-            restrictAge: backupWg.restrict_age,
-            senderWire: undefined, // FIXME!
-            timestampFinish: backupWg.timestamp_finish,
-          });
+      for (const backupWg of backupBlob.withdrawal_groups) {
+        const reservePub = cryptoComp.reservePrivToPub[backupWg.reserve_priv];
+        checkLogicInvariant(!!reservePub);
+        const ts = makeTombstoneId(TombstoneTag.DeleteReserve, reservePub);
+        if (tombstoneSet.has(ts)) {
+          continue;
         }
+        const existingWg = await tx.withdrawalGroups.get(
+          backupWg.withdrawal_group_id,
+        );
+        if (existingWg) {
+          continue;
+        }
+        let wgInfo: WgInfo;
+        switch (backupWg.info.type) {
+          case BackupWgType.BankIntegrated:
+            wgInfo = {
+              withdrawalType: WithdrawalRecordType.BankIntegrated,
+              bankInfo: {
+                exchangePaytoUri: backupWg.info.exchange_payto_uri,
+                talerWithdrawUri: backupWg.info.taler_withdraw_uri,
+                confirmUrl: backupWg.info.confirm_url,
+                timestampBankConfirmed: backupWg.info.timestamp_bank_confirmed,
+                timestampReserveInfoPosted:
+                  backupWg.info.timestamp_reserve_info_posted,
+              },
+            };
+            break;
+          case BackupWgType.BankManual:
+            wgInfo = {
+              withdrawalType: WithdrawalRecordType.BankManual,
+            };
+            break;
+          case BackupWgType.PeerPullCredit:
+            wgInfo = {
+              withdrawalType: WithdrawalRecordType.PeerPullCredit,
+              contractTerms: backupWg.info.contract_terms,
+              contractPriv: backupWg.info.contract_priv,
+            };
+            break;
+          case BackupWgType.PeerPushCredit:
+            wgInfo = {
+              withdrawalType: WithdrawalRecordType.PeerPushCredit,
+              contractTerms: backupWg.info.contract_terms,
+            };
+            break;
+          case BackupWgType.Recoup:
+            wgInfo = {
+              withdrawalType: WithdrawalRecordType.Recoup,
+            };
+            break;
+          default:
+            assertUnreachable(backupWg.info);
+        }
+        const instructedAmount = Amounts.parseOrThrow(
+          backupWg.instructed_amount,
+        );
+        await tx.withdrawalGroups.put({
+          withdrawalGroupId: backupWg.withdrawal_group_id,
+          exchangeBaseUrl: backupWg.exchange_base_url,
+          instructedAmount,
+          secretSeed: backupWg.secret_seed,
+          denomsSel: await getDenomSelStateFromBackup(
+            tx,
+            instructedAmount.currency,
+            backupWg.exchange_base_url,
+            backupWg.selected_denoms,
+          ),
+          denomSelUid: backupWg.selected_denoms_uid,
+          rawWithdrawalAmount: Amounts.parseOrThrow(
+            backupWg.raw_withdrawal_amount,
+          ),
+          effectiveWithdrawalAmount: Amounts.parseOrThrow(
+            backupWg.effective_withdrawal_amount,
+          ),
+          reservePriv: backupWg.reserve_priv,
+          reservePub,
+          status: backupWg.timestamp_finish
+            ? WithdrawalGroupStatus.Finished
+            : WithdrawalGroupStatus.QueryingStatus, // FIXME!
+          timestampStart: backupWg.timestamp_created,
+          wgInfo,
+          restrictAge: backupWg.restrict_age,
+          senderWire: undefined, // FIXME!
+          timestampFinish: backupWg.timestamp_finish,
+        });
       }
 
       for (const backupPurchase of backupBlob.purchases) {
@@ -745,9 +744,13 @@ export async function importBackup(
           for (const oldCoin of backupRefreshGroup.old_coins) {
             const c = await tx.coins.get(oldCoin.coin_pub);
             checkBackupInvariant(!!c);
+            const d = await tx.denominations.get(c.denomPubHash);
+            checkBackupInvariant(!!d);
+
             if (oldCoin.refresh_session) {
               const denomSel = await getDenomSelStateFromBackup(
                 tx,
+                d.currency,
                 c.exchangeBaseUrl,
                 oldCoin.refresh_session.new_denoms,
               );
@@ -800,8 +803,10 @@ export async function importBackup(
         }
         const existingTip = await tx.tips.get(backupTip.wallet_tip_id);
         if (!existingTip) {
+          const tipAmountRaw = Amounts.parseOrThrow(backupTip.tip_amount_raw);
           const denomsSel = await getDenomSelStateFromBackup(
             tx,
+            tipAmountRaw.currency,
             backupTip.exchange_base_url,
             backupTip.selected_denoms,
           );
@@ -815,7 +820,7 @@ export async function importBackup(
             pickedUpTimestamp: backupTip.timestamp_finished,
             secretSeed: backupTip.secret_seed,
             tipAmountEffective: denomsSel.totalCoinValue,
-            tipAmountRaw: Amounts.parseOrThrow(backupTip.tip_amount_raw),
+            tipAmountRaw,
             tipExpiration: backupTip.timestamp_expiration,
             walletTipId: backupTip.wallet_tip_id,
             denomSelUid: backupTip.selected_denoms_uid,

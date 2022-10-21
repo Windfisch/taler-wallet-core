@@ -891,17 +891,10 @@ async function unblockBackup(
       await tx.backupProviders.indexes.byPaymentProposalId
         .iter(proposalId)
         .forEachAsync(async (bp) => {
-          // if (bp.state.tag === BackupProviderStateTag.Retrying) {
           bp.state = {
             tag: BackupProviderStateTag.Ready,
-            nextBackupTimestamp: AbsoluteTime.toTimestamp(
-              AbsoluteTime.addDuration(
-                AbsoluteTime.now(),
-                Duration.fromSpec({ days: 7 }),
-              ),
-            ),
+            nextBackupTimestamp: TalerProtocolTimestamp.now(),
           };
-          // }
           tx.backupProviders.put(bp);
         });
     });

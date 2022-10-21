@@ -846,6 +846,7 @@ export async function getBackupRecovery(
       .filter((x) => x.state.tag !== BackupProviderStateTag.Provisional)
       .map((x) => {
         return {
+          name: x.name,
           url: x.baseUrl,
         };
       }),
@@ -881,7 +882,7 @@ async function backupRecoveryTheirs(
         if (!existingProv) {
           await tx.backupProviders.put({
             baseUrl: prov.url,
-            name: "not-defined",
+            name: prov.name,
             paymentProposalIds: [],
             state: {
               tag: BackupProviderStateTag.Ready,
