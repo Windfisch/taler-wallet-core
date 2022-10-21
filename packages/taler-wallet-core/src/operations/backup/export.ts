@@ -413,23 +413,31 @@ export async function exportBackup(
         let propStatus: BackupProposalStatus;
         switch (purch.purchaseStatus) {
           case PurchaseStatus.Paid:
+          case PurchaseStatus.QueryingAutoRefund:
+          case PurchaseStatus.QueryingRefund:
             propStatus = BackupProposalStatus.Paid;
-            return;
+            break;
+          case PurchaseStatus.PayingReplay:
           case PurchaseStatus.DownloadingProposal:
           case PurchaseStatus.Proposed:
+          case PurchaseStatus.Paying:
             propStatus = BackupProposalStatus.Proposed;
             break;
           case PurchaseStatus.ProposalDownloadFailed:
+          case PurchaseStatus.PaymentAbortFinished:
             propStatus = BackupProposalStatus.PermanentlyFailed;
             break;
+          case PurchaseStatus.AbortingWithRefund:
           case PurchaseStatus.ProposalRefused:
             propStatus = BackupProposalStatus.Refused;
             break;
           case PurchaseStatus.RepurchaseDetected:
             propStatus = BackupProposalStatus.Repurchase;
             break;
-          default:
-            throw Error();
+          default: {
+            const error: never = purch.purchaseStatus;
+            throw Error(`purchase status ${error} is not handled`);
+          }
         }
 
         const payInfo = purch.payInfo;
