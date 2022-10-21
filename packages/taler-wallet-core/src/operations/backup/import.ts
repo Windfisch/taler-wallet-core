@@ -588,8 +588,22 @@ export async function importBackup(
           case BackupProposalStatus.Paid:
             proposalStatus = PurchaseStatus.Paid;
             break;
-          default:
-            throw Error();
+          case BackupProposalStatus.Proposed:
+            proposalStatus = PurchaseStatus.Proposed;
+            break;
+          case BackupProposalStatus.PermanentlyFailed:
+            proposalStatus = PurchaseStatus.PaymentAbortFinished;
+            break;
+          case BackupProposalStatus.Refused:
+            proposalStatus = PurchaseStatus.ProposalRefused;
+            break;
+          case BackupProposalStatus.Repurchase:
+            proposalStatus = PurchaseStatus.RepurchaseDetected;
+            break;
+          default: {
+            const error: never = backupPurchase.proposal_status;
+            throw Error(`backup status ${error} is not handled`);
+          }
         }
         if (!existingPurchase) {
           const refunds: { [refundKey: string]: WalletRefundItem } = {};
@@ -744,7 +758,10 @@ export async function importBackup(
           for (const oldCoin of backupRefreshGroup.old_coins) {
             const c = await tx.coins.get(oldCoin.coin_pub);
             checkBackupInvariant(!!c);
-            const d = await tx.denominations.get(c.denomPubHash);
+            const d = await tx.denominations.get([
+              c.exchangeBaseUrl,
+              c.denomPubHash,
+            ]);
             checkBackupInvariant(!!d);
 
             if (oldCoin.refresh_session) {
