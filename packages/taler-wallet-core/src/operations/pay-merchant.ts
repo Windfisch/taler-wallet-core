@@ -129,6 +129,7 @@ import {
 } from "./common.js";
 import { getExchangeDetails } from "./exchanges.js";
 import { createRefreshGroup, getTotalRefreshCost } from "./refresh.js";
+import { GetReadOnlyAccess } from "../util/query.js";
 
 /**
  * Logger.
@@ -257,6 +258,9 @@ function getPayRequestTimeout(purchase: PurchaseRecord): Duration {
 export async function expectProposalDownload(
   ws: InternalWalletState,
   p: PurchaseRecord,
+  parentTx?: GetReadOnlyAccess<{
+    contractTerms: typeof WalletStoresV1.contractTerms;
+  }>,
 ): Promise<{
   contractData: WalletContractData;
   contractTermsRaw: any;
@@ -265,24 +269,32 @@ export async function expectProposalDownload(
     throw Error("expected proposal to be downloaded");
   }
   const download = p.download;
+
+  async function getFromTransaction(
+    tx: Exclude<typeof parentTx, undefined>,
+  ): Promise<ReturnType<typeof expectProposalDownload>> {
+    const contractTerms = await tx.contractTerms.get(
+      download.contractTermsHash,
+    );
+    if (!contractTerms) {
+      throw Error("contract terms not found");
+    }
+    return {
+      contractData: extractContractData(
+        contractTerms.contractTermsRaw,
+        download.contractTermsHash,
+        download.contractTermsMerchantSig,
+      ),
+      contractTermsRaw: contractTerms.contractTermsRaw,
+    };
+  }
+
+  if (parentTx) {
+    return getFromTransaction(parentTx);
+  }
   return await ws.db
     .mktx((x) => [x.contractTerms])
-    .runReadOnly(async (tx) => {
-      const contractTerms = await tx.contractTerms.get(
-        download.contractTermsHash,
-      );
-      if (!contractTerms) {
-        throw Error("contract terms not found");
-      }
-      return {
-        contractData: extractContractData(
-          contractTerms.contractTermsRaw,
-          download.contractTermsHash,
-          download.contractTermsMerchantSig,
-        ),
-        contractTermsRaw: contractTerms.contractTermsRaw,
-      };
-    });
+    .runReadOnly(getFromTransaction);
 }
 
 export function extractContractData(

@@ -212,28 +212,13 @@ export async function getTransactionById(
           }),
         );
 
-        // const download = await expectProposalDownload(ws, purchase);
+        const download = await expectProposalDownload(ws, purchase, tx);
 
-        // FIXME: this is what expectProposalDownload, but nested tx is not supported
-        if (!purchase.download) {
-          throw Error("expected proposal to be downloaded");
-        }
-        const contractTerms = await tx.contractTerms.get(
-          purchase.download.contractTermsHash,
-        );
-        if (!contractTerms) {
-          throw Error("contract terms not found");
-        }
-        const contractData = extractContractData(
-          contractTerms.contractTermsRaw,
-          purchase.download.contractTermsHash,
-          purchase.download.contractTermsMerchantSig,
-        );
         const cleanRefunds = filteredRefunds.filter(
           (x): x is WalletRefundItem => !!x,
         );
 
-        // const contractData = download.contractData;
+        const contractData = download.contractData;
         const refunds = mergeRefundByExecutionTime(
           cleanRefunds,
           Amounts.getZero(contractData.amount.currency),
@@ -306,23 +291,8 @@ export async function getTransactionById(
           ),
         );
         if (t) throw Error("deleted");
-        // const download = await expectProposalDownload(ws, purchase);
-        // const contractData = download.contractData;
-        // FIXME: this is what expectProposalDownload, but nested tx is not supported
-        if (!purchase.download) {
-          throw Error("expected proposal to be downloaded");
-        }
-        const contractTerms = await tx.contractTerms.get(
-          purchase.download.contractTermsHash,
-        );
-        if (!contractTerms) {
-          throw Error("contract terms not found");
-        }
-        const contractData = extractContractData(
-          contractTerms.contractTermsRaw,
-          purchase.download.contractTermsHash,
-          purchase.download.contractTermsMerchantSig,
-        );
+        const download = await expectProposalDownload(ws, purchase, tx);
+        const contractData = download.contractData;
         const refunds = mergeRefundByExecutionTime(
           [theRefund],
           Amounts.getZero(contractData.amount.currency),
