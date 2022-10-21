@@ -373,10 +373,13 @@ export function constructPayPullUri(args: {
 }
 
 export function constructRecoveryUri(args: BackupRecovery): string {
-  const key = args.walletRootPriv
-  const urls = args.providers.map(p => `p=${canonicalizeBaseUrl(p.url)}`).join("&")
+  const key = args.walletRootPriv;
+  //FIXME: name may contain non valid characters
+  const urls = args.providers
+    .map((p) => `${p.name}=${canonicalizeBaseUrl(p.url)}`)
+    .join("&");
 
-  return `taler://recovery/${key}?${urls}`
+  return `taler://recovery/${key}?${urls}`;
 }
 export function parseRecoveryUri(uri: string): BackupRecovery | undefined {
   const pi = parseProtoInfo(uri, "recovery");
@@ -385,26 +388,24 @@ export function parseRecoveryUri(uri: string): BackupRecovery | undefined {
   }
   const idx = pi.rest.indexOf("?");
   if (idx === -1) {
-    return undefined
+    return undefined;
   }
-  const path = pi.rest.slice(0, idx)
-  const params = pi.rest.slice(idx + 1)
+  const path = pi.rest.slice(0, idx);
+  const params = pi.rest.slice(idx + 1);
   if (!path || !params) {
     return undefined;
   }
   const parts = path.split("/");
   const walletRootPriv = parts[0];
-  if (!walletRootPriv) return undefined
-  const providers = new Array<{ url: string }>();
-  const args = params.split("&")
+  if (!walletRootPriv) return undefined;
+  const providers = new Array<{ name: string; url: string }>();
+  const args = params.split("&");
   for (const param in args) {
-    const eq = args[param].indexOf("=")
+    const eq = args[param].indexOf("=");
     if (eq === -1) return undefined;
-    const name = args[param].slice(0, eq)
-    const value = args[param].slice(eq + 1)
-    if (name !== "p" || !value) return undefined;
-    providers.push({ url: value })
+    const name = args[param].slice(0, eq);
+    const url = args[param].slice(eq + 1);
+    providers.push({ name, url });
   }
-  return { walletRootPriv, providers }
+  return { walletRootPriv, providers };
 }
-

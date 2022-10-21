@@ -1281,6 +1281,7 @@ export enum BackupProposalStatus {
 export interface BackupRecovery {
   walletRootPriv: string;
   providers: {
+    name: string;
     url: string;
   }[];
 }
