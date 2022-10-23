@@ -177,6 +177,7 @@ class NativeWalletMessageHandler {
     let initResponse: any = {};
 
     const reinit = async () => {
+      console.error("in reinit");
       const w = await getDefaultNodeWallet(this.walletArgs);
       this.maybeWallet = w;
       const resp = await w.handleCoreApiRequest(
@@ -203,12 +204,6 @@ class NativeWalletMessageHandler {
         };
         await reinit();
         return wrapResponse({
-          // FIXME: Only for Android compatibility, should be removed
-          // once changed on Android.
-          supported_protocol_versions: {
-            exchange: WALLET_EXCHANGE_PROTOCOL_VERSION,
-            merchant: WALLET_MERCHANT_PROTOCOL_VERSION,
-          },
           ...initResponse,
         });
       }

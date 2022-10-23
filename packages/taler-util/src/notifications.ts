@@ -145,6 +145,7 @@ export interface WaitingForRetryNotification {
   type: NotificationType.WaitingForRetry;
   numPending: number;
   numGivingLiveness: number;
+  numDue: number;
 }
 
 export interface RefundFinishedNotification {
@@ -222,6 +223,7 @@ export interface ReserveCreatedNotification {
 
 export interface PendingOperationProcessedNotification {
   type: NotificationType.PendingOperationProcessed;
+  id: string;
 }
 
 export interface ProposalRefusedNotification {

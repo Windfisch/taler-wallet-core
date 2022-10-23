@@ -9,7 +9,7 @@
     "type": "git",
     "url": "git://git.taler.net/wallet-core.git"
   },
-  "main": "dist/taler-wallet-embedded.js",
+  "main": "dist/taler-wallet-embedded.cjs",
   "author": "Florian Dold",
   "license": "GPL-3.0",
   "type": "module",

@@ -84,6 +84,7 @@ import {
   ExchangeTosStatusDetails,
   FeeDescription,
   GetExchangeTosResult,
+  InitResponse,
   j2s,
   KnownBankAccounts,
   KnownBankAccountsInfo,
@@ -415,6 +416,7 @@ async function runTaskLoop(
       ws.notify({
         type: NotificationType.WaitingForRetry,
         numGivingLiveness,
+        numDue,
         numPending: pending.pendingOperations.length,
       });
       // Wait until either the timeout, or we are notified (via the latch)
@@ -434,6 +436,7 @@ async function runTaskLoop(
         });
         ws.notify({
           type: NotificationType.PendingOperationProcessed,
+          id: p.id,
         });
       }
     }
@@ -987,7 +990,10 @@ async function dispatchRequestInternal<Op extends WalletApiOperation>(
         await fillDefaults(ws);
       }
       await maybeInitDevMode(ws);
-      return {};
+      const resp: InitResponse = {
+        versionInfo: getVersion(ws),
+      };
+      return resp;
     }
     case WalletApiOperation.WithdrawTestkudos: {
       await withdrawTestBalance(ws, {
