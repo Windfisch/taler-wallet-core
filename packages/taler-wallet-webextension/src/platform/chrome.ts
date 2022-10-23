@@ -316,7 +316,7 @@ async function sendMessageToWalletBackground(
     chrome.runtime.sendMessage(
       { operation, payload, id: `id_${i++ % 1000}` },
       (backgroundResponse) => {
-        console.log("BUG: got response from background", backgroundResponse);
+        logger.trace("BUG: got response from background", backgroundResponse);
 
         if (chrome.runtime.lastError) {
           reject(chrome.runtime.lastError.message);
@@ -379,7 +379,7 @@ function listenToAllChannels(
 ): void {
   chrome.runtime.onMessage.addListener((m, s, c) => {
     cb(m, s, (apiResponse) => {
-      console.log("BUG: sending response to client", apiResponse);
+      logger.trace("BUG: sending response to client", apiResponse);
       c(apiResponse);
     });
 
