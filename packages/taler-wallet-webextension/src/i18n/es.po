@@ -15,18 +15,18 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Taler Wallet\n"
-"Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To: languages@taler.net\n"
 "POT-Creation-Date: 2016-11-23 00:00+0100\n"
-"PO-Revision-Date: 2022-03-03 15:13+0000\n"
+"PO-Revision-Date: 2022-10-23 20:20+0000\n"
 "Last-Translator: Sebastian Marchano <sebasjm@gmail.com>\n"
-"Language-Team: Spanish <http://weblate.taler.net/projects/gnu-taler/"
+"Language-Team: Spanish <https://weblate.taler.net/projects/gnu-taler/"
 "webextensions/es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.4.2\n"
+"X-Generator: Weblate 4.13.1\n"
 
 #: src/NavigationBar.tsx:139
 #, c-format
@@ -41,7 +41,7 @@ msgstr "Copia de seguridad"
 #: src/NavigationBar.tsx:147
 #, c-format
 msgid "QR Reader and Taler URI"
-msgstr ""
+msgstr "Lector QR y Taler URI"
 
 #: src/NavigationBar.tsx:154
 #, c-format
@@ -54,14 +54,14 @@ msgid "Dev"
 msgstr "Dev"
 
 #: src/mui/Typography.tsx:122
-#, fuzzy, c-format
+#, c-format
 msgid "%1$s"
-msgstr "Pagar %1$s"
+msgstr "%1$s"
 
 #: src/components/PendingTransactions.tsx:74
 #, c-format
 msgid "PENDING OPERATIONS"
-msgstr ""
+msgstr "OPERACIONES PENDIENTES"
 
 #: src/components/Loading.tsx:36
 #, c-format
@@ -109,19 +109,19 @@ msgid "Expires in"
 msgstr "Expira en"
 
 #: src/wallet/ProviderDetailPage.tsx:60
-#, fuzzy, c-format
+#, c-format
 msgid "There was an error loading the provider detail for &quot; %1$s&quot;"
 msgstr "Hubo un error cargando los detalles del proveedor para \"%1$s\""
 
 #: src/wallet/ProviderDetailPage.tsx:108
-#, fuzzy, c-format
+#, c-format
 msgid "There is not known provider with url &quot;%1$s&quot;."
 msgstr "No hay proveedor conocido con la URL \"%1$s\"."
 
 #: src/wallet/ProviderDetailPage.tsx:115
-#, fuzzy, c-format
+#, c-format
 msgid "See providers"
-msgstr "Eliminar proveedor"
+msgstr "Ver proveedores"
 
 #: src/wallet/ProviderDetailPage.tsx:143
 #, c-format
@@ -243,7 +243,7 @@ msgid "Open withdraw page"
 msgstr "Abrir página de retirada"
 
 #: src/popup/NoBalanceHelp.tsx:43
-#, fuzzy, c-format
+#, c-format
 msgid "Get digital cash"
 msgstr "Retirar dinero digital"
 
@@ -255,12 +255,12 @@ msgstr "No se pudo cargar la página"
 #: src/popup/BalancePage.tsx:175
 #, c-format
 msgid "Add"
-msgstr ""
+msgstr "Agregar"
 
 #: src/popup/BalancePage.tsx:179
 #, c-format
 msgid "Send %1$s"
-msgstr ""
+msgstr "Envíar %1$s"
 
 #: src/popup/TalerActionFound.tsx:44
 #, c-format
@@ -313,19 +313,19 @@ msgid "this popup is being closed and you are being redirected to %1$s"
 msgstr "Este popup está siendo cerrado y estás siendo redirigido a %1$s"
 
 #: src/components/ShowFullContractTermPopup.tsx:158
-#, fuzzy, c-format
+#, c-format
 msgid "Could not load purchase proposal details"
-msgstr "No se pudieron cargar los detalles de la retirada"
+msgstr "No se pudo cargar el detalle de la propuesta"
 
 #: src/components/ShowFullContractTermPopup.tsx:183
 #, c-format
 msgid "Order Id"
-msgstr ""
+msgstr "Id de orden"
 
 #: src/components/ShowFullContractTermPopup.tsx:189
 #, c-format
 msgid "Summary"
-msgstr ""
+msgstr "Resumen"
 
 #: src/components/ShowFullContractTermPopup.tsx:195
 #, c-format
@@ -333,114 +333,114 @@ msgid "Amount"
 msgstr "Cantidad"
 
 #: src/components/ShowFullContractTermPopup.tsx:203
-#, fuzzy, c-format
+#, c-format
 msgid "Merchant name"
 msgstr "Comerciante"
 
 #: src/components/ShowFullContractTermPopup.tsx:209
 #, c-format
 msgid "Merchant jurisdiction"
-msgstr ""
+msgstr "Jurisdicción"
 
 #: src/components/ShowFullContractTermPopup.tsx:215
-#, fuzzy, c-format
+#, c-format
 msgid "Merchant address"
-msgstr "Mensaje del comerciante"
+msgstr "Dirección del comerciante"
 
 #: src/components/ShowFullContractTermPopup.tsx:221
-#, fuzzy, c-format
+#, c-format
 msgid "Merchant logo"
-msgstr "Comerciante"
+msgstr "Logo"
 
 #: src/components/ShowFullContractTermPopup.tsx:234
-#, fuzzy, c-format
+#, c-format
 msgid "Merchant website"
-msgstr "Mensaje del comerciante"
+msgstr "Siti web"
 
 #: src/components/ShowFullContractTermPopup.tsx:240
-#, fuzzy, c-format
+#, c-format
 msgid "Merchant email"
-msgstr "Mensaje del comerciante"
+msgstr "Correo electrónico"
 
 #: src/components/ShowFullContractTermPopup.tsx:246
 #, c-format
 msgid "Merchant public key"
-msgstr ""
+msgstr "Clave pública"
 
 #: src/components/ShowFullContractTermPopup.tsx:256
 #, c-format
 msgid "Delivery date"
-msgstr ""
+msgstr "Fecha de entrega"
 
 #: src/components/ShowFullContractTermPopup.tsx:271
-#, fuzzy, c-format
+#, c-format
 msgid "Delivery location"
-msgstr "Acción Taler"
+msgstr "Ubicación de entrega"
 
 #: src/components/ShowFullContractTermPopup.tsx:277
 #, c-format
 msgid "Products"
-msgstr ""
+msgstr "Productos"
 
 #: src/components/ShowFullContractTermPopup.tsx:289
 #, c-format
 msgid "Created at"
-msgstr ""
+msgstr "Creado en"
 
 #: src/components/ShowFullContractTermPopup.tsx:304
-#, fuzzy, c-format
+#, c-format
 msgid "Refund deadline"
-msgstr "Importe de la devolución"
+msgstr "Plazo de devolución"
 
 #: src/components/ShowFullContractTermPopup.tsx:319
-#, fuzzy, c-format
+#, c-format
 msgid "Auto refund"
-msgstr "Devolución total"
+msgstr "Devolución automática"
 
 #: src/components/ShowFullContractTermPopup.tsx:339
 #, c-format
 msgid "Pay deadline"
-msgstr ""
+msgstr "Plazo de pago"
 
 #: src/components/ShowFullContractTermPopup.tsx:354
 #, c-format
 msgid "Fulfillment URL"
-msgstr ""
+msgstr "URL de éxito"
 
 #: src/components/ShowFullContractTermPopup.tsx:360
-#, fuzzy, c-format
+#, c-format
 msgid "Fulfillment message"
-msgstr "Mensaje del comerciante"
+msgstr "Mensaje de éxito"
 
 #: src/components/ShowFullContractTermPopup.tsx:370
-#, fuzzy, c-format
+#, c-format
 msgid "Max deposit fee"
-msgstr "Comisión de depósito"
+msgstr "Máxima comisión de depósito"
 
 #: src/components/ShowFullContractTermPopup.tsx:378
 #, c-format
 msgid "Max fee"
-msgstr ""
+msgstr "Máxima comisión"
 
 #: src/components/ShowFullContractTermPopup.tsx:386
 #, c-format
 msgid "Minimum age"
-msgstr ""
+msgstr "Edad mínima"
 
 #: src/components/ShowFullContractTermPopup.tsx:398
 #, c-format
 msgid "Wire fee amortization"
-msgstr ""
+msgstr "Amortización de comisión de transferencia"
 
 #: src/components/ShowFullContractTermPopup.tsx:404
 #, c-format
 msgid "Auditors"
-msgstr ""
+msgstr "Auditores"
 
 #: src/components/ShowFullContractTermPopup.tsx:419
-#, fuzzy, c-format
+#, c-format
 msgid "Exchanges"
-msgstr "Exchange"
+msgstr "Exchanges"
 
 #: src/components/Part.tsx:148
 #, c-format
@@ -450,7 +450,7 @@ msgstr "Cuenta del banco"
 #: src/components/Part.tsx:160
 #, c-format
 msgid "Bitcoin address"
-msgstr ""
+msgstr "Dirección de Bitcoin"
 
 #: src/components/Part.tsx:163
 #, c-format
@@ -458,9 +458,9 @@ msgid "IBAN"
 msgstr "IBAN"
 
 #: src/cta/Deposit/views.tsx:38
-#, fuzzy, c-format
+#, c-format
 msgid "Could not load deposit status"
-msgstr "No se pudo cargar el estado del pago"
+msgstr "No se pudo cargar el estado del depósito"
 
 #: src/cta/Deposit/views.tsx:52
 #, c-format
@@ -470,7 +470,7 @@ msgstr "Depósito de dinero digital"
 #: src/cta/Deposit/views.tsx:58
 #, c-format
 msgid "Cost"
-msgstr ""
+msgstr "Costo"
 
 #: src/cta/Deposit/views.tsx:66
 #, c-format
@@ -480,17 +480,17 @@ msgstr "Comisión"
 #: src/cta/Deposit/views.tsx:73
 #, c-format
 msgid "To be received"
-msgstr ""
+msgstr "A recibir"
 
 #: src/cta/Deposit/views.tsx:84
 #, c-format
 msgid "Send &nbsp; %1$s"
-msgstr ""
+msgstr "Envíar %1$s"
 
 #: src/components/BankDetailsByPaytoType.tsx:63
 #, c-format
 msgid "Bitcoin transfer details"
-msgstr ""
+msgstr "Detalle de transferencia Bitcoin"
 
 #: src/components/BankDetailsByPaytoType.tsx:66
 #, c-format
@@ -499,6 +499,9 @@ msgid ""
 "account and the other two are segwit fake address for metadata with an "
 "minimum amount."
 msgstr ""
+"El exchange necesita una transacción con 3 salidas, una salida es hacia la "
+"cuenta del exchange y las otras dos son direcciones segwit falsas para "
+"metadata con el monto mínimo."
 
 #: src/components/BankDetailsByPaytoType.tsx:74
 #, c-format
@@ -506,6 +509,8 @@ msgid ""
 "In bitcoincore wallet use &apos;Add Recipient&apos; button to add two "
 "additional recipient and copy addresses and amounts"
 msgstr ""
+"En la billetera bitcoincore usar el botón \"Agregar destinatario\" para "
+"agregar dos destinatarios y copiar las direcciones y montos"
 
 #: src/components/BankDetailsByPaytoType.tsx:98
 #, c-format
@@ -513,6 +518,8 @@ msgid ""
 "Make sure the amount show %1$s BTC, else you have to change the base unit to "
 "BTC"
 msgstr ""
+"Asegurarse de que el monto muestre %1$s BTC, sino tendrá que cambiar la "
+"unidad a BTC"
 
 #: src/components/BankDetailsByPaytoType.tsx:110
 #, c-format
@@ -527,7 +534,7 @@ msgstr "Banco anfitrión"
 #: src/components/BankDetailsByPaytoType.tsx:139
 #, c-format
 msgid "Bank transfer details"
-msgstr ""
+msgstr "Detalle de transferencia bancaria"
 
 #: src/components/BankDetailsByPaytoType.tsx:148
 #, c-format
@@ -535,9 +542,9 @@ msgid "Subject"
 msgstr "Asunto"
 
 #: src/components/BankDetailsByPaytoType.tsx:154
-#, fuzzy, c-format
+#, c-format
 msgid "Receiver name"
-msgstr "Cantidad recibida"
+msgstr "Nombre del receptor"
 
 #: src/wallet/Transaction.tsx:98
 #, c-format
@@ -557,7 +564,7 @@ msgstr "Esta transacción no está completada"
 #: src/wallet/Transaction.tsx:209
 #, c-format
 msgid "Send"
-msgstr ""
+msgstr "Enviar"
 
 #: src/wallet/Transaction.tsx:216
 #, c-format
@@ -608,6 +615,8 @@ msgid ""
 "The bank did not yet confirmed the wire transfer. Go to the %1$s %2$s and "
 "check there is no pending step."
 msgstr ""
+"El banco todavía no confirmó la transferencia. Ir a %1$s %2$s y verificar "
+"que no hay pasos pendientes."
 
 #: src/wallet/Transaction.tsx:316
 #, c-format
@@ -615,11 +624,13 @@ msgid ""
 "Bank has confirmed the wire transfer. Waiting for the exchange to send the "
 "coins"
 msgstr ""
+"El banco confirmó la transferencia. Esperando que el exchange envíe las "
+"monedas"
 
 #: src/wallet/Transaction.tsx:325
 #, c-format
 msgid "Details"
-msgstr ""
+msgstr "Detalles"
 
 #: src/wallet/Transaction.tsx:360
 #, c-format
@@ -627,30 +638,32 @@ msgid "Payment"
 msgstr "Pago"
 
 #: src/wallet/Transaction.tsx:378
-#, fuzzy, c-format
+#, c-format
 msgid "Refunds"
-msgstr "Devolución"
+msgstr "Devoluciones"
 
 #: src/wallet/Transaction.tsx:385
 #, c-format
 msgid "%1$s %2$s on %3$s"
-msgstr ""
+msgstr "%1$s %2$s en %3$s"
 
 #: src/wallet/Transaction.tsx:415
 #, c-format
 msgid ""
 "Merchant created a refund for this order but was not automatically picked up."
 msgstr ""
+"El comerciante creó una devolución para esta orden pero no fue recogida "
+"automáticamente."
 
 #: src/wallet/Transaction.tsx:420
 #, c-format
 msgid "Offer"
-msgstr ""
+msgstr "Oferta"
 
 #: src/wallet/Transaction.tsx:431
-#, fuzzy, c-format
+#, c-format
 msgid "Accept"
-msgstr "Aceptar propina"
+msgstr "Aceptar"
 
 #: src/wallet/Transaction.tsx:438
 #, c-format
@@ -660,7 +673,7 @@ msgstr "Comerciante"
 #: src/wallet/Transaction.tsx:443
 #, c-format
 msgid "Invoice ID"
-msgstr ""
+msgstr "Id de factura"
 
 #: src/wallet/Transaction.tsx:470
 #, c-format
@@ -685,37 +698,37 @@ msgstr "Devolución"
 #: src/wallet/Transaction.tsx:555
 #, c-format
 msgid "Original order ID"
-msgstr ""
+msgstr "Id de orden original"
 
 #: src/wallet/Transaction.tsx:568
-#, fuzzy, c-format
+#, c-format
 msgid "Purchase summary"
-msgstr "Compra"
+msgstr "Resumen de compra"
 
 #: src/wallet/Transaction.tsx:593
 #, c-format
 msgid "copy"
-msgstr ""
+msgstr "Copiar"
 
 #: src/wallet/Transaction.tsx:596
 #, c-format
 msgid "hide qr"
-msgstr ""
+msgstr "Esconder QR"
 
 #: src/wallet/Transaction.tsx:608
 #, c-format
 msgid "show qr"
-msgstr ""
+msgstr "Mostrar QR"
 
 #: src/wallet/Transaction.tsx:620
 #, c-format
 msgid "Credit"
-msgstr ""
+msgstr "Crédito"
 
 #: src/wallet/Transaction.tsx:624
 #, c-format
 msgid "Invoice"
-msgstr ""
+msgstr "Factura"
 
 #: src/wallet/Transaction.tsx:635
 #, c-format
@@ -723,79 +736,79 @@ msgid "Exchange"
 msgstr "Exchange"
 
 #: src/wallet/Transaction.tsx:641
-#, fuzzy, c-format
+#, c-format
 msgid "URI"
-msgstr "URL"
+msgstr "URI"
 
 #: src/wallet/Transaction.tsx:667
 #, c-format
 msgid "Debit"
-msgstr ""
+msgstr "Débito"
 
 #: src/wallet/Transaction.tsx:710
 #, c-format
 msgid "Transfer"
-msgstr ""
+msgstr "Transferencia"
 
 #: src/wallet/Transaction.tsx:844
-#, fuzzy, c-format
+#, c-format
 msgid "Country"
-msgstr "Cantidad"
+msgstr "País"
 
 #: src/wallet/Transaction.tsx:852
 #, c-format
 msgid "Address lines"
-msgstr ""
+msgstr "Detalle de dirección"
 
 #: src/wallet/Transaction.tsx:860
 #, c-format
 msgid "Building number"
-msgstr ""
+msgstr "Número de edificio"
 
 #: src/wallet/Transaction.tsx:868
 #, c-format
 msgid "Building name"
-msgstr ""
+msgstr "Nombre de edificio"
 
 #: src/wallet/Transaction.tsx:876
 #, c-format
 msgid "Street"
-msgstr ""
+msgstr "Calle"
 
 #: src/wallet/Transaction.tsx:884
 #, c-format
 msgid "Post code"
-msgstr ""
+msgstr "Código postal"
 
 #: src/wallet/Transaction.tsx:892
 #, c-format
 msgid "Town location"
-msgstr ""
+msgstr "Ubicación de la ciudad"
 
 #: src/wallet/Transaction.tsx:900
 #, c-format
 msgid "Town"
-msgstr ""
+msgstr "Ciudad"
 
 #: src/wallet/Transaction.tsx:908
 #, c-format
 msgid "District"
-msgstr ""
+msgstr "Distrito"
 
 #: src/wallet/Transaction.tsx:916
 #, c-format
 msgid "Country subdivision"
-msgstr ""
+msgstr "Subdivisión de país"
 
 #: src/wallet/Transaction.tsx:935
 #, c-format
 msgid "Date"
-msgstr ""
+msgstr "Fecha"
 
 #: src/wallet/Transaction.tsx:990
 #, c-format
 msgid "Transaction fees"
-msgstr ""
+msgstr "Comisiones de transacción"
 
 #: src/wallet/Transaction.tsx:1004
 #, c-format
@@ -808,24 +821,24 @@ msgid "Withdraw"
 msgstr "Retirar"
 
 #: src/wallet/Transaction.tsx:1146
-#, fuzzy, c-format
+#, c-format
 msgid "Price"
-msgstr "Precios"
+msgstr "Precio"
 
 #: src/wallet/Transaction.tsx:1156
-#, fuzzy, c-format
+#, c-format
 msgid "Refunded"
-msgstr "Devolución"
+msgstr "Devuelto"
 
 #: src/wallet/Transaction.tsx:1220
 #, c-format
 msgid "Delivery"
-msgstr ""
+msgstr "Entrega"
 
 #: src/wallet/Transaction.tsx:1335
-#, fuzzy, c-format
+#, c-format
 msgid "Total transfer"
-msgstr "Total extraído"
+msgstr "Total transferido"
 
 #: src/cta/Payment/views.tsx:57
 #, c-format
@@ -848,9 +861,9 @@ msgid "Receipt"
 msgstr "Recibo"
 
 #: src/cta/Payment/views.tsx:156
-#, fuzzy, c-format
+#, c-format
 msgid "Valid until"
-msgstr "Copia de seguridad válida hasta"
+msgstr "Válido hasta"
 
 #: src/cta/Payment/views.tsx:191
 #, c-format
@@ -888,19 +901,19 @@ msgid "Hide QR"
 msgstr "Esconder QR"
 
 #: src/cta/Payment/views.tsx:305
-#, fuzzy, c-format
+#, c-format
 msgid "Scan the QR code or &nbsp; %1$s"
 msgstr "Escanear el código QR o %1$s"
 
 #: src/cta/Payment/views.tsx:346
-#, fuzzy, c-format
+#, c-format
 msgid "Pay &nbsp; %1$s"
 msgstr "Pagar %1$s"
 
 #: src/cta/Payment/views.tsx:360
 #, c-format
 msgid "You have no balance for this currency. Withdraw digital cash first."
-msgstr ""
+msgstr "No hay balance para esta divisa. Extraer dinero digital primero."
 
 #: src/cta/Payment/views.tsx:364
 #, c-format
@@ -908,11 +921,13 @@ msgid ""
 "Could not find enough coins to pay. Even if you have enough %1$s some "
 "restriction may apply."
 msgstr ""
+"No se encontraron suficientes monedas para pagar. Incluso si tuviera "
+"suficiente %1$s algunas restricciones se podrían aplicar."
 
 #: src/cta/Payment/views.tsx:366
-#, fuzzy, c-format
+#, c-format
 msgid "Your current balance is not enough."
-msgstr "Tu balance no es suficiente para pagar esta compra."
+msgstr "Tu balance no es suficiente."
 
 #: src/cta/Payment/views.tsx:395
 #, c-format
@@ -920,83 +935,79 @@ msgid "Merchant message"
 msgstr "Mensaje del comerciante"
 
 #: src/cta/Refund/views.tsx:34
-#, fuzzy, c-format
+#, c-format
 msgid "Could not load refund status"
-msgstr "No se pudo cargar el estado del pago"
+msgstr "No se pudo cargar el estado de la devolución"
 
 #: src/cta/Refund/views.tsx:48
-#, fuzzy, c-format
+#, c-format
 msgid "Digital cash refund"
-msgstr "Pago con dinero digital"
+msgstr "Devolución de dinero digital"
 
 #: src/cta/Refund/views.tsx:52
-#, fuzzy, c-format
+#, c-format
 msgid "You&apos;ve ignored the tip."
 msgstr "Has ignorado la propina."
 
 #: src/cta/Refund/views.tsx:70
-#, fuzzy, c-format
+#, c-format
 msgid "The refund is in progress."
-msgstr "El proceso de reembolso está todavía en progreso."
+msgstr "El proceso de devolución está en progreso."
 
 #: src/cta/Refund/views.tsx:76
-#, fuzzy, c-format
+#, c-format
 msgid "Total to refund"
-msgstr "Devolución total"
+msgstr "Total para devolver"
 
 #: src/cta/Refund/views.tsx:106
-#, fuzzy, c-format
+#, c-format
 msgid "The merchant &quot;%1$s&quot; is offering you a refund."
-msgstr ""
-"El comerciante %1$s te está ofreciendo una propina de %2$s a través del "
-"exchange %3$s"
+msgstr "El comerciante \"%1$s\" te está ofreciendo una devolución."
 
 #: src/cta/Refund/views.tsx:115
-#, fuzzy, c-format
+#, c-format
 msgid "Order amount"
-msgstr "Refrescar cantidad"
+msgstr "Monto de la orden"
 
 #: src/cta/Refund/views.tsx:122
-#, fuzzy, c-format
+#, c-format
 msgid "Already refunded"
-msgstr "Ya reclamado"
+msgstr "Ya devuelto"
 
 #: src/cta/Refund/views.tsx:129
-#, fuzzy, c-format
+#, c-format
 msgid "Refund offered"
-msgstr "Devolución"
+msgstr "Devolución ofrecida"
 
 #: src/cta/Refund/views.tsx:145
 #, c-format
 msgid "Accept &nbsp; %1$s"
-msgstr ""
+msgstr "Aceptar %1$s"
 
 #: src/cta/Tip/views.tsx:32
-#, fuzzy, c-format
+#, c-format
 msgid "Could not load tip status"
-msgstr "No se pudo cargar el estado del pago"
+msgstr "No se pudo cargar el estado de la propina"
 
 #: src/cta/Tip/views.tsx:45
-#, fuzzy, c-format
+#, c-format
 msgid "Digital cash tip"
-msgstr "Pago con dinero digital"
+msgstr "Propina con dinero digital"
 
 #: src/cta/Tip/views.tsx:66
-#, fuzzy, c-format
+#, c-format
 msgid "The merchant is offering you a tip"
-msgstr ""
-"El comerciante %1$s te está ofreciendo una propina de %2$s a través del "
-"exchange %3$s"
+msgstr "El comerciante te ofrece una propina"
 
 #: src/cta/Tip/views.tsx:74
-#, fuzzy, c-format
+#, c-format
 msgid "Merchant URL"
-msgstr "Comerciante"
+msgstr "URL del comerciante"
 
 #: src/cta/Tip/views.tsx:90
 #, c-format
 msgid "Receive &nbsp; %1$s"
-msgstr ""
+msgstr "Recibir %1$s"
 
 #: src/cta/Tip/views.tsx:114
 #, c-format
@@ -1010,9 +1021,9 @@ msgid "Select one option"
 msgstr "Seleccione una opción"
 
 #: src/components/TermsOfService/views.tsx:39
-#, fuzzy, c-format
+#, c-format
 msgid "Could not load"
-msgstr "No se pudo cargar el estado del pago"
+msgstr "No se pudo cargar"
 
 #: src/components/TermsOfService/views.tsx:73
 #, c-format
@@ -1025,7 +1036,7 @@ msgid "I accept the exchange terms of service"
 msgstr "Yo acepto los términos de servicio del exchange"
 
 #: src/components/TermsOfService/views.tsx:107
-#, fuzzy, c-format
+#, c-format
 msgid "Exchange doesn&apos;t have terms of service"
 msgstr "El exchange no tiene los términos de servicio"
 
@@ -1055,34 +1066,34 @@ msgid "Hide terms of service"
 msgstr "Esconder los términos de servicio"
 
 #: src/wallet/ExchangeSelection/views.tsx:117
-#, fuzzy, c-format
+#, c-format
 msgid "Could not load exchange fees"
-msgstr "No se pudo cargar la página"
+msgstr "No se pudo cargar la comisión del exchange"
 
 #: src/wallet/ExchangeSelection/views.tsx:131
 #, c-format
 msgid "Close"
-msgstr ""
+msgstr "Cerrar"
 
 #: src/wallet/ExchangeSelection/views.tsx:160
-#, fuzzy, c-format
+#, c-format
 msgid "could not find any exchange"
-msgstr "Agregar un exchange"
+msgstr "No se pudo encontrar ningún exchange"
 
 #: src/wallet/ExchangeSelection/views.tsx:166
 #, c-format
 msgid "could not find any exchange for the currency %1$s"
-msgstr ""
+msgstr "No se pudo encontrar ningún exchange para la divisa %1$s"
 
 #: src/wallet/ExchangeSelection/views.tsx:186
 #, c-format
 msgid "Service fee description"
-msgstr ""
+msgstr "Descripción de comisión de servicio"
 
 #: src/wallet/ExchangeSelection/views.tsx:201
-#, fuzzy, c-format
+#, c-format
 msgid "Select %1$s exchange"
-msgstr "Cambiar exchange"
+msgstr "Seleccionar exchange %1$s"
 
 #: src/wallet/ExchangeSelection/views.tsx:215
 #, c-format
@@ -1090,44 +1101,44 @@ msgid "Reset"
 msgstr "Reiniciar"
 
 #: src/wallet/ExchangeSelection/views.tsx:218
-#, fuzzy, c-format
+#, c-format
 msgid "Use this exchange"
-msgstr "No fue posible agregar este exchange"
+msgstr "Usar este exchange"
 
 #: src/wallet/ExchangeSelection/views.tsx:230
 #, c-format
 msgid "Doesn&apos;t have auditors"
-msgstr ""
+msgstr "No tiene auditores"
 
 #: src/wallet/ExchangeSelection/views.tsx:241
-#, fuzzy, c-format
+#, c-format
 msgid "currency"
 msgstr "Divisa"
 
 #: src/wallet/ExchangeSelection/views.tsx:249
-#, fuzzy, c-format
+#, c-format
 msgid "Operations"
-msgstr "Operaciones pendientes"
+msgstr "Operaciones"
 
 #: src/wallet/ExchangeSelection/views.tsx:252
-#, fuzzy, c-format
+#, c-format
 msgid "Deposits"
-msgstr "Depósito"
+msgstr "Depósitos"
 
 #: src/wallet/ExchangeSelection/views.tsx:259
-#, fuzzy, c-format
+#, c-format
 msgid "Denomination"
-msgstr "Operaciones pendientes"
+msgstr "Operaciones"
 
 #: src/wallet/ExchangeSelection/views.tsx:265
 #, c-format
 msgid "Until"
-msgstr ""
+msgstr "Hasta"
 
 #: src/wallet/ExchangeSelection/views.tsx:274
-#, fuzzy, c-format
+#, c-format
 msgid "Withdrawals"
-msgstr "Retirada"
+msgstr "Retiradas"
 
 #: src/wallet/ExchangeSelection/views.tsx:423
 #, c-format
@@ -1135,9 +1146,9 @@ msgid "Currency"
 msgstr "Divisa"
 
 #: src/wallet/ExchangeSelection/views.tsx:433
-#, fuzzy, c-format
+#, c-format
 msgid "Coin operations"
-msgstr "Operaciones pendientes"
+msgstr "Operaciones de moneda"
 
 #: src/wallet/ExchangeSelection/views.tsx:436
 #, c-format
@@ -1146,11 +1157,14 @@ msgid ""
 "is valid for a period of time. The exchange will charge the indicated amount "
 "every time a coin is used in such operation."
 msgstr ""
+"Toda operación en esta sección puede ser diferente por valor de denominación "
+"y es válida por un período. El exchange cobrará el monto indicado cada vez "
+"que una es usada en dicha operación."
 
 #: src/wallet/ExchangeSelection/views.tsx:545
-#, fuzzy, c-format
+#, c-format
 msgid "Transfer operations"
-msgstr "Operaciones pendientes"
+msgstr "Operaciones de transferencia"
 
 #: src/wallet/ExchangeSelection/views.tsx:548
 #, c-format
@@ -1159,21 +1173,24 @@ msgid ""
 "valid for a period of time. The exchange will charge the indicated amount "
 "every time a transfer is made."
 msgstr ""
+"Toda operación en esta sección puede ser diferente por tipo de transacción y "
+"es válida por un período. El exchange cobrará el monto indicado cada vez que "
+"se haga una transferencia."
 
 #: src/wallet/ExchangeSelection/views.tsx:563
 #, c-format
 msgid "Operation"
-msgstr ""
+msgstr "Operación"
 
 #: src/wallet/ExchangeSelection/views.tsx:583
-#, fuzzy, c-format
+#, c-format
 msgid "Wallet operations"
-msgstr "Operaciones pendientes"
+msgstr "Operaciones de billetera"
 
 #: src/wallet/ExchangeSelection/views.tsx:597
 #, c-format
 msgid "Feature"
-msgstr ""
+msgstr "Característica"
 
 #: src/cta/Withdraw/views.tsx:47
 #, c-format
@@ -1181,9 +1198,9 @@ msgid "Could not get the info from the URI"
 msgstr "No se pudo obtener la información desde la URI"
 
 #: src/cta/Withdraw/views.tsx:60
-#, fuzzy, c-format
+#, c-format
 msgid "Could not get info of withdrawal"
-msgstr "No se pudo obtener la información desde la URI"
+msgstr "No se pudo obtener la información de retiro"
 
 #: src/cta/Withdraw/views.tsx:74
 #, c-format
@@ -1198,57 +1215,57 @@ msgstr "No se pudo completar la operación de retirada"
 #: src/cta/Withdraw/views.tsx:127
 #, c-format
 msgid "Age restriction"
-msgstr ""
+msgstr "Restricción etaria"
 
 #: src/cta/Withdraw/views.tsx:145
 #, c-format
 msgid "Withdraw &nbsp; %1$s"
-msgstr ""
+msgstr "Retirar %1$s"
 
 #: src/cta/Withdraw/views.tsx:179
-#, fuzzy, c-format
+#, c-format
 msgid "Withdraw to a mobile phone"
-msgstr "Pagar con un teléfono móbil"
+msgstr "Retirar con un teléfono móvil"
 
 #: src/cta/InvoiceCreate/views.tsx:65
 #, c-format
 msgid "Digital invoice"
-msgstr ""
+msgstr "Factura digital"
 
 #: src/cta/InvoiceCreate/views.tsx:69
-#, fuzzy, c-format
+#, c-format
 msgid "Could not finish the invoice creation"
-msgstr "No se pudo completar la operación de retirada"
+msgstr "No se pudo completar la creación de la factura"
 
 #: src/cta/InvoiceCreate/views.tsx:130
 #, c-format
 msgid "Create"
-msgstr ""
+msgstr "Crear"
 
 #: src/cta/InvoicePay/views.tsx:63
-#, fuzzy, c-format
+#, c-format
 msgid "Could not finish the payment operation"
-msgstr "No se pudo completar la operación de retirada"
+msgstr "No se pudo completar la operación de pago"
 
 #: src/cta/TransferCreate/views.tsx:55
-#, fuzzy, c-format
+#, c-format
 msgid "Digital cash transfer"
-msgstr "Pago con dinero digital"
+msgstr "Transferencia de dinero digital"
 
 #: src/cta/TransferCreate/views.tsx:59
-#, fuzzy, c-format
+#, c-format
 msgid "Could not finish the transfer creation"
-msgstr "No se pudo completar la operación de retirada"
+msgstr "No se pudo completar la operación de creación de transferencia"
 
 #: src/cta/TransferPickup/views.tsx:57
-#, fuzzy, c-format
+#, c-format
 msgid "Could not finish the pickup operation"
-msgstr "No se pudo completar la operación de retirada"
+msgstr "No se pudo completar la operación de recolección"
 
 #: src/wallet/CreateManualWithdraw.tsx:149
-#, fuzzy, c-format
+#, c-format
 msgid "Manual Withdrawal for %1$s"
-msgstr "Retirada Manual"
+msgstr "Retirada Manual para %1$s"
 
 #: src/wallet/CreateManualWithdraw.tsx:154
 #, c-format
@@ -1262,9 +1279,9 @@ msgstr ""
 "bancaria con el asunto correcto."
 
 #: src/wallet/CreateManualWithdraw.tsx:162
-#, fuzzy, c-format
+#, c-format
 msgid "No exchange found for %1$s"
-msgstr "Agregar exchange para %1$s"
+msgstr "No se encontró exchange para %1$s"
 
 #: src/wallet/CreateManualWithdraw.tsx:170
 #, c-format
@@ -1277,7 +1294,7 @@ msgid "No exchange configured"
 msgstr "Sin exchange configurado"
 
 #: src/wallet/CreateManualWithdraw.tsx:210
-#, fuzzy, c-format
+#, c-format
 msgid "Can&apos;t create the reserve"
 msgstr "No se pudo crear una reserva"
 
@@ -1287,19 +1304,19 @@ msgid "Start withdrawal"
 msgstr "Comenzar la retirada"
 
 #: src/wallet/DepositPage/views.tsx:38
-#, fuzzy, c-format
+#, c-format
 msgid "Could not load deposit balance"
-msgstr "No se pudo cargar la página"
+msgstr "No se pudo cargar el balance de depósito"
 
 #: src/wallet/DepositPage/views.tsx:51
 #, c-format
 msgid "A currency or an amount should be indicated"
-msgstr ""
+msgstr "Se debería especificar una divisa o un monto"
 
 #: src/wallet/DepositPage/views.tsx:67
 #, c-format
 msgid "There is no enough balance to make a deposit for currency %1$s"
-msgstr ""
+msgstr "No hay suficiente balance para hacer un depósito para la divisa %1$s"
 
 #: src/wallet/DepositPage/views.tsx:117
 #, c-format
@@ -1309,22 +1326,22 @@ msgstr "Enviar %1$s a tu cuenta"
 #: src/wallet/DepositPage/views.tsx:121
 #, c-format
 msgid "There is no account to make a deposit for currency %1$s"
-msgstr ""
+msgstr "No hay una cuenta para hacer un depósito para la divisa %1$s"
 
 #: src/wallet/DepositPage/views.tsx:127
-#, fuzzy, c-format
+#, c-format
 msgid "Add account"
-msgstr "Cuenta"
+msgstr "Agregar cuenta"
 
 #: src/wallet/DepositPage/views.tsx:151
-#, fuzzy, c-format
+#, c-format
 msgid "Select account"
-msgstr "Seleccione una opción"
+msgstr "Seleccionar cuenta"
 
 #: src/wallet/DepositPage/views.tsx:163
-#, fuzzy, c-format
+#, c-format
 msgid "Add another account"
-msgstr "Cuenta del banco"
+msgstr "Agregar otra cuenta"
 
 #: src/wallet/DepositPage/views.tsx:191
 #, c-format
@@ -1337,14 +1354,14 @@ msgid "Total deposit"
 msgstr "Depósito total"
 
 #: src/wallet/DepositPage/views.tsx:233
-#, fuzzy, c-format
+#, c-format
 msgid "Deposit&nbsp;%1$s %2$s"
 msgstr "Depositar %1$s %2$s"
 
 #: src/wallet/AddAccount/views.tsx:56
-#, fuzzy, c-format
+#, c-format
 msgid "Add bank account for %1$s"
-msgstr "Agregar exchange para %1$s"
+msgstr "Agregar cuenta de banco para %1$s"
 
 #: src/wallet/AddAccount/views.tsx:59
 #, c-format
@@ -1352,14 +1369,14 @@ msgid "Enter the URL of an exchange you trust."
 msgstr "Ingresar la URL de un exchange en el que confíes."
 
 #: src/wallet/AddAccount/views.tsx:66
-#, fuzzy, c-format
+#, c-format
 msgid "Unable add this account"
-msgstr "No fue posible agregar este exchange"
+msgstr "No fue posible agregar esta cuenta"
 
 #: src/wallet/AddAccount/views.tsx:73
-#, fuzzy, c-format
+#, c-format
 msgid "Select account type"
-msgstr "Seleccione una opción"
+msgstr "Seleccione un tipo de cuenta"
 
 #: src/wallet/ExchangeAddConfirm.tsx:42
 #, c-format
@@ -1393,7 +1410,7 @@ msgstr ""
 "Un exchange ha sido encontrado! Revisa la información y haz clic en siguiente"
 
 #: src/wallet/ExchangeSetUrl.tsx:135
-#, fuzzy, c-format
+#, c-format
 msgid "This exchange doesn&apos;t match the expected currency %1$s"
 msgstr "Este exchange no coincide con la divisa %1$s esperada"
 
@@ -1438,9 +1455,9 @@ msgid "Could not load the list of transactions"
 msgstr "No se pudo cargar la lista de transacciones"
 
 #: src/wallet/History.tsx:233
-#, fuzzy, c-format
+#, c-format
 msgid "Your transaction history is empty for this currency."
-msgstr "No hay historial para esta divisa"
+msgstr "No hay historial para esta divisa."
 
 #: src/wallet/ProviderAddPage.tsx:127
 #, c-format
@@ -1473,9 +1490,9 @@ msgid "Provider URL"
 msgstr "URL del proveedor"
 
 #: src/wallet/ProviderAddPage.tsx:218
-#, fuzzy, c-format
+#, c-format
 msgid "Please review and accept this provider&apos;s terms of service"
-msgstr "Por favor revisa y acepta, los términos de servicio del proveedor"
+msgstr "Por favor revisa y acepta los términos de servicio del proveedor"
 
 #: src/wallet/ProviderAddPage.tsx:223
 #, c-format
@@ -1508,14 +1525,14 @@ msgid "Accept terms of service"
 msgstr "Aceptar los términos de servicio"
 
 #: src/wallet/ReserveCreated.tsx:44
-#, fuzzy, c-format
+#, c-format
 msgid "Could not parse the payto URI"
-msgstr "No se pudo obtener la información desde la URI"
+msgstr "No se pudo obtener la información de la URI payto"
 
 #: src/wallet/ReserveCreated.tsx:45
 #, c-format
 msgid "Please check the uri"
-msgstr ""
+msgstr "Revisar la URI"
 
 #: src/wallet/ReserveCreated.tsx:75
 #, c-format
@@ -1523,13 +1540,13 @@ msgid "Exchange is ready for withdrawal"
 msgstr "El exchange está listo para la retirada"
 
 #: src/wallet/ReserveCreated.tsx:78
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "To complete the process you need to wire%1$s %2$s to the exchange bank "
 "account"
 msgstr ""
-"Para completar el proceso necesitas transferir %1$s a la cuenta bancaria del "
-"exchange"
+"Para completar el proceso necesitas transferir %1$s %2$s a la cuenta "
+"bancaria del exchange"
 
 #: src/wallet/ReserveCreated.tsx:87
 #, c-format
@@ -1546,14 +1563,14 @@ msgid "Cancel withdrawal"
 msgstr "Cancelar retirada"
 
 #: src/wallet/Settings.tsx:115
-#, fuzzy, c-format
+#, c-format
 msgid "Could not toggle auto-open"
-msgstr "No se pudo cargar la página"
+msgstr "No se pudo cambiar el auto-open"
 
 #: src/wallet/Settings.tsx:121
-#, fuzzy, c-format
+#, c-format
 msgid "Could not toggle clipboard"
-msgstr "No se pudo cargar la página"
+msgstr "No se pudo cambiar portapapeles"
 
 #: src/wallet/Settings.tsx:126
 #, c-format
@@ -1577,7 +1594,7 @@ msgstr ""
 #: src/wallet/Settings.tsx:145
 #, c-format
 msgid "Automatically check clipboard for Taler URI"
-msgstr ""
+msgstr "Revisar el portapapeles automáticamente por Taler URI"
 
 #: src/wallet/Settings.tsx:162
 #, c-format
@@ -1612,7 +1629,7 @@ msgstr "no aceptado"
 #: src/wallet/Settings.tsx:210
 #, c-format
 msgid "unknown (exchange status should be updated)"
-msgstr ""
+msgstr "desconocido (el estado del exchange debería actualizarse)"
 
 #: src/wallet/Settings.tsx:236
 #, c-format
@@ -1622,7 +1639,7 @@ msgstr "Agregar un exchange"
 #: src/wallet/Settings.tsx:241
 #, c-format
 msgid "Troubleshooting"
-msgstr ""
+msgstr "Solución de problemas"
 
 #: src/wallet/Settings.tsx:244
 #, c-format
@@ -1630,9 +1647,9 @@ msgid "Developer mode"
 msgstr "Modo desarrollador"
 
 #: src/wallet/Settings.tsx:246
-#, fuzzy, c-format
+#, c-format
 msgid "More options and information useful for debugging"
-msgstr "(Más información y opciones útiles para depuración)"
+msgstr "Más información y opciones útiles para depuración"
 
 #: src/wallet/Settings.tsx:257
 #, c-format
@@ -1647,27 +1664,27 @@ msgstr "Lenguaje actual"
 #: src/wallet/Settings.tsx:274
 #, c-format
 msgid "Wallet Core"
-msgstr ""
+msgstr "Wallet core"
 
 #: src/wallet/Settings.tsx:284
 #, c-format
 msgid "Web Extension"
-msgstr ""
+msgstr "Web Extension"
 
 #: src/wallet/Settings.tsx:295
 #, c-format
 msgid "Exchange compatibility"
-msgstr ""
+msgstr "Compatibilidad con Exchange"
 
 #: src/wallet/Settings.tsx:299
 #, c-format
 msgid "Merchant compatibility"
-msgstr ""
+msgstr "Compatibilidad con Merchant"
 
 #: src/wallet/Settings.tsx:303
 #, c-format
 msgid "Bank compatibility"
-msgstr ""
+msgstr "Compatibilidad con Bank"
 
 #: src/wallet/Welcome.tsx:59
 #, c-format
@@ -1677,7 +1694,7 @@ msgstr "Extensión del navegador instalada!"
 #: src/wallet/Welcome.tsx:63
 #, c-format
 msgid "You can open the GNU Taler Wallet using the combination %1$s ."
-msgstr ""
+msgstr "Puedes abrir GNU Taler Wallet usando la combinación %1$s."
 
 #: src/wallet/Welcome.tsx:72
 #, c-format
@@ -1685,21 +1702,23 @@ msgid ""
 "Also pinning the GNU Taler Wallet to your Chrome browser allows you to quick "
 "access without keyboard:"
 msgstr ""
+"También fijando GNU Taler Wallet a to navegador Chrome permite un acceso "
+"rápido sin el teclado:"
 
 #: src/wallet/Welcome.tsx:79
 #, c-format
 msgid "Click the puzzle icon"
-msgstr ""
+msgstr "Haz click en el ícono de rompecabezas"
 
 #: src/wallet/Welcome.tsx:82
 #, c-format
 msgid "Search for GNU Taler Wallet"
-msgstr ""
+msgstr "Busca \"GNU Taler Wallet\""
 
 #: src/wallet/Welcome.tsx:85
 #, c-format
 msgid "Click the pin icon"
-msgstr ""
+msgstr "Haz click en el ícono de fijar"
 
 #: src/wallet/Welcome.tsx:91
 #, c-format
@@ -1786,12 +1805,12 @@ msgstr "Reiniciar"
 #: src/wallet/DeveloperPage.tsx:183
 #, c-format
 msgid "TESTING: This may delete all your coin, proceed with caution"
-msgstr ""
+msgstr "TESTING: Esto puede borrar todas tus monedas, proceder con precaución"
 
 #: src/wallet/DeveloperPage.tsx:189
 #, c-format
 msgid "run gc"
-msgstr ""
+msgstr "Ejecutar GC"
 
 #: src/wallet/DeveloperPage.tsx:197
 #, c-format
@@ -1849,9 +1868,9 @@ msgid "from refresh?"
 msgstr "desde refresco?"
 
 #: src/wallet/DeveloperPage.tsx:352
-#, fuzzy, c-format
+#, c-format
 msgid "age key count"
-msgstr "Cuenta del banco"
+msgstr "cantidad de age key"
 
 #: src/wallet/DeveloperPage.tsx:369
 #, c-format
@@ -1866,122 +1885,122 @@ msgstr "hacer clic para mostrar"
 #: src/wallet/QrReader.tsx:108
 #, c-format
 msgid "Scan a QR code or enter taler:// URI below"
-msgstr ""
+msgstr "Escanear un código QR o ingresar taler:// URI debajo"
 
 #: src/wallet/QrReader.tsx:122
 #, c-format
 msgid "Open"
-msgstr ""
+msgstr "Abrir"
 
 #: src/wallet/QrReader.tsx:128
 #, c-format
 msgid "URI is not valid. Taler URI should start with `taler://`"
-msgstr ""
+msgstr "El URI no es válido. Taler URI debería comenzar con `taler://`"
 
 #: src/wallet/QrReader.tsx:133
-#, fuzzy, c-format
+#, c-format
 msgid "Try another"
-msgstr "Probar la demostración"
+msgstr "Intentar otro"
 
 #: src/wallet/DestinationSelection.tsx:183
-#, fuzzy, c-format
+#, c-format
 msgid "Could not load list of exchange"
-msgstr "No se pudo cargar la lista de exchange conocidos"
+msgstr "No se pudo cargar la lista de exchange"
 
 #: src/wallet/DestinationSelection.tsx:209
 #, c-format
 msgid "Choose a currency to proceed or add another exchange"
-msgstr ""
+msgstr "Elija una divisa para proceder o agregue otro exchange"
 
 #: src/wallet/DestinationSelection.tsx:217
-#, fuzzy, c-format
+#, c-format
 msgid "Known currencies"
-msgstr "Exchange conocidos"
+msgstr "Divisas conocidas"
 
 #: src/wallet/DestinationSelection.tsx:318
 #, c-format
 msgid "Specify the amount and the origin"
-msgstr ""
+msgstr "Indicar el monto y el origen"
 
 #: src/wallet/DestinationSelection.tsx:336
-#, fuzzy, c-format
+#, c-format
 msgid "Change currency"
-msgstr "Divisa"
+msgstr "Cambiar divisa"
 
 #: src/wallet/DestinationSelection.tsx:344
 #, c-format
 msgid "Use previous origins:"
-msgstr ""
+msgstr "Usar un origen previo:"
 
 #: src/wallet/DestinationSelection.tsx:364
 #, c-format
 msgid "Or specify the origin of the money"
-msgstr ""
+msgstr "O especificar el origen del dinero"
 
 #: src/wallet/DestinationSelection.tsx:372
 #, c-format
 msgid "Specify the origin of the money"
-msgstr ""
+msgstr "Especificar el origen del dinero"
 
 #: src/wallet/DestinationSelection.tsx:380
-#, fuzzy, c-format
+#, c-format
 msgid "From my bank account"
-msgstr "Cuenta del banco"
+msgstr "Desde mi cuenta de banco"
 
 #: src/wallet/DestinationSelection.tsx:395
 #, c-format
 msgid "From another wallet"
-msgstr ""
+msgstr "Desde otra billetera"
 
 #: src/wallet/DestinationSelection.tsx:449
 #, c-format
 msgid "currency not provided"
-msgstr ""
+msgstr "Divisa no provista"
 
 #: src/wallet/DestinationSelection.tsx:459
 #, c-format
 msgid "Specify the amount and the destination"
-msgstr ""
+msgstr "Especificar el monto y el destino"
 
 #: src/wallet/DestinationSelection.tsx:483
 #, c-format
 msgid "Use previous destinations:"
-msgstr ""
+msgstr "Usar destinos previos:"
 
 #: src/wallet/DestinationSelection.tsx:503
 #, c-format
 msgid "Or specify the destination of the money"
-msgstr ""
+msgstr "O especificar el destino del dinero"
 
 #: src/wallet/DestinationSelection.tsx:511
 #, c-format
 msgid "Specify the destination of the money"
-msgstr ""
+msgstr "Especificar el destino del dinero"
 
 #: src/wallet/DestinationSelection.tsx:521
-#, fuzzy, c-format
+#, c-format
 msgid "To my bank account"
-msgstr "Cuenta del banco"
+msgstr "Hacia mi cuenta de banco"
 
 #: src/wallet/DestinationSelection.tsx:534
 #, c-format
 msgid "To another wallet"
-msgstr ""
+msgstr "Hacia otra billetera"
 
 #: src/cta/Recovery/views.tsx:30
-#, fuzzy, c-format
+#, c-format
 msgid "Could not load backup recovery information"
-msgstr "No se pudo conseguir la información del proveedor"
+msgstr "No se pudo cargar la información de recuperación de copia de seguridad"
 
 #: src/cta/Recovery/views.tsx:47
 #, c-format
 msgid "Digital wallet recovery"
-msgstr ""
+msgstr "Recuperación de billetera digital"
 
 #: src/cta/Recovery/views.tsx:52
 #, c-format
 msgid "Import backup, show info"
-msgstr ""
+msgstr "Importar copia de seguridad, mostrar información"
 
 #: src/wallet/Application.tsx:189
 #, c-format
