@@ -19,6 +19,7 @@ import {
   ExchangeTosStatus,
   WalletCoreVersion,
 } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
 import { Checkbox } from "../components/Checkbox.js";
 import { ErrorTalerOperation } from "../components/ErrorTalerOperation.js";
@@ -36,26 +37,26 @@ import {
 import { useDevContext } from "../context/devContext.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
-import { useBackupDeviceName } from "../hooks/useBackupDeviceName.js";
 import { useAutoOpenPermissions } from "../hooks/useAutoOpenPermissions.js";
+import { useBackupDeviceName } from "../hooks/useBackupDeviceName.js";
+import { useClipboardPermissions } from "../hooks/useClipboardPermissions.js";
 import { ToggleHandler } from "../mui/handlers.js";
 import { Pages } from "../NavigationBar.js";
-import * as wxApi from "../wxApi.js";
 import { platform } from "../platform/api.js";
-import { useClipboardPermissions } from "../hooks/useClipboardPermissions.js";
+import { wxClient } from "../wxApi.js";
 
 const GIT_HASH = typeof __GIT_HASH__ !== "undefined" ? __GIT_HASH__ : undefined;
 
 export function SettingsPage(): VNode {
   const autoOpenToggle = useAutoOpenPermissions();
   const clipboardToggle = useClipboardPermissions();
-  const { devMode, toggleDevMode } = useDevContext();
+  const { devModeToggle } = useDevContext();
   const { name, update } = useBackupDeviceName();
   const webex = platform.getWalletWebExVersion();
 
   const exchangesHook = useAsyncAsHook(async () => {
-    const list = await wxApi.listExchanges();
-    const version = await wxApi.getVersion();
+    const list = await wxClient.call(WalletApiOperation.ListExchanges, {});
+    const version = await wxClient.call(WalletApiOperation.GetVersion, {});
     return { exchanges: list.exchanges, version };
   });
   const { exchanges, version } =
@@ -70,8 +71,7 @@ export function SettingsPage(): VNode {
       setDeviceName={update}
       autoOpenToggle={autoOpenToggle}
       clipboardToggle={clipboardToggle}
-      developerMode={devMode}
-      toggleDeveloperMode={toggleDevMode}
+      devModeToggle={devModeToggle}
       webexVersion={{
         version: webex.version,
         hash: GIT_HASH,
@@ -86,8 +86,7 @@ export interface ViewProps {
   setDeviceName: (s: string) => Promise<void>;
   autoOpenToggle: ToggleHandler;
   clipboardToggle: ToggleHandler;
-  developerMode: boolean;
-  toggleDeveloperMode: () => Promise<void>;
+  devModeToggle: ToggleHandler;
   knownExchanges: Array<ExchangeListItem>;
   coreVersion: WalletCoreVersion | undefined;
   webexVersion: {
@@ -100,10 +99,9 @@ export function SettingsView({
   knownExchanges,
   autoOpenToggle,
   clipboardToggle,
-  developerMode,
+  devModeToggle,
   coreVersion,
   webexVersion,
-  toggleDeveloperMode,
 }: ViewProps): VNode {
   const { i18n, lang, supportedLang, changeLanguage } = useTranslationContext();
 
@@ -248,8 +246,8 @@ export function SettingsView({
               More options and information useful for debugging
             </i18n.Translate>
           }
-          enabled={developerMode}
-          onToggle={toggleDeveloperMode}
+          enabled={devModeToggle.value!}
+          onToggle={devModeToggle.button.onClick!}
         />
 
         <JustInDevMode>

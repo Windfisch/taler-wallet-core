@@ -37,6 +37,7 @@ const version = {
     bank: "0:0:0",
     hash: "d439c3e1bc743f2aa47de4457953dba6ecb0e20f",
     version: "0.9.0-dev.1",
+    devMode: false,
   },
   webexVersion: {
     version: "0.9.0.13",
@@ -46,6 +47,7 @@ const version = {
 
 export const AllOff = createExample(TestedComponent, {
   deviceName: "this-is-the-device-name",
+  devModeToggle: { value: false, button: {} },
   autoOpenToggle: { value: false, button: {} },
   clipboardToggle: { value: false, button: {} },
   setDeviceName: () => Promise.resolve(),
@@ -54,6 +56,7 @@ export const AllOff = createExample(TestedComponent, {
 
 export const OneChecked = createExample(TestedComponent, {
   deviceName: "this-is-the-device-name",
+  devModeToggle: { value: false, button: {} },
   autoOpenToggle: { value: false, button: {} },
   clipboardToggle: { value: false, button: {} },
   setDeviceName: () => Promise.resolve(),
@@ -62,6 +65,7 @@ export const OneChecked = createExample(TestedComponent, {
 
 export const WithOneExchange = createExample(TestedComponent, {
   deviceName: "this-is-the-device-name",
+  devModeToggle: { value: false, button: {} },
   autoOpenToggle: { value: false, button: {} },
   clipboardToggle: { value: false, button: {} },
   setDeviceName: () => Promise.resolve(),
@@ -83,6 +87,7 @@ export const WithOneExchange = createExample(TestedComponent, {
 
 export const WithExchangeInDifferentState = createExample(TestedComponent, {
   deviceName: "this-is-the-device-name",
+  devModeToggle: { value: false, button: {} },
   autoOpenToggle: { value: false, button: {} },
   clipboardToggle: { value: false, button: {} },
   setDeviceName: () => Promise.resolve(),
