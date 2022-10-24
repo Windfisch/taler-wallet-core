@@ -697,7 +697,7 @@ export interface WalletCoreVersion {
   exchange: string;
   merchant: string;
   bank: string;
-  devMode?: boolean;
+  devMode: boolean;
 }
 
 export interface KnownBankAccountsInfo {

@@ -177,6 +177,7 @@ export enum WalletApiOperation {
 
 // group: Initialization
 
+type EmptyObject = Record<string, never>;
 /**
  * Initialize wallet-core.
  *
@@ -184,13 +185,13 @@ export enum WalletApiOperation {
  */
 export type InitWalletOp = {
   op: WalletApiOperation.InitWallet;
-  request: {};
+  request: EmptyObject;
   response: InitResponse;
 };
 
 export type GetVersionOp = {
   op: WalletApiOperation.GetVersion;
-  request: {};
+  request: EmptyObject;
   response: WalletCoreVersion;
 };
 
@@ -201,7 +202,7 @@ export type GetVersionOp = {
  */
 export type GetBalancesOp = {
   op: WalletApiOperation.GetBalances;
-  request: {};
+  request: EmptyObject;
   response: BalancesResponse;
 };
 
@@ -224,8 +225,8 @@ export type GetTransactionByIdOp = {
 
 export type RetryPendingNowOp = {
   op: WalletApiOperation.RetryPendingNow;
-  request: {};
-  response: {};
+  request: EmptyObject;
+  response: EmptyObject;
 };
 
 /**
@@ -234,7 +235,7 @@ export type RetryPendingNowOp = {
 export type DeleteTransactionOp = {
   op: WalletApiOperation.DeleteTransaction;
   request: DeleteTransactionRequest;
-  response: {};
+  response: EmptyObject;
 };
 
 /**
@@ -243,7 +244,7 @@ export type DeleteTransactionOp = {
 export type RetryTransactionOp = {
   op: WalletApiOperation.RetryTransaction;
   request: RetryTransactionRequest;
-  response: {};
+  response: EmptyObject;
 };
 
 // group: Withdrawals
@@ -317,7 +318,7 @@ export type ConfirmPayOp = {
 export type AbortPayWithRefundOp = {
   op: WalletApiOperation.AbortFailedPayWithRefund;
   request: AbortPayWithRefundRequest;
-  response: {};
+  response: EmptyObject;
 };
 
 /**
@@ -358,7 +359,7 @@ export type PrepareTipOp = {
 export type AcceptTipOp = {
   op: WalletApiOperation.AcceptTip;
   request: AcceptTipRequest;
-  response: {};
+  response: EmptyObject;
 };
 
 // group: Exchange Management
@@ -368,7 +369,7 @@ export type AcceptTipOp = {
  */
 export type ListExchangesOp = {
   op: WalletApiOperation.ListExchanges;
-  request: {};
+  request: EmptyObject;
   response: ExchangesListResponse;
 };
 
@@ -378,7 +379,7 @@ export type ListExchangesOp = {
 export type AddExchangeOp = {
   op: WalletApiOperation.AddExchange;
   request: AddExchangeRequest;
-  response: {};
+  response: EmptyObject;
 };
 
 export type ListKnownBankAccountsOp = {
@@ -390,13 +391,13 @@ export type ListKnownBankAccountsOp = {
 export type AddKnownBankAccountsOp = {
   op: WalletApiOperation.AddKnownBankAccounts;
   request: AddKnownBankAccountsRequest;
-  response: {};
+  response: EmptyObject;
 };
 
 export type ForgetKnownBankAccountsOp = {
   op: WalletApiOperation.ForgetKnownBankAccounts;
   request: ForgetKnownBankAccountsRequest;
-  response: {};
+  response: EmptyObject;
 };
 
 /**
@@ -405,7 +406,7 @@ export type ForgetKnownBankAccountsOp = {
 export type SetExchangeTosAcceptedOp = {
   op: WalletApiOperation.SetExchangeTosAccepted;
   request: AcceptExchangeTosRequest;
-  response: {};
+  response: EmptyObject;
 };
 
 /**
@@ -431,7 +432,7 @@ export type GetExchangeDetailedInfoOp = {
  */
 export type ListCurrenciesOp = {
   op: WalletApiOperation.ListCurrencies;
-  request: {};
+  request: EmptyObject;
   response: WalletCurrencyInfo;
 };
 
@@ -477,7 +478,7 @@ export type PrepareDepositOp = {
  */
 export type ExportBackupRecoveryOp = {
   op: WalletApiOperation.ExportBackupRecovery;
-  request: {};
+  request: EmptyObject;
   response: BackupRecovery;
 };
 
@@ -487,7 +488,7 @@ export type ExportBackupRecoveryOp = {
 export type ImportBackupRecoveryOp = {
   op: WalletApiOperation.ImportBackupRecovery;
   request: RecoveryLoadRequest;
-  response: {};
+  response: EmptyObject;
 };
 
 /**
@@ -495,14 +496,14 @@ export type ImportBackupRecoveryOp = {
  */
 export type RunBackupCycleOp = {
   op: WalletApiOperation.RunBackupCycle;
-  request: {};
-  response: {};
+  request: EmptyObject;
+  response: EmptyObject;
 };
 
 export type ExportBackupOp = {
   op: WalletApiOperation.ExportBackup;
-  request: {};
-  response: {};
+  request: EmptyObject;
+  response: EmptyObject;
 };
 
 /**
@@ -511,13 +512,13 @@ export type ExportBackupOp = {
 export type AddBackupProviderOp = {
   op: WalletApiOperation.AddBackupProvider;
   request: AddBackupProviderRequest;
-  response: {};
+  response: EmptyObject;
 };
 
 export type RemoveBackupProviderOp = {
   op: WalletApiOperation.RemoveBackupProvider;
   request: RemoveBackupProviderRequest;
-  response: {};
+  response: EmptyObject;
 };
 
 /**
@@ -525,7 +526,7 @@ export type RemoveBackupProviderOp = {
  */
 export type GetBackupInfoOp = {
   op: WalletApiOperation.GetBackupInfo;
-  request: {};
+  request: EmptyObject;
   response: BackupInfo;
 };
 
@@ -537,7 +538,7 @@ export type GetBackupInfoOp = {
 export type SetWalletDeviceIdOp = {
   op: WalletApiOperation.SetWalletDeviceId;
   request: SetWalletDeviceIdRequest;
-  response: {};
+  response: EmptyObject;
 };
 
 /**
@@ -545,7 +546,7 @@ export type SetWalletDeviceIdOp = {
  */
 export type ExportBackupPlainOp = {
   op: WalletApiOperation.ExportBackupPlain;
-  request: {};
+  request: EmptyObject;
   response: WalletBackupContentV1;
 };
 
@@ -575,7 +576,7 @@ export type CheckPeerPushPaymentOp = {
 export type AcceptPeerPushPaymentOp = {
   op: WalletApiOperation.AcceptPeerPushPayment;
   request: AcceptPeerPushPaymentRequest;
-  response: {};
+  response: EmptyObject;
 };
 
 /**
@@ -602,7 +603,7 @@ export type CheckPeerPullPaymentOp = {
 export type AcceptPeerPullPaymentOp = {
   op: WalletApiOperation.AcceptPeerPullPayment;
   request: AcceptPeerPullPaymentRequest;
-  response: {};
+  response: EmptyObject;
 };
 
 // group: Database Management
@@ -612,7 +613,7 @@ export type AcceptPeerPullPaymentOp = {
  */
 export type ExportDbOp = {
   op: WalletApiOperation.ExportDb;
-  request: {};
+  request: EmptyObject;
   response: any;
 };
 
@@ -627,8 +628,8 @@ export type ImportDbOp = {
  */
 export type ClearDbOp = {
   op: WalletApiOperation.ClearDb;
-  request: {};
-  response: {};
+  request: EmptyObject;
+  response: EmptyObject;
 };
 
 /**
@@ -636,8 +637,8 @@ export type ClearDbOp = {
  */
 export type RecycleOp = {
   op: WalletApiOperation.Recycle;
-  request: {};
-  response: {};
+  request: EmptyObject;
+  response: EmptyObject;
 };
 
 // group: Testing and Debugging
@@ -651,13 +652,13 @@ export type RecycleOp = {
 export type ApplyDevExperimentOp = {
   op: WalletApiOperation.ApplyDevExperiment;
   request: ApplyDevExperimentRequest;
-  response: {};
+  response: EmptyObject;
 };
 
 export type SetDevModeOp = {
   op: WalletApiOperation.SetDevMode;
   request: SetDevModeRequest;
-  response: {};
+  response: EmptyObject;
 };
 
 /**
@@ -667,7 +668,7 @@ export type SetDevModeOp = {
 export type RunIntegrationTestOp = {
   op: WalletApiOperation.RunIntegrationTest;
   request: IntegrationTestArgs;
-  response: {};
+  response: EmptyObject;
 };
 
 /**
@@ -675,7 +676,7 @@ export type RunIntegrationTestOp = {
  */
 export type TestCryptoOp = {
   op: WalletApiOperation.TestCrypto;
-  request: {};
+  request: EmptyObject;
   response: any;
 };
 
@@ -686,7 +687,7 @@ export type TestCryptoOp = {
 export type WithdrawTestBalanceOp = {
   op: WalletApiOperation.WithdrawTestBalance;
   request: WithdrawTestBalanceRequest;
-  response: {};
+  response: EmptyObject;
 };
 
 /**
@@ -694,8 +695,8 @@ export type WithdrawTestBalanceOp = {
  */
 export type WithdrawTestkudosOp = {
   op: WalletApiOperation.WithdrawTestkudos;
-  request: {};
-  response: {};
+  request: EmptyObject;
+  response: EmptyObject;
 };
 
 /**
@@ -716,7 +717,7 @@ export type TestPayOp = {
 export type WithdrawFakebankOp = {
   op: WalletApiOperation.WithdrawFakebank;
   request: WithdrawFakebankRequest;
-  response: {};
+  response: EmptyObject;
 };
 
 /**
@@ -724,7 +725,7 @@ export type WithdrawFakebankOp = {
  */
 export type GetPendingTasksOp = {
   op: WalletApiOperation.GetPendingOperations;
-  request: {};
+  request: EmptyObject;
   response: PendingTasksResponse;
 };
 
@@ -733,7 +734,7 @@ export type GetPendingTasksOp = {
  */
 export type DumpCoinsOp = {
   op: WalletApiOperation.DumpCoins;
-  request: {};
+  request: EmptyObject;
   response: CoinDumpJson;
 };
 
@@ -744,7 +745,7 @@ export type DumpCoinsOp = {
 export type SetCoinSuspendedOp = {
   op: WalletApiOperation.SetCoinSuspended;
   request: SetCoinSuspendedRequest;
-  response: {};
+  response: EmptyObject;
 };
 
 /**
@@ -754,7 +755,7 @@ export type SetCoinSuspendedOp = {
 export type ForceRefreshOp = {
   op: WalletApiOperation.ForceRefresh;
   request: ForceRefreshRequest;
-  response: {};
+  response: EmptyObject;
 };
 
 export type WalletOperations = {
