@@ -142,9 +142,7 @@ export async function runExchangeManagementTest(
   );
   t.assertTrue(exchangesList.exchanges.length === 1);
 
-  await wallet.client.call(WalletApiOperation.ListExchanges, {
-    exchangeBaseUrl: faultyExchange.baseUrl,
-  });
+  await wallet.client.call(WalletApiOperation.ListExchanges, {});
 
   console.log("listing exchanges");
 
