@@ -1,21 +1,43 @@
+/*
+ This file is part of GNU Taler
+ (C) 2022 Taler Systems S.A.
+
+ GNU Taler is free software; you can redistribute it and/or modify it under the
+ terms of the GNU General Public License as published by the Free Software
+ Foundation; either version 3, or (at your option) any later version.
+
+ GNU Taler is distributed in the hope that it will be useful, but WITHOUT ANY
+ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along with
+ GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import useSWR, { SWRConfig as _SWRConfig, useSWRConfig } from 'swr';
-import { h, Fragment, VNode, createContext } from 'preact';
-import { useRef, useState, useEffect, StateUpdater, useContext } from 'preact/hooks';
-import { Buffer } from 'buffer';
-import { useTranslator, Translate } from '../../i18n';
-import { QR } from '../../components/QR';
-import { useNotNullLocalStorage, useLocalStorage } from '../../hooks';
-import '../../scss/main.scss';
-import talerLogo from '../../assets/logo-white.svg';
-import { LangSelectorLikePy as LangSelector } from '../../components/menu/LangSelector';
+import useSWR, { SWRConfig as _SWRConfig, useSWRConfig } from "swr";
+import { h, Fragment, VNode, createContext } from "preact";
+import {
+  useRef,
+  useState,
+  useEffect,
+  StateUpdater,
+  useContext,
+} from "preact/hooks";
+import { Buffer } from "buffer";
+import { useTranslator, Translate } from "../../i18n";
+import { QR } from "../../components/QR";
+import { useNotNullLocalStorage, useLocalStorage } from "../../hooks";
+import "../../scss/main.scss";
+import talerLogo from "../../assets/logo-white.svg";
+import { LangSelectorLikePy as LangSelector } from "../../components/menu/LangSelector";
 
 // FIXME: Fix usages of SWRConfig, doing this isn't the best practice (but hey, it works for now)
 const SWRConfig = _SWRConfig as any;
 
-const UI_ALLOW_REGISTRATIONS = ('__LIBEUFIN_UI_ALLOW_REGISTRATIONS__') ?? 1;
-const UI_IS_DEMO = ('__LIBEUFIN_UI_IS_DEMO__') ?? 0;
-const UI_BANK_NAME = ('__LIBEUFIN_UI_BANK_NAME__') ?? 'Taler Bank';
+const UI_ALLOW_REGISTRATIONS = "__LIBEUFIN_UI_ALLOW_REGISTRATIONS__" ?? 1;
+const UI_IS_DEMO = "__LIBEUFIN_UI_IS_DEMO__" ?? 0;
+const UI_BANK_NAME = "__LIBEUFIN_UI_BANK_NAME__" ?? "Taler Bank";
 
 /**
  * FIXME:
@@ -135,17 +157,23 @@ function maybeDemoContent(content: VNode) {
 }
 
 async function fetcher(url: string) {
-  return fetch(url).then((r) => (r.json()));
+  return fetch(url).then((r) => r.json());
 }
 
 function genCaptchaNumbers(): string {
-  return `${Math.floor(Math.random() * 10)} + ${Math.floor(Math.random() * 10)}`;
+  return `${Math.floor(Math.random() * 10)} + ${Math.floor(
+    Math.random() * 10,
+  )}`;
 }
 /**
  * Bring the state to show the public accounts page.
  */
 function goPublicAccounts(pageStateSetter: StateUpdater<PageStateType>) {
-  return () => pageStateSetter((prevState) => ({ ...prevState, showPublicHistories: true }))
+  return () =>
+    pageStateSetter((prevState) => ({
+      ...prevState,
+      showPublicHistories: true,
+    }));
 }
 
 /**
@@ -154,15 +182,15 @@ function goPublicAccounts(pageStateSetter: StateUpdater<PageStateType>) {
  * the input is invalid, the valid amount otherwise.
  */
 function validateAmount(maybeAmount: string): any {
-  const amountRegex = '^[0-9]+(\.[0-9]+)?$';
+  const amountRegex = "^[0-9]+(.[0-9]+)?$";
   if (!maybeAmount) {
     console.log(`Entered amount (${maybeAmount}) mismatched <input> pattern.`);
     return;
   }
-  if (typeof maybeAmount !== 'undefined' || maybeAmount !== '') {
+  if (typeof maybeAmount !== "undefined" || maybeAmount !== "") {
     console.log(`Maybe valid amount: ${maybeAmount}`);
     // tolerating comma instead of point.
-    const re = RegExp(amountRegex)
+    const re = RegExp(amountRegex);
     if (!re.test(maybeAmount)) {
       console.log(`Not using invalid amount '${maybeAmount}'.`);
       return false;
@@ -175,10 +203,10 @@ function validateAmount(maybeAmount: string): any {
  * Extract IBAN from a Payto URI.
  */
 function getIbanFromPayto(url: string): string {
-  const pathSplit = new URL(url).pathname.split('/');
+  const pathSplit = new URL(url).pathname.split("/");
   let lastIndex = pathSplit.length - 1;
   // Happens if the path ends with "/".
-  if (pathSplit[lastIndex] === '') lastIndex--;
+  if (pathSplit[lastIndex] === "") lastIndex--;
   const iban = pathSplit[lastIndex];
   return iban;
 }
@@ -188,10 +216,9 @@ function getIbanFromPayto(url: string): string {
  */
 function parseAmount(val: string): Amount {
   const format = /^[A-Z]+:[0-9]+(\.[0-9]+)?$/;
-  if (!format.test(val))
-    throw Error(`Backend gave invalid amount: ${val}.`)
-  const amountSplit = val.split(':');
-  return { value: amountSplit[1], currency: amountSplit[0] }
+  if (!format.test(val)) throw Error(`Backend gave invalid amount: ${val}.`);
+  const amountSplit = val.split(":");
+  return { value: amountSplit[1], currency: amountSplit[0] };
 }
 
 /**
@@ -199,8 +226,8 @@ function parseAmount(val: string): Amount {
  * exception if not found.
  */
 function getUsername(backendState: BackendStateTypeOpt): string {
-  if (typeof backendState === 'undefined')
-    throw Error('Username can\'t be found in a undefined backend state.')
+  if (typeof backendState === "undefined")
+    throw Error("Username can't be found in a undefined backend state.");
 
   return backendState.username;
 }
@@ -213,30 +240,32 @@ function getUsername(backendState: BackendStateTypeOpt): string {
 async function postToBackend(
   uri: string,
   backendState: BackendStateTypeOpt,
-  body: string
+  body: string,
 ): Promise<any> {
-  if (typeof backendState === 'undefined')
-    throw Error('Credentials can\'t be found in a undefined backend state.')
+  if (typeof backendState === "undefined")
+    throw Error("Credentials can't be found in a undefined backend state.");
 
   const { username, password } = backendState;
   const headers = prepareHeaders(username, password);
   // Backend URL must have been stored _with_ a final slash.
-  const url = new URL(uri, backendState.url)
+  const url = new URL(uri, backendState.url);
   return await fetch(url.href, {
-    method: 'POST',
+    method: "POST",
     headers,
     body,
-  }
-  );
+  });
 }
 
 function useTransactionPageNumber(): [number, StateUpdater<number>] {
-  const ret = useNotNullLocalStorage('transaction-page', '0');
+  const ret = useNotNullLocalStorage("transaction-page", "0");
   const retObj = JSON.parse(ret[0]);
   const retSetter: StateUpdater<number> = function (val) {
-    const newVal = val instanceof Function ? JSON.stringify(val(retObj)) : JSON.stringify(val)
-    ret[1](newVal)
-  }
+    const newVal =
+      val instanceof Function
+        ? JSON.stringify(val(retObj))
+        : JSON.stringify(val);
+    ret[1](newVal);
+  };
   return [retObj, retSetter];
 }
 
@@ -246,13 +275,10 @@ function useTransactionPageNumber(): [number, StateUpdater<number>] {
 function prepareHeaders(username: string, password: string) {
   const headers = new Headers();
   headers.append(
-    'Authorization',
-    `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`
+    "Authorization",
+    `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`,
   );
-  headers.append(
-    'Content-Type',
-    'application/json'
-  )
+  headers.append("Content-Type", "application/json");
   return headers;
 }
 
@@ -261,10 +287,11 @@ function prepareHeaders(username: string, password: string) {
 // That allows the app to be pointed to a arbitrary
 // euFin backend when launched via "pnpm dev".
 const getRootPath = () => {
-  const maybeRootPath = typeof window !== undefined
-    ? window.location.origin + window.location.pathname
-    : '/';
-  if (!maybeRootPath.endsWith('/')) return `${maybeRootPath}/`;
+  const maybeRootPath =
+    typeof window !== undefined
+      ? window.location.origin + window.location.pathname
+      : "/";
+  if (!maybeRootPath.endsWith("/")) return `${maybeRootPath}/`;
   return maybeRootPath;
 };
 
@@ -278,16 +305,18 @@ const getRootPath = () => {
  * handle of the data entered by the user in <input> fields.
  */
 function useShowPublicAccount(
-  state?: string
+  state?: string,
 ): [string | undefined, StateUpdater<string | undefined>] {
-
-  const ret = useLocalStorage('show-public-account', JSON.stringify(state));
+  const ret = useLocalStorage("show-public-account", JSON.stringify(state));
   const retObj: string | undefined = ret[0] ? JSON.parse(ret[0]) : ret[0];
   const retSetter: StateUpdater<string | undefined> = function (val) {
-    const newVal = val instanceof Function ? JSON.stringify(val(retObj)) : JSON.stringify(val)
-    ret[1](newVal)
-  }
-  return [retObj, retSetter]
+    const newVal =
+      val instanceof Function
+        ? JSON.stringify(val(retObj))
+        : JSON.stringify(val);
+    ret[1](newVal);
+  };
+  return [retObj, retSetter];
 }
 
 /**
@@ -296,16 +325,15 @@ function useShowPublicAccount(
 type RawPaytoInputType = string;
 type RawPaytoInputTypeOpt = RawPaytoInputType | undefined;
 function useRawPaytoInputType(
-  state?: RawPaytoInputType
+  state?: RawPaytoInputType,
 ): [RawPaytoInputTypeOpt, StateUpdater<RawPaytoInputTypeOpt>] {
-
-  const ret = useLocalStorage('raw-payto-input-state', state);
+  const ret = useLocalStorage("raw-payto-input-state", state);
   const retObj: RawPaytoInputTypeOpt = ret[0];
   const retSetter: StateUpdater<RawPaytoInputTypeOpt> = function (val) {
-    const newVal = val instanceof Function ? val(retObj) : val
-    ret[1](newVal)
-  }
-  return [retObj, retSetter]
+    const newVal = val instanceof Function ? val(retObj) : val;
+    ret[1](newVal);
+  };
+  return [retObj, retSetter];
 }
 
 /**
@@ -317,16 +345,23 @@ function useRawPaytoInputType(
  */
 type WireTransferRequestTypeOpt = WireTransferRequestType | undefined;
 function useWireTransferRequestType(
-  state?: WireTransferRequestType
+  state?: WireTransferRequestType,
 ): [WireTransferRequestTypeOpt, StateUpdater<WireTransferRequestTypeOpt>] {
-
-  const ret = useLocalStorage('wire-transfer-request-state', JSON.stringify(state));
-  const retObj: WireTransferRequestTypeOpt = ret[0] ? JSON.parse(ret[0]) : ret[0];
+  const ret = useLocalStorage(
+    "wire-transfer-request-state",
+    JSON.stringify(state),
+  );
+  const retObj: WireTransferRequestTypeOpt = ret[0]
+    ? JSON.parse(ret[0])
+    : ret[0];
   const retSetter: StateUpdater<WireTransferRequestTypeOpt> = function (val) {
-    const newVal = val instanceof Function ? JSON.stringify(val(retObj)) : JSON.stringify(val)
-    ret[1](newVal)
-  }
-  return [retObj, retSetter]
+    const newVal =
+      val instanceof Function
+        ? JSON.stringify(val(retObj))
+        : JSON.stringify(val);
+    ret[1](newVal);
+  };
+  return [retObj, retSetter];
 }
 
 /**
@@ -336,16 +371,23 @@ function useWireTransferRequestType(
  */
 type CredentialsRequestTypeOpt = CredentialsRequestType | undefined;
 function useCredentialsRequestType(
-  state?: CredentialsRequestType
+  state?: CredentialsRequestType,
 ): [CredentialsRequestTypeOpt, StateUpdater<CredentialsRequestTypeOpt>] {
-
-  const ret = useLocalStorage('credentials-request-state', JSON.stringify(state));
-  const retObj: CredentialsRequestTypeOpt = ret[0] ? JSON.parse(ret[0]) : ret[0];
+  const ret = useLocalStorage(
+    "credentials-request-state",
+    JSON.stringify(state),
+  );
+  const retObj: CredentialsRequestTypeOpt = ret[0]
+    ? JSON.parse(ret[0])
+    : ret[0];
   const retSetter: StateUpdater<CredentialsRequestTypeOpt> = function (val) {
-    const newVal = val instanceof Function ? JSON.stringify(val(retObj)) : JSON.stringify(val)
-    ret[1](newVal)
-  }
-  return [retObj, retSetter]
+    const newVal =
+      val instanceof Function
+        ? JSON.stringify(val(retObj))
+        : JSON.stringify(val);
+    ret[1](newVal);
+  };
+  return [retObj, retSetter];
 }
 
 /**
@@ -355,16 +397,18 @@ function useCredentialsRequestType(
  */
 type BackendStateTypeOpt = BackendStateType | undefined;
 function useBackendState(
-  state?: BackendStateType
+  state?: BackendStateType,
 ): [BackendStateTypeOpt, StateUpdater<BackendStateTypeOpt>] {
-
-  const ret = useLocalStorage('backend-state', JSON.stringify(state));
+  const ret = useLocalStorage("backend-state", JSON.stringify(state));
   const retObj: BackendStateTypeOpt = ret[0] ? JSON.parse(ret[0]) : ret[0];
   const retSetter: StateUpdater<BackendStateTypeOpt> = function (val) {
-    const newVal = val instanceof Function ? JSON.stringify(val(retObj)) : JSON.stringify(val)
-    ret[1](newVal)
-  }
-  return [retObj, retSetter]
+    const newVal =
+      val instanceof Function
+        ? JSON.stringify(val(retObj))
+        : JSON.stringify(val);
+    ret[1](newVal);
+  };
+  return [retObj, retSetter];
 }
 
 /**
@@ -373,16 +417,18 @@ function useBackendState(
  */
 type AccountStateTypeOpt = AccountStateType | undefined;
 function useAccountState(
-  state?: AccountStateType
+  state?: AccountStateType,
 ): [AccountStateTypeOpt, StateUpdater<AccountStateTypeOpt>] {
-
-  const ret = useLocalStorage('account-state', JSON.stringify(state));
+  const ret = useLocalStorage("account-state", JSON.stringify(state));
   const retObj: AccountStateTypeOpt = ret[0] ? JSON.parse(ret[0]) : ret[0];
   const retSetter: StateUpdater<AccountStateTypeOpt> = function (val) {
-    const newVal = val instanceof Function ? JSON.stringify(val(retObj)) : JSON.stringify(val)
-    ret[1](newVal)
-  }
-  return [retObj, retSetter]
+    const newVal =
+      val instanceof Function
+        ? JSON.stringify(val(retObj))
+        : JSON.stringify(val);
+    ret[1](newVal);
+  };
+  return [retObj, retSetter];
 }
 
 /**
@@ -397,16 +443,19 @@ function usePageState(
     hasError: false,
     hasInfo: false,
     withdrawalInProgress: false,
-  }
+  },
 ): [PageStateType, StateUpdater<PageStateType>] {
-  const ret = useNotNullLocalStorage('page-state', JSON.stringify(state));
+  const ret = useNotNullLocalStorage("page-state", JSON.stringify(state));
   const retObj: PageStateType = JSON.parse(ret[0]);
-  console.log('Current page state', retObj);
+  console.log("Current page state", retObj);
   const retSetter: StateUpdater<PageStateType> = function (val) {
-    const newVal = val instanceof Function ? JSON.stringify(val(retObj)) : JSON.stringify(val)
-    console.log('Setting new page state', newVal)
-    ret[1](newVal)
-  }
+    const newVal =
+      val instanceof Function
+        ? JSON.stringify(val(retObj))
+        : JSON.stringify(val);
+    console.log("Setting new page state", newVal);
+    ret[1](newVal);
+  };
   return [retObj, retSetter];
 }
 
@@ -432,19 +481,27 @@ function usePageState(
 async function abortWithdrawalCall(
   backendState: BackendStateTypeOpt,
   withdrawalId: string | undefined,
-  pageStateSetter: StateUpdater<PageStateType>
+  pageStateSetter: StateUpdater<PageStateType>,
 ) {
-  if (typeof backendState === 'undefined') {
-    console.log('No credentials found.');
-    pageStateSetter((prevState) => ({ ...prevState, hasError: true, error: 'No credentials found.' }))
+  if (typeof backendState === "undefined") {
+    console.log("No credentials found.");
+    pageStateSetter((prevState) => ({
+      ...prevState,
+      hasError: true,
+      error: "No credentials found.",
+    }));
     return;
   }
-  if (typeof withdrawalId === 'undefined') {
-    console.log('No withdrawal ID found.');
-    pageStateSetter((prevState) => ({ ...prevState, hasError: true, error: 'No withdrawal ID found.' }))
+  if (typeof withdrawalId === "undefined") {
+    console.log("No withdrawal ID found.");
+    pageStateSetter((prevState) => ({
+      ...prevState,
+      hasError: true,
+      error: "No withdrawal ID found.",
+    }));
     return;
   }
-  let res:any;
+  let res: any;
   try {
     const { username, password } = backendState;
     const headers = prepareHeaders(username, password);
@@ -462,36 +519,38 @@ async function abortWithdrawalCall(
     // Backend URL must have been stored _with_ a final slash.
     const url = new URL(
       `access-api/accounts/${backendState.username}/withdrawals/${withdrawalId}/abort`,
-      backendState.url
-    )
-    res = await fetch(url.href, { method: 'POST', headers })
+      backendState.url,
+    );
+    res = await fetch(url.href, { method: "POST", headers });
   } catch (error) {
-    console.log('Could not abort the withdrawal', error);
+    console.log("Could not abort the withdrawal", error);
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: `Could not abort the withdrawal: ${error}`
-    }))
+      error: `Could not abort the withdrawal: ${error}`,
+    }));
     return;
   }
   if (!res.ok) {
-    console.log(`Withdrawal abort gave response error (${res.status})`, res.statusText);
+    console.log(
+      `Withdrawal abort gave response error (${res.status})`,
+      res.statusText,
+    );
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: `Withdrawal abortion gave response error (${res.status})`
-    }))
+      error: `Withdrawal abortion gave response error (${res.status})`,
+    }));
     return;
   }
-  console.log('Withdrawal operation aborted!');
+  console.log("Withdrawal operation aborted!");
   pageStateSetter((prevState) => {
     const { ...rest } = prevState;
     return {
       ...rest,
-      info: 'Withdrawal aborted!'
-    }
-  })
-
+      info: "Withdrawal aborted!",
+    };
+  });
 }
 
 /**
@@ -507,17 +566,24 @@ async function abortWithdrawalCall(
 async function confirmWithdrawalCall(
   backendState: BackendStateTypeOpt,
   withdrawalId: string | undefined,
-  pageStateSetter: StateUpdater<PageStateType>
+  pageStateSetter: StateUpdater<PageStateType>,
 ) {
-
-  if (typeof backendState === 'undefined') {
-    console.log('No credentials found.');
-    pageStateSetter((prevState) => ({ ...prevState, hasError: true, error: 'No credentials found.' }))
+  if (typeof backendState === "undefined") {
+    console.log("No credentials found.");
+    pageStateSetter((prevState) => ({
+      ...prevState,
+      hasError: true,
+      error: "No credentials found.",
+    }));
     return;
   }
-  if (typeof withdrawalId === 'undefined') {
-    console.log('No withdrawal ID found.');
-    pageStateSetter((prevState) => ({ ...prevState, hasError: true, error: 'No withdrawal ID found.' }))
+  if (typeof withdrawalId === "undefined") {
+    console.log("No withdrawal ID found.");
+    pageStateSetter((prevState) => ({
+      ...prevState,
+      hasError: true,
+      error: "No withdrawal ID found.",
+    }));
     return;
   }
   let res: Response;
@@ -538,39 +604,42 @@ async function confirmWithdrawalCall(
     // Backend URL must have been stored _with_ a final slash.
     const url = new URL(
       `access-api/accounts/${backendState.username}/withdrawals/${withdrawalId}/confirm`,
-      backendState.url
-    )
+      backendState.url,
+    );
     res = await fetch(url.href, {
-      method: 'POST',
-      headers
-    })
+      method: "POST",
+      headers,
+    });
   } catch (error) {
-    console.log('Could not POST withdrawal confirmation to the bank', error);
+    console.log("Could not POST withdrawal confirmation to the bank", error);
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: `Could not confirm the withdrawal: ${error}`
-    }))
+      error: `Could not confirm the withdrawal: ${error}`,
+    }));
     return;
   }
-  if (res ? !res.ok : true) { // assume not ok if res is null
-    console.log(`Withdrawal confirmation gave response error (${res.status})`, res.statusText);
+  if (res ? !res.ok : true) {
+    // assume not ok if res is null
+    console.log(
+      `Withdrawal confirmation gave response error (${res.status})`,
+      res.statusText,
+    );
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: `Withdrawal confirmation gave response error (${res.status})`
-    }))
+      error: `Withdrawal confirmation gave response error (${res.status})`,
+    }));
     return;
   }
-  console.log('Withdrawal operation confirmed!');
+  console.log("Withdrawal operation confirmed!");
   pageStateSetter((prevState) => {
     const { talerWithdrawUri, ...rest } = prevState;
     return {
       ...rest,
-      info: 'Withdrawal confirmed!'
-    }
-  })
-
+      info: "Withdrawal confirmed!",
+    };
+  });
 }
 
 /**
@@ -587,43 +656,44 @@ async function createTransactionCall(
    * Optional since the raw payto form doesn't have
    * a stateful management of the input data yet.
    */
-  cleanUpForm: () => void
+  cleanUpForm: () => void,
 ) {
-  let res:any;
+  let res: any;
   try {
     res = await postToBackend(
       `access-api/accounts/${getUsername(backendState)}/transactions`,
       backendState,
-      JSON.stringify(req)
-    )
-  }
-  catch (error) {
-    console.log('Could not POST transaction request to the bank', error);
+      JSON.stringify(req),
+    );
+  } catch (error) {
+    console.log("Could not POST transaction request to the bank", error);
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: `Could not create the wire transfer: ${error}`
-    }))
+      error: `Could not create the wire transfer: ${error}`,
+    }));
     return;
   }
   // POST happened, status not sure yet.
   if (!res.ok) {
     const responseText = JSON.stringify(await res.json());
-    console.log(`Transfer creation gave response error: ${responseText} (${res.status})`);
+    console.log(
+      `Transfer creation gave response error: ${responseText} (${res.status})`,
+    );
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: `Transfer creation gave response error: ${responseText} (${res.status})`
-    }))
+      error: `Transfer creation gave response error: ${responseText} (${res.status})`,
+    }));
     return;
   }
   // status is 200 OK here, tell the user.
-  console.log('Wire transfer created!');
+  console.log("Wire transfer created!");
   pageStateSetter((prevState) => ({
     ...prevState,
     hasInfo: true,
-    info: 'Wire transfer created!'
-  }))
+    info: "Wire transfer created!",
+  }));
 
   // Only at this point the input data can
   // be discarded.
@@ -642,15 +712,19 @@ async function createTransactionCall(
 async function createWithdrawalCall(
   amount: string,
   backendState: BackendStateTypeOpt,
-  pageStateSetter: StateUpdater<PageStateType>
+  pageStateSetter: StateUpdater<PageStateType>,
 ) {
-  if (typeof backendState === 'undefined') {
-    console.log('Page has a problem: no credentials found in the state.');
-    pageStateSetter((prevState) => ({ ...prevState, hasError: true, error: 'No credentials given.' }))
+  if (typeof backendState === "undefined") {
+    console.log("Page has a problem: no credentials found in the state.");
+    pageStateSetter((prevState) => ({
+      ...prevState,
+      hasError: true,
+      error: "No credentials given.",
+    }));
     return;
   }
 
-  let res:any;
+  let res: any;
   try {
     const { username, password } = backendState;
     const headers = prepareHeaders(username, password);
@@ -658,42 +732,43 @@ async function createWithdrawalCall(
     // Let bank generate withdraw URI:
     const url = new URL(
       `access-api/accounts/${backendState.username}/withdrawals`,
-      backendState.url
-    )
+      backendState.url,
+    );
     res = await fetch(url.href, {
-      method: 'POST',
+      method: "POST",
       headers,
       body: JSON.stringify({ amount }),
-    }
-    );
+    });
   } catch (error) {
-    console.log('Could not POST withdrawal request to the bank', error);
+    console.log("Could not POST withdrawal request to the bank", error);
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: `Could not create withdrawal operation: ${error}`
-    }))
+      error: `Could not create withdrawal operation: ${error}`,
+    }));
     return;
   }
   if (!res.ok) {
     const responseText = await res.text();
-    console.log(`Withdrawal creation gave response error: ${responseText} (${res.status})`);
+    console.log(
+      `Withdrawal creation gave response error: ${responseText} (${res.status})`,
+    );
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: `Withdrawal creation gave response error: ${responseText} (${res.status})`
-    }))
+      error: `Withdrawal creation gave response error: ${responseText} (${res.status})`,
+    }));
     return;
   }
 
-  console.log('Withdrawal operation created!');
+  console.log("Withdrawal operation created!");
   const resp = await res.json();
   pageStateSetter((prevState: PageStateType) => ({
     ...prevState,
     withdrawalInProgress: true,
     talerWithdrawUri: resp.taler_withdraw_uri,
-    withdrawalId: resp.withdrawal_id
-  }))
+    withdrawalId: resp.withdrawal_id,
+  }));
 }
 
 async function loginCall(
@@ -703,17 +778,15 @@ async function loginCall(
    * functions can be retrieved from the state.
    */
   backendStateSetter: StateUpdater<BackendStateTypeOpt>,
-  pageStateSetter: StateUpdater<PageStateType>
+  pageStateSetter: StateUpdater<PageStateType>,
 ) {
-
   /**
    * Optimistically setting the state as 'logged in', and
    * let the Account component request the balance to check
    * whether the credentials are valid.  */
   pageStateSetter((prevState) => ({ ...prevState, isLoggedIn: true }));
   let baseUrl = getRootPath();
-  if (!baseUrl.endsWith('/'))
-    baseUrl += '/';
+  if (!baseUrl.endsWith("/")) baseUrl += "/";
 
   backendStateSetter((prevState) => ({
     ...prevState,
@@ -722,7 +795,6 @@ async function loginCall(
     password: req.password,
   }));
 }
-
 
 /**
  * This function requests /register.
@@ -739,51 +811,54 @@ async function registrationCall(
    * the state.
    */
   backendStateSetter: StateUpdater<BackendStateTypeOpt>,
-  pageStateSetter: StateUpdater<PageStateType>
+  pageStateSetter: StateUpdater<PageStateType>,
 ) {
-
   let baseUrl = getRootPath();
   /**
    * If the base URL doesn't end with slash and the path
    * is not empty, then the concatenation made by URL()
    * drops the last path element.
    */
-  if (!baseUrl.endsWith('/'))
-    baseUrl += '/'
+  if (!baseUrl.endsWith("/")) baseUrl += "/";
 
   const headers = new Headers();
-  headers.append(
-    'Content-Type',
-    'application/json'
-  )
-  const url = new URL('access-api/testing/register', baseUrl)
-  let res:any;
+  headers.append("Content-Type", "application/json");
+  const url = new URL("access-api/testing/register", baseUrl);
+  let res: any;
   try {
     res = await fetch(url.href, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(req),
-      headers
+      headers,
     });
   } catch (error) {
-    console.log(`Could not POST new registration to the bank (${url.href})`, error);
+    console.log(
+      `Could not POST new registration to the bank (${url.href})`,
+      error,
+    );
     pageStateSetter((prevState) => ({
-      ...prevState, hasError: true, error: 'Registration failed, please report.'
+      ...prevState,
+      hasError: true,
+      error: "Registration failed, please report.",
     }));
     return;
   }
   if (!res.ok) {
     const errorRaw = await res.text();
-    console.log(`New registration gave response error (${res.status})`, errorRaw);
+    console.log(
+      `New registration gave response error (${res.status})`,
+      errorRaw,
+    );
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: errorRaw
+      error: errorRaw,
     }));
   } else {
     pageStateSetter((prevState) => ({
       ...prevState,
       isLoggedIn: true,
-      tryRegister: false
+      tryRegister: false,
     }));
     backendStateSetter((prevState) => ({
       ...prevState,
@@ -799,12 +874,15 @@ async function registrationCall(
  *************************/
 
 function Currency(): VNode {
-  const { data, error } = useSWR(`${getRootPath()}integration-api/config`, fetcher);
-  if (typeof error !== 'undefined')
+  const { data, error } = useSWR(
+    `${getRootPath()}integration-api/config`,
+    fetcher,
+  );
+  if (typeof error !== "undefined")
     return <b>error: currency could not be retrieved</b>;
 
-  if (typeof data === 'undefined') return <Fragment>"..."</Fragment>;
-  console.log('found bank config', data);
+  if (typeof data === "undefined") return <Fragment>"..."</Fragment>;
+  console.log("found bank config", data);
   return data.currency;
 }
 
@@ -814,8 +892,8 @@ function ErrorBanner(Props: any): VNode | null {
   if (!pageState.hasError) return null;
 
   const rval = (
-    <p class="informational informational-fail">{pageState.error}
-    </p>);
+    <p class="informational informational-fail">{pageState.error}</p>
+  );
   delete pageState.error;
   pageState.hasError = false;
   return rval;
@@ -826,9 +904,7 @@ function StatusBanner(Props: any): VNode | null {
   const i18n = useTranslator();
   if (!pageState.hasInfo) return null;
 
-  const rval = (
-    <p class="informational">{pageState.error}
-    </p>);
+  const rval = <p class="informational">{pageState.error}</p>;
   delete pageState.info_msg;
   pageState.hasInfo = false;
   return rval;
@@ -837,7 +913,7 @@ function StatusBanner(Props: any): VNode | null {
 function BankFrame(Props: any): VNode {
   const i18n = useTranslator();
   const [pageState, pageStateSetter] = useContext(PageContext);
-  console.log('BankFrame state', pageState);
+  console.log("BankFrame state", pageState);
   const logOut = (
     <div class="logout">
       <a
@@ -845,53 +921,59 @@ function BankFrame(Props: any): VNode {
         class="pure-button logout-button"
         onClick={() => {
           pageStateSetter((prevState: PageStateType) => {
-            const {
-              talerWithdrawUri,
-              withdrawalId, ...rest } = prevState;
+            const { talerWithdrawUri, withdrawalId, ...rest } = prevState;
             return {
               ...rest,
               isLoggedIn: false,
               withdrawalInProgress: false,
               hasInfo: false,
               hasError: false,
-              isRawPayto: false
+              isRawPayto: false,
             };
           });
-        }}>{i18n`Logout`}</a></div>);
+        }}
+      >{i18n`Logout`}</a>
+    </div>
+  );
 
   // Prepare demo sites links.
   const DEMO_SITES = [
-    ['Landing', '__DEMO_SITE_LANDING_URL__'],
-    ['Bank', '__DEMO_SITE_BANK_URL__'],
-    ['Essay Shop', '__DEMO_SITE_BLOG_URL__'],
-    ['Donations', '__DEMO_SITE_DONATIONS_URL__'],
-    ['Survey', '__DEMO_SITE_SURVEY_URL__'],
+    ["Landing", "__DEMO_SITE_LANDING_URL__"],
+    ["Bank", "__DEMO_SITE_BANK_URL__"],
+    ["Essay Shop", "__DEMO_SITE_BLOG_URL__"],
+    ["Donations", "__DEMO_SITE_DONATIONS_URL__"],
+    ["Survey", "__DEMO_SITE_SURVEY_URL__"],
   ];
   const demo_sites = [];
   for (const i in DEMO_SITES)
-    demo_sites.push(<a href={DEMO_SITES[i][1]}>{DEMO_SITES[i][0]}</a>)
+    demo_sites.push(<a href={DEMO_SITES[i][1]}>{DEMO_SITES[i][0]}</a>);
 
   return (
     <Fragment>
-      <header class="demobar" style="display: flex; flex-direction: row; justify-content: space-between;">
+      <header
+        class="demobar"
+        style="display: flex; flex-direction: row; justify-content: space-between;"
+      >
         <a href="#main" class="skip">{i18n`Skip to main content`}</a>
         <div style="max-width: 50em; margin-left: 2em;">
           <h1>
             <span class="it">
-              <a href="/">{
-                UI_BANK_NAME
-              }
-              </a>
+              <a href="/">{UI_BANK_NAME}</a>
             </span>
-          </h1>{
-            maybeDemoContent(<p><Translate>
-              This part of the demo shows how a bank that supports
-              Taler directly would work. In addition to using your own
-              bank account, you can also see the transaction history of
-              some <a href="#" onClick={goPublicAccounts(pageStateSetter)}>Public Accounts</a>.
-            </Translate></p>
-            )
-          }
+          </h1>
+          {maybeDemoContent(
+            <p>
+              <Translate>
+                This part of the demo shows how a bank that supports Taler
+                directly would work. In addition to using your own bank account,
+                you can also see the transaction history of some{" "}
+                <a href="#" onClick={goPublicAccounts(pageStateSetter)}>
+                  Public Accounts
+                </a>
+                .
+              </Translate>
+            </p>,
+          )}
         </div>
         <a href="https://taler.net/">
           <img
@@ -899,7 +981,8 @@ function BankFrame(Props: any): VNode {
             alt="{i18n`Taler logo`}"
             height="100"
             width="224"
-            style="margin: 2em 2em" />
+            style="margin: 2em 2em"
+          />
         </a>
       </header>
       <div style="display:flex; flex-direction: column;" class="navcontainer">
@@ -920,15 +1003,18 @@ function BankFrame(Props: any): VNode {
         <div class="footer">
           <hr />
           <div>
-            <p>You can learn more about GNU Taler on our <a href="https://taler.net">main website</a>.</p>
+            <p>
+              You can learn more about GNU Taler on our{" "}
+              <a href="https://taler.net">main website</a>.
+            </p>
           </div>
           <div style="flex-grow:1" />
           <p>Copyright &copy; 2014&mdash;2022 Taler Systems SA</p>
         </div>
       </section>
-    </Fragment>);
+    </Fragment>
+  );
 }
-
 
 function PaytoWireTransfer(Props: any): VNode {
   const currency = useContext(CurrencyContext);
@@ -936,13 +1022,13 @@ function PaytoWireTransfer(Props: any): VNode {
   const [submitData, submitDataSetter] = useWireTransferRequestType();
   const [rawPaytoInput, rawPaytoInputSetter] = useRawPaytoInputType();
   const i18n = useTranslator();
-  const { focus, backendState } = Props
-  const amountRegex = '^[0-9]+(\.[0-9]+)?$';
-  const ibanRegex = '^[A-Z][A-Z][0-9]+$';
-  const receiverInput = '';
-  const subjectInput = '';
+  const { focus, backendState } = Props;
+  const amountRegex = "^[0-9]+(.[0-9]+)?$";
+  const ibanRegex = "^[A-Z][A-Z][0-9]+$";
+  const receiverInput = "";
+  const subjectInput = "";
   let transactionData: TransactionRequestType;
-  const ref = useRef<HTMLInputElement>(null)
+  const ref = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (focus) ref.current?.focus();
   }, [focus, pageState.isRawPayto]);
@@ -950,8 +1036,7 @@ function PaytoWireTransfer(Props: any): VNode {
   if (!pageState.isRawPayto)
     return (
       <div>
-        <div class="pure-form"
-          name="wire-transfer-form">
+        <div class="pure-form" name="wire-transfer-form">
           <p>
             <label for="iban">{i18n`Receiver IBAN:`}</label>&nbsp;
             <input
@@ -967,8 +1052,11 @@ function PaytoWireTransfer(Props: any): VNode {
                 submitDataSetter((submitData: any) => ({
                   ...submitData,
                   iban: e.currentTarget.value,
-                }))
-              }} /><br /><br />
+                }));
+              }}
+            />
+            <br />
+            <br />
             <label for="subject">{i18n`Transfer subject:`}</label>&nbsp;
             <input
               type="text"
@@ -981,8 +1069,11 @@ function PaytoWireTransfer(Props: any): VNode {
                 submitDataSetter((submitData: any) => ({
                   ...submitData,
                   subject: e.currentTarget.value,
-                }))
-              }} /><br /><br />
+                }));
+              }}
+            />
+            <br />
+            <br />
             <label for="amount">{i18n`Amount:`}</label>&nbsp;
             <input
               type="number"
@@ -995,9 +1086,10 @@ function PaytoWireTransfer(Props: any): VNode {
               onInput={(e): void => {
                 submitDataSetter((submitData: any) => ({
                   ...submitData,
-                  amount: e.currentTarget.value.replace(',', '.'),
-                }))
-              }} />
+                  amount: e.currentTarget.value.replace(",", "."),
+                }));
+              }}
+            />
             &nbsp;
             <input
               type="text"
@@ -1005,7 +1097,9 @@ function PaytoWireTransfer(Props: any): VNode {
               class="currency-indicator"
               size={currency.length}
               maxLength={currency.length}
-              tabIndex={-1} value={currency} />
+              tabIndex={-1}
+              value={currency}
+            />
           </p>
           <p>
             <input
@@ -1014,53 +1108,64 @@ function PaytoWireTransfer(Props: any): VNode {
               value="Send"
               onClick={async () => {
                 if (
-                  typeof submitData === 'undefined'
-                  || (typeof submitData.iban === 'undefined'
-                    || submitData.iban === '')
-                  || (typeof submitData.subject === 'undefined'
-                    || submitData.subject === '')
-                  || (typeof submitData.amount === 'undefined'
-                    || submitData.amount === '')
+                  typeof submitData === "undefined" ||
+                  typeof submitData.iban === "undefined" ||
+                  submitData.iban === "" ||
+                  typeof submitData.subject === "undefined" ||
+                  submitData.subject === "" ||
+                  typeof submitData.amount === "undefined" ||
+                  submitData.amount === ""
                 ) {
-                  console.log('Not all the fields were given.');
-                  pageStateSetter((prevState: PageStateType) =>
-                    ({ ...prevState, hasError: true, error: i18n`Field(s) missing.` }))
+                  console.log("Not all the fields were given.");
+                  pageStateSetter((prevState: PageStateType) => ({
+                    ...prevState,
+                    hasError: true,
+                    error: i18n`Field(s) missing.`,
+                  }));
                   return;
                 }
                 transactionData = {
-                  paytoUri: `payto://iban/${submitData.iban}?message=${encodeURIComponent(submitData.subject)}`,
-                  amount: `${currency}:${submitData.amount}`
+                  paytoUri: `payto://iban/${
+                    submitData.iban
+                  }?message=${encodeURIComponent(submitData.subject)}`,
+                  amount: `${currency}:${submitData.amount}`,
                 };
                 return await createTransactionCall(
                   transactionData,
                   backendState,
                   pageStateSetter,
-                  () => submitDataSetter(p => ({
-                    amount: '',
-                    iban: '',
-                    subject: ''
-                  }))
+                  () =>
+                    submitDataSetter((p) => ({
+                      amount: "",
+                      iban: "",
+                      subject: "",
+                    })),
                 );
-              }} />
+              }}
+            />
           </p>
         </div>
-        <p><a
-          href="#"
-          onClick={() => {
-            console.log('switch to raw payto form');
-            pageStateSetter((prevState: any) => ({ ...prevState, isRawPayto: true }));
-          }}>{i18n`Want to try the raw payto://-format?`}
-        </a></p>
+        <p>
+          <a
+            href="#"
+            onClick={() => {
+              console.log("switch to raw payto form");
+              pageStateSetter((prevState: any) => ({
+                ...prevState,
+                isRawPayto: true,
+              }));
+            }}
+          >
+            {i18n`Want to try the raw payto://-format?`}
+          </a>
+        </p>
       </div>
     );
 
   return (
     <div>
-      <p>
-        {i18n`Transfer money to account identified by payto:// URI:`}
-      </p>
-      <div class="pure-form"
-        name="payto-form">
+      <p>{i18n`Transfer money to account identified by payto:// URI:`}</p>
+      <div class="pure-form" name="payto-form">
         <p>
           <label for="address">{i18n`payto URI:`}</label>&nbsp;
           <input
@@ -1074,47 +1179,62 @@ function PaytoWireTransfer(Props: any): VNode {
             placeholder={i18n`payto address`}
             pattern={`payto://iban/[A-Z][A-Z][0-9]+\?message=[a-zA-Z0-9 ]+&amount=${currency}:[0-9]+(\.[0-9]+)?`}
             onInput={(e): void => {
-              rawPaytoInputSetter(e.currentTarget.value)
-            }} />
+              rawPaytoInputSetter(e.currentTarget.value);
+            }}
+          />
           <br />
           <div class="hint">
             Hint:
             <code>
-              payto://iban/[receiver-iban]?message=[subject]&amount=[{currency}:X.Y]
+              payto://iban/[receiver-iban]?message=[subject]&amount=[{currency}
+              :X.Y]
             </code>
           </div>
         </p>
         <p>
-          <input class="pure-button pure-button-primary"
+          <input
+            class="pure-button pure-button-primary"
             type="submit"
             value={i18n`Send`}
             onClick={async () => {
               // empty string evaluates to false.
               if (!rawPaytoInput) {
-                console.log('Didn\'t get any raw Payto string!');
+                console.log("Didn't get any raw Payto string!");
                 return;
               }
               transactionData = { paytoUri: rawPaytoInput };
-              if (typeof transactionData.paytoUri === 'undefined' ||
-                transactionData.paytoUri.length === 0) return;
+              if (
+                typeof transactionData.paytoUri === "undefined" ||
+                transactionData.paytoUri.length === 0
+              )
+                return;
 
               return await createTransactionCall(
                 transactionData,
                 backendState,
                 pageStateSetter,
-                () => rawPaytoInputSetter(p => '')
+                () => rawPaytoInputSetter((p) => ""),
               );
-            }} />
+            }}
+          />
         </p>
-        <p><a
-          href="#"
-          onClick={() => {
-            console.log('switch to wire-transfer-form');
-            pageStateSetter((prevState: any) => ({ ...prevState, isRawPayto: false }));
-          }}>{i18n`Use wire-transfer form?`}
-        </a></p>
+        <p>
+          <a
+            href="#"
+            onClick={() => {
+              console.log("switch to wire-transfer-form");
+              pageStateSetter((prevState: any) => ({
+                ...prevState,
+                isRawPayto: false,
+              }));
+            }}
+          >
+            {i18n`Use wire-transfer form?`}
+          </a>
+        </p>
       </div>
-    </div>);
+    </div>
+  );
 }
 
 /**
@@ -1127,89 +1247,120 @@ function TalerWithdrawalConfirmationQuestion(Props: any): VNode {
   const i18n = useTranslator();
   const captchaNumbers = {
     a: Math.floor(Math.random() * 10),
-    b: Math.floor(Math.random() * 10)
-  }
-  let captchaAnswer = '';
+    b: Math.floor(Math.random() * 10),
+  };
+  let captchaAnswer = "";
 
-  return (<Fragment>
-    <h1 class="nav">{i18n`Confirm Withdrawal`}</h1>
-    <article>
-      <div class="challenge-div">
-        <form class="challenge-form">
-          <div class="pure-form"
-            id="captcha"
-            name="capcha-form">
-            <h2>{i18n`Authorize withdrawal by solving challenge`}</h2>
-            <p>
-              <label for="answer">{i18n`What is`}&nbsp;<em>{captchaNumbers.a}&nbsp;+&nbsp;{captchaNumbers.b}</em>?&nbsp;</label>&nbsp;
-              <input
-                name="answer"
-                id="answer"
-                type="text"
-                required
-                onInput={(e): void => {
-                  captchaAnswer = e.currentTarget.value;
-                }} />
-            </p>
-            <p>
-              <button
-                class="pure-button pure-button-primary btn-confirm"
-                onClick={() => {
-                  if (captchaAnswer == (captchaNumbers.a + captchaNumbers.b).toString()) {
-                    confirmWithdrawalCall(
+  return (
+    <Fragment>
+      <h1 class="nav">{i18n`Confirm Withdrawal`}</h1>
+      <article>
+        <div class="challenge-div">
+          <form class="challenge-form">
+            <div class="pure-form" id="captcha" name="capcha-form">
+              <h2>{i18n`Authorize withdrawal by solving challenge`}</h2>
+              <p>
+                <label for="answer">
+                  {i18n`What is`}&nbsp;
+                  <em>
+                    {captchaNumbers.a}&nbsp;+&nbsp;{captchaNumbers.b}
+                  </em>
+                  ?&nbsp;
+                </label>
+                &nbsp;
+                <input
+                  name="answer"
+                  id="answer"
+                  type="text"
+                  required
+                  onInput={(e): void => {
+                    captchaAnswer = e.currentTarget.value;
+                  }}
+                />
+              </p>
+              <p>
+                <button
+                  class="pure-button pure-button-primary btn-confirm"
+                  onClick={() => {
+                    if (
+                      captchaAnswer ==
+                      (captchaNumbers.a + captchaNumbers.b).toString()
+                    ) {
+                      confirmWithdrawalCall(
+                        backendState,
+                        pageState.withdrawalId,
+                        pageStateSetter,
+                      );
+                      return;
+                    }
+                    pageStateSetter((prevState: PageStateType) => ({
+                      ...prevState,
+                      hasError: true,
+                      error: i18n`Answer is wrong.`,
+                    }));
+                  }}
+                >
+                  {i18n`Confirm`}
+                </button>
+                &nbsp;
+                <button
+                  class="pure-button pure-button-secondary btn-cancel"
+                  onClick={() =>
+                    abortWithdrawalCall(
                       backendState,
                       pageState.withdrawalId,
-                      pageStateSetter)
-                    return;
+                      pageStateSetter,
+                    )
                   }
-                  pageStateSetter((prevState: PageStateType) =>
-                    ({ ...prevState, hasError: true, error: i18n`Answer is wrong.` }))
-                }}>
-                {i18n`Confirm`}
-              </button>
-              &nbsp;
-              <button
-                class="pure-button pure-button-secondary btn-cancel"
-                onClick={() =>
-                  abortWithdrawalCall(
-                    backendState,
-                    pageState.withdrawalId,
-                    pageStateSetter
-                  )}>
-                {i18n`Cancel`}
-              </button>
+                >
+                  {i18n`Cancel`}
+                </button>
+              </p>
+            </div>
+          </form>
+          <div class="hint">
+            <p>
+              <Translate>
+                A this point, a <b>real</b> bank would ask for an additional
+                authentication proof (PIN/TAN, one time password, ..), instead
+                of a simple calculation.
+              </Translate>
             </p>
           </div>
-        </form>
-        <div class="hint">
-          <p><Translate>
-            A this point, a <b>real</b> bank would ask for an additional
-            authentication proof (PIN/TAN, one time password, ..), instead
-            of a simple calculation.
-          </Translate></p>
         </div>
-      </div>
-    </article>
-  </Fragment>);
+      </article>
+    </Fragment>
+  );
 }
 
-function QrCodeSection({ talerWithdrawUri, abortButton }: { talerWithdrawUri: string, abortButton: h.JSX.Element }) {
+function QrCodeSection({
+  talerWithdrawUri,
+  abortButton,
+}: {
+  talerWithdrawUri: string;
+  abortButton: h.JSX.Element;
+}) {
   const i18n = useTranslator();
   useEffect(() => {
     //Taler Wallet WebExtension is listening to headers response and tab updates.
     //In the SPA there is no header response with the Taler URI so
     //this hack manually triggers the tab update after the QR is in the DOM.
-    window.location.href = `${window.location.href.split('#')[0]}#`
-  }, [])
+    window.location.href = `${window.location.href.split("#")[0]}#`;
+  }, []);
 
-  return <section id="main" class="content">
-    <h1 class="nav">{i18n`Charge Taler Wallet`}</h1>
-    <p>{i18n`You can use this QR code to withdraw to your mobile wallet:`}</p>
-    {QR({ text: talerWithdrawUri })}
-    <p>Click <a id="linkqr" href={talerWithdrawUri}>{i18n`this link`}</a> to open your Taler wallet!</p>
-    <br />
-    {abortButton}
-  </section>
+  return (
+    <section id="main" class="content">
+      <h1 class="nav">{i18n`Charge Taler Wallet`}</h1>
+      <p>{i18n`You can use this QR code to withdraw to your mobile wallet:`}</p>
+      {QR({ text: talerWithdrawUri })}
+      <p>
+        Click <a id="linkqr" href={talerWithdrawUri}>{i18n`this link`}</a> to
+        open your Taler wallet!
+      </p>
+      <br />
+      {abortButton}
+    </section>
+  );
 }
 
 /**
@@ -1220,86 +1371,94 @@ function QrCodeSection({ talerWithdrawUri, abortButton }: { talerWithdrawUri: st
 function TalerWithdrawalQRCode(Props: any): VNode {
   // turns true when the wallet POSTed the reserve details:
   const [pageState, pageStateSetter] = useContext(PageContext);
-  const {
-    withdrawalId,
-    talerWithdrawUri,
-    accountLabel,
-    backendState } = Props;
+  const { withdrawalId, talerWithdrawUri, accountLabel, backendState } = Props;
   const i18n = useTranslator();
-  const abortButton = <a class="pure-button" onClick={() => {
-    pageStateSetter((prevState: PageStateType) => {
-      const { withdrawalId, talerWithdrawUri, ...rest } = prevState;
-      return { ...rest, withdrawalInProgress: false };
-    })
-  }}>{i18n`Abort`}</a>
+  const abortButton = (
+    <a
+      class="pure-button"
+      onClick={() => {
+        pageStateSetter((prevState: PageStateType) => {
+          const { withdrawalId, talerWithdrawUri, ...rest } = prevState;
+          return { ...rest, withdrawalInProgress: false };
+        });
+      }}
+    >{i18n`Abort`}</a>
+  );
 
   console.log(`Showing withdraw URI: ${talerWithdrawUri}`);
   // waiting for the wallet:
 
-  const { data, error, mutate } = useSWR(`integration-api/withdrawal-operation/${withdrawalId}`);
+  const { data, error, mutate } = useSWR(
+    `integration-api/withdrawal-operation/${withdrawalId}`,
+  );
 
-  if (typeof error !== 'undefined') {
-    console.log(`withdrawal (${withdrawalId}) was never (correctly) created at the bank...`, error);
+  if (typeof error !== "undefined") {
+    console.log(
+      `withdrawal (${withdrawalId}) was never (correctly) created at the bank...`,
+      error,
+    );
     pageStateSetter((prevState: PageStateType) => ({
       ...prevState,
       hasError: true,
-      error: i18n`withdrawal (${withdrawalId}) was never (correctly) created at the bank...`
-    }))
-    return (<Fragment><br /><br />{abortButton}</Fragment>);
+      error: i18n`withdrawal (${withdrawalId}) was never (correctly) created at the bank...`,
+    }));
+    return (
+      <Fragment>
+        <br />
+        <br />
+        {abortButton}
+      </Fragment>
+    );
   }
 
   // data didn't arrive yet and wallet didn't communicate:
-  if (typeof data === 'undefined')
-    return <p>{i18n`Waiting the bank to create the operaion...`}</p>
-
+  if (typeof data === "undefined")
+    return <p>{i18n`Waiting the bank to create the operaion...`}</p>;
 
   /**
    * Wallet didn't communicate withdrawal details yet:
    */
-  console.log('withdrawal status', data);
+  console.log("withdrawal status", data);
   if (data.aborted)
     pageStateSetter((prevState: PageStateType) => {
-      const {
-        withdrawalId,
-        talerWithdrawUri,
-        ...rest } = prevState;
+      const { withdrawalId, talerWithdrawUri, ...rest } = prevState;
       return {
         ...rest,
         withdrawalInProgress: false,
         hasError: true,
-        error: i18n`This withdrawal was aborted!`
+        error: i18n`This withdrawal was aborted!`,
       };
-    })
-
+    });
 
   if (!data.selection_done) {
     setTimeout(() => mutate(), 1000); // check again after 1 second.
-    return (<QrCodeSection talerWithdrawUri={talerWithdrawUri} abortButton={abortButton} />);
+    return (
+      <QrCodeSection
+        talerWithdrawUri={talerWithdrawUri}
+        abortButton={abortButton}
+      />
+    );
   }
   /**
    * Wallet POSTed the withdrawal details!  Ask the
    * user to authorize the operation (here CAPTCHA).
    */
-  return (<TalerWithdrawalConfirmationQuestion backendState={backendState} />);
+  return <TalerWithdrawalConfirmationQuestion backendState={backendState} />;
 }
-
-
 
 function WalletWithdraw(Props: any): VNode {
   const { backendState, pageStateSetter, focus } = Props;
   const currency = useContext(CurrencyContext);
   const i18n = useTranslator();
-  let submitAmount = '5.00';
-  const amountRegex = '^[0-9]+(\.[0-9]+)?$';
+  let submitAmount = "5.00";
+  const amountRegex = "^[0-9]+(.[0-9]+)?$";
 
-  const ref = useRef<HTMLInputElement>(null)
+  const ref = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (focus) ref.current?.focus();
   }, [focus]);
   return (
-    <div id="reserve-form"
-      class="pure-form"
-      name="tform">
+    <div id="reserve-form" class="pure-form" name="tform">
       <p>
         <label for="withdraw-amount">{i18n`Amount to withdraw:`}</label>&nbsp;
         <input
@@ -1315,7 +1474,8 @@ function WalletWithdraw(Props: any): VNode {
             // deactivate submit button as long as
             // amount is not valid
             submitAmount = e.currentTarget.value;
-          }} />
+          }}
+        />
         &nbsp;
         <input
           type="text"
@@ -1323,7 +1483,9 @@ function WalletWithdraw(Props: any): VNode {
           class="currency-indicator"
           size={currency.length}
           maxLength={currency.length}
-          tabIndex={-1} value={currency} />
+          tabIndex={-1}
+          value={currency}
+        />
       </p>
       <p>
         <div>
@@ -1343,15 +1505,15 @@ function WalletWithdraw(Props: any): VNode {
               createWithdrawalCall(
                 `${currency}:${submitAmount}`,
                 backendState,
-                pageStateSetter
-              )
-            }} />
+                pageStateSetter,
+              );
+            }}
+          />
         </div>
       </p>
     </div>
-  )
+  );
 }
-
 
 /**
  * Let the user choose a payment option,
@@ -1362,58 +1524,75 @@ function PaymentOptions(Props: any): VNode {
   const currency = useContext(CurrencyContext);
   const i18n = useTranslator();
 
-  const [tab, setTab] = useState<'charge-wallet' | 'wire-transfer'>('charge-wallet')
+  const [tab, setTab] = useState<"charge-wallet" | "wire-transfer">(
+    "charge-wallet",
+  );
 
-
-  return (<article>
-    <div class="payments">
-      <div class="tab">
-        <button class={tab === 'charge-wallet' ? 'tablinks active' : 'tablinks'}
-          onClick={(): void => { setTab('charge-wallet') }}>
-          {i18n`Charge Taler wallet`}
-        </button>
-        <button class={tab === 'wire-transfer' ? 'tablinks active' : 'tablinks'}
-          onClick={(): void => { setTab('wire-transfer') }}>
-          {i18n`Wire to bank account`}
-        </button>
+  return (
+    <article>
+      <div class="payments">
+        <div class="tab">
+          <button
+            class={tab === "charge-wallet" ? "tablinks active" : "tablinks"}
+            onClick={(): void => {
+              setTab("charge-wallet");
+            }}
+          >
+            {i18n`Charge Taler wallet`}
+          </button>
+          <button
+            class={tab === "wire-transfer" ? "tablinks active" : "tablinks"}
+            onClick={(): void => {
+              setTab("wire-transfer");
+            }}
+          >
+            {i18n`Wire to bank account`}
+          </button>
+        </div>
+        {tab === "charge-wallet" && (
+          <div id="charge-wallet" class="tabcontent active">
+            <h3>{i18n`Charge Taler wallet`}</h3>
+            <WalletWithdraw
+              backendState={backendState}
+              focus
+              pageStateSetter={pageStateSetter}
+            />
+          </div>
+        )}
+        {tab === "wire-transfer" && (
+          <div id="wire-transfer" class="tabcontent active">
+            <h3>{i18n`Wire to bank account`}</h3>
+            <PaytoWireTransfer
+              backendState={backendState}
+              focus
+              pageStateSetter={pageStateSetter}
+            />
+          </div>
+        )}
       </div>
-      {tab === 'charge-wallet' &&
-        <div id='charge-wallet' class='tabcontent active'>
-          <h3>{i18n`Charge Taler wallet`}</h3>
-          <WalletWithdraw
-            backendState={backendState}
-            focus
-            pageStateSetter={pageStateSetter} />
-        </div>
-      }
-      {tab === 'wire-transfer' &&
-        <div id='wire-transfer' class='tabcontent active'>
-          <h3>{i18n`Wire to bank account`}</h3>
-          <PaytoWireTransfer
-            backendState={backendState}
-            focus
-            pageStateSetter={pageStateSetter} />
-        </div>
-      }
-    </div>
-  </article>);
+    </article>
+  );
 }
 
 function RegistrationButton(Props: any): VNode {
   const { backendStateSetter, pageStateSetter } = Props;
   const i18n = useTranslator();
-  if (UI_ALLOW_REGISTRATIONS) 
-    return (<button
-      class="pure-button pure-button-secondary btn-cancel"
-      onClick={() => {
-        pageStateSetter((prevState: PageStateType) => ({ ...prevState, tryRegister: true }))
-      }}>
-      {i18n`Register`}
-    </button>);
-  
-  
-  return (<span />);
-  
+  if (UI_ALLOW_REGISTRATIONS)
+    return (
+      <button
+        class="pure-button pure-button-secondary btn-cancel"
+        onClick={() => {
+          pageStateSetter((prevState: PageStateType) => ({
+            ...prevState,
+            tryRegister: true,
+          }));
+        }}
+      >
+        {i18n`Register`}
+      </button>
+    );
+
+  return <span />;
 }
 
 /**
@@ -1423,72 +1602,87 @@ function LoginForm(Props: any): VNode {
   const { backendStateSetter, pageStateSetter } = Props;
   const [submitData, submitDataSetter] = useCredentialsRequestType();
   const i18n = useTranslator();
-  const ref = useRef<HTMLInputElement>(null)
+  const ref = useRef<HTMLInputElement>(null);
   useEffect(() => {
     ref.current?.focus();
   }, []);
-  return (<div class="login-div">
-    <form action="javascript:void(0);" class="login-form">
-      <div class="pure-form">
-        <h2>{i18n`Please login!`}</h2>
-        <p class="unameFieldLabel loginFieldLabel formFieldLabel"><label for="username">{i18n`Username:`}</label></p>
-        <input
-          ref={ref}
-          autoFocus
-          type="text"
-          name="username"
-          id="username"
-          value={submitData && submitData.username}
-          placeholder="Username"
-          required
-          onInput={(e): void => {
-            submitDataSetter((submitData: any) => ({
-              ...submitData,
-              username: e.currentTarget.value,
-            }))
-          }}
-        />
-        <p class="passFieldLabel loginFieldLabel formFieldLabel"><label for="password">{i18n`Password:`}</label></p>
-        <input
-          type="password"
-          name="password"
-          id="password"
-          value={submitData && submitData.password}
-          placeholder="Password"
-          required
-          onInput={(e): void => {
-            submitDataSetter((submitData: any) => ({
-              ...submitData,
-              password: e.currentTarget.value,
-            }))
-          }} />
-        <br />
-        <button
-          type="submit"
-          class="pure-button pure-button-primary"
-          onClick={() => {
-            if (typeof submitData === 'undefined') {
-              console.log('login data is undefined', submitData);
-              return;
-            }
-            if (submitData.password.length == 0 || submitData.username.length == 0) {
-              console.log('username or password is the empty string', submitData);
-              return;
-            }
-            loginCall(
-              // Deep copy, to avoid the cleanup
-              // below make data disappear.
-              { ...submitData },
-              backendStateSetter,
-              pageStateSetter
-            );
-            submitDataSetter(undefined);
-          }}>{i18n`Login`}
-        </button>
-        {RegistrationButton(Props)}
-      </div>
-    </form>
-  </div>);
+  return (
+    <div class="login-div">
+      <form action="javascript:void(0);" class="login-form">
+        <div class="pure-form">
+          <h2>{i18n`Please login!`}</h2>
+          <p class="unameFieldLabel loginFieldLabel formFieldLabel">
+            <label for="username">{i18n`Username:`}</label>
+          </p>
+          <input
+            ref={ref}
+            autoFocus
+            type="text"
+            name="username"
+            id="username"
+            value={submitData && submitData.username}
+            placeholder="Username"
+            required
+            onInput={(e): void => {
+              submitDataSetter((submitData: any) => ({
+                ...submitData,
+                username: e.currentTarget.value,
+              }));
+            }}
+          />
+          <p class="passFieldLabel loginFieldLabel formFieldLabel">
+            <label for="password">{i18n`Password:`}</label>
+          </p>
+          <input
+            type="password"
+            name="password"
+            id="password"
+            value={submitData && submitData.password}
+            placeholder="Password"
+            required
+            onInput={(e): void => {
+              submitDataSetter((submitData: any) => ({
+                ...submitData,
+                password: e.currentTarget.value,
+              }));
+            }}
+          />
+          <br />
+          <button
+            type="submit"
+            class="pure-button pure-button-primary"
+            onClick={() => {
+              if (typeof submitData === "undefined") {
+                console.log("login data is undefined", submitData);
+                return;
+              }
+              if (
+                submitData.password.length == 0 ||
+                submitData.username.length == 0
+              ) {
+                console.log(
+                  "username or password is the empty string",
+                  submitData,
+                );
+                return;
+              }
+              loginCall(
+                // Deep copy, to avoid the cleanup
+                // below make data disappear.
+                { ...submitData },
+                backendStateSetter,
+                pageStateSetter,
+              );
+              submitDataSetter(undefined);
+            }}
+          >
+            {i18n`Login`}
+          </button>
+          {RegistrationButton(Props)}
+        </div>
+      </form>
+    </div>
+  );
 }
 
 /**
@@ -1502,17 +1696,15 @@ function RegistrationForm(Props: any): VNode {
   // https://stackoverflow.com/questions/36683770/how-to-get-the-value-of-an-input-field-using-reactjs
   return (
     <Fragment>
-      <h1 class="nav">
-        {
-          i18n`Welcome to ${UI_BANK_NAME}!`
-        }
-      </h1>
+      <h1 class="nav">{i18n`Welcome to ${UI_BANK_NAME}!`}</h1>
       <article>
         <div class="register-div">
           <form action="javascript:void(0);" class="register-form">
             <div class="pure-form">
               <h2>{i18n`Please register!`}</h2>
-              <p class="unameFieldLabel registerFieldLabel formFieldLabel"><label for="register-un">{i18n`Username:`}</label></p>
+              <p class="unameFieldLabel registerFieldLabel formFieldLabel">
+                <label for="register-un">{i18n`Username:`}</label>
+              </p>
               <input
                 id="register-un"
                 name="register-un"
@@ -1524,10 +1716,13 @@ function RegistrationForm(Props: any): VNode {
                   submitDataSetter((submitData: any) => ({
                     ...submitData,
                     username: e.currentTarget.value,
-                  }))
-                }} />
+                  }));
+                }}
+              />
               <br />
-              <p class="unameFieldLabel registerFieldLabel formFieldLabel"><label for="register-pw">{i18n`Password:`}</label></p>
+              <p class="unameFieldLabel registerFieldLabel formFieldLabel">
+                <label for="register-pw">{i18n`Password:`}</label>
+              </p>
               <input
                 type="password"
                 name="register-pw"
@@ -1539,8 +1734,9 @@ function RegistrationForm(Props: any): VNode {
                   submitDataSetter((submitData: any) => ({
                     ...submitData,
                     password: e.currentTarget.value,
-                  }))
-                }} />
+                  }));
+                }}
+              />
               <br />
               {/*
               <label for="phone">{i18n`Phone number:`}</label>
@@ -1562,46 +1758,55 @@ function RegistrationForm(Props: any): VNode {
               <button
                 class="pure-button pure-button-primary btn-register"
                 onClick={() => {
-                  console.log('maybe submitting the registration..');
+                  console.log("maybe submitting the registration..");
                   console.log(submitData);
-                  if (typeof submitData === 'undefined') {
+                  if (typeof submitData === "undefined") {
                     console.log(`submit data ${submitData} is undefined`);
                     return;
                   }
-                  if ((typeof submitData.password === 'undefined') ||
-                    (typeof submitData.username === 'undefined')) {
-                    console.log('username or password is undefined');
+                  if (
+                    typeof submitData.password === "undefined" ||
+                    typeof submitData.username === "undefined"
+                  ) {
+                    console.log("username or password is undefined");
                     return;
                   }
-                  if (submitData.password.length === 0 ||
-                    submitData.username.length === 0) {
-                    console.log('username or password are the empty string');
+                  if (
+                    submitData.password.length === 0 ||
+                    submitData.username.length === 0
+                  ) {
+                    console.log("username or password are the empty string");
                     return;
                   }
-                  console.log('submitting the registration..');
+                  console.log("submitting the registration..");
                   registrationCall(
                     { ...submitData },
                     Props.backendStateSetter, // will store BE URL, if OK.
-                    pageStateSetter
+                    pageStateSetter,
                   );
-                  console.log('Clearing the input data');
+                  console.log("Clearing the input data");
                   /**
-                     * FIXME: clearing the data should be done by setting
-                     * it to undefined, instead of the empty strings, just
-                     * like done in the login function.  Now set to the empty
-                     * strings due to a non lively update of the <input> fields
-                     * after setting to undefined.
-                     */
-                  submitDataSetter({ username: '', password: '' })
-                }}>
+                   * FIXME: clearing the data should be done by setting
+                   * it to undefined, instead of the empty strings, just
+                   * like done in the login function.  Now set to the empty
+                   * strings due to a non lively update of the <input> fields
+                   * after setting to undefined.
+                   */
+                  submitDataSetter({ username: "", password: "" });
+                }}
+              >
                 {i18n`Register`}
               </button>
               {/* FIXME: should use a different color */}
               <button
                 class="pure-button pure-button-secondary btn-cancel"
                 onClick={() => {
-                  pageStateSetter((prevState: PageStateType) => ({ ...prevState, tryRegister: false }))
-                }}>
+                  pageStateSetter((prevState: PageStateType) => ({
+                    ...prevState,
+                    tryRegister: false,
+                  }));
+                }}
+              >
                 {i18n`Cancel`}
               </button>
             </div>
@@ -1609,7 +1814,7 @@ function RegistrationForm(Props: any): VNode {
         </div>
       </article>
     </Fragment>
-  )
+  );
 }
 
 /**
@@ -1619,20 +1824,20 @@ function Transactions(Props: any): VNode {
   const { pageNumber, accountLabel } = Props;
   const i18n = useTranslator();
   const { data, error } = useSWR(
-    `access-api/accounts/${accountLabel}/transactions?page=${pageNumber}`
+    `access-api/accounts/${accountLabel}/transactions?page=${pageNumber}`,
   );
-  if (typeof error !== 'undefined') {
-    console.log('transactions not found error', error);
+  if (typeof error !== "undefined") {
+    console.log("transactions not found error", error);
     switch (error.status) {
-    case 404: {
-      return <p>Transactions page {pageNumber} was not found.</p>
-    }
-    case 401: {
-      return <p>Wrong credentials given.</p>
-    }
-    default: {
-      return <p>Transaction page {pageNumber} could not be retrieved.</p>
-    }
+      case 404: {
+        return <p>Transactions page {pageNumber} was not found.</p>;
+      }
+      case 401: {
+        return <p>Wrong credentials given.</p>;
+      }
+      default: {
+        return <p>Transaction page {pageNumber} could not be retrieved.</p>;
+      }
     }
   }
   if (!data) {
@@ -1640,37 +1845,48 @@ function Transactions(Props: any): VNode {
     return <p>"Transactions page loading..."</p>;
   }
   console.log(`History data of ${accountLabel}`, data);
-  return (<div class="results">
-    <table class="pure-table pure-table-striped">
-      <thead>
-        <tr>
-          <th>{i18n`Date`}</th>
-          <th>{i18n`Amount`}</th>
-          <th>{i18n`Counterpart`}</th>
-          <th>{i18n`Subject`}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {data.transactions.map((item: any, idx: number) => {
-          const sign = item.direction == 'DBIT' ? '-' : '';
-          const counterpart = item.direction == 'DBIT' ? item.creditorIban : item.debtorIban;
-          // Pattern:
-          //
-          // DD/MM YYYY subject -5 EUR
-          // DD/MM YYYY subject 5 EUR
-          const dateRegex = /^([0-9]{4})-([0-9]{2})-([0-9]{1,2})/
-          const dateParse = dateRegex.exec(item.date)
-          const date = dateParse !== null ? `${dateParse[3]}/${dateParse[2]} ${dateParse[1]}` : 'date not found'
-          return (<tr key={idx}>
-            <td>{date}</td>
-            <td>{sign}{item.amount} {item.currency}</td>
-            <td>{counterpart}</td>
-            <td>{item.subject}</td>
-          </tr>);
-        })}
-      </tbody>
-    </table>
-  </div>);
+  return (
+    <div class="results">
+      <table class="pure-table pure-table-striped">
+        <thead>
+          <tr>
+            <th>{i18n`Date`}</th>
+            <th>{i18n`Amount`}</th>
+            <th>{i18n`Counterpart`}</th>
+            <th>{i18n`Subject`}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.transactions.map((item: any, idx: number) => {
+            const sign = item.direction == "DBIT" ? "-" : "";
+            const counterpart =
+              item.direction == "DBIT" ? item.creditorIban : item.debtorIban;
+            // Pattern:
+            //
+            // DD/MM YYYY subject -5 EUR
+            // DD/MM YYYY subject 5 EUR
+            const dateRegex = /^([0-9]{4})-([0-9]{2})-([0-9]{1,2})/;
+            const dateParse = dateRegex.exec(item.date);
+            const date =
+              dateParse !== null
+                ? `${dateParse[3]}/${dateParse[2]} ${dateParse[1]}`
+                : "date not found";
+            return (
+              <tr key={idx}>
+                <td>{date}</td>
+                <td>
+                  {sign}
+                  {item.amount} {item.currency}
+                </td>
+                <td>{counterpart}</td>
+                <td>{item.subject}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 /**
@@ -1685,38 +1901,35 @@ function Account(Props: any): VNode {
   const endpoint = `access-api/accounts/${accountLabel}`;
   const { data, error } = useSWR(endpoint);
   const [pageState, pageStateSetter] = useContext(PageContext);
-  const {
-    withdrawalInProgress,
-    withdrawalId,
-    isLoggedIn,
-    talerWithdrawUri } = pageState;
+  const { withdrawalInProgress, withdrawalId, isLoggedIn, talerWithdrawUri } =
+    pageState;
   const i18n = useTranslator();
   /**
    * This part shows a list of transactions: with 5 elements by
    * default and offers a "load more" button.
    */
-  const [txPageNumber, setTxPageNumber] = useTransactionPageNumber()
-  const txsPages = []
+  const [txPageNumber, setTxPageNumber] = useTransactionPageNumber();
+  const txsPages = [];
   for (let i = 0; i <= txPageNumber; i++)
-    txsPages.push(<Transactions accountLabel={accountLabel} pageNumber={i} />)
+    txsPages.push(<Transactions accountLabel={accountLabel} pageNumber={i} />);
 
-  if (typeof error !== 'undefined') {
-    console.log('account error', error);
+  if (typeof error !== "undefined") {
+    console.log("account error", error);
     /**
      * FIXME: to minimize the code, try only one invocation
      * of pageStateSetter, after having decided the error
      * message in the case-branch.
      */
     switch (error.status) {
-    case 404: {
-      pageStateSetter((prevState: PageStateType) => ({
-        ...prevState,
-        hasError: true,
-        isLoggedIn: false,
-        error: i18n`Username or account label '${accountLabel}' not found.  Won't login.`
-      }));
+      case 404: {
+        pageStateSetter((prevState: PageStateType) => ({
+          ...prevState,
+          hasError: true,
+          isLoggedIn: false,
+          error: i18n`Username or account label '${accountLabel}' not found.  Won't login.`,
+        }));
 
-      /**
+        /**
          * 404 should never stick to the cache, because they
          * taint successful future registrations.  How?  After
          * registering, the user gets navigated to this page,
@@ -1729,27 +1942,27 @@ function Account(Props: any): VNode {
          * in the legitimate request after the registration to still
          * be flagged as 404.  Clearing the cache should prevent
          * this.  */
-      (cache as any).clear();
-      return <p>Profile not found...</p>;
-    }
-    case 401: {
-      pageStateSetter((prevState: PageStateType) => ({
-        ...prevState,
-        hasError: true,
-        isLoggedIn: false,
-        error: i18n`Wrong credentials given.`
-      }));
-      return <p>Wrong credentials...</p>;
-    }
-    default: {
-      pageStateSetter((prevState: PageStateType) => ({
-        ...prevState,
-        hasError: true,
-        isLoggedIn: false,
-        error: i18n`Account information could not be retrieved.`
-      }));
-      return <p>Unknown problem...</p>;
-    }
+        (cache as any).clear();
+        return <p>Profile not found...</p>;
+      }
+      case 401: {
+        pageStateSetter((prevState: PageStateType) => ({
+          ...prevState,
+          hasError: true,
+          isLoggedIn: false,
+          error: i18n`Wrong credentials given.`,
+        }));
+        return <p>Wrong credentials...</p>;
+      }
+      default: {
+        pageStateSetter((prevState: PageStateType) => ({
+          ...prevState,
+          hasError: true,
+          isLoggedIn: false,
+          error: i18n`Account information could not be retrieved.`,
+        }));
+        return <p>Unknown problem...</p>;
+      }
     }
   }
   if (!data) return <p>Retrieving the profile page...</p>;
@@ -1768,51 +1981,60 @@ function Account(Props: any): VNode {
    */
   console.log(`maybe new withdrawal ${talerWithdrawUri}`);
   if (talerWithdrawUri) {
-    console.log('Bank created a new Taler withdrawal');
+    console.log("Bank created a new Taler withdrawal");
     return (
       <BankFrame>
         <TalerWithdrawalQRCode
           accountLabel={accountLabel}
           backendState={backendState}
           withdrawalId={withdrawalId}
-          talerWithdrawUri={talerWithdrawUri} />
+          talerWithdrawUri={talerWithdrawUri}
+        />
       </BankFrame>
     );
   }
-  const balance = parseAmount(data.balance.amount)
+  const balance = parseAmount(data.balance.amount);
 
-  return (<BankFrame>
-    <div>
-      <h1 class="nav welcome-text">
-        <Translate>Welcome, {accountLabel} ({getIbanFromPayto(data.paytoUri)})!</Translate>
-      </h1>
-    </div>
-    <section id="assets">
-      <div class="asset-summary">
-        <h2>{i18n`Bank account balance`}</h2>
-        {data.balance.credit_debit_indicator == 'debit' ? (<b>-</b>) : null}
-        <div class="large-amount amount"><span class="value">{`${balance.value}`}</span>&nbsp;<span class="currency">{`${balance.currency}`}</span></div>
+  return (
+    <BankFrame>
+      <div>
+        <h1 class="nav welcome-text">
+          <Translate>
+            Welcome, {accountLabel} ({getIbanFromPayto(data.paytoUri)})!
+          </Translate>
+        </h1>
       </div>
-    </section>
-    <section id="payments">
-      <div class="payments">
-        <h2>{i18n`Payments`}</h2>
-        {/* FIXME: turn into button! */}
-        <CurrencyContext.Provider value={balance.currency}>
-          {Props.children}
-          <PaymentOptions
-            backendState={backendState}
-            pageStateSetter={pageStateSetter} />
-        </CurrencyContext.Provider>
-      </div>
-    </section>
-    <section id="main">
-      <article>
-        <h2>{i18n`Latest transactions:`}</h2>
-        <Transactions pageNumber="0" accountLabel={accountLabel} />
-      </article>
-    </section>
-  </BankFrame>);
+      <section id="assets">
+        <div class="asset-summary">
+          <h2>{i18n`Bank account balance`}</h2>
+          {data.balance.credit_debit_indicator == "debit" ? <b>-</b> : null}
+          <div class="large-amount amount">
+            <span class="value">{`${balance.value}`}</span>&nbsp;
+            <span class="currency">{`${balance.currency}`}</span>
+          </div>
+        </div>
+      </section>
+      <section id="payments">
+        <div class="payments">
+          <h2>{i18n`Payments`}</h2>
+          {/* FIXME: turn into button! */}
+          <CurrencyContext.Provider value={balance.currency}>
+            {Props.children}
+            <PaymentOptions
+              backendState={backendState}
+              pageStateSetter={pageStateSetter}
+            />
+          </CurrencyContext.Provider>
+        </div>
+      </section>
+      <section id="main">
+        <article>
+          <h2>{i18n`Latest transactions:`}</h2>
+          <Transactions pageNumber="0" accountLabel={accountLabel} />
+        </article>
+      </section>
+    </BankFrame>
+  );
 }
 
 /**
@@ -1822,42 +2044,42 @@ function SWRWithCredentials(props: any): VNode {
   const { username, password, backendUrl } = props;
   const headers = new Headers();
   headers.append(
-    'Authorization',
-    `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`
+    "Authorization",
+    `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`,
   );
-  console.log('Likely backend base URL', backendUrl);
+  console.log("Likely backend base URL", backendUrl);
   return (
     <SWRConfig
       value={{
         fetcher: (url: string) =>
-          fetch(backendUrl + url || '', { headers }).then(
-            (r) => {
-              if (!r.ok)
-                throw { status: r.status, json: r.json() };
+          fetch(backendUrl + url || "", { headers }).then((r) => {
+            if (!r.ok) throw { status: r.status, json: r.json() };
 
-              return r.json()
-            }
-          ),
-      }}>{props.children}</SWRConfig>
+            return r.json();
+          }),
+      }}
+    >
+      {props.children}
+    </SWRConfig>
   );
 }
 
 function SWRWithoutCredentials(Props: any): VNode {
   const { baseUrl } = Props;
-  console.log('Base URL', baseUrl);
+  console.log("Base URL", baseUrl);
   return (
     <SWRConfig
       value={{
         fetcher: (url: string) =>
-          fetch(baseUrl + url || '').then(
-            (r) => {
-              if (!r.ok)
-                throw { status: r.status, json: r.json() };
+          fetch(baseUrl + url || "").then((r) => {
+            if (!r.ok) throw { status: r.status, json: r.json() };
 
-              return r.json()
-            }
-          ),
-      }}>{Props.children}</SWRConfig>
+            return r.json();
+          }),
+      }}
+    >
+      {Props.children}
+    </SWRConfig>
   );
 }
 
@@ -1866,34 +2088,33 @@ function SWRWithoutCredentials(Props: any): VNode {
  */
 function PublicHistories(Props: any): VNode {
   const [showAccount, setShowAccount] = useShowPublicAccount();
-  const { data, error } = useSWR('access-api/public-accounts');
+  const { data, error } = useSWR("access-api/public-accounts");
   const i18n = useTranslator();
 
-  if (typeof error !== 'undefined') {
-    console.log('account error', error);
+  if (typeof error !== "undefined") {
+    console.log("account error", error);
     switch (error.status) {
-    case 404:
-      console.log('public accounts: 404', error);
-      Props.pageStateSetter((prevState: PageStateType) => ({
-        ...prevState,
-        hasError: true,
-        showPublicHistories: false,
-        error: i18n`List of public accounts was not found.`
-      }));
-      break;
-    default:
-      console.log('public accounts: non-404 error', error);
-      Props.pageStateSetter((prevState: PageStateType) => ({
-        ...prevState,
-        hasError: true,
-        showPublicHistories: false,
-        error: i18n`List of public accounts could not be retrieved.`
-      }));
-      break;
+      case 404:
+        console.log("public accounts: 404", error);
+        Props.pageStateSetter((prevState: PageStateType) => ({
+          ...prevState,
+          hasError: true,
+          showPublicHistories: false,
+          error: i18n`List of public accounts was not found.`,
+        }));
+        break;
+      default:
+        console.log("public accounts: non-404 error", error);
+        Props.pageStateSetter((prevState: PageStateType) => ({
+          ...prevState,
+          hasError: true,
+          showPublicHistories: false,
+          error: i18n`List of public accounts could not be retrieved.`,
+        }));
+        break;
     }
   }
-  if (!data)
-    return (<p>Waiting public accounts list...</p>)
+  if (!data) return <p>Waiting public accounts list...</p>;
   const txs: any = {};
   const accountsBar = [];
 
@@ -1901,36 +2122,54 @@ function PublicHistories(Props: any): VNode {
    * Show the account specified in the props, or just one
    * from the list if that's not given.
    */
-  if (typeof showAccount === 'undefined' && data.publicAccounts.length > 0)
+  if (typeof showAccount === "undefined" && data.publicAccounts.length > 0)
     setShowAccount(data.publicAccounts[1].accountLabel);
   console.log(`Public history tab: ${showAccount}`);
 
   // Ask story of all the public accounts.
   for (const account of data.publicAccounts) {
-    console.log('Asking transactions for', account.accountLabel)
+    console.log("Asking transactions for", account.accountLabel);
     const isSelected = account.accountLabel == showAccount;
     accountsBar.push(
-      <li class={isSelected ? 'pure-menu-selected pure-menu-item' : 'pure-menu-item pure-menu'}>
-        <a href="#"
+      <li
+        class={
+          isSelected
+            ? "pure-menu-selected pure-menu-item"
+            : "pure-menu-item pure-menu"
+        }
+      >
+        <a
+          href="#"
           class="pure-menu-link"
-          onClick={() => setShowAccount(account.accountLabel)}>{account.accountLabel}</a>
-      </li>
+          onClick={() => setShowAccount(account.accountLabel)}
+        >
+          {account.accountLabel}
+        </a>
+      </li>,
     );
-    txs[account.accountLabel] = <Transactions accountLabel={account.accountLabel} pageNumber={0} />
+    txs[account.accountLabel] = (
+      <Transactions accountLabel={account.accountLabel} pageNumber={0} />
+    );
   }
 
-  return (<Fragment>
-    <h1 class="nav">{i18n`History of public accounts`}</h1>
-    <section id="main">
-      <article>
-        <div class="pure-menu pure-menu-horizontal" name="accountMenu">
-          <ul class="pure-menu-list">{accountsBar}</ul>
-          {typeof showAccount !== 'undefined' ? txs[showAccount] : <p>No public transactions found.</p>}
-          {Props.children}
-        </div>
-      </article>
-    </section>
-  </Fragment>);
+  return (
+    <Fragment>
+      <h1 class="nav">{i18n`History of public accounts`}</h1>
+      <section id="main">
+        <article>
+          <div class="pure-menu pure-menu-horizontal" name="accountMenu">
+            <ul class="pure-menu-list">{accountsBar}</ul>
+            {typeof showAccount !== "undefined" ? (
+              txs[showAccount]
+            ) : (
+              <p>No public transactions found.</p>
+            )}
+            {Props.children}
+          </div>
+        </article>
+      </section>
+    </Fragment>
+  );
 }
 
 /**
@@ -1945,22 +2184,31 @@ export function BankHome(): VNode {
   const i18n = useTranslator();
 
   if (pageState.showPublicHistories)
-    return (<SWRWithoutCredentials baseUrl={getRootPath()}>
-      <PageContext.Provider value={[pageState, pageStateSetter]}>
-        <BankFrame>
-          <PublicHistories pageStateSetter={pageStateSetter}>
-            <br />
-            <a class="pure-button" onClick={() => {
-              pageStateSetter((prevState: PageStateType) =>
-                ({ ...prevState, showPublicHistories: false }))
-            }}>Go back</a>
-          </PublicHistories>
-        </BankFrame>
-      </PageContext.Provider>
-    </SWRWithoutCredentials>);
+    return (
+      <SWRWithoutCredentials baseUrl={getRootPath()}>
+        <PageContext.Provider value={[pageState, pageStateSetter]}>
+          <BankFrame>
+            <PublicHistories pageStateSetter={pageStateSetter}>
+              <br />
+              <a
+                class="pure-button"
+                onClick={() => {
+                  pageStateSetter((prevState: PageStateType) => ({
+                    ...prevState,
+                    showPublicHistories: false,
+                  }));
+                }}
+              >
+                Go back
+              </a>
+            </PublicHistories>
+          </BankFrame>
+        </PageContext.Provider>
+      </SWRWithoutCredentials>
+    );
 
   if (pageState.tryRegister) {
-    console.log('allow registrations?', UI_ALLOW_REGISTRATIONS);
+    console.log("allow registrations?", UI_ALLOW_REGISTRATIONS);
     if (UI_ALLOW_REGISTRATIONS)
       return (
         <PageContext.Provider value={[pageState, pageStateSetter]}>
@@ -1979,23 +2227,27 @@ export function BankHome(): VNode {
     );
   }
   if (pageState.isLoggedIn) {
-    if (typeof backendState === 'undefined') {
+    if (typeof backendState === "undefined") {
       pageStateSetter((prevState) => ({
         ...prevState,
         hasError: true,
         isLoggedIn: false,
-        error: i18n`Page has a problem: logged in but backend state is lost.`
+        error: i18n`Page has a problem: logged in but backend state is lost.`,
       }));
-      return (<p>Error: waiting for details...</p>);
+      return <p>Error: waiting for details...</p>;
     }
-    console.log('Showing the profile page..');
+    console.log("Showing the profile page..");
     return (
       <SWRWithCredentials
         username={backendState.username}
         password={backendState.password}
-        backendUrl={backendState.url}>
+        backendUrl={backendState.url}
+      >
         <PageContext.Provider value={[pageState, pageStateSetter]}>
-          <Account accountLabel={backendState.username} backendState={backendState} />
+          <Account
+            accountLabel={backendState.username}
+            backendState={backendState}
+          />
         </PageContext.Provider>
       </SWRWithCredentials>
     );
@@ -2004,14 +2256,11 @@ export function BankHome(): VNode {
   return (
     <PageContext.Provider value={[pageState, pageStateSetter]}>
       <BankFrame>
-        <h1 class="nav">
-          {
-            i18n`Welcome to ${UI_BANK_NAME}!`
-          }
-        </h1>
+        <h1 class="nav">{i18n`Welcome to ${UI_BANK_NAME}!`}</h1>
         <LoginForm
           pageStateSetter={pageStateSetter}
-          backendStateSetter={backendStateSetter} />
+          backendStateSetter={backendStateSetter}
+        />
       </BankFrame>
     </PageContext.Provider>
   );

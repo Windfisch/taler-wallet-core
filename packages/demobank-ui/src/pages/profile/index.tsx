@@ -1,5 +1,5 @@
-import { FunctionalComponent, h } from 'preact';
-import { useEffect, useState } from 'preact/hooks';
+import { FunctionalComponent, h } from "preact";
+import { useEffect, useState } from "preact/hooks";
 
 interface Props {
   user: string;
