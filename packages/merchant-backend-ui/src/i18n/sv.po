@@ -1,0 +1,1057 @@
+# This file is part of TALER
+# (C) 2016 GNUnet e.V.
+#
+# TALER is free software; you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 3, or (at your option) any later version.
+#
+# TALER is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Taler Wallet\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-11-23 00:00+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/ApplicationReadyRoutes.tsx:50 src/InstanceRoutes.tsx:118
+#: src/InstanceRoutes.tsx:299
+#, c-format
+msgid "Access denied"
+msgstr ""
+
+#: src/ApplicationReadyRoutes.tsx:51 src/InstanceRoutes.tsx:118
+#: src/InstanceRoutes.tsx:300
+#, c-format
+msgid "Check your token is valid"
+msgstr ""
+
+#: src/ApplicationReadyRoutes.tsx:72
+#, c-format
+msgid "Couldn't access the server."
+msgstr ""
+
+#: src/ApplicationReadyRoutes.tsx:73
+#, c-format
+msgid "Could not infer instance id from url %1$s"
+msgstr ""
+
+#: src/InstanceRoutes.tsx:109
+#, c-format
+msgid "HTTP status #%1$s: Server reported a problem"
+msgstr ""
+
+#: src/InstanceRoutes.tsx:110
+#, c-format
+msgid "Got message: \"%1$s\" from: %2$s"
+msgstr ""
+
+#: src/InstanceRoutes.tsx:127
+#, c-format
+msgid "No default instance"
+msgstr ""
+
+#: src/InstanceRoutes.tsx:128
+#, c-format
+msgid ""
+"in order to use merchant backoffice, you should create the default instance"
+msgstr ""
+
+#: src/InstanceRoutes.tsx:288
+#, c-format
+msgid "Server reported a problem: HTTP status #%1$s"
+msgstr ""
+
+#: src/InstanceRoutes.tsx:289
+#, c-format
+msgid "Got message: %1$s from: %2$s"
+msgstr ""
+
+#: src/components/exception/login.tsx:46
+#, c-format
+msgid "Login required"
+msgstr ""
+
+#: src/components/exception/login.tsx:49
+#, c-format
+msgid ""
+"Please enter your auth token. Token should have \"secret-token:\" and start "
+"with Bearer or ApiKey"
+msgstr ""
+
+#: src/components/exception/login.tsx:86 src/components/modal/index.tsx:53
+#: src/components/modal/index.tsx:75 src/paths/admin/create/CreatePage.tsx:115
+#: src/paths/instance/orders/create/CreatePage.tsx:325
+#: src/paths/instance/products/create/CreatePage.tsx:51
+#: src/paths/instance/products/list/Table.tsx:174
+#: src/paths/instance/products/list/Table.tsx:228
+#: src/paths/instance/products/update/UpdatePage.tsx:55
+#: src/paths/instance/transfers/create/CreatePage.tsx:89
+#: src/paths/instance/update/UpdatePage.tsx:134
+#, c-format
+msgid "Confirm"
+msgstr ""
+
+#: src/components/form/InputArray.tsx:72
+#, c-format
+msgid "The value %1$s is invalid for a payment url"
+msgstr ""
+
+#: src/components/form/InputDate.tsx:67
+#: src/paths/instance/orders/list/index.tsx:123
+#, c-format
+msgid "pick a date"
+msgstr ""
+
+#: src/components/form/InputDate.tsx:81
+#, c-format
+msgid "clear"
+msgstr ""
+
+#: src/components/form/InputDate.tsx:83
+#: src/paths/instance/transfers/list/Table.tsx:140
+#, c-format
+msgid "never"
+msgstr ""
+
+#: src/components/form/InputImage.tsx:80
+#, c-format
+msgid "Image should be smaller than 1 MB"
+msgstr ""
+
+#: src/components/form/InputLocation.tsx:28
+#, c-format
+msgid "Country"
+msgstr ""
+
+#: src/components/form/InputLocation.tsx:30
+#: src/paths/admin/create/CreatePage.tsx:99
+#: src/paths/instance/transfers/list/Table.tsx:124
+#: src/paths/instance/update/UpdatePage.tsx:118
+#, c-format
+msgid "Address"
+msgstr ""
+
+#: src/components/form/InputLocation.tsx:34
+#, c-format
+msgid "Building number"
+msgstr ""
+
+#: src/components/form/InputLocation.tsx:35
+#, c-format
+msgid "Building name"
+msgstr ""
+
+#: src/components/form/InputLocation.tsx:36
+#, c-format
+msgid "Street"
+msgstr ""
+
+#: src/components/form/InputLocation.tsx:37
+#, c-format
+msgid "Post code"
+msgstr ""
+
+#: src/components/form/InputLocation.tsx:38
+#, c-format
+msgid "Town location"
+msgstr ""
+
+#: src/components/form/InputLocation.tsx:39
+#, c-format
+msgid "Town"
+msgstr ""
+
+#: src/components/form/InputLocation.tsx:40
+#, c-format
+msgid "District"
+msgstr ""
+
+#: src/components/form/InputLocation.tsx:41
+#, c-format
+msgid "Country subdivision"
+msgstr ""
+
+#: src/components/form/InputSearchProduct.tsx:59
+#, c-format
+msgid "Product id"
+msgstr ""
+
+#: src/components/form/InputSearchProduct.tsx:60
+#: src/components/product/ProductForm.tsx:99
+#: src/paths/instance/orders/create/NonInventoryProductForm.tsx:122
+#: src/paths/instance/orders/list/Table.tsx:227
+#: src/paths/instance/products/list/Table.tsx:86
+#, c-format
+msgid "Description"
+msgstr ""
+
+#: src/components/form/InputSearchProduct.tsx:73
+#: src/components/form/InputTaxes.tsx:81
+#: src/paths/admin/create/CreatePage.tsx:87 src/paths/admin/list/Table.tsx:110
+#: src/paths/instance/details/DetailPage.tsx:76
+#: src/paths/instance/update/UpdatePage.tsx:106
+#, c-format
+msgid "Name"
+msgstr ""
+
+#: src/components/form/InputSearchProduct.tsx:102
+#, c-format
+msgid "loading..."
+msgstr ""
+
+#: src/components/form/InputSearchProduct.tsx:108
+#, c-format
+msgid "no products found"
+msgstr ""
+
+#: src/components/form/InputSearchProduct.tsx:116
+#, c-format
+msgid "no results"
+msgstr ""
+
+#: src/components/form/InputSecured.tsx:33
+#, c-format
+msgid "Deleting"
+msgstr ""
+
+#: src/components/form/InputSecured.tsx:34
+#, c-format
+msgid "Changing"
+msgstr ""
+
+#: src/components/form/InputSecured.tsx:60
+#, c-format
+msgid "Manage token"
+msgstr ""
+
+#: src/components/form/InputSecured.tsx:83
+#, c-format
+msgid "Update"
+msgstr ""
+
+#: src/components/form/InputSecured.tsx:100
+#: src/paths/instance/orders/create/CreatePage.tsx:252
+#: src/paths/instance/orders/create/CreatePage.tsx:273
+#, c-format
+msgid "Remove"
+msgstr ""
+
+#: src/components/form/InputSecured.tsx:106 src/components/modal/index.tsx:52
+#: src/components/modal/index.tsx:73 src/paths/admin/create/CreatePage.tsx:114
+#: src/paths/instance/orders/create/CreatePage.tsx:324
+#: src/paths/instance/products/create/CreatePage.tsx:50
+#: src/paths/instance/products/list/Table.tsx:166
+#: src/paths/instance/products/list/Table.tsx:218
+#: src/paths/instance/products/update/UpdatePage.tsx:54
+#: src/paths/instance/transfers/create/CreatePage.tsx:88
+#: src/paths/instance/update/UpdatePage.tsx:133
+#, c-format
+msgid "Cancel"
+msgstr ""
+
+#: src/components/form/InputStock.tsx:91
+#, c-format
+msgid "Manage stock"
+msgstr ""
+
+#: src/components/form/InputStock.tsx:93
+#, c-format
+msgid "Infinite"
+msgstr ""
+
+#: src/components/form/InputStock.tsx:105
+#, c-format
+msgid "lost cannot be greater that current + incoming (max %1$s)"
+msgstr ""
+
+#: src/components/form/InputStock.tsx:111
+#, c-format
+msgid "current stock will change from %1$s to %2$s"
+msgstr ""
+
+#: src/components/form/InputStock.tsx:112
+#, c-format
+msgid "current stock will stay at %1$s"
+msgstr ""
+
+#: src/components/form/InputStock.tsx:129
+#: src/paths/instance/products/list/Table.tsx:204
+#, c-format
+msgid "Incoming"
+msgstr ""
+
+#: src/components/form/InputStock.tsx:130
+#: src/paths/instance/products/list/Table.tsx:205
+#, c-format
+msgid "Lost"
+msgstr ""
+
+#: src/components/form/InputStock.tsx:142
+#, c-format
+msgid "Current"
+msgstr ""
+
+#: src/components/form/InputStock.tsx:145
+#, c-format
+msgid "without stock"
+msgstr ""
+
+#: src/components/form/InputStock.tsx:150
+#, c-format
+msgid "Next restock"
+msgstr ""
+
+#: src/components/form/InputStock.tsx:152
+#, c-format
+msgid "Delivery address"
+msgstr ""
+
+#: src/components/form/InputTaxes.tsx:73
+#, c-format
+msgid "this product has no taxes"
+msgstr ""
+
+#: src/components/form/InputTaxes.tsx:77
+#: src/paths/instance/orders/details/DetailPage.tsx:145
+#: src/paths/instance/orders/details/DetailPage.tsx:296
+#: src/paths/instance/orders/list/Table.tsx:116
+#: src/paths/instance/transfers/create/CreatePage.tsx:84
+#, c-format
+msgid "Amount"
+msgstr ""
+
+#: src/components/form/InputTaxes.tsx:78
+#, c-format
+msgid "currency and value separated with colon"
+msgstr ""
+
+#: src/components/form/InputTaxes.tsx:84
+#: src/paths/instance/orders/create/InventoryProductForm.tsx:78
+#, c-format
+msgid "Add"
+msgstr ""
+
+#: src/components/menu/SideBar.tsx:53
+#, c-format
+msgid "Instance"
+msgstr ""
+
+#: src/components/menu/SideBar.tsx:59
+#, c-format
+msgid "Settings"
+msgstr ""
+
+#: src/components/menu/SideBar.tsx:65
+#: src/paths/instance/orders/list/Table.tsx:60
+#, c-format
+msgid "Orders"
+msgstr ""
+
+#: src/components/menu/SideBar.tsx:71
+#: src/paths/instance/orders/create/CreatePage.tsx:258
+#: src/paths/instance/products/list/Table.tsx:48
+#, c-format
+msgid "Products"
+msgstr ""
+
+#: src/components/menu/SideBar.tsx:77
+#: src/paths/instance/transfers/list/Table.tsx:65
+#, c-format
+msgid "Transfers"
+msgstr ""
+
+#: src/components/menu/SideBar.tsx:87
+#, c-format
+msgid "Connection"
+msgstr ""
+
+#: src/components/menu/SideBar.tsx:112 src/paths/admin/list/Table.tsx:57
+#, c-format
+msgid "Instances"
+msgstr ""
+
+#: src/components/menu/SideBar.tsx:116
+#, c-format
+msgid "New"
+msgstr ""
+
+#: src/components/menu/SideBar.tsx:122
+#, c-format
+msgid "List"
+msgstr ""
+
+#: src/components/menu/SideBar.tsx:129
+#, c-format
+msgid "Log out"
+msgstr ""
+
+#: src/components/modal/index.tsx:74
+#, c-format
+msgid "Clear"
+msgstr ""
+
+#: src/components/modal/index.tsx:110 src/components/modal/index.tsx:111
+#, c-format
+msgid "should be the same"
+msgstr ""
+
+#: src/components/modal/index.tsx:111
+#, c-format
+msgid "cannot be the same as before"
+msgstr ""
+
+#: src/components/modal/index.tsx:114
+#, c-format
+msgid ""
+"You are updating the authorization token from instance %1$s with id %2$s"
+msgstr ""
+
+#: src/components/modal/index.tsx:124
+#, c-format
+msgid "Old token"
+msgstr ""
+
+#: src/components/modal/index.tsx:125
+#, c-format
+msgid "New token"
+msgstr ""
+
+#: src/components/modal/index.tsx:127
+#, c-format
+msgid "Clearing the auth token will mean public access to the instance"
+msgstr ""
+
+#: src/components/product/ProductForm.tsx:96
+#: src/paths/admin/create/CreatePage.tsx:85 src/paths/admin/list/Table.tsx:109
+#: src/paths/instance/transfers/list/Table.tsx:122
+#, c-format
+msgid "ID"
+msgstr ""
+
+#: src/components/product/ProductForm.tsx:98
+#: src/paths/instance/orders/create/NonInventoryProductForm.tsx:121
+#: src/paths/instance/products/list/Table.tsx:85
+#, c-format
+msgid "Image"
+msgstr ""
+
+#: src/components/product/ProductForm.tsx:100
+#: src/paths/instance/orders/create/NonInventoryProductForm.tsx:123
+#, c-format
+msgid "Unit"
+msgstr ""
+
+#: src/components/product/ProductForm.tsx:101
+#: src/paths/instance/orders/create/NonInventoryProductForm.tsx:124
+#: src/paths/instance/products/list/Table.tsx:162
+#: src/paths/instance/products/list/Table.tsx:214
+#, c-format
+msgid "Price"
+msgstr ""
+
+#: src/components/product/ProductForm.tsx:103
+#: src/paths/instance/products/list/Table.tsx:90
+#, c-format
+msgid "Stock"
+msgstr ""
+
+#: src/components/product/ProductForm.tsx:105
+#: src/paths/instance/orders/create/NonInventoryProductForm.tsx:128
+#: src/paths/instance/products/list/Table.tsx:88
+#, c-format
+msgid "Taxes"
+msgstr ""
+
+#: src/index.tsx:75
+#, c-format
+msgid "Server not found"
+msgstr ""
+
+#: src/index.tsx:85
+#, c-format
+msgid "Couldn't access the server"
+msgstr ""
+
+#: src/index.tsx:87 src/index.tsx:99
+#, c-format
+msgid "Got message %1$s from %2$s"
+msgstr ""
+
+#: src/index.tsx:97
+#, c-format
+msgid "Unexpected Error"
+msgstr ""
+
+#: src/paths/admin/create/CreatePage.tsx:89
+#: src/paths/instance/update/UpdatePage.tsx:108
+#, c-format
+msgid "Auth token"
+msgstr ""
+
+#: src/paths/admin/create/CreatePage.tsx:91
+#: src/paths/instance/details/DetailPage.tsx:77
+#: src/paths/instance/update/UpdatePage.tsx:110
+#, c-format
+msgid "Account address"
+msgstr ""
+
+#: src/paths/admin/create/CreatePage.tsx:93
+#: src/paths/instance/update/UpdatePage.tsx:112
+#, c-format
+msgid "Default max deposit fee"
+msgstr ""
+
+#: src/paths/admin/create/CreatePage.tsx:95
+#: src/paths/instance/update/UpdatePage.tsx:114
+#, c-format
+msgid "Default max wire fee"
+msgstr ""
+
+#: src/paths/admin/create/CreatePage.tsx:97
+#: src/paths/instance/update/UpdatePage.tsx:116
+#, c-format
+msgid "Default wire fee amortization"
+msgstr ""
+
+#: src/paths/admin/create/CreatePage.tsx:103
+#: src/paths/instance/update/UpdatePage.tsx:122
+#, c-format
+msgid "Jurisdiction"
+msgstr ""
+
+#: src/paths/admin/create/CreatePage.tsx:107
+#: src/paths/instance/update/UpdatePage.tsx:126
+#, c-format
+msgid "Default pay delay"
+msgstr ""
+
+#: src/paths/admin/create/CreatePage.tsx:109
+#: src/paths/instance/update/UpdatePage.tsx:128
+#, c-format
+msgid "Default wire transfer delay"
+msgstr ""
+
+#: src/paths/admin/create/index.tsx:58
+#, c-format
+msgid "could not create instance"
+msgstr ""
+
+#: src/paths/admin/list/Table.tsx:63 src/paths/admin/list/Table.tsx:131
+#: src/paths/instance/transfers/list/Table.tsx:71
+#, c-format
+msgid "Delete"
+msgstr ""
+
+#: src/paths/admin/list/Table.tsx:128
+#, c-format
+msgid "Edit"
+msgstr ""
+
+#: src/paths/admin/list/Table.tsx:149
+#: src/paths/instance/products/list/Table.tsx:245
+#, c-format
+msgid "There is no instances yet, add more pressing the + sign"
+msgstr ""
+
+#: src/paths/instance/orders/create/CreatePage.tsx:237
+#, c-format
+msgid "Inventory products"
+msgstr ""
+
+#: src/paths/instance/orders/create/CreatePage.tsx:286
+#, c-format
+msgid "Total price"
+msgstr ""
+
+#: src/paths/instance/orders/create/CreatePage.tsx:287
+#, c-format
+msgid "Total tax"
+msgstr ""
+
+#: src/paths/instance/orders/create/CreatePage.tsx:289
+#: src/paths/instance/orders/create/CreatePage.tsx:297
+#, c-format
+msgid "Order price"
+msgstr ""
+
+#: src/paths/instance/orders/create/CreatePage.tsx:295
+#, c-format
+msgid "Net"
+msgstr ""
+
+#: src/paths/instance/orders/create/CreatePage.tsx:300
+#: src/paths/instance/orders/details/DetailPage.tsx:144
+#: src/paths/instance/orders/details/DetailPage.tsx:295
+#: src/paths/instance/orders/list/Table.tsx:117
+#, c-format
+msgid "Summary"
+msgstr ""
+
+#: src/paths/instance/orders/create/CreatePage.tsx:302
+#, c-format
+msgid "Payments options"
+msgstr ""
+
+#: src/paths/instance/orders/create/CreatePage.tsx:303
+#, c-format
+msgid "Auto refund deadline"
+msgstr ""
+
+#: src/paths/instance/orders/create/CreatePage.tsx:304
+#, c-format
+msgid "Refund deadline"
+msgstr ""
+
+#: src/paths/instance/orders/create/CreatePage.tsx:305
+#, c-format
+msgid "Pay deadline"
+msgstr ""
+
+#: src/paths/instance/orders/create/CreatePage.tsx:307
+#, c-format
+msgid "Delivery date"
+msgstr ""
+
+#: src/paths/instance/orders/create/CreatePage.tsx:308
+#, c-format
+msgid "Location"
+msgstr ""
+
+#: src/paths/instance/orders/create/CreatePage.tsx:312
+#, c-format
+msgid "Max fee"
+msgstr ""
+
+#: src/paths/instance/orders/create/CreatePage.tsx:313
+#, c-format
+msgid "Max wire fee"
+msgstr ""
+
+#: src/paths/instance/orders/create/CreatePage.tsx:314
+#, c-format
+msgid "Wire fee amortization"
+msgstr ""
+
+#: src/paths/instance/orders/create/CreatePage.tsx:315
+#, c-format
+msgid "Fullfilment url"
+msgstr ""
+
+#: src/paths/instance/orders/create/CreatePage.tsx:318
+#, c-format
+msgid "Extra information"
+msgstr ""
+
+#: src/paths/instance/orders/create/InventoryProductForm.tsx:44
+#, c-format
+msgid "select a product first"
+msgstr ""
+
+#: src/paths/instance/orders/create/InventoryProductForm.tsx:51
+#, c-format
+msgid "should be greater than 0"
+msgstr ""
+
+#: src/paths/instance/orders/create/InventoryProductForm.tsx:58
+#, c-format
+msgid ""
+"cannot be greater than current stock and quantity previously added. max: %1$s"
+msgstr ""
+
+#: src/paths/instance/orders/create/InventoryProductForm.tsx:64
+#, c-format
+msgid "cannot be greater than current stock %1$s"
+msgstr ""
+
+#: src/paths/instance/orders/create/InventoryProductForm.tsx:76
+#: src/paths/instance/orders/create/NonInventoryProductForm.tsx:126
+#, c-format
+msgid "Quantity"
+msgstr ""
+
+#: src/paths/instance/orders/details/DetailPage.tsx:92
+#: src/paths/instance/orders/details/DetailPage.tsx:235
+#: src/paths/instance/orders/details/DetailPage.tsx:333
+#, c-format
+msgid "Order"
+msgstr ""
+
+#: src/paths/instance/orders/details/DetailPage.tsx:93
+#, c-format
+msgid "claimed"
+msgstr ""
+
+#: src/paths/instance/orders/details/DetailPage.tsx:110
+#: src/paths/instance/orders/details/DetailPage.tsx:261
+#: src/paths/instance/orders/list/Table.tsx:136
+#, c-format
+msgid "copy url"
+msgstr ""
+
+#: src/paths/instance/orders/details/DetailPage.tsx:126
+#: src/paths/instance/orders/details/DetailPage.tsx:349
+#, c-format
+msgid "pay at"
+msgstr ""
+
+#: src/paths/instance/orders/details/DetailPage.tsx:127
+#: src/paths/instance/orders/details/DetailPage.tsx:350
+#, c-format
+msgid "created at"
+msgstr ""
+
+#: src/paths/instance/orders/details/DetailPage.tsx:138
+#: src/paths/instance/orders/details/DetailPage.tsx:289
+#, c-format
+msgid "Timeline"
+msgstr ""
+
+#: src/paths/instance/orders/details/DetailPage.tsx:142
+#: src/paths/instance/orders/details/DetailPage.tsx:293
+#, c-format
+msgid "Payment details"
+msgstr ""
+
+#: src/paths/instance/orders/details/DetailPage.tsx:146
+#: src/paths/instance/orders/details/DetailPage.tsx:299
+#: src/paths/instance/orders/details/DetailPage.tsx:363
+#, c-format
+msgid "Order status"
+msgstr ""
+
+#: src/paths/instance/orders/details/DetailPage.tsx:156
+#: src/paths/instance/orders/details/DetailPage.tsx:308
+#, c-format
+msgid "Product list"
+msgstr ""
+
+#: src/paths/instance/orders/details/DetailPage.tsx:236
+#, c-format
+msgid "paid"
+msgstr ""
+
+#: src/paths/instance/orders/details/DetailPage.tsx:238
+#, c-format
+msgid "wired"
+msgstr ""
+
+#: src/paths/instance/orders/details/DetailPage.tsx:241
+#, c-format
+msgid "refunded"
+msgstr ""
+
+#: src/paths/instance/orders/details/DetailPage.tsx:258
+#, c-format
+msgid "refund"
+msgstr ""
+
+#: src/paths/instance/orders/details/DetailPage.tsx:297
+#, c-format
+msgid "Refunded amount"
+msgstr ""
+
+#: src/paths/instance/orders/details/DetailPage.tsx:298
+#, c-format
+msgid "Deposit total"
+msgstr ""
+
+#: src/paths/instance/orders/details/DetailPage.tsx:336
+#, c-format
+msgid "unpaid"
+msgstr ""
+
+#: src/paths/instance/orders/details/DetailPage.tsx:364
+#, c-format
+msgid "Order status URL"
+msgstr ""
+
+#: src/paths/instance/orders/details/DetailPage.tsx:365
+#, c-format
+msgid "Pay URI"
+msgstr ""
+
+#: src/paths/instance/orders/details/DetailPage.tsx:383
+#, c-format
+msgid ""
+"Unknown order status. This is an error, please contact the administrator."
+msgstr ""
+
+#: src/paths/instance/orders/details/index.tsx:56
+#: src/paths/instance/orders/list/index.tsx:147
+#, c-format
+msgid "refund created successfully"
+msgstr ""
+
+#: src/paths/instance/orders/details/index.tsx:59
+#: src/paths/instance/orders/list/index.tsx:150
+#, c-format
+msgid "could not create the refund"
+msgstr ""
+
+#: src/paths/instance/orders/list/Table.tsx:111
+#, c-format
+msgid "load newer orders"
+msgstr ""
+
+#: src/paths/instance/orders/list/Table.tsx:115
+#, c-format
+msgid "Date"
+msgstr ""
+
+#: src/paths/instance/orders/list/Table.tsx:131
+#: src/paths/instance/orders/list/Table.tsx:223
+#, c-format
+msgid "Refund"
+msgstr ""
+
+#: src/paths/instance/orders/list/Table.tsx:145
+#, c-format
+msgid "load older orders"
+msgstr ""
+
+#: src/paths/instance/orders/list/Table.tsx:154
+#, c-format
+msgid "No orders has been found"
+msgstr ""
+
+#: src/paths/instance/orders/list/Table.tsx:202
+#, c-format
+msgid "date"
+msgstr ""
+
+#: src/paths/instance/orders/list/Table.tsx:203
+#, c-format
+msgid "amount"
+msgstr ""
+
+#: src/paths/instance/orders/list/Table.tsx:204
+#, c-format
+msgid "reason"
+msgstr ""
+
+#: src/paths/instance/orders/list/Table.tsx:224
+#, c-format
+msgid "Max refundable:"
+msgstr ""
+
+#: src/paths/instance/orders/list/Table.tsx:226
+#, c-format
+msgid "Reason"
+msgstr ""
+
+#: src/paths/instance/orders/list/Table.tsx:226
+#, c-format
+msgid "duplicated"
+msgstr ""
+
+#: src/paths/instance/orders/list/Table.tsx:226
+#, c-format
+msgid "requested by the customer"
+msgstr ""
+
+#: src/paths/instance/orders/list/Table.tsx:226
+#, c-format
+msgid "other"
+msgstr ""
+
+#: src/paths/instance/orders/list/index.tsx:91
+#, c-format
+msgid "go to order id"
+msgstr ""
+
+#: src/paths/instance/orders/list/index.tsx:107
+#, c-format
+msgid "Paid"
+msgstr ""
+
+#: src/paths/instance/orders/list/index.tsx:108
+#, c-format
+msgid "Refunded"
+msgstr ""
+
+#: src/paths/instance/orders/list/index.tsx:109
+#, c-format
+msgid "Not wired"
+msgstr ""
+
+#: src/paths/instance/orders/list/index.tsx:110
+#, c-format
+msgid "All"
+msgstr ""
+
+#: src/paths/instance/products/create/index.tsx:48
+#: src/paths/instance/products/update/index.tsx:64
+#, c-format
+msgid "could not create product"
+msgstr ""
+
+#: src/paths/instance/products/list/Table.tsx:87
+#, c-format
+msgid "Sell"
+msgstr ""
+
+#: src/paths/instance/products/list/Table.tsx:89
+#, c-format
+msgid "Profit"
+msgstr ""
+
+#: src/paths/instance/products/list/Table.tsx:91
+#, c-format
+msgid "Sold"
+msgstr ""
+
+#: src/paths/instance/products/list/index.tsx:59
+#, c-format
+msgid "product updated successfully"
+msgstr ""
+
+#: src/paths/instance/products/list/index.tsx:62
+#, c-format
+msgid "could not update the product"
+msgstr ""
+
+#: src/paths/instance/products/list/index.tsx:70
+#, c-format
+msgid "product delete successfully"
+msgstr ""
+
+#: src/paths/instance/products/list/index.tsx:73
+#, c-format
+msgid "could not delete the product"
+msgstr ""
+
+#: src/paths/instance/tips/list/Table.tsx:59
+#, c-format
+msgid "Tips"
+msgstr ""
+
+#: src/paths/instance/tips/list/Table.tsx:111
+#, c-format
+msgid "Committed amount"
+msgstr ""
+
+#: src/paths/instance/tips/list/Table.tsx:112
+#, c-format
+msgid "Exchange initial amount"
+msgstr ""
+
+#: src/paths/instance/tips/list/Table.tsx:113
+#, c-format
+msgid "Merchant initial amount"
+msgstr ""
+
+#: src/paths/instance/tips/list/Table.tsx:148
+#, c-format
+msgid "There is no tips yet, add more pressing the + sign"
+msgstr ""
+
+#: src/paths/instance/transfers/create/CreatePage.tsx:50
+#: src/paths/instance/transfers/create/CreatePage.tsx:54
+#: src/paths/instance/transfers/create/CreatePage.tsx:55
+#: src/paths/instance/transfers/create/CreatePage.tsx:56
+#, c-format
+msgid "cannot be empty"
+msgstr ""
+
+#: src/paths/instance/transfers/create/CreatePage.tsx:51
+#, c-format
+msgid "check the id, doest look valid"
+msgstr ""
+
+#: src/paths/instance/transfers/create/CreatePage.tsx:52
+#, c-format
+msgid "should have 52 characters, current %1$s"
+msgstr ""
+
+#: src/paths/instance/transfers/create/CreatePage.tsx:57
+#, c-format
+msgid "URL doesn't have the right format"
+msgstr ""
+
+#: src/paths/instance/transfers/create/CreatePage.tsx:74
+#, c-format
+msgid "Transfer ID"
+msgstr ""
+
+#: src/paths/instance/transfers/create/CreatePage.tsx:76
+#, c-format
+msgid "Account Address"
+msgstr ""
+
+#: src/paths/instance/transfers/create/CreatePage.tsx:82
+#: src/paths/instance/transfers/list/Table.tsx:125
+#, c-format
+msgid "Exchange URL"
+msgstr ""
+
+#: src/paths/instance/transfers/create/index.tsx:49
+#, c-format
+msgid "could not inform transfer"
+msgstr ""
+
+#: src/paths/instance/transfers/list/Table.tsx:118
+#, c-format
+msgid "load newer transfers"
+msgstr ""
+
+#: src/paths/instance/transfers/list/Table.tsx:123
+#, c-format
+msgid "Credit"
+msgstr ""
+
+#: src/paths/instance/transfers/list/Table.tsx:126
+#, c-format
+msgid "Confirmed"
+msgstr ""
+
+#: src/paths/instance/transfers/list/Table.tsx:127
+#: src/paths/instance/transfers/list/index.tsx:60
+#, c-format
+msgid "Verified"
+msgstr ""
+
+#: src/paths/instance/transfers/list/Table.tsx:128
+#, c-format
+msgid "Executed at"
+msgstr ""
+
+#: src/paths/instance/transfers/list/Table.tsx:138
+#: src/paths/instance/transfers/list/Table.tsx:139
+#, c-format
+msgid "yes"
+msgstr ""
+
+#: src/paths/instance/transfers/list/Table.tsx:138
+#: src/paths/instance/transfers/list/Table.tsx:139
+#, c-format
+msgid "no"
+msgstr ""
+
+#: src/paths/instance/transfers/list/Table.tsx:140
+#, c-format
+msgid "unknown"
+msgstr ""
+
+#: src/paths/instance/transfers/list/Table.tsx:145
+#, c-format
+msgid "load older transfers"
+msgstr ""
+
+#: src/paths/instance/transfers/list/Table.tsx:154
+#, c-format
+msgid "There is no transfer yet, add more pressing the + sign"
+msgstr ""

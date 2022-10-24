@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+      "composite": true,
+      "lib": ["es6", "DOM"],
+      "jsx": "react",
+      "jsxFactory": "h",
+      "jsxFragmentFactory": "Fragment",
+      "moduleResolution": "Node",
+      "module": "ESNext",
+      "target": "ES6",
+      "noImplicitAny": true,
+      "noEmitOnError": true,
+      "strict": true,
+      "incremental": true,
+      "sourceMap": true,
+      "esModuleInterop": true,
+      "importHelpers": true,
+      "rootDir": "./src",
+      "typeRoots": ["./node_modules/@types"]
+    },
+    "include": ["src/**/*"]
+  }
+  

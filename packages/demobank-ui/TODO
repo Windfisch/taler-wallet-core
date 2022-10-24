@@ -1,0 +1,45 @@
+Urgent TODOs:
+
+- General:
+  * not only Nora dark-theme, but default light! (CSS)
+  * auto-focus on input fields is not working well
+  * buttons should be visibly insensitive
+    as long as required input fields are not
+    working
+  * next required invalid/missing input field is
+    not properly highlighted in red
+  * Logout button needs more padding to the right (CSS)
+
+- Error bar:
+  * shows JSON, should only show good error message
+    and numeric code, not JSON syntax
+  * should auto-hide after next action, no need for
+    "clear"!
+  * need variant "status bar" in green (or blue)
+    which shows status of last operation
+
+* H1-Titles:
+  * Center more (currently way on the left) (CSS)
+
+- Assets:
+  * Numeric amount needs to be shown MUCH bigger (CSS)
+  * Center more? (CSS)
+
+- Payments:
+  * Amount to withdraw currently shown in white-on-white (CSS)
+  * Big frame drawn around notebook-tabs is not nice (CSS)
+  * Center more? (CSS)
+  * "Wire to bank account"
+    - maybe split two types (payto and IBAN) into
+      two tabs?
+    - currently cannot switch back from payto to IBAN
+
+- Withdraw:
+  * Should use new 'status' bar at the end, instead
+    of extra dialog with "close" button
+  * ditto for bank-wire-transfer final stage
+
+- Footer:
+  * overlaps with transaction history or other
+    content, needs to consistently show at the
+    end! => change rendering logic!? (CSS?)

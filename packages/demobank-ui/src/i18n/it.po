@@ -1,0 +1,258 @@
+#: /home/job/backoffice/packages/bank/src/components/picker/DurationPicker.tsx:55
+#, c-format
+msgid "days"
+msgstr ""
+
+#: /home/job/backoffice/packages/bank/src/components/picker/DurationPicker.tsx:65
+#, c-format
+msgid "hours"
+msgstr ""
+
+#: /home/job/backoffice/packages/bank/src/components/picker/DurationPicker.tsx:76
+#, c-format
+msgid "minutes"
+msgstr ""
+
+#: /home/job/backoffice/packages/bank/src/components/picker/DurationPicker.tsx:87
+#, c-format
+msgid "seconds"
+msgstr ""
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:734
+#, c-format
+msgid "Clear"
+msgstr "Cancella"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:761
+#, c-format
+msgid "Logout"
+msgstr ""
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:782
+#, c-format
+msgid "Demo Bank"
+msgstr "Banca 'demo'"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:837
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:840
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1189
+#, c-format
+msgid "Go back"
+msgstr "Indietro"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:845
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:906
+#, c-format
+msgid "Wire transfer"
+msgstr "Bonifico"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:846
+#, c-format
+msgid "Transfer money to another account of this bank:"
+msgstr "Trasferisci fondi a un altro conto di questa banca:"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:897
+#, c-format
+msgid "Want to try the raw payto://-format?"
+msgstr "Prova il trasferimento tramite il formato Payto!"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:907
+#, c-format
+msgid "Transfer money via the Payto system:"
+msgstr "Effettua un bonifico tramite il sistema Payto:"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:916
+#, c-format
+msgid "payto address"
+msgstr "indirizzo Payto"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:926
+#, c-format
+msgid "Confirm"
+msgstr "Conferma"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:956
+#, c-format
+msgid "Confirm Withdrawal"
+msgstr "Conferma il ritiro"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1026
+#, c-format
+msgid "Waiting the bank to create the operaion..."
+msgstr "La banca sta creando l'operazione..."
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1044
+#, c-format
+msgid "This withdrawal was aborted!"
+msgstr "Questo ritiro è stato annullato!"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1051
+#, c-format
+msgid "Withdraw to a Taler Wallet"
+msgstr "Ritira contante nel portafoglio Taler"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1052
+#, c-format
+msgid "You can use this QR code to withdraw to your mobile wallet:"
+msgstr "Usa questo codice QR per ritirare contante nel tuo wallet:"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1054
+#, c-format
+msgid "this link"
+msgstr "questo link"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1060
+#, c-format
+msgid "Abort"
+msgstr "Annulla"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1084
+#, c-format
+msgid "Start withdrawal"
+msgstr "Ritira contante"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1101
+#, c-format
+msgid "Withdraw Money into a Taler wallet"
+msgstr "Ritira contante nel portafoglio Taler"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1105
+#, c-format
+msgid "Amount to withdraw"
+msgstr "Somma da ritirare"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1137
+#, c-format
+msgid "Please login!"
+msgstr "Accedi!"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1169
+#, c-format
+msgid "Login"
+msgstr "Accedi"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1184
+#, c-format
+msgid "Register to the euFin bank!"
+msgstr "Apri un conto in banca euFin!"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1194
+#, c-format
+msgid "Registration form"
+msgstr "Registrazione"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1232
+#, c-format
+msgid "Register"
+msgstr "Registrati"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1272
+#, c-format
+msgid "Date"
+msgstr ""
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1273
+#, c-format
+msgid "Amount"
+msgstr "Somma"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1274
+#, c-format
+msgid "Counterpart"
+msgstr "Controparte"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1275
+#, c-format
+msgid "Subject"
+msgstr "Causale"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1343
+#, c-format
+msgid "Username or account label '%1$s' not found.  Won't login."
+msgstr "L'utente '%1$s' non esiste.  Login impossibile"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1365
+#, c-format
+msgid "Wrong credentials given."
+msgstr "Credenziali invalide."
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1374
+#, c-format
+msgid "Account information could not be retrieved."
+msgstr "Impossibile ricevere le informazioni relative al conto."
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1394
+#, c-format
+msgid "Close wire transfer"
+msgstr "Chiudi il bonifico"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1412
+#, c-format
+msgid "Close Taler withdrawal"
+msgstr "Chiudi il ritiro Taler"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1457
+#, c-format
+msgid "Bank account balance:"
+msgstr "Bilancio:"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1469
+#, c-format
+msgid "Latest transactions:"
+msgstr "Ultime transazioni:"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1474
+#, c-format
+msgid "Transfer money manually"
+msgstr "Effettua un bonifico"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1543
+#, c-format
+msgid "List of public accounts was not found."
+msgstr "Lista conti pubblici non trovata."
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1552
+#, c-format
+msgid "List of public accounts could not be retrieved."
+msgstr "Lista conti pubblici non pervenuta."
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1584
+#, c-format
+msgid "History of public accounts"
+msgstr "Storico dei conti pubblici"
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1643
+#, c-format
+msgid "Page has a problem: logged in but backend state is lost."
+msgstr ""
+"Stato inconsistente: accesso utente effettuato ma stato con server perso."
+
+#: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1667
+#, fuzzy, c-format
+msgid "Welcome to the euFin bank!"
+msgstr "Benvenuti in banca euFin!"
+
+#  This file is part of GNU Taler
+#  (C) 2021 Taler Systems S.A.
+#  GNU Taler is free software; you can redistribute it and/or modify it under the
+#  terms of the GNU General Public License as published by the Free Software
+#  Foundation; either version 3, or (at your option) any later version.
+#  GNU Taler is distributed in the hope that it will be useful, but WITHOUT ANY
+#  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+#  A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License along with
+#  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Taler Wallet\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-11-23 00:00+0100\n"
+"PO-Revision-Date: 2022-01-08 10:05+0100\n"
+"Last-Translator:  <translate@taler.net>\n"
+"Language-Team: Italian\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"

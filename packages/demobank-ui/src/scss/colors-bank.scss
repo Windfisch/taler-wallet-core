@@ -1,0 +1,31 @@
+nav,
+nav a,
+nav span,
+.navcontainer,
+nav button,
+.demobar,
+.navbtn {
+  color: white;
+  background: #a00000;
+}
+
+nav a.active,
+nav button,
+nav span.active,
+.navbtn.active {
+  background-color: #7a0606;
+}
+
+nav a.active:hover,
+nav span.active:hover,
+.navbtn.active:hover,
+nav button:hover,
+nav a:hover,
+nav span:hover,
+.navbtn:hover {
+  background: #df3d3d;
+}
+
+nav a.navbtn.langbtn:focus {
+  background-color: #df3d3d;
+}

@@ -1,0 +1,157 @@
+@charset "UTF-8";
+/*
+Style common to all demo pages.
+
+Colors:
+- #1e2739 (dark blue)
+- #0042b2 (default blue)
+- #3daee9 (highlight blue)
+*/
+
+.demobar h1 {
+  text-align: center;
+}
+
+.demobar > p {
+  padding: 0.5em;
+}
+
+.demobar a,
+.demobar a:visited {
+  color: inherit;
+  background-color: inherit;
+}
+
+.tt {
+  font-family: "Lucida Console", Monaco, monospace;
+}
+
+.informational-ok {
+  background: lightgreen;
+  border-radius: 1em;
+  padding: 0.5em;
+}
+
+.informational-fail {
+  background: lightpink;
+  border-radius: 1em;
+  padding: 0.5em;
+}
+
+.content {
+  margin-left: 2em;
+  overflow-x: auto;
+}
+
+.demobar {
+  overflow-x: auto;
+  background-color: #0042b2;
+  color: white;
+}
+
+body {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.navcontainer {
+  background: #0042b2;
+  margin-bottom: 50px;
+  width: 100%;
+  color: white;
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0px;
+  width: 100vw;
+  backdrop-filter: blur(10px);
+  opacity: 1;
+  z-index: 10000;
+}
+
+nav {
+  left: 1vw;
+  position: relative;
+  background: #0042b2;
+  z-index: 10000;
+}
+
+nav a,
+nav button,
+nav span,
+.navbtn {
+  border: none;
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  background: #0042b2;
+  height: inherit;
+}
+
+nav a,
+nav button,
+nav span,
+.navbtn {
+  padding: 15px 32px;
+}
+
+nav a:hover,
+nav span:hover,
+.navbtn:hover {
+  background: #3daee9;
+}
+
+nav a.active,
+nav span.active,
+.navbtn.active {
+  background-color: #1e2739;
+}
+
+nav a.active:hover,
+nav button.active:hover,
+nav span.active:hover,
+.navbtn.active:hover {
+  background: #3daee9;
+}
+
+nav a,
+nav span,
+.navbtn {
+  cursor: pointer;
+}
+
+nav .right {
+  float: right;
+  margin-right: 5vw;
+}
+nav .hide div.nav {
+  display: none;
+}
+// nav .right div.nav:hover {
+//   display: block;
+// }
+
+// nav .right:hover div.nav {
+//   display: block;
+// }
+
+.langbtn {
+  width: 100%;
+  text-align: left;
+}
+
+.skip {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.skip:focus {
+  position: static;
+  width: auto;
+  height: auto;
+}

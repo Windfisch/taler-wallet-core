@@ -1,0 +1,123 @@
+{
+  "private": true,
+  "name": "merchant-backoffice",
+  "version": "0.0.4",
+  "license": "MIT",
+  "scripts": {
+    "build": "preact build --no-sw --no-esm",
+    "compile": "tsc",
+    "serve": "sirv build --port ${PORT:=8080} --cors --single",
+    "dev": "preact watch --port ${PORT:=8080} --no-sw --no-esm",
+    "lint-check": "eslint '{src,tests}/**/*.{js,jsx,ts,tsx}'",
+    "lint-fix": "eslint --fix '{src,tests}/**/*.{js,jsx,ts,tsx}'",
+    "test": "jest ./tests",
+    "dev-test": "jest ./tests --watch",
+    "typedoc": "typedoc src",
+    "clean": "rimraf build storybook-static docs single",
+    "build-single": "preact build --no-sw --no-esm -c preact.single-config.js --dest single && sh remove-link-stylesheet.sh",
+    "serve-single": "sirv single --port ${PORT:=8080} --cors --single",
+    "build-storybook": "build-storybook",
+    "storybook": "start-storybook -p 6006"
+  },
+  "engines": {
+    "node": ">=12",
+    "pnpm": ">=5"
+  },
+  "eslintConfig": {
+    "parser": "@typescript-eslint/parser",
+    "extends": [
+      "preact",
+      "plugin:@typescript-eslint/recommended"
+    ],
+    "plugins": [
+      "header"
+    ],
+    "rules": {
+      "header/header": [
+        2,
+        "copyleft-header.js"
+      ]
+    },
+    "ignorePatterns": [
+      "build/"
+    ]
+  },
+  "dependencies": {
+    "@gnu-taler/taler-util": "workspace:*",
+    "axios": "^0.21.1",
+    "date-fns": "^2.21.1",
+    "history": "4.10.1",
+    "jed": "^1.1.1",
+    "preact": "10.6.1",
+    "preact-router": "^3.2.1",
+    "qrcode-generator": "^1.4.4",
+    "swr": "1.1.0",
+    "yup": "^0.32.9"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.13.16",
+    "@babel/plugin-transform-react-jsx-source": "^7.12.13",
+    "@creativebulma/bulma-tooltip": "^1.2.0",
+    "@gnu-taler/pogen": "^0.0.5",
+    "@storybook/addon-a11y": "^6.2.9",
+    "@storybook/addon-actions": "^6.2.9",
+    "@storybook/addon-essentials": "^6.2.9",
+    "@storybook/addon-links": "^6.2.9",
+    "@storybook/preact": "^6.2.9",
+    "@storybook/preset-scss": "^1.0.3",
+    "@testing-library/preact": "^2.0.1",
+    "@testing-library/preact-hooks": "^1.1.0",
+    "@types/history": "^4.7.8",
+    "@types/jest": "^26.0.23",
+    "@types/mocha": "^8.2.2",
+    "@typescript-eslint/eslint-plugin": "^4.22.0",
+    "@typescript-eslint/parser": "^4.22.0",
+    "babel-loader": "^8.2.2",
+    "base64-inline-loader": "^1.1.1",
+    "bulma": "^0.9.2",
+    "bulma-checkbox": "^1.1.1",
+    "bulma-radio": "^1.1.1",
+    "bulma-responsive-tables": "^1.2.3",
+    "bulma-switch-control": "^1.1.1",
+    "bulma-timeline": "^3.0.4",
+    "bulma-upload-control": "^1.2.0",
+    "dotenv": "^8.2.0",
+    "eslint": "^7.25.0",
+    "eslint-config-preact": "^1.1.4",
+    "eslint-plugin-header": "^3.1.1",
+    "html-webpack-inline-chunk-plugin": "^1.1.1",
+    "html-webpack-inline-source-plugin": "0.0.10",
+    "html-webpack-skip-assets-plugin": "^1.0.1",
+    "inline-chunk-html-plugin": "^1.1.1",
+    "jest": "^26.6.3",
+    "jest-preset-preact": "^4.0.2",
+    "po2json": "^0.4.5",
+    "preact-cli": "^3.0.5",
+    "preact-render-to-json": "^3.6.6",
+    "preact-render-to-string": "^5.1.19",
+    "rimraf": "^3.0.2",
+    "sass": "^1.32.13",
+    "sass-loader": "10.1.1",
+    "script-ext-html-webpack-plugin": "^2.1.5",
+    "sirv-cli": "^1.0.11",
+    "typedoc": "^0.20.36",
+    "typescript": "^4.2.4"
+  },
+  "jest": {
+    "preset": "jest-preset-preact",
+    "transformIgnorePatterns": [
+      "node_modules/.pnpm/(?!(@gnu-taler\\+taler-util))",
+      "\\.pnp\\.[^\\/]+$"
+    ],
+    "setupFiles": [
+      "<rootDir>/tests/__mocks__/browserMocks.ts",
+      "<rootDir>/tests/__mocks__/setupTests.ts"
+    ],
+    "moduleNameMapper": {
+      "\\.(css|less)$": "identity-obj-proxy"
+    },
+    "transform": {
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga|po)$": "<rootDir>/tests/__mocks__/fileTransformer.js"
+    }
+  }
+}
