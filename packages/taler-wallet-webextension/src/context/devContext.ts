@@ -21,16 +21,17 @@
 
 import { createContext, h, VNode } from "preact";
 import { useContext } from "preact/hooks";
-import { useLocalStorage } from "../hooks/useLocalStorage.js";
+import { useWalletDevMode } from "../hooks/useWalletDevMode.js";
+import { ToggleHandler } from "../mui/handlers.js";
 
 interface Type {
   devMode: boolean;
-  toggleDevMode: () => Promise<void>;
+  devModeToggle: ToggleHandler;
 }
 const Context = createContext<Type>({
   devMode: false,
-  toggleDevMode: async () => {
-    return;
+  devModeToggle: {
+    button: {},
   },
 });
 
@@ -40,28 +41,28 @@ export const DevContextProviderForTesting = ({
   value,
   children,
 }: {
-  value: boolean;
+  value?: boolean;
   children: any;
 }): VNode => {
   return h(Context.Provider, {
     value: {
-      devMode: value,
-      toggleDevMode: async () => {
-        return;
-      },
+      devMode: !!value,
+      devModeToggle: {
+        value, button: {}
+      }
     },
     children,
   });
 };
 
 export const DevContextProvider = ({ children }: { children: any }): VNode => {
-  const [value, setter] = useLocalStorage("devMode");
-  const devMode = value === "true";
-  const toggleDevMode = async (): Promise<void> =>
-    setter((v) => (!v ? "true" : undefined));
+  const devModeToggle = useWalletDevMode();
+  const value: Type = { devMode: !!devModeToggle.value, devModeToggle }
+  //support for function as children, useful for getting the value right away
   children =
     children.length === 1 && typeof children === "function"
-      ? children({ devMode })
+      ? children(value)
       : children;
-  return h(Context.Provider, { value: { devMode, toggleDevMode }, children });
+
+  return h(Context.Provider, { value, children });
 };

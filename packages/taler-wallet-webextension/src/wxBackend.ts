@@ -151,6 +151,7 @@ async function dispatch(
         r = wrapResponse({ newValue: res });
         break;
       }
+      //FIXME: implement type checked api like WalletCoreApi
       case "toggleHeaderListener": {
         const newVal = req.payload.value;
         logger.trace("new extended permissions value", newVal);

@@ -138,9 +138,14 @@ export function PopupNavBar({ path = "" }: { path?: string }): VNode {
       >
         <i18n.Translate>Balance</i18n.Translate>
       </a>
-      <a href={Pages.backup} class={path.startsWith("/backup") ? "active" : ""}>
-        <i18n.Translate>Backup</i18n.Translate>
-      </a>
+      <JustInDevMode>
+        <a
+          href={Pages.backup}
+          class={path.startsWith("/backup") ? "active" : ""}
+        >
+          <i18n.Translate>Backup</i18n.Translate>
+        </a>
+      </JustInDevMode>
       <div style={{ display: "flex", paddingTop: 4, justifyContent: "right" }}>
         <a href={Pages.qr}>
           <SvgIcon
@@ -172,14 +177,14 @@ export function WalletNavBar({ path = "" }: { path?: string }): VNode {
         >
           <i18n.Translate>Balance</i18n.Translate>
         </a>
-        <a
-          href={Pages.backup}
-          class={path.startsWith("/backup") ? "active" : ""}
-        >
-          <i18n.Translate>Backup</i18n.Translate>
-        </a>
-
         <JustInDevMode>
+          <a
+            href={Pages.backup}
+            class={path.startsWith("/backup") ? "active" : ""}
+          >
+            <i18n.Translate>Backup</i18n.Translate>
+          </a>
+
           <a href={Pages.dev} class={path.startsWith("/dev") ? "active" : ""}>
             <i18n.Translate>Dev</i18n.Translate>
           </a>
