@@ -17,6 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import useSWR, { SWRConfig as _SWRConfig, useSWRConfig } from "swr";
 import { h, Fragment, VNode, createContext } from "preact";
+
 import {
   useRef,
   useState,
@@ -24,20 +25,37 @@ import {
   StateUpdater,
   useContext,
 } from "preact/hooks";
-import { Buffer } from "buffer";
-import { useTranslator, Translate } from "../../i18n";
-import { QR } from "../../components/QR";
-import { useNotNullLocalStorage, useLocalStorage } from "../../hooks";
+import { useTranslator, Translate } from "../../i18n/index.js";
+import { QR } from "../../components/QR.js";
+import { useNotNullLocalStorage, useLocalStorage } from "../../hooks/index.js";
 import "../../scss/main.scss";
 import talerLogo from "../../assets/logo-white.svg";
-import { LangSelectorLikePy as LangSelector } from "../../components/menu/LangSelector";
+import { LangSelectorLikePy as LangSelector } from "../../components/menu/LangSelector.js";
 
 // FIXME: Fix usages of SWRConfig, doing this isn't the best practice (but hey, it works for now)
 const SWRConfig = _SWRConfig as any;
 
-const UI_ALLOW_REGISTRATIONS = "__LIBEUFIN_UI_ALLOW_REGISTRATIONS__" ?? 1;
-const UI_IS_DEMO = "__LIBEUFIN_UI_IS_DEMO__" ?? 0;
-const UI_BANK_NAME = "__LIBEUFIN_UI_BANK_NAME__" ?? "Taler Bank";
+/**
+ * If the first argument does not look like a placeholder, return it.
+ * Otherwise, return the default.
+ *
+ * Useful for placeholder string replacements optionally
+ * done as part of the build system.
+ */
+const replacementOrDefault = (x: string, defaultVal: string) => {
+  if (x.startsWith("__")) {
+    return defaultVal;
+  }
+  return x;
+};
+
+const UI_ALLOW_REGISTRATIONS =
+  replacementOrDefault("__LIBEUFIN_UI_ALLOW_REGISTRATIONS__", "1") == "1";
+const UI_IS_DEMO = replacementOrDefault("__LIBEUFIN_UI_IS_DEMO__", "0") == "1";
+const UI_BANK_NAME = replacementOrDefault(
+  "__LIBEUFIN_UI_BANK_NAME__",
+  "Taler Bank",
+);
 
 /**
  * FIXME:
@@ -156,15 +174,6 @@ function maybeDemoContent(content: VNode) {
   if (UI_IS_DEMO) return content;
 }
 
-async function fetcher(url: string) {
-  return fetch(url).then((r) => r.json());
-}
-
-function genCaptchaNumbers(): string {
-  return `${Math.floor(Math.random() * 10)} + ${Math.floor(
-    Math.random() * 10,
-  )}`;
-}
 /**
  * Bring the state to show the public accounts page.
  */
@@ -276,22 +285,26 @@ function prepareHeaders(username: string, password: string) {
   const headers = new Headers();
   headers.append(
     "Authorization",
-    `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`,
+    `Basic ${window.btoa(`${username}:${password}`)}`,
   );
   headers.append("Content-Type", "application/json");
   return headers;
 }
 
-// Window can be mocked this way:
-// https://gist.github.com/theKashey/07090691c0a4680ed773375d8dbeebc1#file-webpack-conf-js
-// That allows the app to be pointed to a arbitrary
-// euFin backend when launched via "pnpm dev".
-const getRootPath = () => {
+const getBankBackendBaseUrl = () => {
+  const overrideUrl = localStorage.getItem("bank-base-url");
+  if (overrideUrl) {
+    console.log(
+      `using bank base URL ${overrideUrl} (override via bank-base-url localStorage)`,
+    );
+    return overrideUrl;
+  }
   const maybeRootPath =
     typeof window !== undefined
       ? window.location.origin + window.location.pathname
       : "/";
   if (!maybeRootPath.endsWith("/")) return `${maybeRootPath}/`;
+  console.log(`using bank base URL (${maybeRootPath})`);
   return maybeRootPath;
 };
 
@@ -785,7 +798,7 @@ async function loginCall(
    * let the Account component request the balance to check
    * whether the credentials are valid.  */
   pageStateSetter((prevState) => ({ ...prevState, isLoggedIn: true }));
-  let baseUrl = getRootPath();
+  let baseUrl = getBankBackendBaseUrl();
   if (!baseUrl.endsWith("/")) baseUrl += "/";
 
   backendStateSetter((prevState) => ({
@@ -813,7 +826,7 @@ async function registrationCall(
   backendStateSetter: StateUpdater<BackendStateTypeOpt>,
   pageStateSetter: StateUpdater<PageStateType>,
 ) {
-  let baseUrl = getRootPath();
+  let baseUrl = getBankBackendBaseUrl();
   /**
    * If the base URL doesn't end with slash and the path
    * is not empty, then the concatenation made by URL()
@@ -872,19 +885,6 @@ async function registrationCall(
 /**************************
  * Functional components. *
  *************************/
-
-function Currency(): VNode {
-  const { data, error } = useSWR(
-    `${getRootPath()}integration-api/config`,
-    fetcher,
-  );
-  if (typeof error !== "undefined")
-    return <b>error: currency could not be retrieved</b>;
-
-  if (typeof data === "undefined") return <Fragment>"..."</Fragment>;
-  console.log("found bank config", data);
-  return data.currency;
-}
 
 function ErrorBanner(Props: any): VNode | null {
   const [pageState, pageStateSetter] = Props.pageState;
@@ -2043,10 +2043,7 @@ function Account(Props: any): VNode {
 function SWRWithCredentials(props: any): VNode {
   const { username, password, backendUrl } = props;
   const headers = new Headers();
-  headers.append(
-    "Authorization",
-    `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`,
-  );
+  headers.append("Authorization", `Basic ${btoa(`${username}:${password}`)}`);
   console.log("Likely backend base URL", backendUrl);
   return (
     <SWRConfig
@@ -2179,13 +2176,11 @@ function PublicHistories(Props: any): VNode {
 export function BankHome(): VNode {
   const [backendState, backendStateSetter] = useBackendState();
   const [pageState, pageStateSetter] = usePageState();
-  const [accountState, accountStateSetter] = useAccountState();
-  const setTxPageNumber = useTransactionPageNumber()[1];
   const i18n = useTranslator();
 
   if (pageState.showPublicHistories)
     return (
-      <SWRWithoutCredentials baseUrl={getRootPath()}>
+      <SWRWithoutCredentials baseUrl={getBankBackendBaseUrl()}>
         <PageContext.Provider value={[pageState, pageStateSetter]}>
           <BankFrame>
             <PublicHistories pageStateSetter={pageStateSetter}>
