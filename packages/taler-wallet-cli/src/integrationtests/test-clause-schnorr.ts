@@ -93,5 +93,5 @@ export async function runClauseSchnorrTest(t: GlobalTestState) {
   await wallet.runUntilDone();
 }
 
-runClauseSchnorrTest.suites = ["wallet"];
+runClauseSchnorrTest.suites = ["experimental-wallet"];
 runClauseSchnorrTest.excludeByDefault = true;
