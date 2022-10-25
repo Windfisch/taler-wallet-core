@@ -92,7 +92,7 @@ export const Portal = forwardRef(function Portal(
   ) : (
     <Fragment />
   );
-});
+} as any);
 
 function getContainer(container: any): any {
   return typeof container === "function" ? container() : container;

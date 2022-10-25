@@ -81,9 +81,9 @@ export function Modal({
 
   return (
     <Portal
-      ref={handlePortalRef}
-      container={container}
-      // disablePortal={disablePortal}
+    // ref={mountNodeRef}
+    // container={container}
+    // disablePortal={disablePortal}
     >
       <div
         class={[_class, baseStyle].join(" ")}
