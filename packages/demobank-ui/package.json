@@ -44,10 +44,10 @@
     "swr": "1.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.13.16",
-    "@babel/plugin-transform-react-jsx": "^7.12.13",
-    "@babel/plugin-transform-react-jsx-source": "^7.12.13",
-    "@babel/preset-env": "^7.16.7",
+    "@babel/core": "7.13.16",
+    "@babel/plugin-transform-modules-commonjs": "7.13.0",
+    "@babel/plugin-transform-react-jsx-source": "7.12.13",
+    "@babel/preset-env": "7.13.15",
     "@creativebulma/bulma-tooltip": "^1.2.0",
     "@gnu-taler/pogen": "^0.0.5",
     "@storybook/addon-a11y": "6.2.9",
