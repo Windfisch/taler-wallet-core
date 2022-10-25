@@ -26,8 +26,7 @@ function getJsonIfOk(r: Response): Promise<any> {
   }
 
   throw new Error(
-    `Try another server: (${r.status}) ${
-      r.statusText || "internal server error"
+    `Try another server: (${r.status}) ${r.statusText || "internal server error"
     }`,
   );
 }
@@ -100,7 +99,7 @@ export function compose<SType extends { status: string }, PType>(
       const viewComponent = viewMap[statusName] as unknown as StateFunc<SType>;
       return createElement(viewComponent, state);
     }
-    TheComponent.name = `${name}`;
+    // TheComponent.name = `${name}`;
 
     return TheComponent;
   }

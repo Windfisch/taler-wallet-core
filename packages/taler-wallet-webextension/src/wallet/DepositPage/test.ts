@@ -239,43 +239,80 @@ describe("DepositPage states", () => {
       expect(r.currency).eq(currency);
       expect(r.account.value).eq(accountSelected);
       expect(r.amount.value).eq("0");
-      expect(r.depositHandler.onClick).undefined;
-      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
-
-      r.amount.onInput("10");
-    }
-
-    expect(await waitForStateUpdate()).true;
-
-    {
-      const r = pullLastResultOrThrow();
-      if (r.status !== "ready") expect.fail();
-      expect(r.cancelHandler.onClick).not.undefined;
-      expect(r.currency).eq(currency);
-      expect(r.account.value).eq(accountSelected);
-      expect(r.amount.value).eq("10");
       expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
       expect(r.depositHandler.onClick).undefined;
-
-      r.amount.onInput("3");
-    }
-
-    expect(await waitForStateUpdate()).true;
-
-    {
-      const r = pullLastResultOrThrow();
-      if (r.status !== "ready") expect.fail();
-      expect(r.cancelHandler.onClick).not.undefined;
-      expect(r.currency).eq(currency);
-      expect(r.account.value).eq(accountSelected);
-      expect(r.amount.value).eq("3");
-      expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
-      expect(r.depositHandler.onClick).not.undefined;
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
   });
+
+  // it("should calculate the fee upon entering amount ", async () => {
+  //   const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
+  //     mountHook(() =>
+  //       useComponentState(
+  //         { currency, onCancel: nullFunction, onSuccess: nullFunction },
+  //         {
+  //           getBalance: async () =>
+  //           ({
+  //             balances: [{ available: `${currency}:1` }],
+  //           } as Partial<BalancesResponse>),
+  //           listKnownBankAccounts: async () => ({ accounts: [ibanPayto] }),
+  //           getFeeForDeposit: withSomeFee,
+  //         } as Partial<typeof wxApi> as any,
+  //       ),
+  //     );
+
+  //   {
+  //     const { status } = getLastResultOrThrow();
+  //     expect(status).equal("loading");
+  //   }
+
+  //   await waitNextUpdate();
+
+  //   {
+  //     const r = getLastResultOrThrow();
+  //     if (r.status !== "ready") expect.fail();
+  //     expect(r.cancelHandler.onClick).not.undefined;
+  //     expect(r.currency).eq(currency);
+  //     expect(r.account.value).eq(accountSelected);
+  //     expect(r.amount.value).eq("0");
+  //     expect(r.depositHandler.onClick).undefined;
+  //     expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
+
+  //     r.amount.onInput("10");
+  //   }
+
+  //   expect(await waitForStateUpdate()).true;
+
+  //   {
+  //     const r = pullLastResultOrThrow();
+  //     if (r.status !== "ready") expect.fail();
+  //     expect(r.cancelHandler.onClick).not.undefined;
+  //     expect(r.currency).eq(currency);
+  //     expect(r.account.value).eq(accountSelected);
+  //     expect(r.amount.value).eq("10");
+  //     expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
+  //     expect(r.depositHandler.onClick).undefined;
+
+  //     r.amount.onInput("3");
+  //   }
+
+  //   expect(await waitForStateUpdate()).true;
+
+  //   {
+  //     const r = pullLastResultOrThrow();
+  //     if (r.status !== "ready") expect.fail();
+  //     expect(r.cancelHandler.onClick).not.undefined;
+  //     expect(r.currency).eq(currency);
+  //     expect(r.account.value).eq(accountSelected);
+  //     expect(r.amount.value).eq("3");
+  //     expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
+  //     expect(r.depositHandler.onClick).not.undefined;
+  //   }
+
+  //   await assertNoPendingUpdate();
+  //   expect(handler.getCallingQueueState()).eq("empty")
+  // });
 
   it("should calculate the fee upon entering amount ", async () => {
     const { handler, mock } = createWalletApiMock();
