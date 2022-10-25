@@ -18,15 +18,14 @@ import {
   DenomOperationMap,
   ExchangeFullDetails,
   ExchangeListItem,
-  FeeDescriptionPair,
+  FeeDescriptionPair
 } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
-import { TermsState } from "../../components/TermsOfService/utils.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { State as SelectExchangeState } from "../../hooks/useSelectedExchange.js";
 import { ButtonHandler, SelectFieldHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
-import * as wxApi from "../../wxApi.js";
+import { wxApi } from "../../wxApi.js";
 import { useComponentState } from "./state.js";
 import {
   ComparingView,
@@ -34,7 +33,7 @@ import {
   NoExchangesView,
   PrivacyContentView,
   ReadyView,
-  TosContentView,
+  TosContentView
 } from "./views.js";
 
 export interface Props {

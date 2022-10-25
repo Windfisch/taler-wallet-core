@@ -16,11 +16,11 @@
 
 /* eslint-disable react-hooks/rules-of-hooks */
 import { Amounts, TalerErrorDetail } from "@gnu-taler/taler-util";
-import { TalerError } from "@gnu-taler/taler-wallet-core";
+import { TalerError, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { useSelectedExchange } from "../../hooks/useSelectedExchange.js";
-import * as wxApi from "../../wxApi.js";
+import { wxApi } from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 type RecursiveState<S extends object> = S | (() => RecursiveState<S>);
@@ -31,7 +31,7 @@ export function useComponentState(
 ): RecursiveState<State> {
   const amount = Amounts.parseOrThrow(amountStr);
 
-  const hook = useAsyncAsHook(api.listExchanges);
+  const hook = useAsyncAsHook(() => api.wallet.call(WalletApiOperation.ListExchanges, {}));
 
   if (!hook) {
     return {
@@ -69,7 +69,7 @@ export function useComponentState(
 
     async function accept(): Promise<void> {
       try {
-        const resp = await api.initiatePeerPullPayment({
+        const resp = await api.wallet.call(WalletApiOperation.InitiatePeerPullPayment, {
           amount: Amounts.stringify(amount),
           exchangeBaseUrl: exchange.exchangeBaseUrl,
           partialContractTerms: {

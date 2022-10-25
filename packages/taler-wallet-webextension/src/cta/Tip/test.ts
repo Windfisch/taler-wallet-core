@@ -19,14 +19,18 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { Amounts, PrepareTipResult } from "@gnu-taler/taler-util";
+import { Amounts } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
 import { mountHook } from "../../test-utils.js";
+import { createWalletApiMock } from "../../test-utils.js";
 import { useComponentState } from "./state.js";
 
 describe("Tip CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+    const { handler, mock } = createWalletApiMock();
+
+    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
       mountHook(() =>
         useComponentState(
           {
@@ -38,23 +42,20 @@ describe("Tip CTA states", () => {
               null;
             },
           },
-          {
-            prepareTip: async () => ({}),
-            acceptTip: async () => ({}),
-          } as any,
+          mock,
         ),
       );
 
     {
-      const { status, error } = getLastResultOrThrow();
+      const { status, error } = pullLastResultOrThrow();
       expect(status).equals("loading");
       expect(error).undefined;
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const { status, error } = getLastResultOrThrow();
+      const { status, error } = pullLastResultOrThrow();
 
       expect(status).equals("loading-uri");
       if (!error) expect.fail();
@@ -64,12 +65,26 @@ describe("Tip CTA states", () => {
     }
 
     await assertNoPendingUpdate();
+    expect(handler.getCallingQueueState()).eq("empty")
   });
 
   it("should be ready for accepting the tip", async () => {
-    let tipAccepted = false;
 
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+    const { handler, mock } = createWalletApiMock();
+
+    handler.addWalletCallResponse(WalletApiOperation.PrepareTip, undefined, {
+      accepted: false,
+      exchangeBaseUrl: "exchange url",
+      merchantBaseUrl: "merchant url",
+      tipAmountEffective: "EUR:1",
+      walletTipId: "tip_id",
+      expirationTimestamp: {
+        t_s: 1
+      },
+      tipAmountRaw: ""
+    });
+
+    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
       mountHook(() =>
         useComponentState(
           {
@@ -81,58 +96,79 @@ describe("Tip CTA states", () => {
               null;
             },
           },
-          {
-            prepareTip: async () =>
-              ({
-                accepted: tipAccepted,
-                exchangeBaseUrl: "exchange url",
-                merchantBaseUrl: "merchant url",
-                tipAmountEffective: "EUR:1",
-                walletTipId: "tip_id",
-              } as PrepareTipResult as any),
-            acceptTip: async () => {
-              tipAccepted = true;
-            },
-          } as any,
+          mock,
         ),
       );
 
     {
-      const { status, error } = getLastResultOrThrow();
+      const { status, error } = pullLastResultOrThrow();
       expect(status).equals("loading");
       expect(error).undefined;
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const state = getLastResultOrThrow();
+      const state = pullLastResultOrThrow();
 
-      if (state.status !== "ready") expect.fail();
+      if (state.status !== "ready") {
+        expect(state).eq({ status: "ready" })
+        return;
+      }
       if (state.error) expect.fail();
       expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:1"));
       expect(state.merchantBaseUrl).eq("merchant url");
       expect(state.exchangeBaseUrl).eq("exchange url");
       if (state.accept.onClick === undefined) expect.fail();
 
+      handler.addWalletCallResponse(WalletApiOperation.AcceptTip);
       state.accept.onClick();
     }
 
-    await waitNextUpdate();
-    {
-      const state = getLastResultOrThrow();
+    handler.addWalletCallResponse(WalletApiOperation.PrepareTip, undefined, {
+      accepted: true,
+      exchangeBaseUrl: "exchange url",
+      merchantBaseUrl: "merchant url",
+      tipAmountEffective: "EUR:1",
+      walletTipId: "tip_id",
+      expirationTimestamp: {
+        t_s: 1
+      },
+      tipAmountRaw: ""
+    });
+    expect(await waitForStateUpdate()).true;
 
-      if (state.status !== "accepted") expect.fail();
+    {
+      const state = pullLastResultOrThrow();
+
+      if (state.status !== "accepted") {
+        expect(state).eq({ status: "accepted" })
+        return;
+      }
       if (state.error) expect.fail();
       expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:1"));
       expect(state.merchantBaseUrl).eq("merchant url");
       expect(state.exchangeBaseUrl).eq("exchange url");
     }
     await assertNoPendingUpdate();
+    expect(handler.getCallingQueueState()).eq("empty")
   });
 
   it("should be ignored after clicking the ignore button", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+    const { handler, mock } = createWalletApiMock();
+    handler.addWalletCallResponse(WalletApiOperation.PrepareTip, undefined, {
+      exchangeBaseUrl: "exchange url",
+      merchantBaseUrl: "merchant url",
+      tipAmountEffective: "EUR:1",
+      walletTipId: "tip_id",
+      accepted: false,
+      expirationTimestamp: {
+        t_s: 1,
+      },
+      tipAmountRaw: ""
+    });
+
+    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
       mountHook(() =>
         useComponentState(
           {
@@ -144,52 +180,48 @@ describe("Tip CTA states", () => {
               null;
             },
           },
-          {
-            prepareTip: async () =>
-              ({
-                exchangeBaseUrl: "exchange url",
-                merchantBaseUrl: "merchant url",
-                tipAmountEffective: "EUR:1",
-                walletTipId: "tip_id",
-              } as PrepareTipResult as any),
-            acceptTip: async () => ({}),
-          } as any,
+          mock,
         ),
       );
 
     {
-      const { status, error } = getLastResultOrThrow();
+      const { status, error } = pullLastResultOrThrow();
       expect(status).equals("loading");
       expect(error).undefined;
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const state = getLastResultOrThrow();
+      const state = pullLastResultOrThrow();
 
       if (state.status !== "ready") expect.fail();
       if (state.error) expect.fail();
       expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:1"));
       expect(state.merchantBaseUrl).eq("merchant url");
       expect(state.exchangeBaseUrl).eq("exchange url");
-      // if (state.ignore.onClick === undefined) expect.fail();
-
-      // state.ignore.onClick();
     }
 
-    // await waitNextUpdate();
-    // {
-    //   const state = getLastResultOrThrow();
-
-    //   if (state.status !== "ignored") expect.fail();
-    //   if (state.error) expect.fail();
-    // }
     await assertNoPendingUpdate();
+    expect(handler.getCallingQueueState()).eq("empty")
   });
 
   it("should render accepted if the tip has been used previously", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+    const { handler, mock } = createWalletApiMock();
+
+    handler.addWalletCallResponse(WalletApiOperation.PrepareTip, undefined, {
+      accepted: true,
+      exchangeBaseUrl: "exchange url",
+      merchantBaseUrl: "merchant url",
+      tipAmountEffective: "EUR:1",
+      walletTipId: "tip_id",
+      expirationTimestamp: {
+        t_s: 1,
+      },
+      tipAmountRaw: "",
+    });
+
+    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
       mountHook(() =>
         useComponentState(
           {
@@ -201,30 +233,20 @@ describe("Tip CTA states", () => {
               null;
             },
           },
-          {
-            prepareTip: async () =>
-              ({
-                accepted: true,
-                exchangeBaseUrl: "exchange url",
-                merchantBaseUrl: "merchant url",
-                tipAmountEffective: "EUR:1",
-                walletTipId: "tip_id",
-              } as PrepareTipResult as any),
-            acceptTip: async () => ({}),
-          } as any,
+          mock,
         ),
       );
 
     {
-      const { status, error } = getLastResultOrThrow();
+      const { status, error } = pullLastResultOrThrow();
       expect(status).equals("loading");
       expect(error).undefined;
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const state = getLastResultOrThrow();
+      const state = pullLastResultOrThrow();
 
       if (state.status !== "accepted") expect.fail();
       if (state.error) expect.fail();
@@ -233,5 +255,6 @@ describe("Tip CTA states", () => {
       expect(state.exchangeBaseUrl).eq("exchange url");
     }
     await assertNoPendingUpdate();
+    expect(handler.getCallingQueueState()).eq("empty")
   });
 });

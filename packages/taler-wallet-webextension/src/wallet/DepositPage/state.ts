@@ -21,11 +21,12 @@ import {
   KnownBankAccountsInfo,
   parsePaytoUri,
   PaytoUri,
-  stringifyPaytoUri,
+  stringifyPaytoUri
 } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
-import * as wxApi from "../../wxApi.js";
+import { wxApi } from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
@@ -36,8 +37,10 @@ export function useComponentState(
   const currency = parsed !== undefined ? parsed.currency : currencyStr;
 
   const hook = useAsyncAsHook(async () => {
-    const { balances } = await api.getBalance();
-    const { accounts } = await api.listKnownBankAccounts(currency);
+    const { balances } = await api.wallet.call(WalletApiOperation.GetBalances, {});
+    const { accounts } = await api.wallet.call(WalletApiOperation.ListKnownBankAccounts, {
+      currency
+    });
 
     return { accounts, balances };
   });
@@ -127,25 +130,29 @@ export function useComponentState(
     // const newSelected = !accountMap[accountStr] ? undefined : accountMap[accountStr];
     // if (!newSelected) return;
     const uri = !accountStr ? undefined : parsePaytoUri(accountStr);
-    setSelectedAccount(uri);
     if (uri && parsedAmount) {
       try {
         const result = await getFeeForAmount(uri, parsedAmount, api);
+        setSelectedAccount(uri);
         setFee(result);
       } catch (e) {
+        console.error(e)
+        setSelectedAccount(uri);
         setFee(undefined);
       }
     }
   }
 
   async function updateAmount(numStr: string): Promise<void> {
-    setAmount(numStr);
     const parsed = Amounts.parse(`${currency}:${numStr}`);
     if (parsed && selectedAccount) {
       try {
         const result = await getFeeForAmount(selectedAccount, parsed, api);
+        setAmount(numStr);
         setFee(result);
       } catch (e) {
+        console.error(e)
+        setAmount(numStr);
         setFee(undefined);
       }
     }
@@ -165,10 +172,10 @@ export function useComponentState(
   const amountError = !isDirty
     ? undefined
     : !parsedAmount
-    ? "Invalid amount"
-    : Amounts.cmp(balance, parsedAmount) === -1
-    ? `Too much, your current balance is ${Amounts.stringifyValue(balance)}`
-    : undefined;
+      ? "Invalid amount"
+      : Amounts.cmp(balance, parsedAmount) === -1
+        ? `Too much, your current balance is ${Amounts.stringifyValue(balance)}`
+        : undefined;
 
   const unableToDeposit =
     !parsedAmount ||
@@ -176,13 +183,16 @@ export function useComponentState(
     Amounts.isZero(totalToDeposit) ||
     fee === undefined ||
     amountError !== undefined;
+  // console.log(parsedAmount, selectedAccount, fee, totalToDeposit, amountError)
 
   async function doSend(): Promise<void> {
     if (!selectedAccount || !parsedAmount || !currency) return;
 
-    const account = `payto://${selectedAccount.targetType}/${selectedAccount.targetPath}`;
+    const depositPaytoUri = `payto://${selectedAccount.targetType}/${selectedAccount.targetPath}`;
     const amount = Amounts.stringify(parsedAmount);
-    await api.createDepositGroup(account, amount);
+    await api.wallet.call(WalletApiOperation.CreateDepositGroup, {
+      amount, depositPaytoUri
+    })
     onSuccess(currency);
   }
 
@@ -226,9 +236,11 @@ async function getFeeForAmount(
   a: AmountJson,
   api: typeof wxApi,
 ): Promise<DepositGroupFees> {
-  const account = `payto://${p.targetType}/${p.targetPath}`;
+  const depositPaytoUri = `payto://${p.targetType}/${p.targetPath}`;
   const amount = Amounts.stringify(a);
-  return await api.getFeeForDeposit(account, amount);
+  return await api.wallet.call(WalletApiOperation.GetFeeForDeposit, {
+    amount, depositPaytoUri
+  })
 }
 
 export function labelForAccountType(id: string) {

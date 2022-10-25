@@ -19,43 +19,40 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { Amounts, PrepareDepositResponse } from "@gnu-taler/taler-util";
+import { Amounts } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
 import { mountHook } from "../../test-utils.js";
+import { createWalletApiMock } from "../../test-utils.js";
 import { useComponentState } from "./state.js";
 
 describe("Deposit CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+    const { handler, mock } = createWalletApiMock();
+    const props = {
+      talerDepositUri: undefined,
+      amountStr: undefined,
+      cancel: async () => {
+        null;
+      },
+      onSuccess: async () => {
+        null;
+      },
+    }
+    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState(
-          {
-            talerDepositUri: undefined,
-            amountStr: undefined,
-            cancel: async () => {
-              null;
-            },
-            onSuccess: async () => {
-              null;
-            },
-          },
-          {
-            prepareRefund: async () => ({}),
-            applyRefund: async () => ({}),
-            onUpdateNotification: async () => ({}),
-          } as any,
-        ),
+        useComponentState(props, mock),
       );
 
     {
-      const { status } = getLastResultOrThrow();
+      const { status } = pullLastResultOrThrow();
       expect(status).equals("loading");
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const { status, error } = getLastResultOrThrow();
+      const { status, error } = pullLastResultOrThrow();
 
       expect(status).equals("loading-uri");
 
@@ -64,44 +61,41 @@ describe("Deposit CTA states", () => {
       if (error.operational) expect.fail();
       expect(error.message).eq("ERROR_NO-URI-FOR-DEPOSIT");
     }
-
     await assertNoPendingUpdate();
+    expect(handler.getCallingQueueState()).eq("empty")
   });
 
   it("should be ready after loading", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+    const { handler, mock } = createWalletApiMock();
+    handler.addWalletCallResponse(WalletApiOperation.PrepareDeposit, undefined, {
+      effectiveDepositAmount: Amounts.parseOrThrow("EUR:1"),
+      totalDepositCost: Amounts.parseOrThrow("EUR:1.2"),
+    });
+    const props = {
+      talerDepositUri: "payto://refund/asdasdas",
+      amountStr: "EUR:1",
+      cancel: async () => {
+        null;
+      },
+      onSuccess: async () => {
+        null;
+      },
+    }
+
+    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
       mountHook(() =>
-        useComponentState(
-          {
-            talerDepositUri: "payto://refund/asdasdas",
-            amountStr: "EUR:1",
-            cancel: async () => {
-              null;
-            },
-            onSuccess: async () => {
-              null;
-            },
-          },
-          {
-            prepareDeposit: async () =>
-              ({
-                effectiveDepositAmount: Amounts.parseOrThrow("EUR:1"),
-                totalDepositCost: Amounts.parseOrThrow("EUR:1.2"),
-              } as PrepareDepositResponse as any),
-            createDepositGroup: async () => ({}),
-          } as any,
-        ),
+        useComponentState(props, mock),
       );
 
     {
-      const { status } = getLastResultOrThrow();
+      const { status } = pullLastResultOrThrow();
       expect(status).equals("loading");
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const state = getLastResultOrThrow();
+      const state = pullLastResultOrThrow();
 
       if (state.status !== "ready") expect.fail();
       if (state.error) expect.fail();
@@ -112,5 +106,6 @@ describe("Deposit CTA states", () => {
     }
 
     await assertNoPendingUpdate();
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 });

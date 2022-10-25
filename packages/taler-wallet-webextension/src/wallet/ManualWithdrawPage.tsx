@@ -22,13 +22,14 @@ import {
   parsePaytoUri,
   PaytoUri,
 } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
-import * as wxApi from "../wxApi.js";
+import { wxApi } from "../wxApi.js";
 import { CreateManualWithdraw } from "./CreateManualWithdraw.js";
 import { ReserveCreated } from "./ReserveCreated.js";
 
@@ -50,11 +51,14 @@ export function ManualWithdrawPage({ amount, onCancel }: Props): VNode {
   >(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
 
-  const state = useAsyncAsHook(wxApi.listExchanges);
+  const state = useAsyncAsHook(() =>
+    wxApi.wallet.call(WalletApiOperation.ListExchanges, {}),
+  );
   useEffect(() => {
-    return wxApi.onUpdateNotification([NotificationType.ExchangeAdded], () => {
-      state?.retry();
-    });
+    return wxApi.listener.onUpdateNotification(
+      [NotificationType.ExchangeAdded],
+      state?.retry,
+    );
   });
   const { i18n } = useTranslationContext();
 
@@ -63,9 +67,12 @@ export function ManualWithdrawPage({ amount, onCancel }: Props): VNode {
     amount: AmountJson,
   ): Promise<void> {
     try {
-      const response = await wxApi.acceptManualWithdrawal(
-        exchangeBaseUrl,
-        Amounts.stringify(amount),
+      const response = await wxApi.wallet.call(
+        WalletApiOperation.AcceptManualWithdrawal,
+        {
+          exchangeBaseUrl: exchangeBaseUrl,
+          amount: Amounts.stringify(amount),
+        },
       );
       const payto = response.exchangePaytoUris[0];
       const paytoURI = parsePaytoUri(payto);

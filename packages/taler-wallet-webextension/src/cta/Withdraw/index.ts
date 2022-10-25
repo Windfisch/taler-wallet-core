@@ -20,15 +20,15 @@ import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { State as SelectExchangeState } from "../../hooks/useSelectedExchange.js";
 import { ButtonHandler, SelectFieldHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
-import * as wxApi from "../../wxApi.js";
+import { wxApi } from "../../wxApi.js";
 import {
   useComponentStateFromParams,
-  useComponentStateFromURI,
+  useComponentStateFromURI
 } from "./state.js";
 
 import { ExchangeSelectionPage } from "../../wallet/ExchangeSelection/index.js";
-import { LoadingInfoView, LoadingUriView, SuccessView } from "./views.js";
 import { NoExchangesView } from "../../wallet/ExchangeSelection/views.js";
+import { LoadingInfoView, LoadingUriView, SuccessView } from "./views.js";
 
 export interface PropsFromURI {
   talerWithdrawUri: string | undefined;

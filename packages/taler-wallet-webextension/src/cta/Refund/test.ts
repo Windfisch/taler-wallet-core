@@ -21,18 +21,19 @@
 
 import {
   AmountJson,
-  Amounts,
-  NotificationType,
-  PrepareRefundResult,
+  Amounts, NotificationType, OrderShortInfo, PrepareRefundResult
 } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
 import { mountHook } from "../../test-utils.js";
-import { SubsHandler } from "../Payment/test.js";
+import { createWalletApiMock } from "../../test-utils.js";
 import { useComponentState } from "./state.js";
 
 describe("Refund CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+    const { handler, mock } = createWalletApiMock();
+
+    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
       mountHook(() =>
         useComponentState(
           {
@@ -44,24 +45,25 @@ describe("Refund CTA states", () => {
               null;
             },
           },
-          {
-            prepareRefund: async () => ({}),
-            applyRefund: async () => ({}),
-            onUpdateNotification: async () => ({}),
-          } as any,
+          mock
+          // {
+          //   prepareRefund: async () => ({}),
+          //   applyRefund: async () => ({}),
+          //   onUpdateNotification: async () => ({}),
+          // } as any,
         ),
       );
 
     {
-      const { status, error } = getLastResultOrThrow();
+      const { status, error } = pullLastResultOrThrow();
       expect(status).equals("loading");
       expect(error).undefined;
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const { status, error } = getLastResultOrThrow();
+      const { status, error } = pullLastResultOrThrow();
 
       expect(status).equals("loading-uri");
       if (!error) expect.fail();
@@ -71,55 +73,76 @@ describe("Refund CTA states", () => {
     }
 
     await assertNoPendingUpdate();
+    expect(handler.getCallingQueueState()).eq("empty")
   });
 
   it("should be ready after loading", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+    const { handler, mock } = createWalletApiMock();
+    const props = {
+      talerRefundUri: "taler://refund/asdasdas",
+      cancel: async () => {
+        null;
+      },
+      onSuccess: async () => {
+        null;
+      },
+    }
+
+    handler.addWalletCallResponse(WalletApiOperation.PrepareRefund, undefined, {
+      awaiting: "EUR:2",
+      effectivePaid: "EUR:2",
+      gone: "EUR:0",
+      granted: "EUR:0",
+      pending: false,
+      proposalId: "1",
+      info: {
+        contractTermsHash: "123",
+        merchant: {
+          name: "the merchant name",
+        },
+        orderId: "orderId1",
+        summary: "the summary",
+      } as OrderShortInfo,
+    })
+
+    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
       mountHook(() =>
         useComponentState(
-          {
-            talerRefundUri: "taler://refund/asdasdas",
-            cancel: async () => {
-              null;
-            },
-            onSuccess: async () => {
-              null;
-            },
-          },
-          {
-            prepareRefund: async () =>
-              ({
-                effectivePaid: "EUR:2",
-                awaiting: "EUR:2",
-                gone: "EUR:0",
-                granted: "EUR:0",
-                pending: false,
-                proposalId: "1",
-                info: {
-                  contractTermsHash: "123",
-                  merchant: {
-                    name: "the merchant name",
-                  },
-                  orderId: "orderId1",
-                  summary: "the summary",
-                },
-              } as PrepareRefundResult as any),
-            applyRefund: async () => ({}),
-            onUpdateNotification: async () => ({}),
-          } as any,
+          props, mock
+          //   {
+          //     prepareRefund: async () =>
+          //     ({
+          //       effectivePaid: "EUR:2",
+          //       awaiting: "EUR:2",
+          //       gone: "EUR:0",
+          //       granted: "EUR:0",
+          //       pending: false,
+          //       proposalId: "1",
+          //       info: {
+          //         contractTermsHash: "123",
+          //         merchant: {
+          //           name: "the merchant name",
+          //         },
+          //         orderId: "orderId1",
+          //         summary: "the summary",
+          //       },
+          //     } as PrepareRefundResult as any),
+          //     applyRefund: async () => ({}),
+          //     onUpdateNotification: async () => ({}),
+          //   } as any,
         ),
       );
 
     {
-      const { status, error } = getLastResultOrThrow();
+      const { status, error } = pullLastResultOrThrow();
       expect(status).equals("loading");
       expect(error).undefined;
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const state = getLastResultOrThrow();
+      const state = pullLastResultOrThrow();
 
       if (state.status !== "ready") expect.fail();
       if (state.error) expect.fail();
@@ -131,58 +154,101 @@ describe("Refund CTA states", () => {
     }
 
     await assertNoPendingUpdate();
+    expect(handler.getCallingQueueState()).eq("empty")
   });
 
   it("should be ignored after clicking the ignore button", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+    const { handler, mock } = createWalletApiMock();
+    const props = {
+      talerRefundUri: "taler://refund/asdasdas",
+      cancel: async () => {
+        null;
+      },
+      onSuccess: async () => {
+        null;
+      },
+    }
+
+    handler.addWalletCallResponse(WalletApiOperation.PrepareRefund, undefined, {
+      awaiting: "EUR:2",
+      effectivePaid: "EUR:2",
+      gone: "EUR:0",
+      granted: "EUR:0",
+      pending: false,
+      proposalId: "1",
+      info: {
+        contractTermsHash: "123",
+        merchant: {
+          name: "the merchant name",
+        },
+        orderId: "orderId1",
+        summary: "the summary",
+      } as OrderShortInfo,
+    })
+    // handler.addWalletCall(WalletApiOperation.ApplyRefund)
+    // handler.addWalletCall(WalletApiOperation.PrepareRefund, undefined, {
+    //   awaiting: "EUR:1",
+    //   effectivePaid: "EUR:2",
+    //   gone: "EUR:0",
+    //   granted: "EUR:1",
+    //   pending: true,
+    //   proposalId: "1",
+    //   info: {
+    //     contractTermsHash: "123",
+    //     merchant: {
+    //       name: "the merchant name",
+    //     },
+    //     orderId: "orderId1",
+    //     summary: "the summary",
+    //   } as OrderShortInfo,
+    // })
+    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
       mountHook(() =>
         useComponentState(
-          {
-            talerRefundUri: "taler://refund/asdasdas",
-            cancel: async () => {
-              null;
-            },
-            onSuccess: async () => {
-              null;
-            },
-          },
-          {
-            prepareRefund: async () =>
-              ({
-                effectivePaid: "EUR:2",
-                awaiting: "EUR:2",
-                gone: "EUR:0",
-                granted: "EUR:0",
-                pending: false,
-                proposalId: "1",
-                info: {
-                  contractTermsHash: "123",
-                  merchant: {
-                    name: "the merchant name",
-                  },
-                  orderId: "orderId1",
-                  summary: "the summary",
-                },
-              } as PrepareRefundResult as any),
-            applyRefund: async () => ({}),
-            onUpdateNotification: async () => ({}),
-          } as any,
+          props, mock
+          // {
+          //   prepareRefund: async () =>
+          //   ({
+          //     effectivePaid: "EUR:2",
+          //     awaiting: "EUR:2",
+          //     gone: "EUR:0",
+          //     granted: "EUR:0",
+          //     pending: false,
+          //     proposalId: "1",
+          //     info: {
+          //       contractTermsHash: "123",
+          //       merchant: {
+          //         name: "the merchant name",
+          //       },
+          //       orderId: "orderId1",
+          //       summary: "the summary",
+          //     },
+          //   } as PrepareRefundResult as any),
+          //   applyRefund: async () => ({}),
+          //   onUpdateNotification: async () => ({}),
+          // } as any,
         ),
       );
 
     {
-      const { status, error } = getLastResultOrThrow();
+      const { status, error } = pullLastResultOrThrow();
       expect(status).equals("loading");
       expect(error).undefined;
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const state = getLastResultOrThrow();
+      const state = pullLastResultOrThrow();
 
-      if (state.status !== "ready") expect.fail();
-      if (state.error) expect.fail();
+      if (state.status !== "ready") {
+        expect(state).eq({})
+        return;
+      }
+      if (state.error) {
+        expect(state).eq({})
+        return;
+      }
       expect(state.accept.onClick).not.undefined;
       expect(state.merchantName).eq("the merchant name");
       expect(state.orderId).eq("orderId1");
@@ -192,113 +258,145 @@ describe("Refund CTA states", () => {
       state.ignore.onClick();
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const state = getLastResultOrThrow();
+      const state = pullLastResultOrThrow();
 
-      if (state.status !== "ignored") expect.fail();
-      if (state.error) expect.fail();
+      if (state.status !== "ignored") {
+        expect(state).eq({})
+        return;
+      }
+      if (state.error) {
+        expect(state).eq({})
+        return;
+      }
       expect(state.merchantName).eq("the merchant name");
     }
 
     await assertNoPendingUpdate();
+    expect(handler.getCallingQueueState()).eq("empty")
   });
 
   it("should be in progress when doing refresh", async () => {
-    let granted = Amounts.getZero("EUR");
-    const unit: AmountJson = { currency: "EUR", value: 1, fraction: 0 };
-    const refunded: AmountJson = { currency: "EUR", value: 2, fraction: 0 };
-    let awaiting: AmountJson = refunded;
-    let pending = true;
-
-    const subscriptions = new SubsHandler();
-
-    function notifyMelt(): void {
-      granted = Amounts.add(granted, unit).amount;
-      pending = granted.value < refunded.value;
-      awaiting = Amounts.sub(refunded, granted).amount;
-      subscriptions.notifyEvent(NotificationType.RefreshMelted);
+    const { handler, mock } = createWalletApiMock();
+    const props = {
+      talerRefundUri: "taler://refund/asdasdas",
+      cancel: async () => {
+        null;
+      },
+      onSuccess: async () => {
+        null;
+      },
     }
 
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+    handler.addWalletCallResponse(WalletApiOperation.PrepareRefund, undefined, {
+      awaiting: "EUR:2",
+      effectivePaid: "EUR:2",
+      gone: "EUR:0",
+      granted: "EUR:0",
+      pending: true,
+      proposalId: "1",
+      info: {
+        contractTermsHash: "123",
+        merchant: {
+          name: "the merchant name",
+        },
+        orderId: "orderId1",
+        summary: "the summary",
+      } as OrderShortInfo,
+    })
+    handler.addWalletCallResponse(WalletApiOperation.PrepareRefund, undefined, {
+      awaiting: "EUR:1",
+      effectivePaid: "EUR:2",
+      gone: "EUR:0",
+      granted: "EUR:1",
+      pending: true,
+      proposalId: "1",
+      info: {
+        contractTermsHash: "123",
+        merchant: {
+          name: "the merchant name",
+        },
+        orderId: "orderId1",
+        summary: "the summary",
+      } as OrderShortInfo,
+    })
+    handler.addWalletCallResponse(WalletApiOperation.PrepareRefund, undefined, {
+      awaiting: "EUR:0",
+      effectivePaid: "EUR:2",
+      gone: "EUR:0",
+      granted: "EUR:2",
+      pending: false,
+      proposalId: "1",
+      info: {
+        contractTermsHash: "123",
+        merchant: {
+          name: "the merchant name",
+        },
+        orderId: "orderId1",
+        summary: "the summary",
+      } as OrderShortInfo,
+    })
+
+    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
       mountHook(() =>
         useComponentState(
-          {
-            talerRefundUri: "taler://refund/asdasdas",
-            cancel: async () => {
-              null;
-            },
-            onSuccess: async () => {
-              null;
-            },
-          },
-          {
-            prepareRefund: async () =>
-              ({
-                awaiting: Amounts.stringify(awaiting),
-                effectivePaid: "EUR:2",
-                gone: "EUR:0",
-                granted: Amounts.stringify(granted),
-                pending,
-                proposalId: "1",
-                info: {
-                  contractTermsHash: "123",
-                  merchant: {
-                    name: "the merchant name",
-                  },
-                  orderId: "orderId1",
-                  summary: "the summary",
-                },
-              } as PrepareRefundResult as any),
-            applyRefund: async () => ({}),
-            onUpdateNotification: subscriptions.saveSubscription,
-          } as any,
+          props, mock
         ),
       );
 
     {
-      const { status, error } = getLastResultOrThrow();
+      const { status, error } = pullLastResultOrThrow();
       expect(status).equals("loading");
       expect(error).undefined;
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const state = getLastResultOrThrow();
+      const state = pullLastResultOrThrow();
 
-      if (state.status !== "in-progress") expect.fail("1");
+      if (state.status !== "in-progress") {
+        expect(state).eq({})
+        return;
+      }
       if (state.error) expect.fail();
       expect(state.merchantName).eq("the merchant name");
       expect(state.products).undefined;
       expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:2"));
       // expect(state.progress).closeTo(1 / 3, 0.01)
 
-      notifyMelt();
+      handler.notifyEventFromWallet(NotificationType.RefreshMelted)
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const state = getLastResultOrThrow();
+      const state = pullLastResultOrThrow();
 
-      if (state.status !== "in-progress") expect.fail("2");
+      if (state.status !== "in-progress") {
+        expect(state).eq({})
+        return;
+      }
       if (state.error) expect.fail();
       expect(state.merchantName).eq("the merchant name");
       expect(state.products).undefined;
       expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:2"));
       // expect(state.progress).closeTo(2 / 3, 0.01)
 
-      notifyMelt();
+      handler.notifyEventFromWallet(NotificationType.RefreshMelted)
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const state = getLastResultOrThrow();
+      const state = pullLastResultOrThrow();
 
-      if (state.status !== "ready") expect.fail("3");
+      if (state.status !== "ready") {
+        expect(state).eq({})
+        return;
+      }
       if (state.error) expect.fail();
       expect(state.merchantName).eq("the merchant name");
       expect(state.products).undefined;
@@ -306,5 +404,6 @@ describe("Refund CTA states", () => {
     }
 
     await assertNoPendingUpdate();
+    expect(handler.getCallingQueueState()).eq("empty")
   });
 });

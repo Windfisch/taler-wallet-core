@@ -21,7 +21,10 @@ import {
   ExchangeListItem,
   NotificationType,
 } from "@gnu-taler/taler-util";
-import { PendingTaskInfo } from "@gnu-taler/taler-wallet-core";
+import {
+  PendingTaskInfo,
+  WalletApiOperation,
+} from "@gnu-taler/taler-wallet-core";
 import { format } from "date-fns";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
@@ -33,8 +36,7 @@ import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { useDiagnostics } from "../hooks/useDiagnostics.js";
 import { Button } from "../mui/Button.js";
 import { Grid } from "../mui/Grid.js";
-import { Paper } from "../mui/Paper.js";
-import * as wxApi from "../wxApi.js";
+import { wxApi } from "../wxApi.js";
 
 export function DeveloperPage(): VNode {
   const [status, timedOut] = useDiagnostics();
@@ -44,9 +46,12 @@ export function DeveloperPage(): VNode {
   listenAllEvents.includes = (e) => e !== "waiting-for-retry"; // includes every event
 
   const response = useAsyncAsHook(async () => {
-    const op = await wxApi.getPendingOperations();
-    const c = await wxApi.dumpCoins();
-    const ex = await wxApi.listExchanges();
+    const op = await wxApi.wallet.call(
+      WalletApiOperation.GetPendingOperations,
+      {},
+    );
+    const c = await wxApi.wallet.call(WalletApiOperation.DumpCoins, {});
+    const ex = await wxApi.wallet.call(WalletApiOperation.ListExchanges, {});
     return {
       operations: op.pendingOperations,
       coins: c.coins,
@@ -55,9 +60,10 @@ export function DeveloperPage(): VNode {
   });
 
   useEffect(() => {
-    return wxApi.onUpdateNotification(listenAllEvents, () => {
-      response?.retry();
-    });
+    return wxApi.listener.onUpdateNotification(
+      listenAllEvents,
+      response?.retry,
+    );
   });
 
   const nonResponse = { operations: [], coins: [], exchanges: [] };
@@ -76,7 +82,7 @@ export function DeveloperPage(): VNode {
       coins={coins}
       exchanges={exchanges}
       onDownloadDatabase={async () => {
-        const db = await wxApi.exportDB();
+        const db = await wxApi.wallet.call(WalletApiOperation.ExportDb, {});
         return JSON.stringify(db);
       }}
     />
@@ -131,7 +137,9 @@ export function View({
   }
   const fileRef = useRef<HTMLInputElement>(null);
   async function onImportDatabase(str: string): Promise<void> {
-    return wxApi.importDB(JSON.parse(str));
+    return wxApi.wallet.call(WalletApiOperation.ImportDb, {
+      dump: JSON.parse(str),
+    });
   }
   const currencies: { [ex: string]: string } = {};
   const money_by_exchange = coins.reduce(
@@ -169,7 +177,7 @@ export function View({
             onClick={() =>
               confirmReset(
                 i18n.str`Do you want to IRREVOCABLY DESTROY everything inside your wallet and LOSE ALL YOUR COINS?`,
-                wxApi.resetDb,
+                () => wxApi.background.resetDb(),
               )
             }
           >
@@ -182,7 +190,7 @@ export function View({
             onClick={() =>
               confirmReset(
                 i18n.str`TESTING: This may delete all your coin, proceed with caution`,
-                wxApi.runGarbageCollector,
+                () => wxApi.background.runGarbageCollector(),
               )
             }
           >

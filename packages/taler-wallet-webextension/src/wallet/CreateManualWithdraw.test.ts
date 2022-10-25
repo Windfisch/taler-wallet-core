@@ -34,73 +34,73 @@ const exchangeListEmpty = {};
 
 describe("CreateManualWithdraw states", () => {
   it("should set noExchangeFound when exchange list is empty", () => {
-    const { getLastResultOrThrow } = mountHook(() =>
+    const { pullLastResultOrThrow } = mountHook(() =>
       useComponentState(exchangeListEmpty, undefined, undefined),
     );
 
-    const { noExchangeFound } = getLastResultOrThrow();
+    const { noExchangeFound } = pullLastResultOrThrow();
 
     expect(noExchangeFound).equal(true);
   });
 
   it("should set noExchangeFound when exchange list doesn't include selected currency", () => {
-    const { getLastResultOrThrow } = mountHook(() =>
+    const { pullLastResultOrThrow } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, "COL"),
     );
 
-    const { noExchangeFound } = getLastResultOrThrow();
+    const { noExchangeFound } = pullLastResultOrThrow();
 
     expect(noExchangeFound).equal(true);
   });
 
   it("should select the first exchange from the list", () => {
-    const { getLastResultOrThrow } = mountHook(() =>
+    const { pullLastResultOrThrow } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, undefined),
     );
 
-    const { exchange } = getLastResultOrThrow();
+    const { exchange } = pullLastResultOrThrow();
 
     expect(exchange.value).equal("url1");
   });
 
   it("should select the first exchange with the selected currency", () => {
-    const { getLastResultOrThrow } = mountHook(() =>
+    const { pullLastResultOrThrow } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, "ARS"),
     );
 
-    const { exchange } = getLastResultOrThrow();
+    const { exchange } = pullLastResultOrThrow();
 
     expect(exchange.value).equal("url2");
   });
 
   it("should change the exchange when currency change", async () => {
-    const { getLastResultOrThrow, waitNextUpdate } = mountHook(() =>
+    const { pullLastResultOrThrow, waitForStateUpdate } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, "ARS"),
     );
 
     {
-      const { exchange, currency } = getLastResultOrThrow();
+      const { exchange, currency } = pullLastResultOrThrow();
 
       expect(exchange.value).equal("url2");
       if (currency.onChange === undefined) expect.fail();
       currency.onChange("USD");
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const { exchange } = getLastResultOrThrow();
+      const { exchange } = pullLastResultOrThrow();
       expect(exchange.value).equal("url1");
     }
   });
 
   it("should change the currency when exchange change", async () => {
-    const { getLastResultOrThrow, waitNextUpdate } = mountHook(() =>
+    const { pullLastResultOrThrow, waitForStateUpdate } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, "ARS"),
     );
 
     {
-      const { exchange, currency } = getLastResultOrThrow();
+      const { exchange, currency } = pullLastResultOrThrow();
 
       expect(exchange.value).equal("url2");
       expect(currency.value).equal("ARS");
@@ -109,10 +109,10 @@ describe("CreateManualWithdraw states", () => {
       exchange.onChange("url1");
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const { exchange, currency } = getLastResultOrThrow();
+      const { exchange, currency } = pullLastResultOrThrow();
 
       expect(exchange.value).equal("url1");
       expect(currency.value).equal("USD");
@@ -120,22 +120,22 @@ describe("CreateManualWithdraw states", () => {
   });
 
   it("should update parsed amount when amount change", async () => {
-    const { getLastResultOrThrow, waitNextUpdate } = mountHook(() =>
+    const { pullLastResultOrThrow, waitForStateUpdate } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, "ARS"),
     );
 
     {
-      const { amount, parsedAmount } = getLastResultOrThrow();
+      const { amount, parsedAmount } = pullLastResultOrThrow();
 
       expect(parsedAmount).equal(undefined);
 
       amount.onInput("12");
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const { parsedAmount } = getLastResultOrThrow();
+      const { parsedAmount } = pullLastResultOrThrow();
 
       expect(parsedAmount).deep.equals({
         value: 12,
@@ -146,41 +146,41 @@ describe("CreateManualWithdraw states", () => {
   });
 
   it("should have an amount field", async () => {
-    const { getLastResultOrThrow, waitNextUpdate } = mountHook(() =>
+    const { pullLastResultOrThrow, waitForStateUpdate } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, "ARS"),
     );
 
     await defaultTestForInputText(
-      waitNextUpdate,
-      () => getLastResultOrThrow().amount,
+      waitForStateUpdate,
+      () => pullLastResultOrThrow().amount,
     );
   });
 
   it("should have an exchange selector ", async () => {
-    const { getLastResultOrThrow, waitNextUpdate } = mountHook(() =>
+    const { pullLastResultOrThrow, waitForStateUpdate } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, "ARS"),
     );
 
     await defaultTestForInputSelect(
-      waitNextUpdate,
-      () => getLastResultOrThrow().exchange,
+      waitForStateUpdate,
+      () => pullLastResultOrThrow().exchange,
     );
   });
 
   it("should have a currency selector ", async () => {
-    const { getLastResultOrThrow, waitNextUpdate } = mountHook(() =>
+    const { pullLastResultOrThrow, waitForStateUpdate } = mountHook(() =>
       useComponentState(exchangeListWithARSandUSD, undefined, "ARS"),
     );
 
     await defaultTestForInputSelect(
-      waitNextUpdate,
-      () => getLastResultOrThrow().currency,
+      waitForStateUpdate,
+      () => pullLastResultOrThrow().currency,
     );
   });
 });
 
 async function defaultTestForInputText(
-  awaiter: () => Promise<void>,
+  awaiter: () => Promise<boolean>,
   getField: () => TextFieldHandler,
 ): Promise<void> {
   let nextValue = "";
@@ -191,7 +191,7 @@ async function defaultTestForInputText(
     field.onInput(nextValue);
   }
 
-  await awaiter();
+  expect(await awaiter()).true;
 
   {
     const field = getField();
@@ -200,7 +200,7 @@ async function defaultTestForInputText(
 }
 
 async function defaultTestForInputSelect(
-  awaiter: () => Promise<void>,
+  awaiter: () => Promise<boolean>,
   getField: () => SelectFieldHandler,
 ): Promise<void> {
   let nextValue = "";
@@ -218,7 +218,7 @@ async function defaultTestForInputSelect(
     field.onChange(nextValue);
   }
 
-  await awaiter();
+  expect(await awaiter()).true;
 
   {
     const field = getField();

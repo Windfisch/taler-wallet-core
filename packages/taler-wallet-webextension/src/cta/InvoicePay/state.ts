@@ -21,12 +21,12 @@ import {
   PreparePayResult,
   PreparePayResultType,
   TalerErrorDetail,
-  TalerProtocolTimestamp,
+  TalerProtocolTimestamp
 } from "@gnu-taler/taler-util";
-import { TalerError } from "@gnu-taler/taler-wallet-core";
+import { TalerError, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
-import * as wxApi from "../../wxApi.js";
+import { wxApi } from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
@@ -34,18 +34,17 @@ export function useComponentState(
   api: typeof wxApi,
 ): State {
   const hook = useAsyncAsHook(async () => {
-    const p2p = await api.checkPeerPullPayment({
+    const p2p = await api.wallet.call(WalletApiOperation.CheckPeerPullPayment, {
       talerUri: talerPayPullUri,
     });
-    const balance = await api.getBalance();
+    const balance = await api.wallet.call(WalletApiOperation.GetBalances, {});
     return { p2p, balance };
   });
 
-  useEffect(() => {
-    api.onUpdateNotification([NotificationType.CoinWithdrawn], () => {
-      hook?.retry();
-    });
-  });
+  useEffect(() => api.listener.onUpdateNotification(
+    [NotificationType.CoinWithdrawn],
+    hook?.retry
+  ));
 
   const [operationError, setOperationError] = useState<
     TalerErrorDetail | undefined
@@ -64,10 +63,7 @@ export function useComponentState(
     };
   }
 
-  // const { payStatus } = hook.response.p2p;
-
   const {
-    amount: purseAmount,
     contractTerms,
     peerPullPaymentIncomingId,
   } = hook.response.p2p;
@@ -136,17 +132,9 @@ export function useComponentState(
     };
   }
 
-  // if (payStatus.status === PreparePayResultType.AlreadyConfirmed) {
-  //   return {
-  //     status: "confirmed",
-  //     balance: foundAmount,
-  //     ...baseResult,
-  //   };
-  // }
-
   async function accept(): Promise<void> {
     try {
-      const resp = await api.acceptPeerPullPayment({
+      const resp = await api.wallet.call(WalletApiOperation.AcceptPeerPullPayment, {
         peerPullPaymentIncomingId,
       });
       onSuccess(resp.transactionId);

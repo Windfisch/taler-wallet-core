@@ -78,7 +78,7 @@ import {
   Duration,
   durationFromSpec,
   durationMin,
-  ExchangeFullDetails,
+  ExchangeDetailedResponse,
   ExchangeListItem,
   ExchangesListResponse,
   ExchangeTosStatusDetails,
@@ -664,7 +664,7 @@ async function getExchanges(
 async function getExchangeDetailedInfo(
   ws: InternalWalletState,
   exchangeBaseurl: string,
-): Promise<ExchangeFullDetails> {
+): Promise<ExchangeDetailedResponse> {
   //TODO: should we use the forceUpdate parameter?
   const exchange = await ws.db
     .mktx((x) => [
@@ -819,10 +819,12 @@ async function getExchangeDetailedInfo(
   );
 
   return {
-    ...exchange.info,
-    denomFees,
-    transferFees,
-    globalFees,
+    exchange: {
+      ...exchange.info,
+      denomFees,
+      transferFees,
+      globalFees,
+    },
   };
 }
 

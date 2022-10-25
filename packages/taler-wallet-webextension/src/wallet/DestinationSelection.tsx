@@ -15,6 +15,7 @@
  */
 
 import { Amounts } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { styled } from "@linaria/react";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
@@ -36,7 +37,7 @@ import { TextField } from "../mui/TextField.js";
 import { Pages } from "../NavigationBar.js";
 import arrowIcon from "../svg/chevron-down.svg";
 import bankIcon from "../svg/ri-bank-line.svg";
-import * as wxApi from "../wxApi.js";
+import { wxApi } from "../wxApi.js";
 
 const Container = styled.div`
   display: flex;
@@ -171,7 +172,9 @@ export function SelectCurrency({
 }): VNode {
   const { i18n } = useTranslationContext();
 
-  const hook = useAsyncAsHook(wxApi.listExchanges);
+  const hook = useAsyncAsHook(() =>
+    wxApi.wallet.call(WalletApiOperation.ListExchanges, {}),
+  );
 
   if (!hook) {
     return <Loading />;

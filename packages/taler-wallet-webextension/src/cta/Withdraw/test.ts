@@ -21,16 +21,12 @@
 
 import {
   Amounts,
-  ExchangeEntryStatus,
-  ExchangeFullDetails,
-  ExchangeListItem,
-  ExchangesListResponse,
-  ExchangeTosStatus,
-  GetExchangeTosResult,
-  ManualWithdrawalDetails,
+  ExchangeEntryStatus, ExchangeListItem, ExchangeTosStatus
 } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
 import { mountHook } from "../../test-utils.js";
+import { createWalletApiMock } from "../../test-utils.js";
 import { useComponentStateFromURI } from "./state.js";
 
 const exchanges: ExchangeListItem[] = [
@@ -65,39 +61,32 @@ const exchanges: ExchangeListItem[] = [
 
 describe("Withdraw CTA states", () => {
   it("should tell the user that the URI is missing", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+    const { handler, mock } = createWalletApiMock();
+    const props = {
+      talerWithdrawUri: undefined,
+      cancel: async () => {
+        null;
+      },
+      onSuccess: async () => {
+        null;
+      },
+    }
+    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
       mountHook(() =>
         useComponentStateFromURI(
-          {
-            talerWithdrawUri: undefined,
-            cancel: async () => {
-              null;
-            },
-            onSuccess: async () => {
-              null;
-            },
-          },
-          {
-            listExchanges: async () => ({ exchanges }),
-            getWithdrawalDetailsForAmount: async ({
-              talerWithdrawUri,
-            }: any) => ({
-              amount: "ARS:2",
-              possibleExchanges: exchanges,
-            }),
-          } as any,
+          props, mock
         ),
       );
 
     {
-      const { status } = getLastResultOrThrow();
+      const { status } = pullLastResultOrThrow();
       expect(status).equals("loading");
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const { status, error } = getLastResultOrThrow();
+      const { status, error } = pullLastResultOrThrow();
 
       if (status != "uri-error") expect.fail();
       if (!error) expect.fail();
@@ -107,40 +96,41 @@ describe("Withdraw CTA states", () => {
     }
 
     await assertNoPendingUpdate();
+    expect(handler.getCallingQueueState()).eq("empty")
   });
 
   it("should tell the user that there is not known exchange", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+    const { handler, mock } = createWalletApiMock();
+    const props = {
+      talerWithdrawUri: "taler-withdraw://",
+      cancel: async () => {
+        null;
+      },
+      onSuccess: async () => {
+        null;
+      },
+    }
+    handler.addWalletCallResponse(WalletApiOperation.GetWithdrawalDetailsForUri, undefined, {
+      amount: "EUR:2",
+      possibleExchanges: [],
+    })
+
+    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
       mountHook(() =>
         useComponentStateFromURI(
-          {
-            talerWithdrawUri: "taler-withdraw://",
-            cancel: async () => {
-              null;
-            },
-            onSuccess: async () => {
-              null;
-            },
-          },
-          {
-            listExchanges: async () => ({ exchanges }),
-            getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
-              amount: "EUR:2",
-              possibleExchanges: [],
-            }),
-          } as any,
+          props, mock
         ),
       );
 
     {
-      const { status } = getLastResultOrThrow();
+      const { status } = pullLastResultOrThrow();
       expect(status).equals("loading", "1");
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const { status, error } = getLastResultOrThrow();
+      const { status, error } = pullLastResultOrThrow();
 
       expect(status).equals("no-exchange", "3");
 
@@ -148,65 +138,60 @@ describe("Withdraw CTA states", () => {
     }
 
     await assertNoPendingUpdate();
+    expect(handler.getCallingQueueState()).eq("empty")
   });
 
   it("should be able to withdraw if tos are ok", async () => {
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+    const { handler, mock } = createWalletApiMock();
+    const props = {
+      talerWithdrawUri: "taler-withdraw://",
+      cancel: async () => {
+        null;
+      },
+      onSuccess: async () => {
+        null;
+      },
+    }
+    handler.addWalletCallResponse(WalletApiOperation.GetWithdrawalDetailsForUri, undefined, {
+      amount: "ARS:2",
+      possibleExchanges: exchanges,
+      defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl
+    })
+    handler.addWalletCallResponse(WalletApiOperation.GetWithdrawalDetailsForAmount, undefined, {
+      amountRaw: "ARS:2",
+      amountEffective: "ARS:2",
+      paytoUris: ["payto://"],
+      tosAccepted: true,
+      ageRestrictionOptions: []
+    })
+
+    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
       mountHook(() =>
         useComponentStateFromURI(
-          {
-            talerWithdrawUri: "taler-withdraw://",
-            cancel: async () => {
-              null;
-            },
-            onSuccess: async () => {
-              null;
-            },
-          },
-          {
-            listExchanges: async () => ({ exchanges }),
-            getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
-              amount: "ARS:2",
-              possibleExchanges: exchanges,
-              defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl,
-            }),
-            getWithdrawalDetailsForAmount:
-              async (): Promise<ManualWithdrawalDetails> =>
-                ({
-                  amountRaw: "ARS:2",
-                  amountEffective: "ARS:2",
-                } as any),
-            getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
-              contentType: "text",
-              content: "just accept",
-              acceptedEtag: "v1",
-              currentEtag: "v1",
-              tosStatus: ExchangeTosStatus.Accepted,
-            }),
-          } as any,
+          props, mock
         ),
       );
 
     {
-      const { status, error } = getLastResultOrThrow();
+      const { status, error } = pullLastResultOrThrow();
       expect(status).equals("loading");
       expect(error).undefined;
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const { status, error } = getLastResultOrThrow();
+      const { status, error } = pullLastResultOrThrow();
 
       expect(status).equals("loading");
 
       expect(error).undefined;
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const state = getLastResultOrThrow();
+      const state = pullLastResultOrThrow();
       expect(state.status).equals("success");
       if (state.status !== "success") return;
 
@@ -218,82 +203,72 @@ describe("Withdraw CTA states", () => {
     }
 
     await assertNoPendingUpdate();
+    expect(handler.getCallingQueueState()).eq("empty")
   });
 
-  it("should be accept the tos before withdraw", async () => {
-    const listExchangesResponse: ExchangesListResponse = {
-      exchanges: exchanges.map((e) => ({
-        ...e,
-        tosStatus: ExchangeTosStatus.New,
-      })),
-    };
-
-    function updateAcceptedVersionToCurrentVersion(): void {
-      listExchangesResponse.exchanges = listExchangesResponse.exchanges.map(
-        (e) => ({
-          ...e,
-          tosStatus: ExchangeTosStatus.Accepted,
-        }),
-      );
+  it("should accept the tos before withdraw", async () => {
+    const { handler, mock } = createWalletApiMock();
+    const props = {
+      talerWithdrawUri: "taler-withdraw://",
+      cancel: async () => {
+        null;
+      },
+      onSuccess: async () => {
+        null;
+      },
     }
+    const exchangeWithNewTos = exchanges.map((e) => ({
+      ...e,
+      tosStatus: ExchangeTosStatus.New,
+    }));
 
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+    handler.addWalletCallResponse(WalletApiOperation.GetWithdrawalDetailsForUri, undefined, {
+      amount: "ARS:2",
+      possibleExchanges: exchangeWithNewTos,
+      defaultExchangeBaseUrl: exchangeWithNewTos[0].exchangeBaseUrl
+    })
+    handler.addWalletCallResponse(WalletApiOperation.GetWithdrawalDetailsForAmount, undefined, {
+      amountRaw: "ARS:2",
+      amountEffective: "ARS:2",
+      paytoUris: ["payto://"],
+      tosAccepted: false,
+      ageRestrictionOptions: []
+    })
+
+
+    handler.addWalletCallResponse(WalletApiOperation.GetWithdrawalDetailsForUri, undefined, {
+      amount: "ARS:2",
+      possibleExchanges: exchanges,
+      defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl
+    })
+
+    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
       mountHook(() =>
         useComponentStateFromURI(
-          {
-            talerWithdrawUri: "taler-withdraw://",
-            cancel: async () => {
-              null;
-            },
-            onSuccess: async () => {
-              null;
-            },
-          },
-          {
-            listExchanges: async () => listExchangesResponse,
-            getWithdrawalDetailsForUri: async ({ talerWithdrawUri }: any) => ({
-              amount: "ARS:2",
-              possibleExchanges: exchanges,
-              defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl,
-            }),
-            getWithdrawalDetailsForAmount:
-              async (): Promise<ManualWithdrawalDetails> =>
-                ({
-                  amountRaw: "ARS:2",
-                  amountEffective: "ARS:2",
-                } as any),
-            getExchangeTos: async (): Promise<GetExchangeTosResult> => ({
-              contentType: "text",
-              content: "just accept",
-              acceptedEtag: "v1",
-              currentEtag: "v2",
-              tosStatus: ExchangeTosStatus.Changed,
-            }),
-            setExchangeTosAccepted: async () => ({}),
-          } as any,
+          props, mock
         ),
       );
 
     {
-      const { status, error } = getLastResultOrThrow();
+      const { status, error } = pullLastResultOrThrow();
       expect(status).equals("loading");
       expect(error).undefined;
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const { status, error } = getLastResultOrThrow();
+      const { status, error } = pullLastResultOrThrow();
 
       expect(status).equals("loading");
 
       expect(error).undefined;
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const state = getLastResultOrThrow();
+      const state = pullLastResultOrThrow();
       expect(state.status).equals("success");
       if (state.status !== "success") return;
 
@@ -303,14 +278,14 @@ describe("Withdraw CTA states", () => {
 
       expect(state.doWithdrawal.onClick).undefined;
 
-      updateAcceptedVersionToCurrentVersion();
+      // updateAcceptedVersionToCurrentVersion();
       state.onTosUpdate();
     }
 
-    await waitNextUpdate();
+    expect(await waitForStateUpdate()).true;
 
     {
-      const state = getLastResultOrThrow();
+      const state = pullLastResultOrThrow();
       expect(state.status).equals("success");
       if (state.status !== "success") return;
 
@@ -322,5 +297,6 @@ describe("Withdraw CTA states", () => {
     }
 
     await assertNoPendingUpdate();
+    expect(handler.getCallingQueueState()).eq("empty")
   });
 });

@@ -20,6 +20,7 @@ import {
   NotificationType,
   Transaction,
 } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { Loading } from "../components/Loading.js";
@@ -38,7 +39,7 @@ import { Button } from "../mui/Button.js";
 import { NoBalanceHelp } from "../popup/NoBalanceHelp.js";
 import DownloadIcon from "../svg/download_24px.svg";
 import UploadIcon from "../svg/upload_24px.svg";
-import * as wxApi from "../wxApi.js";
+import { wxApi } from "../wxApi.js";
 
 interface Props {
   currency?: string;
@@ -52,16 +53,14 @@ export function HistoryPage({
 }: Props): VNode {
   const { i18n } = useTranslationContext();
   const state = useAsyncAsHook(async () => ({
-    b: await wxApi.getBalance(),
-    tx: await wxApi.getTransactions(),
+    b: await wxApi.wallet.call(WalletApiOperation.GetBalances, {}),
+    tx: await wxApi.wallet.call(WalletApiOperation.GetTransactions, {}),
   }));
 
   useEffect(() => {
-    return wxApi.onUpdateNotification(
+    return wxApi.listener.onUpdateNotification(
       [NotificationType.WithdrawGroupFinished],
-      () => {
-        state?.retry();
-      },
+      state?.retry,
     );
   });
 

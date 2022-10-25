@@ -15,6 +15,7 @@
  */
 
 import { Amounts, Balance, NotificationType } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { BalanceTable } from "../components/BalanceTable.js";
@@ -27,7 +28,7 @@ import { Button } from "../mui/Button.js";
 import { ButtonHandler } from "../mui/handlers.js";
 import { compose, StateViewMap } from "../utils/index.js";
 import { AddNewActionView } from "../wallet/AddNewActionView.js";
-import * as wxApi from "../wxApi.js";
+import { wxApi } from "../wxApi.js";
 import { NoBalanceHelp } from "./NoBalanceHelp.js";
 
 export interface Props {
@@ -71,16 +72,16 @@ function useComponentState(
   api: typeof wxApi,
 ): State {
   const [addingAction, setAddingAction] = useState(false);
-  const state = useAsyncAsHook(api.getBalance);
+  const state = useAsyncAsHook(() =>
+    api.wallet.call(WalletApiOperation.GetBalances, {}),
+  );
 
-  useEffect(() => {
-    return api.onUpdateNotification(
+  useEffect(() =>
+    api.listener.onUpdateNotification(
       [NotificationType.WithdrawGroupFinished],
-      () => {
-        state?.retry();
-      },
-    );
-  });
+      state?.retry,
+    ),
+  );
 
   if (!state) {
     return {

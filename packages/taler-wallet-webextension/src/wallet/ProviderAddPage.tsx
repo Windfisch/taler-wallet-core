@@ -34,8 +34,7 @@ import {
 import { useTranslationContext } from "../context/translation.js";
 import { Button } from "../mui/Button.js";
 import { queryToSlashConfig } from "../utils/index.js";
-import * as wxApi from "../wxApi.js";
-import { wxClient } from "../wxApi.js";
+import { wxApi } from "../wxApi.js";
 
 interface Props {
   currency: string;
@@ -71,7 +70,7 @@ export function ProviderAddPage({ onBack }: Props): VNode {
         setVerifying(undefined);
       }}
       onConfirm={() => {
-        return wxClient
+        return wxApi.wallet
           .call(WalletApiOperation.AddBackupProvider, {
             backupProviderBaseUrl: verifying.url,
             name: verifying.name,

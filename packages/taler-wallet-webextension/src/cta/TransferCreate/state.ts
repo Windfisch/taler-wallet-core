@@ -15,9 +15,9 @@
  */
 
 import { Amounts, TalerErrorDetail } from "@gnu-taler/taler-util";
-import { TalerError } from "@gnu-taler/taler-wallet-core";
+import { TalerError, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
-import * as wxApi from "../../wxApi.js";
+import { wxApi } from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
@@ -33,7 +33,7 @@ export function useComponentState(
 
   async function accept(): Promise<void> {
     try {
-      const resp = await api.initiatePeerPushPayment({
+      const resp = await api.wallet.call(WalletApiOperation.InitiatePeerPushPayment, {
         amount: Amounts.stringify(amount),
         partialContractTerms: {
           summary: subject,

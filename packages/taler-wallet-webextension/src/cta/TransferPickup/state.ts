@@ -18,12 +18,12 @@ import {
   AbsoluteTime,
   Amounts,
   TalerErrorDetail,
-  TalerProtocolTimestamp,
+  TalerProtocolTimestamp
 } from "@gnu-taler/taler-util";
-import { TalerError } from "@gnu-taler/taler-wallet-core";
+import { TalerError, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
-import * as wxApi from "../../wxApi.js";
+import { wxApi } from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
@@ -31,7 +31,7 @@ export function useComponentState(
   api: typeof wxApi,
 ): State {
   const hook = useAsyncAsHook(async () => {
-    return await api.checkPeerPushPayment({
+    return await api.wallet.call(WalletApiOperation.CheckPeerPushPayment, {
       talerUri: talerPayPushUri,
     });
   }, []);
@@ -53,7 +53,6 @@ export function useComponentState(
   }
 
   const {
-    amount: purseAmount,
     contractTerms,
     peerPushPaymentIncomingId,
   } = hook.response;
@@ -65,7 +64,7 @@ export function useComponentState(
 
   async function accept(): Promise<void> {
     try {
-      const resp = await api.acceptPeerPushPayment({
+      const resp = await api.wallet.call(WalletApiOperation.AcceptPeerPushPayment, {
         peerPushPaymentIncomingId,
       });
       onSuccess(resp.transactionId);

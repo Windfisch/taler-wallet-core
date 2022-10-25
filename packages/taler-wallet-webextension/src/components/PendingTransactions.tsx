@@ -19,13 +19,14 @@ import {
   NotificationType,
   Transaction,
 } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, JSX, VNode } from "preact";
 import { useEffect } from "preact/hooks";
 import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { Avatar } from "../mui/Avatar.js";
 import { Typography } from "../mui/Typography.js";
-import * as wxApi from "../wxApi.js";
+import { wxApi } from "../wxApi.js";
 import Banner from "./Banner.js";
 import { Time } from "./Time.js";
 
@@ -34,14 +35,14 @@ interface Props extends JSX.HTMLAttributes {
 }
 
 export function PendingTransactions({ goToTransaction }: Props): VNode {
-  const state = useAsyncAsHook(wxApi.getTransactions);
+  const state = useAsyncAsHook(() =>
+    wxApi.wallet.call(WalletApiOperation.GetTransactions, {}),
+  );
 
   useEffect(() => {
-    return wxApi.onUpdateNotification(
+    return wxApi.listener.onUpdateNotification(
       [NotificationType.WithdrawGroupFinished],
-      () => {
-        state?.retry();
-      },
+      state?.retry,
     );
   });
 

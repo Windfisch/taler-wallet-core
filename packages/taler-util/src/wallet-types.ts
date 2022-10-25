@@ -32,26 +32,24 @@ import {
   codecForAmountJson,
   codecForAmountString,
 } from "./amounts.js";
-import {
-  AbsoluteTime,
-  codecForAbsoluteTime,
-  codecForTimestamp,
-  TalerProtocolDuration,
-  TalerProtocolTimestamp,
-} from "./time.js";
+import { BackupRecovery } from "./backup-types.js";
 import {
   buildCodecForObject,
-  codecForString,
-  codecOptional,
+  buildCodecForUnion,
   Codec,
-  codecForList,
+  codecForAny,
   codecForBoolean,
   codecForConstString,
-  codecForAny,
-  buildCodecForUnion,
-  codecForNumber,
+  codecForList,
   codecForMap,
+  codecForNumber,
+  codecForString,
+  codecOptional,
 } from "./codec.js";
+import { VersionMatchResult } from "./libtool-version.js";
+import { PaytoUri } from "./payto.js";
+import { AgeCommitmentProof } from "./taler-crypto.js";
+import { TalerErrorCode } from "./taler-error-codes.js";
 import {
   AmountString,
   AuditorDenomSig,
@@ -64,14 +62,16 @@ import {
   UnblindedSignature,
 } from "./taler-types.js";
 import {
-  OrderShortInfo,
+  AbsoluteTime,
+  codecForAbsoluteTime,
+  codecForTimestamp,
+  TalerProtocolDuration,
+  TalerProtocolTimestamp,
+} from "./time.js";
+import {
   codecForOrderShortInfo,
+  OrderShortInfo,
 } from "./transactions-types.js";
-import { BackupRecovery } from "./backup-types.js";
-import { PaytoUri } from "./payto.js";
-import { TalerErrorCode } from "./taler-error-codes.js";
-import { AgeCommitmentProof } from "./taler-crypto.js";
-import { VersionMatchResult } from "./libtool-version.js";
 
 /**
  * Identifier for a transaction in the wallet.
