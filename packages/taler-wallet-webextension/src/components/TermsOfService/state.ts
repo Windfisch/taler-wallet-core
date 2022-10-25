@@ -14,9 +14,10 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
-import * as wxApi from "../../wxApi.js";
+import { wxApi } from "../../wxApi.js";
 import { Props, State } from "./index.js";
 import { buildTermsOfServiceState } from "./utils.js";
 
@@ -34,7 +35,10 @@ export function useComponentState(
    * For the exchange selected, bring the status of the terms of service
    */
   const terms = useAsyncAsHook(async () => {
-    const exchangeTos = await api.getExchangeTos(exchangeUrl, ["text/xml"]);
+    const exchangeTos = await api.wallet.call(WalletApiOperation.GetExchangeTos, {
+      exchangeBaseUrl: exchangeUrl,
+      acceptedFormat: ["text/xml"]
+    })
 
     const state = buildTermsOfServiceState(exchangeTos);
 
@@ -72,10 +76,16 @@ export function useComponentState(
 
     try {
       if (accepted) {
-        await api.setExchangeTosAccepted(exchangeUrl, state.version);
+        api.wallet.call(WalletApiOperation.SetExchangeTosAccepted, {
+          exchangeBaseUrl: exchangeUrl,
+          etag: state.version
+        })
       } else {
         // mark as not accepted
-        await api.setExchangeTosAccepted(exchangeUrl, undefined);
+        api.wallet.call(WalletApiOperation.SetExchangeTosAccepted, {
+          exchangeBaseUrl: exchangeUrl,
+          etag: undefined
+        })
       }
       // setAccepted(accepted);
       if (!readOnly) onChange(accepted); //external update

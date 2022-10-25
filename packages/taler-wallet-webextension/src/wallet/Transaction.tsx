@@ -34,6 +34,7 @@ import {
   TransactionType,
   WithdrawalType,
 } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { styled } from "@linaria/react";
 import { differenceInSeconds } from "date-fns";
 import { ComponentChildren, Fragment, h, VNode } from "preact";
@@ -62,31 +63,33 @@ import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { Button } from "../mui/Button.js";
 import { Pages } from "../NavigationBar.js";
-import * as wxApi from "../wxApi.js";
+import { wxApi } from "../wxApi.js";
 
 interface Props {
   tid: string;
   goToWalletHistory: (currency?: string) => Promise<void>;
 }
 
-async function getTransaction(tid: string): Promise<Transaction> {
-  const res = await wxApi.getTransactionById(tid);
-  return res;
-}
-
-export function TransactionPage({ tid, goToWalletHistory }: Props): VNode {
+export function TransactionPage({
+  tid: transactionId,
+  goToWalletHistory,
+}: Props): VNode {
   const { i18n } = useTranslationContext();
 
-  const state = useAsyncAsHook(() => getTransaction(tid), [tid]);
+  const state = useAsyncAsHook(
+    () =>
+      wxApi.wallet.call(WalletApiOperation.GetTransactionById, {
+        transactionId,
+      }),
+    [transactionId],
+  );
 
-  useEffect(() => {
-    return wxApi.onUpdateNotification(
+  useEffect(() =>
+    wxApi.listener.onUpdateNotification(
       [NotificationType.WithdrawGroupFinished],
-      () => {
-        state?.retry();
-      },
-    );
-  });
+      state?.retry,
+    ),
+  );
 
   if (!state) {
     return <Loading />;
@@ -113,15 +116,23 @@ export function TransactionPage({ tid, goToWalletHistory }: Props): VNode {
       onSend={async () => {
         null;
       }}
-      onDelete={() =>
-        wxApi.deleteTransaction(tid).then(() => goToWalletHistory(currency))
-      }
-      onRetry={async () =>
-        await wxApi
-          .retryTransaction(tid)
-          .then(() => goToWalletHistory(currency))
-      }
-      onRefund={(id) => wxApi.applyRefundFromPurchaseId(id).then()}
+      onDelete={async () => {
+        await wxApi.wallet.call(WalletApiOperation.DeleteTransaction, {
+          transactionId,
+        });
+        goToWalletHistory(currency);
+      }}
+      onRetry={async () => {
+        await wxApi.wallet.call(WalletApiOperation.RetryTransaction, {
+          transactionId,
+        });
+        goToWalletHistory(currency);
+      }}
+      onRefund={async (purchaseId) => {
+        await wxApi.wallet.call(WalletApiOperation.ApplyRefundFromPurchaseId, {
+          purchaseId,
+        });
+      }}
       onBack={() => goToWalletHistory(currency)}
     />
   );

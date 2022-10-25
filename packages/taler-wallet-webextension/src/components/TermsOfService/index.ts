@@ -18,7 +18,7 @@ import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { ToggleHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
-import * as wxApi from "../../wxApi.js";
+import { wxApi } from "../../wxApi.js";
 import { useComponentState } from "./state.js";
 import { TermsState } from "./utils.js";
 import {
@@ -26,7 +26,7 @@ import {
   LoadingUriView,
   ShowButtonsAcceptedTosView,
   ShowButtonsNonAcceptedTosView,
-  ShowTosContentView,
+  ShowTosContentView
 } from "./views.js";
 
 export interface Props {

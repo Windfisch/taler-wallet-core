@@ -14,11 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import {
-  AbsoluteTime,
-  BackupRecovery,
-  constructRecoveryUri,
-} from "@gnu-taler/taler-util";
+import { AbsoluteTime, constructRecoveryUri } from "@gnu-taler/taler-util";
 import {
   ProviderInfo,
   ProviderPaymentPaid,
@@ -32,8 +28,10 @@ import {
   intervalToDuration,
 } from "date-fns";
 import { Fragment, h, VNode } from "preact";
+import { useEffect, useState } from "preact/hooks";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
+import { QR } from "../components/QR.js";
 import {
   BoldLight,
   Centered,
@@ -48,10 +46,7 @@ import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { Button } from "../mui/Button.js";
 import { Pages } from "../NavigationBar.js";
-import * as wxApi from "../wxApi.js";
-import { wxClient } from "../wxApi.js";
-import { useEffect, useState } from "preact/hooks";
-import { QR } from "../components/QR.js";
+import { wxApi } from "../wxApi.js";
 
 interface Props {
   onAddProvider: () => Promise<void>;
@@ -112,7 +107,9 @@ export function ShowRecoveryInfo({
 
 export function BackupPage({ onAddProvider }: Props): VNode {
   const { i18n } = useTranslationContext();
-  const status = useAsyncAsHook(wxApi.getBackupInfo);
+  const status = useAsyncAsHook(() =>
+    wxApi.wallet.call(WalletApiOperation.GetBackupInfo, {}),
+  );
   const [recoveryInfo, setRecoveryInfo] = useState<string>("");
   if (!status) {
     return <Loading />;
@@ -127,7 +124,10 @@ export function BackupPage({ onAddProvider }: Props): VNode {
   }
 
   async function getRecoveryInfo(): Promise<void> {
-    const r = await wxClient.call(WalletApiOperation.ExportBackupRecovery, {});
+    const r = await wxApi.wallet.call(
+      WalletApiOperation.ExportBackupRecovery,
+      {},
+    );
     const str = constructRecoveryUri(r);
     setRecoveryInfo(str);
   }
@@ -157,7 +157,9 @@ export function BackupPage({ onAddProvider }: Props): VNode {
     <BackupView
       providers={providers}
       onAddProvider={onAddProvider}
-      onSyncAll={wxApi.syncAllProviders}
+      onSyncAll={async () =>
+        wxApi.wallet.call(WalletApiOperation.RunBackupCycle, {}).then()
+      }
       onShowInfo={getRecoveryInfo}
     />
   );

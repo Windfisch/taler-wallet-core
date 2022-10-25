@@ -14,6 +14,8 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { NotificationType } from "@gnu-taler/taler-util";
+import { WalletCoreApiClient, WalletCoreOpKeys, WalletCoreRequestType, WalletCoreResponseType } from "@gnu-taler/taler-wallet-core";
 import {
   ComponentChildren,
   Fragment,
@@ -24,6 +26,7 @@ import {
   VNode,
 } from "preact";
 import { render as renderToString } from "preact-render-to-string";
+import { BackgroundApiClient, wxApi } from "./wxApi.js";
 
 // When doing tests we want the requestAnimationFrame to be as fast as possible.
 // without this option the RAF will timeout after 100ms making the tests slower
@@ -86,9 +89,10 @@ type RecursiveState<S> = S | (() => RecursiveState<S>);
 
 interface Mounted<T> {
   unmount: () => void;
-  getLastResultOrThrow: () => Exclude<T, VoidFunction>;
+  pullLastResultOrThrow: () => Exclude<T, VoidFunction>;
   assertNoPendingUpdate: () => void;
-  waitNextUpdate: (s?: string) => Promise<void>;
+  // waitNextUpdate: (s?: string) => Promise<void>;
+  waitForStateUpdate: () => Promise<boolean>;
 }
 
 const isNode = typeof window === "undefined";
@@ -97,9 +101,6 @@ export function mountHook<T extends object>(
   callback: () => RecursiveState<T>,
   Context?: ({ children }: { children: any }) => VNode,
 ): Mounted<T> {
-  // const result: { current: T | null } = {
-  //   current: null
-  // }
   let lastResult: Exclude<T, VoidFunction> | Error | null = null;
 
   const listener: Array<() => void> = [];
@@ -132,23 +133,6 @@ export function mountHook<T extends object>(
     ? create(Component, {})
     : create(Context, { children: [create(Component, {})] });
 
-  // waiter callback
-  async function waitNextUpdate(_label = ""): Promise<void> {
-    if (_label) _label = `. label: "${_label}"`;
-    await new Promise((res, rej) => {
-      const tid = setTimeout(() => {
-        rej(
-          Error(`waiting for an update but the hook didn't make one${_label}`),
-        );
-      }, 100);
-
-      listener.push(() => {
-        clearTimeout(tid);
-        res(undefined);
-      });
-    });
-  }
-
   const customElement = {} as Element;
   const parentElement = isNode ? customElement : document.createElement("div");
   if (!isNode) {
@@ -164,14 +148,14 @@ export function mountHook<T extends object>(
     }
   }
 
-  function getLastResult(): Exclude<T | Error | null, VoidFunction> {
+  function pullLastResult(): Exclude<T | Error | null, VoidFunction> {
     const copy: Exclude<T | Error | null, VoidFunction> = lastResult;
     lastResult = null;
     return copy;
   }
 
-  function getLastResultOrThrow(): Exclude<T, VoidFunction> {
-    const r = getLastResult();
+  function pullLastResultOrThrow(): Exclude<T, VoidFunction> {
+    const r = pullLastResult();
     if (r instanceof Error) throw r;
     if (!r) throw Error("there was no last result");
     return r;
@@ -194,15 +178,137 @@ export function mountHook<T extends object>(
       });
     });
 
-    const r = getLastResult();
+    const r = pullLastResult();
     if (r)
       throw Error(`There are still pending results.
-    This may happen because the hook did a new update but the test didn't consume the result using getLastResult`);
+    This may happen because the hook did a new update but the test didn't consume the result using pullLastResult`);
   }
+  async function waitForStateUpdate(): Promise<boolean> {
+    return await new Promise((res, rej) => {
+      const tid = setTimeout(() => {
+        res(false);
+      }, 10);
+
+      listener.push(() => {
+        clearTimeout(tid);
+        res(true);
+      });
+    });
+  }
+
   return {
     unmount,
-    getLastResultOrThrow,
-    waitNextUpdate,
+    pullLastResultOrThrow,
+    waitForStateUpdate,
     assertNoPendingUpdate,
   };
+}
+
+export const nullFunction: any = () => null;
+
+interface MockHandler {
+  addWalletCallResponse<Op extends WalletCoreOpKeys>(operation: Op,
+    payload?: Partial<WalletCoreRequestType<Op>>,
+    response?: WalletCoreResponseType<Op>,
+    callback?: () => void,
+  ): MockHandler;
+
+  getCallingQueueState(): "empty" | string;
+
+  notifyEventFromWallet(event: NotificationType): void;
+}
+
+type CallRecord = WalletCallRecord | BackgroundCallRecord;
+interface WalletCallRecord {
+  source: "wallet"
+  callback: () => void;
+  operation: WalletCoreOpKeys,
+  payload?: WalletCoreRequestType<WalletCoreOpKeys>,
+  response?: WalletCoreResponseType<WalletCoreOpKeys>,
+}
+interface BackgroundCallRecord {
+  source: "background"
+  name: string,
+  args: any,
+  response: any;
+}
+
+type Subscriptions = {
+  [key in NotificationType]?: VoidFunction;
+};
+
+export function createWalletApiMock(): { handler: MockHandler, mock: typeof wxApi } {
+  const calls = new Array<CallRecord>()
+  const subscriptions: Subscriptions = {};
+
+
+  const mock: typeof wxApi = {
+    wallet: new Proxy<WalletCoreApiClient>({} as any, {
+      get(target, name, receiver) {
+        const functionName = String(name)
+        if (functionName !== "call") {
+          throw Error(`the only method in wallet api should be 'call': ${functionName}`)
+        }
+        return function (operation: WalletCoreOpKeys, payload: WalletCoreRequestType<WalletCoreOpKeys>) {
+          const next = calls.shift()
+
+          if (!next) {
+            throw Error(`wallet operation was called but none was expected: ${operation} (${JSON.stringify(payload, undefined, 2)})`)
+          }
+          if (next.source !== "wallet") {
+            throw Error(`wallet operation expected`)
+          }
+          if (operation !== next.operation) {
+            //more checks, deep check payload
+            throw Error(`wallet operation doesn't match: expected ${next.operation} actual ${operation}`)
+          }
+          next.callback()
+
+          return next.response ?? {}
+        }
+      }
+    }),
+    listener: {
+      onUpdateNotification(mTypes: NotificationType[], callback: (() => void) | undefined): (() => void) {
+        mTypes.forEach(m => {
+          subscriptions[m] = callback
+        })
+        return nullFunction
+      }
+    },
+    background: new Proxy<BackgroundApiClient>({} as any, {
+      get(target, name, receiver) {
+        const functionName = String(name);
+        return function (...args: any) {
+          const next = calls.shift()
+          if (!next) {
+            throw Error(`background operation was called but none was expected: ${functionName} (${JSON.stringify(args, undefined, 2)})`)
+          }
+          if (next.source !== "background" || functionName !== next.name) {
+            //more checks, deep check args
+            throw Error(`background operation doesn't match`)
+          }
+          return next.response
+        }
+      }
+    }),
+  }
+
+
+  const handler: MockHandler = {
+    addWalletCallResponse(operation, payload, response, cb) {
+      calls.push({ source: "wallet", operation, payload, response, callback: cb ? cb : () => { null } })
+      return handler
+    },
+    notifyEventFromWallet(event: NotificationType): void {
+      const callback = subscriptions[event]
+      if (!callback) throw Error(`Expected to have a subscription for ${event}`);
+      return callback();
+    },
+    getCallingQueueState() {
+      return calls.length === 0 ? "empty" : `${calls.length} left`;
+    },
+  }
+
+  return { handler, mock }
 }

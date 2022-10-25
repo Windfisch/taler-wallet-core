@@ -18,11 +18,12 @@ import {
   canonicalizeBaseUrl,
   TalerConfigResponse,
 } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { queryToSlashKeys } from "../utils/index.js";
-import * as wxApi from "../wxApi.js";
+import { wxApi } from "../wxApi.js";
 import { ExchangeAddConfirmPage } from "./ExchangeAddConfirm.js";
 import { ExchangeSetUrlPage } from "./ExchangeSetUrl.js";
 
@@ -36,7 +37,9 @@ export function ExchangeAddPage({ currency, onBack }: Props): VNode {
     { url: string; config: TalerConfigResponse } | undefined
   >(undefined);
 
-  const knownExchangesResponse = useAsyncAsHook(wxApi.listExchanges);
+  const knownExchangesResponse = useAsyncAsHook(() =>
+    wxApi.wallet.call(WalletApiOperation.ListExchanges, {}),
+  );
   const knownExchanges = !knownExchangesResponse
     ? []
     : knownExchangesResponse.hasError
@@ -72,7 +75,7 @@ export function ExchangeAddPage({ currency, onBack }: Props): VNode {
       url={verifying.url}
       onCancel={onBack}
       onConfirm={async () => {
-        await wxApi.addExchange({
+        await wxApi.wallet.call(WalletApiOperation.AddExchange, {
           exchangeBaseUrl: canonicalizeBaseUrl(verifying.url),
           forceUpdate: true,
         });

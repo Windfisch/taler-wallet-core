@@ -20,6 +20,7 @@ import {
   ProviderInfo,
   ProviderPaymentStatus,
   ProviderPaymentType,
+  WalletApiOperation,
 } from "@gnu-taler/taler-wallet-core";
 import { Fragment, h, VNode } from "preact";
 import { ErrorMessage } from "../components/ErrorMessage.js";
@@ -30,7 +31,7 @@ import { Time } from "../components/Time.js";
 import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { Button } from "../mui/Button.js";
-import * as wxApi from "../wxApi.js";
+import { wxApi } from "../wxApi.js";
 
 interface Props {
   pid: string;
@@ -41,7 +42,10 @@ export function ProviderDetailPage({ pid: providerURL, onBack }: Props): VNode {
   const { i18n } = useTranslationContext();
   async function getProviderInfo(): Promise<ProviderInfo | null> {
     //create a first list of backup info by currency
-    const status = await wxApi.getBackupInfo();
+    const status = await wxApi.wallet.call(
+      WalletApiOperation.GetBackupInfo,
+      {},
+    );
 
     const providers = status.providers.filter(
       (p) => p.syncProviderBaseUrl === providerURL,
@@ -72,8 +76,20 @@ export function ProviderDetailPage({ pid: providerURL, onBack }: Props): VNode {
     <ProviderView
       url={providerURL}
       info={state.response}
-      onSync={() => wxApi.syncOneProvider(providerURL)}
-      onDelete={() => wxApi.removeProvider(providerURL).then(onBack)}
+      onSync={async () =>
+        wxApi.wallet
+          .call(WalletApiOperation.RunBackupCycle, {
+            providers: [providerURL],
+          })
+          .then()
+      }
+      onDelete={() =>
+        wxApi.wallet
+          .call(WalletApiOperation.RemoveBackupProvider, {
+            provider: providerURL,
+          })
+          .then(onBack)
+      }
       onBack={onBack}
       onExtend={async () => {
         null;

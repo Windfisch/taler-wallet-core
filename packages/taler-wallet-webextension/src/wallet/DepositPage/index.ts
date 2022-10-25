@@ -14,26 +14,25 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { AmountJson, PaytoUri } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
+import {
+  ButtonHandler,
+  SelectFieldHandler,
+  TextFieldHandler
+} from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
+import { wxApi } from "../../wxApi.js";
+import { AddAccountPage } from "../AddAccount/index.js";
+import { useComponentState } from "./state.js";
 import {
   AmountOrCurrencyErrorView,
   LoadingErrorView,
   NoAccountToDepositView,
   NoEnoughBalanceView,
-  ReadyView,
+  ReadyView
 } from "./views.js";
-import * as wxApi from "../../wxApi.js";
-import { useComponentState } from "./state.js";
-import { AmountJson, PaytoUri } from "@gnu-taler/taler-util";
-import {
-  ButtonHandler,
-  SelectFieldHandler,
-  TextFieldHandler,
-  ToggleHandler,
-} from "../../mui/handlers.js";
-import { AddAccountPage } from "../AddAccount/index.js";
 
 export interface Props {
   amount?: string;

@@ -14,7 +14,10 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 import { AbsoluteTime, Duration, Location } from "@gnu-taler/taler-util";
-import { WalletContractData } from "@gnu-taler/taler-wallet-core";
+import {
+  WalletApiOperation,
+  WalletContractData,
+} from "@gnu-taler/taler-wallet-core";
 import { styled } from "@linaria/react";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
@@ -26,9 +29,9 @@ import { useTranslationContext } from "../context/translation.js";
 import { HookError, useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { ButtonHandler } from "../mui/handlers.js";
 import { compose, StateViewMap } from "../utils/index.js";
-import * as wxApi from "../wxApi.js";
+import { wxApi } from "../wxApi.js";
 import { Amount } from "./Amount.js";
-import { Link, LinkPrimary } from "./styled/index.js";
+import { Link } from "./styled/index.js";
 
 const ContractTermsTable = styled.table`
   width: 100%;
@@ -99,7 +102,9 @@ function useComponentState({ proposalId }: Props, api: typeof wxApi): State {
   const [show, setShow] = useState(false);
   const hook = useAsyncAsHook(async () => {
     if (!show) return undefined;
-    return await api.getContractTermsDetails(proposalId);
+    return await api.wallet.call(WalletApiOperation.GetContractTermsDetails, {
+      proposalId,
+    });
   }, [show]);
 
   const hideHandler = {

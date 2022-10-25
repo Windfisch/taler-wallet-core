@@ -16,7 +16,7 @@
 
 import { WalletDiagnostics } from "@gnu-taler/taler-util";
 import { useEffect, useState } from "preact/hooks";
-import * as wxApi from "../wxApi.js";
+import { wxApi } from "../wxApi.js";
 
 export function useDiagnostics(): [WalletDiagnostics | undefined, boolean] {
   const [timedOut, setTimedOut] = useState(false);
@@ -33,7 +33,7 @@ export function useDiagnostics(): [WalletDiagnostics | undefined, boolean] {
       }
     }, 1000);
     const doFetch = async (): Promise<void> => {
-      const d = await wxApi.getDiagnostics();
+      const d = await wxApi.background.getDiagnostics();
       gotDiagnostics = true;
       setDiagnostics(d);
     };

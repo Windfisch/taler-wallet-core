@@ -19,13 +19,13 @@ import {
   AmountJson,
   Amounts,
   ExchangeListItem,
-  ExchangeTosStatus,
+  ExchangeTosStatus
 } from "@gnu-taler/taler-util";
-import { TalerError } from "@gnu-taler/taler-wallet-core";
+import { TalerError, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { useSelectedExchange } from "../../hooks/useSelectedExchange.js";
-import * as wxApi from "../../wxApi.js";
+import { wxApi } from "../../wxApi.js";
 import { PropsFromParams, PropsFromURI, State } from "./index.js";
 
 type RecursiveState<S extends object> = S | (() => RecursiveState<S>);
@@ -35,7 +35,7 @@ export function useComponentStateFromParams(
   api: typeof wxApi,
 ): RecursiveState<State> {
   const uriInfoHook = useAsyncAsHook(async () => {
-    const exchanges = await api.listExchanges();
+    const exchanges = await api.wallet.call(WalletApiOperation.ListExchanges, {});
     return { amount: Amounts.parseOrThrow(amount), exchanges };
   });
 
@@ -58,11 +58,11 @@ export function useComponentStateFromParams(
     transactionId: string;
     confirmTransferUrl: string | undefined;
   }> {
-    const res = await api.acceptManualWithdrawal(
-      exchange,
-      Amounts.stringify(chosenAmount),
-      ageRestricted,
-    );
+    const res = await api.wallet.call(WalletApiOperation.AcceptManualWithdrawal, {
+      exchangeBaseUrl: exchange,
+      amount: Amounts.stringify(chosenAmount),
+      restrictAge: ageRestricted,
+    });
     return {
       confirmTransferUrl: undefined,
       transactionId: res.transactionId,
@@ -93,16 +93,15 @@ export function useComponentStateFromURI(
   const uriInfoHook = useAsyncAsHook(async () => {
     if (!talerWithdrawUri) throw Error("ERROR_NO-URI-FOR-WITHDRAWAL");
 
-    const uriInfo = await api.getWithdrawalDetailsForUri({
+    const uriInfo = await api.wallet.call(WalletApiOperation.GetWithdrawalDetailsForUri, {
       talerWithdrawUri,
     });
-    const exchanges = await api.listExchanges();
     const { amount, defaultExchangeBaseUrl } = uriInfo;
     return {
       talerWithdrawUri,
       amount: Amounts.parseOrThrow(amount),
       thisExchange: defaultExchangeBaseUrl,
-      exchanges,
+      exchanges: uriInfo.possibleExchanges,
     };
   });
 
@@ -118,7 +117,7 @@ export function useComponentStateFromURI(
   const uri = uriInfoHook.response.talerWithdrawUri;
   const chosenAmount = uriInfoHook.response.amount;
   const defaultExchange = uriInfoHook.response.thisExchange;
-  const exchangeList = uriInfoHook.response.exchanges.exchanges;
+  const exchangeList = uriInfoHook.response.exchanges;
 
   async function doManagedWithdraw(
     exchange: string,
@@ -127,7 +126,11 @@ export function useComponentStateFromURI(
     transactionId: string;
     confirmTransferUrl: string | undefined;
   }> {
-    const res = await api.acceptWithdrawal(uri, exchange, ageRestricted);
+    const res = await api.wallet.call(WalletApiOperation.AcceptBankIntegratedWithdrawal, {
+      exchangeBaseUrl: exchange,
+      talerWithdrawUri: uri,
+      restrictAge: ageRestricted
+    });
     return {
       confirmTransferUrl: res.confirmTransferUrl,
       transactionId: res.transactionId,
@@ -186,7 +189,7 @@ function exchangeSelectionState(
      * about the withdrawal
      */
     const amountHook = useAsyncAsHook(async () => {
-      const info = await api.getWithdrawalDetailsForAmount({
+      const info = await api.wallet.call(WalletApiOperation.GetWithdrawalDetailsForAmount, {
         exchangeBaseUrl: currentExchange.exchangeBaseUrl,
         amount: Amounts.stringify(chosenAmount),
         restrictAge: ageRestricted,
@@ -261,10 +264,10 @@ function exchangeSelectionState(
     //TODO: calculate based on exchange info
     const ageRestriction = ageRestrictionEnabled
       ? {
-          list: ageRestrictionOptions,
-          value: String(ageRestricted),
-          onChange: async (v: string) => setAgeRestricted(parseInt(v, 10)),
-        }
+        list: ageRestrictionOptions,
+        value: String(ageRestricted),
+        onChange: async (v: string) => setAgeRestricted(parseInt(v, 10)),
+      }
       : undefined;
 
     return {

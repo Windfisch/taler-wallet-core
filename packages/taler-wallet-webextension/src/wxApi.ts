@@ -22,77 +22,16 @@
  * Imports.
  */
 import {
-  AcceptExchangeTosRequest,
-  AcceptManualWithdrawalResult,
-  AcceptPeerPullPaymentRequest,
-  AcceptPeerPullPaymentResponse,
-  AcceptPeerPushPaymentRequest,
-  AcceptPeerPushPaymentResponse,
-  AcceptTipRequest,
-  AcceptTipResponse,
-  AcceptWithdrawalResponse,
-  AddExchangeRequest,
-  AddKnownBankAccountsRequest,
-  AmountString,
-  ApplyRefundResponse,
-  BalancesResponse,
-  CheckPeerPullPaymentRequest,
-  CheckPeerPullPaymentResponse,
-  CheckPeerPushPaymentRequest,
-  CheckPeerPushPaymentResponse,
-  CoinDumpJson,
-  ConfirmPayResult,
-  CoreApiResponse,
-  CreateDepositGroupRequest,
-  CreateDepositGroupResponse,
-  DeleteTransactionRequest,
-  DepositGroupFees,
-  ExchangeFullDetails,
-  ExchangesListResponse,
-  ForgetKnownBankAccountsRequest,
-  GetExchangeTosResult,
-  GetFeeForDepositRequest,
-  GetWithdrawalDetailsForAmountRequest,
-  GetWithdrawalDetailsForUriRequest,
-  InitiatePeerPullPaymentRequest,
-  InitiatePeerPullPaymentResponse,
-  InitiatePeerPushPaymentRequest,
-  InitiatePeerPushPaymentResponse,
-  KnownBankAccounts,
-  Logger,
-  ManualWithdrawalDetails,
-  NotificationType,
-  PaytoUri,
-  PrepareDepositRequest,
-  PrepareDepositResponse,
-  PreparePayResult,
-  PrepareRefundRequest,
-  PrepareRefundResult,
-  PrepareTipRequest,
-  PrepareTipResult,
-  RetryTransactionRequest,
-  SetWalletDeviceIdRequest,
-  stringifyPaytoUri,
-  Transaction,
-  TransactionsResponse,
-  WalletCoreVersion,
-  WalletDiagnostics,
-  WithdrawUriInfoResponse,
+  CoreApiResponse, Logger, NotificationType, WalletDiagnostics
 } from "@gnu-taler/taler-util";
 import {
-  AddBackupProviderRequest,
-  BackupInfo,
-  PendingOperationsResponse,
-  RemoveBackupProviderRequest,
-  TalerError,
-  WalletApiOperation,
-  WalletContractData,
-  WalletCoreApiClient,
+  TalerError, WalletCoreApiClient,
   WalletCoreOpKeys,
   WalletCoreRequestType,
-  WalletCoreResponseType,
+  WalletCoreResponseType
 } from "@gnu-taler/taler-wallet-core";
 import { MessageFromBackend, platform } from "./platform/api.js";
+import { nullFunction } from "./test-utils.js";
 
 /**
  *
@@ -167,381 +106,39 @@ export class WxWalletCoreApiClient implements WalletCoreApiClient {
   }
 }
 
-export const wxClient = new WxWalletCoreApiClient();
+export class BackgroundApiClient {
 
-/**
- * Pay for a proposal.
- */
-export function confirmPay(
-  proposalId: string,
-  sessionId: string | undefined,
-): Promise<ConfirmPayResult> {
-  return wxClient.call(WalletApiOperation.ConfirmPay, {
-    proposalId,
-    sessionId,
-  });
-}
+  public resetDb(): Promise<void> {
+    return callBackend("reset-db", {});
+  }
 
-/**
- * Check upgrade information
- */
-export function checkUpgrade(): Promise<UpgradeResponse> {
-  return callBackend("check-upgrade", {});
-}
+  public containsHeaderListener(): Promise<ExtendedPermissionsResponse> {
+    return callBackend("containsHeaderListener", {});
+  }
 
-/**
- * Reset database
- */
-export function resetDb(): Promise<void> {
-  return callBackend("reset-db", {});
-}
+  public getDiagnostics(): Promise<WalletDiagnostics> {
+    return callBackend("wxGetDiagnostics", {});
+  }
 
-/**
- * Reset database
- */
-export function runGarbageCollector(): Promise<void> {
-  return callBackend("run-gc", {});
-}
+  public toggleHeaderListener(
+    value: boolean,
+  ): Promise<ExtendedPermissionsResponse> {
+    return callBackend("toggleHeaderListener", { value });
+  }
 
-export function getFeeForDeposit(
-  depositPaytoUri: string,
-  amount: AmountString,
-): Promise<DepositGroupFees> {
-  return callBackend("getFeeForDeposit", {
-    depositPaytoUri,
-    amount,
-  } as GetFeeForDepositRequest);
-}
+  public runGarbageCollector(): Promise<void> {
+    return callBackend("run-gc", {});
+  }
 
-export function prepareDeposit(
-  depositPaytoUri: string,
-  amount: AmountString,
-): Promise<PrepareDepositResponse> {
-  return callBackend("prepareDeposit", {
-    depositPaytoUri,
-    amount,
-  } as PrepareDepositRequest);
 }
-
-export function createDepositGroup(
-  depositPaytoUri: string,
-  amount: AmountString,
-): Promise<CreateDepositGroupResponse> {
-  return callBackend("createDepositGroup", {
-    depositPaytoUri,
-    amount,
-  } as CreateDepositGroupRequest);
-}
-
-/**
- * Get balances for all currencies/exchanges.
- */
-export function getBalance(): Promise<BalancesResponse> {
-  return callBackend("getBalances", {});
-}
-
-export function getContractTermsDetails(
-  proposalId: string,
-): Promise<WalletContractData> {
-  return callBackend("getContractTermsDetails", { proposalId });
-}
-
-/**
- * Retrieve the full event history for this wallet.
- */
-export function getTransactions(): Promise<TransactionsResponse> {
-  return callBackend("getTransactions", {});
-}
-
-interface CurrencyInfo {
-  name: string;
-  baseUrl: string;
-  pub: string;
-}
-interface ListOfKnownCurrencies {
-  auditors: CurrencyInfo[];
-  exchanges: CurrencyInfo[];
-}
-
-/**
- * Get a list of currencies from known auditors and exchanges
- */
-export function listKnownCurrencies(): Promise<ListOfKnownCurrencies> {
-  return callBackend("listCurrencies", {}).then((result) => {
-    const auditors = result.trustedAuditors.map(
-      (a: Record<string, string>) => ({
-        name: a.currency,
-        baseUrl: a.auditorBaseUrl,
-        pub: a.auditorPub,
-      }),
-    );
-    const exchanges = result.trustedExchanges.map(
-      (a: Record<string, string>) => ({
-        name: a.currency,
-        baseUrl: a.exchangeBaseUrl,
-        pub: a.exchangeMasterPub,
-      }),
-    );
-    return { auditors, exchanges };
-  });
-}
-
-export function listExchanges(): Promise<ExchangesListResponse> {
-  return callBackend("listExchanges", {});
-}
-
-export function getExchangeDetailedInfo(
-  exchangeBaseUrl: string,
-): Promise<ExchangeFullDetails> {
-  return callBackend("getExchangeDetailedInfo", {
-    exchangeBaseUrl,
-  });
-}
-
-export function getVersion(): Promise<WalletCoreVersion> {
-  return callBackend("getVersion", {});
-}
-
-export function listKnownBankAccounts(
-  currency?: string,
-): Promise<KnownBankAccounts> {
-  return callBackend("listKnownBankAccounts", { currency });
-}
-
-export function addKnownBankAccounts(
-  payto: PaytoUri,
-  currency: string,
-  alias: string,
-): Promise<void> {
-  return callBackend("addKnownBankAccounts", {
-    payto: stringifyPaytoUri(payto),
-    currency,
-    alias,
-  } as AddKnownBankAccountsRequest);
-}
-export function forgetKnownBankAccounts(payto: string): Promise<void> {
-  return callBackend("forgetKnownBankAccounts", {
-    payto,
-  } as ForgetKnownBankAccountsRequest);
-}
-
-/**
- * Get information about the current state of wallet backups.
- */
-export function getBackupInfo(): Promise<BackupInfo> {
-  return callBackend("getBackupInfo", {});
-}
-
-/**
- * Add a backup provider and activate it
- */
-export function addBackupProvider(
-  backupProviderBaseUrl: string,
-  name: string,
-): Promise<void> {
-  return callBackend("addBackupProvider", {
-    backupProviderBaseUrl,
-    activate: true,
-    name,
-  } as AddBackupProviderRequest);
-}
-
-export function setWalletDeviceId(walletDeviceId: string): Promise<void> {
-  return callBackend("setWalletDeviceId", {
-    walletDeviceId,
-  } as SetWalletDeviceIdRequest);
-}
-
-export function syncAllProviders(): Promise<void> {
-  return callBackend("runBackupCycle", {});
-}
-
-export function syncOneProvider(url: string): Promise<void> {
-  return callBackend("runBackupCycle", { providers: [url] });
-}
-export function removeProvider(url: string): Promise<void> {
-  return callBackend("removeBackupProvider", {
-    provider: url,
-  } as RemoveBackupProviderRequest);
-}
-export function extendedProvider(url: string): Promise<void> {
-  return callBackend("extendBackupProvider", { provider: url });
-}
-
-/**
- * Retry a transaction
- * @param transactionId
- * @returns
- */
-export function retryTransaction(transactionId: string): Promise<void> {
-  return callBackend("retryTransaction", {
-    transactionId,
-  } as RetryTransactionRequest);
-}
-
-/**
- * Permanently delete a transaction from the transaction list
- */
-export function deleteTransaction(transactionId: string): Promise<void> {
-  return callBackend("deleteTransaction", {
-    transactionId,
-  } as DeleteTransactionRequest);
-}
-
-/**
- * Download a refund and accept it.
- */
-export function applyRefund(
-  talerRefundUri: string,
-): Promise<ApplyRefundResponse> {
-  return callBackend("applyRefund", { talerRefundUri });
-}
-
-/**
- * Do refund for purchase.
- */
-export function applyRefundFromPurchaseId(
-  purchaseId: string,
-): Promise<ApplyRefundResponse> {
-  return callBackend("applyRefundFromPurchaseId", { purchaseId });
-}
-
-/**
- * Get details about a pay operation.
- */
-export function preparePay(talerPayUri: string): Promise<PreparePayResult> {
-  return callBackend("preparePayForUri", { talerPayUri });
-}
-
-/**
- * Get details about a withdraw operation.
- */
-export function acceptWithdrawal(
-  talerWithdrawUri: string,
-  selectedExchange: string,
-  restrictAge?: number,
-): Promise<AcceptWithdrawalResponse> {
-  return callBackend("acceptBankIntegratedWithdrawal", {
-    talerWithdrawUri,
-    exchangeBaseUrl: selectedExchange,
-    restrictAge,
-  });
-}
-
-/**
- * Create a reserve into the exchange that expect the amount indicated
- * @param exchangeBaseUrl
- * @param amount
- * @returns
- */
-export function acceptManualWithdrawal(
-  exchangeBaseUrl: string,
-  amount: string,
-  restrictAge?: number,
-): Promise<AcceptManualWithdrawalResult> {
-  return callBackend("acceptManualWithdrawal", {
-    amount,
-    exchangeBaseUrl,
-    restrictAge,
-  });
-}
-
-export function setExchangeTosAccepted(
-  exchangeBaseUrl: string,
-  etag: string | undefined,
-): Promise<void> {
-  return callBackend("setExchangeTosAccepted", {
-    exchangeBaseUrl,
-    etag,
-  } as AcceptExchangeTosRequest);
-}
-
-/**
- * Get diagnostics information
- */
-export function getDiagnostics(): Promise<WalletDiagnostics> {
-  return callBackend("wxGetDiagnostics", {});
-}
-
-/**
- * Get diagnostics information
- */
-export function toggleHeaderListener(
-  value: boolean,
-): Promise<ExtendedPermissionsResponse> {
-  return callBackend("toggleHeaderListener", { value });
-}
-
-/**
- * Get diagnostics information
- */
-export function containsHeaderListener(): Promise<ExtendedPermissionsResponse> {
-  return callBackend("containsHeaderListener", {});
-}
-
-/**
- * Get diagnostics information
- */
-export function getWithdrawalDetailsForUri(
-  req: GetWithdrawalDetailsForUriRequest,
-): Promise<WithdrawUriInfoResponse> {
-  return callBackend("getWithdrawalDetailsForUri", req);
-}
-
-export function getWithdrawalDetailsForAmount(
-  req: GetWithdrawalDetailsForAmountRequest,
-): Promise<ManualWithdrawalDetails> {
-  return callBackend("getWithdrawalDetailsForAmount", req);
-}
-
-export function getExchangeTos(
-  exchangeBaseUrl: string,
-  acceptedFormat: string[],
-): Promise<GetExchangeTosResult> {
-  return callBackend("getExchangeTos", {
-    exchangeBaseUrl,
-    acceptedFormat,
-  });
-}
-
-export function dumpCoins(): Promise<CoinDumpJson> {
-  return callBackend("dumpCoins", {});
-}
-
-export function getPendingOperations(): Promise<PendingOperationsResponse> {
-  return callBackend("getPendingOperations", {});
-}
-
-export function addExchange(req: AddExchangeRequest): Promise<void> {
-  return callBackend("addExchange", req);
-}
-
-export function prepareRefund(
-  req: PrepareRefundRequest,
-): Promise<PrepareRefundResult> {
-  return callBackend("prepareRefund", req);
-}
-
-export function prepareTip(req: PrepareTipRequest): Promise<PrepareTipResult> {
-  return callBackend("prepareTip", req);
-}
-
-export function acceptTip(req: AcceptTipRequest): Promise<AcceptTipResponse> {
-  return callBackend("acceptTip", req);
-}
-
-export function exportDB(): Promise<any> {
-  return callBackend("exportDb", {});
-}
-
-export function importDB(dump: any): Promise<void> {
-  return callBackend("importDb", { dump });
-}
-
-export function onUpdateNotification(
+function onUpdateNotification(
   messageTypes: Array<NotificationType>,
-  doCallback: () => void,
+  doCallback: undefined | (() => void),
 ): () => void {
+  //if no callback, then ignore
+  if (!doCallback) return () => {
+    return
+  };
   const onNewMessage = (message: MessageFromBackend): void => {
     const shouldNotify = messageTypes.includes(message.type);
     if (shouldNotify) {
@@ -551,39 +148,11 @@ export function onUpdateNotification(
   return platform.listenToWalletBackground(onNewMessage);
 }
 
-export function initiatePeerPushPayment(
-  req: InitiatePeerPushPaymentRequest,
-): Promise<InitiatePeerPushPaymentResponse> {
-  return callBackend("initiatePeerPushPayment", req);
-}
-export function checkPeerPushPayment(
-  req: CheckPeerPushPaymentRequest,
-): Promise<CheckPeerPushPaymentResponse> {
-  return callBackend("checkPeerPushPayment", req);
-}
-export function acceptPeerPushPayment(
-  req: AcceptPeerPushPaymentRequest,
-): Promise<AcceptPeerPushPaymentResponse> {
-  return callBackend("acceptPeerPushPayment", req);
-}
-export function initiatePeerPullPayment(
-  req: InitiatePeerPullPaymentRequest,
-): Promise<InitiatePeerPullPaymentResponse> {
-  return callBackend("initiatePeerPullPayment", req);
-}
-export function checkPeerPullPayment(
-  req: CheckPeerPullPaymentRequest,
-): Promise<CheckPeerPullPaymentResponse> {
-  return callBackend("checkPeerPullPayment", req);
-}
-export function acceptPeerPullPayment(
-  req: AcceptPeerPullPaymentRequest,
-): Promise<AcceptPeerPullPaymentResponse> {
-  return callBackend("acceptPeerPullPayment", req);
+export const wxApi = {
+  wallet: new WxWalletCoreApiClient(),
+  background: new BackgroundApiClient(),
+  listener: {
+    onUpdateNotification
+  }
 }
 
-export function getTransactionById(tid: string): Promise<Transaction> {
-  return callBackend("getTransactionById", {
-    transactionId: tid,
-  });
-}

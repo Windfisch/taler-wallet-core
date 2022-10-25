@@ -19,13 +19,13 @@ import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { ButtonHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
-import * as wxApi from "../../wxApi.js";
+import { wxApi } from "../../wxApi.js";
 import { useComponentState } from "./state.js";
 import {
   IgnoredView,
   InProgressView,
   LoadingUriView,
-  ReadyView,
+  ReadyView
 } from "./views.js";
 
 export interface Props {

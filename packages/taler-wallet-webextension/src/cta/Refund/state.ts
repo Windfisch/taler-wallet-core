@@ -15,9 +15,10 @@
  */
 
 import { Amounts, NotificationType } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
-import * as wxApi from "../../wxApi.js";
+import { wxApi } from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
@@ -28,15 +29,14 @@ export function useComponentState(
 
   const info = useAsyncAsHook(async () => {
     if (!talerRefundUri) throw Error("ERROR_NO-URI-FOR-REFUND");
-    const refund = await api.prepareRefund({ talerRefundUri });
+    const refund = await api.wallet.call(WalletApiOperation.PrepareRefund, { talerRefundUri });
     return { refund, uri: talerRefundUri };
   });
 
-  useEffect(() => {
-    api.onUpdateNotification([NotificationType.RefreshMelted], () => {
-      info?.retry();
-    });
-  });
+  useEffect(() => api.listener.onUpdateNotification(
+    [NotificationType.RefreshMelted],
+    info?.retry)
+  );
 
   if (!info) {
     return { status: "loading", error: undefined };
@@ -51,7 +51,9 @@ export function useComponentState(
   const { refund, uri } = info.response;
 
   const doAccept = async (): Promise<void> => {
-    const res = await api.applyRefund(uri);
+    const res = await api.wallet.call(WalletApiOperation.ApplyRefund, {
+      talerRefundUri: uri
+    });
 
     onSuccess(res.transactionId);
   };

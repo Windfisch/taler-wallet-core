@@ -31,18 +31,18 @@ describe("useTalerActionURL hook", () => {
       });
     };
 
-    const { getLastResultOrThrow, waitNextUpdate, assertNoPendingUpdate } =
+    const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
       mountHook(useTalerActionURL, ctx);
 
     {
-      const [url] = getLastResultOrThrow();
+      const [url] = pullLastResultOrThrow();
       expect(url).undefined;
     }
 
-    await waitNextUpdate("waiting for useEffect");
+    expect(await waitForStateUpdate()).true;
 
     {
-      const [url, setDismissed] = getLastResultOrThrow();
+      const [url, setDismissed] = pullLastResultOrThrow();
       expect(url).deep.equals({
         location: "clipboard",
         uri: "qwe",
@@ -50,10 +50,10 @@ describe("useTalerActionURL hook", () => {
       setDismissed(true);
     }
 
-    await waitNextUpdate("after dismiss");
+    expect(await waitForStateUpdate()).true;
 
     {
-      const [url] = getLastResultOrThrow();
+      const [url] = pullLastResultOrThrow();
       if (url !== undefined) throw Error("invalid");
       expect(url).undefined;
     }

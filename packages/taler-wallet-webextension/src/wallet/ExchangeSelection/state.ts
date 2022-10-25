@@ -15,10 +15,10 @@
  */
 
 import { DenomOperationMap, FeeDescription } from "@gnu-taler/taler-util";
-import { createPairTimeline } from "@gnu-taler/taler-wallet-core";
+import { createPairTimeline, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
-import * as wxApi from "../../wxApi.js";
+import { wxApi } from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
@@ -36,22 +36,20 @@ export function useComponentState(
   const [value, setValue] = useState(String(initialValue));
 
   const hook = useAsyncAsHook(async () => {
-    // const { exchanges } = await api.listExchanges();
-
     const selectedIdx = parseInt(value, 10);
     const selectedExchange =
       exchanges.length == 0 ? undefined : exchanges[selectedIdx];
     const selected = !selectedExchange
       ? undefined
-      : await api.getExchangeDetailedInfo(selectedExchange.exchangeBaseUrl);
+      : await api.wallet.call(WalletApiOperation.GetExchangeDetailedInfo, { exchangeBaseUrl: selectedExchange.exchangeBaseUrl });
 
     const initialExchange =
       selectedIdx === initialValue ? undefined : exchanges[initialValue];
     const original = !initialExchange
       ? undefined
-      : await api.getExchangeDetailedInfo(initialExchange.exchangeBaseUrl);
+      : await api.wallet.call(WalletApiOperation.GetExchangeDetailedInfo, { exchangeBaseUrl: initialExchange.exchangeBaseUrl });
 
-    return { exchanges, selected, original };
+    return { exchanges, selected: selected?.exchange, original: original?.exchange };
   }, [value]);
 
   const [showingTos, setShowingTos] = useState<string | undefined>(undefined);

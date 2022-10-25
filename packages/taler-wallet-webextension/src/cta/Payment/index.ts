@@ -15,21 +15,16 @@
  */
 
 import {
-  AmountJson,
-  ConfirmPayResult,
-  PreparePayResult,
-  PreparePayResultAlreadyConfirmed,
-  PreparePayResultInsufficientBalance,
-  PreparePayResultPaymentPossible,
+  AmountJson, PreparePayResult,
+  PreparePayResultAlreadyConfirmed, PreparePayResultPaymentPossible
 } from "@gnu-taler/taler-util";
-import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { ButtonHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
-import * as wxApi from "../../wxApi.js";
+import { wxApi } from "../../wxApi.js";
 import { useComponentState } from "./state.js";
-import { LoadingUriView, BaseView } from "./views.js";
+import { BaseView, LoadingUriView } from "./views.js";
 
 export interface Props {
   talerPayUri?: string;

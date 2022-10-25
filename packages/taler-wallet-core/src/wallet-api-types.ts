@@ -35,6 +35,7 @@ import {
   AcceptWithdrawalResponse,
   AddExchangeRequest,
   AddKnownBankAccountsRequest,
+  ApplyDevExperimentRequest,
   ApplyRefundFromPurchaseIdRequest,
   ApplyRefundRequest,
   ApplyRefundResponse,
@@ -98,12 +99,12 @@ import {
   WithdrawTestBalanceRequest,
   WithdrawUriInfoResponse,
 } from "@gnu-taler/taler-util";
-import { ApplyDevExperimentRequest } from "@gnu-taler/taler-util";
 import { WalletContractData } from "./db.js";
 import {
   AddBackupProviderRequest,
   BackupInfo,
   RemoveBackupProviderRequest,
+  RunBackupCycleRequest,
 } from "./operations/backup/index.js";
 import { PendingOperationsResponse as PendingTasksResponse } from "./pending-types.js";
 
@@ -496,7 +497,7 @@ export type ImportBackupRecoveryOp = {
  */
 export type RunBackupCycleOp = {
   op: WalletApiOperation.RunBackupCycle;
-  request: EmptyObject;
+  request: RunBackupCycleRequest;
   response: EmptyObject;
 };
 

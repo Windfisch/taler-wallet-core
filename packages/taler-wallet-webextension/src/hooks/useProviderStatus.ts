@@ -14,9 +14,9 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { ProviderInfo } from "@gnu-taler/taler-wallet-core";
+import { ProviderInfo, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useState } from "preact/hooks";
-import * as wxApi from "../wxApi.js";
+import { wxApi } from "../wxApi.js";
 
 export interface ProviderStatus {
   info?: ProviderInfo;
@@ -30,7 +30,7 @@ export function useProviderStatus(url: string): ProviderStatus | undefined {
   useEffect(() => {
     async function run(): Promise<void> {
       //create a first list of backup info by currency
-      const status = await wxApi.getBackupInfo();
+      const status = await wxApi.wallet.call(WalletApiOperation.GetBackupInfo, {});
 
       const providers = status.providers.filter(
         (p) => p.syncProviderBaseUrl === url,
@@ -39,13 +39,17 @@ export function useProviderStatus(url: string): ProviderStatus | undefined {
 
       async function sync(): Promise<void> {
         if (info) {
-          await wxApi.syncOneProvider(info.syncProviderBaseUrl);
+          await wxApi.wallet.call(WalletApiOperation.RunBackupCycle, {
+            providers: [info.syncProviderBaseUrl]
+          });
         }
       }
 
       async function remove(): Promise<void> {
         if (info) {
-          await wxApi.removeProvider(info.syncProviderBaseUrl);
+          await wxApi.wallet.call(WalletApiOperation.RemoveBackupProvider, {
+            provider: info.syncProviderBaseUrl
+          });
         }
       }
 

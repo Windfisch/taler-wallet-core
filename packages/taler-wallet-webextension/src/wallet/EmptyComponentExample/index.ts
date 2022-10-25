@@ -17,9 +17,9 @@
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import { compose, StateViewMap } from "../../utils/index.js";
-import { LoadingUriView, ReadyView } from "./views.js";
-import * as wxApi from "../../wxApi.js";
+import { wxApi } from "../../wxApi.js";
 import { useComponentState } from "./state.js";
+import { LoadingUriView, ReadyView } from "./views.js";
 
 export interface Props {
   p: string;

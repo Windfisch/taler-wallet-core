@@ -14,11 +14,11 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { useState, useEffect } from "preact/hooks";
-import * as wxApi from "../wxApi.js";
-import { platform } from "../platform/api.js";
-import { ToggleHandler } from "../mui/handlers.js";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
+import { useEffect, useState } from "preact/hooks";
+import { ToggleHandler } from "../mui/handlers.js";
+import { platform } from "../platform/api.js";
+import { wxApi } from "../wxApi.js";
 
 export function useClipboardPermissions(): ToggleHandler {
   const [enabled, setEnabled] = useState(false);
@@ -31,7 +31,7 @@ export function useClipboardPermissions(): ToggleHandler {
 
   useEffect(() => {
     async function getValue(): Promise<void> {
-      const res = await wxApi.containsHeaderListener();
+      const res = await wxApi.background.containsHeaderListener();
       setEnabled(res.newValue);
     }
     getValue();
@@ -66,7 +66,7 @@ async function handleClipboardPerm(
     onChange(granted);
   } else {
     try {
-      await wxApi.toggleHeaderListener(false).then((r) => onChange(r.newValue));
+      await wxApi.background.toggleHeaderListener(false).then((r) => onChange(r.newValue));
     } catch (e) {
       console.log(e);
     }

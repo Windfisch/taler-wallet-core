@@ -14,10 +14,10 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Amounts, CreateDepositGroupResponse } from "@gnu-taler/taler-util";
-import { useState } from "preact/hooks";
+import { Amounts } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
-import * as wxApi from "../../wxApi.js";
+import { wxApi } from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
@@ -29,10 +29,10 @@ export function useComponentState(
     if (!amountStr) throw Error("ERROR_NO-AMOUNT-FOR-DEPOSIT");
     const amount = Amounts.parse(amountStr);
     if (!amount) throw Error("ERROR_INVALID-AMOUNT-FOR-DEPOSIT");
-    const deposit = await api.prepareDeposit(
-      talerDepositUri,
-      Amounts.stringify(amount),
-    );
+    const deposit = await api.wallet.call(WalletApiOperation.PrepareDeposit, {
+      amount: Amounts.stringify(amount),
+      depositPaytoUri: talerDepositUri,
+    });
     return { deposit, uri: talerDepositUri, amount };
   });
 
@@ -46,7 +46,10 @@ export function useComponentState(
 
   const { deposit, uri, amount } = info.response;
   async function doDeposit(): Promise<void> {
-    const resp = await api.createDepositGroup(uri, Amounts.stringify(amount));
+    const resp = await api.wallet.call(WalletApiOperation.CreateDepositGroup, {
+      amount: Amounts.stringify(amount),
+      depositPaytoUri: uri,
+    });
     onSuccess(resp.transactionId);
   }
 

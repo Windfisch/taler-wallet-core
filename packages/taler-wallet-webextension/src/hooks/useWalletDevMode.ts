@@ -15,7 +15,7 @@
  */
 
 import { useState, useEffect } from "preact/hooks";
-import { wxClient } from "../wxApi.js";
+import { wxApi } from "../wxApi.js";
 import { ToggleHandler } from "../mui/handlers.js";
 import { TalerError, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 
@@ -30,7 +30,7 @@ export function useWalletDevMode(): ToggleHandler {
 
   useEffect(() => {
     async function getValue(): Promise<void> {
-      const res = await wxClient.call(WalletApiOperation.GetVersion, {});
+      const res = await wxApi.wallet.call(WalletApiOperation.GetVersion, {});
       setEnabled(res.devMode);
     }
     getValue();
@@ -49,7 +49,7 @@ async function handleOpen(
   onChange: (value: boolean) => void,
 ): Promise<void> {
   const nextValue = !currentValue
-  await wxClient.call(WalletApiOperation.SetDevMode, { devModeEnabled: nextValue });
+  await wxApi.wallet.call(WalletApiOperation.SetDevMode, { devModeEnabled: nextValue });
   onChange(nextValue);
   return;
 }

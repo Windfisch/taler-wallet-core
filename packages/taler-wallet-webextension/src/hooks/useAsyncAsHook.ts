@@ -13,10 +13,9 @@
  You should have received a copy of the GNU General Public License along with
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-import { NotificationType, TalerErrorDetail } from "@gnu-taler/taler-util";
+import { TalerErrorDetail } from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useMemo, useState } from "preact/hooks";
-import * as wxApi from "../wxApi.js";
 
 export interface HookOk<T> {
   hasError: false;

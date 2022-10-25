@@ -15,19 +15,16 @@
  */
 
 import {
-  AmountJson,
-  Amounts,
-  ConfirmPayResult,
-  ConfirmPayResultType,
+  Amounts, ConfirmPayResultType,
   NotificationType,
   PreparePayResultType,
-  TalerErrorCode,
+  TalerErrorCode
 } from "@gnu-taler/taler-util";
-import { TalerError } from "@gnu-taler/taler-wallet-core";
+import { TalerError, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { ButtonHandler } from "../../mui/handlers.js";
-import * as wxApi from "../../wxApi.js";
+import { wxApi } from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
@@ -38,16 +35,17 @@ export function useComponentState(
 
   const hook = useAsyncAsHook(async () => {
     if (!talerPayUri) throw Error("ERROR_NO-URI-FOR-PAYMENT");
-    const payStatus = await api.preparePay(talerPayUri);
-    const balance = await api.getBalance();
-    return { payStatus, balance, uri: talerPayUri };
-  });
-
-  useEffect(() => {
-    api.onUpdateNotification([NotificationType.CoinWithdrawn], () => {
-      hook?.retry();
+    const payStatus = await api.wallet.call(WalletApiOperation.PreparePayForUri, {
+      talerPayUri: talerPayUri
     });
-  });
+    const balance = await api.wallet.call(WalletApiOperation.GetBalances, {});
+    return { payStatus, balance, uri: talerPayUri };
+  }, []);
+
+  useEffect(() => api.listener.onUpdateNotification(
+    [NotificationType.CoinWithdrawn],
+    hook?.retry
+  ), [hook]);
 
   const hookResponse = !hook || hook.hasError ? undefined : hook.response;
 
@@ -127,7 +125,9 @@ export function useComponentState(
           hint: `payment is not possible: ${payStatus.status}`,
         });
       }
-      const res = await api.confirmPay(payStatus.proposalId, undefined);
+      const res = await api.wallet.call(WalletApiOperation.ConfirmPay, {
+        proposalId: payStatus.proposalId,
+      });
       // handle confirm pay
       if (res.type !== ConfirmPayResultType.Done) {
         throw TalerError.fromUncheckedDetail({

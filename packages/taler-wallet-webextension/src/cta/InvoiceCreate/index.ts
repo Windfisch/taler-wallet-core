@@ -22,7 +22,7 @@ import { ButtonHandler, TextFieldHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import { ExchangeSelectionPage } from "../../wallet/ExchangeSelection/index.js";
 import { NoExchangesView } from "../../wallet/ExchangeSelection/views.js";
-import * as wxApi from "../../wxApi.js";
+import { wxApi } from "../../wxApi.js";
 import { useComponentState } from "./state.js";
 import { LoadingUriView, ReadyView } from "./views.js";
 

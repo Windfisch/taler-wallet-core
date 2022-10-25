@@ -43,7 +43,7 @@ import { useClipboardPermissions } from "../hooks/useClipboardPermissions.js";
 import { ToggleHandler } from "../mui/handlers.js";
 import { Pages } from "../NavigationBar.js";
 import { platform } from "../platform/api.js";
-import { wxClient } from "../wxApi.js";
+import { wxApi } from "../wxApi.js";
 
 const GIT_HASH = typeof __GIT_HASH__ !== "undefined" ? __GIT_HASH__ : undefined;
 
@@ -55,8 +55,8 @@ export function SettingsPage(): VNode {
   const webex = platform.getWalletWebExVersion();
 
   const exchangesHook = useAsyncAsHook(async () => {
-    const list = await wxClient.call(WalletApiOperation.ListExchanges, {});
-    const version = await wxClient.call(WalletApiOperation.GetVersion, {});
+    const list = await wxApi.wallet.call(WalletApiOperation.ListExchanges, {});
+    const version = await wxApi.wallet.call(WalletApiOperation.GetVersion, {});
     return { exchanges: list.exchanges, version };
   });
   const { exchanges, version } =

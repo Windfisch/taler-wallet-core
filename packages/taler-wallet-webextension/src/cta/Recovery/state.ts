@@ -16,8 +16,7 @@
 
 import { parseRecoveryUri } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
-import * as wxApi from "../../wxApi.js";
-import { wxClient } from "../../wxApi.js";
+import { wxApi } from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
@@ -49,7 +48,7 @@ export function useComponentState(
   const recovery = info;
 
   async function recoverBackup(): Promise<void> {
-    await wxClient.call(WalletApiOperation.ImportBackupRecovery, { recovery });
+    await wxApi.wallet.call(WalletApiOperation.ImportBackupRecovery, { recovery });
     onSuccess();
   }
 

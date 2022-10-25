@@ -15,19 +15,17 @@
  */
 
 import { parsePaytoUri, stringifyPaytoUri } from "@gnu-taler/taler-util";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
-import * as wxApi from "../../wxApi.js";
+import { wxApi } from "../../wxApi.js";
 import { Props, State } from "./index.js";
 
 export function useComponentState(
   { currency, onAccountAdded, onCancel }: Props,
   api: typeof wxApi,
 ): State {
-  const hook = useAsyncAsHook(async () => {
-    const { accounts } = await api.listKnownBankAccounts(currency);
-    return { accounts };
-  });
+  const hook = useAsyncAsHook(() => api.wallet.call(WalletApiOperation.ListKnownBankAccounts, { currency }));
 
   const [payto, setPayto] = useState("");
   const [alias, setAlias] = useState("");
@@ -61,7 +59,10 @@ export function useComponentState(
   async function addAccount(): Promise<void> {
     if (!uri || found) return;
 
-    await api.addKnownBankAccounts(uri, currency, alias);
+    const normalizedPayto = stringifyPaytoUri(uri);
+    await api.wallet.call(WalletApiOperation.AddKnownBankAccounts, {
+      alias, currency, payto: normalizedPayto
+    });
     onAccountAdded(payto);
   }
 
@@ -69,10 +70,10 @@ export function useComponentState(
     payto === ""
       ? undefined
       : !uri
-      ? "the uri is not ok"
-      : found
-      ? "that account is already present"
-      : undefined;
+        ? "the uri is not ok"
+        : found
+          ? "that account is already present"
+          : undefined;
 
   const unableToAdd = !type || !alias || paytoUriError;
 

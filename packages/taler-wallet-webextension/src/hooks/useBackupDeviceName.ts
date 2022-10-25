@@ -14,8 +14,9 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useState } from "preact/hooks";
-import * as wxApi from "../wxApi.js";
+import { wxApi } from "../wxApi.js";
 
 export interface BackupDeviceName {
   name: string;
@@ -31,10 +32,10 @@ export function useBackupDeviceName(): BackupDeviceName {
   useEffect(() => {
     async function run(): Promise<void> {
       //create a first list of backup info by currency
-      const status = await wxApi.getBackupInfo();
+      const status = await wxApi.wallet.call(WalletApiOperation.GetBackupInfo, {});
 
       async function update(newName: string): Promise<void> {
-        await wxApi.setWalletDeviceId(newName);
+        await wxApi.wallet.call(WalletApiOperation.SetWalletDeviceId, { walletDeviceId: newName });
         setStatus((old) => ({ ...old, name: newName }));
       }
 
