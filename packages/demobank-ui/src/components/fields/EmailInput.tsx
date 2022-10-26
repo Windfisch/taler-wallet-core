@@ -1,5 +1,5 @@
-import { h, VNode } from 'preact';
-import { useLayoutEffect, useRef, useState } from 'preact/hooks';
+import { h, VNode } from "preact";
+import { useLayoutEffect, useRef, useState } from "preact/hooks";
 
 export interface TextInputProps {
   label: string;
@@ -14,9 +14,7 @@ export interface TextInputProps {
 export function EmailInput(props: TextInputProps): VNode {
   const inputRef = useRef<HTMLInputElement>(null);
   useLayoutEffect(() => {
-    if (props.grabFocus) 
-      inputRef.current?.focus();
-    
+    if (props.grabFocus) inputRef.current?.focus();
   }, [props.grabFocus]);
   const value = props.bind[0];
   const [dirty, setDirty] = useState(false);
@@ -37,18 +35,16 @@ export function EmailInput(props: TextInputProps): VNode {
           required
           placeholder={props.placeholder}
           type="email"
-          class={showError ? 'input is-danger' : 'input'}
+          class={showError ? "input is-danger" : "input"}
           onKeyPress={(e) => {
-            if (e.key === 'Enter' && props.onConfirm) 
-              props.onConfirm()
-            
+            if (e.key === "Enter" && props.onConfirm) props.onConfirm();
           }}
           onInput={(e) => {
             setDirty(true);
             props.bind[1]((e.target as HTMLInputElement).value);
           }}
           ref={inputRef}
-          style={{ display: 'block' }}
+          style={{ display: "block" }}
         />
       </div>
       {showError && <p class="help is-danger">{props.error}</p>}

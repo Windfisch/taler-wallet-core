@@ -19,10 +19,10 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { h, VNode } from 'preact';
-import { useState } from 'preact/hooks';
-import { useTranslator } from '../../i18n';
-import '../../scss/DurationPicker.scss';
+import { h, VNode } from "preact";
+import { useState } from "preact/hooks";
+import { useTranslator } from "../../i18n";
+import "../../scss/DurationPicker.scss";
 
 export interface Props {
   hours?: boolean;
@@ -129,9 +129,9 @@ function InputNumber({
       }}
       style={{
         width: 50,
-        border: 'none',
-        fontSize: 'inherit',
-        background: 'inherit',
+        border: "none",
+        fontSize: "inherit",
+        background: "inherit",
       }}
     />
   );
@@ -157,7 +157,7 @@ function DurationColumn({
           <div class="rdp-cell" key={value - 2}>
             {onDecrease && (
               <button
-                style={{ width: '100%', textAlign: 'center', margin: 5 }}
+                style={{ width: "100%", textAlign: "center", margin: 5 }}
                 onClick={onDecrease}
               >
                 <span class="icon">
@@ -167,7 +167,7 @@ function DurationColumn({
             )}
           </div>
           <div class="rdp-cell" key={value - 1}>
-            {value > min ? toTwoDigitString(value - 1) : ''}
+            {value > min ? toTwoDigitString(value - 1) : ""}
           </div>
           <div class="rdp-cell rdp-center" key={value}>
             {onChange ? (
@@ -182,13 +182,13 @@ function DurationColumn({
           </div>
 
           <div class="rdp-cell" key={value + 1}>
-            {value < max ? toTwoDigitString(value + 1) : ''}
+            {value < max ? toTwoDigitString(value + 1) : ""}
           </div>
 
           <div class="rdp-cell" key={value + 2}>
             {onIncrease && (
               <button
-                style={{ width: '100%', textAlign: 'center', margin: 5 }}
+                style={{ width: "100%", textAlign: "center", margin: 5 }}
                 onClick={onIncrease}
               >
                 <span class="icon">
@@ -204,8 +204,7 @@ function DurationColumn({
 }
 
 function toTwoDigitString(n: number) {
-  if (n < 10) 
-    return `0${n}`;
-  
+  if (n < 10) return `0${n}`;
+
   return `${n}`;
 }

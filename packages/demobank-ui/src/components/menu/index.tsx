@@ -14,11 +14,11 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { ComponentChildren, Fragment, h, VNode } from 'preact';
-import Match from 'preact-router/match';
-import { useEffect, useState } from 'preact/hooks';
-import { NavigationBar } from './NavigationBar';
-import { Sidebar } from './SideBar';
+import { ComponentChildren, Fragment, h, VNode } from "preact";
+import Match from "preact-router/match";
+import { useEffect, useState } from "preact/hooks";
+import { NavigationBar } from "./NavigationBar";
+import { Sidebar } from "./SideBar";
 
 interface MenuProps {
   title: string;
@@ -47,7 +47,7 @@ export function Menu({ title }: MenuProps): VNode {
         return (
           <WithTitle title={titleWithSubtitle}>
             <div
-              class={mobileOpen ? 'has-aside-mobile-expanded' : ''}
+              class={mobileOpen ? "has-aside-mobile-expanded" : ""}
               onClick={() => setMobileOpen(false)}
             >
               <NavigationBar
@@ -82,11 +82,11 @@ export function NotificationCard({
         <div class="column is-12">
           <article
             class={
-              n.type === 'ERROR'
-                ? 'message is-danger'
-                : n.type === 'WARN'
-                  ? 'message is-warning'
-                  : 'message is-info'
+              n.type === "ERROR"
+                ? "message is-danger"
+                : n.type === "WARN"
+                ? "message is-warning"
+                : "message is-info"
             }
           >
             <div class="message-header">
@@ -132,4 +132,4 @@ export interface Notification {
 }
 
 export type ValueOrFunction<T> = T | ((p: T) => T);
-export type MessageType = 'INFO' | 'WARN' | 'ERROR' | 'SUCCESS';
+export type MessageType = "INFO" | "WARN" | "ERROR" | "SUCCESS";

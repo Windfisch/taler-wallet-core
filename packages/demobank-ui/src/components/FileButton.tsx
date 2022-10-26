@@ -1,5 +1,5 @@
-import { h, VNode } from 'preact';
-import { useRef, useState } from 'preact/hooks';
+import { h, VNode } from "preact";
+import { useRef, useState } from "preact/hooks";
 
 const MAX_IMAGE_UPLOAD_SIZE = 1024 * 1024;
 
@@ -23,13 +23,12 @@ export function FileButton(props: Props): VNode {
       </button>
       <input
         ref={fileInputRef}
-        style={{ display: 'none' }}
+        style={{ display: "none" }}
         type="file"
         onChange={(e) => {
           const f: FileList | null = e.currentTarget.files;
-          if (!f || f.length != 1) 
-            return props.onChange(undefined);
-          
+          if (!f || f.length != 1) return props.onChange(undefined);
+
           console.log(f);
           if (f[0].size > MAX_IMAGE_UPLOAD_SIZE) {
             setSizeError(true);
@@ -39,7 +38,7 @@ export function FileButton(props: Props): VNode {
           return f[0].arrayBuffer().then((b) => {
             const content = new Uint8Array(b).reduce(
               (data, byte) => data + String.fromCharCode(byte),
-              '',
+              "",
             );
             return props.onChange({
               content,

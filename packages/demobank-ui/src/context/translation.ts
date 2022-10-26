@@ -19,11 +19,11 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { createContext, h, VNode } from 'preact';
-import { useContext, useEffect } from 'preact/hooks';
-import { useLang } from '../hooks/index.js';
-import * as jedLib from 'jed';
-import { strings } from '../i18n/strings.js';
+import { createContext, h, VNode } from "preact";
+import { useContext, useEffect } from "preact/hooks";
+import { useLang } from "../hooks/index.js";
+import * as jedLib from "jed";
+import { strings } from "../i18n/strings.js";
 
 interface Type {
   lang: string;
@@ -31,7 +31,7 @@ interface Type {
   changeLanguage: (l: string) => void;
 }
 const initial = {
-  lang: 'en',
+  lang: "en",
   handler: null,
   changeLanguage: () => {
     /**
@@ -55,15 +55,12 @@ export const TranslationProvider = ({
   children,
   forceLang,
 }: Props): VNode => {
-
   const [lang, changeLanguage] = useLang(initial);
   useEffect(() => {
-    if (forceLang)
-      changeLanguage(forceLang);
-
+    if (forceLang) changeLanguage(forceLang);
   });
-  console.log('lang store', strings);
-  const handler = new jedLib.Jed(strings[lang] || strings['en']);
+  console.log("lang store", strings);
+  const handler = new jedLib.Jed(strings[lang] || strings["en"]);
   return h(Context.Provider, {
     value: { lang, handler, changeLanguage },
     children,

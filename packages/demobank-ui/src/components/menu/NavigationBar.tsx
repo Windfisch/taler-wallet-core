@@ -19,9 +19,9 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { h, VNode } from 'preact';
-import logo from '../../assets/logo.jpeg';
-import { LangSelectorLikePy as LangSelector } from './LangSelector';
+import { h, VNode } from "preact";
+import logo from "../../assets/logo.jpeg";
+import { LangSelectorLikePy as LangSelector } from "./LangSelector";
 
 interface Props {
   onMobileMenu: () => void;

@@ -19,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { h, Component } from 'preact';
+import { h, Component } from "preact";
 
 interface Props {
   closeFunction?: () => void;
@@ -37,36 +37,36 @@ interface State {
 const now = new Date();
 
 const monthArrShortFull = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 const monthArrShort = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
-const dayArr = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const dayArr = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const yearArr: number[] = [];
 
@@ -83,10 +83,10 @@ export class DatePicker extends Component<Props, State> {
   dayClicked(e: any) {
     const element = e.target; // the actual element clicked
 
-    if (element.innerHTML === '') return false; // don't continue if <span /> empty
+    if (element.innerHTML === "") return false; // don't continue if <span /> empty
 
     // get date from clicked element (gets attached when rendered)
-    const date = new Date(element.getAttribute('data-value'));
+    const date = new Date(element.getAttribute("data-value"));
 
     // update the state
     this.setState({ currentDate: date });
@@ -131,40 +131,37 @@ export class DatePicker extends Component<Props, State> {
    * Display previous month by updating state
    */
   displayPrevMonth() {
-    if (this.state.displayedMonth <= 0) 
+    if (this.state.displayedMonth <= 0)
       this.setState({
         displayedMonth: 11,
         displayedYear: this.state.displayedYear - 1,
       });
-    else 
+    else
       this.setState({
         displayedMonth: this.state.displayedMonth - 1,
       });
-    
   }
 
   /**
    * Display next month by updating state
    */
   displayNextMonth() {
-    if (this.state.displayedMonth >= 11) 
+    if (this.state.displayedMonth >= 11)
       this.setState({
         displayedMonth: 0,
         displayedYear: this.state.displayedYear + 1,
       });
-    else 
+    else
       this.setState({
         displayedMonth: this.state.displayedMonth + 1,
       });
-    
   }
 
   /**
    * Display the selected month (gets fired when clicking on the date string)
    */
   displaySelectedMonth() {
-    if (this.state.selectYearMode) 
-      this.toggleYearSelector();
+    if (this.state.selectYearMode) this.toggleYearSelector();
     else {
       if (!this.state.currentDate) return false;
       this.setState({
@@ -194,7 +191,7 @@ export class DatePicker extends Component<Props, State> {
     this.passDateToParent(this.state.currentDate);
   }
   passDateToParent(date: Date) {
-    if (typeof this.props.dateReceiver === 'function')
+    if (typeof this.props.dateReceiver === "function")
       this.props.dateReceiver(date);
     this.closeDatePicker();
   }
@@ -229,22 +226,18 @@ export class DatePicker extends Component<Props, State> {
   }
 
   render() {
-    const {
-      currentDate,
-      displayedMonth,
-      displayedYear,
-      selectYearMode,
-    } = this.state;
+    const { currentDate, displayedMonth, displayedYear, selectYearMode } =
+      this.state;
 
     return (
       <div>
-        <div class={`datePicker ${this.props.opened && 'datePicker--opened'}`}>
+        <div class={`datePicker ${this.props.opened && "datePicker--opened"}`}>
           <div class="datePicker--titles">
             <h3
               style={{
                 color: selectYearMode
-                  ? 'rgba(255,255,255,.87)'
-                  : 'rgba(255,255,255,.57)',
+                  ? "rgba(255,255,255,.87)"
+                  : "rgba(255,255,255,.57)",
               }}
               onClick={this.toggleYearSelector}
             >
@@ -253,12 +246,12 @@ export class DatePicker extends Component<Props, State> {
             <h2
               style={{
                 color: !selectYearMode
-                  ? 'rgba(255,255,255,.87)'
-                  : 'rgba(255,255,255,.57)',
+                  ? "rgba(255,255,255,.87)"
+                  : "rgba(255,255,255,.57)",
               }}
               onClick={this.displaySelectedMonth}
             >
-              {dayArr[currentDate.getDay()]},{' '}
+              {dayArr[currentDate.getDay()]},{" "}
               {monthArrShort[currentDate.getMonth()]} {currentDate.getDate()}
             </h2>
           </div>
@@ -267,7 +260,7 @@ export class DatePicker extends Component<Props, State> {
             <nav>
               <span onClick={this.displayPrevMonth} class="icon">
                 <i
-                  style={{ transform: 'rotate(180deg)' }}
+                  style={{ transform: "rotate(180deg)" }}
                   class="mdi mdi-forward"
                 />
               </span>
@@ -284,7 +277,7 @@ export class DatePicker extends Component<Props, State> {
             {!selectYearMode && (
               <div class="datePicker--calendar">
                 <div class="datePicker--dayNames">
-                  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                  {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
                     <span key={i}>{day}</span>
                   ))}
                 </div>
@@ -309,8 +302,8 @@ export class DatePicker extends Component<Props, State> {
                       <span
                         key={day.day}
                         class={
-                          (day.today ? 'datePicker--today ' : '') +
-                          (selected ? 'datePicker--selected' : '')
+                          (day.today ? "datePicker--today " : "") +
+                          (selected ? "datePicker--selected" : "")
                         }
                         disabled={!day.date}
                         data-value={day.date}
@@ -328,7 +321,7 @@ export class DatePicker extends Component<Props, State> {
                 {(this.props.years || yearArr).map((year) => (
                   <span
                     key={year}
-                    class={year === displayedYear ? 'selected' : ''}
+                    class={year === displayedYear ? "selected" : ""}
                     onClick={this.changeDisplayedYear}
                   >
                     {year}
@@ -343,7 +336,7 @@ export class DatePicker extends Component<Props, State> {
           class="datePicker--background"
           onClick={this.closeDatePicker}
           style={{
-            display: this.props.opened ? 'block' : 'none',
+            display: this.props.opened ? "block" : "none",
           }}
         />
       </div>
@@ -351,6 +344,4 @@ export class DatePicker extends Component<Props, State> {
   }
 }
 
-for (let i = 2010; i <= now.getFullYear() + 10; i++) 
-  yearArr.push(i);
-
+for (let i = 2010; i <= now.getFullYear() + 10; i++) yearArr.push(i);

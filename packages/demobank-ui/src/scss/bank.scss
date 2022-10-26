@@ -1,5 +1,5 @@
 .navcontainer:not(.default-navcontainer) {
-    margin-bottom: 0 !important;
+  margin-bottom: 0 !important;
 }
 
 .abort-button {
@@ -17,8 +17,8 @@ div.pages-list {
 
 .login-div,
 .register-div {
-    display: block;
-    text-align: center;
+  display: block;
+  text-align: center;
 }
 
 a.page-number {
@@ -42,55 +42,55 @@ input[type="number"]::-webkit-inner-spin-button {
 
 /* This CSS code styles the tab */
 .tab {
-    overflow: hidden;
+  overflow: hidden;
 }
 
 .logout {
-    float: right;
-    border: 20px;
-    margin-right: 15px;
-    margin-top: 15px;
+  float: right;
+  border: 20px;
+  margin-right: 15px;
+  margin-top: 15px;
 }
 
 .tab button {
-    background-color: lightgray;
-    color: black;
-    float: left;
-    border: none;
-    outline: none;
-    cursor: pointer;
-    padding: 18px 19px;
-    border: 2px solid #c1c1c1;
-    transition: 0.5s;
-    font-weight: bold;
+  background-color: lightgray;
+  color: black;
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 18px 19px;
+  border: 2px solid #c1c1c1;
+  transition: 0.5s;
+  font-weight: bold;
 }
 
 .tab button:hover {
-    background-color: yellow;
-    border: 2px solid #c1c1c1;
-    color: black;
+  background-color: yellow;
+  border: 2px solid #c1c1c1;
+  color: black;
 }
 
 .tab button.active {
-    background-color: orange;
-    border: 2px solid #c1c1c1;
-    color: black;
-    font-weight: bold;
+  background-color: orange;
+  border: 2px solid #c1c1c1;
+  color: black;
+  font-weight: bold;
 }
 
 .tabcontent {
-    display: none;
-    padding: 8px 16px;
-    border: 2px solid #c1c1c1;
-    width: max-content;
+  display: none;
+  padding: 8px 16px;
+  border: 2px solid #c1c1c1;
+  width: max-content;
 }
 
 .tabcontent.active {
-    display: block;
+  display: block;
 }
 
 input[type="number"] {
-    -moz-appearance: textfield;
+  -moz-appearance: textfield;
 }
 
 #transfer-fields {
@@ -115,16 +115,16 @@ input[type="number"] {
 }
 
 input {
-    background-color: inherit;
+  background-color: inherit;
 }
 
 .large-amount {
-    font-weight: bold;
-    font-size: x-large;
+  font-weight: bold;
+  font-size: x-large;
 }
 
 .currency {
-    font-style: oblique;
+  font-style: oblique;
 }
 
 /*
@@ -154,111 +154,108 @@ input {
 
 .register-form > .pure-form,
 .login-form > .pure-form {
-    background: #4a4a4a;
-    color: #ffffff;
-    display: inline-block;
-    text-align: left;
-    margin-left: auto;
-    margin-right: auto;
-    padding: 16px 16px;
-    border-radius: 8px;
-    width: max-content;
-    .formFieldLabel {
-        margin: 2px 2px;
-    }
-    input[type="text"],
-    input[type="password"] {
-        border: none;
-        border-radius: 4px;
-        background: #6a6a6a;
-        color: #fefefe;
-        box-shadow: none;
-    }
-    input[placeholder="Password"][type="password"] {
-        margin-bottom: 8px;
-    }
-    .btn-register,
-    .btn-login {
-        float: left;
-    }
-    .btn-cancel {
-        float: right;
-    }
-    h2 {
-        margin-top: 0;
-        margin-bottom: 10px;
-    }
+  background: #4a4a4a;
+  color: #ffffff;
+  display: inline-block;
+  text-align: left;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 16px 16px;
+  border-radius: 8px;
+  width: max-content;
+  .formFieldLabel {
+    margin: 2px 2px;
+  }
+  input[type="text"],
+  input[type="password"] {
+    border: none;
+    border-radius: 4px;
+    background: #6a6a6a;
+    color: #fefefe;
+    box-shadow: none;
+  }
+  input[placeholder="Password"][type="password"] {
+    margin-bottom: 8px;
+  }
+  .btn-register,
+  .btn-login {
+    float: left;
+  }
+  .btn-cancel {
+    float: right;
+  }
+  h2 {
+    margin-top: 0;
+    margin-bottom: 10px;
+  }
 }
 
-
 .challenge-div {
-    display: block;
-    text-align: center;
+  display: block;
+  text-align: center;
 }
 
 .challenge-form > .pure-form {
-    background: #4a4a4a;
-    color: #ffffff;
-    display: inline-block;
-    text-align: left;
-    margin-left: auto;
-    margin-right: auto;
-    padding: 16px 16px;
-    border-radius: 8px;
-    width: max-content;
-    .formFieldLabel {
-        margin: 2px 2px;
-    }
-    input[type="text"] {
-        border: none;
-        border-radius: 4px;
-        background: #6a6a6a;
-        color: #fefefe;
-        box-shadow: none;
-    }
-    .btn-confirm {
-        float: left;
-    }
-    .btn-cancel {
-        float: right;
-    }
-    h2 {
-        margin-top: 0;
-        margin-bottom: 10px;
-    }
+  background: #4a4a4a;
+  color: #ffffff;
+  display: inline-block;
+  text-align: left;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 16px 16px;
+  border-radius: 8px;
+  width: max-content;
+  .formFieldLabel {
+    margin: 2px 2px;
+  }
+  input[type="text"] {
+    border: none;
+    border-radius: 4px;
+    background: #6a6a6a;
+    color: #fefefe;
+    box-shadow: none;
+  }
+  .btn-confirm {
+    float: left;
+  }
+  .btn-cancel {
+    float: right;
+  }
+  h2 {
+    margin-top: 0;
+    margin-bottom: 10px;
+  }
 }
-
 
 .wire-transfer-form > .pure-form,
 .payto-form > .pure-form,
 .reserve-form > .pure-form {
-    background: #4a4a4a;
-    color: #ffffff;
-    display: inline-block;
-    text-align: left;
-    margin-left: auto;
-    margin-right: auto;
-    padding: 16px 16px;
-    border-radius: 8px;
-    width: max-content;
-    .formFieldLabel {
-        margin: 2px 2px;
-    }
-    input[type="text"] {
-        border: none;
-        border-radius: 4px;
-        background: #6a6a6a;
-        color: #fefefe;
-        box-shadow: none;
-    }
+  background: #4a4a4a;
+  color: #ffffff;
+  display: inline-block;
+  text-align: left;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 16px 16px;
+  border-radius: 8px;
+  width: max-content;
+  .formFieldLabel {
+    margin: 2px 2px;
+  }
+  input[type="text"] {
+    border: none;
+    border-radius: 4px;
+    background: #6a6a6a;
+    color: #fefefe;
+    box-shadow: none;
+  }
 }
 
-
 html {
-    background: #ffffff;
-    color: #2a2a2a;
+  background: #ffffff;
+  color: #2a2a2a;
 }
 
 .hint {
-    scale: 0.7;
+  scale: 0.7;
 }

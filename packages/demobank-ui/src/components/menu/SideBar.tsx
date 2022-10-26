@@ -19,8 +19,8 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { h, VNode } from 'preact';
-import { Translate } from '../../i18n';
+import { h, VNode } from "preact";
+import { Translate } from "../../i18n";
 
 interface Props {
   mobile?: boolean;
@@ -28,9 +28,9 @@ interface Props {
 
 export function Sidebar({ mobile }: Props): VNode {
   // const config = useConfigContext();
-  const config = { version: 'none' };
+  const config = { version: "none" };
   // FIXME: add replacement for __VERSION__ with the current version
-  const process = { env: { __VERSION__: '0.0.0' } };
+  const process = { env: { __VERSION__: "0.0.0" } };
 
   return (
     <aside class="aside is-placed-left is-expanded">

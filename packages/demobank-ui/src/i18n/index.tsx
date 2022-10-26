@@ -21,9 +21,9 @@
 /**
  * Imports
  */
-import { ComponentChild, ComponentChildren, h, Fragment, VNode } from 'preact';
+import { ComponentChild, ComponentChildren, h, Fragment, VNode } from "preact";
 
-import { useTranslationContext } from '../context/translation';
+import { useTranslationContext } from "../context/translation";
 
 export function useTranslator() {
   const ctx = useTranslationContext();
@@ -46,12 +46,10 @@ export function useTranslator() {
  * Convert template strings to a msgid
  */
 function toI18nString(stringSeq: ReadonlyArray<string>): string {
-  let s = '';
+  let s = "";
   for (let i = 0; i < stringSeq.length; i++) {
     s += stringSeq[i];
-    if (i < stringSeq.length - 1) 
-      s += `%${i + 1}$s`;
-    
+    if (i < stringSeq.length - 1) s += `%${i + 1}$s`;
   }
   return s;
 }
@@ -64,12 +62,11 @@ interface TranslateSwitchProps {
 function stringifyChildren(children: ComponentChildren): string {
   let n = 1;
   const ss = (children instanceof Array ? children : [children]).map((c) => {
-    if (typeof c === 'string') 
-      return c;
-    
+    if (typeof c === "string") return c;
+
     return `%${n++}$s`;
   });
-  const s = ss.join('').replace(/ +/g, ' ').trim();
+  const s = ss.join("").replace(/ +/g, " ").trim();
   return s;
 }
 
@@ -97,24 +94,20 @@ function getTranslatedChildren(
   const placeholderChildren = Array<ComponentChild>();
   for (let i = 0; i < childArray.length; i++) {
     const x = childArray[i];
-    if (x === undefined) 
-      continue;
-    else if (typeof x === 'string') 
-      continue;
-    else 
-      placeholderChildren.push(x);
-    
+    if (x === undefined) continue;
+    else if (typeof x === "string") continue;
+    else placeholderChildren.push(x);
   }
   const result = Array<ComponentChild>();
-  for (let i = 0; i < tr.length; i++) 
-    if (i % 2 == 0) 
+  for (let i = 0; i < tr.length; i++)
+    if (i % 2 == 0)
       // Text
       result.push(tr[i]);
     else {
       const childIdx = Number.parseInt(tr[i], 10) - 1;
       result.push(placeholderChildren[childIdx]);
     }
-  
+
   return result;
 }
 
@@ -154,21 +147,18 @@ export function TranslateSwitch({ children, target }: TranslateSwitchProps) {
   let singular: VNode<TranslationPluralProps> | undefined;
   let plural: VNode<TranslationPluralProps> | undefined;
   // const children = this.props.children;
-  if (children) 
+  if (children)
     (children instanceof Array ? children : [children]).forEach(
       (child: any) => {
-        if (child.type === TranslatePlural) 
-          plural = child;
-        
-        if (child.type === TranslateSingular) 
-          singular = child;
-        
+        if (child.type === TranslatePlural) plural = child;
+
+        if (child.type === TranslateSingular) singular = child;
       },
     );
-  
+
   if (!singular || !plural) {
-    console.error('translation not found');
-    return h('span', {}, ['translation not found']);
+    console.error("translation not found");
+    return h("span", {}, ["translation not found"]);
   }
   singular.props.target = target;
   plural.props.target = target;

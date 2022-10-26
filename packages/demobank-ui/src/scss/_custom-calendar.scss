@@ -135,9 +135,9 @@
       text-align: center;
 
       // there's probably a better way to do this, but wanted to try out CSS grid
-      grid-template-columns: calc(100% / 7) calc(100% / 7) calc(100% / 7) calc(
-          100% / 7
-        ) calc(100% / 7) calc(100% / 7) calc(100% / 7);
+      grid-template-columns:
+        calc(100% / 7) calc(100% / 7) calc(100% / 7) calc(100% / 7)
+        calc(100% / 7) calc(100% / 7) calc(100% / 7);
 
       span {
         color: var(--secondary-text-color-dark);
@@ -151,9 +151,9 @@
       width: 100%;
       display: grid;
       text-align: center;
-      grid-template-columns: calc(100% / 7) calc(100% / 7) calc(100% / 7) calc(
-          100% / 7
-        ) calc(100% / 7) calc(100% / 7) calc(100% / 7);
+      grid-template-columns:
+        calc(100% / 7) calc(100% / 7) calc(100% / 7) calc(100% / 7)
+        calc(100% / 7) calc(100% / 7) calc(100% / 7);
 
       span {
         color: var(--primary-text-color-dark);

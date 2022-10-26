@@ -14,14 +14,14 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { h, VNode } from 'preact';
-import { useEffect, useRef } from 'preact/hooks';
-import qrcode from 'qrcode-generator';
+import { h, VNode } from "preact";
+import { useEffect, useRef } from "preact/hooks";
+import qrcode from "qrcode-generator";
 
 export function QR({ text }: { text: string }): VNode {
   const divRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const qr = qrcode(0, 'L');
+    const qr = qrcode(0, "L");
     qr.addData(text);
     qr.make();
     if (divRef.current)
@@ -33,14 +33,14 @@ export function QR({ text }: { text: string }): VNode {
   return (
     <div
       style={{
-        width: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'left',
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "left",
       }}
     >
       <div
-        style={{ width: '50%', minWidth: 200, maxWidth: 300 }}
+        style={{ width: "50%", minWidth: 200, maxWidth: 300 }}
         ref={divRef}
       />
     </div>

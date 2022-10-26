@@ -18,8 +18,8 @@
  *
  * @author Sebastian Javier Marchano (sebasjm)
  */
-import { h, VNode } from 'preact';
-import { useLayoutEffect, useRef, useState } from 'preact/hooks';
+import { h, VNode } from "preact";
+import { useLayoutEffect, useRef, useState } from "preact/hooks";
 
 const MAX_IMAGE_UPLOAD_SIZE = 1024 * 1024;
 
@@ -42,9 +42,7 @@ export interface FileInputProps {
 export function FileInput(props: FileInputProps): VNode {
   const inputRef = useRef<HTMLInputElement>(null);
   useLayoutEffect(() => {
-    if (props.grabFocus) 
-      inputRef.current?.focus();
-    
+    if (props.grabFocus) inputRef.current?.focus();
   }, [props.grabFocus]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -56,9 +54,7 @@ export function FileInput(props: FileInputProps): VNode {
           <div class="icon is-small ">
             <i class="mdi mdi-folder" />
           </div>
-          <span>
-            {props.label}
-          </span>
+          <span>{props.label}</span>
         </a>
         {props.tooltip && (
           <span class="icon has-tooltip-right" data-tooltip={props.tooltip}>
@@ -69,15 +65,14 @@ export function FileInput(props: FileInputProps): VNode {
       <div class="control">
         <input
           ref={fileInputRef}
-          style={{ display: 'none' }}
+          style={{ display: "none" }}
           type="file"
           // name={String(name)}
           onChange={(e) => {
             const f: FileList | null = e.currentTarget.files;
-            if (!f || f.length != 1) 
-              return props.onChange(undefined);
-            
-            console.log(f)
+            if (!f || f.length != 1) return props.onChange(undefined);
+
+            console.log(f);
             if (f[0].size > MAX_IMAGE_UPLOAD_SIZE) {
               setSizeError(true);
               return props.onChange(undefined);
@@ -87,10 +82,14 @@ export function FileInput(props: FileInputProps): VNode {
               const b64 = btoa(
                 new Uint8Array(b).reduce(
                   (data, byte) => data + String.fromCharCode(byte),
-                  '',
+                  "",
                 ),
               );
-              return props.onChange({content: `data:${f[0].type};base64,${b64}`, name: f[0].name, type: f[0].type});
+              return props.onChange({
+                content: `data:${f[0].type};base64,${b64}`,
+                name: f[0].name,
+                type: f[0].type,
+              });
             });
           }}
         />

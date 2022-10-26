@@ -19,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { h, VNode } from 'preact';
+import { h, VNode } from "preact";
 
 export interface Notification {
   message: string;
@@ -27,7 +27,7 @@ export interface Notification {
   type: MessageType;
 }
 
-export type MessageType = 'INFO' | 'WARN' | 'ERROR' | 'SUCCESS';
+export type MessageType = "INFO" | "WARN" | "ERROR" | "SUCCESS";
 
 interface Props {
   notifications: Notification[];
@@ -36,16 +36,16 @@ interface Props {
 
 function messageStyle(type: MessageType): string {
   switch (type) {
-  case 'INFO':
-    return 'message is-info';
-  case 'WARN':
-    return 'message is-warning';
-  case 'ERROR':
-    return 'message is-danger';
-  case 'SUCCESS':
-    return 'message is-success';
-  default:
-    return 'message';
+    case "INFO":
+      return "message is-info";
+    case "WARN":
+      return "message is-warning";
+    case "ERROR":
+      return "message is-danger";
+    case "SUCCESS":
+      return "message is-success";
+    default:
+      return "message";
   }
 }
 

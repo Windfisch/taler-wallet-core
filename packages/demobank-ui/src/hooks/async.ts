@@ -18,7 +18,7 @@
  *
  * @author Sebastian Javier Marchano (sebasjm)
  */
-import { useState } from 'preact/hooks';
+import { useState } from "preact/hooks";
 // import { cancelPendingRequest } from "./backend";
 
 export interface Options {
@@ -51,9 +51,9 @@ export function useAsync<T>(
     }, tooLong);
 
     try {
-      console.log('calling async', args);
+      console.log("calling async", args);
       const result = await fn(...args);
-      console.log('async back', result);
+      console.log("async back", result);
       setData(result);
     } catch (error) {
       setError(error);

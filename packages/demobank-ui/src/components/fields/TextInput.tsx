@@ -1,8 +1,8 @@
-import { h, VNode } from 'preact';
-import { useLayoutEffect, useRef, useState } from 'preact/hooks';
+import { h, VNode } from "preact";
+import { useLayoutEffect, useRef, useState } from "preact/hooks";
 
 export interface TextInputProps {
-  inputType?: 'text' | 'number' | 'multiline' | 'password';
+  inputType?: "text" | "number" | "multiline" | "password";
   label: string;
   grabFocus?: boolean;
   disabled?: boolean;
@@ -16,13 +16,11 @@ export interface TextInputProps {
 const TextInputType = function ({ inputType, grabFocus, ...rest }: any): VNode {
   const inputRef = useRef<HTMLInputElement>(null);
   useLayoutEffect(() => {
-    if (grabFocus) 
-      inputRef.current?.focus();
-    
+    if (grabFocus) inputRef.current?.focus();
   }, [grabFocus]);
 
-  return inputType === 'multiline' ? (
-    <textarea {...rest} rows={5} ref={inputRef} style={{ height: 'unset' }} />
+  return inputType === "multiline" ? (
+    <textarea {...rest} rows={5} ref={inputRef} style={{ height: "unset" }} />
   ) : (
     <input {...rest} type={inputType} ref={inputRef} />
   );
@@ -49,17 +47,15 @@ export function TextInput(props: TextInputProps): VNode {
           grabFocus={props.grabFocus}
           disabled={props.disabled}
           placeholder={props.placeholder}
-          class={showError ? 'input is-danger' : 'input'}
+          class={showError ? "input is-danger" : "input"}
           onKeyPress={(e: any) => {
-            if (e.key === 'Enter' && props.onConfirm) 
-              props.onConfirm();
-            
+            if (e.key === "Enter" && props.onConfirm) props.onConfirm();
           }}
           onInput={(e: any) => {
             setDirty(true);
             props.bind[1]((e.target as HTMLInputElement).value);
           }}
-          style={{ display: 'block' }}
+          style={{ display: "block" }}
         />
       </div>
       {showError && <p class="help is-danger">{props.error}</p>}

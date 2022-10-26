@@ -1,7 +1,7 @@
-import { format, subYears } from 'date-fns';
-import { h, VNode } from 'preact';
-import { useLayoutEffect, useRef, useState } from 'preact/hooks';
-import { DatePicker } from '../picker/DatePicker';
+import { format, subYears } from "date-fns";
+import { h, VNode } from "preact";
+import { useLayoutEffect, useRef, useState } from "preact/hooks";
+import { DatePicker } from "../picker/DatePicker";
 
 export interface DateInputProps {
   label: string;
@@ -16,13 +16,11 @@ export interface DateInputProps {
 export function DateInput(props: DateInputProps): VNode {
   const inputRef = useRef<HTMLInputElement>(null);
   useLayoutEffect(() => {
-    if (props.grabFocus) 
-      inputRef.current?.focus();
-    
+    if (props.grabFocus) inputRef.current?.focus();
   }, [props.grabFocus]);
   const [opened, setOpened] = useState(false);
 
-  const value = props.bind[0] || '';
+  const value = props.bind[0] || "";
   const [dirty, setDirty] = useState(false);
   const showError = dirty && props.error;
 
@@ -43,12 +41,10 @@ export function DateInput(props: DateInputProps): VNode {
           <p class="control">
             <input
               type="text"
-              class={showError ? 'input is-danger' : 'input'}
+              class={showError ? "input is-danger" : "input"}
               value={value}
               onKeyPress={(e) => {
-                if (e.key === 'Enter' && props.onConfirm) 
-                  props.onConfirm()
-                
+                if (e.key === "Enter" && props.onConfirm) props.onConfirm();
               }}
               onInput={(e) => {
                 const text = e.currentTarget.value;
@@ -81,7 +77,7 @@ export function DateInput(props: DateInputProps): VNode {
         closeFunction={() => setOpened(false)}
         dateReceiver={(d) => {
           setDirty(true);
-          const v = format(d, 'yyyy-MM-dd');
+          const v = format(d, "yyyy-MM-dd");
           props.bind[1](v);
         }}
       />

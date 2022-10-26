@@ -15,24 +15,22 @@
  */
 
 /**
-*
-* @author Sebastian Javier Marchano (sebasjm)
-*/
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
 
-import { h } from 'preact';
-import Profile from './index';
-
+import { h } from "preact";
+import Profile from "./index";
 
 export default {
-  title: 'Profile/View',
+  title: "Profile/View",
   component: Profile,
   argTypes: {
-    onSelect: { action: 'onSelect' },
+    onSelect: { action: "onSelect" },
   },
 };
 
 export const Empty = (a: any) => <Profile {...a} />;
 Empty.args = {
-  instances: []
-}
-
+  instances: [],
+};

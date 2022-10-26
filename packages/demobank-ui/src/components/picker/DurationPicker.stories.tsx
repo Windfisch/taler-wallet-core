@@ -19,16 +19,16 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { h, FunctionalComponent } from 'preact';
-import { useState } from 'preact/hooks';
-import { DurationPicker as TestedComponent } from './DurationPicker';
+import { h, FunctionalComponent } from "preact";
+import { useState } from "preact/hooks";
+import { DurationPicker as TestedComponent } from "./DurationPicker";
 
 export default {
-  title: 'Components/Picker/Duration',
+  title: "Components/Picker/Duration",
   component: TestedComponent,
   argTypes: {
-    onCreate: { action: 'onCreate' },
-    goBack: { action: 'goBack' },
+    onCreate: { action: "onCreate" },
+    goBack: { action: "goBack" },
   },
 };
 

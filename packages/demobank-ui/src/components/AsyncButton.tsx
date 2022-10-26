@@ -19,10 +19,10 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { ComponentChildren, h, VNode } from 'preact';
-import { useLayoutEffect, useRef } from 'preact/hooks';
+import { ComponentChildren, h, VNode } from "preact";
+import { useLayoutEffect, useRef } from "preact/hooks";
 // import { LoadingModal } from "../modal";
-import { useAsync } from '../hooks/async';
+import { useAsync } from "../hooks/async";
 // import { Translate } from "../../i18n";
 
 type Props = {
@@ -44,20 +44,16 @@ export function AsyncButton({
 
   const buttonRef = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => {
-    if (grabFocus) 
-      buttonRef.current?.focus();
-    
+    if (grabFocus) buttonRef.current?.focus();
   }, [grabFocus]);
 
   // if (isSlow) {
   //   return <LoadingModal onCancel={cancel} />;
   // }
-  if (isLoading) 
-    return <button class="button">Loading...</button>;
-  
+  if (isLoading) return <button class="button">Loading...</button>;
 
   return (
-    <span data-tooltip={rest['data-tooltip']} style={{ marginLeft: 5 }}>
+    <span data-tooltip={rest["data-tooltip"]} style={{ marginLeft: 5 }}>
       <button {...rest} ref={buttonRef} onClick={request} disabled={disabled}>
         {children}
       </button>

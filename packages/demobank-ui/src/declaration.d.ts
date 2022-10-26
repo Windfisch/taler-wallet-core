@@ -1,20 +1,20 @@
-declare module '*.css' {
+declare module "*.css" {
   const mapping: Record<string, string>;
   export default mapping;
 }
-declare module '*.svg' {
+declare module "*.svg" {
   const content: any;
   export default content;
 }
-declare module '*.jpeg' {
+declare module "*.jpeg" {
   const content: any;
   export default content;
 }
-declare module '*.png' {
+declare module "*.png" {
   const content: any;
   export default content;
 }
-declare module 'jed' {
+declare module "jed" {
   const x: any;
   export = x;
 }
