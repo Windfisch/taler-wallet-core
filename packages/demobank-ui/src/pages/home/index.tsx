@@ -31,6 +31,7 @@ import { QR } from "../../components/QR.js";
 import { useLocalStorage, useNotNullLocalStorage } from "../../hooks/index.js";
 import { Translate, useTranslator } from "../../i18n/index.js";
 import "../../scss/main.scss";
+import { parsePaytoUri } from "@gnu-taler/taler-util";
 
 /**
  * If the first argument does not look like a placeholder, return it.
@@ -113,6 +114,7 @@ interface TransactionRequestType {
 interface CredentialsRequestType {
   username: string;
   password: string;
+  repeatPassword: string;
 }
 
 /**
@@ -336,14 +338,16 @@ type RawPaytoInputType = string;
 type RawPaytoInputTypeOpt = RawPaytoInputType | undefined;
 function useRawPaytoInputType(
   state?: RawPaytoInputType,
-): [RawPaytoInputTypeOpt, StateUpdater<RawPaytoInputTypeOpt>] {
+): [RawPaytoInputTypeOpt, StateUpdater<RawPaytoInputTypeOpt>, boolean] {
   const ret = useLocalStorage("raw-payto-input-state", state);
+  const [dirty, setDirty] = useState(false);
   const retObj: RawPaytoInputTypeOpt = ret[0];
   const retSetter: StateUpdater<RawPaytoInputTypeOpt> = function (val) {
     const newVal = val instanceof Function ? val(retObj) : val;
+    setDirty(true);
     ret[1](newVal);
   };
-  return [retObj, retSetter];
+  return [retObj, retSetter, dirty];
 }
 
 /**
@@ -1012,12 +1016,24 @@ function BankFrame(Props: any): VNode {
     </Fragment>
   );
 }
+function ShowInputErrorLabel({
+  isDirty,
+  message,
+}: {
+  message: string | undefined;
+  isDirty: boolean;
+}): VNode {
+  if (message && isDirty)
+    return <p class="informational informational-fail">{message}</p>;
+  return <Fragment />;
+}
 
 function PaytoWireTransfer(Props: any): VNode {
   const currency = useContext(CurrencyContext);
   const [pageState, pageStateSetter] = useContext(PageContext); // NOTE: used for go-back button?
   const [submitData, submitDataSetter] = useWireTransferRequestType();
-  const [rawPaytoInput, rawPaytoInputSetter] = useRawPaytoInputType();
+  const [rawPaytoInput, rawPaytoInputSetter, rawPaytoInputDirty] =
+    useRawPaytoInputType();
   const i18n = useTranslator();
   const { focus, backendState } = Props;
   const amountRegex = "^[0-9]+(.[0-9]+)?$";
@@ -1159,6 +1175,14 @@ function PaytoWireTransfer(Props: any): VNode {
       </div>
     );
 
+  const errors = undefinedIfEmpty({
+    rawPaytoInput: !rawPaytoInput
+      ? i18n`Missing payto address`
+      : !parsePaytoUri(rawPaytoInput)
+      ? i18n`Payto does not follow the pattern`
+      : undefined,
+  });
+
   return (
     <div>
       <p>{i18n`Transfer money to account identified by payto:// URI:`}</p>
@@ -1168,16 +1192,20 @@ function PaytoWireTransfer(Props: any): VNode {
           <input
             name="address"
             type="text"
-            size={90}
+            size={50}
             ref={ref}
             id="address"
             value={rawPaytoInput}
             required
             placeholder={i18n`payto address`}
-            pattern={`payto://iban/[A-Z][A-Z][0-9]+?message=[a-zA-Z0-9 ]+&amount=${currency}:[0-9]+(.[0-9]+)?`}
+            // pattern={`payto://iban/[A-Z][A-Z][0-9]+?message=[a-zA-Z0-9 ]+&amount=${currency}:[0-9]+(.[0-9]+)?`}
             onInput={(e): void => {
               rawPaytoInputSetter(e.currentTarget.value);
             }}
+          />
+          <ShowInputErrorLabel
+            message={errors?.rawPaytoInput}
+            isDirty={rawPaytoInputDirty}
           />
           <br />
           <div class="hint">
@@ -1192,6 +1220,7 @@ function PaytoWireTransfer(Props: any): VNode {
           <input
             class="pure-button pure-button-primary"
             type="submit"
+            disabled={!!errors}
             value={i18n`Send`}
             onClick={async () => {
               // empty string evaluates to false.
@@ -1593,6 +1622,11 @@ function RegistrationButton(Props: any): VNode {
   return <span />;
 }
 
+function undefinedIfEmpty<T extends object>(obj: T): T | undefined {
+  return Object.keys(obj).some((k) => (obj as any)[k] !== undefined)
+    ? obj
+    : undefined;
+}
 /**
  * Collect and submit login data.
  */
@@ -1604,6 +1638,16 @@ function LoginForm(Props: any): VNode {
   useEffect(() => {
     ref.current?.focus();
   }, []);
+
+  const errors = undefinedIfEmpty({
+    username: !(submitData && submitData.username)
+      ? i18n`Missing username`
+      : undefined,
+    password: !(submitData && submitData.password)
+      ? i18n`Missing password`
+      : undefined,
+  });
+
   return (
     <div class="login-div">
       <form action="javascript:void(0);" class="login-form">
@@ -1649,6 +1693,7 @@ function LoginForm(Props: any): VNode {
           <button
             type="submit"
             class="pure-button pure-button-primary"
+            disabled={!!errors}
             onClick={() => {
               if (typeof submitData === "undefined") {
                 console.log("login data is undefined", submitData);
@@ -1691,7 +1736,19 @@ function RegistrationForm(Props: any): VNode {
   const [pageState, pageStateSetter] = useContext(PageContext);
   const [submitData, submitDataSetter] = useCredentialsRequestType();
   const i18n = useTranslator();
-  // https://stackoverflow.com/questions/36683770/how-to-get-the-value-of-an-input-field-using-reactjs
+
+  const errors = !submitData
+    ? undefined
+    : undefinedIfEmpty({
+        username: !submitData.username ? i18n`Missing username` : undefined,
+        password: !submitData.password ? i18n`Missing password` : undefined,
+        repeatPassword: !submitData.repeatPassword
+          ? i18n`Missing password`
+          : submitData.repeatPassword !== submitData.password
+          ? i18n`Password don't match`
+          : undefined,
+      });
+
   return (
     <Fragment>
       <h1 class="nav">{i18n`Welcome to ${UI_BANK_NAME}!`}</h1>
@@ -1735,6 +1792,24 @@ function RegistrationForm(Props: any): VNode {
                   }));
                 }}
               />
+              <p class="unameFieldLabel registerFieldLabel formFieldLabel">
+                <label for="register-repeat">{i18n`Repeat Password:`}</label>
+              </p>
+              <input
+                type="password"
+                style={{ marginBottom: 8 }}
+                name="register-repeat"
+                id="register-repeat"
+                placeholder="Same password"
+                value={submitData && submitData.repeatPassword}
+                required
+                onInput={(e): void => {
+                  submitDataSetter((submitData: any) => ({
+                    ...submitData,
+                    repeatPassword: e.currentTarget.value,
+                  }));
+                }}
+              />
               <br />
               {/*
               <label for="phone">{i18n`Phone number:`}</label>
@@ -1755,28 +1830,10 @@ function RegistrationForm(Props: any): VNode {
               */}
               <button
                 class="pure-button pure-button-primary btn-register"
+                disabled={!!errors}
                 onClick={() => {
                   console.log("maybe submitting the registration..");
-                  console.log(submitData);
-                  if (typeof submitData === "undefined") {
-                    console.log(`submit data ${submitData} is undefined`);
-                    return;
-                  }
-                  if (
-                    typeof submitData.password === "undefined" ||
-                    typeof submitData.username === "undefined"
-                  ) {
-                    console.log("username or password is undefined");
-                    return;
-                  }
-                  if (
-                    submitData.password.length === 0 ||
-                    submitData.username.length === 0
-                  ) {
-                    console.log("username or password are the empty string");
-                    return;
-                  }
-                  console.log("submitting the registration..");
+                  if (!submitData) return;
                   registrationCall(
                     { ...submitData },
                     Props.backendStateSetter, // will store BE URL, if OK.
@@ -1790,7 +1847,11 @@ function RegistrationForm(Props: any): VNode {
                    * strings due to a non lively update of the <input> fields
                    * after setting to undefined.
                    */
-                  submitDataSetter({ username: "", password: "" });
+                  submitDataSetter({
+                    username: "",
+                    password: "",
+                    repeatPassword: "",
+                  });
                 }}
               >
                 {i18n`Register`}
@@ -1799,6 +1860,11 @@ function RegistrationForm(Props: any): VNode {
               <button
                 class="pure-button pure-button-secondary btn-cancel"
                 onClick={() => {
+                  submitDataSetter({
+                    username: "",
+                    password: "",
+                    repeatPassword: "",
+                  });
                   pageStateSetter((prevState: PageStateType) => ({
                     ...prevState,
                     tryRegister: false,
