@@ -15,25 +15,22 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import useSWR, { SWRConfig as _SWRConfig, useSWRConfig } from "swr";
-import { h, Fragment, VNode, createContext } from "preact";
+import { createContext, Fragment, h, VNode } from "preact";
+import useSWR, { SWRConfig, useSWRConfig } from "swr";
 
 import {
-  useRef,
-  useState,
-  useEffect,
   StateUpdater,
   useContext,
+  useEffect,
+  useRef,
+  useState,
 } from "preact/hooks";
-import { useTranslator, Translate } from "../../i18n/index.js";
-import { QR } from "../../components/QR.js";
-import { useNotNullLocalStorage, useLocalStorage } from "../../hooks/index.js";
-import "../../scss/main.scss";
 import talerLogo from "../../assets/logo-white.svg";
 import { LangSelectorLikePy as LangSelector } from "../../components/menu/LangSelector.js";
-
-// FIXME: Fix usages of SWRConfig, doing this isn't the best practice (but hey, it works for now)
-const SWRConfig = _SWRConfig as any;
+import { QR } from "../../components/QR.js";
+import { useLocalStorage, useNotNullLocalStorage } from "../../hooks/index.js";
+import { Translate, useTranslator } from "../../i18n/index.js";
+import "../../scss/main.scss";
 
 /**
  * If the first argument does not look like a placeholder, return it.
@@ -42,7 +39,7 @@ const SWRConfig = _SWRConfig as any;
  * Useful for placeholder string replacements optionally
  * done as part of the build system.
  */
-const replacementOrDefault = (x: string, defaultVal: string) => {
+const replacementOrDefault = (x: string, defaultVal: string): string => {
   if (x.startsWith("__")) {
     return defaultVal;
   }
@@ -121,10 +118,10 @@ interface CredentialsRequestType {
 /**
  * Request body of /register.
  */
-interface LoginRequestType {
-  username: string;
-  password: string;
-}
+// interface LoginRequestType {
+//   username: string;
+//   password: string;
+// }
 
 interface WireTransferRequestType {
   iban: string;
@@ -161,17 +158,20 @@ interface PageStateType {
 /**
  * Bank account specific information.
  */
-interface AccountStateType {
-  balance: string;
-  /* FIXME: Need history here.  */
-}
+// interface AccountStateType {
+//   balance: string;
+//   /* FIXME: Need history here.  */
+// }
 
 /************
  * Helpers. *
  ***********/
 
-function maybeDemoContent(content: VNode) {
-  if (UI_IS_DEMO) return content;
+function maybeDemoContent(content: VNode): VNode {
+  if (UI_IS_DEMO) {
+    return content;
+  }
+  return <Fragment />;
 }
 
 /**
@@ -281,7 +281,7 @@ function useTransactionPageNumber(): [number, StateUpdater<number>] {
 /**
  * Craft headers with Authorization and Content-Type.
  */
-function prepareHeaders(username: string, password: string) {
+function prepareHeaders(username: string, password: string): Headers {
   const headers = new Headers();
   headers.append(
     "Authorization",
@@ -291,7 +291,7 @@ function prepareHeaders(username: string, password: string) {
   return headers;
 }
 
-const getBankBackendBaseUrl = () => {
+const getBankBackendBaseUrl = (): string => {
   const overrideUrl = localStorage.getItem("bank-base-url");
   if (overrideUrl) {
     console.log(
@@ -299,10 +299,7 @@ const getBankBackendBaseUrl = () => {
     );
     return overrideUrl;
   }
-  const maybeRootPath =
-    typeof window !== undefined
-      ? window.location.origin + window.location.pathname
-      : "/";
+  const maybeRootPath = "https://bank.demo.taler.net/demobanks/default/";
   if (!maybeRootPath.endsWith("/")) return `${maybeRootPath}/`;
   console.log(`using bank base URL (${maybeRootPath})`);
   return maybeRootPath;
@@ -428,21 +425,21 @@ function useBackendState(
  * Keep mere business information, like account balance or
  * transactions history.
  */
-type AccountStateTypeOpt = AccountStateType | undefined;
-function useAccountState(
-  state?: AccountStateType,
-): [AccountStateTypeOpt, StateUpdater<AccountStateTypeOpt>] {
-  const ret = useLocalStorage("account-state", JSON.stringify(state));
-  const retObj: AccountStateTypeOpt = ret[0] ? JSON.parse(ret[0]) : ret[0];
-  const retSetter: StateUpdater<AccountStateTypeOpt> = function (val) {
-    const newVal =
-      val instanceof Function
-        ? JSON.stringify(val(retObj))
-        : JSON.stringify(val);
-    ret[1](newVal);
-  };
-  return [retObj, retSetter];
-}
+// type AccountStateTypeOpt = AccountStateType | undefined;
+// function useAccountState(
+//   state?: AccountStateType,
+// ): [AccountStateTypeOpt, StateUpdater<AccountStateTypeOpt>] {
+//   const ret = useLocalStorage("account-state", JSON.stringify(state));
+//   const retObj: AccountStateTypeOpt = ret[0] ? JSON.parse(ret[0]) : ret[0];
+//   const retSetter: StateUpdater<AccountStateTypeOpt> = function (val) {
+//     const newVal =
+//       val instanceof Function
+//         ? JSON.stringify(val(retObj))
+//         : JSON.stringify(val);
+//     ret[1](newVal);
+//   };
+//   return [retObj, retSetter];
+// }
 
 /**
  * Wrapper providing defaults.
@@ -495,7 +492,7 @@ async function abortWithdrawalCall(
   backendState: BackendStateTypeOpt,
   withdrawalId: string | undefined,
   pageStateSetter: StateUpdater<PageStateType>,
-) {
+): Promise<void> {
   if (typeof backendState === "undefined") {
     console.log("No credentials found.");
     pageStateSetter((prevState) => ({
@@ -580,7 +577,7 @@ async function confirmWithdrawalCall(
   backendState: BackendStateTypeOpt,
   withdrawalId: string | undefined,
   pageStateSetter: StateUpdater<PageStateType>,
-) {
+): Promise<void> {
   if (typeof backendState === "undefined") {
     console.log("No credentials found.");
     pageStateSetter((prevState) => ({
@@ -670,7 +667,7 @@ async function createTransactionCall(
    * a stateful management of the input data yet.
    */
   cleanUpForm: () => void,
-) {
+): Promise<void> {
   let res: any;
   try {
     res = await postToBackend(
@@ -888,7 +885,7 @@ async function registrationCall(
 
 function ErrorBanner(Props: any): VNode | null {
   const [pageState, pageStateSetter] = Props.pageState;
-  const i18n = useTranslator();
+  // const i18n = useTranslator();
   if (!pageState.hasError) return null;
 
   const rval = (
@@ -1177,7 +1174,7 @@ function PaytoWireTransfer(Props: any): VNode {
             value={rawPaytoInput}
             required
             placeholder={i18n`payto address`}
-            pattern={`payto://iban/[A-Z][A-Z][0-9]+\?message=[a-zA-Z0-9 ]+&amount=${currency}:[0-9]+(\.[0-9]+)?`}
+            pattern={`payto://iban/[A-Z][A-Z][0-9]+?message=[a-zA-Z0-9 ]+&amount=${currency}:[0-9]+(.[0-9]+)?`}
             onInput={(e): void => {
               rawPaytoInputSetter(e.currentTarget.value);
             }}
@@ -1281,7 +1278,8 @@ function TalerWithdrawalConfirmationQuestion(Props: any): VNode {
               <p>
                 <button
                   class="pure-button pure-button-primary btn-confirm"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
                     if (
                       captchaAnswer ==
                       (captchaNumbers.a + captchaNumbers.b).toString()
@@ -1842,7 +1840,7 @@ function Transactions(Props: any): VNode {
   }
   if (!data) {
     console.log(`History data of ${accountLabel} not arrived`);
-    return <p>"Transactions page loading..."</p>;
+    return <p>Transactions page loading...</p>;
   }
   console.log(`History data of ${accountLabel}`, data);
   return (
@@ -2048,12 +2046,13 @@ function SWRWithCredentials(props: any): VNode {
   return (
     <SWRConfig
       value={{
-        fetcher: (url: string) =>
-          fetch(backendUrl + url || "", { headers }).then((r) => {
+        fetcher: (url: string) => {
+          return fetch(backendUrl + url || "", { headers }).then((r) => {
             if (!r.ok) throw { status: r.status, json: r.json() };
 
             return r.json();
-          }),
+          });
+        },
       }}
     >
       {props.children}

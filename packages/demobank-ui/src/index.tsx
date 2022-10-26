@@ -1,6 +1,6 @@
-import App from "./components/app";
+import App from "./components/app.js";
 export default App;
-import { render, h, Fragment } from "preact";
+import { render, h } from "preact";
 
 const app = document.getElementById("app");
 

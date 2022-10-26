@@ -21,9 +21,9 @@
 
 import { createContext, h, VNode } from 'preact';
 import { useContext, useEffect } from 'preact/hooks';
-import { useLang } from '../hooks';
+import { useLang } from '../hooks/index.js';
 import * as jedLib from 'jed';
-import { strings } from '../i18n/strings';
+import { strings } from '../i18n/strings.js';
 
 interface Type {
   lang: string;
@@ -58,9 +58,9 @@ export const TranslationProvider = ({
 
   const [lang, changeLanguage] = useLang(initial);
   useEffect(() => {
-    if (forceLang) 
+    if (forceLang)
       changeLanguage(forceLang);
-    
+
   });
   console.log('lang store', strings);
   const handler = new jedLib.Jed(strings[lang] || strings['en']);
