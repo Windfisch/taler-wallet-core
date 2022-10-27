@@ -327,6 +327,6 @@ export function compose<SType extends { status: string }, PType>(
     const c = vs[s] as unknown as StateFunc<SType>;
     return c(state);
   };
-  Component.name = `${name}`;
+  // Component.name = `${name}`;
   return Component;
 }
