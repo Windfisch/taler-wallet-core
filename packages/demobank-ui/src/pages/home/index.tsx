@@ -31,7 +31,7 @@ import { QR } from "../../components/QR.js";
 import { useLocalStorage, useNotNullLocalStorage } from "../../hooks/index.js";
 import { Translate, useTranslator } from "../../i18n/index.js";
 import "../../scss/main.scss";
-import { parsePaytoUri } from "@gnu-taler/taler-util";
+import { Amounts, parsePaytoUri } from "@gnu-taler/taler-util";
 
 /**
  * If the first argument does not look like a placeholder, return it.
@@ -80,7 +80,22 @@ const UI_BANK_NAME = replacementOrDefault(
  * Contexts *
  ***********/
 const CurrencyContext = createContext<any>(null);
-const PageContext = createContext<any>(null);
+type PageContextType = [PageStateType, StateUpdater<PageStateType>];
+const PageContextDefault: PageContextType = [
+  {
+    hasError: false,
+    hasInfo: false,
+    isLoggedIn: false,
+    isRawPayto: false,
+    showPublicHistories: false,
+    tryRegister: false,
+    withdrawalInProgress: false,
+  },
+  () => {
+    null;
+  },
+];
+const PageContext = createContext<PageContextType>(PageContextDefault);
 
 /**********************************************
  * Type definitions for states and API calls. *
@@ -91,9 +106,9 @@ const PageContext = createContext<any>(null);
  * authenticate at the bank's backend.
  */
 interface BackendStateType {
-  url: string;
-  username: string;
-  password: string;
+  url?: string;
+  username?: string;
+  password?: string;
 }
 
 /**
@@ -112,9 +127,9 @@ interface TransactionRequestType {
  * Request body of /register.
  */
 interface CredentialsRequestType {
-  username: string;
-  password: string;
-  repeatPassword: string;
+  username?: string;
+  password?: string;
+  repeatPassword?: string;
 }
 
 /**
@@ -126,14 +141,9 @@ interface CredentialsRequestType {
 // }
 
 interface WireTransferRequestType {
-  iban: string;
-  subject: string;
-  amount: string;
-}
-
-interface Amount {
-  value: string;
-  currency: string;
+  iban?: string;
+  subject?: string;
+  amount?: string;
 }
 
 /**
@@ -147,7 +157,12 @@ interface PageStateType {
   hasError: boolean;
   hasInfo: boolean;
   withdrawalInProgress: boolean;
-  error?: string;
+  error?: {
+    description?: string;
+    title: string;
+    debug?: string;
+  };
+
   info?: string;
   talerWithdrawUri?: string;
   /**
@@ -225,12 +240,13 @@ function getIbanFromPayto(url: string): string {
 /**
  * Extract value and currency from a $currency:x.y amount.
  */
-function parseAmount(val: string): Amount {
-  const format = /^[A-Z]+:[0-9]+(\.[0-9]+)?$/;
-  if (!format.test(val)) throw Error(`Backend gave invalid amount: ${val}.`);
-  const amountSplit = val.split(":");
-  return { value: amountSplit[1], currency: amountSplit[0] };
-}
+// function parseAmount(val: string): Amount {
+//   Amounts.parse(val)
+//   const format = /^[A-Z]+:[0-9]+(\.[0-9]+)?$/;
+//   if (!format.test(val)) throw Error(`Backend gave invalid amount: ${val}.`);
+//   const amountSplit = val.split(":");
+//   return { value: amountSplit[1], currency: amountSplit[0] };
+// }
 
 /**
  * Get username from the backend state, and throw
@@ -240,6 +256,9 @@ function getUsername(backendState: BackendStateTypeOpt): string {
   if (typeof backendState === "undefined")
     throw Error("Username can't be found in a undefined backend state.");
 
+  if (!backendState.username) {
+    throw Error("No username, must login first.");
+  }
   return backendState.username;
 }
 
@@ -283,12 +302,14 @@ function useTransactionPageNumber(): [number, StateUpdater<number>] {
 /**
  * Craft headers with Authorization and Content-Type.
  */
-function prepareHeaders(username: string, password: string): Headers {
+function prepareHeaders(username?: string, password?: string): Headers {
   const headers = new Headers();
-  headers.append(
-    "Authorization",
-    `Basic ${window.btoa(`${username}:${password}`)}`,
-  );
+  if (username && password) {
+    headers.append(
+      "Authorization",
+      `Basic ${window.btoa(`${username}:${password}`)}`,
+    );
+  }
   headers.append("Content-Type", "application/json");
   return headers;
 }
@@ -461,13 +482,13 @@ function usePageState(
 ): [PageStateType, StateUpdater<PageStateType>] {
   const ret = useNotNullLocalStorage("page-state", JSON.stringify(state));
   const retObj: PageStateType = JSON.parse(ret[0]);
-  console.log("Current page state", retObj);
+
   const retSetter: StateUpdater<PageStateType> = function (val) {
     const newVal =
       val instanceof Function
         ? JSON.stringify(val(retObj))
         : JSON.stringify(val);
-    console.log("Setting new page state", newVal);
+
     ret[1](newVal);
   };
   return [retObj, retSetter];
@@ -502,7 +523,9 @@ async function abortWithdrawalCall(
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: "No credentials found.",
+      error: {
+        title: `No credentials found.`,
+      },
     }));
     return;
   }
@@ -511,7 +534,9 @@ async function abortWithdrawalCall(
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: "No withdrawal ID found.",
+      error: {
+        title: `No withdrawal ID found.`,
+      },
     }));
     return;
   }
@@ -541,11 +566,16 @@ async function abortWithdrawalCall(
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: `Could not abort the withdrawal: ${error}`,
+      error: {
+        title: `Could not abort the withdrawal.`,
+        description: (error as any).error.description,
+        debug: JSON.stringify(error),
+      },
     }));
     return;
   }
   if (!res.ok) {
+    const response = await res.json();
     console.log(
       `Withdrawal abort gave response error (${res.status})`,
       res.statusText,
@@ -553,7 +583,11 @@ async function abortWithdrawalCall(
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: `Withdrawal abortion gave response error (${res.status})`,
+      error: {
+        title: `Withdrawal abortion failed.`,
+        description: response.error.description,
+        debug: JSON.stringify(res.status),
+      },
     }));
     return;
   }
@@ -587,7 +621,9 @@ async function confirmWithdrawalCall(
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: "No credentials found.",
+      error: {
+        title: "No credentials found.",
+      },
     }));
     return;
   }
@@ -596,7 +632,9 @@ async function confirmWithdrawalCall(
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: "No withdrawal ID found.",
+      error: {
+        title: "No withdrawal ID found.",
+      },
     }));
     return;
   }
@@ -629,11 +667,15 @@ async function confirmWithdrawalCall(
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: `Could not confirm the withdrawal: ${error}`,
+      error: {
+        title: `Could not confirm the withdrawal`,
+        description: (error as any).error.description,
+        debug: JSON.stringify(error),
+      },
     }));
     return;
   }
-  if (res ? !res.ok : true) {
+  if (!res || !res.ok) {
     // assume not ok if res is null
     console.log(
       `Withdrawal confirmation gave response error (${res.status})`,
@@ -642,7 +684,10 @@ async function confirmWithdrawalCall(
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: `Withdrawal confirmation gave response error (${res.status})`,
+      error: {
+        title: `Withdrawal confirmation gave response error`,
+        debug: JSON.stringify(res.status),
+      },
     }));
     return;
   }
@@ -684,20 +729,28 @@ async function createTransactionCall(
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: `Could not create the wire transfer: ${error}`,
+      error: {
+        title: `Could not create the wire transfer`,
+        description: (error as any).error.description,
+        debug: JSON.stringify(error),
+      },
     }));
     return;
   }
   // POST happened, status not sure yet.
   if (!res.ok) {
-    const responseText = JSON.stringify(await res.json());
+    const response = await res.json();
     console.log(
-      `Transfer creation gave response error: ${responseText} (${res.status})`,
+      `Transfer creation gave response error: ${response} (${res.status})`,
     );
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: `Transfer creation gave response error: ${responseText} (${res.status})`,
+      error: {
+        title: `Transfer creation gave response error`,
+        description: response.error.description,
+        debug: JSON.stringify(response),
+      },
     }));
     return;
   }
@@ -733,7 +786,9 @@ async function createWithdrawalCall(
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: "No credentials given.",
+      error: {
+        title: "No credentials given.",
+      },
     }));
     return;
   }
@@ -758,19 +813,27 @@ async function createWithdrawalCall(
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: `Could not create withdrawal operation: ${error}`,
+      error: {
+        title: `Could not create withdrawal operation`,
+        description: (error as any).error.description,
+        debug: JSON.stringify(error),
+      },
     }));
     return;
   }
   if (!res.ok) {
-    const responseText = await res.text();
+    const response = await res.text();
     console.log(
-      `Withdrawal creation gave response error: ${responseText} (${res.status})`,
+      `Withdrawal creation gave response error: ${response} (${res.status})`,
     );
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: `Withdrawal creation gave response error: ${responseText} (${res.status})`,
+      error: {
+        title: `Withdrawal creation gave response error`,
+        description: response.error.description,
+        debug: `${response} (${res.status})`,
+      },
     }));
     return;
   }
@@ -853,7 +916,10 @@ async function registrationCall(
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: "Registration failed, please report.",
+      error: {
+        title: `Registration failed, please report`,
+        debug: JSON.stringify(error),
+      },
     }));
     return;
   }
@@ -893,7 +959,24 @@ function ErrorBanner(Props: any): VNode | null {
   if (!pageState.hasError) return null;
 
   const rval = (
-    <p class="informational informational-fail">{pageState.error}</p>
+    <div class="informational informational-fail" style={{ marginTop: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <p>
+          <b>{pageState.error.title}</b>
+        </p>
+        <div>
+          <input
+            type="button"
+            class="pure-button"
+            value="Clear"
+            onClick={async () => {
+              pageStateSetter((prev) => ({ ...prev, error: undefined }));
+            }}
+          />
+        </div>
+      </div>
+      <p>{pageState.error.description}</p>
+    </div>
   );
   delete pageState.error;
   pageState.hasError = false;
@@ -1024,7 +1107,11 @@ function ShowInputErrorLabel({
   isDirty: boolean;
 }): VNode {
   if (message && isDirty)
-    return <p class="informational informational-fail">{message}</p>;
+    return (
+      <div class="informational informational-fail" style={{ marginTop: 8 }}>
+        {message}
+      </div>
+    );
   return <Fragment />;
 }
 
@@ -1045,6 +1132,33 @@ function PaytoWireTransfer(Props: any): VNode {
   useEffect(() => {
     if (focus) ref.current?.focus();
   }, [focus, pageState.isRawPayto]);
+
+  // typeof submitData === "undefined" ||
+  // typeof submitData.iban === "undefined" ||
+  // submitData.iban === "" ||
+  // typeof submitData.subject === "undefined" ||
+  // submitData.subject === "" ||
+  // typeof submitData.amount === "undefined" ||
+  // submitData.amount === ""
+  let parsedAmount = undefined;
+
+  const errorsWire = !submitData
+    ? undefined
+    : undefinedIfEmpty({
+        iban: !submitData.iban
+          ? i18n`Missing IBAN`
+          : !/^[A-Z0-9]*$/.test(submitData.iban)
+          ? i18n`IBAN should have just uppercased letters and numbers`
+          : undefined,
+        subject: !submitData.subject ? i18n`Missing subject` : undefined,
+        amount: !submitData.amount
+          ? i18n`Missing amount`
+          : !(parsedAmount = Amounts.parse(`${currency}:${submitData.amount}`))
+          ? i18n`Amount is not valid`
+          : Amounts.isZero(parsedAmount)
+          ? i18n`Should be greater than 0`
+          : undefined,
+      });
 
   if (!pageState.isRawPayto)
     return (
@@ -1069,6 +1183,10 @@ function PaytoWireTransfer(Props: any): VNode {
               }}
             />
             <br />
+            <ShowInputErrorLabel
+              message={errorsWire?.iban}
+              isDirty={submitData?.iban !== undefined}
+            />
             <br />
             <label for="subject">{i18n`Transfer subject:`}</label>&nbsp;
             <input
@@ -1086,6 +1204,10 @@ function PaytoWireTransfer(Props: any): VNode {
               }}
             />
             <br />
+            <ShowInputErrorLabel
+              message={errorsWire?.subject}
+              isDirty={submitData?.subject !== undefined}
+            />
             <br />
             <label for="amount">{i18n`Amount:`}</label>&nbsp;
             <input
@@ -1099,7 +1221,7 @@ function PaytoWireTransfer(Props: any): VNode {
               onInput={(e): void => {
                 submitDataSetter((submitData: any) => ({
                   ...submitData,
-                  amount: e.currentTarget.value.replace(",", "."),
+                  amount: e.currentTarget.value,
                 }));
               }}
             />
@@ -1113,11 +1235,17 @@ function PaytoWireTransfer(Props: any): VNode {
               tabIndex={-1}
               value={currency}
             />
+            <ShowInputErrorLabel
+              message={errorsWire?.amount}
+              isDirty={submitData?.amount !== undefined}
+            />
           </p>
-          <p>
+
+          <p style={{ display: "flex", justifyContent: "space-between" }}>
             <input
               type="submit"
               class="pure-button pure-button-primary"
+              disabled={!!errorsWire}
               value="Send"
               onClick={async () => {
                 if (
@@ -1133,7 +1261,9 @@ function PaytoWireTransfer(Props: any): VNode {
                   pageStateSetter((prevState: PageStateType) => ({
                     ...prevState,
                     hasError: true,
-                    error: i18n`Field(s) missing.`,
+                    error: {
+                      title: i18n`Field(s) missing.`,
+                    },
                   }));
                   return;
                 }
@@ -1147,13 +1277,16 @@ function PaytoWireTransfer(Props: any): VNode {
                   transactionData,
                   backendState,
                   pageStateSetter,
-                  () =>
-                    submitDataSetter((p) => ({
-                      amount: "",
-                      iban: "",
-                      subject: "",
-                    })),
+                  () => submitDataSetter((p) => ({})),
                 );
+              }}
+            />
+            <input
+              type="button"
+              class="pure-button"
+              value="Clear"
+              onClick={async () => {
+                submitDataSetter((p) => ({}));
               }}
             />
           </p>
@@ -1175,7 +1308,7 @@ function PaytoWireTransfer(Props: any): VNode {
       </div>
     );
 
-  const errors = undefinedIfEmpty({
+  const errorsPayto = undefinedIfEmpty({
     rawPaytoInput: !rawPaytoInput
       ? i18n`Missing payto address`
       : !parsePaytoUri(rawPaytoInput)
@@ -1204,7 +1337,7 @@ function PaytoWireTransfer(Props: any): VNode {
             }}
           />
           <ShowInputErrorLabel
-            message={errors?.rawPaytoInput}
+            message={errorsPayto?.rawPaytoInput}
             isDirty={rawPaytoInputDirty}
           />
           <br />
@@ -1220,7 +1353,7 @@ function PaytoWireTransfer(Props: any): VNode {
           <input
             class="pure-button pure-button-primary"
             type="submit"
-            disabled={!!errors}
+            disabled={!!errorsPayto}
             value={i18n`Send`}
             onClick={async () => {
               // empty string evaluates to false.
@@ -1323,7 +1456,9 @@ function TalerWithdrawalConfirmationQuestion(Props: any): VNode {
                     pageStateSetter((prevState: PageStateType) => ({
                       ...prevState,
                       hasError: true,
-                      error: i18n`Answer is wrong.`,
+                      error: {
+                        title: i18n`Answer is wrong.`,
+                      },
                     }));
                   }}
                 >
@@ -1366,7 +1501,7 @@ function QrCodeSection({
 }: {
   talerWithdrawUri: string;
   abortButton: h.JSX.Element;
-}) {
+}): VNode {
   const i18n = useTranslator();
   useEffect(() => {
     //Taler Wallet WebExtension is listening to headers response and tab updates.
@@ -1405,8 +1540,12 @@ function TalerWithdrawalQRCode(Props: any): VNode {
       class="pure-button"
       onClick={() => {
         pageStateSetter((prevState: PageStateType) => {
-          const { withdrawalId, talerWithdrawUri, ...rest } = prevState;
-          return { ...rest, withdrawalInProgress: false };
+          return {
+            ...prevState,
+            withdrawalId: undefined,
+            talerWithdrawUri: undefined,
+            withdrawalInProgress: false,
+          };
         });
       }}
     >{i18n`Abort`}</a>
@@ -1415,8 +1554,9 @@ function TalerWithdrawalQRCode(Props: any): VNode {
   console.log(`Showing withdraw URI: ${talerWithdrawUri}`);
   // waiting for the wallet:
 
-  const { data, error, mutate } = useSWR(
+  const { data, error } = useSWR(
     `integration-api/withdrawal-operation/${withdrawalId}`,
+    { refreshInterval: 1000 },
   );
 
   if (typeof error !== "undefined") {
@@ -1427,7 +1567,9 @@ function TalerWithdrawalQRCode(Props: any): VNode {
     pageStateSetter((prevState: PageStateType) => ({
       ...prevState,
       hasError: true,
-      error: i18n`withdrawal (${withdrawalId}) was never (correctly) created at the bank...`,
+      error: {
+        title: i18n`withdrawal (${withdrawalId}) was never (correctly) created at the bank...`,
+      },
     }));
     return (
       <Fragment>
@@ -1453,12 +1595,13 @@ function TalerWithdrawalQRCode(Props: any): VNode {
         ...rest,
         withdrawalInProgress: false,
         hasError: true,
-        error: i18n`This withdrawal was aborted!`,
+        error: {
+          title: i18n`This withdrawal was aborted!`,
+        },
       };
     });
 
   if (!data.selection_done) {
-    setTimeout(() => mutate(), 1000); // check again after 1 second.
     return (
       <QrCodeSection
         talerWithdrawUri={talerWithdrawUri}
@@ -1699,10 +1842,7 @@ function LoginForm(Props: any): VNode {
                 console.log("login data is undefined", submitData);
                 return;
               }
-              if (
-                submitData.password.length == 0 ||
-                submitData.username.length == 0
-              ) {
+              if (!submitData.password || !submitData.username) {
                 console.log(
                   "username or password is the empty string",
                   submitData,
@@ -1716,7 +1856,7 @@ function LoginForm(Props: any): VNode {
                 backendStateSetter,
                 pageStateSetter,
               );
-              submitDataSetter(undefined);
+              submitDataSetter({});
             }}
           >
             {i18n`Login`}
@@ -1963,7 +2103,13 @@ function Account(Props: any): VNode {
   const { accountLabel, backendState } = Props;
   // Getting the bank account balance:
   const endpoint = `access-api/accounts/${accountLabel}`;
-  const { data, error } = useSWR(endpoint);
+  const { data, error } = useSWR(endpoint, {
+    // refreshInterval: 0,
+    // revalidateIfStale: false,
+    // revalidateOnMount: false,
+    // revalidateOnFocus: false,
+    // revalidateOnReconnect: false,
+  });
   const [pageState, pageStateSetter] = useContext(PageContext);
   const { withdrawalInProgress, withdrawalId, isLoggedIn, talerWithdrawUri } =
     pageState;
@@ -1978,7 +2124,7 @@ function Account(Props: any): VNode {
     txsPages.push(<Transactions accountLabel={accountLabel} pageNumber={i} />);
 
   if (typeof error !== "undefined") {
-    console.log("account error", error);
+    console.log("account error", error, endpoint);
     /**
      * FIXME: to minimize the code, try only one invocation
      * of pageStateSetter, after having decided the error
@@ -1990,7 +2136,9 @@ function Account(Props: any): VNode {
           ...prevState,
           hasError: true,
           isLoggedIn: false,
-          error: i18n`Username or account label '${accountLabel}' not found.  Won't login.`,
+          error: {
+            title: i18n`Username or account label '${accountLabel}' not found.  Won't login.`,
+          },
         }));
 
         /**
@@ -2014,7 +2162,9 @@ function Account(Props: any): VNode {
           ...prevState,
           hasError: true,
           isLoggedIn: false,
-          error: i18n`Wrong credentials given.`,
+          error: {
+            title: i18n`Wrong credentials given.`,
+          },
         }));
         return <p>Wrong credentials...</p>;
       }
@@ -2022,8 +2172,11 @@ function Account(Props: any): VNode {
         pageStateSetter((prevState: PageStateType) => ({
           ...prevState,
           hasError: true,
-          isLoggedIn: false,
-          error: i18n`Account information could not be retrieved.`,
+          // isLoggedIn: false,
+          error: {
+            title: i18n`Account information could not be retrieved.`,
+            debug: JSON.stringify(error),
+          },
         }));
         return <p>Unknown problem...</p>;
       }
@@ -2057,7 +2210,8 @@ function Account(Props: any): VNode {
       </BankFrame>
     );
   }
-  const balance = parseAmount(data.balance.amount);
+  const balance = Amounts.parseOrThrow(data.balance.amount);
+  const balanceValue = Amounts.stringifyValue(balance);
 
   return (
     <BankFrame>
@@ -2073,7 +2227,7 @@ function Account(Props: any): VNode {
           <h2>{i18n`Bank account balance`}</h2>
           {data.balance.credit_debit_indicator == "debit" ? <b>-</b> : null}
           <div class="large-amount amount">
-            <span class="value">{`${balance.value}`}</span>&nbsp;
+            <span class="value">{`${balanceValue}`}</span>&nbsp;
             <span class="currency">{`${balance.currency}`}</span>
           </div>
         </div>
@@ -2292,7 +2446,9 @@ export function BankHome(): VNode {
         ...prevState,
         hasError: true,
         isLoggedIn: false,
-        error: i18n`Page has a problem: logged in but backend state is lost.`,
+        error: {
+          title: i18n`Page has a problem: logged in but backend state is lost.`,
+        },
       }));
       return <p>Error: waiting for details...</p>;
     }
