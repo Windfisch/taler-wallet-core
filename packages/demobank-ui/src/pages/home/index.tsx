@@ -586,7 +586,7 @@ async function abortWithdrawalCall(
       error: {
         title: `Withdrawal abortion failed.`,
         description: response.error.description,
-        debug: JSON.stringify(res.status),
+        debug: JSON.stringify(response),
       },
     }));
     return;
@@ -676,6 +676,7 @@ async function confirmWithdrawalCall(
     return;
   }
   if (!res || !res.ok) {
+    const response = await res.json();
     // assume not ok if res is null
     console.log(
       `Withdrawal confirmation gave response error (${res.status})`,
@@ -686,7 +687,7 @@ async function confirmWithdrawalCall(
       hasError: true,
       error: {
         title: `Withdrawal confirmation gave response error`,
-        debug: JSON.stringify(res.status),
+        debug: JSON.stringify(response),
       },
     }));
     return;
@@ -822,7 +823,7 @@ async function createWithdrawalCall(
     return;
   }
   if (!res.ok) {
-    const response = await res.text();
+    const response = await res.json();
     console.log(
       `Withdrawal creation gave response error: ${response} (${res.status})`,
     );
@@ -832,7 +833,7 @@ async function createWithdrawalCall(
       error: {
         title: `Withdrawal creation gave response error`,
         description: response.error.description,
-        debug: `${response} (${res.status})`,
+        debug: JSON.stringify(response),
       },
     }));
     return;
@@ -905,7 +906,10 @@ async function registrationCall(
   try {
     res = await fetch(url.href, {
       method: "POST",
-      body: JSON.stringify(req),
+      body: JSON.stringify({
+        username: req.username,
+        password: req.password,
+      }),
       headers,
     });
   } catch (error) {
@@ -924,15 +928,14 @@ async function registrationCall(
     return;
   }
   if (!res.ok) {
-    const errorRaw = await res.text();
-    console.log(
-      `New registration gave response error (${res.status})`,
-      errorRaw,
-    );
+    const response = await res.json();
     pageStateSetter((prevState) => ({
       ...prevState,
       hasError: true,
-      error: errorRaw,
+      error: {
+        title: `New registration gave response error`,
+        debug: JSON.stringify(response),
+      },
     }));
   } else {
     pageStateSetter((prevState) => ({
@@ -2316,7 +2319,10 @@ function PublicHistories(Props: any): VNode {
           ...prevState,
           hasError: true,
           showPublicHistories: false,
-          error: i18n`List of public accounts was not found.`,
+          error: {
+            title: i18n`List of public accounts was not found.`,
+            debug: JSON.stringify(error),
+          },
         }));
         break;
       default:
@@ -2325,7 +2331,10 @@ function PublicHistories(Props: any): VNode {
           ...prevState,
           hasError: true,
           showPublicHistories: false,
-          error: i18n`List of public accounts could not be retrieved.`,
+          error: {
+            title: i18n`List of public accounts could not be retrieved.`,
+            debug: JSON.stringify(error),
+          },
         }));
         break;
     }
