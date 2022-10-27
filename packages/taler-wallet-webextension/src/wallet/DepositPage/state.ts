@@ -178,12 +178,11 @@ export function useComponentState(
         : undefined;
 
   const unableToDeposit =
-    !parsedAmount ||
-    selectedAccount === undefined ||
-    Amounts.isZero(totalToDeposit) ||
-    fee === undefined ||
-    amountError !== undefined;
-  // console.log(parsedAmount, selectedAccount, fee, totalToDeposit, amountError)
+    !parsedAmount || //no amount specified
+    selectedAccount === undefined || //no account selected
+    Amounts.isZero(totalToDeposit) || //deposit may be zero because of fee
+    fee === undefined || //no fee calculated yet
+    amountError !== undefined; //amount field may be invalid
 
   async function doSend(): Promise<void> {
     if (!selectedAccount || !parsedAmount || !currency) return;

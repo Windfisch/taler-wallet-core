@@ -67,15 +67,11 @@ export function useComponentState(
   }
 
   const paytoUriError =
-    payto === ""
-      ? undefined
-      : !uri
-        ? "the uri is not ok"
-        : found
-          ? "that account is already present"
-          : undefined;
+    found
+      ? "that account is already present"
+      : undefined;
 
-  const unableToAdd = !type || !alias || paytoUriError;
+  const unableToAdd = !type || !alias || !!paytoUriError || !uri;
 
   return {
     status: "ready",

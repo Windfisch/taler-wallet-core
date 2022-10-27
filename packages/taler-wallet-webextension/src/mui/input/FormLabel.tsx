@@ -68,7 +68,7 @@ export function FormLabel({
   return (
     <label
       data-focused={fcs.focused}
-      data-error={fcs.error}
+      data-error={!fcs.error ? undefined : true}
       data-disabled={fcs.disabled}
       class={[_class, root, theme.typography.body1].join(" ")}
       {...rest}
@@ -77,7 +77,9 @@ export function FormLabel({
       }}
     >
       {children}
-      {fcs.required && <span data-error={fcs.error}>&thinsp;{"*"}</span>}
+      {fcs.required && (
+        <span data-error={!fcs.error ? undefined : true}>&thinsp;{"*"}</span>
+      )}
     </label>
   );
 }

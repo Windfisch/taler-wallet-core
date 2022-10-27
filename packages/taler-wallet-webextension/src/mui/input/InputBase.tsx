@@ -65,7 +65,7 @@ export function InputBaseRoot({
       data-multiline={multiline}
       data-hasStart={!!startAdornment}
       data-hasEnd={!!endAdornment}
-      data-error={error}
+      data-error={!error ? undefined : true}
       class={[
         _class,
         rootStyle,

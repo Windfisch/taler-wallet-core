@@ -105,10 +105,126 @@ export function ReadyView({
         >
           <i18n.Translate>Cancel</i18n.Translate>
         </Button>
-        <Button variant="contained" onClick={onAccountAdded.onClick}>
+        <Button
+          variant="contained"
+          onClick={onAccountAdded.onClick}
+          disabled={!onAccountAdded.onClick}
+        >
           <i18n.Translate>Add</i18n.Translate>
         </Button>
       </footer>
+    </Fragment>
+  );
+}
+
+function BitcoinAddressAccount({ field }: { field: TextFieldHandler }): VNode {
+  const { i18n } = useTranslationContext();
+  const [value, setValue] = useState<string | undefined>(undefined);
+  const errors = undefinedIfEmpty({
+    value: !value ? i18n.str`Can't be empty` : undefined,
+  });
+  return (
+    <Fragment>
+      <TextField
+        label="Bitcoin address"
+        variant="standard"
+        fullWidth
+        value={value}
+        error={value !== undefined && !!errors?.value}
+        onChange={(v) => {
+          setValue(v);
+          if (!errors) {
+            field.onInput(`payto://bitcoin/${value}`);
+          }
+        }}
+      />
+      {value !== undefined && errors?.value && (
+        <ErrorMessage title={<span>{errors?.value}</span>} />
+      )}
+    </Fragment>
+  );
+}
+
+function undefinedIfEmpty<T extends object>(obj: T): T | undefined {
+  return Object.keys(obj).some((k) => (obj as any)[k] !== undefined)
+    ? obj
+    : undefined;
+}
+
+function TalerBankAddressAccount({
+  field,
+}: {
+  field: TextFieldHandler;
+}): VNode {
+  const { i18n } = useTranslationContext();
+  const [host, setHost] = useState<string | undefined>(undefined);
+  const [account, setAccount] = useState<string | undefined>(undefined);
+  const errors = undefinedIfEmpty({
+    host: !host ? i18n.str`Can't be empty` : undefined,
+    account: !account ? i18n.str`Can't be empty` : undefined,
+  });
+  return (
+    <Fragment>
+      <TextField
+        label="Bank host"
+        variant="standard"
+        fullWidth
+        value={host}
+        error={host !== undefined && !!errors?.host}
+        onChange={(v) => {
+          setHost(v);
+          if (!errors) {
+            field.onInput(`payto://x-taler-bank/${host}/${account}`);
+          }
+        }}
+      />{" "}
+      {host !== undefined && errors?.host && (
+        <ErrorMessage title={<span>{errors?.host}</span>} />
+      )}
+      <TextField
+        label="Bank account"
+        variant="standard"
+        fullWidth
+        value={account}
+        error={account !== undefined && !!errors?.account}
+        onChange={(v) => {
+          setAccount(v || "");
+          if (!errors) {
+            field.onInput(`payto://x-taler-bank/${host}/${account}`);
+          }
+        }}
+      />{" "}
+      {account !== undefined && errors?.account && (
+        <ErrorMessage title={<span>{errors?.account}</span>} />
+      )}
+    </Fragment>
+  );
+}
+
+function IbanAddressAccount({ field }: { field: TextFieldHandler }): VNode {
+  const { i18n } = useTranslationContext();
+  const [value, setValue] = useState<string | undefined>(undefined);
+  const errors = undefinedIfEmpty({
+    value: !value ? i18n.str`Can't be empty` : undefined,
+  });
+  return (
+    <Fragment>
+      <TextField
+        label="IBAN number"
+        variant="standard"
+        fullWidth
+        value={value}
+        error={value !== undefined && !!errors?.value}
+        onChange={(v) => {
+          setValue(v);
+          if (!errors) {
+            field.onInput(`payto://iba/${value}`);
+          }
+        }}
+      />
+      {value !== undefined && errors?.value && (
+        <ErrorMessage title={<span>{errors?.value}</span>} />
+      )}
     </Fragment>
   );
 }
@@ -120,84 +236,14 @@ function CustomFieldByAccountType({
   type: string;
   field: TextFieldHandler;
 }): VNode {
-  const p = parsePaytoUri(field.value);
-  const parts = !p ? [] : p.targetPath.split("/");
-  const initialPart1 = parts.length > 0 ? parts[0] : "";
-  const initialPart2 = parts.length > 1 ? parts[1] : "";
-  const [part1, setPart1] = useState(initialPart1);
-  const [part2, setPart2] = useState(initialPart2);
-  function updateField(): void {
-    if (part1 && part2) {
-      field.onInput(`payto://${type}/${part1}/${part2}`);
-    } else {
-      if (part1) field.onInput(`payto://${type}/${part1}`);
-    }
-  }
-
   if (type === "bitcoin") {
-    return (
-      <Fragment>
-        {field.error && <ErrorMessage title={<span>{field.error}</span>} />}
-        <TextField
-          label="Bitcoin address"
-          variant="standard"
-          required
-          fullWidth
-          value={part1}
-          onChange={(v) => {
-            setPart1(v);
-            updateField();
-          }}
-        />
-      </Fragment>
-    );
+    return <BitcoinAddressAccount field={field} />;
   }
   if (type === "x-taler-bank") {
-    return (
-      <Fragment>
-        {field.error && <ErrorMessage title={<span>{field.error}</span>} />}
-        <TextField
-          label="Bank host"
-          variant="standard"
-          required
-          fullWidth
-          value={part1}
-          onChange={(v) => {
-            setPart1(v);
-            updateField();
-          }}
-        />{" "}
-        <TextField
-          label="Bank account"
-          variant="standard"
-          required
-          fullWidth
-          value={part2}
-          onChange={(v) => {
-            setPart2(v);
-            updateField();
-          }}
-        />
-      </Fragment>
-    );
+    return <TalerBankAddressAccount field={field} />;
   }
   if (type === "iban") {
-    return (
-      <Fragment>
-        {field.error && <ErrorMessage title={<span>{field.error}</span>} />}
-        <TextField
-          label="IBAN number"
-          variant="standard"
-          required
-          fullWidth
-          value={part1}
-          onChange={(v) => {
-            setPart1(v);
-            updateField();
-          }}
-        />
-      </Fragment>
-    );
+    return <IbanAddressAccount field={field} />;
   }
   return <Fragment />;
 }
