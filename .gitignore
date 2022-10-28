@@ -10,7 +10,7 @@ build/
 # GNU-style build system
 /configure
 /build-system/config.mk
-/Makefile
+/.config.mk
 
 # Editor files
 \#*\#
