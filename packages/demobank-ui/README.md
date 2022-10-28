@@ -4,7 +4,7 @@
 
 - `pnpm install`: Installs dependencies
 
-- `pnpm run build`: Create a roduction-ready build under `dist/`.
+- `pnpm run build`: Create a production-ready build under `dist/`.
 
 - `pnpm run check`: Run type checker
 
