@@ -40,7 +40,13 @@ export function QR({ text }: { text: string }): VNode {
       }}
     >
       <div
-        style={{ width: "50%", minWidth: 200, maxWidth: 300 }}
+        style={{
+            width: "50%",
+            minWidth: 200,
+            maxWidth: 300,
+            marginRight: "auto",
+            marginLeft: "auto",
+        }}
         ref={divRef}
       />
     </div>
