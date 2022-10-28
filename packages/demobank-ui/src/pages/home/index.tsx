@@ -1065,7 +1065,7 @@ function BankFrame(Props: any): VNode {
         <a href="https://taler.net/">
           <img
             src={talerLogo}
-            alt="{i18n`Taler logo`}"
+            alt={i18n`Taler logo`}
             height="100"
             width="224"
             style="margin: 2em 2em"
