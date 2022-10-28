@@ -8,9 +8,8 @@ tsconfig.tsbuildinfo
 build/
 
 # GNU-style build system
-/configure
-/build-system/config.mk
-/.config.mk
+configure
+.config.mk
 
 # Editor files
 \#*\#

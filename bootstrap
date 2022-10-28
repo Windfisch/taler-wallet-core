@@ -11,8 +11,16 @@ if ! git --version >/dev/null; then
 fi
 
 git submodule update --init
-rm -rf configure
-cp build-system/taler-build-scripts/configure ./configure
-# Try making the configure script read-only to prevent
-# accidental changes in the wrong place.
-chmod ogu-w ./configure || true
+
+copy_configure() {
+  src=$1
+  dst=$2
+  rm -f $dst
+  cp $src $dst
+  # Try making the configure script read-only to prevent
+  # accidental changes in the wrong place.
+  chmod ogu-w $dst || true
+}
+our_configure=build-system/taler-build-scripts/configure
+copy_configure "$our_configure" ./configure
+copy_configure "$our_configure" ./packages/taler-wallet-cli/configure
