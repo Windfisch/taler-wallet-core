@@ -14,12 +14,12 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { parsePaytoUri, stringifyPaytoUri } from "@gnu-taler/taler-util";
+import { KnownBankAccountsInfo, parsePaytoUri, stringifyPaytoUri } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { wxApi } from "../../wxApi.js";
-import { Props, State } from "./index.js";
+import { AccountByType, Props, State } from "./index.js";
 
 export function useComponentState(
   { currency, onAccountAdded, onCancel }: Props,
@@ -45,10 +45,10 @@ export function useComponentState(
   }
 
   const accountType: Record<string, string> = {
-    "": "Choose one account",
+    "": "Choose one account type",
     iban: "IBAN",
-    bitcoin: "Bitcoin",
-    "x-taler-bank": "Taler Bank",
+    // bitcoin: "Bitcoin",
+    // "x-taler-bank": "Taler Bank",
   };
   const uri = parsePaytoUri(payto);
   const found =
@@ -72,6 +72,24 @@ export function useComponentState(
       : undefined;
 
   const unableToAdd = !type || !alias || !!paytoUriError || !uri;
+
+  const accountByType: AccountByType = {
+    iban: [],
+    bitcoin: [],
+    "x-taler-bank": [],
+  }
+
+  hook.response.accounts.forEach(acc => {
+    accountByType[acc.uri.targetType].push(acc)
+  });
+
+  async function deleteAccount(account: KnownBankAccountsInfo): Promise<void> {
+    const payto = stringifyPaytoUri(account.uri);
+    await api.wallet.call(WalletApiOperation.ForgetKnownBankAccounts, {
+      payto
+    })
+    hook?.retry()
+  }
 
   return {
     status: "ready",
@@ -97,6 +115,8 @@ export function useComponentState(
         setPayto(v);
       },
     },
+    accountByType,
+    deleteAccount,
     onAccountAdded: {
       onClick: unableToAdd ? undefined : addAccount,
     },

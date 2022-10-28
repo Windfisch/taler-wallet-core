@@ -55,6 +55,13 @@ export const WithNoAccountForIBAN = createExample(ReadyView, {
       null;
     },
   },
+  currentAccount: {
+    isKnown: true,
+    targetType: "iban",
+    iban: "ABCD1234",
+    params: {},
+    targetPath: "/ABCD1234",
+  },
   currency: "USD",
   amount: {
     onInput: async () => {
@@ -83,6 +90,13 @@ export const WithIBANAccountTypeSelected = createExample(ReadyView, {
       null;
     },
   },
+  currentAccount: {
+    isKnown: true,
+    targetType: "iban",
+    iban: "ABCD1234",
+    params: {},
+    targetPath: "/ABCD1234",
+  },
   currency: "USD",
   amount: {
     onInput: async () => {
@@ -110,6 +124,13 @@ export const NewBitcoinAccountTypeSelected = createExample(ReadyView, {
     onChange: async () => {
       null;
     },
+  },
+  currentAccount: {
+    isKnown: true,
+    targetType: "iban",
+    iban: "ABCD1234",
+    params: {},
+    targetPath: "/ABCD1234",
   },
   onAddAccount: {},
   currency: "USD",

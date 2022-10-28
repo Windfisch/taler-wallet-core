@@ -172,7 +172,7 @@ describe("DepositPage states", () => {
       if (r.status !== "ready") expect.fail();
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
-      expect(r.account.value).eq("");
+      expect(r.account.value).eq(stringifyPaytoUri(ibanPayto.uri));
       expect(r.amount.value).eq("0");
       expect(r.depositHandler.onClick).undefined;
     }
@@ -195,7 +195,7 @@ describe("DepositPage states", () => {
       }],
     })
     handler.addWalletCallResponse(WalletApiOperation.ListKnownBankAccounts, undefined, {
-      accounts: [ibanPayto]
+      accounts: [talerBankPayto, ibanPayto]
     });
     handler.addWalletCallResponse(WalletApiOperation.GetFeeForDeposit, undefined, withoutFee())
     handler.addWalletCallResponse(WalletApiOperation.GetFeeForDeposit, undefined, withoutFee())
@@ -221,7 +221,7 @@ describe("DepositPage states", () => {
       if (r.status !== "ready") expect.fail();
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
-      expect(r.account.value).eq("");
+      expect(r.account.value).eq(stringifyPaytoUri(talerBankPayto.uri));
       expect(r.amount.value).eq("0");
       expect(r.depositHandler.onClick).undefined;
       expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
@@ -328,7 +328,7 @@ describe("DepositPage states", () => {
       }],
     })
     handler.addWalletCallResponse(WalletApiOperation.ListKnownBankAccounts, undefined, {
-      accounts: [ibanPayto]
+      accounts: [talerBankPayto, ibanPayto]
     });
     handler.addWalletCallResponse(WalletApiOperation.GetFeeForDeposit, undefined, withSomeFee())
     handler.addWalletCallResponse(WalletApiOperation.GetFeeForDeposit, undefined, withSomeFee())
@@ -353,7 +353,7 @@ describe("DepositPage states", () => {
       if (r.status !== "ready") expect.fail();
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
-      expect(r.account.value).eq("");
+      expect(r.account.value).eq(stringifyPaytoUri(talerBankPayto.uri));
       expect(r.amount.value).eq("0");
       expect(r.depositHandler.onClick).undefined;
       expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));

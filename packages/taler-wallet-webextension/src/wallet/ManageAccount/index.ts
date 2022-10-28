@@ -14,6 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { KnownBankAccountsInfo } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import {
@@ -57,8 +58,14 @@ export namespace State {
     alias: TextFieldHandler;
     onAccountAdded: ButtonHandler;
     onCancel: ButtonHandler;
+    accountByType: AccountByType,
+    deleteAccount: (a: KnownBankAccountsInfo) => Promise<void>,
   }
 }
+
+export type AccountByType = {
+  [key: string]: KnownBankAccountsInfo[]
+};
 
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
@@ -66,8 +73,8 @@ const viewMapping: StateViewMap<State> = {
   ready: ReadyView,
 };
 
-export const AddAccountPage = compose(
-  "AddAccount",
+export const ManageAccountPage = compose(
+  "ManageAccountPage",
   (p: Props) => useComponentState(p, wxApi),
   viewMapping,
 );

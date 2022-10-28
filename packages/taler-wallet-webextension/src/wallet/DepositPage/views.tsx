@@ -160,61 +160,55 @@ export function ReadyView(state: State.Ready): VNode {
             variant="text"
             style={{ marginLeft: "auto" }}
           >
-            <i18n.Translate>Add another account</i18n.Translate>
+            <i18n.Translate>Manage accounts</i18n.Translate>
           </Button>
         </div>
 
-        {state.selectedAccount && (
-          <Fragment>
-            <p>
-              <AccountDetails account={state.selectedAccount} />
-            </p>
-            <InputWithLabel invalid={!!state.amount.error}>
-              <label>
-                <i18n.Translate>Amount</i18n.Translate>
-              </label>
-              <div>
-                <span>{state.currency}</span>
-                <input
-                  type="number"
-                  value={state.amount.value}
-                  onInput={(e) => state.amount.onInput(e.currentTarget.value)}
-                />
-              </div>
-              {state.amount.error && (
-                <ErrorText>{state.amount.error}</ErrorText>
-              )}
-            </InputWithLabel>
+        <p>
+          <AccountDetails account={state.currentAccount} />
+        </p>
+        <InputWithLabel invalid={!!state.amount.error}>
+          <label>
+            <i18n.Translate>Amount</i18n.Translate>
+          </label>
+          <div>
+            <span>{state.currency}</span>
+            <input
+              type="number"
+              value={state.amount.value}
+              onInput={(e) => state.amount.onInput(e.currentTarget.value)}
+            />
+          </div>
+          {state.amount.error && <ErrorText>{state.amount.error}</ErrorText>}
+        </InputWithLabel>
 
-            <InputWithLabel>
-              <label>
-                <i18n.Translate>Deposit fee</i18n.Translate>
-              </label>
-              <div>
-                <span>{state.currency}</span>
-                <input
-                  type="number"
-                  disabled
-                  value={Amounts.stringifyValue(state.totalFee)}
-                />
-              </div>
-            </InputWithLabel>
+        <InputWithLabel>
+          <label>
+            <i18n.Translate>Deposit fee</i18n.Translate>
+          </label>
+          <div>
+            <span>{state.currency}</span>
+            <input
+              type="number"
+              disabled
+              value={Amounts.stringifyValue(state.totalFee)}
+            />
+          </div>
+        </InputWithLabel>
 
-            <InputWithLabel>
-              <label>
-                <i18n.Translate>Total deposit</i18n.Translate>
-              </label>
-              <div>
-                <span>{state.currency}</span>
-                <input
-                  type="number"
-                  disabled
-                  value={Amounts.stringifyValue(state.totalToDeposit)}
-                />
-              </div>
-            </InputWithLabel>
-          </Fragment>
-        )}
+        <InputWithLabel>
+          <label>
+            <i18n.Translate>Total deposit</i18n.Translate>
+          </label>
+          <div>
+            <span>{state.currency}</span>
+            <input
+              type="number"
+              disabled
+              value={Amounts.stringifyValue(state.totalToDeposit)}
+            />
+          </div>
+        </InputWithLabel>
       </section>
       <footer>
         <Button

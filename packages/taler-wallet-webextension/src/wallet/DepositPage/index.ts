@@ -24,7 +24,7 @@ import {
 } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import { wxApi } from "../../wxApi.js";
-import { AddAccountPage } from "../AddAccount/index.js";
+import { ManageAccountPage } from "../ManageAccount/index.js";
 import { useComponentState } from "./state.js";
 import {
   AmountOrCurrencyErrorView,
@@ -62,7 +62,7 @@ export namespace State {
   }
 
   export interface AddingAccount {
-    status: "adding-account";
+    status: "manage-account";
     error: undefined;
     currency: string;
     onAccountAdded: (p: string) => void;
@@ -94,7 +94,7 @@ export namespace State {
     error: undefined;
     currency: string;
 
-    selectedAccount: PaytoUri | undefined;
+    currentAccount: PaytoUri;
     totalFee: AmountJson;
     totalToDeposit: AmountJson;
 
@@ -112,7 +112,7 @@ const viewMapping: StateViewMap<State> = {
   "amount-or-currency-error": AmountOrCurrencyErrorView,
   "no-enough-balance": NoEnoughBalanceView,
   "no-accounts": NoAccountToDepositView,
-  "adding-account": AddAccountPage,
+  "manage-account": ManageAccountPage,
   ready: ReadyView,
 };
 

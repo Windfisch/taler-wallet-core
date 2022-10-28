@@ -50,9 +50,7 @@ export function useComponentState(
   // const [accountIdx, setAccountIdx] = useState<number>(0);
   const [amount, setAmount] = useState(initialValue);
 
-  const [selectedAccount, setSelectedAccount] = useState<
-    PaytoUri | undefined
-  >();
+  const [selectedAccount, setSelectedAccount] = useState<PaytoUri>();
 
   const [fee, setFee] = useState<DepositGroupFees | undefined>(undefined);
   const [addingAccount, setAddingAccount] = useState(false);
@@ -82,7 +80,7 @@ export function useComponentState(
 
   if (addingAccount) {
     return {
-      status: "adding-account",
+      status: "manage-account",
       error: undefined,
       currency,
       onAccountAdded: (p: string) => {
@@ -92,6 +90,7 @@ export function useComponentState(
       },
       onCancel: () => {
         setAddingAccount(false);
+        hook.retry();
       },
     };
   }
@@ -122,13 +121,12 @@ export function useComponentState(
       },
     };
   }
+  const firstAccount = accounts[0].uri
+  const currentAccount = !selectedAccount ? firstAccount : selectedAccount;
 
   const accountMap = createLabelsForBankAccount(accounts);
-  accountMap[""] = "Select one account...";
 
   async function updateAccountFromList(accountStr: string): Promise<void> {
-    // const newSelected = !accountMap[accountStr] ? undefined : accountMap[accountStr];
-    // if (!newSelected) return;
     const uri = !accountStr ? undefined : parsePaytoUri(accountStr);
     if (uri && parsedAmount) {
       try {
@@ -136,7 +134,6 @@ export function useComponentState(
         setSelectedAccount(uri);
         setFee(result);
       } catch (e) {
-        console.error(e)
         setSelectedAccount(uri);
         setFee(undefined);
       }
@@ -145,13 +142,12 @@ export function useComponentState(
 
   async function updateAmount(numStr: string): Promise<void> {
     const parsed = Amounts.parse(`${currency}:${numStr}`);
-    if (parsed && selectedAccount) {
+    if (parsed) {
       try {
-        const result = await getFeeForAmount(selectedAccount, parsed, api);
+        const result = await getFeeForAmount(currentAccount, parsed, api);
         setAmount(numStr);
         setFee(result);
       } catch (e) {
-        console.error(e)
         setAmount(numStr);
         setFee(undefined);
       }
@@ -179,15 +175,14 @@ export function useComponentState(
 
   const unableToDeposit =
     !parsedAmount || //no amount specified
-    selectedAccount === undefined || //no account selected
     Amounts.isZero(totalToDeposit) || //deposit may be zero because of fee
     fee === undefined || //no fee calculated yet
     amountError !== undefined; //amount field may be invalid
 
   async function doSend(): Promise<void> {
-    if (!selectedAccount || !parsedAmount || !currency) return;
+    if (!parsedAmount || !currency) return;
 
-    const depositPaytoUri = `payto://${selectedAccount.targetType}/${selectedAccount.targetPath}`;
+    const depositPaytoUri = `payto://${currentAccount.targetType}/${currentAccount.targetPath}`;
     const amount = Amounts.stringify(parsedAmount);
     await api.wallet.call(WalletApiOperation.CreateDepositGroup, {
       amount, depositPaytoUri
@@ -211,10 +206,10 @@ export function useComponentState(
     },
     account: {
       list: accountMap,
-      value: !selectedAccount ? "" : stringifyPaytoUri(selectedAccount),
+      value: stringifyPaytoUri(currentAccount),
       onChange: updateAccountFromList,
     },
-    selectedAccount,
+    currentAccount,
     cancelHandler: {
       onClick: async () => {
         onCancel(currency);
