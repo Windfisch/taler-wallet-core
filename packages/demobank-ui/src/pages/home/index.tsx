@@ -1516,7 +1516,9 @@ function QrCodeSection({
   return (
     <section id="main" class="content">
       <h1 class="nav">{i18n`Charge Taler Wallet`}</h1>
-      <p>{i18n`You can use this QR code to withdraw to your mobile wallet:`}</p>
+      <article>
+      <div class="qr-div">
+      <p>{i18n`Use this QR code to withdraw to your mobile wallet:`}</p>
       {QR({ text: talerWithdrawUri })}
       <p>
         Click <a id="linkqr" href={talerWithdrawUri}>{i18n`this link`}</a> to
@@ -1524,6 +1526,8 @@ function QrCodeSection({
       </p>
       <br />
       {abortButton}
+      </div>
+      </article>
     </section>
   );
 }
@@ -1540,7 +1544,7 @@ function TalerWithdrawalQRCode(Props: any): VNode {
   const i18n = useTranslator();
   const abortButton = (
     <a
-      class="pure-button"
+      class="pure-button btn-cancel"
       onClick={() => {
         pageStateSetter((prevState: PageStateType) => {
           return {
