@@ -71,7 +71,7 @@ export function useComponentState(
       ? "that account is already present"
       : undefined;
 
-  const unableToAdd = !type || !alias || paytoUriError !== undefined || uri !== undefined;
+  const unableToAdd = !type || !alias || paytoUriError !== undefined || uri === undefined;
 
   const accountByType: AccountByType = {
     iban: [],

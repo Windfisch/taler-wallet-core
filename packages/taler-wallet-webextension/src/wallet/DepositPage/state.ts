@@ -182,7 +182,7 @@ export function useComponentState(
   async function doSend(): Promise<void> {
     if (!parsedAmount || !currency) return;
 
-    const depositPaytoUri = `payto://${currentAccount.targetType}/${currentAccount.targetPath}`;
+    const depositPaytoUri = stringifyPaytoUri(currentAccount);
     const amount = Amounts.stringify(parsedAmount);
     await api.wallet.call(WalletApiOperation.CreateDepositGroup, {
       amount, depositPaytoUri

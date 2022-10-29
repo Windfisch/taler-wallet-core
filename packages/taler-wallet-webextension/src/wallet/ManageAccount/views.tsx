@@ -204,6 +204,9 @@ function IbanTable({
             <th>
               <i18n.Translate>Int. Account Number</i18n.Translate>
             </th>
+            <th>
+              <i18n.Translate>Account name</i18n.Translate>
+            </th>
             <th class="kyc">
               <i18n.Translate>KYC</i18n.Translate>
             </th>
@@ -217,6 +220,7 @@ function IbanTable({
               <tr key={account.alias}>
                 <td>{account.alias}</td>
                 <td>{p.targetPath}</td>
+                <td>{p.params["receiver-name"]}</td>
                 <td class="kyc">
                   {account.kyc_completed ? (
                     <SvgIcon
@@ -484,9 +488,11 @@ function TalerBankAddressAccount({
 
 function IbanAddressAccount({ field }: { field: TextFieldHandler }): VNode {
   const { i18n } = useTranslationContext();
-  const [value, setValue] = useState<string | undefined>(undefined);
+  const [number, setNumber] = useState<string | undefined>(undefined);
+  const [name, setName] = useState<string | undefined>(undefined);
   const errors = undefinedIfEmpty({
-    value: !value ? i18n.str`Can't be empty` : undefined,
+    number: !number ? i18n.str`Can't be empty` : undefined,
+    name: !name ? i18n.str`Can't be empty` : undefined,
   });
   return (
     <Fragment>
@@ -494,17 +500,33 @@ function IbanAddressAccount({ field }: { field: TextFieldHandler }): VNode {
         label="IBAN number"
         variant="standard"
         fullWidth
-        value={value}
-        error={value !== undefined && !!errors?.value}
+        value={number}
+        error={number !== undefined && !!errors?.number}
         onChange={(v) => {
-          setValue(v);
+          setNumber(v);
           if (!errors) {
-            field.onInput(`payto://iban/${v}`);
+            field.onInput(`payto://iban/${v}?receiver-name=${name}`);
           }
         }}
       />
-      {value !== undefined && errors?.value && (
-        <ErrorMessage title={<span>{errors?.value}</span>} />
+      {number !== undefined && errors?.number && (
+        <ErrorMessage title={<span>{errors?.number}</span>} />
+      )}
+      <TextField
+        label="Account name"
+        variant="standard"
+        fullWidth
+        value={name}
+        error={name !== undefined && !!errors?.name}
+        onChange={(v) => {
+          setName(v);
+          if (!errors) {
+            field.onInput(`payto://iban/${number}?receiver-name=${v}`);
+          }
+        }}
+      />
+      {name !== undefined && errors?.name && (
+        <ErrorMessage title={<span>{errors?.name}</span>} />
       )}
     </Fragment>
   );
