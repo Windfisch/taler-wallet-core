@@ -1589,7 +1589,7 @@ function TalerWithdrawalQRCode(Props: any): VNode {
 
   // data didn't arrive yet and wallet didn't communicate:
   if (typeof data === "undefined")
-    return <p>{i18n`Waiting the bank to create the operaion...`}</p>;
+    return <p>{i18n`Waiting the bank to create the operation...`}</p>;
 
   /**
    * Wallet didn't communicate withdrawal details yet:
