@@ -27,9 +27,6 @@ import { SynchronousCryptoWorker } from "./synchronousWorkerNode.js";
  */
 export class SynchronousCryptoWorkerFactory implements CryptoWorkerFactory {
   startWorker(): CryptoWorker {
-    if (typeof require === "undefined") {
-      throw Error("cannot make worker, require(...) not defined");
-    }
 
     return new SynchronousCryptoWorker();
   }
