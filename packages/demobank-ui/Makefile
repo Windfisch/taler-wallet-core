@@ -13,9 +13,5 @@ install:
 	pnpm run check
 	pnpm run build
 	install -d $(spa_dir)
-	install ./dist/index.css $(spa_dir)
-	install ./dist/index.css.map $(spa_dir)
-	install ./dist/index.js $(spa_dir)
-	install ./dist/index.js.map $(spa_dir)
-	install ./dist/index.html $(spa_dir)
+	install ./dist/* $(spa_dir)
 

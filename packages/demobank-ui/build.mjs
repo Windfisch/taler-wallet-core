@@ -92,7 +92,7 @@ export const buildConfig = {
   outdir: "dist",
   minify: false,
   loader: {
-    ".svg": "text",
+    ".svg": "file",
     ".png": "dataurl",
     ".jpeg": "dataurl",
   },

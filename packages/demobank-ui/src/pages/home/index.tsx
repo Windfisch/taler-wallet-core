@@ -1517,16 +1517,16 @@ function QrCodeSection({
     <section id="main" class="content">
       <h1 class="nav">{i18n`Charge Taler Wallet`}</h1>
       <article>
-      <div class="qr-div">
-      <p>{i18n`Use this QR code to withdraw to your mobile wallet:`}</p>
-      {QR({ text: talerWithdrawUri })}
-      <p>
-        Click <a id="linkqr" href={talerWithdrawUri}>{i18n`this link`}</a> to
-        open your Taler wallet!
-      </p>
-      <br />
-      {abortButton}
-      </div>
+        <div class="qr-div">
+          <p>{i18n`Use this QR code to withdraw to your mobile wallet:`}</p>
+          {QR({ text: talerWithdrawUri })}
+          <p>
+            Click <a id="linkqr" href={talerWithdrawUri}>{i18n`this link`}</a>{" "}
+            to open your Taler wallet!
+          </p>
+          <br />
+          {abortButton}
+        </div>
       </article>
     </section>
   );
