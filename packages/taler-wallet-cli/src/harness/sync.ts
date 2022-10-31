@@ -26,8 +26,9 @@ import {
   ProcessWrapper,
 } from "../harness/harness.js";
 import { Configuration } from "@gnu-taler/taler-util";
+import * as child_process from "child_process";
 
-const exec = util.promisify(require("child_process").exec);
+const exec = util.promisify(child_process.exec);
 
 export interface SyncConfig {
   /**
@@ -114,5 +115,5 @@ export class SyncService {
     private globalState: GlobalTestState,
     private syncConfig: SyncConfig,
     private configFilename: string,
-  ) {}
+  ) { }
 }

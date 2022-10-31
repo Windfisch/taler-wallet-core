@@ -26,7 +26,7 @@ import { processRequestWithImpl } from "./worker-common.js";
 
 const logger = new Logger("nodeThreadWorker.ts");
 
-const f = __filename;
+const f = import.meta.url;
 
 const workerCode = `
   // Try loading the glue library for embedded

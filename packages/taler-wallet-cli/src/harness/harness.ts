@@ -57,6 +57,7 @@ import {
 import { deepStrictEqual } from "assert";
 import axiosImp, { AxiosError } from "axios";
 import { ChildProcess, spawn } from "child_process";
+import * as child_process from "child_process";
 import * as fs from "fs";
 import * as http from "http";
 import * as path from "path";
@@ -77,7 +78,7 @@ import {
   TippingReserveStatus,
 } from "./merchantApiTypes.js";
 
-const exec = util.promisify(require("child_process").exec);
+const exec = util.promisify(child_process.exec);
 
 const axios = axiosImp.default;
 
@@ -485,7 +486,7 @@ class BankServiceBase {
     protected globalTestState: GlobalTestState,
     protected bankConfig: BankConfig,
     protected configFile: string,
-  ) {}
+  ) { }
 }
 
 /**
@@ -779,8 +780,7 @@ class LibEuFinBankService extends BankServiceBase implements BankServiceHandle {
  */
 export class FakebankService
   extends BankServiceBase
-  implements BankServiceHandle
-{
+  implements BankServiceHandle {
   proc: ProcessWrapper | undefined;
 
   http = new NodeHttpLib();
@@ -1131,7 +1131,7 @@ export class ExchangeService implements ExchangeServiceInterface {
     private exchangeConfig: ExchangeConfig,
     private configFilename: string,
     private keyPair: EddsaKeyPair,
-  ) {}
+  ) { }
 
   get name() {
     return this.exchangeConfig.name;
@@ -1384,7 +1384,7 @@ export class MerchantApiClient {
   constructor(
     private baseUrl: string,
     public readonly auth: MerchantAuthConfiguration,
-  ) {}
+  ) { }
 
   async changeAuth(auth: MerchantAuthConfiguration): Promise<void> {
     const url = new URL("private/auth", this.baseUrl);
@@ -1577,7 +1577,7 @@ export class MerchantService implements MerchantServiceInterface {
     private globalState: GlobalTestState,
     private merchantConfig: MerchantConfig,
     private configFilename: string,
-  ) {}
+  ) { }
 
   private currentTimetravel: Duration | undefined;
 
@@ -1899,10 +1899,8 @@ export class WalletCli {
         const resp = await sh(
           self.globalTestState,
           `wallet-${self.name}`,
-          `taler-wallet-cli ${
-            self.timetravelArg ?? ""
-          } ${cryptoWorkerArg} --no-throttle -LTRACE --skip-defaults --wallet-db '${
-            self.dbfile
+          `taler-wallet-cli ${self.timetravelArg ?? ""
+          } ${cryptoWorkerArg} --no-throttle -LTRACE --skip-defaults --wallet-db '${self.dbfile
           }' api '${op}' ${shellWrap(JSON.stringify(payload))}`,
         );
         logger.info("--- wallet core response ---");

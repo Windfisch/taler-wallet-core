@@ -20,6 +20,8 @@
 import path from "path";
 import fs from "fs";
 
+const assetFileUrl = import.meta.url;
+
 /**
  * Resolve an asset name into an absolute filename.
  *
@@ -27,8 +29,8 @@ import fs from "fs";
  * at the top level of the package (i.e. next to package.json).
  */
 export function resolveAsset(name: string): string {
-  const n = __filename;
-  const d = __dirname;
+  const n = path.basename(assetFileUrl);
+  const d = path.dirname(assetFileUrl);
   let assetPath: string;
   // Currently both asset paths are the same.
   // This might change if the file that contains "resolveAsset"
