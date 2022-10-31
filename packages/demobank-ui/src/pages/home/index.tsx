@@ -31,7 +31,7 @@ import { QR } from "../../components/QR.js";
 import { useLocalStorage, useNotNullLocalStorage } from "../../hooks/index.js";
 import { Translate, useTranslator } from "../../i18n/index.js";
 import "../../scss/main.scss";
-import { Amounts, parsePaytoUri } from "@gnu-taler/taler-util";
+import { Amounts, HttpStatusCode, parsePaytoUri } from "@gnu-taler/taler-util";
 
 interface BankUiSettings {
   allowRegistrations: boolean;
@@ -2119,7 +2119,7 @@ function Account(Props: any): VNode {
     // revalidateOnFocus: false,
     // revalidateOnReconnect: false,
   });
-  const [pageState, pageStateSetter] = useContext(PageContext);
+  const [pageState, setPageState] = useContext(PageContext);
   const { withdrawalInProgress, withdrawalId, isLoggedIn, talerWithdrawUri } =
     pageState;
   const i18n = useTranslator();
@@ -2141,7 +2141,7 @@ function Account(Props: any): VNode {
      */
     switch (error.status) {
       case 404: {
-        pageStateSetter((prevState: PageStateType) => ({
+        setPageState((prevState: PageStateType) => ({
           ...prevState,
           hasError: true,
           isLoggedIn: false,
@@ -2166,8 +2166,9 @@ function Account(Props: any): VNode {
         (cache as any).clear();
         return <p>Profile not found...</p>;
       }
-      case 401: {
-        pageStateSetter((prevState: PageStateType) => ({
+      case HttpStatusCode.Unauthorized:
+      case HttpStatusCode.Forbidden: {
+        setPageState((prevState: PageStateType) => ({
           ...prevState,
           hasError: true,
           isLoggedIn: false,
@@ -2178,10 +2179,10 @@ function Account(Props: any): VNode {
         return <p>Wrong credentials...</p>;
       }
       default: {
-        pageStateSetter((prevState: PageStateType) => ({
+        setPageState((prevState: PageStateType) => ({
           ...prevState,
           hasError: true,
-          // isLoggedIn: false,
+          isLoggedIn: false,
           error: {
             title: i18n`Account information could not be retrieved.`,
             debug: JSON.stringify(error),
@@ -2249,7 +2250,7 @@ function Account(Props: any): VNode {
             {Props.children}
             <PaymentOptions
               backendState={backendState}
-              pageStateSetter={pageStateSetter}
+              pageStateSetter={setPageState}
             />
           </CurrencyContext.Provider>
         </div>

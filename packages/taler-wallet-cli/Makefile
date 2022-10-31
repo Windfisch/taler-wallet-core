@@ -1,6 +1,9 @@
 # This Makefile has been placed in the public domain.
 
+-include ../../.config.mk
 include .config.mk
+
+$(info prefix is $(prefix))
 
 all:
 	@echo use 'make install' to build and install taler-wallet-cli
@@ -22,6 +25,6 @@ install:
 	install -d $(install_target)/node_modules/taler-wallet-cli/dist
 	install ./dist/taler-wallet-cli.js $(install_target)/node_modules/taler-wallet-cli/dist/
 	install ./dist/taler-wallet-cli.js.map $(install_target)/node_modules/taler-wallet-cli/dist/
-	install ./bin/taler-wallet-cli $(install_target)/node_modules/taler-wallet-cli/bin/
+	install ./bin/taler-wallet-cli.js $(install_target)/node_modules/taler-wallet-cli/bin/
 	ln -sf $(install_target)/node_modules/taler-wallet-cli/bin/taler-wallet-cli $(prefix)/bin/taler-wallet-cli
 endif
