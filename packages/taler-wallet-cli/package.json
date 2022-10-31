@@ -11,9 +11,9 @@
   },
   "author": "Florian Dold",
   "license": "GPL-3.0",
-  "main": "dist/taler-wallet-cli.js",
+  "main": "dist/taler-wallet-cli.mjs",
   "bin": {
-    "taler-wallet-cli": "./bin/taler-wallet-cli.js"
+    "taler-wallet-cli": "./bin/taler-wallet-cli.mjs"
   },
   "type": "module",
   "scripts": {
