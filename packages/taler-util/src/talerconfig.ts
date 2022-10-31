@@ -26,50 +26,9 @@
 import { AmountJson } from "./amounts.js";
 import { Amounts } from "./amounts.js";
 
-const nodejs_fs = (function () {
-  let fs: typeof import("fs");
-  return function () {
-    if (!fs) {
-      /**
-       * need to use an expression when doing a require if we want
-       * webpack not to find out about the requirement
-       */
-      const _r = "require";
-      fs = module[_r]("fs");
-    }
-    return fs;
-  };
-})();
-
-const nodejs_path = (function () {
-  let path: typeof import("path");
-  return function () {
-    if (!path) {
-      /**
-       * need to use an expression when doing a require if we want
-       * webpack not to find out about the requirement
-       */
-      const _r = "require";
-      path = module[_r]("path");
-    }
-    return path;
-  };
-})();
-
-const nodejs_os = (function () {
-  let os: typeof import("os");
-  return function () {
-    if (!os) {
-      /**
-       * need to use an expression when doing a require if we want
-       * webpack not to find out about the requirement
-       */
-      const _r = "require";
-      os = module[_r]("os");
-    }
-    return os;
-  };
-})();
+import nodejs_path from "path";
+import nodejs_os from "os";
+import nodejs_fs from "fs";
 
 export class ConfigError extends Error {
   constructor(message: string) {
@@ -138,10 +97,10 @@ export class ConfigValue<T> {
  */
 export function expandPath(path: string): string {
   if (path[0] === "~") {
-    path = nodejs_path().join(nodejs_os().homedir(), path.slice(1));
+    path = nodejs_path.join(nodejs_os.homedir(), path.slice(1));
   }
   if (path[0] !== "/") {
-    path = nodejs_path().join(process.cwd(), path);
+    path = nodejs_path.join(process.cwd(), path);
   }
   return path;
 }
@@ -288,10 +247,10 @@ function normalizeInlineFilename(parentFile: string, f: string): string {
   if (f[0] === "/") {
     return f;
   }
-  const resolvedParentDir = nodejs_path().dirname(
-    nodejs_fs().realpathSync(parentFile),
+  const resolvedParentDir = nodejs_path.dirname(
+    nodejs_fs.realpathSync(parentFile),
   );
-  return nodejs_path().join(resolvedParentDir, f);
+  return nodejs_path.join(resolvedParentDir, f);
 }
 
 /**
@@ -306,8 +265,8 @@ function which(name: string): string | undefined {
     return undefined;
   }
   for (const path of paths) {
-    const filename = nodejs_path().join(path, name);
-    if (nodejs_fs().existsSync(filename)) {
+    const filename = nodejs_path.join(path, name);
+    if (nodejs_fs.existsSync(filename)) {
       return filename;
     }
   }
@@ -342,7 +301,7 @@ export class Configuration {
 
     checkCycle();
 
-    const s = nodejs_fs().readFileSync(filename, "utf-8");
+    const s = nodejs_fs.readFileSync(filename, "utf-8");
     this.loadedFiles.push({
       filename: filename,
       level: this.nestLevel,
@@ -360,26 +319,26 @@ export class Configuration {
   }
 
   private loadGlob(parentFilename: string, fileglob: string): void {
-    const resolvedParent = nodejs_fs().realpathSync(parentFilename);
-    const parentDir = nodejs_path().dirname(resolvedParent);
+    const resolvedParent = nodejs_fs.realpathSync(parentFilename);
+    const parentDir = nodejs_path.dirname(resolvedParent);
 
     let fullFileglob: string;
 
     if (fileglob.startsWith("/")) {
       fullFileglob = fileglob;
     } else {
-      fullFileglob = nodejs_path().join(parentDir, fileglob);
+      fullFileglob = nodejs_path.join(parentDir, fileglob);
     }
 
     fullFileglob = expandPath(fullFileglob);
 
-    const head = nodejs_path().dirname(fullFileglob);
-    const tail = nodejs_path().basename(fullFileglob);
+    const head = nodejs_path.dirname(fullFileglob);
+    const tail = nodejs_path.basename(fullFileglob);
 
-    const files = nodejs_fs().readdirSync(head);
+    const files = nodejs_fs.readdirSync(head);
     for (const f of files) {
       if (globMatch(tail, f)) {
-        const fullPath = nodejs_path().join(head, f);
+        const fullPath = nodejs_path.join(head, f);
         this.loadFromFilename(fullPath);
       }
     }
@@ -390,7 +349,7 @@ export class Configuration {
     sec.secretFilename = filename;
     const otherCfg = new Configuration();
     try {
-      nodejs_fs().accessSync(filename, nodejs_fs().constants.R_OK);
+      nodejs_fs.accessSync(filename, nodejs_fs.constants.R_OK);
     } catch (err) {
       sec.inaccessible = true;
       return;
@@ -620,9 +579,9 @@ export class Configuration {
   }
 
   loadFrom(dirname: string): void {
-    const files = nodejs_fs().readdirSync(dirname);
+    const files = nodejs_fs.readdirSync(dirname);
     for (const f of files) {
-      const fn = nodejs_path().join(dirname, f);
+      const fn = nodejs_path.join(dirname, f);
       this.loadFromFilename(fn);
     }
   }
@@ -634,8 +593,8 @@ export class Configuration {
        * of the taler-config binary. */
       const path = which("taler-config");
       if (path) {
-        bc = nodejs_fs().realpathSync(
-          nodejs_path().dirname(path) + "/../share/taler/config.d",
+        bc = nodejs_fs.realpathSync(
+          nodejs_path.dirname(path) + "/../share/taler/config.d",
         );
       }
     }
@@ -650,19 +609,19 @@ export class Configuration {
     const home = process.env["HOME"];
     let fn: string | undefined;
     if (xdg) {
-      fn = nodejs_path().join(xdg, "taler.conf");
+      fn = nodejs_path.join(xdg, "taler.conf");
     } else if (home) {
-      fn = nodejs_path().join(home, ".config/taler.conf");
+      fn = nodejs_path.join(home, ".config/taler.conf");
     }
-    if (fn && nodejs_fs().existsSync(fn)) {
+    if (fn && nodejs_fs.existsSync(fn)) {
       return fn;
     }
     const etc1 = "/etc/taler.conf";
-    if (nodejs_fs().existsSync(etc1)) {
+    if (nodejs_fs.existsSync(etc1)) {
       return etc1;
     }
     const etc2 = "/etc/taler/taler.conf";
-    if (nodejs_fs().existsSync(etc2)) {
+    if (nodejs_fs.existsSync(etc2)) {
       return etc2;
     }
     return undefined;
@@ -718,6 +677,6 @@ export class Configuration {
   }
 
   write(filename: string): void {
-    nodejs_fs().writeFileSync(filename, this.stringify());
+    nodejs_fs.writeFileSync(filename, this.stringify());
   }
 }

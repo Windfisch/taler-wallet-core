@@ -19,6 +19,7 @@ import * as child_process from "child_process";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+import url from "url";
 import {
   GlobalTestState,
   runTestWithState,
@@ -287,7 +288,9 @@ export async function runTests(spec: TestRunSpec) {
       testRootDir,
     };
 
-    currentChild = child_process.fork(__filename, ["__TWCLI_TESTWORKER"], {
+    const myFilename = url.fileURLToPath(import.meta.url);
+
+    currentChild = child_process.fork(myFilename, ["__TWCLI_TESTWORKER"], {
       env: {
         TWCLI_RUN_TEST_INSTRUCTION: JSON.stringify(testInstr),
         ...process.env,
