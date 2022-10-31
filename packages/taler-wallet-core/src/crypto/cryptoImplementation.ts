@@ -1074,13 +1074,11 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
     // FIXME: put extensions here if used
     const hExt = new Uint8Array(64);
     let hAgeCommitment: Uint8Array;
-    let maybeAgeCommitmentHash: string | undefined = undefined;
     let minimumAgeSig: string | undefined = undefined;
     if (depositInfo.ageCommitmentProof) {
       const ach = AgeRestriction.hashCommitment(
         depositInfo.ageCommitmentProof.commitment,
       );
-      maybeAgeCommitmentHash = ach;
       hAgeCommitment = decodeCrock(ach);
       if (depositInfo.requiredMinimumAge != null) {
         minimumAgeSig = encodeCrock(
@@ -1130,11 +1128,12 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
       };
 
       if (depositInfo.requiredMinimumAge != null) {
+        // These are only required by the merchant
         s.minimum_age_sig = minimumAgeSig;
         s.age_commitment =
           depositInfo.ageCommitmentProof?.commitment.publicKeys;
       } else if (depositInfo.ageCommitmentProof) {
-        (s as any).h_age_commitment = encodeCrock(hAgeCommitment);
+        s.h_age_commitment = encodeCrock(hAgeCommitment);
       }
 
       return s;

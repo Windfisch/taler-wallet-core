@@ -19,6 +19,7 @@
  */
 import { Logger } from "@gnu-taler/taler-util";
 import os from "os";
+import url from "url";
 import { nativeCryptoR } from "../cryptoImplementation.js";
 import { CryptoWorkerFactory } from "./cryptoDispatcher.js";
 import { CryptoWorker } from "./cryptoWorkerInterface.js";
@@ -26,7 +27,7 @@ import { processRequestWithImpl } from "./worker-common.js";
 
 const logger = new Logger("nodeThreadWorker.ts");
 
-const f = import.meta.url;
+const f = url.fileURLToPath(import.meta.url);
 
 const workerCode = `
   // Try loading the glue library for embedded

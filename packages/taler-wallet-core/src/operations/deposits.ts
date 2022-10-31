@@ -30,6 +30,7 @@ import {
   DepositGroupFees,
   durationFromSpec,
   encodeCrock,
+  ExchangeDepositRequest,
   GetFeeForDepositRequest,
   getRandomBytes,
   hashWire,
@@ -112,8 +113,7 @@ export async function processDepositGroup(
       continue;
     }
     const perm = depositPermissions[i];
-    let requestBody: any;
-    requestBody = {
+    const requestBody: ExchangeDepositRequest = {
       contribution: Amounts.stringify(perm.contribution),
       merchant_payto_uri: depositGroup.wire.payto_uri,
       wire_salt: depositGroup.wire.salt,
@@ -126,6 +126,7 @@ export async function processDepositGroup(
       coin_sig: perm.coin_sig,
       denom_pub_hash: perm.h_denom,
       merchant_pub: depositGroup.merchantPub,
+      h_age_commitment: perm.h_age_commitment,
     };
     // Check for cancellation before making network request.
     options.cancellationToken?.throwIfCancelled();

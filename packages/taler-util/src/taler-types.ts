@@ -289,6 +289,8 @@ export interface CoinDepositPermission {
   minimum_age_sig?: EddsaSignatureString;
 
   age_commitment?: Edx25519PublicKeyEnc[];
+
+  h_age_commitment?: string;
 }
 
 /**
@@ -1971,4 +1973,66 @@ export interface ExchangeReservePurseRequest {
 export interface ExchangePurseDeposits {
   // Array of coins to deposit into the purse.
   deposits: PurseDeposit[];
+}
+
+export interface ExchangeDepositRequest {
+  // Amount to be deposited, can be a fraction of the
+  // coin's total value.
+  contribution: AmountString;
+
+  // The merchant's account details.
+  // In case of an auction policy, it refers to the seller.
+  merchant_payto_uri: string;
+
+  // The salt is used to hide the payto_uri from customers
+  // when computing the h_wire of the merchant.
+  wire_salt: string;
+
+  // SHA-512 hash of the contract of the merchant with the customer.  Further
+  // details are never disclosed to the exchange.
+  h_contract_terms: HashCodeString;
+
+  // Hash of denomination RSA key with which the coin is signed.
+  denom_pub_hash: HashCodeString;
+
+  // Exchange's unblinded RSA signature of the coin.
+  ub_sig: UnblindedSignature;
+
+  // Timestamp when the contract was finalized.
+  timestamp: TalerProtocolTimestamp;
+
+  // Indicative time by which the exchange undertakes to transfer the funds to
+  // the merchant, in case of successful payment. A wire transfer deadline of 'never'
+  // is not allowed.
+  wire_transfer_deadline: TalerProtocolTimestamp;
+
+  // EdDSA public key of the merchant, so that the client can identify the
+  // merchant for refund requests.
+  //
+  // THIS FIELD WILL BE DEPRECATED, once the refund mechanism becomes a
+  // policy via extension.
+  merchant_pub: EddsaPublicKeyString;
+
+  // Date until which the merchant can issue a refund to the customer via the
+  // exchange, to be omitted if refunds are not allowed.
+  //
+  // THIS FIELD WILL BE DEPRECATED, once the refund mechanism becomes a
+  // policy via extension.
+  refund_deadline?: TalerProtocolTimestamp;
+
+  // CAVEAT: THIS IS WORK IN PROGRESS
+  // (Optional) policy for the deposit.
+  // This might be a refund, auction or escrow policy.
+  //
+  // Note that support for policies is an optional feature of the exchange.
+  // Optional features are so called "extensions" in Taler. The exchange
+  // provides the list of supported extensions, including policies, in the
+  // ExtensionsManifestsResponse response to the /keys endpoint.
+  policy?: any;
+
+  // Signature over TALER_DepositRequestPS, made by the customer with the
+  // coin's private key.
+  coin_sig: EddsaSignatureString;
+
+  h_age_commitment?: string;
 }

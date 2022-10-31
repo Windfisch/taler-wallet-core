@@ -15,7 +15,7 @@ warn-noprefix:
 install: warn-noprefix
 else
 install_target = $(prefix)/lib/taler-wallet-cli
-.PHONY: install
+.PHONY: install install-nodeps
 install:
 	pnpm install --frozen-lockfile --filter @gnu-taler/taler-wallet-cli...
 	install -d $(prefix)/bin
