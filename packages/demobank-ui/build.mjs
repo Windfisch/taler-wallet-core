@@ -74,52 +74,14 @@ function git_hash() {
 
 // FIXME: Put this into some helper library.
 function copyFilesPlugin(options) {
-  const getDigest = (string) => {
-    const hash = crypto.createHash("md5");
-    const data = hash.update(string, "utf-8");
-
-    return data.digest("hex");
-  };
-
-  const getFileDigest = (path) => {
-    if (!fs.existsSync(path)) {
-      return null;
-    }
-
-    if (fs.statSync(path).isDirectory()) {
-      return null;
-    }
-
-    return getDigest(fs.readFileSync(path));
-  };
-
-  function filter(src, dest) {
-    if (!fs.existsSync(dest)) {
-      return true;
-    }
-
-    if (fs.statSync(dest).isDirectory()) {
-      return true;
-    }
-
-    return getFileDigest(src) !== getFileDigest(dest);
-  }
-
   return {
     name: "copy-files",
     setup(build) {
-      let src = options.src || "./static";
-      let dest = options.dest || "./dist";
-      build.onEnd(() =>
-        fs.cpSync(src, dest, {
-          dereference: options.dereference || true,
-          errorOnExist: options.errorOnExist || false,
-          filter: options.filter || filter,
-          force: options.force || true,
-          preserveTimestamps: options.preserveTimestamps || true,
-          recursive: options.recursive || true,
-        }),
-      );
+      build.onEnd(() => {
+        for (const fop of options) {
+          fs.copyFileSync(fop.src, fop.dest);
+        }
+      });
     },
   };
 }
@@ -147,10 +109,12 @@ export const buildConfig = {
   plugins: [
     preactCompatPlugin,
     sassPlugin(),
-    copyFilesPlugin({
-      src: "static/index.html",
-      dest: "dist/index.html",
-    }),
+    copyFilesPlugin([
+      {
+        src: "static/index.html",
+        dest: "dist/index.html",
+      },
+    ]),
   ],
 };
 
