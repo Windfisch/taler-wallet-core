@@ -26,5 +26,5 @@ install:
 	install ./dist/taler-wallet-cli.mjs $(install_target)/node_modules/taler-wallet-cli/dist/
 	install ./dist/taler-wallet-cli.mjs.map $(install_target)/node_modules/taler-wallet-cli/dist/
 	install ./bin/taler-wallet-cli.mjs $(install_target)/node_modules/taler-wallet-cli/bin/
-	ln -sf $(install_target)/node_modules/taler-wallet-cli/bin/taler-wallet-cli.mjs $(prefix)/bin/taler-wallet-cli.mjs
+	ln -sf $(install_target)/node_modules/taler-wallet-cli/bin/taler-wallet-cli.mjs $(prefix)/bin/taler-wallet-cli
 endif
