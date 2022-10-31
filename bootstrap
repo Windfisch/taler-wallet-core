@@ -21,6 +21,10 @@ copy_configure() {
   # accidental changes in the wrong place.
   chmod ogu-w $dst || true
 }
+
+# To enable a GNU-style build system, we copy a configure
+# script to each package that can be installed
 our_configure=build-system/taler-build-scripts/configure
 copy_configure "$our_configure" ./configure
 copy_configure "$our_configure" ./packages/taler-wallet-cli/configure
+copy_configure "$our_configure" ./packages/demobank-ui/configure

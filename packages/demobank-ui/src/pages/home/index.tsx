@@ -973,7 +973,7 @@ function ErrorBanner(Props: any): VNode | null {
             class="pure-button"
             value="Clear"
             onClick={async () => {
-              pageStateSetter((prev) => ({ ...prev, error: undefined }));
+              pageStateSetter((prev: any) => ({ ...prev, error: undefined }));
             }}
           />
         </div>
