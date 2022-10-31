@@ -192,16 +192,18 @@ export class Amounts {
    *
    * Throws when currencies don't match.
    */
-  static sub(a: AmountJson, ...rest: AmountJson[]): Result {
-    const currency = a.currency;
-    let value = a.value;
-    let fraction = a.fraction;
+  static sub(a: AmountLike, ...rest: AmountLike[]): Result {
+    const aJ = Amounts.jsonifyAmount(a);
+    const currency = aJ.currency;
+    let value = aJ.value;
+    let fraction = aJ.fraction;
 
     for (const b of rest) {
-      if (b.currency.toUpperCase() !== a.currency.toUpperCase()) {
-        throw Error(`Mismatched currency: ${b.currency} and ${currency}`);
+      const bJ = Amounts.jsonifyAmount(b);
+      if (bJ.currency.toUpperCase() !== aJ.currency.toUpperCase()) {
+        throw Error(`Mismatched currency: ${bJ.currency} and ${currency}`);
       }
-      if (fraction < b.fraction) {
+      if (fraction < bJ.fraction) {
         if (value < 1) {
           return {
             amount: { currency, value: 0, fraction: 0 },
@@ -211,12 +213,12 @@ export class Amounts {
         value--;
         fraction += amountFractionalBase;
       }
-      console.assert(fraction >= b.fraction);
-      fraction -= b.fraction;
-      if (value < b.value) {
+      console.assert(fraction >= bJ.fraction);
+      fraction -= bJ.fraction;
+      if (value < bJ.value) {
         return { amount: { currency, value: 0, fraction: 0 }, saturated: true };
       }
-      value -= b.value;
+      value -= bJ.value;
     }
 
     return { amount: { currency, value, fraction }, saturated: false };

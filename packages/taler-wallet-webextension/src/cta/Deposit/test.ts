@@ -38,11 +38,9 @@ describe("Deposit CTA states", () => {
       onSuccess: async () => {
         null;
       },
-    }
+    };
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() =>
-        useComponentState(props, mock),
-      );
+      mountHook(() => useComponentState(props, mock));
 
     {
       const { status } = pullLastResultOrThrow();
@@ -62,15 +60,19 @@ describe("Deposit CTA states", () => {
       expect(error.message).eq("ERROR_NO-URI-FOR-DEPOSIT");
     }
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should be ready after loading", async () => {
     const { handler, mock } = createWalletApiMock();
-    handler.addWalletCallResponse(WalletApiOperation.PrepareDeposit, undefined, {
-      effectiveDepositAmount: Amounts.parseOrThrow("EUR:1"),
-      totalDepositCost: Amounts.parseOrThrow("EUR:1.2"),
-    });
+    handler.addWalletCallResponse(
+      WalletApiOperation.PrepareDeposit,
+      undefined,
+      {
+        effectiveDepositAmount: "EUR:1",
+        totalDepositCost: "EUR:1.2",
+      },
+    );
     const props = {
       talerDepositUri: "payto://refund/asdasdas",
       amountStr: "EUR:1",
@@ -80,12 +82,10 @@ describe("Deposit CTA states", () => {
       onSuccess: async () => {
         null;
       },
-    }
+    };
 
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() =>
-        useComponentState(props, mock),
-      );
+      mountHook(() => useComponentState(props, mock));
 
     {
       const { status } = pullLastResultOrThrow();

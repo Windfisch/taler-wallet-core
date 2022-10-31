@@ -61,8 +61,8 @@ export function useComponentState(
     },
     fee: Amounts.sub(deposit.totalDepositCost, deposit.effectiveDepositAmount)
       .amount,
-    cost: deposit.totalDepositCost,
-    effective: deposit.effectiveDepositAmount,
+    cost: Amounts.parseOrThrow(deposit.totalDepositCost),
+    effective: Amounts.parseOrThrow(deposit.effectiveDepositAmount),
     cancel,
   };
 }
