@@ -33,27 +33,33 @@ import { Translate, useTranslator } from "../../i18n/index.js";
 import "../../scss/main.scss";
 import { Amounts, parsePaytoUri } from "@gnu-taler/taler-util";
 
+interface BankUiSettings {
+  allowRegistrations: boolean;
+  showDemoNav: boolean;
+  bankName: string;
+  demoSites: [string, string][];
+}
+
 /**
- * If the first argument does not look like a placeholder, return it.
- * Otherwise, return the default.
- *
- * Useful for placeholder string replacements optionally
- * done as part of the build system.
+ * Global settings for the demobank UI.
  */
-const replacementOrDefault = (x: string, defaultVal: string): string => {
-  if (x.startsWith("__")) {
-    return defaultVal;
-  }
-  return x;
+const defaultSettings: BankUiSettings = {
+  allowRegistrations: true,
+  bankName: "Taler Bank",
+  showDemoNav: true,
+  demoSites: [
+    ["Landing", "https://demo.taler.net/"],
+    ["Bank", "https://bank.demo.taler.net/"],
+    ["Essay Shop", "https://shop.demo.taler.net/"],
+    ["Donations", "https://donations.demo.taler.net/"],
+    ["Survey", "https://donations.demo.taler.net/"],
+  ],
 };
 
-const UI_ALLOW_REGISTRATIONS =
-  replacementOrDefault("__LIBEUFIN_UI_ALLOW_REGISTRATIONS__", "1") == "1";
-const UI_IS_DEMO = replacementOrDefault("__LIBEUFIN_UI_IS_DEMO__", "0") == "1";
-const UI_BANK_NAME = replacementOrDefault(
-  "__LIBEUFIN_UI_BANK_NAME__",
-  "Taler Bank",
-);
+const bankUiSettings: BankUiSettings =
+  "talerDemobankSettings" in globalThis
+    ? (globalThis as any).talerDemobankSettings
+    : defaultSettings;
 
 /**
  * FIXME:
@@ -185,7 +191,7 @@ interface PageStateType {
  ***********/
 
 function maybeDemoContent(content: VNode): VNode {
-  if (UI_IS_DEMO) {
+  if (bankUiSettings.showDemoNav) {
     return content;
   }
   return <Fragment />;
@@ -1023,17 +1029,13 @@ function BankFrame(Props: any): VNode {
     </div>
   );
 
-  // Prepare demo sites links.
-  const DEMO_SITES = [
-    ["Landing", "__DEMO_SITE_LANDING_URL__"],
-    ["Bank", "__DEMO_SITE_BANK_URL__"],
-    ["Essay Shop", "__DEMO_SITE_BLOG_URL__"],
-    ["Donations", "__DEMO_SITE_DONATIONS_URL__"],
-    ["Survey", "__DEMO_SITE_SURVEY_URL__"],
-  ];
   const demo_sites = [];
-  for (const i in DEMO_SITES)
-    demo_sites.push(<a href={DEMO_SITES[i][1]}>{DEMO_SITES[i][0]}</a>);
+  for (const i in bankUiSettings.demoSites)
+    demo_sites.push(
+      <a href={bankUiSettings.demoSites[i][1]}>
+        {bankUiSettings.demoSites[i][0]}
+      </a>,
+    );
 
   return (
     <Fragment>
@@ -1045,7 +1047,7 @@ function BankFrame(Props: any): VNode {
         <div style="max-width: 50em; margin-left: 2em;">
           <h1>
             <span class="it">
-              <a href="/">{UI_BANK_NAME}</a>
+              <a href="/">{bankUiSettings.bankName}</a>
             </span>
           </h1>
           {maybeDemoContent(
@@ -1754,7 +1756,7 @@ function PaymentOptions(Props: any): VNode {
 function RegistrationButton(Props: any): VNode {
   const { backendStateSetter, pageStateSetter } = Props;
   const i18n = useTranslator();
-  if (UI_ALLOW_REGISTRATIONS)
+  if (bankUiSettings.allowRegistrations)
     return (
       <button
         class="pure-button pure-button-secondary btn-cancel"
@@ -1898,7 +1900,7 @@ function RegistrationForm(Props: any): VNode {
 
   return (
     <Fragment>
-      <h1 class="nav">{i18n`Welcome to ${UI_BANK_NAME}!`}</h1>
+      <h1 class="nav">{i18n`Welcome to ${bankUiSettings.bankName}!`}</h1>
       <article>
         <div class="register-div">
           <form action="javascript:void(0);" class="register-form">
@@ -2435,8 +2437,8 @@ export function BankHome(): VNode {
     );
 
   if (pageState.tryRegister) {
-    console.log("allow registrations?", UI_ALLOW_REGISTRATIONS);
-    if (UI_ALLOW_REGISTRATIONS)
+    console.log("allow registrations?", bankUiSettings.allowRegistrations);
+    if (bankUiSettings.allowRegistrations)
       return (
         <PageContext.Provider value={[pageState, pageStateSetter]}>
           <BankFrame>
@@ -2485,7 +2487,7 @@ export function BankHome(): VNode {
   return (
     <PageContext.Provider value={[pageState, pageStateSetter]}>
       <BankFrame>
-        <h1 class="nav">{i18n`Welcome to ${UI_BANK_NAME}!`}</h1>
+        <h1 class="nav">{i18n`Welcome to ${bankUiSettings.bankName}!`}</h1>
         <LoginForm
           pageStateSetter={pageStateSetter}
           backendStateSetter={backendStateSetter}
