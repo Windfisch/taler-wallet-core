@@ -129,10 +129,8 @@ export class DevExperimentHttpLib implements HttpRequestLibrary {
     url: string,
     opt?: HttpRequestOptions | undefined,
   ): Promise<HttpResponse> {
-    return this.fetch(url, {
-      method: "GET",
-      ...opt,
-    });
+    logger.info(`devexperiment httplib ${url}`);
+    return this.underlyingLib.get(url, opt);
   }
 
   postJson(
@@ -140,11 +138,8 @@ export class DevExperimentHttpLib implements HttpRequestLibrary {
     body: any,
     opt?: HttpRequestOptions | undefined,
   ): Promise<HttpResponse> {
-    return this.fetch(url, {
-      method: "POST",
-      body,
-      ...opt,
-    });
+    logger.info(`devexperiment httplib ${url}`);
+    return this.underlyingLib.postJson(url, body, opt);
   }
 
   fetch(
