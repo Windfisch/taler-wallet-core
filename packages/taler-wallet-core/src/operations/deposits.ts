@@ -367,7 +367,10 @@ export async function prepareDepositGroup(
     payCoinSel,
   );
 
-  return { totalDepositCost, effectiveDepositAmount };
+  return {
+    totalDepositCost: Amounts.stringify(totalDepositCost),
+    effectiveDepositAmount: Amounts.stringify(effectiveDepositAmount),
+  };
 }
 export async function createDepositGroup(
   ws: InternalWalletState,

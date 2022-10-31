@@ -1643,8 +1643,8 @@ export const codecForPrepareDepositRequest = (): Codec<PrepareDepositRequest> =>
     .build("PrepareDepositRequest");
 
 export interface PrepareDepositResponse {
-  totalDepositCost: AmountJson;
-  effectiveDepositAmount: AmountJson;
+  totalDepositCost: AmountString;
+  effectiveDepositAmount: AmountString;
 }
 
 export const codecForCreateDepositGroupRequest =
