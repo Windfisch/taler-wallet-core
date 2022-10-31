@@ -15,7 +15,7 @@ export default {
   input: "lib/index.js",
   output: {
     file: pkg.main,
-    format: "cjs",
+    format: "es",
     sourcemap: true,
     sourcemapPathTransform: (relativeSourcePath, sourcemapPath) => {
       // Transform to source map paths to virtual path.  Otherwise,

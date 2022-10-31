@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { main } from '../lib/index.js';
+import { main } from '../dist/taler-wallet-cli.js';
 
 async function run() {
   try {
