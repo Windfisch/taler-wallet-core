@@ -27,7 +27,6 @@ importers:
       hash-wasm: ^4.9.0
       node-fetch: ^3.2.0
       rimraf: ^3.0.2
-      source-map-support: ^0.5.21
       tslib: ^2.4.0
       typescript: ^4.8.4
     dependencies:
@@ -40,7 +39,6 @@ importers:
     devDependencies:
       ava: 4.3.3
       rimraf: 3.0.2
-      source-map-support: 0.5.21
       typescript: 4.8.4
 
   packages/anastasis-webui:
@@ -497,7 +495,6 @@ importers:
       rollup: ^2.79.0
       rollup-plugin-sourcemaps: ^0.6.3
       rollup-plugin-terser: ^7.0.2
-      source-map-support: ^0.5.21
       tslib: ^2.4.0
       typedoc: ^0.23.16
       typescript: ^4.8.4
@@ -505,7 +502,6 @@ importers:
       '@gnu-taler/taler-util': link:../taler-util
       '@gnu-taler/taler-wallet-core': link:../taler-wallet-core
       axios: 0.27.2
-      source-map-support: 0.5.21
       tslib: 2.4.0
     devDependencies:
       '@rollup/plugin-commonjs': 22.0.2_rollup@2.79.1
@@ -545,8 +541,6 @@ importers:
       po2json: ^0.4.5
       prettier: ^2.5.1
       rimraf: ^3.0.2
-      source-map-resolve: ^0.6.0
-      source-map-support: ^0.5.21
       tslib: ^2.4.0
       typedoc: ^0.23.16
       typescript: ^4.8.4
@@ -557,7 +551,6 @@ importers:
       axios: 0.27.2
       big-integer: 1.6.51
       fflate: 0.7.4
-      source-map-support: 0.5.21
       tslib: 2.4.0
     devDependencies:
       '@ava/typescript': 3.0.1
@@ -576,7 +569,6 @@ importers:
       po2json: 0.4.5
       prettier: 2.7.1
       rimraf: 3.0.2
-      source-map-resolve: 0.6.0
       typedoc: 0.23.18_typescript@4.8.4
       typescript: 4.8.4
 
@@ -8174,6 +8166,7 @@ packages:
 
   /buffer-from/1.1.2:
     resolution: {integrity: sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==}
+    dev: true
 
   /buffer-xor/1.0.3:
     resolution: {integrity: sha512-571s0T7nZWK6vB67HI5dyUF7wXiNcfaPPPTl6zYCNApANjIvYJTg7hlud/+cJpdAhS7dVzqMLmfhfHR3rAcOjQ==}
@@ -19280,6 +19273,7 @@ packages:
     dependencies:
       buffer-from: 1.1.2
       source-map: 0.6.1
+    dev: true
 
   /source-map-url/0.4.1:
     resolution: {integrity: sha512-cPiFOTLUKvJFIg4SKVScy4ilPPW6rFgMgfuZJPNoDuMs3nC1HbMUycBoJw77xFIp6z1UJQJOfx6C9GMH80DiTw==}
@@ -19294,6 +19288,7 @@ packages:
   /source-map/0.6.1:
     resolution: {integrity: sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==}
     engines: {node: '>=0.10.0'}
+    dev: true
 
   /source-map/0.7.4:
     resolution: {integrity: sha512-l3BikUxvPOcn5E74dZiq5BGsTb5yEwhaTSzccU6t4sDOH8NWJCstKO5QT2CvtFoK6F0saL7p9xHAqHOlCPJygA==}
