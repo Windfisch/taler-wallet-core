@@ -79,6 +79,9 @@ export interface DetailsMap {
   [TalerErrorCode.WALLET_CRYPTO_WORKER_BAD_REQUEST]: {
     detail: string;
   };
+  [TalerErrorCode.WALLET_WITHDRAWAL_KYC_REQUIRED]: {
+    // FIXME!
+  };
 }
 
 type ErrBody<Y> = Y extends keyof DetailsMap ? DetailsMap[Y] : never;

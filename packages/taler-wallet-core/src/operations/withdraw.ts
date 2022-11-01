@@ -47,6 +47,7 @@ import {
   ExchangeWithdrawRequest,
   ForcedDenomSel,
   getRandomBytes,
+  HttpStatusCode,
   j2s,
   LibtoolVersion,
   Logger,
@@ -527,6 +528,23 @@ async function processPlanchetExchangeRequest(
 
   try {
     const resp = await ws.http.postJson(reqUrl, reqBody);
+    if (resp.status === HttpStatusCode.UnavailableForLegalReasons) {
+      logger.info("withdrawal requires KYC");
+      await ws.db
+        .mktx((x) => [x.planchets])
+        .runReadWrite(async (tx) => {
+          let planchet = await tx.planchets.indexes.byGroupAndIndex.get([
+            withdrawalGroup.withdrawalGroupId,
+            coinIdx,
+          ]);
+          if (!planchet) {
+            return;
+          }
+          planchet.planchetStatus = PlanchetStatus.KycRequired;
+          await tx.planchets.put(planchet);
+        });
+      return;
+    }
     const r = await readSuccessResponseJsonOrThrow(
       resp,
       codecForWithdrawResponse(),
@@ -1126,6 +1144,7 @@ export async function processWithdrawalGroup(
   await Promise.all(work);
 
   let numFinished = 0;
+  let numKycRequired = 0;
   let finishedForFirstTime = false;
   let errorsPerCoin: Record<number, TalerErrorDetail> = {};
 
@@ -1143,6 +1162,9 @@ export async function processWithdrawalGroup(
           if (x.planchetStatus === PlanchetStatus.WithdrawalDone) {
             numFinished++;
           }
+          if (x.planchetStatus === PlanchetStatus.KycRequired) {
+            numKycRequired++;
+          }
           if (x.lastError) {
             errorsPerCoin[x.coinIdx] = x.lastError;
           }
@@ -1156,7 +1178,13 @@ export async function processWithdrawalGroup(
 
       await tx.withdrawalGroups.put(wg);
     });
-
+  if (numKycRequired > 0) {
+    throw TalerError.fromDetail(
+      TalerErrorCode.WALLET_WITHDRAWAL_KYC_REQUIRED,
+      {},
+      `KYC check required for withdrawal (not yet implemented in wallet-core)`,
+    );
+  }
   if (numFinished != numTotalCoins) {
     throw TalerError.fromDetail(
       TalerErrorCode.WALLET_WITHDRAWAL_GROUP_INCOMPLETE,

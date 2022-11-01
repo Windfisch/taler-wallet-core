@@ -564,6 +564,7 @@ export interface ExchangeRecord {
 
 export enum PlanchetStatus {
   Pending = 10 /* ACTIVE_START */,
+  KycRequired = 11 /* ACTIVE_START + 1 */,
   WithdrawalDone = 50 /* DORMANT_START */,
 }
 
