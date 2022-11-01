@@ -326,7 +326,6 @@ async function validateGlobalFees(
       endDate: gf.end_date,
       signature: gf.master_sig,
       historyTimeout: gf.history_expiration,
-      kycTimeout: gf.account_kyc_timeout,
       purseLimit: gf.purse_account_limit,
       purseTimeout: gf.purse_timeout,
     });

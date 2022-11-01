@@ -766,7 +766,6 @@ export interface ExchangeGlobalFees {
   purseFee: AmountJson;
 
   historyTimeout: TalerProtocolDuration;
-  kycTimeout: TalerProtocolDuration;
   purseTimeout: TalerProtocolDuration;
 
   purseLimit: number;

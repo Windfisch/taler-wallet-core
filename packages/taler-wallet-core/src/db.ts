@@ -452,8 +452,6 @@ export interface ExchangeDetailsRecord {
 
   /**
    * Fees for exchange services
-   *
-   * FIXME: Put in separate object store!
    */
   globalFees: ExchangeGlobalFees[];
 

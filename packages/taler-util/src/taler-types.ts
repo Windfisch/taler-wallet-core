@@ -772,11 +772,6 @@ export interface GlobalFees {
   // What date (exclusive) does this fees stop going into effect?
   end_date: TalerProtocolTimestamp;
 
-  // KYC fee, charged when a user wants to create an account.
-  // The first year of the account_annual_fee after the KYC is
-  // always included.
-  kyc_fee: AmountString;
-
   // Account history fee, charged when a user wants to
   // obtain a reserve/account history.
   history_fee: AmountString;
@@ -797,13 +792,6 @@ export interface GlobalFees {
   // After an account was deleted/closed, the exchange will
   // retain the account history for legal reasons until this time.
   history_expiration: TalerProtocolDuration;
-
-  // How long does the exchange promise to keep funds
-  // an account for which the KYC has never happened
-  // after a purse was merged into an account? Basically,
-  // after this time funds in an account without KYC are
-  // forfeit.
-  account_kyc_timeout: TalerProtocolDuration;
 
   // Non-negative number of concurrent purses that any
   // account holder is allowed to create without having
@@ -827,8 +815,6 @@ export class WireFeesJson {
    * Cost of a wire transfer.
    */
   wire_fee: string;
-
-  wad_fee: string;
 
   /**
    * Cost of clising a reserve.
@@ -1395,12 +1381,10 @@ export const codecForGlobalFees = (): Codec<GlobalFees> =>
   buildCodecForObject<GlobalFees>()
     .property("start_date", codecForTimestamp)
     .property("end_date", codecForTimestamp)
-    .property("kyc_fee", codecForAmountString())
     .property("history_fee", codecForAmountString())
     .property("account_fee", codecForAmountString())
     .property("purse_fee", codecForAmountString())
     .property("history_expiration", codecForDuration)
-    .property("account_kyc_timeout", codecForDuration)
     .property("purse_account_limit", codecForNumber())
     .property("purse_timeout", codecForDuration)
     .property("master_sig", codecForString())
@@ -1423,7 +1407,6 @@ export const codecForWireFeesJson = (): Codec<WireFeesJson> =>
   buildCodecForObject<WireFeesJson>()
     .property("wire_fee", codecForString())
     .property("closing_fee", codecForString())
-    .property("wad_fee", codecForString())
     .property("sig", codecForString())
     .property("start_date", codecForTimestamp)
     .property("end_date", codecForTimestamp)

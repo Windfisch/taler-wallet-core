@@ -486,7 +486,7 @@ class BankServiceBase {
     protected globalTestState: GlobalTestState,
     protected bankConfig: BankConfig,
     protected configFile: string,
-  ) { }
+  ) {}
 }
 
 /**
@@ -780,7 +780,8 @@ class LibEuFinBankService extends BankServiceBase implements BankServiceHandle {
  */
 export class FakebankService
   extends BankServiceBase
-  implements BankServiceHandle {
+  implements BankServiceHandle
+{
   proc: ProcessWrapper | undefined;
 
   http = new NodeHttpLib();
@@ -1131,7 +1132,7 @@ export class ExchangeService implements ExchangeServiceInterface {
     private exchangeConfig: ExchangeConfig,
     private configFilename: string,
     private keyPair: EddsaKeyPair,
-  ) { }
+  ) {}
 
   get name() {
     return this.exchangeConfig.name;
@@ -1228,11 +1229,14 @@ export class ExchangeService implements ExchangeServiceInterface {
             "-c",
             this.configFilename,
             "wire-fee",
+            // Year
             `${i}`,
+            // Wire method
             accTargetType,
+            // Wire fee
             `${this.exchangeConfig.currency}:0.01`,
-            `${this.exchangeConfig.currency}:0.01`,
-            `${this.exchangeConfig.currency}:0.01`,
+            // Closing fee
+            `${this.exchangeConfig.currency}:0.01`, 
             "upload",
           ],
         );
@@ -1251,15 +1255,11 @@ export class ExchangeService implements ExchangeServiceInterface {
         "now",
         // history fee
         `${this.exchangeConfig.currency}:0.01`,
-        // kyc fee
-        `${this.exchangeConfig.currency}:0.01`,
         // account fee
         `${this.exchangeConfig.currency}:0.01`,
         // purse fee
         `${this.exchangeConfig.currency}:0.00`,
         // purse timeout
-        "1h",
-        // kyc timeout
         "1h",
         // history expiration
         "1year",
@@ -1384,7 +1384,7 @@ export class MerchantApiClient {
   constructor(
     private baseUrl: string,
     public readonly auth: MerchantAuthConfiguration,
-  ) { }
+  ) {}
 
   async changeAuth(auth: MerchantAuthConfiguration): Promise<void> {
     const url = new URL("private/auth", this.baseUrl);
@@ -1577,7 +1577,7 @@ export class MerchantService implements MerchantServiceInterface {
     private globalState: GlobalTestState,
     private merchantConfig: MerchantConfig,
     private configFilename: string,
-  ) { }
+  ) {}
 
   private currentTimetravel: Duration | undefined;
 
@@ -1899,8 +1899,10 @@ export class WalletCli {
         const resp = await sh(
           self.globalTestState,
           `wallet-${self.name}`,
-          `taler-wallet-cli ${self.timetravelArg ?? ""
-          } ${cryptoWorkerArg} --no-throttle -LTRACE --skip-defaults --wallet-db '${self.dbfile
+          `taler-wallet-cli ${
+            self.timetravelArg ?? ""
+          } ${cryptoWorkerArg} --no-throttle -LTRACE --skip-defaults --wallet-db '${
+            self.dbfile
           }' api '${op}' ${shellWrap(JSON.stringify(payload))}`,
         );
         logger.info("--- wallet core response ---");

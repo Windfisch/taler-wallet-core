@@ -414,7 +414,6 @@ export async function importBackup(
               accountFee: Amounts.parseOrThrow(x.accountFee),
               historyFee: Amounts.parseOrThrow(x.historyFee),
               purseFee: Amounts.parseOrThrow(x.purseFee),
-              kycTimeout: x.kycTimeout,
               endDate: x.endDate,
               historyTimeout: x.historyTimeout,
               signature: x.signature,

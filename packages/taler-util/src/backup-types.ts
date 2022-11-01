@@ -1104,7 +1104,6 @@ export interface BackupExchangeGlobalFees {
   purseFee: BackupAmountString;
 
   historyTimeout: TalerProtocolDuration;
-  kycTimeout: TalerProtocolDuration;
   purseTimeout: TalerProtocolDuration;
 
   purseLimit: number;

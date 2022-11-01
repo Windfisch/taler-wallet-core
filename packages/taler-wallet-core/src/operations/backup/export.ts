@@ -363,7 +363,6 @@ export async function exportBackup(
             accountFee: Amounts.stringify(x.accountFee),
             historyFee: Amounts.stringify(x.historyFee),
             purseFee: Amounts.stringify(x.purseFee),
-            kycTimeout: x.kycTimeout,
             endDate: x.endDate,
             historyTimeout: x.historyTimeout,
             signature: x.signature,
