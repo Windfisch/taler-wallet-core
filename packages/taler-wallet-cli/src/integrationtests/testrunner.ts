@@ -450,12 +450,6 @@ if (runTestInstrStr && process.argv.includes("__TWCLI_TESTWORKER")) {
     process.exit(3);
   });
 
-  try {
-    require("source-map-support").install();
-  } catch (e) {
-    // Do nothing.
-  }
-
   const runTest = async () => {
     let testMain: TestMainFunction | undefined;
     for (const t of allTests) {

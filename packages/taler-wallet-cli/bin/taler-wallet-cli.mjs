@@ -16,16 +16,4 @@
  */
 
 import { main } from '../dist/taler-wallet-cli.mjs';
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-
-const doLog = process.env["TALER_DEBUG_SOURCEMAPS"] == "1";
-
-try {
-  require("source-map-support");
-  doLog && console.error("source map support installed");
-} catch (e) {
-  // Do nothing.
-  doLog && console.error("source map support not installed", e);
-}
 main();

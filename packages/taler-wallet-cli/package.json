@@ -48,7 +48,6 @@
     "@gnu-taler/taler-util": "workspace:*",
     "@gnu-taler/taler-wallet-core": "workspace:*",
     "axios": "^0.27.2",
-    "source-map-support": "^0.5.21",
     "tslib": "^2.4.0"
   }
 }

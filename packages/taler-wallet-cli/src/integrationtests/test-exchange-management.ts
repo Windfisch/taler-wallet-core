@@ -35,6 +35,7 @@ import {
   ExchangesListResponse,
   URL,
   TalerErrorCode,
+  j2s,
 } from "@gnu-taler/taler-util";
 import {
   FaultInjectedExchangeService,
@@ -129,6 +130,7 @@ export async function runExchangeManagementTest(
     WalletApiOperation.ListExchanges,
     {},
   );
+  console.log("exchanges list:", j2s(exchangesList));
   t.assertTrue(exchangesList.exchanges.length === 0);
 
   // Try before fault is injected
