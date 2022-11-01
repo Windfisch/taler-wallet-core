@@ -384,7 +384,6 @@ export async function importBackup(
               sig: fee.sig,
               startStamp: fee.start_stamp,
               wireFee: Amounts.parseOrThrow(fee.wire_fee),
-              wadFee: Amounts.parseOrThrow(fee.wad_fee),
             });
           }
           let tosAccepted = undefined;
@@ -414,7 +413,6 @@ export async function importBackup(
             globalFees: backupExchangeDetails.global_fees.map((x) => ({
               accountFee: Amounts.parseOrThrow(x.accountFee),
               historyFee: Amounts.parseOrThrow(x.historyFee),
-              kycFee: Amounts.parseOrThrow(x.kycFee),
               purseFee: Amounts.parseOrThrow(x.purseFee),
               kycTimeout: x.kycTimeout,
               endDate: x.endDate,

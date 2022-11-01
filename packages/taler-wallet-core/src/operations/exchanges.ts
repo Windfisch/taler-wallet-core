@@ -270,7 +270,6 @@ async function validateWireInfo(
         sig: x.sig,
         startStamp,
         wireFee: Amounts.parseOrThrow(x.wire_fee),
-        wadFee: Amounts.parseOrThrow(x.wad_fee),
       };
       let isValid = false;
       if (ws.insecureTrustExchange) {
@@ -323,7 +322,6 @@ async function validateGlobalFees(
       accountFee: Amounts.parseOrThrow(gf.account_fee),
       historyFee: Amounts.parseOrThrow(gf.history_fee),
       purseFee: Amounts.parseOrThrow(gf.purse_fee),
-      kycFee: Amounts.parseOrThrow(gf.kyc_fee),
       startDate: gf.start_date,
       endDate: gf.end_date,
       signature: gf.master_sig,

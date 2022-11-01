@@ -896,7 +896,6 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
       .put(timestampRoundedToBuffer(wf.endStamp))
       .put(amountToBuffer(wf.wireFee))
       .put(amountToBuffer(wf.closingFee))
-      .put(amountToBuffer(wf.wadFee))
       .build();
     const sig = decodeCrock(wf.sig);
     const pub = decodeCrock(masterPub);

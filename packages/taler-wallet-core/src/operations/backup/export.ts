@@ -322,7 +322,6 @@ export async function exportBackup(
             wireFees.push({
               wire_type: x,
               closing_fee: Amounts.stringify(f.closingFee),
-              wad_fee: Amounts.stringify(f.wadFee),
               end_stamp: f.endStamp,
               sig: f.sig,
               start_stamp: f.startStamp,
@@ -363,7 +362,6 @@ export async function exportBackup(
           global_fees: ex.globalFees.map((x) => ({
             accountFee: Amounts.stringify(x.accountFee),
             historyFee: Amounts.stringify(x.historyFee),
-            kycFee: Amounts.stringify(x.kycFee),
             purseFee: Amounts.stringify(x.purseFee),
             kycTimeout: x.kycTimeout,
             endDate: x.endDate,

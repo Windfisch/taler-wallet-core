@@ -727,11 +727,6 @@ export interface WireFee {
   closingFee: AmountJson;
 
   /**
-   * Fees for inter-exchange transfers from P2P payments.
-   */
-  wadFee: AmountJson;
-
-  /**
    * Start date of the fee.
    */
   startStamp: TalerProtocolTimestamp;
@@ -766,7 +761,6 @@ export interface ExchangeGlobalFees {
   startDate: TalerProtocolTimestamp;
   endDate: TalerProtocolTimestamp;
 
-  kycFee: AmountJson;
   historyFee: AmountJson;
   accountFee: AmountJson;
   purseFee: AmountJson;
@@ -790,7 +784,6 @@ const codecForWireFee = (): Codec<WireFee> =>
   buildCodecForObject<WireFee>()
     .property("sig", codecForString())
     .property("wireFee", codecForAmountJson())
-    .property("wadFee", codecForAmountJson())
     .property("closingFee", codecForAmountJson())
     .property("startStamp", codecForTimestamp)
     .property("endStamp", codecForTimestamp)

@@ -770,7 +770,6 @@ async function getExchangeDetailedInfo(
         fee: w.closingFee,
         group: "closing",
       })),
-      ...infoForType.map((w) => ({ ...w, fee: w.wadFee, group: "wad" })),
       ...infoForType.map((w) => ({ ...w, fee: w.wireFee, group: "wire" })),
     ];
     prev[wireType] = createTimeline(
@@ -795,11 +794,6 @@ async function getExchangeDetailedInfo(
       ...w,
       fee: w.historyFee,
       group: "history",
-    })),
-    ...exchange.info.globalFees.map((w) => ({
-      ...w,
-      fee: w.kycFee,
-      group: "kyc",
     })),
     ...exchange.info.globalFees.map((w) => ({
       ...w,
