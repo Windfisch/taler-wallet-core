@@ -1,15 +1,31 @@
 #!/usr/bin/env node
+/*
+ This file is part of GNU Taler
+ (C) 2022 Taler Systems SA
+
+ TALER is free software; you can redistribute it and/or modify it under the
+ terms of the GNU General Public License as published by the Free Software
+ Foundation; either version 3, or (at your option) any later version.
+
+ TALER is distributed in the hope that it will be useful, but WITHOUT ANY
+ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along with
+ TALER; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+ */
 
 import { main } from '../dist/taler-wallet-cli.mjs';
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
 
-async function run() {
-  try {
-    (await import('source-map-support')).install();
-  } catch (e) {
-    // Do nothing.
-  }
-  main();
+const doLog = process.env["TALER_DEBUG_SOURCEMAPS"] == "1";
+
+try {
+  require("source-map-support");
+  doLog && console.error("source map support installed");
+} catch (e) {
+  // Do nothing.
+  doLog && console.error("source map support not installed", e);
 }
-
-run();
-
+main();
