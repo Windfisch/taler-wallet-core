@@ -352,7 +352,7 @@ export const codecForConfirmReserveRequest = (): Codec<ConfirmReserveRequest> =>
 /**
  * Wire coins to the user's own bank account.
  */
-export class ReturnCoinsRequest {
+export interface ReturnCoinsRequest {
   /**
    * The amount to wire.
    */
@@ -368,12 +368,6 @@ export class ReturnCoinsRequest {
    * receive the funds.
    */
   senderWire?: string;
-
-  /**
-   * Verify that a value matches the schema of this class and convert it into a
-   * member.
-   */
-  static checked: (obj: any) => ReturnCoinsRequest;
 }
 
 export interface PrepareRefundResult {
