@@ -413,8 +413,9 @@ export interface InternationalizedString {
 
 /**
  * Contract terms from a merchant.
+ * FIXME: Add type field!
  */
-export interface ContractTerms {
+export interface MerchantContractTerms {
   /**
    * Hash of the merchant's wire details.
    */
@@ -1310,8 +1311,8 @@ export const codecForProduct = (): Codec<Product> =>
     .property("price", codecOptional(codecForString()))
     .build("Tax");
 
-export const codecForContractTerms = (): Codec<ContractTerms> =>
-  buildCodecForObject<ContractTerms>()
+export const codecForContractTerms = (): Codec<MerchantContractTerms> =>
+  buildCodecForObject<MerchantContractTerms>()
     .property("order_id", codecForString())
     .property("fulfillment_url", codecOptional(codecForString()))
     .property("fulfillment_message", codecOptional(codecForString()))

@@ -24,7 +24,7 @@ import {
   CancellationToken,
   canonicalJson,
   codecForDepositSuccess,
-  ContractTerms,
+  MerchantContractTerms,
   CreateDepositGroupRequest,
   CreateDepositGroupResponse,
   DepositGroupFees,
@@ -310,7 +310,7 @@ export async function prepareDepositGroup(
 
   const now = AbsoluteTime.now();
   const nowRounded = AbsoluteTime.toTimestamp(now);
-  const contractTerms: ContractTerms = {
+  const contractTerms: MerchantContractTerms = {
     auditors: [],
     exchanges: exchangeInfos,
     amount: req.amount,
@@ -407,7 +407,7 @@ export async function createDepositGroup(
   const merchantPair = await ws.cryptoApi.createEddsaKeypair({});
   const wireSalt = encodeCrock(getRandomBytes(16));
   const wireHash = hashWire(req.depositPaytoUri, wireSalt);
-  const contractTerms: ContractTerms = {
+  const contractTerms: MerchantContractTerms = {
     auditors: [],
     exchanges: exchangeInfos,
     amount: req.amount,

@@ -25,7 +25,7 @@
  * Imports.
  */
 import {
-  ContractTerms,
+  MerchantContractTerms,
   Duration,
   Codec,
   buildCodecForObject,
@@ -50,7 +50,7 @@ import {
 export interface PostOrderRequest {
   // The order must at least contain the minimal
   // order detail, but can override all
-  order: Partial<ContractTerms>;
+  order: Partial<MerchantContractTerms>;
 
   // if set, the backend will then set the refund deadline to the current
   // time plus the specified delay.
@@ -143,7 +143,7 @@ export interface CheckPaymentClaimedResponse {
   // Wallet claimed the order, but didn't pay yet.
   order_status: "claimed";
 
-  contract_terms: ContractTerms;
+  contract_terms: MerchantContractTerms;
 }
 
 export interface CheckPaymentPaidResponse {
@@ -175,7 +175,7 @@ export interface CheckPaymentPaidResponse {
   refund_amount: AmountString;
 
   // Contract terms
-  contract_terms: ContractTerms;
+  contract_terms: MerchantContractTerms;
 
   // Ihe wire transfer status from the exchange for this order if available, otherwise empty array
   wire_details: TransactionWireTransfer[];

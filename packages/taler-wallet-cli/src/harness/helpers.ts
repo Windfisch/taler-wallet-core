@@ -26,7 +26,7 @@
 import {
   AmountString,
   ConfirmPayResultType,
-  ContractTerms,
+  MerchantContractTerms,
   Duration,
   PreparePayResultType,
 } from "@gnu-taler/taler-util";
@@ -381,7 +381,7 @@ export async function makeTestPayment(
   args: {
     merchant: MerchantServiceInterface;
     wallet: WalletCli;
-    order: Partial<ContractTerms>;
+    order: Partial<MerchantContractTerms>;
     instance?: string;
   },
   auth: WithAuthorization = {},

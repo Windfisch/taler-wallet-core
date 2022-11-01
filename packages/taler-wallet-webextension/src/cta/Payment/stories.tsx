@@ -21,8 +21,7 @@
 
 import {
   Amounts,
-  ConfirmPayResultType,
-  ContractTerms,
+  MerchantContractTerms as ContractTerms,
   PreparePayResultType,
 } from "@gnu-taler/taler-util";
 import merchantIcon from "../../../static-dev/merchant-icon.jpeg";

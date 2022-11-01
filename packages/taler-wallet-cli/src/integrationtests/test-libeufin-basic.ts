@@ -17,7 +17,7 @@
 /**
  * Imports.
  */
-import { AbsoluteTime, ContractTerms, Duration } from "@gnu-taler/taler-util";
+import { AbsoluteTime, MerchantContractTerms, Duration } from "@gnu-taler/taler-util";
 import {
   WalletApiOperation,
   HarnessExchangeBankAccount,
@@ -271,7 +271,7 @@ export async function runLibeufinBasicTest(t: GlobalTestState) {
   console.log("balances", JSON.stringify(bal, undefined, 2));
   t.assertAmountEquals(bal.balances[0].available, "EUR:14.7");
 
-  const order: Partial<ContractTerms> = {
+  const order: Partial<MerchantContractTerms> = {
     summary: "Buy me!",
     amount: "EUR:5",
     fulfillment_url: "taler://fulfillment-success/thx",

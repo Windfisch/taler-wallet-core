@@ -25,7 +25,7 @@ import {
   CoinEnvelope,
   CoinRefreshRequest,
   CoinStatus,
-  ContractTerms,
+  MerchantContractTerms,
   DenominationInfo,
   DenominationPubKey,
   DenomSelectionState,
@@ -1572,7 +1572,7 @@ export interface DepositGroupRecord {
   /**
    * Verbatim contract terms.
    */
-  contractTermsRaw: ContractTerms;
+  contractTermsRaw: MerchantContractTerms;
 
   contractTermsHash: string;
 
@@ -1707,10 +1707,9 @@ export interface PeerPullPaymentInitiationRecord {
   /**
    * Contract terms for the other party.
    *
-   * FIXME: Nail down type!
-   * FIXME: Put in contractTerms store
+   * FIXME: Put into contract terms store.
    */
-  contractTerms: any;
+  contractTerms: PeerContractTerms;
 }
 
 /**

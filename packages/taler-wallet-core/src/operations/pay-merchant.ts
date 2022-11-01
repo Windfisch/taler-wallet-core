@@ -44,7 +44,7 @@ import {
   CoinStatus,
   ConfirmPayResult,
   ConfirmPayResultType,
-  ContractTerms,
+  MerchantContractTerms,
   ContractTermsUtil,
   DenominationInfo,
   Duration,
@@ -298,7 +298,7 @@ export async function expectProposalDownload(
 }
 
 export function extractContractData(
-  parsedContractTerms: ContractTerms,
+  parsedContractTerms: MerchantContractTerms,
   contractTermsHash: string,
   merchantSig: string,
 ): WalletContractData {
@@ -453,7 +453,7 @@ export async function processDownloadProposal(
 
   logger.info(`Contract terms hash: ${contractTermsHash}`);
 
-  let parsedContractTerms: ContractTerms;
+  let parsedContractTerms: MerchantContractTerms;
 
   try {
     parsedContractTerms = codecForContractTerms().decode(

@@ -55,7 +55,7 @@ import {
   AuditorDenomSig,
   codecForContractTerms,
   CoinEnvelope,
-  ContractTerms,
+  MerchantContractTerms,
   DenominationPubKey,
   DenomKeyType,
   ExchangeAuditor,
@@ -229,7 +229,7 @@ export enum ConfirmPayResultType {
  */
 export interface ConfirmPayResultDone {
   type: ConfirmPayResultType.Done;
-  contractTerms: ContractTerms;
+  contractTerms: MerchantContractTerms;
   transactionId: string;
 }
 
@@ -529,7 +529,7 @@ export type PreparePayResult =
 export interface PreparePayResultPaymentPossible {
   status: PreparePayResultType.PaymentPossible;
   proposalId: string;
-  contractTerms: ContractTerms;
+  contractTerms: MerchantContractTerms;
   contractTermsHash: string;
   amountRaw: string;
   amountEffective: string;
@@ -539,14 +539,14 @@ export interface PreparePayResultPaymentPossible {
 export interface PreparePayResultInsufficientBalance {
   status: PreparePayResultType.InsufficientBalance;
   proposalId: string;
-  contractTerms: ContractTerms;
+  contractTerms: MerchantContractTerms;
   amountRaw: string;
   noncePriv: string;
 }
 
 export interface PreparePayResultAlreadyConfirmed {
   status: PreparePayResultType.AlreadyConfirmed;
-  contractTerms: ContractTerms;
+  contractTerms: MerchantContractTerms;
   paid: boolean;
   amountRaw: string;
   amountEffective: string;

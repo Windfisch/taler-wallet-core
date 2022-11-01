@@ -18,17 +18,14 @@ import {
   AbsoluteTime,
   AmountJson,
   Amounts,
-  ConfirmPayResultType,
-  ContractTerms,
+  MerchantContractTerms as ContractTerms,
   PreparePayResult,
-  PreparePayResultPaymentPossible,
   PreparePayResultType,
   Product,
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { Amount } from "../../components/Amount.js";
-import { ErrorTalerOperation } from "../../components/ErrorTalerOperation.js";
 import { LoadingError } from "../../components/LoadingError.js";
 import { LogoHeader } from "../../components/LogoHeader.js";
 import { Part } from "../../components/Part.js";
