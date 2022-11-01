@@ -95,6 +95,7 @@ import { runAgeRestrictionsPeerTest } from "./test-age-restrictions-peer.js";
 import { runWalletBalanceTest } from "./test-wallet-balance.js";
 import { runAgeRestrictionsMixedMerchantTest } from "./test-age-restrictions-mixed-merchant.js";
 import { runWalletCryptoWorkerTest } from "./test-wallet-cryptoworker.js";
+import { runWithdrawalHighTest } from "./test-withdrawal-high.js";
 
 /**
  * Test runner.
@@ -176,6 +177,7 @@ const allTests: TestMainFunction[] = [
   runWalletBackupBasicTest,
   runWalletBackupDoublespendTest,
   runWalletBalanceTest,
+  runWithdrawalHighTest,
   runWallettestingTest,
   runWalletDblessTest,
   runWithdrawalAbortBankTest,
