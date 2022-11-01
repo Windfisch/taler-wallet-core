@@ -366,7 +366,7 @@ export function makeExchangeListItem(
       paytoUris: [],
       exchangeStatus: ExchangeEntryStatus.Unknown,
       permanent: r.permanent,
-      supportedAgeGroups: [],
+      ageRestrictionOptions: [],
     };
   }
   let exchangeStatus;
@@ -378,7 +378,7 @@ export function makeExchangeListItem(
     paytoUris: exchangeDetails.wireInfo.accounts.map((x) => x.payto_uri),
     exchangeStatus,
     permanent: r.permanent,
-    supportedAgeGroups: exchangeDetails.ageMask
+    ageRestrictionOptions: exchangeDetails.ageMask
       ? AgeRestriction.getAgeGroupsFromMask(exchangeDetails.ageMask)
       : [],
   };
