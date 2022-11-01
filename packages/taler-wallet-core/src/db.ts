@@ -473,6 +473,11 @@ export interface ExchangeDetailsRecord {
     | undefined;
 
   wireInfo: WireInfo;
+
+  /**
+   * Age restrictions supported by the exchange (bitmask).
+   */
+  ageMask?: number;
 }
 
 export interface ExchangeTosRecord {

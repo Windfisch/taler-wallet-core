@@ -919,6 +919,7 @@ export interface ExchangeListItem {
   paytoUris: string[];
   tosStatus: ExchangeTosStatus;
   exchangeStatus: ExchangeEntryStatus;
+  supportedAgeGroups: number[];
   /**
    * Permanently added to the wallet, as opposed to just
    * temporarily queried.
@@ -998,6 +999,7 @@ export const codecForExchangeListItem = (): Codec<ExchangeListItem> =>
     .property("tosStatus", codecForAny())
     .property("exchangeStatus", codecForAny())
     .property("permanent", codecForBoolean())
+    .property("supportedAgeGroups", codecForList(codecForNumber()))
     .build("ExchangeListItem");
 
 export const codecForExchangesListResponse = (): Codec<ExchangesListResponse> =>

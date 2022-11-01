@@ -76,6 +76,7 @@ import {
   runOperationHandlerForResult,
 } from "../util/retries.js";
 import { WALLET_EXCHANGE_PROTOCOL_VERSION } from "../versions.js";
+import { isWithdrawableDenom } from "./withdraw.js";
 
 const logger = new Logger("exchanges.ts");
 
@@ -657,6 +658,14 @@ export async function updateExchangeFromUrlHandler(
 
   let detailsPointerChanged = false;
 
+  let ageMask = 0;
+  for (const x of keysInfo.currentDenominations) {
+    if (isWithdrawableDenom(x) && x.denomPub.age_mask != 0) {
+      ageMask = x.denomPub.age_mask;
+      break;
+    }
+  }
+
   const updated = await ws.db
     .mktx((x) => [
       x.exchanges,
@@ -699,6 +708,7 @@ export async function updateExchangeFromUrlHandler(
         wireInfo,
         tosCurrentEtag: tosDownload.tosEtag,
         tosAccepted: existingTosAccepted,
+        ageMask,
       };
       if (existingDetails?.rowId) {
         newDetails.rowId = existingDetails.rowId;

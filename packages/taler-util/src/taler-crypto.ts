@@ -1025,6 +1025,23 @@ export namespace AgeRestriction {
     return count;
   }
 
+  /**
+   * Get the starting points for age groups in the mask.
+   */
+  export function getAgeGroupsFromMask(mask: number): number[] {
+    const groups: number[] = [];
+    let age = 1;
+    let m = mask >> 1;
+    while (m > 0) {
+      if (m & 1) {
+        groups.push(age);
+      }
+      m = m >> 1;
+      age++;
+    }
+    return groups;
+  }
+
   export function getAgeGroupIndex(mask: number, age: number): number {
     invariant((mask & 1) === 1);
     let i = 0;
