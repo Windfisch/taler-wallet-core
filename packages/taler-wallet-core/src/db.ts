@@ -46,6 +46,7 @@ import {
   TransactionIdStr,
   UnblindedSignature,
   WireInfo,
+  HashCodeString,
 } from "@gnu-taler/taler-util";
 import {
   describeContents,
@@ -1630,16 +1631,12 @@ export interface TombstoneRecord {
   id: string;
 }
 
-export interface BalancePerCurrencyRecord {
-  currency: string;
-
-  availableNow: AmountString;
-
-  availableExpected: AmountString;
-
-  pendingIncoming: AmountString;
-
-  pendingOutgoing: AmountString;
+export enum PeerPushPaymentInitiationStatus {
+  /**
+   * Initiated, but no purse created yet.
+   */
+  Initiated = 10 /* ACTIVE_START */,
+  PurseCreated = 50 /* DORMANT_START */,
 }
 
 /**
@@ -1653,7 +1650,8 @@ export interface PeerPushPaymentInitiationRecord {
 
   amount: AmountString;
 
-  contractTerms: any;
+  contractTermsHash: HashCodeString;
+
   /**
    * Purse public key.  Used as the primary key to look
    * up this record.
@@ -1679,12 +1677,12 @@ export interface PeerPushPaymentInitiationRecord {
 
   purseExpiration: TalerProtocolTimestamp;
 
-  /**
-   * Did we successfully create the purse with the exchange?
-   */
-  purseCreated: boolean;
-
   timestampCreated: TalerProtocolTimestamp;
+
+  /**
+   * Status of the peer push payment initiation.
+   */
+  status: PeerPushPaymentInitiationStatus;
 }
 
 export interface PeerPullPaymentInitiationRecord {
@@ -1710,11 +1708,15 @@ export interface PeerPullPaymentInitiationRecord {
   pursePriv: string;
 
   /**
-   * Contract terms for the other party.
-   *
-   * FIXME: Put into contract terms store.
+   * Hash of the contract terms.  Also
+   * used to look up the contract terms in the DB.
    */
-  contractTerms: PeerContractTerms;
+  contractTermsHash: string;
+
+  /**
+   * Status of the peer pull payment initiation.
+   */
+  status: OperationStatus;
 }
 
 /**
@@ -1735,9 +1737,22 @@ export interface PeerPushPaymentIncomingRecord {
 
   timestamp: TalerProtocolTimestamp;
 
-  contractTerms: PeerContractTerms;
+  /**
+   * Hash of the contract terms.  Also
+   * used to look up the contract terms in the DB.
+   */
+  contractTermsHash: string;
 
-  // FIXME: add status etc.
+  /**
+   * Status of the peer push payment incoming initiation.
+   */
+  status: OperationStatus;
+}
+
+export enum PeerPullPaymentIncomingStatus {
+  Proposed = 30 /* USER_ATTENTION_START */,
+  Accepted = 10 /* ACTIVE_START */,
+  Paid = 50 /* DORMANT_START */,
 }
 
 export interface PeerPullPaymentIncomingRecord {
@@ -1751,11 +1766,12 @@ export interface PeerPullPaymentIncomingRecord {
 
   timestampCreated: TalerProtocolTimestamp;
 
-  paid: boolean;
-
-  accepted: boolean;
-
   contractPriv: string;
+
+  /**
+   * Status of the peer push payment incoming initiation.
+   */
+  status: PeerPullPaymentIncomingStatus;
 }
 
 /**
@@ -2058,13 +2074,6 @@ export const WalletStoresV1 = {
     "ghostDepositGroups",
     describeContents<GhostDepositGroupRecord>({
       keyPath: "contractTermsHash",
-    }),
-    {},
-  ),
-  balancesPerCurrency: describeStore(
-    "balancesPerCurrency",
-    describeContents<BalancePerCurrencyRecord>({
-      keyPath: "currency",
     }),
     {},
   ),

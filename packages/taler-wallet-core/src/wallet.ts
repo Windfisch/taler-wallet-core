@@ -184,7 +184,7 @@ import {
   acceptPeerPushPayment,
   checkPeerPullPayment,
   checkPeerPushPayment,
-  initiatePeerRequestForPay,
+  initiatePeerPullPayment,
   initiatePeerToPeerPush,
 } from "./operations/pay-peer.js";
 import { getPendingOperations } from "./operations/pending.js";
@@ -1354,7 +1354,7 @@ async function dispatchRequestInternal<Op extends WalletApiOperation>(
     }
     case WalletApiOperation.InitiatePeerPullPayment: {
       const req = codecForInitiatePeerPullPaymentRequest().decode(payload);
-      return await initiatePeerRequestForPay(ws, req);
+      return await initiatePeerPullPayment(ws, req);
     }
     case WalletApiOperation.CheckPeerPullPayment: {
       const req = codecForCheckPeerPullPaymentRequest().decode(payload);

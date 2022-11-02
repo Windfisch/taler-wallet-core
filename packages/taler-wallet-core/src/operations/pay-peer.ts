@@ -56,6 +56,7 @@ import {
   Logger,
   parsePayPullUri,
   parsePayPushUri,
+  PeerContractTerms,
   RefreshReason,
   strcmp,
   TalerProtocolTimestamp,
@@ -64,6 +65,10 @@ import {
   WalletAccountMergeFlags,
 } from "@gnu-taler/taler-util";
 import {
+  OperationStatus,
+  PeerPullPaymentIncomingStatus,
+  PeerPushPaymentIncomingRecord,
+  PeerPushPaymentInitiationStatus,
   ReserveRecord,
   WalletStoresV1,
   WithdrawalGroupStatus,
@@ -247,6 +252,7 @@ export async function initiatePeerToPeerPush(
   const coinSelRes: PeerCoinSelection | undefined = await ws.db
     .mktx((x) => [
       x.exchanges,
+      x.contractTerms,
       x.coins,
       x.coinAvailability,
       x.denominations,
@@ -272,16 +278,21 @@ export async function initiatePeerToPeerPush(
       await tx.peerPushPaymentInitiations.add({
         amount: Amounts.stringify(instructedAmount),
         contractPriv: econtractResp.contractPriv,
-        contractTerms,
+        contractTermsHash: hContractTerms,
         exchangeBaseUrl: sel.exchangeBaseUrl,
         mergePriv: mergePair.priv,
         mergePub: mergePair.pub,
-        // FIXME: only set this later!
-        purseCreated: true,
         purseExpiration: purseExpiration,
         pursePriv: pursePair.priv,
         pursePub: pursePair.pub,
         timestampCreated: TalerProtocolTimestamp.now(),
+        // FIXME: Only set the later when the purse is actually created!
+        status: PeerPushPaymentInitiationStatus.PurseCreated,
+      });
+
+      await tx.contractTerms.put({
+        h: hContractTerms,
+        contractTermsRaw: contractTerms,
       });
 
       return sel;
@@ -403,8 +414,12 @@ export async function checkPeerPushPayment(
 
   const peerPushPaymentIncomingId = encodeCrock(getRandomBytes(32));
 
+  const contractTermsHash = ContractTermsUtil.hashContractTerms(
+    dec.contractTerms,
+  );
+
   await ws.db
-    .mktx((x) => [x.peerPushPaymentIncoming])
+    .mktx((x) => [x.contractTerms, x.peerPushPaymentIncoming])
     .runReadWrite(async (tx) => {
       await tx.peerPushPaymentIncoming.add({
         peerPushPaymentIncomingId,
@@ -413,7 +428,13 @@ export async function checkPeerPushPayment(
         mergePriv: dec.mergePriv,
         pursePub: pursePub,
         timestamp: TalerProtocolTimestamp.now(),
-        contractTerms: dec.contractTerms,
+        contractTermsHash,
+        status: OperationStatus.Finished,
+      });
+
+      await tx.contractTerms.put({
+        h: contractTermsHash,
+        contractTermsRaw: dec.contractTerms,
       });
     });
 
@@ -485,10 +506,21 @@ export async function acceptPeerPushPayment(
   ws: InternalWalletState,
   req: AcceptPeerPushPaymentRequest,
 ): Promise<AcceptPeerPushPaymentResponse> {
-  const peerInc = await ws.db
-    .mktx((x) => [x.peerPushPaymentIncoming])
+  let peerInc: PeerPushPaymentIncomingRecord | undefined;
+  let contractTerms: PeerContractTerms | undefined;
+  await ws.db
+    .mktx((x) => [x.contractTerms, x.peerPushPaymentIncoming])
     .runReadOnly(async (tx) => {
-      return tx.peerPushPaymentIncoming.get(req.peerPushPaymentIncomingId);
+      peerInc = await tx.peerPushPaymentIncoming.get(
+        req.peerPushPaymentIncomingId,
+      );
+      if (!peerInc) {
+        return;
+      }
+      const ctRec = await tx.contractTerms.get(peerInc.contractTermsHash);
+      if (ctRec) {
+        contractTerms = ctRec.contractTermsRaw;
+      }
     });
 
   if (!peerInc) {
@@ -497,9 +529,11 @@ export async function acceptPeerPushPayment(
     );
   }
 
+  checkDbInvariant(!!contractTerms);
+
   await updateExchangeFromUrl(ws, peerInc.exchangeBaseUrl);
 
-  const amount = Amounts.parseOrThrow(peerInc.contractTerms.amount);
+  const amount = Amounts.parseOrThrow(contractTerms.amount);
 
   const mergeReserveInfo = await getMergeReserveInfo(ws, {
     exchangeBaseUrl: peerInc.exchangeBaseUrl,
@@ -513,14 +547,12 @@ export async function acceptPeerPushPayment(
   );
 
   const sigRes = await ws.cryptoApi.signPurseMerge({
-    contractTermsHash: ContractTermsUtil.hashContractTerms(
-      peerInc.contractTerms,
-    ),
+    contractTermsHash: ContractTermsUtil.hashContractTerms(contractTerms),
     flags: WalletAccountMergeFlags.MergeFullyPaidPurse,
     mergePriv: peerInc.mergePriv,
     mergeTimestamp: mergeTimestamp,
     purseAmount: Amounts.stringify(amount),
-    purseExpiration: peerInc.contractTerms.purse_expiration,
+    purseExpiration: contractTerms.purse_expiration,
     purseFee: Amounts.stringify(Amounts.getZero(amount.currency)),
     pursePub: peerInc.pursePub,
     reservePayto,
@@ -549,7 +581,7 @@ export async function acceptPeerPushPayment(
     amount,
     wgInfo: {
       withdrawalType: WithdrawalRecordType.PeerPushCredit,
-      contractTerms: peerInc.contractTerms,
+      contractTerms,
     },
     exchangeBaseUrl: peerInc.exchangeBaseUrl,
     reserveStatus: WithdrawalGroupStatus.QueryingStatus,
@@ -567,9 +599,6 @@ export async function acceptPeerPushPayment(
   };
 }
 
-/**
- * FIXME: Bad name!
- */
 export async function acceptPeerPullPayment(
   ws: InternalWalletState,
   req: AcceptPeerPullPaymentRequest,
@@ -619,7 +648,7 @@ export async function acceptPeerPullPayment(
       if (!pi) {
         throw Error();
       }
-      pi.accepted = true;
+      pi.status = PeerPullPaymentIncomingStatus.Accepted;
       await tx.peerPullPaymentIncoming.put(pi);
 
       return sel;
@@ -711,8 +740,7 @@ export async function checkPeerPullPayment(
         pursePub: pursePub,
         timestampCreated: TalerProtocolTimestamp.now(),
         contractTerms: dec.contractTerms,
-        paid: false,
-        accepted: false,
+        status: PeerPullPaymentIncomingStatus.Proposed,
       });
     });
 
@@ -726,7 +754,7 @@ export async function checkPeerPullPayment(
 /**
  * Initiate a peer pull payment.
  */
-export async function initiatePeerRequestForPay(
+export async function initiatePeerPullPayment(
   ws: InternalWalletState,
   req: InitiatePeerPullPaymentRequest,
 ): Promise<InitiatePeerPullPaymentResponse> {
@@ -786,14 +814,19 @@ export async function initiatePeerRequestForPay(
   });
 
   await ws.db
-    .mktx((x) => [x.peerPullPaymentInitiations])
+    .mktx((x) => [x.peerPullPaymentInitiations, x.contractTerms])
     .runReadWrite(async (tx) => {
       await tx.peerPullPaymentInitiations.put({
         amount: req.amount,
-        contractTerms,
+        contractTermsHash: hContractTerms,
         exchangeBaseUrl: req.exchangeBaseUrl,
         pursePriv: pursePair.priv,
         pursePub: pursePair.pub,
+        status: OperationStatus.Finished,
+      });
+      await tx.contractTerms.put({
+        contractTermsRaw: contractTerms,
+        h: hContractTerms,
       });
     });
 
