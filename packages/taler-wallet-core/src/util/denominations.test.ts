@@ -25,6 +25,7 @@ import {
   FeeDescriptionPair,
   Amounts,
   DenominationInfo,
+  AmountString,
 } from "@gnu-taler/taler-util";
 // import { expect } from "chai";
 import {
@@ -37,8 +38,8 @@ import test, { ExecutionContext } from "ava";
 /**
  * Create some constants to be used as reference in the tests
  */
-const VALUES = Array.from({ length: 10 }).map((undef, t) =>
-  Amounts.parseOrThrow(`USD:${t}`),
+const VALUES: AmountString[] = Array.from({ length: 10 }).map(
+  (undef, t) => `USD:${t}`,
 );
 const TIMESTAMPS = Array.from({ length: 20 }).map((undef, t_s) => ({ t_s }));
 const ABS_TIME = TIMESTAMPS.map((m) => AbsoluteTime.fromTimestamp(m));

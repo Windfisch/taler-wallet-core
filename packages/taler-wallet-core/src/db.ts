@@ -47,6 +47,7 @@ import {
   UnblindedSignature,
   WireInfo,
   HashCodeString,
+  Amounts,
 } from "@gnu-taler/taler-util";
 import {
   describeContents,
@@ -276,22 +277,22 @@ export interface DenomFees {
   /**
    * Fee for withdrawing.
    */
-  feeWithdraw: AmountJson;
+  feeWithdraw: AmountString;
 
   /**
    * Fee for depositing.
    */
-  feeDeposit: AmountJson;
+  feeDeposit: AmountString;
 
   /**
    * Fee for refreshing.
    */
-  feeRefresh: AmountJson;
+  feeRefresh: AmountString;
 
   /**
    * Fee for refunding.
    */
-  feeRefund: AmountJson;
+  feeRefund: AmountString;
 }
 
 /**
@@ -393,15 +394,15 @@ export namespace DenominationRecord {
     return {
       denomPub: d.denomPub,
       denomPubHash: d.denomPubHash,
-      feeDeposit: d.fees.feeDeposit,
-      feeRefresh: d.fees.feeRefresh,
-      feeRefund: d.fees.feeRefund,
-      feeWithdraw: d.fees.feeWithdraw,
+      feeDeposit: Amounts.stringify(d.fees.feeDeposit),
+      feeRefresh: Amounts.stringify(d.fees.feeRefresh),
+      feeRefund: Amounts.stringify(d.fees.feeRefund),
+      feeWithdraw: Amounts.stringify(d.fees.feeWithdraw),
       stampExpireDeposit: d.stampExpireDeposit,
       stampExpireLegal: d.stampExpireLegal,
       stampExpireWithdraw: d.stampExpireWithdraw,
       stampStart: d.stampStart,
-      value: DenominationRecord.getValue(d),
+      value: Amounts.stringify(DenominationRecord.getValue(d)),
       exchangeBaseUrl: d.exchangeBaseUrl,
     };
   }
@@ -527,7 +528,7 @@ export interface ExchangeRecord {
    * currency.
    *
    * We could use a rowID here, but having the currency in the
-   * details pointer lets us do fewer DB queries sometimes.
+   * details pointer lets us do fewer DB queries
    */
   detailsPointer: ExchangeDetailsPointer | undefined;
 
@@ -752,12 +753,12 @@ export interface TipRecord {
   /**
    * The tipped amount.
    */
-  tipAmountRaw: AmountJson;
+  tipAmountRaw: AmountString;
 
   /**
    * Effect on the balance (including fees etc).
    */
-  tipAmountEffective: AmountJson;
+  tipAmountEffective: AmountString;
 
   /**
    * Timestamp, the tip can't be picked up anymore after this deadline.
@@ -854,9 +855,9 @@ export interface RefreshGroupRecord {
   // object store for faster updates?
   refreshSessionPerCoin: (RefreshSessionRecord | undefined)[];
 
-  inputPerCoin: AmountJson[];
+  inputPerCoin: AmountString[];
 
-  estimatedOutputPerCoin: AmountJson[];
+  estimatedOutputPerCoin: AmountString[];
 
   /**
    * Flag for each coin whether refreshing finished.
@@ -888,7 +889,7 @@ export interface RefreshSessionRecord {
    * Sum of the value of denominations we want
    * to withdraw in this session, without fees.
    */
-  amountRefreshOutput: AmountJson;
+  amountRefreshOutput: AmountString;
 
   /**
    * Hashed denominations of the newly requested coins.
@@ -927,9 +928,9 @@ export interface WalletRefundItemCommon {
    */
   obtainedTime: TalerProtocolTimestamp;
 
-  refundAmount: AmountJson;
+  refundAmount: AmountString;
 
-  refundFee: AmountJson;
+  refundFee: AmountString;
 
   /**
    * Upper bound on the refresh cost incurred by
@@ -938,7 +939,7 @@ export interface WalletRefundItemCommon {
    * Might be lower in practice when two refunds on the same
    * coin are refreshed in the same refresh operation.
    */
-  totalRefreshCostBound: AmountJson;
+  totalRefreshCostBound: AmountString;
 
   coinPub: string;
 
@@ -1003,12 +1004,12 @@ export interface WalletContractData {
   merchantSig: string;
   merchantPub: string;
   merchant: MerchantInfo;
-  amount: AmountJson;
+  amount: AmountString;
   orderId: string;
   merchantBaseUrl: string;
   summary: string;
   autoRefund: TalerProtocolDuration | undefined;
-  maxWireFee: AmountJson;
+  maxWireFee: AmountString;
   wireFeeAmortization: number;
   payDeadline: TalerProtocolTimestamp;
   refundDeadline: TalerProtocolTimestamp;
@@ -1017,7 +1018,7 @@ export interface WalletContractData {
   timestamp: TalerProtocolTimestamp;
   wireMethod: string;
   wireInfoHash: string;
-  maxDepositFee: AmountJson;
+  maxDepositFee: AmountString;
   minimumAge?: number;
   deliveryDate: TalerProtocolTimestamp | undefined;
   deliveryLocation: Location | undefined;
@@ -1099,7 +1100,7 @@ export interface ProposalDownloadInfo {
 
 export interface PurchasePayInfo {
   payCoinSelection: PayCoinSelection;
-  totalPayCost: AmountJson;
+  totalPayCost: AmountString;
   payCoinSelectionUid: string;
 }
 
@@ -1216,7 +1217,7 @@ export interface PurchaseRecord {
    * How much merchant has refund to be taken but the wallet
    * did not picked up yet
    */
-  refundAmountAwaiting: AmountJson | undefined;
+  refundAmountAwaiting: AmountString | undefined;
 }
 
 export enum ConfigRecordKey {
@@ -1379,7 +1380,7 @@ export interface WithdrawalGroupRecord {
   /**
    * Amount that was sent by the user to fund the reserve.
    */
-  instructedAmount: AmountJson;
+  instructedAmount: AmountString;
 
   /**
    * Amount that was observed when querying the reserve that
@@ -1387,7 +1388,7 @@ export interface WithdrawalGroupRecord {
    *
    * Useful for diagnostics.
    */
-  reserveBalanceAmount?: AmountJson;
+  reserveBalanceAmount?: AmountString;
 
   /**
    * Amount including fees (i.e. the amount subtracted from the
@@ -1396,7 +1397,7 @@ export interface WithdrawalGroupRecord {
    * (Initial amount confirmed by the user, might differ with denomSel
    * on reselection.)
    */
-  rawWithdrawalAmount: AmountJson;
+  rawWithdrawalAmount: AmountString;
 
   /**
    * Amount that will be added to the balance when the withdrawal succeeds.
@@ -1404,7 +1405,7 @@ export interface WithdrawalGroupRecord {
    * (Initial amount confirmed by the user, might differ with denomSel
    * on reselection.)
    */
-  effectiveWithdrawalAmount: AmountJson;
+  effectiveWithdrawalAmount: AmountString;
 
   /**
    * Denominations selected for withdrawal.
@@ -1587,9 +1588,9 @@ export interface DepositGroupRecord {
 
   payCoinSelectionUid: string;
 
-  totalPayCost: AmountJson;
+  totalPayCost: AmountString;
 
-  effectiveDepositAmount: AmountJson;
+  effectiveDepositAmount: AmountString;
 
   depositedPerCoin: boolean[];
 

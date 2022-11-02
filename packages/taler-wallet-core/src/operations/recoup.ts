@@ -291,7 +291,7 @@ async function recoupRefreshCoin(
         ).amount;
         recoupGroup.scheduleRefreshCoins.push({
           coinPub: oldCoin.coinPub,
-          amount: residualAmount,
+          amount: Amounts.stringify(residualAmount),
         });
       }
       await tx.coins.put(revokedCoin);

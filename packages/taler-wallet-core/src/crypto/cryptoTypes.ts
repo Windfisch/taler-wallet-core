@@ -44,8 +44,8 @@ import {
 
 export interface RefreshNewDenomInfo {
   count: number;
-  value: AmountJson;
-  feeWithdraw: AmountJson;
+  value: AmountString;
+  feeWithdraw: AmountString;
   denomPub: DenominationPubKey;
   denomPubHash: string;
 }

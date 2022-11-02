@@ -98,10 +98,10 @@ function denominationRecordFromKeys(
     exchangeBaseUrl,
     exchangeMasterPub,
     fees: {
-      feeDeposit: Amounts.parseOrThrow(denomIn.fee_deposit),
-      feeRefresh: Amounts.parseOrThrow(denomIn.fee_refresh),
-      feeRefund: Amounts.parseOrThrow(denomIn.fee_refund),
-      feeWithdraw: Amounts.parseOrThrow(denomIn.fee_withdraw),
+      feeDeposit: Amounts.stringify(denomIn.fee_deposit),
+      feeRefresh: Amounts.stringify(denomIn.fee_refresh),
+      feeRefund: Amounts.stringify(denomIn.fee_refund),
+      feeWithdraw: Amounts.stringify(denomIn.fee_withdraw),
     },
     isOffered: true,
     isRevoked: false,
@@ -267,11 +267,11 @@ async function validateWireInfo(
       const startStamp = x.start_date;
       const endStamp = x.end_date;
       const fee: WireFee = {
-        closingFee: Amounts.parseOrThrow(x.closing_fee),
+        closingFee: Amounts.stringify(x.closing_fee),
         endStamp,
         sig: x.sig,
         startStamp,
-        wireFee: Amounts.parseOrThrow(x.wire_fee),
+        wireFee: Amounts.stringify(x.wire_fee),
       };
       let isValid = false;
       if (ws.insecureTrustExchange) {
@@ -321,9 +321,9 @@ async function validateGlobalFees(
       throw Error("exchange global fees signature invalid: " + gf.master_sig);
     }
     egf.push({
-      accountFee: Amounts.parseOrThrow(gf.account_fee),
-      historyFee: Amounts.parseOrThrow(gf.history_fee),
-      purseFee: Amounts.parseOrThrow(gf.purse_fee),
+      accountFee: Amounts.stringify(gf.account_fee),
+      historyFee: Amounts.stringify(gf.history_fee),
+      purseFee: Amounts.stringify(gf.purse_fee),
       startDate: gf.start_date,
       endDate: gf.end_date,
       signature: gf.master_sig,

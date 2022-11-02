@@ -167,8 +167,8 @@ export function selectWithdrawalDenominations(
     denomPubHash: string;
   }[] = [];
 
-  let totalCoinValue = Amounts.getZero(amountAvailable.currency);
-  let totalWithdrawCost = Amounts.getZero(amountAvailable.currency);
+  let totalCoinValue = Amounts.zeroOfCurrency(amountAvailable.currency);
+  let totalWithdrawCost = Amounts.zeroOfCurrency(amountAvailable.currency);
 
   denoms = denoms.filter(isWithdrawableDenom);
   denoms.sort((d1, d2) =>
@@ -223,8 +223,8 @@ export function selectWithdrawalDenominations(
 
   return {
     selectedDenoms,
-    totalCoinValue,
-    totalWithdrawCost,
+    totalCoinValue: Amounts.stringify(totalCoinValue),
+    totalWithdrawCost: Amounts.stringify(totalCoinValue),
   };
 }
 
@@ -238,8 +238,8 @@ export function selectForcedWithdrawalDenominations(
     denomPubHash: string;
   }[] = [];
 
-  let totalCoinValue = Amounts.getZero(amountAvailable.currency);
-  let totalWithdrawCost = Amounts.getZero(amountAvailable.currency);
+  let totalCoinValue = Amounts.zeroOfCurrency(amountAvailable.currency);
+  let totalWithdrawCost = Amounts.zeroOfCurrency(amountAvailable.currency);
 
   denoms = denoms.filter(isWithdrawableDenom);
   denoms.sort((d1, d2) =>
@@ -279,8 +279,8 @@ export function selectForcedWithdrawalDenominations(
 
   return {
     selectedDenoms,
-    totalCoinValue,
-    totalWithdrawCost,
+    totalCoinValue: Amounts.stringify(totalCoinValue),
+    totalWithdrawCost: Amounts.stringify(totalWithdrawCost),
   };
 }
 
@@ -416,10 +416,10 @@ async function processPlanchetGenerate(
   checkDbInvariant(!!denom);
   const r = await ws.cryptoApi.createPlanchet({
     denomPub: denom.denomPub,
-    feeWithdraw: denom.feeWithdraw,
+    feeWithdraw: Amounts.parseOrThrow(denom.feeWithdraw),
     reservePriv: withdrawalGroup.reservePriv,
     reservePub: withdrawalGroup.reservePub,
-    value: denom.value,
+    value: Amounts.parseOrThrow(denom.value),
     coinIndex: coinIdx,
     secretSeed: withdrawalGroup.secretSeed,
     restrictAge: withdrawalGroup.restrictAge,
@@ -950,7 +950,7 @@ async function queryReserve(
         return;
       }
       wg.status = WithdrawalGroupStatus.Ready;
-      wg.reserveBalanceAmount = Amounts.parse(result.response.balance);
+      wg.reserveBalanceAmount = Amounts.stringify(result.response.balance);
       await tx.withdrawalGroups.put(wg);
     });
 
@@ -1427,7 +1427,7 @@ export async function getFundingPaytoUrisTx(
 export function augmentPaytoUrisForWithdrawal(
   plainPaytoUris: string[],
   reservePub: string,
-  instructedAmount: AmountJson,
+  instructedAmount: AmountLike,
 ): string[] {
   return plainPaytoUris.map((x) =>
     addPaytoQueryParams(x, {
@@ -1732,7 +1732,7 @@ export async function internalCreateWithdrawalGroup(
     denomSelUid,
     denomsSel: initialDenomSel,
     exchangeBaseUrl: canonExchange,
-    instructedAmount: amount,
+    instructedAmount: Amounts.stringify(amount),
     timestampStart: now,
     rawWithdrawalAmount: initialDenomSel.totalWithdrawCost,
     effectiveWithdrawalAmount: initialDenomSel.totalCoinValue,

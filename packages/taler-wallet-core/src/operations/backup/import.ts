@@ -104,10 +104,8 @@ async function recoverPayCoinSelection(
 
   const coveredExchanges: Set<string> = new Set();
 
-  let totalWireFee: AmountJson = Amounts.getZero(contractData.amount.currency);
-  let totalDepositFees: AmountJson = Amounts.getZero(
-    contractData.amount.currency,
-  );
+  let totalWireFee: AmountJson = Amounts.zeroOfAmount(contractData.amount);
+  let totalDepositFees: AmountJson = Amounts.zeroOfAmount(contractData.amount);
 
   for (const coinPub of coinPubs) {
     const coinRecord = await tx.coins.get(coinPub);
@@ -136,7 +134,7 @@ async function recoverPayCoinSelection(
           fee.startStamp <= contractData.timestamp &&
           fee.endStamp >= contractData.timestamp
         ) {
-          wireFee = fee.wireFee;
+          wireFee = Amounts.parseOrThrow(fee.wireFee);
           break;
         }
       }
@@ -156,7 +154,7 @@ async function recoverPayCoinSelection(
   if (Amounts.cmp(contractData.maxWireFee, amortizedWireFee) < 0) {
     customerWireFee = amortizedWireFee;
   } else {
-    customerWireFee = Amounts.getZero(contractData.amount.currency);
+    customerWireFee = Amounts.zeroOfAmount(contractData.amount);
   }
 
   const customerDepositFees = Amounts.sub(
@@ -166,10 +164,10 @@ async function recoverPayCoinSelection(
 
   return {
     coinPubs,
-    coinContributions,
-    paymentAmount: contractData.amount,
-    customerWireFees: customerWireFee,
-    customerDepositFees,
+    coinContributions: coinContributions.map((x) => Amounts.stringify(x)),
+    paymentAmount: Amounts.stringify(contractData.amount),
+    customerWireFees: Amounts.stringify(customerWireFee),
+    customerDepositFees: Amounts.stringify(customerDepositFees),
   };
 }
 
@@ -183,8 +181,8 @@ async function getDenomSelStateFromBackup(
     denomPubHash: string;
     count: number;
   }[] = [];
-  let totalCoinValue = Amounts.getZero(currency);
-  let totalWithdrawCost = Amounts.getZero(currency);
+  let totalCoinValue = Amounts.zeroOfCurrency(currency);
+  let totalWithdrawCost = Amounts.zeroOfCurrency(currency);
   for (const s of sel) {
     const d = await tx.denominations.get([exchangeBaseUrl, s.denom_pub_hash]);
     checkBackupInvariant(!!d);
@@ -200,8 +198,8 @@ async function getDenomSelStateFromBackup(
   }
   return {
     selectedDenoms,
-    totalCoinValue,
-    totalWithdrawCost,
+    totalCoinValue: Amounts.stringify(totalCoinValue),
+    totalWithdrawCost: Amounts.stringify(totalCoinValue),
   };
 }
 
@@ -380,11 +378,11 @@ export async function importBackup(
           for (const fee of backupExchangeDetails.wire_fees) {
             const w = (wireInfo.feesForType[fee.wire_type] ??= []);
             w.push({
-              closingFee: Amounts.parseOrThrow(fee.closing_fee),
+              closingFee: Amounts.stringify(fee.closing_fee),
               endStamp: fee.end_stamp,
               sig: fee.sig,
               startStamp: fee.start_stamp,
-              wireFee: Amounts.parseOrThrow(fee.wire_fee),
+              wireFee: Amounts.stringify(fee.wire_fee),
             });
           }
           let tosAccepted = undefined;
@@ -412,9 +410,9 @@ export async function importBackup(
             tosCurrentEtag: backupExchangeDetails.tos_accepted_etag || "",
             tosAccepted,
             globalFees: backupExchangeDetails.global_fees.map((x) => ({
-              accountFee: Amounts.parseOrThrow(x.accountFee),
-              historyFee: Amounts.parseOrThrow(x.historyFee),
-              purseFee: Amounts.parseOrThrow(x.purseFee),
+              accountFee: Amounts.stringify(x.accountFee),
+              historyFee: Amounts.stringify(x.historyFee),
+              purseFee: Amounts.stringify(x.purseFee),
               endDate: x.endDate,
               historyTimeout: x.historyTimeout,
               signature: x.signature,
@@ -447,16 +445,10 @@ export async function importBackup(
               exchangeBaseUrl: backupExchangeDetails.base_url,
               exchangeMasterPub: backupExchangeDetails.master_public_key,
               fees: {
-                feeDeposit: Amounts.parseOrThrow(
-                  backupDenomination.fee_deposit,
-                ),
-                feeRefresh: Amounts.parseOrThrow(
-                  backupDenomination.fee_refresh,
-                ),
-                feeRefund: Amounts.parseOrThrow(backupDenomination.fee_refund),
-                feeWithdraw: Amounts.parseOrThrow(
-                  backupDenomination.fee_withdraw,
-                ),
+                feeDeposit: Amounts.stringify(backupDenomination.fee_deposit),
+                feeRefresh: Amounts.stringify(backupDenomination.fee_refresh),
+                feeRefund: Amounts.stringify(backupDenomination.fee_refund),
+                feeWithdraw: Amounts.stringify(backupDenomination.fee_withdraw),
               },
               isOffered: backupDenomination.is_offered,
               isRevoked: backupDenomination.is_revoked,
@@ -542,7 +534,7 @@ export async function importBackup(
         await tx.withdrawalGroups.put({
           withdrawalGroupId: backupWg.withdrawal_group_id,
           exchangeBaseUrl: backupWg.exchange_base_url,
-          instructedAmount,
+          instructedAmount: Amounts.stringify(instructedAmount),
           secretSeed: backupWg.secret_seed,
           denomsSel: await getDenomSelStateFromBackup(
             tx,
@@ -551,10 +543,10 @@ export async function importBackup(
             backupWg.selected_denoms,
           ),
           denomSelUid: backupWg.selected_denoms_uid,
-          rawWithdrawalAmount: Amounts.parseOrThrow(
+          rawWithdrawalAmount: Amounts.stringify(
             backupWg.raw_withdrawal_amount,
           ),
-          effectiveWithdrawalAmount: Amounts.parseOrThrow(
+          effectiveWithdrawalAmount: Amounts.stringify(
             backupWg.effective_withdrawal_amount,
           ),
           reservePriv: backupWg.reserve_priv,
@@ -618,10 +610,10 @@ export async function importBackup(
               coinPub: backupRefund.coin_pub,
               executionTime: backupRefund.execution_time,
               obtainedTime: backupRefund.obtained_time,
-              refundAmount: Amounts.parseOrThrow(backupRefund.refund_amount),
-              refundFee: denom.fees.feeRefund,
+              refundAmount: Amounts.stringify(backupRefund.refund_amount),
+              refundFee: Amounts.stringify(denom.fees.feeRefund),
               rtransactionId: backupRefund.rtransaction_id,
-              totalRefreshCostBound: Amounts.parseOrThrow(
+              totalRefreshCostBound: Amounts.stringify(
                 backupRefund.total_refresh_cost_bound,
               ),
             };
@@ -658,7 +650,7 @@ export async function importBackup(
           if (parsedContractTerms.max_wire_fee) {
             maxWireFee = Amounts.parseOrThrow(parsedContractTerms.max_wire_fee);
           } else {
-            maxWireFee = Amounts.getZero(amount.currency);
+            maxWireFee = Amounts.zeroOfCurrency(amount.currency);
           }
           const download: ProposalDownloadInfo = {
             contractTermsHash,
@@ -682,7 +674,7 @@ export async function importBackup(
                 backupPurchase.pay_info,
               ),
               payCoinSelectionUid: backupPurchase.pay_info.pay_coins_uid,
-              totalPayCost: Amounts.parseOrThrow(
+              totalPayCost: Amounts.stringify(
                 backupPurchase.pay_info.total_pay_cost,
               ),
             };
@@ -776,7 +768,7 @@ export async function importBackup(
                   count: x.count,
                   denomPubHash: x.denom_pub_hash,
                 })),
-                amountRefreshOutput: denomSel.totalCoinValue,
+                amountRefreshOutput: Amounts.stringify(denomSel.totalCoinValue),
               });
             } else {
               refreshSessionPerCoin.push(undefined);
@@ -797,11 +789,11 @@ export async function importBackup(
             operationStatus: backupRefreshGroup.timestamp_finish
               ? RefreshOperationStatus.Finished
               : RefreshOperationStatus.Pending,
-            inputPerCoin: backupRefreshGroup.old_coins.map((x) =>
-              Amounts.parseOrThrow(x.input_amount),
+            inputPerCoin: backupRefreshGroup.old_coins.map(
+              (x) => x.input_amount,
             ),
-            estimatedOutputPerCoin: backupRefreshGroup.old_coins.map((x) =>
-              Amounts.parseOrThrow(x.estimated_output_amount),
+            estimatedOutputPerCoin: backupRefreshGroup.old_coins.map(
+              (x) => x.estimated_output_amount,
             ),
             refreshSessionPerCoin,
           });
@@ -834,8 +826,8 @@ export async function importBackup(
             merchantTipId: backupTip.merchant_tip_id,
             pickedUpTimestamp: backupTip.timestamp_finished,
             secretSeed: backupTip.secret_seed,
-            tipAmountEffective: denomsSel.totalCoinValue,
-            tipAmountRaw,
+            tipAmountEffective: Amounts.stringify(denomsSel.totalCoinValue),
+            tipAmountRaw: Amounts.stringify(tipAmountRaw),
             tipExpiration: backupTip.timestamp_expiration,
             walletTipId: backupTip.wallet_tip_id,
             denomSelUid: backupTip.selected_denoms_uid,

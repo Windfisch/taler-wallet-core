@@ -33,11 +33,7 @@ export default {
 };
 
 const cd: WalletContractData = {
-  amount: {
-    currency: "ARS",
-    fraction: 0,
-    value: 2,
-  },
+  amount: "ARS:2",
   contractTermsHash:
     "92X0KSJPZ8XS2XECCGFWTCGW8XMFCXTT2S6WHZDP6H9Y3TSKMTHY94WXEWDERTNN5XWCYGW4VN5CF2D4846HXTW7P06J4CZMHCWKC9G",
   fulfillmentUrl: "",
@@ -47,11 +43,7 @@ const cd: WalletContractData = {
     "0YA1WETV15R6K8QKS79QA3QMT16010F42Q49VSKYQ71HVQKAG0A4ZJCA4YTKHE9EA5SP156TJSKZEJJJ87305N6PS80PC48RNKYZE08",
   orderId: "2022.220-0281XKKB8W7YE",
   summary: "w",
-  maxWireFee: {
-    currency: "ARS",
-    fraction: 0,
-    value: 1,
-  },
+  maxWireFee: "ARS:1",
   payDeadline: {
     t_s: 1660002673,
   },
@@ -77,11 +69,7 @@ const cd: WalletContractData = {
   wireMethod: "x-taler-bank",
   wireInfoHash:
     "QDT28374ZHYJ59WQFZ3TW1D5WKJVDYHQT86VHED3TNMB15ANJSKXDYPPNX01348KDYCX6T4WXA5A8FJJ8YWNEB1JW726C1JPKHM89DR",
-  maxDepositFee: {
-    currency: "ARS",
-    fraction: 0,
-    value: 1,
-  },
+  maxDepositFee: "ARS:1",
   merchant: {
     name: "Default",
     address: {

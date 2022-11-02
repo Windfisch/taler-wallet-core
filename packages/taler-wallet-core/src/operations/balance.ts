@@ -57,9 +57,9 @@ export async function getBalancesInsideTransaction(
     const b = balanceStore[currency];
     if (!b) {
       balanceStore[currency] = {
-        available: Amounts.getZero(currency),
-        pendingIncoming: Amounts.getZero(currency),
-        pendingOutgoing: Amounts.getZero(currency),
+        available: Amounts.zeroOfCurrency(currency),
+        pendingIncoming: Amounts.zeroOfCurrency(currency),
+        pendingOutgoing: Amounts.zeroOfCurrency(currency),
       };
     }
     return balanceStore[currency];
@@ -85,7 +85,10 @@ export async function getBalancesInsideTransaction(
     for (let i = 0; i < r.oldCoinPubs.length; i++) {
       const session = r.refreshSessionPerCoin[i];
       if (session) {
-        const b = initBalance(session.amountRefreshOutput.currency);
+        const currency = Amounts.parseOrThrow(
+          session.amountRefreshOutput,
+        ).currency;
+        const b = initBalance(currency);
         // We are always assuming the refresh will succeed, thus we
         // report the output as available balance.
         b.available = Amounts.add(
@@ -93,7 +96,8 @@ export async function getBalancesInsideTransaction(
           session.amountRefreshOutput,
         ).amount;
       } else {
-        const b = initBalance(r.inputPerCoin[i].currency);
+        const currency = Amounts.parseOrThrow(r.inputPerCoin[i]).currency;
+        const b = initBalance(currency);
         b.available = Amounts.add(
           b.available,
           r.estimatedOutputPerCoin[i],
@@ -106,7 +110,7 @@ export async function getBalancesInsideTransaction(
     if (wds.timestampFinish) {
       return;
     }
-    const b = initBalance(wds.denomsSel.totalWithdrawCost.currency);
+    const b = initBalance(Amounts.currencyOf(wds.denomsSel.totalWithdrawCost));
     b.pendingIncoming = Amounts.add(
       b.pendingIncoming,
       wds.denomsSel.totalCoinValue,

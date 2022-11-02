@@ -160,7 +160,7 @@ export async function spendCoins(
       throw Error("not enough remaining balance on coin for payment");
     }
     refreshCoinPubs.push({
-      amount: remaining.amount,
+      amount: Amounts.stringify(remaining.amount),
       coinPub: coin.coinPub,
     });
     checkDbInvariant(!!coinAvailability);

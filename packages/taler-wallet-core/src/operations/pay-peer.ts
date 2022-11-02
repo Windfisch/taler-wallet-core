@@ -158,8 +158,8 @@ export async function selectPeerCoins(
       }
       coinInfos.push({
         coinPub: coin.coinPub,
-        feeDeposit: denom.feeDeposit,
-        value: denom.value,
+        feeDeposit: Amounts.parseOrThrow(denom.feeDeposit),
+        value: Amounts.parseOrThrow(denom.value),
         denomPubHash: denom.denomPubHash,
         coinPriv: coin.coinPriv,
         denomSig: coin.denomSig,
@@ -175,8 +175,8 @@ export async function selectPeerCoins(
         -Amounts.cmp(o1.value, o2.value) ||
         strcmp(o1.denomPubHash, o2.denomPubHash),
     );
-    let amountAcc = Amounts.getZero(instructedAmount.currency);
-    let depositFeesAcc = Amounts.getZero(instructedAmount.currency);
+    let amountAcc = Amounts.zeroOfCurrency(instructedAmount.currency);
+    let depositFeesAcc = Amounts.zeroOfCurrency(instructedAmount.currency);
     const resCoins: {
       coinPub: string;
       coinPriv: string;
@@ -553,7 +553,7 @@ export async function acceptPeerPushPayment(
     mergeTimestamp: mergeTimestamp,
     purseAmount: Amounts.stringify(amount),
     purseExpiration: contractTerms.purse_expiration,
-    purseFee: Amounts.stringify(Amounts.getZero(amount.currency)),
+    purseFee: Amounts.stringify(Amounts.zeroOfCurrency(amount.currency)),
     pursePub: peerInc.pursePub,
     reservePayto,
     reservePriv: mergeReserveInfo.reservePriv,
@@ -796,7 +796,7 @@ export async function initiatePeerPullPayment(
   const hContractTerms = ContractTermsUtil.hashContractTerms(contractTerms);
 
   const purseFee = Amounts.stringify(
-    Amounts.getZero(Amounts.parseOrThrow(req.amount).currency),
+    Amounts.zeroOfCurrency(Amounts.parseOrThrow(req.amount).currency),
   );
 
   const sigRes = await ws.cryptoApi.signReservePurseCreate({

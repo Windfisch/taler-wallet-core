@@ -110,7 +110,7 @@ export function getTotalRefreshCost(
   const denomMap = Object.fromEntries(denoms.map((x) => [x.denomPubHash, x]));
   const withdrawDenoms = selectWithdrawalDenominations(withdrawAmount, denoms);
   const resultingAmount = Amounts.add(
-    Amounts.getZero(withdrawAmount.currency),
+    Amounts.zeroOfCurrency(withdrawAmount.currency),
     ...withdrawDenoms.selectedDenoms.map(
       (d) =>
         Amounts.mult(
@@ -273,7 +273,7 @@ async function refreshCreateSession(
           count: x.count,
           denomPubHash: x.denomPubHash,
         })),
-        amountRefreshOutput: newCoinDenoms.totalCoinValue,
+        amountRefreshOutput: Amounts.stringify(newCoinDenoms.totalCoinValue),
       };
       await tx.refreshGroups.put(rg);
     });
@@ -340,7 +340,7 @@ async function refreshMelt(
           denomPub: newDenom.denomPub,
           denomPubHash: newDenom.denomPubHash,
           feeWithdraw: newDenom.feeWithdraw,
-          value: newDenom.value,
+          value: Amounts.stringify(newDenom.value),
         });
       }
       return { newCoinDenoms, oldCoin, oldDenom, refreshGroup, refreshSession };
@@ -368,7 +368,7 @@ async function refreshMelt(
     meltCoinDenomPubHash: oldCoin.denomPubHash,
     meltCoinPriv: oldCoin.coinPriv,
     meltCoinPub: oldCoin.coinPub,
-    feeRefresh: oldDenom.feeRefresh,
+    feeRefresh: Amounts.parseOrThrow(oldDenom.feeRefresh),
     meltCoinMaxAge: oldCoin.maxAge,
     meltCoinAgeCommitmentProof: oldCoin.ageCommitmentProof,
     newCoinDenoms,
@@ -584,7 +584,7 @@ async function refreshReveal(
           denomPub: newDenom.denomPub,
           denomPubHash: newDenom.denomPubHash,
           feeWithdraw: newDenom.feeWithdraw,
-          value: newDenom.value,
+          value: Amounts.stringify(newDenom.value),
         });
       }
       return {
@@ -626,7 +626,7 @@ async function refreshReveal(
     meltCoinDenomPubHash: oldCoin.denomPubHash,
     meltCoinPriv: oldCoin.coinPriv,
     meltCoinPub: oldCoin.coinPub,
-    feeRefresh: oldDenom.feeRefresh,
+    feeRefresh: Amounts.parseOrThrow(oldDenom.feeRefresh),
     newCoinDenoms,
     meltCoinMaxAge: oldCoin.maxAge,
     meltCoinAgeCommitmentProof: oldCoin.ageCommitmentProof,
@@ -922,10 +922,14 @@ export async function createRefreshGroup(
         assertUnreachable(coin.status);
     }
     const refreshAmount = ocp.amount;
-    inputPerCoin.push(refreshAmount);
+    inputPerCoin.push(Amounts.parseOrThrow(refreshAmount));
     await tx.coins.put(coin);
     const denoms = await getDenoms(coin.exchangeBaseUrl);
-    const cost = getTotalRefreshCost(denoms, denom, refreshAmount);
+    const cost = getTotalRefreshCost(
+      denoms,
+      denom,
+      Amounts.parseOrThrow(refreshAmount),
+    );
     const output = Amounts.sub(refreshAmount, cost).amount;
     estimatedOutputPerCoin.push(output);
   }
@@ -934,13 +938,15 @@ export async function createRefreshGroup(
     operationStatus: RefreshOperationStatus.Pending,
     timestampFinished: undefined,
     statusPerCoin: oldCoinPubs.map(() => RefreshCoinStatus.Pending),
-    lastErrorPerCoin: {},
     oldCoinPubs: oldCoinPubs.map((x) => x.coinPub),
+    lastErrorPerCoin: {},
     reason,
     refreshGroupId,
     refreshSessionPerCoin: oldCoinPubs.map(() => undefined),
-    inputPerCoin,
-    estimatedOutputPerCoin,
+    inputPerCoin: inputPerCoin.map((x) => Amounts.stringify(x)),
+    estimatedOutputPerCoin: estimatedOutputPerCoin.map((x) =>
+      Amounts.stringify(x),
+    ),
     timestampCreated: TalerProtocolTimestamp.now(),
   };
 
@@ -1037,11 +1043,11 @@ export async function autoRefresh(
         if (AbsoluteTime.isExpired(executeThreshold)) {
           refreshCoins.push({
             coinPub: coin.coinPub,
-            amount: {
+            amount: Amounts.stringify({
               value: denom.amountVal,
               fraction: denom.amountFrac,
               currency: denom.currency,
-            },
+            }),
           });
         } else {
           const checkThreshold = getAutoRefreshCheckThreshold(denom);

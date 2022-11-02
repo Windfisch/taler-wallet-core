@@ -76,7 +76,7 @@ export const WithNoAccountForIBAN = createExample(ReadyView, {
       return;
     },
   },
-  totalFee: Amounts.getZero("USD"),
+  totalFee: Amounts.zeroOfCurrency("USD"),
   totalToDeposit: Amounts.parseOrThrow("USD:10"),
   // onCalculateFee: alwaysReturnFeeToOne,
 });
@@ -111,7 +111,7 @@ export const WithIBANAccountTypeSelected = createExample(ReadyView, {
       return;
     },
   },
-  totalFee: Amounts.getZero("USD"),
+  totalFee: Amounts.zeroOfCurrency("USD"),
   totalToDeposit: Amounts.parseOrThrow("USD:10"),
   // onCalculateFee: alwaysReturnFeeToOne,
 });
@@ -146,7 +146,7 @@ export const NewBitcoinAccountTypeSelected = createExample(ReadyView, {
       return;
     },
   },
-  totalFee: Amounts.getZero("USD"),
+  totalFee: Amounts.zeroOfCurrency("USD"),
   totalToDeposit: Amounts.parseOrThrow("USD:10"),
   // onCalculateFee: alwaysReturnFeeToOne,
 });

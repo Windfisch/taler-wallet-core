@@ -26,6 +26,7 @@ import {
   Logger,
   OrderShortInfo,
   PaymentStatus,
+  PeerContractTerms,
   RefundInfoShort,
   TalerProtocolTimestamp,
   Transaction,
@@ -49,6 +50,8 @@ import {
   WithdrawalGroupRecord,
   WithdrawalRecordType,
   WalletContractData,
+  PeerPushPaymentInitiationStatus,
+  PeerPullPaymentIncomingStatus,
 } from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
 import { assertUnreachable } from "../util/assertUnreachable.js";
@@ -222,7 +225,7 @@ export async function getTransactionById(
         const contractData = download.contractData;
         const refunds = mergeRefundByExecutionTime(
           cleanRefunds,
-          Amounts.getZero(contractData.amount.currency),
+          Amounts.zeroOfAmount(contractData.amount),
         );
 
         const payOpId = RetryTags.forPay(purchase);
@@ -296,7 +299,7 @@ export async function getTransactionById(
         const contractData = download.contractData;
         const refunds = mergeRefundByExecutionTime(
           [theRefund],
-          Amounts.getZero(contractData.amount.currency),
+          Amounts.zeroOfAmount(contractData.amount),
         );
 
         return buildTransactionForRefund(
@@ -320,11 +323,13 @@ export async function getTransactionById(
   } else if (type === TransactionType.PeerPushDebit) {
     const pursePub = rest[0];
     return await ws.db
-      .mktx((x) => [x.peerPushPaymentInitiations])
+      .mktx((x) => [x.peerPushPaymentInitiations, x.contractTerms])
       .runReadWrite(async (tx) => {
         const debit = await tx.peerPushPaymentInitiations.get(pursePub);
         if (!debit) throw Error("not found");
-        return buildTransactionForPushPaymentDebit(debit);
+        const ct = await tx.contractTerms.get(debit.contractTermsHash);
+        checkDbInvariant(!!ct);
+        return buildTransactionForPushPaymentDebit(debit, ct.contractTermsRaw);
       });
   } else {
     const unknownTxType: never = type;
@@ -334,6 +339,7 @@ export async function getTransactionById(
 
 function buildTransactionForPushPaymentDebit(
   pi: PeerPushPaymentInitiationRecord,
+  contractTerms: PeerContractTerms,
   ort?: OperationRetryRecord,
 ): Transaction {
   return {
@@ -342,11 +348,11 @@ function buildTransactionForPushPaymentDebit(
     amountRaw: pi.amount,
     exchangeBaseUrl: pi.exchangeBaseUrl,
     info: {
-      expiration: pi.contractTerms.purse_expiration,
-      summary: pi.contractTerms.summary,
+      expiration: contractTerms.purse_expiration,
+      summary: contractTerms.summary,
     },
     frozen: false,
-    pending: !pi.purseCreated,
+    pending: pi.status != PeerPushPaymentInitiationStatus.PurseCreated,
     timestamp: pi.timestampCreated,
     talerUri: constructPayPushUri({
       exchangeBaseUrl: pi.exchangeBaseUrl,
@@ -586,7 +592,7 @@ function mergeRefundByExecutionTime(
       prev.set(key, {
         executionTime: refund.executionTime,
         amountAppliedEffective: effective,
-        amountAppliedRaw: raw,
+        amountAppliedRaw: Amounts.parseOrThrow(raw),
         firstTimestamp: refund.obtainedTime,
       });
     } else {
@@ -659,7 +665,7 @@ async function buildTransactionForPurchase(
   refundsInfo: MergedRefundInfo[],
   ort?: OperationRetryRecord,
 ): Promise<Transaction> {
-  const zero = Amounts.getZero(contractData.amount.currency);
+  const zero = Amounts.zeroOfAmount(contractData.amount);
 
   const info: OrderShortInfo = {
     merchant: contractData.merchant,
@@ -769,7 +775,11 @@ export async function getTransactions(
         if (shouldSkipSearch(transactionsRequest, [])) {
           return;
         }
-        transactions.push(buildTransactionForPushPaymentDebit(pi));
+        const ct = await tx.contractTerms.get(pi.contractTermsHash);
+        checkDbInvariant(!!ct);
+        transactions.push(
+          buildTransactionForPushPaymentDebit(pi, ct.contractTermsRaw),
+        );
       });
 
       tx.peerPullPaymentIncoming.iter().forEachAsync(async (pi) => {
@@ -780,7 +790,10 @@ export async function getTransactions(
         if (shouldSkipSearch(transactionsRequest, [])) {
           return;
         }
-        if (!pi.accepted) {
+        if (
+          pi.status !== PeerPullPaymentIncomingStatus.Accepted &&
+          pi.status !== PeerPullPaymentIncomingStatus.Paid
+        ) {
           return;
         }
 
@@ -791,7 +804,7 @@ export async function getTransactions(
         if (
           shouldSkipCurrency(
             transactionsRequest,
-            wsr.rawWithdrawalAmount.currency,
+            Amounts.currencyOf(wsr.rawWithdrawalAmount),
           )
         ) {
           return;
@@ -899,7 +912,7 @@ export async function getTransactions(
 
         const refunds = mergeRefundByExecutionTime(
           cleanRefunds,
-          Amounts.getZero(download.currency),
+          Amounts.zeroOfCurrency(download.currency),
         );
 
         refunds.forEach(async (refundInfo) => {
@@ -929,7 +942,7 @@ export async function getTransactions(
         if (
           shouldSkipCurrency(
             transactionsRequest,
-            tipRecord.tipAmountRaw.currency,
+            Amounts.parseOrThrow(tipRecord.tipAmountRaw).currency,
           )
         ) {
           return;

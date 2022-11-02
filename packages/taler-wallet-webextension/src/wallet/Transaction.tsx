@@ -1132,7 +1132,7 @@ export function PurchaseDetails({
   const partialFee = Amounts.sub(price.effective, price.raw).amount;
 
   const refundFee = !refund
-    ? Amounts.getZero(price.effective.currency)
+    ? Amounts.zeroOfCurrency(price.effective.currency)
     : Amounts.sub(refund.raw, refund.effective).amount;
 
   const fee = Amounts.sum([partialFee, refundFee]).amount;

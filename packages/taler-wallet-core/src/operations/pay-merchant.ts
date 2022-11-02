@@ -182,10 +182,10 @@ export async function getTotalPaymentCost(
           DenominationRecord.toDenomInfo(denom),
           amountLeft,
         );
-        costs.push(pcs.coinContributions[i]);
+        costs.push(Amounts.parseOrThrow(pcs.coinContributions[i]));
         costs.push(refreshCost);
       }
-      const zero = Amounts.getZero(pcs.paymentAmount.currency);
+      const zero = Amounts.zeroOfAmount(pcs.paymentAmount);
       return Amounts.sum([zero, ...costs]).amount;
     });
 }
@@ -307,10 +307,10 @@ export function extractContractData(
   if (parsedContractTerms.max_wire_fee) {
     maxWireFee = Amounts.parseOrThrow(parsedContractTerms.max_wire_fee);
   } else {
-    maxWireFee = Amounts.getZero(amount.currency);
+    maxWireFee = Amounts.zeroOfCurrency(amount.currency);
   }
   return {
-    amount,
+    amount: Amounts.stringify(amount),
     contractTermsHash: contractTermsHash,
     fulfillmentUrl: parsedContractTerms.fulfillment_url ?? "",
     merchantBaseUrl: parsedContractTerms.merchant_base_url,
@@ -319,7 +319,7 @@ export function extractContractData(
     orderId: parsedContractTerms.order_id,
     summary: parsedContractTerms.summary,
     autoRefund: parsedContractTerms.auto_refund,
-    maxWireFee,
+    maxWireFee: Amounts.stringify(maxWireFee),
     payDeadline: parsedContractTerms.pay_deadline,
     refundDeadline: parsedContractTerms.refund_deadline,
     wireFeeAmortization: parsedContractTerms.wire_fee_amortization || 1,
@@ -334,7 +334,7 @@ export function extractContractData(
     timestamp: parsedContractTerms.timestamp,
     wireMethod: parsedContractTerms.wire_method,
     wireInfoHash: parsedContractTerms.h_wire,
-    maxDepositFee: Amounts.parseOrThrow(parsedContractTerms.max_fee),
+    maxDepositFee: Amounts.stringify(parsedContractTerms.max_fee),
     merchant: parsedContractTerms.merchant,
     products: parsedContractTerms.products,
     summaryI18n: parsedContractTerms.summary_i18n,
@@ -539,7 +539,7 @@ export async function processDownloadProposal(
       p.download = {
         contractTermsHash,
         contractTermsMerchantSig: contractData.merchantSig,
-        currency: contractData.amount.currency,
+        currency: Amounts.currencyOf(contractData.amount),
         fulfillmentUrl: contractData.fulfillmentUrl,
       };
       await tx.contractTerms.put({
@@ -825,9 +825,9 @@ async function handleInsufficientFunds(
         }
         prevPayCoins.push({
           coinPub,
-          contribution: contrib,
+          contribution: Amounts.parseOrThrow(contrib),
           exchangeBaseUrl: coin.exchangeBaseUrl,
-          feeDeposit: denom.fees.feeDeposit,
+          feeDeposit: Amounts.parseOrThrow(denom.fees.feeDeposit),
         });
       }
     });
@@ -836,10 +836,10 @@ async function handleInsufficientFunds(
     auditors: contractData.allowedAuditors,
     exchanges: contractData.allowedExchanges,
     wireMethod: contractData.wireMethod,
-    contractTermsAmount: contractData.amount,
-    depositFeeLimit: contractData.maxDepositFee,
+    contractTermsAmount: Amounts.parseOrThrow(contractData.amount),
+    depositFeeLimit: Amounts.parseOrThrow(contractData.maxDepositFee),
     wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
-    wireFeeLimit: contractData.maxWireFee,
+    wireFeeLimit: Amounts.parseOrThrow(contractData.maxWireFee),
     prevPayCoins,
     requiredMinimumAge: contractData.minimumAge,
   });
@@ -875,7 +875,9 @@ async function handleInsufficientFunds(
       await spendCoins(ws, tx, {
         allocationId: `txn:proposal:${p.proposalId}`,
         coinPubs: payInfo.payCoinSelection.coinPubs,
-        contributions: payInfo.payCoinSelection.coinContributions,
+        contributions: payInfo.payCoinSelection.coinContributions.map((x) =>
+          Amounts.parseOrThrow(x),
+        ),
         refreshReason: RefreshReason.PayMerchant,
       });
     });
@@ -1068,7 +1070,7 @@ export function selectGreedy(
         wireFeesPerExchange,
         wireFeeAmortization,
         aci.exchangeBaseUrl,
-        aci.feeDeposit,
+        Amounts.parseOrThrow(aci.feeDeposit),
       );
 
       let coinSpend = Amounts.max(
@@ -1190,8 +1192,8 @@ export async function selectPayCoinsNew(
     amountPayRemaining: contractTermsAmount,
     amountWireFeeLimitRemaining: wireFeeLimit,
     amountDepositFeeLimitRemaining: depositFeeLimit,
-    customerDepositFees: Amounts.getZero(currency),
-    customerWireFees: Amounts.getZero(currency),
+    customerDepositFees: Amounts.zeroOfCurrency(currency),
+    customerWireFees: Amounts.zeroOfCurrency(currency),
     wireFeeCoveredForExchange: new Set(),
   };
 
@@ -1269,11 +1271,11 @@ export async function selectPayCoinsNew(
     });
 
   return {
-    paymentAmount: contractTermsAmount,
-    coinContributions,
+    paymentAmount: Amounts.stringify(contractTermsAmount),
+    coinContributions: coinContributions.map((x) => Amounts.stringify(x)),
     coinPubs,
-    customerDepositFees: tally.customerDepositFees,
-    customerWireFees: tally.customerWireFees,
+    customerDepositFees: Amounts.stringify(tally.customerDepositFees),
+    customerWireFees: Amounts.stringify(tally.customerWireFees),
   };
 }
 
@@ -1326,10 +1328,10 @@ export async function checkPaymentByProposalId(
     const res = await selectPayCoinsNew(ws, {
       auditors: contractData.allowedAuditors,
       exchanges: contractData.allowedExchanges,
-      contractTermsAmount: contractData.amount,
-      depositFeeLimit: contractData.maxDepositFee,
+      contractTermsAmount: Amounts.parseOrThrow(contractData.amount),
+      depositFeeLimit: Amounts.parseOrThrow(contractData.maxDepositFee),
       wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
-      wireFeeLimit: contractData.maxWireFee,
+      wireFeeLimit: Amounts.parseOrThrow(contractData.maxWireFee),
       prevPayCoins: [],
       requiredMinimumAge: contractData.minimumAge,
       wireMethod: contractData.wireMethod,
@@ -1531,10 +1533,10 @@ export async function generateDepositPermissions(
       denomKeyType: denom.denomPub.cipher,
       denomSig: coin.denomSig,
       exchangeBaseUrl: coin.exchangeBaseUrl,
-      feeDeposit: denom.fees.feeDeposit,
+      feeDeposit: Amounts.parseOrThrow(denom.fees.feeDeposit),
       merchantPub: contractData.merchantPub,
       refundDeadline: contractData.refundDeadline,
-      spendAmount: payCoinSel.coinContributions[i],
+      spendAmount: Amounts.parseOrThrow(payCoinSel.coinContributions[i]),
       timestamp: contractData.timestamp,
       wireInfoHash,
       ageCommitmentProof: coin.ageCommitmentProof,
@@ -1684,10 +1686,10 @@ export async function confirmPay(
     auditors: contractData.allowedAuditors,
     exchanges: contractData.allowedExchanges,
     wireMethod: contractData.wireMethod,
-    contractTermsAmount: contractData.amount,
-    depositFeeLimit: contractData.maxDepositFee,
+    contractTermsAmount: Amounts.parseOrThrow(contractData.amount),
+    depositFeeLimit: Amounts.parseOrThrow(contractData.maxDepositFee),
     wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
-    wireFeeLimit: contractData.maxWireFee,
+    wireFeeLimit: Amounts.parseOrThrow(contractData.maxWireFee),
     prevPayCoins: [],
     requiredMinimumAge: contractData.minimumAge,
     forcedSelection: forcedCoinSel,
@@ -1742,7 +1744,7 @@ export async function confirmPay(
           p.payInfo = {
             payCoinSelection: coinSelection,
             payCoinSelectionUid: encodeCrock(getRandomBytes(16)),
-            totalPayCost: payCostInfo,
+            totalPayCost: Amounts.stringify(payCostInfo),
           };
           p.lastSessionId = sessionId;
           p.timestampAccept = TalerProtocolTimestamp.now();
@@ -1751,7 +1753,9 @@ export async function confirmPay(
           await spendCoins(ws, tx, {
             allocationId: `txn:proposal:${p.proposalId}`,
             coinPubs: coinSelection.coinPubs,
-            contributions: coinSelection.coinContributions,
+            contributions: coinSelection.coinContributions.map((x) =>
+              Amounts.parseOrThrow(x),
+            ),
             refreshReason: RefreshReason.PayMerchant,
           });
           break;
@@ -2131,15 +2135,18 @@ async function applySuccessfulRefund(
     amountLeft,
   );
 
-  refreshCoinsMap[coin.coinPub] = { coinPub: coin.coinPub, amount: amountLeft };
+  refreshCoinsMap[coin.coinPub] = {
+    coinPub: coin.coinPub,
+    amount: Amounts.stringify(amountLeft),
+  };
 
   p.refunds[refundKey] = {
     type: RefundState.Applied,
     obtainedTime: AbsoluteTime.toTimestamp(AbsoluteTime.now()),
     executionTime: r.execution_time,
-    refundAmount: Amounts.parseOrThrow(r.refund_amount),
-    refundFee: denom.fees.feeRefund,
-    totalRefreshCostBound,
+    refundAmount: Amounts.stringify(r.refund_amount),
+    refundFee: Amounts.stringify(denom.fees.feeRefund),
+    totalRefreshCostBound: Amounts.stringify(totalRefreshCostBound),
     coinPub: r.coin_pub,
     rtransactionId: r.rtransaction_id,
   };
@@ -2189,9 +2196,9 @@ async function storePendingRefund(
     type: RefundState.Pending,
     obtainedTime: AbsoluteTime.toTimestamp(AbsoluteTime.now()),
     executionTime: r.execution_time,
-    refundAmount: Amounts.parseOrThrow(r.refund_amount),
-    refundFee: denom.fees.feeRefund,
-    totalRefreshCostBound,
+    refundAmount: Amounts.stringify(r.refund_amount),
+    refundFee: Amounts.stringify(denom.fees.feeRefund),
+    totalRefreshCostBound: Amounts.stringify(totalRefreshCostBound),
     coinPub: r.coin_pub,
     rtransactionId: r.rtransaction_id,
   };
@@ -2241,9 +2248,9 @@ async function storeFailedRefund(
     type: RefundState.Failed,
     obtainedTime: TalerProtocolTimestamp.now(),
     executionTime: r.execution_time,
-    refundAmount: Amounts.parseOrThrow(r.refund_amount),
-    refundFee: denom.fees.feeRefund,
-    totalRefreshCostBound,
+    refundAmount: Amounts.stringify(r.refund_amount),
+    refundFee: Amounts.stringify(denom.fees.feeRefund),
+    totalRefreshCostBound: Amounts.stringify(totalRefreshCostBound),
     coinPub: r.coin_pub,
     rtransactionId: r.rtransaction_id,
   };
@@ -2274,13 +2281,13 @@ async function storeFailedRefund(
       let contrib: AmountJson | undefined;
       for (let i = 0; i < payCoinSelection.coinPubs.length; i++) {
         if (payCoinSelection.coinPubs[i] === r.coin_pub) {
-          contrib = payCoinSelection.coinContributions[i];
+          contrib = Amounts.parseOrThrow(payCoinSelection.coinContributions[i]);
         }
       }
       // FIXME: Is this case tested?!
       refreshCoinsMap[coin.coinPub] = {
         coinPub: coin.coinPub,
-        amount: amountLeft,
+        amount: Amounts.stringify(amountLeft),
       };
       await tx.coins.put(coin);
     }
@@ -2417,10 +2424,8 @@ async function calculateRefundSummary(
   p: PurchaseRecord,
 ): Promise<RefundSummary> {
   const download = await expectProposalDownload(ws, p);
-  let amountRefundGranted = Amounts.getZero(
-    download.contractData.amount.currency,
-  );
-  let amountRefundGone = Amounts.getZero(download.contractData.amount.currency);
+  let amountRefundGranted = Amounts.zeroOfAmount(download.contractData.amount);
+  let amountRefundGone = Amounts.zeroOfAmount(download.contractData.amount);
 
   let pendingAtExchange = false;
 
@@ -2454,7 +2459,7 @@ async function calculateRefundSummary(
     }
   });
   return {
-    amountEffectivePaid: payInfo.totalPayCost,
+    amountEffectivePaid: Amounts.parseOrThrow(payInfo.totalPayCost),
     amountRefundGone,
     amountRefundGranted,
     pendingAtExchange,
@@ -2598,7 +2603,7 @@ async function queryAndSaveAwaitingRefund(
   );
   if (!orderStatus.refunded) {
     // Wait for retry ...
-    return Amounts.getZero(download.contractData.amount.currency);
+    return Amounts.zeroOfAmount(download.contractData.amount);
   }
 
   const refundAwaiting = Amounts.sub(
@@ -2618,7 +2623,7 @@ async function queryAndSaveAwaitingRefund(
           logger.warn("purchase does not exist anymore");
           return;
         }
-        p.refundAmountAwaiting = refundAwaiting;
+        p.refundAmountAwaiting = Amounts.stringify(refundAwaiting);
         await tx.purchases.put(p);
       });
   }

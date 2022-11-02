@@ -39,26 +39,26 @@ test("withdrawal selection bug repro", (t) => {
       exchangeBaseUrl: "https://exchange.demo.taler.net/",
       exchangeMasterPub: "",
       fees: {
-        feeDeposit: {
+        feeDeposit: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
-        feeRefresh: {
+        }),
+        feeRefresh: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
-        feeRefund: {
+        }),
+        feeRefund: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
-        feeWithdraw: {
+        }),
+        feeWithdraw: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
+        }),
       },
       isOffered: true,
       isRevoked: false,
@@ -95,26 +95,26 @@ test("withdrawal selection bug repro", (t) => {
       exchangeBaseUrl: "https://exchange.demo.taler.net/",
       exchangeMasterPub: "",
       fees: {
-        feeDeposit: {
+        feeDeposit: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
-        feeRefresh: {
+        }),
+        feeRefresh: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
-        feeRefund: {
+        }),
+        feeRefund: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
-        feeWithdraw: {
+        }),
+        feeWithdraw: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
+        }),
       },
       isOffered: true,
       isRevoked: false,
@@ -150,26 +150,26 @@ test("withdrawal selection bug repro", (t) => {
       exchangeBaseUrl: "https://exchange.demo.taler.net/",
       exchangeMasterPub: "",
       fees: {
-        feeDeposit: {
+        feeDeposit: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
-        feeRefresh: {
+        }),
+        feeRefresh: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
-        feeRefund: {
+        }),
+        feeRefund: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
-        feeWithdraw: {
+        }),
+        feeWithdraw: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
+        }),
       },
       isOffered: true,
       isRevoked: false,
@@ -206,26 +206,26 @@ test("withdrawal selection bug repro", (t) => {
       exchangeBaseUrl: "https://exchange.demo.taler.net/",
       exchangeMasterPub: "",
       fees: {
-        feeDeposit: {
+        feeDeposit: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
-        feeRefresh: {
+        }),
+        feeRefresh: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
-        feeRefund: {
+        }),
+        feeRefund: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
-        feeWithdraw: {
+        }),
+        feeWithdraw: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
+        }),
       },
       isOffered: true,
       isRevoked: false,
@@ -261,26 +261,26 @@ test("withdrawal selection bug repro", (t) => {
       exchangeBaseUrl: "https://exchange.demo.taler.net/",
       exchangeMasterPub: "",
       fees: {
-        feeDeposit: {
+        feeDeposit: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
-        feeRefresh: {
+        }),
+        feeRefresh: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
-        feeRefund: {
+        }),
+        feeRefund: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
-        feeWithdraw: {
+        }),
+        feeWithdraw: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
+        }),
       },
       isOffered: true,
       isRevoked: false,
@@ -316,26 +316,26 @@ test("withdrawal selection bug repro", (t) => {
       exchangeBaseUrl: "https://exchange.demo.taler.net/",
       exchangeMasterPub: "",
       fees: {
-        feeDeposit: {
+        feeDeposit: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
-        feeRefresh: {
+        }),
+        feeRefresh: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
-        feeRefund: {
+        }),
+        feeRefund: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
-        feeWithdraw: {
+        }),
+        feeWithdraw: Amounts.stringify({
           currency: "KUDOS",
           fraction: 1000000,
           value: 0,
-        },
+        }),
       },
       isOffered: true,
       isRevoked: false,

@@ -160,7 +160,7 @@ export async function withdrawCoin(args: {
   const planchet = await cryptoApi.createPlanchet({
     coinIndex: 0,
     denomPub: denom.denomPub,
-    feeWithdraw: denom.fees.feeWithdraw,
+    feeWithdraw: Amounts.parseOrThrow(denom.fees.feeWithdraw),
     reservePriv: reserveKeyPair.reservePriv,
     reservePub: reserveKeyPair.reservePub,
     secretSeed: encodeCrock(getRandomBytes(32)),
@@ -294,11 +294,11 @@ export async function refreshCoin(req: {
       denomPub: x.denomPub,
       denomPubHash: x.denomPubHash,
       feeWithdraw: x.fees.feeWithdraw,
-      value: {
+      value: Amounts.stringify({
         currency: x.currency,
         fraction: x.amountFrac,
         value: x.amountVal,
-      },
+      }),
     })),
     meltCoinMaxAge: oldCoin.maxAge,
   });

@@ -139,7 +139,7 @@ export function tallyFees(
 
   if (!tally.wireFeeCoveredForExchange.has(exchangeBaseUrl)) {
     const wf =
-      wireFeesPerExchange[exchangeBaseUrl] ?? Amounts.getZero(currency);
+      wireFeesPerExchange[exchangeBaseUrl] ?? Amounts.zeroOfCurrency(currency);
     const wfForgiven = Amounts.min(amountWireFeeLimitRemaining, wf);
     amountWireFeeLimitRemaining = Amounts.sub(
       amountWireFeeLimitRemaining,

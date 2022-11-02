@@ -18,6 +18,7 @@ import {
   AbsoluteTime,
   AmountJson,
   Amounts,
+  AmountString,
   DenominationInfo,
   FeeDescription,
   FeeDescriptionPair,
@@ -51,7 +52,7 @@ export function selectBestForOverlappingDenominations<
   return minDeposit;
 }
 
-export function selectMinimumFee<T extends { fee: AmountJson }>(
+export function selectMinimumFee<T extends { fee: AmountString }>(
   list: T[],
 ): T | undefined {
   let minFee: T | undefined = undefined;
@@ -285,7 +286,7 @@ export function createTimeline<Type extends object>(
   idProp: PropsWithReturnType<Type, string>,
   periodStartProp: PropsWithReturnType<Type, TalerProtocolTimestamp>,
   periodEndProp: PropsWithReturnType<Type, TalerProtocolTimestamp>,
-  feeProp: PropsWithReturnType<Type, AmountJson>,
+  feeProp: PropsWithReturnType<Type, AmountString>,
   groupProp: PropsWithReturnType<Type, string> | undefined,
   selectBestForOverlapping: (l: Type[]) => Type | undefined,
 ): FeeDescription[] {
@@ -312,7 +313,7 @@ export function createTimeline<Type extends object>(
       }
       ps.push({
         type: "start",
-        fee,
+        fee: Amounts.stringify(fee),
         group,
         id,
         moment: AbsoluteTime.fromTimestamp(stampStart),
@@ -320,7 +321,7 @@ export function createTimeline<Type extends object>(
       });
       ps.push({
         type: "end",
-        fee,
+        fee: Amounts.stringify(fee),
         group,
         id,
         moment: AbsoluteTime.fromTimestamp(stampEnd),
@@ -416,7 +417,7 @@ export function createTimeline<Type extends object>(
           group: cursor.group,
           from: cursor.moment,
           until: AbsoluteTime.never(), //not yet known
-          fee: currentFee,
+          fee: Amounts.stringify(currentFee),
         });
       } else {
         prev.until = cursor.moment;

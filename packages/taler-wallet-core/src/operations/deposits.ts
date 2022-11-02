@@ -348,10 +348,10 @@ export async function prepareDepositGroup(
     auditors: contractData.allowedAuditors,
     exchanges: contractData.allowedExchanges,
     wireMethod: contractData.wireMethod,
-    contractTermsAmount: contractData.amount,
-    depositFeeLimit: contractData.maxDepositFee,
+    contractTermsAmount: Amounts.parseOrThrow(contractData.amount),
+    depositFeeLimit: Amounts.parseOrThrow(contractData.maxDepositFee),
     wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
-    wireFeeLimit: contractData.maxWireFee,
+    wireFeeLimit: Amounts.parseOrThrow(contractData.maxWireFee),
     prevPayCoins: [],
   });
 
@@ -445,10 +445,10 @@ export async function createDepositGroup(
     auditors: contractData.allowedAuditors,
     exchanges: contractData.allowedExchanges,
     wireMethod: contractData.wireMethod,
-    contractTermsAmount: contractData.amount,
-    depositFeeLimit: contractData.maxDepositFee,
+    contractTermsAmount: Amounts.parseOrThrow(contractData.amount),
+    depositFeeLimit: Amounts.parseOrThrow(contractData.maxDepositFee),
     wireFeeAmortization: contractData.wireFeeAmortization ?? 1,
-    wireFeeLimit: contractData.maxWireFee,
+    wireFeeLimit: Amounts.parseOrThrow(contractData.maxWireFee),
     prevPayCoins: [],
   });
 
@@ -479,8 +479,8 @@ export async function createDepositGroup(
     depositedPerCoin: payCoinSel.coinPubs.map(() => false),
     merchantPriv: merchantPair.priv,
     merchantPub: merchantPair.pub,
-    totalPayCost: totalDepositCost,
-    effectiveDepositAmount,
+    totalPayCost: Amounts.stringify(totalDepositCost),
+    effectiveDepositAmount: Amounts.stringify(effectiveDepositAmount),
     wire: {
       payto_uri: req.depositPaytoUri,
       salt: wireSalt,
@@ -501,7 +501,9 @@ export async function createDepositGroup(
       await spendCoins(ws, tx, {
         allocationId: `txn:deposit:${depositGroup.depositGroupId}`,
         coinPubs: payCoinSel.coinPubs,
-        contributions: payCoinSel.coinContributions,
+        contributions: payCoinSel.coinContributions.map((x) =>
+          Amounts.parseOrThrow(x),
+        ),
         refreshReason: RefreshReason.PayDeposit,
       });
       await tx.depositGroups.put(depositGroup);
@@ -543,8 +545,8 @@ export async function getEffectiveDepositAmount(
         if (!denom) {
           throw Error("can't find denomination to calculate deposit amount");
         }
-        amt.push(pcs.coinContributions[i]);
-        fees.push(denom.feeDeposit);
+        amt.push(Amounts.parseOrThrow(pcs.coinContributions[i]));
+        fees.push(Amounts.parseOrThrow(denom.feeDeposit));
         exchangeSet.add(coin.exchangeBaseUrl);
       }
 
@@ -565,7 +567,7 @@ export async function getEffectiveDepositAmount(
           );
         })?.wireFee;
         if (fee) {
-          fees.push(fee);
+          fees.push(Amounts.parseOrThrow(fee));
         }
       }
     });
@@ -604,7 +606,7 @@ export async function getTotalFeesForDepositAmount(
         if (!denom) {
           throw Error("can't find denomination to calculate deposit amount");
         }
-        coinFee.push(denom.feeDeposit);
+        coinFee.push(Amounts.parseOrThrow(denom.feeDeposit));
         exchangeSet.add(coin.exchangeBaseUrl);
 
         const allDenoms = await tx.denominations.indexes.byExchangeBaseUrl
@@ -638,7 +640,7 @@ export async function getTotalFeesForDepositAmount(
           },
         )?.wireFee;
         if (fee) {
-          wireFee.push(fee);
+          wireFee.push(Amounts.parseOrThrow(fee));
         }
       }
     });

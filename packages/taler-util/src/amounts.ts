@@ -103,10 +103,24 @@ export class Amounts {
     throw Error("not instantiable");
   }
 
+  static currencyOf(amount: AmountLike) {
+    const amt = Amounts.parseOrThrow(amount);
+    return amt.currency;
+  }
+
+  static zeroOfAmount(amount: AmountLike): AmountJson {
+    const amt = Amounts.parseOrThrow(amount);
+    return {
+      currency: amt.currency,
+      fraction: 0,
+      value: 0,
+    };
+  }
+
   /**
    * Get an amount that represents zero units of a currency.
    */
-  static getZero(currency: string): AmountJson {
+  static zeroOfCurrency(currency: string): AmountJson {
     return {
       currency,
       fraction: 0,
@@ -132,7 +146,7 @@ export class Amounts {
   static sumOrZero(currency: string, amounts: AmountLike[]): Result {
     if (amounts.length <= 0) {
       return {
-        amount: Amounts.getZero(currency),
+        amount: Amounts.zeroOfCurrency(currency),
         saturated: false,
       };
     }
@@ -147,9 +161,11 @@ export class Amounts {
    *
    * Throws when currencies don't match.
    */
-  static add(first: AmountJson, ...rest: AmountJson[]): Result {
-    const currency = first.currency;
-    let value = first.value + Math.floor(first.fraction / amountFractionalBase);
+  static add(first: AmountLike, ...rest: AmountLike[]): Result {
+    const firstJ = Amounts.jsonifyAmount(first);
+    const currency = firstJ.currency;
+    let value =
+      firstJ.value + Math.floor(firstJ.fraction / amountFractionalBase);
     if (value > amountMaxValue) {
       return {
         amount: {
@@ -160,17 +176,18 @@ export class Amounts {
         saturated: true,
       };
     }
-    let fraction = first.fraction % amountFractionalBase;
+    let fraction = firstJ.fraction % amountFractionalBase;
     for (const x of rest) {
-      if (x.currency.toUpperCase() !== currency.toUpperCase()) {
-        throw Error(`Mismatched currency: ${x.currency} and ${currency}`);
+      const xJ = Amounts.jsonifyAmount(x);
+      if (xJ.currency.toUpperCase() !== currency.toUpperCase()) {
+        throw Error(`Mismatched currency: ${xJ.currency} and ${currency}`);
       }
 
       value =
         value +
-        x.value +
-        Math.floor((fraction + x.fraction) / amountFractionalBase);
-      fraction = Math.floor((fraction + x.fraction) % amountFractionalBase);
+        xJ.value +
+        Math.floor((fraction + xJ.fraction) / amountFractionalBase);
+      fraction = Math.floor((fraction + xJ.fraction) % amountFractionalBase);
       if (value > amountMaxValue) {
         return {
           amount: {
@@ -322,12 +339,27 @@ export class Amounts {
    * Parse amount in standard string form (like 'EUR:20.5'),
    * throw if the input is not a valid amount.
    */
-  static parseOrThrow(s: string): AmountJson {
-    const res = Amounts.parse(s);
-    if (!res) {
-      throw Error(`Can't parse amount: "${s}"`);
+  static parseOrThrow(s: AmountLike): AmountJson {
+    if (typeof s === "object") {
+      if (typeof s.currency !== "string") {
+        throw Error("invalid amount object");
+      }
+      if (typeof s.value !== "number") {
+        throw Error("invalid amount object");
+      }
+      if (typeof s.fraction !== "number") {
+        throw Error("invalid amount object");
+      }
+      return { currency: s.currency, value: s.value, fraction: s.fraction };
+    } else if (typeof s === "string") {
+      const res = Amounts.parse(s);
+      if (!res) {
+        throw Error(`Can't parse amount: "${s}"`);
+      }
+      return res;
+    } else {
+      throw Error("invalid amount (illegal type)");
     }
-    return res;
   }
 
   /**
@@ -371,10 +403,13 @@ export class Amounts {
       throw Error("amount can only be multiplied by a positive integer");
     }
     if (n == 0) {
-      return { amount: Amounts.getZero(a.currency), saturated: false };
+      return {
+        amount: Amounts.zeroOfCurrency(a.currency),
+        saturated: false,
+      };
     }
     let x = a;
-    let acc = Amounts.getZero(a.currency);
+    let acc = Amounts.zeroOfCurrency(a.currency);
     while (n > 1) {
       if (n % 2 == 0) {
         n = n / 2;
@@ -427,9 +462,10 @@ export class Amounts {
     return x1.currency.toUpperCase() === x2.currency.toUpperCase();
   }
 
-  static stringifyValue(a: AmountJson, minFractional = 0): string {
-    const av = a.value + Math.floor(a.fraction / amountFractionalBase);
-    const af = a.fraction % amountFractionalBase;
+  static stringifyValue(a: AmountLike, minFractional = 0): string {
+    const aJ = Amounts.jsonifyAmount(a);
+    const av = aJ.value + Math.floor(aJ.fraction / amountFractionalBase);
+    const af = aJ.fraction % amountFractionalBase;
     let s = av.toString();
 
     if (af) {

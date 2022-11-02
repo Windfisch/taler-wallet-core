@@ -771,7 +771,7 @@ async function getExchangeDetailedInfo(
     const feesByGroup = [
       ...infoForType.map((w) => ({
         ...w,
-        fee: w.closingFee,
+        fee: Amounts.stringify(w.closingFee),
         group: "closing",
       })),
       ...infoForType.map((w) => ({ ...w, fee: w.wireFee, group: "wire" })),

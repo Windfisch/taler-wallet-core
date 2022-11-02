@@ -28,6 +28,7 @@ import {
   AgeCommitmentProof,
   AgeRestriction,
   AmountJson,
+  AmountLike,
   Amounts,
   AmountString,
   BlindedDenominationSignature,
@@ -1155,8 +1156,8 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
       sessionSecretSeed: refreshSessionSecretSeed,
     } = req;
 
-    const currency = newCoinDenoms[0].value.currency;
-    let valueWithFee = Amounts.getZero(currency);
+    const currency = Amounts.currencyOf(newCoinDenoms[0].value);
+    let valueWithFee = Amounts.zeroOfCurrency(currency);
 
     for (const ncd of newCoinDenoms) {
       const t = Amounts.add(ncd.value, ncd.feeWithdraw).amount;
@@ -1627,21 +1628,22 @@ export const nativeCryptoR: TalerCryptoInterfaceR = {
   },
 };
 
-function amountToBuffer(amount: AmountJson): Uint8Array {
+function amountToBuffer(amount: AmountLike): Uint8Array {
+  const amountJ = Amounts.jsonifyAmount(amount);
   const buffer = new ArrayBuffer(8 + 4 + 12);
   const dvbuf = new DataView(buffer);
   const u8buf = new Uint8Array(buffer);
-  const curr = stringToBytes(amount.currency);
+  const curr = stringToBytes(amountJ.currency);
   if (typeof dvbuf.setBigUint64 !== "undefined") {
-    dvbuf.setBigUint64(0, BigInt(amount.value));
+    dvbuf.setBigUint64(0, BigInt(amountJ.value));
   } else {
-    const arr = bigint(amount.value).toArray(2 ** 8).value;
+    const arr = bigint(amountJ.value).toArray(2 ** 8).value;
     let offset = 8 - arr.length;
     for (let i = 0; i < arr.length; i++) {
       dvbuf.setUint8(offset++, arr[i]);
     }
   }
-  dvbuf.setUint32(8, amount.fraction);
+  dvbuf.setUint32(8, amountJ.fraction);
   u8buf.set(curr, 8 + 4);
 
   return u8buf;

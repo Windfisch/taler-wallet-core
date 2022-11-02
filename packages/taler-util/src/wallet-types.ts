@@ -644,7 +644,7 @@ export enum RefreshReason {
  */
 export interface CoinRefreshRequest {
   readonly coinPub: string;
-  readonly amount: AmountJson;
+  readonly amount: AmountString;
 }
 
 /**
@@ -719,12 +719,12 @@ export interface WireFee {
   /**
    * Fee for wire transfers.
    */
-  wireFee: AmountJson;
+  wireFee: AmountString;
 
   /**
    * Fees to close and refund a reserve.
    */
-  closingFee: AmountJson;
+  closingFee: AmountString;
 
   /**
    * Start date of the fee.
@@ -761,9 +761,9 @@ export interface ExchangeGlobalFees {
   startDate: TalerProtocolTimestamp;
   endDate: TalerProtocolTimestamp;
 
-  historyFee: AmountJson;
-  accountFee: AmountJson;
-  purseFee: AmountJson;
+  historyFee: AmountString;
+  accountFee: AmountString;
+  purseFee: AmountString;
 
   historyTimeout: TalerProtocolDuration;
   purseTimeout: TalerProtocolDuration;
@@ -782,8 +782,8 @@ const codecForExchangeAccount = (): Codec<ExchangeAccount> =>
 const codecForWireFee = (): Codec<WireFee> =>
   buildCodecForObject<WireFee>()
     .property("sig", codecForString())
-    .property("wireFee", codecForAmountJson())
-    .property("closingFee", codecForAmountJson())
+    .property("wireFee", codecForAmountString())
+    .property("closingFee", codecForAmountString())
     .property("startStamp", codecForTimestamp)
     .property("endStamp", codecForTimestamp)
     .build("codecForWireFee");
@@ -798,7 +798,7 @@ export interface DenominationInfo {
   /**
    * Value of one coin of the denomination.
    */
-  value: AmountJson;
+  value: AmountString;
 
   /**
    * Hash of the denomination public key.
@@ -811,22 +811,22 @@ export interface DenominationInfo {
   /**
    * Fee for withdrawing.
    */
-  feeWithdraw: AmountJson;
+  feeWithdraw: AmountString;
 
   /**
    * Fee for depositing.
    */
-  feeDeposit: AmountJson;
+  feeDeposit: AmountString;
 
   /**
    * Fee for refreshing.
    */
-  feeRefresh: AmountJson;
+  feeRefresh: AmountString;
 
   /**
    * Fee for refunding.
    */
-  feeRefund: AmountJson;
+  feeRefund: AmountString;
 
   /**
    * Validity start date of the denomination.
@@ -858,21 +858,21 @@ export interface FeeDescription {
   group: string;
   from: AbsoluteTime;
   until: AbsoluteTime;
-  fee?: AmountJson;
+  fee?: AmountString;
 }
 
 export interface FeeDescriptionPair {
   group: string;
   from: AbsoluteTime;
   until: AbsoluteTime;
-  left?: AmountJson;
-  right?: AmountJson;
+  left?: AmountString;
+  right?: AmountString;
 }
 
 export interface TimePoint<T> {
   id: string;
   group: string;
-  fee: AmountJson;
+  fee: AmountString;
   type: "start" | "end";
   moment: AbsoluteTime;
   denom: T;
@@ -955,8 +955,8 @@ export const codecForFeeDescriptionPair = (): Codec<FeeDescriptionPair> =>
     .property("group", codecForString())
     .property("from", codecForAbsoluteTime)
     .property("until", codecForAbsoluteTime)
-    .property("left", codecOptional(codecForAmountJson()))
-    .property("right", codecOptional(codecForAmountJson()))
+    .property("left", codecOptional(codecForAmountString()))
+    .property("right", codecOptional(codecForAmountString()))
     .build("FeeDescriptionPair");
 
 export const codecForFeeDescription = (): Codec<FeeDescription> =>
@@ -964,7 +964,7 @@ export const codecForFeeDescription = (): Codec<FeeDescription> =>
     .property("group", codecForString())
     .property("from", codecForAbsoluteTime)
     .property("until", codecForAbsoluteTime)
-    .property("fee", codecOptional(codecForAmountJson()))
+    .property("fee", codecOptional(codecForAmountString()))
     .build("FeeDescription");
 
 export const codecForFeesByOperations = (): Codec<
@@ -1056,8 +1056,8 @@ export interface ManualWithdrawalDetails {
  * Selected denominations withn some extra info.
  */
 export interface DenomSelectionState {
-  totalCoinValue: AmountJson;
-  totalWithdrawCost: AmountJson;
+  totalCoinValue: AmountString;
+  totalWithdrawCost: AmountString;
   selectedDenoms: {
     denomPubHash: string;
     count: number;
@@ -1786,7 +1786,7 @@ export interface PayCoinSelection {
   /**
    * Amount requested by the merchant.
    */
-  paymentAmount: AmountJson;
+  paymentAmount: AmountString;
 
   /**
    * Public keys of the coins that were selected.
@@ -1796,17 +1796,17 @@ export interface PayCoinSelection {
   /**
    * Amount that each coin contributes.
    */
-  coinContributions: AmountJson[];
+  coinContributions: AmountString[];
 
   /**
    * How much of the wire fees is the customer paying?
    */
-  customerWireFees: AmountJson;
+  customerWireFees: AmountString;
 
   /**
    * How much of the deposit fees is the customer paying?
    */
-  customerDepositFees: AmountJson;
+  customerDepositFees: AmountString;
 }
 
 export interface InitiatePeerPushPaymentRequest {

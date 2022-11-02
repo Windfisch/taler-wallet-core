@@ -99,7 +99,7 @@ export function useComponentState(
   const balance =
     bs.length > 0
       ? Amounts.parseOrThrow(bs[0].available)
-      : Amounts.getZero(currency);
+      : Amounts.zeroOfCurrency(currency);
 
   if (Amounts.isZero(balance)) {
     return {
@@ -157,12 +157,12 @@ export function useComponentState(
   const totalFee =
     fee !== undefined
       ? Amounts.sum([fee.wire, fee.coin, fee.refresh]).amount
-      : Amounts.getZero(currency);
+      : Amounts.zeroOfCurrency(currency);
 
   const totalToDeposit =
     parsedAmount && fee !== undefined
       ? Amounts.sub(parsedAmount, totalFee).amount
-      : Amounts.getZero(currency);
+      : Amounts.zeroOfCurrency(currency);
 
   const isDirty = amount !== initialValue;
   const amountError = !isDirty
