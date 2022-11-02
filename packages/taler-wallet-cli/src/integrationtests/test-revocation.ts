@@ -181,6 +181,7 @@ export async function runRevocationTest(t: GlobalTestState) {
   await makeTestPayment(t, { wallet, merchant, order });
 
   wallet.deleteDatabase();
+
   await withdrawViaBank(t, { wallet, bank, exchange, amount: "TESTKUDOS:15" });
 
   const coinDump = await wallet.client.call(WalletApiOperation.DumpCoins, {});

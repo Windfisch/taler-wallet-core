@@ -250,6 +250,7 @@ export async function importCoin(
         coinSource = {
           type: CoinSourceType.Refresh,
           oldCoinPub: backupCoin.coin_source.old_coin_pub,
+          refreshGroupId: backupCoin.coin_source.refresh_group_id,
         };
         break;
       case BackupCoinSourceType.Tip:

@@ -240,6 +240,7 @@ export async function exportBackup(
             bcs = {
               type: BackupCoinSourceType.Refresh,
               old_coin_pub: coin.coinSource.oldCoinPub,
+              refresh_group_id: coin.coinSource.refreshGroupId,
             };
             break;
           case CoinSourceType.Tip:

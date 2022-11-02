@@ -687,6 +687,7 @@ async function refreshReveal(
         status: CoinStatus.Fresh,
         coinSource: {
           type: CoinSourceType.Refresh,
+          refreshGroupId,
           oldCoinPub: refreshGroup.oldCoinPubs[coinIndex],
         },
         coinEvHash: pc.coinEvHash,
@@ -838,10 +839,6 @@ async function processRefreshSession(
  * Refreshes the remaining amount on the coin, effectively capturing the remaining
  * value in the refresh group.
  *
- * The caller must ensure that
- * the remaining amount was updated correctly before the coin was deposited or
- * credited.
- *
  * The caller must also ensure that the coins that should be refreshed exist
  * in the current database transaction.
  */
@@ -893,6 +890,10 @@ export async function createRefreshGroup(
     );
     switch (coin.status) {
       case CoinStatus.Dormant:
+        coin.spendAllocation = {
+          amount: Amounts.stringify(ocp.amount),
+          id: `txn:refresh:${refreshGroupId}`,
+        };
         break;
       case CoinStatus.Fresh: {
         coin.status = CoinStatus.Dormant;
@@ -911,6 +912,10 @@ export async function createRefreshGroup(
         // For suspended coins, we don't have to adjust coin
         // availability, as they are not counted as available.
         coin.status = CoinStatus.Dormant;
+        coin.spendAllocation = {
+          amount: Amounts.stringify(ocp.amount),
+          id: `txn:refresh:${refreshGroupId}`,
+        };
         break;
       }
       default:

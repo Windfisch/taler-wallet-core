@@ -640,6 +640,7 @@ export interface WithdrawCoinSource {
 
 export interface RefreshCoinSource {
   type: CoinSourceType.Refresh;
+  refreshGroupId: string;
   oldCoinPub: string;
 }
 

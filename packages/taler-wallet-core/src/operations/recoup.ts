@@ -279,11 +279,21 @@ async function recoupRefreshCoin(
       checkDbInvariant(!!oldCoinDenom);
       checkDbInvariant(!!revokedCoinDenom);
       revokedCoin.status = CoinStatus.Dormant;
-      recoupGroup.scheduleRefreshCoins.push({
-        coinPub: oldCoin.coinPub,
-        //amount: Amounts.sub(oldCoinDenom.value, revokedCoinDenom.value).amount,
-        amount: revokedCoinDenom.value,
-      });
+      if (!revokedCoin.spendAllocation) {
+        // We don't know what happened to this coin
+        logger.error(
+          `can't refresh-recoup coin ${revokedCoin.coinPub}, no spendAllocation known`,
+        );
+      } else {
+        let residualAmount = Amounts.sub(
+          revokedCoinDenom.value,
+          revokedCoin.spendAllocation.amount,
+        ).amount;
+        recoupGroup.scheduleRefreshCoins.push({
+          coinPub: oldCoin.coinPub,
+          amount: residualAmount,
+        });
+      }
       await tx.coins.put(revokedCoin);
       await tx.coins.put(oldCoin);
       await putGroupAsFinished(ws, tx, recoupGroup, coinIdx);

@@ -534,6 +534,8 @@ export interface BackupRefreshCoinSource {
    * Public key of the coin that was refreshed into this coin.
    */
   old_coin_pub: string;
+
+  refresh_group_id: string;
 }
 
 /**
