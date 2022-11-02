@@ -142,6 +142,8 @@ export async function spendCoins(
       }
       if (alloc.id !== csi.allocationId) {
         // FIXME: assign error code
+        logger.info("conflicting coin allocation ID");
+        logger.info(`old ID: ${alloc.id}, new ID: ${csi.allocationId}`);
         throw Error("conflicting coin allocation (id)");
       }
       if (0 !== Amounts.cmp(alloc.amount, contrib)) {

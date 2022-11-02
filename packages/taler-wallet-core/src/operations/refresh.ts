@@ -890,10 +890,6 @@ export async function createRefreshGroup(
     );
     switch (coin.status) {
       case CoinStatus.Dormant:
-        coin.spendAllocation = {
-          amount: Amounts.stringify(ocp.amount),
-          id: `txn:refresh:${refreshGroupId}`,
-        };
         break;
       case CoinStatus.Fresh: {
         coin.status = CoinStatus.Dormant;
@@ -912,14 +908,16 @@ export async function createRefreshGroup(
         // For suspended coins, we don't have to adjust coin
         // availability, as they are not counted as available.
         coin.status = CoinStatus.Dormant;
-        coin.spendAllocation = {
-          amount: Amounts.stringify(ocp.amount),
-          id: `txn:refresh:${refreshGroupId}`,
-        };
         break;
       }
       default:
         assertUnreachable(coin.status);
+    }
+    if (!coin.spendAllocation) {
+      coin.spendAllocation = {
+        amount: Amounts.stringify(ocp.amount),
+        id: `txn:refresh:${refreshGroupId}`,
+      };
     }
     const refreshAmount = ocp.amount;
     inputPerCoin.push(Amounts.parseOrThrow(refreshAmount));
