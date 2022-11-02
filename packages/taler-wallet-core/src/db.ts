@@ -2089,6 +2089,7 @@ export const WalletStoresV1 = {
         "exchangeBaseUrl",
         "pursePub",
       ]),
+      byStatus: describeIndex("byStatus", "status"),
     },
   ),
   peerPullPaymentIncoming: describeStore(
@@ -2101,6 +2102,7 @@ export const WalletStoresV1 = {
         "exchangeBaseUrl",
         "pursePub",
       ]),
+      byStatus: describeIndex("byStatus", "status"),
     },
   ),
   peerPullPaymentInitiations: describeStore(
@@ -2108,14 +2110,18 @@ export const WalletStoresV1 = {
     describeContents<PeerPullPaymentInitiationRecord>({
       keyPath: "pursePub",
     }),
-    {},
+    {
+      byStatus: describeIndex("byStatus", "status"),
+    },
   ),
   peerPushPaymentInitiations: describeStore(
     "peerPushPaymentInitiations",
     describeContents<PeerPushPaymentInitiationRecord>({
       keyPath: "pursePub",
     }),
-    {},
+    {
+      byStatus: describeIndex("byStatus", "status"),
+    },
   ),
   bankAccounts: describeStore(
     "bankAccounts",
