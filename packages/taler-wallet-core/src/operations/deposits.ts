@@ -646,8 +646,10 @@ export async function getTotalFeesForDepositAmount(
     });
 
   return {
-    coin: Amounts.sumOrZero(total.currency, coinFee).amount,
-    wire: Amounts.sumOrZero(total.currency, wireFee).amount,
-    refresh: Amounts.sumOrZero(total.currency, refreshFee).amount,
+    coin: Amounts.stringify(Amounts.sumOrZero(total.currency, coinFee).amount),
+    wire: Amounts.stringify(Amounts.sumOrZero(total.currency, wireFee).amount),
+    refresh: Amounts.stringify(
+      Amounts.sumOrZero(total.currency, refreshFee).amount,
+    ),
   };
 }

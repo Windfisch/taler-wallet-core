@@ -1614,9 +1614,9 @@ export interface GetFeeForDepositRequest {
 }
 
 export interface DepositGroupFees {
-  coin: AmountJson;
-  wire: AmountJson;
-  refresh: AmountJson;
+  coin: AmountString;
+  wire: AmountString;
+  refresh: AmountString;
 }
 
 export interface CreateDepositGroupRequest {
