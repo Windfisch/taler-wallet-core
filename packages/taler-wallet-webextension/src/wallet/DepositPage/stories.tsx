@@ -28,21 +28,6 @@ export default {
   title: "wallet/deposit",
 };
 
-const accountsType = {
-  "": labelForAccountType(""),
-  iban: labelForAccountType("iban"),
-  bitcoin: labelForAccountType("bitcoin"),
-  "x-taler-bank": labelForAccountType("x-taler-bank"),
-};
-async function alwaysReturnFeeToOne(): Promise<DepositGroupFees> {
-  const fee = {
-    currency: "EUR",
-    value: 1,
-    fraction: 0,
-  };
-  return { coin: fee, refresh: fee, wire: fee };
-}
-
 // const ac = parsePaytoUri("payto://iban/ES8877998399652238")!;
 // const accountMap = createLabelsForBankAccount([ac]);
 

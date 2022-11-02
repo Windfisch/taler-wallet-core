@@ -20,53 +20,60 @@
  */
 
 import {
-  Amounts, DepositGroupFees,
+  Amounts,
+  DepositGroupFees,
   parsePaytoUri,
-  stringifyPaytoUri
+  stringifyPaytoUri,
 } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
-import { createWalletApiMock, mountHook, nullFunction } from "../../test-utils.js";
+import {
+  createWalletApiMock,
+  mountHook,
+  nullFunction,
+} from "../../test-utils.js";
 
 import { useComponentState } from "./state.js";
 
 const currency = "EUR";
 const withoutFee = (): DepositGroupFees => ({
-  coin: Amounts.parseOrThrow(`${currency}:0`),
-  wire: Amounts.parseOrThrow(`${currency}:0`),
-  refresh: Amounts.parseOrThrow(`${currency}:0`),
+  coin: Amounts.stringify(`${currency}:0`),
+  wire: Amounts.stringify(`${currency}:0`),
+  refresh: Amounts.stringify(`${currency}:0`),
 });
 
 const withSomeFee = (): DepositGroupFees => ({
-  coin: Amounts.parseOrThrow(`${currency}:1`),
-  wire: Amounts.parseOrThrow(`${currency}:1`),
-  refresh: Amounts.parseOrThrow(`${currency}:1`),
+  coin: Amounts.stringify(`${currency}:1`),
+  wire: Amounts.stringify(`${currency}:1`),
+  refresh: Amounts.stringify(`${currency}:1`),
 });
 
 describe("DepositPage states", () => {
   it("should have status 'no-enough-balance' when balance is empty", async () => {
     const { handler, mock } = createWalletApiMock();
-    const props = { currency, onCancel: nullFunction, onSuccess: nullFunction }
+    const props = { currency, onCancel: nullFunction, onSuccess: nullFunction };
 
     handler.addWalletCallResponse(WalletApiOperation.GetBalances, undefined, {
-      balances: [{
-        available: `${currency}:0`,
-        hasPendingTransactions: false,
-        pendingIncoming: `${currency}:0`,
-        pendingOutgoing: `${currency}:0`,
-        requiresUserInput: false,
-      }],
-    })
-    handler.addWalletCallResponse(WalletApiOperation.ListKnownBankAccounts, undefined, {
-      accounts: []
+      balances: [
+        {
+          available: `${currency}:0`,
+          hasPendingTransactions: false,
+          pendingIncoming: `${currency}:0`,
+          pendingOutgoing: `${currency}:0`,
+          requiresUserInput: false,
+        },
+      ],
     });
+    handler.addWalletCallResponse(
+      WalletApiOperation.ListKnownBankAccounts,
+      undefined,
+      {
+        accounts: [],
+      },
+    );
 
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() =>
-        useComponentState(
-          props, mock
-        ),
-      );
+      mountHook(() => useComponentState(props, mock));
 
     {
       const { status } = pullLastResultOrThrow();
@@ -81,31 +88,33 @@ describe("DepositPage states", () => {
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should have status 'no-accounts' when balance is not empty and accounts is empty", async () => {
     const { handler, mock } = createWalletApiMock();
-    const props = { currency, onCancel: nullFunction, onSuccess: nullFunction }
+    const props = { currency, onCancel: nullFunction, onSuccess: nullFunction };
 
     handler.addWalletCallResponse(WalletApiOperation.GetBalances, undefined, {
-      balances: [{
-        available: `${currency}:1`,
-        hasPendingTransactions: false,
-        pendingIncoming: `${currency}:0`,
-        pendingOutgoing: `${currency}:0`,
-        requiresUserInput: false,
-      }],
-    })
-    handler.addWalletCallResponse(WalletApiOperation.ListKnownBankAccounts, undefined, {
-      accounts: []
+      balances: [
+        {
+          available: `${currency}:1`,
+          hasPendingTransactions: false,
+          pendingIncoming: `${currency}:0`,
+          pendingOutgoing: `${currency}:0`,
+          requiresUserInput: false,
+        },
+      ],
     });
+    handler.addWalletCallResponse(
+      WalletApiOperation.ListKnownBankAccounts,
+      undefined,
+      {
+        accounts: [],
+      },
+    );
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() =>
-        useComponentState(
-          props, mock
-        )
-      );
+      mountHook(() => useComponentState(props, mock));
 
     {
       const { status } = pullLastResultOrThrow();
@@ -120,7 +129,7 @@ describe("DepositPage states", () => {
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
   const ibanPayto = {
@@ -138,27 +147,29 @@ describe("DepositPage states", () => {
 
   it("should have status 'ready' but unable to deposit ", async () => {
     const { handler, mock } = createWalletApiMock();
-    const props = { currency, onCancel: nullFunction, onSuccess: nullFunction }
+    const props = { currency, onCancel: nullFunction, onSuccess: nullFunction };
 
     handler.addWalletCallResponse(WalletApiOperation.GetBalances, undefined, {
-      balances: [{
-        available: `${currency}:1`,
-        hasPendingTransactions: false,
-        pendingIncoming: `${currency}:0`,
-        pendingOutgoing: `${currency}:0`,
-        requiresUserInput: false,
-      }],
-    })
-    handler.addWalletCallResponse(WalletApiOperation.ListKnownBankAccounts, undefined, {
-      accounts: [ibanPayto]
+      balances: [
+        {
+          available: `${currency}:1`,
+          hasPendingTransactions: false,
+          pendingIncoming: `${currency}:0`,
+          pendingOutgoing: `${currency}:0`,
+          requiresUserInput: false,
+        },
+      ],
     });
+    handler.addWalletCallResponse(
+      WalletApiOperation.ListKnownBankAccounts,
+      undefined,
+      {
+        accounts: [ibanPayto],
+      },
+    );
 
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() =>
-        useComponentState(
-          props, mock
-        ),
-      );
+      mountHook(() => useComponentState(props, mock));
 
     {
       const { status } = pullLastResultOrThrow();
@@ -178,35 +189,49 @@ describe("DepositPage states", () => {
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should not be able to deposit more than the balance ", async () => {
     const { handler, mock } = createWalletApiMock();
-    const props = { currency, onCancel: nullFunction, onSuccess: nullFunction }
+    const props = { currency, onCancel: nullFunction, onSuccess: nullFunction };
 
     handler.addWalletCallResponse(WalletApiOperation.GetBalances, undefined, {
-      balances: [{
-        available: `${currency}:5`,
-        hasPendingTransactions: false,
-        pendingIncoming: `${currency}:0`,
-        pendingOutgoing: `${currency}:0`,
-        requiresUserInput: false,
-      }],
-    })
-    handler.addWalletCallResponse(WalletApiOperation.ListKnownBankAccounts, undefined, {
-      accounts: [talerBankPayto, ibanPayto]
+      balances: [
+        {
+          available: `${currency}:5`,
+          hasPendingTransactions: false,
+          pendingIncoming: `${currency}:0`,
+          pendingOutgoing: `${currency}:0`,
+          requiresUserInput: false,
+        },
+      ],
     });
-    handler.addWalletCallResponse(WalletApiOperation.GetFeeForDeposit, undefined, withoutFee())
-    handler.addWalletCallResponse(WalletApiOperation.GetFeeForDeposit, undefined, withoutFee())
-    handler.addWalletCallResponse(WalletApiOperation.GetFeeForDeposit, undefined, withoutFee())
+    handler.addWalletCallResponse(
+      WalletApiOperation.ListKnownBankAccounts,
+      undefined,
+      {
+        accounts: [talerBankPayto, ibanPayto],
+      },
+    );
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetFeeForDeposit,
+      undefined,
+      withoutFee(),
+    );
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetFeeForDeposit,
+      undefined,
+      withoutFee(),
+    );
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetFeeForDeposit,
+      undefined,
+      withoutFee(),
+    );
 
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() =>
-        useComponentState(
-          props, mock
-        ),
-      );
+      mountHook(() => useComponentState(props, mock));
 
     {
       const { status } = pullLastResultOrThrow();
@@ -214,7 +239,7 @@ describe("DepositPage states", () => {
     }
 
     expect(await waitForStateUpdate()).true;
-    const accountSelected = stringifyPaytoUri(ibanPayto.uri)
+    const accountSelected = stringifyPaytoUri(ibanPayto.uri);
 
     {
       const r = pullLastResultOrThrow();
@@ -227,7 +252,7 @@ describe("DepositPage states", () => {
       expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
       expect(r.account.onChange).not.undefined;
 
-      r.account.onChange!(accountSelected)
+      r.account.onChange!(accountSelected);
     }
 
     expect(await waitForStateUpdate()).true;
@@ -316,29 +341,39 @@ describe("DepositPage states", () => {
 
   it("should calculate the fee upon entering amount ", async () => {
     const { handler, mock } = createWalletApiMock();
-    const props = { currency, onCancel: nullFunction, onSuccess: nullFunction }
+    const props = { currency, onCancel: nullFunction, onSuccess: nullFunction };
 
     handler.addWalletCallResponse(WalletApiOperation.GetBalances, undefined, {
-      balances: [{
-        available: `${currency}:10`,
-        hasPendingTransactions: false,
-        pendingIncoming: `${currency}:0`,
-        pendingOutgoing: `${currency}:0`,
-        requiresUserInput: false,
-      }],
-    })
-    handler.addWalletCallResponse(WalletApiOperation.ListKnownBankAccounts, undefined, {
-      accounts: [talerBankPayto, ibanPayto]
+      balances: [
+        {
+          available: `${currency}:10`,
+          hasPendingTransactions: false,
+          pendingIncoming: `${currency}:0`,
+          pendingOutgoing: `${currency}:0`,
+          requiresUserInput: false,
+        },
+      ],
     });
-    handler.addWalletCallResponse(WalletApiOperation.GetFeeForDeposit, undefined, withSomeFee())
-    handler.addWalletCallResponse(WalletApiOperation.GetFeeForDeposit, undefined, withSomeFee())
+    handler.addWalletCallResponse(
+      WalletApiOperation.ListKnownBankAccounts,
+      undefined,
+      {
+        accounts: [talerBankPayto, ibanPayto],
+      },
+    );
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetFeeForDeposit,
+      undefined,
+      withSomeFee(),
+    );
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetFeeForDeposit,
+      undefined,
+      withSomeFee(),
+    );
 
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() =>
-        useComponentState(
-          props, mock
-        ),
-      );
+      mountHook(() => useComponentState(props, mock));
 
     {
       const { status } = pullLastResultOrThrow();
@@ -346,7 +381,7 @@ describe("DepositPage states", () => {
     }
 
     expect(await waitForStateUpdate()).true;
-    const accountSelected = stringifyPaytoUri(ibanPayto.uri)
+    const accountSelected = stringifyPaytoUri(ibanPayto.uri);
 
     {
       const r = pullLastResultOrThrow();
@@ -359,7 +394,7 @@ describe("DepositPage states", () => {
       expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
       expect(r.account.onChange).not.undefined;
 
-      r.account.onChange!(accountSelected)
+      r.account.onChange!(accountSelected);
     }
 
     expect(await waitForStateUpdate()).true;
@@ -392,7 +427,6 @@ describe("DepositPage states", () => {
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
-
 });
