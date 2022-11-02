@@ -73,9 +73,11 @@ import {
 import {
   OperationAttemptResult,
   OperationAttemptResultType,
-  runOperationHandlerForResult,
+  RetryTags,
+  unwrapOperationHandlerResultOrThrow,
 } from "../util/retries.js";
 import { WALLET_EXCHANGE_PROTOCOL_VERSION } from "../versions.js";
+import { runOperationWithErrorReporting } from "./common.js";
 import { isWithdrawableDenom } from "./withdraw.js";
 
 const logger = new Logger("exchanges.ts");
@@ -546,8 +548,13 @@ export async function updateExchangeFromUrl(
   exchange: ExchangeRecord;
   exchangeDetails: ExchangeDetailsRecord;
 }> {
-  return runOperationHandlerForResult(
-    await updateExchangeFromUrlHandler(ws, baseUrl, options),
+  const canonUrl = canonicalizeBaseUrl(baseUrl);
+  return unwrapOperationHandlerResultOrThrow(
+    await runOperationWithErrorReporting(
+      ws,
+      RetryTags.forExchangeUpdateFromUrl(canonUrl),
+      () => updateExchangeFromUrlHandler(ws, canonUrl, options),
+    ),
   );
 }
 

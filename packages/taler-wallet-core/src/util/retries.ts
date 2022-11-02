@@ -176,6 +176,9 @@ export namespace RetryTags {
   export function forExchangeUpdate(exch: ExchangeRecord): string {
     return `${PendingTaskType.ExchangeUpdate}:${exch.baseUrl}`;
   }
+  export function forExchangeUpdateFromUrl(exchBaseUrl: string): string {
+    return `${PendingTaskType.ExchangeUpdate}:${exchBaseUrl}`;
+  }
   export function forExchangeCheckRefresh(exch: ExchangeRecord): string {
     return `${PendingTaskType.ExchangeCheckRefresh}:${exch.baseUrl}`;
   }
@@ -246,7 +249,7 @@ export async function scheduleRetry(
 /**
  * Run an operation handler, expect a success result and extract the success value.
  */
-export async function runOperationHandlerForResult<T>(
+export async function unwrapOperationHandlerResultOrThrow<T>(
   res: OperationAttemptResult<T>,
 ): Promise<T> {
   switch (res.type) {

@@ -904,6 +904,10 @@ export enum ExchangeEntryStatus {
   Ok = "ok",
 }
 
+export interface OperationErrorInfo {
+  error: TalerErrorDetail;
+}
+
 // FIXME: This should probably include some error status.
 export interface ExchangeListItem {
   exchangeBaseUrl: string;
@@ -917,6 +921,12 @@ export interface ExchangeListItem {
    * temporarily queried.
    */
   permanent: boolean;
+
+  /**
+   * Information about the last error that occured when trying
+   * to update the exchange info.
+   */
+  lastUpdateErrorInfo?: OperationErrorInfo;
 }
 
 const codecForAuditorDenomSig = (): Codec<AuditorDenomSig> =>

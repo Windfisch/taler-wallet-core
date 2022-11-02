@@ -1385,6 +1385,7 @@ export async function getWithdrawalDetailsForUri(
       x.exchangeDetails,
       x.exchangeTos,
       x.denominations,
+      x.operationRetries,
     ])
     .runReadOnly(async (tx) => {
       const exchangeRecords = await tx.exchanges.iter().toArray();
@@ -1396,8 +1397,13 @@ export async function getWithdrawalDetailsForUri(
         const denominations = await tx.denominations.indexes.byExchangeBaseUrl
           .iter(r.baseUrl)
           .toArray();
+        const retryRecord = await tx.operationRetries.get(
+          RetryTags.forExchangeUpdate(r),
+        );
         if (exchangeDetails && denominations) {
-          exchanges.push(makeExchangeListItem(r, exchangeDetails));
+          exchanges.push(
+            makeExchangeListItem(r, exchangeDetails, retryRecord?.lastError),
+          );
         }
       }
     });

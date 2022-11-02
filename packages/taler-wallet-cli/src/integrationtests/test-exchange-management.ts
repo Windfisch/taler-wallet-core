@@ -194,12 +194,16 @@ export async function runExchangeManagementTest(
   t.assertTrue(
     err1.errorDetail.code === TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
   );
-
   exchangesList = await wallet.client.call(
     WalletApiOperation.ListExchanges,
     {},
   );
-  t.assertTrue(exchangesList.exchanges.length === 0);
+  console.log("exchanges list", j2s(exchangesList));
+  t.assertTrue(exchangesList.exchanges.length === 1);
+  t.assertTrue(
+    exchangesList.exchanges[0].lastUpdateErrorInfo?.error.code ===
+      TalerErrorCode.WALLET_RECEIVED_MALFORMED_RESPONSE,
+  );
 
   /*
    * =========================================================================
@@ -240,7 +244,11 @@ export async function runExchangeManagementTest(
     WalletApiOperation.ListExchanges,
     {},
   );
-  t.assertTrue(exchangesList.exchanges.length === 0);
+  t.assertTrue(exchangesList.exchanges.length === 1);
+  t.assertTrue(
+    exchangesList.exchanges[0].lastUpdateErrorInfo?.error.code ===
+      TalerErrorCode.WALLET_EXCHANGE_PROTOCOL_VERSION_INCOMPATIBLE,
+  );
 
   /*
    * =========================================================================

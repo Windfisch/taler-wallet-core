@@ -54,7 +54,7 @@ import { checkDbInvariant } from "../util/invariants.js";
 import { GetReadWriteAccess } from "../util/query.js";
 import {
   OperationAttemptResult,
-  runOperationHandlerForResult,
+  unwrapOperationHandlerResultOrThrow,
 } from "../util/retries.js";
 import { createRefreshGroup, processRefreshGroup } from "./refresh.js";
 import { internalCreateWithdrawalGroup } from "./withdraw.js";
@@ -307,7 +307,7 @@ export async function processRecoupGroup(
     forceNow?: boolean;
   } = {},
 ): Promise<void> {
-  await runOperationHandlerForResult(
+  await unwrapOperationHandlerResultOrThrow(
     await processRecoupGroupHandler(ws, recoupGroupId, options),
   );
   return;

@@ -239,7 +239,7 @@ import {
   GetReadOnlyAccess,
   GetReadWriteAccess,
 } from "./util/query.js";
-import { OperationAttemptResult } from "./util/retries.js";
+import { OperationAttemptResult, RetryTags } from "./util/retries.js";
 import { TimerAPI, TimerGroup } from "./util/timer.js";
 import {
   WALLET_BANK_INTEGRATION_PROTOCOL_VERSION,
@@ -650,12 +650,16 @@ async function getExchanges(
       x.exchangeDetails,
       x.exchangeTos,
       x.denominations,
+      x.operationRetries,
     ])
     .runReadOnly(async (tx) => {
       const exchangeRecords = await tx.exchanges.iter().toArray();
       for (const r of exchangeRecords) {
         const exchangeDetails = await getExchangeDetails(tx, r.baseUrl);
-        exchanges.push(makeExchangeListItem(r, exchangeDetails));
+        const opRetryRecord = await tx.operationRetries.get(
+          RetryTags.forExchangeUpdate(r),
+        );
+        exchanges.push(makeExchangeListItem(r, exchangeDetails, opRetryRecord?.lastError));
       }
     });
   return { exchanges };

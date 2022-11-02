@@ -28,6 +28,7 @@ import {
   ExchangeTosStatus,
   j2s,
   Logger,
+  OperationErrorInfo,
   RefreshReason,
   TalerErrorCode,
   TalerErrorDetail,
@@ -224,30 +225,37 @@ export async function storeOperationPending(
     });
 }
 
-export async function runOperationWithErrorReporting(
+export async function runOperationWithErrorReporting<T1, T2>(
   ws: InternalWalletState,
   opId: string,
-  f: () => Promise<OperationAttemptResult>,
-): Promise<void> {
+  f: () => Promise<OperationAttemptResult<T1, T2>>,
+): Promise<OperationAttemptResult<T1, T2>> {
   let maybeError: TalerErrorDetail | undefined;
   try {
     const resp = await f();
     switch (resp.type) {
       case OperationAttemptResultType.Error:
-        return await storeOperationError(ws, opId, resp.errorDetail);
+        await storeOperationError(ws, opId, resp.errorDetail);
+        return resp;
       case OperationAttemptResultType.Finished:
-        return await storeOperationFinished(ws, opId);
+        await storeOperationFinished(ws, opId);
+        return resp;
       case OperationAttemptResultType.Pending:
-        return await storeOperationPending(ws, opId);
+        await storeOperationPending(ws, opId);
+        return resp;
       case OperationAttemptResultType.Longpoll:
-        break;
+        return resp;
     }
   } catch (e) {
     if (e instanceof TalerError) {
       logger.warn("operation processed resulted in error");
       logger.warn(`error was: ${j2s(e.errorDetail)}`);
       maybeError = e.errorDetail;
-      return await storeOperationError(ws, opId, maybeError!);
+      await storeOperationError(ws, opId, maybeError!);
+      return {
+        type: OperationAttemptResultType.Error,
+        errorDetail: e.errorDetail,
+      };
     } else if (e instanceof Error) {
       // This is a bug, as we expect pending operations to always
       // do their own error handling and only throw WALLET_PENDING_OPERATION_FAILED
@@ -261,7 +269,11 @@ export async function runOperationWithErrorReporting(
         },
         `unexpected exception (message: ${e.message})`,
       );
-      return await storeOperationError(ws, opId, maybeError);
+      await storeOperationError(ws, opId, maybeError);
+      return {
+        type: OperationAttemptResultType.Error,
+        errorDetail: maybeError,
+      };
     } else {
       logger.error("Uncaught exception, value is not even an error.");
       maybeError = makeErrorDetail(
@@ -269,7 +281,11 @@ export async function runOperationWithErrorReporting(
         {},
         `unexpected exception (not even an error)`,
       );
-      return await storeOperationError(ws, opId, maybeError);
+      await storeOperationError(ws, opId, maybeError);
+      return {
+        type: OperationAttemptResultType.Error,
+        errorDetail: maybeError,
+      };
     }
   }
 }
@@ -357,7 +373,13 @@ export function getExchangeTosStatus(
 export function makeExchangeListItem(
   r: ExchangeRecord,
   exchangeDetails: ExchangeDetailsRecord | undefined,
+  lastError: TalerErrorDetail | undefined,
 ): ExchangeListItem {
+  const lastUpdateErrorInfo: OperationErrorInfo | undefined = lastError
+    ? {
+        error: lastError,
+      }
+    : undefined;
   if (!exchangeDetails) {
     return {
       exchangeBaseUrl: r.baseUrl,
@@ -367,6 +389,7 @@ export function makeExchangeListItem(
       exchangeStatus: ExchangeEntryStatus.Unknown,
       permanent: r.permanent,
       ageRestrictionOptions: [],
+      lastUpdateErrorInfo,
     };
   }
   let exchangeStatus;
@@ -381,5 +404,6 @@ export function makeExchangeListItem(
     ageRestrictionOptions: exchangeDetails.ageMask
       ? AgeRestriction.getAgeGroupsFromMask(exchangeDetails.ageMask)
       : [],
+    lastUpdateErrorInfo,
   };
 }
