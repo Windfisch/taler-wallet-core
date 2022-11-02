@@ -526,7 +526,8 @@ export interface ExchangeRecord {
    * exchange advertises a different master public key and/or
    * currency.
    *
-   * FIXME: Use a rowId here?
+   * We could use a rowID here, but having the currency in the
+   * details pointer lets us do fewer DB queries sometimes.
    */
   detailsPointer: ExchangeDetailsPointer | undefined;
 
