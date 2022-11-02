@@ -183,7 +183,7 @@ export namespace RetryTags {
     return `${PendingTaskType.TipPickup}:${tipRecord.walletTipId}`;
   }
   export function forRefresh(refreshGroupRecord: RefreshGroupRecord): string {
-    return `${PendingTaskType.TipPickup}:${refreshGroupRecord.refreshGroupId}`;
+    return `${PendingTaskType.Refresh}:${refreshGroupRecord.refreshGroupId}`;
   }
   export function forPay(purchaseRecord: PurchaseRecord): string {
     return `${PendingTaskType.Purchase}:${purchaseRecord.proposalId}`;

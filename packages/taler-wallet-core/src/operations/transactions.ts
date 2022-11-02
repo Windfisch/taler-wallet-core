@@ -51,6 +51,7 @@ import {
   WalletContractData,
 } from "../db.js";
 import { InternalWalletState } from "../internal-wallet-state.js";
+import { assertUnreachable } from "../util/assertUnreachable.js";
 import { checkDbInvariant } from "../util/invariants.js";
 import { RetryTags } from "../util/retries.js";
 import {
@@ -803,33 +804,36 @@ export async function getTransactions(
         const opId = RetryTags.forWithdrawal(wsr);
         const ort = await tx.operationRetries.get(opId);
 
-        if (wsr.wgInfo.withdrawalType === WithdrawalRecordType.PeerPullCredit) {
-          transactions.push(buildTransactionForPullPaymentCredit(wsr, ort));
-          return;
-        } else if (
-          wsr.wgInfo.withdrawalType === WithdrawalRecordType.PeerPushCredit
-        ) {
-          transactions.push(buildTransactionForPushPaymentCredit(wsr, ort));
-          return;
-        } else if (
-          wsr.wgInfo.withdrawalType === WithdrawalRecordType.BankIntegrated
-        ) {
-          transactions.push(
-            buildTransactionForBankIntegratedWithdraw(wsr, ort),
-          );
-        } else {
-          const exchangeDetails = await getExchangeDetails(
-            tx,
-            wsr.exchangeBaseUrl,
-          );
-          if (!exchangeDetails) {
-            // FIXME: report somehow
+        switch (wsr.wgInfo.withdrawalType) {
+          case WithdrawalRecordType.PeerPullCredit:
+            transactions.push(buildTransactionForPullPaymentCredit(wsr, ort));
+            return;
+          case WithdrawalRecordType.PeerPushCredit:
+            transactions.push(buildTransactionForPushPaymentCredit(wsr, ort));
+            return;
+          case WithdrawalRecordType.BankIntegrated:
+            transactions.push(
+              buildTransactionForBankIntegratedWithdraw(wsr, ort),
+            );
+            return;
+          case WithdrawalRecordType.BankManual: {
+            const exchangeDetails = await getExchangeDetails(
+              tx,
+              wsr.exchangeBaseUrl,
+            );
+            if (!exchangeDetails) {
+              // FIXME: report somehow
+              return;
+            }
+
+            transactions.push(
+              buildTransactionForManualWithdraw(wsr, exchangeDetails, ort),
+            );
             return;
           }
-
-          transactions.push(
-            buildTransactionForManualWithdraw(wsr, exchangeDetails, ort),
-          );
+          case WithdrawalRecordType.Recoup:
+            // FIXME: Do we also report a transaction here?
+            return;
         }
       });
 

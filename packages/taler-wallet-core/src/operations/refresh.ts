@@ -426,6 +426,16 @@ async function refreshMelt(
     return;
   }
 
+  if (resp.status === HttpStatusCode.Conflict) {
+    // Just log for better diagnostics here, error status
+    // will be handled later.
+    logger.error(
+      `melt request for ${Amounts.stringify(
+        derived.meltValueWithFee,
+      )} failed in refresh group ${refreshGroupId} due to conflict`,
+    );
+  }
+
   const meltResponse = await readSuccessResponseJsonOrThrow(
     resp,
     codecForExchangeMeltResponse(),

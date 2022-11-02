@@ -281,7 +281,8 @@ async function recoupRefreshCoin(
       revokedCoin.status = CoinStatus.Dormant;
       recoupGroup.scheduleRefreshCoins.push({
         coinPub: oldCoin.coinPub,
-        amount: Amounts.sub(oldCoinDenom.value, revokedCoinDenom.value).amount,
+        //amount: Amounts.sub(oldCoinDenom.value, revokedCoinDenom.value).amount,
+        amount: revokedCoinDenom.value,
       });
       await tx.coins.put(revokedCoin);
       await tx.coins.put(oldCoin);
