@@ -1763,6 +1763,8 @@ export interface PeerPullPaymentIncomingRecord {
  *
  * Mostly used to store the private key for a reserve and to allow
  * other records to reference the reserve key pair via a small row ID.
+ *
+ * In the future, we might also store KYC info about a reserve here.
  */
 export interface ReserveRecord {
   rowId?: number;
