@@ -852,7 +852,7 @@ export interface ExchangeListItem {
   permanent: boolean;
 
   /**
-   * Information about the last error that occured when trying
+   * Information about the last error that occurred when trying
    * to update the exchange info.
    */
   lastUpdateErrorInfo?: OperationErrorInfo;

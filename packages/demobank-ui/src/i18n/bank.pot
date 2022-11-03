@@ -78,7 +78,7 @@ msgstr ""
 
 #: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1026
 #, c-format
-msgid "Waiting the bank to create the operaion..."
+msgid "Waiting the bank to create the operation..."
 msgstr ""
 
 #: /home/job/backoffice/packages/bank/src/pages/home/index.tsx:1044

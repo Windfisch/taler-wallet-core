@@ -30,8 +30,8 @@ function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
   return value !== null && value !== undefined;
 }
 
-export function buildActions<T extends WithId>(intances: T[], selected: string[], action: 'DELETE'): Actions<T>[] {
-  return selected.map(id => intances.find(i => i.id === id))
+export function buildActions<T extends WithId>(instances: T[], selected: string[], action: 'DELETE'): Actions<T>[] {
+  return selected.map(id => instances.find(i => i.id === id))
     .filter(notEmpty)
     .map(id => ({ element: id, type: action }))
 }

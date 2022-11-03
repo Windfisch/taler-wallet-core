@@ -17,10 +17,10 @@ import { amountFractionalBase, AmountJson, Amounts } from "@gnu-taler/taler-util
 import { MerchantBackend } from "../declaration";
 
 /**
- * sums two prices, 
- * @param one 
- * @param two 
- * @returns 
+ * sums two prices,
+ * @param one
+ * @param two
+ * @returns
  */
 const sumPrices = (one: string, two: string) => {
   const [currency, valueOne] = one.split(':')
@@ -30,7 +30,7 @@ const sumPrices = (one: string, two: string) => {
 
 /**
  * merge refund with the same description and a difference less than one minute
- * @param prev list of refunds that will hold the merged refunds 
+ * @param prev list of refunds that will hold the merged refunds
  * @param cur new refund to add to the list
  * @returns list with the new refund, may be merged with the last
  */
@@ -38,8 +38,8 @@ export function mergeRefunds(prev: MerchantBackend.Orders.RefundDetails[], cur: 
   let tail;
 
   if (prev.length === 0 ||  //empty list
-    cur.timestamp.t_s === 'never' || //current doesnt have timestamp
-    (tail = prev[prev.length - 1]).timestamp.t_s === 'never' || // last doesnt have timestamp
+    cur.timestamp.t_s === 'never' || //current does not have timestamp
+    (tail = prev[prev.length - 1]).timestamp.t_s === 'never' || // last does not have timestamp
     cur.reason !== tail.reason || //different reason
     Math.abs(cur.timestamp.t_s - tail.timestamp.t_s) > 1000 * 60) {//more than 1 minute difference
 

@@ -24,7 +24,7 @@ import { useNotifications } from '../../src/hooks/notifications';
 
 jest.useFakeTimers()
 
-test('notification should disapear after timeout', () => {
+test('notification should disappear after timeout', () => {
   jest.spyOn(global, 'setTimeout');
 
   const timeout = 1000

@@ -175,10 +175,8 @@ function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
   return value !== null && value !== undefined;
 }
 
-function buildActions(intances: MerchantBackend.Instances.Instance[], selected: string[], action: 'DELETE'): Actions[] {
-  return selected.map(id => intances.find(i => i.id === id))
+function buildActions(instances: MerchantBackend.Instances.Instance[], selected: string[], action: 'DELETE'): Actions[] {
+  return selected.map(id => instances.find(i => i.id === id))
     .filter(notEmpty)
     .map(id => ({ element: id, type: action }))
 }
-
-
