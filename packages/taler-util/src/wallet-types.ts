@@ -284,56 +284,6 @@ export interface SenderWireInfos {
 }
 
 /**
- * Request to create a reserve.
- */
-export interface CreateReserveRequest {
-  /**
-   * The initial amount for the reserve.
-   */
-  amount: AmountJson;
-
-  /**
-   * Exchange URL where the bank should create the reserve.
-   */
-  exchange: string;
-
-  /**
-   * Payto URI that identifies the exchange's account that the funds
-   * for this reserve go into.
-   */
-  exchangePaytoUri?: string;
-
-  /**
-   * Wire details (as a payto URI) for the bank account that sent the funds to
-   * the exchange.
-   */
-  senderWire?: string;
-
-  /**
-   * URL to fetch the withdraw status from the bank.
-   */
-  bankWithdrawStatusUrl?: string;
-
-  /**
-   * Forced denomination selection for the first withdrawal
-   * from this reserve, only used for testing.
-   */
-  forcedDenomSel?: ForcedDenomSel;
-
-  restrictAge?: number;
-}
-
-export const codecForCreateReserveRequest = (): Codec<CreateReserveRequest> =>
-  buildCodecForObject<CreateReserveRequest>()
-    .property("amount", codecForAmountJson())
-    .property("exchange", codecForString())
-    .property("exchangePaytoUri", codecForString())
-    .property("senderWire", codecOptional(codecForString()))
-    .property("bankWithdrawStatusUrl", codecOptional(codecForString()))
-    .property("forcedDenomSel", codecForAny())
-    .build("CreateReserveRequest");
-
-/**
  * Request to mark a reserve as confirmed.
  */
 export interface ConfirmReserveRequest {
@@ -348,27 +298,6 @@ export const codecForConfirmReserveRequest = (): Codec<ConfirmReserveRequest> =>
   buildCodecForObject<ConfirmReserveRequest>()
     .property("reservePub", codecForString())
     .build("ConfirmReserveRequest");
-
-/**
- * Wire coins to the user's own bank account.
- */
-export interface ReturnCoinsRequest {
-  /**
-   * The amount to wire.
-   */
-  amount: AmountJson;
-
-  /**
-   * The exchange to take the coins from.
-   */
-  exchange: string;
-
-  /**
-   * Wire details for the bank account of the customer that will
-   * receive the funds.
-   */
-  senderWire?: string;
-}
 
 export interface PrepareRefundResult {
   proposalId: string;
