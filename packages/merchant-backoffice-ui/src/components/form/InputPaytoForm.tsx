@@ -22,6 +22,7 @@ import { h, VNode, Fragment } from "preact";
 import { useCallback, useState } from "preact/hooks";
 import { Translate, Translator, useTranslator } from "../../i18n/index.js";
 import { COUNTRY_TABLE } from "../../utils/constants.js";
+import { undefinedIfEmpty } from "../../utils/table.js";
 import { FormErrors, FormProvider } from "./FormProvider.js";
 import { Input } from "./Input.js";
 import { InputGroup } from "./InputGroup.js";
@@ -153,12 +154,6 @@ const targets = [
 ];
 const noTargetValue = targets[0];
 const defaultTarget = { target: noTargetValue, options: {} };
-
-function undefinedIfEmpty<T>(obj: T): T | undefined {
-  return Object.keys(obj).some((k) => (obj as any)[k] !== undefined)
-    ? obj
-    : undefined;
-}
 
 export function InputPaytoForm<T>({
   name,

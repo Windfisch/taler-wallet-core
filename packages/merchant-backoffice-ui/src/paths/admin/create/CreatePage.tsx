@@ -33,6 +33,7 @@ import { Translate, useTranslator } from "../../../i18n/index.js";
 import { DefaultInstanceFormFields } from "../../../components/instance/DefaultInstanceFormFields.js";
 import { INSTANCE_ID_REGEX, PAYTO_REGEX } from "../../../utils/constants.js";
 import { Amounts } from "@gnu-taler/taler-util";
+import { undefinedIfEmpty } from "../../../utils/table.js";
 
 export type Entity = MerchantBackend.Instances.InstanceConfigurationMessage & {
   auth_token?: string;
@@ -52,12 +53,6 @@ function with_defaults(id?: string): Partial<Entity> {
     default_wire_fee_amortization: 1,
     default_wire_transfer_delay: { d_us: 1000 * 2 * 60 * 60 * 24 * 1000 }, // two days
   };
-}
-
-function undefinedIfEmpty<T>(obj: T): T | undefined {
-  return Object.keys(obj).some((k) => (obj as any)[k] !== undefined)
-    ? obj
-    : undefined;
 }
 
 export function CreatePage({ onCreate, onBack, forceId }: Props): VNode {

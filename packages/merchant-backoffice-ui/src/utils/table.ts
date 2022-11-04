@@ -35,3 +35,19 @@ export function buildActions<T extends WithId>(instances: T[], selected: string[
     .filter(notEmpty)
     .map(id => ({ element: id, type: action }))
 }
+
+/**
+ * For any object or array, return the same object if is not empty.
+ * not empty: 
+ *  - for arrays: at least one element not undefined
+ *  - for objects: at least one property not undefined
+ * @param obj 
+ * @returns 
+ */
+export function undefinedIfEmpty<T extends Record<string, unknown>|Array<unknown>>(obj: T): T | undefined {
+  if (obj === undefined) return undefined
+  return Object.values(obj).some((v) => v !== undefined)
+    ? obj
+    : undefined;
+}
+

@@ -34,6 +34,7 @@ import { Translate, useTranslator } from "../../../i18n/index.js";
 import { DefaultInstanceFormFields } from "../../../components/instance/DefaultInstanceFormFields.js";
 import { PAYTO_REGEX } from "../../../utils/constants.js";
 import { Amounts } from "@gnu-taler/taler-util";
+import { undefinedIfEmpty } from "../../../utils/table.js";
 
 type Entity = MerchantBackend.Instances.InstanceReconfigurationMessage & {
   auth_token?: string;
@@ -68,12 +69,6 @@ function getTokenValuePart(t?: string): string | undefined {
   const match = /secret-token:(.*)/.exec(t);
   if (!match || !match[1]) return undefined;
   return match[1];
-}
-
-function undefinedIfEmpty<T>(obj: T): T | undefined {
-  return Object.keys(obj).some((k) => (obj as any)[k] !== undefined)
-    ? obj
-    : undefined;
 }
 
 export function UpdatePage({

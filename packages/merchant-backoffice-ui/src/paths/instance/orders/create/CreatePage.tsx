@@ -42,6 +42,7 @@ import { InventoryProductForm } from "../../../../components/product/InventoryPr
 import { NonInventoryProductFrom } from "../../../../components/product/NonInventoryProductForm.js";
 import { InputNumber } from "../../../../components/form/InputNumber.js";
 import { InputBoolean } from "../../../../components/form/InputBoolean.js";
+import { undefinedIfEmpty } from "../../../../utils/table.js";
 
 interface Props {
   onCreate: (d: MerchantBackend.Orders.PostOrderRequest) => void;
@@ -125,12 +126,6 @@ const stringIsValidJSON = (value: string) => {
     return false;
   }
 };
-
-function undefinedIfEmpty<T>(obj: T): T | undefined {
-  return Object.keys(obj).some((k) => (obj as any)[k] !== undefined)
-    ? obj
-    : undefined;
-}
 
 export function CreatePage({
   onCreate,
