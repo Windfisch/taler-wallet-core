@@ -9,10 +9,10 @@ build-arch:
 build-indep:
 	true
 override_dh_auto_install:
-	dh_install bin/taler-wallet-cli $(TALER_WALLET_HOME)/node_modules/taler-wallet-cli/bin
-	dh_install dist/taler-wallet-cli.js $(TALER_WALLET_HOME)/node_modules/taler-wallet-cli/dist
-	dh_install dist/taler-wallet-cli.js.map $(TALER_WALLET_HOME)/node_modules/taler-wallet-cli/dist
-	dh_link $(TALER_WALLET_HOME)/node_modules/taler-wallet-cli/bin/taler-wallet-cli /usr/bin/taler-wallet-cli
+	dh_install bin/taler-wallet-cli.mjs $(TALER_WALLET_HOME)/node_modules/taler-wallet-cli/bin
+	dh_install dist/taler-wallet-cli.mjs $(TALER_WALLET_HOME)/node_modules/taler-wallet-cli/dist
+	dh_install dist/taler-wallet-cli.mjs.map $(TALER_WALLET_HOME)/node_modules/taler-wallet-cli/dist
+	dh_link $(TALER_WALLET_HOME)/node_modules/taler-wallet-cli/bin/taler-wallet-cli.mjs /usr/bin/taler-wallet-cli
 
 override_dh_builddeb:
 	dh_builddeb -- -Zgzip
