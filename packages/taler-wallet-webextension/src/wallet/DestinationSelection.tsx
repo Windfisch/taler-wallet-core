@@ -283,6 +283,11 @@ export function DestinationSelectionGetCash({
   const [currency, setCurrency] = useState(parsedInitialAmount?.currency);
 
   const [amount, setAmount] = useState(parsedInitialAmountValue);
+  function positiveSetAmount(e: string):void {
+    const value = Number.parseInt(e, 10);
+    if (value < 0) return
+    setAmount(String(value))
+  }
   const { i18n } = useTranslationContext();
   const previous1: Contact[] = [];
   const previous2: Contact[] = [
@@ -324,6 +329,7 @@ export function DestinationSelectionGetCash({
         <TextField
           label="Amount"
           type="number"
+          min="0"
           variant="filled"
           error={invalid}
           required
@@ -425,6 +431,11 @@ export function DestinationSelectionSendCash({
   const currency = parsedInitialAmount?.currency;
 
   const [amount, setAmount] = useState(parsedInitialAmountValue);
+  function positiveSetAmount(e: string):void {
+    const value = Number.parseInt(e, 10);
+    if (value < 0) return
+    setAmount(String(value))
+  }
   const { i18n } = useTranslationContext();
   const previous1: Contact[] = [];
   const previous2: Contact[] = [
@@ -466,6 +477,7 @@ export function DestinationSelectionSendCash({
         <TextField
           label="Amount"
           type="number"
+          min="0"
           variant="filled"
           required
           error={invalid}
@@ -474,7 +486,7 @@ export function DestinationSelectionSendCash({
           }
           value={amount}
           onChange={(e) => {
-            setAmount(e);
+            positiveSetAmount(e);
           }}
         />
       </div>

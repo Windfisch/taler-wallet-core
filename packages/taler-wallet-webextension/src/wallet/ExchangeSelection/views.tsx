@@ -19,6 +19,7 @@ import { styled } from "@linaria/react";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { Amount } from "../../components/Amount.js";
+import { ErrorMessage } from "../../components/ErrorMessage.js";
 import { LoadingError } from "../../components/LoadingError.js";
 import { SelectList } from "../../components/SelectList.js";
 import { Input, SvgIcon } from "../../components/styled/index.js";
@@ -156,17 +157,16 @@ export function NoExchangesView({
   const { i18n } = useTranslationContext();
   if (!currency) {
     return (
-      <div>
-        <i18n.Translate>could not find any exchange</i18n.Translate>
-      </div>
+      <ErrorMessage
+        title={<i18n.Translate>Could not find any exchange</i18n.Translate>}
+      />
     );
+
   }
   return (
-    <div>
-      <i18n.Translate>
-        could not find any exchange for the currency {currency}
-      </i18n.Translate>
-    </div>
+    <ErrorMessage
+      title={<i18n.Translate>Could not find any exchange for the currency {currency}</i18n.Translate>}
+    />
   );
 }
 

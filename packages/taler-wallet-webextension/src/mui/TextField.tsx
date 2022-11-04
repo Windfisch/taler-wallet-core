@@ -40,6 +40,7 @@ export interface Props {
   minRows?: number;
   multiline?: boolean;
   onChange?: (s: string) => void;
+  min?: string;
   placeholder?: string;
   required?: boolean;
 
