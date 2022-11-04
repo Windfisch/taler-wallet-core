@@ -521,7 +521,7 @@ function IbanAddressAccount({ field }: { field: TextFieldHandler }): VNode {
         onChange={(v) => {
           setName(v);
           if (!errors) {
-            field.onInput(`payto://iban/${number}?receiver-name=${v}`);
+            field.onInput(`payto://iban/${number}?receiver-name=${encodeURIComponent(v)}`);
           }
         }}
       />

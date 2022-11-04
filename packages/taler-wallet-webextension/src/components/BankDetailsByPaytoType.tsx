@@ -122,7 +122,12 @@ export function BankDetailsByPaytoType({
       />
     </Fragment>
   ) : payto.targetType === "iban" ? (
-    <Row name={<i18n.Translate>IBAN</i18n.Translate>} value={payto.iban} />
+    <Fragment>
+      {payto.bic !== undefined ? 
+        <Row name={<i18n.Translate>BIC</i18n.Translate>} value={payto.bic} />
+      : undefined}
+      <Row name={<i18n.Translate>IBAN</i18n.Translate>} value={payto.iban} />
+    </Fragment>
   ) : undefined;
 
   const receiver = payto.params["receiver"] || undefined;
