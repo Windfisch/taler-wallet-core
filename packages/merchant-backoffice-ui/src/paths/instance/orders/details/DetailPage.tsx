@@ -432,7 +432,7 @@ function PaidPage({
   const refund_taken = order.refund_details.reduce((prev, cur) => {
     if (cur.pending) return prev;
     return Amounts.add(prev, Amounts.parseOrThrow(cur.amount)).amount;
-  }, Amounts.getZero(amount.currency));
+  }, Amounts.zeroOfCurrency(amount.currency));
   value.refund_taken = Amounts.stringify(refund_taken);
 
   return (

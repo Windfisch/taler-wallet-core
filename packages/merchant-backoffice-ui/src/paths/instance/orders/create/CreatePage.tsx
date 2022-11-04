@@ -140,7 +140,7 @@ export function CreatePage({
 }: Props): VNode {
   const [value, valueHandler] = useState(with_defaults(instanceConfig));
   const config = useConfigContext();
-  const zero = Amounts.getZero(config.currency);
+  const zero = Amounts.zeroOfCurrency(config.currency);
 
   const inventoryList = Object.values(value.inventoryProducts || {});
   const productList = Object.values(value.products || {});

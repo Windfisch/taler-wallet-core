@@ -268,14 +268,14 @@ export function RefundModal({
     .map((r) => r.amount)
     .reduce(
       (p, c) => Amounts.add(p, Amounts.parseOrThrow(c)).amount,
-      Amounts.getZero(config.currency)
+      Amounts.zeroOfCurrency(config.currency)
     );
   const orderPrice =
     order.order_status === "paid"
       ? Amounts.parseOrThrow(order.contract_terms.amount)
       : undefined;
   const totalRefundable = !orderPrice
-    ? Amounts.getZero(totalRefunded.currency)
+    ? Amounts.zeroOfCurrency(totalRefunded.currency)
     : refunds.length
     ? Amounts.sub(orderPrice, totalRefunded).amount
     : orderPrice;
