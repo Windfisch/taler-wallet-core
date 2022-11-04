@@ -15,7 +15,7 @@
  */
 
 import { renderHook } from "@testing-library/preact-hooks"
-import { useAsync } from "../../src/hooks/async"
+import { useAsync } from "../../src/hooks/async.js"
 
 /**
 *

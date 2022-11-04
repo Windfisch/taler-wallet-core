@@ -37,8 +37,8 @@ test('listener', async () => {
 
   const { result } = renderHook(() => useListener(addWorldToTheEnd))
 
+  expect(result.current).toBeDefined()
   if (!result.current) {
-    expect(result.current).toBeDefined()
     return;
   }
 

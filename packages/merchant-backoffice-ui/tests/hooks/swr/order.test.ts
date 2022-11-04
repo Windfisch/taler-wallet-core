@@ -62,8 +62,8 @@ describe("order api interaction with listing", () => {
       return { query, api };
     }, { wrapper: TestingContext });
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
 
@@ -143,8 +143,8 @@ describe("order api interaction with listing", () => {
       return { query, api };
     }, { wrapper: TestingContext });
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
 
@@ -234,8 +234,8 @@ describe("order api interaction with listing", () => {
       return { query, api };
     }, { wrapper: TestingContext });
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
 
@@ -305,8 +305,8 @@ describe("order api interaction with details", () => {
       return { query, api };
     }, { wrapper: TestingContext });
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
 
@@ -374,8 +374,8 @@ describe("order api interaction with details", () => {
       return { query, api };
     }, { wrapper: TestingContext });
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
 

@@ -34,7 +34,7 @@ import {
   AxiosMockEnvironment
 } from "../../axiosMock.js";
 
-describe("product api interaction with listing ", () => {
+describe("product api interaction with listing", () => {
   it("should evict cache when creating a product", async () => {
     const env = new AxiosMockEnvironment();
 
@@ -56,8 +56,8 @@ describe("product api interaction with listing ", () => {
       { wrapper: TestingContext }
     ); // get products -> loading
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
     expect(result.current.query.loading).toBeTruthy();
@@ -141,8 +141,8 @@ describe("product api interaction with listing ", () => {
       { wrapper: TestingContext }
     ); // get products -> loading
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
     expect(result.current.query.loading).toBeTruthy();
@@ -218,8 +218,8 @@ describe("product api interaction with listing ", () => {
       { wrapper: TestingContext }
     ); // get products -> loading
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
     expect(result.current.query.loading).toBeTruthy();
@@ -289,8 +289,8 @@ describe("product api interaction with details", () => {
       return { query, api };
     }, { wrapper: TestingContext });
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
     expect(result.current.query.loading).toBeTruthy();

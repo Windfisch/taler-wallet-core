@@ -42,14 +42,11 @@ function getFiles(dir: string, files_: string[] = []) {
 const STORIES_NAME_REGEX = RegExp(".*.stories.tsx");
 
 function render(vnode: VNode) {
+  const SC: any = SWRConfig
   return originalRender(
-    <SWRConfig
-      value={{
-        provider: () => new Map(),
-      }}
-    >
+    <SC value={{ provider: () => new Map() }}>
       {vnode}
-    </SWRConfig>,
+    </SC>,
   );
 }
 

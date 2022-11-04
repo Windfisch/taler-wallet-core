@@ -37,7 +37,7 @@ import {
 } from "../../axiosMock.js";
 import { TestingContext } from "./index.js";
 
-describe("instance api interaction with details ", () => {
+describe("instance api interaction with details", () => {
 
   it("should evict cache when updating an instance", async () => {
 
@@ -59,8 +59,8 @@ describe("instance api interaction with details ", () => {
       { wrapper: TestingContext }
     );
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
     expect(result.current.query.loading).toBeTruthy();
@@ -135,8 +135,8 @@ describe("instance api interaction with details ", () => {
       { wrapper: TestingContext }
     );
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
     expect(result.current.query.loading).toBeTruthy();
@@ -222,8 +222,8 @@ describe("instance api interaction with details ", () => {
       { wrapper: TestingContext }
     );
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
     expect(result.current.query.loading).toBeTruthy();
@@ -284,7 +284,7 @@ describe("instance api interaction with details ", () => {
   });
 });
 
-describe("instance admin api interaction with listing ", () => {
+describe("instance admin api interaction with listing", () => {
 
   it("should evict cache when creating a new instance", async () => {
     const env = new AxiosMockEnvironment();
@@ -307,8 +307,8 @@ describe("instance admin api interaction with listing ", () => {
       { wrapper: TestingContext }
     );
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
     expect(result.current.query.loading).toBeTruthy();
@@ -397,8 +397,8 @@ describe("instance admin api interaction with listing ", () => {
       { wrapper: TestingContext }
     );
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
     expect(result.current.query.loading).toBeTruthy();
@@ -481,8 +481,8 @@ describe("instance admin api interaction with listing ", () => {
       { wrapper: TestingContext }
     );
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
     expect(result.current.query.loading).toBeTruthy();
@@ -545,7 +545,7 @@ describe("instance admin api interaction with listing ", () => {
   });
 });
 
-describe("instance management api interaction with listing ", () => {
+describe("instance management api interaction with listing", () => {
 
   it("should evict cache when updating an instance", async () => {
     const env = new AxiosMockEnvironment();
@@ -569,8 +569,8 @@ describe("instance management api interaction with listing ", () => {
       { wrapper: TestingContext }
     );
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
     expect(result.current.query.loading).toBeTruthy();

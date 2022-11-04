@@ -28,6 +28,7 @@ interface TestingContextProps {
   children?: ComponentChildren;
 }
 export function TestingContext({ children }: TestingContextProps): VNode {
+  const SC: any = SWRConfig
   return (
     <BackendContextProvider defaultUrl="http://backend" initialToken="token">
       <InstanceContextProvider
@@ -38,7 +39,7 @@ export function TestingContext({ children }: TestingContextProps): VNode {
           changeToken: () => null,
         }}
       >
-        <SWRConfig value={{ provider: () => new Map() }}>{children}</SWRConfig>
+        <SC value={{ provider: () => new Map() }}>{children}</SC>
       </InstanceContextProvider>
     </BackendContextProvider>
   );

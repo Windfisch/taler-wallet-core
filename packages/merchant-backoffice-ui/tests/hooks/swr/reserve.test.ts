@@ -41,7 +41,7 @@ import {
 } from "../../axiosMock.js";
 import { TestingContext } from "./index.js";
 
-describe("reserve api interaction with listing ", () => {
+describe("reserve api interaction with listing", () => {
   it("should evict cache when creating a reserve", async () => {
     const env = new AxiosMockEnvironment();
 
@@ -65,8 +65,8 @@ describe("reserve api interaction with listing ", () => {
       { wrapper: TestingContext }
     );
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
     expect(result.current.query.loading).toBeTruthy();
@@ -171,8 +171,8 @@ describe("reserve api interaction with listing ", () => {
       }
     );
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
     expect(result.current.query.loading).toBeTruthy();
@@ -260,8 +260,8 @@ describe("reserve api interaction with details", () => {
       }
     );
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
     expect(result.current.query.loading).toBeTruthy();
@@ -353,8 +353,8 @@ describe("reserve api interaction with details", () => {
       }
     );
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
     expect(result.current.query.loading).toBeTruthy();
@@ -448,8 +448,8 @@ describe("reserve api interaction with tip details", () => {
       }
     );
 
+    expect(result.current).toBeDefined();
     if (!result.current) {
-      expect(result.current).toBeDefined();
       return;
     }
     expect(result.current.query.loading).toBeTruthy();
