@@ -176,6 +176,7 @@ interface PageStateType {
    * be moved in a future "withdrawal state" object.
    */
   withdrawalId?: string;
+  timestamp?: number;
 }
 
 /**
@@ -497,7 +498,24 @@ function usePageState(
 
     ret[1](newVal);
   };
-  return [retObj, retSetter];
+
+  //when moving from one page to another
+  //clean up the info and error bar
+  function removeLatestInfo(val: any): ReturnType<typeof retSetter> {
+    const updater = typeof val === 'function' ? val : (c:any) => val
+    return retSetter((current:any) => {
+      const cleanedCurrent: PageStateType = {...current, 
+        hasInfo: false, 
+        info: undefined, 
+        hasError: false, 
+        errors: undefined, 
+        timestamp: new Date().getTime() 
+      }
+      return updater(cleanedCurrent)
+    })
+  }
+
+  return [retObj, removeLatestInfo];
 }
 
 /**
@@ -997,9 +1015,7 @@ function StatusBanner(Props: any): VNode | null {
   const i18n = useTranslator();
   if (!pageState.hasInfo) return null;
 
-  const rval = <p class="informational">{pageState.error}</p>;
-  delete pageState.info_msg;
-  pageState.hasInfo = false;
+  const rval = <p class="informational informational-ok">{pageState.info}</p>;
   return rval;
 }
 
@@ -1176,7 +1192,7 @@ function PaytoWireTransfer(Props: any): VNode {
               type="text"
               id="iban"
               name="iban"
-              value={submitData?.iban}
+              value={submitData?.iban ?? ""}
               placeholder="CC0123456789"
               required
               pattern={ibanRegex}
@@ -1199,7 +1215,7 @@ function PaytoWireTransfer(Props: any): VNode {
               name="subject"
               id="subject"
               placeholder="subject"
-              value={submitData?.subject}
+              value={submitData?.subject  ?? ""}
               required
               onInput={(e): void => {
                 submitDataSetter((submitData: any) => ({
@@ -1221,7 +1237,7 @@ function PaytoWireTransfer(Props: any): VNode {
               id="amount"
               placeholder="amount"
               required
-              value={submitData?.amount}
+              value={submitData?.amount  ?? ""}
               pattern={amountRegex}
               onInput={(e): void => {
                 submitDataSetter((submitData: any) => ({
@@ -1282,7 +1298,11 @@ function PaytoWireTransfer(Props: any): VNode {
                   transactionData,
                   backendState,
                   pageStateSetter,
-                  () => submitDataSetter((p) => ({})),
+                  () => submitDataSetter((p) => ({
+                    amount: undefined,
+                    iban: undefined,
+                    subject: undefined,
+                  })),
                 );
               }}
             />
@@ -1291,7 +1311,11 @@ function PaytoWireTransfer(Props: any): VNode {
               class="pure-button"
               value="Clear"
               onClick={async () => {
-                submitDataSetter((p) => ({}));
+                submitDataSetter((p) => ({
+                  amount: undefined,
+                  iban: undefined,
+                  subject: undefined,
+                }));
               }}
             />
           </p>
@@ -1436,6 +1460,7 @@ function TalerWithdrawalConfirmationQuestion(Props: any): VNode {
                   name="answer"
                   id="answer"
                   type="text"
+                  autoFocus
                   required
                   onInput={(e): void => {
                     captchaAnswer = e.currentTarget.value;
@@ -1472,8 +1497,8 @@ function TalerWithdrawalConfirmationQuestion(Props: any): VNode {
                 &nbsp;
                 <button
                   class="pure-button pure-button-secondary btn-cancel"
-                  onClick={() =>
-                    abortWithdrawalCall(
+                  onClick={async () =>
+                    await abortWithdrawalCall(
                       backendState,
                       pageState.withdrawalId,
                       pageStateSetter,
@@ -1791,11 +1816,11 @@ function LoginForm(Props: any): VNode {
     ref.current?.focus();
   }, []);
 
-  const errors = undefinedIfEmpty({
-    username: !(submitData && submitData.username)
+  const errors = !submitData ? undefined : undefinedIfEmpty({
+    username: !submitData.username
       ? i18n`Missing username`
       : undefined,
-    password: !(submitData && submitData.password)
+    password: !submitData.password
       ? i18n`Missing password`
       : undefined,
   });
@@ -1865,7 +1890,11 @@ function LoginForm(Props: any): VNode {
                 backendStateSetter,
                 pageStateSetter,
               );
-              submitDataSetter({});
+              submitDataSetter({
+                password: "",
+                repeatPassword: "",
+                username:"",
+              });
             }}
           >
             {i18n`Login`}
@@ -2034,11 +2063,14 @@ function RegistrationForm(Props: any): VNode {
  * Show one page of transactions.
  */
 function Transactions(Props: any): VNode {
-  const { pageNumber, accountLabel } = Props;
+  const { pageNumber, accountLabel, balanceValue } = Props;
   const i18n = useTranslator();
-  const { data, error } = useSWR(
+  const { data, error, mutate } = useSWR(
     `access-api/accounts/${accountLabel}/transactions?page=${pageNumber}`,
   );
+  useEffect(() => {
+    mutate()
+  }, [balanceValue])
   if (typeof error !== "undefined") {
     console.log("transactions not found error", error);
     switch (error.status) {
@@ -2120,12 +2152,12 @@ function Account(Props: any): VNode {
     // revalidateOnReconnect: false,
   });
   const [pageState, setPageState] = useContext(PageContext);
-  const { withdrawalInProgress, withdrawalId, isLoggedIn, talerWithdrawUri } =
+  const { withdrawalInProgress, withdrawalId, isLoggedIn, talerWithdrawUri, timestamp } =
     pageState;
   const i18n = useTranslator();
   useEffect(() => {
     mutate()
-  }, [talerWithdrawUri])
+  }, [timestamp])
 
   /**
    * This part shows a list of transactions: with 5 elements by
@@ -2262,7 +2294,7 @@ function Account(Props: any): VNode {
       <section id="main">
         <article>
           <h2>{i18n`Latest transactions:`}</h2>
-          <Transactions pageNumber="0" accountLabel={accountLabel} />
+          <Transactions balanceValue={balanceValue} pageNumber="0" accountLabel={accountLabel} />
         </article>
       </section>
     </BankFrame>

@@ -112,8 +112,6 @@ export function useLocalStorage(
     value?: string | ((val?: string) => string | undefined),
   ) => {
     setStoredValue((p) => {
-      console.log("calling setStoredValue");
-      console.log(window);
       const toStore = value instanceof Function ? value(p) : value;
       if (typeof window !== "undefined")
         if (!toStore) window.localStorage.removeItem(key);
