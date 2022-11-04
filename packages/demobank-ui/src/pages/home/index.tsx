@@ -2112,7 +2112,7 @@ function Account(Props: any): VNode {
   const { accountLabel, backendState } = Props;
   // Getting the bank account balance:
   const endpoint = `access-api/accounts/${accountLabel}`;
-  const { data, error } = useSWR(endpoint, {
+  const { data, error, mutate } = useSWR(endpoint, {
     // refreshInterval: 0,
     // revalidateIfStale: false,
     // revalidateOnMount: false,
@@ -2123,6 +2123,10 @@ function Account(Props: any): VNode {
   const { withdrawalInProgress, withdrawalId, isLoggedIn, talerWithdrawUri } =
     pageState;
   const i18n = useTranslator();
+  useEffect(() => {
+    mutate()
+  }, [talerWithdrawUri])
+
   /**
    * This part shows a list of transactions: with 5 elements by
    * default and offers a "load more" button.
