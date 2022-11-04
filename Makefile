@@ -11,7 +11,11 @@ include .config.mk
 
 .PHONY: dist
 dist:
-	$(git-archive-all) --include ./configure taler-wallet-$(shell git describe --tags --abbrev=0).tar.gz
+	$(git-archive-all) \
+	       	--include ./configure \
+	       	--include ./packages/taler-wallet-cli/configure \
+	       	--include ./packages/demobank-ui/configure \
+	       	taler-wallet-$(shell git describe --tags --abbrev=0).tar.gz
 
 # Create tarball with git hash prefix in name
 .PHONY: dist-git
