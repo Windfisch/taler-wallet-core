@@ -28,7 +28,7 @@ import { InputCurrency } from "../../../../components/form/InputCurrency.js";
 import { InputSelector } from "../../../../components/form/InputSelector.js";
 import { useConfigContext } from "../../../../context/config.js";
 import { MerchantBackend } from "../../../../declaration.js";
-import { Translate, useTranslator } from "../../../../i18n";
+import { Translate, useTranslator } from "../../../../i18n/index.js";
 import { CROCKFORD_BASE32_REGEX, URL_REGEX } from "../../../../utils/constants.js";
 
 type Entity = MerchantBackend.Transfers.TransferInformation

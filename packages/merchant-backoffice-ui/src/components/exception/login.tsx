@@ -23,7 +23,7 @@ import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useBackendContext } from "../../context/backend.js";
 import { useInstanceContext } from "../../context/instance.js";
-import { Translate, useTranslator } from "../../i18n";
+import { Translate, useTranslator } from "../../i18n/index.js";
 import { Notification } from "../../utils/types.js";
 
 interface Props {

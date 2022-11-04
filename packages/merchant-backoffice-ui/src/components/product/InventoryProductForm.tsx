@@ -19,7 +19,7 @@ import { FormProvider, FormErrors } from "../form/FormProvider.js";
 import { InputNumber } from "../form/InputNumber.js";
 import { InputSearchProduct } from "../form/InputSearchProduct.js";
 import { MerchantBackend, WithId } from "../../declaration.js";
-import { Translate, useTranslator } from "../../i18n";
+import { Translate, useTranslator } from "../../i18n/index.js";
 import { ProductMap } from "../../paths/instance/orders/create/CreatePage.js";
 
 type Form = {

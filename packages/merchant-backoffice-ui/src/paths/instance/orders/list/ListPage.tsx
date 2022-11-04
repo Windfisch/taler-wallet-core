@@ -24,7 +24,7 @@ import { h, VNode } from 'preact';
 import { useState } from 'preact/hooks';
 import { DatePicker } from "../../../../components/picker/DatePicker.js";
 import { MerchantBackend, WithId } from "../../../../declaration.js";
-import { Translate, useTranslator } from '../../../../i18n';
+import { Translate, useTranslator } from '../../../../i18n/index.js';
 import { CardTable } from "./Table.js";
 
 export interface ListPageProps {

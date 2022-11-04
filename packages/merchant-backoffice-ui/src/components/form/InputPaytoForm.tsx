@@ -20,7 +20,7 @@
  */
 import { h, VNode, Fragment } from "preact";
 import { useCallback, useState } from "preact/hooks";
-import { Translate, Translator, useTranslator } from "../../i18n.js";
+import { Translate, Translator, useTranslator } from "../../i18n/index.js";
 import { COUNTRY_TABLE } from "../../utils/constants.js";
 import { FormErrors, FormProvider } from "./FormProvider.js";
 import { Input } from "./Input.js";

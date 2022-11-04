@@ -34,7 +34,7 @@ import { TextField } from "../../../../components/form/TextField.js";
 import { ProductList } from "../../../../components/product/ProductList.js";
 import { useBackendContext } from "../../../../context/backend.js";
 import { MerchantBackend } from "../../../../declaration.js";
-import { Translate, useTranslator } from "../../../../i18n";
+import { Translate, useTranslator } from "../../../../i18n/index.js";
 import { mergeRefunds } from "../../../../utils/amount.js";
 import { RefundModal } from "../list/Table.js";
 import { Event, Timeline } from "./Timeline.js";

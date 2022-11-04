@@ -25,7 +25,7 @@ import { useBackendContext } from "../../context/backend.js";
 import { useConfigContext } from "../../context/config.js";
 import { useInstanceContext } from "../../context/instance.js";
 import { useInstanceKYCDetails } from "../../hooks/instance.js";
-import { Translate } from "../../i18n";
+import { Translate } from "../../i18n/index.js";
 import { LangSelector } from "./LangSelector.js";
 
 interface Props {

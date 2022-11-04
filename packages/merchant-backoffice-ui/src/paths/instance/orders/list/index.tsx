@@ -22,11 +22,11 @@
 import { h, VNode, Fragment } from 'preact';
 import { useState } from 'preact/hooks';
 import { Loading } from "../../../../components/exception/loading.js";
-import { NotificationCard } from "../../../../components/menu.js";
+import { NotificationCard } from "../../../../components/menu/index.js";
 import { MerchantBackend, WithId } from "../../../../declaration.js";
 import { HttpError } from "../../../../hooks/backend.js";
 import { InstanceOrderFilter, useInstanceOrders, useOrderAPI, useOrderDetails } from "../../../../hooks/order.js";
-import { useTranslator } from '../../../../i18n';
+import { useTranslator } from '../../../../i18n/index.js';
 import { Notification } from "../../../../utils/types.js";
 import { RefundModal } from "./Table.js";
 import { ListPage } from "./ListPage.js";

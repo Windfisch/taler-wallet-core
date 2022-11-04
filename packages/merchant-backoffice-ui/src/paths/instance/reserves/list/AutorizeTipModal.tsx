@@ -24,10 +24,10 @@ import { useState } from "preact/hooks";
 import { FormErrors, FormProvider } from "../../../../components/form/FormProvider.js";
 import { Input } from "../../../../components/form/Input.js";
 import { InputCurrency } from "../../../../components/form/InputCurrency.js";
-import { ConfirmModal, ContinueModal } from "../../../../components/modal.js";
+import { ConfirmModal, ContinueModal } from "../../../../components/modal/index.js";
 import { MerchantBackend } from "../../../../declaration.js";
-import { useTranslator } from "../../../../i18n";
-import { AuthorizeTipSchema } from "../../../../schemas.js";
+import { useTranslator } from "../../../../i18n/index.js";
+import { AuthorizeTipSchema } from "../../../../schemas/index.js";
 import { CreatedSuccessfully } from "./CreatedSuccessfully.js";
 import * as yup from 'yup';
 

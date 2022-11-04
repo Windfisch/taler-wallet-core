@@ -17,7 +17,7 @@ import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { CreatedSuccessfully } from "../../../../components/notifications/CreatedSuccessfully.js";
 import { useOrderAPI } from "../../../../hooks/order.js";
-import { Translate } from "../../../../i18n";
+import { Translate } from "../../../../i18n/index.js";
 import { Entity } from "./index.js";
 
 interface Props {

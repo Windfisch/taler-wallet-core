@@ -21,7 +21,7 @@
 
 import { Fragment, h, VNode } from "preact";
 import { useBackendContext } from "../../context/backend.js";
-import { useTranslator } from "../../i18n";
+import { useTranslator } from "../../i18n/index.js";
 import { Entity } from "../../paths/admin/create/CreatePage.js";
 import { Input } from "../form/Input.js";
 import { InputCurrency } from "../form/InputCurrency.js";

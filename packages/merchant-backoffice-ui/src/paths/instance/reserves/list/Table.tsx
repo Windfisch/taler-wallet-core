@@ -22,7 +22,7 @@
 import { format } from "date-fns";
 import { Fragment, h, VNode } from "preact";
 import { MerchantBackend, WithId } from "../../../../declaration.js";
-import { Translate, useTranslator } from "../../../../i18n";
+import { Translate, useTranslator } from "../../../../i18n/index.js";
 
 type Entity = MerchantBackend.Tips.ReserveStatusEntry & WithId;
 

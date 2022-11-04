@@ -22,7 +22,7 @@
 import { h, VNode } from "preact";
 import { StateUpdater, useEffect, useState } from "preact/hooks";
 import { MerchantBackend } from "../../../declaration.js";
-import { Translate, useTranslator } from "../../../i18n";
+import { Translate, useTranslator } from "../../../i18n/index.js";
 
 interface Props {
   instances: MerchantBackend.Instances.Instance[];

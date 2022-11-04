@@ -16,10 +16,10 @@
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { Loading } from "../../../../components/exception/loading.js";
-import { NotificationCard } from "../../../../components/menu.js";
+import { NotificationCard } from "../../../../components/menu/index.js";
 import { HttpError } from "../../../../hooks/backend.js";
 import { useOrderDetails, useOrderAPI } from "../../../../hooks/order.js";
-import { useTranslator } from "../../../../i18n";
+import { useTranslator } from "../../../../i18n/index.js";
 import { Notification } from "../../../../utils/types.js";
 import { DetailPage } from "./DetailPage.js";
 

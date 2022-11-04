@@ -24,10 +24,10 @@ import { InputNumber } from "../form/InputNumber.js";
 import { InputTaxes } from "../form/InputTaxes.js";
 import { MerchantBackend } from "../../declaration.js";
 import { useListener } from "../../hooks/listener.js";
-import { Translate, useTranslator } from "../../i18n";
+import { Translate, useTranslator } from "../../i18n/index.js";
 import {
   NonInventoryProductSchema as schema
-} from "../../schemas.js";
+} from "../../schemas/index.js";
 
 
 type Entity = MerchantBackend.Product

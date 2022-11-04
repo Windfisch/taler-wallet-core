@@ -21,7 +21,7 @@
 
 import { h, VNode } from "preact";
 import { MerchantBackend } from "../../../../declaration.js";
-import { Translate, useTranslator } from "../../../../i18n";
+import { Translate, useTranslator } from "../../../../i18n/index.js";
 
 export interface Props {
   status: MerchantBackend.Instances.AccountKycRedirects;

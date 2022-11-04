@@ -23,7 +23,7 @@ import { h, VNode } from "preact";
 import { MerchantBackend } from "../../../declaration.js";
 import { CardTable as CardTableActive } from "./TableActive.js";
 import { useState } from 'preact/hooks';
-import { Translate, useTranslator } from "../../../i18n";
+import { Translate, useTranslator } from "../../../i18n/index.js";
 
 interface Props {
   instances: MerchantBackend.Instances.Instance[];

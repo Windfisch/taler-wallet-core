@@ -23,7 +23,7 @@
 import { ComponentChildren, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { useInstanceContext } from "../../context/instance.js";
-import { Translate, useTranslator } from "../../i18n";
+import { Translate, useTranslator } from "../../i18n/index.js";
 import { DEFAULT_REQUEST_TIMEOUT } from "../../utils/constants.js";
 import { Loading, Spinner } from "../exception/loading.js";
 import { FormProvider } from "../form/FormProvider.js";

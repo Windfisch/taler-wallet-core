@@ -35,7 +35,7 @@ import { InputLocation } from "../../../../components/form/InputLocation.js";
 import { ProductList } from "../../../../components/product/ProductList.js";
 import { useConfigContext } from "../../../../context/config.js";
 import { Duration, MerchantBackend, WithId } from "../../../../declaration.js";
-import { Translate, useTranslator } from "../../../../i18n";
+import { Translate, useTranslator } from "../../../../i18n/index.js";
 import { OrderCreateSchema as schema } from "../../../../schemas/index.js";
 import { rate } from "../../../../utils/amount.js";
 import { InventoryProductForm } from "../../../../components/product/InventoryProductForm.js";

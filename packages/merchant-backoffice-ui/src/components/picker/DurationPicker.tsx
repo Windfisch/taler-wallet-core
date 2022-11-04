@@ -21,7 +21,7 @@
 
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { useTranslator } from "../../i18n";
+import { useTranslator } from "../../i18n/index.js";
 import "../../scss/DurationPicker.scss";
 
 export interface Props {

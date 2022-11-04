@@ -16,7 +16,7 @@
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { Loading } from "../../../components/exception/loading.js";
-import { DeleteModal } from "../../../components/modal.js";
+import { DeleteModal } from "../../../components/modal/index.js";
 import { useInstanceContext } from "../../../context/instance.js";
 import { HttpError } from "../../../hooks/backend.js";
 import { useInstanceAPI, useInstanceDetails } from "../../../hooks/instance.js";

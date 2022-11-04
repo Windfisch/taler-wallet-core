@@ -21,7 +21,7 @@
 
 import { createContext, h, VNode } from 'preact'
 import { useCallback, useContext, useState } from 'preact/hooks'
-import { useBackendDefaultToken, useBackendURL } from "../hooks.js";
+import { useBackendDefaultToken, useBackendURL } from "../hooks/index.js";
 
 interface BackendContextType {
   url: string;

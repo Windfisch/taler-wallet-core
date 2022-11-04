@@ -22,12 +22,12 @@
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { Loading } from "../../../components/exception/loading.js";
-import { NotificationCard } from "../../../components/menu.js";
-import { DeleteModal, PurgeModal } from "../../../components/modal.js";
+import { NotificationCard } from "../../../components/menu/index.js";
+import { DeleteModal, PurgeModal } from "../../../components/modal/index.js";
 import { MerchantBackend } from "../../../declaration.js";
 import { HttpError } from "../../../hooks/backend.js";
 import { useAdminAPI, useBackendInstances } from "../../../hooks/instance.js";
-import { useTranslator } from "../../../i18n";
+import { useTranslator } from "../../../i18n/index.js";
 import { Notification } from "../../../utils/types.js";
 import { View } from "./View.js";
 

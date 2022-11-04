@@ -25,7 +25,7 @@ import { FormErrors, FormProvider } from "../../../../components/form/FormProvid
 import { Input } from "../../../../components/form/Input.js";
 import { InputCurrency } from "../../../../components/form/InputCurrency.js";
 import { ExchangeBackend, MerchantBackend } from "../../../../declaration.js";
-import { Translate, useTranslator } from "../../../../i18n";
+import { Translate, useTranslator } from "../../../../i18n/index.js";
 import { AsyncButton } from "../../../../components/exception/AsyncButton.js";
 import { canonicalizeBaseUrl, ExchangeKeysJson } from "@gnu-taler/taler-util"
 import { PAYTO_WIRE_METHOD_LOOKUP, URL_REGEX } from "../../../../utils/constants.js";

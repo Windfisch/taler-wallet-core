@@ -31,10 +31,10 @@ import { Input } from "../../../../components/form/Input.js";
 import { InputCurrency } from "../../../../components/form/InputCurrency.js";
 import { InputGroup } from "../../../../components/form/InputGroup.js";
 import { InputSelector } from "../../../../components/form/InputSelector.js";
-import { ConfirmModal } from "../../../../components/modal.js";
+import { ConfirmModal } from "../../../../components/modal/index.js";
 import { useConfigContext } from "../../../../context/config.js";
 import { MerchantBackend, WithId } from "../../../../declaration.js";
-import { Translate, useTranslator } from "../../../../i18n";
+import { Translate, useTranslator } from "../../../../i18n/index.js";
 import { mergeRefunds } from "../../../../utils/amount.js";
 
 type Entity = MerchantBackend.Orders.OrderHistoryEntry & WithId;

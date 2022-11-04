@@ -30,7 +30,7 @@ import { InputCurrency } from "../../../../components/form/InputCurrency.js";
 import { InputNumber } from "../../../../components/form/InputNumber.js";
 import { MerchantBackend, WithId } from "../../../../declaration.js";
 import emptyImage from "../../../../assets/empty.png";
-import { Translate, useTranslator } from "../../../../i18n";
+import { Translate, useTranslator } from "../../../../i18n/index.js";
 import { Amounts } from "@gnu-taler/taler-util";
 
 type Entity = MerchantBackend.Products.ProductDetail & WithId;

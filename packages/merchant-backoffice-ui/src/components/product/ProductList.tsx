@@ -17,7 +17,7 @@ import { Amounts } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import emptyImage from "../../assets/empty.png";
 import { MerchantBackend } from "../../declaration.js";
-import { Translate } from "../../i18n";
+import { Translate } from "../../i18n/index.js";
 
 interface Props {
   list: MerchantBackend.Product[];

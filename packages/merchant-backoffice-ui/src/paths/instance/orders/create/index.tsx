@@ -22,7 +22,7 @@
 import { Fragment, h, VNode } from 'preact';
 import { useState } from 'preact/hooks';
 import { Loading } from "../../../../components/exception/loading.js";
-import { NotificationCard } from "../../../../components/menu.js";
+import { NotificationCard } from "../../../../components/menu/index.js";
 import { MerchantBackend } from "../../../../declaration.js";
 import { HttpError } from "../../../../hooks/backend.js";
 import { useInstanceDetails } from "../../../../hooks/instance.js";

@@ -23,7 +23,7 @@ import { h, VNode } from 'preact';
 import { FormProvider } from "../../../../components/form/FormProvider.js";
 import { InputSelector } from "../../../../components/form/InputSelector.js";
 import { MerchantBackend } from "../../../../declaration.js";
-import { Translate, useTranslator } from '../../../../i18n';
+import { Translate, useTranslator } from '../../../../i18n/index.js';
 import { CardTable } from "./Table.js";
 
 export interface Props {

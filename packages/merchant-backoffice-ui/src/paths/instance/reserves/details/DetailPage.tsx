@@ -29,10 +29,10 @@ import { Input } from "../../../../components/form/Input.js";
 import { InputCurrency } from "../../../../components/form/InputCurrency.js";
 import { InputDate } from "../../../../components/form/InputDate.js";
 import { TextField } from "../../../../components/form/TextField.js";
-import { ContinueModal, SimpleModal } from "../../../../components/modal.js";
+import { ContinueModal, SimpleModal } from "../../../../components/modal/index.js";
 import { MerchantBackend } from "../../../../declaration.js";
 import { useTipDetails } from "../../../../hooks/reserves.js";
-import { Translate, useTranslator } from "../../../../i18n";
+import { Translate, useTranslator } from "../../../../i18n/index.js";
 import { TipInfo } from "./TipInfo.js";
 
 type Entity = MerchantBackend.Tips.ReserveDetail;

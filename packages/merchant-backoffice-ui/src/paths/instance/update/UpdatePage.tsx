@@ -27,11 +27,10 @@ import {
   FormProvider,
   FormErrors,
 } from "../../../components/form/FormProvider.js";
-import { UpdateTokenModal } from "../../../components/modal.js";
+import { UpdateTokenModal } from "../../../components/modal/index.js";
 import { useInstanceContext } from "../../../context/instance.js";
 import { MerchantBackend } from "../../../declaration.js";
-import { Translate, useTranslator } from "../../../i18n";
-import { InstanceUpdateSchema as schema } from "../../../schemas.js";
+import { Translate, useTranslator } from "../../../i18n/index.js";
 import { DefaultInstanceFormFields } from "../../../components/instance/DefaultInstanceFormFields.js";
 import { PAYTO_REGEX } from "../../../utils/constants.js";
 import { Amounts } from "@gnu-taler/taler-util";

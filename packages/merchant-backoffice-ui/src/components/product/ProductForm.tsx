@@ -24,11 +24,11 @@ import { useCallback, useEffect, useState } from "preact/hooks";
 import * as yup from "yup";
 import { useBackendContext } from "../../context/backend.js";
 import { MerchantBackend } from "../../declaration.js";
-import { useTranslator } from "../../i18n";
+import { useTranslator } from "../../i18n/index.js";
 import {
   ProductCreateSchema as createSchema,
   ProductUpdateSchema as updateSchema,
-} from "../../schemas.js";
+} from "../../schemas/index.js";
 import { FormProvider, FormErrors } from "../form/FormProvider.js";
 import { Input } from "../form/Input.js";
 import { InputCurrency } from "../form/InputCurrency.js";

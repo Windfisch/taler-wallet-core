@@ -16,7 +16,7 @@
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { Loading } from "../../../components/exception/loading.js";
-import { NotificationCard } from "../../../components/menu.js";
+import { NotificationCard } from "../../../components/menu/index.js";
 import { useInstanceContext } from "../../../context/instance.js";
 import { MerchantBackend } from "../../../declaration.js";
 import { HttpError, HttpResponse } from "../../../hooks/backend.js";
@@ -26,7 +26,7 @@ import {
   useManagedInstanceDetails,
   useManagementAPI,
 } from "../../../hooks/instance.js";
-import { useTranslator } from "../../../i18n";
+import { useTranslator } from "../../../i18n/index.js";
 import { Notification } from "../../../utils/types.js";
 import { UpdatePage } from "./UpdatePage.js";
 

@@ -27,9 +27,9 @@ import {
   FormErrors,
   FormProvider,
 } from "../../../components/form/FormProvider.js";
-import { SetTokenNewInstanceModal } from "../../../components/modal.js";
+import { SetTokenNewInstanceModal } from "../../../components/modal/index.js";
 import { MerchantBackend } from "../../../declaration.js";
-import { Translate, useTranslator } from "../../../i18n";
+import { Translate, useTranslator } from "../../../i18n/index.js";
 import { DefaultInstanceFormFields } from "../../../components/instance/DefaultInstanceFormFields.js";
 import { INSTANCE_ID_REGEX, PAYTO_REGEX } from "../../../utils/constants.js";
 import { Amounts } from "@gnu-taler/taler-util";

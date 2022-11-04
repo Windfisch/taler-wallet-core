@@ -24,7 +24,7 @@ import { AsyncButton } from "../../../../components/exception/AsyncButton.js";
 import { ProductForm } from "../../../../components/product/ProductForm.js";
 import { MerchantBackend } from "../../../../declaration.js";
 import { useListener } from "../../../../hooks/listener.js";
-import { Translate, useTranslator } from "../../../../i18n";
+import { Translate, useTranslator } from "../../../../i18n/index.js";
 
 type Entity = MerchantBackend.Products.ProductAddDetail & { product_id: string}
 

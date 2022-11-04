@@ -27,7 +27,7 @@ import { Input } from "./Input.js";
 import { InputGroup } from "./InputGroup.js";
 import { InputNumber } from "./InputNumber.js";
 import { InputDate } from "./InputDate.js";
-import { Translate, useTranslator } from "../../i18n";
+import { Translate, useTranslator } from "../../i18n/index.js";
 import { InputLocation } from "./InputLocation.js";
 
 export interface Props<T> extends InputProps<T> {

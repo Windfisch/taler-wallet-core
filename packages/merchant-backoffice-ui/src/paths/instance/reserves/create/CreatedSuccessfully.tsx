@@ -17,7 +17,7 @@
 import { h, VNode } from "preact";
 import { CreatedSuccessfully as Template } from "../../../../components/notifications/CreatedSuccessfully.js";
 import { MerchantBackend } from "../../../../declaration.js";
-import { Translate } from "../../../../i18n";
+import { Translate } from "../../../../i18n/index.js";
 import { QR } from "../../../../components/exception/QR.js";
 
 type Entity = { request: MerchantBackend.Tips.ReserveCreateRequest, response: MerchantBackend.Tips.ReserveCreateConfirmation };

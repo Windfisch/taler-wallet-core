@@ -22,14 +22,14 @@
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { Loading } from "../../../../components/exception/loading.js";
-import { NotificationCard } from "../../../../components/menu.js";
+import { NotificationCard } from "../../../../components/menu/index.js";
 import { MerchantBackend } from "../../../../declaration.js";
 import { HttpError } from "../../../../hooks/backend.js";
 import {
   useInstanceReserves,
   useReservesAPI,
 } from "../../../../hooks/reserves.js";
-import { useTranslator } from "../../../../i18n";
+import { useTranslator } from "../../../../i18n/index.js";
 import { Notification } from "../../../../utils/types.js";
 import { CardTable } from "./Table.js";
 import { AuthorizeTipModal } from "./AutorizeTipModal.js";
