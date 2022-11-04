@@ -37,6 +37,7 @@ export interface PaytoUriIBAN extends PaytoUriGeneric {
   isKnown: true;
   targetType: "iban";
   iban: string;
+  bic?: string;
 }
 
 export interface PaytoUriTalerBank extends PaytoUriGeneric {
@@ -134,12 +135,24 @@ export function parsePaytoUri(s: string): PaytoUri | undefined {
     };
   }
   if (targetType === "iban") {
+    const parts = targetPath.split("/");
+    let iban: string | undefined = undefined;
+    let bic: string | undefined = undefined;
+    if (parts.length === 1) {
+      iban = parts[0]
+    } if (parts.length === 2) {
+      bic = parts[0]
+      iban = parts[1]
+    } else {
+      iban = targetPath
+    }
     return {
       isKnown: true,
       targetPath,
       targetType,
       params,
-      iban: targetPath,
+      iban,
+      bic,
     };
   }
   if (targetType === "bitcoin") {
