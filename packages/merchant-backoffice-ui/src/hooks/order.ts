@@ -15,10 +15,10 @@
  */
 import { useEffect, useState } from "preact/hooks";
 import useSWR, { useSWRConfig } from "swr";
-import { useBackendContext } from "../context/backend";
-import { useInstanceContext } from "../context/instance";
-import { MerchantBackend } from "../declaration";
-import { MAX_RESULT_SIZE, PAGE_SIZE } from "../utils/constants";
+import { useBackendContext } from "../context/backend.js";
+import { useInstanceContext } from "../context/instance.js";
+import { MerchantBackend } from "../declaration.js";
+import { MAX_RESULT_SIZE, PAGE_SIZE } from "../utils/constants.js";
 import {
   fetcher,
   HttpError,
@@ -27,7 +27,7 @@ import {
   HttpResponsePaginated,
   request,
   useMatchMutate,
-} from "./backend";
+} from "./backend.js";
 
 export interface OrderAPI {
   //FIXME: add OutOfStockResponse on 410

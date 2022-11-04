@@ -19,7 +19,7 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 import { h, VNode } from "preact";
-import { InputProps, useField } from "./useField";
+import { InputProps, useField } from "./useField.js";
 
 interface Props<T> extends InputProps<T> {
   name: T;

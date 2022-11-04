@@ -21,15 +21,15 @@
 
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { AsyncButton } from "../../../../components/exception/AsyncButton";
-import { FormErrors, FormProvider } from "../../../../components/form/FormProvider";
-import { Input } from "../../../../components/form/Input";
-import { InputCurrency } from "../../../../components/form/InputCurrency";
-import { InputSelector } from "../../../../components/form/InputSelector";
-import { useConfigContext } from "../../../../context/config";
-import { MerchantBackend } from "../../../../declaration";
+import { AsyncButton } from "../../../../components/exception/AsyncButton.js";
+import { FormErrors, FormProvider } from "../../../../components/form/FormProvider.js";
+import { Input } from "../../../../components/form/Input.js";
+import { InputCurrency } from "../../../../components/form/InputCurrency.js";
+import { InputSelector } from "../../../../components/form/InputSelector.js";
+import { useConfigContext } from "../../../../context/config.js";
+import { MerchantBackend } from "../../../../declaration.js";
 import { Translate, useTranslator } from "../../../../i18n";
-import { CROCKFORD_BASE32_REGEX, URL_REGEX } from "../../../../utils/constants";
+import { CROCKFORD_BASE32_REGEX, URL_REGEX } from "../../../../utils/constants.js";
 
 type Entity = MerchantBackend.Transfers.TransferInformation
 

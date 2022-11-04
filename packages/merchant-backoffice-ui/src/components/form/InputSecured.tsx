@@ -20,8 +20,8 @@
 */
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { Translate, useTranslator } from "../../i18n";
-import { InputProps, useField } from "./useField";
+import { Translate, useTranslator } from "../../i18n/index.js";
+import { InputProps, useField } from "./useField.js";
 
 export type Props<T> = InputProps<T>;
 

@@ -21,11 +21,11 @@
 
 import { useSWRConfig } from "swr";
 import axios, { AxiosError, AxiosResponse } from "axios";
-import { MerchantBackend } from "../declaration";
-import { useBackendContext } from "../context/backend";
+import { MerchantBackend } from "../declaration.js";
+import { useBackendContext } from "../context/backend.js";
 import { useEffect, useState } from "preact/hooks";
-import { DEFAULT_REQUEST_TIMEOUT } from "../utils/constants";
-import { axiosHandler, removeAxiosCancelToken } from "../utils/switchableAxios";
+import { DEFAULT_REQUEST_TIMEOUT } from "../utils/constants.js";
+import { axiosHandler, removeAxiosCancelToken } from "../utils/switchableAxios.js";
 
 export function useMatchMutate(): (
   re: RegExp,

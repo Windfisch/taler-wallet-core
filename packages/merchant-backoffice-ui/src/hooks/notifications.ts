@@ -20,7 +20,7 @@
 */
 
 import { useState } from "preact/hooks";
-import { Notification } from '../utils/types';
+import { Notification } from "../utils/types.js";
 
 interface Result {
   notifications: Notification[];

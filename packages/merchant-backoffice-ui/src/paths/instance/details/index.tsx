@@ -15,12 +15,12 @@
  */
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { Loading } from "../../../components/exception/loading";
-import { DeleteModal } from "../../../components/modal";
-import { useInstanceContext } from "../../../context/instance";
-import { HttpError } from "../../../hooks/backend";
-import { useInstanceAPI, useInstanceDetails } from "../../../hooks/instance";
-import { DetailPage } from "./DetailPage";
+import { Loading } from "../../../components/exception/loading.js";
+import { DeleteModal } from "../../../components/modal.js";
+import { useInstanceContext } from "../../../context/instance.js";
+import { HttpError } from "../../../hooks/backend.js";
+import { useInstanceAPI, useInstanceDetails } from "../../../hooks/instance.js";
+import { DetailPage } from "./DetailPage.js";
 
 interface Props {
   onUnauthorized: () => VNode;

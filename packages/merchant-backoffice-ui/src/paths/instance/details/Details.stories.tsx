@@ -20,7 +20,7 @@
  */
 
 import { h, VNode, FunctionalComponent } from "preact";
-import { DetailPage as TestedComponent } from "./DetailPage";
+import { DetailPage as TestedComponent } from "./DetailPage.js";
 
 export default {
   title: "Pages/Instance/Detail",

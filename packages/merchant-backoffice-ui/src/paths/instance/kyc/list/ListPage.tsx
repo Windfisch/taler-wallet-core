@@ -20,7 +20,7 @@
  */
 
 import { h, VNode } from "preact";
-import { MerchantBackend } from "../../../../declaration";
+import { MerchantBackend } from "../../../../declaration.js";
 import { Translate, useTranslator } from "../../../../i18n";
 
 export interface Props {

@@ -21,9 +21,9 @@
 import { format } from "date-fns";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { Translate, useTranslator } from "../../i18n";
-import { DatePicker } from "../picker/DatePicker";
-import { InputProps, useField } from "./useField";
+import { Translate, useTranslator } from "../../i18n/index.js";
+import { DatePicker } from "../picker/DatePicker.js";
+import { InputProps, useField } from "./useField.js";
 
 export interface Props<T> extends InputProps<T> {
   readonly?: boolean;

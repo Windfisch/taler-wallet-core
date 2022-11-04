@@ -21,7 +21,7 @@
 
 import { h, VNode } from 'preact';
 import logo from '../../assets/logo.jpeg';
-import { LangSelector } from './LangSelector';
+import { LangSelector } from "./LangSelector.js";
 
 interface Props {
   onMobileMenu: () => void;

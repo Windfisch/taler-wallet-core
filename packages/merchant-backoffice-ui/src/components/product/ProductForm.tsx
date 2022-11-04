@@ -22,21 +22,21 @@
 import { h } from "preact";
 import { useCallback, useEffect, useState } from "preact/hooks";
 import * as yup from "yup";
-import { useBackendContext } from "../../context/backend";
-import { MerchantBackend } from "../../declaration";
+import { useBackendContext } from "../../context/backend.js";
+import { MerchantBackend } from "../../declaration.js";
 import { useTranslator } from "../../i18n";
 import {
   ProductCreateSchema as createSchema,
   ProductUpdateSchema as updateSchema,
-} from "../../schemas";
-import { FormProvider, FormErrors } from "../form/FormProvider";
-import { Input } from "../form/Input";
-import { InputCurrency } from "../form/InputCurrency";
-import { InputImage } from "../form/InputImage";
-import { InputNumber } from "../form/InputNumber";
-import { InputStock, Stock } from "../form/InputStock";
-import { InputTaxes } from "../form/InputTaxes";
-import { InputWithAddon } from "../form/InputWithAddon";
+} from "../../schemas.js";
+import { FormProvider, FormErrors } from "../form/FormProvider.js";
+import { Input } from "../form/Input.js";
+import { InputCurrency } from "../form/InputCurrency.js";
+import { InputImage } from "../form/InputImage.js";
+import { InputNumber } from "../form/InputNumber.js";
+import { InputStock, Stock } from "../form/InputStock.js";
+import { InputTaxes } from "../form/InputTaxes.js";
+import { InputWithAddon } from "../form/InputWithAddon.js";
 
 type Entity = MerchantBackend.Products.ProductDetail & { product_id: string };
 

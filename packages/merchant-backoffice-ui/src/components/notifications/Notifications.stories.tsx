@@ -20,7 +20,7 @@
 */
 
 import { h } from 'preact';
-import { Notifications } from './index';
+import { Notifications } from "./index.js";
 
 
 export default {

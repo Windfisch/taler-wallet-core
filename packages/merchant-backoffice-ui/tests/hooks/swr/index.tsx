@@ -21,8 +21,8 @@
 
 import { ComponentChildren, h, VNode } from "preact";
 import { SWRConfig } from "swr";
-import { BackendContextProvider } from "../../../src/context/backend";
-import { InstanceContextProvider } from "../../../src/context/instance";
+import { BackendContextProvider } from "../../../src/context/backend.js";
+import { InstanceContextProvider } from "../../../src/context/instance.js";
 
 interface TestingContextProps {
   children?: ComponentChildren;

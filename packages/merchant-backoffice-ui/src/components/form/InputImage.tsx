@@ -20,10 +20,9 @@
 */
 import { ComponentChildren, h, VNode } from "preact";
 import { useRef, useState } from "preact/hooks";
-import emptyImage from "../../assets/empty.png";
-import { Translate } from "../../i18n";
-import { MAX_IMAGE_SIZE as MAX_IMAGE_UPLOAD_SIZE } from "../../utils/constants";
-import { InputProps, useField } from "./useField";
+import { Translate } from "../../i18n/index.js";
+import { MAX_IMAGE_SIZE as MAX_IMAGE_UPLOAD_SIZE } from "../../utils/constants.js";
+import { InputProps, useField } from "./useField.js";
 
 export interface Props<T> extends InputProps<T> {
   expand?: boolean;

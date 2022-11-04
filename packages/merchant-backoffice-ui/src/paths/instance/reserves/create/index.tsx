@@ -21,13 +21,13 @@
 
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { NotificationCard } from "../../../../components/menu";
-import { MerchantBackend } from "../../../../declaration";
-import { useReservesAPI } from "../../../../hooks/reserves";
+import { NotificationCard } from "../../../../components/menu.js";
+import { MerchantBackend } from "../../../../declaration.js";
+import { useReservesAPI } from "../../../../hooks/reserves.js";
 import { useTranslator } from "../../../../i18n";
-import { Notification } from "../../../../utils/types";
-import { CreatedSuccessfully } from "./CreatedSuccessfully";
-import { CreatePage } from "./CreatePage";
+import { Notification } from "../../../../utils/types.js";
+import { CreatedSuccessfully } from "./CreatedSuccessfully.js";
+import { CreatePage } from "./CreatePage.js";
 interface Props {
   onBack: () => void;
   onConfirm: () => void;

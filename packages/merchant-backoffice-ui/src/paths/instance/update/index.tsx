@@ -15,20 +15,20 @@
  */
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { Loading } from "../../../components/exception/loading";
-import { NotificationCard } from "../../../components/menu";
-import { useInstanceContext } from "../../../context/instance";
-import { MerchantBackend } from "../../../declaration";
-import { HttpError, HttpResponse } from "../../../hooks/backend";
+import { Loading } from "../../../components/exception/loading.js";
+import { NotificationCard } from "../../../components/menu.js";
+import { useInstanceContext } from "../../../context/instance.js";
+import { MerchantBackend } from "../../../declaration.js";
+import { HttpError, HttpResponse } from "../../../hooks/backend.js";
 import {
   useInstanceAPI,
   useInstanceDetails,
   useManagedInstanceDetails,
   useManagementAPI,
-} from "../../../hooks/instance";
+} from "../../../hooks/instance.js";
 import { useTranslator } from "../../../i18n";
-import { Notification } from "../../../utils/types";
-import { UpdatePage } from "./UpdatePage";
+import { Notification } from "../../../utils/types.js";
+import { UpdatePage } from "./UpdatePage.js";
 
 export interface Props {
   onBack: () => void;

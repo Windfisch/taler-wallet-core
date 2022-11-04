@@ -20,7 +20,7 @@
 */
 
 import { h, VNode, FunctionalComponent } from 'preact';
-import { CreatedSuccessfully as TestedComponent } from './CreatedSuccessfully';
+import { CreatedSuccessfully as TestedComponent } from "./CreatedSuccessfully.js";
 
 
 export default {

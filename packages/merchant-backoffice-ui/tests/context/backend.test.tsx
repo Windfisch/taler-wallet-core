@@ -22,14 +22,14 @@
 import { renderHook } from "@testing-library/preact-hooks";
 import { ComponentChildren, h, VNode } from "preact";
 import { act } from "preact/test-utils";
-import { BackendContextProvider } from "../../src/context/backend";
-import { InstanceContextProvider } from "../../src/context/instance";
-import { MerchantBackend } from "../../src/declaration";
+import { BackendContextProvider } from "../../src/context/backend.js";
+import { InstanceContextProvider } from "../../src/context/instance.js";
+import { MerchantBackend } from "../../src/declaration.js";
 import {
   useAdminAPI,
   useInstanceAPI,
   useManagementAPI,
-} from "../../src/hooks/instance";
+} from "../../src/hooks/instance.js";
 import {
   API_CREATE_INSTANCE,
   API_GET_CURRENT_INSTANCE,
@@ -37,7 +37,7 @@ import {
   API_UPDATE_INSTANCE_AUTH_BY_ID,
   assertJustExpectedRequestWereMade,
   AxiosMockEnvironment,
-} from "../axiosMock";
+} from "../axiosMock.js";
 
 interface TestingContextProps {
   children?: ComponentChildren;

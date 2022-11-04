@@ -20,13 +20,13 @@
  */
 import { Fragment, h, VNode } from "preact";
 import Router, { Route, route } from "preact-router";
-import { useBackendContext } from "./context/backend";
-import { useBackendInstancesTestForAdmin } from "./hooks/backend";
-import { InstanceRoutes } from "./InstanceRoutes";
-import LoginPage from "./paths/login";
-import { INSTANCE_ID_LOOKUP } from "./utils/constants";
-import { NotYetReadyAppMenu, Menu, NotificationCard } from "./components/menu";
-import { useTranslator } from "./i18n";
+import { useBackendContext } from "./context/backend.js";
+import { useBackendInstancesTestForAdmin } from "./hooks/backend.js";
+import { InstanceRoutes } from "./InstanceRoutes.js";
+import LoginPage from "./paths/login/index.js";
+import { INSTANCE_ID_LOOKUP } from "./utils/constants.js";
+import { NotYetReadyAppMenu, NotificationCard } from "./components/menu/index.js";
+import { useTranslator } from "./i18n/index.js";
 import { createHashHistory } from "history";
 import { useState } from "preact/hooks";
 

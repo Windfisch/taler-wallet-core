@@ -21,7 +21,7 @@
 
 import { h, VNode } from "preact";
 import { StateUpdater, useEffect, useState } from "preact/hooks";
-import { MerchantBackend } from "../../../declaration";
+import { MerchantBackend } from "../../../declaration.js";
 import { Translate, useTranslator } from "../../../i18n";
 
 interface Props {

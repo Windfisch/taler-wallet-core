@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 import { amountFractionalBase, AmountJson, Amounts } from "@gnu-taler/taler-util";
-import { MerchantBackend } from "../declaration";
+import { MerchantBackend } from "../declaration.js";
 
 /**
  * sums two prices,

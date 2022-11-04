@@ -15,13 +15,13 @@
  */
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { Loading } from "../../../../components/exception/loading";
-import { NotificationCard } from "../../../../components/menu";
-import { HttpError } from "../../../../hooks/backend";
-import { useOrderDetails, useOrderAPI } from "../../../../hooks/order";
+import { Loading } from "../../../../components/exception/loading.js";
+import { NotificationCard } from "../../../../components/menu.js";
+import { HttpError } from "../../../../hooks/backend.js";
+import { useOrderDetails, useOrderAPI } from "../../../../hooks/order.js";
 import { useTranslator } from "../../../../i18n";
-import { Notification } from "../../../../utils/types";
-import { DetailPage } from "./DetailPage";
+import { Notification } from "../../../../utils/types.js";
+import { DetailPage } from "./DetailPage.js";
 
 export interface Props {
   oid: string;

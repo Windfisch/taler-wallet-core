@@ -20,10 +20,10 @@
 */
 
 import { h, VNode } from "preact";
-import { AsyncButton } from "../../../../components/exception/AsyncButton";
-import { ProductForm } from "../../../../components/product/ProductForm";
-import { MerchantBackend } from "../../../../declaration";
-import { useListener } from "../../../../hooks/listener";
+import { AsyncButton } from "../../../../components/exception/AsyncButton.js";
+import { ProductForm } from "../../../../components/product/ProductForm.js";
+import { MerchantBackend } from "../../../../declaration.js";
+import { useListener } from "../../../../hooks/listener.js";
 import { Translate, useTranslator } from "../../../../i18n";
 
 type Entity = MerchantBackend.Products.ProductAddDetail & { product_id: string}

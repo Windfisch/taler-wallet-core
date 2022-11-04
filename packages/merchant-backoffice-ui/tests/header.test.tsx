@@ -20,12 +20,12 @@
  */
 
 import { h } from "preact";
-import { ProductList } from "../src/components/product/ProductList";
+import { ProductList } from "../src/components/product/ProductList.js";
 // See: https://github.com/preactjs/enzyme-adapter-preact-pure
 // import { shallow } from 'enzyme';
-import * as backend from "../src/context/config";
+import * as backend from "../src/context/config.js";
 import { render, findAllByText } from "@testing-library/preact";
-import * as i18n from "../src/context/translation";
+import * as i18n from "../src/context/translation.js";
 
 import * as jedLib from "jed";
 const handler = new jedLib.Jed("en");
@@ -54,7 +54,7 @@ describe("Initial Test of the Sidebar", () => {
             unit: "book",
           },
         ]}
-      />
+      />,
     );
 
     expect(context.findAllByText("description of the product")).toBeDefined();

@@ -21,13 +21,13 @@
 import { h, VNode } from "preact";
 import { useCallback, useState } from "preact/hooks";
 import * as yup from 'yup';
-import { MerchantBackend } from "../../declaration";
+import { MerchantBackend } from "../../declaration.js";
 import { Translate, useTranslator } from "../../i18n";
-import { TaxSchema as schema } from '../../schemas';
-import { FormErrors, FormProvider } from "./FormProvider";
-import { Input } from "./Input";
-import { InputGroup } from "./InputGroup";
-import { InputProps, useField } from "./useField";
+import { TaxSchema as schema } from "../../schemas.js";
+import { FormErrors, FormProvider } from "./FormProvider.js";
+import { Input } from "./Input.js";
+import { InputGroup } from "./InputGroup.js";
+import { InputProps, useField } from "./useField.js";
 
 export interface Props<T> extends InputProps<T> {
   isValid?: (e: any) => boolean;

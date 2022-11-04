@@ -13,8 +13,8 @@
  You should have received a copy of the GNU General Public License along with
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-import { MerchantBackend } from "../declaration";
-import { useBackendContext } from "../context/backend";
+import { MerchantBackend } from "../declaration.js";
+import { useBackendContext } from "../context/backend.js";
 import {
   request,
   HttpResponse,
@@ -22,10 +22,10 @@ import {
   HttpResponseOk,
   HttpResponsePaginated,
   useMatchMutate,
-} from "./backend";
+} from "./backend.js";
 import useSWR from "swr";
-import { useInstanceContext } from "../context/instance";
-import { MAX_RESULT_SIZE, PAGE_SIZE } from "../utils/constants";
+import { useInstanceContext } from "../context/instance.js";
+import { MAX_RESULT_SIZE, PAGE_SIZE } from "../utils/constants.js";
 import { useEffect, useState } from "preact/hooks";
 
 async function transferFetcher<T>(

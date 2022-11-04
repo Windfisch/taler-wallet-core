@@ -21,8 +21,8 @@
 
 import { renderHook } from "@testing-library/preact-hooks";
 import { act } from "preact/test-utils";
-import { MerchantBackend } from "../../../src/declaration";
-import { useAdminAPI, useBackendInstances, useInstanceAPI, useInstanceDetails, useManagementAPI } from "../../../src/hooks/instance";
+import { MerchantBackend } from "../../../src/declaration.js";
+import { useAdminAPI, useBackendInstances, useInstanceAPI, useInstanceDetails, useManagementAPI } from "../../../src/hooks/instance.js";
 import {
   API_CREATE_INSTANCE,
   API_DELETE_INSTANCE,
@@ -34,8 +34,8 @@ import {
   API_UPDATE_INSTANCE_BY_ID,
   assertJustExpectedRequestWereMade,
   AxiosMockEnvironment
-} from "../../axiosMock";
-import { TestingContext } from "./index";
+} from "../../axiosMock.js";
+import { TestingContext } from "./index.js";
 
 describe("instance api interaction with details ", () => {
 

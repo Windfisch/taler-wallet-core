@@ -22,15 +22,15 @@
 import { renderHook } from "@testing-library/preact-hooks";
 import { act } from "preact/test-utils";
 import { TestingContext } from ".";
-import { MerchantBackend } from "../../../src/declaration";
-import { useInstanceOrders, useOrderAPI, useOrderDetails } from "../../../src/hooks/order";
+import { MerchantBackend } from "../../../src/declaration.js";
+import { useInstanceOrders, useOrderAPI, useOrderDetails } from "../../../src/hooks/order.js";
 import {
   API_CREATE_ORDER,
   API_DELETE_ORDER,
   API_FORGET_ORDER_BY_ID,
   API_GET_ORDER_BY_ID,
   API_LIST_ORDERS, API_REFUND_ORDER_BY_ID, assertJustExpectedRequestWereMade, assertNextRequest, assertNoMoreRequestWereMade, AxiosMockEnvironment
-} from "../../axiosMock";
+} from "../../axiosMock.js";
 
 describe("order api interaction with listing", () => {
 

@@ -15,8 +15,8 @@
  */
 import { format } from "date-fns";
 import { Fragment, h, VNode } from "preact";
-import { CreatedSuccessfully as Template } from "../../../../components/notifications/CreatedSuccessfully";
-import { MerchantBackend } from "../../../../declaration";
+import { CreatedSuccessfully as Template } from "../../../../components/notifications/CreatedSuccessfully.js";
+import { MerchantBackend } from "../../../../declaration.js";
 
 type Entity = MerchantBackend.Tips.TipCreateConfirmation;
 

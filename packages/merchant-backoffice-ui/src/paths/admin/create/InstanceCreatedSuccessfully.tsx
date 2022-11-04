@@ -18,8 +18,8 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 import { h, VNode } from "preact";
-import { CreatedSuccessfully } from "../../../components/notifications/CreatedSuccessfully";
-import { Entity } from "./index";
+import { CreatedSuccessfully } from "../../../components/notifications/CreatedSuccessfully.js";
+import { Entity } from "./index.js";
 
 export function InstanceCreatedSuccessfully({ entity, onConfirm }: { entity: Entity; onConfirm: () => void; }): VNode {
   return <CreatedSuccessfully onConfirm={onConfirm}>

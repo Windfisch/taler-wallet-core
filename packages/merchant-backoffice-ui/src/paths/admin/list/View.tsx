@@ -20,8 +20,8 @@
 */
 
 import { h, VNode } from "preact";
-import { MerchantBackend } from "../../../declaration";
-import { CardTable as CardTableActive } from './TableActive';
+import { MerchantBackend } from "../../../declaration.js";
+import { CardTable as CardTableActive } from "./TableActive.js";
 import { useState } from 'preact/hooks';
 import { Translate, useTranslator } from "../../../i18n";
 

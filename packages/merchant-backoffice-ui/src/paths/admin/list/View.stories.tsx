@@ -20,7 +20,7 @@
 */
 
 import { h } from 'preact';
-import { View } from './View';
+import { View } from "./View.js";
 
 
 export default {

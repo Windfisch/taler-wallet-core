@@ -19,7 +19,7 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 import { useState } from "preact/hooks";
-import { cancelPendingRequest } from "./backend";
+import { cancelPendingRequest } from "./backend.js";
 
 export interface Options {
   slowTolerance: number,

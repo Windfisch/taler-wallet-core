@@ -20,7 +20,7 @@
  */
 
 import { h, VNode, FunctionalComponent } from "preact";
-import { ListPage as TestedComponent } from "./ListPage";
+import { ListPage as TestedComponent } from "./ListPage.js";
 
 export default {
   title: "Pages/Order/List",

@@ -22,8 +22,8 @@
 import { renderHook } from "@testing-library/preact-hooks";
 import { act } from "preact/test-utils";
 import { TestingContext } from ".";
-import { MerchantBackend } from "../../../src/declaration";
-import { useInstanceProducts, useProductAPI, useProductDetails } from "../../../src/hooks/product";
+import { MerchantBackend } from "../../../src/declaration.js";
+import { useInstanceProducts, useProductAPI, useProductDetails } from "../../../src/hooks/product.js";
 import {
   API_CREATE_PRODUCT,
   API_DELETE_PRODUCT, API_GET_PRODUCT_BY_ID,
@@ -32,7 +32,7 @@ import {
   assertJustExpectedRequestWereMade,
   assertNextRequest,
   AxiosMockEnvironment
-} from "../../axiosMock";
+} from "../../axiosMock.js";
 
 describe("product api interaction with listing ", () => {
   it("should evict cache when creating a product", async () => {

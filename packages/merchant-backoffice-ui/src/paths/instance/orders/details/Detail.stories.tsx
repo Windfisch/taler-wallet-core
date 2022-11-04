@@ -21,8 +21,8 @@
 
 import { addDays } from "date-fns";
 import { h, VNode, FunctionalComponent } from "preact";
-import { MerchantBackend } from "../../../../declaration";
-import { DetailPage as TestedComponent } from "./DetailPage";
+import { MerchantBackend } from "../../../../declaration.js";
+import { DetailPage as TestedComponent } from "./DetailPage.js";
 
 export default {
   title: "Pages/Order/Detail",

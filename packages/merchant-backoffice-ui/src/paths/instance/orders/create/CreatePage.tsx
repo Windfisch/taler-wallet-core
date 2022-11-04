@@ -26,22 +26,22 @@ import { useEffect, useState } from "preact/hooks";
 import {
   FormProvider,
   FormErrors,
-} from "../../../../components/form/FormProvider";
-import { Input } from "../../../../components/form/Input";
-import { InputCurrency } from "../../../../components/form/InputCurrency";
-import { InputDate } from "../../../../components/form/InputDate";
-import { InputGroup } from "../../../../components/form/InputGroup";
-import { InputLocation } from "../../../../components/form/InputLocation";
-import { ProductList } from "../../../../components/product/ProductList";
-import { useConfigContext } from "../../../../context/config";
-import { Duration, MerchantBackend, WithId } from "../../../../declaration";
+} from "../../../../components/form/FormProvider.js";
+import { Input } from "../../../../components/form/Input.js";
+import { InputCurrency } from "../../../../components/form/InputCurrency.js";
+import { InputDate } from "../../../../components/form/InputDate.js";
+import { InputGroup } from "../../../../components/form/InputGroup.js";
+import { InputLocation } from "../../../../components/form/InputLocation.js";
+import { ProductList } from "../../../../components/product/ProductList.js";
+import { useConfigContext } from "../../../../context/config.js";
+import { Duration, MerchantBackend, WithId } from "../../../../declaration.js";
 import { Translate, useTranslator } from "../../../../i18n";
-import { OrderCreateSchema as schema } from "../../../../schemas/index";
-import { rate } from "../../../../utils/amount";
-import { InventoryProductForm } from "../../../../components/product/InventoryProductForm";
-import { NonInventoryProductFrom } from "../../../../components/product/NonInventoryProductForm";
-import { InputNumber } from "../../../../components/form/InputNumber";
-import { InputBoolean } from "../../../../components/form/InputBoolean";
+import { OrderCreateSchema as schema } from "../../../../schemas/index.js";
+import { rate } from "../../../../utils/amount.js";
+import { InventoryProductForm } from "../../../../components/product/InventoryProductForm.js";
+import { NonInventoryProductFrom } from "../../../../components/product/NonInventoryProductForm.js";
+import { InputNumber } from "../../../../components/form/InputNumber.js";
+import { InputBoolean } from "../../../../components/form/InputBoolean.js";
 
 interface Props {
   onCreate: (d: MerchantBackend.Orders.PostOrderRequest) => void;

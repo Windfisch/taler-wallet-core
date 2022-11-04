@@ -28,3 +28,4 @@ our_configure=build-system/taler-build-scripts/configure
 copy_configure "$our_configure" ./configure
 copy_configure "$our_configure" ./packages/taler-wallet-cli/configure
 copy_configure "$our_configure" ./packages/demobank-ui/configure
+copy_configure "$our_configure" ./packages/merchant-backoffice-ui/configure

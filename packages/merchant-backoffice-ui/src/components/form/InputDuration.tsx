@@ -21,10 +21,10 @@
 import { intervalToDuration, formatDuration } from "date-fns";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { Translate, useTranslator } from "../../i18n";
-import { SimpleModal } from "../modal";
-import { DurationPicker } from "../picker/DurationPicker";
-import { InputProps, useField } from "./useField";
+import { Translate, useTranslator } from "../../i18n/index.js";
+import { SimpleModal } from "../modal/index.js";
+import { DurationPicker } from "../picker/DurationPicker.js";
+import { InputProps, useField } from "./useField.js";
 
 export interface Props<T> extends InputProps<T> {
   expand?: boolean;

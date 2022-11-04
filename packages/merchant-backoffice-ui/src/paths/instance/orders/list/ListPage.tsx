@@ -22,10 +22,10 @@
 import { format } from 'date-fns';
 import { h, VNode } from 'preact';
 import { useState } from 'preact/hooks';
-import { DatePicker } from '../../../../components/picker/DatePicker';
-import { MerchantBackend, WithId } from '../../../../declaration';
+import { DatePicker } from "../../../../components/picker/DatePicker.js";
+import { MerchantBackend, WithId } from "../../../../declaration.js";
 import { Translate, useTranslator } from '../../../../i18n';
-import { CardTable } from './Table';
+import { CardTable } from "./Table.js";
 
 export interface ListPageProps {
   errorOrderId: string | undefined,

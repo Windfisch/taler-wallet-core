@@ -22,16 +22,16 @@
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import * as yup from "yup";
-import { AsyncButton } from "../../../components/exception/AsyncButton";
+import { AsyncButton } from "../../../components/exception/AsyncButton.js";
 import {
   FormErrors,
   FormProvider,
-} from "../../../components/form/FormProvider";
-import { SetTokenNewInstanceModal } from "../../../components/modal";
-import { MerchantBackend } from "../../../declaration";
+} from "../../../components/form/FormProvider.js";
+import { SetTokenNewInstanceModal } from "../../../components/modal.js";
+import { MerchantBackend } from "../../../declaration.js";
 import { Translate, useTranslator } from "../../../i18n";
-import { DefaultInstanceFormFields } from "../../../components/instance/DefaultInstanceFormFields";
-import { INSTANCE_ID_REGEX, PAYTO_REGEX } from "../../../utils/constants";
+import { DefaultInstanceFormFields } from "../../../components/instance/DefaultInstanceFormFields.js";
+import { INSTANCE_ID_REGEX, PAYTO_REGEX } from "../../../utils/constants.js";
 import { Amounts } from "@gnu-taler/taler-util";
 
 export type Entity = MerchantBackend.Instances.InstanceConfigurationMessage & {

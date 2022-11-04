@@ -21,14 +21,14 @@
 
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { FormErrors, FormProvider } from "../../../../components/form/FormProvider";
-import { Input } from "../../../../components/form/Input";
-import { InputCurrency } from "../../../../components/form/InputCurrency";
-import { ConfirmModal, ContinueModal } from "../../../../components/modal";
-import { MerchantBackend } from "../../../../declaration";
+import { FormErrors, FormProvider } from "../../../../components/form/FormProvider.js";
+import { Input } from "../../../../components/form/Input.js";
+import { InputCurrency } from "../../../../components/form/InputCurrency.js";
+import { ConfirmModal, ContinueModal } from "../../../../components/modal.js";
+import { MerchantBackend } from "../../../../declaration.js";
 import { useTranslator } from "../../../../i18n";
-import { AuthorizeTipSchema } from "../../../../schemas";
-import { CreatedSuccessfully } from "./CreatedSuccessfully";
+import { AuthorizeTipSchema } from "../../../../schemas.js";
+import { CreatedSuccessfully } from "./CreatedSuccessfully.js";
 import * as yup from 'yup';
 
 interface AuthorizeTipModalProps {

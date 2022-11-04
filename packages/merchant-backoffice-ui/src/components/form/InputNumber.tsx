@@ -19,8 +19,8 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 import { ComponentChildren, h } from "preact";
-import { InputWithAddon } from "./InputWithAddon";
-import { InputProps } from "./useField";
+import { InputWithAddon } from "./InputWithAddon.js";
+import { InputProps } from "./useField.js";
 
 export interface Props<T> extends InputProps<T> {
   readonly?: boolean;

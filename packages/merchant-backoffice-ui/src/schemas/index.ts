@@ -21,7 +21,7 @@
 
 import { isAfter, isFuture } from 'date-fns';
 import * as yup from 'yup';
-import { AMOUNT_REGEX, PAYTO_REGEX } from "../utils/constants";
+import { AMOUNT_REGEX, PAYTO_REGEX } from "../utils/constants.js";
 
 yup.setLocale({
   mixed: {

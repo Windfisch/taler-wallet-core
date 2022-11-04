@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { WithId } from "../declaration";
+import { WithId } from "../declaration.js";
 
 /**
 *

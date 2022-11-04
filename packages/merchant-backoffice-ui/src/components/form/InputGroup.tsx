@@ -20,7 +20,7 @@
 */
 import { ComponentChildren, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { useGroupField } from "./useGroupField";
+import { useGroupField } from "./useGroupField.js";
 
 export interface Props<T> {
   name: T;

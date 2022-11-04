@@ -17,11 +17,11 @@
 import { ComponentChildren, Fragment, h, VNode } from "preact";
 import Match from "preact-router/match";
 import { useEffect, useState } from "preact/hooks";
-import { AdminPaths } from "../../AdminRoutes";
-import { InstancePaths } from "../../InstanceRoutes";
-import { Notification } from "../../utils/types";
-import { NavigationBar } from "./NavigationBar";
-import { Sidebar } from "./SideBar";
+import { AdminPaths } from "../../AdminRoutes.js";
+import { InstancePaths } from "../../InstanceRoutes.js";
+import { Notification } from "../../utils/types.js";
+import { NavigationBar } from "./NavigationBar.js";
+import { Sidebar } from "./SideBar.js";
 
 function getInstanceTitle(path: string, id: string): string {
   switch (path) {

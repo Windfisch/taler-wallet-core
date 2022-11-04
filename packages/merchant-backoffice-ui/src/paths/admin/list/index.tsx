@@ -21,15 +21,15 @@
 
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { Loading } from "../../../components/exception/loading";
-import { NotificationCard } from "../../../components/menu";
-import { DeleteModal, PurgeModal } from "../../../components/modal";
-import { MerchantBackend } from "../../../declaration";
-import { HttpError } from "../../../hooks/backend";
-import { useAdminAPI, useBackendInstances } from "../../../hooks/instance";
+import { Loading } from "../../../components/exception/loading.js";
+import { NotificationCard } from "../../../components/menu.js";
+import { DeleteModal, PurgeModal } from "../../../components/modal.js";
+import { MerchantBackend } from "../../../declaration.js";
+import { HttpError } from "../../../hooks/backend.js";
+import { useAdminAPI, useBackendInstances } from "../../../hooks/instance.js";
 import { useTranslator } from "../../../i18n";
-import { Notification } from "../../../utils/types";
-import { View } from "./View";
+import { Notification } from "../../../utils/types.js";
+import { View } from "./View.js";
 
 interface Props {
   onCreate: () => void;

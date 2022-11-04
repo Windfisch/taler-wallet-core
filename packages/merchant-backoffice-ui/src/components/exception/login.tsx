@@ -21,10 +21,10 @@
 
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { useBackendContext } from "../../context/backend";
-import { useInstanceContext } from "../../context/instance";
+import { useBackendContext } from "../../context/backend.js";
+import { useInstanceContext } from "../../context/instance.js";
 import { Translate, useTranslator } from "../../i18n";
-import { Notification } from "../../utils/types";
+import { Notification } from "../../utils/types.js";
 
 interface Props {
   withMessage?: Notification;

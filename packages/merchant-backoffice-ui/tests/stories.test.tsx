@@ -19,8 +19,8 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 import { h, VNode } from "preact";
-import * as config from "../src/context/config";
-import * as i18n from "../src/context/translation";
+import * as config from "../src/context/config.js";
+import * as i18n from "../src/context/translation.js";
 import { cleanup, render as originalRender } from "@testing-library/preact";
 import { SWRConfig } from "swr";
 
@@ -49,7 +49,7 @@ function render(vnode: VNode) {
       }}
     >
       {vnode}
-    </SWRConfig>
+    </SWRConfig>,
   );
 }
 

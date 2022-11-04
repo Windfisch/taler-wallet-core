@@ -20,7 +20,7 @@
 */
 
 import { ComponentChildren, VNode } from "preact";
-import { useFormContext } from "./FormProvider";
+import { useFormContext } from "./FormProvider.js";
 
 interface Use<V> {
   error?: string;

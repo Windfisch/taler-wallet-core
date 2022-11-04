@@ -21,14 +21,14 @@
 
 import { Fragment, h, VNode } from 'preact';
 import { useState } from 'preact/hooks';
-import { Loading } from '../../../../components/exception/loading';
-import { NotificationCard } from '../../../../components/menu';
-import { MerchantBackend } from '../../../../declaration';
-import { HttpError } from '../../../../hooks/backend';
-import { useProductAPI, useProductDetails } from '../../../../hooks/product';
+import { Loading } from "../../../../components/exception/loading.js";
+import { NotificationCard } from "../../../../components/menu.js";
+import { MerchantBackend } from "../../../../declaration.js";
+import { HttpError } from "../../../../hooks/backend.js";
+import { useProductAPI, useProductDetails } from "../../../../hooks/product.js";
 import { useTranslator } from '../../../../i18n';
-import { Notification } from '../../../../utils/types';
-import { UpdatePage } from './UpdatePage';
+import { Notification } from "../../../../utils/types.js";
+import { UpdatePage } from "./UpdatePage.js";
 
 export type Entity = MerchantBackend.Products.ProductAddDetail
 interface Props {

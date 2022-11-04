@@ -22,16 +22,15 @@
 import { h, VNode } from 'preact';
 import { route } from 'preact-router';
 import { useMemo } from "preact/hooks";
-import { ApplicationReadyRoutes } from "./ApplicationReadyRoutes";
-import { Loading } from "./components/exception/loading";
-import { NotificationCard, NotYetReadyAppMenu } from "./components/menu";
-import { BackendContextProvider, useBackendContext } from './context/backend';
-import { ConfigContextProvider } from './context/config';
-import { FetchContextProvider } from './context/fetch';
-import { TranslationProvider } from './context/translation';
-import { useBackendConfig } from "./hooks/backend";
-import { useTranslator } from './i18n';
-import LoginPage from './paths/login';
+import { ApplicationReadyRoutes } from "./ApplicationReadyRoutes.js";
+import { Loading } from "./components/exception/loading.js";
+import { NotificationCard, NotYetReadyAppMenu } from "./components/menu/index.js";
+import { BackendContextProvider, useBackendContext } from './context/backend.js';
+import { ConfigContextProvider } from './context/config.js';
+import { TranslationProvider } from './context/translation.js';
+import { useBackendConfig } from "./hooks/backend.js";
+import { useTranslator } from './i18n/index.js';
+import LoginPage from './paths/login/index.js';
 import "./scss/main.scss";
 
 export default function Application(): VNode {

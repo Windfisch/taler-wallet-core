@@ -22,18 +22,18 @@
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import * as yup from "yup";
-import { AsyncButton } from "../../../components/exception/AsyncButton";
+import { AsyncButton } from "../../../components/exception/AsyncButton.js";
 import {
   FormProvider,
   FormErrors,
-} from "../../../components/form/FormProvider";
-import { UpdateTokenModal } from "../../../components/modal";
-import { useInstanceContext } from "../../../context/instance";
-import { MerchantBackend } from "../../../declaration";
+} from "../../../components/form/FormProvider.js";
+import { UpdateTokenModal } from "../../../components/modal.js";
+import { useInstanceContext } from "../../../context/instance.js";
+import { MerchantBackend } from "../../../declaration.js";
 import { Translate, useTranslator } from "../../../i18n";
-import { InstanceUpdateSchema as schema } from "../../../schemas";
-import { DefaultInstanceFormFields } from "../../../components/instance/DefaultInstanceFormFields";
-import { PAYTO_REGEX } from "../../../utils/constants";
+import { InstanceUpdateSchema as schema } from "../../../schemas.js";
+import { DefaultInstanceFormFields } from "../../../components/instance/DefaultInstanceFormFields.js";
+import { PAYTO_REGEX } from "../../../utils/constants.js";
 import { Amounts } from "@gnu-taler/taler-util";
 
 type Entity = MerchantBackend.Instances.InstanceReconfigurationMessage & {

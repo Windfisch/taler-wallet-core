@@ -19,7 +19,7 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 import { h, VNode } from "preact";
-import { LoginModal } from '../../components/exception/login';
+import { LoginModal } from "../../components/exception/login.js";
 
 interface Props {
   onConfirm: (url: string, token?: string) => void;

@@ -20,7 +20,7 @@
 */
 
 import { h, VNode, FunctionalComponent } from 'preact';
-import { CreatePage as TestedComponent } from './CreatePage';
+import { CreatePage as TestedComponent } from "./CreatePage.js";
 
 
 export default {

@@ -20,13 +20,13 @@
  */
 import { h, VNode, Fragment } from "preact";
 import { useCallback, useState } from "preact/hooks";
-import { Translate, Translator, useTranslator } from "../../i18n";
-import { COUNTRY_TABLE } from "../../utils/constants";
-import { FormErrors, FormProvider } from "./FormProvider";
-import { Input } from "./Input";
-import { InputGroup } from "./InputGroup";
-import { InputSelector } from "./InputSelector";
-import { InputProps, useField } from "./useField";
+import { Translate, Translator, useTranslator } from "../../i18n.js";
+import { COUNTRY_TABLE } from "../../utils/constants.js";
+import { FormErrors, FormProvider } from "./FormProvider.js";
+import { Input } from "./Input.js";
+import { InputGroup } from "./InputGroup.js";
+import { InputSelector } from "./InputSelector.js";
+import { InputProps, useField } from "./useField.js";
 
 export interface Props<T> extends InputProps<T> {
   isValid?: (e: any) => boolean;
@@ -217,7 +217,7 @@ export function InputPaytoForm<T>({
   };
 
   const hasErrors = Object.keys(errors).some(
-    (k) => (errors as any)[k] !== undefined
+    (k) => (errors as any)[k] !== undefined,
   );
 
   const submit = useCallback((): void => {

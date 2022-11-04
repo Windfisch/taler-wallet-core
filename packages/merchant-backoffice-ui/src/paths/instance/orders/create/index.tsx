@@ -21,16 +21,16 @@
 
 import { Fragment, h, VNode } from 'preact';
 import { useState } from 'preact/hooks';
-import { Loading } from '../../../../components/exception/loading';
-import { NotificationCard } from '../../../../components/menu';
-import { MerchantBackend } from '../../../../declaration';
-import { HttpError } from '../../../../hooks/backend';
-import { useInstanceDetails } from '../../../../hooks/instance';
-import { useOrderAPI } from '../../../../hooks/order';
-import { useInstanceProducts } from '../../../../hooks/product';
-import { Notification } from '../../../../utils/types';
-import { CreatePage } from './CreatePage';
-import { OrderCreatedSuccessfully } from './OrderCreatedSuccessfully';
+import { Loading } from "../../../../components/exception/loading.js";
+import { NotificationCard } from "../../../../components/menu.js";
+import { MerchantBackend } from "../../../../declaration.js";
+import { HttpError } from "../../../../hooks/backend.js";
+import { useInstanceDetails } from "../../../../hooks/instance.js";
+import { useOrderAPI } from "../../../../hooks/order.js";
+import { useInstanceProducts } from "../../../../hooks/product.js";
+import { Notification } from "../../../../utils/types.js";
+import { CreatePage } from "./CreatePage.js";
+import { OrderCreatedSuccessfully } from "./OrderCreatedSuccessfully.js";
 
 export type Entity = {
   request: MerchantBackend.Orders.PostOrderRequest,

@@ -20,10 +20,10 @@
  */
 
 import { h, VNode } from "preact";
-import { Loading } from "../../../../components/exception/loading";
-import { HttpError } from "../../../../hooks/backend";
-import { useInstanceKYCDetails } from "../../../../hooks/instance";
-import { ListPage } from "./ListPage";
+import { Loading } from "../../../../components/exception/loading.js";
+import { HttpError } from "../../../../hooks/backend.js";
+import { useInstanceKYCDetails } from "../../../../hooks/instance.js";
+import { ListPage } from "./ListPage.js";
 
 interface Props {
   onUnauthorized: () => VNode;

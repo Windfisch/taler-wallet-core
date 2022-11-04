@@ -19,7 +19,7 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 import { ComponentChildren, h, VNode } from "preact";
-import { useField, InputProps } from "./useField";
+import { useField, InputProps } from "./useField.js";
 
 interface Props<T> extends InputProps<T> {
   inputType?: 'text' | 'number' | 'multiline' | 'password';

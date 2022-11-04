@@ -21,11 +21,10 @@
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import emptyImage from "../../assets/empty.png";
-import { MerchantBackend, WithId } from "../../declaration";
-import { useInstanceProducts } from "../../hooks/product";
-import { Translate, useTranslator } from "../../i18n";
-import { FormErrors, FormProvider } from "./FormProvider";
-import { InputWithAddon } from "./InputWithAddon";
+import { MerchantBackend, WithId } from "../../declaration.js";
+import { Translate, useTranslator } from "../../i18n/index.js";
+import { FormErrors, FormProvider } from "./FormProvider.js";
+import { InputWithAddon } from "./InputWithAddon.js";
 
 type Entity = MerchantBackend.Products.ProductDetail & WithId
 

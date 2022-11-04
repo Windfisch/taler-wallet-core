@@ -14,8 +14,8 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 import { h, VNode } from "preact";
-import { CreatedSuccessfully as Template } from "../../../../components/notifications/CreatedSuccessfully";
-import { Entity } from "./index";
+import { CreatedSuccessfully as Template } from "../../../../components/notifications/CreatedSuccessfully.js";
+import { Entity } from "./index.js";
 import emptyImage from "../../assets/empty.png";
 
 interface Props {

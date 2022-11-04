@@ -19,13 +19,13 @@
  */
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { NotificationCard } from "../../../components/menu";
-import { MerchantBackend } from "../../../declaration";
-import { useAdminAPI } from "../../../hooks/instance";
+import { NotificationCard } from "../../../components/menu.js";
+import { MerchantBackend } from "../../../declaration.js";
+import { useAdminAPI } from "../../../hooks/instance.js";
 import { useTranslator } from "../../../i18n";
-import { Notification } from "../../../utils/types";
-import { CreatePage } from "./CreatePage";
-import { InstanceCreatedSuccessfully } from "./InstanceCreatedSuccessfully";
+import { Notification } from "../../../utils/types.js";
+import { CreatePage } from "./CreatePage.js";
+import { InstanceCreatedSuccessfully } from "./InstanceCreatedSuccessfully.js";
 
 interface Props {
   onBack?: () => void;

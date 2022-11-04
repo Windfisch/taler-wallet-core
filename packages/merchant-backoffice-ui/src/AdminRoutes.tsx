@@ -15,8 +15,8 @@
  */
 import { h, VNode } from "preact";
 import Router, { route, Route } from "preact-router";
-import InstanceCreatePage from "./paths/admin/create";
-import InstanceListPage from './paths/admin/list';
+import InstanceCreatePage from "./paths/admin/create/index.js";
+import InstanceListPage from './paths/admin/list/index.js';
 
 
 export enum AdminPaths {

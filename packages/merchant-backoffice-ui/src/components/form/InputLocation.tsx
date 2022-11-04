@@ -19,8 +19,8 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 import { Fragment, h } from "preact";
-import { useTranslator } from "../../i18n";
-import { Input } from "./Input";
+import { useTranslator } from "../../i18n/index.js";
+import { Input } from "./Input.js";
 
 export function InputLocation({name}:{name:string}) {
   const i18n = useTranslator()

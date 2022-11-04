@@ -26,16 +26,16 @@ import { StateUpdater, useState } from "preact/hooks";
 import {
   FormErrors,
   FormProvider,
-} from "../../../../components/form/FormProvider";
-import { Input } from "../../../../components/form/Input";
-import { InputCurrency } from "../../../../components/form/InputCurrency";
-import { InputGroup } from "../../../../components/form/InputGroup";
-import { InputSelector } from "../../../../components/form/InputSelector";
-import { ConfirmModal } from "../../../../components/modal";
-import { useConfigContext } from "../../../../context/config";
-import { MerchantBackend, WithId } from "../../../../declaration";
+} from "../../../../components/form/FormProvider.js";
+import { Input } from "../../../../components/form/Input.js";
+import { InputCurrency } from "../../../../components/form/InputCurrency.js";
+import { InputGroup } from "../../../../components/form/InputGroup.js";
+import { InputSelector } from "../../../../components/form/InputSelector.js";
+import { ConfirmModal } from "../../../../components/modal.js";
+import { useConfigContext } from "../../../../context/config.js";
+import { MerchantBackend, WithId } from "../../../../declaration.js";
 import { Translate, useTranslator } from "../../../../i18n";
-import { mergeRefunds } from "../../../../utils/amount";
+import { mergeRefunds } from "../../../../utils/amount.js";
 
 type Entity = MerchantBackend.Orders.OrderHistoryEntry & WithId;
 interface Props {

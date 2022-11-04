@@ -21,15 +21,15 @@
 
 import { h, VNode, Fragment } from 'preact';
 import { useState } from 'preact/hooks';
-import { Loading } from '../../../../components/exception/loading';
-import { NotificationCard } from '../../../../components/menu';
-import { MerchantBackend, WithId } from '../../../../declaration';
-import { HttpError } from '../../../../hooks/backend';
-import { InstanceOrderFilter, useInstanceOrders, useOrderAPI, useOrderDetails } from '../../../../hooks/order';
+import { Loading } from "../../../../components/exception/loading.js";
+import { NotificationCard } from "../../../../components/menu.js";
+import { MerchantBackend, WithId } from "../../../../declaration.js";
+import { HttpError } from "../../../../hooks/backend.js";
+import { InstanceOrderFilter, useInstanceOrders, useOrderAPI, useOrderDetails } from "../../../../hooks/order.js";
 import { useTranslator } from '../../../../i18n';
-import { Notification } from '../../../../utils/types';
-import { RefundModal } from './Table';
-import { ListPage } from './ListPage';
+import { Notification } from "../../../../utils/types.js";
+import { RefundModal } from "./Table.js";
+import { ListPage } from "./ListPage.js";
 
 interface Props {
   onUnauthorized: () => VNode;

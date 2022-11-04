@@ -20,7 +20,7 @@
 */
 
 import { h, VNode, FunctionalComponent } from 'preact';
-import { InventoryProductForm as TestedComponent } from './InventoryProductForm';
+import { InventoryProductForm as TestedComponent } from "./InventoryProductForm.js";
 
 
 export default {

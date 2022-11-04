@@ -19,7 +19,7 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 
-import { useFormContext } from "./FormProvider";
+import { useFormContext } from "./FormProvider.js";
 
 interface Use {
   hasError?: boolean;

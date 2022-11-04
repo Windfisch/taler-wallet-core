@@ -19,16 +19,16 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 import { Fragment, h } from "preact";
-import { MerchantBackend, Timestamp } from "../../declaration";
-import { InputProps, useField } from "./useField";
-import { FormProvider, FormErrors } from "./FormProvider";
+import { MerchantBackend, Timestamp } from "../../declaration.js";
+import { InputProps, useField } from "./useField.js";
+import { FormProvider, FormErrors } from "./FormProvider.js";
 import { useLayoutEffect, useState } from "preact/hooks";
-import { Input } from "./Input";
-import { InputGroup } from "./InputGroup";
-import { InputNumber } from "./InputNumber";
-import { InputDate } from "./InputDate";
+import { Input } from "./Input.js";
+import { InputGroup } from "./InputGroup.js";
+import { InputNumber } from "./InputNumber.js";
+import { InputDate } from "./InputDate.js";
 import { Translate, useTranslator } from "../../i18n";
-import { InputLocation } from "./InputLocation";
+import { InputLocation } from "./InputLocation.js";
 
 export interface Props<T> extends InputProps<T> {
   alreadyExist?: boolean;

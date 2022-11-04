@@ -19,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { AMOUNT_REGEX, PAYTO_REGEX } from "../../src/utils/constants";
+import { AMOUNT_REGEX, PAYTO_REGEX } from "../../src/utils/constants.js";
 
 describe('payto uri format', () => {
   const valids = [

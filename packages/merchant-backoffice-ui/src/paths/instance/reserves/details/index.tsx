@@ -20,10 +20,10 @@
  */
 
 import { Fragment, h, VNode } from "preact";
-import { Loading } from "../../../../components/exception/loading";
-import { HttpError } from "../../../../hooks/backend";
-import { useReserveDetails } from "../../../../hooks/reserves";
-import { DetailPage } from "./DetailPage";
+import { Loading } from "../../../../components/exception/loading.js";
+import { HttpError } from "../../../../hooks/backend.js";
+import { useReserveDetails } from "../../../../hooks/reserves.js";
+import { DetailPage } from "./DetailPage.js";
 
 interface Props {
   rid: string;

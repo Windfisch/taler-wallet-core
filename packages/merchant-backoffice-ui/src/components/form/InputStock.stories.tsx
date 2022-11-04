@@ -22,8 +22,8 @@
 import { addDays } from "date-fns";
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { FormProvider } from "./FormProvider";
-import { InputStock, Stock } from "./InputStock";
+import { FormProvider } from "./FormProvider.js";
+import { InputStock, Stock } from "./InputStock.js";
 
 export default {
   title: "Components/Form/InputStock",

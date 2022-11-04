@@ -15,12 +15,12 @@
  */
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { FormProvider, FormErrors } from "../form/FormProvider";
-import { InputNumber } from "../form/InputNumber";
-import { InputSearchProduct } from "../form/InputSearchProduct";
-import { MerchantBackend, WithId } from "../../declaration";
+import { FormProvider, FormErrors } from "../form/FormProvider.js";
+import { InputNumber } from "../form/InputNumber.js";
+import { InputSearchProduct } from "../form/InputSearchProduct.js";
+import { MerchantBackend, WithId } from "../../declaration.js";
 import { Translate, useTranslator } from "../../i18n";
-import { ProductMap } from "../../paths/instance/orders/create/CreatePage";
+import { ProductMap } from "../../paths/instance/orders/create/CreatePage.js";
 
 type Form = {
   product: MerchantBackend.Products.ProductDetail & WithId,

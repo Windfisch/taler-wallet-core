@@ -16,18 +16,18 @@
 import { Fragment, h, VNode } from "preact";
 import { useCallback, useEffect, useState } from "preact/hooks";
 import * as yup from 'yup';
-import { FormErrors, FormProvider } from "../form/FormProvider";
-import { Input } from "../form/Input";
-import { InputCurrency } from "../form/InputCurrency";
-import { InputImage } from "../form/InputImage";
-import { InputNumber } from "../form/InputNumber";
-import { InputTaxes } from "../form/InputTaxes";
-import { MerchantBackend } from "../../declaration";
-import { useListener } from "../../hooks/listener";
+import { FormErrors, FormProvider } from "../form/FormProvider.js";
+import { Input } from "../form/Input.js";
+import { InputCurrency } from "../form/InputCurrency.js";
+import { InputImage } from "../form/InputImage.js";
+import { InputNumber } from "../form/InputNumber.js";
+import { InputTaxes } from "../form/InputTaxes.js";
+import { MerchantBackend } from "../../declaration.js";
+import { useListener } from "../../hooks/listener.js";
 import { Translate, useTranslator } from "../../i18n";
 import {
   NonInventoryProductSchema as schema
-} from '../../schemas';
+} from "../../schemas.js";
 
 
 type Entity = MerchantBackend.Product

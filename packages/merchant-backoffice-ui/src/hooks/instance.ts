@@ -14,9 +14,9 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 import useSWR, { useSWRConfig } from "swr";
-import { useBackendContext } from "../context/backend";
-import { useInstanceContext } from "../context/instance";
-import { MerchantBackend } from "../declaration";
+import { useBackendContext } from "../context/backend.js";
+import { useInstanceContext } from "../context/instance.js";
+import { MerchantBackend } from "../declaration.js";
 import {
   fetcher,
   HttpError,
@@ -24,7 +24,7 @@ import {
   HttpResponseOk,
   request,
   useMatchMutate,
-} from "./backend";
+} from "./backend.js";
 
 interface InstanceAPI {
   updateInstance: (

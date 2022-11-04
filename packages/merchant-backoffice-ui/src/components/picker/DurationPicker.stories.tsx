@@ -21,7 +21,7 @@
 
 import { h, FunctionalComponent } from 'preact';
 import { useState } from 'preact/hooks';
-import { DurationPicker as TestedComponent } from './DurationPicker';
+import { DurationPicker as TestedComponent } from "./DurationPicker.js";
 
 
 export default {

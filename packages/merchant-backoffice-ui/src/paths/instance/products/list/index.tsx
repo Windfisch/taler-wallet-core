@@ -21,14 +21,14 @@
 
 import { h, VNode } from 'preact';
 import { useState } from 'preact/hooks';
-import { Loading } from '../../../../components/exception/loading';
-import { NotificationCard } from '../../../../components/menu';
-import { MerchantBackend, WithId } from '../../../../declaration';
-import { HttpError } from '../../../../hooks/backend';
-import { useInstanceProducts, useProductAPI } from "../../../../hooks/product";
+import { Loading } from "../../../../components/exception/loading.js";
+import { NotificationCard } from "../../../../components/menu.js";
+import { MerchantBackend, WithId } from "../../../../declaration.js";
+import { HttpError } from "../../../../hooks/backend.js";
+import { useInstanceProducts, useProductAPI } from "../../../../hooks/product.js";
 import { useTranslator } from '../../../../i18n';
-import { Notification } from '../../../../utils/types';
-import { CardTable } from './Table';
+import { Notification } from "../../../../utils/types.js";
+import { CardTable } from "./Table.js";
 
 interface Props {
   onUnauthorized: () => VNode;

@@ -20,11 +20,11 @@
 */
 
 import { h, VNode } from 'preact';
-import { FormProvider } from '../../../../components/form/FormProvider';
-import { InputSelector } from '../../../../components/form/InputSelector';
-import { MerchantBackend } from '../../../../declaration';
+import { FormProvider } from "../../../../components/form/FormProvider.js";
+import { InputSelector } from "../../../../components/form/InputSelector.js";
+import { MerchantBackend } from "../../../../declaration.js";
 import { Translate, useTranslator } from '../../../../i18n';
-import { CardTable } from './Table';
+import { CardTable } from "./Table.js";
 
 export interface Props {
   transfers: MerchantBackend.Transfers.TransferDetails[];

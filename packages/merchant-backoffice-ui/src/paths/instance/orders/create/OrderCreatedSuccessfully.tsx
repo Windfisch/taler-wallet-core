@@ -15,10 +15,10 @@
  */
 import { h, VNode } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { CreatedSuccessfully } from "../../../../components/notifications/CreatedSuccessfully";
-import { useOrderAPI } from "../../../../hooks/order";
+import { CreatedSuccessfully } from "../../../../components/notifications/CreatedSuccessfully.js";
+import { useOrderAPI } from "../../../../hooks/order.js";
 import { Translate } from "../../../../i18n";
-import { Entity } from "./index";
+import { Entity } from "./index.js";
 
 interface Props {
   entity: Entity;

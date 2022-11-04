@@ -15,8 +15,8 @@
  */
 import { format } from "date-fns";
 import { Fragment, h, VNode } from "preact";
-import { useBackendContext } from "../../../../context/backend";
-import { MerchantBackend } from "../../../../declaration";
+import { useBackendContext } from "../../../../context/backend.js";
+import { MerchantBackend } from "../../../../declaration.js";
 
 type Entity = MerchantBackend.Tips.TipDetails;
 

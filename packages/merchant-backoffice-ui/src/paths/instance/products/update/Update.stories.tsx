@@ -20,7 +20,7 @@
 */
 
 import { h, VNode, FunctionalComponent } from 'preact';
-import { UpdatePage as TestedComponent } from './UpdatePage';
+import { UpdatePage as TestedComponent } from "./UpdatePage.js";
 
 
 export default {

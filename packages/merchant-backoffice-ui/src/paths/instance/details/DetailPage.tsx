@@ -21,9 +21,9 @@
 
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { FormProvider } from "../../../components/form/FormProvider";
-import { Input } from "../../../components/form/Input";
-import { MerchantBackend } from "../../../declaration";
+import { FormProvider } from "../../../components/form/FormProvider.js";
+import { Input } from "../../../components/form/Input.js";
+import { MerchantBackend } from "../../../declaration.js";
 import { useTranslator } from "../../../i18n";
 
 type Entity = MerchantBackend.Instances.InstanceReconfigurationMessage;

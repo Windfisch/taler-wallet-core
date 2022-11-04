@@ -21,16 +21,16 @@
 
 import { Fragment, h, VNode } from "preact";
 import { StateUpdater, useEffect, useState } from "preact/hooks";
-import { FormErrors, FormProvider } from "../../../../components/form/FormProvider";
-import { Input } from "../../../../components/form/Input";
-import { InputCurrency } from "../../../../components/form/InputCurrency";
-import { ExchangeBackend, MerchantBackend } from "../../../../declaration";
+import { FormErrors, FormProvider } from "../../../../components/form/FormProvider.js";
+import { Input } from "../../../../components/form/Input.js";
+import { InputCurrency } from "../../../../components/form/InputCurrency.js";
+import { ExchangeBackend, MerchantBackend } from "../../../../declaration.js";
 import { Translate, useTranslator } from "../../../../i18n";
-import { AsyncButton } from "../../../../components/exception/AsyncButton";
+import { AsyncButton } from "../../../../components/exception/AsyncButton.js";
 import { canonicalizeBaseUrl, ExchangeKeysJson } from "@gnu-taler/taler-util"
-import { PAYTO_WIRE_METHOD_LOOKUP, URL_REGEX } from "../../../../utils/constants";
-import { request } from "../../../../hooks/backend";
-import { InputSelector } from "../../../../components/form/InputSelector";
+import { PAYTO_WIRE_METHOD_LOOKUP, URL_REGEX } from "../../../../utils/constants.js";
+import { request } from "../../../../hooks/backend.js";
+import { InputSelector } from "../../../../components/form/InputSelector.js";
 
 type Entity = MerchantBackend.Tips.ReserveCreateRequest
 

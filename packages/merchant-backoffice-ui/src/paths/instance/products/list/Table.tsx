@@ -25,10 +25,10 @@ import { StateUpdater, useState } from "preact/hooks";
 import {
   FormProvider,
   FormErrors,
-} from "../../../../components/form/FormProvider";
-import { InputCurrency } from "../../../../components/form/InputCurrency";
-import { InputNumber } from "../../../../components/form/InputNumber";
-import { MerchantBackend, WithId } from "../../../../declaration";
+} from "../../../../components/form/FormProvider.js";
+import { InputCurrency } from "../../../../components/form/InputCurrency.js";
+import { InputNumber } from "../../../../components/form/InputNumber.js";
+import { MerchantBackend, WithId } from "../../../../declaration.js";
 import emptyImage from "../../../../assets/empty.png";
 import { Translate, useTranslator } from "../../../../i18n";
 import { Amounts } from "@gnu-taler/taler-util";

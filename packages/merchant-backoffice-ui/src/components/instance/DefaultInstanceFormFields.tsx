@@ -20,17 +20,17 @@
  */
 
 import { Fragment, h, VNode } from "preact";
-import { useBackendContext } from "../../context/backend";
+import { useBackendContext } from "../../context/backend.js";
 import { useTranslator } from "../../i18n";
-import { Entity } from "../../paths/admin/create/CreatePage";
-import { Input } from "../form/Input";
-import { InputCurrency } from "../form/InputCurrency";
-import { InputDuration } from "../form/InputDuration";
-import { InputGroup } from "../form/InputGroup";
-import { InputImage } from "../form/InputImage";
-import { InputLocation } from "../form/InputLocation";
-import { InputPaytoForm } from "../form/InputPaytoForm";
-import { InputWithAddon } from "../form/InputWithAddon";
+import { Entity } from "../../paths/admin/create/CreatePage.js";
+import { Input } from "../form/Input.js";
+import { InputCurrency } from "../form/InputCurrency.js";
+import { InputDuration } from "../form/InputDuration.js";
+import { InputGroup } from "../form/InputGroup.js";
+import { InputImage } from "../form/InputImage.js";
+import { InputLocation } from "../form/InputLocation.js";
+import { InputPaytoForm } from "../form/InputPaytoForm.js";
+import { InputWithAddon } from "../form/InputWithAddon.js";
 
 export function DefaultInstanceFormFields({
   readonlyId,

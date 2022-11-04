@@ -21,18 +21,18 @@
 
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { Loading } from "../../../../components/exception/loading";
-import { NotificationCard } from "../../../../components/menu";
-import { MerchantBackend } from "../../../../declaration";
-import { HttpError } from "../../../../hooks/backend";
+import { Loading } from "../../../../components/exception/loading.js";
+import { NotificationCard } from "../../../../components/menu.js";
+import { MerchantBackend } from "../../../../declaration.js";
+import { HttpError } from "../../../../hooks/backend.js";
 import {
   useInstanceReserves,
   useReservesAPI,
-} from "../../../../hooks/reserves";
+} from "../../../../hooks/reserves.js";
 import { useTranslator } from "../../../../i18n";
-import { Notification } from "../../../../utils/types";
-import { CardTable } from "./Table";
-import { AuthorizeTipModal } from "./AutorizeTipModal";
+import { Notification } from "../../../../utils/types.js";
+import { CardTable } from "./Table.js";
+import { AuthorizeTipModal } from "./AutorizeTipModal.js";
 
 interface Props {
   onUnauthorized: () => VNode;

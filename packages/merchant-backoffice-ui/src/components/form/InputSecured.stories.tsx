@@ -21,8 +21,8 @@
 
 import { h, VNode } from 'preact';
 import { useState } from 'preact/hooks';
-import { FormProvider } from "./FormProvider";
-import { InputSecured } from './InputSecured';
+import { FormProvider } from "./FormProvider.js";
+import { InputSecured } from './InputSecured.js';
 
 export default {
   title: 'Components/Form/InputSecured',

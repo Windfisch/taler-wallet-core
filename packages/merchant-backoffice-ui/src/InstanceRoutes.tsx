@@ -22,39 +22,39 @@
 import { Fragment, FunctionComponent, h, VNode } from "preact";
 import { Route, route, Router } from "preact-router";
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
-import { Loading } from "./components/exception/loading";
-import { Menu, NotificationCard } from "./components/menu";
-import { useBackendContext } from "./context/backend";
-import { InstanceContextProvider } from "./context/instance";
+import { Loading } from "./components/exception/loading.js";
+import { Menu, NotificationCard } from "./components/menu/index.js";
+import { useBackendContext } from "./context/backend.js";
+import { InstanceContextProvider } from "./context/instance.js";
 import {
   useBackendDefaultToken,
   useBackendInstanceToken,
   useLocalStorage,
-} from "./hooks";
-import { HttpError } from "./hooks/backend";
-import { Translate, useTranslator } from "./i18n";
-import InstanceCreatePage from "./paths/admin/create";
-import InstanceListPage from "./paths/admin/list";
-import OrderCreatePage from "./paths/instance/orders/create";
-import OrderDetailsPage from "./paths/instance/orders/details";
-import OrderListPage from "./paths/instance/orders/list";
-import ProductCreatePage from "./paths/instance/products/create";
-import ProductListPage from "./paths/instance/products/list";
-import ProductUpdatePage from "./paths/instance/products/update";
-import TransferListPage from "./paths/instance/transfers/list";
-import TransferCreatePage from "./paths/instance/transfers/create";
-import ReservesCreatePage from "./paths/instance/reserves/create";
-import ReservesDetailsPage from "./paths/instance/reserves/details";
-import ReservesListPage from "./paths/instance/reserves/list";
-import ListKYCPage from "./paths/instance/kyc/list";
+} from "./hooks/index.js";
+import { HttpError } from "./hooks/backend.js";
+import { Translate, useTranslator } from "./i18n/index.js";
+import InstanceCreatePage from "./paths/admin/create/index.js";
+import InstanceListPage from "./paths/admin/list/index.js";
+import OrderCreatePage from "./paths/instance/orders/create/index.js";
+import OrderDetailsPage from "./paths/instance/orders/details/index.js";
+import OrderListPage from "./paths/instance/orders/list/index.js";
+import ProductCreatePage from "./paths/instance/products/create/index.js";
+import ProductListPage from "./paths/instance/products/list/index.js";
+import ProductUpdatePage from "./paths/instance/products/update/index.js";
+import TransferListPage from "./paths/instance/transfers/list/index.js";
+import TransferCreatePage from "./paths/instance/transfers/create/index.js";
+import ReservesCreatePage from "./paths/instance/reserves/create/index.js";
+import ReservesDetailsPage from "./paths/instance/reserves/details/index.js";
+import ReservesListPage from "./paths/instance/reserves/list/index.js";
+import ListKYCPage from "./paths/instance/kyc/list/index.js";
 import InstanceUpdatePage, {
   Props as InstanceUpdatePageProps,
   AdminUpdate as InstanceAdminUpdatePage,
-} from "./paths/instance/update";
-import LoginPage from "./paths/login";
-import NotFoundPage from "./paths/notfound";
-import { Notification } from "./utils/types";
-import { useInstanceKYCDetails } from "./hooks/instance";
+} from "./paths/instance/update/index.js";
+import LoginPage from "./paths/login/index.js";
+import NotFoundPage from "./paths/notfound/index.js";
+import { Notification } from "./utils/types.js";
+import { useInstanceKYCDetails } from "./hooks/instance.js";
 import { format } from "date-fns";
 
 export enum InstancePaths {

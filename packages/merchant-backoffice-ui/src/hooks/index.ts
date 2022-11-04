@@ -20,7 +20,7 @@
 */
 
 import { StateUpdater, useCallback, useState } from "preact/hooks";
-import { ValueOrFunction } from '../utils/types';
+import { ValueOrFunction } from "../utils/types.js";
 
 
 const calculateRootPath = () => {

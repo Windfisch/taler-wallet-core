@@ -20,7 +20,7 @@
  */
 
 import { h, VNode, FunctionalComponent } from "preact";
-import { CardTable as TestedComponent } from "./Table";
+import { CardTable as TestedComponent } from "./Table.js";
 
 export default {
   title: "Pages/Reserve/List",

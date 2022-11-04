@@ -20,8 +20,8 @@
 */
 
 import { ComponentChildren, h } from "preact";
-import { LoadingModal } from "../modal";
-import { useAsync } from "../../hooks/async";
+import { LoadingModal } from "../modal.js";
+import { useAsync } from "../../hooks/async.js";
 import { Translate } from "../../i18n";
 
 type Props = {

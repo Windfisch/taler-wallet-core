@@ -20,7 +20,7 @@
 */
 
 import { renderHook, act } from '@testing-library/preact-hooks';
-import { useListener } from '../../src/hooks/listener';
+import { useListener } from "../../src/hooks/listener.js";
 
 // jest.useFakeTimers()
 

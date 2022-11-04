@@ -19,7 +19,7 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 import { ComponentChildren, h, VNode } from "preact";
-import { InputProps, useField } from "./useField";
+import { InputProps, useField } from "./useField.js";
 
 export interface Props<T> extends InputProps<T> {
   expand?: boolean;

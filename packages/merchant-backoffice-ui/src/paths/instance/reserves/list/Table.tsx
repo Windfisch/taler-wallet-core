@@ -21,7 +21,7 @@
 
 import { format } from "date-fns";
 import { Fragment, h, VNode } from "preact";
-import { MerchantBackend, WithId } from "../../../../declaration";
+import { MerchantBackend, WithId } from "../../../../declaration.js";
 import { Translate, useTranslator } from "../../../../i18n";
 
 type Entity = MerchantBackend.Tips.ReserveStatusEntry & WithId;

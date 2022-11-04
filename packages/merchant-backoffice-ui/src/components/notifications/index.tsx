@@ -20,7 +20,7 @@
 */
 
 import { h, VNode } from "preact";
-import { MessageType, Notification } from "../../utils/types";
+import { MessageType, Notification } from "../../utils/types.js";
 
 interface Props {
   notifications: Notification[];

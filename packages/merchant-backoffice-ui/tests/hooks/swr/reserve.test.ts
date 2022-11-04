@@ -21,13 +21,13 @@
 
 import { renderHook } from "@testing-library/preact-hooks";
 import { act } from "preact/test-utils";
-import { MerchantBackend } from "../../../src/declaration";
+import { MerchantBackend } from "../../../src/declaration.js";
 import {
   useInstanceReserves,
   useReserveDetails,
   useReservesAPI,
   useTipDetails,
-} from "../../../src/hooks/reserves";
+} from "../../../src/hooks/reserves.js";
 import {
   API_AUTHORIZE_TIP,
   API_AUTHORIZE_TIP_FOR_RESERVE,
@@ -38,8 +38,8 @@ import {
   API_LIST_RESERVES,
   assertJustExpectedRequestWereMade,
   AxiosMockEnvironment,
-} from "../../axiosMock";
-import { TestingContext } from "./index";
+} from "../../axiosMock.js";
+import { TestingContext } from "./index.js";
 
 describe("reserve api interaction with listing ", () => {
   it("should evict cache when creating a reserve", async () => {

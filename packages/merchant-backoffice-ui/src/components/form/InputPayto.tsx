@@ -19,9 +19,9 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 import { h, VNode } from "preact";
-import { InputArray } from "./InputArray";
-import { PAYTO_REGEX } from "../../utils/constants";
-import { InputProps } from "./useField";
+import { InputArray } from "./InputArray.js";
+import { PAYTO_REGEX } from "../../utils/constants.js";
+import { InputProps } from "./useField.js";
 
 export type Props<T> = InputProps<T>;
 

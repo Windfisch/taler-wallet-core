@@ -22,7 +22,7 @@
 import { format } from "date-fns";
 import { h, VNode } from "preact";
 import { StateUpdater, useState } from "preact/hooks";
-import { MerchantBackend, WithId } from "../../../../declaration";
+import { MerchantBackend, WithId } from "../../../../declaration.js";
 import { Translate, useTranslator } from "../../../../i18n";
 
 type Entity = MerchantBackend.Transfers.TransferDetails & WithId;

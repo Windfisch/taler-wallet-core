@@ -20,16 +20,16 @@
  */
 
 import { act, renderHook } from "@testing-library/preact-hooks";
-import { TestingContext } from "./index";
-import { useInstanceTransfers, useTransferAPI } from "../../../src/hooks/transfer";
+import { TestingContext } from "./index.js";
+import { useInstanceTransfers, useTransferAPI } from "../../../src/hooks/transfer.js";
 import {
   API_INFORM_TRANSFERS,
   API_LIST_TRANSFERS,
   assertJustExpectedRequestWereMade,
   assertNoMoreRequestWereMade,
   AxiosMockEnvironment,
-} from "../../axiosMock";
-import { MerchantBackend } from "../../../src/declaration";
+} from "../../axiosMock.js";
+import { MerchantBackend } from "../../../src/declaration.js";
 
 describe("transfer api interaction with listing", () => {
 

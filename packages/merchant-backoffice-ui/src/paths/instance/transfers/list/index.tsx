@@ -21,12 +21,12 @@
 
 import { h, VNode } from 'preact';
 import { useState } from 'preact/hooks';
-import { Loading } from '../../../../components/exception/loading';
-import { MerchantBackend } from '../../../../declaration';
-import { HttpError } from '../../../../hooks/backend';
-import { useInstanceDetails } from '../../../../hooks/instance';
-import { useInstanceTransfers } from "../../../../hooks/transfer";
-import { ListPage } from './ListPage';
+import { Loading } from "../../../../components/exception/loading.js";
+import { MerchantBackend } from "../../../../declaration.js";
+import { HttpError } from "../../../../hooks/backend.js";
+import { useInstanceDetails } from "../../../../hooks/instance.js";
+import { useInstanceTransfers } from "../../../../hooks/transfer.js";
+import { ListPage } from "./ListPage.js";
 
 interface Props {
   onUnauthorized: () => VNode;

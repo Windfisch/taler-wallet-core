@@ -19,9 +19,9 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 import * as axios from 'axios';
-import { MerchantBackend } from '../src/declaration';
-import { mockAxiosOnce, setAxiosRequestAsTestingEnvironment } from '../src/utils/switchableAxios';
-// import { mockAxiosOnce, setAxiosRequestAsTestingEnvironment } from "../src/hooks/backend";
+import { MerchantBackend } from "../src/declaration.js";
+import { mockAxiosOnce, setAxiosRequestAsTestingEnvironment } from "../src/utils/switchableAxios.js";
+// import { mockAxiosOnce, setAxiosRequestAsTestingEnvironment } from "../src/hooks/backend.js";
 
 export type Query<Req, Res> = (GetQuery | PostQuery | DeleteQuery | PatchQuery) & RequestResponse<Req, Res>
 

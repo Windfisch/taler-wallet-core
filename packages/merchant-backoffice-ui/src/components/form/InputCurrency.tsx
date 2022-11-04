@@ -19,10 +19,10 @@
 * @author Sebastian Javier Marchano (sebasjm)
 */
 import { ComponentChildren, h } from "preact";
-import { useConfigContext } from "../../context/config";
-import { Amount } from "../../declaration";
-import { InputWithAddon } from "./InputWithAddon";
-import { InputProps } from "./useField";
+import { useConfigContext } from "../../context/config.js";
+import { Amount } from "../../declaration.js";
+import { InputWithAddon } from "./InputWithAddon.js";
+import { InputProps } from "./useField.js";
 
 export interface Props<T> extends InputProps<T> {
   expand?: boolean;

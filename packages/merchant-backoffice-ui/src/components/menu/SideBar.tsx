@@ -21,12 +21,12 @@
 
 import { Fragment, h, VNode } from "preact";
 import { useCallback } from "preact/hooks";
-import { useBackendContext } from "../../context/backend";
-import { useConfigContext } from "../../context/config";
-import { useInstanceContext } from "../../context/instance";
-import { useInstanceKYCDetails } from "../../hooks/instance";
+import { useBackendContext } from "../../context/backend.js";
+import { useConfigContext } from "../../context/config.js";
+import { useInstanceContext } from "../../context/instance.js";
+import { useInstanceKYCDetails } from "../../hooks/instance.js";
 import { Translate } from "../../i18n";
-import { LangSelector } from "./LangSelector";
+import { LangSelector } from "./LangSelector.js";
 
 interface Props {
   onLogout: () => void;

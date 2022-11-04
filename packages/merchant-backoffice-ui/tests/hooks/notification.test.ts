@@ -20,7 +20,7 @@
  */
 
 import { renderHook, act} from '@testing-library/preact-hooks';
-import { useNotifications } from '../../src/hooks/notifications';
+import { useNotifications } from "../../src/hooks/notifications.js";
 
 jest.useFakeTimers()
 
