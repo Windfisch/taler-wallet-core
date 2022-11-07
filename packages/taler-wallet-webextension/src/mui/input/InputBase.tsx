@@ -189,6 +189,7 @@ export function InputBase({
   Root = InputBaseRoot,
   Input,
   onChange,
+  onInput,
   name,
   placeholder,
   readOnly,
@@ -254,6 +255,19 @@ export function InputBase({
     }
   };
 
+  const handleInput = (
+    event: JSX.TargetedEvent<HTMLElement & { value?: string }>,
+  ): void => {
+    // if (inputPropsProp.onChange) {
+    //   inputPropsProp.onChange(event, ...args);
+    // }
+
+    // Perform in the willUpdate
+    if (onInput) {
+      event.currentTarget.value = onInput(event.currentTarget.value);
+    }
+  };
+
   const handleClick = (
     event: JSX.TargetedMouseEvent<HTMLElement & { value?: string }>,
   ): void => {
@@ -290,6 +304,7 @@ export function InputBase({
           onKeyDown={onKeyDown}
           onKeyUp={onKeyUp}
           type={type}
+          onInput={handleInput}
           onChange={handleChange}
           onBlur={handleBlur}
           onFocus={handleFocus}
@@ -345,6 +360,7 @@ export function TextareaAutoSize({
   // disabled,
   // size,
   onChange,
+  onInput,
   value,
   multiline,
   focused,
@@ -480,7 +496,18 @@ export function TextareaAutoSize({
     }
 
     if (onChange) {
-      onChange(event);
+      onChange(event.target.value);
+    }
+  };
+  const handleInput = (event: any): void => {
+    renders.current = 0;
+
+    if (!isControlled) {
+      syncHeight();
+    }
+
+    if (onInput) {
+      event.currentTarget.value = onInput(event.currentTarget.value);
     }
   };
 
@@ -498,6 +525,7 @@ export function TextareaAutoSize({
         ].join(" ")}
         value={value}
         onChange={handleChange}
+        onInput={handleInput}
         ref={inputRef}
         // Apply the rows prop to get a "correct" first SSR paint
         rows={minRows}

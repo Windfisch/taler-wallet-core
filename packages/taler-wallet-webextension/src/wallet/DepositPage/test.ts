@@ -167,6 +167,11 @@ describe("DepositPage states", () => {
         accounts: [ibanPayto],
       },
     );
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetFeeForDeposit,
+      undefined,
+      withoutFee(),
+    );
 
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
       mountHook(() => useComponentState(props, mock));
@@ -176,6 +181,11 @@ describe("DepositPage states", () => {
       expect(status).equal("loading");
     }
 
+    expect(await waitForStateUpdate()).true;
+    {
+      const { status } = pullLastResultOrThrow();
+      expect(status).equal("loading");
+    }
     expect(await waitForStateUpdate()).true;
 
     {
@@ -219,6 +229,12 @@ describe("DepositPage states", () => {
       undefined,
       withoutFee(),
     );
+
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetFeeForDeposit,
+      undefined,
+      withoutFee(),
+    );
     handler.addWalletCallResponse(
       WalletApiOperation.GetFeeForDeposit,
       undefined,
@@ -233,6 +249,12 @@ describe("DepositPage states", () => {
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
       mountHook(() => useComponentState(props, mock));
 
+    {
+      const { status } = pullLastResultOrThrow();
+      expect(status).equal("loading");
+    }
+
+    expect(await waitForStateUpdate()).true;
     {
       const { status } = pullLastResultOrThrow();
       expect(status).equal("loading");
@@ -364,6 +386,11 @@ describe("DepositPage states", () => {
     handler.addWalletCallResponse(
       WalletApiOperation.GetFeeForDeposit,
       undefined,
+      withoutFee(),
+    );
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetFeeForDeposit,
+      undefined,
       withSomeFee(),
     );
     handler.addWalletCallResponse(
@@ -374,6 +401,13 @@ describe("DepositPage states", () => {
 
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
       mountHook(() => useComponentState(props, mock));
+
+    {
+      const { status } = pullLastResultOrThrow();
+      expect(status).equal("loading");
+    }
+
+    expect(await waitForStateUpdate()).true;
 
     {
       const { status } = pullLastResultOrThrow();
@@ -409,6 +443,8 @@ describe("DepositPage states", () => {
       expect(r.depositHandler.onClick).undefined;
       expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
 
+      expect(r.amount.onInput).not.undefined;
+      if (!r.amount.onInput) return;
       r.amount.onInput("10");
     }
 

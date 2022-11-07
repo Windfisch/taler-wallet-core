@@ -416,9 +416,10 @@ function BitcoinAddressAccount({ field }: { field: TextFieldHandler }): VNode {
         fullWidth
         value={value}
         error={value !== undefined && !!errors?.value}
+        disabled={!field.onInput}
         onChange={(v) => {
           setValue(v);
-          if (!errors) {
+          if (!errors && field.onInput) {
             field.onInput(`payto://bitcoin/${v}`);
           }
         }}
@@ -456,9 +457,10 @@ function TalerBankAddressAccount({
         fullWidth
         value={host}
         error={host !== undefined && !!errors?.host}
+        disabled={!field.onInput}
         onChange={(v) => {
           setHost(v);
-          if (!errors) {
+          if (!errors && field.onInput) {
             field.onInput(`payto://x-taler-bank/${v}/${account}`);
           }
         }}
@@ -470,11 +472,12 @@ function TalerBankAddressAccount({
         label="Bank account"
         variant="standard"
         fullWidth
+        disabled={!field.onInput}
         value={account}
         error={account !== undefined && !!errors?.account}
         onChange={(v) => {
           setAccount(v || "");
-          if (!errors) {
+          if (!errors && field.onInput) {
             field.onInput(`payto://x-taler-bank/${host}/${v}`);
           }
         }}
@@ -502,9 +505,10 @@ function IbanAddressAccount({ field }: { field: TextFieldHandler }): VNode {
         fullWidth
         value={number}
         error={number !== undefined && !!errors?.number}
+        disabled={!field.onInput}
         onChange={(v) => {
           setNumber(v);
-          if (!errors) {
+          if (!errors && field.onInput) {
             field.onInput(`payto://iban/${v}?receiver-name=${name}`);
           }
         }}
@@ -518,10 +522,13 @@ function IbanAddressAccount({ field }: { field: TextFieldHandler }): VNode {
         fullWidth
         value={name}
         error={name !== undefined && !!errors?.name}
+        disabled={!field.onInput}
         onChange={(v) => {
           setName(v);
-          if (!errors) {
-            field.onInput(`payto://iban/${number}?receiver-name=${encodeURIComponent(v)}`);
+          if (!errors && field.onInput) {
+            field.onInput(
+              `payto://iban/${number}?receiver-name=${encodeURIComponent(v)}`,
+            );
           }
         }}
       />

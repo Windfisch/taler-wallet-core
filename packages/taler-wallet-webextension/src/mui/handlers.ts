@@ -16,7 +16,7 @@
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 
 export interface TextFieldHandler {
-  onInput: (value: string) => Promise<void>;
+  onInput?: (value: string) => Promise<void>;
   value: string;
   error?: string;
 }

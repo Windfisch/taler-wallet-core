@@ -40,7 +40,9 @@ export interface Props {
   minRows?: number;
   multiline?: boolean;
   onChange?: (s: string) => void;
+  onInput?: (s: string) => string;
   min?: string;
+  step?: string;
   placeholder?: string;
   required?: boolean;
 

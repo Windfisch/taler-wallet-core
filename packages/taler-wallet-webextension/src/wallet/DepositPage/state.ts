@@ -49,7 +49,6 @@ export function useComponentState(
     parsed !== undefined ? Amounts.stringifyValue(parsed) : "0";
   // const [accountIdx, setAccountIdx] = useState<number>(0);
   const [amount, setAmount] = useState(initialValue);
-
   const [selectedAccount, setSelectedAccount] = useState<PaytoUri>();
 
   const [fee, setFee] = useState<DepositGroupFees | undefined>(undefined);
@@ -123,6 +122,16 @@ export function useComponentState(
   }
   const firstAccount = accounts[0].uri
   const currentAccount = !selectedAccount ? firstAccount : selectedAccount;
+
+  if (fee === undefined && parsedAmount) {
+    getFeeForAmount(currentAccount, parsedAmount, api).then(initialFee => {
+      setFee(initialFee)
+    })
+    return {
+      status: "loading",
+      error: undefined,
+    };
+  }
 
   const accountMap = createLabelsForBankAccount(accounts);
 

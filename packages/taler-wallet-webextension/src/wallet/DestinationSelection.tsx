@@ -19,6 +19,7 @@ import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { styled } from "@linaria/react";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
+import { AmountField } from "../components/AmountField.js";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
 import { SelectList } from "../components/SelectList.js";
@@ -32,6 +33,7 @@ import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { Button } from "../mui/Button.js";
 import { Grid } from "../mui/Grid.js";
+import { TextFieldHandler } from "../mui/handlers.js";
 import { Paper } from "../mui/Paper.js";
 import { TextField } from "../mui/TextField.js";
 import { Pages } from "../NavigationBar.js";
@@ -283,11 +285,6 @@ export function DestinationSelectionGetCash({
   const [currency, setCurrency] = useState(parsedInitialAmount?.currency);
 
   const [amount, setAmount] = useState(parsedInitialAmountValue);
-  function positiveSetAmount(e: string):void {
-    const value = Number.parseInt(e, 10);
-    if (value < 0) return
-    setAmount(String(value))
-  }
   const { i18n } = useTranslationContext();
   const previous1: Contact[] = [];
   const previous2: Contact[] = [
@@ -326,19 +323,13 @@ export function DestinationSelectionGetCash({
         <i18n.Translate>Specify the amount and the origin</i18n.Translate>
       </h1>
       <Grid container columns={2} justifyContent="space-between">
-        <TextField
-          label="Amount"
-          type="number"
-          min="0"
-          variant="filled"
-          error={invalid}
+        <AmountField
+          label={<i18n.Translate>Amount</i18n.Translate>}
+          currency={currency}
           required
-          startAdornment={
-            <div style={{ padding: "25px 12px 8px 12px" }}>{currency}</div>
-          }
-          value={amount}
-          onChange={(e) => {
-            setAmount(e);
+          handler={{
+            onInput: async (s) => setAmount(s),
+            value: amount,
           }}
         />
         <Button onClick={async () => setCurrency(undefined)}>
@@ -431,11 +422,6 @@ export function DestinationSelectionSendCash({
   const currency = parsedInitialAmount?.currency;
 
   const [amount, setAmount] = useState(parsedInitialAmountValue);
-  function positiveSetAmount(e: string):void {
-    const value = Number.parseInt(e, 10);
-    if (value < 0) return
-    setAmount(String(value))
-  }
   const { i18n } = useTranslationContext();
   const previous1: Contact[] = [];
   const previous2: Contact[] = [
@@ -474,19 +460,13 @@ export function DestinationSelectionSendCash({
       </h1>
 
       <div>
-        <TextField
-          label="Amount"
-          type="number"
-          min="0"
-          variant="filled"
+        <AmountField
+          label={<i18n.Translate>Amount</i18n.Translate>}
+          currency={currency}
           required
-          error={invalid}
-          startAdornment={
-            <div style={{ padding: "25px 12px 8px 12px" }}>{currency}</div>
-          }
-          value={amount}
-          onChange={(e) => {
-            positiveSetAmount(e);
+          handler={{
+            onInput: async (s) => setAmount(s),
+            value: amount,
           }}
         />
       </div>

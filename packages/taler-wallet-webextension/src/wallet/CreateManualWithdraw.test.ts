@@ -129,6 +129,8 @@ describe("CreateManualWithdraw states", () => {
 
       expect(parsedAmount).equal(undefined);
 
+      expect(amount.onInput).not.undefined;
+      if (!amount.onInput) return;
       amount.onInput("12");
     }
 
@@ -188,6 +190,8 @@ async function defaultTestForInputText(
     const field = getField();
     const initialValue = field.value;
     nextValue = `${initialValue} something else`;
+    expect(field.onInput).not.undefined;
+    if (!field.onInput) return;
     field.onInput(nextValue);
   }
 

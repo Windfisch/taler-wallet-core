@@ -260,7 +260,7 @@ export function CreateManualWithdraw({
                 <input
                   type="number"
                   value={state.amount.value}
-                  onInput={(e) => state.amount.onInput(e.currentTarget.value)}
+                  // onInput={(e) => state.amount.onInput(e.currentTarget.value)}
                 />
               </div>
             </InputWithLabel>

@@ -16,6 +16,7 @@
 
 import { Amounts, PaytoUri } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
+import { AmountField } from "../../components/AmountField.js";
 import { ErrorMessage } from "../../components/ErrorMessage.js";
 import { LoadingError } from "../../components/LoadingError.js";
 import { SelectList } from "../../components/SelectList.js";
@@ -28,6 +29,7 @@ import {
 } from "../../components/styled/index.js";
 import { useTranslationContext } from "../../context/translation.js";
 import { Button } from "../../mui/Button.js";
+import { Grid } from "../../mui/Grid.js";
 import { State } from "./index.js";
 
 export function LoadingErrorView({ error }: State.LoadingUriError): VNode {
@@ -167,48 +169,33 @@ export function ReadyView(state: State.Ready): VNode {
         <p>
           <AccountDetails account={state.currentAccount} />
         </p>
-        <InputWithLabel invalid={!!state.amount.error}>
-          <label>
-            <i18n.Translate>Amount</i18n.Translate>
-          </label>
-          <div>
-            <span>{state.currency}</span>
-            <input
-              type="number"
-              value={state.amount.value}
-              onInput={(e) => state.amount.onInput(e.currentTarget.value)}
+        <Grid container spacing={2} columns={1}>
+          <Grid item xs={1}>
+            <AmountField
+              label={<i18n.Translate>Amount</i18n.Translate>}
+              currency={state.currency}
+              handler={state.amount}
             />
-          </div>
-          {state.amount.error && <ErrorText>{state.amount.error}</ErrorText>}
-        </InputWithLabel>
-
-        <InputWithLabel>
-          <label>
-            <i18n.Translate>Deposit fee</i18n.Translate>
-          </label>
-          <div>
-            <span>{state.currency}</span>
-            <input
-              type="number"
-              disabled
-              value={Amounts.stringifyValue(state.totalFee)}
+          </Grid>
+          <Grid item xs={1}>
+            <AmountField
+              label={<i18n.Translate>Deposit fee</i18n.Translate>}
+              currency={state.currency}
+              handler={{
+                value: Amounts.stringifyValue(state.totalFee),
+              }}
             />
-          </div>
-        </InputWithLabel>
-
-        <InputWithLabel>
-          <label>
-            <i18n.Translate>Total deposit</i18n.Translate>
-          </label>
-          <div>
-            <span>{state.currency}</span>
-            <input
-              type="number"
-              disabled
-              value={Amounts.stringifyValue(state.totalToDeposit)}
+          </Grid>
+          <Grid item xs={1}>
+            <AmountField
+              label={<i18n.Translate>Total deposit</i18n.Translate>}
+              currency={state.currency}
+              handler={{
+                value: Amounts.stringifyValue(state.totalToDeposit),
+              }}
             />
-          </div>
-        </InputWithLabel>
+          </Grid>
+        </Grid>
       </section>
       <footer>
         <Button
