@@ -42,6 +42,7 @@ import { useEffect, useState } from "preact/hooks";
 import emptyImg from "../../static/img/empty.png";
 import { Amount } from "../components/Amount.js";
 import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType.js";
+import { CopyButton } from "../components/CopyButton.js";
 import { ErrorTalerOperation } from "../components/ErrorTalerOperation.js";
 import { Loading } from "../components/Loading.js";
 import { LoadingError } from "../components/LoadingError.js";
@@ -293,6 +294,39 @@ export function TransactionView({
               )}
               subject={transaction.withdrawalDetails.reservePub}
             />
+            <table>
+              <tbody>
+                <tr>
+                  <td>
+                    <pre>
+                      <b>
+                        <a
+                          target="_bank"
+                          rel="noreferrer"
+                          title="RFC 8905 for designating targets for payments"
+                          href="https://tools.ietf.org/html/rfc8905"
+                        >
+                          Payto URI
+                        </a>
+                      </b>
+                    </pre>
+                  </td>
+                  <td width="100%">
+                    {transaction.withdrawalDetails.exchangePaytoUris[0]}
+                  </td>
+                  <td>
+                    <CopyButton
+                      getContent={() =>
+                        transaction.withdrawalDetails.type ===
+                        WithdrawalType.ManualTransfer
+                          ? transaction.withdrawalDetails.exchangePaytoUris[0]
+                          : ""
+                      }
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
             <WarningBox>
               <i18n.Translate>
                 Make sure to use the correct subject, otherwise the money will

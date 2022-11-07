@@ -21,11 +21,11 @@ import {
   segwitMinAmount,
 } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { useTranslationContext } from "../context/translation.js";
 import { CopiedIcon, CopyIcon } from "../svg/index.js";
 import { Amount } from "./Amount.js";
-import { ButtonBox, TooltipLeft, TooltipRight } from "./styled/index.js";
+import { ButtonBox, TooltipLeft } from "./styled/index.js";
 
 export interface BankDetailsProps {
   payto: PaytoUri | undefined;
@@ -123,9 +123,9 @@ export function BankDetailsByPaytoType({
     </Fragment>
   ) : payto.targetType === "iban" ? (
     <Fragment>
-      {payto.bic !== undefined ? 
+      {payto.bic !== undefined ? (
         <Row name={<i18n.Translate>BIC</i18n.Translate>} value={payto.bic} />
-      : undefined}
+      ) : undefined}
       <Row name={<i18n.Translate>IBAN</i18n.Translate>} value={payto.iban} />
     </Fragment>
   ) : undefined;

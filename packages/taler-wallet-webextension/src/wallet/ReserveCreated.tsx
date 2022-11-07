@@ -17,6 +17,7 @@ import { AmountJson, PaytoUri, stringifyPaytoUri } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { Amount } from "../components/Amount.js";
 import { BankDetailsByPaytoType } from "../components/BankDetailsByPaytoType.js";
+import { CopyButton } from "../components/CopyButton.js";
 import { ErrorMessage } from "../components/ErrorMessage.js";
 import { QR } from "../components/QR.js";
 import { Title, WarningBox } from "../components/styled/index.js";
@@ -56,6 +57,30 @@ export function ReserveCreated({
           payto={paytoURI}
           subject={reservePub}
         />
+        <table>
+          <tbody>
+            <tr>
+              <td>
+                <pre>
+                  <b>
+                    <a
+                      target="_bank"
+                      rel="noreferrer"
+                      title="RFC 8905 for designating targets for payments"
+                      href="https://tools.ietf.org/html/rfc8905"
+                    >
+                      Payto URI
+                    </a>
+                  </b>
+                </pre>
+              </td>
+              <td width="100%">{stringifyPaytoUri(paytoURI)}</td>
+              <td>
+                <CopyButton getContent={() => stringifyPaytoUri(paytoURI)} />
+              </td>
+            </tr>
+          </tbody>
+        </table>
         <p>
           <WarningBox>
             <i18n.Translate>
