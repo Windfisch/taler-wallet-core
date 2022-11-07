@@ -367,16 +367,14 @@ type RawPaytoInputType = string;
 type RawPaytoInputTypeOpt = RawPaytoInputType | undefined;
 function useRawPaytoInputType(
   state?: RawPaytoInputType,
-): [RawPaytoInputTypeOpt, StateUpdater<RawPaytoInputTypeOpt>, boolean] {
+): [RawPaytoInputTypeOpt, StateUpdater<RawPaytoInputTypeOpt>] {
   const ret = useLocalStorage("raw-payto-input-state", state);
-  const [dirty, setDirty] = useState(false);
   const retObj: RawPaytoInputTypeOpt = ret[0];
   const retSetter: StateUpdater<RawPaytoInputTypeOpt> = function (val) {
     const newVal = val instanceof Function ? val(retObj) : val;
-    setDirty(true);
     ret[1](newVal);
   };
-  return [retObj, retSetter, dirty];
+  return [retObj, retSetter];
 }
 
 /**
@@ -1156,8 +1154,10 @@ function PaytoWireTransfer(Props: any): VNode {
   const currency = useContext(CurrencyContext);
   const [pageState, pageStateSetter] = useContext(PageContext); // NOTE: used for go-back button?
   const [submitData, submitDataSetter] = useWireTransferRequestType();
-  const [rawPaytoInput, rawPaytoInputSetter, rawPaytoInputDirty] =
-    useRawPaytoInputType();
+  // const [rawPaytoInput, rawPaytoInputSetter] = useRawPaytoInputType();
+  const [rawPaytoInput, rawPaytoInputSetter] = useState<string | undefined>(
+    undefined,
+  );
   const i18n = useTranslator();
   const { focus, backendState } = Props;
   const amountRegex = "^[0-9]+(.[0-9]+)?$";
@@ -1339,7 +1339,7 @@ function PaytoWireTransfer(Props: any): VNode {
         </div>
         <p>
           <a
-            href="#"
+            href="/account"
             onClick={() => {
               console.log("switch to raw payto form");
               pageStateSetter((prevState: any) => ({
@@ -1374,7 +1374,7 @@ function PaytoWireTransfer(Props: any): VNode {
             size={50}
             ref={ref}
             id="address"
-            value={rawPaytoInput}
+            value={rawPaytoInput ?? ""}
             required
             placeholder={i18n`payto address`}
             // pattern={`payto://iban/[A-Z][A-Z][0-9]+?message=[a-zA-Z0-9 ]+&amount=${currency}:[0-9]+(.[0-9]+)?`}
@@ -1384,7 +1384,7 @@ function PaytoWireTransfer(Props: any): VNode {
           />
           <ShowInputErrorLabel
             message={errorsPayto?.rawPaytoInput}
-            isDirty={rawPaytoInputDirty}
+            isDirty={rawPaytoInput !== undefined}
           />
           <br />
           <div class="hint">
@@ -1418,14 +1418,14 @@ function PaytoWireTransfer(Props: any): VNode {
                 transactionData,
                 backendState,
                 pageStateSetter,
-                () => rawPaytoInputSetter((p) => ""),
+                () => rawPaytoInputSetter(undefined),
               );
             }}
           />
         </p>
         <p>
           <a
-            href="#"
+            href="/account"
             onClick={() => {
               console.log("switch to wire-transfer-form");
               pageStateSetter((prevState: any) => ({
@@ -2557,7 +2557,6 @@ function AccountPage(): VNode {
 
 function Redirect({ to }: { to: string }): VNode {
   useEffect(() => {
-    debugger;
     route(to, true);
   }, []);
   return <div>being redirected to {to}</div>;
