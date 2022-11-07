@@ -17,8 +17,8 @@
 import { ComponentChildren, Fragment, h, VNode } from "preact";
 import Match from "preact-router/match";
 import { useEffect, useState } from "preact/hooks";
-import { NavigationBar } from "./NavigationBar";
-import { Sidebar } from "./SideBar";
+import { NavigationBar } from "./NavigationBar.js";
+import { Sidebar } from "./SideBar.js";
 
 interface MenuProps {
   title: string;

@@ -32,6 +32,8 @@ import { useLocalStorage, useNotNullLocalStorage } from "../../hooks/index.js";
 import { Translate, useTranslator } from "../../i18n/index.js";
 import "../../scss/main.scss";
 import { Amounts, HttpStatusCode, parsePaytoUri } from "@gnu-taler/taler-util";
+import { createHashHistory } from "history";
+import Router, { Route, route } from "preact-router";
 
 interface BankUiSettings {
   allowRegistrations: boolean;
@@ -94,7 +96,7 @@ const PageContextDefault: PageContextType = [
     isLoggedIn: false,
     isRawPayto: false,
     showPublicHistories: false,
-    tryRegister: false,
+
     withdrawalInProgress: false,
   },
   () => {
@@ -158,7 +160,6 @@ interface WireTransferRequestType {
 interface PageStateType {
   isLoggedIn: boolean;
   isRawPayto: boolean;
-  tryRegister: boolean;
   showPublicHistories: boolean;
   hasError: boolean;
   hasInfo: boolean;
@@ -480,7 +481,6 @@ function usePageState(
   state: PageStateType = {
     isLoggedIn: false,
     isRawPayto: false,
-    tryRegister: false,
     showPublicHistories: false,
     hasError: false,
     hasInfo: false,
@@ -502,17 +502,18 @@ function usePageState(
   //when moving from one page to another
   //clean up the info and error bar
   function removeLatestInfo(val: any): ReturnType<typeof retSetter> {
-    const updater = typeof val === 'function' ? val : (c:any) => val
-    return retSetter((current:any) => {
-      const cleanedCurrent: PageStateType = {...current, 
-        hasInfo: false, 
-        info: undefined, 
-        hasError: false, 
-        errors: undefined, 
-        timestamp: new Date().getTime() 
-      }
-      return updater(cleanedCurrent)
-    })
+    const updater = typeof val === "function" ? val : (c: any) => val;
+    return retSetter((current: any) => {
+      const cleanedCurrent: PageStateType = {
+        ...current,
+        hasInfo: false,
+        info: undefined,
+        hasError: false,
+        errors: undefined,
+        timestamp: new Date().getTime(),
+      };
+      return updater(cleanedCurrent);
+    });
   }
 
   return [retObj, removeLatestInfo];
@@ -926,7 +927,7 @@ async function registrationCall(
   const headers = new Headers();
   headers.append("Content-Type", "application/json");
   const url = new URL("access-api/testing/register", baseUrl);
-  let res: any;
+  let res: Response;
   try {
     res = await fetch(url.href, {
       method: "POST",
@@ -953,19 +954,30 @@ async function registrationCall(
   }
   if (!res.ok) {
     const response = await res.json();
-    pageStateSetter((prevState) => ({
-      ...prevState,
-      hasError: true,
-      error: {
-        title: `New registration gave response error`,
-        debug: JSON.stringify(response),
-      },
-    }));
+    if (res.status === 409) {
+      pageStateSetter((prevState) => ({
+        ...prevState,
+        hasError: true,
+        error: {
+          title: `That username is already taken`,
+          debug: JSON.stringify(response),
+        },
+      }));
+    } else {
+      pageStateSetter((prevState) => ({
+        ...prevState,
+        hasError: true,
+        error: {
+          title: `New registration gave response error`,
+          debug: JSON.stringify(response),
+        },
+      }));
+    }
   } else {
+    // registration was ok
     pageStateSetter((prevState) => ({
       ...prevState,
       isLoggedIn: true,
-      tryRegister: false,
     }));
     backendStateSetter((prevState) => ({
       ...prevState,
@@ -973,6 +985,7 @@ async function registrationCall(
       username: req.username,
       password: req.password,
     }));
+    route("/account");
   }
 }
 
@@ -1072,7 +1085,10 @@ function BankFrame(Props: any): VNode {
                 This part of the demo shows how a bank that supports Taler
                 directly would work. In addition to using your own bank account,
                 you can also see the transaction history of some{" "}
-                <a href="#" onClick={goPublicAccounts(pageStateSetter)}>
+                <a
+                  href="/public-accounts"
+                  onClick={goPublicAccounts(pageStateSetter)}
+                >
                   Public Accounts
                 </a>
                 .
@@ -1215,7 +1231,7 @@ function PaytoWireTransfer(Props: any): VNode {
               name="subject"
               id="subject"
               placeholder="subject"
-              value={submitData?.subject  ?? ""}
+              value={submitData?.subject ?? ""}
               required
               onInput={(e): void => {
                 submitDataSetter((submitData: any) => ({
@@ -1237,7 +1253,7 @@ function PaytoWireTransfer(Props: any): VNode {
               id="amount"
               placeholder="amount"
               required
-              value={submitData?.amount  ?? ""}
+              value={submitData?.amount ?? ""}
               pattern={amountRegex}
               onInput={(e): void => {
                 submitDataSetter((submitData: any) => ({
@@ -1298,11 +1314,12 @@ function PaytoWireTransfer(Props: any): VNode {
                   transactionData,
                   backendState,
                   pageStateSetter,
-                  () => submitDataSetter((p) => ({
-                    amount: undefined,
-                    iban: undefined,
-                    subject: undefined,
-                  })),
+                  () =>
+                    submitDataSetter((p) => ({
+                      amount: undefined,
+                      iban: undefined,
+                      subject: undefined,
+                    })),
                 );
               }}
             />
@@ -1537,7 +1554,7 @@ function QrCodeSection({
     //Taler Wallet WebExtension is listening to headers response and tab updates.
     //In the SPA there is no header response with the Taler URI so
     //this hack manually triggers the tab update after the QR is in the DOM.
-    window.location.href = `${window.location.href.split("#")[0]}#`;
+    window.location.hash = `/account/${new Date().getTime()}`;
   }, []);
 
   return (
@@ -1786,10 +1803,7 @@ function RegistrationButton(Props: any): VNode {
       <button
         class="pure-button pure-button-secondary btn-cancel"
         onClick={() => {
-          pageStateSetter((prevState: PageStateType) => ({
-            ...prevState,
-            tryRegister: true,
-          }));
+          route("/register");
         }}
       >
         {i18n`Register`}
@@ -1816,14 +1830,12 @@ function LoginForm(Props: any): VNode {
     ref.current?.focus();
   }, []);
 
-  const errors = !submitData ? undefined : undefinedIfEmpty({
-    username: !submitData.username
-      ? i18n`Missing username`
-      : undefined,
-    password: !submitData.password
-      ? i18n`Missing password`
-      : undefined,
-  });
+  const errors = !submitData
+    ? undefined
+    : undefinedIfEmpty({
+        username: !submitData.username ? i18n`Missing username` : undefined,
+        password: !submitData.password ? i18n`Missing password` : undefined,
+      });
 
   return (
     <div class="login-div">
@@ -1893,7 +1905,7 @@ function LoginForm(Props: any): VNode {
               submitDataSetter({
                 password: "",
                 repeatPassword: "",
-                username:"",
+                username: "",
               });
             }}
           >
@@ -2043,10 +2055,7 @@ function RegistrationForm(Props: any): VNode {
                     password: "",
                     repeatPassword: "",
                   });
-                  pageStateSetter((prevState: PageStateType) => ({
-                    ...prevState,
-                    tryRegister: false,
-                  }));
+                  route("/account");
                 }}
               >
                 {i18n`Cancel`}
@@ -2069,8 +2078,8 @@ function Transactions(Props: any): VNode {
     `access-api/accounts/${accountLabel}/transactions?page=${pageNumber}`,
   );
   useEffect(() => {
-    mutate()
-  }, [balanceValue])
+    mutate();
+  }, [balanceValue]);
   if (typeof error !== "undefined") {
     console.log("transactions not found error", error);
     switch (error.status) {
@@ -2152,12 +2161,17 @@ function Account(Props: any): VNode {
     // revalidateOnReconnect: false,
   });
   const [pageState, setPageState] = useContext(PageContext);
-  const { withdrawalInProgress, withdrawalId, isLoggedIn, talerWithdrawUri, timestamp } =
-    pageState;
+  const {
+    withdrawalInProgress,
+    withdrawalId,
+    isLoggedIn,
+    talerWithdrawUri,
+    timestamp,
+  } = pageState;
   const i18n = useTranslator();
   useEffect(() => {
-    mutate()
-  }, [timestamp])
+    mutate();
+  }, [timestamp]);
 
   /**
    * This part shows a list of transactions: with 5 elements by
@@ -2294,7 +2308,11 @@ function Account(Props: any): VNode {
       <section id="main">
         <article>
           <h2>{i18n`Latest transactions:`}</h2>
-          <Transactions balanceValue={balanceValue} pageNumber="0" accountLabel={accountLabel} />
+          <Transactions
+            balanceValue={balanceValue}
+            pageNumber="0"
+            accountLabel={accountLabel}
+          />
         </article>
       </section>
     </BankFrame>
@@ -2440,50 +2458,39 @@ function PublicHistories(Props: any): VNode {
   );
 }
 
-/**
- * If the user is logged in, it displays
- * the balance, otherwise it offers to login.
- */
-export function BankHome(): VNode {
+function PublicHistoriesPage(): VNode {
+  // const [backendState, backendStateSetter] = useBackendState();
+  const [pageState, pageStateSetter] = usePageState();
+  // const i18n = useTranslator();
+  return (
+    <SWRWithoutCredentials baseUrl={getBankBackendBaseUrl()}>
+      <PageContext.Provider value={[pageState, pageStateSetter]}>
+        <BankFrame>
+          <PublicHistories pageStateSetter={pageStateSetter}>
+            <br />
+            <a
+              class="pure-button"
+              onClick={() => {
+                pageStateSetter((prevState: PageStateType) => ({
+                  ...prevState,
+                  showPublicHistories: false,
+                }));
+              }}
+            >
+              Go back
+            </a>
+          </PublicHistories>
+        </BankFrame>
+      </PageContext.Provider>
+    </SWRWithoutCredentials>
+  );
+}
+
+function RegistrationPage(): VNode {
   const [backendState, backendStateSetter] = useBackendState();
   const [pageState, pageStateSetter] = usePageState();
   const i18n = useTranslator();
-
-  if (pageState.showPublicHistories)
-    return (
-      <SWRWithoutCredentials baseUrl={getBankBackendBaseUrl()}>
-        <PageContext.Provider value={[pageState, pageStateSetter]}>
-          <BankFrame>
-            <PublicHistories pageStateSetter={pageStateSetter}>
-              <br />
-              <a
-                class="pure-button"
-                onClick={() => {
-                  pageStateSetter((prevState: PageStateType) => ({
-                    ...prevState,
-                    showPublicHistories: false,
-                  }));
-                }}
-              >
-                Go back
-              </a>
-            </PublicHistories>
-          </BankFrame>
-        </PageContext.Provider>
-      </SWRWithoutCredentials>
-    );
-
-  if (pageState.tryRegister) {
-    console.log("allow registrations?", bankUiSettings.allowRegistrations);
-    if (bankUiSettings.allowRegistrations)
-      return (
-        <PageContext.Provider value={[pageState, pageStateSetter]}>
-          <BankFrame>
-            <RegistrationForm backendStateSetter={backendStateSetter} />
-          </BankFrame>
-        </PageContext.Provider>
-      );
-
+  if (!bankUiSettings.allowRegistrations) {
     return (
       <PageContext.Provider value={[pageState, pageStateSetter]}>
         <BankFrame>
@@ -2492,44 +2499,82 @@ export function BankHome(): VNode {
       </PageContext.Provider>
     );
   }
-  if (pageState.isLoggedIn) {
-    if (typeof backendState === "undefined") {
-      pageStateSetter((prevState) => ({
-        ...prevState,
-        hasError: true,
-        isLoggedIn: false,
-        error: {
-          title: i18n`Page has a problem: logged in but backend state is lost.`,
-        },
-      }));
-      return <p>Error: waiting for details...</p>;
-    }
-    console.log("Showing the profile page..");
-    return (
-      <SWRWithCredentials
-        username={backendState.username}
-        password={backendState.password}
-        backendUrl={backendState.url}
-      >
-        <PageContext.Provider value={[pageState, pageStateSetter]}>
-          <Account
-            accountLabel={backendState.username}
-            backendState={backendState}
-          />
-        </PageContext.Provider>
-      </SWRWithCredentials>
-    );
-  } // end of logged-in state.
-
   return (
     <PageContext.Provider value={[pageState, pageStateSetter]}>
       <BankFrame>
-        <h1 class="nav">{i18n`Welcome to ${bankUiSettings.bankName}!`}</h1>
-        <LoginForm
-          pageStateSetter={pageStateSetter}
-          backendStateSetter={backendStateSetter}
-        />
+        <RegistrationForm backendStateSetter={backendStateSetter} />
       </BankFrame>
     </PageContext.Provider>
+  );
+}
+
+function AccountPage(): VNode {
+  const [backendState, backendStateSetter] = useBackendState();
+  const [pageState, pageStateSetter] = usePageState();
+  const i18n = useTranslator();
+
+  if (!pageState.isLoggedIn) {
+    return (
+      <PageContext.Provider value={[pageState, pageStateSetter]}>
+        <BankFrame>
+          <h1 class="nav">{i18n`Welcome to ${bankUiSettings.bankName}!`}</h1>
+          <LoginForm
+            pageStateSetter={pageStateSetter}
+            backendStateSetter={backendStateSetter}
+          />
+        </BankFrame>
+      </PageContext.Provider>
+    );
+  }
+
+  if (typeof backendState === "undefined") {
+    pageStateSetter((prevState) => ({
+      ...prevState,
+      hasError: true,
+      isLoggedIn: false,
+      error: {
+        title: i18n`Page has a problem: logged in but backend state is lost.`,
+      },
+    }));
+    return <p>Error: waiting for details...</p>;
+  }
+  console.log("Showing the profile page..");
+  return (
+    <SWRWithCredentials
+      username={backendState.username}
+      password={backendState.password}
+      backendUrl={backendState.url}
+    >
+      <PageContext.Provider value={[pageState, pageStateSetter]}>
+        <Account
+          accountLabel={backendState.username}
+          backendState={backendState}
+        />
+      </PageContext.Provider>
+    </SWRWithCredentials>
+  );
+}
+
+function Redirect({ to }: { to: string }): VNode {
+  useEffect(() => {
+    debugger;
+    route(to, true);
+  }, []);
+  return <div>being redirected to {to}</div>;
+}
+
+/**
+ * If the user is logged in, it displays
+ * the balance, otherwise it offers to login.
+ */
+export function BankHome(): VNode {
+  const history = createHashHistory();
+  return (
+    <Router history={history}>
+      <Route path="/public-accounts" component={PublicHistoriesPage} />
+      <Route path="/register" component={RegistrationPage} />
+      <Route path="/account/:id*" component={AccountPage} />
+      <Route default component={Redirect} to="/account" />
+    </Router>
   );
 }

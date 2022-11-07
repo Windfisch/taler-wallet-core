@@ -105,6 +105,7 @@ importers:
       esbuild-sass-plugin: ^2.4.0
       eslint: ^8.26.0
       eslint-config-preact: ^1.2.0
+      history: 4.10.1
       jed: 1.1.1
       po2json: ^0.4.5
       preact: 10.6.5
@@ -117,6 +118,7 @@ importers:
     dependencies:
       '@gnu-taler/taler-util': link:../taler-util
       date-fns: 2.29.3
+      history: 4.10.1
       jed: 1.1.1
       preact: 10.6.5
       preact-router: 3.2.1_preact@10.6.5
