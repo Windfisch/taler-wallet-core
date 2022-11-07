@@ -311,7 +311,7 @@ export function TransactionView({
                       </b>
                     </pre>
                   </td>
-                  <td width="100%">
+                  <td width="100%" style={{ wordBreak: "break-all" }}>
                     {transaction.withdrawalDetails.exchangePaytoUris[0]}
                   </td>
                   <td>

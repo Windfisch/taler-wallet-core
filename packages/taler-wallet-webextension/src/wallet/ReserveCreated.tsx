@@ -74,7 +74,9 @@ export function ReserveCreated({
                   </b>
                 </pre>
               </td>
-              <td width="100%">{stringifyPaytoUri(paytoURI)}</td>
+              <td width="100%" style={{ wordBreak: "break-all" }}>
+                {stringifyPaytoUri(paytoURI)}
+              </td>
               <td>
                 <CopyButton getContent={() => stringifyPaytoUri(paytoURI)} />
               </td>
