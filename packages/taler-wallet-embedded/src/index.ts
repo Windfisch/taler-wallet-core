@@ -39,11 +39,14 @@ import {
   CoreApiEnvelope,
   CoreApiResponse,
   CoreApiResponseSuccess,
+  Logger,
   WalletNotification,
 } from "@gnu-taler/taler-util";
 import fs from "fs";
 
 export { handleWorkerError, handleWorkerMessage };
+
+const logger = new Logger("taler-wallet-embedded/index.ts");
 
 export class NativeHttpLib implements HttpRequestLibrary {
   useNfcTunnel = false;
@@ -111,7 +114,7 @@ export class NativeHttpLib implements HttpRequestLibrary {
     const myId = msg.id;
     const p = this.requestMap[myId];
     if (!p) {
-      console.error(
+      logger.error(
         `no matching request for tunneled HTTP response, id=${myId}`,
       );
     }
@@ -143,7 +146,7 @@ function sendNativeMessage(ev: CoreApiEnvelope): void {
   if (typeof sendMessage !== "function") {
     const errMsg =
       "FATAL: cannot install native wallet listener: native functions missing";
-    console.error(errMsg);
+    logger.error(errMsg);
     throw new Error(errMsg);
   }
   const m = JSON.stringify(ev);
@@ -177,7 +180,7 @@ class NativeWalletMessageHandler {
     let initResponse: any = {};
 
     const reinit = async () => {
-      console.error("in reinit");
+      logger.info("in reinit");
       const w = await getDefaultNodeWallet(this.walletArgs);
       this.maybeWallet = w;
       const resp = await w.handleCoreApiRequest(
@@ -187,7 +190,9 @@ class NativeWalletMessageHandler {
       );
       initResponse = resp.type == "response" ? resp.result : resp.error;
       w.runTaskLoop().catch((e) => {
-        console.error("Error during wallet retry loop", e);
+        logger.error(
+          `Error during wallet retry loop: ${e.stack ?? e.toString()}`,
+        );
       });
       this.wp.resolve(w);
     };
@@ -226,7 +231,7 @@ class NativeWalletMessageHandler {
           try {
             fs.unlinkSync(oldArgs.persistentStoragePath);
           } catch (e) {
-            console.error("Error while deleting the wallet db:", e);
+            logger.error("Error while deleting the wallet db:", e);
           }
           // Prevent further storage!
           this.walletArgs.persistentStoragePath = undefined;
@@ -250,23 +255,23 @@ export function installNativeWalletListener(): void {
   const handler = new NativeWalletMessageHandler();
   const onMessage = async (msgStr: any): Promise<void> => {
     if (typeof msgStr !== "string") {
-      console.error("expected string as message");
+      logger.error("expected string as message");
       return;
     }
     const msg = JSON.parse(msgStr);
     const operation = msg.operation;
     if (typeof operation !== "string") {
-      console.error(
+      logger.error(
         "message to native wallet helper must contain operation of type string",
       );
       return;
     }
     const id = msg.id;
-    console.log(`native listener: got request for ${operation} (${id})`);
+    logger.info(`native listener: got request for ${operation} (${id})`);
 
     try {
       const respMsg = await handler.handleMessage(operation, id, msg.args);
-      console.log(
+      logger.info(
         `native listener: sending success response for ${operation} (${id})`,
       );
       sendNativeMessage(respMsg);
@@ -285,5 +290,5 @@ export function installNativeWalletListener(): void {
   // @ts-ignore
   globalThis.__native_onMessage = onMessage;
 
-  console.log("native wallet listener installed");
+  logger.info("native wallet listener installed");
 }
