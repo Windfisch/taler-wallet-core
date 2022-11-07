@@ -28,7 +28,7 @@ export interface Props {
   disabled?: boolean;
   disableUnderline?: boolean;
   endAdornment?: VNode;
-  error?: boolean;
+  error?: string;
   fullWidth?: boolean;
   id?: string;
   margin?: "dense" | "normal" | "none";
@@ -128,7 +128,7 @@ function Root({ fullWidth, disabled, focused, error, children }: any): VNode {
   return (
     <InputBaseRoot
       disabled={disabled}
-      focused={focused}
+      focused={focused ? true : undefined}
       fullWidth={fullWidth}
       error={error}
       class={[rootStyle, formControlStyle, underlineStyle].join(" ")}

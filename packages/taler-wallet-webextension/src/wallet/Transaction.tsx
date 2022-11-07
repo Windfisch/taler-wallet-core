@@ -1343,7 +1343,7 @@ function DepositDetails({
   const { i18n } = useTranslationContext();
   const r = Amounts.parseOrThrow(transaction.amountRaw);
   const e = Amounts.parseOrThrow(transaction.amountEffective);
-  const fee = Amounts.sub(r, e).amount;
+  const fee = Amounts.sub(e, r).amount;
 
   const maxFrac = [r, e, fee]
     .map((a) => Amounts.maxFractionalDigits(a))
@@ -1366,7 +1366,7 @@ function DepositDetails({
             <i18n.Translate>Transaction fees</i18n.Translate>
           </td>
           <td>
-            <Amount value={fee} negative maxFracSize={maxFrac} />
+            <Amount value={fee} maxFracSize={maxFrac} />
           </td>
         </tr>
       )}

@@ -22,7 +22,7 @@ import { Colors } from "../style";
 export interface Props {
   color: Colors;
   disabled: boolean;
-  error: boolean;
+  error?: string;
   focused: boolean;
   fullWidth: boolean;
   hiddenLabel: boolean;
@@ -64,7 +64,7 @@ export const FormControlContext = createContext<FCCProps | null>(null);
 export function FormControl({
   color = "primary",
   disabled = false,
-  error = false,
+  error = undefined,
   focused: visuallyFocused,
   fullWidth = false,
   hiddenLabel = false,
@@ -75,9 +75,9 @@ export function FormControl({
   children,
 }: Partial<Props>): VNode {
   const [filled, setFilled] = useState(false);
-  const [focusedState, setFocused] = useState(false);
+  const [focusedState, setFocused] = useState(visuallyFocused);
   const focused =
-    visuallyFocused !== undefined && !disabled ? visuallyFocused : focusedState;
+    focusedState !== undefined && !disabled ? focusedState : false;
 
   const value: FCCProps = {
     color,
@@ -124,7 +124,7 @@ export interface FCCProps {
   // setAdornedStart,
   color: Colors;
   disabled: boolean;
-  error: boolean;
+  error: string | undefined;
   filled: boolean;
   focused: boolean;
   fullWidth: boolean;
@@ -142,7 +142,7 @@ export interface FCCProps {
 const defaultContextValue: FCCProps = {
   color: "primary",
   disabled: false,
-  error: false,
+  error: undefined,
   filled: false,
   focused: false,
   fullWidth: false,
@@ -159,7 +159,7 @@ const defaultContextValue: FCCProps = {
 function withoutUndefinedProperties(obj: any): any {
   return Object.keys(obj).reduce((acc, key) => {
     const _acc: any = acc;
-    if (obj[key] !== undefined) _acc[key] = obj[key];
+    if (obj[key] !== undefined && obj[key] !== false) _acc[key] = obj[key];
     return _acc;
   }, {});
 }

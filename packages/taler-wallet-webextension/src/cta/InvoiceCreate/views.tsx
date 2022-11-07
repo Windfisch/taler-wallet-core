@@ -78,7 +78,7 @@ export function ReadyView({
         <TextField
           label="Subject"
           variant="filled"
-          error={!!subject.error}
+          error={subject.error}
           required
           fullWidth
           value={subject.value}

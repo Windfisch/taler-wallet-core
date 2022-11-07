@@ -22,7 +22,7 @@ import { useFormControl } from "./FormControl.js";
 export interface Props {
   class?: string;
   disabled?: boolean;
-  error?: boolean;
+  error?: string;
   filled?: boolean;
   focused?: boolean;
   required?: boolean;
@@ -67,9 +67,9 @@ export function FormLabel({
   });
   return (
     <label
-      data-focused={fcs.focused}
+      data-focused={!fcs.focused ? undefined : true}
       data-error={!fcs.error ? undefined : true}
-      data-disabled={fcs.disabled}
+      data-disabled={!fcs.disabled ? undefined : true}
       class={[_class, root, theme.typography.body1].join(" ")}
       {...rest}
       style={{

@@ -30,7 +30,7 @@ export interface Props {
   autoFocus?: boolean;
   color?: Colors;
   disabled?: boolean;
-  error?: boolean;
+  error?: string;
   fullWidth?: boolean;
   helperText?: VNode | string;
   id?: string;
@@ -85,7 +85,12 @@ export function TextField({
     <FormControl {...props}>
       {label && <InputLabel>{label}</InputLabel>}
       <Input {...props}>{children}</Input>
-      {helperText && <FormHelperText>{helperText}</FormHelperText>}
+      {helperText && (
+        <FormHelperText error={props.error}>{helperText}</FormHelperText>
+      )}
+      {props.error ? (
+        <FormHelperText error="true">{props.error}</FormHelperText>
+      ) : undefined}
     </FormControl>
   );
 }

@@ -194,8 +194,9 @@ export const AddingIbanAccount = createExample(ReadyView, {
         uri: {
           targetType: "iban",
           iban: "ASDQWEQWE",
+          bic: "SANDBOX",
           isKnown: true,
-          targetPath: "/ASDQWEQWE",
+          targetPath: "SANDBOX/ASDQWEQWE",
           params: {},
         },
       },

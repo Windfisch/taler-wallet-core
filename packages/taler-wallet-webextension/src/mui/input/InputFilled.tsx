@@ -27,7 +27,7 @@ export interface Props {
   defaultValue?: string;
   disabled?: boolean;
   disableUnderline?: boolean;
-  error?: boolean;
+  error?: string;
   fullWidth?: boolean;
   id?: string;
   margin?: "dense" | "normal" | "none";
@@ -176,7 +176,7 @@ function Root({
   return (
     <InputBaseRoot
       disabled={disabled}
-      focused={focused}
+      focused={focused ? true : undefined}
       fullWidth={fullWidth}
       multiline={multiline}
       error={error}

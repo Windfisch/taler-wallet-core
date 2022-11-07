@@ -90,7 +90,7 @@ interface InputLabelProps {
   color: Colors;
   disableAnimation: boolean;
   disabled: boolean;
-  error: boolean;
+  error?: string;
   focused: boolean;
   margin: boolean;
   required: boolean;
@@ -104,8 +104,8 @@ export function InputLabel(props: Partial<InputLabelProps>): VNode {
     <FormLabel
       data-form-control={!!fcs}
       data-size={fcs.size}
-      data-shrink={props.shrink || fcs.filled || fcs.focused}
-      data-disable-animation={props.disableAnimation}
+      data-shrink={props.shrink || fcs.filled || fcs.focused ? true : undefined}
+      data-disable-animation={props.disableAnimation ? true : undefined}
       data-variant={fcs.variant}
       class={root}
       {...props}

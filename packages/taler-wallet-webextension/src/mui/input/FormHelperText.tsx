@@ -43,7 +43,7 @@ const containedStyle = css`
 
 interface Props {
   disabled?: boolean;
-  error?: boolean;
+  error?: string;
   filled?: boolean;
   focused?: boolean;
   margin?: "dense";

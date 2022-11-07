@@ -45,23 +45,20 @@ export function AmountField({
     return handler.value;
   }
   return (
-    <Fragment>
-      <TextField
-        label={label}
-        type="number"
-        min="0"
-        step="0.1"
-        variant="filled"
-        error={!!handler.error}
-        required={required}
-        startAdornment={
-          <div style={{ padding: "25px 12px 8px 12px" }}>{currency}</div>
-        }
-        value={handler.value}
-        disabled={!handler.onInput}
-        onInput={positiveAmount}
-      />
-      {handler.error && <ErrorText>{handler.error}</ErrorText>}
-    </Fragment>
+    <TextField
+      label={label}
+      type="number"
+      min="0"
+      step="0.1"
+      variant="filled"
+      error={handler.error}
+      required={required}
+      startAdornment={
+        <div style={{ padding: "25px 12px 8px 12px" }}>{currency}</div>
+      }
+      value={handler.value}
+      disabled={!handler.onInput}
+      onInput={positiveAmount}
+    />
   );
 }

@@ -23,7 +23,6 @@ import {
 import { styled } from "@linaria/react";
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { ErrorMessage } from "../../components/ErrorMessage.js";
 import { LoadingError } from "../../components/LoadingError.js";
 import { SelectList } from "../../components/SelectList.js";
 import {
@@ -41,6 +40,7 @@ import checkIcon from "../../svg/check_24px.svg";
 import warningIcon from "../../svg/warning_24px.svg";
 import deleteIcon from "../../svg/delete_24px.svg";
 import { State } from "./index.js";
+import { ErrorMessage } from "../../components/ErrorMessage.js";
 
 type AccountType = "bitcoin" | "x-taler-bank" | "iban";
 type ComponentFormByAccountType = {
@@ -143,9 +143,9 @@ export function ReadyView({
             </p>
             <p>
               <TextField
-                label="Account alias"
-                variant="standard"
-                required
+                label="Alias"
+                variant="filled"
+                placeholder="Easy to remember description"
                 fullWidth
                 disabled={accountType.value === ""}
                 value={alias.value}
@@ -202,6 +202,9 @@ function IbanTable({
               <i18n.Translate>Alias</i18n.Translate>
             </th>
             <th>
+              <i18n.Translate>Bank Id</i18n.Translate>
+            </th>
+            <th>
               <i18n.Translate>Int. Account Number</i18n.Translate>
             </th>
             <th>
@@ -219,7 +222,8 @@ function IbanTable({
             return (
               <tr key={account.alias}>
                 <td>{account.alias}</td>
-                <td>{p.targetPath}</td>
+                <td>{p.bic}</td>
+                <td>{p.iban}</td>
                 <td>{p.params["receiver-name"]}</td>
                 <td class="kyc">
                   {account.kyc_completed ? (
@@ -415,7 +419,7 @@ function BitcoinAddressAccount({ field }: { field: TextFieldHandler }): VNode {
         variant="standard"
         fullWidth
         value={value}
-        error={value !== undefined && !!errors?.value}
+        error={value !== undefined ? errors?.value : undefined}
         disabled={!field.onInput}
         onChange={(v) => {
           setValue(v);
@@ -424,9 +428,6 @@ function BitcoinAddressAccount({ field }: { field: TextFieldHandler }): VNode {
           }
         }}
       />
-      {value !== undefined && errors?.value && (
-        <ErrorMessage title={<span>{errors?.value}</span>} />
-      )}
     </Fragment>
   );
 }
@@ -456,7 +457,7 @@ function TalerBankAddressAccount({
         variant="standard"
         fullWidth
         value={host}
-        error={host !== undefined && !!errors?.host}
+        error={host !== undefined ? errors?.host : undefined}
         disabled={!field.onInput}
         onChange={(v) => {
           setHost(v);
@@ -464,77 +465,109 @@ function TalerBankAddressAccount({
             field.onInput(`payto://x-taler-bank/${v}/${account}`);
           }
         }}
-      />{" "}
-      {host !== undefined && errors?.host && (
-        <ErrorMessage title={<span>{errors?.host}</span>} />
-      )}
+      />
       <TextField
         label="Bank account"
         variant="standard"
         fullWidth
         disabled={!field.onInput}
         value={account}
-        error={account !== undefined && !!errors?.account}
+        error={account !== undefined ? errors?.account : undefined}
         onChange={(v) => {
           setAccount(v || "");
           if (!errors && field.onInput) {
             field.onInput(`payto://x-taler-bank/${host}/${v}`);
           }
         }}
-      />{" "}
-      {account !== undefined && errors?.account && (
-        <ErrorMessage title={<span>{errors?.account}</span>} />
-      )}
+      />
     </Fragment>
   );
 }
 
+//Taken from libeufin and libeufin took it from the ISO20022 XSD schema
+const bicRegex = /^[A-Z]{6}[A-Z2-9][A-NP-Z0-9]([A-Z0-9]{3})?$/;
+const ibanRegex = /^[A-Z]{2}[0-9]{2}[a-zA-Z0-9]{1,30}$/;
+
 function IbanAddressAccount({ field }: { field: TextFieldHandler }): VNode {
   const { i18n } = useTranslationContext();
-  const [number, setNumber] = useState<string | undefined>(undefined);
+  const [bic, setBic] = useState<string | undefined>(undefined);
+  const [iban, setIban] = useState<string | undefined>(undefined);
   const [name, setName] = useState<string | undefined>(undefined);
   const errors = undefinedIfEmpty({
-    number: !number ? i18n.str`Can't be empty` : undefined,
+    bic: !bic
+      ? undefined
+      : !bicRegex.test(bic)
+      ? i18n.str`Invalid bic`
+      : undefined,
+    iban: !iban
+      ? i18n.str`Can't be empty`
+      : !ibanRegex.test(iban)
+      ? i18n.str`Invalid iban`
+      : undefined,
     name: !name ? i18n.str`Can't be empty` : undefined,
   });
+
+  function sendUpdateIfNoErrors(
+    bic: string | undefined,
+    iban: string,
+    name: string,
+  ): void {
+    if (!errors && field.onInput) {
+      const path = bic === undefined ? iban : `${bic}/${iban}`;
+      field.onInput(
+        `payto://iban/${path}?receiver-name=${encodeURIComponent(name)}`,
+      );
+    }
+  }
   return (
     <Fragment>
-      <TextField
-        label="IBAN number"
-        variant="standard"
-        fullWidth
-        value={number}
-        error={number !== undefined && !!errors?.number}
-        disabled={!field.onInput}
-        onChange={(v) => {
-          setNumber(v);
-          if (!errors && field.onInput) {
-            field.onInput(`payto://iban/${v}?receiver-name=${name}`);
-          }
-        }}
-      />
-      {number !== undefined && errors?.number && (
-        <ErrorMessage title={<span>{errors?.number}</span>} />
-      )}
-      <TextField
-        label="Account name"
-        variant="standard"
-        fullWidth
-        value={name}
-        error={name !== undefined && !!errors?.name}
-        disabled={!field.onInput}
-        onChange={(v) => {
-          setName(v);
-          if (!errors && field.onInput) {
-            field.onInput(
-              `payto://iban/${number}?receiver-name=${encodeURIComponent(v)}`,
-            );
-          }
-        }}
-      />
-      {name !== undefined && errors?.name && (
-        <ErrorMessage title={<span>{errors?.name}</span>} />
-      )}
+      <p>
+        <TextField
+          label="BIC"
+          variant="filled"
+          placeholder="BANKID"
+          fullWidth
+          value={bic}
+          error={bic !== undefined ? errors?.bic : undefined}
+          disabled={!field.onInput}
+          onChange={(v) => {
+            setBic(v);
+            sendUpdateIfNoErrors(v, iban || "", name || "");
+          }}
+        />
+      </p>
+      <p>
+        <TextField
+          label="IBAN"
+          variant="filled"
+          placeholder="XX123456"
+          fullWidth
+          required
+          value={iban}
+          error={iban !== undefined ? errors?.iban : undefined}
+          disabled={!field.onInput}
+          onChange={(v) => {
+            setIban(v);
+            sendUpdateIfNoErrors(bic, v, name || "");
+          }}
+        />
+      </p>
+      <p>
+        <TextField
+          label="Receiver name"
+          variant="filled"
+          placeholder="Name of the target bank account owner"
+          fullWidth
+          required
+          value={name}
+          error={name !== undefined ? errors?.name : undefined}
+          disabled={!field.onInput}
+          onChange={(v) => {
+            setName(v);
+            sendUpdateIfNoErrors(bic, iban || "", v);
+          }}
+        />
+      </p>
     </Fragment>
   );
 }

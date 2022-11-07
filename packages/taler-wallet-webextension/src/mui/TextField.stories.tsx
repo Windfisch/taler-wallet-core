@@ -56,13 +56,13 @@ const Input = (variant: Props["variant"]): VNode => {
         value="disabled"
       />
       <TextField
-        error
+        error={"Error"}
         variant={variant}
         label="Something"
         {...{ value, onChange }}
       />
       <TextField
-        error
+        error={"Error"}
         disabled
         variant={variant}
         label="Disabled and Error"

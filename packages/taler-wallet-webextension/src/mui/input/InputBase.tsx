@@ -60,8 +60,8 @@ export function InputBaseRoot({
   const fcs = useFormControl({});
   return (
     <div
-      data-disabled={disabled}
-      data-focused={focused}
+      data-disabled={!disabled ? undefined : true}
+      data-focused={!focused ? undefined : true}
       data-multiline={multiline}
       data-hasStart={!!startAdornment}
       data-hasEnd={!!endAdornment}
@@ -115,6 +115,12 @@ const componentStyle = css`
     transition: ${theme.transitions.create("opacity", {
       duration: theme.transitions.duration.shorter,
     })};
+  }
+  &:not(focus)::placeholder {
+    opacity: 0;
+  }
+  &:focus::placeholder {
+    opacity: ${theme.palette.mode === "light" ? 0.42 : 0.5};
   }
   &:focus {
     outline: 0;
@@ -292,11 +298,11 @@ export function InputBase({
     <Root {...fcs} onClick={handleClick}>
       <FormControlContext.Provider value={null}>
         <Input
-          aria-invalid={fcs.error}
+          aria-invalid={fcs.error ? true : undefined}
           // aria-describedby={}
-          disabled={fcs.disabled}
+          disabled={fcs.disabled ? true : undefined}
           name={name}
-          placeholder={placeholder}
+          placeholder={!placeholder ? undefined : placeholder}
           readOnly={readOnly}
           required={fcs.required}
           rows={rows}
