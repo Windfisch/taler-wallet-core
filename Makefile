@@ -9,6 +9,12 @@ git-archive-all = ./build-system/taler-build-scripts/archive-with-submodules/git
 
 include .config.mk
 
+.PHONY: compile
+compile:
+	pnpm install -r --frozen-lockfile
+	pnpm run compile
+
+
 .PHONY: dist
 dist:
 	$(git-archive-all) \
@@ -40,11 +46,6 @@ clean:
 .PHONY: submodules-update
 submodules-update:
 	git submodule update --recursive --remote
-
-.PHONY: compile
-compile:
-	pnpm install -r --frozen-lockfile
-	pnpm run compile
 
 .PHONY: check
 check:
@@ -88,5 +89,5 @@ lint:
 	./node_modules/.bin/eslint --ext '.js,.ts,.tsx' 'src'
 
 
-install:
+install: compile
 	@echo Please run \'make install\' from one of the directories in packages/\'
