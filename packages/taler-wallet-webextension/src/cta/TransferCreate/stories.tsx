@@ -27,10 +27,13 @@ export default {
 };
 
 export const Ready = createExample(ReadyView, {
-  chosenAmount: {
+  debitAmount: {
     currency: "ARS",
     value: 1,
     fraction: 0,
+  },
+  expiration: {
+    value: "20/1/2022",
   },
   create: {},
   cancel: {},

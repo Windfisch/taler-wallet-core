@@ -48,11 +48,11 @@ export namespace State {
   }
   export interface Ready extends BaseInfo {
     status: "ready";
-    invalid: boolean;
     create: ButtonHandler;
     toBeReceived: AmountJson;
-    chosenAmount: AmountJson;
+    debitAmount: AmountJson;
     subject: TextFieldHandler;
+    expiration: TextFieldHandler;
     error: undefined;
     operationError?: TalerErrorDetail;
   }

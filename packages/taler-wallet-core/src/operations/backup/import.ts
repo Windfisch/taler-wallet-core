@@ -26,7 +26,7 @@ import {
   BackupRefreshReason,
   BackupRefundState,
   BackupWgType,
-  codecForContractTerms,
+  codecForMerchantContractTerms,
   CoinStatus,
   DenomKeyType,
   DenomSelectionState,
@@ -638,7 +638,7 @@ export async function importBackup(
                 break;
             }
           }
-          const parsedContractTerms = codecForContractTerms().decode(
+          const parsedContractTerms = codecForMerchantContractTerms().decode(
             backupPurchase.contract_terms_raw,
           );
           const amount = Amounts.parseOrThrow(parsedContractTerms.amount);

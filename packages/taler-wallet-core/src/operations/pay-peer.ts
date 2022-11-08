@@ -57,6 +57,10 @@ import {
   parsePayPullUri,
   parsePayPushUri,
   PeerContractTerms,
+  PreparePeerPullPaymentRequest,
+  PreparePeerPullPaymentResponse,
+  PreparePeerPushPaymentRequest,
+  PreparePeerPushPaymentResponse,
   RefreshReason,
   strcmp,
   TalerProtocolTimestamp,
@@ -218,27 +222,29 @@ export async function selectPeerCoins(
   return undefined;
 }
 
+export async function preparePeerPushPayment(
+  ws: InternalWalletState,
+  req: PreparePeerPushPaymentRequest,
+): Promise<PreparePeerPushPaymentResponse> {
+  // FIXME: look up for the exchange and calculate fee
+  return {
+    amountEffective: req.amount,
+    amountRaw: req.amount,
+  };
+}
+
 export async function initiatePeerToPeerPush(
   ws: InternalWalletState,
   req: InitiatePeerPushPaymentRequest,
 ): Promise<InitiatePeerPushPaymentResponse> {
-  const instructedAmount = Amounts.parseOrThrow(req.amount);
+  const instructedAmount = Amounts.parseOrThrow(
+    req.partialContractTerms.amount,
+  );
+  const purseExpiration = req.partialContractTerms.purse_expiration;
+  const contractTerms = req.partialContractTerms;
 
   const pursePair = await ws.cryptoApi.createEddsaKeypair({});
   const mergePair = await ws.cryptoApi.createEddsaKeypair({});
-
-  const purseExpiration: TalerProtocolTimestamp = AbsoluteTime.toTimestamp(
-    AbsoluteTime.addDuration(
-      AbsoluteTime.now(),
-      Duration.fromSpec({ days: 2 }),
-    ),
-  );
-
-  const contractTerms = {
-    ...req.partialContractTerms,
-    purse_expiration: purseExpiration,
-    amount: req.amount,
-  };
 
   const hContractTerms = ContractTermsUtil.hashContractTerms(contractTerms);
 
@@ -751,6 +757,16 @@ export async function checkPeerPullPayment(
   };
 }
 
+export async function preparePeerPullPayment(
+  ws: InternalWalletState,
+  req: PreparePeerPullPaymentRequest,
+): Promise<PreparePeerPullPaymentResponse> {
+  //FIXME: look up for exchange details and use purse fee
+  return {
+    amountEffective: req.amount,
+    amountRaw: req.amount,
+  };
+}
 /**
  * Initiate a peer pull payment.
  */
@@ -769,23 +785,16 @@ export async function initiatePeerPullPayment(
   const pursePair = await ws.cryptoApi.createEddsaKeypair({});
   const mergePair = await ws.cryptoApi.createEddsaKeypair({});
 
-  const purseExpiration: TalerProtocolTimestamp = AbsoluteTime.toTimestamp(
-    AbsoluteTime.addDuration(
-      AbsoluteTime.now(),
-      Duration.fromSpec({ days: 2 }),
-    ),
+  const instructedAmount = Amounts.parseOrThrow(
+    req.partialContractTerms.amount,
   );
+  const purseExpiration = req.partialContractTerms.purse_expiration;
+  const contractTerms = req.partialContractTerms;
 
   const reservePayto = talerPaytoFromExchangeReserve(
     req.exchangeBaseUrl,
     mergeReserveInfo.reservePub,
   );
-
-  const contractTerms = {
-    ...req.partialContractTerms,
-    amount: req.amount,
-    purse_expiration: purseExpiration,
-  };
 
   const econtractResp = await ws.cryptoApi.encryptContractForDeposit({
     contractTerms,
@@ -796,7 +805,7 @@ export async function initiatePeerPullPayment(
   const hContractTerms = ContractTermsUtil.hashContractTerms(contractTerms);
 
   const purseFee = Amounts.stringify(
-    Amounts.zeroOfCurrency(Amounts.parseOrThrow(req.amount).currency),
+    Amounts.zeroOfCurrency(instructedAmount.currency),
   );
 
   const sigRes = await ws.cryptoApi.signReservePurseCreate({
@@ -804,7 +813,7 @@ export async function initiatePeerPullPayment(
     flags: WalletAccountMergeFlags.CreateWithPurseFee,
     mergePriv: mergePair.priv,
     mergeTimestamp: mergeTimestamp,
-    purseAmount: req.amount,
+    purseAmount: req.partialContractTerms.amount,
     purseExpiration: purseExpiration,
     purseFee: purseFee,
     pursePriv: pursePair.priv,
@@ -817,7 +826,7 @@ export async function initiatePeerPullPayment(
     .mktx((x) => [x.peerPullPaymentInitiations, x.contractTerms])
     .runReadWrite(async (tx) => {
       await tx.peerPullPaymentInitiations.put({
-        amount: req.amount,
+        amount: req.partialContractTerms.amount,
         contractTermsHash: hContractTerms,
         exchangeBaseUrl: req.exchangeBaseUrl,
         pursePriv: pursePair.priv,
@@ -840,7 +849,7 @@ export async function initiatePeerPullPayment(
     purse_fee: purseFee,
     purse_pub: pursePair.pub,
     purse_sig: sigRes.purseSig,
-    purse_value: req.amount,
+    purse_value: req.partialContractTerms.amount,
     reserve_sig: sigRes.accountSig,
     econtract: econtractResp.econtract,
   };
@@ -862,7 +871,7 @@ export async function initiatePeerPullPayment(
   logger.info(`reserve merge response: ${j2s(resp)}`);
 
   const wg = await internalCreateWithdrawalGroup(ws, {
-    amount: Amounts.parseOrThrow(req.amount),
+    amount: instructedAmount,
     wgInfo: {
       withdrawalType: WithdrawalRecordType.PeerPullCredit,
       contractTerms,

@@ -1297,7 +1297,7 @@ export const codecForProduct = (): Codec<Product> =>
     .property("price", codecOptional(codecForString()))
     .build("Tax");
 
-export const codecForContractTerms = (): Codec<MerchantContractTerms> =>
+export const codecForMerchantContractTerms = (): Codec<MerchantContractTerms> =>
   buildCodecForObject<MerchantContractTerms>()
     .property("order_id", codecForString())
     .property("fulfillment_url", codecOptional(codecForString()))
@@ -1329,7 +1329,14 @@ export const codecForContractTerms = (): Codec<MerchantContractTerms> =>
     .property("products", codecOptional(codecForList(codecForProduct())))
     .property("extra", codecForAny())
     .property("minimum_age", codecOptional(codecForNumber()))
-    .build("ContractTerms");
+    .build("MerchantContractTerms");
+
+export const codecForPeerContractTerms = (): Codec<PeerContractTerms> =>
+  buildCodecForObject<PeerContractTerms>()
+    .property("summary", codecForString())
+    .property("amount", codecForString())
+    .property("purse_expiration", codecForTimestamp)
+    .build("PeerContractTerms");
 
 export const codecForMerchantRefundPermission =
   (): Codec<MerchantAbortPayRefundDetails> =>

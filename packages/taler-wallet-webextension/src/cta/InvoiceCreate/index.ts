@@ -59,10 +59,10 @@ export namespace State {
     doSelectExchange: ButtonHandler;
     create: ButtonHandler;
     subject: TextFieldHandler;
+    expiration: TextFieldHandler;
     toBeReceived: AmountJson;
-    chosenAmount: AmountJson;
+    requestAmount: AmountJson;
     exchangeUrl: string;
-    invalid: boolean;
     error: undefined;
     operationError?: TalerErrorDetail;
   }

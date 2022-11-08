@@ -75,6 +75,10 @@ import {
   PrepareDepositResponse,
   PreparePayRequest,
   PreparePayResult,
+  PreparePeerPullPaymentRequest,
+  PreparePeerPullPaymentResponse,
+  PreparePeerPushPaymentRequest,
+  PreparePeerPushPaymentResponse,
   PrepareRefundRequest,
   PrepareRefundResult,
   PrepareTipRequest,
@@ -164,9 +168,11 @@ export enum WalletApiOperation {
   WithdrawFakebank = "withdrawFakebank",
   ImportDb = "importDb",
   ExportDb = "exportDb",
+  PreparePeerPushPayment = "preparePeerPushPayment",
   InitiatePeerPushPayment = "initiatePeerPushPayment",
   CheckPeerPushPayment = "checkPeerPushPayment",
   AcceptPeerPushPayment = "acceptPeerPushPayment",
+  PreparePeerPullPayment = "preparePeerPullPayment",
   InitiatePeerPullPayment = "initiatePeerPullPayment",
   CheckPeerPullPayment = "checkPeerPullPayment",
   AcceptPeerPullPayment = "acceptPeerPullPayment",
@@ -556,6 +562,15 @@ export type ExportBackupPlainOp = {
 /**
  * Initiate an outgoing peer push payment.
  */
+export type PreparePeerPushPaymentOp = {
+  op: WalletApiOperation.PreparePeerPushPayment;
+  request: PreparePeerPushPaymentRequest;
+  response: PreparePeerPushPaymentResponse;
+};
+
+/**
+ * Initiate an outgoing peer push payment.
+ */
 export type InitiatePeerPushPaymentOp = {
   op: WalletApiOperation.InitiatePeerPushPayment;
   request: InitiatePeerPushPaymentRequest;
@@ -578,6 +593,15 @@ export type AcceptPeerPushPaymentOp = {
   op: WalletApiOperation.AcceptPeerPushPayment;
   request: AcceptPeerPushPaymentRequest;
   response: EmptyObject;
+};
+
+/**
+ * Initiate an outgoing peer pull payment.
+ */
+export type PreparePeerPullPaymentOp = {
+  op: WalletApiOperation.PreparePeerPullPayment;
+  request: PreparePeerPullPaymentRequest;
+  response: PreparePeerPullPaymentResponse;
 };
 
 /**
@@ -815,9 +839,11 @@ export type WalletOperations = {
   [WalletApiOperation.TestPay]: TestPayOp;
   [WalletApiOperation.ExportDb]: ExportDbOp;
   [WalletApiOperation.ImportDb]: ImportDbOp;
+  [WalletApiOperation.PreparePeerPushPayment]: PreparePeerPushPaymentOp;
   [WalletApiOperation.InitiatePeerPushPayment]: InitiatePeerPushPaymentOp;
   [WalletApiOperation.CheckPeerPushPayment]: CheckPeerPushPaymentOp;
   [WalletApiOperation.AcceptPeerPushPayment]: AcceptPeerPushPaymentOp;
+  [WalletApiOperation.PreparePeerPullPayment]: PreparePeerPullPaymentOp;
   [WalletApiOperation.InitiatePeerPullPayment]: InitiatePeerPullPaymentOp;
   [WalletApiOperation.CheckPeerPullPayment]: CheckPeerPullPaymentOp;
   [WalletApiOperation.AcceptPeerPullPayment]: AcceptPeerPullPaymentOp;

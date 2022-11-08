@@ -53,13 +53,15 @@ import { TalerErrorCode } from "./taler-error-codes.js";
 import {
   AmountString,
   AuditorDenomSig,
-  codecForContractTerms,
+  codecForMerchantContractTerms,
   CoinEnvelope,
   MerchantContractTerms,
+  PeerContractTerms,
   DenominationPubKey,
   DenomKeyType,
   ExchangeAuditor,
   UnblindedSignature,
+  codecForPeerContractTerms,
 } from "./taler-types.js";
 import {
   AbsoluteTime,
@@ -253,7 +255,7 @@ export const codecForConfirmPayResultDone = (): Codec<ConfirmPayResultDone> =>
   buildCodecForObject<ConfirmPayResultDone>()
     .property("type", codecForConstString(ConfirmPayResultType.Done))
     .property("transactionId", codecForString())
-    .property("contractTerms", codecForContractTerms())
+    .property("contractTerms", codecForMerchantContractTerms())
     .build("ConfirmPayResultDone");
 
 export const codecForConfirmPayResult = (): Codec<ConfirmPayResult> =>
@@ -383,7 +385,7 @@ export const codecForPreparePayResultPaymentPossible =
     buildCodecForObject<PreparePayResultPaymentPossible>()
       .property("amountEffective", codecForAmountString())
       .property("amountRaw", codecForAmountString())
-      .property("contractTerms", codecForContractTerms())
+      .property("contractTerms", codecForMerchantContractTerms())
       .property("proposalId", codecForString())
       .property("contractTermsHash", codecForString())
       .property("noncePriv", codecForString())
@@ -1738,9 +1740,26 @@ export interface PayCoinSelection {
   customerDepositFees: AmountString;
 }
 
-export interface InitiatePeerPushPaymentRequest {
+export interface PreparePeerPushPaymentRequest {
+  exchangeBaseUrl?: string;
   amount: AmountString;
-  partialContractTerms: any;
+}
+
+export const codecForPreparePeerPushPaymentRequest =
+  (): Codec<PreparePeerPushPaymentRequest> =>
+    buildCodecForObject<PreparePeerPushPaymentRequest>()
+      .property("exchangeBaseUrl", codecOptional(codecForString()))
+      .property("amount", codecForAmountString())
+      .build("InitiatePeerPushPaymentRequest");
+
+export interface PreparePeerPushPaymentResponse {
+  amountRaw: AmountString;
+  amountEffective: AmountString;
+}
+
+export interface InitiatePeerPushPaymentRequest {
+  exchangeBaseUrl?: string;
+  partialContractTerms: PeerContractTerms;
 }
 
 export interface InitiatePeerPushPaymentResponse {
@@ -1755,8 +1774,7 @@ export interface InitiatePeerPushPaymentResponse {
 export const codecForInitiatePeerPushPaymentRequest =
   (): Codec<InitiatePeerPushPaymentRequest> =>
     buildCodecForObject<InitiatePeerPushPaymentRequest>()
-      .property("amount", codecForAmountString())
-      .property("partialContractTerms", codecForAny())
+      .property("partialContractTerms", codecForPeerContractTerms())
       .build("InitiatePeerPushPaymentRequest");
 
 export interface CheckPeerPushPaymentRequest {
@@ -1768,13 +1786,13 @@ export interface CheckPeerPullPaymentRequest {
 }
 
 export interface CheckPeerPushPaymentResponse {
-  contractTerms: any;
+  contractTerms: PeerContractTerms;
   amount: AmountString;
   peerPushPaymentIncomingId: string;
 }
 
 export interface CheckPeerPullPaymentResponse {
-  contractTerms: any;
+  contractTerms: PeerContractTerms;
   amount: AmountString;
   peerPullPaymentIncomingId: string;
 }
@@ -1843,21 +1861,34 @@ export const codecForAcceptPeerPullPaymentRequest =
       .property("peerPullPaymentIncomingId", codecForString())
       .build("AcceptPeerPllPaymentRequest");
 
+export interface PreparePeerPullPaymentRequest {
+  exchangeBaseUrl: string;
+  amount: AmountString;
+}
+export const codecForPreparePeerPullPaymentRequest =
+  (): Codec<PreparePeerPullPaymentRequest> =>
+    buildCodecForObject<PreparePeerPullPaymentRequest>()
+      .property("amount", codecForAmountString())
+      .property("exchangeBaseUrl", codecForString())
+      .build("PreparePeerPullPaymentRequest");
+
+export interface PreparePeerPullPaymentResponse {
+  amountRaw: AmountString;
+  amountEffective: AmountString;
+}
 export interface InitiatePeerPullPaymentRequest {
   /**
    * FIXME: Make this optional?
    */
   exchangeBaseUrl: string;
-  amount: AmountString;
-  partialContractTerms: any;
+  partialContractTerms: PeerContractTerms;
 }
 
 export const codecForInitiatePeerPullPaymentRequest =
   (): Codec<InitiatePeerPullPaymentRequest> =>
     buildCodecForObject<InitiatePeerPullPaymentRequest>()
-      .property("partialContractTerms", codecForAny())
-      .property("amount", codecForAmountString())
-      .property("exchangeBaseUrl", codecForAmountString())
+      .property("partialContractTerms", codecForPeerContractTerms())
+      .property("exchangeBaseUrl", codecForString())
       .build("InitiatePeerPullPaymentRequest");
 
 export interface InitiatePeerPullPaymentResponse {

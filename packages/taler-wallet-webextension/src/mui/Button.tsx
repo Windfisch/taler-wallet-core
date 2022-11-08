@@ -290,7 +290,7 @@ export function Button({
 
   return (
     <ButtonBase
-      disabled={disabled || running}
+      disabled={disabled || running || !doClick}
       class={[
         theme.typography.button,
         theme.shape.roundBorder,

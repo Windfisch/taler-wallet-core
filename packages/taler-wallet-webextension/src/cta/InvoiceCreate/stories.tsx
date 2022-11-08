@@ -27,10 +27,13 @@ export default {
 };
 
 export const Ready = createExample(ReadyView, {
-  chosenAmount: {
+  requestAmount: {
     currency: "ARS",
     value: 1,
     fraction: 0,
+  },
+  expiration: {
+    value: "2/12/12",
   },
   cancel: {},
   toBeReceived: {

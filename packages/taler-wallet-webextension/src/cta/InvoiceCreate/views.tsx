@@ -14,6 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { format } from "date-fns";
 import { h, VNode } from "preact";
 import { ErrorTalerOperation } from "../../components/ErrorTalerOperation.js";
 import { LoadingError } from "../../components/LoadingError.js";
@@ -46,18 +47,40 @@ export function LoadingUriView({ error }: State.LoadingUriError): VNode {
 }
 
 export function ReadyView({
-  invalid,
   exchangeUrl,
   subject,
+  expiration,
   cancel,
   operationError,
   create,
   toBeReceived,
-  chosenAmount,
+  requestAmount,
   doSelectExchange,
 }: State.Ready): VNode {
   const { i18n } = useTranslationContext();
 
+  async function oneDayExpiration() {
+    if (expiration.onInput) {
+      expiration.onInput(
+        format(new Date().getTime() + 1000 * 60 * 60 * 24, "dd/MM/yyyy"),
+      );
+    }
+  }
+
+  async function oneWeekExpiration() {
+    if (expiration.onInput) {
+      expiration.onInput(
+        format(new Date().getTime() + 1000 * 60 * 60 * 24 * 7, "dd/MM/yyyy"),
+      );
+    }
+  }
+  async function _20DaysExpiration() {
+    if (expiration.onInput) {
+      expiration.onInput(
+        format(new Date().getTime() + 1000 * 60 * 60 * 24 * 20, "dd/MM/yyyy"),
+      );
+    }
+  }
   return (
     <WalletAction>
       <LogoHeader />
@@ -75,16 +98,6 @@ export function ReadyView({
         />
       )}
       <section style={{ textAlign: "left" }}>
-        <TextField
-          label="Subject"
-          variant="filled"
-          error={subject.error}
-          required
-          fullWidth
-          value={subject.value}
-          onChange={subject.onInput}
-        />
-
         <Part
           title={
             <div
@@ -107,6 +120,52 @@ export function ReadyView({
           kind="neutral"
           big
         />
+        <p>
+          <TextField
+            label="Subject"
+            variant="filled"
+            error={subject.error}
+            required
+            fullWidth
+            value={subject.value}
+            onChange={subject.onInput}
+          />
+        </p>
+
+        <p>
+          <TextField
+            label="Expiration"
+            variant="filled"
+            error={expiration.error}
+            required
+            fullWidth
+            value={expiration.value}
+            onChange={expiration.onInput}
+          />
+          <p>
+            <Button
+              variant="outlined"
+              disabled={!expiration.onInput}
+              onClick={oneDayExpiration}
+            >
+              1 day
+            </Button>
+            <Button
+              variant="outlined"
+              disabled={!expiration.onInput}
+              onClick={oneWeekExpiration}
+            >
+              1 week
+            </Button>
+            <Button
+              variant="outlined"
+              disabled={!expiration.onInput}
+              onClick={_20DaysExpiration}
+            >
+              20 days
+            </Button>
+          </p>
+        </p>
 
         <Part
           title={<i18n.Translate>Details</i18n.Translate>}
@@ -114,19 +173,14 @@ export function ReadyView({
             <InvoiceDetails
               amount={{
                 effective: toBeReceived,
-                raw: chosenAmount,
+                raw: requestAmount,
               }}
             />
           }
         />
       </section>
       <section>
-        <Button
-          disabled={invalid}
-          onClick={create.onClick}
-          variant="contained"
-          color="success"
-        >
+        <Button onClick={create.onClick} variant="contained" color="success">
           <i18n.Translate>Create</i18n.Translate>
         </Button>
       </section>

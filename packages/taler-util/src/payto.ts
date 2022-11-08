@@ -139,12 +139,13 @@ export function parsePaytoUri(s: string): PaytoUri | undefined {
     let iban: string | undefined = undefined;
     let bic: string | undefined = undefined;
     if (parts.length === 1) {
-      iban = parts[0]
-    } if (parts.length === 2) {
-      bic = parts[0]
-      iban = parts[1]
+      iban = parts[0];
+    }
+    if (parts.length === 2) {
+      bic = parts[0];
+      iban = parts[1];
     } else {
-      iban = targetPath
+      iban = targetPath;
     }
     return {
       isKnown: true,

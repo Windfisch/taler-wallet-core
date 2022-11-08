@@ -27,7 +27,6 @@ import { SynchronousCryptoWorker } from "./synchronousWorkerNode.js";
  */
 export class SynchronousCryptoWorkerFactory implements CryptoWorkerFactory {
   startWorker(): CryptoWorker {
-
     return new SynchronousCryptoWorker();
   }
 

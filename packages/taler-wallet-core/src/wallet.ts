@@ -57,6 +57,8 @@ import {
   codecForListKnownBankAccounts,
   codecForPrepareDepositRequest,
   codecForPreparePayRequest,
+  codecForPreparePeerPullPaymentRequest,
+  codecForPreparePeerPushPaymentRequest,
   codecForPrepareRefundRequest,
   codecForPrepareTipRequest,
   codecForRetryTransactionRequest,
@@ -186,6 +188,8 @@ import {
   checkPeerPushPayment,
   initiatePeerPullPayment,
   initiatePeerToPeerPush,
+  preparePeerPullPayment,
+  preparePeerPushPayment,
 } from "./operations/pay-peer.js";
 import { getPendingOperations } from "./operations/pending.js";
 import {
@@ -659,7 +663,9 @@ async function getExchanges(
         const opRetryRecord = await tx.operationRetries.get(
           RetryTags.forExchangeUpdate(r),
         );
-        exchanges.push(makeExchangeListItem(r, exchangeDetails, opRetryRecord?.lastError));
+        exchanges.push(
+          makeExchangeListItem(r, exchangeDetails, opRetryRecord?.lastError),
+        );
       }
     });
   return { exchanges };
@@ -927,9 +933,9 @@ async function dumpCoins(ws: InternalWalletState): Promise<CoinDumpJson> {
           ageCommitmentProof: c.ageCommitmentProof,
           spend_allocation: c.spendAllocation
             ? {
-                amount: c.spendAllocation.amount,
-                id: c.spendAllocation.id,
-              }
+              amount: c.spendAllocation.amount,
+              id: c.spendAllocation.id,
+            }
             : undefined,
         });
       }
@@ -1340,6 +1346,10 @@ async function dispatchRequestInternal<Op extends WalletApiOperation>(
       await importDb(ws.db.idbHandle(), req.dump);
       return [];
     }
+    case WalletApiOperation.PreparePeerPushPayment: {
+      const req = codecForPreparePeerPushPaymentRequest().decode(payload);
+      return await preparePeerPushPayment(ws, req);
+    }
     case WalletApiOperation.InitiatePeerPushPayment: {
       const req = codecForInitiatePeerPushPaymentRequest().decode(payload);
       return await initiatePeerToPeerPush(ws, req);
@@ -1351,6 +1361,10 @@ async function dispatchRequestInternal<Op extends WalletApiOperation>(
     case WalletApiOperation.AcceptPeerPushPayment: {
       const req = codecForAcceptPeerPushPaymentRequest().decode(payload);
       return await acceptPeerPushPayment(ws, req);
+    }
+    case WalletApiOperation.PreparePeerPullPayment: {
+      const req = codecForPreparePeerPullPaymentRequest().decode(payload);
+      return await preparePeerPullPayment(ws, req);
     }
     case WalletApiOperation.InitiatePeerPullPayment: {
       const req = codecForInitiatePeerPullPaymentRequest().decode(payload);
