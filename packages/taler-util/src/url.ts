@@ -83,20 +83,24 @@ export interface URLCtor {
 })();
 
 // @ts-ignore
-const _URL = globalThis.URL;
+let _URL = globalThis.URL;
 if (!_URL) {
   // @ts-ignore
-  globalThis.URL = URLImpl;
+  globalThis.URL = _URL = URLImpl;
+  // @ts-ignore
+  _URL = URLImpl;
 }
 
 export const URL: URLCtor = _URL;
 
 // @ts-ignore
-const _URLSearchParams = globalThis.URLSearchParams;
+let _URLSearchParams = globalThis.URLSearchParams;
 
 if (!_URLSearchParams) {
   // @ts-ignore
-  globalThis.URL = URLSearchParamsImpl;
+  globalThis.URLSearchParams = URLSearchParamsImpl;
+  // @ts-ignore
+  _URLSearchParams = URLSearchParamsImpl;
 }
 
 export const URLSearchParams: URLSearchParamsCtor = _URLSearchParams;

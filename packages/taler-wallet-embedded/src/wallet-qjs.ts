@@ -308,3 +308,6 @@ export function installNativeWalletListener(): void {
 
   logger.info("native wallet listener installed");
 }
+
+// @ts-ignore
+globalThis.installNativeWalletListener = installNativeWalletListener;
