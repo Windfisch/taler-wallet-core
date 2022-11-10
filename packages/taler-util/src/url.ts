@@ -14,6 +14,8 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { URLImpl, URLSearchParamsImpl } from "./whatwg-url.js";
+
 interface URL {
   hash: string;
   host: string;
@@ -83,7 +85,8 @@ export interface URLCtor {
 // @ts-ignore
 const _URL = globalThis.URL;
 if (!_URL) {
-  throw Error("FATAL: URL not available");
+  // @ts-ignore
+  globalThis.URL = URLImpl;
 }
 
 export const URL: URLCtor = _URL;
@@ -92,7 +95,8 @@ export const URL: URLCtor = _URL;
 const _URLSearchParams = globalThis.URLSearchParams;
 
 if (!_URLSearchParams) {
-  throw Error("FATAL: URLSearchParams not available");
+  // @ts-ignore
+  globalThis.URL = URLSearchParamsImpl;
 }
 
 export const URLSearchParams: URLSearchParamsCtor = _URLSearchParams;
