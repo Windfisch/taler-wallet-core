@@ -95,6 +95,7 @@ importers:
       '@creativebulma/bulma-tooltip': ^1.2.0
       '@gnu-taler/pogen': ^0.0.5
       '@gnu-taler/taler-util': workspace:*
+      '@types/history': ^4.7.8
       '@typescript-eslint/eslint-plugin': ^5.41.0
       '@typescript-eslint/parser': ^5.41.0
       bulma: ^0.9.4
@@ -128,6 +129,7 @@ importers:
     devDependencies:
       '@creativebulma/bulma-tooltip': 1.2.0
       '@gnu-taler/pogen': link:../pogen
+      '@types/history': 4.7.11
       '@typescript-eslint/eslint-plugin': 5.41.0_huremdigmcnkianavgfk3x6iou
       '@typescript-eslint/parser': 5.41.0_wyqvi574yv7oiwfeinomdzmc3m
       bulma: 0.9.4
