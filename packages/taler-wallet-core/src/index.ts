@@ -66,3 +66,5 @@ export {
 
 export * from "./util/timer.js";
 export * from "./util/denominations.js";
+
+export { SynchronousCryptoWorkerFactoryPlain } from "./crypto/workers/synchronousWorkerFactoryPlain.js";

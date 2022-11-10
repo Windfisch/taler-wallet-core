@@ -19,15 +19,15 @@
  */
 import { CryptoWorkerFactory } from "./cryptoDispatcher.js";
 import { CryptoWorker } from "./cryptoWorkerInterface.js";
-import { SynchronousCryptoWorker } from "./synchronousWorkerNode.js";
+import { SynchronousCryptoWorkerNode } from "./synchronousWorkerNode.js";
 
 /**
  * The synchronous crypto worker produced by this factory doesn't run in the
  * background, but actually blocks the caller until the operation is done.
  */
-export class SynchronousCryptoWorkerFactory implements CryptoWorkerFactory {
+export class SynchronousCryptoWorkerFactoryNode implements CryptoWorkerFactory {
   startWorker(): CryptoWorker {
-    return new SynchronousCryptoWorker();
+    return new SynchronousCryptoWorkerNode();
   }
 
   getConcurrency(): number {

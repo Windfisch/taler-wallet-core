@@ -33,7 +33,7 @@ import {
   findDenomOrThrow,
   NodeHttpLib,
   refreshCoin,
-  SynchronousCryptoWorkerFactory,
+  SynchronousCryptoWorkerFactoryNode,
   withdrawCoin,
 } from "@gnu-taler/taler-wallet-core";
 
@@ -49,7 +49,7 @@ export async function runBench2(configJson: any): Promise<void> {
   // Validate the configuration file for this benchmark.
   const benchConf = codecForBench2Config().decode(configJson);
   const curr = benchConf.currency;
-  const cryptoDisp = new CryptoDispatcher(new SynchronousCryptoWorkerFactory());
+  const cryptoDisp = new CryptoDispatcher(new SynchronousCryptoWorkerFactoryNode());
   const cryptoApi = cryptoDisp.cryptoApi;
 
   const http = new NodeHttpLib();

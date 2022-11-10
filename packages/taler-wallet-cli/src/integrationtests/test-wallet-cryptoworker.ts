@@ -26,7 +26,7 @@ import {
   findDenomOrThrow,
   NodeHttpLib,
   refreshCoin,
-  SynchronousCryptoWorkerFactory,
+  SynchronousCryptoWorkerFactoryNode,
   TalerError,
   topupReserveWithDemobank,
   WalletApiOperation,

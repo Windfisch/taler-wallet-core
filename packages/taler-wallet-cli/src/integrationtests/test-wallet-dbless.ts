@@ -26,7 +26,7 @@ import {
   findDenomOrThrow,
   NodeHttpLib,
   refreshCoin,
-  SynchronousCryptoWorkerFactory,
+  SynchronousCryptoWorkerFactoryNode,
   TalerError,
   topupReserveWithDemobank,
   withdrawCoin,
@@ -43,7 +43,7 @@ export async function runWalletDblessTest(t: GlobalTestState) {
   const { bank, exchange } = await createSimpleTestkudosEnvironment(t);
 
   const http = new NodeHttpLib();
-  const cryptiDisp = new CryptoDispatcher(new SynchronousCryptoWorkerFactory());
+  const cryptiDisp = new CryptoDispatcher(new SynchronousCryptoWorkerFactoryNode());
   const cryptoApi = cryptiDisp.cryptoApi;
 
   try {

@@ -580,6 +580,7 @@ importers:
 
   packages/taler-wallet-embedded:
     specifiers:
+      '@gnu-taler/idb-bridge': workspace:*
       '@gnu-taler/taler-util': workspace:*
       '@gnu-taler/taler-wallet-core': workspace:*
       '@rollup/plugin-commonjs': ^22.0.2
@@ -595,6 +596,7 @@ importers:
       tslib: ^2.4.0
       typescript: ^4.8.4
     dependencies:
+      '@gnu-taler/idb-bridge': link:../idb-bridge
       '@gnu-taler/taler-util': link:../taler-util
       '@gnu-taler/taler-wallet-core': link:../taler-wallet-core
       tslib: 2.4.0

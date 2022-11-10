@@ -15,4 +15,4 @@
  */
 
 export * from "./index.js";
-export { SynchronousCryptoWorker } from "./crypto/workers/synchronousWorkerWeb.js";
+export { SynchronousCryptoWorkerPlain as SynchronousCryptoWorker } from "./crypto/workers/synchronousWorkerPlain.js";

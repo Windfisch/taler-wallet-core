@@ -53,7 +53,7 @@ import {
   NodeHttpLib,
   NodeThreadCryptoWorkerFactory,
   summarizeTalerErrorDetail,
-  SynchronousCryptoWorkerFactory,
+  SynchronousCryptoWorkerFactoryNode,
   Wallet,
   WalletApiOperation,
   WalletCoreApiClient,
@@ -1490,7 +1490,7 @@ testCli
       const cryptoDisp = new CryptoDispatcher(workerFactory);
       cryptoApi = cryptoDisp.cryptoApi;
     } else if (args.cryptoworker.impl === "sync") {
-      const workerFactory = new SynchronousCryptoWorkerFactory();
+      const workerFactory = new SynchronousCryptoWorkerFactoryNode();
       const cryptoDisp = new CryptoDispatcher(workerFactory);
       cryptoApi = cryptoDisp.cryptoApi;
     } else if (args.cryptoworker.impl === "none") {

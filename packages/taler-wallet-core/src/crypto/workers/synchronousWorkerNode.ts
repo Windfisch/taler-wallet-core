@@ -31,7 +31,7 @@ const logger = new Logger("synchronousWorker.ts");
  * The node crypto worker can also use IPC to offload cryptographic
  * operations to a helper process (usually written in C / part of taler-exchange).
  */
-export class SynchronousCryptoWorker implements CryptoWorker {
+export class SynchronousCryptoWorkerNode implements CryptoWorker {
   /**
    * Function to be called when we receive a message from the worker thread.
    */

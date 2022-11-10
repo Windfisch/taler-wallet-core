@@ -33,7 +33,7 @@ import { AccessStats } from "@gnu-taler/idb-bridge";
 import { Logger, WalletNotification } from "@gnu-taler/taler-util";
 import * as fs from "fs";
 import { NodeThreadCryptoWorkerFactory } from "../crypto/workers/nodeThreadWorker.js";
-import { SynchronousCryptoWorkerFactory } from "../crypto/workers/synchronousWorkerFactory.js";
+import { SynchronousCryptoWorkerFactoryNode } from "../crypto/workers/synchronousWorkerFactoryNode.js";
 import { openTalerDatabase } from "../db-utils.js";
 import { HttpRequestLibrary } from "../util/http.js";
 import { SetTimeoutTimerAPI } from "../util/timer.js";
@@ -165,7 +165,7 @@ export async function getDefaultNodeWallet2(
   const cryptoWorkerType = args.cryptoWorkerType ?? "node-worker-thread";
   if (cryptoWorkerType === "sync") {
     logger.info("using synchronous crypto worker");
-    workerFactory = new SynchronousCryptoWorkerFactory();
+    workerFactory = new SynchronousCryptoWorkerFactoryNode();
   } else if (cryptoWorkerType === "node-worker-thread") {
     try {
       // Try if we have worker threads available, fails in older node versions.
@@ -179,7 +179,7 @@ export async function getDefaultNodeWallet2(
       logger.warn(
         "worker threads not available, falling back to synchronous workers",
       );
-      workerFactory = new SynchronousCryptoWorkerFactory();
+      workerFactory = new SynchronousCryptoWorkerFactoryNode();
     }
   } else {
     throw Error(`unsupported crypto worker type '${cryptoWorkerType}'`);

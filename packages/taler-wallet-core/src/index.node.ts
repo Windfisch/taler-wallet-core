@@ -24,7 +24,7 @@ export {
   DefaultNodeWalletArgs,
 } from "./headless/helpers.js";
 export * from "./crypto/workers/nodeThreadWorker.js";
-export { SynchronousCryptoWorker } from "./crypto/workers/synchronousWorkerNode.js";
+export { SynchronousCryptoWorkerNode as SynchronousCryptoWorker } from "./crypto/workers/synchronousWorkerNode.js";
 
 export type { AccessStats } from "@gnu-taler/idb-bridge";
-export * from "./crypto/workers/synchronousWorkerFactory.js";
+export * from "./crypto/workers/synchronousWorkerFactoryNode.js";

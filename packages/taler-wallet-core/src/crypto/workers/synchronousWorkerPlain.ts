@@ -31,7 +31,7 @@ const logger = new Logger("synchronousWorker.ts");
  * Worker implementation that synchronously executes cryptographic
  * operations.
  */
-export class SynchronousCryptoWorker implements CryptoWorker {
+export class SynchronousCryptoWorkerPlain implements CryptoWorker {
   /**
    * Function to be called when we receive a message from the worker thread.
    */
