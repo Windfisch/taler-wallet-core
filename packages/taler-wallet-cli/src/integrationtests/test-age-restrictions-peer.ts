@@ -17,6 +17,7 @@
 /**
  * Imports.
  */
+import { AbsoluteTime, Duration } from "@gnu-taler/taler-util";
 import { getDefaultNodeWallet2, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { defaultCoinConfig } from "../harness/denomStructures.js";
 import { GlobalTestState, WalletCli } from "../harness/harness.js";
@@ -59,10 +60,18 @@ export async function runAgeRestrictionsPeerTest(t: GlobalTestState) {
       restrictAge: 13,
     });
 
+    const purse_expiration = AbsoluteTime.toTimestamp(
+      AbsoluteTime.addDuration(
+        AbsoluteTime.now(),
+        Duration.fromSpec({ days: 2 }),
+      ),
+    );
+
     const initResp = await wallet.client.call(WalletApiOperation.InitiatePeerPushPayment, {
-      amount: "TESTKUDOS:1",
       partialContractTerms: {
         summary: "Hello, World",
+        amount: "TESTKUDOS:1",
+        purse_expiration,
       },
     });
 

@@ -34,7 +34,7 @@ import {
   codecForConstString,
   codecForBoolean,
   codecForNumber,
-  codecForContractTerms,
+  codecForMerchantContractTerms,
   codecForAny,
   buildCodecForUnion,
   AmountString,
@@ -102,7 +102,7 @@ export const codecForCheckPaymentPaidResponse =
       .property("exchange_ec", codecForNumber())
       .property("exchange_hc", codecForNumber())
       .property("refund_amount", codecForAmountString())
-      .property("contract_terms", codecForContractTerms())
+      .property("contract_terms", codecForMerchantContractTerms())
       // FIXME: specify
       .property("wire_details", codecForAny())
       .property("wire_reports", codecForAny())
@@ -122,7 +122,7 @@ export const codecForCheckPaymentClaimedResponse =
   (): Codec<CheckPaymentClaimedResponse> =>
     buildCodecForObject<CheckPaymentClaimedResponse>()
       .property("order_status", codecForConstString("claimed"))
-      .property("contract_terms", codecForContractTerms())
+      .property("contract_terms", codecForMerchantContractTerms())
       .build("CheckPaymentClaimedResponse");
 
 export const codecForMerchantOrderPrivateStatusResponse =

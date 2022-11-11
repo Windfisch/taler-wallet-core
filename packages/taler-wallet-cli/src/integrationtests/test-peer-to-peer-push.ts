@@ -17,7 +17,7 @@
 /**
  * Imports.
  */
-import { j2s } from "@gnu-taler/taler-util";
+import { AbsoluteTime, Duration, j2s } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { GlobalTestState, WalletCli } from "../harness/harness.js";
 import {
@@ -47,13 +47,21 @@ export async function runPeerToPeerPushTest(t: GlobalTestState) {
 
   await wallet1.runUntilDone();
 
+  const purse_expiration = AbsoluteTime.toTimestamp(
+    AbsoluteTime.addDuration(
+      AbsoluteTime.now(),
+      Duration.fromSpec({ days: 2 }),
+    ),
+  );
+
   {
     const resp = await wallet1.client.call(
       WalletApiOperation.InitiatePeerPushPayment,
       {
-        amount: "TESTKUDOS:5",
         partialContractTerms: {
           summary: "Hello World",
+          amount: "TESTKUDOS:5",
+          purse_expiration
         },
       },
     );
@@ -64,9 +72,10 @@ export async function runPeerToPeerPushTest(t: GlobalTestState) {
   const resp = await wallet1.client.call(
     WalletApiOperation.InitiatePeerPushPayment,
     {
-      amount: "TESTKUDOS:5",
       partialContractTerms: {
         summary: "Hello World",
+        amount: "TESTKUDOS:5",
+        purse_expiration
       },
     },
   );
