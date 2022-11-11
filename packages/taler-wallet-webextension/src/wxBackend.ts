@@ -296,13 +296,6 @@ function parseTalerUriAndRedirect(tabId: number, talerUri: string): void {
         tabId,
         `/cta/transfer/recovery?talerBackupUri=${talerUri}`,
       );
-    case TalerUriType.TalerNotifyReserve:
-      // FIXME:  Is this still useful?
-      // handleNotifyReserve(w);
-      logger.warn(
-        `Response with HTTP 402 the Taler header but it is deprecated ${talerUri}`,
-      );
-      break;
     case TalerUriType.Unknown:
       logger.warn(
         `Response with HTTP 402 the Taler header but could not classify ${talerUri}`,

@@ -87,22 +87,6 @@ export function TalerActionFound({ url, onDismiss }: Props): VNode {
             </Button>
           </div>
         )}
-        {uriType === TalerUriType.TalerNotifyReserve && (
-          <div>
-            <p>
-              <i18n.Translate>
-                This page has a notify reserve action.
-              </i18n.Translate>
-            </p>
-            <Button
-              variant="contained"
-              color="success"
-              onClick={redirectToWallet}
-            >
-              <i18n.Translate>Notify</i18n.Translate>
-            </Button>
-          </div>
-        )}
         {uriType === TalerUriType.TalerRefund && (
           <div>
             <p>

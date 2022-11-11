@@ -266,11 +266,6 @@ function openWalletURIFromPopup(talerUri: string): void {
         `static/wallet.html#/cta/transfer/pickup?talerPayPushUri=${talerUri}`,
       );
       break;
-    case TalerUriType.TalerNotifyReserve:
-      logger.warn(
-        `Response with HTTP 402 the Taler header but it is deprecated ${talerUri}`,
-      );
-      break;
     case TalerUriType.Unknown:
       logger.warn(
         `Response with HTTP 402 the Taler header but could not classify ${talerUri}`,

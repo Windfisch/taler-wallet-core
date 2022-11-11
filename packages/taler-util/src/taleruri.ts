@@ -94,7 +94,6 @@ export enum TalerUriType {
   TalerWithdraw = "taler-withdraw",
   TalerTip = "taler-tip",
   TalerRefund = "taler-refund",
-  TalerNotifyReserve = "taler-notify-reserve",
   TalerPayPush = "taler-pay-push",
   TalerPayPull = "taler-pay-pull",
   TalerRecovery = "taler-recovery",
@@ -151,9 +150,6 @@ export function classifyTalerUri(s: string): TalerUriType {
   }
   if (sl.startsWith(`taler+http://${talerActionPayPull}/`)) {
     return TalerUriType.TalerPayPull;
-  }
-  if (sl.startsWith("taler://notify-reserve/")) {
-    return TalerUriType.TalerNotifyReserve;
   }
   if (sl.startsWith("taler://dev-experiment/")) {
     return TalerUriType.TalerDevExperiment;

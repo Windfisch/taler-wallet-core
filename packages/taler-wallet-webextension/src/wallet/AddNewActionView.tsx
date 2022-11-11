@@ -64,8 +64,6 @@ export function AddNewActionView({ onCancel }: Props): VNode {
           >
             {(() => {
               switch (uriType) {
-                case TalerUriType.TalerNotifyReserve:
-                  return <i18n.Translate>Open reserve page</i18n.Translate>;
                 case TalerUriType.TalerPay:
                   return <i18n.Translate>Open pay page</i18n.Translate>;
                 case TalerUriType.TalerRefund:
