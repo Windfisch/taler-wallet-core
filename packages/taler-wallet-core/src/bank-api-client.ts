@@ -23,6 +23,7 @@
  */
 import {
   AmountString,
+  base64FromArrayBuffer,
   buildCodecForObject,
   Codec,
   codecForAny,
@@ -31,6 +32,7 @@ import {
   getRandomBytes,
   j2s,
   Logger,
+  stringToBytes,
   TalerErrorCode,
 } from "@gnu-taler/taler-util";
 import { TalerError } from "./errors.js";
@@ -85,7 +87,7 @@ export interface HarnessExchangeBankAccount {
  */
 function makeBasicAuthHeader(username: string, password: string): string {
   const auth = `${username}:${password}`;
-  const authEncoded: string = Buffer.from(auth).toString("base64");
+  const authEncoded: string = base64FromArrayBuffer(stringToBytes(auth));
   return `Basic ${authEncoded}`;
 }
 

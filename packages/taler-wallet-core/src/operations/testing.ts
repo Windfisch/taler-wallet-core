@@ -18,8 +18,10 @@
  * Imports.
  */
 import {
+  base64FromArrayBuffer,
   ConfirmPayResultType,
   Logger,
+  stringToBytes,
   TestPayResult,
   WithdrawTestBalanceRequest,
 } from "@gnu-taler/taler-util";
@@ -78,10 +80,11 @@ function makeId(length: number): string {
 
 /**
  * Helper function to generate the "Authorization" HTTP header.
+ * FIXME: redundant, put in taler-util
  */
 function makeBasicAuthHeader(username: string, password: string): string {
   const auth = `${username}:${password}`;
-  const authEncoded: string = Buffer.from(auth).toString("base64");
+  const authEncoded: string = base64FromArrayBuffer(stringToBytes(auth));
   return `Basic ${authEncoded}`;
 }
 

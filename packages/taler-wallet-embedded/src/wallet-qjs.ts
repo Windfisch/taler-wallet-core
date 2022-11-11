@@ -23,6 +23,7 @@ import {
   getErrorDetailFromException,
   handleWorkerError,
   handleWorkerMessage,
+  Headers,
   HttpRequestLibrary,
   HttpRequestOptions,
   HttpResponse,
@@ -31,19 +32,47 @@ import {
   SetTimeoutTimerAPI,
   SynchronousCryptoWorkerFactoryPlain,
   Wallet,
+  WalletApiOperation,
 } from "@gnu-taler/taler-wallet-core";
 
 import {
   CoreApiEnvelope,
   CoreApiResponse,
   CoreApiResponseSuccess,
+  j2s,
   Logger,
+  setGlobalLogLevelFromString,
   WalletNotification,
 } from "@gnu-taler/taler-util";
 import { BridgeIDBFactory } from "@gnu-taler/idb-bridge";
 import { MemoryBackend } from "@gnu-taler/idb-bridge";
 import { shimIndexedDB } from "@gnu-taler/idb-bridge";
 import { IDBFactory } from "@gnu-taler/idb-bridge";
+
+import * as _qjsOsImp from "os";
+
+const textDecoder = new TextDecoder();
+const textEncoder = new TextEncoder();
+
+export interface QjsHttpResp {
+  status: number;
+  data: ArrayBuffer;
+}
+
+export interface QjsHttpOptions {
+  method: string;
+  debug?: boolean;
+  data?: ArrayBuffer;
+  headers?: string[];
+}
+
+export interface QjsOsLib {
+  // Not async!
+  fetchHttp(url: string, options?: QjsHttpOptions): QjsHttpResp;
+}
+
+// This is not the nodejs "os" module, but the qjs "os" module.
+const qjsOs: QjsOsLib = _qjsOsImp as any;
 
 export { handleWorkerError, handleWorkerMessage };
 
@@ -54,20 +83,73 @@ export class NativeHttpLib implements HttpRequestLibrary {
     url: string,
     opt?: HttpRequestOptions | undefined,
   ): Promise<HttpResponse> {
-    throw new Error("Method not implemented.");
+    return this.fetch(url, {
+      method: "GET",
+      ...opt,
+    });
   }
   postJson(
     url: string,
     body: any,
     opt?: HttpRequestOptions | undefined,
   ): Promise<HttpResponse> {
-    throw new Error("Method not implemented.");
+    return this.fetch(url, {
+      method: "POST",
+      body,
+      ...opt,
+    });
   }
-  fetch(
+  async fetch(
     url: string,
     opt?: HttpRequestOptions | undefined,
   ): Promise<HttpResponse> {
-    throw new Error("Method not implemented.");
+    const method = opt?.method ?? "GET";
+    let data: ArrayBuffer | undefined = undefined;
+    let headers: string[] = [];
+    if (opt?.headers) {
+      for (let headerName of Object.keys(opt.headers)) {
+        headers.push(`${headerName}: ${opt.headers[headerName]}`);
+      }
+    }
+    if (method.toUpperCase() === "POST") {
+      if (opt?.body) {
+        if (typeof opt.body === "string") {
+          data = textEncoder.encode(opt.body).buffer;
+        } else if (ArrayBuffer.isView(opt.body)) {
+          data = opt.body.buffer;
+        } else if (opt.body instanceof ArrayBuffer) {
+          data = opt.body;
+        } else if (typeof opt.body === "object") {
+          data = textEncoder.encode(JSON.stringify(opt.body)).buffer;
+        }
+      } else {
+        data = new ArrayBuffer(0);
+      }
+    }
+    console.log(`data type ${data?.constructor.name}`);
+    console.log(`data: ${j2s(data)}`);
+    const res = qjsOs.fetchHttp(url, {
+      method,
+      data,
+      headers,
+    });
+    return {
+      requestMethod: method,
+      headers: new Headers(),
+      async bytes() {
+        return res.data;
+      },
+      json() {
+        const text = textDecoder.decode(res.data);
+        return JSON.parse(text);
+      },
+      async text() {
+        const text = textDecoder.decode(res.data);
+        return text;
+      },
+      requestUrl: url,
+      status: res.status,
+    };
   }
 }
 
@@ -268,6 +350,7 @@ class NativeWalletMessageHandler {
 }
 
 export function installNativeWalletListener(): void {
+  setGlobalLogLevelFromString("trace");
   const handler = new NativeWalletMessageHandler();
   const onMessage = async (msgStr: any): Promise<void> => {
     if (typeof msgStr !== "string") {
@@ -311,3 +394,24 @@ export function installNativeWalletListener(): void {
 
 // @ts-ignore
 globalThis.installNativeWalletListener = installNativeWalletListener;
+
+// @ts-ignore
+globalThis.makeWallet = getWallet;
+
+export async function testWithGv() {
+  const w = await getWallet();
+  await w.wallet.client.call(WalletApiOperation.InitWallet, {});
+  await w.wallet.client.call(WalletApiOperation.RunIntegrationTest, {
+    amountToSpend: "KUDOS:1",
+    amountToWithdraw: "KUDOS:3",
+    bankBaseUrl: "https://bank.demo.taler.net/demobanks/default/access-api/",
+    exchangeBaseUrl: "https://exchange.demo.taler.net/",
+    merchantBaseUrl: "https://backend.demo.taler.net/",
+  });
+  await w.wallet.runTaskLoop({
+    stopWhenDone: true,
+  });
+}
+
+// @ts-ignore
+globalThis.testWithGv = testWithGv;

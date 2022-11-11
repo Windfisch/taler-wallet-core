@@ -253,7 +253,6 @@ let decoder: any;
 
 export function stringToBytes(s: string): Uint8Array {
   if (!encoder) {
-    // @ts-ignore
     encoder = new TextEncoder();
   }
   return encoder.encode(s);
@@ -261,7 +260,6 @@ export function stringToBytes(s: string): Uint8Array {
 
 export function bytesToString(b: Uint8Array): string {
   if (!decoder) {
-    // @ts-ignore
     decoder = new TextDecoder();
   }
   return decoder.decode(b);

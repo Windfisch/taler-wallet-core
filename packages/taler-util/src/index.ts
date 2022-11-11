@@ -33,3 +33,4 @@ export {
 export { RequestThrottler } from "./RequestThrottler.js";
 export * from "./CancellationToken.js";
 export * from "./contract-terms.js";
+export * from "./base64.js";

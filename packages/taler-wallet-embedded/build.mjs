@@ -51,6 +51,7 @@ export const buildConfig = {
   target: [
     'es2020'
   ],
+  external: ["os"],
   format: 'esm',
   platform: 'neutral',
   mainFields: ["module", "main"],

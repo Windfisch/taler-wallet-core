@@ -53,7 +53,7 @@ class IntervalHandle {
    * only event left.  Has no effect in the browser.
    */
   unref(): void {
-    if (typeof this.h === "object") {
+    if (typeof this.h === "object" && "unref" in this.h) {
       this.h.unref();
     }
   }
@@ -71,7 +71,7 @@ class TimeoutHandle {
    * only event left.  Has no effect in the browser.
    */
   unref(): void {
-    if (typeof this.h === "object") {
+    if (typeof this.h === "object" && "unref" in this.h) {
       this.h.unref();
     }
   }

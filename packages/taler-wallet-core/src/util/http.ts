@@ -68,7 +68,7 @@ export interface HttpRequestOptions {
    */
   cancellationToken?: CancellationToken;
 
-  body?: string | ArrayBuffer | ArrayBufferView;
+  body?: string | ArrayBuffer | Object;
 }
 
 /**
