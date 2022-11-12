@@ -347,8 +347,7 @@ function isASCIIHex(c: number) {
 export class URLSearchParamsImpl {
   _list: any[];
   _url: any;
-  constructor(constructorArgs: any[], { doNotStripQMark = false }: any) {
-    let init = constructorArgs[0];
+  constructor(init: any, { doNotStripQMark = false }: any = {}) {
     this._list = [];
     this._url = null;
 
@@ -423,6 +422,19 @@ export class URLSearchParamsImpl {
       }
     }
     return output;
+  }
+
+  forEach(
+    callbackfn: (
+      value: string,
+      key: string,
+      parent: URLSearchParamsImpl,
+    ) => void,
+    thisArg?: any,
+  ): void {
+    for (const tuple of this._list) {
+      callbackfn.call(thisArg, tuple[1], tuple[0], this);
+    }
   }
 
   has(name: string) {
@@ -1916,7 +1928,7 @@ export class URLImpl {
 
     // We cannot invoke the "new URLSearchParams object" algorithm without going through the constructor, which strips
     // question mark by default. Therefore the doNotStripQMark hack is used.
-    this._query = new URLSearchParamsImpl([query], {
+    this._query = new URLSearchParamsImpl(query, {
       doNotStripQMark: true,
     });
     this._query._url = this;

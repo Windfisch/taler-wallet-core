@@ -27,6 +27,7 @@ import {
 import {
   Logger,
   RequestThrottler,
+  stringToBytes,
   TalerErrorCode,
 } from "@gnu-taler/taler-util";
 
@@ -70,7 +71,15 @@ export class BrowserHttpLib implements HttpRequestLibrary {
       }
       myRequest.responseType = "arraybuffer";
       if (requestBody) {
-        myRequest.send(requestBody);
+        if (requestBody instanceof ArrayBuffer) {
+          myRequest.send(requestBody);
+        } else if (ArrayBuffer.isView(requestBody)) {
+          myRequest.send(requestBody);
+        } else if (typeof requestBody === "string") {
+          myRequest.send(requestBody);
+        } else {
+          myRequest.send(JSON.stringify(requestBody));
+        }
       } else {
         myRequest.send();
       }

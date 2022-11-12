@@ -55,9 +55,24 @@ export class ServiceWorkerHttpLib implements HttpRequestLibrary {
       );
     }
 
+    let myBody: BodyInit | undefined = undefined;
+    if (requestBody != null) {
+      if (typeof requestBody === "string") {
+        myBody = requestBody;
+      } else if (requestBody instanceof ArrayBuffer) {
+        myBody = requestBody;
+      } else if (ArrayBuffer.isView(requestBody)) {
+        myBody = requestBody;
+      } else if (typeof requestBody === "object") {
+        myBody = JSON.stringify(myBody);
+      } else {
+        throw Error("unsupported request body type");
+      }
+    }
+
     const response = await fetch(requestUrl, {
       headers: requestHeader,
-      body: requestBody,
+      body: myBody,
       method: requestMethod,
       // timeout: options?.timeout
     });

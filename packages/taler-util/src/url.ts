@@ -82,9 +82,12 @@ export interface URLCtor {
   delete Object.prototype.__magic__;
 })();
 
+// Use native or pure JS URL implementation?
+const useOwnUrlImp = true;
+
 // @ts-ignore
 let _URL = globalThis.URL;
-if (!_URL) {
+if (useOwnUrlImp || !_URL) {
   // @ts-ignore
   globalThis.URL = _URL = URLImpl;
   // @ts-ignore
@@ -96,7 +99,7 @@ export const URL: URLCtor = _URL;
 // @ts-ignore
 let _URLSearchParams = globalThis.URLSearchParams;
 
-if (!_URLSearchParams) {
+if (useOwnUrlImp || !_URLSearchParams) {
   // @ts-ignore
   globalThis.URLSearchParams = URLSearchParamsImpl;
   // @ts-ignore
