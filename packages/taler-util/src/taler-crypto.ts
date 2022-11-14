@@ -15,7 +15,7 @@
  */
 
 /**
- * Native implementation of GNU Taler crypto.
+ * Native implementation of GNU Taler crypto primitives.
  */
 
 /**
