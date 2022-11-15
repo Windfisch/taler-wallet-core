@@ -31,7 +31,6 @@ import {
   csBlind,
   csUnblind,
   csVerify,
-  scalarMultBase25519,
   deriveSecrets,
   calcRBlind,
   Edx25519,
@@ -49,6 +48,15 @@ initNodePrng();
 import bigint from "big-integer";
 import { AssertionError } from "assert";
 import BigInteger from "big-integer";
+
+/**
+ * Used for testing, simple scalar multiplication with base point of Ed25519
+ * @param s scalar
+ * @returns new point sG
+ */
+async function scalarMultBase25519(s: Uint8Array): Promise<Uint8Array> {
+  return nacl.crypto_scalarmult_ed25519_base_noclamp(s);
+}
 
 test("encoding", (t) => {
   const s = "Hello, World";

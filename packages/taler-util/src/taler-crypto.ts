@@ -431,15 +431,6 @@ export function deriveSecrets(bseed: Uint8Array): CsBlindingSecrets {
 }
 
 /**
- * Used for testing, simple scalar multiplication with base point of Ed25519
- * @param s scalar
- * @returns new point sG
- */
-export async function scalarMultBase25519(s: Uint8Array): Promise<Uint8Array> {
-  return nacl.crypto_scalarmult_ed25519_base_noclamp(s);
-}
-
-/**
  * calculation of the blinded public point R in CS
  * @param csPub denomination publik key
  * @param secrets client blinding secrets
