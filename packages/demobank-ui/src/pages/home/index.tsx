@@ -54,7 +54,7 @@ const defaultSettings: BankUiSettings = {
     ["Bank", "https://bank.demo.taler.net/"],
     ["Essay Shop", "https://shop.demo.taler.net/"],
     ["Donations", "https://donations.demo.taler.net/"],
-    ["Survey", "https://donations.demo.taler.net/"],
+    ["Survey", "https://survey.demo.taler.net/"],
   ],
 };
 
