@@ -21,7 +21,7 @@ import {
   PreparePayResult,
   PreparePayResultType,
   TalerErrorDetail,
-  TalerProtocolTimestamp
+  TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
 import { TalerError, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useState } from "preact/hooks";
@@ -41,10 +41,12 @@ export function useComponentState(
     return { p2p, balance };
   });
 
-  useEffect(() => api.listener.onUpdateNotification(
-    [NotificationType.CoinWithdrawn],
-    hook?.retry
-  ));
+  useEffect(() =>
+    api.listener.onUpdateNotification(
+      [NotificationType.CoinWithdrawn],
+      hook?.retry,
+    ),
+  );
 
   const [operationError, setOperationError] = useState<
     TalerErrorDetail | undefined
@@ -63,10 +65,7 @@ export function useComponentState(
     };
   }
 
-  const {
-    contractTerms,
-    peerPullPaymentIncomingId,
-  } = hook.response.p2p;
+  const { contractTerms, peerPullPaymentIncomingId } = hook.response.p2p;
 
   const amountStr: string = contractTerms?.amount;
   const amount = Amounts.parseOrThrow(amountStr);
@@ -134,9 +133,12 @@ export function useComponentState(
 
   async function accept(): Promise<void> {
     try {
-      const resp = await api.wallet.call(WalletApiOperation.AcceptPeerPullPayment, {
-        peerPullPaymentIncomingId,
-      });
+      const resp = await api.wallet.call(
+        WalletApiOperation.AcceptPeerPullPayment,
+        {
+          peerPullPaymentIncomingId,
+        },
+      );
       onSuccess(resp.transactionId);
     } catch (e) {
       if (e instanceof TalerError) {

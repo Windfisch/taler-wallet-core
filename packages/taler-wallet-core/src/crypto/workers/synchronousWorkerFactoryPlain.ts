@@ -25,7 +25,9 @@ import { SynchronousCryptoWorkerPlain } from "./synchronousWorkerPlain.js";
  * The synchronous crypto worker produced by this factory doesn't run in the
  * background, but actually blocks the caller until the operation is done.
  */
-export class SynchronousCryptoWorkerFactoryPlain implements CryptoWorkerFactory {
+export class SynchronousCryptoWorkerFactoryPlain
+  implements CryptoWorkerFactory
+{
   startWorker(): CryptoWorker {
     return new SynchronousCryptoWorkerPlain();
   }

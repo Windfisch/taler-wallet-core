@@ -30,7 +30,10 @@ export function useProviderStatus(url: string): ProviderStatus | undefined {
   useEffect(() => {
     async function run(): Promise<void> {
       //create a first list of backup info by currency
-      const status = await wxApi.wallet.call(WalletApiOperation.GetBackupInfo, {});
+      const status = await wxApi.wallet.call(
+        WalletApiOperation.GetBackupInfo,
+        {},
+      );
 
       const providers = status.providers.filter(
         (p) => p.syncProviderBaseUrl === url,
@@ -40,7 +43,7 @@ export function useProviderStatus(url: string): ProviderStatus | undefined {
       async function sync(): Promise<void> {
         if (info) {
           await wxApi.wallet.call(WalletApiOperation.RunBackupCycle, {
-            providers: [info.syncProviderBaseUrl]
+            providers: [info.syncProviderBaseUrl],
           });
         }
       }
@@ -48,7 +51,7 @@ export function useProviderStatus(url: string): ProviderStatus | undefined {
       async function remove(): Promise<void> {
         if (info) {
           await wxApi.wallet.call(WalletApiOperation.RemoveBackupProvider, {
-            provider: info.syncProviderBaseUrl
+            provider: info.syncProviderBaseUrl,
           });
         }
       }

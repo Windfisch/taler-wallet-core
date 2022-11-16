@@ -161,11 +161,14 @@ export function NoExchangesView({
         title={<i18n.Translate>Could not find any exchange</i18n.Translate>}
       />
     );
-
   }
   return (
     <ErrorMessage
-      title={<i18n.Translate>Could not find any exchange for the currency {currency}</i18n.Translate>}
+      title={
+        <i18n.Translate>
+          Could not find any exchange for the currency {currency}
+        </i18n.Translate>
+      }
     />
   );
 }

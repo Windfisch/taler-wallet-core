@@ -933,9 +933,9 @@ async function dumpCoins(ws: InternalWalletState): Promise<CoinDumpJson> {
           ageCommitmentProof: c.ageCommitmentProof,
           spend_allocation: c.spendAllocation
             ? {
-              amount: c.spendAllocation.amount,
-              id: c.spendAllocation.id,
-            }
+                amount: c.spendAllocation.amount,
+                id: c.spendAllocation.id,
+              }
             : undefined,
         });
       }
@@ -1215,8 +1215,7 @@ async function dispatchRequestInternal<Op extends WalletApiOperation>(
     }
     case WalletApiOperation.AddBackupProvider: {
       const req = codecForAddBackupProviderRequest().decode(payload);
-      await addBackupProvider(ws, req);
-      return {};
+      return await addBackupProvider(ws, req);
     }
     case WalletApiOperation.RunBackupCycle: {
       const req = codecForRunBackupCycle().decode(payload);

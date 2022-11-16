@@ -29,13 +29,17 @@ export function useComponentState(
 
   const info = useAsyncAsHook(async () => {
     if (!talerRefundUri) throw Error("ERROR_NO-URI-FOR-REFUND");
-    const refund = await api.wallet.call(WalletApiOperation.PrepareRefund, { talerRefundUri });
+    const refund = await api.wallet.call(WalletApiOperation.PrepareRefund, {
+      talerRefundUri,
+    });
     return { refund, uri: talerRefundUri };
   });
 
-  useEffect(() => api.listener.onUpdateNotification(
-    [NotificationType.RefreshMelted],
-    info?.retry)
+  useEffect(() =>
+    api.listener.onUpdateNotification(
+      [NotificationType.RefreshMelted],
+      info?.retry,
+    ),
   );
 
   if (!info) {
@@ -52,7 +56,7 @@ export function useComponentState(
 
   const doAccept = async (): Promise<void> => {
     const res = await api.wallet.call(WalletApiOperation.ApplyRefund, {
-      talerRefundUri: uri
+      talerRefundUri: uri,
     });
 
     onSuccess(res.transactionId);

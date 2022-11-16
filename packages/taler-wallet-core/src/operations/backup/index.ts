@@ -29,15 +29,18 @@ import {
   AmountString,
   BackupRecovery,
   buildCodecForObject,
+  buildCodecForUnion,
   bytesToString,
   canonicalizeBaseUrl,
   canonicalJson,
   Codec,
   codecForAmountString,
   codecForBoolean,
+  codecForConstString,
   codecForList,
   codecForNumber,
   codecForString,
+  codecForTalerErrorDetail,
   codecOptional,
   ConfirmPayResultType,
   decodeCrock,
@@ -78,6 +81,7 @@ import {
   WalletBackupConfState,
 } from "../../db.js";
 import { InternalWalletState } from "../../internal-wallet-state.js";
+import { assertUnreachable } from "../../util/assertUnreachable.js";
 import {
   readSuccessResponseJsonOrThrow,
   readTalerErrorResponse,
@@ -232,12 +236,6 @@ function deriveBlobSecret(bc: WalletBackupConfState): Uint8Array {
 
 interface BackupForProviderArgs {
   backupProviderBaseUrl: string;
-
-  /**
-   * Should we attempt one more upload after trying
-   * to pay?
-   */
-  retryAfterPayment: boolean;
 }
 
 function getNextBackupTimestamp(): TalerProtocolTimestamp {
@@ -253,7 +251,7 @@ function getNextBackupTimestamp(): TalerProtocolTimestamp {
 async function runBackupCycleForProvider(
   ws: InternalWalletState,
   args: BackupForProviderArgs,
-): Promise<OperationAttemptResult> {
+): Promise<OperationAttemptResult<unknown, { talerUri: string }>> {
   const provider = await ws.db
     .mktx((x) => [x.backupProviders])
     .runReadOnly(async (tx) => {
@@ -339,57 +337,34 @@ async function runBackupCycleForProvider(
     if (!talerUri) {
       throw Error("no taler URI available to pay provider");
     }
-    const res = await preparePayForUri(ws, talerUri);
-    let proposalId = res.proposalId;
-    let doPay = false;
-    switch (res.status) {
-      case PreparePayResultType.InsufficientBalance:
-        // FIXME: record in provider state!
-        logger.warn("insufficient balance to pay for backup provider");
-        proposalId = res.proposalId;
-        break;
-      case PreparePayResultType.PaymentPossible:
-        doPay = true;
-        break;
-      case PreparePayResultType.AlreadyConfirmed:
-        break;
-    }
 
-    // FIXME: check if the provider is overcharging us!
+    //We can't delay downloading the proposal since we need the id
+    //FIXME: check download errors
+
+    const res = await preparePayForUri(ws, talerUri);
 
     await ws.db
       .mktx((x) => [x.backupProviders, x.operationRetries])
       .runReadWrite(async (tx) => {
-        const provRec = await tx.backupProviders.get(provider.baseUrl);
-        checkDbInvariant(!!provRec);
-        const ids = new Set(provRec.paymentProposalIds);
-        ids.add(proposalId);
-        provRec.paymentProposalIds = Array.from(ids).sort();
-        provRec.currentPaymentProposalId = proposalId;
-        // FIXME: allocate error code for this!
-        await tx.backupProviders.put(provRec);
-        const opId = RetryTags.forBackup(provRec);
+        const prov = await tx.backupProviders.get(provider.baseUrl);
+        if (!prov) {
+          logger.warn("backup provider not found anymore");
+          return;
+        }
+        const opId = RetryTags.forBackup(prov);
         await scheduleRetryInTx(ws, tx, opId);
+        prov.currentPaymentProposalId = res.proposalId;
+        prov.state = {
+          tag: BackupProviderStateTag.Retrying,
+        };
+        await tx.backupProviders.put(prov);
       });
 
-    if (doPay) {
-      const confirmRes = await confirmPay(ws, proposalId);
-      switch (confirmRes.type) {
-        case ConfirmPayResultType.Pending:
-          logger.warn("payment not yet finished yet");
-          break;
-      }
-    }
-
-    if (args.retryAfterPayment) {
-      return await runBackupCycleForProvider(ws, {
-        ...args,
-        retryAfterPayment: false,
-      });
-    }
     return {
       type: OperationAttemptResultType.Pending,
-      result: undefined,
+      result: {
+        talerUri,
+      },
     };
   }
 
@@ -442,10 +417,7 @@ async function runBackupCycleForProvider(
       });
     logger.info("processed existing backup");
     // Now upload our own, merged backup.
-    return await runBackupCycleForProvider(ws, {
-      ...args,
-      retryAfterPayment: false,
-    });
+    return await runBackupCycleForProvider(ws, args);
   }
 
   // Some other response that we did not expect!
@@ -477,7 +449,6 @@ export async function processBackupForProvider(
 
   return await runBackupCycleForProvider(ws, {
     backupProviderBaseUrl: provider.baseUrl,
-    retryAfterPayment: true,
   });
 }
 
@@ -540,12 +511,11 @@ export async function runBackupCycle(
   for (const provider of providers) {
     await runBackupCycleForProvider(ws, {
       backupProviderBaseUrl: provider.baseUrl,
-      retryAfterPayment: true,
     });
   }
 }
 
-interface SyncTermsOfServiceResponse {
+export interface SyncTermsOfServiceResponse {
   // maximum backup size supported
   storage_limit_in_megabytes: number;
 
@@ -557,7 +527,7 @@ interface SyncTermsOfServiceResponse {
   version: string;
 }
 
-const codecForSyncTermsOfServiceResponse =
+export const codecForSyncTermsOfServiceResponse =
   (): Codec<SyncTermsOfServiceResponse> =>
     buildCodecForObject<SyncTermsOfServiceResponse>()
       .property("storage_limit_in_megabytes", codecForNumber())
@@ -584,10 +554,58 @@ export const codecForAddBackupProviderRequest =
       .property("activate", codecOptional(codecForBoolean()))
       .build("AddBackupProviderRequest");
 
+export type AddBackupProviderResponse =
+  | AddBackupProviderOk
+  | AddBackupProviderPaymentRequired
+  | AddBackupProviderError;
+
+interface AddBackupProviderOk {
+  status: "ok";
+}
+interface AddBackupProviderPaymentRequired {
+  status: "payment-required";
+  talerUri: string;
+}
+interface AddBackupProviderError {
+  status: "error";
+  error: TalerErrorDetail;
+}
+
+export const codecForAddBackupProviderOk = (): Codec<AddBackupProviderOk> =>
+  buildCodecForObject<AddBackupProviderOk>()
+    .property("status", codecForConstString("ok"))
+    .build("AddBackupProviderOk");
+
+export const codecForAddBackupProviderPaymenrRequired =
+  (): Codec<AddBackupProviderPaymentRequired> =>
+    buildCodecForObject<AddBackupProviderPaymentRequired>()
+      .property("status", codecForConstString("payment-required"))
+      .property("talerUri", codecForString())
+      .build("AddBackupProviderPaymentRequired");
+
+export const codecForAddBackupProviderError =
+  (): Codec<AddBackupProviderError> =>
+    buildCodecForObject<AddBackupProviderError>()
+      .property("status", codecForConstString("error"))
+      .property("error", codecForTalerErrorDetail())
+      .build("AddBackupProviderError");
+
+export const codecForAddBackupProviderResponse =
+  (): Codec<AddBackupProviderResponse> =>
+    buildCodecForUnion<AddBackupProviderResponse>()
+      .discriminateOn("status")
+      .alternative("ok", codecForAddBackupProviderOk())
+      .alternative(
+        "payment-required",
+        codecForAddBackupProviderPaymenrRequired(),
+      )
+      .alternative("error", codecForAddBackupProviderError())
+      .build("AddBackupProviderResponse");
+
 export async function addBackupProvider(
   ws: InternalWalletState,
   req: AddBackupProviderRequest,
-): Promise<void> {
+): Promise<AddBackupProviderResponse> {
   logger.info(`adding backup provider ${j2s(req)}`);
   await provideBackupState(ws);
   const canonUrl = canonicalizeBaseUrl(req.backupProviderBaseUrl);
@@ -618,6 +636,7 @@ export async function addBackupProvider(
     .mktx((x) => [x.backupProviders])
     .runReadWrite(async (tx) => {
       let state: BackupProviderState;
+      //FIXME: what is the difference provisional and ready?
       if (req.activate) {
         state = {
           tag: BackupProviderStateTag.Ready,
@@ -641,6 +660,39 @@ export async function addBackupProvider(
         uids: [encodeCrock(getRandomBytes(32))],
       });
     });
+
+  return await runFirstBackupCycleForProvider(ws, {
+    backupProviderBaseUrl: canonUrl,
+  });
+}
+
+async function runFirstBackupCycleForProvider(
+  ws: InternalWalletState,
+  args: BackupForProviderArgs,
+): Promise<AddBackupProviderResponse> {
+  const resp = await runBackupCycleForProvider(ws, args);
+  switch (resp.type) {
+    case OperationAttemptResultType.Error:
+      return {
+        status: "error",
+        error: resp.errorDetail,
+      };
+    case OperationAttemptResultType.Finished:
+      return {
+        status: "ok",
+      };
+    case OperationAttemptResultType.Longpoll:
+      throw Error(
+        "unexpected runFirstBackupCycleForProvider result (longpoll)",
+      );
+    case OperationAttemptResultType.Pending:
+      return {
+        status: "payment-required",
+        talerUri: resp.result.talerUri,
+      };
+    default:
+      assertUnreachable(resp);
+  }
 }
 
 export async function restoreFromRecoverySecret(): Promise<void> {

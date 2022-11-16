@@ -19,7 +19,7 @@ import {
   AmountJson,
   Amounts,
   ExchangeListItem,
-  ExchangeTosStatus
+  ExchangeTosStatus,
 } from "@gnu-taler/taler-util";
 import { TalerError, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
@@ -35,7 +35,10 @@ export function useComponentStateFromParams(
   api: typeof wxApi,
 ): RecursiveState<State> {
   const uriInfoHook = useAsyncAsHook(async () => {
-    const exchanges = await api.wallet.call(WalletApiOperation.ListExchanges, {});
+    const exchanges = await api.wallet.call(
+      WalletApiOperation.ListExchanges,
+      {},
+    );
     return { amount: Amounts.parseOrThrow(amount), exchanges };
   });
 
@@ -58,11 +61,14 @@ export function useComponentStateFromParams(
     transactionId: string;
     confirmTransferUrl: string | undefined;
   }> {
-    const res = await api.wallet.call(WalletApiOperation.AcceptManualWithdrawal, {
-      exchangeBaseUrl: exchange,
-      amount: Amounts.stringify(chosenAmount),
-      restrictAge: ageRestricted,
-    });
+    const res = await api.wallet.call(
+      WalletApiOperation.AcceptManualWithdrawal,
+      {
+        exchangeBaseUrl: exchange,
+        amount: Amounts.stringify(chosenAmount),
+        restrictAge: ageRestricted,
+      },
+    );
     return {
       confirmTransferUrl: undefined,
       transactionId: res.transactionId,
@@ -93,9 +99,12 @@ export function useComponentStateFromURI(
   const uriInfoHook = useAsyncAsHook(async () => {
     if (!talerWithdrawUri) throw Error("ERROR_NO-URI-FOR-WITHDRAWAL");
 
-    const uriInfo = await api.wallet.call(WalletApiOperation.GetWithdrawalDetailsForUri, {
-      talerWithdrawUri,
-    });
+    const uriInfo = await api.wallet.call(
+      WalletApiOperation.GetWithdrawalDetailsForUri,
+      {
+        talerWithdrawUri,
+      },
+    );
     const { amount, defaultExchangeBaseUrl } = uriInfo;
     return {
       talerWithdrawUri,
@@ -126,11 +135,14 @@ export function useComponentStateFromURI(
     transactionId: string;
     confirmTransferUrl: string | undefined;
   }> {
-    const res = await api.wallet.call(WalletApiOperation.AcceptBankIntegratedWithdrawal, {
-      exchangeBaseUrl: exchange,
-      talerWithdrawUri: uri,
-      restrictAge: ageRestricted
-    });
+    const res = await api.wallet.call(
+      WalletApiOperation.AcceptBankIntegratedWithdrawal,
+      {
+        exchangeBaseUrl: exchange,
+        talerWithdrawUri: uri,
+        restrictAge: ageRestricted,
+      },
+    );
     return {
       confirmTransferUrl: res.confirmTransferUrl,
       transactionId: res.transactionId,
@@ -189,11 +201,14 @@ function exchangeSelectionState(
      * about the withdrawal
      */
     const amountHook = useAsyncAsHook(async () => {
-      const info = await api.wallet.call(WalletApiOperation.GetWithdrawalDetailsForAmount, {
-        exchangeBaseUrl: currentExchange.exchangeBaseUrl,
-        amount: Amounts.stringify(chosenAmount),
-        restrictAge: ageRestricted,
-      });
+      const info = await api.wallet.call(
+        WalletApiOperation.GetWithdrawalDetailsForAmount,
+        {
+          exchangeBaseUrl: currentExchange.exchangeBaseUrl,
+          amount: Amounts.stringify(chosenAmount),
+          restrictAge: ageRestricted,
+        },
+      );
 
       const withdrawAmount = {
         raw: Amounts.parseOrThrow(info.amountRaw),
@@ -264,10 +279,10 @@ function exchangeSelectionState(
     //TODO: calculate based on exchange info
     const ageRestriction = ageRestrictionEnabled
       ? {
-        list: ageRestrictionOptions,
-        value: String(ageRestricted),
-        onChange: async (v: string) => setAgeRestricted(parseInt(v, 10)),
-      }
+          list: ageRestrictionOptions,
+          value: String(ageRestricted),
+          onChange: async (v: string) => setAgeRestricted(parseInt(v, 10)),
+        }
       : undefined;
 
     return {

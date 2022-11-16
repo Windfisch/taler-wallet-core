@@ -65,11 +65,10 @@ describe("Tip CTA states", () => {
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should be ready for accepting the tip", async () => {
-
     const { handler, mock } = createWalletApiMock();
 
     handler.addWalletCallResponse(WalletApiOperation.PrepareTip, undefined, {
@@ -79,9 +78,9 @@ describe("Tip CTA states", () => {
       tipAmountEffective: "EUR:1",
       walletTipId: "tip_id",
       expirationTimestamp: {
-        t_s: 1
+        t_s: 1,
       },
-      tipAmountRaw: ""
+      tipAmountRaw: "",
     });
 
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
@@ -112,7 +111,7 @@ describe("Tip CTA states", () => {
       const state = pullLastResultOrThrow();
 
       if (state.status !== "ready") {
-        expect(state).eq({ status: "ready" })
+        expect(state).eq({ status: "ready" });
         return;
       }
       if (state.error) expect.fail();
@@ -132,9 +131,9 @@ describe("Tip CTA states", () => {
       tipAmountEffective: "EUR:1",
       walletTipId: "tip_id",
       expirationTimestamp: {
-        t_s: 1
+        t_s: 1,
       },
-      tipAmountRaw: ""
+      tipAmountRaw: "",
     });
     expect(await waitForStateUpdate()).true;
 
@@ -142,7 +141,7 @@ describe("Tip CTA states", () => {
       const state = pullLastResultOrThrow();
 
       if (state.status !== "accepted") {
-        expect(state).eq({ status: "accepted" })
+        expect(state).eq({ status: "accepted" });
         return;
       }
       if (state.error) expect.fail();
@@ -151,7 +150,7 @@ describe("Tip CTA states", () => {
       expect(state.exchangeBaseUrl).eq("exchange url");
     }
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should be ignored after clicking the ignore button", async () => {
@@ -165,7 +164,7 @@ describe("Tip CTA states", () => {
       expirationTimestamp: {
         t_s: 1,
       },
-      tipAmountRaw: ""
+      tipAmountRaw: "",
     });
 
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
@@ -203,7 +202,7 @@ describe("Tip CTA states", () => {
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should render accepted if the tip has been used previously", async () => {
@@ -255,6 +254,6 @@ describe("Tip CTA states", () => {
       expect(state.exchangeBaseUrl).eq("exchange url");
     }
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 });

@@ -26,7 +26,9 @@ export function useComponentState(
 ): State {
   const tipInfo = useAsyncAsHook(async () => {
     if (!talerTipUri) throw Error("ERROR_NO-URI-FOR-TIP");
-    const tip = await api.wallet.call(WalletApiOperation.PrepareTip, { talerTipUri });
+    const tip = await api.wallet.call(WalletApiOperation.PrepareTip, {
+      talerTipUri,
+    });
     return { tip };
   });
 
@@ -46,7 +48,9 @@ export function useComponentState(
   const { tip } = tipInfo.response;
 
   const doAccept = async (): Promise<void> => {
-    const res = await api.wallet.call(WalletApiOperation.AcceptTip, { walletTipId: tip.walletTipId });
+    const res = await api.wallet.call(WalletApiOperation.AcceptTip, {
+      walletTipId: tip.walletTipId,
+    });
 
     //FIX: this may not be seen since we are moving to the success also
     tipInfo.retry();

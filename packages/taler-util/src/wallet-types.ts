@@ -241,12 +241,18 @@ export interface ConfirmPayResultPending {
   lastError: TalerErrorDetail | undefined;
 }
 
+export const codecForTalerErrorDetail = (): Codec<TalerErrorDetail> =>
+  buildCodecForObject<TalerErrorDetail>()
+    .property("code", codecForNumber())
+    .property("hint", codecOptional(codecForString()))
+    .build("TalerErrorDetail");
+
 export type ConfirmPayResult = ConfirmPayResultDone | ConfirmPayResultPending;
 
 export const codecForConfirmPayResultPending =
   (): Codec<ConfirmPayResultPending> =>
     buildCodecForObject<ConfirmPayResultPending>()
-      .property("lastError", codecForAny())
+      .property("lastError", codecOptional(codecForTalerErrorDetail()))
       .property("transactionId", codecForString())
       .property("type", codecForConstString(ConfirmPayResultType.Pending))
       .build("ConfirmPayResultPending");

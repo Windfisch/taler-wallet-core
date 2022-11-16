@@ -25,8 +25,7 @@ import * as a4 from "./DepositPage/stories.js";
 import * as a5 from "./ExchangeAddConfirm.stories.js";
 import * as a6 from "./ExchangeAddSetUrl.stories.js";
 import * as a7 from "./History.stories.js";
-import * as a8 from "./ProviderAddConfirmProvider.stories.js";
-import * as a9 from "./ProviderAddSetUrl.stories.js";
+import * as a8 from "./AddBackupProvider/stories.js";
 import * as a10 from "./ProviderDetail.stories.js";
 import * as a11 from "./ReserveCreated.stories.js";
 import * as a12 from "./Settings.stories.js";
@@ -47,7 +46,6 @@ export default [
   a6,
   a7,
   a8,
-  a9,
   a10,
   a11,
   a12,

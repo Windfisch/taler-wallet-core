@@ -22,13 +22,17 @@
  * Imports.
  */
 import {
-  CoreApiResponse, Logger, NotificationType, WalletDiagnostics
+  CoreApiResponse,
+  Logger,
+  NotificationType,
+  WalletDiagnostics,
 } from "@gnu-taler/taler-util";
 import {
-  TalerError, WalletCoreApiClient,
+  TalerError,
+  WalletCoreApiClient,
   WalletCoreOpKeys,
   WalletCoreRequestType,
-  WalletCoreResponseType
+  WalletCoreResponseType,
 } from "@gnu-taler/taler-wallet-core";
 import { MessageFromBackend, platform } from "./platform/api.js";
 import { nullFunction } from "./test-utils.js";
@@ -107,7 +111,6 @@ export class WxWalletCoreApiClient implements WalletCoreApiClient {
 }
 
 export class BackgroundApiClient {
-
   public resetDb(): Promise<void> {
     return callBackend("reset-db", {});
   }
@@ -129,16 +132,16 @@ export class BackgroundApiClient {
   public runGarbageCollector(): Promise<void> {
     return callBackend("run-gc", {});
   }
-
 }
 function onUpdateNotification(
   messageTypes: Array<NotificationType>,
   doCallback: undefined | (() => void),
 ): () => void {
   //if no callback, then ignore
-  if (!doCallback) return () => {
-    return
-  };
+  if (!doCallback)
+    return () => {
+      return;
+    };
   const onNewMessage = (message: MessageFromBackend): void => {
     const shouldNotify = messageTypes.includes(message.type);
     if (shouldNotify) {
@@ -152,7 +155,6 @@ export const wxApi = {
   wallet: new WxWalletCoreApiClient(),
   background: new BackgroundApiClient(),
   listener: {
-    onUpdateNotification
-  }
-}
-
+    onUpdateNotification,
+  },
+};

@@ -32,10 +32,15 @@ export function useBackupDeviceName(): BackupDeviceName {
   useEffect(() => {
     async function run(): Promise<void> {
       //create a first list of backup info by currency
-      const status = await wxApi.wallet.call(WalletApiOperation.GetBackupInfo, {});
+      const status = await wxApi.wallet.call(
+        WalletApiOperation.GetBackupInfo,
+        {},
+      );
 
       async function update(newName: string): Promise<void> {
-        await wxApi.wallet.call(WalletApiOperation.SetWalletDeviceId, { walletDeviceId: newName });
+        await wxApi.wallet.call(WalletApiOperation.SetWalletDeviceId, {
+          walletDeviceId: newName,
+        });
         setStatus((old) => ({ ...old, name: newName }));
       }
 

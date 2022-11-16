@@ -1584,7 +1584,7 @@ export async function runPayForConfirmPay(
       const numRetry = opRetry?.retryInfo.retryCounter ?? 0;
       if (
         res.errorDetail.code ===
-        TalerErrorCode.WALLET_PAY_MERCHANT_SERVER_ERROR &&
+          TalerErrorCode.WALLET_PAY_MERCHANT_SERVER_ERROR &&
         numRetry < maxRetry
       ) {
         // Pretend the operation is pending instead of reporting

@@ -21,7 +21,9 @@
 
 import {
   Amounts,
-  ExchangeEntryStatus, ExchangeListItem, ExchangeTosStatus
+  ExchangeEntryStatus,
+  ExchangeListItem,
+  ExchangeTosStatus,
 } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
@@ -70,13 +72,9 @@ describe("Withdraw CTA states", () => {
       onSuccess: async () => {
         null;
       },
-    }
+    };
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() =>
-        useComponentStateFromURI(
-          props, mock
-        ),
-      );
+      mountHook(() => useComponentStateFromURI(props, mock));
 
     {
       const { status } = pullLastResultOrThrow();
@@ -96,7 +94,7 @@ describe("Withdraw CTA states", () => {
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should tell the user that there is not known exchange", async () => {
@@ -109,18 +107,18 @@ describe("Withdraw CTA states", () => {
       onSuccess: async () => {
         null;
       },
-    }
-    handler.addWalletCallResponse(WalletApiOperation.GetWithdrawalDetailsForUri, undefined, {
-      amount: "EUR:2",
-      possibleExchanges: [],
-    })
+    };
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetWithdrawalDetailsForUri,
+      undefined,
+      {
+        amount: "EUR:2",
+        possibleExchanges: [],
+      },
+    );
 
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() =>
-        useComponentStateFromURI(
-          props, mock
-        ),
-      );
+      mountHook(() => useComponentStateFromURI(props, mock));
 
     {
       const { status } = pullLastResultOrThrow();
@@ -138,7 +136,7 @@ describe("Withdraw CTA states", () => {
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should be able to withdraw if tos are ok", async () => {
@@ -151,26 +149,30 @@ describe("Withdraw CTA states", () => {
       onSuccess: async () => {
         null;
       },
-    }
-    handler.addWalletCallResponse(WalletApiOperation.GetWithdrawalDetailsForUri, undefined, {
-      amount: "ARS:2",
-      possibleExchanges: exchanges,
-      defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl
-    })
-    handler.addWalletCallResponse(WalletApiOperation.GetWithdrawalDetailsForAmount, undefined, {
-      amountRaw: "ARS:2",
-      amountEffective: "ARS:2",
-      paytoUris: ["payto://"],
-      tosAccepted: true,
-      ageRestrictionOptions: []
-    })
+    };
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetWithdrawalDetailsForUri,
+      undefined,
+      {
+        amount: "ARS:2",
+        possibleExchanges: exchanges,
+        defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl,
+      },
+    );
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetWithdrawalDetailsForAmount,
+      undefined,
+      {
+        amountRaw: "ARS:2",
+        amountEffective: "ARS:2",
+        paytoUris: ["payto://"],
+        tosAccepted: true,
+        ageRestrictionOptions: [],
+      },
+    );
 
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() =>
-        useComponentStateFromURI(
-          props, mock
-        ),
-      );
+      mountHook(() => useComponentStateFromURI(props, mock));
 
     {
       const { status, error } = pullLastResultOrThrow();
@@ -203,7 +205,7 @@ describe("Withdraw CTA states", () => {
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should accept the tos before withdraw", async () => {
@@ -216,38 +218,45 @@ describe("Withdraw CTA states", () => {
       onSuccess: async () => {
         null;
       },
-    }
+    };
     const exchangeWithNewTos = exchanges.map((e) => ({
       ...e,
       tosStatus: ExchangeTosStatus.New,
     }));
 
-    handler.addWalletCallResponse(WalletApiOperation.GetWithdrawalDetailsForUri, undefined, {
-      amount: "ARS:2",
-      possibleExchanges: exchangeWithNewTos,
-      defaultExchangeBaseUrl: exchangeWithNewTos[0].exchangeBaseUrl
-    })
-    handler.addWalletCallResponse(WalletApiOperation.GetWithdrawalDetailsForAmount, undefined, {
-      amountRaw: "ARS:2",
-      amountEffective: "ARS:2",
-      paytoUris: ["payto://"],
-      tosAccepted: false,
-      ageRestrictionOptions: []
-    })
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetWithdrawalDetailsForUri,
+      undefined,
+      {
+        amount: "ARS:2",
+        possibleExchanges: exchangeWithNewTos,
+        defaultExchangeBaseUrl: exchangeWithNewTos[0].exchangeBaseUrl,
+      },
+    );
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetWithdrawalDetailsForAmount,
+      undefined,
+      {
+        amountRaw: "ARS:2",
+        amountEffective: "ARS:2",
+        paytoUris: ["payto://"],
+        tosAccepted: false,
+        ageRestrictionOptions: [],
+      },
+    );
 
-
-    handler.addWalletCallResponse(WalletApiOperation.GetWithdrawalDetailsForUri, undefined, {
-      amount: "ARS:2",
-      possibleExchanges: exchanges,
-      defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl
-    })
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetWithdrawalDetailsForUri,
+      undefined,
+      {
+        amount: "ARS:2",
+        possibleExchanges: exchanges,
+        defaultExchangeBaseUrl: exchanges[0].exchangeBaseUrl,
+      },
+    );
 
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() =>
-        useComponentStateFromURI(
-          props, mock
-        ),
-      );
+      mountHook(() => useComponentStateFromURI(props, mock));
 
     {
       const { status, error } = pullLastResultOrThrow();
@@ -297,6 +306,6 @@ describe("Withdraw CTA states", () => {
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 });

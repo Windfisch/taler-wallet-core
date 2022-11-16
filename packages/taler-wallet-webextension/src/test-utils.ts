@@ -15,7 +15,12 @@
  */
 
 import { NotificationType } from "@gnu-taler/taler-util";
-import { WalletCoreApiClient, WalletCoreOpKeys, WalletCoreRequestType, WalletCoreResponseType } from "@gnu-taler/taler-wallet-core";
+import {
+  WalletCoreApiClient,
+  WalletCoreOpKeys,
+  WalletCoreRequestType,
+  WalletCoreResponseType,
+} from "@gnu-taler/taler-wallet-core";
 import {
   ComponentChildren,
   Fragment,
@@ -207,7 +212,8 @@ export function mountHook<T extends object>(
 export const nullFunction: any = () => null;
 
 interface MockHandler {
-  addWalletCallResponse<Op extends WalletCoreOpKeys>(operation: Op,
+  addWalletCallResponse<Op extends WalletCoreOpKeys>(
+    operation: Op,
     payload?: Partial<WalletCoreRequestType<Op>>,
     response?: WalletCoreResponseType<Op>,
     callback?: () => void,
@@ -220,16 +226,16 @@ interface MockHandler {
 
 type CallRecord = WalletCallRecord | BackgroundCallRecord;
 interface WalletCallRecord {
-  source: "wallet"
+  source: "wallet";
   callback: () => void;
-  operation: WalletCoreOpKeys,
-  payload?: WalletCoreRequestType<WalletCoreOpKeys>,
-  response?: WalletCoreResponseType<WalletCoreOpKeys>,
+  operation: WalletCoreOpKeys;
+  payload?: WalletCoreRequestType<WalletCoreOpKeys>;
+  response?: WalletCoreResponseType<WalletCoreOpKeys>;
 }
 interface BackgroundCallRecord {
-  source: "background"
-  name: string,
-  args: any,
+  source: "background";
+  name: string;
+  args: any;
   response: any;
 }
 
@@ -237,78 +243,112 @@ type Subscriptions = {
   [key in NotificationType]?: VoidFunction;
 };
 
-export function createWalletApiMock(): { handler: MockHandler, mock: typeof wxApi } {
-  const calls = new Array<CallRecord>()
+export function createWalletApiMock(): {
+  handler: MockHandler;
+  mock: typeof wxApi;
+} {
+  const calls = new Array<CallRecord>();
   const subscriptions: Subscriptions = {};
-
 
   const mock: typeof wxApi = {
     wallet: new Proxy<WalletCoreApiClient>({} as any, {
       get(target, name, receiver) {
-        const functionName = String(name)
+        const functionName = String(name);
         if (functionName !== "call") {
-          throw Error(`the only method in wallet api should be 'call': ${functionName}`)
+          throw Error(
+            `the only method in wallet api should be 'call': ${functionName}`,
+          );
         }
-        return function (operation: WalletCoreOpKeys, payload: WalletCoreRequestType<WalletCoreOpKeys>) {
-          const next = calls.shift()
+        return function (
+          operation: WalletCoreOpKeys,
+          payload: WalletCoreRequestType<WalletCoreOpKeys>,
+        ) {
+          const next = calls.shift();
 
           if (!next) {
-            throw Error(`wallet operation was called but none was expected: ${operation} (${JSON.stringify(payload, undefined, 2)})`)
+            throw Error(
+              `wallet operation was called but none was expected: ${operation} (${JSON.stringify(
+                payload,
+                undefined,
+                2,
+              )})`,
+            );
           }
           if (next.source !== "wallet") {
-            throw Error(`wallet operation expected`)
+            throw Error(`wallet operation expected`);
           }
           if (operation !== next.operation) {
             //more checks, deep check payload
-            throw Error(`wallet operation doesn't match: expected ${next.operation} actual ${operation}`)
+            throw Error(
+              `wallet operation doesn't match: expected ${next.operation} actual ${operation}`,
+            );
           }
-          next.callback()
+          next.callback();
 
-          return next.response ?? {}
-        }
-      }
+          return next.response ?? {};
+        };
+      },
     }),
     listener: {
-      onUpdateNotification(mTypes: NotificationType[], callback: (() => void) | undefined): (() => void) {
-        mTypes.forEach(m => {
-          subscriptions[m] = callback
-        })
-        return nullFunction
-      }
+      onUpdateNotification(
+        mTypes: NotificationType[],
+        callback: (() => void) | undefined,
+      ): () => void {
+        mTypes.forEach((m) => {
+          subscriptions[m] = callback;
+        });
+        return nullFunction;
+      },
     },
     background: new Proxy<BackgroundApiClient>({} as any, {
       get(target, name, receiver) {
         const functionName = String(name);
         return function (...args: any) {
-          const next = calls.shift()
+          const next = calls.shift();
           if (!next) {
-            throw Error(`background operation was called but none was expected: ${functionName} (${JSON.stringify(args, undefined, 2)})`)
+            throw Error(
+              `background operation was called but none was expected: ${functionName} (${JSON.stringify(
+                args,
+                undefined,
+                2,
+              )})`,
+            );
           }
           if (next.source !== "background" || functionName !== next.name) {
             //more checks, deep check args
-            throw Error(`background operation doesn't match`)
+            throw Error(`background operation doesn't match`);
           }
-          return next.response
-        }
-      }
+          return next.response;
+        };
+      },
     }),
-  }
-
+  };
 
   const handler: MockHandler = {
     addWalletCallResponse(operation, payload, response, cb) {
-      calls.push({ source: "wallet", operation, payload, response, callback: cb ? cb : () => { null } })
-      return handler
+      calls.push({
+        source: "wallet",
+        operation,
+        payload,
+        response,
+        callback: cb
+          ? cb
+          : () => {
+              null;
+            },
+      });
+      return handler;
     },
     notifyEventFromWallet(event: NotificationType): void {
-      const callback = subscriptions[event]
-      if (!callback) throw Error(`Expected to have a subscription for ${event}`);
+      const callback = subscriptions[event];
+      if (!callback)
+        throw Error(`Expected to have a subscription for ${event}`);
       return callback();
     },
     getCallingQueueState() {
       return calls.length === 0 ? "empty" : `${calls.length} left`;
     },
-  }
+  };
 
-  return { handler, mock }
+  return { handler, mock };
 }

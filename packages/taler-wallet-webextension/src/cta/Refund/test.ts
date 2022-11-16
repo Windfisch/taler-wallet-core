@@ -21,7 +21,10 @@
 
 import {
   AmountJson,
-  Amounts, NotificationType, OrderShortInfo, PrepareRefundResult
+  Amounts,
+  NotificationType,
+  OrderShortInfo,
+  PrepareRefundResult,
 } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
@@ -45,7 +48,7 @@ describe("Refund CTA states", () => {
               null;
             },
           },
-          mock
+          mock,
           // {
           //   prepareRefund: async () => ({}),
           //   applyRefund: async () => ({}),
@@ -73,7 +76,7 @@ describe("Refund CTA states", () => {
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should be ready after loading", async () => {
@@ -86,7 +89,7 @@ describe("Refund CTA states", () => {
       onSuccess: async () => {
         null;
       },
-    }
+    };
 
     handler.addWalletCallResponse(WalletApiOperation.PrepareRefund, undefined, {
       awaiting: "EUR:2",
@@ -103,12 +106,13 @@ describe("Refund CTA states", () => {
         orderId: "orderId1",
         summary: "the summary",
       } as OrderShortInfo,
-    })
+    });
 
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
       mountHook(() =>
         useComponentState(
-          props, mock
+          props,
+          mock,
           //   {
           //     prepareRefund: async () =>
           //     ({
@@ -154,7 +158,7 @@ describe("Refund CTA states", () => {
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should be ignored after clicking the ignore button", async () => {
@@ -167,7 +171,7 @@ describe("Refund CTA states", () => {
       onSuccess: async () => {
         null;
       },
-    }
+    };
 
     handler.addWalletCallResponse(WalletApiOperation.PrepareRefund, undefined, {
       awaiting: "EUR:2",
@@ -184,7 +188,7 @@ describe("Refund CTA states", () => {
         orderId: "orderId1",
         summary: "the summary",
       } as OrderShortInfo,
-    })
+    });
     // handler.addWalletCall(WalletApiOperation.ApplyRefund)
     // handler.addWalletCall(WalletApiOperation.PrepareRefund, undefined, {
     //   awaiting: "EUR:1",
@@ -205,7 +209,8 @@ describe("Refund CTA states", () => {
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
       mountHook(() =>
         useComponentState(
-          props, mock
+          props,
+          mock,
           // {
           //   prepareRefund: async () =>
           //   ({
@@ -242,11 +247,11 @@ describe("Refund CTA states", () => {
       const state = pullLastResultOrThrow();
 
       if (state.status !== "ready") {
-        expect(state).eq({})
+        expect(state).eq({});
         return;
       }
       if (state.error) {
-        expect(state).eq({})
+        expect(state).eq({});
         return;
       }
       expect(state.accept.onClick).not.undefined;
@@ -264,18 +269,18 @@ describe("Refund CTA states", () => {
       const state = pullLastResultOrThrow();
 
       if (state.status !== "ignored") {
-        expect(state).eq({})
+        expect(state).eq({});
         return;
       }
       if (state.error) {
-        expect(state).eq({})
+        expect(state).eq({});
         return;
       }
       expect(state.merchantName).eq("the merchant name");
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should be in progress when doing refresh", async () => {
@@ -288,7 +293,7 @@ describe("Refund CTA states", () => {
       onSuccess: async () => {
         null;
       },
-    }
+    };
 
     handler.addWalletCallResponse(WalletApiOperation.PrepareRefund, undefined, {
       awaiting: "EUR:2",
@@ -305,7 +310,7 @@ describe("Refund CTA states", () => {
         orderId: "orderId1",
         summary: "the summary",
       } as OrderShortInfo,
-    })
+    });
     handler.addWalletCallResponse(WalletApiOperation.PrepareRefund, undefined, {
       awaiting: "EUR:1",
       effectivePaid: "EUR:2",
@@ -321,7 +326,7 @@ describe("Refund CTA states", () => {
         orderId: "orderId1",
         summary: "the summary",
       } as OrderShortInfo,
-    })
+    });
     handler.addWalletCallResponse(WalletApiOperation.PrepareRefund, undefined, {
       awaiting: "EUR:0",
       effectivePaid: "EUR:2",
@@ -337,14 +342,10 @@ describe("Refund CTA states", () => {
         orderId: "orderId1",
         summary: "the summary",
       } as OrderShortInfo,
-    })
+    });
 
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() =>
-        useComponentState(
-          props, mock
-        ),
-      );
+      mountHook(() => useComponentState(props, mock));
 
     {
       const { status, error } = pullLastResultOrThrow();
@@ -358,7 +359,7 @@ describe("Refund CTA states", () => {
       const state = pullLastResultOrThrow();
 
       if (state.status !== "in-progress") {
-        expect(state).eq({})
+        expect(state).eq({});
         return;
       }
       if (state.error) expect.fail();
@@ -367,7 +368,7 @@ describe("Refund CTA states", () => {
       expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:2"));
       // expect(state.progress).closeTo(1 / 3, 0.01)
 
-      handler.notifyEventFromWallet(NotificationType.RefreshMelted)
+      handler.notifyEventFromWallet(NotificationType.RefreshMelted);
     }
 
     expect(await waitForStateUpdate()).true;
@@ -376,7 +377,7 @@ describe("Refund CTA states", () => {
       const state = pullLastResultOrThrow();
 
       if (state.status !== "in-progress") {
-        expect(state).eq({})
+        expect(state).eq({});
         return;
       }
       if (state.error) expect.fail();
@@ -385,7 +386,7 @@ describe("Refund CTA states", () => {
       expect(state.amount).deep.eq(Amounts.parseOrThrow("EUR:2"));
       // expect(state.progress).closeTo(2 / 3, 0.01)
 
-      handler.notifyEventFromWallet(NotificationType.RefreshMelted)
+      handler.notifyEventFromWallet(NotificationType.RefreshMelted);
     }
 
     expect(await waitForStateUpdate()).true;
@@ -394,7 +395,7 @@ describe("Refund CTA states", () => {
       const state = pullLastResultOrThrow();
 
       if (state.status !== "ready") {
-        expect(state).eq({})
+        expect(state).eq({});
         return;
       }
       if (state.error) expect.fail();
@@ -404,6 +405,6 @@ describe("Refund CTA states", () => {
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 });

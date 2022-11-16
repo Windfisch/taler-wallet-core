@@ -32,7 +32,7 @@ setupI18n("en", { en: {} });
 setupPlatform(chromeAPI);
 
 function testThisStory(st: any): any {
-  describe(`render examples for ${(st as any).default.title}`, () => {
+  describe(`example "${(st as any).default.title}"`, () => {
     Object.keys(st).forEach((k) => {
       const Component = (st as any)[k];
       if (k === "default" || !Component) return;

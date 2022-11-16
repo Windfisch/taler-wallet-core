@@ -18,7 +18,7 @@ import {
   DenomOperationMap,
   ExchangeFullDetails,
   ExchangeListItem,
-  FeeDescriptionPair
+  FeeDescriptionPair,
 } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
@@ -33,7 +33,7 @@ import {
   NoExchangesView,
   PrivacyContentView,
   ReadyView,
-  TosContentView
+  TosContentView,
 } from "./views.js";
 
 export interface Props {

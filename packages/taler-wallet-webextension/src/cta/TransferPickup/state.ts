@@ -18,7 +18,7 @@ import {
   AbsoluteTime,
   Amounts,
   TalerErrorDetail,
-  TalerProtocolTimestamp
+  TalerProtocolTimestamp,
 } from "@gnu-taler/taler-util";
 import { TalerError, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
@@ -52,10 +52,7 @@ export function useComponentState(
     };
   }
 
-  const {
-    contractTerms,
-    peerPushPaymentIncomingId,
-  } = hook.response;
+  const { contractTerms, peerPushPaymentIncomingId } = hook.response;
 
   const amount: string = contractTerms?.amount;
   const summary: string | undefined = contractTerms?.summary;
@@ -64,9 +61,12 @@ export function useComponentState(
 
   async function accept(): Promise<void> {
     try {
-      const resp = await api.wallet.call(WalletApiOperation.AcceptPeerPushPayment, {
-        peerPushPaymentIncomingId,
-      });
+      const resp = await api.wallet.call(
+        WalletApiOperation.AcceptPeerPushPayment,
+        {
+          peerPushPaymentIncomingId,
+        },
+      );
       onSuccess(resp.transactionId);
     } catch (e) {
       if (e instanceof TalerError) {

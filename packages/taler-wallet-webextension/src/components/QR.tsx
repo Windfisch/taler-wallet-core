@@ -22,7 +22,7 @@ export function QR({ text }: { text: string }): VNode {
   const divRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!divRef.current) return;
-    const qr = qrcode(0, "L");
+    const qr = qrcode(0, "H");
     qr.addData(text);
     qr.make();
     divRef.current.innerHTML = qr.createSvgTag({

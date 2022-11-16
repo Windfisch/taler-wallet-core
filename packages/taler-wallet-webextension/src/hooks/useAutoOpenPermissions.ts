@@ -63,7 +63,9 @@ async function handleAutoOpenPerm(
     onChange(res.newValue);
   } else {
     try {
-      await wxApi.background.toggleHeaderListener(false).then((r) => onChange(r.newValue));
+      await wxApi.background
+        .toggleHeaderListener(false)
+        .then((r) => onChange(r.newValue));
     } catch (e) {
       console.log(e);
     }

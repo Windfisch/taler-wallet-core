@@ -26,7 +26,8 @@ function getJsonIfOk(r: Response): Promise<any> {
   }
 
   throw new Error(
-    `Try another server: (${r.status}) ${r.statusText || "internal server error"
+    `Try another server: (${r.status}) ${
+      r.statusText || "internal server error"
     }`,
   );
 }
@@ -108,4 +109,8 @@ export function compose<SType extends { status: string }, PType>(
     const h = withHook(() => hook(p));
     return h();
   };
+}
+
+export function assertUnreachable(x: never): never {
+  throw new Error("Didn't expect to get here");
 }

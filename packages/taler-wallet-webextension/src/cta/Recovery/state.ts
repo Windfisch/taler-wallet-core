@@ -48,7 +48,9 @@ export function useComponentState(
   const recovery = info;
 
   async function recoverBackup(): Promise<void> {
-    await wxApi.wallet.call(WalletApiOperation.ImportBackupRecovery, { recovery });
+    await wxApi.wallet.call(WalletApiOperation.ImportBackupRecovery, {
+      recovery,
+    });
     onSuccess();
   }
 

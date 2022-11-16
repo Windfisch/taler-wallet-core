@@ -66,7 +66,9 @@ async function handleClipboardPerm(
     onChange(granted);
   } else {
     try {
-      await wxApi.background.toggleHeaderListener(false).then((r) => onChange(r.newValue));
+      await wxApi.background
+        .toggleHeaderListener(false)
+        .then((r) => onChange(r.newValue));
     } catch (e) {
       console.log(e);
     }

@@ -20,7 +20,7 @@ import { HookError } from "../../hooks/useAsyncAsHook.js";
 import {
   ButtonHandler,
   SelectFieldHandler,
-  TextFieldHandler
+  TextFieldHandler,
 } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import { wxApi } from "../../wxApi.js";
@@ -31,7 +31,7 @@ import {
   LoadingErrorView,
   NoAccountToDepositView,
   NoEnoughBalanceView,
-  ReadyView
+  ReadyView,
 } from "./views.js";
 
 export interface Props {

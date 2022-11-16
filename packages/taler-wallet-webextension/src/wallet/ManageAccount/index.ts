@@ -20,7 +20,7 @@ import { HookError } from "../../hooks/useAsyncAsHook.js";
 import {
   ButtonHandler,
   SelectFieldHandler,
-  TextFieldHandler
+  TextFieldHandler,
 } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import { wxApi } from "../../wxApi.js";
@@ -58,13 +58,13 @@ export namespace State {
     alias: TextFieldHandler;
     onAccountAdded: ButtonHandler;
     onCancel: ButtonHandler;
-    accountByType: AccountByType,
-    deleteAccount: (a: KnownBankAccountsInfo) => Promise<void>,
+    accountByType: AccountByType;
+    deleteAccount: (a: KnownBankAccountsInfo) => Promise<void>;
   }
 }
 
 export type AccountByType = {
-  [key: string]: KnownBankAccountsInfo[]
+  [key: string]: KnownBankAccountsInfo[];
 };
 
 const viewMapping: StateViewMap<State> = {

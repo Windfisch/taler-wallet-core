@@ -48,8 +48,9 @@ export const DevContextProviderForTesting = ({
     value: {
       devMode: !!value,
       devModeToggle: {
-        value, button: {}
-      }
+        value,
+        button: {},
+      },
     },
     children,
   });
@@ -57,7 +58,7 @@ export const DevContextProviderForTesting = ({
 
 export const DevContextProvider = ({ children }: { children: any }): VNode => {
   const devModeToggle = useWalletDevMode();
-  const value: Type = { devMode: !!devModeToggle.value, devModeToggle }
+  const value: Type = { devMode: !!devModeToggle.value, devModeToggle };
   //support for function as children, useful for getting the value right away
   children =
     children.length === 1 && typeof children === "function"

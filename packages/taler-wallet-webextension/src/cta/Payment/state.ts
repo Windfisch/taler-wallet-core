@@ -15,10 +15,11 @@
  */
 
 import {
-  Amounts, ConfirmPayResultType,
+  Amounts,
+  ConfirmPayResultType,
   NotificationType,
   PreparePayResultType,
-  TalerErrorCode
+  TalerErrorCode,
 } from "@gnu-taler/taler-util";
 import { TalerError, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useEffect, useState } from "preact/hooks";
@@ -35,17 +36,24 @@ export function useComponentState(
 
   const hook = useAsyncAsHook(async () => {
     if (!talerPayUri) throw Error("ERROR_NO-URI-FOR-PAYMENT");
-    const payStatus = await api.wallet.call(WalletApiOperation.PreparePayForUri, {
-      talerPayUri: talerPayUri
-    });
+    const payStatus = await api.wallet.call(
+      WalletApiOperation.PreparePayForUri,
+      {
+        talerPayUri: talerPayUri,
+      },
+    );
     const balance = await api.wallet.call(WalletApiOperation.GetBalances, {});
     return { payStatus, balance, uri: talerPayUri };
   }, []);
 
-  useEffect(() => api.listener.onUpdateNotification(
-    [NotificationType.CoinWithdrawn],
-    hook?.retry
-  ), [hook]);
+  useEffect(
+    () =>
+      api.listener.onUpdateNotification(
+        [NotificationType.CoinWithdrawn],
+        hook?.retry,
+      ),
+    [hook],
+  );
 
   const hookResponse = !hook || hook.hasError ? undefined : hook.response;
 

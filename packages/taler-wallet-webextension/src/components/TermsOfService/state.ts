@@ -35,10 +35,13 @@ export function useComponentState(
    * For the exchange selected, bring the status of the terms of service
    */
   const terms = useAsyncAsHook(async () => {
-    const exchangeTos = await api.wallet.call(WalletApiOperation.GetExchangeTos, {
-      exchangeBaseUrl: exchangeUrl,
-      acceptedFormat: ["text/xml"]
-    })
+    const exchangeTos = await api.wallet.call(
+      WalletApiOperation.GetExchangeTos,
+      {
+        exchangeBaseUrl: exchangeUrl,
+        acceptedFormat: ["text/xml"],
+      },
+    );
 
     const state = buildTermsOfServiceState(exchangeTos);
 
@@ -78,14 +81,14 @@ export function useComponentState(
       if (accepted) {
         api.wallet.call(WalletApiOperation.SetExchangeTosAccepted, {
           exchangeBaseUrl: exchangeUrl,
-          etag: state.version
-        })
+          etag: state.version,
+        });
       } else {
         // mark as not accepted
         api.wallet.call(WalletApiOperation.SetExchangeTosAccepted, {
           exchangeBaseUrl: exchangeUrl,
-          etag: undefined
-        })
+          etag: undefined,
+        });
       }
       // setAccepted(accepted);
       if (!readOnly) onChange(accepted); //external update

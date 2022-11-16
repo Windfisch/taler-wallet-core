@@ -20,11 +20,13 @@
  */
 
 import {
-  Amounts, ConfirmPayResult,
+  Amounts,
+  ConfirmPayResult,
   ConfirmPayResultType,
-  NotificationType, PreparePayResultInsufficientBalance,
+  NotificationType,
+  PreparePayResultInsufficientBalance,
   PreparePayResultPaymentPossible,
-  PreparePayResultType
+  PreparePayResultType,
 } from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { expect } from "chai";
@@ -42,11 +44,9 @@ describe("Payment CTA states", () => {
       onSuccess: async () => {
         null;
       },
-    }
+    };
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() =>
-        useComponentState(props, mock),
-      );
+      mountHook(() => useComponentState(props, mock));
 
     {
       const { status, error } = pullLastResultOrThrow();
@@ -66,7 +66,7 @@ describe("Payment CTA states", () => {
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should response with no balance", async () => {
@@ -78,18 +78,24 @@ describe("Payment CTA states", () => {
       onSuccess: async () => {
         null;
       },
-    }
+    };
 
-    handler.addWalletCallResponse(WalletApiOperation.PreparePayForUri, undefined, {
-      status: PreparePayResultType.InsufficientBalance,
-      amountRaw: "USD:10",
-    } as PreparePayResultInsufficientBalance)
-    handler.addWalletCallResponse(WalletApiOperation.GetBalances, {}, { balances: [] })
+    handler.addWalletCallResponse(
+      WalletApiOperation.PreparePayForUri,
+      undefined,
+      {
+        status: PreparePayResultType.InsufficientBalance,
+        amountRaw: "USD:10",
+      } as PreparePayResultInsufficientBalance,
+    );
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetBalances,
+      {},
+      { balances: [] },
+    );
 
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() =>
-        useComponentState(props, mock),
-      );
+      mountHook(() => useComponentState(props, mock));
 
     {
       const { status, error } = pullLastResultOrThrow();
@@ -102,7 +108,7 @@ describe("Payment CTA states", () => {
     {
       const r = pullLastResultOrThrow();
       if (r.status !== "no-balance-for-currency") {
-        expect(r).eq({})
+        expect(r).eq({});
         return;
       }
       expect(r.balance).undefined;
@@ -110,7 +116,7 @@ describe("Payment CTA states", () => {
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should not be able to pay if there is no enough balance", async () => {
@@ -122,25 +128,33 @@ describe("Payment CTA states", () => {
       onSuccess: async () => {
         null;
       },
-    }
-    handler.addWalletCallResponse(WalletApiOperation.PreparePayForUri, undefined, {
-      status: PreparePayResultType.InsufficientBalance,
-      amountRaw: "USD:10",
-    } as PreparePayResultInsufficientBalance)
-    handler.addWalletCallResponse(WalletApiOperation.GetBalances, {}, {
-      balances: [{
-        available: "USD:5",
-        hasPendingTransactions: false,
-        pendingIncoming: "USD:0",
-        pendingOutgoing: "USD:0",
-        requiresUserInput: false,
-      }]
-    })
+    };
+    handler.addWalletCallResponse(
+      WalletApiOperation.PreparePayForUri,
+      undefined,
+      {
+        status: PreparePayResultType.InsufficientBalance,
+        amountRaw: "USD:10",
+      } as PreparePayResultInsufficientBalance,
+    );
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetBalances,
+      {},
+      {
+        balances: [
+          {
+            available: "USD:5",
+            hasPendingTransactions: false,
+            pendingIncoming: "USD:0",
+            pendingOutgoing: "USD:0",
+            requiresUserInput: false,
+          },
+        ],
+      },
+    );
 
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() =>
-        useComponentState(props, mock),
-      );
+      mountHook(() => useComponentState(props, mock));
 
     {
       const { status, error } = pullLastResultOrThrow();
@@ -158,7 +172,7 @@ describe("Payment CTA states", () => {
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should be able to pay (without fee)", async () => {
@@ -170,25 +184,33 @@ describe("Payment CTA states", () => {
       onSuccess: async () => {
         null;
       },
-    }
-    handler.addWalletCallResponse(WalletApiOperation.PreparePayForUri, undefined, {
-      status: PreparePayResultType.PaymentPossible,
-      amountRaw: "USD:10",
-      amountEffective: "USD:10",
-    } as PreparePayResultPaymentPossible)
-    handler.addWalletCallResponse(WalletApiOperation.GetBalances, {}, {
-      balances: [{
-        available: "USD:15",
-        hasPendingTransactions: false,
-        pendingIncoming: "USD:0",
-        pendingOutgoing: "USD:0",
-        requiresUserInput: false,
-      }]
-    })
+    };
+    handler.addWalletCallResponse(
+      WalletApiOperation.PreparePayForUri,
+      undefined,
+      {
+        status: PreparePayResultType.PaymentPossible,
+        amountRaw: "USD:10",
+        amountEffective: "USD:10",
+      } as PreparePayResultPaymentPossible,
+    );
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetBalances,
+      {},
+      {
+        balances: [
+          {
+            available: "USD:15",
+            hasPendingTransactions: false,
+            pendingIncoming: "USD:0",
+            pendingOutgoing: "USD:0",
+            requiresUserInput: false,
+          },
+        ],
+      },
+    );
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() =>
-        useComponentState(props, mock),
-      );
+      mountHook(() => useComponentState(props, mock));
 
     {
       const { status, error } = pullLastResultOrThrow();
@@ -201,8 +223,8 @@ describe("Payment CTA states", () => {
     {
       const r = pullLastResultOrThrow();
       if (r.status !== "ready") {
-        expect(r).eq({})
-        return
+        expect(r).eq({});
+        return;
       }
       expect(r.balance).deep.equal(Amounts.parseOrThrow("USD:15"));
       expect(r.amount).deep.equal(Amounts.parseOrThrow("USD:10"));
@@ -210,7 +232,7 @@ describe("Payment CTA states", () => {
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should be able to pay (with fee)", async () => {
@@ -222,29 +244,33 @@ describe("Payment CTA states", () => {
       onSuccess: async () => {
         null;
       },
-    }
-    handler.addWalletCallResponse(WalletApiOperation.PreparePayForUri, undefined, {
-      status: PreparePayResultType.PaymentPossible,
-      amountRaw: "USD:9",
-      amountEffective: "USD:10",
-    } as PreparePayResultPaymentPossible)
-    handler.addWalletCallResponse(WalletApiOperation.GetBalances, {}, {
-      balances: [{
-        available: "USD:15",
-        hasPendingTransactions: false,
-        pendingIncoming: "USD:0",
-        pendingOutgoing: "USD:0",
-        requiresUserInput: false,
-      }]
-    })
+    };
+    handler.addWalletCallResponse(
+      WalletApiOperation.PreparePayForUri,
+      undefined,
+      {
+        status: PreparePayResultType.PaymentPossible,
+        amountRaw: "USD:9",
+        amountEffective: "USD:10",
+      } as PreparePayResultPaymentPossible,
+    );
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetBalances,
+      {},
+      {
+        balances: [
+          {
+            available: "USD:15",
+            hasPendingTransactions: false,
+            pendingIncoming: "USD:0",
+            pendingOutgoing: "USD:0",
+            requiresUserInput: false,
+          },
+        ],
+      },
+    );
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() =>
-        useComponentState(
-          props,
-          mock
-
-        ),
-      );
+      mountHook(() => useComponentState(props, mock));
 
     {
       const { status, error } = pullLastResultOrThrow();
@@ -263,7 +289,7 @@ describe("Payment CTA states", () => {
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should get confirmation done after pay successfully", async () => {
@@ -275,33 +301,39 @@ describe("Payment CTA states", () => {
       onSuccess: async () => {
         null;
       },
-    }
-    handler.addWalletCallResponse(WalletApiOperation.PreparePayForUri, undefined, {
-      status: PreparePayResultType.PaymentPossible,
-      amountRaw: "USD:9",
-      amountEffective: "USD:10",
-    } as PreparePayResultPaymentPossible)
+    };
+    handler.addWalletCallResponse(
+      WalletApiOperation.PreparePayForUri,
+      undefined,
+      {
+        status: PreparePayResultType.PaymentPossible,
+        amountRaw: "USD:9",
+        amountEffective: "USD:10",
+      } as PreparePayResultPaymentPossible,
+    );
 
-    handler.addWalletCallResponse(WalletApiOperation.GetBalances, {}, {
-      balances: [{
-        available: "USD:15",
-        hasPendingTransactions: false,
-        pendingIncoming: "USD:0",
-        pendingOutgoing: "USD:0",
-        requiresUserInput: false,
-      }]
-    })
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetBalances,
+      {},
+      {
+        balances: [
+          {
+            available: "USD:15",
+            hasPendingTransactions: false,
+            pendingIncoming: "USD:0",
+            pendingOutgoing: "USD:0",
+            requiresUserInput: false,
+          },
+        ],
+      },
+    );
     handler.addWalletCallResponse(WalletApiOperation.ConfirmPay, undefined, {
       type: ConfirmPayResultType.Done,
       contractTerms: {},
-    } as ConfirmPayResult)
+    } as ConfirmPayResult);
 
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() =>
-        useComponentState(
-          props, mock
-        ),
-      );
+      mountHook(() => useComponentState(props, mock));
 
     {
       const { status, error } = pullLastResultOrThrow();
@@ -314,7 +346,7 @@ describe("Payment CTA states", () => {
     {
       const r = pullLastResultOrThrow();
       if (r.status !== "ready") {
-        expect(r).eq({})
+        expect(r).eq({});
         return;
       }
       expect(r.balance).deep.equal(Amounts.parseOrThrow("USD:15"));
@@ -324,7 +356,7 @@ describe("Payment CTA states", () => {
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should not stay in ready state after pay with error", async () => {
@@ -335,32 +367,38 @@ describe("Payment CTA states", () => {
       goToWalletManualWithdraw: nullFunction,
       onSuccess: nullFunction,
     };
-    handler.addWalletCallResponse(WalletApiOperation.PreparePayForUri, undefined, {
-      status: PreparePayResultType.PaymentPossible,
-      amountRaw: "USD:9",
-      amountEffective: "USD:10",
-    } as PreparePayResultPaymentPossible)
+    handler.addWalletCallResponse(
+      WalletApiOperation.PreparePayForUri,
+      undefined,
+      {
+        status: PreparePayResultType.PaymentPossible,
+        amountRaw: "USD:9",
+        amountEffective: "USD:10",
+      } as PreparePayResultPaymentPossible,
+    );
 
-    handler.addWalletCallResponse(WalletApiOperation.GetBalances, {}, {
-      balances: [{
-        available: "USD:15",
-        hasPendingTransactions: false,
-        pendingIncoming: "USD:0",
-        pendingOutgoing: "USD:0",
-        requiresUserInput: false,
-      }]
-    })
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetBalances,
+      {},
+      {
+        balances: [
+          {
+            available: "USD:15",
+            hasPendingTransactions: false,
+            pendingIncoming: "USD:0",
+            pendingOutgoing: "USD:0",
+            requiresUserInput: false,
+          },
+        ],
+      },
+    );
     handler.addWalletCallResponse(WalletApiOperation.ConfirmPay, undefined, {
       type: ConfirmPayResultType.Pending,
       lastError: { code: 1 },
-    } as ConfirmPayResult)
+    } as ConfirmPayResult);
 
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() =>
-        useComponentState(
-          props, mock
-        ),
-      );
+      mountHook(() => useComponentState(props, mock));
 
     {
       const { status, error } = pullLastResultOrThrow();
@@ -368,7 +406,7 @@ describe("Payment CTA states", () => {
       expect(error).undefined;
     }
 
-    expect(await waitForStateUpdate()).true
+    expect(await waitForStateUpdate()).true;
 
     {
       const r = pullLastResultOrThrow();
@@ -380,7 +418,7 @@ describe("Payment CTA states", () => {
       r.payHandler.onClick();
     }
 
-    expect(await waitForStateUpdate()).true
+    expect(await waitForStateUpdate()).true;
 
     {
       const r = pullLastResultOrThrow();
@@ -402,7 +440,7 @@ describe("Payment CTA states", () => {
 
     await assertNoPendingUpdate();
 
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 
   it("should update balance if a coins is withdraw", async () => {
@@ -415,46 +453,62 @@ describe("Payment CTA states", () => {
       onSuccess: async () => {
         null;
       },
-    }
+    };
 
-    handler.addWalletCallResponse(WalletApiOperation.PreparePayForUri, undefined, {
-      status: PreparePayResultType.PaymentPossible,
-      amountRaw: "USD:9",
-      amountEffective: "USD:10",
-    } as PreparePayResultPaymentPossible)
+    handler.addWalletCallResponse(
+      WalletApiOperation.PreparePayForUri,
+      undefined,
+      {
+        status: PreparePayResultType.PaymentPossible,
+        amountRaw: "USD:9",
+        amountEffective: "USD:10",
+      } as PreparePayResultPaymentPossible,
+    );
 
-    handler.addWalletCallResponse(WalletApiOperation.GetBalances, {}, {
-      balances: [{
-        available: "USD:10",
-        hasPendingTransactions: false,
-        pendingIncoming: "USD:0",
-        pendingOutgoing: "USD:0",
-        requiresUserInput: false,
-      }]
-    })
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetBalances,
+      {},
+      {
+        balances: [
+          {
+            available: "USD:10",
+            hasPendingTransactions: false,
+            pendingIncoming: "USD:0",
+            pendingOutgoing: "USD:0",
+            requiresUserInput: false,
+          },
+        ],
+      },
+    );
 
-    handler.addWalletCallResponse(WalletApiOperation.PreparePayForUri, undefined, {
-      status: PreparePayResultType.PaymentPossible,
-      amountRaw: "USD:9",
-      amountEffective: "USD:10",
-    } as PreparePayResultPaymentPossible)
+    handler.addWalletCallResponse(
+      WalletApiOperation.PreparePayForUri,
+      undefined,
+      {
+        status: PreparePayResultType.PaymentPossible,
+        amountRaw: "USD:9",
+        amountEffective: "USD:10",
+      } as PreparePayResultPaymentPossible,
+    );
 
-    handler.addWalletCallResponse(WalletApiOperation.GetBalances, {}, {
-      balances: [{
-        available: "USD:15",
-        hasPendingTransactions: false,
-        pendingIncoming: "USD:0",
-        pendingOutgoing: "USD:0",
-        requiresUserInput: false,
-      }]
-    })
+    handler.addWalletCallResponse(
+      WalletApiOperation.GetBalances,
+      {},
+      {
+        balances: [
+          {
+            available: "USD:15",
+            hasPendingTransactions: false,
+            pendingIncoming: "USD:0",
+            pendingOutgoing: "USD:0",
+            requiresUserInput: false,
+          },
+        ],
+      },
+    );
 
     const { pullLastResultOrThrow, waitForStateUpdate, assertNoPendingUpdate } =
-      mountHook(() =>
-        useComponentState(
-          props, mock
-        ),
-      );
+      mountHook(() => useComponentState(props, mock));
 
     {
       const { status, error } = pullLastResultOrThrow();
@@ -467,8 +521,8 @@ describe("Payment CTA states", () => {
     {
       const r = pullLastResultOrThrow();
       if (r.status !== "ready") {
-        expect(r).eq({})
-        return
+        expect(r).eq({});
+        return;
       }
       expect(r.balance).deep.equal(Amounts.parseOrThrow("USD:10"));
       expect(r.amount).deep.equal(Amounts.parseOrThrow("USD:9"));
@@ -483,8 +537,8 @@ describe("Payment CTA states", () => {
     {
       const r = pullLastResultOrThrow();
       if (r.status !== "ready") {
-        expect(r).eq({})
-        return
+        expect(r).eq({});
+        return;
       }
       expect(r.balance).deep.equal(Amounts.parseOrThrow("USD:15"));
       expect(r.amount).deep.equal(Amounts.parseOrThrow("USD:9"));
@@ -493,6 +547,6 @@ describe("Payment CTA states", () => {
     }
 
     await assertNoPendingUpdate();
-    expect(handler.getCallingQueueState()).eq("empty")
+    expect(handler.getCallingQueueState()).eq("empty");
   });
 });

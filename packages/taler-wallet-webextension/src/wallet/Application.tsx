@@ -65,6 +65,7 @@ import { InvoiceCreatePage } from "../cta/InvoiceCreate/index.js";
 import { TransferPickupPage } from "../cta/TransferPickup/index.js";
 import { InvoicePayPage } from "../cta/InvoicePay/index.js";
 import { RecoveryPage } from "../cta/Recovery/index.js";
+import { AddBackupProviderPage } from "./AddBackupProvider/index.js";
 
 export function Application(): VNode {
   const [globalNotification, setGlobalNotification] = useState<
@@ -221,7 +222,13 @@ export function Application(): VNode {
               />
               <Route
                 path={Pages.backupProviderAdd}
-                component={ProviderAddPage}
+                component={AddBackupProviderPage}
+                onPaymentRequired={(uri: string) =>
+                  redirectTo(`${Pages.ctaPay}?talerPayUri=${uri}`)
+                }
+                onComplete={(pid: string) =>
+                  redirectTo(Pages.backupProviderDetail({ pid }))
+                }
                 onBack={() => redirectTo(Pages.backup)}
               />
 

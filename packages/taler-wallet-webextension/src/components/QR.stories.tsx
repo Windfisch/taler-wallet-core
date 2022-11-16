@@ -20,10 +20,12 @@
  */
 
 import { createExample } from "../test-utils.js";
-import { QrReaderPage } from "./QrReader.js";
+import { QR } from "./QR.js";
 
 export default {
-  title: "wallet/qr reader",
+  title: "wallet/qr",
 };
 
-export const Reading = createExample(QrReaderPage, {});
+export const Restore = createExample(QR, {
+  text: "taler://restore/6J0RZTJC6AV21WXK87BTE67WTHE9P2QSHF2BZXTP7PDZY2ARYBPG@sync1.demo.taler.net,sync2.demo.taler.net,sync1.demo.taler.net,sync3.demo.taler.net",
+});

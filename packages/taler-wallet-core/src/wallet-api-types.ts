@@ -106,6 +106,7 @@ import {
 import { WalletContractData } from "./db.js";
 import {
   AddBackupProviderRequest,
+  AddBackupProviderResponse,
   BackupInfo,
   RemoveBackupProviderRequest,
   RunBackupCycleRequest,
@@ -519,7 +520,7 @@ export type ExportBackupOp = {
 export type AddBackupProviderOp = {
   op: WalletApiOperation.AddBackupProvider;
   request: AddBackupProviderRequest;
-  response: EmptyObject;
+  response: AddBackupProviderResponse;
 };
 
 export type RemoveBackupProviderOp = {

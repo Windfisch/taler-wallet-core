@@ -14,7 +14,11 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { KnownBankAccountsInfo, parsePaytoUri, stringifyPaytoUri } from "@gnu-taler/taler-util";
+import {
+  KnownBankAccountsInfo,
+  parsePaytoUri,
+  stringifyPaytoUri,
+} from "@gnu-taler/taler-util";
 import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
@@ -25,7 +29,9 @@ export function useComponentState(
   { currency, onAccountAdded, onCancel }: Props,
   api: typeof wxApi,
 ): State {
-  const hook = useAsyncAsHook(() => api.wallet.call(WalletApiOperation.ListKnownBankAccounts, { currency }));
+  const hook = useAsyncAsHook(() =>
+    api.wallet.call(WalletApiOperation.ListKnownBankAccounts, { currency }),
+  );
 
   const [payto, setPayto] = useState("");
   const [alias, setAlias] = useState("");
@@ -61,34 +67,34 @@ export function useComponentState(
 
     const normalizedPayto = stringifyPaytoUri(uri);
     await api.wallet.call(WalletApiOperation.AddKnownBankAccounts, {
-      alias, currency, payto: normalizedPayto
+      alias,
+      currency,
+      payto: normalizedPayto,
     });
     onAccountAdded(payto);
   }
 
-  const paytoUriError =
-    found
-      ? "that account is already present"
-      : undefined;
+  const paytoUriError = found ? "that account is already present" : undefined;
 
-  const unableToAdd = !type || !alias || paytoUriError !== undefined || uri === undefined;
+  const unableToAdd =
+    !type || !alias || paytoUriError !== undefined || uri === undefined;
 
   const accountByType: AccountByType = {
     iban: [],
     bitcoin: [],
     "x-taler-bank": [],
-  }
+  };
 
-  hook.response.accounts.forEach(acc => {
-    accountByType[acc.uri.targetType].push(acc)
+  hook.response.accounts.forEach((acc) => {
+    accountByType[acc.uri.targetType].push(acc);
   });
 
   async function deleteAccount(account: KnownBankAccountsInfo): Promise<void> {
     const payto = stringifyPaytoUri(account.uri);
     await api.wallet.call(WalletApiOperation.ForgetKnownBankAccounts, {
-      payto
-    })
-    hook?.retry()
+      payto,
+    });
+    hook?.retry();
   }
 
   return {

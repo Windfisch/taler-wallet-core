@@ -48,8 +48,10 @@ async function handleOpen(
   currentValue: undefined | boolean,
   onChange: (value: boolean) => void,
 ): Promise<void> {
-  const nextValue = !currentValue
-  await wxApi.wallet.call(WalletApiOperation.SetDevMode, { devModeEnabled: nextValue });
+  const nextValue = !currentValue;
+  await wxApi.wallet.call(WalletApiOperation.SetDevMode, {
+    devModeEnabled: nextValue,
+  });
   onChange(nextValue);
   return;
 }

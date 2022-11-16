@@ -14,32 +14,40 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { AmountJson, Product } from "@gnu-taler/taler-util";
+import {
+  AmountJson,
+  BackupBackupProviderTerms,
+  TalerErrorDetail,
+} from "@gnu-taler/taler-util";
+import { SyncTermsOfServiceResponse } from "@gnu-taler/taler-wallet-core";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
-import { ButtonHandler } from "../../mui/handlers.js";
+import {
+  ButtonHandler,
+  TextFieldHandler,
+  ToggleHandler,
+} from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import { wxApi } from "../../wxApi.js";
 import { useComponentState } from "./state.js";
 import {
-  IgnoredView,
-  InProgressView,
   LoadingUriView,
-  ReadyView,
+  SelectProviderView,
+  ConfirmProviderView,
 } from "./views.js";
 
 export interface Props {
-  talerRefundUri?: string;
-  cancel: () => Promise<void>;
-  onSuccess: (tx: string) => Promise<void>;
+  currency: string;
+  onBack: () => Promise<void>;
+  onComplete: (pid: string) => Promise<void>;
+  onPaymentRequired: (uri: string) => Promise<void>;
 }
 
 export type State =
   | State.Loading
   | State.LoadingUriError
-  | State.Ready
-  | State.Ignored
-  | State.InProgress;
+  | State.ConfirmProvider
+  | State.SelectProvider;
 
 export namespace State {
   export interface Loading {
@@ -48,48 +56,40 @@ export namespace State {
   }
 
   export interface LoadingUriError {
-    status: "loading-uri";
+    status: "loading-error";
     error: HookError;
   }
 
-  interface BaseInfo {
-    merchantName: string;
-    products: Product[] | undefined;
-    amount: AmountJson;
-    awaitingAmount: AmountJson;
-    granted: AmountJson;
+  export interface ConfirmProvider {
+    status: "confirm-provider";
+    error: undefined | TalerErrorDetail;
+    url: string;
+    provider: SyncTermsOfServiceResponse;
+    tos: ToggleHandler;
+    onCancel: ButtonHandler;
+    onAccept: ButtonHandler;
   }
 
-  export interface Ready extends BaseInfo {
-    status: "ready";
-    error: undefined;
-
-    accept: ButtonHandler;
-    ignore: ButtonHandler;
-    orderId: string;
-    cancel: () => Promise<void>;
-  }
-
-  export interface Ignored extends BaseInfo {
-    status: "ignored";
-    error: undefined;
-  }
-  export interface InProgress extends BaseInfo {
-    status: "in-progress";
-    error: undefined;
+  export interface SelectProvider {
+    status: "select-provider";
+    url: TextFieldHandler;
+    urlOk: boolean;
+    name: TextFieldHandler;
+    onConfirm: ButtonHandler;
+    onCancel: ButtonHandler;
+    error: undefined | TalerErrorDetail;
   }
 }
 
 const viewMapping: StateViewMap<State> = {
   loading: Loading,
-  "loading-uri": LoadingUriView,
-  "in-progress": InProgressView,
-  ignored: IgnoredView,
-  ready: ReadyView,
+  "loading-error": LoadingUriView,
+  "select-provider": SelectProviderView,
+  "confirm-provider": ConfirmProviderView,
 };
 
-export const RefundPage = compose(
-  "Refund",
+export const AddBackupProviderPage = compose(
+  "AddBackupProvider",
   (p: Props) => useComponentState(p, wxApi),
   viewMapping,
 );
