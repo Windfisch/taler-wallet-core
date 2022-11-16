@@ -1559,7 +1559,7 @@ function QrCodeSection({
 
   return (
     <section id="main" class="content">
-      <h1 class="nav">{i18n`Charge Taler Wallet`}</h1>
+      <h1 class="nav">{i18n`Transfer to Taler Wallet`}</h1>
       <article>
         <div class="qr-div">
           <p>{i18n`Use this QR code to withdraw to your mobile wallet:`}</p>
@@ -1759,7 +1759,7 @@ function PaymentOptions(Props: any): VNode {
               setTab("charge-wallet");
             }}
           >
-            {i18n`Charge Taler wallet`}
+            {i18n`Obtain digital cash`}
           </button>
           <button
             class={tab === "wire-transfer" ? "tablinks active" : "tablinks"}
@@ -1767,12 +1767,12 @@ function PaymentOptions(Props: any): VNode {
               setTab("wire-transfer");
             }}
           >
-            {i18n`Wire to bank account`}
+            {i18n`Transfer to bank account`}
           </button>
         </div>
         {tab === "charge-wallet" && (
           <div id="charge-wallet" class="tabcontent active">
-            <h3>{i18n`Charge Taler wallet`}</h3>
+            <h3>{i18n`Obtain digital cash`}</h3>
             <WalletWithdraw
               backendState={backendState}
               focus
@@ -1782,7 +1782,7 @@ function PaymentOptions(Props: any): VNode {
         )}
         {tab === "wire-transfer" && (
           <div id="wire-transfer" class="tabcontent active">
-            <h3>{i18n`Wire to bank account`}</h3>
+            <h3>{i18n`Transfer to bank account`}</h3>
             <PaytoWireTransfer
               backendState={backendState}
               focus
