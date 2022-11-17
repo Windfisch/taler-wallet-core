@@ -527,6 +527,7 @@ function buildTransactionForDeposit(
     frozen: false,
     timestamp: dg.timestampCreated,
     targetPaytoUri: dg.wire.payto_uri,
+    wireTransferDeadline: dg.contractTermsRaw.wire_transfer_deadline,
     transactionId: makeTransactionId(
       TransactionType.Deposit,
       dg.depositGroupId,

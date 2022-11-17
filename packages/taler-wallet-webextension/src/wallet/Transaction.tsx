@@ -524,6 +524,18 @@ export function TransactionView({
           text={<DepositDetails transaction={transaction} />}
           kind="neutral"
         />
+        <Part
+          title={<i18n.Translate>Wire transfer deadline</i18n.Translate>}
+          text={
+            <Time
+              timestamp={AbsoluteTime.fromTimestamp(
+                transaction.wireTransferDeadline,
+              )}
+              format="dd MMMM yyyy 'at' HH:mm"
+            />
+          }
+          kind="neutral"
+        />
       </TransactionTemplate>
     );
   }

@@ -527,6 +527,8 @@ export interface TransactionDeposit extends TransactionCommon {
    * Effective amount that is being deposited
    */
   amountEffective: AmountString;
+
+  wireTransferDeadline: TalerProtocolTimestamp;
 }
 
 export interface TransactionByIdRequest {

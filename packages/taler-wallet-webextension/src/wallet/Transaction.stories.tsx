@@ -110,6 +110,9 @@ const exampleData = {
   deposit: {
     ...commonTransaction,
     type: TransactionType.Deposit,
+    wireTransferDeadline: {
+      t_s: new Date().getTime() / 1000,
+    },
     depositGroupId: "#groupId",
     targetPaytoUri: "payto://x-taler-bank/bank.demo.taler.net/Exchange",
   } as TransactionDeposit,

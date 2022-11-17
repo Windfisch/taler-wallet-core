@@ -144,7 +144,11 @@ export function PartPayto({ payto, kind, big }: PropsPayto): VNode {
   const { i18n } = useTranslationContext();
   if (payto.isKnown) {
     if (payto.targetType === "x-taler-bank") {
-      text = <Fragment>{payto.account}</Fragment>;
+      text = (
+        <a target="_bank" rel="noreferrer" href={payto.host}>
+          {payto.account}
+        </a>
+      );
       title = i18n.str`Bank account`;
     } else if (payto.targetType === "bitcoin") {
       text =
@@ -159,8 +163,17 @@ export function PartPayto({ payto, kind, big }: PropsPayto): VNode {
         );
       title = i18n.str`Bitcoin address`;
     } else if (payto.targetType === "iban") {
-      text = <Fragment>{payto.targetPath}</Fragment>;
-      title = i18n.str`IBAN`;
+      if (payto.bic) {
+        text = (
+          <Fragment>
+            {payto.bic}/{payto.iban}
+          </Fragment>
+        );
+        title = i18n.str`BIC/IBAN`;
+      } else {
+        text = <Fragment>{payto.iban}</Fragment>;
+        title = i18n.str`IBAN`;
+      }
     }
   }
   if (!text) {
