@@ -91,8 +91,6 @@ const CurrencyContext = createContext<any>(null);
 type PageContextType = [PageStateType, StateUpdater<PageStateType>];
 const PageContextDefault: PageContextType = [
   {
-    hasError: false,
-    hasInfo: false,
     isLoggedIn: false,
     isRawPayto: false,
     showPublicHistories: false,
@@ -161,8 +159,6 @@ interface PageStateType {
   isLoggedIn: boolean;
   isRawPayto: boolean;
   showPublicHistories: boolean;
-  hasError: boolean;
-  hasInfo: boolean;
   withdrawalInProgress: boolean;
   error?: {
     description?: string;
@@ -480,8 +476,6 @@ function usePageState(
     isLoggedIn: false,
     isRawPayto: false,
     showPublicHistories: false,
-    hasError: false,
-    hasInfo: false,
     withdrawalInProgress: false,
   },
 ): [PageStateType, StateUpdater<PageStateType>] {
@@ -504,9 +498,7 @@ function usePageState(
     return retSetter((current: any) => {
       const cleanedCurrent: PageStateType = {
         ...current,
-        hasInfo: false,
         info: undefined,
-        hasError: false,
         errors: undefined,
         timestamp: new Date().getTime(),
       };
@@ -545,7 +537,7 @@ async function abortWithdrawalCall(
     console.log("No credentials found.");
     pageStateSetter((prevState) => ({
       ...prevState,
-      hasError: true,
+
       error: {
         title: `No credentials found.`,
       },
@@ -556,7 +548,7 @@ async function abortWithdrawalCall(
     console.log("No withdrawal ID found.");
     pageStateSetter((prevState) => ({
       ...prevState,
-      hasError: true,
+
       error: {
         title: `No withdrawal ID found.`,
       },
@@ -588,7 +580,7 @@ async function abortWithdrawalCall(
     console.log("Could not abort the withdrawal", error);
     pageStateSetter((prevState) => ({
       ...prevState,
-      hasError: true,
+
       error: {
         title: `Could not abort the withdrawal.`,
         description: (error as any).error.description,
@@ -605,7 +597,7 @@ async function abortWithdrawalCall(
     );
     pageStateSetter((prevState) => ({
       ...prevState,
-      hasError: true,
+
       error: {
         title: `Withdrawal abortion failed.`,
         description: response.error.description,
@@ -619,6 +611,7 @@ async function abortWithdrawalCall(
     const { ...rest } = prevState;
     return {
       ...rest,
+
       info: "Withdrawal aborted!",
     };
   });
@@ -643,7 +636,7 @@ async function confirmWithdrawalCall(
     console.log("No credentials found.");
     pageStateSetter((prevState) => ({
       ...prevState,
-      hasError: true,
+
       error: {
         title: "No credentials found.",
       },
@@ -654,7 +647,7 @@ async function confirmWithdrawalCall(
     console.log("No withdrawal ID found.");
     pageStateSetter((prevState) => ({
       ...prevState,
-      hasError: true,
+
       error: {
         title: "No withdrawal ID found.",
       },
@@ -689,7 +682,7 @@ async function confirmWithdrawalCall(
     console.log("Could not POST withdrawal confirmation to the bank", error);
     pageStateSetter((prevState) => ({
       ...prevState,
-      hasError: true,
+
       error: {
         title: `Could not confirm the withdrawal`,
         description: (error as any).error.description,
@@ -707,7 +700,7 @@ async function confirmWithdrawalCall(
     );
     pageStateSetter((prevState) => ({
       ...prevState,
-      hasError: true,
+
       error: {
         title: `Withdrawal confirmation gave response error`,
         debug: JSON.stringify(response),
@@ -720,6 +713,7 @@ async function confirmWithdrawalCall(
     const { talerWithdrawUri, ...rest } = prevState;
     return {
       ...rest,
+
       info: "Withdrawal confirmed!",
     };
   });
@@ -752,7 +746,7 @@ async function createTransactionCall(
     console.log("Could not POST transaction request to the bank", error);
     pageStateSetter((prevState) => ({
       ...prevState,
-      hasError: true,
+
       error: {
         title: `Could not create the wire transfer`,
         description: (error as any).error.description,
@@ -769,7 +763,7 @@ async function createTransactionCall(
     );
     pageStateSetter((prevState) => ({
       ...prevState,
-      hasError: true,
+
       error: {
         title: `Transfer creation gave response error`,
         description: response.error.description,
@@ -782,7 +776,7 @@ async function createTransactionCall(
   console.log("Wire transfer created!");
   pageStateSetter((prevState) => ({
     ...prevState,
-    hasInfo: true,
+
     info: "Wire transfer created!",
   }));
 
@@ -809,7 +803,7 @@ async function createWithdrawalCall(
     console.log("Page has a problem: no credentials found in the state.");
     pageStateSetter((prevState) => ({
       ...prevState,
-      hasError: true,
+
       error: {
         title: "No credentials given.",
       },
@@ -836,7 +830,7 @@ async function createWithdrawalCall(
     console.log("Could not POST withdrawal request to the bank", error);
     pageStateSetter((prevState) => ({
       ...prevState,
-      hasError: true,
+
       error: {
         title: `Could not create withdrawal operation`,
         description: (error as any).error.description,
@@ -852,7 +846,7 @@ async function createWithdrawalCall(
     );
     pageStateSetter((prevState) => ({
       ...prevState,
-      hasError: true,
+
       error: {
         title: `Withdrawal creation gave response error`,
         description: response.error.description,
@@ -942,7 +936,7 @@ async function registrationCall(
     );
     pageStateSetter((prevState) => ({
       ...prevState,
-      hasError: true,
+
       error: {
         title: `Registration failed, please report`,
         debug: JSON.stringify(error),
@@ -955,7 +949,7 @@ async function registrationCall(
     if (res.status === 409) {
       pageStateSetter((prevState) => ({
         ...prevState,
-        hasError: true,
+
         error: {
           title: `That username is already taken`,
           debug: JSON.stringify(response),
@@ -964,7 +958,7 @@ async function registrationCall(
     } else {
       pageStateSetter((prevState) => ({
         ...prevState,
-        hasError: true,
+
         error: {
           title: `New registration gave response error`,
           debug: JSON.stringify(response),
@@ -994,7 +988,7 @@ async function registrationCall(
 function ErrorBanner(Props: any): VNode | null {
   const [pageState, pageStateSetter] = Props.pageState;
   // const i18n = useTranslator();
-  if (!pageState.hasError) return null;
+  if (!pageState.error) return null;
 
   const rval = (
     <div class="informational informational-fail" style={{ marginTop: 8 }}>
@@ -1017,16 +1011,32 @@ function ErrorBanner(Props: any): VNode | null {
     </div>
   );
   delete pageState.error;
-  pageState.hasError = false;
   return rval;
 }
 
 function StatusBanner(Props: any): VNode | null {
   const [pageState, pageStateSetter] = Props.pageState;
-  const i18n = useTranslator();
-  if (!pageState.hasInfo) return null;
+  if (!pageState.info) return null;
 
-  const rval = <p class="informational informational-ok">{pageState.info}</p>;
+  const rval = (
+    <div class="informational informational-ok" style={{ marginTop: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <p>
+          <b>{pageState.info}</b>
+        </p>
+        <div>
+          <input
+            type="button"
+            class="pure-button"
+            value="Clear"
+            onClick={async () => {
+              pageStateSetter((prev: any) => ({ ...prev, info: undefined }));
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
   return rval;
 }
 
@@ -1046,8 +1056,8 @@ function BankFrame(Props: any): VNode {
               ...rest,
               isLoggedIn: false,
               withdrawalInProgress: false,
-              hasInfo: false,
-              hasError: false,
+              error: undefined,
+              info: undefined,
               isRawPayto: false,
             };
           });
@@ -1297,7 +1307,7 @@ function PaytoWireTransfer(Props: any): VNode {
                   console.log("Not all the fields were given.");
                   pageStateSetter((prevState: PageStateType) => ({
                     ...prevState,
-                    hasError: true,
+
                     error: {
                       title: i18n`Field(s) missing.`,
                     },
@@ -1502,7 +1512,7 @@ function TalerWithdrawalConfirmationQuestion(Props: any): VNode {
                     }
                     pageStateSetter((prevState: PageStateType) => ({
                       ...prevState,
-                      hasError: true,
+
                       error: {
                         title: i18n`Answer is wrong.`,
                       },
@@ -1617,7 +1627,7 @@ function TalerWithdrawalQRCode(Props: any): VNode {
     );
     pageStateSetter((prevState: PageStateType) => ({
       ...prevState,
-      hasError: true,
+
       error: {
         title: i18n`withdrawal (${withdrawalId}) was never (correctly) created at the bank...`,
       },
@@ -1645,7 +1655,7 @@ function TalerWithdrawalQRCode(Props: any): VNode {
       return {
         ...rest,
         withdrawalInProgress: false,
-        hasError: true,
+
         error: {
           title: i18n`This withdrawal was aborted!`,
         },
@@ -2193,7 +2203,7 @@ function Account(Props: any): VNode {
       case 404: {
         setPageState((prevState: PageStateType) => ({
           ...prevState,
-          hasError: true,
+
           isLoggedIn: false,
           error: {
             title: i18n`Username or account label '${accountLabel}' not found.  Won't login.`,
@@ -2220,7 +2230,7 @@ function Account(Props: any): VNode {
       case HttpStatusCode.Forbidden: {
         setPageState((prevState: PageStateType) => ({
           ...prevState,
-          hasError: true,
+
           isLoggedIn: false,
           error: {
             title: i18n`Wrong credentials given.`,
@@ -2231,7 +2241,7 @@ function Account(Props: any): VNode {
       default: {
         setPageState((prevState: PageStateType) => ({
           ...prevState,
-          hasError: true,
+
           isLoggedIn: false,
           error: {
             title: i18n`Account information could not be retrieved.`,
@@ -2378,7 +2388,7 @@ function PublicHistories(Props: any): VNode {
         console.log("public accounts: 404", error);
         Props.pageStateSetter((prevState: PageStateType) => ({
           ...prevState,
-          hasError: true,
+
           showPublicHistories: false,
           error: {
             title: i18n`List of public accounts was not found.`,
@@ -2390,7 +2400,7 @@ function PublicHistories(Props: any): VNode {
         console.log("public accounts: non-404 error", error);
         Props.pageStateSetter((prevState: PageStateType) => ({
           ...prevState,
-          hasError: true,
+
           showPublicHistories: false,
           error: {
             title: i18n`List of public accounts could not be retrieved.`,
@@ -2530,7 +2540,7 @@ function AccountPage(): VNode {
   if (typeof backendState === "undefined") {
     pageStateSetter((prevState) => ({
       ...prevState,
-      hasError: true,
+
       isLoggedIn: false,
       error: {
         title: i18n`Page has a problem: logged in but backend state is lost.`,
