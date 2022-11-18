@@ -21,6 +21,7 @@ import {
   AbsoluteTime,
   Transaction,
   TransactionType,
+  WithdrawalType,
 } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useTranslationContext } from "../context/translation.js";
@@ -38,6 +39,7 @@ import { Time } from "./Time.js";
 
 export function TransactionItem(props: { tx: Transaction }): VNode {
   const tx = props.tx;
+  const { i18n } = useTranslationContext();
   switch (tx.type) {
     case TransactionType.Withdrawal:
       return (
@@ -48,7 +50,18 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           title={new URL(tx.exchangeBaseUrl).hostname}
           timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
           iconPath={"W"}
-          pending={tx.pending}
+          pending={
+            tx.pending
+              ? tx.withdrawalDetails.type ===
+                WithdrawalType.TalerBankIntegrationApi
+                ? !tx.withdrawalDetails.confirmed
+                  ? i18n.str`Need approval in the Bank`
+                  : i18n.str`Exchange is waiting the wire transfer`
+                : undefined
+              : tx.withdrawalDetails.type === WithdrawalType.ManualTransfer
+              ? i18n.str`Exchange is waiting the wire transfer`
+              : undefined
+          }
         />
       );
     case TransactionType.Payment:
@@ -61,7 +74,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           subtitle={tx.info.summary}
           timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
           iconPath={"P"}
-          pending={tx.pending}
+          // pending={tx.pending}
         />
       );
     case TransactionType.Refund:
@@ -74,7 +87,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           title={tx.info.merchant.name}
           timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
           iconPath={"R"}
-          pending={tx.pending}
+          // pending={tx.pending}
         />
       );
     case TransactionType.Tip:
@@ -86,7 +99,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           title={new URL(tx.merchantBaseUrl).hostname}
           timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
           iconPath={"T"}
-          pending={tx.pending}
+          // pending={tx.pending}
         />
       );
     case TransactionType.Refresh:
@@ -98,7 +111,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           title={new URL(tx.exchangeBaseUrl).hostname}
           timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
           iconPath={"R"}
-          pending={tx.pending}
+          // pending={tx.pending}
         />
       );
     case TransactionType.Deposit:
@@ -110,7 +123,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           title={tx.targetPaytoUri}
           timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
           iconPath={"D"}
-          pending={tx.pending}
+          // pending={tx.pending}
         />
       );
     case TransactionType.PeerPullCredit:
@@ -122,7 +135,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           title={tx.info.summary || "Invoice"}
           timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
           iconPath={"I"}
-          pending={tx.pending}
+          // pending={tx.pending}
         />
       );
     case TransactionType.PeerPullDebit:
@@ -134,7 +147,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           title={tx.info.summary || "Invoice"}
           timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
           iconPath={"I"}
-          pending={tx.pending}
+          // pending={tx.pending}
         />
       );
     case TransactionType.PeerPushCredit:
@@ -146,7 +159,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           title={tx.info.summary || "Transfer"}
           timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
           iconPath={"T"}
-          pending={tx.pending}
+          // pending={tx.pending}
         />
       );
     case TransactionType.PeerPushDebit:
@@ -158,7 +171,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
           title={tx.info.summary || "Transfer"}
           timestamp={AbsoluteTime.fromTimestamp(tx.timestamp)}
           iconPath={"T"}
-          pending={tx.pending}
+          // pending={tx.pending}
         />
       );
     default: {
@@ -198,7 +211,7 @@ function TransactionLayout(props: TransactionLayoutProps): VNode {
         </LargeText>
         {props.pending && (
           <LightText style={{ marginTop: 5, marginBottom: 5 }}>
-            <i18n.Translate>Waiting for confirmation</i18n.Translate>
+            <i18n.Translate>{props.pending}</i18n.Translate>
           </LightText>
         )}
         <SmallLightText style={{ marginTop: 5 }}>
@@ -206,7 +219,7 @@ function TransactionLayout(props: TransactionLayoutProps): VNode {
         </SmallLightText>
       </Column>
       <TransactionAmount
-        pending={props.pending}
+        pending={props.pending !== undefined}
         amount={Amounts.parseOrThrow(props.amount)}
         debitCreditIndicator={props.debitCreditIndicator}
       />
@@ -222,7 +235,7 @@ interface TransactionLayoutProps {
   subtitle?: string;
   id: string;
   iconPath: string;
-  pending: boolean;
+  pending?: string;
 }
 
 interface TransactionAmountProps {

@@ -341,8 +341,7 @@ export function TransactionView({
               <InfoBox>
                 <div style={{ display: "block" }}>
                   <i18n.Translate>
-                    The bank did not yet confirmed the wire transfer. Go to the
-                    {` `}
+                    Wire transfer need a confirmation. Go to the
                     <a
                       href={transaction.withdrawalDetails.bankConfirmationUrl}
                       target="_blank"
@@ -351,7 +350,8 @@ export function TransactionView({
                     >
                       <i18n.Translate>bank site</i18n.Translate>
                     </a>{" "}
-                    and check there is no pending step.
+                    and check wire transfer operation to exchange account is
+                    complete.
                   </i18n.Translate>
                 </div>
               </InfoBox>
