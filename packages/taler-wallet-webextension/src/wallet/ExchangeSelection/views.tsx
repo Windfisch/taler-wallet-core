@@ -262,7 +262,10 @@ export function ComparingView({
                 <i18n.Translate>Denomination</i18n.Translate>
               </th>
               <th class="fee">
-                <i18n.Translate>Fee</i18n.Translate>
+                <i18n.Translate>Current</i18n.Translate>
+              </th>
+              <th class="fee">
+                <i18n.Translate>Selected</i18n.Translate>
               </th>
               <th>
                 <i18n.Translate>Until</i18n.Translate>
@@ -270,7 +273,10 @@ export function ComparingView({
             </tr>
           </thead>
           <tbody>
-            <RenderFeePairByValue list={pairTimeline.deposit} />
+            <RenderFeePairByValue
+              list={pairTimeline.deposit}
+              sorting={(a, b) => Number(a) - Number(b)}
+            />
           </tbody>
         </FeeDescriptionTable>
         <p>
@@ -292,7 +298,10 @@ export function ComparingView({
             </tr>
           </thead>
           <tbody>
-            <RenderFeePairByValue list={pairTimeline.withdraw} />
+            <RenderFeePairByValue
+              list={pairTimeline.withdraw}
+              sorting={(a, b) => Number(a) - Number(b)}
+            />
           </tbody>
         </FeeDescriptionTable>
         <p>
@@ -314,7 +323,10 @@ export function ComparingView({
             </tr>
           </thead>
           <tbody>
-            <RenderFeePairByValue list={pairTimeline.refund} />
+            <RenderFeePairByValue
+              list={pairTimeline.refund}
+              sorting={(a, b) => Number(a) - Number(b)}
+            />
           </tbody>
         </FeeDescriptionTable>{" "}
         <p>
@@ -336,7 +348,10 @@ export function ComparingView({
             </tr>
           </thead>
           <tbody>
-            <RenderFeePairByValue list={pairTimeline.refresh} />
+            <RenderFeePairByValue
+              list={pairTimeline.refresh}
+              sorting={(a, b) => Number(a) - Number(b)}
+            />
           </tbody>
         </FeeDescriptionTable>{" "}
       </section>
@@ -689,7 +704,7 @@ function FeePairRowsGroup({ infos }: { infos: FeeDescriptionPair[] }): VNode {
             <td class="icon">
               {hasMoreInfo && main ? (
                 <SvgIcon
-                  title="Select this contact"
+                  title="Expand"
                   dangerouslySetInnerHTML={{ __html: arrowDown }}
                   color="currentColor"
                   transform={expanded ? "" : "rotate(-90deg)"}
@@ -708,7 +723,7 @@ function FeePairRowsGroup({ infos }: { infos: FeeDescriptionPair[] }): VNode {
               <td class="fee"> --- </td>
             )}
             <td class="expiration">
-              <Time timestamp={info.until} format="dd-MMM-yyyy" />
+              <Time timestamp={info.until} format="dd-MMM-yyyy HH:mm:ss" />
             </td>
           </tr>
         );
@@ -722,35 +737,53 @@ function FeePairRowsGroup({ infos }: { infos: FeeDescriptionPair[] }): VNode {
  * @param param0
  * @returns
  */
-function RenderFeePairByValue({ list }: { list: FeeDescriptionPair[] }): VNode {
-  return (
-    <Fragment>
-      {
-        list.reduce(
-          (prev, info, idx) => {
-            const next = idx >= list.length - 1 ? undefined : list[idx + 1];
+function RenderFeePairByValue({
+  list,
+  sorting,
+}: {
+  list: FeeDescriptionPair[];
+  sorting?: (a: string, b: string) => number;
+}): VNode {
+  const grouped = list.reduce((prev, cur) => {
+    if (!prev[cur.group]) {
+      prev[cur.group] = [];
+    }
+    prev[cur.group].push(cur);
+    return prev;
+  }, {} as Record<string, FeeDescriptionPair[]>);
+  const p = Object.keys(grouped)
+    .sort(sorting)
+    .map((i, idx) => <FeePairRowsGroup key={idx} infos={grouped[i]} />);
+  return <Fragment>{p}</Fragment>;
 
-            const nextIsMoreInfo =
-              next !== undefined && next.group === info.group;
+  // return (
+  //   <Fragment>
+  //     {
+  //       list.reduce(
+  //         (prev, info, idx) => {
+  //           const next = idx >= list.length - 1 ? undefined : list[idx + 1];
 
-            prev.rows.push(info);
+  //           const nextIsMoreInfo =
+  //             next !== undefined && next.group === info.group;
 
-            if (nextIsMoreInfo) {
-              return prev;
-            }
+  //           prev.rows.push(info);
 
-            // prev.rows = [];
-            prev.views.push(<FeePairRowsGroup infos={prev.rows} />);
-            return prev;
-          },
-          { rows: [], views: [] } as {
-            rows: FeeDescriptionPair[];
-            views: h.JSX.Element[];
-          },
-        ).views
-      }
-    </Fragment>
-  );
+  //           if (nextIsMoreInfo) {
+  //             return prev;
+  //           }
+
+  //           // prev.rows = [];
+  //           prev.views.push(<FeePairRowsGroup infos={prev.rows} />);
+  //           return prev;
+  //         },
+  //         { rows: [], views: [] } as {
+  //           rows: FeeDescriptionPair[];
+  //           views: h.JSX.Element[];
+  //         },
+  //       ).views
+  //     }
+  //   </Fragment>
+  // );
 }
 /**
  *

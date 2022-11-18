@@ -93,93 +93,96 @@ export function createPairTimeline(
   left: FeeDescription[],
   right: FeeDescription[],
 ): FeeDescriptionPair[] {
+  //FIXME: we need to create a copy of the array because 
+  //this algorithm is using splice, remove splice and 
+  //remove this array duplication
+  left = [...left]
+  right = [...right]
+
   //both list empty, discarded
   if (left.length === 0 && right.length === 0) return [];
 
   const pairList: FeeDescriptionPair[] = [];
 
-  let li = 0;
-  let ri = 0;
+  let li = 0; //left list index
+  let ri = 0; //right list index
 
   while (li < left.length && ri < right.length) {
-    const currentGroup =
-      left[li].group < right[ri].group ? left[li].group : right[ri].group;
+    const currentGroup = Number.parseFloat(left[li].group) < Number.parseFloat(right[ri].group) ? left[li].group : right[ri].group;
+    const lgs = li; //left group start index
+    const rgs = ri; //right group start index
 
-    let ll = 0; //left length (until next value)
-    while (li + ll < left.length && left[li + ll].group === currentGroup) {
-      ll++;
+    let lgl = 0; //left group length (until next value)
+    while (li + lgl < left.length && left[li + lgl].group === currentGroup) {
+      lgl++;
     }
-    let rl = 0; //right length (until next value)
-    while (ri + rl < right.length && right[ri + rl].group === currentGroup) {
-      rl++;
+    let rgl = 0; //right group length (until next value)
+    while (ri + rgl < right.length && right[ri + rgl].group === currentGroup) {
+      rgl++;
     }
-    const leftIsEmpty = ll === 0;
-    const rightIsEmpty = rl === 0;
+    const leftGroupIsEmpty = lgl === 0;
+    const rightGroupIsEmpty = rgl === 0;
     //check which start after, add gap so both list starts at the same time
     // one list may be empty
-    const leftStarts: AbsoluteTime = leftIsEmpty
+    const leftStartTime: AbsoluteTime = leftGroupIsEmpty
       ? { t_ms: "never" }
       : left[li].from;
-    const rightStarts: AbsoluteTime = rightIsEmpty
+    const rightStartTime: AbsoluteTime = rightGroupIsEmpty
       ? { t_ms: "never" }
       : right[ri].from;
 
     //first time cut is the smallest time
-    let timeCut: AbsoluteTime = leftStarts;
+    let timeCut: AbsoluteTime = leftStartTime;
 
-    if (AbsoluteTime.cmp(leftStarts, rightStarts) < 0) {
-      const ends = rightIsEmpty ? left[li + ll - 1].until : right[0].from;
+    if (AbsoluteTime.cmp(leftStartTime, rightStartTime) < 0) {
+      const ends = rightGroupIsEmpty ? left[li + lgl - 1].until : right[0].from;
 
       right.splice(ri, 0, {
-        from: leftStarts,
+        from: leftStartTime,
         until: ends,
         group: left[li].group,
       });
-      rl++;
+      rgl++;
 
-      timeCut = leftStarts;
+      timeCut = leftStartTime;
     }
-    if (AbsoluteTime.cmp(leftStarts, rightStarts) > 0) {
-      const ends = leftIsEmpty ? right[ri + rl - 1].until : left[0].from;
+    if (AbsoluteTime.cmp(leftStartTime, rightStartTime) > 0) {
+      const ends = leftGroupIsEmpty ? right[ri + rgl - 1].until : left[0].from;
 
       left.splice(li, 0, {
-        from: rightStarts,
+        from: rightStartTime,
         until: ends,
         group: right[ri].group,
       });
-      ll++;
+      lgl++;
 
-      timeCut = rightStarts;
+      timeCut = rightStartTime;
     }
 
     //check which ends sooner, add gap so both list ends at the same time
     // here both list are non empty
-    const leftEnds: AbsoluteTime = left[li + ll - 1].until;
-    const rightEnds: AbsoluteTime = right[ri + rl - 1].until;
+    const leftEndTime: AbsoluteTime = left[li + lgl - 1].until;
+    const rightEndTime: AbsoluteTime = right[ri + rgl - 1].until;
 
-    if (AbsoluteTime.cmp(leftEnds, rightEnds) > 0) {
-      right.splice(ri + rl, 0, {
-        from: rightEnds,
-        until: leftEnds,
+    if (AbsoluteTime.cmp(leftEndTime, rightEndTime) > 0) {
+      right.splice(ri + rgl, 0, {
+        from: rightEndTime,
+        until: leftEndTime,
         group: left[0].group,
       });
-      rl++;
+      rgl++;
     }
-    if (AbsoluteTime.cmp(leftEnds, rightEnds) < 0) {
-      left.splice(li + ll, 0, {
-        from: leftEnds,
-        until: rightEnds,
+    if (AbsoluteTime.cmp(leftEndTime, rightEndTime) < 0) {
+      left.splice(li + lgl, 0, {
+        from: leftEndTime,
+        until: rightEndTime,
         group: right[0].group,
       });
-      ll++;
+      lgl++;
     }
 
     //now both lists are non empty and (starts,ends) at the same time
-    while (
-      li < left.length &&
-      ri < right.length &&
-      left[li].group === right[ri].group
-    ) {
+    while (li < (lgs + lgl) && ri < (rgs + rgl)) {
       if (
         AbsoluteTime.cmp(left[li].from, timeCut) !== 0 &&
         AbsoluteTime.cmp(right[ri].from, timeCut) !== 0
@@ -215,22 +218,22 @@ export function createPairTimeline(
       }
       pairList[pairList.length - 1].until = timeCut;
 
-      if (
-        li < left.length &&
-        left[li].group !== pairList[pairList.length - 1].group
-      ) {
-        //value changed, should break
-        //this if will catch when both (left and right) change at the same time
-        //if just one side changed it will catch in the while condition
-        break;
-      }
+      // if (
+      //   (li < left.length && left[li].group !== currentGroup) ||
+      //   (ri < right.length && right[ri].group !== currentGroup)
+      // ) {
+      //   //value changed, should break
+      //   //this if will catch when both (left and right) change at the same time
+      //   //if just one side changed it will catch in the while condition
+      //   break;
+      // }
     }
   }
   //one of the list left or right can still have elements
   if (li < left.length) {
     let timeCut =
       pairList.length > 0 &&
-      pairList[pairList.length - 1].group === left[li].group
+        pairList[pairList.length - 1].group === left[li].group
         ? pairList[pairList.length - 1].until
         : left[li].from;
     while (li < left.length) {
@@ -248,7 +251,7 @@ export function createPairTimeline(
   if (ri < right.length) {
     let timeCut =
       pairList.length > 0 &&
-      pairList[pairList.length - 1].group === right[ri].group
+        pairList[pairList.length - 1].group === right[ri].group
         ? pairList[pairList.length - 1].until
         : right[ri].from;
     while (ri < right.length) {

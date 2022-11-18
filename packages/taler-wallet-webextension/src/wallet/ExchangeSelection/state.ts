@@ -38,30 +38,34 @@ export function useComponentState(
   }
   const [value, setValue] = useState(String(initialValue));
 
+  const selectedIdx = parseInt(value, 10);
+  const selectedExchange =
+    exchanges.length == 0 ? undefined : exchanges[selectedIdx];
+
+  const comparingExchanges = selectedIdx !== initialValue;
+
+  const initialExchange =
+    comparingExchanges ? exchanges[initialValue] : undefined;
+
   const hook = useAsyncAsHook(async () => {
-    const selectedIdx = parseInt(value, 10);
-    const selectedExchange =
-      exchanges.length == 0 ? undefined : exchanges[selectedIdx];
     const selected = !selectedExchange
       ? undefined
       : await api.wallet.call(WalletApiOperation.GetExchangeDetailedInfo, {
-          exchangeBaseUrl: selectedExchange.exchangeBaseUrl,
-        });
+        exchangeBaseUrl: selectedExchange.exchangeBaseUrl,
+      });
 
-    const initialExchange =
-      selectedIdx === initialValue ? undefined : exchanges[initialValue];
     const original = !initialExchange
       ? undefined
       : await api.wallet.call(WalletApiOperation.GetExchangeDetailedInfo, {
-          exchangeBaseUrl: initialExchange.exchangeBaseUrl,
-        });
+        exchangeBaseUrl: initialExchange.exchangeBaseUrl,
+      });
 
     return {
       exchanges,
       selected: selected?.exchange,
       original: original?.exchange,
     };
-  }, [value]);
+  }, [selectedExchange, initialExchange]);
 
   const [showingTos, setShowingTos] = useState<string | undefined>(undefined);
   const [showingPrivacy, setShowingPrivacy] = useState<string | undefined>(
@@ -83,8 +87,7 @@ export function useComponentState(
 
   const { selected, original } = hook.response;
 
-  if (!selected) {
-    //!selected <=> exchanges.length === 0
+  if (selectedExchange === undefined || !selected) {
     return {
       status: "no-exchange",
       error: undefined,
@@ -118,7 +121,7 @@ export function useComponentState(
     };
   }
 
-  if (!original) {
+  if (!comparingExchanges || !original) {
     // !original <=> selected == original
     return {
       status: "ready",
@@ -147,6 +150,7 @@ export function useComponentState(
     };
   }
 
+  //this may be expensive, useMemo
   const pairTimeline: DenomOperationMap<FeeDescription[]> = {
     deposit: createPairTimeline(
       selected.denomFees.deposit,
