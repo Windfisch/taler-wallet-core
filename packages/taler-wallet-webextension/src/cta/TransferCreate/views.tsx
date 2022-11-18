@@ -93,6 +93,9 @@ export function ReadyView({
           <TextField
             label="Subject"
             variant="filled"
+            helperText={
+              <i18n.Translate>Short description of the transfer</i18n.Translate>
+            }
             error={subject.error}
             required
             fullWidth

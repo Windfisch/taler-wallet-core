@@ -125,6 +125,9 @@ export function ReadyView({
             label="Subject"
             variant="filled"
             error={subject.error}
+            helperText={
+              <i18n.Translate>Short description of the invoice</i18n.Translate>
+            }
             required
             fullWidth
             value={subject.value}
