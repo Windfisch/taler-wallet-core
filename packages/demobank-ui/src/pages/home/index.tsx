@@ -2285,8 +2285,8 @@ function Account(Props: any): VNode {
       <section id="assets">
         <div class="asset-summary">
           <h2>{i18n`Bank account balance`}</h2>
-          {data.balance.credit_debit_indicator == "debit" ? <b>-</b> : null}
           <div class="large-amount amount">
+            {data.balance.credit_debit_indicator == "debit" ? <b>-</b> : null}
             <span class="value">{`${balanceValue}`}</span>&nbsp;
             <span class="currency">{`${balance.currency}`}</span>
           </div>
