@@ -93,11 +93,11 @@ export function createPairTimeline(
   left: FeeDescription[],
   right: FeeDescription[],
 ): FeeDescriptionPair[] {
-  //FIXME: we need to create a copy of the array because 
-  //this algorithm is using splice, remove splice and 
+  //FIXME: we need to create a copy of the array because
+  //this algorithm is using splice, remove splice and
   //remove this array duplication
-  left = [...left]
-  right = [...right]
+  left = [...left];
+  right = [...right];
 
   //both list empty, discarded
   if (left.length === 0 && right.length === 0) return [];
@@ -108,7 +108,10 @@ export function createPairTimeline(
   let ri = 0; //right list index
 
   while (li < left.length && ri < right.length) {
-    const currentGroup = Number.parseFloat(left[li].group) < Number.parseFloat(right[ri].group) ? left[li].group : right[ri].group;
+    const currentGroup =
+      Number.parseFloat(left[li].group) < Number.parseFloat(right[ri].group)
+        ? left[li].group
+        : right[ri].group;
     const lgs = li; //left group start index
     const rgs = ri; //right group start index
 
@@ -182,7 +185,7 @@ export function createPairTimeline(
     }
 
     //now both lists are non empty and (starts,ends) at the same time
-    while (li < (lgs + lgl) && ri < (rgs + rgl)) {
+    while (li < lgs + lgl && ri < rgs + rgl) {
       if (
         AbsoluteTime.cmp(left[li].from, timeCut) !== 0 &&
         AbsoluteTime.cmp(right[ri].from, timeCut) !== 0
@@ -233,7 +236,7 @@ export function createPairTimeline(
   if (li < left.length) {
     let timeCut =
       pairList.length > 0 &&
-        pairList[pairList.length - 1].group === left[li].group
+      pairList[pairList.length - 1].group === left[li].group
         ? pairList[pairList.length - 1].until
         : left[li].from;
     while (li < left.length) {
@@ -251,7 +254,7 @@ export function createPairTimeline(
   if (ri < right.length) {
     let timeCut =
       pairList.length > 0 &&
-        pairList[pairList.length - 1].group === right[ri].group
+      pairList[pairList.length - 1].group === right[ri].group
         ? pairList[pairList.length - 1].until
         : right[ri].from;
     while (ri < right.length) {

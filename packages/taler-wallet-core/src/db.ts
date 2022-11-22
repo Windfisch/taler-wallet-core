@@ -2258,7 +2258,10 @@ export async function importDb(db: IDBDatabase, object: any): Promise<void> {
         dump.stores[name] = storeDump;
         talerDb.objectStores[name].records.map((r: any) => {
           const pkey = r.primaryKey;
-          const key = typeof pkey === "string" ? pkey : pkey.join(",");
+          const key =
+            typeof pkey === "string" || typeof pkey === "number"
+              ? pkey
+              : pkey.join(",");
           storeDump[key] = r.value;
         });
       }
