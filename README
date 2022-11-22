@@ -134,7 +134,7 @@ from the source tree is executed, and not the globally installed one:
 nyc ./packages/taler-wallet-cli/bin/taler-wallet-cli '*'
 ```
 
-## Minimun required browser for WebEx
+## Minimum required browser for WebEx
 
 Can be found in: 
  - packages/taler-wallet-webextension/manifest-v2.json
