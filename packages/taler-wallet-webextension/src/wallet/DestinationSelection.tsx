@@ -33,9 +33,7 @@ import { useTranslationContext } from "../context/translation.js";
 import { useAsyncAsHook } from "../hooks/useAsyncAsHook.js";
 import { Button } from "../mui/Button.js";
 import { Grid } from "../mui/Grid.js";
-import { TextFieldHandler } from "../mui/handlers.js";
 import { Paper } from "../mui/Paper.js";
-import { TextField } from "../mui/TextField.js";
 import { Pages } from "../NavigationBar.js";
 import arrowIcon from "../svg/chevron-down.svg";
 import bankIcon from "../svg/ri-bank-line.svg";
@@ -279,12 +277,13 @@ export function DestinationSelectionGetCash({
   const parsedInitialAmount = !initialAmount
     ? undefined
     : Amounts.parse(initialAmount);
-  const parsedInitialAmountValue = !parsedInitialAmount
-    ? "0"
-    : Amounts.stringifyValue(parsedInitialAmount);
+
   const [currency, setCurrency] = useState(parsedInitialAmount?.currency);
 
-  const [amount, setAmount] = useState(parsedInitialAmountValue);
+  const [amount, setAmount] = useState(
+    parsedInitialAmount ?? Amounts.zeroOfCurrency(currency ?? "KUDOS"),
+  );
+
   const { i18n } = useTranslationContext();
   const previous1: Contact[] = [];
   const previous2: Contact[] = [
@@ -313,10 +312,8 @@ export function DestinationSelectionGetCash({
       </div>
     );
   }
-  const currencyAndAmount = `${currency}:${amount}`;
-  const parsedAmount = Amounts.parse(currencyAndAmount);
-  // const dirty = parsedInitialAmountValue !== amount;
-  const invalid = !parsedAmount || Amounts.isZero(parsedAmount);
+  const currencyAndAmount = Amounts.stringify(amount);
+  const invalid = Amounts.isZero(amount);
   return (
     <Container>
       <h1>
@@ -325,7 +322,6 @@ export function DestinationSelectionGetCash({
       <Grid container columns={2} justifyContent="space-between">
         <AmountField
           label={<i18n.Translate>Amount</i18n.Translate>}
-          currency={currency}
           required
           handler={{
             onInput: async (s) => setAmount(s),
@@ -416,12 +412,12 @@ export function DestinationSelectionSendCash({
   const parsedInitialAmount = !initialAmount
     ? undefined
     : Amounts.parse(initialAmount);
-  const parsedInitialAmountValue = !parsedInitialAmount
-    ? ""
-    : Amounts.stringifyValue(parsedInitialAmount);
+
   const currency = parsedInitialAmount?.currency;
 
-  const [amount, setAmount] = useState(parsedInitialAmountValue);
+  const [amount, setAmount] = useState(
+    parsedInitialAmount ?? Amounts.zeroOfCurrency(currency ?? "KUDOS"),
+  );
   const { i18n } = useTranslationContext();
   const previous1: Contact[] = [];
   const previous2: Contact[] = [
@@ -450,9 +446,9 @@ export function DestinationSelectionSendCash({
       </div>
     );
   }
-  const currencyAndAmount = `${currency}:${amount}`;
-  const parsedAmount = Amounts.parse(currencyAndAmount);
-  const invalid = !parsedAmount || Amounts.isZero(parsedAmount);
+  const currencyAndAmount = Amounts.stringify(amount);
+  //const parsedAmount = Amounts.parse(currencyAndAmount);
+  const invalid = Amounts.isZero(amount);
   return (
     <Container>
       <h1>
@@ -462,7 +458,6 @@ export function DestinationSelectionSendCash({
       <div>
         <AmountField
           label={<i18n.Translate>Amount</i18n.Translate>}
-          currency={currency}
           required
           handler={{
             onInput: async (s) => setAmount(s),

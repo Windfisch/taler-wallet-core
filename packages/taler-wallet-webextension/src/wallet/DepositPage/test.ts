@@ -194,7 +194,7 @@ describe("DepositPage states", () => {
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
       expect(r.account.value).eq(stringifyPaytoUri(ibanPayto.uri));
-      expect(r.amount.value).eq("0");
+      expect(r.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
       expect(r.depositHandler.onClick).undefined;
     }
 
@@ -269,7 +269,7 @@ describe("DepositPage states", () => {
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
       expect(r.account.value).eq(stringifyPaytoUri(talerBankPayto.uri));
-      expect(r.amount.value).eq("0");
+      expect(r.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
       expect(r.depositHandler.onClick).undefined;
       expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
       expect(r.account.onChange).not.undefined;
@@ -285,7 +285,7 @@ describe("DepositPage states", () => {
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
       expect(r.account.value).eq(accountSelected);
-      expect(r.amount.value).eq("0");
+      expect(r.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
       expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
       expect(r.depositHandler.onClick).undefined;
     }
@@ -423,7 +423,7 @@ describe("DepositPage states", () => {
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
       expect(r.account.value).eq(stringifyPaytoUri(talerBankPayto.uri));
-      expect(r.amount.value).eq("0");
+      expect(r.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
       expect(r.depositHandler.onClick).undefined;
       expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:0`));
       expect(r.account.onChange).not.undefined;
@@ -439,13 +439,13 @@ describe("DepositPage states", () => {
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
       expect(r.account.value).eq(accountSelected);
-      expect(r.amount.value).eq("0");
+      expect(r.amount.value).deep.eq(Amounts.parseOrThrow("EUR:0"));
       expect(r.depositHandler.onClick).undefined;
       expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
 
       expect(r.amount.onInput).not.undefined;
       if (!r.amount.onInput) return;
-      r.amount.onInput("10");
+      r.amount.onInput(Amounts.parseOrThrow("EUR:10"));
     }
 
     expect(await waitForStateUpdate()).true;
@@ -456,7 +456,7 @@ describe("DepositPage states", () => {
       expect(r.cancelHandler.onClick).not.undefined;
       expect(r.currency).eq(currency);
       expect(r.account.value).eq(accountSelected);
-      expect(r.amount.value).eq("10");
+      expect(r.amount.value).deep.eq(Amounts.parseOrThrow("EUR:10"));
       expect(r.totalFee).deep.eq(Amounts.parseOrThrow(`${currency}:3`));
       expect(r.totalToDeposit).deep.eq(Amounts.parseOrThrow(`${currency}:7`));
       expect(r.depositHandler.onClick).not.undefined;

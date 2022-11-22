@@ -41,6 +41,7 @@ export interface Props {
   multiline?: boolean;
   onChange?: (s: string) => void;
   onInput?: (s: string) => string;
+  inputmode?: string;
   min?: string;
   step?: string;
   placeholder?: string;

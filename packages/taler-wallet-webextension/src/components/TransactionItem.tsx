@@ -57,9 +57,9 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
                 ? !tx.withdrawalDetails.confirmed
                   ? i18n.str`Need approval in the Bank`
                   : i18n.str`Exchange is waiting the wire transfer`
-                : undefined
-              : tx.withdrawalDetails.type === WithdrawalType.ManualTransfer
-              ? i18n.str`Exchange is waiting the wire transfer`
+                : tx.withdrawalDetails.type === WithdrawalType.ManualTransfer
+                ? i18n.str`Exchange is waiting the wire transfer`
+                : "" //pending but no message
               : undefined
           }
         />

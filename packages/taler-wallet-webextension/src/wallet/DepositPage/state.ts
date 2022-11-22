@@ -52,9 +52,13 @@ export function useComponentState(
   });
 
   const initialValue =
-    parsed !== undefined ? Amounts.stringifyValue(parsed) : "0";
+    parsed !== undefined
+      ? parsed
+      : currency !== undefined
+      ? Amounts.zeroOfCurrency(currency)
+      : undefined;
   // const [accountIdx, setAccountIdx] = useState<number>(0);
-  const [amount, setAmount] = useState(initialValue);
+  const [amount, setAmount] = useState<AmountJson>(initialValue ?? ({} as any));
   const [selectedAccount, setSelectedAccount] = useState<PaytoUri>();
 
   const [fee, setFee] = useState<DepositGroupFees | undefined>(undefined);
@@ -81,7 +85,7 @@ export function useComponentState(
   }
   const { accounts, balances } = hook.response;
 
-  const parsedAmount = Amounts.parse(`${currency}:${amount}`);
+  // const parsedAmount = Amounts.parse(`${currency}:${amount}`);
 
   if (addingAccount) {
     return {
@@ -129,8 +133,8 @@ export function useComponentState(
   const firstAccount = accounts[0].uri;
   const currentAccount = !selectedAccount ? firstAccount : selectedAccount;
 
-  if (fee === undefined && parsedAmount) {
-    getFeeForAmount(currentAccount, parsedAmount, api).then((initialFee) => {
+  if (fee === undefined) {
+    getFeeForAmount(currentAccount, amount, api).then((initialFee) => {
       setFee(initialFee);
     });
     return {
@@ -143,9 +147,9 @@ export function useComponentState(
 
   async function updateAccountFromList(accountStr: string): Promise<void> {
     const uri = !accountStr ? undefined : parsePaytoUri(accountStr);
-    if (uri && parsedAmount) {
+    if (uri) {
       try {
-        const result = await getFeeForAmount(uri, parsedAmount, api);
+        const result = await getFeeForAmount(uri, amount, api);
         setSelectedAccount(uri);
         setFee(result);
       } catch (e) {
@@ -155,17 +159,15 @@ export function useComponentState(
     }
   }
 
-  async function updateAmount(numStr: string): Promise<void> {
-    const parsed = Amounts.parse(`${currency}:${numStr}`);
-    if (parsed) {
-      try {
-        const result = await getFeeForAmount(currentAccount, parsed, api);
-        setAmount(numStr);
-        setFee(result);
-      } catch (e) {
-        setAmount(numStr);
-        setFee(undefined);
-      }
+  async function updateAmount(newAmount: AmountJson): Promise<void> {
+    // const parsed = Amounts.parse(`${currency}:${numStr}`);
+    try {
+      const result = await getFeeForAmount(currentAccount, newAmount, api);
+      setAmount(newAmount);
+      setFee(result);
+    } catch (e) {
+      setAmount(newAmount);
+      setFee(undefined);
     }
   }
 
@@ -175,32 +177,29 @@ export function useComponentState(
       : Amounts.zeroOfCurrency(currency);
 
   const totalToDeposit =
-    parsedAmount && fee !== undefined
-      ? Amounts.sub(parsedAmount, totalFee).amount
+    fee !== undefined
+      ? Amounts.sub(amount, totalFee).amount
       : Amounts.zeroOfCurrency(currency);
 
   const isDirty = amount !== initialValue;
   const amountError = !isDirty
     ? undefined
-    : !parsedAmount
-    ? "Invalid amount"
-    : Amounts.cmp(balance, parsedAmount) === -1
+    : Amounts.cmp(balance, amount) === -1
     ? `Too much, your current balance is ${Amounts.stringifyValue(balance)}`
     : undefined;
 
   const unableToDeposit =
-    !parsedAmount || //no amount specified
     Amounts.isZero(totalToDeposit) || //deposit may be zero because of fee
     fee === undefined || //no fee calculated yet
     amountError !== undefined; //amount field may be invalid
 
   async function doSend(): Promise<void> {
-    if (!parsedAmount || !currency) return;
+    if (!currency) return;
 
     const depositPaytoUri = stringifyPaytoUri(currentAccount);
-    const amount = Amounts.stringify(parsedAmount);
+    const amountStr = Amounts.stringify(amount);
     await api.wallet.call(WalletApiOperation.CreateDepositGroup, {
-      amount,
+      amount: amountStr,
       depositPaytoUri,
     });
     onSuccess(currency);
@@ -211,7 +210,7 @@ export function useComponentState(
     error: undefined,
     currency,
     amount: {
-      value: String(amount),
+      value: amount,
       onInput: updateAmount,
       error: amountError,
     },

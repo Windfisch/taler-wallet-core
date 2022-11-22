@@ -20,7 +20,6 @@
  */
 
 import * as a1 from "./Backup.stories.js";
-import * as a3 from "./CreateManualWithdraw.stories.js";
 import * as a4 from "./DepositPage/stories.js";
 import * as a5 from "./ExchangeAddConfirm.stories.js";
 import * as a6 from "./ExchangeAddSetUrl.stories.js";
@@ -40,7 +39,6 @@ import * as a20 from "./ManageAccount/stories.js";
 
 export default [
   a1,
-  a3,
   a4,
   a5,
   a6,

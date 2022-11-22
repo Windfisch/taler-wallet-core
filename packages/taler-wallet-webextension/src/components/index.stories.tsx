@@ -25,5 +25,6 @@ import * as a3 from "./Amount.stories.js";
 import * as a4 from "./ShowFullContractTermPopup.stories.js";
 import * as a5 from "./TermsOfService/stories.js";
 import * as a6 from "./QR.stories";
+import * as a7 from "./AmountField.stories.js";
 
-export default [a1, a2, a3, a4, a5, a6];
+export default [a1, a2, a3, a4, a5, a6, a7];

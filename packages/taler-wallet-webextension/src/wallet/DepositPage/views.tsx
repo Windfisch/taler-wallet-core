@@ -173,25 +173,22 @@ export function ReadyView(state: State.Ready): VNode {
           <Grid item xs={1}>
             <AmountField
               label={<i18n.Translate>Amount</i18n.Translate>}
-              currency={state.currency}
               handler={state.amount}
             />
           </Grid>
           <Grid item xs={1}>
             <AmountField
               label={<i18n.Translate>Deposit fee</i18n.Translate>}
-              currency={state.currency}
               handler={{
-                value: Amounts.stringifyValue(state.totalFee),
+                value: state.totalFee,
               }}
             />
           </Grid>
           <Grid item xs={1}>
             <AmountField
               label={<i18n.Translate>Total deposit</i18n.Translate>}
-              currency={state.currency}
               handler={{
-                value: Amounts.stringifyValue(state.totalToDeposit),
+                value: state.totalToDeposit,
               }}
             />
           </Grid>

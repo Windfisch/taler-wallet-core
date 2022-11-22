@@ -52,7 +52,7 @@ export const WithNoAccountForIBAN = createExample(ReadyView, {
     onInput: async () => {
       null;
     },
-    value: "10:USD",
+    value: Amounts.parseOrThrow("USD:10"),
   },
   onAddAccount: {},
   cancelHandler: {},
@@ -87,7 +87,7 @@ export const WithIBANAccountTypeSelected = createExample(ReadyView, {
     onInput: async () => {
       null;
     },
-    value: "10:USD",
+    value: Amounts.parseOrThrow("USD:10"),
   },
   onAddAccount: {},
   cancelHandler: {},
@@ -123,7 +123,7 @@ export const NewBitcoinAccountTypeSelected = createExample(ReadyView, {
     onInput: async () => {
       null;
     },
-    value: "10:USD",
+    value: Amounts.parseOrThrow("USD:10"),
   },
   cancelHandler: {},
   depositHandler: {

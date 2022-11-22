@@ -18,6 +18,7 @@ import { AmountJson, PaytoUri } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
 import { HookError } from "../../hooks/useAsyncAsHook.js";
 import {
+  AmountFieldHandler,
   ButtonHandler,
   SelectFieldHandler,
   TextFieldHandler,
@@ -98,7 +99,7 @@ export namespace State {
     totalFee: AmountJson;
     totalToDeposit: AmountJson;
 
-    amount: TextFieldHandler;
+    amount: AmountFieldHandler;
     account: SelectFieldHandler;
     cancelHandler: ButtonHandler;
     depositHandler: ButtonHandler;

@@ -44,21 +44,22 @@ export function useComponentState(
 
   const comparingExchanges = selectedIdx !== initialValue;
 
-  const initialExchange =
-    comparingExchanges ? exchanges[initialValue] : undefined;
+  const initialExchange = comparingExchanges
+    ? exchanges[initialValue]
+    : undefined;
 
   const hook = useAsyncAsHook(async () => {
     const selected = !selectedExchange
       ? undefined
       : await api.wallet.call(WalletApiOperation.GetExchangeDetailedInfo, {
-        exchangeBaseUrl: selectedExchange.exchangeBaseUrl,
-      });
+          exchangeBaseUrl: selectedExchange.exchangeBaseUrl,
+        });
 
     const original = !initialExchange
       ? undefined
       : await api.wallet.call(WalletApiOperation.GetExchangeDetailedInfo, {
-        exchangeBaseUrl: initialExchange.exchangeBaseUrl,
-      });
+          exchangeBaseUrl: initialExchange.exchangeBaseUrl,
+        });
 
     return {
       exchanges,

@@ -13,11 +13,18 @@
  You should have received a copy of the GNU General Public License along with
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
+import { AmountJson } from "@gnu-taler/taler-util";
 import { TalerError } from "@gnu-taler/taler-wallet-core";
 
 export interface TextFieldHandler {
   onInput?: (value: string) => Promise<void>;
   value: string;
+  error?: string;
+}
+
+export interface AmountFieldHandler {
+  onInput?: (value: AmountJson) => Promise<void>;
+  value: AmountJson;
   error?: string;
 }
 
