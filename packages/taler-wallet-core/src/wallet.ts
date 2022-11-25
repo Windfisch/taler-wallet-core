@@ -100,6 +100,7 @@ import {
   WalletCoreVersion,
   WalletNotification,
   codecForUserAttentionByIdRequest,
+  ManualWithdrawalDetails,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import {
@@ -1091,12 +1092,14 @@ async function dispatchRequestInternal<Op extends WalletApiOperation>(
         Amounts.parseOrThrow(req.amount),
         req.restrictAge,
       );
-      return {
+      const resp: ManualWithdrawalDetails = {
         amountRaw: req.amount,
         amountEffective: Amounts.stringify(wi.selectedDenoms.totalCoinValue),
         paytoUris: wi.exchangePaytoUris,
         tosAccepted: wi.termsOfServiceAccepted,
+        ageRestrictionOptions: wi.ageRestrictionOptions,
       };
+      return resp;
     }
     case WalletApiOperation.GetBalances: {
       return await getBalances(ws);
