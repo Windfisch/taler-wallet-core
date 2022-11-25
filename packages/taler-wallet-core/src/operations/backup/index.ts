@@ -368,10 +368,7 @@ async function runBackupCycleForProvider(
       }
     }
 
-    if (
-      res === undefined ||
-      res.status === PreparePayResultType.AlreadyConfirmed
-    ) {
+    if (res === undefined) {
       //claimed
 
       await ws.db
@@ -399,10 +396,6 @@ async function runBackupCycleForProvider(
       };
     }
     const result = res;
-
-    if (result.status === PreparePayResultType.Lost) {
-      throw Error("invalid state, could not get proposal for backup");
-    }
 
     await ws.db
       .mktx((x) => [x.backupProviders, x.operationRetries])
@@ -890,7 +883,13 @@ async function getProviderPaymentInfo(
   const status = await checkPaymentByProposalId(
     ws,
     provider.currentPaymentProposalId,
-  );
+  ).catch(() => undefined);
+
+  if (!status) {
+    return {
+      type: ProviderPaymentType.Unpaid,
+    };
+  }
 
   switch (status.status) {
     case PreparePayResultType.InsufficientBalance:
@@ -902,10 +901,6 @@ async function getProviderPaymentInfo(
       return {
         type: ProviderPaymentType.Pending,
         talerUri: status.talerUri,
-      };
-    case PreparePayResultType.Lost:
-      return {
-        type: ProviderPaymentType.Unpaid,
       };
     case PreparePayResultType.AlreadyConfirmed:
       if (status.paid) {

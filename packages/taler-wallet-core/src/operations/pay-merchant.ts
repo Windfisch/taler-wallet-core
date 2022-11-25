@@ -1291,10 +1291,7 @@ export async function checkPaymentByProposalId(
       return tx.purchases.get(proposalId);
     });
   if (!proposal) {
-    // throw Error(`could not get proposal ${proposalId}`);
-    return {
-      status: PreparePayResultType.Lost,
-    };
+    throw Error(`could not get proposal ${proposalId}`);
   }
   if (proposal.purchaseStatus === PurchaseStatus.RepurchaseDetected) {
     const existingProposalId = proposal.repurchaseProposalId;

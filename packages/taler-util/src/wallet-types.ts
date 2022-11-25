@@ -385,7 +385,6 @@ export enum PreparePayResultType {
   PaymentPossible = "payment-possible",
   InsufficientBalance = "insufficient-balance",
   AlreadyConfirmed = "already-confirmed",
-  Lost = "lost",
 }
 
 export const codecForPreparePayResultPaymentPossible =
@@ -434,12 +433,6 @@ export const codecForPreparePayResultAlreadyConfirmed =
       .property("proposalId", codecForString())
       .build("PreparePayResultAlreadyConfirmed");
 
-export const codecForPreparePayResultPaymentLost =
-  (): Codec<PreparePayResultPaymentLost> =>
-    buildCodecForObject<PreparePayResultPaymentLost>()
-      .property("status", codecForConstString(PreparePayResultType.Lost))
-      .build("PreparePayResultLost");
-
 export const codecForPreparePayResult = (): Codec<PreparePayResult> =>
   buildCodecForUnion<PreparePayResult>()
     .discriminateOn("status")
@@ -455,10 +448,6 @@ export const codecForPreparePayResult = (): Codec<PreparePayResult> =>
       PreparePayResultType.PaymentPossible,
       codecForPreparePayResultPaymentPossible(),
     )
-    .alternative(
-      PreparePayResultType.Lost,
-      codecForPreparePayResultPaymentLost(),
-    )
     .build("PreparePayResult");
 
 /**
@@ -467,8 +456,7 @@ export const codecForPreparePayResult = (): Codec<PreparePayResult> =>
 export type PreparePayResult =
   | PreparePayResultInsufficientBalance
   | PreparePayResultAlreadyConfirmed
-  | PreparePayResultPaymentPossible
-  | PreparePayResultPaymentLost;
+  | PreparePayResultPaymentPossible;
 
 /**
  * Payment is possible.
@@ -502,10 +490,6 @@ export interface PreparePayResultAlreadyConfirmed {
   contractTermsHash: string;
   proposalId: string;
   talerUri?: string;
-}
-
-export interface PreparePayResultPaymentLost {
-  status: PreparePayResultType.Lost;
 }
 
 export interface BankWithdrawDetails {

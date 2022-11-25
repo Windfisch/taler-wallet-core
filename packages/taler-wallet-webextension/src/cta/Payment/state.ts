@@ -83,13 +83,6 @@ export function useComponentState(
   }
   const { payStatus } = hook.response;
 
-  if (payStatus.status === PreparePayResultType.Lost) {
-    return {
-      status: "lost",
-      error: undefined,
-    };
-  }
-
   const amount = Amounts.parseOrThrow(payStatus.amountRaw);
 
   const foundBalance = hook.response.balance.balances.find(

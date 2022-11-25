@@ -65,21 +65,6 @@ type SupportedStates =
   | State.NoBalanceForCurrency
   | State.NoEnoughBalance;
 
-export function LostView(state: State.Lost): VNode {
-  const { i18n } = useTranslationContext();
-
-  return (
-    <ErrorMessage
-      title={<i18n.Translate>Could not load pay status</i18n.Translate>}
-      description={
-        <i18n.Translate>
-          The proposal was lost, another should be downloaded
-        </i18n.Translate>
-      }
-    />
-  );
-}
-
 export function BaseView(state: SupportedStates): VNode {
   const { i18n } = useTranslationContext();
 
@@ -416,9 +401,6 @@ export function ButtonsSection({
         {!payStatus.paid && <PayWithMobile uri={uri} />}
       </Fragment>
     );
-  }
-  if (payStatus.status === PreparePayResultType.Lost) {
-    return <Fragment />;
   }
 
   assertUnreachable(payStatus);
