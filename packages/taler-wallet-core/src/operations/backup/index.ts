@@ -27,6 +27,7 @@
 import {
   AbsoluteTime,
   AmountString,
+  AttentionType,
   BackupRecovery,
   buildCodecForObject,
   buildCodecForUnion,
@@ -57,13 +58,17 @@ import {
   kdf,
   Logger,
   notEmpty,
+  PaymentStatus,
+  PreparePayResult,
   PreparePayResultType,
   RecoveryLoadRequest,
   RecoveryMergeStrategy,
+  ReserveTransactionType,
   rsaBlind,
   secretbox,
   secretbox_open,
   stringToBytes,
+  TalerErrorCode,
   TalerErrorDetail,
   TalerProtocolTimestamp,
   URL,
@@ -80,6 +85,7 @@ import {
   ConfigRecordKey,
   WalletBackupConfState,
 } from "../../db.js";
+import { TalerError } from "../../errors.js";
 import { InternalWalletState } from "../../internal-wallet-state.js";
 import { assertUnreachable } from "../../util/assertUnreachable.js";
 import {
@@ -96,6 +102,7 @@ import {
   RetryTags,
   scheduleRetryInTx,
 } from "../../util/retries.js";
+import { addAttentionRequest, removeAttentionRequest } from "../attention.js";
 import {
   checkPaymentByProposalId,
   confirmPay,
@@ -198,6 +205,7 @@ async function computeBackupCryptoData(
     );
   }
   for (const purch of backupContent.purchases) {
+    if (!purch.contract_terms_raw) continue;
     const { h: contractTermsHash } = await cryptoApi.hashString({
       str: canonicalJson(purch.contract_terms_raw),
     });
@@ -251,7 +259,7 @@ function getNextBackupTimestamp(): TalerProtocolTimestamp {
 async function runBackupCycleForProvider(
   ws: InternalWalletState,
   args: BackupForProviderArgs,
-): Promise<OperationAttemptResult<unknown, { talerUri: string }>> {
+): Promise<OperationAttemptResult<unknown, { talerUri?: string }>> {
   const provider = await ws.db
     .mktx((x) => [x.backupProviders])
     .runReadOnly(async (tx) => {
@@ -292,6 +300,10 @@ async function runBackupCycleForProvider(
     provider.baseUrl,
   );
 
+  if (provider.shouldRetryFreshProposal) {
+    accountBackupUrl.searchParams.set("fresh", "yes");
+  }
+
   const resp = await ws.http.fetch(accountBackupUrl.href, {
     method: "POST",
     body: encBackup,
@@ -324,6 +336,12 @@ async function runBackupCycleForProvider(
         };
         await tx.backupProviders.put(prov);
       });
+
+    removeAttentionRequest(ws, {
+      entityId: provider.baseUrl,
+      type: AttentionType.BackupUnpaid,
+    });
+
     return {
       type: OperationAttemptResultType.Finished,
       result: undefined,
@@ -340,8 +358,51 @@ async function runBackupCycleForProvider(
 
     //We can't delay downloading the proposal since we need the id
     //FIXME: check download errors
+    let res: PreparePayResult | undefined = undefined;
+    try {
+      res = await preparePayForUri(ws, talerUri);
+    } catch (e) {
+      const error = TalerError.fromException(e);
+      if (!error.hasErrorCode(TalerErrorCode.WALLET_ORDER_ALREADY_CLAIMED)) {
+        throw error;
+      }
+    }
 
-    const res = await preparePayForUri(ws, talerUri);
+    if (
+      res === undefined ||
+      res.status === PreparePayResultType.AlreadyConfirmed
+    ) {
+      //claimed
+
+      await ws.db
+        .mktx((x) => [x.backupProviders, x.operationRetries])
+        .runReadWrite(async (tx) => {
+          const prov = await tx.backupProviders.get(provider.baseUrl);
+          if (!prov) {
+            logger.warn("backup provider not found anymore");
+            return;
+          }
+          const opId = RetryTags.forBackup(prov);
+          await scheduleRetryInTx(ws, tx, opId);
+          prov.shouldRetryFreshProposal = true;
+          prov.state = {
+            tag: BackupProviderStateTag.Retrying,
+          };
+          await tx.backupProviders.put(prov);
+        });
+
+      return {
+        type: OperationAttemptResultType.Pending,
+        result: {
+          talerUri,
+        },
+      };
+    }
+    const result = res;
+
+    if (result.status === PreparePayResultType.Lost) {
+      throw Error("invalid state, could not get proposal for backup");
+    }
 
     await ws.db
       .mktx((x) => [x.backupProviders, x.operationRetries])
@@ -353,12 +414,23 @@ async function runBackupCycleForProvider(
         }
         const opId = RetryTags.forBackup(prov);
         await scheduleRetryInTx(ws, tx, opId);
-        prov.currentPaymentProposalId = res.proposalId;
+        prov.currentPaymentProposalId = result.proposalId;
+        prov.shouldRetryFreshProposal = false;
         prov.state = {
           tag: BackupProviderStateTag.Retrying,
         };
         await tx.backupProviders.put(prov);
       });
+
+    addAttentionRequest(
+      ws,
+      {
+        type: AttentionType.BackupUnpaid,
+        provider_base_url: provider.baseUrl,
+        talerUri,
+      },
+      provider.baseUrl,
+    );
 
     return {
       type: OperationAttemptResultType.Pending,
@@ -384,6 +456,12 @@ async function runBackupCycleForProvider(
         };
         await tx.backupProviders.put(prov);
       });
+
+    removeAttentionRequest(ws, {
+      entityId: provider.baseUrl,
+      type: AttentionType.BackupUnpaid,
+    });
+
     return {
       type: OperationAttemptResultType.Finished,
       result: undefined,
@@ -564,7 +642,7 @@ interface AddBackupProviderOk {
 }
 interface AddBackupProviderPaymentRequired {
   status: "payment-required";
-  talerUri: string;
+  talerUri?: string;
 }
 interface AddBackupProviderError {
   status: "error";
@@ -580,7 +658,7 @@ export const codecForAddBackupProviderPaymenrRequired =
   (): Codec<AddBackupProviderPaymentRequired> =>
     buildCodecForObject<AddBackupProviderPaymentRequired>()
       .property("status", codecForConstString("payment-required"))
-      .property("talerUri", codecForString())
+      .property("talerUri", codecOptional(codecForString()))
       .build("AddBackupProviderPaymentRequired");
 
 export const codecForAddBackupProviderError =
@@ -655,6 +733,7 @@ export async function addBackupProvider(
           storageLimitInMegabytes: terms.storage_limit_in_megabytes,
           supportedProtocolVersion: terms.version,
         },
+        shouldRetryFreshProposal: false,
         paymentProposalIds: [],
         baseUrl: canonUrl,
         uids: [encodeCrock(getRandomBytes(32))],
@@ -779,10 +858,12 @@ export interface ProviderPaymentUnpaid {
 
 export interface ProviderPaymentInsufficientBalance {
   type: ProviderPaymentType.InsufficientBalance;
+  amount: AmountString;
 }
 
 export interface ProviderPaymentPending {
   type: ProviderPaymentType.Pending;
+  talerUri?: string;
 }
 
 export interface ProviderPaymentPaid {
@@ -810,32 +891,40 @@ async function getProviderPaymentInfo(
     ws,
     provider.currentPaymentProposalId,
   );
-  if (status.status === PreparePayResultType.InsufficientBalance) {
-    return {
-      type: ProviderPaymentType.InsufficientBalance,
-    };
-  }
-  if (status.status === PreparePayResultType.PaymentPossible) {
-    return {
-      type: ProviderPaymentType.Pending,
-    };
-  }
-  if (status.status === PreparePayResultType.AlreadyConfirmed) {
-    if (status.paid) {
+
+  switch (status.status) {
+    case PreparePayResultType.InsufficientBalance:
       return {
-        type: ProviderPaymentType.Paid,
-        paidUntil: AbsoluteTime.addDuration(
-          AbsoluteTime.fromTimestamp(status.contractTerms.timestamp),
-          durationFromSpec({ years: 1 }),
-        ),
+        type: ProviderPaymentType.InsufficientBalance,
+        amount: status.amountRaw,
       };
-    } else {
+    case PreparePayResultType.PaymentPossible:
       return {
         type: ProviderPaymentType.Pending,
+        talerUri: status.talerUri,
       };
-    }
+    case PreparePayResultType.Lost:
+      return {
+        type: ProviderPaymentType.Unpaid,
+      };
+    case PreparePayResultType.AlreadyConfirmed:
+      if (status.paid) {
+        return {
+          type: ProviderPaymentType.Paid,
+          paidUntil: AbsoluteTime.addDuration(
+            AbsoluteTime.fromTimestamp(status.contractTerms.timestamp),
+            durationFromSpec({ years: 1 }), //FIXME: take this from the contract term
+          ),
+        };
+      } else {
+        return {
+          type: ProviderPaymentType.Pending,
+          talerUri: status.talerUri,
+        };
+      }
+    default:
+      assertUnreachable(status);
   }
-  throw Error("not reached");
 }
 
 /**
@@ -936,6 +1025,7 @@ async function backupRecoveryTheirs(
             baseUrl: prov.url,
             name: prov.name,
             paymentProposalIds: [],
+            shouldRetryFreshProposal: false,
             state: {
               tag: BackupProviderStateTag.Ready,
               nextBackupTimestamp: TalerProtocolTimestamp.now(),

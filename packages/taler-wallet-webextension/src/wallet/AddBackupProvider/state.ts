@@ -171,7 +171,11 @@ export function useComponentState(
 
     switch (resp.status) {
       case "payment-required":
-        return onPaymentRequired(resp.talerUri);
+        if (resp.talerUri) {
+          return onPaymentRequired(resp.talerUri);
+        } else {
+          return onComplete(url);
+        }
       case "error":
         return setOperationError(resp.error);
       case "ok":

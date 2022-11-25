@@ -216,6 +216,23 @@ export function parsePayUri(s: string): PayUriResult | undefined {
   };
 }
 
+export function constructPayUri(
+  merchantBaseUrl: string,
+  orderId: string,
+  sessionId: string,
+  claimToken?: string,
+  noncePriv?: string,
+): string {
+  const base = canonicalizeBaseUrl(merchantBaseUrl);
+  const url = new URL(base);
+  const isHttp = base.startsWith("http://");
+  let result = isHttp ? `taler+http://pay/` : `taler://pay/`;
+  result += `${url.hostname}${url.pathname}${orderId}/${sessionId}?`;
+  if (claimToken) result += `c=${claimToken}`;
+  if (noncePriv) result += `n=${noncePriv}`;
+  return result;
+}
+
 export function parsePayPushUri(s: string): PayPushUriResult | undefined {
   const pi = parseProtoInfo(s, talerActionPayPush);
   if (!pi) {

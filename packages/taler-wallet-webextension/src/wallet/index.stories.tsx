@@ -36,6 +36,7 @@ import * as a17 from "./QrReader.stories.js";
 import * as a18 from "./DestinationSelection.stories.js";
 import * as a19 from "./ExchangeSelection/stories.js";
 import * as a20 from "./ManageAccount/stories.js";
+import * as a21 from "./Notifications/stories.js";
 
 export default [
   a1,
@@ -55,4 +56,5 @@ export default [
   a18,
   a19,
   a20,
+  a21,
 ];

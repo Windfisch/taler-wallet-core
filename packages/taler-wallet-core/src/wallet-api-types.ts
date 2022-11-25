@@ -71,6 +71,9 @@ import {
   KnownBankAccounts,
   ListKnownBankAccountsRequest,
   ManualWithdrawalDetails,
+  UserAttentionsCountResponse,
+  UserAttentionsRequest,
+  UserAttentionsResponse,
   PrepareDepositRequest,
   PrepareDepositResponse,
   PreparePayRequest,
@@ -102,6 +105,7 @@ import {
   WithdrawFakebankRequest,
   WithdrawTestBalanceRequest,
   WithdrawUriInfoResponse,
+  UserAttentionByIdRequest,
 } from "@gnu-taler/taler-util";
 import { WalletContractData } from "./db.js";
 import {
@@ -133,6 +137,9 @@ export enum WalletApiOperation {
   GetWithdrawalDetailsForAmount = "getWithdrawalDetailsForAmount",
   AcceptManualWithdrawal = "acceptManualWithdrawal",
   GetBalances = "getBalances",
+  GetUserAttentionRequests = "getUserAttentionRequests",
+  GetUserAttentionUnreadCount = "getUserAttentionUnreadCount",
+  MarkAttentionRequestAsRead = "markAttentionRequestAsRead",
   GetPendingOperations = "getPendingOperations",
   SetExchangeTosAccepted = "setExchangeTosAccepted",
   ApplyRefund = "applyRefund",
@@ -749,6 +756,33 @@ export type WithdrawFakebankOp = {
 /**
  * Get wallet-internal pending tasks.
  */
+export type GetUserAttentionRequests = {
+  op: WalletApiOperation.GetUserAttentionRequests;
+  request: UserAttentionsRequest;
+  response: UserAttentionsResponse;
+};
+
+/**
+ * Get wallet-internal pending tasks.
+ */
+export type MarkAttentionRequestAsRead = {
+  op: WalletApiOperation.MarkAttentionRequestAsRead;
+  request: UserAttentionByIdRequest;
+  response: EmptyObject;
+};
+
+/**
+ * Get wallet-internal pending tasks.
+ */
+export type GetUserAttentionsUnreadCount = {
+  op: WalletApiOperation.GetUserAttentionUnreadCount;
+  request: UserAttentionsRequest;
+  response: UserAttentionsCountResponse;
+};
+
+/**
+ * Get wallet-internal pending tasks.
+ */
 export type GetPendingTasksOp = {
   op: WalletApiOperation.GetPendingOperations;
   request: EmptyObject;
@@ -798,6 +832,9 @@ export type WalletOperations = {
   [WalletApiOperation.GetTransactionById]: GetTransactionByIdOp;
   [WalletApiOperation.RetryPendingNow]: RetryPendingNowOp;
   [WalletApiOperation.GetPendingOperations]: GetPendingTasksOp;
+  [WalletApiOperation.GetUserAttentionRequests]: GetUserAttentionRequests;
+  [WalletApiOperation.GetUserAttentionUnreadCount]: GetUserAttentionsUnreadCount;
+  [WalletApiOperation.MarkAttentionRequestAsRead]: MarkAttentionRequestAsRead;
   [WalletApiOperation.DumpCoins]: DumpCoinsOp;
   [WalletApiOperation.SetCoinSuspended]: SetCoinSuspendedOp;
   [WalletApiOperation.ForceRefresh]: ForceRefreshOp;

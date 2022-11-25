@@ -27,6 +27,7 @@ import { h, VNode } from "preact";
 import { useTranslationContext } from "../context/translation.js";
 import { Avatar } from "../mui/Avatar.js";
 import { Pages } from "../NavigationBar.js";
+import { assertUnreachable } from "../utils/index.js";
 import {
   Column,
   ExtraLargeText,
@@ -175,8 +176,7 @@ export function TransactionItem(props: { tx: Transaction }): VNode {
         />
       );
     default: {
-      const pe: never = tx;
-      throw Error(`unsupported transaction type ${pe}`);
+      assertUnreachable(tx);
     }
   }
 }

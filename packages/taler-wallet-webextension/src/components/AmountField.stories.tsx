@@ -50,7 +50,6 @@ function RenderAmount(): VNode {
       <AmountField
         required
         label={<i18n.Translate>Amount</i18n.Translate>}
-        currency="USD"
         highestDenom={2000000}
         lowestDenom={0.01}
         handler={handler}

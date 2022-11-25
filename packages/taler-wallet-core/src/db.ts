@@ -48,6 +48,9 @@ import {
   WireInfo,
   HashCodeString,
   Amounts,
+  AttentionPriority,
+  AttentionInfo,
+  AbsoluteTime,
 } from "@gnu-taler/taler-util";
 import {
   describeContents,
@@ -1540,6 +1543,8 @@ export interface BackupProviderRecord {
    */
   currentPaymentProposalId?: string;
 
+  shouldRetryFreshProposal: boolean;
+
   /**
    * Proposals that were used to pay (or attempt to pay) the provider.
    *
@@ -1841,6 +1846,21 @@ export interface ContractTermsRecord {
   contractTermsRaw: any;
 }
 
+export interface UserAttentionRecord {
+  info: AttentionInfo;
+
+  entityId: string;
+  /**
+   * When the notification was created.
+   */
+  createdMs: number;
+
+  /**
+   * When the user mark this notification as read.
+   */
+  read: TalerProtocolTimestamp | undefined;
+}
+
 /**
  * Schema definition for the IndexedDB
  * wallet database.
@@ -2134,6 +2154,13 @@ export const WalletStoresV1 = {
     "contractTerms",
     describeContents<ContractTermsRecord>({
       keyPath: "h",
+    }),
+    {},
+  ),
+  userAttention: describeStore(
+    "userAttention",
+    describeContents<UserAttentionRecord>({
+      keyPath: ["entityId", "info.type"],
     }),
     {},
   ),

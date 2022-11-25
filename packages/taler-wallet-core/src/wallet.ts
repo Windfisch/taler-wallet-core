@@ -55,6 +55,7 @@ import {
   codecForInitiatePeerPushPaymentRequest,
   codecForIntegrationTestArgs,
   codecForListKnownBankAccounts,
+  codecForUserAttentionsRequest,
   codecForPrepareDepositRequest,
   codecForPreparePayRequest,
   codecForPreparePeerPullPaymentRequest,
@@ -98,6 +99,7 @@ import {
   URL,
   WalletCoreVersion,
   WalletNotification,
+  codecForUserAttentionByIdRequest,
 } from "@gnu-taler/taler-util";
 import { TalerCryptoInterface } from "./crypto/cryptoImplementation.js";
 import {
@@ -147,6 +149,11 @@ import {
 } from "./operations/backup/index.js";
 import { setWalletDeviceId } from "./operations/backup/state.js";
 import { getBalances } from "./operations/balance.js";
+import {
+  getUserAttentions,
+  getUserAttentionsUnreadCount,
+  markAttentionRequestAsRead,
+} from "./operations/attention.js";
 import {
   getExchangeTosStatus,
   makeExchangeListItem,
@@ -1093,6 +1100,18 @@ async function dispatchRequestInternal<Op extends WalletApiOperation>(
     }
     case WalletApiOperation.GetBalances: {
       return await getBalances(ws);
+    }
+    case WalletApiOperation.GetUserAttentionRequests: {
+      const req = codecForUserAttentionsRequest().decode(payload);
+      return await getUserAttentions(ws, req);
+    }
+    case WalletApiOperation.MarkAttentionRequestAsRead: {
+      const req = codecForUserAttentionByIdRequest().decode(payload);
+      return await markAttentionRequestAsRead(ws, req);
+    }
+    case WalletApiOperation.GetUserAttentionUnreadCount: {
+      const req = codecForUserAttentionsRequest().decode(payload);
+      return await getUserAttentionsUnreadCount(ws, req);
     }
     case WalletApiOperation.GetPendingOperations: {
       return await getPendingOperations(ws);

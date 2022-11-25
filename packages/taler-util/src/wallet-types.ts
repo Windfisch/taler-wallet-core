@@ -40,6 +40,7 @@ import {
   codecForAny,
   codecForBoolean,
   codecForConstString,
+  codecForEither,
   codecForList,
   codecForMap,
   codecForNumber,
@@ -384,6 +385,7 @@ export enum PreparePayResultType {
   PaymentPossible = "payment-possible",
   InsufficientBalance = "insufficient-balance",
   AlreadyConfirmed = "already-confirmed",
+  Lost = "lost",
 }
 
 export const codecForPreparePayResultPaymentPossible =
@@ -394,6 +396,7 @@ export const codecForPreparePayResultPaymentPossible =
       .property("contractTerms", codecForMerchantContractTerms())
       .property("proposalId", codecForString())
       .property("contractTermsHash", codecForString())
+      .property("talerUri", codecForString())
       .property("noncePriv", codecForString())
       .property(
         "status",
@@ -406,6 +409,7 @@ export const codecForPreparePayResultInsufficientBalance =
     buildCodecForObject<PreparePayResultInsufficientBalance>()
       .property("amountRaw", codecForAmountString())
       .property("contractTerms", codecForAny())
+      .property("talerUri", codecForString())
       .property("proposalId", codecForString())
       .property("noncePriv", codecForString())
       .property(
@@ -424,10 +428,17 @@ export const codecForPreparePayResultAlreadyConfirmed =
       .property("amountEffective", codecForAmountString())
       .property("amountRaw", codecForAmountString())
       .property("paid", codecForBoolean())
+      .property("talerUri", codecOptional(codecForString()))
       .property("contractTerms", codecForAny())
       .property("contractTermsHash", codecForString())
       .property("proposalId", codecForString())
       .build("PreparePayResultAlreadyConfirmed");
+
+export const codecForPreparePayResultPaymentLost =
+  (): Codec<PreparePayResultPaymentLost> =>
+    buildCodecForObject<PreparePayResultPaymentLost>()
+      .property("status", codecForConstString(PreparePayResultType.Lost))
+      .build("PreparePayResultLost");
 
 export const codecForPreparePayResult = (): Codec<PreparePayResult> =>
   buildCodecForUnion<PreparePayResult>()
@@ -444,6 +455,10 @@ export const codecForPreparePayResult = (): Codec<PreparePayResult> =>
       PreparePayResultType.PaymentPossible,
       codecForPreparePayResultPaymentPossible(),
     )
+    .alternative(
+      PreparePayResultType.Lost,
+      codecForPreparePayResultPaymentLost(),
+    )
     .build("PreparePayResult");
 
 /**
@@ -452,7 +467,8 @@ export const codecForPreparePayResult = (): Codec<PreparePayResult> =>
 export type PreparePayResult =
   | PreparePayResultInsufficientBalance
   | PreparePayResultAlreadyConfirmed
-  | PreparePayResultPaymentPossible;
+  | PreparePayResultPaymentPossible
+  | PreparePayResultPaymentLost;
 
 /**
  * Payment is possible.
@@ -465,6 +481,7 @@ export interface PreparePayResultPaymentPossible {
   amountRaw: string;
   amountEffective: string;
   noncePriv: string;
+  talerUri: string;
 }
 
 export interface PreparePayResultInsufficientBalance {
@@ -473,6 +490,7 @@ export interface PreparePayResultInsufficientBalance {
   contractTerms: MerchantContractTerms;
   amountRaw: string;
   noncePriv: string;
+  talerUri: string;
 }
 
 export interface PreparePayResultAlreadyConfirmed {
@@ -483,6 +501,11 @@ export interface PreparePayResultAlreadyConfirmed {
   amountEffective: string;
   contractTermsHash: string;
   proposalId: string;
+  talerUri?: string;
+}
+
+export interface PreparePayResultPaymentLost {
+  status: PreparePayResultType.Lost;
 }
 
 export interface BankWithdrawDetails {
@@ -1675,6 +1698,170 @@ export interface WithdrawFakebankRequest {
   amount: AmountString;
   exchange: string;
   bank: string;
+}
+
+export enum AttentionPriority {
+  High = "high",
+  Medium = "medium",
+  Low = "low",
+}
+
+export interface UserAttentionByIdRequest {
+  entityId: string;
+  type: AttentionType;
+}
+
+export const codecForUserAttentionByIdRequest =
+  (): Codec<UserAttentionByIdRequest> =>
+    buildCodecForObject<UserAttentionByIdRequest>()
+      .property("type", codecForAny())
+      .property("entityId", codecForString())
+      .build("UserAttentionByIdRequest");
+
+export const codecForUserAttentionsRequest = (): Codec<UserAttentionsRequest> =>
+  buildCodecForObject<UserAttentionsRequest>()
+    .property(
+      "priority",
+      codecOptional(
+        codecForEither(
+          codecForConstString(AttentionPriority.Low),
+          codecForConstString(AttentionPriority.Medium),
+          codecForConstString(AttentionPriority.High),
+        ),
+      ),
+    )
+    .build("UserAttentionsRequest");
+
+export interface UserAttentionsRequest {
+  priority?: AttentionPriority;
+}
+
+export type AttentionInfo =
+  | AttentionKycWithdrawal
+  | AttentionBackupUnpaid
+  | AttentionBackupExpiresSoon
+  | AttentionMerchantRefund
+  | AttentionExchangeTosChanged
+  | AttentionExchangeKeyExpired
+  | AttentionExchangeDenominationExpired
+  | AttentionAuditorTosChanged
+  | AttentionAuditorKeyExpires
+  | AttentionAuditorDenominationExpires
+  | AttentionPullPaymentPaid
+  | AttentionPushPaymentReceived;
+
+export enum AttentionType {
+  KycWithdrawal = "kyc-withdrawal",
+
+  BackupUnpaid = "backup-unpaid",
+  BackupExpiresSoon = "backup-expires-soon",
+  MerchantRefund = "merchant-refund",
+
+  ExchangeTosChanged = "exchange-tos-changed",
+  ExchangeKeyExpired = "exchange-key-expired",
+  ExchangeKeyExpiresSoon = "exchange-key-expires-soon",
+  ExchangeDenominationsExpired = "exchange-denominations-expired",
+  ExchangeDenominationsExpiresSoon = "exchange-denominations-expires-soon",
+
+  AuditorTosChanged = "auditor-tos-changed",
+  AuditorKeyExpires = "auditor-key-expires",
+  AuditorDenominationsExpires = "auditor-denominations-expires",
+
+  PullPaymentPaid = "pull-payment-paid",
+  PushPaymentReceived = "push-payment-withdrawn",
+}
+
+export const UserAttentionPriority: {
+  [type in AttentionType]: AttentionPriority;
+} = {
+  "kyc-withdrawal": AttentionPriority.Medium,
+
+  "backup-unpaid": AttentionPriority.High,
+  "backup-expires-soon": AttentionPriority.Medium,
+  "merchant-refund": AttentionPriority.Medium,
+
+  "exchange-tos-changed": AttentionPriority.Medium,
+
+  "exchange-key-expired": AttentionPriority.High,
+  "exchange-key-expires-soon": AttentionPriority.Medium,
+  "exchange-denominations-expired": AttentionPriority.High,
+  "exchange-denominations-expires-soon": AttentionPriority.Medium,
+
+  "auditor-tos-changed": AttentionPriority.Medium,
+  "auditor-key-expires": AttentionPriority.Medium,
+  "auditor-denominations-expires": AttentionPriority.Medium,
+
+  "pull-payment-paid": AttentionPriority.High,
+  "push-payment-withdrawn": AttentionPriority.High,
+};
+
+interface AttentionBackupExpiresSoon {
+  type: AttentionType.BackupExpiresSoon;
+  provider_base_url: string;
+}
+interface AttentionBackupUnpaid {
+  type: AttentionType.BackupUnpaid;
+  provider_base_url: string;
+  talerUri: string;
+}
+
+interface AttentionMerchantRefund {
+  type: AttentionType.MerchantRefund;
+  transactionId: string;
+}
+
+interface AttentionKycWithdrawal {
+  type: AttentionType.KycWithdrawal;
+  transactionId: string;
+}
+
+interface AttentionExchangeTosChanged {
+  type: AttentionType.ExchangeTosChanged;
+  exchange_base_url: string;
+}
+interface AttentionExchangeKeyExpired {
+  type: AttentionType.ExchangeKeyExpired;
+  exchange_base_url: string;
+}
+interface AttentionExchangeDenominationExpired {
+  type: AttentionType.ExchangeDenominationsExpired;
+  exchange_base_url: string;
+}
+interface AttentionAuditorTosChanged {
+  type: AttentionType.AuditorTosChanged;
+  auditor_base_url: string;
+}
+
+interface AttentionAuditorKeyExpires {
+  type: AttentionType.AuditorKeyExpires;
+  auditor_base_url: string;
+}
+interface AttentionAuditorDenominationExpires {
+  type: AttentionType.AuditorDenominationsExpires;
+  auditor_base_url: string;
+}
+interface AttentionPullPaymentPaid {
+  type: AttentionType.PullPaymentPaid;
+  transactionId: string;
+}
+
+interface AttentionPushPaymentReceived {
+  type: AttentionType.PushPaymentReceived;
+  transactionId: string;
+}
+
+export type UserAttentionUnreadList = Array<{
+  info: AttentionInfo;
+  when: AbsoluteTime;
+  read: boolean;
+}>;
+
+export interface UserAttentionsResponse {
+  pending: UserAttentionUnreadList;
+}
+
+export interface UserAttentionsCountResponse {
+  total: number;
 }
 
 export const codecForWithdrawFakebankRequest =

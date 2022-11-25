@@ -44,6 +44,7 @@ export const NoBalance = createExample(BaseView, {
   uri: "",
   payStatus: {
     status: PreparePayResultType.InsufficientBalance,
+    talerUri: "taler://pay/..",
     noncePriv: "",
     proposalId: "96YY92RQZGF3V7TJSPN4SF9549QX7BRF88Q5PYFCSBNQ0YK4RPK0",
     contractTerms: {
@@ -73,6 +74,7 @@ export const NoEnoughBalance = createExample(BaseView, {
   uri: "",
   payStatus: {
     status: PreparePayResultType.InsufficientBalance,
+    talerUri: "taler://pay/..",
     noncePriv: "",
     proposalId: "96YY92RQZGF3V7TJSPN4SF9549QX7BRF88Q5PYFCSBNQ0YK4RPK0",
     contractTerms: {
@@ -102,6 +104,7 @@ export const EnoughBalanceButRestricted = createExample(BaseView, {
   uri: "",
   payStatus: {
     status: PreparePayResultType.InsufficientBalance,
+    talerUri: "taler://pay/..",
     noncePriv: "",
     proposalId: "96YY92RQZGF3V7TJSPN4SF9549QX7BRF88Q5PYFCSBNQ0YK4RPK0",
     contractTerms: {
@@ -136,6 +139,7 @@ export const PaymentPossible = createExample(BaseView, {
   uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
   payStatus: {
     status: PreparePayResultType.PaymentPossible,
+    talerUri: "taler://pay/..",
     amountEffective: "USD:10",
     amountRaw: "USD:10",
     noncePriv: "",
@@ -176,6 +180,7 @@ export const PaymentPossibleWithFee = createExample(BaseView, {
   uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
   payStatus: {
     status: PreparePayResultType.PaymentPossible,
+    talerUri: "taler://pay/..",
     amountEffective: "USD:10.20",
     amountRaw: "USD:10",
     noncePriv: "",
@@ -213,6 +218,7 @@ export const TicketWithAProductList = createExample(BaseView, {
   uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
   payStatus: {
     status: PreparePayResultType.PaymentPossible,
+    talerUri: "taler://pay/..",
     amountEffective: "USD:10.20",
     amountRaw: "USD:10",
     noncePriv: "",
@@ -269,6 +275,7 @@ export const TicketWithShipping = createExample(BaseView, {
   uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
   payStatus: {
     status: PreparePayResultType.PaymentPossible,
+    talerUri: "taler://pay/..",
     amountEffective: "USD:10.20",
     amountRaw: "USD:10",
     noncePriv: "",
@@ -315,6 +322,7 @@ export const AlreadyConfirmedByOther = createExample(BaseView, {
   uri: "taler://pay/merchant-backend.taler/2021.242-01G2X4275RBWG/?c=66BE594PDZR24744J6EQK52XM0",
   payStatus: {
     status: PreparePayResultType.AlreadyConfirmed,
+    talerUri: "taler://pay/..",
     amountEffective: "USD:10",
     amountRaw: "USD:10",
     contractTerms: {

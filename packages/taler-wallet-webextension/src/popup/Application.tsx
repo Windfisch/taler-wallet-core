@@ -150,6 +150,10 @@ export function Application(): VNode {
                   component={RedirectToWalletPage}
                 />
                 <Route path={Pages.dev} component={RedirectToWalletPage} />
+                <Route
+                  path={Pages.notifications}
+                  component={RedirectToWalletPage}
+                />
 
                 <Route default component={Redirect} to={Pages.balance} />
               </Router>

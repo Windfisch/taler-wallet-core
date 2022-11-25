@@ -174,6 +174,7 @@ export const InactiveInsufficientBalance = createExample(TestedComponent, {
     paymentProposalIds: [],
     paymentStatus: {
       type: ProviderPaymentType.InsufficientBalance,
+      amount: "EUR:123",
     },
     terms: {
       annualFee: "EUR:0.1",
@@ -191,6 +192,7 @@ export const InactivePending = createExample(TestedComponent, {
     paymentProposalIds: [],
     paymentStatus: {
       type: ProviderPaymentType.Pending,
+      talerUri: "taler://pay/sad",
     },
     terms: {
       annualFee: "EUR:0.1",

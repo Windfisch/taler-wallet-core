@@ -36,9 +36,16 @@ import { wxApi } from "../wxApi.js";
 interface Props {
   pid: string;
   onBack: () => Promise<void>;
+  onPayProvider: (uri: string) => Promise<void>;
+  onWithdraw: (amount: string) => Promise<void>;
 }
 
-export function ProviderDetailPage({ pid: providerURL, onBack }: Props): VNode {
+export function ProviderDetailPage({
+  pid: providerURL,
+  onBack,
+  onPayProvider,
+  onWithdraw,
+}: Props): VNode {
   const { i18n } = useTranslationContext();
   async function getProviderInfo(): Promise<ProviderInfo | null> {
     //create a first list of backup info by currency
@@ -71,11 +78,30 @@ export function ProviderDetailPage({ pid: providerURL, onBack }: Props): VNode {
       />
     );
   }
+  const info = state.response;
+  if (info === null) {
+    return (
+      <Fragment>
+        <section>
+          <p>
+            <i18n.Translate>
+              There is not known provider with url &quot;{providerURL}&quot;.
+            </i18n.Translate>
+          </p>
+        </section>
+        <footer>
+          <Button variant="contained" color="secondary" onClick={onBack}>
+            <i18n.Translate>See providers</i18n.Translate>
+          </Button>
+          <div />
+        </footer>
+      </Fragment>
+    );
+  }
 
   return (
     <ProviderView
-      url={providerURL}
-      info={state.response}
+      info={info}
       onSync={async () =>
         wxApi.wallet
           .call(WalletApiOperation.RunBackupCycle, {
@@ -83,6 +109,16 @@ export function ProviderDetailPage({ pid: providerURL, onBack }: Props): VNode {
           })
           .then()
       }
+      onPayProvider={async () => {
+        if (info.paymentStatus.type !== ProviderPaymentType.Pending) return;
+        if (!info.paymentStatus.talerUri) return;
+        onPayProvider(info.paymentStatus.talerUri);
+      }}
+      onWithdraw={async () => {
+        if (info.paymentStatus.type !== ProviderPaymentType.InsufficientBalance)
+          return;
+        onWithdraw(info.paymentStatus.amount);
+      }}
       onDelete={() =>
         wxApi.wallet
           .call(WalletApiOperation.RemoveBackupProvider, {
@@ -99,42 +135,25 @@ export function ProviderDetailPage({ pid: providerURL, onBack }: Props): VNode {
 }
 
 export interface ViewProps {
-  url: string;
-  info: ProviderInfo | null;
+  info: ProviderInfo;
   onDelete: () => Promise<void>;
   onSync: () => Promise<void>;
   onBack: () => Promise<void>;
   onExtend: () => Promise<void>;
+  onPayProvider: () => Promise<void>;
+  onWithdraw: () => Promise<void>;
 }
 
 export function ProviderView({
   info,
-  url,
   onDelete,
+  onPayProvider,
+  onWithdraw,
   onSync,
   onBack,
   onExtend,
 }: ViewProps): VNode {
   const { i18n } = useTranslationContext();
-  if (info === null) {
-    return (
-      <Fragment>
-        <section>
-          <p>
-            <i18n.Translate>
-              There is not known provider with url &quot;{url}&quot;.
-            </i18n.Translate>
-          </p>
-        </section>
-        <footer>
-          <Button variant="contained" color="secondary" onClick={onBack}>
-            <i18n.Translate>See providers</i18n.Translate>
-          </Button>
-          <div />
-        </footer>
-      </Fragment>
-    );
-  }
   const lb = info.lastSuccessfulBackupTimestamp
     ? AbsoluteTime.fromTimestamp(info.lastSuccessfulBackupTimestamp)
     : undefined;
@@ -230,6 +249,18 @@ export function ProviderView({
           <Button variant="contained" color="error" onClick={onDelete}>
             <i18n.Translate>Remove provider</i18n.Translate>
           </Button>
+          {info.paymentStatus.type === ProviderPaymentType.Pending &&
+          info.paymentStatus.talerUri ? (
+            <Button variant="contained" color="primary" onClick={onPayProvider}>
+              <i18n.Translate>Pay</i18n.Translate>
+            </Button>
+          ) : undefined}
+          {info.paymentStatus.type ===
+          ProviderPaymentType.InsufficientBalance ? (
+            <Button variant="contained" color="primary" onClick={onWithdraw}>
+              <i18n.Translate>Withdraw</i18n.Translate>
+            </Button>
+          ) : undefined}
         </div>
       </footer>
     </Fragment>

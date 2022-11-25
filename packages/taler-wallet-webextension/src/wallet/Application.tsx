@@ -66,6 +66,7 @@ import { TransferPickupPage } from "../cta/TransferPickup/index.js";
 import { InvoicePayPage } from "../cta/InvoicePay/index.js";
 import { RecoveryPage } from "../cta/Recovery/index.js";
 import { AddBackupProviderPage } from "./AddBackupProvider/index.js";
+import { NotificationsPage } from "./Notifications/index.js";
 
 export function Application(): VNode {
   const [globalNotification, setGlobalNotification] = useState<
@@ -206,6 +207,7 @@ export function Application(): VNode {
               />
 
               <Route path={Pages.settings} component={SettingsPage} />
+              <Route path={Pages.notifications} component={NotificationsPage} />
 
               {/**
                * BACKUP
@@ -218,6 +220,12 @@ export function Application(): VNode {
               <Route
                 path={Pages.backupProviderDetail.pattern}
                 component={ProviderDetailPage}
+                onPayProvider={(uri: string) =>
+                  redirectTo(`${Pages.ctaPay}?talerPayUri=${uri}`)
+                }
+                onWithdraw={(amount: string) =>
+                  redirectTo(Pages.receiveCash({ amount }))
+                }
                 onBack={() => redirectTo(Pages.backup)}
               />
               <Route
@@ -254,7 +262,7 @@ export function Application(): VNode {
                 path={Pages.ctaPay}
                 component={PaymentPage}
                 goToWalletManualWithdraw={(amount?: string) =>
-                  redirectTo(Pages.ctaWithdrawManual({ amount }))
+                  redirectTo(Pages.receiveCash({ amount }))
                 }
                 cancel={() => redirectTo(Pages.balance)}
                 onSuccess={(tid: string) =>
@@ -321,7 +329,7 @@ export function Application(): VNode {
                 path={Pages.ctaInvoicePay}
                 component={InvoicePayPage}
                 goToWalletManualWithdraw={(amount?: string) =>
-                  redirectTo(Pages.ctaWithdrawManual({ amount }))
+                  redirectTo(Pages.receiveCash({ amount }))
                 }
                 onClose={() => redirectTo(Pages.balance)}
                 onSuccess={(tid: string) =>

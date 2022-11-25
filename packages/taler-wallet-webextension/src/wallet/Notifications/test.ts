@@ -1,6 +1,6 @@
 /*
  This file is part of GNU Taler
- (C) 2019 GNUnet e.V.
+ (C) 2022 Taler Systems S.A.
 
  GNU Taler is free software; you can redistribute it and/or modify it under the
  terms of the GNU General Public License as published by the Free Software
@@ -14,6 +14,15 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-export function assertUnreachable(x: never): never {
-  throw new Error(`Didn't expect to get here ${x}`);
-}
+/**
+ *
+ * @author Sebastian Javier Marchano (sebasjm)
+ */
+
+import { expect } from "chai";
+
+describe("test description", () => {
+  it("should assert", () => {
+    expect([]).deep.equals([]);
+  });
+});

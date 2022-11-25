@@ -72,6 +72,7 @@ import {
   TalerProtocolTimestamp,
   TransactionType,
   URL,
+  constructPayUri,
 } from "@gnu-taler/taler-util";
 import { EddsaKeypair } from "../crypto/cryptoImplementation.js";
 import {
@@ -1290,7 +1291,10 @@ export async function checkPaymentByProposalId(
       return tx.purchases.get(proposalId);
     });
   if (!proposal) {
-    throw Error(`could not get proposal ${proposalId}`);
+    // throw Error(`could not get proposal ${proposalId}`);
+    return {
+      status: PreparePayResultType.Lost,
+    };
   }
   if (proposal.purchaseStatus === PurchaseStatus.RepurchaseDetected) {
     const existingProposalId = proposal.repurchaseProposalId;
@@ -1315,6 +1319,14 @@ export async function checkPaymentByProposalId(
   }
 
   proposalId = proposal.proposalId;
+
+  const talerUri = constructPayUri(
+    proposal.merchantBaseUrl,
+    proposal.orderId,
+    proposal.lastSessionId ?? proposal.downloadSessionId ?? "",
+    proposal.claimToken,
+    proposal.noncePriv,
+  );
 
   // First check if we already paid for it.
   const purchase = await ws.db
@@ -1345,6 +1357,7 @@ export async function checkPaymentByProposalId(
         proposalId: proposal.proposalId,
         noncePriv: proposal.noncePriv,
         amountRaw: Amounts.stringify(d.contractData.amount),
+        talerUri,
       };
     }
 
@@ -1360,6 +1373,7 @@ export async function checkPaymentByProposalId(
       amountEffective: Amounts.stringify(totalCost),
       amountRaw: Amounts.stringify(res.paymentAmount),
       contractTermsHash: d.contractData.contractTermsHash,
+      talerUri,
     };
   }
 
@@ -1396,6 +1410,7 @@ export async function checkPaymentByProposalId(
       amountRaw: Amounts.stringify(download.contractData.amount),
       amountEffective: Amounts.stringify(purchase.payInfo?.totalPayCost!),
       proposalId,
+      talerUri,
     };
   } else if (!purchase.timestampFirstSuccessfulPay) {
     const download = await expectProposalDownload(ws, purchase);
@@ -1407,6 +1422,7 @@ export async function checkPaymentByProposalId(
       amountRaw: Amounts.stringify(download.contractData.amount),
       amountEffective: Amounts.stringify(purchase.payInfo?.totalPayCost!),
       proposalId,
+      talerUri,
     };
   } else {
     const paid =
@@ -1423,6 +1439,7 @@ export async function checkPaymentByProposalId(
       amountEffective: Amounts.stringify(purchase.payInfo?.totalPayCost!),
       ...(paid ? { nextUrl: download.contractData.orderId } : {}),
       proposalId,
+      talerUri,
     };
   }
 }
@@ -1468,7 +1485,7 @@ export async function preparePayForUri(
     );
   }
 
-  let proposalId = await startDownloadProposal(
+  const proposalId = await startDownloadProposal(
     ws,
     uriResult.merchantBaseUrl,
     uriResult.orderId,
@@ -1911,6 +1928,28 @@ export async function processPurchasePay(
     if (resp.status === HttpStatusCode.BadRequest) {
       const errDetails = await readUnexpectedResponseDetails(resp);
       logger.warn("unexpected 400 response for /pay");
+      logger.warn(j2s(errDetails));
+      await ws.db
+        .mktx((x) => [x.purchases])
+        .runReadWrite(async (tx) => {
+          const purch = await tx.purchases.get(proposalId);
+          if (!purch) {
+            return;
+          }
+          // FIXME: Should be some "PayPermanentlyFailed" and error info should be stored
+          purch.purchaseStatus = PurchaseStatus.PaymentAbortFinished;
+          await tx.purchases.put(purch);
+        });
+      throw makePendingOperationFailedError(
+        errDetails,
+        TransactionType.Payment,
+        proposalId,
+      );
+    }
+
+    if (resp.status === HttpStatusCode.Gone) {
+      const errDetails = await readUnexpectedResponseDetails(resp);
+      logger.warn("unexpected 410 response for /pay");
       logger.warn(j2s(errDetails));
       await ws.db
         .mktx((x) => [x.purchases])

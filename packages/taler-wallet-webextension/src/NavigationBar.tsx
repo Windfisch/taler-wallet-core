@@ -24,7 +24,7 @@
 /**
  * Imports.
  */
-import { h, VNode } from "preact";
+import { Fragment, h, VNode } from "preact";
 import {
   NavigationHeader,
   NavigationHeaderHolder,
@@ -33,6 +33,11 @@ import {
 import { useTranslationContext } from "./context/translation.js";
 import settingsIcon from "./svg/settings_black_24dp.svg";
 import qrIcon from "./svg/qr_code_24px.svg";
+import warningIcon from "./svg/warning_24px.svg";
+import { useAsyncAsHook } from "./hooks/useAsyncAsHook.js";
+import { wxApi } from "./wxApi.js";
+import { WalletApiOperation } from "@gnu-taler/taler-wallet-core";
+import { JustInDevMode } from "./components/JustInDevMode.js";
 
 /**
  * List of pages used by the wallet
@@ -102,6 +107,7 @@ export const Pages = {
   backupProviderAdd: "/backup/provider/add",
 
   qr: "/qr",
+  notifications: "/notifications",
   settings: "/settings",
   settingsExchangeAdd: pageDefinition<{ currency?: string }>(
     "/settings/exchange/add/:currency?",
@@ -127,7 +133,21 @@ export const Pages = {
   ),
 };
 
-export function PopupNavBar({ path = "" }: { path?: string }): VNode {
+export function PopupNavBar({
+  path = "",
+}: {
+  path?: string;
+}): // api: typeof wxApi,
+VNode {
+  const api = wxApi; //FIXME: as parameter
+  const hook = useAsyncAsHook(async () => {
+    return await api.wallet.call(
+      WalletApiOperation.GetUserAttentionUnreadCount,
+      {},
+    );
+  });
+  const attentionCount = !hook || hook.hasError ? 0 : hook.response.total;
+
   const { i18n } = useTranslationContext();
   return (
     <NavigationHeader>
@@ -141,6 +161,17 @@ export function PopupNavBar({ path = "" }: { path?: string }): VNode {
         <i18n.Translate>Backup</i18n.Translate>
       </a>
       <div style={{ display: "flex", paddingTop: 4, justifyContent: "right" }}>
+        {attentionCount > 0 ? (
+          <a href={Pages.notifications}>
+            <SvgIcon
+              title={i18n.str`Notifications`}
+              dangerouslySetInnerHTML={{ __html: warningIcon }}
+              color="yellow"
+            />
+          </a>
+        ) : (
+          <Fragment />
+        )}
         <a href={Pages.qr}>
           <SvgIcon
             title={i18n.str`QR Reader and Taler URI`}
@@ -178,9 +209,15 @@ export function WalletNavBar({ path = "" }: { path?: string }): VNode {
           <i18n.Translate>Backup</i18n.Translate>
         </a>
 
-        <a href={Pages.dev} class={path.startsWith("/dev") ? "active" : ""}>
-          <i18n.Translate>Dev</i18n.Translate>
+        <a href={Pages.notifications}>
+          <i18n.Translate>Notifications</i18n.Translate>
         </a>
+
+        <JustInDevMode>
+          <a href={Pages.dev} class={path.startsWith("/dev") ? "active" : ""}>
+            <i18n.Translate>Dev</i18n.Translate>
+          </a>
+        </JustInDevMode>
 
         <div
           style={{ display: "flex", paddingTop: 4, justifyContent: "right" }}

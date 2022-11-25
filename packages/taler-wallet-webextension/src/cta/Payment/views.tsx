@@ -26,6 +26,7 @@ import {
 import { Fragment, h, VNode } from "preact";
 import { useState } from "preact/hooks";
 import { Amount } from "../../components/Amount.js";
+import { ErrorMessage } from "../../components/ErrorMessage.js";
 import { LoadingError } from "../../components/LoadingError.js";
 import { LogoHeader } from "../../components/LogoHeader.js";
 import { Part } from "../../components/Part.js";
@@ -43,6 +44,7 @@ import { Time } from "../../components/Time.js";
 import { useTranslationContext } from "../../context/translation.js";
 import { Button } from "../../mui/Button.js";
 import { ButtonHandler } from "../../mui/handlers.js";
+import { assertUnreachable } from "../../utils/index.js";
 import { MerchantDetails, PurchaseDetails } from "../../wallet/Transaction.js";
 import { State } from "./index.js";
 
@@ -63,8 +65,24 @@ type SupportedStates =
   | State.NoBalanceForCurrency
   | State.NoEnoughBalance;
 
+export function LostView(state: State.Lost): VNode {
+  const { i18n } = useTranslationContext();
+
+  return (
+    <ErrorMessage
+      title={<i18n.Translate>Could not load pay status</i18n.Translate>}
+      description={
+        <i18n.Translate>
+          The proposal was lost, another should be downloaded
+        </i18n.Translate>
+      }
+    />
+  );
+}
+
 export function BaseView(state: SupportedStates): VNode {
   const { i18n } = useTranslationContext();
+
   const contractTerms: ContractTerms = state.payStatus.contractTerms;
 
   const price = {
@@ -399,8 +417,9 @@ export function ButtonsSection({
       </Fragment>
     );
   }
+  if (payStatus.status === PreparePayResultType.Lost) {
+    return <Fragment />;
+  }
 
-  const error: never = payStatus;
-
-  return <Fragment />;
+  assertUnreachable(payStatus);
 }

@@ -18,6 +18,7 @@ import {
   AmountJson,
   PreparePayResult,
   PreparePayResultAlreadyConfirmed,
+  PreparePayResultInsufficientBalance,
   PreparePayResultPaymentPossible,
 } from "@gnu-taler/taler-util";
 import { Loading } from "../../components/Loading.js";
@@ -26,7 +27,7 @@ import { ButtonHandler } from "../../mui/handlers.js";
 import { compose, StateViewMap } from "../../utils/index.js";
 import { wxApi } from "../../wxApi.js";
 import { useComponentState } from "./state.js";
-import { BaseView, LoadingUriView } from "./views.js";
+import { BaseView, LoadingUriView, LostView } from "./views.js";
 
 export interface Props {
   talerPayUri?: string;
@@ -40,6 +41,7 @@ export type State =
   | State.LoadingUriError
   | State.Ready
   | State.NoEnoughBalance
+  | State.Lost
   | State.NoBalanceForCurrency
   | State.Confirmed;
 
@@ -62,12 +64,15 @@ export namespace State {
   }
   export interface NoBalanceForCurrency extends BaseInfo {
     status: "no-balance-for-currency";
-    payStatus: PreparePayResult;
+    payStatus:
+      | PreparePayResultInsufficientBalance
+      | PreparePayResultPaymentPossible
+      | PreparePayResultAlreadyConfirmed;
     balance: undefined;
   }
   export interface NoEnoughBalance extends BaseInfo {
     status: "no-enough-balance";
-    payStatus: PreparePayResult;
+    payStatus: PreparePayResultInsufficientBalance;
     balance: AmountJson;
   }
   export interface Ready extends BaseInfo {
@@ -75,6 +80,11 @@ export namespace State {
     payStatus: PreparePayResultPaymentPossible;
     payHandler: ButtonHandler;
     balance: AmountJson;
+  }
+
+  export interface Lost {
+    status: "lost";
+    error: undefined;
   }
 
   export interface Confirmed extends BaseInfo {
@@ -89,6 +99,7 @@ const viewMapping: StateViewMap<State> = {
   "loading-uri": LoadingUriView,
   "no-balance-for-currency": BaseView,
   "no-enough-balance": BaseView,
+  lost: LostView,
   confirmed: BaseView,
   ready: BaseView,
 };

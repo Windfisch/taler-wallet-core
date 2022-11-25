@@ -89,6 +89,7 @@ export function useComponentState(
 
   const insufficientBalance: PreparePayResult = {
     status: PreparePayResultType.InsufficientBalance,
+    talerUri: "taler://pay",
     proposalId: "fakeID",
     contractTerms: {} as any,
     amountRaw: hook.response.p2p.amount,

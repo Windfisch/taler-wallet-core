@@ -89,6 +89,7 @@ export const LotOfProviders = createExample(TestedComponent, {
       paymentProposalIds: [],
       paymentStatus: {
         type: ProviderPaymentType.Pending,
+        talerUri: "taler://",
       },
       terms: {
         annualFee: "KUDOS:0.1",
@@ -103,6 +104,7 @@ export const LotOfProviders = createExample(TestedComponent, {
       paymentProposalIds: [],
       paymentStatus: {
         type: ProviderPaymentType.InsufficientBalance,
+        amount: "KUDOS:10",
       },
       terms: {
         annualFee: "KUDOS:0.1",
