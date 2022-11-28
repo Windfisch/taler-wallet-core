@@ -21,8 +21,8 @@
 
 import { expect } from "chai";
 
-describe("test description", () => {
-  it("should assert", () => {
+describe("Transfer create states", () => {
+  it.skip("should assert", () => {
     expect([]).deep.equals([]);
   });
 });

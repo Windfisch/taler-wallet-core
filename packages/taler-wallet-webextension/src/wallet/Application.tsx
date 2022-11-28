@@ -48,17 +48,13 @@ import { BackupPage } from "./BackupPage.js";
 import { DepositPage } from "./DepositPage/index.js";
 import { ExchangeAddPage } from "./ExchangeAddPage.js";
 import { HistoryPage } from "./History.js";
-import { ProviderAddPage } from "./ProviderAddPage.js";
 import { ProviderDetailPage } from "./ProviderDetailPage.js";
 import { SettingsPage } from "./Settings.js";
 import { TransactionPage } from "./Transaction.js";
 import { WelcomePage } from "./Welcome.js";
 import { QrReaderPage } from "./QrReader.js";
 import { platform } from "../platform/api.js";
-import {
-  DestinationSelectionGetCash,
-  DestinationSelectionSendCash,
-} from "./DestinationSelection.js";
+import { DestinationSelectionPage } from "./DestinationSelection/index.js";
 import { ExchangeSelectionPage } from "./ExchangeSelection/index.js";
 import { TransferCreatePage } from "../cta/TransferCreate/index.js";
 import { InvoiceCreatePage } from "../cta/InvoiceCreate/index.js";
@@ -153,7 +149,8 @@ export function Application(): VNode {
               <Route path={Pages.exchanges} component={ExchangeSelectionPage} />
               <Route
                 path={Pages.sendCash.pattern}
-                component={DestinationSelectionSendCash}
+                type="send"
+                component={DestinationSelectionPage}
                 goToWalletBankDeposit={(amount: string) =>
                   redirectTo(Pages.balanceDeposit({ amount }))
                 }
@@ -163,7 +160,8 @@ export function Application(): VNode {
               />
               <Route
                 path={Pages.receiveCash.pattern}
-                component={DestinationSelectionGetCash}
+                type="get"
+                component={DestinationSelectionPage}
                 goToWalletManualWithdraw={(amount?: string) =>
                   redirectTo(Pages.ctaWithdrawManual({ amount }))
                 }

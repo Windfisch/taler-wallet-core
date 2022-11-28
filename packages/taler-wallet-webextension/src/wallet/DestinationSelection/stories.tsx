@@ -19,25 +19,44 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { createExample } from "../test-utils.js";
-import {
-  DestinationSelectionGetCash,
-  DestinationSelectionSendCash,
-  SelectCurrencyView,
-} from "./DestinationSelection.js";
+import { createExample } from "../../test-utils.js";
+import { ReadyView, SelectCurrencyView } from "./views.js";
 
 export default {
   title: "wallet/destination",
 };
 
-export const GetCash = createExample(DestinationSelectionGetCash, {
-  amount: "usd:0",
+export const GetCash = createExample(ReadyView, {
+  amountHandler: {
+    value: {
+      currency: "EUR",
+      fraction: 0,
+      value: 2,
+    },
+  },
+  goToBank: {},
+  goToWallet: {},
+  previous: [],
+  selectCurrency: {},
+  type: "get",
 });
-export const SendCash = createExample(DestinationSelectionSendCash, {
-  amount: "eur:1",
+export const SendCash = createExample(ReadyView, {
+  amountHandler: {
+    value: {
+      currency: "EUR",
+      fraction: 0,
+      value: 1,
+    },
+  },
+  goToBank: {},
+  goToWallet: {},
+  previous: [],
+  selectCurrency: {},
+  type: "send",
 });
+
 export const SelectCurrency = createExample(SelectCurrencyView, {
-  list: {
+  currencies: {
     "": "Select a currency",
     USD: "USD",
   },

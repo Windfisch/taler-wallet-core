@@ -21,8 +21,8 @@
 
 import { expect } from "chai";
 
-describe("test description", () => {
-  it("should assert", () => {
+describe("Invoice payment state", () => {
+  it.skip("should create some states", () => {
     expect([]).deep.equals([]);
   });
 });

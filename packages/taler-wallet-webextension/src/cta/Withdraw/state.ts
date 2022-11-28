@@ -25,10 +25,9 @@ import { TalerError, WalletApiOperation } from "@gnu-taler/taler-wallet-core";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { useSelectedExchange } from "../../hooks/useSelectedExchange.js";
+import { RecursiveState } from "../../utils/index.js";
 import { wxApi } from "../../wxApi.js";
 import { PropsFromParams, PropsFromURI, State } from "./index.js";
-
-type RecursiveState<S extends object> = S | (() => RecursiveState<S>);
 
 export function useComponentStateFromParams(
   { amount, cancel, onSuccess }: PropsFromParams,

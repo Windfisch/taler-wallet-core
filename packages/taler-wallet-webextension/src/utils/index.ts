@@ -80,7 +80,7 @@ export type StateViewMap<StateType extends { status: string }> = {
   [S in StateType as S["status"]]: StateFunc<S>;
 };
 
-type RecursiveState<S extends object> = S | (() => RecursiveState<S>);
+export type RecursiveState<S extends object> = S | (() => RecursiveState<S>);
 
 export function compose<SType extends { status: string }, PType>(
   name: string,

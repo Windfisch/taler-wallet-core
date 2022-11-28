@@ -25,10 +25,9 @@ import { isFuture, parse } from "date-fns";
 import { useState } from "preact/hooks";
 import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { useSelectedExchange } from "../../hooks/useSelectedExchange.js";
+import { RecursiveState } from "../../utils/index.js";
 import { wxApi } from "../../wxApi.js";
 import { Props, State } from "./index.js";
-
-type RecursiveState<S extends object> = S | (() => RecursiveState<S>);
 
 export function useComponentState(
   { amount: amountStr, onClose, onSuccess }: Props,
