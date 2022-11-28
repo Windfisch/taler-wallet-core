@@ -468,7 +468,7 @@ export class Amounts {
     const af = aJ.fraction % amountFractionalBase;
     let s = av.toString();
 
-    if (af) {
+    if (af || minFractional) {
       s = s + ".";
       let n = af;
       for (let i = 0; i < amountFractionalLength; i++) {

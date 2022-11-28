@@ -193,6 +193,16 @@ VNode {
 
 export function WalletNavBar({ path = "" }: { path?: string }): VNode {
   const { i18n } = useTranslationContext();
+
+  const api = wxApi; //FIXME: as parameter
+  const hook = useAsyncAsHook(async () => {
+    return await api.wallet.call(
+      WalletApiOperation.GetUserAttentionUnreadCount,
+      {},
+    );
+  });
+  const attentionCount = !hook || hook.hasError ? 0 : hook.response.total;
+
   return (
     <NavigationHeaderHolder>
       <NavigationHeader>
@@ -209,9 +219,13 @@ export function WalletNavBar({ path = "" }: { path?: string }): VNode {
           <i18n.Translate>Backup</i18n.Translate>
         </a>
 
-        <a href={Pages.notifications}>
-          <i18n.Translate>Notifications</i18n.Translate>
-        </a>
+        {attentionCount > 0 ? (
+          <a href={Pages.notifications}>
+            <i18n.Translate>Notifications</i18n.Translate>
+          </a>
+        ) : (
+          <Fragment />
+        )}
 
         <JustInDevMode>
           <a href={Pages.dev} class={path.startsWith("/dev") ? "active" : ""}>

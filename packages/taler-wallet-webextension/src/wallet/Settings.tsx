@@ -203,6 +203,7 @@ export function SettingsView({
                           </DestructiveText>
                         );
                       case ExchangeTosStatus.Unknown:
+                      default:
                         return (
                           <DestructiveText>
                             <i18n.Translate>

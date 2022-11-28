@@ -44,7 +44,9 @@ export function AmountField({
   handler: AmountFieldHandler;
 }): VNode {
   const [unit, setUnit] = useState(1);
-  const [dotAtTheEnd, setDotAtTheEnd] = useState(false);
+  const [decimalPlaces, setDecimalPlaces] = useState<number | undefined>(
+    undefined,
+  );
   const currency = handler.value.currency;
 
   let hd = Math.floor(Math.log10(highestDenom || 1) / 3);
@@ -72,10 +74,18 @@ export function AmountField({
     ld--;
   }
 
-  const prev = Amounts.stringifyValue(handler.value);
+  const previousValue = Amounts.stringifyValue(handler.value, decimalPlaces);
+
+  const normal = denormalize(handler.value, unit) ?? handler.value;
+
+  let textValue = Amounts.stringifyValue(normal, decimalPlaces);
+  if (decimalPlaces === 0) {
+    textValue += ".";
+  }
 
   function positiveAmount(value: string): string {
-    setDotAtTheEnd(value.endsWith("."));
+    // setDotAtTheEnd(value.endsWith("."));
+    // const dotAtTheEnd = value.endsWith(".");
     if (!value) {
       if (handler.onInput) {
         handler.onInput(Amounts.zeroOfCurrency(currency));
@@ -85,28 +95,30 @@ export function AmountField({
     try {
       //remove all but last dot
       const parsed = value.replace(/(\.)(?=.*\1)/g, "");
+      const parts = parsed.split(".");
+      setDecimalPlaces(parts.length === 1 ? undefined : parts[1].length);
+
+      //FIXME: should normalize before parsing
+      //parsing first add some restriction on the rage of the values
       const real = parseValue(currency, parsed);
 
       if (!real || real.value < 0) {
-        return prev;
+        return previousValue;
       }
 
-      const normal = normalize(real, unit);
+      const realNormalized = normalize(real, unit);
 
-      console.log(real, unit, normal);
-      if (normal && handler.onInput) {
-        handler.onInput(normal);
+      // console.log(real, unit, normal);
+      if (realNormalized && handler.onInput) {
+        handler.onInput(realNormalized);
       }
       return parsed;
     } catch (e) {
       // do nothing
     }
-    return prev;
+    return previousValue;
   }
 
-  const normal = denormalize(handler.value, unit) ?? handler.value;
-
-  const textValue = Amounts.stringifyValue(normal) + (dotAtTheEnd ? "." : "");
   return (
     <Fragment>
       <TextField
@@ -161,19 +173,21 @@ export function AmountField({
 
 function parseValue(currency: string, s: string): AmountJson | undefined {
   const [intPart, fractPart] = s.split(".");
-  const tail = "." + (fractPart || "0");
-  if (tail.length > amountFractionalLength + 1) {
-    return undefined;
-  }
+  const tailPart = !fractPart
+    ? "0"
+    : fractPart.substring(0, amountFractionalLength);
+
   const value = Number.parseInt(intPart, 10);
-  if (Number.isNaN(value) || value > amountMaxValue) {
+  const parsedTail = Number.parseFloat(`.${tailPart}`);
+  if (Number.isNaN(value) || Number.isNaN(parsedTail)) {
     return undefined;
   }
-  return {
-    currency,
-    fraction: Math.round(amountFractionalBase * Number.parseFloat(tail)),
-    value,
-  };
+  if (value > amountMaxValue) {
+    return undefined;
+  }
+
+  const fraction = Math.round(amountFractionalBase * parsedTail);
+  return { currency, fraction, value };
 }
 
 function normalize(amount: AmountJson, unit: number): AmountJson | undefined {
