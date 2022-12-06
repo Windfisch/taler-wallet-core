@@ -20,7 +20,7 @@
  */
 
 import { h, VNode } from "preact";
-import { Translate } from "../../i18n";
+import { useTranslationContext } from "../../context/translation.js";
 
 interface Props {
   mobile?: boolean;
@@ -31,6 +31,7 @@ export function Sidebar({ mobile }: Props): VNode {
   const config = { version: "none" };
   // FIXME: add replacement for __VERSION__ with the current version
   const process = { env: { __VERSION__: "0.0.0" } };
+  const { i18n } = useTranslationContext();
 
   return (
     <aside class="aside is-placed-left is-expanded">
@@ -49,20 +50,20 @@ export function Sidebar({ mobile }: Props): VNode {
       </div>
       <div class="menu is-menu-main">
         <p class="menu-label">
-          <Translate>Bank menu</Translate>
+          <i18n.Translate>Bank menu</i18n.Translate>
         </p>
         <ul class="menu-list">
           <li>
             <div class="ml-4">
               <span class="menu-item-label">
-                <Translate>Select option1</Translate>
+                <i18n.Translate>Select option1</i18n.Translate>
               </span>
             </div>
           </li>
           <li>
             <div class="ml-4">
               <span class="menu-item-label">
-                <Translate>Select option2</Translate>
+                <i18n.Translate>Select option2</i18n.Translate>
               </span>
             </div>
           </li>

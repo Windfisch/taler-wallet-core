@@ -18,9 +18,9 @@
 import esbuild from "esbuild";
 import path from "path";
 import fs from "fs";
-import crypto from "crypto";
-import { sassPlugin } from "esbuild-sass-plugin";
+import sass from "sass";
 
+// eslint-disable-next-line no-undef
 const BASE = process.cwd();
 
 const preact = path.join(
@@ -44,14 +44,16 @@ const preactCompatPlugin = {
   },
 };
 
-const entryPoints = ["src/index.tsx"];
+const entryPoints = ["src/index.tsx", "src/stories.tsx"];
 
 let GIT_ROOT = BASE;
 while (!fs.existsSync(path.join(GIT_ROOT, ".git")) && GIT_ROOT !== "/") {
   GIT_ROOT = path.join(GIT_ROOT, "../");
 }
 if (GIT_ROOT === "/") {
+  // eslint-disable-next-line no-undef
   console.log("not found");
+  // eslint-disable-next-line no-undef
   process.exit(1);
 }
 const GIT_HASH = GIT_ROOT === "/" ? undefined : git_hash();
@@ -86,6 +88,26 @@ function copyFilesPlugin(options) {
   };
 }
 
+const DEFAULT_SASS_FILTER = /\.(s[ac]ss|css)$/
+
+const buildSassPlugin = {
+  name: "custom-build-sass",
+  setup(build) {
+
+    build.onLoad({ filter: DEFAULT_SASS_FILTER }, ({ path: file }) => {
+      const resolveDir = path.dirname(file)
+      const { css: contents } = sass.compile(file, { loadPaths: ["./"] })
+
+      return {
+        resolveDir,
+        loader: 'css',
+        contents
+      }
+    });
+
+  },
+};
+
 export const buildConfig = {
   entryPoints: [...entryPoints],
   bundle: true,
@@ -95,6 +117,10 @@ export const buildConfig = {
     ".svg": "file",
     ".png": "dataurl",
     ".jpeg": "dataurl",
+    '.ttf': 'file',
+    '.woff': 'file',
+    '.woff2': 'file',
+    '.eot': 'file',
   },
   target: ["es6"],
   format: "esm",
@@ -108,17 +134,14 @@ export const buildConfig = {
   },
   plugins: [
     preactCompatPlugin,
-    sassPlugin(),
     copyFilesPlugin([
       {
-        src: "static/index.html",
-        dest: "dist/index.html",
+        src: "./src/index.html",
+        dest: "./dist/index.html",
       },
     ]),
+    buildSassPlugin
   ],
 };
 
-esbuild.build(buildConfig).catch((e) => {
-  console.log(e);
-  process.exit(1);
-});
+await esbuild.build(buildConfig)

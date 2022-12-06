@@ -27,13 +27,16 @@ import {
 } from "preact/hooks";
 import talerLogo from "../../assets/logo-white.svg";
 import { LangSelectorLikePy as LangSelector } from "../../components/menu/LangSelector.js";
-import { QR } from "../../components/QR.js";
-import { useLocalStorage, useNotNullLocalStorage } from "../../hooks/index.js";
-import { Translate, useTranslator } from "../../i18n/index.js";
-import "../../scss/main.scss";
+import {
+  useLocalStorage,
+  useNotNullLocalStorage,
+} from "../../hooks/useLocalStorage.js";
+// import { Translate, useTranslator } from "../../i18n/index.js";
+import { useTranslationContext } from "../../context/translation.js";
 import { Amounts, HttpStatusCode, parsePaytoUri } from "@gnu-taler/taler-util";
 import { createHashHistory } from "history";
 import Router, { Route, route } from "preact-router";
+import { QrCodeSection } from "./QrCodeSection.js";
 
 interface BankUiSettings {
   allowRegistrations: boolean;
@@ -987,7 +990,7 @@ async function registrationCall(
 
 function ErrorBanner(Props: any): VNode | null {
   const [pageState, pageStateSetter] = Props.pageState;
-  // const i18n = useTranslator();
+  // const { i18n } = useTranslationContext();
   if (!pageState.error) return null;
 
   const rval = (
@@ -1041,7 +1044,7 @@ function StatusBanner(Props: any): VNode | null {
 }
 
 function BankFrame(Props: any): VNode {
-  const i18n = useTranslator();
+  const { i18n } = useTranslationContext();
   const [pageState, pageStateSetter] = useContext(PageContext);
   console.log("BankFrame state", pageState);
   const logOut = (
@@ -1062,7 +1065,7 @@ function BankFrame(Props: any): VNode {
             };
           });
         }}
-      >{i18n`Logout`}</a>
+      >{i18n.str`Logout`}</a>
     </div>
   );
 
@@ -1080,7 +1083,7 @@ function BankFrame(Props: any): VNode {
         class="demobar"
         style="display: flex; flex-direction: row; justify-content: space-between;"
       >
-        <a href="#main" class="skip">{i18n`Skip to main content`}</a>
+        <a href="#main" class="skip">{i18n.str`Skip to main content`}</a>
         <div style="max-width: 50em; margin-left: 2em;">
           <h1>
             <span class="it">
@@ -1089,7 +1092,7 @@ function BankFrame(Props: any): VNode {
           </h1>
           {maybeDemoContent(
             <p>
-              <Translate>
+              <i18n.Translate>
                 This part of the demo shows how a bank that supports Taler
                 directly would work. In addition to using your own bank account,
                 you can also see the transaction history of some{" "}
@@ -1100,14 +1103,14 @@ function BankFrame(Props: any): VNode {
                   Public Accounts
                 </a>
                 .
-              </Translate>
+              </i18n.Translate>
             </p>,
           )}
         </div>
         <a href="https://taler.net/">
           <img
             src={talerLogo}
-            alt={i18n`Taler logo`}
+            alt={i18n.str`Taler logo`}
             height="100"
             width="224"
             style="margin: 2em 2em"
@@ -1168,7 +1171,7 @@ function PaytoWireTransfer(Props: any): VNode {
   const [rawPaytoInput, rawPaytoInputSetter] = useState<string | undefined>(
     undefined,
   );
-  const i18n = useTranslator();
+  const { i18n } = useTranslationContext();
   const { focus, backendState } = Props;
   const amountRegex = "^[0-9]+(.[0-9]+)?$";
   const ibanRegex = "^[A-Z][A-Z][0-9]+$";
@@ -1193,17 +1196,17 @@ function PaytoWireTransfer(Props: any): VNode {
     ? undefined
     : undefinedIfEmpty({
         iban: !submitData.iban
-          ? i18n`Missing IBAN`
+          ? i18n.str`Missing IBAN`
           : !/^[A-Z0-9]*$/.test(submitData.iban)
-          ? i18n`IBAN should have just uppercased letters and numbers`
+          ? i18n.str`IBAN should have just uppercased letters and numbers`
           : undefined,
-        subject: !submitData.subject ? i18n`Missing subject` : undefined,
+        subject: !submitData.subject ? i18n.str`Missing subject` : undefined,
         amount: !submitData.amount
-          ? i18n`Missing amount`
+          ? i18n.str`Missing amount`
           : !(parsedAmount = Amounts.parse(`${currency}:${submitData.amount}`))
-          ? i18n`Amount is not valid`
+          ? i18n.str`Amount is not valid`
           : Amounts.isZero(parsedAmount)
-          ? i18n`Should be greater than 0`
+          ? i18n.str`Should be greater than 0`
           : undefined,
       });
 
@@ -1212,7 +1215,7 @@ function PaytoWireTransfer(Props: any): VNode {
       <div>
         <div class="pure-form" name="wire-transfer-form">
           <p>
-            <label for="iban">{i18n`Receiver IBAN:`}</label>&nbsp;
+            <label for="iban">{i18n.str`Receiver IBAN:`}</label>&nbsp;
             <input
               ref={ref}
               type="text"
@@ -1235,7 +1238,7 @@ function PaytoWireTransfer(Props: any): VNode {
               isDirty={submitData?.iban !== undefined}
             />
             <br />
-            <label for="subject">{i18n`Transfer subject:`}</label>&nbsp;
+            <label for="subject">{i18n.str`Transfer subject:`}</label>&nbsp;
             <input
               type="text"
               name="subject"
@@ -1256,7 +1259,7 @@ function PaytoWireTransfer(Props: any): VNode {
               isDirty={submitData?.subject !== undefined}
             />
             <br />
-            <label for="amount">{i18n`Amount:`}</label>&nbsp;
+            <label for="amount">{i18n.str`Amount:`}</label>&nbsp;
             <input
               type="number"
               name="amount"
@@ -1309,7 +1312,7 @@ function PaytoWireTransfer(Props: any): VNode {
                     ...prevState,
 
                     error: {
-                      title: i18n`Field(s) missing.`,
+                      title: i18n.str`Field(s) missing.`,
                     },
                   }));
                   return;
@@ -1358,7 +1361,7 @@ function PaytoWireTransfer(Props: any): VNode {
               }));
             }}
           >
-            {i18n`Want to try the raw payto://-format?`}
+            {i18n.str`Want to try the raw payto://-format?`}
           </a>
         </p>
       </div>
@@ -1366,18 +1369,18 @@ function PaytoWireTransfer(Props: any): VNode {
 
   const errorsPayto = undefinedIfEmpty({
     rawPaytoInput: !rawPaytoInput
-      ? i18n`Missing payto address`
+      ? i18n.str`Missing payto address`
       : !parsePaytoUri(rawPaytoInput)
-      ? i18n`Payto does not follow the pattern`
+      ? i18n.str`Payto does not follow the pattern`
       : undefined,
   });
 
   return (
     <div>
-      <p>{i18n`Transfer money to account identified by payto:// URI:`}</p>
+      <p>{i18n.str`Transfer money to account identified by payto:// URI:`}</p>
       <div class="pure-form" name="payto-form">
         <p>
-          <label for="address">{i18n`payto URI:`}</label>&nbsp;
+          <label for="address">{i18n.str`payto URI:`}</label>&nbsp;
           <input
             name="address"
             type="text"
@@ -1386,7 +1389,7 @@ function PaytoWireTransfer(Props: any): VNode {
             id="address"
             value={rawPaytoInput ?? ""}
             required
-            placeholder={i18n`payto address`}
+            placeholder={i18n.str`payto address`}
             // pattern={`payto://iban/[A-Z][A-Z][0-9]+?message=[a-zA-Z0-9 ]+&amount=${currency}:[0-9]+(.[0-9]+)?`}
             onInput={(e): void => {
               rawPaytoInputSetter(e.currentTarget.value);
@@ -1410,7 +1413,7 @@ function PaytoWireTransfer(Props: any): VNode {
             class="pure-button pure-button-primary"
             type="submit"
             disabled={!!errorsPayto}
-            value={i18n`Send`}
+            value={i18n.str`Send`}
             onClick={async () => {
               // empty string evaluates to false.
               if (!rawPaytoInput) {
@@ -1444,7 +1447,7 @@ function PaytoWireTransfer(Props: any): VNode {
               }));
             }}
           >
-            {i18n`Use wire-transfer form?`}
+            {i18n.str`Use wire-transfer form?`}
           </a>
         </p>
       </div>
@@ -1459,7 +1462,7 @@ function PaytoWireTransfer(Props: any): VNode {
 function TalerWithdrawalConfirmationQuestion(Props: any): VNode {
   const [pageState, pageStateSetter] = useContext(PageContext);
   const { backendState } = Props;
-  const i18n = useTranslator();
+  const { i18n } = useTranslationContext();
   const captchaNumbers = {
     a: Math.floor(Math.random() * 10),
     b: Math.floor(Math.random() * 10),
@@ -1468,15 +1471,15 @@ function TalerWithdrawalConfirmationQuestion(Props: any): VNode {
 
   return (
     <Fragment>
-      <h1 class="nav">{i18n`Confirm Withdrawal`}</h1>
+      <h1 class="nav">{i18n.str`Confirm Withdrawal`}</h1>
       <article>
         <div class="challenge-div">
           <form class="challenge-form">
             <div class="pure-form" id="captcha" name="capcha-form">
-              <h2>{i18n`Authorize withdrawal by solving challenge`}</h2>
+              <h2>{i18n.str`Authorize withdrawal by solving challenge`}</h2>
               <p>
                 <label for="answer">
-                  {i18n`What is`}&nbsp;
+                  {i18n.str`What is`}&nbsp;
                   <em>
                     {captchaNumbers.a}&nbsp;+&nbsp;{captchaNumbers.b}
                   </em>
@@ -1514,12 +1517,12 @@ function TalerWithdrawalConfirmationQuestion(Props: any): VNode {
                       ...prevState,
 
                       error: {
-                        title: i18n`Answer is wrong.`,
+                        title: i18n.str`Answer is wrong.`,
                       },
                     }));
                   }}
                 >
-                  {i18n`Confirm`}
+                  {i18n.str`Confirm`}
                 </button>
                 &nbsp;
                 <button
@@ -1532,57 +1535,23 @@ function TalerWithdrawalConfirmationQuestion(Props: any): VNode {
                     )
                   }
                 >
-                  {i18n`Cancel`}
+                  {i18n.str`Cancel`}
                 </button>
               </p>
             </div>
           </form>
           <div class="hint">
             <p>
-              <Translate>
+              <i18n.Translate>
                 A this point, a <b>real</b> bank would ask for an additional
                 authentication proof (PIN/TAN, one time password, ..), instead
                 of a simple calculation.
-              </Translate>
+              </i18n.Translate>
             </p>
           </div>
         </div>
       </article>
     </Fragment>
-  );
-}
-
-function QrCodeSection({
-  talerWithdrawUri,
-  abortButton,
-}: {
-  talerWithdrawUri: string;
-  abortButton: h.JSX.Element;
-}): VNode {
-  const i18n = useTranslator();
-  useEffect(() => {
-    //Taler Wallet WebExtension is listening to headers response and tab updates.
-    //In the SPA there is no header response with the Taler URI so
-    //this hack manually triggers the tab update after the QR is in the DOM.
-    window.location.hash = `/account/${new Date().getTime()}`;
-  }, []);
-
-  return (
-    <section id="main" class="content">
-      <h1 class="nav">{i18n`Transfer to Taler Wallet`}</h1>
-      <article>
-        <div class="qr-div">
-          <p>{i18n`Use this QR code to withdraw to your mobile wallet:`}</p>
-          {QR({ text: talerWithdrawUri })}
-          <p>
-            Click <a id="linkqr" href={talerWithdrawUri}>{i18n`this link`}</a>{" "}
-            to open your Taler wallet!
-          </p>
-          <br />
-          {abortButton}
-        </div>
-      </article>
-    </section>
   );
 }
 
@@ -1595,7 +1564,7 @@ function TalerWithdrawalQRCode(Props: any): VNode {
   // turns true when the wallet POSTed the reserve details:
   const [pageState, pageStateSetter] = useContext(PageContext);
   const { withdrawalId, talerWithdrawUri, accountLabel, backendState } = Props;
-  const i18n = useTranslator();
+  const { i18n } = useTranslationContext();
   const abortButton = (
     <a
       class="pure-button btn-cancel"
@@ -1609,7 +1578,7 @@ function TalerWithdrawalQRCode(Props: any): VNode {
           };
         });
       }}
-    >{i18n`Abort`}</a>
+    >{i18n.str`Abort`}</a>
   );
 
   console.log(`Showing withdraw URI: ${talerWithdrawUri}`);
@@ -1629,7 +1598,7 @@ function TalerWithdrawalQRCode(Props: any): VNode {
       ...prevState,
 
       error: {
-        title: i18n`withdrawal (${withdrawalId}) was never (correctly) created at the bank...`,
+        title: i18n.str`withdrawal (${withdrawalId}) was never (correctly) created at the bank...`,
       },
     }));
     return (
@@ -1643,7 +1612,7 @@ function TalerWithdrawalQRCode(Props: any): VNode {
 
   // data didn't arrive yet and wallet didn't communicate:
   if (typeof data === "undefined")
-    return <p>{i18n`Waiting the bank to create the operation...`}</p>;
+    return <p>{i18n.str`Waiting the bank to create the operation...`}</p>;
 
   /**
    * Wallet didn't communicate withdrawal details yet:
@@ -1657,7 +1626,7 @@ function TalerWithdrawalQRCode(Props: any): VNode {
         withdrawalInProgress: false,
 
         error: {
-          title: i18n`This withdrawal was aborted!`,
+          title: i18n.str`This withdrawal was aborted!`,
         },
       };
     });
@@ -1680,7 +1649,7 @@ function TalerWithdrawalQRCode(Props: any): VNode {
 function WalletWithdraw(Props: any): VNode {
   const { backendState, pageStateSetter, focus } = Props;
   const currency = useContext(CurrencyContext);
-  const i18n = useTranslator();
+  const { i18n } = useTranslationContext();
   let submitAmount = "5.00";
   const amountRegex = "^[0-9]+(.[0-9]+)?$";
 
@@ -1691,7 +1660,8 @@ function WalletWithdraw(Props: any): VNode {
   return (
     <div id="reserve-form" class="pure-form" name="tform">
       <p>
-        <label for="withdraw-amount">{i18n`Amount to withdraw:`}</label>&nbsp;
+        <label for="withdraw-amount">{i18n.str`Amount to withdraw:`}</label>
+        &nbsp;
         <input
           type="number"
           ref={ref}
@@ -1724,7 +1694,7 @@ function WalletWithdraw(Props: any): VNode {
             id="select-exchange"
             class="pure-button pure-button-primary"
             type="submit"
-            value={i18n`Withdraw`}
+            value={i18n.str`Withdraw`}
             onClick={() => {
               submitAmount = validateAmount(submitAmount);
               /**
@@ -1753,7 +1723,7 @@ function WalletWithdraw(Props: any): VNode {
 function PaymentOptions(Props: any): VNode {
   const { backendState, pageStateSetter, focus } = Props;
   const currency = useContext(CurrencyContext);
-  const i18n = useTranslator();
+  const { i18n } = useTranslationContext();
 
   const [tab, setTab] = useState<"charge-wallet" | "wire-transfer">(
     "charge-wallet",
@@ -1769,7 +1739,7 @@ function PaymentOptions(Props: any): VNode {
               setTab("charge-wallet");
             }}
           >
-            {i18n`Obtain digital cash`}
+            {i18n.str`Obtain digital cash`}
           </button>
           <button
             class={tab === "wire-transfer" ? "tablinks active" : "tablinks"}
@@ -1777,12 +1747,12 @@ function PaymentOptions(Props: any): VNode {
               setTab("wire-transfer");
             }}
           >
-            {i18n`Transfer to bank account`}
+            {i18n.str`Transfer to bank account`}
           </button>
         </div>
         {tab === "charge-wallet" && (
           <div id="charge-wallet" class="tabcontent active">
-            <h3>{i18n`Obtain digital cash`}</h3>
+            <h3>{i18n.str`Obtain digital cash`}</h3>
             <WalletWithdraw
               backendState={backendState}
               focus
@@ -1792,7 +1762,7 @@ function PaymentOptions(Props: any): VNode {
         )}
         {tab === "wire-transfer" && (
           <div id="wire-transfer" class="tabcontent active">
-            <h3>{i18n`Transfer to bank account`}</h3>
+            <h3>{i18n.str`Transfer to bank account`}</h3>
             <PaytoWireTransfer
               backendState={backendState}
               focus
@@ -1807,7 +1777,7 @@ function PaymentOptions(Props: any): VNode {
 
 function RegistrationButton(Props: any): VNode {
   const { backendStateSetter, pageStateSetter } = Props;
-  const i18n = useTranslator();
+  const { i18n } = useTranslationContext();
   if (bankUiSettings.allowRegistrations)
     return (
       <button
@@ -1816,7 +1786,7 @@ function RegistrationButton(Props: any): VNode {
           route("/register");
         }}
       >
-        {i18n`Register`}
+        {i18n.str`Register`}
       </button>
     );
 
@@ -1834,7 +1804,7 @@ function undefinedIfEmpty<T extends object>(obj: T): T | undefined {
 function LoginForm(Props: any): VNode {
   const { backendStateSetter, pageStateSetter } = Props;
   const [submitData, submitDataSetter] = useCredentialsRequestType();
-  const i18n = useTranslator();
+  const { i18n } = useTranslationContext();
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => {
     ref.current?.focus();
@@ -1843,17 +1813,17 @@ function LoginForm(Props: any): VNode {
   const errors = !submitData
     ? undefined
     : undefinedIfEmpty({
-        username: !submitData.username ? i18n`Missing username` : undefined,
-        password: !submitData.password ? i18n`Missing password` : undefined,
+        username: !submitData.username ? i18n.str`Missing username` : undefined,
+        password: !submitData.password ? i18n.str`Missing password` : undefined,
       });
 
   return (
     <div class="login-div">
       <form action="javascript:void(0);" class="login-form">
         <div class="pure-form">
-          <h2>{i18n`Please login!`}</h2>
+          <h2>{i18n.str`Please login!`}</h2>
           <p class="unameFieldLabel loginFieldLabel formFieldLabel">
-            <label for="username">{i18n`Username:`}</label>
+            <label for="username">{i18n.str`Username:`}</label>
           </p>
           <input
             ref={ref}
@@ -1872,7 +1842,7 @@ function LoginForm(Props: any): VNode {
             }}
           />
           <p class="passFieldLabel loginFieldLabel formFieldLabel">
-            <label for="password">{i18n`Password:`}</label>
+            <label for="password">{i18n.str`Password:`}</label>
           </p>
           <input
             type="password"
@@ -1919,7 +1889,7 @@ function LoginForm(Props: any): VNode {
               });
             }}
           >
-            {i18n`Login`}
+            {i18n.str`Login`}
           </button>
           {RegistrationButton(Props)}
         </div>
@@ -1935,30 +1905,30 @@ function RegistrationForm(Props: any): VNode {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [pageState, pageStateSetter] = useContext(PageContext);
   const [submitData, submitDataSetter] = useCredentialsRequestType();
-  const i18n = useTranslator();
+  const { i18n } = useTranslationContext();
 
   const errors = !submitData
     ? undefined
     : undefinedIfEmpty({
-        username: !submitData.username ? i18n`Missing username` : undefined,
-        password: !submitData.password ? i18n`Missing password` : undefined,
+        username: !submitData.username ? i18n.str`Missing username` : undefined,
+        password: !submitData.password ? i18n.str`Missing password` : undefined,
         repeatPassword: !submitData.repeatPassword
-          ? i18n`Missing password`
+          ? i18n.str`Missing password`
           : submitData.repeatPassword !== submitData.password
-          ? i18n`Password don't match`
+          ? i18n.str`Password don't match`
           : undefined,
       });
 
   return (
     <Fragment>
-      <h1 class="nav">{i18n`Welcome to ${bankUiSettings.bankName}!`}</h1>
+      <h1 class="nav">{i18n.str`Welcome to ${bankUiSettings.bankName}!`}</h1>
       <article>
         <div class="register-div">
           <form action="javascript:void(0);" class="register-form">
             <div class="pure-form">
-              <h2>{i18n`Please register!`}</h2>
+              <h2>{i18n.str`Please register!`}</h2>
               <p class="unameFieldLabel registerFieldLabel formFieldLabel">
-                <label for="register-un">{i18n`Username:`}</label>
+                <label for="register-un">{i18n.str`Username:`}</label>
               </p>
               <input
                 id="register-un"
@@ -1976,7 +1946,7 @@ function RegistrationForm(Props: any): VNode {
               />
               <br />
               <p class="unameFieldLabel registerFieldLabel formFieldLabel">
-                <label for="register-pw">{i18n`Password:`}</label>
+                <label for="register-pw">{i18n.str`Password:`}</label>
               </p>
               <input
                 type="password"
@@ -1993,7 +1963,7 @@ function RegistrationForm(Props: any): VNode {
                 }}
               />
               <p class="unameFieldLabel registerFieldLabel formFieldLabel">
-                <label for="register-repeat">{i18n`Repeat Password:`}</label>
+                <label for="register-repeat">{i18n.str`Repeat Password:`}</label>
               </p>
               <input
                 type="password"
@@ -2012,7 +1982,7 @@ function RegistrationForm(Props: any): VNode {
               />
               <br />
               {/*
-              <label for="phone">{i18n`Phone number:`}</label>
+              <label for="phone">{i18n.str`Phone number:`}</label>
               // FIXME: add input validation (must start with +, otherwise only numbers)
               <input
                 name="phone"
@@ -2054,7 +2024,7 @@ function RegistrationForm(Props: any): VNode {
                   });
                 }}
               >
-                {i18n`Register`}
+                {i18n.str`Register`}
               </button>
               {/* FIXME: should use a different color */}
               <button
@@ -2068,7 +2038,7 @@ function RegistrationForm(Props: any): VNode {
                   route("/account");
                 }}
               >
-                {i18n`Cancel`}
+                {i18n.str`Cancel`}
               </button>
             </div>
           </form>
@@ -2083,7 +2053,7 @@ function RegistrationForm(Props: any): VNode {
  */
 function Transactions(Props: any): VNode {
   const { pageNumber, accountLabel, balanceValue } = Props;
-  const i18n = useTranslator();
+  const { i18n } = useTranslationContext();
   const { data, error, mutate } = useSWR(
     `access-api/accounts/${accountLabel}/transactions?page=${pageNumber}`,
   );
@@ -2114,10 +2084,10 @@ function Transactions(Props: any): VNode {
       <table class="pure-table pure-table-striped">
         <thead>
           <tr>
-            <th>{i18n`Date`}</th>
-            <th>{i18n`Amount`}</th>
-            <th>{i18n`Counterpart`}</th>
-            <th>{i18n`Subject`}</th>
+            <th>{i18n.str`Date`}</th>
+            <th>{i18n.str`Amount`}</th>
+            <th>{i18n.str`Counterpart`}</th>
+            <th>{i18n.str`Subject`}</th>
           </tr>
         </thead>
         <tbody>
@@ -2178,7 +2148,7 @@ function Account(Props: any): VNode {
     talerWithdrawUri,
     timestamp,
   } = pageState;
-  const i18n = useTranslator();
+  const { i18n } = useTranslationContext();
   useEffect(() => {
     mutate();
   }, [timestamp]);
@@ -2206,7 +2176,7 @@ function Account(Props: any): VNode {
 
           isLoggedIn: false,
           error: {
-            title: i18n`Username or account label '${accountLabel}' not found.  Won't login.`,
+            title: i18n.str`Username or account label '${accountLabel}' not found.  Won't login.`,
           },
         }));
 
@@ -2233,7 +2203,7 @@ function Account(Props: any): VNode {
 
           isLoggedIn: false,
           error: {
-            title: i18n`Wrong credentials given.`,
+            title: i18n.str`Wrong credentials given.`,
           },
         }));
         return <p>Wrong credentials...</p>;
@@ -2244,7 +2214,7 @@ function Account(Props: any): VNode {
 
           isLoggedIn: false,
           error: {
-            title: i18n`Account information could not be retrieved.`,
+            title: i18n.str`Account information could not be retrieved.`,
             debug: JSON.stringify(error),
           },
         }));
@@ -2287,14 +2257,14 @@ function Account(Props: any): VNode {
     <BankFrame>
       <div>
         <h1 class="nav welcome-text">
-          <Translate>
+          <i18n.Translate>
             Welcome, {accountLabel} ({getIbanFromPayto(data.paytoUri)})!
-          </Translate>
+          </i18n.Translate>
         </h1>
       </div>
       <section id="assets">
         <div class="asset-summary">
-          <h2>{i18n`Bank account balance`}</h2>
+          <h2>{i18n.str`Bank account balance`}</h2>
           <div class="large-amount amount">
             {data.balance.credit_debit_indicator == "debit" ? <b>-</b> : null}
             <span class="value">{`${balanceValue}`}</span>&nbsp;
@@ -2304,7 +2274,7 @@ function Account(Props: any): VNode {
       </section>
       <section id="payments">
         <div class="payments">
-          <h2>{i18n`Payments`}</h2>
+          <h2>{i18n.str`Payments`}</h2>
           {/* FIXME: turn into button! */}
           <CurrencyContext.Provider value={balance.currency}>
             {Props.children}
@@ -2317,7 +2287,7 @@ function Account(Props: any): VNode {
       </section>
       <section id="main">
         <article>
-          <h2>{i18n`Latest transactions:`}</h2>
+          <h2>{i18n.str`Latest transactions:`}</h2>
           <Transactions
             balanceValue={balanceValue}
             pageNumber="0"
@@ -2379,7 +2349,7 @@ function SWRWithoutCredentials(Props: any): VNode {
 function PublicHistories(Props: any): VNode {
   const [showAccount, setShowAccount] = useShowPublicAccount();
   const { data, error } = useSWR("access-api/public-accounts");
-  const i18n = useTranslator();
+  const { i18n } = useTranslationContext();
 
   if (typeof error !== "undefined") {
     console.log("account error", error);
@@ -2391,7 +2361,7 @@ function PublicHistories(Props: any): VNode {
 
           showPublicHistories: false,
           error: {
-            title: i18n`List of public accounts was not found.`,
+            title: i18n.str`List of public accounts was not found.`,
             debug: JSON.stringify(error),
           },
         }));
@@ -2403,7 +2373,7 @@ function PublicHistories(Props: any): VNode {
 
           showPublicHistories: false,
           error: {
-            title: i18n`List of public accounts could not be retrieved.`,
+            title: i18n.str`List of public accounts could not be retrieved.`,
             debug: JSON.stringify(error),
           },
         }));
@@ -2450,7 +2420,7 @@ function PublicHistories(Props: any): VNode {
 
   return (
     <Fragment>
-      <h1 class="nav">{i18n`History of public accounts`}</h1>
+      <h1 class="nav">{i18n.str`History of public accounts`}</h1>
       <section id="main">
         <article>
           <div class="pure-menu pure-menu-horizontal" name="accountMenu">
@@ -2471,7 +2441,7 @@ function PublicHistories(Props: any): VNode {
 function PublicHistoriesPage(): VNode {
   // const [backendState, backendStateSetter] = useBackendState();
   const [pageState, pageStateSetter] = usePageState();
-  // const i18n = useTranslator();
+  // const { i18n } = useTranslationContext();
   return (
     <SWRWithoutCredentials baseUrl={getBankBackendBaseUrl()}>
       <PageContext.Provider value={[pageState, pageStateSetter]}>
@@ -2499,12 +2469,12 @@ function PublicHistoriesPage(): VNode {
 function RegistrationPage(): VNode {
   const [backendState, backendStateSetter] = useBackendState();
   const [pageState, pageStateSetter] = usePageState();
-  const i18n = useTranslator();
+  const { i18n } = useTranslationContext();
   if (!bankUiSettings.allowRegistrations) {
     return (
       <PageContext.Provider value={[pageState, pageStateSetter]}>
         <BankFrame>
-          <p>{i18n`Currently, the bank is not accepting new registrations!`}</p>
+          <p>{i18n.str`Currently, the bank is not accepting new registrations!`}</p>
         </BankFrame>
       </PageContext.Provider>
     );
@@ -2521,13 +2491,13 @@ function RegistrationPage(): VNode {
 function AccountPage(): VNode {
   const [backendState, backendStateSetter] = useBackendState();
   const [pageState, pageStateSetter] = usePageState();
-  const i18n = useTranslator();
+  const { i18n } = useTranslationContext();
 
   if (!pageState.isLoggedIn) {
     return (
       <PageContext.Provider value={[pageState, pageStateSetter]}>
         <BankFrame>
-          <h1 class="nav">{i18n`Welcome to ${bankUiSettings.bankName}!`}</h1>
+          <h1 class="nav">{i18n.str`Welcome to ${bankUiSettings.bankName}!`}</h1>
           <LoginForm
             pageStateSetter={pageStateSetter}
             backendStateSetter={backendStateSetter}
@@ -2543,7 +2513,7 @@ function AccountPage(): VNode {
 
       isLoggedIn: false,
       error: {
-        title: i18n`Page has a problem: logged in but backend state is lost.`,
+        title: i18n.str`Page has a problem: logged in but backend state is lost.`,
       },
     }));
     return <p>Error: waiting for details...</p>;

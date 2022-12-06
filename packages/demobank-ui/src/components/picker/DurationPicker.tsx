@@ -21,7 +21,7 @@
 
 import { h, VNode } from "preact";
 import { useState } from "preact/hooks";
-import { useTranslator } from "../../i18n";
+import { useTranslationContext } from "../../context/translation.js";
 import "../../scss/DurationPicker.scss";
 
 export interface Props {
@@ -46,13 +46,13 @@ export function DurationPicker({
   const ms = ss * 60;
   const hs = ms * 60;
   const ds = hs * 24;
-  const i18n = useTranslator();
+  const { i18n } = useTranslationContext();
 
   return (
     <div class="rdp-picker">
       {days && (
         <DurationColumn
-          unit={i18n`days`}
+          unit={i18n.str`days`}
           max={99}
           value={Math.floor(value / ds)}
           onDecrease={value >= ds ? () => onChange(value - ds) : undefined}
@@ -62,7 +62,7 @@ export function DurationPicker({
       )}
       {hours && (
         <DurationColumn
-          unit={i18n`hours`}
+          unit={i18n.str`hours`}
           max={23}
           min={1}
           value={Math.floor(value / hs) % 24}
@@ -73,7 +73,7 @@ export function DurationPicker({
       )}
       {minutes && (
         <DurationColumn
-          unit={i18n`minutes`}
+          unit={i18n.str`minutes`}
           max={59}
           min={1}
           value={Math.floor(value / ms) % 60}
@@ -84,7 +84,7 @@ export function DurationPicker({
       )}
       {seconds && (
         <DurationColumn
-          unit={i18n`seconds`}
+          unit={i18n.str`seconds`}
           max={59}
           value={Math.floor(value / ss) % 60}
           onDecrease={value >= ss ? () => onChange(value - ss) : undefined}

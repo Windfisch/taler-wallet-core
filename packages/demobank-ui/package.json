@@ -11,13 +11,13 @@
   },
   "dependencies": {
     "@gnu-taler/taler-util": "workspace:*",
+    "@gnu-taler/web-util": "workspace:*",
     "date-fns": "2.29.3",
     "history": "4.10.1",
     "jed": "1.1.1",
-    "preact": "10.6.5",
+    "preact": "10.11.3",
     "preact-router": "3.2.1",
     "qrcode-generator": "^1.4.4",
-    "react": "npm:@preact/compat@^17.1.2",
     "swr": "1.3.0"
   },
   "devDependencies": {
@@ -30,11 +30,10 @@
     "bulma-checkbox": "^1.1.1",
     "bulma-radio": "^1.1.1",
     "esbuild": "^0.15.12",
-    "esbuild-sass-plugin": "^2.4.0",
     "eslint": "^8.26.0",
     "eslint-config-preact": "^1.2.0",
     "po2json": "^0.4.5",
-    "sass": "1.32.13",
+    "sass": "1.56.1",
     "typescript": "^4.4.4"
   }
 }
