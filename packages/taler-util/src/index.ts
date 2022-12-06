@@ -29,6 +29,7 @@ export {
   secretbox,
   secretbox_open,
   crypto_sign_keyPair_fromSeed,
+  setPRNG,
 } from "./nacl-fast.js";
 export { RequestThrottler } from "./RequestThrottler.js";
 export * from "./CancellationToken.js";

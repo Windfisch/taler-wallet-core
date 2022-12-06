@@ -42,6 +42,7 @@ import {
   j2s,
   Logger,
   setGlobalLogLevelFromString,
+  setPRNG,
   WalletNotification,
 } from "@gnu-taler/taler-util";
 import { BridgeIDBFactory } from "@gnu-taler/idb-bridge";
@@ -53,6 +54,16 @@ import * as _qjsOsImp from "os";
 
 const textDecoder = new TextDecoder();
 const textEncoder = new TextEncoder();
+
+setGlobalLogLevelFromString("trace");
+
+setPRNG(function (x: Uint8Array, n: number) {
+  // @ts-ignore
+  const va = globalThis._randomBytes(n);
+  const v = new Uint8Array(va);
+  for (let i = 0; i < n; i++) x[i] = v[i];
+  for (let i = 0; i < v.length; i++) v[i] = 0;
+});
 
 export interface QjsHttpResp {
   status: number;
@@ -126,8 +137,6 @@ export class NativeHttpLib implements HttpRequestLibrary {
         data = new ArrayBuffer(0);
       }
     }
-    console.log(`data type ${data?.constructor.name}`);
-    console.log(`data: ${j2s(data)}`);
     const res = qjsOs.fetchHttp(url, {
       method,
       data,

@@ -59,18 +59,6 @@ export function hmacSha256(key: Uint8Array, message: Uint8Array): Uint8Array {
   return hmac(sha256, 64, key, message);
 }
 
-/**
- * HMAC-SHA512-SHA256 (see RFC 5869).
- */
-export function kdfKw(args: {
-  outputLength: number;
-  ikm: Uint8Array;
-  salt?: Uint8Array;
-  info?: Uint8Array;
-}) {
-  return kdf(args.outputLength, args.ikm, args.salt, args.info);
-}
-
 export function kdf(
   outputLength: number,
   ikm: Uint8Array,

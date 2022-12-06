@@ -22,7 +22,7 @@
  * Imports.
  */
 import * as nacl from "./nacl-fast.js";
-import { kdf, kdfKw } from "./kdf.js";
+import { kdf } from "./kdf.js";
 import bigint from "big-integer";
 import {
   CoinEnvelope,
@@ -54,6 +54,8 @@ export function getRandomBytesF<T extends number, N extends string>(
 ): FlavorP<Uint8Array, N, T> {
   return nacl.randomBytes(n);
 }
+
+const useNative = true;
 
 const encTable = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
@@ -99,6 +101,10 @@ function getValue(chr: string): number {
 }
 
 export function encodeCrock(data: ArrayBuffer): string {
+  if (useNative && "_encodeCrock" in globalThis) {
+    // @ts-ignore
+    return globalThis._encodeCrock(data);
+  }
   const dataBytes = new Uint8Array(data);
   let sb = "";
   const size = data.byteLength;
@@ -123,7 +129,23 @@ export function encodeCrock(data: ArrayBuffer): string {
   return sb;
 }
 
+/**
+ * HMAC-SHA512-SHA256 (see RFC 5869).
+ */
+export function kdfKw(args: {
+  outputLength: number;
+  ikm: Uint8Array;
+  salt?: Uint8Array;
+  info?: Uint8Array;
+}) {
+  return kdf(args.outputLength, args.ikm, args.salt, args.info);
+}
+
 export function decodeCrock(encoded: string): Uint8Array {
+  if (useNative && "_decodeCrock" in globalThis) {
+    // @ts-ignore
+    return globalThis._decodeCrock(encoded);
+  }
   const size = encoded.length;
   let bitpos = 0;
   let bitbuf = 0;
@@ -152,6 +174,10 @@ export function decodeCrock(encoded: string): Uint8Array {
 }
 
 export function eddsaGetPublic(eddsaPriv: Uint8Array): Uint8Array {
+  if (useNative && "_eddsaGetPublic" in globalThis) {
+    // @ts-ignore
+    return globalThis._eddsaGetPublic(eddsaPriv);
+  }
   const pair = nacl.crypto_sign_keyPair_fromSeed(eddsaPriv);
   return pair.publicKey;
 }
@@ -164,13 +190,13 @@ export function keyExchangeEddsaEcdhe(
   eddsaPriv: Uint8Array,
   ecdhePub: Uint8Array,
 ): Uint8Array {
-  const ph = nacl.hash(eddsaPriv);
+  const ph = hash(eddsaPriv);
   const a = new Uint8Array(32);
   for (let i = 0; i < 32; i++) {
     a[i] = ph[i];
   }
   const x = nacl.scalarMult(a, ecdhePub);
-  return nacl.hash(x);
+  return hash(x);
 }
 
 export function keyExchangeEcdheEddsa(
@@ -179,7 +205,7 @@ export function keyExchangeEcdheEddsa(
 ): Uint8Array {
   const curve25519Pub = nacl.sign_ed25519_pk_to_curve25519(eddsaPub);
   const x = nacl.scalarMult(ecdhePriv, curve25519Pub);
-  return nacl.hash(x);
+  return hash(x);
 }
 
 interface RsaPub {
@@ -477,7 +503,7 @@ function csFDH(
   const L = bigint.fromArray(lMod, 256, false);
 
   const info = stringToBytes("Curve25519FDH");
-  const preshash = nacl.hash(typedArrayConcat([rPub, hm]));
+  const preshash = hash(typedArrayConcat([rPub, hm]));
   return csKdfMod(L, preshash, csPub, info).reverse();
 }
 
@@ -608,6 +634,10 @@ export function createEcdheKeyPair(): EcdheKeyPair {
 }
 
 export function hash(d: Uint8Array): Uint8Array {
+  if (useNative && "_hash" in globalThis) {
+    // @ts-ignore
+    return globalThis._hash(d);
+  }
   return nacl.hash(d);
 }
 
@@ -616,7 +646,7 @@ export function hash(d: Uint8Array): Uint8Array {
  * to 32 bytes.
  */
 export function hashTruncate32(d: Uint8Array): Uint8Array {
-  const sha512HashCode = nacl.hash(d);
+  const sha512HashCode = hash(d);
   return sha512HashCode.subarray(0, 32);
 }
 
@@ -673,7 +703,7 @@ export function hashDenomPub(pub: DenominationPubKey): Uint8Array {
     dv.setUint32(0, pub.age_mask ?? 0);
     dv.setUint32(4, DenomKeyType.toIntTag(pub.cipher));
     uint8ArrayBuf.set(pubBuf, 8);
-    return nacl.hash(uint8ArrayBuf);
+    return hash(uint8ArrayBuf);
   } else if (pub.cipher === DenomKeyType.ClauseSchnorr) {
     const pubBuf = decodeCrock(pub.cs_public_key);
     const hashInputBuf = new ArrayBuffer(pubBuf.length + 4 + 4);
@@ -682,7 +712,7 @@ export function hashDenomPub(pub: DenominationPubKey): Uint8Array {
     dv.setUint32(0, pub.age_mask ?? 0);
     dv.setUint32(4, DenomKeyType.toIntTag(pub.cipher));
     uint8ArrayBuf.set(pubBuf, 8);
-    return nacl.hash(uint8ArrayBuf);
+    return hash(uint8ArrayBuf);
   } else {
     throw Error(
       `unsupported cipher (${
@@ -693,6 +723,10 @@ export function hashDenomPub(pub: DenominationPubKey): Uint8Array {
 }
 
 export function eddsaSign(msg: Uint8Array, eddsaPriv: Uint8Array): Uint8Array {
+  if (useNative && "_eddsaSign" in globalThis) {
+    // @ts-ignore
+    return globalThis._eddsaSign(msg, eddsaPriv);
+  }
   const pair = nacl.crypto_sign_keyPair_fromSeed(eddsaPriv);
   return nacl.sign_detached(msg, pair.secretKey);
 }
@@ -702,6 +736,10 @@ export function eddsaVerify(
   sig: Uint8Array,
   eddsaPub: Uint8Array,
 ): boolean {
+  if (useNative && "_eddsaVerify" in globalThis) {
+    // @ts-ignore
+    return globalThis._eddsaVerify(msg, sig, eddsaPub);
+  }
   return nacl.sign_detached_verify(msg, sig, eddsaPub);
 }
 
