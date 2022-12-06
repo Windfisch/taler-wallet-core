@@ -190,14 +190,6 @@ export async function selectPeerCoins(
       ageCommitmentProof: AgeCommitmentProof | undefined;
     }[] = [];
     for (const coin of coinInfos) {
-      if (Amounts.cmp(amountAcc, instructedAmount) >= 0) {
-        const res: PeerCoinSelection = {
-          exchangeBaseUrl: exch.baseUrl,
-          coins: resCoins,
-          depositFees: depositFeesAcc,
-        };
-        return res;
-      }
       const gap = Amounts.add(
         coin.feeDeposit,
         Amounts.sub(instructedAmount, amountAcc).amount,
@@ -216,6 +208,14 @@ export async function selectPeerCoins(
         denomSig: coin.denomSig,
         ageCommitmentProof: coin.ageCommitmentProof,
       });
+      if (Amounts.cmp(amountAcc, instructedAmount) >= 0) {
+        const res: PeerCoinSelection = {
+          exchangeBaseUrl: exch.baseUrl,
+          coins: resCoins,
+          depositFees: depositFeesAcc,
+        };
+        return res;
+      }
     }
     continue;
   }
