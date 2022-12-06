@@ -24,13 +24,7 @@ import { queryToSlashKeys } from "../utils/index.js";
 import { ExchangeSetUrlPage as TestedComponent } from "./ExchangeSetUrl.js";
 
 export default {
-  title: "wallet/exchange add/set url",
-  component: TestedComponent,
-  argTypes: {
-    onRetry: { action: "onRetry" },
-    onDelete: { action: "onDelete" },
-    onBack: { action: "onBack" },
-  },
+  title: "exchange add set url",
 };
 
 export const ExpectedUSD = createExample(TestedComponent, {

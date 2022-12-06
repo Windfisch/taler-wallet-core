@@ -23,7 +23,7 @@ import { createExample } from "../test-utils.js";
 import { QrReaderPage } from "./QrReader.js";
 
 export default {
-  title: "wallet/qr reader",
+  title: "qr reader",
 };
 
 export const Reading = createExample(QrReaderPage, {});

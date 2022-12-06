@@ -29,13 +29,7 @@ import { createExample } from "../test-utils.js";
 import { TalerProtocolTimestamp } from "@gnu-taler/taler-util";
 
 export default {
-  title: "wallet/backup/list",
-  component: TestedComponent,
-  argTypes: {
-    onRetry: { action: "onRetry" },
-    onDelete: { action: "onDelete" },
-    onBack: { action: "onBack" },
-  },
+  title: "backup",
 };
 
 export const LotOfProviders = createExample(TestedComponent, {

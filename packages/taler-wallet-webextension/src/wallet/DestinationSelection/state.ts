@@ -21,7 +21,6 @@ import { useAsyncAsHook } from "../../hooks/useAsyncAsHook.js";
 import { assertUnreachable, RecursiveState } from "../../utils/index.js";
 import { wxApi } from "../../wxApi.js";
 import { Contact, Props, State } from "./index.js";
-import bankIcon from "../../svg/ri-bank-line.svg";
 
 export function useComponentState(
   props: Props,
@@ -42,22 +41,22 @@ export function useComponentState(
   const previous: Contact[] = true
     ? []
     : [
-        {
-          name: "International Bank",
-          icon: bankIcon, //FIXME: should be decided in the view
-          description: "account ending with 3454",
-        },
-        {
-          name: "Max",
-          icon: bankIcon,
-          description: "account ending with 3454",
-        },
-        {
-          name: "Alex",
-          icon: bankIcon,
-          description: "account ending with 3454",
-        },
-      ];
+      {
+        name: "International Bank",
+        icon_type: 'bank',
+        description: "account ending with 3454",
+      },
+      {
+        name: "Max",
+        icon_type: 'bank',
+        description: "account ending with 3454",
+      },
+      {
+        name: "Alex",
+        icon_type: 'bank',
+        description: "account ending with 3454",
+      },
+    ];
 
   if (!amount) {
     return () => {
@@ -115,15 +114,15 @@ export function useComponentState(
           onClick: invalid
             ? undefined
             : async () => {
-                props.goToWalletBankDeposit(currencyAndAmount);
-              },
+              props.goToWalletBankDeposit(currencyAndAmount);
+            },
         },
         goToWallet: {
           onClick: invalid
             ? undefined
             : async () => {
-                props.goToWalletWalletSend(currencyAndAmount);
-              },
+              props.goToWalletWalletSend(currencyAndAmount);
+            },
         },
         amountHandler: {
           onInput: async (s) => setAmount(s),
@@ -145,15 +144,15 @@ export function useComponentState(
           onClick: invalid
             ? undefined
             : async () => {
-                props.goToWalletManualWithdraw(currencyAndAmount);
-              },
+              props.goToWalletManualWithdraw(currencyAndAmount);
+            },
         },
         goToWallet: {
           onClick: invalid
             ? undefined
             : async () => {
-                props.goToWalletWalletInvoice(currencyAndAmount);
-              },
+              props.goToWalletWalletInvoice(currencyAndAmount);
+            },
         },
         amountHandler: {
           onInput: async (s) => setAmount(s),

@@ -40,6 +40,7 @@ function getFilesInDirectory(startPath, regex) {
   return result
 }
 
+// eslint-disable-next-line no-undef
 const BASE = process.cwd()
 const allTestFiles = getFilesInDirectory(path.join(BASE, 'src'), /.test.ts$/)
 
@@ -67,7 +68,9 @@ while (!fs.existsSync(path.join(GIT_ROOT, '.git')) && GIT_ROOT !== '/') {
   GIT_ROOT = path.join(GIT_ROOT, '../')
 }
 if (GIT_ROOT === '/') {
+  // eslint-disable-next-line no-undef
   console.log("not found")
+  // eslint-disable-next-line no-undef
   process.exit(1);
 }
 const GIT_HASH = GIT_ROOT === '/' ? undefined : git_hash()
@@ -118,10 +121,12 @@ export const buildConfig = {
   ],
 }
 
-esbuild
+await esbuild
   .build(buildConfig)
   .catch((e) => {
+    // eslint-disable-next-line no-undef
     console.log(e)
+    // eslint-disable-next-line no-undef
     process.exit(1)
   });
 

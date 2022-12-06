@@ -23,9 +23,7 @@ import { createExample } from "../test-utils.js";
 import { BalanceView as TestedComponent } from "./BalancePage.js";
 
 export default {
-  title: "popup/balance",
-  component: TestedComponent,
-  argTypes: {},
+  title: "balance",
 };
 
 export const EmptyBalance = createExample(TestedComponent, {

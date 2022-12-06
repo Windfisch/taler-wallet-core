@@ -1,67 +1,38 @@
 #!/usr/bin/env node
-/* eslint-disable no-undef */
+/*
+ This file is part of GNU Taler
+ (C) 2022 Taler Systems S.A.
 
-import linaria from '@linaria/esbuild'
-import esbuild from 'esbuild'
-import { buildConfig } from "./build-fast-with-linaria.mjs"
-import fs from 'fs';
-import WebSocket from "ws";
-import chokidar from "chokidar";
-import path from "path"
+ GNU Taler is free software; you can redistribute it and/or modify it under the
+ terms of the GNU General Public License as published by the Free Software
+ Foundation; either version 3, or (at your option) any later version.
 
-const devServerBroadcastDelay = 500
-const devServerPort = 8002
-const wss = new WebSocket.Server({ port: devServerPort });
-const toWatch = ["./src"]
+ GNU Taler is distributed in the hope that it will be useful, but WITHOUT ANY
+ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-function broadcast(file, event) {
-  setTimeout(() => {
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        console.log(new Date(), file)
-        client.send(JSON.stringify(event));
-      }
-    });
-  }, devServerBroadcastDelay);
-}
+ You should have received a copy of the GNU General Public License along with
+ GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
+ */
 
-const watcher = chokidar
-  .watch(toWatch, {
-    persistent: true,
-    ignoreInitial: true,
-    awaitWriteFinish: {
-      stabilityThreshold: 100,
-      pollInterval: 100,
-    },
-  })
-  .on("error", (error) => console.error(error))
-  .on("change", async (file) => {
-    broadcast(file, { type: "RELOAD" });
-  })
-  .on("add", async (file) => {
-    broadcast(file, { type: "RELOAD" });
-  })
-  .on("unlink", async (file) => {
-    broadcast(file, { type: "RELOAD" });
-  });
+import { serve } from "@gnu-taler/web-util/lib/index.node";
+import esbuild from 'esbuild';
+import { buildConfig } from "./build-fast-with-linaria.mjs";
 
+buildConfig.inject = ['./node_modules/@gnu-taler/web-util/lib/live-reload.mjs']
 
-fs.writeFileSync("dev-html/manifest.json", fs.readFileSync("manifest-v2.json"))
-fs.writeFileSync("dev-html/mocha.css", fs.readFileSync("node_modules/mocha/mocha.css"))
-fs.writeFileSync("dev-html/mocha.js", fs.readFileSync("node_modules/mocha/mocha.js"))
-fs.writeFileSync("dev-html/mocha.js.map", fs.readFileSync("node_modules/mocha/mocha.js.map"))
+serve({
+  folder: './dist',
+  port: 8080,
+  source: './src',
+  development: true,
+  onUpdate: async () => esbuild.build(buildConfig)
+})
 
-const server = await esbuild
-  .serve({ servedir: 'dev-html' }, {
-    ...buildConfig, outdir: 'dev-html/dist'
-  })
-  .catch((e) => {
-    console.log(e)
-    process.exit(1)
-  });
+// FIXME: create a mocha test in the browser as it was before
 
-console.log(`Dev server is ready at http://localhost:${server.port}/.
-http://localhost:${server.port}/stories.html for the components stories.
-The server is running a using websocket at ${devServerPort} to notify code change and live reload.
-`);
+// fs.writeFileSync("dev-html/manifest.json", fs.readFileSync("manifest-v2.json"))
+// fs.writeFileSync("dev-html/mocha.css", fs.readFileSync("node_modules/mocha/mocha.css"))
+// fs.writeFileSync("dev-html/mocha.js", fs.readFileSync("node_modules/mocha/mocha.js"))
+// fs.writeFileSync("dev-html/mocha.js.map", fs.readFileSync("node_modules/mocha/mocha.js.map"))
 

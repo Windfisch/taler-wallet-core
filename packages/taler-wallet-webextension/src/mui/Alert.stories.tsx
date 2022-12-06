@@ -24,7 +24,7 @@ import { ComponentChildren, Fragment, h, VNode } from "preact";
 import { Alert } from "./Alert.jsx";
 
 export default {
-  title: "mui/alert",
+  title: "alert",
   component: Alert,
 };
 

@@ -23,7 +23,7 @@ import { createExample } from "../../test-utils.js";
 import { ReadyView } from "./views.js";
 
 export default {
-  title: "wallet/invoice create",
+  title: "invoice create",
 };
 
 export const Ready = createExample(ReadyView, {

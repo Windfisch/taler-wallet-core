@@ -23,7 +23,7 @@ import { createExample } from "../../test-utils.js";
 import { ReadyView } from "./views.js";
 
 export default {
-  title: "wallet/transfer create",
+  title: "transfer create",
 };
 
 export const Ready = createExample(ReadyView, {

@@ -23,7 +23,7 @@ import { createExample } from "../test-utils.js";
 import { SetUrlView as TestedComponent } from "./ProviderAddPage.js";
 
 export default {
-  title: "wallet/backup/add",
+  title: "add",
   component: TestedComponent,
   argTypes: {
     onRetry: { action: "onRetry" },

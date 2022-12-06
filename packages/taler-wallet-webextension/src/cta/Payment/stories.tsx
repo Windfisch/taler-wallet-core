@@ -30,7 +30,7 @@ import { BaseView } from "./views.js";
 import beer from "../../../static-dev/beer.png";
 
 export default {
-  title: "cta/payment",
+  title: "payment",
   component: BaseView,
   argTypes: {},
 };

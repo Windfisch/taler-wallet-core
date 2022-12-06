@@ -29,7 +29,7 @@ import {
 } from "./ShowFullContractTermPopup.js";
 
 export default {
-  title: "component/ShowFullContractTermPopup",
+  title: "ShowFullContractTermPopup",
 };
 
 const cd: WalletContractData = {

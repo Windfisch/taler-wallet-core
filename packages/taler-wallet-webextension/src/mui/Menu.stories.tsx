@@ -25,7 +25,7 @@ import { Menu, MenuItem } from "./Menu.jsx";
 import { Paper } from "./Paper.js";
 
 export default {
-  title: "mui/menu",
+  title: "menu",
   component: Menu,
 };
 

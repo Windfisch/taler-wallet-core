@@ -377,6 +377,7 @@ export function ReadySendView({
     </Container>
   );
 }
+import bankIcon from "../../svg/ri-bank-line.svg";
 
 function RowExample({
   info,
@@ -385,15 +386,22 @@ function RowExample({
   info: Contact;
   disabled?: boolean;
 }): VNode {
+  const icon = info.icon_type === "bank" ? bankIcon : undefined;
   return (
     <MediaExample data-disabled={disabled}>
       <MediaLeft>
         <CircleDiv>
-          <SvgIcon
-            title={info.name}
-            dangerouslySetInnerHTML={{ __html: info.icon }}
-            color="currentColor"
-          />
+          {icon !== undefined ? (
+            <SvgIcon
+              title={info.name}
+              dangerouslySetInnerHTML={{
+                __html: icon,
+              }}
+              color="currentColor"
+            />
+          ) : (
+            <span>A</span>
+          )}
         </CircleDiv>
       </MediaLeft>
       <MediaBody>

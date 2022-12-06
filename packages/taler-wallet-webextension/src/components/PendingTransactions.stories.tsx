@@ -28,7 +28,7 @@ import { createExample } from "../test-utils.js";
 import { PendingTransactionsView as TestedComponent } from "./PendingTransactions.js";
 
 export default {
-  title: "component/PendingTransactions",
+  title: "PendingTransactions",
   component: TestedComponent,
 };
 

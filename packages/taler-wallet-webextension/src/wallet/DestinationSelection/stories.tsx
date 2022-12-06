@@ -23,7 +23,7 @@ import { createExample } from "../../test-utils.js";
 import { ReadyView, SelectCurrencyView } from "./views.js";
 
 export default {
-  title: "wallet/destination",
+  title: "destination",
 };
 
 export const GetCash = createExample(ReadyView, {

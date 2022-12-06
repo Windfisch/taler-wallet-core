@@ -23,7 +23,7 @@ import { createExample } from "../test-utils.js";
 import { ExchangeAddConfirmPage as TestedComponent } from "./ExchangeAddConfirm.js";
 
 export default {
-  title: "wallet/exchange add/confirm",
+  title: "exchange add confirm",
   component: TestedComponent,
   argTypes: {
     onRetry: { action: "onRetry" },

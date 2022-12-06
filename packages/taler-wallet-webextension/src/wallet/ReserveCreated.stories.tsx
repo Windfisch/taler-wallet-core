@@ -24,7 +24,7 @@ import { createExample } from "../test-utils.js";
 import { ReserveCreated as TestedComponent } from "./ReserveCreated.js";
 
 export default {
-  title: "wallet/manual withdraw/reserve created",
+  title: "reserve created",
   component: TestedComponent,
   argTypes: {},
 };

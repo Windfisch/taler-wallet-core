@@ -23,7 +23,7 @@ import { h, VNode } from "preact";
 import { Paper } from "./Paper.js";
 
 export default {
-  title: "mui/paper",
+  title: "paper",
   component: Paper,
 };
 

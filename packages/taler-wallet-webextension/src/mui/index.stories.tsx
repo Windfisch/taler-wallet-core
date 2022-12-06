@@ -19,11 +19,9 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import * as a1 from "./Button.stories.js";
-import * as a3 from "./Grid.stories.js";
-import * as a4 from "./Paper.stories.js";
-import * as a5 from "./TextField.stories.js";
-import * as a6 from "./Alert.stories.js";
-import * as a7 from "./Menu.stories.js";
-
-export default [a1, a3, a4, a5, a6, a7];
+export * as a1 from "./Button.stories.js";
+export * as a3 from "./Grid.stories.js";
+export * as a4 from "./Paper.stories.js";
+export * as a5 from "./TextField.stories.js";
+export * as a6 from "./Alert.stories.js";
+export * as a7 from "./Menu.stories.js";

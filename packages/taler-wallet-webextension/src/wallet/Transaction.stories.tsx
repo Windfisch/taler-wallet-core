@@ -46,7 +46,7 @@ import {
 import { TransactionView as TestedComponent } from "./Transaction.js";
 
 export default {
-  title: "wallet/history/details",
+  title: "transaction details",
   component: TestedComponent,
   argTypes: {
     onRetry: { action: "onRetry" },

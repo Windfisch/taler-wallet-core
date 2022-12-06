@@ -19,42 +19,21 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import * as a1 from "./Backup.stories.js";
-import * as a4 from "./DepositPage/stories.js";
-import * as a5 from "./ExchangeAddConfirm.stories.js";
-import * as a6 from "./ExchangeAddSetUrl.stories.js";
-import * as a7 from "./History.stories.js";
-import * as a8 from "./AddBackupProvider/stories.js";
-import * as a10 from "./ProviderDetail.stories.js";
-import * as a11 from "./ReserveCreated.stories.js";
-import * as a12 from "./Settings.stories.js";
-import * as a13 from "./Transaction.stories.js";
-import * as a14 from "./Welcome.stories.js";
-import * as a15 from "./AddNewActionView.stories.js";
-import * as a16 from "./DeveloperPage.stories.js";
-import * as a17 from "./QrReader.stories.js";
-import * as a18 from "./DestinationSelection/stories.js";
-import * as a19 from "./ExchangeSelection/stories.js";
-import * as a20 from "./ManageAccount/stories.js";
-import * as a21 from "./Notifications/stories.js";
-
-export default [
-  a1,
-  a4,
-  a5,
-  a6,
-  a7,
-  a8,
-  a10,
-  a11,
-  a12,
-  a13,
-  a14,
-  a15,
-  a16,
-  a17,
-  a18,
-  a19,
-  a20,
-  a21,
-];
+export * as a1 from "./Backup.stories.js";
+export * as a4 from "./DepositPage/stories.js";
+export * as a5 from "./ExchangeAddConfirm.stories.js";
+export * as a6 from "./ExchangeAddSetUrl.stories.js";
+export * as a7 from "./History.stories.js";
+export * as a8 from "./AddBackupProvider/stories.js";
+export * as a10 from "./ProviderDetail.stories.js";
+export * as a11 from "./ReserveCreated.stories.js";
+export * as a12 from "./Settings.stories.js";
+export * as a13 from "./Transaction.stories.js";
+export * as a14 from "./Welcome.stories.js";
+export * as a15 from "./AddNewActionView.stories.js";
+export * as a16 from "./DeveloperPage.stories.js";
+export * as a17 from "./QrReader.stories.js";
+export * as a18 from "./DestinationSelection/stories.js";
+export * as a19 from "./ExchangeSelection/stories.js";
+export * as a20 from "./ManageAccount/stories.js";
+export * as a21 from "./Notifications/stories.js";

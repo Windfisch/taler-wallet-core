@@ -26,8 +26,7 @@ import SendIcon from "../svg/send_24px.svg";
 import { styled } from "@linaria/react";
 
 export default {
-  title: "mui/button",
-  component: Button,
+  title: "Button",
 };
 
 const Stack = styled.div`

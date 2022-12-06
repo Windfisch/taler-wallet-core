@@ -29,7 +29,7 @@ import { AmountFieldHandler, TextFieldHandler } from "../mui/handlers.js";
 import { AmountField } from "./AmountField.js";
 
 export default {
-  title: "components/amountField",
+  title: "amountField",
 };
 
 function RenderAmount(): VNode {

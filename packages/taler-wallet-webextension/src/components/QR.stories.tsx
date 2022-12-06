@@ -23,7 +23,7 @@ import { createExample } from "../test-utils.js";
 import { QR } from "./QR.js";
 
 export default {
-  title: "wallet/qr",
+  title: "qr",
 };
 
 export const Restore = createExample(QR, {

@@ -32,6 +32,9 @@
       "path": "../taler-wallet-core/"
     },
     {
+      "path": "../web-util/"
+    },
+    {
       "path": "../taler-util/"
     }
   ],

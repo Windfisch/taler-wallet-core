@@ -25,7 +25,7 @@ import { createExample } from "../test-utils.js";
 import { ProviderView as TestedComponent } from "./ProviderDetailPage.js";
 
 export default {
-  title: "wallet/backup/details",
+  title: "provider details",
   component: TestedComponent,
   argTypes: {
     onRetry: { action: "onRetry" },

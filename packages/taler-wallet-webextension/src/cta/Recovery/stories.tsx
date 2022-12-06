@@ -24,5 +24,5 @@ import { createExample } from "../../test-utils.js";
 import { ReadyView } from "./views.js";
 
 export default {
-  title: "cta/recovery",
+  title: "recovery",
 };

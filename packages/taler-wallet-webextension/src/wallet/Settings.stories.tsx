@@ -23,7 +23,7 @@ import { createExample } from "../test-utils.js";
 import { SettingsView as TestedComponent } from "./Settings.js";
 
 export default {
-  title: "wallet/settings",
+  title: "settings",
   component: TestedComponent,
   argTypes: {
     setDeviceName: () => Promise.resolve(),

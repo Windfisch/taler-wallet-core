@@ -23,8 +23,7 @@ import { createExample } from "../test-utils.js";
 import { TalerActionFound as TestedComponent } from "./TalerActionFound.js";
 
 export default {
-  title: "popup/TalerActionFound",
-  component: TestedComponent,
+  title: "TalerActionFound",
 };
 
 export const PayAction = createExample(TestedComponent, {

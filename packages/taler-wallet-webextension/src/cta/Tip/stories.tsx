@@ -24,7 +24,7 @@ import { createExample } from "../../test-utils.js";
 import { AcceptedView, ReadyView } from "./views.js";
 
 export default {
-  title: "cta/tip",
+  title: "tip",
 };
 
 export const Accepted = createExample(AcceptedView, {

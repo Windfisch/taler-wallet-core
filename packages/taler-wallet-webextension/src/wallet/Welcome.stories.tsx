@@ -23,7 +23,7 @@ import { createExample } from "../test-utils.js";
 import { View as TestedComponent } from "./Welcome.js";
 
 export default {
-  title: "wallet/welcome",
+  title: "welcome",
   component: TestedComponent,
 };
 

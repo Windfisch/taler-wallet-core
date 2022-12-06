@@ -25,7 +25,7 @@ import { createExample } from "../../test-utils.js";
 import { SuccessView } from "./views.js";
 
 export default {
-  title: "cta/withdraw",
+  title: "withdraw",
 };
 
 const exchangeList = {

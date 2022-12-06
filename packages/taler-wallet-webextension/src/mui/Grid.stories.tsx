@@ -23,7 +23,7 @@ import { Grid } from "./Grid.js";
 import { Fragment, h, VNode } from "preact";
 
 export default {
-  title: "mui/grid",
+  title: "grid",
   component: Grid,
 };
 

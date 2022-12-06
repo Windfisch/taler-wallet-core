@@ -40,7 +40,7 @@ import { HistoryView as TestedComponent } from "./History.js";
 import { createExample } from "../test-utils.js";
 
 export default {
-  title: "wallet/balance",
+  title: "balance",
   component: TestedComponent,
 };
 

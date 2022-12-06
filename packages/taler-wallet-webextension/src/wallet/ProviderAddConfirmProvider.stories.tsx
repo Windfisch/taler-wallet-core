@@ -23,7 +23,7 @@ import { createExample } from "../test-utils.js";
 import { ConfirmProviderView as TestedComponent } from "./ProviderAddPage.js";
 
 export default {
-  title: "wallet/backup/confirm",
+  title: "confirm",
   component: TestedComponent,
   argTypes: {
     onRetry: { action: "onRetry" },

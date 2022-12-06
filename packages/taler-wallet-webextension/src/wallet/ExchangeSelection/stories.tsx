@@ -23,7 +23,7 @@ import { createExample } from "../../test-utils.js";
 import { ComparingView, ReadyView } from "./views.js";
 
 export default {
-  title: "wallet/select exchange",
+  title: "select exchange",
 };
 
 export const Bitcoin1 = createExample(ReadyView, {

@@ -23,7 +23,7 @@ import { createExample } from "../test-utils.js";
 import { AddNewActionView as TestedComponent } from "./AddNewActionView.js";
 
 export default {
-  title: "wallet/add new action",
+  title: "add new action",
   component: TestedComponent,
   argTypes: {
     setDeviceName: () => Promise.resolve(),

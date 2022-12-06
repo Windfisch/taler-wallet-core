@@ -74,7 +74,7 @@ export namespace State {
 }
 
 export type Contact = {
-  icon: string;
+  icon_type: string;
   name: string;
   description: string;
 };

@@ -19,14 +19,12 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import * as a1 from "./Deposit/stories.jsx";
-import * as a3 from "./Payment/stories.jsx";
-import * as a4 from "./Refund/stories.jsx";
-import * as a5 from "./Tip/stories.jsx";
-import * as a6 from "./Withdraw/stories.jsx";
-import * as a8 from "./InvoiceCreate/stories.js";
-import * as a9 from "./InvoicePay/stories.js";
-import * as a10 from "./TransferCreate/stories.js";
-import * as a11 from "./TransferPickup/stories.js";
-
-export default [a1, a3, a4, a5, a6, a8, a9, a10, a11];
+export * as a1 from "./Deposit/stories.jsx";
+export * as a3 from "./Payment/stories.jsx";
+export * as a4 from "./Refund/stories.jsx";
+export * as a5 from "./Tip/stories.jsx";
+export * as a6 from "./Withdraw/stories.jsx";
+export * as a8 from "./InvoiceCreate/stories.js";
+export * as a9 from "./InvoicePay/stories.js";
+export * as a10 from "./TransferCreate/stories.js";
+export * as a11 from "./TransferPickup/stories.js";

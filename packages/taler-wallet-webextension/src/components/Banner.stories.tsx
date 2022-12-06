@@ -26,7 +26,7 @@ import { Banner } from "./Banner.js";
 import { SvgIcon } from "./styled/index.js";
 import wifiIcon from "../svg/wifi.svg";
 export default {
-  title: "mui/banner",
+  title: "banner",
   component: Banner,
 };
 

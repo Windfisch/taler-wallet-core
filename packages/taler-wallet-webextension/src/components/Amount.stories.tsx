@@ -24,7 +24,7 @@ import { Fragment, h, VNode } from "preact";
 import { Amount } from "./Amount.js";
 
 export default {
-  title: "components/amount",
+  title: "amount",
   component: Amount,
 };
 

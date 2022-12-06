@@ -24,7 +24,7 @@ import { createExample } from "../test-utils.js";
 import { View as TestedComponent } from "./DeveloperPage.js";
 
 export default {
-  title: "wallet/developer",
+  title: "developer",
   component: TestedComponent,
   argTypes: {
     setDeviceName: () => Promise.resolve(),

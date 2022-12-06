@@ -23,7 +23,7 @@ import { createExample } from "../../test-utils.js";
 import { ConfirmProviderView, SelectProviderView } from "./views.js";
 
 export default {
-  title: "wallet/backup/confirm",
+  title: "add backup provider",
 };
 
 export const DemoService = createExample(ConfirmProviderView, {

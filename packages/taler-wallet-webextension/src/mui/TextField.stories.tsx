@@ -25,7 +25,7 @@ import { useState } from "preact/hooks";
 import { TextField, Props } from "./TextField.js";
 
 export default {
-  title: "mui/TextField",
+  title: "TextField",
   component: TextField,
 };
 

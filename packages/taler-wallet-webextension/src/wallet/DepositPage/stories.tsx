@@ -25,7 +25,7 @@ import { labelForAccountType } from "./state.js";
 import { ReadyView } from "./views.js";
 
 export default {
-  title: "wallet/deposit",
+  title: "deposit",
 };
 
 // const ac = parsePaytoUri("payto://iban/ES8877998399652238")!;
