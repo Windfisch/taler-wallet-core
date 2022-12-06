@@ -1,9 +1,5 @@
-
-import {
-  clk, setGlobalLogLevelFromString
-} from "@gnu-taler/taler-util";
+import { clk, setGlobalLogLevelFromString } from "@gnu-taler/taler-util";
 import { serve } from "./serve.js";
-
 
 export const walletCli = clk
   .program("wallet", {
@@ -20,7 +16,7 @@ export const walletCli = clk
   })
   .flag("verbose", ["-V", "--verbose"], {
     help: "Enable verbose output.",
-  })
+  });
 
 walletCli
   .subcommand("serve", "serve", { help: "Create a server." })
@@ -39,12 +35,9 @@ walletCli
     return serve({
       folder: args.serve.folder || "./dist",
       port: args.serve.port || 8000,
-      development: args.serve.development
-    })
-  }
-  );
-
-
+      development: args.serve.development,
+    });
+  });
 
 declare const __VERSION__: string;
 function printVersion(): void {
@@ -55,5 +48,3 @@ function printVersion(): void {
 export function main(): void {
   walletCli.run();
 }
-
-

@@ -16,8 +16,8 @@
     "./lib/index.node": "./lib/index.node.cjs"
   },
   "scripts": {
-    "prepare": "tsc",
-    "compile": "./build.mjs",
+    "prepare": "tsc && ./build.js",
+    "compile": "tsc && ./build.js",
     "clean": "rimraf dist lib tsconfig.tsbuildinfo",
     "pretty": "prettier --write src"
   },

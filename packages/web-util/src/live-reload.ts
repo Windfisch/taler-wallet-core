@@ -15,7 +15,7 @@ function setupLiveReload(): void {
         return;
       }
     } catch (e) {
-      return
+      return;
     }
     console.log("unsupported", event);
   });
@@ -28,7 +28,6 @@ function setupLiveReload(): void {
   });
 }
 setupLiveReload();
-
 
 function showReloadOverlay(): void {
   const d = document.createElement("div");
@@ -49,4 +48,3 @@ function showReloadOverlay(): void {
     document.body.appendChild(d);
   }
 }
-

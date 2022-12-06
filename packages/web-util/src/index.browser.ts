@@ -1,9 +1,8 @@
-
 //`ws://localhost:8003/socket`
 export function setupLiveReload(wsURL: string | undefined) {
   if (!wsURL) return;
   const ws = new WebSocket(wsURL);
-  ws.addEventListener('message', (message) => {
+  ws.addEventListener("message", (message) => {
     const event = JSON.parse(message.data);
     if (event.type === "LOG") {
       console.log(event.message);
@@ -12,7 +11,7 @@ export function setupLiveReload(wsURL: string | undefined) {
       window.location.reload();
     }
     if (event.type === "UPDATE") {
-      const c = document.getElementById("container")
+      const c = document.getElementById("container");
       if (c) {
         document.body.removeChild(c);
       }
@@ -35,4 +34,4 @@ export function setupLiveReload(wsURL: string | undefined) {
   };
 }
 
-export { renderStories, parseGroupImport } from "./stories.js"
+export { renderStories, parseGroupImport } from "./stories.js";
