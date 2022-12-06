@@ -626,8 +626,6 @@ importers:
       '@linaria/core': 3.0.0-beta.22
       '@linaria/react': 3.0.0-beta.22
       '@linaria/webpack-loader': 3.0.0-beta.22
-      '@testing-library/preact': ^2.0.1
-      '@testing-library/preact-hooks': ^1.1.0
       '@types/chai': ^4.3.0
       '@types/chrome': 0.0.197
       '@types/history': ^4.7.8
@@ -636,7 +634,6 @@ importers:
       babel-loader: ^8.2.3
       babel-plugin-transform-react-jsx: ^6.24.1
       chai: ^4.3.6
-      chokidar: ^3.5.3
       date-fns: ^2.29.2
       esbuild: ^0.15.13
       history: 4.10.1
@@ -652,11 +649,9 @@ importers:
       rimraf: ^3.0.2
       tslib: ^2.4.0
       typescript: ^4.8.4
-      ws: 7.4.5
     dependencies:
       '@gnu-taler/taler-util': link:../taler-util
       '@gnu-taler/taler-wallet-core': link:../taler-wallet-core
-      '@gnu-taler/web-util': link:../web-util
       date-fns: 2.29.3
       history: 4.10.1
       preact: 10.11.3
@@ -664,7 +659,6 @@ importers:
       qr-scanner: 1.4.1
       qrcode-generator: 1.4.4
       tslib: 2.4.0
-      ws: 7.4.5
     devDependencies:
       '@babel/core': 7.18.9
       '@babel/plugin-transform-modules-commonjs': 7.18.6_@babel+core@7.18.9
@@ -672,12 +666,11 @@ importers:
       '@babel/preset-typescript': 7.18.6_@babel+core@7.18.9
       '@babel/runtime': 7.18.9
       '@gnu-taler/pogen': link:../pogen
+      '@gnu-taler/web-util': link:../web-util
       '@linaria/babel-preset': 3.0.0-beta.22
       '@linaria/core': 3.0.0-beta.22
       '@linaria/react': 3.0.0-beta.22
       '@linaria/webpack-loader': 3.0.0-beta.22
-      '@testing-library/preact': 2.0.1_preact@10.11.3
-      '@testing-library/preact-hooks': 1.1.0_eng4adldpgibddgycwaukopxga
       '@types/chai': 4.3.3
       '@types/chrome': 0.0.197
       '@types/history': 4.7.11
@@ -686,7 +679,6 @@ importers:
       babel-loader: 8.2.5_@babel+core@7.18.9
       babel-plugin-transform-react-jsx: 6.24.1
       chai: 4.3.6
-      chokidar: 3.5.3
       esbuild: 0.15.13
       mocha: 9.2.2
       nyc: 15.1.0
@@ -6922,16 +6914,6 @@ packages:
       preact: 10.11.2
     dev: true
 
-  /@testing-library/preact-hooks/1.1.0_eng4adldpgibddgycwaukopxga:
-    resolution: {integrity: sha512-+JIor+NsOHkK3oIrwMDGKGHXTN0JJi462dBJlj4FNbGaDPTlctE6eu2ranWQirh7/FJMkWfzQCP+tk7jmY8ZrQ==}
-    peerDependencies:
-      '@testing-library/preact': ^2.0.0
-      preact: ^10.4.8
-    dependencies:
-      '@testing-library/preact': 2.0.1_preact@10.11.3
-      preact: 10.11.3
-    dev: true
-
   /@testing-library/preact-hooks/1.1.0_vfcmu6iy7nffpurikpgxo6gwxi:
     resolution: {integrity: sha512-+JIor+NsOHkK3oIrwMDGKGHXTN0JJi462dBJlj4FNbGaDPTlctE6eu2ranWQirh7/FJMkWfzQCP+tk7jmY8ZrQ==}
     peerDependencies:
@@ -6950,16 +6932,6 @@ packages:
     dependencies:
       '@testing-library/dom': 7.31.2
       preact: 10.11.2
-    dev: true
-
-  /@testing-library/preact/2.0.1_preact@10.11.3:
-    resolution: {integrity: sha512-79kwVOY+3caoLgaPbiPzikjgY0Aya7Fc7TvGtR1upCnz2wrtmPDnN2t9vO7I7vDP2zoA+feSwOH5Q0BFErhaaQ==}
-    engines: {node: '>= 10'}
-    peerDependencies:
-      preact: '>=10 || ^10.0.0-alpha.0 || ^10.0.0-beta.0'
-    dependencies:
-      '@testing-library/dom': 7.31.2
-      preact: 10.11.3
     dev: true
 
   /@testing-library/preact/2.0.1_preact@10.6.5:
@@ -23230,6 +23202,7 @@ packages:
         optional: true
       utf-8-validate:
         optional: true
+    dev: true
 
   /ws/7.5.9:
     resolution: {integrity: sha512-F+P9Jil7UiSKSkppIiD94dN07AwvFixvLIj1Og1Rl9GGMuNipJnV9JzjD6XuqmAeiswGvUmNLjr5cFuXwNS77Q==}
