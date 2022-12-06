@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "@gnu-taler/taler-util": "workspace:*",
+    "@gnu-taler/web-util": "workspace:*",
     "axios": "^0.21.1",
     "date-fns": "2.29.3",
     "history": "4.10.1",
