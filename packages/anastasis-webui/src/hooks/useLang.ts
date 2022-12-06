@@ -13,29 +13,18 @@
  You should have received a copy of the GNU Affero General Public License along with
  GNU Anastasis; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
-import { setupI18n } from "@gnu-taler/taler-util";
-import { h, render } from "preact";
-import App from "./components/app.js";
 
-function main(): void {
-  try {
-    const container = document.getElementById("container");
-    if (!container) {
-      throw Error("container not found, can't mount page contents");
-    }
-    render(h(App, {}), container);
-  } catch (e) {
-    console.error("got error", e);
-    if (e instanceof Error) {
-      document.body.innerText = `Fatal error: "${e.message}".  Please report this bug at https://bugs.gnunet.org/.`;
-    }
-  }
+import { useNotNullLocalStorage } from "./useLocalStorage.js";
+
+function getBrowserLang(): string | undefined {
+  if (window.navigator.languages) return window.navigator.languages[0];
+  if (window.navigator.language) return window.navigator.language;
+  return undefined;
 }
 
-// setupI18n("en", strings);
-
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", main);
-} else {
-  main();
+export function useLang(
+  initial?: string,
+): [string, (s: string) => void, boolean] {
+  const defaultLang = (getBrowserLang() || initial || "en").substring(0, 2);
+  return useNotNullLocalStorage("lang-preference", defaultLang);
 }

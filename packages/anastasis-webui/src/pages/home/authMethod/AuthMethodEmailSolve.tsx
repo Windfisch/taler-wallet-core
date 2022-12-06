@@ -23,7 +23,7 @@ import { useState } from "preact/hooks";
 import { AsyncButton } from "../../../components/AsyncButton.js";
 import { TextInput } from "../../../components/fields/TextInput.js";
 import { useAnastasisContext } from "../../../context/anastasis.js";
-import { useTranslator } from "../../../i18n/index.js";
+import { useTranslationContext } from "../../../context/translation.js";
 import { AnastasisClientFrame } from "../index.js";
 import { SolveOverviewFeedbackDisplay } from "../SolveScreen.js";
 import { shouldHideConfirm } from "./helpers.js";
@@ -53,7 +53,7 @@ export function AuthMethodEmailSolve({ id }: AuthMethodSolveProps): VNode {
     _setAnswer(result);
   }
   const [expanded, setExpanded] = useState(false);
-  const i18n = useTranslator();
+  const { i18n } = useTranslationContext();
 
   const reducer = useAnastasisContext();
   if (!reducer) {
@@ -124,7 +124,7 @@ export function AuthMethodEmailSolve({ id }: AuthMethodSolveProps): VNode {
 
   const error =
     answer.length > 21
-      ? i18n`The answer should not be greater than 21 characters.`
+      ? i18n.str`The answer should not be greater than 21 characters.`
       : undefined;
 
   return (

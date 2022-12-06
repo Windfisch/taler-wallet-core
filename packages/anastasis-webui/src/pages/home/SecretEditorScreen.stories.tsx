@@ -24,6 +24,7 @@ import { createExample, reducerStatesExample } from "../../utils/index.js";
 import { SecretEditorScreen as TestedComponent } from "./SecretEditorScreen.js";
 
 export default {
+  title: "Secret editor",
   component: TestedComponent,
   args: {
     order: 7,

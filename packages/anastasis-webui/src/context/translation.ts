@@ -19,23 +19,42 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
+import { i18n, setupI18n } from "@gnu-taler/taler-util";
 import { createContext, h, VNode } from "preact";
 import { useContext, useEffect } from "preact/hooks";
-import { useLang } from "../hooks/index.js";
-import * as jedLib from "jed";
+import { useLang } from "../hooks/useLang.js";
 import { strings } from "../i18n/strings.js";
 
 interface Type {
   lang: string;
-  handler: any;
+  supportedLang: { [id in keyof typeof supportedLang]: string };
   changeLanguage: (l: string) => void;
+  i18n: typeof i18n;
+  isSaved: boolean;
 }
+
+const supportedLang = {
+  es: "Español [es]",
+  ja: "日本語 [ja]",
+  en: "English [en]",
+  fr: "Français [fr]",
+  de: "Deutsch [de]",
+  sv: "Svenska [sv]",
+  it: "Italiano [it]",
+  // ko: "한국어 [ko]",
+  // ru: "Ру́сский язы́к [ru]",
+  tr: "Türk [tr]",
+  navigator: "Defined by navigator",
+};
+
 const initial = {
   lang: "en",
-  handler: null,
+  supportedLang,
   changeLanguage: () => {
     // do not change anything
   },
+  i18n,
+  isSaved: false,
 };
 const Context = createContext<Type>(initial);
 
@@ -50,15 +69,23 @@ export const TranslationProvider = ({
   children,
   forceLang,
 }: Props): VNode => {
-  const [lang, changeLanguage] = useLang(initial);
+  const [lang, changeLanguage, isSaved] = useLang(initial);
   useEffect(() => {
     if (forceLang) {
       changeLanguage(forceLang);
     }
   });
-  const handler = new jedLib.Jed(strings[lang] || strings["en"]);
+  useEffect(() => {
+    setupI18n(lang, strings);
+  }, [lang]);
+  if (forceLang) {
+    setupI18n(forceLang, strings);
+  } else {
+    setupI18n(lang, strings);
+  }
+
   return h(Context.Provider, {
-    value: { lang, handler, changeLanguage },
+    value: { lang, changeLanguage, supportedLang, i18n, isSaved },
     children,
   });
 };

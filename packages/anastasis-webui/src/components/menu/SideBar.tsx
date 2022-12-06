@@ -22,7 +22,7 @@
 import { BackupStates, RecoveryStates } from "@gnu-taler/anastasis-core";
 import { Fragment, h, VNode } from "preact";
 import { useAnastasisContext } from "../../context/anastasis.js";
-import { Translate } from "../../i18n/index.js";
+import { useTranslationContext } from "../../context/translation.js";
 
 interface Props {
   mobile?: boolean;
@@ -34,6 +34,7 @@ const VERSION_WITH_HASH = GIT_HASH ? `${VERSION}-${GIT_HASH}` : VERSION;
 
 export function Sidebar({ mobile }: Props): VNode {
   const reducer = useAnastasisContext()!;
+  const { i18n } = useTranslationContext();
 
   function saveSession(): void {
     const state = reducer.exportState();
@@ -64,7 +65,7 @@ export function Sidebar({ mobile }: Props): VNode {
       <div class="menu is-menu-main">
         {!reducer.currentReducerState && (
           <p class="menu-label">
-            <Translate>Backup or Recorver</Translate>
+            <i18n.Translate>Backup or Recorver</i18n.Translate>
           </p>
         )}
         <ul class="menu-list">
@@ -72,7 +73,7 @@ export function Sidebar({ mobile }: Props): VNode {
             <li>
               <div class="ml-4">
                 <span class="menu-item-label">
-                  <Translate>Select one option</Translate>
+                  <i18n.Translate>Select one option</i18n.Translate>
                 </span>
               </div>
             </li>
@@ -91,7 +92,7 @@ export function Sidebar({ mobile }: Props): VNode {
               >
                 <div class="ml-4">
                   <span class="menu-item-label">
-                    <Translate>Location</Translate>
+                    <i18n.Translate>Location</i18n.Translate>
                   </span>
                 </div>
               </li>
@@ -105,7 +106,7 @@ export function Sidebar({ mobile }: Props): VNode {
               >
                 <div class="ml-4">
                   <span class="menu-item-label">
-                    <Translate>Personal information</Translate>
+                    <i18n.Translate>Personal information</i18n.Translate>
                   </span>
                 </div>
               </li>
@@ -119,7 +120,7 @@ export function Sidebar({ mobile }: Props): VNode {
               >
                 <div class="ml-4">
                   <span class="menu-item-label">
-                    <Translate>Authorization methods</Translate>
+                    <i18n.Translate>Authorization methods</i18n.Translate>
                   </span>
                 </div>
               </li>
@@ -133,7 +134,7 @@ export function Sidebar({ mobile }: Props): VNode {
               >
                 <div class="ml-4">
                   <span class="menu-item-label">
-                    <Translate>Policies</Translate>
+                    <i18n.Translate>Policies</i18n.Translate>
                   </span>
                 </div>
               </li>
@@ -147,14 +148,14 @@ export function Sidebar({ mobile }: Props): VNode {
               >
                 <div class="ml-4">
                   <span class="menu-item-label">
-                    <Translate>Secret input</Translate>
+                    <i18n.Translate>Secret input</i18n.Translate>
                   </span>
                 </div>
               </li>
               {/* <li class={reducer.currentReducerState.backup_state === BackupStates.PoliciesPaying ? 'is-active' : ''}>
               <div class="ml-4">
 
-                <span class="menu-item-label"><Translate>Payment (optional)</Translate></span>
+                <span class="menu-item-label"><i18n.Translate>Payment (optional)</i18n.Translate></span>
               </div>
             </li> */}
               <li
@@ -167,14 +168,14 @@ export function Sidebar({ mobile }: Props): VNode {
               >
                 <div class="ml-4">
                   <span class="menu-item-label">
-                    <Translate>Backup completed</Translate>
+                    <i18n.Translate>Backup completed</i18n.Translate>
                   </span>
                 </div>
               </li>
               {/* <li class={reducer.currentReducerState.backup_state === BackupStates.TruthsPaying ? 'is-active' : ''}>
               <div class="ml-4">
 
-                <span class="menu-item-label"><Translate>Truth Paying</Translate></span>
+                <span class="menu-item-label"><i18n.Translate>Truth Paying</i18n.Translate></span>
               </div>
             </li> */}
               {reducer.currentReducerState.backup_state !==
@@ -219,7 +220,7 @@ export function Sidebar({ mobile }: Props): VNode {
                 >
                   <div class="ml-4">
                     <span class="menu-item-label">
-                      <Translate>Location</Translate>
+                      <i18n.Translate>Location</i18n.Translate>
                     </span>
                   </div>
                 </li>
@@ -233,7 +234,7 @@ export function Sidebar({ mobile }: Props): VNode {
                 >
                   <div class="ml-4">
                     <span class="menu-item-label">
-                      <Translate>Personal information</Translate>
+                      <i18n.Translate>Personal information</i18n.Translate>
                     </span>
                   </div>
                 </li>
@@ -247,7 +248,7 @@ export function Sidebar({ mobile }: Props): VNode {
                 >
                   <div class="ml-4">
                     <span class="menu-item-label">
-                      <Translate>Secret selection</Translate>
+                      <i18n.Translate>Secret selection</i18n.Translate>
                     </span>
                   </div>
                 </li>
@@ -263,7 +264,7 @@ export function Sidebar({ mobile }: Props): VNode {
                 >
                   <div class="ml-4">
                     <span class="menu-item-label">
-                      <Translate>Solve Challenges</Translate>
+                      <i18n.Translate>Solve Challenges</i18n.Translate>
                     </span>
                   </div>
                 </li>
@@ -277,7 +278,7 @@ export function Sidebar({ mobile }: Props): VNode {
                 >
                   <div class="ml-4">
                     <span class="menu-item-label">
-                      <Translate>Secret recovered</Translate>
+                      <i18n.Translate>Secret recovered</i18n.Translate>
                     </span>
                   </div>
                 </li>

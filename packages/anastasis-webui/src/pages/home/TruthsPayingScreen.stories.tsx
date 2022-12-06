@@ -24,6 +24,7 @@ import { createExample, reducerStatesExample } from "../../utils/index.js";
 import { TruthsPayingScreen as TestedComponent } from "./TruthsPayingScreen.js";
 
 export default {
+  title: "Truths Paying",
   component: TestedComponent,
   args: {
     order: 10,

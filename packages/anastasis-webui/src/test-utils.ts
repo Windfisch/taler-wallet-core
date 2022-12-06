@@ -41,8 +41,10 @@ export function createExample<Props>(
   // check how we can build evaluatedProps in render time
   const evaluatedProps = typeof props === "function" ? props() : props;
   const Render = (args: any): VNode => create(Component, args);
-  Render.args = evaluatedProps;
-  return Render;
+  return {
+    component: Render,
+    props: evaluatedProps
+  };
 }
 
 export function createExampleWithCustomContext<Props, ContextProps>(
@@ -58,8 +60,10 @@ export function createExampleWithCustomContext<Props, ContextProps>(
       ...contextProps,
       children: [Render(args)],
     } as any);
-  WithContext.args = evaluatedProps;
-  return WithContext;
+  return {
+    component: WithContext,
+    props: evaluatedProps
+  };
 }
 
 export function NullLink({

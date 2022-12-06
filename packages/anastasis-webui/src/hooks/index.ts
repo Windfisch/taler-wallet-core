@@ -19,7 +19,9 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { StateUpdater, useState } from "preact/hooks";
+import { StateUpdater } from "preact/hooks";
+import { useLocalStorage, useNotNullLocalStorage } from "./useLocalStorage.js";
+
 export type ValueOrFunction<T> = T | ((p: T) => T);
 
 const calculateRootPath = () => {
@@ -69,69 +71,4 @@ export function useBackendInstanceToken(
   }
 
   return [token, setToken];
-}
-
-export function useLang(initial?: string): [string, StateUpdater<string>] {
-  const browserLang =
-    typeof window !== "undefined"
-      ? navigator.language || (navigator as any).userLanguage
-      : undefined;
-  const defaultLang = (browserLang || initial || "en").substring(0, 2);
-  return useNotNullLocalStorage("lang-preference", defaultLang);
-}
-
-export function useLocalStorage(
-  key: string,
-  initialValue?: string,
-): [string | undefined, StateUpdater<string | undefined>] {
-  const [storedValue, setStoredValue] = useState<string | undefined>(
-    (): string | undefined => {
-      return typeof window !== "undefined"
-        ? window.localStorage.getItem(key) || initialValue
-        : initialValue;
-    },
-  );
-
-  const setValue = (
-    value?: string | ((val?: string) => string | undefined),
-  ) => {
-    setStoredValue((p) => {
-      const toStore = value instanceof Function ? value(p) : value;
-      if (typeof window !== "undefined") {
-        if (!toStore) {
-          window.localStorage.removeItem(key);
-        } else {
-          window.localStorage.setItem(key, toStore);
-        }
-      }
-      return toStore;
-    });
-  };
-
-  return [storedValue, setValue];
-}
-
-export function useNotNullLocalStorage(
-  key: string,
-  initialValue: string,
-): [string, StateUpdater<string>] {
-  const [storedValue, setStoredValue] = useState<string>((): string => {
-    return typeof window !== "undefined"
-      ? window.localStorage.getItem(key) || initialValue
-      : initialValue;
-  });
-
-  const setValue = (value: string | ((val: string) => string)) => {
-    const valueToStore = value instanceof Function ? value(storedValue) : value;
-    setStoredValue(valueToStore);
-    if (typeof window !== "undefined") {
-      if (!valueToStore) {
-        window.localStorage.removeItem(key);
-      } else {
-        window.localStorage.setItem(key, valueToStore);
-      }
-    }
-  };
-
-  return [storedValue, setValue];
 }

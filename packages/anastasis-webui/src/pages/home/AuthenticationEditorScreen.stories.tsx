@@ -24,6 +24,7 @@ import { createExample, reducerStatesExample } from "../../utils/index.js";
 import { AuthenticationEditorScreen as TestedComponent } from "./AuthenticationEditorScreen.js";
 
 export default {
+  title: "Authentication Editor Screen",
   component: TestedComponent,
   args: {
     order: 4,

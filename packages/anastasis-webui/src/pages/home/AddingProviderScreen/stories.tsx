@@ -24,6 +24,7 @@ import { createExampleWithoutAnastasis } from "../../../utils/index.jsx";
 import { WithoutProviderType, WithProviderType } from "./views.jsx";
 
 export default {
+  title: "Adding Provider Screen",
   args: {
     order: 1,
   },

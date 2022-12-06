@@ -24,6 +24,7 @@ import { createExample, reducerStatesExample } from "../../utils/index.js";
 import { ReviewPoliciesScreen as TestedComponent } from "./ReviewPoliciesScreen.js";
 
 export default {
+  title: "Reviewing Policies",
   args: {
     order: 6,
   },

@@ -24,6 +24,7 @@ import { createExample, reducerStatesExample } from "../../../utils/index.js";
 import { authMethods as TestedComponent, KnownAuthMethods } from "./index.js";
 
 export default {
+  title: "Auth method: Post solve",
   component: TestedComponent,
   args: {
     order: 5,

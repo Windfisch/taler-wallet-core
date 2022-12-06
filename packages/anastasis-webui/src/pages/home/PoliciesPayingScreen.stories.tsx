@@ -24,6 +24,7 @@ import { createExample, reducerStatesExample } from "../../utils/index.js";
 import { PoliciesPayingScreen as TestedComponent } from "./PoliciesPayingScreen.js";
 
 export default {
+  title: "Policies paying",
   component: TestedComponent,
   args: {
     order: 9,

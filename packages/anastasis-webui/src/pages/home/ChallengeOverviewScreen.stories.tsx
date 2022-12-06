@@ -28,6 +28,7 @@ import { createExample, reducerStatesExample } from "../../utils/index.js";
 import { ChallengeOverviewScreen as TestedComponent } from "./ChallengeOverviewScreen.js";
 
 export default {
+  title: "Challenge overview",
   component: TestedComponent,
   args: {
     order: 5,

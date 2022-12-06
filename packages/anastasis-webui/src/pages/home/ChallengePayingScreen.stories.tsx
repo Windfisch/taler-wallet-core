@@ -23,6 +23,7 @@ import { createExample, reducerStatesExample } from "../../utils/index.js";
 import { ChallengePayingScreen as TestedComponent } from "./ChallengePayingScreen.js";
 
 export default {
+  title: "Challenge paying",
   component: TestedComponent,
   args: {
     order: 10,

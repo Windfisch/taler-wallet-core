@@ -37,16 +37,18 @@ export function createExampleWithoutAnastasis<Props>(
   // check how we can build evaluatedProps in render time
   const evaluatedProps = typeof props === "function" ? props() : props;
   const Render = (args: any): VNode => h(Component, args);
-  Render.args = evaluatedProps;
-  return Render;
+  return {
+    component: Render,
+    props: evaluatedProps,
+  };
 }
 
 export function createExample<Props>(
   Component: FunctionalComponent<Props>,
   currentReducerState?: ReducerState,
   props?: Partial<Props>,
-): { (args: Props): VNode } {
-  const r = (args: Props): VNode => {
+): ComponentChildren {
+  const Render = (args: Props): VNode => {
     return (
       <AnastasisProvider
         value={{
@@ -74,8 +76,10 @@ export function createExample<Props>(
       </AnastasisProvider>
     );
   };
-  r.args = props;
-  return r;
+  return {
+    component: Render,
+    props: props,
+  };
 }
 
 const base = {

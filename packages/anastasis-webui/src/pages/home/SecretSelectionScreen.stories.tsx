@@ -27,6 +27,7 @@ import {
 } from "./SecretSelectionScreen.js";
 
 export default {
+  title: "Secret selection",
   component: SecretSelectionScreen,
   args: {
     order: 4,

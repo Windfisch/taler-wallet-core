@@ -23,8 +23,10 @@ import { TextInput } from "../../../components/fields/TextInput.js";
 import { Notifications } from "../../../components/Notifications.js";
 import { AnastasisClientFrame } from "../index.js";
 import { testProvider, WithoutType, WithType } from "./index.js";
+import { useTranslationContext } from "../../../context/translation.js";
 
 export function WithProviderType(props: WithType): VNode {
+  const { i18n } = useTranslationContext();
   return (
     <AnastasisClientFrame
       hideNav
@@ -33,7 +35,7 @@ export function WithProviderType(props: WithType): VNode {
     >
       <div>
         <Notifications notifications={props.notifications} />
-        <p>Add a provider url for a {props.providerLabel} service</p>
+        <p>{i18n.str`Add a provider url for a ${props.providerLabel} service`}</p>
         <div class="container">
           <TextInput
             label="Provider URL"
