@@ -72,7 +72,6 @@ export function FileInput(props: FileInputProps): VNode {
             const f: FileList | null = e.currentTarget.files;
             if (!f || f.length != 1) return props.onChange(undefined);
 
-            console.log(f);
             if (f[0].size > MAX_IMAGE_UPLOAD_SIZE) {
               setSizeError(true);
               return props.onChange(undefined);

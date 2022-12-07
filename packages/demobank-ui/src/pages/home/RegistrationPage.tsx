@@ -200,7 +200,7 @@ async function registrationCall(
       headers,
     });
   } catch (error) {
-    logger.trace(
+    logger.error(
       `Could not POST new registration to the bank (${registerEndpoint.href})`,
       error,
     );

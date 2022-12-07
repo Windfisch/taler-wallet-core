@@ -15,9 +15,8 @@
  */
 
 import { Amounts, HttpStatusCode, Logger } from "@gnu-taler/taler-util";
-import { hooks } from "@gnu-taler/web-util/lib/index.browser";
 import { ComponentChildren, Fragment, h, VNode } from "preact";
-import { StateUpdater, useEffect } from "preact/hooks";
+import { useEffect } from "preact/hooks";
 import useSWR, { SWRConfig, useSWRConfig } from "swr";
 import { useBackendContext } from "../../context/backend.js";
 import { PageStateType, usePageContext } from "../../context/pageState.js";
@@ -28,8 +27,8 @@ import { getIbanFromPayto, prepareHeaders } from "../../utils.js";
 import { BankFrame } from "./BankFrame.js";
 import { LoginForm } from "./LoginForm.js";
 import { PaymentOptions } from "./PaymentOptions.js";
-import { WithdrawalQRCode } from "./TalerWithdrawalQRCode.js";
 import { Transactions } from "./Transactions.js";
+import { WithdrawalQRCode } from "./WithdrawalQRCode.js";
 
 export function AccountPage(): VNode {
   const backend = useBackendContext();
@@ -118,7 +117,7 @@ function Account({ accountLabel }: { accountLabel: string }): VNode {
   // }
 
   if (typeof error !== "undefined") {
-    logger.trace("account error", error, endpoint);
+    logger.error("account error", error, endpoint);
     /**
      * FIXME: to minimize the code, try only one invocation
      * of pageStateSetter, after having decided the error
