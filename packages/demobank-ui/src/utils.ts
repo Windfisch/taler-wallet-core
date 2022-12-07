@@ -6,7 +6,9 @@ import { canonicalizeBaseUrl } from "@gnu-taler/taler-util";
  * the input is invalid, the valid amount otherwise.
  */
 const amountRegex = /^[0-9]+(.[0-9]+)?$/;
-export function validateAmount(maybeAmount: string | undefined): string | undefined {
+export function validateAmount(
+  maybeAmount: string | undefined,
+): string | undefined {
   if (!maybeAmount || !amountRegex.test(maybeAmount)) {
     return;
   }
@@ -29,8 +31,7 @@ const maybeRootPath = "https://bank.demo.taler.net/demobanks/default/";
 
 export function getBankBackendBaseUrl(): string {
   const overrideUrl = localStorage.getItem("bank-base-url");
-  return canonicalizeBaseUrl(overrideUrl ? overrideUrl : maybeRootPath)
-
+  return canonicalizeBaseUrl(overrideUrl ? overrideUrl : maybeRootPath);
 }
 
 export function undefinedIfEmpty<T extends object>(obj: T): T | undefined {

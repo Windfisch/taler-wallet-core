@@ -16,7 +16,11 @@
 
 import { ComponentChildren, createContext, h, VNode } from "preact";
 import { useContext } from "preact/hooks";
-import { BackendStateHandler, defaultState, useBackendState } from "../hooks/backend.js";
+import {
+  BackendStateHandler,
+  defaultState,
+  useBackendState,
+} from "../hooks/backend.js";
 
 /**
  *
@@ -28,10 +32,10 @@ export type Type = BackendStateHandler;
 const initial: Type = {
   state: defaultState,
   clear() {
-    null
+    null;
   },
   save(info) {
-    null
+    null;
   },
 };
 const Context = createContext<Type>(initial);

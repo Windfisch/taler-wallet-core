@@ -4,7 +4,7 @@ import { hooks } from "@gnu-taler/web-util/lib/index.browser";
  * Has the information to reach and
  * authenticate at the bank's backend.
  */
-export type BackendState = LoggedIn | LoggedOut
+export type BackendState = LoggedIn | LoggedOut;
 
 export interface BackendInfo {
   url: string;
@@ -13,16 +13,16 @@ export interface BackendInfo {
 }
 
 interface LoggedIn extends BackendInfo {
-  status: "loggedIn"
+  status: "loggedIn";
 }
 interface LoggedOut {
-  status: "loggedOut"
+  status: "loggedOut";
 }
 
-export const defaultState: BackendState = { status: "loggedOut" }
+export const defaultState: BackendState = { status: "loggedOut" };
 
 export interface BackendStateHandler {
-  state: BackendState,
+  state: BackendState;
   clear(): void;
   save(info: BackendInfo): void;
 }
@@ -32,24 +32,27 @@ export interface BackendStateHandler {
  * base URL.
  */
 export function useBackendState(): BackendStateHandler {
-  const [value, update] = hooks.useLocalStorage("backend-state", JSON.stringify(defaultState));
+  const [value, update] = hooks.useLocalStorage(
+    "backend-state",
+    JSON.stringify(defaultState),
+  );
   // const parsed = value !== undefined ? JSON.parse(value) : value;
-  let parsed
+  let parsed;
   try {
-    parsed = JSON.parse(value!)
+    parsed = JSON.parse(value!);
   } catch {
-    parsed = undefined
+    parsed = undefined;
   }
-  const state: BackendState = !parsed?.status ? defaultState : parsed
+  const state: BackendState = !parsed?.status ? defaultState : parsed;
 
   return {
     state,
     clear() {
-      update(JSON.stringify(defaultState))
+      update(JSON.stringify(defaultState));
     },
     save(info) {
-      const nextState: BackendState = { status: "loggedIn", ...info }
-      update(JSON.stringify(nextState))
+      const nextState: BackendState = { status: "loggedIn", ...info };
+      update(JSON.stringify(nextState));
     },
-  }
+  };
 }
