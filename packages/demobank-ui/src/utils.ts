@@ -52,3 +52,18 @@ export function undefinedIfEmpty<T extends object>(obj: T): T | undefined {
     ? obj
     : undefined;
 }
+
+/**
+ * Craft headers with Authorization and Content-Type.
+ */
+export function prepareHeaders(username?: string, password?: string): Headers {
+  const headers = new Headers();
+  if (username && password) {
+    headers.append(
+      "Authorization",
+      `Basic ${window.btoa(`${username}:${password}`)}`,
+    );
+  }
+  headers.append("Content-Type", "application/json");
+  return headers;
+}
