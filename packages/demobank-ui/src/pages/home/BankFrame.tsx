@@ -15,12 +15,11 @@
  */
 
 import { Fragment, h, VNode } from "preact";
+import talerLogo from "../../assets/logo-white.svg";
+import { LangSelectorLikePy as LangSelector } from "../../components/menu/LangSelector.js";
 import { PageStateType, usePageContext } from "../../context/pageState.js";
 import { useTranslationContext } from "../../context/translation.js";
 import { bankUiSettings } from "../../settings.js";
-import { LangSelectorLikePy as LangSelector } from "../../components/menu/LangSelector.js";
-import { StateUpdater } from "preact/hooks";
-import talerLogo from "../../assets/logo-white.svg";
 
 export function BankFrame(Props: any): VNode {
   const { i18n } = useTranslationContext();
