@@ -916,23 +916,21 @@ function PaytoWireTransfer(Props: any): VNode {
   // submitData.amount === ""
   let parsedAmount = undefined;
 
-  const errorsWire = !submitData
-    ? undefined
-    : undefinedIfEmpty({
-        iban: !submitData.iban
-          ? i18n.str`Missing IBAN`
-          : !/^[A-Z0-9]*$/.test(submitData.iban)
-          ? i18n.str`IBAN should have just uppercased letters and numbers`
-          : undefined,
-        subject: !submitData.subject ? i18n.str`Missing subject` : undefined,
-        amount: !submitData.amount
-          ? i18n.str`Missing amount`
-          : !(parsedAmount = Amounts.parse(`${currency}:${submitData.amount}`))
-          ? i18n.str`Amount is not valid`
-          : Amounts.isZero(parsedAmount)
-          ? i18n.str`Should be greater than 0`
-          : undefined,
-      });
+  const errorsWire = {
+    iban: !submitData?.iban
+      ? i18n.str`Missing IBAN`
+      : !/^[A-Z0-9]*$/.test(submitData.iban)
+      ? i18n.str`IBAN should have just uppercased letters and numbers`
+      : undefined,
+    subject: !submitData?.subject ? i18n.str`Missing subject` : undefined,
+    amount: !submitData?.amount
+      ? i18n.str`Missing amount`
+      : !(parsedAmount = Amounts.parse(`${currency}:${submitData.amount}`))
+      ? i18n.str`Amount is not valid`
+      : Amounts.isZero(parsedAmount)
+      ? i18n.str`Should be greater than 0`
+      : undefined,
+  };
 
   if (!pageState.isRawPayto)
     return (
