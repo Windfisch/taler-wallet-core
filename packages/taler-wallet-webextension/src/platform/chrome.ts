@@ -444,11 +444,14 @@ function registerTalerHeaderListener(
     info: chrome.tabs.TabChangeInfo,
   ): Promise<void> {
     if (tabId < 0) return;
-    if (info.status !== "complete") return;
-    const uri = await findTalerUriInTab(tabId);
-    if (!uri) return;
-    logger.info(`Found a Taler URI in the tab ${tabId}`);
-    callback(tabId, uri);
+    const tabLocationHasBeenUpdated = info.status === "complete"
+    const tabTitleHasBeenUpdated = info.title !== undefined
+    if (tabLocationHasBeenUpdated || tabTitleHasBeenUpdated) {
+      const uri = await findTalerUriInTab(tabId);
+      if (!uri) return;
+      logger.info(`Found a Taler URI in the tab ${tabId}`);
+      callback(tabId, uri);
+    }
   }
 
   const prevHeaderListener = currentHeaderListener;
@@ -540,26 +543,26 @@ function setAlertedIcon(): void {
 
 interface OffscreenCanvasRenderingContext2D
   extends CanvasState,
-    CanvasTransform,
-    CanvasCompositing,
-    CanvasImageSmoothing,
-    CanvasFillStrokeStyles,
-    CanvasShadowStyles,
-    CanvasFilters,
-    CanvasRect,
-    CanvasDrawPath,
-    CanvasUserInterface,
-    CanvasText,
-    CanvasDrawImage,
-    CanvasImageData,
-    CanvasPathDrawingStyles,
-    CanvasTextDrawingStyles,
-    CanvasPath {
+  CanvasTransform,
+  CanvasCompositing,
+  CanvasImageSmoothing,
+  CanvasFillStrokeStyles,
+  CanvasShadowStyles,
+  CanvasFilters,
+  CanvasRect,
+  CanvasDrawPath,
+  CanvasUserInterface,
+  CanvasText,
+  CanvasDrawImage,
+  CanvasImageData,
+  CanvasPathDrawingStyles,
+  CanvasTextDrawingStyles,
+  CanvasPath {
   readonly canvas: OffscreenCanvas;
 }
 declare const OffscreenCanvasRenderingContext2D: {
   prototype: OffscreenCanvasRenderingContext2D;
-  new (): OffscreenCanvasRenderingContext2D;
+  new(): OffscreenCanvasRenderingContext2D;
 };
 
 interface OffscreenCanvas extends EventTarget {
@@ -572,7 +575,7 @@ interface OffscreenCanvas extends EventTarget {
 }
 declare const OffscreenCanvas: {
   prototype: OffscreenCanvas;
-  new (width: number, height: number): OffscreenCanvas;
+  new(width: number, height: number): OffscreenCanvas;
 };
 
 function createCanvas(size: number): OffscreenCanvas {
