@@ -20,11 +20,8 @@ import useSWR, { SWRConfig, useSWRConfig } from "swr";
 
 import { Amounts, HttpStatusCode, parsePaytoUri } from "@gnu-taler/taler-util";
 import { hooks } from "@gnu-taler/web-util/lib/index.browser";
-import { createHashHistory } from "history";
-import Router, { Route, route } from "preact-router";
+import { route } from "preact-router";
 import { StateUpdater, useEffect, useRef, useState } from "preact/hooks";
-import talerLogo from "../../assets/logo-white.svg";
-import { LangSelectorLikePy as LangSelector } from "../../components/menu/LangSelector.js";
 import { PageStateType, usePageContext } from "../../context/pageState.js";
 import { useTranslationContext } from "../../context/translation.js";
 import { BackendStateType, useBackendState } from "../../hooks/backend.js";
@@ -35,6 +32,8 @@ import {
   getIbanFromPayto,
   validateAmount,
 } from "../../utils.js";
+import { BankFrame } from "./BankFrame.js";
+import { Transactions } from "./Transactions.js";
 
 /**
  * FIXME:
@@ -56,24 +55,6 @@ import {
 /************
  * Helpers. *
  ***********/
-
-function maybeDemoContent(content: VNode): VNode {
-  if (bankUiSettings.showDemoNav) {
-    return content;
-  }
-  return <Fragment />;
-}
-
-/**
- * Bring the state to show the public accounts page.
- */
-function goPublicAccounts(pageStateSetter: StateUpdater<PageStateType>) {
-  return () =>
-    pageStateSetter((prevState) => ({
-      ...prevState,
-      showPublicHistories: true,
-    }));
-}
 
 /**
  * Get username from the backend state, and throw
@@ -144,29 +125,6 @@ function prepareHeaders(username?: string, password?: string): Headers {
 /*******************
  * State managers. *
  ******************/
-
-/**
- * Stores in the state a object containing a 'username'
- * and 'password' field, in order to avoid losing the
- * handle of the data entered by the user in <input> fields.
- */
-function useShowPublicAccount(
-  state?: string,
-): [string | undefined, StateUpdater<string | undefined>] {
-  const ret = hooks.useLocalStorage(
-    "show-public-account",
-    JSON.stringify(state),
-  );
-  const retObj: string | undefined = ret[0] ? JSON.parse(ret[0]) : ret[0];
-  const retSetter: StateUpdater<string | undefined> = function (val) {
-    const newVal =
-      val instanceof Function
-        ? JSON.stringify(val(retObj))
-        : JSON.stringify(val);
-    ret[1](newVal);
-  };
-  return [retObj, retSetter];
-}
 
 /**
  * Stores the raw Payto value entered by the user in the state.
@@ -689,165 +647,6 @@ async function registrationCall(
  * Functional components. *
  *************************/
 
-function ErrorBanner(Props: any): VNode | null {
-  const [pageState, pageStateSetter] = Props.pageState;
-  // const { i18n } = useTranslationContext();
-  if (!pageState.error) return null;
-
-  const rval = (
-    <div class="informational informational-fail" style={{ marginTop: 8 }}>
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <p>
-          <b>{pageState.error.title}</b>
-        </p>
-        <div>
-          <input
-            type="button"
-            class="pure-button"
-            value="Clear"
-            onClick={async () => {
-              pageStateSetter((prev: any) => ({ ...prev, error: undefined }));
-            }}
-          />
-        </div>
-      </div>
-      <p>{pageState.error.description}</p>
-    </div>
-  );
-  delete pageState.error;
-  return rval;
-}
-
-function StatusBanner(Props: any): VNode | null {
-  const [pageState, pageStateSetter] = Props.pageState;
-  if (!pageState.info) return null;
-
-  const rval = (
-    <div class="informational informational-ok" style={{ marginTop: 8 }}>
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <p>
-          <b>{pageState.info}</b>
-        </p>
-        <div>
-          <input
-            type="button"
-            class="pure-button"
-            value="Clear"
-            onClick={async () => {
-              pageStateSetter((prev: any) => ({ ...prev, info: undefined }));
-            }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-  return rval;
-}
-
-function BankFrame(Props: any): VNode {
-  const { i18n } = useTranslationContext();
-  const { pageState, pageStateSetter } = usePageContext();
-  console.log("BankFrame state", pageState);
-  const logOut = (
-    <div class="logout">
-      <a
-        href="#"
-        class="pure-button logout-button"
-        onClick={() => {
-          pageStateSetter((prevState: PageStateType) => {
-            const { talerWithdrawUri, withdrawalId, ...rest } = prevState;
-            return {
-              ...rest,
-              isLoggedIn: false,
-              withdrawalInProgress: false,
-              error: undefined,
-              info: undefined,
-              isRawPayto: false,
-            };
-          });
-        }}
-      >{i18n.str`Logout`}</a>
-    </div>
-  );
-
-  const demo_sites = [];
-  for (const i in bankUiSettings.demoSites)
-    demo_sites.push(
-      <a href={bankUiSettings.demoSites[i][1]}>
-        {bankUiSettings.demoSites[i][0]}
-      </a>,
-    );
-
-  return (
-    <Fragment>
-      <header
-        class="demobar"
-        style="display: flex; flex-direction: row; justify-content: space-between;"
-      >
-        <a href="#main" class="skip">{i18n.str`Skip to main content`}</a>
-        <div style="max-width: 50em; margin-left: 2em;">
-          <h1>
-            <span class="it">
-              <a href="/">{bankUiSettings.bankName}</a>
-            </span>
-          </h1>
-          {maybeDemoContent(
-            <p>
-              <i18n.Translate>
-                This part of the demo shows how a bank that supports Taler
-                directly would work. In addition to using your own bank account,
-                you can also see the transaction history of some{" "}
-                <a
-                  href="/public-accounts"
-                  onClick={goPublicAccounts(pageStateSetter)}
-                >
-                  Public Accounts
-                </a>
-                .
-              </i18n.Translate>
-            </p>,
-          )}
-        </div>
-        <a href="https://taler.net/">
-          <img
-            src={talerLogo}
-            alt={i18n.str`Taler logo`}
-            height="100"
-            width="224"
-            style="margin: 2em 2em"
-          />
-        </a>
-      </header>
-      <div style="display:flex; flex-direction: column;" class="navcontainer">
-        <nav class="demolist">
-          {maybeDemoContent(<Fragment>{demo_sites}</Fragment>)}
-          <div class="right">
-            <LangSelector />
-          </div>
-        </nav>
-      </div>
-      <section id="main" class="content">
-        <ErrorBanner pageState={[pageState, pageStateSetter]} />
-        <StatusBanner pageState={[pageState, pageStateSetter]} />
-        {pageState.isLoggedIn ? logOut : null}
-        {Props.children}
-      </section>
-      <section id="footer" class="footer">
-        <div class="footer">
-          <hr />
-          <div>
-            <p>
-              You can learn more about GNU Taler on our{" "}
-              <a href="https://taler.net">main website</a>.
-            </p>
-          </div>
-          <div style="flex-grow:1" />
-          <p>Copyright &copy; 2014&mdash;2022 Taler Systems SA</p>
-        </div>
-      </section>
-    </Fragment>
-  );
-}
 function ShowInputErrorLabel({
   isDirty,
   message,
@@ -1686,81 +1485,6 @@ function RegistrationForm(): VNode {
 }
 
 /**
- * Show one page of transactions.
- */
-function Transactions(Props: any): VNode {
-  const { pageNumber, accountLabel, balanceValue } = Props;
-  const { i18n } = useTranslationContext();
-  const { data, error, mutate } = useSWR(
-    `access-api/accounts/${accountLabel}/transactions?page=${pageNumber}`,
-  );
-  useEffect(() => {
-    mutate();
-  }, [balanceValue]);
-  if (typeof error !== "undefined") {
-    console.log("transactions not found error", error);
-    switch (error.status) {
-      case 404: {
-        return <p>Transactions page {pageNumber} was not found.</p>;
-      }
-      case 401: {
-        return <p>Wrong credentials given.</p>;
-      }
-      default: {
-        return <p>Transaction page {pageNumber} could not be retrieved.</p>;
-      }
-    }
-  }
-  if (!data) {
-    console.log(`History data of ${accountLabel} not arrived`);
-    return <p>Transactions page loading...</p>;
-  }
-  console.log(`History data of ${accountLabel}`, data);
-  return (
-    <div class="results">
-      <table class="pure-table pure-table-striped">
-        <thead>
-          <tr>
-            <th>{i18n.str`Date`}</th>
-            <th>{i18n.str`Amount`}</th>
-            <th>{i18n.str`Counterpart`}</th>
-            <th>{i18n.str`Subject`}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.transactions.map((item: any, idx: number) => {
-            const sign = item.direction == "DBIT" ? "-" : "";
-            const counterpart =
-              item.direction == "DBIT" ? item.creditorIban : item.debtorIban;
-            // Pattern:
-            //
-            // DD/MM YYYY subject -5 EUR
-            // DD/MM YYYY subject 5 EUR
-            const dateRegex = /^([0-9]{4})-([0-9]{2})-([0-9]{1,2})/;
-            const dateParse = dateRegex.exec(item.date);
-            const date =
-              dateParse !== null
-                ? `${dateParse[3]}/${dateParse[2]} ${dateParse[1]}`
-                : "date not found";
-            return (
-              <tr key={idx}>
-                <td>{date}</td>
-                <td>
-                  {sign}
-                  {item.amount} {item.currency}
-                </td>
-                <td>{counterpart}</td>
-                <td>{item.subject}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-/**
  * Show only the account's balance.  NOTE: the backend state
  * is mostly needed to provide the user's credentials to POST
  * to the bank.
@@ -1962,145 +1686,6 @@ function SWRWithCredentials(props: any): VNode {
     >
       {props.children}
     </SWRConfig>
-  );
-}
-
-function SWRWithoutCredentials(Props: any): VNode {
-  const { baseUrl } = Props;
-  console.log("Base URL", baseUrl);
-  return (
-    <SWRConfig
-      value={{
-        fetcher: (url: string) =>
-          fetch(baseUrl + url || "").then((r) => {
-            if (!r.ok) throw { status: r.status, json: r.json() };
-
-            return r.json();
-          }),
-      }}
-    >
-      {Props.children}
-    </SWRConfig>
-  );
-}
-
-/**
- * Show histories of public accounts.
- */
-function PublicHistories(Props: any): VNode {
-  const [showAccount, setShowAccount] = useShowPublicAccount();
-  const { data, error } = useSWR("access-api/public-accounts");
-  const { i18n } = useTranslationContext();
-
-  if (typeof error !== "undefined") {
-    console.log("account error", error);
-    switch (error.status) {
-      case 404:
-        console.log("public accounts: 404", error);
-        Props.pageStateSetter((prevState: PageStateType) => ({
-          ...prevState,
-
-          showPublicHistories: false,
-          error: {
-            title: i18n.str`List of public accounts was not found.`,
-            debug: JSON.stringify(error),
-          },
-        }));
-        break;
-      default:
-        console.log("public accounts: non-404 error", error);
-        Props.pageStateSetter((prevState: PageStateType) => ({
-          ...prevState,
-
-          showPublicHistories: false,
-          error: {
-            title: i18n.str`List of public accounts could not be retrieved.`,
-            debug: JSON.stringify(error),
-          },
-        }));
-        break;
-    }
-  }
-  if (!data) return <p>Waiting public accounts list...</p>;
-  const txs: any = {};
-  const accountsBar = [];
-
-  /**
-   * Show the account specified in the props, or just one
-   * from the list if that's not given.
-   */
-  if (typeof showAccount === "undefined" && data.publicAccounts.length > 0)
-    setShowAccount(data.publicAccounts[1].accountLabel);
-  console.log(`Public history tab: ${showAccount}`);
-
-  // Ask story of all the public accounts.
-  for (const account of data.publicAccounts) {
-    console.log("Asking transactions for", account.accountLabel);
-    const isSelected = account.accountLabel == showAccount;
-    accountsBar.push(
-      <li
-        class={
-          isSelected
-            ? "pure-menu-selected pure-menu-item"
-            : "pure-menu-item pure-menu"
-        }
-      >
-        <a
-          href="#"
-          class="pure-menu-link"
-          onClick={() => setShowAccount(account.accountLabel)}
-        >
-          {account.accountLabel}
-        </a>
-      </li>,
-    );
-    txs[account.accountLabel] = (
-      <Transactions accountLabel={account.accountLabel} pageNumber={0} />
-    );
-  }
-
-  return (
-    <Fragment>
-      <h1 class="nav">{i18n.str`History of public accounts`}</h1>
-      <section id="main">
-        <article>
-          <div class="pure-menu pure-menu-horizontal" name="accountMenu">
-            <ul class="pure-menu-list">{accountsBar}</ul>
-            {typeof showAccount !== "undefined" ? (
-              txs[showAccount]
-            ) : (
-              <p>No public transactions found.</p>
-            )}
-            {Props.children}
-          </div>
-        </article>
-      </section>
-    </Fragment>
-  );
-}
-
-export function PublicHistoriesPage(): VNode {
-  const { pageState, pageStateSetter } = usePageContext();
-  // const { i18n } = useTranslationContext();
-  return (
-    <SWRWithoutCredentials baseUrl={getBankBackendBaseUrl()}>
-      <BankFrame>
-        <PublicHistories pageStateSetter={pageStateSetter}>
-          <br />
-          <a
-            class="pure-button"
-            onClick={() => {
-              pageStateSetter((prevState: PageStateType) => ({
-                ...prevState,
-                showPublicHistories: false,
-              }));
-            }}
-          >
-            Go back
-          </a>
-        </PublicHistories>
-      </BankFrame>
-    </SWRWithoutCredentials>
   );
 }
 
