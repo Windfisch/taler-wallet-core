@@ -2079,7 +2079,7 @@ function PublicHistories(Props: any): VNode {
   );
 }
 
-function PublicHistoriesPage(): VNode {
+export function PublicHistoriesPage(): VNode {
   const { pageState, pageStateSetter } = usePageContext();
   // const { i18n } = useTranslationContext();
   return (
@@ -2104,7 +2104,7 @@ function PublicHistoriesPage(): VNode {
   );
 }
 
-function RegistrationPage(): VNode {
+export function RegistrationPage(): VNode {
   const { i18n } = useTranslationContext();
   if (!bankUiSettings.allowRegistrations) {
     return (
@@ -2120,7 +2120,7 @@ function RegistrationPage(): VNode {
   );
 }
 
-function AccountPage(): VNode {
+export function AccountPage(): VNode {
   const [backendState, backendStateSetter] = useBackendState();
   const { i18n } = useTranslationContext();
   const { pageState, pageStateSetter } = usePageContext();
@@ -2129,10 +2129,7 @@ function AccountPage(): VNode {
     return (
       <BankFrame>
         <h1 class="nav">{i18n.str`Welcome to ${bankUiSettings.bankName}!`}</h1>
-        <LoginForm
-          pageStateSetter={pageStateSetter}
-          backendStateSetter={backendStateSetter}
-        />
+        <LoginForm />
       </BankFrame>
     );
   }
@@ -2160,28 +2157,5 @@ function AccountPage(): VNode {
         backendState={backendState}
       />
     </SWRWithCredentials>
-  );
-}
-
-function Redirect({ to }: { to: string }): VNode {
-  useEffect(() => {
-    route(to, true);
-  }, []);
-  return <div>being redirected to {to}</div>;
-}
-
-/**
- * If the user is logged in, it displays
- * the balance, otherwise it offers to login.
- */
-export function BankHome(): VNode {
-  const history = createHashHistory();
-  return (
-    <Router history={history}>
-      <Route path="/public-accounts" component={PublicHistoriesPage} />
-      <Route path="/register" component={RegistrationPage} />
-      <Route path="/account/:id*" component={AccountPage} />
-      <Route default component={Redirect} to="/account" />
-    </Router>
   );
 }

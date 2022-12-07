@@ -1,13 +1,13 @@
 import { h, FunctionalComponent } from "preact";
 import { PageStateProvider } from "../context/pageState.js";
 import { TranslationProvider } from "../context/translation.js";
-import { BankHome } from "../pages/home/index.js";
+import { Routing } from "../pages/Routing.js";
 
 const App: FunctionalComponent = () => {
   return (
     <TranslationProvider>
       <PageStateProvider>
-        <BankHome />
+        <Routing />
       </PageStateProvider>
     </TranslationProvider>
   );
