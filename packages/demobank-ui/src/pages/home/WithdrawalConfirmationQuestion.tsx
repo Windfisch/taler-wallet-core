@@ -1,3 +1,4 @@
+import { Logger } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { StateUpdater } from "preact/hooks";
 import { useBackendContext } from "../../context/backend.js";
@@ -6,11 +7,13 @@ import { useTranslationContext } from "../../context/translation.js";
 import { BackendState } from "../../hooks/backend.js";
 import { prepareHeaders } from "../../utils.js";
 
+const logger = new Logger("WithdrawalConfirmationQuestion");
+
 /**
  * Additional authentication required to complete the operation.
  * Not providing a back button, only abort.
  */
-export function TalerWithdrawalConfirmationQuestion(): VNode {
+export function WithdrawalConfirmationQuestion(): VNode {
   const { pageState, pageStateSetter } = usePageContext();
   const backend = useBackendContext();
   const { i18n } = useTranslationContext();
@@ -122,7 +125,7 @@ async function confirmWithdrawalCall(
   pageStateSetter: StateUpdater<PageStateType>,
 ): Promise<void> {
   if (backendState.status === "loggedOut") {
-    console.log("No credentials found.");
+    logger.error("No credentials found.");
     pageStateSetter((prevState) => ({
       ...prevState,
 
@@ -133,7 +136,7 @@ async function confirmWithdrawalCall(
     return;
   }
   if (typeof withdrawalId === "undefined") {
-    console.log("No withdrawal ID found.");
+    logger.error("No withdrawal ID found.");
     pageStateSetter((prevState) => ({
       ...prevState,
 
@@ -168,7 +171,7 @@ async function confirmWithdrawalCall(
       headers,
     });
   } catch (error) {
-    console.log("Could not POST withdrawal confirmation to the bank", error);
+    logger.error("Could not POST withdrawal confirmation to the bank", error);
     pageStateSetter((prevState) => ({
       ...prevState,
 
@@ -183,7 +186,7 @@ async function confirmWithdrawalCall(
   if (!res || !res.ok) {
     const response = await res.json();
     // assume not ok if res is null
-    console.log(
+    logger.error(
       `Withdrawal confirmation gave response error (${res.status})`,
       res.statusText,
     );
@@ -197,7 +200,7 @@ async function confirmWithdrawalCall(
     }));
     return;
   }
-  console.log("Withdrawal operation confirmed!");
+  logger.trace("Withdrawal operation confirmed!");
   pageStateSetter((prevState) => {
     const { talerWithdrawUri, ...rest } = prevState;
     return {
@@ -217,7 +220,7 @@ async function abortWithdrawalCall(
   pageStateSetter: StateUpdater<PageStateType>,
 ): Promise<void> {
   if (backendState.status === "loggedOut") {
-    console.log("No credentials found.");
+    logger.error("No credentials found.");
     pageStateSetter((prevState) => ({
       ...prevState,
 
@@ -228,7 +231,7 @@ async function abortWithdrawalCall(
     return;
   }
   if (typeof withdrawalId === "undefined") {
-    console.log("No withdrawal ID found.");
+    logger.error("No withdrawal ID found.");
     pageStateSetter((prevState) => ({
       ...prevState,
 
@@ -260,7 +263,7 @@ async function abortWithdrawalCall(
     );
     res = await fetch(url.href, { method: "POST", headers });
   } catch (error) {
-    console.log("Could not abort the withdrawal", error);
+    logger.error("Could not abort the withdrawal", error);
     pageStateSetter((prevState) => ({
       ...prevState,
 
@@ -274,7 +277,7 @@ async function abortWithdrawalCall(
   }
   if (!res.ok) {
     const response = await res.json();
-    console.log(
+    logger.error(
       `Withdrawal abort gave response error (${res.status})`,
       res.statusText,
     );
@@ -289,7 +292,7 @@ async function abortWithdrawalCall(
     }));
     return;
   }
-  console.log("Withdrawal operation aborted!");
+  logger.trace("Withdrawal operation aborted!");
   pageStateSetter((prevState) => {
     const { ...rest } = prevState;
     return {

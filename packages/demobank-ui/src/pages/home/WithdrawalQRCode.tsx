@@ -1,17 +1,18 @@
+import { Logger } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import useSWR from "swr";
-import { useBackendContext } from "../../context/backend.js";
 import { PageStateType, usePageContext } from "../../context/pageState.js";
 import { useTranslationContext } from "../../context/translation.js";
 import { QrCodeSection } from "./QrCodeSection.js";
-import { TalerWithdrawalConfirmationQuestion } from "./TalerWithdrawalConfirmationQuestion.js";
+import { WithdrawalConfirmationQuestion } from "./WithdrawalConfirmationQuestion.js";
 
+const logger = new Logger("WithdrawalQRCode");
 /**
  * Offer the QR code (and a clickable taler://-link) to
  * permit the passing of exchange and reserve details to
  * the bank.  Poll the backend until such operation is done.
  */
-export function TalerWithdrawalQRCode({
+export function WithdrawalQRCode({
   withdrawalId,
   talerWithdrawUri,
 }: {
@@ -37,7 +38,7 @@ export function TalerWithdrawalQRCode({
     >{i18n.str`Abort`}</a>
   );
 
-  console.log(`Showing withdraw URI: ${talerWithdrawUri}`);
+  logger.trace(`Showing withdraw URI: ${talerWithdrawUri}`);
   // waiting for the wallet:
 
   const { data, error } = useSWR(
@@ -46,7 +47,7 @@ export function TalerWithdrawalQRCode({
   );
 
   if (typeof error !== "undefined") {
-    console.log(
+    logger.error(
       `withdrawal (${withdrawalId}) was never (correctly) created at the bank...`,
       error,
     );
@@ -73,7 +74,7 @@ export function TalerWithdrawalQRCode({
   /**
    * Wallet didn't communicate withdrawal details yet:
    */
-  console.log("withdrawal status", data);
+  logger.trace("withdrawal status", data);
   if (data.aborted)
     pageStateSetter((prevState: PageStateType) => {
       const { withdrawalId, talerWithdrawUri, ...rest } = prevState;
@@ -99,5 +100,5 @@ export function TalerWithdrawalQRCode({
    * Wallet POSTed the withdrawal details!  Ask the
    * user to authorize the operation (here CAPTCHA).
    */
-  return <TalerWithdrawalConfirmationQuestion />;
+  return <WithdrawalConfirmationQuestion />;
 }

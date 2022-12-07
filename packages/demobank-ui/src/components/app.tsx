@@ -1,3 +1,7 @@
+import {
+  globalLogLevel,
+  setGlobalLogLevelFromString,
+} from "@gnu-taler/taler-util";
 import { h, FunctionalComponent } from "preact";
 import { BackendStateProvider } from "../context/backend.js";
 import { PageStateProvider } from "../context/pageState.js";
@@ -31,6 +35,10 @@ const App: FunctionalComponent = () => {
       </PageStateProvider>
     </TranslationProvider>
   );
+};
+(window as any).setGlobalLogLevelFromString = setGlobalLogLevelFromString;
+(window as any).getGlobaLevel = () => {
+  return globalLogLevel;
 };
 
 export default App;

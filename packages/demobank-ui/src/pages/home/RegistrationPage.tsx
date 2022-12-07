@@ -13,6 +13,7 @@
  You should have received a copy of the GNU General Public License along with
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
+import { Logger } from "@gnu-taler/taler-util";
 import { Fragment, h, VNode } from "preact";
 import { route } from "preact-router";
 import { StateUpdater, useState } from "preact/hooks";
@@ -24,6 +25,8 @@ import { bankUiSettings } from "../../settings.js";
 import { getBankBackendBaseUrl, undefinedIfEmpty } from "../../utils.js";
 import { BankFrame } from "./BankFrame.js";
 import { ShowInputErrorLabel } from "./ShowInputErrorLabel.js";
+
+const logger = new Logger("RegistrationPage");
 
 export function RegistrationPage(): VNode {
   const { i18n } = useTranslationContext();
@@ -197,7 +200,7 @@ async function registrationCall(
       headers,
     });
   } catch (error) {
-    console.log(
+    logger.trace(
       `Could not POST new registration to the bank (${registerEndpoint.href})`,
       error,
     );

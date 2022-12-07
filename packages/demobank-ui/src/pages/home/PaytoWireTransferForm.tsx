@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Amounts, parsePaytoUri } from "@gnu-taler/taler-util";
+import { Amounts, Logger, parsePaytoUri } from "@gnu-taler/taler-util";
 import { hooks } from "@gnu-taler/web-util/lib/index.browser";
 import { h, VNode } from "preact";
 import { StateUpdater, useEffect, useRef, useState } from "preact/hooks";
@@ -24,6 +24,8 @@ import { useTranslationContext } from "../../context/translation.js";
 import { BackendState } from "../../hooks/backend.js";
 import { prepareHeaders, undefinedIfEmpty } from "../../utils.js";
 import { ShowInputErrorLabel } from "./ShowInputErrorLabel.js";
+
+const logger = new Logger("PaytoWireTransferForm");
 
 export function PaytoWireTransferForm({
   focus,
@@ -162,7 +164,7 @@ export function PaytoWireTransferForm({
                   typeof submitData.amount === "undefined" ||
                   submitData.amount === ""
                 ) {
-                  console.log("Not all the fields were given.");
+                  logger.error("Not all the fields were given.");
                   pageStateSetter((prevState: PageStateType) => ({
                     ...prevState,
 
@@ -209,7 +211,7 @@ export function PaytoWireTransferForm({
           <a
             href="/account"
             onClick={() => {
-              console.log("switch to raw payto form");
+              logger.trace("switch to raw payto form");
               pageStateSetter((prevState) => ({
                 ...prevState,
                 isRawPayto: true,
@@ -272,7 +274,7 @@ export function PaytoWireTransferForm({
             onClick={async () => {
               // empty string evaluates to false.
               if (!rawPaytoInput) {
-                console.log("Didn't get any raw Payto string!");
+                logger.error("Didn't get any raw Payto string!");
                 return;
               }
               transactionData = { paytoUri: rawPaytoInput };
@@ -295,7 +297,7 @@ export function PaytoWireTransferForm({
           <a
             href="/account"
             onClick={() => {
-              console.log("switch to wire-transfer-form");
+              logger.trace("switch to wire-transfer-form");
               pageStateSetter((prevState) => ({
                 ...prevState,
                 isRawPayto: false,
@@ -355,7 +357,7 @@ async function createTransactionCall(
   cleanUpForm: () => void,
 ): Promise<void> {
   if (backendState.status === "loggedOut") {
-    console.log("No credentials found.");
+    logger.error("No credentials found.");
     pageStateSetter((prevState) => ({
       ...prevState,
 
@@ -379,7 +381,7 @@ async function createTransactionCall(
       body: JSON.stringify(req),
     });
   } catch (error) {
-    console.log("Could not POST transaction request to the bank", error);
+    logger.error("Could not POST transaction request to the bank", error);
     pageStateSetter((prevState) => ({
       ...prevState,
 
@@ -394,7 +396,7 @@ async function createTransactionCall(
   // POST happened, status not sure yet.
   if (!res.ok) {
     const response = await res.json();
-    console.log(
+    logger.error(
       `Transfer creation gave response error: ${response} (${res.status})`,
     );
     pageStateSetter((prevState) => ({
@@ -409,7 +411,7 @@ async function createTransactionCall(
     return;
   }
   // status is 200 OK here, tell the user.
-  console.log("Wire transfer created!");
+  logger.trace("Wire transfer created!");
   pageStateSetter((prevState) => ({
     ...prevState,
 

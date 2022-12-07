@@ -1,8 +1,10 @@
+import { Logger } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { useEffect } from "preact/hooks";
 import useSWR from "swr";
 import { useTranslationContext } from "../../context/translation.js";
 
+const logger = new Logger("Transactions");
 /**
  * Show one page of transactions.
  */
@@ -25,7 +27,7 @@ export function Transactions({
     }
   }, [balanceValue ?? ""]);
   if (typeof error !== "undefined") {
-    console.log("transactions not found error", error);
+    logger.error("transactions not found error", error);
     switch (error.status) {
       case 404: {
         return <p>Transactions page {pageNumber} was not found.</p>;
@@ -39,10 +41,10 @@ export function Transactions({
     }
   }
   if (!data) {
-    console.log(`History data of ${accountLabel} not arrived`);
+    logger.trace(`History data of ${accountLabel} not arrived`);
     return <p>Transactions page loading...</p>;
   }
-  console.log(`History data of ${accountLabel}`, data);
+  logger.trace(`History data of ${accountLabel}`, data);
   return (
     <div class="results">
       <table class="pure-table pure-table-striped">

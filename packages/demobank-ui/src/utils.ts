@@ -5,20 +5,10 @@ import { canonicalizeBaseUrl } from "@gnu-taler/taler-util";
  * replace comma with a dot.  Returns 'false' whenever
  * the input is invalid, the valid amount otherwise.
  */
+const amountRegex = /^[0-9]+(.[0-9]+)?$/;
 export function validateAmount(maybeAmount: string | undefined): string | undefined {
-  const amountRegex = "^[0-9]+(.[0-9]+)?$";
-  if (!maybeAmount) {
-    console.log(`Entered amount (${maybeAmount}) mismatched <input> pattern.`);
+  if (!maybeAmount || !amountRegex.test(maybeAmount)) {
     return;
-  }
-  if (typeof maybeAmount !== "undefined" || maybeAmount !== "") {
-    console.log(`Maybe valid amount: ${maybeAmount}`);
-    // tolerating comma instead of point.
-    const re = RegExp(amountRegex);
-    if (!re.test(maybeAmount)) {
-      console.log(`Not using invalid amount '${maybeAmount}'.`);
-      return;
-    }
   }
   return maybeAmount;
 }
@@ -39,13 +29,6 @@ const maybeRootPath = "https://bank.demo.taler.net/demobanks/default/";
 
 export function getBankBackendBaseUrl(): string {
   const overrideUrl = localStorage.getItem("bank-base-url");
-  if (overrideUrl) {
-    console.log(
-      `using bank base URL ${overrideUrl} (override via bank-base-url localStorage)`,
-    );
-  } else {
-    console.log(`using bank base URL (${maybeRootPath})`);
-  }
   return canonicalizeBaseUrl(overrideUrl ? overrideUrl : maybeRootPath)
 
 }

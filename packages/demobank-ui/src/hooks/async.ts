@@ -51,9 +51,7 @@ export function useAsync<T>(
     }, tooLong);
 
     try {
-      console.log("calling async", args);
       const result = await fn(...args);
-      console.log("async back", result);
       setData(result);
     } catch (error) {
       setError(error);

@@ -14,6 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { Logger } from "@gnu-taler/taler-util";
 import { hooks } from "@gnu-taler/web-util/lib/index.browser";
 import { ComponentChildren, Fragment, h, VNode } from "preact";
 import { route } from "preact-router";
@@ -24,6 +25,8 @@ import { useTranslationContext } from "../../context/translation.js";
 import { getBankBackendBaseUrl } from "../../utils.js";
 import { BankFrame } from "./BankFrame.js";
 import { Transactions } from "./Transactions.js";
+
+const logger = new Logger("PublicHistoriesPage");
 
 export function PublicHistoriesPage(): VNode {
   return (
@@ -42,7 +45,7 @@ function SWRWithoutCredentials({
   children: ComponentChildren;
   baseUrl: string;
 }): VNode {
-  console.log("Base URL", baseUrl);
+  logger.trace("Base URL", baseUrl);
   return (
     <SWRConfig
       value={{
@@ -69,10 +72,9 @@ function PublicHistories(): VNode {
   const { i18n } = useTranslationContext();
 
   if (typeof error !== "undefined") {
-    console.log("account error", error);
     switch (error.status) {
       case 404:
-        console.log("public accounts: 404", error);
+        logger.error("public accounts: 404", error);
         route("/account");
         pageStateSetter((prevState: PageStateType) => ({
           ...prevState,
@@ -84,7 +86,7 @@ function PublicHistories(): VNode {
         }));
         break;
       default:
-        console.log("public accounts: non-404 error", error);
+        logger.error("public accounts: non-404 error", error);
         route("/account");
         pageStateSetter((prevState: PageStateType) => ({
           ...prevState,
@@ -105,13 +107,14 @@ function PublicHistories(): VNode {
    * Show the account specified in the props, or just one
    * from the list if that's not given.
    */
-  if (typeof showAccount === "undefined" && data.publicAccounts.length > 0)
+  if (typeof showAccount === "undefined" && data.publicAccounts.length > 0) {
     setShowAccount(data.publicAccounts[1].accountLabel);
-  console.log(`Public history tab: ${showAccount}`);
+  }
+  logger.trace(`Public history tab: ${showAccount}`);
 
   // Ask story of all the public accounts.
   for (const account of data.publicAccounts) {
-    console.log("Asking transactions for", account.accountLabel);
+    logger.trace("Asking transactions for", account.accountLabel);
     const isSelected = account.accountLabel == showAccount;
     accountsBar.push(
       <li

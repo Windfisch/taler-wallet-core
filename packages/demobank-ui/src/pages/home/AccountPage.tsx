@@ -14,7 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import { Amounts, HttpStatusCode } from "@gnu-taler/taler-util";
+import { Amounts, HttpStatusCode, Logger } from "@gnu-taler/taler-util";
 import { hooks } from "@gnu-taler/web-util/lib/index.browser";
 import { ComponentChildren, Fragment, h, VNode } from "preact";
 import { StateUpdater, useEffect } from "preact/hooks";
@@ -28,7 +28,7 @@ import { getIbanFromPayto, prepareHeaders } from "../../utils.js";
 import { BankFrame } from "./BankFrame.js";
 import { LoginForm } from "./LoginForm.js";
 import { PaymentOptions } from "./PaymentOptions.js";
-import { TalerWithdrawalQRCode } from "./TalerWithdrawalQRCode.js";
+import { WithdrawalQRCode } from "./TalerWithdrawalQRCode.js";
 import { Transactions } from "./Transactions.js";
 
 export function AccountPage(): VNode {
@@ -80,6 +80,8 @@ function SWRWithCredentials({
   );
 }
 
+const logger = new Logger("AccountPage");
+
 /**
  * Show only the account's balance.  NOTE: the backend state
  * is mostly needed to provide the user's credentials to POST
@@ -116,7 +118,7 @@ function Account({ accountLabel }: { accountLabel: string }): VNode {
   // }
 
   if (typeof error !== "undefined") {
-    console.log("account error", error, endpoint);
+    logger.trace("account error", error, endpoint);
     /**
      * FIXME: to minimize the code, try only one invocation
      * of pageStateSetter, after having decided the error
@@ -189,12 +191,11 @@ function Account({ accountLabel }: { accountLabel: string }): VNode {
    * brought to this ("Account") page where they get informed about
    * the outcome.
    */
-  console.log(`maybe new withdrawal ${talerWithdrawUri}`);
   if (talerWithdrawUri && withdrawalId) {
-    console.log("Bank created a new Taler withdrawal");
+    logger.trace("Bank created a new Taler withdrawal");
     return (
       <BankFrame>
-        <TalerWithdrawalQRCode
+        <WithdrawalQRCode
           withdrawalId={withdrawalId}
           talerWithdrawUri={talerWithdrawUri}
         />
@@ -252,15 +253,15 @@ function Account({ accountLabel }: { accountLabel: string }): VNode {
   );
 }
 
-function useTransactionPageNumber(): [number, StateUpdater<number>] {
-  const ret = hooks.useNotNullLocalStorage("transaction-page", "0");
-  const retObj = JSON.parse(ret[0]);
-  const retSetter: StateUpdater<number> = function (val) {
-    const newVal =
-      val instanceof Function
-        ? JSON.stringify(val(retObj))
-        : JSON.stringify(val);
-    ret[1](newVal);
-  };
-  return [retObj, retSetter];
-}
+// function useTransactionPageNumber(): [number, StateUpdater<number>] {
+//   const ret = hooks.useNotNullLocalStorage("transaction-page", "0");
+//   const retObj = JSON.parse(ret[0]);
+//   const retSetter: StateUpdater<number> = function (val) {
+//     const newVal =
+//       val instanceof Function
+//         ? JSON.stringify(val(retObj))
+//         : JSON.stringify(val);
+//     ret[1](newVal);
+//   };
+//   return [retObj, retSetter];
+// }

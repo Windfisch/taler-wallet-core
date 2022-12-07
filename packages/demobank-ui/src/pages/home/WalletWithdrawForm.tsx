@@ -14,6 +14,7 @@
  GNU Taler; see the file COPYING.  If not, see <http://www.gnu.org/licenses/>
  */
 
+import { Logger } from "@gnu-taler/taler-util";
 import { h, VNode } from "preact";
 import { StateUpdater, useEffect, useRef } from "preact/hooks";
 import { useBackendContext } from "../../context/backend.js";
@@ -21,6 +22,8 @@ import { PageStateType, usePageContext } from "../../context/pageState.js";
 import { useTranslationContext } from "../../context/translation.js";
 import { BackendState } from "../../hooks/backend.js";
 import { prepareHeaders, validateAmount } from "../../utils.js";
+
+const logger = new Logger("WalletWithdrawForm");
 
 export function WalletWithdrawForm({
   focus,
@@ -110,7 +113,7 @@ async function createWithdrawalCall(
   pageStateSetter: StateUpdater<PageStateType>,
 ): Promise<void> {
   if (backendState?.status === "loggedOut") {
-    console.log("Page has a problem: no credentials found in the state.");
+    logger.error("Page has a problem: no credentials found in the state.");
     pageStateSetter((prevState) => ({
       ...prevState,
 
@@ -137,7 +140,7 @@ async function createWithdrawalCall(
       body: JSON.stringify({ amount }),
     });
   } catch (error) {
-    console.log("Could not POST withdrawal request to the bank", error);
+    logger.trace("Could not POST withdrawal request to the bank", error);
     pageStateSetter((prevState) => ({
       ...prevState,
 
@@ -151,7 +154,7 @@ async function createWithdrawalCall(
   }
   if (!res.ok) {
     const response = await res.json();
-    console.log(
+    logger.error(
       `Withdrawal creation gave response error: ${response} (${res.status})`,
     );
     pageStateSetter((prevState) => ({
@@ -166,7 +169,7 @@ async function createWithdrawalCall(
     return;
   }
 
-  console.log("Withdrawal operation created!");
+  logger.trace("Withdrawal operation created!");
   const resp = await res.json();
   pageStateSetter((prevState: PageStateType) => ({
     ...prevState,
