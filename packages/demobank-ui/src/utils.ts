@@ -1,4 +1,3 @@
-
 /**
  * Validate (the number part of) an amount.  If needed,
  * replace comma with a dot.  Returns 'false' whenever

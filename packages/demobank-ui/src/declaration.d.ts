@@ -23,7 +23,6 @@ declare module "jed" {
  * Type definitions for states and API calls. *
  *********************************************/
 
-
 /**
  * Request body of POST /transactions.
  *

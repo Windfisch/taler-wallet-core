@@ -1,7 +1,6 @@
 import { hooks } from "@gnu-taler/web-util/lib/index.browser";
 import { StateUpdater } from "preact/hooks";
 
-
 /**
  * Has the information to reach and
  * authenticate at the bank's backend.

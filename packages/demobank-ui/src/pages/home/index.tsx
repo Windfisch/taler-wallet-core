@@ -890,7 +890,14 @@ function ShowInputErrorLabel({
   return <Fragment />;
 }
 
-function PaytoWireTransfer(Props: any): VNode {
+function PaytoWireTransfer({
+  focus,
+  currency,
+}: {
+  focus?: boolean;
+  currency?: string;
+}): VNode {
+  const [backendState, backendStateSetter] = useBackendState();
   const { pageState, pageStateSetter } = usePageContext(); // NOTE: used for go-back button?
 
   const [submitData, submitDataSetter] = useWireTransferRequestType();
@@ -899,7 +906,6 @@ function PaytoWireTransfer(Props: any): VNode {
     undefined,
   );
   const { i18n } = useTranslationContext();
-  const { focus, backendState, currency } = Props;
   const ibanRegex = "^[A-Z][A-Z][0-9]+$";
   let transactionData: TransactionRequestType;
   const ref = useRef<HTMLInputElement>(null);
@@ -907,13 +913,6 @@ function PaytoWireTransfer(Props: any): VNode {
     if (focus) ref.current?.focus();
   }, [focus, pageState.isRawPayto]);
 
-  // typeof submitData === "undefined" ||
-  // typeof submitData.iban === "undefined" ||
-  // submitData.iban === "" ||
-  // typeof submitData.subject === "undefined" ||
-  // submitData.subject === "" ||
-  // typeof submitData.amount === "undefined" ||
-  // submitData.amount === ""
   let parsedAmount = undefined;
 
   const errorsWire = {
@@ -986,8 +985,8 @@ function PaytoWireTransfer(Props: any): VNode {
               type="text"
               readonly
               class="currency-indicator"
-              size={currency.length}
-              maxLength={currency.length}
+              size={currency?.length}
+              maxLength={currency?.length}
               tabIndex={-1}
               value={currency}
             />
@@ -1367,8 +1366,15 @@ function TalerWithdrawalQRCode(Props: any): VNode {
   return <TalerWithdrawalConfirmationQuestion backendState={backendState} />;
 }
 
-function WalletWithdraw(Props: any): VNode {
-  const { backendState, pageStateSetter, focus, currency } = Props;
+function WalletWithdraw({
+  focus,
+  currency,
+}: {
+  currency?: string;
+  focus?: boolean;
+}): VNode {
+  const [backendState, backendStateSetter] = useBackendState();
+  const { pageState, pageStateSetter } = usePageContext();
   const { i18n } = useTranslationContext();
   let submitAmount = "5.00";
 
@@ -1385,8 +1391,8 @@ function WalletWithdraw(Props: any): VNode {
           type="text"
           readonly
           class="currency-indicator"
-          size={currency.length}
-          maxLength={currency.length}
+          size={currency?.length ?? 5}
+          maxLength={currency?.length}
           tabIndex={-1}
           value={currency}
         />
@@ -1419,7 +1425,7 @@ function WalletWithdraw(Props: any): VNode {
                * on the console, and the browser colourizes the amount input
                * box to indicate a error.
                */
-              if (!submitAmount) return;
+              if (!submitAmount && currency) return;
               createWithdrawalCall(
                 `${currency}:${submitAmount}`,
                 backendState,
@@ -1437,8 +1443,7 @@ function WalletWithdraw(Props: any): VNode {
  * Let the user choose a payment option,
  * then specify the details trigger the action.
  */
-function PaymentOptions(Props: any): VNode {
-  const { backendState, pageStateSetter, currency } = Props;
+function PaymentOptions({ currency }: { currency?: string }): VNode {
   const { i18n } = useTranslationContext();
 
   const [tab, setTab] = useState<"charge-wallet" | "wire-transfer">(
@@ -1469,23 +1474,13 @@ function PaymentOptions(Props: any): VNode {
         {tab === "charge-wallet" && (
           <div id="charge-wallet" class="tabcontent active">
             <h3>{i18n.str`Obtain digital cash`}</h3>
-            <WalletWithdraw
-              backendState={backendState}
-              focus
-              currency={currency}
-              pageStateSetter={pageStateSetter}
-            />
+            <WalletWithdraw focus currency={currency} />
           </div>
         )}
         {tab === "wire-transfer" && (
           <div id="wire-transfer" class="tabcontent active">
             <h3>{i18n.str`Transfer to bank account`}</h3>
-            <PaytoWireTransfer
-              backendState={backendState}
-              focus
-              currency={currency}
-              pageStateSetter={pageStateSetter}
-            />
+            <PaytoWireTransfer focus currency={currency} />
           </div>
         )}
       </div>
@@ -1942,7 +1937,9 @@ function Account(Props: any): VNode {
       }
     }
   }
-  if (!data) return <p>Retrieving the profile page...</p>;
+  const balance = !data ? undefined : Amounts.parseOrThrow(data.balance.amount);
+  const accountNumber = !data ? undefined : getIbanFromPayto(data.paytoUri);
+  const balanceIsDebit = data && data.balance.credit_debit_indicator == "debit";
 
   /**
    * This block shows the withdrawal QR code.
@@ -1970,36 +1967,41 @@ function Account(Props: any): VNode {
       </BankFrame>
     );
   }
-  const balance = Amounts.parseOrThrow(data.balance.amount);
-  const balanceValue = Amounts.stringifyValue(balance);
+  const balanceValue = !balance ? undefined : Amounts.stringifyValue(balance);
 
   return (
     <BankFrame>
       <div>
         <h1 class="nav welcome-text">
           <i18n.Translate>
-            Welcome, {accountLabel} ({getIbanFromPayto(data.paytoUri)})!
+            Welcome,
+            {accountNumber
+              ? `${accountLabel} (${accountNumber})`
+              : accountLabel}
+            !
           </i18n.Translate>
         </h1>
       </div>
       <section id="assets">
         <div class="asset-summary">
           <h2>{i18n.str`Bank account balance`}</h2>
-          <div class="large-amount amount">
-            {data.balance.credit_debit_indicator == "debit" ? <b>-</b> : null}
-            <span class="value">{`${balanceValue}`}</span>&nbsp;
-            <span class="currency">{`${balance.currency}`}</span>
-          </div>
+          {!balance ? (
+            <div class="large-amount" style={{ color: "gray" }}>
+              Waiting server response...
+            </div>
+          ) : (
+            <div class="large-amount amount">
+              {balanceIsDebit ? <b>-</b> : null}
+              <span class="value">{`${balanceValue}`}</span>&nbsp;
+              <span class="currency">{`${balance.currency}`}</span>
+            </div>
+          )}
         </div>
       </section>
       <section id="payments">
         <div class="payments">
           <h2>{i18n.str`Payments`}</h2>
-          <PaymentOptions
-            currency={balance.currency}
-            backendState={backendState}
-            pageStateSetter={setPageState}
-          />
+          <PaymentOptions currency={balance?.currency} />
         </div>
       </section>
       <section id="main">
