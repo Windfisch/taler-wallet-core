@@ -23,15 +23,6 @@ declare module "jed" {
  * Type definitions for states and API calls. *
  *********************************************/
 
-/**
- * Has the information to reach and
- * authenticate at the bank's backend.
- */
-interface BackendStateType {
-  url?: string;
-  username?: string;
-  password?: string;
-}
 
 /**
  * Request body of POST /transactions.

@@ -15,26 +15,26 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createContext, Fragment, h, VNode } from "preact";
+import { h, Fragment, VNode } from "preact";
 import useSWR, { SWRConfig, useSWRConfig } from "swr";
 
-import {
-  StateUpdater,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "preact/hooks";
-import talerLogo from "../../assets/logo-white.svg";
-import { LangSelectorLikePy as LangSelector } from "../../components/menu/LangSelector.js";
-import { useTranslationContext } from "../../context/translation.js";
 import { Amounts, HttpStatusCode, parsePaytoUri } from "@gnu-taler/taler-util";
+import { hooks } from "@gnu-taler/web-util/lib/index.browser";
 import { createHashHistory } from "history";
 import Router, { Route, route } from "preact-router";
-import { QrCodeSection } from "./QrCodeSection.js";
-import { hooks } from "@gnu-taler/web-util/lib/index.browser";
-import { bankUiSettings } from "../../settings.js";
+import { StateUpdater, useEffect, useRef, useState } from "preact/hooks";
+import talerLogo from "../../assets/logo-white.svg";
+import { LangSelectorLikePy as LangSelector } from "../../components/menu/LangSelector.js";
 import { PageStateType, usePageContext } from "../../context/pageState.js";
+import { useTranslationContext } from "../../context/translation.js";
+import { BackendStateType, useBackendState } from "../../hooks/backend.js";
+import { bankUiSettings } from "../../settings.js";
+import { QrCodeSection } from "./QrCodeSection.js";
+import {
+  getBankBackendBaseUrl,
+  getIbanFromPayto,
+  validateAmount,
+} from "../../utils.js";
 
 /**
  * FIXME:
@@ -52,22 +52,6 @@ import { PageStateType, usePageContext } from "../../context/pageState.js";
  *
  * - Many strings need to be i18n-wrapped.
  */
-
-/***********
- * Globals *
- **********/
-
-/************
- * Contexts *
- ***********/
-
-/**
- * Bank account specific information.
- */
-// interface AccountStateType {
-//   balance: string;
-//   /* FIXME: Need history here.  */
-// }
 
 /************
  * Helpers. *
@@ -92,56 +76,10 @@ function goPublicAccounts(pageStateSetter: StateUpdater<PageStateType>) {
 }
 
 /**
- * Validate (the number part of) an amount.  If needed,
- * replace comma with a dot.  Returns 'false' whenever
- * the input is invalid, the valid amount otherwise.
- */
-function validateAmount(maybeAmount: string): any {
-  const amountRegex = "^[0-9]+(.[0-9]+)?$";
-  if (!maybeAmount) {
-    console.log(`Entered amount (${maybeAmount}) mismatched <input> pattern.`);
-    return;
-  }
-  if (typeof maybeAmount !== "undefined" || maybeAmount !== "") {
-    console.log(`Maybe valid amount: ${maybeAmount}`);
-    // tolerating comma instead of point.
-    const re = RegExp(amountRegex);
-    if (!re.test(maybeAmount)) {
-      console.log(`Not using invalid amount '${maybeAmount}'.`);
-      return false;
-    }
-  }
-  return maybeAmount;
-}
-
-/**
- * Extract IBAN from a Payto URI.
- */
-function getIbanFromPayto(url: string): string {
-  const pathSplit = new URL(url).pathname.split("/");
-  let lastIndex = pathSplit.length - 1;
-  // Happens if the path ends with "/".
-  if (pathSplit[lastIndex] === "") lastIndex--;
-  const iban = pathSplit[lastIndex];
-  return iban;
-}
-
-/**
- * Extract value and currency from a $currency:x.y amount.
- */
-// function parseAmount(val: string): Amount {
-//   Amounts.parse(val)
-//   const format = /^[A-Z]+:[0-9]+(\.[0-9]+)?$/;
-//   if (!format.test(val)) throw Error(`Backend gave invalid amount: ${val}.`);
-//   const amountSplit = val.split(":");
-//   return { value: amountSplit[1], currency: amountSplit[0] };
-// }
-
-/**
  * Get username from the backend state, and throw
  * exception if not found.
  */
-function getUsername(backendState: BackendStateTypeOpt): string {
+function getUsername(backendState: BackendStateType | undefined): string {
   if (typeof backendState === "undefined")
     throw Error("Username can't be found in a undefined backend state.");
 
@@ -158,7 +96,7 @@ function getUsername(backendState: BackendStateTypeOpt): string {
  */
 async function postToBackend(
   uri: string,
-  backendState: BackendStateTypeOpt,
+  backendState: BackendStateType | undefined,
   body: string,
 ): Promise<any> {
   if (typeof backendState === "undefined")
@@ -202,20 +140,6 @@ function prepareHeaders(username?: string, password?: string): Headers {
   headers.append("Content-Type", "application/json");
   return headers;
 }
-
-const getBankBackendBaseUrl = (): string => {
-  const overrideUrl = localStorage.getItem("bank-base-url");
-  if (overrideUrl) {
-    console.log(
-      `using bank base URL ${overrideUrl} (override via bank-base-url localStorage)`,
-    );
-    return overrideUrl;
-  }
-  const maybeRootPath = "https://bank.demo.taler.net/demobanks/default/";
-  if (!maybeRootPath.endsWith("/")) return `${maybeRootPath}/`;
-  console.log(`using bank base URL (${maybeRootPath})`);
-  return maybeRootPath;
-};
 
 /*******************
  * State managers. *
@@ -316,27 +240,6 @@ function useCredentialsRequestType(
 }
 
 /**
- * Return getters and setters for
- * login credentials and backend's
- * base URL.
- */
-type BackendStateTypeOpt = BackendStateType | undefined;
-function useBackendState(
-  state?: BackendStateType,
-): [BackendStateTypeOpt, StateUpdater<BackendStateTypeOpt>] {
-  const ret = hooks.useLocalStorage("backend-state", JSON.stringify(state));
-  const retObj: BackendStateTypeOpt = ret[0] ? JSON.parse(ret[0]) : ret[0];
-  const retSetter: StateUpdater<BackendStateTypeOpt> = function (val) {
-    const newVal =
-      val instanceof Function
-        ? JSON.stringify(val(retObj))
-        : JSON.stringify(val);
-    ret[1](newVal);
-  };
-  return [retObj, retSetter];
-}
-
-/**
  * Request preparators.
  *
  * These functions aim at sanitizing the input received
@@ -356,7 +259,7 @@ function useBackendState(
  * Abort a withdrawal operation via the Access API's /abort.
  */
 async function abortWithdrawalCall(
-  backendState: BackendStateTypeOpt,
+  backendState: BackendStateType | undefined,
   withdrawalId: string | undefined,
   pageStateSetter: StateUpdater<PageStateType>,
 ): Promise<void> {
@@ -455,7 +358,7 @@ async function abortWithdrawalCall(
  * 'page state' and let the related components refresh.
  */
 async function confirmWithdrawalCall(
-  backendState: BackendStateTypeOpt,
+  backendState: BackendStateType | undefined,
   withdrawalId: string | undefined,
   pageStateSetter: StateUpdater<PageStateType>,
 ): Promise<void> {
@@ -554,7 +457,7 @@ async function confirmWithdrawalCall(
  */
 async function createTransactionCall(
   req: TransactionRequestType,
-  backendState: BackendStateTypeOpt,
+  backendState: BackendStateType | undefined,
   pageStateSetter: StateUpdater<PageStateType>,
   /**
    * Optional since the raw payto form doesn't have
@@ -623,9 +526,9 @@ async function createTransactionCall(
  * the user about the operation's outcome.  (2) use POST helper.  */
 async function createWithdrawalCall(
   amount: string,
-  backendState: BackendStateTypeOpt,
+  backendState: BackendStateType | undefined,
   pageStateSetter: StateUpdater<PageStateType>,
-) {
+): Promise<void> {
   if (typeof backendState === "undefined") {
     console.log("Page has a problem: no credentials found in the state.");
     pageStateSetter((prevState) => ({
@@ -699,9 +602,9 @@ async function loginCall(
    * FIXME: figure out if the two following
    * functions can be retrieved from the state.
    */
-  backendStateSetter: StateUpdater<BackendStateTypeOpt>,
+  backendStateSetter: StateUpdater<BackendStateType | undefined>,
   pageStateSetter: StateUpdater<PageStateType>,
-) {
+): Promise<void> {
   /**
    * Optimistically setting the state as 'logged in', and
    * let the Account component request the balance to check
@@ -732,9 +635,9 @@ async function registrationCall(
    * functions can be retrieved somewhat from
    * the state.
    */
-  backendStateSetter: StateUpdater<BackendStateTypeOpt>,
+  backendStateSetter: StateUpdater<BackendStateType | undefined>,
   pageStateSetter: StateUpdater<PageStateType>,
-) {
+): Promise<void> {
   let baseUrl = getBankBackendBaseUrl();
   /**
    * If the base URL doesn't end with slash and the path
@@ -1718,8 +1621,10 @@ function LoginForm(Props: any): VNode {
 /**
  * Collect and submit registration data.
  */
-function RegistrationForm(Props: any): VNode {
+function RegistrationForm(): VNode {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
+  const [backendState, backendStateSetter] = useBackendState();
   const { pageState, pageStateSetter } = usePageContext();
   const [submitData, submitDataSetter] = useCredentialsRequestType();
   const { i18n } = useTranslationContext();
@@ -1823,7 +1728,7 @@ function RegistrationForm(Props: any): VNode {
                   if (!submitData) return;
                   registrationCall(
                     { ...submitData },
-                    Props.backendStateSetter, // will store BE URL, if OK.
+                    backendStateSetter, // will store BE URL, if OK.
                     pageStateSetter,
                   );
                   console.log("Clearing the input data");
@@ -2278,7 +2183,6 @@ function PublicHistoriesPage(): VNode {
 }
 
 function RegistrationPage(): VNode {
-  const [backendState, backendStateSetter] = useBackendState();
   const { i18n } = useTranslationContext();
   if (!bankUiSettings.allowRegistrations) {
     return (
@@ -2289,7 +2193,7 @@ function RegistrationPage(): VNode {
   }
   return (
     <BankFrame>
-      <RegistrationForm backendStateSetter={backendStateSetter} />
+      <RegistrationForm />
     </BankFrame>
   );
 }
