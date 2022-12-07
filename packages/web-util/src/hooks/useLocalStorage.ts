@@ -19,7 +19,7 @@
  * @author Sebastian Javier Marchano (sebasjm)
  */
 
-import { StateUpdater, useState } from "preact/hooks";
+import { StateUpdater, useEffect, useState } from "preact/hooks";
 
 export function useLocalStorage(
   key: string,
@@ -32,6 +32,16 @@ export function useLocalStorage(
         : initialValue;
     },
   );
+
+  useEffect(() => {
+    const listener = buildListenerForKey(key, (newValue) => {
+      setStoredValue(newValue ?? initialValue)
+    })
+    window.addEventListener('storage', listener)
+    return () => {
+      window.removeEventListener('storage', listener)
+    }
+  }, [])
 
   const setValue = (
     value?: string | ((val?: string) => string | undefined),
@@ -52,6 +62,13 @@ export function useLocalStorage(
   return [storedValue, setValue];
 }
 
+function buildListenerForKey(key: string, onUpdate: (newValue: string | undefined) => void): () => void {
+  return function listenKeyChange() {
+    const value = window.localStorage.getItem(key)
+    onUpdate(value ?? undefined)
+  }
+}
+
 //TODO: merge with the above function
 export function useNotNullLocalStorage(
   key: string,
@@ -62,6 +79,17 @@ export function useNotNullLocalStorage(
       ? window.localStorage.getItem(key) || initialValue
       : initialValue;
   });
+
+
+  useEffect(() => {
+    const listener = buildListenerForKey(key, (newValue) => {
+      setStoredValue(newValue ?? initialValue)
+    })
+    window.localStorage.addEventListener('storage', listener)
+    return () => {
+      window.localStorage.removeEventListener('storage', listener)
+    }
+  })
 
   const setValue = (value: string | ((val: string) => string)): void => {
     const valueToStore = value instanceof Function ? value(storedValue) : value;
