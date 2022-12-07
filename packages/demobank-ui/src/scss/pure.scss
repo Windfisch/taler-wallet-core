@@ -910,17 +910,23 @@ since IE8 won't execute CSS that contains a CSS3 selector.
   border-color: #ccc;
 }
 
-.pure-form input:focus:invalid,
-.pure-form textarea:focus:invalid,
-.pure-form select:focus:invalid {
-  color: #b94a48;
-  border-color: #e9322d;
-}
-.pure-form input[type="file"]:focus:invalid:focus,
-.pure-form input[type="radio"]:focus:invalid:focus,
-.pure-form input[type="checkbox"]:focus:invalid:focus {
-  outline-color: #e9322d;
-}
+/**
+ * Even if we add novalidate property
+ * in the form, the styles are applied for
+ * invalid elements so we need to remove this styles
+ *
+ */
+// .pure-form input:focus:invalid,
+// .pure-form textarea:focus:invalid,
+// .pure-form select:focus:invalid {
+//   color: #b94a48;
+//   border-color: #e9322d;
+// }
+// .pure-form input[type="file"]:focus:invalid:focus,
+// .pure-form input[type="radio"]:focus:invalid:focus,
+// .pure-form input[type="checkbox"]:focus:invalid:focus {
+//   outline-color: #e9322d;
+// }
 .pure-form select {
   /* Normalizes the height; padding is not sufficient. */
   height: 2.25em;
