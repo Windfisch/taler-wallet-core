@@ -118,30 +118,32 @@ export function PaytoWireTransferForm({
             />
             <br />
             <label for="amount">{i18n.str`Amount:`}</label>&nbsp;
-            <input
-              type="text"
-              readonly
-              class="currency-indicator"
-              size={currency?.length}
-              maxLength={currency?.length}
-              tabIndex={-1}
-              value={currency}
-            />
-            &nbsp;
-            <input
-              type="number"
-              name="amount"
-              id="amount"
-              placeholder="amount"
-              required
-              value={submitData?.amount ?? ""}
-              onInput={(e): void => {
-                submitDataSetter((submitData) => ({
-                  ...submitData,
-                  amount: e.currentTarget.value,
-                }));
-              }}
-            />
+            <div style={{ width: "max-content" }}>
+              <input
+                type="text"
+                readonly
+                class="currency-indicator"
+                size={currency?.length}
+                maxLength={currency?.length}
+                tabIndex={-1}
+                value={currency}
+              />
+              &nbsp;
+              <input
+                type="number"
+                name="amount"
+                id="amount"
+                placeholder="amount"
+                required
+                value={submitData?.amount ?? ""}
+                onInput={(e): void => {
+                  submitDataSetter((submitData) => ({
+                    ...submitData,
+                    amount: e.currentTarget.value,
+                  }));
+                }}
+              />
+            </div>
             <ShowInputErrorLabel
               message={errorsWire?.amount}
               isDirty={submitData?.amount !== undefined}

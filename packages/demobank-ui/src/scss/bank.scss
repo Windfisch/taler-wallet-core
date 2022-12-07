@@ -88,7 +88,7 @@ input[type="number"]::-webkit-inner-spin-button {
   display: none;
   padding: 8px 16px;
   border: 2px solid #c1c1c1;
-  width: max-content;
+  width: min-content;
 }
 
 .tabcontent.active {
@@ -168,7 +168,7 @@ input {
   margin-right: auto;
   padding: 16px 16px;
   border-radius: 8px;
-  width: max-content;
+  width: min-content;
   .formFieldLabel {
     margin: 2px 2px;
   }
@@ -210,7 +210,7 @@ input {
   margin-right: auto;
   padding: 16px 16px;
   border-radius: 8px;
-  width: max-content;
+  width: min-content;
   .formFieldLabel {
     margin: 2px 2px;
   }
@@ -244,7 +244,7 @@ input {
   margin-right: auto;
   padding: 16px 16px;
   border-radius: 8px;
-  width: max-content;
+  width: min-content;
   .formFieldLabel {
     margin: 2px 2px;
   }

@@ -46,29 +46,31 @@ export function WalletWithdrawForm({
       <p>
         <label for="withdraw-amount">{i18n.str`Amount to withdraw:`}</label>
         &nbsp;
-        <input
-          type="text"
-          readonly
-          class="currency-indicator"
-          size={currency?.length ?? 5}
-          maxLength={currency?.length}
-          tabIndex={-1}
-          value={currency}
-        />
-        &nbsp;
-        <input
-          type="number"
-          ref={ref}
-          id="withdraw-amount"
-          name="withdraw-amount"
-          value={submitAmount}
-          onChange={(e): void => {
-            // FIXME: validate using 'parseAmount()',
-            // deactivate submit button as long as
-            // amount is not valid
-            submitAmount = e.currentTarget.value;
-          }}
-        />
+        <div style={{ width: "max-content" }}>
+          <input
+            type="text"
+            readonly
+            class="currency-indicator"
+            size={currency?.length ?? 5}
+            maxLength={currency?.length}
+            tabIndex={-1}
+            value={currency}
+          />
+          &nbsp;
+          <input
+            type="number"
+            ref={ref}
+            id="withdraw-amount"
+            name="withdraw-amount"
+            value={submitAmount}
+            onChange={(e): void => {
+              // FIXME: validate using 'parseAmount()',
+              // deactivate submit button as long as
+              // amount is not valid
+              submitAmount = e.currentTarget.value;
+            }}
+          />
+        </div>
       </p>
       <p>
         <div>

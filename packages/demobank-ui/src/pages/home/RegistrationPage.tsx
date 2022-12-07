@@ -44,6 +44,8 @@ export function RegistrationPage(): VNode {
   );
 }
 
+const usernameRegex = /^[a-z][a-zA-Z0-9]+$/;
+
 /**
  * Collect and submit registration data.
  */
@@ -57,8 +59,16 @@ function RegistrationForm(): VNode {
   const { i18n } = useTranslationContext();
 
   const errors = undefinedIfEmpty({
-    username: !username ? i18n.str`Missing username` : undefined,
-    password: !password ? i18n.str`Missing password` : undefined,
+    username: !username
+      ? i18n.str`Missing username`
+      : !usernameRegex.test(username)
+      ? i18n.str`Use only letter and numbers starting with a lower case letter`
+      : undefined,
+    password: !password
+      ? i18n.str`Missing password`
+      : !usernameRegex.test(password)
+      ? i18n.str`Use only letter and numbers starting with a lower case letter`
+      : undefined,
     repeatPassword: !repeatPassword
       ? i18n.str`Missing password`
       : repeatPassword !== password
