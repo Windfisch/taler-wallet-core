@@ -46,3 +46,9 @@ export function getBankBackendBaseUrl(): string {
   console.log(`using bank base URL (${maybeRootPath})`);
   return maybeRootPath;
 }
+
+export function undefinedIfEmpty<T extends object>(obj: T): T | undefined {
+  return Object.keys(obj).some((k) => (obj as any)[k] !== undefined)
+    ? obj
+    : undefined;
+}

@@ -30,10 +30,12 @@ import { QrCodeSection } from "./QrCodeSection.js";
 import {
   getBankBackendBaseUrl,
   getIbanFromPayto,
+  undefinedIfEmpty,
   validateAmount,
 } from "../../utils.js";
 import { BankFrame } from "./BankFrame.js";
 import { Transactions } from "./Transactions.js";
+import { ShowInputErrorLabel } from "./ShowInputErrorLabel.js";
 
 /**
  * FIXME:
@@ -553,111 +555,9 @@ async function loginCall(
   }));
 }
 
-/**
- * This function requests /register.
- *
- * This function is responsible to change two states:
- * the backend's (to store the login credentials) and
- * the page's (to indicate a successful login or a problem).
- */
-async function registrationCall(
-  req: { username: string; password: string },
-  /**
-   * FIXME: figure out if the two following
-   * functions can be retrieved somewhat from
-   * the state.
-   */
-  backendStateSetter: StateUpdater<BackendStateType | undefined>,
-  pageStateSetter: StateUpdater<PageStateType>,
-): Promise<void> {
-  let baseUrl = getBankBackendBaseUrl();
-  /**
-   * If the base URL doesn't end with slash and the path
-   * is not empty, then the concatenation made by URL()
-   * drops the last path element.
-   */
-  if (!baseUrl.endsWith("/")) baseUrl += "/";
-
-  const headers = new Headers();
-  headers.append("Content-Type", "application/json");
-  const url = new URL("access-api/testing/register", baseUrl);
-  let res: Response;
-  try {
-    res = await fetch(url.href, {
-      method: "POST",
-      body: JSON.stringify({
-        username: req.username,
-        password: req.password,
-      }),
-      headers,
-    });
-  } catch (error) {
-    console.log(
-      `Could not POST new registration to the bank (${url.href})`,
-      error,
-    );
-    pageStateSetter((prevState) => ({
-      ...prevState,
-
-      error: {
-        title: `Registration failed, please report`,
-        debug: JSON.stringify(error),
-      },
-    }));
-    return;
-  }
-  if (!res.ok) {
-    const response = await res.json();
-    if (res.status === 409) {
-      pageStateSetter((prevState) => ({
-        ...prevState,
-
-        error: {
-          title: `That username is already taken`,
-          debug: JSON.stringify(response),
-        },
-      }));
-    } else {
-      pageStateSetter((prevState) => ({
-        ...prevState,
-
-        error: {
-          title: `New registration gave response error`,
-          debug: JSON.stringify(response),
-        },
-      }));
-    }
-  } else {
-    // registration was ok
-    pageStateSetter((prevState) => ({
-      ...prevState,
-      isLoggedIn: true,
-    }));
-    backendStateSetter((prevState) => ({
-      ...prevState,
-      url: baseUrl,
-      username: req.username,
-      password: req.password,
-    }));
-    route("/account");
-  }
-}
-
 /**************************
  * Functional components. *
  *************************/
-
-function ShowInputErrorLabel({
-  isDirty,
-  message,
-}: {
-  message: string | undefined;
-  isDirty: boolean;
-}): VNode {
-  if (message && isDirty)
-    return <div style={{ marginTop: 8, color: "red" }}>{message}</div>;
-  return <Fragment />;
-}
 
 function PaytoWireTransfer({
   focus,
@@ -1257,11 +1157,6 @@ function PaymentOptions({ currency }: { currency?: string }): VNode {
   );
 }
 
-function undefinedIfEmpty<T extends object>(obj: T): T | undefined {
-  return Object.keys(obj).some((k) => (obj as any)[k] !== undefined)
-    ? obj
-    : undefined;
-}
 /**
  * Collect and submit login data.
  */
@@ -1358,129 +1253,6 @@ function LoginForm(): VNode {
         </div>
       </form>
     </div>
-  );
-}
-
-/**
- * Collect and submit registration data.
- */
-function RegistrationForm(): VNode {
-  const [backendState, backendStateSetter] = useBackendState();
-  const { pageState, pageStateSetter } = usePageContext();
-  const [username, setUsername] = useState<string | undefined>();
-  const [password, setPassword] = useState<string | undefined>();
-  const [repeatPassword, setRepeatPassword] = useState<string | undefined>();
-
-  const { i18n } = useTranslationContext();
-
-  const errors = undefinedIfEmpty({
-    username: !username ? i18n.str`Missing username` : undefined,
-    password: !password ? i18n.str`Missing password` : undefined,
-    repeatPassword: !repeatPassword
-      ? i18n.str`Missing password`
-      : repeatPassword !== password
-      ? i18n.str`Password don't match`
-      : undefined,
-  });
-
-  return (
-    <Fragment>
-      <h1 class="nav">{i18n.str`Welcome to ${bankUiSettings.bankName}!`}</h1>
-      <article>
-        <div class="register-div">
-          <form action="javascript:void(0);" class="register-form" noValidate>
-            <div class="pure-form">
-              <h2>{i18n.str`Please register!`}</h2>
-              <p class="unameFieldLabel registerFieldLabel formFieldLabel">
-                <label for="register-un">{i18n.str`Username:`}</label>
-              </p>
-              <input
-                id="register-un"
-                name="register-un"
-                type="text"
-                placeholder="Username"
-                value={username ?? ""}
-                onInput={(e): void => {
-                  setUsername(e.currentTarget.value);
-                }}
-              />
-              <ShowInputErrorLabel
-                message={errors?.username}
-                isDirty={username !== undefined}
-              />
-              <p class="unameFieldLabel registerFieldLabel formFieldLabel">
-                <label for="register-pw">{i18n.str`Password:`}</label>
-              </p>
-              <input
-                type="password"
-                name="register-pw"
-                id="register-pw"
-                placeholder="Password"
-                value={password ?? ""}
-                required
-                onInput={(e): void => {
-                  setPassword(e.currentTarget.value);
-                }}
-              />
-              <ShowInputErrorLabel
-                message={errors?.password}
-                isDirty={username !== undefined}
-              />
-              <p class="unameFieldLabel registerFieldLabel formFieldLabel">
-                <label for="register-repeat">{i18n.str`Repeat Password:`}</label>
-              </p>
-              <input
-                type="password"
-                style={{ marginBottom: 8 }}
-                name="register-repeat"
-                id="register-repeat"
-                placeholder="Same password"
-                value={repeatPassword ?? ""}
-                required
-                onInput={(e): void => {
-                  setRepeatPassword(e.currentTarget.value);
-                }}
-              />
-              <ShowInputErrorLabel
-                message={errors?.repeatPassword}
-                isDirty={username !== undefined}
-              />
-              <br />
-              <button
-                class="pure-button pure-button-primary btn-register"
-                disabled={!!errors}
-                onClick={() => {
-                  if (!username || !password) return;
-                  registrationCall(
-                    { username, password },
-                    backendStateSetter, // will store BE URL, if OK.
-                    pageStateSetter,
-                  );
-
-                  setUsername(undefined);
-                  setPassword(undefined);
-                  setRepeatPassword(undefined);
-                }}
-              >
-                {i18n.str`Register`}
-              </button>
-              {/* FIXME: should use a different color */}
-              <button
-                class="pure-button pure-button-secondary btn-cancel"
-                onClick={() => {
-                  setUsername(undefined);
-                  setPassword(undefined);
-                  setRepeatPassword(undefined);
-                  route("/account");
-                }}
-              >
-                {i18n.str`Cancel`}
-              </button>
-            </div>
-          </form>
-        </div>
-      </article>
-    </Fragment>
   );
 }
 
@@ -1686,22 +1458,6 @@ function SWRWithCredentials(props: any): VNode {
     >
       {props.children}
     </SWRConfig>
-  );
-}
-
-export function RegistrationPage(): VNode {
-  const { i18n } = useTranslationContext();
-  if (!bankUiSettings.allowRegistrations) {
-    return (
-      <BankFrame>
-        <p>{i18n.str`Currently, the bank is not accepting new registrations!`}</p>
-      </BankFrame>
-    );
-  }
-  return (
-    <BankFrame>
-      <RegistrationForm />
-    </BankFrame>
   );
 }
 
