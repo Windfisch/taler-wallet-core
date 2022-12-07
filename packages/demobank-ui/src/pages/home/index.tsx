@@ -27,44 +27,14 @@ import {
 } from "preact/hooks";
 import talerLogo from "../../assets/logo-white.svg";
 import { LangSelectorLikePy as LangSelector } from "../../components/menu/LangSelector.js";
-import {
-  useLocalStorage,
-  useNotNullLocalStorage,
-} from "../../hooks/useLocalStorage.js";
-// import { Translate, useTranslator } from "../../i18n/index.js";
 import { useTranslationContext } from "../../context/translation.js";
 import { Amounts, HttpStatusCode, parsePaytoUri } from "@gnu-taler/taler-util";
 import { createHashHistory } from "history";
 import Router, { Route, route } from "preact-router";
 import { QrCodeSection } from "./QrCodeSection.js";
-
-interface BankUiSettings {
-  allowRegistrations: boolean;
-  showDemoNav: boolean;
-  bankName: string;
-  demoSites: [string, string][];
-}
-
-/**
- * Global settings for the demobank UI.
- */
-const defaultSettings: BankUiSettings = {
-  allowRegistrations: true,
-  bankName: "Taler Bank",
-  showDemoNav: true,
-  demoSites: [
-    ["Landing", "https://demo.taler.net/"],
-    ["Bank", "https://bank.demo.taler.net/"],
-    ["Essay Shop", "https://shop.demo.taler.net/"],
-    ["Donations", "https://donations.demo.taler.net/"],
-    ["Survey", "https://survey.demo.taler.net/"],
-  ],
-};
-
-const bankUiSettings: BankUiSettings =
-  "talerDemobankSettings" in globalThis
-    ? (globalThis as any).talerDemobankSettings
-    : defaultSettings;
+import { hooks } from "@gnu-taler/web-util/lib/index.browser";
+import { bankUiSettings } from "../../settings.js";
+import { PageStateType, usePageContext } from "../../context/pageState.js";
 
 /**
  * FIXME:
@@ -90,94 +60,6 @@ const bankUiSettings: BankUiSettings =
 /************
  * Contexts *
  ***********/
-const CurrencyContext = createContext<any>(null);
-type PageContextType = [PageStateType, StateUpdater<PageStateType>];
-const PageContextDefault: PageContextType = [
-  {
-    isLoggedIn: false,
-    isRawPayto: false,
-    showPublicHistories: false,
-
-    withdrawalInProgress: false,
-  },
-  () => {
-    null;
-  },
-];
-const PageContext = createContext<PageContextType>(PageContextDefault);
-
-/**********************************************
- * Type definitions for states and API calls. *
- *********************************************/
-
-/**
- * Has the information to reach and
- * authenticate at the bank's backend.
- */
-interface BackendStateType {
-  url?: string;
-  username?: string;
-  password?: string;
-}
-
-/**
- * Request body of POST /transactions.
- *
- * If the amount appears twice: both as a Payto parameter and
- * in the JSON dedicate field, the one on the Payto URI takes
- * precedence.
- */
-interface TransactionRequestType {
-  paytoUri: string;
-  amount?: string; // with currency.
-}
-
-/**
- * Request body of /register.
- */
-interface CredentialsRequestType {
-  username?: string;
-  password?: string;
-  repeatPassword?: string;
-}
-
-/**
- * Request body of /register.
- */
-// interface LoginRequestType {
-//   username: string;
-//   password: string;
-// }
-
-interface WireTransferRequestType {
-  iban?: string;
-  subject?: string;
-  amount?: string;
-}
-
-/**
- * Track page state.
- */
-interface PageStateType {
-  isLoggedIn: boolean;
-  isRawPayto: boolean;
-  showPublicHistories: boolean;
-  withdrawalInProgress: boolean;
-  error?: {
-    description?: string;
-    title: string;
-    debug?: string;
-  };
-
-  info?: string;
-  talerWithdrawUri?: string;
-  /**
-   * Not strictly a presentational value, could
-   * be moved in a future "withdrawal state" object.
-   */
-  withdrawalId?: string;
-  timestamp?: number;
-}
 
 /**
  * Bank account specific information.
@@ -294,7 +176,7 @@ async function postToBackend(
 }
 
 function useTransactionPageNumber(): [number, StateUpdater<number>] {
-  const ret = useNotNullLocalStorage("transaction-page", "0");
+  const ret = hooks.useNotNullLocalStorage("transaction-page", "0");
   const retObj = JSON.parse(ret[0]);
   const retSetter: StateUpdater<number> = function (val) {
     const newVal =
@@ -347,7 +229,10 @@ const getBankBackendBaseUrl = (): string => {
 function useShowPublicAccount(
   state?: string,
 ): [string | undefined, StateUpdater<string | undefined>] {
-  const ret = useLocalStorage("show-public-account", JSON.stringify(state));
+  const ret = hooks.useLocalStorage(
+    "show-public-account",
+    JSON.stringify(state),
+  );
   const retObj: string | undefined = ret[0] ? JSON.parse(ret[0]) : ret[0];
   const retSetter: StateUpdater<string | undefined> = function (val) {
     const newVal =
@@ -367,7 +252,7 @@ type RawPaytoInputTypeOpt = RawPaytoInputType | undefined;
 function useRawPaytoInputType(
   state?: RawPaytoInputType,
 ): [RawPaytoInputTypeOpt, StateUpdater<RawPaytoInputTypeOpt>] {
-  const ret = useLocalStorage("raw-payto-input-state", state);
+  const ret = hooks.useLocalStorage("raw-payto-input-state", state);
   const retObj: RawPaytoInputTypeOpt = ret[0];
   const retSetter: StateUpdater<RawPaytoInputTypeOpt> = function (val) {
     const newVal = val instanceof Function ? val(retObj) : val;
@@ -387,7 +272,7 @@ type WireTransferRequestTypeOpt = WireTransferRequestType | undefined;
 function useWireTransferRequestType(
   state?: WireTransferRequestType,
 ): [WireTransferRequestTypeOpt, StateUpdater<WireTransferRequestTypeOpt>] {
-  const ret = useLocalStorage(
+  const ret = hooks.useLocalStorage(
     "wire-transfer-request-state",
     JSON.stringify(state),
   );
@@ -413,7 +298,7 @@ type CredentialsRequestTypeOpt = CredentialsRequestType | undefined;
 function useCredentialsRequestType(
   state?: CredentialsRequestType,
 ): [CredentialsRequestTypeOpt, StateUpdater<CredentialsRequestTypeOpt>] {
-  const ret = useLocalStorage(
+  const ret = hooks.useLocalStorage(
     "credentials-request-state",
     JSON.stringify(state),
   );
@@ -439,7 +324,7 @@ type BackendStateTypeOpt = BackendStateType | undefined;
 function useBackendState(
   state?: BackendStateType,
 ): [BackendStateTypeOpt, StateUpdater<BackendStateTypeOpt>] {
-  const ret = useLocalStorage("backend-state", JSON.stringify(state));
+  const ret = hooks.useLocalStorage("backend-state", JSON.stringify(state));
   const retObj: BackendStateTypeOpt = ret[0] ? JSON.parse(ret[0]) : ret[0];
   const retSetter: StateUpdater<BackendStateTypeOpt> = function (val) {
     const newVal =
@@ -449,67 +334,6 @@ function useBackendState(
     ret[1](newVal);
   };
   return [retObj, retSetter];
-}
-
-/**
- * Keep mere business information, like account balance or
- * transactions history.
- */
-// type AccountStateTypeOpt = AccountStateType | undefined;
-// function useAccountState(
-//   state?: AccountStateType,
-// ): [AccountStateTypeOpt, StateUpdater<AccountStateTypeOpt>] {
-//   const ret = useLocalStorage("account-state", JSON.stringify(state));
-//   const retObj: AccountStateTypeOpt = ret[0] ? JSON.parse(ret[0]) : ret[0];
-//   const retSetter: StateUpdater<AccountStateTypeOpt> = function (val) {
-//     const newVal =
-//       val instanceof Function
-//         ? JSON.stringify(val(retObj))
-//         : JSON.stringify(val);
-//     ret[1](newVal);
-//   };
-//   return [retObj, retSetter];
-// }
-
-/**
- * Wrapper providing defaults.
- */
-function usePageState(
-  state: PageStateType = {
-    isLoggedIn: false,
-    isRawPayto: false,
-    showPublicHistories: false,
-    withdrawalInProgress: false,
-  },
-): [PageStateType, StateUpdater<PageStateType>] {
-  const ret = useNotNullLocalStorage("page-state", JSON.stringify(state));
-  const retObj: PageStateType = JSON.parse(ret[0]);
-
-  const retSetter: StateUpdater<PageStateType> = function (val) {
-    const newVal =
-      val instanceof Function
-        ? JSON.stringify(val(retObj))
-        : JSON.stringify(val);
-
-    ret[1](newVal);
-  };
-
-  //when moving from one page to another
-  //clean up the info and error bar
-  function removeLatestInfo(val: any): ReturnType<typeof retSetter> {
-    const updater = typeof val === "function" ? val : (c: any) => val;
-    return retSetter((current: any) => {
-      const cleanedCurrent: PageStateType = {
-        ...current,
-        info: undefined,
-        errors: undefined,
-        timestamp: new Date().getTime(),
-      };
-      return updater(cleanedCurrent);
-    });
-  }
-
-  return [retObj, removeLatestInfo];
 }
 
 /**
@@ -1045,7 +869,7 @@ function StatusBanner(Props: any): VNode | null {
 
 function BankFrame(Props: any): VNode {
   const { i18n } = useTranslationContext();
-  const [pageState, pageStateSetter] = useContext(PageContext);
+  const { pageState, pageStateSetter } = usePageContext();
   console.log("BankFrame state", pageState);
   const logOut = (
     <div class="logout">
@@ -1164,19 +988,16 @@ function ShowInputErrorLabel({
 }
 
 function PaytoWireTransfer(Props: any): VNode {
-  const currency = useContext(CurrencyContext);
-  const [pageState, pageStateSetter] = useContext(PageContext); // NOTE: used for go-back button?
+  const { pageState, pageStateSetter } = usePageContext(); // NOTE: used for go-back button?
+
   const [submitData, submitDataSetter] = useWireTransferRequestType();
-  // const [rawPaytoInput, rawPaytoInputSetter] = useRawPaytoInputType();
+
   const [rawPaytoInput, rawPaytoInputSetter] = useState<string | undefined>(
     undefined,
   );
   const { i18n } = useTranslationContext();
-  const { focus, backendState } = Props;
-  const amountRegex = "^[0-9]+(.[0-9]+)?$";
+  const { focus, backendState, currency } = Props;
   const ibanRegex = "^[A-Z][A-Z][0-9]+$";
-  const receiverInput = "";
-  const subjectInput = "";
   let transactionData: TransactionRequestType;
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -1213,7 +1034,7 @@ function PaytoWireTransfer(Props: any): VNode {
   if (!pageState.isRawPayto)
     return (
       <div>
-        <div class="pure-form" name="wire-transfer-form">
+        <form class="pure-form" name="wire-transfer-form">
           <p>
             <label for="iban">{i18n.str`Receiver IBAN:`}</label>&nbsp;
             <input
@@ -1261,22 +1082,6 @@ function PaytoWireTransfer(Props: any): VNode {
             <br />
             <label for="amount">{i18n.str`Amount:`}</label>&nbsp;
             <input
-              type="number"
-              name="amount"
-              id="amount"
-              placeholder="amount"
-              required
-              value={submitData?.amount ?? ""}
-              pattern={amountRegex}
-              onInput={(e): void => {
-                submitDataSetter((submitData: any) => ({
-                  ...submitData,
-                  amount: e.currentTarget.value,
-                }));
-              }}
-            />
-            &nbsp;
-            <input
               type="text"
               readonly
               class="currency-indicator"
@@ -1284,6 +1089,21 @@ function PaytoWireTransfer(Props: any): VNode {
               maxLength={currency.length}
               tabIndex={-1}
               value={currency}
+            />
+            &nbsp;
+            <input
+              type="number"
+              name="amount"
+              id="amount"
+              placeholder="amount"
+              required
+              value={submitData?.amount ?? ""}
+              onInput={(e): void => {
+                submitDataSetter((submitData: any) => ({
+                  ...submitData,
+                  amount: e.currentTarget.value,
+                }));
+              }}
             />
             <ShowInputErrorLabel
               message={errorsWire?.amount}
@@ -1349,7 +1169,7 @@ function PaytoWireTransfer(Props: any): VNode {
               }}
             />
           </p>
-        </div>
+        </form>
         <p>
           <a
             href="/account"
@@ -1460,7 +1280,7 @@ function PaytoWireTransfer(Props: any): VNode {
  * Not providing a back button, only abort.
  */
 function TalerWithdrawalConfirmationQuestion(Props: any): VNode {
-  const [pageState, pageStateSetter] = useContext(PageContext);
+  const { pageState, pageStateSetter } = usePageContext();
   const { backendState } = Props;
   const { i18n } = useTranslationContext();
   const captchaNumbers = {
@@ -1474,7 +1294,7 @@ function TalerWithdrawalConfirmationQuestion(Props: any): VNode {
       <h1 class="nav">{i18n.str`Confirm Withdrawal`}</h1>
       <article>
         <div class="challenge-div">
-          <form class="challenge-form">
+          <form class="challenge-form" noValidate>
             <div class="pure-form" id="captcha" name="capcha-form">
               <h2>{i18n.str`Authorize withdrawal by solving challenge`}</h2>
               <p>
@@ -1562,8 +1382,8 @@ function TalerWithdrawalConfirmationQuestion(Props: any): VNode {
  */
 function TalerWithdrawalQRCode(Props: any): VNode {
   // turns true when the wallet POSTed the reserve details:
-  const [pageState, pageStateSetter] = useContext(PageContext);
-  const { withdrawalId, talerWithdrawUri, accountLabel, backendState } = Props;
+  const { pageState, pageStateSetter } = usePageContext();
+  const { withdrawalId, talerWithdrawUri, backendState } = Props;
   const { i18n } = useTranslationContext();
   const abortButton = (
     <a
@@ -1647,36 +1467,18 @@ function TalerWithdrawalQRCode(Props: any): VNode {
 }
 
 function WalletWithdraw(Props: any): VNode {
-  const { backendState, pageStateSetter, focus } = Props;
-  const currency = useContext(CurrencyContext);
+  const { backendState, pageStateSetter, focus, currency } = Props;
   const { i18n } = useTranslationContext();
   let submitAmount = "5.00";
-  const amountRegex = "^[0-9]+(.[0-9]+)?$";
 
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (focus) ref.current?.focus();
   }, [focus]);
   return (
-    <div id="reserve-form" class="pure-form" name="tform">
+    <form id="reserve-form" class="pure-form" name="tform">
       <p>
         <label for="withdraw-amount">{i18n.str`Amount to withdraw:`}</label>
-        &nbsp;
-        <input
-          type="number"
-          ref={ref}
-          id="withdraw-amount"
-          name="withdraw-amount"
-          value={submitAmount}
-          pattern={amountRegex}
-          class="amount"
-          onChange={(e): void => {
-            // FIXME: validate using 'parseAmount()',
-            // deactivate submit button as long as
-            // amount is not valid
-            submitAmount = e.currentTarget.value;
-          }}
-        />
         &nbsp;
         <input
           type="text"
@@ -1686,6 +1488,20 @@ function WalletWithdraw(Props: any): VNode {
           maxLength={currency.length}
           tabIndex={-1}
           value={currency}
+        />
+        &nbsp;
+        <input
+          type="number"
+          ref={ref}
+          id="withdraw-amount"
+          name="withdraw-amount"
+          value={submitAmount}
+          onChange={(e): void => {
+            // FIXME: validate using 'parseAmount()',
+            // deactivate submit button as long as
+            // amount is not valid
+            submitAmount = e.currentTarget.value;
+          }}
         />
       </p>
       <p>
@@ -1712,7 +1528,7 @@ function WalletWithdraw(Props: any): VNode {
           />
         </div>
       </p>
-    </div>
+    </form>
   );
 }
 
@@ -1721,8 +1537,7 @@ function WalletWithdraw(Props: any): VNode {
  * then specify the details trigger the action.
  */
 function PaymentOptions(Props: any): VNode {
-  const { backendState, pageStateSetter, focus } = Props;
-  const currency = useContext(CurrencyContext);
+  const { backendState, pageStateSetter, currency } = Props;
   const { i18n } = useTranslationContext();
 
   const [tab, setTab] = useState<"charge-wallet" | "wire-transfer">(
@@ -1756,6 +1571,7 @@ function PaymentOptions(Props: any): VNode {
             <WalletWithdraw
               backendState={backendState}
               focus
+              currency={currency}
               pageStateSetter={pageStateSetter}
             />
           </div>
@@ -1766,6 +1582,7 @@ function PaymentOptions(Props: any): VNode {
             <PaytoWireTransfer
               backendState={backendState}
               focus
+              currency={currency}
               pageStateSetter={pageStateSetter}
             />
           </div>
@@ -1819,7 +1636,7 @@ function LoginForm(Props: any): VNode {
 
   return (
     <div class="login-div">
-      <form action="javascript:void(0);" class="login-form">
+      <form action="javascript:void(0);" class="login-form" noValidate>
         <div class="pure-form">
           <h2>{i18n.str`Please login!`}</h2>
           <p class="unameFieldLabel loginFieldLabel formFieldLabel">
@@ -1903,7 +1720,7 @@ function LoginForm(Props: any): VNode {
  */
 function RegistrationForm(Props: any): VNode {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [pageState, pageStateSetter] = useContext(PageContext);
+  const { pageState, pageStateSetter } = usePageContext();
   const [submitData, submitDataSetter] = useCredentialsRequestType();
   const { i18n } = useTranslationContext();
 
@@ -1924,7 +1741,7 @@ function RegistrationForm(Props: any): VNode {
       <h1 class="nav">{i18n.str`Welcome to ${bankUiSettings.bankName}!`}</h1>
       <article>
         <div class="register-div">
-          <form action="javascript:void(0);" class="register-form">
+          <form action="javascript:void(0);" class="register-form" noValidate>
             <div class="pure-form">
               <h2>{i18n.str`Please register!`}</h2>
               <p class="unameFieldLabel registerFieldLabel formFieldLabel">
@@ -2140,7 +1957,7 @@ function Account(Props: any): VNode {
     // revalidateOnFocus: false,
     // revalidateOnReconnect: false,
   });
-  const [pageState, setPageState] = useContext(PageContext);
+  const { pageState, pageStateSetter: setPageState } = usePageContext();
   const {
     withdrawalInProgress,
     withdrawalId,
@@ -2275,14 +2092,11 @@ function Account(Props: any): VNode {
       <section id="payments">
         <div class="payments">
           <h2>{i18n.str`Payments`}</h2>
-          {/* FIXME: turn into button! */}
-          <CurrencyContext.Provider value={balance.currency}>
-            {Props.children}
-            <PaymentOptions
-              backendState={backendState}
-              pageStateSetter={setPageState}
-            />
-          </CurrencyContext.Provider>
+          <PaymentOptions
+            currency={balance.currency}
+            backendState={backendState}
+            pageStateSetter={setPageState}
+          />
         </div>
       </section>
       <section id="main">
@@ -2439,71 +2253,61 @@ function PublicHistories(Props: any): VNode {
 }
 
 function PublicHistoriesPage(): VNode {
-  // const [backendState, backendStateSetter] = useBackendState();
-  const [pageState, pageStateSetter] = usePageState();
+  const { pageState, pageStateSetter } = usePageContext();
   // const { i18n } = useTranslationContext();
   return (
     <SWRWithoutCredentials baseUrl={getBankBackendBaseUrl()}>
-      <PageContext.Provider value={[pageState, pageStateSetter]}>
-        <BankFrame>
-          <PublicHistories pageStateSetter={pageStateSetter}>
-            <br />
-            <a
-              class="pure-button"
-              onClick={() => {
-                pageStateSetter((prevState: PageStateType) => ({
-                  ...prevState,
-                  showPublicHistories: false,
-                }));
-              }}
-            >
-              Go back
-            </a>
-          </PublicHistories>
-        </BankFrame>
-      </PageContext.Provider>
+      <BankFrame>
+        <PublicHistories pageStateSetter={pageStateSetter}>
+          <br />
+          <a
+            class="pure-button"
+            onClick={() => {
+              pageStateSetter((prevState: PageStateType) => ({
+                ...prevState,
+                showPublicHistories: false,
+              }));
+            }}
+          >
+            Go back
+          </a>
+        </PublicHistories>
+      </BankFrame>
     </SWRWithoutCredentials>
   );
 }
 
 function RegistrationPage(): VNode {
   const [backendState, backendStateSetter] = useBackendState();
-  const [pageState, pageStateSetter] = usePageState();
   const { i18n } = useTranslationContext();
   if (!bankUiSettings.allowRegistrations) {
     return (
-      <PageContext.Provider value={[pageState, pageStateSetter]}>
-        <BankFrame>
-          <p>{i18n.str`Currently, the bank is not accepting new registrations!`}</p>
-        </BankFrame>
-      </PageContext.Provider>
+      <BankFrame>
+        <p>{i18n.str`Currently, the bank is not accepting new registrations!`}</p>
+      </BankFrame>
     );
   }
   return (
-    <PageContext.Provider value={[pageState, pageStateSetter]}>
-      <BankFrame>
-        <RegistrationForm backendStateSetter={backendStateSetter} />
-      </BankFrame>
-    </PageContext.Provider>
+    <BankFrame>
+      <RegistrationForm backendStateSetter={backendStateSetter} />
+    </BankFrame>
   );
 }
 
 function AccountPage(): VNode {
   const [backendState, backendStateSetter] = useBackendState();
-  const [pageState, pageStateSetter] = usePageState();
   const { i18n } = useTranslationContext();
+  const { pageState, pageStateSetter } = usePageContext();
 
   if (!pageState.isLoggedIn) {
     return (
-      <PageContext.Provider value={[pageState, pageStateSetter]}>
-        <BankFrame>
-          <h1 class="nav">{i18n.str`Welcome to ${bankUiSettings.bankName}!`}</h1>
-          <LoginForm
-            pageStateSetter={pageStateSetter}
-            backendStateSetter={backendStateSetter}
-          />
-        </BankFrame>
-      </PageContext.Provider>
+      <BankFrame>
+        <h1 class="nav">{i18n.str`Welcome to ${bankUiSettings.bankName}!`}</h1>
+        <LoginForm
+          pageStateSetter={pageStateSetter}
+          backendStateSetter={backendStateSetter}
+        />
+      </BankFrame>
     );
   }
 
@@ -2525,12 +2329,10 @@ function AccountPage(): VNode {
       password={backendState.password}
       backendUrl={backendState.url}
     >
-      <PageContext.Provider value={[pageState, pageStateSetter]}>
-        <Account
-          accountLabel={backendState.username}
-          backendState={backendState}
-        />
-      </PageContext.Provider>
+      <Account
+        accountLabel={backendState.username}
+        backendState={backendState}
+      />
     </SWRWithCredentials>
   );
 }

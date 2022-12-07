@@ -22,7 +22,7 @@
 import { i18n, setupI18n } from "@gnu-taler/taler-util";
 import { createContext, h, VNode } from "preact";
 import { useContext, useEffect } from "preact/hooks";
-import { useLang } from "../hooks/useLang.js";
+import { hooks } from "@gnu-taler/web-util/lib/index.browser";
 import { strings } from "../i18n/strings.js";
 
 interface Type {
@@ -70,7 +70,7 @@ export const TranslationProvider = ({
   children,
   forceLang,
 }: Props): VNode => {
-  const [lang, changeLanguage, isSaved] = useLang(initial);
+  const [lang, changeLanguage, isSaved] = hooks.useLang(initial);
   useEffect(() => {
     if (forceLang) {
       changeLanguage(forceLang);

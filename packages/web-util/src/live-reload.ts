@@ -17,7 +17,7 @@ function setupLiveReload(): void {
     } catch (e) {
       return;
     }
-    console.log("unsupported", event);
+    console.log("unsupported", message);
   });
 
   ws.addEventListener("error", (error) => {
